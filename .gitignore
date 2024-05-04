@@ -1,0 +1,11 @@
+.idea/
+cmake-build-debug/
+cmake-build-release/
+out/
+.vs/
+.cache
+.DS_Store
+build/DenOfIz
+CMakeFiles/
+CMakeCache.txt
+/Shaders/SPIRV/

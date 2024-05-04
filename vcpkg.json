@@ -1,0 +1,22 @@
+{
+  "name": "den-of-iz",
+  "version": "0.0.1",
+  "dependencies": [
+    {
+      "name": "sdl2",
+      "features": ["vulkan"]
+    },
+    "vulkan-headers",
+    "vulkan-memory-allocator",
+    "assimp",
+    "directxtex",
+    "directx-dxc",
+    "directx-headers",
+    "tinygltf",
+    "glm",
+    "glslang",
+    "boost",
+    "stb",
+    "spirv-cross"
+  ]
+}

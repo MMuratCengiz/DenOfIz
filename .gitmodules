@@ -1,0 +1,9 @@
+[submodule "vcpkg"]
+	path = vcpkg
+	url = https://github.com/microsoft/vcpkg.git
+[submodule "_External/The-Forge"]
+	path = _External/The-Forge
+	url = git@github.com:ConfettiFX/The-Forge.git
+[submodule "_External/VulkanMemoryAllocator"]
+	path = _External/VulkanMemoryAllocator
+	url = git@github.com:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git

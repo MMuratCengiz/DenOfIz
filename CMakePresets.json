@@ -1,0 +1,49 @@
+{
+  "configurePresets": [
+    {
+      "name": "Base",
+      "hidden": true,
+      "generator": "Visual Studio 17 2022",
+      "installDir": "build/DenOfIz/${presetName}",
+      "binaryDir": "build/DenOfIz/${presetName}",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS" : "OFF",
+        "CMAKE_TOOLCHAIN_FILE" : "vcpkg/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "Debug_MSVC",
+      "inherits": "Base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md"
+      }
+    },
+    {
+      "name": "Release_MSVC",
+      "inherits": "Base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+        "CRT_LINKAGE_STATIC": "1"
+      }
+    },
+    {
+      "name": "Debug_OSX",
+      "inherits": "Base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-osx"
+      }
+    },
+    {
+      "name": "Release_OSX",
+      "inherits": "Base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-osx"
+      }
+    }
+  ],
+  "version": 3
+}
