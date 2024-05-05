@@ -16,13 +16,36 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/DirectX12/DX12Device.h>
+#pragma once
+#ifdef BUILD_DX12
 
-using namespace DenOfIz;
-using namespace DirectX;
-using Microsoft::WRL::ComPtr;
+#include <DenOfIzCore/Common.h>
+#include <d3d12.h>
 
-DX12Device::DX12Device()
+#include <dxgi1_6.h>
+
+#include <DirectXMath.h>
+#include <DirectXColors.h>
+
+#include "directx/d3dx12.h"
+
+struct DX12Context
 {
+    ID3D12Device5 *D3DDevice;
 
-}
+    IDXGISwapChain3 *SwapChain;
+    IDXGIFactory4 *DXGIFactory;
+
+    ID3D12CommandQueue *CommandQueue;
+    ID3D12CommandAllocator *CommandAllocators;
+
+    ID3D12GraphicsCommandList4 *GraphicsCommandList;
+
+    DXGI_FORMAT BackBufferFormat;
+    DXGI_FORMAT DepthBufferFormat;
+
+    D3D12_VIEWPORT ScreenViewport;
+    D3D12_RECT ScissorRect;
+};
+
+#endif

@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#ifdef BUILD_VK
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
 #include <DenOfIzGraphics/Backends/Interface/ILock.h>
@@ -24,29 +25,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-class VulkanLock : public ILock
-{
-private:
-	vk::Fence fence{};
-	vk::Semaphore semaphore{};
+    class VulkanLock : public ILock
+    {
+        vk::Fence fence{};
+        vk::Semaphore semaphore{};
 
-	VulkanContext* context;
-public:
-	VulkanLock(VulkanContext* context, const LockType& lockType);
-	void Wait() override;
-	void Reset() override;
-	void Notify() override;
+        VulkanContext *context;
 
-	inline const vk::Fence& GetVkFence()
-	{
-		return fence;
-	}
+    public:
+        VulkanLock( VulkanContext *context, const LockType &lockType );
+        void Wait() override;
+        void Reset() override;
+        void Notify() override;
 
-	inline const vk::Semaphore& GetVkSemaphore()
-	{
-		return semaphore;
-	}
+        const vk::Fence &GetVkFence()
+        {
+            return fence;
+        }
 
-	~VulkanLock() override;
-};
+        const vk::Semaphore &GetVkSemaphore()
+        {
+            return semaphore;
+        }
+
+        ~VulkanLock() override;
+    };
 }
+
+#endif

@@ -16,35 +16,9 @@
 
 #pragma once
 
-#ifdef WIN32
-#define _CRTDBG_MAP_ALLOC
+#include "Common_Windows.h"
+#include "Common_Apple.h"
 #include <stdlib.h>
-#include <crtdbg.h>
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#define GLM_FORCE_RADIANS
-//#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-
-#include <stdlib.h>
-
-#ifdef _WIN32
-#ifdef DEBUG
-#define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
-#include <crtdbg.h>
-#endif
-
-#ifndef NOMINMAX
-#define NOMINMAX
-#include <windows.h>
-#endif
-#endif
-
-#ifndef __APPLE_CC__
-#include <malloc.h>
-#endif
 
 #include <string>
 #include <iostream>
@@ -52,6 +26,7 @@
 #include <functional>
 #include <memory>
 #include <cstring>
+#include <cassert>
 #include "Time.h"
 
 #include <glm/glm.hpp>
@@ -61,34 +36,20 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
-#define PATH( P ) std::string("") + P
+#include <boost/static_assert.hpp>
 
-#define ENTITY_CAST( instance ) std::dynamic_pointer_cast< IGameEntity >( instance )
+#define ReturnIf(condition) if (condition) return
 
-#define while_false( statement ) do { statement } while ( false )
-#define ASSERT_M( val, message ) while_false( if ( !( val ) ) { throw std::runtime_error( message ); } )
-#define ASSERT( val ) ASSERT_M( val, "assert val failed!" )
+struct Unit
+{
+};
 
-#define NOT_NULL( val ) ASSERT_M( val != nullptr, "val cannot be null!" )
-#define VkCheckResult( R ) ASSERT( R == vk::Result::eSuccess )
-#define IS_NULL( val ) ( val == nullptr )
-
-#define FUNCTION_BREAK( condition ) if ( condition ) return
-#define SKIP_ITERATION_IF( condition ) if ( condition ) continue;
-
-#define VK_CORRECTION_MATRIX glm::mat4(  1.0f,  0.0f, 0.0f, 0.0f, \
-                                         0.0f, -1.0f, 0.0f, 0.0f, \
-                                         0.0f,  0.0f, 0.5f, 0.0f, \
-                                         0.0f,  0.0f, 0.5f, 1.0f)
-
-#include "Constants.h"
-
-struct Unit { };
-template<typename T>
-struct Result {
-	bool Success;
-	std::string Message;
-	T Result;
+template <typename T>
+struct Result
+{
+    bool Success;
+    std::string Message;
+    T Result;
 };
 
 #define Success(Return) \

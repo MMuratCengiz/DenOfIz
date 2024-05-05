@@ -26,66 +26,66 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-struct StencilTestState
-{
-	bool enabled = false;
-	CompareOp compareOp;
-	uint32_t compareMask;
-	uint32_t writeMask;
-	uint32_t ref;
+    struct StencilTestState
+    {
+        bool enabled = false;
+        CompareOp compareOp;
+        uint32_t compareMask;
+        uint32_t writeMask;
+        uint32_t ref;
 
-	StencilOp failOp;
-	StencilOp passOp;
-	StencilOp depthFailOp;
-};
+        StencilOp failOp;
+        StencilOp passOp;
+        StencilOp depthFailOp;
+    };
 
-enum class BindPoint
-{
-	Graphics,
-	Compute,
-	RayTracing
-};
+    enum class BindPoint
+    {
+        Graphics,
+        Compute,
+        RayTracing
+    };
 
-enum class BlendMode
-{
-	None,
-	AlphaBlend
-};
+    enum class BlendMode
+    {
+        None,
+        AlphaBlend
+    };
 
-enum class CullMode
-{
-	FrontAndBackFace,
-	BackFace,
-	FrontFace,
-	None
-};
+    enum class CullMode
+    {
+        FrontAndBackFace,
+        BackFace,
+        FrontFace,
+        None
+    };
 
-struct PipelineRendering
-{
-	uint32_t ViewMask;
-	std::vector<ImageFormat> ColorAttachmentFormats;
-	ImageFormat DepthAttachmentFormat;
-	ImageFormat StencilAttachmentFormat;
-};
+    struct PipelineRendering
+    {
+        uint32_t ViewMask;
+        std::vector<ImageFormat> ColorAttachmentFormats;
+        ImageFormat DepthAttachmentFormat;
+        ImageFormat StencilAttachmentFormat;
+    };
 
-struct PipelineCreateInfo
-{
-	CullMode CullMode = CullMode::None;
-	BindPoint BindPoint = BindPoint::Graphics;
+    struct PipelineCreateInfo
+    {
+        CullMode CullMode = CullMode::None;
+        BindPoint BindPoint = BindPoint::Graphics;
 
-	CompareOp DepthCompareOp;
-	bool EnableDepthTest = true;
-	bool InterleavedMode = true;
+        CompareOp DepthCompareOp;
+        bool EnableDepthTest = true;
+        bool InterleavedMode = true;
 
-	StencilTestState StencilTestStateFront{};
-	StencilTestState StencilTestStateBack{};
+        StencilTestState StencilTestStateFront{};
+        StencilTestState StencilTestStateBack{};
 
-	SpvProgram SpvProgram;
+        SpvProgram SpvProgram;
 
-	std::vector<BlendMode> BlendModes;
+        std::vector<BlendMode> BlendModes;
 
-	PipelineRendering Rendering;
-	MSAASampleCount MSAASampleCount = MSAASampleCount::_0; // 0 Disables MSAA
-};
+        PipelineRendering Rendering;
+        MSAASampleCount MSAASampleCount = MSAASampleCount::_0; // 0 Disables MSAA
+    };
 
 }

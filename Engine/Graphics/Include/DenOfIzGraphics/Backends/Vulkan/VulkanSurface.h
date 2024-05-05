@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#ifdef BUILD_VK
 
 #include "VulkanContext.h"
 #include "VulkanUtilities.h"
@@ -24,22 +25,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-class VulkanSurface
-{
-private:
-	VulkanContext* context;
-public:
-	explicit VulkanSurface(VulkanContext* context);
+    class VulkanSurface
+    {
+        VulkanContext *m_Context;
 
-	~VulkanSurface();
-private:
-	void CreateSurface();
-	void CreateSwapChain(const vk::SurfaceCapabilitiesKHR& surfaceCapabilities);
-	void CreateImageView(vk::ImageView& imageView, const vk::Image& image, const vk::Format& format,
-			const vk::ImageAspectFlags& aspectFlags);
-	void ChooseExtent2D(const vk::SurfaceCapabilitiesKHR& capabilities);
-	void CreateSwapChainImages(vk::Format format);
-	void Dispose();
-};
+    public:
+        explicit VulkanSurface( VulkanContext *context );
+
+        ~VulkanSurface();
+
+    private:
+        void CreateSurface() const;
+        void CreateSwapChain( const vk::SurfaceCapabilitiesKHR &surfaceCapabilities ) const;
+        void CreateImageView( vk::ImageView &imageView, const vk::Image &image, const vk::Format &format, const vk::ImageAspectFlags &aspectFlags ) const;
+        void ChooseExtent2D( const vk::SurfaceCapabilitiesKHR &capabilities ) const;
+        void CreateSwapChainImages( vk::Format format ) const;
+        void Dispose() const;
+    };
 
 }
+
+#endif

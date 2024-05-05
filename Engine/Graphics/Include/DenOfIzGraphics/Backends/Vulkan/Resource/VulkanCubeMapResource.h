@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#ifdef BUILD_VK
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
 #include "VulkanSamplerResource.h"
@@ -24,21 +25,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-class VulkanCubeMapResource : ICubeMapResource
-{
-private:
-	VulkanContext* context;
-	CubeMapCreateInfo createInfo;
+    class VulkanCubeMapResource final : ICubeMapResource, boost::noncopyable
+    {
+        VulkanContext *m_Context;
+        CubeMapCreateInfo m_CreateInfo;
 
-	vk::Sampler sampler { };
-	vk::ImageView imageView { };
-	vk::Image image;
-	VmaAllocation allocation;
-public:
-	explicit VulkanCubeMapResource(VulkanContext* context, const CubeMapCreateInfo& createInfo);
+        vk::Sampler m_Sampler{};
+        vk::ImageView m_ImageView{};
+        vk::Image m_Image;
+        VmaAllocation m_Allocation;
 
-	void Allocate(std::vector<const void*> data) override;
-	void Deallocate() override;
-};
+    public:
+        explicit VulkanCubeMapResource( VulkanContext *context, const CubeMapCreateInfo &createInfo );
+
+        void Allocate( std::vector<const void *> data ) override;
+        void Deallocate() override;
+    };
 
 }
+
+#endif

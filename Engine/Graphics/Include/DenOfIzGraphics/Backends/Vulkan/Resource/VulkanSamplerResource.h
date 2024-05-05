@@ -17,60 +17,63 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#ifdef BUILD_VK
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanUtilities.h>
-#include "../../../../../../../vcpkg/buildtrees/vulkan-memory-allocator/src/9f570d7ae1-a5f1728ee3.clean/include/vk_mem_alloc.h"
 
 namespace DenOfIz
 {
 
-struct ShaderInputMaterial
-{
-	glm::vec4 diffuseColor;
-	glm::vec4 specularColor;
+    struct ShaderInputMaterial
+    {
+        glm::vec4 DiffuseColor;
+        glm::vec4 SpecularColor;
 
-	float shininess;
-};
+        float Shininess;
+    };
 
-struct VulkanImageCreateInfo
-{
-	vk::Format Format{};
-	vk::ImageUsageFlags Usage{};
-	vk::ImageAspectFlags Aspect{};
-	vk::SampleCountFlagBits SampleCount{};
-	uint32_t Width = 0; // 0 means as wide as the render window
-	uint32_t Height = 0; // 0 means as tall as the render window
-};
+    struct VulkanImageCreateInfo
+    {
+        vk::Format Format{};
+        vk::ImageUsageFlags Usage{};
+        vk::ImageAspectFlags Aspect{};
+        vk::SampleCountFlagBits SampleCount{};
+        uint32_t Width = 0; // 0 means as wide as the render window
+        uint32_t Height = 0; // 0 means as tall as the render window
+    };
 
-struct VulkanImage
-{
-	vk::Sampler Sampler{};
-	vk::ImageView ImageView{};
-	vk::Image Instance{};
-	VmaAllocation Allocation{};
+    struct VulkanImage
+    {
+        vk::Sampler Sampler{};
+        vk::ImageView ImageView{};
+        vk::Image Instance{};
+        VmaAllocation Allocation{};
 
-	void Create(VulkanContext* context, const VulkanImageCreateInfo& createInfo);
-	void Dispose(VulkanContext* context);
-};
+        void Create( VulkanContext *context, const VulkanImageCreateInfo &createInfo );
+        void Dispose( const VulkanContext *context ) const;
+    };
 
-class VulkanSamplerResource : public ISamplerResource
-{
-private:
-	SamplerCreateInfo createInfo;
-	VulkanContext* context;
-	VulkanImage image{};
-	uint32_t mipLevels{};
-public:
-	vk::DescriptorImageInfo DescriptorInfo;
+    class VulkanSamplerResource final : public ISamplerResource, boost::noncopyable
+    {
+        SamplerCreateInfo m_CreateInfo;
+        VulkanContext *m_Context;
+        VulkanImage m_Image{};
+        uint32_t m_MipLevels{};
 
-	explicit VulkanSamplerResource(VulkanContext* context, const SamplerCreateInfo& createInfo);
+    public:
+        vk::DescriptorImageInfo DescriptorInfo;
 
-	void Allocate(const void* newImage) override;
-	void Deallocate() override;
-private:
-	vk::SamplerCreateInfo GetSamplerCreateInfo();
-	void GenerateMipMaps();
-};
+        explicit VulkanSamplerResource( VulkanContext *context, const SamplerCreateInfo &createInfo );
+
+        void Allocate( const void *newImage ) override;
+        void Deallocate() override;
+
+    private:
+        vk::SamplerCreateInfo GetSamplerCreateInfo() const;
+        void GenerateMipMaps() const;
+    };
 
 }
+
+#endif

@@ -10,6 +10,7 @@
     "vulkan-memory-allocator",
     "assimp",
     "directxtex",
+    "directxtk12",
     "directx-dxc",
     "directx-headers",
     "tinygltf",

@@ -16,200 +16,177 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#ifdef BUILD_VK
+
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanRenderPass.h>
 
 using namespace DenOfIz;
 
-VulkanRenderPass::VulkanRenderPass(VulkanContext* context, const RenderPassCreateInfo& createInfo)
-		:context(context), createInfo(createInfo)
+VulkanRenderPass::VulkanRenderPass( VulkanContext *context, const RenderPassCreateInfo &createInfo ) :
+    m_Context( context ), m_CreateInfo( createInfo )
 {
-	swapChainImageAvailable.resize(this->context->SwapChainImages.size());
-	swapChainImageRendered.resize(this->context->SwapChainImages.size());
-	hasIndexData.resize(context->SwapChainImages.size());
-	currentResources.resize(context->SwapChainImages.size());
+    m_SwapChainImageAvailable = std::make_unique<VulkanLock>( this->m_Context, LockType::Semaphore );
+    m_SwapChainImageRendered = std::make_unique<VulkanLock>( this->m_Context, LockType::Semaphore );
 
-	for (uint32_t i = 0; i < swapChainImageAvailable.size(); ++i)
-	{
-		swapChainImageAvailable[i] = std::make_unique<VulkanLock>(this->context, LockType::Semaphore);
-		swapChainImageRendered[i] = std::make_unique<VulkanLock>(this->context, LockType::Semaphore);
-	}
-	uint32_t attachmentIndex = 0;
+    vk::CommandBufferAllocateInfo bufferAllocateInfo{};
+    bufferAllocateInfo.level = vk::CommandBufferLevel::ePrimary;
+    bufferAllocateInfo.commandPool = context->GraphicsQueueCommandPool;
+    bufferAllocateInfo.commandBufferCount = 1;
 
-	vk::CommandBufferAllocateInfo bufferAllocateInfo{};
-	bufferAllocateInfo.level = vk::CommandBufferLevel::ePrimary;
-	bufferAllocateInfo.commandPool = context->GraphicsQueueCommandPool;
-	bufferAllocateInfo.commandBufferCount = context->SwapChainImages.size();
+    m_CommandBuffer = context->LogicalDevice.allocateCommandBuffers( bufferAllocateInfo )[ 0 ];
 
-	commandBuffers = context->LogicalDevice.allocateCommandBuffers(bufferAllocateInfo);
-
-	viewportExtent.width = viewportExtent.width == 0 ? context->SurfaceExtent.width : viewportExtent.width;
-	viewportExtent.height = viewportExtent.height == 0 ? context->SurfaceExtent.height : viewportExtent.height;
-	UpdateViewport(viewportExtent.width, viewportExtent.height);
-	CreateRenderTarget();
+    m_ViewportExtent.width = m_ViewportExtent.width == 0 ? context->SurfaceExtent.width : m_ViewportExtent.width;
+    m_ViewportExtent.height = m_ViewportExtent.height == 0 ? context->SurfaceExtent.height : m_ViewportExtent.height;
+    UpdateViewport( m_ViewportExtent.width, m_ViewportExtent.height );
+    CreateRenderTarget();
 }
 
 void VulkanRenderPass::CreateRenderTarget()
 {
-	for (uint32_t swapChainImageIndex = 0; swapChainImageIndex < createInfo.SwapChainImageCount; ++swapChainImageIndex)
-	{
-		RenderTargetAttachment& attachment = renderTargetAttachments.emplace_back(RenderTargetAttachment{});
-		std::vector<vk::ImageView> bufferImageViews;
+    RenderTargetAttachment &attachment = m_RenderTargetAttachments.emplace_back( RenderTargetAttachment{} );
+    std::vector<vk::ImageView> bufferImageViews;
 
-		if (createInfo.RenderToSwapChain)
-		{
-			attachment.IsSwapChain = true;
-			attachment.Instance.ImageView = context->SwapChainImageViews[swapChainImageIndex];
-			attachment.Instance.Instance = context->SwapChainImages[swapChainImageIndex];
-			bufferImageViews.push_back(attachment.Instance.ImageView);
-		}
-		else
-		{
-			// Possible to be swap chain image, then no need to create a new attachment just attach to it.
-			// Merge render target and render pass as it seems closely related.
-			auto aspectFlags = VulkanEnumConverter::GetOutputImageVkAspect(createInfo.RenderTargetType);
-			auto usageFlags = VulkanEnumConverter::GetVkUsageFlags(createInfo.RenderTargetType);
-			auto imageFormat = VulkanEnumConverter::ConvertImageFormat(createInfo.Format);
+    if ( m_CreateInfo.RenderToSwapChain )
+    {
+        attachment.IsSwapChain = true;
+        attachment.Image.ImageView = m_Context->SwapChainImageViews[ m_CreateInfo.SwapChainImageIndex ];
+        attachment.Image.Instance = m_Context->SwapChainImages[ m_CreateInfo.SwapChainImageIndex ];
+        bufferImageViews.push_back( attachment.Image.ImageView );
+    }
+    else
+    {
+        // Possible to be swap chain image, then no need to create a new attachment just attach to it.
+        // Merge render target and render pass as it seems closely related.
+        auto aspectFlags = VulkanEnumConverter::GetOutputImageVkAspect( m_CreateInfo.RenderTargetType );
+        auto usageFlags = VulkanEnumConverter::GetVkUsageFlags( m_CreateInfo.RenderTargetType );
+        auto imageFormat = VulkanEnumConverter::ConvertImageFormat( m_CreateInfo.Format );
 
-			attachment.Instance = CreateAttachment(imageFormat, usageFlags, aspectFlags);
+        attachment.Image = CreateAttachment( imageFormat, usageFlags, aspectFlags );
 
-			if (createInfo.MSAASampleCount != MSAASampleCount::_0 && createInfo.RenderTargetType == RenderTargetType::Color)
-			{
-				RenderTargetAttachment& msaaAttachment = renderTargetAttachments.emplace_back(RenderTargetAttachment{});
-				usageFlags = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransientAttachment;
+        if ( m_CreateInfo.MSAASampleCount != MSAASampleCount::_0 && m_CreateInfo.RenderTargetType == RenderTargetType::Color )
+        {
+            RenderTargetAttachment &msaaAttachment = m_RenderTargetAttachments.emplace_back( RenderTargetAttachment{} );
+            usageFlags = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransientAttachment;
 
-				msaaAttachment.Instance = CreateAttachment(imageFormat, usageFlags, aspectFlags);
-				bufferImageViews.push_back(attachment.Instance.ImageView);
-			}
+            msaaAttachment.Image = CreateAttachment( imageFormat, usageFlags, aspectFlags );
+            bufferImageViews.push_back( attachment.Image.ImageView );
+        }
+    }
 
-		}
-	}
+    m_RenderTarget = attachment.Image.Instance;
+    m_RenderTargetImageView = attachment.Image.ImageView;
 }
 
 void VulkanRenderPass::AcquireNextImage()
 {
-	if (!createInfo.RenderToSwapChain)
-	{
-		return;
-	}
+    if ( !m_CreateInfo.RenderToSwapChain )
+    {
+        return;
+    }
 
-	auto image = context->LogicalDevice.acquireNextImageKHR(context->SwapChain, UINT64_MAX, swapChainImageAvailable[frameIndex]->GetVkSemaphore(), nullptr);
-	if (image.result == vk::Result::eErrorOutOfDateKHR)
-	{
-		throw std::runtime_error("failed to acquire swap chain image!");
-	}
-	else if (image.result != vk::Result::eSuccess && image.result != vk::Result::eSuboptimalKHR)
-	{
-		throw std::runtime_error("failed to acquire swap chain image!");
-	}
-	swapChainIndex = image.value;
+    auto image = m_Context->LogicalDevice.acquireNextImageKHR( m_Context->SwapChain, UINT64_MAX, m_SwapChainImageAvailable->GetVkSemaphore(), nullptr );
+    if ( image.result == vk::Result::eErrorOutOfDateKHR )
+    {
+        throw std::runtime_error( "failed to acquire swap chain image!" );
+    }
+    if ( image.result != vk::Result::eSuccess && image.result != vk::Result::eSuboptimalKHR )
+    {
+        throw std::runtime_error( "failed to acquire swap chain image!" );
+    }
+    m_SwapChainIndex = image.value;
 }
 
-void VulkanRenderPass::Begin(uint32_t frameIdx, std::array<float, 4> clearColor)
+void VulkanRenderPass::Begin( const std::array<float, 4> clearColor )
 {
-	this->frameIndex = frameIdx;
+    m_CurrentResources = std::vector<vk::WriteDescriptorSet>();
+    m_HasIndexData = false;
 
-	currentResources[frameIndex] = std::vector<vk::WriteDescriptorSet>();
-	hasIndexData[frameIndex] = false;
+    if ( m_CreateInfo.RenderToSwapChain )
+    {
+        AcquireNextImage();
+    }
 
-	uint32_t renderIndex = frameIdx;
-	if (createInfo.RenderToSwapChain)
-	{
-		AcquireNextImage();
-		renderIndex = swapChainIndex;
-	}
+    vk::RenderingAttachmentInfo colorAttachmentInfo{};
+    colorAttachmentInfo.imageView = m_RenderTargetImageView;
+    colorAttachmentInfo.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    colorAttachmentInfo.loadOp = vk::AttachmentLoadOp::eClear;
+    colorAttachmentInfo.storeOp = vk::AttachmentStoreOp::eStore;
+    colorAttachmentInfo.clearValue.color = clearColor;
 
-	vk::RenderingAttachmentInfo colorAttachmentInfo{};
-	colorAttachmentInfo.imageView = renderTargetAttachments[renderIndex].Instance.ImageView;
-	colorAttachmentInfo.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
-	colorAttachmentInfo.loadOp = vk::AttachmentLoadOp::eClear;
-	colorAttachmentInfo.storeOp = vk::AttachmentStoreOp::eStore;
-	colorAttachmentInfo.clearValue.color = clearColor;
+    vk::RenderingInfo renderInfo{};
+    renderInfo.renderArea.extent = m_ViewportExtent;
+    renderInfo.renderArea.offset = m_ViewportOffset;
+    renderInfo.layerCount = 1;
+    renderInfo.colorAttachmentCount = 1;
+    renderInfo.pColorAttachments = &colorAttachmentInfo;
 
-	vk::RenderingInfo renderInfo{};
-	renderInfo.renderArea.extent = viewportExtent;
-	renderInfo.renderArea.offset = viewportOffset;
-	renderInfo.layerCount = 1;
-	renderInfo.colorAttachmentCount = 1;
-	renderInfo.pColorAttachments = &colorAttachmentInfo;
+    vk::CommandBufferBeginInfo beginInfo{};
+    beginInfo.flags = {};
 
-	vk::CommandBufferBeginInfo beginInfo{};
-	beginInfo.flags = {};
+    vk::ImageMemoryBarrier imageMemoryBarrier{};
+    imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite, imageMemoryBarrier.oldLayout = vk::ImageLayout::eUndefined, imageMemoryBarrier.newLayout =
+        vk::ImageLayout::eColorAttachmentOptimal, imageMemoryBarrier.image = m_RenderTarget, imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+    imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+    imageMemoryBarrier.subresourceRange.levelCount = 1;
+    imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+    imageMemoryBarrier.subresourceRange.layerCount = 1;
 
-	vk::ImageMemoryBarrier imageMemoryBarrier{};
-	imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
-	imageMemoryBarrier.oldLayout = vk::ImageLayout::eUndefined,
-	imageMemoryBarrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal,
-	imageMemoryBarrier.image = renderTargetAttachments[renderIndex].Instance.Instance,
-	imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-	imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
-	imageMemoryBarrier.subresourceRange.levelCount = 1;
-	imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-	imageMemoryBarrier.subresourceRange.layerCount = 1;
+    m_CommandBuffer.reset();
+    m_CommandBuffer.begin( beginInfo );
+    m_CommandBuffer.pipelineBarrier( vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::DependencyFlags{}, 0, nullptr, 0,
+                                   nullptr, 1, &imageMemoryBarrier );
 
-	commandBuffers[frameIndex].reset();
-	commandBuffers[frameIndex].begin(beginInfo);
-	commandBuffers[frameIndex].pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput,
-			vk::PipelineStageFlagBits::eColorAttachmentOutput,
-			vk::DependencyFlags{},
-			0,
-			nullptr,
-			0,
-			nullptr,
-			1,
-			&imageMemoryBarrier
-	);
-
-	commandBuffers[frameIndex].beginRendering(&renderInfo);
+    m_CommandBuffer.beginRendering( &renderInfo );
 }
 
-void VulkanRenderPass::BindPipeline(VulkanPipeline* pipeline)
+void VulkanRenderPass::BindPipeline( VulkanPipeline *pipeline )
 {
-	boundPipeline = pipeline;
-	commandBuffers[frameIndex].bindPipeline(pipeline->BindPoint, pipeline->Instance);
+    m_BoundPipeline = pipeline;
+    m_CommandBuffer.bindPipeline( pipeline->BindPoint, pipeline->Instance );
 }
 
-void VulkanRenderPass::BindResource(IResource* resource)
+void VulkanRenderPass::BindResource( IResource *resource )
 {
-	vk::WriteDescriptorSet writeDescriptorSet = boundPipeline->GetWriteDescriptorSet(resource->Name);
-	switch (resource->Type())
-	{
-	case ResourceType::Buffer:
-	{
-		VulkanBufferResource* bufferResource = static_cast<VulkanBufferResource*>(resource);
-		writeDescriptorSet.pBufferInfo = &bufferResource->DescriptorInfo;
-		break;
-	}
-	case ResourceType::Sampler:
-	case ResourceType::CubeMap:
-	{
-		VulkanSamplerResource* samplerResource = static_cast<VulkanSamplerResource*>(resource);
-		writeDescriptorSet.pImageInfo = &samplerResource->DescriptorInfo;
-		break;
-	}
-	}
+    vk::WriteDescriptorSet writeDescriptorSet = m_BoundPipeline->GetWriteDescriptorSet( resource->Name );
+    switch ( resource->Type() )
+    {
+    case ResourceType::Buffer:
+    {
+        const auto bufferResource = static_cast<VulkanBufferResource *>(resource);
+        writeDescriptorSet.pBufferInfo = &bufferResource->DescriptorInfo;
+        break;
+    }
+    case ResourceType::Sampler:
+    case ResourceType::CubeMap:
+    {
+        const auto samplerResource = static_cast<VulkanSamplerResource *>(resource);
+        writeDescriptorSet.pImageInfo = &samplerResource->DescriptorInfo;
+        break;
+    }
+    }
 
-	writeDescriptorSet.descriptorCount = 1;
-	currentResources[frameIndex].push_back(std::move(writeDescriptorSet));
+    writeDescriptorSet.descriptorCount = 1;
+    m_CurrentResources.push_back( std::move( writeDescriptorSet ) );
 }
 
-void VulkanRenderPass::BindIndexBuffer(IBufferResource* resource)
+void VulkanRenderPass::BindIndexBuffer( IBufferResource *resource )
 {
-	VulkanBufferResource* bufferResource = (VulkanBufferResource*)resource;
-	vk::DeviceSize offset = 0;
-	commandBuffers[frameIndex].bindIndexBuffer(bufferResource->Instance, offset, vk::IndexType::eUint32);
-	hasIndexData[frameIndex] = true;
+    const auto bufferResource = static_cast<VulkanBufferResource *>(resource);
+    constexpr vk::DeviceSize offset = 0;
+    m_CommandBuffer.bindIndexBuffer( bufferResource->Instance, offset, vk::IndexType::eUint32 );
+    m_HasIndexData = true;
 }
 
-void VulkanRenderPass::BindVertexBuffer(IBufferResource* resource)
+void VulkanRenderPass::BindVertexBuffer( IBufferResource *resource ) const
 {
-	VulkanBufferResource* bufferResource = static_cast<VulkanBufferResource*>(resource);
-	vk::DeviceSize offset = 0;
-	commandBuffers[frameIndex].bindVertexBuffers(0, 1, &bufferResource->Instance, &offset);
+    const auto bufferResource = static_cast<VulkanBufferResource *>(resource);
+    constexpr vk::DeviceSize offset = 0;
+    m_CommandBuffer.bindVertexBuffers( 0, 1, &bufferResource->Instance, &offset );
 }
 
-void VulkanRenderPass::SetDepthBias(float constant, float clamp, float slope)
+void VulkanRenderPass::SetDepthBias( const float constant, const float clamp, const float slope ) const
 {
-	commandBuffers[frameIndex].setDepthBias(constant, clamp, slope);
+    m_CommandBuffer.setDepthBias( constant, clamp, slope );
 }
 
 /* Type of Resources:
@@ -220,224 +197,215 @@ void VulkanRenderPass::SetDepthBias(float constant, float clamp, float slope)
  * -
  */
 
-void VulkanRenderPass::Draw(const uint32_t& instanceCount, const uint32_t& vertexCount)
+void VulkanRenderPass::Draw( const uint32_t &instanceCount, const uint32_t &vertexCount ) const
 {
-	commandBuffers[frameIndex].setViewportWithCount(1, &viewport);
-	commandBuffers[frameIndex].setScissorWithCount(1, &viewScissor);
+    m_CommandBuffer.setViewportWithCount( 1, &m_Viewport );
+    m_CommandBuffer.setScissorWithCount( 1, &m_ViewScissor );
 
-	const std::vector<vk::WriteDescriptorSet>& writeDescriptors = currentResources[frameIndex];
-	if (!writeDescriptors.empty())
-	{
-		commandBuffers[frameIndex].pushDescriptorSetKHR(boundPipeline->BindPoint, boundPipeline->Layout, 0, writeDescriptors);
-	}
+    const std::vector<vk::WriteDescriptorSet> &writeDescriptors = m_CurrentResources;
+    if ( !writeDescriptors.empty() )
+    {
+        m_CommandBuffer.pushDescriptorSetKHR( m_BoundPipeline->BindPoint, m_BoundPipeline->Layout, 0, writeDescriptors );
+    }
 
-//	for (const auto& pushConstantBinding : boundPipeline->getPushConstantBindings(frameIndex))
-//	{
-//		commandBuffers[frameIndex].pushConstants(boundPipeline->Layout, pushConstantBinding.stage, 0, pushConstantBinding.totalSize, pushConstantBinding.Data);
-//	}
+    //	for (const auto& pushConstantBinding : boundPipeline->getPushConstantBindings(frameIndex))
+    //	{
+    //		commandBuffers.pushConstants(boundPipeline->Layout, pushConstantBinding.stage, 0, pushConstantBinding.totalSize, pushConstantBinding.Data);
+    //	}
 
-	if (hasIndexData[frameIndex])
-	{
-		commandBuffers[frameIndex].drawIndexed(vertexCount, instanceCount, 0, 0, 0);
-	}
-	else
-	{
-		commandBuffers[frameIndex].draw(vertexCount, instanceCount, 0, 0);
-	}
+    if ( m_HasIndexData )
+    {
+        m_CommandBuffer.drawIndexed( vertexCount, instanceCount, 0, 0, 0 );
+    }
+    else
+    {
+        m_CommandBuffer.draw( vertexCount, instanceCount, 0, 0 );
+    }
 }
 
-SubmitResult VulkanRenderPass::Submit(std::vector<std::shared_ptr<VulkanLock>> waitOnLock, VulkanLock* notifyFence)
+SubmitResult VulkanRenderPass::Submit( const std::vector<std::shared_ptr<VulkanLock>> &waitOnLock, VulkanLock *notifyFence )
 {
-	commandBuffers[frameIndex].endRendering();
-	if (createInfo.RenderToSwapChain)
-	{
-		vk::ImageMemoryBarrier imageMemoryBarrier{};
-		imageMemoryBarrier.dstAccessMask = {},
-		imageMemoryBarrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
-		imageMemoryBarrier.newLayout = vk::ImageLayout::ePresentSrcKHR,
-		imageMemoryBarrier.image = renderTargetAttachments[swapChainIndex].Instance.Instance,
-		imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-		imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
-		imageMemoryBarrier.subresourceRange.levelCount = 1;
-		imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-		imageMemoryBarrier.subresourceRange.layerCount = 1;
+    m_CommandBuffer.endRendering();
+    if ( m_CreateInfo.RenderToSwapChain )
+    {
+        vk::ImageMemoryBarrier imageMemoryBarrier{};
+        imageMemoryBarrier.dstAccessMask = {}, imageMemoryBarrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal, imageMemoryBarrier.newLayout =
+            vk::ImageLayout::ePresentSrcKHR, imageMemoryBarrier.image = m_RenderTarget, imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+        imageMemoryBarrier.subresourceRange.levelCount = 1;
+        imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+        imageMemoryBarrier.subresourceRange.layerCount = 1;
 
-		commandBuffers[frameIndex].pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput,
-				vk::PipelineStageFlagBits::eBottomOfPipe,
-				vk::DependencyFlags{},
-				0,
-				nullptr,
-				0,
-				nullptr,
-				1,
-				&imageMemoryBarrier
-		);
-	}
+        m_CommandBuffer.pipelineBarrier( vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eBottomOfPipe, vk::DependencyFlags{}, 0, nullptr, 0, nullptr,
+                                       1, &imageMemoryBarrier );
+    }
 
-	commandBuffers[frameIndex].end();
+    m_CommandBuffer.end();
 
-	vk::SubmitInfo submitInfo{};
+    vk::SubmitInfo submitInfo{};
 
-	std::vector<vk::Semaphore> semaphores;
+    std::vector<vk::Semaphore> semaphores;
 
-	for (auto& waitOn : waitOnLock)
-	{
-		semaphores.push_back(std::dynamic_pointer_cast<VulkanLock>(waitOn)->GetVkSemaphore());
-	}
+    for ( auto &waitOn : waitOnLock )
+    {
+        semaphores.push_back( std::dynamic_pointer_cast<VulkanLock>( waitOn )->GetVkSemaphore() );
+    }
 
-	if (createInfo.RenderToSwapChain)
-	{
-		semaphores.push_back(swapChainImageAvailable[frameIndex]->GetVkSemaphore());
-	}
+    if ( m_CreateInfo.RenderToSwapChain )
+    {
+        semaphores.push_back( m_SwapChainImageAvailable->GetVkSemaphore() );
+    }
 
-	vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+    vk::PipelineStageFlags waitStages[ ] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 
-	submitInfo.waitSemaphoreCount = semaphores.size();
-	submitInfo.pWaitSemaphores = semaphores.data();
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffers[frameIndex];
+    submitInfo.waitSemaphoreCount = semaphores.size();
+    submitInfo.pWaitSemaphores = semaphores.data();
+    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &m_CommandBuffer;
 
-	if (createInfo.RenderToSwapChain)
-	{
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = &swapChainImageRendered[frameIndex]->GetVkSemaphore();
-	}
-	else
-	{
-		submitInfo.signalSemaphoreCount = 0;
-		submitInfo.pSignalSemaphores = nullptr;
-	}
+    if ( m_CreateInfo.RenderToSwapChain )
+    {
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &m_SwapChainImageRendered->GetVkSemaphore();
+    }
+    else
+    {
+        submitInfo.signalSemaphoreCount = 0;
+        submitInfo.pSignalSemaphores = nullptr;
+    }
 
-	notifyFence->Reset();
-	auto submitResult = context->Queues[QueueType::Graphics].submit(1, &submitInfo, notifyFence->GetVkFence());
+    notifyFence->Reset();
+    const auto submitResult = m_Context->Queues[ QueueType::Graphics ].submit( 1, &submitInfo, notifyFence->GetVkFence() );
 
-	VkCheckResult(submitResult);
-	if (createInfo.RenderToSwapChain)
-	{
-		return PresentPassToSwapChain();
-	}
+    VK_CHECK_RESULT( submitResult );
+    if ( m_CreateInfo.RenderToSwapChain )
+    {
+        return PresentPassToSwapChain();
+    }
 
-	return SubmitResult::Success;
+    return SubmitResult::Success;
 }
 
-SubmitResult VulkanRenderPass::PresentPassToSwapChain()
+SubmitResult VulkanRenderPass::PresentPassToSwapChain() const
 {
-	vk::PresentInfoKHR presentInfo{};
+    vk::PresentInfoKHR presentInfo{};
 
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &swapChainImageRendered[frameIndex]->GetVkSemaphore();
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = &context->SwapChain;
-	presentInfo.pImageIndices = &swapChainIndex;
-	presentInfo.pResults = nullptr;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &m_SwapChainImageRendered->GetVkSemaphore();
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = &m_Context->SwapChain;
+    presentInfo.pImageIndices = &m_SwapChainIndex;
+    presentInfo.pResults = nullptr;
 
-	const auto presentResult = context->Queues[QueueType::Presentation].presentKHR(presentInfo);
-	if (presentResult == vk::Result::eErrorOutOfDateKHR || presentResult == vk::Result::eSuboptimalKHR)
-	{
-		return SubmitResult::SwapChainInvalidated;
-	}
-	else if (presentResult != vk::Result::eSuccess)
-	{
-		return SubmitResult::OtherError;
-	}
+    const auto presentResult = m_Context->Queues[ QueueType::Presentation ].presentKHR( presentInfo );
+    if ( presentResult == vk::Result::eErrorOutOfDateKHR || presentResult == vk::Result::eSuboptimalKHR )
+    {
+        return SubmitResult::SwapChainInvalidated;
+    }
+    if ( presentResult != vk::Result::eSuccess )
+    {
+        return SubmitResult::OtherError;
+    }
 
-	return SubmitResult::Success;
+    return SubmitResult::Success;
 }
 
-void VulkanRenderPass::UpdateViewport(const uint32_t& width, const uint32_t& height)
+void VulkanRenderPass::UpdateViewport( const uint32_t &width, const uint32_t &height )
 {
-	FUNCTION_BREAK(width == 0 || height == 0);
-	viewport.x = viewportOffset.x;
-	viewport.y = viewportOffset.x;
-	viewport.width = width;
-	viewport.height = static_cast<float>(height);
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
+    ReturnIf( width == 0 || height == 0 );
+    m_Viewport.x = m_ViewportOffset.x;
+    m_Viewport.y = m_ViewportOffset.x;
+    m_Viewport.width = width;
+    m_Viewport.height = static_cast<float>(height);
+    m_Viewport.minDepth = 0.0f;
+    m_Viewport.maxDepth = 1.0f;
 
-	viewScissor.offset = vk::Offset2D(viewport.x, viewport.y);
-	viewScissor.extent = vk::Extent2D(width, height);
+    m_ViewScissor.offset = vk::Offset2D( m_Viewport.x, m_Viewport.y );
+    m_ViewScissor.extent = vk::Extent2D( width, height );
 
-	viewportExtent.width = width;
-	viewportExtent.height = height;
+    m_ViewportExtent.width = width;
+    m_ViewportExtent.height = height;
 }
 
-VulkanImage VulkanRenderPass::CreateAttachment(const vk::Format& format, const vk::ImageUsageFlags& usage, const vk::ImageAspectFlags& aspect)
+VulkanImage VulkanRenderPass::CreateAttachment( const vk::Format &format, const vk::ImageUsageFlags &usage, const vk::ImageAspectFlags &aspect ) const
 {
-	VulkanImage newAttachment{};
-	vk::ImageCreateInfo imageCreateInfo{};
+    VulkanImage newAttachment{};
+    vk::ImageCreateInfo imageCreateInfo{};
 
-	imageCreateInfo.imageType = vk::ImageType::e2D;
-	imageCreateInfo.extent.width = createInfo.Width == 0 ? context->SurfaceExtent.width : createInfo.Width;
-	imageCreateInfo.extent.height = createInfo.Height == 0 ? context->SurfaceExtent.height : createInfo.Height;
-	imageCreateInfo.extent.depth = 1;
-	imageCreateInfo.format = format;
-	imageCreateInfo.tiling = vk::ImageTiling::eOptimal;
-	imageCreateInfo.usage = usage;
-	imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
-	imageCreateInfo.samples = VulkanEnumConverter::ConverSampleCount(createInfo.MSAASampleCount);
-	imageCreateInfo.mipLevels = 1;
-	imageCreateInfo.arrayLayers = 1;
-	imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
+    imageCreateInfo.imageType = vk::ImageType::e2D;
+    imageCreateInfo.extent.width = m_CreateInfo.Width == 0 ? m_Context->SurfaceExtent.width : m_CreateInfo.Width;
+    imageCreateInfo.extent.height = m_CreateInfo.Height == 0 ? m_Context->SurfaceExtent.height : m_CreateInfo.Height;
+    imageCreateInfo.extent.depth = 1;
+    imageCreateInfo.format = format;
+    imageCreateInfo.tiling = vk::ImageTiling::eOptimal;
+    imageCreateInfo.usage = usage;
+    imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
+    imageCreateInfo.samples = VulkanEnumConverter::ConverSampleCount( m_CreateInfo.MSAASampleCount );
+    imageCreateInfo.mipLevels = 1;
+    imageCreateInfo.arrayLayers = 1;
+    imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
 
-	VmaAllocationCreateInfo allocationCreateInfo{};
-	allocationCreateInfo.usage = VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
+    VmaAllocationCreateInfo allocationCreateInfo{};
+    allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-	vk::Image image;
-	VmaAllocation allocation;
+    vk::Image image;
+    VmaAllocation allocation;
 
-	vmaCreateImage(context->Vma, (VkImageCreateInfo*)&imageCreateInfo, &allocationCreateInfo, (VkImage*)&image, &allocation, nullptr);
+    vmaCreateImage( m_Context->Vma, reinterpret_cast<VkImageCreateInfo *>(&imageCreateInfo), &allocationCreateInfo, reinterpret_cast<VkImage *>(&image), &allocation, nullptr );
 
-	newAttachment.Instance = image;
-	newAttachment.Allocation = allocation;
+    newAttachment.Instance = image;
+    newAttachment.Allocation = allocation;
 
-	vk::ImageViewCreateInfo imageViewCreateInfo{};
-	imageViewCreateInfo.image = image;
-	imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
-	imageViewCreateInfo.format = format;
-	imageViewCreateInfo.components.r = vk::ComponentSwizzle::eIdentity;
-	imageViewCreateInfo.components.g = vk::ComponentSwizzle::eIdentity;
-	imageViewCreateInfo.components.b = vk::ComponentSwizzle::eIdentity;
-	imageViewCreateInfo.components.a = vk::ComponentSwizzle::eIdentity;
-	imageViewCreateInfo.subresourceRange.aspectMask = aspect;
-	imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-	imageViewCreateInfo.subresourceRange.levelCount = 1;
-	imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-	imageViewCreateInfo.subresourceRange.layerCount = 1;
+    vk::ImageViewCreateInfo imageViewCreateInfo{};
+    imageViewCreateInfo.image = image;
+    imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
+    imageViewCreateInfo.format = format;
+    imageViewCreateInfo.components.r = vk::ComponentSwizzle::eIdentity;
+    imageViewCreateInfo.components.g = vk::ComponentSwizzle::eIdentity;
+    imageViewCreateInfo.components.b = vk::ComponentSwizzle::eIdentity;
+    imageViewCreateInfo.components.a = vk::ComponentSwizzle::eIdentity;
+    imageViewCreateInfo.subresourceRange.aspectMask = aspect;
+    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+    imageViewCreateInfo.subresourceRange.levelCount = 1;
+    imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    imageViewCreateInfo.subresourceRange.layerCount = 1;
 
-	newAttachment.ImageView = context->LogicalDevice.createImageView(imageViewCreateInfo);
+    newAttachment.ImageView = m_Context->LogicalDevice.createImageView( imageViewCreateInfo );
 
-	if (usage & vk::ImageUsageFlagBits::eSampled)
-	{
-		vk::SamplerCreateInfo samplerCreateInfo{};
+    if ( usage & vk::ImageUsageFlagBits::eSampled )
+    {
+        vk::SamplerCreateInfo samplerCreateInfo{};
 
-		samplerCreateInfo.magFilter = vk::Filter::eNearest;
-		samplerCreateInfo.minFilter = vk::Filter::eNearest;
-		samplerCreateInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
-		samplerCreateInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
-		samplerCreateInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-		samplerCreateInfo.maxAnisotropy = 1.0f;
-		samplerCreateInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
-		samplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
-		samplerCreateInfo.mipLodBias = 0.0f;
-		samplerCreateInfo.minLod = 0.0f;
-		samplerCreateInfo.maxLod = 1.0f;
+        samplerCreateInfo.magFilter = vk::Filter::eNearest;
+        samplerCreateInfo.minFilter = vk::Filter::eNearest;
+        samplerCreateInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+        samplerCreateInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+        samplerCreateInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+        samplerCreateInfo.maxAnisotropy = 1.0f;
+        samplerCreateInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
+        samplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
+        samplerCreateInfo.mipLodBias = 0.0f;
+        samplerCreateInfo.minLod = 0.0f;
+        samplerCreateInfo.maxLod = 1.0f;
 
-		newAttachment.Sampler = context->LogicalDevice.createSampler(samplerCreateInfo);
-	}
+        newAttachment.Sampler = m_Context->LogicalDevice.createSampler( samplerCreateInfo );
+    }
 
-	return newAttachment;
+    return newAttachment;
 }
 
 VulkanRenderPass::~VulkanRenderPass()
 {
-	context->LogicalDevice.resetCommandPool(context->GraphicsQueueCommandPool);
+    m_Context->LogicalDevice.resetCommandPool( m_Context->GraphicsQueueCommandPool );
 
-	for (auto& attachment : renderTargetAttachments)
-	{
-		if (!attachment.IsSwapChain)
-		{
-			attachment.Instance.Dispose(context);
-		}
-	}
+    for ( auto &attachment : m_RenderTargetAttachments )
+    {
+        if ( !attachment.IsSwapChain )
+        {
+            attachment.Image.Dispose( m_Context );
+        }
+    }
 }
+
+#endif

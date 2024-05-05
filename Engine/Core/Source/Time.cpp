@@ -19,43 +19,42 @@ using namespace DenOfIz;
 
 void Time::Tick()
 {
-	if (firstTickTime == 0)
-	{
-		firstTickTime = DoubleEpochNow();
-	}
+    if ( firstTickTime == 0 )
+    {
+        firstTickTime = DoubleEpochNow();
+    }
 
-	if (prev == 0)
-	{
-		prev = DoubleEpochNow();
-		return;
-	}
+    if ( prev == 0 )
+    {
+        prev = DoubleEpochNow();
+        return;
+    }
 
-	double now = DoubleEpochNow();
+    double now = DoubleEpochNow();
 
-	deltaTime = (now - prev) / (double)1000000.0; //std::max( now - prev, (double) 1 / 60.f );
-	prev = now;
-	frames++;
+    deltaTime = (now - prev) / 1000000.0; //std::max( now - prev, (double) 1 / 60.f );
+    prev = now;
+    frames++;
 
-	if (now - lastFrameTick >= 1000000)
-	{
-		ListenFps(frames);
-		lastFrameTick = now;
-		frames = 0;
-	}
+    if ( now - lastFrameTick >= 1000000 )
+    {
+        ListenFps( frames );
+        lastFrameTick = now;
+        frames = 0;
+    }
 }
 
 double Time::GetDeltaTime()
 {
-	return deltaTime;
+    return deltaTime;
 }
 
 double Time::DoubleEpochNow()
 {
-	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
-			.count();
+    return std::chrono::duration_cast<std::chrono::microseconds>( std::chrono::system_clock::now().time_since_epoch() ).count();
 }
 
 double Time::GetFirstTickTime()
 {
-	return firstTickTime;
+    return firstTickTime;
 }

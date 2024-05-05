@@ -17,16 +17,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#ifdef BUILD_DX12
 
 #include <DenOfIzCore/Common.h>
+#include "DirectXHelpers.h"
 
 namespace DenOfIz
 {
 
-class DX12Device
-{
-public:
-	DX12Device();
-};
+    class DX12Device
+    {
+    public:
+        DX12Device();
+    };
 
 }
+
+#endif

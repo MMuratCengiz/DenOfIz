@@ -23,24 +23,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-class Utilities
-{
-private:
-	Utilities() = default;
+    class Utilities
+    {
+        Utilities() = default;
 
-public:
-	static std::string ReadFile(const std::string& filename);
+    public:
+        static std::string ReadFile( const std::string &filename );
 
-	static glm::mat4 getTRSMatrix(const glm::vec3& t, const glm::quat& r, const glm::vec3& s);
+        static glm::mat4 getTRSMatrix( const glm::vec3 &t, const glm::quat &r, const glm::vec3 &s );
 
-	static glm::quat vecToQuat(const glm::vec4& vec);
+        static glm::quat vecToQuat( const glm::vec4 &vec );
 
-	static std::string getFileDirectory(const std::string& file, bool includeFinalSep = true);
+        static std::string getFileDirectory( const std::string &file, bool includeFinalSep = true );
 
-	static std::string getFilename(const std::string& file);
+        static std::string getFilename( const std::string &file );
 
-	static std::string combineDirectories(const std::string& directory, const std::string& file);
+        static std::string combineDirectories( const std::string &directory, const std::string &file );
 
-};
+    };
 
 }

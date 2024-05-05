@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#ifdef BUILD_VK
 
 #include "VulkanContext.h"
 #include <DenOfIzGraphics/Backends/Interface/IResource.h>
@@ -27,1041 +28,1043 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-class VulkanEnumConverter
-{
-public:
-	static inline vk::ShaderStageFlagBits ConvertShaderStage(const ShaderStage& shaderStage)
-	{
-		switch (shaderStage)
-		{
-		case ShaderStage::Vertex:
-			return vk::ShaderStageFlagBits::eVertex;
-		case ShaderStage::TessellationControl:
-			return vk::ShaderStageFlagBits::eTessellationControl;
-		case ShaderStage::TessellationEvaluation:
-			return vk::ShaderStageFlagBits::eTessellationEvaluation;
-		case ShaderStage::Geometry:
-			return vk::ShaderStageFlagBits::eGeometry;
-		case ShaderStage::Fragment:
-			return vk::ShaderStageFlagBits::eFragment;
-		case ShaderStage::Compute:
-			return vk::ShaderStageFlagBits::eCompute;
-		case ShaderStage::AllGraphics:
-			return vk::ShaderStageFlagBits::eAllGraphics;
-		case ShaderStage::All:
-			return vk::ShaderStageFlagBits::eAll;
-		case ShaderStage::RaygenKHR:
-			return vk::ShaderStageFlagBits::eRaygenKHR;
-		case ShaderStage::AnyHitKHR:
-			return vk::ShaderStageFlagBits::eAnyHitKHR;
-		case ShaderStage::ClosestHitKHR:
-			return vk::ShaderStageFlagBits::eClosestHitKHR;
-		case ShaderStage::MissKHR:
-			return vk::ShaderStageFlagBits::eMissKHR;
-		case ShaderStage::IntersectionKHR:
-			return vk::ShaderStageFlagBits::eIntersectionKHR;
-		case ShaderStage::CallableKHR:
-			return vk::ShaderStageFlagBits::eCallableKHR;
-		case ShaderStage::RaygenNV:
-			return vk::ShaderStageFlagBits::eRaygenNV;
-		case ShaderStage::AnyHitNV:
-			return vk::ShaderStageFlagBits::eAnyHitNV;
-		case ShaderStage::ClosestHitNV:
-			return vk::ShaderStageFlagBits::eClosestHitNV;
-		case ShaderStage::MissNV:
-			return vk::ShaderStageFlagBits::eMissNV;
-		case ShaderStage::IntersectionNV:
-			return vk::ShaderStageFlagBits::eIntersectionNV;
-		case ShaderStage::CallableNV:
-			return vk::ShaderStageFlagBits::eCallableNV;
-		case ShaderStage::TaskNV:
-			return vk::ShaderStageFlagBits::eTaskNV;
-		case ShaderStage::MeshNV:
-			return vk::ShaderStageFlagBits::eMeshNV;
-		case ShaderStage::TaskEXT:
-			return vk::ShaderStageFlagBits::eTaskEXT;
-		case ShaderStage::MeshEXT:
-			return vk::ShaderStageFlagBits::eMeshEXT;
-		}
+    class VulkanEnumConverter
+    {
+    public:
+        static vk::ShaderStageFlagBits ConvertShaderStage( const ShaderStage &shaderStage )
+        {
+            switch ( shaderStage )
+            {
+            case ShaderStage::Vertex:
+                return vk::ShaderStageFlagBits::eVertex;
+            case ShaderStage::TessellationControl:
+                return vk::ShaderStageFlagBits::eTessellationControl;
+            case ShaderStage::TessellationEvaluation:
+                return vk::ShaderStageFlagBits::eTessellationEvaluation;
+            case ShaderStage::Geometry:
+                return vk::ShaderStageFlagBits::eGeometry;
+            case ShaderStage::Fragment:
+                return vk::ShaderStageFlagBits::eFragment;
+            case ShaderStage::Compute:
+                return vk::ShaderStageFlagBits::eCompute;
+            case ShaderStage::AllGraphics:
+                return vk::ShaderStageFlagBits::eAllGraphics;
+            case ShaderStage::All:
+                return vk::ShaderStageFlagBits::eAll;
+            case ShaderStage::RaygenKHR:
+                return vk::ShaderStageFlagBits::eRaygenKHR;
+            case ShaderStage::AnyHitKHR:
+                return vk::ShaderStageFlagBits::eAnyHitKHR;
+            case ShaderStage::ClosestHitKHR:
+                return vk::ShaderStageFlagBits::eClosestHitKHR;
+            case ShaderStage::MissKHR:
+                return vk::ShaderStageFlagBits::eMissKHR;
+            case ShaderStage::IntersectionKHR:
+                return vk::ShaderStageFlagBits::eIntersectionKHR;
+            case ShaderStage::CallableKHR:
+                return vk::ShaderStageFlagBits::eCallableKHR;
+            case ShaderStage::RaygenNV:
+                return vk::ShaderStageFlagBits::eRaygenNV;
+            case ShaderStage::AnyHitNV:
+                return vk::ShaderStageFlagBits::eAnyHitNV;
+            case ShaderStage::ClosestHitNV:
+                return vk::ShaderStageFlagBits::eClosestHitNV;
+            case ShaderStage::MissNV:
+                return vk::ShaderStageFlagBits::eMissNV;
+            case ShaderStage::IntersectionNV:
+                return vk::ShaderStageFlagBits::eIntersectionNV;
+            case ShaderStage::CallableNV:
+                return vk::ShaderStageFlagBits::eCallableNV;
+            case ShaderStage::TaskNV:
+                return vk::ShaderStageFlagBits::eTaskNV;
+            case ShaderStage::MeshNV:
+                return vk::ShaderStageFlagBits::eMeshNV;
+            case ShaderStage::TaskEXT:
+                return vk::ShaderStageFlagBits::eTaskEXT;
+            case ShaderStage::MeshEXT:
+                return vk::ShaderStageFlagBits::eMeshEXT;
+            }
 
-		return vk::ShaderStageFlagBits::eVertex;
-	}
+            return vk::ShaderStageFlagBits::eVertex;
+        }
 
-	static inline vk::SampleCountFlagBits ConverSampleCount(const MSAASampleCount& sampleCount)
-	{
-		switch (sampleCount)
-		{
-		case MSAASampleCount::_0:
-		case MSAASampleCount::_1:
-			return vk::SampleCountFlagBits::e1;
-		case MSAASampleCount::_2:
-			return vk::SampleCountFlagBits::e2;
-		case MSAASampleCount::_4:
-			return vk::SampleCountFlagBits::e4;
-		case MSAASampleCount::_8:
-			return vk::SampleCountFlagBits::e8;
-		case MSAASampleCount::_16:
-			return vk::SampleCountFlagBits::e16;
-		case MSAASampleCount::_32:
-			return vk::SampleCountFlagBits::e32;
-		case MSAASampleCount::_64:
-			return vk::SampleCountFlagBits::e64;
-		}
+        static vk::SampleCountFlagBits ConverSampleCount( const MSAASampleCount &sampleCount )
+        {
+            switch ( sampleCount )
+            {
+            case MSAASampleCount::_0:
+            case MSAASampleCount::_1:
+                return vk::SampleCountFlagBits::e1;
+            case MSAASampleCount::_2:
+                return vk::SampleCountFlagBits::e2;
+            case MSAASampleCount::_4:
+                return vk::SampleCountFlagBits::e4;
+            case MSAASampleCount::_8:
+                return vk::SampleCountFlagBits::e8;
+            case MSAASampleCount::_16:
+                return vk::SampleCountFlagBits::e16;
+            case MSAASampleCount::_32:
+                return vk::SampleCountFlagBits::e32;
+            case MSAASampleCount::_64:
+                return vk::SampleCountFlagBits::e64;
+            }
 
-		return vk::SampleCountFlagBits::e1;
-	}
+            return vk::SampleCountFlagBits::e1;
+        }
 
-	static inline vk::ImageLayout ConvertImageLayout(const ImageLayout& imageLayout)
-	{
-		switch (imageLayout)
-		{
-		case Undefined:
-			return vk::ImageLayout::eUndefined;
-		case General:
-			return vk::ImageLayout::eGeneral;
-		case ColorAttachmentOptimal:
-			return vk::ImageLayout::eColorAttachmentOptimal;
-		case DepthStencilAttachmentOptimal:
-			return vk::ImageLayout::eDepthStencilAttachmentOptimal;
-		case DepthStencilReadOnlyOptimal:
-			return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
-		case ShaderReadOnlyOptimal:
-			return vk::ImageLayout::eShaderReadOnlyOptimal;
-		case TransferSrcOptimal:
-			return vk::ImageLayout::eTransferSrcOptimal;
-		case TransferDstOptimal:
-			return vk::ImageLayout::eTransferDstOptimal;
-		case Preinitialized:
-			return vk::ImageLayout::ePreinitialized;
-		case DepthReadOnlyStencilAttachmentOptimal:
-			return vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal;
-		case DepthAttachmentStencilReadOnlyOptimal:
-			return vk::ImageLayout::eDepthAttachmentStencilReadOnlyOptimal;
-		case DepthAttachmentOptimal:
-			return vk::ImageLayout::eDepthAttachmentOptimal;
-		case DepthReadOnlyOptimal:
-			return vk::ImageLayout::eDepthReadOnlyOptimal;
-		case StencilAttachmentOptimal:
-			return vk::ImageLayout::eStencilAttachmentOptimal;
-		case StencilReadOnlyOptimal:
-			return vk::ImageLayout::eStencilReadOnlyOptimal;
-		case ReadOnlyOptimal:
-			return vk::ImageLayout::eReadOnlyOptimal;
-		case AttachmentOptimal:
-			return vk::ImageLayout::eAttachmentOptimal;
-		case PresentSrcKHR:
-			return vk::ImageLayout::ePresentSrcKHR;
-		case VideoDecodeDstKHR:
-			return vk::ImageLayout::eVideoDecodeDstKHR;
-		case VideoDecodeSrcKHR:
-			return vk::ImageLayout::eVideoDecodeSrcKHR;
-		case VideoDecodeDpbKHR:
-			return vk::ImageLayout::eVideoDecodeDpbKHR;
-		case SharedPresentKHR:
-			return vk::ImageLayout::eSharedPresentKHR;
-		case DepthReadOnlyStencilAttachmentOptimalKHR:
-			return vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimalKHR;
-		case DepthAttachmentStencilReadOnlyOptimalKHR:
-			return vk::ImageLayout::eDepthAttachmentStencilReadOnlyOptimalKHR;
-		case ShadingRateOptimalNV:
-			return vk::ImageLayout::eShadingRateOptimalNV;
-		case FragmentDensityMapOptimalEXT:
-			return vk::ImageLayout::eFragmentDensityMapOptimalEXT;
-		case FragmentShadingRateAttachmentOptimalKHR:
-			return vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR;
-		case RenderingLocalReadKHR:
-			return vk::ImageLayout::eRenderingLocalReadKHR;
-		case DepthAttachmentOptimalKHR:
-			return vk::ImageLayout::eDepthAttachmentOptimalKHR;
-		case DepthReadOnlyOptimalKHR:
-			return vk::ImageLayout::eDepthReadOnlyOptimalKHR;
-		case StencilAttachmentOptimalKHR:
-			return vk::ImageLayout::eStencilAttachmentOptimalKHR;
-		case StencilReadOnlyOptimalKHR:
-			return vk::ImageLayout::eStencilReadOnlyOptimalKHR;
-		case VideoEncodeDstKHR:
-			return vk::ImageLayout::eVideoEncodeDstKHR;
-		case VideoEncodeSrcKHR:
-			return vk::ImageLayout::eVideoEncodeSrcKHR;
-		case VideoEncodeDpbKHR:
-			return vk::ImageLayout::eVideoEncodeDpbKHR;
-		case ReadOnlyOptimalKHR:
-			return vk::ImageLayout::eReadOnlyOptimalKHR;
-		case AttachmentOptimalKHR:
-			return vk::ImageLayout::eAttachmentOptimalKHR;
-		case AttachmentFeedbackLoopOptimalEXT:
-			return vk::ImageLayout::eAttachmentFeedbackLoopOptimalEXT;
-		}
-	}
+        static vk::ImageLayout ConvertImageLayout( const ImageLayout &imageLayout )
+        {
+            switch ( imageLayout )
+            {
+            case Undefined:
+                return vk::ImageLayout::eUndefined;
+            case General:
+                return vk::ImageLayout::eGeneral;
+            case ColorAttachmentOptimal:
+                return vk::ImageLayout::eColorAttachmentOptimal;
+            case DepthStencilAttachmentOptimal:
+                return vk::ImageLayout::eDepthStencilAttachmentOptimal;
+            case DepthStencilReadOnlyOptimal:
+                return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
+            case ShaderReadOnlyOptimal:
+                return vk::ImageLayout::eShaderReadOnlyOptimal;
+            case TransferSrcOptimal:
+                return vk::ImageLayout::eTransferSrcOptimal;
+            case TransferDstOptimal:
+                return vk::ImageLayout::eTransferDstOptimal;
+            case Preinitialized:
+                return vk::ImageLayout::ePreinitialized;
+            case DepthReadOnlyStencilAttachmentOptimal:
+                return vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal;
+            case DepthAttachmentStencilReadOnlyOptimal:
+                return vk::ImageLayout::eDepthAttachmentStencilReadOnlyOptimal;
+            case DepthAttachmentOptimal:
+                return vk::ImageLayout::eDepthAttachmentOptimal;
+            case DepthReadOnlyOptimal:
+                return vk::ImageLayout::eDepthReadOnlyOptimal;
+            case StencilAttachmentOptimal:
+                return vk::ImageLayout::eStencilAttachmentOptimal;
+            case StencilReadOnlyOptimal:
+                return vk::ImageLayout::eStencilReadOnlyOptimal;
+            case ReadOnlyOptimal:
+                return vk::ImageLayout::eReadOnlyOptimal;
+            case AttachmentOptimal:
+                return vk::ImageLayout::eAttachmentOptimal;
+            case PresentSrcKHR:
+                return vk::ImageLayout::ePresentSrcKHR;
+            case VideoDecodeDstKHR:
+                return vk::ImageLayout::eVideoDecodeDstKHR;
+            case VideoDecodeSrcKHR:
+                return vk::ImageLayout::eVideoDecodeSrcKHR;
+            case VideoDecodeDpbKHR:
+                return vk::ImageLayout::eVideoDecodeDpbKHR;
+            case SharedPresentKHR:
+                return vk::ImageLayout::eSharedPresentKHR;
+            case DepthReadOnlyStencilAttachmentOptimalKHR:
+                return vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimalKHR;
+            case DepthAttachmentStencilReadOnlyOptimalKHR:
+                return vk::ImageLayout::eDepthAttachmentStencilReadOnlyOptimalKHR;
+            case ShadingRateOptimalNV:
+                return vk::ImageLayout::eShadingRateOptimalNV;
+            case FragmentDensityMapOptimalEXT:
+                return vk::ImageLayout::eFragmentDensityMapOptimalEXT;
+            case FragmentShadingRateAttachmentOptimalKHR:
+                return vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR;
+            case RenderingLocalReadKHR:
+                return vk::ImageLayout::eRenderingLocalReadKHR;
+            case DepthAttachmentOptimalKHR:
+                return vk::ImageLayout::eDepthAttachmentOptimalKHR;
+            case DepthReadOnlyOptimalKHR:
+                return vk::ImageLayout::eDepthReadOnlyOptimalKHR;
+            case StencilAttachmentOptimalKHR:
+                return vk::ImageLayout::eStencilAttachmentOptimalKHR;
+            case StencilReadOnlyOptimalKHR:
+                return vk::ImageLayout::eStencilReadOnlyOptimalKHR;
+            case VideoEncodeDstKHR:
+                return vk::ImageLayout::eVideoEncodeDstKHR;
+            case VideoEncodeSrcKHR:
+                return vk::ImageLayout::eVideoEncodeSrcKHR;
+            case VideoEncodeDpbKHR:
+                return vk::ImageLayout::eVideoEncodeDpbKHR;
+            case ReadOnlyOptimalKHR:
+                return vk::ImageLayout::eReadOnlyOptimalKHR;
+            case AttachmentOptimalKHR:
+                return vk::ImageLayout::eAttachmentOptimalKHR;
+            case AttachmentFeedbackLoopOptimalEXT:
+                return vk::ImageLayout::eAttachmentFeedbackLoopOptimalEXT;
+            }
+        }
 
-	static inline vk::StencilOp ConvertStencilOp(const StencilOp& stencilOp)
-	{
-		switch (stencilOp)
-		{
-		case StencilOp::Keep:
-			return vk::StencilOp::eKeep;
-		case StencilOp::Zero:
-			return vk::StencilOp::eZero;
-		case StencilOp::Replace:
-			return vk::StencilOp::eReplace;
-		case StencilOp::IncrementAndClamp:
-			return vk::StencilOp::eIncrementAndClamp;
-		case StencilOp::DecrementAndClamp:
-			return vk::StencilOp::eDecrementAndClamp;
-		case StencilOp::Invert:
-			return vk::StencilOp::eInvert;
-		case StencilOp::IncrementAndWrap:
-			return vk::StencilOp::eIncrementAndWrap;
-		case StencilOp::DecrementAndWrap:
-			return vk::StencilOp::eDecrementAndWrap;
-		}
+        static vk::StencilOp ConvertStencilOp( const StencilOp &stencilOp )
+        {
+            switch ( stencilOp )
+            {
+            case StencilOp::Keep:
+                return vk::StencilOp::eKeep;
+            case StencilOp::Zero:
+                return vk::StencilOp::eZero;
+            case StencilOp::Replace:
+                return vk::StencilOp::eReplace;
+            case StencilOp::IncrementAndClamp:
+                return vk::StencilOp::eIncrementAndClamp;
+            case StencilOp::DecrementAndClamp:
+                return vk::StencilOp::eDecrementAndClamp;
+            case StencilOp::Invert:
+                return vk::StencilOp::eInvert;
+            case StencilOp::IncrementAndWrap:
+                return vk::StencilOp::eIncrementAndWrap;
+            case StencilOp::DecrementAndWrap:
+                return vk::StencilOp::eDecrementAndWrap;
+            }
 
-		return vk::StencilOp::eZero;
-	}
+            return vk::StencilOp::eZero;
+        }
 
-	static inline vk::CompareOp ConvertCompareOp(const CompareOp& compareOp)
-	{
-		switch (compareOp)
-		{
-		case CompareOp::Always:
-			return vk::CompareOp::eAlways;
-		case CompareOp::Equal:
-			return vk::CompareOp::eEqual;
-		case CompareOp::NotEqual:
-			return vk::CompareOp::eNotEqual;
-		case CompareOp::Less:
-			return vk::CompareOp::eLess;
-		case CompareOp::LessOrEqual:
-			return vk::CompareOp::eLessOrEqual;
-		case CompareOp::Greater:
-			return vk::CompareOp::eGreater;
-		case CompareOp::GreaterOrEqual:
-			return vk::CompareOp::eGreaterOrEqual;
-		}
+        static vk::CompareOp ConvertCompareOp( const CompareOp &compareOp )
+        {
+            switch ( compareOp )
+            {
+            case CompareOp::Always:
+                return vk::CompareOp::eAlways;
+            case CompareOp::Equal:
+                return vk::CompareOp::eEqual;
+            case CompareOp::NotEqual:
+                return vk::CompareOp::eNotEqual;
+            case CompareOp::Less:
+                return vk::CompareOp::eLess;
+            case CompareOp::LessOrEqual:
+                return vk::CompareOp::eLessOrEqual;
+            case CompareOp::Greater:
+                return vk::CompareOp::eGreater;
+            case CompareOp::GreaterOrEqual:
+                return vk::CompareOp::eGreaterOrEqual;
+            }
 
-		return vk::CompareOp::eAlways;
-	}
+            return vk::CompareOp::eAlways;
+        }
 
-	static inline vk::Filter ConvertFilter(const Filter& filter)
-	{
-		switch (filter)
-		{
-		case Filter::Nearest:
-			return vk::Filter::eNearest;
-		case Filter::Linear:
-			return vk::Filter::eLinear;
-		case Filter::CubicIMG:
-			return vk::Filter::eCubicIMG;
-		case Filter::CubicEXT:
-			return vk::Filter::eCubicEXT;
-		}
+        static vk::Filter ConvertFilter( const Filter &filter )
+        {
+            switch ( filter )
+            {
+            case Filter::Nearest:
+                return vk::Filter::eNearest;
+            case Filter::Linear:
+                return vk::Filter::eLinear;
+            case Filter::CubicIMG:
+                return vk::Filter::eCubicIMG;
+            case Filter::CubicEXT:
+                return vk::Filter::eCubicEXT;
+            }
 
-		return vk::Filter::eLinear;
-	}
+            return vk::Filter::eLinear;
+        }
 
-	static inline vk::SamplerAddressMode ConvertAddressMode(const SamplerAddressMode& addressMode)
-	{
-		switch (addressMode)
-		{
-		case SamplerAddressMode::Repeat:
-			return vk::SamplerAddressMode::eRepeat;
-		case SamplerAddressMode::MirroredRepeat:
-			return vk::SamplerAddressMode::eMirroredRepeat;
-		case SamplerAddressMode::ClampToEdge:
-			return vk::SamplerAddressMode::eClampToEdge;
-		case SamplerAddressMode::ClampToBorder:
-			return vk::SamplerAddressMode::eClampToBorder;
-		case SamplerAddressMode::MirrorClampToEdge:
-			return vk::SamplerAddressMode::eMirrorClampToEdge;
-		case SamplerAddressMode::MirrorClampToEdgeKHR:
-			return vk::SamplerAddressMode::eMirrorClampToEdgeKHR;
-		}
-		return vk::SamplerAddressMode::eClampToBorder;
-	}
+        static vk::SamplerAddressMode ConvertAddressMode( const SamplerAddressMode &addressMode )
+        {
+            switch ( addressMode )
+            {
+            case SamplerAddressMode::Repeat:
+                return vk::SamplerAddressMode::eRepeat;
+            case SamplerAddressMode::MirroredRepeat:
+                return vk::SamplerAddressMode::eMirroredRepeat;
+            case SamplerAddressMode::ClampToEdge:
+                return vk::SamplerAddressMode::eClampToEdge;
+            case SamplerAddressMode::ClampToBorder:
+                return vk::SamplerAddressMode::eClampToBorder;
+            case SamplerAddressMode::MirrorClampToEdge:
+                return vk::SamplerAddressMode::eMirrorClampToEdge;
+            case SamplerAddressMode::MirrorClampToEdgeKHR:
+                return vk::SamplerAddressMode::eMirrorClampToEdgeKHR;
+            }
+            return vk::SamplerAddressMode::eClampToBorder;
+        }
 
-	static inline vk::SamplerMipmapMode ConvertMipmapMode(const MipmapMode& mipmapMode)
-	{
-		switch (mipmapMode)
-		{
-		case MipmapMode::Nearest:
-			return vk::SamplerMipmapMode::eNearest;
-		case MipmapMode::Linear:
-			return vk::SamplerMipmapMode::eLinear;
-		}
+        static vk::SamplerMipmapMode ConvertMipmapMode( const MipmapMode &mipmapMode )
+        {
+            switch ( mipmapMode )
+            {
+            case MipmapMode::Nearest:
+                return vk::SamplerMipmapMode::eNearest;
+            case MipmapMode::Linear:
+                return vk::SamplerMipmapMode::eLinear;
+            }
 
-		return vk::SamplerMipmapMode::eLinear;
-	}
+            return vk::SamplerMipmapMode::eLinear;
+        }
 
-	static inline vk::BufferUsageFlagBits ConvertBufferUsage(MemoryUsage usage)
-	{
-		switch (usage)
-		{
-		case MemoryUsage::TransferSrc:
-			return vk::BufferUsageFlagBits::eTransferSrc;
-		case MemoryUsage::TransferDst:
-			return vk::BufferUsageFlagBits::eTransferDst;
-		case MemoryUsage::UniformTexelBuffer:
-			return vk::BufferUsageFlagBits::eUniformTexelBuffer;
-		case MemoryUsage::StorageTexelBuffer:
-			return vk::BufferUsageFlagBits::eStorageTexelBuffer;
-		case MemoryUsage::UniformBuffer:
-			return vk::BufferUsageFlagBits::eUniformBuffer;
-		case MemoryUsage::StorageBuffer:
-			return vk::BufferUsageFlagBits::eStorageBuffer;
-		case MemoryUsage::IndexBuffer:
-			return vk::BufferUsageFlagBits::eIndexBuffer;
-		case MemoryUsage::VertexBuffer:
-			return vk::BufferUsageFlagBits::eVertexBuffer;
-		case MemoryUsage::IndirectBuffer:
-			return vk::BufferUsageFlagBits::eIndirectBuffer;
-		case MemoryUsage::ShaderDeviceAddress:
-			return vk::BufferUsageFlagBits::eShaderDeviceAddress;
-		case MemoryUsage::VideoDecodeSrcKHR:
-			return vk::BufferUsageFlagBits::eVideoDecodeSrcKHR;
-		case MemoryUsage::VideoDecodeDstKHR:
-			return vk::BufferUsageFlagBits::eVideoDecodeDstKHR;
-		case MemoryUsage::TransformFeedbackBufferEXT:
-			return vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT;
-		case MemoryUsage::TransformFeedbackCounterBufferEXT:
-			return vk::BufferUsageFlagBits::eTransformFeedbackCounterBufferEXT;
-		case MemoryUsage::ConditionalRenderingEXT:
-			return vk::BufferUsageFlagBits::eConditionalRenderingEXT;
-		case MemoryUsage::AccelerationStructureBuildInputReadOnlyKHR:
-			return vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR;
-		case MemoryUsage::AccelerationStructureStorageKHR:
-			return vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR;
-		case MemoryUsage::ShaderBindingTableKHR:
-			return vk::BufferUsageFlagBits::eShaderBindingTableKHR;
-		case MemoryUsage::RayTracingNV:
-			return vk::BufferUsageFlagBits::eRayTracingNV;
-		case MemoryUsage::ShaderDeviceAddressEXT:
-			return vk::BufferUsageFlagBits::eShaderDeviceAddressEXT;
-		case MemoryUsage::ShaderDeviceAddressKHR:
-			return vk::BufferUsageFlagBits::eShaderDeviceAddressKHR;
-		case MemoryUsage::VideoEncodeDstKHR:
-			return vk::BufferUsageFlagBits::eVideoEncodeDstKHR;
-		case MemoryUsage::VideoEncodeSrcKHR:
-			return vk::BufferUsageFlagBits::eVideoEncodeSrcKHR;
-		case MemoryUsage::SamplerDescriptorBufferEXT:
-			return vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT;
-		case MemoryUsage::ResourceDescriptorBufferEXT:
-			return vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT;
-		case MemoryUsage::PushDescriptorsDescriptorBufferEXT:
-			return vk::BufferUsageFlagBits::ePushDescriptorsDescriptorBufferEXT;
-		case MemoryUsage::MicromapBuildInputReadOnlyEXT:
-			return vk::BufferUsageFlagBits::eMicromapBuildInputReadOnlyEXT;
-		case MemoryUsage::MicromapStorageEXT:
-			return vk::BufferUsageFlagBits::eMicromapStorageEXT;
-		}
+        static vk::BufferUsageFlagBits ConvertBufferUsage( MemoryUsage usage )
+        {
+            switch ( usage )
+            {
+            case MemoryUsage::TransferSrc:
+                return vk::BufferUsageFlagBits::eTransferSrc;
+            case MemoryUsage::TransferDst:
+                return vk::BufferUsageFlagBits::eTransferDst;
+            case MemoryUsage::UniformTexelBuffer:
+                return vk::BufferUsageFlagBits::eUniformTexelBuffer;
+            case MemoryUsage::StorageTexelBuffer:
+                return vk::BufferUsageFlagBits::eStorageTexelBuffer;
+            case MemoryUsage::UniformBuffer:
+                return vk::BufferUsageFlagBits::eUniformBuffer;
+            case MemoryUsage::StorageBuffer:
+                return vk::BufferUsageFlagBits::eStorageBuffer;
+            case MemoryUsage::IndexBuffer:
+                return vk::BufferUsageFlagBits::eIndexBuffer;
+            case MemoryUsage::VertexBuffer:
+                return vk::BufferUsageFlagBits::eVertexBuffer;
+            case MemoryUsage::IndirectBuffer:
+                return vk::BufferUsageFlagBits::eIndirectBuffer;
+            case MemoryUsage::ShaderDeviceAddress:
+                return vk::BufferUsageFlagBits::eShaderDeviceAddress;
+            case MemoryUsage::VideoDecodeSrcKHR:
+                return vk::BufferUsageFlagBits::eVideoDecodeSrcKHR;
+            case MemoryUsage::VideoDecodeDstKHR:
+                return vk::BufferUsageFlagBits::eVideoDecodeDstKHR;
+            case MemoryUsage::TransformFeedbackBufferEXT:
+                return vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT;
+            case MemoryUsage::TransformFeedbackCounterBufferEXT:
+                return vk::BufferUsageFlagBits::eTransformFeedbackCounterBufferEXT;
+            case MemoryUsage::ConditionalRenderingEXT:
+                return vk::BufferUsageFlagBits::eConditionalRenderingEXT;
+            case MemoryUsage::AccelerationStructureBuildInputReadOnlyKHR:
+                return vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR;
+            case MemoryUsage::AccelerationStructureStorageKHR:
+                return vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR;
+            case MemoryUsage::ShaderBindingTableKHR:
+                return vk::BufferUsageFlagBits::eShaderBindingTableKHR;
+            case MemoryUsage::RayTracingNV:
+                return vk::BufferUsageFlagBits::eRayTracingNV;
+            case MemoryUsage::ShaderDeviceAddressEXT:
+                return vk::BufferUsageFlagBits::eShaderDeviceAddressEXT;
+            case MemoryUsage::ShaderDeviceAddressKHR:
+                return vk::BufferUsageFlagBits::eShaderDeviceAddressKHR;
+            case MemoryUsage::VideoEncodeDstKHR:
+                return vk::BufferUsageFlagBits::eVideoEncodeDstKHR;
+            case MemoryUsage::VideoEncodeSrcKHR:
+                return vk::BufferUsageFlagBits::eVideoEncodeSrcKHR;
+            case MemoryUsage::SamplerDescriptorBufferEXT:
+                return vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT;
+            case MemoryUsage::ResourceDescriptorBufferEXT:
+                return vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT;
+            case MemoryUsage::PushDescriptorsDescriptorBufferEXT:
+                return vk::BufferUsageFlagBits::ePushDescriptorsDescriptorBufferEXT;
+            case MemoryUsage::MicromapBuildInputReadOnlyEXT:
+                return vk::BufferUsageFlagBits::eMicromapBuildInputReadOnlyEXT;
+            case MemoryUsage::MicromapStorageEXT:
+                return vk::BufferUsageFlagBits::eMicromapStorageEXT;
+            }
 
-		return vk::BufferUsageFlagBits::eVertexBuffer;
-	}
+            return vk::BufferUsageFlagBits::eVertexBuffer;
+        }
 
-	// Weird naming on Vma or my side, either way location = usage.
-	static inline VmaMemoryUsage ConvertMemoryLocation(MemoryLocation location)
-	{
-		switch (location)
-		{
-		case MemoryLocation::Auto:
-			return VmaMemoryUsage::VMA_MEMORY_USAGE_AUTO;
-		case MemoryLocation::GPU:
-			return VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_ONLY;
-		case MemoryLocation::CPU:
-			return VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_COPY;
-		case MemoryLocation::CPU_GPU:
-			return VmaMemoryUsage::VMA_MEMORY_USAGE_CPU_TO_GPU;
-		case MemoryLocation::GPU_CPU:
-			return VmaMemoryUsage::VMA_MEMORY_USAGE_GPU_TO_CPU;
-		}
+        // Weird naming on Vma or my side, either way location = usage.
+        static VmaMemoryUsage ConvertMemoryLocation( MemoryLocation location )
+        {
+            switch ( location )
+            {
+            case MemoryLocation::Auto:
+                return VMA_MEMORY_USAGE_AUTO;
+            case MemoryLocation::GPU:
+                return VMA_MEMORY_USAGE_GPU_ONLY;
+            case MemoryLocation::CPU:
+                return VMA_MEMORY_USAGE_CPU_COPY;
+            case MemoryLocation::CPU_GPU:
+                return VMA_MEMORY_USAGE_CPU_TO_GPU;
+            case MemoryLocation::GPU_CPU:
+                return VMA_MEMORY_USAGE_GPU_TO_CPU;
+            }
 
-		return VmaMemoryUsage::VMA_MEMORY_USAGE_AUTO;
-	}
+            return VMA_MEMORY_USAGE_AUTO;
+        }
 
-	static inline vk::Format ConvertImageFormat(const ImageFormat& imageFormat)
-	{
-		switch (imageFormat)
-		{
-		case ImageFormat::Undefined:
-			return vk::Format::eUndefined;
-		case ImageFormat::R4G4UnormPack8:
-			return vk::Format::eR4G4UnormPack8;
-		case ImageFormat::R4G4B4A4UnormPack16:
-			return vk::Format::eR4G4B4A4UnormPack16;
-		case ImageFormat::B4G4R4A4UnormPack16:
-			return vk::Format::eB4G4R4A4UnormPack16;
-		case ImageFormat::R5G6B5UnormPack16:
-			return vk::Format::eR5G6B5UnormPack16;
-		case ImageFormat::B5G6R5UnormPack16:
-			return vk::Format::eB5G6R5UnormPack16;
-		case ImageFormat::R5G5B5A1UnormPack16:
-			return vk::Format::eR5G5B5A1UnormPack16;
-		case ImageFormat::B5G5R5A1UnormPack16:
-			return vk::Format::eB5G5R5A1UnormPack16;
-		case ImageFormat::A1R5G5B5UnormPack16:
-			return vk::Format::eA1R5G5B5UnormPack16;
-		case ImageFormat::R8Unorm:
-			return vk::Format::eR8Unorm;
-		case ImageFormat::R8Snorm:
-			return vk::Format::eR8Snorm;
-		case ImageFormat::R8Uscaled:
-			return vk::Format::eR8Uscaled;
-		case ImageFormat::R8Sscaled:
-			return vk::Format::eR8Sscaled;
-		case ImageFormat::R8Uint:
-			return vk::Format::eR8Uint;
-		case ImageFormat::R8Sint:
-			return vk::Format::eR8Sint;
-		case ImageFormat::R8Srgb:
-			return vk::Format::eR8Srgb;
-		case ImageFormat::R8G8Unorm:
-			return vk::Format::eR8G8Unorm;
-		case ImageFormat::R8G8Snorm:
-			return vk::Format::eR8G8Snorm;
-		case ImageFormat::R8G8Uscaled:
-			return vk::Format::eR8G8Uscaled;
-		case ImageFormat::R8G8Sscaled:
-			return vk::Format::eR8G8Sscaled;
-		case ImageFormat::R8G8Uint:
-			return vk::Format::eR8G8Uint;
-		case ImageFormat::R8G8Sint:
-			return vk::Format::eR8G8Sint;
-		case ImageFormat::R8G8Srgb:
-			return vk::Format::eR8G8Srgb;
-		case ImageFormat::R8G8B8Unorm:
-			return vk::Format::eR8G8B8Unorm;
-		case ImageFormat::R8G8B8Snorm:
-			return vk::Format::eR8G8B8Snorm;
-		case ImageFormat::R8G8B8Uscaled:
-			return vk::Format::eR8G8B8Uscaled;
-		case ImageFormat::R8G8B8Sscaled:
-			return vk::Format::eR8G8B8Sscaled;
-		case ImageFormat::R8G8B8Uint:
-			return vk::Format::eR8G8B8Uint;
-		case ImageFormat::R8G8B8Sint:
-			return vk::Format::eR8G8B8Sint;
-		case ImageFormat::R8G8B8Srgb:
-			return vk::Format::eR8G8B8Srgb;
-		case ImageFormat::B8G8R8Unorm:
-			return vk::Format::eB8G8R8Unorm;
-		case ImageFormat::B8G8R8Snorm:
-			return vk::Format::eB8G8R8Snorm;
-		case ImageFormat::B8G8R8Uscaled:
-			return vk::Format::eB8G8R8Uscaled;
-		case ImageFormat::B8G8R8Sscaled:
-			return vk::Format::eB8G8R8Sscaled;
-		case ImageFormat::B8G8R8Uint:
-			return vk::Format::eB8G8R8Uint;
-		case ImageFormat::B8G8R8Sint:
-			return vk::Format::eB8G8R8Sint;
-		case ImageFormat::B8G8R8Srgb:
-			return vk::Format::eB8G8R8Srgb;
-		case ImageFormat::R8G8B8A8Unorm:
-			return vk::Format::eR8G8B8A8Unorm;
-		case ImageFormat::R8G8B8A8Snorm:
-			return vk::Format::eR8G8B8A8Snorm;
-		case ImageFormat::R8G8B8A8Uscaled:
-			return vk::Format::eR8G8B8A8Uscaled;
-		case ImageFormat::R8G8B8A8Sscaled:
-			return vk::Format::eR8G8B8A8Sscaled;
-		case ImageFormat::R8G8B8A8Uint:
-			return vk::Format::eR8G8B8A8Uint;
-		case ImageFormat::R8G8B8A8Sint:
-			return vk::Format::eR8G8B8A8Sint;
-		case ImageFormat::R8G8B8A8Srgb:
-			return vk::Format::eR8G8B8A8Srgb;
-		case ImageFormat::B8G8R8A8Unorm:
-			return vk::Format::eB8G8R8A8Unorm;
-		case ImageFormat::B8G8R8A8Snorm:
-			return vk::Format::eB8G8R8A8Snorm;
-		case ImageFormat::B8G8R8A8Uscaled:
-			return vk::Format::eB8G8R8A8Uscaled;
-		case ImageFormat::B8G8R8A8Sscaled:
-			return vk::Format::eB8G8R8A8Sscaled;
-		case ImageFormat::B8G8R8A8Uint:
-			return vk::Format::eB8G8R8A8Uint;
-		case ImageFormat::B8G8R8A8Sint:
-			return vk::Format::eB8G8R8A8Sint;
-		case ImageFormat::B8G8R8A8Srgb:
-			return vk::Format::eB8G8R8A8Srgb;
-		case ImageFormat::A8B8G8R8UnormPack32:
-			return vk::Format::eA8B8G8R8UnormPack32;
-		case ImageFormat::A8B8G8R8SnormPack32:
-			return vk::Format::eA8B8G8R8SnormPack32;
-		case ImageFormat::A8B8G8R8UscaledPack32:
-			return vk::Format::eA8B8G8R8UscaledPack32;
-		case ImageFormat::A8B8G8R8SscaledPack32:
-			return vk::Format::eA8B8G8R8SscaledPack32;
-		case ImageFormat::A8B8G8R8UintPack32:
-			return vk::Format::eA8B8G8R8UintPack32;
-		case ImageFormat::A8B8G8R8SintPack32:
-			return vk::Format::eA8B8G8R8SintPack32;
-		case ImageFormat::A8B8G8R8SrgbPack32:
-			return vk::Format::eA8B8G8R8SrgbPack32;
-		case ImageFormat::A2R10G10B10UnormPack32:
-			return vk::Format::eA2R10G10B10UnormPack32;
-		case ImageFormat::A2R10G10B10SnormPack32:
-			return vk::Format::eA2R10G10B10SnormPack32;
-		case ImageFormat::A2R10G10B10UscaledPack32:
-			return vk::Format::eA2R10G10B10UscaledPack32;
-		case ImageFormat::A2R10G10B10SscaledPack32:
-			return vk::Format::eA2R10G10B10SscaledPack32;
-		case ImageFormat::A2R10G10B10UintPack32:
-			return vk::Format::eA2R10G10B10UintPack32;
-		case ImageFormat::A2R10G10B10SintPack32:
-			return vk::Format::eA2R10G10B10SintPack32;
-		case ImageFormat::A2B10G10R10UnormPack32:
-			return vk::Format::eA2B10G10R10UnormPack32;
-		case ImageFormat::A2B10G10R10SnormPack32:
-			return vk::Format::eA2B10G10R10SnormPack32;
-		case ImageFormat::A2B10G10R10UscaledPack32:
-			return vk::Format::eA2B10G10R10UscaledPack32;
-		case ImageFormat::A2B10G10R10SscaledPack32:
-			return vk::Format::eA2B10G10R10SscaledPack32;
-		case ImageFormat::A2B10G10R10UintPack32:
-			return vk::Format::eA2B10G10R10UintPack32;
-		case ImageFormat::A2B10G10R10SintPack32:
-			return vk::Format::eA2B10G10R10SintPack32;
-		case ImageFormat::R16Unorm:
-			return vk::Format::eR16Unorm;
-		case ImageFormat::R16Snorm:
-			return vk::Format::eR16Snorm;
-		case ImageFormat::R16Uscaled:
-			return vk::Format::eR16Uscaled;
-		case ImageFormat::R16Sscaled:
-			return vk::Format::eR16Sscaled;
-		case ImageFormat::R16Uint:
-			return vk::Format::eR16Uint;
-		case ImageFormat::R16Sint:
-			return vk::Format::eR16Sint;
-		case ImageFormat::R16Sfloat:
-			return vk::Format::eR16Sfloat;
-		case ImageFormat::R16G16Unorm:
-			return vk::Format::eR16G16Unorm;
-		case ImageFormat::R16G16Snorm:
-			return vk::Format::eR16G16Snorm;
-		case ImageFormat::R16G16Uscaled:
-			return vk::Format::eR16G16Uscaled;
-		case ImageFormat::R16G16Sscaled:
-			return vk::Format::eR16G16Sscaled;
-		case ImageFormat::R16G16Uint:
-			return vk::Format::eR16G16Uint;
-		case ImageFormat::R16G16Sint:
-			return vk::Format::eR16G16Sint;
-		case ImageFormat::R16G16Sfloat:
-			return vk::Format::eR16G16Sfloat;
-		case ImageFormat::R16G16B16Unorm:
-			return vk::Format::eR16G16B16Unorm;
-		case ImageFormat::R16G16B16Snorm:
-			return vk::Format::eR16G16B16Snorm;
-		case ImageFormat::R16G16B16Uscaled:
-			return vk::Format::eR16G16B16Uscaled;
-		case ImageFormat::R16G16B16Sscaled:
-			return vk::Format::eR16G16B16Sscaled;
-		case ImageFormat::R16G16B16Uint:
-			return vk::Format::eR16G16B16Uint;
-		case ImageFormat::R16G16B16Sint:
-			return vk::Format::eR16G16B16Sint;
-		case ImageFormat::R16G16B16Sfloat:
-			return vk::Format::eR16G16B16Sfloat;
-		case ImageFormat::R16G16B16A16Unorm:
-			return vk::Format::eR16G16B16A16Unorm;
-		case ImageFormat::R16G16B16A16Snorm:
-			return vk::Format::eR16G16B16A16Snorm;
-		case ImageFormat::R16G16B16A16Uscaled:
-			return vk::Format::eR16G16B16A16Uscaled;
-		case ImageFormat::R16G16B16A16Sscaled:
-			return vk::Format::eR16G16B16A16Sscaled;
-		case ImageFormat::R16G16B16A16Uint:
-			return vk::Format::eR16G16B16A16Uint;
-		case ImageFormat::R16G16B16A16Sint:
-			return vk::Format::eR16G16B16A16Sint;
-		case ImageFormat::R16G16B16A16Sfloat:
-			return vk::Format::eR16G16B16A16Sfloat;
-		case ImageFormat::R32Uint:
-			return vk::Format::eR32Uint;
-		case ImageFormat::R32Sint:
-			return vk::Format::eR32Sint;
-		case ImageFormat::R32Sfloat:
-			return vk::Format::eR32Sfloat;
-		case ImageFormat::R32G32Uint:
-			return vk::Format::eR32G32Uint;
-		case ImageFormat::R32G32Sint:
-			return vk::Format::eR32G32Sint;
-		case ImageFormat::R32G32Sfloat:
-			return vk::Format::eR32G32Sfloat;
-		case ImageFormat::R32G32B32Uint:
-			return vk::Format::eR32G32B32Uint;
-		case ImageFormat::R32G32B32Sint:
-			return vk::Format::eR32G32B32Sint;
-		case ImageFormat::R32G32B32Sfloat:
-			return vk::Format::eR32G32B32Sfloat;
-		case ImageFormat::R32G32B32A32Uint:
-			return vk::Format::eR32G32B32A32Uint;
-		case ImageFormat::R32G32B32A32Sint:
-			return vk::Format::eR32G32B32A32Sint;
-		case ImageFormat::R32G32B32A32Sfloat:
-			return vk::Format::eR32G32B32A32Sfloat;
-		case ImageFormat::R64Uint:
-			return vk::Format::eR64Uint;
-		case ImageFormat::R64Sint:
-			return vk::Format::eR64Sint;
-		case ImageFormat::R64Sfloat:
-			return vk::Format::eR64Sfloat;
-		case ImageFormat::R64G64Uint:
-			return vk::Format::eR64G64Uint;
-		case ImageFormat::R64G64Sint:
-			return vk::Format::eR64G64Sint;
-		case ImageFormat::R64G64Sfloat:
-			return vk::Format::eR64G64Sfloat;
-		case ImageFormat::R64G64B64Uint:
-			return vk::Format::eR64G64B64Uint;
-		case ImageFormat::R64G64B64Sint:
-			return vk::Format::eR64G64B64Sint;
-		case ImageFormat::R64G64B64Sfloat:
-			return vk::Format::eR64G64B64Sfloat;
-		case ImageFormat::R64G64B64A64Uint:
-			return vk::Format::eR64G64B64A64Uint;
-		case ImageFormat::R64G64B64A64Sint:
-			return vk::Format::eR64G64B64A64Sint;
-		case ImageFormat::R64G64B64A64Sfloat:
-			return vk::Format::eR64G64B64A64Sfloat;
-		case ImageFormat::B10G11R11UfloatPack32:
-			return vk::Format::eB10G11R11UfloatPack32;
-		case ImageFormat::E5B9G9R9UfloatPack32:
-			return vk::Format::eE5B9G9R9UfloatPack32;
-		case ImageFormat::D16Unorm:
-			return vk::Format::eD16Unorm;
-		case ImageFormat::X8D24UnormPack32:
-			return vk::Format::eX8D24UnormPack32;
-		case ImageFormat::D32Sfloat:
-			return vk::Format::eD32Sfloat;
-		case ImageFormat::S8Uint:
-			return vk::Format::eS8Uint;
-		case ImageFormat::D16UnormS8Uint:
-			return vk::Format::eD16UnormS8Uint;
-		case ImageFormat::D24UnormS8Uint:
-			return vk::Format::eD24UnormS8Uint;
-		case ImageFormat::D32SfloatS8Uint:
-			return vk::Format::eD32SfloatS8Uint;
-		case ImageFormat::Bc1RgbUnormBlock:
-			return vk::Format::eBc1RgbUnormBlock;
-		case ImageFormat::Bc1RgbSrgbBlock:
-			return vk::Format::eBc1RgbSrgbBlock;
-		case ImageFormat::Bc1RgbaUnormBlock:
-			return vk::Format::eBc1RgbaUnormBlock;
-		case ImageFormat::Bc1RgbaSrgbBlock:
-			return vk::Format::eBc1RgbaSrgbBlock;
-		case ImageFormat::Bc2UnormBlock:
-			return vk::Format::eBc2UnormBlock;
-		case ImageFormat::Bc2SrgbBlock:
-			return vk::Format::eBc2SrgbBlock;
-		case ImageFormat::Bc3UnormBlock:
-			return vk::Format::eBc3UnormBlock;
-		case ImageFormat::Bc3SrgbBlock:
-			return vk::Format::eBc3SrgbBlock;
-		case ImageFormat::Bc4UnormBlock:
-			return vk::Format::eBc4UnormBlock;
-		case ImageFormat::Bc4SnormBlock:
-			return vk::Format::eBc4SnormBlock;
-		case ImageFormat::Bc5UnormBlock:
-			return vk::Format::eBc5UnormBlock;
-		case ImageFormat::Bc5SnormBlock:
-			return vk::Format::eBc5SnormBlock;
-		case ImageFormat::Bc6HUfloatBlock:
-			return vk::Format::eBc6HUfloatBlock;
-		case ImageFormat::Bc6HSfloatBlock:
-			return vk::Format::eBc6HSfloatBlock;
-		case ImageFormat::Bc7UnormBlock:
-			return vk::Format::eBc7UnormBlock;
-		case ImageFormat::Bc7SrgbBlock:
-			return vk::Format::eBc7SrgbBlock;
-		case ImageFormat::Etc2R8G8B8UnormBlock:
-			return vk::Format::eEtc2R8G8B8UnormBlock;
-		case ImageFormat::Etc2R8G8B8SrgbBlock:
-			return vk::Format::eEtc2R8G8B8SrgbBlock;
-		case ImageFormat::Etc2R8G8B8A1UnormBlock:
-			return vk::Format::eEtc2R8G8B8A1UnormBlock;
-		case ImageFormat::Etc2R8G8B8A1SrgbBlock:
-			return vk::Format::eEtc2R8G8B8A1SrgbBlock;
-		case ImageFormat::Etc2R8G8B8A8UnormBlock:
-			return vk::Format::eEtc2R8G8B8A8UnormBlock;
-		case ImageFormat::Etc2R8G8B8A8SrgbBlock:
-			return vk::Format::eEtc2R8G8B8A8SrgbBlock;
-		case ImageFormat::EacR11UnormBlock:
-			return vk::Format::eEacR11UnormBlock;
-		case ImageFormat::EacR11SnormBlock:
-			return vk::Format::eEacR11SnormBlock;
-		case ImageFormat::EacR11G11UnormBlock:
-			return vk::Format::eEacR11G11UnormBlock;
-		case ImageFormat::EacR11G11SnormBlock:
-			return vk::Format::eEacR11G11SnormBlock;
-		case ImageFormat::Astc4x4UnormBlock:
-			return vk::Format::eAstc4x4UnormBlock;
-		case ImageFormat::Astc4x4SrgbBlock:
-			return vk::Format::eAstc4x4SrgbBlock;
-		case ImageFormat::Astc5x4UnormBlock:
-			return vk::Format::eAstc5x4UnormBlock;
-		case ImageFormat::Astc5x4SrgbBlock:
-			return vk::Format::eAstc5x4SrgbBlock;
-		case ImageFormat::Astc5x5UnormBlock:
-			return vk::Format::eAstc5x5UnormBlock;
-		case ImageFormat::Astc5x5SrgbBlock:
-			return vk::Format::eAstc5x5SrgbBlock;
-		case ImageFormat::Astc6x5UnormBlock:
-			return vk::Format::eAstc6x5UnormBlock;
-		case ImageFormat::Astc6x5SrgbBlock:
-			return vk::Format::eAstc6x5SrgbBlock;
-		case ImageFormat::Astc6x6UnormBlock:
-			return vk::Format::eAstc6x6UnormBlock;
-		case ImageFormat::Astc6x6SrgbBlock:
-			return vk::Format::eAstc6x6SrgbBlock;
-		case ImageFormat::Astc8x5UnormBlock:
-			return vk::Format::eAstc8x5UnormBlock;
-		case ImageFormat::Astc8x5SrgbBlock:
-			return vk::Format::eAstc8x5SrgbBlock;
-		case ImageFormat::Astc8x6UnormBlock:
-			return vk::Format::eAstc8x6UnormBlock;
-		case ImageFormat::Astc8x6SrgbBlock:
-			return vk::Format::eAstc8x6SrgbBlock;
-		case ImageFormat::Astc8x8UnormBlock:
-			return vk::Format::eAstc8x8UnormBlock;
-		case ImageFormat::Astc8x8SrgbBlock:
-			return vk::Format::eAstc8x8SrgbBlock;
-		case ImageFormat::Astc10x5UnormBlock:
-			return vk::Format::eAstc10x5UnormBlock;
-		case ImageFormat::Astc10x5SrgbBlock:
-			return vk::Format::eAstc10x5SrgbBlock;
-		case ImageFormat::Astc10x6UnormBlock:
-			return vk::Format::eAstc10x6UnormBlock;
-		case ImageFormat::Astc10x6SrgbBlock:
-			return vk::Format::eAstc10x6SrgbBlock;
-		case ImageFormat::Astc10x8UnormBlock:
-			return vk::Format::eAstc10x8UnormBlock;
-		case ImageFormat::Astc10x8SrgbBlock:
-			return vk::Format::eAstc10x8SrgbBlock;
-		case ImageFormat::Astc10x10UnormBlock:
-			return vk::Format::eAstc10x10UnormBlock;
-		case ImageFormat::Astc10x10SrgbBlock:
-			return vk::Format::eAstc10x10SrgbBlock;
-		case ImageFormat::Astc12x10UnormBlock:
-			return vk::Format::eAstc12x10UnormBlock;
-		case ImageFormat::Astc12x10SrgbBlock:
-			return vk::Format::eAstc12x10SrgbBlock;
-		case ImageFormat::Astc12x12UnormBlock:
-			return vk::Format::eAstc12x12UnormBlock;
-		case ImageFormat::Astc12x12SrgbBlock:
-			return vk::Format::eAstc12x12SrgbBlock;
-		case ImageFormat::G8B8G8R8422Unorm:
-			return vk::Format::eG8B8G8R8422Unorm;
-		case ImageFormat::B8G8R8G8422Unorm:
-			return vk::Format::eB8G8R8G8422Unorm;
-		case ImageFormat::G8B8R83Plane420Unorm:
-			return vk::Format::eG8B8R83Plane420Unorm;
-		case ImageFormat::G8B8R82Plane420Unorm:
-			return vk::Format::eG8B8R82Plane420Unorm;
-		case ImageFormat::G8B8R83Plane422Unorm:
-			return vk::Format::eG8B8R83Plane422Unorm;
-		case ImageFormat::G8B8R82Plane422Unorm:
-			return vk::Format::eG8B8R82Plane422Unorm;
-		case ImageFormat::G8B8R83Plane444Unorm:
-			return vk::Format::eG8B8R83Plane444Unorm;
-		case ImageFormat::R10X6UnormPack16:
-			return vk::Format::eR10X6UnormPack16;
-		case ImageFormat::R10X6G10X6Unorm2Pack16:
-			return vk::Format::eR10X6G10X6Unorm2Pack16;
-		case ImageFormat::R10X6G10X6B10X6A10X6Unorm4Pack16:
-			return vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16;
-		case ImageFormat::G10X6B10X6G10X6R10X6422Unorm4Pack16:
-			return vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16;
-		case ImageFormat::B10X6G10X6R10X6G10X6422Unorm4Pack16:
-			return vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16;
-		case ImageFormat::G10X6B10X6R10X63Plane420Unorm3Pack16:
-			return vk::Format::eG10X6B10X6R10X63Plane420Unorm3Pack16;
-		case ImageFormat::G10X6B10X6R10X62Plane420Unorm3Pack16:
-			return vk::Format::eG10X6B10X6R10X62Plane420Unorm3Pack16;
-		case ImageFormat::G10X6B10X6R10X63Plane422Unorm3Pack16:
-			return vk::Format::eG10X6B10X6R10X63Plane422Unorm3Pack16;
-		case ImageFormat::G10X6B10X6R10X62Plane422Unorm3Pack16:
-			return vk::Format::eG10X6B10X6R10X62Plane422Unorm3Pack16;
-		case ImageFormat::G10X6B10X6R10X63Plane444Unorm3Pack16:
-			return vk::Format::eG10X6B10X6R10X63Plane444Unorm3Pack16;
-		case ImageFormat::R12X4UnormPack16:
-			return vk::Format::eR12X4UnormPack16;
-		case ImageFormat::R12X4G12X4Unorm2Pack16:
-			return vk::Format::eR12X4G12X4Unorm2Pack16;
-		case ImageFormat::R12X4G12X4B12X4A12X4Unorm4Pack16:
-			return vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16;
-		case ImageFormat::G12X4B12X4G12X4R12X4422Unorm4Pack16:
-			return vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16;
-		case ImageFormat::B12X4G12X4R12X4G12X4422Unorm4Pack16:
-			return vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16;
-		case ImageFormat::G12X4B12X4R12X43Plane420Unorm3Pack16:
-			return vk::Format::eG12X4B12X4R12X43Plane420Unorm3Pack16;
-		case ImageFormat::G12X4B12X4R12X42Plane420Unorm3Pack16:
-			return vk::Format::eG12X4B12X4R12X42Plane420Unorm3Pack16;
-		case ImageFormat::G12X4B12X4R12X43Plane422Unorm3Pack16:
-			return vk::Format::eG12X4B12X4R12X43Plane422Unorm3Pack16;
-		case ImageFormat::G12X4B12X4R12X42Plane422Unorm3Pack16:
-			return vk::Format::eG12X4B12X4R12X42Plane422Unorm3Pack16;
-		case ImageFormat::G12X4B12X4R12X43Plane444Unorm3Pack16:
-			return vk::Format::eG12X4B12X4R12X43Plane444Unorm3Pack16;
-		case ImageFormat::G16B16G16R16422Unorm:
-			return vk::Format::eG16B16G16R16422Unorm;
-		case ImageFormat::B16G16R16G16422Unorm:
-			return vk::Format::eB16G16R16G16422Unorm;
-		case ImageFormat::G16B16R163Plane420Unorm:
-			return vk::Format::eG16B16R163Plane420Unorm;
-		case ImageFormat::G16B16R162Plane420Unorm:
-			return vk::Format::eG16B16R162Plane420Unorm;
-		case ImageFormat::G16B16R163Plane422Unorm:
-			return vk::Format::eG16B16R163Plane422Unorm;
-		case ImageFormat::G16B16R162Plane422Unorm:
-			return vk::Format::eG16B16R162Plane422Unorm;
-		case ImageFormat::G16B16R163Plane444Unorm:
-			return vk::Format::eG16B16R163Plane444Unorm;
-		case ImageFormat::G8B8R82Plane444Unorm:
-			return vk::Format::eG8B8R82Plane444Unorm;
-		case ImageFormat::G10X6B10X6R10X62Plane444Unorm3Pack16:
-			return vk::Format::eG10X6B10X6R10X62Plane444Unorm3Pack16;
-		case ImageFormat::G12X4B12X4R12X42Plane444Unorm3Pack16:
-			return vk::Format::eG12X4B12X4R12X42Plane444Unorm3Pack16;
-		case ImageFormat::G16B16R162Plane444Unorm:
-			return vk::Format::eG16B16R162Plane444Unorm;
-		case ImageFormat::A4R4G4B4UnormPack16:
-			return vk::Format::eA4R4G4B4UnormPack16;
-		case ImageFormat::A4B4G4R4UnormPack16:
-			return vk::Format::eA4B4G4R4UnormPack16;
-		case ImageFormat::Astc4x4SfloatBlock:
-			return vk::Format::eAstc4x4SfloatBlock;
-		case ImageFormat::Astc5x4SfloatBlock:
-			return vk::Format::eAstc5x4SfloatBlock;
-		case ImageFormat::Astc5x5SfloatBlock:
-			return vk::Format::eAstc5x5SfloatBlock;
-		case ImageFormat::Astc6x5SfloatBlock:
-			return vk::Format::eAstc6x5SfloatBlock;
-		case ImageFormat::Astc6x6SfloatBlock:
-			return vk::Format::eAstc6x6SfloatBlock;
-		case ImageFormat::Astc8x5SfloatBlock:
-			return vk::Format::eAstc8x5SfloatBlock;
-		case ImageFormat::Astc8x6SfloatBlock:
-			return vk::Format::eAstc8x6SfloatBlock;
-		case ImageFormat::Astc8x8SfloatBlock:
-			return vk::Format::eAstc8x8SfloatBlock;
-		case ImageFormat::Astc10x5SfloatBlock:
-			return vk::Format::eAstc10x5SfloatBlock;
-		case ImageFormat::Astc10x6SfloatBlock:
-			return vk::Format::eAstc10x6SfloatBlock;
-		case ImageFormat::Astc10x8SfloatBlock:
-			return vk::Format::eAstc10x8SfloatBlock;
-		case ImageFormat::Astc10x10SfloatBlock:
-			return vk::Format::eAstc10x10SfloatBlock;
-		case ImageFormat::Astc12x10SfloatBlock:
-			return vk::Format::eAstc12x10SfloatBlock;
-		case ImageFormat::Astc12x12SfloatBlock:
-			return vk::Format::eAstc12x12SfloatBlock;
-		case ImageFormat::Pvrtc12BppUnormBlockIMG:
-			return vk::Format::ePvrtc12BppUnormBlockIMG;
-		case ImageFormat::Pvrtc14BppUnormBlockIMG:
-			return vk::Format::ePvrtc14BppUnormBlockIMG;
-		case ImageFormat::Pvrtc22BppUnormBlockIMG:
-			return vk::Format::ePvrtc22BppUnormBlockIMG;
-		case ImageFormat::Pvrtc24BppUnormBlockIMG:
-			return vk::Format::ePvrtc24BppUnormBlockIMG;
-		case ImageFormat::Pvrtc12BppSrgbBlockIMG:
-			return vk::Format::ePvrtc12BppSrgbBlockIMG;
-		case ImageFormat::Pvrtc14BppSrgbBlockIMG:
-			return vk::Format::ePvrtc14BppSrgbBlockIMG;
-		case ImageFormat::Pvrtc22BppSrgbBlockIMG:
-			return vk::Format::ePvrtc22BppSrgbBlockIMG;
-		case ImageFormat::Pvrtc24BppSrgbBlockIMG:
-			return vk::Format::ePvrtc24BppSrgbBlockIMG;
-		case ImageFormat::Astc4x4SfloatBlockEXT:
-			return vk::Format::eAstc4x4SfloatBlockEXT;
-		case ImageFormat::Astc5x4SfloatBlockEXT:
-			return vk::Format::eAstc5x4SfloatBlockEXT;
-		case ImageFormat::Astc5x5SfloatBlockEXT:
-			return vk::Format::eAstc5x5SfloatBlockEXT;
-		case ImageFormat::Astc6x5SfloatBlockEXT:
-			return vk::Format::eAstc6x5SfloatBlockEXT;
-		case ImageFormat::Astc6x6SfloatBlockEXT:
-			return vk::Format::eAstc6x6SfloatBlockEXT;
-		case ImageFormat::Astc8x5SfloatBlockEXT:
-			return vk::Format::eAstc8x5SfloatBlockEXT;
-		case ImageFormat::Astc8x6SfloatBlockEXT:
-			return vk::Format::eAstc8x6SfloatBlockEXT;
-		case ImageFormat::Astc8x8SfloatBlockEXT:
-			return vk::Format::eAstc8x8SfloatBlockEXT;
-		case ImageFormat::Astc10x5SfloatBlockEXT:
-			return vk::Format::eAstc10x5SfloatBlockEXT;
-		case ImageFormat::Astc10x6SfloatBlockEXT:
-			return vk::Format::eAstc10x6SfloatBlockEXT;
-		case ImageFormat::Astc10x8SfloatBlockEXT:
-			return vk::Format::eAstc10x8SfloatBlockEXT;
-		case ImageFormat::Astc10x10SfloatBlockEXT:
-			return vk::Format::eAstc10x10SfloatBlockEXT;
-		case ImageFormat::Astc12x10SfloatBlockEXT:
-			return vk::Format::eAstc12x10SfloatBlockEXT;
-		case ImageFormat::Astc12x12SfloatBlockEXT:
-			return vk::Format::eAstc12x12SfloatBlockEXT;
-		case ImageFormat::G8B8G8R8422UnormKHR:
-			return vk::Format::eG8B8G8R8422UnormKHR;
-		case ImageFormat::B8G8R8G8422UnormKHR:
-			return vk::Format::eB8G8R8G8422UnormKHR;
-		case ImageFormat::G8B8R83Plane420UnormKHR:
-			return vk::Format::eG8B8R83Plane420UnormKHR;
-		case ImageFormat::G8B8R82Plane420UnormKHR:
-			return vk::Format::eG8B8R82Plane420UnormKHR;
-		case ImageFormat::G8B8R83Plane422UnormKHR:
-			return vk::Format::eG8B8R83Plane422UnormKHR;
-		case ImageFormat::G8B8R82Plane422UnormKHR:
-			return vk::Format::eG8B8R82Plane422UnormKHR;
-		case ImageFormat::G8B8R83Plane444UnormKHR:
-			return vk::Format::eG8B8R83Plane444UnormKHR;
-		case ImageFormat::R10X6UnormPack16KHR:
-			return vk::Format::eR10X6UnormPack16KHR;
-		case ImageFormat::R10X6G10X6Unorm2Pack16KHR:
-			return vk::Format::eR10X6G10X6Unorm2Pack16KHR;
-		case ImageFormat::R10X6G10X6B10X6A10X6Unorm4Pack16KHR:
-			return vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16KHR;
-		case ImageFormat::G10X6B10X6G10X6R10X6422Unorm4Pack16KHR:
-			return vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16KHR;
-		case ImageFormat::B10X6G10X6R10X6G10X6422Unorm4Pack16KHR:
-			return vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16KHR;
-		case ImageFormat::G10X6B10X6R10X63Plane420Unorm3Pack16KHR:
-			return vk::Format::eG10X6B10X6R10X63Plane420Unorm3Pack16KHR;
-		case ImageFormat::G10X6B10X6R10X62Plane420Unorm3Pack16KHR:
-			return vk::Format::eG10X6B10X6R10X62Plane420Unorm3Pack16KHR;
-		case ImageFormat::G10X6B10X6R10X63Plane422Unorm3Pack16KHR:
-			return vk::Format::eG10X6B10X6R10X63Plane422Unorm3Pack16KHR;
-		case ImageFormat::G10X6B10X6R10X62Plane422Unorm3Pack16KHR:
-			return vk::Format::eG10X6B10X6R10X62Plane422Unorm3Pack16KHR;
-		case ImageFormat::G10X6B10X6R10X63Plane444Unorm3Pack16KHR:
-			return vk::Format::eG10X6B10X6R10X63Plane444Unorm3Pack16KHR;
-		case ImageFormat::R12X4UnormPack16KHR:
-			return vk::Format::eR12X4UnormPack16KHR;
-		case ImageFormat::R12X4G12X4Unorm2Pack16KHR:
-			return vk::Format::eR12X4G12X4Unorm2Pack16KHR;
-		case ImageFormat::R12X4G12X4B12X4A12X4Unorm4Pack16KHR:
-			return vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16KHR;
-		case ImageFormat::G12X4B12X4G12X4R12X4422Unorm4Pack16KHR:
-			return vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16KHR;
-		case ImageFormat::B12X4G12X4R12X4G12X4422Unorm4Pack16KHR:
-			return vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16KHR;
-		case ImageFormat::G12X4B12X4R12X43Plane420Unorm3Pack16KHR:
-			return vk::Format::eG12X4B12X4R12X43Plane420Unorm3Pack16KHR;
-		case ImageFormat::G12X4B12X4R12X42Plane420Unorm3Pack16KHR:
-			return vk::Format::eG12X4B12X4R12X42Plane420Unorm3Pack16KHR;
-		case ImageFormat::G12X4B12X4R12X43Plane422Unorm3Pack16KHR:
-			return vk::Format::eG12X4B12X4R12X43Plane422Unorm3Pack16KHR;
-		case ImageFormat::G12X4B12X4R12X42Plane422Unorm3Pack16KHR:
-			return vk::Format::eG12X4B12X4R12X42Plane422Unorm3Pack16KHR;
-		case ImageFormat::G12X4B12X4R12X43Plane444Unorm3Pack16KHR:
-			return vk::Format::eG12X4B12X4R12X43Plane444Unorm3Pack16KHR;
-		case ImageFormat::G16B16G16R16422UnormKHR:
-			return vk::Format::eG16B16G16R16422UnormKHR;
-		case ImageFormat::B16G16R16G16422UnormKHR:
-			return vk::Format::eB16G16R16G16422UnormKHR;
-		case ImageFormat::G16B16R163Plane420UnormKHR:
-			return vk::Format::eG16B16R163Plane420UnormKHR;
-		case ImageFormat::G16B16R162Plane420UnormKHR:
-			return vk::Format::eG16B16R162Plane420UnormKHR;
-		case ImageFormat::G16B16R163Plane422UnormKHR:
-			return vk::Format::eG16B16R163Plane422UnormKHR;
-		case ImageFormat::G16B16R162Plane422UnormKHR:
-			return vk::Format::eG16B16R162Plane422UnormKHR;
-		case ImageFormat::G16B16R163Plane444UnormKHR:
-			return vk::Format::eG16B16R163Plane444UnormKHR;
-		case ImageFormat::G8B8R82Plane444UnormEXT:
-			return vk::Format::eG8B8R82Plane444UnormEXT;
-		case ImageFormat::G10X6B10X6R10X62Plane444Unorm3Pack16EXT:
-			return vk::Format::eG10X6B10X6R10X62Plane444Unorm3Pack16EXT;
-		case ImageFormat::G12X4B12X4R12X42Plane444Unorm3Pack16EXT:
-			return vk::Format::eG12X4B12X4R12X42Plane444Unorm3Pack16EXT;
-		case ImageFormat::G16B16R162Plane444UnormEXT:
-			return vk::Format::eG16B16R162Plane444UnormEXT;
-		case ImageFormat::A4R4G4B4UnormPack16EXT:
-			return vk::Format::eA4R4G4B4UnormPack16EXT;
-		case ImageFormat::A4B4G4R4UnormPack16EXT:
-			return vk::Format::eA4B4G4R4UnormPack16EXT;
-		case ImageFormat::R16G16S105NV:
-			return vk::Format::eR16G16S105NV;
-		case ImageFormat::A1B5G5R5UnormPack16KHR:
-			return vk::Format::eA1B5G5R5UnormPack16KHR;
-		case ImageFormat::A8UnormKHR:
-			return vk::Format::eA8UnormKHR;
-		}
+        static vk::Format ConvertImageFormat( const ImageFormat &imageFormat )
+        {
+            switch ( imageFormat )
+            {
+            case ImageFormat::Undefined:
+                return vk::Format::eUndefined;
+            case ImageFormat::R4G4UnormPack8:
+                return vk::Format::eR4G4UnormPack8;
+            case ImageFormat::R4G4B4A4UnormPack16:
+                return vk::Format::eR4G4B4A4UnormPack16;
+            case ImageFormat::B4G4R4A4UnormPack16:
+                return vk::Format::eB4G4R4A4UnormPack16;
+            case ImageFormat::R5G6B5UnormPack16:
+                return vk::Format::eR5G6B5UnormPack16;
+            case ImageFormat::B5G6R5UnormPack16:
+                return vk::Format::eB5G6R5UnormPack16;
+            case ImageFormat::R5G5B5A1UnormPack16:
+                return vk::Format::eR5G5B5A1UnormPack16;
+            case ImageFormat::B5G5R5A1UnormPack16:
+                return vk::Format::eB5G5R5A1UnormPack16;
+            case ImageFormat::A1R5G5B5UnormPack16:
+                return vk::Format::eA1R5G5B5UnormPack16;
+            case ImageFormat::R8Unorm:
+                return vk::Format::eR8Unorm;
+            case ImageFormat::R8Snorm:
+                return vk::Format::eR8Snorm;
+            case ImageFormat::R8Uscaled:
+                return vk::Format::eR8Uscaled;
+            case ImageFormat::R8Sscaled:
+                return vk::Format::eR8Sscaled;
+            case ImageFormat::R8Uint:
+                return vk::Format::eR8Uint;
+            case ImageFormat::R8Sint:
+                return vk::Format::eR8Sint;
+            case ImageFormat::R8Srgb:
+                return vk::Format::eR8Srgb;
+            case ImageFormat::R8G8Unorm:
+                return vk::Format::eR8G8Unorm;
+            case ImageFormat::R8G8Snorm:
+                return vk::Format::eR8G8Snorm;
+            case ImageFormat::R8G8Uscaled:
+                return vk::Format::eR8G8Uscaled;
+            case ImageFormat::R8G8Sscaled:
+                return vk::Format::eR8G8Sscaled;
+            case ImageFormat::R8G8Uint:
+                return vk::Format::eR8G8Uint;
+            case ImageFormat::R8G8Sint:
+                return vk::Format::eR8G8Sint;
+            case ImageFormat::R8G8Srgb:
+                return vk::Format::eR8G8Srgb;
+            case ImageFormat::R8G8B8Unorm:
+                return vk::Format::eR8G8B8Unorm;
+            case ImageFormat::R8G8B8Snorm:
+                return vk::Format::eR8G8B8Snorm;
+            case ImageFormat::R8G8B8Uscaled:
+                return vk::Format::eR8G8B8Uscaled;
+            case ImageFormat::R8G8B8Sscaled:
+                return vk::Format::eR8G8B8Sscaled;
+            case ImageFormat::R8G8B8Uint:
+                return vk::Format::eR8G8B8Uint;
+            case ImageFormat::R8G8B8Sint:
+                return vk::Format::eR8G8B8Sint;
+            case ImageFormat::R8G8B8Srgb:
+                return vk::Format::eR8G8B8Srgb;
+            case ImageFormat::B8G8R8Unorm:
+                return vk::Format::eB8G8R8Unorm;
+            case ImageFormat::B8G8R8Snorm:
+                return vk::Format::eB8G8R8Snorm;
+            case ImageFormat::B8G8R8Uscaled:
+                return vk::Format::eB8G8R8Uscaled;
+            case ImageFormat::B8G8R8Sscaled:
+                return vk::Format::eB8G8R8Sscaled;
+            case ImageFormat::B8G8R8Uint:
+                return vk::Format::eB8G8R8Uint;
+            case ImageFormat::B8G8R8Sint:
+                return vk::Format::eB8G8R8Sint;
+            case ImageFormat::B8G8R8Srgb:
+                return vk::Format::eB8G8R8Srgb;
+            case ImageFormat::R8G8B8A8Unorm:
+                return vk::Format::eR8G8B8A8Unorm;
+            case ImageFormat::R8G8B8A8Snorm:
+                return vk::Format::eR8G8B8A8Snorm;
+            case ImageFormat::R8G8B8A8Uscaled:
+                return vk::Format::eR8G8B8A8Uscaled;
+            case ImageFormat::R8G8B8A8Sscaled:
+                return vk::Format::eR8G8B8A8Sscaled;
+            case ImageFormat::R8G8B8A8Uint:
+                return vk::Format::eR8G8B8A8Uint;
+            case ImageFormat::R8G8B8A8Sint:
+                return vk::Format::eR8G8B8A8Sint;
+            case ImageFormat::R8G8B8A8Srgb:
+                return vk::Format::eR8G8B8A8Srgb;
+            case ImageFormat::B8G8R8A8Unorm:
+                return vk::Format::eB8G8R8A8Unorm;
+            case ImageFormat::B8G8R8A8Snorm:
+                return vk::Format::eB8G8R8A8Snorm;
+            case ImageFormat::B8G8R8A8Uscaled:
+                return vk::Format::eB8G8R8A8Uscaled;
+            case ImageFormat::B8G8R8A8Sscaled:
+                return vk::Format::eB8G8R8A8Sscaled;
+            case ImageFormat::B8G8R8A8Uint:
+                return vk::Format::eB8G8R8A8Uint;
+            case ImageFormat::B8G8R8A8Sint:
+                return vk::Format::eB8G8R8A8Sint;
+            case ImageFormat::B8G8R8A8Srgb:
+                return vk::Format::eB8G8R8A8Srgb;
+            case ImageFormat::A8B8G8R8UnormPack32:
+                return vk::Format::eA8B8G8R8UnormPack32;
+            case ImageFormat::A8B8G8R8SnormPack32:
+                return vk::Format::eA8B8G8R8SnormPack32;
+            case ImageFormat::A8B8G8R8UscaledPack32:
+                return vk::Format::eA8B8G8R8UscaledPack32;
+            case ImageFormat::A8B8G8R8SscaledPack32:
+                return vk::Format::eA8B8G8R8SscaledPack32;
+            case ImageFormat::A8B8G8R8UintPack32:
+                return vk::Format::eA8B8G8R8UintPack32;
+            case ImageFormat::A8B8G8R8SintPack32:
+                return vk::Format::eA8B8G8R8SintPack32;
+            case ImageFormat::A8B8G8R8SrgbPack32:
+                return vk::Format::eA8B8G8R8SrgbPack32;
+            case ImageFormat::A2R10G10B10UnormPack32:
+                return vk::Format::eA2R10G10B10UnormPack32;
+            case ImageFormat::A2R10G10B10SnormPack32:
+                return vk::Format::eA2R10G10B10SnormPack32;
+            case ImageFormat::A2R10G10B10UscaledPack32:
+                return vk::Format::eA2R10G10B10UscaledPack32;
+            case ImageFormat::A2R10G10B10SscaledPack32:
+                return vk::Format::eA2R10G10B10SscaledPack32;
+            case ImageFormat::A2R10G10B10UintPack32:
+                return vk::Format::eA2R10G10B10UintPack32;
+            case ImageFormat::A2R10G10B10SintPack32:
+                return vk::Format::eA2R10G10B10SintPack32;
+            case ImageFormat::A2B10G10R10UnormPack32:
+                return vk::Format::eA2B10G10R10UnormPack32;
+            case ImageFormat::A2B10G10R10SnormPack32:
+                return vk::Format::eA2B10G10R10SnormPack32;
+            case ImageFormat::A2B10G10R10UscaledPack32:
+                return vk::Format::eA2B10G10R10UscaledPack32;
+            case ImageFormat::A2B10G10R10SscaledPack32:
+                return vk::Format::eA2B10G10R10SscaledPack32;
+            case ImageFormat::A2B10G10R10UintPack32:
+                return vk::Format::eA2B10G10R10UintPack32;
+            case ImageFormat::A2B10G10R10SintPack32:
+                return vk::Format::eA2B10G10R10SintPack32;
+            case ImageFormat::R16Unorm:
+                return vk::Format::eR16Unorm;
+            case ImageFormat::R16Snorm:
+                return vk::Format::eR16Snorm;
+            case ImageFormat::R16Uscaled:
+                return vk::Format::eR16Uscaled;
+            case ImageFormat::R16Sscaled:
+                return vk::Format::eR16Sscaled;
+            case ImageFormat::R16Uint:
+                return vk::Format::eR16Uint;
+            case ImageFormat::R16Sint:
+                return vk::Format::eR16Sint;
+            case ImageFormat::R16Sfloat:
+                return vk::Format::eR16Sfloat;
+            case ImageFormat::R16G16Unorm:
+                return vk::Format::eR16G16Unorm;
+            case ImageFormat::R16G16Snorm:
+                return vk::Format::eR16G16Snorm;
+            case ImageFormat::R16G16Uscaled:
+                return vk::Format::eR16G16Uscaled;
+            case ImageFormat::R16G16Sscaled:
+                return vk::Format::eR16G16Sscaled;
+            case ImageFormat::R16G16Uint:
+                return vk::Format::eR16G16Uint;
+            case ImageFormat::R16G16Sint:
+                return vk::Format::eR16G16Sint;
+            case ImageFormat::R16G16Sfloat:
+                return vk::Format::eR16G16Sfloat;
+            case ImageFormat::R16G16B16Unorm:
+                return vk::Format::eR16G16B16Unorm;
+            case ImageFormat::R16G16B16Snorm:
+                return vk::Format::eR16G16B16Snorm;
+            case ImageFormat::R16G16B16Uscaled:
+                return vk::Format::eR16G16B16Uscaled;
+            case ImageFormat::R16G16B16Sscaled:
+                return vk::Format::eR16G16B16Sscaled;
+            case ImageFormat::R16G16B16Uint:
+                return vk::Format::eR16G16B16Uint;
+            case ImageFormat::R16G16B16Sint:
+                return vk::Format::eR16G16B16Sint;
+            case ImageFormat::R16G16B16Sfloat:
+                return vk::Format::eR16G16B16Sfloat;
+            case ImageFormat::R16G16B16A16Unorm:
+                return vk::Format::eR16G16B16A16Unorm;
+            case ImageFormat::R16G16B16A16Snorm:
+                return vk::Format::eR16G16B16A16Snorm;
+            case ImageFormat::R16G16B16A16Uscaled:
+                return vk::Format::eR16G16B16A16Uscaled;
+            case ImageFormat::R16G16B16A16Sscaled:
+                return vk::Format::eR16G16B16A16Sscaled;
+            case ImageFormat::R16G16B16A16Uint:
+                return vk::Format::eR16G16B16A16Uint;
+            case ImageFormat::R16G16B16A16Sint:
+                return vk::Format::eR16G16B16A16Sint;
+            case ImageFormat::R16G16B16A16Sfloat:
+                return vk::Format::eR16G16B16A16Sfloat;
+            case ImageFormat::R32Uint:
+                return vk::Format::eR32Uint;
+            case ImageFormat::R32Sint:
+                return vk::Format::eR32Sint;
+            case ImageFormat::R32Sfloat:
+                return vk::Format::eR32Sfloat;
+            case ImageFormat::R32G32Uint:
+                return vk::Format::eR32G32Uint;
+            case ImageFormat::R32G32Sint:
+                return vk::Format::eR32G32Sint;
+            case ImageFormat::R32G32Sfloat:
+                return vk::Format::eR32G32Sfloat;
+            case ImageFormat::R32G32B32Uint:
+                return vk::Format::eR32G32B32Uint;
+            case ImageFormat::R32G32B32Sint:
+                return vk::Format::eR32G32B32Sint;
+            case ImageFormat::R32G32B32Sfloat:
+                return vk::Format::eR32G32B32Sfloat;
+            case ImageFormat::R32G32B32A32Uint:
+                return vk::Format::eR32G32B32A32Uint;
+            case ImageFormat::R32G32B32A32Sint:
+                return vk::Format::eR32G32B32A32Sint;
+            case ImageFormat::R32G32B32A32Sfloat:
+                return vk::Format::eR32G32B32A32Sfloat;
+            case ImageFormat::R64Uint:
+                return vk::Format::eR64Uint;
+            case ImageFormat::R64Sint:
+                return vk::Format::eR64Sint;
+            case ImageFormat::R64Sfloat:
+                return vk::Format::eR64Sfloat;
+            case ImageFormat::R64G64Uint:
+                return vk::Format::eR64G64Uint;
+            case ImageFormat::R64G64Sint:
+                return vk::Format::eR64G64Sint;
+            case ImageFormat::R64G64Sfloat:
+                return vk::Format::eR64G64Sfloat;
+            case ImageFormat::R64G64B64Uint:
+                return vk::Format::eR64G64B64Uint;
+            case ImageFormat::R64G64B64Sint:
+                return vk::Format::eR64G64B64Sint;
+            case ImageFormat::R64G64B64Sfloat:
+                return vk::Format::eR64G64B64Sfloat;
+            case ImageFormat::R64G64B64A64Uint:
+                return vk::Format::eR64G64B64A64Uint;
+            case ImageFormat::R64G64B64A64Sint:
+                return vk::Format::eR64G64B64A64Sint;
+            case ImageFormat::R64G64B64A64Sfloat:
+                return vk::Format::eR64G64B64A64Sfloat;
+            case ImageFormat::B10G11R11UfloatPack32:
+                return vk::Format::eB10G11R11UfloatPack32;
+            case ImageFormat::E5B9G9R9UfloatPack32:
+                return vk::Format::eE5B9G9R9UfloatPack32;
+            case ImageFormat::D16Unorm:
+                return vk::Format::eD16Unorm;
+            case ImageFormat::X8D24UnormPack32:
+                return vk::Format::eX8D24UnormPack32;
+            case ImageFormat::D32Sfloat:
+                return vk::Format::eD32Sfloat;
+            case ImageFormat::S8Uint:
+                return vk::Format::eS8Uint;
+            case ImageFormat::D16UnormS8Uint:
+                return vk::Format::eD16UnormS8Uint;
+            case ImageFormat::D24UnormS8Uint:
+                return vk::Format::eD24UnormS8Uint;
+            case ImageFormat::D32SfloatS8Uint:
+                return vk::Format::eD32SfloatS8Uint;
+            case ImageFormat::Bc1RgbUnormBlock:
+                return vk::Format::eBc1RgbUnormBlock;
+            case ImageFormat::Bc1RgbSrgbBlock:
+                return vk::Format::eBc1RgbSrgbBlock;
+            case ImageFormat::Bc1RgbaUnormBlock:
+                return vk::Format::eBc1RgbaUnormBlock;
+            case ImageFormat::Bc1RgbaSrgbBlock:
+                return vk::Format::eBc1RgbaSrgbBlock;
+            case ImageFormat::Bc2UnormBlock:
+                return vk::Format::eBc2UnormBlock;
+            case ImageFormat::Bc2SrgbBlock:
+                return vk::Format::eBc2SrgbBlock;
+            case ImageFormat::Bc3UnormBlock:
+                return vk::Format::eBc3UnormBlock;
+            case ImageFormat::Bc3SrgbBlock:
+                return vk::Format::eBc3SrgbBlock;
+            case ImageFormat::Bc4UnormBlock:
+                return vk::Format::eBc4UnormBlock;
+            case ImageFormat::Bc4SnormBlock:
+                return vk::Format::eBc4SnormBlock;
+            case ImageFormat::Bc5UnormBlock:
+                return vk::Format::eBc5UnormBlock;
+            case ImageFormat::Bc5SnormBlock:
+                return vk::Format::eBc5SnormBlock;
+            case ImageFormat::Bc6HUfloatBlock:
+                return vk::Format::eBc6HUfloatBlock;
+            case ImageFormat::Bc6HSfloatBlock:
+                return vk::Format::eBc6HSfloatBlock;
+            case ImageFormat::Bc7UnormBlock:
+                return vk::Format::eBc7UnormBlock;
+            case ImageFormat::Bc7SrgbBlock:
+                return vk::Format::eBc7SrgbBlock;
+            case ImageFormat::Etc2R8G8B8UnormBlock:
+                return vk::Format::eEtc2R8G8B8UnormBlock;
+            case ImageFormat::Etc2R8G8B8SrgbBlock:
+                return vk::Format::eEtc2R8G8B8SrgbBlock;
+            case ImageFormat::Etc2R8G8B8A1UnormBlock:
+                return vk::Format::eEtc2R8G8B8A1UnormBlock;
+            case ImageFormat::Etc2R8G8B8A1SrgbBlock:
+                return vk::Format::eEtc2R8G8B8A1SrgbBlock;
+            case ImageFormat::Etc2R8G8B8A8UnormBlock:
+                return vk::Format::eEtc2R8G8B8A8UnormBlock;
+            case ImageFormat::Etc2R8G8B8A8SrgbBlock:
+                return vk::Format::eEtc2R8G8B8A8SrgbBlock;
+            case ImageFormat::EacR11UnormBlock:
+                return vk::Format::eEacR11UnormBlock;
+            case ImageFormat::EacR11SnormBlock:
+                return vk::Format::eEacR11SnormBlock;
+            case ImageFormat::EacR11G11UnormBlock:
+                return vk::Format::eEacR11G11UnormBlock;
+            case ImageFormat::EacR11G11SnormBlock:
+                return vk::Format::eEacR11G11SnormBlock;
+            case ImageFormat::Astc4x4UnormBlock:
+                return vk::Format::eAstc4x4UnormBlock;
+            case ImageFormat::Astc4x4SrgbBlock:
+                return vk::Format::eAstc4x4SrgbBlock;
+            case ImageFormat::Astc5x4UnormBlock:
+                return vk::Format::eAstc5x4UnormBlock;
+            case ImageFormat::Astc5x4SrgbBlock:
+                return vk::Format::eAstc5x4SrgbBlock;
+            case ImageFormat::Astc5x5UnormBlock:
+                return vk::Format::eAstc5x5UnormBlock;
+            case ImageFormat::Astc5x5SrgbBlock:
+                return vk::Format::eAstc5x5SrgbBlock;
+            case ImageFormat::Astc6x5UnormBlock:
+                return vk::Format::eAstc6x5UnormBlock;
+            case ImageFormat::Astc6x5SrgbBlock:
+                return vk::Format::eAstc6x5SrgbBlock;
+            case ImageFormat::Astc6x6UnormBlock:
+                return vk::Format::eAstc6x6UnormBlock;
+            case ImageFormat::Astc6x6SrgbBlock:
+                return vk::Format::eAstc6x6SrgbBlock;
+            case ImageFormat::Astc8x5UnormBlock:
+                return vk::Format::eAstc8x5UnormBlock;
+            case ImageFormat::Astc8x5SrgbBlock:
+                return vk::Format::eAstc8x5SrgbBlock;
+            case ImageFormat::Astc8x6UnormBlock:
+                return vk::Format::eAstc8x6UnormBlock;
+            case ImageFormat::Astc8x6SrgbBlock:
+                return vk::Format::eAstc8x6SrgbBlock;
+            case ImageFormat::Astc8x8UnormBlock:
+                return vk::Format::eAstc8x8UnormBlock;
+            case ImageFormat::Astc8x8SrgbBlock:
+                return vk::Format::eAstc8x8SrgbBlock;
+            case ImageFormat::Astc10x5UnormBlock:
+                return vk::Format::eAstc10x5UnormBlock;
+            case ImageFormat::Astc10x5SrgbBlock:
+                return vk::Format::eAstc10x5SrgbBlock;
+            case ImageFormat::Astc10x6UnormBlock:
+                return vk::Format::eAstc10x6UnormBlock;
+            case ImageFormat::Astc10x6SrgbBlock:
+                return vk::Format::eAstc10x6SrgbBlock;
+            case ImageFormat::Astc10x8UnormBlock:
+                return vk::Format::eAstc10x8UnormBlock;
+            case ImageFormat::Astc10x8SrgbBlock:
+                return vk::Format::eAstc10x8SrgbBlock;
+            case ImageFormat::Astc10x10UnormBlock:
+                return vk::Format::eAstc10x10UnormBlock;
+            case ImageFormat::Astc10x10SrgbBlock:
+                return vk::Format::eAstc10x10SrgbBlock;
+            case ImageFormat::Astc12x10UnormBlock:
+                return vk::Format::eAstc12x10UnormBlock;
+            case ImageFormat::Astc12x10SrgbBlock:
+                return vk::Format::eAstc12x10SrgbBlock;
+            case ImageFormat::Astc12x12UnormBlock:
+                return vk::Format::eAstc12x12UnormBlock;
+            case ImageFormat::Astc12x12SrgbBlock:
+                return vk::Format::eAstc12x12SrgbBlock;
+            case ImageFormat::G8B8G8R8422Unorm:
+                return vk::Format::eG8B8G8R8422Unorm;
+            case ImageFormat::B8G8R8G8422Unorm:
+                return vk::Format::eB8G8R8G8422Unorm;
+            case ImageFormat::G8B8R83Plane420Unorm:
+                return vk::Format::eG8B8R83Plane420Unorm;
+            case ImageFormat::G8B8R82Plane420Unorm:
+                return vk::Format::eG8B8R82Plane420Unorm;
+            case ImageFormat::G8B8R83Plane422Unorm:
+                return vk::Format::eG8B8R83Plane422Unorm;
+            case ImageFormat::G8B8R82Plane422Unorm:
+                return vk::Format::eG8B8R82Plane422Unorm;
+            case ImageFormat::G8B8R83Plane444Unorm:
+                return vk::Format::eG8B8R83Plane444Unorm;
+            case ImageFormat::R10X6UnormPack16:
+                return vk::Format::eR10X6UnormPack16;
+            case ImageFormat::R10X6G10X6Unorm2Pack16:
+                return vk::Format::eR10X6G10X6Unorm2Pack16;
+            case ImageFormat::R10X6G10X6B10X6A10X6Unorm4Pack16:
+                return vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16;
+            case ImageFormat::G10X6B10X6G10X6R10X6422Unorm4Pack16:
+                return vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16;
+            case ImageFormat::B10X6G10X6R10X6G10X6422Unorm4Pack16:
+                return vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16;
+            case ImageFormat::G10X6B10X6R10X63Plane420Unorm3Pack16:
+                return vk::Format::eG10X6B10X6R10X63Plane420Unorm3Pack16;
+            case ImageFormat::G10X6B10X6R10X62Plane420Unorm3Pack16:
+                return vk::Format::eG10X6B10X6R10X62Plane420Unorm3Pack16;
+            case ImageFormat::G10X6B10X6R10X63Plane422Unorm3Pack16:
+                return vk::Format::eG10X6B10X6R10X63Plane422Unorm3Pack16;
+            case ImageFormat::G10X6B10X6R10X62Plane422Unorm3Pack16:
+                return vk::Format::eG10X6B10X6R10X62Plane422Unorm3Pack16;
+            case ImageFormat::G10X6B10X6R10X63Plane444Unorm3Pack16:
+                return vk::Format::eG10X6B10X6R10X63Plane444Unorm3Pack16;
+            case ImageFormat::R12X4UnormPack16:
+                return vk::Format::eR12X4UnormPack16;
+            case ImageFormat::R12X4G12X4Unorm2Pack16:
+                return vk::Format::eR12X4G12X4Unorm2Pack16;
+            case ImageFormat::R12X4G12X4B12X4A12X4Unorm4Pack16:
+                return vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16;
+            case ImageFormat::G12X4B12X4G12X4R12X4422Unorm4Pack16:
+                return vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16;
+            case ImageFormat::B12X4G12X4R12X4G12X4422Unorm4Pack16:
+                return vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16;
+            case ImageFormat::G12X4B12X4R12X43Plane420Unorm3Pack16:
+                return vk::Format::eG12X4B12X4R12X43Plane420Unorm3Pack16;
+            case ImageFormat::G12X4B12X4R12X42Plane420Unorm3Pack16:
+                return vk::Format::eG12X4B12X4R12X42Plane420Unorm3Pack16;
+            case ImageFormat::G12X4B12X4R12X43Plane422Unorm3Pack16:
+                return vk::Format::eG12X4B12X4R12X43Plane422Unorm3Pack16;
+            case ImageFormat::G12X4B12X4R12X42Plane422Unorm3Pack16:
+                return vk::Format::eG12X4B12X4R12X42Plane422Unorm3Pack16;
+            case ImageFormat::G12X4B12X4R12X43Plane444Unorm3Pack16:
+                return vk::Format::eG12X4B12X4R12X43Plane444Unorm3Pack16;
+            case ImageFormat::G16B16G16R16422Unorm:
+                return vk::Format::eG16B16G16R16422Unorm;
+            case ImageFormat::B16G16R16G16422Unorm:
+                return vk::Format::eB16G16R16G16422Unorm;
+            case ImageFormat::G16B16R163Plane420Unorm:
+                return vk::Format::eG16B16R163Plane420Unorm;
+            case ImageFormat::G16B16R162Plane420Unorm:
+                return vk::Format::eG16B16R162Plane420Unorm;
+            case ImageFormat::G16B16R163Plane422Unorm:
+                return vk::Format::eG16B16R163Plane422Unorm;
+            case ImageFormat::G16B16R162Plane422Unorm:
+                return vk::Format::eG16B16R162Plane422Unorm;
+            case ImageFormat::G16B16R163Plane444Unorm:
+                return vk::Format::eG16B16R163Plane444Unorm;
+            case ImageFormat::G8B8R82Plane444Unorm:
+                return vk::Format::eG8B8R82Plane444Unorm;
+            case ImageFormat::G10X6B10X6R10X62Plane444Unorm3Pack16:
+                return vk::Format::eG10X6B10X6R10X62Plane444Unorm3Pack16;
+            case ImageFormat::G12X4B12X4R12X42Plane444Unorm3Pack16:
+                return vk::Format::eG12X4B12X4R12X42Plane444Unorm3Pack16;
+            case ImageFormat::G16B16R162Plane444Unorm:
+                return vk::Format::eG16B16R162Plane444Unorm;
+            case ImageFormat::A4R4G4B4UnormPack16:
+                return vk::Format::eA4R4G4B4UnormPack16;
+            case ImageFormat::A4B4G4R4UnormPack16:
+                return vk::Format::eA4B4G4R4UnormPack16;
+            case ImageFormat::Astc4x4SfloatBlock:
+                return vk::Format::eAstc4x4SfloatBlock;
+            case ImageFormat::Astc5x4SfloatBlock:
+                return vk::Format::eAstc5x4SfloatBlock;
+            case ImageFormat::Astc5x5SfloatBlock:
+                return vk::Format::eAstc5x5SfloatBlock;
+            case ImageFormat::Astc6x5SfloatBlock:
+                return vk::Format::eAstc6x5SfloatBlock;
+            case ImageFormat::Astc6x6SfloatBlock:
+                return vk::Format::eAstc6x6SfloatBlock;
+            case ImageFormat::Astc8x5SfloatBlock:
+                return vk::Format::eAstc8x5SfloatBlock;
+            case ImageFormat::Astc8x6SfloatBlock:
+                return vk::Format::eAstc8x6SfloatBlock;
+            case ImageFormat::Astc8x8SfloatBlock:
+                return vk::Format::eAstc8x8SfloatBlock;
+            case ImageFormat::Astc10x5SfloatBlock:
+                return vk::Format::eAstc10x5SfloatBlock;
+            case ImageFormat::Astc10x6SfloatBlock:
+                return vk::Format::eAstc10x6SfloatBlock;
+            case ImageFormat::Astc10x8SfloatBlock:
+                return vk::Format::eAstc10x8SfloatBlock;
+            case ImageFormat::Astc10x10SfloatBlock:
+                return vk::Format::eAstc10x10SfloatBlock;
+            case ImageFormat::Astc12x10SfloatBlock:
+                return vk::Format::eAstc12x10SfloatBlock;
+            case ImageFormat::Astc12x12SfloatBlock:
+                return vk::Format::eAstc12x12SfloatBlock;
+            case ImageFormat::Pvrtc12BppUnormBlockIMG:
+                return vk::Format::ePvrtc12BppUnormBlockIMG;
+            case ImageFormat::Pvrtc14BppUnormBlockIMG:
+                return vk::Format::ePvrtc14BppUnormBlockIMG;
+            case ImageFormat::Pvrtc22BppUnormBlockIMG:
+                return vk::Format::ePvrtc22BppUnormBlockIMG;
+            case ImageFormat::Pvrtc24BppUnormBlockIMG:
+                return vk::Format::ePvrtc24BppUnormBlockIMG;
+            case ImageFormat::Pvrtc12BppSrgbBlockIMG:
+                return vk::Format::ePvrtc12BppSrgbBlockIMG;
+            case ImageFormat::Pvrtc14BppSrgbBlockIMG:
+                return vk::Format::ePvrtc14BppSrgbBlockIMG;
+            case ImageFormat::Pvrtc22BppSrgbBlockIMG:
+                return vk::Format::ePvrtc22BppSrgbBlockIMG;
+            case ImageFormat::Pvrtc24BppSrgbBlockIMG:
+                return vk::Format::ePvrtc24BppSrgbBlockIMG;
+            case ImageFormat::Astc4x4SfloatBlockEXT:
+                return vk::Format::eAstc4x4SfloatBlockEXT;
+            case ImageFormat::Astc5x4SfloatBlockEXT:
+                return vk::Format::eAstc5x4SfloatBlockEXT;
+            case ImageFormat::Astc5x5SfloatBlockEXT:
+                return vk::Format::eAstc5x5SfloatBlockEXT;
+            case ImageFormat::Astc6x5SfloatBlockEXT:
+                return vk::Format::eAstc6x5SfloatBlockEXT;
+            case ImageFormat::Astc6x6SfloatBlockEXT:
+                return vk::Format::eAstc6x6SfloatBlockEXT;
+            case ImageFormat::Astc8x5SfloatBlockEXT:
+                return vk::Format::eAstc8x5SfloatBlockEXT;
+            case ImageFormat::Astc8x6SfloatBlockEXT:
+                return vk::Format::eAstc8x6SfloatBlockEXT;
+            case ImageFormat::Astc8x8SfloatBlockEXT:
+                return vk::Format::eAstc8x8SfloatBlockEXT;
+            case ImageFormat::Astc10x5SfloatBlockEXT:
+                return vk::Format::eAstc10x5SfloatBlockEXT;
+            case ImageFormat::Astc10x6SfloatBlockEXT:
+                return vk::Format::eAstc10x6SfloatBlockEXT;
+            case ImageFormat::Astc10x8SfloatBlockEXT:
+                return vk::Format::eAstc10x8SfloatBlockEXT;
+            case ImageFormat::Astc10x10SfloatBlockEXT:
+                return vk::Format::eAstc10x10SfloatBlockEXT;
+            case ImageFormat::Astc12x10SfloatBlockEXT:
+                return vk::Format::eAstc12x10SfloatBlockEXT;
+            case ImageFormat::Astc12x12SfloatBlockEXT:
+                return vk::Format::eAstc12x12SfloatBlockEXT;
+            case ImageFormat::G8B8G8R8422UnormKHR:
+                return vk::Format::eG8B8G8R8422UnormKHR;
+            case ImageFormat::B8G8R8G8422UnormKHR:
+                return vk::Format::eB8G8R8G8422UnormKHR;
+            case ImageFormat::G8B8R83Plane420UnormKHR:
+                return vk::Format::eG8B8R83Plane420UnormKHR;
+            case ImageFormat::G8B8R82Plane420UnormKHR:
+                return vk::Format::eG8B8R82Plane420UnormKHR;
+            case ImageFormat::G8B8R83Plane422UnormKHR:
+                return vk::Format::eG8B8R83Plane422UnormKHR;
+            case ImageFormat::G8B8R82Plane422UnormKHR:
+                return vk::Format::eG8B8R82Plane422UnormKHR;
+            case ImageFormat::G8B8R83Plane444UnormKHR:
+                return vk::Format::eG8B8R83Plane444UnormKHR;
+            case ImageFormat::R10X6UnormPack16KHR:
+                return vk::Format::eR10X6UnormPack16KHR;
+            case ImageFormat::R10X6G10X6Unorm2Pack16KHR:
+                return vk::Format::eR10X6G10X6Unorm2Pack16KHR;
+            case ImageFormat::R10X6G10X6B10X6A10X6Unorm4Pack16KHR:
+                return vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16KHR;
+            case ImageFormat::G10X6B10X6G10X6R10X6422Unorm4Pack16KHR:
+                return vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16KHR;
+            case ImageFormat::B10X6G10X6R10X6G10X6422Unorm4Pack16KHR:
+                return vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16KHR;
+            case ImageFormat::G10X6B10X6R10X63Plane420Unorm3Pack16KHR:
+                return vk::Format::eG10X6B10X6R10X63Plane420Unorm3Pack16KHR;
+            case ImageFormat::G10X6B10X6R10X62Plane420Unorm3Pack16KHR:
+                return vk::Format::eG10X6B10X6R10X62Plane420Unorm3Pack16KHR;
+            case ImageFormat::G10X6B10X6R10X63Plane422Unorm3Pack16KHR:
+                return vk::Format::eG10X6B10X6R10X63Plane422Unorm3Pack16KHR;
+            case ImageFormat::G10X6B10X6R10X62Plane422Unorm3Pack16KHR:
+                return vk::Format::eG10X6B10X6R10X62Plane422Unorm3Pack16KHR;
+            case ImageFormat::G10X6B10X6R10X63Plane444Unorm3Pack16KHR:
+                return vk::Format::eG10X6B10X6R10X63Plane444Unorm3Pack16KHR;
+            case ImageFormat::R12X4UnormPack16KHR:
+                return vk::Format::eR12X4UnormPack16KHR;
+            case ImageFormat::R12X4G12X4Unorm2Pack16KHR:
+                return vk::Format::eR12X4G12X4Unorm2Pack16KHR;
+            case ImageFormat::R12X4G12X4B12X4A12X4Unorm4Pack16KHR:
+                return vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16KHR;
+            case ImageFormat::G12X4B12X4G12X4R12X4422Unorm4Pack16KHR:
+                return vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16KHR;
+            case ImageFormat::B12X4G12X4R12X4G12X4422Unorm4Pack16KHR:
+                return vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16KHR;
+            case ImageFormat::G12X4B12X4R12X43Plane420Unorm3Pack16KHR:
+                return vk::Format::eG12X4B12X4R12X43Plane420Unorm3Pack16KHR;
+            case ImageFormat::G12X4B12X4R12X42Plane420Unorm3Pack16KHR:
+                return vk::Format::eG12X4B12X4R12X42Plane420Unorm3Pack16KHR;
+            case ImageFormat::G12X4B12X4R12X43Plane422Unorm3Pack16KHR:
+                return vk::Format::eG12X4B12X4R12X43Plane422Unorm3Pack16KHR;
+            case ImageFormat::G12X4B12X4R12X42Plane422Unorm3Pack16KHR:
+                return vk::Format::eG12X4B12X4R12X42Plane422Unorm3Pack16KHR;
+            case ImageFormat::G12X4B12X4R12X43Plane444Unorm3Pack16KHR:
+                return vk::Format::eG12X4B12X4R12X43Plane444Unorm3Pack16KHR;
+            case ImageFormat::G16B16G16R16422UnormKHR:
+                return vk::Format::eG16B16G16R16422UnormKHR;
+            case ImageFormat::B16G16R16G16422UnormKHR:
+                return vk::Format::eB16G16R16G16422UnormKHR;
+            case ImageFormat::G16B16R163Plane420UnormKHR:
+                return vk::Format::eG16B16R163Plane420UnormKHR;
+            case ImageFormat::G16B16R162Plane420UnormKHR:
+                return vk::Format::eG16B16R162Plane420UnormKHR;
+            case ImageFormat::G16B16R163Plane422UnormKHR:
+                return vk::Format::eG16B16R163Plane422UnormKHR;
+            case ImageFormat::G16B16R162Plane422UnormKHR:
+                return vk::Format::eG16B16R162Plane422UnormKHR;
+            case ImageFormat::G16B16R163Plane444UnormKHR:
+                return vk::Format::eG16B16R163Plane444UnormKHR;
+            case ImageFormat::G8B8R82Plane444UnormEXT:
+                return vk::Format::eG8B8R82Plane444UnormEXT;
+            case ImageFormat::G10X6B10X6R10X62Plane444Unorm3Pack16EXT:
+                return vk::Format::eG10X6B10X6R10X62Plane444Unorm3Pack16EXT;
+            case ImageFormat::G12X4B12X4R12X42Plane444Unorm3Pack16EXT:
+                return vk::Format::eG12X4B12X4R12X42Plane444Unorm3Pack16EXT;
+            case ImageFormat::G16B16R162Plane444UnormEXT:
+                return vk::Format::eG16B16R162Plane444UnormEXT;
+            case ImageFormat::A4R4G4B4UnormPack16EXT:
+                return vk::Format::eA4R4G4B4UnormPack16EXT;
+            case ImageFormat::A4B4G4R4UnormPack16EXT:
+                return vk::Format::eA4B4G4R4UnormPack16EXT;
+            case ImageFormat::R16G16S105NV:
+                return vk::Format::eR16G16S105NV;
+            case ImageFormat::A1B5G5R5UnormPack16KHR:
+                return vk::Format::eA1B5G5R5UnormPack16KHR;
+            case ImageFormat::A8UnormKHR:
+                return vk::Format::eA8UnormKHR;
+            }
 
-		return vk::Format::eUndefined;
-	}
+            return vk::Format::eUndefined;
+        }
 
-	static inline vk::ImageLayout GetImageVkLayout(const RenderTargetType& targetType)
-	{
-		switch (targetType)
-		{
-		case RenderTargetType::Color:
-			return vk::ImageLayout::eColorAttachmentOptimal;
-		case RenderTargetType::Depth:
-			return vk::ImageLayout::eDepthAttachmentOptimal;
-		case RenderTargetType::Stencil:
-			return vk::ImageLayout::eStencilAttachmentOptimal;
-		case RenderTargetType::DepthAndStencil:
-			return vk::ImageLayout::eDepthStencilAttachmentOptimal;
-		}
+        static vk::ImageLayout GetImageVkLayout( const RenderTargetType &targetType )
+        {
+            switch ( targetType )
+            {
+            case RenderTargetType::Color:
+                return vk::ImageLayout::eColorAttachmentOptimal;
+            case RenderTargetType::Depth:
+                return vk::ImageLayout::eDepthAttachmentOptimal;
+            case RenderTargetType::Stencil:
+                return vk::ImageLayout::eStencilAttachmentOptimal;
+            case RenderTargetType::DepthAndStencil:
+                return vk::ImageLayout::eDepthStencilAttachmentOptimal;
+            }
 
-		return vk::ImageLayout::eColorAttachmentOptimal;
-	}
+            return vk::ImageLayout::eColorAttachmentOptimal;
+        }
 
-	static inline vk::ImageUsageFlags GetVkUsageFlags(const RenderTargetType& targetType)
-	{
-		vk::ImageUsageFlags usageFlags = vk::ImageUsageFlagBits::eColorAttachment;
+        static vk::ImageUsageFlags GetVkUsageFlags( const RenderTargetType &targetType )
+        {
+            vk::ImageUsageFlags usageFlags = vk::ImageUsageFlagBits::eColorAttachment;
 
-		if (targetType == RenderTargetType::Depth || targetType == RenderTargetType::DepthAndStencil)
-		{
-			usageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
-		}
+            if ( targetType == RenderTargetType::Depth || targetType == RenderTargetType::DepthAndStencil )
+            {
+                usageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+            }
 
-		if (targetType == RenderTargetType::Color || targetType == RenderTargetType::Depth)
-		{
-			usageFlags |= vk::ImageUsageFlagBits::eSampled;
-		}
+            if ( targetType == RenderTargetType::Color || targetType == RenderTargetType::Depth )
+            {
+                usageFlags |= vk::ImageUsageFlagBits::eSampled;
+            }
 
-		return usageFlags;
-	}
+            return usageFlags;
+        }
 
-	static inline vk::ImageAspectFlags GetOutputImageVkAspect(const RenderTargetType& renderTargetType)
-	{
-		vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eColor;
+        static vk::ImageAspectFlags GetOutputImageVkAspect( const RenderTargetType &renderTargetType )
+        {
+            vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eColor;
 
-		if (renderTargetType == RenderTargetType::Depth)
-		{
-			aspectFlags = vk::ImageAspectFlagBits::eDepth;
-		}
-		else if (renderTargetType == RenderTargetType::Stencil)
-		{
-			aspectFlags = vk::ImageAspectFlagBits::eStencil;
-		}
-		else if (renderTargetType == RenderTargetType::DepthAndStencil)
-		{
-			aspectFlags = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
-		}
+            if ( renderTargetType == RenderTargetType::Depth )
+            {
+                aspectFlags = vk::ImageAspectFlagBits::eDepth;
+            }
+            else if ( renderTargetType == RenderTargetType::Stencil )
+            {
+                aspectFlags = vk::ImageAspectFlagBits::eStencil;
+            }
+            else if ( renderTargetType == RenderTargetType::DepthAndStencil )
+            {
+                aspectFlags = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
+            }
 
-		return aspectFlags;
-	}
+            return aspectFlags;
+        }
 
-	static inline vk::PipelineBindPoint ConvertPipelineBindPoint(const BindPoint& point)
-	{
-		switch (point)
-		{
-		case BindPoint::Graphics:
-			return vk::PipelineBindPoint::eGraphics;
-		case BindPoint::Compute:
-			return vk::PipelineBindPoint::eCompute;
-		case BindPoint::RayTracing:
-			return vk::PipelineBindPoint::eRayTracingKHR;
-		}
+        static vk::PipelineBindPoint ConvertPipelineBindPoint( const BindPoint &point )
+        {
+            switch ( point )
+            {
+            case BindPoint::Graphics:
+                return vk::PipelineBindPoint::eGraphics;
+            case BindPoint::Compute:
+                return vk::PipelineBindPoint::eCompute;
+            case BindPoint::RayTracing:
+                return vk::PipelineBindPoint::eRayTracingKHR;
+            }
 
-		return vk::PipelineBindPoint::eRayTracingKHR;
-	}
-};
+            return vk::PipelineBindPoint::eRayTracingKHR;
+        }
+    };
 
 }
+
+#endif

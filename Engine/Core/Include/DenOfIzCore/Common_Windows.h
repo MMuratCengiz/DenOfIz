@@ -1,6 +1,6 @@
 /*
-Blazar Engine - 3D Game Engine
-Copyright (c) 2020-2021 Muhammed Murat Cengiz
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,27 +18,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "Common.h"
-#include <chrono>
+#ifdef WIN32
+#include <winsdkver.h>
+#include <sdkddkver.h>
+#define NOMINMAX
+#define NODRAWTEXT
+#define NOGDI
+#define NOBITMAP
+#define NOMCX
+#define NOSERVICE
+#define NOHELP
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#define WIN32_LEAN_AND_MEAN
 
-namespace DenOfIz
-{
-
-    class Time
-    {
-        int frames;
-        double prev = 0;
-        double deltaTime = 0;
-        double firstTickTime;
-        double lastFrameTick;
-
-    public:
-        std::function<void( double )> ListenFps;
-
-        void Tick();
-        double GetDeltaTime();
-        double GetFirstTickTime();
-        static double DoubleEpochNow();
-    };
-
-}
+#include <wrl/client.h>
+#include <wrl/event.h>
+#endif

@@ -1,6 +1,6 @@
 /*
-Blazar Engine - 3D Game Engine
-Copyright (c) 2020-2021 Muhammed Murat Cengiz
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,27 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "Common.h"
-#include <chrono>
-
-namespace DenOfIz
-{
-
-    class Time
-    {
-        int frames;
-        double prev = 0;
-        double deltaTime = 0;
-        double firstTickTime;
-        double lastFrameTick;
-
-    public:
-        std::function<void( double )> ListenFps;
-
-        void Tick();
-        double GetDeltaTime();
-        double GetFirstTickTime();
-        static double DoubleEpochNow();
-    };
-
-}
+#ifndef __APPLE_CC__
+#include <malloc.h>
+#endif

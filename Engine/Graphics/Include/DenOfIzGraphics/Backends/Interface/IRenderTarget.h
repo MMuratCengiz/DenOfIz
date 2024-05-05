@@ -24,52 +24,51 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-enum class RenderTargetType
-{
-	Color,
-	Depth,
-	Stencil,
-	DepthAndStencil
-};
+    enum class RenderTargetType
+    {
+        Color,
+        Depth,
+        Stencil,
+        DepthAndStencil
+    };
 
-enum class SubmitResult
-{
-	Success,
-	OtherError,
-	SwapChainInvalidated
-};
+    enum class SubmitResult
+    {
+        Success,
+        OtherError,
+        SwapChainInvalidated
+    };
 
-struct RenderPassCreateInfo
-{
-	uint32_t SwapChainImageCount = 3;
+    struct RenderPassCreateInfo
+    {
+        uint32_t SwapChainImageIndex;
 
-	bool RenderToSwapChain;
+        bool RenderToSwapChain;
 
-	MSAASampleCount MSAASampleCount = MSAASampleCount::_0;
+        MSAASampleCount MSAASampleCount = MSAASampleCount::_0;
 
-	RenderTargetType RenderTargetType = RenderTargetType::Color;
-	ImageFormat Format = ImageFormat::B8G8R8A8Unorm;
+        RenderTargetType RenderTargetType = RenderTargetType::Color;
+        ImageFormat Format = ImageFormat::B8G8R8A8Unorm;
 
-	uint32_t Width = 0; // 0 == Match Swap Chain
-	uint32_t Height = 0; // 0 == Match Swap Chain
-};
+        uint32_t Width = 0; // 0 == Match Swap Chain
+        uint32_t Height = 0; // 0 == Match Swap Chain
+    };
 
-class IRenderPassCommands;
-class ICommandQueue;
+    class IRenderPassCommands;
+    class ICommandQueue;
 
-class ICommandQueue
-{
-public:
-	ICommandQueue * Begin();
-	IRenderPassCommands* RenderPass();
+    class ICommandQueue
+    {
+    public:
+        ICommandQueue *Begin();
+        IRenderPassCommands *RenderPass();
 
-	void End();
-};
+        void End();
+    };
 
-class IRenderPassCommands
-{
-public:
+    class IRenderPassCommands
+    {
 
-};
+    };
 
 }

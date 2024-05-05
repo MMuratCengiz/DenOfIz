@@ -17,90 +17,81 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#ifdef BUILD_VK
 
 #include "VulkanContext.h"
 #include "VulkanSurface.h"
 #include "VulkanPipeline.h"
-#include <DenOfIzCore/Logger.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
 #include "DenOfIzGraphics/Backends/Interface/IDevice.h"
 
 namespace DenOfIz
 {
 
-class VulkanDevice
-{
-private:
-	const std::unordered_map<std::string, bool> ENABLED_LAYERS {
+    class VulkanDevice final : public IDevice
+    {
+        const std::unordered_map<std::string, bool> m_EnabledLayers{
 #if DEBUG
-//			{ "VK_LAYER_KHRONOS_validation", true }
+            //			{ "VK_LAYER_KHRONOS_validation", true }
 #endif
-	};
+        };
 
-	const std::vector<const char*> REQUIRED_EXTENSIONS{
-			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-			// Maintenance Extensions
-			VK_KHR_MAINTENANCE1_EXTENSION_NAME,
-			VK_KHR_MAINTENANCE2_EXTENSION_NAME,
-			VK_KHR_MAINTENANCE3_EXTENSION_NAME,
-			// Dynamic Rendering
-			VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-			VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
-			VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
-			VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
-			// Used to pass Viewport and Scissor count.
-			VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
+        const std::vector<const char *> m_RequiredExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                                                             // Maintenance Extensions
+                                                             VK_KHR_MAINTENANCE1_EXTENSION_NAME, VK_KHR_MAINTENANCE2_EXTENSION_NAME, VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+                                                             // Dynamic Rendering
+                                                             VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
+                                                             VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
+                                                             // Used to pass Viewport and Scissor count.
+                                                             VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
 #if __APPLE_CC__
 			,"VK_KHR_portability_subset"
 #endif
-	};
+        };
 
-	const std::vector<QueueType> QueueTypes = {
-			QueueType::Graphics,
-			QueueType::Transfer,
-			QueueType::Presentation
-	};
+        const std::vector<QueueType> m_QueueTypes = { QueueType::Graphics, QueueType::Transfer, QueueType::Presentation };
 
-	VkDebugUtilsMessengerEXT DebugMessenger = VK_NULL_HANDLE;
-	std::unordered_map<std::string, bool> SupportedExtensions;
-	std::unordered_map<std::string, bool> SupportedLayers;
+        VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
+        std::unordered_map<std::string, bool> m_SupportedExtensions;
+        std::unordered_map<std::string, bool> m_SupportedLayers;
 
-	std::unique_ptr<VulkanContext> Context;
-	std::unique_ptr<VulkanSurface> RenderSurface;
-public:
-	VulkanDevice() = default;
+        std::unique_ptr<VulkanContext> m_Context;
+        std::unique_ptr<VulkanSurface> m_RenderSurface;
 
-	void CreateDevice(SDL_Window* window);
-	std::vector<SelectableDevice> ListDevices();
-	void SelectDevice(const vk::PhysicalDevice& device);
+    public:
+        VulkanDevice() = default;
 
+        void CreateDevice( SDL_Window *window ) override;
+        std::vector<SelectableDevice> ListDevices() override;
+        void SelectDevice( const vk::PhysicalDevice &device ) override;
 
-	void WaitIdle();
-	uint32_t GetFrameCount() const;
-	VulkanContext* GetContext() const;
-	ImageFormat GetSwapChainImageFormat();
+        void WaitIdle() override;
+        uint32_t GetFrameCount() const;
+        VulkanContext *GetContext() const;
+        ImageFormat GetSwapChainImageFormat() const;
 
-	~VulkanDevice();
+        ~VulkanDevice() override;
 
-private:
-	void CreateRenderSurface();
+    private:
+        void CreateRenderSurface();
 
-	Result<Unit> InitDebugMessages(const vk::DebugUtilsMessengerCreateInfoEXT& createInfo);
-	void InitSupportedLayers(std::vector<const char*>& layers);
-	vk::DebugUtilsMessengerCreateInfoEXT GetDebugUtilsCreateInfo() const;
-	static void LoadExtensionFunctions();
+        Result<Unit> InitDebugMessages( const vk::DebugUtilsMessengerCreateInfoEXT &createInfo );
+        void InitSupportedLayers( std::vector<const char *> &layers );
+        vk::DebugUtilsMessengerCreateInfoEXT GetDebugUtilsCreateInfo() const;
+        static void LoadExtensionFunctions();
 
-	void SetupQueueFamilies();
-	void CreateLogicalDevice();
-	void CreateSurface();
-	void CreateImageFormat();
+        void SetupQueueFamilies() const;
+        void CreateLogicalDevice() const;
+        void CreateSurface() const;
+        void CreateImageFormat() const;
 
-	void InitializeVMA();
-	static std::unordered_map<std::string, bool> DefaultRequiredExtensions();
-	static void CreateDeviceInfo(const vk::PhysicalDevice& physicalDevice, DeviceInfo& deviceInfo);
-	std::vector<vk::DeviceQueueCreateInfo> CreateUniqueDeviceCreateInfos();
-	void DestroyDebugUtils() const;
-};
+        void InitializeVma() const;
+        static std::unordered_map<std::string, bool> DefaultRequiredExtensions();
+        static void CreateDeviceInfo( const vk::PhysicalDevice &physicalDevice, DeviceInfo &deviceInfo );
+        std::vector<vk::DeviceQueueCreateInfo> CreateUniqueDeviceCreateInfos() const;
+        void DestroyDebugUtils() const;
+    };
 
 }
 
+#endif

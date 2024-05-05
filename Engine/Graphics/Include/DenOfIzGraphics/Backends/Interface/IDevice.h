@@ -23,28 +23,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-struct DeviceCapabilities
-{
-	bool DedicatedTransferQueue;
-};
+    struct DeviceCapabilities
+    {
+        bool DedicatedTransferQueue;
+    };
 
-struct DeviceProperties
-{
-	bool IsDedicated;
-	uint32_t MemoryAvailableInMb;
-};
+    struct DeviceProperties
+    {
+        bool IsDedicated;
+        uint32_t MemoryAvailableInMb;
+    };
 
-struct DeviceInfo
-{
-	std::string Name;
-	DeviceProperties Properties;
-	DeviceCapabilities Capabilities;
-};
+    struct DeviceInfo
+    {
+        std::string Name;
+        DeviceProperties Properties;
+        DeviceCapabilities Capabilities;
+    };
 
-struct SelectableDevice
-{
-	DeviceInfo Device;
-	std::function<void()> Select;
-};
+    struct SelectableDevice
+    {
+        DeviceInfo Device;
+        std::function<void()> Select;
+    };
+
+    class IDevice
+    {
+    public:
+        virtual ~IDevice() = default;
+
+    private:
+        virtual void CreateDevice( SDL_Window *window ) = 0;
+        virtual std::vector<SelectableDevice> ListDevices() = 0;
+        virtual void SelectDevice( const vk::PhysicalDevice &device ) = 0;
+        virtual void WaitIdle() = 0;
+    };
 
 }

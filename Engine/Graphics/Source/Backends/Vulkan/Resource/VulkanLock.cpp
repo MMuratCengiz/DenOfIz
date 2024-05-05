@@ -16,80 +16,84 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#ifdef BUILD_VK
+
 #include <DenOfIzGraphics/Backends/Vulkan/Resource/VulkanLock.h>
 
 using namespace DenOfIz;
 
-VulkanLock::VulkanLock(VulkanContext* context, const LockType& lockType)
-		 :context(context)
+VulkanLock::VulkanLock( VulkanContext *context, const LockType &lockType ) :
+    context( context )
 {
-	this->lockType = lockType;
+    this->lockType = lockType;
 
-	if (lockType == LockType::Fence)
-	{
-		vk::FenceCreateInfo fenceCreateInfo{};
-		fenceCreateInfo.flags = vk::FenceCreateFlagBits::eSignaled;
-		fence = this->context->LogicalDevice.createFence(fenceCreateInfo);
-	}
-	else
-	{
-		vk::SemaphoreCreateInfo semaphoreCreateInfo{};
-		semaphore = this->context->LogicalDevice.createSemaphore(semaphoreCreateInfo);
-	}
+    if ( lockType == LockType::Fence )
+    {
+        vk::FenceCreateInfo fenceCreateInfo{};
+        fenceCreateInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+        fence = this->context->LogicalDevice.createFence( fenceCreateInfo );
+    }
+    else
+    {
+        constexpr vk::SemaphoreCreateInfo semaphoreCreateInfo{};
+        semaphore = this->context->LogicalDevice.createSemaphore( semaphoreCreateInfo );
+    }
 }
 
 void VulkanLock::Wait()
 {
-	if (lockType == LockType::Fence)
-	{
-		auto result = context->LogicalDevice.waitForFences(1, &fence, true, UINT64_MAX);
-		VkCheckResult(result);
-	}
-	else
-	{
-		vk::SemaphoreWaitInfo waitInfo{};
-		waitInfo.semaphoreCount = 1;
-		waitInfo.pSemaphores = &semaphore;
-		waitInfo.flags = vk::SemaphoreWaitFlagBits::eAny;
+    if ( lockType == LockType::Fence )
+    {
+        const auto result = context->LogicalDevice.waitForFences( 1, &fence, true, UINT64_MAX );
+        VK_CHECK_RESULT( result );
+    }
+    else
+    {
+        vk::SemaphoreWaitInfo waitInfo{};
+        waitInfo.semaphoreCount = 1;
+        waitInfo.pSemaphores = &semaphore;
+        waitInfo.flags = vk::SemaphoreWaitFlagBits::eAny;
 
-		auto result = context->LogicalDevice.waitSemaphores(waitInfo, UINT64_MAX);
-		VkCheckResult(result);
-	}
+        auto result = context->LogicalDevice.waitSemaphores( waitInfo, UINT64_MAX );
+        VK_CHECK_RESULT( result );
+    }
 }
 
 void VulkanLock::Reset()
 {
-	if (lockType == LockType::Fence)
-	{
-		vk::Result result = context->LogicalDevice.resetFences(1, &fence);
-		VkCheckResult(result);
-	}
-	else
-	{
-		// No matching functionality
-	}
+    if ( lockType == LockType::Fence )
+    {
+        const vk::Result result = context->LogicalDevice.resetFences( 1, &fence );
+        VK_CHECK_RESULT( result );
+    }
+    else
+    {
+        // No matching functionality
+    }
 }
 
 void VulkanLock::Notify()
 {
-	if (lockType == LockType::Fence)
-	{
-		// No notify on client
-	}
-	else
-	{
-		context->LogicalDevice.signalSemaphore(semaphore);
-	}
+    if ( lockType == LockType::Fence )
+    {
+        // No notify on client
+    }
+    else
+    {
+        context->LogicalDevice.signalSemaphore( semaphore );
+    }
 }
 
 VulkanLock::~VulkanLock()
 {
-	if (lockType == LockType::Fence)
-	{
-		context->LogicalDevice.destroyFence(fence);
-	}
-	else
-	{
-		context->LogicalDevice.destroySemaphore(semaphore);
-	}
+    if ( lockType == LockType::Fence )
+    {
+        context->LogicalDevice.destroyFence( fence );
+    }
+    else
+    {
+        context->LogicalDevice.destroySemaphore( semaphore );
+    }
 }
+
+#endif

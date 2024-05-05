@@ -21,84 +21,83 @@
 
 using namespace DenOfIz;
 
-std::string Utilities::ReadFile(const std::string& filename)
+std::string Utilities::ReadFile( const std::string &filename )
 {
-	std::ifstream file(filename, std::ios::ate | std::ios::binary);
+    std::ifstream file( filename, std::ios::ate | std::ios::binary );
 
-	if (!file.is_open())
-	{
-		throw std::runtime_error("failed to open file!");
-	}
+    if ( !file.is_open() )
+    {
+        throw std::runtime_error( "failed to open file!" );
+    }
 
-	std::string data;
+    std::string data;
 
-	file.seekg(0, std::ios::end);
-	data.reserve(file.tellg());
-	file.seekg(0, std::ios::beg);
-	data.assign((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.seekg( 0, std::ios::end );
+    data.reserve( file.tellg() );
+    file.seekg( 0, std::ios::beg );
+    data.assign( (std::istreambuf_iterator<char>( file )), std::istreambuf_iterator<char>() );
 
-	return std::move(data);
+    return std::move( data );
 
 }
 
-glm::mat4 Utilities::getTRSMatrix(const glm::vec3& t, const glm::quat& r, const glm::vec3& s)
+glm::mat4 Utilities::getTRSMatrix( const glm::vec3 &t, const glm::quat &r, const glm::vec3 &s )
 {
-	glm::mat4 modelMatrix{ 1 };
+    glm::mat4 modelMatrix{ 1 };
 
-	modelMatrix = glm::translate(modelMatrix, t);
-	modelMatrix = glm::scale(modelMatrix, s);
-	modelMatrix *= glm::mat4_cast(r);
+    modelMatrix = translate( modelMatrix, t );
+    modelMatrix = scale( modelMatrix, s );
+    modelMatrix *= mat4_cast( r );
 
-	return modelMatrix;
+    return modelMatrix;
 }
 
-glm::quat Utilities::vecToQuat(const glm::vec4& vec)
+glm::quat Utilities::vecToQuat( const glm::vec4 &vec )
 {
-	return glm::make_quat(glm::value_ptr(vec));
+    return glm::make_quat( value_ptr( vec ) );
 }
 
-std::string Utilities::getFileDirectory(const std::string& file, bool includeFinalSep)
+std::string Utilities::getFileDirectory( const std::string &file, bool includeFinalSep )
 {
-	size_t sepUnixIdx = file.find_last_of("/\\");
-	size_t sepWinIdx = file.find_last_of("\\\\");
+    size_t sepUnixIdx = file.find_last_of( "/\\" );
+    size_t sepWinIdx = file.find_last_of( "\\\\" );
 
-	int finalSepSub = includeFinalSep ? 1 : 0;
+    int finalSepSub = includeFinalSep ? 1 : 0;
 
-	if (sepUnixIdx != -1)
-	{
-		return file.substr(0, sepUnixIdx + finalSepSub);
-	}
-	else if (sepWinIdx != -1)
-	{
-		return file.substr(0, sepWinIdx - finalSepSub);
-	}
+    if ( sepUnixIdx != -1 )
+    {
+        return file.substr( 0, sepUnixIdx + finalSepSub );
+    }
+    if ( sepWinIdx != -1 )
+    {
+        return file.substr( 0, sepWinIdx - finalSepSub );
+    }
 
-	return file;
+    return file;
 }
 
-std::string Utilities::getFilename(const std::string& file)
+std::string Utilities::getFilename( const std::string &file )
 {
-	size_t sepUnixIdx = file.find_last_of("/\\");
-	size_t sepWinIdx = file.find_last_of("\\\\");
+    size_t sepUnixIdx = file.find_last_of( "/\\" );
+    size_t sepWinIdx = file.find_last_of( "\\\\" );
 
-	if (sepUnixIdx != -1)
-	{
-		return file.substr(sepUnixIdx + 1);
-	}
-	else if (sepWinIdx != -1)
-	{
-		return file.substr(0, sepWinIdx + 1);
-	}
+    if ( sepUnixIdx != -1 )
+    {
+        return file.substr( sepUnixIdx + 1 );
+    }
+    if ( sepWinIdx != -1 )
+    {
+        return file.substr( 0, sepWinIdx + 1 );
+    }
 
-	return file;
+    return file;
 }
 
-std::string Utilities::combineDirectories(const std::string& directory, const std::string& file)
+std::string Utilities::combineDirectories( const std::string &directory, const std::string &file )
 {
-	std::string dir = getFileDirectory(directory);
-	std::string f = getFilename(file);
+    std::string dir = getFileDirectory( directory );
+    std::string f = getFilename( file );
 
-	return dir + f;
+    return dir + f;
 
 }
-

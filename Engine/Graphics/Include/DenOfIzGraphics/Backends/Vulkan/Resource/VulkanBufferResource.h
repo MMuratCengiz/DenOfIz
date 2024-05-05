@@ -17,35 +17,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#ifdef BUILD_VK
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanUtilities.h>
-#include "VulkanSamplerResource.h"
 #include <DenOfIzGraphics/Backends/Interface/IResource.h>
 
 namespace DenOfIz
 {
 
-class VulkanBufferResource : public IBufferResource, boost::noncopyable
-{
-private:
-	BufferCreateInfo createInfo;
-	VulkanContext* context;
+    class VulkanBufferResource final : public IBufferResource, boost::noncopyable
+    {
+        BufferCreateInfo m_CreateInfo;
+        VulkanContext *m_Context;
 
-	VmaAllocation allocation;
-	bool alreadyDisposed = false;
-	bool alreadyAllocated = false;
-public:
-	vk::Buffer Instance;
-	vk::DescriptorBufferInfo DescriptorInfo;
+        VmaAllocation m_Allocation;
+        bool m_AlreadyDisposed = false;
+        bool m_AlreadyAllocated = false;
 
-	explicit VulkanBufferResource(VulkanContext* context, const BufferCreateInfo& createInfo);
+    public:
+        vk::Buffer Instance;
+        vk::DescriptorBufferInfo DescriptorInfo;
 
-	void Allocate(const void* newData) override;
-	void Deallocate() override;
-	~VulkanBufferResource();
-	void UpdateAllocation(const void* newData);
+        explicit VulkanBufferResource( VulkanContext *context, const BufferCreateInfo &createInfo );
 
-};
+        void Allocate( const void *newData ) override;
+        void Deallocate() override;
+        virtual ~VulkanBufferResource();
+        void UpdateAllocation( const void *newData );
+
+    };
 
 }
+
+#endif

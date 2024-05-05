@@ -32,30 +32,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-class TestVulkanRenderer
-{
-private:
-	std::vector<float> triangle {
-		1.0f,  1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-		-1.0f,  1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-		0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0
-	};
+    class TestVulkanRenderer
+    {
+        std::vector<float> triangle{ 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+                                     1.0 };
 
-	SDL_Window* window;
+        SDL_Window *window;
 
-	VulkanDevice device{};
-	std::unique_ptr<SpvProgram> program;
-	std::unique_ptr<VulkanPipeline> pipeline;
-	std::unique_ptr<VulkanBufferResource> vertexBuffer;
-	std::unique_ptr<VulkanBufferResource> timePassedBuffer;
-	std::unique_ptr<VulkanRenderPass> renderPass;
-	std::unique_ptr<Time> time = std::make_unique<Time>();
-	std::vector<std::unique_ptr<VulkanLock>> fences;
-	int frameIndex = 0;
-public:
-	void Setup(SDL_Window* w);
-	void Render();
-	void Exit();
-};
+        VulkanDevice device{};
+        std::unique_ptr<SpvProgram> program;
+        std::unique_ptr<VulkanPipeline> pipeline;
+        std::unique_ptr<VulkanBufferResource> vertexBuffer;
+        std::unique_ptr<VulkanBufferResource> timePassedBuffer;
+        std::unique_ptr<Time> time = std::make_unique<Time>();
+        std::vector<std::unique_ptr<VulkanLock>> fences;
+        std::vector<std::unique_ptr<VulkanRenderPass>> renderPasses;
+        int frameIndex = 0;
+
+    public:
+        void Setup( SDL_Window *w );
+        void Render();
+        void Exit();
+    };
 
 }

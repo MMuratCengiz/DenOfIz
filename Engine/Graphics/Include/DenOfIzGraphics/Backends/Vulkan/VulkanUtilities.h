@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#ifdef BUILD_VK
 
 #include "VulkanContext.h"
 #include "../Interface/IResource.h"
@@ -24,14 +25,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-class VulkanUtilities
-{
-private:
-	VulkanUtilities() = default;
-public:
-	static void InitStagingBuffer(VulkanContext* context, vk::Buffer& buffer, VmaAllocation& allocation, const void* data, const uint64_t& size);
-	static void RunOneTimeCommand(VulkanContext* context, std::function<void(vk::CommandBuffer&)> run);
-	static void CopyBuffer(VulkanContext* context, vk::Buffer& from, vk::Buffer& to, uint32_t size);
-};
+    class VulkanUtilities
+    {
+        VulkanUtilities() = default;
+
+    public:
+        static void InitStagingBuffer( const VulkanContext *context, vk::Buffer &buffer, VmaAllocation &allocation, const void *data, const uint64_t &size );
+        static void RunOneTimeCommand( const VulkanContext *context, const std::function<void( vk::CommandBuffer & )> &run );
+        static void CopyBuffer( const VulkanContext *context, const vk::Buffer &from, const vk::Buffer &to, uint32_t size );
+    };
 
 }
+
+#endif

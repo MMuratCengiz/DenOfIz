@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#ifdef BUILD_VK
 
 #ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
@@ -26,64 +27,66 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzCore/Common.h>
 #include <unordered_map>
 #include "vk_mem_alloc.h"
-#include "../Interface/IDevice.h"
 #include "../Common/ShaderCompiler.h"
 
 namespace DenOfIz
 {
 
-struct VulkanDeviceInfo
-{
-	vk::PhysicalDevice device;
-	vk::PhysicalDeviceProperties properties;
-	vk::PhysicalDeviceFeatures features;
+    struct VulkanDeviceInfo
+    {
+        vk::PhysicalDevice	Device;
+        vk::PhysicalDeviceProperties Properties;
+        vk::PhysicalDeviceFeatures Features;
 
-	std::vector<vk::ExtensionProperties> extensionProperties;
-	std::vector<vk::QueueFamilyProperties> queueFamilies;
-};
+        std::vector<vk::ExtensionProperties> ExtensionProperties;
+        std::vector<vk::QueueFamilyProperties> QueueFamilies;
+    };
 
-struct QueueFamily
-{
-	uint32_t index;
-	VkQueueFamilyProperties properties;
-};
+    struct QueueFamily
+    {
+        uint32_t Index;
+        VkQueueFamilyProperties Properties;
+    };
 
-enum class QueueType
-{
-	Graphics,
-	Presentation,
-	Transfer,
-};
+    enum class QueueType
+    {
+        Graphics,
+        Presentation,
+        Transfer,
+    };
 
-struct VulkanContext
-{
-public:
-	vk::Instance Instance;
-	vk::PhysicalDevice PhysicalDevice;
-	vk::Device LogicalDevice;
-	VmaAllocator Vma;
-	ImageFormat SurfaceImageFormat;
-	vk::ColorSpaceKHR ColorSpace;
-	vk::PresentModeKHR PresentMode;
-	vk::SwapchainKHR SwapChain;
-	vk::SurfaceKHR RenderSurface;
-	vk::SurfaceKHR Surface;
-	std::vector<vk::Image> SwapChainImages;
-	std::vector<vk::ImageView> SwapChainImageViews;
-	vk::Image depthImage;
+    struct VulkanContext
+    {
+        vk::Instance Instance;
+        vk::PhysicalDevice PhysicalDevice;
+        vk::Device LogicalDevice;
+        VmaAllocator Vma;
+        ImageFormat SurfaceImageFormat;
+        vk::ColorSpaceKHR ColorSpace;
+        vk::PresentModeKHR PresentMode;
+        vk::SwapchainKHR SwapChain;
+        vk::SurfaceKHR RenderSurface;
+        vk::SurfaceKHR Surface;
+        std::vector<vk::Image> SwapChainImages;
+        std::vector<vk::ImageView> SwapChainImageViews;
+        vk::Image DepthImage;
 
-	vk::CommandPool TransferQueueCommandPool;
-	vk::CommandPool GraphicsQueueCommandPool;
-	vk::CommandPool ComputeQueueCommandPool;
+        vk::CommandPool TransferQueueCommandPool;
+        vk::CommandPool GraphicsQueueCommandPool;
+        vk::CommandPool ComputeQueueCommandPool;
 
-	vk::Extent2D SurfaceExtent{};
+        vk::Extent2D SurfaceExtent{};
 
-	SDL_Window* Window;
-	std::unordered_map<QueueType, QueueFamily> QueueFamilies;
-	std::unordered_map<QueueType, vk::Queue> Queues;
+        SDL_Window *Window;
+        std::unordered_map<QueueType, QueueFamily> QueueFamilies;
+        std::unordered_map<QueueType, vk::Queue> Queues;
 
-	//Todo move to generic RenderContext when created.
-	ShaderCompiler ShaderCompiler;
-};
+        //Todo move to generic RenderContext when created.
+        ShaderCompiler ShaderCompiler;
+    };
 
 }
+
+#define VK_CHECK_RESULT(R) assert((R) == vk::Result::eSuccess)
+
+#endif
