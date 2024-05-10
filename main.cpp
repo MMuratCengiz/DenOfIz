@@ -1,3 +1,4 @@
+#ifdef DISABLED
 #include <DenOfIzGraphics/Backends/Vulkan/Sample/TestVulkanRenderer.h>
 #include "SDL.h"
 #include <filesystem>
@@ -46,3 +47,9 @@ int main()
 
 	return 0;
 }
+#endif
+
+#include <IApp.h>
+#include <DenOfIzGame/MainApp.h>
+
+DEFINE_APPLICATION_MAIN(MainApp);

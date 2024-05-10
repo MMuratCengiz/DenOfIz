@@ -30,7 +30,7 @@ namespace DenOfIz
     class ILock
     {
     protected:
-        LockType lockType;
+        LockType m_lockType = LockType::Fence;
 
     public:
         virtual void Wait() = 0;

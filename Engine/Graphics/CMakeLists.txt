@@ -1,3 +1,5 @@
+include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
+
 find_package(Vulkan REQUIRED)
 find_package(VulkanHeaders CONFIG)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
@@ -18,11 +20,9 @@ find_package(spirv_cross_hlsl CONFIG REQUIRED)
 find_package(spirv_cross_msl CONFIG REQUIRED)
 find_package(spirv_cross_c CONFIG REQUIRED)
 
-include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
-
 set(DEN_OF_IZ_SOURCES
         #Vulkan Backend
-        Source/Backends/Vulkan/VulkanDevice.cpp
+        Source/Backends/Vulkan/VulkanLogicalDevice.cpp
         Source/Backends/Vulkan/VulkanSurface.cpp
         Source/Backends/Vulkan/VulkanUtilities.cpp
         Source/Backends/Vulkan/VulkanPipeline.cpp
@@ -35,7 +35,7 @@ set(DEN_OF_IZ_SOURCES
         Source/Backends/Vulkan/Sample/TestVulkanRenderer.cpp
 
         #DirectX12 Backend
-        Source/Backends/DirectX12/DX12Device.cpp
+        Source/Backends/DirectX12/DX12LogicalDevice.cpp
         Source/Backends/DirectX12/DeviceResources.cpp
 
         Source/Backends/Common/ShaderCompiler.cpp
@@ -51,9 +51,6 @@ target_link_libraries(DenOfIzGraphics
         DenOfIzCore
         ${Vulkan_LIBRARY}
         Vulkan::Headers
-        Microsoft::DirectX-Headers
-        Microsoft::DirectXShaderCompiler
-        Microsoft::DirectXTK12
         GPUOpen::VulkanMemoryAllocator
         spirv-cross-glsl
         spirv-cross-hlsl
@@ -72,6 +69,8 @@ if (WIN32)
     target_link_libraries(DenOfIzGraphics
             PUBLIC
             Microsoft::DirectX-Headers
+            Microsoft::DirectXShaderCompiler
+            Microsoft::DirectXTK12
     )
 
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_DX12)

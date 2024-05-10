@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifdef BUILD_VK
 
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanDevice.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
 #include "SDL_vulkan.h"
 
 using namespace DenOfIz;
@@ -49,7 +49,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL g_DebugCallback( VkDebugUtilsMessageSeveri
     return VK_FALSE;
 }
 
-void VulkanDevice::LoadExtensionFunctions()
+void VulkanLogicalDevice::LoadExtensionFunctions()
 {
     const vk::DynamicLoader dl;
 
@@ -58,25 +58,25 @@ void VulkanDevice::LoadExtensionFunctions()
     VULKAN_HPP_DEFAULT_DISPATCHER.init( vkGetInstanceProcAddr );
 }
 
-void VulkanDevice::CreateDevice( SDL_Window *window )
+void VulkanLogicalDevice::CreateDevice( SDL_Window *window )
 {
     LoadExtensionFunctions();
 
-    m_Context = std::make_unique<VulkanContext>();
-    m_Context->Window = window;
+    m_context = std::make_unique<VulkanContext>();
+    m_context->Window = window;
 
     vk::ApplicationInfo appInfo{ "DenOfIz", VK_MAKE_VERSION( 1, 0, 0 ), "No Engine", VK_MAKE_VERSION( 1, 0, 0 ), VK_API_VERSION_1_3, };
 
     vk::InstanceCreateInfo createInfo{ {}, &appInfo };
 
     uint32_t sdlExtensionCount;
-    if ( !SDL_Vulkan_GetInstanceExtensions( m_Context->Window, &sdlExtensionCount, nullptr ) )
+    if ( !SDL_Vulkan_GetInstanceExtensions( m_context->Window, &sdlExtensionCount, nullptr ) )
     {
         LOG( Verbosity::Critical, "VulkanDevice", SDL_GetError() );
     }
 
     std::vector<const char *> extensions( sdlExtensionCount );
-    if ( !SDL_Vulkan_GetInstanceExtensions( m_Context->Window, &sdlExtensionCount, extensions.data() ) )
+    if ( !SDL_Vulkan_GetInstanceExtensions( m_context->Window, &sdlExtensionCount, extensions.data() ) )
     {
         LOG( Verbosity::Critical, "VulkanDevice", SDL_GetError() );
     }
@@ -85,57 +85,56 @@ void VulkanDevice::CreateDevice( SDL_Window *window )
     InitSupportedLayers( layers );
 
     vk::DebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo;
-    if ( m_SupportedLayers.contains( "VK_LAYER_KHRONOS_validation" ) )
+    if ( m_supportedLayers.contains( "VK_LAYER_KHRONOS_validation" ) )
     {
         debugUtilsCreateInfo = GetDebugUtilsCreateInfo();
         createInfo.pNext = &debugUtilsCreateInfo;
 
         extensions.emplace_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
-    }
-
-    createInfo.enabledExtensionCount = extensions.size();
-    createInfo.ppEnabledExtensionNames = extensions.data();
-    if ( !layers.empty() )
+    } 
+	else
     {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
-        createInfo.ppEnabledLayerNames = layers.data();
+		createInfo.pNext = nullptr;
     }
 
-    m_Context->Instance = createInstance( createInfo );
-    VULKAN_HPP_DEFAULT_DISPATCHER.init( m_Context->Instance );
+	createInfo.setPEnabledExtensionNames(extensions);
+	createInfo.setPEnabledLayerNames(layers);
 
-    auto extensionProperties = vk::enumerateInstanceExtensionProperties( nullptr );
+    m_context->Instance = createInstance( createInfo );
+    VULKAN_HPP_DEFAULT_DISPATCHER.init( m_context->Instance );
+
+    const auto extensionProperties = vk::enumerateInstanceExtensionProperties( nullptr );
     for ( vk::ExtensionProperties prp : extensionProperties )
     {
-        this->m_SupportedExtensions[ prp.extensionName ] = true;
+        this->m_supportedExtensions[ prp.extensionName ] = true;
     }
 
-    if ( m_SupportedLayers.contains( "VK_LAYER_KHRONOS_validation" ) )
+    if ( m_supportedLayers.contains( "VK_LAYER_KHRONOS_validation" ) )
     {
         InitDebugMessages( debugUtilsCreateInfo );
     }
 
     CreateSurface();
-    m_Context->ShaderCompiler.Init();
+    m_context->ShaderCompiler.Init();
 }
 
-void VulkanDevice::InitSupportedLayers( std::vector<const char *> &layers )
+void VulkanLogicalDevice::InitSupportedLayers( std::vector<const char *> &layers )
 {
     const auto layerProperties = vk::enumerateInstanceLayerProperties();
 
     for ( vk::LayerProperties prp : layerProperties )
     {
-        auto layerPair = m_EnabledLayers.find( prp.layerName );
+        auto layerPair = m_enabledLayers.find( prp.layerName );
 
-        if ( layerPair != m_EnabledLayers.end() )
+        if ( layerPair != m_enabledLayers.end() )
         {
-            m_SupportedLayers[ prp.layerName ] = true;
+            m_supportedLayers[ prp.layerName ] = true;
             layers.emplace_back( layerPair->first.c_str() );
         }
     }
 }
 
-vk::DebugUtilsMessengerCreateInfoEXT VulkanDevice::GetDebugUtilsCreateInfo() const
+vk::DebugUtilsMessengerCreateInfoEXT VulkanLogicalDevice::GetDebugUtilsCreateInfo() const
 {
     vk::DebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo{};
 
@@ -149,15 +148,15 @@ vk::DebugUtilsMessengerCreateInfoEXT VulkanDevice::GetDebugUtilsCreateInfo() con
     return debugUtilsCreateInfo;
 }
 
-Result<Unit> VulkanDevice::InitDebugMessages( const vk::DebugUtilsMessengerCreateInfoEXT &createInfo )
+Result<Unit> VulkanLogicalDevice::InitDebugMessages( const vk::DebugUtilsMessengerCreateInfoEXT &createInfo )
 {
-    const auto instance = static_cast<VkInstance>(m_Context->Instance);
+    const auto instance = static_cast<VkInstance>(m_context->Instance);
 
     const auto createDebugUtils = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr( instance, "vkCreateDebugUtilsMessengerEXT" ));
 
     const auto createInfoCast = static_cast<VkDebugUtilsMessengerCreateInfoEXT>(createInfo);
 
-    if ( createDebugUtils == nullptr || createDebugUtils( instance, &createInfoCast, nullptr, &m_DebugMessenger ) != VK_SUCCESS )
+    if ( createDebugUtils == nullptr || createDebugUtils( instance, &createInfoCast, nullptr, &m_debugMessenger ) != VK_SUCCESS )
     {
         return Error( "Failed to initialize debugger!" );
     }
@@ -165,31 +164,23 @@ Result<Unit> VulkanDevice::InitDebugMessages( const vk::DebugUtilsMessengerCreat
     return Success( {} );
 }
 
-std::vector<SelectableDevice> VulkanDevice::ListDevices()
+std::vector<PhysicalDeviceInfo> VulkanLogicalDevice::ListPhysicalDevices()
 {
-    const auto devices = m_Context->Instance.enumeratePhysicalDevices();
-    std::vector<SelectableDevice> result;
+    const auto devices = m_context->Instance.enumeratePhysicalDevices();
+    std::vector<PhysicalDeviceInfo> result;
 
     for ( const auto &device : devices )
     {
         vk::PhysicalDevice physicalDevice = device;
-
-        SelectableDevice selectableDevice{};
-
-        CreateDeviceInfo( physicalDevice, selectableDevice.Device );
-
-        selectableDevice.Select = [=, this]()
-        {
-            SelectDevice( device );
-        };
-
-        result.push_back( selectableDevice );
+        PhysicalDeviceInfo deviceInfo{};
+        CreateDeviceInfo( physicalDevice, deviceInfo );
+        result.push_back( deviceInfo );
     }
 
     return result;
 }
 
-void VulkanDevice::CreateDeviceInfo( const vk::PhysicalDevice &physicalDevice, DeviceInfo &deviceInfo )
+void VulkanLogicalDevice::CreateDeviceInfo( const vk::PhysicalDevice &physicalDevice, PhysicalDeviceInfo &deviceInfo )
 {
     vk::PhysicalDeviceFeatures2 deviceFeatures;
     vk::PhysicalDeviceProperties deviceProperties;
@@ -205,15 +196,30 @@ void VulkanDevice::CreateDeviceInfo( const vk::PhysicalDevice &physicalDevice, D
 
     auto extensions = physicalDevice.enumerateDeviceExtensionProperties( nullptr );
 
+	deviceInfo.Id = deviceProperties.deviceID;
     deviceInfo.Name = std::string( deviceProperties.deviceName.data() );
-    deviceInfo.Properties.IsDedicated = true; // todo
-    deviceInfo.Capabilities.DedicatedTransferQueue = true; // todo
+
+	// Todo actually read these from somewhere:
+    deviceInfo.Properties.IsDedicated = true;
+    deviceInfo.Capabilities.DedicatedTransferQueue = true; 
+    deviceInfo.Capabilities.ComputeShaders = true;
+    deviceInfo.Capabilities.RayTracing = true; 
 }
 
-void VulkanDevice::SelectDevice( const vk::PhysicalDevice &device )
+void VulkanLogicalDevice::LoadPhysicalDevice( const PhysicalDeviceInfo& device )
 {
-    // Todo break if already initialized
-    m_Context->PhysicalDevice = device;
+	assert(m_context->PhysicalDevice != VK_NULL_HANDLE, "A physical device is already selected for this logical device. Create a new Logical Device.");
+	
+	for (const vk::PhysicalDevice physicalDevice: m_context->Instance.enumeratePhysicalDevices())
+    {
+        const vk::PhysicalDeviceProperties deviceProperties = physicalDevice.getProperties( );
+		if (deviceProperties.deviceID == device.Id)
+        {
+			m_context->PhysicalDevice = physicalDevice;
+        }
+	}
+
+	assert(m_context->PhysicalDevice != VK_NULL_HANDLE, "Invalid DeviceID provided.");
 
     CreateLogicalDevice();
     InitializeVma();
@@ -222,24 +228,24 @@ void VulkanDevice::SelectDevice( const vk::PhysicalDevice &device )
 
     vk::CommandPoolCreateInfo graphicsCommandPoolCreateInfo{};
     graphicsCommandPoolCreateInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-    graphicsCommandPoolCreateInfo.queueFamilyIndex = m_Context->QueueFamilies[ QueueType::Graphics ].Index;
+    graphicsCommandPoolCreateInfo.queueFamilyIndex = m_context->QueueFamilies[ QueueType::Graphics ].Index;
 
     vk::CommandPoolCreateInfo transferCommandPoolCreateInfo{};
     transferCommandPoolCreateInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-    transferCommandPoolCreateInfo.queueFamilyIndex = m_Context->QueueFamilies[ QueueType::Transfer ].Index;
+    transferCommandPoolCreateInfo.queueFamilyIndex = m_context->QueueFamilies[ QueueType::Transfer ].Index;
 
-    m_Context->GraphicsQueueCommandPool = m_Context->LogicalDevice.createCommandPool( graphicsCommandPoolCreateInfo );
-    m_Context->TransferQueueCommandPool = m_Context->LogicalDevice.createCommandPool( transferCommandPoolCreateInfo );
+    m_context->GraphicsQueueCommandPool = m_context->LogicalDevice.createCommandPool( graphicsCommandPoolCreateInfo );
+    m_context->TransferQueueCommandPool = m_context->LogicalDevice.createCommandPool( transferCommandPoolCreateInfo );
 }
 
-void VulkanDevice::SetupQueueFamilies() const
+void VulkanLogicalDevice::SetupQueueFamilies() const
 {
     auto exists = [&]( const QueueType bit ) -> bool
     {
-        return m_Context->QueueFamilies.contains( bit );
+        return m_context->QueueFamilies.contains( bit );
     };
 
-    const auto localQueueFamilies = m_Context->PhysicalDevice.getQueueFamilyProperties();
+    const auto localQueueFamilies = m_context->PhysicalDevice.getQueueFamilyProperties();
 
     uint32_t index = 0;
     for ( const vk::QueueFamilyProperties &property : localQueueFamilies )
@@ -249,19 +255,19 @@ void VulkanDevice::SetupQueueFamilies() const
 
         if ( hasGraphics && !exists( QueueType::Graphics ) )
         {
-            m_Context->QueueFamilies[ QueueType::Graphics ] = QueueFamily{ index, static_cast<VkQueueFlags>(property.queueFlags) };
+            m_context->QueueFamilies[ QueueType::Graphics ] = QueueFamily{ index, { static_cast<VkQueueFlags>(property.queueFlags) } };
         }
         else if ( hasTransfer && !exists( QueueType::Transfer ) )
         {
             // Try to fetch a unique transfer queue
-            m_Context->QueueFamilies[ QueueType::Transfer ] = QueueFamily{ index, static_cast<VkQueueFlags>(property.queueFlags) };
+            m_context->QueueFamilies[ QueueType::Transfer ] = QueueFamily{ index, { static_cast<VkQueueFlags>(property.queueFlags) } };
         }
 
-        const vk::Bool32 presentationSupport = m_Context->PhysicalDevice.getSurfaceSupportKHR( index, m_Context->Surface );
+        const vk::Bool32 presentationSupport = m_context->PhysicalDevice.getSurfaceSupportKHR( index, m_context->Surface );
 
         if ( presentationSupport && !exists( QueueType::Presentation ) )
         {
-            m_Context->QueueFamilies[ QueueType::Presentation ] = QueueFamily{ index, static_cast<VkQueueFlags>(property.queueFlags) };
+            m_context->QueueFamilies[ QueueType::Presentation ] = QueueFamily{ index, { static_cast<VkQueueFlags>(property.queueFlags) } };
         }
 
         ++index;
@@ -269,11 +275,11 @@ void VulkanDevice::SetupQueueFamilies() const
 
     if ( !exists( QueueType::Transfer ) )
     {
-        m_Context->QueueFamilies[ QueueType::Transfer ] = m_Context->QueueFamilies[ QueueType::Graphics ];
+        m_context->QueueFamilies[ QueueType::Transfer ] = m_context->QueueFamilies[ QueueType::Graphics ];
     }
 }
 
-void VulkanDevice::CreateLogicalDevice() const
+void VulkanLogicalDevice::CreateLogicalDevice() const
 {
     SetupQueueFamilies();
 
@@ -290,55 +296,47 @@ void VulkanDevice::CreateLogicalDevice() const
     vk::DeviceCreateInfo createInfo{};
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(deviceQueueCreateInfos.size());
     createInfo.pQueueCreateInfos = deviceQueueCreateInfos.data();
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(m_RequiredExtensions.size());
-    createInfo.ppEnabledExtensionNames = m_RequiredExtensions.data();
+	createInfo.setPEnabledExtensionNames(m_requiredExtensions);
     createInfo.pEnabledFeatures = &features;
     createInfo.pNext = &dynamicRenderingFeature;
 
-    m_Context->LogicalDevice = m_Context->PhysicalDevice.createDevice( createInfo );
-    VULKAN_HPP_DEFAULT_DISPATCHER.init( m_Context->LogicalDevice );
+    m_context->LogicalDevice = m_context->PhysicalDevice.createDevice( createInfo );
+    VULKAN_HPP_DEFAULT_DISPATCHER.init( m_context->LogicalDevice );
 
-    m_Context->Queues[ QueueType::Graphics ] = vk::Queue{};
-    m_Context->Queues[ QueueType::Presentation ] = vk::Queue{};
-    m_Context->Queues[ QueueType::Transfer ] = vk::Queue{};
+    m_context->Queues[ QueueType::Graphics ] = vk::Queue{};
+    m_context->Queues[ QueueType::Presentation ] = vk::Queue{};
+    m_context->Queues[ QueueType::Transfer ] = vk::Queue{};
 
-    m_Context->LogicalDevice.getQueue( m_Context->QueueFamilies[ QueueType::Graphics ].Index, 0, &m_Context->Queues[ QueueType::Graphics ] );
-    m_Context->LogicalDevice.getQueue( m_Context->QueueFamilies[ QueueType::Presentation ].Index, 0, &m_Context->Queues[ QueueType::Presentation ] );
-    m_Context->LogicalDevice.getQueue( m_Context->QueueFamilies[ QueueType::Transfer ].Index, 0, &m_Context->Queues[ QueueType::Transfer ] );
+    m_context->LogicalDevice.getQueue( m_context->QueueFamilies[ QueueType::Graphics ].Index, 0, &m_context->Queues[ QueueType::Graphics ] );
+    m_context->LogicalDevice.getQueue( m_context->QueueFamilies[ QueueType::Presentation ].Index, 0, &m_context->Queues[ QueueType::Presentation ] );
+    m_context->LogicalDevice.getQueue( m_context->QueueFamilies[ QueueType::Transfer ].Index, 0, &m_context->Queues[ QueueType::Transfer ] );
 }
 
-void VulkanDevice::InitializeVma() const
+void VulkanLogicalDevice::InitializeVma() const
 {
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_3;
-    allocatorInfo.physicalDevice = m_Context->PhysicalDevice;
-    allocatorInfo.device = m_Context->LogicalDevice;
-    allocatorInfo.instance = m_Context->Instance;
+    allocatorInfo.physicalDevice = m_context->PhysicalDevice;
+    allocatorInfo.device = m_context->LogicalDevice;
+    allocatorInfo.instance = m_context->Instance;
 
-    vmaCreateAllocator( &allocatorInfo, &m_Context->Vma );
+    vmaCreateAllocator( &allocatorInfo, &m_context->Vma );
 }
 
-void VulkanDevice::CreateSurface() const
+void VulkanLogicalDevice::CreateSurface() const
 {
-    const auto instance = static_cast<VkInstance>(m_Context->Instance);
-    auto surface = static_cast<VkSurfaceKHR>(m_Context->Surface);
-    SDL_Vulkan_CreateSurface( m_Context->Window, instance, &surface );
-    m_Context->Surface = vk::SurfaceKHR( surface );
+    const auto instance = static_cast<VkInstance>(m_context->Instance);
+    auto surface = static_cast<VkSurfaceKHR>(m_context->Surface);
+    SDL_Vulkan_CreateSurface( m_context->Window, instance, &surface );
+    m_context->Surface = vk::SurfaceKHR( surface );
 }
 
-std::unordered_map<std::string, bool> VulkanDevice::DefaultRequiredExtensions()
-{
-    std::unordered_map<std::string, bool> result;
-    result[ VK_KHR_SWAPCHAIN_EXTENSION_NAME ] = true;
-    return result;
-}
-
-std::vector<vk::DeviceQueueCreateInfo> VulkanDevice::CreateUniqueDeviceCreateInfos() const
+std::vector<vk::DeviceQueueCreateInfo> VulkanLogicalDevice::CreateUniqueDeviceCreateInfos() const
 {
     std::unordered_map<uint32_t, bool> uniqueIndexes;
     std::vector<vk::DeviceQueueCreateInfo> result;
 
-    for ( std::pair<QueueType, QueueFamily> key : m_Context->QueueFamilies )
+    for ( std::pair<QueueType, QueueFamily> key : m_context->QueueFamilies )
     {
         if ( !uniqueIndexes.contains( key.second.Index ) )
         {
@@ -353,65 +351,65 @@ std::vector<vk::DeviceQueueCreateInfo> VulkanDevice::CreateUniqueDeviceCreateInf
     return result;
 }
 
-void VulkanDevice::WaitIdle()
+void VulkanLogicalDevice::WaitIdle()
 {
-    m_Context->LogicalDevice.waitIdle();
+    m_context->LogicalDevice.waitIdle();
 }
 
-void VulkanDevice::CreateRenderSurface()
+void VulkanLogicalDevice::CreateRenderSurface()
 {
-    m_Context->LogicalDevice.waitIdle();
+    m_context->LogicalDevice.waitIdle();
 
-    auto *renderSurfacePtr = new VulkanSurface{ m_Context.get() };
-    this->m_RenderSurface = std::unique_ptr<VulkanSurface>( renderSurfacePtr );
+    auto *renderSurfacePtr = new VulkanSurface{ m_context.get() };
+    this->m_renderSurface = std::unique_ptr<VulkanSurface>( renderSurfacePtr );
 }
 
-VulkanDevice::~VulkanDevice()
+VulkanLogicalDevice::~VulkanLogicalDevice()
 {
-    m_RenderSurface.reset();
+    m_renderSurface.reset();
     DestroyDebugUtils();
 
-    if ( m_Context == nullptr )
+    if ( m_context == nullptr )
     {
         return;
     }
 
-    m_Context->LogicalDevice.destroyCommandPool( m_Context->TransferQueueCommandPool );
-    m_Context->LogicalDevice.destroyCommandPool( m_Context->GraphicsQueueCommandPool );
-    m_Context->LogicalDevice.destroyCommandPool( m_Context->ComputeQueueCommandPool );
+    m_context->LogicalDevice.destroyCommandPool( m_context->TransferQueueCommandPool );
+    m_context->LogicalDevice.destroyCommandPool( m_context->GraphicsQueueCommandPool );
+    m_context->LogicalDevice.destroyCommandPool( m_context->ComputeQueueCommandPool );
 
-    m_Context->Instance.destroySurfaceKHR( m_Context->Surface );
-    vmaDestroyAllocator( m_Context->Vma );
-    m_Context->LogicalDevice.destroy();
-    m_Context->Instance.destroy();
+    m_context->Instance.destroySurfaceKHR( m_context->Surface );
+    vmaDestroyAllocator( m_context->Vma );
+    m_context->LogicalDevice.destroy();
+    m_context->Instance.destroy();
 
-    m_Context->ShaderCompiler.Destroy();
+    m_context->ShaderCompiler.Destroy();
 }
 
-void VulkanDevice::DestroyDebugUtils() const
+void VulkanLogicalDevice::DestroyDebugUtils() const
 {
-    if ( m_DebugMessenger == VK_NULL_HANDLE )
+    if ( m_debugMessenger == VK_NULL_HANDLE )
     {
         return;
     }
 
-    const auto instance = static_cast<VkInstance>(m_Context->Instance);
+    const auto instance = static_cast<VkInstance>(m_context->Instance);
 
     if ( const auto deleteDebugUtils = PFN_vkDestroyDebugUtilsMessengerEXT(vkGetInstanceProcAddr( instance, "vkDestroyDebugUtilsMessengerEXT" )) )
     {
-        deleteDebugUtils( instance, m_DebugMessenger, nullptr );
+        deleteDebugUtils( instance, m_debugMessenger, nullptr );
     }
 }
 
-VulkanContext *VulkanDevice::GetContext() const
+VulkanContext *VulkanLogicalDevice::GetContext() const
 {
-    return m_Context.get();
+    return m_context.get();
 }
 
-void VulkanDevice::CreateImageFormat() const
+void VulkanLogicalDevice::CreateImageFormat() const
 {
-    const auto surfaceFormats = m_Context->PhysicalDevice.getSurfaceFormatsKHR( m_Context->Surface );
-    const auto presentModes = m_Context->PhysicalDevice.getSurfacePresentModesKHR( m_Context->Surface );
+    const auto surfaceFormats = m_context->PhysicalDevice.getSurfaceFormatsKHR( m_context->Surface );
+    const auto presentModes = m_context->PhysicalDevice.getSurfacePresentModesKHR( m_context->Surface );
 
     auto presentMode = vk::PresentModeKHR::eImmediate;
     for ( const auto mode : presentModes )
@@ -431,19 +429,19 @@ void VulkanDevice::CreateImageFormat() const
         }
     }
 
-    m_Context->SurfaceImageFormat = ImageFormat::B8G8R8A8Unorm;
-    m_Context->ColorSpace = surfaceFormat.colorSpace;
-    m_Context->PresentMode = presentMode;
+    m_context->SurfaceImageFormat = ImageFormat::B8G8R8A8Unorm;
+    m_context->ColorSpace = surfaceFormat.colorSpace;
+    m_context->PresentMode = presentMode;
 }
 
-uint32_t VulkanDevice::GetFrameCount() const
+uint32_t VulkanLogicalDevice::GetFrameCount() const
 {
-    return m_Context->SwapChainImages.size();
+    return m_context->SwapChainImages.size();
 }
 
-ImageFormat VulkanDevice::GetSwapChainImageFormat() const
+ImageFormat VulkanLogicalDevice::GetSwapChainImageFormat() const
 {
-    return m_Context->SurfaceImageFormat;
+    return m_context->SurfaceImageFormat;
 }
 
 #endif

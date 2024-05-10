@@ -30,7 +30,7 @@ Logger::Logger( const LoggerType &loggerType ) :
 
 void Logger::Log( const Verbosity &verbosity, const std::string &component, const std::string &message )
 {
-    ReturnIf( verbosity > globalVerbosity );
+    RETURN_IF( verbosity > globalVerbosity );
 
     const auto formattedMessage = boost::format( "[%1%][%2%]: %3%" ) % component % verbosityStrMap[ static_cast<int>(verbosity) ] % message;
 

@@ -30,37 +30,37 @@ namespace DenOfIz
 
     class VulkanPipeline
     {
-        bool m_AlreadyDisposed = false;
-        const std::array<vk::DynamicState, 4> m_DynamicStates = { vk::DynamicState::eViewportWithCount, vk::DynamicState::eDepthBias, vk::DynamicState::eScissorWithCount,
-                                                                vk::DynamicState::eLineWidth };
+        bool m_alreadyDisposed = false;
+        const std::array<vk::DynamicState, 4> m_dynamicStates = { vk::DynamicState::eViewportWithCount, vk::DynamicState::eDepthBias, vk::DynamicState::eScissorWithCount,
+                                                                  vk::DynamicState::eLineWidth };
 
-        VulkanContext *m_Context;
-        std::vector<vk::ShaderModule> m_ShaderModules;
-        std::vector<vk::PushConstantRange> m_PushConstants;
-        std::vector<vk::Format> m_ColorFormats;
-        std::vector<vk::DescriptorSetLayout> m_Layouts;
+        VulkanContext *m_context;
+        std::vector<vk::ShaderModule> m_shaderModules;
+        std::vector<vk::PushConstantRange> m_pushConstants;
+        std::vector<vk::Format> m_colorFormats;
+        std::vector<vk::DescriptorSetLayout> m_layouts;
 
-        PipelineCreateInfo m_CreateInfo;
+        PipelineCreateInfo m_createInfo;
         // Storing these here
-        std::vector<vk::PipelineShaderStageCreateInfo> m_PipelineStageCreateInfos;
-        std::vector<vk::PipelineColorBlendAttachmentState> m_ColorBlendAttachments{};
-        vk::PipelineRenderingCreateInfo m_RenderingCreateInfo{};
-        vk::PipelineTessellationStateCreateInfo m_TessellationStateCreateInfo{};
-        vk::GraphicsPipelineCreateInfo m_PipelineCreateInfo{};
-        vk::PipelineColorBlendStateCreateInfo m_ColorBlending{};
-        vk::PipelineRasterizationStateCreateInfo m_RasterizationStateCreateInfo{};
-        vk::PipelineViewportStateCreateInfo m_ViewportStateCreateInfo{};
-        vk::PipelineMultisampleStateCreateInfo m_MultisampleStateCreateInfo{};
-        vk::PipelineDynamicStateCreateInfo m_DynamicStateCreateInfo{};
-        vk::PipelineLayoutCreateInfo m_PipelineLayoutCreateInfo{};
-        vk::PipelineVertexInputStateCreateInfo m_InputStateCreateInfo{};
-        vk::PipelineInputAssemblyStateCreateInfo m_InputAssemblyCreateInfo{};
-        vk::PipelineDepthStencilStateCreateInfo m_DepthStencilStateCreateInfo{};
+        std::vector<vk::PipelineShaderStageCreateInfo> m_pipelineStageCreateInfos;
+        std::vector<vk::PipelineColorBlendAttachmentState> m_colorBlendAttachments{};
+        vk::PipelineRenderingCreateInfo m_renderingCreateInfo{};
+        vk::PipelineTessellationStateCreateInfo m_tessellationStateCreateInfo{};
+        vk::GraphicsPipelineCreateInfo m_pipelineCreateInfo{};
+        vk::PipelineColorBlendStateCreateInfo m_colorBlending{};
+        vk::PipelineRasterizationStateCreateInfo m_rasterizationStateCreateInfo{};
+        vk::PipelineViewportStateCreateInfo m_viewportStateCreateInfo{};
+        vk::PipelineMultisampleStateCreateInfo m_multisampleStateCreateInfo{};
+        vk::PipelineDynamicStateCreateInfo m_dynamicStateCreateInfo{};
+        vk::PipelineLayoutCreateInfo m_pipelineLayoutCreateInfo{};
+        vk::PipelineVertexInputStateCreateInfo m_inputStateCreateInfo{};
+        vk::PipelineInputAssemblyStateCreateInfo m_inputAssemblyCreateInfo{};
+        vk::PipelineDepthStencilStateCreateInfo m_depthStencilStateCreateInfo{};
 
-        std::vector<vk::VertexInputAttributeDescription> m_VertexAttributeDescriptions;
-        std::vector<vk::VertexInputBindingDescription> m_InputBindingDescriptions;
+        std::vector<vk::VertexInputAttributeDescription> m_vertexAttributeDescriptions;
+        std::vector<vk::VertexInputBindingDescription> m_inputBindingDescriptions;
 
-        std::unordered_map<std::string, vk::WriteDescriptorSet> m_DescriptorSets;
+        std::unordered_map<std::string, vk::WriteDescriptorSet> m_descriptorSets;
 
     public:
         vk::Pipeline Instance;

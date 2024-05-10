@@ -37,27 +37,27 @@ namespace DenOfIz
 
     class VulkanRenderPass : boost::noncopyable
     {
-        VulkanContext *m_Context;
-        VulkanPipeline *m_BoundPipeline;
-        vk::Extent2D m_ViewportExtent;
+        VulkanContext *m_context;
+        VulkanPipeline *m_boundPipeline;
+        vk::Extent2D m_viewportExtent;
 
-        vk::Offset2D m_ViewportOffset;
-        std::unique_ptr<VulkanLock> m_SwapChainImageAvailable;
-        std::unique_ptr<VulkanLock> m_SwapChainImageRendered;
-        std::vector<vk::WriteDescriptorSet> m_CurrentResources;
-        vk::Image m_RenderTarget;
-        vk::ImageView m_RenderTargetImageView;
-        std::vector<RenderTargetAttachment> m_RenderTargetAttachments;
-        vk::CommandBuffer m_CommandBuffer;
-        bool m_HasIndexData;
+        vk::Offset2D m_viewportOffset;
+        std::unique_ptr<VulkanLock> m_swapChainImageAvailable;
+        std::unique_ptr<VulkanLock> m_swapChainImageRendered;
+        std::vector<vk::WriteDescriptorSet> m_currentResources;
+        vk::Image m_renderTarget;
+        vk::ImageView m_renderTargetImageView;
+        std::vector<RenderTargetAttachment> m_renderTargetAttachments;
+        vk::CommandBuffer m_commandBuffer;
+        bool m_hasIndexData;
 
-        uint32_t m_SwapChainIndex{};
-        uint32_t m_FrameIndex{};
+        uint32_t m_swapChainIndex{};
+        uint32_t m_frameIndex{};
 
-        vk::Viewport m_Viewport{};
-        vk::Rect2D m_ViewScissor{};
+        vk::Viewport m_viewport{};
+        vk::Rect2D m_viewScissor{};
 
-        RenderPassCreateInfo m_CreateInfo;
+        RenderPassCreateInfo m_createInfo;
 
     public:
         explicit VulkanRenderPass( VulkanContext *context, const RenderPassCreateInfo &createInfo );

@@ -16,6 +16,7 @@
       "inherits": "Base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "CRT_LINKAGE_STATIC": "0",
         "VCPKG_TARGET_TRIPLET": "x64-windows-static-md"
       }
     },

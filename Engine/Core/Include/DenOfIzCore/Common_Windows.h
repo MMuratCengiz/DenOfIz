@@ -19,8 +19,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #ifdef WIN32
-#include <winsdkver.h>
-#include <sdkddkver.h>
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#pragma warning(push)
+#pragma warning(disable : 4005)
 #define NOMINMAX
 #define NODRAWTEXT
 #define NOGDI
@@ -28,11 +33,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define NOMCX
 #define NOSERVICE
 #define NOHELP
-#define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
-#include <crtdbg.h>
-#define WIN32_LEAN_AND_MEAN
+#pragma warning(pop)
 
-#include <wrl/client.h>
-#include <wrl/event.h>
+#include <Windows.h>
+
 #endif

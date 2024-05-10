@@ -27,7 +27,7 @@ namespace DenOfIz
 
     class VulkanSurface
     {
-        VulkanContext *m_Context;
+        VulkanContext *m_context;
 
     public:
         explicit VulkanSurface( VulkanContext *context );

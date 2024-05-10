@@ -7,6 +7,7 @@
 #pragma once
 
 #include "DX12Context.h"
+#include <wrl/event.h>
 
 namespace DenOfIz
 {
@@ -45,7 +46,7 @@ namespace DenOfIz
             m_deviceNotify = deviceNotify;
         }
 
-        void Prepare( D3D12_RESOURCE_STATES beforeState = D3D12_RESOURCE_STATE_PRESENT );
+        void Prepare( D3D12_RESOURCE_STATES beforeState = D3D12_RESOURCE_STATE_PRESENT ) const;
         void Present( D3D12_RESOURCE_STATES beforeState = D3D12_RESOURCE_STATE_RENDER_TARGET );
         void WaitIdle() noexcept;
 
@@ -53,17 +54,6 @@ namespace DenOfIz
         RECT GetOutputSize() const
         {
             return m_outputSize;
-        }
-
-        // Direct3D Accessors.
-        ID3D12Device5 *GetD3DDevice() const
-        {
-            return m_d3dDevice.Get();
-        }
-
-        IDXGISwapChain3 *GetSwapChain() const
-        {
-            return m_swapChain.Get();
         }
 
         IDXGIFactory4 *GetDXGIFactory() const
@@ -84,11 +74,6 @@ namespace DenOfIz
         ID3D12Resource *GetDepthStencil() const
         {
             return m_depthStencil.Get();
-        }
-
-        ID3D12CommandQueue *GetCommandQueue() const
-        {
-            return m_commandQueue.Get();
         }
 
         ID3D12CommandAllocator *GetCommandAllocator() const
@@ -131,7 +116,7 @@ namespace DenOfIz
             return m_backBufferCount;
         }
 
-        DXGI_COLOR_SPACE_TYPE GetColorSpace() const
+        [[nodiscard]] DXGI_COLOR_SPACE_TYPE GetColorSpace() const
         {
             return m_colorSpace;
         }
@@ -153,7 +138,7 @@ namespace DenOfIz
 
     private:
         void MoveToNextFrame();
-        void GetAdapter( IDXGIAdapter1 **ppAdapter );
+        void GetAdapter( IDXGIAdapter1 **ppAdapter ) const;
         void UpdateColorSpace();
 
         static constexpr size_t MAX_BACK_BUFFER_COUNT = 3;
@@ -161,14 +146,11 @@ namespace DenOfIz
         UINT m_backBufferIndex;
 
         // Direct3D objects.
-        Microsoft::WRL::ComPtr<ID3D12Device5> m_d3dDevice;
-        Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
         Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> m_commandList;
         Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocators[ MAX_BACK_BUFFER_COUNT ];
 
         // Swap chain objects.
         Microsoft::WRL::ComPtr<IDXGIFactory4> m_dxgiFactory;
-        Microsoft::WRL::ComPtr<IDXGISwapChain3> m_swapChain;
         Microsoft::WRL::ComPtr<ID3D12Resource> m_renderTargets[ MAX_BACK_BUFFER_COUNT ];
         Microsoft::WRL::ComPtr<ID3D12Resource> m_depthStencil;
 

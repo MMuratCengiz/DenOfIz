@@ -16,13 +16,34 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/DirectX12/DX12Device.h>
+#pragma once
+#ifdef BUILD_DX12
 
-using namespace DenOfIz;
-using namespace DirectX;
-using Microsoft::WRL::ComPtr;
+#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
+#include <DenOfIzCore/Common.h>
+#include "DirectXHelpers.h"
+#include "DX12Context.h"
 
-DX12Device::DX12Device()
+namespace DenOfIz
 {
 
+    class DX12LogicalDevice final : public ILogicalDevice
+
+    {
+        std::unique_ptr<DX12Context> m_context;
+        DWORD m_dxgiFactoryFlags;
+
+    public:
+        DX12LogicalDevice();
+        ~DX12LogicalDevice() override;
+
+    private:
+        void CreateDevice( SDL_Window *window ) override;
+        std::vector<PhysicalDeviceInfo> ListPhysicalDevices() override;
+        void LoadPhysicalDevice( const PhysicalDeviceInfo &device ) override;
+        void WaitIdle() override;
+    };
+
 }
+
+#endif

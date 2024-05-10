@@ -38,7 +38,7 @@
 
 #include <boost/static_assert.hpp>
 
-#define ReturnIf(condition) if (condition) return
+#define RETURN_IF(condition) if (condition) return
 
 struct Unit
 {

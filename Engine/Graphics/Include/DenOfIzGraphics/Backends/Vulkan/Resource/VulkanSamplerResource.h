@@ -56,10 +56,10 @@ namespace DenOfIz
 
     class VulkanSamplerResource final : public ISamplerResource, boost::noncopyable
     {
-        SamplerCreateInfo m_CreateInfo;
-        VulkanContext *m_Context;
-        VulkanImage m_Image{};
-        uint32_t m_MipLevels{};
+        SamplerCreateInfo m_createInfo;
+        VulkanContext *m_context;
+        VulkanImage m_image{};
+        uint32_t m_mipLevels{};
 
     public:
         vk::DescriptorImageInfo DescriptorInfo;

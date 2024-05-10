@@ -25,11 +25,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 
 VulkanSurface::VulkanSurface( VulkanContext *context ) :
-    m_Context( context ) { CreateSurface(); }
+    m_context( context ) { CreateSurface(); }
 
 void VulkanSurface::CreateSurface() const
 {
-    const vk::SurfaceCapabilitiesKHR capabilities = m_Context->PhysicalDevice.getSurfaceCapabilitiesKHR( m_Context->Surface );
+    const vk::SurfaceCapabilitiesKHR capabilities = m_context->PhysicalDevice.getSurfaceCapabilitiesKHR( m_context->Surface );
 
     CreateSwapChain( capabilities );
 }
@@ -42,15 +42,15 @@ void VulkanSurface::CreateSwapChain( const vk::SurfaceCapabilitiesKHR &surfaceCa
 
     const uint32_t imageCount = std::min( surfaceCapabilities.maxImageCount, surfaceCapabilities.minImageCount + 1 );
 
-    createInfo.surface = m_Context->Surface;
+    createInfo.surface = m_context->Surface;
     createInfo.minImageCount = imageCount;
-    createInfo.imageFormat = VulkanEnumConverter::ConvertImageFormat( m_Context->SurfaceImageFormat );
-    createInfo.imageColorSpace = m_Context->ColorSpace;
-    createInfo.imageExtent = m_Context->SurfaceExtent;
+    createInfo.imageFormat = VulkanEnumConverter::ConvertImageFormat( m_context->SurfaceImageFormat );
+    createInfo.imageColorSpace = m_context->ColorSpace;
+    createInfo.imageExtent = m_context->SurfaceExtent;
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
 
-    const uint32_t qfIndexes[ 2 ] = { m_Context->QueueFamilies.at( QueueType::Graphics ).Index, m_Context->QueueFamilies.at( QueueType::Presentation ).Index };
+    const uint32_t qfIndexes[ 2 ] = { m_context->QueueFamilies.at( QueueType::Graphics ).Index, m_context->QueueFamilies.at( QueueType::Presentation ).Index };
 
     if ( qfIndexes[ 0 ] != qfIndexes[ 1 ] )
     {
@@ -67,24 +67,24 @@ void VulkanSurface::CreateSwapChain( const vk::SurfaceCapabilitiesKHR &surfaceCa
 
     createInfo.preTransform = surfaceCapabilities.currentTransform;
     createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-    createInfo.presentMode = m_Context->PresentMode;
+    createInfo.presentMode = m_context->PresentMode;
     createInfo.clipped = VK_TRUE;
-    createInfo.oldSwapchain = m_Context->SwapChain;
+    createInfo.oldSwapchain = m_context->SwapChain;
 
-    m_Context->SwapChain = m_Context->LogicalDevice.createSwapchainKHR( createInfo );
-    CreateSwapChainImages( VulkanEnumConverter::ConvertImageFormat( m_Context->SurfaceImageFormat ) );
+    m_context->SwapChain = m_context->LogicalDevice.createSwapchainKHR( createInfo );
+    CreateSwapChainImages( VulkanEnumConverter::ConvertImageFormat( m_context->SurfaceImageFormat ) );
 }
 
 void VulkanSurface::CreateSwapChainImages( const vk::Format format ) const
 {
-    m_Context->SwapChainImages = m_Context->LogicalDevice.getSwapchainImagesKHR( m_Context->SwapChain );
+    m_context->SwapChainImages = m_context->LogicalDevice.getSwapchainImagesKHR( m_context->SwapChain );
 
-    m_Context->SwapChainImageViews.resize( m_Context->SwapChainImages.size() );
+    m_context->SwapChainImageViews.resize( m_context->SwapChainImages.size() );
 
     int index = 0;
-    for ( auto image : m_Context->SwapChainImages )
+    for ( auto image : m_context->SwapChainImages )
     {
-        CreateImageView( m_Context->SwapChainImageViews[ index++ ], image, format, vk::ImageAspectFlagBits::eColor );
+        CreateImageView( m_context->SwapChainImageViews[ index++ ], image, format, vk::ImageAspectFlagBits::eColor );
     }
 }
 
@@ -92,14 +92,14 @@ void VulkanSurface::ChooseExtent2D( const vk::SurfaceCapabilitiesKHR &capabiliti
 {
     if ( capabilities.currentExtent.width != UINT32_MAX )
     {
-        m_Context->SurfaceExtent.width = capabilities.currentExtent.width;
-        m_Context->SurfaceExtent.height = capabilities.currentExtent.height;
+        m_context->SurfaceExtent.width = capabilities.currentExtent.width;
+        m_context->SurfaceExtent.height = capabilities.currentExtent.height;
         return;
     }
 
-    const SDL_Surface *pSurface = SDL_GetWindowSurface( m_Context->Window );
-    m_Context->SurfaceExtent.width = std::clamp( static_cast<uint32_t>(pSurface->w), capabilities.minImageExtent.width, capabilities.maxImageExtent.width );
-    m_Context->SurfaceExtent.height = std::clamp( static_cast<uint32_t>(pSurface->h), capabilities.minImageExtent.height, capabilities.maxImageExtent.height );
+    const SDL_Surface *pSurface = SDL_GetWindowSurface( m_context->Window );
+    m_context->SurfaceExtent.width = std::clamp( static_cast<uint32_t>(pSurface->w), capabilities.minImageExtent.width, capabilities.maxImageExtent.width );
+    m_context->SurfaceExtent.height = std::clamp( static_cast<uint32_t>(pSurface->h), capabilities.minImageExtent.height, capabilities.maxImageExtent.height );
 }
 
 void VulkanSurface::CreateImageView( vk::ImageView &imageView, const vk::Image &image, const vk::Format &format, const vk::ImageAspectFlags &aspectFlags ) const
@@ -118,20 +118,20 @@ void VulkanSurface::CreateImageView( vk::ImageView &imageView, const vk::Image &
     imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
     imageViewCreateInfo.subresourceRange.layerCount = 1;
 
-    imageView = m_Context->LogicalDevice.createImageView( imageViewCreateInfo );
+    imageView = m_context->LogicalDevice.createImageView( imageViewCreateInfo );
 }
 
 VulkanSurface::~VulkanSurface()
 {
     Dispose();
-    m_Context->LogicalDevice.destroySwapchainKHR( m_Context->SwapChain );
+    m_context->LogicalDevice.destroySwapchainKHR( m_context->SwapChain );
 }
 
 void VulkanSurface::Dispose() const
 {
-    for ( const auto &imageView : m_Context->SwapChainImageViews )
+    for ( const auto &imageView : m_context->SwapChainImageViews )
     {
-        m_Context->LogicalDevice.destroyImageView( imageView );
+        m_context->LogicalDevice.destroyImageView( imageView );
     }
 }
 

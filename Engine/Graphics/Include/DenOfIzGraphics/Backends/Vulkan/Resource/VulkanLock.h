@@ -24,13 +24,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-
-    class VulkanLock : public ILock
+    class VulkanLock final : public ILock
     {
-        vk::Fence fence{};
-        vk::Semaphore semaphore{};
+        vk::Fence m_fence{};
+        vk::Semaphore m_semaphore{};
 
-        VulkanContext *context;
+        VulkanContext *m_context;
 
     public:
         VulkanLock( VulkanContext *context, const LockType &lockType );
@@ -38,14 +37,14 @@ namespace DenOfIz
         void Reset() override;
         void Notify() override;
 
-        const vk::Fence &GetVkFence()
+        const vk::Fence &GetVkFence() const
         {
-            return fence;
+            return m_fence;
         }
 
-        const vk::Semaphore &GetVkSemaphore()
+        const vk::Semaphore &GetVkSemaphore() const
         {
-            return semaphore;
+            return m_semaphore;
         }
 
         ~VulkanLock() override;

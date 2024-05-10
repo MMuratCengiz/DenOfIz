@@ -23,28 +23,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 
 VulkanCubeMapResource::VulkanCubeMapResource( VulkanContext *context, const CubeMapCreateInfo &createInfo ) :
-    m_Context( context ), m_CreateInfo( createInfo ), m_Allocation( nullptr )
+    m_context( context ), m_createInfo( createInfo ), m_allocation( nullptr )
 {
 }
 
 void VulkanCubeMapResource::Allocate( std::vector<const void *> data )
 {
-    assert( !m_CreateInfo.Samplers.empty() );
-    assert( m_CreateInfo.Samplers.size() != data.size() );
+    assert( !m_createInfo.Samplers.empty() );
+    assert( m_createInfo.Samplers.size() != data.size() );
 
-    int width = m_CreateInfo.Samplers[ 0 ].Width;
-    int height = m_CreateInfo.Samplers[ 0 ].Height;
+    int width = m_createInfo.Samplers[ 0 ].Width;
+    int height = m_createInfo.Samplers[ 0 ].Height;
 
-    std::vector<std::pair<vk::Buffer, VmaAllocation>> stagingBuffers( m_CreateInfo.Samplers.size() );
+    std::vector<std::pair<vk::Buffer, VmaAllocation>> stagingBuffers( m_createInfo.Samplers.size() );
 
     int mipStagingBufferIndex = 0;
 
     uint32_t index = 0;
-    for ( const auto &img : m_CreateInfo.Samplers )
+    for ( const auto &img : m_createInfo.Samplers )
     {
         auto &[buffer, allocation] = stagingBuffers[ mipStagingBufferIndex++ ];
 
-        VulkanUtilities::InitStagingBuffer( m_Context, buffer, allocation, data[ index++ ], img.Width * img.Height * 4 );
+        VulkanUtilities::InitStagingBuffer( m_context, buffer, allocation, data[ index++ ], img.Width * img.Height * 4 );
     }
 
     vk::ImageCreateInfo imageCreateInfo{};
@@ -66,11 +66,11 @@ void VulkanCubeMapResource::Allocate( std::vector<const void *> data )
     VmaAllocationCreateInfo allocationCreateInfo{};
     allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-    vmaCreateImage( m_Context->Vma, (VkImageCreateInfo *)&imageCreateInfo, &allocationCreateInfo, (VkImage *)&m_Image, &m_Allocation, nullptr );
+    vmaCreateImage( m_context->Vma, reinterpret_cast<VkImageCreateInfo *>(&imageCreateInfo), &allocationCreateInfo, reinterpret_cast<VkImage *>(&m_image), &m_allocation, nullptr );
 
     vk::ImageViewCreateInfo imageViewCreateInfo{};
 
-    imageViewCreateInfo.image = m_Image;
+    imageViewCreateInfo.image = m_image;
     imageViewCreateInfo.viewType = vk::ImageViewType::eCube;
     imageViewCreateInfo.format = vk::Format::eR8G8B8A8Srgb;
     imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -79,7 +79,7 @@ void VulkanCubeMapResource::Allocate( std::vector<const void *> data )
     imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
     imageViewCreateInfo.subresourceRange.layerCount = 6;
 
-    m_ImageView = m_Context->LogicalDevice.createImageView( imageViewCreateInfo );
+    m_imageView = m_context->LogicalDevice.createImageView( imageViewCreateInfo );
 
     vk::SamplerCreateInfo samplerCreateInfo{};
 
@@ -99,12 +99,12 @@ void VulkanCubeMapResource::Allocate( std::vector<const void *> data )
     samplerCreateInfo.minLod = 1.0f;
     samplerCreateInfo.maxLod = 1.0f;
 
-    m_Sampler = m_Context->LogicalDevice.createSampler( samplerCreateInfo );
+    m_sampler = m_context->LogicalDevice.createSampler( samplerCreateInfo );
 
     int arrayLayer = 0;
     for ( auto &[buffer, allocation] : stagingBuffers )
     {
-        VulkanUtilities::RunOneTimeCommand( m_Context, [&]( const vk::CommandBuffer &commandBuffer )
+        VulkanUtilities::RunOneTimeCommand( m_context, [&]( const vk::CommandBuffer &commandBuffer )
         {
             vk::ImageMemoryBarrier toTransferOptimal{};
 
@@ -112,7 +112,7 @@ void VulkanCubeMapResource::Allocate( std::vector<const void *> data )
             toTransferOptimal.newLayout = vk::ImageLayout::eTransferDstOptimal;
             toTransferOptimal.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             toTransferOptimal.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            toTransferOptimal.image = m_Image;
+            toTransferOptimal.image = m_image;
             toTransferOptimal.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
             toTransferOptimal.subresourceRange.baseMipLevel = 0;
             toTransferOptimal.subresourceRange.levelCount = 1;
@@ -135,7 +135,7 @@ void VulkanCubeMapResource::Allocate( std::vector<const void *> data )
             bufferImageCopy.imageOffset = vk::Offset3D{ 0, 0, 0 };
             bufferImageCopy.imageExtent = vk::Extent3D{ static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 };
 
-            commandBuffer.copyBufferToImage( buffer, m_Image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferImageCopy );
+            commandBuffer.copyBufferToImage( buffer, m_image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferImageCopy );
 
             vk::ImageMemoryBarrier toShaderOptimal{};
 
@@ -143,7 +143,7 @@ void VulkanCubeMapResource::Allocate( std::vector<const void *> data )
             toShaderOptimal.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
             toShaderOptimal.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             toShaderOptimal.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            toShaderOptimal.image = m_Image;
+            toShaderOptimal.image = m_image;
             toShaderOptimal.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
             toShaderOptimal.subresourceRange.baseMipLevel = 0;
             toShaderOptimal.subresourceRange.levelCount = 1;
@@ -155,16 +155,16 @@ void VulkanCubeMapResource::Allocate( std::vector<const void *> data )
             commandBuffer.pipelineBarrier( vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, 0, nullptr, 0, nullptr, 1, &toShaderOptimal );
         } );
 
-        vmaDestroyBuffer( m_Context->Vma, buffer, allocation );
+        vmaDestroyBuffer( m_context->Vma, buffer, allocation );
         arrayLayer++;
     }
 }
 
 void VulkanCubeMapResource::Deallocate()
 {
-    vmaDestroyImage( m_Context->Vma, m_Image, m_Allocation );
-    m_Context->LogicalDevice.destroyImageView( m_ImageView );
-    m_Context->LogicalDevice.destroySampler( m_Sampler );
+    vmaDestroyImage( m_context->Vma, m_image, m_allocation );
+    m_context->LogicalDevice.destroyImageView( m_imageView );
+    m_context->LogicalDevice.destroySampler( m_sampler );
 }
 
 #endif

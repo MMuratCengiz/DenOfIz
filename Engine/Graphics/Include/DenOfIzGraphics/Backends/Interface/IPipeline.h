@@ -60,9 +60,18 @@ namespace DenOfIz
         None
     };
 
+    namespace ViewMask
+    {
+        constexpr int R = 0x00000001;
+        constexpr int G = 0x00000002;
+        constexpr int B = 0x00000004;
+        constexpr int A = 0x00000008;
+    };
+
     struct PipelineRendering
     {
-        uint32_t ViewMask;
+        uint32_t ViewMask = ViewMask::R | ViewMask::G | ViewMask::B | ViewMask::A;
+
         std::vector<ImageFormat> ColorAttachmentFormats;
         ImageFormat DepthAttachmentFormat;
         ImageFormat StencilAttachmentFormat;

@@ -34,20 +34,20 @@ namespace DenOfIz
 
     class TestVulkanRenderer
     {
-        std::vector<float> triangle{ 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-                                     1.0 };
+        std::vector<float> m_Triangle{ 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+                                       1.0 };
 
-        SDL_Window *window;
+        SDL_Window *m_Window = nullptr;
 
-        VulkanDevice device{};
-        std::unique_ptr<SpvProgram> program;
-        std::unique_ptr<VulkanPipeline> pipeline;
-        std::unique_ptr<VulkanBufferResource> vertexBuffer;
-        std::unique_ptr<VulkanBufferResource> timePassedBuffer;
-        std::unique_ptr<Time> time = std::make_unique<Time>();
-        std::vector<std::unique_ptr<VulkanLock>> fences;
-        std::vector<std::unique_ptr<VulkanRenderPass>> renderPasses;
-        int frameIndex = 0;
+        VulkanDevice m_Device{};
+        std::unique_ptr<SpvProgram> m_Program;
+        std::unique_ptr<VulkanPipeline> m_Pipeline;
+        std::unique_ptr<VulkanBufferResource> m_VertexBuffer;
+        std::unique_ptr<VulkanBufferResource> m_TimePassedBuffer;
+        std::unique_ptr<Time> m_Time = std::make_unique<Time>();
+        std::vector<std::unique_ptr<VulkanLock>> m_Fences;
+        std::vector<std::unique_ptr<VulkanRenderPass>> m_RenderPasses;
+        int m_FrameIndex = 0;
 
     public:
         void Setup( SDL_Window *w );

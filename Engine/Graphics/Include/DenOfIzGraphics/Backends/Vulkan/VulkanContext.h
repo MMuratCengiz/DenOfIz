@@ -34,7 +34,7 @@ namespace DenOfIz
 
     struct VulkanDeviceInfo
     {
-        vk::PhysicalDevice	Device;
+        vk::PhysicalDevice Device;
         vk::PhysicalDeviceProperties Properties;
         vk::PhysicalDeviceFeatures Features;
 

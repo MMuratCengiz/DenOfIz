@@ -17,20 +17,42 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifdef BUILD_DX12
 
 #include <DenOfIzCore/Common.h>
-#include "DirectXHelpers.h"
 
 namespace DenOfIz
 {
+    struct PhysicalDeviceCapabilities
+    {
+        bool DedicatedTransferQueue;
+        bool RayTracing;
+        bool ComputeShaders;
+    };
 
-    class DX12Device
+    struct PhysicalDeviceProperties
+    {
+        bool IsDedicated;
+        uint32_t MemoryAvailableInMb;
+    };
+
+    struct PhysicalDeviceInfo
+    {
+        long Id;
+        std::string Name;
+        PhysicalDeviceProperties Properties;
+        PhysicalDeviceCapabilities Capabilities;
+    };
+
+    class ILogicalDevice
     {
     public:
-        DX12Device();
+        virtual ~ILogicalDevice() = default;
+
+    private:
+        virtual void CreateDevice( SDL_Window *window ) = 0;
+        virtual std::vector<PhysicalDeviceInfo> ListPhysicalDevices() = 0;
+        virtual void LoadPhysicalDevice( const PhysicalDeviceInfo &device ) = 0;
+        virtual void WaitIdle() = 0;
     };
 
 }
-
-#endif

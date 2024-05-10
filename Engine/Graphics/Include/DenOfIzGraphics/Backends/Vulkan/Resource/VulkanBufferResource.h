@@ -27,12 +27,12 @@ namespace DenOfIz
 
     class VulkanBufferResource final : public IBufferResource, boost::noncopyable
     {
-        BufferCreateInfo m_CreateInfo;
-        VulkanContext *m_Context;
+        BufferCreateInfo m_createInfo;
+        VulkanContext *m_context;
 
-        VmaAllocation m_Allocation;
-        bool m_AlreadyDisposed = false;
-        bool m_AlreadyAllocated = false;
+        VmaAllocation m_allocation;
+        bool m_alreadyDisposed = false;
+        bool m_alreadyAllocated = false;
 
     public:
         vk::Buffer Instance;
@@ -42,7 +42,7 @@ namespace DenOfIz
 
         void Allocate( const void *newData ) override;
         void Deallocate() override;
-        virtual ~VulkanBufferResource();
+        ~VulkanBufferResource() override;
         void UpdateAllocation( const void *newData );
 
     };

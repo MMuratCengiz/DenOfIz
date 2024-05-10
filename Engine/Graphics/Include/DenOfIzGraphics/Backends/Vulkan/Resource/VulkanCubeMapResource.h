@@ -24,16 +24,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-
     class VulkanCubeMapResource final : ICubeMapResource, boost::noncopyable
     {
-        VulkanContext *m_Context;
-        CubeMapCreateInfo m_CreateInfo;
+        VulkanContext *m_context;
+        CubeMapCreateInfo m_createInfo;
 
-        vk::Sampler m_Sampler{};
-        vk::ImageView m_ImageView{};
-        vk::Image m_Image;
-        VmaAllocation m_Allocation;
+        vk::Sampler m_sampler{};
+        vk::ImageView m_imageView{};
+        vk::Image m_image;
+        VmaAllocation m_allocation;
 
     public:
         explicit VulkanCubeMapResource( VulkanContext *context, const CubeMapCreateInfo &createInfo );

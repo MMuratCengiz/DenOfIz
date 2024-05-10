@@ -206,7 +206,7 @@ namespace DenOfIz
         return std::move( spirv );
     }
 
-    std::vector<uint32_t> ShaderCompiler::HLSLtoSPV( const ShaderStage shaderType, const std::string &shaderPath )
+    std::vector<uint32_t> ShaderCompiler::HLSLtoSPV( const ShaderStage shaderType, const std::string &shaderPath ) const
     {
         // Attribute to source: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
         // https://github.com/KhronosGroup/Vulkan-Guide
@@ -239,38 +239,6 @@ namespace DenOfIz
         case ShaderStage::AllGraphics:
             break;
         case ShaderStage::All:
-            break;
-        case ShaderStage::RaygenKHR:
-            break;
-        case ShaderStage::AnyHitKHR:
-            break;
-        case ShaderStage::ClosestHitKHR:
-            break;
-        case ShaderStage::MissKHR:
-            break;
-        case ShaderStage::IntersectionKHR:
-            break;
-        case ShaderStage::CallableKHR:
-            break;
-        case ShaderStage::RaygenNV:
-            break;
-        case ShaderStage::AnyHitNV:
-            break;
-        case ShaderStage::ClosestHitNV:
-            break;
-        case ShaderStage::MissNV:
-            break;
-        case ShaderStage::IntersectionNV:
-            break;
-        case ShaderStage::CallableNV:
-            break;
-        case ShaderStage::TaskNV:
-            break;
-        case ShaderStage::MeshNV:
-            break;
-        case ShaderStage::TaskEXT:
-            break;
-        case ShaderStage::MeshEXT:
             break;
         }
 
@@ -316,7 +284,7 @@ namespace DenOfIz
                                           static_cast<uint32_t *>(code->GetBufferPointer()) + code->GetBufferSize() / sizeof( uint32_t ) );
 
         code->Release();
-        return std::move( codeToUVec );
+        return codeToUVec;
     }
 
 }

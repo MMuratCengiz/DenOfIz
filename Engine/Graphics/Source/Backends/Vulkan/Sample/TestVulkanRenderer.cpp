@@ -22,76 +22,78 @@ using namespace DenOfIz;
 
 void TestVulkanRenderer::Setup( SDL_Window *w )
 {
-    this->window = w;
+    this->m_Window = w;
 
     auto compiler = ShaderCompiler();
     compiler.Init();
     auto vs = compiler.HLSLtoSPV( ShaderStage::Vertex, "vs.hlsl" );
     auto fs = compiler.HLSLtoSPV( ShaderStage::Fragment, "fs.hlsl" );
     compiler.Destroy();
-    program = std::make_unique<SpvProgram>( std::vector<CompiledShader>{ CompiledShader{ .Stage = ShaderStage::Vertex, .Data = std::move( vs ) },
-                                                                         CompiledShader{ .Stage = ShaderStage::Fragment, .Data = std::move( fs ) } } );
+    m_Program = std::make_unique<SpvProgram>( std::vector<CompiledShader>{ CompiledShader{ .Stage = ShaderStage::Vertex, .Data = std::move( vs ) },
+                                                                           CompiledShader{ .Stage = ShaderStage::Fragment, .Data = std::move( fs ) } } );
 
-    device.CreateDevice( window );
-    device.ListDevices()[ 0 ].Select();
-    device.WaitIdle();
+    m_Device.CreateDevice( m_Window );
+	auto firstDevice = m_Device.ListPhysicalDevices()[0];
+    m_Device.LoadPhysicalDevice(firstDevice);
 
-    PipelineCreateInfo pipelineCreateInfo{ .SpvProgram = *program.get() };
+    PipelineCreateInfo pipelineCreateInfo{ .SpvProgram = *m_Program };
+	pipelineCreateInfo.BlendModes = { BlendMode::None };
+	pipelineCreateInfo.Rendering.ColorAttachmentFormats.push_back( m_Device.GetContext()->SurfaceImageFormat );
 
-    pipeline = std::make_unique<VulkanPipeline>( device.GetContext(), pipelineCreateInfo );
+    m_Pipeline = std::make_unique<VulkanPipeline>( m_Device.GetContext(), pipelineCreateInfo );
 
     BufferCreateInfo bufferCreateInfo{};
-    bufferCreateInfo.MemoryCreateInfo.Size = triangle.size() * sizeof( float );
+    bufferCreateInfo.MemoryCreateInfo.Size = m_Triangle.size() * sizeof( float );
     bufferCreateInfo.MemoryCreateInfo.Location = MemoryLocation::GPU;
     bufferCreateInfo.MemoryCreateInfo.Usage = MemoryUsage::VertexBuffer;
     bufferCreateInfo.UseStaging = true;
 
-    vertexBuffer = std::make_unique<VulkanBufferResource>( device.GetContext(), bufferCreateInfo );
-    vertexBuffer->Allocate( triangle.data() );
+    m_VertexBuffer = std::make_unique<VulkanBufferResource>( m_Device.GetContext(), bufferCreateInfo );
+    m_VertexBuffer->Allocate( m_Triangle.data() );
 
     BufferCreateInfo deltaTimeBufferCreateInfo;
     deltaTimeBufferCreateInfo.MemoryCreateInfo.Size = sizeof( float );
     deltaTimeBufferCreateInfo.MemoryCreateInfo.Location = MemoryLocation::CPU_GPU;
     deltaTimeBufferCreateInfo.MemoryCreateInfo.Usage = MemoryUsage::UniformBuffer;
 
-    timePassedBuffer = std::make_unique<VulkanBufferResource>( device.GetContext(), deltaTimeBufferCreateInfo );
-    timePassedBuffer->Name = "time";
+    m_TimePassedBuffer = std::make_unique<VulkanBufferResource>( m_Device.GetContext(), deltaTimeBufferCreateInfo );
+    m_TimePassedBuffer->Name = "time";
 
     RenderPassCreateInfo createInfo{};
     createInfo.RenderToSwapChain = true;
-    createInfo.Format = device.GetSwapChainImageFormat();
+    createInfo.Format = m_Device.GetSwapChainImageFormat();
     createInfo.RenderTargetType = RenderTargetType::Color;
 
     for ( int i = 0; i < 3; i++ )
     {
         createInfo.SwapChainImageIndex = i;
-        renderPasses.push_back( std::make_unique<VulkanRenderPass>( device.GetContext(), createInfo ) );
-        fences.push_back( std::make_unique<VulkanLock>( device.GetContext(), LockType::Fence ) );
+        m_RenderPasses.push_back( std::make_unique<VulkanRenderPass>( m_Device.GetContext(), createInfo ) );
+        m_Fences.push_back( std::make_unique<VulkanLock>( m_Device.GetContext(), LockType::Fence ) );
     }
 
-    time->ListenFps = []( const double fps )
+    m_Time->ListenFps = []( const double fps )
     {
-        std::cout << "FPS: " << fps << std::endl;
+        std::cout << "FPS: " << fps << "\n";
     };
 }
 
 void TestVulkanRenderer::Render()
 {
-    float timePassed = (time->DoubleEpochNow() - time->GetFirstTickTime()) / 1000000.0f;
+    float timePassed = (m_Time->DoubleEpochNow() - m_Time->GetFirstTickTime()) / 1000000.0f;
     //	timePassedBuffer->Allocate(&timePassed);
-    time->Tick();
+    m_Time->Tick();
 
-    fences[ frameIndex ]->Wait();
-    renderPasses[ frameIndex ]->Begin( { 0.0f, 0.0f, 0.0f, 1.0f } );
-    renderPasses[ frameIndex ]->BindPipeline( pipeline.get() );
-    renderPasses[ frameIndex ]->BindVertexBuffer( vertexBuffer.get() );
+    m_Fences[ m_FrameIndex ]->Wait();
+    m_RenderPasses[ m_FrameIndex ]->Begin( { 0.0f, 1.0f, 0.0f, 1.0f } );
+    m_RenderPasses[ m_FrameIndex ]->BindPipeline( m_Pipeline.get() );
+    m_RenderPasses[ m_FrameIndex ]->BindVertexBuffer( m_VertexBuffer.get() );
     //	renderPasses[frameIndex]->BindResource((IResource*)timePassedBuffer.get());
-    renderPasses[ frameIndex ]->Draw( 1, 3 );
-    renderPasses[ frameIndex ]->Submit( {}, fences[ frameIndex ].get() );
-    frameIndex = (frameIndex + 1) % 3;
+    m_RenderPasses[ m_FrameIndex ]->Draw( 1, 3 );
+    m_RenderPasses[ m_FrameIndex ]->Submit( {}, m_Fences[ m_FrameIndex ].get() );
+    m_FrameIndex = (m_FrameIndex + 1) % 3;
 }
 
 void TestVulkanRenderer::Exit()
 {
-    device.WaitIdle();
+    m_Device.WaitIdle();
 }

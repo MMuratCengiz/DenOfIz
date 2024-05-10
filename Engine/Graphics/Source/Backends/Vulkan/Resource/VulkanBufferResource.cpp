@@ -24,41 +24,41 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 
 VulkanBufferResource::VulkanBufferResource( VulkanContext *context, const BufferCreateInfo &createInfo ) :
-    m_CreateInfo( createInfo ), m_Context( context ), m_Allocation( nullptr )
+    m_createInfo( createInfo ), m_context( context ), m_allocation( nullptr )
 {
 }
 
 void VulkanBufferResource::Allocate( const void *newData )
 {
     Data = newData;
-    if ( m_AlreadyAllocated )
+    if ( m_alreadyAllocated )
     {
         UpdateAllocation( newData );
         return;
     }
 
-    m_AlreadyDisposed = false;
-    m_AlreadyAllocated = true;
+    m_alreadyDisposed = false;
+    m_alreadyAllocated = true;
 
     std::pair<vk::Buffer, VmaAllocation> stagingBuffer;
-    Size = m_CreateInfo.MemoryCreateInfo.Size;
+    Size = m_createInfo.MemoryCreateInfo.Size;
 
-    if ( m_CreateInfo.UseStaging )
+    if ( m_createInfo.UseStaging )
     {
-        VulkanUtilities::InitStagingBuffer( m_Context, stagingBuffer.first, stagingBuffer.second, newData, Size );
+        VulkanUtilities::InitStagingBuffer( m_context, stagingBuffer.first, stagingBuffer.second, newData, Size );
     }
 
     vk::BufferCreateInfo bufferCreateInfo{};
-    bufferCreateInfo.usage = VulkanEnumConverter::ConvertBufferUsage( m_CreateInfo.MemoryCreateInfo.Usage );
+    bufferCreateInfo.usage = VulkanEnumConverter::ConvertBufferUsage( m_createInfo.MemoryCreateInfo.Usage );
     bufferCreateInfo.size = Size;
     bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 
     VmaAllocationCreateInfo allocationCreateInfo{};
 
-    allocationCreateInfo.usage = VulkanEnumConverter::ConvertMemoryLocation( m_CreateInfo.MemoryCreateInfo.Location );
+    allocationCreateInfo.usage = VulkanEnumConverter::ConvertMemoryLocation( m_createInfo.MemoryCreateInfo.Location );
 
     // Todo more flexibility, or a clearer interface here:
-    if ( m_CreateInfo.MemoryCreateInfo.Location == MemoryLocation::CPU_GPU )
+    if ( m_createInfo.MemoryCreateInfo.Location == MemoryLocation::CPU_GPU )
     {
         const auto gpuVisible = vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eDeviceLocal;
         allocationCreateInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eHostVisible);
@@ -71,25 +71,25 @@ void VulkanBufferResource::Allocate( const void *newData )
     }
 
     VmaAllocationInfo allocationInfo;
-    vmaCreateBuffer( m_Context->Vma, reinterpret_cast<VkBufferCreateInfo *>(&bufferCreateInfo), &allocationCreateInfo, reinterpret_cast<VkBuffer *>(&Instance), &m_Allocation, &allocationInfo );
+    vmaCreateBuffer( m_context->Vma, reinterpret_cast<VkBufferCreateInfo *>(&bufferCreateInfo), &allocationCreateInfo, reinterpret_cast<VkBuffer *>(&Instance), &m_allocation, &allocationInfo );
 
-    if ( m_CreateInfo.UseStaging )
+    if ( m_createInfo.UseStaging )
     {
-        VulkanUtilities::CopyBuffer( m_Context, stagingBuffer.first, Instance, Size );
-        vmaDestroyBuffer( m_Context->Vma, stagingBuffer.first, stagingBuffer.second );
+        VulkanUtilities::CopyBuffer( m_context, stagingBuffer.first, Instance, Size );
+        vmaDestroyBuffer( m_context->Vma, stagingBuffer.first, stagingBuffer.second );
     }
-    else if ( mappedMemory != nullptr && m_CreateInfo.KeepMemoryMapped )
+    else if ( mappedMemory != nullptr && m_createInfo.KeepMemoryMapped )
     {
         memcpy( mappedMemory, newData, Size );
     }
     else
     {
-        vmaMapMemory( this->m_Context->Vma, m_Allocation, &mappedMemory );
+        vmaMapMemory( this->m_context->Vma, m_allocation, &mappedMemory );
         memcpy( mappedMemory, newData, Size );
 
-        if ( !m_CreateInfo.KeepMemoryMapped )
+        if ( !m_createInfo.KeepMemoryMapped )
         {
-            vmaUnmapMemory( m_Context->Vma, m_Allocation );
+            vmaUnmapMemory( m_context->Vma, m_allocation );
         }
     }
 
@@ -100,37 +100,37 @@ void VulkanBufferResource::Allocate( const void *newData )
 
 void VulkanBufferResource::UpdateAllocation( const void *newData )
 {
-    if ( m_CreateInfo.UseStaging )
+    if ( m_createInfo.UseStaging )
     {
         std::pair<vk::Buffer, VmaAllocation> stagingBuffer;
-        VulkanUtilities::InitStagingBuffer( m_Context, stagingBuffer.first, stagingBuffer.second, newData, Size );
-        VulkanUtilities::CopyBuffer( m_Context, stagingBuffer.first, Instance, Size );
-        vmaDestroyBuffer( m_Context->Vma, stagingBuffer.first, stagingBuffer.second );
+        VulkanUtilities::InitStagingBuffer( m_context, stagingBuffer.first, stagingBuffer.second, newData, Size );
+        VulkanUtilities::CopyBuffer( m_context, stagingBuffer.first, Instance, Size );
+        vmaDestroyBuffer( m_context->Vma, stagingBuffer.first, stagingBuffer.second );
     }
-    else if ( m_CreateInfo.KeepMemoryMapped )
+    else if ( m_createInfo.KeepMemoryMapped )
     {
         memcpy( mappedMemory, newData, Size );
     }
     else
     {
-        vmaMapMemory( m_Context->Vma, m_Allocation, &mappedMemory );
+        vmaMapMemory( m_context->Vma, m_allocation, &mappedMemory );
         memcpy( mappedMemory, newData, Size );
-        vmaUnmapMemory( m_Context->Vma, m_Allocation );
+        vmaUnmapMemory( m_context->Vma, m_allocation );
     }
 }
 
 void VulkanBufferResource::Deallocate()
 {
-    m_AlreadyAllocated = false;
-    ReturnIf( m_AlreadyDisposed );
-    m_AlreadyDisposed = true;
+    m_alreadyAllocated = false;
+    RETURN_IF( m_alreadyDisposed );
+    m_alreadyDisposed = true;
 
-    if ( m_CreateInfo.KeepMemoryMapped )
+    if ( m_createInfo.KeepMemoryMapped )
     {
-        vmaUnmapMemory( m_Context->Vma, m_Allocation );
+        vmaUnmapMemory( m_context->Vma, m_allocation );
     }
 
-    vmaDestroyBuffer( m_Context->Vma, Instance, m_Allocation );
+    vmaDestroyBuffer( m_context->Vma, Instance, m_allocation );
 }
 
 VulkanBufferResource::~VulkanBufferResource()

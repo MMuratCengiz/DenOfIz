@@ -20,26 +20,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifdef BUILD_DX12
 
 #include <DenOfIzCore/Common.h>
-#include <d3d12.h>
 
+#include <directx/dxgiformat.h>
+#include <directx/d3d12.h>
+
+#include <directx/dxgicommon.h>
+#include <directx/d3dx12.h>
 #include <dxgi1_6.h>
 
-#include <DirectXMath.h>
-#include <DirectXColors.h>
-
-#include "directx/d3dx12.h"
+#ifdef DEBUG
+#include <dxgidebug.h>
+#endif
 
 struct DX12Context
 {
-    ID3D12Device5 *D3DDevice;
-
-    IDXGISwapChain3 *SwapChain;
-    IDXGIFactory4 *DXGIFactory;
-
-    ID3D12CommandQueue *CommandQueue;
-    ID3D12CommandAllocator *CommandAllocators;
-
-    ID3D12GraphicsCommandList4 *GraphicsCommandList;
+    Microsoft::WRL::ComPtr<ID3D12Device5> D3DDevice;
+    Microsoft::WRL::ComPtr<IDXGISwapChain3> SwapChain;
+    Microsoft::WRL::ComPtr<IDXGIFactory4> DXGIFactory;
+    Microsoft::WRL::ComPtr<ID3D12CommandQueue> CommandQueue;
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CommandAllocators;
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> GraphicsCommandList;
 
     DXGI_FORMAT BackBufferFormat;
     DXGI_FORMAT DepthBufferFormat;
@@ -47,5 +47,7 @@ struct DX12Context
     D3D12_VIEWPORT ScreenViewport;
     D3D12_RECT ScissorRect;
 };
+
+#define DX_CHECK_RESULT(R) assert(SUCCEEDED(R))
 
 #endif
