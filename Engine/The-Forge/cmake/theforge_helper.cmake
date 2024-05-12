@@ -78,6 +78,20 @@ function(INCLUDE_THEFORGE target)
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/nvapi/amd64"
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/ThirdParty/OpenSource/winpixeventruntime/bin"
     )
+
+    set(BINARY_DIR "${PROJECT_BINARY_DIR}")
+    if (APPLE)
+        set(BINARY_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}.app/Contents/Resources")
+    endif ()
+    if (WIN32)
+        configure_file(${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/Windows/pc_gpu.data ${BINARY_DIR}/GPUCfg/gpu.data COPYONLY)
+    elseif(APPLE)
+        configure_file(${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/Darwin/apple_gpu.data ${BINARY_DIR}/GPUCfg/gpu.data COPYONLY)
+    elseif(LINUX)
+        configure_file(${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/Linux/steamdeck_gpu.data ${BINARY_DIR}/GPUCfg/gpu.data COPYONLY)
+    elseif(ANDROID)
+        configure_file(${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/Android/android_gpu.data ${BINARY_DIR}/GPUCfg/gpu.data COPYONLY)
+    endif ()
 endfunction()
 
 
@@ -93,6 +107,7 @@ function(compile_shaders)
     
     file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/Shaders)
     file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/CompiledShaders)
+    # file(TOUCH ${PROJECT_BINARY_DIR}/CompiledShaders/reload-server.txt)
 
     set(target_lang "VULKAN")
     if (WIN32)
