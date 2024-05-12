@@ -1,5 +1,4 @@
-#ifndef MAIN_H
-#define MAIN_H
+#pragma once
 
 #include <IApp.h>
 
@@ -14,5 +13,3 @@ public:
     void Update(float deltaTime) override;
     const char *GetName() override;
 };
-
-#endif // MAIN_H

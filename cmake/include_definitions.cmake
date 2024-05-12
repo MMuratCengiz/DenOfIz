@@ -1,3 +1,8 @@
+if (APPLE)
+    enable_language(OBJC)
+    enable_language(OBJCXX)
+endif()
+
 if (WIN32)
     add_definitions(-D_WIN32=1)
 endif()
@@ -7,4 +12,10 @@ if (CMAKE_BUILD_TYPE MATCHES "Debug")
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
+
 set(CMAKE_CXX_STANDARD 23)
+if (APPLE)
+    set(CMAKE_OBJCXX_STANDARD 23)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -x objective-c")
+    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -x objective-c++")
+endif()

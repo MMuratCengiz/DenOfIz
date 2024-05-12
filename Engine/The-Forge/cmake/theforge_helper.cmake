@@ -25,10 +25,7 @@
 include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
 
 function(INCLUDE_THEFORGE target)
-    target_link_libraries(${target} 
-        PUBLIC  
-        TheForge
-    )
+    target_link_libraries(${target} PUBLIC TheForge)
 
     if (WIN32)
         target_link_libraries(${target} PUBLIC 
@@ -48,9 +45,11 @@ function(INCLUDE_THEFORGE target)
         configure_file("${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/VulkanSDK/bin/Linux/libVkLayer_khronos_validation.so" "${PROJECT_BINARY_DIR}/libVkLayer_khronos_validation.so" COPYONLY)
     endif()
 
-    target_compile_features(${target} PRIVATE cxx_std_20)
-    set_property(TARGET ${target} PROPERTY CXX_STANDARD 20)
-    set_property(TARGET ${target} PROPERTY CXX_STANDARD_REQUIRED ON)
+    if (NOT APPLE)
+        target_compile_features(${target} PRIVATE cxx_std_20)
+        set_property(TARGET ${target} PROPERTY CXX_STANDARD 20)
+        set_property(TARGET ${target} PROPERTY CXX_STANDARD_REQUIRED ON)
+    endif()
 
     if (MSVC)
         # set_property(TARGET main PROPERTY WIN32_EXECUTABLE ON)
@@ -99,7 +98,7 @@ function(compile_shaders)
     if (WIN32)
         set(target_lang "DIRECT3D12 VULKAN")
     elseif (APPLE)
-        set(target_lang "METAL")
+        set(target_lang "MACOS")
     endif()
 
 
@@ -108,5 +107,5 @@ function(compile_shaders)
             "-dShaders" "-bCompiledShaders" "-l ${target_lang}" --compile --verbose
             ${COMPILE_SHADERS_SHADER_LIST}
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
-    ) 
+    )
 endfunction()

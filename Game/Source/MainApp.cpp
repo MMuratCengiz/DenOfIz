@@ -31,7 +31,7 @@ namespace
     ProfileToken gGpuProfileToken = PROFILE_INVALID_TOKEN;
 } // namespace
 
-const char *MainApp::GetName() { return "The Forge Template"; }
+const char *MainApp::GetName() { return "DenOfIz"; }
 
 bool MainApp::Init()
 {
@@ -40,6 +40,7 @@ bool MainApp::Init()
 
     for (int i = 0; i < IApp::argc; i++)
     {
+        printf("Argv[%d]=%s", i, IApp::argv[i]);
         std::string arg(IApp::argv[i]);
 
 #ifdef VULKAN
@@ -53,6 +54,13 @@ bool MainApp::Init()
         if (arg == "--direct3d12")
         {
             gPlatformParameters.mSelectedRendererApi = RendererApi::RENDERER_API_D3D12;
+        }
+#endif
+
+#ifdef METAL
+        if (arg == "--metal")
+        {
+            gPlatformParameters.mSelectedRendererApi = RendererApi::RENDERER_API_METAL;
         }
 #endif
     }

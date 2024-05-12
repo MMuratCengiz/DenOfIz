@@ -6,18 +6,9 @@
       "name": "sdl2",
       "features": ["vulkan"]
     },
-    "vulkan-headers",
-    "vulkan-memory-allocator",
-    "assimp",
-    "directxtex",
-    "directxtk12",
-    "directx-dxc",
-    "directx-headers",
-    "tinygltf",
-    "glm",
-    "glslang",
-    "boost",
-    "stb",
-    "spirv-cross"
+    { "name": "directxtex", "platform": "windows" },
+    { "name": "directxtk12", "platform": "windows" },
+    { "name": "directx-dxc", "platform": "windows" },
+    { "name": "directx-headers", "platform": "windows" }
   ]
 }

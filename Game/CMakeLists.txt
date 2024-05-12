@@ -1,6 +1,4 @@
-include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
 include("${PROJECT_SOURCE_DIR}/Engine/The-Forge/cmake/theforge_helper.cmake")
-
 
 set(DenOfIzGameSources
     "Source/DemoScene.cpp" 
@@ -9,10 +7,6 @@ set(DenOfIzGameSources
 
 add_library(DenOfIzGame ${LIB_TYPE} ${DenOfIzGameSources})
 
-#DEPENDENCIES
-# find_package(unofficial-gainput CONFIG REQUIRED)
-# target_link_libraries(DenOfIzGame PRIVATE unofficial::gainput::gainputstatic)
-#--DEPENDENCIES
 install_target(DenOfIzGame)
 
 target_include_default_directories(DenOfIzGame)

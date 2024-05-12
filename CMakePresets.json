@@ -32,14 +32,16 @@
     {
       "name": "Debug_OSX",
       "inherits": "Base",
+      "generator": "Xcode",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_BUILD_TYPE": "Debug",
         "VCPKG_TARGET_TRIPLET": "x64-osx"
       }
     },
     {
       "name": "Release_OSX",
       "inherits": "Base",
+      "generator": "Xcode",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-osx"
