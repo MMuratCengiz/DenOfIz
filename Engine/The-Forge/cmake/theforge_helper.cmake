@@ -101,11 +101,15 @@ function(compile_shaders)
         set(target_lang "MACOS")
     endif()
 
+    set(BINARY_DIR "${PROJECT_BINARY_DIR}")
+    if (APPLE)
+        set(BINARY_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}.app/Contents/Resources")
+    endif ()
 
     execute_process(COMMAND "${Python3_EXECUTABLE}"
             "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Tools/ForgeShadingLanguage/fsl.py"
             "-dShaders" "-bCompiledShaders" "-l ${target_lang}" --compile --verbose
             ${COMPILE_SHADERS_SHADER_LIST}
-            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+            WORKING_DIRECTORY "${BINARY_DIR}"
     )
 endfunction()

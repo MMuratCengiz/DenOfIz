@@ -1,8 +1,3 @@
-if (APPLE)
-    enable_language(OBJC)
-    enable_language(OBJCXX)
-endif()
-
 if (WIN32)
     add_definitions(-D_WIN32=1)
 endif()
@@ -12,6 +7,10 @@ if (CMAKE_BUILD_TYPE MATCHES "Debug")
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
+foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
+    string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${PROJECT_BINARY_DIR}")
+endforeach()
 
 set(CMAKE_CXX_STANDARD 23)
 if (APPLE)
