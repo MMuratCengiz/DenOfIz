@@ -50,6 +50,6 @@ int main()
 #endif
 
 #include <IApp.h>
-#include <DenOfIzGame/MainApp.h>
+#include <DenOfIzGame/Raytracing.h>
 
-DEFINE_APPLICATION_MAIN(MainApp);
+DEFINE_APPLICATION_MAIN(RaytracingApp);

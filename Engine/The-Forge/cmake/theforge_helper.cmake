@@ -58,6 +58,9 @@ function(INCLUDE_THEFORGE target)
     
     copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "GPUCfg" "gpu.cfg")
     copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Fonts" *)
+    copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Scripts" *)
+    copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Meshes" *)
+    copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Textures" *)
 
     target_include_directories(${target} PUBLIC
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/Interfaces"
@@ -69,6 +72,9 @@ function(INCLUDE_THEFORGE target)
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Utilities"
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Utilities/Interfaces"
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Utilities/ThirdParty/OpenSource/Nothings/"
+        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Tools/ForgeShadingLanguage/includes"
+        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics"
+        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Examples_3/Visibility_Buffer/src"
         ${VULKAN_HEADERS_INCLUDE_DIRS}
     )
 
