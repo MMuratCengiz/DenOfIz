@@ -1,6 +1,5 @@
 include(${PROJECT_SOURCE_DIR}/cmake/common.cmake)
 
-find_package(glm REQUIRED)
 find_package(Boost COMPONENTS thread atomic log REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 
@@ -20,7 +19,6 @@ target_link_libraries(DenOfIzCore
         Boost::thread
         Boost::atomic
         Boost::log
-        glm::glm
         SDL2::SDL2
         SDL2::SDL2main
         SDL2::SDL2-static

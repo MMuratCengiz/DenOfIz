@@ -2,6 +2,11 @@
   "name": "den-of-iz",
   "version": "0.0.1",
   "dependencies": [
+    "boost",
+    "vulkan-memory-allocator",
+    "glslang",
+    "spirv-cross",
+    "stb",
     {
       "name": "sdl2",
       "features": ["vulkan"]

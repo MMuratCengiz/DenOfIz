@@ -56,11 +56,7 @@ function(INCLUDE_THEFORGE target)
         target_compile_options(${target} PRIVATE /Zc:__cplusplus)
     endif ()
     
-    copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "GPUCfg" "gpu.cfg")
-    copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Fonts" *)
-    copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Scripts" *)
-    copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Meshes" *)
-    copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Textures" *)
+    copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 
     target_include_directories(${target} PUBLIC
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/Interfaces"
@@ -111,8 +107,8 @@ function(compile_shaders)
     set(oneValueArgs TARGET_PROJECT SHADER_TARGET SHADER_LIST)
     cmake_parse_arguments(COMPILE_SHADERS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
     
-    file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/Shaders)
-    file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/CompiledShaders)
+    file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/Assets/Shaders)
+    file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/Assets/CompiledShaders)
     # file(TOUCH ${PROJECT_BINARY_DIR}/CompiledShaders/reload-server.txt)
 
     set(target_lang "VULKAN")
@@ -131,6 +127,6 @@ function(compile_shaders)
             "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Tools/ForgeShadingLanguage/fsl.py"
             "-dShaders" "-bCompiledShaders" "-l ${target_lang}" --compile --verbose
             ${COMPILE_SHADERS_SHADER_LIST}
-            WORKING_DIRECTORY "${BINARY_DIR}"
+            WORKING_DIRECTORY "${BINARY_DIR}/Assets"
     )
 endfunction()

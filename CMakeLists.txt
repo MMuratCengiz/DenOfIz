@@ -14,8 +14,7 @@ set(VCPKG_MANIFEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
-#Engine/Core Engine/Graphics
-set(SUB_PROJECTS Engine/The-Forge Game)
+set(SUB_PROJECTS Engine/Core Engine/Graphics Engine/The-Forge Game)
 foreach(SUB_PROJECT IN LISTS SUB_PROJECTS)
     add_subdirectory(${SUB_PROJECT})
 endforeach()

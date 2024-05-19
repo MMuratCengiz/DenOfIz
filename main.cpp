@@ -51,5 +51,7 @@ int main()
 
 #include <IApp.h>
 #include <DenOfIzGame/Raytracing.h>
+#include <DenOfIzGame/MainApp.h>
 
-DEFINE_APPLICATION_MAIN(RaytracingApp);
+//DEFINE_APPLICATION_MAIN(RaytracingApp);
+DEFINE_APPLICATION_MAIN(MainApp)

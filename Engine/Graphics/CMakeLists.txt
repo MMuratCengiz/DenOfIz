@@ -1,4 +1,5 @@
 include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
+include("${PROJECT_SOURCE_DIR}/Engine/The-Forge/cmake/theforge_helper.cmake")
 
 find_package(Vulkan REQUIRED)
 find_package(VulkanHeaders CONFIG)
@@ -40,6 +41,9 @@ set(DEN_OF_IZ_SOURCES
 
         Source/Backends/Common/ShaderCompiler.cpp
         Source/Backends/Common/SpvProgram.cpp
+
+        #Renderers
+        Source/Renderer/SimpleRenderer.cpp
 )
 
 add_library(DenOfIzGraphics ${DEN_OF_IZ_SOURCES})
@@ -76,5 +80,6 @@ if (WIN32)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_DX12)
 endif ()
 
+include_theforge(DenOfIzGraphics)
 target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_VK)
 set_target_default_properties(DenOfIzGraphics)

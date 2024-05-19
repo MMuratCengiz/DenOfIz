@@ -29,5 +29,5 @@ compile_shaders(
 compile_shaders(
     TARGET_PROJECT DenOfIzGame
     SHADER_TARGET ProjectShader
-    SHADER_LIST "${CMAKE_CURRENT_SOURCE_DIR}/Shaders/FSL/ShaderList.fsl"
+    SHADER_LIST "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Shaders/FSL/ShaderList.fsl"
 )

@@ -85,6 +85,11 @@ if (NOT APPLE)
     set_property(TARGET gainput PROPERTY CXX_STANDARD_REQUIRED ON)
 endif ()
 
+
+set(THE_FORGE_DENOFIZ_SOURCES
+        Source/TheForgeContext.cpp
+)
+
 add_library(TheForge ${LIB_TYPE}
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/CameraController.cpp"
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/Fonts/FontSystem.cpp"
@@ -258,6 +263,8 @@ add_library(TheForge ${LIB_TYPE}
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/Darwin/iOSToolsFileSystem.mm"
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/Darwin/iOSWindow.mm"
         >
+
+        ${THE_FORGE_DENOFIZ_SOURCES}
 )
 
 if (MSVC)
@@ -334,4 +341,6 @@ if (APPLE)
             XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_WEAK YES)
 endif ()
 
+target_include_default_directories(TheForge)
+target_include_directories(TheForge PUBLIC ${PROJECT_SOURCE_DIR}/_External/The-Forge)
 target_link_libraries(TheForge PUBLIC gainput)
