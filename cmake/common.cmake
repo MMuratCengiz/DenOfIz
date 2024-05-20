@@ -12,13 +12,13 @@ function(copy_to_binary RootSource Dir FileSelect)
 
     foreach (File IN LISTS FilesInDir)
         get_filename_component(FileParentDir ${File} DIRECTORY)
-        set(FileParentDir ${FileParentDir}/)
+        set(FileParentDir "${FileParentDir}/")
 
         string(LENGTH "${File}" FilePathLen)
         string(LENGTH "${FileParentDir}" DirPathLen)
 
         math(EXPR FileTrimmedLen "${FilePathLen}-${PathLen}")
-        math(EXPR DirTrimmedLen "${FilePathLen}-${DirPathLen}")
+        math(EXPR DirTrimmedLen "${DirPathLen}-${PathLen}")
 
         string(SUBSTRING ${File} ${PathLen} ${FileTrimmedLen} FileStripped)
         string(SUBSTRING ${FileParentDir} ${PathLen} ${DirTrimmedLen} DirStripped)
@@ -27,7 +27,6 @@ function(copy_to_binary RootSource Dir FileSelect)
         if (APPLE)
             set(BINARY_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}.app/Contents/Resources")
         endif ()
-
         file(MAKE_DIRECTORY "${BINARY_DIR}/${Dir}")
         file(MAKE_DIRECTORY "${BINARY_DIR}/${Dir}/${DirStripped}")
         message("Configuring file: ${File} ${BINARY_DIR}/${Dir}/${DirStripped} COPYONLY")

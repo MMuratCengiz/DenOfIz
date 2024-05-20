@@ -32,7 +32,7 @@ add_executable(DenOfIz MACOSX_BUNDLE ${SOURCES})
 
 
 if (APPLE)
-    FILE(GLOB FONTS ${PROJECT_SOURCE_DIR}/Game/Fonts/*)
+    FILE(GLOB FONTS Game/Assets/Fonts/*)
     FILE(GLOB SHADERS ${PROJECT_SOURCE_DIR}/Game/Shaders/*)
 
     set_target_properties(DenOfIz PROPERTIES

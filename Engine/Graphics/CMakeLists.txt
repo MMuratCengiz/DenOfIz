@@ -7,10 +7,10 @@ find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 
 if (WIN32)
 find_package(directx-headers CONFIG REQUIRED)
-endif ()
-
 find_package(directxtk12 CONFIG REQUIRED)
 find_package(directx-dxc CONFIG REQUIRED)
+endif ()
+
 find_package(glslang CONFIG REQUIRED)
 find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_glsl CONFIG REQUIRED)

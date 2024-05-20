@@ -66,10 +66,10 @@ bool MainApp::Init()
     }
 
     // FILE PATHS
-    fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_BINARIES, "CompiledShaders");
-    fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_GPU_CONFIG, "GPUCfg");
-    fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_TEXTURES, "Textures");
-    fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_FONTS, "Fonts");
+    fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_BINARIES, "Assets/CompiledShaders");
+    fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_GPU_CONFIG, "Assets/GPUCfg");
+    fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_TEXTURES, "Assets/Textures");
+    fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_FONTS, "Assets/Fonts");
     fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_SCREENSHOTS, "Screenshots");
     fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SCRIPTS, "Scripts");
 
@@ -97,10 +97,9 @@ bool MainApp::Init()
         .mCmdPerPoolCount = 1,
         .mAddSyncPrimitives = true,
     };
+
     addGpuCmdRing(pRenderer, &cmdRingDesc, &gGraphicsCmdRing);
-
     addSemaphore(pRenderer, &pImageAcquiredSemaphore);
-
     initResourceLoaderInterface(pRenderer);
 
     // Initialize micro profiler and its UI.
@@ -123,6 +122,7 @@ bool MainApp::Init()
     FontSystemDesc fontRenderDesc = {
         .pRenderer = pRenderer,
     };
+
     if (!initFontSystem(&fontRenderDesc))
     {
         return false;
@@ -214,14 +214,6 @@ bool MainApp::Load(ReloadDesc *pReloadDesc)
         }
     }
 
-    FontSystemLoadDesc fontLoad = {
-        .mLoadType = pReloadDesc->mType,
-        .mColorFormat = static_cast<uint32_t>(pSwapChain->ppRenderTargets[0]->mFormat),
-        .mWidth = static_cast<uint32_t>(mSettings.mWidth),
-        .mHeight = static_cast<uint32_t>(mSettings.mHeight),
-    };
-    loadFontSystem(&fontLoad);
-
     UserInterfaceLoadDesc uiLoad = {
         .mLoadType = static_cast<uint32_t>(pReloadDesc->mType),
         .mColorFormat = static_cast<uint32_t>(pSwapChain->ppRenderTargets[0]->mFormat),
@@ -230,6 +222,13 @@ bool MainApp::Load(ReloadDesc *pReloadDesc)
     };
     loadUserInterface(&uiLoad);
 
+    FontSystemLoadDesc fontLoad = {
+        .mLoadType = pReloadDesc->mType,
+        .mColorFormat = static_cast<uint32_t>(pSwapChain->ppRenderTargets[0]->mFormat),
+        .mWidth = static_cast<uint32_t>(mSettings.mWidth),
+        .mHeight = static_cast<uint32_t>(mSettings.mHeight),
+    };
+    loadFontSystem(&fontLoad);
     initScreenshotInterface(pRenderer, pGraphicsQueue);
 
     if (!Scene::Load(pReloadDesc, pRenderer, pSwapChain->ppRenderTargets[0]))

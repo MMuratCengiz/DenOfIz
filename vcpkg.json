@@ -11,8 +11,8 @@
       "name": "sdl2",
       "features": ["vulkan"]
     },
-    { "name": "directxtex", "platform": "windows" },
     { "name": "directxtk12", "platform": "windows" },
+    { "name": "directxtex", "platform": "windows" },
     { "name": "directx-dxc", "platform": "windows" },
     { "name": "directx-headers", "platform": "windows" }
   ]

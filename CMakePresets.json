@@ -35,7 +35,7 @@
       "generator": "Xcode",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "VCPKG_TARGET_TRIPLET": "x64-osx"
+        "VCPKG_TARGET_TRIPLET": "arm64-osx"
       }
     },
     {
@@ -44,7 +44,7 @@
       "generator": "Xcode",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "VCPKG_TARGET_TRIPLET": "x64-osx"
+        "VCPKG_TARGET_TRIPLET": "arm64-osx"
       }
     }
   ],
