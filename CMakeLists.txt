@@ -50,6 +50,6 @@ endif ()
 
 target_link_libraries(DenOfIz
         PRIVATE
-# DenOfIzGraphics
+        DenOfIzGraphics
         DenOfIzGame
 )

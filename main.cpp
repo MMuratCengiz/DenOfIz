@@ -1,4 +1,4 @@
-#ifdef DISABLED
+#ifndef DISABLED
 #include <DenOfIzGraphics/Backends/Vulkan/Sample/TestVulkanRenderer.h>
 #include "SDL.h"
 #include <filesystem>
@@ -49,9 +49,8 @@ int main()
 }
 #endif
 
-#include <IApp.h>
-#include <DenOfIzGame/Raytracing.h>
-#include <DenOfIzGame/MainApp.h>
+//#include <IApp.h>
+//#include <DenOfIzGame/MainApp.h>
 
 //DEFINE_APPLICATION_MAIN(RaytracingApp);
-DEFINE_APPLICATION_MAIN(MainApp)
+//DEFINE_APPLICATION_MAIN(MainApp)

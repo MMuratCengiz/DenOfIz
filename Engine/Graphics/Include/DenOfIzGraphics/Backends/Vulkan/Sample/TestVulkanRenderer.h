@@ -18,11 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanDevice.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanPipeline.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanRenderPass.h>
 #include <DenOfIzGraphics/Backends/Vulkan/Resource/VulkanBufferResource.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanDevice.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanRenderPass.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
 #include <DenOfIzGraphics/Backends/Common/SpvProgram.h>
@@ -39,7 +38,7 @@ namespace DenOfIz
 
         SDL_Window *m_Window = nullptr;
 
-        VulkanDevice m_Device{};
+        VulkanLogicalDevice m_Device{};
         std::unique_ptr<SpvProgram> m_Program;
         std::unique_ptr<VulkanPipeline> m_Pipeline;
         std::unique_ptr<VulkanBufferResource> m_VertexBuffer;
