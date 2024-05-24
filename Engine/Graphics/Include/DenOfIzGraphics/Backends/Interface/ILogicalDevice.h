@@ -19,40 +19,64 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzCore/Common.h>
+#include "IFence.h"
+#include "ISemaphore.h"
+#include "ICommandList.h"
+#include "IPipeline.h"
+#include "IRenderPass.h"
+#include "ISwapChain.h"
+#include "IResource.h"
 
 namespace DenOfIz
 {
-    struct PhysicalDeviceCapabilities
-    {
-        bool DedicatedTransferQueue;
-        bool RayTracing;
-        bool ComputeShaders;
-    };
+struct PhysicalDeviceCapabilities
+{
+	bool DedicatedTransferQueue;
+	bool RayTracing;
+	bool ComputeShaders;
+	bool Tearing;
+};
 
-    struct PhysicalDeviceProperties
-    {
-        bool IsDedicated;
-        uint32_t MemoryAvailableInMb;
-    };
+struct PhysicalDeviceProperties
+{
+	bool IsDedicated;
+	uint32_t MemoryAvailableInMb;
+};
 
-    struct PhysicalDeviceInfo
-    {
-        long Id;
-        std::string Name;
-        PhysicalDeviceProperties Properties;
-        PhysicalDeviceCapabilities Capabilities;
-    };
+struct PhysicalDeviceInfo
+{
+	long Id;
+	std::string Name;
+	PhysicalDeviceProperties Properties;
+	PhysicalDeviceCapabilities Capabilities;
+};
 
-    class ILogicalDevice
-    {
-    public:
-        virtual ~ILogicalDevice() = default;
+class ILogicalDevice
+{
+protected:
+	PhysicalDeviceInfo m_selectedDeviceInfo;
+public:
+	virtual ~ILogicalDevice() = default;
 
-    private:
-        virtual void CreateDevice( SDL_Window *window ) = 0;
-        virtual std::vector<PhysicalDeviceInfo> ListPhysicalDevices() = 0;
-        virtual void LoadPhysicalDevice( const PhysicalDeviceInfo &device ) = 0;
-        virtual void WaitIdle() = 0;
-    };
+	virtual void CreateDevice(SDL_Window* window) = 0;
+	virtual std::vector<PhysicalDeviceInfo> ListPhysicalDevices() = 0;
+	virtual void LoadPhysicalDevice(const PhysicalDeviceInfo& device) = 0;
+	virtual void WaitIdle() = 0;
+
+	inline const PhysicalDeviceInfo& SelectedDeviceInfo() {
+		return m_selectedDeviceInfo;
+	};
+
+	// Factory methods
+	virtual std::unique_ptr<ICommandList> CreateCommandList() = 0;
+	virtual std::unique_ptr<IPipeline> CreatePipeline(const PipelineCreateInfo& createInfo) = 0;
+	virtual std::unique_ptr<IRenderPass> CreateRenderPass(const RenderPassCreateInfo& createInfo) = 0;
+	virtual std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainCreateInfo& createInfo) = 0;
+	virtual std::unique_ptr<IFence> CreateFence() = 0;
+	virtual std::unique_ptr<ISemaphore> CreateSemaphore() = 0;
+	virtual std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferCreateInfo& createInfo) = 0;
+	virtual std::unique_ptr<IImageResource> CreateImageResource(std::string name, const SamplerCreateInfo& createInfo) = 0;
+	virtual std::unique_ptr<ICubeMapResource> CreateCubeMapResource(const CubeMapCreateInfo& createInfo) = 0;
+};
 
 }

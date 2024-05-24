@@ -24,66 +24,66 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    enum class ShaderStage
-    {
-        Vertex,
-        TessellationControl,
-        TessellationEvaluation,
-        Geometry,
-        Fragment,
-        Compute,
-        AllGraphics,
-        All,
-        Raygen,
-        AnyHit,
-        ClosestHit,
-        Miss,
-        Intersection,
-        Callable,
-        Task,
-        Mesh,
-    };
+enum class ShaderStage
+{
+	Vertex,
+	TessellationControl,
+	TessellationEvaluation,
+	Geometry,
+	Fragment,
+	Compute,
+	AllGraphics,
+	All,
+	Raygen,
+	AnyHit,
+	ClosestHit,
+	Miss,
+	Intersection,
+	Callable,
+	Task,
+	Mesh,
+};
 
-    struct Shader
-    {
-        ShaderStage Stage;
-        std::string Path;
-    };
+struct Shader
+{
+	ShaderStage Stage;
+	std::string Path;
+};
 
-    struct CompiledShader
-    {
-        ShaderStage Stage;
-        std::vector<uint32_t> Data;
-    };
+struct CompiledShader
+{
+	ShaderStage Stage;
+	std::vector<uint32_t> Data;
+};
 
-    struct VertexInput
-    {
-        uint32_t BoundBufferIndex;
-        uint32_t Location;
-        uint32_t Size;
-        uint32_t Offset;
-        uint32_t Stride;
-        std::string Name;
-        ImageFormat Format;
-    };
+struct VertexInput
+{
+	uint32_t BoundBufferIndex;
+	uint32_t Location;
+	uint32_t Size;
+	uint32_t Offset;
+	uint32_t Stride;
+	std::string Name;
+	ImageFormat Format;
+};
 
-    enum class UniformType
-    {
-        Struct,
-        Sampler
-    };
+enum class UniformType
+{
+	Struct,
+	Sampler
+};
 
-    struct ShaderUniformInput
-    {
-        ShaderStage Stage;
-        uint32_t BoundDescriptorSet;
-        uint32_t Location;
-        uint32_t Binding;
-        uint32_t ArraySize;
-        uint32_t Size;
-        UniformType Type;
-        ImageFormat Format;
-        std::string Name;
-    };
+struct ShaderUniformInput
+{
+	ShaderStage Stage;
+	uint32_t BoundDescriptorSet;
+	uint32_t Location;
+	uint32_t Binding;
+	uint32_t ArraySize;
+	uint32_t Size;
+	UniformType Type;
+	ImageFormat Format;
+	std::string Name;
+};
 
 }

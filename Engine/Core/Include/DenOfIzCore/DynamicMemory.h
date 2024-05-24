@@ -21,76 +21,77 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <utility>
 #include "Common.h"
 
-namespace DenOfIz {
+namespace DenOfIz
+{
 
 class DynamicMemory
 {
 private:
-    char *buffer;
-    uint64_t currentSize;
-    uint64_t bufferSize;
+	char* buffer;
+	uint64_t currentSize;
+	uint64_t bufferSize;
 public:
-    inline explicit DynamicMemory( uint64_t initialSize = 1024 ) : currentSize( 0 ), bufferSize( initialSize )
-    {
-        buffer = static_cast< char * >( malloc( initialSize ) );
-    }
+	inline explicit DynamicMemory(uint64_t initialSize = 1024)
+			:currentSize(0), bufferSize(initialSize)
+	{
+		buffer = static_cast< char* >( malloc(initialSize));
+	}
 
-    void setInitialSize( uint64_t size )
-    {
-        free( buffer );
-        buffer = static_cast< char * >( malloc( size ) );
-        bufferSize = size;
-    }
+	void setInitialSize(uint64_t size)
+	{
+		free(buffer);
+		buffer = static_cast< char* >( malloc(size));
+		bufferSize = size;
+	}
 
-    template< typename T >
-    void attachElement( T e )
-    {
-        uint32_t size = sizeof( T );
+	template<typename T>
+	void attachElement(T e)
+	{
+		uint32_t size = sizeof(T);
 
-        expandIfRequired( size );
+		expandIfRequired(size);
 
-        memcpy( buffer + currentSize, &e, size );
-        currentSize += size;
-    }
+		memcpy(buffer + currentSize, &e, size);
+		currentSize += size;
+	}
 
+	template<typename T>
+	void attachElements(std::vector<T> elements)
+	{
+		uint32_t additionalSize = elements.size() * sizeof(T);
 
-    template< typename T >
-    void attachElements( std::vector< T > elements )
-    {
-        uint32_t additionalSize = elements.size( ) * sizeof( T );
+		expandIfRequired(additionalSize);
 
-        expandIfRequired( additionalSize );
+		memcpy(buffer + currentSize, elements.data(), additionalSize);
+		currentSize += additionalSize;
+	}
 
-        memcpy( buffer + currentSize, elements.data( ), additionalSize );
-        currentSize += additionalSize;
-    }
+	const void* data(uint64_t offset = 0) const
+	{
+		float* f = (float*)(void*)buffer;
+		return static_cast< const void* >( buffer + offset );
+	}
 
-    const void *data( uint64_t offset = 0 ) const
-    {
-        float *f = ( float * ) ( void * ) buffer;
-        return static_cast< const void * >( buffer + offset );
-    }
+	[[nodiscard]] const uint64_t& size() const
+	{
+		return currentSize;
+	}
 
-    [[nodiscard]] const uint64_t &size( ) const
-    {
-        return currentSize;
-    }
-
-    ~DynamicMemory( )
-    {
-        free( buffer );
-    }
+	~DynamicMemory()
+	{
+		free(buffer);
+	}
 
 private:
-    void expandIfRequired( const uint32_t &additionalSize )
-    {
-        if ( additionalSize + currentSize > bufferSize )
-        {
-            bufferSize += std::max< uint32_t >( 1024, additionalSize );
+	void expandIfRequired(const uint32_t& additionalSize)
+	{
+		if (additionalSize + currentSize > bufferSize)
+		{
+			bufferSize += std::max<uint32_t>(1024, additionalSize);
 
-            buffer = static_cast< char * >( realloc( buffer, bufferSize ) );
-        }
-    }
+			buffer = static_cast< char* >( realloc(buffer, bufferSize));
+		}
+	}
 };
 
 }

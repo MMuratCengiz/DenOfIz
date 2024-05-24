@@ -32,58 +32,58 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    struct VulkanDeviceInfo
-    {
-        vk::PhysicalDevice Device;
-        vk::PhysicalDeviceProperties Properties;
-        vk::PhysicalDeviceFeatures Features;
+struct VulkanDeviceInfo
+{
+	vk::PhysicalDevice Device;
+	vk::PhysicalDeviceProperties Properties;
+	vk::PhysicalDeviceFeatures Features;
 
-        std::vector<vk::ExtensionProperties> ExtensionProperties;
-        std::vector<vk::QueueFamilyProperties> QueueFamilies;
-    };
+	std::vector<vk::ExtensionProperties> ExtensionProperties;
+	std::vector<vk::QueueFamilyProperties> QueueFamilies;
+};
 
-    struct QueueFamily
-    {
-        uint32_t Index;
-        VkQueueFamilyProperties Properties;
-    };
+struct QueueFamily
+{
+	uint32_t Index;
+	VkQueueFamilyProperties Properties;
+};
 
-    enum class QueueType
-    {
-        Graphics,
-        Presentation,
-        Transfer,
-    };
+enum class QueueType
+{
+	Graphics,
+	Presentation,
+	Transfer,
+};
 
-    struct VulkanContext
-    {
-        vk::Instance Instance;
-        vk::PhysicalDevice PhysicalDevice;
-        vk::Device LogicalDevice;
-        VmaAllocator Vma;
-        ImageFormat SurfaceImageFormat;
-        vk::ColorSpaceKHR ColorSpace;
-        vk::PresentModeKHR PresentMode;
-        vk::SwapchainKHR SwapChain;
-        vk::SurfaceKHR RenderSurface;
-        vk::SurfaceKHR Surface;
-        std::vector<vk::Image> SwapChainImages;
-        std::vector<vk::ImageView> SwapChainImageViews;
-        vk::Image DepthImage;
+struct VulkanContext
+{
+	vk::Instance Instance;
+	vk::PhysicalDevice PhysicalDevice;
+	vk::Device LogicalDevice;
+	VmaAllocator Vma;
+	ImageFormat SurfaceImageFormat;
+	vk::ColorSpaceKHR ColorSpace;
+	vk::PresentModeKHR PresentMode;
 
-        vk::CommandPool TransferQueueCommandPool;
-        vk::CommandPool GraphicsQueueCommandPool;
-        vk::CommandPool ComputeQueueCommandPool;
+	vk::SurfaceKHR Surface;
+	vk::SwapchainKHR SwapChain;
+	std::vector<vk::Image> SwapChainImages;
+	std::vector<vk::ImageView> SwapChainImageViews;
+	vk::Image DepthImage;
 
-        vk::Extent2D SurfaceExtent{};
+	vk::CommandPool TransferQueueCommandPool;
+	vk::CommandPool GraphicsQueueCommandPool;
+	vk::CommandPool ComputeQueueCommandPool;
 
-        SDL_Window *Window;
-        std::unordered_map<QueueType, QueueFamily> QueueFamilies;
-        std::unordered_map<QueueType, vk::Queue> Queues;
+	vk::Extent2D SurfaceExtent{};
 
-        //Todo move to generic RenderContext when created.
-        ShaderCompiler ShaderCompiler;
-    };
+	SDL_Window* Window;
+	std::unordered_map<QueueType, QueueFamily> QueueFamilies;
+	std::unordered_map<QueueType, vk::Queue> Queues;
+
+	//Todo move to generic RenderContext when created.
+	ShaderCompiler ShaderCompiler;
+};
 
 }
 

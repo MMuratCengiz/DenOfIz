@@ -20,7 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-TheForgeContext::TheForgeContext(const InitialAppInfo& appInfo) :m_appInfo(appInfo)
+TheForgeContext::TheForgeContext(const InitialAppInfo& appInfo)
+		:m_appInfo(appInfo)
 {
 	// FILE PATHS
 	fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_BINARIES, "Assets/CompiledShaders");

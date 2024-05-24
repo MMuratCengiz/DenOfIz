@@ -32,20 +32,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <dxgidebug.h>
 #endif
 
+using namespace Microsoft::WRL;
+
 struct DX12Context
 {
-    Microsoft::WRL::ComPtr<ID3D12Device5> D3DDevice;
-    Microsoft::WRL::ComPtr<IDXGISwapChain3> SwapChain;
-    Microsoft::WRL::ComPtr<IDXGIFactory4> DXGIFactory;
-    Microsoft::WRL::ComPtr<ID3D12CommandQueue> CommandQueue;
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CommandAllocators;
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> GraphicsCommandList;
+	static const int BackBufferCount = 3;
 
-    DXGI_FORMAT BackBufferFormat;
-    DXGI_FORMAT DepthBufferFormat;
+	ComPtr<IDXGIAdapter1> Adapter;
 
-    D3D12_VIEWPORT ScreenViewport;
-    D3D12_RECT ScissorRect;
+	ComPtr<ID3D12Device5> D3DDevice;
+	ComPtr<IDXGIFactory4> DXGIFactory;
+	ComPtr<ID3D12CommandQueue> CommandQueue;
+	ComPtr<ID3D12CommandAllocator> DirectCommandAllocator[BackBufferCount];
+	ComPtr<ID3D12GraphicsCommandList4> DirectCommandList;
+
+
+	D3D12_VIEWPORT ScreenViewport;
+	D3D12_RECT ScissorRect;
+	DXGI_FORMAT BackBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+	DXGI_FORMAT DepthBufferFormat = DXGI_FORMAT_D32_FLOAT;
+	// RenderTargetView and DepthStencilView Descriptor Heap
+	ComPtr<ID3D12DescriptorHeap> RTVDescriptorHeap;
+	ComPtr<ID3D12DescriptorHeap> DSVDescriptorHeap;
+	ComPtr<IDXGISwapChain3> SwapChain;
+	std::vector<ComPtr<ID3D12Resource>> SwapChainImages;
+
+	SDL_Window* Window;
 };
 
 #define DX_CHECK_RESULT(R) assert(SUCCEEDED(R))

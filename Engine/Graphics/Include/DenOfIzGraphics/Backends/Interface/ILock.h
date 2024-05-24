@@ -21,25 +21,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    enum class LockType
-    {
-        Fence,
-        Semaphore
-    };
+enum class LockType
+{
+	Fence,
+	Semaphore
+};
 
-    class ILock
-    {
-    protected:
-        LockType m_lockType = LockType::Fence;
+class ILock
+{
+protected:
+	LockType m_lockType = LockType::Fence;
 
-    public:
-        virtual void Wait() = 0;
-        virtual void Notify() = 0;
-        virtual void Reset() = 0;
+public:
+	virtual void Wait() = 0;
+	virtual void Notify() = 0;
+	virtual void Reset() = 0;
 
-        virtual ~ILock()
-        {
-        };
-    };
+	virtual ~ILock()
+	{
+	};
+};
 
 }

@@ -333,7 +333,7 @@ if (APPLE)
 
     if (IOS)
         target_link_libraries(TheForge
-            PRIVATE "-framework UIKit"
+                PRIVATE "-framework UIKit"
         )
     endif ()
     set_target_properties(TheForge

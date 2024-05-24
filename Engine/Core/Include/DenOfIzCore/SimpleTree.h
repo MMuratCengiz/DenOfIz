@@ -65,14 +65,14 @@ public:
 		root = new TNode{};
 	}
 
-	void freeNode( TNode* node )
+	void freeNode(TNode* node)
 	{
-		if ( node == nullptr )
+		if (node == nullptr)
 		{
 			return;
 		}
 
-		for ( auto child : node->children )
+		for (auto child : node->children)
 		{
 			freeNode(child);
 		}
@@ -86,7 +86,7 @@ public:
 		return root;
 	}
 
-	inline void setRootData( const IdT& id, const T& data )
+	inline void setRootData(const IdT& id, const T& data)
 	{
 		root->id = id;
 		root->data = data;
@@ -96,7 +96,7 @@ public:
 		largestIndex = std::max(id, largestIndex);
 	}
 
-	inline void addNode( const IdT& id, const T& data )
+	inline void addNode(const IdT& id, const T& data)
 	{
 		auto child = new TNode{};
 		child->id = id;
@@ -108,7 +108,7 @@ public:
 		largestIndex = std::max(id, largestIndex);
 	}
 
-	inline void addNode( TNode* parent, const IdT& id, const T& data )
+	inline void addNode(TNode* parent, const IdT& id, const T& data)
 	{
 		auto child = new TNode{};
 		child->id = id;
@@ -120,28 +120,28 @@ public:
 		largestIndex = std::max(id, largestIndex);
 	}
 
-	inline TNode* findNode( const IdT& id )
+	inline TNode* findNode(const IdT& id)
 	{
 		return findNode(root, id);
 	}
 
-	inline TNode* findNode( TNode* iter, const IdT& id )
+	inline TNode* findNode(TNode* iter, const IdT& id)
 	{
-		if ( iter->id == id )
+		if (iter->id == id)
 		{
 			return iter;
 		}
 
-		if ( iter->children.empty())
+		if (iter->children.empty())
 		{
 			return nullptr;
 		}
 
-		for ( const auto& child : iter->children )
+		for (const auto& child : iter->children)
 		{
 			auto* result = findNode(child, id);
 
-			if ( result != nullptr )
+			if (result != nullptr)
 			{
 				return result;
 			}
@@ -150,17 +150,17 @@ public:
 		return nullptr;
 	}
 
-	inline std::vector<TNode*> flattenTree( bool skipRoot = false )
+	inline std::vector<TNode*> flattenTree(bool skipRoot = false)
 	{
 		std::vector<TNode*> result;
 
-		if ( !skipRoot )
+		if (!skipRoot)
 		{
 			flattenTree(result, root);
 		}
 		else
 		{
-			for ( TNode* child : root->children )
+			for (TNode* child : root->children)
 			{
 				flattenTree(result, child);
 			}
@@ -169,28 +169,28 @@ public:
 		return result;
 	}
 
-	inline void flattenTree( std::vector<TNode*>& data, TNode* parent )
+	inline void flattenTree(std::vector<TNode*>& data, TNode* parent)
 	{
 		data.push_back(parent);
 
-		for ( TNode* child : parent->children )
+		for (TNode* child : parent->children)
 		{
 			flattenTree(data, child);
 		}
 	}
 
-	inline void moveNodeToParent( const IdT& id, const IdT& parentId )
+	inline void moveNodeToParent(const IdT& id, const IdT& parentId)
 	{
 		auto parent = findNode(parentId);
 		auto node = findNode(id);
 
-		if ( node->parent != root && node->parent != nullptr )
+		if (node->parent != root && node->parent != nullptr)
 		{
 			int i = 0;
 
-			for ( ; i < parent->children.size(); ++i )
+			for (; i < parent->children.size(); ++i)
 			{
-				if ( parent->children[ i ]->id == id )
+				if (parent->children[i]->id == id)
 				{
 					break;
 				}
@@ -217,7 +217,7 @@ public:
 template<typename T>
 struct TreeDeleter
 {
-	void operator()( T* p )
+	void operator()(T* p)
 	{
 		p->freeNode(p->getRoot());
 		delete p;

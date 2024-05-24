@@ -17,14 +17,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#include <DenOfIzGraphics/Backends/GraphicsAPIInit.h>
 
 namespace DenOfIz
 {
 
 class SimpleRenderer
 {
+private:
+	std::unique_ptr<ILogicalDevice> m_logicalDevice;
+	SDL_Window * m_window;
+
+	std::vector<float> m_Triangle{ 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+								   1.0 };
+
+	std::unique_ptr<SpvProgram> m_program;
+	std::unique_ptr<IPipeline> m_pipeline;
+	std::unique_ptr<IBufferResource> m_VertexBuffer;
+	std::unique_ptr<IBufferResource> m_TimePassedBuffer;
+	std::unique_ptr<Time> m_time = std::make_unique<Time>();
+	std::vector<std::unique_ptr<IFence>> m_fences;
+	std::vector<std::unique_ptr<IRenderPass>> m_renderPasses;
+
+	int m_FrameIndex = 0;
 public:
-	void Init();
+	void Init(SDL_Window* window);
 	void Render();
 };
 

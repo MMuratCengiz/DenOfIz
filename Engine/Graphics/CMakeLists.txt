@@ -6,9 +6,9 @@ find_package(VulkanHeaders CONFIG)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 
 if (WIN32)
-find_package(directx-headers CONFIG REQUIRED)
-find_package(directxtk12 CONFIG REQUIRED)
-find_package(directx-dxc CONFIG REQUIRED)
+    find_package(directx-headers CONFIG REQUIRED)
+    find_package(directxtk12 CONFIG REQUIRED)
+    find_package(directx-dxc CONFIG REQUIRED)
 endif ()
 
 find_package(glslang CONFIG REQUIRED)
@@ -21,35 +21,72 @@ find_package(spirv_cross_hlsl CONFIG REQUIRED)
 find_package(spirv_cross_msl CONFIG REQUIRED)
 find_package(spirv_cross_c CONFIG REQUIRED)
 
-set(DEN_OF_IZ_SOURCES
-        #Vulkan Backend
-        Source/Backends/Vulkan/VulkanLogicalDevice.cpp
-        Source/Backends/Vulkan/VulkanSurface.cpp
-        Source/Backends/Vulkan/VulkanUtilities.cpp
-        Source/Backends/Vulkan/VulkanPipeline.cpp
-        Source/Backends/Vulkan/VulkanRenderPass.cpp
-        Source/Backends/Vulkan/VmaImplementation.cpp
-        Source/Backends/Vulkan/Resource/VulkanLock.cpp
-        Source/Backends/Vulkan/Resource/VulkanBufferResource.cpp
-        Source/Backends/Vulkan/Resource/VulkanSamplerResource.cpp
-        Source/Backends/Vulkan/Resource/VulkanCubeMapResource.cpp
-        Source/Backends/Vulkan/Sample/TestVulkanRenderer.cpp
+find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
-        #DirectX12 Backend
-        Source/Backends/DirectX12/DX12LogicalDevice.cpp
-        Source/Backends/DirectX12/DeviceResources.cpp
+SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
 
+        #Shader Compiler
         Source/Backends/Common/ShaderCompiler.cpp
         Source/Backends/Common/SpvProgram.cpp
 
         #Renderers
-        Source/Renderer/SimpleRenderer.cpp
+        Source/Renderer/SimpleRenderer.cpp)
+
+SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
+        Source/Backends/Vulkan/VulkanLogicalDevice.cpp
+        Source/Backends/Vulkan/VulkanCommandList.cpp
+        Source/Backends/Vulkan/VulkanSurface.cpp
+        Source/Backends/Vulkan/VulkanUtilities.cpp
+        Source/Backends/Vulkan/VulkanPipeline.cpp
+        Source/Backends/Vulkan/VulkanRenderPass.cpp
+        Source/Backends/Vulkan/VulkanSwapChain.cpp
+        Source/Backends/Vulkan/VmaImplementation.cpp
+        Source/Backends/Vulkan/Resource/VulkanLock.cpp
+        Source/Backends/Vulkan/Resource/VulkanFence.cpp
+        Source/Backends/Vulkan/Resource/VulkanSemaphore.cpp
+        Source/Backends/Vulkan/Resource/VulkanBufferResource.cpp
+        Source/Backends/Vulkan/Resource/VulkanImageResource.cpp
+        Source/Backends/Vulkan/Resource/VulkanSamplerResource.cpp
+        Source/Backends/Vulkan/Resource/VulkanCubeMapResource.cpp
+        Source/Backends/Vulkan/Sample/TestVulkanRenderer.cpp)
+
+
+set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
+        #DirectX12 Backend
+        Source/Backends/DirectX12/DX12LogicalDevice.cpp
+        Source/Backends/DirectX12/DeviceResources.cpp
+        Source/Backends/DirectX12/DX12Pipeline.cpp
+        Source/Backends/DirectX12/DX12RenderPass.cpp
+        Source/Backends/DirectX12/DX12SwapChain.cpp
 )
 
-add_library(DenOfIzGraphics ${DEN_OF_IZ_SOURCES})
+set(DEN_OF_IZ_GRAPHICS_METAL_SOURCES
+    #TODO Implement Metal Backend
+)
+
+if (WIN32)
+    set(DEN_OF_IZ_GRAPHICS_SOURCES
+            ${DEN_OF_IZ_GRAPHICS_COMMON_SOURCES}
+            ${DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES}
+            ${DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES}
+    )
+elseif (APPLE)
+    set(DEN_OF_IZ_GRAPHICS_SOURCES
+            ${DEN_OF_IZ_GRAPHICS_COMMON_SOURCES}
+            ${DEN_OF_IZ_GRAPHICS_METAL_SOURCES}
+    )
+else ()
+    set(DEN_OF_IZ_GRAPHICS_SOURCES
+            ${DEN_OF_IZ_GRAPHICS_COMMON_SOURCES}
+            ${DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES}
+    )
+endif()
+
+add_library(DenOfIzGraphics ${DEN_OF_IZ_GRAPHICS_SOURCES})
 install_target(DenOfIzGraphics)
 install(FILES ${SPVHeaders} DESTINATION Include/DenOfIzGraphics)
 target_include_default_directories(DenOfIzGraphics)
+target_include_directories(DenOfIzGraphics PRIVATE ${TINYGLTF_INCLUDE_DIRS})
 target_link_libraries(DenOfIzGraphics
         PUBLIC
         DenOfIzCore
@@ -80,6 +117,9 @@ if (WIN32)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_DX12)
 endif ()
 
+if (WIN32 OR LINUX)
+    target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_VK)
+endif ()
+
 include_theforge(DenOfIzGraphics)
-target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_VK)
 set_target_default_properties(DenOfIzGraphics)

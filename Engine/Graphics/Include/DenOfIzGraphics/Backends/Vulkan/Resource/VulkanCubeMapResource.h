@@ -24,22 +24,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class VulkanCubeMapResource final : ICubeMapResource, boost::noncopyable
-    {
-        VulkanContext *m_context;
-        CubeMapCreateInfo m_createInfo;
+class VulkanCubeMapResource final : ICubeMapResource, boost::noncopyable
+{
+	VulkanContext* m_context;
+	CubeMapCreateInfo m_createInfo;
 
-        vk::Sampler m_sampler{};
-        vk::ImageView m_imageView{};
-        vk::Image m_image;
-        VmaAllocation m_allocation;
+	vk::Sampler m_sampler{};
+	vk::ImageView m_imageView{};
+	vk::Image m_image;
+	VmaAllocation m_allocation;
 
-    public:
-        explicit VulkanCubeMapResource( VulkanContext *context, const CubeMapCreateInfo &createInfo );
+public:
+	explicit VulkanCubeMapResource(VulkanContext* context, const CubeMapCreateInfo& createInfo);
 
-        void Allocate( std::vector<const void *> data ) override;
-        void Deallocate() override;
-    };
+	void Allocate(std::vector<const void*> data) override;
+	void Deallocate() override;
+};
 
 }
 

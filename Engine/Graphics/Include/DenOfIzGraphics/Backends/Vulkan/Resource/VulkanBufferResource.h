@@ -25,27 +25,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class VulkanBufferResource final : public IBufferResource, boost::noncopyable
-    {
-        BufferCreateInfo m_createInfo;
-        VulkanContext *m_context;
+class VulkanBufferResource final : public IBufferResource, boost::noncopyable
+{
+	BufferCreateInfo m_createInfo;
+	VulkanContext* m_context;
 
-        VmaAllocation m_allocation;
-        bool m_alreadyDisposed = false;
-        bool m_alreadyAllocated = false;
+	VmaAllocation m_allocation;
+	bool m_alreadyDisposed = false;
+	bool m_alreadyAllocated = false;
 
-    public:
-        vk::Buffer Instance;
-        vk::DescriptorBufferInfo DescriptorInfo;
+public:
+	vk::Buffer Instance;
+	vk::DescriptorBufferInfo DescriptorInfo;
 
-        explicit VulkanBufferResource( VulkanContext *context, const BufferCreateInfo &createInfo );
+	explicit VulkanBufferResource(VulkanContext* context, const BufferCreateInfo& createInfo);
 
-        void Allocate( const void *newData ) override;
-        void Deallocate() override;
-        ~VulkanBufferResource() override;
-        void UpdateAllocation( const void *newData );
+	void Allocate(const void* newData) override;
+	void Deallocate() override;
+	~VulkanBufferResource() override;
+	void UpdateAllocation(const void* newData);
 
-    };
+};
 
 }
 

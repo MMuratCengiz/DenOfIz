@@ -29,8 +29,6 @@
 #include <cassert>
 #include "Time.h"
 
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
 #include <stb_image.h>
 
 #define SDL_MAIN_HANDLED
@@ -44,25 +42,27 @@ struct Unit
 {
 };
 
-template <typename T>
+template<typename T>
 struct Result
 {
-    bool Success;
-    std::string Message;
-    T Result;
+	bool Success;
+	std::string Message;
+	T Result;
 };
 
 #define Success(Return) \
 { \
-	.Success = true, \
-	.Message = "", \
-	.Result = Return, \
+    .Success = true, \
+    .Message = "", \
+    .Result = Return, \
 }
 
 #define Error(ErrorMessage) \
 { \
-	.Success = false, \
-	.Message = ErrorMessage \
+    .Success = false, \
+    .Message = ErrorMessage \
 }
+
+#define assertm(exp, msg) assert(((void)msg, exp))
 
 #include <boost/noncopyable.hpp>

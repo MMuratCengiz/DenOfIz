@@ -24,21 +24,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class Time
-    {
-        int frames;
-        double prev = 0;
-        double deltaTime = 0;
-        double firstTickTime;
-        double lastFrameTick;
+class Time
+{
+	int frames;
+	double prev = 0;
+	double deltaTime = 0;
+	double firstTickTime;
+	double lastFrameTick;
 
-    public:
-        std::function<void( double )> ListenFps;
+public:
+	std::function<void(double)> ListenFps;
 
-        void Tick();
-        double GetDeltaTime();
-        double GetFirstTickTime();
-        static double DoubleEpochNow();
-    };
+	void Tick();
+	double GetDeltaTime();
+	double GetFirstTickTime();
+	static double DoubleEpochNow();
+};
 
 }

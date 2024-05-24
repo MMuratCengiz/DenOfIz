@@ -12,19 +12,19 @@ using namespace Microsoft::WRL;
 namespace DenOfIz
 {
 
-    class ShaderCompiler
-    {
-        ComPtr<IDxcLibrary> dxcLibrary;
-        ComPtr<IDxcCompiler3> dxcCompiler;
-        ComPtr<IDxcUtils> dxcUtils;
+class ShaderCompiler
+{
+	ComPtr<IDxcLibrary> dxcLibrary;
+	ComPtr<IDxcCompiler3> dxcCompiler;
+	ComPtr<IDxcUtils> dxcUtils;
 
-    public:
-        Result<Unit> Init();
-        void Destroy();
-        void InitResources( TBuiltInResource &Resources );
-        EShLanguage FindLanguage( ShaderStage shaderType );
-        std::vector<uint32_t> HLSLtoSPV( ShaderStage shaderType, const std::string &filename ) const;
-        std::vector<uint32_t> GLSLtoSPV( ShaderStage shaderType, const std::string &filename );
-    };
+public:
+	Result<Unit> Init();
+	void Destroy();
+	void InitResources(TBuiltInResource& Resources);
+	EShLanguage FindLanguage(ShaderStage shaderType);
+	std::vector<uint32_t> HLSLtoSPV(ShaderStage shaderType, const std::string& filename) const;
+	std::vector<uint32_t> GLSLtoSPV(ShaderStage shaderType, const std::string& filename);
+};
 
 }

@@ -25,23 +25,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class VulkanSurface
-    {
-        VulkanContext *m_context;
+// Todo this class does not need to exist, it can be part of the logical device
+class VulkanSurface
+{
+	VulkanContext* m_context;
 
-    public:
-        explicit VulkanSurface( VulkanContext *context );
+public:
+	explicit VulkanSurface(VulkanContext* context);
 
-        ~VulkanSurface();
+	~VulkanSurface();
 
-    private:
-        void CreateSurface() const;
-        void CreateSwapChain( const vk::SurfaceCapabilitiesKHR &surfaceCapabilities ) const;
-        void CreateImageView( vk::ImageView &imageView, const vk::Image &image, const vk::Format &format, const vk::ImageAspectFlags &aspectFlags ) const;
-        void ChooseExtent2D( const vk::SurfaceCapabilitiesKHR &capabilities ) const;
-        void CreateSwapChainImages( vk::Format format ) const;
-        void Dispose() const;
-    };
+private:
+	void CreateSurface() const;
+	void CreateSwapChain(const vk::SurfaceCapabilitiesKHR& surfaceCapabilities) const;
+	void CreateImageView(vk::ImageView& imageView, const vk::Image& image, const vk::Format& format, const vk::ImageAspectFlags& aspectFlags) const;
+	void ChooseExtent2D(const vk::SurfaceCapabilitiesKHR& capabilities) const;
+	void CreateSwapChainImages(vk::Format format) const;
+	void Dispose() const;
+};
 
 }
 

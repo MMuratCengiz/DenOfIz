@@ -19,64 +19,65 @@
 
 using namespace DenOfIz;
 
-Logger::Logger( const LoggerType &loggerType ) :
-    loggerType( loggerType )
+Logger::Logger(const LoggerType& loggerType)
+		:
+		loggerType(loggerType)
 {
-    if ( loggerType == LoggerType::File )
-    {
-        logStream.open( "./log.txt", std::fstream::out | std::fstream::trunc ); // todo read from settings or something
-    }
+	if (loggerType == LoggerType::File)
+	{
+		logStream.open("./log.txt", std::fstream::out | std::fstream::trunc); // todo read from settings or something
+	}
 }
 
-void Logger::Log( const Verbosity &verbosity, const std::string &component, const std::string &message )
+void Logger::Log(const Verbosity& verbosity, const std::string& component, const std::string& message)
 {
-    RETURN_IF( verbosity > globalVerbosity );
+	RETURN_IF(verbosity > globalVerbosity);
 
-    const auto formattedMessage = boost::format( "[%1%][%2%]: %3%" ) % component % verbosityStrMap[ static_cast<int>(verbosity) ] % message;
+	const auto formattedMessage = boost::format("[%1%][%2%]: %3%") % component % verbosityStrMap[static_cast<int>(verbosity)] % message;
 
-    switch ( loggerType )
-    {
-    case LoggerType::File:
-        FileLog( formattedMessage.str() );
-        break;
-    case LoggerType::Console:
-        ConsoleLog( formattedMessage.str() );
-        break;
-    }
+	switch (loggerType)
+	{
+	case LoggerType::File:
+		FileLog(formattedMessage.str());
+		break;
+	case LoggerType::Console:
+		ConsoleLog(formattedMessage.str());
+		break;
+	}
 }
 
-void Logger::FileLog( const std::string &message )
+void Logger::FileLog(const std::string& message)
 {
-    messageQueue.push( message );
+	messageQueue.push(message);
 }
 
-void Logger::ConsoleLog( const std::string &message ) const
+void Logger::ConsoleLog(const std::string& message) const
 {
-    std::cout << message << std::endl;
+	std::cout << message << std::endl;
 }
 
 void Logger::LogListener()
 {
-    while ( running )
-    {
-        while ( !messageQueue.empty() )
-        {
-            std::string messageToLog = messageQueue.top();
-            logStream << messageToLog;
-            messageQueue.pop();
-        }
-    }
+	while (running)
+	{
+		while (!messageQueue.empty())
+		{
+			std::string messageToLog = messageQueue.top();
+			logStream << messageToLog;
+			messageQueue.pop();
+		}
+	}
 }
 
 Logger::~Logger()
 {
-    try
-    {
-        logStream.close();
-    }
-    catch ( const std::exception & )
-    {
-    }
+	try
+	{
+		logStream.close();
+	}
+	catch (const std::exception&)
+	{
+	}
 
-    running = false;
+	running = false;
 }

@@ -28,12 +28,12 @@ function(INCLUDE_THEFORGE target)
     target_link_libraries(${target} PUBLIC TheForge)
 
     if (WIN32)
-        target_link_libraries(${target} PUBLIC 
-            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.lib"
-            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/ags/ags_lib/lib/amd_ags_x64.lib"
-            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/nvapi/amd64/nvapi64.lib"
-            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/DirectXShaderCompiler/lib/x64/dxcompiler.lib"
-            XInput 
+        target_link_libraries(${target} PUBLIC
+                "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.lib"
+                "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/ags/ags_lib/lib/amd_ags_x64.lib"
+                "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/nvapi/amd64/nvapi64.lib"
+                "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/DirectXShaderCompiler/lib/x64/dxcompiler.lib"
+                XInput
         )
 
         configure_file("${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.dll" "${PROJECT_BINARY_DIR}/WinPixEventRuntime.dll" COPYONLY)
@@ -43,42 +43,42 @@ function(INCLUDE_THEFORGE target)
     elseif (LINUX)
         configure_file("${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/VulkanSDK/bin/Linux/VkLayer_khronos_validation.json" "${PROJECT_BINARY_DIR}/VkLayer_khronos_validation.json" COPYONLY)
         configure_file("${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/VulkanSDK/bin/Linux/libVkLayer_khronos_validation.so" "${PROJECT_BINARY_DIR}/libVkLayer_khronos_validation.so" COPYONLY)
-    endif()
+    endif ()
 
     if (NOT APPLE)
         target_compile_features(${target} PRIVATE cxx_std_20)
         set_property(TARGET ${target} PROPERTY CXX_STANDARD 20)
         set_property(TARGET ${target} PROPERTY CXX_STANDARD_REQUIRED ON)
-    endif()
+    endif ()
 
     if (MSVC)
         # set_property(TARGET main PROPERTY WIN32_EXECUTABLE ON)
         target_compile_options(${target} PRIVATE /Zc:__cplusplus)
     endif ()
-    
+
     copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 
     target_include_directories(${target} PUBLIC
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/Interfaces"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/ThirdParty/OpenSource/gainput/lib/source"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/Interfaces"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/DirectXShaderCompiler/inc"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/Interfaces"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Resources/ResourceLoader/Interfaces"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Utilities"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Utilities/Interfaces"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Utilities/ThirdParty/OpenSource/Nothings/"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Tools/ForgeShadingLanguage/includes"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Examples_3/Visibility_Buffer/src"
-        ${VULKAN_HEADERS_INCLUDE_DIRS}
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/Interfaces"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/ThirdParty/OpenSource/gainput/lib/source"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/Interfaces"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/DirectXShaderCompiler/inc"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/Interfaces"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Resources/ResourceLoader/Interfaces"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Utilities"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Utilities/Interfaces"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Utilities/ThirdParty/OpenSource/Nothings/"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Tools/ForgeShadingLanguage/includes"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Examples_3/Visibility_Buffer/src"
+            ${VULKAN_HEADERS_INCLUDE_DIRS}
     )
 
     target_link_directories(${target} PUBLIC
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/ags/ags_lib/lib"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/DirectXShaderCompiler/lib/x64"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/nvapi/amd64"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/ThirdParty/OpenSource/winpixeventruntime/bin"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/ags/ags_lib/lib"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/DirectXShaderCompiler/lib/x64"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics/ThirdParty/OpenSource/nvapi/amd64"
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/ThirdParty/OpenSource/winpixeventruntime/bin"
     )
 
     set(BINARY_DIR "${PROJECT_BINARY_DIR}")
@@ -90,26 +90,26 @@ function(INCLUDE_THEFORGE target)
     file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/Assets/GPUCfg)
     if (WIN32)
         configure_file(${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/Windows/pc_gpu.data ${BINARY_DIR}/Assets/GPUCfg/gpu.data COPYONLY)
-    elseif(APPLE)
+    elseif (APPLE)
         configure_file(${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/Darwin/apple_gpu.data ${BINARY_DIR}/Assets/GPUCfg/gpu.data COPYONLY)
-    elseif(LINUX)
+    elseif (LINUX)
         configure_file(${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/Linux/steamdeck_gpu.data ${BINARY_DIR}/Assets/GPUCfg/gpu.data COPYONLY)
-    elseif(ANDROID)
+    elseif (ANDROID)
         configure_file(${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/Android/android_gpu.data ${BINARY_DIR}/Assets/GPUCfg/gpu.data COPYONLY)
     endif ()
 endfunction()
 
 
-if(WIN32)
+if (WIN32)
     set(Python3_ROOT_DIR "${CMAKE_SOURCE_DIR}/_External/The-Forge/Tools/python-3.6.0-embed-amd64")
-endif()
+endif ()
 
 find_package(Python3 COMPONENTS Interpreter)
 
 function(compile_shaders)
     set(oneValueArgs TARGET_PROJECT SHADER_TARGET SHADER_LIST)
     cmake_parse_arguments(COMPILE_SHADERS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    
+
     file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/Assets/Shaders)
     file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/Assets/CompiledShaders)
     # file(TOUCH ${PROJECT_BINARY_DIR}/CompiledShaders/reload-server.txt)
@@ -119,7 +119,7 @@ function(compile_shaders)
         set(target_lang "DIRECT3D12 VULKAN")
     elseif (APPLE)
         set(target_lang "MACOS")
-    endif()
+    endif ()
 
     set(BINARY_DIR "${PROJECT_BINARY_DIR}")
     if (APPLE)

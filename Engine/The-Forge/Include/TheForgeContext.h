@@ -75,7 +75,7 @@ public:
 	Queue* pGraphicsQueue;
 	GpuCmdRing mCmdRing = {};
 
-	Semaphore *pImageAcquiredSemaphore;
+	Semaphore* pImageAcquiredSemaphore;
 	TheForgeContext(const InitialAppInfo& appInfo);
 	~TheForgeContext();
 private:

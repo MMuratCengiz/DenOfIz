@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "VulkanContext.h"
 #include "VulkanUtilities.h"
 #include "VulkanPipeline.h"
+#include "../Interface/IRenderPass.h"
 #include "Resource/VulkanSamplerResource.h"
 #include "Resource/VulkanBufferResource.h"
 #include "Resource/VulkanLock.h"
@@ -29,64 +30,61 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    struct RenderTargetAttachment
-    {
-        bool IsSwapChain; // Disposing is different when swap chain.
-        VulkanImage Image;
-    };
+struct RenderTargetAttachment
+{
+	bool IsSwapChain; // Disposing is different when swap chain.
+	VulkanImage Image;
+};
 
-    class VulkanRenderPass : boost::noncopyable
-    {
-        VulkanContext *m_context;
-        VulkanPipeline *m_boundPipeline;
-        vk::Extent2D m_viewportExtent;
+class VulkanRenderPass : boost::noncopyable, public IRenderPass
+{
+	VulkanContext* m_context;
+	VulkanPipeline* m_boundPipeline;
+	vk::Extent2D m_viewportExtent;
 
-        vk::Offset2D m_viewportOffset;
-        std::unique_ptr<VulkanLock> m_swapChainImageAvailable;
-        std::unique_ptr<VulkanLock> m_swapChainImageRendered;
-        std::vector<vk::WriteDescriptorSet> m_currentResources;
-        vk::Image m_renderTarget;
-        vk::ImageView m_renderTargetImageView;
-        std::vector<RenderTargetAttachment> m_renderTargetAttachments;
-        vk::CommandBuffer m_commandBuffer;
-        bool m_hasIndexData;
+	vk::Offset2D m_viewportOffset;
+	std::unique_ptr<VulkanLock> m_swapChainImageAvailable;
+	std::unique_ptr<VulkanLock> m_swapChainImageRendered;
+	std::vector<vk::WriteDescriptorSet> m_currentResources;
+	vk::Image m_renderTarget;
+	vk::ImageView m_renderTargetImageView;
+	std::vector<RenderTargetAttachment> m_renderTargetAttachments;
+	vk::CommandBuffer m_commandBuffer;
+	bool m_hasIndexData;
 
-        uint32_t m_swapChainIndex{};
-        uint32_t m_frameIndex{};
+	uint32_t m_swapChainIndex{};
+	uint32_t m_frameIndex{};
 
-        vk::Viewport m_viewport{};
-        vk::Rect2D m_viewScissor{};
+	vk::Viewport m_viewport{};
+	vk::Rect2D m_viewScissor{};
 
-        RenderPassCreateInfo m_createInfo;
+	RenderPassCreateInfo m_createInfo;
 
-    public:
-        explicit VulkanRenderPass( VulkanContext *context, const RenderPassCreateInfo &createInfo );
+public:
+	explicit VulkanRenderPass(VulkanContext* context, const RenderPassCreateInfo& createInfo);
 
-        void UpdateViewport( const uint32_t &width, const uint32_t &height );
+	void UpdateViewport(const uint32_t& width, const uint32_t& height) override;
+	void SetDepthBias(float constant, float clamp, float slope) const override;
 
-        void Begin( std::array<float, 4> clearColor = { 0.0f, 0.0f, 0.0f, 0.0f } );
-        void BindPipeline( VulkanPipeline *pipeline );
-        void BindResource( IResource *resource );
-        // If using indices = 0 then the index buffer will be ignored.
-        void BindIndexBuffer( IBufferResource *resource );
-        // Use vertices = 0 safely when drawing using index buffers
-        void BindVertexBuffer( IBufferResource *resource ) const;
-        void Draw( const uint32_t &instanceCount, const uint32_t &vertexCount ) const;
+	void Begin(std::array<float, 4> clearColor = { 0.0f, 0.0f, 0.0f, 0.0f }) override;
+	void BindPipeline(IPipeline* pipeline) override;
+	void BindResource(IResource* resource) override;
+	// If using indices = 0 then the index buffer will be ignored.
+	void BindIndexBuffer(IBufferResource* resource) override;
+	// Use vertices = 0 safely when drawing using index buffers
+	void BindVertexBuffer(IBufferResource* resource) const override;
+	void Draw(const uint32_t& instanceCount, const uint32_t& vertexCount) const override;
 
-        // Uncommon - Operations:
-        void SetDepthBias( float constant, float clamp, float slope ) const;
-        // --
+	SubmitResult Submit(const std::vector<std::shared_ptr<ILock>>& waitOnLock, ILock* notifyFence);
+	~VulkanRenderPass();
 
-        SubmitResult Submit( const std::vector<std::shared_ptr<VulkanLock>> &waitOnLock, VulkanLock *notifyFence );
-        ~VulkanRenderPass();
-
-    private:
-        void AcquireNextImage();
-        void CreateRenderTarget();
-        VulkanImage
-        CreateAttachment( const vk::Format &format, const vk::ImageUsageFlags &usage, const vk::ImageAspectFlags &aspect ) const;
-        SubmitResult PresentPassToSwapChain() const;
-    };
+private:
+	void AcquireNextImage();
+	void CreateRenderTarget();
+	VulkanImage
+	CreateAttachment(const vk::Format& format, const vk::ImageUsageFlags& usage, const vk::ImageAspectFlags& aspect) const;
+	SubmitResult PresentPassToSwapChain() const;
+};
 
 }
 

@@ -27,22 +27,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class DX12LogicalDevice final : public ILogicalDevice
+class DX12LogicalDevice final : public ILogicalDevice
+{
+private:
+	D3D_FEATURE_LEVEL m_minFeatureLevel = D3D_FEATURE_LEVEL_12_0;
+	std::unique_ptr<DX12Context> m_context;
+	DWORD m_dxgiFactoryFlags;
+public:
+	DX12LogicalDevice();
+	~DX12LogicalDevice() override;
 
-    {
-        std::unique_ptr<DX12Context> m_context;
-        DWORD m_dxgiFactoryFlags;
-
-    public:
-        DX12LogicalDevice();
-        ~DX12LogicalDevice() override;
-
-    private:
-        void CreateDevice( SDL_Window *window ) override;
-        std::vector<PhysicalDeviceInfo> ListPhysicalDevices() override;
-        void LoadPhysicalDevice( const PhysicalDeviceInfo &device ) override;
-        void WaitIdle() override;
-    };
+	// Override methods
+	void CreateDevice(SDL_Window* window) override;
+	std::vector<PhysicalDeviceInfo> ListPhysicalDevices() override;
+	void LoadPhysicalDevice(const PhysicalDeviceInfo& device) override;
+	void WaitIdle() override;
+	// --
+private:
+	void CreateDeviceInfo(IDXGIAdapter1& adapter, PhysicalDeviceInfo& deviceInfo);
+	void CreateSwapChain();
+};
 
 }
 

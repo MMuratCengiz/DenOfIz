@@ -13,8 +13,6 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#ifdef BUILD_VK
-
 #ifdef WIN32
 #include <DenOfIzCore/Common_Windows.h>
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -38,5 +36,3 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 #define JSON_NOEXCEPTION
 
 #include <tiny_gltf.h>
-
-#endif

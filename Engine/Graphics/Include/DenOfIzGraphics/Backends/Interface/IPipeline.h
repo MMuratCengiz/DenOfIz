@@ -26,75 +26,80 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    struct StencilTestState
-    {
-        bool enabled = false;
-        CompareOp compareOp;
-        uint32_t compareMask;
-        uint32_t writeMask;
-        uint32_t ref;
+struct StencilTestState
+{
+	bool enabled = false;
+	CompareOp compareOp;
+	uint32_t compareMask;
+	uint32_t writeMask;
+	uint32_t ref;
 
-        StencilOp failOp;
-        StencilOp passOp;
-        StencilOp depthFailOp;
-    };
+	StencilOp failOp;
+	StencilOp passOp;
+	StencilOp depthFailOp;
+};
 
-    enum class BindPoint
-    {
-        Graphics,
-        Compute,
-        RayTracing
-    };
+enum class BindPoint
+{
+	Graphics,
+	Compute,
+	RayTracing
+};
 
-    enum class BlendMode
-    {
-        None,
-        AlphaBlend
-    };
+enum class BlendMode
+{
+	None,
+	AlphaBlend
+};
 
-    enum class CullMode
-    {
-        FrontAndBackFace,
-        BackFace,
-        FrontFace,
-        None
-    };
+enum class CullMode
+{
+	FrontAndBackFace,
+	BackFace,
+	FrontFace,
+	None
+};
 
-    namespace ViewMask
-    {
-        constexpr int R = 0x00000001;
-        constexpr int G = 0x00000002;
-        constexpr int B = 0x00000004;
-        constexpr int A = 0x00000008;
-    };
+namespace ViewMask
+{
+constexpr int R = 0x00000001;
+constexpr int G = 0x00000002;
+constexpr int B = 0x00000004;
+constexpr int A = 0x00000008;
+};
 
-    struct PipelineRendering
-    {
-        uint32_t ViewMask = ViewMask::R | ViewMask::G | ViewMask::B | ViewMask::A;
+struct PipelineRendering
+{
+	uint32_t ViewMask = ViewMask::R | ViewMask::G | ViewMask::B | ViewMask::A;
 
-        std::vector<ImageFormat> ColorAttachmentFormats;
-        ImageFormat DepthAttachmentFormat;
-        ImageFormat StencilAttachmentFormat;
-    };
+	std::vector<ImageFormat> ColorAttachmentFormats;
+	ImageFormat DepthAttachmentFormat;
+	ImageFormat StencilAttachmentFormat;
+};
 
-    struct PipelineCreateInfo
-    {
-        CullMode CullMode = CullMode::None;
-        BindPoint BindPoint = BindPoint::Graphics;
+struct PipelineCreateInfo
+{
+	CullMode CullMode = CullMode::None;
+	BindPoint BindPoint = BindPoint::Graphics;
 
-        CompareOp DepthCompareOp;
-        bool EnableDepthTest = true;
-        bool InterleavedMode = true;
+	CompareOp DepthCompareOp;
+	bool EnableDepthTest = true;
+	bool InterleavedMode = true;
 
-        StencilTestState StencilTestStateFront{};
-        StencilTestState StencilTestStateBack{};
+	StencilTestState StencilTestStateFront{};
+	StencilTestState StencilTestStateBack{};
 
-        SpvProgram SpvProgram;
+	SpvProgram SpvProgram;
 
-        std::vector<BlendMode> BlendModes;
+	std::vector<BlendMode> BlendModes;
 
-        PipelineRendering Rendering;
-        MSAASampleCount MSAASampleCount = MSAASampleCount::_0; // 0 Disables MSAA
-    };
+	PipelineRendering Rendering;
+	MSAASampleCount MSAASampleCount = MSAASampleCount::_0; // 0 Disables MSAA
+};
+
+class IPipeline {
+public:
+	virtual ~IPipeline() = 0;
+};
 
 }
