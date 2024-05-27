@@ -443,18 +443,43 @@ enum class ResourceState
 	AccelerationStructureWrite
 };
 
-struct MemoryCreateInfo
-{
-	BufferMemoryUsage Usage;
-	MemoryLocation Location;
-	uint32_t Size;
-};
-
 enum class ResourceType
 {
 	Texture,
 	CubeMap,
 	Buffer
+};
+
+// TODO should this be resource type instead
+enum class ResourceBindingType
+{
+	Sampler,
+	CombinedImageSampler,
+	SampledImage,
+	StorageImage,
+	UniformTexelBuffer,
+	StorageTexelBuffer,
+	UniformBuffer,
+	StorageBuffer,
+	UniformBufferDynamic,
+	StorageBufferDynamic,
+	InputAttachment,
+	InlineUniformBlock,
+	AccelerationStructure,
+};
+
+enum class LoadOp
+{
+	Clear,
+	Load,
+	Unidentified
+};
+
+enum class StoreOp
+{
+	Store,
+	None,
+	Unidentified
 };
 
 class IResource
@@ -471,21 +496,30 @@ struct BufferCreateInfo
 	bool KeepMemoryMapped = false;
 	bool UseStaging = false;
 
-	MemoryCreateInfo MemoryCreateInfo;
+	BufferMemoryUsage Usage;
+	MemoryLocation Location;
 };
 
 class IBufferResource : public IResource
 {
 protected:
-	void* mappedMemory;
+	uint32_t m_size;
+	const void* m_data;
 
+	void* m_mappedMemory;
 public:
-	uint32_t Size;
-	const void* Data;
+	void Allocate(const void* data, uint32_t size) {
+		m_size = size;
+		m_data = data;
+		Allocate(data);
+	}
 
-	virtual void Allocate(const void* data) = 0;
 	virtual void Deallocate() = 0;
 
+	inline uint32_t GetSize() const { return m_size; }
+	inline const void* GetData() const { return m_data; }
+protected:
+	virtual void Allocate(const void* data) = 0;
 private:
 	const ResourceType Type() override
 	{
@@ -495,8 +529,6 @@ private:
 
 struct ImageCreateInfo
 {
-	uint32_t Width;
-	uint32_t Height;
 	ImageAspect Aspect = ImageAspect::Color;
 	ImageFormat Format;
 	ImageMemoryUsage ImageUsage;
@@ -524,26 +556,40 @@ struct SamplerCreateInfo
 	uint32_t Width;
 	uint32_t Height;
 	ImageFormat Format;
-	MemoryCreateInfo MemoryCreateInfo;
 };
 
 class IImageResource : public IResource
 {
 
 protected:
-	uint32_t size;
-	const void* data;
+	uint32_t m_width;
+	uint32_t m_height;
+	uint32_t m_depth;
+	const void* m_data;
 
 public:
-	virtual void Allocate(const void* data) = 0;
+	virtual void Allocate(const void* data, uint32_t width, uint32_t height, uint32_t depth = 0) {
+		m_width = width;
+		m_height = height;
+		m_depth = depth;
+		m_data = data;
+		Allocate(data);
+	}
+
 	virtual void Deallocate() = 0;
 
 	virtual void AttachSampler(SamplerCreateInfo&) = 0;
+
+	inline uint32_t GetWidth() const { return m_width; }
+	inline uint32_t GetHeight() const { return m_height; }
+	inline uint32_t GetDepth() const { return m_depth; }
 
 	const ResourceType Type() override
 	{
 		return ResourceType::Texture;
 	};
+protected:
+	virtual void Allocate(const void* data) = 0;
 };
 
 struct CubeMapCreateInfo

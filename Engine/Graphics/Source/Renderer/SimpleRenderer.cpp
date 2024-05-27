@@ -31,51 +31,57 @@ void SimpleRenderer::Init(SDL_Window* window)
 
 	m_logicalDevice = gapiInit.CreateLogicalDevice(m_window);
 
-
 	auto compiler = ShaderCompiler();
 	compiler.Init();
-	auto vs = compiler.HLSLtoSPV(ShaderStage::Vertex, "vs.hlsl");
-	auto fs = compiler.HLSLtoSPV(ShaderStage::Fragment, "fs.hlsl");
+	auto vs = compiler.HLSLtoSPV(ShaderStage::Vertex, "Shaders/vs.hlsl");
+	auto fs = compiler.HLSLtoSPV(ShaderStage::Fragment, "Shaders/fs.hlsl");
 	compiler.Destroy();
 
 	m_program = std::make_unique<SpvProgram>(std::vector<CompiledShader>{ CompiledShader{ .Stage = ShaderStage::Vertex, .Data = std::move(vs) },
 																		  CompiledShader{ .Stage = ShaderStage::Fragment, .Data = std::move(fs) }});
+
+	m_rootSignature = m_logicalDevice->CreateRootSignature(RootSignatureCreateInfo{});
+	m_swapChain = m_logicalDevice->CreateSwapChain(SwapChainCreateInfo{});
 
 	auto firstDevice = m_logicalDevice->ListPhysicalDevices()[0];
 	m_logicalDevice->LoadPhysicalDevice(firstDevice);
 
 	PipelineCreateInfo pipelineCreateInfo{ .SpvProgram = *m_program };
 	pipelineCreateInfo.BlendModes = { BlendMode::None };
-//	pipelineCreateInfo.Rendering.ColorAttachmentFormats.push_back(m_logicalDevice->GetContext()->SurfaceImageFormat); Todo
+	pipelineCreateInfo.RootSignature = m_rootSignature.get();
+	pipelineCreateInfo.Rendering.ColorAttachmentFormats.push_back(m_swapChain->GetPreferredFormat());
 
 	m_pipeline = m_logicalDevice->CreatePipeline(pipelineCreateInfo);
+	m_commandListRing = std::make_unique<CommandListRing>(m_logicalDevice.get());
+	for (int i = 0; i < mc_framesInFlight; ++i)
+	{
+		m_commandListRing->NewCommandList(CommandListCreateInfo());
+	}
 
 	BufferCreateInfo bufferCreateInfo{};
-	bufferCreateInfo.MemoryCreateInfo.Size = m_Triangle.size() * sizeof(float);
-	bufferCreateInfo.MemoryCreateInfo.Location = MemoryLocation::GPU;
-	bufferCreateInfo.MemoryCreateInfo.Usage = BufferMemoryUsage::VertexBuffer;
+	bufferCreateInfo.Location = MemoryLocation::GPU;
+	bufferCreateInfo.Usage = BufferMemoryUsage::VertexBuffer;
 	bufferCreateInfo.UseStaging = true;
 
-	m_VertexBuffer = m_logicalDevice->CreateBufferResource("vb", bufferCreateInfo);
-	m_VertexBuffer->Allocate(m_Triangle.data());
+	m_vertexBuffer = m_logicalDevice->CreateBufferResource("vb", bufferCreateInfo);
+	m_vertexBuffer->Allocate(m_Triangle.data(), m_Triangle.size() * sizeof(float));
 
-	BufferCreateInfo deltaTimeBufferCreateInfo;
-	deltaTimeBufferCreateInfo.MemoryCreateInfo.Size = sizeof(float);
-	deltaTimeBufferCreateInfo.MemoryCreateInfo.Location = MemoryLocation::CPU_GPU;
-	deltaTimeBufferCreateInfo.MemoryCreateInfo.Usage = BufferMemoryUsage::UniformBuffer;
+	BufferCreateInfo deltaTimeBufferCreateInfo {};
+	deltaTimeBufferCreateInfo.Location = MemoryLocation::CPU_GPU;
+	deltaTimeBufferCreateInfo.Usage = BufferMemoryUsage::UniformBuffer;
 
-	m_TimePassedBuffer = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferCreateInfo);
+	m_timePassedBuffer = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferCreateInfo);
 
-	RenderPassCreateInfo createInfo{};
-	createInfo.RenderToSwapChain = true;
-	createInfo.RenderTargetType = RenderTargetType::Color;
-
-	for (int i = 0; i < 3; i++)
-	{
-		createInfo.SwapChainImageIndex = i;
-		m_renderPasses.push_back(std::move(m_logicalDevice->CreateRenderPass(createInfo)));
-		m_fences.push_back(m_logicalDevice->CreateFence());
-	}
+//	RenderPassCreateInfo createInfo{};
+//	createInfo.RenderToSwapChain = true;
+//	createInfo.RenderTargetType = RenderTargetType::Color;
+//
+//	for (int i = 0; i < 3; i++)
+//	{
+//		createInfo.SwapChainImageIndex = i;
+//		m_renderPasses.push_back(std::move(m_logicalDevice->CreateRenderPass(createInfo)));
+//		m_fences.push_back(m_logicalDevice->CreateFence());
+//	}
 
 	m_time->ListenFps = [](const double fps)
 	{
@@ -85,13 +91,23 @@ void SimpleRenderer::Init(SDL_Window* window)
 
 void SimpleRenderer::Render()
 {
-	/*
-	 * RenderPass.Begin()
-	 * 		.BindPipeline()
-	 * 		.BindResource()
-	 * RenderPass.End()
-	 * 		.Render();
-	 */
+	float timePassed = (m_time->DoubleEpochNow() - m_time->GetFirstTickTime()) / 1000000.0f;
+	m_timePassedBuffer->Allocate(&timePassed, sizeof(float));
+	m_time->Tick();
+
+	auto nextCommandList = m_commandListRing->GetNextInFlight();
+	nextCommandList->Reset();
+	nextCommandList->Begin();
+
+	RenderingInfo renderingInfo{};
+	renderingInfo.ColorAttachments.push_back(RenderingAttachmentInfo{ .Resource = m_swapChain.get() });
+
+	nextCommandList->BeginRendering(renderingInfo);
+	nextCommandList->BindPipeline(m_pipeline.get());
+	nextCommandList->BindVertexBuffer(m_vertexBuffer.get());
+	nextCommandList->Draw(1, 3);
+	nextCommandList->End();
+	nextCommandList->Submit(m_fences[m_FrameIndex].get(), {});
 }
 
 }

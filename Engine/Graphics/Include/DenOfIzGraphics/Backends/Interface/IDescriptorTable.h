@@ -18,23 +18,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DX12Context.h"
-#include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
+#include "IResource.h"
+#include "IRootSignature.h"
 
 namespace DenOfIz
 {
 
-class DX12SwapChain : public ISwapChain
+struct DescriptorTableCreateInfo
 {
-private:
-	DX12Context* m_context;
-public:
-	DX12SwapChain(DX12Context* context);
-	~DX12SwapChain() override;
+	IRootSignature* RootSignature;
+	ResourceUpdateFrequency Frequency;
+};
 
-	uint32_t AcquireNextImage() override;
-	void Resize(uint32_t width, uint32_t height) override;
-	void Present();
+class IDescriptorTable
+{
+public:
+	virtual ~IDescriptorTable() = default;
+
+	// -- Requires a sampler
+	virtual void BindImage(std::string name, IImageResource* resource) = 0;
+	virtual void BindBuffer(std::string name, IBufferResource* resource) = 0;
 };
 
 }

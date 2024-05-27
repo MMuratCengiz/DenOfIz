@@ -34,17 +34,18 @@ class VulkanBufferResource final : public IBufferResource, boost::noncopyable
 	bool m_alreadyDisposed = false;
 	bool m_alreadyAllocated = false;
 
-public:
 	vk::Buffer Instance;
+public:
 	vk::DescriptorBufferInfo DescriptorInfo;
 
 	explicit VulkanBufferResource(VulkanContext* context, const BufferCreateInfo& createInfo);
 
-	void Allocate(const void* newData) override;
 	void Deallocate() override;
 	~VulkanBufferResource() override;
 	void UpdateAllocation(const void* newData);
-
+	inline const vk::Buffer& GetBuffer() const { return Instance; }
+protected:
+	void Allocate(const void* newData) override;
 };
 
 }

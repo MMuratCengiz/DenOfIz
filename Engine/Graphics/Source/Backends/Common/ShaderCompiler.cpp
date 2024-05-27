@@ -1,7 +1,6 @@
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
 #include <DenOfIzCore/Logger.h>
 #include <DenOfIzCore/Utilities.h>
-
 using namespace Microsoft::WRL;
 
 namespace DenOfIz

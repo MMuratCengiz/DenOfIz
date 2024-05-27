@@ -159,3 +159,24 @@ VulkanSwapChain::~VulkanSwapChain()
 	Dispose();
 	m_context->LogicalDevice.destroySwapchainKHR(m_context->SwapChain);
 }
+
+ImageFormat VulkanSwapChain::GetPreferredFormat()
+{
+	// Todo missing cases
+	switch (m_context->PhysicalDevice.getSurfaceFormatsKHR(m_context->Surface)[0].format)
+	{
+	case vk::Format::eB8G8R8A8Unorm:
+		return ImageFormat::B8G8R8A8Unorm;
+	case vk::Format::eR8G8B8A8Unorm:
+		return ImageFormat::R8G8B8A8Unorm;
+	case vk::Format::eR8G8B8A8Srgb:
+		return ImageFormat::R8G8B8A8Srgb;
+	default:
+		return ImageFormat::R8G8B8A8Unorm;
+	}
+}
+
+void VulkanSwapChain::Resize(uint32_t width, uint32_t height)
+{
+
+}

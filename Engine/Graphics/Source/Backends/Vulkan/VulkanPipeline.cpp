@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanPipeline.h>
 #include <ranges>
+#include "DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h"
 
 using namespace DenOfIz;
 
@@ -282,8 +283,11 @@ void VulkanPipeline::CreatePipelineLayout()
 		m_layouts.emplace_back(m_context->LogicalDevice.createDescriptorSetLayout(layoutCreateInfo));
 	}
 
-	m_pipelineLayoutCreateInfo.setLayoutCount = m_layouts.size();
-	m_pipelineLayoutCreateInfo.pSetLayouts = m_layouts.data();
+	VulkanRootSignature* vulkanRootSignature = dynamic_cast<VulkanRootSignature*>(m_createInfo.RootSignature);
+	m_pipelineLayoutCreateInfo.setSetLayouts(vulkanRootSignature->GetDescriptorSetLayouts());
+	// Todo clean
+//	m_pipelineLayoutCreateInfo.setLayoutCount = vulkanRootSignature->GetDescriptorSetLayouts().size();
+//	m_pipelineLayoutCreateInfo.pSetLayouts = m_layouts.data();
 
 	for (const PushConstant& pushConstant : m_createInfo.SpvProgram.PushConstants())
 	{

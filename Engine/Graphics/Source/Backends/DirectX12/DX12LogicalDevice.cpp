@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/DirectX12/DX12LogicalDevice.h>
 
 #include "DenOfIzCore/Logger.h"
-#include "SDL_syswm.h"
+#include "SDL2/SDL_syswm.h"
 
 using namespace DenOfIz;
 using namespace DirectX;
@@ -32,6 +32,7 @@ DX12LogicalDevice::DX12LogicalDevice()
 DX12LogicalDevice::~DX12LogicalDevice()
 {
 	WaitIdle();
+	Dispose();
 }
 
 void DX12LogicalDevice::CreateDevice(SDL_Window* window)
@@ -220,7 +221,7 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo& device)
 
 	m_context->RTVDescriptorHeap->SetName(L"DeviceResources");
 
-	m_rtvDescriptorSize = m_context->D3DDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+//	m_rtvDescriptorSize = m_context->D3DDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	if (m_context->DepthBufferFormat != DXGI_FORMAT_UNKNOWN)
 	{
@@ -250,16 +251,16 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo& device)
 	m_context->DirectCommandList->SetName(L"DeviceResources");
 
 	// Create a fence for tracking GPU execution progress.
-	DX_CHECK_RESULT(m_context->D3DDevice->CreateFence(m_fenceValues[m_backBufferIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.ReleaseAndGetAddressOf())));
+//	DX_CHECK_RESULT(m_context->D3DDevice->CreateFence(m_fenceValues[m_backBufferIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.ReleaseAndGetAddressOf())));
 
-	m_fenceValues[m_backBufferIndex]++;
-	m_fence->SetName(L"DeviceResources");
-
-	m_fenceEvent.Attach(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
-	if (!m_fenceEvent.IsValid())
-	{
-		throw std::exception("CreateEvent");
-	}
+//	m_fenceValues[m_backBufferIndex]++;
+//	m_fence->SetName(L"DeviceResources");
+//
+//	m_fenceEvent.Attach(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
+//	if (!m_fenceEvent.IsValid())
+//	{
+//		throw std::exception("CreateEvent");
+//	}
 }
 
 void DX12LogicalDevice::CreateSwapChain()
@@ -296,16 +297,16 @@ void DX12LogicalDevice::CreateSwapChain()
 
 void DX12LogicalDevice::Dispose()
 {
-	for (UINT n = 0; n < m_context->BackBufferCount; n++)
-	{
-		m_commandAllocators[n].Reset();
-		m_renderTargets[n].Reset();
-	}
-
-	m_context->DepthStencil.Reset();
+//	for (UINT n = 0; n < m_context->BackBufferCount; n++)
+//	{
+//		m_commandAllocators[n].Reset();
+//		m_renderTargets[n].Reset();
+//	}
+//
+//	m_context->DepthStencil.Reset();
+//	m_context->CommandList.Reset();
+//	m_context->fence.Reset();
 	m_context->CommandQueue.Reset();
-	m_context->CommandList.Reset();
-	m_context->fence.Reset();
 	m_context->RTVDescriptorHeap.Reset();
 	m_context->DSVDescriptorHeap.Reset();
 	m_context->SwapChain.Reset();

@@ -1,7 +1,8 @@
 #ifndef DISABLED
-#include <DenOfIzGraphics/Backends/Vulkan/Sample/TestVulkanRenderer.h>
-#include "SDL.h"
+#define SDL_MAIN_HANDLED
+#include <SDL2/SDL.h>
 #include <filesystem>
+#include <DenOfIzGraphics/Backends/Vulkan/Sample/TestVulkanRenderer.h>
 
 int main()
 {

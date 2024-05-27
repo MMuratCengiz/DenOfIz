@@ -39,13 +39,13 @@ private:
 	std::vector<vk::ImageView> n_swapChainImageViews;
 public:
 	VulkanSwapChain(VulkanContext* context);
-	~VulkanSwapChain();
+	~VulkanSwapChain() override;
 
 	uint32_t AcquireNextImage() override;
 	VulkanLock* GetImageAvailableLock();
 	VulkanLock* GetImageRenderedLock();
 	void Resize(uint32_t width, uint32_t height) override;
-	void Present() override;
+	ImageFormat GetPreferredFormat() override;
 
 	inline vk::SwapchainKHR* GetSwapChain() { return &m_swapChain; }
 private:

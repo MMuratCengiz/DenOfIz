@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12SwapChain.h>
-#include "SDL_syswm.h"
+#include "SDl2/SDL_syswm.h"
 
 using namespace DenOfIz;
 

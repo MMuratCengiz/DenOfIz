@@ -1,0 +1,64 @@
+/*
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanDescriptorTable.h>
+#include "DenOfIzGraphics/Backends/Vulkan/Resource/VulkanImageResource.h"
+#include "DenOfIzGraphics/Backends/Vulkan/Resource/VulkanBufferResource.h"
+
+using namespace DenOfIz;
+
+VulkanDescriptorTable::VulkanDescriptorTable(VulkanContext* context, DescriptorTableCreateInfo createInfo) :m_context(context), m_createInfo(std::move(createInfo))
+{
+	m_rootSignature = static_cast<VulkanRootSignature*>(m_createInfo.RootSignature);
+
+	vk::DescriptorSetAllocateInfo allocateInfo{};
+
+	allocateInfo.setDescriptorPool(m_context->DescriptorPool);
+	allocateInfo.setDescriptorSetCount(m_rootSignature->GetResourceCount(createInfo.Frequency));
+	allocateInfo.setSetLayouts(m_rootSignature->GetDescriptorSetLayouts());
+
+	m_descriptorSets = m_context->LogicalDevice.allocateDescriptorSets(allocateInfo);
+}
+
+void VulkanDescriptorTable::BindImage(std::string name, IImageResource* resource)
+{
+	VulkanImageResource* vulkanResource = static_cast<VulkanImageResource*>(resource);
+
+	vk::WriteDescriptorSet& writeDescriptorSet = CreateWriteDescriptor(name);
+	writeDescriptorSet.pImageInfo = &vulkanResource->DescriptorInfo;
+}
+
+void VulkanDescriptorTable::BindBuffer(std::string name, IBufferResource* resource)
+{
+	VulkanBufferResource* vulkanResource = static_cast<VulkanBufferResource*>(resource);
+
+	vk::WriteDescriptorSet& writeDescriptorSet = CreateWriteDescriptor(name);
+	writeDescriptorSet.pBufferInfo = &vulkanResource->DescriptorInfo;
+}
+
+vk::WriteDescriptorSet& VulkanDescriptorTable::CreateWriteDescriptor(std::string& name)
+{
+	ResourceBinding resourceBinding = m_rootSignature->GetResourceBinding(name).get();
+
+	vk::WriteDescriptorSet& writeDescriptorSet = m_writeDescriptorSets.emplace_back();
+	writeDescriptorSet.dstSet = m_descriptorSets[resourceBinding.Binding];
+	writeDescriptorSet.dstBinding = resourceBinding.Binding;
+	writeDescriptorSet.descriptorType = VulkanEnumConverter::ConvertBindingTypeToDescriptorType(resourceBinding.Type);
+	writeDescriptorSet.descriptorCount = resourceBinding.ArraySize;
+	return writeDescriptorSet;
+}

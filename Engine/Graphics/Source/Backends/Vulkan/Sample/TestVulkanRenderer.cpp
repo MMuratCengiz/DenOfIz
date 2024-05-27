@@ -43,18 +43,16 @@ void TestVulkanRenderer::Setup(SDL_Window* w)
 	m_Pipeline = std::make_unique<VulkanPipeline>(m_Device.GetContext(), pipelineCreateInfo);
 
 	BufferCreateInfo bufferCreateInfo{};
-	bufferCreateInfo.MemoryCreateInfo.Size = m_Triangle.size() * sizeof(float);
-	bufferCreateInfo.MemoryCreateInfo.Location = MemoryLocation::GPU;
-	bufferCreateInfo.MemoryCreateInfo.Usage = BufferMemoryUsage::VertexBuffer;
+	bufferCreateInfo.Location = MemoryLocation::GPU;
+	bufferCreateInfo.Usage = BufferMemoryUsage::VertexBuffer;
 	bufferCreateInfo.UseStaging = true;
 
 	m_VertexBuffer = std::make_unique<VulkanBufferResource>(m_Device.GetContext(), bufferCreateInfo);
-	m_VertexBuffer->Allocate(m_Triangle.data());
+	m_VertexBuffer->IBufferResource::Allocate(m_Triangle.data(), m_Triangle.size() * sizeof(float));
 
 	BufferCreateInfo deltaTimeBufferCreateInfo;
-	deltaTimeBufferCreateInfo.MemoryCreateInfo.Size = sizeof(float);
-	deltaTimeBufferCreateInfo.MemoryCreateInfo.Location = MemoryLocation::CPU_GPU;
-	deltaTimeBufferCreateInfo.MemoryCreateInfo.Usage = BufferMemoryUsage::UniformBuffer;
+	deltaTimeBufferCreateInfo.Location = MemoryLocation::CPU_GPU;
+	deltaTimeBufferCreateInfo.Usage = BufferMemoryUsage::UniformBuffer;
 
 	m_TimePassedBuffer = std::make_unique<VulkanBufferResource>(m_Device.GetContext(), deltaTimeBufferCreateInfo);
 	m_TimePassedBuffer->Name = "time";
@@ -80,7 +78,7 @@ void TestVulkanRenderer::Setup(SDL_Window* w)
 void TestVulkanRenderer::Render()
 {
 	float timePassed = (m_Time->DoubleEpochNow() - m_Time->GetFirstTickTime()) / 1000000.0f;
-	//	timePassedBuffer->Allocate(&timePassed);
+	m_TimePassedBuffer->IBufferResource::Allocate(&timePassed, sizeof(float));
 	m_Time->Tick();
 
 	m_Fences[m_FrameIndex]->Wait();

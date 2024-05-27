@@ -4,7 +4,8 @@
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <glslang/Public/ShaderLang.h>
 #include <DenOfIzGraphics/Backends/Interface/IShader.h>
-#include "wsl/wrladapter.h"
+
+#include <wrl/client.h>
 #include "directx-dxc/dxcapi.h"
 
 using namespace Microsoft::WRL;

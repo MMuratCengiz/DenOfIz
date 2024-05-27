@@ -19,10 +19,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 #ifdef BUILD_DX12
 
+#include "DX12Context.h"
 #include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
 #include <DenOfIzCore/Common.h>
 #include "DirectXHelpers.h"
-#include "DX12Context.h"
 
 namespace DenOfIz
 {
@@ -46,6 +46,7 @@ public:
 private:
 	void CreateDeviceInfo(IDXGIAdapter1& adapter, PhysicalDeviceInfo& deviceInfo);
 	void CreateSwapChain();
+	void Dispose();
 };
 
 }

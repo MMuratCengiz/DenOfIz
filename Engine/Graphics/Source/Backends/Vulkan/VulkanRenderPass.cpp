@@ -174,7 +174,7 @@ void VulkanRenderPass::BindIndexBuffer(IBufferResource* resource)
 {
 	const auto bufferResource = static_cast<VulkanBufferResource*>(resource);
 	constexpr vk::DeviceSize offset = 0;
-	m_commandBuffer.bindIndexBuffer(bufferResource->Instance, offset, vk::IndexType::eUint32);
+	m_commandBuffer.bindIndexBuffer(bufferResource->GetBuffer(), offset, vk::IndexType::eUint32);
 	m_hasIndexData = true;
 }
 
@@ -182,7 +182,7 @@ void VulkanRenderPass::BindVertexBuffer(IBufferResource* resource) const
 {
 	const auto bufferResource = static_cast<VulkanBufferResource*>(resource);
 	constexpr vk::DeviceSize offset = 0;
-	m_commandBuffer.bindVertexBuffers(0, 1, &bufferResource->Instance, &offset);
+	m_commandBuffer.bindVertexBuffers(0, 1, &bufferResource->GetBuffer(), &offset);
 }
 
 void VulkanRenderPass::SetDepthBias(const float constant, const float clamp, const float slope) const
@@ -279,7 +279,7 @@ SubmitResult VulkanRenderPass::Submit(const std::vector<std::shared_ptr<ILock>>&
 	}
 
 	notifyFence->Reset();
-	const auto submitResult = m_context->Queues[QueueType::Graphics].submit(1, &submitInfo, reinterpret_cast<VulkanLock*>(notifyFence)->GetVkFence());
+	const auto submitResult = m_context->Queues[QueueType::Graphics].submit(1, &submitInfo, dynamic_cast<VulkanLock*>(notifyFence)->GetVkFence());
 
 	VK_CHECK_RESULT(submitResult);
 	if (m_createInfo.RenderToSwapChain)
@@ -344,7 +344,7 @@ VulkanImage VulkanRenderPass::CreateAttachment(const vk::Format& format, const v
 	imageCreateInfo.tiling = vk::ImageTiling::eOptimal;
 	imageCreateInfo.usage = usage;
 	imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
-	imageCreateInfo.samples = VulkanEnumConverter::ConverSampleCount(m_createInfo.MSAASampleCount);
+	imageCreateInfo.samples = VulkanEnumConverter::ConvertSampleCount(m_createInfo.MSAASampleCount);
 	imageCreateInfo.mipLevels = 1;
 	imageCreateInfo.arrayLayers = 1;
 	imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;

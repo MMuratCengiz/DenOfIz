@@ -17,6 +17,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
 #include "SDL_vulkan.h"
+#include "DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h"
+#include "DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h"
+#include "DenOfIzGraphics/Backends/Vulkan/VulkanDescriptorTable.h"
+#include "DenOfIzGraphics/Backends/Vulkan/Resource/VulkanImageResource.h"
+#include "DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h"
 
 using namespace DenOfIz;
 
@@ -234,6 +239,10 @@ void VulkanLogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo& device)
 
 	m_context->GraphicsQueueCommandPool = m_context->LogicalDevice.createCommandPool(graphicsCommandPoolCreateInfo);
 	m_context->TransferQueueCommandPool = m_context->LogicalDevice.createCommandPool(transferCommandPoolCreateInfo);
+
+	// Todo find a better approach
+	const vk::DescriptorPoolCreateInfo& descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo{ vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, 1000 };
+	m_context->DescriptorPool = m_context->LogicalDevice.createDescriptorPool(descriptorPoolCreateInfo);
 }
 
 void VulkanLogicalDevice::SetupQueueFamilies() const
@@ -372,6 +381,7 @@ VulkanLogicalDevice::~VulkanLogicalDevice()
 		return;
 	}
 
+	m_context->LogicalDevice.destroyDescriptorPool(m_context->DescriptorPool);
 	m_context->LogicalDevice.destroyCommandPool(m_context->TransferQueueCommandPool);
 	m_context->LogicalDevice.destroyCommandPool(m_context->GraphicsQueueCommandPool);
 	m_context->LogicalDevice.destroyCommandPool(m_context->ComputeQueueCommandPool);
@@ -442,9 +452,15 @@ ImageFormat VulkanLogicalDevice::GetSwapChainImageFormat() const
 	return m_context->SurfaceImageFormat;
 }
 
+std::unique_ptr<ICommandList> VulkanLogicalDevice::CreateCommandList(const CommandListCreateInfo& createInfo)
+{
+	VulkanCommandList* commandList = new VulkanCommandList(m_context.get(), createInfo);
+	return std::unique_ptr<ICommandList>(dynamic_cast<ICommandList*>(commandList));
+}
+
 std::unique_ptr<IPipeline> VulkanLogicalDevice::CreatePipeline(const PipelineCreateInfo& createInfo)
 {
-	VulkanPipeline * pipeline = new VulkanPipeline(m_context.get(), createInfo);
+	VulkanPipeline* pipeline = new VulkanPipeline(m_context.get(), createInfo);
 	return std::unique_ptr<IPipeline>(reinterpret_cast<IPipeline*>(pipeline));
 }
 
@@ -456,17 +472,34 @@ std::unique_ptr<IRenderPass> VulkanLogicalDevice::CreateRenderPass(const RenderP
 
 std::unique_ptr<ISwapChain> VulkanLogicalDevice::CreateSwapChain(const SwapChainCreateInfo& createInfo)
 {
-	return std::unique_ptr<ISwapChain>();
+	VulkanSwapChain* swapChain = new VulkanSwapChain(m_context.get());
+	return std::unique_ptr<ISwapChain>(swapChain);
+}
+
+std::unique_ptr<IRootSignature> VulkanLogicalDevice::CreateRootSignature(const RootSignatureCreateInfo& createInfo)
+{
+	VulkanRootSignature* rootSignature = new VulkanRootSignature(m_context.get(), createInfo);
+	return std::unique_ptr<IRootSignature>(rootSignature);
+}
+
+std::unique_ptr<IDescriptorTable> VulkanLogicalDevice::CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo)
+{
+	VulkanDescriptorTable* descriptorTable = new VulkanDescriptorTable(m_context.get(), createInfo);
+	return std::unique_ptr<IDescriptorTable>(descriptorTable);
 }
 
 std::unique_ptr<IBufferResource> VulkanLogicalDevice::CreateBufferResource(std::string name, const BufferCreateInfo& createInfo)
 {
-	return std::unique_ptr<IBufferResource>();
+	VulkanBufferResource* bufferResource = new VulkanBufferResource(m_context.get(), createInfo);
+	bufferResource->Name = name;
+	return std::unique_ptr<IBufferResource>(bufferResource);
 }
 
-std::unique_ptr<IImageResource> VulkanLogicalDevice::CreateImageResource(std::string name, const SamplerCreateInfo& createInfo)
+std::unique_ptr<IImageResource> VulkanLogicalDevice::CreateImageResource(std::string name, const ImageCreateInfo& createInfo)
 {
-	return std::unique_ptr<VulkanSamplerResource>();
+	VulkanImageResource* imageResource = new VulkanImageResource(m_context.get(), createInfo);
+	imageResource->Name = name;
+	return std::unique_ptr<IImageResource>(imageResource);
 }
 
 std::unique_ptr<ICubeMapResource> VulkanLogicalDevice::CreateCubeMapResource(const CubeMapCreateInfo& createInfo)
@@ -476,10 +509,12 @@ std::unique_ptr<ICubeMapResource> VulkanLogicalDevice::CreateCubeMapResource(con
 
 std::unique_ptr<IFence> VulkanLogicalDevice::CreateFence()
 {
-	return std::unique_ptr<IFence>();
+	VulkanFence* fence = new VulkanFence(m_context.get());
+	return std::unique_ptr<IFence>(fence);
 }
 
 std::unique_ptr<ISemaphore> VulkanLogicalDevice::CreateSemaphore()
 {
-	return std::unique_ptr<ISemaphore>();
+	VulkanSemaphore* semaphore = new VulkanSemaphore(m_context.get());
+	return std::unique_ptr<ISemaphore>(semaphore);
 }

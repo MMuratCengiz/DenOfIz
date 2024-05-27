@@ -4,6 +4,7 @@
   "dependencies": [
     "boost",
     "vulkan-memory-allocator",
+    "vulkan-hpp",
     "glslang",
     "spirv-cross",
     "stb",

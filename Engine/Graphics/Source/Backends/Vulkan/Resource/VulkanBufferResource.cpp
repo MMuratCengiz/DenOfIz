@@ -29,7 +29,6 @@ VulkanBufferResource::VulkanBufferResource(VulkanContext* context, const BufferC
 
 void VulkanBufferResource::Allocate(const void* newData)
 {
-	Data = newData;
 	if (m_alreadyAllocated)
 	{
 		UpdateAllocation(newData);
@@ -40,24 +39,23 @@ void VulkanBufferResource::Allocate(const void* newData)
 	m_alreadyAllocated = true;
 
 	std::pair<vk::Buffer, VmaAllocation> stagingBuffer;
-	Size = m_createInfo.MemoryCreateInfo.Size;
 
 	if (m_createInfo.UseStaging)
 	{
-		VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer.first, stagingBuffer.second, newData, Size);
+		VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer.first, stagingBuffer.second, newData, m_size);
 	}
 
 	vk::BufferCreateInfo bufferCreateInfo{};
-	bufferCreateInfo.usage = VulkanEnumConverter::ConvertBufferUsage(m_createInfo.MemoryCreateInfo.Usage);
-	bufferCreateInfo.size = Size;
+	bufferCreateInfo.usage = VulkanEnumConverter::ConvertBufferUsage(m_createInfo.Usage);
+	bufferCreateInfo.size = m_size;
 	bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 
 	VmaAllocationCreateInfo allocationCreateInfo{};
 
-	allocationCreateInfo.usage = VulkanEnumConverter::ConvertMemoryLocation(m_createInfo.MemoryCreateInfo.Location);
+	allocationCreateInfo.usage = VulkanEnumConverter::ConvertMemoryLocation(m_createInfo.Location);
 
 	// Todo more flexibility, or a clearer interface here:
-	if (m_createInfo.MemoryCreateInfo.Location == MemoryLocation::CPU_GPU)
+	if (m_createInfo.Location == MemoryLocation::CPU_GPU)
 	{
 		const auto gpuVisible = vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eDeviceLocal;
 		allocationCreateInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eHostVisible);
@@ -75,17 +73,17 @@ void VulkanBufferResource::Allocate(const void* newData)
 
 	if (m_createInfo.UseStaging)
 	{
-		VulkanUtilities::CopyBuffer(m_context, stagingBuffer.first, Instance, Size);
+		VulkanUtilities::CopyBuffer(m_context, stagingBuffer.first, Instance, m_size);
 		vmaDestroyBuffer(m_context->Vma, stagingBuffer.first, stagingBuffer.second);
 	}
-	else if (mappedMemory != nullptr && m_createInfo.KeepMemoryMapped)
+	else if (m_mappedMemory != nullptr && m_createInfo.KeepMemoryMapped)
 	{
-		memcpy(mappedMemory, newData, Size);
+		memcpy(m_mappedMemory, newData, m_size);
 	}
 	else
 	{
-		vmaMapMemory(this->m_context->Vma, m_allocation, &mappedMemory);
-		memcpy(mappedMemory, newData, Size);
+		vmaMapMemory(this->m_context->Vma, m_allocation, &m_mappedMemory);
+		memcpy(m_mappedMemory, newData, m_size);
 
 		if (!m_createInfo.KeepMemoryMapped)
 		{
@@ -95,7 +93,7 @@ void VulkanBufferResource::Allocate(const void* newData)
 
 	DescriptorInfo.buffer = Instance;
 	DescriptorInfo.offset = 0;
-	DescriptorInfo.range = Size;
+	DescriptorInfo.range = m_size;
 }
 
 void VulkanBufferResource::UpdateAllocation(const void* newData)
@@ -103,18 +101,18 @@ void VulkanBufferResource::UpdateAllocation(const void* newData)
 	if (m_createInfo.UseStaging)
 	{
 		std::pair<vk::Buffer, VmaAllocation> stagingBuffer;
-		VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer.first, stagingBuffer.second, newData, Size);
-		VulkanUtilities::CopyBuffer(m_context, stagingBuffer.first, Instance, Size);
+		VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer.first, stagingBuffer.second, newData, m_size);
+		VulkanUtilities::CopyBuffer(m_context, stagingBuffer.first, Instance, m_size);
 		vmaDestroyBuffer(m_context->Vma, stagingBuffer.first, stagingBuffer.second);
 	}
 	else if (m_createInfo.KeepMemoryMapped)
 	{
-		memcpy(mappedMemory, newData, Size);
+		memcpy(m_mappedMemory, newData, m_size);
 	}
 	else
 	{
-		vmaMapMemory(m_context->Vma, m_allocation, &mappedMemory);
-		memcpy(mappedMemory, newData, Size);
+		vmaMapMemory(m_context->Vma, m_allocation, &m_mappedMemory);
+		memcpy(m_mappedMemory, newData, m_size);
 		vmaUnmapMemory(m_context->Vma, m_allocation);
 	}
 }

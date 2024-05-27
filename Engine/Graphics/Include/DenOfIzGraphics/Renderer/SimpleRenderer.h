@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 #include <DenOfIzGraphics/Backends/GraphicsAPIInit.h>
+#include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
 
 namespace DenOfIz
 {
@@ -25,6 +26,7 @@ namespace DenOfIz
 class SimpleRenderer
 {
 private:
+	const uint32_t mc_framesInFlight = 3;
 	std::unique_ptr<ILogicalDevice> m_logicalDevice;
 	SDL_Window * m_window;
 
@@ -33,11 +35,14 @@ private:
 
 	std::unique_ptr<SpvProgram> m_program;
 	std::unique_ptr<IPipeline> m_pipeline;
-	std::unique_ptr<IBufferResource> m_VertexBuffer;
-	std::unique_ptr<IBufferResource> m_TimePassedBuffer;
+	std::unique_ptr<IBufferResource> m_vertexBuffer;
+	std::unique_ptr<IBufferResource> m_timePassedBuffer;
 	std::unique_ptr<Time> m_time = std::make_unique<Time>();
+	std::unique_ptr<IRootSignature> m_rootSignature;
+	std::unique_ptr<ISwapChain> m_swapChain;
 	std::vector<std::unique_ptr<IFence>> m_fences;
 	std::vector<std::unique_ptr<IRenderPass>> m_renderPasses;
+	std::unique_ptr<CommandListRing> m_commandListRing;
 
 	int m_FrameIndex = 0;
 public:

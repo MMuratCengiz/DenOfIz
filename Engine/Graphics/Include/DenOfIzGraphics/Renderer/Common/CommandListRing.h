@@ -18,23 +18,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DX12Context.h"
-#include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
+#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
 
 namespace DenOfIz
 {
 
-class DX12SwapChain : public ISwapChain
+class CommandListRing
 {
 private:
-	DX12Context* m_context;
+	std::vector<std::unique_ptr<ICommandList>> m_commandLists;
+	size_t m_nextInFlight = 0;
+	ILogicalDevice* m_logicalDevice;
 public:
-	DX12SwapChain(DX12Context* context);
-	~DX12SwapChain() override;
+	CommandListRing(ILogicalDevice* logicalDevice) : m_logicalDevice(logicalDevice) {}
 
-	uint32_t AcquireNextImage() override;
-	void Resize(uint32_t width, uint32_t height) override;
-	void Present();
+	inline void NewCommandList(CommandListCreateInfo createInfo)
+	{
+		m_commandLists.push_back(m_logicalDevice->CreateCommandList(createInfo));
+	}
+
+	ICommandList* GetNextInFlight()
+	{
+		auto next = m_commandLists[m_nextInFlight].get();
+		m_nextInFlight = (m_nextInFlight + 1) % m_commandLists.size();
+		return next;
+	}
 };
 
 }

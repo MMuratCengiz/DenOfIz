@@ -77,14 +77,16 @@ public:
 
 
 	// Factory methods
-	std::unique_ptr<ICommandList> CreateCommandList() override;
+	std::unique_ptr<ICommandList> CreateCommandList(const CommandListCreateInfo& createInfo) override;
 	std::unique_ptr<IPipeline> CreatePipeline(const PipelineCreateInfo& createInfo) override;
 	std::unique_ptr<IRenderPass> CreateRenderPass(const RenderPassCreateInfo& createInfo) override;
 	std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainCreateInfo& createInfo) override;
+	std::unique_ptr<IRootSignature> CreateRootSignature(const RootSignatureCreateInfo& createInfo) override;
+	std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) override;
 	std::unique_ptr<IFence> CreateFence() override;
 	std::unique_ptr<ISemaphore> CreateSemaphore() override;
 	std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferCreateInfo& createInfo) override;
-	std::unique_ptr<IImageResource> CreateImageResource(std::string name, const SamplerCreateInfo& createInfo) override;
+	std::unique_ptr<IImageResource> CreateImageResource(std::string name, const ImageCreateInfo& createInfo) override;
 	std::unique_ptr<ICubeMapResource> CreateCubeMapResource(const CubeMapCreateInfo& createInfo) override;
 
 	~VulkanLogicalDevice() override;

@@ -5,9 +5,9 @@
 //
 
 #pragma once
+#ifdef BUILD_DX12
 
 #include "DX12Context.h"
-#include <wrl/event.h>
 
 namespace DenOfIz
 {
@@ -189,3 +189,5 @@ private:
 };
 
 }
+
+#endif

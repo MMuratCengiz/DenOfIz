@@ -19,6 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzCore/Common.h>
+#define SDL_MAIN_HANDLED
+#include <SDL2/SDL.h>
 #include "IFence.h"
 #include "ISemaphore.h"
 #include "ICommandList.h"
@@ -26,6 +28,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IRenderPass.h"
 #include "ISwapChain.h"
 #include "IResource.h"
+#include "IRootSignature.h"
+#include "IDescriptorTable.h"
 
 namespace DenOfIz
 {
@@ -68,14 +72,16 @@ public:
 	};
 
 	// Factory methods
-	virtual std::unique_ptr<ICommandList> CreateCommandList() = 0;
+	virtual std::unique_ptr<ICommandList> CreateCommandList(const CommandListCreateInfo& createInfo) = 0;
 	virtual std::unique_ptr<IPipeline> CreatePipeline(const PipelineCreateInfo& createInfo) = 0;
 	virtual std::unique_ptr<IRenderPass> CreateRenderPass(const RenderPassCreateInfo& createInfo) = 0;
 	virtual std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainCreateInfo& createInfo) = 0;
+	virtual std::unique_ptr<IRootSignature> CreateRootSignature(const RootSignatureCreateInfo& createInfo) = 0;
+	virtual std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) = 0;
 	virtual std::unique_ptr<IFence> CreateFence() = 0;
 	virtual std::unique_ptr<ISemaphore> CreateSemaphore() = 0;
 	virtual std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferCreateInfo& createInfo) = 0;
-	virtual std::unique_ptr<IImageResource> CreateImageResource(std::string name, const SamplerCreateInfo& createInfo) = 0;
+	virtual std::unique_ptr<IImageResource> CreateImageResource(std::string name, const ImageCreateInfo& createInfo) = 0;
 	virtual std::unique_ptr<ICubeMapResource> CreateCubeMapResource(const CubeMapCreateInfo& createInfo) = 0;
 };
 

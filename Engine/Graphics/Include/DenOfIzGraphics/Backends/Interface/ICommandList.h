@@ -24,6 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IPipeline.h"
 #include "IResource.h"
 #include "ISwapChain.h"
+#include "IDescriptorTable.h"
+#include <array>
 
 namespace DenOfIz
 {
@@ -44,6 +46,51 @@ struct ImageBarrier
 	uint16_t ArrayLayer;
 };
 
+struct RenderingAttachmentInfo
+{
+	ImageLayout Layout = ImageLayout::Undefined;
+	LoadOp LoadOp = LoadOp::Clear;
+	StoreOp StoreOp = StoreOp::Store;
+
+	IImageResource* Resource = nullptr;
+
+	std::array<float, 4> ClearColor { 0.0f, 0.0f, 0.0f, 1.0f };
+	std::array<float, 2> ClearDepth { 1.0f, 0.0f};
+};
+
+struct RenderingInfo
+{
+	std::vector<RenderingAttachmentInfo> ColorAttachments;
+	RenderingAttachmentInfo* DepthAttachment = nullptr;
+	RenderingAttachmentInfo* StencilAttachment = nullptr;
+
+	float RenderAreaWidth = 0.0f;
+	float RenderAreaHeight = 0.0f;
+	float RenderAreaOffsetX = 0.0f;
+	float RenderAreaOffsetY = 0.0f;
+	uint32_t LayerCount = 1;
+};
+
+struct SubmitInfo
+{
+	IFence* Notify = nullptr;
+	std::vector<ISemaphore*> WaitOnLocks;
+};
+
+enum QueueType
+{
+	Graphics,
+	Compute,
+	Transfer,
+	Presentation
+};
+
+struct CommandListCreateInfo
+{
+	QueueType QueueType = QueueType::Graphics;
+
+};
+
 class ICommandList
 {
 public:
@@ -51,29 +98,28 @@ public:
 
 	virtual void Reset() = 0;
 	virtual void Begin() = 0;
+	virtual void BeginRendering(const RenderingInfo& renderingInfo) = 0;
+	virtual void EndRendering() = 0;
 	virtual void End() = 0;
-	virtual void Submit(IFence* notify) = 0;
+	virtual void Submit(IFence* notify, std::vector<ISemaphore*> waitOnLocks) = 0;
 	virtual uint32_t AcquireNextImage(ISwapChain* swapChain, ISemaphore* lock) = 0;
 	virtual void BindPipeline(IPipeline* pipeline) = 0;
 	virtual void BindVertexBuffer(IBufferResource* buffer) = 0;
 	virtual void BindIndexBuffer(IBufferResource* buffer) = 0;
 	virtual void BindViewport(float x, float y, float width, float height) = 0;
 	virtual void BindScissorRect(float x, float y, float width, float height) = 0;
+	virtual void BindDescriptorTable(IDescriptorTable* table) = 0;
 	virtual void BindPushConstants(ShaderStage stage, uint32_t offset, uint32_t size, void* data) = 0;
 	virtual void BindBufferResource(IBufferResource* resource) = 0;
 	virtual void BindImageResource(IImageResource* resource) = 0;
 	virtual void SetDepthBias(float constantFactor, float clamp, float slopeFactor) = 0;
-	virtual void ClearColor(float r, float g, float b, float a) = 0;
-	virtual void ClearDepthStencil(float depth, uint32_t stencil) = 0;
 	virtual void SetImageBarrier(IImageResource* resource, ImageBarrier barrier) = 0;
 	virtual void SetBufferBarrier(IBufferResource* resource, BufferBarrier barrier) = 0;
-	virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) = 0;
-	virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
+	virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) = 0;
+	virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0) = 0;
 	virtual void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
 	virtual void CopyBuffer(IBufferResource* src, IBufferResource* dst, uint32_t size) = 0;
 	virtual void TransitionImageLayout(IImageResource* image, ImageLayout oldLayout, ImageLayout newLayout) = 0;
-	virtual void ClearColorAttachment(uint32_t attachmentIndex, float r, float g, float b, float a) = 0;
-	virtual void ClearDepthStencilAttachment(float depth, uint32_t stencil) = 0;
 	virtual void Present(ISwapChain* swapChain, uint32_t imageIndex, std::vector<ISemaphore*> waitOnLocks) = 0;
 };
 

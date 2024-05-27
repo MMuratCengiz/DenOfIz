@@ -31,9 +31,6 @@
 
 #include <stb_image.h>
 
-#define SDL_MAIN_HANDLED
-#include <SDL2/SDL.h>
-
 #include <boost/static_assert.hpp>
 
 #define RETURN_IF(condition) if (condition) return

@@ -72,7 +72,7 @@ public:
 		return vk::ShaderStageFlagBits::eVertex;
 	}
 
-	static vk::SampleCountFlagBits ConverSampleCount(const MSAASampleCount& sampleCount)
+	static vk::SampleCountFlagBits ConvertSampleCount(const MSAASampleCount& sampleCount)
 	{
 		switch (sampleCount)
 		{
@@ -161,6 +161,8 @@ public:
 		case AttachmentFeedbackLoopOptimalEXT:
 			return vk::ImageLayout::eAttachmentFeedbackLoopOptimalEXT;
 		}
+
+		return vk::ImageLayout::eUndefined;
 	}
 
 	static vk::StencilOp ConvertStencilOp(const StencilOp& stencilOp)
@@ -209,6 +211,37 @@ public:
 		}
 
 		return vk::CompareOp::eAlways;
+	}
+
+	static vk::AttachmentLoadOp ConvertLoadOp(const LoadOp& loadOp)
+	{
+		switch (loadOp)
+		{
+		case LoadOp::Load:
+			return vk::AttachmentLoadOp::eLoad;
+		case LoadOp::Clear:
+			return vk::AttachmentLoadOp::eClear;
+		case LoadOp::Unidentified:
+			return vk::AttachmentLoadOp::eDontCare;
+		}
+
+		return vk::AttachmentLoadOp::eLoad;
+
+	}
+
+	static vk::AttachmentStoreOp ConvertStoreOp(const StoreOp& storeOp)
+	{
+		switch (storeOp)
+		{
+		case StoreOp::Store:
+			return vk::AttachmentStoreOp::eStore;
+		case StoreOp::None:
+			return vk::AttachmentStoreOp::eNone;
+		case StoreOp::Unidentified:
+			return vk::AttachmentStoreOp::eDontCare;
+		}
+
+		return vk::AttachmentStoreOp::eStore;
 	}
 
 	static vk::Filter ConvertFilter(const Filter& filter)
@@ -870,6 +903,41 @@ public:
 		}
 
 		return vk::Format::eUndefined;
+	}
+
+	static vk::DescriptorType ConvertBindingTypeToDescriptorType(const ResourceBindingType& type)
+	{
+		switch (type)
+		{
+		case ResourceBindingType::Sampler:
+			return vk::DescriptorType::eSampler;
+		case ResourceBindingType::CombinedImageSampler:
+			return vk::DescriptorType::eCombinedImageSampler;
+		case ResourceBindingType::SampledImage:
+			return vk::DescriptorType::eSampledImage;
+		case ResourceBindingType::StorageImage:
+			return vk::DescriptorType::eStorageImage;
+		case ResourceBindingType::UniformTexelBuffer:
+			return vk::DescriptorType::eUniformTexelBuffer;
+		case ResourceBindingType::StorageTexelBuffer:
+			return vk::DescriptorType::eStorageTexelBuffer;
+		case ResourceBindingType::UniformBuffer:
+			return vk::DescriptorType::eUniformBuffer;
+		case ResourceBindingType::StorageBuffer:
+			return vk::DescriptorType::eStorageBuffer;
+		case ResourceBindingType::UniformBufferDynamic:
+			return vk::DescriptorType::eUniformBufferDynamic;
+		case ResourceBindingType::StorageBufferDynamic:
+			return vk::DescriptorType::eStorageBufferDynamic;
+		case ResourceBindingType::InputAttachment:
+			return vk::DescriptorType::eInputAttachment;
+		case ResourceBindingType::InlineUniformBlock:
+			return vk::DescriptorType::eInlineUniformBlock;
+		case ResourceBindingType::AccelerationStructure:
+			return vk::DescriptorType::eAccelerationStructureKHR;
+		}
+
+		return vk::DescriptorType::eSampler;
 	}
 
 	static vk::ImageLayout GetImageVkLayout(const RenderTargetType& targetType)

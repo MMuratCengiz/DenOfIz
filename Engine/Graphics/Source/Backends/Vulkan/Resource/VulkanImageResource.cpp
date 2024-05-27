@@ -27,14 +27,14 @@ VulkanImageResource::VulkanImageResource(VulkanContext* context, ImageCreateInfo
 	vk::ImageCreateInfo imageCreateInfo{};
 
 	imageCreateInfo.imageType = vk::ImageType::e2D;
-	imageCreateInfo.extent.width = createInfo.Width == 0 ? context->SurfaceExtent.width : createInfo.Width;
-	imageCreateInfo.extent.height = createInfo.Height == 0 ? context->SurfaceExtent.height : createInfo.Height;
+	imageCreateInfo.extent.width = m_width == 0 ? context->SurfaceExtent.width : m_width;
+	imageCreateInfo.extent.height = m_height == 0 ? context->SurfaceExtent.height : m_height;
 	imageCreateInfo.extent.depth = 1;
 	imageCreateInfo.format = VulkanEnumConverter::ConvertImageFormat(createInfo.Format);
 	imageCreateInfo.tiling = vk::ImageTiling::eOptimal;
 	imageCreateInfo.usage = VulkanEnumConverter::ConvertImageUsage(createInfo.ImageUsage);
 	imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
-	imageCreateInfo.samples = VulkanEnumConverter::ConverSampleCount(createInfo.MSAASampleCount);
+	imageCreateInfo.samples = VulkanEnumConverter::ConvertSampleCount(createInfo.MSAASampleCount);
 	imageCreateInfo.mipLevels = 1;
 	imageCreateInfo.arrayLayers = 1;
 	imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
@@ -66,9 +66,9 @@ void VulkanImageResource::Allocate(const void* newImage)
 	m_allocated = true;
 
 	bool isEmptyImage = newImage == nullptr;
-	data = newImage;
+	m_data = newImage;
 
-	m_mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(m_createInfo.Width, m_createInfo.Height)))) + 1;
+	m_mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(m_width, m_height)))) + 1;
 
 	if (isEmptyImage)
 	{
@@ -80,8 +80,8 @@ void VulkanImageResource::Allocate(const void* newImage)
 	vk::ImageCreateInfo imageCreateInfo{};
 
 	imageCreateInfo.imageType = vk::ImageType::e2D;
-	imageCreateInfo.extent.width = m_createInfo.Width;
-	imageCreateInfo.extent.height = m_createInfo.Height;
+	imageCreateInfo.extent.width = m_width;
+	imageCreateInfo.extent.height = m_height;
 	imageCreateInfo.extent.depth = 1;
 	imageCreateInfo.mipLevels = m_mipLevels;
 	imageCreateInfo.arrayLayers = 1;
@@ -139,7 +139,7 @@ void VulkanImageResource::Allocate(const void* newImage)
 	vk::Buffer stagingBuffer;
 	VmaAllocation stagingAllocation;
 
-	VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer, stagingAllocation, newImage, m_createInfo.Width * m_createInfo.Height * 4);
+	VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer, stagingAllocation, newImage, m_width * m_height * 4);
 	VulkanUtilities::RunOneTimeCommand(m_context, [&](const vk::CommandBuffer& commandBuffer)
 	{
 		vk::ImageMemoryBarrier memoryBarrier{};
@@ -169,7 +169,7 @@ void VulkanImageResource::Allocate(const void* newImage)
 		bufferImageCopy.imageSubresource.baseArrayLayer = 0;
 		bufferImageCopy.imageSubresource.layerCount = 1;
 		bufferImageCopy.imageOffset = vk::Offset3D{ 0, 0, 0 };
-		bufferImageCopy.imageExtent = vk::Extent3D{ m_createInfo.Width, m_createInfo.Height, 1 };
+		bufferImageCopy.imageExtent = vk::Extent3D{ m_width, m_height, 1 };
 
 		commandBuffer.copyBufferToImage(stagingBuffer, m_image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferImageCopy);
 	});
@@ -198,7 +198,7 @@ void VulkanImageResource::AttachSampler(SamplerCreateInfo& info)
 
 void VulkanImageResource::GenerateMipMaps() const
 {
-	int32_t mipWidth = m_createInfo.Width, mipHeight = m_createInfo.Height;
+	int32_t mipWidth = m_width, mipHeight = m_height;
 
 	VulkanUtilities::RunOneTimeCommand(m_context, [&](vk::CommandBuffer& commandBuffer)
 	{

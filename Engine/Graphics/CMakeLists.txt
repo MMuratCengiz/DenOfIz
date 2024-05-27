@@ -35,10 +35,12 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
 SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanLogicalDevice.cpp
         Source/Backends/Vulkan/VulkanCommandList.cpp
+        Source/Backends/Vulkan/VulkanDescriptorTable.cpp
         Source/Backends/Vulkan/VulkanSurface.cpp
         Source/Backends/Vulkan/VulkanUtilities.cpp
         Source/Backends/Vulkan/VulkanPipeline.cpp
         Source/Backends/Vulkan/VulkanRenderPass.cpp
+        Source/Backends/Vulkan/VulkanRootSignature.cpp
         Source/Backends/Vulkan/VulkanSwapChain.cpp
         Source/Backends/Vulkan/VmaImplementation.cpp
         Source/Backends/Vulkan/Resource/VulkanLock.cpp
@@ -82,6 +84,7 @@ else ()
     )
 endif()
 
+#copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 add_library(DenOfIzGraphics ${DEN_OF_IZ_GRAPHICS_SOURCES})
 install_target(DenOfIzGraphics)
 install(FILES ${SPVHeaders} DESTINATION Include/DenOfIzGraphics)

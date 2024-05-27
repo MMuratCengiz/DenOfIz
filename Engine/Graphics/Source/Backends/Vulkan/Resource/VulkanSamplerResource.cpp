@@ -100,7 +100,7 @@ VulkanSamplerResource::VulkanSamplerResource(VulkanContext* context, const Sampl
 void VulkanSamplerResource::Allocate(const void* newImage)
 {
 	bool isEmptyImage = newImage == nullptr;
-	data = newImage;
+	m_data = newImage;
 
 	m_mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(m_createInfo.Width, m_createInfo.Height)))) + 1;
 

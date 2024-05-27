@@ -54,8 +54,9 @@ public:
 	inline vk::Sampler GetSampler() const { return m_sampler; }
 
 	void AttachSampler(SamplerCreateInfo& info) override;
-	void Allocate(const void* data) override;
 	void Deallocate() override;
+protected:
+	void Allocate(const void* data) override;
 private:
 	void GenerateMipMaps() const;
 };

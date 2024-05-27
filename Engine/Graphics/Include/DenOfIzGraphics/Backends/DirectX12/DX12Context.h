@@ -19,18 +19,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 #ifdef BUILD_DX12
 
-#include <DenOfIzCore/Common.h>
-
+#include <DenOfIzCore/Common_Windows.h>
 #include <directx/dxgiformat.h>
 #include <directx/d3d12.h>
-
 #include <directx/dxgicommon.h>
 #include <directx/d3dx12.h>
 #include <dxgi1_6.h>
+#include <wrl/client.h>
+#include <wrl/event.h>
+#define SDL_MAIN_HANDLED
+#include "SDL2/SDL.h"
 
 #ifdef DEBUG
 #include <dxgidebug.h>
 #endif
+
+#include <DenOfIzCore/Common.h>
 
 using namespace Microsoft::WRL;
 

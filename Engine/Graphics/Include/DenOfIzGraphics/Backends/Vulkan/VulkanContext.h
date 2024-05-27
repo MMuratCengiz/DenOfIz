@@ -24,6 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 #include <vulkan/vulkan.hpp>
 
+#define SDL_MAIN_HANDLED
+#include <SDL2/SDL.h>
+#include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 #include <DenOfIzCore/Common.h>
 #include <unordered_map>
 #include "vk_mem_alloc.h"
@@ -48,13 +51,6 @@ struct QueueFamily
 	VkQueueFamilyProperties Properties;
 };
 
-enum class QueueType
-{
-	Graphics,
-	Presentation,
-	Transfer,
-};
-
 struct VulkanContext
 {
 	vk::Instance Instance;
@@ -74,6 +70,7 @@ struct VulkanContext
 	vk::CommandPool TransferQueueCommandPool;
 	vk::CommandPool GraphicsQueueCommandPool;
 	vk::CommandPool ComputeQueueCommandPool;
+	vk::DescriptorPool DescriptorPool;
 
 	vk::Extent2D SurfaceExtent{};
 

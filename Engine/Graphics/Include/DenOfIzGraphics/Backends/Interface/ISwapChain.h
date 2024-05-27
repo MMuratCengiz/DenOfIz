@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzCore/Common.h>
 #include <DenOfIzGraphics/Backends/Interface/ILock.h>
+#include <DenOfIzGraphics/Backends/Interface/IResource.h>
 
 namespace DenOfIz
 {
@@ -34,12 +35,16 @@ struct SwapChainCreateInfo
 class ISwapChain : public IImageResource // Allows to be used as a "Render Target"
 {
 public:
-	virtual ~ISwapChain() = 0;
+	virtual ~ISwapChain() = default;
 
 	virtual ImageFormat GetPreferredFormat() = 0;
 	virtual uint32_t AcquireNextImage() = 0;
 	virtual void Resize(uint32_t width, uint32_t height) = 0;
-	virtual void Present() = 0;
+
+	void AttachSampler(SamplerCreateInfo& info) override
+	{
+		// Do nothing
+	}
 
 	void Allocate(const void* data) override
 	{
