@@ -27,7 +27,8 @@ class CommandListRing
 {
 private:
 	std::vector<std::unique_ptr<ICommandList>> m_commandLists;
-	size_t m_nextInFlight = 0;
+	size_t m_currentFrame = 0;
+	size_t m_frame = 0;
 	ILogicalDevice* m_logicalDevice;
 public:
 	CommandListRing(ILogicalDevice* logicalDevice) : m_logicalDevice(logicalDevice) {}
@@ -37,12 +38,15 @@ public:
 		m_commandLists.push_back(m_logicalDevice->CreateCommandList(createInfo));
 	}
 
-	ICommandList* GetNextInFlight()
+	ICommandList* GetNext()
 	{
-		auto next = m_commandLists[m_nextInFlight].get();
-		m_nextInFlight = (m_nextInFlight + 1) % m_commandLists.size();
+		m_currentFrame = m_frame;
+		auto next = m_commandLists[m_frame].get();
+		m_frame = (m_frame + 1) % m_commandLists.size();
 		return next;
 	}
+
+	inline uint32_t GetCurrentFrame() const { return m_currentFrame; }
 };
 
 }

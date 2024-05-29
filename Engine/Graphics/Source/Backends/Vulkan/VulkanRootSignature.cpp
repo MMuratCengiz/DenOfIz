@@ -22,9 +22,7 @@ using namespace DenOfIz;
 
 VulkanRootSignature::VulkanRootSignature(VulkanContext* context, RootSignatureCreateInfo createInfo) : m_context(context), m_createInfo(std::move(createInfo))
 {
-	m_layouts.resize(3);
-	m_bindings.resize(3);
-	m_pushConstants.resize(3);
+	m_layouts.resize(1);
 }
 
 void VulkanRootSignature::AddResourceBindingInternal(const ResourceBinding& binding)
@@ -43,12 +41,11 @@ void VulkanRootSignature::AddResourceBindingInternal(const ResourceBinding& bind
 		layoutBinding.stageFlags |= VulkanEnumConverter::ConvertShaderStage(stage);
 	}
 
-	m_bindings[static_cast<uint32_t>(binding.Frequency)].push_back(std::move(layoutBinding));
+	m_bindings.push_back(std::move(layoutBinding));
 }
 
 void VulkanRootSignature::AddRootConstantInternal(const RootConstantBinding& rootConstantBinding)
 {
-
 	m_rootConstantMap[rootConstantBinding.Name] = rootConstantBinding;
 
 	vk::PushConstantRange pushConstantRange{};
@@ -66,12 +63,16 @@ void VulkanRootSignature::AddRootConstantInternal(const RootConstantBinding& roo
 
 void VulkanRootSignature::CreateInternal()
 {
-	for (auto& binding : m_bindings)
-	{
-		vk::DescriptorSetLayoutCreateInfo layoutInfo{};
-		layoutInfo.setBindings(binding);
-		layoutInfo.flags = vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR;
+	vk::DescriptorSetLayoutCreateInfo layoutInfo{};
+	layoutInfo.setBindings(m_bindings);
+	layoutInfo.flags = vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR;
+	m_layouts[0] = m_context->LogicalDevice.createDescriptorSetLayout(layoutInfo);
+}
 
-		m_layouts.push_back(m_context->LogicalDevice.createDescriptorSetLayout(layoutInfo));
+VulkanRootSignature::~VulkanRootSignature()
+{
+	for (auto layout : m_layouts)
+	{
+		m_context->LogicalDevice.destroyDescriptorSetLayout(layout);
 	}
 }

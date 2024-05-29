@@ -24,6 +24,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+
+struct CubeMapCreateInfo
+{
+	std::vector<SamplerCreateInfo> Samplers;
+};
+
+class ICubeMapResource : public IResource
+{
+
+protected:
+	uint32_t size;
+	const void* data;
+
+public:
+	virtual void Allocate(std::vector<const void*> data) = 0;
+	virtual void Deallocate() = 0;
+
+	const ResourceType Type() override
+	{
+		return ResourceType::CubeMap;
+	};
+};
+
 class VulkanCubeMapResource final : ICubeMapResource, boost::noncopyable
 {
 	VulkanContext* m_context;

@@ -20,35 +20,30 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanSwapChain::VulkanSwapChain(VulkanContext* context)
-	:m_context(context)
+VulkanSwapChain::VulkanSwapChain(VulkanContext* context, const SwapChainCreateInfo& createInfo)
+		:m_context(context), m_createInfo(createInfo)
 {
-	m_swapChainImageAvailable = std::make_unique<VulkanLock>(this->m_context, LockType::Semaphore);
-	m_swapChainImageRendered = std::make_unique<VulkanLock>(this->m_context, LockType::Semaphore);
+	m_swapChainImageAvailable = std::make_unique<VulkanSemaphore>(this->m_context);
+	m_swapChainImageRendered = std::make_unique<VulkanSemaphore>(this->m_context);
 
-	CreateSurface();
+	CreateSwapChain();
 }
 
-void VulkanSwapChain::CreateSurface() const
+void VulkanSwapChain::CreateSwapChain()
 {
-	const vk::SurfaceCapabilitiesKHR capabilities = m_context->PhysicalDevice.getSurfaceCapabilitiesKHR(m_context->Surface);
+ 	const vk::SurfaceCapabilitiesKHR capabilities = m_context->PhysicalDevice.getSurfaceCapabilitiesKHR(m_context->Surface);
 
-	CreateSwapChain(capabilities);
-}
-
-void VulkanSwapChain::CreateSwapChain(const vk::SurfaceCapabilitiesKHR& surfaceCapabilities) const
-{
-	ChooseExtent2D(surfaceCapabilities);
+	ChooseExtent2D(capabilities);
 
 	vk::SwapchainCreateInfoKHR createInfo{};
 
-	const uint32_t imageCount = std::min(surfaceCapabilities.maxImageCount, surfaceCapabilities.minImageCount + 1);
+	const uint32_t imageCount = std::min(capabilities.maxImageCount, capabilities.minImageCount + 1);
 
 	createInfo.surface = m_context->Surface;
 	createInfo.minImageCount = imageCount;
 	createInfo.imageFormat = VulkanEnumConverter::ConvertImageFormat(m_context->SurfaceImageFormat);
 	createInfo.imageColorSpace = m_context->ColorSpace;
-	createInfo.imageExtent = m_context->SurfaceExtent;
+	createInfo.imageExtent = vk::Extent2D(m_width, m_height);
 	createInfo.imageArrayLayers = 1;
 	createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
 
@@ -67,40 +62,49 @@ void VulkanSwapChain::CreateSwapChain(const vk::SurfaceCapabilitiesKHR& surfaceC
 		createInfo.pQueueFamilyIndices = nullptr;
 	}
 
-	createInfo.preTransform = surfaceCapabilities.currentTransform;
+	createInfo.preTransform = capabilities.currentTransform;
 	createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
 	createInfo.presentMode = m_context->PresentMode;
 	createInfo.clipped = VK_TRUE;
-	createInfo.oldSwapchain = m_context->SwapChain;
+	createInfo.oldSwapchain = m_swapChain;
 
-	m_context->SwapChain = m_context->LogicalDevice.createSwapchainKHR(createInfo);
+	m_swapChain = m_context->LogicalDevice.createSwapchainKHR(createInfo);
 	CreateSwapChainImages(VulkanEnumConverter::ConvertImageFormat(m_context->SurfaceImageFormat));
 }
 
-void VulkanSwapChain::CreateSwapChainImages(const vk::Format format) const
+void VulkanSwapChain::CreateSwapChainImages(const vk::Format format)
 {
-	m_context->SwapChainImages = m_context->LogicalDevice.getSwapchainImagesKHR(m_context->SwapChain);
-	m_context->SwapChainImageViews.resize(m_context->SwapChainImages.size());
+	m_swapChainImages = m_context->LogicalDevice.getSwapchainImagesKHR(m_swapChain);
+	m_swapChainImageViews.resize(m_swapChainImages.size());
 
 	int index = 0;
-	for (auto image : m_context->SwapChainImages)
+	for (auto image : m_swapChainImages)
 	{
-		CreateImageView(m_context->SwapChainImageViews[index++], image, format, vk::ImageAspectFlagBits::eColor);
+		CreateImageView(m_swapChainImageViews[index], image, format, vk::ImageAspectFlagBits::eColor);
+		m_renderTargets.push_back(std::make_unique<VulkanImageResource>(image, m_swapChainImageViews[index], format, vk::ImageAspectFlagBits::eColor));
+		index++;
 	}
 }
 
-void VulkanSwapChain::ChooseExtent2D(const vk::SurfaceCapabilitiesKHR& capabilities) const
+void VulkanSwapChain::ChooseExtent2D(const vk::SurfaceCapabilitiesKHR& capabilities)
 {
+	if (m_createInfo.Width != 0 || m_createInfo.Height != 0)
+	{
+		m_width = m_createInfo.Width;
+		m_height = m_createInfo.Height;
+		return;
+	}
+
 	if (capabilities.currentExtent.width != UINT32_MAX)
 	{
-		m_context->SurfaceExtent.width = capabilities.currentExtent.width;
-		m_context->SurfaceExtent.height = capabilities.currentExtent.height;
+		m_width = capabilities.currentExtent.width;
+		m_height = capabilities.currentExtent.height;
 		return;
 	}
 
 	const SDL_Surface* pSurface = SDL_GetWindowSurface(m_context->Window);
-	m_context->SurfaceExtent.width = std::clamp(static_cast<uint32_t>(pSurface->w), capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-	m_context->SurfaceExtent.height = std::clamp(static_cast<uint32_t>(pSurface->h), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+	m_width = std::clamp(static_cast<uint32_t>(pSurface->w), capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+	m_height = std::clamp(static_cast<uint32_t>(pSurface->h), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 }
 
 void VulkanSwapChain::CreateImageView(vk::ImageView& imageView, const vk::Image& image, const vk::Format& format, const vk::ImageAspectFlags& aspectFlags) const
@@ -124,15 +128,16 @@ void VulkanSwapChain::CreateImageView(vk::ImageView& imageView, const vk::Image&
 
 void VulkanSwapChain::Dispose() const
 {
-	for (const auto& imageView : m_context->SwapChainImageViews)
+	for (const auto& imageView : m_swapChainImageViews)
 	{
 		m_context->LogicalDevice.destroyImageView(imageView);
 	}
 }
 
-uint32_t VulkanSwapChain::AcquireNextImage()
+uint32_t VulkanSwapChain::AcquireNextImage(ISemaphore* imageReadySemaphore)
 {
-	auto image = m_context->LogicalDevice.acquireNextImageKHR(m_context->SwapChain, UINT64_MAX, m_swapChainImageAvailable->GetVkSemaphore(), nullptr);
+	VulkanSemaphore* semaphore = dynamic_cast<VulkanSemaphore*>(imageReadySemaphore);
+	auto image = m_context->LogicalDevice.acquireNextImageKHR(m_swapChain, UINT64_MAX, semaphore->GetSemaphore(), nullptr);
 	if (image.result == vk::Result::eErrorOutOfDateKHR)
 	{
 		throw std::runtime_error("failed to acquire swap chain image!");
@@ -144,12 +149,12 @@ uint32_t VulkanSwapChain::AcquireNextImage()
 	return image.value;
 }
 
-VulkanLock* VulkanSwapChain::GetImageAvailableLock()
+VulkanSemaphore* VulkanSwapChain::GetImageAvailableLock()
 {
 	return m_swapChainImageAvailable.get();
 }
 
-VulkanLock* VulkanSwapChain::GetImageRenderedLock()
+VulkanSemaphore* VulkanSwapChain::GetImageRenderedLock()
 {
 	return m_swapChainImageRendered.get();
 }
@@ -157,7 +162,7 @@ VulkanLock* VulkanSwapChain::GetImageRenderedLock()
 VulkanSwapChain::~VulkanSwapChain()
 {
 	Dispose();
-	m_context->LogicalDevice.destroySwapchainKHR(m_context->SwapChain);
+	m_context->LogicalDevice.destroySwapchainKHR(m_swapChain);
 }
 
 ImageFormat VulkanSwapChain::GetPreferredFormat()

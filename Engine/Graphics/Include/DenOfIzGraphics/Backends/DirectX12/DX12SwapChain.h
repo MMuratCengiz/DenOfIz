@@ -32,7 +32,7 @@ public:
 	DX12SwapChain(DX12Context* context);
 	~DX12SwapChain() override;
 
-	uint32_t AcquireNextImage() override;
+	uint32_t AcquireNextImage(ISemaphore * imageAvailableSemaphore) override;
 	void Resize(uint32_t width, uint32_t height) override;
 	void Present();
 };

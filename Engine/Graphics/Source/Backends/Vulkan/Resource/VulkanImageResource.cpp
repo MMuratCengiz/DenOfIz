@@ -59,6 +59,7 @@ VulkanImageResource::VulkanImageResource(VulkanContext* context, ImageCreateInfo
 	imageViewCreateInfo.subresourceRange.layerCount = 1;
 
 	m_imageView = context->LogicalDevice.createImageView(imageViewCreateInfo);
+	m_aspect = VulkanEnumConverter::ConvertImageAspect(createInfo.Aspect);
 }
 
 void VulkanImageResource::Allocate(const void* newImage)

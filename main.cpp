@@ -2,7 +2,7 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <filesystem>
-#include <DenOfIzGraphics/Backends/Vulkan/Sample/TestVulkanRenderer.h>
+#include <DenOfIzGraphics/Renderer/SimpleRenderer.h>
 
 int main()
 {
@@ -24,8 +24,8 @@ int main()
 			SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN
 	);
 
-	auto renderer = DenOfIz::TestVulkanRenderer();
-	renderer.Setup(window);
+	auto renderer = DenOfIz::SimpleRenderer();
+	renderer.Init(window);
 
 	auto running = true;
 	SDL_Event event;
@@ -41,8 +41,8 @@ int main()
 
 		renderer.Render();
 	}
-	renderer.Exit();
 
+	renderer.Quit();
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 

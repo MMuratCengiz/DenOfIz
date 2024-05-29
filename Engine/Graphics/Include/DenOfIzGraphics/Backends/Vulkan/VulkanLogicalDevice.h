@@ -36,8 +36,8 @@ namespace DenOfIz
 class VulkanLogicalDevice final : public ILogicalDevice
 {
 	const std::unordered_map<std::string, bool> m_enabledLayers{
-#if DEBUG
-			//{ "VK_LAYER_KHRONOS_validation", true }
+#ifdef DEBUG
+			{ "VK_LAYER_KHRONOS_validation", true }
 #endif
 	};
 
@@ -75,7 +75,6 @@ public:
 	[[nodiscard]] VulkanContext* GetContext() const;
 	[[nodiscard]] ImageFormat GetSwapChainImageFormat() const;
 
-
 	// Factory methods
 	std::unique_ptr<ICommandList> CreateCommandList(const CommandListCreateInfo& createInfo) override;
 	std::unique_ptr<IPipeline> CreatePipeline(const PipelineCreateInfo& createInfo) override;
@@ -87,7 +86,6 @@ public:
 	std::unique_ptr<ISemaphore> CreateSemaphore() override;
 	std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferCreateInfo& createInfo) override;
 	std::unique_ptr<IImageResource> CreateImageResource(std::string name, const ImageCreateInfo& createInfo) override;
-	std::unique_ptr<ICubeMapResource> CreateCubeMapResource(const CubeMapCreateInfo& createInfo) override;
 
 	~VulkanLogicalDevice() override;
 

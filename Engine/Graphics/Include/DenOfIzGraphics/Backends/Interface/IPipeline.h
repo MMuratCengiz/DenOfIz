@@ -71,7 +71,7 @@ constexpr int A = 0x00000008;
 
 struct PipelineRendering
 {
-	uint32_t ViewMask = ViewMask::R | ViewMask::G | ViewMask::B | ViewMask::A;
+	uint32_t ViewMask = 0;
 
 	std::vector<ImageFormat> ColorAttachmentFormats;
 	ImageFormat DepthAttachmentFormat;
@@ -102,7 +102,7 @@ struct PipelineCreateInfo
 
 class IPipeline {
 public:
-	virtual ~IPipeline() = 0;
+	virtual ~IPipeline() = default;
 };
 
 }

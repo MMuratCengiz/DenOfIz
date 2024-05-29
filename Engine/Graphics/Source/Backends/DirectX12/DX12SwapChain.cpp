@@ -26,7 +26,7 @@ DX12SwapChain::DX12SwapChain(DX12Context* context)
 {
 }
 
-uint32_t DX12SwapChain::AcquireNextImage()
+uint32_t DX12SwapChain::AcquireNextImage(ISemaphore * imageAvailableSemaphore)
 {
 	return m_context->SwapChain->GetCurrentBackBufferIndex();
 }

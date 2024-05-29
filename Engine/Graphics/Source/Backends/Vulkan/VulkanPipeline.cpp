@@ -248,40 +248,40 @@ void VulkanPipeline::ConfigureDynamicState()
 void VulkanPipeline::CreatePipelineLayout()
 {
 	// Layout binding per set!
-	std::unordered_map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> bindings;
-
-	for (const ShaderUniformInput& input : m_createInfo.SpvProgram.UniformInputs())
-	{
-		vk::DescriptorSetLayoutBinding& binding = bindings[input.BoundDescriptorSet].emplace_back();
-
-		binding.binding = input.Binding;
-
-		switch (input.Type)
-		{
-		case UniformType::Struct:
-			binding.descriptorType = vk::DescriptorType::eUniformBuffer;
-			break;
-		case UniformType::Sampler:
-			binding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-			break;
-		}
-		binding.descriptorCount = input.ArraySize;
-		binding.stageFlags = VulkanEnumConverter::ConvertShaderStage(input.Stage);
-
-		vk::WriteDescriptorSet& writeDescriptorSet = m_descriptorSets[input.Name];
-		writeDescriptorSet.descriptorType = binding.descriptorType;
-		writeDescriptorSet.dstBinding = input.Binding;
-	}
-
-	for (auto binding : bindings | std::views::values)
-	{
-		vk::DescriptorSetLayoutCreateInfo layoutCreateInfo{};
-		layoutCreateInfo.bindingCount = binding.size();
-		layoutCreateInfo.pBindings = binding.data();
-		layoutCreateInfo.flags = vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR;
-
-		m_layouts.emplace_back(m_context->LogicalDevice.createDescriptorSetLayout(layoutCreateInfo));
-	}
+//	std::unordered_map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> bindings;
+//
+//	for (const ShaderUniformInput& input : m_createInfo.SpvProgram.UniformInputs())
+//	{
+//		vk::DescriptorSetLayoutBinding& binding = bindings[input.BoundDescriptorSet].emplace_back();
+//
+//		binding.binding = input.Binding;
+//
+//		switch (input.Type)
+//		{
+//		case UniformType::Struct:
+//			binding.descriptorType = vk::DescriptorType::eUniformBuffer;
+//			break;
+//		case UniformType::Sampler:
+//			binding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+//			break;
+//		}
+//		binding.descriptorCount = input.ArraySize;
+//		binding.stageFlags = VulkanEnumConverter::ConvertShaderStage(input.Stage);
+//
+//		vk::WriteDescriptorSet& writeDescriptorSet = m_descriptorSets[input.Name];
+//		writeDescriptorSet.descriptorType = binding.descriptorType;
+//		writeDescriptorSet.dstBinding = input.Binding;
+//	}
+//
+//	for (auto binding : bindings | std::views::values)
+//	{
+//		vk::DescriptorSetLayoutCreateInfo layoutCreateInfo{};
+//		layoutCreateInfo.bindingCount = binding.size();
+//		layoutCreateInfo.pBindings = binding.data();
+//		layoutCreateInfo.flags = vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR;
+//
+//		m_layouts.emplace_back(m_context->LogicalDevice.createDescriptorSetLayout(layoutCreateInfo));
+//	}
 
 	VulkanRootSignature* vulkanRootSignature = dynamic_cast<VulkanRootSignature*>(m_createInfo.RootSignature);
 	m_pipelineLayoutCreateInfo.setSetLayouts(vulkanRootSignature->GetDescriptorSetLayouts());

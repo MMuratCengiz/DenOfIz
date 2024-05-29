@@ -144,10 +144,6 @@ public:
 			return vk::ImageLayout::eVideoDecodeDpbKHR;
 		case SharedPresent:
 			return vk::ImageLayout::eSharedPresentKHR;
-		case ShadingRateOptimalNV:
-			return vk::ImageLayout::eShadingRateOptimalNV;
-		case FragmentDensityMapOptimalEXT:
-			return vk::ImageLayout::eFragmentDensityMapOptimalEXT;
 		case FragmentShadingRateAttachmentOptimal:
 			return vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR;
 		case RenderingLocalRead:
@@ -158,8 +154,6 @@ public:
 			return vk::ImageLayout::eVideoEncodeSrcKHR;
 		case VideoEncodeDpb:
 			return vk::ImageLayout::eVideoEncodeDpbKHR;
-		case AttachmentFeedbackLoopOptimalEXT:
-			return vk::ImageLayout::eAttachmentFeedbackLoopOptimalEXT;
 		}
 
 		return vk::ImageLayout::eUndefined;

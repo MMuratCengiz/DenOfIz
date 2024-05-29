@@ -23,7 +23,9 @@ using namespace DenOfIz;
 VulkanFence::VulkanFence(VulkanContext* context)
 		:m_context(context)
 {
-	m_fence = m_context->LogicalDevice.createFence(vk::FenceCreateFlags{});
+	vk::FenceCreateInfo fenceCreateInfo{};
+	fenceCreateInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+	m_fence = m_context->LogicalDevice.createFence(fenceCreateInfo);
 }
 
 void VulkanFence::Wait()

@@ -1,5 +1,5 @@
-// Blazar Engine - 3D Game Engine
-// Copyright (c) 2020-2021 Muhammed Murat Cengiz
+// Den Of Iz - Game/Game Engine
+// Copyright (c) 2020-2024 Muhammed Murat Cengiz
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by

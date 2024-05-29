@@ -22,9 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanLock::VulkanLock(VulkanContext* context, const LockType& lockType)
-		:
-		m_context(context)
+VulkanLock::VulkanLock(VulkanContext* context, const LockType& lockType): m_context(context)
 {
 	this->m_lockType = lockType;
 

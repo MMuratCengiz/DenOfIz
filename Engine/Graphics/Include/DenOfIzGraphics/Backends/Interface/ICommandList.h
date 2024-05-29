@@ -25,26 +25,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IResource.h"
 #include "ISwapChain.h"
 #include "IDescriptorTable.h"
+#include "PipelineBarrier.h"
 #include <array>
 
 namespace DenOfIz
 {
-
-struct BufferBarrier
-{
-	ResourceState CurrentState;
-	ResourceState NewState;
-};
-
-struct ImageBarrier
-{
-	ResourceState CurrentState;
-	ResourceState NewState;
-
-	bool SubresourceBarrier = false;
-	uint8_t MipLevel = 7; // Todo check this whole mip levels thing
-	uint16_t ArrayLayer;
-};
 
 struct RenderingAttachmentInfo
 {
@@ -61,8 +46,8 @@ struct RenderingAttachmentInfo
 struct RenderingInfo
 {
 	std::vector<RenderingAttachmentInfo> ColorAttachments;
-	RenderingAttachmentInfo* DepthAttachment = nullptr;
-	RenderingAttachmentInfo* StencilAttachment = nullptr;
+	RenderingAttachmentInfo DepthAttachment;
+	RenderingAttachmentInfo StencilAttachment;
 
 	float RenderAreaWidth = 0.0f;
 	float RenderAreaHeight = 0.0f;
@@ -74,21 +59,13 @@ struct RenderingInfo
 struct SubmitInfo
 {
 	IFence* Notify = nullptr;
-	std::vector<ISemaphore*> WaitOnLocks;
-};
-
-enum QueueType
-{
-	Graphics,
-	Compute,
-	Transfer,
-	Presentation
+	std::vector<ISemaphore*> WaitOnLocks = {};
+	std::vector<ISemaphore*> SignalLocks = {};
 };
 
 struct CommandListCreateInfo
 {
 	QueueType QueueType = QueueType::Graphics;
-
 };
 
 class ICommandList
@@ -101,8 +78,7 @@ public:
 	virtual void BeginRendering(const RenderingInfo& renderingInfo) = 0;
 	virtual void EndRendering() = 0;
 	virtual void End() = 0;
-	virtual void Submit(IFence* notify, std::vector<ISemaphore*> waitOnLocks) = 0;
-	virtual uint32_t AcquireNextImage(ISwapChain* swapChain, ISemaphore* lock) = 0;
+	virtual void Submit(const SubmitInfo& submitInfo) = 0;
 	virtual void BindPipeline(IPipeline* pipeline) = 0;
 	virtual void BindVertexBuffer(IBufferResource* buffer) = 0;
 	virtual void BindIndexBuffer(IBufferResource* buffer) = 0;
@@ -113,8 +89,7 @@ public:
 	virtual void BindBufferResource(IBufferResource* resource) = 0;
 	virtual void BindImageResource(IImageResource* resource) = 0;
 	virtual void SetDepthBias(float constantFactor, float clamp, float slopeFactor) = 0;
-	virtual void SetImageBarrier(IImageResource* resource, ImageBarrier barrier) = 0;
-	virtual void SetBufferBarrier(IBufferResource* resource, BufferBarrier barrier) = 0;
+	virtual void SetPipelineBarrier(const PipelineBarrier& barrier) = 0;
 	virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) = 0;
 	virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0) = 0;
 	virtual void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;

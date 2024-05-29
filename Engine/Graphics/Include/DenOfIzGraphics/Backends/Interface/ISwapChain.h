@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzCore/Common.h>
 #include <DenOfIzGraphics/Backends/Interface/ILock.h>
 #include <DenOfIzGraphics/Backends/Interface/IResource.h>
+#include <DenOfIzGraphics/Backends/Interface/ISemaphore.h>
 
 namespace DenOfIz
 {
@@ -32,29 +33,25 @@ struct SwapChainCreateInfo
 	uint32_t BufferCount = 3;
 };
 
-class ISwapChain : public IImageResource // Allows to be used as a "Render Target"
+struct Viewport
+{
+	float X = 0.0f;
+	float Y = 0.0f;
+	float Width = 0.0f;
+	float Height = 0.0f;
+};
+
+class ISwapChain : boost::noncopyable
 {
 public:
 	virtual ~ISwapChain() = default;
 
 	virtual ImageFormat GetPreferredFormat() = 0;
-	virtual uint32_t AcquireNextImage() = 0;
+	virtual uint32_t AcquireNextImage(ISemaphore* imageReadySemaphore) = 0;
 	virtual void Resize(uint32_t width, uint32_t height) = 0;
 
-	void AttachSampler(SamplerCreateInfo& info) override
-	{
-		// Do nothing
-	}
-
-	void Allocate(const void* data) override
-	{
-		// Do nothing
-	}
-
-	void Deallocate() override
-	{
-		// Do nothing
-	}
+	virtual IImageResource* GetRenderTarget(uint32_t frame) = 0;
+	virtual Viewport GetViewport() = 0;
 };
 
 }

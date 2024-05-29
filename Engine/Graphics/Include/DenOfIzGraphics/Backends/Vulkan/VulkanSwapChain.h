@@ -22,6 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "VulkanEnumConverter.h"
 #include "Resource/VulkanLock.h"
 #include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
+#include "Resource/VulkanSemaphore.h"
+#include "Resource/VulkanImageResource.h"
 
 namespace DenOfIz
 {
@@ -29,31 +31,38 @@ namespace DenOfIz
 class VulkanSwapChain : public ISwapChain
 {
 private:
-	std::unique_ptr<VulkanLock> m_swapChainImageAvailable;
-	std::unique_ptr<VulkanLock> m_swapChainImageRendered;
+	SwapChainCreateInfo m_createInfo;
+	std::unique_ptr<VulkanSemaphore> m_swapChainImageAvailable;
+	std::unique_ptr<VulkanSemaphore> m_swapChainImageRendered;
 
 	VulkanContext* m_context;
 	vk::SurfaceKHR m_surface;
 	vk::SwapchainKHR m_swapChain;
 	std::vector<vk::Image> m_swapChainImages;
-	std::vector<vk::ImageView> n_swapChainImageViews;
+	std::vector<vk::ImageView> m_swapChainImageViews;
+
+	std::vector<std::unique_ptr<VulkanImageResource>> m_renderTargets;
+
+	uint32_t m_width = 0;
+	uint32_t m_height = 0;
 public:
-	VulkanSwapChain(VulkanContext* context);
+	VulkanSwapChain(VulkanContext* context, const SwapChainCreateInfo& createInfo);
 	~VulkanSwapChain() override;
 
-	uint32_t AcquireNextImage() override;
-	VulkanLock* GetImageAvailableLock();
-	VulkanLock* GetImageRenderedLock();
+	uint32_t AcquireNextImage(ISemaphore* imageReadySemaphore) override;
+	VulkanSemaphore* GetImageAvailableLock();
+	VulkanSemaphore* GetImageRenderedLock();
 	void Resize(uint32_t width, uint32_t height) override;
 	ImageFormat GetPreferredFormat() override;
 
+	inline IImageResource* GetRenderTarget(uint32_t frame) override { return m_renderTargets.at(frame).get(); }
 	inline vk::SwapchainKHR* GetSwapChain() { return &m_swapChain; }
+	inline Viewport GetViewport() override { return { 0.0f, 0.0f, static_cast<float>(m_width), static_cast<float>(m_height) }; }
 private:
-	void CreateSurface() const;
-	void CreateSwapChain(const vk::SurfaceCapabilitiesKHR& surfaceCapabilities) const;
+	void CreateSwapChain();
 	void CreateImageView(vk::ImageView& imageView, const vk::Image& image, const vk::Format& format, const vk::ImageAspectFlags& aspectFlags) const;
-	void ChooseExtent2D(const vk::SurfaceCapabilitiesKHR& capabilities) const;
-	void CreateSwapChainImages(vk::Format format) const;
+	void ChooseExtent2D(const vk::SurfaceCapabilitiesKHR& capabilities);
+	void CreateSwapChainImages(vk::Format format);
 	void Dispose() const;
 };
 

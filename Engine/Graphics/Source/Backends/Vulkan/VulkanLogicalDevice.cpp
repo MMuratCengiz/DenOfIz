@@ -132,6 +132,7 @@ void VulkanLogicalDevice::InitSupportedLayers(std::vector<const char*>& layers)
 		{
 			m_supportedLayers[prp.layerName] = true;
 			layers.emplace_back(layerPair->first.c_str());
+			LOG(Verbosity::Information, "VulkanDevice", "Enabled Layer: " + layerPair->first);
 		}
 	}
 }
@@ -206,12 +207,15 @@ void VulkanLogicalDevice::CreateDeviceInfo(const vk::PhysicalDevice& physicalDev
 	deviceInfo.Capabilities.DedicatedTransferQueue = true;
 	deviceInfo.Capabilities.ComputeShaders = true;
 	deviceInfo.Capabilities.RayTracing = true;
+	deviceInfo.Capabilities.GeometryShaders = true;
+	deviceInfo.Capabilities.Tessellation = true;
 }
 
 void VulkanLogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo& device)
 {
-	assertm(m_context->PhysicalDevice != VK_NULL_HANDLE, "A physical device is already selected for this logical device. Create a new Logical Device.");
+	assertm(m_context->PhysicalDevice == VK_NULL_HANDLE, "A physical device is already selected for this logical device. Create a new Logical Device.");
 	m_selectedDeviceInfo = device;
+	m_context->SelectedDeviceInfo = device;
 
 	for (const vk::PhysicalDevice physicalDevice : m_context->Instance.enumeratePhysicalDevices())
 	{
@@ -241,7 +245,9 @@ void VulkanLogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo& device)
 	m_context->TransferQueueCommandPool = m_context->LogicalDevice.createCommandPool(transferCommandPoolCreateInfo);
 
 	// Todo find a better approach
-	const vk::DescriptorPoolCreateInfo& descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo{ vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, 1000 };
+	vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo { vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, 1000 };
+	std::vector<vk::DescriptorPoolSize> poolSizes = { { vk::DescriptorType::eUniformBuffer, 1000 }, { vk::DescriptorType::eCombinedImageSampler, 1000 } };
+	descriptorPoolCreateInfo.setPoolSizes(poolSizes);
 	m_context->DescriptorPool = m_context->LogicalDevice.createDescriptorPool(descriptorPoolCreateInfo);
 }
 
@@ -367,13 +373,13 @@ void VulkanLogicalDevice::CreateRenderSurface()
 {
 	m_context->LogicalDevice.waitIdle();
 
-	auto* renderSurfacePtr = new VulkanSurface{ m_context.get() };
-	this->m_renderSurface = std::unique_ptr<VulkanSurface>(renderSurfacePtr);
+//	auto* renderSurfacePtr = new VulkanSurface{ m_context.get() };
+//	this->m_renderSurface = std::unique_ptr<VulkanSurface>(renderSurfacePtr);
 }
 
 VulkanLogicalDevice::~VulkanLogicalDevice()
 {
-	m_renderSurface.reset();
+//	m_renderSurface.reset();
 	DestroyDebugUtils();
 
 	if (m_context == nullptr)
@@ -461,7 +467,7 @@ std::unique_ptr<ICommandList> VulkanLogicalDevice::CreateCommandList(const Comma
 std::unique_ptr<IPipeline> VulkanLogicalDevice::CreatePipeline(const PipelineCreateInfo& createInfo)
 {
 	VulkanPipeline* pipeline = new VulkanPipeline(m_context.get(), createInfo);
-	return std::unique_ptr<IPipeline>(reinterpret_cast<IPipeline*>(pipeline));
+	return std::unique_ptr<IPipeline>(pipeline);
 }
 
 std::unique_ptr<IRenderPass> VulkanLogicalDevice::CreateRenderPass(const RenderPassCreateInfo& createInfo)
@@ -472,7 +478,7 @@ std::unique_ptr<IRenderPass> VulkanLogicalDevice::CreateRenderPass(const RenderP
 
 std::unique_ptr<ISwapChain> VulkanLogicalDevice::CreateSwapChain(const SwapChainCreateInfo& createInfo)
 {
-	VulkanSwapChain* swapChain = new VulkanSwapChain(m_context.get());
+	VulkanSwapChain* swapChain = new VulkanSwapChain(m_context.get(), createInfo);
 	return std::unique_ptr<ISwapChain>(swapChain);
 }
 
@@ -500,11 +506,6 @@ std::unique_ptr<IImageResource> VulkanLogicalDevice::CreateImageResource(std::st
 	VulkanImageResource* imageResource = new VulkanImageResource(m_context.get(), createInfo);
 	imageResource->Name = name;
 	return std::unique_ptr<IImageResource>(imageResource);
-}
-
-std::unique_ptr<ICubeMapResource> VulkanLogicalDevice::CreateCubeMapResource(const CubeMapCreateInfo& createInfo)
-{
-	return std::unique_ptr<ICubeMapResource>();
 }
 
 std::unique_ptr<IFence> VulkanLogicalDevice::CreateFence()

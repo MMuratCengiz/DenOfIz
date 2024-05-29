@@ -33,27 +33,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-struct PhysicalDeviceCapabilities
-{
-	bool DedicatedTransferQueue;
-	bool RayTracing;
-	bool ComputeShaders;
-	bool Tearing;
-};
-
-struct PhysicalDeviceProperties
-{
-	bool IsDedicated;
-	uint32_t MemoryAvailableInMb;
-};
-
-struct PhysicalDeviceInfo
-{
-	long Id;
-	std::string Name;
-	PhysicalDeviceProperties Properties;
-	PhysicalDeviceCapabilities Capabilities;
-};
 
 class ILogicalDevice
 {
@@ -82,7 +61,6 @@ public:
 	virtual std::unique_ptr<ISemaphore> CreateSemaphore() = 0;
 	virtual std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferCreateInfo& createInfo) = 0;
 	virtual std::unique_ptr<IImageResource> CreateImageResource(std::string name, const ImageCreateInfo& createInfo) = 0;
-	virtual std::unique_ptr<ICubeMapResource> CreateCubeMapResource(const CubeMapCreateInfo& createInfo) = 0;
 };
 
 }

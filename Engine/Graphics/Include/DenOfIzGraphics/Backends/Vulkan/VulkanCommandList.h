@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "../Interface/ICommandList.h"
 #include "Resource/VulkanSemaphore.h"
 #include "Resource/VulkanFence.h"
+#include "Resource/VulkanPipelineBarrierHelper.h"
 
 namespace DenOfIz
 {
@@ -34,8 +35,9 @@ class VulkanCommandList : public ICommandList
 private:
 	CommandListCreateInfo m_createInfo;
 	VulkanContext* m_context;
-	vk::CommandBuffer m_commandBuffer;
+	VulkanPipeline* m_boundPipeline;
 
+	vk::CommandBuffer m_commandBuffer;
 	vk::Viewport m_viewport;
 	vk::Rect2D m_scissorRect;
 public:
@@ -46,8 +48,7 @@ public:
 	void BeginRendering(const RenderingInfo& renderingInfo) override;
 	void EndRendering() override;
 	void End() override;
-	void Submit(IFence* notify, std::vector<ISemaphore*> waitOnLocks) override;
-	uint32_t AcquireNextImage(ISwapChain* swapChain, ISemaphore* lock) override;
+	void Submit(const SubmitInfo& submitInfo) override;
 	void BindPipeline(IPipeline* pipeline) override;
 	void BindVertexBuffer(IBufferResource* buffer) override;
 	void BindIndexBuffer(IBufferResource* buffer) override;
@@ -58,8 +59,7 @@ public:
 	void BindBufferResource(IBufferResource* resource) override;
 	void BindImageResource(IImageResource* resource) override;
 	void SetDepthBias(float constantFactor, float clamp, float slopeFactor) override;
-	void SetImageBarrier(IImageResource* resource, ImageBarrier barrier) override;
-	void SetBufferBarrier(IBufferResource* resource, BufferBarrier barrier) override;
+	void SetPipelineBarrier(const PipelineBarrier& barrier);
 	void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) override;
 	void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0) override;
 	void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;

@@ -80,6 +80,7 @@ struct VulkanContext
 
 	//Todo move to generic RenderContext when created.
 	ShaderCompiler ShaderCompiler;
+	PhysicalDeviceInfo SelectedDeviceInfo;
 };
 
 }

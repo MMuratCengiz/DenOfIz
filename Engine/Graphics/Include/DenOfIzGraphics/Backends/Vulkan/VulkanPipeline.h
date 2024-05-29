@@ -28,7 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-class VulkanPipeline
+class VulkanPipeline : public IPipeline
 {
 	bool m_alreadyDisposed = false;
 	const std::array<vk::DynamicState, 4> m_dynamicStates = { vk::DynamicState::eViewportWithCount, vk::DynamicState::eDepthBias, vk::DynamicState::eScissorWithCount,
@@ -69,7 +69,7 @@ public:
 
 	vk::WriteDescriptorSet GetWriteDescriptorSet(const std::string& name);
 	VulkanPipeline(VulkanContext* context, const PipelineCreateInfo&);
-	~VulkanPipeline();
+	~VulkanPipeline() override;
 
 private:
 	void ConfigureVertexInput();

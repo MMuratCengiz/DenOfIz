@@ -37,6 +37,7 @@ private:
 	vk::ImageView m_imageView;
 	vk::Format m_format;
 	vk::Sampler m_sampler;
+	vk::ImageAspectFlags m_aspect;
 
 	VmaAllocation m_allocation;
 	uint32_t m_mipLevels{};
@@ -46,12 +47,39 @@ public:
 	vk::DescriptorImageInfo DescriptorInfo;
 
 	VulkanImageResource(VulkanContext* context, ImageCreateInfo createInfo);
+
+	// Use as render target
+	inline VulkanImageResource(vk::Image image, vk::ImageView imageView, vk::Format format, vk::ImageAspectFlags imageAspect)
+			:m_image(image), m_imageView(imageView), m_format(format), m_aspect(imageAspect)
+	{
+	}
+
 	~VulkanImageResource();
 
-	inline vk::Image GetImage() const { return m_image; }
-	inline vk::ImageView GetImageView() const { return m_imageView; }
-	inline vk::Format GetFormat() const { return m_format; }
-	inline vk::Sampler GetSampler() const { return m_sampler; }
+	virtual inline vk::Image GetImage() const
+	{
+		return m_image;
+	}
+
+	virtual inline vk::ImageView GetImageView() const
+	{
+		return m_imageView;
+	}
+
+	virtual inline vk::Format GetFormat() const
+	{
+		return m_format;
+	}
+
+	virtual inline vk::Sampler GetSampler() const
+	{
+		return m_sampler;
+	}
+
+	virtual inline vk::ImageAspectFlags GetAspect() const
+	{
+		return m_aspect;
+	}
 
 	void AttachSampler(SamplerCreateInfo& info) override;
 	void Deallocate() override;

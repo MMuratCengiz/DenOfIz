@@ -37,8 +37,8 @@ private:
 public:
 	VulkanDescriptorTable(VulkanContext* context, DescriptorTableCreateInfo createInfo);
 
-	void BindImage(std::string name, IImageResource* resource) override;
-	void BindBuffer(std::string name, IBufferResource* resource) override;
+	void BindImage(IImageResource* resource) override;
+	void BindBuffer(IBufferResource* resource) override;
 
 	const std::vector<vk::WriteDescriptorSet>& GetWriteDescriptorSets() const { return m_writeDescriptorSets; }
 

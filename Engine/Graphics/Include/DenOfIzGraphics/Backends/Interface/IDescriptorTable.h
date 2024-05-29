@@ -36,8 +36,8 @@ public:
 	virtual ~IDescriptorTable() = default;
 
 	// -- Requires a sampler
-	virtual void BindImage(std::string name, IImageResource* resource) = 0;
-	virtual void BindBuffer(std::string name, IBufferResource* resource) = 0;
+	virtual void BindImage(IImageResource* resource) = 0;
+	virtual void BindBuffer(IBufferResource* resource) = 0;
 };
 
 }

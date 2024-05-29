@@ -50,6 +50,7 @@ SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/Resource/VulkanImageResource.cpp
         Source/Backends/Vulkan/Resource/VulkanSamplerResource.cpp
         Source/Backends/Vulkan/Resource/VulkanCubeMapResource.cpp
+        Source/Backends/Vulkan/Resource/VulkanPipelineBarrierHelper.cpp
         Source/Backends/Vulkan/Sample/TestVulkanRenderer.cpp)
 
 

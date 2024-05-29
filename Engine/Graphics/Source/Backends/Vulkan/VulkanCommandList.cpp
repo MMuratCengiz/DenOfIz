@@ -22,7 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanCommandList::VulkanCommandList(VulkanContext* context, CommandListCreateInfo createInfo):m_context(context), m_createInfo(std::move(createInfo))
+VulkanCommandList::VulkanCommandList(VulkanContext* context, CommandListCreateInfo createInfo)
+		:m_context(context), m_createInfo(std::move(createInfo))
 {
 	auto commandPool = m_context->GraphicsQueueCommandPool;
 	switch (m_createInfo.QueueType)
@@ -71,6 +72,7 @@ void VulkanCommandList::BeginRendering(const RenderingInfo& renderingInfo)
 	renderInfo.renderArea.extent = vk::Extent2D(widthAdapted, heightAdapted);
 	renderInfo.renderArea.offset = vk::Offset2D(renderingInfo.RenderAreaOffsetX, renderingInfo.RenderAreaOffsetY);
 	renderInfo.layerCount = renderingInfo.LayerCount;
+	renderInfo.viewMask = 0;
 
 	std::vector<vk::RenderingAttachmentInfo> colorAttachments;
 
@@ -91,30 +93,30 @@ void VulkanCommandList::BeginRendering(const RenderingInfo& renderingInfo)
 	renderInfo.setColorAttachments(colorAttachments);
 
 	// Todo these need to be fixed.
-	if (renderingInfo.DepthAttachment->Resource != nullptr)
+	if (renderingInfo.DepthAttachment.Resource != nullptr)
 	{
-		VulkanImageResource* vkDepthStencilResource = dynamic_cast<VulkanImageResource*>(renderingInfo.DepthAttachment->Resource);
+		VulkanImageResource* vkDepthStencilResource = dynamic_cast<VulkanImageResource*>(renderingInfo.DepthAttachment.Resource);
 
 		vk::RenderingAttachmentInfo depthAttachmentInfo{};
 		depthAttachmentInfo.imageView = vkDepthStencilResource->GetImageView();
-		depthAttachmentInfo.imageLayout = VulkanEnumConverter::ConvertImageLayout(renderingInfo.DepthAttachment->Layout);
-		depthAttachmentInfo.loadOp = VulkanEnumConverter::ConvertLoadOp(renderingInfo.DepthAttachment->LoadOp);
-		depthAttachmentInfo.storeOp = VulkanEnumConverter::ConvertStoreOp(renderingInfo.DepthAttachment->StoreOp);
-		depthAttachmentInfo.clearValue.depthStencil = vk::ClearDepthStencilValue(renderingInfo.DepthAttachment->ClearDepth[0], renderingInfo.DepthAttachment->ClearDepth[1]);
+		depthAttachmentInfo.imageLayout = VulkanEnumConverter::ConvertImageLayout(renderingInfo.DepthAttachment.Layout);
+		depthAttachmentInfo.loadOp = VulkanEnumConverter::ConvertLoadOp(renderingInfo.DepthAttachment.LoadOp);
+		depthAttachmentInfo.storeOp = VulkanEnumConverter::ConvertStoreOp(renderingInfo.DepthAttachment.StoreOp);
+		depthAttachmentInfo.clearValue.depthStencil = vk::ClearDepthStencilValue(renderingInfo.DepthAttachment.ClearDepth[0], renderingInfo.DepthAttachment.ClearDepth[1]);
 
 		renderInfo.setPDepthAttachment(&depthAttachmentInfo);
 	}
 
-	if (renderingInfo.StencilAttachment->Resource != nullptr)
+	if (renderingInfo.StencilAttachment.Resource != nullptr)
 	{
-		VulkanImageResource* vkDepthStencilResource = dynamic_cast<VulkanImageResource*>(renderingInfo.StencilAttachment->Resource);
+		VulkanImageResource* vkDepthStencilResource = dynamic_cast<VulkanImageResource*>(renderingInfo.StencilAttachment.Resource);
 
 		vk::RenderingAttachmentInfo stencilAttachmentInfo{};
 		stencilAttachmentInfo.imageView = vkDepthStencilResource->GetImageView();
-		stencilAttachmentInfo.imageLayout = VulkanEnumConverter::ConvertImageLayout(renderingInfo.StencilAttachment->Layout);
-		stencilAttachmentInfo.loadOp = VulkanEnumConverter::ConvertLoadOp(renderingInfo.StencilAttachment->LoadOp);
-		stencilAttachmentInfo.storeOp = VulkanEnumConverter::ConvertStoreOp(renderingInfo.StencilAttachment->StoreOp);
-		stencilAttachmentInfo.clearValue.depthStencil = vk::ClearDepthStencilValue(renderingInfo.StencilAttachment->ClearDepth[0], renderingInfo.DepthAttachment->ClearDepth[1]);
+		stencilAttachmentInfo.imageLayout = VulkanEnumConverter::ConvertImageLayout(renderingInfo.StencilAttachment.Layout);
+		stencilAttachmentInfo.loadOp = VulkanEnumConverter::ConvertLoadOp(renderingInfo.StencilAttachment.LoadOp);
+		stencilAttachmentInfo.storeOp = VulkanEnumConverter::ConvertStoreOp(renderingInfo.StencilAttachment.StoreOp);
+		stencilAttachmentInfo.clearValue.depthStencil = vk::ClearDepthStencilValue(renderingInfo.StencilAttachment.ClearDepth[0], renderingInfo.DepthAttachment.ClearDepth[1]);
 
 		renderInfo.setPStencilAttachment(&stencilAttachmentInfo);
 	}
@@ -132,41 +134,43 @@ void VulkanCommandList::End()
 	m_commandBuffer.end();
 }
 
-void VulkanCommandList::Submit(IFence* notify, std::vector<ISemaphore*> waitOnLocks)
+void VulkanCommandList::Submit(const SubmitInfo& submitInfo)
 {
-	vk::SubmitInfo submitInfo{};
+	vk::SubmitInfo vkSubmitInfo{};
 
-	std::vector<vk::PipelineStageFlags> waitStages(waitOnLocks.size());
-	std::vector<vk::Semaphore> semaphores(waitOnLocks.size());
-	for (ISemaphore* waitOn : waitOnLocks)
+	std::vector<vk::PipelineStageFlags> waitStages;
+	std::vector<vk::Semaphore> waitOnSemaphores;
+	for (ISemaphore* waitOn : submitInfo.WaitOnLocks)
 	{
-		semaphores.push_back(reinterpret_cast<VulkanSemaphore*>(waitOn)->GetSemaphore());
+		waitOnSemaphores.push_back(reinterpret_cast<VulkanSemaphore*>(waitOn)->GetSemaphore());
 		waitStages.push_back(vk::PipelineStageFlagBits::eAllCommands);
 	}
+	std::vector<vk::Semaphore> signalSemaphores;
+	for (ISemaphore* signal : submitInfo.SignalLocks)
+	{
+		signalSemaphores.push_back(reinterpret_cast<VulkanSemaphore*>(signal)->GetSemaphore());
+	}
 
-	submitInfo.waitSemaphoreCount = semaphores.size();
-	submitInfo.pWaitSemaphores = semaphores.data();
-	submitInfo.pWaitDstStageMask = waitStages.data();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_commandBuffer;
-	submitInfo.signalSemaphoreCount = semaphores.size();
-	submitInfo.pSignalSemaphores = semaphores.data();
+	vkSubmitInfo.waitSemaphoreCount = waitOnSemaphores.size();
+	vkSubmitInfo.pWaitSemaphores = waitOnSemaphores.data();
+	vkSubmitInfo.pWaitDstStageMask = waitStages.data();
+	vkSubmitInfo.pWaitDstStageMask = waitStages.data();
+	vkSubmitInfo.commandBufferCount = 1;
+	vkSubmitInfo.pCommandBuffers = &m_commandBuffer;
+	vkSubmitInfo.signalSemaphoreCount = signalSemaphores.size();
+	vkSubmitInfo.pSignalSemaphores = signalSemaphores.data();
 
+	VulkanFence* notify = reinterpret_cast<VulkanFence*>(submitInfo.Notify);
 	notify->Reset();
-	const auto submitResult = m_context->Queues[m_createInfo.QueueType].submit(1, &submitInfo, reinterpret_cast<VulkanFence*>(notify)->GetFence());
+	const auto submitResult = m_context->Queues[m_createInfo.QueueType].submit(1, &vkSubmitInfo, notify->GetFence());
 
 	VK_CHECK_RESULT(submitResult);
 }
 
-uint32_t VulkanCommandList::AcquireNextImage(ISwapChain* swapChain, ISemaphore* lock)
-{
-	return swapChain->AcquireNextImage();
-}
-
 void VulkanCommandList::BindPipeline(IPipeline* pipeline)
 {
-	VulkanPipeline* vkPipeline = dynamic_cast<VulkanPipeline*>(pipeline);
-	m_commandBuffer.bindPipeline(vkPipeline->BindPoint, vkPipeline->Instance);
+	m_boundPipeline = dynamic_cast<VulkanPipeline*>(pipeline);
+	m_commandBuffer.bindPipeline(m_boundPipeline->BindPoint, m_boundPipeline->Instance);
 }
 
 void VulkanCommandList::BindVertexBuffer(IBufferResource* buffer)
@@ -205,8 +209,13 @@ void VulkanCommandList::BindScissorRect(float offsetX, float offsetY, float widt
 
 void VulkanCommandList::BindDescriptorTable(IDescriptorTable* table)
 {
+	assertm(m_boundPipeline != VK_NULL_HANDLE, "Pipeline must be bound before binding descriptor table.");
+
 	VulkanDescriptorTable* vkTable = dynamic_cast<VulkanDescriptorTable*>(table);
 
+	std::vector<vk::WriteDescriptorSet> writeDescriptorSets = vkTable->GetWriteDescriptorSets();
+	vk::PipelineBindPoint bindPoint = m_createInfo.QueueType == QueueType::Graphics ? vk::PipelineBindPoint::eGraphics : vk::PipelineBindPoint::eCompute;
+	m_commandBuffer.pushDescriptorSetKHR(bindPoint, m_boundPipeline->Layout, 0, writeDescriptorSets.size(), writeDescriptorSets.data());
 }
 
 void VulkanCommandList::BindPushConstants(ShaderStage stage, uint32_t offset, uint32_t size, void* data)
@@ -228,36 +237,9 @@ void VulkanCommandList::SetDepthBias(float constantFactor, float clamp, float sl
 	m_commandBuffer.setDepthBias(constantFactor, clamp, slopeFactor);
 }
 
-void VulkanCommandList::SetImageBarrier(IImageResource* resource, ImageBarrier barrier)
+void VulkanCommandList::SetPipelineBarrier(const PipelineBarrier& barrier)
 {
-	VulkanImageResource* vkResource = dynamic_cast<VulkanImageResource*>(resource);
-
-	vk::ImageMemoryBarrier imageMemoryBarrier{};
-	imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-	imageMemoryBarrier.oldLayout = vk::ImageLayout::eUndefined;
-	imageMemoryBarrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
-	imageMemoryBarrier.image = vkResource->GetImage();
-	imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-	imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
-	imageMemoryBarrier.subresourceRange.levelCount = 1;
-	imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-	imageMemoryBarrier.subresourceRange.layerCount = 1;
-
-	m_commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::DependencyFlags{}, 0, nullptr, 0,
-			nullptr, 1, &imageMemoryBarrier);
-}
-
-void VulkanCommandList::SetBufferBarrier(IBufferResource* resource, BufferBarrier barrier)
-{
-	VulkanBufferResource* vkResource = dynamic_cast<VulkanBufferResource*>(resource);
-
-	vk::BufferMemoryBarrier bufferMemoryBarrier{};
-	bufferMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-	bufferMemoryBarrier.size = vkResource->GetSize();
-	bufferMemoryBarrier.buffer = vkResource->GetBuffer();
-
-	m_commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::DependencyFlags{}, 0, nullptr, 1,
-			&bufferMemoryBarrier, 0, nullptr);
+	VulkanPipelineBarrierHelper::ExecutePipelineBarrier(m_context, m_commandBuffer, m_createInfo.QueueType, barrier);
 }
 
 void VulkanCommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance)

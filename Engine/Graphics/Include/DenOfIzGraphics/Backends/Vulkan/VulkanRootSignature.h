@@ -31,10 +31,11 @@ private:
 	VulkanContext* m_context;
 
 	std::vector<vk::DescriptorSetLayout> m_layouts;
-	std::vector<std::vector<vk::DescriptorSetLayoutBinding>> m_bindings;
+	std::vector<vk::DescriptorSetLayoutBinding> m_bindings;
 	std::vector<vk::PushConstantRange> m_pushConstants;
 public:
 	VulkanRootSignature(VulkanContext* context, RootSignatureCreateInfo createInfo);
+	~VulkanRootSignature();
 
 	const std::vector<vk::DescriptorSetLayout>& GetDescriptorSetLayouts() const { return m_layouts; }
 protected:
