@@ -22,11 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "VulkanContext.h"
 #include "VulkanSurface.h"
 #include "VulkanPipeline.h"
-#include "VulkanRenderPass.h"
 #include "Resource/VulkanSamplerResource.h"
 #include "Resource/VulkanCubeMapResource.h"
 #include "Resource/VulkanBufferResource.h"
-#include "Resource/VulkanLock.h"
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 
@@ -61,7 +59,6 @@ class VulkanLogicalDevice final : public ILogicalDevice
 	std::unordered_map<std::string, bool> m_supportedLayers;
 
 	std::unique_ptr<VulkanContext> m_context;
-	std::unique_ptr<VulkanSurface> m_renderSurface;
 
 public:
 	VulkanLogicalDevice() = default;
@@ -78,7 +75,6 @@ public:
 	// Factory methods
 	std::unique_ptr<ICommandList> CreateCommandList(const CommandListCreateInfo& createInfo) override;
 	std::unique_ptr<IPipeline> CreatePipeline(const PipelineCreateInfo& createInfo) override;
-	std::unique_ptr<IRenderPass> CreateRenderPass(const RenderPassCreateInfo& createInfo) override;
 	std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainCreateInfo& createInfo) override;
 	std::unique_ptr<IRootSignature> CreateRootSignature(const RootSignatureCreateInfo& createInfo) override;
 	std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) override;

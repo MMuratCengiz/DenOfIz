@@ -25,7 +25,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ISemaphore.h"
 #include "ICommandList.h"
 #include "IPipeline.h"
-#include "IRenderPass.h"
 #include "ISwapChain.h"
 #include "IResource.h"
 #include "IRootSignature.h"
@@ -53,7 +52,6 @@ public:
 	// Factory methods
 	virtual std::unique_ptr<ICommandList> CreateCommandList(const CommandListCreateInfo& createInfo) = 0;
 	virtual std::unique_ptr<IPipeline> CreatePipeline(const PipelineCreateInfo& createInfo) = 0;
-	virtual std::unique_ptr<IRenderPass> CreateRenderPass(const RenderPassCreateInfo& createInfo) = 0;
 	virtual std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainCreateInfo& createInfo) = 0;
 	virtual std::unique_ptr<IRootSignature> CreateRootSignature(const RootSignatureCreateInfo& createInfo) = 0;
 	virtual std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) = 0;

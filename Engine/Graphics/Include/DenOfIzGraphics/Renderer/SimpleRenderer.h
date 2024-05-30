@@ -45,7 +45,6 @@ private:
 	std::vector<std::unique_ptr<IFence>> m_fences;
 	std::vector<std::unique_ptr<ISemaphore>> m_imageReadySemaphores;
 	std::vector<std::unique_ptr<ISemaphore>> m_imageRenderedSemaphores;
-	std::vector<std::unique_ptr<IRenderPass>> m_renderPasses;
 	std::unique_ptr<CommandListRing> m_commandListRing;
 public:
 	void Init(SDL_Window* window);

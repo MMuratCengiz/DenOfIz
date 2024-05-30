@@ -2,7 +2,6 @@
 
 #ifdef BUILD_VK
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanRenderPass.h>
 #endif
 
 #ifdef BUILD_DX

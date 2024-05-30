@@ -14,20 +14,22 @@ set_target_default_properties(DenOfIzGame)
 
 include_theforge(DenOfIzGame)
 
-compile_shaders(
-    TARGET_PROJECT DenOfIzGame
-    SHADER_TARGET UiShader
-    SHADER_LIST "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/UI/Shaders/FSL/UI_ShaderList.fsl"
-)
+if (ENABLED) # TODO Re-enable
+    compile_shaders(
+        TARGET_PROJECT DenOfIzGame
+        SHADER_TARGET UiShader
+        SHADER_LIST "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/UI/Shaders/FSL/UI_ShaderList.fsl"
+    )
 
-compile_shaders(
-    TARGET_PROJECT DenOfIzGame
-    SHADER_TARGET FontShader
-    SHADER_LIST "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/Fonts/Shaders/FSL/Fonts_ShaderList.fsl"
-)
+    compile_shaders(
+        TARGET_PROJECT DenOfIzGame
+        SHADER_TARGET FontShader
+        SHADER_LIST "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/Fonts/Shaders/FSL/Fonts_ShaderList.fsl"
+    )
 
-compile_shaders(
-    TARGET_PROJECT DenOfIzGame
-    SHADER_TARGET ProjectShader
-    SHADER_LIST "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Shaders/FSL/ShaderList.fsl"
-)
+    compile_shaders(
+        TARGET_PROJECT DenOfIzGame
+        SHADER_TARGET ProjectShader
+        SHADER_LIST "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Shaders/FSL/ShaderList.fsl"
+    )
+endif ()

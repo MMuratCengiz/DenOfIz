@@ -1,5 +1,6 @@
 include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
 
+set(SUB_PROJECTS Core Graphics)
 set(SUB_PROJECTS Core Graphics The-Forge)
 
 foreach (SUB_PROJECT IN LISTS SUB_PROJECTS)

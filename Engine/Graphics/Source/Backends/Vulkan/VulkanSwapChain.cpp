@@ -23,9 +23,6 @@ using namespace DenOfIz;
 VulkanSwapChain::VulkanSwapChain(VulkanContext* context, const SwapChainCreateInfo& createInfo)
 		:m_context(context), m_createInfo(createInfo)
 {
-	m_swapChainImageAvailable = std::make_unique<VulkanSemaphore>(this->m_context);
-	m_swapChainImageRendered = std::make_unique<VulkanSemaphore>(this->m_context);
-
 	CreateSwapChain();
 }
 
@@ -147,16 +144,6 @@ uint32_t VulkanSwapChain::AcquireNextImage(ISemaphore* imageReadySemaphore)
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
 	return image.value;
-}
-
-VulkanSemaphore* VulkanSwapChain::GetImageAvailableLock()
-{
-	return m_swapChainImageAvailable.get();
-}
-
-VulkanSemaphore* VulkanSwapChain::GetImageRenderedLock()
-{
-	return m_swapChainImageRendered.get();
 }
 
 VulkanSwapChain::~VulkanSwapChain()

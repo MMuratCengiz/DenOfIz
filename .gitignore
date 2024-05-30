@@ -9,3 +9,4 @@ build/DenOfIz
 CMakeFiles/
 CMakeCache.txt
 /Shaders/SPIRV/
+/_External/The-Forge/Art/*

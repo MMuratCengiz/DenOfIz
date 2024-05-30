@@ -470,12 +470,6 @@ std::unique_ptr<IPipeline> VulkanLogicalDevice::CreatePipeline(const PipelineCre
 	return std::unique_ptr<IPipeline>(pipeline);
 }
 
-std::unique_ptr<IRenderPass> VulkanLogicalDevice::CreateRenderPass(const RenderPassCreateInfo& createInfo)
-{
-	VulkanRenderPass* renderPass = new VulkanRenderPass(m_context.get(), createInfo);
-	return std::unique_ptr<IRenderPass>(renderPass);
-}
-
 std::unique_ptr<ISwapChain> VulkanLogicalDevice::CreateSwapChain(const SwapChainCreateInfo& createInfo)
 {
 	VulkanSwapChain* swapChain = new VulkanSwapChain(m_context.get(), createInfo);

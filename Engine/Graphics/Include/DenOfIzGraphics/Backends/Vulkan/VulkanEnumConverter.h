@@ -23,7 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/IResource.h>
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include <DenOfIzGraphics/Backends/Interface/IShader.h>
-#include <DenOfIzGraphics/Backends/Interface/IRenderPass.h>
 
 namespace DenOfIz
 {
@@ -932,60 +931,6 @@ public:
 		}
 
 		return vk::DescriptorType::eSampler;
-	}
-
-	static vk::ImageLayout GetImageVkLayout(const RenderTargetType& targetType)
-	{
-		switch (targetType)
-		{
-		case RenderTargetType::Color:
-			return vk::ImageLayout::eColorAttachmentOptimal;
-		case RenderTargetType::Depth:
-			return vk::ImageLayout::eDepthAttachmentOptimal;
-		case RenderTargetType::Stencil:
-			return vk::ImageLayout::eStencilAttachmentOptimal;
-		case RenderTargetType::DepthAndStencil:
-			return vk::ImageLayout::eDepthStencilAttachmentOptimal;
-		}
-
-		return vk::ImageLayout::eColorAttachmentOptimal;
-	}
-
-	static vk::ImageUsageFlags GetVkUsageFlags(const RenderTargetType& targetType)
-	{
-		vk::ImageUsageFlags usageFlags = vk::ImageUsageFlagBits::eColorAttachment;
-
-		if (targetType == RenderTargetType::Depth || targetType == RenderTargetType::DepthAndStencil)
-		{
-			usageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
-		}
-
-		if (targetType == RenderTargetType::Color || targetType == RenderTargetType::Depth)
-		{
-			usageFlags |= vk::ImageUsageFlagBits::eSampled;
-		}
-
-		return usageFlags;
-	}
-
-	static vk::ImageAspectFlags GetOutputImageVkAspect(const RenderTargetType& renderTargetType)
-	{
-		vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eColor;
-
-		if (renderTargetType == RenderTargetType::Depth)
-		{
-			aspectFlags = vk::ImageAspectFlagBits::eDepth;
-		}
-		else if (renderTargetType == RenderTargetType::Stencil)
-		{
-			aspectFlags = vk::ImageAspectFlagBits::eStencil;
-		}
-		else if (renderTargetType == RenderTargetType::DepthAndStencil)
-		{
-			aspectFlags = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
-		}
-
-		return aspectFlags;
 	}
 
 	static vk::PipelineBindPoint ConvertPipelineBindPoint(const BindPoint& point)

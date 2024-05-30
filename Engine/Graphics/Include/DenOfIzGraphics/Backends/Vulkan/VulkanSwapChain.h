@@ -20,7 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifdef BUILD_VK
 
 #include "VulkanEnumConverter.h"
-#include "Resource/VulkanLock.h"
 #include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
 #include "Resource/VulkanSemaphore.h"
 #include "Resource/VulkanImageResource.h"
@@ -32,9 +31,6 @@ class VulkanSwapChain : public ISwapChain
 {
 private:
 	SwapChainCreateInfo m_createInfo;
-	std::unique_ptr<VulkanSemaphore> m_swapChainImageAvailable;
-	std::unique_ptr<VulkanSemaphore> m_swapChainImageRendered;
-
 	VulkanContext* m_context;
 	vk::SurfaceKHR m_surface;
 	vk::SwapchainKHR m_swapChain;
@@ -50,8 +46,6 @@ public:
 	~VulkanSwapChain() override;
 
 	uint32_t AcquireNextImage(ISemaphore* imageReadySemaphore) override;
-	VulkanSemaphore* GetImageAvailableLock();
-	VulkanSemaphore* GetImageRenderedLock();
 	void Resize(uint32_t width, uint32_t height) override;
 	ImageFormat GetPreferredFormat() override;
 
