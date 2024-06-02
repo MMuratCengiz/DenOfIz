@@ -28,10 +28,13 @@ class DX12Pipeline : public IPipeline
 {
 private:
 	DX12Context* m_context;
+	ComPtr<ID3D12PipelineState> m_pipelineState;
 	PipelineCreateInfo m_createInfo;
 public:
 	DX12Pipeline(DX12Context* context, const PipelineCreateInfo& info);
 	~DX12Pipeline() override;
+private:
+	void SetMSAASampleCount(const PipelineCreateInfo& createInfo, D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc) const;
 };
 
 }

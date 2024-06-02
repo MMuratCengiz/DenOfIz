@@ -248,6 +248,7 @@ void DemoScene::Exit(Renderer *pRenderer)
 bool DemoScene::Load(ReloadDesc *pReloadDesc, Renderer *pRenderer, RenderTarget *pRenderTarget)
 {
     if (pReloadDesc->mType & RELOAD_TYPE_SHADER)
+    if (pReloadDesc->mType & RELOAD_TYPE_SHADER)
     {
         AddSphereResources(pRenderer);
         AddQuadResources(pRenderer);

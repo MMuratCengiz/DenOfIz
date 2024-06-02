@@ -24,6 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzCore/Common.h>
 #include "DirectXHelpers.h"
 
+#include "Resource/DX12Fence.h"
+
 namespace DenOfIz
 {
 
@@ -41,6 +43,9 @@ public:
 	void CreateDevice(SDL_Window* window) override;
 	std::vector<PhysicalDeviceInfo> ListPhysicalDevices() override;
 	void LoadPhysicalDevice(const PhysicalDeviceInfo& device) override;
+	inline bool IsDeviceLost() override {
+		return m_context->IsDeviceLost;
+	}
 	void WaitIdle() override;
 	// --
 private:

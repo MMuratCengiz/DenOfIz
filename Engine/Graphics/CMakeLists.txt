@@ -42,6 +42,7 @@ SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanRootSignature.cpp
         Source/Backends/Vulkan/VulkanSwapChain.cpp
         Source/Backends/Vulkan/VmaImplementation.cpp
+        # Vulkan Resources
         Source/Backends/Vulkan/Resource/VulkanFence.cpp
         Source/Backends/Vulkan/Resource/VulkanSemaphore.cpp
         Source/Backends/Vulkan/Resource/VulkanBufferResource.cpp
@@ -57,6 +58,10 @@ set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
         Source/Backends/DirectX12/DeviceResources.cpp
         Source/Backends/DirectX12/DX12Pipeline.cpp
         Source/Backends/DirectX12/DX12SwapChain.cpp
+        Source/Backends/DirectX12/DX12RootSignature.cpp
+
+        #DirectX12 Resources
+        Source/Backends/DirectX12/Resource/DX12Fence.cpp
 )
 
 set(DEN_OF_IZ_GRAPHICS_METAL_SOURCES

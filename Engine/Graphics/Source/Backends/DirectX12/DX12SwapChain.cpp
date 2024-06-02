@@ -18,24 +18,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12SwapChain.h>
 #include "SDl2/SDL_syswm.h"
+#include "DenOfIzCore/Logger.h"
 
 using namespace DenOfIz;
 
-DX12SwapChain::DX12SwapChain(DX12Context* context)
-	:m_context(context)
+DX12SwapChain::DX12SwapChain(DX12Context* context, const SwapChainCreateInfo& swapChainCreateInfo)
+	:m_context(context), m_swapChainCreateInfo(swapChainCreateInfo)
 {
+	CreateSwapChain();
 }
 
-uint32_t DX12SwapChain::AcquireNextImage(ISemaphore * imageAvailableSemaphore)
-{
-	return m_context->SwapChain->GetCurrentBackBufferIndex();
-}
-
-void DX12SwapChain::Resize(uint32_t width, uint32_t height)
-{
-}
-
-void DX12SwapChain::Present()
+void DX12SwapChain::CreateSwapChain() const
 {
 	SDL_Surface* surface = SDL_GetWindowSurface(m_context->Window);
 	SDL_SysWMinfo wmInfo;
@@ -46,7 +39,7 @@ void DX12SwapChain::Present()
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
 	swapChainDesc.Width = surface->w;
 	swapChainDesc.Height = surface->h;
-	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.Format = DX12EnumConverter::ConvertImageFormat(m_swapChainCreateInfo.Format);
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.BufferCount = m_context->BackBufferCount;
 	swapChainDesc.SampleDesc.Count = 1;
@@ -64,8 +57,36 @@ void DX12SwapChain::Present()
 	ComPtr<IDXGISwapChain1> swapChain;
 
 	DX_CHECK_RESULT(m_context->DXGIFactory->CreateSwapChainForHwnd(m_context->CommandQueue.Get(), hwnd, &swapChainDesc, &fsSwapChainDesc, nullptr, swapChain.GetAddressOf()));
-	DX_CHECK_RESULT(swapChain.As(&m_context->SwapChain));
-	DX_CHECK_RESULT(m_context->DXGIFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER));
+	DX_CHECK_RESULT(swapChain.As(&m_swapChain));
+	DX_CHECK_RESULT(m_context->DXGIFactory->MakeWindowAssociation(hwnd, 0));
+}
+
+uint32_t DX12SwapChain::AcquireNextImage(ISemaphore * imageAvailableSemaphore)
+{
+	return m_swapChain->GetCurrentBackBufferIndex();
+}
+
+void DX12SwapChain::Resize(uint32_t width, uint32_t height)
+{
+	m_swapChainCreateInfo.Width = width;
+	m_swapChainCreateInfo.Height = height;
+
+	HRESULT hr = m_swapChain->ResizeBuffers(
+			m_swapChainCreateInfo.BufferCount,
+			width,
+			height,
+			DX12EnumConverter::ConvertImageFormat(m_swapChainCreateInfo.Format),
+			m_context->SelectedDeviceInfo.Capabilities.Tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u);
+
+	if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+	{
+		LOG(Verbosity::Debug, "DX12SwapChain", (boost::format("Device Lost on ResizeBuffers: Reason code 0x")
+			% ((hr == DXGI_ERROR_DEVICE_REMOVED) ? m_context->D3DDevice->GetDeviceRemovedReason() : hr)).str());
+
+		m_context->IsDeviceLost = true;
+		return;
+	}
+	DX_CHECK_RESULT(hr);
 }
 
 DX12SwapChain::~DX12SwapChain()

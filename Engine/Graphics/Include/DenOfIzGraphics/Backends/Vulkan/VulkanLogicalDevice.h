@@ -66,6 +66,9 @@ public:
 	void CreateDevice(SDL_Window* window) override;
 	std::vector<PhysicalDeviceInfo> ListPhysicalDevices() override;
 	void LoadPhysicalDevice(const PhysicalDeviceInfo& device) override;
+	inline bool IsDeviceLost() override {
+		return m_context->IsDeviceLost;
+	}
 
 	void WaitIdle() override;
 	[[nodiscard]] uint32_t GetFrameCount() const;

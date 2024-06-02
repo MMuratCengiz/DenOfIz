@@ -18,26 +18,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
 #include "DX12Context.h"
-#include "DX12EnumConverter.h"
-#include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
 
 namespace DenOfIz
 {
 
-class DX12SwapChain : public ISwapChain
+class DX12RootSignature : public IRootSignature
 {
 private:
 	DX12Context* m_context;
-	SwapChainCreateInfo m_swapChainCreateInfo;
-	ComPtr<IDXGISwapChain3> m_swapChain;
-public:
-	DX12SwapChain(DX12Context* context, const SwapChainCreateInfo& swapChainCreateInfo);
-	~DX12SwapChain() override;
+	RootSignatureCreateInfo m_createInfo;
+	ComPtr<ID3D12RootSignature> m_rootSignature;
 
-	uint32_t AcquireNextImage(ISemaphore * imageAvailableSemaphore) override;
-	void Resize(uint32_t width, uint32_t height) override;
-	void CreateSwapChain() const;
+	std::vector<D3D12_ROOT_PARAMETER> m_rootParameters;
+public:
+	DX12RootSignature(DX12Context* context, const RootSignatureCreateInfo& createInfo);
+	~DX12RootSignature() override;
+protected:
+	void AddResourceBindingInternal(const ResourceBinding& binding) override;
+	void AddRootConstantInternal(const RootConstantBinding& rootConstant) override;
+	void CreateInternal() override;
 };
 
 }

@@ -21,7 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IShader.h"
 #include "IResource.h"
 #include "IRootSignature.h"
-#include <DenOfIzCore/Common.h>
 #include <DenOfIzGraphics/Backends/Common/SpvProgram.h>
 
 namespace DenOfIz

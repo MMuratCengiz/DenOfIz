@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifdef BUILD_DX12
 
 #include <DenOfIzCore/Common_Windows.h>
+#include "../Interface/CommonData.h"
 #include <directx/dxgiformat.h>
 #include <directx/d3d12.h>
 #include <directx/dxgicommon.h>
@@ -41,6 +42,7 @@ using namespace Microsoft::WRL;
 struct DX12Context
 {
 	static const int BackBufferCount = 3;
+	bool IsDeviceLost = false;
 
 	ComPtr<IDXGIAdapter1> Adapter;
 
@@ -62,6 +64,7 @@ struct DX12Context
 	std::vector<ComPtr<ID3D12Resource>> SwapChainImages;
 
 	SDL_Window* Window;
+	PhysicalDeviceInfo SelectedDeviceInfo;
 };
 
 #define DX_CHECK_RESULT(R) assert(SUCCEEDED(R))

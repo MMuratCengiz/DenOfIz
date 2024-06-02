@@ -10,19 +10,19 @@ Result<Unit> ShaderCompiler::Init()
 {
 	glslang::InitializeProcess();
 
-	HRESULT result = DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&dxcLibrary));
+	HRESULT result = DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&m_dxcLibrary));
 	if (FAILED(result))
 	{
 		return Error("Failed to initialize DXC Library");
 	}
 
-	result = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler));
+	result = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&m_dxcCompiler));
 	if (FAILED(result))
 	{
 		return Error("Failed to initialize DXC Compiler");
 	}
 
-	result = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
+	result = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&m_dxcUtils));
 	if (FAILED(result))
 	{
 		return Error("Failed to initialize DXC Utils");
@@ -212,7 +212,7 @@ std::vector<uint32_t> ShaderCompiler::HLSLtoSPV(const ShaderStage shaderType, co
 	uint32_t codePage = DXC_CP_ACP;
 	ComPtr<IDxcBlobEncoding> sourceBlob;
 	std::wstring wsShaderPath(shaderPath.begin(), shaderPath.end());
-	HRESULT result = dxcUtils->LoadFile(wsShaderPath.c_str(), &codePage, &sourceBlob);
+	HRESULT result = m_dxcUtils->LoadFile(wsShaderPath.c_str(), &codePage, &sourceBlob);
 	if (FAILED(result))
 	{
 		throw std::runtime_error(&"Could not load shader file"[GetLastError()]);
@@ -258,7 +258,7 @@ std::vector<uint32_t> ShaderCompiler::HLSLtoSPV(const ShaderStage shaderType, co
 	buffer.Size = sourceBlob->GetBufferSize();
 
 	ComPtr<IDxcResult> dxcResult{ nullptr };
-	result = dxcCompiler->Compile(&buffer, arguments.data(), static_cast<uint32_t>(arguments.size()), nullptr, IID_PPV_ARGS(&dxcResult));
+	result = m_dxcCompiler->Compile(&buffer, arguments.data(), static_cast<uint32_t>(arguments.size()), nullptr, IID_PPV_ARGS(&dxcResult));
 
 	if (SUCCEEDED(result))
 	{

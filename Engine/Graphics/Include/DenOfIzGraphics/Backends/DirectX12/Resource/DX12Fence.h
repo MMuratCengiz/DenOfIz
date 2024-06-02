@@ -18,26 +18,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DX12Context.h"
-#include "DX12EnumConverter.h"
-#include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
+#include <DenOfIzGraphics/Backends/Interface/IFence.h>
+#include "DenOfIzGraphics/Backends/DirectX12/DX12Context.h"
 
 namespace DenOfIz
 {
 
-class DX12SwapChain : public ISwapChain
+class DX12Fence : public IFence
 {
 private:
 	DX12Context* m_context;
-	SwapChainCreateInfo m_swapChainCreateInfo;
-	ComPtr<IDXGISwapChain3> m_swapChain;
+	Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
 public:
-	DX12SwapChain(DX12Context* context, const SwapChainCreateInfo& swapChainCreateInfo);
-	~DX12SwapChain() override;
-
-	uint32_t AcquireNextImage(ISemaphore * imageAvailableSemaphore) override;
-	void Resize(uint32_t width, uint32_t height) override;
-	void CreateSwapChain() const;
+	DX12Fence(DX12Context* context);
+	~DX12Fence() override;
+	void Wait() override;
+	void Reset() override;
 };
 
 }

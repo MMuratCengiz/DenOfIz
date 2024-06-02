@@ -15,9 +15,9 @@ namespace DenOfIz
 
 class ShaderCompiler
 {
-	ComPtr<IDxcLibrary> dxcLibrary;
-	ComPtr<IDxcCompiler3> dxcCompiler;
-	ComPtr<IDxcUtils> dxcUtils;
+	ComPtr<IDxcLibrary> m_dxcLibrary;
+	ComPtr<IDxcCompiler3> m_dxcCompiler;
+	ComPtr<IDxcUtils> m_dxcUtils;
 
 public:
 	Result<Unit> Init();

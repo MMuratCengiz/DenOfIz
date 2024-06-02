@@ -16,28 +16,27 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include <DenOfIzGraphics/Backends/DirectX12/Resource/DX12Fence.h>
+#include "DenOfIzGraphics/Backends/DirectX12/DX12Context.h"
 
-#include "DX12Context.h"
-#include "DX12EnumConverter.h"
-#include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
+using namespace DenOfIz;
 
-namespace DenOfIz
+DX12Fence::DX12Fence(DX12Context* context)
 {
+	context->D3DDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.ReleaseAndGetAddressOf()));
+}
 
-class DX12SwapChain : public ISwapChain
+DX12Fence::~DX12Fence()
 {
-private:
-	DX12Context* m_context;
-	SwapChainCreateInfo m_swapChainCreateInfo;
-	ComPtr<IDXGISwapChain3> m_swapChain;
-public:
-	DX12SwapChain(DX12Context* context, const SwapChainCreateInfo& swapChainCreateInfo);
-	~DX12SwapChain() override;
+	m_fence.Reset();
+}
 
-	uint32_t AcquireNextImage(ISemaphore * imageAvailableSemaphore) override;
-	void Resize(uint32_t width, uint32_t height) override;
-	void CreateSwapChain() const;
-};
+void DX12Fence::Wait()
+{
 
 }
+
+void DX12Fence::Reset()
+{
+}
+
