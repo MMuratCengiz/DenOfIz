@@ -40,7 +40,7 @@ struct BufferCreateInfo
 	bool UseStaging = false;
 
 	BufferMemoryUsage Usage;
-	MemoryLocation Location;
+	HeapType HeapType;
 };
 
 class IBufferResource : public IResource
@@ -75,7 +75,7 @@ struct ImageCreateInfo
 	ImageAspect Aspect = ImageAspect::Color;
 	ImageFormat Format;
 	ImageMemoryUsage ImageUsage;
-	MemoryLocation Location = MemoryLocation::Auto;
+	HeapType HeapType = HeapType::Auto;
 	MSAASampleCount MSAASampleCount = MSAASampleCount::_0;
 };
 

@@ -33,6 +33,7 @@ enum class RootSignatureType
 };
 
 // Static = 0th set, Dynamic = 1, PerDraw = 2
+// Frequency is mapped 1 to 1 with DX12s RootSignature 'RegisterSpace' and Vulkan's 'Set'
 enum class ResourceUpdateFrequency : uint32_t
 {
 	Static = 0,
@@ -49,21 +50,21 @@ struct ResourceBinding
 {
 	std::string Name;
 	uint32_t Binding;
+	uint32_t RegisterSpace = 0;
 	ResourceBindingType Type;
-	ResourceUpdateFrequency Frequency;
-	std::vector<ShaderStage> Stages;
-	int ArraySize = 1;
 
-	uint32_t FrequencyUInt() const
-	{
-		return static_cast<uint32_t>(Frequency);
-	}
+	// A binding can appear in more than one stage, i.e. both in fragment and vertex shaders.
+	std::vector<ShaderStage> Stages;
+
+	// 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
+	int ArraySize = 1;
 };
 
 struct RootConstantBinding
 {
 	std::string Name;
-	uint32_t Order;
+	uint32_t Binding;
+	uint32_t RegisterSpace = 0;
 	int Size;
 	std::vector<ShaderStage> Stages;
 };
@@ -72,7 +73,7 @@ class IRootSignature
 {
 protected:
 	uint32_t m_resourceCount = 0;
-	std::vector<uint32_t> m_resourceCountPerFrequency = { 0, 0, 0 };
+	std::vector<uint32_t> m_resourceCountPerSet;
 	std::unordered_map<std::string, ResourceBinding> m_resourceBindingMap;
 	std::unordered_map<std::string, RootConstantBinding> m_rootConstantMap;
 	bool m_created = false;
@@ -81,10 +82,13 @@ public:
 
 	void AddResourceBinding(const ResourceBinding& binding) {
 		ValidateNotCreated();
+		if (m_resourceCountPerSet.size() <= binding.RegisterSpace)
+		{
+			m_resourceCountPerSet.resize(binding.RegisterSpace + 1);
+		}
 		m_resourceBindingMap[binding.Name] = binding;
 		m_resourceCount++;
-		uint32_t frequency = binding.FrequencyUInt();
-		m_resourceCountPerFrequency[frequency] = std::max(m_resourceCountPerFrequency[frequency], binding.Binding + 1);
+		m_resourceCountPerSet[binding.RegisterSpace] = std::max(m_resourceCountPerSet[binding.RegisterSpace], binding.Binding + 1);
 		AddResourceBindingInternal(binding);
 	}
 
@@ -101,7 +105,7 @@ public:
 	}
 
 	inline uint32_t GetResourceCount() const { return m_resourceCount; }
-	inline uint32_t GetResourceCount(ResourceUpdateFrequency frequency) const { return m_resourceCountPerFrequency[static_cast<uint32_t>(frequency)]; }
+	inline uint32_t GetResourceCount(uint32_t registerSpace) const { return m_resourceCountPerSet[static_cast<uint32_t>(registerSpace)]; }
 
 	inline boost::optional<ResourceBinding> GetResourceBinding(std::string name) const
 	{

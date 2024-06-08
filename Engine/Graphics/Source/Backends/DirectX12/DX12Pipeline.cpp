@@ -23,24 +23,60 @@ using namespace DenOfIz;
 DX12Pipeline::DX12Pipeline(DX12Context* context, const PipelineCreateInfo& createInfo)
 		:m_context(context), m_createInfo(createInfo)
 {
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
-	psoDesc.pRootSignature = m_rootSignature.Get();
-	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
-	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
+	D3D12_COMPUTE_PIPELINE_STATE_DESC computePsoDesc = {};
 
+	assertm(m_createInfo.RootSignature != nullptr, "Root signature is not set for the pipeline");
+	assertm(m_createInfo.InputLayout != nullptr, "Input layout is not set for the pipeline");
+
+	CreateGraphicsPipeline();
+}
+
+void DX12Pipeline::CreateGraphicsPipeline()
+{
+	DX12RootSignature* rootSignature = reinterpret_cast<DX12RootSignature*>(m_createInfo.RootSignature);
+	DX12InputLayout* inputLayout = reinterpret_cast<DX12InputLayout*>(m_createInfo.InputLayout);
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+	psoDesc.InputLayout = inputLayout->GetInputLayout();
+	psoDesc.pRootSignature = rootSignature->GetRootSignature();
+	SetGraphicsShaders(psoDesc);
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	psoDesc.RasterizerState.CullMode = DX12EnumConverter::ConvertCullMode(m_createInfo.CullMode);
+
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	psoDesc.DepthStencilState.DepthEnable = FALSE;
-	psoDesc.DepthStencilState.StencilEnable = FALSE;
+
+	InitDepthStencil(psoDesc);
+
 	psoDesc.SampleMask = UINT_MAX;
-	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	psoDesc.PrimitiveTopologyType = DX12EnumConverter::ConvertPrimitiveTopology(m_createInfo.PrimitiveTopology);
+
 	psoDesc.NumRenderTargets = 1;
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 
-	SetMSAASampleCount(createInfo, psoDesc);
+	SetMSAASampleCount(m_createInfo, psoDesc);
+	DX_CHECK_RESULT(m_context->D3DDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_graphicsPipeline)));
+}
 
-	DX_CHECK_RESULT(m_context->D3DDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState)));
+void DX12Pipeline::InitDepthStencil(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc) const
+{
+	psoDesc.DepthStencilState.DepthEnable = m_createInfo.DepthTest.Enable;
+	psoDesc.DepthStencilState.DepthFunc = DX12EnumConverter::ConvertCompareOp(m_createInfo.DepthTest.CompareOp);
+	psoDesc.DepthStencilState.DepthWriteMask = m_createInfo.DepthTest.Write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+
+	psoDesc.DepthStencilState.StencilEnable = m_createInfo.StencilTest.Enable;
+	psoDesc.DepthStencilState.StencilReadMask = m_createInfo.StencilTest.ReadMask;
+	psoDesc.DepthStencilState.StencilWriteMask = m_createInfo.StencilTest.WriteMask;
+
+	InitStencilFace(psoDesc.DepthStencilState.FrontFace, m_createInfo.StencilTest.FrontFace);
+	InitStencilFace(psoDesc.DepthStencilState.BackFace, m_createInfo.StencilTest.BackFace);
+}
+
+void DX12Pipeline::InitStencilFace(D3D12_DEPTH_STENCILOP_DESC& stencilFace, const StencilFace& face) const
+{
+	stencilFace.StencilDepthFailOp = DX12EnumConverter::ConvertStencilOp(face.FailOp);
+	stencilFace.StencilFunc = DX12EnumConverter::ConvertCompareOp(face.CompareOp);
+	stencilFace.StencilFailOp = DX12EnumConverter::ConvertStencilOp(face.FailOp);
+	stencilFace.StencilPassOp = DX12EnumConverter::ConvertStencilOp(face.PassOp);
 }
 
 void DX12Pipeline::SetMSAASampleCount(const PipelineCreateInfo& createInfo, D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc) const
@@ -72,7 +108,38 @@ void DX12Pipeline::SetMSAASampleCount(const PipelineCreateInfo& createInfo, D3D1
 	}
 }
 
+void DX12Pipeline::SetGraphicsShaders(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc)
+{
+	for (const CompiledShader& compiledShader: m_createInfo.ShaderProgram.Shaders)
+	{
+		switch (compiledShader.Stage) {
+		case ShaderStage::Vertex:
+			psoDesc.VS = GetShaderByteCode(compiledShader);
+			break;
+		case ShaderStage::TessellationControl:
+			psoDesc.HS = GetShaderByteCode(compiledShader);
+			break;
+		case ShaderStage::TessellationEvaluation:
+			psoDesc.DS = GetShaderByteCode(compiledShader);
+			break;
+		case ShaderStage::Geometry:
+			psoDesc.GS = GetShaderByteCode(compiledShader);
+			break;
+		case ShaderStage::Fragment:
+			psoDesc.PS = GetShaderByteCode(compiledShader);
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+D3D12_SHADER_BYTECODE DX12Pipeline::GetShaderByteCode(const CompiledShader& compiledShader) const
+{
+	return D3D12_SHADER_BYTECODE(compiledShader.Data.data(), compiledShader.Data.size());
+}
+
 DX12Pipeline::~DX12Pipeline()
 {
-
+	m_graphicsPipeline.Reset();
 }

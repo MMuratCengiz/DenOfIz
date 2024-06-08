@@ -27,7 +27,7 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
 
         #Shader Compiler
         Source/Backends/Common/ShaderCompiler.cpp
-        Source/Backends/Common/SpvProgram.cpp
+        Source/Backends/Common/ShaderProgram.cpp
 
         #Renderers
         Source/Renderer/SimpleRenderer.cpp)
@@ -47,7 +47,6 @@ SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/Resource/VulkanSemaphore.cpp
         Source/Backends/Vulkan/Resource/VulkanBufferResource.cpp
         Source/Backends/Vulkan/Resource/VulkanImageResource.cpp
-        Source/Backends/Vulkan/Resource/VulkanSamplerResource.cpp
         Source/Backends/Vulkan/Resource/VulkanCubeMapResource.cpp
         Source/Backends/Vulkan/Resource/VulkanPipelineBarrierHelper.cpp)
 
@@ -59,9 +58,12 @@ set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
         Source/Backends/DirectX12/DX12Pipeline.cpp
         Source/Backends/DirectX12/DX12SwapChain.cpp
         Source/Backends/DirectX12/DX12RootSignature.cpp
+        Source/Backends/DirectX12/DX12InputLayout.cpp
 
         #DirectX12 Resources
+        Source/Backends/DirectX12/Resource/DX12BufferResource.cpp
         Source/Backends/DirectX12/Resource/DX12Fence.cpp
+        Source/Backends/DirectX12/Resource/DX12ImageResource.cpp
 )
 
 set(DEN_OF_IZ_GRAPHICS_METAL_SOURCES

@@ -16,6 +16,7 @@
 
 #include <DenOfIzCore/Logger.h>
 #include <fstream>
+#include <iostream>
 
 using namespace DenOfIz;
 
@@ -31,7 +32,10 @@ Logger::Logger(const LoggerType& loggerType)
 
 void Logger::Log(const Verbosity& verbosity, const std::string& component, const std::string& message)
 {
-	RETURN_IF(verbosity > globalVerbosity);
+	if (verbosity > globalVerbosity)
+	{
+		return;
+	}
 
 	const auto formattedMessage = boost::format("[%1%][%2%]: %3%") % component % verbosityStrMap[static_cast<int>(verbosity)] % message;
 

@@ -22,7 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "VulkanContext.h"
 #include "VulkanSurface.h"
 #include "VulkanPipeline.h"
-#include "Resource/VulkanSamplerResource.h"
 #include "Resource/VulkanCubeMapResource.h"
 #include "Resource/VulkanBufferResource.h"
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>

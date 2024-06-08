@@ -43,7 +43,7 @@ void VulkanPipeline::ConfigureVertexInput()
 {
 	bool hasTessellationShaders = false;
 
-	for (const auto& [Stage, Data] : m_createInfo.SpvProgram.Shaders)
+	for (const auto& [Stage, Data] : m_createInfo.ShaderProgram.Shaders)
 	{
 		vk::PipelineShaderStageCreateInfo& shaderStageCreateInfo = m_pipelineStageCreateInfos.emplace_back();
 
@@ -59,7 +59,7 @@ void VulkanPipeline::ConfigureVertexInput()
 		hasTessellationShaders = hasTessellationShaders || stage == vk::ShaderStageFlagBits::eTessellationControl;
 	}
 
-	auto& program = m_createInfo.SpvProgram;
+	auto& program = m_createInfo.ShaderProgram;
 	auto& vertexInputs = program.VertexInputs();
 
 	uint32_t offsetIter = 0;
@@ -100,7 +100,7 @@ void VulkanPipeline::ConfigureVertexInput()
 	m_inputStateCreateInfo.vertexAttributeDescriptionCount = m_vertexAttributeDescriptions.size();
 	m_inputStateCreateInfo.pVertexAttributeDescriptions = m_vertexAttributeDescriptions.data();
 
-	m_inputAssemblyCreateInfo.topology = vk::PrimitiveTopology::eTriangleList;
+	m_inputAssemblyCreateInfo.topology = VulkanEnumConverter::ConvertPrimitiveTopology(m_createInfo.PrimitiveTopology);
 	m_inputAssemblyCreateInfo.primitiveRestartEnable = VK_FALSE;
 
 	m_pipelineCreateInfo.stageCount = static_cast<uint32_t>(m_pipelineStageCreateInfos.size());
@@ -247,49 +247,10 @@ void VulkanPipeline::ConfigureDynamicState()
 
 void VulkanPipeline::CreatePipelineLayout()
 {
-	// Layout binding per set!
-//	std::unordered_map<uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> bindings;
-//
-//	for (const ShaderUniformInput& input : m_createInfo.SpvProgram.UniformInputs())
-//	{
-//		vk::DescriptorSetLayoutBinding& binding = bindings[input.BoundDescriptorSet].emplace_back();
-//
-//		binding.binding = input.Binding;
-//
-//		switch (input.Type)
-//		{
-//		case UniformType::Struct:
-//			binding.descriptorType = vk::DescriptorType::eUniformBuffer;
-//			break;
-//		case UniformType::Sampler:
-//			binding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-//			break;
-//		}
-//		binding.descriptorCount = input.ArraySize;
-//		binding.stageFlags = VulkanEnumConverter::ConvertShaderStage(input.Stage);
-//
-//		vk::WriteDescriptorSet& writeDescriptorSet = m_descriptorSets[input.Name];
-//		writeDescriptorSet.descriptorType = binding.descriptorType;
-//		writeDescriptorSet.dstBinding = input.Binding;
-//	}
-//
-//	for (auto binding : bindings | std::views::values)
-//	{
-//		vk::DescriptorSetLayoutCreateInfo layoutCreateInfo{};
-//		layoutCreateInfo.bindingCount = binding.size();
-//		layoutCreateInfo.pBindings = binding.data();
-//		layoutCreateInfo.flags = vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR;
-//
-//		m_layouts.emplace_back(m_context->LogicalDevice.createDescriptorSetLayout(layoutCreateInfo));
-//	}
-
 	VulkanRootSignature* vulkanRootSignature = dynamic_cast<VulkanRootSignature*>(m_createInfo.RootSignature);
 	m_pipelineLayoutCreateInfo.setSetLayouts(vulkanRootSignature->GetDescriptorSetLayouts());
-	// Todo clean
-//	m_pipelineLayoutCreateInfo.setLayoutCount = vulkanRootSignature->GetDescriptorSetLayouts().size();
-//	m_pipelineLayoutCreateInfo.pSetLayouts = m_layouts.data();
 
-	for (const PushConstant& pushConstant : m_createInfo.SpvProgram.PushConstants())
+	for (const PushConstant& pushConstant : m_createInfo.ShaderProgram.PushConstants())
 	{
 		vk::PushConstantRange& pushConstantRange = m_pushConstants.emplace_back();
 		pushConstantRange.stageFlags = VulkanEnumConverter::ConvertShaderStage(pushConstant.Stage);
@@ -314,34 +275,34 @@ void VulkanPipeline::CreateRenderPass()
 
 void VulkanPipeline::CreateDepthAttachmentImages()
 {
-	m_depthStencilStateCreateInfo.depthTestEnable = m_createInfo.EnableDepthTest;
-	m_depthStencilStateCreateInfo.depthWriteEnable = m_createInfo.EnableDepthTest;
-	m_depthStencilStateCreateInfo.depthCompareOp = VulkanEnumConverter::ConvertCompareOp(m_createInfo.DepthCompareOp);
+	m_depthStencilStateCreateInfo.depthTestEnable = m_createInfo.DepthTest.Enable;
+	m_depthStencilStateCreateInfo.depthWriteEnable = m_createInfo.DepthTest.Write;
+	m_depthStencilStateCreateInfo.depthCompareOp = VulkanEnumConverter::ConvertCompareOp(m_createInfo.DepthTest.CompareOp);
 	m_depthStencilStateCreateInfo.depthBoundsTestEnable = VK_FALSE;
 	m_depthStencilStateCreateInfo.minDepthBounds = 0.0f;
 	m_depthStencilStateCreateInfo.maxDepthBounds = 1.0f;
 
-	const bool enableStencilTest = m_createInfo.StencilTestStateFront.enabled || m_createInfo.StencilTestStateBack.enabled;
-
-	m_depthStencilStateCreateInfo.stencilTestEnable = enableStencilTest;
+	m_depthStencilStateCreateInfo.stencilTestEnable = m_createInfo.StencilTest.Enable;
 
 	m_depthStencilStateCreateInfo.front = vk::StencilOpState{};
 	m_depthStencilStateCreateInfo.back = vk::StencilOpState{};
 
-	auto initStencilState = [=](vk::StencilOpState& vkState, const StencilTestState& state)
+	auto initStencilState = [=, this](vk::StencilOpState& vkState, const StencilFace& state)
 	{
-		RETURN_IF(!state.enabled);
-		vkState.compareOp = VulkanEnumConverter::ConvertCompareOp(state.compareOp);
-		vkState.compareMask = state.compareMask;
-		vkState.writeMask = state.writeMask;
-		vkState.reference = state.ref;
-		vkState.failOp = VulkanEnumConverter::ConvertStencilOp(state.failOp);
-		vkState.passOp = VulkanEnumConverter::ConvertStencilOp(state.passOp);
-		vkState.depthFailOp = VulkanEnumConverter::ConvertStencilOp(state.depthFailOp);
+		vkState.compareOp = VulkanEnumConverter::ConvertCompareOp(state.CompareOp);
+		vkState.compareMask = m_createInfo.StencilTest.ReadMask;
+		vkState.writeMask = m_createInfo.StencilTest.WriteMask;
+		vkState.reference = 0;
+		vkState.failOp = VulkanEnumConverter::ConvertStencilOp(state.FailOp);
+		vkState.passOp = VulkanEnumConverter::ConvertStencilOp(state.PassOp);
+		vkState.depthFailOp = VulkanEnumConverter::ConvertStencilOp(state.DepthFailOp);
 	};
 
-	initStencilState(m_depthStencilStateCreateInfo.front, m_createInfo.StencilTestStateFront);
-	initStencilState(m_depthStencilStateCreateInfo.back, m_createInfo.StencilTestStateFront);
+	if (m_createInfo.StencilTest.Enable)
+	{
+		initStencilState(m_depthStencilStateCreateInfo.front, m_createInfo.StencilTest.FrontFace);
+		initStencilState(m_depthStencilStateCreateInfo.back, m_createInfo.StencilTest.BackFace);
+	}
 
 	m_pipelineCreateInfo.pDepthStencilState = &m_depthStencilStateCreateInfo;
 }

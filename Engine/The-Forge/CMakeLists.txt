@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 ## Contains modified version of the github project from: https://github.com/wutipong/the-forge-template
-
+find_package(SDL2 REQUIRED)
 include(${PROJECT_SOURCE_DIR}/cmake/common.cmake)
 
 set(GAINPUT_SOURCES
@@ -87,7 +87,9 @@ endif ()
 
 
 set(THE_FORGE_DENOFIZ_SOURCES
-        Source/TheForgeContext.cpp
+        Source/TFCommon.cpp
+        Source/Pipelines/QuadPipeline.cpp
+        Source/Renderer/TriangleRenderer.cpp
 )
 
 add_library(TheForge ${LIB_TYPE}
@@ -343,4 +345,16 @@ endif ()
 
 target_include_default_directories(TheForge)
 target_include_directories(TheForge PUBLIC ${PROJECT_SOURCE_DIR}/_External/The-Forge)
-target_link_libraries(TheForge PUBLIC gainput)
+target_link_libraries(TheForge PUBLIC gainput
+        SDL2::SDL2
+        SDL2::SDL2main
+        SDL2::SDL2-static
+        DenOfIzCore
+)
+
+copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
+compile_shaders(
+        TARGET_PROJECT TheForge
+        SHADER_TARGET TheForgeShaders
+        SHADER_LIST ${CMAKE_CURRENT_SOURCE_DIR}/Assets/Shaders/FSL/ShaderList.fsl
+)

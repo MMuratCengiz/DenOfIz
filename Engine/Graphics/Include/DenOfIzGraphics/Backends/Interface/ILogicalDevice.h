@@ -42,7 +42,7 @@ public:
 	virtual void CreateDevice(SDL_Window* window) = 0;
 	virtual std::vector<PhysicalDeviceInfo> ListPhysicalDevices() = 0;
 	virtual void LoadPhysicalDevice(const PhysicalDeviceInfo& device) = 0;
-	virtual bool IsDeviceLost();
+	virtual bool IsDeviceLost() = 0;
 	virtual void WaitIdle() = 0;
 
 	inline const PhysicalDeviceInfo& SelectedDeviceInfo() {

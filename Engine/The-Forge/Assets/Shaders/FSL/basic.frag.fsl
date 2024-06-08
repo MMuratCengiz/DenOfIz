@@ -1,0 +1,10 @@
+STRUCT(VSOutput)
+{
+    DATA(float4, Color, COLOR);
+};
+
+float4 PS_MAIN(VSOutput In)
+{
+    INIT_MAIN;
+    RETURN(In.Color);
+}

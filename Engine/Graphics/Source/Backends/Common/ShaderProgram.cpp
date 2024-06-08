@@ -17,12 +17,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Interface/IShader.h>
-#include <DenOfIzGraphics/Backends/Common/SpvProgram.h>
+#include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 
-namespace DenOfIz
-{
+using namespace DenOfIz;
 
-SpvProgram::SpvProgram(std::vector<CompiledShader> shaderInfos)
+ShaderProgram::ShaderProgram(std::vector<CompiledShader> shaderInfos)
 		:
 		Shaders(std::move(shaderInfos))
 {
@@ -34,7 +33,7 @@ SpvProgram::SpvProgram(std::vector<CompiledShader> shaderInfos)
 	}
 }
 
-void SpvProgram::OnEachShader(const CompiledShader& shaderInfo, const bool& first)
+void ShaderProgram::OnEachShader(const CompiledShader& shaderInfo, const bool& first)
 {
 	spirv_cross::Compiler compiler(shaderInfo.Data);
 
@@ -83,7 +82,7 @@ void SpvProgram::OnEachShader(const CompiledShader& shaderInfo, const bool& firs
 }
 
 void
-SpvProgram::CreateVertexInput(const uint32_t& offset, const ShaderVarType& type, const SpvDecoration& decoration, const uint32_t& size)
+ShaderProgram::CreateVertexInput(const uint32_t& offset, const ShaderVarType& type, const SpvDecoration& decoration, const uint32_t& size)
 {
 	VertexInput& input = vertexInputs.emplace_back(VertexInput{});
 	input.Location = decoration.Location;
@@ -93,7 +92,7 @@ SpvProgram::CreateVertexInput(const uint32_t& offset, const ShaderVarType& type,
 	input.Name = decoration.Name;
 }
 
-void SpvProgram::CreateUniformInput(const spirv_cross::Compiler& compiler, const UniformType& uniformType, const spirv_cross::Resource resource, const ShaderStage stage)
+void ShaderProgram::CreateUniformInput(const spirv_cross::Compiler& compiler, const UniformType& uniformType, const spirv_cross::Resource resource, const ShaderStage stage)
 {
 	SpvDecoration decoration = GetDecoration(compiler, resource);
 	if (decoration.Name == "type.$Globals")
@@ -111,7 +110,7 @@ void SpvProgram::CreateUniformInput(const spirv_cross::Compiler& compiler, const
 
 }
 
-void SpvProgram::AddResourceToInput(const UniformType& uniformType, const ShaderStage& stage, const SpvDecoration& decoration)
+void ShaderProgram::AddResourceToInput(const UniformType& uniformType, const ShaderStage& stage, const SpvDecoration& decoration)
 {
 	ShaderUniformInput& uniformInput = uniformInputs.emplace_back(ShaderUniformInput{});
 
@@ -126,7 +125,7 @@ void SpvProgram::AddResourceToInput(const UniformType& uniformType, const Shader
 	uniformInput.Format = SpvTypeToCustomType(decoration.Type).Format;
 }
 
-void SpvProgram::CreatePushConstant(const spirv_cross::Compiler& compiler, const spirv_cross::Resource resource, const ShaderStage stage)
+void ShaderProgram::CreatePushConstant(const spirv_cross::Compiler& compiler, const spirv_cross::Resource resource, const ShaderStage stage)
 {
 	SpvDecoration decoration = GetDecoration(compiler, resource);
 
@@ -138,7 +137,7 @@ void SpvProgram::CreatePushConstant(const spirv_cross::Compiler& compiler, const
 	pushConstant.Children = std::move(decoration.Children);
 }
 
-ShaderVarType SpvProgram::SpvTypeToCustomType(const spirv_cross::SPIRType& type)
+ShaderVarType ShaderProgram::SpvTypeToCustomType(const spirv_cross::SPIRType& type)
 {
 	auto format = ImageFormat::Undefined;
 	uint32_t size = 0;
@@ -180,45 +179,20 @@ ShaderVarType SpvProgram::SpvTypeToCustomType(const spirv_cross::SPIRType& type)
 		return ImageFormat::Undefined;
 	};
 
-	auto make64UInt = [](const uint32_t& numOfElements) -> ImageFormat
-	{
-		if (numOfElements == 1)
-			return ImageFormat::R64Uint;
-		if (numOfElements == 2)
-			return ImageFormat::R64G64Uint;
-		if (numOfElements == 3)
-			return ImageFormat::R64G64B64Uint;
-		if (numOfElements == 4)
-			return ImageFormat::R64G64B64A64Uint;
-		return ImageFormat::Undefined;
-	};
-
 	auto make32Float = [](const uint32_t& numOfElements) -> ImageFormat
 	{
 		if (numOfElements == 1)
-			return ImageFormat::R32Sfloat;
+			return ImageFormat::R32Float;
 		if (numOfElements == 2)
-			return ImageFormat::R32G32Sfloat;
+			return ImageFormat::R32G32Float;
 		if (numOfElements == 3)
-			return ImageFormat::R32G32B32Sfloat;
+			return ImageFormat::R32G32B32Float;
 		if (numOfElements == 4)
-			return ImageFormat::R32G32B32A32Sfloat;
+			return ImageFormat::R32G32B32A32Float;
 		return ImageFormat::Undefined;
 	};
 
-	auto make64Float = [](const uint32_t& numOfElements) -> ImageFormat
-	{
-		if (numOfElements == 1)
-			return ImageFormat::R64Sfloat;
-		if (numOfElements == 2)
-			return ImageFormat::R64G64Sfloat;
-		if (numOfElements == 3)
-			return ImageFormat::R64G64B64Sfloat;
-		if (numOfElements == 4)
-			return ImageFormat::R64G64B64A64Sfloat;
-		return ImageFormat::Undefined;
-	};
-
+	// 64 bit types not supported by DX12
 	switch (type.basetype)
 	{
 	default:
@@ -234,19 +208,15 @@ ShaderVarType SpvProgram::SpvTypeToCustomType(const spirv_cross::SPIRType& type)
 		size = sizeof(int64_t);
 		break;
 	case spirv_cross::SPIRType::UInt:
+	case spirv_cross::SPIRType::UInt64:
 		format = make32UInt(type.vecsize);
 		size = sizeof(uint32_t);
 		break;
-	case spirv_cross::SPIRType::UInt64:
-		format = make64UInt(type.vecsize);
-		size = sizeof(uint64_t);
-		break;
+	case spirv_cross::SPIRType::Double:
 	case spirv_cross::SPIRType::Float:
 		format = make32Float(type.vecsize);
 		size = sizeof(float);
 		break;
-	case spirv_cross::SPIRType::Double:
-		format = make64Float(type.vecsize);
 		size = sizeof(double);
 		break;
 	}
@@ -254,7 +224,7 @@ ShaderVarType SpvProgram::SpvTypeToCustomType(const spirv_cross::SPIRType& type)
 	return ShaderVarType{ format, size * type.vecsize };
 }
 
-SpvDecoration SpvProgram::GetDecoration(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& resource)
+SpvDecoration ShaderProgram::GetDecoration(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& resource)
 {
 	SpvDecoration decoration{ .Type = compiler.get_type(resource.type_id), .Set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet) };
 
@@ -293,7 +263,7 @@ SpvDecoration SpvProgram::GetDecoration(const spirv_cross::Compiler& compiler, c
 	return decoration;
 }
 
-uint32_t SpvProgram::GetTypeArraySize(SpvDecoration& decoration) const
+uint32_t ShaderProgram::GetTypeArraySize(SpvDecoration& decoration) const
 {
 	uint32_t totalArraySize = 0;
 	for (uint32_t dimensionSize : decoration.Type.array)
@@ -302,6 +272,4 @@ uint32_t SpvProgram::GetTypeArraySize(SpvDecoration& decoration) const
 	}
 	totalArraySize = totalArraySize == 0 ? 1 : decoration.Size / totalArraySize;
 	return totalArraySize;
-}
-
 }

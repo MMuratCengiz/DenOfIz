@@ -1,4 +1,4 @@
-#ifndef DISABLED
+#ifdef DISABLED
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <filesystem>
@@ -51,7 +51,8 @@ int main()
 #endif
 
 //#include <IApp.h>
-//#include <DenOfIzGame/MainApp.h>
+#include <TF/Renderer/TriangleRenderer.h>
 
 //DEFINE_APPLICATION_MAIN(RaytracingApp);
 //DEFINE_APPLICATION_MAIN(MainApp)
+DEFINE_APPLICATION_MAIN(DenOfIz::TriangleRenderer)

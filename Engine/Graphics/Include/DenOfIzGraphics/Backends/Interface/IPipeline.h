@@ -21,7 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IShader.h"
 #include "IResource.h"
 #include "IRootSignature.h"
-#include <DenOfIzGraphics/Backends/Common/SpvProgram.h>
+#include "IInputLayout.h"
+#include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 
 namespace DenOfIz
 {
@@ -54,6 +55,7 @@ enum class BlendMode
 
 enum class CullMode
 {
+	// Remove?
 	FrontAndBackFace,
 	BackFace,
 	FrontFace,
@@ -77,21 +79,44 @@ struct PipelineRendering
 	ImageFormat StencilAttachmentFormat;
 };
 
+struct DepthTest
+{
+	bool Enable = true;
+	CompareOp CompareOp = CompareOp::Always;
+	bool Write;
+};
+
+struct StencilFace
+{
+	CompareOp CompareOp = CompareOp::Always;
+	StencilOp FailOp = StencilOp::Keep;
+	StencilOp PassOp = StencilOp::Keep;
+	StencilOp DepthFailOp = StencilOp::Keep;
+};
+
+struct StencilTest
+{
+	bool Enable = false;
+	uint32_t WriteMask = 0;
+	uint32_t ReadMask = 0;
+	StencilFace FrontFace;
+	StencilFace BackFace;
+};
+
 struct PipelineCreateInfo
 {
+	IInputLayout* InputLayout = nullptr;
 	IRootSignature* RootSignature = nullptr;
+	PrimitiveTopology PrimitiveTopology = PrimitiveTopology::Triangle;
 
 	CullMode CullMode = CullMode::None;
 	BindPoint BindPoint = BindPoint::Graphics;
 
-	CompareOp DepthCompareOp;
-	bool EnableDepthTest = true;
+	DepthTest DepthTest;
+	StencilTest StencilTest;
+
+	ShaderProgram ShaderProgram;
 	bool InterleavedMode = true;
-
-	StencilTestState StencilTestStateFront{};
-	StencilTestState StencilTestStateBack{};
-
-	SpvProgram SpvProgram;
 
 	std::vector<BlendMode> BlendModes;
 

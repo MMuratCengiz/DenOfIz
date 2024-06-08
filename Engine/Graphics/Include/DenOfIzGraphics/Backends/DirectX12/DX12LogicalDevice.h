@@ -24,6 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzCore/Common.h>
 #include "DirectXHelpers.h"
 
+#include "Resource/DX12BufferResource.h"
+#include "Resource/DX12ImageResource.h"
 #include "Resource/DX12Fence.h"
 
 namespace DenOfIz

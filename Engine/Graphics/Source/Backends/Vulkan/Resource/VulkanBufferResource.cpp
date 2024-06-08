@@ -52,10 +52,10 @@ void VulkanBufferResource::Allocate(const void* newData)
 
 	VmaAllocationCreateInfo allocationCreateInfo{};
 
-	allocationCreateInfo.usage = VulkanEnumConverter::ConvertMemoryLocation(m_createInfo.Location);
+	allocationCreateInfo.usage = VulkanEnumConverter::ConvertMemoryLocation(m_createInfo.HeapType);
 
 	// Todo more flexibility, or a clearer interface here:
-	if (m_createInfo.Location == MemoryLocation::CPU_GPU)
+	if (m_createInfo.HeapType == HeapType::CPU_GPU)
 	{
 		const auto gpuVisible = vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eDeviceLocal;
 		allocationCreateInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eHostVisible);

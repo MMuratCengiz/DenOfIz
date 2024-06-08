@@ -34,7 +34,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "Common_3/Utilities/Interfaces/ILog.h"
 #include "Common_3/Utilities/Interfaces/ITime.h"
 #include "Common_3/Utilities/RingBuffer.h"
+#include "Common_3/Utilities/Threading/ThreadSystem.h"
+#include "Common_3/Graphics/Interfaces/IRay.h"
+#include <vector>
 
+#define SDL_MAIN_HANDLED
+#include <SDL2/SDL.h>
 namespace DenOfIz
 {
 
@@ -43,6 +48,9 @@ struct InitialAppInfo
 	std::string Name = "DenOfIz";
 	int Width = 1920;
 	int Height = 1080;
+
+	bool VSyncEnabled = false;
+	SDL_Window* window;
 };
 
 struct InitializationState
@@ -57,31 +65,49 @@ struct SystemInitializationState
 	InitializationState UI{};
 	InitializationState Profiler{};
 	InitializationState Fonts{};
+	InitializationState SwapChain{};
 };
 
-class TheForgeContext
+class TFCommon : public IApp
 {
 private:
-	InitialAppInfo m_appInfo{};
-	SystemInitializationState m_InitializationState{};
-	ProfileToken m_GpuProfileToken;
+	SystemInitializationState m_initializationState{};
+	ProfileToken m_gpuProfileToken;
+	ThreadSystem m_threadSystem;
+
+	std::vector<float> m_triangle{ 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+								   -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+								   0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f };
 public:
-	static const uint32_t gDataBufferCount = 2;
+	static const uint32_t g_DataBufferCount = 2;
 
-	UIComponent* pUIComponent;
-	Renderer* pRenderer;
-	Raytracing* pRaytracing = NULL;
+	UIComponent* p_UIComponent;
+	Renderer* p_Renderer;
+	Raytracing* p_Raytracing;
+	Queue* p_GraphicsQueue;
 
-	Queue* pGraphicsQueue;
-	GpuCmdRing mCmdRing = {};
+	GpuCmdRing GraphicsCmdRing = {};
+	SwapChain * p_SwapChain;
 
-	Semaphore* pImageAcquiredSemaphore;
-	TheForgeContext(const InitialAppInfo& appInfo);
-	~TheForgeContext();
+	Semaphore* p_ImageAcquiredSemaphore;
+	uint32_t m_FrameIndex = 0;
+	ProfileToken m_GPUProfileToken;
+
+	TFCommon() = default;
+	uint32_t AcquireNextImage();
+	GpuCmdRingElement NextCmdRingElement();
+	void Resize(uint32_t width, uint32_t height);
+	void Present(std::vector<Semaphore*> waitSemaphores, uint32_t swapchainImageIndex);
+
+	virtual bool Init() override;
+	virtual void Exit() override;
+	virtual bool Load(ReloadDesc* pReloadDesc) override;
+	virtual void Unload(ReloadDesc* pReloadDesc) override;
+	const char* GetName() override;
 private:
+	bool InitSwapChain();
 	void InitQueue();
 	void InitProfiler();
-	void InitImgui();
 };
 
 }

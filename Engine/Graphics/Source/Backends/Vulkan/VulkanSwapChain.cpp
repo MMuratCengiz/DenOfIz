@@ -162,7 +162,7 @@ ImageFormat VulkanSwapChain::GetPreferredFormat()
 	case vk::Format::eR8G8B8A8Unorm:
 		return ImageFormat::R8G8B8A8Unorm;
 	case vk::Format::eR8G8B8A8Srgb:
-		return ImageFormat::R8G8B8A8Srgb;
+		return ImageFormat::R8G8B8A8UnormSrgb;
 	default:
 		return ImageFormat::R8G8B8A8Unorm;
 	}

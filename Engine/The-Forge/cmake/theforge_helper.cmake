@@ -104,8 +104,8 @@ if (WIN32)
     set(Python3_ROOT_DIR "${CMAKE_SOURCE_DIR}/_External/The-Forge/Tools/python-3.6.0-embed-amd64")
 endif ()
 
-find_package(Python3 COMPONENTS Interpreter)
-
+# To try locally:
+# PS C:\Workspace\DenOfIz\_External\The-Forge> python C:/Workspace/DenOfIz/_External/The-Forge/Common_3/Tools/ForgeShadingLanguage/fsl.py -dShaders -bCompiledShaders -l DIRECT3D12 --compile --verbose "C:/Workspace/DenOfIz/Engine/The-Forge/Assets/Shaders/FSL/ShaderList.fsl"
 function(compile_shaders)
     set(oneValueArgs TARGET_PROJECT SHADER_TARGET SHADER_LIST)
     cmake_parse_arguments(COMPILE_SHADERS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -116,7 +116,7 @@ function(compile_shaders)
 
     set(target_lang "VULKAN")
     if (WIN32)
-        set(target_lang "DIRECT3D12 VULKAN")
+        set(target_lang "DIRECT3D12")
     elseif (APPLE)
         set(target_lang "MACOS")
     endif ()
@@ -126,10 +126,15 @@ function(compile_shaders)
         set(BINARY_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}.app/Contents/Resources")
     endif ()
 
-    execute_process(COMMAND "${Python3_EXECUTABLE}"
+    set(Py3_EXECUTABLE "${PROJECT_SOURCE_DIR}/_External/The-Forge/Tools/python-3.6.0-embed-amd64/python.exe")
+    message("${Py3_EXECUTABLE} "
+            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Tools/ForgeShadingLanguage/fsl.py"
+            " -dShaders" " -bCompiledShaders" " -l ${target_lang}" " --compile" " --verbose"
+            " ${COMPILE_SHADERS_SHADER_LIST}")
+    execute_process(COMMAND "${Py3_EXECUTABLE}"
             "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Tools/ForgeShadingLanguage/fsl.py"
             "-dShaders" "-bCompiledShaders" "-l ${target_lang}" --compile --verbose
-            ${COMPILE_SHADERS_SHADER_LIST}
+            "${COMPILE_SHADERS_SHADER_LIST}"
             WORKING_DIRECTORY "${BINARY_DIR}/Assets"
     )
 endfunction()

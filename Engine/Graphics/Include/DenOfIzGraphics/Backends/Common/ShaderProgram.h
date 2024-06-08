@@ -54,7 +54,7 @@ struct PushConstant
 	std::vector<SpvDecoration> Children;
 };
 
-class SpvProgram
+class ShaderProgram
 {
 	std::vector<VertexInput> vertexInputs;
 	std::vector<ShaderUniformInput> uniformInputs;
@@ -63,7 +63,7 @@ class SpvProgram
 public:
 	std::vector<CompiledShader> Shaders;
 
-	explicit SpvProgram(std::vector<CompiledShader> shaders);
+	explicit ShaderProgram(std::vector<CompiledShader> shaders);
 
 	const std::vector<VertexInput> VertexInputs()
 	{

@@ -20,7 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifdef BUILD_DX12
 
 #include <DenOfIzCore/Common_Windows.h>
-#include "../Interface/CommonData.h"
+#include <DenOfIzCore/Logger.h>
+#include <DenOfIzGraphics/Backends/Interface/CommonData.h>
 #include <directx/dxgiformat.h>
 #include <directx/d3d12.h>
 #include <directx/dxgicommon.h>
@@ -30,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <wrl/event.h>
 #define SDL_MAIN_HANDLED
 #include "SDL2/SDL.h"
+#include "D3D12MemAlloc.h"
 
 #ifdef DEBUG
 #include <dxgidebug.h>
@@ -39,6 +41,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace Microsoft::WRL;
 
+namespace DenOfIz
+{
+
 struct DX12Context
 {
 	static const int BackBufferCount = 3;
@@ -46,12 +51,11 @@ struct DX12Context
 
 	ComPtr<IDXGIAdapter1> Adapter;
 
-	ComPtr<ID3D12Device5> D3DDevice;
-	ComPtr<IDXGIFactory4> DXGIFactory;
+	ComPtr<ID3D12Device14> D3DDevice;
+	ComPtr<IDXGIFactory7> DXGIFactory;
 	ComPtr<ID3D12CommandQueue> CommandQueue;
 	ComPtr<ID3D12CommandAllocator> DirectCommandAllocator[BackBufferCount];
 	ComPtr<ID3D12GraphicsCommandList4> DirectCommandList;
-
 
 	D3D12_VIEWPORT ScreenViewport;
 	D3D12_RECT ScissorRect;
@@ -65,8 +69,21 @@ struct DX12Context
 
 	SDL_Window* Window;
 	PhysicalDeviceInfo SelectedDeviceInfo;
+	D3D12MA::Allocator* DX12MemoryAllocator;
 };
 
-#define DX_CHECK_RESULT(R) assert(SUCCEEDED(R))
+}
+
+#define DX_CHECK_RESULT(exp) 																				\
+do                                                                                    						\
+{                                                                                    						\
+	HRESULT hrNoConflictName = exp;                                                         				\
+	if (!SUCCEEDED(hrNoConflictName))                                                                     	\
+	{                                                                                       				\
+		std::string message = (boost::format("FAILED with HRESULT:") % (uint32_t)hrNoConflictName).str(); 	\
+		LOG(Verbosity::Critical, "DirectX", message);                                       				\
+		assertm(false, message);                                                            				\
+	}                                                                                    					\
+} while (false)
 
 #endif

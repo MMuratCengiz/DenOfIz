@@ -419,19 +419,19 @@ public:
 	}
 
 	// Weird naming on Vma or my side, either way location = usage.
-	static VmaMemoryUsage ConvertMemoryLocation(MemoryLocation location)
+	static VmaMemoryUsage ConvertMemoryLocation(HeapType location)
 	{
 		switch (location)
 		{
-		case MemoryLocation::Auto:
+		case HeapType::Auto:
 			return VMA_MEMORY_USAGE_AUTO;
-		case MemoryLocation::GPU:
+		case HeapType::GPU:
 			return VMA_MEMORY_USAGE_GPU_ONLY;
-		case MemoryLocation::CPU:
+		case HeapType::CPU:
 			return VMA_MEMORY_USAGE_CPU_COPY;
-		case MemoryLocation::CPU_GPU:
+		case HeapType::CPU_GPU:
 			return VMA_MEMORY_USAGE_CPU_TO_GPU;
-		case MemoryLocation::GPU_CPU:
+		case HeapType::GPU_CPU:
 			return VMA_MEMORY_USAGE_GPU_TO_CPU;
 		}
 
@@ -442,7 +442,7 @@ public:
 	{
 		switch (imageFormat)
 		{
-		case ImageFormat::Unknown:
+		case ImageFormat::Undefined:
 			return vk::Format::eUndefined;
 		case ImageFormat::R32G32B32A32Float:
 			return vk::Format::eR32G32B32A32Sfloat;
@@ -575,33 +575,42 @@ public:
 		{
 		case ResourceBindingType::Sampler:
 			return vk::DescriptorType::eSampler;
-		case ResourceBindingType::CombinedImageSampler:
-			return vk::DescriptorType::eCombinedImageSampler;
-		case ResourceBindingType::SampledImage:
+		case ResourceBindingType::Texture:
+		case ResourceBindingType::TextureReadWrite:
 			return vk::DescriptorType::eSampledImage;
 		case ResourceBindingType::StorageImage:
 			return vk::DescriptorType::eStorageImage;
-		case ResourceBindingType::UniformTexelBuffer:
-			return vk::DescriptorType::eUniformTexelBuffer;
-		case ResourceBindingType::StorageTexelBuffer:
-			return vk::DescriptorType::eStorageTexelBuffer;
-		case ResourceBindingType::UniformBuffer:
+		case ResourceBindingType::Buffer:
+		case ResourceBindingType::BufferReadWrite:
 			return vk::DescriptorType::eUniformBuffer;
-		case ResourceBindingType::StorageBuffer:
+		case ResourceBindingType::Storage:
 			return vk::DescriptorType::eStorageBuffer;
-		case ResourceBindingType::UniformBufferDynamic:
+		case ResourceBindingType::BufferDynamic:
 			return vk::DescriptorType::eUniformBufferDynamic;
-		case ResourceBindingType::StorageBufferDynamic:
+		case ResourceBindingType::StorageDynamic:
 			return vk::DescriptorType::eStorageBufferDynamic;
-		case ResourceBindingType::InputAttachment:
-			return vk::DescriptorType::eInputAttachment;
-		case ResourceBindingType::InlineUniformBlock:
-			return vk::DescriptorType::eInlineUniformBlock;
 		case ResourceBindingType::AccelerationStructure:
 			return vk::DescriptorType::eAccelerationStructureKHR;
 		}
 
 		return vk::DescriptorType::eSampler;
+	}
+
+	static vk::PrimitiveTopology ConvertPrimitiveTopology(const PrimitiveTopology& topology)
+	{
+		switch (topology)
+		{
+		case PrimitiveTopology::Point:
+			return vk::PrimitiveTopology::ePointList;
+		case PrimitiveTopology::Line:
+			return vk::PrimitiveTopology::eLineList;
+		case PrimitiveTopology::Triangle:
+			return vk::PrimitiveTopology::eTriangleList;
+		case PrimitiveTopology::Patch:
+			return vk::PrimitiveTopology::ePatchList;
+		}
+
+		return vk::PrimitiveTopology::eTriangleList;
 	}
 
 	static vk::PipelineBindPoint ConvertPipelineBindPoint(const BindPoint& point)

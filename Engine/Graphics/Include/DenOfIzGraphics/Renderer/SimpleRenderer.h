@@ -34,7 +34,7 @@ private:
 								   -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
 								   0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f };
 
-	std::unique_ptr<SpvProgram> m_program;
+	std::unique_ptr<ShaderProgram> m_program;
 	std::unique_ptr<IPipeline> m_pipeline;
 	std::unique_ptr<IBufferResource> m_vertexBuffer;
 	std::unique_ptr<IBufferResource> m_timePassedBuffer;

@@ -39,22 +39,21 @@ void SimpleRenderer::Init(SDL_Window* window)
 	auto fs = compiler.HLSLtoSPV(ShaderStage::Fragment, "Assets/Shaders/fs.hlsl");
 	compiler.Destroy();
 
-	m_program = std::make_unique<SpvProgram>(std::vector<CompiledShader>{ CompiledShader{ .Stage = ShaderStage::Vertex, .Data = std::move(vs) },
-																		  CompiledShader{ .Stage = ShaderStage::Fragment, .Data = std::move(fs) }});
+	m_program = std::make_unique<ShaderProgram>(std::vector<CompiledShader>{ CompiledShader{ .Stage = ShaderStage::Vertex, .Data = std::move(vs) },
+																			 CompiledShader{ .Stage = ShaderStage::Fragment, .Data = std::move(fs) }});
 
 	m_rootSignature = m_logicalDevice->CreateRootSignature(RootSignatureCreateInfo{});
 	ResourceBinding timePassedBinding{};
 	timePassedBinding.Name = "time";
 	timePassedBinding.Binding = 0;
-	timePassedBinding.Type = ResourceBindingType::UniformBuffer;
-	timePassedBinding.Frequency = ResourceUpdateFrequency::Dynamic;
+	timePassedBinding.Type = ResourceBindingType::Buffer;
 	timePassedBinding.Stages = { ShaderStage::Vertex };
 	m_rootSignature->AddResourceBinding(timePassedBinding);
 	m_rootSignature->Create();
 
 	m_swapChain = m_logicalDevice->CreateSwapChain(SwapChainCreateInfo{});
 
-	PipelineCreateInfo pipelineCreateInfo{ .SpvProgram = *m_program };
+	PipelineCreateInfo pipelineCreateInfo{ .ShaderProgram = *m_program };
 	pipelineCreateInfo.BlendModes = { BlendMode::None };
 	pipelineCreateInfo.RootSignature = m_rootSignature.get();
 	pipelineCreateInfo.Rendering.ColorAttachmentFormats.push_back(m_swapChain->GetPreferredFormat());
@@ -70,7 +69,7 @@ void SimpleRenderer::Init(SDL_Window* window)
 	}
 
 	BufferCreateInfo bufferCreateInfo{};
-	bufferCreateInfo.Location = MemoryLocation::GPU;
+	bufferCreateInfo.HeapType = HeapType::GPU;
 	bufferCreateInfo.Usage = BufferMemoryUsage::VertexBuffer;
 	bufferCreateInfo.UseStaging = true;
 
@@ -78,7 +77,7 @@ void SimpleRenderer::Init(SDL_Window* window)
 	m_vertexBuffer->Allocate(m_triangle.data(), m_triangle.size() * sizeof(float));
 
 	BufferCreateInfo deltaTimeBufferCreateInfo {};
-	deltaTimeBufferCreateInfo.Location = MemoryLocation::CPU_GPU;
+	deltaTimeBufferCreateInfo.HeapType = HeapType::CPU_GPU;
 	deltaTimeBufferCreateInfo.Usage = BufferMemoryUsage::UniformBuffer;
 
 	m_timePassedBuffer = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferCreateInfo);

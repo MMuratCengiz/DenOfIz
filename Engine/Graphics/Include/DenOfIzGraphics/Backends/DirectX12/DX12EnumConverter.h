@@ -28,11 +28,75 @@ namespace DenOfIz
 class DX12EnumConverter
 {
 public:
+	static D3D12_DESCRIPTOR_RANGE_TYPE ConvertBindingTypeToDescriptorRangeType(ResourceBindingType bindingType)
+	{
+		switch (bindingType)
+		{
+		case ResourceBindingType::Sampler:
+			return D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+		case ResourceBindingType::StorageImage:
+			break;
+		case ResourceBindingType::Buffer:
+		case ResourceBindingType::Texture:
+		case ResourceBindingType::BufferDynamic:
+			return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		case ResourceBindingType::BufferReadWrite:
+		case ResourceBindingType::TextureReadWrite:
+			return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+		case ResourceBindingType::Storage:
+		case ResourceBindingType::StorageDynamic:
+			return D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+		case ResourceBindingType::AccelerationStructure:
+			return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		}
+
+		return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+	}
+
+	static D3D12_ROOT_PARAMETER_TYPE ConvertBindingTypeToRootParameterType(ResourceBindingType bindingType)
+	{
+		switch (bindingType)
+		{
+		case ResourceBindingType::Buffer:
+		case ResourceBindingType::Texture:
+		case ResourceBindingType::BufferDynamic:
+			return D3D12_ROOT_PARAMETER_TYPE_SRV;
+		case ResourceBindingType::BufferReadWrite:
+		case ResourceBindingType::TextureReadWrite:
+			return D3D12_ROOT_PARAMETER_TYPE_UAV;
+		case ResourceBindingType::Storage:
+		case ResourceBindingType::StorageDynamic:
+			return D3D12_ROOT_PARAMETER_TYPE_CBV;
+		default:
+			assertm(false, "Sampler binding type is not a supported root constant");
+			break;
+		}
+
+		return D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	}
+
+	static D3D12_HEAP_TYPE ConvertHeapType(const HeapType& heapType)
+	{
+		switch (heapType)
+		{
+		case HeapType::Auto:
+		case HeapType::GPU:
+			return D3D12_HEAP_TYPE_DEFAULT;
+		case HeapType::CPU:
+		case HeapType::CPU_GPU:
+			return D3D12_HEAP_TYPE_UPLOAD;
+		case HeapType::GPU_CPU:
+			return D3D12_HEAP_TYPE_READBACK;
+		}
+
+		return D3D12_HEAP_TYPE_DEFAULT;
+	}
+
 	static DXGI_FORMAT ConvertImageFormat(const ImageFormat& format)
 	{
 		switch (format)
 		{
-		case ImageFormat::Unknown:
+		case ImageFormat::Undefined:
 			return DXGI_FORMAT_UNKNOWN;
 		case ImageFormat::R32G32B32A32Float:
 			return DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -157,6 +221,110 @@ public:
 		};
 
 		return DXGI_FORMAT_UNKNOWN;
+	}
+
+	static D3D12_SHADER_VISIBILITY ConvertShaderStageToShaderVisibility(const ShaderStage& stage)
+	{
+		switch (stage)
+		{
+		case ShaderStage::Vertex:
+			return D3D12_SHADER_VISIBILITY_VERTEX;
+		case ShaderStage::TessellationControl:
+			return D3D12_SHADER_VISIBILITY_HULL;
+		case ShaderStage::TessellationEvaluation:
+			return D3D12_SHADER_VISIBILITY_DOMAIN;
+		case ShaderStage::Geometry:
+			return D3D12_SHADER_VISIBILITY_GEOMETRY;
+		case ShaderStage::Fragment:
+			return D3D12_SHADER_VISIBILITY_PIXEL;
+		case ShaderStage::Mesh:
+			return D3D12_SHADER_VISIBILITY_MESH;
+		default:
+			return D3D12_SHADER_VISIBILITY_ALL;
+		}
+
+		return D3D12_SHADER_VISIBILITY_ALL;
+	}
+
+	static D3D12_COMPARISON_FUNC ConvertCompareOp(const CompareOp& op)
+	{
+		switch (op)
+		{
+		case CompareOp::Equal:
+			return D3D12_COMPARISON_FUNC_EQUAL;
+		case CompareOp::NotEqual:
+			return D3D12_COMPARISON_FUNC_NOT_EQUAL;
+		case CompareOp::Always:
+			return D3D12_COMPARISON_FUNC_ALWAYS;
+		case CompareOp::Less:
+			return D3D12_COMPARISON_FUNC_LESS;
+		case CompareOp::LessOrEqual:
+			return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+		case CompareOp::Greater:
+			return D3D12_COMPARISON_FUNC_GREATER;
+		case CompareOp::GreaterOrEqual:
+			return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+		}
+
+		return D3D12_COMPARISON_FUNC_EQUAL;
+	}
+
+	static D3D12_PRIMITIVE_TOPOLOGY_TYPE ConvertPrimitiveTopology(const PrimitiveTopology& topology)
+	{
+		switch (topology)
+		{
+		case PrimitiveTopology::Point:
+			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+		case PrimitiveTopology::Line:
+			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+		case PrimitiveTopology::Triangle:
+			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		case PrimitiveTopology::Patch:
+			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+		}
+
+		return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	}
+
+	static D3D12_STENCIL_OP ConvertStencilOp(const StencilOp& op)
+	{
+		switch (op)
+		{
+		case StencilOp::Keep:
+			return D3D12_STENCIL_OP_KEEP;
+		case StencilOp::Zero:
+			return D3D12_STENCIL_OP_ZERO;
+		case StencilOp::Replace:
+			return D3D12_STENCIL_OP_REPLACE;
+		case StencilOp::IncrementAndClamp:
+			return D3D12_STENCIL_OP_INCR_SAT;
+		case StencilOp::DecrementAndClamp:
+			return D3D12_STENCIL_OP_DECR_SAT;
+		case StencilOp::Invert:
+			return D3D12_STENCIL_OP_INVERT;
+		case StencilOp::IncrementAndWrap:
+			return D3D12_STENCIL_OP_INCR;
+		case StencilOp::DecrementAndWrap:
+			return D3D12_STENCIL_OP_DECR;
+		}
+
+		return D3D12_STENCIL_OP_KEEP;
+	}
+
+	static D3D12_CULL_MODE ConvertCullMode(CullMode mode)
+	{
+		switch (mode)
+		{
+		case CullMode::FrontAndBackFace: // Todo remove
+		case CullMode::FrontFace:
+			return D3D12_CULL_MODE_FRONT;
+		case CullMode::BackFace:
+			return D3D12_CULL_MODE_BACK;
+		case CullMode::None:
+			return D3D12_CULL_MODE_NONE;
+		}
+
+		return D3D12_CULL_MODE_NONE;
 	}
 };
 

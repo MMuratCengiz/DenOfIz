@@ -22,6 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DX12EnumConverter.h"
 #include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
 
+using namespace Microsoft::WRL;
+
 namespace DenOfIz
 {
 
@@ -37,7 +39,7 @@ public:
 
 	uint32_t AcquireNextImage(ISemaphore * imageAvailableSemaphore) override;
 	void Resize(uint32_t width, uint32_t height) override;
-	void CreateSwapChain() const;
+	void CreateSwapChain();
 };
 
 }

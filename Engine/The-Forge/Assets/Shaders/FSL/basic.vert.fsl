@@ -1,0 +1,23 @@
+RES(Buffer(float), deltaTime, UPDATE_FREQ_PER_FRAME, t0, binding = 0);
+
+STRUCT(VSInput)
+{
+	DATA(float4, Position1, POSITION);
+	DATA(float4, Color1,   COLOR0);
+};
+
+STRUCT(VSOutput)
+{
+	DATA(float4, Position, SV_Position);
+	DATA(float4, Color,    COLOR);
+};
+
+VSOutput VS_MAIN( VSInput In, SV_InstanceID(uint) InstanceID )
+{
+    INIT_MAIN;
+    VSOutput Out;
+    Out.Position = In.Position1;
+    //float4 deltaTimeV = float4(Get(deltaTime)[0],  Get(deltaTime), Get(deltaTime), 1.0f);
+    Out.Color = In.Color1;
+    RETURN(Out);
+}

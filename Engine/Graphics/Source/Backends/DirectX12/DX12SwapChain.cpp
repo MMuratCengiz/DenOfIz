@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzCore/Logger.h"
 
 using namespace DenOfIz;
+using namespace Microsoft::WRL;
 
 DX12SwapChain::DX12SwapChain(DX12Context* context, const SwapChainCreateInfo& swapChainCreateInfo)
 	:m_context(context), m_swapChainCreateInfo(swapChainCreateInfo)
@@ -28,7 +29,7 @@ DX12SwapChain::DX12SwapChain(DX12Context* context, const SwapChainCreateInfo& sw
 	CreateSwapChain();
 }
 
-void DX12SwapChain::CreateSwapChain() const
+void DX12SwapChain::CreateSwapChain()
 {
 	SDL_Surface* surface = SDL_GetWindowSurface(m_context->Window);
 	SDL_SysWMinfo wmInfo;
@@ -56,8 +57,11 @@ void DX12SwapChain::CreateSwapChain() const
 	// Create a swap chain for the window.
 	ComPtr<IDXGISwapChain1> swapChain;
 
-	DX_CHECK_RESULT(m_context->DXGIFactory->CreateSwapChainForHwnd(m_context->CommandQueue.Get(), hwnd, &swapChainDesc, &fsSwapChainDesc, nullptr, swapChain.GetAddressOf()));
-	DX_CHECK_RESULT(swapChain.As(&m_swapChain));
+	DX_CHECK_RESULT(m_context->DXGIFactory->CreateSwapChainForHwnd(m_context->CommandQueue.Get(), hwnd, &swapChainDesc, &fsSwapChainDesc, nullptr, &swapChain));
+
+	DX_CHECK_RESULT(swapChain->QueryInterface(IID_PPV_ARGS(&m_swapChain)));
+	swapChain->Release();
+
 	DX_CHECK_RESULT(m_context->DXGIFactory->MakeWindowAssociation(hwnd, 0));
 }
 
@@ -86,10 +90,11 @@ void DX12SwapChain::Resize(uint32_t width, uint32_t height)
 		m_context->IsDeviceLost = true;
 		return;
 	}
+
 	DX_CHECK_RESULT(hr);
 }
 
 DX12SwapChain::~DX12SwapChain()
 {
-	m_context->SwapChain->Release();
+	m_swapChain.Reset();
 }

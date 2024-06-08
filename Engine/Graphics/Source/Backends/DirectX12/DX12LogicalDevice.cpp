@@ -261,6 +261,12 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo& device)
 //	{
 //		throw std::exception("CreateEvent");
 //	}
+	D3D12MA::ALLOCATOR_DESC allocatorDesc = {};
+	allocatorDesc.pDevice = m_context->D3DDevice.Get();
+	allocatorDesc.pAdapter = m_context->Adapter.Get();
+
+	allocatorDesc.Flags = D3D12MA::ALLOCATOR_FLAG_MSAA_TEXTURES_ALWAYS_COMMITTED | D3D12MA::ALLOCATOR_FLAG_DEFAULT_POOLS_NOT_ZEROED;
+	DX_CHECK_RESULT(D3D12MA::CreateAllocator(&allocatorDesc, &m_context->DX12MemoryAllocator));
 }
 
 void DX12LogicalDevice::CreateSwapChain()
@@ -306,6 +312,7 @@ void DX12LogicalDevice::Dispose()
 //	m_context->DepthStencil.Reset();
 //	m_context->CommandList.Reset();
 //	m_context->fence.Reset();
+	m_context->DX12MemoryAllocator->Release();
 	m_context->CommandQueue.Reset();
 	m_context->RTVDescriptorHeap.Reset();
 	m_context->DSVDescriptorHeap.Reset();

@@ -21,10 +21,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
+namespace DenOfIz
+{
+
 // Adaption of `vk::Format`
 enum class ImageFormat
 {
-	Unknown,
+	Undefined,
 	R32G32B32A32Float,
 	R32G32B32A32Uint,
 	R32G32B32A32Sint,
@@ -87,6 +90,14 @@ enum class ImageFormat
 	BC7UnormSrgb,
 };
 
+enum class PrimitiveTopology
+{
+	Point,
+	Line,
+	Triangle,
+	Patch
+};
+
 enum class MSAASampleCount
 {
 	_0, // Disabled
@@ -130,13 +141,33 @@ enum ImageLayout
 	VideoEncodeDpb,
 };
 
-enum class MemoryLocation
+enum class HeapType
 {
 	Auto,
 	GPU,
 	CPU,
 	CPU_GPU,
 	GPU_CPU
+};
+
+struct BufferUsage
+{
+	uint32_t MapRead : 1;
+	uint32_t MapWrite : 1;
+	uint32_t CopySrc : 1;
+	uint32_t CopyDst : 1;
+	uint32_t Index : 1;
+	uint32_t Vertex : 1;
+	uint32_t Uniform : 1;
+	uint32_t StorageRead : 1;
+	uint32_t StorageReadWrite : 1;
+	uint32_t Indirect : 1;
+	uint32_t QueryResolve : 1;
+	uint32_t AccelerationStructureScratch : 1;
+	uint32_t BottomLevelAccelerationStructureInput : 1;
+	uint32_t TopLevelAccelerationStructureInput : 1;
+	uint32_t Exclusive : 1;
+	uint32_t Ordered : 1;
 };
 
 enum class BufferMemoryUsage
@@ -280,21 +311,17 @@ enum class ResourceType
 	Buffer
 };
 
-// TODO should this be resource type instead
 enum class ResourceBindingType
 {
 	Sampler,
-	CombinedImageSampler,
-	SampledImage,
+	Texture,
+	TextureReadWrite,
+	Buffer,
+	BufferReadWrite,
+	BufferDynamic,
+	Storage,
 	StorageImage,
-	UniformTexelBuffer,
-	StorageTexelBuffer,
-	UniformBuffer,
-	StorageBuffer,
-	UniformBufferDynamic,
-	StorageBufferDynamic,
-	InputAttachment,
-	InlineUniformBlock,
+	StorageDynamic,
 	AccelerationStructure,
 };
 
@@ -343,3 +370,5 @@ struct PhysicalDeviceInfo
 	PhysicalDeviceProperties Properties;
 	PhysicalDeviceCapabilities Capabilities;
 };
+
+}

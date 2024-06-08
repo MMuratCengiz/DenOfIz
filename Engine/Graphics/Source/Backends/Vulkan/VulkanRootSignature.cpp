@@ -50,7 +50,7 @@ void VulkanRootSignature::AddRootConstantInternal(const RootConstantBinding& roo
 
 	vk::PushConstantRange pushConstantRange{};
 
-	pushConstantRange.offset = rootConstantBinding.Order;
+	pushConstantRange.offset = rootConstantBinding.Binding;
 	pushConstantRange.size = rootConstantBinding.Size;
 
 	for (auto stage : rootConstantBinding.Stages)
