@@ -33,7 +33,7 @@ namespace DenOfIz
 class VulkanLogicalDevice final : public ILogicalDevice
 {
 	const std::unordered_map<std::string, bool> m_enabledLayers{
-#ifdef DEBUG
+#ifdef _DEBUG
 			{ "VK_LAYER_KHRONOS_validation", true }
 #endif
 	};

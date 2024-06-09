@@ -5,19 +5,29 @@
 #include <glslang/Public/ShaderLang.h>
 #include <DenOfIzGraphics/Backends/Interface/IShader.h>
 
-#include <wrl/client.h>
-#include "directx-dxc/dxcapi.h"
+#include "dxc/WinAdapter.h"
+#include "dxc/dxcapi.h"
 
-using namespace Microsoft::WRL;
+#if defined(__APPLE__)
+#include <Metal/Metal.hpp>
+#include <MetalKit/MetalKit.hpp>
+#include <simd/simd.h>
+#include <metal_irconverter/metal_irconverter.h>
+#endif
 
 namespace DenOfIz
 {
 
 class ShaderCompiler
 {
-	ComPtr<IDxcLibrary> m_dxcLibrary;
-	ComPtr<IDxcCompiler3> m_dxcCompiler;
-	ComPtr<IDxcUtils> m_dxcUtils;
+private:
+	CComPtr<IDxcLibrary> m_dxcLibrary;
+	CComPtr<IDxcCompiler3> m_dxcCompiler;
+	CComPtr<IDxcUtils> m_dxcUtils;
+
+#if defined(__APPLE__)
+    IRCompiler* mp_compiler;
+#endif
 
 public:
 	Result<Unit> Init();

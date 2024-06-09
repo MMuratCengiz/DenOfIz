@@ -38,7 +38,7 @@ DX12LogicalDevice::~DX12LogicalDevice()
 void DX12LogicalDevice::CreateDevice(SDL_Window* window)
 {
 	m_context->Window = window;
-#if defined(DEBUG)
+#if defined(_DEBUG)
 	{
 		ComPtr<ID3D12Debug> debugController;
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf()))))
@@ -320,7 +320,7 @@ void DX12LogicalDevice::Dispose()
 	m_context->D3DDevice.Reset();
 	m_context->DXGIFactory.Reset();
 
-#ifdef DEBUG
+#ifdef _DEBUG
 	{
 		ComPtr<IDXGIDebug1> dxgiDebug;
 		if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))

@@ -33,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "SDL2/SDL.h"
 #include "D3D12MemAlloc.h"
 
-#ifdef DEBUG
+#ifdef _DEBUG
 #include <dxgidebug.h>
 #endif
 

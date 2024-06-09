@@ -1,7 +1,6 @@
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
 #include <DenOfIzCore/Logger.h>
 #include <DenOfIzCore/Utilities.h>
-using namespace Microsoft::WRL;
 
 namespace DenOfIz
 {
@@ -10,13 +9,13 @@ Result<Unit> ShaderCompiler::Init()
 {
 	glslang::InitializeProcess();
 
-	HRESULT result = DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&m_dxcLibrary));
+    HRESULT result = DxcCreateInstance(CLSID_DxcLibrary, ID_PPV_ARGS(&m_dxcLibrary));
 	if (FAILED(result))
 	{
 		return Error("Failed to initialize DXC Library");
 	}
 
-	result = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&m_dxcCompiler));
+	result = DxcCreateInstance(CLSID_DxcCompiler, ID_PPV_ARGS(&m_dxcCompiler));
 	if (FAILED(result))
 	{
 		return Error("Failed to initialize DXC Compiler");
@@ -34,6 +33,7 @@ Result<Unit> ShaderCompiler::Init()
 void ShaderCompiler::Destroy()
 {
 	glslang::FinalizeProcess();
+    IRCompilerDestroy(mp_compiler);
 }
 
 void ShaderCompiler::InitResources(TBuiltInResource& Resources)
@@ -210,7 +210,7 @@ std::vector<uint32_t> ShaderCompiler::HLSLtoSPV(const ShaderStage shaderType, co
 	// Attribute to source: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
 	// https://github.com/KhronosGroup/Vulkan-Guide
 	uint32_t codePage = DXC_CP_ACP;
-	ComPtr<IDxcBlobEncoding> sourceBlob;
+	CComPtr<IDxcBlobEncoding> sourceBlob;
 	std::wstring wsShaderPath(shaderPath.begin(), shaderPath.end());
 	HRESULT result = m_dxcUtils->LoadFile(wsShaderPath.c_str(), &codePage, &sourceBlob);
 	if (FAILED(result))
@@ -257,7 +257,7 @@ std::vector<uint32_t> ShaderCompiler::HLSLtoSPV(const ShaderStage shaderType, co
 	buffer.Ptr = sourceBlob->GetBufferPointer();
 	buffer.Size = sourceBlob->GetBufferSize();
 
-	ComPtr<IDxcResult> dxcResult{ nullptr };
+	CComPtr<IDxcResult> dxcResult{ nullptr };
 	result = m_dxcCompiler->Compile(&buffer, arguments.data(), static_cast<uint32_t>(arguments.size()), nullptr, IID_PPV_ARGS(&dxcResult));
 
 	if (SUCCEEDED(result))
@@ -267,7 +267,7 @@ std::vector<uint32_t> ShaderCompiler::HLSLtoSPV(const ShaderStage shaderType, co
 
 	if (FAILED(result) && (dxcResult))
 	{
-		ComPtr<IDxcBlobEncoding> errorBlob;
+		CComPtr<IDxcBlobEncoding> errorBlob;
 		result = dxcResult->GetErrorBuffer(&errorBlob);
 		if (SUCCEEDED(result) && errorBlob)
 		{
@@ -276,7 +276,7 @@ std::vector<uint32_t> ShaderCompiler::HLSLtoSPV(const ShaderStage shaderType, co
 		}
 	}
 
-	ComPtr<IDxcBlob> code;
+	CComPtr<IDxcBlob> code;
 	dxcResult->GetResult(&code);
 
 	std::vector<uint32_t> codeToUVec(static_cast<uint32_t*>(code->GetBufferPointer()),

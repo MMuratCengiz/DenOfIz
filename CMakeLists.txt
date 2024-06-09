@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.17.2)
 
 set(LANGUAGES C CXX)
 if (APPLE)
@@ -10,11 +10,12 @@ project(DenOfIz LANGUAGES ${LANGUAGES})
 option(CRT_LINKAGE_STATIC "Link MSVC runtime statically" 1)
 
 set(Boost_NO_WARN_NEW_VERSIONS 1)
+SET(VCPKG_INSTALL_OPTIONS "--allow-unsupported")
 set(VCPKG_MANIFEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
-set(SUB_PROJECTS Engine/Core Engine/Graphics Engine/The-Forge Game)
+set(SUB_PROJECTS Engine Game)
 foreach(SUB_PROJECT IN LISTS SUB_PROJECTS)
     add_subdirectory(${SUB_PROJECT})
 endforeach()
@@ -29,7 +30,6 @@ if (APPLE)
 endif ()
 
 add_executable(DenOfIz MACOSX_BUNDLE ${SOURCES})
-
 
 if (APPLE)
     FILE(GLOB FONTS Game/Assets/Fonts/*)
@@ -50,6 +50,6 @@ endif ()
 
 target_link_libraries(DenOfIz
         PRIVATE
-        DenOfIzGraphics
+        DenOfIzEngine
         DenOfIzGame
 )

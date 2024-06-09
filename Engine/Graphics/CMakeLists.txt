@@ -1,16 +1,16 @@
 include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
 include("${PROJECT_SOURCE_DIR}/Engine/The-Forge/cmake/theforge_helper.cmake")
-
-find_package(Vulkan REQUIRED)
-find_package(VulkanHeaders CONFIG)
-find_package(VulkanMemoryAllocator CONFIG REQUIRED)
+include("${PROJECT_SOURCE_DIR}/cmake/include_dxcompiler.cmake")
+#build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
 
 if (WIN32)
     find_package(directx-headers CONFIG REQUIRED)
     find_package(directxtk12 CONFIG REQUIRED)
-    find_package(directx-dxc CONFIG REQUIRED)
 endif ()
-
+find_package(Vulkan REQUIRED)
+find_package(VulkanHeaders CONFIG)
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
+#find_package(directx-dxc CONFIG REQUIRED)
 find_package(glslang CONFIG REQUIRED)
 find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_glsl CONFIG REQUIRED)
@@ -20,11 +20,10 @@ find_package(spirv_cross_cpp CONFIG REQUIRED)
 find_package(spirv_cross_hlsl CONFIG REQUIRED)
 find_package(spirv_cross_msl CONFIG REQUIRED)
 find_package(spirv_cross_c CONFIG REQUIRED)
-
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
 SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
-
         #Shader Compiler
         Source/Backends/Common/ShaderCompiler.cpp
         Source/Backends/Common/ShaderProgram.cpp
@@ -67,7 +66,7 @@ set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
 )
 
 set(DEN_OF_IZ_GRAPHICS_METAL_SOURCES
-    #TODO Implement Metal Backend
+        Source/Backends/Metal/MetalImpl.cpp
 )
 
 if (WIN32)
@@ -86,17 +85,29 @@ else ()
             ${DEN_OF_IZ_GRAPHICS_COMMON_SOURCES}
             ${DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES}
     )
-endif()
+endif ()
 
-#copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
+copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 add_library(DenOfIzGraphics ${DEN_OF_IZ_GRAPHICS_SOURCES})
+add_dependencies(DenOfIzGraphics DirectXShaderCompiler)
 install_target(DenOfIzGraphics)
 install(FILES ${SPVHeaders} DESTINATION Include/DenOfIzGraphics)
 target_include_default_directories(DenOfIzGraphics)
-target_include_directories(DenOfIzGraphics PRIVATE ${TINYGLTF_INCLUDE_DIRS})
+
+target_include_directories(DenOfIzGraphics
+        PRIVATE
+        ${TINYGLTF_INCLUDE_DIRS}
+        _ThirdParty/DirectXShaderCompiler/include
+)
+
 target_link_libraries(DenOfIzGraphics
         PUBLIC
         DenOfIzCore
+)
+
+target_link_libraries(DenOfIzGraphics
+        PRIVATE
+        dxcompiler
         ${Vulkan_LIBRARY}
         Vulkan::Headers
         GPUOpen::VulkanMemoryAllocator
@@ -115,14 +126,41 @@ target_link_libraries(DenOfIzGraphics
 
 if (WIN32)
     target_link_libraries(DenOfIzGraphics
-            PUBLIC
+            PRIVATE
             Microsoft::DirectX-Headers
-            Microsoft::DirectXShaderCompiler
             Microsoft::DirectXTK12
     )
 
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_DX12)
 endif ()
+if (APPLE)
+    include(${PROJECT_SOURCE_DIR}/cmake/include_metalirconverter.cmake)
+
+    target_include_directories(DenOfIzGraphics
+            PRIVATE
+            _ThirdParty/metal-cpp
+            _ThirdParty/metal-cpp-extensions
+            ${metal_irconverter_INCLUDE_DIRS}
+            ${metal_irconverter_runtime_INCLUDE_DIRS}
+    )
+
+    target_link_libraries(DenOfIzGraphics
+            PRIVATE
+            ${metalirconverter_LIBRARIES}
+    )
+
+    target_link_libraries(DenOfIzGraphics
+            PRIVATE "-framework Cocoa"
+            PRIVATE "-framework Foundation"
+            PRIVATE "-framework Metal"
+            PRIVATE "-framework MetalKit"
+            PRIVATE "-framework MetalPerformanceShaders"
+            PRIVATE "-framework MetalShaderConverter"
+    )
+
+    target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_METAL)
+endif ()
+
 
 if (WIN32 OR LINUX)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_VK)

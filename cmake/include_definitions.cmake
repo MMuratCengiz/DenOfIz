@@ -3,7 +3,7 @@ if (WIN32)
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
-    add_definitions(-DDEBUG)
+    add_definitions(-D_DEBUG)
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")

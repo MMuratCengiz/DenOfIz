@@ -9,6 +9,7 @@
     "spirv-cross",
     "stb",
     "tinygltf",
+    "python3",
     {
       "name": "sdl2",
       "features": ["vulkan"]
@@ -16,7 +17,6 @@
     { "name": "d3d12-memory-allocator", "platform": "windows" },
     { "name": "directxtk12", "platform": "windows" },
     { "name": "directxtex", "platform": "windows" },
-    { "name": "directx-dxc", "platform": "windows" },
     { "name": "directx-headers", "platform": "windows" }
   ]
 }

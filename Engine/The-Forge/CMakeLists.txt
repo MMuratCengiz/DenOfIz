@@ -307,7 +307,7 @@ if (APPLE)
             PRIVATE "-framework Foundation"
             PRIVATE "-framework CoreData"
             PRIVATE "-framework CoreHaptics"
-            PRIVATE "-framework AppKit"
+#            PRIVATE "-framework AppKit"
             PRIVATE "-framework Metal"
             PRIVATE "-framework CoreVideo"
             PRIVATE "-framework MetalKit"
@@ -346,9 +346,6 @@ endif ()
 target_include_default_directories(TheForge)
 target_include_directories(TheForge PUBLIC ${PROJECT_SOURCE_DIR}/_External/The-Forge)
 target_link_libraries(TheForge PUBLIC gainput
-        SDL2::SDL2
-        SDL2::SDL2main
-        SDL2::SDL2-static
         DenOfIzCore
 )
 

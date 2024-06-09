@@ -58,7 +58,7 @@ DeviceResources::~DeviceResources()
 // Configures the Direct3D device, and stores handles to it and the device context.
 void DeviceResources::CreateDeviceResources()
 {
-#if defined(DEBUG)
+#if defined(_DEBUG)
 	// Enable the debug layer (requires the Graphics Tools "optional feature").
 	//
 	// NOTE: Enabling the debug layer after device creation will invalidate the active device.
@@ -108,7 +108,7 @@ void DeviceResources::CreateDeviceResources()
 		if (FAILED(hr) || !allowTearing)
 		{
 			m_options &= ~c_AllowTearing;
-#ifdef DEBUG
+#ifdef _DEBUG
 			OutputDebugStringA("WARNING: Variable refresh rate displays not supported");
 #endif
 		}
@@ -427,7 +427,7 @@ void DeviceResources::HandleDeviceLost()
 	m_Context->D3DDevice.Reset();
 	m_dxgiFactory.Reset();
 
-#ifdef DEBUG
+#ifdef _DEBUG
 	{
 		ComPtr<IDXGIDebug1> dxgiDebug;
 		if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))
@@ -493,7 +493,7 @@ void DeviceResources::Present(D3D12_RESOURCE_STATES beforeState)
 	// If the device was reset we must completely reinitialize the renderer.
 	if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
 	{
-#ifdef DEBUG
+#ifdef _DEBUG
 		char buff[64] = {};
 		sprintf_s(buff, "Device Lost on Present: Reason code 0x%08X\n", (hr == DXGI_ERROR_DEVICE_REMOVED) ? m_Context->D3DDevice->GetDeviceRemovedReason() : hr);
 		OutputDebugStringA(buff);
@@ -589,7 +589,7 @@ void DeviceResources::GetAdapter(IDXGIAdapter1** ppAdapter) const
 				{
 					if (opts.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED)
 					{
-#ifdef DEBUG
+#ifdef _DEBUG
 						wchar_t buff[256] = {};
 						swprintf_s(buff, L"Direct3D Adapter (%u): VID:%04X, PID:%04X - %ls (DXR Tier %d)\n", adapterIndex, desc.VendorId, desc.DeviceId, desc.Description,
 								opts.RaytracingTier);
@@ -603,7 +603,7 @@ void DeviceResources::GetAdapter(IDXGIAdapter1** ppAdapter) const
 	}
 	else
 	{
-#ifdef DEBUG
+#ifdef _DEBUG
 		OutputDebugStringA("ERROR: DirectX Raytracing not supported by this version of the OS");
 #endif
 		throw std::exception("DirectX Raytracing not supported by this version of the OS");
@@ -611,7 +611,7 @@ void DeviceResources::GetAdapter(IDXGIAdapter1** ppAdapter) const
 
 	if (!adapter)
 	{
-#ifdef DEBUG
+#ifdef _DEBUG
 		OutputDebugStringA("ERROR: No Direct3D 12 device found that supports DirectX Raytracing");
 #endif
 		throw std::exception("No Direct3D 12 device found that supports DirectX Raytracing");

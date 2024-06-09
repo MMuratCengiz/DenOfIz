@@ -25,7 +25,7 @@ enum class Verbosity : int
 class Logger
 {
 
-#ifdef DEBUG
+#ifdef _DEBUG
 	const Verbosity globalVerbosity = Verbosity::Information;
 #else
 	const Verbosity globalVerbosity = Verbosity::Warning;
@@ -47,7 +47,7 @@ public:
 	static Logger& Get()
 	{
 		static Logger instance(
-#ifdef DEBUG
+#ifdef _DEBUG
 				LoggerType::Console
 #else
 				LoggerType::Console
