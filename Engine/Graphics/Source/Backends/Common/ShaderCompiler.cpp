@@ -9,13 +9,13 @@ Result<Unit> ShaderCompiler::Init()
 {
 	glslang::InitializeProcess();
 
-    HRESULT result = DxcCreateInstance(CLSID_DxcLibrary, ID_PPV_ARGS(&m_dxcLibrary));
+    HRESULT result = DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&m_dxcLibrary));
 	if (FAILED(result))
 	{
 		return Error("Failed to initialize DXC Library");
 	}
 
-	result = DxcCreateInstance(CLSID_DxcCompiler, ID_PPV_ARGS(&m_dxcCompiler));
+	result = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&m_dxcCompiler));
 	if (FAILED(result))
 	{
 		return Error("Failed to initialize DXC Compiler");

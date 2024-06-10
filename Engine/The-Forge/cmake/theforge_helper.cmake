@@ -58,6 +58,10 @@ function(INCLUDE_THEFORGE target)
 
     copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 
+    target_compile_options(${target} PRIVATE
+            $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
+            $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
+
     target_include_directories(${target} PUBLIC
             "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/Interfaces"
             "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/ThirdParty/OpenSource/gainput/lib/source"

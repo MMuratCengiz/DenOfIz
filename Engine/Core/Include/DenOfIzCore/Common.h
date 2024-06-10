@@ -18,7 +18,7 @@
 
 #include "Common_Windows.h"
 #include "Common_Apple.h"
-#include <stdlib.h>
+#include <cstdlib>
 
 #include <string>
 #include <iostream>

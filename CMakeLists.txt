@@ -53,3 +53,10 @@ target_link_libraries(DenOfIz
         DenOfIzEngine
         DenOfIzGame
 )
+
+if (APPLE)
+    # Required for the forge, not necessary otherwise.
+    target_compile_options(DenOfIz PRIVATE
+            $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
+            $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
+endif ()

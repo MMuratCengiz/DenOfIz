@@ -32,14 +32,14 @@ find_path(
 )
 
 find_library(
-        metalirconverter_LIBRARIES
+        metal_irconverter_LIBRARIES
         NAMES metalirconverter
         PATHS /usr/local/lib/
         PATHS /usr/lib64/
         PATHS /usr/lib/
 )
 
-if (metal_irconverter_INCLUDE_DIRS AND metalirconverter_LIBRARIES)
+if (metal_irconverter_INCLUDE_DIRS AND metal_irconverter_LIBRARIES)
 else ()
     message(FATAL_ERROR "Metal converter is required to build this project, please download/install it online. (At the time of this writing: https://developer.apple.com/download/all/?q=shader%20converter)")
 endif ()

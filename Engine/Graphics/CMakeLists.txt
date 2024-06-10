@@ -1,7 +1,8 @@
+include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_dxcompiler.cmake")
+build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
+
 include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
 include("${PROJECT_SOURCE_DIR}/Engine/The-Forge/cmake/theforge_helper.cmake")
-include("${PROJECT_SOURCE_DIR}/cmake/include_dxcompiler.cmake")
-#build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
 
 if (WIN32)
     find_package(directx-headers CONFIG REQUIRED)
@@ -21,6 +22,7 @@ find_package(spirv_cross_hlsl CONFIG REQUIRED)
 find_package(spirv_cross_msl CONFIG REQUIRED)
 find_package(spirv_cross_c CONFIG REQUIRED)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
+find_package(SDL2 CONFIG REQUIRED)
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
 SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
@@ -89,7 +91,6 @@ endif ()
 
 copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 add_library(DenOfIzGraphics ${DEN_OF_IZ_GRAPHICS_SOURCES})
-add_dependencies(DenOfIzGraphics DirectXShaderCompiler)
 install_target(DenOfIzGraphics)
 install(FILES ${SPVHeaders} DESTINATION Include/DenOfIzGraphics)
 target_include_default_directories(DenOfIzGraphics)
@@ -122,6 +123,9 @@ target_link_libraries(DenOfIzGraphics
         glslang::glslang-default-resource-limits
         glslang::SPIRV
         glslang::SPVRemapper
+        SDL2::SDL2
+        SDL2::SDL2main
+        SDL2::SDL2-static
 )
 
 if (WIN32)
@@ -134,7 +138,7 @@ if (WIN32)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_DX12)
 endif ()
 if (APPLE)
-    include(${PROJECT_SOURCE_DIR}/cmake/include_metalirconverter.cmake)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_metalirconverter.cmake)
 
     target_include_directories(DenOfIzGraphics
             PRIVATE
@@ -146,7 +150,7 @@ if (APPLE)
 
     target_link_libraries(DenOfIzGraphics
             PRIVATE
-            ${metalirconverter_LIBRARIES}
+            ${metal_irconverter_LIBRARIES}
     )
 
     target_link_libraries(DenOfIzGraphics
@@ -154,8 +158,6 @@ if (APPLE)
             PRIVATE "-framework Foundation"
             PRIVATE "-framework Metal"
             PRIVATE "-framework MetalKit"
-            PRIVATE "-framework MetalPerformanceShaders"
-            PRIVATE "-framework MetalShaderConverter"
     )
 
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_METAL)
@@ -166,5 +168,4 @@ if (WIN32 OR LINUX)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_VK)
 endif ()
 
-include_theforge(DenOfIzGraphics)
 set_target_default_properties(DenOfIzGraphics)

@@ -69,13 +69,13 @@ public:
 			logicalDevice = std::make_unique<DX12LogicalDevice>();
 		}
 #elif BUILD_METAL
-		if (std::IsMetalPreferred())
+		if (IsMetalPreferred())
 		{
 			// TODO
 			return nullptr;
 		}
 #else
-		assertm(true, "No supported API found for this system.")
+		assertm(false, "No supported API found for this system.")
 #endif
 
 		logicalDevice->CreateDevice(window);
@@ -124,7 +124,7 @@ private:
 	inline bool IsMetalPreferred() const
 	{
 #ifdef __APPLE__
-		if ( preference.OSX == APIPreferenceOSX::Metal )
+		if (preference.OSX == APIPreferenceOSX::Metal)
 		{
 			return true;
 		}

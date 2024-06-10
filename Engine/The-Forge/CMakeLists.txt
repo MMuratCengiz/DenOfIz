@@ -73,6 +73,11 @@ add_library(gainput ${LIB_TYPE} ${GAINPUT_SOURCES})
 if (MSVC)
     target_compile_definitions(gainput PRIVATE -D_CRT_SECURE_NO_WARNINGS)
 endif ()
+if (APPLE)
+    target_compile_options(gainput PRIVATE
+            $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
+            $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
+endif()
 
 target_include_directories(gainput PUBLIC
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/ThirdParty/OpenSource/gainput/lib/source"
@@ -341,6 +346,10 @@ if (APPLE)
     set_target_properties(TheForge
             PROPERTIES
             XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_WEAK YES)
+
+    target_compile_options(TheForge PRIVATE
+            $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
+            $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
 endif ()
 
 target_include_default_directories(TheForge)

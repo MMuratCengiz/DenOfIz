@@ -5,9 +5,12 @@
 #include <glslang/Public/ShaderLang.h>
 #include <DenOfIzGraphics/Backends/Interface/IShader.h>
 
+#ifdef _WIN32
+#else
+#define __EMULATE_UUID
 #include "dxc/WinAdapter.h"
 #include "dxc/dxcapi.h"
-
+#endif
 #if defined(__APPLE__)
 #include <Metal/Metal.hpp>
 #include <MetalKit/MetalKit.hpp>

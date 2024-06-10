@@ -5,7 +5,7 @@ foreach (SUB_PROJECT IN LISTS SUB_PROJECTS)
     add_subdirectory(${SUB_PROJECT})
 endforeach ()
 
-add_library(DenOfIzEngine ${LIB_TYPE} Engine.h)
+add_library(DenOfIzEngine ${LIB_TYPE} Engine.cpp)
 target_link_libraries(DenOfIzEngine
         PUBLIC
         DenOfIzGraphics

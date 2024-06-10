@@ -13,8 +13,3 @@ foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
 endforeach()
 
 set(CMAKE_CXX_STANDARD 23)
-if (APPLE)
-    set(CMAKE_OBJCXX_STANDARD 23)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -x objective-c")
-    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -x objective-c++")
-endif()
