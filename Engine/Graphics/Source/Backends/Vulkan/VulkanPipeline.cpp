@@ -18,12 +18,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanPipeline.h>
 #include <ranges>
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h"
+#include "DenOfIzGraphics/Backends/Common/ShaderReflection.h"
 
 using namespace DenOfIz;
 
 VulkanPipeline::VulkanPipeline(VulkanContext* context, const PipelineCreateInfo& createInfo)
 		:
-		m_context(context), m_createInfo(createInfo), BindPoint(VulkanEnumConverter::ConvertPipelineBindPoint(createInfo.BindPoint))
+		m_context(context), m_createInfo(createInfo), BindPoint(VulkanEnumConverter::ConvertPipelineBindPoint(createInfo.BindPoint)),
+		m_programReflection(ShaderReflection(createInfo.ShaderProgram.GetCompiledShaders()))
 {
 	m_pipelineCreateInfo.pDepthStencilState = nullptr;
 
@@ -43,7 +45,7 @@ void VulkanPipeline::ConfigureVertexInput()
 {
 	bool hasTessellationShaders = false;
 
-	for (const auto& [Stage, Data] : m_createInfo.ShaderProgram.Shaders)
+	for (const auto& [Stage, Data] : m_createInfo.ShaderProgram.GetCompiledShaders())
 	{
 		vk::PipelineShaderStageCreateInfo& shaderStageCreateInfo = m_pipelineStageCreateInfos.emplace_back();
 
@@ -59,8 +61,7 @@ void VulkanPipeline::ConfigureVertexInput()
 		hasTessellationShaders = hasTessellationShaders || stage == vk::ShaderStageFlagBits::eTessellationControl;
 	}
 
-	auto& program = m_createInfo.ShaderProgram;
-	auto& vertexInputs = program.VertexInputs();
+	auto& vertexInputs = m_programReflection.VertexInputs();
 
 	uint32_t offsetIter = 0;
 	for (const VertexInput& vertexInput : vertexInputs)
@@ -250,7 +251,7 @@ void VulkanPipeline::CreatePipelineLayout()
 	VulkanRootSignature* vulkanRootSignature = dynamic_cast<VulkanRootSignature*>(m_createInfo.RootSignature);
 	m_pipelineLayoutCreateInfo.setSetLayouts(vulkanRootSignature->GetDescriptorSetLayouts());
 
-	for (const PushConstant& pushConstant : m_createInfo.ShaderProgram.PushConstants())
+	for (const PushConstant& pushConstant : m_programReflection.PushConstants())
 	{
 		vk::PushConstantRange& pushConstantRange = m_pushConstants.emplace_back();
 		pushConstantRange.stageFlags = VulkanEnumConverter::ConvertShaderStage(pushConstant.Stage);

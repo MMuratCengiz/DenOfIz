@@ -177,9 +177,9 @@ void DeviceResources::CreateDeviceResources()
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-	DX_CHECK_RESULT(m_Context->D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(m_Context->CommandQueue.ReleaseAndGetAddressOf())));
+	DX_CHECK_RESULT(m_Context->D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(m_Context->GraphicsCommandQueue.ReleaseAndGetAddressOf())));
 
-	m_Context->CommandQueue->SetName(L"DeviceResources");
+	m_Context->GraphicsCommandQueue->SetName(L"DeviceResources");
 
 	// Create descriptor heaps for render target views and depth stencil views.
 	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc = {};
@@ -257,10 +257,10 @@ void DeviceResources::CreateWindowSizeDependentResources()
 	DXGI_FORMAT backBufferFormat = NoSRGB(m_backBufferFormat);
 
 	// If the swap chain already exists, resize it, otherwise create one.
-	if (m_Context->SwapChain)
+	if (SwapChain)
 	{
 		// If the swap chain already exists, resize it.
-		HRESULT hr = m_Context->SwapChain->ResizeBuffers(m_backBufferCount, backBufferWidth, backBufferHeight, backBufferFormat,
+		HRESULT hr = SwapChain->ResizeBuffers(m_backBufferCount, backBufferWidth, backBufferHeight, backBufferFormat,
 				(m_options & c_AllowTearing) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u);
 
 		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
@@ -300,9 +300,9 @@ void DeviceResources::CreateWindowSizeDependentResources()
 
 		// Create a swap chain for the window.
 		ComPtr<IDXGISwapChain1> swapChain;
-		DX_CHECK_RESULT(m_dxgiFactory->CreateSwapChainForHwnd(m_Context->CommandQueue.Get(), m_window, &swapChainDesc, &fsSwapChainDesc, nullptr, swapChain.GetAddressOf()));
+		DX_CHECK_RESULT(m_dxgiFactory->CreateSwapChainForHwnd(m_Context->GraphicsCommandQueue.Get(), m_window, &swapChainDesc, &fsSwapChainDesc, nullptr, swapChain.GetAddressOf()));
 
-		DX_CHECK_RESULT(swapChain.As(&m_Context->SwapChain));
+		DX_CHECK_RESULT(swapChain.As(&SwapChain));
 
 		// This class does not support exclusive full-screen mode and prevents DXGI from responding to the ALT+ENTER shortcut
 		DX_CHECK_RESULT(m_dxgiFactory->MakeWindowAssociation(m_window, DXGI_MWA_NO_ALT_ENTER));
@@ -315,7 +315,7 @@ void DeviceResources::CreateWindowSizeDependentResources()
 	// and create render target views for each of them.
 	for (UINT n = 0; n < m_backBufferCount; n++)
 	{
-		DX_CHECK_RESULT(m_Context->SwapChain->GetBuffer(n, IID_PPV_ARGS(m_renderTargets[n].GetAddressOf())));
+		DX_CHECK_RESULT(SwapChain->GetBuffer(n, IID_PPV_ARGS(m_renderTargets[n].GetAddressOf())));
 
 		wchar_t name[25] = {};
 		swprintf_s(name, L"Render target %u", n);
@@ -330,7 +330,7 @@ void DeviceResources::CreateWindowSizeDependentResources()
 	}
 
 	// Reset the index to the current back buffer.
-	m_backBufferIndex = m_Context->SwapChain->GetCurrentBackBufferIndex();
+	m_backBufferIndex = SwapChain->GetCurrentBackBufferIndex();
 
 	if (m_depthBufferFormat != DXGI_FORMAT_UNKNOWN)
 	{
@@ -418,12 +418,12 @@ void DeviceResources::HandleDeviceLost()
 	}
 
 	m_depthStencil.Reset();
-	m_Context->CommandQueue.Reset();
+	m_Context->GraphicsCommandQueue.Reset();
 	m_commandList.Reset();
 	m_fence.Reset();
 	m_rtvDescriptorHeap.Reset();
 	m_dsvDescriptorHeap.Reset();
-	m_Context->SwapChain.Reset();
+	SwapChain.Reset();
 	m_Context->D3DDevice.Reset();
 	m_dxgiFactory.Reset();
 
@@ -473,21 +473,21 @@ void DeviceResources::Present(D3D12_RESOURCE_STATES beforeState)
 
 	// Send the command list off to the GPU for processing.
 	DX_CHECK_RESULT(m_commandList->Close());
-	m_Context->CommandQueue->ExecuteCommandLists(1, CommandListCast(m_commandList.GetAddressOf()));
+	m_Context->GraphicsCommandQueue->ExecuteCommandLists(1, CommandListCast(m_commandList.GetAddressOf()));
 
 	HRESULT hr;
 	if (m_options & c_AllowTearing)
 	{
 		// Recommended to always use tearing if supported when using a sync interval of 0.
 		// Note this will fail if in true 'fullscreen' mode.
-		hr = m_Context->SwapChain->Present(0, DXGI_PRESENT_ALLOW_TEARING);
+		hr = SwapChain->Present(0, DXGI_PRESENT_ALLOW_TEARING);
 	}
 	else
 	{
 		// The first argument instructs DXGI to block until VSync, putting the application
 		// to sleep until the next VSync. This ensures we don't waste any cycles rendering
 		// frames that will never be displayed to the screen.
-		hr = m_Context->SwapChain->Present(1, 0);
+		hr = SwapChain->Present(1, 0);
 	}
 
 	// If the device was reset we must completely reinitialize the renderer.
@@ -517,11 +517,11 @@ void DeviceResources::Present(D3D12_RESOURCE_STATES beforeState)
 // Wait for pending GPU work to complete.
 void DeviceResources::WaitIdle() noexcept
 {
-	if (m_Context->CommandQueue && m_fence && m_fenceEvent.IsValid())
+	if (m_Context->GraphicsCommandQueue && m_fence && m_fenceEvent.IsValid())
 	{
 		// Schedule a Signal command in the GPU queue.
 		UINT64 fenceValue = m_fenceValues[m_backBufferIndex];
-		if (SUCCEEDED(m_Context->CommandQueue->Signal(m_fence.Get(), fenceValue)))
+		if (SUCCEEDED(m_Context->GraphicsCommandQueue->Signal(m_fence.Get(), fenceValue)))
 		{
 			// Wait until the Signal has been processed.
 			if (SUCCEEDED(m_fence->SetEventOnCompletion(fenceValue, m_fenceEvent.Get())))
@@ -540,10 +540,10 @@ void DeviceResources::MoveToNextFrame()
 {
 	// Schedule a Signal command in the queue.
 	const UINT64 currentFenceValue = m_fenceValues[m_backBufferIndex];
-	DX_CHECK_RESULT(m_Context->CommandQueue->Signal(m_fence.Get(), currentFenceValue));
+	DX_CHECK_RESULT(m_Context->GraphicsCommandQueue->Signal(m_fence.Get(), currentFenceValue));
 
 	// Update the back buffer index.
-	m_backBufferIndex = m_Context->SwapChain->GetCurrentBackBufferIndex();
+	m_backBufferIndex = SwapChain->GetCurrentBackBufferIndex();
 
 	// If the next frame is not ready to be rendered yet, wait until it is ready.
 	if (m_fence->GetCompletedValue() < m_fenceValues[m_backBufferIndex])
@@ -628,10 +628,10 @@ void DeviceResources::UpdateColorSpace()
 	bool isDisplayHDR10 = false;
 
 #if defined(NTDDI_WIN10_RS2)
-	if (m_Context->SwapChain)
+	if (SwapChain)
 	{
 		ComPtr<IDXGIOutput> output;
-		if (SUCCEEDED(m_Context->SwapChain->GetContainingOutput(output.GetAddressOf())))
+		if (SUCCEEDED(SwapChain->GetContainingOutput(output.GetAddressOf())))
 		{
 			ComPtr<IDXGIOutput6> output6;
 			if (SUCCEEDED(output.As(&output6)))
@@ -671,8 +671,8 @@ void DeviceResources::UpdateColorSpace()
 	m_colorSpace = colorSpace;
 
 	UINT colorSpaceSupport = 0;
-	if (SUCCEEDED(m_Context->SwapChain->CheckColorSpaceSupport(colorSpace, &colorSpaceSupport)) && (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT))
+	if (SUCCEEDED(SwapChain->CheckColorSpaceSupport(colorSpace, &colorSpaceSupport)) && (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT))
 	{
-		DX_CHECK_RESULT(m_Context->SwapChain->SetColorSpace1(colorSpace));
+		DX_CHECK_RESULT(SwapChain->SetColorSpace1(colorSpace));
 	}
 }

@@ -33,12 +33,14 @@ DX12Pipeline::DX12Pipeline(DX12Context* context, const PipelineCreateInfo& creat
 
 void DX12Pipeline::CreateGraphicsPipeline()
 {
-	DX12RootSignature* rootSignature = reinterpret_cast<DX12RootSignature*>(m_createInfo.RootSignature);
+	m_topology = {};
+	m_topology = DX12EnumConverter::ConvertPrimitiveTopology(m_createInfo.PrimitiveTopology);
+	m_rootSignature = reinterpret_cast<DX12RootSignature*>(m_createInfo.RootSignature);
 	DX12InputLayout* inputLayout = reinterpret_cast<DX12InputLayout*>(m_createInfo.InputLayout);
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.InputLayout = inputLayout->GetInputLayout();
-	psoDesc.pRootSignature = rootSignature->GetRootSignature();
+	psoDesc.pRootSignature = m_rootSignature->GetRootSignature();
 	SetGraphicsShaders(psoDesc);
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	psoDesc.RasterizerState.CullMode = DX12EnumConverter::ConvertCullMode(m_createInfo.CullMode);
@@ -48,7 +50,7 @@ void DX12Pipeline::CreateGraphicsPipeline()
 	InitDepthStencil(psoDesc);
 
 	psoDesc.SampleMask = UINT_MAX;
-	psoDesc.PrimitiveTopologyType = DX12EnumConverter::ConvertPrimitiveTopology(m_createInfo.PrimitiveTopology);
+	psoDesc.PrimitiveTopologyType = DX12EnumConverter::ConvertPrimitiveTopologyToType(m_createInfo.PrimitiveTopology);
 
 	psoDesc.NumRenderTargets = 1;
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -110,16 +112,16 @@ void DX12Pipeline::SetMSAASampleCount(const PipelineCreateInfo& createInfo, D3D1
 
 void DX12Pipeline::SetGraphicsShaders(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc)
 {
-	for (const CompiledShader& compiledShader: m_createInfo.ShaderProgram.Shaders)
+	for (const CompiledShader& compiledShader: m_createInfo.ShaderProgram.GetCompiledShaders())
 	{
 		switch (compiledShader.Stage) {
 		case ShaderStage::Vertex:
 			psoDesc.VS = GetShaderByteCode(compiledShader);
 			break;
-		case ShaderStage::TessellationControl:
+		case ShaderStage::Hull:
 			psoDesc.HS = GetShaderByteCode(compiledShader);
 			break;
-		case ShaderStage::TessellationEvaluation:
+		case ShaderStage::Domain:
 			psoDesc.DS = GetShaderByteCode(compiledShader);
 			break;
 		case ShaderStage::Geometry:

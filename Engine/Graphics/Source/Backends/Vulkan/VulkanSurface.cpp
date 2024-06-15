@@ -97,9 +97,9 @@ void VulkanSurface::ChooseExtent2D(const vk::SurfaceCapabilitiesKHR& capabilitie
 		return;
 	}
 
-	const SDL_Surface* pSurface = SDL_GetWindowSurface(m_context->Window);
-	m_context->SurfaceExtent.width = std::clamp(static_cast<uint32_t>(pSurface->w), capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-	m_context->SurfaceExtent.height = std::clamp(static_cast<uint32_t>(pSurface->h), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+	const GraphicsWindowSurface surface = m_context->Window->GetSurface();
+	m_context->SurfaceExtent.width = std::clamp(static_cast<uint32_t>(surface.Width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+	m_context->SurfaceExtent.height = std::clamp(static_cast<uint32_t>(surface.Height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 }
 
 void VulkanSurface::CreateImageView(vk::ImageView& imageView, const vk::Image& image, const vk::Format& format, const vk::ImageAspectFlags& aspectFlags) const

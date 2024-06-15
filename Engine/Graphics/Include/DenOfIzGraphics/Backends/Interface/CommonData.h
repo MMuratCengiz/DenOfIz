@@ -24,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-// Adaption of `vk::Format`
 enum class ImageFormat
 {
 	Undefined,
@@ -98,6 +97,12 @@ enum class PrimitiveTopology
 	Patch
 };
 
+enum class IndexType
+{
+	Uint16,
+	Uint32
+};
+
 enum class MSAASampleCount
 {
 	_0, // Disabled
@@ -152,15 +157,13 @@ enum class HeapType
 
 struct BufferUsage
 {
-	uint32_t MapRead : 1;
-	uint32_t MapWrite : 1;
+	uint32_t Map : 1;
 	uint32_t CopySrc : 1;
 	uint32_t CopyDst : 1;
-	uint32_t Index : 1;
-	uint32_t Vertex : 1;
-	uint32_t Uniform : 1;
-	uint32_t StorageRead : 1;
-	uint32_t StorageReadWrite : 1;
+	uint32_t IndexBuffer : 1;
+	uint32_t VertexBuffer : 1;
+	uint32_t UniformBuffer : 1;
+	uint32_t Storage : 1;
 	uint32_t Indirect : 1;
 	uint32_t QueryResolve : 1;
 	uint32_t AccelerationStructureScratch : 1;
@@ -168,37 +171,8 @@ struct BufferUsage
 	uint32_t TopLevelAccelerationStructureInput : 1;
 	uint32_t Exclusive : 1;
 	uint32_t Ordered : 1;
-};
-
-enum class BufferMemoryUsage
-{
-	TransferSrc,
-	TransferDst,
-	UniformTexelBuffer,
-	StorageTexelBuffer,
-	UniformBuffer,
-	StorageBuffer,
-	IndexBuffer,
-	VertexBuffer,
-	IndirectBuffer,
-	ShaderDeviceAddress,
-	VideoDecodeSrc,
-	VideoDecodeDst,
-	TransformFeedbackBufferEXT,
-	TransformFeedbackCounterBufferEXT,
-	ConditionalRenderingEXT,
-	AccelerationStructureBuildInputReadOnly,
-	AccelerationStructureStorage,
-	ShaderBindingTable,
-	RayTracingNV,
-	ShaderDeviceAddressEXT,
-	VideoEncodeDst,
-	VideoEncodeSrc,
-	SamplerDescriptorBufferEXT,
-	ResourceDescriptorBufferEXT,
-	PushDescriptorsDescriptorBufferEXT,
-	MicromapBuildInputReadOnlyEXT,
-	MicromapStorageEXT,
+	// = 0 Assumed to be read only
+	uint32_t ReadWrite : 1;
 };
 
 enum class ImageMemoryUsage
@@ -343,7 +317,7 @@ enum QueueType
 {
 	Graphics,
 	Compute,
-	Transfer,
+	Copy,
 	Presentation
 };
 
@@ -355,6 +329,7 @@ struct PhysicalDeviceCapabilities
 	bool Tearing;
 	bool Tessellation;
 	bool GeometryShaders;;
+	bool HDR;
 };
 
 struct PhysicalDeviceProperties

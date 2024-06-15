@@ -36,9 +36,9 @@ public:
 		{
 		case ShaderStage::Vertex:
 			return vk::ShaderStageFlagBits::eVertex;
-		case ShaderStage::TessellationControl:
+		case ShaderStage::Hull:
 			return vk::ShaderStageFlagBits::eTessellationControl;
-		case ShaderStage::TessellationEvaluation:
+		case ShaderStage::Domain:
 			return vk::ShaderStageFlagBits::eTessellationEvaluation;
 		case ShaderStage::Geometry:
 			return vk::ShaderStageFlagBits::eGeometry;
@@ -285,67 +285,47 @@ public:
 		return vk::SamplerMipmapMode::eLinear;
 	}
 
-	static vk::BufferUsageFlagBits ConvertBufferUsage(BufferMemoryUsage usage)
+	static vk::BufferUsageFlags ConvertBufferUsage(BufferUsage usage)
 	{
-		switch (usage)
+		vk::BufferUsageFlags flags = {};
+		if (usage.CopySrc)
 		{
-		case BufferMemoryUsage::TransferSrc:
-			return vk::BufferUsageFlagBits::eTransferSrc;
-		case BufferMemoryUsage::TransferDst:
-			return vk::BufferUsageFlagBits::eTransferDst;
-		case BufferMemoryUsage::UniformTexelBuffer:
-			return vk::BufferUsageFlagBits::eUniformTexelBuffer;
-		case BufferMemoryUsage::StorageTexelBuffer:
-			return vk::BufferUsageFlagBits::eStorageTexelBuffer;
-		case BufferMemoryUsage::UniformBuffer:
-			return vk::BufferUsageFlagBits::eUniformBuffer;
-		case BufferMemoryUsage::StorageBuffer:
-			return vk::BufferUsageFlagBits::eStorageBuffer;
-		case BufferMemoryUsage::IndexBuffer:
-			return vk::BufferUsageFlagBits::eIndexBuffer;
-		case BufferMemoryUsage::VertexBuffer:
-			return vk::BufferUsageFlagBits::eVertexBuffer;
-		case BufferMemoryUsage::IndirectBuffer:
-			return vk::BufferUsageFlagBits::eIndirectBuffer;
-		case BufferMemoryUsage::ShaderDeviceAddress:
-			return vk::BufferUsageFlagBits::eShaderDeviceAddress;
-		case BufferMemoryUsage::TransformFeedbackBufferEXT:
-			return vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT;
-		case BufferMemoryUsage::TransformFeedbackCounterBufferEXT:
-			return vk::BufferUsageFlagBits::eTransformFeedbackCounterBufferEXT;
-		case BufferMemoryUsage::ConditionalRenderingEXT:
-			return vk::BufferUsageFlagBits::eConditionalRenderingEXT;
-		case BufferMemoryUsage::RayTracingNV:
-			return vk::BufferUsageFlagBits::eRayTracingNV;
-		case BufferMemoryUsage::ShaderDeviceAddressEXT:
-			return vk::BufferUsageFlagBits::eShaderDeviceAddressEXT;
-		case BufferMemoryUsage::SamplerDescriptorBufferEXT:
-			return vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT;
-		case BufferMemoryUsage::ResourceDescriptorBufferEXT:
-			return vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT;
-		case BufferMemoryUsage::PushDescriptorsDescriptorBufferEXT:
-			return vk::BufferUsageFlagBits::ePushDescriptorsDescriptorBufferEXT;
-		case BufferMemoryUsage::MicromapBuildInputReadOnlyEXT:
-			return vk::BufferUsageFlagBits::eMicromapBuildInputReadOnlyEXT;
-		case BufferMemoryUsage::MicromapStorageEXT:
-			return vk::BufferUsageFlagBits::eMicromapStorageEXT;
-		case BufferMemoryUsage::VideoDecodeSrc:
-			return vk::BufferUsageFlagBits::eVideoDecodeSrcKHR;
-		case BufferMemoryUsage::VideoDecodeDst:
-			return vk::BufferUsageFlagBits::eVideoDecodeDstKHR;
-		case BufferMemoryUsage::AccelerationStructureBuildInputReadOnly:
-			return vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR;
-		case BufferMemoryUsage::AccelerationStructureStorage:
-			return vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR;
-		case BufferMemoryUsage::ShaderBindingTable:
-			return vk::BufferUsageFlagBits::eShaderBindingTableKHR;
-		case BufferMemoryUsage::VideoEncodeDst:
-			return vk::BufferUsageFlagBits::eVideoEncodeDstKHR;
-		case BufferMemoryUsage::VideoEncodeSrc:
-			return vk::BufferUsageFlagBits::eVideoEncodeSrcKHR;
+			flags |= vk::BufferUsageFlagBits::eTransferSrc;
+		}
+		if (usage.CopyDst)
+		{
+			flags |= vk::BufferUsageFlagBits::eTransferDst;
+		}
+		if (usage.IndexBuffer)
+		{
+			flags |= vk::BufferUsageFlagBits::eIndexBuffer;
+		}
+		if (usage.VertexBuffer)
+		{
+			flags |= vk::BufferUsageFlagBits::eVertexBuffer;
+		}
+		if (usage.UniformBuffer)
+		{
+			flags |= vk::BufferUsageFlagBits::eUniformBuffer;
+		}
+		if (usage.Storage)
+		{
+			flags |= vk::BufferUsageFlagBits::eStorageBuffer;
+		}
+		if (usage.Indirect)
+		{
+			flags |= vk::BufferUsageFlagBits::eIndirectBuffer;
+		}
+		if (usage.AccelerationStructureScratch)
+		{
+			flags |= vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress;
+		}
+		if (usage.BottomLevelAccelerationStructureInput || usage.TopLevelAccelerationStructureInput)
+		{
+			flags |= vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress;
 		}
 
-		return vk::BufferUsageFlagBits::eVertexBuffer;
+		return flags;
 	}
 
 	static vk::ImageAspectFlagBits ConvertImageAspect(ImageAspect aspect)

@@ -30,7 +30,8 @@ struct SwapChainCreateInfo
 	uint32_t Width = 0; // 0 means that it will be set to the window width
 	uint32_t Height = 0; // 0 means that it will be set to the window height
 	uint32_t BufferCount = 3;
-	ImageFormat Format = ImageFormat::R8G8B8A8Unorm;
+	ImageFormat BackBufferFormat = ImageFormat::R8G8B8A8Unorm;
+	ImageFormat DepthBufferFormat = ImageFormat::D32Float;
 };
 
 struct Viewport

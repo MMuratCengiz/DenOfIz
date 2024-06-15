@@ -26,9 +26,11 @@ namespace DenOfIz
 class CommandListRing
 {
 private:
+	std::vector<std::unique_ptr<IFence>> m_frameFences;
 	std::vector<std::unique_ptr<ICommandList>> m_commandLists;
-	size_t m_currentFrame = 0;
-	size_t m_frame = 0;
+	uint32_t m_currentFrame = 0;
+	uint32_t m_frame = 0;
+
 	ILogicalDevice* m_logicalDevice;
 public:
 	CommandListRing(ILogicalDevice* logicalDevice) : m_logicalDevice(logicalDevice) {}
@@ -36,6 +38,7 @@ public:
 	inline void NewCommandList(CommandListCreateInfo createInfo)
 	{
 		m_commandLists.push_back(m_logicalDevice->CreateCommandList(createInfo));
+		m_frameFences.push_back(m_logicalDevice->CreateFence());
 	}
 
 	ICommandList* GetNext()

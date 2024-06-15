@@ -17,9 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-
-#define SDL_MAIN_HANDLED
-#include <SDL2/SDL.h>
+#include "../Common/GraphicsWindowHandle.h"
 #include "IFence.h"
 #include "ISemaphore.h"
 #include "ICommandList.h"
@@ -39,7 +37,7 @@ protected:
 public:
 	virtual ~ILogicalDevice() = default;
 
-	virtual void CreateDevice(SDL_Window* window) = 0;
+	virtual void CreateDevice(GraphicsWindowHandle* window) = 0;
 	virtual std::vector<PhysicalDeviceInfo> ListPhysicalDevices() = 0;
 	virtual void LoadPhysicalDevice(const PhysicalDeviceInfo& device) = 0;
 	virtual bool IsDeviceLost() = 0;
@@ -54,6 +52,7 @@ public:
 	virtual std::unique_ptr<IPipeline> CreatePipeline(const PipelineCreateInfo& createInfo) = 0;
 	virtual std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainCreateInfo& createInfo) = 0;
 	virtual std::unique_ptr<IRootSignature> CreateRootSignature(const RootSignatureCreateInfo& createInfo) = 0;
+	virtual std::unique_ptr<IInputLayout> CreateInputLayout(const InputLayoutCreateInfo& createInfo) = 0;
 	virtual std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) = 0;
 	virtual std::unique_ptr<IFence> CreateFence() = 0;
 	virtual std::unique_ptr<ISemaphore> CreateSemaphore() = 0;

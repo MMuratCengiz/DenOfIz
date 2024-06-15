@@ -44,17 +44,17 @@ void Time::Tick()
 	}
 }
 
-double Time::GetDeltaTime()
+const double Time::GetDeltaTime() const
 {
 	return deltaTime;
+}
+
+const double Time::GetFirstTickTime() const
+{
+	return firstTickTime;
 }
 
 double Time::DoubleEpochNow()
 {
 	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-}
-
-double Time::GetFirstTickTime()
-{
-	return firstTickTime;
 }

@@ -29,6 +29,8 @@ class DX12Fence : public IFence
 private:
 	DX12Context* m_context;
 	Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
+	UINT32 m_fenceValue = 0;
+	Microsoft::WRL::Wrappers::Event m_fenceEvent;
 public:
 	DX12Fence(DX12Context* context);
 	~DX12Fence() override;

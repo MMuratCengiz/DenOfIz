@@ -24,6 +24,7 @@ using namespace DenOfIz;
 DX12Fence::DX12Fence(DX12Context* context)
 {
 	context->D3DDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.ReleaseAndGetAddressOf()));
+	m_fenceEvent.Attach(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
 }
 
 DX12Fence::~DX12Fence()
@@ -33,10 +34,12 @@ DX12Fence::~DX12Fence()
 
 void DX12Fence::Wait()
 {
-
+	DX_CHECK_RESULT(m_fence->SetEventOnCompletion(m_fenceValue, m_fenceEvent.Get()));
+	WaitForSingleObjectEx(m_fenceEvent.Get(), INFINITE, FALSE);
 }
 
 void DX12Fence::Reset()
 {
+	m_fence->Signal(m_fenceValue);
 }
 

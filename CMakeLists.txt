@@ -10,7 +10,6 @@ project(DenOfIz LANGUAGES ${LANGUAGES})
 option(CRT_LINKAGE_STATIC "Link MSVC runtime statically" 1)
 
 set(Boost_NO_WARN_NEW_VERSIONS 1)
-SET(VCPKG_INSTALL_OPTIONS "--allow-unsupported")
 set(VCPKG_MANIFEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")

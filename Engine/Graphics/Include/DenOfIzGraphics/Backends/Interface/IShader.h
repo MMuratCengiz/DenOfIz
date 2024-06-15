@@ -27,8 +27,8 @@ namespace DenOfIz
 enum class ShaderStage
 {
 	Vertex,
-	TessellationControl,
-	TessellationEvaluation,
+	Hull,
+	Domain,
 	Geometry,
 	Fragment,
 	Compute,

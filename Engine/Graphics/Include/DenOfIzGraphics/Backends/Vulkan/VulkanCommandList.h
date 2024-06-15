@@ -43,15 +43,13 @@ private:
 public:
 	VulkanCommandList(VulkanContext* context, CommandListCreateInfo createInfo);
 
-	void Reset() override;
 	void Begin() override;
 	void BeginRendering(const RenderingInfo& renderingInfo) override;
 	void EndRendering() override;
-	void End() override;
-	void Submit(const SubmitInfo& submitInfo) override;
+	void Execute(const ExecuteInfo& submitInfo) override;
 	void BindPipeline(IPipeline* pipeline) override;
 	void BindVertexBuffer(IBufferResource* buffer) override;
-	void BindIndexBuffer(IBufferResource* buffer) override;
+	void BindIndexBuffer(IBufferResource* buffer, const IndexType& indexType) override;
 	void BindViewport(float offsetX, float offsetY, float width, float height) override;
 	void BindScissorRect(float offsetX, float offsetY, float width, float height) override;
 	void BindDescriptorTable(IDescriptorTable* table) override;
@@ -59,11 +57,10 @@ public:
 	void BindBufferResource(IBufferResource* resource) override;
 	void BindImageResource(IImageResource* resource) override;
 	void SetDepthBias(float constantFactor, float clamp, float slopeFactor) override;
-	void SetPipelineBarrier(const PipelineBarrier& barrier);
+	void SetPipelineBarrier(const PipelineBarrier& barrier) override;
 	void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) override;
 	void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0) override;
 	void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
-	void CopyBuffer(IBufferResource* src, IBufferResource* dst, uint32_t size) override;
 	void TransitionImageLayout(IImageResource* image, ImageLayout oldLayout, ImageLayout newLayout) override;
 	void Present(ISwapChain* swapChain, uint32_t imageIndex, std::vector<ISemaphore*> waitOnLocks) override;
 };

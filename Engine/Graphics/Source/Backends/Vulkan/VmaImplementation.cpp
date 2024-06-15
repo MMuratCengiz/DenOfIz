@@ -24,8 +24,9 @@
 #define VMA_STATS_STRING_ENABLED 0
 #include <vulkan/vulkan.hpp>
 
+
 #define VMA_IMPLEMENTATION
-#include "vk_mem_alloc.h"
+#include "vma/vk_mem_alloc.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 

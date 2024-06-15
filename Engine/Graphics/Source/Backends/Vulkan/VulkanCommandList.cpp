@@ -35,7 +35,7 @@ VulkanCommandList::VulkanCommandList(VulkanContext* context, CommandListCreateIn
 	case QueueType::Compute:
 		commandPool = m_context->ComputeQueueCommandPool;
 		break;
-	case QueueType::Transfer:
+	case QueueType::Copy:
 		commandPool = m_context->TransferQueueCommandPool;
 		break;
 	}
@@ -48,13 +48,10 @@ VulkanCommandList::VulkanCommandList(VulkanContext* context, CommandListCreateIn
 	m_commandBuffer = m_context->LogicalDevice.allocateCommandBuffers(allocInfo)[0];
 }
 
-void VulkanCommandList::Reset()
-{
-	m_commandBuffer.reset();
-}
-
 void VulkanCommandList::Begin()
 {
+	m_commandBuffer.reset();
+
 	vk::CommandBufferBeginInfo beginInfo{};
 	beginInfo.flags = {};
 	m_commandBuffer.begin(beginInfo);
@@ -64,10 +61,10 @@ void VulkanCommandList::BeginRendering(const RenderingInfo& renderingInfo)
 {
 	vk::RenderingInfo renderInfo{};
 
-	SDL_Surface* surface = SDL_GetWindowSurface(m_context->Window);
+	GraphicsWindowSurface surface = m_context->Window->GetSurface();
 
-	float widthAdapted = renderingInfo.RenderAreaWidth == 0 ? static_cast<float>(surface->w) : static_cast<float>(renderingInfo.RenderAreaWidth);
-	float heightAdapted = renderingInfo.RenderAreaHeight == 0 ? static_cast<float>(surface->h) : static_cast<float>(renderingInfo.RenderAreaHeight);
+	float widthAdapted = renderingInfo.RenderAreaWidth == 0 ? static_cast<float>(surface.Width) : static_cast<float>(renderingInfo.RenderAreaWidth);
+	float heightAdapted = renderingInfo.RenderAreaHeight == 0 ? static_cast<float>(surface.Height) : static_cast<float>(renderingInfo.RenderAreaHeight);
 
 	renderInfo.renderArea.extent = vk::Extent2D(widthAdapted, heightAdapted);
 	renderInfo.renderArea.offset = vk::Offset2D(renderingInfo.RenderAreaOffsetX, renderingInfo.RenderAreaOffsetY);
@@ -76,7 +73,7 @@ void VulkanCommandList::BeginRendering(const RenderingInfo& renderingInfo)
 
 	std::vector<vk::RenderingAttachmentInfo> colorAttachments;
 
-	for (const auto& colorAttachment : renderingInfo.ColorAttachments)
+	for (const auto& colorAttachment : renderingInfo.RTAttachments)
 	{
 		VulkanImageResource* vkColorAttachmentResource = dynamic_cast<VulkanImageResource*>(colorAttachment.Resource);
 
@@ -129,24 +126,21 @@ void VulkanCommandList::EndRendering()
 	m_commandBuffer.endRendering();
 }
 
-void VulkanCommandList::End()
+void VulkanCommandList::Execute(const ExecuteInfo& executeInfo)
 {
 	m_commandBuffer.end();
-}
 
-void VulkanCommandList::Submit(const SubmitInfo& submitInfo)
-{
 	vk::SubmitInfo vkSubmitInfo{};
 
 	std::vector<vk::PipelineStageFlags> waitStages;
 	std::vector<vk::Semaphore> waitOnSemaphores;
-	for (ISemaphore* waitOn : submitInfo.WaitOnLocks)
+	for (ISemaphore* waitOn : executeInfo.WaitOnLocks)
 	{
 		waitOnSemaphores.push_back(reinterpret_cast<VulkanSemaphore*>(waitOn)->GetSemaphore());
 		waitStages.push_back(vk::PipelineStageFlagBits::eAllCommands);
 	}
 	std::vector<vk::Semaphore> signalSemaphores;
-	for (ISemaphore* signal : submitInfo.SignalLocks)
+	for (ISemaphore* signal : executeInfo.SignalLocks)
 	{
 		signalSemaphores.push_back(reinterpret_cast<VulkanSemaphore*>(signal)->GetSemaphore());
 	}
@@ -160,7 +154,7 @@ void VulkanCommandList::Submit(const SubmitInfo& submitInfo)
 	vkSubmitInfo.signalSemaphoreCount = signalSemaphores.size();
 	vkSubmitInfo.pSignalSemaphores = signalSemaphores.data();
 
-	VulkanFence* notify = reinterpret_cast<VulkanFence*>(submitInfo.Notify);
+	VulkanFence* notify = reinterpret_cast<VulkanFence*>(executeInfo.Notify);
 	notify->Reset();
 	const auto submitResult = m_context->Queues[m_createInfo.QueueType].submit(1, &vkSubmitInfo, notify->GetFence());
 
@@ -180,11 +174,21 @@ void VulkanCommandList::BindVertexBuffer(IBufferResource* buffer)
 	m_commandBuffer.bindVertexBuffers(0, 1, &bufferResource->GetBuffer(), &offset);
 }
 
-void VulkanCommandList::BindIndexBuffer(IBufferResource* buffer)
+void VulkanCommandList::BindIndexBuffer(IBufferResource* buffer, const IndexType& indexType)
 {
 	const auto bufferResource = static_cast<VulkanBufferResource*>(buffer);
 	constexpr vk::DeviceSize offset = 0;
-	m_commandBuffer.bindIndexBuffer(bufferResource->GetBuffer(), offset, vk::IndexType::eUint32);
+
+	switch (indexType)
+	{
+	case IndexType::Uint16:
+		m_commandBuffer.bindIndexBuffer(bufferResource->GetBuffer(), offset, vk::IndexType::eUint16);
+		break;
+	case IndexType::Uint32:
+		m_commandBuffer.bindIndexBuffer(bufferResource->GetBuffer(), offset, vk::IndexType::eUint32);
+		break;
+	}
+
 }
 
 void VulkanCommandList::BindViewport(float offsetX, float offsetY, float width, float height)
@@ -257,10 +261,6 @@ void VulkanCommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uin
 	assertm(m_createInfo.QueueType == QueueType::Compute, "Dispatch can only be called on compute queues.");
 }
 
-void VulkanCommandList::CopyBuffer(IBufferResource* src, IBufferResource* dst, uint32_t size)
-{
-
-}
 
 void VulkanCommandList::TransitionImageLayout(IImageResource* image, ImageLayout oldLayout, ImageLayout newLayout)
 {

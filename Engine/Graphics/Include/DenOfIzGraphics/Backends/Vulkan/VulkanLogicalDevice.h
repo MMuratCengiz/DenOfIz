@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "VulkanContext.h"
 #include "VulkanSurface.h"
 #include "VulkanPipeline.h"
+#include "VulkanInputLayout.h"
 #include "Resource/VulkanCubeMapResource.h"
 #include "Resource/VulkanBufferResource.h"
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
@@ -51,7 +52,7 @@ class VulkanLogicalDevice final : public ILogicalDevice
 #endif
 	};
 
-	const std::vector<QueueType> m_queueTypes = { QueueType::Graphics, QueueType::Transfer, QueueType::Presentation };
+	const std::vector<QueueType> m_queueTypes = { QueueType::Graphics, QueueType::Copy, QueueType::Presentation };
 
 	VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
 	std::unordered_map<std::string, bool> m_supportedExtensions;
@@ -62,7 +63,7 @@ class VulkanLogicalDevice final : public ILogicalDevice
 public:
 	VulkanLogicalDevice() = default;
 
-	void CreateDevice(SDL_Window* window) override;
+	void CreateDevice(GraphicsWindowHandle* window) override;
 	std::vector<PhysicalDeviceInfo> ListPhysicalDevices() override;
 	void LoadPhysicalDevice(const PhysicalDeviceInfo& device) override;
 	inline bool IsDeviceLost() override {
@@ -79,6 +80,7 @@ public:
 	std::unique_ptr<IPipeline> CreatePipeline(const PipelineCreateInfo& createInfo) override;
 	std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainCreateInfo& createInfo) override;
 	std::unique_ptr<IRootSignature> CreateRootSignature(const RootSignatureCreateInfo& createInfo) override;
+	std::unique_ptr<IInputLayout> CreateInputLayout(const InputLayoutCreateInfo& createInfo) override;
 	std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) override;
 	std::unique_ptr<IFence> CreateFence() override;
 	std::unique_ptr<ISemaphore> CreateSemaphore() override;

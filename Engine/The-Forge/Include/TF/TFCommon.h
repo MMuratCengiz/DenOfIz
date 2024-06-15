@@ -38,8 +38,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "Common_3/Graphics/Interfaces/IRay.h"
 #include <vector>
 
-#define SDL_MAIN_HANDLED
-#include <SDL2/SDL.h>
 namespace DenOfIz
 {
 
@@ -50,7 +48,6 @@ struct InitialAppInfo
 	int Height = 1080;
 
 	bool VSyncEnabled = false;
-	SDL_Window* window;
 };
 
 struct InitializationState

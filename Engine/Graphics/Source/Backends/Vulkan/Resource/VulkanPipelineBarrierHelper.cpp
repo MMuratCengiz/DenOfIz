@@ -318,7 +318,7 @@ vk::PipelineStageFlags VulkanPipelineBarrierHelper::GetPipelineStageFlags(Vulkan
 
 		break;
 	}
-	case QueueType::Transfer:
+	case QueueType::Copy:
 		return vk::PipelineStageFlagBits::eAllCommands;
 	}
 

@@ -34,9 +34,12 @@ private:
 	D3D12MA::Allocation* m_allocation;
 public:
 	DX12BufferResource(DX12Context* context, const BufferCreateInfo& createInfo);
+	ID3D12Resource2* GetResource() { return m_resource; }
+	~DX12BufferResource() override;
 	void Deallocate() override;
 protected:
 	void Allocate(const void* data) override;
+	void CreateBufferView();
 };
 
 }

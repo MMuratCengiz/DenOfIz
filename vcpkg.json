@@ -3,8 +3,9 @@
   "version": "0.0.1",
   "dependencies": [
     "boost",
+    "vulkan",
     "vulkan-memory-allocator",
-    "vulkan-hpp",
+    "vulkan-headers",
     "glslang",
     "spirv-cross",
     "stb",
@@ -17,6 +18,7 @@
     { "name": "d3d12-memory-allocator", "platform": "windows" },
     { "name": "directxtk12", "platform": "windows" },
     { "name": "directxtex", "platform": "windows" },
+    { "name": "directx-dxc", "platform": "windows" },
     { "name": "directx-headers", "platform": "windows" }
   ]
 }

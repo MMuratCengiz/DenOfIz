@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzCore/Logger.h>
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h>
+#include "DenOfIzGraphics/Backends/Common/ShaderReflection.h"
 
 namespace DenOfIz
 {
@@ -35,6 +36,8 @@ class VulkanPipeline : public IPipeline
 															  vk::DynamicState::eLineWidth };
 
 	VulkanContext* m_context;
+	ShaderReflection m_programReflection;
+
 	std::vector<vk::ShaderModule> m_shaderModules;
 	std::vector<vk::PushConstantRange> m_pushConstants;
 	std::vector<vk::Format> m_colorFormats;

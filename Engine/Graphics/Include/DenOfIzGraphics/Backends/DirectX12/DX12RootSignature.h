@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
 #include "DX12Context.h"
 #include "DX12EnumConverter.h"
+#include <unordered_set>
 
 namespace DenOfIz
 {

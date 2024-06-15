@@ -220,10 +220,6 @@ add_library(TheForge ${LIB_TYPE}
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Utilities/ThirdParty/OpenSource/zstd/decompress/zstd_decompress_internal.h"
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Utilities/ThirdParty/OpenSource/zstd/decompress/zstd_decompress.c"
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Utilities/Timer.c"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Renderer/VisibilityBuffer/VisibilityBuffer.cpp"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Examples_3/Visibility_Buffer/src/SanMiguel.cpp"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Examples_3/Visibility_Buffer/src/SanMiguelSDF.cpp"
-        "${PROJECT_SOURCE_DIR}/_External/The-Forge/Examples_3/Visibility_Buffer/src/Visibility_Buffer.cpp"
 
         $<$<PLATFORM_ID:Windows>:
         "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/ThirdParty/OpenSource/cpu_features/src/impl_x86_windows.c"
@@ -312,7 +308,6 @@ if (APPLE)
             PRIVATE "-framework Foundation"
             PRIVATE "-framework CoreData"
             PRIVATE "-framework CoreHaptics"
-#            PRIVATE "-framework AppKit"
             PRIVATE "-framework Metal"
             PRIVATE "-framework CoreVideo"
             PRIVATE "-framework MetalKit"

@@ -2,6 +2,10 @@
 #include <DenOfIzCore/Logger.h>
 #include <DenOfIzCore/Utilities.h>
 
+#ifdef _WIN32
+using namespace Microsoft::WRL;
+#endif
+
 namespace DenOfIz
 {
 
@@ -33,10 +37,12 @@ Result<Unit> ShaderCompiler::Init()
 void ShaderCompiler::Destroy()
 {
 	glslang::FinalizeProcess();
+#ifdef __APPLE__
     IRCompilerDestroy(mp_compiler);
+#endif
 }
 
-void ShaderCompiler::InitResources(TBuiltInResource& Resources)
+void ShaderCompiler::InitResources(TBuiltInResource& Resources) const
 {
 	Resources.maxLights = 32;
 	Resources.maxClipPlanes = 6;
@@ -141,15 +147,15 @@ void ShaderCompiler::InitResources(TBuiltInResource& Resources)
 	Resources.limits.generalConstantMatrixVectorIndexing = true;
 }
 
-EShLanguage ShaderCompiler::FindLanguage(const ShaderStage shader_type)
+EShLanguage ShaderCompiler::FindLanguage(const ShaderStage shader_type) const
 {
 	switch (shader_type)
 	{
 	case ShaderStage::Vertex:
 		return EShLangVertex;
-	case ShaderStage::TessellationControl:
+	case ShaderStage::Hull:
 		return EShLangTessControl;
-	case ShaderStage::TessellationEvaluation:
+	case ShaderStage::Domain:
 		return EShLangTessEvaluation;
 	case ShaderStage::Geometry:
 		return EShLangGeometry;
@@ -162,10 +168,10 @@ EShLanguage ShaderCompiler::FindLanguage(const ShaderStage shader_type)
 	}
 }
 
-std::vector<uint32_t> ShaderCompiler::GLSLtoSPV(const ShaderStage shaderType, const std::string& shaderPath)
+std::vector<uint32_t> ShaderCompiler::CompileGLSL(const std::string& filename, const CompileOptions& compileOptions) const
 {
-	auto glslContents = Utilities::ReadFile(shaderPath);
-
+	auto glslContents = Utilities::ReadFile(filename);
+	ShaderStage shaderType = compileOptions.Stage;
 	EShLanguage stage = FindLanguage(shaderType);
 
 	TBuiltInResource resources = {};
@@ -205,52 +211,71 @@ std::vector<uint32_t> ShaderCompiler::GLSLtoSPV(const ShaderStage shaderType, co
 	return std::move(spirv);
 }
 
-std::vector<uint32_t> ShaderCompiler::HLSLtoSPV(const ShaderStage shaderType, const std::string& shaderPath) const
+std::vector<uint32_t> ShaderCompiler::CompileHLSL(const std::string& filename, const CompileOptions& compileOptions) const
 {
 	// Attribute to source: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
 	// https://github.com/KhronosGroup/Vulkan-Guide
 	uint32_t codePage = DXC_CP_ACP;
 	CComPtr<IDxcBlobEncoding> sourceBlob;
-	std::wstring wsShaderPath(shaderPath.begin(), shaderPath.end());
+	std::wstring wsShaderPath(filename.begin(), filename.end());
 	HRESULT result = m_dxcUtils->LoadFile(wsShaderPath.c_str(), &codePage, &sourceBlob);
 	if (FAILED(result))
 	{
 		throw std::runtime_error(&"Could not load shader file"[GetLastError()]);
 	}
 
-	LPCWSTR targetProfile{};
-	switch (shaderType)
+	std::string hlslVersion = "6_6";
+	std::string targetProfile;
+	switch (compileOptions.Stage)
 	{
 	case ShaderStage::Vertex:
-		targetProfile = L"vs_6_1";
+		targetProfile = "vs";
 		break;
-	case ShaderStage::TessellationControl:
+	case ShaderStage::Hull:
+		targetProfile = "hs";
 		break;
-	case ShaderStage::TessellationEvaluation:
+	case ShaderStage::Domain:
+		targetProfile = "ds";
 		break;
 	case ShaderStage::Geometry:
+		targetProfile = "gs";
 		break;
 	case ShaderStage::Fragment:
-		targetProfile = L"ps_6_1";
+		targetProfile = "ps";
 		break;
 	case ShaderStage::Compute:
+		targetProfile = "cs";
 		break;
-	case ShaderStage::AllGraphics:
-		break;
-	case ShaderStage::All:
+	default:
+		assertm(false, "Invalid shader stage");
 		break;
 	}
+	targetProfile += "_" + hlslVersion;
 
-	// Configure the compiler arguments for compiling the HLSL shader to SPIR-V
-	std::vector<LPCWSTR> arguments = {
-			// (Optional) name of the shader file to be displayed e.g. in an error message
-			wsShaderPath.c_str(),
-			// Shader main entry point
-			L"-E", L"main",
-			// Shader target profile
-			L"-T", targetProfile,
-			// Compile to SPIRV
-			L"-spirv" };
+	std::vector<LPCWSTR> arguments;
+	arguments.push_back(wsShaderPath.c_str());
+	// Set the entry point
+	arguments.push_back(L"-E");
+	std::wstring wsEntryPoint(compileOptions.EntryPoint.begin(), compileOptions.EntryPoint.end());
+	arguments.push_back(wsEntryPoint.c_str());
+	// Set shader stage
+	arguments.push_back(L"-T");
+	std::wstring wsTargetProfile(targetProfile.begin(), targetProfile.end());
+	arguments.push_back(wsTargetProfile.c_str());
+	if (compileOptions.TargetIL == TargetIL::SPIRV)
+	{
+		arguments.push_back(L"-spirv");
+	}
+	for (const auto& define : compileOptions.Defines)
+	{
+		arguments.push_back(L"-D");
+		arguments.push_back(LPCWSTR(define.c_str()));
+	}
+	arguments.push_back(L"-HV");
+	arguments.push_back(L"2021");
+#ifdef _DEBUG
+	arguments.push_back(L"-Zi");
+#endif
 
 	DxcBuffer buffer{};
 	buffer.Encoding = DXC_CP_ACP; // or? DXC_CP_UTF8;
@@ -282,7 +307,7 @@ std::vector<uint32_t> ShaderCompiler::HLSLtoSPV(const ShaderStage shaderType, co
 	std::vector<uint32_t> codeToUVec(static_cast<uint32_t*>(code->GetBufferPointer()),
 			static_cast<uint32_t*>(code->GetBufferPointer()) + code->GetBufferSize() / sizeof(uint32_t));
 
-	code->Release();
+	code.Reset();
 	return codeToUVec;
 }
 

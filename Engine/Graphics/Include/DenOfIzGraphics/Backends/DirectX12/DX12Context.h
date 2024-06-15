@@ -29,9 +29,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <dxgi1_6.h>
 #include <wrl/client.h>
 #include <wrl/event.h>
-#define SDL_MAIN_HANDLED
-#include "SDL2/SDL.h"
 #include "D3D12MemAlloc.h"
+#include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
+#include "DX12DescriptorHeap.h"
 
 #ifdef _DEBUG
 #include <dxgidebug.h>
@@ -44,30 +44,26 @@ using namespace Microsoft::WRL;
 namespace DenOfIz
 {
 
-struct DX12Context
+struct DX12Context : boost::noncopyable
 {
 	static const int BackBufferCount = 3;
 	bool IsDeviceLost = false;
 
 	ComPtr<IDXGIAdapter1> Adapter;
 
-	ComPtr<ID3D12Device14> D3DDevice;
+	ComPtr<ID3D12Device9> D3DDevice;
 	ComPtr<IDXGIFactory7> DXGIFactory;
-	ComPtr<ID3D12CommandQueue> CommandQueue;
-	ComPtr<ID3D12CommandAllocator> DirectCommandAllocator[BackBufferCount];
-	ComPtr<ID3D12GraphicsCommandList4> DirectCommandList;
+	ComPtr<ID3D12CommandQueue> GraphicsCommandQueue;
+	ComPtr<ID3D12CommandQueue> ComputeCommandQueue;
 
-	D3D12_VIEWPORT ScreenViewport;
-	D3D12_RECT ScissorRect;
-	DXGI_FORMAT BackBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
-	DXGI_FORMAT DepthBufferFormat = DXGI_FORMAT_D32_FLOAT;
-	// RenderTargetView and DepthStencilView Descriptor Heap
-	ComPtr<ID3D12DescriptorHeap> RTVDescriptorHeap;
-	ComPtr<ID3D12DescriptorHeap> DSVDescriptorHeap;
-	ComPtr<IDXGISwapChain3> SwapChain;
-	std::vector<ComPtr<ID3D12Resource>> SwapChainImages;
+	ComPtr<ID3D12CommandAllocator> CopyCommandListAllocator;
+	ComPtr<ID3D12GraphicsCommandList4> CopyCommandList;
 
-	SDL_Window* Window;
+	std::array<std::unique_ptr<DX12DescriptorHeap>, D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES> CpuDescriptorHeaps;
+	std::unique_ptr<DX12DescriptorHeap> ShaderVisibleCbvSrvUavDescriptorHeap;
+	std::unique_ptr<DX12DescriptorHeap> ShaderVisibleSamplerDescriptorHeap;
+
+	GraphicsWindowHandle* Window;
 	PhysicalDeviceInfo SelectedDeviceInfo;
 	D3D12MA::Allocator* DX12MemoryAllocator;
 };

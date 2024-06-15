@@ -125,7 +125,8 @@ bool TFCommon::InitSwapChain()
 		m_initializationState.SwapChain.Initialized = false;
 		m_initializationState.SwapChain.InitializationMessage = "SwapChain initialization failed.";
 		return false;
-	} else
+	}
+	else
 	{
 		m_initializationState.SwapChain.Initialized = true;
 		return true;

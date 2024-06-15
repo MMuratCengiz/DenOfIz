@@ -18,78 +18,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IShader.h>
-#include <DenOfIzGraphics/Backends/Interface/IResource.h>
-#include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
-#include "spirv_hlsl.hpp"
+#include "DenOfIzGraphics/Backends/Interface/IShader.h"
+#include "ShaderCompiler.h"
 
 namespace DenOfIz
 {
 
-struct ShaderVarType
-{
-	ImageFormat Format;
-	uint32_t Size;
-};
-
-struct SpvDecoration
-{
-	spirv_cross::SPIRType Type;
-	uint32_t Offset; // This offset is mostly meant for struct members
-	uint32_t Set;
-	uint32_t Location;
-	uint32_t Binding;
-	uint32_t ArraySize;
-	uint32_t Size;
-	std::string Name;
-	std::vector<SpvDecoration> Children;
-};
-
-struct PushConstant
+struct ShaderInfo
 {
 	ShaderStage Stage;
-	uint32_t Size;
-	uint32_t Offset;
-	std::string Name;
-	std::vector<SpvDecoration> Children;
+	std::string Path;
+	std::vector<std::string> Defines;
+	std::string EntryPoint = "main";
 };
 
 class ShaderProgram
 {
-	std::vector<VertexInput> vertexInputs;
-	std::vector<ShaderUniformInput> uniformInputs;
-	std::vector<PushConstant> pushConstants;
-
-public:
-	std::vector<CompiledShader> Shaders;
-
-	explicit ShaderProgram(std::vector<CompiledShader> shaders);
-
-	const std::vector<VertexInput> VertexInputs()
-	{
-		return vertexInputs;
-	}
-
-	const std::vector<ShaderUniformInput> UniformInputs()
-	{
-		return uniformInputs;
-	}
-
-	const std::vector<PushConstant> PushConstants()
-	{
-		return pushConstants;
-	}
-
 private:
-	void OnEachShader(const CompiledShader& shaderInfo, const bool& first);
-	void CreatePushConstant(const spirv_cross::Compiler& compiler, spirv_cross::Resource resource, ShaderStage stage);
-	void CreateVertexInput(const uint32_t& offset, const ShaderVarType& type, const SpvDecoration& decoration, const uint32_t& Size);
-	void
-	CreateUniformInput(const spirv_cross::Compiler& compiler, const UniformType& uniformType, spirv_cross::Resource resource, ShaderStage stage);
-	static ShaderVarType SpvTypeToCustomType(const spirv_cross::SPIRType& type);
-	SpvDecoration GetDecoration(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& resource);
-	void AddResourceToInput(const UniformType& uniformType, const ShaderStage& stage, const SpvDecoration& decoration);
-	uint32_t GetTypeArraySize(SpvDecoration& decoration) const;
+	std::vector<ShaderInfo> m_shaders;
+	std::vector<CompiledShader> m_compiledShaders;
+public:
+	ShaderProgram() = default;
+	void AddShader(const ShaderInfo& shaderInfo);
+	void Compile();
+	const std::vector<CompiledShader>& GetCompiledShaders() const { return m_compiledShaders; }
+	~ShaderProgram() = default;
 };
+
 
 }

@@ -40,7 +40,8 @@ void VulkanBufferResource::Allocate(const void* newData)
 
 	std::pair<vk::Buffer, VmaAllocation> stagingBuffer;
 
-	if (m_createInfo.UseStaging)
+	bool useStagingBuffer = m_createInfo.HeapType == HeapType::GPU;
+	if (useStagingBuffer)
 	{
 		VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer.first, stagingBuffer.second, newData, m_size);
 	}
@@ -71,7 +72,7 @@ void VulkanBufferResource::Allocate(const void* newData)
 	vmaCreateBuffer(m_context->Vma, reinterpret_cast<VkBufferCreateInfo*>(&bufferCreateInfo), &allocationCreateInfo, reinterpret_cast<VkBuffer*>(&Instance), &m_allocation,
 			&allocationInfo);
 
-	if (m_createInfo.UseStaging)
+	if (useStagingBuffer)
 	{
 		VulkanUtilities::CopyBuffer(m_context, stagingBuffer.first, Instance, m_size);
 		vmaDestroyBuffer(m_context->Vma, stagingBuffer.first, stagingBuffer.second);
@@ -98,7 +99,7 @@ void VulkanBufferResource::Allocate(const void* newData)
 
 void VulkanBufferResource::UpdateAllocation(const void* newData)
 {
-	if (m_createInfo.UseStaging)
+	if (m_createInfo.HeapType == HeapType::GPU)
 	{
 		std::pair<vk::Buffer, VmaAllocation> stagingBuffer;
 		VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer.first, stagingBuffer.second, newData, m_size);

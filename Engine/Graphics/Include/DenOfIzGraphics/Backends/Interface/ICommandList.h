@@ -45,7 +45,7 @@ struct RenderingAttachmentInfo
 
 struct RenderingInfo
 {
-	std::vector<RenderingAttachmentInfo> ColorAttachments;
+	std::vector<RenderingAttachmentInfo> RTAttachments;
 	RenderingAttachmentInfo DepthAttachment;
 	RenderingAttachmentInfo StencilAttachment;
 
@@ -56,7 +56,7 @@ struct RenderingInfo
 	uint32_t LayerCount = 1;
 };
 
-struct SubmitInfo
+struct ExecuteInfo
 {
 	IFence* Notify = nullptr;
 	std::vector<ISemaphore*> WaitOnLocks = {};
@@ -73,15 +73,14 @@ class ICommandList
 public:
 	virtual ~ICommandList() = default;
 
-	virtual void Reset() = 0;
 	virtual void Begin() = 0;
 	virtual void BeginRendering(const RenderingInfo& renderingInfo) = 0;
 	virtual void EndRendering() = 0;
-	virtual void End() = 0;
-	virtual void Submit(const SubmitInfo& submitInfo) = 0;
+	virtual void Execute(const ExecuteInfo& submitInfo) = 0;
+	virtual void Present(ISwapChain* swapChain, uint32_t imageIndex, std::vector<ISemaphore*> waitOnLocks) = 0;
 	virtual void BindPipeline(IPipeline* pipeline) = 0;
 	virtual void BindVertexBuffer(IBufferResource* buffer) = 0;
-	virtual void BindIndexBuffer(IBufferResource* buffer) = 0;
+	virtual void BindIndexBuffer(IBufferResource* buffer, const IndexType& indexType) = 0;
 	virtual void BindViewport(float x, float y, float width, float height) = 0;
 	virtual void BindScissorRect(float x, float y, float width, float height) = 0;
 	virtual void BindDescriptorTable(IDescriptorTable* table) = 0;
@@ -93,9 +92,7 @@ public:
 	virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) = 0;
 	virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0) = 0;
 	virtual void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
-	virtual void CopyBuffer(IBufferResource* src, IBufferResource* dst, uint32_t size) = 0;
 	virtual void TransitionImageLayout(IImageResource* image, ImageLayout oldLayout, ImageLayout newLayout) = 0;
-	virtual void Present(ISwapChain* swapChain, uint32_t imageIndex, std::vector<ISemaphore*> waitOnLocks) = 0;
 };
 
 }

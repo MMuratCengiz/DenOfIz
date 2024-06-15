@@ -36,8 +36,8 @@ public:
 	std::function<void(double)> ListenFps;
 
 	void Tick();
-	double GetDeltaTime();
-	double GetFirstTickTime();
+	const double GetDeltaTime() const;
+	const double GetFirstTickTime() const;
 	static double DoubleEpochNow();
 };
 

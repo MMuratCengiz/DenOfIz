@@ -6,6 +6,9 @@
 #include <DenOfIzGraphics/Backends/Interface/IShader.h>
 
 #ifdef _WIN32
+#include <wrl/client.h>
+#include <directx-dxc/dxcapi.h>
+#define CComPtr Microsoft::WRL::ComPtr
 #else
 #define __EMULATE_UUID
 #include "dxc/WinAdapter.h"
@@ -21,9 +24,26 @@
 namespace DenOfIz
 {
 
+enum class TargetIL
+{
+	DXIL,
+	MSL,
+	SPIRV
+};
+
+struct CompileOptions
+{
+	std::string EntryPoint = "main";
+	ShaderStage Stage;
+	TargetIL TargetIL;
+
+	std::vector<std::string> Defines;
+};
+
 class ShaderCompiler
 {
 private:
+
 	CComPtr<IDxcLibrary> m_dxcLibrary;
 	CComPtr<IDxcCompiler3> m_dxcCompiler;
 	CComPtr<IDxcUtils> m_dxcUtils;
@@ -35,10 +55,10 @@ private:
 public:
 	Result<Unit> Init();
 	void Destroy();
-	void InitResources(TBuiltInResource& Resources);
-	EShLanguage FindLanguage(ShaderStage shaderType);
-	std::vector<uint32_t> HLSLtoSPV(ShaderStage shaderType, const std::string& filename) const;
-	std::vector<uint32_t> GLSLtoSPV(ShaderStage shaderType, const std::string& filename);
+	void InitResources(TBuiltInResource& Resources) const;
+	EShLanguage FindLanguage(ShaderStage shaderType) const;
+	std::vector<uint32_t> CompileHLSL(const std::string& filename, const CompileOptions& compileOptions) const;
+	std::vector<uint32_t> CompileGLSL(const std::string& filename, const CompileOptions& compileOptions) const;
 };
 
 }

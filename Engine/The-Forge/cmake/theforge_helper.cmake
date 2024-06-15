@@ -58,10 +58,12 @@ function(INCLUDE_THEFORGE target)
 
     copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 
-    target_compile_options(${target} PRIVATE
-            $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
-            $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
-
+    if (APPLE)
+        target_compile_options(${target} PRIVATE
+                $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
+                $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
+    endif()
+    
     target_include_directories(${target} PUBLIC
             "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/Interfaces"
             "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Application/ThirdParty/OpenSource/gainput/lib/source"
@@ -74,7 +76,6 @@ function(INCLUDE_THEFORGE target)
             "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Utilities/ThirdParty/OpenSource/Nothings/"
             "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Tools/ForgeShadingLanguage/includes"
             "${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/Graphics"
-            "${PROJECT_SOURCE_DIR}/_External/The-Forge/Examples_3/Visibility_Buffer/src"
             ${VULKAN_HEADERS_INCLUDE_DIRS}
     )
 

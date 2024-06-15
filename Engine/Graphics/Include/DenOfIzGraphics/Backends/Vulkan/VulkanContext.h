@@ -23,14 +23,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #endif
 #include <vulkan/vulkan.hpp>
-
-#define SDL_MAIN_HANDLED
-#include <SDL2/SDL.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 #include <DenOfIzCore/Common.h>
 #include <unordered_map>
-#include "vk_mem_alloc.h"
+#include "vma/vk_mem_alloc.h"
 #include "../Common/ShaderCompiler.h"
+#include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 
 namespace DenOfIz
 {
@@ -74,7 +72,7 @@ struct VulkanContext
 
 	vk::Extent2D SurfaceExtent{};
 
-	SDL_Window* Window;
+	GraphicsWindowHandle* Window;
 	std::unordered_map<QueueType, QueueFamily> QueueFamilies;
 	std::unordered_map<QueueType, vk::Queue> Queues;
 

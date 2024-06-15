@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
-#include "SDL_vulkan.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanDescriptorTable.h"
 #include "DenOfIzGraphics/Backends/Vulkan/Resource/VulkanImageResource.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h"
+#include "vulkan/vulkan_win32.h"
 
 using namespace DenOfIz;
 
@@ -60,7 +60,7 @@ void VulkanLogicalDevice::LoadExtensionFunctions()
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 }
 
-void VulkanLogicalDevice::CreateDevice(SDL_Window* window)
+void VulkanLogicalDevice::CreateDevice(GraphicsWindowHandle* window)
 {
 	LoadExtensionFunctions();
 
@@ -71,18 +71,7 @@ void VulkanLogicalDevice::CreateDevice(SDL_Window* window)
 
 	vk::InstanceCreateInfo createInfo{{}, &appInfo };
 
-	uint32_t sdlExtensionCount;
-	if (!SDL_Vulkan_GetInstanceExtensions(m_context->Window, &sdlExtensionCount, nullptr))
-	{
-		LOG(Verbosity::Critical, "VulkanDevice", SDL_GetError());
-	}
-
-	std::vector<const char*> extensions(sdlExtensionCount);
-	if (!SDL_Vulkan_GetInstanceExtensions(m_context->Window, &sdlExtensionCount, extensions.data()))
-	{
-		LOG(Verbosity::Critical, "VulkanDevice", SDL_GetError());
-	}
-
+	std::vector<const char*> extensions = m_context->Window->GetVkRequiredExtensions();
 	std::vector<const char*> layers;
 	InitSupportedLayers(layers);
 
@@ -239,7 +228,7 @@ void VulkanLogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo& device)
 
 	vk::CommandPoolCreateInfo transferCommandPoolCreateInfo{};
 	transferCommandPoolCreateInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-	transferCommandPoolCreateInfo.queueFamilyIndex = m_context->QueueFamilies[QueueType::Transfer].Index;
+	transferCommandPoolCreateInfo.queueFamilyIndex = m_context->QueueFamilies[QueueType::Copy].Index;
 
 	m_context->GraphicsQueueCommandPool = m_context->LogicalDevice.createCommandPool(graphicsCommandPoolCreateInfo);
 	m_context->TransferQueueCommandPool = m_context->LogicalDevice.createCommandPool(transferCommandPoolCreateInfo);
@@ -270,10 +259,10 @@ void VulkanLogicalDevice::SetupQueueFamilies() const
 		{
 			m_context->QueueFamilies[QueueType::Graphics] = QueueFamily{ index, { static_cast<VkQueueFlags>(property.queueFlags) }};
 		}
-		else if (hasTransfer && !exists(QueueType::Transfer))
+		else if (hasTransfer && !exists(QueueType::Copy))
 		{
 			// Try to fetch a unique transfer queue
-			m_context->QueueFamilies[QueueType::Transfer] = QueueFamily{ index, { static_cast<VkQueueFlags>(property.queueFlags) }};
+			m_context->QueueFamilies[QueueType::Copy] = QueueFamily{ index, { static_cast<VkQueueFlags>(property.queueFlags) }};
 		}
 
 		const vk::Bool32 presentationSupport = m_context->PhysicalDevice.getSurfaceSupportKHR(index, m_context->Surface);
@@ -286,9 +275,9 @@ void VulkanLogicalDevice::SetupQueueFamilies() const
 		++index;
 	}
 
-	if (!exists(QueueType::Transfer))
+	if (!exists(QueueType::Copy))
 	{
-		m_context->QueueFamilies[QueueType::Transfer] = m_context->QueueFamilies[QueueType::Graphics];
+		m_context->QueueFamilies[QueueType::Copy] = m_context->QueueFamilies[QueueType::Graphics];
 	}
 }
 
@@ -318,11 +307,11 @@ void VulkanLogicalDevice::CreateLogicalDevice() const
 
 	m_context->Queues[QueueType::Graphics] = vk::Queue{};
 	m_context->Queues[QueueType::Presentation] = vk::Queue{};
-	m_context->Queues[QueueType::Transfer] = vk::Queue{};
+	m_context->Queues[QueueType::Copy] = vk::Queue{};
 
 	m_context->LogicalDevice.getQueue(m_context->QueueFamilies[QueueType::Graphics].Index, 0, &m_context->Queues[QueueType::Graphics]);
 	m_context->LogicalDevice.getQueue(m_context->QueueFamilies[QueueType::Presentation].Index, 0, &m_context->Queues[QueueType::Presentation]);
-	m_context->LogicalDevice.getQueue(m_context->QueueFamilies[QueueType::Transfer].Index, 0, &m_context->Queues[QueueType::Transfer]);
+	m_context->LogicalDevice.getQueue(m_context->QueueFamilies[QueueType::Copy].Index, 0, &m_context->Queues[QueueType::Copy]);
 }
 
 void VulkanLogicalDevice::InitializeVma() const
@@ -340,7 +329,15 @@ void VulkanLogicalDevice::CreateSurface() const
 {
 	const auto instance = static_cast<VkInstance>(m_context->Instance);
 	auto surface = static_cast<VkSurfaceKHR>(m_context->Surface);
-	SDL_Vulkan_CreateSurface(m_context->Window, instance, &surface);
+#ifdef WIN32
+	VkWin32SurfaceCreateInfoKHR createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	createInfo.hwnd = m_context->Window->GetNativeHandle();
+	createInfo.hinstance = GetModuleHandle(nullptr);
+	assertm(vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) == VK_SUCCESS, "Failed to create surface");
+#else
+#error "Not implemented yet"
+#endif
 	m_context->Surface = vk::SurfaceKHR(surface);
 }
 
@@ -480,6 +477,12 @@ std::unique_ptr<IRootSignature> VulkanLogicalDevice::CreateRootSignature(const R
 {
 	VulkanRootSignature* rootSignature = new VulkanRootSignature(m_context.get(), createInfo);
 	return std::unique_ptr<IRootSignature>(rootSignature);
+}
+
+std::unique_ptr<IInputLayout> VulkanLogicalDevice::CreateInputLayout(const InputLayoutCreateInfo& createInfo)
+{
+	VulkanInputLayout* inputLayout = new VulkanInputLayout(createInfo);
+	return std::unique_ptr<IInputLayout>(inputLayout);
 }
 
 std::unique_ptr<IDescriptorTable> VulkanLogicalDevice::CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo)

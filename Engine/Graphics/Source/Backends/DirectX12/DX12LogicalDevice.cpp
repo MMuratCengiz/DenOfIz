@@ -22,11 +22,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "SDL2/SDL_syswm.h"
 
 using namespace DenOfIz;
-using namespace DirectX;
 using Microsoft::WRL::ComPtr;
 
 DX12LogicalDevice::DX12LogicalDevice()
 {
+	m_context = std::make_unique<DX12Context>();
 }
 
 DX12LogicalDevice::~DX12LogicalDevice()
@@ -35,10 +35,10 @@ DX12LogicalDevice::~DX12LogicalDevice()
 	Dispose();
 }
 
-void DX12LogicalDevice::CreateDevice(SDL_Window* window)
+void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle* window)
 {
 	m_context->Window = window;
-#if defined(_DEBUG)
+#ifdef _DEBUG
 	{
 		ComPtr<ID3D12Debug> debugController;
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf()))))
@@ -109,7 +109,7 @@ void DX12LogicalDevice::CreateDeviceInfo(IDXGIAdapter1& adapter, PhysicalDeviceI
 	{
 		deviceInfo.Capabilities.RayTracing = opts.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
 	}
-
+	device.Reset();
 	bool allowTearing = false;
 	ComPtr<IDXGIFactory5> factory5;
 	HRESULT hr = m_context->DXGIFactory.As(&factory5);
@@ -146,18 +146,16 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo& device)
 	}
 
 	m_context->Adapter = adapter.Detach();
-
 	// Create the DX12 API device object.
-	DX_CHECK_RESULT(D3D12CreateDevice(m_context->Adapter.Get(), m_minFeatureLevel, IID_PPV_ARGS(m_context->D3DDevice.ReleaseAndGetAddressOf())));
-
-	m_context->D3DDevice->SetName(L"DeviceResources");
+	ComPtr<ID3D12Device> dxDevice;
+	DX_CHECK_RESULT(D3D12CreateDevice(m_context->Adapter.Get(), m_minFeatureLevel, IID_PPV_ARGS(dxDevice.ReleaseAndGetAddressOf())));
+	DX_CHECK_RESULT(dxDevice->QueryInterface(IID_PPV_ARGS(&m_context->D3DDevice)));
 
 	// Confirm the device supports DXR.
 	D3D12_FEATURE_DATA_D3D12_OPTIONS5 opts = {};
 	if (FAILED(m_context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &opts, sizeof(opts))) || opts.RaytracingTier == D3D12_RAYTRACING_TIER_NOT_SUPPORTED)
 	{
-		OutputDebugStringA("DirectX Raytracing support not found.\n");
-
+		LOG(Verbosity::Warning, "DX12Device", "WARNING: DirectX Raytracing support not found.");
 	}
 
 	// Confirm the device supports Shader Model 6.3 or better.
@@ -203,52 +201,27 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo& device)
 		m_minFeatureLevel = D3D_FEATURE_LEVEL_12_0;
 	}
 
-	// Create the command queue.
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-	DX_CHECK_RESULT(m_context->D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(m_context->CommandQueue.ReleaseAndGetAddressOf())));
+	DX_CHECK_RESULT(m_context->D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(m_context->GraphicsCommandQueue.ReleaseAndGetAddressOf())));
 
-	m_context->CommandQueue->SetName(L"DeviceResources");
+	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+	DX_CHECK_RESULT(m_context->D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(m_context->ComputeCommandQueue.ReleaseAndGetAddressOf())));
 
-	// Create descriptor heaps for render target views and depth stencil views.
-	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc = {};
-	rtvDescriptorHeapDesc.NumDescriptors = m_context->BackBufferCount;
-	rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-
-	DX_CHECK_RESULT(m_context->D3DDevice->CreateDescriptorHeap(&rtvDescriptorHeapDesc, IID_PPV_ARGS(m_context->RTVDescriptorHeap.ReleaseAndGetAddressOf())));
-
-	m_context->RTVDescriptorHeap->SetName(L"DeviceResources");
-
-//	m_rtvDescriptorSize = m_context->D3DDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-	if (m_context->DepthBufferFormat != DXGI_FORMAT_UNKNOWN)
+	for (int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; i++)
 	{
-		D3D12_DESCRIPTOR_HEAP_DESC dsvDescriptorHeapDesc = {};
-		dsvDescriptorHeapDesc.NumDescriptors = 1;
-		dsvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-
-		DX_CHECK_RESULT(m_context->D3DDevice->CreateDescriptorHeap(&dsvDescriptorHeapDesc, IID_PPV_ARGS(m_context->DSVDescriptorHeap.ReleaseAndGetAddressOf())));
-
-		m_context->DSVDescriptorHeap->SetName(L"DeviceResources");
+		m_context->CpuDescriptorHeaps[i] = std::make_unique<DX12DescriptorHeap>(m_context->D3DDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE(i), false);
 	}
 
-	// Create a command allocator for each back buffer that will be rendered to.
-	for (UINT n = 0; n < m_context->BackBufferCount; n++)
-	{
-		DX_CHECK_RESULT(m_context->D3DDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(m_context->DirectCommandAllocator[n].ReleaseAndGetAddressOf())));
+	m_context->ShaderVisibleCbvSrvUavDescriptorHeap = std::make_unique<DX12DescriptorHeap>(m_context->D3DDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
+	m_context->ShaderVisibleSamplerDescriptorHeap = std::make_unique<DX12DescriptorHeap>(m_context->D3DDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, true);
 
-		std::string name = (boost::format("Render target %1") % n).str();
-		m_context->DirectCommandAllocator[n]->SetName(LPCWSTR(name.c_str()));
-	}
-
-	// Create a command list for recording graphics commands.
-	DX_CHECK_RESULT(m_context->D3DDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_context->DirectCommandAllocator[0].Get(), nullptr,
-			IID_PPV_ARGS(m_context->DirectCommandList.ReleaseAndGetAddressOf())));
-	DX_CHECK_RESULT(m_context->DirectCommandList->Close());
-
-	m_context->DirectCommandList->SetName(L"DeviceResources");
+	DX_CHECK_RESULT(m_context->D3DDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(m_context->CopyCommandListAllocator.ReleaseAndGetAddressOf())));
+	DX_CHECK_RESULT(m_context->D3DDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COPY, m_context->CopyCommandListAllocator.Get(), nullptr,
+			IID_PPV_ARGS(m_context->CopyCommandList.ReleaseAndGetAddressOf())));
+	DX_CHECK_RESULT(m_context->CopyCommandList->Close());
 
 	// Create a fence for tracking GPU execution progress.
 //	DX_CHECK_RESULT(m_context->D3DDevice->CreateFence(m_fenceValues[m_backBufferIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.ReleaseAndGetAddressOf())));
@@ -269,54 +242,12 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo& device)
 	DX_CHECK_RESULT(D3D12MA::CreateAllocator(&allocatorDesc, &m_context->DX12MemoryAllocator));
 }
 
-void DX12LogicalDevice::CreateSwapChain()
-{
-	SDL_Surface* surface = SDL_GetWindowSurface(m_context->Window);
-
-	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-	swapChainDesc.BufferCount = m_context->BackBufferCount;
-	swapChainDesc.Width = surface->w;
-	swapChainDesc.Height = surface->h;
-	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	swapChainDesc.SampleDesc.Count = 1;
-
-	ComPtr<IDXGISwapChain1> swapChain;
-
-	SDL_SysWMinfo wmInfo;
-	SDL_VERSION(&wmInfo.version);
-	SDL_GetWindowWMInfo(m_context->Window, &wmInfo);
-	HWND hwnd = wmInfo.info.win.window;
-
-	DX_CHECK_RESULT(m_context->DXGIFactory->CreateSwapChainForHwnd(
-			m_context->CommandQueue.Get(),
-			hwnd,
-			&swapChainDesc,
-			nullptr,
-			nullptr,
-			&swapChain
-	));
-
-	DX_CHECK_RESULT(swapChain.As(&m_context->SwapChain));
-}
-
 void DX12LogicalDevice::Dispose()
 {
-//	for (UINT n = 0; n < m_context->BackBufferCount; n++)
-//	{
-//		m_commandAllocators[n].Reset();
-//		m_renderTargets[n].Reset();
-//	}
-//
-//	m_context->DepthStencil.Reset();
-//	m_context->CommandList.Reset();
-//	m_context->fence.Reset();
 	m_context->DX12MemoryAllocator->Release();
-	m_context->CommandQueue.Reset();
-	m_context->RTVDescriptorHeap.Reset();
-	m_context->DSVDescriptorHeap.Reset();
-	m_context->SwapChain.Reset();
+	m_context->CopyCommandListAllocator->Reset();
+	m_context->CopyCommandList.Reset();
+	m_context->GraphicsCommandQueue.Reset();
 	m_context->D3DDevice.Reset();
 	m_context->DXGIFactory.Reset();
 
@@ -334,4 +265,65 @@ void DX12LogicalDevice::Dispose()
 void DX12LogicalDevice::WaitIdle()
 {
 
+}
+
+std::unique_ptr<ICommandList> DX12LogicalDevice::CreateCommandList(const CommandListCreateInfo& createInfo)
+{
+	DX12CommandList* commandList = new DX12CommandList(m_context.get(), createInfo);
+	return std::unique_ptr<ICommandList>(commandList);
+}
+
+std::unique_ptr<IPipeline> DX12LogicalDevice::CreatePipeline(const PipelineCreateInfo& createInfo)
+{
+	DX12Pipeline *pipeline = new DX12Pipeline(m_context.get(), createInfo);
+	return std::unique_ptr<IPipeline>(pipeline);
+}
+
+std::unique_ptr<ISwapChain> DX12LogicalDevice::CreateSwapChain(const SwapChainCreateInfo& createInfo)
+{
+	DX12SwapChain* swapChain = new DX12SwapChain(m_context.get(), createInfo);
+	return std::unique_ptr<ISwapChain>(swapChain);
+}
+
+std::unique_ptr<IRootSignature> DX12LogicalDevice::CreateRootSignature(const RootSignatureCreateInfo& createInfo)
+{
+	DX12RootSignature* rootSignature = new DX12RootSignature(m_context.get(), createInfo);
+	return std::unique_ptr<IRootSignature>(rootSignature);
+}
+
+std::unique_ptr<IInputLayout> DX12LogicalDevice::CreateInputLayout(const InputLayoutCreateInfo& createInfo)
+{
+	DX12InputLayout* inputLayout = new DX12InputLayout(createInfo);
+	return std::unique_ptr<IInputLayout>(inputLayout);
+}
+
+std::unique_ptr<IDescriptorTable> DX12LogicalDevice::CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo)
+{
+	DX12DescriptorTable* descriptorTable = new DX12DescriptorTable(m_context.get(), createInfo);
+	return std::unique_ptr<IDescriptorTable>(descriptorTable);
+}
+
+std::unique_ptr<IFence> DX12LogicalDevice::CreateFence()
+{
+	DX12Fence* fence = new DX12Fence(m_context.get());
+	return std::unique_ptr<IFence>(fence);
+}
+
+std::unique_ptr<ISemaphore> DX12LogicalDevice::CreateSemaphore()
+{
+	return std::unique_ptr<ISemaphore>();
+}
+
+std::unique_ptr<IBufferResource> DX12LogicalDevice::CreateBufferResource(std::string name, const BufferCreateInfo& createInfo)
+{
+	DX12BufferResource* buffer = new DX12BufferResource(m_context.get(), createInfo);
+	buffer->Name = name;
+	return std::unique_ptr<IBufferResource>(buffer);
+}
+
+std::unique_ptr<IImageResource> DX12LogicalDevice::CreateImageResource(std::string name, const ImageCreateInfo& createInfo)
+{
+	DX12ImageResource* image = new DX12ImageResource(m_context.get(), createInfo);
+	image->Name = name;
+	return std::unique_ptr<IImageResource>(image);
 }

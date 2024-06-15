@@ -53,6 +53,22 @@ public:
 		return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
 	}
 
+	static D3D12_COMMAND_LIST_TYPE ConvertQueueType(QueueType queueType)
+	{
+		switch (queueType)
+		{
+		case QueueType::Presentation:
+		case QueueType::Graphics:
+			return D3D12_COMMAND_LIST_TYPE_DIRECT;
+		case QueueType::Compute:
+			return D3D12_COMMAND_LIST_TYPE_COMPUTE;
+		case QueueType::Copy:
+			return D3D12_COMMAND_LIST_TYPE_COPY;
+		}
+
+		return D3D12_COMMAND_LIST_TYPE_DIRECT;
+	}
+
 	static D3D12_ROOT_PARAMETER_TYPE ConvertBindingTypeToRootParameterType(ResourceBindingType bindingType)
 	{
 		switch (bindingType)
@@ -229,9 +245,9 @@ public:
 		{
 		case ShaderStage::Vertex:
 			return D3D12_SHADER_VISIBILITY_VERTEX;
-		case ShaderStage::TessellationControl:
+		case ShaderStage::Hull:
 			return D3D12_SHADER_VISIBILITY_HULL;
-		case ShaderStage::TessellationEvaluation:
+		case ShaderStage::Domain:
 			return D3D12_SHADER_VISIBILITY_DOMAIN;
 		case ShaderStage::Geometry:
 			return D3D12_SHADER_VISIBILITY_GEOMETRY;
@@ -269,7 +285,7 @@ public:
 		return D3D12_COMPARISON_FUNC_EQUAL;
 	}
 
-	static D3D12_PRIMITIVE_TOPOLOGY_TYPE ConvertPrimitiveTopology(const PrimitiveTopology& topology)
+	static D3D12_PRIMITIVE_TOPOLOGY_TYPE ConvertPrimitiveTopologyToType(const PrimitiveTopology& topology)
 	{
 		switch (topology)
 		{
@@ -284,6 +300,23 @@ public:
 		}
 
 		return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	}
+
+	static D3D12_PRIMITIVE_TOPOLOGY ConvertPrimitiveTopology(const PrimitiveTopology& topology)
+	{
+		switch (topology)
+		{
+		case PrimitiveTopology::Point:
+			return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+		case PrimitiveTopology::Line:
+			return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+		case PrimitiveTopology::Triangle:
+			return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		case PrimitiveTopology::Patch:
+			return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST; // Todo could require more control points
+		}
+
+		return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	}
 
 	static D3D12_STENCIL_OP ConvertStencilOp(const StencilOp& op)
@@ -325,6 +358,109 @@ public:
 		}
 
 		return D3D12_CULL_MODE_NONE;
+	}
+
+	static D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE ConvertLoadOp(const LoadOp& op)
+	{
+		switch (op)
+		{
+		case LoadOp::Clear:
+			return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR;
+		case LoadOp::Load:
+			return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE;
+		case LoadOp::Unidentified:
+			return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD;
+		}
+
+		return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD;
+	}
+
+	static D3D12_RENDER_PASS_ENDING_ACCESS_TYPE ConvertStoreOp(const StoreOp& op)
+	{
+		switch (op)
+		{
+		case StoreOp::Store:
+			return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE;
+		case StoreOp::Unidentified:
+			return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;
+		case StoreOp::None:
+			return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS;
+		}
+
+		return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;
+	}
+
+	static D3D12_RESOURCE_STATES ConvertResourceState(const ResourceState& state)
+	{
+		D3D12_RESOURCE_STATES result = D3D12_RESOURCE_STATE_COMMON;
+
+		if (state.GenericRead)
+		{
+			return D3D12_RESOURCE_STATE_GENERIC_READ;
+		}
+		if (state.Common)
+		{
+			return D3D12_RESOURCE_STATE_COMMON;
+		}
+		if (state.Present)
+		{
+			return D3D12_RESOURCE_STATE_PRESENT;
+		}
+
+		if (state.VertexAndConstantBuffer)
+		{
+			result |= D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+		}
+		if (state.IndexBuffer)
+		{
+			result |= D3D12_RESOURCE_STATE_INDEX_BUFFER;
+		}
+		if (state.RenderTarget)
+		{
+			result |= D3D12_RESOURCE_STATE_RENDER_TARGET;
+		}
+		if (state.UnorderedAccess)
+		{
+			result |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		}
+		if (state.DepthWrite)
+		{
+			result |= D3D12_RESOURCE_STATE_DEPTH_WRITE;
+		}
+		else if (state.DepthRead)
+		{
+			result |= D3D12_RESOURCE_STATE_DEPTH_READ;
+		}
+
+		if (state.StreamOut)
+		{
+			result |= D3D12_RESOURCE_STATE_STREAM_OUT;
+		}
+		if (state.IndirectArgument)
+		{
+			result |= D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
+		}
+		if (state.CopyDst)
+		{
+			result |= D3D12_RESOURCE_STATE_COPY_DEST;
+		}
+		if (state.CopySource)
+		{
+			result |= D3D12_RESOURCE_STATE_COPY_SOURCE;
+		}
+		if (state.ShaderResource)
+		{
+			result |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+		}
+		if (state.PixelShaderResource)
+		{
+			result |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		}
+		if (state.AccelerationStructureRead || state.AccelerationStructureWrite)
+		{
+			result |= D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+		}
+		return result;
 	}
 };
 

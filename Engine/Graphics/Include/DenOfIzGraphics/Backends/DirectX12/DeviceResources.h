@@ -27,6 +27,8 @@ class DeviceResources
 {
 	std::unique_ptr<DX12Context> m_Context;
 
+	ComPtr<IDXGISwapChain3> SwapChain;
+	std::vector<ComPtr<ID3D12Resource>> SwapChainImages;
 public:
 	static constexpr unsigned int c_AllowTearing = 0x1;
 	static constexpr unsigned int c_EnableHDR = 0x2;

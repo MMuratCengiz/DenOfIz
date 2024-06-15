@@ -29,10 +29,17 @@ class DX12ImageResource : public IImageResource
 private:
 	DX12Context* m_context;
 	ImageCreateInfo m_createInfo;
+	ID3D12Resource2* m_resource;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
+	bool isExternalResource = false;
 public:
 	DX12ImageResource(DX12Context* context, const ImageCreateInfo& createInfo);
+	DX12ImageResource(ID3D12Resource2* resource, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle);
 	void AttachSampler(SamplerCreateInfo& info) override;
 	void Deallocate() override;
+
+	ID3D12Resource* GetResource() const { return m_resource; }
+	const D3D12_CPU_DESCRIPTOR_HANDLE& GetCpuHandle() const { return m_cpuHandle; };
 protected:
 	void Allocate(const void* data) override;
 };

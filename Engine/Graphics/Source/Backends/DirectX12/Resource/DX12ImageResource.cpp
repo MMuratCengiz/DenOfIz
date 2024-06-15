@@ -24,8 +24,19 @@ DX12ImageResource::DX12ImageResource(DX12Context* context, const ImageCreateInfo
 {
 }
 
+DX12ImageResource::DX12ImageResource(ID3D12Resource2* resource, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle) : m_resource(resource), m_cpuHandle(cpuHandle)
+{
+	isExternalResource = true;
+}
+
 void DX12ImageResource::Allocate(const void* data)
 {
+	if (isExternalResource)
+	{
+		LOG(Verbosity::Warning, "DX12ImageResource", "Allocating an externally managed resource(i.e. a swapchain render target).");
+		return;
+	}
+
 	D3D12_RESOURCE_DESC resourceDesc = {};
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	resourceDesc.Alignment = 0;
@@ -42,12 +53,13 @@ void DX12ImageResource::Allocate(const void* data)
 	D3D12MA::ALLOCATION_DESC allocDesc = {};
 	allocDesc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
 
-	ID3D12Resource* resource;
 	D3D12MA::Allocation* allocation;
 	HRESULT hr = m_context->DX12MemoryAllocator->CreateResource(
 			&allocDesc, &resourceDesc,
 			D3D12_RESOURCE_STATE_COPY_DEST, NULL,
-			&allocation, IID_PPV_ARGS(&resource));
+			&allocation, IID_PPV_ARGS(&m_resource));
+
+	DX_CHECK_RESULT(hr);
 }
 
 void DX12ImageResource::AttachSampler(SamplerCreateInfo& info)

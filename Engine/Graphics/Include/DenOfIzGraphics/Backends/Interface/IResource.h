@@ -34,12 +34,19 @@ public:
 	virtual const ResourceType Type() = 0;
 };
 
+struct BufferView
+{
+	uint64_t Offset;
+	uint64_t Stride;
+};
+
 struct BufferCreateInfo
 {
 	bool KeepMemoryMapped = false;
-	bool UseStaging = false;
 
-	BufferMemoryUsage Usage;
+	BufferView BufferView; // For Structured Buffers
+	ImageFormat Format = ImageFormat::Undefined;
+	BufferUsage Usage;
 	HeapType HeapType;
 };
 

@@ -21,26 +21,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-void SimpleRenderer::Init(SDL_Window* window)
+void SimpleRenderer::Init(GraphicsWindowHandle* window)
 {
 	m_window = window;
-	
-	APIPreference apiPreference = {};
-	apiPreference.Windows = APIPreferenceWindows::Vulkan;
-	GraphicsAPIInit gapiInit(apiPreference);
+	GraphicsAPI::SetAPIPreference(APIPreference{
+			.Windows = APIPreferenceWindows::DirectX12,
+	});
 
-	m_logicalDevice = gapiInit.CreateLogicalDevice(m_window);
+	m_logicalDevice = GraphicsAPI::CreateLogicalDevice(m_window);
 	auto firstDevice = m_logicalDevice->ListPhysicalDevices()[0];
 	m_logicalDevice->LoadPhysicalDevice(firstDevice);
 
-	auto compiler = ShaderCompiler();
-	compiler.Init();
-	auto vs = compiler.HLSLtoSPV(ShaderStage::Vertex, "Assets/Shaders/vs.hlsl");
-	auto fs = compiler.HLSLtoSPV(ShaderStage::Fragment, "Assets/Shaders/fs.hlsl");
-	compiler.Destroy();
-
-	m_program = std::make_unique<ShaderProgram>(std::vector<CompiledShader>{ CompiledShader{ .Stage = ShaderStage::Vertex, .Data = std::move(vs) },
-																			 CompiledShader{ .Stage = ShaderStage::Fragment, .Data = std::move(fs) }});
+	m_program.AddShader(ShaderInfo{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" });
+	m_program.AddShader(ShaderInfo{ .Stage = ShaderStage::Fragment, .Path = "Assets/Shaders/fs.hlsl" });
+	m_program.Compile();
 
 	m_rootSignature = m_logicalDevice->CreateRootSignature(RootSignatureCreateInfo{});
 	ResourceBinding timePassedBinding{};
@@ -50,12 +44,32 @@ void SimpleRenderer::Init(SDL_Window* window)
 	timePassedBinding.Stages = { ShaderStage::Vertex };
 	m_rootSignature->AddResourceBinding(timePassedBinding);
 	m_rootSignature->Create();
+	const InputLayoutCreateInfo& inputLayoutCreateInfo = InputLayoutCreateInfo{};
+
+	m_inputLayout = m_logicalDevice->CreateInputLayout(
+			{
+					.InputGroups =
+							{
+									{
+											.Elements =
+													{
+															InputLayoutElement
+																	{
+																			.Semantic = Semantic::Position,
+																			.Format = ImageFormat::R32G32B32A32Float
+																	}
+													},
+											.StepRate = StepRate::PerVertex
+									}
+							}
+			});
 
 	m_swapChain = m_logicalDevice->CreateSwapChain(SwapChainCreateInfo{});
 
-	PipelineCreateInfo pipelineCreateInfo{ .ShaderProgram = *m_program };
+	PipelineCreateInfo pipelineCreateInfo{ .ShaderProgram = m_program };
 	pipelineCreateInfo.BlendModes = { BlendMode::None };
 	pipelineCreateInfo.RootSignature = m_rootSignature.get();
+	pipelineCreateInfo.InputLayout = m_inputLayout.get();
 	pipelineCreateInfo.Rendering.ColorAttachmentFormats.push_back(m_swapChain->GetPreferredFormat());
 
 	m_pipeline = m_logicalDevice->CreatePipeline(pipelineCreateInfo);
@@ -70,15 +84,14 @@ void SimpleRenderer::Init(SDL_Window* window)
 
 	BufferCreateInfo bufferCreateInfo{};
 	bufferCreateInfo.HeapType = HeapType::GPU;
-	bufferCreateInfo.Usage = BufferMemoryUsage::VertexBuffer;
-	bufferCreateInfo.UseStaging = true;
+	bufferCreateInfo.Usage.VertexBuffer = 1;
 
 	m_vertexBuffer = m_logicalDevice->CreateBufferResource("vb", bufferCreateInfo);
 	m_vertexBuffer->Allocate(m_triangle.data(), m_triangle.size() * sizeof(float));
 
-	BufferCreateInfo deltaTimeBufferCreateInfo {};
+	BufferCreateInfo deltaTimeBufferCreateInfo{};
 	deltaTimeBufferCreateInfo.HeapType = HeapType::CPU_GPU;
-	deltaTimeBufferCreateInfo.Usage = BufferMemoryUsage::UniformBuffer;
+	deltaTimeBufferCreateInfo.Usage.UniformBuffer = 1;
 
 	m_timePassedBuffer = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferCreateInfo);
 	float timePassed = 0.0f;
@@ -86,17 +99,6 @@ void SimpleRenderer::Init(SDL_Window* window)
 
 	m_descriptorTable = m_logicalDevice->CreateDescriptorTable(DescriptorTableCreateInfo{ .RootSignature = m_rootSignature.get() });
 	m_descriptorTable->BindBuffer(m_timePassedBuffer.get());
-
-//	RenderPassCreateInfo createInfo{};
-//	createInfo.RenderToSwapChain = true;
-//	createInfo.RenderTargetType = RenderTargetType::Color;
-//
-//	for (int i = 0; i < 3; i++)
-//	{
-//		createInfo.SwapChainImageIndex = i;
-//		m_renderPasses.push_back(std::move(m_logicalDevice->CreateRenderPass(createInfo)));
-//		m_fences.push_back(m_logicalDevice->CreateFence());
-//	}
 
 	m_time->ListenFps = [](const double fps)
 	{
@@ -106,7 +108,7 @@ void SimpleRenderer::Init(SDL_Window* window)
 
 void SimpleRenderer::Render()
 {
-	float timePassed = (m_time->DoubleEpochNow() - m_time->GetFirstTickTime()) / 1000000.0f;
+	float timePassed = std::fmax(1.0f, (m_time->DoubleEpochNow() - m_time->GetFirstTickTime()) / 1000000.0f);
 	m_timePassedBuffer->Allocate(&timePassed, sizeof(float));
 	m_time->Tick();
 
@@ -115,14 +117,13 @@ void SimpleRenderer::Render()
 
 	m_fences[currentFrame]->Wait();
 	uint32_t nextImage = m_swapChain->AcquireNextImage(m_imageReadySemaphores[currentFrame].get());
-	nextCommandList->Reset();
 	nextCommandList->Begin();
 
 	RenderingAttachmentInfo renderingAttachmentInfo{};
 	renderingAttachmentInfo.Resource = m_swapChain->GetRenderTarget(nextImage);
 
 	RenderingInfo renderingInfo{};
-	renderingInfo.ColorAttachments.push_back(std::move(renderingAttachmentInfo));
+	renderingInfo.RTAttachments.push_back(std::move(renderingAttachmentInfo));
 
 	PipelineBarrier pipelineBarrier{};
 	ImageBarrierInfo imageBarrier{};
@@ -141,20 +142,20 @@ void SimpleRenderer::Render()
 	nextCommandList->BindVertexBuffer(m_vertexBuffer.get());
 	nextCommandList->Draw(3, 1);
 	nextCommandList->EndRendering();
-	nextCommandList->End();
 
-	SubmitInfo submitInfo{};
+	ExecuteInfo submitInfo{};
 	submitInfo.Notify = m_fences[currentFrame].get();
 	submitInfo.WaitOnLocks.push_back(m_imageReadySemaphores[currentFrame].get());
 	submitInfo.SignalLocks.push_back(m_imageRenderedSemaphores[currentFrame].get());
 
-	nextCommandList->Submit(submitInfo);
+	nextCommandList->Execute(submitInfo);
 	nextCommandList->Present(m_swapChain.get(), nextImage, { m_imageRenderedSemaphores[currentFrame].get() });
 }
 
 void SimpleRenderer::Quit()
 {
 	m_logicalDevice->WaitIdle();
+	GfxGlobal::Destroy();
 }
 
 }
