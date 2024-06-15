@@ -5,10 +5,9 @@ include("${PROJECT_SOURCE_DIR}/Engine/The-Forge/cmake/theforge_helper.cmake")
 if (WIN32)
     find_package(directx-headers CONFIG REQUIRED)
     find_package(directxtk12 CONFIG REQUIRED)
-    find_package(directx-dxc CONFIG REQUIRED)
 else ()
-    include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_dxcompiler.cmake")
-    build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
+#    include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_dxcompiler.cmake")
+#    build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
 endif ()
 
 find_package(Vulkan CONFIG)
@@ -106,31 +105,18 @@ target_include_default_directories(DenOfIzGraphics)
 target_include_directories(DenOfIzGraphics
         PRIVATE
         ${TINYGLTF_INCLUDE_DIRS}
+        _ThirdParty/dxc/inc
 )
 
-if (NOT WIN32)
-    target_include_directories(DenOfIzGraphics
-            PRIVATE
-            _ThirdParty/DirectXShaderCompiler/include
-    )
-
-    target_link_libraries(DenOfIzGraphics
-            PRIVATE
-            dxcompiler
-    )
-else ()
-    target_link_libraries(DenOfIzGraphics
-            PUBLIC
-            Microsoft::DirectXShaderCompiler
-    )
-endif ()
+target_link_directories(
+        DenOfIzGraphics
+        PRIVATE
+        _ThirdParty/dxc/lib/${CPU_ARCHITECTURE}
+)
 
 target_link_libraries(DenOfIzGraphics
         PUBLIC
         DenOfIzCore
-)
-
-target_link_libraries(DenOfIzGraphics
         PRIVATE
         SDL2::SDL2
         SDL2::SDL2main
@@ -138,6 +124,7 @@ target_link_libraries(DenOfIzGraphics
         ${Vulkan_LIBRARY}
         Vulkan::Headers
         GPUOpen::VulkanMemoryAllocator
+        dxcompiler
         spirv-cross-glsl
         spirv-cross-hlsl
         spirv-cross-cpp
@@ -152,19 +139,13 @@ target_link_libraries(DenOfIzGraphics
 )
 
 if (WIN32)
-#    target_link_libraries(DenOfIzGraphics PUBLIC
-#            "${CMAKE_CURRENT_SOURCE_DIR}/_/_ThirdParty/dxc/lib/dxcompiler.lib"
-#            XInput
-#    )
-#    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/dxc/bin/x64/dxcompiler.dll" "${PROJECT_BINARY_DIR}/dxcompiler.dll" COPYONLY)
-#    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/dxc/bin/x64/dxil.dll" "${PROJECT_BINARY_DIR}/dxil.dll" COPYONLY)
+    configure_file(_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/dxcompiler.dll COPYONLY)
+    configure_file(_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/dxil.dll COPYONLY)
 
     target_link_libraries(DenOfIzGraphics
             PRIVATE
             dxgi
             d3d12
-            Microsoft::DXIL
-            Microsoft::DirectXShaderCompiler
             Microsoft::DirectX-Headers
             Microsoft::DirectXTK12
     )

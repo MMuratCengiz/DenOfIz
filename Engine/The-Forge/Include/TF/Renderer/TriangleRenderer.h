@@ -18,38 +18,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "../TFCommon.h"
 #include <DenOfIzCore/Time.h>
 #include <memory>
-#include "../TFCommon.h"
 
 namespace DenOfIz
 {
 
-    class TriangleRenderer : public TFCommon
-    {
-    private:
-        std::vector<float> m_triangle{ 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f,  0.0f, 1.0f, -1.0f, 1.0f, 0.0f, 1.0f,
-                                       0.0f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,  0.0f, 1.0f, 1.0f };
-        std::vector<uint32_t> m_indices{ 0, 1, 2 };
+class TriangleRenderer : public TFCommon
+{
+private:
 
-        Shader *mp_basicShader;
-        RootSignature *mp_rootSignature;
-        DescriptorSet *mp_descriptorSet;
-        Buffer *mp_deltaTimeBuffer[ g_DataBufferCount ];
-        Buffer *mp_vertexBuffer;
-        Buffer *mp_indexBuffer;
-        Pipeline *mp_pipeline;
+	std::vector<float> m_triangle{ 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+								   -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+								   0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f };
+	std::vector<uint32_t> m_indices{ 0, 1, 2 };
 
-        std::unique_ptr<Time> m_time = std::make_unique<Time>();
+	Shader* mp_basicShader;
+	RootSignature* mp_rootSignature;
+	DescriptorSet* mp_descriptorSet;
+	Buffer* mp_deltaTimeBuffer[g_DataBufferCount];
+	Buffer* mp_vertexBuffer;
+	Buffer* mp_indexBuffer;
+	Pipeline* mp_pipeline;
 
-    public:
-        TriangleRenderer() = default;
-        void Update(float deltaTime) override;
-        void Draw() override;
-        bool Init() override;
-        void Exit() override;
-        bool Load(ReloadDesc *pReloadDesc) override;
-        void Unload(ReloadDesc *pReloadDesc) override;
-    };
+	std::unique_ptr<Time> m_time = std::make_unique<Time>();
+public:
+	TriangleRenderer() = default;
+	void Update(float deltaTime) override;
+	void Draw() override;
+	bool Init() override;
+	void Exit() override;
+	bool Load(ReloadDesc* pReloadDesc) override;
+	void Unload(ReloadDesc* pReloadDesc) override;
+};
 
-} // namespace DenOfIz
+}

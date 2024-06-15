@@ -142,7 +142,7 @@ vk::DebugUtilsMessengerCreateInfoEXT VulkanLogicalDevice::GetDebugUtilsCreateInf
     return debugUtilsCreateInfo;
 }
 
-Result<Unit> VulkanLogicalDevice::InitDebugMessages(const vk::DebugUtilsMessengerCreateInfoEXT &createInfo)
+bool VulkanLogicalDevice::InitDebugMessages(const vk::DebugUtilsMessengerCreateInfoEXT &createInfo)
 {
     const auto instance = static_cast<VkInstance>(m_context->Instance);
 
@@ -152,10 +152,11 @@ Result<Unit> VulkanLogicalDevice::InitDebugMessages(const vk::DebugUtilsMessenge
 
     if ( createDebugUtils == nullptr || createDebugUtils(instance, &createInfoCast, nullptr, &m_debugMessenger) != VK_SUCCESS )
     {
-        return Error("Failed to initialize debugger!");
+        LOG(Verbosity::Warning, "VulkanDevice", "Failed to initialize debugger!");
+        return false;
     }
 
-    return Success({});
+    return true;
 }
 
 std::vector<PhysicalDeviceInfo> VulkanLogicalDevice::ListPhysicalDevices()

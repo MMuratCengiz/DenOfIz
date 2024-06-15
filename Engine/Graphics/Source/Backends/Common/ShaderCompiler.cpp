@@ -9,29 +9,32 @@ using namespace Microsoft::WRL;
 namespace DenOfIz
 {
 
-    Result<Unit> ShaderCompiler::Init()
+    bool ShaderCompiler::Init()
     {
         glslang::InitializeProcess();
 
         HRESULT result = DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&m_dxcLibrary));
         if ( FAILED(result) )
         {
-            return Error("Failed to initialize DXC Library");
+            LOG(Verbosity::Critical, "Graphics", "Failed to initialize DXC Library");
+            return false;
         }
 
         result = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&m_dxcCompiler));
         if ( FAILED(result) )
         {
-            return Error("Failed to initialize DXC Compiler");
+            LOG(Verbosity::Critical, "Graphics", "Failed to initialize DXC Compiler");
+            return false;
         }
 
         result = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&m_dxcUtils));
         if ( FAILED(result) )
         {
-            return Error("Failed to initialize DXC Utils");
+            LOG(Verbosity::Critical, "Graphics", "Failed to initialize DXC Utils");
+            return false;
         }
 
-        return Success({});
+        return true;
     }
 
     void ShaderCompiler::Destroy()

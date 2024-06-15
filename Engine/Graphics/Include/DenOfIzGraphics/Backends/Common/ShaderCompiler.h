@@ -6,13 +6,14 @@
 #include <glslang/SPIRV/GlslangToSpv.h>
 
 #ifdef _WIN32
-#include <directx-dxc/dxcapi.h>
+#include <DenOfIzCore/Common_Windows.h>
 #include <wrl/client.h>
+#include "dxcapi.h"
 #define CComPtr Microsoft::WRL::ComPtr
 #else
 #define __EMULATE_UUID
 #include "dxc/WinAdapter.h"
-#include "dxc/dxcapi.h"
+#include <dxcapi.h>
 #endif
 #if defined(__APPLE__)
 #include <Metal/Metal.hpp>
@@ -52,7 +53,7 @@ namespace DenOfIz
 #endif
 
     public:
-        Result<Unit> Init();
+        bool Init();
         void Destroy();
         void InitResources(TBuiltInResource &Resources) const;
         EShLanguage FindLanguage(ShaderStage shaderType) const;

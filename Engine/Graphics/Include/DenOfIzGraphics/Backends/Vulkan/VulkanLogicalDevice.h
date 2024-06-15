@@ -91,7 +91,7 @@ namespace DenOfIz
     private:
         void CreateRenderSurface();
 
-        Result<Unit> InitDebugMessages(const vk::DebugUtilsMessengerCreateInfoEXT &createInfo);
+        bool InitDebugMessages(const vk::DebugUtilsMessengerCreateInfoEXT &createInfo);
         void InitSupportedLayers(std::vector<const char *> &layers);
         [[nodiscard]] vk::DebugUtilsMessengerCreateInfoEXT GetDebugUtilsCreateInfo() const;
         static void LoadExtensionFunctions();

@@ -22,26 +22,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #endif
+#include <vulkan/vulkan.hpp>
 #include <DenOfIzCore/Common.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 #include <unordered_map>
-#include <vulkan/vulkan.hpp>
 #include "../Common/ShaderCompiler.h"
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "vma/vk_mem_alloc.h"
 
 namespace DenOfIz
 {
-
-    struct VulkanDeviceInfo
-    {
-        vk::PhysicalDevice Device;
-        vk::PhysicalDeviceProperties Properties;
-        vk::PhysicalDeviceFeatures Features;
-
-        std::vector<vk::ExtensionProperties> ExtensionProperties;
-        std::vector<vk::QueueFamilyProperties> QueueFamilies;
-    };
 
     struct QueueFamily
     {

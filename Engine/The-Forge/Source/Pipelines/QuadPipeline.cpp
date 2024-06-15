@@ -20,46 +20,47 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-QuadPipeline::QuadPipeline(TFCommon *common) : m_common(common)
+QuadPipeline::QuadPipeline(TFCommon* common)
+		:m_common(common)
 {
-    ShaderLoadDesc shaderDesc{
-        .mStages{
-            {
-                .pFileName = "quad.vert",
-            },
-            {
-                .pFileName = "basic.frag",
-            },
-        },
-    };
+	ShaderLoadDesc shaderDesc{
+			.mStages{
+					{
+							.pFileName = "quad.vert",
+					},
+					{
+							.pFileName = "basic.frag",
+					},
+			},
+	};
 
-    addShader(common->p_Renderer, &shaderDesc, &m_program);
-    ASSERT(m_program);
+	addShader(common->p_Renderer, &shaderDesc, &m_program);
+	ASSERT(m_program);
 
-    //	PipelineDesc desc = {
-    //			.mGraphicsDesc =
-    //					{
-    //							.pShaderProgram = m_program,
-    //							.pRootSignature = pRSSingle,
-    //							.pVertexLayout = &vertexLayout,
-    //							.pDepthState = &depthStateDesc,
-    //							.pRasterizerState = &sphereRasterizerStateDesc,
-    //							.pColorFormats = &pRenderTarget->mFormat,
-    //							.mRenderTargetCount = 1,
-    //							.mSampleCount = pRenderTarget->mSampleCount,
-    //							.mSampleQuality = p_RenderTarget->mSampleQuality,
-    //							.mDepthStencilFormat = depthBufferFormat,
-    //							.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST
-    //					},
-    //			.mType = PIPELINE_TYPE_GRAPHICS,
-    //	};
-    //
-    //	addPipeline(m_common->p_Renderer, &desc, &p_PipelineQuad);
-    ASSERT(p_PipelineQuad);
+//	PipelineDesc desc = {
+//			.mGraphicsDesc =
+//					{
+//							.pShaderProgram = m_program,
+//							.pRootSignature = pRSSingle,
+//							.pVertexLayout = &vertexLayout,
+//							.pDepthState = &depthStateDesc,
+//							.pRasterizerState = &sphereRasterizerStateDesc,
+//							.pColorFormats = &pRenderTarget->mFormat,
+//							.mRenderTargetCount = 1,
+//							.mSampleCount = pRenderTarget->mSampleCount,
+//							.mSampleQuality = p_RenderTarget->mSampleQuality,
+//							.mDepthStencilFormat = depthBufferFormat,
+//							.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST
+//					},
+//			.mType = PIPELINE_TYPE_GRAPHICS,
+//	};
+//
+//	addPipeline(m_common->p_Renderer, &desc, &p_PipelineQuad);
+	ASSERT(p_PipelineQuad);
 }
 
 QuadPipeline::~QuadPipeline()
 {
-    removeShader(m_common->p_Renderer, m_program);
-    removePipeline(m_common->p_Renderer, p_PipelineQuad);
+	removeShader(m_common->p_Renderer, m_program);
+	removePipeline(m_common->p_Renderer, p_PipelineQuad);
 }

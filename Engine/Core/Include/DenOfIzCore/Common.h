@@ -35,31 +35,6 @@
 
 #define RETURN_IF(condition) if (condition) return
 
-struct Unit
-{
-};
-
-template<typename T>
-struct Result
-{
-	bool Success;
-	std::string Message;
-	T Result;
-};
-
-#define Success(Return) \
-{ \
-    .Success = true, \
-    .Message = "", \
-    .Result = Return, \
-}
-
-#define Error(ErrorMessage) \
-{ \
-    .Success = false, \
-    .Message = ErrorMessage \
-}
-
 #define assertm(exp, msg) assert(((void)msg, exp))
 
 #include <boost/noncopyable.hpp>
