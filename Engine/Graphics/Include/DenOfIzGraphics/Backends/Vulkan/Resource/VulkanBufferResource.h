@@ -19,35 +19,37 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 #ifdef BUILD_VK
 
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
 #include <DenOfIzGraphics/Backends/Interface/IResource.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
 
 namespace DenOfIz
 {
 
-class VulkanBufferResource final : public IBufferResource, boost::noncopyable
-{
-	BufferCreateInfo m_createInfo;
-	VulkanContext* m_context;
+    class VulkanBufferResource final : public IBufferResource, boost::noncopyable
+    {
+        BufferCreateInfo m_createInfo;
+        VulkanContext *m_context;
 
-	VmaAllocation m_allocation;
-	bool m_alreadyDisposed = false;
-	bool m_alreadyAllocated = false;
+        VmaAllocation m_allocation;
+        bool m_alreadyDisposed = false;
+        bool m_alreadyAllocated = false;
 
-	vk::Buffer Instance;
-public:
-	vk::DescriptorBufferInfo DescriptorInfo;
+        vk::Buffer Instance;
 
-	explicit VulkanBufferResource(VulkanContext* context, const BufferCreateInfo& createInfo);
+    public:
+        vk::DescriptorBufferInfo DescriptorInfo;
 
-	void Deallocate() override;
-	~VulkanBufferResource() override;
-	void UpdateAllocation(const void* newData);
-	inline const vk::Buffer& GetBuffer() const { return Instance; }
-protected:
-	void Allocate(const void* newData) override;
-};
+        explicit VulkanBufferResource(VulkanContext *context, const BufferCreateInfo &createInfo);
 
-}
+        void Deallocate() override;
+        ~VulkanBufferResource() override;
+        void UpdateAllocation(const void *newData);
+        inline const vk::Buffer &GetBuffer() const { return Instance; }
+
+    protected:
+        void Allocate(const void *newData) override;
+    };
+
+} // namespace DenOfIz
 
 #endif

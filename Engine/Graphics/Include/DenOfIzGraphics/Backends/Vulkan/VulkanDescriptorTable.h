@@ -18,31 +18,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzGraphics/Backends/Interface/IDescriptorTable.h>
 #include "VulkanContext.h"
 #include "VulkanRootSignature.h"
-#include <DenOfIzGraphics/Backends/Interface/IDescriptorTable.h>
 
 namespace DenOfIz
 {
 
-class VulkanDescriptorTable : public IDescriptorTable
-{
-private:
-	VulkanContext* m_context;
-	VulkanRootSignature* m_rootSignature;
-	DescriptorTableCreateInfo m_createInfo;
+    class VulkanDescriptorTable : public IDescriptorTable
+    {
+    private:
+        VulkanContext *m_context;
+        VulkanRootSignature *m_rootSignature;
+        DescriptorTableCreateInfo m_createInfo;
 
-	std::vector<vk::DescriptorSet> m_descriptorSets;
-	std::vector<vk::WriteDescriptorSet> m_writeDescriptorSets;
-public:
-	VulkanDescriptorTable(VulkanContext* context, DescriptorTableCreateInfo createInfo);
+        std::vector<vk::DescriptorSet> m_descriptorSets;
+        std::vector<vk::WriteDescriptorSet> m_writeDescriptorSets;
 
-	void BindImage(IImageResource* resource) override;
-	void BindBuffer(IBufferResource* resource) override;
+    public:
+        VulkanDescriptorTable(VulkanContext *context, DescriptorTableCreateInfo createInfo);
 
-	const std::vector<vk::WriteDescriptorSet>& GetWriteDescriptorSets() const { return m_writeDescriptorSets; }
+        void BindImage(IImageResource *resource) override;
+        void BindBuffer(IBufferResource *resource) override;
 
-	vk::WriteDescriptorSet& CreateWriteDescriptor(std::string& name);
-};
+        const std::vector<vk::WriteDescriptorSet> &GetWriteDescriptorSets() const { return m_writeDescriptorSets; }
 
-}
+        vk::WriteDescriptorSet &CreateWriteDescriptor(std::string &name);
+    };
+
+} // namespace DenOfIz

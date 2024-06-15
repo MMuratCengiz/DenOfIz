@@ -18,23 +18,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "../VulkanContext.h"
 #include "../../Interface/IFence.h"
+#include "../VulkanContext.h"
 
 namespace DenOfIz
 {
 
-class VulkanFence : public IFence
-{
-private:
-	VulkanContext* m_context;
-	vk::Fence m_fence;
-public:
-	VulkanFence(VulkanContext* context);
-	~VulkanFence();
-	void Wait() override;
-	void Reset() override;
-	inline VkFence GetFence() const { return m_fence; }
-};
+    class VulkanFence : public IFence
+    {
+    private:
+        VulkanContext *m_context;
+        vk::Fence m_fence;
 
-}
+    public:
+        VulkanFence(VulkanContext *context);
+        ~VulkanFence();
+        void Wait() override;
+        void Reset() override;
+        inline VkFence GetFence() const { return m_fence; }
+    };
+
+} // namespace DenOfIz

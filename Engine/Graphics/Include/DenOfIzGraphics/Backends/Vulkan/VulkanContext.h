@@ -22,67 +22,67 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #endif
-#include <vulkan/vulkan.hpp>
-#include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 #include <DenOfIzCore/Common.h>
+#include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 #include <unordered_map>
-#include "vma/vk_mem_alloc.h"
+#include <vulkan/vulkan.hpp>
 #include "../Common/ShaderCompiler.h"
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
+#include "vma/vk_mem_alloc.h"
 
 namespace DenOfIz
 {
 
-struct VulkanDeviceInfo
-{
-	vk::PhysicalDevice Device;
-	vk::PhysicalDeviceProperties Properties;
-	vk::PhysicalDeviceFeatures Features;
+    struct VulkanDeviceInfo
+    {
+        vk::PhysicalDevice Device;
+        vk::PhysicalDeviceProperties Properties;
+        vk::PhysicalDeviceFeatures Features;
 
-	std::vector<vk::ExtensionProperties> ExtensionProperties;
-	std::vector<vk::QueueFamilyProperties> QueueFamilies;
-};
+        std::vector<vk::ExtensionProperties> ExtensionProperties;
+        std::vector<vk::QueueFamilyProperties> QueueFamilies;
+    };
 
-struct QueueFamily
-{
-	uint32_t Index;
-	VkQueueFamilyProperties Properties;
-};
+    struct QueueFamily
+    {
+        uint32_t Index;
+        VkQueueFamilyProperties Properties;
+    };
 
-struct VulkanContext
-{
-	vk::Instance Instance;
-	vk::PhysicalDevice PhysicalDevice;
-	vk::Device LogicalDevice;
-	VmaAllocator Vma;
-	ImageFormat SurfaceImageFormat;
-	vk::ColorSpaceKHR ColorSpace;
-	vk::PresentModeKHR PresentMode;
+    struct VulkanContext
+    {
+        vk::Instance Instance;
+        vk::PhysicalDevice PhysicalDevice;
+        vk::Device LogicalDevice;
+        VmaAllocator Vma;
+        ImageFormat SurfaceImageFormat;
+        vk::ColorSpaceKHR ColorSpace;
+        vk::PresentModeKHR PresentMode;
 
-	vk::SurfaceKHR Surface;
-	vk::SwapchainKHR SwapChain;
-	std::vector<vk::Image> SwapChainImages;
-	std::vector<vk::ImageView> SwapChainImageViews;
-	vk::Image DepthImage;
+        vk::SurfaceKHR Surface;
+        vk::SwapchainKHR SwapChain;
+        std::vector<vk::Image> SwapChainImages;
+        std::vector<vk::ImageView> SwapChainImageViews;
+        vk::Image DepthImage;
 
-	vk::CommandPool TransferQueueCommandPool;
-	vk::CommandPool GraphicsQueueCommandPool;
-	vk::CommandPool ComputeQueueCommandPool;
-	vk::DescriptorPool DescriptorPool;
+        vk::CommandPool TransferQueueCommandPool;
+        vk::CommandPool GraphicsQueueCommandPool;
+        vk::CommandPool ComputeQueueCommandPool;
+        vk::DescriptorPool DescriptorPool;
 
-	vk::Extent2D SurfaceExtent{};
+        vk::Extent2D SurfaceExtent{};
 
-	GraphicsWindowHandle* Window;
-	std::unordered_map<QueueType, QueueFamily> QueueFamilies;
-	std::unordered_map<QueueType, vk::Queue> Queues;
+        GraphicsWindowHandle *Window;
+        std::unordered_map<QueueType, QueueFamily> QueueFamilies;
+        std::unordered_map<QueueType, vk::Queue> Queues;
 
-	//Todo move to generic RenderContext when created.
-	ShaderCompiler ShaderCompiler;
-	PhysicalDeviceInfo SelectedDeviceInfo;
-	bool IsDeviceLost = false;
-};
+        // Todo move to generic RenderContext when created.
+        ShaderCompiler ShaderCompiler;
+        PhysicalDeviceInfo SelectedDeviceInfo;
+        bool IsDeviceLost = false;
+    };
 
-}
+} // namespace DenOfIz
 
 #define VK_CHECK_RESULT(R) assert((R) == vk::Result::eSuccess)
 

@@ -18,30 +18,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IResource.h>
 #include <DenOfIzGraphics/Backends/DirectX12/DX12Context.h>
+#include <DenOfIzGraphics/Backends/Interface/IResource.h>
 
 namespace DenOfIz
 {
 
-class DX12ImageResource : public IImageResource
-{
-private:
-	DX12Context* m_context;
-	ImageCreateInfo m_createInfo;
-	ID3D12Resource2* m_resource;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
-	bool isExternalResource = false;
-public:
-	DX12ImageResource(DX12Context* context, const ImageCreateInfo& createInfo);
-	DX12ImageResource(ID3D12Resource2* resource, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle);
-	void AttachSampler(SamplerCreateInfo& info) override;
-	void Deallocate() override;
+    class DX12ImageResource : public IImageResource
+    {
+    private:
+        DX12Context *m_context;
+        ImageCreateInfo m_createInfo;
+        ID3D12Resource2 *m_resource;
+        D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
+        bool isExternalResource = false;
 
-	ID3D12Resource* GetResource() const { return m_resource; }
-	const D3D12_CPU_DESCRIPTOR_HANDLE& GetCpuHandle() const { return m_cpuHandle; };
-protected:
-	void Allocate(const void* data) override;
-};
+    public:
+        DX12ImageResource(DX12Context *context, const ImageCreateInfo &createInfo);
+        DX12ImageResource(ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle);
+        void AttachSampler(SamplerCreateInfo &info) override;
+        void Deallocate() override;
 
-}
+        ID3D12Resource *GetResource() const { return m_resource; }
+        const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle() const { return m_cpuHandle; };
+
+    protected:
+        void Allocate(const void *data) override;
+    };
+
+} // namespace DenOfIz

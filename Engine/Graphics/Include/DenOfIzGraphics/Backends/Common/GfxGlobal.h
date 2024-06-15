@@ -24,55 +24,47 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-enum class APIPreferenceWindows
-{
-	DirectX12,
-	Vulkan
-};
+    enum class APIPreferenceWindows
+    {
+        DirectX12,
+        Vulkan
+    };
 
-enum class APIPreferenceOSX
-{
-	Metal,
-	Vulkan
-};
+    enum class APIPreferenceOSX
+    {
+        Metal,
+        Vulkan
+    };
 
-enum class APIPreferenceLinux
-{
-	Vulkan
-};
+    enum class APIPreferenceLinux
+    {
+        Vulkan
+    };
 
-struct APIPreference
-{
-	APIPreferenceWindows Windows = APIPreferenceWindows::DirectX12;
-	APIPreferenceOSX OSX = APIPreferenceOSX::Metal;
-	APIPreferenceLinux Linux = APIPreferenceLinux::Vulkan;
-};
+    struct APIPreference
+    {
+        APIPreferenceWindows Windows = APIPreferenceWindows::DirectX12;
+        APIPreferenceOSX OSX = APIPreferenceOSX::Metal;
+        APIPreferenceLinux Linux = APIPreferenceLinux::Vulkan;
+    };
 
-class GfxGlobal
-{
-private:
-	static std::unique_ptr<GfxGlobal> s_instance;
-	static std::mutex s_mutex;
-	ShaderCompiler m_shaderCompiler;
-	APIPreference m_apiPreference;
-public:
-	static GfxGlobal* GetInstance();
-	static void Destroy();
+    class GfxGlobal
+    {
+    private:
+        static std::unique_ptr<GfxGlobal> s_instance;
+        static std::mutex s_mutex;
+        ShaderCompiler m_shaderCompiler;
+        APIPreference m_apiPreference;
 
-	const ShaderCompiler& GetShaderCompiler() const
-	{
-		return m_shaderCompiler;
-	}
+    public:
+        static GfxGlobal *GetInstance();
+        static void Destroy();
 
-	void SetAPIPreference(APIPreference preference)
-	{
-		m_apiPreference = preference;
-	}
+        const ShaderCompiler &GetShaderCompiler() const { return m_shaderCompiler; }
 
-	const APIPreference& GetAPIPreference() const
-	{
-		return m_apiPreference;
-	}
-};
+        void SetAPIPreference(APIPreference preference) { m_apiPreference = preference; }
 
-}
+        const APIPreference &GetAPIPreference() const { return m_apiPreference; }
+    };
+
+} // namespace DenOfIz

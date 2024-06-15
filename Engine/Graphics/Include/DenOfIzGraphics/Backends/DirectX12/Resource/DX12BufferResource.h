@@ -25,21 +25,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-class DX12BufferResource : public IBufferResource
-{
-private:
-	DX12Context* m_context;
-	BufferCreateInfo m_createInfo;
-	ID3D12Resource2* m_resource;
-	D3D12MA::Allocation* m_allocation;
-public:
-	DX12BufferResource(DX12Context* context, const BufferCreateInfo& createInfo);
-	ID3D12Resource2* GetResource() { return m_resource; }
-	~DX12BufferResource() override;
-	void Deallocate() override;
-protected:
-	void Allocate(const void* data) override;
-	void CreateBufferView();
-};
+    class DX12BufferResource : public IBufferResource
+    {
+    private:
+        DX12Context *m_context;
+        BufferCreateInfo m_createInfo;
+        ID3D12Resource2 *m_resource;
+        D3D12MA::Allocation *m_allocation;
 
-}
+    public:
+        DX12BufferResource(DX12Context *context, const BufferCreateInfo &createInfo);
+        ID3D12Resource2 *GetResource() { return m_resource; }
+        ~DX12BufferResource() override;
+        void Deallocate() override;
+
+    protected:
+        void Allocate(const void *data) override;
+        void CreateBufferView();
+    };
+
+} // namespace DenOfIz

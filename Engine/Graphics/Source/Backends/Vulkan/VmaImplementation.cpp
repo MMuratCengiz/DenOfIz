@@ -14,7 +14,9 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifdef WIN32
+
 #include <DenOfIzCore/Common_Windows.h>
+
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
@@ -22,10 +24,11 @@
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #endif
 #define VMA_STATS_STRING_ENABLED 0
+
 #include <vulkan/vulkan.hpp>
 
-
 #define VMA_IMPLEMENTATION
+
 #include "vma/vk_mem_alloc.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE

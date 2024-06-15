@@ -18,115 +18,116 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "IShader.h"
+#include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
+#include "IInputLayout.h"
 #include "IResource.h"
 #include "IRootSignature.h"
-#include "IInputLayout.h"
-#include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
+#include "IShader.h"
 
 namespace DenOfIz
 {
 
-struct StencilTestState
-{
-	bool enabled = false;
-	CompareOp compareOp;
-	uint32_t compareMask;
-	uint32_t writeMask;
-	uint32_t ref;
+    struct StencilTestState
+    {
+        bool enabled = false;
+        CompareOp compareOp;
+        uint32_t compareMask;
+        uint32_t writeMask;
+        uint32_t ref;
 
-	StencilOp failOp;
-	StencilOp passOp;
-	StencilOp depthFailOp;
-};
+        StencilOp failOp;
+        StencilOp passOp;
+        StencilOp depthFailOp;
+    };
 
-enum class BindPoint
-{
-	Graphics,
-	Compute,
-	RayTracing
-};
+    enum class BindPoint
+    {
+        Graphics,
+        Compute,
+        RayTracing
+    };
 
-enum class BlendMode
-{
-	None,
-	AlphaBlend
-};
+    enum class BlendMode
+    {
+        None,
+        AlphaBlend
+    };
 
-enum class CullMode
-{
-	// Remove?
-	FrontAndBackFace,
-	BackFace,
-	FrontFace,
-	None
-};
+    enum class CullMode
+    {
+        // Remove?
+        FrontAndBackFace,
+        BackFace,
+        FrontFace,
+        None
+    };
 
-namespace ViewMask
-{
-constexpr int R = 0x00000001;
-constexpr int G = 0x00000002;
-constexpr int B = 0x00000004;
-constexpr int A = 0x00000008;
-};
+    namespace ViewMask
+    {
+        constexpr int R = 0x00000001;
+        constexpr int G = 0x00000002;
+        constexpr int B = 0x00000004;
+        constexpr int A = 0x00000008;
+    }; // namespace ViewMask
 
-struct PipelineRendering
-{
-	uint32_t ViewMask = 0;
+    struct PipelineRendering
+    {
+        uint32_t ViewMask = 0;
 
-	std::vector<ImageFormat> ColorAttachmentFormats;
-	ImageFormat DepthAttachmentFormat;
-	ImageFormat StencilAttachmentFormat;
-};
+        std::vector<ImageFormat> ColorAttachmentFormats;
+        ImageFormat DepthAttachmentFormat;
+        ImageFormat StencilAttachmentFormat;
+    };
 
-struct DepthTest
-{
-	bool Enable = true;
-	CompareOp CompareOp = CompareOp::Always;
-	bool Write;
-};
+    struct DepthTest
+    {
+        bool Enable = true;
+        CompareOp CompareOp = CompareOp::Always;
+        bool Write;
+    };
 
-struct StencilFace
-{
-	CompareOp CompareOp = CompareOp::Always;
-	StencilOp FailOp = StencilOp::Keep;
-	StencilOp PassOp = StencilOp::Keep;
-	StencilOp DepthFailOp = StencilOp::Keep;
-};
+    struct StencilFace
+    {
+        CompareOp CompareOp = CompareOp::Always;
+        StencilOp FailOp = StencilOp::Keep;
+        StencilOp PassOp = StencilOp::Keep;
+        StencilOp DepthFailOp = StencilOp::Keep;
+    };
 
-struct StencilTest
-{
-	bool Enable = false;
-	uint32_t WriteMask = 0;
-	uint32_t ReadMask = 0;
-	StencilFace FrontFace;
-	StencilFace BackFace;
-};
+    struct StencilTest
+    {
+        bool Enable = false;
+        uint32_t WriteMask = 0;
+        uint32_t ReadMask = 0;
+        StencilFace FrontFace;
+        StencilFace BackFace;
+    };
 
-struct PipelineCreateInfo
-{
-	IInputLayout* InputLayout = nullptr;
-	IRootSignature* RootSignature = nullptr;
-	PrimitiveTopology PrimitiveTopology = PrimitiveTopology::Triangle;
+    struct PipelineCreateInfo
+    {
+        IInputLayout *InputLayout = nullptr;
+        IRootSignature *RootSignature = nullptr;
+        PrimitiveTopology PrimitiveTopology = PrimitiveTopology::Triangle;
 
-	CullMode CullMode = CullMode::None;
-	BindPoint BindPoint = BindPoint::Graphics;
+        CullMode CullMode = CullMode::None;
+        BindPoint BindPoint = BindPoint::Graphics;
 
-	DepthTest DepthTest;
-	StencilTest StencilTest;
+        DepthTest DepthTest;
+        StencilTest StencilTest;
 
-	ShaderProgram ShaderProgram;
-	bool InterleavedMode = true;
+        ShaderProgram ShaderProgram;
+        bool InterleavedMode = true;
 
-	std::vector<BlendMode> BlendModes;
+        std::vector<BlendMode> BlendModes;
 
-	PipelineRendering Rendering;
-	MSAASampleCount MSAASampleCount = MSAASampleCount::_0; // 0 Disables MSAA
-};
+        PipelineRendering Rendering;
+        MSAASampleCount MSAASampleCount = MSAASampleCount::_0; // 0 Disables MSAA
+    };
 
-class IPipeline {
-public:
-	virtual ~IPipeline() = default;
-};
+    class IPipeline
+    {
+    public:
+        virtual ~IPipeline() = default;
+    };
 
-}
+} // namespace DenOfIz

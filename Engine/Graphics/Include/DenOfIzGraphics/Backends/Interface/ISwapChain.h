@@ -25,34 +25,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-struct SwapChainCreateInfo
-{
-	uint32_t Width = 0; // 0 means that it will be set to the window width
-	uint32_t Height = 0; // 0 means that it will be set to the window height
-	uint32_t BufferCount = 3;
-	ImageFormat BackBufferFormat = ImageFormat::R8G8B8A8Unorm;
-	ImageFormat DepthBufferFormat = ImageFormat::D32Float;
-};
+    struct SwapChainCreateInfo
+    {
+        uint32_t Width = 0; // 0 means that it will be set to the window width
+        uint32_t Height = 0; // 0 means that it will be set to the window height
+        uint32_t BufferCount = 3;
+        ImageFormat BackBufferFormat = ImageFormat::R8G8B8A8Unorm;
+        ImageFormat DepthBufferFormat = ImageFormat::D32Float;
+    };
 
-struct Viewport
-{
-	float X = 0.0f;
-	float Y = 0.0f;
-	float Width = 0.0f;
-	float Height = 0.0f;
-};
+    struct Viewport
+    {
+        float X = 0.0f;
+        float Y = 0.0f;
+        float Width = 0.0f;
+        float Height = 0.0f;
+    };
 
-class ISwapChain : boost::noncopyable
-{
-public:
-	virtual ~ISwapChain() = default;
+    class ISwapChain : boost::noncopyable
+    {
+    public:
+        virtual ~ISwapChain() = default;
 
-	virtual ImageFormat GetPreferredFormat() = 0;
-	virtual uint32_t AcquireNextImage(ISemaphore* imageReadySemaphore) = 0;
-	virtual void Resize(uint32_t width, uint32_t height) = 0;
+        virtual ImageFormat GetPreferredFormat() = 0;
+        virtual uint32_t AcquireNextImage(ISemaphore *imageReadySemaphore) = 0;
+        virtual void Resize(uint32_t width, uint32_t height) = 0;
 
-	virtual IImageResource* GetRenderTarget(uint32_t frame) = 0;
-	virtual Viewport GetViewport() = 0;
-};
+        virtual IImageResource *GetRenderTarget(uint32_t frame) = 0;
+        virtual Viewport GetViewport() = 0;
+    };
 
-}
+} // namespace DenOfIz

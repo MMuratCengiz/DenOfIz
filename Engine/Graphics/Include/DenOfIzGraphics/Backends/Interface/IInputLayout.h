@@ -23,49 +23,49 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-enum class StepRate
-{
-	PerVertex,
-	PerInstance,
-};
+    enum class StepRate
+    {
+        PerVertex,
+        PerInstance,
+    };
 
-enum class Semantic
-{
-	Position,
-	Normal,
-	Color,
-	Tangent,
-	Binormal,
-	Bitangent,
-	BlendJoints,
-	BlendWeights,
-	TextureCoordinate,
-};
+    enum class Semantic
+    {
+        Position,
+        Normal,
+        Color,
+        Tangent,
+        Binormal,
+        Bitangent,
+        BlendJoints,
+        BlendWeights,
+        TextureCoordinate,
+    };
 
-struct InputLayoutElement
-{
-	Semantic Semantic;
-	uint32_t SemanticIndex;
-	uint32_t Binding;
-	uint32_t Offset;
-	ImageFormat Format;
-};
+    struct InputLayoutElement
+    {
+        Semantic Semantic;
+        uint32_t SemanticIndex;
+        uint32_t Binding;
+        uint32_t Offset;
+        ImageFormat Format;
+    };
 
-struct InputGroup
-{
-	std::vector<InputLayoutElement> Elements;
-	StepRate StepRate;
-};
+    struct InputGroup
+    {
+        std::vector<InputLayoutElement> Elements;
+        StepRate StepRate;
+    };
 
-struct InputLayoutCreateInfo
-{
-	std::vector<InputGroup> InputGroups;
-};
+    struct InputLayoutCreateInfo
+    {
+        std::vector<InputGroup> InputGroups;
+    };
 
-class IInputLayout
-{
-public:
-	virtual ~IInputLayout() = default;
-};
+    class IInputLayout
+    {
+    public:
+        virtual ~IInputLayout() = default;
+    };
 
-}
+} // namespace DenOfIz

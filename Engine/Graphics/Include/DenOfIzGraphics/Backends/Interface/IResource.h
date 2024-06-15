@@ -18,128 +18,128 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "CommonData.h"
-#include <vector>
 #include <string>
+#include <vector>
+#include "CommonData.h"
 
 namespace DenOfIz
 {
 
-class IResource
-{
-public:
-	virtual ~IResource() = default;
-	std::string Name;
+    class IResource
+    {
+    public:
+        virtual ~IResource() = default;
+        std::string Name;
 
-	virtual const ResourceType Type() = 0;
-};
+        virtual const ResourceType Type() = 0;
+    };
 
-struct BufferView
-{
-	uint64_t Offset;
-	uint64_t Stride;
-};
+    struct BufferView
+    {
+        uint64_t Offset;
+        uint64_t Stride;
+    };
 
-struct BufferCreateInfo
-{
-	bool KeepMemoryMapped = false;
+    struct BufferCreateInfo
+    {
+        bool KeepMemoryMapped = false;
 
-	BufferView BufferView; // For Structured Buffers
-	ImageFormat Format = ImageFormat::Undefined;
-	BufferUsage Usage;
-	HeapType HeapType;
-};
+        BufferView BufferView; // For Structured Buffers
+        ImageFormat Format = ImageFormat::Undefined;
+        BufferUsage Usage;
+        HeapType HeapType;
+    };
 
-class IBufferResource : public IResource
-{
-protected:
-	uint32_t m_size;
-	const void* m_data;
+    class IBufferResource : public IResource
+    {
+    protected:
+        uint32_t m_size;
+        const void *m_data;
 
-	void* m_mappedMemory;
-public:
-	void Allocate(const void* data, uint32_t size) {
-		m_size = size;
-		m_data = data;
-		Allocate(data);
-	}
+        void *m_mappedMemory;
 
-	virtual void Deallocate() = 0;
+    public:
+        void Allocate(const void *data, uint32_t size)
+        {
+            m_size = size;
+            m_data = data;
+            Allocate(data);
+        }
 
-	inline uint32_t GetSize() const { return m_size; }
-	inline const void* GetData() const { return m_data; }
-protected:
-	virtual void Allocate(const void* data) = 0;
-private:
-	const ResourceType Type() override
-	{
-		return ResourceType::Buffer;
-	}
-};
+        virtual void Deallocate() = 0;
 
-struct ImageCreateInfo
-{
-	ImageAspect Aspect = ImageAspect::Color;
-	ImageFormat Format;
-	ImageMemoryUsage ImageUsage;
-	HeapType HeapType = HeapType::Auto;
-	MSAASampleCount MSAASampleCount = MSAASampleCount::_0;
-};
+        inline uint32_t GetSize() const { return m_size; }
+        inline const void *GetData() const { return m_data; }
 
-struct SamplerCreateInfo
-{
-	Filter MagFilter;
-	Filter MinFilter;
-	SamplerAddressMode AddressModeU;
-	SamplerAddressMode AddressModeV;
-	SamplerAddressMode AddressModeW;
-	bool AnisotropyEnable = true;
-	float MaxAnisotropy = 16.0f;
-	//	borderColor, unnormalizedCoordinates; Todo, Maybe?
-	bool CompareEnable = false;
-	CompareOp CompareOp = CompareOp::Always;
-	MipmapMode MipmapMode;
-	float MipLodBias;
-	float MinLod;
-	float MaxLod;
+    protected:
+        virtual void Allocate(const void *data) = 0;
 
-	uint32_t Width;
-	uint32_t Height;
-	ImageFormat Format;
-};
+    private:
+        const ResourceType Type() override { return ResourceType::Buffer; }
+    };
 
-class IImageResource : public IResource
-{
+    struct ImageCreateInfo
+    {
+        ImageAspect Aspect = ImageAspect::Color;
+        ImageFormat Format;
+        ImageMemoryUsage ImageUsage;
+        HeapType HeapType = HeapType::Auto;
+        MSAASampleCount MSAASampleCount = MSAASampleCount::_0;
+    };
 
-protected:
-	uint32_t m_width;
-	uint32_t m_height;
-	uint32_t m_depth;
-	const void* m_data;
+    struct SamplerCreateInfo
+    {
+        Filter MagFilter;
+        Filter MinFilter;
+        SamplerAddressMode AddressModeU;
+        SamplerAddressMode AddressModeV;
+        SamplerAddressMode AddressModeW;
+        bool AnisotropyEnable = true;
+        float MaxAnisotropy = 16.0f;
+        //	borderColor, unnormalizedCoordinates; Todo, Maybe?
+        bool CompareEnable = false;
+        CompareOp CompareOp = CompareOp::Always;
+        MipmapMode MipmapMode;
+        float MipLodBias;
+        float MinLod;
+        float MaxLod;
 
-public:
-	virtual void Allocate(const void* data, uint32_t width, uint32_t height, uint32_t depth = 0) {
-		m_width = width;
-		m_height = height;
-		m_depth = depth;
-		m_data = data;
-		Allocate(data);
-	}
+        uint32_t Width;
+        uint32_t Height;
+        ImageFormat Format;
+    };
 
-	virtual void Deallocate() = 0;
+    class IImageResource : public IResource
+    {
 
-	virtual void AttachSampler(SamplerCreateInfo&) = 0;
+    protected:
+        uint32_t m_width;
+        uint32_t m_height;
+        uint32_t m_depth;
+        const void *m_data;
 
-	inline uint32_t GetWidth() const { return m_width; }
-	inline uint32_t GetHeight() const { return m_height; }
-	inline uint32_t GetDepth() const { return m_depth; }
+    public:
+        virtual void Allocate(const void *data, uint32_t width, uint32_t height, uint32_t depth = 0)
+        {
+            m_width = width;
+            m_height = height;
+            m_depth = depth;
+            m_data = data;
+            Allocate(data);
+        }
 
-	const ResourceType Type() override
-	{
-		return ResourceType::Texture;
-	};
-protected:
-	virtual void Allocate(const void* data) = 0;
-};
+        virtual void Deallocate() = 0;
 
-}
+        virtual void AttachSampler(SamplerCreateInfo &) = 0;
+
+        inline uint32_t GetWidth() const { return m_width; }
+        inline uint32_t GetHeight() const { return m_height; }
+        inline uint32_t GetDepth() const { return m_depth; }
+
+        const ResourceType Type() override { return ResourceType::Texture; };
+
+    protected:
+        virtual void Allocate(const void *data) = 0;
+    };
+
+} // namespace DenOfIz

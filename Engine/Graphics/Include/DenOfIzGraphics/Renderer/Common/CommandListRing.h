@@ -23,33 +23,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-class CommandListRing
-{
-private:
-	std::vector<std::unique_ptr<IFence>> m_frameFences;
-	std::vector<std::unique_ptr<ICommandList>> m_commandLists;
-	uint32_t m_currentFrame = 0;
-	uint32_t m_frame = 0;
+    class CommandListRing
+    {
+    private:
+        std::vector<std::unique_ptr<IFence>> m_frameFences;
+        std::vector<std::unique_ptr<ICommandList>> m_commandLists;
+        uint32_t m_currentFrame = 0;
+        uint32_t m_frame = 0;
 
-	ILogicalDevice* m_logicalDevice;
-public:
-	CommandListRing(ILogicalDevice* logicalDevice) : m_logicalDevice(logicalDevice) {}
+        ILogicalDevice *m_logicalDevice;
 
-	inline void NewCommandList(CommandListCreateInfo createInfo)
-	{
-		m_commandLists.push_back(m_logicalDevice->CreateCommandList(createInfo));
-		m_frameFences.push_back(m_logicalDevice->CreateFence());
-	}
+    public:
+        CommandListRing(ILogicalDevice *logicalDevice) : m_logicalDevice(logicalDevice) {}
 
-	ICommandList* GetNext()
-	{
-		m_currentFrame = m_frame;
-		auto next = m_commandLists[m_frame].get();
-		m_frame = (m_frame + 1) % m_commandLists.size();
-		return next;
-	}
+        inline void NewCommandList(CommandListCreateInfo createInfo)
+        {
+            m_commandLists.push_back(m_logicalDevice->CreateCommandList(createInfo));
+            m_frameFences.push_back(m_logicalDevice->CreateFence());
+        }
 
-	inline uint32_t GetCurrentFrame() const { return m_currentFrame; }
-};
+        ICommandList *GetNext()
+        {
+            m_currentFrame = m_frame;
+            auto next = m_commandLists[ m_frame ].get();
+            m_frame = (m_frame + 1) % m_commandLists.size();
+            return next;
+        }
 
-}
+        inline uint32_t GetCurrentFrame() const { return m_currentFrame; }
+    };
+
+} // namespace DenOfIz

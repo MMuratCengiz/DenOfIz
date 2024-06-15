@@ -17,48 +17,48 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanDescriptorTable.h>
-#include "DenOfIzGraphics/Backends/Vulkan/Resource/VulkanImageResource.h"
 #include "DenOfIzGraphics/Backends/Vulkan/Resource/VulkanBufferResource.h"
+#include "DenOfIzGraphics/Backends/Vulkan/Resource/VulkanImageResource.h"
 
 using namespace DenOfIz;
 
-VulkanDescriptorTable::VulkanDescriptorTable(VulkanContext* context, DescriptorTableCreateInfo createInfo) :m_context(context), m_createInfo(std::move(createInfo))
+VulkanDescriptorTable::VulkanDescriptorTable(VulkanContext *context, DescriptorTableCreateInfo createInfo) : m_context(context), m_createInfo(std::move(createInfo))
 {
-	m_rootSignature = static_cast<VulkanRootSignature*>(m_createInfo.RootSignature);
+    m_rootSignature = static_cast<VulkanRootSignature *>(m_createInfo.RootSignature);
 
-//	vk::DescriptorSetAllocateInfo allocateInfo{};
-//
-//	allocateInfo.setDescriptorPool(m_context->DescriptorPool);
-//	allocateInfo.setDescriptorSetCount(m_rootSignature->GetResourceCount());
-//	allocateInfo.setSetLayouts(m_rootSignature->GetDescriptorSetLayouts());
-//
-//	m_descriptorSets = m_context->LogicalDevice.allocateDescriptorSets(allocateInfo);
+    //	vk::DescriptorSetAllocateInfo allocateInfo{};
+    //
+    //	allocateInfo.setDescriptorPool(m_context->DescriptorPool);
+    //	allocateInfo.setDescriptorSetCount(m_rootSignature->GetResourceCount());
+    //	allocateInfo.setSetLayouts(m_rootSignature->GetDescriptorSetLayouts());
+    //
+    //	m_descriptorSets = m_context->LogicalDevice.allocateDescriptorSets(allocateInfo);
 }
 
-void VulkanDescriptorTable::BindImage(IImageResource* resource)
+void VulkanDescriptorTable::BindImage(IImageResource *resource)
 {
-	VulkanImageResource* vulkanResource = static_cast<VulkanImageResource*>(resource);
+    VulkanImageResource *vulkanResource = static_cast<VulkanImageResource *>(resource);
 
-	vk::WriteDescriptorSet& writeDescriptorSet = CreateWriteDescriptor(resource->Name);
-	writeDescriptorSet.pImageInfo = &vulkanResource->DescriptorInfo;
+    vk::WriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor(resource->Name);
+    writeDescriptorSet.pImageInfo = &vulkanResource->DescriptorInfo;
 }
 
-void VulkanDescriptorTable::BindBuffer(IBufferResource* resource)
+void VulkanDescriptorTable::BindBuffer(IBufferResource *resource)
 {
-	VulkanBufferResource* vulkanResource = static_cast<VulkanBufferResource*>(resource);
+    VulkanBufferResource *vulkanResource = static_cast<VulkanBufferResource *>(resource);
 
-	vk::WriteDescriptorSet& writeDescriptorSet = CreateWriteDescriptor(resource->Name);
-	writeDescriptorSet.pBufferInfo = &vulkanResource->DescriptorInfo;
+    vk::WriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor(resource->Name);
+    writeDescriptorSet.pBufferInfo = &vulkanResource->DescriptorInfo;
 }
 
-vk::WriteDescriptorSet& VulkanDescriptorTable::CreateWriteDescriptor(std::string& name)
+vk::WriteDescriptorSet &VulkanDescriptorTable::CreateWriteDescriptor(std::string &name)
 {
-	ResourceBinding resourceBinding = m_rootSignature->GetResourceBinding(name).get();
+    ResourceBinding resourceBinding = m_rootSignature->GetResourceBinding(name).get();
 
-	vk::WriteDescriptorSet& writeDescriptorSet = m_writeDescriptorSets.emplace_back();
-	writeDescriptorSet.dstSet = nullptr;
-	writeDescriptorSet.dstBinding = resourceBinding.Binding;
-	writeDescriptorSet.descriptorType = VulkanEnumConverter::ConvertBindingTypeToDescriptorType(resourceBinding.Type);
-	writeDescriptorSet.descriptorCount = resourceBinding.ArraySize;
-	return writeDescriptorSet;
+    vk::WriteDescriptorSet &writeDescriptorSet = m_writeDescriptorSets.emplace_back();
+    writeDescriptorSet.dstSet = nullptr;
+    writeDescriptorSet.dstBinding = resourceBinding.Binding;
+    writeDescriptorSet.descriptorType = VulkanEnumConverter::ConvertBindingTypeToDescriptorType(resourceBinding.Type);
+    writeDescriptorSet.descriptorCount = resourceBinding.ArraySize;
+    return writeDescriptorSet;
 }

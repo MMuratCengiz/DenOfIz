@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <string>
 
+#include <vector>
 #include "Common_3/Application/Interfaces/IApp.h"
 #include "Common_3/Application/Interfaces/ICameraController.h"
 #include "Common_3/Application/Interfaces/IFont.h"
@@ -29,82 +30,82 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "Common_3/Application/Interfaces/IUI.h"
 #include "Common_3/Game/Interfaces/IScripting.h"
 #include "Common_3/Graphics/Interfaces/IGraphics.h"
+#include "Common_3/Graphics/Interfaces/IRay.h"
 #include "Common_3/Resources/ResourceLoader/Interfaces/IResourceLoader.h"
 #include "Common_3/Utilities/Interfaces/IFileSystem.h"
 #include "Common_3/Utilities/Interfaces/ILog.h"
 #include "Common_3/Utilities/Interfaces/ITime.h"
 #include "Common_3/Utilities/RingBuffer.h"
 #include "Common_3/Utilities/Threading/ThreadSystem.h"
-#include "Common_3/Graphics/Interfaces/IRay.h"
-#include <vector>
 
 namespace DenOfIz
 {
 
-struct InitialAppInfo
-{
-	std::string Name = "DenOfIz";
-	int Width = 1920;
-	int Height = 1080;
+    struct InitialAppInfo
+    {
+        std::string Name = "DenOfIz";
+        int Width = 1920;
+        int Height = 1080;
 
-	bool VSyncEnabled = false;
-};
+        bool VSyncEnabled = false;
+    };
 
-struct InitializationState
-{
-	bool Initialized = false;
-	std::string InitializationMessage = "Undefined.";
-};
+    struct InitializationState
+    {
+        bool Initialized = false;
+        std::string InitializationMessage = "Undefined.";
+    };
 
-struct SystemInitializationState
-{
-	InitializationState Renderer{};
-	InitializationState UI{};
-	InitializationState Profiler{};
-	InitializationState Fonts{};
-	InitializationState SwapChain{};
-};
+    struct SystemInitializationState
+    {
+        InitializationState Renderer{};
+        InitializationState UI{};
+        InitializationState Profiler{};
+        InitializationState Fonts{};
+        InitializationState SwapChain{};
+    };
 
-class TFCommon : public IApp
-{
-private:
-	SystemInitializationState m_initializationState{};
-	ProfileToken m_gpuProfileToken;
-	ThreadSystem m_threadSystem;
+    class TFCommon : public IApp
+    {
+    private:
+        SystemInitializationState m_initializationState{};
+        ProfileToken m_gpuProfileToken;
+        ThreadSystem m_threadSystem;
 
-	std::vector<float> m_triangle{ 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-								   -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-								   0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f };
-public:
-	static const uint32_t g_DataBufferCount = 2;
+        std::vector<float> m_triangle{ 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f,  0.0f, 1.0f, -1.0f, 1.0f, 0.0f, 1.0f,
+                                       0.0f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,  0.0f, 1.0f, 1.0f };
 
-	UIComponent* p_UIComponent;
-	Renderer* p_Renderer;
-	Raytracing* p_Raytracing;
-	Queue* p_GraphicsQueue;
+    public:
+        static const uint32_t g_DataBufferCount = 2;
 
-	GpuCmdRing GraphicsCmdRing = {};
-	SwapChain * p_SwapChain;
+        UIComponent *p_UIComponent;
+        Renderer *p_Renderer;
+        Raytracing *p_Raytracing;
+        Queue *p_GraphicsQueue;
 
-	Semaphore* p_ImageAcquiredSemaphore;
-	uint32_t m_FrameIndex = 0;
-	ProfileToken m_GPUProfileToken;
+        GpuCmdRing GraphicsCmdRing = {};
+        SwapChain *p_SwapChain;
 
-	TFCommon() = default;
-	uint32_t AcquireNextImage();
-	GpuCmdRingElement NextCmdRingElement();
-	void Resize(uint32_t width, uint32_t height);
-	void Present(std::vector<Semaphore*> waitSemaphores, uint32_t swapchainImageIndex);
+        Semaphore *p_ImageAcquiredSemaphore;
+        uint32_t m_FrameIndex = 0;
+        ProfileToken m_GPUProfileToken;
 
-	virtual bool Init() override;
-	virtual void Exit() override;
-	virtual bool Load(ReloadDesc* pReloadDesc) override;
-	virtual void Unload(ReloadDesc* pReloadDesc) override;
-	const char* GetName() override;
-private:
-	bool InitSwapChain();
-	void InitQueue();
-	void InitProfiler();
-};
+        TFCommon() = default;
+        uint32_t AcquireNextImage();
+        GpuCmdRingElement NextCmdRingElement();
+        void Resize(uint32_t width, uint32_t height);
+        void Present(std::vector<Semaphore *> waitSemaphores, uint32_t swapchainImageIndex);
 
-}
+        virtual bool Init() override;
+        virtual void Exit() override;
+        virtual bool Load(ReloadDesc *pReloadDesc) override;
+        virtual void Unload(ReloadDesc *pReloadDesc) override;
+        const char *GetName() override;
+
+    private:
+        bool InitSwapChain();
+        void InitQueue();
+        void InitProfiler();
+    };
+
+} // namespace DenOfIz

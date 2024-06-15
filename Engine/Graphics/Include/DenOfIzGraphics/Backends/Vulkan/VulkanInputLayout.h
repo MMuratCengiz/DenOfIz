@@ -16,23 +16,24 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Backends/Interface/IInputLayout.h>
 #include "VulkanContext.h"
 #include "VulkanEnumConverter.h"
-#include <DenOfIzGraphics/Backends/Interface/IInputLayout.h>
 
 namespace DenOfIz
 {
 
-class VulkanInputLayout : public IInputLayout
-{
-private:
-	VkPipelineVertexInputStateCreateInfo m_vertexInputState;
-	std::vector<VkVertexInputBindingDescription> m_bindingDescriptions;
-	std::vector<VkVertexInputAttributeDescription> m_attributeDescriptions;
-public:
-	VulkanInputLayout(const InputLayoutCreateInfo& createInfo);
-	inline const VkPipelineVertexInputStateCreateInfo& GetVertexInputState() const { return m_vertexInputState; }
-	~VulkanInputLayout() override = default;
-};
+    class VulkanInputLayout : public IInputLayout
+    {
+    private:
+        VkPipelineVertexInputStateCreateInfo m_vertexInputState;
+        std::vector<VkVertexInputBindingDescription> m_bindingDescriptions;
+        std::vector<VkVertexInputAttributeDescription> m_attributeDescriptions;
 
-}
+    public:
+        VulkanInputLayout(const InputLayoutCreateInfo &createInfo);
+        inline const VkPipelineVertexInputStateCreateInfo &GetVertexInputState() const { return m_vertexInputState; }
+        ~VulkanInputLayout() override = default;
+    };
+
+} // namespace DenOfIz

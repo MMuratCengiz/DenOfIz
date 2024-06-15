@@ -18,30 +18,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "VulkanEnumConverter.h"
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
+#include "VulkanEnumConverter.h"
 
 namespace DenOfIz
 {
 
-class VulkanRootSignature : public IRootSignature
-{
-private:
-	RootSignatureCreateInfo m_createInfo;
-	VulkanContext* m_context;
+    class VulkanRootSignature : public IRootSignature
+    {
+    private:
+        RootSignatureCreateInfo m_createInfo;
+        VulkanContext *m_context;
 
-	std::vector<vk::DescriptorSetLayout> m_layouts;
-	std::vector<vk::DescriptorSetLayoutBinding> m_bindings;
-	std::vector<vk::PushConstantRange> m_pushConstants;
-public:
-	VulkanRootSignature(VulkanContext* context, RootSignatureCreateInfo createInfo);
-	~VulkanRootSignature();
+        std::vector<vk::DescriptorSetLayout> m_layouts;
+        std::vector<vk::DescriptorSetLayoutBinding> m_bindings;
+        std::vector<vk::PushConstantRange> m_pushConstants;
 
-	const std::vector<vk::DescriptorSetLayout>& GetDescriptorSetLayouts() const { return m_layouts; }
-protected:
-	void AddResourceBindingInternal(const ResourceBinding& binding) override;
-	void AddRootConstantInternal(const RootConstantBinding& rootConstantBinding) override;
+    public:
+        VulkanRootSignature(VulkanContext *context, RootSignatureCreateInfo createInfo);
+        ~VulkanRootSignature();
 
-	void CreateInternal() override;
-};
-}
+        const std::vector<vk::DescriptorSetLayout> &GetDescriptorSetLayouts() const { return m_layouts; }
+
+    protected:
+        void AddResourceBindingInternal(const ResourceBinding &binding) override;
+        void AddRootConstantInternal(const RootConstantBinding &rootConstantBinding) override;
+
+        void CreateInternal() override;
+    };
+} // namespace DenOfIz

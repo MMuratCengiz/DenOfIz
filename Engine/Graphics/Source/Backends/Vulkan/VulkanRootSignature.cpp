@@ -20,59 +20,59 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanRootSignature::VulkanRootSignature(VulkanContext* context, RootSignatureCreateInfo createInfo) : m_context(context), m_createInfo(std::move(createInfo))
+VulkanRootSignature::VulkanRootSignature(VulkanContext *context, RootSignatureCreateInfo createInfo) : m_context(context), m_createInfo(std::move(createInfo))
 {
-	m_layouts.resize(1);
+    m_layouts.resize(1);
 }
 
-void VulkanRootSignature::AddResourceBindingInternal(const ResourceBinding& binding)
+void VulkanRootSignature::AddResourceBindingInternal(const ResourceBinding &binding)
 {
-	assertm(!m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior.");
-	m_resourceBindingMap[binding.Name] = binding;
+    assertm(!m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior.");
+    m_resourceBindingMap[ binding.Name ] = binding;
 
-	vk::DescriptorSetLayoutBinding layoutBinding{};
+    vk::DescriptorSetLayoutBinding layoutBinding{};
 
-	layoutBinding.binding = binding.Binding;
-	layoutBinding.descriptorType = VulkanEnumConverter::ConvertBindingTypeToDescriptorType(binding.Type);
-	layoutBinding.descriptorCount = binding.ArraySize;
+    layoutBinding.binding = binding.Binding;
+    layoutBinding.descriptorType = VulkanEnumConverter::ConvertBindingTypeToDescriptorType(binding.Type);
+    layoutBinding.descriptorCount = binding.ArraySize;
 
-	for (auto stage : binding.Stages)
-	{
-		layoutBinding.stageFlags |= VulkanEnumConverter::ConvertShaderStage(stage);
-	}
+    for ( auto stage : binding.Stages )
+    {
+        layoutBinding.stageFlags |= VulkanEnumConverter::ConvertShaderStage(stage);
+    }
 
-	m_bindings.push_back(std::move(layoutBinding));
+    m_bindings.push_back(std::move(layoutBinding));
 }
 
-void VulkanRootSignature::AddRootConstantInternal(const RootConstantBinding& rootConstantBinding)
+void VulkanRootSignature::AddRootConstantInternal(const RootConstantBinding &rootConstantBinding)
 {
-	m_rootConstantMap[rootConstantBinding.Name] = rootConstantBinding;
+    m_rootConstantMap[ rootConstantBinding.Name ] = rootConstantBinding;
 
-	vk::PushConstantRange pushConstantRange{};
+    vk::PushConstantRange pushConstantRange{};
 
-	pushConstantRange.offset = rootConstantBinding.Binding;
-	pushConstantRange.size = rootConstantBinding.Size;
+    pushConstantRange.offset = rootConstantBinding.Binding;
+    pushConstantRange.size = rootConstantBinding.Size;
 
-	for (auto stage : rootConstantBinding.Stages)
-	{
-		pushConstantRange.stageFlags |= VulkanEnumConverter::ConvertShaderStage(stage);
-	}
+    for ( auto stage : rootConstantBinding.Stages )
+    {
+        pushConstantRange.stageFlags |= VulkanEnumConverter::ConvertShaderStage(stage);
+    }
 
-	m_pushConstants.push_back(std::move(pushConstantRange));
+    m_pushConstants.push_back(std::move(pushConstantRange));
 }
 
 void VulkanRootSignature::CreateInternal()
 {
-	vk::DescriptorSetLayoutCreateInfo layoutInfo{};
-	layoutInfo.setBindings(m_bindings);
-	layoutInfo.flags = vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR;
-	m_layouts[0] = m_context->LogicalDevice.createDescriptorSetLayout(layoutInfo);
+    vk::DescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.setBindings(m_bindings);
+    layoutInfo.flags = vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR;
+    m_layouts[ 0 ] = m_context->LogicalDevice.createDescriptorSetLayout(layoutInfo);
 }
 
 VulkanRootSignature::~VulkanRootSignature()
 {
-	for (auto layout : m_layouts)
-	{
-		m_context->LogicalDevice.destroyDescriptorSetLayout(layout);
-	}
+    for ( auto layout : m_layouts )
+    {
+        m_context->LogicalDevice.destroyDescriptorSetLayout(layout);
+    }
 }

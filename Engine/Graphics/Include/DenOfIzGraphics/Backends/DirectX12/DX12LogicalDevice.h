@@ -19,56 +19,70 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 #ifdef BUILD_DX12
 
-#include "DX12Context.h"
-#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
 #include <DenOfIzCore/Common.h>
+#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
+#include "DX12Context.h"
 
-#include "Resource/DX12BufferResource.h"
-#include "Resource/DX12ImageResource.h"
-#include "Resource/DX12Fence.h"
-#include "DX12DescriptorTable.h"
 #include "DX12CommandList.h"
+#include "DX12DescriptorTable.h"
+#include "Resource/DX12BufferResource.h"
+#include "Resource/DX12Fence.h"
+#include "Resource/DX12ImageResource.h"
 
 #include <dxgidebug.h>
 
 namespace DenOfIz
 {
 
-class DX12LogicalDevice final : public ILogicalDevice
-{
-private:
-	D3D_FEATURE_LEVEL m_minFeatureLevel = D3D_FEATURE_LEVEL_12_0;
-	std::unique_ptr<DX12Context> m_context;
-	DWORD m_dxgiFactoryFlags =  0;
-public:
-	DX12LogicalDevice();
-	~DX12LogicalDevice() override;
+    class DX12LogicalDevice final : public ILogicalDevice
+    {
+    private:
+        D3D_FEATURE_LEVEL m_minFeatureLevel = D3D_FEATURE_LEVEL_12_0;
+        std::unique_ptr<DX12Context> m_context;
+        DWORD m_dxgiFactoryFlags = 0;
 
-	// Override methods
-	void CreateDevice(GraphicsWindowHandle* window) override;
-	std::vector<PhysicalDeviceInfo> ListPhysicalDevices() override;
-	void LoadPhysicalDevice(const PhysicalDeviceInfo& device) override;
-	inline bool IsDeviceLost() override {
-		return m_context->IsDeviceLost;
-	}
+    public:
+        DX12LogicalDevice();
 
-	std::unique_ptr<ICommandList> CreateCommandList(const CommandListCreateInfo& createInfo) override;
-	std::unique_ptr<IPipeline> CreatePipeline(const PipelineCreateInfo& createInfo) override;
-	std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainCreateInfo& createInfo) override;
-	std::unique_ptr<IRootSignature> CreateRootSignature(const RootSignatureCreateInfo& createInfo) override;
-	std::unique_ptr<IInputLayout> CreateInputLayout(const InputLayoutCreateInfo& createInfo) override;
-	std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo& createInfo) override;
-	std::unique_ptr<IFence> CreateFence() override;
-	std::unique_ptr<ISemaphore> CreateSemaphore() override;
-	std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferCreateInfo& createInfo) override;
-	std::unique_ptr<IImageResource> CreateImageResource(std::string name, const ImageCreateInfo& createInfo) override;
-	void WaitIdle() override;
-	// --
-private:
-	void CreateDeviceInfo(IDXGIAdapter1& adapter, PhysicalDeviceInfo& deviceInfo);
-	void Dispose();
-};
+        ~DX12LogicalDevice() override;
 
-}
+        // Override methods
+        void CreateDevice(GraphicsWindowHandle *window) override;
+
+        std::vector<PhysicalDeviceInfo> ListPhysicalDevices() override;
+
+        void LoadPhysicalDevice(const PhysicalDeviceInfo &device) override;
+
+        inline bool IsDeviceLost() override { return m_context->IsDeviceLost; }
+
+        std::unique_ptr<ICommandList> CreateCommandList(const CommandListCreateInfo &createInfo) override;
+
+        std::unique_ptr<IPipeline> CreatePipeline(const PipelineCreateInfo &createInfo) override;
+
+        std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainCreateInfo &createInfo) override;
+
+        std::unique_ptr<IRootSignature> CreateRootSignature(const RootSignatureCreateInfo &createInfo) override;
+
+        std::unique_ptr<IInputLayout> CreateInputLayout(const InputLayoutCreateInfo &createInfo) override;
+
+        std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo &createInfo) override;
+
+        std::unique_ptr<IFence> CreateFence() override;
+
+        std::unique_ptr<ISemaphore> CreateSemaphore() override;
+
+        std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferCreateInfo &createInfo) override;
+
+        std::unique_ptr<IImageResource> CreateImageResource(std::string name, const ImageCreateInfo &createInfo) override;
+
+        void WaitIdle() override;
+        // --
+    private:
+        void CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDeviceInfo &deviceInfo);
+
+        void Dispose();
+    };
+
+} // namespace DenOfIz
 
 #endif

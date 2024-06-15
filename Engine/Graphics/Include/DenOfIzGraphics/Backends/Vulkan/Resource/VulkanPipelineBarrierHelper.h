@@ -20,22 +20,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "../VulkanContext.h"
 #include "../VulkanEnumConverter.h"
-#include "VulkanImageResource.h"
 #include "VulkanBufferResource.h"
+#include "VulkanImageResource.h"
 
 namespace DenOfIz
 {
 
-class VulkanPipelineBarrierHelper
-{
-public:
-	static void ExecutePipelineBarrier(VulkanContext* context, vk::CommandBuffer commandBuffer, const QueueType& commandQueueType, const PipelineBarrier& barrier);
-private:
-	static vk::ImageMemoryBarrier CreateImageBarrier(const ImageBarrierInfo& barrier, vk::AccessFlags& srcAccessFlags, vk::AccessFlags& dstAccessFlags);
-	static vk::BufferMemoryBarrier CreateBufferBarrier(const BufferBarrierInfo& barrier, vk::AccessFlags& srcAccessFlags, vk::AccessFlags& dstAccessFlags);
-	static vk::AccessFlags GetAccessFlags(ResourceState state);
-	static vk::ImageLayout GetImageLayout(ResourceState state);
-	static vk::PipelineStageFlags GetPipelineStageFlags(VulkanContext* context, QueueType queueType, vk::AccessFlags accessFlags);
-};
+    class VulkanPipelineBarrierHelper
+    {
+    public:
+        static void ExecutePipelineBarrier(VulkanContext *context, vk::CommandBuffer commandBuffer, const QueueType &commandQueueType, const PipelineBarrier &barrier);
 
-}
+    private:
+        static vk::ImageMemoryBarrier CreateImageBarrier(const ImageBarrierInfo &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags);
+        static vk::BufferMemoryBarrier CreateBufferBarrier(const BufferBarrierInfo &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags);
+        static vk::AccessFlags GetAccessFlags(ResourceState state);
+        static vk::ImageLayout GetImageLayout(ResourceState state);
+        static vk::PipelineStageFlags GetPipelineStageFlags(VulkanContext *context, QueueType queueType, vk::AccessFlags accessFlags);
+    };
+
+} // namespace DenOfIz

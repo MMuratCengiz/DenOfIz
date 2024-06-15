@@ -18,24 +18,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "../VulkanContext.h"
 #include "../../Interface/ISemaphore.h"
+#include "../VulkanContext.h"
 
 namespace DenOfIz
 {
 
-class VulkanSemaphore : public ISemaphore
-{
-private:
-	VulkanContext* m_context;
-	vk::Semaphore m_semaphore;
-public:
-	VulkanSemaphore(VulkanContext* context);
-	~VulkanSemaphore();
-	void Wait() override;
-	void Notify() override;
+    class VulkanSemaphore : public ISemaphore
+    {
+    private:
+        VulkanContext *m_context;
+        vk::Semaphore m_semaphore;
 
-	vk::Semaphore GetSemaphore() const { return m_semaphore; }
-};
+    public:
+        VulkanSemaphore(VulkanContext *context);
+        ~VulkanSemaphore();
+        void Wait() override;
+        void Notify() override;
 
-}
+        vk::Semaphore GetSemaphore() const { return m_semaphore; }
+    };
+
+} // namespace DenOfIz

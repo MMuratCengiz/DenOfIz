@@ -24,45 +24,42 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-struct CubeMapCreateInfo
-{
-	std::vector<SamplerCreateInfo> Samplers;
-};
+    struct CubeMapCreateInfo
+    {
+        std::vector<SamplerCreateInfo> Samplers;
+    };
 
-class ICubeMapResource : public IResource
-{
+    class ICubeMapResource : public IResource
+    {
 
-protected:
-	uint32_t size;
-	const void* data;
+    protected:
+        uint32_t size;
+        const void *data;
 
-public:
-	virtual void Allocate(std::vector<const void*> data) = 0;
-	virtual void Deallocate() = 0;
+    public:
+        virtual void Allocate(std::vector<const void *> data) = 0;
+        virtual void Deallocate() = 0;
 
-	const ResourceType Type() override
-	{
-		return ResourceType::CubeMap;
-	};
-};
+        const ResourceType Type() override { return ResourceType::CubeMap; };
+    };
 
-class VulkanCubeMapResource final : ICubeMapResource, boost::noncopyable
-{
-	VulkanContext* m_context;
-	CubeMapCreateInfo m_createInfo;
+    class VulkanCubeMapResource final : ICubeMapResource, boost::noncopyable
+    {
+        VulkanContext *m_context;
+        CubeMapCreateInfo m_createInfo;
 
-	vk::Sampler m_sampler{};
-	vk::ImageView m_imageView{};
-	vk::Image m_image;
-	VmaAllocation m_allocation;
+        vk::Sampler m_sampler{};
+        vk::ImageView m_imageView{};
+        vk::Image m_image;
+        VmaAllocation m_allocation;
 
-public:
-	explicit VulkanCubeMapResource(VulkanContext* context, const CubeMapCreateInfo& createInfo);
+    public:
+        explicit VulkanCubeMapResource(VulkanContext *context, const CubeMapCreateInfo &createInfo);
 
-	void Allocate(std::vector<const void*> data) override;
-	void Deallocate() override;
-};
+        void Allocate(std::vector<const void *> data) override;
+        void Deallocate() override;
+    };
 
-}
+} // namespace DenOfIz
 
 #endif

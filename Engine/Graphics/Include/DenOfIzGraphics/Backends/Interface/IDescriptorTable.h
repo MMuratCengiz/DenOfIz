@@ -24,20 +24,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-struct DescriptorTableCreateInfo
-{
-	IRootSignature* RootSignature;
-	ResourceUpdateFrequency Frequency;
-};
+    struct DescriptorTableCreateInfo
+    {
+        IRootSignature *RootSignature;
+        ResourceUpdateFrequency Frequency;
+    };
 
-class IDescriptorTable
-{
-public:
-	virtual ~IDescriptorTable() = default;
+    class IDescriptorTable
+    {
+    public:
+        virtual ~IDescriptorTable() = default;
 
-	// -- Requires a sampler
-	virtual void BindImage(IImageResource* resource) = 0;
-	virtual void BindBuffer(IBufferResource* resource) = 0;
-};
+        // -- Requires a sampler
+        virtual void BindImage(IImageResource *resource) = 0;
+        virtual void BindBuffer(IBufferResource *resource) = 0;
+    };
 
-}
+} // namespace DenOfIz

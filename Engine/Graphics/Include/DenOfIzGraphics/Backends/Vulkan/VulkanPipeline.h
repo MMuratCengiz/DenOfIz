@@ -19,75 +19,75 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 #ifdef BUILD_VK
 
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
-#include <DenOfIzCore/Utilities.h>
 #include <DenOfIzCore/Logger.h>
+#include <DenOfIzCore/Utilities.h>
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h>
 #include "DenOfIzGraphics/Backends/Common/ShaderReflection.h"
 
 namespace DenOfIz
 {
 
-class VulkanPipeline : public IPipeline
-{
-	bool m_alreadyDisposed = false;
-	const std::array<vk::DynamicState, 4> m_dynamicStates = { vk::DynamicState::eViewportWithCount, vk::DynamicState::eDepthBias, vk::DynamicState::eScissorWithCount,
-															  vk::DynamicState::eLineWidth };
+    class VulkanPipeline : public IPipeline
+    {
+        bool m_alreadyDisposed = false;
+        const std::array<vk::DynamicState, 4> m_dynamicStates = { vk::DynamicState::eViewportWithCount, vk::DynamicState::eDepthBias, vk::DynamicState::eScissorWithCount,
+                                                                  vk::DynamicState::eLineWidth };
 
-	VulkanContext* m_context;
-	ShaderReflection m_programReflection;
+        VulkanContext *m_context;
+        ShaderReflection m_programReflection;
 
-	std::vector<vk::ShaderModule> m_shaderModules;
-	std::vector<vk::PushConstantRange> m_pushConstants;
-	std::vector<vk::Format> m_colorFormats;
-	std::vector<vk::DescriptorSetLayout> m_layouts;
+        std::vector<vk::ShaderModule> m_shaderModules;
+        std::vector<vk::PushConstantRange> m_pushConstants;
+        std::vector<vk::Format> m_colorFormats;
+        std::vector<vk::DescriptorSetLayout> m_layouts;
 
-	PipelineCreateInfo m_createInfo;
-	// Storing these here
-	std::vector<vk::PipelineShaderStageCreateInfo> m_pipelineStageCreateInfos;
-	std::vector<vk::PipelineColorBlendAttachmentState> m_colorBlendAttachments{};
-	vk::PipelineRenderingCreateInfo m_renderingCreateInfo{};
-	vk::PipelineTessellationStateCreateInfo m_tessellationStateCreateInfo{};
-	vk::GraphicsPipelineCreateInfo m_pipelineCreateInfo{};
-	vk::PipelineColorBlendStateCreateInfo m_colorBlending{};
-	vk::PipelineRasterizationStateCreateInfo m_rasterizationStateCreateInfo{};
-	vk::PipelineViewportStateCreateInfo m_viewportStateCreateInfo{};
-	vk::PipelineMultisampleStateCreateInfo m_multisampleStateCreateInfo{};
-	vk::PipelineDynamicStateCreateInfo m_dynamicStateCreateInfo{};
-	vk::PipelineLayoutCreateInfo m_pipelineLayoutCreateInfo{};
-	vk::PipelineVertexInputStateCreateInfo m_inputStateCreateInfo{};
-	vk::PipelineInputAssemblyStateCreateInfo m_inputAssemblyCreateInfo{};
-	vk::PipelineDepthStencilStateCreateInfo m_depthStencilStateCreateInfo{};
+        PipelineCreateInfo m_createInfo;
+        // Storing these here
+        std::vector<vk::PipelineShaderStageCreateInfo> m_pipelineStageCreateInfos;
+        std::vector<vk::PipelineColorBlendAttachmentState> m_colorBlendAttachments{};
+        vk::PipelineRenderingCreateInfo m_renderingCreateInfo{};
+        vk::PipelineTessellationStateCreateInfo m_tessellationStateCreateInfo{};
+        vk::GraphicsPipelineCreateInfo m_pipelineCreateInfo{};
+        vk::PipelineColorBlendStateCreateInfo m_colorBlending{};
+        vk::PipelineRasterizationStateCreateInfo m_rasterizationStateCreateInfo{};
+        vk::PipelineViewportStateCreateInfo m_viewportStateCreateInfo{};
+        vk::PipelineMultisampleStateCreateInfo m_multisampleStateCreateInfo{};
+        vk::PipelineDynamicStateCreateInfo m_dynamicStateCreateInfo{};
+        vk::PipelineLayoutCreateInfo m_pipelineLayoutCreateInfo{};
+        vk::PipelineVertexInputStateCreateInfo m_inputStateCreateInfo{};
+        vk::PipelineInputAssemblyStateCreateInfo m_inputAssemblyCreateInfo{};
+        vk::PipelineDepthStencilStateCreateInfo m_depthStencilStateCreateInfo{};
 
-	std::vector<vk::VertexInputAttributeDescription> m_vertexAttributeDescriptions;
-	std::vector<vk::VertexInputBindingDescription> m_inputBindingDescriptions;
+        std::vector<vk::VertexInputAttributeDescription> m_vertexAttributeDescriptions;
+        std::vector<vk::VertexInputBindingDescription> m_inputBindingDescriptions;
 
-	std::unordered_map<std::string, vk::WriteDescriptorSet> m_descriptorSets;
+        std::unordered_map<std::string, vk::WriteDescriptorSet> m_descriptorSets;
 
-public:
-	vk::Pipeline Instance;
-	vk::PipelineLayout Layout;
-	vk::PipelineBindPoint BindPoint;
+    public:
+        vk::Pipeline Instance;
+        vk::PipelineLayout Layout;
+        vk::PipelineBindPoint BindPoint;
 
-	vk::WriteDescriptorSet GetWriteDescriptorSet(const std::string& name);
-	VulkanPipeline(VulkanContext* context, const PipelineCreateInfo&);
-	~VulkanPipeline() override;
+        vk::WriteDescriptorSet GetWriteDescriptorSet(const std::string &name);
+        VulkanPipeline(VulkanContext *context, const PipelineCreateInfo &);
+        ~VulkanPipeline() override;
 
-private:
-	void ConfigureVertexInput();
-	void ConfigureColorBlend();
-	void ConfigureRasterization();
-	void ConfigureViewport();
-	void ConfigureMultisampling();
-	void ConfigureDynamicState();
-	void CreatePipelineLayout();
-	void CreateRenderPass();
-	void CreateDepthAttachmentImages();
-	void CreatePipeline();
-	vk::ShaderModule CreateShaderModule(const std::vector<uint32_t>& data) const;
-};
+    private:
+        void ConfigureVertexInput();
+        void ConfigureColorBlend();
+        void ConfigureRasterization();
+        void ConfigureViewport();
+        void ConfigureMultisampling();
+        void ConfigureDynamicState();
+        void CreatePipelineLayout();
+        void CreateRenderPass();
+        void CreateDepthAttachmentImages();
+        void CreatePipeline();
+        vk::ShaderModule CreateShaderModule(const std::vector<uint32_t> &data) const;
+    };
 
-}
+} // namespace DenOfIz
 
 #endif

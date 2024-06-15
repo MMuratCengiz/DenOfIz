@@ -21,41 +21,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-void ShaderProgram::AddShader(const ShaderInfo& shaderInfo)
-{
-	m_shaders.push_back(shaderInfo);
-}
+void ShaderProgram::AddShader(const ShaderInfo &shaderInfo) { m_shaders.push_back(shaderInfo); }
 
 void ShaderProgram::Compile()
 {
-	ShaderCompiler compiler = GfxGlobal::GetInstance()->GetShaderCompiler();
+    ShaderCompiler compiler = GfxGlobal::GetInstance()->GetShaderCompiler();
 
-	for (auto& shader : m_shaders)
-	{
-		CompileOptions options = {};
-		options.Defines = shader.Defines;
-		options.EntryPoint = shader.EntryPoint;
-		options.Stage = shader.Stage;
+    for ( auto &shader : m_shaders )
+    {
+        CompileOptions options = {};
+        options.Defines = shader.Defines;
+        options.EntryPoint = shader.EntryPoint;
+        options.Stage = shader.Stage;
 
 #if defined(WIN32)
-		if (GfxGlobal::GetInstance()->GetAPIPreference().Windows == APIPreferenceWindows::DirectX12)
-		{
-			options.TargetIL = TargetIL::DXIL;
-		}
-		else
-		{
-			options.TargetIL = TargetIL::SPIRV;
-		}
+        if ( GfxGlobal::GetInstance()->GetAPIPreference().Windows == APIPreferenceWindows::DirectX12 )
+        {
+            options.TargetIL = TargetIL::DXIL;
+        }
+        else
+        {
+            options.TargetIL = TargetIL::SPIRV;
+        }
 #elif defined(__APPLE__)
-		options.TargetIL = TargetIL::MSL;
+        options.TargetIL = TargetIL::MSL;
 #elif defined(__linux__)
-		options.TargetIL = TargetIL::SPIRV;
+        options.TargetIL = TargetIL::SPIRV;
 #endif
 
-		std::vector<uint32_t> data = compiler.CompileHLSL(shader.Path, options);
-		m_compiledShaders.push_back({
-				.Stage = shader.Stage,
-				.Data = data
-		});
-	}
+        std::vector<uint32_t> data = compiler.CompileHLSL(shader.Path, options);
+        m_compiledShaders.push_back({ .Stage = shader.Stage, .Data = data });
+    }
 }

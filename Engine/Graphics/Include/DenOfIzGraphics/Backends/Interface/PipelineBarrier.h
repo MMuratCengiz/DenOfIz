@@ -25,71 +25,54 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-struct ImageBarrierInfo
-{
-	IImageResource* Resource;
-	ResourceState OldState{};
-	ResourceState NewState{};
+    struct ImageBarrierInfo
+    {
+        IImageResource *Resource;
+        ResourceState OldState{};
+        ResourceState NewState{};
 
-	bool EnableQueueBarrier = false;
-	uint32_t SourceQueue;
-	uint32_t DestinationQueue;
+        bool EnableQueueBarrier = false;
+        uint32_t SourceQueue;
+        uint32_t DestinationQueue;
 
-	bool EnableSubresourceBarrier = false;
-	uint32_t MipLevel = 0;
-	uint32_t ArrayLayer = 0;
-};
+        bool EnableSubresourceBarrier = false;
+        uint32_t MipLevel = 0;
+        uint32_t ArrayLayer = 0;
+    };
 
-struct BufferBarrierInfo
-{
-	IBufferResource* Resource;
-	ResourceState OldState;
-	ResourceState NewState;
-};
+    struct BufferBarrierInfo
+    {
+        IBufferResource *Resource;
+        ResourceState OldState;
+        ResourceState NewState;
+    };
 
-struct MemoryBarrierInfo
-{
-	// todo
-	ResourceState OldState;
-	ResourceState NewState;
-};
+    struct MemoryBarrierInfo
+    {
+        // todo
+        ResourceState OldState;
+        ResourceState NewState;
+    };
 
-class PipelineBarrier
-{
-private:
-	std::vector<ImageBarrierInfo> m_imageBarriers;
-	std::vector<BufferBarrierInfo> m_bufferBarriers;
-	std::vector<MemoryBarrierInfo> m_memoryBarriers;
-public:
-	inline void ImageBarrier(ImageBarrierInfo barrier)
-	{
-		m_imageBarriers.push_back(barrier);
-	}
+    class PipelineBarrier
+    {
+    private:
+        std::vector<ImageBarrierInfo> m_imageBarriers;
+        std::vector<BufferBarrierInfo> m_bufferBarriers;
+        std::vector<MemoryBarrierInfo> m_memoryBarriers;
 
-	inline void BufferBarrier(BufferBarrierInfo barrier)
-	{
-		m_bufferBarriers.push_back(barrier);
-	}
+    public:
+        inline void ImageBarrier(ImageBarrierInfo barrier) { m_imageBarriers.push_back(barrier); }
 
-	inline void MemoryBarrier(MemoryBarrierInfo barrier)
-	{
-		m_memoryBarriers.push_back(barrier);
-	}
+        inline void BufferBarrier(BufferBarrierInfo barrier) { m_bufferBarriers.push_back(barrier); }
 
-	inline const std::vector<ImageBarrierInfo>& GetImageBarriers() const
-	{
-		return m_imageBarriers;
-	}
+        inline void MemoryBarrier(MemoryBarrierInfo barrier) { m_memoryBarriers.push_back(barrier); }
 
-	inline const std::vector<BufferBarrierInfo>& GetBufferBarriers() const
-	{
-		return m_bufferBarriers;
-	}
+        inline const std::vector<ImageBarrierInfo> &GetImageBarriers() const { return m_imageBarriers; }
 
-	inline const std::vector<MemoryBarrierInfo>& GetMemoryBarriers() const
-	{
-		return m_memoryBarriers;
-	}
-};
+        inline const std::vector<BufferBarrierInfo> &GetBufferBarriers() const { return m_bufferBarriers; }
 
-}
+        inline const std::vector<MemoryBarrierInfo> &GetMemoryBarriers() const { return m_memoryBarriers; }
+    };
+
+} // namespace DenOfIz

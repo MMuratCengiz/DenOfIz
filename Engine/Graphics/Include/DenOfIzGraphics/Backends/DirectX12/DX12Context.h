@@ -22,16 +22,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzCore/Common_Windows.h>
 #include <DenOfIzCore/Logger.h>
 #include <DenOfIzGraphics/Backends/Interface/CommonData.h>
-#include <directx/dxgiformat.h>
 #include <directx/d3d12.h>
-#include <directx/dxgicommon.h>
 #include <directx/d3dx12.h>
+#include <directx/dxgicommon.h>
+#include <directx/dxgiformat.h>
 #include <dxgi1_6.h>
 #include <wrl/client.h>
 #include <wrl/event.h>
 #include "D3D12MemAlloc.h"
-#include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "DX12DescriptorHeap.h"
+#include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 
 #ifdef _DEBUG
 #include <dxgidebug.h>
@@ -44,42 +44,43 @@ using namespace Microsoft::WRL;
 namespace DenOfIz
 {
 
-struct DX12Context : boost::noncopyable
-{
-	static const int BackBufferCount = 3;
-	bool IsDeviceLost = false;
+    struct DX12Context : boost::noncopyable
+    {
+        static const int BackBufferCount = 3;
+        bool IsDeviceLost = false;
 
-	ComPtr<IDXGIAdapter1> Adapter;
+        ComPtr<IDXGIAdapter1> Adapter;
 
-	ComPtr<ID3D12Device9> D3DDevice;
-	ComPtr<IDXGIFactory7> DXGIFactory;
-	ComPtr<ID3D12CommandQueue> GraphicsCommandQueue;
-	ComPtr<ID3D12CommandQueue> ComputeCommandQueue;
+        ComPtr<ID3D12Device9> D3DDevice;
+        ComPtr<IDXGIFactory7> DXGIFactory;
+        ComPtr<ID3D12CommandQueue> GraphicsCommandQueue;
+        ComPtr<ID3D12CommandQueue> ComputeCommandQueue;
 
-	ComPtr<ID3D12CommandAllocator> CopyCommandListAllocator;
-	ComPtr<ID3D12GraphicsCommandList4> CopyCommandList;
+        ComPtr<ID3D12CommandAllocator> CopyCommandListAllocator;
+        ComPtr<ID3D12GraphicsCommandList4> CopyCommandList;
 
-	std::array<std::unique_ptr<DX12DescriptorHeap>, D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES> CpuDescriptorHeaps;
-	std::unique_ptr<DX12DescriptorHeap> ShaderVisibleCbvSrvUavDescriptorHeap;
-	std::unique_ptr<DX12DescriptorHeap> ShaderVisibleSamplerDescriptorHeap;
+        std::array<std::unique_ptr<DX12DescriptorHeap>, D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES> CpuDescriptorHeaps;
+        std::unique_ptr<DX12DescriptorHeap> ShaderVisibleCbvSrvUavDescriptorHeap;
+        std::unique_ptr<DX12DescriptorHeap> ShaderVisibleSamplerDescriptorHeap;
 
-	GraphicsWindowHandle* Window;
-	PhysicalDeviceInfo SelectedDeviceInfo;
-	D3D12MA::Allocator* DX12MemoryAllocator;
-};
+        GraphicsWindowHandle *Window;
+        PhysicalDeviceInfo SelectedDeviceInfo;
+        D3D12MA::Allocator *DX12MemoryAllocator;
+    };
 
-}
+} // namespace DenOfIz
 
-#define DX_CHECK_RESULT(exp) 																				\
-do                                                                                    						\
-{                                                                                    						\
-	HRESULT hrNoConflictName = exp;                                                         				\
-	if (!SUCCEEDED(hrNoConflictName))                                                                     	\
-	{                                                                                       				\
-		std::string message = (boost::format("FAILED with HRESULT:") % (uint32_t)hrNoConflictName).str(); 	\
-		LOG(Verbosity::Critical, "DirectX", message);                                       				\
-		assertm(false, message);                                                            				\
-	}                                                                                    					\
-} while (false)
+#define DX_CHECK_RESULT(exp)                                                                                                                                                       \
+    do                                                                                                                                                                             \
+    {                                                                                                                                                                              \
+        HRESULT hrNoConflictName = exp;                                                                                                                                            \
+        if ( !SUCCEEDED(hrNoConflictName) )                                                                                                                                        \
+        {                                                                                                                                                                          \
+            std::string message = (boost::format("FAILED with HRESULT:") % (uint32_t)hrNoConflictName).str();                                                                      \
+            LOG(Verbosity::Critical, "DirectX", message);                                                                                                                          \
+            assertm(false, message);                                                                                                                                               \
+        }                                                                                                                                                                          \
+    }                                                                                                                                                                              \
+    while ( false )
 
 #endif

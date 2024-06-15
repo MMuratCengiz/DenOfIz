@@ -20,19 +20,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12DescriptorTable::DX12DescriptorTable(DX12Context* context, DescriptorTableCreateInfo createInfo)
+DX12DescriptorTable::DX12DescriptorTable(DX12Context *context, DescriptorTableCreateInfo createInfo)
 {
-	DX12RootSignature* rootSignature = static_cast<DX12RootSignature*>(createInfo.RootSignature);
-	m_rootSignature = rootSignature->GetRootSignature();
+    DX12RootSignature *rootSignature = static_cast<DX12RootSignature *>(createInfo.RootSignature);
+    m_rootSignature = rootSignature->GetRootSignature();
 }
 
-void DX12DescriptorTable::BindImage(IImageResource* resource)
-{
-	DX12ImageResource* dx12Resource = static_cast<DX12ImageResource*>(resource);
-}
+void DX12DescriptorTable::BindImage(IImageResource *resource) { DX12ImageResource *dx12Resource = static_cast<DX12ImageResource *>(resource); }
 
-void DX12DescriptorTable::BindBuffer(IBufferResource* resource)
+void DX12DescriptorTable::BindBuffer(IBufferResource *resource)
 {
-	DX12BufferResource* dx12Resource = static_cast<DX12BufferResource*>(resource);
-	m_resources.push_back(dx12Resource->GetResource());
+    DX12BufferResource *dx12Resource = static_cast<DX12BufferResource *>(resource);
+    m_resources.push_back(dx12Resource->GetResource());
 }

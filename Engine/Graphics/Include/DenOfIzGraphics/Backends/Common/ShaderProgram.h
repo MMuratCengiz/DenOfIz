@@ -24,26 +24,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-struct ShaderInfo
-{
-	ShaderStage Stage;
-	std::string Path;
-	std::vector<std::string> Defines;
-	std::string EntryPoint = "main";
-};
+    struct ShaderInfo
+    {
+        ShaderStage Stage;
+        std::string Path;
+        std::vector<std::string> Defines;
+        std::string EntryPoint = "main";
+    };
 
-class ShaderProgram
-{
-private:
-	std::vector<ShaderInfo> m_shaders;
-	std::vector<CompiledShader> m_compiledShaders;
-public:
-	ShaderProgram() = default;
-	void AddShader(const ShaderInfo& shaderInfo);
-	void Compile();
-	const std::vector<CompiledShader>& GetCompiledShaders() const { return m_compiledShaders; }
-	~ShaderProgram() = default;
-};
+    class ShaderProgram
+    {
+    private:
+        std::vector<ShaderInfo> m_shaders;
+        std::vector<CompiledShader> m_compiledShaders;
 
+    public:
+        ShaderProgram() = default;
+        void AddShader(const ShaderInfo &shaderInfo);
+        void Compile();
+        const std::vector<CompiledShader> &GetCompiledShaders() const { return m_compiledShaders; }
+        ~ShaderProgram() = default;
+    };
 
-}
+} // namespace DenOfIz

@@ -23,25 +23,25 @@ using namespace DenOfIz;
 std::unique_ptr<GfxGlobal> GfxGlobal::s_instance;
 std::mutex GfxGlobal::s_mutex;
 
-GfxGlobal* GfxGlobal::GetInstance()
+GfxGlobal *GfxGlobal::GetInstance()
 {
-	s_mutex.lock();
-	if (!s_instance)
-	{
-		s_instance = std::make_unique<GfxGlobal>();
-		s_instance->m_shaderCompiler.Init();
-	}
-	s_mutex.unlock();
-	return s_instance.get();
+    s_mutex.lock();
+    if ( !s_instance )
+    {
+        s_instance = std::make_unique<GfxGlobal>();
+        s_instance->m_shaderCompiler.Init();
+    }
+    s_mutex.unlock();
+    return s_instance.get();
 }
 
 void GfxGlobal::Destroy()
 {
-	s_mutex.lock();
-	if (s_instance)
-	{
-		s_instance->m_shaderCompiler.Destroy();
-		s_instance.reset();
-	}
-	s_mutex.unlock();
+    s_mutex.lock();
+    if ( s_instance )
+    {
+        s_instance->m_shaderCompiler.Destroy();
+        s_instance.reset();
+    }
+    s_mutex.unlock();
 }

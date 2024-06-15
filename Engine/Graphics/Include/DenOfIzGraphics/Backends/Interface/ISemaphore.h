@@ -21,15 +21,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-class ISemaphore
-{
-public:
-	virtual void Wait() = 0;
-	virtual void Notify() = 0;
+    class ISemaphore
+    {
+    public:
+        virtual void Wait() = 0;
+        virtual void Notify() = 0;
 
-	virtual ~ISemaphore()
-	{
-	};
-};
+        virtual ~ISemaphore(){};
+    };
 
-}
+} // namespace DenOfIz

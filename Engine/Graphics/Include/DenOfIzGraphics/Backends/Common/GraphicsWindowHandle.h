@@ -37,91 +37,91 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-struct GraphicsWindowSurface
-{
-	uint32_t Width;
-	uint32_t Height;
-};
+    struct GraphicsWindowSurface
+    {
+        uint32_t Width;
+        uint32_t Height;
+    };
 
-class GraphicsWindowHandle
-{
-private:
+    class GraphicsWindowHandle
+    {
+    private:
 #ifdef WINDOW_MANAGER_SDL
-	SDL_Window* m_sdlWindow;
+        SDL_Window *m_sdlWindow;
 #endif
 
 #ifdef _WIN32
-	HWND m_windowHandle;
+        HWND m_windowHandle;
 #elif __APPLE__
-	NSWindow* m_windowHandle;
+        NSWindow *m_windowHandle;
 #elif __linux__
 #endif
 
-public:
-	GraphicsWindowHandle() = default;
+    public:
+        GraphicsWindowHandle() = default;
 #ifdef WINDOW_MANAGER_SDL
-	void Create(SDL_Window* window)
-	{
-		m_sdlWindow = window;
+        void Create(SDL_Window *window)
+        {
+            m_sdlWindow = window;
 #ifdef _WIN32
-		SDL_SysWMinfo info;
-		SDL_VERSION(&info.version);
-		if (SDL_GetWindowWMInfo(window, &info))
-		{
-			m_windowHandle = info.info.win.window;
-		}
+            SDL_SysWMinfo info;
+            SDL_VERSION(&info.version);
+            if ( SDL_GetWindowWMInfo(window, &info) )
+            {
+                m_windowHandle = info.info.win.window;
+            }
 #elif __APPLE__
 #endif
 
-		if (m_windowHandle == nullptr)
-		{
-			LOG(Verbosity::Critical, "WindowHandle", "Failed to get window handle");
-		}
-	}
+            if ( m_windowHandle == nullptr )
+            {
+                LOG(Verbosity::Critical, "WindowHandle", "Failed to get window handle");
+            }
+        }
 #else
 #error "Not implemented yet"
 #endif
 
 #ifdef _WIN32
-	HWND
+        HWND
 #elif __APPLE__
-	NSWindow*
+        NSWindow *
 #elif __linux__
 #error "Not implemented yet"
 #endif
-	GetNativeHandle() const
-	{
-		return m_windowHandle;
-	}
+        GetNativeHandle() const
+        {
+            return m_windowHandle;
+        }
 
-	const GraphicsWindowSurface GetSurface() const
-	{
+        const GraphicsWindowSurface GetSurface() const
+        {
 #ifdef WINDOW_MANAGER_SDL
-		GraphicsWindowSurface result;
-		SDL_Surface* surface = SDL_GetWindowSurface(m_sdlWindow);
-		result.Width = surface->w;
-		result.Height = surface->h;
-		return result;
+            GraphicsWindowSurface result;
+            SDL_Surface *surface = SDL_GetWindowSurface(m_sdlWindow);
+            result.Width = surface->w;
+            result.Height = surface->h;
+            return result;
 #else
 #error "Not implemented yet"
 #endif
-	}
+        }
 
 #ifdef BUILD_VK
-	const std::vector<const char*> GetVkRequiredExtensions() const
-	{
+        const std::vector<const char *> GetVkRequiredExtensions() const
+        {
 #ifdef WINDOW_MANAGER_SDL
-		uint32_t extensionCount = 0;
-		SDL_Vulkan_GetInstanceExtensions(m_sdlWindow, &extensionCount, nullptr);
-		std::vector<const char*> extensions(extensionCount);
-		SDL_Vulkan_GetInstanceExtensions(m_sdlWindow, &extensionCount, extensions.data());
-		return extensions;
+            uint32_t extensionCount = 0;
+            SDL_Vulkan_GetInstanceExtensions(m_sdlWindow, &extensionCount, nullptr);
+            std::vector<const char *> extensions(extensionCount);
+            SDL_Vulkan_GetInstanceExtensions(m_sdlWindow, &extensionCount, extensions.data());
+            return extensions;
 #else
 #error "Not implemented yet"
 #endif
-	}
+        }
 #endif
-	~GraphicsWindowHandle() = default;
-};
+        ~GraphicsWindowHandle() = default;
+    };
 
-}
+} // namespace DenOfIz

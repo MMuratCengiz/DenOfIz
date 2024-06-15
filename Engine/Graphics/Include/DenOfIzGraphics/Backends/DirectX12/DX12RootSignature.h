@@ -19,35 +19,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
+#include <unordered_set>
 #include "DX12Context.h"
 #include "DX12EnumConverter.h"
-#include <unordered_set>
 
 namespace DenOfIz
 {
 
-class DX12RootSignature : public IRootSignature
-{
-private:
-	D3D_ROOT_SIGNATURE_VERSION m_rootSignatureVersion;
-	DX12Context* m_context;
-	RootSignatureCreateInfo m_createInfo;
-	ComPtr<ID3D12RootSignature> m_rootSignature;
+    class DX12RootSignature : public IRootSignature
+    {
+    private:
+        D3D_ROOT_SIGNATURE_VERSION m_rootSignatureVersion;
+        DX12Context *m_context;
+        RootSignatureCreateInfo m_createInfo;
+        ComPtr<ID3D12RootSignature> m_rootSignature;
 
-	std::vector<CD3DX12_ROOT_PARAMETER1> m_rootParameters;
-	std::vector<CD3DX12_ROOT_PARAMETER1> m_rootConstants;
-	std::vector<CD3DX12_DESCRIPTOR_RANGE1> m_descriptorRanges;
+        std::vector<CD3DX12_ROOT_PARAMETER1> m_rootParameters;
+        std::vector<CD3DX12_ROOT_PARAMETER1> m_rootConstants;
+        std::vector<CD3DX12_DESCRIPTOR_RANGE1> m_descriptorRanges;
 
-	std::unordered_set<D3D12_SHADER_VISIBILITY> m_descriptorRangesShaderVisibilities;
-public:
-	DX12RootSignature(DX12Context* context, const RootSignatureCreateInfo& createInfo);
-	inline ID3D12RootSignature* GetRootSignature() const { return m_rootSignature.Get(); }
-	~DX12RootSignature() override;
-protected:
-	void AddResourceBindingInternal(const ResourceBinding& binding) override;
-	void AddRootConstantInternal(const RootConstantBinding& rootConstant) override;
-	void CreateInternal() override;
+        std::unordered_set<D3D12_SHADER_VISIBILITY> m_descriptorRangesShaderVisibilities;
 
-};
+    public:
+        DX12RootSignature(DX12Context *context, const RootSignatureCreateInfo &createInfo);
 
-}
+        inline ID3D12RootSignature *GetRootSignature() const { return m_rootSignature.Get(); }
+
+        ~DX12RootSignature() override;
+
+    protected:
+        void AddResourceBindingInternal(const ResourceBinding &binding) override;
+
+        void AddRootConstantInternal(const RootConstantBinding &rootConstant) override;
+
+        void CreateInternal() override;
+    };
+
+} // namespace DenOfIz

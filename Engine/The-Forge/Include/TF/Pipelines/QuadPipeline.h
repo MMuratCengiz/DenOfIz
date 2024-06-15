@@ -23,16 +23,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-class QuadPipeline
-{
-private:
-	TFCommon* m_common;
-	Shader* m_program;
-public:
-	Pipeline* p_PipelineQuad;
+    class QuadPipeline
+    {
+    private:
+        TFCommon *m_common;
+        Shader *m_program;
 
-	QuadPipeline(TFCommon* common);
-	~QuadPipeline();
-};
+    public:
+        Pipeline *p_PipelineQuad;
 
-}
+        QuadPipeline(TFCommon *common);
+        ~QuadPipeline();
+    };
+
+} // namespace DenOfIz

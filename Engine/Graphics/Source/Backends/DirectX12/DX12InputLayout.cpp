@@ -20,69 +20,66 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12InputLayout::DX12InputLayout(const InputLayoutCreateInfo& createInfo)
+DX12InputLayout::DX12InputLayout(const InputLayoutCreateInfo &createInfo)
 {
-	for (const InputGroup& inputGroup : createInfo.InputGroups)
-	{
-		D3D12_INPUT_CLASSIFICATION inputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-		uint32_t instanceDataStepRate = 0;
+    for ( const InputGroup &inputGroup : createInfo.InputGroups )
+    {
+        D3D12_INPUT_CLASSIFICATION inputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+        uint32_t instanceDataStepRate = 0;
 
-		if (inputGroup.StepRate == StepRate::PerInstance)
-		{
-			inputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
-			instanceDataStepRate = 1;
-		}
+        if ( inputGroup.StepRate == StepRate::PerInstance )
+        {
+            inputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
+            instanceDataStepRate = 1;
+        }
 
-		for (const InputLayoutElement& inputElement : inputGroup.Elements)
-		{
-			D3D12_INPUT_ELEMENT_DESC& element = m_inputElements.emplace_back(D3D12_INPUT_ELEMENT_DESC{});
+        for ( const InputLayoutElement &inputElement : inputGroup.Elements )
+        {
+            D3D12_INPUT_ELEMENT_DESC &element = m_inputElements.emplace_back(D3D12_INPUT_ELEMENT_DESC{});
 
-			switch (inputElement.Semantic)
-			{
-			case Semantic::Position:
-				element.SemanticName = "POSITION";
-				break;
-			case Semantic::Normal:
-				element.SemanticName = "NORMAL";
-				break;
-			case Semantic::Color:
-				element.SemanticName = "COLOR";
-				break;
-			case Semantic::Tangent:
-				element.SemanticName = "TANGENT";
-				break;
-			case Semantic::Binormal:
-				element.SemanticName = "BINORMAL";
-				break;
-			case Semantic::Bitangent:
-				element.SemanticName = "BITANGENT";
-				break;
-			case Semantic::BlendJoints:
-				element.SemanticName = "BLENDJOINTS";
-				break;
-			case Semantic::BlendWeights:
-				element.SemanticName = "BLENDWEIGHTS";
-				break;
-			case Semantic::TextureCoordinate:
-				element.SemanticName = &"TEXCOORD"[inputElement.SemanticIndex];
-				break;
-			}
+            switch ( inputElement.Semantic )
+            {
+            case Semantic::Position:
+                element.SemanticName = "POSITION";
+                break;
+            case Semantic::Normal:
+                element.SemanticName = "NORMAL";
+                break;
+            case Semantic::Color:
+                element.SemanticName = "COLOR";
+                break;
+            case Semantic::Tangent:
+                element.SemanticName = "TANGENT";
+                break;
+            case Semantic::Binormal:
+                element.SemanticName = "BINORMAL";
+                break;
+            case Semantic::Bitangent:
+                element.SemanticName = "BITANGENT";
+                break;
+            case Semantic::BlendJoints:
+                element.SemanticName = "BLENDJOINTS";
+                break;
+            case Semantic::BlendWeights:
+                element.SemanticName = "BLENDWEIGHTS";
+                break;
+            case Semantic::TextureCoordinate:
+                element.SemanticName = &"TEXCOORD"[ inputElement.SemanticIndex ];
+                break;
+            }
 
-			element.SemanticIndex = inputElement.SemanticIndex;
-			element.Format = DX12EnumConverter::ConvertImageFormat(inputElement.Format);
-			element.InputSlot = inputElement.Binding;
-			element.AlignedByteOffset = inputElement.Offset;
-			element.InputSlotClass = inputSlotClass;
-			element.InstanceDataStepRate = instanceDataStepRate;
-		}
-	}
+            element.SemanticIndex = inputElement.SemanticIndex;
+            element.Format = DX12EnumConverter::ConvertImageFormat(inputElement.Format);
+            element.InputSlot = inputElement.Binding;
+            element.AlignedByteOffset = inputElement.Offset;
+            element.InputSlotClass = inputSlotClass;
+            element.InstanceDataStepRate = instanceDataStepRate;
+        }
+    }
 
-	m_inputLayout = {};
-	m_inputLayout.pInputElementDescs = m_inputElements.data();
-	m_inputLayout.NumElements = m_inputElements.size();
+    m_inputLayout = {};
+    m_inputLayout.pInputElementDescs = m_inputElements.data();
+    m_inputLayout.NumElements = m_inputElements.size();
 }
 
-DX12InputLayout::~DX12InputLayout()
-{
-
-}
+DX12InputLayout::~DX12InputLayout() {}

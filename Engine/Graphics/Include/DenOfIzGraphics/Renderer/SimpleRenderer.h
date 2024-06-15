@@ -17,41 +17,41 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <DenOfIzGraphics/Backends/GraphicsAPI.h>
 #include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
-#include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 
 namespace DenOfIz
 {
 
-class SimpleRenderer
-{
-private:
-	const uint32_t mc_framesInFlight = 3;
-	std::unique_ptr<ILogicalDevice> m_logicalDevice;
-	GraphicsWindowHandle * m_window;
+    class SimpleRenderer
+    {
+    private:
+        const uint32_t mc_framesInFlight = 3;
+        std::unique_ptr<ILogicalDevice> m_logicalDevice;
+        GraphicsWindowHandle *m_window;
 
-	std::vector<float> m_triangle{ 1.0f, 1.0f,  1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-								   -1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-								   0.0f, -1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f };
+        std::vector<float> m_triangle{ 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,  0.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
+                                       0.0f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 1.0f, 1.0f, 0.0f,  0.0f, 1.0f, 1.0f };
 
-	ShaderProgram m_program;
-	std::unique_ptr<IPipeline> m_pipeline;
-	std::unique_ptr<IBufferResource> m_vertexBuffer;
-	std::unique_ptr<IBufferResource> m_timePassedBuffer;
-	std::unique_ptr<Time> m_time = std::make_unique<Time>();
-	std::unique_ptr<IInputLayout> m_inputLayout;
-	std::unique_ptr<IRootSignature> m_rootSignature;
-	std::unique_ptr<IDescriptorTable> m_descriptorTable;
-	std::unique_ptr<ISwapChain> m_swapChain;
-	std::vector<std::unique_ptr<IFence>> m_fences;
-	std::vector<std::unique_ptr<ISemaphore>> m_imageReadySemaphores;
-	std::vector<std::unique_ptr<ISemaphore>> m_imageRenderedSemaphores;
-	std::unique_ptr<CommandListRing> m_commandListRing;
-public:
-	void Init(GraphicsWindowHandle* window);
-	void Render();
-	void Quit();
-};
+        ShaderProgram m_program;
+        std::unique_ptr<IPipeline> m_pipeline;
+        std::unique_ptr<IBufferResource> m_vertexBuffer;
+        std::unique_ptr<IBufferResource> m_timePassedBuffer;
+        std::unique_ptr<Time> m_time = std::make_unique<Time>();
+        std::unique_ptr<IInputLayout> m_inputLayout;
+        std::unique_ptr<IRootSignature> m_rootSignature;
+        std::unique_ptr<IDescriptorTable> m_descriptorTable;
+        std::unique_ptr<ISwapChain> m_swapChain;
+        std::vector<std::unique_ptr<IFence>> m_fences;
+        std::vector<std::unique_ptr<ISemaphore>> m_imageReadySemaphores;
+        std::vector<std::unique_ptr<ISemaphore>> m_imageRenderedSemaphores;
+        std::unique_ptr<CommandListRing> m_commandListRing;
 
-}
+    public:
+        void Init(GraphicsWindowHandle *window);
+        void Render();
+        void Quit();
+    };
+
+} // namespace DenOfIz

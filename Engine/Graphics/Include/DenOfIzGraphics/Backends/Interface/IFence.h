@@ -21,15 +21,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-class IFence
-{
-public:
-	virtual void Wait() = 0;
-	virtual void Reset() = 0;
+    class IFence
+    {
+    public:
+        virtual void Wait() = 0;
+        virtual void Reset() = 0;
 
-	virtual ~IFence()
-	{
-	};
-};
+        virtual ~IFence(){};
+    };
 
-}
+} // namespace DenOfIz

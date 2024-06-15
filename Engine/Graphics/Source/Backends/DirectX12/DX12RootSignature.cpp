@@ -20,75 +20,67 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12RootSignature::DX12RootSignature(DX12Context* context, const RootSignatureCreateInfo& createInfo)
-		:m_context(context), m_createInfo(createInfo)
+DX12RootSignature::DX12RootSignature(DX12Context *context, const RootSignatureCreateInfo &createInfo) : m_context(context), m_createInfo(createInfo)
 {
-	D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
-	m_rootSignatureVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+    D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
+    m_rootSignatureVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
 
-	if (FAILED(context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
-	{
-		m_rootSignatureVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
-	}
+    if ( FAILED(context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))) )
+    {
+        m_rootSignatureVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+    }
 }
 
-void DX12RootSignature::AddResourceBindingInternal(const ResourceBinding& binding)
+void DX12RootSignature::AddResourceBindingInternal(const ResourceBinding &binding)
 {
-	CD3DX12_DESCRIPTOR_RANGE1 descriptorRange = {};
-	descriptorRange.Init(
-		DX12EnumConverter::ConvertBindingTypeToDescriptorRangeType(binding.Type),
-		binding.ArraySize,
-		binding.Binding,
-		binding.RegisterSpace
-			);
+    CD3DX12_DESCRIPTOR_RANGE1 descriptorRange = {};
+    descriptorRange.Init(DX12EnumConverter::ConvertBindingTypeToDescriptorRangeType(binding.Type), binding.ArraySize, binding.Binding, binding.RegisterSpace);
 
-	m_descriptorRanges.push_back(descriptorRange);
-	for (const auto& stage : binding.Stages)
-	{
-		m_descriptorRangesShaderVisibilities.insert(DX12EnumConverter::ConvertShaderStageToShaderVisibility(stage));
-	}
+    m_descriptorRanges.push_back(descriptorRange);
+    for ( const auto &stage : binding.Stages )
+    {
+        m_descriptorRangesShaderVisibilities.insert(DX12EnumConverter::ConvertShaderStageToShaderVisibility(stage));
+    }
 }
 
-void DX12RootSignature::AddRootConstantInternal(const RootConstantBinding& rootConstant)
+void DX12RootSignature::AddRootConstantInternal(const RootConstantBinding &rootConstant)
 {
-	CD3DX12_ROOT_PARAMETER1 dxRootConstant = {};
-	dxRootConstant.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	if (rootConstant.Stages.size() > 1 || rootConstant.Stages.empty())
-	{
-		dxRootConstant.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	}
-	else {
-		dxRootConstant.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility(rootConstant.Stages[0]);
-	}
-	dxRootConstant.Constants.Num32BitValues = rootConstant.Size / sizeof(uint32_t);
-	dxRootConstant.Constants.ShaderRegister = rootConstant.Binding;
-	dxRootConstant.Constants.RegisterSpace = rootConstant.RegisterSpace;
-	m_rootConstants.push_back(dxRootConstant);
+    CD3DX12_ROOT_PARAMETER1 dxRootConstant = {};
+    dxRootConstant.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+    if ( rootConstant.Stages.size() > 1 || rootConstant.Stages.empty() )
+    {
+        dxRootConstant.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    }
+    else
+    {
+        dxRootConstant.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility(rootConstant.Stages[ 0 ]);
+    }
+    dxRootConstant.Constants.Num32BitValues = rootConstant.Size / sizeof(uint32_t);
+    dxRootConstant.Constants.ShaderRegister = rootConstant.Binding;
+    dxRootConstant.Constants.RegisterSpace = rootConstant.RegisterSpace;
+    m_rootConstants.push_back(dxRootConstant);
 }
 
 void DX12RootSignature::CreateInternal()
 {
-	D3D12_SHADER_VISIBILITY	shaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	if (m_descriptorRangesShaderVisibilities.size() == 1)
-	{
-		shaderVisibility = *m_descriptorRangesShaderVisibilities.begin();
-	}
+    D3D12_SHADER_VISIBILITY shaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    if ( m_descriptorRangesShaderVisibilities.size() == 1 )
+    {
+        shaderVisibility = *m_descriptorRangesShaderVisibilities.begin();
+    }
 
-	std::copy(m_rootConstants.begin(), m_rootConstants.end(), std::back_inserter(m_rootParameters));
+    std::copy(m_rootConstants.begin(), m_rootConstants.end(), std::back_inserter(m_rootParameters));
 
-	CD3DX12_ROOT_PARAMETER1 descriptors = {};
-	descriptors.InitAsDescriptorTable(m_descriptorRanges.size(), m_descriptorRanges.data(), shaderVisibility);
-	m_rootParameters.push_back(descriptors);
+    CD3DX12_ROOT_PARAMETER1 descriptors = {};
+    descriptors.InitAsDescriptorTable(m_descriptorRanges.size(), m_descriptorRanges.data(), shaderVisibility);
+    m_rootParameters.push_back(descriptors);
 
-	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init_1_2(rootSignatureDesc, static_cast<uint32_t>(m_rootParameters.size()), m_rootParameters.data());
-	ComPtr<ID3DBlob> signature;
-	ComPtr<ID3DBlob> error;
-	DX_CHECK_RESULT(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, m_rootSignatureVersion, &signature, &error));
-	DX_CHECK_RESULT(m_context->D3DDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
+    CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
+    rootSignatureDesc.Init_1_2(rootSignatureDesc, static_cast<uint32_t>(m_rootParameters.size()), m_rootParameters.data());
+    ComPtr<ID3DBlob> signature;
+    ComPtr<ID3DBlob> error;
+    DX_CHECK_RESULT(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, m_rootSignatureVersion, &signature, &error));
+    DX_CHECK_RESULT(m_context->D3DDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
 }
 
-DX12RootSignature::~DX12RootSignature()
-{
-	m_rootSignature.Reset();
-}
+DX12RootSignature::~DX12RootSignature() { m_rootSignature.Reset(); }
