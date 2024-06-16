@@ -307,11 +307,11 @@ void VulkanPipeline::CreateDepthAttachmentImages()
     m_pipelineCreateInfo.pDepthStencilState = &m_depthStencilStateCreateInfo;
 }
 
-vk::ShaderModule VulkanPipeline::CreateShaderModule(const std::vector<uint32_t> &data) const
+vk::ShaderModule VulkanPipeline::CreateShaderModule(CComPtr<IDxcBlob> data) const
 {
     vk::ShaderModuleCreateInfo shaderModuleCreateInfo{};
-    shaderModuleCreateInfo.codeSize = data.size() * sizeof(uint32_t);
-    shaderModuleCreateInfo.pCode = data.data();
+    shaderModuleCreateInfo.codeSize = data->GetBufferSize();
+    shaderModuleCreateInfo.pCode = static_cast<const uint32_t *>(data->GetBufferPointer());
 
     return m_context->LogicalDevice.createShaderModule(shaderModuleCreateInfo);
 }

@@ -33,7 +33,11 @@ ShaderReflection::ShaderReflection(std::vector<CompiledShader> shaderInfos) : Sh
 
 void ShaderReflection::OnEachShader(const CompiledShader &shaderInfo, const bool &first)
 {
-    spirv_cross::Compiler compiler(shaderInfo.Data);
+    CComPtr<IDxcBlob> code = shaderInfo.Data;
+    std::vector<uint32_t> codeToUVec(static_cast<uint32_t *>(code->GetBufferPointer()),
+                                     static_cast<uint32_t *>(code->GetBufferPointer()) + code->GetBufferSize() / sizeof(uint32_t));
+
+    spirv_cross::Compiler compiler(codeToUVec);
 
     auto shaderResources = compiler.get_shader_resources();
 

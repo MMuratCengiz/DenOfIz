@@ -214,7 +214,7 @@ namespace DenOfIz
         return std::move(spirv);
     }
 
-    std::vector<uint32_t> ShaderCompiler::CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const
+    CComPtr<IDxcBlob> ShaderCompiler::CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const
     {
         // Attribute to source: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
         // https://github.com/KhronosGroup/Vulkan-Guide
@@ -276,7 +276,7 @@ namespace DenOfIz
         }
         arguments.push_back(L"-HV");
         arguments.push_back(L"2021");
-#ifdef _DEBUG
+#ifndef NDEBUG
         arguments.push_back(L"-Zi");
 #endif
 
@@ -306,12 +306,7 @@ namespace DenOfIz
 
         CComPtr<IDxcBlob> code;
         dxcResult->GetResult(&code);
-
-        std::vector<uint32_t> codeToUVec(static_cast<uint32_t *>(code->GetBufferPointer()),
-                                         static_cast<uint32_t *>(code->GetBufferPointer()) + code->GetBufferSize() / sizeof(uint32_t));
-
-        code.Reset();
-        return codeToUVec;
+        return code;
     }
 
 } // namespace DenOfIz

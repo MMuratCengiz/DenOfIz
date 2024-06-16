@@ -26,18 +26,21 @@ VulkanInputLayout::VulkanInputLayout(const InputLayoutCreateInfo &createInfo)
     for ( const InputGroup &inputGroup : createInfo.InputGroups )
     {
         VkVertexInputBindingDescription &bindingDescription = m_bindingDescriptions.emplace_back(VkVertexInputBindingDescription{});
-        bindingDescription.binding = bindingIndex++;
+        bindingDescription.binding = bindingIndex;
         bindingDescription.inputRate = inputGroup.StepRate == StepRate::PerInstance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
 
+        uint32_t offset = 0;
         for ( const InputLayoutElement &inputElement : inputGroup.Elements )
         {
             VkVertexInputAttributeDescription &attributeDescription = m_attributeDescriptions.emplace_back(VkVertexInputAttributeDescription{});
-            attributeDescription.binding = inputElement.Binding;
-            attributeDescription.location = inputElement.SemanticIndex;
+            attributeDescription.binding = bindingIndex;
+            attributeDescription.location = static_cast<int>(inputElement.Semantic) + inputElement.SemanticIndex; // Is this correct? !CHECK_VK!
             attributeDescription.format = (VkFormat)VulkanEnumConverter::ConvertImageFormat(inputElement.Format);
-            attributeDescription.offset = inputElement.Offset;
+            attributeDescription.offset = offset;
+            offset += GetImageFormatSize(inputElement.Format);
         }
         bindingDescription.stride = inputGroup.Elements.size() * sizeof(float);
+        bindingIndex++;
     }
 
     m_vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

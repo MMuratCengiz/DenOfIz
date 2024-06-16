@@ -35,7 +35,7 @@ void DX12BufferResource::Allocate(const void *data)
         allocationDesc.HeapType = DX12EnumConverter::ConvertHeapType(HeapType::CPU);
 
         HRESULT hr =
-            m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, &m_allocation, IID_PPV_ARGS(&stagingBuffer));
+            m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, NULL, &m_allocation, IID_PPV_ARGS(&stagingBuffer));
         DX_CHECK_RESULT(hr);
 
         void *mappedMemory = nullptr;

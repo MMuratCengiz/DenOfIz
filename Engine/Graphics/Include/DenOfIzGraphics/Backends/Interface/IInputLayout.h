@@ -46,17 +46,21 @@ namespace DenOfIz
     {
         Semantic Semantic;
         uint32_t SemanticIndex;
-        uint32_t Binding;
-        uint32_t Offset;
         ImageFormat Format;
     };
 
+    /**
+     * @brief Describes a group of input elements that are bound to a single vertex buffer.
+     */
     struct InputGroup
     {
         std::vector<InputLayoutElement> Elements;
         StepRate StepRate;
     };
 
+    /**
+     * @brief Describes the input layout of a the input assembler stage. The order the groups are added determines the buffer binding.
+     */
     struct InputLayoutCreateInfo
     {
         std::vector<InputGroup> InputGroups;

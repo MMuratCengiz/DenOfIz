@@ -25,7 +25,7 @@ namespace DenOfIz
     {
         m_window = window;
         GraphicsAPI::SetAPIPreference(APIPreference{
-            .Windows = APIPreferenceWindows::DirectX12,
+//            .Windows = APIPreferenceWindows::Vulkan,
         });
 
         m_logicalDevice = GraphicsAPI::CreateLogicalDevice(m_window);
@@ -47,7 +47,11 @@ namespace DenOfIz
         const InputLayoutCreateInfo &inputLayoutCreateInfo = InputLayoutCreateInfo{};
 
         m_inputLayout =
-            m_logicalDevice->CreateInputLayout({ .InputGroups = { { .Elements = { InputLayoutElement{ .Semantic = Semantic::Position, .Format = ImageFormat::R32G32B32A32Float } },
+            m_logicalDevice->CreateInputLayout({ .InputGroups = { { .Elements =
+                                                                    {
+                                                                            InputLayoutElement{ .Semantic = Semantic::Position, .Format = ImageFormat::R32G32B32Float },
+                                                                            InputLayoutElement{ .Semantic = Semantic::Color, .Format = ImageFormat::R32G32B32A32Float,} ,
+                                                                    },
                                                                     .StepRate = StepRate::PerVertex } } });
 
         m_swapChain = m_logicalDevice->CreateSwapChain(SwapChainCreateInfo{});

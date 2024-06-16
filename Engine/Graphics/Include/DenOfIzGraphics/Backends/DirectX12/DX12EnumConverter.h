@@ -37,6 +37,7 @@ namespace DenOfIz
             case ResourceBindingType::StorageImage:
                 break;
             case ResourceBindingType::Buffer:
+                return D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             case ResourceBindingType::Texture:
             case ResourceBindingType::BufferDynamic:
                 return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -461,6 +462,87 @@ namespace DenOfIz
                 result |= D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
             }
             return result;
+        }
+
+        static uint32_t GetImageFormatSize(const ImageFormat &format)
+        {
+            switch ( format )
+            {
+            case ImageFormat::R32G32B32A32Float:
+            case ImageFormat::R32G32B32A32Uint:
+            case ImageFormat::R32G32B32A32Sint:
+                return 16;
+            case ImageFormat::R32G32B32Float:
+            case ImageFormat::R32G32B32Uint:
+            case ImageFormat::R32G32B32Sint:
+                return 12;
+            case ImageFormat::R16G16B16A16Float:
+            case ImageFormat::R16G16B16A16Unorm:
+            case ImageFormat::R16G16B16A16Uint:
+            case ImageFormat::R16G16B16A16Snorm:
+            case ImageFormat::R16G16B16A16Sint:
+            case ImageFormat::R32G32Float:
+            case ImageFormat::R32G32Uint:
+            case ImageFormat::R32G32Sint:
+                return 8;
+            case ImageFormat::R10G10B10A2Unorm:
+            case ImageFormat::R10G10B10A2Uint:
+            case ImageFormat::R8G8B8A8Unorm:
+            case ImageFormat::R8G8B8A8UnormSrgb:
+            case ImageFormat::R8G8B8A8Uint:
+            case ImageFormat::R8G8B8A8Snorm:
+            case ImageFormat::R8G8B8A8Sint:
+            case ImageFormat::R16G16Float:
+            case ImageFormat::R16G16Unorm:
+            case ImageFormat::R16G16Uint:
+            case ImageFormat::R16G16Snorm:
+            case ImageFormat::R16G16Sint:
+            case ImageFormat::D32Float:
+            case ImageFormat::R32Float:
+            case ImageFormat::R32Uint:
+            case ImageFormat::R32Sint:
+            case ImageFormat::D24UnormS8Uint:
+                return 4;
+            case ImageFormat::R8G8Unorm:
+            case ImageFormat::R8G8Uint:
+            case ImageFormat::R8G8Snorm:
+            case ImageFormat::R8G8Sint:
+            case ImageFormat::R16Float:
+            case ImageFormat::D16Unorm:
+            case ImageFormat::R16Unorm:
+            case ImageFormat::R16Uint:
+                return 2;
+            case ImageFormat::R16Snorm:
+            case ImageFormat::R16Sint:
+            case ImageFormat::R8Unorm:
+            case ImageFormat::R8Uint:
+            case ImageFormat::R8Snorm:
+            case ImageFormat::R8Sint:
+                return 1;
+            // Recheck what the below are and what the expected sizes are.
+            case ImageFormat::BC1Unorm:
+            case ImageFormat::BC1UnormSrgb:
+            case ImageFormat::BC2Unorm:
+            case ImageFormat::BC2UnormSrgb:
+            case ImageFormat::BC3Unorm:
+            case ImageFormat::BC3UnormSrgb:
+            case ImageFormat::BC4Unorm:
+            case ImageFormat::BC4Snorm:
+            case ImageFormat::BC5Unorm:
+            case ImageFormat::BC5Snorm:
+                return 1;
+            case ImageFormat::B8G8R8A8Unorm:
+                return 4;
+            case ImageFormat::BC6HUfloat16:
+            case ImageFormat::BC6HSfloat16:
+                return 2;
+            case ImageFormat::BC7Unorm:
+                return 1;
+            case ImageFormat::BC7UnormSrgb:
+                return 1;
+            default:
+                return 0;
+            }
         }
     };
 

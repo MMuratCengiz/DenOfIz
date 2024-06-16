@@ -84,6 +84,7 @@ void DX12Pipeline::SetMSAASampleCount(const PipelineCreateInfo &createInfo, D3D1
 {
     switch ( createInfo.MSAASampleCount )
     {
+    case MSAASampleCount::_0:
     case MSAASampleCount::_1:
         psoDesc.SampleDesc.Count = 1;
         break;
@@ -139,7 +140,7 @@ void DX12Pipeline::SetGraphicsShaders(D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDes
 
 D3D12_SHADER_BYTECODE DX12Pipeline::GetShaderByteCode(const CompiledShader &compiledShader) const
 {
-    return D3D12_SHADER_BYTECODE(compiledShader.Data.data(), compiledShader.Data.size());
+    return D3D12_SHADER_BYTECODE(compiledShader.Data->GetBufferPointer(), compiledShader.Data->GetBufferSize());
 }
 
 DX12Pipeline::~DX12Pipeline() { m_graphicsPipeline.Reset(); }

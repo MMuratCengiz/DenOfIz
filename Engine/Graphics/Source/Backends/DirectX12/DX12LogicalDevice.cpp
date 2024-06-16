@@ -35,7 +35,8 @@ DX12LogicalDevice::~DX12LogicalDevice()
 void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
 {
     m_context->Window = window;
-#ifdef _DEBUG
+    DWORD dxgiFactoryFlags = 0;
+#ifndef NDEBUG
     {
         ComPtr<ID3D12Debug> debugController;
         if ( SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf()))) )
@@ -50,7 +51,7 @@ void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
         ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
         if ( SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(dxgiInfoQueue.GetAddressOf()))) )
         {
-            m_dxgiFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+            dxgiFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
 
             dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true);
             dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true);
@@ -66,7 +67,7 @@ void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
     }
 #endif
 
-    DX_CHECK_RESULT(CreateDXGIFactory2(m_dxgiFactoryFlags, IID_PPV_ARGS(m_context->DXGIFactory.ReleaseAndGetAddressOf())));
+    DX_CHECK_RESULT(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(m_context->DXGIFactory.ReleaseAndGetAddressOf())));
 }
 
 std::vector<PhysicalDeviceInfo> DX12LogicalDevice::ListPhysicalDevices()
@@ -107,7 +108,7 @@ void DX12LogicalDevice::CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDeviceI
         deviceInfo.Capabilities.RayTracing = opts.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
     }
     device.Reset();
-    bool allowTearing = false;
+    BOOL allowTearing = false;
     ComPtr<IDXGIFactory5> factory5;
     HRESULT hr = m_context->DXGIFactory.As(&factory5);
     if ( SUCCEEDED(hr) )
@@ -168,10 +169,8 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
     ComPtr<ID3D12InfoQueue> d3dInfoQueue;
     if ( SUCCEEDED(m_context->D3DDevice.As(&d3dInfoQueue)) )
     {
-#ifdef _DEBUG
         d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
         d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-#endif
         D3D12_MESSAGE_ID hide[] = {
             D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
             D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE,
@@ -251,7 +250,7 @@ void DX12LogicalDevice::Dispose()
     m_context->D3DDevice.Reset();
     m_context->DXGIFactory.Reset();
 
-#ifdef _DEBUG
+#ifndef NDEBUG
     {
         ComPtr<IDXGIDebug1> dxgiDebug;
         if ( SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))) )

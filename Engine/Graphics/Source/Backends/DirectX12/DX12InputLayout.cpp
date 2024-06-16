@@ -22,6 +22,7 @@ using namespace DenOfIz;
 
 DX12InputLayout::DX12InputLayout(const InputLayoutCreateInfo &createInfo)
 {
+    int bindingIndex = 0;
     for ( const InputGroup &inputGroup : createInfo.InputGroups )
     {
         D3D12_INPUT_CLASSIFICATION inputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
@@ -33,6 +34,7 @@ DX12InputLayout::DX12InputLayout(const InputLayoutCreateInfo &createInfo)
             instanceDataStepRate = 1;
         }
 
+        uint32_t offset = 0;
         for ( const InputLayoutElement &inputElement : inputGroup.Elements )
         {
             D3D12_INPUT_ELEMENT_DESC &element = m_inputElements.emplace_back(D3D12_INPUT_ELEMENT_DESC{});
@@ -70,11 +72,15 @@ DX12InputLayout::DX12InputLayout(const InputLayoutCreateInfo &createInfo)
 
             element.SemanticIndex = inputElement.SemanticIndex;
             element.Format = DX12EnumConverter::ConvertImageFormat(inputElement.Format);
-            element.InputSlot = inputElement.Binding;
-            element.AlignedByteOffset = inputElement.Offset;
+            element.InputSlot = bindingIndex;
             element.InputSlotClass = inputSlotClass;
+            element.AlignedByteOffset = offset;
             element.InstanceDataStepRate = instanceDataStepRate;
+
+            offset += GetImageFormatSize(inputElement.Format);
         }
+
+        bindingIndex++;
     }
 
     m_inputLayout = {};

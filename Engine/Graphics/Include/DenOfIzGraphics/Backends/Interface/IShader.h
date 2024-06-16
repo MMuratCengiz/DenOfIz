@@ -21,6 +21,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include "IResource.h"
 
+#ifdef WIN32
+#define CComPtr Microsoft::WRL::ComPtr
+#endif
+
+#ifdef _WIN32
+#include <DenOfIzCore/Common_Windows.h> // Include this before to make sure NOMINMAX is defined
+#include <wrl/client.h>
+using namespace Microsoft::WRL;
+#define CComPtr Microsoft::WRL::ComPtr
+#else
+#define __EMULATE_UUID
+#include "WinAdapter.h"
+#endif
+
+#include "dxcapi.h"
+
 namespace DenOfIz
 {
 
@@ -53,7 +69,7 @@ namespace DenOfIz
     struct CompiledShader
     {
         ShaderStage Stage;
-        std::vector<uint32_t> Data;
+        CComPtr<IDxcBlob> Data;
     };
 
     struct VertexInput

@@ -49,7 +49,7 @@ void ShaderProgram::Compile()
         options.TargetIL = TargetIL::SPIRV;
 #endif
 
-        std::vector<uint32_t> data = compiler.CompileHLSL(shader.Path, options);
+        CComPtr<IDxcBlob> data = compiler.CompileHLSL(shader.Path, options);
         m_compiledShaders.push_back({ .Stage = shader.Stage, .Data = data });
     }
 }

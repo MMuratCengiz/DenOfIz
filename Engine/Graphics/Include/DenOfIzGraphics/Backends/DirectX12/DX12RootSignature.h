@@ -34,9 +34,9 @@ namespace DenOfIz
         RootSignatureCreateInfo m_createInfo;
         ComPtr<ID3D12RootSignature> m_rootSignature;
 
-        std::vector<CD3DX12_ROOT_PARAMETER1> m_rootParameters;
-        std::vector<CD3DX12_ROOT_PARAMETER1> m_rootConstants;
-        std::vector<CD3DX12_DESCRIPTOR_RANGE1> m_descriptorRanges;
+        std::vector<CD3DX12_ROOT_PARAMETER> m_rootParameters;
+        std::vector<CD3DX12_ROOT_PARAMETER> m_rootConstants;
+        std::vector<CD3DX12_DESCRIPTOR_RANGE> m_descriptorRanges;
 
         std::unordered_set<D3D12_SHADER_VISIBILITY> m_descriptorRangesShaderVisibilities;
 

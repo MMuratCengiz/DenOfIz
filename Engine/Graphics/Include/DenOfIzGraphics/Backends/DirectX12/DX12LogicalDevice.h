@@ -39,8 +39,6 @@ namespace DenOfIz
     private:
         D3D_FEATURE_LEVEL m_minFeatureLevel = D3D_FEATURE_LEVEL_12_0;
         std::unique_ptr<DX12Context> m_context;
-        DWORD m_dxgiFactoryFlags = 0;
-
     public:
         DX12LogicalDevice();
 

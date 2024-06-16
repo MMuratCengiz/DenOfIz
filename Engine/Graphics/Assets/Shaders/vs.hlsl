@@ -3,7 +3,10 @@ struct PSInput {
     float4 color : COLOR;
 };
 
-float deltaTime;
+cbuffer ConstantBuffer : register(b0)
+{
+    float4 deltaTime;
+};
 
 PSInput main(float4 position : POSITION0, float4 color : COLOR0) {
     PSInput result;

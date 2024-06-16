@@ -23,9 +23,6 @@ namespace DenOfIz
 
     class GraphicsAPI
     {
-    private:
-        APIPreference preference;
-
     public:
         static void SetAPIPreference(APIPreference preference) { GfxGlobal::GetInstance()->SetAPIPreference(preference); }
 

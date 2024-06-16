@@ -5,16 +5,7 @@
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
 
-#ifdef _WIN32
-#include <DenOfIzCore/Common_Windows.h>
-#include <wrl/client.h>
-#include "dxcapi.h"
-#define CComPtr Microsoft::WRL::ComPtr
-#else
-#define __EMULATE_UUID
-#include "dxc/WinAdapter.h"
 #include <dxcapi.h>
-#endif
 #if defined(__APPLE__)
 #include <Metal/Metal.hpp>
 #include <MetalKit/MetalKit.hpp>
@@ -57,7 +48,7 @@ namespace DenOfIz
         void Destroy();
         void InitResources(TBuiltInResource &Resources) const;
         EShLanguage FindLanguage(ShaderStage shaderType) const;
-        std::vector<uint32_t> CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const;
+        CComPtr<IDxcBlob> CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const;
         std::vector<uint32_t> CompileGLSL(const std::string &filename, const CompileOptions &compileOptions) const;
     };
 

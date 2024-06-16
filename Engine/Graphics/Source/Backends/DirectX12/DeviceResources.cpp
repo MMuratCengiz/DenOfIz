@@ -107,7 +107,7 @@ void DeviceResources::CreateDeviceResources()
         if ( FAILED(hr) || !allowTearing )
         {
             m_options &= ~c_AllowTearing;
-#ifdef _DEBUG
+#ifndef NDEBUG
             OutputDebugStringA("WARNING: Variable refresh rate displays not supported");
 #endif
         }

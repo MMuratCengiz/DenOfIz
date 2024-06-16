@@ -33,7 +33,7 @@ DX12RootSignature::DX12RootSignature(DX12Context *context, const RootSignatureCr
 
 void DX12RootSignature::AddResourceBindingInternal(const ResourceBinding &binding)
 {
-    CD3DX12_DESCRIPTOR_RANGE1 descriptorRange = {};
+    CD3DX12_DESCRIPTOR_RANGE descriptorRange = {};
     descriptorRange.Init(DX12EnumConverter::ConvertBindingTypeToDescriptorRangeType(binding.Type), binding.ArraySize, binding.Binding, binding.RegisterSpace);
 
     m_descriptorRanges.push_back(descriptorRange);
@@ -45,7 +45,7 @@ void DX12RootSignature::AddResourceBindingInternal(const ResourceBinding &bindin
 
 void DX12RootSignature::AddRootConstantInternal(const RootConstantBinding &rootConstant)
 {
-    CD3DX12_ROOT_PARAMETER1 dxRootConstant = {};
+    CD3DX12_ROOT_PARAMETER dxRootConstant = {};
     dxRootConstant.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
     if ( rootConstant.Stages.size() > 1 || rootConstant.Stages.empty() )
     {
@@ -71,15 +71,16 @@ void DX12RootSignature::CreateInternal()
 
     std::copy(m_rootConstants.begin(), m_rootConstants.end(), std::back_inserter(m_rootParameters));
 
-    CD3DX12_ROOT_PARAMETER1 descriptors = {};
+    CD3DX12_ROOT_PARAMETER descriptors = {};
     descriptors.InitAsDescriptorTable(m_descriptorRanges.size(), m_descriptorRanges.data(), shaderVisibility);
     m_rootParameters.push_back(descriptors);
 
-    CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-    rootSignatureDesc.Init_1_2(rootSignatureDesc, static_cast<uint32_t>(m_rootParameters.size()), m_rootParameters.data());
+    D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc(static_cast<uint32_t>(m_rootParameters.size()), m_rootParameters.data());
     ComPtr<ID3DBlob> signature;
     ComPtr<ID3DBlob> error;
-    DX_CHECK_RESULT(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, m_rootSignatureVersion, &signature, &error));
+    rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+    DX_CHECK_RESULT(D3D12SerializeRootSignature(&rootSignatureDesc, m_rootSignatureVersion, &signature, &error));
     DX_CHECK_RESULT(m_context->D3DDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
 }
 
