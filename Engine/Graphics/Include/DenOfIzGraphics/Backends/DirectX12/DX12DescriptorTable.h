@@ -36,7 +36,7 @@ namespace DenOfIz
     public:
         DX12DescriptorTable(DX12Context *context, DescriptorTableCreateInfo createInfo);
 
-        void BindImage(IImageResource *resource) override;
+        void BindImage(ITextureResource *resource) override;
 
         void BindBuffer(IBufferResource *resource) override;
 

@@ -17,7 +17,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CRT_LINKAGE_STATIC": "0",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md"
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
+        "CMAKE_CXX_FLAGS": "-D_DEBUG -Od -Zi -W3 /c /EHsc -DNOMINMAX  /wd\"4267\""
       }
     },
     {
@@ -26,7 +27,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-windows-static",
-        "CRT_LINKAGE_STATIC": "1"
+        "CRT_LINKAGE_STATIC": "1",
+        "CMAKE_CXX_FLAGS": "-DNOMINMAX"
       }
     },
     {

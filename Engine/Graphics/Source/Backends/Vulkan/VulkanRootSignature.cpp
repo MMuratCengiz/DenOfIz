@@ -27,7 +27,7 @@ VulkanRootSignature::VulkanRootSignature(VulkanContext *context, RootSignatureCr
 
 void VulkanRootSignature::AddResourceBindingInternal(const ResourceBinding &binding)
 {
-    assertm(!m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior.");
+    ASSERTM(!m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior.");
     m_resourceBindingMap[ binding.Name ] = binding;
 
     vk::DescriptorSetLayoutBinding layoutBinding{};

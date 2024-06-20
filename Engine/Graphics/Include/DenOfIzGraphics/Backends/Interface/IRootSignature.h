@@ -138,7 +138,7 @@ namespace DenOfIz
         virtual void CreateInternal() = 0;
 
     private:
-        inline void ValidateNotCreated() { assertm(!m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior."); }
+        inline void ValidateNotCreated() { ASSERTM(!m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior."); }
     };
 
 } // namespace DenOfIz

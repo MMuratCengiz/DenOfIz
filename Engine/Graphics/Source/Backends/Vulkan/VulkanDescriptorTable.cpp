@@ -35,7 +35,7 @@ VulkanDescriptorTable::VulkanDescriptorTable(VulkanContext *context, DescriptorT
     //	m_descriptorSets = m_context->LogicalDevice.allocateDescriptorSets(allocateInfo);
 }
 
-void VulkanDescriptorTable::BindImage(IImageResource *resource)
+void VulkanDescriptorTable::BindImage(ITextureResource *resource)
 {
     VulkanImageResource *vulkanResource = static_cast<VulkanImageResource *>(resource);
 

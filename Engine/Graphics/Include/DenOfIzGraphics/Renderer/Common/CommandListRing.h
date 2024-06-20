@@ -39,7 +39,7 @@ namespace DenOfIz
         inline void NewCommandList(CommandListCreateInfo createInfo)
         {
             m_commandLists.push_back(m_logicalDevice->CreateCommandList(createInfo));
-            m_frameFences.push_back(m_logicalDevice->CreateFence());
+//            m_frameFences.push_back(m_logicalDevice->CreateFence());
         }
 
         ICommandList *GetNext()

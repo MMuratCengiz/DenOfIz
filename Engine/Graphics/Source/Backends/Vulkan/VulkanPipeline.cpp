@@ -207,7 +207,7 @@ void VulkanPipeline::ConfigureColorBlend()
     const uint32_t attachmentCount = m_createInfo.BlendModes.size();
     m_colorBlendAttachments.resize(attachmentCount);
 
-    for ( int i = 0; i < attachmentCount; ++i )
+    for ( uint32_t i = 0; i < attachmentCount; ++i )
     {
         m_colorBlendAttachments[ i ].colorWriteMask =
             vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
@@ -307,7 +307,7 @@ void VulkanPipeline::CreateDepthAttachmentImages()
     m_pipelineCreateInfo.pDepthStencilState = &m_depthStencilStateCreateInfo;
 }
 
-vk::ShaderModule VulkanPipeline::CreateShaderModule(CComPtr<IDxcBlob> data) const
+vk::ShaderModule VulkanPipeline::CreateShaderModule(wil::com_ptr<IDxcBlob> data) const
 {
     vk::ShaderModuleCreateInfo shaderModuleCreateInfo{};
     shaderModuleCreateInfo.codeSize = data->GetBufferSize();

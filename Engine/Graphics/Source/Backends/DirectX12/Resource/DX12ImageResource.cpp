@@ -48,15 +48,21 @@ void DX12ImageResource::Allocate(const void *data)
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-    D3D12MA::ALLOCATION_DESC allocDesc = {};
-    allocDesc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
-
+    D3D12MA::ALLOCATION_DESC allocationDesc = {};
+    allocationDesc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
+    // Remove the following line to once dependency to The Forge is removed !TF!
+    allocationDesc.CreationNodeMask = 1;
+    allocationDesc.VisibleNodeMask = 1;
+    // --
     D3D12MA::Allocation *allocation;
-    HRESULT hr = m_context->DX12MemoryAllocator->CreateResource(&allocDesc, &resourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, NULL, &allocation, IID_PPV_ARGS(&m_resource));
+    HRESULT hr = m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, NULL, &allocation, IID_PPV_ARGS(&m_resource));
 
-    DX_CHECK_RESULT(hr);
+    THROW_IF_FAILED(hr);
 }
 
 void DX12ImageResource::AttachSampler(SamplerCreateInfo &info) {}
 
-void DX12ImageResource::Deallocate() {}
+void DX12ImageResource::Deallocate()
+{
+//    DX_SAFE_RELEASE(m_resource);
+}

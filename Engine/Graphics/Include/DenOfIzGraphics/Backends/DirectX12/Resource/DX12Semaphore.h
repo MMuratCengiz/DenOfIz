@@ -28,12 +28,13 @@ namespace DenOfIz
     {
     private:
         DX12Context *m_context;
-        Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
-        HANDLE m_fenceEvent;
+        wil::com_ptr<ID3D12Fence> m_fence;
+        Microsoft::WRL::Wrappers::Event m_fenceEvent;
         UINT64 m_fenceValue;
 
     public:
         DX12Semaphore(DX12Context *context);
+        ID3D12Fence *GetFence() const { return m_fence.get(); }
         ~DX12Semaphore() override;
         void Wait() override;
         void Notify() override;

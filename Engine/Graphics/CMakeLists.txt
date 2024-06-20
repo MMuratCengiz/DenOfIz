@@ -10,8 +10,7 @@ else ()
 #    build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
 endif ()
 
-find_package(Vulkan CONFIG)
-find_package(VulkanHeaders CONFIG)
+find_package(Vulkan REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(glslang CONFIG REQUIRED)
 find_package(spirv_cross_core CONFIG REQUIRED)
@@ -24,6 +23,7 @@ find_package(spirv_cross_msl CONFIG REQUIRED)
 find_package(spirv_cross_c CONFIG REQUIRED)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
+find_package(wil CONFIG REQUIRED)
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 
 SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
@@ -106,6 +106,8 @@ target_include_directories(DenOfIzGraphics
         PRIVATE
         ${TINYGLTF_INCLUDE_DIRS}
         _ThirdParty/dxc/inc
+        PUBLIC
+        _ThirdParty/D3D12MemoryAllocator #TODO: Remove once dependency to the-forge is removed !TF!
 )
 
 target_link_directories(
@@ -118,11 +120,11 @@ target_link_libraries(DenOfIzGraphics
         PUBLIC
         DenOfIzCore
         PRIVATE
+        WIL::WIL
         SDL2::SDL2
         SDL2::SDL2main
         SDL2::SDL2-static
-        ${Vulkan_LIBRARY}
-        Vulkan::Headers
+        Vulkan::Vulkan
         GPUOpen::VulkanMemoryAllocator
         dxcompiler
         spirv-cross-glsl

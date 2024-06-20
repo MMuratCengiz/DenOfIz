@@ -41,7 +41,6 @@ namespace DenOfIz
         std::unique_ptr<DX12Context> m_context;
     public:
         DX12LogicalDevice();
-
         ~DX12LogicalDevice() override;
 
         // Override methods
@@ -71,14 +70,12 @@ namespace DenOfIz
 
         std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferCreateInfo &createInfo) override;
 
-        std::unique_ptr<IImageResource> CreateImageResource(std::string name, const ImageCreateInfo &createInfo) override;
+        std::unique_ptr<ITextureResource> CreateImageResource(std::string name, const ImageCreateInfo &createInfo) override;
 
         void WaitIdle() override;
         // --
     private:
         void CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDeviceInfo &deviceInfo);
-
-        void Dispose();
     };
 
 } // namespace DenOfIz

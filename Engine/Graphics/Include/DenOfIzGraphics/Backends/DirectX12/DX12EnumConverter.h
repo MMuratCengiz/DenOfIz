@@ -85,7 +85,7 @@ namespace DenOfIz
             case ResourceBindingType::StorageDynamic:
                 return D3D12_ROOT_PARAMETER_TYPE_CBV;
             default:
-                assertm(false, "Sampler binding type is not a supported root constant");
+                ASSERTM(false, "Sampler binding type is not a supported root constant");
                 break;
             }
 
@@ -394,7 +394,6 @@ namespace DenOfIz
         static D3D12_RESOURCE_STATES ConvertResourceState(const ResourceState &state)
         {
             D3D12_RESOURCE_STATES result = D3D12_RESOURCE_STATE_COMMON;
-
             if ( state.GenericRead )
             {
                 return D3D12_RESOURCE_STATE_GENERIC_READ;

@@ -49,12 +49,17 @@ namespace DenOfIz
         m_inputLayout =
             m_logicalDevice->CreateInputLayout({ .InputGroups = { { .Elements =
                                                                     {
-                                                                            InputLayoutElement{ .Semantic = Semantic::Position, .Format = ImageFormat::R32G32B32Float },
+                                                                            InputLayoutElement{ .Semantic = Semantic::Position, .Format = ImageFormat::R32G32B32A32Float },
                                                                             InputLayoutElement{ .Semantic = Semantic::Color, .Format = ImageFormat::R32G32B32A32Float,} ,
                                                                     },
                                                                     .StepRate = StepRate::PerVertex } } });
 
-        m_swapChain = m_logicalDevice->CreateSwapChain(SwapChainCreateInfo{});
+        const GraphicsWindowSurface &surface = m_window->GetSurface();
+        m_swapChain = m_logicalDevice->CreateSwapChain(SwapChainCreateInfo{
+            .Width = surface.Width,
+            .Height = surface.Height,
+            .BufferCount = mc_framesInFlight
+        });
 
         PipelineCreateInfo pipelineCreateInfo{ .ShaderProgram = m_program };
         pipelineCreateInfo.BlendModes = { BlendMode::None };
@@ -64,7 +69,7 @@ namespace DenOfIz
 
         m_pipeline = m_logicalDevice->CreatePipeline(pipelineCreateInfo);
         m_commandListRing = std::make_unique<CommandListRing>(m_logicalDevice.get());
-        for ( int i = 0; i < mc_framesInFlight; ++i )
+        for ( uint32_t i = 0; i < mc_framesInFlight; ++i )
         {
             m_commandListRing->NewCommandList(CommandListCreateInfo());
             m_fences.push_back(m_logicalDevice->CreateFence());
@@ -82,15 +87,17 @@ namespace DenOfIz
         BufferCreateInfo deltaTimeBufferCreateInfo{};
         deltaTimeBufferCreateInfo.HeapType = HeapType::CPU_GPU;
         deltaTimeBufferCreateInfo.Usage.UniformBuffer = 1;
+        deltaTimeBufferCreateInfo.KeepMemoryMapped = true;
 
         m_timePassedBuffer = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferCreateInfo);
-        float timePassed = 0.0f;
+        float timePassed = 1.0f;
         m_timePassedBuffer->Allocate(&timePassed, sizeof(float));
 
         m_descriptorTable = m_logicalDevice->CreateDescriptorTable(DescriptorTableCreateInfo{ .RootSignature = m_rootSignature.get() });
         m_descriptorTable->BindBuffer(m_timePassedBuffer.get());
+        m_time->ListenFps = [](const double fps) { LOG(Verbosity::Information, "SimpleRenderer", (boost::format("FPS: %1%") % fps).str()); };
 
-        m_time->ListenFps = [](const double fps) { std::cout << "FPS: " << fps << "\n"; };
+        LOG(Verbosity::Information, "SimpleRenderer", "Initialization Complete.");
     }
 
     void SimpleRenderer::Render()
@@ -101,8 +108,8 @@ namespace DenOfIz
 
         auto nextCommandList = m_commandListRing->GetNext();
         uint32_t currentFrame = m_commandListRing->GetCurrentFrame();
-
         m_fences[ currentFrame ]->Wait();
+
         uint32_t nextImage = m_swapChain->AcquireNextImage(m_imageReadySemaphores[ currentFrame ].get());
         nextCommandList->Begin();
 
@@ -112,37 +119,46 @@ namespace DenOfIz
         RenderingInfo renderingInfo{};
         renderingInfo.RTAttachments.push_back(std::move(renderingAttachmentInfo));
 
-        PipelineBarrier pipelineBarrier{};
-        ImageBarrierInfo imageBarrier{};
-        imageBarrier.OldState.Undefined = 1;
-        imageBarrier.NewState.Present = 1;
-        imageBarrier.Resource = m_swapChain->GetRenderTarget(nextImage);
-        pipelineBarrier.ImageBarrier(imageBarrier);
-        nextCommandList->SetPipelineBarrier(pipelineBarrier);
-
+        nextCommandList->SetPipelineBarrier(PipelineBarrier::UndefinedToRenderTarget(m_swapChain->GetRenderTarget(nextImage)));
         nextCommandList->BeginRendering(renderingInfo);
+
         const Viewport &viewport = m_swapChain->GetViewport();
         nextCommandList->BindViewport(viewport.X, viewport.Y, viewport.Width, viewport.Height);
         nextCommandList->BindScissorRect(viewport.X, viewport.Y, viewport.Width, viewport.Height);
+
         nextCommandList->BindPipeline(m_pipeline.get());
         nextCommandList->BindDescriptorTable(m_descriptorTable.get());
         nextCommandList->BindVertexBuffer(m_vertexBuffer.get());
         nextCommandList->Draw(3, 1);
         nextCommandList->EndRendering();
-
+        nextCommandList->SetPipelineBarrier(PipelineBarrier::RenderTargetToPresent(m_swapChain->GetRenderTarget(nextImage)));
         ExecuteInfo submitInfo{};
         submitInfo.Notify = m_fences[ currentFrame ].get();
         submitInfo.WaitOnLocks.push_back(m_imageReadySemaphores[ currentFrame ].get());
         submitInfo.SignalLocks.push_back(m_imageRenderedSemaphores[ currentFrame ].get());
-
         nextCommandList->Execute(submitInfo);
         nextCommandList->Present(m_swapChain.get(), nextImage, { m_imageRenderedSemaphores[ currentFrame ].get() });
     }
 
     void SimpleRenderer::Quit()
     {
+        m_commandListRing.reset();
+        m_swapChain.reset();
+        m_rootSignature.reset();
+        m_inputLayout.reset();
+        m_pipeline.reset();
         m_logicalDevice->WaitIdle();
+        m_vertexBuffer.reset();
+        m_timePassedBuffer.reset();
+        for ( uint32_t i = 0; i < mc_framesInFlight; ++i )
+        {
+            m_fences[ i ].reset();
+            m_imageReadySemaphores[ i ].reset();
+            m_imageRenderedSemaphores[ i ].reset();
+        }
+        m_logicalDevice.reset();
         GfxGlobal::Destroy();
+        GraphicsAPI::ReportLiveObjects();
     }
 
 } // namespace DenOfIz

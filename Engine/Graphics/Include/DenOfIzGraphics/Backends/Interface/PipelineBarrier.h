@@ -27,7 +27,7 @@ namespace DenOfIz
 
     struct ImageBarrierInfo
     {
-        IImageResource *Resource;
+        ITextureResource *Resource;
         ResourceState OldState{};
         ResourceState NewState{};
 
@@ -73,6 +73,28 @@ namespace DenOfIz
         inline const std::vector<BufferBarrierInfo> &GetBufferBarriers() const { return m_bufferBarriers; }
 
         inline const std::vector<MemoryBarrierInfo> &GetMemoryBarriers() const { return m_memoryBarriers; }
+
+        static PipelineBarrier UndefinedToRenderTarget(ITextureResource *resource)
+        {
+            PipelineBarrier barrier;
+            ImageBarrierInfo imageBarrier{};
+            imageBarrier.OldState.Undefined = 1;
+            imageBarrier.NewState.RenderTarget = 1;
+            imageBarrier.Resource = resource;
+            barrier.ImageBarrier(imageBarrier);
+            return barrier;
+        }
+
+        static PipelineBarrier RenderTargetToPresent(ITextureResource *resource)
+        {
+            PipelineBarrier barrier;
+            ImageBarrierInfo imageBarrier{};
+            imageBarrier.OldState.RenderTarget = 1;
+            imageBarrier.NewState.Present = 1;
+            imageBarrier.Resource = resource;
+            barrier.ImageBarrier(imageBarrier);
+            return barrier;
+        }
     };
 
 } // namespace DenOfIz

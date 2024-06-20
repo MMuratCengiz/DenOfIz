@@ -56,7 +56,7 @@ namespace DenOfIz
         virtual std::unique_ptr<IFence> CreateFence() = 0;
         virtual std::unique_ptr<ISemaphore> CreateSemaphore() = 0;
         virtual std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferCreateInfo &createInfo) = 0;
-        virtual std::unique_ptr<IImageResource> CreateImageResource(std::string name, const ImageCreateInfo &createInfo) = 0;
+        virtual std::unique_ptr<ITextureResource> CreateImageResource(std::string name, const ImageCreateInfo &createInfo) = 0;
     };
 
 } // namespace DenOfIz

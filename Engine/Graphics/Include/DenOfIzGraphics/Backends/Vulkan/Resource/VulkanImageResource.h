@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class VulkanImageResource : public IImageResource
+    class VulkanImageResource : public ITextureResource
     {
     private:
         VulkanContext *m_context;

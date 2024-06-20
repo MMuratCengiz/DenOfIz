@@ -76,12 +76,15 @@ void DX12RootSignature::CreateInternal()
     m_rootParameters.push_back(descriptors);
 
     D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc(static_cast<uint32_t>(m_rootParameters.size()), m_rootParameters.data());
-    ComPtr<ID3DBlob> signature;
-    ComPtr<ID3DBlob> error;
+    wil::com_ptr<ID3DBlob> signature;
+    wil::com_ptr<ID3DBlob> error;
     rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-    DX_CHECK_RESULT(D3D12SerializeRootSignature(&rootSignatureDesc, m_rootSignatureVersion, &signature, &error));
-    DX_CHECK_RESULT(m_context->D3DDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
+    THROW_IF_FAILED(D3D12SerializeRootSignature(&rootSignatureDesc, m_rootSignatureVersion, &signature, &error));
+    THROW_IF_FAILED(m_context->D3DDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(m_rootSignature.put())));
 }
 
-DX12RootSignature::~DX12RootSignature() { m_rootSignature.Reset(); }
+DX12RootSignature::~DX12RootSignature()
+{
+//    DX_SAFE_RELEASE(m_rootSignature);
+}

@@ -214,12 +214,12 @@ namespace DenOfIz
         return std::move(spirv);
     }
 
-    CComPtr<IDxcBlob> ShaderCompiler::CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const
+    wil::com_ptr<IDxcBlob> ShaderCompiler::CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const
     {
         // Attribute to source: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
         // https://github.com/KhronosGroup/Vulkan-Guide
         uint32_t codePage = DXC_CP_ACP;
-        CComPtr<IDxcBlobEncoding> sourceBlob;
+        wil::com_ptr<IDxcBlobEncoding> sourceBlob;
         std::wstring wsShaderPath(filename.begin(), filename.end());
         HRESULT result = m_dxcUtils->LoadFile(wsShaderPath.c_str(), &codePage, &sourceBlob);
         if ( FAILED(result) )
@@ -250,7 +250,7 @@ namespace DenOfIz
             targetProfile = "cs";
             break;
         default:
-            assertm(false, "Invalid shader stage");
+            ASSERTM(false, "Invalid shader stage");
             break;
         }
         targetProfile += "_" + hlslVersion;
@@ -285,7 +285,7 @@ namespace DenOfIz
         buffer.Ptr = sourceBlob->GetBufferPointer();
         buffer.Size = sourceBlob->GetBufferSize();
 
-        CComPtr<IDxcResult> dxcResult{ nullptr };
+        wil::com_ptr<IDxcResult> dxcResult{ nullptr };
         result = m_dxcCompiler->Compile(&buffer, arguments.data(), static_cast<uint32_t>(arguments.size()), nullptr, IID_PPV_ARGS(&dxcResult));
 
         if ( SUCCEEDED(result) )
@@ -295,7 +295,7 @@ namespace DenOfIz
 
         if ( FAILED(result) && (dxcResult) )
         {
-            CComPtr<IDxcBlobEncoding> errorBlob;
+            wil::com_ptr<IDxcBlobEncoding> errorBlob;
             result = dxcResult->GetErrorBuffer(&errorBlob);
             if ( SUCCEEDED(result) && errorBlob )
             {
@@ -304,7 +304,7 @@ namespace DenOfIz
             }
         }
 
-        CComPtr<IDxcBlob> code;
+        wil::com_ptr<IDxcBlob> code;
         dxcResult->GetResult(&code);
         return code;
     }

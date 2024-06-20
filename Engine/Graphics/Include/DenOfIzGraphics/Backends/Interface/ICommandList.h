@@ -37,7 +37,7 @@ namespace DenOfIz
         LoadOp LoadOp = LoadOp::Clear;
         StoreOp StoreOp = StoreOp::Store;
 
-        IImageResource *Resource = nullptr;
+        ITextureResource *Resource = nullptr;
 
         std::array<float, 4> ClearColor{ 0.0f, 0.0f, 0.0f, 1.0f };
         std::array<float, 2> ClearDepth{ 1.0f, 0.0f };
@@ -86,13 +86,13 @@ namespace DenOfIz
         virtual void BindDescriptorTable(IDescriptorTable *table) = 0;
         virtual void BindPushConstants(ShaderStage stage, uint32_t offset, uint32_t size, void *data) = 0;
         virtual void BindBufferResource(IBufferResource *resource) = 0;
-        virtual void BindImageResource(IImageResource *resource) = 0;
+        virtual void BindImageResource(ITextureResource *resource) = 0;
         virtual void SetDepthBias(float constantFactor, float clamp, float slopeFactor) = 0;
         virtual void SetPipelineBarrier(const PipelineBarrier &barrier) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) = 0;
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0) = 0;
         virtual void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
-        virtual void TransitionImageLayout(IImageResource *image, ImageLayout oldLayout, ImageLayout newLayout) = 0;
+        virtual void TransitionImageLayout(ITextureResource *image, ImageLayout oldLayout, ImageLayout newLayout) = 0;
     };
 
 } // namespace DenOfIz

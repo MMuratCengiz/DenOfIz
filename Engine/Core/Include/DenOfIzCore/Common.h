@@ -31,10 +31,9 @@
 
 #include <stb_image.h>
 
-#include <boost/static_assert.hpp>
-
 #define RETURN_IF(condition) if (condition) return
 
-#define assertm(exp, msg) assert(((void)msg, exp))
+#define ASSERTM(exp, msg) assert(((void)msg, exp))
+#define NOT_NULL(exp) ASSERTM(exp != nullptr, #exp " is null")
 
 #include <boost/noncopyable.hpp>

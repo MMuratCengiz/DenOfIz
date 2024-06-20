@@ -56,7 +56,7 @@ namespace DenOfIz
         uint32_t m_size;
         const void *m_data;
 
-        void *m_mappedMemory;
+        void *m_mappedMemory = nullptr;
 
     public:
         void Allocate(const void *data, uint32_t size)
@@ -109,7 +109,7 @@ namespace DenOfIz
         ImageFormat Format;
     };
 
-    class IImageResource : public IResource
+    class ITextureResource : public IResource
     {
 
     protected:

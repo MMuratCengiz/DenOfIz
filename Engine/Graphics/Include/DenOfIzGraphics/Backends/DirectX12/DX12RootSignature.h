@@ -32,7 +32,7 @@ namespace DenOfIz
         D3D_ROOT_SIGNATURE_VERSION m_rootSignatureVersion;
         DX12Context *m_context;
         RootSignatureCreateInfo m_createInfo;
-        ComPtr<ID3D12RootSignature> m_rootSignature;
+        wil::com_ptr<ID3D12RootSignature> m_rootSignature;
 
         std::vector<CD3DX12_ROOT_PARAMETER> m_rootParameters;
         std::vector<CD3DX12_ROOT_PARAMETER> m_rootConstants;
@@ -43,7 +43,7 @@ namespace DenOfIz
     public:
         DX12RootSignature(DX12Context *context, const RootSignatureCreateInfo &createInfo);
 
-        inline ID3D12RootSignature *GetRootSignature() const { return m_rootSignature.Get(); }
+        inline ID3D12RootSignature *GetRootSignature() const { return m_rootSignature.get(); }
 
         ~DX12RootSignature() override;
 

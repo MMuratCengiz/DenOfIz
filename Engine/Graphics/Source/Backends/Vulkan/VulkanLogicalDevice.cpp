@@ -205,7 +205,7 @@ void VulkanLogicalDevice::CreateDeviceInfo(const vk::PhysicalDevice &physicalDev
 
 void VulkanLogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
 {
-    assertm(m_context->PhysicalDevice == VK_NULL_HANDLE, "A physical device is already selected for this logical device. Create a new Logical Device.");
+    ASSERTM(m_context->PhysicalDevice == VK_NULL_HANDLE, "A physical device is already selected for this logical device. Create a new Logical Device.");
     m_selectedDeviceInfo = device;
     m_context->SelectedDeviceInfo = device;
 
@@ -218,7 +218,7 @@ void VulkanLogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
         }
     }
 
-    assertm(m_context->PhysicalDevice != VK_NULL_HANDLE, "Invalid DeviceID provided.");
+    ASSERTM(m_context->PhysicalDevice != VK_NULL_HANDLE, "Invalid DeviceID provided.");
 
     CreateLogicalDevice();
     InitializeVma();
@@ -334,7 +334,7 @@ void VulkanLogicalDevice::CreateSurface() const
     createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     createInfo.hwnd = m_context->Window->GetNativeHandle();
     createInfo.hinstance = GetModuleHandle(nullptr);
-    assertm(vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) == VK_SUCCESS, "Failed to create surface");
+    ASSERTM(vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) == VK_SUCCESS, "Failed to create surface");
 #else
 #error "Not implemented yet"
 #endif
@@ -486,11 +486,11 @@ std::unique_ptr<IBufferResource> VulkanLogicalDevice::CreateBufferResource(std::
     return std::unique_ptr<IBufferResource>(bufferResource);
 }
 
-std::unique_ptr<IImageResource> VulkanLogicalDevice::CreateImageResource(std::string name, const ImageCreateInfo &createInfo)
+std::unique_ptr<ITextureResource> VulkanLogicalDevice::CreateImageResource(std::string name, const ImageCreateInfo &createInfo)
 {
     VulkanImageResource *imageResource = new VulkanImageResource(m_context.get(), createInfo);
     imageResource->Name = name;
-    return std::unique_ptr<IImageResource>(imageResource);
+    return std::unique_ptr<ITextureResource>(imageResource);
 }
 
 std::unique_ptr<IFence> VulkanLogicalDevice::CreateFence()

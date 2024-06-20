@@ -49,9 +49,24 @@ namespace DenOfIz
                 return nullptr;
             }
 #endif
-            assertm(logicalDevice != nullptr, "No supported API found for this system.");
+            ASSERTM(logicalDevice != nullptr, "No supported API found for this system.");
             logicalDevice->CreateDevice(window);
             return logicalDevice;
+        }
+
+        static void ReportLiveObjects()
+        {
+#ifndef NDEBUG
+#if defined(BUILD_DX12)
+            {
+                wil::com_ptr<IDXGIDebug1> dxgi_debug;
+                if ( SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(dxgi_debug.addressof()))) )
+                {
+                    dxgi_debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
+                }
+            }
+#endif
+#endif
         }
 
     private:

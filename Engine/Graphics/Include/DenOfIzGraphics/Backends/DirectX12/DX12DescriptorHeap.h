@@ -31,7 +31,7 @@ namespace DenOfIz
     private:
         std::mutex m_mutex;
 
-        ComPtr<ID3D12DescriptorHeap> m_heap;
+        wil::com_ptr<ID3D12DescriptorHeap> m_heap;
         CD3DX12_CPU_DESCRIPTOR_HANDLE m_cpuStartHandle;
         CD3DX12_GPU_DESCRIPTOR_HANDLE m_gpuStartHandle;
         uint32_t m_descriptorSize;
@@ -74,13 +74,15 @@ namespace DenOfIz
             desc.Type = type;
             desc.NodeMask = 0;
 
-            device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_heap));
+            device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(m_heap.addressof()));
             m_descriptorSize = device->GetDescriptorHandleIncrementSize(type);
             m_cpuStartHandle = m_heap->GetCPUDescriptorHandleForHeapStart();
             //		m_gpuStartHandle = m_heap->GetGPUDescriptorHandleForHeapStart();
         }
 
         uint32_t GetDescriptorSize() const { return m_descriptorSize; }
+
+        ID3D12DescriptorHeap *GetHeap() { return m_heap.get(); }
 
         D3D12_CPU_DESCRIPTOR_HANDLE GetCPUStartHandle() { return m_heap->GetCPUDescriptorHandleForHeapStart(); }
 
@@ -89,12 +91,15 @@ namespace DenOfIz
         CD3DX12_CPU_DESCRIPTOR_HANDLE GetNextCPUHandleOffset(uint32_t count)
         {
             m_mutex.lock();
-            m_cpuStartHandle.Offset(m_descriptorSize * count);
+            CD3DX12_CPU_DESCRIPTOR_HANDLE handle = m_cpuStartHandle;
+            m_cpuStartHandle.Offset(count, m_descriptorSize);
             m_mutex.unlock();
-            return m_cpuStartHandle;
+            return handle;
         }
 
-        ~DX12DescriptorHeap() { m_heap.Reset(); }
+        static const uint32_t RoundUp(uint32_t size, uint32_t alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT) { return (size + (alignment - 1)) & ~(alignment - 1); }
+
+        ~DX12DescriptorHeap() { /*m_heap.reset();*/ }
     };
 
 } // namespace DenOfIz

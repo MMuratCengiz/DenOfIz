@@ -21,18 +21,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12Fence::DX12Fence(DX12Context *context)
+DX12Fence::DX12Fence(DX12Context *context) : m_context(context)
 {
-    context->D3DDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.ReleaseAndGetAddressOf()));
+    m_context->D3DDevice->CreateFence(m_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.put()));
     m_fenceEvent.Attach(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
 }
 
-DX12Fence::~DX12Fence() { m_fence.Reset(); }
+DX12Fence::~DX12Fence() {}
 
 void DX12Fence::Wait()
 {
-    DX_CHECK_RESULT(m_fence->SetEventOnCompletion(m_fenceValue, m_fenceEvent.Get()));
-    WaitForSingleObjectEx(m_fenceEvent.Get(), INFINITE, FALSE);
+    if (!m_submitted)
+    {
+        m_submitted = true;
+        return;
+    }
+
+    if ( m_fence->GetCompletedValue() != 1 )
+    {
+        THROW_IF_FAILED(m_fence->SetEventOnCompletion(m_fenceValue, m_fenceEvent.Get()));
+        WaitForSingleObjectEx(m_fenceEvent.Get(), INFINITE, FALSE);
+    }
+    m_fence->Signal(0);
 }
 
-void DX12Fence::Reset() { m_fence->Signal(m_fenceValue); }
+void DX12Fence::Reset()
+{
+    m_submitted = true;
+}

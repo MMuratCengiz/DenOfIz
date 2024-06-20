@@ -33,7 +33,7 @@ ShaderReflection::ShaderReflection(std::vector<CompiledShader> shaderInfos) : Sh
 
 void ShaderReflection::OnEachShader(const CompiledShader &shaderInfo, const bool &first)
 {
-    CComPtr<IDxcBlob> code = shaderInfo.Data;
+    wil::com_ptr<IDxcBlob> code = shaderInfo.Data;
     std::vector<uint32_t> codeToUVec(static_cast<uint32_t *>(code->GetBufferPointer()),
                                      static_cast<uint32_t *>(code->GetBufferPointer()) + code->GetBufferSize() / sizeof(uint32_t));
 
@@ -58,7 +58,6 @@ void ShaderReflection::OnEachShader(const CompiledShader &shaderInfo, const bool
                       return decoration1.Location < decoration2.Location;
                   });
 
-        uint32_t index;
         for ( const spirv_cross::Resource &resource : stageInputs )
         {
             SpvDecoration decoration = GetDecoration(compiler, resource);

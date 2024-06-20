@@ -26,6 +26,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DX12SwapChain.h"
 #include "Resource/DX12BufferResource.h"
 #include "Resource/DX12ImageResource.h"
+#include "Resource/DX12Semaphore.h"
+#include "Resource/DX12Fence.h"
 
 namespace DenOfIz
 {
@@ -36,15 +38,18 @@ namespace DenOfIz
         CommandListCreateInfo m_createInfo;
         DX12Context *m_context;
 
-        ComPtr<ID3D12CommandAllocator> m_commandAllocator;
-        ComPtr<ID3D12GraphicsCommandList10> m_commandList;
+        wil::com_ptr<ID3D12CommandAllocator> m_commandAllocator;
+        wil::com_ptr<ID3D12GraphicsCommandList> m_commandList;
+        wil::com_ptr<ID3D12DebugCommandList> m_debugCommandList;
         ID3D12RootSignature *m_currentRootSignature = nullptr;
 
         CD3DX12_RECT m_scissor;
         D3D12_VIEWPORT m_viewport;
-
+        ID3D12CommandQueue *m_commandQueue;
+        std::vector<ID3D12DescriptorHeap *> m_heaps = { m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetHeap(), m_context->ShaderVisibleSamplerDescriptorHeap->GetHeap() };
     public:
         DX12CommandList(DX12Context *context, CommandListCreateInfo createInfo);
+        ~DX12CommandList() override;
 
         void Begin() override;
         void BeginRendering(const RenderingInfo &renderingInfo) override;
@@ -59,13 +64,13 @@ namespace DenOfIz
         void BindDescriptorTable(IDescriptorTable *table) override;
         void BindPushConstants(ShaderStage stage, uint32_t offset, uint32_t size, void *data) override;
         void BindBufferResource(IBufferResource *resource) override;
-        void BindImageResource(IImageResource *resource) override;
+        void BindImageResource(ITextureResource *resource) override;
         void SetDepthBias(float constantFactor, float clamp, float slopeFactor) override;
         void SetPipelineBarrier(const PipelineBarrier &barrier) override;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) override;
         void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
         void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
-        void TransitionImageLayout(IImageResource *image, ImageLayout oldLayout, ImageLayout newLayout) override;
+        void TransitionImageLayout(ITextureResource *image, ImageLayout oldLayout, ImageLayout newLayout) override;
 
     private:
         void SetRootSignature(ID3D12RootSignature *rootSignature);

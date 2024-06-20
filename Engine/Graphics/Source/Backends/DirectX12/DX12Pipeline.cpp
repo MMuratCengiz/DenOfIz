@@ -22,10 +22,12 @@ using namespace DenOfIz;
 
 DX12Pipeline::DX12Pipeline(DX12Context *context, const PipelineCreateInfo &createInfo) : m_context(context), m_createInfo(createInfo)
 {
+    NOT_NULL(context);
+
     D3D12_COMPUTE_PIPELINE_STATE_DESC computePsoDesc = {};
 
-    assertm(m_createInfo.RootSignature != nullptr, "Root signature is not set for the pipeline");
-    assertm(m_createInfo.InputLayout != nullptr, "Input layout is not set for the pipeline");
+    ASSERTM(m_createInfo.RootSignature != nullptr, "Root signature is not set for the pipeline");
+    ASSERTM(m_createInfo.InputLayout != nullptr, "Input layout is not set for the pipeline");
 
     CreateGraphicsPipeline();
 }
@@ -41,6 +43,7 @@ void DX12Pipeline::CreateGraphicsPipeline()
     psoDesc.InputLayout = inputLayout->GetInputLayout();
     psoDesc.pRootSignature = m_rootSignature->GetRootSignature();
     SetGraphicsShaders(psoDesc);
+
     psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
     psoDesc.RasterizerState.CullMode = DX12EnumConverter::ConvertCullMode(m_createInfo.CullMode);
 
@@ -55,7 +58,7 @@ void DX12Pipeline::CreateGraphicsPipeline()
     psoDesc.RTVFormats[ 0 ] = DXGI_FORMAT_R8G8B8A8_UNORM;
 
     SetMSAASampleCount(m_createInfo, psoDesc);
-    DX_CHECK_RESULT(m_context->D3DDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_graphicsPipeline)));
+    THROW_IF_FAILED(m_context->D3DDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(m_graphicsPipeline.put())));
 }
 
 void DX12Pipeline::InitDepthStencil(D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc) const
@@ -143,4 +146,4 @@ D3D12_SHADER_BYTECODE DX12Pipeline::GetShaderByteCode(const CompiledShader &comp
     return D3D12_SHADER_BYTECODE(compiledShader.Data->GetBufferPointer(), compiledShader.Data->GetBufferSize());
 }
 
-DX12Pipeline::~DX12Pipeline() { m_graphicsPipeline.Reset(); }
+DX12Pipeline::~DX12Pipeline() { m_graphicsPipeline.reset(); }

@@ -22,18 +22,43 @@ using namespace DenOfIz;
 
 DX12CommandList::DX12CommandList(DX12Context *context, CommandListCreateInfo createInfo) : m_context(context), m_createInfo(createInfo)
 {
+    switch ( createInfo.QueueType )
+    {
+    case QueueType::Presentation:
+    case QueueType::Graphics:
+        m_commandQueue = m_context->GraphicsCommandQueue.get();
+        break;
+    case QueueType::Compute:
+        m_commandQueue = m_context->ComputeCommandQueue.get();
+        break;
+    case QueueType::Copy:
+        m_commandQueue = m_context->CopyCommandQueue.get();
+        break;
+    }
+
     D3D12_COMMAND_LIST_TYPE commandListType = DX12EnumConverter::ConvertQueueType(m_createInfo.QueueType);
 
-    m_context->D3DDevice->CreateCommandAllocator(commandListType, IID_PPV_ARGS(&m_commandAllocator));
-    m_context->D3DDevice->CreateCommandList(0, commandListType, m_commandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_commandList));
+    THROW_IF_FAILED(m_context->D3DDevice->CreateCommandAllocator(commandListType, IID_PPV_ARGS(m_commandAllocator.put())));
+    THROW_IF_FAILED(m_context->D3DDevice->CreateCommandList(0, commandListType, m_commandAllocator.get(), nullptr, IID_PPV_ARGS(m_commandList.put())));
+#ifndef NDEBUG
+    m_commandList->QueryInterface(IID_PPV_ARGS(m_debugCommandList.put()));
+#endif
+    m_commandList->Close();
+}
+
+DX12CommandList::~DX12CommandList()
+{
+    //    DX_SAFE_RELEASE(m_commandList);
+    //    DX_SAFE_RELEASE(m_commandAllocator);
 }
 
 void DX12CommandList::Begin()
 {
-    m_commandAllocator->Reset();
-    m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+    THROW_IF_FAILED(m_commandAllocator->Reset());
+    THROW_IF_FAILED(m_commandList->Reset(m_commandAllocator.get(), nullptr));
 
     m_currentRootSignature = nullptr;
+    m_commandList->SetDescriptorHeaps(m_heaps.size(), m_heaps.data());
 }
 
 void DX12CommandList::BeginRendering(const RenderingInfo &renderingInfo)
@@ -51,22 +76,41 @@ void DX12CommandList::BeginRendering(const RenderingInfo &renderingInfo)
     m_commandList->OMSetRenderTargets(renderTargets.size(), renderTargets.data(), FALSE, nullptr);
 }
 
-void DX12CommandList::EndRendering() { m_commandList->EndRenderPass(); }
+void DX12CommandList::EndRendering() {}
 
 void DX12CommandList::Execute(const ExecuteInfo &executeInfo)
 {
-    DX_CHECK_RESULT(m_commandList->Close());
-    m_context->GraphicsCommandQueue->ExecuteCommandLists(1, CommandListCast(m_commandList.GetAddressOf()));
+    THROW_IF_FAILED(m_commandList->Close());
+
+    for ( uint32_t i = 0; i < executeInfo.WaitOnLocks.size(); ++i )
+    {
+        m_commandQueue->Wait(reinterpret_cast<DX12Semaphore *>(executeInfo.WaitOnLocks[ i ])->GetFence(), 1);
+    }
+    m_commandQueue->ExecuteCommandLists(1, CommandListCast(m_commandList.addressof()));
+    for ( uint32_t i = 0; i < executeInfo.SignalLocks.size(); ++i )
+    {
+        m_commandQueue->Signal(reinterpret_cast<DX12Semaphore *>(executeInfo.SignalLocks[ i ])->GetFence(), 1);
+    }
+    m_commandQueue->Signal(reinterpret_cast<DX12Fence *>(executeInfo.Notify)->GetFence(), 1);
 }
 
 void DX12CommandList::Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks)
 {
+    NOT_NULL(swapChain);
+
     DX12SwapChain *dx12SwapChain = reinterpret_cast<DX12SwapChain *>(swapChain);
-    dx12SwapChain->GetSwapChain()->Present(0, DXGI_PRESENT_ALLOW_TEARING);
+    uint32_t flags = 0;
+    if ( m_context->SelectedDeviceInfo.Capabilities.Tearing )
+    {
+        flags |= DXGI_PRESENT_ALLOW_TEARING;
+    }
+    dx12SwapChain->GetSwapChain()->Present(0, flags);
 }
 
 void DX12CommandList::BindPipeline(IPipeline *pipeline)
 {
+    NOT_NULL(pipeline);
+
     DX12Pipeline *dx12Pipeline = reinterpret_cast<DX12Pipeline *>(pipeline);
     m_currentRootSignature = dx12Pipeline->GetRootSignature();
 
@@ -85,11 +129,13 @@ void DX12CommandList::BindPipeline(IPipeline *pipeline)
 
 void DX12CommandList::BindVertexBuffer(IBufferResource *buffer)
 {
+    NOT_NULL(buffer);
+
     DX12BufferResource *pBuffer = reinterpret_cast<DX12BufferResource *>(buffer);
 
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView = {};
     vertexBufferView.BufferLocation = pBuffer->GetResource()->GetGPUVirtualAddress();
-    vertexBufferView.StrideInBytes = pBuffer->GetSize();
+    vertexBufferView.StrideInBytes = 8 * sizeof(float); // pBuffer->GetStride();
     vertexBufferView.SizeInBytes = pBuffer->GetSize();
 
     m_commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
@@ -97,6 +143,8 @@ void DX12CommandList::BindVertexBuffer(IBufferResource *buffer)
 
 void DX12CommandList::BindIndexBuffer(IBufferResource *buffer, const IndexType &indexType)
 {
+    NOT_NULL(buffer);
+
     DX12BufferResource *pBuffer = reinterpret_cast<DX12BufferResource *>(buffer);
 
     D3D12_INDEX_BUFFER_VIEW indexBufferView = {};
@@ -136,9 +184,9 @@ void DX12CommandList::BindPushConstants(ShaderStage stage, uint32_t offset, uint
 
 void DX12CommandList::BindBufferResource(IBufferResource *resource) {}
 
-void DX12CommandList::BindImageResource(IImageResource *resource) {}
+void DX12CommandList::BindImageResource(ITextureResource *resource) {}
 
-void DX12CommandList::SetDepthBias(float constantFactor, float clamp, float slopeFactor) { m_commandList->RSSetDepthBias(constantFactor, clamp, slopeFactor); }
+void DX12CommandList::SetDepthBias(float constantFactor, float clamp, float slopeFactor) { /*Move to pipeline state due to reduces support*/ }
 
 void DX12CommandList::SetPipelineBarrier(const PipelineBarrier &barrier)
 {
@@ -147,20 +195,32 @@ void DX12CommandList::SetPipelineBarrier(const PipelineBarrier &barrier)
     for ( const ImageBarrierInfo &imageBarrier : barrier.GetImageBarriers() )
     {
         ID3D12Resource *pResource = reinterpret_cast<DX12ImageResource *>(imageBarrier.Resource)->GetResource();
-        D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(pResource, DX12EnumConverter::ConvertResourceState(imageBarrier.OldState),
-                                                                                      DX12EnumConverter::ConvertResourceState(imageBarrier.NewState));
-        resourceBarriers.push_back(resourceBarrier);
+        D3D12_RESOURCE_STATES before = DX12EnumConverter::ConvertResourceState(imageBarrier.OldState);
+        D3D12_RESOURCE_STATES after = DX12EnumConverter::ConvertResourceState(imageBarrier.NewState);
+        D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(pResource, before, after);
+
+        if ( before != after )
+        {
+            resourceBarriers.push_back(resourceBarrier);
+        }
     }
 
     for ( const BufferBarrierInfo &bufferBarrier : barrier.GetBufferBarriers() )
     {
         ID3D12Resource *pResource = reinterpret_cast<DX12ImageResource *>(bufferBarrier.Resource)->GetResource();
-        D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(pResource, DX12EnumConverter::ConvertResourceState(bufferBarrier.OldState),
-                                                                                      DX12EnumConverter::ConvertResourceState(bufferBarrier.NewState));
-        resourceBarriers.push_back(resourceBarrier);
+        D3D12_RESOURCE_STATES before = DX12EnumConverter::ConvertResourceState(bufferBarrier.OldState);
+        D3D12_RESOURCE_STATES after = DX12EnumConverter::ConvertResourceState(bufferBarrier.NewState);
+        D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(pResource, before, after);
+        if ( before != after )
+        {
+            resourceBarriers.push_back(resourceBarrier);
+        }
     }
 
-    m_commandList->ResourceBarrier(resourceBarriers.size(), resourceBarriers.data());
+    if ( resourceBarriers.size() > 0 )
+    {
+        m_commandList->ResourceBarrier(resourceBarriers.size(), resourceBarriers.data());
+    }
 }
 
 void DX12CommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance)
@@ -175,17 +235,17 @@ void DX12CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_
 
 void DX12CommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) { m_commandList->Dispatch(groupCountX, groupCountY, groupCountZ); }
 
-void DX12CommandList::TransitionImageLayout(IImageResource *image, ImageLayout oldLayout, ImageLayout newLayout) {}
+void DX12CommandList::TransitionImageLayout(ITextureResource *image, ImageLayout oldLayout, ImageLayout newLayout) {}
 
 void DX12CommandList::SetRootSignature(ID3D12RootSignature *rootSignature)
 {
     RETURN_IF(rootSignature == nullptr);
-    RETURN_IF(m_currentRootSignature == rootSignature);
+
     if ( m_currentRootSignature != nullptr && rootSignature != m_currentRootSignature )
     {
         LOG(Verbosity::Warning, "DX12CommandList", "Root signature is set to a different value, it is not expected to overwrite this value.");
     }
-
+    m_currentRootSignature = rootSignature;
     if ( m_createInfo.QueueType == QueueType::Graphics )
     {
         m_commandList->SetGraphicsRootSignature(rootSignature);

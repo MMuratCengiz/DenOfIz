@@ -85,7 +85,7 @@ namespace DenOfIz
         void CreateRenderPass();
         void CreateDepthAttachmentImages();
         void CreatePipeline();
-        vk::ShaderModule CreateShaderModule(CComPtr<IDxcBlob> code) const;
+        vk::ShaderModule CreateShaderModule(wil::com_ptr<IDxcBlob> code) const;
     };
 
 } // namespace DenOfIz

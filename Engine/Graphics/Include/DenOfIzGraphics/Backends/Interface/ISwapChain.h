@@ -52,7 +52,7 @@ namespace DenOfIz
         virtual uint32_t AcquireNextImage(ISemaphore *imageReadySemaphore) = 0;
         virtual void Resize(uint32_t width, uint32_t height) = 0;
 
-        virtual IImageResource *GetRenderTarget(uint32_t frame) = 0;
+        virtual ITextureResource *GetRenderTarget(uint32_t frame) = 0;
         virtual Viewport GetViewport() = 0;
     };
 

@@ -32,11 +32,16 @@ DX12SwapChain::DX12SwapChain(DX12Context *context, const SwapChainCreateInfo &sw
 void DX12SwapChain::CreateSwapChain()
 {
     GraphicsWindowSurface surface = m_context->Window->GetSurface();
+    if ( m_swapChainCreateInfo.Width != surface.Width || m_swapChainCreateInfo.Height != surface.Height )
+    {
+        LOG(Verbosity::Debug, "DX12SwapChain", "Swap chain size does not match window size. This could be intentional");
+    }
+
     HWND hwnd = m_context->Window->GetNativeHandle();
 
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-    swapChainDesc.Width = surface.Width;
-    swapChainDesc.Height = surface.Height;
+    swapChainDesc.Width = m_swapChainCreateInfo.Width;
+    swapChainDesc.Height = m_swapChainCreateInfo.Height;
     swapChainDesc.Format = DX12EnumConverter::ConvertImageFormat(m_swapChainCreateInfo.BackBufferFormat);
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.BufferCount = m_context->BackBufferCount;
@@ -51,32 +56,28 @@ void DX12SwapChain::CreateSwapChain()
     fsSwapChainDesc.Windowed = TRUE;
 
     // Create a swap chain for the window.
-    ComPtr<IDXGISwapChain1> swapChain;
+    wil::com_ptr<IDXGISwapChain1> swapChain;
 
-    DX_CHECK_RESULT(m_context->DXGIFactory->CreateSwapChainForHwnd(m_context->GraphicsCommandQueue.Get(), hwnd, &swapChainDesc, &fsSwapChainDesc, nullptr, &swapChain));
-
-    DX_CHECK_RESULT(swapChain->QueryInterface(IID_PPV_ARGS(&m_swapChain)));
-    swapChain->Release();
-
-    DX_CHECK_RESULT(m_context->DXGIFactory->MakeWindowAssociation(hwnd, 0));
+    THROW_IF_FAILED(m_context->DXGIFactory->CreateSwapChainForHwnd(m_context->GraphicsCommandQueue.get(), hwnd, &swapChainDesc, &fsSwapChainDesc, nullptr, swapChain.put()));
+    THROW_IF_FAILED(swapChain->QueryInterface(IID_PPV_ARGS(m_swapChain.put())));
+    THROW_IF_FAILED(m_context->DXGIFactory->MakeWindowAssociation(hwnd, DXGI_MWA_VALID));
+    //    swapChain->Release();
 
     m_renderTargets.resize(m_context->BackBufferCount);
     m_renderTargetCpuHandles.resize(m_context->BackBufferCount);
 
     for ( uint32_t i = 0; i < m_context->BackBufferCount; i++ )
     {
-        ComPtr<ID3D12Resource2> buffer;
-        DX_CHECK_RESULT(m_swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer)));
+        wil::com_ptr<ID3D12Resource2> buffer;
+        THROW_IF_FAILED(m_swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer)));
 
         D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
         rtvDesc.Format = swapChainDesc.Format;
         rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
         m_renderTargetCpuHandles[ i ] = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_RTV ]->GetNextCPUHandleOffset(1);
-        m_renderTargets[ i ] = std::make_unique<DX12ImageResource>(buffer.Get(), m_renderTargetCpuHandles[ i ]);
-
-        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvDescriptor(m_renderTargetCpuHandles[ i ], i, m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_RTV ]->GetDescriptorSize());
-        m_context->D3DDevice->CreateRenderTargetView(m_renderTargets[ i ]->GetResource(), &rtvDesc, rtvDescriptor);
+        m_renderTargets[ i ] = std::make_unique<DX12ImageResource>(buffer.get(), m_renderTargetCpuHandles[ i ]);
+        m_context->D3DDevice->CreateRenderTargetView(m_renderTargets[ i ]->GetResource(), &rtvDesc, m_renderTargetCpuHandles[ i ]);
     }
 
     SetColorSpace();
@@ -94,15 +95,15 @@ void DX12SwapChain::CreateSwapChain()
     depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
     depthOptimizedClearValue.DepthStencil.Stencil = 0;
 
-    DX_CHECK_RESULT(m_context->D3DDevice->CreateCommittedResource(&depthHeapProperties, D3D12_HEAP_FLAG_NONE, &depthStencilDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE,
-                                                                  &depthOptimizedClearValue, IID_PPV_ARGS(m_depthStencil.ReleaseAndGetAddressOf())));
+    THROW_IF_FAILED(m_context->D3DDevice->CreateCommittedResource(&depthHeapProperties, D3D12_HEAP_FLAG_NONE, &depthStencilDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE,
+                                                                  &depthOptimizedClearValue, IID_PPV_ARGS(m_depthStencil.put())));
 
     D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
     dsvDesc.Format = depthBufferFormat;
     dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 
     m_depthStencilCpuHandle = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_DSV ]->GetNextCPUHandleOffset(1);
-    m_context->D3DDevice->CreateDepthStencilView(m_depthStencil.Get(), &dsvDesc, m_depthStencilCpuHandle);
+    m_context->D3DDevice->CreateDepthStencilView(m_depthStencil.get(), &dsvDesc, m_depthStencilCpuHandle);
 }
 
 void DX12SwapChain::SetColorSpace()
@@ -111,14 +112,14 @@ void DX12SwapChain::SetColorSpace()
     bool isDisplayHDR10 = false;
 
 #if defined(NTDDI_WIN10_RS2)
-    ComPtr<IDXGIOutput> output;
-    if ( SUCCEEDED(m_swapChain->GetContainingOutput(output.GetAddressOf())) )
+    wil::com_ptr<IDXGIOutput> output;
+    if ( SUCCEEDED(m_swapChain->GetContainingOutput(output.put())) )
     {
-        ComPtr<IDXGIOutput6> output6;
-        if ( SUCCEEDED(output.As(&output6)) )
+        wil::com_ptr<IDXGIOutput6> output6 = output.query<IDXGIOutput6>();
+        if ( output6 )
         {
             DXGI_OUTPUT_DESC1 desc;
-            DX_CHECK_RESULT(output6->GetDesc1(&desc));
+            THROW_IF_FAILED(output6->GetDesc1(&desc));
             if ( desc.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020 )
             {
                 isDisplayHDR10 = true;
@@ -147,11 +148,19 @@ void DX12SwapChain::SetColorSpace()
     UINT colorSpaceSupport = 0;
     if ( SUCCEEDED(m_swapChain->CheckColorSpaceSupport(m_colorSpace, &colorSpaceSupport)) && (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) )
     {
-        DX_CHECK_RESULT(m_swapChain->SetColorSpace1(m_colorSpace));
+        THROW_IF_FAILED(m_swapChain->SetColorSpace1(m_colorSpace));
     }
 }
 
-uint32_t DX12SwapChain::AcquireNextImage(ISemaphore *imageAvailableSemaphore) { return m_swapChain->GetCurrentBackBufferIndex(); }
+uint32_t DX12SwapChain::AcquireNextImage(ISemaphore *imageAvailableSemaphore)
+{
+    uint32_t index = m_swapChain->GetCurrentBackBufferIndex();
+    if ( imageAvailableSemaphore )
+    {
+        imageAvailableSemaphore->Notify();
+    }
+    return index;
+}
 
 void DX12SwapChain::Resize(uint32_t width, uint32_t height)
 {
@@ -170,21 +179,29 @@ void DX12SwapChain::Resize(uint32_t width, uint32_t height)
         return;
     }
 
-    DX_CHECK_RESULT(hr);
+    THROW_IF_FAILED(hr);
 }
 
-Viewport DX12SwapChain::GetViewport() { return Viewport(); }
+Viewport DX12SwapChain::GetViewport()
+{
+    return Viewport {
+        0.0f,
+        0.0f,
+        static_cast<float>(m_swapChainCreateInfo.Width),
+        static_cast<float>(m_swapChainCreateInfo.Height),
+    };
+}
 
-IImageResource *DX12SwapChain::GetRenderTarget(uint32_t frame) { return m_renderTargets[ frame ].get(); }
+ITextureResource *DX12SwapChain::GetRenderTarget(uint32_t frame) { return m_renderTargets[ frame ].get(); }
 
 ImageFormat DX12SwapChain::GetPreferredFormat() { return ImageFormat::R8Unorm; }
 
 DX12SwapChain::~DX12SwapChain()
 {
-    for ( uint32_t i = 0; i < m_context->BackBufferCount; i++ )
-    {
-        m_renderTargets[ i ].reset();
-    }
-    m_depthStencil.Reset();
-    m_swapChain.Reset();
+    //    for ( uint32_t i = 0; i < m_context->BackBufferCount; i++ )
+    //    {
+    //        m_renderTargets[ i ].reset();
+    //    }
+    //    DX_SAFE_RELEASE(m_depthStencil);
+    //    DX_SAFE_RELEASE(m_swapChain);
 }

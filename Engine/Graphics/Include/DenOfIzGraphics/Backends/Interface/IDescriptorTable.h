@@ -36,7 +36,7 @@ namespace DenOfIz
         virtual ~IDescriptorTable() = default;
 
         // -- Requires a sampler
-        virtual void BindImage(IImageResource *resource) = 0;
+        virtual void BindImage(ITextureResource *resource) = 0;
         virtual void BindBuffer(IBufferResource *resource) = 0;
     };
 

@@ -22,14 +22,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "SDL2/SDL_syswm.h"
 
 using namespace DenOfIz;
-using Microsoft::WRL::ComPtr;
 
 DX12LogicalDevice::DX12LogicalDevice() { m_context = std::make_unique<DX12Context>(); }
 
 DX12LogicalDevice::~DX12LogicalDevice()
 {
     WaitIdle();
-    Dispose();
+//    m_context = nullptr;
+//    m_context.reset();
+//    for ( int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; i++ )
+//    {
+//        m_context->CpuDescriptorHeaps[ i ].reset();
+//    }
+//    m_context->ShaderVisibleCbvSrvUavDescriptorHeap.reset();
+//    m_context->ShaderVisibleSamplerDescriptorHeap.reset();
+    //    m_context->CopyCommandListAllocator.reset();
+    //    m_context->CopyCommandList.reset();
+    //    m_context->DX12MemoryAllocator.reset();
+    //    m_context->CopyCommandQueue.reset();
+    //    m_context->ComputeCommandQueue.reset();
+    //    m_context->GraphicsCommandQueue.reset();
+    //    m_context->D3DDevice.reset();
+    //    m_context->DXGIFactory.reset();
+    //    m_context->Adapter.reset();
 }
 
 void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
@@ -38,8 +53,8 @@ void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
     DWORD dxgiFactoryFlags = 0;
 #ifndef NDEBUG
     {
-        ComPtr<ID3D12Debug> debugController;
-        if ( SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.GetAddressOf()))) )
+        wil::com_ptr<ID3D12Debug> debugController;
+        if ( SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController.put()))) )
         {
             debugController->EnableDebugLayer();
         }
@@ -48,8 +63,8 @@ void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
             LOG(Verbosity::Warning, "DX12Device", "WARNING: Direct3D Debug Device is not available");
         }
 
-        ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
-        if ( SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(dxgiInfoQueue.GetAddressOf()))) )
+        wil::com_ptr<IDXGIInfoQueue> dxgiInfoQueue;
+        if ( SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(dxgiInfoQueue.put()))) )
         {
             dxgiFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
 
@@ -67,17 +82,17 @@ void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
     }
 #endif
 
-    DX_CHECK_RESULT(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(m_context->DXGIFactory.ReleaseAndGetAddressOf())));
+    THROW_IF_FAILED(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(m_context->DXGIFactory.put())));
 }
 
 std::vector<PhysicalDeviceInfo> DX12LogicalDevice::ListPhysicalDevices()
 {
     std::vector<PhysicalDeviceInfo> result;
-    ComPtr<IDXGIAdapter1> adapter;
-    for ( UINT adapterIndex = 0; SUCCEEDED(m_context->DXGIFactory->EnumAdapters1(adapterIndex, adapter.ReleaseAndGetAddressOf())); adapterIndex++ )
+    wil::com_ptr<IDXGIAdapter1> adapter;
+    for ( UINT adapterIndex = 0; SUCCEEDED(m_context->DXGIFactory->EnumAdapters1(adapterIndex, adapter.put())); adapterIndex++ )
     {
         PhysicalDeviceInfo deviceInfo{};
-        CreateDeviceInfo(*adapter.Get(), deviceInfo);
+        CreateDeviceInfo(*adapter.get(), deviceInfo);
         result.push_back(deviceInfo);
     }
 
@@ -89,51 +104,48 @@ void DX12LogicalDevice::CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDeviceI
     DXGI_ADAPTER_DESC adapterDesc;
     adapter.GetDesc(&adapterDesc);
     deviceInfo.Id = adapterDesc.DeviceId;
-    deviceInfo.Name = LPCSTR(adapterDesc.Description);
+    std::wstring adapterName(adapterDesc.Description);
+    deviceInfo.Name = std::string(adapterName.begin(), adapterName.end());
 
     // Todo actually read these from somewhere:
     deviceInfo.Capabilities.DedicatedTransferQueue = true;
     deviceInfo.Capabilities.ComputeShaders = true;
 
     DXGI_ADAPTER_DESC1 desc;
-    DX_CHECK_RESULT(adapter.GetDesc1(&desc));
+    THROW_IF_FAILED(adapter.GetDesc1(&desc));
 
     deviceInfo.Properties.IsDedicated = !(desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE);
 
-    ComPtr<ID3D12Device> device;
-    DX_CHECK_RESULT(D3D12CreateDevice(&adapter, m_minFeatureLevel, IID_PPV_ARGS(device.GetAddressOf())));
+    wil::com_ptr<ID3D12Device> device;
+    THROW_IF_FAILED(D3D12CreateDevice(&adapter, m_minFeatureLevel, IID_PPV_ARGS(device.put())));
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 opts = {};
     if ( SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &opts, sizeof(opts))) )
     {
         deviceInfo.Capabilities.RayTracing = opts.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
     }
-    device.Reset();
-    BOOL allowTearing = false;
-    ComPtr<IDXGIFactory5> factory5;
-    HRESULT hr = m_context->DXGIFactory.As(&factory5);
-    if ( SUCCEEDED(hr) )
-    {
-        hr = factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
-    }
 
+    BOOL allowTearing = false;
+    HRESULT hr = m_context->DXGIFactory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
     if ( FAILED(hr) || !allowTearing )
     {
         deviceInfo.Capabilities.Tearing = false;
         LOG(Verbosity::Warning, "DX12Device", "WARNING: Variable refresh rate displays not supported");
+    }
+    else
+    {
+        deviceInfo.Capabilities.Tearing = true;
     }
 }
 
 void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
 {
     m_selectedDeviceInfo = device;
-    ComPtr<IDXGIAdapter1> adapter;
-    ComPtr<IDXGIFactory6> factory6;
-    HRESULT hr = m_context->DXGIFactory.As(&factory6);
+    m_context->SelectedDeviceInfo = m_selectedDeviceInfo;
 
-    DX_CHECK_RESULT(hr);
+    wil::com_ptr<IDXGIAdapter1> adapter;
 
     for ( UINT adapterIndex = 0;
-          SUCCEEDED(factory6->EnumAdapterByGpuPreference(adapterIndex, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(adapter.ReleaseAndGetAddressOf()))); adapterIndex++ )
+          SUCCEEDED(m_context->DXGIFactory->EnumAdapterByGpuPreference(adapterIndex, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(adapter.put()))); adapterIndex++ )
     {
         DXGI_ADAPTER_DESC adapterDesc;
         adapter->GetDesc(&adapterDesc);
@@ -143,11 +155,12 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
         }
     }
 
-    m_context->Adapter = adapter.Detach();
+    m_context->Adapter = adapter.detach();
     // Create the DX12 API device object.
-    ComPtr<ID3D12Device> dxDevice;
-    DX_CHECK_RESULT(D3D12CreateDevice(m_context->Adapter.Get(), m_minFeatureLevel, IID_PPV_ARGS(dxDevice.ReleaseAndGetAddressOf())));
-    DX_CHECK_RESULT(dxDevice->QueryInterface(IID_PPV_ARGS(&m_context->D3DDevice)));
+    wil::com_ptr<ID3D12Device> dxDevice;
+    THROW_IF_FAILED(D3D12CreateDevice(m_context->Adapter.get(), m_minFeatureLevel, IID_PPV_ARGS(dxDevice.put())));
+    THROW_IF_FAILED(dxDevice->QueryInterface(IID_PPV_ARGS(m_context->D3DDevice.put())));
+    dxDevice->Release();
 
     // Confirm the device supports DXR.
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 opts = {};
@@ -160,14 +173,14 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_SHADER_MODEL_6_3 };
     if ( FAILED(m_context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel))) || shaderModel.HighestShaderModel < D3D_SHADER_MODEL_6_3 )
     {
-        OutputDebugStringA("ERROR: Requires Shader Model 6.3 or better support.\n");
+        LOG(Verbosity::Critical, "DX12Device", "ERROR: Requires Shader Model 6.3 or better support.\n.");
         throw std::exception("Requires Shader Model 6.3 or better support");
     }
 
 #ifndef NDEBUG
     // Configure debug device (if active).
-    ComPtr<ID3D12InfoQueue> d3dInfoQueue;
-    if ( SUCCEEDED(m_context->D3DDevice.As(&d3dInfoQueue)) )
+    wil::com_ptr<ID3D12InfoQueue1> d3dInfoQueue = m_context->D3DDevice.query<ID3D12InfoQueue1>();
+    if ( d3dInfoQueue )
     {
         d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
         d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
@@ -182,6 +195,27 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
         filter.DenyList.NumIDs = _countof(hide);
         filter.DenyList.pIDList = hide;
         d3dInfoQueue->AddStorageFilterEntries(&filter);
+
+        DWORD callbackCookie;
+        d3dInfoQueue->RegisterMessageCallback(
+            [](D3D12_MESSAGE_CATEGORY category, D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID iD, LPCSTR description, void *context)
+            {
+                switch ( severity )
+                {
+                case D3D12_MESSAGE_SEVERITY_ERROR:
+                case D3D12_MESSAGE_SEVERITY_CORRUPTION:
+                    LOG(Verbosity::Critical, "DX12Device", description);
+                    break;
+                case D3D12_MESSAGE_SEVERITY_WARNING:
+                    LOG(Verbosity::Warning, "DX12Device", description);
+                    break;
+                case D3D12_MESSAGE_SEVERITY_INFO:
+                case D3D12_MESSAGE_SEVERITY_MESSAGE:
+                    LOG(Verbosity::Information, "DX12Device", description);
+                    break;
+                };
+            },
+            D3D12_MESSAGE_CALLBACK_FLAG_NONE, this, &callbackCookie);
     }
 #endif
 
@@ -190,7 +224,7 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
 
     D3D12_FEATURE_DATA_FEATURE_LEVELS featLevels = { _countof(s_featureLevels), s_featureLevels, D3D_FEATURE_LEVEL_11_0 };
 
-    hr = m_context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS, &featLevels, sizeof(featLevels));
+    HRESULT hr = m_context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS, &featLevels, sizeof(featLevels));
     if ( SUCCEEDED(hr) )
     {
         m_minFeatureLevel = featLevels.MaxSupportedFeatureLevel;
@@ -203,62 +237,33 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
     D3D12_COMMAND_QUEUE_DESC queueDesc = {};
     queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-
-    DX_CHECK_RESULT(m_context->D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(m_context->GraphicsCommandQueue.ReleaseAndGetAddressOf())));
+    THROW_IF_FAILED(m_context->D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(m_context->GraphicsCommandQueue.put())));
 
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-    DX_CHECK_RESULT(m_context->D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(m_context->ComputeCommandQueue.ReleaseAndGetAddressOf())));
+    THROW_IF_FAILED(m_context->D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(m_context->ComputeCommandQueue.put())));
+
+    queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
+    THROW_IF_FAILED(m_context->D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(m_context->CopyCommandQueue.put())));
 
     for ( int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; i++ )
     {
-        m_context->CpuDescriptorHeaps[ i ] = std::make_unique<DX12DescriptorHeap>(m_context->D3DDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE(i), false);
+        m_context->CpuDescriptorHeaps[ i ] = std::make_unique<DX12DescriptorHeap>(m_context->D3DDevice.get(), D3D12_DESCRIPTOR_HEAP_TYPE(i), false);
     }
 
-    m_context->ShaderVisibleCbvSrvUavDescriptorHeap = std::make_unique<DX12DescriptorHeap>(m_context->D3DDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
-    m_context->ShaderVisibleSamplerDescriptorHeap = std::make_unique<DX12DescriptorHeap>(m_context->D3DDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, true);
+    m_context->ShaderVisibleCbvSrvUavDescriptorHeap = std::make_unique<DX12DescriptorHeap>(m_context->D3DDevice.get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
+    m_context->ShaderVisibleSamplerDescriptorHeap = std::make_unique<DX12DescriptorHeap>(m_context->D3DDevice.get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, true);
 
-    DX_CHECK_RESULT(m_context->D3DDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(m_context->CopyCommandListAllocator.ReleaseAndGetAddressOf())));
-    DX_CHECK_RESULT(m_context->D3DDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COPY, m_context->CopyCommandListAllocator.Get(), nullptr,
-                                                            IID_PPV_ARGS(m_context->CopyCommandList.ReleaseAndGetAddressOf())));
-    DX_CHECK_RESULT(m_context->CopyCommandList->Close());
+    THROW_IF_FAILED(m_context->D3DDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(m_context->CopyCommandListAllocator.put())));
+    THROW_IF_FAILED(m_context->D3DDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COPY, m_context->CopyCommandListAllocator.get(), nullptr,
+                                                            IID_PPV_ARGS(m_context->CopyCommandList.put())));
+    THROW_IF_FAILED(m_context->CopyCommandList->Close());
 
-    // Create a fence for tracking GPU execution progress.
-    //	DX_CHECK_RESULT(m_context->D3DDevice->CreateFence(m_fenceValues[m_backBufferIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.ReleaseAndGetAddressOf())));
-
-    //	m_fenceValues[m_backBufferIndex]++;
-    //	m_fence->SetName(L"DeviceResources");
-    //
-    //	m_fenceEvent.Attach(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
-    //	if (!m_fenceEvent.IsValid())
-    //	{
-    //		throw std::exception("CreateEvent");
-    //	}
     D3D12MA::ALLOCATOR_DESC allocatorDesc = {};
-    allocatorDesc.pDevice = m_context->D3DDevice.Get();
-    allocatorDesc.pAdapter = m_context->Adapter.Get();
+    allocatorDesc.pDevice = m_context->D3DDevice.get();
+    allocatorDesc.pAdapter = m_context->Adapter.get();
 
     allocatorDesc.Flags = D3D12MA::ALLOCATOR_FLAG_MSAA_TEXTURES_ALWAYS_COMMITTED | D3D12MA::ALLOCATOR_FLAG_DEFAULT_POOLS_NOT_ZEROED;
-    DX_CHECK_RESULT(D3D12MA::CreateAllocator(&allocatorDesc, &m_context->DX12MemoryAllocator));
-}
-
-void DX12LogicalDevice::Dispose()
-{
-    m_context->DX12MemoryAllocator->Release();
-    m_context->CopyCommandListAllocator->Reset();
-    m_context->CopyCommandList.Reset();
-    m_context->GraphicsCommandQueue.Reset();
-    m_context->D3DDevice.Reset();
-    m_context->DXGIFactory.Reset();
-
-#ifndef NDEBUG
-    {
-        ComPtr<IDXGIDebug1> dxgiDebug;
-        if ( SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))) )
-        {
-            dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_SUMMARY | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
-        }
-    }
-#endif
+    THROW_IF_FAILED(D3D12MA::CreateAllocator(&allocatorDesc, m_context->DX12MemoryAllocator.put()));
 }
 
 void DX12LogicalDevice::WaitIdle() {}
@@ -305,7 +310,11 @@ std::unique_ptr<IFence> DX12LogicalDevice::CreateFence()
     return std::unique_ptr<IFence>(fence);
 }
 
-std::unique_ptr<ISemaphore> DX12LogicalDevice::CreateSemaphore() { return std::unique_ptr<ISemaphore>(); }
+std::unique_ptr<ISemaphore> DX12LogicalDevice::CreateSemaphore()
+{
+    DX12Semaphore *semaphore = new DX12Semaphore(m_context.get());
+    return std::unique_ptr<ISemaphore>(semaphore);
+}
 
 std::unique_ptr<IBufferResource> DX12LogicalDevice::CreateBufferResource(std::string name, const BufferCreateInfo &createInfo)
 {
@@ -314,9 +323,9 @@ std::unique_ptr<IBufferResource> DX12LogicalDevice::CreateBufferResource(std::st
     return std::unique_ptr<IBufferResource>(buffer);
 }
 
-std::unique_ptr<IImageResource> DX12LogicalDevice::CreateImageResource(std::string name, const ImageCreateInfo &createInfo)
+std::unique_ptr<ITextureResource> DX12LogicalDevice::CreateImageResource(std::string name, const ImageCreateInfo &createInfo)
 {
     DX12ImageResource *image = new DX12ImageResource(m_context.get(), createInfo);
     image->Name = name;
-    return std::unique_ptr<IImageResource>(image);
+    return std::unique_ptr<ITextureResource>(image);
 }

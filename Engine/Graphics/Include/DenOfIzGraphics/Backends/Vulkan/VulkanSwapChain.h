@@ -50,7 +50,7 @@ namespace DenOfIz
         void Resize(uint32_t width, uint32_t height) override;
         ImageFormat GetPreferredFormat() override;
 
-        inline IImageResource *GetRenderTarget(uint32_t frame) override { return m_renderTargets.at(frame).get(); }
+        inline ITextureResource *GetRenderTarget(uint32_t frame) override { return m_renderTargets.at(frame).get(); }
         inline vk::SwapchainKHR *GetSwapChain() { return &m_swapChain; }
         inline Viewport GetViewport() override { return { 0.0f, 0.0f, static_cast<float>(m_width), static_cast<float>(m_height) }; }
 

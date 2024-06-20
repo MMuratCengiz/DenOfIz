@@ -29,9 +29,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <dxgi1_6.h>
 #include <wrl/client.h>
 #include <wrl/event.h>
-#include "D3D12MemAlloc.h"
+#include <wil/com.h>
+#include <wil/result.h>
 #include "DX12DescriptorHeap.h"
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
+
+// !TF! remove
+#include "Direct3D12MemoryAllocator.h"
+//#include "D3D12MemAlloc.h"
+// --
 
 #ifdef _DEBUG
 #include <dxgidebug.h>
@@ -49,15 +55,18 @@ namespace DenOfIz
         static const int BackBufferCount = 3;
         bool IsDeviceLost = false;
 
-        ComPtr<IDXGIAdapter1> Adapter;
+        // Release Last
+        wil::com_ptr<IDXGIAdapter1> Adapter;
+        wil::com_ptr<IDXGIFactory7> DXGIFactory;
+        wil::com_ptr<ID3D12Device9> D3DDevice;
+        wil::com_ptr<ID3D12CommandQueue> GraphicsCommandQueue;
+        wil::com_ptr<ID3D12CommandQueue> ComputeCommandQueue;
+        wil::com_ptr<ID3D12CommandQueue> CopyCommandQueue;
 
-        ComPtr<ID3D12Device9> D3DDevice;
-        ComPtr<IDXGIFactory7> DXGIFactory;
-        ComPtr<ID3D12CommandQueue> GraphicsCommandQueue;
-        ComPtr<ID3D12CommandQueue> ComputeCommandQueue;
+        wil::com_ptr<D3D12MA::Allocator> DX12MemoryAllocator;
 
-        ComPtr<ID3D12CommandAllocator> CopyCommandListAllocator;
-        ComPtr<ID3D12GraphicsCommandList4> CopyCommandList;
+        wil::com_ptr<ID3D12CommandAllocator> CopyCommandListAllocator;
+        wil::com_ptr<ID3D12GraphicsCommandList4> CopyCommandList;
 
         std::array<std::unique_ptr<DX12DescriptorHeap>, D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES> CpuDescriptorHeaps;
         std::unique_ptr<DX12DescriptorHeap> ShaderVisibleCbvSrvUavDescriptorHeap;
@@ -65,22 +74,8 @@ namespace DenOfIz
 
         GraphicsWindowHandle *Window;
         PhysicalDeviceInfo SelectedDeviceInfo;
-        D3D12MA::Allocator *DX12MemoryAllocator;
     };
 
 } // namespace DenOfIz
-
-#define DX_CHECK_RESULT(exp)                                                                                                                                                       \
-    do                                                                                                                                                                             \
-    {                                                                                                                                                                              \
-        HRESULT hrNoConflictName = exp;                                                                                                                                            \
-        if ( !SUCCEEDED(hrNoConflictName) )                                                                                                                                        \
-        {                                                                                                                                                                          \
-            std::string message = (boost::format("FAILED with HRESULT:") % (uint32_t)hrNoConflictName).str();                                                                      \
-            LOG(Verbosity::Critical, "DirectX", message);                                                                                                                          \
-            assertm(false, message);                                                                                                                                               \
-        }                                                                                                                                                                          \
-    }                                                                                                                                                                              \
-    while ( false )
 
 #endif

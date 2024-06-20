@@ -208,7 +208,7 @@ void VulkanCommandList::BindScissorRect(float offsetX, float offsetY, float widt
 
 void VulkanCommandList::BindDescriptorTable(IDescriptorTable *table)
 {
-    assertm(m_boundPipeline != VK_NULL_HANDLE, "Pipeline must be bound before binding descriptor table.");
+    ASSERTM(m_boundPipeline != VK_NULL_HANDLE, "Pipeline must be bound before binding descriptor table.");
 
     VulkanDescriptorTable *vkTable = dynamic_cast<VulkanDescriptorTable *>(table);
 
@@ -221,7 +221,7 @@ void VulkanCommandList::BindPushConstants(ShaderStage stage, uint32_t offset, ui
 
 void VulkanCommandList::BindBufferResource(IBufferResource *resource) {}
 
-void VulkanCommandList::BindImageResource(IImageResource *resource) {}
+void VulkanCommandList::BindImageResource(ITextureResource *resource) {}
 
 void VulkanCommandList::SetDepthBias(float constantFactor, float clamp, float slopeFactor) { m_commandBuffer.setDepthBias(constantFactor, clamp, slopeFactor); }
 
@@ -242,14 +242,14 @@ void VulkanCommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint3
 
 void VulkanCommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-    assertm(m_createInfo.QueueType == QueueType::Compute, "Dispatch can only be called on compute queues.");
+    ASSERTM(m_createInfo.QueueType == QueueType::Compute, "Dispatch can only be called on compute queues.");
 }
 
-void VulkanCommandList::TransitionImageLayout(IImageResource *image, ImageLayout oldLayout, ImageLayout newLayout) {}
+void VulkanCommandList::TransitionImageLayout(ITextureResource *image, ImageLayout oldLayout, ImageLayout newLayout) {}
 
 void VulkanCommandList::Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks)
 {
-    assertm(m_createInfo.QueueType == QueueType::Graphics || m_createInfo.QueueType == QueueType::Presentation, "Present can only be called on presentation queues.");
+    ASSERTM(m_createInfo.QueueType == QueueType::Graphics || m_createInfo.QueueType == QueueType::Presentation, "Present can only be called on presentation queues.");
 
     vk::PresentInfoKHR presentInfo{};
 

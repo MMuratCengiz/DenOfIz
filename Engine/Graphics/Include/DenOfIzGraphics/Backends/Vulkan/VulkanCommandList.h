@@ -56,13 +56,13 @@ namespace DenOfIz
         void BindDescriptorTable(IDescriptorTable *table) override;
         void BindPushConstants(ShaderStage stage, uint32_t offset, uint32_t size, void *data) override;
         void BindBufferResource(IBufferResource *resource) override;
-        void BindImageResource(IImageResource *resource) override;
+        void BindImageResource(ITextureResource *resource) override;
         void SetDepthBias(float constantFactor, float clamp, float slopeFactor) override;
         void SetPipelineBarrier(const PipelineBarrier &barrier) override;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) override;
         void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0) override;
         void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
-        void TransitionImageLayout(IImageResource *image, ImageLayout oldLayout, ImageLayout newLayout) override;
+        void TransitionImageLayout(ITextureResource *image, ImageLayout oldLayout, ImageLayout newLayout) override;
         void Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks) override;
     };
 

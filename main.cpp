@@ -1,4 +1,7 @@
 #ifndef DISABLED
+// Include first to ensure NOMINMAX
+#include <DenOfIzCore/Common_Windows.h>
+
 #define SDL_MAIN_HANDLED
 #include <DenOfIzGraphics/Renderer/SimpleRenderer.h>
 #include <SDL2/SDL.h>
@@ -10,6 +13,7 @@ int main()
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
 #endif
+    int * n = new int[5];
     if ( SDL_Init(SDL_INIT_EVERYTHING) != 0 )
     {
         exit(1);

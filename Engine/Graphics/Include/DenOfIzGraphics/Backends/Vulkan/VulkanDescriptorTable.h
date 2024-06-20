@@ -38,7 +38,7 @@ namespace DenOfIz
     public:
         VulkanDescriptorTable(VulkanContext *context, DescriptorTableCreateInfo createInfo);
 
-        void BindImage(IImageResource *resource) override;
+        void BindImage(ITextureResource *resource) override;
         void BindBuffer(IBufferResource *resource) override;
 
         const std::vector<vk::WriteDescriptorSet> &GetWriteDescriptorSets() const { return m_writeDescriptorSets; }

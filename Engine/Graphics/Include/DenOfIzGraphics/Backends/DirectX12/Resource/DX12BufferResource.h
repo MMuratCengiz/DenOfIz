@@ -30,15 +30,18 @@ namespace DenOfIz
     private:
         DX12Context *m_context;
         BufferCreateInfo m_createInfo;
-        ID3D12Resource2 *m_resource;
-        D3D12MA::Allocation *m_allocation;
+        wil::com_ptr<ID3D12Resource2> m_resource;
+        wil::com_ptr<D3D12MA::Allocation> m_allocation;
 
+        bool allocated = false;
+        uint32_t m_stride = 0;
     public:
         DX12BufferResource(DX12Context *context, const BufferCreateInfo &createInfo);
-        ID3D12Resource2 *GetResource() { return m_resource; }
+        ID3D12Resource2 *GetResource() { return m_resource.get(); }
         ~DX12BufferResource() override;
         void Deallocate() override;
 
+        uint32_t GetStride() const { return m_stride; }
     protected:
         void Allocate(const void *data) override;
         void CreateBufferView();

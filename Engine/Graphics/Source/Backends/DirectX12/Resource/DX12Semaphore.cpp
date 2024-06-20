@@ -23,20 +23,24 @@ using namespace DenOfIz;
 DX12Semaphore::DX12Semaphore(DX12Context *context)
 {
     m_context = context;
-    m_fenceValue = 0;
-    m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    context->D3DDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.ReleaseAndGetAddressOf()));
+    m_fenceValue = 1;
+    context->D3DDevice->CreateFence(m_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.put()));
+    m_fenceEvent.Attach(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
 }
 
-DX12Semaphore::~DX12Semaphore() { m_fence.Reset(); }
+DX12Semaphore::~DX12Semaphore() { m_fence = nullptr; }
 
 void DX12Semaphore::Wait()
 {
-    if ( m_fence->GetCompletedValue() < m_fenceValue )
+    if ( m_fence->GetCompletedValue() != 1 )
     {
-        m_fence->SetEventOnCompletion(m_fenceValue, m_fenceEvent);
-        WaitForSingleObject(m_fenceEvent, INFINITE);
+        THROW_IF_FAILED(m_fence->SetEventOnCompletion(m_fenceValue, m_fenceEvent.Get()));
+        WaitForSingleObjectEx(m_fenceEvent.Get(), INFINITE, FALSE);
+        m_fence->Signal(0);
     }
 }
 
-void DX12Semaphore::Notify() { m_fenceValue++; }
+void DX12Semaphore::Notify()
+{
+    m_fence->Signal(1);
+}

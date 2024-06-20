@@ -30,14 +30,14 @@ namespace DenOfIz
     {
     private:
         DX12Context *m_context;
-        ComPtr<ID3D12PipelineState> m_graphicsPipeline;
+        wil::com_ptr<ID3D12PipelineState> m_graphicsPipeline;
         DX12RootSignature *m_rootSignature;
         PipelineCreateInfo m_createInfo;
         D3D12_PRIMITIVE_TOPOLOGY m_topology;
 
     public:
         DX12Pipeline(DX12Context *context, const PipelineCreateInfo &info);
-        ID3D12PipelineState *GetPipeline() const { return m_graphicsPipeline.Get(); }
+        ID3D12PipelineState *GetPipeline() const { return m_graphicsPipeline.get(); }
         ID3D12RootSignature *GetRootSignature() const { return m_rootSignature->GetRootSignature(); }
         D3D12_PRIMITIVE_TOPOLOGY GetTopology() const { return m_topology; }
         ~DX12Pipeline() override;
