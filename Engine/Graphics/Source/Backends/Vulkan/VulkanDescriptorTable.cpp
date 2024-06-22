@@ -53,7 +53,7 @@ void VulkanDescriptorTable::BindBuffer(IBufferResource *resource)
 
 vk::WriteDescriptorSet &VulkanDescriptorTable::CreateWriteDescriptor(std::string &name)
 {
-    ResourceBinding resourceBinding = m_rootSignature->GetResourceBinding(name).get();
+    ResourceBinding resourceBinding = m_rootSignature->GetResourceBinding(name);
 
     vk::WriteDescriptorSet &writeDescriptorSet = m_writeDescriptorSets.emplace_back();
     writeDescriptorSet.dstSet = nullptr;

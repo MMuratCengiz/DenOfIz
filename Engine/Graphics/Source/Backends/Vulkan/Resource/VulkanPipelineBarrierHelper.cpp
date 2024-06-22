@@ -51,7 +51,7 @@ void VulkanPipelineBarrierHelper::ExecutePipelineBarrier(VulkanContext *context,
     vk::AccessFlags dstAccessFlags = {};
 
     std::vector<vk::ImageMemoryBarrier> imageBarriers;
-    for ( const ImageBarrierInfo &imageBarrier : barrier.GetImageBarriers() )
+    for ( const TextureBarrierInfo &imageBarrier : barrier.GetTextureBarriers() )
     {
         vk::ImageMemoryBarrier imageMemoryBarrier = CreateImageBarrier(imageBarrier, srcAccessFlags, dstAccessFlags);
         imageBarriers.push_back(std::move(imageMemoryBarrier));
@@ -71,7 +71,7 @@ void VulkanPipelineBarrierHelper::ExecutePipelineBarrier(VulkanContext *context,
     commandBuffer.pipelineBarrier(srcStageMask, dstStageMask, vk::DependencyFlags{}, memoryBarriers, bufferBarriers, imageBarriers);
 }
 
-vk::ImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier(const ImageBarrierInfo &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags)
+vk::ImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier(const TextureBarrierInfo &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags)
 {
     VulkanImageResource *imageResource = (VulkanImageResource *)barrier.Resource;
     vk::ImageMemoryBarrier imageMemoryBarrier{};

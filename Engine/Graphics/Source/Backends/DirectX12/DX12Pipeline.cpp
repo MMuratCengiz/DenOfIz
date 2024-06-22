@@ -22,12 +22,12 @@ using namespace DenOfIz;
 
 DX12Pipeline::DX12Pipeline(DX12Context *context, const PipelineCreateInfo &createInfo) : m_context(context), m_createInfo(createInfo)
 {
-    NOT_NULL(context);
+    DZ_NOT_NULL(context);
 
     D3D12_COMPUTE_PIPELINE_STATE_DESC computePsoDesc = {};
 
-    ASSERTM(m_createInfo.RootSignature != nullptr, "Root signature is not set for the pipeline");
-    ASSERTM(m_createInfo.InputLayout != nullptr, "Input layout is not set for the pipeline");
+    DZ_ASSERTM(m_createInfo.RootSignature != nullptr, "Root signature is not set for the pipeline");
+    DZ_ASSERTM(m_createInfo.InputLayout != nullptr, "Input layout is not set for the pipeline");
 
     CreateGraphicsPipeline();
 }

@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 #ifdef BUILD_VK
 
-#include <DenOfIzCore/Logger.h>
 #include <DenOfIzCore/Utilities.h>
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>

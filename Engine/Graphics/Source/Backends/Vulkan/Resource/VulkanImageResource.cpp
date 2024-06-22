@@ -134,7 +134,7 @@ void VulkanImageResource::Allocate(const void *newImage)
         m_sampler = m_context->LogicalDevice.createSampler(samplerCreateInfo);
     }
 
-    RETURN_IF(isEmptyImage);
+    DZ_RETURN_IF(isEmptyImage);
 
     vk::Buffer stagingBuffer;
     VmaAllocation stagingAllocation;
@@ -299,7 +299,7 @@ void VulkanImageResource::GenerateMipMaps() const
 
 void VulkanImageResource::Deallocate()
 {
-    RETURN_IF(!m_allocated);
+    DZ_RETURN_IF(!m_allocated);
 
     vmaDestroyImage(m_context->Vma, m_image, m_allocation);
     m_context->LogicalDevice.destroyImageView(m_imageView);

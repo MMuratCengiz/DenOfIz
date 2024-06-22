@@ -31,7 +31,7 @@ void DX12ImageResource::Allocate(const void *data)
 {
     if ( isExternalResource )
     {
-        LOG(Verbosity::Warning, "DX12ImageResource", "Allocating an externally managed resource(i.e. a swapchain render target).");
+        LOG(WARNING) << "DX12ImageResource" << "Allocating an externally managed resource(i.e. a swapchain render target).";
         return;
     }
 

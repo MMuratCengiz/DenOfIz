@@ -21,7 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/ILock.h>
 #include <DenOfIzGraphics/Backends/Interface/IResource.h>
 #include <DenOfIzGraphics/Backends/Interface/ISemaphore.h>
-#include <boost/noncopyable.hpp>
 
 namespace DenOfIz
 {
@@ -43,7 +42,7 @@ namespace DenOfIz
         float Height = 0.0f;
     };
 
-    class ISwapChain : boost::noncopyable
+    class ISwapChain
     {
     public:
         virtual ~ISwapChain() = default;

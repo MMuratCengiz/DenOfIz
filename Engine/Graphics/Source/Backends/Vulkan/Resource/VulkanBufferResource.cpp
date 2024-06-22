@@ -117,7 +117,7 @@ void VulkanBufferResource::UpdateAllocation(const void *newData)
 void VulkanBufferResource::Deallocate()
 {
     m_alreadyAllocated = false;
-    RETURN_IF(m_alreadyDisposed);
+    DZ_RETURN_IF(m_alreadyDisposed);
     m_alreadyDisposed = true;
 
     if ( m_createInfo.KeepMemoryMapped )

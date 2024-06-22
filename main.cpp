@@ -1,6 +1,6 @@
 #ifndef DISABLED
 // Include first to ensure NOMINMAX
-#include <DenOfIzCore/Common_Windows.h>
+#include <DenOfIzCore/Engine.h>
 
 #define SDL_MAIN_HANDLED
 #include <DenOfIzGraphics/Renderer/SimpleRenderer.h>
@@ -9,6 +9,8 @@
 
 int main()
 {
+    DenOfIz::Engine::Init();
+
 #if defined WIN32 && defined DEBUG
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);

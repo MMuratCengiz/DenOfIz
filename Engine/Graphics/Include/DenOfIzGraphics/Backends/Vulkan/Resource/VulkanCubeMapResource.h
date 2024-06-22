@@ -43,7 +43,7 @@ namespace DenOfIz
         const ResourceType Type() override { return ResourceType::CubeMap; };
     };
 
-    class VulkanCubeMapResource final : ICubeMapResource, boost::noncopyable
+    class VulkanCubeMapResource final : ICubeMapResource, private NonCopyable
     {
         VulkanContext *m_context;
         CubeMapCreateInfo m_createInfo;

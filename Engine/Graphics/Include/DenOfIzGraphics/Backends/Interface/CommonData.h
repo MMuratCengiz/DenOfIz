@@ -345,8 +345,6 @@ namespace DenOfIz
         unsigned int UnorderedAccess : 1;
         unsigned int DepthWrite : 1;
         unsigned int DepthRead : 1;
-        unsigned int NonPixelShaderResource : 1;
-        unsigned int PixelShaderResource : 1;
         unsigned int ShaderResource : 1;
         unsigned int StreamOut : 1;
         unsigned int IndirectArgument : 1;

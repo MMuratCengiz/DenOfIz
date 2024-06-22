@@ -5,6 +5,7 @@ include("${PROJECT_SOURCE_DIR}/Engine/The-Forge/cmake/theforge_helper.cmake")
 if (WIN32)
     find_package(directx-headers CONFIG REQUIRED)
     find_package(directxtk12 CONFIG REQUIRED)
+    find_package(directx12-agility CONFIG)
 else ()
 #    include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_dxcompiler.cmake")
 #    build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
@@ -150,8 +151,21 @@ if (WIN32)
             d3d12
             Microsoft::DirectX-Headers
             Microsoft::DirectXTK12
+            Microsoft::DirectX-Guids
     )
 
+    if(TARGET Microsoft::DirectX12-Agility)
+        target_link_libraries(DenOfIzGraphics
+                PRIVATE
+                Microsoft::DirectX12-Agility
+        )
+        file(MAKE_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/D3D12")
+        add_custom_command(TARGET DenOfIzGraphics POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:Microsoft::DirectX12-Core,IMPORTED_LOCATION_RELEASE> $<TARGET_FILE_DIR:DenOfIzGraphics>/D3D12
+                COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:Microsoft::DirectX12-Layers,IMPORTED_LOCATION_DEBUG> $<TARGET_FILE_DIR:DenOfIzGraphics>/D3D12
+                COMMAND_EXPAND_LISTS
+        )
+    endif()
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_DX12)
 endif ()
 if (APPLE)

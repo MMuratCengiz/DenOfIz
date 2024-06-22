@@ -1,4 +1,3 @@
-#include <DenOfIzCore/Logger.h>
 #include <DenOfIzCore/Utilities.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
 
@@ -16,21 +15,21 @@ namespace DenOfIz
         HRESULT result = DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&m_dxcLibrary));
         if ( FAILED(result) )
         {
-            LOG(Verbosity::Critical, "Graphics", "Failed to initialize DXC Library");
+            LOG(FATAL) << "Graphics" << "Failed to initialize DXC Library";
             return false;
         }
 
         result = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&m_dxcCompiler));
         if ( FAILED(result) )
         {
-            LOG(Verbosity::Critical, "Graphics", "Failed to initialize DXC Compiler");
+            LOG(FATAL) << "Graphics" << "Failed to initialize DXC Compiler";
             return false;
         }
 
         result = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&m_dxcUtils));
         if ( FAILED(result) )
         {
-            LOG(Verbosity::Critical, "Graphics", "Failed to initialize DXC Utils");
+            LOG(FATAL) << "Graphics" << "Failed to initialize DXC Utils";
             return false;
         }
 
@@ -192,16 +191,16 @@ namespace DenOfIz
         std::vector<uint32_t> spirv;
         if ( !shader.parse(&resources, 100, false, messages) )
         {
-            LOG(Verbosity::Warning, "Graphics", std::string(shader.getInfoLog()));
-            LOG(Verbosity::Warning, "Graphics", std::string(shader.getInfoDebugLog()));
+            LOG(WARNING) << "Graphics", std::string(shader.getInfoLog());
+            LOG(FATAL) << "Graphics", std::string(shader.getInfoDebugLog());
             return spirv;
         }
 
         program.addShader(&shader);
         if ( !program.link(messages) )
         {
-            LOG(Verbosity::Warning, "Graphics", std::string(shader.getInfoLog()));
-            LOG(Verbosity::Warning, "Graphics", std::string(shader.getInfoDebugLog()));
+            LOG(WARNING) << "Graphics" << std::string(shader.getInfoLog());
+            LOG(WARNING) << "Graphics" << std::string(shader.getInfoDebugLog());
             return spirv;
         }
 
@@ -250,7 +249,7 @@ namespace DenOfIz
             targetProfile = "cs";
             break;
         default:
-            ASSERTM(false, "Invalid shader stage");
+            DZ_ASSERTM(false, "Invalid shader stage");
             break;
         }
         targetProfile += "_" + hlslVersion;

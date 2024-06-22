@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class VulkanBufferResource final : public IBufferResource, boost::noncopyable
+    class VulkanBufferResource final : public IBufferResource, private NonCopyable
     {
         BufferCreateInfo m_createInfo;
         VulkanContext *m_context;

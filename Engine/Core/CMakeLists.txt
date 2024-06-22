@@ -1,23 +1,18 @@
 include(${PROJECT_SOURCE_DIR}/cmake/common.cmake)
 
-find_package(Boost COMPONENTS thread atomic log REQUIRED)
-
 find_path(STB_INCLUDE_DIRS "stb_image.h")
+find_package(glog CONFIG REQUIRED)
 
 set(DEN_OF_IZ_CORE_SOURCES
         Source/Utilities.cpp
-        Source/Time.cpp
-        Source/Logger.cpp)
+        Source/Time.cpp)
 
 add_library(DenOfIzCore ${LIB_TYPE} ${DEN_OF_IZ_CORE_SOURCES})
 
 target_include_default_directories(DenOfIzCore)
 target_link_libraries(DenOfIzCore
         PUBLIC
-        Boost::boost
-        Boost::thread
-        Boost::atomic
-        Boost::log
+        glog::glog
 )
 target_include_directories(DenOfIzCore PUBLIC PRIVATE ${STB_INCLUDE_DIRS})
 install_target(DenOfIzCore)

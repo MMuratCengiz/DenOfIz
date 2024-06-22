@@ -20,7 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifdef BUILD_DX12
 
 #include <DenOfIzCore/Common_Windows.h>
-#include <DenOfIzCore/Logger.h>
 #include <DenOfIzGraphics/Backends/Interface/CommonData.h>
 #include <directx/d3d12.h>
 #include <directx/d3dx12.h>
@@ -31,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <wrl/event.h>
 #include <wil/com.h>
 #include <wil/result.h>
+#include <array>
 #include "DX12DescriptorHeap.h"
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 
@@ -39,7 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //#include "D3D12MemAlloc.h"
 // --
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 #include <dxgidebug.h>
 #endif
 
@@ -49,8 +49,12 @@ using namespace Microsoft::WRL;
 
 namespace DenOfIz
 {
+    struct DX12Capabilities
+    {
+        bool EnhancedBarriers = false;
+    };
 
-    struct DX12Context : boost::noncopyable
+    struct DX12Context : private NonCopyable
     {
         static const int BackBufferCount = 3;
         bool IsDeviceLost = false;
@@ -74,6 +78,7 @@ namespace DenOfIz
 
         GraphicsWindowHandle *Window;
         PhysicalDeviceInfo SelectedDeviceInfo;
+        DX12Capabilities DX12Capabilities;
     };
 
 } // namespace DenOfIz

@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    struct ImageBarrierInfo
+    struct TextureBarrierInfo
     {
         ITextureResource *Resource;
         ResourceState OldState{};
@@ -57,18 +57,18 @@ namespace DenOfIz
     class PipelineBarrier
     {
     private:
-        std::vector<ImageBarrierInfo> m_imageBarriers;
+        std::vector<TextureBarrierInfo> m_textureBarriers;
         std::vector<BufferBarrierInfo> m_bufferBarriers;
         std::vector<MemoryBarrierInfo> m_memoryBarriers;
 
     public:
-        inline void ImageBarrier(ImageBarrierInfo barrier) { m_imageBarriers.push_back(barrier); }
+        inline void TextureBarrier(TextureBarrierInfo barrier) { m_textureBarriers.push_back(barrier); }
 
         inline void BufferBarrier(BufferBarrierInfo barrier) { m_bufferBarriers.push_back(barrier); }
 
         inline void MemoryBarrier(MemoryBarrierInfo barrier) { m_memoryBarriers.push_back(barrier); }
 
-        inline const std::vector<ImageBarrierInfo> &GetImageBarriers() const { return m_imageBarriers; }
+        inline const std::vector<TextureBarrierInfo> &GetTextureBarriers() const { return m_textureBarriers; }
 
         inline const std::vector<BufferBarrierInfo> &GetBufferBarriers() const { return m_bufferBarriers; }
 
@@ -77,22 +77,22 @@ namespace DenOfIz
         static PipelineBarrier UndefinedToRenderTarget(ITextureResource *resource)
         {
             PipelineBarrier barrier;
-            ImageBarrierInfo imageBarrier{};
-            imageBarrier.OldState.Undefined = 1;
-            imageBarrier.NewState.RenderTarget = 1;
-            imageBarrier.Resource = resource;
-            barrier.ImageBarrier(imageBarrier);
+            TextureBarrierInfo textureBarrier{};
+            textureBarrier.OldState.Undefined = 1;
+            textureBarrier.NewState.RenderTarget = 1;
+            textureBarrier.Resource = resource;
+            barrier.TextureBarrier(textureBarrier);
             return barrier;
         }
 
         static PipelineBarrier RenderTargetToPresent(ITextureResource *resource)
         {
             PipelineBarrier barrier;
-            ImageBarrierInfo imageBarrier{};
-            imageBarrier.OldState.RenderTarget = 1;
-            imageBarrier.NewState.Present = 1;
-            imageBarrier.Resource = resource;
-            barrier.ImageBarrier(imageBarrier);
+            TextureBarrierInfo textureBarrier{};
+            textureBarrier.OldState.RenderTarget = 1;
+            textureBarrier.NewState.Present = 1;
+            textureBarrier.Resource = resource;
+            barrier.TextureBarrier(textureBarrier);
             return barrier;
         }
     };

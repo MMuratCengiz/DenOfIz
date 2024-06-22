@@ -188,11 +188,11 @@ void VulkanCommandList::BindIndexBuffer(IBufferResource *buffer, const IndexType
 
 void VulkanCommandList::BindViewport(float offsetX, float offsetY, float width, float height)
 {
-    RETURN_IF(width == 0 || height == 0);
+    DZ_RETURN_IF(width == 0 || height == 0);
     m_viewport.x = offsetX;
     m_viewport.y = offsetY;
     m_viewport.width = width;
-    m_viewport.height = static_cast<float>(height);
+    m_viewport.height = 1.0f * static_cast<float>(height);
     m_viewport.minDepth = 0.0f;
     m_viewport.maxDepth = 1.0f;
 
@@ -208,7 +208,7 @@ void VulkanCommandList::BindScissorRect(float offsetX, float offsetY, float widt
 
 void VulkanCommandList::BindDescriptorTable(IDescriptorTable *table)
 {
-    ASSERTM(m_boundPipeline != VK_NULL_HANDLE, "Pipeline must be bound before binding descriptor table.");
+    DZ_ASSERTM(m_boundPipeline != VK_NULL_HANDLE, "Pipeline must be bound before binding descriptor table.");
 
     VulkanDescriptorTable *vkTable = dynamic_cast<VulkanDescriptorTable *>(table);
 
@@ -242,14 +242,14 @@ void VulkanCommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint3
 
 void VulkanCommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-    ASSERTM(m_createInfo.QueueType == QueueType::Compute, "Dispatch can only be called on compute queues.");
+    DZ_ASSERTM(m_createInfo.QueueType == QueueType::Compute, "Dispatch can only be called on compute queues.");
 }
 
 void VulkanCommandList::TransitionImageLayout(ITextureResource *image, ImageLayout oldLayout, ImageLayout newLayout) {}
 
 void VulkanCommandList::Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks)
 {
-    ASSERTM(m_createInfo.QueueType == QueueType::Graphics || m_createInfo.QueueType == QueueType::Presentation, "Present can only be called on presentation queues.");
+    DZ_ASSERTM(m_createInfo.QueueType == QueueType::Graphics || m_createInfo.QueueType == QueueType::Presentation, "Present can only be called on presentation queues.");
 
     vk::PresentInfoKHR presentInfo{};
 

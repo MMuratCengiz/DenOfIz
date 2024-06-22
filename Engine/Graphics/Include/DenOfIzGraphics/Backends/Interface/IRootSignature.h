@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzCore/Common.h>
-#include <boost/optional.hpp>
 #include "IResource.h"
 #include "IShader.h"
 
@@ -111,24 +110,14 @@ namespace DenOfIz
         inline uint32_t GetResourceCount() const { return m_resourceCount; }
         inline uint32_t GetResourceCount(uint32_t registerSpace) const { return m_resourceCountPerSet[ static_cast<uint32_t>(registerSpace) ]; }
 
-        inline boost::optional<ResourceBinding> GetResourceBinding(std::string name) const
+        inline ResourceBinding GetResourceBinding(std::string name) const
         {
-            if ( m_resourceBindingMap.find(name) == m_resourceBindingMap.end() )
-            {
-                return boost::none;
-            }
-
-            return boost::make_optional(m_resourceBindingMap.at(name));
+            return m_resourceBindingMap.at(name);
         }
 
-        inline boost::optional<RootConstantBinding> GetRootConstantBinding(std::string name)
+        inline RootConstantBinding GetRootConstantBinding(std::string name)
         {
-            if ( m_rootConstantMap.find(name) == m_rootConstantMap.end() )
-            {
-                return boost::none;
-            }
-
-            return boost::make_optional(m_rootConstantMap.at(name));
+            return m_rootConstantMap.at(name);
         }
 
     protected:
@@ -138,7 +127,8 @@ namespace DenOfIz
         virtual void CreateInternal() = 0;
 
     private:
-        inline void ValidateNotCreated() { ASSERTM(!m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior."); }
+        inline void ValidateNotCreated() {
+            DZ_ASSERTM(!m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior."); }
     };
 
 } // namespace DenOfIz

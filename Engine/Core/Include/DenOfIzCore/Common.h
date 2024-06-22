@@ -18,22 +18,29 @@
 
 #include "Common_Windows.h"
 #include "Common_Apple.h"
-#include <cstdlib>
-
 #include <string>
 #include <iostream>
-#include <sstream>
 #include <functional>
 #include <memory>
 #include <cstring>
 #include <cassert>
-#include "Time.h"
+#include <glog/logging.h>
 
-#include <stb_image.h>
+#define DZ_RETURN_IF(condition) if (condition) return
+#define DZ_ASSERTM(exp, msg) assert(((void)msg, exp))
+#define DZ_NOT_NULL(exp) DZ_ASSERTM(exp != nullptr, #exp " is null")
 
-#define RETURN_IF(condition) if (condition) return
+namespace DenOfIz
+{
+    class NonCopyable
+    {
+        NonCopyable(NonCopyable const &) = delete;
+        NonCopyable(NonCopyable &&) = delete;
+        NonCopyable &operator=(NonCopyable const &) = delete;
+        NonCopyable &operator=(NonCopyable &&) = delete;
+    protected:
+        NonCopyable() = default;
+        ~NonCopyable() = default;
+    };
+}
 
-#define ASSERTM(exp, msg) assert(((void)msg, exp))
-#define NOT_NULL(exp) ASSERTM(exp != nullptr, #exp " is null")
-
-#include <boost/noncopyable.hpp>

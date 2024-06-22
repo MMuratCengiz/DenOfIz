@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#include <DenOfIzCore/Time.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <DenOfIzGraphics/Backends/GraphicsAPI.h>
 #include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
@@ -31,8 +32,14 @@ namespace DenOfIz
         std::unique_ptr<ILogicalDevice> m_logicalDevice;
         GraphicsWindowHandle *m_window;
 
-        std::vector<float> m_triangle{ 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,  0.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
-                                       0.0f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 1.0f, 1.0f, 0.0f,  0.0f, 1.0f, 1.0f };
+        // clang-format off
+        std::vector<float> m_triangle
+        {
+             1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+             0.0f,  1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f
+        };
+        // clang-format on
 
         ShaderProgram m_program;
         std::unique_ptr<IPipeline> m_pipeline;

@@ -24,14 +24,14 @@ using namespace DenOfIz;
 
 DX12BufferResource::DX12BufferResource(DX12Context *context, const BufferCreateInfo &createInfo) : m_context(context), m_createInfo(createInfo)
 {
-    m_stride = DX12EnumConverter::GetImageFormatSize(m_createInfo.Format);
+    m_stride = GetImageFormatSize(m_createInfo.Format);
 }
 
 void DX12BufferResource::Allocate(const void *data)
 {
     if ( m_createInfo.KeepMemoryMapped && allocated )
     {
-        NOT_NULL(m_mappedMemory);
+        DZ_NOT_NULL(m_mappedMemory);
         memcpy(m_mappedMemory, data, m_size);
         return;
     }
@@ -141,7 +141,7 @@ void DX12BufferResource::CreateBufferView()
         : m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ];
 
     // The views here are set explicitly in CommandList::BindVertexBuffer and CommandList::BindIndexBuffer
-    RETURN_IF(m_createInfo.Usage.VertexBuffer || m_createInfo.Usage.IndexBuffer);
+    DZ_RETURN_IF(m_createInfo.Usage.VertexBuffer || m_createInfo.Usage.IndexBuffer);
 
     if ( m_createInfo.Usage.UniformBuffer )
     {

@@ -28,26 +28,22 @@ using namespace DenOfIz;
 static VKAPI_ATTR VkBool32 VKAPI_CALL g_DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
                                                       const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData)
 {
-    Verbosity verbosity;
-
     switch ( messageSeverity )
     {
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT:
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-        verbosity = Verbosity::Debug;
+        DLOG(INFO) << "VulkanDevice" << pCallbackData->pMessage;
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-        verbosity = Verbosity::Information;
+        LOG(INFO) << "VulkanDevice" << pCallbackData->pMessage;
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-        verbosity = Verbosity::Warning;
+        LOG(WARNING) << "VulkanDevice" << pCallbackData->pMessage;
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-        verbosity = Verbosity::Critical;
+        LOG(FATAL) << "VulkanDevice" << pCallbackData->pMessage;
         break;
     }
-
-    LOG(verbosity, "VulkanDevice", pCallbackData->pMessage);
     return VK_FALSE;
 }
 
@@ -123,7 +119,7 @@ void VulkanLogicalDevice::InitSupportedLayers(std::vector<const char *> &layers)
         {
             m_supportedLayers[ prp.layerName ] = true;
             layers.emplace_back(layerPair->first.c_str());
-            LOG(Verbosity::Information, "VulkanDevice", "Enabled Layer: " + layerPair->first);
+            LOG(INFO) << "VulkanDevice" << "Enabled Layer: " + layerPair->first;
         }
     }
 }
@@ -152,7 +148,7 @@ bool VulkanLogicalDevice::InitDebugMessages(const vk::DebugUtilsMessengerCreateI
 
     if ( createDebugUtils == nullptr || createDebugUtils(instance, &createInfoCast, nullptr, &m_debugMessenger) != VK_SUCCESS )
     {
-        LOG(Verbosity::Warning, "VulkanDevice", "Failed to initialize debugger!");
+        LOG(FATAL) << "VulkanDevice" << "Failed to initialize debugger!";
         return false;
     }
 
@@ -205,7 +201,7 @@ void VulkanLogicalDevice::CreateDeviceInfo(const vk::PhysicalDevice &physicalDev
 
 void VulkanLogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
 {
-    ASSERTM(m_context->PhysicalDevice == VK_NULL_HANDLE, "A physical device is already selected for this logical device. Create a new Logical Device.");
+    DZ_ASSERTM(m_context->PhysicalDevice == VK_NULL_HANDLE, "A physical device is already selected for this logical device. Create a new Logical Device.");
     m_selectedDeviceInfo = device;
     m_context->SelectedDeviceInfo = device;
 
@@ -218,7 +214,7 @@ void VulkanLogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
         }
     }
 
-    ASSERTM(m_context->PhysicalDevice != VK_NULL_HANDLE, "Invalid DeviceID provided.");
+    DZ_ASSERTM(m_context->PhysicalDevice != VK_NULL_HANDLE, "Invalid DeviceID provided.");
 
     CreateLogicalDevice();
     InitializeVma();
@@ -334,7 +330,7 @@ void VulkanLogicalDevice::CreateSurface() const
     createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     createInfo.hwnd = m_context->Window->GetNativeHandle();
     createInfo.hinstance = GetModuleHandle(nullptr);
-    ASSERTM(vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) == VK_SUCCESS, "Failed to create surface");
+    DZ_ASSERTM(vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) == VK_SUCCESS, "Failed to create surface");
 #else
 #error "Not implemented yet"
 #endif

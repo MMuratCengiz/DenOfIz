@@ -17,7 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12SwapChain.h>
-#include "DenOfIzCore/Logger.h"
 
 using namespace DenOfIz;
 using namespace Microsoft::WRL;
@@ -34,7 +33,7 @@ void DX12SwapChain::CreateSwapChain()
     GraphicsWindowSurface surface = m_context->Window->GetSurface();
     if ( m_swapChainCreateInfo.Width != surface.Width || m_swapChainCreateInfo.Height != surface.Height )
     {
-        LOG(Verbosity::Debug, "DX12SwapChain", "Swap chain size does not match window size. This could be intentional");
+        DLOG(INFO) << "DX12SwapChain" << "Swap chain size does not match window size. This could be intentional";
     }
 
     HWND hwnd = m_context->Window->GetNativeHandle();
@@ -172,8 +171,8 @@ void DX12SwapChain::Resize(uint32_t width, uint32_t height)
 
     if ( hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET )
     {
-        LOG(Verbosity::Debug, "DX12SwapChain",
-            (boost::format("Device Lost on ResizeBuffers: Reason code 0x") % ((hr == DXGI_ERROR_DEVICE_REMOVED) ? m_context->D3DDevice->GetDeviceRemovedReason() : hr)).str());
+        DLOG(INFO) << "DX12SwapChain" <<
+            std::format("Device Lost on ResizeBuffers: Reason code 0x{}" , ((hr == DXGI_ERROR_DEVICE_REMOVED) ? m_context->D3DDevice->GetDeviceRemovedReason() : hr));
 
         m_context->IsDeviceLost = true;
         return;

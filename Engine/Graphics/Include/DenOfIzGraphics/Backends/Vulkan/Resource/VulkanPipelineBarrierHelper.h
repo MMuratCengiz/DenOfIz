@@ -32,7 +32,7 @@ namespace DenOfIz
         static void ExecutePipelineBarrier(VulkanContext *context, vk::CommandBuffer commandBuffer, const QueueType &commandQueueType, const PipelineBarrier &barrier);
 
     private:
-        static vk::ImageMemoryBarrier CreateImageBarrier(const ImageBarrierInfo &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags);
+        static vk::ImageMemoryBarrier CreateImageBarrier(const TextureBarrierInfo &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags);
         static vk::BufferMemoryBarrier CreateBufferBarrier(const BufferBarrierInfo &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags);
         static vk::AccessFlags GetAccessFlags(ResourceState state);
         static vk::ImageLayout GetImageLayout(ResourceState state);

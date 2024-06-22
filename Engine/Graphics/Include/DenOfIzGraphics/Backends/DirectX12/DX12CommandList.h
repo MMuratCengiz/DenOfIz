@@ -39,7 +39,7 @@ namespace DenOfIz
         DX12Context *m_context;
 
         wil::com_ptr<ID3D12CommandAllocator> m_commandAllocator;
-        wil::com_ptr<ID3D12GraphicsCommandList> m_commandList;
+        wil::com_ptr<ID3D12GraphicsCommandList7> m_commandList;
         wil::com_ptr<ID3D12DebugCommandList> m_debugCommandList;
         ID3D12RootSignature *m_currentRootSignature = nullptr;
 
@@ -73,6 +73,8 @@ namespace DenOfIz
         void TransitionImageLayout(ITextureResource *image, ImageLayout oldLayout, ImageLayout newLayout) override;
 
     private:
+        void CompatibilityPipelineBarrier(const PipelineBarrier &barrier);
+        void EnhancedPipelineBarrier(const PipelineBarrier &barrier);
         void SetRootSignature(ID3D12RootSignature *rootSignature);
     };
 

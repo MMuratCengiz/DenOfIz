@@ -1,6 +1,14 @@
+### To include the engine in your project, you need to add the following lines to your `CMakeLists.txt`:
+
+```cmake
+add_subdirectory(Engine)
+target_link_libraries(YourProjectName Engine)
+```
+
+Some packages are required to build the engine. This is following vcpkg.json:
+
+```json
 {
-  "name": "den-of-iz",
-  "version": "0.0.1",
   "dependencies": [
     "wil",
     "glog",
@@ -22,3 +30,8 @@
     { "name": "directx-headers", "platform": "windows" }
   ]
 }
+```
+
+In the future this will probably be bundled into the Engine project.
+
+For windows you need to setup the DirectX Agility SDK.

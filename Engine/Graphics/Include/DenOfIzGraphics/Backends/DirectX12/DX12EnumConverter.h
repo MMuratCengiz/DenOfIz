@@ -85,7 +85,7 @@ namespace DenOfIz
             case ResourceBindingType::StorageDynamic:
                 return D3D12_ROOT_PARAMETER_TYPE_CBV;
             default:
-                ASSERTM(false, "Sampler binding type is not a supported root constant");
+                DZ_ASSERTM(false, "Sampler binding type is not a supported root constant");
                 break;
             }
 
@@ -452,10 +452,6 @@ namespace DenOfIz
             {
                 result |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
             }
-            if ( state.PixelShaderResource )
-            {
-                result |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-            }
             if ( state.AccelerationStructureRead || state.AccelerationStructureWrite )
             {
                 result |= D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
@@ -463,85 +459,131 @@ namespace DenOfIz
             return result;
         }
 
-        static uint32_t GetImageFormatSize(const ImageFormat &format)
+        static D3D12_BARRIER_LAYOUT ConvertResourceStateToBarrierLayout(const ResourceState &state, const QueueType &queueType)
         {
-            switch ( format )
+            auto queueSpecificResult = [ = ](D3D12_BARRIER_LAYOUT direct, D3D12_BARRIER_LAYOUT compute, D3D12_BARRIER_LAYOUT other)
             {
-            case ImageFormat::R32G32B32A32Float:
-            case ImageFormat::R32G32B32A32Uint:
-            case ImageFormat::R32G32B32A32Sint:
-                return 16;
-            case ImageFormat::R32G32B32Float:
-            case ImageFormat::R32G32B32Uint:
-            case ImageFormat::R32G32B32Sint:
-                return 12;
-            case ImageFormat::R16G16B16A16Float:
-            case ImageFormat::R16G16B16A16Unorm:
-            case ImageFormat::R16G16B16A16Uint:
-            case ImageFormat::R16G16B16A16Snorm:
-            case ImageFormat::R16G16B16A16Sint:
-            case ImageFormat::R32G32Float:
-            case ImageFormat::R32G32Uint:
-            case ImageFormat::R32G32Sint:
-                return 8;
-            case ImageFormat::R10G10B10A2Unorm:
-            case ImageFormat::R10G10B10A2Uint:
-            case ImageFormat::R8G8B8A8Unorm:
-            case ImageFormat::R8G8B8A8UnormSrgb:
-            case ImageFormat::R8G8B8A8Uint:
-            case ImageFormat::R8G8B8A8Snorm:
-            case ImageFormat::R8G8B8A8Sint:
-            case ImageFormat::R16G16Float:
-            case ImageFormat::R16G16Unorm:
-            case ImageFormat::R16G16Uint:
-            case ImageFormat::R16G16Snorm:
-            case ImageFormat::R16G16Sint:
-            case ImageFormat::D32Float:
-            case ImageFormat::R32Float:
-            case ImageFormat::R32Uint:
-            case ImageFormat::R32Sint:
-            case ImageFormat::D24UnormS8Uint:
-                return 4;
-            case ImageFormat::R8G8Unorm:
-            case ImageFormat::R8G8Uint:
-            case ImageFormat::R8G8Snorm:
-            case ImageFormat::R8G8Sint:
-            case ImageFormat::R16Float:
-            case ImageFormat::D16Unorm:
-            case ImageFormat::R16Unorm:
-            case ImageFormat::R16Uint:
-                return 2;
-            case ImageFormat::R16Snorm:
-            case ImageFormat::R16Sint:
-            case ImageFormat::R8Unorm:
-            case ImageFormat::R8Uint:
-            case ImageFormat::R8Snorm:
-            case ImageFormat::R8Sint:
-                return 1;
-            // Recheck what the below are and what the expected sizes are.
-            case ImageFormat::BC1Unorm:
-            case ImageFormat::BC1UnormSrgb:
-            case ImageFormat::BC2Unorm:
-            case ImageFormat::BC2UnormSrgb:
-            case ImageFormat::BC3Unorm:
-            case ImageFormat::BC3UnormSrgb:
-            case ImageFormat::BC4Unorm:
-            case ImageFormat::BC4Snorm:
-            case ImageFormat::BC5Unorm:
-            case ImageFormat::BC5Snorm:
-                return 1;
-            case ImageFormat::B8G8R8A8Unorm:
-                return 4;
-            case ImageFormat::BC6HUfloat16:
-            case ImageFormat::BC6HSfloat16:
-                return 2;
-            case ImageFormat::BC7Unorm:
-                return 1;
-            case ImageFormat::BC7UnormSrgb:
-                return 1;
-            default:
-                return 0;
+                switch ( queueType )
+                {
+                case QueueType::Graphics:
+                case QueueType::Presentation:
+                    return direct;
+                case QueueType::Compute:
+                    return compute;
+                default:
+                    return other;
+                }
+            };
+
+            if ( state.Common || state.Present )
+            {
+                return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMMON);
             }
+            if ( state.GenericRead )
+            {
+                return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_GENERIC_READ, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_GENERIC_READ, D3D12_BARRIER_LAYOUT_GENERIC_READ);
+            }
+            if ( state.CopySource )
+            {
+                return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_SOURCE, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COPY_SOURCE, D3D12_BARRIER_LAYOUT_COPY_SOURCE);
+            }
+            if ( state.CopyDst )
+            {
+                return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_DEST, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COPY_DEST, D3D12_BARRIER_LAYOUT_COPY_DEST);
+            }
+            if ( state.UnorderedAccess )
+            {
+                return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_UNORDERED_ACCESS, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_UNORDERED_ACCESS,
+                                           D3D12_BARRIER_LAYOUT_UNORDERED_ACCESS);
+            }
+            if ( state.ShaderResource )
+            {
+                return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_SHADER_RESOURCE,
+                                           D3D12_BARRIER_LAYOUT_SHADER_RESOURCE);
+            }
+
+            if ( state.RenderTarget )
+            {
+                return D3D12_BARRIER_LAYOUT_RENDER_TARGET;
+            }
+            if ( state.DepthRead )
+            {
+                return D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ;
+            }
+            if ( state.DepthWrite )
+            {
+                return D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE;
+            }
+
+            return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMMON);
+        }
+
+        static D3D12_BARRIER_ACCESS ConvertResourceStateToBarrierAccess(const ResourceState &state)
+        {
+            D3D12_BARRIER_ACCESS result = D3D12_BARRIER_ACCESS_COMMON;
+            if ( state.GenericRead )
+            {
+                return result;
+            }
+            if ( state.Common || state.Present )
+            {
+                return D3D12_BARRIER_ACCESS_COMMON;
+            }
+
+            if ( state.VertexAndConstantBuffer )
+            {
+                result |= D3D12_BARRIER_ACCESS_VERTEX_BUFFER | D3D12_BARRIER_ACCESS_CONSTANT_BUFFER;
+            }
+            if ( state.IndexBuffer )
+            {
+                result |= D3D12_BARRIER_ACCESS_INDEX_BUFFER;
+            }
+            if ( state.RenderTarget )
+            {
+                result |= D3D12_BARRIER_ACCESS_RENDER_TARGET;
+            }
+            if ( state.UnorderedAccess )
+            {
+                result |= D3D12_BARRIER_ACCESS_UNORDERED_ACCESS;
+            }
+            if ( state.DepthWrite )
+            {
+                result |= D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE;
+            }
+            else if ( state.DepthRead )
+            {
+                result |= D3D12_BARRIER_ACCESS_DEPTH_STENCIL_READ;
+            }
+
+            if ( state.StreamOut )
+            {
+                result |= D3D12_BARRIER_ACCESS_STREAM_OUTPUT;
+            }
+            if ( state.IndirectArgument )
+            {
+                result |= D3D12_BARRIER_ACCESS_INDIRECT_ARGUMENT;
+            }
+            if ( state.CopyDst )
+            {
+                result |= D3D12_BARRIER_ACCESS_COPY_DEST;
+            }
+            if ( state.CopySource )
+            {
+                result |= D3D12_BARRIER_ACCESS_COPY_SOURCE;
+            }
+            if ( state.ShaderResource )
+            {
+                result |= D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
+            }
+            if ( state.AccelerationStructureRead )
+            {
+                result |= D3D12_BARRIER_ACCESS_RAYTRACING_ACCELERATION_STRUCTURE_READ;
+            }
+            if ( state.AccelerationStructureWrite )
+            {
+                result |= D3D12_BARRIER_ACCESS_RAYTRACING_ACCELERATION_STRUCTURE_WRITE;
+            }
+            return result;
         }
     };
 

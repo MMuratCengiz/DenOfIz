@@ -23,21 +23,21 @@ using namespace DenOfIz;
 DX12DescriptorTable::DX12DescriptorTable(DX12Context *context, DescriptorTableCreateInfo createInfo)
 {
     DX12RootSignature *rootSignature = static_cast<DX12RootSignature *>(createInfo.RootSignature);
-    NOT_NULL(rootSignature);
+    DZ_NOT_NULL(rootSignature);
 
     m_rootSignature = rootSignature->GetRootSignature();
 }
 
 void DX12DescriptorTable::BindImage(ITextureResource *resource)
 {
-    NOT_NULL(resource);
+    DZ_NOT_NULL(resource);
 
     DX12ImageResource *dx12Resource = static_cast<DX12ImageResource *>(resource);
 }
 
 void DX12DescriptorTable::BindBuffer(IBufferResource *resource)
 {
-    NOT_NULL(resource);
+    DZ_NOT_NULL(resource);
 
     DX12BufferResource *dx12Resource = static_cast<DX12BufferResource *>(resource);
     m_resources.push_back(dx12Resource->GetResource());

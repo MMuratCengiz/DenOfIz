@@ -49,7 +49,7 @@ namespace DenOfIz
                 return nullptr;
             }
 #endif
-            ASSERTM(logicalDevice != nullptr, "No supported API found for this system.");
+            DZ_ASSERTM(logicalDevice != nullptr, "No supported API found for this system.");
             logicalDevice->CreateDevice(window);
             return logicalDevice;
         }

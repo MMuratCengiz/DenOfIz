@@ -17,7 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#include "DenOfIzCore/Logger.h"
+
+#include <DenOfIzCore/Engine.h>
 
 #define WINDOW_MANAGER_SDL
 
@@ -75,7 +76,7 @@ namespace DenOfIz
 
             if ( m_windowHandle == nullptr )
             {
-                LOG(Verbosity::Critical, "WindowHandle", "Failed to get window handle");
+                LOG(FATAL) << "WindowHandle" << "Failed to get window handle";
             }
         }
 #else
