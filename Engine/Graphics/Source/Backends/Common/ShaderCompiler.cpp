@@ -15,21 +15,21 @@ namespace DenOfIz
         HRESULT result = DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&m_dxcLibrary));
         if ( FAILED(result) )
         {
-            LOG(FATAL) << "Graphics" << "Failed to initialize DXC Library";
+            LOG(FATAL) << "Failed to initialize DXC Library";
             return false;
         }
 
         result = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&m_dxcCompiler));
         if ( FAILED(result) )
         {
-            LOG(FATAL) << "Graphics" << "Failed to initialize DXC Compiler";
+            LOG(FATAL) << "Failed to initialize DXC Compiler";
             return false;
         }
 
         result = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&m_dxcUtils));
         if ( FAILED(result) )
         {
-            LOG(FATAL) << "Graphics" << "Failed to initialize DXC Utils";
+            LOG(FATAL) << "Failed to initialize DXC Utils";
             return false;
         }
 
@@ -191,16 +191,16 @@ namespace DenOfIz
         std::vector<uint32_t> spirv;
         if ( !shader.parse(&resources, 100, false, messages) )
         {
-            LOG(WARNING) << "Graphics", std::string(shader.getInfoLog());
-            LOG(FATAL) << "Graphics", std::string(shader.getInfoDebugLog());
+            LOG(WARNING) << std::string(shader.getInfoLog());
+            LOG(FATAL) << std::string(shader.getInfoDebugLog());
             return spirv;
         }
 
         program.addShader(&shader);
         if ( !program.link(messages) )
         {
-            LOG(WARNING) << "Graphics" << std::string(shader.getInfoLog());
-            LOG(WARNING) << "Graphics" << std::string(shader.getInfoDebugLog());
+            LOG(WARNING) << std::string(shader.getInfoLog());
+            LOG(WARNING) << std::string(shader.getInfoDebugLog());
             return spirv;
         }
 

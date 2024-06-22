@@ -59,7 +59,7 @@ void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
         }
         else
         {
-            LOG(WARNING) << "DX12Device" << "WARNING: Direct3D Debug Device is not available";
+            LOG(WARNING) << "Direct3D Debug Device is not available";
         }
 
         wil::com_ptr<IDXGIInfoQueue> dxgiInfoQueue;
@@ -128,7 +128,7 @@ void DX12LogicalDevice::CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDeviceI
     if ( FAILED(hr) || !allowTearing )
     {
         deviceInfo.Capabilities.Tearing = false;
-        LOG(WARNING) << "DX12Device" << "WARNING: Variable refresh rate displays not supported";
+        LOG(WARNING) << "WARNING: Variable refresh rate displays not supported";
     }
     else
     {
@@ -138,6 +138,7 @@ void DX12LogicalDevice::CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDeviceI
 
 void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
 {
+    LOG(INFO) << "Loading physical device: " << device.Name;
     m_selectedDeviceInfo = device;
     m_context->SelectedDeviceInfo = m_selectedDeviceInfo;
 
@@ -165,14 +166,14 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 opts = {};
     if ( FAILED(m_context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &opts, sizeof(opts))) || opts.RaytracingTier == D3D12_RAYTRACING_TIER_NOT_SUPPORTED )
     {
-        LOG(WARNING) << "DX12Device" << "WARNING: DirectX Raytracing support not found.";
+        LOG(WARNING) << "WARNING: DirectX Raytracing support not found.";
     }
 
     // Confirm the device supports Shader Model 6.3 or better.
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_SHADER_MODEL_6_3 };
     if ( FAILED(m_context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel))) || shaderModel.HighestShaderModel < D3D_SHADER_MODEL_6_3 )
     {
-        LOG(FATAL) << "DX12Device" << "ERROR: Requires Shader Model 6.3 or better support.";
+        LOG(FATAL) << "ERROR: Requires Shader Model 6.3 or better support.";
         throw std::exception("Requires Shader Model 6.3 or better support");
     }
 
@@ -180,8 +181,9 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
     HRESULT hr = m_context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12));
     if ( SUCCEEDED(hr) )
     {
-        LOG(INFO) << "DX12Device" << "Enhanced DX12 barriers are supported.";
         m_context->DX12Capabilities.EnhancedBarriers = options12.EnhancedBarriersSupported;
+        LOG_IF(INFO, options12.EnhancedBarriersSupported) << "DX12Device" << "Enhanced DX12 barriers are supported.";
+        LOG_IF(INFO, !options12.EnhancedBarriersSupported) << "DX12Device" << "Enhanced DX12 barriers are not supported.";
     }
 
 #ifndef NDEBUG
@@ -211,14 +213,14 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
                 {
                 case D3D12_MESSAGE_SEVERITY_ERROR:
                 case D3D12_MESSAGE_SEVERITY_CORRUPTION:
-                    LOG(FATAL) << "DX12Device" << description;
+                    LOG(FATAL) << description;
                     break;
                 case D3D12_MESSAGE_SEVERITY_WARNING:
-                    LOG(WARNING) << "DX12Device" << description;
+                    LOG(WARNING) << description;
                     break;
                 case D3D12_MESSAGE_SEVERITY_INFO:
                 case D3D12_MESSAGE_SEVERITY_MESSAGE:
-                    LOG(INFO) << "DX12Device" << description;
+                    LOG(INFO) << description;
                     break;
                 };
             },

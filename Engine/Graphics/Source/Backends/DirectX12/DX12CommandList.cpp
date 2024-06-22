@@ -308,7 +308,7 @@ void DX12CommandList::SetRootSignature(ID3D12RootSignature *rootSignature)
 
     if ( m_currentRootSignature != nullptr && rootSignature != m_currentRootSignature )
     {
-        LOG(WARNING) << "DX12CommandList" << "Root signature is set to a different value, it is not expected to overwrite this value.";
+        LOG(WARNING) << "Root signature is set to a different value, it is not expected to overwrite this value.";
     }
     m_currentRootSignature = rootSignature;
     if ( m_createInfo.QueueType == QueueType::Graphics )

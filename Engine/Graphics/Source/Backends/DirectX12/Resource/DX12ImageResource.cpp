@@ -31,7 +31,7 @@ void DX12ImageResource::Allocate(const void *data)
 {
     if ( isExternalResource )
     {
-        LOG(WARNING) << "DX12ImageResource" << "Allocating an externally managed resource(i.e. a swapchain render target).";
+        LOG(WARNING) << "Allocating an externally managed resource(i.e. a swapchain render target).";
         return;
     }
 

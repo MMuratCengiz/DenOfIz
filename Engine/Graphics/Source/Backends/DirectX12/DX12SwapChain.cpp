@@ -33,7 +33,7 @@ void DX12SwapChain::CreateSwapChain()
     GraphicsWindowSurface surface = m_context->Window->GetSurface();
     if ( m_swapChainCreateInfo.Width != surface.Width || m_swapChainCreateInfo.Height != surface.Height )
     {
-        DLOG(INFO) << "DX12SwapChain" << "Swap chain size does not match window size. This could be intentional";
+        DLOG(INFO) << "Swap chain size does not match window size. This could be intentional";
     }
 
     HWND hwnd = m_context->Window->GetNativeHandle();
@@ -171,7 +171,7 @@ void DX12SwapChain::Resize(uint32_t width, uint32_t height)
 
     if ( hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET )
     {
-        DLOG(INFO) << "DX12SwapChain" <<
+        DLOG(INFO) <<
             std::format("Device Lost on ResizeBuffers: Reason code 0x{}" , ((hr == DXGI_ERROR_DEVICE_REMOVED) ? m_context->D3DDevice->GetDeviceRemovedReason() : hr));
 
         m_context->IsDeviceLost = true;
@@ -197,10 +197,4 @@ ImageFormat DX12SwapChain::GetPreferredFormat() { return ImageFormat::R8Unorm; }
 
 DX12SwapChain::~DX12SwapChain()
 {
-    //    for ( uint32_t i = 0; i < m_context->BackBufferCount; i++ )
-    //    {
-    //        m_renderTargets[ i ].reset();
-    //    }
-    //    DX_SAFE_RELEASE(m_depthStencil);
-    //    DX_SAFE_RELEASE(m_swapChain);
 }

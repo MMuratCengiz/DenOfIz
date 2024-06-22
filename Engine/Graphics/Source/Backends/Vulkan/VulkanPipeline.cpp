@@ -337,7 +337,7 @@ vk::WriteDescriptorSet VulkanPipeline::GetWriteDescriptorSet(const std::string &
 {
     if ( !m_descriptorSets.contains(name) )
     {
-        LOG(FATAL) << "VulkanPipeline" << "Invalid descriptor set, about to crash!";
+        LOG(FATAL) << "Invalid descriptor set, about to crash!";
     }
 
     return m_descriptorSets[ name ];

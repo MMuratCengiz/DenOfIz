@@ -32,16 +32,16 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL g_DebugCallback(VkDebugUtilsMessageSeverit
     {
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT:
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-        DLOG(INFO) << "VulkanDevice" << pCallbackData->pMessage;
+        DLOG(INFO) << pCallbackData->pMessage;
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-        LOG(INFO) << "VulkanDevice" << pCallbackData->pMessage;
+        LOG(INFO) << pCallbackData->pMessage;
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-        LOG(WARNING) << "VulkanDevice" << pCallbackData->pMessage;
+        LOG(WARNING) << pCallbackData->pMessage;
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-        LOG(FATAL) << "VulkanDevice" << pCallbackData->pMessage;
+        LOG(FATAL) << pCallbackData->pMessage;
         break;
     }
     return VK_FALSE;
@@ -119,7 +119,7 @@ void VulkanLogicalDevice::InitSupportedLayers(std::vector<const char *> &layers)
         {
             m_supportedLayers[ prp.layerName ] = true;
             layers.emplace_back(layerPair->first.c_str());
-            LOG(INFO) << "VulkanDevice" << "Enabled Layer: " + layerPair->first;
+            LOG(INFO) << "Enabled Layer: " + layerPair->first;
         }
     }
 }
@@ -148,7 +148,7 @@ bool VulkanLogicalDevice::InitDebugMessages(const vk::DebugUtilsMessengerCreateI
 
     if ( createDebugUtils == nullptr || createDebugUtils(instance, &createInfoCast, nullptr, &m_debugMessenger) != VK_SUCCESS )
     {
-        LOG(FATAL) << "VulkanDevice" << "Failed to initialize debugger!";
+        LOG(WARNING) << "Failed to initialize debugger!";
         return false;
     }
 

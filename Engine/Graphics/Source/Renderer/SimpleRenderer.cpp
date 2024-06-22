@@ -95,9 +95,9 @@ namespace DenOfIz
 
         m_descriptorTable = m_logicalDevice->CreateDescriptorTable(DescriptorTableCreateInfo{ .RootSignature = m_rootSignature.get() });
         m_descriptorTable->BindBuffer(m_timePassedBuffer.get());
-        m_time->ListenFps = [](const double fps) { DLOG(INFO) << "SimpleRenderer" << std::format("FPS: {}", fps); };
+        m_time->ListenFps = [](const double fps) { DLOG(INFO) << std::format("FPS: {}", fps); };
 
-        LOG(INFO) <<  "SimpleRenderer" << "Initialization Complete.";
+        LOG(INFO) << "Initialization Complete.";
     }
 
     void SimpleRenderer::Render()

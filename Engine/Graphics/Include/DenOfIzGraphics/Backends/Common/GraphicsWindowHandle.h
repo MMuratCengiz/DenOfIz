@@ -76,7 +76,7 @@ namespace DenOfIz
 
             if ( m_windowHandle == nullptr )
             {
-                LOG(FATAL) << "WindowHandle" << "Failed to get window handle";
+                LOG(FATAL) << "Failed to get window handle";
             }
         }
 #else
