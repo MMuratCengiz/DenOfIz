@@ -18,7 +18,7 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "CRT_LINKAGE_STATIC": "0",
         "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
-        "CMAKE_CXX_FLAGS": "-D_DEBUG -Od -Zi -W3 /c /EHsc -DNOMINMAX  /wd\"4267\""
+        "CMAKE_CXX_FLAGS": "-D_DEBUG -Od -Zi -W3 /c /EHsc -DNOMINMAX  /wd\"4267\" /wd\"4244\""
       }
     },
     {

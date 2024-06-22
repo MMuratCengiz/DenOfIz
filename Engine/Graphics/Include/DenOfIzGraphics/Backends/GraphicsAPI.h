@@ -33,18 +33,21 @@ namespace DenOfIz
 #ifdef BUILD_VK
             if ( IsVulkanPreferred() )
             {
+                LOG(INFO) << "Using Vulkan as the graphics API.";
                 logicalDevice = std::make_unique<VulkanLogicalDevice>();
             }
 #endif
 #ifdef BUILD_DX12
             if ( IsDX12Preferred() )
             {
+                LOG(INFO) << "Using DirectX 12 as the graphics API.";
                 logicalDevice = std::make_unique<DX12LogicalDevice>();
             }
 #endif
 #ifdef BUILD_METAL
             if ( IsMetalPreferred() )
             {
+                LOG(INFO) << "Using Metal as the graphics API.";
                 // TODO
                 return nullptr;
             }

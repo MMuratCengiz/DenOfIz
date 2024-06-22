@@ -190,9 +190,11 @@ void VulkanCommandList::BindViewport(float offsetX, float offsetY, float width, 
 {
     DZ_RETURN_IF(width == 0 || height == 0);
     m_viewport.x = offsetX;
-    m_viewport.y = offsetY;
+    // Vulkan has inverted y-axis
+    m_viewport.y = height;
+    m_viewport.height = -static_cast<float>(height);
+    // --
     m_viewport.width = width;
-    m_viewport.height = 1.0f * static_cast<float>(height);
     m_viewport.minDepth = 0.0f;
     m_viewport.maxDepth = 1.0f;
 

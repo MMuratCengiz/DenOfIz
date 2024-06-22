@@ -25,7 +25,7 @@ namespace DenOfIz
     {
         m_window = window;
         GraphicsAPI::SetAPIPreference(APIPreference{
-//            .Windows = APIPreferenceWindows::Vulkan,
+            .Windows = APIPreferenceWindows::Vulkan,
         });
 
         m_logicalDevice = GraphicsAPI::CreateLogicalDevice(m_window);
@@ -142,6 +142,7 @@ namespace DenOfIz
 
     void SimpleRenderer::Quit()
     {
+        m_logicalDevice->WaitIdle();
         m_commandListRing.reset();
         m_swapChain.reset();
         m_rootSignature.reset();

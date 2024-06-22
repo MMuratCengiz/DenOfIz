@@ -27,23 +27,6 @@ DX12LogicalDevice::DX12LogicalDevice() { m_context = std::make_unique<DX12Contex
 DX12LogicalDevice::~DX12LogicalDevice()
 {
     WaitIdle();
-    //    m_context = nullptr;
-    //    m_context.reset();
-    //    for ( int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; i++ )
-    //    {
-    //        m_context->CpuDescriptorHeaps[ i ].reset();
-    //    }
-    //    m_context->ShaderVisibleCbvSrvUavDescriptorHeap.reset();
-    //    m_context->ShaderVisibleSamplerDescriptorHeap.reset();
-    //    m_context->CopyCommandListAllocator.reset();
-    //    m_context->CopyCommandList.reset();
-    //    m_context->DX12MemoryAllocator.reset();
-    //    m_context->CopyCommandQueue.reset();
-    //    m_context->ComputeCommandQueue.reset();
-    //    m_context->GraphicsCommandQueue.reset();
-    //    m_context->D3DDevice.reset();
-    //    m_context->DXGIFactory.reset();
-    //    m_context->Adapter.reset();
 }
 
 void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
@@ -106,39 +89,48 @@ void DX12LogicalDevice::CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDeviceI
     std::wstring adapterName(adapterDesc.Description);
     deviceInfo.Name = std::string(adapterName.begin(), adapterName.end());
 
+    DXGI_ADAPTER_DESC1 desc;
+    THROW_IF_FAILED(adapter.GetDesc1(&desc));
+    deviceInfo.Properties.IsDedicated = !(desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE);
+    deviceInfo.Properties.MemoryAvailableInMb = desc.DedicatedVideoMemory / (1024 * 1024);
+
+    wil::com_ptr<ID3D12Device> device;
+    THROW_IF_FAILED(D3D12CreateDevice(&adapter, m_minFeatureLevel, IID_PPV_ARGS(device.put())));
+
     // Todo actually read these from somewhere:
     deviceInfo.Capabilities.DedicatedTransferQueue = true;
     deviceInfo.Capabilities.ComputeShaders = true;
 
-    DXGI_ADAPTER_DESC1 desc;
-    THROW_IF_FAILED(adapter.GetDesc1(&desc));
-
-    deviceInfo.Properties.IsDedicated = !(desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE);
-
-    wil::com_ptr<ID3D12Device> device;
-    THROW_IF_FAILED(D3D12CreateDevice(&adapter, m_minFeatureLevel, IID_PPV_ARGS(device.put())));
-    D3D12_FEATURE_DATA_D3D12_OPTIONS5 opts = {};
-    if ( SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &opts, sizeof(opts))) )
+    D3D12_FEATURE_DATA_D3D12_OPTIONS5 opts5 = {};
+    if ( SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &opts5, sizeof(opts5))) )
     {
-        deviceInfo.Capabilities.RayTracing = opts.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
+        deviceInfo.Capabilities.RayTracing = opts5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
     }
 
     BOOL allowTearing = false;
-    HRESULT hr = m_context->DXGIFactory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
-    if ( FAILED(hr) || !allowTearing )
+    m_context->DXGIFactory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
+    deviceInfo.Capabilities.Tearing = allowTearing;
+
+    D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {};
+    HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12));
+    if ( SUCCEEDED(hr) )
     {
-        deviceInfo.Capabilities.Tearing = false;
-        LOG(WARNING) << "WARNING: Variable refresh rate displays not supported";
-    }
-    else
-    {
-        deviceInfo.Capabilities.Tearing = true;
+        m_context->DX12Capabilities.EnhancedBarriers = options12.EnhancedBarriersSupported;
     }
 }
 
 void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
 {
     LOG(INFO) << "Loading physical device: " << device.Name;
+    LOG(INFO) << "Device Capabilities:";
+    LOG(INFO) << "Dedicated GPU " << (device.Properties.IsDedicated ? "Yes" : "No");
+    LOG(INFO) << "Available Memory " << device.Properties.MemoryAvailableInMb << "MB";
+    LOG(INFO) << "Dedicated Transfer Queue: " << (device.Capabilities.DedicatedTransferQueue ? "Yes" : "No");
+    LOG(INFO) << "Compute Shaders: " << (device.Capabilities.ComputeShaders ? "Yes" : "No");
+    LOG(INFO) << "Ray Tracing: " << (device.Capabilities.RayTracing ? "Yes" : "No");
+    LOG(INFO) << "Tearing: " << (device.Capabilities.Tearing ? "Yes" : "No");
+    LOG(INFO) << "DX12 Enhanced Barriers: " << (m_context->DX12Capabilities.EnhancedBarriers ? "Yes" : "No");
+
     m_selectedDeviceInfo = device;
     m_context->SelectedDeviceInfo = m_selectedDeviceInfo;
 
@@ -162,28 +154,12 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
     THROW_IF_FAILED(dxDevice->QueryInterface(IID_PPV_ARGS(m_context->D3DDevice.put())));
     dxDevice->Release();
 
-    // Confirm the device supports DXR.
-    D3D12_FEATURE_DATA_D3D12_OPTIONS5 opts = {};
-    if ( FAILED(m_context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &opts, sizeof(opts))) || opts.RaytracingTier == D3D12_RAYTRACING_TIER_NOT_SUPPORTED )
-    {
-        LOG(WARNING) << "WARNING: DirectX Raytracing support not found.";
-    }
-
     // Confirm the device supports Shader Model 6.3 or better.
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_SHADER_MODEL_6_3 };
     if ( FAILED(m_context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel))) || shaderModel.HighestShaderModel < D3D_SHADER_MODEL_6_3 )
     {
         LOG(FATAL) << "ERROR: Requires Shader Model 6.3 or better support.";
         throw std::exception("Requires Shader Model 6.3 or better support");
-    }
-
-    D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {};
-    HRESULT hr = m_context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12));
-    if ( SUCCEEDED(hr) )
-    {
-        m_context->DX12Capabilities.EnhancedBarriers = options12.EnhancedBarriersSupported;
-        LOG_IF(INFO, options12.EnhancedBarriersSupported) << "DX12Device" << "Enhanced DX12 barriers are supported.";
-        LOG_IF(INFO, !options12.EnhancedBarriersSupported) << "DX12Device" << "Enhanced DX12 barriers are not supported.";
     }
 
 #ifndef NDEBUG
@@ -233,7 +209,7 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
 
     D3D12_FEATURE_DATA_FEATURE_LEVELS featLevels = { _countof(s_featureLevels), s_featureLevels, D3D_FEATURE_LEVEL_11_0 };
 
-    hr = m_context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS, &featLevels, sizeof(featLevels));
+    HRESULT hr = m_context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS, &featLevels, sizeof(featLevels));
     if ( SUCCEEDED(hr) )
     {
         m_minFeatureLevel = featLevels.MaxSupportedFeatureLevel;
