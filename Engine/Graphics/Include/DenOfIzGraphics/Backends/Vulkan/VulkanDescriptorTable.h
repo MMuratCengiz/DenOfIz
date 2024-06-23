@@ -30,13 +30,13 @@ namespace DenOfIz
     private:
         VulkanContext *m_context;
         VulkanRootSignature *m_rootSignature;
-        DescriptorTableCreateInfo m_createInfo;
+        DescriptorTableDesc m_desc;
 
         std::vector<vk::DescriptorSet> m_descriptorSets;
         std::vector<vk::WriteDescriptorSet> m_writeDescriptorSets;
 
     public:
-        VulkanDescriptorTable(VulkanContext *context, DescriptorTableCreateInfo createInfo);
+        VulkanDescriptorTable(VulkanContext *context, DescriptorTableDesc desc);
 
         void BindImage(ITextureResource *resource) override;
         void BindBuffer(IBufferResource *resource) override;

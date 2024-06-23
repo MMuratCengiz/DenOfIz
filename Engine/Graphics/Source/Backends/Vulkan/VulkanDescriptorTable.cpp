@@ -17,14 +17,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanDescriptorTable.h>
-#include "DenOfIzGraphics/Backends/Vulkan/Resource/VulkanBufferResource.h"
-#include "DenOfIzGraphics/Backends/Vulkan/Resource/VulkanImageResource.h"
+#include "DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h"
+#include "DenOfIzGraphics/Backends/Vulkan/VulkanImageResource.h"
 
 using namespace DenOfIz;
 
-VulkanDescriptorTable::VulkanDescriptorTable(VulkanContext *context, DescriptorTableCreateInfo createInfo) : m_context(context), m_createInfo(std::move(createInfo))
+VulkanDescriptorTable::VulkanDescriptorTable(VulkanContext *context, DescriptorTableDesc desc) : m_context(context), m_desc(std::move(desc))
 {
-    m_rootSignature = static_cast<VulkanRootSignature *>(m_createInfo.RootSignature);
+    m_rootSignature = static_cast<VulkanRootSignature *>(m_desc.RootSignature);
 
     //	vk::DescriptorSetAllocateInfo allocateInfo{};
     //
@@ -37,7 +37,7 @@ VulkanDescriptorTable::VulkanDescriptorTable(VulkanContext *context, DescriptorT
 
 void VulkanDescriptorTable::BindImage(ITextureResource *resource)
 {
-    VulkanImageResource *vulkanResource = static_cast<VulkanImageResource *>(resource);
+    VulkanTextureResource *vulkanResource = static_cast<VulkanTextureResource *>(resource);
 
     vk::WriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor(resource->Name);
     writeDescriptorSet.pImageInfo = &vulkanResource->DescriptorInfo;

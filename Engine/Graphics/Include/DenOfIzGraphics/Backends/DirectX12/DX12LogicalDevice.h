@@ -21,13 +21,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzCore/Common.h>
 #include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
+#include "DX12BufferResource.h"
+#include "DX12CommandListPool.h"
 #include "DX12Context.h"
-
-#include "DX12CommandList.h"
 #include "DX12DescriptorTable.h"
-#include "Resource/DX12BufferResource.h"
-#include "Resource/DX12Fence.h"
-#include "Resource/DX12ImageResource.h"
+#include "DX12Fence.h"
+#include "DX12TextureResource.h"
 
 #include <dxgidebug.h>
 
@@ -39,6 +38,7 @@ namespace DenOfIz
     private:
         D3D_FEATURE_LEVEL m_minFeatureLevel = D3D_FEATURE_LEVEL_12_0;
         std::unique_ptr<DX12Context> m_context;
+
     public:
         DX12LogicalDevice();
         ~DX12LogicalDevice() override;
@@ -46,36 +46,27 @@ namespace DenOfIz
         // Override methods
         void CreateDevice(GraphicsWindowHandle *window) override;
 
-        std::vector<PhysicalDeviceInfo> ListPhysicalDevices() override;
+        std::vector<PhysicalDevice> ListPhysicalDevices() override;
 
-        void LoadPhysicalDevice(const PhysicalDeviceInfo &device) override;
+        void LoadPhysicalDevice(const PhysicalDevice &device) override;
 
         inline bool IsDeviceLost() override { return m_context->IsDeviceLost; }
 
-        std::unique_ptr<ICommandList> CreateCommandList(const CommandListCreateInfo &createInfo) override;
-
-        std::unique_ptr<IPipeline> CreatePipeline(const PipelineCreateInfo &createInfo) override;
-
-        std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainCreateInfo &createInfo) override;
-
-        std::unique_ptr<IRootSignature> CreateRootSignature(const RootSignatureCreateInfo &createInfo) override;
-
-        std::unique_ptr<IInputLayout> CreateInputLayout(const InputLayoutCreateInfo &createInfo) override;
-
-        std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo &createInfo) override;
-
+        std::unique_ptr<ICommandListPool> CreateCommandListPool(const CommandListPoolDesc &poolDesc) override;
+        std::unique_ptr<IPipeline> CreatePipeline(const PipelineDesc &pipelineDesc) override;
+        std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainDesc &swapChainDesc) override;
+        std::unique_ptr<IRootSignature> CreateRootSignature(const RootSignatureDesc &rootSignatureDesc) override;
+        std::unique_ptr<IInputLayout> CreateInputLayout(const InputLayoutDesc &inputLayoutDesc) override;
+        std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableDesc &descriptorTableDesc) override;
         std::unique_ptr<IFence> CreateFence() override;
-
         std::unique_ptr<ISemaphore> CreateSemaphore() override;
-
-        std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferCreateInfo &createInfo) override;
-
-        std::unique_ptr<ITextureResource> CreateImageResource(std::string name, const ImageCreateInfo &createInfo) override;
+        std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferDesc &bufferDesc) override;
+        std::unique_ptr<ITextureResource> CreateImageResource(std::string name, const TextureDesc &textureDesc) override;
 
         void WaitIdle() override;
         // --
     private:
-        void CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDeviceInfo &deviceInfo);
+        void CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDevice &physicalDevice);
     };
 
 } // namespace DenOfIz

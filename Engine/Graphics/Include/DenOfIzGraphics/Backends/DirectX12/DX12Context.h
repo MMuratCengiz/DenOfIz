@@ -45,8 +45,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzCore/Common.h>
 
-using namespace Microsoft::WRL;
-
 namespace DenOfIz
 {
     struct DX12Capabilities
@@ -77,7 +75,7 @@ namespace DenOfIz
         std::unique_ptr<DX12DescriptorHeap> ShaderVisibleSamplerDescriptorHeap;
 
         GraphicsWindowHandle *Window;
-        PhysicalDeviceInfo SelectedDeviceInfo;
+        PhysicalDevice SelectedDeviceInfo;
         DX12Capabilities DX12Capabilities;
     };
 

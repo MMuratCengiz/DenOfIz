@@ -20,11 +20,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanSwapChain::VulkanSwapChain(VulkanContext *context, const SwapChainCreateInfo &createInfo) : m_context(context), m_createInfo(createInfo) { CreateSwapChain(); }
+VulkanSwapChain::VulkanSwapChain(VulkanContext *context, const SwapChainDesc &desc) : m_context(context), m_desc(desc) { CreateSwapChain(); }
 
 void VulkanSwapChain::CreateSwapChain()
 {
-    const vk::SurfaceCapabilitiesKHR capabilities = m_context->PhysicalDevice.getSurfaceCapabilitiesKHR(m_context->Surface);
+    const vk::SurfaceCapabilitiesKHR capabilities = m_context->GPU.getSurfaceCapabilitiesKHR(m_context->Surface);
 
     ChooseExtent2D(capabilities);
 
@@ -74,17 +74,17 @@ void VulkanSwapChain::CreateSwapChainImages(const vk::Format format)
     for ( auto image : m_swapChainImages )
     {
         CreateImageView(m_swapChainImageViews[ index ], image, format, vk::ImageAspectFlagBits::eColor);
-        m_renderTargets.push_back(std::make_unique<VulkanImageResource>(image, m_swapChainImageViews[ index ], format, vk::ImageAspectFlagBits::eColor));
+        m_renderTargets.push_back(std::make_unique<VulkanTextureResource>(image, m_swapChainImageViews[ index ], format, vk::ImageAspectFlagBits::eColor));
         index++;
     }
 }
 
 void VulkanSwapChain::ChooseExtent2D(const vk::SurfaceCapabilitiesKHR &capabilities)
 {
-    if ( m_createInfo.Width != 0 || m_createInfo.Height != 0 )
+    if ( m_desc.Width != 0 || m_desc.Height != 0 )
     {
-        m_width = m_createInfo.Width;
-        m_height = m_createInfo.Height;
+        m_width = m_desc.Width;
+        m_height = m_desc.Height;
         return;
     }
 
@@ -148,19 +148,19 @@ VulkanSwapChain::~VulkanSwapChain()
     m_context->LogicalDevice.destroySwapchainKHR(m_swapChain);
 }
 
-ImageFormat VulkanSwapChain::GetPreferredFormat()
+Format VulkanSwapChain::GetPreferredFormat()
 {
     // Todo missing cases
-    switch ( m_context->PhysicalDevice.getSurfaceFormatsKHR(m_context->Surface)[ 0 ].format )
+    switch ( m_context->GPU.getSurfaceFormatsKHR(m_context->Surface)[ 0 ].format )
     {
     case vk::Format::eB8G8R8A8Unorm:
-        return ImageFormat::B8G8R8A8Unorm;
+        return Format::B8G8R8A8Unorm;
     case vk::Format::eR8G8B8A8Unorm:
-        return ImageFormat::R8G8B8A8Unorm;
+        return Format::R8G8B8A8Unorm;
     case vk::Format::eR8G8B8A8Srgb:
-        return ImageFormat::R8G8B8A8UnormSrgb;
+        return Format::R8G8B8A8UnormSrgb;
     default:
-        return ImageFormat::R8G8B8A8Unorm;
+        return Format::R8G8B8A8Unorm;
     }
 }
 

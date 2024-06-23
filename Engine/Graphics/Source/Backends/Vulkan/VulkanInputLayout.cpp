@@ -20,10 +20,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanInputLayout::VulkanInputLayout(const InputLayoutCreateInfo &createInfo)
+VulkanInputLayout::VulkanInputLayout(const InputLayoutDesc &inputLayoutDesc)
 {
     int bindingIndex = 0;
-    for ( const InputGroup &inputGroup : createInfo.InputGroups )
+    for ( const InputGroup &inputGroup : inputLayoutDesc.InputGroups )
     {
         VkVertexInputBindingDescription &bindingDescription = m_bindingDescriptions.emplace_back(VkVertexInputBindingDescription{});
         bindingDescription.binding = bindingIndex;

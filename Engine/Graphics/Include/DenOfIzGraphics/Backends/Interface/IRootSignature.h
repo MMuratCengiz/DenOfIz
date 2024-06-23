@@ -19,7 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzCore/Common.h>
-#include "IResource.h"
+#include "IBufferResource.h"
+#include "ITextureResource.h"
 #include "IShader.h"
 
 namespace DenOfIz
@@ -40,7 +41,7 @@ namespace DenOfIz
         PerDraw = 2
     };
 
-    struct RootSignatureCreateInfo
+    struct RootSignatureDesc
     {
         // Todo
     };

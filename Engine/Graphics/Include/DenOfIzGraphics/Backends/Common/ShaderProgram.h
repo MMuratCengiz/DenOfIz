@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    struct ShaderInfo
+    struct ShaderDesc
     {
         ShaderStage Stage;
         std::string Path;
@@ -35,12 +35,12 @@ namespace DenOfIz
     class ShaderProgram
     {
     private:
-        std::vector<ShaderInfo> m_shaders;
+        std::vector<ShaderDesc> m_shaders;
         std::vector<CompiledShader> m_compiledShaders;
 
     public:
         ShaderProgram() = default;
-        void AddShader(const ShaderInfo &shaderInfo);
+        void AddShader(const ShaderDesc &shaderInfo);
         void Compile();
         const std::vector<CompiledShader> &GetCompiledShaders() const { return m_compiledShaders; }
         ~ShaderProgram() = default;

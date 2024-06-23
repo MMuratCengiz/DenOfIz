@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifdef BUILD_VK
 
 #include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
-#include "Resource/VulkanImageResource.h"
-#include "Resource/VulkanSemaphore.h"
+#include "VulkanImageResource.h"
+#include "VulkanSemaphore.h"
 #include "VulkanEnumConverter.h"
 
 namespace DenOfIz
@@ -30,25 +30,25 @@ namespace DenOfIz
     class VulkanSwapChain : public ISwapChain
     {
     private:
-        SwapChainCreateInfo m_createInfo;
+        SwapChainDesc m_desc;
         VulkanContext *m_context;
         vk::SurfaceKHR m_surface;
         vk::SwapchainKHR m_swapChain;
         std::vector<vk::Image> m_swapChainImages;
         std::vector<vk::ImageView> m_swapChainImageViews;
 
-        std::vector<std::unique_ptr<VulkanImageResource>> m_renderTargets;
+        std::vector<std::unique_ptr<VulkanTextureResource>> m_renderTargets;
 
         uint32_t m_width = 0;
         uint32_t m_height = 0;
 
     public:
-        VulkanSwapChain(VulkanContext *context, const SwapChainCreateInfo &createInfo);
+        VulkanSwapChain(VulkanContext *context, const SwapChainDesc &desc);
         ~VulkanSwapChain() override;
 
         uint32_t AcquireNextImage(ISemaphore *imageReadySemaphore) override;
         void Resize(uint32_t width, uint32_t height) override;
-        ImageFormat GetPreferredFormat() override;
+        Format GetPreferredFormat() override;
 
         inline ITextureResource *GetRenderTarget(uint32_t frame) override { return m_renderTargets.at(frame).get(); }
         inline vk::SwapchainKHR *GetSwapChain() { return &m_swapChain; }

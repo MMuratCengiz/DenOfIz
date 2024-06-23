@@ -41,11 +41,13 @@ namespace DenOfIz
 
     struct VulkanContext
     {
+        PhysicalDevice SelectedDeviceInfo;
+
         vk::Instance Instance;
-        vk::PhysicalDevice PhysicalDevice;
+        vk::PhysicalDevice GPU;
         vk::Device LogicalDevice;
         VmaAllocator Vma;
-        ImageFormat SurfaceImageFormat;
+        Format SurfaceImageFormat;
         vk::ColorSpaceKHR ColorSpace;
         vk::PresentModeKHR PresentMode;
 
@@ -68,7 +70,6 @@ namespace DenOfIz
 
         // Todo move to generic RenderContext when created.
         ShaderCompiler ShaderCompiler;
-        PhysicalDeviceInfo SelectedDeviceInfo;
         bool IsDeviceLost = false;
     };
 

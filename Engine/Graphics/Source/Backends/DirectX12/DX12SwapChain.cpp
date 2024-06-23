@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 using namespace Microsoft::WRL;
 
-DX12SwapChain::DX12SwapChain(DX12Context *context, const SwapChainCreateInfo &swapChainCreateInfo) : m_context(context), m_swapChainCreateInfo(swapChainCreateInfo)
+DX12SwapChain::DX12SwapChain(DX12Context *context, const SwapChainDesc &desc) : m_context(context), m_swapChainCreateInfo(desc)
 {
     m_swapChainCreateInfo.Width = std::max(1u, m_swapChainCreateInfo.Width);
     m_swapChainCreateInfo.Height = std::max(1u, m_swapChainCreateInfo.Height);
@@ -75,7 +75,7 @@ void DX12SwapChain::CreateSwapChain()
         rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
         m_renderTargetCpuHandles[ i ] = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_RTV ]->GetNextCPUHandleOffset(1);
-        m_renderTargets[ i ] = std::make_unique<DX12ImageResource>(buffer.get(), m_renderTargetCpuHandles[ i ]);
+        m_renderTargets[ i ] = std::make_unique<DX12TextureResource>(buffer.get(), m_renderTargetCpuHandles[ i ]);
         m_context->D3DDevice->CreateRenderTargetView(m_renderTargets[ i ]->GetResource(), &rtvDesc, m_renderTargetCpuHandles[ i ]);
     }
 
@@ -131,11 +131,11 @@ void DX12SwapChain::SetColorSpace()
     {
         switch ( m_swapChainCreateInfo.BackBufferFormat )
         {
-        case ImageFormat::R10G10B10A2Unorm:
+        case Format::R10G10B10A2Unorm:
             // The application creates the HDR10 signal.
             m_colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
             break;
-        case ImageFormat::R16G16B16A16Float:
+        case Format::R16G16B16A16Float:
             // The system creates the HDR10 signal; application uses linear values.
             m_colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709;
             break;
@@ -193,7 +193,7 @@ Viewport DX12SwapChain::GetViewport()
 
 ITextureResource *DX12SwapChain::GetRenderTarget(uint32_t frame) { return m_renderTargets[ frame ].get(); }
 
-ImageFormat DX12SwapChain::GetPreferredFormat() { return ImageFormat::R8Unorm; }
+Format DX12SwapChain::GetPreferredFormat() { return Format::R8Unorm; }
 
 DX12SwapChain::~DX12SwapChain()
 {

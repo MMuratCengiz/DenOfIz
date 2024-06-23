@@ -21,9 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
 #include "DX12Context.h"
 #include "DX12EnumConverter.h"
-#include "DenOfIzGraphics/Backends/DirectX12/Resource/DX12ImageResource.h"
-
-using namespace Microsoft::WRL;
+#include "DenOfIzGraphics/Backends/DirectX12/DX12TextureResource.h"
 
 namespace DenOfIz
 {
@@ -32,10 +30,10 @@ namespace DenOfIz
     {
     private:
         DX12Context *m_context;
-        SwapChainCreateInfo m_swapChainCreateInfo;
+        SwapChainDesc m_swapChainCreateInfo;
         wil::com_ptr<IDXGISwapChain4> m_swapChain;
 
-        std::vector<std::unique_ptr<DX12ImageResource>> m_renderTargets;
+        std::vector<std::unique_ptr<DX12TextureResource>> m_renderTargets;
         std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_renderTargetCpuHandles;
         wil::com_ptr<ID3D12Resource> m_depthStencil;
         D3D12_CPU_DESCRIPTOR_HANDLE m_depthStencilCpuHandle;
@@ -43,13 +41,13 @@ namespace DenOfIz
         DXGI_COLOR_SPACE_TYPE m_colorSpace;
         Viewport m_viewport;
     public:
-        DX12SwapChain(DX12Context *context, const SwapChainCreateInfo &swapChainCreateInfo);
+        DX12SwapChain(DX12Context *context, const SwapChainDesc &desc);
         ~DX12SwapChain() override;
 
         IDXGISwapChain4 *GetSwapChain() { return m_swapChain.get(); }
 
         uint32_t AcquireNextImage(ISemaphore *imageAvailableSemaphore) override;
-        ImageFormat GetPreferredFormat() override;
+        Format GetPreferredFormat() override;
         ITextureResource *GetRenderTarget(uint32_t frame) override;
         Viewport GetViewport() override;
         void Resize(uint32_t width, uint32_t height) override;

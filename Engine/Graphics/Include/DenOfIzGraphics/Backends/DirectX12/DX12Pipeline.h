@@ -32,18 +32,18 @@ namespace DenOfIz
         DX12Context *m_context;
         wil::com_ptr<ID3D12PipelineState> m_graphicsPipeline;
         DX12RootSignature *m_rootSignature;
-        PipelineCreateInfo m_createInfo;
+        PipelineDesc m_desc;
         D3D12_PRIMITIVE_TOPOLOGY m_topology;
 
     public:
-        DX12Pipeline(DX12Context *context, const PipelineCreateInfo &info);
+        DX12Pipeline(DX12Context *context, const PipelineDesc &desc);
         ID3D12PipelineState *GetPipeline() const { return m_graphicsPipeline.get(); }
         ID3D12RootSignature *GetRootSignature() const { return m_rootSignature->GetRootSignature(); }
         D3D12_PRIMITIVE_TOPOLOGY GetTopology() const { return m_topology; }
         ~DX12Pipeline() override;
 
     private:
-        void SetMSAASampleCount(const PipelineCreateInfo &createInfo, D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc) const;
+        void SetMSAASampleCount(const PipelineDesc &desc, D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc) const;
         void SetGraphicsShaders(D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc);
         D3D12_SHADER_BYTECODE GetShaderByteCode(const CompiledShader &compiledShader) const;
         void CreateGraphicsPipeline();

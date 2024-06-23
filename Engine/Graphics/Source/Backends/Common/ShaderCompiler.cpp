@@ -1,10 +1,6 @@
 #include <DenOfIzCore/Utilities.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
 
-#ifdef _WIN32
-using namespace Microsoft::WRL;
-#endif
-
 namespace DenOfIz
 {
 

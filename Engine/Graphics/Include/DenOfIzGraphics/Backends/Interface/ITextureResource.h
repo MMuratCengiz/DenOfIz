@@ -18,76 +18,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <string>
-#include <vector>
 #include "CommonData.h"
 
 namespace DenOfIz
 {
-
-    class IResource
+    struct TextureDesc
     {
-    public:
-        virtual ~IResource() = default;
-        std::string Name;
-
-        virtual const ResourceType Type() = 0;
-    };
-
-    struct BufferView
-    {
-        uint64_t Offset;
-        uint64_t Stride;
-    };
-
-    struct BufferCreateInfo
-    {
-        bool KeepMemoryMapped = false;
-
-        BufferView BufferView; // For Structured Buffers
-        ImageFormat Format = ImageFormat::Undefined;
-        BufferUsage Usage;
-        HeapType HeapType;
-    };
-
-    class IBufferResource : public IResource
-    {
-    protected:
-        uint32_t m_size;
-        const void *m_data;
-
-        void *m_mappedMemory = nullptr;
-
-    public:
-        void Allocate(const void *data, uint32_t size)
-        {
-            m_size = size;
-            m_data = data;
-            Allocate(data);
-        }
-
-        virtual void Deallocate() = 0;
-
-        inline uint32_t GetSize() const { return m_size; }
-        inline const void *GetData() const { return m_data; }
-
-    protected:
-        virtual void Allocate(const void *data) = 0;
-
-    private:
-        const ResourceType Type() override { return ResourceType::Buffer; }
-    };
-
-    struct ImageCreateInfo
-    {
-        ImageAspect Aspect = ImageAspect::Color;
-        ImageFormat Format;
-        ImageMemoryUsage ImageUsage;
+        TextureAspect Aspect = TextureAspect::Color;
+        Format Format;
+        TextureMemoryUsage ImageUsage;
         HeapType HeapType = HeapType::Auto;
         MSAASampleCount MSAASampleCount = MSAASampleCount::_0;
+
+        uint32_t Width;
+        uint32_t Height;
+        uint32_t Depth = 1;
+        uint32_t ArrayLayers = 1;
+        uint32_t MipLevels = 1;
     };
 
-    struct SamplerCreateInfo
+    struct SamplerDesc
     {
         Filter MagFilter;
         Filter MinFilter;
@@ -106,10 +56,10 @@ namespace DenOfIz
 
         uint32_t Width;
         uint32_t Height;
-        ImageFormat Format;
+        Format Format;
     };
 
-    class ITextureResource : public IResource
+    class ITextureResource
     {
 
     protected:
@@ -119,6 +69,8 @@ namespace DenOfIz
         const void *m_data;
 
     public:
+        std::string Name;
+        virtual ~ITextureResource() = default;
         virtual void Allocate(const void *data, uint32_t width, uint32_t height, uint32_t depth = 0)
         {
             m_width = width;
@@ -130,13 +82,12 @@ namespace DenOfIz
 
         virtual void Deallocate() = 0;
 
-        virtual void AttachSampler(SamplerCreateInfo &) = 0;
+        virtual void AttachSampler(SamplerDesc &) = 0;
 
         inline uint32_t GetWidth() const { return m_width; }
         inline uint32_t GetHeight() const { return m_height; }
         inline uint32_t GetDepth() const { return m_depth; }
 
-        const ResourceType Type() override { return ResourceType::Texture; };
 
     protected:
         virtual void Allocate(const void *data) = 0;

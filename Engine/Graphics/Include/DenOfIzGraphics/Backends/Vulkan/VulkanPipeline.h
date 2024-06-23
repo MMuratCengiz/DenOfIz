@@ -42,7 +42,7 @@ namespace DenOfIz
         std::vector<vk::Format> m_colorFormats;
         std::vector<vk::DescriptorSetLayout> m_layouts;
 
-        PipelineCreateInfo m_createInfo;
+        PipelineDesc m_desc;
         // Storing these here
         std::vector<vk::PipelineShaderStageCreateInfo> m_pipelineStageCreateInfos;
         std::vector<vk::PipelineColorBlendAttachmentState> m_colorBlendAttachments{};
@@ -70,7 +70,7 @@ namespace DenOfIz
         vk::PipelineBindPoint BindPoint;
 
         vk::WriteDescriptorSet GetWriteDescriptorSet(const std::string &name);
-        VulkanPipeline(VulkanContext *context, const PipelineCreateInfo &);
+        VulkanPipeline(VulkanContext *context, const PipelineDesc &);
         ~VulkanPipeline() override;
 
     private:

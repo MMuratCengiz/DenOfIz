@@ -18,27 +18,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "IBufferResource.h"
-#include "ITextureResource.h"
-#include "IRootSignature.h"
+#include "../Interface/IFence.h"
+#include "VulkanContext.h"
 
 namespace DenOfIz
 {
 
-    struct DescriptorTableDesc
+    class VulkanFence : public IFence
     {
-        IRootSignature *RootSignature;
-        ResourceUpdateFrequency Frequency;
-    };
+    private:
+        VulkanContext *m_context;
+        vk::Fence m_fence;
 
-    class IDescriptorTable
-    {
     public:
-        virtual ~IDescriptorTable() = default;
-
-        // -- Requires a sampler
-        virtual void BindImage(ITextureResource *resource) = 0;
-        virtual void BindBuffer(IBufferResource *resource) = 0;
+        VulkanFence(VulkanContext *context);
+        ~VulkanFence();
+        void Wait() override;
+        void Reset() override;
+        inline VkFence GetFence() const { return m_fence; }
     };
 
 } // namespace DenOfIz

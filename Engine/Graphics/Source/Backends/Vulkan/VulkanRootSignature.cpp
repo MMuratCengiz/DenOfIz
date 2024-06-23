@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanRootSignature::VulkanRootSignature(VulkanContext *context, RootSignatureCreateInfo createInfo) : m_context(context), m_createInfo(std::move(createInfo))
+VulkanRootSignature::VulkanRootSignature(VulkanContext *context, RootSignatureDesc desc) : m_context(context), m_desc(std::move(desc))
 {
     m_layouts.resize(1);
 }

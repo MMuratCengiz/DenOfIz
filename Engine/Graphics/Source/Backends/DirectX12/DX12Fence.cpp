@@ -16,31 +16,36 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/DirectX12/Resource/DX12Semaphore.h>
+#include <DenOfIzGraphics/Backends/DirectX12/DX12Fence.h>
+#include "DenOfIzGraphics/Backends/DirectX12/DX12Context.h"
 
 using namespace DenOfIz;
 
-DX12Semaphore::DX12Semaphore(DX12Context *context)
+DX12Fence::DX12Fence(DX12Context *context) : m_context(context)
 {
-    m_context = context;
-    m_fenceValue = 1;
-    context->D3DDevice->CreateFence(m_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.put()));
+    m_context->D3DDevice->CreateFence(m_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.put()));
     m_fenceEvent.Attach(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
 }
 
-DX12Semaphore::~DX12Semaphore() { m_fence = nullptr; }
+DX12Fence::~DX12Fence() {}
 
-void DX12Semaphore::Wait()
+void DX12Fence::Wait()
 {
+    if (!m_submitted)
+    {
+        m_submitted = true;
+        return;
+    }
+
     if ( m_fence->GetCompletedValue() != 1 )
     {
         THROW_IF_FAILED(m_fence->SetEventOnCompletion(m_fenceValue, m_fenceEvent.Get()));
         WaitForSingleObjectEx(m_fenceEvent.Get(), INFINITE, FALSE);
-        m_fence->Signal(0);
     }
+    m_fence->Signal(0);
 }
 
-void DX12Semaphore::Notify()
+void DX12Fence::Reset()
 {
-    m_fence->Signal(1);
+    m_submitted = true;
 }

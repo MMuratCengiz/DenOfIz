@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12RootSignature::DX12RootSignature(DX12Context *context, const RootSignatureCreateInfo &createInfo) : m_context(context), m_createInfo(createInfo)
+DX12RootSignature::DX12RootSignature(DX12Context *context, const RootSignatureDesc &desc) : m_context(context), m_desc(desc)
 {
     D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
     m_rootSignatureVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;

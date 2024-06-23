@@ -18,32 +18,33 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/DirectX12/DX12Context.h>
-#include <DenOfIzGraphics/Backends/Interface/IResource.h>
+#include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
+#include "DX12Context.h"
+#include "DX12EnumConverter.h"
 
 namespace DenOfIz
 {
 
-    class DX12ImageResource : public ITextureResource
+    class DX12BufferResource : public IBufferResource
     {
     private:
         DX12Context *m_context;
-        ImageCreateInfo m_createInfo;
-        ID3D12Resource2 *m_resource;
-        D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
-        bool isExternalResource = false;
+        BufferDesc m_desc;
+        wil::com_ptr<ID3D12Resource2> m_resource;
+        wil::com_ptr<D3D12MA::Allocation> m_allocation;
 
+        bool allocated = false;
+        uint32_t m_stride = 0;
     public:
-        DX12ImageResource(DX12Context *context, const ImageCreateInfo &createInfo);
-        DX12ImageResource(ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle);
-        void AttachSampler(SamplerCreateInfo &info) override;
+        DX12BufferResource(DX12Context *context, const BufferDesc &desc);
+        ID3D12Resource2 *GetResource() { return m_resource.get(); }
+        ~DX12BufferResource() override;
         void Deallocate() override;
 
-        ID3D12Resource *GetResource() const { return m_resource; }
-        const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle() const { return m_cpuHandle; };
-
+        uint32_t GetStride() const { return m_stride; }
     protected:
         void Allocate(const void *data) override;
+        void CreateBufferView();
     };
 
 } // namespace DenOfIz

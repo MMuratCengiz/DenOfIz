@@ -1,5 +1,5 @@
 /*
-Blazar Engine - 3D Game Engine
+Den Of Iz - Game/Game Engine
 Copyright (c) 2020-2021 Muhammed Murat Cengiz
 
 This program is free software: you can redistribute it and/or modify
@@ -21,12 +21,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
-#include "Resource/VulkanBufferResource.h"
-#include "Resource/VulkanCubeMapResource.h"
+#include "VulkanBufferResource.h"
+#include "VulkanCubeMapResource.h"
 #include "VulkanContext.h"
 #include "VulkanInputLayout.h"
 #include "VulkanPipeline.h"
 #include "VulkanSurface.h"
+#include "VulkanCommandPool.h"
 
 namespace DenOfIz
 {
@@ -65,26 +66,26 @@ namespace DenOfIz
         VulkanLogicalDevice() = default;
 
         void CreateDevice(GraphicsWindowHandle *window) override;
-        std::vector<PhysicalDeviceInfo> ListPhysicalDevices() override;
-        void LoadPhysicalDevice(const PhysicalDeviceInfo &device) override;
+        std::vector<PhysicalDevice> ListPhysicalDevices() override;
+        void LoadPhysicalDevice(const PhysicalDevice &device) override;
         inline bool IsDeviceLost() override { return m_context->IsDeviceLost; }
 
         void WaitIdle() override;
         [[nodiscard]] uint32_t GetFrameCount() const;
         [[nodiscard]] VulkanContext *GetContext() const;
-        [[nodiscard]] ImageFormat GetSwapChainImageFormat() const;
+        [[nodiscard]] Format GetSwapChainImageFormat() const;
 
         // Factory methods
-        std::unique_ptr<ICommandList> CreateCommandList(const CommandListCreateInfo &createInfo) override;
-        std::unique_ptr<IPipeline> CreatePipeline(const PipelineCreateInfo &createInfo) override;
-        std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainCreateInfo &createInfo) override;
-        std::unique_ptr<IRootSignature> CreateRootSignature(const RootSignatureCreateInfo &createInfo) override;
-        std::unique_ptr<IInputLayout> CreateInputLayout(const InputLayoutCreateInfo &createInfo) override;
-        std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableCreateInfo &createInfo) override;
+        std::unique_ptr<ICommandListPool> CreateCommandListPool(const CommandListPoolDesc &createInfo) override;
+        std::unique_ptr<IPipeline> CreatePipeline(const PipelineDesc &createInfo) override;
+        std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainDesc &createInfo) override;
+        std::unique_ptr<IRootSignature> CreateRootSignature(const RootSignatureDesc &createInfo) override;
+        std::unique_ptr<IInputLayout> CreateInputLayout(const InputLayoutDesc &createInfo) override;
+        std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableDesc &createInfo) override;
         std::unique_ptr<IFence> CreateFence() override;
         std::unique_ptr<ISemaphore> CreateSemaphore() override;
-        std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferCreateInfo &createInfo) override;
-        std::unique_ptr<ITextureResource> CreateImageResource(std::string name, const ImageCreateInfo &createInfo) override;
+        std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferDesc &createInfo) override;
+        std::unique_ptr<ITextureResource> CreateImageResource(std::string name, const TextureDesc &createInfo) override;
 
         ~VulkanLogicalDevice() override;
 
@@ -102,7 +103,7 @@ namespace DenOfIz
         void CreateImageFormat() const;
 
         void InitializeVma() const;
-        static void CreateDeviceInfo(const vk::PhysicalDevice &physicalDevice, PhysicalDeviceInfo &deviceInfo);
+        static void CreateDeviceInfo(const vk::PhysicalDevice &physicalDevice, PhysicalDevice &deviceInfo);
         std::vector<vk::DeviceQueueCreateInfo> CreateUniqueDeviceCreateInfos() const;
         void DestroyDebugUtils() const;
     };

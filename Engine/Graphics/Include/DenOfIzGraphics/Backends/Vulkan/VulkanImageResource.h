@@ -18,20 +18,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "../../Interface/IResource.h"
-#include "../VulkanContext.h"
+#include "../Interface/ITextureResource.h"
+#include "VulkanContext.h"
 
 namespace DenOfIz
 {
 
-    class VulkanImageResource : public ITextureResource
+    class VulkanTextureResource : public ITextureResource
     {
     private:
         VulkanContext *m_context;
-        ImageCreateInfo m_createInfo;
+        TextureDesc m_desc;
 
         bool m_hasSampler = false;
-        SamplerCreateInfo m_samplerCreateInfo;
+        SamplerDesc m_samplerDesc;
 
         vk::Image m_image;
         vk::ImageView m_imageView;
@@ -46,28 +46,22 @@ namespace DenOfIz
 
     public:
         vk::DescriptorImageInfo DescriptorInfo;
-
-        VulkanImageResource(VulkanContext *context, ImageCreateInfo createInfo);
+        VulkanTextureResource(VulkanContext *context, const TextureDesc &textureDesc);
 
         // Use as render target
-        inline VulkanImageResource(vk::Image image, vk::ImageView imageView, vk::Format format, vk::ImageAspectFlags imageAspect) :
+        inline VulkanTextureResource(vk::Image image, vk::ImageView imageView, vk::Format format, vk::ImageAspectFlags imageAspect) :
             m_image(image), m_imageView(imageView), m_format(format), m_aspect(imageAspect)
         {
         }
 
-        ~VulkanImageResource();
-
+        ~VulkanTextureResource();
         virtual inline vk::Image GetImage() const { return m_image; }
-
         virtual inline vk::ImageView GetImageView() const { return m_imageView; }
-
         virtual inline vk::Format GetFormat() const { return m_format; }
-
         virtual inline vk::Sampler GetSampler() const { return m_sampler; }
-
         virtual inline vk::ImageAspectFlags GetAspect() const { return m_aspect; }
 
-        void AttachSampler(SamplerCreateInfo &info) override;
+        void AttachSampler(SamplerDesc &info) override;
         void Deallocate() override;
 
     protected:

@@ -18,27 +18,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "IBufferResource.h"
-#include "ITextureResource.h"
-#include "IRootSignature.h"
+#include "ICommandList.h"
 
 namespace DenOfIz
 {
-
-    struct DescriptorTableDesc
+    struct CommandListPoolDesc
     {
-        IRootSignature *RootSignature;
-        ResourceUpdateFrequency Frequency;
+        QueueType QueueType;
+        uint32_t CommandListCount = 1;
     };
 
-    class IDescriptorTable
+    class ICommandListPool
     {
     public:
-        virtual ~IDescriptorTable() = default;
-
-        // -- Requires a sampler
-        virtual void BindImage(ITextureResource *resource) = 0;
-        virtual void BindBuffer(IBufferResource *resource) = 0;
+        virtual std::vector<ICommandList*> GetCommandLists() = 0;
+        virtual ~ICommandListPool() = default;
     };
-
 } // namespace DenOfIz

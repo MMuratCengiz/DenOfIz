@@ -19,15 +19,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
+#include "DX12BufferResource.h"
 #include "DX12Context.h"
 #include "DX12DescriptorTable.h"
 #include "DX12EnumConverter.h"
+#include "DX12Fence.h"
 #include "DX12Pipeline.h"
+#include "DX12Semaphore.h"
 #include "DX12SwapChain.h"
-#include "Resource/DX12BufferResource.h"
-#include "Resource/DX12ImageResource.h"
-#include "Resource/DX12Semaphore.h"
-#include "Resource/DX12Fence.h"
+#include "DX12TextureResource.h"
 
 namespace DenOfIz
 {
@@ -35,7 +35,7 @@ namespace DenOfIz
     class DX12CommandList : public ICommandList
     {
     private:
-        CommandListCreateInfo m_createInfo;
+        CommandListDesc m_desc;
         DX12Context *m_context;
 
         wil::com_ptr<ID3D12CommandAllocator> m_commandAllocator;
@@ -47,14 +47,16 @@ namespace DenOfIz
         D3D12_VIEWPORT m_viewport;
         ID3D12CommandQueue *m_commandQueue;
         std::vector<ID3D12DescriptorHeap *> m_heaps = { m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetHeap(), m_context->ShaderVisibleSamplerDescriptorHeap->GetHeap() };
+
     public:
-        DX12CommandList(DX12Context *context, CommandListCreateInfo createInfo);
+        DX12CommandList(DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> m_commandAllocator, wil::com_ptr<ID3D12GraphicsCommandList> m_commandList,
+                        CommandListDesc desc);
         ~DX12CommandList() override;
 
         void Begin() override;
-        void BeginRendering(const RenderingInfo &renderingInfo) override;
+        void BeginRendering(const RenderingDesc &renderingInfo) override;
         void EndRendering() override;
-        void Execute(const ExecuteInfo &executeInfo) override;
+        void Execute(const ExecuteDesc &executeInfo) override;
         void Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks) override;
         void BindPipeline(IPipeline *pipeline) override;
         void BindVertexBuffer(IBufferResource *buffer) override;
@@ -62,20 +64,18 @@ namespace DenOfIz
         void BindViewport(float x, float y, float width, float height) override;
         void BindScissorRect(float x, float y, float width, float height) override;
         void BindDescriptorTable(IDescriptorTable *table) override;
-        void BindPushConstants(ShaderStage stage, uint32_t offset, uint32_t size, void *data) override;
-        void BindBufferResource(IBufferResource *resource) override;
-        void BindImageResource(ITextureResource *resource) override;
         void SetDepthBias(float constantFactor, float clamp, float slopeFactor) override;
         void SetPipelineBarrier(const PipelineBarrier &barrier) override;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) override;
         void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
         void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
-        void TransitionImageLayout(ITextureResource *image, ImageLayout oldLayout, ImageLayout newLayout) override;
-
+        void CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionInfo) override;
+        void CopyTextureRegion(const CopyTextureRegionDesc &copyTextureRegionInfo) override;
     private:
         void CompatibilityPipelineBarrier(const PipelineBarrier &barrier);
         void EnhancedPipelineBarrier(const PipelineBarrier &barrier);
         void SetRootSignature(ID3D12RootSignature *rootSignature);
+        uint32_t GetSubresourceIndex(ITextureResource *texture, uint32_t mipLevel, uint32_t arrayLayer);
     };
 
 } // namespace DenOfIz

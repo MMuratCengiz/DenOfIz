@@ -25,18 +25,18 @@ namespace DenOfIz
     {
         m_window = window;
         GraphicsAPI::SetAPIPreference(APIPreference{
-            .Windows = APIPreferenceWindows::Vulkan,
+//            .Windows = APIPreferenceWindows::Vulkan,
         });
 
         m_logicalDevice = GraphicsAPI::CreateLogicalDevice(m_window);
         auto firstDevice = m_logicalDevice->ListPhysicalDevices()[ 0 ];
         m_logicalDevice->LoadPhysicalDevice(firstDevice);
 
-        m_program.AddShader(ShaderInfo{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" });
-        m_program.AddShader(ShaderInfo{ .Stage = ShaderStage::Fragment, .Path = "Assets/Shaders/fs.hlsl" });
+        m_program.AddShader(ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" });
+        m_program.AddShader(ShaderDesc{ .Stage = ShaderStage::Fragment, .Path = "Assets/Shaders/fs.hlsl" });
         m_program.Compile();
 
-        m_rootSignature = m_logicalDevice->CreateRootSignature(RootSignatureCreateInfo{});
+        m_rootSignature = m_logicalDevice->CreateRootSignature(RootSignatureDesc{});
         ResourceBinding timePassedBinding{};
         timePassedBinding.Name = "time";
         timePassedBinding.Binding = 0;
@@ -44,56 +44,55 @@ namespace DenOfIz
         timePassedBinding.Stages = { ShaderStage::Vertex };
         m_rootSignature->AddResourceBinding(timePassedBinding);
         m_rootSignature->Create();
-        const InputLayoutCreateInfo &inputLayoutCreateInfo = InputLayoutCreateInfo{};
 
         m_inputLayout =
             m_logicalDevice->CreateInputLayout({ .InputGroups = { { .Elements =
                                                                     {
-                                                                            InputLayoutElement{ .Semantic = Semantic::Position, .Format = ImageFormat::R32G32B32A32Float },
-                                                                            InputLayoutElement{ .Semantic = Semantic::Color, .Format = ImageFormat::R32G32B32A32Float,} ,
+                                                                            InputLayoutElement{ .Semantic = Semantic::Position, .Format = Format::R32G32B32A32Float },
+                                                                            InputLayoutElement{ .Semantic = Semantic::Color, .Format = Format::R32G32B32A32Float,} ,
                                                                     },
                                                                     .StepRate = StepRate::PerVertex } } });
 
         const GraphicsWindowSurface &surface = m_window->GetSurface();
-        m_swapChain = m_logicalDevice->CreateSwapChain(SwapChainCreateInfo{
+        m_swapChain = m_logicalDevice->CreateSwapChain(SwapChainDesc{
             .Width = surface.Width,
             .Height = surface.Height,
             .BufferCount = mc_framesInFlight
         });
 
-        PipelineCreateInfo pipelineCreateInfo{ .ShaderProgram = m_program };
-        pipelineCreateInfo.BlendModes = { BlendMode::None };
-        pipelineCreateInfo.RootSignature = m_rootSignature.get();
-        pipelineCreateInfo.InputLayout = m_inputLayout.get();
-        pipelineCreateInfo.Rendering.ColorAttachmentFormats.push_back(m_swapChain->GetPreferredFormat());
+        PipelineDesc pipelineDesc{ .ShaderProgram = m_program };
+        pipelineDesc.BlendModes = { BlendMode::None };
+        pipelineDesc.RootSignature = m_rootSignature.get();
+        pipelineDesc.InputLayout = m_inputLayout.get();
+        pipelineDesc.Rendering.ColorAttachmentFormats.push_back(m_swapChain->GetPreferredFormat());
 
-        m_pipeline = m_logicalDevice->CreatePipeline(pipelineCreateInfo);
+        m_pipeline = m_logicalDevice->CreatePipeline(pipelineDesc);
         m_commandListRing = std::make_unique<CommandListRing>(m_logicalDevice.get());
+
         for ( uint32_t i = 0; i < mc_framesInFlight; ++i )
         {
-            m_commandListRing->NewCommandList(CommandListCreateInfo());
             m_fences.push_back(m_logicalDevice->CreateFence());
             m_imageReadySemaphores.push_back(m_logicalDevice->CreateSemaphore());
             m_imageRenderedSemaphores.push_back(m_logicalDevice->CreateSemaphore());
         }
 
-        BufferCreateInfo bufferCreateInfo{};
-        bufferCreateInfo.HeapType = HeapType::GPU;
-        bufferCreateInfo.Usage.VertexBuffer = 1;
+        BufferDesc bufferDesc{};
+        bufferDesc.HeapType = HeapType::GPU;
+        bufferDesc.Usage.VertexBuffer = 1;
 
-        m_vertexBuffer = m_logicalDevice->CreateBufferResource("vb", bufferCreateInfo);
+        m_vertexBuffer = m_logicalDevice->CreateBufferResource("vb", bufferDesc);
         m_vertexBuffer->Allocate(m_triangle.data(), m_triangle.size() * sizeof(float));
 
-        BufferCreateInfo deltaTimeBufferCreateInfo{};
-        deltaTimeBufferCreateInfo.HeapType = HeapType::CPU_GPU;
-        deltaTimeBufferCreateInfo.Usage.UniformBuffer = 1;
-        deltaTimeBufferCreateInfo.KeepMemoryMapped = true;
+        BufferDesc deltaTimeBufferDesc{};
+        deltaTimeBufferDesc.HeapType = HeapType::CPU_GPU;
+        deltaTimeBufferDesc.Usage.UniformBuffer = 1;
+        deltaTimeBufferDesc.KeepMemoryMapped = true;
 
-        m_timePassedBuffer = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferCreateInfo);
+        m_timePassedBuffer = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferDesc);
         float timePassed = 1.0f;
         m_timePassedBuffer->Allocate(&timePassed, sizeof(float));
 
-        m_descriptorTable = m_logicalDevice->CreateDescriptorTable(DescriptorTableCreateInfo{ .RootSignature = m_rootSignature.get() });
+        m_descriptorTable = m_logicalDevice->CreateDescriptorTable(DescriptorTableDesc{ .RootSignature = m_rootSignature.get() });
         m_descriptorTable->BindBuffer(m_timePassedBuffer.get());
         m_time->ListenFps = [](const double fps) { DLOG(INFO) << std::format("FPS: {}", fps); };
 
@@ -113,11 +112,11 @@ namespace DenOfIz
         uint32_t nextImage = m_swapChain->AcquireNextImage(m_imageReadySemaphores[ currentFrame ].get());
         nextCommandList->Begin();
 
-        RenderingAttachmentInfo renderingAttachmentInfo{};
-        renderingAttachmentInfo.Resource = m_swapChain->GetRenderTarget(nextImage);
+        RenderingAttachmentDesc renderingAttachmentDesc{};
+        renderingAttachmentDesc.Resource = m_swapChain->GetRenderTarget(nextImage);
 
-        RenderingInfo renderingInfo{};
-        renderingInfo.RTAttachments.push_back(std::move(renderingAttachmentInfo));
+        RenderingDesc renderingInfo{};
+        renderingInfo.RTAttachments.push_back(std::move(renderingAttachmentDesc));
 
         nextCommandList->SetPipelineBarrier(PipelineBarrier::UndefinedToRenderTarget(m_swapChain->GetRenderTarget(nextImage)));
         nextCommandList->BeginRendering(renderingInfo);
@@ -132,7 +131,8 @@ namespace DenOfIz
         nextCommandList->Draw(3, 1);
         nextCommandList->EndRendering();
         nextCommandList->SetPipelineBarrier(PipelineBarrier::RenderTargetToPresent(m_swapChain->GetRenderTarget(nextImage)));
-        ExecuteInfo submitInfo{};
+
+        ExecuteDesc submitInfo{};
         submitInfo.Notify = m_fences[ currentFrame ].get();
         submitInfo.WaitOnLocks.push_back(m_imageReadySemaphores[ currentFrame ].get());
         submitInfo.SignalLocks.push_back(m_imageRenderedSemaphores[ currentFrame ].get());

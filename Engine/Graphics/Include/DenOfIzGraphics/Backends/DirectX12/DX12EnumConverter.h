@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
-#include <DenOfIzGraphics/Backends/Interface/IResource.h>
 #include <DenOfIzGraphics/Backends/Interface/IShader.h>
 
 namespace DenOfIz
@@ -109,131 +108,131 @@ namespace DenOfIz
             return D3D12_HEAP_TYPE_DEFAULT;
         }
 
-        static DXGI_FORMAT ConvertImageFormat(const ImageFormat &format)
+        static DXGI_FORMAT ConvertImageFormat(const Format &format)
         {
             switch ( format )
             {
-            case ImageFormat::Undefined:
+            case Format::Undefined:
                 return DXGI_FORMAT_UNKNOWN;
-            case ImageFormat::R32G32B32A32Float:
+            case Format::R32G32B32A32Float:
                 return DXGI_FORMAT_R32G32B32A32_FLOAT;
-            case ImageFormat::R32G32B32A32Uint:
+            case Format::R32G32B32A32Uint:
                 return DXGI_FORMAT_R32G32B32A32_UINT;
-            case ImageFormat::R32G32B32A32Sint:
+            case Format::R32G32B32A32Sint:
                 return DXGI_FORMAT_R32G32B32A32_SINT;
-            case ImageFormat::R32G32B32Float:
+            case Format::R32G32B32Float:
                 return DXGI_FORMAT_R32G32B32_FLOAT;
-            case ImageFormat::R32G32B32Uint:
+            case Format::R32G32B32Uint:
                 return DXGI_FORMAT_R32G32B32_UINT;
-            case ImageFormat::R32G32B32Sint:
+            case Format::R32G32B32Sint:
                 return DXGI_FORMAT_R32G32B32_SINT;
-            case ImageFormat::R16G16B16A16Float:
+            case Format::R16G16B16A16Float:
                 return DXGI_FORMAT_R16G16B16A16_FLOAT;
-            case ImageFormat::R16G16B16A16Unorm:
+            case Format::R16G16B16A16Unorm:
                 return DXGI_FORMAT_R16G16B16A16_UNORM;
-            case ImageFormat::R16G16B16A16Uint:
+            case Format::R16G16B16A16Uint:
                 return DXGI_FORMAT_R16G16B16A16_UINT;
-            case ImageFormat::R16G16B16A16Snorm:
+            case Format::R16G16B16A16Snorm:
                 return DXGI_FORMAT_R16G16B16A16_SNORM;
-            case ImageFormat::R16G16B16A16Sint:
+            case Format::R16G16B16A16Sint:
                 return DXGI_FORMAT_R16G16B16A16_SINT;
-            case ImageFormat::R32G32Float:
+            case Format::R32G32Float:
                 return DXGI_FORMAT_R32G32_FLOAT;
-            case ImageFormat::R32G32Uint:
+            case Format::R32G32Uint:
                 return DXGI_FORMAT_R32G32_UINT;
-            case ImageFormat::R32G32Sint:
+            case Format::R32G32Sint:
                 return DXGI_FORMAT_R32G32_SINT;
-            case ImageFormat::R10G10B10A2Unorm:
+            case Format::R10G10B10A2Unorm:
                 return DXGI_FORMAT_R10G10B10A2_UNORM;
-            case ImageFormat::R10G10B10A2Uint:
+            case Format::R10G10B10A2Uint:
                 return DXGI_FORMAT_R10G10B10A2_UINT;
-            case ImageFormat::R8G8B8A8Unorm:
+            case Format::R8G8B8A8Unorm:
                 return DXGI_FORMAT_R8G8B8A8_UNORM;
-            case ImageFormat::R8G8B8A8UnormSrgb:
+            case Format::R8G8B8A8UnormSrgb:
                 return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-            case ImageFormat::R8G8B8A8Uint:
+            case Format::R8G8B8A8Uint:
                 return DXGI_FORMAT_R8G8B8A8_UINT;
-            case ImageFormat::R8G8B8A8Snorm:
+            case Format::R8G8B8A8Snorm:
                 return DXGI_FORMAT_R8G8B8A8_SNORM;
-            case ImageFormat::R8G8B8A8Sint:
+            case Format::R8G8B8A8Sint:
                 return DXGI_FORMAT_R8G8B8A8_SINT;
-            case ImageFormat::R16G16Float:
+            case Format::R16G16Float:
                 return DXGI_FORMAT_R16G16_FLOAT;
-            case ImageFormat::R16G16Unorm:
+            case Format::R16G16Unorm:
                 return DXGI_FORMAT_R16G16_UNORM;
-            case ImageFormat::R16G16Uint:
+            case Format::R16G16Uint:
                 return DXGI_FORMAT_R16G16_UINT;
-            case ImageFormat::R16G16Snorm:
+            case Format::R16G16Snorm:
                 return DXGI_FORMAT_R16G16_SNORM;
-            case ImageFormat::R16G16Sint:
+            case Format::R16G16Sint:
                 return DXGI_FORMAT_R16G16_SINT;
-            case ImageFormat::D32Float:
+            case Format::D32Float:
                 return DXGI_FORMAT_D32_FLOAT;
-            case ImageFormat::R32Float:
+            case Format::R32Float:
                 return DXGI_FORMAT_R32_FLOAT;
-            case ImageFormat::R32Uint:
+            case Format::R32Uint:
                 return DXGI_FORMAT_R32_UINT;
-            case ImageFormat::R32Sint:
+            case Format::R32Sint:
                 return DXGI_FORMAT_R32_SINT;
-            case ImageFormat::D24UnormS8Uint:
+            case Format::D24UnormS8Uint:
                 return DXGI_FORMAT_D24_UNORM_S8_UINT;
-            case ImageFormat::R8G8Unorm:
+            case Format::R8G8Unorm:
                 return DXGI_FORMAT_R8G8_UNORM;
-            case ImageFormat::R8G8Uint:
+            case Format::R8G8Uint:
                 return DXGI_FORMAT_R8G8_UINT;
-            case ImageFormat::R8G8Snorm:
+            case Format::R8G8Snorm:
                 return DXGI_FORMAT_R8G8_SNORM;
-            case ImageFormat::R8G8Sint:
+            case Format::R8G8Sint:
                 return DXGI_FORMAT_R8G8_SINT;
-            case ImageFormat::R16Float:
+            case Format::R16Float:
                 return DXGI_FORMAT_R16_FLOAT;
-            case ImageFormat::D16Unorm:
+            case Format::D16Unorm:
                 return DXGI_FORMAT_D16_UNORM;
-            case ImageFormat::R16Unorm:
+            case Format::R16Unorm:
                 return DXGI_FORMAT_R16_UNORM;
-            case ImageFormat::R16Uint:
+            case Format::R16Uint:
                 return DXGI_FORMAT_R16_UINT;
-            case ImageFormat::R16Snorm:
+            case Format::R16Snorm:
                 return DXGI_FORMAT_R16_SNORM;
-            case ImageFormat::R16Sint:
+            case Format::R16Sint:
                 return DXGI_FORMAT_R16_SINT;
-            case ImageFormat::R8Unorm:
+            case Format::R8Unorm:
                 return DXGI_FORMAT_R8_UNORM;
-            case ImageFormat::R8Uint:
+            case Format::R8Uint:
                 return DXGI_FORMAT_R8_UINT;
-            case ImageFormat::R8Snorm:
+            case Format::R8Snorm:
                 return DXGI_FORMAT_R8_SNORM;
-            case ImageFormat::R8Sint:
+            case Format::R8Sint:
                 return DXGI_FORMAT_R8_SINT;
-            case ImageFormat::BC1Unorm:
+            case Format::BC1Unorm:
                 return DXGI_FORMAT_BC1_UNORM;
-            case ImageFormat::BC1UnormSrgb:
+            case Format::BC1UnormSrgb:
                 return DXGI_FORMAT_BC1_UNORM_SRGB;
-            case ImageFormat::BC2Unorm:
+            case Format::BC2Unorm:
                 return DXGI_FORMAT_BC2_UNORM;
-            case ImageFormat::BC2UnormSrgb:
+            case Format::BC2UnormSrgb:
                 return DXGI_FORMAT_BC2_UNORM_SRGB;
-            case ImageFormat::BC3Unorm:
+            case Format::BC3Unorm:
                 return DXGI_FORMAT_BC3_UNORM;
-            case ImageFormat::BC3UnormSrgb:
+            case Format::BC3UnormSrgb:
                 return DXGI_FORMAT_BC3_UNORM_SRGB;
-            case ImageFormat::BC4Unorm:
+            case Format::BC4Unorm:
                 return DXGI_FORMAT_BC4_UNORM;
-            case ImageFormat::BC4Snorm:
+            case Format::BC4Snorm:
                 return DXGI_FORMAT_BC4_SNORM;
-            case ImageFormat::BC5Unorm:
+            case Format::BC5Unorm:
                 return DXGI_FORMAT_BC5_UNORM;
-            case ImageFormat::BC5Snorm:
+            case Format::BC5Snorm:
                 return DXGI_FORMAT_BC5_SNORM;
-            case ImageFormat::B8G8R8A8Unorm:
+            case Format::B8G8R8A8Unorm:
                 return DXGI_FORMAT_B8G8R8A8_UNORM;
-            case ImageFormat::BC6HUfloat16:
+            case Format::BC6HUfloat16:
                 return DXGI_FORMAT_BC6H_UF16;
-            case ImageFormat::BC6HSfloat16:
+            case Format::BC6HSfloat16:
                 return DXGI_FORMAT_BC6H_SF16;
-            case ImageFormat::BC7Unorm:
+            case Format::BC7Unorm:
                 return DXGI_FORMAT_BC7_UNORM;
-            case ImageFormat::BC7UnormSrgb:
+            case Format::BC7UnormSrgb:
                 return DXGI_FORMAT_BC7_UNORM_SRGB;
             };
 

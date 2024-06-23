@@ -15,27 +15,27 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzGraphics/Backends/Vulkan/Resource/VulkanCubeMapResource.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanCubeMapResource.h>
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanUtilities.h"
 
 using namespace DenOfIz;
 
-VulkanCubeMapResource::VulkanCubeMapResource(VulkanContext *context, const CubeMapCreateInfo &createInfo) : m_context(context), m_createInfo(createInfo), m_allocation(nullptr) {}
+VulkanCubeMapResource::VulkanCubeMapResource(VulkanContext *context, const CubeMapDesc &desc) : m_context(context), m_desc(desc), m_allocation(nullptr) {}
 
 void VulkanCubeMapResource::Allocate(std::vector<const void *> data)
 {
-    assert(!m_createInfo.Samplers.empty());
-    assert(m_createInfo.Samplers.size() != data.size());
+    assert(!m_desc.Samplers.empty());
+    assert(m_desc.Samplers.size() != data.size());
 
-    int width = m_createInfo.Samplers[ 0 ].Width;
-    int height = m_createInfo.Samplers[ 0 ].Height;
+    int width = m_desc.Samplers[ 0 ].Width;
+    int height = m_desc.Samplers[ 0 ].Height;
 
-    std::vector<std::pair<vk::Buffer, VmaAllocation>> stagingBuffers(m_createInfo.Samplers.size());
+    std::vector<std::pair<vk::Buffer, VmaAllocation>> stagingBuffers(m_desc.Samplers.size());
 
     int mipStagingBufferIndex = 0;
 
     uint32_t index = 0;
-    for ( const auto &img : m_createInfo.Samplers )
+    for ( const auto &img : m_desc.Samplers )
     {
         auto &[ buffer, allocation ] = stagingBuffers[ mipStagingBufferIndex++ ];
 

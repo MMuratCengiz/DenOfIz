@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-void ShaderProgram::AddShader(const ShaderInfo &shaderInfo) { m_shaders.push_back(shaderInfo); }
+void ShaderProgram::AddShader(const ShaderDesc &shaderInfo) { m_shaders.push_back(shaderInfo); }
 
 void ShaderProgram::Compile()
 {

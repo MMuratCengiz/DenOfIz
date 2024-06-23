@@ -25,7 +25,7 @@ VulkanSurface::VulkanSurface(VulkanContext *context) : m_context(context) { Crea
 
 void VulkanSurface::CreateSurface() const
 {
-    const vk::SurfaceCapabilitiesKHR capabilities = m_context->PhysicalDevice.getSurfaceCapabilitiesKHR(m_context->Surface);
+    const vk::SurfaceCapabilitiesKHR capabilities = m_context->GPU.getSurfaceCapabilitiesKHR(m_context->Surface);
 
     CreateSwapChain(capabilities);
 }

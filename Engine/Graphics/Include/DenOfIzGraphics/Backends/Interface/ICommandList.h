@@ -23,7 +23,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IFence.h"
 #include "ILock.h"
 #include "IPipeline.h"
-#include "IResource.h"
+#include "IBufferResource.h"
+#include "ITextureResource.h"
+#include "IRayTracingAccelerationStructure.h"
 #include "ISemaphore.h"
 #include "ISwapChain.h"
 #include "PipelineBarrier.h"
@@ -31,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    struct RenderingAttachmentInfo
+    struct RenderingAttachmentDesc
     {
         ImageLayout Layout = ImageLayout::Undefined;
         LoadOp LoadOp = LoadOp::Clear;
@@ -43,11 +45,11 @@ namespace DenOfIz
         std::array<float, 2> ClearDepth{ 1.0f, 0.0f };
     };
 
-    struct RenderingInfo
+    struct RenderingDesc
     {
-        std::vector<RenderingAttachmentInfo> RTAttachments;
-        RenderingAttachmentInfo DepthAttachment;
-        RenderingAttachmentInfo StencilAttachment;
+        std::vector<RenderingAttachmentDesc> RTAttachments;
+        RenderingAttachmentDesc DepthAttachment;
+        RenderingAttachmentDesc StencilAttachment;
 
         float RenderAreaWidth = 0.0f;
         float RenderAreaHeight = 0.0f;
@@ -56,14 +58,42 @@ namespace DenOfIz
         uint32_t LayerCount = 1;
     };
 
-    struct ExecuteInfo
+    struct CopyBufferRegionDesc
+    {
+        IBufferResource *DstBuffer = nullptr;
+        uint64_t DstOffset = 0;
+        IBufferResource *SrcBuffer = nullptr;
+        uint64_t SrcOffset = 0;
+        uint64_t NumBytes = 0;
+    };
+
+    struct CopyTextureRegionDesc
+    {
+        ITextureResource *SrcTexture = nullptr;
+        ITextureResource *DstTexture = nullptr;
+        uint32_t SrcX = 0;
+        uint32_t SrcY = 0;
+        uint32_t SrcZ = 0;
+        uint32_t DstX = 0;
+        uint32_t DstY = 0;
+        uint32_t DstZ = 0;
+        uint32_t Width = 0;
+        uint32_t Height = 0;
+        uint32_t Depth = 0;
+        uint32_t SrcMipLevel = 0;
+        uint32_t DstMipLevel = 0;
+        uint32_t SrcArrayLayer = 0;
+        uint32_t DstArrayLayer = 0;
+    };
+
+    struct ExecuteDesc
     {
         IFence *Notify = nullptr;
         std::vector<ISemaphore *> WaitOnLocks = {};
         std::vector<ISemaphore *> SignalLocks = {};
     };
 
-    struct CommandListCreateInfo
+    struct CommandListDesc
     {
         QueueType QueueType = QueueType::Graphics;
     };
@@ -74,9 +104,9 @@ namespace DenOfIz
         virtual ~ICommandList() = default;
 
         virtual void Begin() = 0;
-        virtual void BeginRendering(const RenderingInfo &renderingInfo) = 0;
+        virtual void BeginRendering(const RenderingDesc &renderingInfo) = 0;
         virtual void EndRendering() = 0;
-        virtual void Execute(const ExecuteInfo &submitInfo) = 0;
+        virtual void Execute(const ExecuteDesc &submitInfo) = 0;
         virtual void Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks) = 0;
         virtual void BindPipeline(IPipeline *pipeline) = 0;
         virtual void BindVertexBuffer(IBufferResource *buffer) = 0;
@@ -84,15 +114,15 @@ namespace DenOfIz
         virtual void BindViewport(float x, float y, float width, float height) = 0;
         virtual void BindScissorRect(float x, float y, float width, float height) = 0;
         virtual void BindDescriptorTable(IDescriptorTable *table) = 0;
-        virtual void BindPushConstants(ShaderStage stage, uint32_t offset, uint32_t size, void *data) = 0;
-        virtual void BindBufferResource(IBufferResource *resource) = 0;
-        virtual void BindImageResource(ITextureResource *resource) = 0;
         virtual void SetDepthBias(float constantFactor, float clamp, float slopeFactor) = 0;
         virtual void SetPipelineBarrier(const PipelineBarrier &barrier) = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) = 0;
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0) = 0;
+        // List of copy commands
+        virtual void CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionInfo) = 0;
+        virtual void CopyTextureRegion(const CopyTextureRegionDesc & copyTextureRegionInfo) = 0;
+        // --
         virtual void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
-        virtual void TransitionImageLayout(ITextureResource *image, ImageLayout oldLayout, ImageLayout newLayout) = 0;
     };
 
 } // namespace DenOfIz

@@ -16,27 +16,27 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/DirectX12/Resource/DX12BufferResource.h>
-#include "DenOfIzGraphics/Backends/DirectX12/Resource/DX12Fence.h"
+#include <DenOfIzGraphics/Backends/DirectX12/DX12BufferResource.h>
+#include "DenOfIzGraphics/Backends/DirectX12/DX12Fence.h"
 #include "directxtk12/BufferHelpers.h"
 
 using namespace DenOfIz;
 
-DX12BufferResource::DX12BufferResource(DX12Context *context, const BufferCreateInfo &createInfo) : m_context(context), m_createInfo(createInfo)
+DX12BufferResource::DX12BufferResource(DX12Context *context, const BufferDesc &desc) : m_context(context), m_desc(desc)
 {
-    m_stride = GetImageFormatSize(m_createInfo.Format);
+    m_stride = GetImageFormatSize(m_desc.Format);
 }
 
 void DX12BufferResource::Allocate(const void *data)
 {
-    if ( m_createInfo.KeepMemoryMapped && allocated )
+    if ( m_desc.KeepMemoryMapped && allocated )
     {
         DZ_NOT_NULL(m_mappedMemory);
         memcpy(m_mappedMemory, data, m_size);
         return;
     }
 
-    bool useStaging = m_createInfo.HeapType == HeapType::GPU_CPU || m_createInfo.HeapType == HeapType::GPU;
+    bool useStaging = m_desc.HeapType == HeapType::GPU_CPU || m_desc.HeapType == HeapType::GPU;
     ID3D12Resource2 *stagingBuffer = nullptr;
     D3D12MA::Allocation *stagingAllocation = nullptr;
 
@@ -65,11 +65,11 @@ void DX12BufferResource::Allocate(const void *data)
     if ( !allocated )
     {
         D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
-        if ( m_createInfo.Usage.ReadWrite )
+        if ( m_desc.Usage.ReadWrite )
         {
             flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
         }
-        if ( m_createInfo.Usage.AccelerationStructureScratch || m_createInfo.Usage.BottomLevelAccelerationStructureInput || m_createInfo.Usage.TopLevelAccelerationStructureInput )
+        if ( m_desc.Usage.AccelerationStructureScratch || m_desc.Usage.BottomLevelAccelerationStructureInput || m_desc.Usage.TopLevelAccelerationStructureInput )
         {
             flags = D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
         }
@@ -77,14 +77,14 @@ void DX12BufferResource::Allocate(const void *data)
         CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(DX12DescriptorHeap::RoundUp(m_size), flags);
 
         D3D12MA::ALLOCATION_DESC allocationDesc = {};
-        allocationDesc.HeapType = DX12EnumConverter::ConvertHeapType(m_createInfo.HeapType);
+        allocationDesc.HeapType = DX12EnumConverter::ConvertHeapType(m_desc.HeapType);
 
         D3D12_RESOURCE_STATES start_state = D3D12_RESOURCE_STATE_COMMON;
-        if ( m_createInfo.HeapType == HeapType::CPU_GPU || m_createInfo.HeapType == HeapType::CPU )
+        if ( m_desc.HeapType == HeapType::CPU_GPU || m_desc.HeapType == HeapType::CPU )
         {
             start_state = D3D12_RESOURCE_STATE_GENERIC_READ;
         }
-        else if ( m_createInfo.HeapType == HeapType::GPU_CPU || m_createInfo.HeapType == HeapType::GPU )
+        else if ( m_desc.HeapType == HeapType::GPU_CPU || m_desc.HeapType == HeapType::GPU )
         {
             start_state = D3D12_RESOURCE_STATE_COPY_DEST;
         }
@@ -120,7 +120,7 @@ void DX12BufferResource::Allocate(const void *data)
     {
         THROW_IF_FAILED(m_resource->Map(0, NULL, &m_mappedMemory));
         memcpy(m_mappedMemory, data, m_size);
-        if ( !m_createInfo.KeepMemoryMapped )
+        if ( !m_desc.KeepMemoryMapped )
         {
             m_resource->Unmap(0, NULL);
             m_mappedMemory = nullptr;
@@ -136,14 +136,14 @@ void DX12BufferResource::Allocate(const void *data)
 
 void DX12BufferResource::CreateBufferView()
 {
-    std::unique_ptr<DX12DescriptorHeap> &heap = m_createInfo.HeapType == HeapType::CPU_GPU || m_createInfo.HeapType == HeapType::GPU
+    std::unique_ptr<DX12DescriptorHeap> &heap = m_desc.HeapType == HeapType::CPU_GPU || m_desc.HeapType == HeapType::GPU
         ? m_context->ShaderVisibleCbvSrvUavDescriptorHeap
         : m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ];
 
     // The views here are set explicitly in CommandList::BindVertexBuffer and CommandList::BindIndexBuffer
-    DZ_RETURN_IF(m_createInfo.Usage.VertexBuffer || m_createInfo.Usage.IndexBuffer);
+    DZ_RETURN_IF(m_desc.Usage.VertexBuffer || m_desc.Usage.IndexBuffer);
 
-    if ( m_createInfo.Usage.UniformBuffer )
+    if ( m_desc.Usage.UniformBuffer )
     {
         D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
         desc.BufferLocation = m_allocation->GetResource()->GetGPUVirtualAddress();
@@ -152,15 +152,15 @@ void DX12BufferResource::CreateBufferView()
     }
     else
     {
-        uint64_t stride = m_createInfo.BufferView.Stride;
+        uint64_t stride = m_desc.BufferView.Stride;
 
-        if ( !m_createInfo.Usage.ReadWrite )
+        if ( !m_desc.Usage.ReadWrite )
         {
             D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
-            desc.Format = DX12EnumConverter::ConvertImageFormat(m_createInfo.Format);
+            desc.Format = DX12EnumConverter::ConvertImageFormat(m_desc.Format);
             desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
             desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            desc.Buffer.FirstElement = m_createInfo.BufferView.Offset;
+            desc.Buffer.FirstElement = m_desc.BufferView.Offset;
             if ( stride != 0 )
             {
                 desc.Buffer.NumElements = m_size / stride;
@@ -172,9 +172,9 @@ void DX12BufferResource::CreateBufferView()
         else
         {
             D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {};
-            desc.Format = DX12EnumConverter::ConvertImageFormat(m_createInfo.Format);
+            desc.Format = DX12EnumConverter::ConvertImageFormat(m_desc.Format);
             desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-            desc.Buffer.FirstElement = m_createInfo.BufferView.Offset;
+            desc.Buffer.FirstElement = m_desc.BufferView.Offset;
             if ( stride != 0 )
             {
                 desc.Buffer.NumElements = m_size / stride;
@@ -189,7 +189,7 @@ void DX12BufferResource::CreateBufferView()
 
 void DX12BufferResource::Deallocate()
 {
-    if ( m_mappedMemory != nullptr && m_createInfo.KeepMemoryMapped )
+    if ( m_mappedMemory != nullptr && m_desc.KeepMemoryMapped )
     {
         m_resource->Unmap(0, NULL);
         m_mappedMemory = nullptr;

@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 #ifdef BUILD_VK
 
-#include <DenOfIzGraphics/Backends/Interface/IResource.h>
+#include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
 
 namespace DenOfIz
@@ -27,7 +27,7 @@ namespace DenOfIz
 
     class VulkanBufferResource final : public IBufferResource, private NonCopyable
     {
-        BufferCreateInfo m_createInfo;
+        BufferDesc m_desc;
         VulkanContext *m_context;
 
         VmaAllocation m_allocation;
@@ -39,7 +39,7 @@ namespace DenOfIz
     public:
         vk::DescriptorBufferInfo DescriptorInfo;
 
-        explicit VulkanBufferResource(VulkanContext *context, const BufferCreateInfo &createInfo);
+        explicit VulkanBufferResource(VulkanContext *context, const BufferDesc &desc);
 
         void Deallocate() override;
         ~VulkanBufferResource() override;

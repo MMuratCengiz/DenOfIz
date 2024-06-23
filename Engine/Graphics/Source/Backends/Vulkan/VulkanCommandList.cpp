@@ -22,10 +22,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanCommandList::VulkanCommandList(VulkanContext *context, CommandListCreateInfo createInfo) : m_context(context), m_createInfo(std::move(createInfo))
+VulkanCommandList::VulkanCommandList(VulkanContext *context, CommandListDesc desc) : m_context(context), m_desc(std::move(desc))
 {
     auto commandPool = m_context->GraphicsQueueCommandPool;
-    switch ( m_createInfo.QueueType )
+    switch ( m_desc.QueueType )
     {
     case QueueType::Presentation:
     case QueueType::Graphics:
@@ -56,7 +56,7 @@ void VulkanCommandList::Begin()
     m_commandBuffer.begin(beginInfo);
 }
 
-void VulkanCommandList::BeginRendering(const RenderingInfo &renderingInfo)
+void VulkanCommandList::BeginRendering(const RenderingDesc &renderingInfo)
 {
     vk::RenderingInfo renderInfo{};
 
@@ -74,7 +74,7 @@ void VulkanCommandList::BeginRendering(const RenderingInfo &renderingInfo)
 
     for ( const auto &colorAttachment : renderingInfo.RTAttachments )
     {
-        VulkanImageResource *vkColorAttachmentResource = dynamic_cast<VulkanImageResource *>(colorAttachment.Resource);
+        VulkanTextureResource *vkColorAttachmentResource = dynamic_cast<VulkanTextureResource *>(colorAttachment.Resource);
 
         vk::RenderingAttachmentInfo colorAttachmentInfo{};
         colorAttachmentInfo.imageView = vkColorAttachmentResource->GetImageView();
@@ -91,7 +91,7 @@ void VulkanCommandList::BeginRendering(const RenderingInfo &renderingInfo)
     // Todo these need to be fixed.
     if ( renderingInfo.DepthAttachment.Resource != nullptr )
     {
-        VulkanImageResource *vkDepthStencilResource = dynamic_cast<VulkanImageResource *>(renderingInfo.DepthAttachment.Resource);
+        VulkanTextureResource *vkDepthStencilResource = dynamic_cast<VulkanTextureResource *>(renderingInfo.DepthAttachment.Resource);
 
         vk::RenderingAttachmentInfo depthAttachmentInfo{};
         depthAttachmentInfo.imageView = vkDepthStencilResource->GetImageView();
@@ -105,7 +105,7 @@ void VulkanCommandList::BeginRendering(const RenderingInfo &renderingInfo)
 
     if ( renderingInfo.StencilAttachment.Resource != nullptr )
     {
-        VulkanImageResource *vkDepthStencilResource = dynamic_cast<VulkanImageResource *>(renderingInfo.StencilAttachment.Resource);
+        VulkanTextureResource *vkDepthStencilResource = dynamic_cast<VulkanTextureResource *>(renderingInfo.StencilAttachment.Resource);
 
         vk::RenderingAttachmentInfo stencilAttachmentInfo{};
         stencilAttachmentInfo.imageView = vkDepthStencilResource->GetImageView();
@@ -122,7 +122,7 @@ void VulkanCommandList::BeginRendering(const RenderingInfo &renderingInfo)
 
 void VulkanCommandList::EndRendering() { m_commandBuffer.endRendering(); }
 
-void VulkanCommandList::Execute(const ExecuteInfo &executeInfo)
+void VulkanCommandList::Execute(const ExecuteDesc &executeInfo)
 {
     m_commandBuffer.end();
 
@@ -152,7 +152,7 @@ void VulkanCommandList::Execute(const ExecuteInfo &executeInfo)
 
     VulkanFence *notify = reinterpret_cast<VulkanFence *>(executeInfo.Notify);
     notify->Reset();
-    const auto submitResult = m_context->Queues[ m_createInfo.QueueType ].submit(1, &vkSubmitInfo, notify->GetFence());
+    const auto submitResult = m_context->Queues[ m_desc.QueueType ].submit(1, &vkSubmitInfo, notify->GetFence());
 
     VK_CHECK_RESULT(submitResult);
 }
@@ -215,26 +215,42 @@ void VulkanCommandList::BindDescriptorTable(IDescriptorTable *table)
     VulkanDescriptorTable *vkTable = dynamic_cast<VulkanDescriptorTable *>(table);
 
     std::vector<vk::WriteDescriptorSet> writeDescriptorSets = vkTable->GetWriteDescriptorSets();
-    vk::PipelineBindPoint bindPoint = m_createInfo.QueueType == QueueType::Graphics ? vk::PipelineBindPoint::eGraphics : vk::PipelineBindPoint::eCompute;
+    vk::PipelineBindPoint bindPoint = m_desc.QueueType == QueueType::Graphics ? vk::PipelineBindPoint::eGraphics : vk::PipelineBindPoint::eCompute;
     m_commandBuffer.pushDescriptorSetKHR(bindPoint, m_boundPipeline->Layout, 0, writeDescriptorSets.size(), writeDescriptorSets.data());
 }
-
-void VulkanCommandList::BindPushConstants(ShaderStage stage, uint32_t offset, uint32_t size, void *data) {}
-
-void VulkanCommandList::BindBufferResource(IBufferResource *resource) {}
-
-void VulkanCommandList::BindImageResource(ITextureResource *resource) {}
 
 void VulkanCommandList::SetDepthBias(float constantFactor, float clamp, float slopeFactor) { m_commandBuffer.setDepthBias(constantFactor, clamp, slopeFactor); }
 
 void VulkanCommandList::SetPipelineBarrier(const PipelineBarrier &barrier)
 {
-    VulkanPipelineBarrierHelper::ExecutePipelineBarrier(m_context, m_commandBuffer, m_createInfo.QueueType, barrier);
+    VulkanPipelineBarrierHelper::ExecutePipelineBarrier(m_context, m_commandBuffer, m_desc.QueueType, barrier);
 }
 
 void VulkanCommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance)
 {
     m_commandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+}
+
+void VulkanCommandList::CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionDesc)
+{
+    VulkanBufferResource *srcBuffer = dynamic_cast<VulkanBufferResource *>(copyBufferRegionDesc.SrcBuffer);
+    VulkanBufferResource *dstBuffer = dynamic_cast<VulkanBufferResource *>(copyBufferRegionDesc.DstBuffer);
+
+    vk::BufferCopy copyRegion{};
+    copyRegion.srcOffset = copyBufferRegionDesc.SrcOffset;
+    copyRegion.dstOffset = copyBufferRegionDesc.DstOffset;
+    copyRegion.size = copyBufferRegionDesc.NumBytes;
+
+    m_commandBuffer.copyBuffer(srcBuffer->GetBuffer(), dstBuffer->GetBuffer(), 1, &copyRegion);
+}
+
+void VulkanCommandList::CopyTextureRegion(const CopyTextureRegionDesc &copyTextureRegionDesc)
+{
+    VulkanTextureResource *srcTex = dynamic_cast<VulkanTextureResource *>(copyTextureRegionDesc.SrcTexture);
+    VulkanTextureResource *dstTex = dynamic_cast<VulkanTextureResource *>(copyTextureRegionDesc.DstTexture);
+
+    vk::ImageCopy copyRegion{};
+    // TODO
 }
 
 void VulkanCommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
@@ -244,14 +260,12 @@ void VulkanCommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint3
 
 void VulkanCommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-    DZ_ASSERTM(m_createInfo.QueueType == QueueType::Compute, "Dispatch can only be called on compute queues.");
+    DZ_ASSERTM(m_desc.QueueType == QueueType::Compute, "Dispatch can only be called on compute queues.");
 }
-
-void VulkanCommandList::TransitionImageLayout(ITextureResource *image, ImageLayout oldLayout, ImageLayout newLayout) {}
 
 void VulkanCommandList::Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks)
 {
-    DZ_ASSERTM(m_createInfo.QueueType == QueueType::Graphics || m_createInfo.QueueType == QueueType::Presentation, "Present can only be called on presentation queues.");
+    DZ_ASSERTM(m_desc.QueueType == QueueType::Graphics || m_desc.QueueType == QueueType::Presentation, "Present can only be called on presentation queues.");
 
     vk::PresentInfoKHR presentInfo{};
 

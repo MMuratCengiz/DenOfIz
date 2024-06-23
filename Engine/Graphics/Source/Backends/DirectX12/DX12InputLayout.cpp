@@ -20,10 +20,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12InputLayout::DX12InputLayout(const InputLayoutCreateInfo &createInfo)
+DX12InputLayout::DX12InputLayout(const InputLayoutDesc &desc)
 {
     int bindingIndex = 0;
-    for ( const InputGroup &inputGroup : createInfo.InputGroups )
+    for ( const InputGroup &inputGroup : desc.InputGroups )
     {
         D3D12_INPUT_CLASSIFICATION inputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
         uint32_t instanceDataStepRate = 0;

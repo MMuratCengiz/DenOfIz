@@ -18,7 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "IResource.h"
+#include "IBufferResource.h"
+#include "ITextureResource.h"
 #include "ISemaphore.h"
 
 namespace DenOfIz

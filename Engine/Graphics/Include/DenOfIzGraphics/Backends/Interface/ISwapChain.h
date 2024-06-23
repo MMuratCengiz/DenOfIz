@@ -19,19 +19,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/ILock.h>
-#include <DenOfIzGraphics/Backends/Interface/IResource.h>
+#include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
+#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
 #include <DenOfIzGraphics/Backends/Interface/ISemaphore.h>
 
 namespace DenOfIz
 {
 
-    struct SwapChainCreateInfo
+    struct SwapChainDesc
     {
         uint32_t Width = 0; // 0 means that it will be set to the window width
         uint32_t Height = 0; // 0 means that it will be set to the window height
         uint32_t BufferCount = 3;
-        ImageFormat BackBufferFormat = ImageFormat::R8G8B8A8Unorm;
-        ImageFormat DepthBufferFormat = ImageFormat::D32Float;
+        Format BackBufferFormat = Format::R8G8B8A8Unorm;
+        Format DepthBufferFormat = Format::D32Float;
     };
 
     struct Viewport
@@ -47,7 +48,7 @@ namespace DenOfIz
     public:
         virtual ~ISwapChain() = default;
 
-        virtual ImageFormat GetPreferredFormat() = 0;
+        virtual Format GetPreferredFormat() = 0;
         virtual uint32_t AcquireNextImage(ISemaphore *imageReadySemaphore) = 0;
         virtual void Resize(uint32_t width, uint32_t height) = 0;
 

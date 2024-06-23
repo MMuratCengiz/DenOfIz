@@ -19,7 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <string>
-#include "IResource.h"
+#include "IBufferResource.h"
+#include "ITextureResource.h"
 #include <wil/com.h>
 
 #ifdef WIN32
@@ -79,7 +80,7 @@ namespace DenOfIz
         uint32_t Offset;
         uint32_t Stride;
         std::string Name;
-        ImageFormat Format;
+        Format Format;
     };
 
     enum class UniformType
@@ -97,7 +98,7 @@ namespace DenOfIz
         uint32_t ArraySize;
         uint32_t Size;
         UniformType Type;
-        ImageFormat Format;
+        Format Format;
         std::string Name;
     };
 

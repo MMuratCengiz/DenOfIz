@@ -139,20 +139,20 @@ void ShaderReflection::CreatePushConstant(const spirv_cross::Compiler &compiler,
 
 ShaderVarType ShaderReflection::SpvTypeToCustomType(const spirv_cross::SPIRType &type)
 {
-    auto format = ImageFormat::Undefined;
+    auto format = Format::Undefined;
     uint32_t size = 0;
 
-    auto make32Int = [](const uint32_t &numOfElements) -> ImageFormat
+    auto make32Int = [](const uint32_t &numOfElements) -> Format
     {
         if ( numOfElements == 1 )
-            return ImageFormat::R32Sint;
+            return Format::R32Sint;
         if ( numOfElements == 2 )
-            return ImageFormat::R32G32Sint;
+            return Format::R32G32Sint;
         if ( numOfElements == 3 )
-            return ImageFormat::R32G32B32Sint;
+            return Format::R32G32B32Sint;
         if ( numOfElements == 4 )
-            return ImageFormat::R32G32B32A32Sint;
-        return ImageFormat::Undefined;
+            return Format::R32G32B32A32Sint;
+        return Format::Undefined;
     };
 
 #if NO_64_BIT_EXISTS_IN_HLSL_GLSL
@@ -170,30 +170,30 @@ ShaderVarType ShaderReflection::SpvTypeToCustomType(const spirv_cross::SPIRType 
     };
 #endif
 
-    auto make32UInt = [](const uint32_t &numOfElements) -> ImageFormat
+    auto make32UInt = [](const uint32_t &numOfElements) -> Format
     {
         if ( numOfElements == 1 )
-            return ImageFormat::R32Uint;
+            return Format::R32Uint;
         if ( numOfElements == 2 )
-            return ImageFormat::R32G32Uint;
+            return Format::R32G32Uint;
         if ( numOfElements == 3 )
-            return ImageFormat::R32G32B32Uint;
+            return Format::R32G32B32Uint;
         if ( numOfElements == 4 )
-            return ImageFormat::R32G32B32A32Uint;
-        return ImageFormat::Undefined;
+            return Format::R32G32B32A32Uint;
+        return Format::Undefined;
     };
 
-    auto make32Float = [](const uint32_t &numOfElements) -> ImageFormat
+    auto make32Float = [](const uint32_t &numOfElements) -> Format
     {
         if ( numOfElements == 1 )
-            return ImageFormat::R32Float;
+            return Format::R32Float;
         if ( numOfElements == 2 )
-            return ImageFormat::R32G32Float;
+            return Format::R32G32Float;
         if ( numOfElements == 3 )
-            return ImageFormat::R32G32B32Float;
+            return Format::R32G32B32Float;
         if ( numOfElements == 4 )
-            return ImageFormat::R32G32B32A32Float;
-        return ImageFormat::Undefined;
+            return Format::R32G32B32A32Float;
+        return Format::Undefined;
     };
 
     // 64 bit types not supported by DX12

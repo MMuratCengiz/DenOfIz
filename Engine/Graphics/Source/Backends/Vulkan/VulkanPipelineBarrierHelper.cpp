@@ -41,7 +41,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  * under the License.
  */
 
-#include <DenOfIzGraphics/Backends/Vulkan/Resource/VulkanPipelineBarrierHelper.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanPipelineBarrierHelper.h>
 
 using namespace DenOfIz;
 
@@ -73,7 +73,7 @@ void VulkanPipelineBarrierHelper::ExecutePipelineBarrier(VulkanContext *context,
 
 vk::ImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier(const TextureBarrierInfo &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags)
 {
-    VulkanImageResource *imageResource = (VulkanImageResource *)barrier.Resource;
+    VulkanTextureResource *imageResource = (VulkanTextureResource *)barrier.Resource;
     vk::ImageMemoryBarrier imageMemoryBarrier{};
 
     if ( barrier.OldState.UnorderedAccess && barrier.NewState.UnorderedAccess )

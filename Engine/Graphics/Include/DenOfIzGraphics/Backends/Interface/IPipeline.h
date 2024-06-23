@@ -20,7 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include "IInputLayout.h"
-#include "IResource.h"
+#include "IBufferResource.h"
+#include "ITextureResource.h"
 #include "IRootSignature.h"
 #include "IShader.h"
 
@@ -74,9 +75,9 @@ namespace DenOfIz
     {
         uint32_t ViewMask = 0;
 
-        std::vector<ImageFormat> ColorAttachmentFormats;
-        ImageFormat DepthAttachmentFormat;
-        ImageFormat StencilAttachmentFormat;
+        std::vector<Format> ColorAttachmentFormats;
+        Format DepthAttachmentFormat;
+        Format StencilAttachmentFormat;
     };
 
     struct DepthTest
@@ -103,7 +104,7 @@ namespace DenOfIz
         StencilFace BackFace;
     };
 
-    struct PipelineCreateInfo
+    struct PipelineDesc
     {
         IInputLayout *InputLayout = nullptr;
         IRootSignature *RootSignature = nullptr;

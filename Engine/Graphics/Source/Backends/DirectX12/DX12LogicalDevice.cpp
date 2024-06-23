@@ -67,13 +67,13 @@ void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
     THROW_IF_FAILED(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(m_context->DXGIFactory.put())));
 }
 
-std::vector<PhysicalDeviceInfo> DX12LogicalDevice::ListPhysicalDevices()
+std::vector<PhysicalDevice> DX12LogicalDevice::ListPhysicalDevices()
 {
-    std::vector<PhysicalDeviceInfo> result;
+    std::vector<PhysicalDevice> result;
     wil::com_ptr<IDXGIAdapter1> adapter;
     for ( UINT adapterIndex = 0; SUCCEEDED(m_context->DXGIFactory->EnumAdapters1(adapterIndex, adapter.put())); adapterIndex++ )
     {
-        PhysicalDeviceInfo deviceInfo{};
+        PhysicalDevice deviceInfo{};
         CreateDeviceInfo(*adapter.get(), deviceInfo);
         result.push_back(deviceInfo);
     }
@@ -81,35 +81,35 @@ std::vector<PhysicalDeviceInfo> DX12LogicalDevice::ListPhysicalDevices()
     return result;
 }
 
-void DX12LogicalDevice::CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDeviceInfo &deviceInfo)
+void DX12LogicalDevice::CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDevice &physicalDevice)
 {
     DXGI_ADAPTER_DESC adapterDesc;
     adapter.GetDesc(&adapterDesc);
-    deviceInfo.Id = adapterDesc.DeviceId;
+    physicalDevice.Id = adapterDesc.DeviceId;
     std::wstring adapterName(adapterDesc.Description);
-    deviceInfo.Name = std::string(adapterName.begin(), adapterName.end());
+    physicalDevice.Name = std::string(adapterName.begin(), adapterName.end());
 
     DXGI_ADAPTER_DESC1 desc;
     THROW_IF_FAILED(adapter.GetDesc1(&desc));
-    deviceInfo.Properties.IsDedicated = !(desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE);
-    deviceInfo.Properties.MemoryAvailableInMb = desc.DedicatedVideoMemory / (1024 * 1024);
+    physicalDevice.Properties.IsDedicated = !(desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE);
+    physicalDevice.Properties.MemoryAvailableInMb = desc.DedicatedVideoMemory / (1024 * 1024);
 
     wil::com_ptr<ID3D12Device> device;
     THROW_IF_FAILED(D3D12CreateDevice(&adapter, m_minFeatureLevel, IID_PPV_ARGS(device.put())));
 
     // Todo actually read these from somewhere:
-    deviceInfo.Capabilities.DedicatedTransferQueue = true;
-    deviceInfo.Capabilities.ComputeShaders = true;
+    physicalDevice.Capabilities.DedicatedTransferQueue = true;
+    physicalDevice.Capabilities.ComputeShaders = true;
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 opts5 = {};
     if ( SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &opts5, sizeof(opts5))) )
     {
-        deviceInfo.Capabilities.RayTracing = opts5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
+        physicalDevice.Capabilities.RayTracing = opts5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
     }
 
     BOOL allowTearing = false;
     m_context->DXGIFactory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
-    deviceInfo.Capabilities.Tearing = allowTearing;
+    physicalDevice.Capabilities.Tearing = allowTearing;
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {};
     HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12));
@@ -119,7 +119,7 @@ void DX12LogicalDevice::CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDeviceI
     }
 }
 
-void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
+void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
 {
     LOG(INFO) << "Loading physical device: " << device.Name;
     LOG(INFO) << "Device Capabilities:";
@@ -253,39 +253,39 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
 
 void DX12LogicalDevice::WaitIdle() {}
 
-std::unique_ptr<ICommandList> DX12LogicalDevice::CreateCommandList(const CommandListCreateInfo &createInfo)
+std::unique_ptr<ICommandListPool> DX12LogicalDevice::CreateCommandListPool(const CommandListPoolDesc &poolDesc)
 {
-    DX12CommandList *commandList = new DX12CommandList(m_context.get(), createInfo);
-    return std::unique_ptr<ICommandList>(commandList);
+    DX12CommandListPool *pool = new DX12CommandListPool(m_context.get(), poolDesc);
+    return std::unique_ptr<ICommandListPool>(pool);
 }
 
-std::unique_ptr<IPipeline> DX12LogicalDevice::CreatePipeline(const PipelineCreateInfo &createInfo)
+std::unique_ptr<IPipeline> DX12LogicalDevice::CreatePipeline(const PipelineDesc &pipelineDesc)
 {
-    DX12Pipeline *pipeline = new DX12Pipeline(m_context.get(), createInfo);
+    DX12Pipeline *pipeline = new DX12Pipeline(m_context.get(), pipelineDesc);
     return std::unique_ptr<IPipeline>(pipeline);
 }
 
-std::unique_ptr<ISwapChain> DX12LogicalDevice::CreateSwapChain(const SwapChainCreateInfo &createInfo)
+std::unique_ptr<ISwapChain> DX12LogicalDevice::CreateSwapChain(const SwapChainDesc &swapChainDesc)
 {
-    DX12SwapChain *swapChain = new DX12SwapChain(m_context.get(), createInfo);
+    DX12SwapChain *swapChain = new DX12SwapChain(m_context.get(), swapChainDesc);
     return std::unique_ptr<ISwapChain>(swapChain);
 }
 
-std::unique_ptr<IRootSignature> DX12LogicalDevice::CreateRootSignature(const RootSignatureCreateInfo &createInfo)
+std::unique_ptr<IRootSignature> DX12LogicalDevice::CreateRootSignature(const RootSignatureDesc &rootSignatureDesc)
 {
-    DX12RootSignature *rootSignature = new DX12RootSignature(m_context.get(), createInfo);
+    DX12RootSignature *rootSignature = new DX12RootSignature(m_context.get(), rootSignatureDesc);
     return std::unique_ptr<IRootSignature>(rootSignature);
 }
 
-std::unique_ptr<IInputLayout> DX12LogicalDevice::CreateInputLayout(const InputLayoutCreateInfo &createInfo)
+std::unique_ptr<IInputLayout> DX12LogicalDevice::CreateInputLayout(const InputLayoutDesc &inputLayoutDesc)
 {
-    DX12InputLayout *inputLayout = new DX12InputLayout(createInfo);
+    DX12InputLayout *inputLayout = new DX12InputLayout(inputLayoutDesc);
     return std::unique_ptr<IInputLayout>(inputLayout);
 }
 
-std::unique_ptr<IDescriptorTable> DX12LogicalDevice::CreateDescriptorTable(const DescriptorTableCreateInfo &createInfo)
+std::unique_ptr<IDescriptorTable> DX12LogicalDevice::CreateDescriptorTable(const DescriptorTableDesc &descriptorTableDesc)
 {
-    DX12DescriptorTable *descriptorTable = new DX12DescriptorTable(m_context.get(), createInfo);
+    DX12DescriptorTable *descriptorTable = new DX12DescriptorTable(m_context.get(), descriptorTableDesc);
     return std::unique_ptr<IDescriptorTable>(descriptorTable);
 }
 
@@ -301,16 +301,16 @@ std::unique_ptr<ISemaphore> DX12LogicalDevice::CreateSemaphore()
     return std::unique_ptr<ISemaphore>(semaphore);
 }
 
-std::unique_ptr<IBufferResource> DX12LogicalDevice::CreateBufferResource(std::string name, const BufferCreateInfo &createInfo)
+std::unique_ptr<IBufferResource> DX12LogicalDevice::CreateBufferResource(std::string name, const BufferDesc &bufferDesc)
 {
-    DX12BufferResource *buffer = new DX12BufferResource(m_context.get(), createInfo);
+    DX12BufferResource *buffer = new DX12BufferResource(m_context.get(), bufferDesc);
     buffer->Name = name;
     return std::unique_ptr<IBufferResource>(buffer);
 }
 
-std::unique_ptr<ITextureResource> DX12LogicalDevice::CreateImageResource(std::string name, const ImageCreateInfo &createInfo)
+std::unique_ptr<ITextureResource> DX12LogicalDevice::CreateImageResource(std::string name, const TextureDesc &textureDesc)
 {
-    DX12ImageResource *image = new DX12ImageResource(m_context.get(), createInfo);
+    DX12TextureResource *image = new DX12TextureResource(m_context.get(), textureDesc);
     image->Name = name;
     return std::unique_ptr<ITextureResource>(image);
 }

@@ -16,13 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Vulkan/Resource/VulkanImageResource.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanImageResource.h>
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanUtilities.h"
 
 using namespace DenOfIz;
 
-VulkanImageResource::VulkanImageResource(VulkanContext *context, ImageCreateInfo createInfo) : m_context(context), m_createInfo(createInfo)
+VulkanTextureResource::VulkanTextureResource(VulkanContext *context, const TextureDesc &textureDesc) : m_context(context), m_desc(textureDesc)
 {
     vk::ImageCreateInfo imageCreateInfo{};
 
@@ -30,11 +30,11 @@ VulkanImageResource::VulkanImageResource(VulkanContext *context, ImageCreateInfo
     imageCreateInfo.extent.width = m_width == 0 ? context->SurfaceExtent.width : m_width;
     imageCreateInfo.extent.height = m_height == 0 ? context->SurfaceExtent.height : m_height;
     imageCreateInfo.extent.depth = 1;
-    imageCreateInfo.format = VulkanEnumConverter::ConvertImageFormat(createInfo.Format);
+    imageCreateInfo.format = VulkanEnumConverter::ConvertImageFormat(textureDesc.Format);
     imageCreateInfo.tiling = vk::ImageTiling::eOptimal;
-    imageCreateInfo.usage = VulkanEnumConverter::ConvertImageUsage(createInfo.ImageUsage);
+    imageCreateInfo.usage = VulkanEnumConverter::ConvertImageUsage(textureDesc.ImageUsage);
     imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
-    imageCreateInfo.samples = VulkanEnumConverter::ConvertSampleCount(createInfo.MSAASampleCount);
+    imageCreateInfo.samples = VulkanEnumConverter::ConvertSampleCount(textureDesc.MSAASampleCount);
     imageCreateInfo.mipLevels = 1;
     imageCreateInfo.arrayLayers = 1;
     imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
@@ -47,22 +47,22 @@ VulkanImageResource::VulkanImageResource(VulkanContext *context, ImageCreateInfo
     vk::ImageViewCreateInfo imageViewCreateInfo{};
     imageViewCreateInfo.image = m_image;
     imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
-    imageViewCreateInfo.format = VulkanEnumConverter::ConvertImageFormat(createInfo.Format);
+    imageViewCreateInfo.format = VulkanEnumConverter::ConvertImageFormat(textureDesc.Format);
     imageViewCreateInfo.components.r = vk::ComponentSwizzle::eIdentity;
     imageViewCreateInfo.components.g = vk::ComponentSwizzle::eIdentity;
     imageViewCreateInfo.components.b = vk::ComponentSwizzle::eIdentity;
     imageViewCreateInfo.components.a = vk::ComponentSwizzle::eIdentity;
-    imageViewCreateInfo.subresourceRange.aspectMask = VulkanEnumConverter::ConvertImageAspect(createInfo.Aspect);
+    imageViewCreateInfo.subresourceRange.aspectMask = VulkanEnumConverter::ConvertImageAspect(textureDesc.Aspect);
     imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
     imageViewCreateInfo.subresourceRange.levelCount = 1;
     imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
     imageViewCreateInfo.subresourceRange.layerCount = 1;
 
     m_imageView = context->LogicalDevice.createImageView(imageViewCreateInfo);
-    m_aspect = VulkanEnumConverter::ConvertImageAspect(createInfo.Aspect);
+    m_aspect = VulkanEnumConverter::ConvertImageAspect(textureDesc.Aspect);
 }
 
-void VulkanImageResource::Allocate(const void *newImage)
+void VulkanTextureResource::Allocate(const void *newImage)
 {
     m_allocated = true;
 
@@ -76,7 +76,7 @@ void VulkanImageResource::Allocate(const void *newImage)
         m_mipLevels = 1;
     }
 
-    const vk::Format format = VulkanEnumConverter::ConvertImageFormat(m_createInfo.Format);
+    const vk::Format format = VulkanEnumConverter::ConvertImageFormat(m_desc.Format);
 
     vk::ImageCreateInfo imageCreateInfo{};
 
@@ -115,20 +115,20 @@ void VulkanImageResource::Allocate(const void *newImage)
     {
         vk::SamplerCreateInfo samplerCreateInfo{};
 
-        samplerCreateInfo.magFilter = VulkanEnumConverter::ConvertFilter(m_samplerCreateInfo.MagFilter);
-        samplerCreateInfo.minFilter = VulkanEnumConverter::ConvertFilter(m_samplerCreateInfo.MinFilter);
-        samplerCreateInfo.addressModeU = VulkanEnumConverter::ConvertAddressMode(m_samplerCreateInfo.AddressModeU);
-        samplerCreateInfo.addressModeV = VulkanEnumConverter::ConvertAddressMode(m_samplerCreateInfo.AddressModeV);
-        samplerCreateInfo.addressModeW = VulkanEnumConverter::ConvertAddressMode(m_samplerCreateInfo.AddressModeW);
-        samplerCreateInfo.anisotropyEnable = m_samplerCreateInfo.AnisotropyEnable;
-        samplerCreateInfo.maxAnisotropy = m_samplerCreateInfo.MaxAnisotropy;
+        samplerCreateInfo.magFilter = VulkanEnumConverter::ConvertFilter(m_samplerDesc.MagFilter);
+        samplerCreateInfo.minFilter = VulkanEnumConverter::ConvertFilter(m_samplerDesc.MinFilter);
+        samplerCreateInfo.addressModeU = VulkanEnumConverter::ConvertAddressMode(m_samplerDesc.AddressModeU);
+        samplerCreateInfo.addressModeV = VulkanEnumConverter::ConvertAddressMode(m_samplerDesc.AddressModeV);
+        samplerCreateInfo.addressModeW = VulkanEnumConverter::ConvertAddressMode(m_samplerDesc.AddressModeW);
+        samplerCreateInfo.anisotropyEnable = m_samplerDesc.AnisotropyEnable;
+        samplerCreateInfo.maxAnisotropy = m_samplerDesc.MaxAnisotropy;
         samplerCreateInfo.borderColor = vk::BorderColor::eFloatOpaqueBlack;
         samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
-        samplerCreateInfo.compareEnable = m_samplerCreateInfo.CompareEnable;
-        samplerCreateInfo.compareOp = VulkanEnumConverter::ConvertCompareOp(m_samplerCreateInfo.CompareOp);
-        samplerCreateInfo.mipmapMode = VulkanEnumConverter::ConvertMipmapMode(m_samplerCreateInfo.MipmapMode);
-        samplerCreateInfo.mipLodBias = m_samplerCreateInfo.MipLodBias;
-        samplerCreateInfo.minLod = m_samplerCreateInfo.MinLod;
+        samplerCreateInfo.compareEnable = m_samplerDesc.CompareEnable;
+        samplerCreateInfo.compareOp = VulkanEnumConverter::ConvertCompareOp(m_samplerDesc.CompareOp);
+        samplerCreateInfo.mipmapMode = VulkanEnumConverter::ConvertMipmapMode(m_samplerDesc.MipmapMode);
+        samplerCreateInfo.mipLodBias = m_samplerDesc.MipLodBias;
+        samplerCreateInfo.minLod = m_samplerDesc.MinLod;
         samplerCreateInfo.maxLod = m_mipLevels;
 
         m_sampler = m_context->LogicalDevice.createSampler(samplerCreateInfo);
@@ -178,7 +178,7 @@ void VulkanImageResource::Allocate(const void *newImage)
 
     vmaDestroyBuffer(m_context->Vma, stagingBuffer, stagingAllocation);
 
-    const vk::FormatProperties properties = m_context->PhysicalDevice.getFormatProperties(format);
+    const vk::FormatProperties properties = m_context->GPU.getFormatProperties(format);
 
     if ( (properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImageFilterLinear) != vk::FormatFeatureFlagBits::eSampledImageFilterLinear )
     {
@@ -192,13 +192,13 @@ void VulkanImageResource::Allocate(const void *newImage)
     DescriptorInfo.sampler = m_sampler;
 }
 
-void VulkanImageResource::AttachSampler(SamplerCreateInfo &info)
+void VulkanTextureResource::AttachSampler(SamplerDesc &info)
 {
-    m_samplerCreateInfo = info;
+    m_samplerDesc = info;
     m_hasSampler = true;
 }
 
-void VulkanImageResource::GenerateMipMaps() const
+void VulkanTextureResource::GenerateMipMaps() const
 {
     int32_t mipWidth = m_width, mipHeight = m_height;
 
@@ -297,7 +297,7 @@ void VulkanImageResource::GenerateMipMaps() const
         });
 }
 
-void VulkanImageResource::Deallocate()
+void VulkanTextureResource::Deallocate()
 {
     DZ_RETURN_IF(!m_allocated);
 
@@ -309,4 +309,4 @@ void VulkanImageResource::Deallocate()
     }
 }
 
-VulkanImageResource::~VulkanImageResource() { Deallocate(); }
+VulkanTextureResource::~VulkanTextureResource() { Deallocate(); }

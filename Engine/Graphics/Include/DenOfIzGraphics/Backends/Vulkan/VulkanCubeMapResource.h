@@ -24,12 +24,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    struct CubeMapCreateInfo
+    struct CubeMapDesc
     {
-        std::vector<SamplerCreateInfo> Samplers;
+        std::vector<SamplerDesc> Samplers;
     };
 
-    class ICubeMapResource : public IResource
+    class ICubeMapResource
     {
 
     protected:
@@ -39,14 +39,12 @@ namespace DenOfIz
     public:
         virtual void Allocate(std::vector<const void *> data) = 0;
         virtual void Deallocate() = 0;
-
-        const ResourceType Type() override { return ResourceType::CubeMap; };
     };
 
     class VulkanCubeMapResource final : ICubeMapResource, private NonCopyable
     {
         VulkanContext *m_context;
-        CubeMapCreateInfo m_createInfo;
+        CubeMapDesc m_desc;
 
         vk::Sampler m_sampler{};
         vk::ImageView m_imageView{};
@@ -54,7 +52,7 @@ namespace DenOfIz
         VmaAllocation m_allocation;
 
     public:
-        explicit VulkanCubeMapResource(VulkanContext *context, const CubeMapCreateInfo &createInfo);
+        explicit VulkanCubeMapResource(VulkanContext *context, const CubeMapDesc &desc);
 
         void Allocate(std::vector<const void *> data) override;
         void Deallocate() override;

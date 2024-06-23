@@ -49,12 +49,12 @@ SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanSwapChain.cpp
         Source/Backends/Vulkan/VmaImplementation.cpp
         # Vulkan Resources
-        Source/Backends/Vulkan/Resource/VulkanFence.cpp
-        Source/Backends/Vulkan/Resource/VulkanSemaphore.cpp
-        Source/Backends/Vulkan/Resource/VulkanBufferResource.cpp
-        Source/Backends/Vulkan/Resource/VulkanImageResource.cpp
-        Source/Backends/Vulkan/Resource/VulkanCubeMapResource.cpp
-        Source/Backends/Vulkan/Resource/VulkanPipelineBarrierHelper.cpp)
+        Source/Backends/Vulkan/VulkanFence.cpp
+        Source/Backends/Vulkan/VulkanSemaphore.cpp
+        Source/Backends/Vulkan/VulkanBufferResource.cpp
+        Source/Backends/Vulkan/VulkanTextureResource.cpp
+        Source/Backends/Vulkan/VulkanCubeMapResource.cpp
+        Source/Backends/Vulkan/VulkanPipelineBarrierHelper.cpp)
 
 
 set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
@@ -69,10 +69,10 @@ set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
         Source/Backends/DirectX12/DX12CommandList.cpp
 
         #DirectX12 Resources
-        Source/Backends/DirectX12/Resource/DX12BufferResource.cpp
-        Source/Backends/DirectX12/Resource/DX12Fence.cpp
-        Source/Backends/DirectX12/Resource/DX12ImageResource.cpp
-        Source/Backends/DirectX12/Resource/DX12Semaphore.cpp
+        Source/Backends/DirectX12/DX12BufferResource.cpp
+        Source/Backends/DirectX12/DX12Fence.cpp
+        Source/Backends/DirectX12/DX12TextureResource.cpp
+        Source/Backends/DirectX12/DX12Semaphore.cpp
 )
 
 set(DEN_OF_IZ_GRAPHICS_METAL_SOURCES

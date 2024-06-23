@@ -19,11 +19,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "../Interface/ICommandList.h"
-#include "Resource/VulkanBufferResource.h"
-#include "Resource/VulkanFence.h"
-#include "Resource/VulkanImageResource.h"
-#include "Resource/VulkanPipelineBarrierHelper.h"
-#include "Resource/VulkanSemaphore.h"
+#include "VulkanBufferResource.h"
+#include "VulkanFence.h"
+#include "VulkanImageResource.h"
+#include "VulkanPipelineBarrierHelper.h"
+#include "VulkanSemaphore.h"
 #include "VulkanContext.h"
 #include "VulkanPipeline.h"
 
@@ -33,7 +33,7 @@ namespace DenOfIz
     class VulkanCommandList : public ICommandList
     {
     private:
-        CommandListCreateInfo m_createInfo;
+        CommandListDesc m_desc;
         VulkanContext *m_context;
         VulkanPipeline *m_boundPipeline;
 
@@ -42,27 +42,25 @@ namespace DenOfIz
         vk::Rect2D m_scissorRect;
 
     public:
-        VulkanCommandList(VulkanContext *context, CommandListCreateInfo createInfo);
+        VulkanCommandList(VulkanContext *context, CommandListDesc desc);
 
         void Begin() override;
-        void BeginRendering(const RenderingInfo &renderingInfo) override;
+        void BeginRendering(const RenderingDesc &renderingInfo) override;
         void EndRendering() override;
-        void Execute(const ExecuteInfo &submitInfo) override;
+        void Execute(const ExecuteDesc &submitInfo) override;
         void BindPipeline(IPipeline *pipeline) override;
         void BindVertexBuffer(IBufferResource *buffer) override;
         void BindIndexBuffer(IBufferResource *buffer, const IndexType &indexType) override;
         void BindViewport(float offsetX, float offsetY, float width, float height) override;
         void BindScissorRect(float offsetX, float offsetY, float width, float height) override;
         void BindDescriptorTable(IDescriptorTable *table) override;
-        void BindPushConstants(ShaderStage stage, uint32_t offset, uint32_t size, void *data) override;
-        void BindBufferResource(IBufferResource *resource) override;
-        void BindImageResource(ITextureResource *resource) override;
         void SetDepthBias(float constantFactor, float clamp, float slopeFactor) override;
         void SetPipelineBarrier(const PipelineBarrier &barrier) override;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) override;
         void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0) override;
+        void CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionDesc) override;
+        void CopyTextureRegion(const CopyTextureRegionDesc &copyTextureRegionDesc) override;
         void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
-        void TransitionImageLayout(ITextureResource *image, ImageLayout oldLayout, ImageLayout newLayout) override;
         void Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks) override;
     };
 

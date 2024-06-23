@@ -16,18 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/DirectX12/Resource/DX12ImageResource.h>
+#include <DenOfIzGraphics/Backends/DirectX12/DX12TextureResource.h>
 
 using namespace DenOfIz;
 
-DX12ImageResource::DX12ImageResource(DX12Context *context, const ImageCreateInfo &createInfo) : m_context(context), m_createInfo(createInfo) {}
+DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc &desc) : m_context(context), m_desc(desc) {}
 
-DX12ImageResource::DX12ImageResource(ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle) : m_resource(resource), m_cpuHandle(cpuHandle)
+DX12TextureResource::DX12TextureResource(ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle) : m_resource(resource), m_cpuHandle(cpuHandle)
 {
     isExternalResource = true;
 }
 
-void DX12ImageResource::Allocate(const void *data)
+void DX12TextureResource::Allocate(const void *data)
 {
     if ( isExternalResource )
     {
@@ -60,9 +60,9 @@ void DX12ImageResource::Allocate(const void *data)
     THROW_IF_FAILED(hr);
 }
 
-void DX12ImageResource::AttachSampler(SamplerCreateInfo &info) {}
+void DX12TextureResource::AttachSampler(SamplerDesc &samplerDesc) {}
 
-void DX12ImageResource::Deallocate()
+void DX12TextureResource::Deallocate()
 {
 //    DX_SAFE_RELEASE(m_resource);
 }

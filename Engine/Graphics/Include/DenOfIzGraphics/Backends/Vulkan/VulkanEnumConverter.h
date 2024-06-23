@@ -20,7 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifdef BUILD_VK
 
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
-#include <DenOfIzGraphics/Backends/Interface/IResource.h>
+#include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
+#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
 #include <DenOfIzGraphics/Backends/Interface/IShader.h>
 #include "VulkanContext.h"
 
@@ -327,70 +328,70 @@ namespace DenOfIz
             return flags;
         }
 
-        static vk::ImageAspectFlagBits ConvertImageAspect(ImageAspect aspect)
+        static vk::ImageAspectFlagBits ConvertImageAspect(TextureAspect aspect)
         {
             switch ( aspect )
             {
-            case ImageAspect::Color:
+            case TextureAspect::Color:
                 return vk::ImageAspectFlagBits::eColor;
-            case ImageAspect::Depth:
+            case TextureAspect::Depth:
                 return vk::ImageAspectFlagBits::eDepth;
-            case ImageAspect::Stencil:
+            case TextureAspect::Stencil:
                 return vk::ImageAspectFlagBits::eStencil;
-            case ImageAspect::Metadata:
+            case TextureAspect::Metadata:
                 return vk::ImageAspectFlagBits::eMetadata;
-            case ImageAspect::Plane0:
+            case TextureAspect::Plane0:
                 return vk::ImageAspectFlagBits::ePlane0;
-            case ImageAspect::Plane1:
+            case TextureAspect::Plane1:
                 return vk::ImageAspectFlagBits::ePlane1;
-            case ImageAspect::Plane2:
+            case TextureAspect::Plane2:
                 return vk::ImageAspectFlagBits::ePlane2;
-            case ImageAspect::None:
+            case TextureAspect::None:
                 return vk::ImageAspectFlagBits::eNone;
             }
 
             return vk::ImageAspectFlagBits::eNone;
         }
 
-        static vk::ImageUsageFlagBits ConvertImageUsage(ImageMemoryUsage usage)
+        static vk::ImageUsageFlagBits ConvertImageUsage(TextureMemoryUsage usage)
         {
             switch ( usage )
             {
-            case ImageMemoryUsage::TransferSrc:
+            case TextureMemoryUsage::TransferSrc:
                 return vk::ImageUsageFlagBits::eTransferSrc;
-            case ImageMemoryUsage::TransferDst:
+            case TextureMemoryUsage::TransferDst:
                 return vk::ImageUsageFlagBits::eTransferDst;
-            case ImageMemoryUsage::Sampled:
+            case TextureMemoryUsage::Sampled:
                 return vk::ImageUsageFlagBits::eSampled;
-            case ImageMemoryUsage::Storage:
+            case TextureMemoryUsage::Storage:
                 return vk::ImageUsageFlagBits::eStorage;
-            case ImageMemoryUsage::ColorAttachment:
+            case TextureMemoryUsage::ColorAttachment:
                 return vk::ImageUsageFlagBits::eColorAttachment;
-            case ImageMemoryUsage::DepthStencilAttachment:
+            case TextureMemoryUsage::DepthStencilAttachment:
                 return vk::ImageUsageFlagBits::eDepthStencilAttachment;
-            case ImageMemoryUsage::TransientAttachment:
+            case TextureMemoryUsage::TransientAttachment:
                 return vk::ImageUsageFlagBits::eTransientAttachment;
-            case ImageMemoryUsage::InputAttachment:
+            case TextureMemoryUsage::InputAttachment:
                 return vk::ImageUsageFlagBits::eInputAttachment;
-            case ImageMemoryUsage::VideoDecodeDst:
+            case TextureMemoryUsage::VideoDecodeDst:
                 return vk::ImageUsageFlagBits::eVideoDecodeDstKHR;
-            case ImageMemoryUsage::VideoDecodeSrc:
+            case TextureMemoryUsage::VideoDecodeSrc:
                 return vk::ImageUsageFlagBits::eVideoDecodeSrcKHR;
-            case ImageMemoryUsage::VideoDecodeDpb:
+            case TextureMemoryUsage::VideoDecodeDpb:
                 return vk::ImageUsageFlagBits::eVideoDecodeDpbKHR;
-            case ImageMemoryUsage::FragmentDensityMap:
+            case TextureMemoryUsage::FragmentDensityMap:
                 return vk::ImageUsageFlagBits::eFragmentDensityMapEXT;
-            case ImageMemoryUsage::FragmentShadingRateAttachment:
+            case TextureMemoryUsage::FragmentShadingRateAttachment:
                 return vk::ImageUsageFlagBits::eFragmentShadingRateAttachmentKHR;
-            case ImageMemoryUsage::HostTransferEXT:
+            case TextureMemoryUsage::HostTransferEXT:
                 return vk::ImageUsageFlagBits::eHostTransferEXT;
-            case ImageMemoryUsage::VideoEncodeDst:
+            case TextureMemoryUsage::VideoEncodeDst:
                 return vk::ImageUsageFlagBits::eVideoEncodeDstKHR;
-            case ImageMemoryUsage::VideoEncodeSrc:
+            case TextureMemoryUsage::VideoEncodeSrc:
                 return vk::ImageUsageFlagBits::eVideoEncodeSrcKHR;
-            case ImageMemoryUsage::VideoEncodeDpb:
+            case TextureMemoryUsage::VideoEncodeDpb:
                 return vk::ImageUsageFlagBits::eVideoEncodeDpbKHR;
-            case ImageMemoryUsage::AttachmentFeedbackLoop:
+            case TextureMemoryUsage::AttachmentFeedbackLoop:
                 return vk::ImageUsageFlagBits::eAttachmentFeedbackLoopEXT;
             }
 
@@ -417,131 +418,131 @@ namespace DenOfIz
             return VMA_MEMORY_USAGE_AUTO;
         }
 
-        static vk::Format ConvertImageFormat(const ImageFormat &imageFormat)
+        static vk::Format ConvertImageFormat(const Format &imageFormat)
         {
             switch ( imageFormat )
             {
-            case ImageFormat::Undefined:
+            case Format::Undefined:
                 return vk::Format::eUndefined;
-            case ImageFormat::R32G32B32A32Float:
+            case Format::R32G32B32A32Float:
                 return vk::Format::eR32G32B32A32Sfloat;
-            case ImageFormat::R32G32B32A32Uint:
+            case Format::R32G32B32A32Uint:
                 return vk::Format::eR32G32B32A32Uint;
-            case ImageFormat::R32G32B32A32Sint:
+            case Format::R32G32B32A32Sint:
                 return vk::Format::eR32G32B32A32Sint;
-            case ImageFormat::R32G32B32Float:
+            case Format::R32G32B32Float:
                 return vk::Format::eR32G32B32Sfloat;
-            case ImageFormat::R32G32B32Uint:
+            case Format::R32G32B32Uint:
                 return vk::Format::eR32G32B32Uint;
-            case ImageFormat::R32G32B32Sint:
+            case Format::R32G32B32Sint:
                 return vk::Format::eR32G32B32Sint;
-            case ImageFormat::R16G16B16A16Float:
+            case Format::R16G16B16A16Float:
                 return vk::Format::eR16G16B16A16Sfloat;
-            case ImageFormat::R16G16B16A16Unorm:
+            case Format::R16G16B16A16Unorm:
                 return vk::Format::eR16G16B16A16Unorm;
-            case ImageFormat::R16G16B16A16Uint:
+            case Format::R16G16B16A16Uint:
                 return vk::Format::eR16G16B16A16Uint;
-            case ImageFormat::R16G16B16A16Snorm:
+            case Format::R16G16B16A16Snorm:
                 return vk::Format::eR16G16B16A16Snorm;
-            case ImageFormat::R16G16B16A16Sint:
+            case Format::R16G16B16A16Sint:
                 return vk::Format::eR16G16B16A16Sint;
-            case ImageFormat::R32G32Float:
+            case Format::R32G32Float:
                 return vk::Format::eR32G32Sfloat;
-            case ImageFormat::R32G32Uint:
+            case Format::R32G32Uint:
                 return vk::Format::eR32G32Uint;
-            case ImageFormat::R32G32Sint:
+            case Format::R32G32Sint:
                 return vk::Format::eR32G32Sint;
-            case ImageFormat::R10G10B10A2Unorm:
+            case Format::R10G10B10A2Unorm:
                 return vk::Format::eA2R10G10B10UnormPack32;
-            case ImageFormat::R10G10B10A2Uint:
+            case Format::R10G10B10A2Uint:
                 return vk::Format::eA2R10G10B10UintPack32;
-            case ImageFormat::R8G8B8A8Unorm:
+            case Format::R8G8B8A8Unorm:
                 return vk::Format::eR8G8B8A8Unorm;
-            case ImageFormat::R8G8B8A8UnormSrgb:
+            case Format::R8G8B8A8UnormSrgb:
                 return vk::Format::eR8G8B8A8Srgb;
-            case ImageFormat::R8G8B8A8Uint:
+            case Format::R8G8B8A8Uint:
                 return vk::Format::eR8G8B8A8Uint;
-            case ImageFormat::R8G8B8A8Snorm:
+            case Format::R8G8B8A8Snorm:
                 return vk::Format::eR8G8B8A8Snorm;
-            case ImageFormat::R8G8B8A8Sint:
+            case Format::R8G8B8A8Sint:
                 return vk::Format::eR8G8B8A8Sint;
-            case ImageFormat::R16G16Float:
+            case Format::R16G16Float:
                 return vk::Format::eR16G16Sfloat;
-            case ImageFormat::R16G16Unorm:
+            case Format::R16G16Unorm:
                 return vk::Format::eR16G16Unorm;
-            case ImageFormat::R16G16Uint:
+            case Format::R16G16Uint:
                 return vk::Format::eR16G16Uint;
-            case ImageFormat::R16G16Snorm:
+            case Format::R16G16Snorm:
                 return vk::Format::eR16G16Snorm;
-            case ImageFormat::R16G16Sint:
+            case Format::R16G16Sint:
                 return vk::Format::eR16G16Sint;
-            case ImageFormat::D32Float:
+            case Format::D32Float:
                 return vk::Format::eD32Sfloat;
-            case ImageFormat::R32Float:
+            case Format::R32Float:
                 return vk::Format::eR32Sfloat;
-            case ImageFormat::R32Uint:
+            case Format::R32Uint:
                 return vk::Format::eR32Uint;
-            case ImageFormat::R32Sint:
+            case Format::R32Sint:
                 return vk::Format::eR32Sint;
-            case ImageFormat::D24UnormS8Uint:
+            case Format::D24UnormS8Uint:
                 return vk::Format::eD24UnormS8Uint;
-            case ImageFormat::R8G8Unorm:
+            case Format::R8G8Unorm:
                 return vk::Format::eR8G8Unorm;
-            case ImageFormat::R8G8Uint:
+            case Format::R8G8Uint:
                 return vk::Format::eR8G8Uint;
-            case ImageFormat::R8G8Snorm:
+            case Format::R8G8Snorm:
                 return vk::Format::eR8G8Snorm;
-            case ImageFormat::R8G8Sint:
+            case Format::R8G8Sint:
                 return vk::Format::eR8G8Sint;
-            case ImageFormat::R16Float:
+            case Format::R16Float:
                 return vk::Format::eR16Sfloat;
-            case ImageFormat::D16Unorm:
+            case Format::D16Unorm:
                 return vk::Format::eD16Unorm;
-            case ImageFormat::R16Unorm:
+            case Format::R16Unorm:
                 return vk::Format::eR16Unorm;
-            case ImageFormat::R16Uint:
+            case Format::R16Uint:
                 return vk::Format::eR16Uint;
-            case ImageFormat::R16Snorm:
+            case Format::R16Snorm:
                 return vk::Format::eR16Snorm;
-            case ImageFormat::R16Sint:
+            case Format::R16Sint:
                 return vk::Format::eR16Sint;
-            case ImageFormat::R8Unorm:
+            case Format::R8Unorm:
                 return vk::Format::eR8Unorm;
-            case ImageFormat::R8Uint:
+            case Format::R8Uint:
                 return vk::Format::eR8Uint;
-            case ImageFormat::R8Snorm:
+            case Format::R8Snorm:
                 return vk::Format::eR8Snorm;
-            case ImageFormat::R8Sint:
+            case Format::R8Sint:
                 return vk::Format::eR8Sint;
-            case ImageFormat::BC1Unorm:
+            case Format::BC1Unorm:
                 return vk::Format::eBc1RgbaUnormBlock;
-            case ImageFormat::BC1UnormSrgb:
+            case Format::BC1UnormSrgb:
                 return vk::Format::eBc1RgbUnormBlock;
-            case ImageFormat::BC2Unorm:
+            case Format::BC2Unorm:
                 return vk::Format::eBc2UnormBlock;
-            case ImageFormat::BC2UnormSrgb:
+            case Format::BC2UnormSrgb:
                 return vk::Format::eBc2SrgbBlock;
-            case ImageFormat::BC3Unorm:
+            case Format::BC3Unorm:
                 return vk::Format::eBc3UnormBlock;
-            case ImageFormat::BC3UnormSrgb:
+            case Format::BC3UnormSrgb:
                 return vk::Format::eBc3SrgbBlock;
-            case ImageFormat::BC4Unorm:
+            case Format::BC4Unorm:
                 return vk::Format::eBc4UnormBlock;
-            case ImageFormat::BC4Snorm:
+            case Format::BC4Snorm:
                 return vk::Format::eBc4SnormBlock;
-            case ImageFormat::BC5Unorm:
+            case Format::BC5Unorm:
                 return vk::Format::eBc5UnormBlock;
-            case ImageFormat::BC5Snorm:
+            case Format::BC5Snorm:
                 return vk::Format::eBc5SnormBlock;
-            case ImageFormat::B8G8R8A8Unorm:
+            case Format::B8G8R8A8Unorm:
                 return vk::Format::eB8G8R8A8Unorm;
-            case ImageFormat::BC6HUfloat16:
+            case Format::BC6HUfloat16:
                 return vk::Format::eBc6HUfloatBlock;
-            case ImageFormat::BC6HSfloat16:
+            case Format::BC6HSfloat16:
                 return vk::Format::eBc6HSfloatBlock;
-            case ImageFormat::BC7Unorm:
+            case Format::BC7Unorm:
                 return vk::Format::eBc7UnormBlock;
-            case ImageFormat::BC7UnormSrgb:
+            case Format::BC7UnormSrgb:
                 return vk::Format::eBc7SrgbBlock;
             }
 

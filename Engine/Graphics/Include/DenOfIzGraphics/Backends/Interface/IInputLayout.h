@@ -46,7 +46,7 @@ namespace DenOfIz
     {
         Semantic Semantic;
         uint32_t SemanticIndex;
-        ImageFormat Format;
+        Format Format;
     };
 
     /**
@@ -61,7 +61,7 @@ namespace DenOfIz
     /**
      * @brief Describes the input layout of a the input assembler stage. The order the groups are added determines the buffer binding.
      */
-    struct InputLayoutCreateInfo
+    struct InputLayoutDesc
     {
         std::vector<InputGroup> InputGroups;
     };

@@ -32,7 +32,7 @@ namespace DenOfIz
         D3D12_INPUT_LAYOUT_DESC m_inputLayout;
 
     public:
-        DX12InputLayout(const InputLayoutCreateInfo &createInfo);
+        DX12InputLayout(const InputLayoutDesc &desc);
 
         inline const D3D12_INPUT_LAYOUT_DESC &GetInputLayout() const { return m_inputLayout; }
 

@@ -18,33 +18,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IResource.h>
-#include "../DX12Context.h"
-#include "../DX12EnumConverter.h"
+#include <DenOfIzGraphics/Backends/DirectX12/DX12Context.h>
+#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
 
 namespace DenOfIz
 {
 
-    class DX12BufferResource : public IBufferResource
+    class DX12TextureResource : public ITextureResource
     {
     private:
         DX12Context *m_context;
-        BufferCreateInfo m_createInfo;
-        wil::com_ptr<ID3D12Resource2> m_resource;
-        wil::com_ptr<D3D12MA::Allocation> m_allocation;
+        TextureDesc m_desc;
+        ID3D12Resource2 *m_resource;
+        D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
+        bool isExternalResource = false;
 
-        bool allocated = false;
-        uint32_t m_stride = 0;
     public:
-        DX12BufferResource(DX12Context *context, const BufferCreateInfo &createInfo);
-        ID3D12Resource2 *GetResource() { return m_resource.get(); }
-        ~DX12BufferResource() override;
+        DX12TextureResource(DX12Context *context, const TextureDesc &desc);
+        DX12TextureResource(ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle);
+        ~DX12TextureResource() override = default;
+
+        void AttachSampler(SamplerDesc &samplerDesc) override;
         void Deallocate() override;
 
-        uint32_t GetStride() const { return m_stride; }
+        ID3D12Resource *GetResource() const { return m_resource; }
+        const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle() const { return m_cpuHandle; };
+
     protected:
         void Allocate(const void *data) override;
-        void CreateBufferView();
     };
 
 } // namespace DenOfIz

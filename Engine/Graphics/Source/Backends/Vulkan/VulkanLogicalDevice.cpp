@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
-#include "DenOfIzGraphics/Backends/Vulkan/Resource/VulkanImageResource.h"
+#include "DenOfIzGraphics/Backends/Vulkan/VulkanImageResource.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanDescriptorTable.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h"
@@ -155,15 +155,15 @@ bool VulkanLogicalDevice::InitDebugMessages(const vk::DebugUtilsMessengerCreateI
     return true;
 }
 
-std::vector<PhysicalDeviceInfo> VulkanLogicalDevice::ListPhysicalDevices()
+std::vector<PhysicalDevice> VulkanLogicalDevice::ListPhysicalDevices()
 {
     const auto devices = m_context->Instance.enumeratePhysicalDevices();
-    std::vector<PhysicalDeviceInfo> result;
+    std::vector<PhysicalDevice> result;
 
     for ( const auto &device : devices )
     {
         vk::PhysicalDevice physicalDevice = device;
-        PhysicalDeviceInfo deviceInfo{};
+        PhysicalDevice deviceInfo{};
         CreateDeviceInfo(physicalDevice, deviceInfo);
         result.push_back(deviceInfo);
     }
@@ -171,7 +171,7 @@ std::vector<PhysicalDeviceInfo> VulkanLogicalDevice::ListPhysicalDevices()
     return result;
 }
 
-void VulkanLogicalDevice::CreateDeviceInfo(const vk::PhysicalDevice &physicalDevice, PhysicalDeviceInfo &deviceInfo)
+void VulkanLogicalDevice::CreateDeviceInfo(const vk::PhysicalDevice &physicalDevice, PhysicalDevice &deviceInfo)
 {
     vk::PhysicalDeviceFeatures2 deviceFeatures;
     vk::PhysicalDeviceProperties deviceProperties;
@@ -199,9 +199,9 @@ void VulkanLogicalDevice::CreateDeviceInfo(const vk::PhysicalDevice &physicalDev
     deviceInfo.Capabilities.Tessellation = true;
 }
 
-void VulkanLogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
+void VulkanLogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
 {
-    DZ_ASSERTM(m_context->PhysicalDevice == VK_NULL_HANDLE, "A physical device is already selected for this logical device. Create a new Logical Device.");
+    DZ_ASSERTM(m_context->GPU == VK_NULL_HANDLE, "A physical device is already selected for this logical device. Create a new Logical Device.");
     m_selectedDeviceInfo = device;
     m_context->SelectedDeviceInfo = device;
 
@@ -210,11 +210,11 @@ void VulkanLogicalDevice::LoadPhysicalDevice(const PhysicalDeviceInfo &device)
         const vk::PhysicalDeviceProperties deviceProperties = physicalDevice.getProperties();
         if ( deviceProperties.deviceID == device.Id )
         {
-            m_context->PhysicalDevice = physicalDevice;
+            m_context->GPU = physicalDevice;
         }
     }
 
-    DZ_ASSERTM(m_context->PhysicalDevice != VK_NULL_HANDLE, "Invalid DeviceID provided.");
+    DZ_ASSERTM(m_context->GPU != VK_NULL_HANDLE, "Invalid DeviceID provided.");
 
     CreateLogicalDevice();
     InitializeVma();
@@ -243,7 +243,7 @@ void VulkanLogicalDevice::SetupQueueFamilies() const
 {
     auto exists = [ & ](const QueueType bit) -> bool { return m_context->QueueFamilies.contains(bit); };
 
-    const auto localQueueFamilies = m_context->PhysicalDevice.getQueueFamilyProperties();
+    const auto localQueueFamilies = m_context->GPU.getQueueFamilyProperties();
 
     uint32_t index = 0;
     for ( const vk::QueueFamilyProperties &property : localQueueFamilies )
@@ -261,7 +261,7 @@ void VulkanLogicalDevice::SetupQueueFamilies() const
             m_context->QueueFamilies[ QueueType::Copy ] = QueueFamily{ index, { static_cast<VkQueueFlags>(property.queueFlags) } };
         }
 
-        const vk::Bool32 presentationSupport = m_context->PhysicalDevice.getSurfaceSupportKHR(index, m_context->Surface);
+        const vk::Bool32 presentationSupport = m_context->GPU.getSurfaceSupportKHR(index, m_context->Surface);
 
         if ( presentationSupport && !exists(QueueType::Presentation) )
         {
@@ -298,7 +298,7 @@ void VulkanLogicalDevice::CreateLogicalDevice() const
     createInfo.pEnabledFeatures = &features;
     createInfo.pNext = &dynamicRenderingFeature;
 
-    m_context->LogicalDevice = m_context->PhysicalDevice.createDevice(createInfo);
+    m_context->LogicalDevice = m_context->GPU.createDevice(createInfo);
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_context->LogicalDevice);
 
     m_context->Queues[ QueueType::Graphics ] = vk::Queue{};
@@ -314,7 +314,7 @@ void VulkanLogicalDevice::InitializeVma() const
 {
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_3;
-    allocatorInfo.physicalDevice = m_context->PhysicalDevice;
+    allocatorInfo.physicalDevice = m_context->GPU;
     allocatorInfo.device = m_context->LogicalDevice;
     allocatorInfo.instance = m_context->Instance;
 
@@ -409,8 +409,8 @@ VulkanContext *VulkanLogicalDevice::GetContext() const { return m_context.get();
 
 void VulkanLogicalDevice::CreateImageFormat() const
 {
-    const auto surfaceFormats = m_context->PhysicalDevice.getSurfaceFormatsKHR(m_context->Surface);
-    const auto presentModes = m_context->PhysicalDevice.getSurfacePresentModesKHR(m_context->Surface);
+    const auto surfaceFormats = m_context->GPU.getSurfaceFormatsKHR(m_context->Surface);
+    const auto presentModes = m_context->GPU.getSurfacePresentModesKHR(m_context->Surface);
 
     auto presentMode = vk::PresentModeKHR::eImmediate;
     for ( const auto mode : presentModes )
@@ -430,61 +430,61 @@ void VulkanLogicalDevice::CreateImageFormat() const
         }
     }
 
-    m_context->SurfaceImageFormat = ImageFormat::B8G8R8A8Unorm;
+    m_context->SurfaceImageFormat = Format::B8G8R8A8Unorm;
     m_context->ColorSpace = surfaceFormat.colorSpace;
     m_context->PresentMode = presentMode;
 }
 
 uint32_t VulkanLogicalDevice::GetFrameCount() const { return m_context->SwapChainImages.size(); }
 
-ImageFormat VulkanLogicalDevice::GetSwapChainImageFormat() const { return m_context->SurfaceImageFormat; }
+Format VulkanLogicalDevice::GetSwapChainImageFormat() const { return m_context->SurfaceImageFormat; }
 
-std::unique_ptr<ICommandList> VulkanLogicalDevice::CreateCommandList(const CommandListCreateInfo &createInfo)
+std::unique_ptr<ICommandListPool> VulkanLogicalDevice::CreateCommandListPool(const CommandListPoolDesc &createInfo)
 {
-    VulkanCommandList *commandList = new VulkanCommandList(m_context.get(), createInfo);
-    return std::unique_ptr<ICommandList>(dynamic_cast<ICommandList *>(commandList));
+    VulkanCommandPool *pool = new VulkanCommandPool(m_context.get(), createInfo);
+    return std::unique_ptr<ICommandListPool>(dynamic_cast<ICommandListPool *>(pool));
 }
 
-std::unique_ptr<IPipeline> VulkanLogicalDevice::CreatePipeline(const PipelineCreateInfo &createInfo)
+std::unique_ptr<IPipeline> VulkanLogicalDevice::CreatePipeline(const PipelineDesc &createInfo)
 {
     VulkanPipeline *pipeline = new VulkanPipeline(m_context.get(), createInfo);
     return std::unique_ptr<IPipeline>(pipeline);
 }
 
-std::unique_ptr<ISwapChain> VulkanLogicalDevice::CreateSwapChain(const SwapChainCreateInfo &createInfo)
+std::unique_ptr<ISwapChain> VulkanLogicalDevice::CreateSwapChain(const SwapChainDesc &createInfo)
 {
     VulkanSwapChain *swapChain = new VulkanSwapChain(m_context.get(), createInfo);
     return std::unique_ptr<ISwapChain>(swapChain);
 }
 
-std::unique_ptr<IRootSignature> VulkanLogicalDevice::CreateRootSignature(const RootSignatureCreateInfo &createInfo)
+std::unique_ptr<IRootSignature> VulkanLogicalDevice::CreateRootSignature(const RootSignatureDesc &createInfo)
 {
     VulkanRootSignature *rootSignature = new VulkanRootSignature(m_context.get(), createInfo);
     return std::unique_ptr<IRootSignature>(rootSignature);
 }
 
-std::unique_ptr<IInputLayout> VulkanLogicalDevice::CreateInputLayout(const InputLayoutCreateInfo &createInfo)
+std::unique_ptr<IInputLayout> VulkanLogicalDevice::CreateInputLayout(const InputLayoutDesc &createInfo)
 {
     VulkanInputLayout *inputLayout = new VulkanInputLayout(createInfo);
     return std::unique_ptr<IInputLayout>(inputLayout);
 }
 
-std::unique_ptr<IDescriptorTable> VulkanLogicalDevice::CreateDescriptorTable(const DescriptorTableCreateInfo &createInfo)
+std::unique_ptr<IDescriptorTable> VulkanLogicalDevice::CreateDescriptorTable(const DescriptorTableDesc &createInfo)
 {
     VulkanDescriptorTable *descriptorTable = new VulkanDescriptorTable(m_context.get(), createInfo);
     return std::unique_ptr<IDescriptorTable>(descriptorTable);
 }
 
-std::unique_ptr<IBufferResource> VulkanLogicalDevice::CreateBufferResource(std::string name, const BufferCreateInfo &createInfo)
+std::unique_ptr<IBufferResource> VulkanLogicalDevice::CreateBufferResource(std::string name, const BufferDesc &createInfo)
 {
     VulkanBufferResource *bufferResource = new VulkanBufferResource(m_context.get(), createInfo);
     bufferResource->Name = name;
     return std::unique_ptr<IBufferResource>(bufferResource);
 }
 
-std::unique_ptr<ITextureResource> VulkanLogicalDevice::CreateImageResource(std::string name, const ImageCreateInfo &createInfo)
+std::unique_ptr<ITextureResource> VulkanLogicalDevice::CreateImageResource(std::string name, const TextureDesc &createInfo)
 {
-    VulkanImageResource *imageResource = new VulkanImageResource(m_context.get(), createInfo);
+    VulkanTextureResource *imageResource = new VulkanTextureResource(m_context.get(), createInfo);
     imageResource->Name = name;
     return std::unique_ptr<ITextureResource>(imageResource);
 }

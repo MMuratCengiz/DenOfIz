@@ -20,9 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12DescriptorTable::DX12DescriptorTable(DX12Context *context, DescriptorTableCreateInfo createInfo)
+DX12DescriptorTable::DX12DescriptorTable(DX12Context *context, DescriptorTableDesc desc)
 {
-    DX12RootSignature *rootSignature = static_cast<DX12RootSignature *>(createInfo.RootSignature);
+    DX12RootSignature *rootSignature = static_cast<DX12RootSignature *>(desc.RootSignature);
     DZ_NOT_NULL(rootSignature);
 
     m_rootSignature = rootSignature->GetRootSignature();
@@ -32,7 +32,7 @@ void DX12DescriptorTable::BindImage(ITextureResource *resource)
 {
     DZ_NOT_NULL(resource);
 
-    DX12ImageResource *dx12Resource = static_cast<DX12ImageResource *>(resource);
+    DX12TextureResource *dx12Resource = static_cast<DX12TextureResource *>(resource);
 }
 
 void DX12DescriptorTable::BindBuffer(IBufferResource *resource)

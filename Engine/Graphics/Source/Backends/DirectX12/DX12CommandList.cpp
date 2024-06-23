@@ -20,9 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12CommandList::DX12CommandList(DX12Context *context, CommandListCreateInfo createInfo) : m_context(context), m_createInfo(createInfo)
+DX12CommandList::DX12CommandList(DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> commandAllocator, wil::com_ptr<ID3D12GraphicsCommandList> commandList,
+                                 CommandListDesc desc) : m_context(context), m_commandAllocator(commandAllocator), m_desc(desc)
 {
-    switch ( createInfo.QueueType )
+    commandList->QueryInterface(IID_PPV_ARGS(m_commandList.put()));
+
+    switch ( desc.QueueType )
     {
     case QueueType::Presentation:
     case QueueType::Graphics:
@@ -36,21 +39,12 @@ DX12CommandList::DX12CommandList(DX12Context *context, CommandListCreateInfo cre
         break;
     }
 
-    D3D12_COMMAND_LIST_TYPE commandListType = DX12EnumConverter::ConvertQueueType(m_createInfo.QueueType);
-
-    THROW_IF_FAILED(m_context->D3DDevice->CreateCommandAllocator(commandListType, IID_PPV_ARGS(m_commandAllocator.put())));
-    THROW_IF_FAILED(m_context->D3DDevice->CreateCommandList(0, commandListType, m_commandAllocator.get(), nullptr, IID_PPV_ARGS(m_commandList.put())));
 #ifndef NDEBUG
     m_commandList->QueryInterface(IID_PPV_ARGS(m_debugCommandList.put()));
 #endif
-    m_commandList->Close();
 }
 
-DX12CommandList::~DX12CommandList()
-{
-    //    DX_SAFE_RELEASE(m_commandList);
-    //    DX_SAFE_RELEASE(m_commandAllocator);
-}
+DX12CommandList::~DX12CommandList() {}
 
 void DX12CommandList::Begin()
 {
@@ -61,12 +55,12 @@ void DX12CommandList::Begin()
     m_commandList->SetDescriptorHeaps(m_heaps.size(), m_heaps.data());
 }
 
-void DX12CommandList::BeginRendering(const RenderingInfo &renderingInfo)
+void DX12CommandList::BeginRendering(const RenderingDesc &renderingInfo)
 {
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> renderTargets(renderingInfo.RTAttachments.size());
     for ( int i = 0; i < renderingInfo.RTAttachments.size(); i++ )
     {
-        DX12ImageResource *pImageResource = reinterpret_cast<DX12ImageResource *>(renderingInfo.RTAttachments[ i ].Resource);
+        DX12TextureResource *pImageResource = reinterpret_cast<DX12TextureResource *>(renderingInfo.RTAttachments[ i ].Resource);
         renderTargets[ i ] = pImageResource->GetCpuHandle();
 
         m_commandList->ClearRenderTargetView(renderTargets[ i ], renderingInfo.RTAttachments[ i ].ClearColor.data(), 0, nullptr);
@@ -78,7 +72,7 @@ void DX12CommandList::BeginRendering(const RenderingInfo &renderingInfo)
 
 void DX12CommandList::EndRendering() {}
 
-void DX12CommandList::Execute(const ExecuteInfo &executeInfo)
+void DX12CommandList::Execute(const ExecuteDesc &executeInfo)
 {
     THROW_IF_FAILED(m_commandList->Close());
 
@@ -114,7 +108,7 @@ void DX12CommandList::BindPipeline(IPipeline *pipeline)
     DX12Pipeline *dx12Pipeline = reinterpret_cast<DX12Pipeline *>(pipeline);
     m_currentRootSignature = dx12Pipeline->GetRootSignature();
 
-    if ( m_createInfo.QueueType == QueueType::Graphics )
+    if ( m_desc.QueueType == QueueType::Graphics )
     {
         m_commandList->SetGraphicsRootSignature(dx12Pipeline->GetRootSignature());
         m_commandList->IASetPrimitiveTopology(dx12Pipeline->GetTopology());
@@ -180,12 +174,6 @@ void DX12CommandList::BindDescriptorTable(IDescriptorTable *table)
     SetRootSignature(pTable->GetRootSignature());
 }
 
-void DX12CommandList::BindPushConstants(ShaderStage stage, uint32_t offset, uint32_t size, void *data) {}
-
-void DX12CommandList::BindBufferResource(IBufferResource *resource) {}
-
-void DX12CommandList::BindImageResource(ITextureResource *resource) {}
-
 void DX12CommandList::SetDepthBias(float constantFactor, float clamp, float slopeFactor) { /*Move to pipeline state due to reduces support*/ }
 
 void DX12CommandList::SetPipelineBarrier(const PipelineBarrier &barrier)
@@ -212,7 +200,45 @@ void DX12CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_
 
 void DX12CommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) { m_commandList->Dispatch(groupCountX, groupCountY, groupCountZ); }
 
-void DX12CommandList::TransitionImageLayout(ITextureResource *image, ImageLayout oldLayout, ImageLayout newLayout) {}
+void DX12CommandList::CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionInfo)
+{
+    DZ_NOT_NULL(copyBufferRegionInfo.DstBuffer);
+    DZ_NOT_NULL(copyBufferRegionInfo.SrcBuffer);
+
+    DX12BufferResource *dstBuffer = reinterpret_cast<DX12BufferResource *>(copyBufferRegionInfo.DstBuffer);
+    DX12BufferResource *srcBuffer = reinterpret_cast<DX12BufferResource *>(copyBufferRegionInfo.SrcBuffer);
+
+    m_commandList->CopyBufferRegion(dstBuffer->GetResource(), copyBufferRegionInfo.DstOffset, srcBuffer->GetResource(), copyBufferRegionInfo.SrcOffset, copyBufferRegionInfo.NumBytes);
+}
+
+void DX12CommandList::CopyTextureRegion(const CopyTextureRegionDesc &copyTextureRegionInfo)
+{
+    DZ_NOT_NULL(copyTextureRegionInfo.DstTexture);
+    DZ_NOT_NULL(copyTextureRegionInfo.SrcTexture);
+
+    DX12TextureResource *dstTexture = reinterpret_cast<DX12TextureResource *>(copyTextureRegionInfo.DstTexture);
+    DX12TextureResource *srcTexture = reinterpret_cast<DX12TextureResource *>(copyTextureRegionInfo.SrcTexture);
+
+    D3D12_TEXTURE_COPY_LOCATION dst = {};
+    dst.pResource = dstTexture->GetResource();
+    dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    dst.SubresourceIndex = copyTextureRegionInfo.DstMipLevel;
+
+    D3D12_TEXTURE_COPY_LOCATION src = {};
+    src.pResource = srcTexture->GetResource();
+    src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    src.SubresourceIndex = copyTextureRegionInfo.SrcMipLevel;
+
+    D3D12_BOX box = {};
+    box.left = copyTextureRegionInfo.SrcX;
+    box.top = copyTextureRegionInfo.SrcY;
+    box.front = copyTextureRegionInfo.SrcZ;
+    box.right = copyTextureRegionInfo.SrcX + copyTextureRegionInfo.Width;
+    box.bottom = copyTextureRegionInfo.SrcY + copyTextureRegionInfo.Height;
+    box.back = copyTextureRegionInfo.SrcZ + copyTextureRegionInfo.Depth;
+
+    m_commandList->CopyTextureRegion(&dst, copyTextureRegionInfo.DstX, copyTextureRegionInfo.DstY, copyTextureRegionInfo.DstZ, &src, &box);
+}
 
 void DX12CommandList::CompatibilityPipelineBarrier(const PipelineBarrier &barrier)
 {
@@ -220,7 +246,7 @@ void DX12CommandList::CompatibilityPipelineBarrier(const PipelineBarrier &barrie
 
     for ( const TextureBarrierInfo &imageBarrier : barrier.GetTextureBarriers() )
     {
-        ID3D12Resource *pResource = reinterpret_cast<DX12ImageResource *>(imageBarrier.Resource)->GetResource();
+        ID3D12Resource *pResource = reinterpret_cast<DX12TextureResource *>(imageBarrier.Resource)->GetResource();
         D3D12_RESOURCE_STATES before = DX12EnumConverter::ConvertResourceState(imageBarrier.OldState);
         D3D12_RESOURCE_STATES after = DX12EnumConverter::ConvertResourceState(imageBarrier.NewState);
         D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(pResource, before, after);
@@ -233,7 +259,7 @@ void DX12CommandList::CompatibilityPipelineBarrier(const PipelineBarrier &barrie
 
     for ( const BufferBarrierInfo &bufferBarrier : barrier.GetBufferBarriers() )
     {
-        ID3D12Resource *pResource = reinterpret_cast<DX12ImageResource *>(bufferBarrier.Resource)->GetResource();
+        ID3D12Resource *pResource = reinterpret_cast<DX12TextureResource *>(bufferBarrier.Resource)->GetResource();
         D3D12_RESOURCE_STATES before = DX12EnumConverter::ConvertResourceState(bufferBarrier.OldState);
         D3D12_RESOURCE_STATES after = DX12EnumConverter::ConvertResourceState(bufferBarrier.NewState);
         D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(pResource, before, after);
@@ -259,12 +285,12 @@ void DX12CommandList::EnhancedPipelineBarrier(const PipelineBarrier &barrier)
 
     for ( const TextureBarrierInfo &textureBarrier : barrier.GetTextureBarriers() )
     {
-        ID3D12Resource *pResource = reinterpret_cast<DX12ImageResource *>(textureBarrier.Resource)->GetResource();
+        ID3D12Resource *pResource = reinterpret_cast<DX12TextureResource *>(textureBarrier.Resource)->GetResource();
 
         D3D12_TEXTURE_BARRIER dxTextureBarrier = dxTextureBarriers.emplace_back(D3D12_TEXTURE_BARRIER{});
         dxTextureBarrier.pResource = pResource;
-        dxTextureBarrier.LayoutBefore = DX12EnumConverter::ConvertResourceStateToBarrierLayout(textureBarrier.OldState, m_createInfo.QueueType);
-        dxTextureBarrier.LayoutAfter = DX12EnumConverter::ConvertResourceStateToBarrierLayout(textureBarrier.NewState, m_createInfo.QueueType);
+        dxTextureBarrier.LayoutBefore = DX12EnumConverter::ConvertResourceStateToBarrierLayout(textureBarrier.OldState, m_desc.QueueType);
+        dxTextureBarrier.LayoutAfter = DX12EnumConverter::ConvertResourceStateToBarrierLayout(textureBarrier.NewState, m_desc.QueueType);
         dxTextureBarrier.AccessBefore = DX12EnumConverter::ConvertResourceStateToBarrierAccess(textureBarrier.OldState);
         dxTextureBarrier.AccessAfter = DX12EnumConverter::ConvertResourceStateToBarrierAccess(textureBarrier.NewState);
         // Todo dxTextureBarrier.Subresource, dxTextureBarrier.SyncBefore and dxTextureBarrier.SyncAfter
@@ -277,7 +303,7 @@ void DX12CommandList::EnhancedPipelineBarrier(const PipelineBarrier &barrier)
 
     for ( const BufferBarrierInfo &bufferBarrier : barrier.GetBufferBarriers() )
     {
-        ID3D12Resource *pResource = reinterpret_cast<DX12ImageResource *>(bufferBarrier.Resource)->GetResource();
+        ID3D12Resource *pResource = reinterpret_cast<DX12TextureResource *>(bufferBarrier.Resource)->GetResource();
 
         D3D12_BUFFER_BARRIER dxBufferBarrier = dxBufferBarriers.emplace_back(D3D12_BUFFER_BARRIER{});
         dxBufferBarrier.pResource = pResource;
@@ -311,7 +337,7 @@ void DX12CommandList::SetRootSignature(ID3D12RootSignature *rootSignature)
         LOG(WARNING) << "Root signature is set to a different value, it is not expected to overwrite this value.";
     }
     m_currentRootSignature = rootSignature;
-    if ( m_createInfo.QueueType == QueueType::Graphics )
+    if ( m_desc.QueueType == QueueType::Graphics )
     {
         m_commandList->SetGraphicsRootSignature(rootSignature);
         // TODO! Validate these for all cases

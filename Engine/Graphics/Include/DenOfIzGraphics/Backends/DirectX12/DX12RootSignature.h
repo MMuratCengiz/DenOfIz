@@ -31,7 +31,7 @@ namespace DenOfIz
     private:
         D3D_ROOT_SIGNATURE_VERSION m_rootSignatureVersion;
         DX12Context *m_context;
-        RootSignatureCreateInfo m_createInfo;
+        RootSignatureDesc m_desc;
         wil::com_ptr<ID3D12RootSignature> m_rootSignature;
 
         std::vector<CD3DX12_ROOT_PARAMETER> m_rootParameters;
@@ -41,7 +41,7 @@ namespace DenOfIz
         std::unordered_set<D3D12_SHADER_VISIBILITY> m_descriptorRangesShaderVisibilities;
 
     public:
-        DX12RootSignature(DX12Context *context, const RootSignatureCreateInfo &createInfo);
+        DX12RootSignature(DX12Context *context, const RootSignatureDesc &desc);
 
         inline ID3D12RootSignature *GetRootSignature() const { return m_rootSignature.get(); }
 

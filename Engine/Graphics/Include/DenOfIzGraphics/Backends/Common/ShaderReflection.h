@@ -19,7 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
-#include <DenOfIzGraphics/Backends/Interface/IResource.h>
+#include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
+#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
 #include <DenOfIzGraphics/Backends/Interface/IShader.h>
 #include "spirv_cross/spirv_hlsl.hpp"
 
@@ -28,7 +29,7 @@ namespace DenOfIz
 
     struct ShaderVarType
     {
-        ImageFormat Format;
+        Format Format;
         uint32_t Size;
     };
 

@@ -27,7 +27,7 @@ namespace DenOfIz
     class VulkanRootSignature : public IRootSignature
     {
     private:
-        RootSignatureCreateInfo m_createInfo;
+        RootSignatureDesc m_desc;
         VulkanContext *m_context;
 
         std::vector<vk::DescriptorSetLayout> m_layouts;
@@ -35,7 +35,7 @@ namespace DenOfIz
         std::vector<vk::PushConstantRange> m_pushConstants;
 
     public:
-        VulkanRootSignature(VulkanContext *context, RootSignatureCreateInfo createInfo);
+        VulkanRootSignature(VulkanContext *context, RootSignatureDesc desc);
         ~VulkanRootSignature();
 
         const std::vector<vk::DescriptorSetLayout> &GetDescriptorSetLayouts() const { return m_layouts; }

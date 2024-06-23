@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    enum class ImageFormat
+    enum class Format
     {
         Undefined,
         R32G32B32A32Float,
@@ -89,81 +89,81 @@ namespace DenOfIz
         BC7UnormSrgb
     };
 
-    static uint32_t GetImageFormatSize(const ImageFormat &format)
+    static uint32_t GetImageFormatSize(const Format &format)
     {
         switch ( format )
         {
-        case ImageFormat::R32G32B32A32Float:
-        case ImageFormat::R32G32B32A32Uint:
-        case ImageFormat::R32G32B32A32Sint:
+        case Format::R32G32B32A32Float:
+        case Format::R32G32B32A32Uint:
+        case Format::R32G32B32A32Sint:
             return 16;
-        case ImageFormat::R32G32B32Float:
-        case ImageFormat::R32G32B32Uint:
-        case ImageFormat::R32G32B32Sint:
+        case Format::R32G32B32Float:
+        case Format::R32G32B32Uint:
+        case Format::R32G32B32Sint:
             return 12;
-        case ImageFormat::R16G16B16A16Float:
-        case ImageFormat::R16G16B16A16Unorm:
-        case ImageFormat::R16G16B16A16Uint:
-        case ImageFormat::R16G16B16A16Snorm:
-        case ImageFormat::R16G16B16A16Sint:
-        case ImageFormat::R32G32Float:
-        case ImageFormat::R32G32Uint:
-        case ImageFormat::R32G32Sint:
+        case Format::R16G16B16A16Float:
+        case Format::R16G16B16A16Unorm:
+        case Format::R16G16B16A16Uint:
+        case Format::R16G16B16A16Snorm:
+        case Format::R16G16B16A16Sint:
+        case Format::R32G32Float:
+        case Format::R32G32Uint:
+        case Format::R32G32Sint:
             return 8;
-        case ImageFormat::R10G10B10A2Unorm:
-        case ImageFormat::R10G10B10A2Uint:
-        case ImageFormat::R8G8B8A8Unorm:
-        case ImageFormat::R8G8B8A8UnormSrgb:
-        case ImageFormat::R8G8B8A8Uint:
-        case ImageFormat::R8G8B8A8Snorm:
-        case ImageFormat::R8G8B8A8Sint:
-        case ImageFormat::R16G16Float:
-        case ImageFormat::R16G16Unorm:
-        case ImageFormat::R16G16Uint:
-        case ImageFormat::R16G16Snorm:
-        case ImageFormat::R16G16Sint:
-        case ImageFormat::D32Float:
-        case ImageFormat::R32Float:
-        case ImageFormat::R32Uint:
-        case ImageFormat::R32Sint:
-        case ImageFormat::D24UnormS8Uint:
+        case Format::R10G10B10A2Unorm:
+        case Format::R10G10B10A2Uint:
+        case Format::R8G8B8A8Unorm:
+        case Format::R8G8B8A8UnormSrgb:
+        case Format::R8G8B8A8Uint:
+        case Format::R8G8B8A8Snorm:
+        case Format::R8G8B8A8Sint:
+        case Format::R16G16Float:
+        case Format::R16G16Unorm:
+        case Format::R16G16Uint:
+        case Format::R16G16Snorm:
+        case Format::R16G16Sint:
+        case Format::D32Float:
+        case Format::R32Float:
+        case Format::R32Uint:
+        case Format::R32Sint:
+        case Format::D24UnormS8Uint:
             return 4;
-        case ImageFormat::R8G8Unorm:
-        case ImageFormat::R8G8Uint:
-        case ImageFormat::R8G8Snorm:
-        case ImageFormat::R8G8Sint:
-        case ImageFormat::R16Float:
-        case ImageFormat::D16Unorm:
-        case ImageFormat::R16Unorm:
-        case ImageFormat::R16Uint:
+        case Format::R8G8Unorm:
+        case Format::R8G8Uint:
+        case Format::R8G8Snorm:
+        case Format::R8G8Sint:
+        case Format::R16Float:
+        case Format::D16Unorm:
+        case Format::R16Unorm:
+        case Format::R16Uint:
             return 2;
-        case ImageFormat::R16Snorm:
-        case ImageFormat::R16Sint:
-        case ImageFormat::R8Unorm:
-        case ImageFormat::R8Uint:
-        case ImageFormat::R8Snorm:
-        case ImageFormat::R8Sint:
+        case Format::R16Snorm:
+        case Format::R16Sint:
+        case Format::R8Unorm:
+        case Format::R8Uint:
+        case Format::R8Snorm:
+        case Format::R8Sint:
             return 1;
         // Recheck what the below are and what the expected sizes are.
-        case ImageFormat::BC1Unorm:
-        case ImageFormat::BC1UnormSrgb:
-        case ImageFormat::BC2Unorm:
-        case ImageFormat::BC2UnormSrgb:
-        case ImageFormat::BC3Unorm:
-        case ImageFormat::BC3UnormSrgb:
-        case ImageFormat::BC4Unorm:
-        case ImageFormat::BC4Snorm:
-        case ImageFormat::BC5Unorm:
-        case ImageFormat::BC5Snorm:
+        case Format::BC1Unorm:
+        case Format::BC1UnormSrgb:
+        case Format::BC2Unorm:
+        case Format::BC2UnormSrgb:
+        case Format::BC3Unorm:
+        case Format::BC3UnormSrgb:
+        case Format::BC4Unorm:
+        case Format::BC4Snorm:
+        case Format::BC5Unorm:
+        case Format::BC5Snorm:
             return 1;
-        case ImageFormat::B8G8R8A8Unorm:
+        case Format::B8G8R8A8Unorm:
             return 4;
-        case ImageFormat::BC6HUfloat16:
-        case ImageFormat::BC6HSfloat16:
+        case Format::BC6HUfloat16:
+        case Format::BC6HSfloat16:
             return 2;
-        case ImageFormat::BC7Unorm:
+        case Format::BC7Unorm:
             return 1;
-        case ImageFormat::BC7UnormSrgb:
+        case Format::BC7UnormSrgb:
             return 1;
         default:
             return 0;
@@ -256,7 +256,7 @@ namespace DenOfIz
         uint32_t ReadWrite : 1;
     };
 
-    enum class ImageMemoryUsage
+    enum class TextureMemoryUsage
     {
         TransferSrc,
         TransferDst,
@@ -278,7 +278,7 @@ namespace DenOfIz
         AttachmentFeedbackLoop,
     };
 
-    enum class ImageAspect
+    enum class TextureAspect
     {
         Color,
         Depth,
@@ -408,7 +408,6 @@ namespace DenOfIz
         bool Tearing;
         bool Tessellation;
         bool GeometryShaders;
-        ;
         bool HDR;
     };
 
@@ -418,7 +417,7 @@ namespace DenOfIz
         unsigned int MemoryAvailableInMb;
     };
 
-    struct PhysicalDeviceInfo
+    struct PhysicalDevice
     {
         long Id;
         std::string Name;

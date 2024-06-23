@@ -15,13 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzGraphics/Backends/Vulkan/Resource/VulkanBufferResource.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
+#include "DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanUtilities.h"
 
 using namespace DenOfIz;
 
-VulkanBufferResource::VulkanBufferResource(VulkanContext *context, const BufferCreateInfo &createInfo) : m_createInfo(createInfo), m_context(context), m_allocation(nullptr) {}
+VulkanBufferResource::VulkanBufferResource(VulkanContext *context, const BufferDesc &desc) : m_desc(desc), m_context(context), m_allocation(nullptr) {}
 
 void VulkanBufferResource::Allocate(const void *newData)
 {
@@ -36,23 +36,23 @@ void VulkanBufferResource::Allocate(const void *newData)
 
     std::pair<vk::Buffer, VmaAllocation> stagingBuffer;
 
-    bool useStagingBuffer = m_createInfo.HeapType == HeapType::GPU;
+    bool useStagingBuffer = m_desc.HeapType == HeapType::GPU;
     if ( useStagingBuffer )
     {
         VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer.first, stagingBuffer.second, newData, m_size);
     }
 
     vk::BufferCreateInfo bufferCreateInfo{};
-    bufferCreateInfo.usage = VulkanEnumConverter::ConvertBufferUsage(m_createInfo.Usage);
+    bufferCreateInfo.usage = VulkanEnumConverter::ConvertBufferUsage(m_desc.Usage);
     bufferCreateInfo.size = m_size;
     bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 
     VmaAllocationCreateInfo allocationCreateInfo{};
 
-    allocationCreateInfo.usage = VulkanEnumConverter::ConvertMemoryLocation(m_createInfo.HeapType);
+    allocationCreateInfo.usage = VulkanEnumConverter::ConvertMemoryLocation(m_desc.HeapType);
 
     // Todo more flexibility, or a clearer interface here:
-    if ( m_createInfo.HeapType == HeapType::CPU_GPU )
+    if ( m_desc.HeapType == HeapType::CPU_GPU )
     {
         const auto gpuVisible = vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eDeviceLocal;
         allocationCreateInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eHostVisible);
@@ -73,7 +73,7 @@ void VulkanBufferResource::Allocate(const void *newData)
         VulkanUtilities::CopyBuffer(m_context, stagingBuffer.first, Instance, m_size);
         vmaDestroyBuffer(m_context->Vma, stagingBuffer.first, stagingBuffer.second);
     }
-    else if ( m_mappedMemory != nullptr && m_createInfo.KeepMemoryMapped )
+    else if ( m_mappedMemory != nullptr && m_desc.KeepMemoryMapped )
     {
         memcpy(m_mappedMemory, newData, m_size);
     }
@@ -82,7 +82,7 @@ void VulkanBufferResource::Allocate(const void *newData)
         vmaMapMemory(this->m_context->Vma, m_allocation, &m_mappedMemory);
         memcpy(m_mappedMemory, newData, m_size);
 
-        if ( !m_createInfo.KeepMemoryMapped )
+        if ( !m_desc.KeepMemoryMapped )
         {
             vmaUnmapMemory(m_context->Vma, m_allocation);
         }
@@ -95,14 +95,14 @@ void VulkanBufferResource::Allocate(const void *newData)
 
 void VulkanBufferResource::UpdateAllocation(const void *newData)
 {
-    if ( m_createInfo.HeapType == HeapType::GPU )
+    if ( m_desc.HeapType == HeapType::GPU )
     {
         std::pair<vk::Buffer, VmaAllocation> stagingBuffer;
         VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer.first, stagingBuffer.second, newData, m_size);
         VulkanUtilities::CopyBuffer(m_context, stagingBuffer.first, Instance, m_size);
         vmaDestroyBuffer(m_context->Vma, stagingBuffer.first, stagingBuffer.second);
     }
-    else if ( m_createInfo.KeepMemoryMapped )
+    else if ( m_desc.KeepMemoryMapped )
     {
         memcpy(m_mappedMemory, newData, m_size);
     }
@@ -120,7 +120,7 @@ void VulkanBufferResource::Deallocate()
     DZ_RETURN_IF(m_alreadyDisposed);
     m_alreadyDisposed = true;
 
-    if ( m_createInfo.KeepMemoryMapped )
+    if ( m_desc.KeepMemoryMapped )
     {
         vmaUnmapMemory(m_context->Vma, m_allocation);
     }
