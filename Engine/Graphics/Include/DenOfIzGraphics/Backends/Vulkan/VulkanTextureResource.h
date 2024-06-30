@@ -55,11 +55,11 @@ namespace DenOfIz
         }
 
         ~VulkanTextureResource();
-        virtual inline vk::Image GetImage() const { return m_image; }
-        virtual inline vk::ImageView GetImageView() const { return m_imageView; }
-        virtual inline vk::Format GetFormat() const { return m_format; }
-        virtual inline vk::Sampler GetSampler() const { return m_sampler; }
-        virtual inline vk::ImageAspectFlags GetAspect() const { return m_aspect; }
+        inline vk::Image GetImage() const { return m_image; }
+        inline vk::ImageView GetImageView() const { return m_imageView; }
+        inline vk::Format GetFormat() const { return m_format; }
+        inline vk::Sampler GetSampler() const { return m_sampler; }
+        inline vk::ImageAspectFlags GetAspect() const { return m_aspect; }
 
         void AttachSampler(SamplerDesc &info) override;
         void Deallocate() override;

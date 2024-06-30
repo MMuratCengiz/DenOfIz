@@ -22,13 +22,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct SubresourceDesc
+    {
+        uint32_t MipSlice = 0;
+        uint32_t ArraySlice = 0;
+        uint32_t PlaneSlice = 0;
+    };
+
     struct TextureDesc
     {
         TextureAspect Aspect = TextureAspect::Color;
         Format Format;
-        TextureMemoryUsage ImageUsage;
+        ResourceDescriptor Descriptor;
+
         HeapType HeapType = HeapType::Auto;
         MSAASampleCount MSAASampleCount = MSAASampleCount::_0;
+        ResourceState InitialState;
 
         uint32_t Width;
         uint32_t Height;
@@ -46,7 +55,6 @@ namespace DenOfIz
         SamplerAddressMode AddressModeW;
         bool AnisotropyEnable = true;
         float MaxAnisotropy = 16.0f;
-        //	borderColor, unnormalizedCoordinates; Todo, Maybe?
         bool CompareEnable = false;
         CompareOp CompareOp = CompareOp::Always;
         MipmapMode MipmapMode;
@@ -87,8 +95,6 @@ namespace DenOfIz
         inline uint32_t GetWidth() const { return m_width; }
         inline uint32_t GetHeight() const { return m_height; }
         inline uint32_t GetDepth() const { return m_depth; }
-
-
     protected:
         virtual void Allocate(const void *data) = 0;
     };

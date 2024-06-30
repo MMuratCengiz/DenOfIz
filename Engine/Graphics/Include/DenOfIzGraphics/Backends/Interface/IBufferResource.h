@@ -54,7 +54,8 @@ namespace DenOfIz
 
         BufferView BufferView; // For Structured Buffers
         Format Format = Format::Undefined;
-        BufferUsage Usage;
+        ResourceDescriptor Descriptor;
+        ResourceState InitialState;
         HeapType HeapType;
     };
 

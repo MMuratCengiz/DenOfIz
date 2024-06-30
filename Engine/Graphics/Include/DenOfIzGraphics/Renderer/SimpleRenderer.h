@@ -45,6 +45,7 @@ namespace DenOfIz
         std::unique_ptr<IPipeline> m_pipeline;
         std::unique_ptr<IBufferResource> m_vertexBuffer;
         std::unique_ptr<IBufferResource> m_timePassedBuffer;
+        std::unique_ptr<ITextureResource> m_computeReadBack;
         std::unique_ptr<Time> m_time = std::make_unique<Time>();
         std::unique_ptr<IInputLayout> m_inputLayout;
         std::unique_ptr<IRootSignature> m_rootSignature;

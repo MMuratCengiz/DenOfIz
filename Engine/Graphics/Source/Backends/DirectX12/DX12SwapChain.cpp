@@ -41,7 +41,7 @@ void DX12SwapChain::CreateSwapChain()
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
     swapChainDesc.Width = m_swapChainCreateInfo.Width;
     swapChainDesc.Height = m_swapChainCreateInfo.Height;
-    swapChainDesc.Format = DX12EnumConverter::ConvertImageFormat(m_swapChainCreateInfo.BackBufferFormat);
+    swapChainDesc.Format = DX12EnumConverter::ConvertFormat(m_swapChainCreateInfo.BackBufferFormat);
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.BufferCount = m_context->BackBufferCount;
     swapChainDesc.SampleDesc.Count = 1;
@@ -82,7 +82,7 @@ void DX12SwapChain::CreateSwapChain()
     SetColorSpace();
     CD3DX12_HEAP_PROPERTIES depthHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
 
-    DXGI_FORMAT depthBufferFormat = DX12EnumConverter::ConvertImageFormat(m_swapChainCreateInfo.DepthBufferFormat);
+    DXGI_FORMAT depthBufferFormat = DX12EnumConverter::ConvertFormat(m_swapChainCreateInfo.DepthBufferFormat);
     D3D12_RESOURCE_DESC depthStencilDesc = CD3DX12_RESOURCE_DESC::Tex2D(depthBufferFormat, m_swapChainCreateInfo.Width, m_swapChainCreateInfo.Height,
                                                                         1, // This depth stencil view has only one texture.
                                                                         1 // Use a single mipmap level.
@@ -166,7 +166,7 @@ void DX12SwapChain::Resize(uint32_t width, uint32_t height)
     m_swapChainCreateInfo.Width = width;
     m_swapChainCreateInfo.Height = height;
 
-    HRESULT hr = m_swapChain->ResizeBuffers(m_swapChainCreateInfo.BufferCount, width, height, DX12EnumConverter::ConvertImageFormat(m_swapChainCreateInfo.BackBufferFormat),
+    HRESULT hr = m_swapChain->ResizeBuffers(m_swapChainCreateInfo.BufferCount, width, height, DX12EnumConverter::ConvertFormat(m_swapChainCreateInfo.BackBufferFormat),
                                             m_context->SelectedDeviceInfo.Capabilities.Tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u);
 
     if ( hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET )

@@ -40,7 +40,7 @@ namespace DenOfIz
         ResourceBinding timePassedBinding{};
         timePassedBinding.Name = "time";
         timePassedBinding.Binding = 0;
-        timePassedBinding.Type = ResourceBindingType::Buffer;
+        timePassedBinding.Descriptor.UniformBuffer = 1;
         timePassedBinding.Stages = { ShaderStage::Vertex };
         m_rootSignature->AddResourceBinding(timePassedBinding);
         m_rootSignature->Create();
@@ -76,16 +76,21 @@ namespace DenOfIz
             m_imageRenderedSemaphores.push_back(m_logicalDevice->CreateSemaphore());
         }
 
+        TextureDesc textureDesc{};
+        textureDesc.InitialState.UnorderedAccess = 1;
+        textureDesc.Format = Format::R32G32B32A32Float;
+        m_computeReadBack = m_logicalDevice->CreateTextureResource("computeReadBack", textureDesc);
+
         BufferDesc bufferDesc{};
         bufferDesc.HeapType = HeapType::GPU;
-        bufferDesc.Usage.VertexBuffer = 1;
+        bufferDesc.Descriptor.VertexBuffer = 1;
 
         m_vertexBuffer = m_logicalDevice->CreateBufferResource("vb", bufferDesc);
         m_vertexBuffer->Allocate(m_triangle.data(), m_triangle.size() * sizeof(float));
 
         BufferDesc deltaTimeBufferDesc{};
         deltaTimeBufferDesc.HeapType = HeapType::CPU_GPU;
-        deltaTimeBufferDesc.Usage.UniformBuffer = 1;
+        deltaTimeBufferDesc.Descriptor.UniformBuffer = 1;
         deltaTimeBufferDesc.KeepMemoryMapped = true;
 
         m_timePassedBuffer = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferDesc);

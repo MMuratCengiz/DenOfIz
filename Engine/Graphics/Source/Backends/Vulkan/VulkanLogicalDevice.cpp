@@ -16,11 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanImageResource.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanDescriptorTable.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h"
+#include "DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h"
 #include "vulkan/vulkan_win32.h"
 
 using namespace DenOfIz;
@@ -482,7 +482,7 @@ std::unique_ptr<IBufferResource> VulkanLogicalDevice::CreateBufferResource(std::
     return std::unique_ptr<IBufferResource>(bufferResource);
 }
 
-std::unique_ptr<ITextureResource> VulkanLogicalDevice::CreateImageResource(std::string name, const TextureDesc &createInfo)
+std::unique_ptr<ITextureResource> VulkanLogicalDevice::CreateTextureResource(std::string name, const TextureDesc &createInfo)
 {
     VulkanTextureResource *imageResource = new VulkanTextureResource(m_context.get(), createInfo);
     imageResource->Name = name;

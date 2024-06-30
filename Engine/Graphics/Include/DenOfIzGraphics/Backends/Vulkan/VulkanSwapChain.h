@@ -20,9 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifdef BUILD_VK
 
 #include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
-#include "VulkanImageResource.h"
-#include "VulkanSemaphore.h"
 #include "VulkanEnumConverter.h"
+#include "VulkanSemaphore.h"
+#include "VulkanTextureResource.h"
 
 namespace DenOfIz
 {

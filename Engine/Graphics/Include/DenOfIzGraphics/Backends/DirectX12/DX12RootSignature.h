@@ -39,6 +39,7 @@ namespace DenOfIz
         std::vector<CD3DX12_DESCRIPTOR_RANGE> m_descriptorRanges;
 
         std::unordered_set<D3D12_SHADER_VISIBILITY> m_descriptorRangesShaderVisibilities;
+        uint32_t usedStages = 0;
 
     public:
         DX12RootSignature(DX12Context *context, const RootSignatureDesc &desc);

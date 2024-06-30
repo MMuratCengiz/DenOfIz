@@ -19,10 +19,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 #ifdef BUILD_VK
 
-#include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
-#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
+#include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include <DenOfIzGraphics/Backends/Interface/IShader.h>
+#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
 #include "VulkanContext.h"
 
 namespace DenOfIz
@@ -96,69 +96,6 @@ namespace DenOfIz
             return vk::SampleCountFlagBits::e1;
         }
 
-        static vk::ImageLayout ConvertImageLayout(const ImageLayout &imageLayout)
-        {
-            switch ( imageLayout )
-            {
-            case Undefined:
-                return vk::ImageLayout::eUndefined;
-            case General:
-                return vk::ImageLayout::eGeneral;
-            case ColorAttachmentOptimal:
-                return vk::ImageLayout::eColorAttachmentOptimal;
-            case DepthStencilAttachmentOptimal:
-                return vk::ImageLayout::eDepthStencilAttachmentOptimal;
-            case DepthStencilReadOnlyOptimal:
-                return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
-            case ShaderReadOnlyOptimal:
-                return vk::ImageLayout::eShaderReadOnlyOptimal;
-            case TransferSrcOptimal:
-                return vk::ImageLayout::eTransferSrcOptimal;
-            case TransferDstOptimal:
-                return vk::ImageLayout::eTransferDstOptimal;
-            case PreInitialized:
-                return vk::ImageLayout::ePreinitialized;
-            case DepthReadOnlyStencilAttachmentOptimal:
-                return vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal;
-            case DepthAttachmentStencilReadOnlyOptimal:
-                return vk::ImageLayout::eDepthAttachmentStencilReadOnlyOptimal;
-            case DepthAttachmentOptimal:
-                return vk::ImageLayout::eDepthAttachmentOptimal;
-            case DepthReadOnlyOptimal:
-                return vk::ImageLayout::eDepthReadOnlyOptimal;
-            case StencilAttachmentOptimal:
-                return vk::ImageLayout::eStencilAttachmentOptimal;
-            case StencilReadOnlyOptimal:
-                return vk::ImageLayout::eStencilReadOnlyOptimal;
-            case ReadOnlyOptimal:
-                return vk::ImageLayout::eReadOnlyOptimal;
-            case AttachmentOptimal:
-                return vk::ImageLayout::eAttachmentOptimal;
-            case PresentSrc:
-                return vk::ImageLayout::ePresentSrcKHR;
-            case VideoDecodeDst:
-                return vk::ImageLayout::eVideoDecodeDstKHR;
-            case VideoDecodeSrc:
-                return vk::ImageLayout::eVideoDecodeSrcKHR;
-            case VideoDecodeDpb:
-                return vk::ImageLayout::eVideoDecodeDpbKHR;
-            case SharedPresent:
-                return vk::ImageLayout::eSharedPresentKHR;
-            case FragmentShadingRateAttachmentOptimal:
-                return vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR;
-            case RenderingLocalRead:
-                return vk::ImageLayout::eRenderingLocalReadKHR;
-            case VideoEncodeDst:
-                return vk::ImageLayout::eVideoEncodeDstKHR;
-            case VideoEncodeSrc:
-                return vk::ImageLayout::eVideoEncodeSrcKHR;
-            case VideoEncodeDpb:
-                return vk::ImageLayout::eVideoEncodeDpbKHR;
-            }
-
-            return vk::ImageLayout::eUndefined;
-        }
-
         static vk::StencilOp ConvertStencilOp(const StencilOp &stencilOp)
         {
             switch ( stencilOp )
@@ -188,6 +125,8 @@ namespace DenOfIz
         {
             switch ( compareOp )
             {
+            case CompareOp::Never:
+                return vk::CompareOp::eNever;
             case CompareOp::Always:
                 return vk::CompareOp::eAlways;
             case CompareOp::Equal:
@@ -245,10 +184,6 @@ namespace DenOfIz
                 return vk::Filter::eNearest;
             case Filter::Linear:
                 return vk::Filter::eLinear;
-            case Filter::CubicIMG:
-                return vk::Filter::eCubicIMG;
-            case Filter::CubicEXT:
-                return vk::Filter::eCubicEXT;
             }
 
             return vk::Filter::eLinear;
@@ -260,16 +195,14 @@ namespace DenOfIz
             {
             case SamplerAddressMode::Repeat:
                 return vk::SamplerAddressMode::eRepeat;
-            case SamplerAddressMode::MirroredRepeat:
+            case SamplerAddressMode::Mirror:
                 return vk::SamplerAddressMode::eMirroredRepeat;
             case SamplerAddressMode::ClampToEdge:
                 return vk::SamplerAddressMode::eClampToEdge;
             case SamplerAddressMode::ClampToBorder:
                 return vk::SamplerAddressMode::eClampToBorder;
-            case SamplerAddressMode::MirrorClampToEdge:
-                return vk::SamplerAddressMode::eMirrorClampToEdge;
             }
-            return vk::SamplerAddressMode::eClampToBorder;
+            return vk::SamplerAddressMode::eRepeat;
         }
 
         static vk::SamplerMipmapMode ConvertMipmapMode(const MipmapMode &mipmapMode)
@@ -285,14 +218,15 @@ namespace DenOfIz
             return vk::SamplerMipmapMode::eLinear;
         }
 
-        static vk::BufferUsageFlags ConvertBufferUsage(BufferUsage usage)
+        // !IMPROVEMENT! This might be incorrect
+        static vk::BufferUsageFlags ConvertBufferUsage(ResourceDescriptor usage, ResourceState initialState)
         {
             vk::BufferUsageFlags flags = {};
-            if ( usage.CopySrc )
+            if ( initialState.CopySrc )
             {
                 flags |= vk::BufferUsageFlagBits::eTransferSrc;
             }
-            if ( usage.CopyDst )
+            if ( initialState.CopyDst )
             {
                 flags |= vk::BufferUsageFlagBits::eTransferDst;
             }
@@ -308,19 +242,24 @@ namespace DenOfIz
             {
                 flags |= vk::BufferUsageFlagBits::eUniformBuffer;
             }
-            if ( usage.Storage )
+            if ( usage.Buffer )
             {
                 flags |= vk::BufferUsageFlagBits::eStorageBuffer;
             }
-            if ( usage.Indirect )
+            if ( usage.IndirectBuffer )
             {
                 flags |= vk::BufferUsageFlagBits::eIndirectBuffer;
             }
-            if ( usage.AccelerationStructureScratch )
+            if ( usage.AccelerationStructure )
+            {
+                flags |= vk::BufferUsageFlagBits::eStorageBuffer;
+            }
+
+            if ( initialState.AccelerationStructureWrite )
             {
                 flags |= vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress;
             }
-            if ( usage.BottomLevelAccelerationStructureInput || usage.TopLevelAccelerationStructureInput )
+            if ( initialState.AccelerationStructureRead )
             {
                 flags |= vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress;
             }
@@ -353,49 +292,26 @@ namespace DenOfIz
             return vk::ImageAspectFlagBits::eNone;
         }
 
-        static vk::ImageUsageFlagBits ConvertImageUsage(TextureMemoryUsage usage)
+        static vk::ImageUsageFlags ConvertTextureDescriptorToUsage(ResourceDescriptor descriptor, ResourceState initialState)
         {
-            switch ( usage )
+            vk::ImageUsageFlags usage = {};
+            if ( descriptor.Sampler )
             {
-            case TextureMemoryUsage::TransferSrc:
-                return vk::ImageUsageFlagBits::eTransferSrc;
-            case TextureMemoryUsage::TransferDst:
-                return vk::ImageUsageFlagBits::eTransferDst;
-            case TextureMemoryUsage::Sampled:
-                return vk::ImageUsageFlagBits::eSampled;
-            case TextureMemoryUsage::Storage:
-                return vk::ImageUsageFlagBits::eStorage;
-            case TextureMemoryUsage::ColorAttachment:
-                return vk::ImageUsageFlagBits::eColorAttachment;
-            case TextureMemoryUsage::DepthStencilAttachment:
-                return vk::ImageUsageFlagBits::eDepthStencilAttachment;
-            case TextureMemoryUsage::TransientAttachment:
-                return vk::ImageUsageFlagBits::eTransientAttachment;
-            case TextureMemoryUsage::InputAttachment:
-                return vk::ImageUsageFlagBits::eInputAttachment;
-            case TextureMemoryUsage::VideoDecodeDst:
-                return vk::ImageUsageFlagBits::eVideoDecodeDstKHR;
-            case TextureMemoryUsage::VideoDecodeSrc:
-                return vk::ImageUsageFlagBits::eVideoDecodeSrcKHR;
-            case TextureMemoryUsage::VideoDecodeDpb:
-                return vk::ImageUsageFlagBits::eVideoDecodeDpbKHR;
-            case TextureMemoryUsage::FragmentDensityMap:
-                return vk::ImageUsageFlagBits::eFragmentDensityMapEXT;
-            case TextureMemoryUsage::FragmentShadingRateAttachment:
-                return vk::ImageUsageFlagBits::eFragmentShadingRateAttachmentKHR;
-            case TextureMemoryUsage::HostTransferEXT:
-                return vk::ImageUsageFlagBits::eHostTransferEXT;
-            case TextureMemoryUsage::VideoEncodeDst:
-                return vk::ImageUsageFlagBits::eVideoEncodeDstKHR;
-            case TextureMemoryUsage::VideoEncodeSrc:
-                return vk::ImageUsageFlagBits::eVideoEncodeSrcKHR;
-            case TextureMemoryUsage::VideoEncodeDpb:
-                return vk::ImageUsageFlagBits::eVideoEncodeDpbKHR;
-            case TextureMemoryUsage::AttachmentFeedbackLoop:
-                return vk::ImageUsageFlagBits::eAttachmentFeedbackLoopEXT;
+                usage |= vk::ImageUsageFlagBits::eSampled;
             }
-
-            return vk::ImageUsageFlagBits::eColorAttachment;
+            if ( descriptor.ReadWrite )
+            {
+                usage |= vk::ImageUsageFlagBits::eStorage;
+            }
+            if ( initialState.RenderTarget )
+            {
+                usage |= vk::ImageUsageFlagBits::eColorAttachment;
+            }
+            if ( initialState.DepthRead || initialState.DepthWrite )
+            {
+                usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+            }
+            return usage;
         }
 
         // Weird naming on Vma or my side, either way location = usage.
@@ -549,31 +465,34 @@ namespace DenOfIz
             return vk::Format::eUndefined;
         }
 
-        static vk::DescriptorType ConvertBindingTypeToDescriptorType(const ResourceBindingType &type)
+        static vk::DescriptorType ConvertResourceDescriptorToDescriptorType(const ResourceDescriptor &descriptor)
         {
-            switch ( type )
+            if ( descriptor.Sampler )
             {
-            case ResourceBindingType::Sampler:
                 return vk::DescriptorType::eSampler;
-            case ResourceBindingType::Texture:
-            case ResourceBindingType::TextureReadWrite:
-                return vk::DescriptorType::eSampledImage;
-            case ResourceBindingType::StorageImage:
+            }
+            if ( descriptor.Texture )
+            {
+                return descriptor.ReadWrite ? vk::DescriptorType::eStorageImage : vk::DescriptorType::eSampledImage;
+            }
+            if ( descriptor.ReadWrite )
+            {
                 return vk::DescriptorType::eStorageImage;
-            case ResourceBindingType::Buffer:
-            case ResourceBindingType::BufferReadWrite:
+            }
+            if ( descriptor.UniformBuffer )
+            {
                 return vk::DescriptorType::eUniformBuffer;
-            case ResourceBindingType::Storage:
+            }
+            if (descriptor.Buffer)
+            {
                 return vk::DescriptorType::eStorageBuffer;
-            case ResourceBindingType::BufferDynamic:
-                return vk::DescriptorType::eUniformBufferDynamic;
-            case ResourceBindingType::StorageDynamic:
-                return vk::DescriptorType::eStorageBufferDynamic;
-            case ResourceBindingType::AccelerationStructure:
+            }
+            if ( descriptor.AccelerationStructure )
+            {
                 return vk::DescriptorType::eAccelerationStructureKHR;
             }
 
-            return vk::DescriptorType::eSampler;
+            return vk::DescriptorType::eStorageImage;
         }
 
         static vk::PrimitiveTopology ConvertPrimitiveTopology(const PrimitiveTopology &topology)

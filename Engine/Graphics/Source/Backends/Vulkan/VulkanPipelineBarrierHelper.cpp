@@ -142,7 +142,7 @@ vk::AccessFlags VulkanPipelineBarrierHelper::GetAccessFlags(ResourceState state)
 {
     vk::AccessFlags result;
 
-    if ( state.CopySource )
+    if ( state.CopySrc )
     {
         result |= vk::AccessFlagBits::eTransferRead;
     }
@@ -200,7 +200,7 @@ vk::AccessFlags VulkanPipelineBarrierHelper::GetAccessFlags(ResourceState state)
 
 vk::ImageLayout VulkanPipelineBarrierHelper::GetImageLayout(ResourceState state)
 {
-    if ( state.CopySource )
+    if ( state.CopySrc )
     {
         return vk::ImageLayout::eTransferSrcOptimal;
     }

@@ -95,7 +95,7 @@ void VulkanCommandList::BeginRendering(const RenderingDesc &renderingInfo)
 
         vk::RenderingAttachmentInfo depthAttachmentInfo{};
         depthAttachmentInfo.imageView = vkDepthStencilResource->GetImageView();
-        depthAttachmentInfo.imageLayout = VulkanEnumConverter::ConvertImageLayout(renderingInfo.DepthAttachment.Layout);
+        depthAttachmentInfo.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
         depthAttachmentInfo.loadOp = VulkanEnumConverter::ConvertLoadOp(renderingInfo.DepthAttachment.LoadOp);
         depthAttachmentInfo.storeOp = VulkanEnumConverter::ConvertStoreOp(renderingInfo.DepthAttachment.StoreOp);
         depthAttachmentInfo.clearValue.depthStencil = vk::ClearDepthStencilValue(renderingInfo.DepthAttachment.ClearDepth[ 0 ], renderingInfo.DepthAttachment.ClearDepth[ 1 ]);
@@ -109,7 +109,7 @@ void VulkanCommandList::BeginRendering(const RenderingDesc &renderingInfo)
 
         vk::RenderingAttachmentInfo stencilAttachmentInfo{};
         stencilAttachmentInfo.imageView = vkDepthStencilResource->GetImageView();
-        stencilAttachmentInfo.imageLayout = VulkanEnumConverter::ConvertImageLayout(renderingInfo.StencilAttachment.Layout);
+        stencilAttachmentInfo.imageLayout =  vk::ImageLayout::eDepthStencilAttachmentOptimal;
         stencilAttachmentInfo.loadOp = VulkanEnumConverter::ConvertLoadOp(renderingInfo.StencilAttachment.LoadOp);
         stencilAttachmentInfo.storeOp = VulkanEnumConverter::ConvertStoreOp(renderingInfo.StencilAttachment.StoreOp);
         stencilAttachmentInfo.clearValue.depthStencil = vk::ClearDepthStencilValue(renderingInfo.StencilAttachment.ClearDepth[ 0 ], renderingInfo.DepthAttachment.ClearDepth[ 1 ]);

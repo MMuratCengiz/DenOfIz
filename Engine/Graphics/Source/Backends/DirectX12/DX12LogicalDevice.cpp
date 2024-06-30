@@ -308,7 +308,7 @@ std::unique_ptr<IBufferResource> DX12LogicalDevice::CreateBufferResource(std::st
     return std::unique_ptr<IBufferResource>(buffer);
 }
 
-std::unique_ptr<ITextureResource> DX12LogicalDevice::CreateImageResource(std::string name, const TextureDesc &textureDesc)
+std::unique_ptr<ITextureResource> DX12LogicalDevice::CreateTextureResource(std::string name, const TextureDesc &textureDesc)
 {
     DX12TextureResource *image = new DX12TextureResource(m_context.get(), textureDesc);
     image->Name = name;

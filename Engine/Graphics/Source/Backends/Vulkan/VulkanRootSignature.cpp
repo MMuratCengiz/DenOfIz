@@ -33,7 +33,7 @@ void VulkanRootSignature::AddResourceBindingInternal(const ResourceBinding &bind
     vk::DescriptorSetLayoutBinding layoutBinding{};
 
     layoutBinding.binding = binding.Binding;
-    layoutBinding.descriptorType = VulkanEnumConverter::ConvertBindingTypeToDescriptorType(binding.Type);
+    layoutBinding.descriptorType = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType(binding.Descriptor);
     layoutBinding.descriptorCount = binding.ArraySize;
 
     for ( auto stage : binding.Stages )

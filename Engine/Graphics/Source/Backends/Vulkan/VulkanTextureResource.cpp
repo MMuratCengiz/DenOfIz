@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanImageResource.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h>
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanUtilities.h"
 
@@ -32,7 +32,7 @@ VulkanTextureResource::VulkanTextureResource(VulkanContext *context, const Textu
     imageCreateInfo.extent.depth = 1;
     imageCreateInfo.format = VulkanEnumConverter::ConvertImageFormat(textureDesc.Format);
     imageCreateInfo.tiling = vk::ImageTiling::eOptimal;
-    imageCreateInfo.usage = VulkanEnumConverter::ConvertImageUsage(textureDesc.ImageUsage);
+    imageCreateInfo.usage = VulkanEnumConverter::ConvertTextureDescriptorToUsage(textureDesc.Descriptor, textureDesc.InitialState);
     imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
     imageCreateInfo.samples = VulkanEnumConverter::ConvertSampleCount(textureDesc.MSAASampleCount);
     imageCreateInfo.mipLevels = 1;

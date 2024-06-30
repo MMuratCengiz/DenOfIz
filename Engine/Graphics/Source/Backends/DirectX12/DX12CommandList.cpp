@@ -219,6 +219,7 @@ void DX12CommandList::CopyTextureRegion(const CopyTextureRegionDesc &copyTexture
     DX12TextureResource *dstTexture = reinterpret_cast<DX12TextureResource *>(copyTextureRegionInfo.DstTexture);
     DX12TextureResource *srcTexture = reinterpret_cast<DX12TextureResource *>(copyTextureRegionInfo.SrcTexture);
 
+
     D3D12_TEXTURE_COPY_LOCATION dst = {};
     dst.pResource = dstTexture->GetResource();
     dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;

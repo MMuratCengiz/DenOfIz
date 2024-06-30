@@ -71,7 +71,7 @@ DX12InputLayout::DX12InputLayout(const InputLayoutDesc &desc)
             }
 
             element.SemanticIndex = inputElement.SemanticIndex;
-            element.Format = DX12EnumConverter::ConvertImageFormat(inputElement.Format);
+            element.Format = DX12EnumConverter::ConvertFormat(inputElement.Format);
             element.InputSlot = bindingIndex;
             element.InputSlotClass = inputSlotClass;
             element.AlignedByteOffset = offset;

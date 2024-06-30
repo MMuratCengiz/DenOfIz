@@ -35,7 +35,6 @@ namespace DenOfIz
 
     struct RenderingAttachmentDesc
     {
-        ImageLayout Layout = ImageLayout::Undefined;
         LoadOp LoadOp = LoadOp::Clear;
         StoreOp StoreOp = StoreOp::Store;
 

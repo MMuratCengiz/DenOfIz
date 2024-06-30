@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "VulkanBufferResource.h"
 #include "VulkanContext.h"
 #include "VulkanEnumConverter.h"
-#include "VulkanBufferResource.h"
-#include "VulkanImageResource.h"
+#include "VulkanTextureResource.h"
 
 namespace DenOfIz
 {

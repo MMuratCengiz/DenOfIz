@@ -27,8 +27,8 @@ namespace DenOfIz
     class DX12TextureResource : public ITextureResource
     {
     private:
-        DX12Context *m_context;
         TextureDesc m_desc;
+        DX12Context *m_context;
         ID3D12Resource2 *m_resource;
         D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
         bool isExternalResource = false;
@@ -46,6 +46,10 @@ namespace DenOfIz
 
     protected:
         void Allocate(const void *data) override;
+    private:
+        D3D12_FILTER CalculateFilter(Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy) const;
+        void CreateTextureSrv();
+        void CreateTextureUav();
     };
 
 } // namespace DenOfIz

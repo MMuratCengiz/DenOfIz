@@ -18,21 +18,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanDescriptorTable.h>
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h"
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanImageResource.h"
+#include "DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h"
 
 using namespace DenOfIz;
 
 VulkanDescriptorTable::VulkanDescriptorTable(VulkanContext *context, DescriptorTableDesc desc) : m_context(context), m_desc(std::move(desc))
 {
     m_rootSignature = static_cast<VulkanRootSignature *>(m_desc.RootSignature);
-
-    //	vk::DescriptorSetAllocateInfo allocateInfo{};
-    //
-    //	allocateInfo.setDescriptorPool(m_context->DescriptorPool);
-    //	allocateInfo.setDescriptorSetCount(m_rootSignature->GetResourceCount());
-    //	allocateInfo.setSetLayouts(m_rootSignature->GetDescriptorSetLayouts());
-    //
-    //	m_descriptorSets = m_context->LogicalDevice.allocateDescriptorSets(allocateInfo);
 }
 
 void VulkanDescriptorTable::BindImage(ITextureResource *resource)
@@ -58,7 +50,7 @@ vk::WriteDescriptorSet &VulkanDescriptorTable::CreateWriteDescriptor(std::string
     vk::WriteDescriptorSet &writeDescriptorSet = m_writeDescriptorSets.emplace_back();
     writeDescriptorSet.dstSet = nullptr;
     writeDescriptorSet.dstBinding = resourceBinding.Binding;
-    writeDescriptorSet.descriptorType = VulkanEnumConverter::ConvertBindingTypeToDescriptorType(resourceBinding.Type);
+    writeDescriptorSet.descriptorType = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType(resourceBinding.Descriptor);
     writeDescriptorSet.descriptorCount = resourceBinding.ArraySize;
     return writeDescriptorSet;
 }

@@ -196,37 +196,6 @@ namespace DenOfIz
         _64,
     };
 
-    enum ImageLayout
-    {
-        Undefined,
-        General,
-        ColorAttachmentOptimal,
-        DepthStencilAttachmentOptimal,
-        DepthStencilReadOnlyOptimal,
-        ShaderReadOnlyOptimal,
-        TransferSrcOptimal,
-        TransferDstOptimal,
-        PreInitialized,
-        DepthReadOnlyStencilAttachmentOptimal,
-        DepthAttachmentStencilReadOnlyOptimal,
-        DepthAttachmentOptimal,
-        DepthReadOnlyOptimal,
-        StencilAttachmentOptimal,
-        StencilReadOnlyOptimal,
-        ReadOnlyOptimal,
-        AttachmentOptimal,
-        PresentSrc,
-        VideoDecodeDst,
-        VideoDecodeSrc,
-        VideoDecodeDpb,
-        SharedPresent,
-        FragmentShadingRateAttachmentOptimal,
-        RenderingLocalRead,
-        VideoEncodeDst,
-        VideoEncodeSrc,
-        VideoEncodeDpb,
-    };
-
     enum class HeapType
     {
         Auto,
@@ -234,48 +203,6 @@ namespace DenOfIz
         CPU,
         CPU_GPU,
         GPU_CPU
-    };
-
-    struct BufferUsage
-    {
-        uint32_t Map : 1;
-        uint32_t CopySrc : 1;
-        uint32_t CopyDst : 1;
-        uint32_t IndexBuffer : 1;
-        uint32_t VertexBuffer : 1;
-        uint32_t UniformBuffer : 1;
-        uint32_t Storage : 1;
-        uint32_t Indirect : 1;
-        uint32_t QueryResolve : 1;
-        uint32_t AccelerationStructureScratch : 1;
-        uint32_t BottomLevelAccelerationStructureInput : 1;
-        uint32_t TopLevelAccelerationStructureInput : 1;
-        uint32_t Exclusive : 1;
-        uint32_t Ordered : 1;
-        // = 0 Assumed to be read only
-        uint32_t ReadWrite : 1;
-    };
-
-    enum class TextureMemoryUsage
-    {
-        TransferSrc,
-        TransferDst,
-        Sampled,
-        Storage,
-        ColorAttachment,
-        DepthStencilAttachment,
-        TransientAttachment,
-        InputAttachment,
-        VideoDecodeDst,
-        VideoDecodeSrc,
-        VideoDecodeDpb,
-        FragmentDensityMap,
-        FragmentShadingRateAttachment,
-        HostTransferEXT,
-        VideoEncodeDst,
-        VideoEncodeSrc,
-        VideoEncodeDpb,
-        AttachmentFeedbackLoop,
     };
 
     enum class TextureAspect
@@ -293,10 +220,9 @@ namespace DenOfIz
     enum class SamplerAddressMode
     {
         Repeat,
-        MirroredRepeat,
+        Mirror,
         ClampToEdge,
         ClampToBorder,
-        MirrorClampToEdge,
     };
 
     enum class MipmapMode
@@ -309,12 +235,11 @@ namespace DenOfIz
     {
         Nearest,
         Linear,
-        CubicIMG,
-        CubicEXT,
     };
 
     enum class CompareOp
     {
+        Never,
         Equal,
         NotEqual,
         Always,
@@ -336,46 +261,41 @@ namespace DenOfIz
         DecrementAndWrap
     };
 
+    struct ResourceDescriptor
+    {
+        uint32_t Buffer : 1;
+        uint32_t Texture : 1;
+        uint32_t Sampler : 1;
+        uint32_t UniformBuffer : 1;
+        uint32_t RootConstant : 1;
+        uint32_t IndexBuffer : 1;
+        uint32_t VertexBuffer : 1;
+        uint32_t IndirectBuffer : 1;
+        uint32_t TextureCube : 1;
+        uint32_t AccelerationStructure : 1;
+        // = 0 Assumed to be read only
+        uint32_t ReadWrite : 1;
+    };
+
     struct ResourceState
     {
-        unsigned int Undefined : 1;
-        unsigned int VertexAndConstantBuffer : 1;
-        unsigned int IndexBuffer : 1;
-        unsigned int RenderTarget : 1;
-        unsigned int UnorderedAccess : 1;
-        unsigned int DepthWrite : 1;
-        unsigned int DepthRead : 1;
-        unsigned int ShaderResource : 1;
-        unsigned int StreamOut : 1;
-        unsigned int IndirectArgument : 1;
-        unsigned int CopyDst : 1;
-        unsigned int CopySource : 1;
-        unsigned int GenericRead : 1;
-        unsigned int Present : 1;
-        unsigned int Common : 1;
-        unsigned int AccelerationStructureRead : 1;
-        unsigned int AccelerationStructureWrite : 1;
-    };
-
-    enum class ResourceType
-    {
-        Texture,
-        CubeMap,
-        Buffer
-    };
-
-    enum class ResourceBindingType
-    {
-        Sampler,
-        Texture,
-        TextureReadWrite,
-        Buffer,
-        BufferReadWrite,
-        BufferDynamic,
-        Storage,
-        StorageImage,
-        StorageDynamic,
-        AccelerationStructure,
+        uint32_t Undefined : 1;
+        uint32_t VertexAndConstantBuffer : 1;
+        uint32_t IndexBuffer : 1;
+        uint32_t RenderTarget : 1;
+        uint32_t UnorderedAccess : 1;
+        uint32_t DepthWrite : 1;
+        uint32_t DepthRead : 1;
+        uint32_t ShaderResource : 1;
+        uint32_t StreamOut : 1;
+        uint32_t IndirectArgument : 1;
+        uint32_t CopyDst : 1;
+        uint32_t CopySrc : 1;
+        uint32_t GenericRead : 1;
+        uint32_t Present : 1;
+        uint32_t Common : 1;
+        uint32_t AccelerationStructureRead : 1;
+        uint32_t AccelerationStructureWrite : 1;
     };
 
     enum class LoadOp

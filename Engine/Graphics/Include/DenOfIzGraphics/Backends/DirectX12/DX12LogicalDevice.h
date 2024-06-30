@@ -61,7 +61,7 @@ namespace DenOfIz
         std::unique_ptr<IFence> CreateFence() override;
         std::unique_ptr<ISemaphore> CreateSemaphore() override;
         std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferDesc &bufferDesc) override;
-        std::unique_ptr<ITextureResource> CreateImageResource(std::string name, const TextureDesc &textureDesc) override;
+        std::unique_ptr<ITextureResource> CreateTextureResource(std::string name, const TextureDesc &textureDesc) override;
 
         void WaitIdle() override;
         // --

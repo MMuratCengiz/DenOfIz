@@ -27,30 +27,22 @@ namespace DenOfIz
     class DX12EnumConverter
     {
     public:
-        static D3D12_DESCRIPTOR_RANGE_TYPE ConvertBindingTypeToDescriptorRangeType(ResourceBindingType bindingType)
+        static D3D12_DESCRIPTOR_RANGE_TYPE ConvertResourceDescriptorToDescriptorRangeType(ResourceDescriptor descriptor)
         {
-            switch ( bindingType )
-            {
-            case ResourceBindingType::Sampler:
+            if ( descriptor.Sampler ) {
                 return D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-            case ResourceBindingType::StorageImage:
-                break;
-            case ResourceBindingType::Buffer:
+            }
+            if ( descriptor.UniformBuffer || descriptor.RootConstant ) {
                 return D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-            case ResourceBindingType::Texture:
-            case ResourceBindingType::BufferDynamic:
-                return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-            case ResourceBindingType::BufferReadWrite:
-            case ResourceBindingType::TextureReadWrite:
+            }
+            if ( ( descriptor.Texture || descriptor.Buffer ) && descriptor.ReadWrite ) {
                 return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-            case ResourceBindingType::Storage:
-            case ResourceBindingType::StorageDynamic:
-                return D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-            case ResourceBindingType::AccelerationStructure:
+            }
+            if ( descriptor.Texture || descriptor.Buffer || descriptor.AccelerationStructure ) {
                 return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
             }
 
-            return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+            return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         }
 
         static D3D12_COMMAND_LIST_TYPE ConvertQueueType(QueueType queueType)
@@ -67,28 +59,6 @@ namespace DenOfIz
             }
 
             return D3D12_COMMAND_LIST_TYPE_DIRECT;
-        }
-
-        static D3D12_ROOT_PARAMETER_TYPE ConvertBindingTypeToRootParameterType(ResourceBindingType bindingType)
-        {
-            switch ( bindingType )
-            {
-            case ResourceBindingType::Buffer:
-            case ResourceBindingType::Texture:
-            case ResourceBindingType::BufferDynamic:
-                return D3D12_ROOT_PARAMETER_TYPE_SRV;
-            case ResourceBindingType::BufferReadWrite:
-            case ResourceBindingType::TextureReadWrite:
-                return D3D12_ROOT_PARAMETER_TYPE_UAV;
-            case ResourceBindingType::Storage:
-            case ResourceBindingType::StorageDynamic:
-                return D3D12_ROOT_PARAMETER_TYPE_CBV;
-            default:
-                DZ_ASSERTM(false, "Sampler binding type is not a supported root constant");
-                break;
-            }
-
-            return D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
         }
 
         static D3D12_HEAP_TYPE ConvertHeapType(const HeapType &heapType)
@@ -108,7 +78,7 @@ namespace DenOfIz
             return D3D12_HEAP_TYPE_DEFAULT;
         }
 
-        static DXGI_FORMAT ConvertImageFormat(const Format &format)
+        static DXGI_FORMAT ConvertFormat(const Format &format)
         {
             switch ( format )
             {
@@ -266,6 +236,8 @@ namespace DenOfIz
         {
             switch ( op )
             {
+            case CompareOp::Never:
+                return D3D12_COMPARISON_FUNC_NEVER;
             case CompareOp::Equal:
                 return D3D12_COMPARISON_FUNC_EQUAL;
             case CompareOp::NotEqual:
@@ -443,7 +415,7 @@ namespace DenOfIz
             {
                 result |= D3D12_RESOURCE_STATE_COPY_DEST;
             }
-            if ( state.CopySource )
+            if ( state.CopySrc )
             {
                 result |= D3D12_RESOURCE_STATE_COPY_SOURCE;
             }
@@ -482,7 +454,7 @@ namespace DenOfIz
             {
                 return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_GENERIC_READ, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_GENERIC_READ, D3D12_BARRIER_LAYOUT_GENERIC_READ);
             }
-            if ( state.CopySource )
+            if ( state.CopySrc )
             {
                 return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_SOURCE, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COPY_SOURCE, D3D12_BARRIER_LAYOUT_COPY_SOURCE);
             }
@@ -566,7 +538,7 @@ namespace DenOfIz
             {
                 result |= D3D12_BARRIER_ACCESS_COPY_DEST;
             }
-            if ( state.CopySource )
+            if ( state.CopySrc )
             {
                 result |= D3D12_BARRIER_ACCESS_COPY_SOURCE;
             }
@@ -583,6 +555,22 @@ namespace DenOfIz
                 result |= D3D12_BARRIER_ACCESS_RAYTRACING_ACCELERATION_STRUCTURE_WRITE;
             }
             return result;
+        }
+
+        static D3D12_TEXTURE_ADDRESS_MODE ConvertSamplerAddressMode(const SamplerAddressMode& mode)
+        {
+            switch ( mode )
+            {
+            case SamplerAddressMode::Repeat:
+                return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+            case SamplerAddressMode::Mirror:
+                return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+            case SamplerAddressMode::ClampToEdge:
+                return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+            case SamplerAddressMode::ClampToBorder:
+                return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+            }
+            return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         }
     };
 

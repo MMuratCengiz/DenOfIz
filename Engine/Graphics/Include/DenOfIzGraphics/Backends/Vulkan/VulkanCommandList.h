@@ -20,12 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "../Interface/ICommandList.h"
 #include "VulkanBufferResource.h"
+#include "VulkanContext.h"
 #include "VulkanFence.h"
-#include "VulkanImageResource.h"
+#include "VulkanPipeline.h"
 #include "VulkanPipelineBarrierHelper.h"
 #include "VulkanSemaphore.h"
-#include "VulkanContext.h"
-#include "VulkanPipeline.h"
+#include "VulkanTextureResource.h"
 
 namespace DenOfIz
 {

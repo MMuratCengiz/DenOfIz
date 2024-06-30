@@ -65,13 +65,13 @@ void DX12BufferResource::Allocate(const void *data)
     if ( !allocated )
     {
         D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
-        if ( m_desc.Usage.ReadWrite )
+        if ( m_desc.Descriptor.ReadWrite )
         {
             flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
         }
-        if ( m_desc.Usage.AccelerationStructureScratch || m_desc.Usage.BottomLevelAccelerationStructureInput || m_desc.Usage.TopLevelAccelerationStructureInput )
+        if ( m_desc.Descriptor.AccelerationStructure )
         {
-            flags = D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
+            flags |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
         }
 
         CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(DX12DescriptorHeap::RoundUp(m_size), flags);
@@ -141,9 +141,9 @@ void DX12BufferResource::CreateBufferView()
         : m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ];
 
     // The views here are set explicitly in CommandList::BindVertexBuffer and CommandList::BindIndexBuffer
-    DZ_RETURN_IF(m_desc.Usage.VertexBuffer || m_desc.Usage.IndexBuffer);
+    DZ_RETURN_IF(m_desc.Descriptor.VertexBuffer || m_desc.Descriptor.IndexBuffer);
 
-    if ( m_desc.Usage.UniformBuffer )
+    if ( m_desc.Descriptor.UniformBuffer )
     {
         D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
         desc.BufferLocation = m_allocation->GetResource()->GetGPUVirtualAddress();
@@ -154,10 +154,10 @@ void DX12BufferResource::CreateBufferView()
     {
         uint64_t stride = m_desc.BufferView.Stride;
 
-        if ( !m_desc.Usage.ReadWrite )
+        if ( !m_desc.Descriptor.ReadWrite )
         {
             D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
-            desc.Format = DX12EnumConverter::ConvertImageFormat(m_desc.Format);
+            desc.Format = DX12EnumConverter::ConvertFormat(m_desc.Format);
             desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
             desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             desc.Buffer.FirstElement = m_desc.BufferView.Offset;
@@ -172,7 +172,7 @@ void DX12BufferResource::CreateBufferView()
         else
         {
             D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {};
-            desc.Format = DX12EnumConverter::ConvertImageFormat(m_desc.Format);
+            desc.Format = DX12EnumConverter::ConvertFormat(m_desc.Format);
             desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
             desc.Buffer.FirstElement = m_desc.BufferView.Offset;
             if ( stride != 0 )

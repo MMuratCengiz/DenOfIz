@@ -43,7 +43,7 @@ void VulkanBufferResource::Allocate(const void *newData)
     }
 
     vk::BufferCreateInfo bufferCreateInfo{};
-    bufferCreateInfo.usage = VulkanEnumConverter::ConvertBufferUsage(m_desc.Usage);
+    bufferCreateInfo.usage = VulkanEnumConverter::ConvertBufferUsage(m_desc.Descriptor, m_desc.InitialState);
     bufferCreateInfo.size = m_size;
     bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 

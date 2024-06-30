@@ -34,12 +34,14 @@ DX12RootSignature::DX12RootSignature(DX12Context *context, const RootSignatureDe
 void DX12RootSignature::AddResourceBindingInternal(const ResourceBinding &binding)
 {
     CD3DX12_DESCRIPTOR_RANGE descriptorRange = {};
-    descriptorRange.Init(DX12EnumConverter::ConvertBindingTypeToDescriptorRangeType(binding.Type), binding.ArraySize, binding.Binding, binding.RegisterSpace);
+    descriptorRange.Init(DX12EnumConverter::ConvertResourceDescriptorToDescriptorRangeType(binding.Descriptor), binding.ArraySize, binding.Binding, binding.RegisterSpace);
 
     m_descriptorRanges.push_back(descriptorRange);
     for ( const auto &stage : binding.Stages )
     {
-        m_descriptorRangesShaderVisibilities.insert(DX12EnumConverter::ConvertShaderStageToShaderVisibility(stage));
+        D3D12_SHADER_VISIBILITY usedStage = DX12EnumConverter::ConvertShaderStageToShaderVisibility(stage);
+        m_descriptorRangesShaderVisibilities.insert(usedStage);
+        usedStages |= usedStage;
     }
 }
 
@@ -69,6 +71,29 @@ void DX12RootSignature::CreateInternal()
         shaderVisibility = *m_descriptorRangesShaderVisibilities.begin();
     }
 
+    D3D12_ROOT_SIGNATURE_FLAGS flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+    if ( !(usedStages & D3D12_SHADER_VISIBILITY_VERTEX) )
+    {
+        flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS;
+    }
+    if ( !(usedStages & D3D12_SHADER_VISIBILITY_HULL) )
+    {
+        flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS;
+    }
+    if ( !(usedStages & D3D12_SHADER_VISIBILITY_DOMAIN) )
+    {
+        flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
+    }
+    if ( !(usedStages & D3D12_SHADER_VISIBILITY_GEOMETRY) )
+    {
+        flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
+    }
+    if ( !(usedStages & D3D12_SHADER_VISIBILITY_PIXEL) )
+    {
+        flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+    }
+
     std::copy(m_rootConstants.begin(), m_rootConstants.end(), std::back_inserter(m_rootParameters));
 
     CD3DX12_ROOT_PARAMETER descriptors = {};
@@ -78,13 +103,12 @@ void DX12RootSignature::CreateInternal()
     D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc(static_cast<uint32_t>(m_rootParameters.size()), m_rootParameters.data());
     wil::com_ptr<ID3DBlob> signature;
     wil::com_ptr<ID3DBlob> error;
-    rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-
+    rootSignatureDesc.Flags = flags;
     THROW_IF_FAILED(D3D12SerializeRootSignature(&rootSignatureDesc, m_rootSignatureVersion, &signature, &error));
     THROW_IF_FAILED(m_context->D3DDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(m_rootSignature.put())));
 }
 
 DX12RootSignature::~DX12RootSignature()
 {
-//    DX_SAFE_RELEASE(m_rootSignature);
+    //    DX_SAFE_RELEASE(m_rootSignature);
 }
