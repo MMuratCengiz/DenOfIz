@@ -76,7 +76,7 @@ vk::ImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier(const Tex
     VulkanTextureResource *imageResource = (VulkanTextureResource *)barrier.Resource;
     vk::ImageMemoryBarrier imageMemoryBarrier{};
 
-    if ( barrier.OldState.UnorderedAccess && barrier.NewState.UnorderedAccess )
+    if ( barrier.OldState.IsSet(ResourceState::UnorderedAccess) && barrier.NewState.IsSet(ResourceState::UnorderedAccess) )
     {
         imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
         imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderWrite | vk::AccessFlagBits::eShaderRead;
@@ -100,7 +100,7 @@ vk::ImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier(const Tex
     imageMemoryBarrier.subresourceRange.layerCount = barrier.EnableSubresourceBarrier ? 1 : VK_REMAINING_ARRAY_LAYERS;
 
     imageMemoryBarrier.srcQueueFamilyIndex = barrier.SourceQueue;
-    if ( barrier.EnableQueueBarrier && !barrier.OldState.Undefined )
+    if ( barrier.EnableQueueBarrier && !barrier.OldState.IsSet(ResourceState::Undefined) )
     {
         imageMemoryBarrier.srcQueueFamilyIndex = barrier.SourceQueue;
         imageMemoryBarrier.dstQueueFamilyIndex = barrier.DestinationQueue;
@@ -122,7 +122,7 @@ vk::BufferMemoryBarrier VulkanPipelineBarrierHelper::CreateBufferBarrier(const B
     VulkanBufferResource *bufferResource = (VulkanBufferResource *)barrier.Resource;
     vk::MemoryBarrier memoryBarrier{};
 
-    if ( barrier.OldState.UnorderedAccess && barrier.NewState.UnorderedAccess )
+    if ( barrier.OldState.IsSet(ResourceState::UnorderedAccess) && barrier.NewState.IsSet(ResourceState::UnorderedAccess) )
     {
         memoryBarrier.srcAccessMask |= vk::AccessFlagBits::eShaderWrite;
         memoryBarrier.dstAccessMask |= vk::AccessFlagBits::eShaderWrite | vk::AccessFlagBits::eShaderRead;
@@ -138,59 +138,59 @@ vk::BufferMemoryBarrier VulkanPipelineBarrierHelper::CreateBufferBarrier(const B
     return vk::BufferMemoryBarrier();
 }
 
-vk::AccessFlags VulkanPipelineBarrierHelper::GetAccessFlags(ResourceState state)
+vk::AccessFlags VulkanPipelineBarrierHelper::GetAccessFlags(const BitSet<ResourceState>& state)
 {
     vk::AccessFlags result;
 
-    if ( state.CopySrc )
+    if ( state.IsSet(ResourceState::CopySrc) )
     {
         result |= vk::AccessFlagBits::eTransferRead;
     }
-    if ( state.CopyDst )
+    if ( state.IsSet(ResourceState::CopyDst) )
     {
         result |= vk::AccessFlagBits::eTransferWrite;
     }
-    if ( state.VertexAndConstantBuffer )
+    if ( state.IsSet(ResourceState::VertexAndConstantBuffer) )
     {
         result |= vk::AccessFlagBits::eUniformRead | vk::AccessFlagBits::eVertexAttributeRead;
     }
-    if ( state.IndexBuffer )
+    if ( state.IsSet(ResourceState::IndexBuffer) )
     {
         result |= vk::AccessFlagBits::eIndexRead;
     }
-    if ( state.UnorderedAccess )
+    if ( state.IsSet(ResourceState::UnorderedAccess) )
     {
         result |= vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite;
     }
-    if ( state.IndirectArgument )
+    if ( state.IsSet(ResourceState::IndirectArgument) )
     {
         result |= vk::AccessFlagBits::eIndirectCommandRead;
     }
-    if ( state.RenderTarget )
+    if ( state.IsSet(ResourceState::RenderTarget) )
     {
         result |= vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite;
     }
-    if ( state.DepthWrite )
+    if ( state.IsSet(ResourceState::DepthWrite) )
     {
         result |= vk::AccessFlagBits::eDepthStencilAttachmentWrite;
     }
-    if ( state.DepthRead )
+    if ( state.IsSet(ResourceState::DepthRead) )
     {
         result |= vk::AccessFlagBits::eDepthStencilAttachmentRead;
     }
-    if ( state.ShaderResource )
+    if ( state.IsSet(ResourceState::ShaderResource) )
     {
         result |= vk::AccessFlagBits::eShaderRead;
     }
-    if ( state.Present )
+    if ( state.IsSet(ResourceState::Present) )
     {
         result |= vk::AccessFlagBits::eMemoryRead;
     }
-    if ( state.AccelerationStructureRead )
+    if ( state.IsSet(ResourceState::AccelerationStructureRead) )
     {
         result |= vk::AccessFlagBits::eAccelerationStructureReadKHR;
     }
-    if ( state.AccelerationStructureWrite )
+    if ( state.IsSet(ResourceState::AccelerationStructureWrite) )
     {
         result |= vk::AccessFlagBits::eAccelerationStructureWriteKHR;
     }
@@ -198,41 +198,41 @@ vk::AccessFlags VulkanPipelineBarrierHelper::GetAccessFlags(ResourceState state)
     return result;
 }
 
-vk::ImageLayout VulkanPipelineBarrierHelper::GetImageLayout(ResourceState state)
+vk::ImageLayout VulkanPipelineBarrierHelper::GetImageLayout(const BitSet<ResourceState>& state)
 {
-    if ( state.CopySrc )
+    if ( state.IsSet(ResourceState::CopySrc) )
     {
         return vk::ImageLayout::eTransferSrcOptimal;
     }
-    if ( state.CopyDst )
+    if ( state.IsSet(ResourceState::CopyDst) )
     {
         return vk::ImageLayout::eTransferDstOptimal;
     }
-    if ( state.RenderTarget )
+    if ( state.IsSet(ResourceState::RenderTarget) )
     {
         return vk::ImageLayout::eColorAttachmentOptimal;
     }
-    if ( state.DepthWrite )
+    if ( state.IsSet(ResourceState::DepthWrite) )
     {
         return vk::ImageLayout::eDepthStencilAttachmentOptimal;
     }
-    if ( state.DepthRead )
+    if ( state.IsSet(ResourceState::DepthRead) )
     {
         return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
     }
-    if ( state.UnorderedAccess )
+    if ( state.IsSet(ResourceState::UnorderedAccess) )
     {
         return vk::ImageLayout::eGeneral;
     }
-    if ( state.ShaderResource )
+    if ( state.IsSet(ResourceState::ShaderResource) )
     {
         return vk::ImageLayout::eShaderReadOnlyOptimal;
     }
-    if ( state.Present )
+    if ( state.IsSet(ResourceState::Present) )
     {
         return vk::ImageLayout::ePresentSrcKHR;
     }
-    if ( state.Common )
+    if ( state.IsSet(ResourceState::Common) )
     {
         return vk::ImageLayout::eGeneral;
     }

@@ -51,7 +51,7 @@ namespace DenOfIz
         std::string Name;
         uint32_t Binding;
         uint32_t RegisterSpace = 0;
-        ResourceDescriptor Descriptor;
+        BitSet<ResourceDescriptor> Descriptor;
 
         // A binding can appear in more than one stage, i.e. both in fragment and vertex shaders.
         std::vector<ShaderStage> Stages;

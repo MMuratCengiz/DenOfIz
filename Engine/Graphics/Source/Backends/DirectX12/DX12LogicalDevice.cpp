@@ -22,7 +22,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12LogicalDevice::DX12LogicalDevice() { m_context = std::make_unique<DX12Context>(); }
+DX12LogicalDevice::DX12LogicalDevice()
+{
+    m_context = std::make_unique<DX12Context>();
+}
 
 DX12LogicalDevice::~DX12LogicalDevice()
 {
@@ -31,7 +34,7 @@ DX12LogicalDevice::~DX12LogicalDevice()
 
 void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
 {
-    m_context->Window = window;
+    m_context->Window      = window;
     DWORD dxgiFactoryFlags = 0;
 #ifndef NDEBUG
     {
@@ -57,8 +60,8 @@ void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
                 80 /* IDXGISwapChain::GetContainingOutput: The swapchain's adapter does not control the output on which the swapchain's window resides. */,
             };
             DXGI_INFO_QUEUE_FILTER filter = {};
-            filter.DenyList.NumIDs = _countof(hide);
-            filter.DenyList.pIDList = hide;
+            filter.DenyList.NumIDs        = _countof(hide);
+            filter.DenyList.pIDList       = hide;
             dxgiInfoQueue->AddStorageFilterEntries(DXGI_DEBUG_DXGI, &filter);
         }
     }
@@ -91,7 +94,7 @@ void DX12LogicalDevice::CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDevice 
 
     DXGI_ADAPTER_DESC1 desc;
     THROW_IF_FAILED(adapter.GetDesc1(&desc));
-    physicalDevice.Properties.IsDedicated = !(desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE);
+    physicalDevice.Properties.IsDedicated         = !(desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE);
     physicalDevice.Properties.MemoryAvailableInMb = desc.DedicatedVideoMemory / (1024 * 1024);
 
     wil::com_ptr<ID3D12Device> device;
@@ -99,7 +102,7 @@ void DX12LogicalDevice::CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDevice 
 
     // Todo actually read these from somewhere:
     physicalDevice.Capabilities.DedicatedTransferQueue = true;
-    physicalDevice.Capabilities.ComputeShaders = true;
+    physicalDevice.Capabilities.ComputeShaders         = true;
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 opts5 = {};
     if ( SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &opts5, sizeof(opts5))) )
@@ -112,7 +115,7 @@ void DX12LogicalDevice::CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDevice 
     physicalDevice.Capabilities.Tearing = allowTearing;
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {};
-    HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12));
+    HRESULT                            hr        = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12));
     if ( SUCCEEDED(hr) )
     {
         m_context->DX12Capabilities.EnhancedBarriers = options12.EnhancedBarriersSupported;
@@ -131,7 +134,7 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
     LOG(INFO) << "Tearing: " << (device.Capabilities.Tearing ? "Yes" : "No");
     LOG(INFO) << "DX12 Enhanced Barriers: " << (m_context->DX12Capabilities.EnhancedBarriers ? "Yes" : "No");
 
-    m_selectedDeviceInfo = device;
+    m_selectedDeviceInfo          = device;
     m_context->SelectedDeviceInfo = m_selectedDeviceInfo;
 
     wil::com_ptr<IDXGIAdapter1> adapter;
@@ -177,8 +180,8 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
             D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE,
         };
         D3D12_INFO_QUEUE_FILTER filter = {};
-        filter.DenyList.NumIDs = _countof(hide);
-        filter.DenyList.pIDList = hide;
+        filter.DenyList.NumIDs         = _countof(hide);
+        filter.DenyList.pIDList        = hide;
         d3dInfoQueue->AddStorageFilterEntries(&filter);
 
         DWORD callbackCookie;
@@ -220,8 +223,8 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
     }
 
     D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-    queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-    queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+    queueDesc.Flags                    = D3D12_COMMAND_QUEUE_FLAG_NONE;
+    queueDesc.Type                     = D3D12_COMMAND_LIST_TYPE_DIRECT;
     THROW_IF_FAILED(m_context->D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(m_context->GraphicsCommandQueue.put())));
 
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
@@ -236,7 +239,7 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
     }
 
     m_context->ShaderVisibleCbvSrvUavDescriptorHeap = std::make_unique<DX12DescriptorHeap>(m_context->D3DDevice.get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true);
-    m_context->ShaderVisibleSamplerDescriptorHeap = std::make_unique<DX12DescriptorHeap>(m_context->D3DDevice.get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, true);
+    m_context->ShaderVisibleSamplerDescriptorHeap   = std::make_unique<DX12DescriptorHeap>(m_context->D3DDevice.get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, true);
 
     THROW_IF_FAILED(m_context->D3DDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(m_context->CopyCommandListAllocator.put())));
     THROW_IF_FAILED(m_context->D3DDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COPY, m_context->CopyCommandListAllocator.get(), nullptr,
@@ -244,14 +247,16 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
     THROW_IF_FAILED(m_context->CopyCommandList->Close());
 
     D3D12MA::ALLOCATOR_DESC allocatorDesc = {};
-    allocatorDesc.pDevice = m_context->D3DDevice.get();
-    allocatorDesc.pAdapter = m_context->Adapter.get();
+    allocatorDesc.pDevice                 = m_context->D3DDevice.get();
+    allocatorDesc.pAdapter                = m_context->Adapter.get();
+    allocatorDesc.Flags = static_cast<D3D12MA::ALLOCATOR_FLAGS>(D3D12MA::ALLOCATOR_FLAG_MSAA_TEXTURES_ALWAYS_COMMITTED | D3D12MA::ALLOCATOR_FLAG_DEFAULT_POOLS_NOT_ZEROED);
 
-    allocatorDesc.Flags = D3D12MA::ALLOCATOR_FLAG_MSAA_TEXTURES_ALWAYS_COMMITTED | D3D12MA::ALLOCATOR_FLAG_DEFAULT_POOLS_NOT_ZEROED;
     THROW_IF_FAILED(D3D12MA::CreateAllocator(&allocatorDesc, m_context->DX12MemoryAllocator.put()));
 }
 
-void DX12LogicalDevice::WaitIdle() {}
+void DX12LogicalDevice::WaitIdle()
+{
+}
 
 std::unique_ptr<ICommandListPool> DX12LogicalDevice::CreateCommandListPool(const CommandListPoolDesc &poolDesc)
 {
@@ -304,13 +309,13 @@ std::unique_ptr<ISemaphore> DX12LogicalDevice::CreateSemaphore()
 std::unique_ptr<IBufferResource> DX12LogicalDevice::CreateBufferResource(std::string name, const BufferDesc &bufferDesc)
 {
     DX12BufferResource *buffer = new DX12BufferResource(m_context.get(), bufferDesc);
-    buffer->Name = name;
+    buffer->Name               = name;
     return std::unique_ptr<IBufferResource>(buffer);
 }
 
 std::unique_ptr<ITextureResource> DX12LogicalDevice::CreateTextureResource(std::string name, const TextureDesc &textureDesc)
 {
     DX12TextureResource *image = new DX12TextureResource(m_context.get(), textureDesc);
-    image->Name = name;
+    image->Name                = name;
     return std::unique_ptr<ITextureResource>(image);
 }

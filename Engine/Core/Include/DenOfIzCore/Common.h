@@ -16,31 +16,13 @@
 
 #pragma once
 
-#include "Common_Windows.h"
-#include "Common_Apple.h"
-#include <string>
-#include <iostream>
-#include <functional>
-#include <memory>
-#include <cstring>
 #include <cassert>
+#include <cstring>
+#include <functional>
 #include <glog/logging.h>
-
-#define DZ_RETURN_IF(condition) if (condition) return
-#define DZ_ASSERTM(exp, msg) assert(((void)msg, exp))
-#define DZ_NOT_NULL(exp) DZ_ASSERTM(exp != nullptr, #exp " is null")
-
-namespace DenOfIz
-{
-    class NonCopyable
-    {
-        NonCopyable(NonCopyable const &) = delete;
-        NonCopyable(NonCopyable &&) = delete;
-        NonCopyable &operator=(NonCopyable const &) = delete;
-        NonCopyable &operator=(NonCopyable &&) = delete;
-    protected:
-        NonCopyable() = default;
-        ~NonCopyable() = default;
-    };
-}
-
+#include <iostream>
+#include <memory>
+#include <string>
+#include "Common_Apple.h"
+#include "Common_Windows.h"
+#include "Common_Macro.h"

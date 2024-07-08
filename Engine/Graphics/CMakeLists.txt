@@ -35,6 +35,7 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Backends/Common/ShaderProgram.cpp
 
         #Renderers
+        Source/Renderer/Common/BatchResourceCopy.cpp
         Source/Renderer/SimpleRenderer.cpp)
 
 SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES

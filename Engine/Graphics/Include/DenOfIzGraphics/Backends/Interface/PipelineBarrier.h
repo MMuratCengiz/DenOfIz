@@ -29,8 +29,8 @@ namespace DenOfIz
     struct TextureBarrierInfo
     {
         ITextureResource *Resource;
-        ResourceState OldState{};
-        ResourceState NewState{};
+        BitSet<ResourceState> OldState{};
+        BitSet<ResourceState> NewState{};
 
         bool EnableQueueBarrier = false;
         uint32_t SourceQueue;
@@ -44,15 +44,15 @@ namespace DenOfIz
     struct BufferBarrierInfo
     {
         IBufferResource *Resource;
-        ResourceState OldState;
-        ResourceState NewState;
+        BitSet<ResourceState> OldState;
+        BitSet<ResourceState> NewState;
     };
 
     struct MemoryBarrierInfo
     {
         // todo
-        ResourceState OldState;
-        ResourceState NewState;
+        BitSet<ResourceState> OldState;
+        BitSet<ResourceState> NewState;
     };
 
     class PipelineBarrier
@@ -79,8 +79,8 @@ namespace DenOfIz
         {
             PipelineBarrier barrier;
             TextureBarrierInfo textureBarrier{};
-            textureBarrier.OldState.Undefined = 1;
-            textureBarrier.NewState.RenderTarget = 1;
+            textureBarrier.OldState = ResourceState::Undefined;
+            textureBarrier.NewState = ResourceState::RenderTarget;
             textureBarrier.Resource = resource;
             barrier.TextureBarrier(textureBarrier);
             return barrier;
@@ -90,8 +90,8 @@ namespace DenOfIz
         {
             PipelineBarrier barrier;
             TextureBarrierInfo textureBarrier{};
-            textureBarrier.OldState.RenderTarget = 1;
-            textureBarrier.NewState.Present = 1;
+            textureBarrier.OldState = ResourceState::RenderTarget;
+            textureBarrier.NewState = ResourceState::Present;
             textureBarrier.Resource = resource;
             barrier.TextureBarrier(textureBarrier);
             return barrier;

@@ -19,3 +19,7 @@ install_target(DenOfIzCore)
 
 set_target_properties(DenOfIzCore PROPERTIES LINKER_LANGUAGE CXX)
 set_target_default_properties(DenOfIzCore)
+
+if (BUILD_TESTING)
+    add_subdirectory(Tests)
+endif ()

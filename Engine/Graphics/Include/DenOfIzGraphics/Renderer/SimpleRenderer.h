@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <DenOfIzGraphics/Backends/GraphicsAPI.h>
 #include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
+#include "Common/BatchResourceCopy.h"
 
 namespace DenOfIz
 {
@@ -51,6 +52,7 @@ namespace DenOfIz
         std::unique_ptr<IRootSignature> m_rootSignature;
         std::unique_ptr<IDescriptorTable> m_descriptorTable;
         std::unique_ptr<ISwapChain> m_swapChain;
+        std::unique_ptr<BatchResourceCopy> m_batchResourceCopy;
         std::vector<std::unique_ptr<IFence>> m_fences;
         std::vector<std::unique_ptr<ISemaphore>> m_imageReadySemaphores;
         std::vector<std::unique_ptr<ISemaphore>> m_imageRenderedSemaphores;

@@ -20,6 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <string>
 #include <vector>
+#include "DenOfIzCore/Common_Macro.h"
+#include "DenOfIzCore/BitSet.h"
 
 namespace DenOfIz
 {
@@ -198,7 +200,6 @@ namespace DenOfIz
 
     enum class HeapType
     {
-        Auto,
         GPU,
         CPU,
         CPU_GPU,
@@ -261,42 +262,43 @@ namespace DenOfIz
         DecrementAndWrap
     };
 
-    struct ResourceDescriptor
+    enum class ResourceDescriptor : uint32_t
     {
-        uint32_t Buffer : 1;
-        uint32_t Texture : 1;
-        uint32_t Sampler : 1;
-        uint32_t UniformBuffer : 1;
-        uint32_t RootConstant : 1;
-        uint32_t IndexBuffer : 1;
-        uint32_t VertexBuffer : 1;
-        uint32_t IndirectBuffer : 1;
-        uint32_t TextureCube : 1;
-        uint32_t AccelerationStructure : 1;
-        // = 0 Assumed to be read only
-        uint32_t ReadWrite : 1;
+        Buffer                = 1 << 1,
+        Texture               = 1 << 2,
+        Sampler               = 1 << 3,
+        UniformBuffer         = 1 << 4,
+        RootConstant          = 1 << 5,
+        IndexBuffer           = 1 << 6,
+        VertexBuffer          = 1 << 7,
+        IndirectBuffer        = 1 << 8,
+        TextureCube           = 1 << 9,
+        AccelerationStructure = 1 << 10,
+        UnorderedAccess       = 1 << 11 // When not set, implies read-only resource
     };
+    DZ_BITSET(ResourceDescriptor)
 
-    struct ResourceState
+    enum class ResourceState : uint32_t
     {
-        uint32_t Undefined : 1;
-        uint32_t VertexAndConstantBuffer : 1;
-        uint32_t IndexBuffer : 1;
-        uint32_t RenderTarget : 1;
-        uint32_t UnorderedAccess : 1;
-        uint32_t DepthWrite : 1;
-        uint32_t DepthRead : 1;
-        uint32_t ShaderResource : 1;
-        uint32_t StreamOut : 1;
-        uint32_t IndirectArgument : 1;
-        uint32_t CopyDst : 1;
-        uint32_t CopySrc : 1;
-        uint32_t GenericRead : 1;
-        uint32_t Present : 1;
-        uint32_t Common : 1;
-        uint32_t AccelerationStructureRead : 1;
-        uint32_t AccelerationStructureWrite : 1;
+        Undefined                  = 1 << 1,
+        VertexAndConstantBuffer    = 1 << 2,
+        IndexBuffer                = 1 << 3,
+        RenderTarget               = 1 << 4,
+        UnorderedAccess            = 1 << 5,
+        DepthWrite                 = 1 << 6,
+        DepthRead                  = 1 << 7,
+        ShaderResource             = 1 << 8,
+        StreamOut                  = 1 << 9,
+        IndirectArgument           = 1 << 10,
+        CopyDst                    = 1 << 11,
+        CopySrc                    = 1 << 12,
+        GenericRead                = 1 << 13,
+        Present                    = 1 << 14,
+        Common                     = 1 << 15,
+        AccelerationStructureRead  = 1 << 16,
+        AccelerationStructureWrite = 1 << 17
     };
+    DZ_BITSET(ResourceState)
 
     enum class LoadOp
     {
@@ -333,15 +335,15 @@ namespace DenOfIz
 
     struct PhysicalDeviceProperties
     {
-        bool IsDedicated;
+        bool         IsDedicated;
         unsigned int MemoryAvailableInMb;
     };
 
     struct PhysicalDevice
     {
-        long Id;
-        std::string Name;
-        PhysicalDeviceProperties Properties;
+        long                       Id;
+        std::string                Name;
+        PhysicalDeviceProperties   Properties;
         PhysicalDeviceCapabilities Capabilities;
     };
 

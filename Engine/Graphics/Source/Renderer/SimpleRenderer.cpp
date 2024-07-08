@@ -31,6 +31,7 @@ namespace DenOfIz
         m_logicalDevice = GraphicsAPI::CreateLogicalDevice(m_window);
         auto firstDevice = m_logicalDevice->ListPhysicalDevices()[ 0 ];
         m_logicalDevice->LoadPhysicalDevice(firstDevice);
+        m_batchResourceCopy = std::make_unique<BatchResourceCopy>(m_logicalDevice.get());
 
         m_program.AddShader(ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" });
         m_program.AddShader(ShaderDesc{ .Stage = ShaderStage::Fragment, .Path = "Assets/Shaders/fs.hlsl" });
@@ -40,7 +41,7 @@ namespace DenOfIz
         ResourceBinding timePassedBinding{};
         timePassedBinding.Name = "time";
         timePassedBinding.Binding = 0;
-        timePassedBinding.Descriptor.UniformBuffer = 1;
+        timePassedBinding.Descriptor = ResourceDescriptor::UniformBuffer;
         timePassedBinding.Stages = { ShaderStage::Vertex };
         m_rootSignature->AddResourceBinding(timePassedBinding);
         m_rootSignature->Create();
@@ -77,25 +78,36 @@ namespace DenOfIz
         }
 
         TextureDesc textureDesc{};
-        textureDesc.InitialState.UnorderedAccess = 1;
+        textureDesc.Descriptor = ResourceDescriptor::UnorderedAccess;
         textureDesc.Format = Format::R32G32B32A32Float;
+        textureDesc.Width = 512;
+        textureDesc.Height = 512;
+        textureDesc.MipLevels = log2(std::max(surface.Width, surface.Height)) + 1;
+
         m_computeReadBack = m_logicalDevice->CreateTextureResource("computeReadBack", textureDesc);
 
         BufferDesc bufferDesc{};
         bufferDesc.HeapType = HeapType::GPU;
-        bufferDesc.Descriptor.VertexBuffer = 1;
-
+        bufferDesc.Descriptor = ResourceDescriptor::VertexBuffer & ResourceDescriptor::UnorderedAccess;
+        bufferDesc.NumBytes = m_triangle.size() * sizeof(float);
         m_vertexBuffer = m_logicalDevice->CreateBufferResource("vb", bufferDesc);
-        m_vertexBuffer->Allocate(m_triangle.data(), m_triangle.size() * sizeof(float));
+
+        m_batchResourceCopy->Begin();
+        m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_vertexBuffer.get(), .Data = m_triangle.data(), .NumBytes = bufferDesc.NumBytes });
+        m_batchResourceCopy->End(nullptr);
+
+//        m_vertexBuffer->Allocate(m_triangle.data(), m_triangle.size() * sizeof(float));
 
         BufferDesc deltaTimeBufferDesc{};
         deltaTimeBufferDesc.HeapType = HeapType::CPU_GPU;
-        deltaTimeBufferDesc.Descriptor.UniformBuffer = 1;
+        deltaTimeBufferDesc.Descriptor |= ResourceDescriptor::UniformBuffer;
+        deltaTimeBufferDesc.NumBytes = sizeof(float);
         deltaTimeBufferDesc.KeepMemoryMapped = true;
 
-        m_timePassedBuffer = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferDesc);
         float timePassed = 1.0f;
-        m_timePassedBuffer->Allocate(&timePassed, sizeof(float));
+        m_timePassedBuffer = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferDesc);
+        m_timePassedBuffer->MapMemory();
+        m_timePassedBuffer->CopyData(&timePassed, sizeof(float));
 
         m_descriptorTable = m_logicalDevice->CreateDescriptorTable(DescriptorTableDesc{ .RootSignature = m_rootSignature.get() });
         m_descriptorTable->BindBuffer(m_timePassedBuffer.get());
@@ -107,7 +119,7 @@ namespace DenOfIz
     void SimpleRenderer::Render()
     {
         float timePassed = std::fmax(1.0f, (m_time->DoubleEpochNow() - m_time->GetFirstTickTime()) / 1000000.0f);
-        m_timePassedBuffer->Allocate(&timePassed, sizeof(float));
+        m_timePassedBuffer->CopyData(&timePassed, sizeof(float));
         m_time->Tick();
 
         auto nextCommandList = m_commandListRing->GetNext();
@@ -140,13 +152,14 @@ namespace DenOfIz
         ExecuteDesc submitInfo{};
         submitInfo.Notify = m_fences[ currentFrame ].get();
         submitInfo.WaitOnLocks.push_back(m_imageReadySemaphores[ currentFrame ].get());
-        submitInfo.SignalLocks.push_back(m_imageRenderedSemaphores[ currentFrame ].get());
+        submitInfo.NotifyLocks.push_back(m_imageRenderedSemaphores[ currentFrame ].get());
         nextCommandList->Execute(submitInfo);
         nextCommandList->Present(m_swapChain.get(), nextImage, { m_imageRenderedSemaphores[ currentFrame ].get() });
     }
 
     void SimpleRenderer::Quit()
     {
+        m_timePassedBuffer->UnmapMemory();
         m_logicalDevice->WaitIdle();
         m_commandListRing.reset();
         m_swapChain.reset();

@@ -33,16 +33,18 @@ namespace DenOfIz
     {
         TextureAspect Aspect = TextureAspect::Color;
         Format Format;
-        ResourceDescriptor Descriptor;
+        BitSet<ResourceDescriptor> Descriptor;
 
-        HeapType HeapType = HeapType::Auto;
+        HeapType HeapType = HeapType::GPU;
         MSAASampleCount MSAASampleCount = MSAASampleCount::_0;
-        ResourceState InitialState;
+        BitSet<ResourceState> InitialState;
 
         uint32_t Width;
+        // if Height is > 1, it is a 2D texture
         uint32_t Height;
+        // if Depth is > 1, it is a 3D texture
         uint32_t Depth = 1;
-        uint32_t ArrayLayers = 1;
+        uint32_t ArraySize = 1;
         uint32_t MipLevels = 1;
     };
 

@@ -11,6 +11,7 @@
     "stb",
     "tinygltf",
     "python3",
+    "gtest",
     {
       "name": "sdl2",
       "features": ["vulkan"]

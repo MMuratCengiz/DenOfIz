@@ -52,7 +52,10 @@ void DX12CommandList::Begin()
     THROW_IF_FAILED(m_commandList->Reset(m_commandAllocator.get(), nullptr));
 
     m_currentRootSignature = nullptr;
-    m_commandList->SetDescriptorHeaps(m_heaps.size(), m_heaps.data());
+    if ( m_desc.QueueType != QueueType::Copy)
+    {
+        m_commandList->SetDescriptorHeaps(m_heaps.size(), m_heaps.data());
+    }
 }
 
 void DX12CommandList::BeginRendering(const RenderingDesc &renderingInfo)
@@ -81,11 +84,14 @@ void DX12CommandList::Execute(const ExecuteDesc &executeInfo)
         m_commandQueue->Wait(reinterpret_cast<DX12Semaphore *>(executeInfo.WaitOnLocks[ i ])->GetFence(), 1);
     }
     m_commandQueue->ExecuteCommandLists(1, CommandListCast(m_commandList.addressof()));
-    for ( uint32_t i = 0; i < executeInfo.SignalLocks.size(); ++i )
+    for ( uint32_t i = 0; i < executeInfo.NotifyLocks.size(); ++i )
     {
-        m_commandQueue->Signal(reinterpret_cast<DX12Semaphore *>(executeInfo.SignalLocks[ i ])->GetFence(), 1);
+        m_commandQueue->Signal(reinterpret_cast<DX12Semaphore *>(executeInfo.NotifyLocks[ i ])->GetFence(), 1);
     }
-    m_commandQueue->Signal(reinterpret_cast<DX12Fence *>(executeInfo.Notify)->GetFence(), 1);
+    if ( executeInfo.Notify != nullptr )
+    {
+        m_commandQueue->Signal(reinterpret_cast<DX12Fence *>(executeInfo.Notify)->GetFence(), 1);
+    }
 }
 
 void DX12CommandList::Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks)
@@ -218,7 +224,6 @@ void DX12CommandList::CopyTextureRegion(const CopyTextureRegionDesc &copyTexture
 
     DX12TextureResource *dstTexture = reinterpret_cast<DX12TextureResource *>(copyTextureRegionInfo.DstTexture);
     DX12TextureResource *srcTexture = reinterpret_cast<DX12TextureResource *>(copyTextureRegionInfo.SrcTexture);
-
 
     D3D12_TEXTURE_COPY_LOCATION dst = {};
     dst.pResource = dstTexture->GetResource();

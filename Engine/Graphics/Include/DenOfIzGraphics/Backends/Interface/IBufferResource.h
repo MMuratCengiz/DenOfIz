@@ -52,20 +52,22 @@ namespace DenOfIz
     {
         bool KeepMemoryMapped = false;
 
-        BufferView BufferView; // For Structured Buffers
-        Format Format = Format::Undefined;
-        ResourceDescriptor Descriptor;
-        ResourceState InitialState;
-        HeapType HeapType;
+        uint32_t                   NumBytes;
+        BufferView                 BufferView; // For Structured Buffers
+        Format                     Format = Format::Undefined;
+        BitSet<ResourceDescriptor> Descriptor;
+        BitSet<ResourceState>      InitialState;
+        HeapType                   HeapType;
     };
 
     class IBufferResource
     {
     protected:
-        uint32_t m_size;
+        uint32_t    m_numBytes;
         const void *m_data;
 
-        void *m_mappedMemory = nullptr;
+        void                 *m_mappedMemory = nullptr;
+        BitSet<ResourceState> m_state;
 
     public:
         virtual ~IBufferResource() = default;
@@ -74,15 +76,27 @@ namespace DenOfIz
 
         void Allocate(const void *data, uint32_t size)
         {
-            m_size = size;
+            m_numBytes = size;
             m_data = data;
             Allocate(data);
         }
 
+        // Allowed only on CPU visible resources
+        virtual void MapMemory()                               = 0;
+        virtual void CopyData(const void *data, uint32_t size) = 0;
+        virtual void UnmapMemory()                             = 0;
+        //--
+
         virtual void Deallocate() = 0;
 
-        inline uint32_t GetSize() const { return m_size; }
-        inline const void *GetData() const { return m_data; }
+        inline uint32_t GetSize() const
+        {
+            return m_numBytes;
+        }
+        inline const void *GetData() const
+        {
+            return m_data;
+        }
 
     protected:
         virtual void Allocate(const void *data) = 0;

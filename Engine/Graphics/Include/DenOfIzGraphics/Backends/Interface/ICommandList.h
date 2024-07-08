@@ -89,7 +89,7 @@ namespace DenOfIz
     {
         IFence *Notify = nullptr;
         std::vector<ISemaphore *> WaitOnLocks = {};
-        std::vector<ISemaphore *> SignalLocks = {};
+        std::vector<ISemaphore *> NotifyLocks = {};
     };
 
     struct CommandListDesc

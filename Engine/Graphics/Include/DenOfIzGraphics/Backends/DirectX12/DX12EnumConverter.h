@@ -27,18 +27,22 @@ namespace DenOfIz
     class DX12EnumConverter
     {
     public:
-        static D3D12_DESCRIPTOR_RANGE_TYPE ConvertResourceDescriptorToDescriptorRangeType(ResourceDescriptor descriptor)
+        static D3D12_DESCRIPTOR_RANGE_TYPE ConvertResourceDescriptorToDescriptorRangeType(const BitSet<ResourceDescriptor>& descriptor)
         {
-            if ( descriptor.Sampler ) {
+            if ( descriptor.IsSet(ResourceDescriptor::Sampler) )
+            {
                 return D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
             }
-            if ( descriptor.UniformBuffer || descriptor.RootConstant ) {
+            if ( descriptor.Any({ResourceDescriptor::UniformBuffer, ResourceDescriptor::RootConstant}) )
+            {
                 return D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             }
-            if ( ( descriptor.Texture || descriptor.Buffer ) && descriptor.ReadWrite ) {
+            if ( descriptor.Any({ResourceDescriptor::Texture, ResourceDescriptor::Buffer}) && descriptor.IsSet(ResourceDescriptor::UnorderedAccess) )
+            {
                 return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
             }
-            if ( descriptor.Texture || descriptor.Buffer || descriptor.AccelerationStructure ) {
+            if ( descriptor.Any({ResourceDescriptor::Texture, ResourceDescriptor::Buffer, ResourceDescriptor::AccelerationStructure}) )
+            {
                 return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
             }
 
@@ -65,7 +69,6 @@ namespace DenOfIz
         {
             switch ( heapType )
             {
-            case HeapType::Auto:
             case HeapType::GPU:
                 return D3D12_HEAP_TYPE_DEFAULT;
             case HeapType::CPU:
@@ -76,6 +79,31 @@ namespace DenOfIz
             }
 
             return D3D12_HEAP_TYPE_DEFAULT;
+        }
+
+        static uint32_t ConvertSampleCount(const MSAASampleCount &sampleCount)
+        {
+            switch ( sampleCount )
+            {
+            case MSAASampleCount::_0:
+                return 1;
+            case MSAASampleCount::_1:
+                return 1;
+            case MSAASampleCount::_2:
+                return 2;
+            case MSAASampleCount::_4:
+                return 4;
+            case MSAASampleCount::_8:
+                return 8;
+            case MSAASampleCount::_16:
+                return 16;
+            case MSAASampleCount::_32:
+            case MSAASampleCount::_64:
+                LOG(WARNING) << "Exceeded the maximum sample count of 16 for this API, defaulting to 16.";
+                return 16;
+            }
+
+            return 1;
         }
 
         static DXGI_FORMAT ConvertFormat(const Format &format)
@@ -362,75 +390,75 @@ namespace DenOfIz
             return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;
         }
 
-        static D3D12_RESOURCE_STATES ConvertResourceState(const ResourceState &state)
+        static D3D12_RESOURCE_STATES ConvertResourceState(const BitSet<ResourceState> &state)
         {
             D3D12_RESOURCE_STATES result = D3D12_RESOURCE_STATE_COMMON;
-            if ( state.GenericRead )
+            if ( state.IsSet(ResourceState::GenericRead) )
             {
                 return D3D12_RESOURCE_STATE_GENERIC_READ;
             }
-            if ( state.Common )
+            if ( state.IsSet(ResourceState::Common) )
             {
                 return D3D12_RESOURCE_STATE_COMMON;
             }
-            if ( state.Present )
+            if ( state.IsSet(ResourceState::Present) )
             {
                 return D3D12_RESOURCE_STATE_PRESENT;
             }
 
-            if ( state.VertexAndConstantBuffer )
+            if ( state.IsSet(ResourceState::VertexAndConstantBuffer) )
             {
                 result |= D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
             }
-            if ( state.IndexBuffer )
+            if ( state.IsSet(ResourceState::IndexBuffer) )
             {
                 result |= D3D12_RESOURCE_STATE_INDEX_BUFFER;
             }
-            if ( state.RenderTarget )
+            if ( state.IsSet(ResourceState::RenderTarget) )
             {
                 result |= D3D12_RESOURCE_STATE_RENDER_TARGET;
             }
-            if ( state.UnorderedAccess )
+            if ( state.IsSet(ResourceState::UnorderedAccess) )
             {
                 result |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
             }
-            if ( state.DepthWrite )
+            if ( state.IsSet(ResourceState::DepthWrite) )
             {
                 result |= D3D12_RESOURCE_STATE_DEPTH_WRITE;
             }
-            else if ( state.DepthRead )
+            else if ( state.IsSet(ResourceState::DepthRead) )
             {
                 result |= D3D12_RESOURCE_STATE_DEPTH_READ;
             }
 
-            if ( state.StreamOut )
+            if ( state.IsSet(ResourceState::StreamOut) )
             {
                 result |= D3D12_RESOURCE_STATE_STREAM_OUT;
             }
-            if ( state.IndirectArgument )
+            if ( state.IsSet(ResourceState::IndirectArgument) )
             {
                 result |= D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
             }
-            if ( state.CopyDst )
+            if ( state.IsSet(ResourceState::CopyDst) )
             {
                 result |= D3D12_RESOURCE_STATE_COPY_DEST;
             }
-            if ( state.CopySrc )
+            if ( state.IsSet(ResourceState::CopySrc) )
             {
                 result |= D3D12_RESOURCE_STATE_COPY_SOURCE;
             }
-            if ( state.ShaderResource )
+            if ( state.IsSet(ResourceState::ShaderResource) )
             {
                 result |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
             }
-            if ( state.AccelerationStructureRead || state.AccelerationStructureWrite )
+            if ( state.IsSet(ResourceState::AccelerationStructureRead) || state.IsSet(ResourceState::AccelerationStructureWrite) )
             {
                 result |= D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
             }
             return result;
         }
 
-        static D3D12_BARRIER_LAYOUT ConvertResourceStateToBarrierLayout(const ResourceState &state, const QueueType &queueType)
+        static D3D12_BARRIER_LAYOUT ConvertResourceStateToBarrierLayout(const BitSet<ResourceState> &state, const QueueType &queueType)
         {
             auto queueSpecificResult = [ = ](D3D12_BARRIER_LAYOUT direct, D3D12_BARRIER_LAYOUT compute, D3D12_BARRIER_LAYOUT other)
             {
@@ -446,42 +474,42 @@ namespace DenOfIz
                 }
             };
 
-            if ( state.Common || state.Present )
+            if ( state.IsSet(ResourceState::Common) || state.IsSet(ResourceState::Present) )
             {
                 return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMMON);
             }
-            if ( state.GenericRead )
+            if ( state.IsSet(ResourceState::GenericRead) )
             {
                 return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_GENERIC_READ, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_GENERIC_READ, D3D12_BARRIER_LAYOUT_GENERIC_READ);
             }
-            if ( state.CopySrc )
+            if ( state.IsSet(ResourceState::CopySrc) )
             {
                 return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_SOURCE, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COPY_SOURCE, D3D12_BARRIER_LAYOUT_COPY_SOURCE);
             }
-            if ( state.CopyDst )
+            if ( state.IsSet(ResourceState::CopyDst) )
             {
                 return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_DEST, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COPY_DEST, D3D12_BARRIER_LAYOUT_COPY_DEST);
             }
-            if ( state.UnorderedAccess )
+            if ( state.IsSet(ResourceState::UnorderedAccess) )
             {
                 return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_UNORDERED_ACCESS, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_UNORDERED_ACCESS,
                                            D3D12_BARRIER_LAYOUT_UNORDERED_ACCESS);
             }
-            if ( state.ShaderResource )
+            if ( state.IsSet(ResourceState::ShaderResource) )
             {
                 return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_SHADER_RESOURCE,
                                            D3D12_BARRIER_LAYOUT_SHADER_RESOURCE);
             }
 
-            if ( state.RenderTarget )
+            if ( state.IsSet(ResourceState::RenderTarget) )
             {
                 return D3D12_BARRIER_LAYOUT_RENDER_TARGET;
             }
-            if ( state.DepthRead )
+            if ( state.IsSet(ResourceState::DepthRead) )
             {
                 return D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ;
             }
-            if ( state.DepthWrite )
+            if ( state.IsSet(ResourceState::DepthWrite) )
             {
                 return D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE;
             }
@@ -489,75 +517,75 @@ namespace DenOfIz
             return queueSpecificResult(D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMMON);
         }
 
-        static D3D12_BARRIER_ACCESS ConvertResourceStateToBarrierAccess(const ResourceState &state)
+        static D3D12_BARRIER_ACCESS ConvertResourceStateToBarrierAccess(const BitSet<ResourceState> &state)
         {
             D3D12_BARRIER_ACCESS result = D3D12_BARRIER_ACCESS_COMMON;
-            if ( state.GenericRead )
+            if ( state.IsSet(ResourceState::GenericRead) )
             {
                 return result;
             }
-            if ( state.Common || state.Present )
+            if ( state.IsSet(ResourceState::Common) || state.IsSet(ResourceState::Present) )
             {
                 return D3D12_BARRIER_ACCESS_COMMON;
             }
 
-            if ( state.VertexAndConstantBuffer )
+            if ( state.IsSet(ResourceState::VertexAndConstantBuffer) )
             {
                 result |= D3D12_BARRIER_ACCESS_VERTEX_BUFFER | D3D12_BARRIER_ACCESS_CONSTANT_BUFFER;
             }
-            if ( state.IndexBuffer )
+            if ( state.IsSet(ResourceState::IndexBuffer) )
             {
                 result |= D3D12_BARRIER_ACCESS_INDEX_BUFFER;
             }
-            if ( state.RenderTarget )
+            if ( state.IsSet(ResourceState::RenderTarget) )
             {
                 result |= D3D12_BARRIER_ACCESS_RENDER_TARGET;
             }
-            if ( state.UnorderedAccess )
+            if ( state.IsSet(ResourceState::UnorderedAccess) )
             {
                 result |= D3D12_BARRIER_ACCESS_UNORDERED_ACCESS;
             }
-            if ( state.DepthWrite )
+            if ( state.IsSet(ResourceState::DepthWrite) )
             {
                 result |= D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE;
             }
-            else if ( state.DepthRead )
+            else if ( state.IsSet(ResourceState::DepthRead) )
             {
                 result |= D3D12_BARRIER_ACCESS_DEPTH_STENCIL_READ;
             }
 
-            if ( state.StreamOut )
+            if ( state.IsSet(ResourceState::StreamOut) )
             {
                 result |= D3D12_BARRIER_ACCESS_STREAM_OUTPUT;
             }
-            if ( state.IndirectArgument )
+            if ( state.IsSet(ResourceState::IndirectArgument) )
             {
                 result |= D3D12_BARRIER_ACCESS_INDIRECT_ARGUMENT;
             }
-            if ( state.CopyDst )
+            if ( state.IsSet(ResourceState::CopyDst) )
             {
                 result |= D3D12_BARRIER_ACCESS_COPY_DEST;
             }
-            if ( state.CopySrc )
+            if ( state.IsSet(ResourceState::CopySrc) )
             {
                 result |= D3D12_BARRIER_ACCESS_COPY_SOURCE;
             }
-            if ( state.ShaderResource )
+            if ( state.IsSet(ResourceState::ShaderResource) )
             {
                 result |= D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
             }
-            if ( state.AccelerationStructureRead )
+            if ( state.IsSet(ResourceState::AccelerationStructureRead) )
             {
                 result |= D3D12_BARRIER_ACCESS_RAYTRACING_ACCELERATION_STRUCTURE_READ;
             }
-            if ( state.AccelerationStructureWrite )
+            if ( state.IsSet(ResourceState::AccelerationStructureWrite) )
             {
                 result |= D3D12_BARRIER_ACCESS_RAYTRACING_ACCELERATION_STRUCTURE_WRITE;
             }
             return result;
         }
 
-        static D3D12_TEXTURE_ADDRESS_MODE ConvertSamplerAddressMode(const SamplerAddressMode& mode)
+        static D3D12_TEXTURE_ADDRESS_MODE ConvertSamplerAddressMode(const SamplerAddressMode &mode)
         {
             switch ( mode )
             {

@@ -23,6 +23,7 @@ using namespace DenOfIz;
 
 DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc &desc) : m_context(context), m_desc(desc)
 {
+    Validate();
     D3D12_RESOURCE_DESC resourceDesc = {};
 
     if ( m_desc.Depth > 1 )
@@ -39,13 +40,12 @@ DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc
     }
 
     resourceDesc.Alignment = 0;
-    resourceDesc.Width = m_desc.Width;
-    resourceDesc.Height = m_desc.Height;
-    resourceDesc.DepthOrArraySize = m_desc.ArrayLayers;
+    resourceDesc.Width = std::max(1u, m_desc.Width);
+    resourceDesc.Height = std::max(1u, m_desc.Height);
+    resourceDesc.DepthOrArraySize = std::max(1u, std::max(m_desc.ArraySize, m_desc.Depth));
     resourceDesc.MipLevels = m_desc.MipLevels;
     resourceDesc.Format = DX12EnumConverter::ConvertFormat(m_desc.Format);
-    // Todo
-    resourceDesc.SampleDesc.Count = 1;
+    resourceDesc.SampleDesc.Count = DX12EnumConverter::ConvertSampleCount(m_desc.MSAASampleCount);
     resourceDesc.SampleDesc.Quality = 0;
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
@@ -58,29 +58,70 @@ DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc
     // --
     D3D12MA::Allocation *allocation;
 
-    // Decide UAV flags
-    if ( m_desc.Descriptor.Texture && m_desc.Descriptor.ReadWrite )
+    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::UnorderedAccess) )
     {
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
 
     D3D12_RESOURCE_STATES initialState = DX12EnumConverter::ConvertResourceState(m_desc.InitialState);
-    if ( m_desc.InitialState.RenderTarget )
+    if ( m_desc.InitialState.IsSet(ResourceState::RenderTarget) )
     {
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-        initialState = DX12EnumConverter::ConvertResourceState(ResourceState{ .RenderTarget = 1 });
+        initialState = DX12EnumConverter::ConvertResourceState(ResourceState::RenderTarget);
     }
-    else if ( m_desc.InitialState.DepthWrite )
+    else if ( m_desc.InitialState.IsSet(ResourceState::DepthWrite) )
     {
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-        initialState = DX12EnumConverter::ConvertResourceState(ResourceState{ .DepthWrite = 1 });
+        initialState = DX12EnumConverter::ConvertResourceState(ResourceState::DepthWrite);
     }
 
     HRESULT hr = m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, initialState, NULL, &allocation, IID_PPV_ARGS(&m_resource));
     THROW_IF_FAILED(hr);
 
-    CreateTextureSrv();
-    CreateTextureUav();
+    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::Texture) )
+    {
+        CreateTextureSrv();
+    }
+    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::UnorderedAccess) )
+    {
+        CreateTextureUav();
+    }
+}
+
+void DX12TextureResource::Validate()
+{
+    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::UnorderedAccess) && m_desc.MSAASampleCount != MSAASampleCount::_0 )
+    {
+        LOG(WARNING) << "MSAA textures cannot be used as UAVs. Resetting MSAASampleCount to 0.";
+        m_desc.MSAASampleCount = MSAASampleCount::_0;
+    }
+
+    if ( m_desc.MSAASampleCount != MSAASampleCount::_0 && m_desc.MipLevels > 1 )
+    {
+        LOG(WARNING) << "Mip mapped textures cannot be sampled. Resetting MSAASampleCount to 0.";
+        m_desc.MSAASampleCount = MSAASampleCount::_0;
+    }
+
+    if ( m_desc.ArraySize > 1 && m_desc.Depth > 1 )
+    {
+        LOG(WARNING) << "Array textures cannot have depth. Resetting depth to 1.";
+        m_desc.Depth = 1;
+    }
+
+    if ( !this->m_desc.Descriptor.IsSet(ResourceDescriptor::Texture) || !m_desc.Descriptor.IsSet(ResourceDescriptor::TextureCube) )
+    {
+        LOG(WARNING) << "Descriptor for texture contains neither Texture nor TextureCube.";
+    }
+
+    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::TextureCube) && m_desc.ArraySize != 6 )
+    {
+        LOG(WARNING) << "TextureCube does not have an array size of 6. ";
+    }
+
+    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::TextureCube) && m_desc.Height != m_desc.Width )
+    {
+        LOG(WARNING) << "TextureCube does not have equal width and height.";
+    }
 }
 
 void DX12TextureResource::CreateTextureSrv()
@@ -94,22 +135,49 @@ void DX12TextureResource::CreateTextureSrv()
         srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
         srvDesc.Texture3D.MipLevels = m_desc.MipLevels;
         srvDesc.Texture3D.MostDetailedMip = 0;
-        srvDesc.Texture3D.ResourceMinLODClamp = 0.0f;
     }
     else if ( m_desc.Height > 1 )
     {
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-        srvDesc.Texture2D.MipLevels = m_desc.MipLevels;
-        srvDesc.Texture2D.MostDetailedMip = 0;
-        srvDesc.Texture2D.PlaneSlice = 0;
-        srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+        if ( m_desc.MSAASampleCount != MSAASampleCount::_0 )
+        {
+               srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMSARRAY;
+               srvDesc.Texture2DMSArray.ArraySize = m_desc.ArraySize;
+               srvDesc.Texture2DMSArray.FirstArraySlice = 0;
+        }
+        else
+        {
+            if ( m_desc.ArraySize > 1 )
+            {
+                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+                srvDesc.Texture2DArray.ArraySize = m_desc.ArraySize;
+                srvDesc.Texture2DArray.FirstArraySlice = 0;
+                srvDesc.Texture2DArray.MipLevels = m_desc.MipLevels;
+                srvDesc.Texture2DArray.MostDetailedMip = 0;
+            }
+            else
+            {
+                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+                srvDesc.Texture2D.MipLevels = m_desc.MipLevels;
+                srvDesc.Texture2D.MostDetailedMip = 0;
+            }
+        }
     }
     else
     {
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
-        srvDesc.Texture1D.MipLevels = m_desc.MipLevels;
-        srvDesc.Texture1D.MostDetailedMip = 0;
-        srvDesc.Texture1D.ResourceMinLODClamp = 0.0f;
+        if ( m_desc.ArraySize > 1 )
+        {
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
+            srvDesc.Texture1DArray.ArraySize = m_desc.ArraySize;
+            srvDesc.Texture1DArray.FirstArraySlice = 0;
+            srvDesc.Texture1DArray.MipLevels = m_desc.MipLevels;
+            srvDesc.Texture1DArray.MostDetailedMip = 0;
+        }
+        else
+        {
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+            srvDesc.Texture1D.MipLevels = m_desc.MipLevels;
+            srvDesc.Texture1D.MostDetailedMip = 0;
+        }
     }
 
     m_cpuHandle = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetCPUStartHandle();
@@ -118,46 +186,71 @@ void DX12TextureResource::CreateTextureSrv()
 
 void DX12TextureResource::CreateTextureUav()
 {
-    D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-
+    D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {};
     if ( m_desc.Depth > 1 )
     {
-        uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
-        uavDesc.Texture3D.MipSlice = 0;
-        uavDesc.Texture3D.FirstWSlice = 0;
-        uavDesc.Texture3D.WSize = m_desc.Depth;
+        if ( m_desc.ArraySize > 1 )
+        {
+            desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1DARRAY;
+            desc.Texture1DArray.ArraySize =  m_desc.ArraySize;
+            desc.Texture1DArray.FirstArraySlice = 0;
+            desc.Texture1DArray.MipSlice = 0;
+        }
+        else
+        {
+            desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1D;
+            desc.Texture1D.MipSlice = 0;
+        }
     }
     else if ( m_desc.Height > 1 )
     {
-        uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-        uavDesc.Texture2D.MipSlice = 0;
-        uavDesc.Texture2D.PlaneSlice = 0;
+        if ( m_desc.ArraySize > 1 )
+        {
+            desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+            desc.Texture2DArray.ArraySize = m_desc.ArraySize;
+            desc.Texture2DArray.FirstArraySlice = 0;
+            desc.Texture2DArray.MipSlice = 0;
+            desc.Texture2DArray.PlaneSlice = 0;
+        }
+        else
+        {
+            desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+            desc.Texture2D.MipSlice = 0;
+            desc.Texture2D.PlaneSlice = 0;
+        }
     }
     else
     {
-        uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1D;
-        uavDesc.Texture1D.MipSlice = m_desc.MipLevels;
+        desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
+        desc.Texture3D.MipSlice = 0;
+        desc.Texture3D.FirstWSlice = 0;
+        desc.Texture3D.WSize = m_desc.ArraySize;
     }
 
-    uavDesc.Format = DX12EnumConverter::ConvertFormat(m_desc.Format);
+    desc.Format = DX12EnumConverter::ConvertFormat(m_desc.Format);
+
+    std::unique_ptr<DX12DescriptorHeap> &heap = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ];
+    m_cpuHandle = heap->GetNextCPUHandleOffset(m_desc.MipLevels);
+
     for ( uint32_t i = 0; i < m_desc.MipLevels; ++i )
     {
-        D3D12_CPU_DESCRIPTOR_HANDLE handle = D3D12_CPU_DESCRIPTOR_HANDLE(m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetCPUStartHandle().ptr + m_cpuHandle.ptr + i);
-        uavDesc.Texture1DArray.MipSlice = i;
+        D3D12_CPU_DESCRIPTOR_HANDLE handle = D3D12_CPU_DESCRIPTOR_HANDLE(m_cpuHandle.ptr + i * heap->GetDescriptorSize());
+        desc.Texture1DArray.MipSlice = i;
+        desc.Texture1DArray.ArraySize = m_desc.ArraySize;
+        desc.Texture1D.MipSlice = i;
 
-        {
-        }
         if ( m_desc.Depth > 1 )
         {
-            uavDesc.Texture3D.WSize = m_desc.ArrayLayers / (UINT)pow(2.0, int(i));
-            uavDesc.Texture3D.MipSlice = i;
+            desc.Texture3D.WSize = m_desc.ArraySize / pow(2, int(i));
+            desc.Texture3D.MipSlice = i;
         }
         else if ( m_height > 1 )
         {
-            uavDesc.Texture2D.MipSlice = i;
+            desc.Texture2D.MipSlice = i;
+            desc.Texture2DArray.MipSlice = i;
+            desc.Texture2DArray.ArraySize = m_desc.ArraySize;
         }
-
-        m_context->D3DDevice->CreateUnorderedAccessView(m_resource, nullptr, &uavDesc, handle);
+        m_context->D3DDevice->CreateUnorderedAccessView(m_resource, nullptr, &desc, handle);
     }
 }
 
@@ -194,7 +287,9 @@ void DX12TextureResource::AttachSampler(SamplerDesc &samplerDesc)
 
     m_context->D3DDevice->CreateSampler(&desc, m_cpuHandle);
 }
+
 void DX12TextureResource::Deallocate() {}
+
 D3D12_FILTER DX12TextureResource::CalculateFilter(Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy) const
 {
     int filter = (static_cast<int>(min) << 4) | (static_cast<int>(mag) << 2) | static_cast<int>(mode);

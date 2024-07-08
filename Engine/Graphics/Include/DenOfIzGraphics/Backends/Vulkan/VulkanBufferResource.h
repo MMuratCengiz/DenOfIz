@@ -37,6 +37,9 @@ namespace DenOfIz
         vk::Buffer Instance;
 
     public:
+        void MapMemory() override;
+        void CopyData(const void *data, uint32_t size) override;
+        void UnmapMemory() override;
         vk::DescriptorBufferInfo DescriptorInfo;
 
         explicit VulkanBufferResource(VulkanContext *context, const BufferDesc &desc);

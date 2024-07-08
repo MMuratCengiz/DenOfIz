@@ -219,47 +219,47 @@ namespace DenOfIz
         }
 
         // !IMPROVEMENT! This might be incorrect
-        static vk::BufferUsageFlags ConvertBufferUsage(ResourceDescriptor usage, ResourceState initialState)
+        static vk::BufferUsageFlags ConvertBufferUsage(BitSet<ResourceDescriptor> usage, BitSet<ResourceState> initialState)
         {
             vk::BufferUsageFlags flags = {};
-            if ( initialState.CopySrc )
+            if ( initialState.IsSet(ResourceState::CopySrc) )
             {
                 flags |= vk::BufferUsageFlagBits::eTransferSrc;
             }
-            if ( initialState.CopyDst )
+            if ( initialState.IsSet(ResourceState::CopyDst) )
             {
                 flags |= vk::BufferUsageFlagBits::eTransferDst;
             }
-            if ( usage.IndexBuffer )
+            if ( usage.IsSet(ResourceDescriptor::IndexBuffer) )
             {
                 flags |= vk::BufferUsageFlagBits::eIndexBuffer;
             }
-            if ( usage.VertexBuffer )
+            if ( usage.IsSet(ResourceDescriptor::VertexBuffer) )
             {
                 flags |= vk::BufferUsageFlagBits::eVertexBuffer;
             }
-            if ( usage.UniformBuffer )
+            if ( usage.IsSet(ResourceDescriptor::UniformBuffer) )
             {
                 flags |= vk::BufferUsageFlagBits::eUniformBuffer;
             }
-            if ( usage.Buffer )
+            if ( usage.IsSet(ResourceDescriptor::Buffer) )
             {
                 flags |= vk::BufferUsageFlagBits::eStorageBuffer;
             }
-            if ( usage.IndirectBuffer )
+            if ( usage.IsSet(ResourceDescriptor::IndirectBuffer) )
             {
                 flags |= vk::BufferUsageFlagBits::eIndirectBuffer;
             }
-            if ( usage.AccelerationStructure )
+            if ( usage.IsSet(ResourceDescriptor::AccelerationStructure) )
             {
                 flags |= vk::BufferUsageFlagBits::eStorageBuffer;
             }
 
-            if ( initialState.AccelerationStructureWrite )
+            if ( initialState.IsSet(ResourceState::AccelerationStructureWrite) )
             {
                 flags |= vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress;
             }
-            if ( initialState.AccelerationStructureRead )
+            if ( initialState.IsSet(ResourceState::AccelerationStructureRead) )
             {
                 flags |= vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress;
             }
@@ -292,35 +292,33 @@ namespace DenOfIz
             return vk::ImageAspectFlagBits::eNone;
         }
 
-        static vk::ImageUsageFlags ConvertTextureDescriptorToUsage(ResourceDescriptor descriptor, ResourceState initialState)
+        static vk::ImageUsageFlags ConvertTextureDescriptorToUsage(BitSet<ResourceDescriptor> descriptor, BitSet<ResourceState> initialState)
         {
             vk::ImageUsageFlags usage = {};
-            if ( descriptor.Sampler )
+            if ( descriptor.IsSet(ResourceDescriptor::Sampler) )
             {
                 usage |= vk::ImageUsageFlagBits::eSampled;
             }
-            if ( descriptor.ReadWrite )
+            if ( descriptor.IsSet(ResourceDescriptor::UnorderedAccess) )
             {
                 usage |= vk::ImageUsageFlagBits::eStorage;
             }
-            if ( initialState.RenderTarget )
+            if ( initialState.IsSet(ResourceState::RenderTarget) )
             {
                 usage |= vk::ImageUsageFlagBits::eColorAttachment;
             }
-            if ( initialState.DepthRead || initialState.DepthWrite )
+            if ( initialState.Any({ ResourceState::DepthRead, ResourceState::DepthWrite }) )
             {
                 usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
             }
             return usage;
         }
 
-        // Weird naming on Vma or my side, either way location = usage.
+        // Weird naming on Vma or my side, either way location
         static VmaMemoryUsage ConvertMemoryLocation(HeapType location)
         {
             switch ( location )
             {
-            case HeapType::Auto:
-                return VMA_MEMORY_USAGE_AUTO;
             case HeapType::GPU:
                 return VMA_MEMORY_USAGE_GPU_ONLY;
             case HeapType::CPU:
@@ -465,29 +463,29 @@ namespace DenOfIz
             return vk::Format::eUndefined;
         }
 
-        static vk::DescriptorType ConvertResourceDescriptorToDescriptorType(const ResourceDescriptor &descriptor)
+        static vk::DescriptorType ConvertResourceDescriptorToDescriptorType(const BitSet<ResourceDescriptor> &descriptor)
         {
-            if ( descriptor.Sampler )
+            if ( descriptor.IsSet(ResourceDescriptor::Sampler) )
             {
                 return vk::DescriptorType::eSampler;
             }
-            if ( descriptor.Texture )
+            if ( descriptor.IsSet(ResourceDescriptor::Texture) )
             {
-                return descriptor.ReadWrite ? vk::DescriptorType::eStorageImage : vk::DescriptorType::eSampledImage;
+                return descriptor.IsSet(ResourceDescriptor::UnorderedAccess) ? vk::DescriptorType::eStorageImage : vk::DescriptorType::eSampledImage;
             }
-            if ( descriptor.ReadWrite )
+            if ( descriptor.IsSet(ResourceDescriptor::UnorderedAccess) )
             {
                 return vk::DescriptorType::eStorageImage;
             }
-            if ( descriptor.UniformBuffer )
+            if ( descriptor.IsSet(ResourceDescriptor::UniformBuffer) )
             {
                 return vk::DescriptorType::eUniformBuffer;
             }
-            if (descriptor.Buffer)
+            if ( descriptor.IsSet(ResourceDescriptor::Buffer) )
             {
                 return vk::DescriptorType::eStorageBuffer;
             }
-            if ( descriptor.AccelerationStructure )
+            if ( descriptor.IsSet(ResourceDescriptor::AccelerationStructure) )
             {
                 return vk::DescriptorType::eAccelerationStructureKHR;
             }

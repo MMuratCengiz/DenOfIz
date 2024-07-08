@@ -7,6 +7,11 @@
 #include <SDL2/SDL.h>
 #include <filesystem>
 
+void BitSetTest()
+{
+
+}
+
 int main()
 {
     DenOfIz::Engine::Init();

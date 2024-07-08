@@ -136,7 +136,7 @@ void VulkanCommandList::Execute(const ExecuteDesc &executeInfo)
         waitStages.push_back(vk::PipelineStageFlagBits::eAllCommands);
     }
     std::vector<vk::Semaphore> signalSemaphores;
-    for ( ISemaphore *signal : executeInfo.SignalLocks )
+    for ( ISemaphore *signal : executeInfo.NotifyLocks )
     {
         signalSemaphores.push_back(reinterpret_cast<VulkanSemaphore *>(signal)->GetSemaphore());
     }

@@ -39,12 +39,12 @@ void VulkanBufferResource::Allocate(const void *newData)
     bool useStagingBuffer = m_desc.HeapType == HeapType::GPU;
     if ( useStagingBuffer )
     {
-        VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer.first, stagingBuffer.second, newData, m_size);
+        VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer.first, stagingBuffer.second, newData, m_numBytes);
     }
 
     vk::BufferCreateInfo bufferCreateInfo{};
     bufferCreateInfo.usage = VulkanEnumConverter::ConvertBufferUsage(m_desc.Descriptor, m_desc.InitialState);
-    bufferCreateInfo.size = m_size;
+    bufferCreateInfo.size = m_numBytes;
     bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 
     VmaAllocationCreateInfo allocationCreateInfo{};
@@ -70,17 +70,17 @@ void VulkanBufferResource::Allocate(const void *newData)
 
     if ( useStagingBuffer )
     {
-        VulkanUtilities::CopyBuffer(m_context, stagingBuffer.first, Instance, m_size);
+        VulkanUtilities::CopyBuffer(m_context, stagingBuffer.first, Instance, m_numBytes);
         vmaDestroyBuffer(m_context->Vma, stagingBuffer.first, stagingBuffer.second);
     }
     else if ( m_mappedMemory != nullptr && m_desc.KeepMemoryMapped )
     {
-        memcpy(m_mappedMemory, newData, m_size);
+        memcpy(m_mappedMemory, newData, m_numBytes);
     }
     else
     {
         vmaMapMemory(this->m_context->Vma, m_allocation, &m_mappedMemory);
-        memcpy(m_mappedMemory, newData, m_size);
+        memcpy(m_mappedMemory, newData, m_numBytes);
 
         if ( !m_desc.KeepMemoryMapped )
         {
@@ -90,7 +90,7 @@ void VulkanBufferResource::Allocate(const void *newData)
 
     DescriptorInfo.buffer = Instance;
     DescriptorInfo.offset = 0;
-    DescriptorInfo.range = m_size;
+    DescriptorInfo.range = m_numBytes;
 }
 
 void VulkanBufferResource::UpdateAllocation(const void *newData)
@@ -98,20 +98,39 @@ void VulkanBufferResource::UpdateAllocation(const void *newData)
     if ( m_desc.HeapType == HeapType::GPU )
     {
         std::pair<vk::Buffer, VmaAllocation> stagingBuffer;
-        VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer.first, stagingBuffer.second, newData, m_size);
-        VulkanUtilities::CopyBuffer(m_context, stagingBuffer.first, Instance, m_size);
+        VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer.first, stagingBuffer.second, newData, m_numBytes);
+        VulkanUtilities::CopyBuffer(m_context, stagingBuffer.first, Instance, m_numBytes);
         vmaDestroyBuffer(m_context->Vma, stagingBuffer.first, stagingBuffer.second);
     }
     else if ( m_desc.KeepMemoryMapped )
     {
-        memcpy(m_mappedMemory, newData, m_size);
+        memcpy(m_mappedMemory, newData, m_numBytes);
     }
     else
     {
         vmaMapMemory(m_context->Vma, m_allocation, &m_mappedMemory);
-        memcpy(m_mappedMemory, newData, m_size);
+        memcpy(m_mappedMemory, newData, m_numBytes);
         vmaUnmapMemory(m_context->Vma, m_allocation);
     }
+}
+
+void VulkanBufferResource::MapMemory()
+{
+    DZ_ASSERTM(m_desc.HeapType == HeapType::CPU_GPU || m_desc.HeapType == HeapType::CPU, "Can only map to CPU visible buffer");
+    DZ_ASSERTM(m_mappedMemory == nullptr,  std::format("Memory already mapped {}", Name.c_str()));
+    vmaMapMemory(m_context->Vma, m_allocation, &m_mappedMemory);
+}
+
+void VulkanBufferResource::CopyData(const void *data, uint32_t size)
+{
+    DZ_ASSERTM(m_mappedMemory != nullptr,  std::format("Memory not mapped  buffer: {}", Name.c_str()));
+    memcpy(m_mappedMemory, data, size);
+}
+void VulkanBufferResource::UnmapMemory()
+{
+    DZ_ASSERTM(m_mappedMemory != nullptr, std::format("Memory not mapped, buffer: {}", Name.c_str()));
+    vmaUnmapMemory(m_context->Vma, m_allocation);
+    m_mappedMemory = nullptr;
 }
 
 void VulkanBufferResource::Deallocate()

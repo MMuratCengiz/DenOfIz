@@ -47,6 +47,7 @@ namespace DenOfIz
     protected:
         void Allocate(const void *data) override;
     private:
+        void Validate();
         D3D12_FILTER CalculateFilter(Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy) const;
         void CreateTextureSrv();
         void CreateTextureUav();
