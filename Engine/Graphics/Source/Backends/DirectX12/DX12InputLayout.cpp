@@ -25,12 +25,12 @@ DX12InputLayout::DX12InputLayout(const InputLayoutDesc &desc)
     int bindingIndex = 0;
     for ( const InputGroup &inputGroup : desc.InputGroups )
     {
-        D3D12_INPUT_CLASSIFICATION inputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-        uint32_t instanceDataStepRate = 0;
+        D3D12_INPUT_CLASSIFICATION inputSlotClass       = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+        uint32_t                   instanceDataStepRate = 0;
 
         if ( inputGroup.StepRate == StepRate::PerInstance )
         {
-            inputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
+            inputSlotClass       = D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
             instanceDataStepRate = 1;
         }
 
@@ -70,11 +70,11 @@ DX12InputLayout::DX12InputLayout(const InputLayoutDesc &desc)
                 break;
             }
 
-            element.SemanticIndex = inputElement.SemanticIndex;
-            element.Format = DX12EnumConverter::ConvertFormat(inputElement.Format);
-            element.InputSlot = bindingIndex;
-            element.InputSlotClass = inputSlotClass;
-            element.AlignedByteOffset = offset;
+            element.SemanticIndex        = inputElement.SemanticIndex;
+            element.Format               = DX12EnumConverter::ConvertFormat(inputElement.Format);
+            element.InputSlot            = bindingIndex;
+            element.InputSlotClass       = inputSlotClass;
+            element.AlignedByteOffset    = offset;
             element.InstanceDataStepRate = instanceDataStepRate;
 
             offset += GetImageFormatSize(inputElement.Format);
@@ -83,9 +83,11 @@ DX12InputLayout::DX12InputLayout(const InputLayoutDesc &desc)
         bindingIndex++;
     }
 
-    m_inputLayout = {};
+    m_inputLayout                    = {};
     m_inputLayout.pInputElementDescs = m_inputElements.data();
-    m_inputLayout.NumElements = m_inputElements.size();
+    m_inputLayout.NumElements        = m_inputElements.size();
 }
 
-DX12InputLayout::~DX12InputLayout() {}
+DX12InputLayout::~DX12InputLayout()
+{
+}

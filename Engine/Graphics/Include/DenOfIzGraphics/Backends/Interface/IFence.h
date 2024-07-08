@@ -24,7 +24,7 @@ namespace DenOfIz
     class IFence
     {
     public:
-        virtual void Wait() = 0;
+        virtual void Wait()  = 0;
         virtual void Reset() = 0;
 
         virtual ~IFence(){};

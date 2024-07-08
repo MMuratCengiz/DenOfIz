@@ -26,10 +26,10 @@ namespace DenOfIz
     class CommandListRing
     {
     private:
-        std::vector<std::unique_ptr<IFence>> m_frameFences;
+        std::vector<std::unique_ptr<IFence>>           m_frameFences;
         std::vector<std::unique_ptr<ICommandListPool>> m_commandListPools;
-        uint32_t m_currentFrame = 0;
-        uint32_t m_frame = 0;
+        uint32_t                                       m_currentFrame = 0;
+        uint32_t                                       m_frame        = 0;
 
         ILogicalDevice *m_logicalDevice;
 
@@ -37,7 +37,7 @@ namespace DenOfIz
         CommandListRing(ILogicalDevice *logicalDevice) : m_logicalDevice(logicalDevice)
         {
             CommandListPoolDesc createInfo{};
-            createInfo.QueueType = QueueType::Graphics;
+            createInfo.QueueType        = QueueType::Graphics;
             createInfo.CommandListCount = 3;
             m_commandListPools.push_back(m_logicalDevice->CreateCommandListPool(createInfo));
         }
@@ -45,12 +45,15 @@ namespace DenOfIz
         ICommandList *GetNext()
         {
             m_currentFrame = m_frame;
-            auto next = m_commandListPools[ m_frame ]->GetCommandLists()[ m_frame ];
-            m_frame = (m_frame + 1) % m_commandListPools.size();
+            auto next      = m_commandListPools[ m_frame ]->GetCommandLists()[ m_frame ];
+            m_frame        = (m_frame + 1) % m_commandListPools.size();
             return next;
         }
 
-        inline uint32_t GetCurrentFrame() const { return m_currentFrame; }
+        inline uint32_t GetCurrentFrame() const
+        {
+            return m_currentFrame;
+        }
     };
 
 } // namespace DenOfIz

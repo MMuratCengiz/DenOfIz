@@ -21,7 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-void ShaderProgram::AddShader(const ShaderDesc &shaderInfo) { m_shaders.push_back(shaderInfo); }
+void ShaderProgram::AddShader(const ShaderDesc &shaderInfo)
+{
+    m_shaders.push_back(shaderInfo);
+}
 
 void ShaderProgram::Compile()
 {
@@ -30,9 +33,9 @@ void ShaderProgram::Compile()
     for ( auto &shader : m_shaders )
     {
         CompileOptions options = {};
-        options.Defines = shader.Defines;
-        options.EntryPoint = shader.EntryPoint;
-        options.Stage = shader.Stage;
+        options.Defines        = shader.Defines;
+        options.EntryPoint     = shader.EntryPoint;
+        options.Stage          = shader.Stage;
 
 #if defined(WIN32)
         if ( GfxGlobal::GetInstance()->GetAPIPreference().Windows == APIPreferenceWindows::DirectX12 )

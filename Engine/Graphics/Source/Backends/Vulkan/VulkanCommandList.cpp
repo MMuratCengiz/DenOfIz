@@ -40,8 +40,8 @@ VulkanCommandList::VulkanCommandList(VulkanContext *context, CommandListDesc des
     }
 
     vk::CommandBufferAllocateInfo allocInfo{};
-    allocInfo.commandPool = commandPool;
-    allocInfo.level = vk::CommandBufferLevel::ePrimary; // Todo
+    allocInfo.commandPool        = commandPool;
+    allocInfo.level              = vk::CommandBufferLevel::ePrimary; // Todo
     allocInfo.commandBufferCount = 1;
 
     m_commandBuffer = m_context->LogicalDevice.allocateCommandBuffers(allocInfo)[ 0 ];
@@ -62,13 +62,13 @@ void VulkanCommandList::BeginRendering(const RenderingDesc &renderingInfo)
 
     GraphicsWindowSurface surface = m_context->Window->GetSurface();
 
-    float widthAdapted = renderingInfo.RenderAreaWidth == 0 ? static_cast<float>(surface.Width) : static_cast<float>(renderingInfo.RenderAreaWidth);
+    float widthAdapted  = renderingInfo.RenderAreaWidth == 0 ? static_cast<float>(surface.Width) : static_cast<float>(renderingInfo.RenderAreaWidth);
     float heightAdapted = renderingInfo.RenderAreaHeight == 0 ? static_cast<float>(surface.Height) : static_cast<float>(renderingInfo.RenderAreaHeight);
 
     renderInfo.renderArea.extent = vk::Extent2D(widthAdapted, heightAdapted);
     renderInfo.renderArea.offset = vk::Offset2D(renderingInfo.RenderAreaOffsetX, renderingInfo.RenderAreaOffsetY);
-    renderInfo.layerCount = renderingInfo.LayerCount;
-    renderInfo.viewMask = 0;
+    renderInfo.layerCount        = renderingInfo.LayerCount;
+    renderInfo.viewMask          = 0;
 
     std::vector<vk::RenderingAttachmentInfo> colorAttachments;
 
@@ -77,10 +77,10 @@ void VulkanCommandList::BeginRendering(const RenderingDesc &renderingInfo)
         VulkanTextureResource *vkColorAttachmentResource = dynamic_cast<VulkanTextureResource *>(colorAttachment.Resource);
 
         vk::RenderingAttachmentInfo colorAttachmentInfo{};
-        colorAttachmentInfo.imageView = vkColorAttachmentResource->GetImageView();
-        colorAttachmentInfo.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
-        colorAttachmentInfo.loadOp = VulkanEnumConverter::ConvertLoadOp(colorAttachment.LoadOp);
-        colorAttachmentInfo.storeOp = VulkanEnumConverter::ConvertStoreOp(colorAttachment.StoreOp);
+        colorAttachmentInfo.imageView        = vkColorAttachmentResource->GetImageView();
+        colorAttachmentInfo.imageLayout      = vk::ImageLayout::eColorAttachmentOptimal;
+        colorAttachmentInfo.loadOp           = VulkanEnumConverter::ConvertLoadOp(colorAttachment.LoadOp);
+        colorAttachmentInfo.storeOp          = VulkanEnumConverter::ConvertStoreOp(colorAttachment.StoreOp);
         colorAttachmentInfo.clearValue.color = colorAttachment.ClearColor;
 
         colorAttachments.push_back(colorAttachmentInfo);
@@ -94,10 +94,10 @@ void VulkanCommandList::BeginRendering(const RenderingDesc &renderingInfo)
         VulkanTextureResource *vkDepthStencilResource = dynamic_cast<VulkanTextureResource *>(renderingInfo.DepthAttachment.Resource);
 
         vk::RenderingAttachmentInfo depthAttachmentInfo{};
-        depthAttachmentInfo.imageView = vkDepthStencilResource->GetImageView();
-        depthAttachmentInfo.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-        depthAttachmentInfo.loadOp = VulkanEnumConverter::ConvertLoadOp(renderingInfo.DepthAttachment.LoadOp);
-        depthAttachmentInfo.storeOp = VulkanEnumConverter::ConvertStoreOp(renderingInfo.DepthAttachment.StoreOp);
+        depthAttachmentInfo.imageView               = vkDepthStencilResource->GetImageView();
+        depthAttachmentInfo.imageLayout             = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+        depthAttachmentInfo.loadOp                  = VulkanEnumConverter::ConvertLoadOp(renderingInfo.DepthAttachment.LoadOp);
+        depthAttachmentInfo.storeOp                 = VulkanEnumConverter::ConvertStoreOp(renderingInfo.DepthAttachment.StoreOp);
         depthAttachmentInfo.clearValue.depthStencil = vk::ClearDepthStencilValue(renderingInfo.DepthAttachment.ClearDepth[ 0 ], renderingInfo.DepthAttachment.ClearDepth[ 1 ]);
 
         renderInfo.setPDepthAttachment(&depthAttachmentInfo);
@@ -108,10 +108,10 @@ void VulkanCommandList::BeginRendering(const RenderingDesc &renderingInfo)
         VulkanTextureResource *vkDepthStencilResource = dynamic_cast<VulkanTextureResource *>(renderingInfo.StencilAttachment.Resource);
 
         vk::RenderingAttachmentInfo stencilAttachmentInfo{};
-        stencilAttachmentInfo.imageView = vkDepthStencilResource->GetImageView();
-        stencilAttachmentInfo.imageLayout =  vk::ImageLayout::eDepthStencilAttachmentOptimal;
-        stencilAttachmentInfo.loadOp = VulkanEnumConverter::ConvertLoadOp(renderingInfo.StencilAttachment.LoadOp);
-        stencilAttachmentInfo.storeOp = VulkanEnumConverter::ConvertStoreOp(renderingInfo.StencilAttachment.StoreOp);
+        stencilAttachmentInfo.imageView               = vkDepthStencilResource->GetImageView();
+        stencilAttachmentInfo.imageLayout             = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+        stencilAttachmentInfo.loadOp                  = VulkanEnumConverter::ConvertLoadOp(renderingInfo.StencilAttachment.LoadOp);
+        stencilAttachmentInfo.storeOp                 = VulkanEnumConverter::ConvertStoreOp(renderingInfo.StencilAttachment.StoreOp);
         stencilAttachmentInfo.clearValue.depthStencil = vk::ClearDepthStencilValue(renderingInfo.StencilAttachment.ClearDepth[ 0 ], renderingInfo.DepthAttachment.ClearDepth[ 1 ]);
 
         renderInfo.setPStencilAttachment(&stencilAttachmentInfo);
@@ -120,7 +120,10 @@ void VulkanCommandList::BeginRendering(const RenderingDesc &renderingInfo)
     m_commandBuffer.beginRendering(renderInfo);
 }
 
-void VulkanCommandList::EndRendering() { m_commandBuffer.endRendering(); }
+void VulkanCommandList::EndRendering()
+{
+    m_commandBuffer.endRendering();
+}
 
 void VulkanCommandList::Execute(const ExecuteDesc &executeInfo)
 {
@@ -129,7 +132,7 @@ void VulkanCommandList::Execute(const ExecuteDesc &executeInfo)
     vk::SubmitInfo vkSubmitInfo{};
 
     std::vector<vk::PipelineStageFlags> waitStages;
-    std::vector<vk::Semaphore> waitOnSemaphores;
+    std::vector<vk::Semaphore>          waitOnSemaphores;
     for ( ISemaphore *waitOn : executeInfo.WaitOnLocks )
     {
         waitOnSemaphores.push_back(reinterpret_cast<VulkanSemaphore *>(waitOn)->GetSemaphore());
@@ -141,14 +144,14 @@ void VulkanCommandList::Execute(const ExecuteDesc &executeInfo)
         signalSemaphores.push_back(reinterpret_cast<VulkanSemaphore *>(signal)->GetSemaphore());
     }
 
-    vkSubmitInfo.waitSemaphoreCount = waitOnSemaphores.size();
-    vkSubmitInfo.pWaitSemaphores = waitOnSemaphores.data();
-    vkSubmitInfo.pWaitDstStageMask = waitStages.data();
-    vkSubmitInfo.pWaitDstStageMask = waitStages.data();
-    vkSubmitInfo.commandBufferCount = 1;
-    vkSubmitInfo.pCommandBuffers = &m_commandBuffer;
+    vkSubmitInfo.waitSemaphoreCount   = waitOnSemaphores.size();
+    vkSubmitInfo.pWaitSemaphores      = waitOnSemaphores.data();
+    vkSubmitInfo.pWaitDstStageMask    = waitStages.data();
+    vkSubmitInfo.pWaitDstStageMask    = waitStages.data();
+    vkSubmitInfo.commandBufferCount   = 1;
+    vkSubmitInfo.pCommandBuffers      = &m_commandBuffer;
     vkSubmitInfo.signalSemaphoreCount = signalSemaphores.size();
-    vkSubmitInfo.pSignalSemaphores = signalSemaphores.data();
+    vkSubmitInfo.pSignalSemaphores    = signalSemaphores.data();
 
     VulkanFence *notify = reinterpret_cast<VulkanFence *>(executeInfo.Notify);
     notify->Reset();
@@ -165,15 +168,15 @@ void VulkanCommandList::BindPipeline(IPipeline *pipeline)
 
 void VulkanCommandList::BindVertexBuffer(IBufferResource *buffer)
 {
-    const auto bufferResource = static_cast<VulkanBufferResource *>(buffer);
-    constexpr vk::DeviceSize offset = 0;
+    const auto               bufferResource = static_cast<VulkanBufferResource *>(buffer);
+    constexpr vk::DeviceSize offset         = 0;
     m_commandBuffer.bindVertexBuffers(0, 1, &bufferResource->GetBuffer(), &offset);
 }
 
 void VulkanCommandList::BindIndexBuffer(IBufferResource *buffer, const IndexType &indexType)
 {
-    const auto bufferResource = static_cast<VulkanBufferResource *>(buffer);
-    constexpr vk::DeviceSize offset = 0;
+    const auto               bufferResource = static_cast<VulkanBufferResource *>(buffer);
+    constexpr vk::DeviceSize offset         = 0;
 
     switch ( indexType )
     {
@@ -191,10 +194,10 @@ void VulkanCommandList::BindViewport(float offsetX, float offsetY, float width, 
     DZ_RETURN_IF(width == 0 || height == 0);
     m_viewport.x = offsetX;
     // Vulkan has inverted y-axis
-    m_viewport.y = height;
+    m_viewport.y      = height;
     m_viewport.height = -static_cast<float>(height);
     // --
-    m_viewport.width = width;
+    m_viewport.width    = width;
     m_viewport.minDepth = 0.0f;
     m_viewport.maxDepth = 1.0f;
 
@@ -215,11 +218,14 @@ void VulkanCommandList::BindDescriptorTable(IDescriptorTable *table)
     VulkanDescriptorTable *vkTable = dynamic_cast<VulkanDescriptorTable *>(table);
 
     std::vector<vk::WriteDescriptorSet> writeDescriptorSets = vkTable->GetWriteDescriptorSets();
-    vk::PipelineBindPoint bindPoint = m_desc.QueueType == QueueType::Graphics ? vk::PipelineBindPoint::eGraphics : vk::PipelineBindPoint::eCompute;
+    vk::PipelineBindPoint               bindPoint           = m_desc.QueueType == QueueType::Graphics ? vk::PipelineBindPoint::eGraphics : vk::PipelineBindPoint::eCompute;
     m_commandBuffer.pushDescriptorSetKHR(bindPoint, m_boundPipeline->Layout, 0, writeDescriptorSets.size(), writeDescriptorSets.data());
 }
 
-void VulkanCommandList::SetDepthBias(float constantFactor, float clamp, float slopeFactor) { m_commandBuffer.setDepthBias(constantFactor, clamp, slopeFactor); }
+void VulkanCommandList::SetDepthBias(float constantFactor, float clamp, float slopeFactor)
+{
+    m_commandBuffer.setDepthBias(constantFactor, clamp, slopeFactor);
+}
 
 void VulkanCommandList::SetPipelineBarrier(const PipelineBarrier &barrier)
 {
@@ -239,7 +245,7 @@ void VulkanCommandList::CopyBufferRegion(const CopyBufferRegionDesc &copyBufferR
     vk::BufferCopy copyRegion{};
     copyRegion.srcOffset = copyBufferRegionDesc.SrcOffset;
     copyRegion.dstOffset = copyBufferRegionDesc.DstOffset;
-    copyRegion.size = copyBufferRegionDesc.NumBytes;
+    copyRegion.size      = copyBufferRegionDesc.NumBytes;
 
     m_commandBuffer.copyBuffer(srcBuffer->GetBuffer(), dstBuffer->GetBuffer(), 1, &copyRegion);
 }
@@ -276,11 +282,11 @@ void VulkanCommandList::Present(ISwapChain *swapChain, uint32_t imageIndex, std:
     }
 
     presentInfo.waitSemaphoreCount = vkWaitOnSemaphores.size();
-    presentInfo.pWaitSemaphores = vkWaitOnSemaphores.data();
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = reinterpret_cast<VulkanSwapChain *>(swapChain)->GetSwapChain();
-    presentInfo.pImageIndices = &imageIndex;
-    presentInfo.pResults = nullptr;
+    presentInfo.pWaitSemaphores    = vkWaitOnSemaphores.data();
+    presentInfo.swapchainCount     = 1;
+    presentInfo.pSwapchains        = reinterpret_cast<VulkanSwapChain *>(swapChain)->GetSwapChain();
+    presentInfo.pImageIndices      = &imageIndex;
+    presentInfo.pResults           = nullptr;
 
     const auto presentResult = m_context->Queues[ QueueType::Presentation ].presentKHR(presentInfo);
 

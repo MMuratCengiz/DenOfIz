@@ -33,9 +33,9 @@ namespace DenOfIz
         LockType m_lockType = LockType::Fence;
 
     public:
-        virtual void Wait() = 0;
+        virtual void Wait()   = 0;
         virtual void Notify() = 0;
-        virtual void Reset() = 0;
+        virtual void Reset()  = 0;
 
         virtual ~ILock(){};
     };

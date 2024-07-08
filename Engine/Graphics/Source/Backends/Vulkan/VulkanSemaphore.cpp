@@ -30,8 +30,8 @@ void VulkanSemaphore::Wait()
 {
     vk::SemaphoreWaitInfo waitInfo{};
     waitInfo.semaphoreCount = 1;
-    waitInfo.pSemaphores = &m_semaphore;
-    waitInfo.flags = vk::SemaphoreWaitFlagBits::eAny;
+    waitInfo.pSemaphores    = &m_semaphore;
+    waitInfo.flags          = vk::SemaphoreWaitFlagBits::eAny;
 
     auto result = m_context->LogicalDevice.waitSemaphores(waitInfo, UINT64_MAX);
     VK_CHECK_RESULT(result);
@@ -45,4 +45,7 @@ void VulkanSemaphore::Notify()
     m_context->LogicalDevice.signalSemaphore(signalInfo);
 }
 
-VulkanSemaphore::~VulkanSemaphore() { m_context->LogicalDevice.destroySemaphore(m_semaphore); }
+VulkanSemaphore::~VulkanSemaphore()
+{
+    m_context->LogicalDevice.destroySemaphore(m_semaphore);
+}

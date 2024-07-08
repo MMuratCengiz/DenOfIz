@@ -28,19 +28,19 @@ namespace DenOfIz
     {
     private:
         VulkanContext *m_context;
-        TextureDesc m_desc;
+        TextureDesc    m_desc;
 
-        bool m_hasSampler = false;
+        bool        m_hasSampler = false;
         SamplerDesc m_samplerDesc;
 
-        vk::Image m_image;
-        vk::ImageView m_imageView;
-        vk::Format m_format;
-        vk::Sampler m_sampler;
+        vk::Image            m_image;
+        vk::ImageView        m_imageView;
+        vk::Format           m_format;
+        vk::Sampler          m_sampler;
         vk::ImageAspectFlags m_aspect;
 
         VmaAllocation m_allocation;
-        uint32_t m_mipLevels{};
+        uint32_t      m_mipLevels{};
 
         bool m_allocated = false;
 
@@ -55,11 +55,26 @@ namespace DenOfIz
         }
 
         ~VulkanTextureResource();
-        inline vk::Image GetImage() const { return m_image; }
-        inline vk::ImageView GetImageView() const { return m_imageView; }
-        inline vk::Format GetFormat() const { return m_format; }
-        inline vk::Sampler GetSampler() const { return m_sampler; }
-        inline vk::ImageAspectFlags GetAspect() const { return m_aspect; }
+        inline vk::Image GetImage() const
+        {
+            return m_image;
+        }
+        inline vk::ImageView GetImageView() const
+        {
+            return m_imageView;
+        }
+        inline vk::Format GetFormat() const
+        {
+            return m_format;
+        }
+        inline vk::Sampler GetSampler() const
+        {
+            return m_sampler;
+        }
+        inline vk::ImageAspectFlags GetAspect() const
+        {
+            return m_aspect;
+        }
 
         void AttachSampler(SamplerDesc &info) override;
         void Deallocate() override;

@@ -25,13 +25,13 @@ namespace DenOfIz
     struct CommandListPoolDesc
     {
         QueueType QueueType;
-        uint32_t CommandListCount = 1;
+        uint32_t  CommandListCount = 1;
     };
 
     class ICommandListPool
     {
     public:
-        virtual std::vector<ICommandList*> GetCommandLists() = 0;
-        virtual ~ICommandListPool() = default;
+        virtual std::vector<ICommandList *> GetCommandLists() = 0;
+        virtual ~ICommandListPool()                           = default;
     };
 } // namespace DenOfIz

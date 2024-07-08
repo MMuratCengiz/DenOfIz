@@ -26,23 +26,26 @@ namespace DenOfIz
 
     struct ShaderDesc
     {
-        ShaderStage Stage;
-        std::string Path;
+        ShaderStage              Stage;
+        std::string              Path;
         std::vector<std::string> Defines;
-        std::string EntryPoint = "main";
+        std::string              EntryPoint = "main";
     };
 
     class ShaderProgram
     {
     private:
-        std::vector<ShaderDesc> m_shaders;
+        std::vector<ShaderDesc>     m_shaders;
         std::vector<CompiledShader> m_compiledShaders;
 
     public:
         ShaderProgram() = default;
-        void AddShader(const ShaderDesc &shaderInfo);
-        void Compile();
-        const std::vector<CompiledShader> &GetCompiledShaders() const { return m_compiledShaders; }
+        void                               AddShader(const ShaderDesc &shaderInfo);
+        void                               Compile();
+        const std::vector<CompiledShader> &GetCompiledShaders() const
+        {
+            return m_compiledShaders;
+        }
         ~ShaderProgram() = default;
     };
 

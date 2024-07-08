@@ -18,14 +18,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 #include "../Common/GraphicsWindowHandle.h"
+#include "IBufferResource.h"
+#include "ICommandListPool.h"
 #include "IDescriptorTable.h"
 #include "IPipeline.h"
-#include "IBufferResource.h"
-#include "ITextureResource.h"
 #include "IRootSignature.h"
 #include "ISemaphore.h"
 #include "ISwapChain.h"
-#include "ICommandListPool.h"
+#include "ITextureResource.h"
 
 namespace DenOfIz
 {
@@ -38,24 +38,27 @@ namespace DenOfIz
     public:
         virtual ~ILogicalDevice() = default;
 
-        virtual void CreateDevice(GraphicsWindowHandle *window) = 0;
-        virtual std::vector<PhysicalDevice> ListPhysicalDevices() = 0;
-        virtual void LoadPhysicalDevice(const PhysicalDevice &device) = 0;
-        virtual bool IsDeviceLost() = 0;
-        virtual void WaitIdle() = 0;
+        virtual void                        CreateDevice(GraphicsWindowHandle *window)       = 0;
+        virtual std::vector<PhysicalDevice> ListPhysicalDevices()                            = 0;
+        virtual void                        LoadPhysicalDevice(const PhysicalDevice &device) = 0;
+        virtual bool                        IsDeviceLost()                                   = 0;
+        virtual void                        WaitIdle()                                       = 0;
 
-        inline const PhysicalDevice &SelectedDeviceInfo() { return m_selectedDeviceInfo; };
+        inline const PhysicalDevice &SelectedDeviceInfo()
+        {
+            return m_selectedDeviceInfo;
+        };
 
         // Factory methods
-        virtual std::unique_ptr<ICommandListPool> CreateCommandListPool(const CommandListPoolDesc &createInfo) = 0;
-        virtual std::unique_ptr<IPipeline> CreatePipeline(const PipelineDesc &createInfo) = 0;
-        virtual std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainDesc &createInfo) = 0;
-        virtual std::unique_ptr<IRootSignature> CreateRootSignature(const RootSignatureDesc &createInfo) = 0;
-        virtual std::unique_ptr<IInputLayout> CreateInputLayout(const InputLayoutDesc &createInfo) = 0;
-        virtual std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableDesc &createInfo) = 0;
-        virtual std::unique_ptr<IFence> CreateFence() = 0;
-        virtual std::unique_ptr<ISemaphore> CreateSemaphore() = 0;
-        virtual std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferDesc &createInfo) = 0;
+        virtual std::unique_ptr<ICommandListPool> CreateCommandListPool(const CommandListPoolDesc &createInfo)           = 0;
+        virtual std::unique_ptr<IPipeline>        CreatePipeline(const PipelineDesc &createInfo)                         = 0;
+        virtual std::unique_ptr<ISwapChain>       CreateSwapChain(const SwapChainDesc &createInfo)                       = 0;
+        virtual std::unique_ptr<IRootSignature>   CreateRootSignature(const RootSignatureDesc &createInfo)               = 0;
+        virtual std::unique_ptr<IInputLayout>     CreateInputLayout(const InputLayoutDesc &createInfo)                   = 0;
+        virtual std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableDesc &createInfo)           = 0;
+        virtual std::unique_ptr<IFence>           CreateFence()                                                          = 0;
+        virtual std::unique_ptr<ISemaphore>       CreateSemaphore()                                                      = 0;
+        virtual std::unique_ptr<IBufferResource>  CreateBufferResource(std::string name, const BufferDesc &createInfo)   = 0;
         virtual std::unique_ptr<ITextureResource> CreateTextureResource(std::string name, const TextureDesc &createInfo) = 0;
     };
 

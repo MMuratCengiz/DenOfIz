@@ -28,11 +28,11 @@ namespace DenOfIz
     class VulkanDescriptorTable : public IDescriptorTable
     {
     private:
-        VulkanContext *m_context;
+        VulkanContext       *m_context;
         VulkanRootSignature *m_rootSignature;
-        DescriptorTableDesc m_desc;
+        DescriptorTableDesc  m_desc;
 
-        std::vector<vk::DescriptorSet> m_descriptorSets;
+        std::vector<vk::DescriptorSet>      m_descriptorSets;
         std::vector<vk::WriteDescriptorSet> m_writeDescriptorSets;
 
     public:
@@ -41,7 +41,10 @@ namespace DenOfIz
         void BindImage(ITextureResource *resource) override;
         void BindBuffer(IBufferResource *resource) override;
 
-        const std::vector<vk::WriteDescriptorSet> &GetWriteDescriptorSets() const { return m_writeDescriptorSets; }
+        const std::vector<vk::WriteDescriptorSet> &GetWriteDescriptorSets() const
+        {
+            return m_writeDescriptorSets;
+        }
 
         vk::WriteDescriptorSet &CreateWriteDescriptor(std::string &name);
     };

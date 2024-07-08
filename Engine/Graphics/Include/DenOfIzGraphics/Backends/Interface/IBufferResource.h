@@ -77,7 +77,7 @@ namespace DenOfIz
         void Allocate(const void *data, uint32_t size)
         {
             m_numBytes = size;
-            m_data = data;
+            m_data     = data;
             Allocate(data);
         }
 

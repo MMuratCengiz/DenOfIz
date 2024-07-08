@@ -27,14 +27,17 @@ namespace DenOfIz
     class DX12Semaphore : public ISemaphore
     {
     private:
-        DX12Context *m_context;
-        wil::com_ptr<ID3D12Fence> m_fence;
+        DX12Context                    *m_context;
+        wil::com_ptr<ID3D12Fence>       m_fence;
         Microsoft::WRL::Wrappers::Event m_fenceEvent;
-        UINT64 m_fenceValue;
+        UINT64                          m_fenceValue;
 
     public:
         DX12Semaphore(DX12Context *context);
-        ID3D12Fence *GetFence() const { return m_fence.get(); }
+        ID3D12Fence *GetFence() const
+        {
+            return m_fence.get();
+        }
         ~DX12Semaphore() override;
         void Wait() override;
         void Notify() override;

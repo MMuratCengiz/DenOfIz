@@ -24,7 +24,7 @@ VulkanFence::VulkanFence(VulkanContext *context) : m_context(context)
 {
     vk::FenceCreateInfo fenceCreateInfo{};
     fenceCreateInfo.flags = vk::FenceCreateFlagBits::eSignaled;
-    m_fence = m_context->LogicalDevice.createFence(fenceCreateInfo);
+    m_fence               = m_context->LogicalDevice.createFence(fenceCreateInfo);
 }
 
 void VulkanFence::Wait()
@@ -39,4 +39,7 @@ void VulkanFence::Reset()
     VK_CHECK_RESULT(result);
 }
 
-VulkanFence::~VulkanFence() { m_context->LogicalDevice.destroyFence(m_fence); }
+VulkanFence::~VulkanFence()
+{
+    m_context->LogicalDevice.destroyFence(m_fence);
+}

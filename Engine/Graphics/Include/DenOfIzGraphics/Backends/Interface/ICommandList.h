@@ -19,15 +19,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <array>
+#include "IBufferResource.h"
 #include "IDescriptorTable.h"
 #include "IFence.h"
 #include "ILock.h"
 #include "IPipeline.h"
-#include "IBufferResource.h"
-#include "ITextureResource.h"
 #include "IRayTracingAccelerationStructure.h"
 #include "ISemaphore.h"
 #include "ISwapChain.h"
+#include "ITextureResource.h"
 #include "PipelineBarrier.h"
 
 namespace DenOfIz
@@ -35,7 +35,7 @@ namespace DenOfIz
 
     struct RenderingAttachmentDesc
     {
-        LoadOp LoadOp = LoadOp::Clear;
+        LoadOp  LoadOp  = LoadOp::Clear;
         StoreOp StoreOp = StoreOp::Store;
 
         ITextureResource *Resource = nullptr;
@@ -47,47 +47,47 @@ namespace DenOfIz
     struct RenderingDesc
     {
         std::vector<RenderingAttachmentDesc> RTAttachments;
-        RenderingAttachmentDesc DepthAttachment;
-        RenderingAttachmentDesc StencilAttachment;
+        RenderingAttachmentDesc              DepthAttachment;
+        RenderingAttachmentDesc              StencilAttachment;
 
-        float RenderAreaWidth = 0.0f;
-        float RenderAreaHeight = 0.0f;
-        float RenderAreaOffsetX = 0.0f;
-        float RenderAreaOffsetY = 0.0f;
-        uint32_t LayerCount = 1;
+        float    RenderAreaWidth   = 0.0f;
+        float    RenderAreaHeight  = 0.0f;
+        float    RenderAreaOffsetX = 0.0f;
+        float    RenderAreaOffsetY = 0.0f;
+        uint32_t LayerCount        = 1;
     };
 
     struct CopyBufferRegionDesc
     {
         IBufferResource *DstBuffer = nullptr;
-        uint64_t DstOffset = 0;
+        uint64_t         DstOffset = 0;
         IBufferResource *SrcBuffer = nullptr;
-        uint64_t SrcOffset = 0;
-        uint64_t NumBytes = 0;
+        uint64_t         SrcOffset = 0;
+        uint64_t         NumBytes  = 0;
     };
 
     struct CopyTextureRegionDesc
     {
-        ITextureResource *SrcTexture = nullptr;
-        ITextureResource *DstTexture = nullptr;
-        uint32_t SrcX = 0;
-        uint32_t SrcY = 0;
-        uint32_t SrcZ = 0;
-        uint32_t DstX = 0;
-        uint32_t DstY = 0;
-        uint32_t DstZ = 0;
-        uint32_t Width = 0;
-        uint32_t Height = 0;
-        uint32_t Depth = 0;
-        uint32_t SrcMipLevel = 0;
-        uint32_t DstMipLevel = 0;
-        uint32_t SrcArrayLayer = 0;
-        uint32_t DstArrayLayer = 0;
+        ITextureResource *SrcTexture    = nullptr;
+        ITextureResource *DstTexture    = nullptr;
+        uint32_t          SrcX          = 0;
+        uint32_t          SrcY          = 0;
+        uint32_t          SrcZ          = 0;
+        uint32_t          DstX          = 0;
+        uint32_t          DstY          = 0;
+        uint32_t          DstZ          = 0;
+        uint32_t          Width         = 0;
+        uint32_t          Height        = 0;
+        uint32_t          Depth         = 0;
+        uint32_t          SrcMipLevel   = 0;
+        uint32_t          DstMipLevel   = 0;
+        uint32_t          SrcArrayLayer = 0;
+        uint32_t          DstArrayLayer = 0;
     };
 
     struct ExecuteDesc
     {
-        IFence *Notify = nullptr;
+        IFence                   *Notify      = nullptr;
         std::vector<ISemaphore *> WaitOnLocks = {};
         std::vector<ISemaphore *> NotifyLocks = {};
     };
@@ -102,24 +102,24 @@ namespace DenOfIz
     public:
         virtual ~ICommandList() = default;
 
-        virtual void Begin() = 0;
-        virtual void BeginRendering(const RenderingDesc &renderingInfo) = 0;
-        virtual void EndRendering() = 0;
-        virtual void Execute(const ExecuteDesc &submitInfo) = 0;
-        virtual void Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks) = 0;
-        virtual void BindPipeline(IPipeline *pipeline) = 0;
-        virtual void BindVertexBuffer(IBufferResource *buffer) = 0;
-        virtual void BindIndexBuffer(IBufferResource *buffer, const IndexType &indexType) = 0;
-        virtual void BindViewport(float x, float y, float width, float height) = 0;
-        virtual void BindScissorRect(float x, float y, float width, float height) = 0;
-        virtual void BindDescriptorTable(IDescriptorTable *table) = 0;
-        virtual void SetDepthBias(float constantFactor, float clamp, float slopeFactor) = 0;
-        virtual void SetPipelineBarrier(const PipelineBarrier &barrier) = 0;
+        virtual void Begin()                                                                                                                                  = 0;
+        virtual void BeginRendering(const RenderingDesc &renderingInfo)                                                                                       = 0;
+        virtual void EndRendering()                                                                                                                           = 0;
+        virtual void Execute(const ExecuteDesc &submitInfo)                                                                                                   = 0;
+        virtual void Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks)                                               = 0;
+        virtual void BindPipeline(IPipeline *pipeline)                                                                                                        = 0;
+        virtual void BindVertexBuffer(IBufferResource *buffer)                                                                                                = 0;
+        virtual void BindIndexBuffer(IBufferResource *buffer, const IndexType &indexType)                                                                     = 0;
+        virtual void BindViewport(float x, float y, float width, float height)                                                                                = 0;
+        virtual void BindScissorRect(float x, float y, float width, float height)                                                                             = 0;
+        virtual void BindDescriptorTable(IDescriptorTable *table)                                                                                             = 0;
+        virtual void SetDepthBias(float constantFactor, float clamp, float slopeFactor)                                                                       = 0;
+        virtual void SetPipelineBarrier(const PipelineBarrier &barrier)                                                                                       = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) = 0;
-        virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0) = 0;
+        virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0)                                 = 0;
         // List of copy commands
-        virtual void CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionInfo) = 0;
-        virtual void CopyTextureRegion(const CopyTextureRegionDesc & copyTextureRegionInfo) = 0;
+        virtual void CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionInfo)    = 0;
+        virtual void CopyTextureRegion(const CopyTextureRegionDesc &copyTextureRegionInfo) = 0;
         // --
         virtual void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
     };

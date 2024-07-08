@@ -36,21 +36,20 @@ namespace DenOfIz
     {
     private:
         CommandListDesc m_desc;
-        DX12Context *m_context;
+        DX12Context    *m_context;
 
-        wil::com_ptr<ID3D12CommandAllocator> m_commandAllocator;
+        wil::com_ptr<ID3D12CommandAllocator>     m_commandAllocator;
         wil::com_ptr<ID3D12GraphicsCommandList7> m_commandList;
-        wil::com_ptr<ID3D12DebugCommandList> m_debugCommandList;
-        ID3D12RootSignature *m_currentRootSignature = nullptr;
+        wil::com_ptr<ID3D12DebugCommandList>     m_debugCommandList;
+        ID3D12RootSignature                     *m_currentRootSignature = nullptr;
 
-        CD3DX12_RECT m_scissor;
-        D3D12_VIEWPORT m_viewport;
-        ID3D12CommandQueue *m_commandQueue;
+        CD3DX12_RECT                        m_scissor;
+        D3D12_VIEWPORT                      m_viewport;
+        ID3D12CommandQueue                 *m_commandQueue;
         std::vector<ID3D12DescriptorHeap *> m_heaps = { m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetHeap(), m_context->ShaderVisibleSamplerDescriptorHeap->GetHeap() };
 
     public:
-        DX12CommandList(DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> m_commandAllocator, wil::com_ptr<ID3D12GraphicsCommandList> m_commandList,
-                        CommandListDesc desc);
+        DX12CommandList(DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> m_commandAllocator, wil::com_ptr<ID3D12GraphicsCommandList> m_commandList, CommandListDesc desc);
         ~DX12CommandList() override;
 
         void Begin() override;
@@ -71,10 +70,11 @@ namespace DenOfIz
         void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
         void CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionInfo) override;
         void CopyTextureRegion(const CopyTextureRegionDesc &copyTextureRegionInfo) override;
+
     private:
-        void CompatibilityPipelineBarrier(const PipelineBarrier &barrier);
-        void EnhancedPipelineBarrier(const PipelineBarrier &barrier);
-        void SetRootSignature(ID3D12RootSignature *rootSignature);
+        void     CompatibilityPipelineBarrier(const PipelineBarrier &barrier);
+        void     EnhancedPipelineBarrier(const PipelineBarrier &barrier);
+        void     SetRootSignature(ID3D12RootSignature *rootSignature);
         uint32_t GetSubresourceIndex(ITextureResource *texture, uint32_t mipLevel, uint32_t arrayLayer);
     };
 

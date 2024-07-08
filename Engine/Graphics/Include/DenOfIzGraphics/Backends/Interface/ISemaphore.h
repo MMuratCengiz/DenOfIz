@@ -24,7 +24,7 @@ namespace DenOfIz
     class ISemaphore
     {
     public:
-        virtual void Wait() = 0;
+        virtual void Wait()   = 0;
         virtual void Notify() = 0;
 
         virtual ~ISemaphore(){};

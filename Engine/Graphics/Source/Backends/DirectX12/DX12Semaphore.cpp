@@ -22,13 +22,16 @@ using namespace DenOfIz;
 
 DX12Semaphore::DX12Semaphore(DX12Context *context)
 {
-    m_context = context;
+    m_context    = context;
     m_fenceValue = 1;
     context->D3DDevice->CreateFence(m_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.put()));
     m_fenceEvent.Attach(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
 }
 
-DX12Semaphore::~DX12Semaphore() { m_fence = nullptr; }
+DX12Semaphore::~DX12Semaphore()
+{
+    m_fence = nullptr;
+}
 
 void DX12Semaphore::Wait()
 {

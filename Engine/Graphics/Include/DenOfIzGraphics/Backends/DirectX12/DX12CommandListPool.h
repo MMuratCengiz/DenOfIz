@@ -26,11 +26,12 @@ namespace DenOfIz
     class DX12CommandListPool : public ICommandListPool
     {
     private:
-        DX12Context *m_context;
+        DX12Context                                      *m_context;
         std::vector<wil::com_ptr<ID3D12CommandAllocator>> m_commandAllocators;
-        wil::com_ptr<ID3D12GraphicsCommandList> m_commandList;
-        std::vector<std::unique_ptr<DX12CommandList>> m_commandLists;
-        CommandListPoolDesc m_desc;
+        wil::com_ptr<ID3D12GraphicsCommandList>           m_commandList;
+        std::vector<std::unique_ptr<DX12CommandList>>     m_commandLists;
+        CommandListPoolDesc                               m_desc;
+
     public:
         DX12CommandListPool(DX12Context *context, CommandListPoolDesc desc) : m_desc(desc)
         {
@@ -38,7 +39,7 @@ namespace DenOfIz
             DZ_ASSERTM(desc.CommandListCount > 0, "CommandListCount must be greater than 0");
 
             m_context = context;
-            for (uint32_t i = 0; i < desc.CommandListCount; i++)
+            for ( uint32_t i = 0; i < desc.CommandListCount; i++ )
             {
                 wil::com_ptr<ID3D12CommandAllocator> commandAllocator;
 
@@ -49,22 +50,22 @@ namespace DenOfIz
 
             D3D12_COMMAND_LIST_TYPE commandListType = DX12EnumConverter::ConvertQueueType(m_desc.QueueType);
 
-            THROW_IF_FAILED(context->D3DDevice->CreateCommandList(0, commandListType, m_commandAllocators[0].get(), nullptr, IID_PPV_ARGS(m_commandList.put())));
+            THROW_IF_FAILED(context->D3DDevice->CreateCommandList(0, commandListType, m_commandAllocators[ 0 ].get(), nullptr, IID_PPV_ARGS(m_commandList.put())));
             m_commandList->Close();
 
             CommandListDesc commandListCreateInfo{};
             commandListCreateInfo.QueueType = m_desc.QueueType;
 
-            for (uint32_t i = 0; i < desc.CommandListCount; i++)
+            for ( uint32_t i = 0; i < desc.CommandListCount; i++ )
             {
-                m_commandLists.push_back(std::make_unique<DX12CommandList>(m_context, m_commandAllocators[i], m_commandList, commandListCreateInfo));
+                m_commandLists.push_back(std::make_unique<DX12CommandList>(m_context, m_commandAllocators[ i ], m_commandList, commandListCreateInfo));
             }
         }
 
-        virtual std::vector<ICommandList*> GetCommandLists() override
+        virtual std::vector<ICommandList *> GetCommandLists() override
         {
-            std::vector<ICommandList*> commandLists;
-            for (auto &commandList : m_commandLists)
+            std::vector<ICommandList *> commandLists;
+            for ( auto &commandList : m_commandLists )
             {
                 commandLists.push_back(commandList.get());
             }

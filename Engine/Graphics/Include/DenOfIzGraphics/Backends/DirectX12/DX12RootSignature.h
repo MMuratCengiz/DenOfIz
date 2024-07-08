@@ -29,22 +29,25 @@ namespace DenOfIz
     class DX12RootSignature : public IRootSignature
     {
     private:
-        D3D_ROOT_SIGNATURE_VERSION m_rootSignatureVersion;
-        DX12Context *m_context;
-        RootSignatureDesc m_desc;
+        D3D_ROOT_SIGNATURE_VERSION        m_rootSignatureVersion;
+        DX12Context                      *m_context;
+        RootSignatureDesc                 m_desc;
         wil::com_ptr<ID3D12RootSignature> m_rootSignature;
 
-        std::vector<CD3DX12_ROOT_PARAMETER> m_rootParameters;
-        std::vector<CD3DX12_ROOT_PARAMETER> m_rootConstants;
+        std::vector<CD3DX12_ROOT_PARAMETER>   m_rootParameters;
+        std::vector<CD3DX12_ROOT_PARAMETER>   m_rootConstants;
         std::vector<CD3DX12_DESCRIPTOR_RANGE> m_descriptorRanges;
 
         std::unordered_set<D3D12_SHADER_VISIBILITY> m_descriptorRangesShaderVisibilities;
-        uint32_t usedStages = 0;
+        uint32_t                                    usedStages = 0;
 
     public:
         DX12RootSignature(DX12Context *context, const RootSignatureDesc &desc);
 
-        inline ID3D12RootSignature *GetRootSignature() const { return m_rootSignature.get(); }
+        inline ID3D12RootSignature *GetRootSignature() const
+        {
+            return m_rootSignature.get();
+        }
 
         ~DX12RootSignature() override;
 

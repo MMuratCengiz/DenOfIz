@@ -26,8 +26,8 @@ namespace DenOfIz
     struct CopyToGpuBufferDesc
     {
         IBufferResource *DstBuffer;
-        const void *Data;
-        size_t NumBytes;
+        const void      *Data;
+        size_t           NumBytes;
     };
 
     class BatchResourceCopy
@@ -36,12 +36,13 @@ namespace DenOfIz
         ILogicalDevice *m_device;
 
         std::unique_ptr<ICommandListPool> m_commandListPool;
-        ICommandList *m_copyCommandList;
+        ICommandList                     *m_copyCommandList;
 
         std::unique_ptr<ISemaphore>                   m_executeSemaphore;
         std::mutex                                    m_resourceCleanLock;
         std::vector<std::unique_ptr<IBufferResource>> m_resourcesToClean;
         std::future<void>                             m_cleanResourcesFuture;
+
     public:
         BatchResourceCopy(ILogicalDevice *device);
 

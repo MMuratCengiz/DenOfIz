@@ -48,13 +48,13 @@ void VulkanPipeline::ConfigureVertexInput()
     {
         vk::PipelineShaderStageCreateInfo &shaderStageCreateInfo = m_pipelineStageCreateInfos.emplace_back();
 
-        const vk::ShaderStageFlagBits stage = VulkanEnumConverter::ConvertShaderStage(Stage);
-        vk::ShaderModule &shaderModule = m_shaderModules.emplace_back(this->CreateShaderModule(Data));
+        const vk::ShaderStageFlagBits stage        = VulkanEnumConverter::ConvertShaderStage(Stage);
+        vk::ShaderModule             &shaderModule = m_shaderModules.emplace_back(this->CreateShaderModule(Data));
 
-        shaderStageCreateInfo.stage = stage;
+        shaderStageCreateInfo.stage  = stage;
         shaderStageCreateInfo.module = shaderModule;
-        shaderStageCreateInfo.pName = "main";
-        shaderStageCreateInfo.pNext = nullptr;
+        shaderStageCreateInfo.pName  = "main";
+        shaderStageCreateInfo.pNext  = nullptr;
 
         hasTessellationShaders = hasTessellationShaders || stage == vk::ShaderStageFlagBits::eTessellationEvaluation;
         hasTessellationShaders = hasTessellationShaders || stage == vk::ShaderStageFlagBits::eTessellationControl;
@@ -74,48 +74,48 @@ void VulkanPipeline::ConfigureVertexInput()
         else
         {
             vk::VertexInputBindingDescription &bindingDesc = m_inputBindingDescriptions.emplace_back();
-            bindingDesc.binding = m_inputBindingDescriptions.size() - 1;
-            bindingDesc.inputRate = vk::VertexInputRate::eVertex; // TODO investigate later for instanced rendering
-            bindingDesc.stride = 0;
+            bindingDesc.binding                            = m_inputBindingDescriptions.size() - 1;
+            bindingDesc.inputRate                          = vk::VertexInputRate::eVertex; // TODO investigate later for instanced rendering
+            bindingDesc.stride                             = 0;
 
             desc.binding = bindingDesc.binding;
         }
 
         desc.location = vertexInput.Location;
-        desc.format = VulkanEnumConverter::ConvertImageFormat(vertexInput.Format);
-        desc.offset = vertexInput.Offset;
+        desc.format   = VulkanEnumConverter::ConvertImageFormat(vertexInput.Format);
+        desc.offset   = vertexInput.Offset;
         offsetIter += vertexInput.Size;
     }
 
     if ( m_desc.InterleavedMode )
     {
         vk::VertexInputBindingDescription &bindingDesc = m_inputBindingDescriptions.emplace_back();
-        bindingDesc.binding = 0;
-        bindingDesc.inputRate = vk::VertexInputRate::eVertex; // TODO investigate later for instanced rendering
-        bindingDesc.stride = offsetIter;
+        bindingDesc.binding                            = 0;
+        bindingDesc.inputRate                          = vk::VertexInputRate::eVertex; // TODO investigate later for instanced rendering
+        bindingDesc.stride                             = offsetIter;
     }
 
-    m_inputStateCreateInfo.vertexBindingDescriptionCount = m_inputBindingDescriptions.size();
-    m_inputStateCreateInfo.pVertexBindingDescriptions = m_inputBindingDescriptions.data();
+    m_inputStateCreateInfo.vertexBindingDescriptionCount   = m_inputBindingDescriptions.size();
+    m_inputStateCreateInfo.pVertexBindingDescriptions      = m_inputBindingDescriptions.data();
     m_inputStateCreateInfo.vertexAttributeDescriptionCount = m_vertexAttributeDescriptions.size();
-    m_inputStateCreateInfo.pVertexAttributeDescriptions = m_vertexAttributeDescriptions.data();
+    m_inputStateCreateInfo.pVertexAttributeDescriptions    = m_vertexAttributeDescriptions.data();
 
-    m_inputAssemblyCreateInfo.topology = VulkanEnumConverter::ConvertPrimitiveTopology(m_desc.PrimitiveTopology);
+    m_inputAssemblyCreateInfo.topology               = VulkanEnumConverter::ConvertPrimitiveTopology(m_desc.PrimitiveTopology);
     m_inputAssemblyCreateInfo.primitiveRestartEnable = VK_FALSE;
 
     m_pipelineCreateInfo.stageCount = static_cast<uint32_t>(m_pipelineStageCreateInfos.size());
-    m_pipelineCreateInfo.pStages = m_pipelineStageCreateInfos.data();
+    m_pipelineCreateInfo.pStages    = m_pipelineStageCreateInfos.data();
 
     // Todo read patch control points from either pipelineRequest or from GLSLShaderSet
     m_tessellationStateCreateInfo.patchControlPoints = 3;
 
     if ( hasTessellationShaders )
     {
-        m_inputAssemblyCreateInfo.topology = vk::PrimitiveTopology::ePatchList;
+        m_inputAssemblyCreateInfo.topology      = vk::PrimitiveTopology::ePatchList;
         m_pipelineCreateInfo.pTessellationState = &m_tessellationStateCreateInfo;
     }
 
-    m_pipelineCreateInfo.pVertexInputState = &m_inputStateCreateInfo;
+    m_pipelineCreateInfo.pVertexInputState   = &m_inputStateCreateInfo;
     m_pipelineCreateInfo.pInputAssemblyState = &m_inputAssemblyCreateInfo;
 }
 
@@ -150,12 +150,12 @@ void VulkanPipeline::ConfigureMultisampling()
         break;
     }
 
-    m_multisampleStateCreateInfo.minSampleShading = 1.0f;
-    m_multisampleStateCreateInfo.pSampleMask = nullptr;
+    m_multisampleStateCreateInfo.minSampleShading      = 1.0f;
+    m_multisampleStateCreateInfo.pSampleMask           = nullptr;
     m_multisampleStateCreateInfo.alphaToCoverageEnable = VK_FALSE;
-    m_multisampleStateCreateInfo.alphaToOneEnable = VK_FALSE;
-    m_multisampleStateCreateInfo.sampleShadingEnable = VK_TRUE;
-    m_multisampleStateCreateInfo.minSampleShading = .2f;
+    m_multisampleStateCreateInfo.alphaToOneEnable      = VK_FALSE;
+    m_multisampleStateCreateInfo.sampleShadingEnable   = VK_TRUE;
+    m_multisampleStateCreateInfo.minSampleShading      = .2f;
 
     m_pipelineCreateInfo.pMultisampleState = &m_multisampleStateCreateInfo;
 }
@@ -164,18 +164,18 @@ void VulkanPipeline::ConfigureViewport()
 {
     // Todo test, these are dynamic states
     m_viewportStateCreateInfo.viewportCount = 0;
-    m_viewportStateCreateInfo.pViewports = nullptr;
-    m_viewportStateCreateInfo.scissorCount = 0;
-    m_viewportStateCreateInfo.pScissors = nullptr;
-    m_pipelineCreateInfo.pViewportState = &m_viewportStateCreateInfo;
+    m_viewportStateCreateInfo.pViewports    = nullptr;
+    m_viewportStateCreateInfo.scissorCount  = 0;
+    m_viewportStateCreateInfo.pScissors     = nullptr;
+    m_pipelineCreateInfo.pViewportState     = &m_viewportStateCreateInfo;
 }
 
 void VulkanPipeline::ConfigureRasterization()
 {
-    m_rasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
+    m_rasterizationStateCreateInfo.depthClampEnable        = VK_FALSE;
     m_rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
-    m_rasterizationStateCreateInfo.polygonMode = vk::PolygonMode::eFill;
-    m_rasterizationStateCreateInfo.lineWidth = 1.0f;
+    m_rasterizationStateCreateInfo.polygonMode             = vk::PolygonMode::eFill;
+    m_rasterizationStateCreateInfo.lineWidth               = 1.0f;
 
     switch ( m_desc.CullMode )
     {
@@ -193,11 +193,11 @@ void VulkanPipeline::ConfigureRasterization()
         break;
     }
 
-    m_rasterizationStateCreateInfo.frontFace = vk::FrontFace::eCounterClockwise;
-    m_rasterizationStateCreateInfo.depthBiasEnable = false; // Todo, test if works with dynamic state
+    m_rasterizationStateCreateInfo.frontFace               = vk::FrontFace::eCounterClockwise;
+    m_rasterizationStateCreateInfo.depthBiasEnable         = false; // Todo, test if works with dynamic state
     m_rasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
-    m_rasterizationStateCreateInfo.depthBiasClamp = 0.0f;
-    m_rasterizationStateCreateInfo.depthBiasSlopeFactor = 0.0f;
+    m_rasterizationStateCreateInfo.depthBiasClamp          = 0.0f;
+    m_rasterizationStateCreateInfo.depthBiasSlopeFactor    = 0.0f;
 
     m_pipelineCreateInfo.pRasterizationState = &m_rasterizationStateCreateInfo;
 }
@@ -214,7 +214,7 @@ void VulkanPipeline::ConfigureColorBlend()
 
         if ( m_desc.BlendModes[ i ] == BlendMode::AlphaBlend )
         {
-            m_colorBlendAttachments[ i ].blendEnable = true;
+            m_colorBlendAttachments[ i ].blendEnable         = true;
             m_colorBlendAttachments[ i ].srcColorBlendFactor = vk::BlendFactor::eOne;
             m_colorBlendAttachments[ i ].dstColorBlendFactor = vk::BlendFactor::eOne;
 
@@ -227,22 +227,22 @@ void VulkanPipeline::ConfigureColorBlend()
     }
 
     // This overwrites the above
-    m_colorBlending.logicOpEnable = false;
-    m_colorBlending.logicOp = vk::LogicOp::eCopy;
-    m_colorBlending.attachmentCount = attachmentCount;
-    m_colorBlending.pAttachments = m_colorBlendAttachments.data();
-    m_colorBlending.blendConstants[ 0 ] = 0.0f;
-    m_colorBlending.blendConstants[ 1 ] = 0.0f;
-    m_colorBlending.blendConstants[ 2 ] = 0.0f;
-    m_colorBlending.blendConstants[ 3 ] = 0.0f;
+    m_colorBlending.logicOpEnable         = false;
+    m_colorBlending.logicOp               = vk::LogicOp::eCopy;
+    m_colorBlending.attachmentCount       = attachmentCount;
+    m_colorBlending.pAttachments          = m_colorBlendAttachments.data();
+    m_colorBlending.blendConstants[ 0 ]   = 0.0f;
+    m_colorBlending.blendConstants[ 1 ]   = 0.0f;
+    m_colorBlending.blendConstants[ 2 ]   = 0.0f;
+    m_colorBlending.blendConstants[ 3 ]   = 0.0f;
     m_pipelineCreateInfo.pColorBlendState = &m_colorBlending;
 }
 
 void VulkanPipeline::ConfigureDynamicState()
 {
     m_dynamicStateCreateInfo.dynamicStateCount = m_dynamicStates.size();
-    m_dynamicStateCreateInfo.pDynamicStates = m_dynamicStates.data();
-    m_pipelineCreateInfo.pDynamicState = &m_dynamicStateCreateInfo;
+    m_dynamicStateCreateInfo.pDynamicStates    = m_dynamicStates.data();
+    m_pipelineCreateInfo.pDynamicState         = &m_dynamicStateCreateInfo;
 }
 
 void VulkanPipeline::CreatePipelineLayout()
@@ -253,48 +253,48 @@ void VulkanPipeline::CreatePipelineLayout()
     for ( const PushConstant &pushConstant : m_programReflection.PushConstants() )
     {
         vk::PushConstantRange &pushConstantRange = m_pushConstants.emplace_back();
-        pushConstantRange.stageFlags = VulkanEnumConverter::ConvertShaderStage(pushConstant.Stage);
-        pushConstantRange.offset = pushConstant.Offset;
-        pushConstantRange.size = pushConstant.Size;
+        pushConstantRange.stageFlags             = VulkanEnumConverter::ConvertShaderStage(pushConstant.Stage);
+        pushConstantRange.offset                 = pushConstant.Offset;
+        pushConstantRange.size                   = pushConstant.Size;
     }
 
     m_pipelineLayoutCreateInfo.pushConstantRangeCount = m_pushConstants.size();
-    m_pipelineLayoutCreateInfo.pPushConstantRanges = m_pushConstants.data();
+    m_pipelineLayoutCreateInfo.pPushConstantRanges    = m_pushConstants.data();
 
-    Layout = m_context->LogicalDevice.createPipelineLayout(m_pipelineLayoutCreateInfo);
+    Layout                      = m_context->LogicalDevice.createPipelineLayout(m_pipelineLayoutCreateInfo);
     m_pipelineCreateInfo.layout = Layout;
 }
 
 void VulkanPipeline::CreateRenderPass()
 {
-    m_pipelineCreateInfo.renderPass = nullptr;
-    m_pipelineCreateInfo.subpass = 0;
+    m_pipelineCreateInfo.renderPass         = nullptr;
+    m_pipelineCreateInfo.subpass            = 0;
     m_pipelineCreateInfo.basePipelineHandle = nullptr;
-    m_pipelineCreateInfo.basePipelineIndex = -1;
+    m_pipelineCreateInfo.basePipelineIndex  = -1;
 }
 
 void VulkanPipeline::CreateDepthAttachmentImages()
 {
-    m_depthStencilStateCreateInfo.depthTestEnable = m_desc.DepthTest.Enable;
-    m_depthStencilStateCreateInfo.depthWriteEnable = m_desc.DepthTest.Write;
-    m_depthStencilStateCreateInfo.depthCompareOp = VulkanEnumConverter::ConvertCompareOp(m_desc.DepthTest.CompareOp);
+    m_depthStencilStateCreateInfo.depthTestEnable       = m_desc.DepthTest.Enable;
+    m_depthStencilStateCreateInfo.depthWriteEnable      = m_desc.DepthTest.Write;
+    m_depthStencilStateCreateInfo.depthCompareOp        = VulkanEnumConverter::ConvertCompareOp(m_desc.DepthTest.CompareOp);
     m_depthStencilStateCreateInfo.depthBoundsTestEnable = VK_FALSE;
-    m_depthStencilStateCreateInfo.minDepthBounds = 0.0f;
-    m_depthStencilStateCreateInfo.maxDepthBounds = 1.0f;
+    m_depthStencilStateCreateInfo.minDepthBounds        = 0.0f;
+    m_depthStencilStateCreateInfo.maxDepthBounds        = 1.0f;
 
     m_depthStencilStateCreateInfo.stencilTestEnable = m_desc.StencilTest.Enable;
 
     m_depthStencilStateCreateInfo.front = vk::StencilOpState{};
-    m_depthStencilStateCreateInfo.back = vk::StencilOpState{};
+    m_depthStencilStateCreateInfo.back  = vk::StencilOpState{};
 
     auto initStencilState = [ =, this ](vk::StencilOpState &vkState, const StencilFace &state)
     {
-        vkState.compareOp = VulkanEnumConverter::ConvertCompareOp(state.CompareOp);
+        vkState.compareOp   = VulkanEnumConverter::ConvertCompareOp(state.CompareOp);
         vkState.compareMask = m_desc.StencilTest.ReadMask;
-        vkState.writeMask = m_desc.StencilTest.WriteMask;
-        vkState.reference = 0;
-        vkState.failOp = VulkanEnumConverter::ConvertStencilOp(state.FailOp);
-        vkState.passOp = VulkanEnumConverter::ConvertStencilOp(state.PassOp);
+        vkState.writeMask   = m_desc.StencilTest.WriteMask;
+        vkState.reference   = 0;
+        vkState.failOp      = VulkanEnumConverter::ConvertStencilOp(state.FailOp);
+        vkState.passOp      = VulkanEnumConverter::ConvertStencilOp(state.PassOp);
         vkState.depthFailOp = VulkanEnumConverter::ConvertStencilOp(state.DepthFailOp);
     };
 
@@ -311,7 +311,7 @@ vk::ShaderModule VulkanPipeline::CreateShaderModule(wil::com_ptr<IDxcBlob> data)
 {
     vk::ShaderModuleCreateInfo shaderModuleCreateInfo{};
     shaderModuleCreateInfo.codeSize = data->GetBufferSize();
-    shaderModuleCreateInfo.pCode = static_cast<const uint32_t *>(data->GetBufferPointer());
+    shaderModuleCreateInfo.pCode    = static_cast<const uint32_t *>(data->GetBufferPointer());
 
     return m_context->LogicalDevice.createShaderModule(shaderModuleCreateInfo);
 }
@@ -330,7 +330,7 @@ void VulkanPipeline::CreatePipeline()
                                 .setStencilAttachmentFormat(VulkanEnumConverter::ConvertImageFormat(m_desc.Rendering.StencilAttachmentFormat));
 
     m_pipelineCreateInfo.pNext = &m_renderingCreateInfo;
-    Instance = m_context->LogicalDevice.createGraphicsPipeline(nullptr, m_pipelineCreateInfo).value;
+    Instance                   = m_context->LogicalDevice.createGraphicsPipeline(nullptr, m_pipelineCreateInfo).value;
 }
 
 vk::WriteDescriptorSet VulkanPipeline::GetWriteDescriptorSet(const std::string &name)

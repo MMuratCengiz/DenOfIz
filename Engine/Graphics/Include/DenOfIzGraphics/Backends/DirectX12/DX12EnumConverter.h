@@ -27,21 +27,21 @@ namespace DenOfIz
     class DX12EnumConverter
     {
     public:
-        static D3D12_DESCRIPTOR_RANGE_TYPE ConvertResourceDescriptorToDescriptorRangeType(const BitSet<ResourceDescriptor>& descriptor)
+        static D3D12_DESCRIPTOR_RANGE_TYPE ConvertResourceDescriptorToDescriptorRangeType(const BitSet<ResourceDescriptor> &descriptor)
         {
             if ( descriptor.IsSet(ResourceDescriptor::Sampler) )
             {
                 return D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
             }
-            if ( descriptor.Any({ResourceDescriptor::UniformBuffer, ResourceDescriptor::RootConstant}) )
+            if ( descriptor.Any({ ResourceDescriptor::UniformBuffer, ResourceDescriptor::RootConstant }) )
             {
                 return D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             }
-            if ( descriptor.Any({ResourceDescriptor::Texture, ResourceDescriptor::Buffer}) && descriptor.IsSet(ResourceDescriptor::UnorderedAccess) )
+            if ( descriptor.Any({ ResourceDescriptor::Texture, ResourceDescriptor::Buffer }) && descriptor.IsSet(ResourceDescriptor::UnorderedAccess) )
             {
                 return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
             }
-            if ( descriptor.Any({ResourceDescriptor::Texture, ResourceDescriptor::Buffer, ResourceDescriptor::AccelerationStructure}) )
+            if ( descriptor.Any({ ResourceDescriptor::Texture, ResourceDescriptor::Buffer, ResourceDescriptor::AccelerationStructure }) )
             {
                 return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
             }

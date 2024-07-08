@@ -26,13 +26,16 @@ namespace DenOfIz
     class VulkanInputLayout : public IInputLayout
     {
     private:
-        VkPipelineVertexInputStateCreateInfo m_vertexInputState;
-        std::vector<VkVertexInputBindingDescription> m_bindingDescriptions;
+        VkPipelineVertexInputStateCreateInfo           m_vertexInputState;
+        std::vector<VkVertexInputBindingDescription>   m_bindingDescriptions;
         std::vector<VkVertexInputAttributeDescription> m_attributeDescriptions;
 
     public:
         VulkanInputLayout(const InputLayoutDesc &inputLayoutDesc);
-        inline const VkPipelineVertexInputStateCreateInfo &GetVertexInputState() const { return m_vertexInputState; }
+        inline const VkPipelineVertexInputStateCreateInfo &GetVertexInputState() const
+        {
+            return m_vertexInputState;
+        }
         ~VulkanInputLayout() override = default;
     };
 

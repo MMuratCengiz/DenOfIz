@@ -80,24 +80,24 @@ vk::ImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier(const Tex
     {
         imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
         imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderWrite | vk::AccessFlagBits::eShaderRead;
-        imageMemoryBarrier.oldLayout = vk::ImageLayout::eGeneral;
-        imageMemoryBarrier.newLayout = vk::ImageLayout::eGeneral;
+        imageMemoryBarrier.oldLayout     = vk::ImageLayout::eGeneral;
+        imageMemoryBarrier.newLayout     = vk::ImageLayout::eGeneral;
     }
     else
     {
         imageMemoryBarrier.srcAccessMask = GetAccessFlags(barrier.OldState);
         imageMemoryBarrier.dstAccessMask = GetAccessFlags(barrier.NewState);
-        imageMemoryBarrier.oldLayout = GetImageLayout(barrier.OldState);
-        imageMemoryBarrier.newLayout = GetImageLayout(barrier.NewState);
+        imageMemoryBarrier.oldLayout     = GetImageLayout(barrier.OldState);
+        imageMemoryBarrier.newLayout     = GetImageLayout(barrier.NewState);
         assert(imageMemoryBarrier.newLayout != vk::ImageLayout::eUndefined);
     }
 
-    imageMemoryBarrier.image = imageResource->GetImage();
-    imageMemoryBarrier.subresourceRange.aspectMask = imageResource->GetAspect();
-    imageMemoryBarrier.subresourceRange.baseMipLevel = barrier.EnableSubresourceBarrier ? barrier.MipLevel : 0;
-    imageMemoryBarrier.subresourceRange.levelCount = barrier.EnableSubresourceBarrier ? 1 : VK_REMAINING_MIP_LEVELS;
+    imageMemoryBarrier.image                           = imageResource->GetImage();
+    imageMemoryBarrier.subresourceRange.aspectMask     = imageResource->GetAspect();
+    imageMemoryBarrier.subresourceRange.baseMipLevel   = barrier.EnableSubresourceBarrier ? barrier.MipLevel : 0;
+    imageMemoryBarrier.subresourceRange.levelCount     = barrier.EnableSubresourceBarrier ? 1 : VK_REMAINING_MIP_LEVELS;
     imageMemoryBarrier.subresourceRange.baseArrayLayer = barrier.EnableSubresourceBarrier ? barrier.ArrayLayer : 0;
-    imageMemoryBarrier.subresourceRange.layerCount = barrier.EnableSubresourceBarrier ? 1 : VK_REMAINING_ARRAY_LAYERS;
+    imageMemoryBarrier.subresourceRange.layerCount     = barrier.EnableSubresourceBarrier ? 1 : VK_REMAINING_ARRAY_LAYERS;
 
     imageMemoryBarrier.srcQueueFamilyIndex = barrier.SourceQueue;
     if ( barrier.EnableQueueBarrier && !barrier.OldState.IsSet(ResourceState::Undefined) )
@@ -120,7 +120,7 @@ vk::ImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier(const Tex
 vk::BufferMemoryBarrier VulkanPipelineBarrierHelper::CreateBufferBarrier(const BufferBarrierInfo &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags)
 {
     VulkanBufferResource *bufferResource = (VulkanBufferResource *)barrier.Resource;
-    vk::MemoryBarrier memoryBarrier{};
+    vk::MemoryBarrier     memoryBarrier{};
 
     if ( barrier.OldState.IsSet(ResourceState::UnorderedAccess) && barrier.NewState.IsSet(ResourceState::UnorderedAccess) )
     {
@@ -138,7 +138,7 @@ vk::BufferMemoryBarrier VulkanPipelineBarrierHelper::CreateBufferBarrier(const B
     return vk::BufferMemoryBarrier();
 }
 
-vk::AccessFlags VulkanPipelineBarrierHelper::GetAccessFlags(const BitSet<ResourceState>& state)
+vk::AccessFlags VulkanPipelineBarrierHelper::GetAccessFlags(const BitSet<ResourceState> &state)
 {
     vk::AccessFlags result;
 
@@ -198,7 +198,7 @@ vk::AccessFlags VulkanPipelineBarrierHelper::GetAccessFlags(const BitSet<Resourc
     return result;
 }
 
-vk::ImageLayout VulkanPipelineBarrierHelper::GetImageLayout(const BitSet<ResourceState>& state)
+vk::ImageLayout VulkanPipelineBarrierHelper::GetImageLayout(const BitSet<ResourceState> &state)
 {
     if ( state.IsSet(ResourceState::CopySrc) )
     {

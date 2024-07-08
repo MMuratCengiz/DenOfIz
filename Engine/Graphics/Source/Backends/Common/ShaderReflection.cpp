@@ -34,16 +34,16 @@ ShaderReflection::ShaderReflection(std::vector<CompiledShader> shaderInfos) : Sh
 void ShaderReflection::OnEachShader(const CompiledShader &shaderInfo, const bool &first)
 {
     wil::com_ptr<IDxcBlob> code = shaderInfo.Data;
-    std::vector<uint32_t> codeToUVec(static_cast<uint32_t *>(code->GetBufferPointer()),
-                                     static_cast<uint32_t *>(code->GetBufferPointer()) + code->GetBufferSize() / sizeof(uint32_t));
+    std::vector<uint32_t>  codeToUVec(static_cast<uint32_t *>(code->GetBufferPointer()),
+                                      static_cast<uint32_t *>(code->GetBufferPointer()) + code->GetBufferSize() / sizeof(uint32_t));
 
     spirv_cross::Compiler compiler(codeToUVec);
 
     auto shaderResources = compiler.get_shader_resources();
 
-    auto stageInputs = shaderResources.stage_inputs;
-    auto samplers = shaderResources.sampled_images;
-    auto uniforms = shaderResources.uniform_buffers;
+    auto stageInputs         = shaderResources.stage_inputs;
+    auto samplers            = shaderResources.sampled_images;
+    auto uniforms            = shaderResources.uniform_buffers;
     auto shaderPushConstants = shaderResources.push_constant_buffers;
 
     uint32_t offsetIter = 0;
@@ -61,7 +61,7 @@ void ShaderReflection::OnEachShader(const CompiledShader &shaderInfo, const bool
         for ( const spirv_cross::Resource &resource : stageInputs )
         {
             SpvDecoration decoration = GetDecoration(compiler, resource);
-            ShaderVarType gType = SpvTypeToCustomType(decoration.Type);
+            ShaderVarType gType      = SpvTypeToCustomType(decoration.Type);
             CreateVertexInput(offsetIter, gType, decoration, gType.Size);
             offsetIter += gType.Size;
         }
@@ -86,11 +86,11 @@ void ShaderReflection::OnEachShader(const CompiledShader &shaderInfo, const bool
 void ShaderReflection::CreateVertexInput(const uint32_t &offset, const ShaderVarType &type, const SpvDecoration &decoration, const uint32_t &size)
 {
     VertexInput &input = vertexInputs.emplace_back(VertexInput{});
-    input.Location = decoration.Location;
-    input.Format = type.Format;
-    input.Offset = offset;
-    input.Size = size;
-    input.Name = decoration.Name;
+    input.Location     = decoration.Location;
+    input.Format       = type.Format;
+    input.Offset       = offset;
+    input.Size         = size;
+    input.Name         = decoration.Name;
 }
 
 void ShaderReflection::CreateUniformInput(const spirv_cross::Compiler &compiler, const UniformType &uniformType, const spirv_cross::Resource resource, const ShaderStage stage)
@@ -114,15 +114,15 @@ void ShaderReflection::AddResourceToInput(const UniformType &uniformType, const 
 {
     ShaderUniformInput &uniformInput = uniformInputs.emplace_back(ShaderUniformInput{});
 
-    uniformInput.Name = decoration.Name;
-    uniformInput.Location = decoration.Location;
+    uniformInput.Name               = decoration.Name;
+    uniformInput.Location           = decoration.Location;
     uniformInput.BoundDescriptorSet = decoration.Set;
-    uniformInput.Stage = stage;
-    uniformInput.Binding = decoration.Binding;
-    uniformInput.ArraySize = decoration.ArraySize;
-    uniformInput.Size = decoration.Size;
-    uniformInput.Type = uniformType;
-    uniformInput.Format = SpvTypeToCustomType(decoration.Type).Format;
+    uniformInput.Stage              = stage;
+    uniformInput.Binding            = decoration.Binding;
+    uniformInput.ArraySize          = decoration.ArraySize;
+    uniformInput.Size               = decoration.Size;
+    uniformInput.Type               = uniformType;
+    uniformInput.Format             = SpvTypeToCustomType(decoration.Type).Format;
 }
 
 void ShaderReflection::CreatePushConstant(const spirv_cross::Compiler &compiler, const spirv_cross::Resource resource, const ShaderStage stage)
@@ -130,17 +130,17 @@ void ShaderReflection::CreatePushConstant(const spirv_cross::Compiler &compiler,
     SpvDecoration decoration = GetDecoration(compiler, resource);
 
     PushConstant &pushConstant = pushConstants.emplace_back(PushConstant{});
-    pushConstant.Offset = 0; // TODO Could a push constant have any other offset?
-    pushConstant.Size = decoration.Size;
-    pushConstant.Stage = stage;
-    pushConstant.Name = decoration.Name;
-    pushConstant.Children = std::move(decoration.Children);
+    pushConstant.Offset        = 0; // TODO Could a push constant have any other offset?
+    pushConstant.Size          = decoration.Size;
+    pushConstant.Stage         = stage;
+    pushConstant.Name          = decoration.Name;
+    pushConstant.Children      = std::move(decoration.Children);
 }
 
 ShaderVarType ShaderReflection::SpvTypeToCustomType(const spirv_cross::SPIRType &type)
 {
-    auto format = Format::Undefined;
-    uint32_t size = 0;
+    auto     format = Format::Undefined;
+    uint32_t size   = 0;
 
     auto make32Int = [](const uint32_t &numOfElements) -> Format
     {
@@ -205,21 +205,21 @@ ShaderVarType ShaderReflection::SpvTypeToCustomType(const spirv_cross::SPIRType 
     case spirv_cross::SPIRType::UShort:
     case spirv_cross::SPIRType::Int:
         format = make32Int(type.vecsize);
-        size = sizeof(int32_t);
+        size   = sizeof(int32_t);
         break;
     case spirv_cross::SPIRType::Int64:
         format = make32Int(type.vecsize);
-        size = sizeof(int64_t);
+        size   = sizeof(int64_t);
         break;
     case spirv_cross::SPIRType::UInt:
     case spirv_cross::SPIRType::UInt64:
         format = make32UInt(type.vecsize);
-        size = sizeof(uint32_t);
+        size   = sizeof(uint32_t);
         break;
     case spirv_cross::SPIRType::Double:
     case spirv_cross::SPIRType::Float:
         format = make32Float(type.vecsize);
-        size = sizeof(float);
+        size   = sizeof(float);
         break;
         size = sizeof(double);
         break;
@@ -245,14 +245,14 @@ SpvDecoration ShaderReflection::GetDecoration(const spirv_cross::Compiler &compi
 
             auto &child = decoration.Children.emplace_back(SpvDecoration{
                 .Type = compiler.get_type(decoration.Type.member_types[ i ]),
-                .Set = decoration.Set,
+                .Set  = decoration.Set,
             });
 
-            child.Offset = offsetIter;
-            child.Size = size;
-            child.Name = compiler.get_member_name(resource.base_type_id, i);
-            child.Location = decoration.Location;
-            child.Binding = decoration.Binding;
+            child.Offset    = offsetIter;
+            child.Size      = size;
+            child.Name      = compiler.get_member_name(resource.base_type_id, i);
+            child.Location  = decoration.Location;
+            child.Binding   = decoration.Binding;
             child.ArraySize = GetTypeArraySize(child);
             offsetIter += size;
         }
@@ -261,12 +261,12 @@ SpvDecoration ShaderReflection::GetDecoration(const spirv_cross::Compiler &compi
     }
 
     decoration.Location = compiler.get_decoration(resource.id, spv::DecorationLocation);
-    decoration.Binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+    decoration.Binding  = compiler.get_decoration(resource.id, spv::DecorationBinding);
 
     uint32_t totalArraySize = GetTypeArraySize(decoration);
 
     decoration.ArraySize = totalArraySize;
-    decoration.Name = resource.name;
+    decoration.Name      = resource.name;
     return decoration;
 }
 

@@ -27,27 +27,30 @@ namespace DenOfIz
 
     class VulkanBufferResource final : public IBufferResource, private NonCopyable
     {
-        BufferDesc m_desc;
+        BufferDesc     m_desc;
         VulkanContext *m_context;
 
         VmaAllocation m_allocation;
-        bool m_alreadyDisposed = false;
-        bool m_alreadyAllocated = false;
+        bool          m_alreadyDisposed  = false;
+        bool          m_alreadyAllocated = false;
 
         vk::Buffer Instance;
 
     public:
-        void MapMemory() override;
-        void CopyData(const void *data, uint32_t size) override;
-        void UnmapMemory() override;
+        void                     MapMemory() override;
+        void                     CopyData(const void *data, uint32_t size) override;
+        void                     UnmapMemory() override;
         vk::DescriptorBufferInfo DescriptorInfo;
 
         explicit VulkanBufferResource(VulkanContext *context, const BufferDesc &desc);
 
         void Deallocate() override;
         ~VulkanBufferResource() override;
-        void UpdateAllocation(const void *newData);
-        inline const vk::Buffer &GetBuffer() const { return Instance; }
+        void                     UpdateAllocation(const void *newData);
+        inline const vk::Buffer &GetBuffer() const
+        {
+            return Instance;
+        }
 
     protected:
         void Allocate(const void *newData) override;

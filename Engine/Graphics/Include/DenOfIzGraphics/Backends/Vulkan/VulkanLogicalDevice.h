@@ -22,12 +22,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 #include "VulkanBufferResource.h"
-#include "VulkanCubeMapResource.h"
+#include "VulkanCommandPool.h"
 #include "VulkanContext.h"
+#include "VulkanCubeMapResource.h"
 #include "VulkanInputLayout.h"
 #include "VulkanPipeline.h"
 #include "VulkanSurface.h"
-#include "VulkanCommandPool.h"
 
 namespace DenOfIz
 {
@@ -56,7 +56,7 @@ namespace DenOfIz
 
         const std::vector<QueueType> m_queueTypes = { QueueType::Graphics, QueueType::Copy, QueueType::Presentation };
 
-        VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
+        VkDebugUtilsMessengerEXT              m_debugMessenger = VK_NULL_HANDLE;
         std::unordered_map<std::string, bool> m_supportedExtensions;
         std::unordered_map<std::string, bool> m_supportedLayers;
 
@@ -65,26 +65,29 @@ namespace DenOfIz
     public:
         VulkanLogicalDevice() = default;
 
-        void CreateDevice(GraphicsWindowHandle *window) override;
+        void                        CreateDevice(GraphicsWindowHandle *window) override;
         std::vector<PhysicalDevice> ListPhysicalDevices() override;
-        void LoadPhysicalDevice(const PhysicalDevice &device) override;
-        inline bool IsDeviceLost() override { return m_context->IsDeviceLost; }
+        void                        LoadPhysicalDevice(const PhysicalDevice &device) override;
+        inline bool                 IsDeviceLost() override
+        {
+            return m_context->IsDeviceLost;
+        }
 
-        void WaitIdle() override;
-        [[nodiscard]] uint32_t GetFrameCount() const;
+        void                         WaitIdle() override;
+        [[nodiscard]] uint32_t       GetFrameCount() const;
         [[nodiscard]] VulkanContext *GetContext() const;
-        [[nodiscard]] Format GetSwapChainImageFormat() const;
+        [[nodiscard]] Format         GetSwapChainImageFormat() const;
 
         // Factory methods
         std::unique_ptr<ICommandListPool> CreateCommandListPool(const CommandListPoolDesc &createInfo) override;
-        std::unique_ptr<IPipeline> CreatePipeline(const PipelineDesc &createInfo) override;
-        std::unique_ptr<ISwapChain> CreateSwapChain(const SwapChainDesc &createInfo) override;
-        std::unique_ptr<IRootSignature> CreateRootSignature(const RootSignatureDesc &createInfo) override;
-        std::unique_ptr<IInputLayout> CreateInputLayout(const InputLayoutDesc &createInfo) override;
+        std::unique_ptr<IPipeline>        CreatePipeline(const PipelineDesc &createInfo) override;
+        std::unique_ptr<ISwapChain>       CreateSwapChain(const SwapChainDesc &createInfo) override;
+        std::unique_ptr<IRootSignature>   CreateRootSignature(const RootSignatureDesc &createInfo) override;
+        std::unique_ptr<IInputLayout>     CreateInputLayout(const InputLayoutDesc &createInfo) override;
         std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableDesc &createInfo) override;
-        std::unique_ptr<IFence> CreateFence() override;
-        std::unique_ptr<ISemaphore> CreateSemaphore() override;
-        std::unique_ptr<IBufferResource> CreateBufferResource(std::string name, const BufferDesc &createInfo) override;
+        std::unique_ptr<IFence>           CreateFence() override;
+        std::unique_ptr<ISemaphore>       CreateSemaphore() override;
+        std::unique_ptr<IBufferResource>  CreateBufferResource(std::string name, const BufferDesc &createInfo) override;
         std::unique_ptr<ITextureResource> CreateTextureResource(std::string name, const TextureDesc &createInfo) override;
 
         ~VulkanLogicalDevice() override;
@@ -92,20 +95,20 @@ namespace DenOfIz
     private:
         void CreateRenderSurface();
 
-        bool InitDebugMessages(const vk::DebugUtilsMessengerCreateInfoEXT &createInfo);
-        void InitSupportedLayers(std::vector<const char *> &layers);
+        bool                                               InitDebugMessages(const vk::DebugUtilsMessengerCreateInfoEXT &createInfo);
+        void                                               InitSupportedLayers(std::vector<const char *> &layers);
         [[nodiscard]] vk::DebugUtilsMessengerCreateInfoEXT GetDebugUtilsCreateInfo() const;
-        static void LoadExtensionFunctions();
+        static void                                        LoadExtensionFunctions();
 
         void SetupQueueFamilies() const;
         void CreateLogicalDevice() const;
         void CreateSurface() const;
         void CreateImageFormat() const;
 
-        void InitializeVma() const;
-        static void CreateDeviceInfo(const vk::PhysicalDevice &physicalDevice, PhysicalDevice &deviceInfo);
+        void                                   InitializeVma() const;
+        static void                            CreateDeviceInfo(const vk::PhysicalDevice &physicalDevice, PhysicalDevice &deviceInfo);
         std::vector<vk::DeviceQueueCreateInfo> CreateUniqueDeviceCreateInfos() const;
-        void DestroyDebugUtils() const;
+        void                                   DestroyDebugUtils() const;
     };
 
 } // namespace DenOfIz

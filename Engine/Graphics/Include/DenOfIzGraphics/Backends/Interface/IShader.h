@@ -19,9 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <string>
+#include <wil/com.h>
 #include "IBufferResource.h"
 #include "ITextureResource.h"
-#include <wil/com.h>
 
 #ifdef WIN32
 #define CComPtr Microsoft::WRL::ComPtr
@@ -68,19 +68,19 @@ namespace DenOfIz
 
     struct CompiledShader
     {
-        ShaderStage Stage;
+        ShaderStage            Stage;
         wil::com_ptr<IDxcBlob> Data;
     };
 
     struct VertexInput
     {
-        uint32_t BoundBufferIndex;
-        uint32_t Location;
-        uint32_t Size;
-        uint32_t Offset;
-        uint32_t Stride;
+        uint32_t    BoundBufferIndex;
+        uint32_t    Location;
+        uint32_t    Size;
+        uint32_t    Offset;
+        uint32_t    Stride;
         std::string Name;
-        Format Format;
+        Format      Format;
     };
 
     enum class UniformType
@@ -92,13 +92,13 @@ namespace DenOfIz
     struct ShaderUniformInput
     {
         ShaderStage Stage;
-        uint32_t BoundDescriptorSet;
-        uint32_t Location;
-        uint32_t Binding;
-        uint32_t ArraySize;
-        uint32_t Size;
+        uint32_t    BoundDescriptorSet;
+        uint32_t    Location;
+        uint32_t    Binding;
+        uint32_t    ArraySize;
+        uint32_t    Size;
         UniformType Type;
-        Format Format;
+        Format      Format;
         std::string Name;
     };
 

@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzCore/Common.h>
 #include "IBufferResource.h"
-#include "ITextureResource.h"
 #include "IShader.h"
+#include "ITextureResource.h"
 
 namespace DenOfIz
 {
@@ -36,7 +36,7 @@ namespace DenOfIz
     // Frequency is mapped 1 to 1 with DX12s RootSignature 'RegisterSpace' and Vulkan's 'Set'
     enum class ResourceUpdateFrequency : uint32_t
     {
-        Static = 0,
+        Static  = 0,
         Dynamic = 1,
         PerDraw = 2
     };
@@ -48,9 +48,9 @@ namespace DenOfIz
 
     struct ResourceBinding
     {
-        std::string Name;
-        uint32_t Binding;
-        uint32_t RegisterSpace = 0;
+        std::string                Name;
+        uint32_t                   Binding;
+        uint32_t                   RegisterSpace = 0;
         BitSet<ResourceDescriptor> Descriptor;
 
         // A binding can appear in more than one stage, i.e. both in fragment and vertex shaders.
@@ -62,21 +62,21 @@ namespace DenOfIz
 
     struct RootConstantBinding
     {
-        std::string Name;
-        uint32_t Binding;
-        uint32_t RegisterSpace = 0;
-        int Size;
+        std::string              Name;
+        uint32_t                 Binding;
+        uint32_t                 RegisterSpace = 0;
+        int                      Size;
         std::vector<ShaderStage> Stages;
     };
 
     class IRootSignature
     {
     protected:
-        uint32_t m_resourceCount = 0;
-        std::vector<uint32_t> m_resourceCountPerSet;
-        std::unordered_map<std::string, ResourceBinding> m_resourceBindingMap;
+        uint32_t                                             m_resourceCount = 0;
+        std::vector<uint32_t>                                m_resourceCountPerSet;
+        std::unordered_map<std::string, ResourceBinding>     m_resourceBindingMap;
         std::unordered_map<std::string, RootConstantBinding> m_rootConstantMap;
-        bool m_created = false;
+        bool                                                 m_created = false;
 
     public:
         virtual ~IRootSignature() = default;
@@ -108,8 +108,14 @@ namespace DenOfIz
             CreateInternal();
         }
 
-        inline uint32_t GetResourceCount() const { return m_resourceCount; }
-        inline uint32_t GetResourceCount(uint32_t registerSpace) const { return m_resourceCountPerSet[ static_cast<uint32_t>(registerSpace) ]; }
+        inline uint32_t GetResourceCount() const
+        {
+            return m_resourceCount;
+        }
+        inline uint32_t GetResourceCount(uint32_t registerSpace) const
+        {
+            return m_resourceCountPerSet[ static_cast<uint32_t>(registerSpace) ];
+        }
 
         inline ResourceBinding GetResourceBinding(std::string name) const
         {
@@ -122,14 +128,16 @@ namespace DenOfIz
         }
 
     protected:
-        virtual void AddResourceBindingInternal(const ResourceBinding &binding) = 0;
+        virtual void AddResourceBindingInternal(const ResourceBinding &binding)       = 0;
         virtual void AddRootConstantInternal(const RootConstantBinding &rootConstant) = 0;
 
         virtual void CreateInternal() = 0;
 
     private:
-        inline void ValidateNotCreated() {
-            DZ_ASSERTM(!m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior."); }
+        inline void ValidateNotCreated()
+        {
+            DZ_ASSERTM(!m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior.");
+        }
     };
 
 } // namespace DenOfIz

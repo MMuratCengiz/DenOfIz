@@ -23,205 +23,206 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-template<typename T1, typename T2 = T1>
-struct TreeDataTuple
-{
-	T1 first;
-	T2 second;
-};
+    template <typename T1, typename T2 = T1>
+    struct TreeDataTuple
+    {
+        T1 first;
+        T2 second;
+    };
 
-template<typename T1, typename T2 = T1, typename T3 = T1>
-struct TreeDataTriplet
-{
-	T1 first;
-	T2 second;
-	T3 third;
-};
+    template <typename T1, typename T2 = T1, typename T3 = T1>
+    struct TreeDataTriplet
+    {
+        T1 first;
+        T2 second;
+        T3 third;
+    };
 
-template<typename T, typename IdT = int>
-struct TreeNode;
+    template <typename T, typename IdT = int>
+    struct TreeNode;
 
-template<typename T, typename IdT>
-struct TreeNode
-{
-	IdT id;
-	T data;
-	TreeNode<T, IdT>* parent;
-	std::vector<TreeNode<T, IdT>*> children;
-};
+    template <typename T, typename IdT>
+    struct TreeNode
+    {
+        IdT                             id;
+        T                               data;
+        TreeNode<T, IdT>               *parent;
+        std::vector<TreeNode<T, IdT> *> children;
+    };
 
-template<typename T, typename IdT = int>
-class SimpleTree
-{
-private:
-	typedef TreeNode<T, IdT> TNode;
+    template <typename T, typename IdT = int>
+    class SimpleTree
+    {
+    private:
+        typedef TreeNode<T, IdT> TNode;
 
-	TNode* root;
-	unsigned int totalNodes = 0;
-	IdT largestIndex = 0;
-public:
-	SimpleTree()
-	{
-		root = new TNode{};
-	}
+        TNode       *root;
+        unsigned int totalNodes   = 0;
+        IdT          largestIndex = 0;
 
-	void freeNode(TNode* node)
-	{
-		if (node == nullptr)
-		{
-			return;
-		}
+    public:
+        SimpleTree()
+        {
+            root = new TNode{};
+        }
 
-		for (auto child : node->children)
-		{
-			freeNode(child);
-		}
+        void freeNode(TNode *node)
+        {
+            if ( node == nullptr )
+            {
+                return;
+            }
 
-		delete node;
-		node = nullptr;
-	}
+            for ( auto child : node->children )
+            {
+                freeNode(child);
+            }
 
-	inline TNode* getRoot() const
-	{
-		return root;
-	}
+            delete node;
+            node = nullptr;
+        }
 
-	inline void setRootData(const IdT& id, const T& data)
-	{
-		root->id = id;
-		root->data = data;
-		// Todo maybe be more clear if root is considered a node or not
-		totalNodes++;
+        inline TNode *getRoot() const
+        {
+            return root;
+        }
 
-		largestIndex = std::max(id, largestIndex);
-	}
+        inline void setRootData(const IdT &id, const T &data)
+        {
+            root->id   = id;
+            root->data = data;
+            // Todo maybe be more clear if root is considered a node or not
+            totalNodes++;
 
-	inline void addNode(const IdT& id, const T& data)
-	{
-		auto child = new TNode{};
-		child->id = id;
-		child->data = data;
-		child->parent = root;
+            largestIndex = std::max(id, largestIndex);
+        }
 
-		root->children.push_back(std::move(child));
-		totalNodes++;
-		largestIndex = std::max(id, largestIndex);
-	}
+        inline void addNode(const IdT &id, const T &data)
+        {
+            auto child    = new TNode{};
+            child->id     = id;
+            child->data   = data;
+            child->parent = root;
 
-	inline void addNode(TNode* parent, const IdT& id, const T& data)
-	{
-		auto child = new TNode{};
-		child->id = id;
-		child->data = data;
-		child->parent = parent;
+            root->children.push_back(std::move(child));
+            totalNodes++;
+            largestIndex = std::max(id, largestIndex);
+        }
 
-		parent->children.push_back(std::move(child));
-		totalNodes++;
-		largestIndex = std::max(id, largestIndex);
-	}
+        inline void addNode(TNode *parent, const IdT &id, const T &data)
+        {
+            auto child    = new TNode{};
+            child->id     = id;
+            child->data   = data;
+            child->parent = parent;
 
-	inline TNode* findNode(const IdT& id)
-	{
-		return findNode(root, id);
-	}
+            parent->children.push_back(std::move(child));
+            totalNodes++;
+            largestIndex = std::max(id, largestIndex);
+        }
 
-	inline TNode* findNode(TNode* iter, const IdT& id)
-	{
-		if (iter->id == id)
-		{
-			return iter;
-		}
+        inline TNode *findNode(const IdT &id)
+        {
+            return findNode(root, id);
+        }
 
-		if (iter->children.empty())
-		{
-			return nullptr;
-		}
+        inline TNode *findNode(TNode *iter, const IdT &id)
+        {
+            if ( iter->id == id )
+            {
+                return iter;
+            }
 
-		for (const auto& child : iter->children)
-		{
-			auto* result = findNode(child, id);
+            if ( iter->children.empty() )
+            {
+                return nullptr;
+            }
 
-			if (result != nullptr)
-			{
-				return result;
-			}
-		}
+            for ( const auto &child : iter->children )
+            {
+                auto *result = findNode(child, id);
 
-		return nullptr;
-	}
+                if ( result != nullptr )
+                {
+                    return result;
+                }
+            }
 
-	inline std::vector<TNode*> flattenTree(bool skipRoot = false)
-	{
-		std::vector<TNode*> result;
+            return nullptr;
+        }
 
-		if (!skipRoot)
-		{
-			flattenTree(result, root);
-		}
-		else
-		{
-			for (TNode* child : root->children)
-			{
-				flattenTree(result, child);
-			}
-		}
+        inline std::vector<TNode *> flattenTree(bool skipRoot = false)
+        {
+            std::vector<TNode *> result;
 
-		return result;
-	}
+            if ( !skipRoot )
+            {
+                flattenTree(result, root);
+            }
+            else
+            {
+                for ( TNode *child : root->children )
+                {
+                    flattenTree(result, child);
+                }
+            }
 
-	inline void flattenTree(std::vector<TNode*>& data, TNode* parent)
-	{
-		data.push_back(parent);
+            return result;
+        }
 
-		for (TNode* child : parent->children)
-		{
-			flattenTree(data, child);
-		}
-	}
+        inline void flattenTree(std::vector<TNode *> &data, TNode *parent)
+        {
+            data.push_back(parent);
 
-	inline void moveNodeToParent(const IdT& id, const IdT& parentId)
-	{
-		auto parent = findNode(parentId);
-		auto node = findNode(id);
+            for ( TNode *child : parent->children )
+            {
+                flattenTree(data, child);
+            }
+        }
 
-		if (node->parent != root && node->parent != nullptr)
-		{
-			int i = 0;
+        inline void moveNodeToParent(const IdT &id, const IdT &parentId)
+        {
+            auto parent = findNode(parentId);
+            auto node   = findNode(id);
 
-			for (; i < parent->children.size(); ++i)
-			{
-				if (parent->children[i]->id == id)
-				{
-					break;
-				}
-			}
+            if ( node->parent != root && node->parent != nullptr )
+            {
+                int i = 0;
 
-			parent->children.erase(parent->children.begin() + i);
-		}
+                for ( ; i < parent->children.size(); ++i )
+                {
+                    if ( parent->children[ i ]->id == id )
+                    {
+                        break;
+                    }
+                }
 
-		parent->children.push_back(node);
-		node->parent = parent;
-	}
+                parent->children.erase(parent->children.begin() + i);
+            }
 
-	[[nodiscard]] const unsigned int& size() const
-	{
-		return totalNodes;
-	}
+            parent->children.push_back(node);
+            node->parent = parent;
+        }
 
-	[[nodiscard]] const IdT& getLargestIndex() const
-	{
-		return largestIndex;
-	}
-};
+        [[nodiscard]] const unsigned int &size() const
+        {
+            return totalNodes;
+        }
 
-template<typename T>
-struct TreeDeleter
-{
-	void operator()(T* p)
-	{
-		p->freeNode(p->getRoot());
-		delete p;
-	}
-};
+        [[nodiscard]] const IdT &getLargestIndex() const
+        {
+            return largestIndex;
+        }
+    };
 
-}
+    template <typename T>
+    struct TreeDeleter
+    {
+        void operator()(T *p)
+        {
+            p->freeNode(p->getRoot());
+            delete p;
+        }
+    };
+
+} // namespace DenOfIz

@@ -26,29 +26,35 @@ namespace DenOfIz
     struct CommandGraphDesc
     {
         uint32_t ThreadCount = 1;
-        uint32_t FrameCount = 3;
+        uint32_t FrameCount  = 3;
     };
 
     class CommandGraph
     {
     protected:
-
-        CommandGraphDesc m_desc;
-        std::vector<std::unique_ptr<IFence>> m_frameFences;
+        CommandGraphDesc                           m_desc;
+        std::vector<std::unique_ptr<IFence>>       m_frameFences;
         std::vector<std::unique_ptr<ICommandList>> m_commandLists;
-        int m_frame = -1;// -1 = first frame
-        ILogicalDevice* m_logicalDevice;
+        int                                        m_frame = -1; // -1 = first frame
+        ILogicalDevice                            *m_logicalDevice;
+
     public:
-        CommandGraph(ILogicalDevice *logicalDevice) : m_logicalDevice(logicalDevice) {}
+        CommandGraph(ILogicalDevice *logicalDevice) : m_logicalDevice(logicalDevice)
+        {
+        }
 
         virtual
 
-        void NextFrame()
+            void
+            NextFrame()
         {
             m_frame = (m_frame + 1) % m_desc.FrameCount;
         }
 
-        inline uint32_t GetCurrentFrame() const { return m_frame; }
+        inline uint32_t GetCurrentFrame() const
+        {
+            return m_frame;
+        }
     };
 
 } // namespace DenOfIz

@@ -26,26 +26,26 @@ VulkanInputLayout::VulkanInputLayout(const InputLayoutDesc &inputLayoutDesc)
     for ( const InputGroup &inputGroup : inputLayoutDesc.InputGroups )
     {
         VkVertexInputBindingDescription &bindingDescription = m_bindingDescriptions.emplace_back(VkVertexInputBindingDescription{});
-        bindingDescription.binding = bindingIndex;
-        bindingDescription.inputRate = inputGroup.StepRate == StepRate::PerInstance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+        bindingDescription.binding                          = bindingIndex;
+        bindingDescription.inputRate                        = inputGroup.StepRate == StepRate::PerInstance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
 
         uint32_t offset = 0;
         for ( const InputLayoutElement &inputElement : inputGroup.Elements )
         {
             VkVertexInputAttributeDescription &attributeDescription = m_attributeDescriptions.emplace_back(VkVertexInputAttributeDescription{});
-            attributeDescription.binding = bindingIndex;
-            attributeDescription.location = static_cast<int>(inputElement.Semantic) + inputElement.SemanticIndex; // Is this correct? !CHECK_VK!
-            attributeDescription.format = (VkFormat)VulkanEnumConverter::ConvertImageFormat(inputElement.Format);
-            attributeDescription.offset = offset;
+            attributeDescription.binding                            = bindingIndex;
+            attributeDescription.location                           = static_cast<int>(inputElement.Semantic) + inputElement.SemanticIndex; // Is this correct? !CHECK_VK!
+            attributeDescription.format                             = (VkFormat)VulkanEnumConverter::ConvertImageFormat(inputElement.Format);
+            attributeDescription.offset                             = offset;
             offset += GetImageFormatSize(inputElement.Format);
         }
         bindingDescription.stride = inputGroup.Elements.size() * sizeof(float);
         bindingIndex++;
     }
 
-    m_vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    m_vertexInputState.vertexBindingDescriptionCount = static_cast<uint32_t>(m_bindingDescriptions.size());
-    m_vertexInputState.pVertexBindingDescriptions = m_bindingDescriptions.data();
+    m_vertexInputState.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    m_vertexInputState.vertexBindingDescriptionCount   = static_cast<uint32_t>(m_bindingDescriptions.size());
+    m_vertexInputState.pVertexBindingDescriptions      = m_bindingDescriptions.data();
     m_vertexInputState.vertexAttributeDescriptionCount = static_cast<uint32_t>(m_attributeDescriptions.size());
-    m_vertexInputState.pVertexAttributeDescriptions = m_attributeDescriptions.data();
+    m_vertexInputState.pVertexAttributeDescriptions    = m_attributeDescriptions.data();
 }

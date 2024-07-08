@@ -25,10 +25,10 @@ namespace DenOfIz
     {
         m_window = window;
         GraphicsAPI::SetAPIPreference(APIPreference{
-//            .Windows = APIPreferenceWindows::Vulkan,
+            //            .Windows = APIPreferenceWindows::Vulkan,
         });
 
-        m_logicalDevice = GraphicsAPI::CreateLogicalDevice(m_window);
+        m_logicalDevice  = GraphicsAPI::CreateLogicalDevice(m_window);
         auto firstDevice = m_logicalDevice->ListPhysicalDevices()[ 0 ];
         m_logicalDevice->LoadPhysicalDevice(firstDevice);
         m_batchResourceCopy = std::make_unique<BatchResourceCopy>(m_logicalDevice.get());
@@ -39,10 +39,10 @@ namespace DenOfIz
 
         m_rootSignature = m_logicalDevice->CreateRootSignature(RootSignatureDesc{});
         ResourceBinding timePassedBinding{};
-        timePassedBinding.Name = "time";
-        timePassedBinding.Binding = 0;
+        timePassedBinding.Name       = "time";
+        timePassedBinding.Binding    = 0;
         timePassedBinding.Descriptor = ResourceDescriptor::UniformBuffer;
-        timePassedBinding.Stages = { ShaderStage::Vertex };
+        timePassedBinding.Stages     = { ShaderStage::Vertex };
         m_rootSignature->AddResourceBinding(timePassedBinding);
         m_rootSignature->Create();
 
@@ -55,19 +55,15 @@ namespace DenOfIz
                                                                     .StepRate = StepRate::PerVertex } } });
 
         const GraphicsWindowSurface &surface = m_window->GetSurface();
-        m_swapChain = m_logicalDevice->CreateSwapChain(SwapChainDesc{
-            .Width = surface.Width,
-            .Height = surface.Height,
-            .BufferCount = mc_framesInFlight
-        });
+        m_swapChain = m_logicalDevice->CreateSwapChain(SwapChainDesc{ .Width = surface.Width, .Height = surface.Height, .BufferCount = mc_framesInFlight });
 
         PipelineDesc pipelineDesc{ .ShaderProgram = m_program };
-        pipelineDesc.BlendModes = { BlendMode::None };
+        pipelineDesc.BlendModes    = { BlendMode::None };
         pipelineDesc.RootSignature = m_rootSignature.get();
-        pipelineDesc.InputLayout = m_inputLayout.get();
+        pipelineDesc.InputLayout   = m_inputLayout.get();
         pipelineDesc.Rendering.ColorAttachmentFormats.push_back(m_swapChain->GetPreferredFormat());
 
-        m_pipeline = m_logicalDevice->CreatePipeline(pipelineDesc);
+        m_pipeline        = m_logicalDevice->CreatePipeline(pipelineDesc);
         m_commandListRing = std::make_unique<CommandListRing>(m_logicalDevice.get());
 
         for ( uint32_t i = 0; i < mc_framesInFlight; ++i )
@@ -79,32 +75,32 @@ namespace DenOfIz
 
         TextureDesc textureDesc{};
         textureDesc.Descriptor = ResourceDescriptor::UnorderedAccess;
-        textureDesc.Format = Format::R32G32B32A32Float;
-        textureDesc.Width = 512;
-        textureDesc.Height = 512;
-        textureDesc.MipLevels = log2(std::max(surface.Width, surface.Height)) + 1;
+        textureDesc.Format     = Format::R32G32B32A32Float;
+        textureDesc.Width      = 512;
+        textureDesc.Height     = 512;
+        textureDesc.MipLevels  = log2(std::max(surface.Width, surface.Height)) + 1;
 
         m_computeReadBack = m_logicalDevice->CreateTextureResource("computeReadBack", textureDesc);
 
         BufferDesc bufferDesc{};
-        bufferDesc.HeapType = HeapType::GPU;
+        bufferDesc.HeapType   = HeapType::GPU;
         bufferDesc.Descriptor = ResourceDescriptor::VertexBuffer & ResourceDescriptor::UnorderedAccess;
-        bufferDesc.NumBytes = m_triangle.size() * sizeof(float);
-        m_vertexBuffer = m_logicalDevice->CreateBufferResource("vb", bufferDesc);
+        bufferDesc.NumBytes   = m_triangle.size() * sizeof(float);
+        m_vertexBuffer        = m_logicalDevice->CreateBufferResource("vb", bufferDesc);
 
         m_batchResourceCopy->Begin();
         m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_vertexBuffer.get(), .Data = m_triangle.data(), .NumBytes = bufferDesc.NumBytes });
         m_batchResourceCopy->End(nullptr);
 
-//        m_vertexBuffer->Allocate(m_triangle.data(), m_triangle.size() * sizeof(float));
+        //        m_vertexBuffer->Allocate(m_triangle.data(), m_triangle.size() * sizeof(float));
 
         BufferDesc deltaTimeBufferDesc{};
         deltaTimeBufferDesc.HeapType = HeapType::CPU_GPU;
         deltaTimeBufferDesc.Descriptor |= ResourceDescriptor::UniformBuffer;
-        deltaTimeBufferDesc.NumBytes = sizeof(float);
+        deltaTimeBufferDesc.NumBytes         = sizeof(float);
         deltaTimeBufferDesc.KeepMemoryMapped = true;
 
-        float timePassed = 1.0f;
+        float timePassed   = 1.0f;
         m_timePassedBuffer = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferDesc);
         m_timePassedBuffer->MapMemory();
         m_timePassedBuffer->CopyData(&timePassed, sizeof(float));
@@ -122,8 +118,8 @@ namespace DenOfIz
         m_timePassedBuffer->CopyData(&timePassed, sizeof(float));
         m_time->Tick();
 
-        auto nextCommandList = m_commandListRing->GetNext();
-        uint32_t currentFrame = m_commandListRing->GetCurrentFrame();
+        auto     nextCommandList = m_commandListRing->GetNext();
+        uint32_t currentFrame    = m_commandListRing->GetCurrentFrame();
         m_fences[ currentFrame ]->Wait();
 
         uint32_t nextImage = m_swapChain->AcquireNextImage(m_imageReadySemaphores[ currentFrame ].get());

@@ -23,7 +23,7 @@ using namespace DenOfIz;
 DX12RootSignature::DX12RootSignature(DX12Context *context, const RootSignatureDesc &desc) : m_context(context), m_desc(desc)
 {
     D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
-    m_rootSignatureVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+    m_rootSignatureVersion                        = D3D_ROOT_SIGNATURE_VERSION_1_1;
 
     if ( FAILED(context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))) )
     {
@@ -48,7 +48,7 @@ void DX12RootSignature::AddResourceBindingInternal(const ResourceBinding &bindin
 void DX12RootSignature::AddRootConstantInternal(const RootConstantBinding &rootConstant)
 {
     CD3DX12_ROOT_PARAMETER dxRootConstant = {};
-    dxRootConstant.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+    dxRootConstant.ParameterType          = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
     if ( rootConstant.Stages.size() > 1 || rootConstant.Stages.empty() )
     {
         dxRootConstant.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
@@ -59,7 +59,7 @@ void DX12RootSignature::AddRootConstantInternal(const RootConstantBinding &rootC
     }
     dxRootConstant.Constants.Num32BitValues = rootConstant.Size / sizeof(uint32_t);
     dxRootConstant.Constants.ShaderRegister = rootConstant.Binding;
-    dxRootConstant.Constants.RegisterSpace = rootConstant.RegisterSpace;
+    dxRootConstant.Constants.RegisterSpace  = rootConstant.RegisterSpace;
     m_rootConstants.push_back(dxRootConstant);
 }
 
@@ -101,8 +101,8 @@ void DX12RootSignature::CreateInternal()
     m_rootParameters.push_back(descriptors);
 
     D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc(static_cast<uint32_t>(m_rootParameters.size()), m_rootParameters.data());
-    wil::com_ptr<ID3DBlob> signature;
-    wil::com_ptr<ID3DBlob> error;
+    wil::com_ptr<ID3DBlob>    signature;
+    wil::com_ptr<ID3DBlob>    error;
     rootSignatureDesc.Flags = flags;
     THROW_IF_FAILED(D3D12SerializeRootSignature(&rootSignatureDesc, m_rootSignatureVersion, &signature, &error));
     THROW_IF_FAILED(m_context->D3DDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(m_rootSignature.put())));

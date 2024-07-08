@@ -33,22 +33,22 @@ namespace DenOfIz
     {
 
     protected:
-        uint32_t size;
+        uint32_t    size;
         const void *data;
 
     public:
         virtual void Allocate(std::vector<const void *> data) = 0;
-        virtual void Deallocate() = 0;
+        virtual void Deallocate()                             = 0;
     };
 
     class VulkanCubeMapResource final : ICubeMapResource, private NonCopyable
     {
         VulkanContext *m_context;
-        CubeMapDesc m_desc;
+        CubeMapDesc    m_desc;
 
-        vk::Sampler m_sampler{};
+        vk::Sampler   m_sampler{};
         vk::ImageView m_imageView{};
-        vk::Image m_image;
+        vk::Image     m_image;
         VmaAllocation m_allocation;
 
     public:

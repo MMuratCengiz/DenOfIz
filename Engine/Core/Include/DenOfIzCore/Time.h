@@ -18,27 +18,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "Common.h"
 #include <chrono>
+#include "Common.h"
 
 namespace DenOfIz
 {
 
-class Time
-{
-	int frames;
-	double prev = 0;
-	double deltaTime = 0;
-	double firstTickTime;
-	double lastFrameTick;
+    class Time
+    {
+        int    frames;
+        double prev      = 0;
+        double deltaTime = 0;
+        double firstTickTime;
+        double lastFrameTick;
 
-public:
-	std::function<void(double)> ListenFps;
+    public:
+        std::function<void(double)> ListenFps;
 
-	void Tick();
-	const double GetDeltaTime() const;
-	const double GetFirstTickTime() const;
-	static double DoubleEpochNow();
-};
+        void          Tick();
+        const double  GetDeltaTime() const;
+        const double  GetFirstTickTime() const;
+        static double DoubleEpochNow();
+    };
 
-}
+} // namespace DenOfIz

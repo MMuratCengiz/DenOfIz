@@ -34,12 +34,12 @@ namespace DenOfIz
     {
     private:
         CommandListDesc m_desc;
-        VulkanContext *m_context;
+        VulkanContext  *m_context;
         VulkanPipeline *m_boundPipeline;
 
         vk::CommandBuffer m_commandBuffer;
-        vk::Viewport m_viewport;
-        vk::Rect2D m_scissorRect;
+        vk::Viewport      m_viewport;
+        vk::Rect2D        m_scissorRect;
 
     public:
         VulkanCommandList(VulkanContext *context, CommandListDesc desc);

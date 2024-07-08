@@ -27,11 +27,13 @@ DX12Fence::DX12Fence(DX12Context *context) : m_context(context)
     m_fenceEvent.Attach(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
 }
 
-DX12Fence::~DX12Fence() {}
+DX12Fence::~DX12Fence()
+{
+}
 
 void DX12Fence::Wait()
 {
-    if (!m_submitted)
+    if ( !m_submitted )
     {
         m_submitted = true;
         return;

@@ -31,7 +31,7 @@ namespace DenOfIz
     {
     private:
         std::vector<ID3D12Resource2 *> m_resources;
-        ID3D12RootSignature *m_rootSignature;
+        ID3D12RootSignature           *m_rootSignature;
 
     public:
         DX12DescriptorTable(DX12Context *context, DescriptorTableDesc desc);
@@ -39,8 +39,14 @@ namespace DenOfIz
         void BindImage(ITextureResource *resource) override;
         void BindBuffer(IBufferResource *resource) override;
 
-        const std::vector<ID3D12Resource2 *> &GetResources() const { return m_resources; }
-        ID3D12RootSignature *GetRootSignature() const { return m_rootSignature; }
+        const std::vector<ID3D12Resource2 *> &GetResources() const
+        {
+            return m_resources;
+        }
+        ID3D12RootSignature *GetRootSignature() const
+        {
+            return m_rootSignature;
+        }
     };
 
 } // namespace DenOfIz

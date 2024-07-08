@@ -32,8 +32,8 @@ void VulkanRootSignature::AddResourceBindingInternal(const ResourceBinding &bind
 
     vk::DescriptorSetLayoutBinding layoutBinding{};
 
-    layoutBinding.binding = binding.Binding;
-    layoutBinding.descriptorType = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType(binding.Descriptor);
+    layoutBinding.binding         = binding.Binding;
+    layoutBinding.descriptorType  = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType(binding.Descriptor);
     layoutBinding.descriptorCount = binding.ArraySize;
 
     for ( auto stage : binding.Stages )
@@ -51,7 +51,7 @@ void VulkanRootSignature::AddRootConstantInternal(const RootConstantBinding &roo
     vk::PushConstantRange pushConstantRange{};
 
     pushConstantRange.offset = rootConstantBinding.Binding;
-    pushConstantRange.size = rootConstantBinding.Size;
+    pushConstantRange.size   = rootConstantBinding.Size;
 
     for ( auto stage : rootConstantBinding.Stages )
     {
@@ -66,7 +66,7 @@ void VulkanRootSignature::CreateInternal()
     vk::DescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.setBindings(m_bindings);
     layoutInfo.flags = vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR;
-    m_layouts[ 0 ] = m_context->LogicalDevice.createDescriptorSetLayout(layoutInfo);
+    m_layouts[ 0 ]   = m_context->LogicalDevice.createDescriptorSetLayout(layoutInfo);
 }
 
 VulkanRootSignature::~VulkanRootSignature()

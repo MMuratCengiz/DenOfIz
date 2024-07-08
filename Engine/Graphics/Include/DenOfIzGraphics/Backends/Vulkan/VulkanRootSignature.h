@@ -28,17 +28,20 @@ namespace DenOfIz
     {
     private:
         RootSignatureDesc m_desc;
-        VulkanContext *m_context;
+        VulkanContext    *m_context;
 
-        std::vector<vk::DescriptorSetLayout> m_layouts;
+        std::vector<vk::DescriptorSetLayout>        m_layouts;
         std::vector<vk::DescriptorSetLayoutBinding> m_bindings;
-        std::vector<vk::PushConstantRange> m_pushConstants;
+        std::vector<vk::PushConstantRange>          m_pushConstants;
 
     public:
         VulkanRootSignature(VulkanContext *context, RootSignatureDesc desc);
         ~VulkanRootSignature();
 
-        const std::vector<vk::DescriptorSetLayout> &GetDescriptorSetLayouts() const { return m_layouts; }
+        const std::vector<vk::DescriptorSetLayout> &GetDescriptorSetLayouts() const
+        {
+            return m_layouts;
+        }
 
     protected:
         void AddResourceBindingInternal(const ResourceBinding &binding) override;

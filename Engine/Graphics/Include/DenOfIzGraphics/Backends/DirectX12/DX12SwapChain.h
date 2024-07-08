@@ -29,29 +29,33 @@ namespace DenOfIz
     class DX12SwapChain : public ISwapChain
     {
     private:
-        DX12Context *m_context;
-        SwapChainDesc m_swapChainCreateInfo;
+        DX12Context                  *m_context;
+        SwapChainDesc                 m_swapChainCreateInfo;
         wil::com_ptr<IDXGISwapChain4> m_swapChain;
 
         std::vector<std::unique_ptr<DX12TextureResource>> m_renderTargets;
-        std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_renderTargetCpuHandles;
-        wil::com_ptr<ID3D12Resource> m_depthStencil;
-        D3D12_CPU_DESCRIPTOR_HANDLE m_depthStencilCpuHandle;
+        std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>          m_renderTargetCpuHandles;
+        wil::com_ptr<ID3D12Resource>                      m_depthStencil;
+        D3D12_CPU_DESCRIPTOR_HANDLE                       m_depthStencilCpuHandle;
 
         DXGI_COLOR_SPACE_TYPE m_colorSpace;
-        Viewport m_viewport;
+        Viewport              m_viewport;
+
     public:
         DX12SwapChain(DX12Context *context, const SwapChainDesc &desc);
         ~DX12SwapChain() override;
 
-        IDXGISwapChain4 *GetSwapChain() { return m_swapChain.get(); }
+        IDXGISwapChain4 *GetSwapChain()
+        {
+            return m_swapChain.get();
+        }
 
-        uint32_t AcquireNextImage(ISemaphore *imageAvailableSemaphore) override;
-        Format GetPreferredFormat() override;
+        uint32_t          AcquireNextImage(ISemaphore *imageAvailableSemaphore) override;
+        Format            GetPreferredFormat() override;
         ITextureResource *GetRenderTarget(uint32_t frame) override;
-        Viewport GetViewport() override;
-        void Resize(uint32_t width, uint32_t height) override;
-        void CreateSwapChain();
+        Viewport          GetViewport() override;
+        void              Resize(uint32_t width, uint32_t height) override;
+        void              CreateSwapChain();
 
         void SetColorSpace();
     };

@@ -44,7 +44,9 @@ DX12CommandList::DX12CommandList(DX12Context *context, wil::com_ptr<ID3D12Comman
 #endif
 }
 
-DX12CommandList::~DX12CommandList() {}
+DX12CommandList::~DX12CommandList()
+{
+}
 
 void DX12CommandList::Begin()
 {
@@ -52,7 +54,7 @@ void DX12CommandList::Begin()
     THROW_IF_FAILED(m_commandList->Reset(m_commandAllocator.get(), nullptr));
 
     m_currentRootSignature = nullptr;
-    if ( m_desc.QueueType != QueueType::Copy)
+    if ( m_desc.QueueType != QueueType::Copy )
     {
         m_commandList->SetDescriptorHeaps(m_heaps.size(), m_heaps.data());
     }
@@ -64,7 +66,7 @@ void DX12CommandList::BeginRendering(const RenderingDesc &renderingInfo)
     for ( int i = 0; i < renderingInfo.RTAttachments.size(); i++ )
     {
         DX12TextureResource *pImageResource = reinterpret_cast<DX12TextureResource *>(renderingInfo.RTAttachments[ i ].Resource);
-        renderTargets[ i ] = pImageResource->GetCpuHandle();
+        renderTargets[ i ]                  = pImageResource->GetCpuHandle();
 
         m_commandList->ClearRenderTargetView(renderTargets[ i ], renderingInfo.RTAttachments[ i ].ClearColor.data(), 0, nullptr);
     }
@@ -73,7 +75,9 @@ void DX12CommandList::BeginRendering(const RenderingDesc &renderingInfo)
     m_commandList->OMSetRenderTargets(renderTargets.size(), renderTargets.data(), FALSE, nullptr);
 }
 
-void DX12CommandList::EndRendering() {}
+void DX12CommandList::EndRendering()
+{
+}
 
 void DX12CommandList::Execute(const ExecuteDesc &executeInfo)
 {
@@ -99,7 +103,7 @@ void DX12CommandList::Present(ISwapChain *swapChain, uint32_t imageIndex, std::v
     DZ_NOT_NULL(swapChain);
 
     DX12SwapChain *dx12SwapChain = reinterpret_cast<DX12SwapChain *>(swapChain);
-    uint32_t flags = 0;
+    uint32_t       flags         = 0;
     if ( m_context->SelectedDeviceInfo.Capabilities.Tearing )
     {
         flags |= DXGI_PRESENT_ALLOW_TEARING;
@@ -112,7 +116,7 @@ void DX12CommandList::BindPipeline(IPipeline *pipeline)
     DZ_NOT_NULL(pipeline);
 
     DX12Pipeline *dx12Pipeline = reinterpret_cast<DX12Pipeline *>(pipeline);
-    m_currentRootSignature = dx12Pipeline->GetRootSignature();
+    m_currentRootSignature     = dx12Pipeline->GetRootSignature();
 
     if ( m_desc.QueueType == QueueType::Graphics )
     {
@@ -134,9 +138,9 @@ void DX12CommandList::BindVertexBuffer(IBufferResource *buffer)
     DX12BufferResource *pBuffer = reinterpret_cast<DX12BufferResource *>(buffer);
 
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView = {};
-    vertexBufferView.BufferLocation = pBuffer->GetResource()->GetGPUVirtualAddress();
-    vertexBufferView.StrideInBytes = 8 * sizeof(float); // pBuffer->GetStride();
-    vertexBufferView.SizeInBytes = pBuffer->GetSize();
+    vertexBufferView.BufferLocation           = pBuffer->GetResource()->GetGPUVirtualAddress();
+    vertexBufferView.StrideInBytes            = 8 * sizeof(float); // pBuffer->GetStride();
+    vertexBufferView.SizeInBytes              = pBuffer->GetSize();
 
     m_commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
 }
@@ -148,8 +152,8 @@ void DX12CommandList::BindIndexBuffer(IBufferResource *buffer, const IndexType &
     DX12BufferResource *pBuffer = reinterpret_cast<DX12BufferResource *>(buffer);
 
     D3D12_INDEX_BUFFER_VIEW indexBufferView = {};
-    indexBufferView.BufferLocation = pBuffer->GetResource()->GetGPUVirtualAddress();
-    indexBufferView.SizeInBytes = pBuffer->GetSize();
+    indexBufferView.BufferLocation          = pBuffer->GetResource()->GetGPUVirtualAddress();
+    indexBufferView.SizeInBytes             = pBuffer->GetSize();
     switch ( indexType )
     {
     case IndexType::Uint16:
@@ -180,7 +184,9 @@ void DX12CommandList::BindDescriptorTable(IDescriptorTable *table)
     SetRootSignature(pTable->GetRootSignature());
 }
 
-void DX12CommandList::SetDepthBias(float constantFactor, float clamp, float slopeFactor) { /*Move to pipeline state due to reduces support*/ }
+void DX12CommandList::SetDepthBias(float constantFactor, float clamp, float slopeFactor)
+{ /*Move to pipeline state due to reduces support*/
+}
 
 void DX12CommandList::SetPipelineBarrier(const PipelineBarrier &barrier)
 {
@@ -204,7 +210,10 @@ void DX12CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_
     m_commandList->DrawInstanced(vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
-void DX12CommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) { m_commandList->Dispatch(groupCountX, groupCountY, groupCountZ); }
+void DX12CommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+    m_commandList->Dispatch(groupCountX, groupCountY, groupCountZ);
+}
 
 void DX12CommandList::CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionInfo)
 {
@@ -214,7 +223,8 @@ void DX12CommandList::CopyBufferRegion(const CopyBufferRegionDesc &copyBufferReg
     DX12BufferResource *dstBuffer = reinterpret_cast<DX12BufferResource *>(copyBufferRegionInfo.DstBuffer);
     DX12BufferResource *srcBuffer = reinterpret_cast<DX12BufferResource *>(copyBufferRegionInfo.SrcBuffer);
 
-    m_commandList->CopyBufferRegion(dstBuffer->GetResource(), copyBufferRegionInfo.DstOffset, srcBuffer->GetResource(), copyBufferRegionInfo.SrcOffset, copyBufferRegionInfo.NumBytes);
+    m_commandList->CopyBufferRegion(dstBuffer->GetResource(), copyBufferRegionInfo.DstOffset, srcBuffer->GetResource(), copyBufferRegionInfo.SrcOffset,
+                                    copyBufferRegionInfo.NumBytes);
 }
 
 void DX12CommandList::CopyTextureRegion(const CopyTextureRegionDesc &copyTextureRegionInfo)
@@ -226,22 +236,22 @@ void DX12CommandList::CopyTextureRegion(const CopyTextureRegionDesc &copyTexture
     DX12TextureResource *srcTexture = reinterpret_cast<DX12TextureResource *>(copyTextureRegionInfo.SrcTexture);
 
     D3D12_TEXTURE_COPY_LOCATION dst = {};
-    dst.pResource = dstTexture->GetResource();
-    dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-    dst.SubresourceIndex = copyTextureRegionInfo.DstMipLevel;
+    dst.pResource                   = dstTexture->GetResource();
+    dst.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    dst.SubresourceIndex            = copyTextureRegionInfo.DstMipLevel;
 
     D3D12_TEXTURE_COPY_LOCATION src = {};
-    src.pResource = srcTexture->GetResource();
-    src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-    src.SubresourceIndex = copyTextureRegionInfo.SrcMipLevel;
+    src.pResource                   = srcTexture->GetResource();
+    src.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    src.SubresourceIndex            = copyTextureRegionInfo.SrcMipLevel;
 
     D3D12_BOX box = {};
-    box.left = copyTextureRegionInfo.SrcX;
-    box.top = copyTextureRegionInfo.SrcY;
-    box.front = copyTextureRegionInfo.SrcZ;
-    box.right = copyTextureRegionInfo.SrcX + copyTextureRegionInfo.Width;
-    box.bottom = copyTextureRegionInfo.SrcY + copyTextureRegionInfo.Height;
-    box.back = copyTextureRegionInfo.SrcZ + copyTextureRegionInfo.Depth;
+    box.left      = copyTextureRegionInfo.SrcX;
+    box.top       = copyTextureRegionInfo.SrcY;
+    box.front     = copyTextureRegionInfo.SrcZ;
+    box.right     = copyTextureRegionInfo.SrcX + copyTextureRegionInfo.Width;
+    box.bottom    = copyTextureRegionInfo.SrcY + copyTextureRegionInfo.Height;
+    box.back      = copyTextureRegionInfo.SrcZ + copyTextureRegionInfo.Depth;
 
     m_commandList->CopyTextureRegion(&dst, copyTextureRegionInfo.DstX, copyTextureRegionInfo.DstY, copyTextureRegionInfo.DstZ, &src, &box);
 }
@@ -252,9 +262,9 @@ void DX12CommandList::CompatibilityPipelineBarrier(const PipelineBarrier &barrie
 
     for ( const TextureBarrierInfo &imageBarrier : barrier.GetTextureBarriers() )
     {
-        ID3D12Resource *pResource = reinterpret_cast<DX12TextureResource *>(imageBarrier.Resource)->GetResource();
-        D3D12_RESOURCE_STATES before = DX12EnumConverter::ConvertResourceState(imageBarrier.OldState);
-        D3D12_RESOURCE_STATES after = DX12EnumConverter::ConvertResourceState(imageBarrier.NewState);
+        ID3D12Resource        *pResource       = reinterpret_cast<DX12TextureResource *>(imageBarrier.Resource)->GetResource();
+        D3D12_RESOURCE_STATES  before          = DX12EnumConverter::ConvertResourceState(imageBarrier.OldState);
+        D3D12_RESOURCE_STATES  after           = DX12EnumConverter::ConvertResourceState(imageBarrier.NewState);
         D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(pResource, before, after);
 
         if ( before != after )
@@ -265,9 +275,9 @@ void DX12CommandList::CompatibilityPipelineBarrier(const PipelineBarrier &barrie
 
     for ( const BufferBarrierInfo &bufferBarrier : barrier.GetBufferBarriers() )
     {
-        ID3D12Resource *pResource = reinterpret_cast<DX12TextureResource *>(bufferBarrier.Resource)->GetResource();
-        D3D12_RESOURCE_STATES before = DX12EnumConverter::ConvertResourceState(bufferBarrier.OldState);
-        D3D12_RESOURCE_STATES after = DX12EnumConverter::ConvertResourceState(bufferBarrier.NewState);
+        ID3D12Resource        *pResource       = reinterpret_cast<DX12TextureResource *>(bufferBarrier.Resource)->GetResource();
+        D3D12_RESOURCE_STATES  before          = DX12EnumConverter::ConvertResourceState(bufferBarrier.OldState);
+        D3D12_RESOURCE_STATES  after           = DX12EnumConverter::ConvertResourceState(bufferBarrier.NewState);
         D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(pResource, before, after);
         if ( before != after )
         {
@@ -285,8 +295,8 @@ void DX12CommandList::EnhancedPipelineBarrier(const PipelineBarrier &barrier)
 {
     std::vector<D3D12_BARRIER_GROUP> resourceBarriers;
 
-    std::vector<D3D12_GLOBAL_BARRIER> dxGlobalBarriers = {};
-    std::vector<D3D12_BUFFER_BARRIER> dxBufferBarriers = {};
+    std::vector<D3D12_GLOBAL_BARRIER>  dxGlobalBarriers  = {};
+    std::vector<D3D12_BUFFER_BARRIER>  dxBufferBarriers  = {};
     std::vector<D3D12_TEXTURE_BARRIER> dxTextureBarriers = {};
 
     for ( const TextureBarrierInfo &textureBarrier : barrier.GetTextureBarriers() )
@@ -294,11 +304,11 @@ void DX12CommandList::EnhancedPipelineBarrier(const PipelineBarrier &barrier)
         ID3D12Resource *pResource = reinterpret_cast<DX12TextureResource *>(textureBarrier.Resource)->GetResource();
 
         D3D12_TEXTURE_BARRIER dxTextureBarrier = dxTextureBarriers.emplace_back(D3D12_TEXTURE_BARRIER{});
-        dxTextureBarrier.pResource = pResource;
-        dxTextureBarrier.LayoutBefore = DX12EnumConverter::ConvertResourceStateToBarrierLayout(textureBarrier.OldState, m_desc.QueueType);
-        dxTextureBarrier.LayoutAfter = DX12EnumConverter::ConvertResourceStateToBarrierLayout(textureBarrier.NewState, m_desc.QueueType);
-        dxTextureBarrier.AccessBefore = DX12EnumConverter::ConvertResourceStateToBarrierAccess(textureBarrier.OldState);
-        dxTextureBarrier.AccessAfter = DX12EnumConverter::ConvertResourceStateToBarrierAccess(textureBarrier.NewState);
+        dxTextureBarrier.pResource             = pResource;
+        dxTextureBarrier.LayoutBefore          = DX12EnumConverter::ConvertResourceStateToBarrierLayout(textureBarrier.OldState, m_desc.QueueType);
+        dxTextureBarrier.LayoutAfter           = DX12EnumConverter::ConvertResourceStateToBarrierLayout(textureBarrier.NewState, m_desc.QueueType);
+        dxTextureBarrier.AccessBefore          = DX12EnumConverter::ConvertResourceStateToBarrierAccess(textureBarrier.OldState);
+        dxTextureBarrier.AccessAfter           = DX12EnumConverter::ConvertResourceStateToBarrierAccess(textureBarrier.NewState);
         // Todo dxTextureBarrier.Subresource, dxTextureBarrier.SyncBefore and dxTextureBarrier.SyncAfter
 
         if ( dxTextureBarrier.LayoutAfter != dxTextureBarrier.LayoutBefore || dxTextureBarrier.AccessAfter != dxTextureBarrier.AccessBefore )
@@ -312,11 +322,11 @@ void DX12CommandList::EnhancedPipelineBarrier(const PipelineBarrier &barrier)
         ID3D12Resource *pResource = reinterpret_cast<DX12TextureResource *>(bufferBarrier.Resource)->GetResource();
 
         D3D12_BUFFER_BARRIER dxBufferBarrier = dxBufferBarriers.emplace_back(D3D12_BUFFER_BARRIER{});
-        dxBufferBarrier.pResource = pResource;
-        dxBufferBarrier.AccessBefore = DX12EnumConverter::ConvertResourceStateToBarrierAccess(bufferBarrier.OldState);
-        dxBufferBarrier.AccessAfter = DX12EnumConverter::ConvertResourceStateToBarrierAccess(bufferBarrier.NewState);
-        dxBufferBarrier.Offset = 0;
-        dxBufferBarrier.Size = pResource->GetDesc().Width;
+        dxBufferBarrier.pResource            = pResource;
+        dxBufferBarrier.AccessBefore         = DX12EnumConverter::ConvertResourceStateToBarrierAccess(bufferBarrier.OldState);
+        dxBufferBarrier.AccessAfter          = DX12EnumConverter::ConvertResourceStateToBarrierAccess(bufferBarrier.NewState);
+        dxBufferBarrier.Offset               = 0;
+        dxBufferBarrier.Size                 = pResource->GetDesc().Width;
 
         if ( dxBufferBarrier.AccessAfter != dxBufferBarrier.AccessBefore )
         {
@@ -325,9 +335,9 @@ void DX12CommandList::EnhancedPipelineBarrier(const PipelineBarrier &barrier)
     }
 
     D3D12_BARRIER_GROUP textureBarrierGroup = resourceBarriers.emplace_back(D3D12_BARRIER_GROUP{});
-    textureBarrierGroup.Type = D3D12_BARRIER_TYPE_TEXTURE;
-    textureBarrierGroup.NumBarriers = dxTextureBarriers.size();
-    textureBarrierGroup.pTextureBarriers = dxTextureBarriers.data();
+    textureBarrierGroup.Type                = D3D12_BARRIER_TYPE_TEXTURE;
+    textureBarrierGroup.NumBarriers         = dxTextureBarriers.size();
+    textureBarrierGroup.pTextureBarriers    = dxTextureBarriers.data();
 
     if ( resourceBarriers.size() > 0 )
     {

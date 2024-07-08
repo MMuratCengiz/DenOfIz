@@ -20,7 +20,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanSwapChain::VulkanSwapChain(VulkanContext *context, const SwapChainDesc &desc) : m_context(context), m_desc(desc) { CreateSwapChain(); }
+VulkanSwapChain::VulkanSwapChain(VulkanContext *context, const SwapChainDesc &desc) : m_context(context), m_desc(desc)
+{
+    CreateSwapChain();
+}
 
 void VulkanSwapChain::CreateSwapChain()
 {
@@ -32,34 +35,34 @@ void VulkanSwapChain::CreateSwapChain()
 
     const uint32_t imageCount = std::min(capabilities.maxImageCount, capabilities.minImageCount + 1);
 
-    createInfo.surface = m_context->Surface;
-    createInfo.minImageCount = imageCount;
-    createInfo.imageFormat = VulkanEnumConverter::ConvertImageFormat(m_context->SurfaceImageFormat);
-    createInfo.imageColorSpace = m_context->ColorSpace;
-    createInfo.imageExtent = vk::Extent2D(m_width, m_height);
+    createInfo.surface          = m_context->Surface;
+    createInfo.minImageCount    = imageCount;
+    createInfo.imageFormat      = VulkanEnumConverter::ConvertImageFormat(m_context->SurfaceImageFormat);
+    createInfo.imageColorSpace  = m_context->ColorSpace;
+    createInfo.imageExtent      = vk::Extent2D(m_width, m_height);
     createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
+    createInfo.imageUsage       = vk::ImageUsageFlagBits::eColorAttachment;
 
     const uint32_t qfIndexes[ 2 ] = { m_context->QueueFamilies.at(QueueType::Graphics).Index, m_context->QueueFamilies.at(QueueType::Presentation).Index };
 
     if ( qfIndexes[ 0 ] != qfIndexes[ 1 ] )
     {
-        createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
+        createInfo.imageSharingMode      = vk::SharingMode::eConcurrent;
         createInfo.queueFamilyIndexCount = 2;
-        createInfo.pQueueFamilyIndices = qfIndexes;
+        createInfo.pQueueFamilyIndices   = qfIndexes;
     }
     else
     {
-        createInfo.imageSharingMode = vk::SharingMode::eExclusive;
+        createInfo.imageSharingMode      = vk::SharingMode::eExclusive;
         createInfo.queueFamilyIndexCount = 0;
-        createInfo.pQueueFamilyIndices = nullptr;
+        createInfo.pQueueFamilyIndices   = nullptr;
     }
 
-    createInfo.preTransform = capabilities.currentTransform;
+    createInfo.preTransform   = capabilities.currentTransform;
     createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-    createInfo.presentMode = m_context->PresentMode;
-    createInfo.clipped = VK_TRUE;
-    createInfo.oldSwapchain = m_swapChain;
+    createInfo.presentMode    = m_context->PresentMode;
+    createInfo.clipped        = VK_TRUE;
+    createInfo.oldSwapchain   = m_swapChain;
 
     m_swapChain = m_context->LogicalDevice.createSwapchainKHR(createInfo);
     CreateSwapChainImages(VulkanEnumConverter::ConvertImageFormat(m_context->SurfaceImageFormat));
@@ -83,38 +86,38 @@ void VulkanSwapChain::ChooseExtent2D(const vk::SurfaceCapabilitiesKHR &capabilit
 {
     if ( m_desc.Width != 0 || m_desc.Height != 0 )
     {
-        m_width = m_desc.Width;
+        m_width  = m_desc.Width;
         m_height = m_desc.Height;
         return;
     }
 
     if ( capabilities.currentExtent.width != UINT32_MAX )
     {
-        m_width = capabilities.currentExtent.width;
+        m_width  = capabilities.currentExtent.width;
         m_height = capabilities.currentExtent.height;
         return;
     }
 
     const GraphicsWindowSurface surface = m_context->Window->GetSurface();
-    m_width = std::clamp(static_cast<uint32_t>(surface.Width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-    m_height = std::clamp(static_cast<uint32_t>(surface.Height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+    m_width                             = std::clamp(static_cast<uint32_t>(surface.Width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+    m_height                            = std::clamp(static_cast<uint32_t>(surface.Height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 }
 
 void VulkanSwapChain::CreateImageView(vk::ImageView &imageView, const vk::Image &image, const vk::Format &format, const vk::ImageAspectFlags &aspectFlags) const
 {
     vk::ImageViewCreateInfo imageViewCreateInfo{};
-    imageViewCreateInfo.image = image;
-    imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
-    imageViewCreateInfo.format = format;
-    imageViewCreateInfo.components.r = vk::ComponentSwizzle::eIdentity;
-    imageViewCreateInfo.components.g = vk::ComponentSwizzle::eIdentity;
-    imageViewCreateInfo.components.b = vk::ComponentSwizzle::eIdentity;
-    imageViewCreateInfo.components.a = vk::ComponentSwizzle::eIdentity;
-    imageViewCreateInfo.subresourceRange.aspectMask = aspectFlags;
-    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-    imageViewCreateInfo.subresourceRange.levelCount = 1;
+    imageViewCreateInfo.image                           = image;
+    imageViewCreateInfo.viewType                        = vk::ImageViewType::e2D;
+    imageViewCreateInfo.format                          = format;
+    imageViewCreateInfo.components.r                    = vk::ComponentSwizzle::eIdentity;
+    imageViewCreateInfo.components.g                    = vk::ComponentSwizzle::eIdentity;
+    imageViewCreateInfo.components.b                    = vk::ComponentSwizzle::eIdentity;
+    imageViewCreateInfo.components.a                    = vk::ComponentSwizzle::eIdentity;
+    imageViewCreateInfo.subresourceRange.aspectMask     = aspectFlags;
+    imageViewCreateInfo.subresourceRange.baseMipLevel   = 0;
+    imageViewCreateInfo.subresourceRange.levelCount     = 1;
     imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-    imageViewCreateInfo.subresourceRange.layerCount = 1;
+    imageViewCreateInfo.subresourceRange.layerCount     = 1;
 
     imageView = m_context->LogicalDevice.createImageView(imageViewCreateInfo);
 }
@@ -130,7 +133,7 @@ void VulkanSwapChain::Dispose() const
 uint32_t VulkanSwapChain::AcquireNextImage(ISemaphore *imageReadySemaphore)
 {
     VulkanSemaphore *semaphore = dynamic_cast<VulkanSemaphore *>(imageReadySemaphore);
-    auto image = m_context->LogicalDevice.acquireNextImageKHR(m_swapChain, UINT64_MAX, semaphore->GetSemaphore(), nullptr);
+    auto             image     = m_context->LogicalDevice.acquireNextImageKHR(m_swapChain, UINT64_MAX, semaphore->GetSemaphore(), nullptr);
     if ( image.result == vk::Result::eErrorOutOfDateKHR )
     {
         throw std::runtime_error("failed to acquire swap chain image!");
@@ -164,4 +167,6 @@ Format VulkanSwapChain::GetPreferredFormat()
     }
 }
 
-void VulkanSwapChain::Resize(uint32_t width, uint32_t height) {}
+void VulkanSwapChain::Resize(uint32_t width, uint32_t height)
+{
+}

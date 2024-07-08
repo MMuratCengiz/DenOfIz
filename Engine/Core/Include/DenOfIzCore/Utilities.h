@@ -23,19 +23,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-class Utilities
-{
-	Utilities() = default;
+    class Utilities
+    {
+        Utilities() = default;
 
-public:
-	static std::string ReadFile(const std::string& filename);
+    public:
+        static std::string ReadFile(const std::string &filename);
 
-	static std::string GetFileDirectory(const std::string& file, bool includeFinalSep = true);
+        static std::string GetFileDirectory(const std::string &file, bool includeFinalSep = true);
 
-	static std::string GetFilename(const std::string& file);
+        static std::string GetFilename(const std::string &file);
 
-	static std::string CombineDirectories(const std::string& directory, const std::string& file);
+        static std::string CombineDirectories(const std::string &directory, const std::string &file);
+    };
 
-};
-
-}
+} // namespace DenOfIz

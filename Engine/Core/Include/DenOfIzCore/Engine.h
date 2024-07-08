@@ -19,31 +19,30 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 // Init OS specific common includes, to make sure they are loaded first
-#include "Common_Windows.h"
 #include "Common_Apple.h"
+#include "Common_Windows.h"
 
 #include "glog/logging.h"
 
 namespace DenOfIz
 {
-        class Engine
+    class Engine
     {
-        public:
-            static void Init()
-            {
-                FLAGS_alsologtostderr = true;
-                FLAGS_colorlogtostdout = true;
-                google::LogAtLevel(google::GLOG_INFO, "DenOfIz.log");
-                google::InitGoogleLogging("DenOfIz");
-                google::SetLogDestination(google::GLOG_INFO, "DenOfIz.log");
-                google::SetLogDestination(google::GLOG_WARNING, "DenOfIz.log");
-                google::SetLogDestination(google::GLOG_ERROR, "DenOfIz.log");
-                google::SetLogDestination(google::GLOG_FATAL, "DenOfIz.log");
-            }
+    public:
+        static void Init()
+        {
+            FLAGS_alsologtostderr  = true;
+            FLAGS_colorlogtostdout = true;
+            google::LogAtLevel(google::GLOG_INFO, "DenOfIz.log");
+            google::InitGoogleLogging("DenOfIz");
+            google::SetLogDestination(google::GLOG_INFO, "DenOfIz.log");
+            google::SetLogDestination(google::GLOG_WARNING, "DenOfIz.log");
+            google::SetLogDestination(google::GLOG_ERROR, "DenOfIz.log");
+            google::SetLogDestination(google::GLOG_FATAL, "DenOfIz.log");
+        }
 
-            static void Shutdown()
-            {
-
-            }
-        };
-}
+        static void Shutdown()
+        {
+        }
+    };
+} // namespace DenOfIz

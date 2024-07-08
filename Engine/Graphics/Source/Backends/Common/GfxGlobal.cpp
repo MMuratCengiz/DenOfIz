@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 
 std::unique_ptr<GfxGlobal> GfxGlobal::s_instance;
-std::mutex GfxGlobal::s_mutex;
+std::mutex                 GfxGlobal::s_mutex;
 
 GfxGlobal *GfxGlobal::GetInstance()
 {

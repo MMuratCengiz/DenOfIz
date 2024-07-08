@@ -32,7 +32,7 @@ void VulkanDescriptorTable::BindImage(ITextureResource *resource)
     VulkanTextureResource *vulkanResource = static_cast<VulkanTextureResource *>(resource);
 
     vk::WriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor(resource->Name);
-    writeDescriptorSet.pImageInfo = &vulkanResource->DescriptorInfo;
+    writeDescriptorSet.pImageInfo              = &vulkanResource->DescriptorInfo;
 }
 
 void VulkanDescriptorTable::BindBuffer(IBufferResource *resource)
@@ -40,7 +40,7 @@ void VulkanDescriptorTable::BindBuffer(IBufferResource *resource)
     VulkanBufferResource *vulkanResource = static_cast<VulkanBufferResource *>(resource);
 
     vk::WriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor(resource->Name);
-    writeDescriptorSet.pBufferInfo = &vulkanResource->DescriptorInfo;
+    writeDescriptorSet.pBufferInfo             = &vulkanResource->DescriptorInfo;
 }
 
 vk::WriteDescriptorSet &VulkanDescriptorTable::CreateWriteDescriptor(std::string &name)
@@ -48,9 +48,9 @@ vk::WriteDescriptorSet &VulkanDescriptorTable::CreateWriteDescriptor(std::string
     ResourceBinding resourceBinding = m_rootSignature->GetResourceBinding(name);
 
     vk::WriteDescriptorSet &writeDescriptorSet = m_writeDescriptorSets.emplace_back();
-    writeDescriptorSet.dstSet = nullptr;
-    writeDescriptorSet.dstBinding = resourceBinding.Binding;
-    writeDescriptorSet.descriptorType = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType(resourceBinding.Descriptor);
-    writeDescriptorSet.descriptorCount = resourceBinding.ArraySize;
+    writeDescriptorSet.dstSet                  = nullptr;
+    writeDescriptorSet.dstBinding              = resourceBinding.Binding;
+    writeDescriptorSet.descriptorType          = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType(resourceBinding.Descriptor);
+    writeDescriptorSet.descriptorCount         = resourceBinding.ArraySize;
     return writeDescriptorSet;
 }

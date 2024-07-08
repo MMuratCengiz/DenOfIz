@@ -99,9 +99,9 @@ namespace DenOfIz
         {
 #ifdef WINDOW_MANAGER_SDL
             GraphicsWindowSurface result;
-            SDL_Surface *surface = SDL_GetWindowSurface(m_sdlWindow);
-            result.Width = surface->w;
-            result.Height = surface->h;
+            SDL_Surface          *surface = SDL_GetWindowSurface(m_sdlWindow);
+            result.Width                  = surface->w;
+            result.Height                 = surface->h;
             return result;
 #else
 #error "Not implemented yet"

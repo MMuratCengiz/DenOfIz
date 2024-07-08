@@ -19,15 +19,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "IBufferResource.h"
-#include "ITextureResource.h"
 #include "IRootSignature.h"
+#include "ITextureResource.h"
 
 namespace DenOfIz
 {
 
     struct DescriptorTableDesc
     {
-        IRootSignature *RootSignature;
+        IRootSignature         *RootSignature;
         ResourceUpdateFrequency Frequency;
     };
 

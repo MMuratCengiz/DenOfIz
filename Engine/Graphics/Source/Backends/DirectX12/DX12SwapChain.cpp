@@ -23,7 +23,7 @@ using namespace Microsoft::WRL;
 
 DX12SwapChain::DX12SwapChain(DX12Context *context, const SwapChainDesc &desc) : m_context(context), m_swapChainCreateInfo(desc)
 {
-    m_swapChainCreateInfo.Width = std::max(1u, m_swapChainCreateInfo.Width);
+    m_swapChainCreateInfo.Width  = std::max(1u, m_swapChainCreateInfo.Width);
     m_swapChainCreateInfo.Height = std::max(1u, m_swapChainCreateInfo.Height);
     CreateSwapChain();
 }
@@ -39,20 +39,20 @@ void DX12SwapChain::CreateSwapChain()
     HWND hwnd = m_context->Window->GetNativeHandle();
 
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-    swapChainDesc.Width = m_swapChainCreateInfo.Width;
-    swapChainDesc.Height = m_swapChainCreateInfo.Height;
-    swapChainDesc.Format = DX12EnumConverter::ConvertFormat(m_swapChainCreateInfo.BackBufferFormat);
-    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapChainDesc.BufferCount = m_context->BackBufferCount;
-    swapChainDesc.SampleDesc.Count = 1;
-    swapChainDesc.SampleDesc.Quality = 0;
-    swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
-    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-    swapChainDesc.Flags = (m_context->SelectedDeviceInfo.Capabilities.Tearing) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u;
+    swapChainDesc.Width                 = m_swapChainCreateInfo.Width;
+    swapChainDesc.Height                = m_swapChainCreateInfo.Height;
+    swapChainDesc.Format                = DX12EnumConverter::ConvertFormat(m_swapChainCreateInfo.BackBufferFormat);
+    swapChainDesc.BufferUsage           = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.BufferCount           = m_context->BackBufferCount;
+    swapChainDesc.SampleDesc.Count      = 1;
+    swapChainDesc.SampleDesc.Quality    = 0;
+    swapChainDesc.Scaling               = DXGI_SCALING_STRETCH;
+    swapChainDesc.SwapEffect            = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+    swapChainDesc.AlphaMode             = DXGI_ALPHA_MODE_IGNORE;
+    swapChainDesc.Flags                 = (m_context->SelectedDeviceInfo.Capabilities.Tearing) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u;
 
     DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsSwapChainDesc = {};
-    fsSwapChainDesc.Windowed = TRUE;
+    fsSwapChainDesc.Windowed                        = TRUE;
 
     // Create a swap chain for the window.
     wil::com_ptr<IDXGISwapChain1> swapChain;
@@ -71,35 +71,35 @@ void DX12SwapChain::CreateSwapChain()
         THROW_IF_FAILED(m_swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer)));
 
         D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-        rtvDesc.Format = swapChainDesc.Format;
-        rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+        rtvDesc.Format                        = swapChainDesc.Format;
+        rtvDesc.ViewDimension                 = D3D12_RTV_DIMENSION_TEXTURE2D;
 
         m_renderTargetCpuHandles[ i ] = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_RTV ]->GetNextCPUHandleOffset(1);
-        m_renderTargets[ i ] = std::make_unique<DX12TextureResource>(buffer.get(), m_renderTargetCpuHandles[ i ]);
+        m_renderTargets[ i ]          = std::make_unique<DX12TextureResource>(buffer.get(), m_renderTargetCpuHandles[ i ]);
         m_context->D3DDevice->CreateRenderTargetView(m_renderTargets[ i ]->GetResource(), &rtvDesc, m_renderTargetCpuHandles[ i ]);
     }
 
     SetColorSpace();
     CD3DX12_HEAP_PROPERTIES depthHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
 
-    DXGI_FORMAT depthBufferFormat = DX12EnumConverter::ConvertFormat(m_swapChainCreateInfo.DepthBufferFormat);
-    D3D12_RESOURCE_DESC depthStencilDesc = CD3DX12_RESOURCE_DESC::Tex2D(depthBufferFormat, m_swapChainCreateInfo.Width, m_swapChainCreateInfo.Height,
-                                                                        1, // This depth stencil view has only one texture.
-                                                                        1 // Use a single mipmap level.
-    );
+    DXGI_FORMAT         depthBufferFormat = DX12EnumConverter::ConvertFormat(m_swapChainCreateInfo.DepthBufferFormat);
+    D3D12_RESOURCE_DESC depthStencilDesc  = CD3DX12_RESOURCE_DESC::Tex2D(depthBufferFormat, m_swapChainCreateInfo.Width, m_swapChainCreateInfo.Height,
+                                                                         1, // This depth stencil view has only one texture.
+                                                                         1  // Use a single mipmap level.
+     );
     depthStencilDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
-    D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-    depthOptimizedClearValue.Format = depthBufferFormat;
-    depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+    D3D12_CLEAR_VALUE depthOptimizedClearValue    = {};
+    depthOptimizedClearValue.Format               = depthBufferFormat;
+    depthOptimizedClearValue.DepthStencil.Depth   = 1.0f;
     depthOptimizedClearValue.DepthStencil.Stencil = 0;
 
     THROW_IF_FAILED(m_context->D3DDevice->CreateCommittedResource(&depthHeapProperties, D3D12_HEAP_FLAG_NONE, &depthStencilDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE,
                                                                   &depthOptimizedClearValue, IID_PPV_ARGS(m_depthStencil.put())));
 
     D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-    dsvDesc.Format = depthBufferFormat;
-    dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+    dsvDesc.Format                        = depthBufferFormat;
+    dsvDesc.ViewDimension                 = D3D12_DSV_DIMENSION_TEXTURE2D;
 
     m_depthStencilCpuHandle = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_DSV ]->GetNextCPUHandleOffset(1);
     m_context->D3DDevice->CreateDepthStencilView(m_depthStencil.get(), &dsvDesc, m_depthStencilCpuHandle);
@@ -107,7 +107,7 @@ void DX12SwapChain::CreateSwapChain()
 
 void DX12SwapChain::SetColorSpace()
 {
-    m_colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+    m_colorSpace        = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
     bool isDisplayHDR10 = false;
 
 #if defined(NTDDI_WIN10_RS2)
@@ -163,7 +163,7 @@ uint32_t DX12SwapChain::AcquireNextImage(ISemaphore *imageAvailableSemaphore)
 
 void DX12SwapChain::Resize(uint32_t width, uint32_t height)
 {
-    m_swapChainCreateInfo.Width = width;
+    m_swapChainCreateInfo.Width  = width;
     m_swapChainCreateInfo.Height = height;
 
     HRESULT hr = m_swapChain->ResizeBuffers(m_swapChainCreateInfo.BufferCount, width, height, DX12EnumConverter::ConvertFormat(m_swapChainCreateInfo.BackBufferFormat),
@@ -171,8 +171,7 @@ void DX12SwapChain::Resize(uint32_t width, uint32_t height)
 
     if ( hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET )
     {
-        DLOG(INFO) <<
-            std::format("Device Lost on ResizeBuffers: Reason code 0x{}" , ((hr == DXGI_ERROR_DEVICE_REMOVED) ? m_context->D3DDevice->GetDeviceRemovedReason() : hr));
+        DLOG(INFO) << std::format("Device Lost on ResizeBuffers: Reason code 0x{}", ((hr == DXGI_ERROR_DEVICE_REMOVED) ? m_context->D3DDevice->GetDeviceRemovedReason() : hr));
 
         m_context->IsDeviceLost = true;
         return;
@@ -183,7 +182,7 @@ void DX12SwapChain::Resize(uint32_t width, uint32_t height)
 
 Viewport DX12SwapChain::GetViewport()
 {
-    return Viewport {
+    return Viewport{
         0.0f,
         0.0f,
         static_cast<float>(m_swapChainCreateInfo.Width),
@@ -191,9 +190,15 @@ Viewport DX12SwapChain::GetViewport()
     };
 }
 
-ITextureResource *DX12SwapChain::GetRenderTarget(uint32_t frame) { return m_renderTargets[ frame ].get(); }
+ITextureResource *DX12SwapChain::GetRenderTarget(uint32_t frame)
+{
+    return m_renderTargets[ frame ].get();
+}
 
-Format DX12SwapChain::GetPreferredFormat() { return Format::R8Unorm; }
+Format DX12SwapChain::GetPreferredFormat()
+{
+    return Format::R8Unorm;
+}
 
 DX12SwapChain::~DX12SwapChain()
 {

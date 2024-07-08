@@ -29,12 +29,15 @@ namespace DenOfIz
     {
     private:
         std::vector<D3D12_INPUT_ELEMENT_DESC> m_inputElements;
-        D3D12_INPUT_LAYOUT_DESC m_inputLayout;
+        D3D12_INPUT_LAYOUT_DESC               m_inputLayout;
 
     public:
         DX12InputLayout(const InputLayoutDesc &desc);
 
-        inline const D3D12_INPUT_LAYOUT_DESC &GetInputLayout() const { return m_inputLayout; }
+        inline const D3D12_INPUT_LAYOUT_DESC &GetInputLayout() const
+        {
+            return m_inputLayout;
+        }
 
         ~DX12InputLayout() override;
     };

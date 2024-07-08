@@ -44,27 +44,36 @@ namespace DenOfIz
     struct APIPreference
     {
         APIPreferenceWindows Windows = APIPreferenceWindows::DirectX12;
-        APIPreferenceOSX OSX = APIPreferenceOSX::Metal;
-        APIPreferenceLinux Linux = APIPreferenceLinux::Vulkan;
+        APIPreferenceOSX     OSX     = APIPreferenceOSX::Metal;
+        APIPreferenceLinux   Linux   = APIPreferenceLinux::Vulkan;
     };
 
     class GfxGlobal
     {
     private:
         static std::unique_ptr<GfxGlobal> s_instance;
-        static std::mutex s_mutex;
-        ShaderCompiler m_shaderCompiler;
-        APIPreference m_apiPreference;
+        static std::mutex                 s_mutex;
+        ShaderCompiler                    m_shaderCompiler;
+        APIPreference                     m_apiPreference;
 
     public:
         static GfxGlobal *GetInstance();
-        static void Destroy();
+        static void       Destroy();
 
-        const ShaderCompiler &GetShaderCompiler() const { return m_shaderCompiler; }
+        const ShaderCompiler &GetShaderCompiler() const
+        {
+            return m_shaderCompiler;
+        }
 
-        void SetAPIPreference(APIPreference preference) { m_apiPreference = preference; }
+        void SetAPIPreference(APIPreference preference)
+        {
+            m_apiPreference = preference;
+        }
 
-        const APIPreference &GetAPIPreference() const { return m_apiPreference; }
+        const APIPreference &GetAPIPreference() const
+        {
+            return m_apiPreference;
+        }
     };
 
 } // namespace DenOfIz

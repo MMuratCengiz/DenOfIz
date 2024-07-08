@@ -46,7 +46,7 @@ namespace DenOfIz
     {
         Semantic Semantic;
         uint32_t SemanticIndex;
-        Format Format;
+        Format   Format;
     };
 
     /**
@@ -55,7 +55,7 @@ namespace DenOfIz
     struct InputGroup
     {
         std::vector<InputLayoutElement> Elements;
-        StepRate StepRate;
+        StepRate                        StepRate;
     };
 
     /**

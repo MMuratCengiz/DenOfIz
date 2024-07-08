@@ -28,7 +28,7 @@ namespace DenOfIz
     {
     private:
         VulkanContext *m_context;
-        vk::Semaphore m_semaphore;
+        vk::Semaphore  m_semaphore;
 
     public:
         VulkanSemaphore(VulkanContext *context);
@@ -36,7 +36,10 @@ namespace DenOfIz
         void Wait() override;
         void Notify() override;
 
-        vk::Semaphore GetSemaphore() const { return m_semaphore; }
+        vk::Semaphore GetSemaphore() const
+        {
+            return m_semaphore;
+        }
     };
 
 } // namespace DenOfIz

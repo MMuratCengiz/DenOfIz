@@ -22,10 +22,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #endif
-#include <vulkan/vulkan.hpp>
 #include <DenOfIzCore/Common.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 #include <unordered_map>
+#include <vulkan/vulkan.hpp>
 #include "../Common/ShaderCompiler.h"
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "vma/vk_mem_alloc.h"
@@ -35,7 +35,7 @@ namespace DenOfIz
 
     struct QueueFamily
     {
-        uint32_t Index;
+        uint32_t                Index;
         VkQueueFamilyProperties Properties;
     };
 
@@ -43,34 +43,34 @@ namespace DenOfIz
     {
         PhysicalDevice SelectedDeviceInfo;
 
-        vk::Instance Instance;
+        vk::Instance       Instance;
         vk::PhysicalDevice GPU;
-        vk::Device LogicalDevice;
-        VmaAllocator Vma;
-        Format SurfaceImageFormat;
-        vk::ColorSpaceKHR ColorSpace;
+        vk::Device         LogicalDevice;
+        VmaAllocator       Vma;
+        Format             SurfaceImageFormat;
+        vk::ColorSpaceKHR  ColorSpace;
         vk::PresentModeKHR PresentMode;
 
-        vk::SurfaceKHR Surface;
-        vk::SwapchainKHR SwapChain;
-        std::vector<vk::Image> SwapChainImages;
+        vk::SurfaceKHR             Surface;
+        vk::SwapchainKHR           SwapChain;
+        std::vector<vk::Image>     SwapChainImages;
         std::vector<vk::ImageView> SwapChainImageViews;
-        vk::Image DepthImage;
+        vk::Image                  DepthImage;
 
-        vk::CommandPool TransferQueueCommandPool;
-        vk::CommandPool GraphicsQueueCommandPool;
-        vk::CommandPool ComputeQueueCommandPool;
+        vk::CommandPool    TransferQueueCommandPool;
+        vk::CommandPool    GraphicsQueueCommandPool;
+        vk::CommandPool    ComputeQueueCommandPool;
         vk::DescriptorPool DescriptorPool;
 
         vk::Extent2D SurfaceExtent{};
 
-        GraphicsWindowHandle *Window;
+        GraphicsWindowHandle                      *Window;
         std::unordered_map<QueueType, QueueFamily> QueueFamilies;
-        std::unordered_map<QueueType, vk::Queue> Queues;
+        std::unordered_map<QueueType, vk::Queue>   Queues;
 
         // Todo move to generic RenderContext when created.
         ShaderCompiler ShaderCompiler;
-        bool IsDeviceLost = false;
+        bool           IsDeviceLost = false;
     };
 
 } // namespace DenOfIz

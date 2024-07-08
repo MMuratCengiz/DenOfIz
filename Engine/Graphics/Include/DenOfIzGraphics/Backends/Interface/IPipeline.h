@@ -19,22 +19,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
-#include "IInputLayout.h"
 #include "IBufferResource.h"
-#include "ITextureResource.h"
+#include "IInputLayout.h"
 #include "IRootSignature.h"
 #include "IShader.h"
+#include "ITextureResource.h"
 
 namespace DenOfIz
 {
 
     struct StencilTestState
     {
-        bool enabled = false;
+        bool      enabled = false;
         CompareOp compareOp;
-        uint32_t compareMask;
-        uint32_t writeMask;
-        uint32_t ref;
+        uint32_t  compareMask;
+        uint32_t  writeMask;
+        uint32_t  ref;
 
         StencilOp failOp;
         StencilOp passOp;
@@ -76,53 +76,53 @@ namespace DenOfIz
         uint32_t ViewMask = 0;
 
         std::vector<Format> ColorAttachmentFormats;
-        Format DepthAttachmentFormat;
-        Format StencilAttachmentFormat;
+        Format              DepthAttachmentFormat;
+        Format              StencilAttachmentFormat;
     };
 
     struct DepthTest
     {
-        bool Enable = true;
+        bool      Enable    = true;
         CompareOp CompareOp = CompareOp::Always;
-        bool Write;
+        bool      Write;
     };
 
     struct StencilFace
     {
-        CompareOp CompareOp = CompareOp::Always;
-        StencilOp FailOp = StencilOp::Keep;
-        StencilOp PassOp = StencilOp::Keep;
+        CompareOp CompareOp   = CompareOp::Always;
+        StencilOp FailOp      = StencilOp::Keep;
+        StencilOp PassOp      = StencilOp::Keep;
         StencilOp DepthFailOp = StencilOp::Keep;
     };
 
     struct StencilTest
     {
-        bool Enable = false;
-        uint32_t WriteMask = 0;
-        uint32_t ReadMask = 0;
+        bool        Enable    = false;
+        uint32_t    WriteMask = 0;
+        uint32_t    ReadMask  = 0;
         StencilFace FrontFace;
         StencilFace BackFace;
     };
 
     struct PipelineDesc
     {
-        IInputLayout *InputLayout = nullptr;
-        IRootSignature *RootSignature = nullptr;
+        IInputLayout     *InputLayout       = nullptr;
+        IRootSignature   *RootSignature     = nullptr;
         PrimitiveTopology PrimitiveTopology = PrimitiveTopology::Triangle;
 
-        CullMode CullMode = CullMode::None;
+        CullMode  CullMode  = CullMode::None;
         BindPoint BindPoint = BindPoint::Graphics;
 
-        DepthTest DepthTest;
+        DepthTest   DepthTest;
         StencilTest StencilTest;
 
         ShaderProgram ShaderProgram;
-        bool InterleavedMode = true;
+        bool          InterleavedMode = true;
 
         std::vector<BlendMode> BlendModes;
 
         PipelineRendering Rendering;
-        MSAASampleCount MSAASampleCount = MSAASampleCount::_0; // 0 Disables MSAA
+        MSAASampleCount   MSAASampleCount = MSAASampleCount::_0; // 0 Disables MSAA
     };
 
     class IPipeline

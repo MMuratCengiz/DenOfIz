@@ -28,14 +28,17 @@ namespace DenOfIz
     {
     private:
         VulkanContext *m_context;
-        vk::Fence m_fence;
+        vk::Fence      m_fence;
 
     public:
         VulkanFence(VulkanContext *context);
         ~VulkanFence();
-        void Wait() override;
-        void Reset() override;
-        inline VkFence GetFence() const { return m_fence; }
+        void           Wait() override;
+        void           Reset() override;
+        inline VkFence GetFence() const
+        {
+            return m_fence;
+        }
     };
 
 } // namespace DenOfIz

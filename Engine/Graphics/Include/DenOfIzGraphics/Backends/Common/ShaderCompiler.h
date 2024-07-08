@@ -27,7 +27,7 @@ namespace DenOfIz
     {
         std::string EntryPoint = "main";
         ShaderStage Stage;
-        TargetIL TargetIL;
+        TargetIL    TargetIL;
 
         std::vector<std::string> Defines;
     };
@@ -35,21 +35,21 @@ namespace DenOfIz
     class ShaderCompiler
     {
     private:
-        wil::com_ptr<IDxcLibrary> m_dxcLibrary;
+        wil::com_ptr<IDxcLibrary>   m_dxcLibrary;
         wil::com_ptr<IDxcCompiler3> m_dxcCompiler;
-        wil::com_ptr<IDxcUtils> m_dxcUtils;
+        wil::com_ptr<IDxcUtils>     m_dxcUtils;
 
 #if defined(__APPLE__)
         IRCompiler *mp_compiler;
 #endif
 
     public:
-        bool Init();
-        void Destroy();
-        void InitResources(TBuiltInResource &Resources) const;
-        EShLanguage FindLanguage(ShaderStage shaderType) const;
+        bool                   Init();
+        void                   Destroy();
+        void                   InitResources(TBuiltInResource &Resources) const;
+        EShLanguage            FindLanguage(ShaderStage shaderType) const;
         wil::com_ptr<IDxcBlob> CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const;
-        std::vector<uint32_t> CompileGLSL(const std::string &filename, const CompileOptions &compileOptions) const;
+        std::vector<uint32_t>  CompileGLSL(const std::string &filename, const CompileOptions &compileOptions) const;
     };
 
 } // namespace DenOfIz

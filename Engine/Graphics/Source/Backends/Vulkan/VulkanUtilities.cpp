@@ -23,13 +23,13 @@ void VulkanUtilities::InitStagingBuffer(const VulkanContext *context, vk::Buffer
 {
     vk::BufferCreateInfo stagingBufferCreateInfo{};
 
-    stagingBufferCreateInfo.usage = vk::BufferUsageFlagBits::eTransferSrc;
-    stagingBufferCreateInfo.size = size;
+    stagingBufferCreateInfo.usage       = vk::BufferUsageFlagBits::eTransferSrc;
+    stagingBufferCreateInfo.size        = size;
     stagingBufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 
     VmaAllocationCreateInfo stagingAllocationInfo{};
-    stagingAllocationInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-    stagingAllocationInfo.requiredFlags = static_cast<VkMemoryPropertyFlagBits>(vk::MemoryPropertyFlagBits::eHostVisible);
+    stagingAllocationInfo.usage          = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    stagingAllocationInfo.requiredFlags  = static_cast<VkMemoryPropertyFlagBits>(vk::MemoryPropertyFlagBits::eHostVisible);
     stagingAllocationInfo.preferredFlags = static_cast<VkMemoryPropertyFlagBits>(vk::MemoryPropertyFlagBits::eHostCoherent);
 
     vmaCreateBuffer(context->Vma, reinterpret_cast<VkBufferCreateInfo *>(&stagingBufferCreateInfo), &stagingAllocationInfo, reinterpret_cast<VkBuffer *>(&buffer), &allocation,
@@ -44,8 +44,8 @@ void VulkanUtilities::InitStagingBuffer(const VulkanContext *context, vk::Buffer
 void VulkanUtilities::RunOneTimeCommand(const VulkanContext *context, const std::function<void(vk::CommandBuffer &)> &run)
 {
     vk::CommandBufferAllocateInfo bufferAllocateInfo{};
-    bufferAllocateInfo.level = vk::CommandBufferLevel::ePrimary;
-    bufferAllocateInfo.commandPool = context->GraphicsQueueCommandPool;
+    bufferAllocateInfo.level              = vk::CommandBufferLevel::ePrimary;
+    bufferAllocateInfo.commandPool        = context->GraphicsQueueCommandPool;
     bufferAllocateInfo.commandBufferCount = 1;
 
     vk::CommandBuffer buffer = context->LogicalDevice.allocateCommandBuffers(bufferAllocateInfo)[ 0 ];
@@ -62,10 +62,10 @@ void VulkanUtilities::RunOneTimeCommand(const VulkanContext *context, const std:
 
     vk::SubmitInfo submitInfo{};
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &buffer;
+    submitInfo.pCommandBuffers    = &buffer;
 
     const vk::Queue queue = context->Queues.at(QueueType::Graphics);
-    result = queue.submit(1, &submitInfo, nullptr);
+    result                = queue.submit(1, &submitInfo, nullptr);
     VK_CHECK_RESULT(result);
 }
 

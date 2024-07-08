@@ -25,4 +25,4 @@ namespace DenOfIz
     public:
         virtual ~IRayTracingAccelerationStructure() = default;
     };
-}
+} // namespace DenOfIz

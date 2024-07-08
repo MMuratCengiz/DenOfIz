@@ -32,9 +32,9 @@ namespace DenOfIz
         std::mutex m_mutex;
 
         wil::com_ptr<ID3D12DescriptorHeap> m_heap;
-        CD3DX12_CPU_DESCRIPTOR_HANDLE m_cpuStartHandle;
-        CD3DX12_GPU_DESCRIPTOR_HANDLE m_gpuStartHandle;
-        uint32_t m_descriptorSize;
+        CD3DX12_CPU_DESCRIPTOR_HANDLE      m_cpuStartHandle;
+        CD3DX12_GPU_DESCRIPTOR_HANDLE      m_gpuStartHandle;
+        uint32_t                           m_descriptorSize;
 
     public:
         DX12DescriptorHeap(ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_TYPE type, bool shaderVisible)
@@ -71,7 +71,7 @@ namespace DenOfIz
                 }
             }
 
-            desc.Type = type;
+            desc.Type     = type;
             desc.NodeMask = 0;
 
             device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(m_heap.addressof()));
@@ -80,13 +80,25 @@ namespace DenOfIz
             //		m_gpuStartHandle = m_heap->GetGPUDescriptorHandleForHeapStart();
         }
 
-        uint32_t GetDescriptorSize() const { return m_descriptorSize; }
+        uint32_t GetDescriptorSize() const
+        {
+            return m_descriptorSize;
+        }
 
-        ID3D12DescriptorHeap *GetHeap() { return m_heap.get(); }
+        ID3D12DescriptorHeap *GetHeap()
+        {
+            return m_heap.get();
+        }
 
-        D3D12_CPU_DESCRIPTOR_HANDLE GetCPUStartHandle() { return m_heap->GetCPUDescriptorHandleForHeapStart(); }
+        D3D12_CPU_DESCRIPTOR_HANDLE GetCPUStartHandle()
+        {
+            return m_heap->GetCPUDescriptorHandleForHeapStart();
+        }
 
-        D3D12_GPU_DESCRIPTOR_HANDLE GetGPUStartHandle() { return m_heap->GetGPUDescriptorHandleForHeapStart(); }
+        D3D12_GPU_DESCRIPTOR_HANDLE GetGPUStartHandle()
+        {
+            return m_heap->GetGPUDescriptorHandleForHeapStart();
+        }
 
         CD3DX12_CPU_DESCRIPTOR_HANDLE GetNextCPUHandleOffset(uint32_t count)
         {
@@ -97,9 +109,14 @@ namespace DenOfIz
             return handle;
         }
 
-        static const uint32_t RoundUp(uint32_t size, uint32_t alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT) { return (size + (alignment - 1)) & ~(alignment - 1); }
+        static const uint32_t RoundUp(uint32_t size, uint32_t alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT)
+        {
+            return (size + (alignment - 1)) & ~(alignment - 1);
+        }
 
-        ~DX12DescriptorHeap() { /*m_heap.reset();*/ }
+        ~DX12DescriptorHeap()
+        { /*m_heap.reset();*/
+        }
     };
 
 } // namespace DenOfIz

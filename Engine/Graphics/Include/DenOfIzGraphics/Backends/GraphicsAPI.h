@@ -23,7 +23,10 @@ namespace DenOfIz
     class GraphicsAPI
     {
     public:
-        static void SetAPIPreference(APIPreference preference) { GfxGlobal::GetInstance()->SetAPIPreference(preference); }
+        static void SetAPIPreference(APIPreference preference)
+        {
+            GfxGlobal::GetInstance()->SetAPIPreference(preference);
+        }
 
         static std::unique_ptr<ILogicalDevice> CreateLogicalDevice(GraphicsWindowHandle *window)
         {

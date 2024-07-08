@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <string>
 #include <vector>
-#include "DenOfIzCore/Common_Macro.h"
 #include "DenOfIzCore/BitSet.h"
+#include "DenOfIzCore/Common_Macro.h"
 
 namespace DenOfIz
 {

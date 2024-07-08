@@ -28,17 +28,21 @@ namespace DenOfIz
     class DX12BufferResource : public IBufferResource
     {
     private:
-        DX12Context *m_context;
-        BufferDesc m_desc;
-        wil::com_ptr<ID3D12Resource2> m_resource;
+        DX12Context                      *m_context;
+        BufferDesc                        m_desc;
+        wil::com_ptr<ID3D12Resource2>     m_resource;
         wil::com_ptr<D3D12MA::Allocation> m_allocation;
-        D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
+        D3D12_CPU_DESCRIPTOR_HANDLE       m_cpuHandle;
 
-        bool allocated = false;
-        uint32_t m_stride = 0;
+        bool     allocated = false;
+        uint32_t m_stride  = 0;
+
     public:
         DX12BufferResource(DX12Context *context, const BufferDesc &desc);
-        ID3D12Resource2 *GetResource() { return m_resource.get(); }
+        ID3D12Resource2 *GetResource()
+        {
+            return m_resource.get();
+        }
         void MapMemory() override;
         void CopyData(const void *data, uint32_t size) override;
         void UnmapMemory() override;
@@ -46,7 +50,11 @@ namespace DenOfIz
         ~DX12BufferResource() override;
         void Deallocate() override;
 
-        uint32_t GetStride() const { return m_stride; }
+        uint32_t GetStride() const
+        {
+            return m_stride;
+        }
+
     protected:
         void Allocate(const void *data) override;
 

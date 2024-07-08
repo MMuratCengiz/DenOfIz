@@ -21,7 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanSurface::VulkanSurface(VulkanContext *context) : m_context(context) { CreateSurface(); }
+VulkanSurface::VulkanSurface(VulkanContext *context) : m_context(context)
+{
+    CreateSurface();
+}
 
 void VulkanSurface::CreateSurface() const
 {
@@ -38,34 +41,34 @@ void VulkanSurface::CreateSwapChain(const vk::SurfaceCapabilitiesKHR &surfaceCap
 
     const uint32_t imageCount = std::min(surfaceCapabilities.maxImageCount, surfaceCapabilities.minImageCount + 1);
 
-    createInfo.surface = m_context->Surface;
-    createInfo.minImageCount = imageCount;
-    createInfo.imageFormat = VulkanEnumConverter::ConvertImageFormat(m_context->SurfaceImageFormat);
-    createInfo.imageColorSpace = m_context->ColorSpace;
-    createInfo.imageExtent = m_context->SurfaceExtent;
+    createInfo.surface          = m_context->Surface;
+    createInfo.minImageCount    = imageCount;
+    createInfo.imageFormat      = VulkanEnumConverter::ConvertImageFormat(m_context->SurfaceImageFormat);
+    createInfo.imageColorSpace  = m_context->ColorSpace;
+    createInfo.imageExtent      = m_context->SurfaceExtent;
     createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
+    createInfo.imageUsage       = vk::ImageUsageFlagBits::eColorAttachment;
 
     const uint32_t qfIndexes[ 2 ] = { m_context->QueueFamilies.at(QueueType::Graphics).Index, m_context->QueueFamilies.at(QueueType::Presentation).Index };
 
     if ( qfIndexes[ 0 ] != qfIndexes[ 1 ] )
     {
-        createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
+        createInfo.imageSharingMode      = vk::SharingMode::eConcurrent;
         createInfo.queueFamilyIndexCount = 2;
-        createInfo.pQueueFamilyIndices = qfIndexes;
+        createInfo.pQueueFamilyIndices   = qfIndexes;
     }
     else
     {
-        createInfo.imageSharingMode = vk::SharingMode::eExclusive;
+        createInfo.imageSharingMode      = vk::SharingMode::eExclusive;
         createInfo.queueFamilyIndexCount = 0;
-        createInfo.pQueueFamilyIndices = nullptr;
+        createInfo.pQueueFamilyIndices   = nullptr;
     }
 
-    createInfo.preTransform = surfaceCapabilities.currentTransform;
+    createInfo.preTransform   = surfaceCapabilities.currentTransform;
     createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-    createInfo.presentMode = m_context->PresentMode;
-    createInfo.clipped = VK_TRUE;
-    createInfo.oldSwapchain = m_context->SwapChain;
+    createInfo.presentMode    = m_context->PresentMode;
+    createInfo.clipped        = VK_TRUE;
+    createInfo.oldSwapchain   = m_context->SwapChain;
 
     m_context->SwapChain = m_context->LogicalDevice.createSwapchainKHR(createInfo);
     CreateSwapChainImages(VulkanEnumConverter::ConvertImageFormat(m_context->SurfaceImageFormat));
@@ -87,31 +90,31 @@ void VulkanSurface::ChooseExtent2D(const vk::SurfaceCapabilitiesKHR &capabilitie
 {
     if ( capabilities.currentExtent.width != UINT32_MAX )
     {
-        m_context->SurfaceExtent.width = capabilities.currentExtent.width;
+        m_context->SurfaceExtent.width  = capabilities.currentExtent.width;
         m_context->SurfaceExtent.height = capabilities.currentExtent.height;
         return;
     }
 
     const GraphicsWindowSurface surface = m_context->Window->GetSurface();
-    m_context->SurfaceExtent.width = std::clamp(static_cast<uint32_t>(surface.Width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-    m_context->SurfaceExtent.height = std::clamp(static_cast<uint32_t>(surface.Height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+    m_context->SurfaceExtent.width      = std::clamp(static_cast<uint32_t>(surface.Width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+    m_context->SurfaceExtent.height     = std::clamp(static_cast<uint32_t>(surface.Height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 }
 
 void VulkanSurface::CreateImageView(vk::ImageView &imageView, const vk::Image &image, const vk::Format &format, const vk::ImageAspectFlags &aspectFlags) const
 {
     vk::ImageViewCreateInfo imageViewCreateInfo{};
-    imageViewCreateInfo.image = image;
-    imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
-    imageViewCreateInfo.format = format;
-    imageViewCreateInfo.components.r = vk::ComponentSwizzle::eIdentity;
-    imageViewCreateInfo.components.g = vk::ComponentSwizzle::eIdentity;
-    imageViewCreateInfo.components.b = vk::ComponentSwizzle::eIdentity;
-    imageViewCreateInfo.components.a = vk::ComponentSwizzle::eIdentity;
-    imageViewCreateInfo.subresourceRange.aspectMask = aspectFlags;
-    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-    imageViewCreateInfo.subresourceRange.levelCount = 1;
+    imageViewCreateInfo.image                           = image;
+    imageViewCreateInfo.viewType                        = vk::ImageViewType::e2D;
+    imageViewCreateInfo.format                          = format;
+    imageViewCreateInfo.components.r                    = vk::ComponentSwizzle::eIdentity;
+    imageViewCreateInfo.components.g                    = vk::ComponentSwizzle::eIdentity;
+    imageViewCreateInfo.components.b                    = vk::ComponentSwizzle::eIdentity;
+    imageViewCreateInfo.components.a                    = vk::ComponentSwizzle::eIdentity;
+    imageViewCreateInfo.subresourceRange.aspectMask     = aspectFlags;
+    imageViewCreateInfo.subresourceRange.baseMipLevel   = 0;
+    imageViewCreateInfo.subresourceRange.levelCount     = 1;
     imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-    imageViewCreateInfo.subresourceRange.layerCount = 1;
+    imageViewCreateInfo.subresourceRange.layerCount     = 1;
 
     imageView = m_context->LogicalDevice.createImageView(imageViewCreateInfo);
 }
