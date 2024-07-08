@@ -18,11 +18,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "exception"
+
 #define DZ_RETURN_IF(condition)                                                                                                                                                    \
     if ( condition )                                                                                                                                                               \
     return
 #define DZ_ASSERTM(exp, msg) assert(((void)msg, exp))
-#define DZ_NOT_NULL(exp) DZ_ASSERTM(exp != nullptr, #exp " is null")
+#define DZ_NOT_NULL(exp)                                                                                                                                                           \
+    do                                                                                                                                                                             \
+    {                                                                                                                                                                              \
+        if ( !exp )                                                                                                                                                                \
+        {                                                                                                                                                                          \
+            throw std::runtime_error(#exp " is null");                                                                                                                             \
+        }                                                                                                                                                                          \
+    }                                                                                                                                                                              \
+    while ( 0 )
 
 namespace DenOfIz
 {
@@ -38,33 +48,3 @@ namespace DenOfIz
         ~NonCopyable() = default;
     };
 } // namespace DenOfIz
-
-#define DZ_BITSET(Enum)                                                                                                                                                            \
-    inline constexpr Enum operator|(Enum a, Enum b)                                                                                                                                \
-    {                                                                                                                                                                              \
-        return Enum(((uint32_t)a) | ((uint32_t)b));                                                                                                                                \
-    }                                                                                                                                                                              \
-    inline Enum &operator|=(Enum &a, Enum b)                                                                                                                                       \
-    {                                                                                                                                                                              \
-        return (Enum &)(((uint32_t &)a) |= ((uint32_t)b));                                                                                                                         \
-    }                                                                                                                                                                              \
-    inline constexpr Enum operator&(Enum a, Enum b)                                                                                                                                \
-    {                                                                                                                                                                              \
-        return Enum(((uint32_t)a) & ((uint32_t)b));                                                                                                                                \
-    }                                                                                                                                                                              \
-    inline Enum &operator&=(Enum &a, Enum b)                                                                                                                                       \
-    {                                                                                                                                                                              \
-        return (Enum &)(((uint32_t &)a) &= ((uint32_t)b));                                                                                                                         \
-    }                                                                                                                                                                              \
-    inline constexpr Enum operator~(Enum a)                                                                                                                                        \
-    {                                                                                                                                                                              \
-        return Enum(~((uint32_t)a));                                                                                                                                               \
-    }                                                                                                                                                                              \
-    inline constexpr Enum operator^(Enum a, Enum b)                                                                                                                                \
-    {                                                                                                                                                                              \
-        return Enum(((uint32_t)a) ^ ((uint32_t)b));                                                                                                                                \
-    }                                                                                                                                                                              \
-    inline Enum &operator^=(Enum &a, Enum b)                                                                                                                                       \
-    {                                                                                                                                                                              \
-        return (Enum &)(((uint32_t &)a) ^= ((uint32_t)b));                                                                                                                         \
-    }

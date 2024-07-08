@@ -106,18 +106,18 @@ namespace DenOfIz
 
     struct PipelineDesc
     {
-        IInputLayout     *InputLayout       = nullptr;
-        IRootSignature   *RootSignature     = nullptr;
+        IInputLayout   *InputLayout   = nullptr;
+        IRootSignature *RootSignature = nullptr;
+
         PrimitiveTopology PrimitiveTopology = PrimitiveTopology::Triangle;
-
-        CullMode  CullMode  = CullMode::None;
-        BindPoint BindPoint = BindPoint::Graphics;
-
-        DepthTest   DepthTest;
-        StencilTest StencilTest;
+        CullMode          CullMode          = CullMode::None;
+        BindPoint         BindPoint         = BindPoint::Graphics;
+        DepthTest         DepthTest;
+        StencilTest       StencilTest;
 
         ShaderProgram ShaderProgram;
-        bool          InterleavedMode = true;
+        // todo remove
+        bool InterleavedMode = true;
 
         std::vector<BlendMode> BlendModes;
 

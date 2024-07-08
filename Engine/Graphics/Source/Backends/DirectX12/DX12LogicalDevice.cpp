@@ -30,6 +30,7 @@ DX12LogicalDevice::DX12LogicalDevice()
 DX12LogicalDevice::~DX12LogicalDevice()
 {
     WaitIdle();
+    m_context = nullptr;
 }
 
 void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
@@ -288,10 +289,10 @@ std::unique_ptr<IInputLayout> DX12LogicalDevice::CreateInputLayout(const InputLa
     return std::unique_ptr<IInputLayout>(inputLayout);
 }
 
-std::unique_ptr<IDescriptorTable> DX12LogicalDevice::CreateDescriptorTable(const DescriptorTableDesc &descriptorTableDesc)
+std::unique_ptr<IResourceBindGroup> DX12LogicalDevice::CreateResourceBindGroup(const ResourceBindGroupDesc &descriptorTableDesc)
 {
-    DX12DescriptorTable *descriptorTable = new DX12DescriptorTable(m_context.get(), descriptorTableDesc);
-    return std::unique_ptr<IDescriptorTable>(descriptorTable);
+    DX12ResourceBindGroup *descriptorTable = new DX12ResourceBindGroup(m_context.get(), descriptorTableDesc);
+    return std::unique_ptr<IResourceBindGroup>(descriptorTable);
 }
 
 std::unique_ptr<IFence> DX12LogicalDevice::CreateFence()

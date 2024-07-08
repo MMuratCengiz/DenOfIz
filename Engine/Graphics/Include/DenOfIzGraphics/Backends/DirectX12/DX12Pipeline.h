@@ -56,6 +56,7 @@ namespace DenOfIz
         void                  SetGraphicsShaders(D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc);
         D3D12_SHADER_BYTECODE GetShaderByteCode(const CompiledShader &compiledShader) const;
         void                  CreateGraphicsPipeline();
+        void                  CreateComputePipeline();
         void                  InitStencilFace(D3D12_DEPTH_STENCILOP_DESC &stencilFace, const StencilFace &face) const;
         void                  InitDepthStencil(D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc) const;
     };

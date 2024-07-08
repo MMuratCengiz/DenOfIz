@@ -20,11 +20,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <array>
 #include "IBufferResource.h"
-#include "IDescriptorTable.h"
 #include "IFence.h"
 #include "ILock.h"
 #include "IPipeline.h"
 #include "IRayTracingAccelerationStructure.h"
+#include "IResourceBindGroup.h"
 #include "ISemaphore.h"
 #include "ISwapChain.h"
 #include "ITextureResource.h"
@@ -87,9 +87,9 @@ namespace DenOfIz
 
     struct ExecuteDesc
     {
-        IFence                   *Notify      = nullptr;
-        std::vector<ISemaphore *> WaitOnLocks = {};
-        std::vector<ISemaphore *> NotifyLocks = {};
+        IFence                   *Notify           = nullptr;
+        std::vector<ISemaphore *> WaitOnSemaphores = {};
+        std::vector<ISemaphore *> NotifySemaphores = {};
     };
 
     struct CommandListDesc
@@ -112,7 +112,7 @@ namespace DenOfIz
         virtual void BindIndexBuffer(IBufferResource *buffer, const IndexType &indexType)                                                                     = 0;
         virtual void BindViewport(float x, float y, float width, float height)                                                                                = 0;
         virtual void BindScissorRect(float x, float y, float width, float height)                                                                             = 0;
-        virtual void BindDescriptorTable(IDescriptorTable *table)                                                                                             = 0;
+        virtual void BindResourceGroup(IResourceBindGroup *bindGroup)                                                                                         = 0;
         virtual void SetDepthBias(float constantFactor, float clamp, float slopeFactor)                                                                       = 0;
         virtual void SetPipelineBarrier(const PipelineBarrier &barrier)                                                                                       = 0;
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) = 0;

@@ -51,14 +51,14 @@ void VulkanPipelineBarrierHelper::ExecutePipelineBarrier(VulkanContext *context,
     vk::AccessFlags dstAccessFlags = {};
 
     std::vector<vk::ImageMemoryBarrier> imageBarriers;
-    for ( const TextureBarrierInfo &imageBarrier : barrier.GetTextureBarriers() )
+    for ( const TextureBarrierDesc &imageBarrier : barrier.GetTextureBarriers() )
     {
         vk::ImageMemoryBarrier imageMemoryBarrier = CreateImageBarrier(imageBarrier, srcAccessFlags, dstAccessFlags);
         imageBarriers.push_back(std::move(imageMemoryBarrier));
     }
 
     std::vector<vk::BufferMemoryBarrier> bufferBarriers;
-    for ( const BufferBarrierInfo &bufferBarrier : barrier.GetBufferBarriers() )
+    for ( const BufferBarrierDesc &bufferBarrier : barrier.GetBufferBarriers() )
     {
         vk::BufferMemoryBarrier bufferMemoryBarrier = CreateBufferBarrier(bufferBarrier, srcAccessFlags, dstAccessFlags);
         bufferBarriers.push_back(std::move(bufferMemoryBarrier));
@@ -71,7 +71,7 @@ void VulkanPipelineBarrierHelper::ExecutePipelineBarrier(VulkanContext *context,
     commandBuffer.pipelineBarrier(srcStageMask, dstStageMask, vk::DependencyFlags{}, memoryBarriers, bufferBarriers, imageBarriers);
 }
 
-vk::ImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier(const TextureBarrierInfo &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags)
+vk::ImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier(const TextureBarrierDesc &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags)
 {
     VulkanTextureResource *imageResource = (VulkanTextureResource *)barrier.Resource;
     vk::ImageMemoryBarrier imageMemoryBarrier{};
@@ -117,7 +117,7 @@ vk::ImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier(const Tex
     return imageMemoryBarrier;
 }
 
-vk::BufferMemoryBarrier VulkanPipelineBarrierHelper::CreateBufferBarrier(const BufferBarrierInfo &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags)
+vk::BufferMemoryBarrier VulkanPipelineBarrierHelper::CreateBufferBarrier(const BufferBarrierDesc &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags)
 {
     VulkanBufferResource *bufferResource = (VulkanBufferResource *)barrier.Resource;
     vk::MemoryBarrier     memoryBarrier{};

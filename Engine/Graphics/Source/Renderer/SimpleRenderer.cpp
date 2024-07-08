@@ -73,40 +73,29 @@ namespace DenOfIz
             m_imageRenderedSemaphores.push_back(m_logicalDevice->CreateSemaphore());
         }
 
-        TextureDesc textureDesc{};
-        textureDesc.Descriptor = ResourceDescriptor::UnorderedAccess;
-        textureDesc.Format     = Format::R32G32B32A32Float;
-        textureDesc.Width      = 512;
-        textureDesc.Height     = 512;
-        textureDesc.MipLevels  = log2(std::max(surface.Width, surface.Height)) + 1;
-
-        m_computeReadBack = m_logicalDevice->CreateTextureResource("computeReadBack", textureDesc);
-
         BufferDesc bufferDesc{};
-        bufferDesc.HeapType   = HeapType::GPU;
-        bufferDesc.Descriptor = ResourceDescriptor::VertexBuffer & ResourceDescriptor::UnorderedAccess;
-        bufferDesc.NumBytes   = m_triangle.size() * sizeof(float);
-        m_vertexBuffer        = m_logicalDevice->CreateBufferResource("vb", bufferDesc);
+        bufferDesc.HeapType     = HeapType::GPU;
+        bufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
+        bufferDesc.InitialState = ResourceState::CopyDst;
+        bufferDesc.NumBytes     = m_triangle.size() * sizeof(float);
+        m_vertexBuffer          = m_logicalDevice->CreateBufferResource("vb", bufferDesc);
 
         m_batchResourceCopy->Begin();
         m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_vertexBuffer.get(), .Data = m_triangle.data(), .NumBytes = bufferDesc.NumBytes });
         m_batchResourceCopy->End(nullptr);
 
-        //        m_vertexBuffer->Allocate(m_triangle.data(), m_triangle.size() * sizeof(float));
-
         BufferDesc deltaTimeBufferDesc{};
-        deltaTimeBufferDesc.HeapType = HeapType::CPU_GPU;
-        deltaTimeBufferDesc.Descriptor |= ResourceDescriptor::UniformBuffer;
-        deltaTimeBufferDesc.NumBytes         = sizeof(float);
-        deltaTimeBufferDesc.KeepMemoryMapped = true;
+        deltaTimeBufferDesc.HeapType   = HeapType::CPU_GPU;
+        deltaTimeBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
+        deltaTimeBufferDesc.NumBytes   = sizeof(float);
 
         float timePassed   = 1.0f;
         m_timePassedBuffer = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferDesc);
         m_timePassedBuffer->MapMemory();
         m_timePassedBuffer->CopyData(&timePassed, sizeof(float));
 
-        m_descriptorTable = m_logicalDevice->CreateDescriptorTable(DescriptorTableDesc{ .RootSignature = m_rootSignature.get() });
-        m_descriptorTable->BindBuffer(m_timePassedBuffer.get());
+        m_resourceBindGroup = m_logicalDevice->CreateResourceBindGroup(ResourceBindGroupDesc{ .RootSignature = m_rootSignature.get() });
+        m_resourceBindGroup->BindBuffer(m_timePassedBuffer.get());
         m_time->ListenFps = [](const double fps) { DLOG(INFO) << std::format("FPS: {}", fps); };
 
         LOG(INFO) << "Initialization Complete.";
@@ -139,7 +128,7 @@ namespace DenOfIz
         nextCommandList->BindScissorRect(viewport.X, viewport.Y, viewport.Width, viewport.Height);
 
         nextCommandList->BindPipeline(m_pipeline.get());
-        nextCommandList->BindDescriptorTable(m_descriptorTable.get());
+        nextCommandList->BindResourceGroup(m_resourceBindGroup.get());
         nextCommandList->BindVertexBuffer(m_vertexBuffer.get());
         nextCommandList->Draw(3, 1);
         nextCommandList->EndRendering();
@@ -147,14 +136,15 @@ namespace DenOfIz
 
         ExecuteDesc submitInfo{};
         submitInfo.Notify = m_fences[ currentFrame ].get();
-        submitInfo.WaitOnLocks.push_back(m_imageReadySemaphores[ currentFrame ].get());
-        submitInfo.NotifyLocks.push_back(m_imageRenderedSemaphores[ currentFrame ].get());
+        submitInfo.WaitOnSemaphores.push_back(m_imageReadySemaphores[ currentFrame ].get());
+        submitInfo.NotifySemaphores.push_back(m_imageRenderedSemaphores[ currentFrame ].get());
         nextCommandList->Execute(submitInfo);
         nextCommandList->Present(m_swapChain.get(), nextImage, { m_imageRenderedSemaphores[ currentFrame ].get() });
     }
 
     void SimpleRenderer::Quit()
     {
+        m_batchResourceCopy.reset();
         m_timePassedBuffer->UnmapMemory();
         m_logicalDevice->WaitIdle();
         m_commandListRing.reset();

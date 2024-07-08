@@ -262,6 +262,7 @@ namespace DenOfIz
         DecrementAndWrap
     };
 
+    // TODO both ResourceDescriptor and ResourceState contain UnorderedAccess. Also set together most of the time, investigate improving it.
     enum class ResourceDescriptor : uint32_t
     {
         Buffer                = 1 << 1,
@@ -276,7 +277,6 @@ namespace DenOfIz
         AccelerationStructure = 1 << 10,
         UnorderedAccess       = 1 << 11 // When not set, implies read-only resource
     };
-    DZ_BITSET(ResourceDescriptor)
 
     enum class ResourceState : uint32_t
     {
@@ -298,7 +298,6 @@ namespace DenOfIz
         AccelerationStructureRead  = 1 << 16,
         AccelerationStructureWrite = 1 << 17
     };
-    DZ_BITSET(ResourceState)
 
     enum class LoadOp
     {

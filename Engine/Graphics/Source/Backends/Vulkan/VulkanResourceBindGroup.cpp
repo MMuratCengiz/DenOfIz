@@ -16,18 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanDescriptorTable.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h>
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h"
 
 using namespace DenOfIz;
 
-VulkanDescriptorTable::VulkanDescriptorTable(VulkanContext *context, DescriptorTableDesc desc) : m_context(context), m_desc(std::move(desc))
+VulkanResourceBindGroup::VulkanResourceBindGroup(VulkanContext *context, ResourceBindGroupDesc desc) : m_context(context), m_desc(std::move(desc))
 {
     m_rootSignature = static_cast<VulkanRootSignature *>(m_desc.RootSignature);
 }
 
-void VulkanDescriptorTable::BindImage(ITextureResource *resource)
+void VulkanResourceBindGroup::BindTexture(ITextureResource *resource)
 {
     VulkanTextureResource *vulkanResource = static_cast<VulkanTextureResource *>(resource);
 
@@ -35,7 +35,7 @@ void VulkanDescriptorTable::BindImage(ITextureResource *resource)
     writeDescriptorSet.pImageInfo              = &vulkanResource->DescriptorInfo;
 }
 
-void VulkanDescriptorTable::BindBuffer(IBufferResource *resource)
+void VulkanResourceBindGroup::BindBuffer(IBufferResource *resource)
 {
     VulkanBufferResource *vulkanResource = static_cast<VulkanBufferResource *>(resource);
 
@@ -43,7 +43,7 @@ void VulkanDescriptorTable::BindBuffer(IBufferResource *resource)
     writeDescriptorSet.pBufferInfo             = &vulkanResource->DescriptorInfo;
 }
 
-vk::WriteDescriptorSet &VulkanDescriptorTable::CreateWriteDescriptor(std::string &name)
+vk::WriteDescriptorSet &VulkanResourceBindGroup::CreateWriteDescriptor(std::string &name)
 {
     ResourceBinding resourceBinding = m_rootSignature->GetResourceBinding(name);
 

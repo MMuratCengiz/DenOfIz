@@ -18,13 +18,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzCore/Cast.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 #include "DX12BufferResource.h"
 #include "DX12Context.h"
-#include "DX12DescriptorTable.h"
 #include "DX12EnumConverter.h"
 #include "DX12Fence.h"
 #include "DX12Pipeline.h"
+#include "DX12ResourceBindGroup.h"
 #include "DX12Semaphore.h"
 #include "DX12SwapChain.h"
 #include "DX12TextureResource.h"
@@ -62,7 +63,7 @@ namespace DenOfIz
         void BindIndexBuffer(IBufferResource *buffer, const IndexType &indexType) override;
         void BindViewport(float x, float y, float width, float height) override;
         void BindScissorRect(float x, float y, float width, float height) override;
-        void BindDescriptorTable(IDescriptorTable *table) override;
+        void BindResourceGroup(IResourceBindGroup *bindGroup) override;
         void SetDepthBias(float constantFactor, float clamp, float slopeFactor) override;
         void SetPipelineBarrier(const PipelineBarrier &barrier) override;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) override;

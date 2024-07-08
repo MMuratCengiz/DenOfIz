@@ -26,9 +26,12 @@ VulkanTextureResource::VulkanTextureResource(VulkanContext *context, const Textu
 {
     vk::ImageCreateInfo imageCreateInfo{};
 
+    m_width  = textureDesc.Width;
+    m_height = textureDesc.Height;
+
     imageCreateInfo.imageType     = vk::ImageType::e2D;
-    imageCreateInfo.extent.width  = m_width == 0 ? context->SurfaceExtent.width : m_width;
-    imageCreateInfo.extent.height = m_height == 0 ? context->SurfaceExtent.height : m_height;
+    imageCreateInfo.extent.width  = m_width;
+    imageCreateInfo.extent.height = m_height;
     imageCreateInfo.extent.depth  = 1;
     imageCreateInfo.format        = VulkanEnumConverter::ConvertImageFormat(textureDesc.Format);
     imageCreateInfo.tiling        = vk::ImageTiling::eOptimal;

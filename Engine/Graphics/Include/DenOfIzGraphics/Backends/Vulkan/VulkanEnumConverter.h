@@ -315,7 +315,7 @@ namespace DenOfIz
         }
 
         // Weird naming on Vma or my side, either way location
-        static VmaMemoryUsage ConvertMemoryLocation(HeapType location)
+        static VmaMemoryUsage ConvertHeapType(HeapType location)
         {
             switch ( location )
             {

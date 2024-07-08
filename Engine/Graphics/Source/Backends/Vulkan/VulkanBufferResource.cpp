@@ -23,26 +23,7 @@ using namespace DenOfIz;
 
 VulkanBufferResource::VulkanBufferResource(VulkanContext *context, const BufferDesc &desc) : m_desc(desc), m_context(context), m_allocation(nullptr)
 {
-}
-
-void VulkanBufferResource::Allocate(const void *newData)
-{
-    if ( m_alreadyAllocated )
-    {
-        UpdateAllocation(newData);
-        return;
-    }
-
-    m_alreadyDisposed  = false;
-    m_alreadyAllocated = true;
-
-    std::pair<vk::Buffer, VmaAllocation> stagingBuffer;
-
-    bool useStagingBuffer = m_desc.HeapType == HeapType::GPU;
-    if ( useStagingBuffer )
-    {
-        VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer.first, stagingBuffer.second, newData, m_numBytes);
-    }
+    m_numBytes = m_desc.NumBytes;
 
     vk::BufferCreateInfo bufferCreateInfo{};
     bufferCreateInfo.usage       = VulkanEnumConverter::ConvertBufferUsage(m_desc.Descriptor, m_desc.InitialState);
@@ -51,69 +32,34 @@ void VulkanBufferResource::Allocate(const void *newData)
 
     VmaAllocationCreateInfo allocationCreateInfo{};
 
-    allocationCreateInfo.usage = VulkanEnumConverter::ConvertMemoryLocation(m_desc.HeapType);
+    allocationCreateInfo.usage = VulkanEnumConverter::ConvertHeapType(m_desc.HeapType);
 
     // Todo more flexibility, or a clearer interface here:
+    if ( m_desc.HeapType == HeapType::CPU || m_desc.HeapType == HeapType::CPU_GPU )
+    {
+        allocationCreateInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eHostVisible);
+    }
     if ( m_desc.HeapType == HeapType::CPU_GPU )
     {
-        const auto gpuVisible               = vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eDeviceLocal;
-        allocationCreateInfo.requiredFlags  = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eHostVisible);
-        allocationCreateInfo.preferredFlags = static_cast<VkMemoryPropertyFlags>(gpuVisible);
+        allocationCreateInfo.preferredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eDeviceLocal);
     }
-    else
+    if ( m_desc.HeapType == HeapType::GPU || m_desc.HeapType == HeapType::GPU_CPU )
     {
-        bufferCreateInfo.usage             = bufferCreateInfo.usage | vk::BufferUsageFlagBits::eTransferDst;
         allocationCreateInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eDeviceLocal);
     }
+    if ( m_desc.HeapType == HeapType::GPU_CPU )
+    {
+        allocationCreateInfo.preferredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eHostVisible);
+    }
 
+    bufferCreateInfo.usage = VulkanEnumConverter::ConvertBufferUsage(m_desc.Descriptor, m_desc.InitialState);
     VmaAllocationInfo allocationInfo;
     vmaCreateBuffer(m_context->Vma, reinterpret_cast<VkBufferCreateInfo *>(&bufferCreateInfo), &allocationCreateInfo, reinterpret_cast<VkBuffer *>(&Instance), &m_allocation,
                     &allocationInfo);
 
-    if ( useStagingBuffer )
-    {
-        VulkanUtilities::CopyBuffer(m_context, stagingBuffer.first, Instance, m_numBytes);
-        vmaDestroyBuffer(m_context->Vma, stagingBuffer.first, stagingBuffer.second);
-    }
-    else if ( m_mappedMemory != nullptr && m_desc.KeepMemoryMapped )
-    {
-        memcpy(m_mappedMemory, newData, m_numBytes);
-    }
-    else
-    {
-        vmaMapMemory(this->m_context->Vma, m_allocation, &m_mappedMemory);
-        memcpy(m_mappedMemory, newData, m_numBytes);
-
-        if ( !m_desc.KeepMemoryMapped )
-        {
-            vmaUnmapMemory(m_context->Vma, m_allocation);
-        }
-    }
-
     DescriptorInfo.buffer = Instance;
     DescriptorInfo.offset = 0;
     DescriptorInfo.range  = m_numBytes;
-}
-
-void VulkanBufferResource::UpdateAllocation(const void *newData)
-{
-    if ( m_desc.HeapType == HeapType::GPU )
-    {
-        std::pair<vk::Buffer, VmaAllocation> stagingBuffer;
-        VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer.first, stagingBuffer.second, newData, m_numBytes);
-        VulkanUtilities::CopyBuffer(m_context, stagingBuffer.first, Instance, m_numBytes);
-        vmaDestroyBuffer(m_context->Vma, stagingBuffer.first, stagingBuffer.second);
-    }
-    else if ( m_desc.KeepMemoryMapped )
-    {
-        memcpy(m_mappedMemory, newData, m_numBytes);
-    }
-    else
-    {
-        vmaMapMemory(m_context->Vma, m_allocation, &m_mappedMemory);
-        memcpy(m_mappedMemory, newData, m_numBytes);
-        vmaUnmapMemory(m_context->Vma, m_allocation);
-    }
 }
 
 void VulkanBufferResource::MapMemory()
@@ -128,28 +74,26 @@ void VulkanBufferResource::CopyData(const void *data, uint32_t size)
     DZ_ASSERTM(m_mappedMemory != nullptr, std::format("Memory not mapped  buffer: {}", Name.c_str()));
     memcpy(m_mappedMemory, data, size);
 }
+
+void *VulkanBufferResource::ReadData()
+{
+    DZ_ASSERTM(m_mappedMemory != nullptr, std::format("Memory not mapped, buffer: {}", Name.c_str()));
+    return m_mappedMemory;
+}
+
 void VulkanBufferResource::UnmapMemory()
 {
     DZ_ASSERTM(m_mappedMemory != nullptr, std::format("Memory not mapped, buffer: {}", Name.c_str()));
     vmaUnmapMemory(m_context->Vma, m_allocation);
     m_mappedMemory = nullptr;
 }
-
-void VulkanBufferResource::Deallocate()
+VulkanBufferResource::~VulkanBufferResource()
 {
-    m_alreadyAllocated = false;
-    DZ_RETURN_IF(m_alreadyDisposed);
-    m_alreadyDisposed = true;
-
-    if ( m_desc.KeepMemoryMapped )
+    if ( m_mappedMemory != nullptr )
     {
+        LOG(WARNING) << "Memory not unmapped before lifetime of the buffer.";
         vmaUnmapMemory(m_context->Vma, m_allocation);
     }
 
     vmaDestroyBuffer(m_context->Vma, Instance, m_allocation);
-}
-
-VulkanBufferResource::~VulkanBufferResource()
-{
-    VulkanBufferResource::Deallocate();
 }

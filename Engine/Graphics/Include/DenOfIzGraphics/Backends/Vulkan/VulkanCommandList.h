@@ -53,7 +53,7 @@ namespace DenOfIz
         void BindIndexBuffer(IBufferResource *buffer, const IndexType &indexType) override;
         void BindViewport(float offsetX, float offsetY, float width, float height) override;
         void BindScissorRect(float offsetX, float offsetY, float width, float height) override;
-        void BindDescriptorTable(IDescriptorTable *table) override;
+        void BindResourceGroup(IResourceBindGroup *bindGroup) override;
         void SetDepthBias(float constantFactor, float clamp, float slopeFactor) override;
         void SetPipelineBarrier(const PipelineBarrier &barrier) override;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) override;

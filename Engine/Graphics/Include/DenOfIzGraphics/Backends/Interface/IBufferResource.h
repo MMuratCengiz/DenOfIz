@@ -50,8 +50,6 @@ namespace DenOfIz
 
     struct BufferDesc
     {
-        bool KeepMemoryMapped = false;
-
         uint32_t                   NumBytes;
         BufferView                 BufferView; // For Structured Buffers
         Format                     Format = Format::Undefined;
@@ -63,9 +61,8 @@ namespace DenOfIz
     class IBufferResource
     {
     protected:
-        uint32_t    m_numBytes;
-        const void *m_data;
-
+        uint32_t              m_numBytes;
+        const void           *m_data;
         void                 *m_mappedMemory = nullptr;
         BitSet<ResourceState> m_state;
 
@@ -74,31 +71,21 @@ namespace DenOfIz
 
         std::string Name;
 
-        void Allocate(const void *data, uint32_t size)
-        {
-            m_numBytes = size;
-            m_data     = data;
-            Allocate(data);
-        }
-
         // Allowed only on CPU visible resources
-        virtual void MapMemory()                               = 0;
-        virtual void CopyData(const void *data, uint32_t size) = 0;
-        virtual void UnmapMemory()                             = 0;
+        virtual void  MapMemory()                               = 0;
+        virtual void  CopyData(const void *data, uint32_t size) = 0;
+        virtual void *ReadData()                                = 0;
+        virtual void  UnmapMemory()                             = 0;
         //--
-
-        virtual void Deallocate() = 0;
 
         inline uint32_t GetSize() const
         {
             return m_numBytes;
         }
+
         inline const void *GetData() const
         {
             return m_data;
         }
-
-    protected:
-        virtual void Allocate(const void *data) = 0;
     };
 } // namespace DenOfIz

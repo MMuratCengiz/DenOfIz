@@ -81,10 +81,12 @@ DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc
     if ( m_desc.Descriptor.IsSet(ResourceDescriptor::Texture) )
     {
         CreateTextureSrv();
+        m_rootParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
     }
     if ( m_desc.Descriptor.IsSet(ResourceDescriptor::UnorderedAccess) )
     {
         CreateTextureUav();
+        m_rootParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
     }
 }
 

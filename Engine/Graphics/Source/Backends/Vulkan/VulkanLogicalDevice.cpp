@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h"
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanDescriptorTable.h"
+#include "DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h"
@@ -481,10 +481,10 @@ std::unique_ptr<IInputLayout> VulkanLogicalDevice::CreateInputLayout(const Input
     return std::unique_ptr<IInputLayout>(inputLayout);
 }
 
-std::unique_ptr<IDescriptorTable> VulkanLogicalDevice::CreateDescriptorTable(const DescriptorTableDesc &createInfo)
+std::unique_ptr<IResourceBindGroup> VulkanLogicalDevice::CreateResourceBindGroup(const ResourceBindGroupDesc &createInfo)
 {
-    VulkanDescriptorTable *descriptorTable = new VulkanDescriptorTable(m_context.get(), createInfo);
-    return std::unique_ptr<IDescriptorTable>(descriptorTable);
+    VulkanResourceBindGroup *descriptorTable = new VulkanResourceBindGroup(m_context.get(), createInfo);
+    return std::unique_ptr<IResourceBindGroup>(descriptorTable);
 }
 
 std::unique_ptr<IBufferResource> VulkanLogicalDevice::CreateBufferResource(std::string name, const BufferDesc &createInfo)

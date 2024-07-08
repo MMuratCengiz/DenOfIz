@@ -25,19 +25,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    struct DescriptorTableDesc
+    struct ResourceBindGroupDesc
     {
         IRootSignature         *RootSignature;
-        ResourceUpdateFrequency Frequency;
     };
 
-    class IDescriptorTable
+    class IResourceBindGroup
     {
     public:
-        virtual ~IDescriptorTable() = default;
+        virtual ~IResourceBindGroup() = default;
 
         // -- Requires a sampler
-        virtual void BindImage(ITextureResource *resource) = 0;
+        virtual void BindTexture(ITextureResource *resource) = 0;
         virtual void BindBuffer(IBufferResource *resource) = 0;
     };
 

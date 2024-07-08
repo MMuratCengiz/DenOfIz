@@ -24,8 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DX12BufferResource.h"
 #include "DX12CommandListPool.h"
 #include "DX12Context.h"
-#include "DX12DescriptorTable.h"
 #include "DX12Fence.h"
+#include "DX12ResourceBindGroup.h"
 #include "DX12TextureResource.h"
 
 #include <dxgidebug.h>
@@ -60,7 +60,7 @@ namespace DenOfIz
         std::unique_ptr<ISwapChain>       CreateSwapChain(const SwapChainDesc &swapChainDesc) override;
         std::unique_ptr<IRootSignature>   CreateRootSignature(const RootSignatureDesc &rootSignatureDesc) override;
         std::unique_ptr<IInputLayout>     CreateInputLayout(const InputLayoutDesc &inputLayoutDesc) override;
-        std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableDesc &descriptorTableDesc) override;
+        std::unique_ptr<IResourceBindGroup> CreateResourceBindGroup(const ResourceBindGroupDesc &descriptorTableDesc) override;
         std::unique_ptr<IFence>           CreateFence() override;
         std::unique_ptr<ISemaphore>       CreateSemaphore() override;
         std::unique_ptr<IBufferResource>  CreateBufferResource(std::string name, const BufferDesc &bufferDesc) override;

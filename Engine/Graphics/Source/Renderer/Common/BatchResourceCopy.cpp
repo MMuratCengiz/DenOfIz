@@ -25,8 +25,14 @@ BatchResourceCopy::BatchResourceCopy(ILogicalDevice *device) : m_device(device)
     m_commandListPool = m_device->CreateCommandListPool({ QueueType::Copy });
     DZ_ASSERTM(m_commandListPool->GetCommandLists().size() > 0, "Command list pool did not produce any command lists.");
 
-    m_copyCommandList  = m_commandListPool->GetCommandLists()[ 0 ];
-    m_executeSemaphore = m_device->CreateSemaphore();
+    m_copyCommandList = m_commandListPool->GetCommandLists()[ 0 ];
+    m_executeFence    = m_device->CreateFence();
+}
+
+BatchResourceCopy::~BatchResourceCopy()
+{
+    m_executeFence.reset();
+    m_commandListPool.reset();
 }
 
 void BatchResourceCopy::Begin()
@@ -54,9 +60,8 @@ void BatchResourceCopy::CopyToGPUBuffer(const CopyToGpuBufferDesc &copyInfo)
 
     CopyBufferRegion(copyBufferRegionDesc);
 
-    m_resourceCleanLock.lock();
+    std::lock_guard<std::mutex> lock(m_resourceCleanLock);
     m_resourcesToClean.push_back(std::move(stagingBuffer));
-    m_resourceCleanLock.unlock();
 }
 
 void BatchResourceCopy::CopyBufferRegion(const CopyBufferRegionDesc &copyInfo)
@@ -73,19 +78,19 @@ void BatchResourceCopy::End(ISemaphore *notify)
 {
     ExecuteDesc desc{};
 
-    desc.NotifyLocks.push_back(m_executeSemaphore.get());
+    desc.Notify = m_executeFence.get();
     if ( notify )
     {
-        desc.NotifyLocks.push_back(notify);
+        desc.NotifySemaphores.push_back(notify);
     }
 
     m_copyCommandList->Execute(desc);
-    m_cleanResourcesFuture = std::async(std::launch::async,
-                                        [ this ]()
-                                        {
-                                            m_resourceCleanLock.lock();
-                                            m_executeSemaphore->Wait();
-                                            m_resourcesToClean.clear();
-                                            m_resourceCleanLock.unlock();
-                                        });
+    m_cleanResourcesFuture = std::async(std::launch::async, [ this ]() { CleanResources(); });
+}
+
+void BatchResourceCopy::CleanResources()
+{
+    std::lock_guard<std::mutex> lock(m_resourceCleanLock);
+    m_executeFence->Wait();
+    m_resourcesToClean.clear();
 }

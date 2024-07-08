@@ -83,14 +83,14 @@ void DX12CommandList::Execute(const ExecuteDesc &executeInfo)
 {
     THROW_IF_FAILED(m_commandList->Close());
 
-    for ( uint32_t i = 0; i < executeInfo.WaitOnLocks.size(); ++i )
+    for ( uint32_t i = 0; i < executeInfo.WaitOnSemaphores.size(); ++i )
     {
-        m_commandQueue->Wait(reinterpret_cast<DX12Semaphore *>(executeInfo.WaitOnLocks[ i ])->GetFence(), 1);
+        m_commandQueue->Wait(reinterpret_cast<DX12Semaphore *>(executeInfo.WaitOnSemaphores[ i ])->GetFence(), 1);
     }
     m_commandQueue->ExecuteCommandLists(1, CommandListCast(m_commandList.addressof()));
-    for ( uint32_t i = 0; i < executeInfo.NotifyLocks.size(); ++i )
+    for ( uint32_t i = 0; i < executeInfo.NotifySemaphores.size(); ++i )
     {
-        m_commandQueue->Signal(reinterpret_cast<DX12Semaphore *>(executeInfo.NotifyLocks[ i ])->GetFence(), 1);
+        m_commandQueue->Signal(reinterpret_cast<DX12Semaphore *>(executeInfo.NotifySemaphores[ i ])->GetFence(), 1);
     }
     if ( executeInfo.Notify != nullptr )
     {
@@ -178,10 +178,26 @@ void DX12CommandList::BindScissorRect(float x, float y, float width, float heigh
     m_commandList->RSSetScissorRects(1, &m_scissor);
 }
 
-void DX12CommandList::BindDescriptorTable(IDescriptorTable *table)
+void DX12CommandList::BindResourceGroup(IResourceBindGroup *bindGroup)
 {
-    DX12DescriptorTable *pTable = reinterpret_cast<DX12DescriptorTable *>(table);
+    DX12ResourceBindGroup *pTable = reinterpret_cast<DX12ResourceBindGroup *>(bindGroup);
     SetRootSignature(pTable->GetRootSignature());
+
+    for ( const RootParameterHandle &handle : pTable->GetDescriptorTableHandles() )
+    {
+        switch ( m_desc.QueueType )
+        {
+        case QueueType::Graphics:
+            m_commandList->SetGraphicsRootDescriptorTable(handle.Index, handle.GpuHandle);
+            break;
+        case QueueType::Compute:
+            m_commandList->SetComputeRootDescriptorTable(handle.Index, handle.GpuHandle);
+            break;
+        default:
+            LOG(ERROR) << "`BindResourceGroup` is an invalid function for queue type";
+            break;
+        }
+    }
 }
 
 void DX12CommandList::SetDepthBias(float constantFactor, float clamp, float slopeFactor)
@@ -260,7 +276,7 @@ void DX12CommandList::CompatibilityPipelineBarrier(const PipelineBarrier &barrie
 {
     std::vector<D3D12_RESOURCE_BARRIER> resourceBarriers;
 
-    for ( const TextureBarrierInfo &imageBarrier : barrier.GetTextureBarriers() )
+    for ( const TextureBarrierDesc &imageBarrier : barrier.GetTextureBarriers() )
     {
         ID3D12Resource        *pResource       = reinterpret_cast<DX12TextureResource *>(imageBarrier.Resource)->GetResource();
         D3D12_RESOURCE_STATES  before          = DX12EnumConverter::ConvertResourceState(imageBarrier.OldState);
@@ -273,7 +289,7 @@ void DX12CommandList::CompatibilityPipelineBarrier(const PipelineBarrier &barrie
         }
     }
 
-    for ( const BufferBarrierInfo &bufferBarrier : barrier.GetBufferBarriers() )
+    for ( const BufferBarrierDesc &bufferBarrier : barrier.GetBufferBarriers() )
     {
         ID3D12Resource        *pResource       = reinterpret_cast<DX12TextureResource *>(bufferBarrier.Resource)->GetResource();
         D3D12_RESOURCE_STATES  before          = DX12EnumConverter::ConvertResourceState(bufferBarrier.OldState);
@@ -299,7 +315,7 @@ void DX12CommandList::EnhancedPipelineBarrier(const PipelineBarrier &barrier)
     std::vector<D3D12_BUFFER_BARRIER>  dxBufferBarriers  = {};
     std::vector<D3D12_TEXTURE_BARRIER> dxTextureBarriers = {};
 
-    for ( const TextureBarrierInfo &textureBarrier : barrier.GetTextureBarriers() )
+    for ( const TextureBarrierDesc &textureBarrier : barrier.GetTextureBarriers() )
     {
         ID3D12Resource *pResource = reinterpret_cast<DX12TextureResource *>(textureBarrier.Resource)->GetResource();
 
@@ -317,7 +333,7 @@ void DX12CommandList::EnhancedPipelineBarrier(const PipelineBarrier &barrier)
         }
     }
 
-    for ( const BufferBarrierInfo &bufferBarrier : barrier.GetBufferBarriers() )
+    for ( const BufferBarrierDesc &bufferBarrier : barrier.GetBufferBarriers() )
     {
         ID3D12Resource *pResource = reinterpret_cast<DX12TextureResource *>(bufferBarrier.Resource)->GetResource();
 
@@ -344,6 +360,7 @@ void DX12CommandList::EnhancedPipelineBarrier(const PipelineBarrier &barrier)
         m_commandList->Barrier(resourceBarriers.size(), resourceBarriers.data());
     }
 }
+
 void DX12CommandList::SetRootSignature(ID3D12RootSignature *rootSignature)
 {
     DZ_RETURN_IF(rootSignature == nullptr);
@@ -352,16 +369,18 @@ void DX12CommandList::SetRootSignature(ID3D12RootSignature *rootSignature)
     {
         LOG(WARNING) << "Root signature is set to a different value, it is not expected to overwrite this value.";
     }
+
     m_currentRootSignature = rootSignature;
-    if ( m_desc.QueueType == QueueType::Graphics )
+    switch ( m_desc.QueueType )
     {
+    case QueueType::Graphics:
         m_commandList->SetGraphicsRootSignature(rootSignature);
-        // TODO! Validate these for all cases
-        m_commandList->SetGraphicsRootDescriptorTable(0, m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetHeap()->GetGPUDescriptorHandleForHeapStart());
-    }
-    else
-    {
+        break;
+    case QueueType::Compute:
         m_commandList->SetComputeRootSignature(rootSignature);
-        m_commandList->SetComputeRootDescriptorTable(0, m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetHeap()->GetGPUDescriptorHandleForHeapStart());
+        break;
+    default:
+        LOG(ERROR) << "SetRootSignature is an invalid function for queue type";
+        break;
     }
 }

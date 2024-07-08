@@ -84,7 +84,7 @@ namespace DenOfIz
         std::unique_ptr<ISwapChain>       CreateSwapChain(const SwapChainDesc &createInfo) override;
         std::unique_ptr<IRootSignature>   CreateRootSignature(const RootSignatureDesc &createInfo) override;
         std::unique_ptr<IInputLayout>     CreateInputLayout(const InputLayoutDesc &createInfo) override;
-        std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableDesc &createInfo) override;
+        std::unique_ptr<IResourceBindGroup> CreateResourceBindGroup(const ResourceBindGroupDesc &createInfo) override;
         std::unique_ptr<IFence>           CreateFence() override;
         std::unique_ptr<ISemaphore>       CreateSemaphore() override;
         std::unique_ptr<IBufferResource>  CreateBufferResource(std::string name, const BufferDesc &createInfo) override;

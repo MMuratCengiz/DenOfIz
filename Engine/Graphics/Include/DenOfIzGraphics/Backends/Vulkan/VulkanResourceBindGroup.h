@@ -18,27 +18,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IDescriptorTable.h>
+#include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
 #include "VulkanContext.h"
 #include "VulkanRootSignature.h"
 
 namespace DenOfIz
 {
 
-    class VulkanDescriptorTable : public IDescriptorTable
+    class VulkanResourceBindGroup : public IResourceBindGroup
     {
     private:
-        VulkanContext       *m_context;
-        VulkanRootSignature *m_rootSignature;
-        DescriptorTableDesc  m_desc;
+        VulkanContext        *m_context;
+        VulkanRootSignature  *m_rootSignature;
+        ResourceBindGroupDesc m_desc;
 
         std::vector<vk::DescriptorSet>      m_descriptorSets;
         std::vector<vk::WriteDescriptorSet> m_writeDescriptorSets;
 
     public:
-        VulkanDescriptorTable(VulkanContext *context, DescriptorTableDesc desc);
+        VulkanResourceBindGroup(VulkanContext *context, ResourceBindGroupDesc desc);
 
-        void BindImage(ITextureResource *resource) override;
+        void BindTexture(ITextureResource *resource) override;
         void BindBuffer(IBufferResource *resource) override;
 
         const std::vector<vk::WriteDescriptorSet> &GetWriteDescriptorSets() const

@@ -4,17 +4,19 @@
 
 #define SDL_MAIN_HANDLED
 #include <DenOfIzGraphics/Renderer/SimpleRenderer.h>
+#include "DenOfIzGraphics/Renderer/ComputeTest.h"
 #include <SDL2/SDL.h>
 #include <filesystem>
-
-void BitSetTest()
-{
-
-}
 
 int main()
 {
     DenOfIz::Engine::Init();
+
+    DenOfIz::ComputeTest computeTest;
+    if (computeTest.Run() == 0) {
+        return 0;
+    }
+
 
 #if defined WIN32 && defined DEBUG
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);

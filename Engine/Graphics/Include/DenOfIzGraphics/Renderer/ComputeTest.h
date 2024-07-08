@@ -18,35 +18,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IDescriptorTable.h>
-#include "DX12BufferResource.h"
-#include "DX12Context.h"
-#include "DX12RootSignature.h"
-#include "DX12TextureResource.h"
+#include <DenOfIzGraphics/Backends/GraphicsAPI.h>
 
 namespace DenOfIz
 {
-
-    class DX12DescriptorTable : public IDescriptorTable
+    class ComputeTest
     {
     private:
-        std::vector<ID3D12Resource2 *> m_resources;
-        ID3D12RootSignature           *m_rootSignature;
+        std::unique_ptr<ILogicalDevice>     m_logicalDevice;
+        ShaderProgram                       m_program;
+        std::unique_ptr<ICommandListPool>   m_commandListPool;
+        std::unique_ptr<IPipeline>          m_pipeline;
+        std::unique_ptr<IBufferResource>    buffer;
+        std::unique_ptr<IInputLayout>       m_inputLayout;
+        std::unique_ptr<IRootSignature>     m_rootSignature;
+        std::unique_ptr<IResourceBindGroup> m_resourceBindGroup;
+        std::unique_ptr<IFence>             m_fence;
 
     public:
-        DX12DescriptorTable(DX12Context *context, DescriptorTableDesc desc);
+        ComputeTest();
+        ~ComputeTest();
 
-        void BindImage(ITextureResource *resource) override;
-        void BindBuffer(IBufferResource *resource) override;
-
-        const std::vector<ID3D12Resource2 *> &GetResources() const
-        {
-            return m_resources;
-        }
-        ID3D12RootSignature *GetRootSignature() const
-        {
-            return m_rootSignature;
-        }
+        int Run();
     };
-
 } // namespace DenOfIz

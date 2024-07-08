@@ -24,19 +24,27 @@ DX12Pipeline::DX12Pipeline(DX12Context *context, const PipelineDesc &desc) : m_c
 {
     DZ_NOT_NULL(context);
 
-    D3D12_COMPUTE_PIPELINE_STATE_DESC computePsoDesc = {};
-
     DZ_ASSERTM(m_desc.RootSignature != nullptr, "Root signature is not set for the pipeline");
     DZ_ASSERTM(m_desc.InputLayout != nullptr, "Input layout is not set for the pipeline");
 
-    CreateGraphicsPipeline();
+    m_rootSignature = reinterpret_cast<DX12RootSignature *>(m_desc.RootSignature);
+
+    switch ( m_desc.BindPoint )
+    {
+    case BindPoint::Graphics:
+        CreateGraphicsPipeline();
+        break;
+    case BindPoint::Compute:
+        CreateComputePipeline();
+        break;
+    case BindPoint::RayTracing:
+        break;
+    }
 }
 
 void DX12Pipeline::CreateGraphicsPipeline()
 {
-    m_topology                   = {};
     m_topology                   = DX12EnumConverter::ConvertPrimitiveTopology(m_desc.PrimitiveTopology);
-    m_rootSignature              = reinterpret_cast<DX12RootSignature *>(m_desc.RootSignature);
     DX12InputLayout *inputLayout = reinterpret_cast<DX12InputLayout *>(m_desc.InputLayout);
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
@@ -59,6 +67,18 @@ void DX12Pipeline::CreateGraphicsPipeline()
 
     SetMSAASampleCount(m_desc, psoDesc);
     THROW_IF_FAILED(m_context->D3DDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(m_graphicsPipeline.put())));
+}
+
+void DX12Pipeline::CreateComputePipeline()
+{
+    const auto &compiledShaders = m_desc.ShaderProgram.GetCompiledShaders();
+    DZ_ASSERTM(compiledShaders.size() == 1, "Compute pipeline must have at least/only one shader");
+
+    D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
+    psoDesc.pRootSignature                    = m_rootSignature->GetRootSignature();
+    psoDesc.CS                                = GetShaderByteCode(compiledShaders[ 0 ]);
+
+    THROW_IF_FAILED(m_context->D3DDevice->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(m_graphicsPipeline.put())));
 }
 
 void DX12Pipeline::InitDepthStencil(D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc) const
@@ -145,7 +165,6 @@ D3D12_SHADER_BYTECODE DX12Pipeline::GetShaderByteCode(const CompiledShader &comp
 {
     return D3D12_SHADER_BYTECODE(compiledShader.Data->GetBufferPointer(), compiledShader.Data->GetBufferSize());
 }
-
 DX12Pipeline::~DX12Pipeline()
 {
     m_graphicsPipeline.reset();

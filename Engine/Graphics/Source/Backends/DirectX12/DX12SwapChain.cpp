@@ -30,6 +30,8 @@ DX12SwapChain::DX12SwapChain(DX12Context *context, const SwapChainDesc &desc) : 
 
 void DX12SwapChain::CreateSwapChain()
 {
+    DZ_NOT_NULL(m_context->Window);
+
     GraphicsWindowSurface surface = m_context->Window->GetSurface();
     if ( m_swapChainCreateInfo.Width != surface.Width || m_swapChainCreateInfo.Height != surface.Height )
     {

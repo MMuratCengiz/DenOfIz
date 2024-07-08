@@ -31,6 +31,7 @@ namespace DenOfIz
         DX12Context                *m_context;
         ID3D12Resource2            *m_resource;
         D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
+        D3D12_ROOT_PARAMETER_TYPE   m_rootParameterType;
         bool                        isExternalResource = false;
 
     public:
@@ -40,6 +41,11 @@ namespace DenOfIz
 
         void AttachSampler(SamplerDesc &samplerDesc) override;
         void Deallocate() override;
+
+        const D3D12_ROOT_PARAMETER_TYPE &GetRootParameterType() const
+        {
+            return m_rootParameterType;
+        }
 
         ID3D12Resource *GetResource() const
         {

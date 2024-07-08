@@ -29,31 +29,23 @@ namespace DenOfIz
     {
         BufferDesc     m_desc;
         VulkanContext *m_context;
-
-        VmaAllocation m_allocation;
-        bool          m_alreadyDisposed  = false;
-        bool          m_alreadyAllocated = false;
-
-        vk::Buffer Instance;
+        VmaAllocation  m_allocation;
+        vk::Buffer     Instance;
 
     public:
         void                     MapMemory() override;
         void                     CopyData(const void *data, uint32_t size) override;
+        void *                   ReadData() override;
         void                     UnmapMemory() override;
         vk::DescriptorBufferInfo DescriptorInfo;
 
         explicit VulkanBufferResource(VulkanContext *context, const BufferDesc &desc);
-
-        void Deallocate() override;
         ~VulkanBufferResource() override;
         void                     UpdateAllocation(const void *newData);
         inline const vk::Buffer &GetBuffer() const
         {
             return Instance;
         }
-
-    protected:
-        void Allocate(const void *newData) override;
     };
 
 } // namespace DenOfIz

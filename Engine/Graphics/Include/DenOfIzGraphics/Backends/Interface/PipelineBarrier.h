@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    struct TextureBarrierInfo
+    struct TextureBarrierDesc
     {
         ITextureResource     *Resource;
         BitSet<ResourceState> OldState{};
@@ -41,14 +41,14 @@ namespace DenOfIz
         uint32_t ArrayLayer               = 0;
     };
 
-    struct BufferBarrierInfo
+    struct BufferBarrierDesc
     {
         IBufferResource      *Resource;
         BitSet<ResourceState> OldState;
         BitSet<ResourceState> NewState;
     };
 
-    struct MemoryBarrierInfo
+    struct MemoryBarrierDesc
     {
         // todo
         BitSet<ResourceState> OldState;
@@ -58,37 +58,37 @@ namespace DenOfIz
     class PipelineBarrier
     {
     private:
-        std::vector<TextureBarrierInfo> m_textureBarriers;
-        std::vector<BufferBarrierInfo>  m_bufferBarriers;
-        std::vector<MemoryBarrierInfo>  m_memoryBarriers;
+        std::vector<TextureBarrierDesc> m_textureBarriers;
+        std::vector<BufferBarrierDesc>  m_bufferBarriers;
+        std::vector<MemoryBarrierDesc>  m_memoryBarriers;
 
     public:
-        inline void TextureBarrier(TextureBarrierInfo barrier)
+        inline void TextureBarrier(TextureBarrierDesc barrier)
         {
             m_textureBarriers.push_back(barrier);
         }
 
-        inline void BufferBarrier(BufferBarrierInfo barrier)
+        inline void BufferBarrier(BufferBarrierDesc barrier)
         {
             m_bufferBarriers.push_back(barrier);
         }
 
-        inline void MemoryBarrier(MemoryBarrierInfo barrier)
+        inline void MemoryBarrier(MemoryBarrierDesc barrier)
         {
             m_memoryBarriers.push_back(barrier);
         }
 
-        inline const std::vector<TextureBarrierInfo> &GetTextureBarriers() const
+        inline const std::vector<TextureBarrierDesc> &GetTextureBarriers() const
         {
             return m_textureBarriers;
         }
 
-        inline const std::vector<BufferBarrierInfo> &GetBufferBarriers() const
+        inline const std::vector<BufferBarrierDesc> &GetBufferBarriers() const
         {
             return m_bufferBarriers;
         }
 
-        inline const std::vector<MemoryBarrierInfo> &GetMemoryBarriers() const
+        inline const std::vector<MemoryBarrierDesc> &GetMemoryBarriers() const
         {
             return m_memoryBarriers;
         }
@@ -96,7 +96,7 @@ namespace DenOfIz
         static PipelineBarrier UndefinedToRenderTarget(ITextureResource *resource)
         {
             PipelineBarrier    barrier;
-            TextureBarrierInfo textureBarrier{};
+            TextureBarrierDesc textureBarrier{};
             textureBarrier.OldState = ResourceState::Undefined;
             textureBarrier.NewState = ResourceState::RenderTarget;
             textureBarrier.Resource = resource;
@@ -107,7 +107,7 @@ namespace DenOfIz
         static PipelineBarrier RenderTargetToPresent(ITextureResource *resource)
         {
             PipelineBarrier    barrier;
-            TextureBarrierInfo textureBarrier{};
+            TextureBarrierDesc textureBarrier{};
             textureBarrier.OldState = ResourceState::RenderTarget;
             textureBarrier.NewState = ResourceState::Present;
             textureBarrier.Resource = resource;

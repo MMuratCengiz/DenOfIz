@@ -38,18 +38,20 @@ namespace DenOfIz
         std::unique_ptr<ICommandListPool> m_commandListPool;
         ICommandList                     *m_copyCommandList;
 
-        std::unique_ptr<ISemaphore>                   m_executeSemaphore;
+        std::unique_ptr<IFence>                       m_executeFence;
         std::mutex                                    m_resourceCleanLock;
         std::vector<std::unique_ptr<IBufferResource>> m_resourcesToClean;
         std::future<void>                             m_cleanResourcesFuture;
 
     public:
         BatchResourceCopy(ILogicalDevice *device);
+        ~BatchResourceCopy();
 
         void Begin();
         void CopyToGPUBuffer(const CopyToGpuBufferDesc &copyInfo);
         void CopyBufferRegion(const CopyBufferRegionDesc &copyInfo);
         void CopyTextureRegion(const CopyTextureRegionDesc &copyInfo);
         void End(ISemaphore *notify);
+        void CleanResources();
     };
 } // namespace DenOfIz

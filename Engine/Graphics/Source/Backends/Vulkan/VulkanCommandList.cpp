@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h>
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanDescriptorTable.h"
+#include "DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h"
 
 using namespace DenOfIz;
@@ -133,13 +133,13 @@ void VulkanCommandList::Execute(const ExecuteDesc &executeInfo)
 
     std::vector<vk::PipelineStageFlags> waitStages;
     std::vector<vk::Semaphore>          waitOnSemaphores;
-    for ( ISemaphore *waitOn : executeInfo.WaitOnLocks )
+    for ( ISemaphore *waitOn : executeInfo.WaitOnSemaphores )
     {
         waitOnSemaphores.push_back(reinterpret_cast<VulkanSemaphore *>(waitOn)->GetSemaphore());
         waitStages.push_back(vk::PipelineStageFlagBits::eAllCommands);
     }
     std::vector<vk::Semaphore> signalSemaphores;
-    for ( ISemaphore *signal : executeInfo.NotifyLocks )
+    for ( ISemaphore *signal : executeInfo.NotifySemaphores )
     {
         signalSemaphores.push_back(reinterpret_cast<VulkanSemaphore *>(signal)->GetSemaphore());
     }
@@ -153,9 +153,14 @@ void VulkanCommandList::Execute(const ExecuteDesc &executeInfo)
     vkSubmitInfo.signalSemaphoreCount = signalSemaphores.size();
     vkSubmitInfo.pSignalSemaphores    = signalSemaphores.data();
 
-    VulkanFence *notify = reinterpret_cast<VulkanFence *>(executeInfo.Notify);
-    notify->Reset();
-    const auto submitResult = m_context->Queues[ m_desc.QueueType ].submit(1, &vkSubmitInfo, notify->GetFence());
+    vk::Fence vkNotifyFence = VK_NULL_HANDLE;
+    if ( executeInfo.Notify != nullptr )
+    {
+        VulkanFence *notify = reinterpret_cast<VulkanFence *>(executeInfo.Notify);
+        notify->Reset();
+        vkNotifyFence = notify->GetFence();
+    }
+    const auto submitResult = m_context->Queues[ m_desc.QueueType ].submit(1, &vkSubmitInfo, vkNotifyFence);
 
     VK_CHECK_RESULT(submitResult);
 }
@@ -211,11 +216,11 @@ void VulkanCommandList::BindScissorRect(float offsetX, float offsetY, float widt
     m_commandBuffer.setScissorWithCount(1, &m_scissorRect);
 }
 
-void VulkanCommandList::BindDescriptorTable(IDescriptorTable *table)
+void VulkanCommandList::BindResourceGroup(IResourceBindGroup *bindGroup)
 {
     DZ_ASSERTM(m_boundPipeline != VK_NULL_HANDLE, "Pipeline must be bound before binding descriptor table.");
 
-    VulkanDescriptorTable *vkTable = dynamic_cast<VulkanDescriptorTable *>(table);
+    VulkanResourceBindGroup *vkTable = dynamic_cast<VulkanResourceBindGroup *>(bindGroup);
 
     std::vector<vk::WriteDescriptorSet> writeDescriptorSets = vkTable->GetWriteDescriptorSets();
     vk::PipelineBindPoint               bindPoint           = m_desc.QueueType == QueueType::Graphics ? vk::PipelineBindPoint::eGraphics : vk::PipelineBindPoint::eCompute;

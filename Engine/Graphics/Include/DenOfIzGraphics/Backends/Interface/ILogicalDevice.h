@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "../Common/GraphicsWindowHandle.h"
 #include "IBufferResource.h"
 #include "ICommandListPool.h"
-#include "IDescriptorTable.h"
 #include "IPipeline.h"
+#include "IResourceBindGroup.h"
 #include "IRootSignature.h"
 #include "ISemaphore.h"
 #include "ISwapChain.h"
@@ -55,7 +55,7 @@ namespace DenOfIz
         virtual std::unique_ptr<ISwapChain>       CreateSwapChain(const SwapChainDesc &createInfo)                       = 0;
         virtual std::unique_ptr<IRootSignature>   CreateRootSignature(const RootSignatureDesc &createInfo)               = 0;
         virtual std::unique_ptr<IInputLayout>     CreateInputLayout(const InputLayoutDesc &createInfo)                   = 0;
-        virtual std::unique_ptr<IDescriptorTable> CreateDescriptorTable(const DescriptorTableDesc &createInfo)           = 0;
+        virtual std::unique_ptr<IResourceBindGroup> CreateResourceBindGroup(const ResourceBindGroupDesc &createInfo)           = 0;
         virtual std::unique_ptr<IFence>           CreateFence()                                                          = 0;
         virtual std::unique_ptr<ISemaphore>       CreateSemaphore()                                                      = 0;
         virtual std::unique_ptr<IBufferResource>  CreateBufferResource(std::string name, const BufferDesc &createInfo)   = 0;

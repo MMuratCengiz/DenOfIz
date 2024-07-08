@@ -28,6 +28,7 @@ namespace DenOfIz
             GfxGlobal::GetInstance()->SetAPIPreference(preference);
         }
 
+        // TODO, remove the window parameter
         static std::unique_ptr<ILogicalDevice> CreateLogicalDevice(GraphicsWindowHandle *window)
         {
             std::unique_ptr<ILogicalDevice> logicalDevice = nullptr;

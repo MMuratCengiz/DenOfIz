@@ -77,6 +77,22 @@ namespace DenOfIz
         GraphicsWindowHandle *Window;
         PhysicalDevice        SelectedDeviceInfo;
         DX12Capabilities      DX12Capabilities;
+
+        ~DX12Context()
+        {
+            GraphicsCommandQueue                 = nullptr;
+            ComputeCommandQueue                  = nullptr;
+            CopyCommandQueue                     = nullptr;
+            CopyCommandListAllocator             = nullptr;
+            CopyCommandList                      = nullptr;
+            CpuDescriptorHeaps                   = {};
+            ShaderVisibleCbvSrvUavDescriptorHeap = nullptr;
+            ShaderVisibleSamplerDescriptorHeap   = nullptr;
+            DX12MemoryAllocator                  = nullptr;
+            D3DDevice                            = nullptr;
+            Adapter                              = nullptr;
+            DXGIFactory                          = nullptr;
+        }
     };
 
 } // namespace DenOfIz

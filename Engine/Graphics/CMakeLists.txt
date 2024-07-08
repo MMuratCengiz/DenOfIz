@@ -7,8 +7,8 @@ if (WIN32)
     find_package(directxtk12 CONFIG REQUIRED)
     find_package(directx12-agility CONFIG)
 else ()
-#    include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_dxcompiler.cmake")
-#    build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
+    #    include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_dxcompiler.cmake")
+    #    build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
 endif ()
 
 find_package(Vulkan REQUIRED)
@@ -36,12 +36,14 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
 
         #Renderers
         Source/Renderer/Common/BatchResourceCopy.cpp
-        Source/Renderer/SimpleRenderer.cpp)
+        Source/Renderer/ComputeTest.cpp
+        Source/Renderer/SimpleRenderer.cpp
+)
 
 SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanLogicalDevice.cpp
         Source/Backends/Vulkan/VulkanCommandList.cpp
-        Source/Backends/Vulkan/VulkanDescriptorTable.cpp
+        Source/Backends/Vulkan/VulkanResourceBindGroup.cpp
         Source/Backends/Vulkan/VulkanInputLayout.cpp
         Source/Backends/Vulkan/VulkanSurface.cpp
         Source/Backends/Vulkan/VulkanUtilities.cpp
@@ -55,7 +57,8 @@ SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanBufferResource.cpp
         Source/Backends/Vulkan/VulkanTextureResource.cpp
         Source/Backends/Vulkan/VulkanCubeMapResource.cpp
-        Source/Backends/Vulkan/VulkanPipelineBarrierHelper.cpp)
+        Source/Backends/Vulkan/VulkanPipelineBarrierHelper.cpp
+)
 
 
 set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
@@ -66,7 +69,7 @@ set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
         Source/Backends/DirectX12/DX12SwapChain.cpp
         Source/Backends/DirectX12/DX12RootSignature.cpp
         Source/Backends/DirectX12/DX12InputLayout.cpp
-        Source/Backends/DirectX12/DX12DescriptorTable.cpp
+        Source/Backends/DirectX12/DX12ResourceBindGroup.cpp
         Source/Backends/DirectX12/DX12CommandList.cpp
 
         #DirectX12 Resources
@@ -155,7 +158,7 @@ if (WIN32)
             Microsoft::DirectX-Guids
     )
 
-    if(TARGET Microsoft::DirectX12-Agility)
+    if (TARGET Microsoft::DirectX12-Agility)
         target_link_libraries(DenOfIzGraphics
                 PRIVATE
                 Microsoft::DirectX12-Agility
@@ -166,7 +169,7 @@ if (WIN32)
                 COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:Microsoft::DirectX12-Layers,IMPORTED_LOCATION_DEBUG> $<TARGET_FILE_DIR:DenOfIzGraphics>/D3D12
                 COMMAND_EXPAND_LISTS
         )
-    endif()
+    endif ()
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_DX12)
 endif ()
 if (APPLE)
