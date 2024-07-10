@@ -4,7 +4,7 @@
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
 #endif
 
-#ifdef BUILD_DX
+#ifdef BUILD_DX12
 #include <DenOfIzGraphics/Backends/DirectX12/DX12LogicalDevice.h>
 #endif
 

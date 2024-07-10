@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <DenOfIzGraphics/Backends/GraphicsAPI.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/Data/PrimitiveBuilder.h>
+#include <DenOfIzGraphics/Data/Geometry.h>
 #include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
 
 namespace DenOfIz
@@ -42,7 +42,7 @@ namespace DenOfIz
              0.0f,  1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f
         };
         // clang-format on
-        PrimitiveData                            m_rect = PrimitiveBuilder::BuildPlane({ .Width = 0.5f, .Height = 0.5f });
+        GeometryData                             m_rect = Geometry::BuildQuad({ .Size = XMFLOAT2(1.0f, 1.0f) });
         ShaderProgram                            m_program;
         std::unique_ptr<IPipeline>               m_pipeline;
         std::unique_ptr<IBufferResource>         m_vertexBuffer;

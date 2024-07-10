@@ -17,7 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifdef BUILD_VK
 
 #ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
@@ -76,5 +75,3 @@ namespace DenOfIz
 } // namespace DenOfIz
 
 #define VK_CHECK_RESULT(R) assert((R) == vk::Result::eSuccess)
-
-#endif

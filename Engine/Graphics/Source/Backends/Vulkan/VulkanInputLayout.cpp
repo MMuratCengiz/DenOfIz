@@ -23,14 +23,14 @@ using namespace DenOfIz;
 VulkanInputLayout::VulkanInputLayout(const InputLayoutDesc &inputLayoutDesc)
 {
     int bindingIndex = 0;
-    for ( const InputGroup &inputGroup : inputLayoutDesc.InputGroups )
+    for ( const InputGroupDesc &inputGroup : inputLayoutDesc.InputGroups )
     {
         VkVertexInputBindingDescription &bindingDescription = m_bindingDescriptions.emplace_back(VkVertexInputBindingDescription{});
         bindingDescription.binding                          = bindingIndex;
         bindingDescription.inputRate                        = inputGroup.StepRate == StepRate::PerInstance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
 
         uint32_t offset = 0;
-        for ( const InputLayoutElement &inputElement : inputGroup.Elements )
+        for ( const InputLayoutElementDesc &inputElement : inputGroup.Elements )
         {
             VkVertexInputAttributeDescription &attributeDescription = m_attributeDescriptions.emplace_back(VkVertexInputAttributeDescription{});
             attributeDescription.binding                            = bindingIndex;

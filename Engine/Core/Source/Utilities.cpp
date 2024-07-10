@@ -15,6 +15,7 @@
 //  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzCore/Utilities.h>
+#include <filesystem>
 #include <fstream>
 
 #ifdef __APPLE__
@@ -106,6 +107,6 @@ std::string Utilities::AppPath(const std::string &resourcePath)
     LOG(WARNING) << "Unable to load file: " << resourcePath;
     return "";
 #else
-    return relative;
+    return resourcePath;
 #endif
 }

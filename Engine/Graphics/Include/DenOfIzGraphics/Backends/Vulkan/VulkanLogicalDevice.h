@@ -17,7 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifdef BUILD_VK
 
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
@@ -112,5 +111,3 @@ namespace DenOfIz
     };
 
 } // namespace DenOfIz
-
-#endif

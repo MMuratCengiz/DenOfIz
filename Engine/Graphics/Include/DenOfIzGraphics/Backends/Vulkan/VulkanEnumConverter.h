@@ -17,7 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#ifdef BUILD_VK
 
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
@@ -527,5 +526,3 @@ namespace DenOfIz
     };
 
 } // namespace DenOfIz
-
-#endif

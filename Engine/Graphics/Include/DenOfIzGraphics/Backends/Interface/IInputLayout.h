@@ -42,7 +42,7 @@ namespace DenOfIz
         TextureCoordinate,
     };
 
-    struct InputLayoutElement
+    struct InputLayoutElementDesc
     {
         Semantic Semantic;
         uint32_t SemanticIndex;
@@ -52,10 +52,10 @@ namespace DenOfIz
     /**
      * @brief Describes a group of input elements that are bound to a single vertex buffer.
      */
-    struct InputGroup
+    struct InputGroupDesc
     {
-        std::vector<InputLayoutElement> Elements;
-        StepRate                        StepRate;
+        std::vector<InputLayoutElementDesc> Elements;
+        StepRate                            StepRate = StepRate::PerVertex;
     };
 
     /**
@@ -63,7 +63,7 @@ namespace DenOfIz
      */
     struct InputLayoutDesc
     {
-        std::vector<InputGroup> InputGroups;
+        std::vector<InputGroupDesc> InputGroups;
     };
 
     class IInputLayout

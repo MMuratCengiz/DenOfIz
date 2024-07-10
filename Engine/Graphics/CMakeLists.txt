@@ -43,7 +43,8 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         #Renderers
         Source/Data/BatchResourceCopy.cpp
         Source/Data/TextureLoader.cpp
-        Source/Data/PrimitiveBuilder.cpp
+        Source/Data/VertexTypes.cpp
+        Source/Data/Geometry.cpp
         Source/Renderer/ComputeTest.cpp
         Source/Renderer/SimpleRenderer.cpp
 )
@@ -213,7 +214,6 @@ if (APPLE)
             $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
             $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
 endif ()
-
 
 if (WIN32 OR LINUX)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_VK)

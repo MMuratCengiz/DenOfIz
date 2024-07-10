@@ -25,7 +25,7 @@ namespace DenOfIz
     {
         m_window = window;
         GraphicsAPI::SetAPIPreference(APIPreference{
-//            .Windows = APIPreferenceWindows::Vulkan,
+            //            .Windows = APIPreferenceWindows::Vulkan,
         });
 
         m_logicalDevice  = GraphicsAPI::CreateLogicalDevice(m_window);
@@ -46,12 +46,7 @@ namespace DenOfIz
         m_rootSignature->AddResourceBinding(timePassedBinding);
         m_rootSignature->Create();
 
-        m_inputLayout =
-            m_logicalDevice->CreateInputLayout({ .InputGroups = { { .Elements =
-                                                                    {
-                                                                            InputLayoutElement{ .Semantic = Semantic::Position, .Format = Format::R32G32B32A32Float },
-                                                                    },
-                                                                    .StepRate = StepRate::PerVertex } } });
+        m_inputLayout = m_logicalDevice->CreateInputLayout(VertexPositionNormalTexture::InputLayout);
 
         const GraphicsWindowSurface &surface = m_window->GetSurface();
         m_swapChain = m_logicalDevice->CreateSwapChain(SwapChainDesc{ .Width = surface.Width, .Height = surface.Height, .BufferCount = mc_framesInFlight });
@@ -76,14 +71,14 @@ namespace DenOfIz
         vBufferDesc.HeapType     = HeapType::GPU;
         vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
         vBufferDesc.InitialState = ResourceState::CopyDst;
-        vBufferDesc.NumBytes     = m_rect.Vertices.size() * sizeof(float);
+        vBufferDesc.NumBytes     = m_rect.SizeOfVertices();
         m_vertexBuffer           = m_logicalDevice->CreateBufferResource("vb", vBufferDesc);
 
         BufferDesc iBufferDesc{};
         iBufferDesc.HeapType     = HeapType::GPU;
         iBufferDesc.Descriptor   = ResourceDescriptor::IndexBuffer;
         iBufferDesc.InitialState = ResourceState::CopyDst;
-        iBufferDesc.NumBytes     = m_rect.Indices.size() * sizeof(uint32_t);
+        iBufferDesc.NumBytes     = m_rect.SizeOfIndices();
         m_indexBuffer            = m_logicalDevice->CreateBufferResource("ib", iBufferDesc);
 
         m_batchResourceCopy->Begin();

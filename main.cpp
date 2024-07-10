@@ -30,7 +30,7 @@ int main()
 
     uint32_t windowFlags = SDL_WINDOW_SHOWN;
 #if defined WIN32 || defined __linux__
-    windowFlags |= SDL_WINDOW_VULKAN
+    windowFlags |= SDL_WINDOW_VULKAN;
 #elif __APPLE__
     windowFlags |= SDL_WINDOW_METAL;
 #endif
