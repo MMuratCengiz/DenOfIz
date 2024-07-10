@@ -30,7 +30,6 @@ DX12LogicalDevice::DX12LogicalDevice()
 DX12LogicalDevice::~DX12LogicalDevice()
 {
     WaitIdle();
-    m_context = nullptr;
 }
 
 void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
@@ -155,8 +154,7 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
     // Create the DX12 API device object.
     wil::com_ptr<ID3D12Device> dxDevice;
     THROW_IF_FAILED(D3D12CreateDevice(m_context->Adapter.get(), m_minFeatureLevel, IID_PPV_ARGS(dxDevice.put())));
-    THROW_IF_FAILED(dxDevice->QueryInterface(IID_PPV_ARGS(m_context->D3DDevice.put())));
-    dxDevice->Release();
+    m_context->D3DDevice = dxDevice.query<ID3D12Device9>();
 
     // Confirm the device supports Shader Model 6.3 or better.
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_SHADER_MODEL_6_3 };
@@ -253,10 +251,24 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
     allocatorDesc.Flags = static_cast<D3D12MA::ALLOCATOR_FLAGS>(D3D12MA::ALLOCATOR_FLAG_MSAA_TEXTURES_ALWAYS_COMMITTED | D3D12MA::ALLOCATOR_FLAG_DEFAULT_POOLS_NOT_ZEROED);
 
     THROW_IF_FAILED(D3D12MA::CreateAllocator(&allocatorDesc, m_context->DX12MemoryAllocator.put()));
+    THROW_IF_FAILED(m_context->D3DDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_waitIdleFence.put())));
 }
 
 void DX12LogicalDevice::WaitIdle()
 {
+    uint16_t fenceValue = 0;
+    for ( auto &queue : { m_context->GraphicsCommandQueue, m_context->ComputeCommandQueue, m_context->CopyCommandQueue } )
+    {
+        if ( queue )
+        {
+            queue->Signal(m_waitIdleFence.get(), ++fenceValue);
+        }
+    }
+
+    if (m_waitIdleFence)
+    {
+        m_waitIdleFence->SetEventOnCompletion(fenceValue, nullptr);
+    }
 }
 
 std::unique_ptr<ICommandListPool> DX12LogicalDevice::CreateCommandListPool(const CommandListPoolDesc &poolDesc)

@@ -28,7 +28,7 @@ DX12BufferResource::DX12BufferResource(DX12Context *context, const BufferDesc &d
     m_numBytes                 = m_desc.NumBytes;
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
 
-    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::UnorderedAccess) )
+    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::RWBuffer) )
     {
         flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
@@ -82,7 +82,7 @@ void DX12BufferResource::CreateBufferView()
     {
         uint64_t stride = m_desc.BufferView.Stride;
 
-        if ( m_desc.Descriptor.IsSet(ResourceDescriptor::UnorderedAccess) || m_desc.HeapType == HeapType::GPU )
+        if ( m_desc.Descriptor.IsSet(ResourceDescriptor::RWBuffer) )
         {
             D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {};
             desc.Format                           = DX12EnumConverter::ConvertFormat(m_desc.Format);
@@ -141,6 +141,7 @@ void DX12BufferResource::UnmapMemory()
     m_resource->Unmap(0, NULL);
     m_mappedMemory = nullptr;
 }
+
 DX12BufferResource::~DX12BufferResource()
 {
     if ( m_mappedMemory != nullptr )

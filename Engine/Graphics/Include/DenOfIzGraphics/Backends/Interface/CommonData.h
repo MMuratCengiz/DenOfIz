@@ -266,16 +266,17 @@ namespace DenOfIz
     enum class ResourceDescriptor : uint32_t
     {
         Buffer                = 1 << 1,
-        Texture               = 1 << 2,
-        Sampler               = 1 << 3,
-        UniformBuffer         = 1 << 4,
-        RootConstant          = 1 << 5,
-        IndexBuffer           = 1 << 6,
-        VertexBuffer          = 1 << 7,
-        IndirectBuffer        = 1 << 8,
-        TextureCube           = 1 << 9,
-        AccelerationStructure = 1 << 10,
-        UnorderedAccess       = 1 << 11 // When not set, implies read-only resource
+        RWBuffer              = 1 << 2,
+        Texture               = 1 << 3,
+        RWTexture             = 1 << 4,
+        Sampler               = 1 << 5,
+        UniformBuffer         = 1 << 6,
+        RootConstant          = 1 << 7,
+        IndexBuffer           = 1 << 8,
+        VertexBuffer          = 1 << 9,
+        IndirectBuffer        = 1 << 10,
+        TextureCube           = 1 << 11,
+        AccelerationStructure = 1 << 12,
     };
 
     enum class ResourceState : uint32_t

@@ -15,29 +15,44 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IInputLayout.h>
-#include "VulkanContext.h"
-#include "VulkanEnumConverter.h"
+#include "stb_image.h"
+#include <DenOfIzCore/Common.h>
+
+#define DZ_USE_STB_IMAGE
+
+#ifdef DZ_USE_STB_IMAGE
+typedef stbi_uc DzImageType;
+#endif
 
 namespace DenOfIz
 {
-
-    class VulkanInputLayout : public IInputLayout
+    struct TextureData
     {
-    private:
-        VkPipelineVertexInputStateCreateInfo           m_vertexInputState;
-        std::vector<VkVertexInputBindingDescription>   m_bindingDescriptions;
-        std::vector<VkVertexInputAttributeDescription> m_attributeDescriptions;
+        int          Width;
+        int          Height;
+        int          Channels;
+        DzImageType *Contents;
 
-    public:
-        VulkanInputLayout(const InputLayoutDesc &inputLayoutDesc);
-        inline const VkPipelineVertexInputStateCreateInfo &GetVertexInputState() const
+        ~TextureData()
         {
-            return m_vertexInputState;
+#ifdef DZ_USE_STB_IMAGE
+            stbi_image_free(Contents);
+#endif
         }
-        ~VulkanInputLayout() override = default;
     };
 
+    class TextureLoader
+    {
+    private:
+        TextureLoader() = delete;
+
+    public:
+        static TextureData LoadTexture(const std::string&path);
+
+    private:
+        static TextureData LoadTextureSTB(const std::string& path);
+    };
 } // namespace DenOfIz

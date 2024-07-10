@@ -26,12 +26,14 @@ ComputeTest::ComputeTest()
 
 ComputeTest::~ComputeTest()
 {
-    m_logicalDevice->WaitIdle();
+    m_fence->Wait();
+
+    m_commandListPool.reset();
+    m_fence.reset();
     buffer.reset();
     m_rootSignature.reset();
     m_inputLayout.reset();
     m_pipeline.reset();
-    m_logicalDevice->WaitIdle();
     m_logicalDevice.reset();
     GfxGlobal::Destroy();
     GraphicsAPI::ReportLiveObjects();
@@ -55,13 +57,13 @@ int ComputeTest::Run()
     ResourceBinding bufferBinding{};
     bufferBinding.Name       = "computeReadBack";
     bufferBinding.Binding    = 0;
-    bufferBinding.Descriptor = BitSet<ResourceDescriptor>(ResourceDescriptor::Buffer) | ResourceDescriptor::UnorderedAccess;
+    bufferBinding.Descriptor = BitSet<ResourceDescriptor>(ResourceDescriptor::RWBuffer);
     bufferBinding.Stages     = { ShaderStage::Compute };
     m_rootSignature->AddResourceBinding(bufferBinding);
     m_rootSignature->Create();
 
     BufferDesc bufferDesc{};
-    bufferDesc.Descriptor        = ResourceDescriptor::UnorderedAccess;
+    bufferDesc.Descriptor        = ResourceDescriptor::RWBuffer;
     bufferDesc.NumBytes          = 1024 * sizeof(float);
     bufferDesc.BufferView.Stride = sizeof(float);
     bufferDesc.HeapType          = HeapType::GPU;
@@ -120,7 +122,7 @@ int ComputeTest::Run()
     float *mappedData = reinterpret_cast<float *>(readBack->ReadData());
     for ( UINT i = 0; i < 1024; i++ )
     {
-        std::cout << "Index " << i << ": " << mappedData[ i ] << std::endl;
+//        std::cout << "Index " << i << ": " << mappedData[ i ] << std::endl;
     }
     readBack->UnmapMemory();
     return 0;

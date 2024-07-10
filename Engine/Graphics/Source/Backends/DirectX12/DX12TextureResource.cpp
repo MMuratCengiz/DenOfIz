@@ -56,9 +56,8 @@ DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc
     allocationDesc.CreationNodeMask = 1;
     allocationDesc.VisibleNodeMask  = 1;
     // --
-    D3D12MA::Allocation *allocation;
 
-    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::UnorderedAccess) )
+    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::RWTexture) )
     {
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
@@ -75,7 +74,7 @@ DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc
         initialState = DX12EnumConverter::ConvertResourceState(ResourceState::DepthWrite);
     }
 
-    HRESULT hr = m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, initialState, NULL, &allocation, IID_PPV_ARGS(&m_resource));
+    HRESULT hr = m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, initialState, NULL, &m_allocation, IID_PPV_ARGS(&m_resource));
     THROW_IF_FAILED(hr);
 
     if ( m_desc.Descriptor.IsSet(ResourceDescriptor::Texture) )
@@ -83,7 +82,7 @@ DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc
         CreateTextureSrv();
         m_rootParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
     }
-    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::UnorderedAccess) )
+    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::RWTexture) )
     {
         CreateTextureUav();
         m_rootParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
@@ -92,7 +91,7 @@ DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc
 
 void DX12TextureResource::Validate()
 {
-    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::UnorderedAccess) && m_desc.MSAASampleCount != MSAASampleCount::_0 )
+    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::RWTexture) && m_desc.MSAASampleCount != MSAASampleCount::_0 )
     {
         LOG(WARNING) << "MSAA textures cannot be used as UAVs. Resetting MSAASampleCount to 0.";
         m_desc.MSAASampleCount = MSAASampleCount::_0;
@@ -292,6 +291,11 @@ void DX12TextureResource::AttachSampler(SamplerDesc &samplerDesc)
 
 void DX12TextureResource::Deallocate()
 {
+    if ( !isExternalResource )
+    {
+        m_allocation->Release();
+        m_resource->Release();
+    }
 }
 
 D3D12_FILTER DX12TextureResource::CalculateFilter(Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy) const

@@ -20,8 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzCore/Time.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <DenOfIzGraphics/Backends/GraphicsAPI.h>
+#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
+#include <DenOfIzGraphics/Data/PrimitiveBuilder.h>
 #include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
-#include "Common/BatchResourceCopy.h"
 
 namespace DenOfIz
 {
@@ -41,10 +42,11 @@ namespace DenOfIz
              0.0f,  1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f
         };
         // clang-format on
-
+        PrimitiveData                            m_rect = PrimitiveBuilder::BuildPlane({ .Width = 0.5f, .Height = 0.5f });
         ShaderProgram                            m_program;
         std::unique_ptr<IPipeline>               m_pipeline;
         std::unique_ptr<IBufferResource>         m_vertexBuffer;
+        std::unique_ptr<IBufferResource>         m_indexBuffer;
         std::unique_ptr<IBufferResource>         m_timePassedBuffer;
         std::unique_ptr<Time>                    m_time = std::make_unique<Time>();
         std::unique_ptr<IInputLayout>            m_inputLayout;

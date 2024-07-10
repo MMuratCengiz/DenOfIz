@@ -29,10 +29,11 @@ namespace DenOfIz
     private:
         TextureDesc                 m_desc;
         DX12Context                *m_context;
+        D3D12MA::Allocation        *m_allocation;
         ID3D12Resource2            *m_resource;
         D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
         D3D12_ROOT_PARAMETER_TYPE   m_rootParameterType;
-        bool                        isExternalResource = false;
+        bool                        isExternalResource = false; // Used for swap chain render targets, might need a better way
 
     public:
         DX12TextureResource(DX12Context *context, const TextureDesc &desc);
@@ -51,6 +52,7 @@ namespace DenOfIz
         {
             return m_resource;
         }
+
         const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle() const
         {
             return m_cpuHandle;

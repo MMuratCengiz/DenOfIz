@@ -25,7 +25,7 @@ namespace DenOfIz
     {
         m_window = window;
         GraphicsAPI::SetAPIPreference(APIPreference{
-            //            .Windows = APIPreferenceWindows::Vulkan,
+            //                        .Windows = APIPreferenceWindows::Vulkan,
         });
 
         m_logicalDevice  = GraphicsAPI::CreateLogicalDevice(m_window);
@@ -50,7 +50,6 @@ namespace DenOfIz
             m_logicalDevice->CreateInputLayout({ .InputGroups = { { .Elements =
                                                                     {
                                                                             InputLayoutElement{ .Semantic = Semantic::Position, .Format = Format::R32G32B32A32Float },
-                                                                            InputLayoutElement{ .Semantic = Semantic::Color, .Format = Format::R32G32B32A32Float,} ,
                                                                     },
                                                                     .StepRate = StepRate::PerVertex } } });
 
@@ -73,15 +72,23 @@ namespace DenOfIz
             m_imageRenderedSemaphores.push_back(m_logicalDevice->CreateSemaphore());
         }
 
-        BufferDesc bufferDesc{};
-        bufferDesc.HeapType     = HeapType::GPU;
-        bufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
-        bufferDesc.InitialState = ResourceState::CopyDst;
-        bufferDesc.NumBytes     = m_triangle.size() * sizeof(float);
-        m_vertexBuffer          = m_logicalDevice->CreateBufferResource("vb", bufferDesc);
+        BufferDesc vBufferDesc{};
+        vBufferDesc.HeapType     = HeapType::GPU;
+        vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
+        vBufferDesc.InitialState = ResourceState::CopyDst;
+        vBufferDesc.NumBytes     = m_rect.Vertices.size() * sizeof(float);
+        m_vertexBuffer           = m_logicalDevice->CreateBufferResource("vb", vBufferDesc);
+
+        BufferDesc iBufferDesc{};
+        iBufferDesc.HeapType     = HeapType::GPU;
+        iBufferDesc.Descriptor   = ResourceDescriptor::IndexBuffer;
+        iBufferDesc.InitialState = ResourceState::CopyDst;
+        iBufferDesc.NumBytes     = m_rect.Indices.size() * sizeof(uint32_t);
+        m_indexBuffer            = m_logicalDevice->CreateBufferResource("ib", iBufferDesc);
 
         m_batchResourceCopy->Begin();
-        m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_vertexBuffer.get(), .Data = m_triangle.data(), .NumBytes = bufferDesc.NumBytes });
+        m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_vertexBuffer.get(), .Data = m_rect.Vertices.data(), .NumBytes = vBufferDesc.NumBytes });
+        m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_indexBuffer.get(), .Data = m_rect.Indices.data(), .NumBytes = iBufferDesc.NumBytes });
         m_batchResourceCopy->End(nullptr);
 
         BufferDesc deltaTimeBufferDesc{};
@@ -130,7 +137,8 @@ namespace DenOfIz
         nextCommandList->BindPipeline(m_pipeline.get());
         nextCommandList->BindResourceGroup(m_resourceBindGroup.get());
         nextCommandList->BindVertexBuffer(m_vertexBuffer.get());
-        nextCommandList->Draw(3, 1);
+        nextCommandList->BindIndexBuffer(m_indexBuffer.get(), IndexType::Uint32);
+        nextCommandList->DrawIndexed(m_rect.Indices.size(), 1);
         nextCommandList->EndRendering();
         nextCommandList->SetPipelineBarrier(PipelineBarrier::RenderTargetToPresent(m_swapChain->GetRenderTarget(nextImage)));
 
@@ -144,26 +152,13 @@ namespace DenOfIz
 
     void SimpleRenderer::Quit()
     {
-        m_batchResourceCopy.reset();
         m_timePassedBuffer->UnmapMemory();
-        m_logicalDevice->WaitIdle();
-        m_commandListRing.reset();
-        m_swapChain.reset();
-        m_rootSignature.reset();
-        m_inputLayout.reset();
-        m_pipeline.reset();
-        m_logicalDevice->WaitIdle();
-        m_vertexBuffer.reset();
-        m_timePassedBuffer.reset();
         for ( uint32_t i = 0; i < mc_framesInFlight; ++i )
         {
-            m_fences[ i ].reset();
-            m_imageReadySemaphores[ i ].reset();
-            m_imageRenderedSemaphores[ i ].reset();
+            m_fences[ i ]->Wait();
         }
-        m_logicalDevice.reset();
+        m_logicalDevice->WaitIdle();
         GfxGlobal::Destroy();
-        GraphicsAPI::ReportLiveObjects();
     }
 
 } // namespace DenOfIz

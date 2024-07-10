@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanInputLayout.h>
 #include "DenOfIzGraphics/Backends/Common/ShaderReflection.h"
 
 namespace DenOfIz

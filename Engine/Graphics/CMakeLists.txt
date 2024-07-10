@@ -35,7 +35,9 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Backends/Common/ShaderProgram.cpp
 
         #Renderers
-        Source/Renderer/Common/BatchResourceCopy.cpp
+        Source/Data/BatchResourceCopy.cpp
+        Source/Data/TextureLoader.cpp
+        Source/Data/PrimitiveBuilder.cpp
         Source/Renderer/ComputeTest.cpp
         Source/Renderer/SimpleRenderer.cpp
 )

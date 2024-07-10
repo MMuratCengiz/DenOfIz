@@ -37,7 +37,7 @@ namespace DenOfIz
             {
                 return D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             }
-            if ( descriptor.Any({ ResourceDescriptor::Texture, ResourceDescriptor::Buffer }) && descriptor.IsSet(ResourceDescriptor::UnorderedAccess) )
+            if ( descriptor.Any({ ResourceDescriptor::RWTexture, ResourceDescriptor::RWBuffer }) )
             {
                 return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
             }

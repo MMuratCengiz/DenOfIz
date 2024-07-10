@@ -60,45 +60,8 @@ void VulkanPipeline::ConfigureVertexInput()
         hasTessellationShaders = hasTessellationShaders || stage == vk::ShaderStageFlagBits::eTessellationControl;
     }
 
-    auto &vertexInputs = m_programReflection.VertexInputs();
-
-    uint32_t offsetIter = 0;
-    for ( const VertexInput &vertexInput : vertexInputs )
-    {
-        vk::VertexInputAttributeDescription &desc = m_vertexAttributeDescriptions.emplace_back();
-
-        if ( m_desc.InterleavedMode )
-        {
-            desc.binding = 0;
-        }
-        else
-        {
-            vk::VertexInputBindingDescription &bindingDesc = m_inputBindingDescriptions.emplace_back();
-            bindingDesc.binding                            = m_inputBindingDescriptions.size() - 1;
-            bindingDesc.inputRate                          = vk::VertexInputRate::eVertex; // TODO investigate later for instanced rendering
-            bindingDesc.stride                             = 0;
-
-            desc.binding = bindingDesc.binding;
-        }
-
-        desc.location = vertexInput.Location;
-        desc.format   = VulkanEnumConverter::ConvertImageFormat(vertexInput.Format);
-        desc.offset   = vertexInput.Offset;
-        offsetIter += vertexInput.Size;
-    }
-
-    if ( m_desc.InterleavedMode )
-    {
-        vk::VertexInputBindingDescription &bindingDesc = m_inputBindingDescriptions.emplace_back();
-        bindingDesc.binding                            = 0;
-        bindingDesc.inputRate                          = vk::VertexInputRate::eVertex; // TODO investigate later for instanced rendering
-        bindingDesc.stride                             = offsetIter;
-    }
-
-    m_inputStateCreateInfo.vertexBindingDescriptionCount   = m_inputBindingDescriptions.size();
-    m_inputStateCreateInfo.pVertexBindingDescriptions      = m_inputBindingDescriptions.data();
-    m_inputStateCreateInfo.vertexAttributeDescriptionCount = m_vertexAttributeDescriptions.size();
-    m_inputStateCreateInfo.pVertexAttributeDescriptions    = m_vertexAttributeDescriptions.data();
+    VulkanInputLayout* inputLayout = reinterpret_cast<VulkanInputLayout*>(m_desc.InputLayout);
+    m_inputStateCreateInfo = inputLayout->GetVertexInputState();
 
     m_inputAssemblyCreateInfo.topology               = VulkanEnumConverter::ConvertPrimitiveTopology(m_desc.PrimitiveTopology);
     m_inputAssemblyCreateInfo.primitiveRestartEnable = VK_FALSE;

@@ -299,7 +299,7 @@ namespace DenOfIz
             {
                 usage |= vk::ImageUsageFlagBits::eSampled;
             }
-            if ( descriptor.IsSet(ResourceDescriptor::UnorderedAccess) )
+            if ( descriptor.Any({ ResourceDescriptor::RWBuffer, ResourceDescriptor::RWTexture }) )
             {
                 usage |= vk::ImageUsageFlagBits::eStorage;
             }
@@ -471,9 +471,9 @@ namespace DenOfIz
             }
             if ( descriptor.IsSet(ResourceDescriptor::Texture) )
             {
-                return descriptor.IsSet(ResourceDescriptor::UnorderedAccess) ? vk::DescriptorType::eStorageImage : vk::DescriptorType::eSampledImage;
+                return vk::DescriptorType::eSampledImage;
             }
-            if ( descriptor.IsSet(ResourceDescriptor::UnorderedAccess) )
+            if ( descriptor.IsSet(ResourceDescriptor::RWTexture) )
             {
                 return vk::DescriptorType::eStorageImage;
             }
@@ -481,7 +481,7 @@ namespace DenOfIz
             {
                 return vk::DescriptorType::eUniformBuffer;
             }
-            if ( descriptor.IsSet(ResourceDescriptor::Buffer) )
+            if ( descriptor.Any({ ResourceDescriptor::RWBuffer, ResourceDescriptor::Buffer }) )
             {
                 return vk::DescriptorType::eStorageBuffer;
             }

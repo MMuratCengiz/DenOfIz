@@ -38,6 +38,7 @@ namespace DenOfIz
     private:
         D3D_FEATURE_LEVEL            m_minFeatureLevel = D3D_FEATURE_LEVEL_12_0;
         std::unique_ptr<DX12Context> m_context;
+        wil::com_ptr<ID3D12Fence>    m_waitIdleFence;
 
     public:
         DX12LogicalDevice();
@@ -55,16 +56,16 @@ namespace DenOfIz
             return m_context->IsDeviceLost;
         }
 
-        std::unique_ptr<ICommandListPool> CreateCommandListPool(const CommandListPoolDesc &poolDesc) override;
-        std::unique_ptr<IPipeline>        CreatePipeline(const PipelineDesc &pipelineDesc) override;
-        std::unique_ptr<ISwapChain>       CreateSwapChain(const SwapChainDesc &swapChainDesc) override;
-        std::unique_ptr<IRootSignature>   CreateRootSignature(const RootSignatureDesc &rootSignatureDesc) override;
-        std::unique_ptr<IInputLayout>     CreateInputLayout(const InputLayoutDesc &inputLayoutDesc) override;
+        std::unique_ptr<ICommandListPool>   CreateCommandListPool(const CommandListPoolDesc &poolDesc) override;
+        std::unique_ptr<IPipeline>          CreatePipeline(const PipelineDesc &pipelineDesc) override;
+        std::unique_ptr<ISwapChain>         CreateSwapChain(const SwapChainDesc &swapChainDesc) override;
+        std::unique_ptr<IRootSignature>     CreateRootSignature(const RootSignatureDesc &rootSignatureDesc) override;
+        std::unique_ptr<IInputLayout>       CreateInputLayout(const InputLayoutDesc &inputLayoutDesc) override;
         std::unique_ptr<IResourceBindGroup> CreateResourceBindGroup(const ResourceBindGroupDesc &descriptorTableDesc) override;
-        std::unique_ptr<IFence>           CreateFence() override;
-        std::unique_ptr<ISemaphore>       CreateSemaphore() override;
-        std::unique_ptr<IBufferResource>  CreateBufferResource(std::string name, const BufferDesc &bufferDesc) override;
-        std::unique_ptr<ITextureResource> CreateTextureResource(std::string name, const TextureDesc &textureDesc) override;
+        std::unique_ptr<IFence>             CreateFence() override;
+        std::unique_ptr<ISemaphore>         CreateSemaphore() override;
+        std::unique_ptr<IBufferResource>    CreateBufferResource(std::string name, const BufferDesc &bufferDesc) override;
+        std::unique_ptr<ITextureResource>   CreateTextureResource(std::string name, const TextureDesc &textureDesc) override;
 
         void WaitIdle() override;
         // --
