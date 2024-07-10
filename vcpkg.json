@@ -15,7 +15,12 @@
     "directxmath",
     {
       "name": "sdl2",
-      "features": ["vulkan"]
+      "features": ["vulkan"],
+      "platform": "windows|linux"
+    },
+    {
+      "name": "sdl2",
+      "platform": "osx"
     },
     { "name": "d3d12-memory-allocator", "platform": "windows" },
     { "name": "directx12-agility", "platform": "windows" },

@@ -7,8 +7,8 @@
       "installDir": "build/DenOfIz/${presetName}",
       "binaryDir": "build/DenOfIz/${presetName}",
       "cacheVariables": {
-        "BUILD_SHARED_LIBS" : "OFF",
-        "CMAKE_TOOLCHAIN_FILE" : "vcpkg/scripts/buildsystems/vcpkg.cmake"
+        "BUILD_SHARED_LIBS": "OFF",
+        "CMAKE_TOOLCHAIN_FILE": "vcpkg/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {

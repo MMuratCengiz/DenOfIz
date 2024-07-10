@@ -213,17 +213,18 @@ namespace DenOfIz
         return std::move(spirv);
     }
 
-    IDxcBlob* ShaderCompiler::CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const
+    IDxcBlob *ShaderCompiler::CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const
     {
         // Attribute to source: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
         // https://github.com/KhronosGroup/Vulkan-Guide
+        std::string       path     = Utilities::AppPath(filename);
         uint32_t          codePage = DXC_CP_ACP;
         IDxcBlobEncoding *sourceBlob;
-        std::wstring      wsShaderPath(filename.begin(), filename.end());
+        std::wstring      wsShaderPath(path.begin(), path.end());
         HRESULT           result = m_dxcUtils->LoadFile(wsShaderPath.c_str(), &codePage, &sourceBlob);
         if ( FAILED(result) )
         {
-            throw std::runtime_error(&"Could not load shader file"[ GetLastError() ]);
+            LOG(FATAL) << "Could not load shader file: " << path << " error code: " << GetLastError();
         }
 
         std::string hlslVersion = "6_6";
@@ -310,7 +311,7 @@ namespace DenOfIz
         dxcResult->Release();
         sourceBlob->Release();
 
-        return std::move(code);
+        return code;
     }
 
 } // namespace DenOfIz

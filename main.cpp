@@ -28,7 +28,14 @@ int main()
         exit(1);
     }
 
-    auto window = SDL_CreateWindow("Hello C++", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN);
+    uint32_t windowFlags = SDL_WINDOW_SHOWN;
+#if defined WIN32 || defined __linux__
+    windowFlags |= SDL_WINDOW_VULKAN
+#elif __APPLE__
+    windowFlags |= SDL_WINDOW_METAL;
+#endif
+
+    auto window = SDL_CreateWindow("Hello C++", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, windowFlags);
 
     auto windowHandle = std::make_unique<DenOfIz::GraphicsWindowHandle>();
     windowHandle->Create(window);

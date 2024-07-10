@@ -35,6 +35,8 @@ namespace DenOfIz
         static std::string GetFilename(const std::string &file);
 
         static std::string CombineDirectories(const std::string &directory, const std::string &file);
+
+        static std::string AppPath(const std::string&resourcePath);
     };
 
 } // namespace DenOfIz

@@ -16,7 +16,10 @@
 
 #include <DenOfIzCore/Utilities.h>
 #include <fstream>
-#include <vector>
+
+#ifdef __APPLE__
+#include "CoreFoundation/CoreFoundation.h"
+#endif
 
 using namespace DenOfIz;
 
@@ -81,4 +84,28 @@ std::string Utilities::CombineDirectories(const std::string &directory, const st
     std::string f   = GetFilename(file);
 
     return dir + f;
+}
+
+std::string Utilities::AppPath(const std::string &resourcePath)
+{
+    std::filesystem::path testRel(resourcePath);
+    if (testRel.is_absolute())
+    {
+        return resourcePath;
+    }
+#if __APPLE__
+    CFBundleRef mainBundle   = CFBundleGetMainBundle();
+    CFURLRef    resourcesURL = CFBundleCopyResourcesDirectoryURL(mainBundle);
+    char        path[ PATH_MAX ];
+    if ( CFURLGetFileSystemRepresentation(resourcesURL, TRUE, (UInt8 *)path, PATH_MAX) )
+    {
+        CFRelease(resourcesURL);
+        return std::string(path) + "/" + resourcePath;
+    }
+    CFRelease(resourcesURL);
+    LOG(WARNING) << "Unable to load file: " << resourcePath;
+    return "";
+#else
+    return relative;
+#endif
 }

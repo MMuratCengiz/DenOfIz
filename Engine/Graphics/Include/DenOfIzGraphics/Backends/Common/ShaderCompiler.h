@@ -47,7 +47,7 @@ namespace DenOfIz
         void                  Destroy();
         void                  InitResources(TBuiltInResource &Resources) const;
         EShLanguage           FindLanguage(ShaderStage shaderType) const;
-        IDxcBlob             *CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const;
+        IDxcBlob             *CompileHLSL(const std::string &path, const CompileOptions &compileOptions) const;
         std::vector<uint32_t> CompileGLSL(const std::string &filename, const CompileOptions &compileOptions) const;
     };
 

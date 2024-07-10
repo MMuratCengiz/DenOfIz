@@ -12,8 +12,11 @@ else ()
     build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
 endif ()
 
-find_package(Vulkan REQUIRED)
-find_package(VulkanMemoryAllocator CONFIG REQUIRED)
+if (WIN32 OR LINUX)
+    find_package(Vulkan REQUIRED)
+    find_package(VulkanMemoryAllocator CONFIG REQUIRED)
+endif ()
+
 find_package(glslang CONFIG REQUIRED)
 find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_glsl CONFIG REQUIRED)
@@ -126,8 +129,6 @@ target_link_libraries(DenOfIzGraphics
         SDL2::SDL2
         SDL2::SDL2main
         SDL2::SDL2-static
-        Vulkan::Vulkan
-        GPUOpen::VulkanMemoryAllocator
         spirv-cross-glsl
         spirv-cross-hlsl
         spirv-cross-cpp
@@ -216,6 +217,9 @@ endif ()
 
 if (WIN32 OR LINUX)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_VK)
+    target_link_libraries(DenOfIzGraphics PUBLIC
+            Vulkan::Vulkan
+            GPUOpen::VulkanMemoryAllocator)
 endif ()
 
 set_target_default_properties(DenOfIzGraphics)

@@ -64,15 +64,16 @@ namespace DenOfIz
         void Create(SDL_Window *window)
         {
             m_sdlWindow = window;
-#ifdef _WIN32
             SDL_SysWMinfo info;
             SDL_VERSION(&info.version);
             if ( SDL_GetWindowWMInfo(window, &info) )
             {
+#ifdef _WIN32
                 m_windowHandle = info.info.win.window;
-            }
 #elif __APPLE__
+                m_windowHandle = info.info.cocoa.window;
 #endif
+            }
 
             if ( m_windowHandle == nullptr )
             {
@@ -86,7 +87,7 @@ namespace DenOfIz
 #ifdef _WIN32
         HWND
 #elif __APPLE__
-        NSWindow *
+        [[nodiscard]] NSWindow *
 #elif __linux__
 #error "Not implemented yet"
 #endif
@@ -95,10 +96,10 @@ namespace DenOfIz
             return m_windowHandle;
         }
 
-        const GraphicsWindowSurface GetSurface() const
+        [[nodiscard]] const GraphicsWindowSurface GetSurface() const
         {
 #ifdef WINDOW_MANAGER_SDL
-            GraphicsWindowSurface result;
+            GraphicsWindowSurface result{};
             SDL_Surface          *surface = SDL_GetWindowSurface(m_sdlWindow);
             result.Width                  = surface->w;
             result.Height                 = surface->h;
