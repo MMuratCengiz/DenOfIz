@@ -7,8 +7,9 @@ if (WIN32)
     find_package(directxtk12 CONFIG REQUIRED)
     find_package(directx12-agility CONFIG)
 else ()
-    #    include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_dxcompiler.cmake")
-    #    build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
+    # MacOS still needs to build from source
+    include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_dxcompiler.cmake")
+    build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
 endif ()
 
 find_package(Vulkan REQUIRED)
@@ -112,28 +113,19 @@ target_include_default_directories(DenOfIzGraphics)
 target_include_directories(DenOfIzGraphics
         PRIVATE
         ${TINYGLTF_INCLUDE_DIRS}
-        _ThirdParty/dxc/inc
         PUBLIC
         _ThirdParty/D3D12MemoryAllocator #TODO: Remove once dependency to the-forge is removed !TF!
-)
-
-target_link_directories(
-        DenOfIzGraphics
-        PRIVATE
-        _ThirdParty/dxc/lib/${CPU_ARCHITECTURE}
 )
 
 target_link_libraries(DenOfIzGraphics
         PUBLIC
         DenOfIzCore
         PRIVATE
-        WIL::WIL
         SDL2::SDL2
         SDL2::SDL2main
         SDL2::SDL2-static
         Vulkan::Vulkan
         GPUOpen::VulkanMemoryAllocator
-        dxcompiler
         spirv-cross-glsl
         spirv-cross-hlsl
         spirv-cross-cpp
@@ -148,13 +140,26 @@ target_link_libraries(DenOfIzGraphics
 )
 
 if (WIN32)
+    target_include_directories(DenOfIzGraphics
+            PRIVATE
+            _ThirdParty/dxc/inc
+    )
+
+    target_link_directories(
+            DenOfIzGraphics
+            PRIVATE
+            _ThirdParty/dxc/lib/${CPU_ARCHITECTURE}
+    )
+
     configure_file(_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/dxcompiler.dll COPYONLY)
     configure_file(_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/dxil.dll COPYONLY)
 
     target_link_libraries(DenOfIzGraphics
             PRIVATE
+            WIL::WIL
             dxgi
             d3d12
+            dxcompiler
             Microsoft::DirectX-Headers
             Microsoft::DirectXTK12
             Microsoft::DirectX-Guids
@@ -175,10 +180,15 @@ if (WIN32)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_DX12)
 endif ()
 if (APPLE)
+    target_include_directories(DenOfIzGraphics
+            PUBLIC
+            _ThirdParty/DirectXShaderCompiler/include/dxc
+    )
+
     include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_metalirconverter.cmake)
 
     target_include_directories(DenOfIzGraphics
-            PRIVATE
+            PUBLIC
             _ThirdParty/metal-cpp
             _ThirdParty/metal-cpp-extensions
             ${metal_irconverter_INCLUDE_DIRS}
@@ -186,18 +196,18 @@ if (APPLE)
     )
 
     target_link_libraries(DenOfIzGraphics
-            PRIVATE
-            ${metal_irconverter_LIBRARIES}
-    )
-
-    target_link_libraries(DenOfIzGraphics
+            PRIVATE ${metal_irconverter_LIBRARIES}
             PRIVATE "-framework Cocoa"
             PRIVATE "-framework Foundation"
             PRIVATE "-framework Metal"
             PRIVATE "-framework MetalKit"
+            PRIVATE dxcompiler
     )
 
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_METAL)
+    target_compile_options(DenOfIzGraphics PRIVATE
+            $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
+            $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
 endif ()
 
 
