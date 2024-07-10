@@ -19,13 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <string>
-#include <wil/com.h>
 #include "IBufferResource.h"
 #include "ITextureResource.h"
-
-#ifdef WIN32
-#define CComPtr Microsoft::WRL::ComPtr
-#endif
 
 #ifdef _WIN32
 #include <DenOfIzCore/Common_Windows.h> // Include this before to make sure NOMINMAX is defined
@@ -66,10 +61,24 @@ namespace DenOfIz
         std::string Path;
     };
 
+    struct ShaderBlob
+    {
+        size_t Size;
+        void  *Data;
+
+        ~ShaderBlob()
+        {
+            if ( Data != nullptr )
+            {
+                free(Data);
+            }
+        }
+    };
+
     struct CompiledShader
     {
-        ShaderStage            Stage;
-        wil::com_ptr<IDxcBlob> Data;
+        ShaderStage Stage;
+        IDxcBlob   *Blob;
     };
 
     struct VertexInput

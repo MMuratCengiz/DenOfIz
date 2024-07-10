@@ -52,7 +52,19 @@ void ShaderProgram::Compile()
         options.TargetIL = TargetIL::SPIRV;
 #endif
 
-        wil::com_ptr<IDxcBlob> data = compiler.CompileHLSL(shader.Path, options);
-        m_compiledShaders.push_back({ .Stage = shader.Stage, .Data = data });
+        IDxcBlob* blob = compiler.CompileHLSL(shader.Path, options);
+        m_compiledShaders.push_back({ .Stage = shader.Stage, .Blob = std::move(blob) });
+    }
+}
+
+ShaderProgram::~ShaderProgram()
+{
+    for ( auto &shader : m_compiledShaders )
+    {
+        if ( shader.Blob )
+        {
+            shader.Blob->Release();
+            shader.Blob = nullptr;
+        }
     }
 }

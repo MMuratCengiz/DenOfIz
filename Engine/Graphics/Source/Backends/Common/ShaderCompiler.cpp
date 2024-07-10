@@ -34,6 +34,10 @@ namespace DenOfIz
 
     void ShaderCompiler::Destroy()
     {
+        m_dxcUtils->Release();
+        m_dxcCompiler->Release();
+        m_dxcLibrary->Release();
+
         glslang::FinalizeProcess();
 #ifdef __APPLE__
         IRCompilerDestroy(mp_compiler);
@@ -209,14 +213,14 @@ namespace DenOfIz
         return std::move(spirv);
     }
 
-    wil::com_ptr<IDxcBlob> ShaderCompiler::CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const
+    IDxcBlob* ShaderCompiler::CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const
     {
         // Attribute to source: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
         // https://github.com/KhronosGroup/Vulkan-Guide
-        uint32_t                       codePage = DXC_CP_ACP;
-        wil::com_ptr<IDxcBlobEncoding> sourceBlob;
-        std::wstring                   wsShaderPath(filename.begin(), filename.end());
-        HRESULT                        result = m_dxcUtils->LoadFile(wsShaderPath.c_str(), &codePage, &sourceBlob);
+        uint32_t          codePage = DXC_CP_ACP;
+        IDxcBlobEncoding *sourceBlob;
+        std::wstring      wsShaderPath(filename.begin(), filename.end());
+        HRESULT           result = m_dxcUtils->LoadFile(wsShaderPath.c_str(), &codePage, &sourceBlob);
         if ( FAILED(result) )
         {
             throw std::runtime_error(&"Could not load shader file"[ GetLastError() ]);
@@ -280,7 +284,7 @@ namespace DenOfIz
         buffer.Ptr      = sourceBlob->GetBufferPointer();
         buffer.Size     = sourceBlob->GetBufferSize();
 
-        wil::com_ptr<IDxcResult> dxcResult{ nullptr };
+        IDxcResult *dxcResult{ nullptr };
         result = m_dxcCompiler->Compile(&buffer, arguments.data(), static_cast<uint32_t>(arguments.size()), nullptr, IID_PPV_ARGS(&dxcResult));
 
         if ( SUCCEEDED(result) )
@@ -290,18 +294,23 @@ namespace DenOfIz
 
         if ( FAILED(result) && (dxcResult) )
         {
-            wil::com_ptr<IDxcBlobEncoding> errorBlob;
+            IDxcBlobEncoding *errorBlob;
             result = dxcResult->GetErrorBuffer(&errorBlob);
             if ( SUCCEEDED(result) && errorBlob )
             {
                 std::cerr << "Shader compilation failed :\n\n" << static_cast<const char *>(errorBlob->GetBufferPointer());
+                errorBlob->Release();
                 throw std::runtime_error("Compilation failed");
             }
         }
 
-        wil::com_ptr<IDxcBlob> code;
+        IDxcBlob *code;
         dxcResult->GetResult(&code);
-        return code;
+
+        dxcResult->Release();
+        sourceBlob->Release();
+
+        return std::move(code);
     }
 
 } // namespace DenOfIz

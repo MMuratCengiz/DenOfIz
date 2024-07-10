@@ -35,21 +35,21 @@ namespace DenOfIz
     class ShaderCompiler
     {
     private:
-        wil::com_ptr<IDxcLibrary>   m_dxcLibrary;
-        wil::com_ptr<IDxcCompiler3> m_dxcCompiler;
-        wil::com_ptr<IDxcUtils>     m_dxcUtils;
+        IDxcLibrary   *m_dxcLibrary;
+        IDxcCompiler3 *m_dxcCompiler;
+        IDxcUtils     *m_dxcUtils;
 
 #if defined(__APPLE__)
         IRCompiler *mp_compiler;
 #endif
 
     public:
-        bool                   Init();
-        void                   Destroy();
-        void                   InitResources(TBuiltInResource &Resources) const;
-        EShLanguage            FindLanguage(ShaderStage shaderType) const;
-        wil::com_ptr<IDxcBlob> CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const;
-        std::vector<uint32_t>  CompileGLSL(const std::string &filename, const CompileOptions &compileOptions) const;
+        bool                  Init();
+        void                  Destroy();
+        void                  InitResources(TBuiltInResource &Resources) const;
+        EShLanguage           FindLanguage(ShaderStage shaderType) const;
+        IDxcBlob             *CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const;
+        std::vector<uint32_t> CompileGLSL(const std::string &filename, const CompileOptions &compileOptions) const;
     };
 
 } // namespace DenOfIz

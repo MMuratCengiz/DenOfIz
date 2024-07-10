@@ -146,11 +146,10 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
         adapter->GetDesc(&adapterDesc);
         if ( device.Id == adapterDesc.DeviceId )
         {
+            THROW_IF_FAILED(adapter->QueryInterface(IID_PPV_ARGS(m_context->Adapter.put())));
             break;
         }
     }
-
-    m_context->Adapter = adapter.detach();
     // Create the DX12 API device object.
     wil::com_ptr<ID3D12Device> dxDevice;
     THROW_IF_FAILED(D3D12CreateDevice(m_context->Adapter.get(), m_minFeatureLevel, IID_PPV_ARGS(dxDevice.put())));

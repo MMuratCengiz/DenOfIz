@@ -44,12 +44,12 @@ void VulkanPipeline::ConfigureVertexInput()
 {
     bool hasTessellationShaders = false;
 
-    for ( const auto &[ Stage, Data ] : m_desc.ShaderProgram.GetCompiledShaders() )
+    for ( const auto &[ Stage, Blob ] : m_desc.ShaderProgram.GetCompiledShaders() )
     {
         vk::PipelineShaderStageCreateInfo &shaderStageCreateInfo = m_pipelineStageCreateInfos.emplace_back();
 
         const vk::ShaderStageFlagBits stage        = VulkanEnumConverter::ConvertShaderStage(Stage);
-        vk::ShaderModule             &shaderModule = m_shaderModules.emplace_back(this->CreateShaderModule(Data));
+        vk::ShaderModule             &shaderModule = m_shaderModules.emplace_back(this->CreateShaderModule(Blob));
 
         shaderStageCreateInfo.stage  = stage;
         shaderStageCreateInfo.module = shaderModule;
@@ -270,11 +270,11 @@ void VulkanPipeline::CreateDepthAttachmentImages()
     m_pipelineCreateInfo.pDepthStencilState = &m_depthStencilStateCreateInfo;
 }
 
-vk::ShaderModule VulkanPipeline::CreateShaderModule(wil::com_ptr<IDxcBlob> data) const
+vk::ShaderModule VulkanPipeline::CreateShaderModule(IDxcBlob* blob) const
 {
     vk::ShaderModuleCreateInfo shaderModuleCreateInfo{};
-    shaderModuleCreateInfo.codeSize = data->GetBufferSize();
-    shaderModuleCreateInfo.pCode    = static_cast<const uint32_t *>(data->GetBufferPointer());
+    shaderModuleCreateInfo.codeSize = blob->GetBufferSize();
+    shaderModuleCreateInfo.pCode    = static_cast<const uint32_t *>(blob->GetBufferPointer());
 
     return m_context->LogicalDevice.createShaderModule(shaderModuleCreateInfo);
 }

@@ -46,7 +46,7 @@ namespace DenOfIz
         {
             return m_compiledShaders;
         }
-        ~ShaderProgram() = default;
+        ~ShaderProgram();
     };
 
 } // namespace DenOfIz
