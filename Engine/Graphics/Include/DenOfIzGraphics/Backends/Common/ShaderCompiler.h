@@ -5,10 +5,9 @@
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
 
-#include <dxcapi.h>
 #if defined(__APPLE__)
-#include <Metal/Metal.hpp>
-#include <MetalKit/MetalKit.hpp>
+#include "Metal/Metal.h"
+#include "MetalKit/MetalKit.h"
 #include <metal_irconverter/metal_irconverter.h>
 #include <simd/simd.h>
 #endif

@@ -8,8 +8,10 @@
 #include <DenOfIzGraphics/Backends/DirectX12/DX12LogicalDevice.h>
 #endif
 
+#ifdef BUILD_METAL
+#endif
+
 #include "Common/GfxGlobal.h"
-#include "DenOfIzGraphics/Backends/DirectX12/DX12LogicalDevice.h"
 #include "Interface/IFence.h"
 #include "Interface/ILogicalDevice.h"
 #include "Interface/IPipeline.h"

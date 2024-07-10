@@ -26,6 +26,8 @@ find_package(spirv_cross_c CONFIG REQUIRED)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 find_package(wil CONFIG REQUIRED)
+find_package(directxmath CONFIG REQUIRED)
+
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 
 SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
@@ -137,6 +139,7 @@ target_link_libraries(DenOfIzGraphics
         glslang::glslang-default-resource-limits
         glslang::SPIRV
         glslang::SPVRemapper
+        Microsoft::DirectXMath
 )
 
 if (WIN32)

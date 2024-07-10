@@ -12,6 +12,7 @@
     "tinygltf",
     "python3",
     "gtest",
+    "directxmath",
     {
       "name": "sdl2",
       "features": ["vulkan"]
