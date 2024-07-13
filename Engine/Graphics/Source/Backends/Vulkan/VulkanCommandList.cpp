@@ -264,6 +264,22 @@ void VulkanCommandList::CopyTextureRegion(const CopyTextureRegionDesc &copyTextu
     // TODO
 }
 
+void VulkanCommandList::CopyBufferToTexture(const CopyBufferToTextureDesc &copyBufferToTextureDesc)
+{
+    VulkanBufferResource *srcBuffer = dynamic_cast<VulkanBufferResource *>(copyBufferToTextureDesc.SrcBuffer);
+    VulkanTextureResource *dstTex   = dynamic_cast<VulkanTextureResource *>(copyBufferToTextureDesc.DstTexture);
+
+    vk::BufferImageCopy copyRegion{};
+    copyRegion.bufferOffset      = copyBufferToTextureDesc.SrcOffset;
+    copyRegion.bufferRowLength   = 0;
+    copyRegion.bufferImageHeight = 0;
+    copyRegion.imageSubresource  = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, copyBufferToTextureDesc.MipLevel, copyBufferToTextureDesc.ArrayLayer, 1);
+    copyRegion.imageOffset       = vk::Offset3D(0, 0, 0);
+    copyRegion.imageExtent       = vk::Extent3D(dstTex->GetWidth(), dstTex->GetHeight(), 1);
+
+    m_commandBuffer.copyBufferToImage(srcBuffer->GetBuffer(), dstTex->GetImage(), vk::ImageLayout::eTransferDstOptimal, 1, &copyRegion);
+}
+
 void VulkanCommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
     m_commandBuffer.draw(vertexCount, instanceCount, firstVertex, firstInstance);
@@ -273,7 +289,6 @@ void VulkanCommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uin
 {
     DZ_ASSERTM(m_desc.QueueType == QueueType::Compute, "Dispatch can only be called on compute queues.");
 }
-
 void VulkanCommandList::Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks)
 {
     DZ_ASSERTM(m_desc.QueueType == QueueType::Graphics || m_desc.QueueType == QueueType::Presentation, "Present can only be called on presentation queues.");

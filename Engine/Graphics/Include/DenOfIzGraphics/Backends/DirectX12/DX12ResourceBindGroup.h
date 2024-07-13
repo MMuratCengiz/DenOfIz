@@ -44,16 +44,13 @@ namespace DenOfIz
     private:
         DX12Context                     *m_context;
         std::vector<ID3D12Resource2 *>   m_resources;
-        ID3D12RootSignature             *m_rootSignature;
+        DX12RootSignature               *m_rootSignature;
         std::vector<RootParameterHandle> m_samplerParams;
         std::vector<RootParameterHandle> m_cbvSrvUavParams;
         std::vector<RootParameterHandle> m_rootConstants;
 
     public:
         DX12ResourceBindGroup(DX12Context *context, ResourceBindGroupDesc desc);
-
-        void BindTexture(ITextureResource *resource) override;
-        void BindBuffer(IBufferResource *resource) override;
 
         const std::vector<RootParameterHandle> &GetRootConstantHandles() const
         {
@@ -77,8 +74,15 @@ namespace DenOfIz
 
         ID3D12RootSignature *GetRootSignature() const
         {
-            return m_rootSignature;
+            return m_rootSignature->GetRootSignature();
         }
+
+        void Update(UpdateDesc desc) override;
+    protected:
+        void BindTexture(ITextureResource *resource) override;
+        void BindBuffer(IBufferResource *resource) override;
+        void BindSampler(ISampler *sampler) override;
+
     };
 
 } // namespace DenOfIz

@@ -512,3 +512,10 @@ std::unique_ptr<ISemaphore> VulkanLogicalDevice::CreateSemaphore()
     VulkanSemaphore *semaphore = new VulkanSemaphore(m_context.get());
     return std::unique_ptr<ISemaphore>(semaphore);
 }
+
+std::unique_ptr<ISampler> VulkanLogicalDevice::CreateSampler(std::string name, const SamplerDesc &createInfo)
+{
+    VulkanSampler *sampler = new VulkanSampler(m_context.get(), createInfo);
+    sampler->Name          = name;
+    return std::unique_ptr<ISampler>(sampler);
+}

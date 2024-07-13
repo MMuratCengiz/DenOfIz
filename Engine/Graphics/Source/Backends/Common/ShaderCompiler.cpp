@@ -161,7 +161,7 @@ namespace DenOfIz
             return EShLangTessEvaluation;
         case ShaderStage::Geometry:
             return EShLangGeometry;
-        case ShaderStage::Fragment:
+        case ShaderStage::Pixel:
             return EShLangFragment;
         case ShaderStage::Compute:
             return EShLangCompute;
@@ -243,7 +243,7 @@ namespace DenOfIz
         case ShaderStage::Geometry:
             targetProfile = "gs";
             break;
-        case ShaderStage::Fragment:
+        case ShaderStage::Pixel:
             targetProfile = "ps";
             break;
         case ShaderStage::Compute:

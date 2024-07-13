@@ -24,6 +24,8 @@ using namespace DenOfIz;
 DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc &desc) : m_context(context), m_desc(desc)
 {
     Validate();
+    InitDimensions(desc);
+
     D3D12_RESOURCE_DESC resourceDesc = {};
 
     if ( m_desc.Depth > 1 )
@@ -74,7 +76,9 @@ DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc
         initialState = DX12EnumConverter::ConvertResourceState(ResourceState::DepthWrite);
     }
 
-    HRESULT hr = m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, initialState, NULL, &m_allocation, IID_PPV_ARGS(&m_resource));
+    // Used for certain commands
+    m_resourceDesc = resourceDesc;
+    HRESULT hr     = m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, initialState, NULL, &m_allocation, IID_PPV_ARGS(&m_resource));
     THROW_IF_FAILED(hr);
 
     if ( m_desc.Descriptor.IsSet(ResourceDescriptor::Texture) )
@@ -269,26 +273,6 @@ void DX12TextureResource::Allocate(const void *data)
     }
 }
 
-void DX12TextureResource::AttachSampler(SamplerDesc &samplerDesc)
-{
-    D3D12_SAMPLER_DESC desc = {};
-    desc.Filter             = CalculateFilter(samplerDesc.MinFilter, samplerDesc.MagFilter, samplerDesc.MipmapMode, samplerDesc.CompareOp, samplerDesc.MaxAnisotropy);
-    desc.AddressU           = DX12EnumConverter::ConvertSamplerAddressMode(samplerDesc.AddressModeU);
-    desc.AddressV           = DX12EnumConverter::ConvertSamplerAddressMode(samplerDesc.AddressModeV);
-    desc.AddressW           = DX12EnumConverter::ConvertSamplerAddressMode(samplerDesc.AddressModeW);
-    desc.MipLODBias         = samplerDesc.MipLodBias;
-    desc.MaxAnisotropy      = samplerDesc.MaxAnisotropy;
-    desc.ComparisonFunc     = DX12EnumConverter::ConvertCompareOp(samplerDesc.CompareOp);
-    desc.BorderColor[ 0 ]   = 0.0f;
-    desc.BorderColor[ 1 ]   = 0.0f;
-    desc.BorderColor[ 2 ]   = 0.0f;
-    desc.BorderColor[ 3 ]   = 0.0f;
-    desc.MinLOD             = samplerDesc.MinLod;
-    desc.MaxLOD             = samplerDesc.MaxLod;
-
-    m_context->D3DDevice->CreateSampler(&desc, m_cpuHandle);
-}
-
 void DX12TextureResource::Deallocate()
 {
     if ( !isExternalResource )
@@ -298,7 +282,27 @@ void DX12TextureResource::Deallocate()
     }
 }
 
-D3D12_FILTER DX12TextureResource::CalculateFilter(Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy) const
+DX12Sampler::DX12Sampler(DX12Context *context, const SamplerDesc &desc) : m_context(context), m_desc(desc)
+{
+    m_samplerDesc.Filter             = CalculateFilter(desc.MinFilter, desc.MagFilter, desc.MipmapMode, desc.CompareOp, desc.MaxAnisotropy);
+    m_samplerDesc.AddressU           = DX12EnumConverter::ConvertSamplerAddressMode(desc.AddressModeU);
+    m_samplerDesc.AddressV           = DX12EnumConverter::ConvertSamplerAddressMode(desc.AddressModeV);
+    m_samplerDesc.AddressW           = DX12EnumConverter::ConvertSamplerAddressMode(desc.AddressModeW);
+    m_samplerDesc.MipLODBias         = desc.MipLodBias;
+    m_samplerDesc.MaxAnisotropy      = desc.MaxAnisotropy;
+    m_samplerDesc.ComparisonFunc     = DX12EnumConverter::ConvertCompareOp(desc.CompareOp);
+    m_samplerDesc.BorderColor[ 0 ]   = 0.0f;
+    m_samplerDesc.BorderColor[ 1 ]   = 0.0f;
+    m_samplerDesc.BorderColor[ 2 ]   = 0.0f;
+    m_samplerDesc.BorderColor[ 3 ]   = 0.0f;
+    m_samplerDesc.MinLOD             = desc.MinLod;
+    m_samplerDesc.MaxLOD             = desc.MaxLod;
+
+    m_cpuHandle = context->ShaderVisibleSamplerDescriptorHeap->GetNextCPUHandleOffset(1);
+    m_context->D3DDevice->CreateSampler(&m_samplerDesc, m_cpuHandle);
+}
+
+D3D12_FILTER DX12Sampler::CalculateFilter(Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy) const
 {
     int filter     = (static_cast<int>(min) << 4) | (static_cast<int>(mag) << 2) | static_cast<int>(mode);
     int baseFilter = compareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D12_FILTER_MIN_MAG_MIP_POINT;

@@ -71,8 +71,10 @@ namespace DenOfIz
         void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
         void CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionInfo) override;
         void CopyTextureRegion(const CopyTextureRegionDesc &copyTextureRegionInfo) override;
+        void CopyBufferToTexture(const CopyBufferToTextureDesc &copyBufferToTexture) override;
 
     private:
+        void     AddDescriptorTable(const RootParameterHandle &handle);
         void     CompatibilityPipelineBarrier(const PipelineBarrier &barrier);
         void     EnhancedPipelineBarrier(const PipelineBarrier &barrier);
         void     SetRootSignature(ID3D12RootSignature *rootSignature);

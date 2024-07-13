@@ -322,6 +322,11 @@ namespace DenOfIz
         Presentation
     };
 
+    struct Constants
+    {
+        uint32_t TexturePitchAlignment;
+    };
+
     struct PhysicalDeviceCapabilities
     {
         bool DedicatedTransferQueue;
@@ -345,6 +350,7 @@ namespace DenOfIz
         std::string                Name;
         PhysicalDeviceProperties   Properties;
         PhysicalDeviceCapabilities Capabilities;
+        Constants                  Constants;
     };
 
 } // namespace DenOfIz

@@ -29,25 +29,6 @@ namespace DenOfIz
         uint32_t PlaneSlice = 0;
     };
 
-    struct TextureDesc
-    {
-        TextureAspect              Aspect = TextureAspect::Color;
-        Format                     Format;
-        BitSet<ResourceDescriptor> Descriptor;
-
-        HeapType              HeapType        = HeapType::GPU;
-        MSAASampleCount       MSAASampleCount = MSAASampleCount::_0;
-        BitSet<ResourceState> InitialState;
-
-        uint32_t Width;
-        // if Height is > 1, it is a 2D texture
-        uint32_t Height;
-        // if Depth is > 1, it is a 3D texture
-        uint32_t Depth     = 1;
-        uint32_t ArraySize = 1;
-        uint32_t MipLevels = 1;
-    };
-
     struct SamplerDesc
     {
         Filter             MagFilter;
@@ -69,6 +50,26 @@ namespace DenOfIz
         Format   Format;
     };
 
+    struct TextureDesc
+    {
+        TextureAspect              Aspect = TextureAspect::Color;
+        Format                     Format;
+        BitSet<ResourceDescriptor> Descriptor;
+
+        HeapType              HeapType        = HeapType::GPU;
+        MSAASampleCount       MSAASampleCount = MSAASampleCount::_0;
+        BitSet<ResourceState> InitialState;
+        SamplerDesc           Sampler; // Requires `| Descriptor::Sampler`
+
+        uint32_t Width;
+        // if Height is > 1, it is a 2D texture
+        uint32_t Height;
+        // if Depth is > 1, it is a 3D texture
+        uint32_t Depth     = 1;
+        uint32_t ArraySize = 1;
+        uint32_t MipLevels = 1;
+    };
+
     class ITextureResource
     {
 
@@ -78,21 +79,17 @@ namespace DenOfIz
         uint32_t    m_depth;
         const void *m_data;
 
+        void InitDimensions(const TextureDesc &desc)
+        {
+            m_width  = desc.Width;
+            m_height = desc.Height;
+            m_depth  = desc.Depth;
+        }
     public:
         std::string Name;
         virtual ~ITextureResource() = default;
-        virtual void Allocate(const void *data, uint32_t width, uint32_t height, uint32_t depth = 0)
-        {
-            m_width  = width;
-            m_height = height;
-            m_depth  = depth;
-            m_data   = data;
-            Allocate(data);
-        }
 
         virtual void Deallocate() = 0;
-
-        virtual void AttachSampler(SamplerDesc &) = 0;
 
         inline uint32_t GetWidth() const
         {
@@ -111,4 +108,10 @@ namespace DenOfIz
         virtual void Allocate(const void *data) = 0;
     };
 
+    class ISampler
+    {
+    public:
+        std::string Name;
+        virtual ~ISampler() = default;
+    };
 } // namespace DenOfIz

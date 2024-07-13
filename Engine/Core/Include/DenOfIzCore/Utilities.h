@@ -37,6 +37,21 @@ namespace DenOfIz
         static std::string CombineDirectories(const std::string &directory, const std::string &file);
 
         static std::string AppPath(const std::string&resourcePath);
+
+        inline static uint32_t Align(uint32_t value, uint32_t alignment)
+        {
+            return (value + alignment - 1) & ~(alignment - 1);
+        }
+
+        template<typename T>
+        static std::vector<T>& SafeGetInnerVec(std::vector<std::vector<T>> &vec, size_t index)
+        {
+            if (index >= vec.size())
+            {
+                vec.resize(index + 1);
+            }
+            return vec[index];
+        }
     };
 
 } // namespace DenOfIz

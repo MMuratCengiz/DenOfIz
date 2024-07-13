@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzCore/Utilities.h>
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
 #include <unordered_set>
 #include "DX12Context.h"
@@ -25,6 +26,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct MultiRangeDesc
+    {
+        CD3DX12_DESCRIPTOR_RANGE Resource;
+        // Samplers must be bound to separate tables
+        CD3DX12_DESCRIPTOR_RANGE Sampler;
+    };
+
+    struct RegisterSpaceRangesDesc
+    {
+        int                                   Space;
+        std::vector<CD3DX12_DESCRIPTOR_RANGE> DescriptorRanges;
+    };
 
     class DX12RootSignature : public IRootSignature
     {
@@ -34,12 +47,15 @@ namespace DenOfIz
         RootSignatureDesc                 m_desc;
         wil::com_ptr<ID3D12RootSignature> m_rootSignature;
 
-        std::vector<CD3DX12_ROOT_PARAMETER>   m_rootParameters;
-        std::vector<CD3DX12_ROOT_PARAMETER>   m_rootConstants;
-        std::vector<CD3DX12_DESCRIPTOR_RANGE> m_descriptorRanges;
+        std::vector<CD3DX12_ROOT_PARAMETER>                m_rootParameters;
+        std::vector<CD3DX12_ROOT_PARAMETER>                m_rootConstants;
+        std::vector<std::vector<CD3DX12_DESCRIPTOR_RANGE>> m_descriptorRanges;
+        std::vector<std::vector<CD3DX12_DESCRIPTOR_RANGE>> m_samplerDescriptorRanges;
+        std::vector<D3D12_STATIC_SAMPLER_DESC>             m_staticSamplerDescriptorRanges;
 
         std::unordered_set<D3D12_SHADER_VISIBILITY> m_descriptorRangesShaderVisibilities;
-        uint32_t                                    usedStages = 0;
+        std::unordered_set<D3D12_SHADER_VISIBILITY> m_samplerRangesShaderVisibilities;
+        uint32_t                                    m_usedStages = 0;
 
     public:
         DX12RootSignature(DX12Context *context, const RootSignatureDesc &desc);
@@ -52,11 +68,10 @@ namespace DenOfIz
         ~DX12RootSignature() override;
 
     protected:
-        void AddResourceBindingInternal(const ResourceBinding &binding) override;
-
-        void AddRootConstantInternal(const RootConstantBinding &rootConstant) override;
-
-        void CreateInternal() override;
+        void AddStaticSampler(const StaticSamplerDesc &desc);
+        void AddResourceBindingInternal(const ResourceBindingDesc &binding) override;
+        void AddRootConstantInternal(const RootConstantResourceBinding &rootConstant) override;
+        D3D12_ROOT_SIGNATURE_FLAGS ComputeShaderVisibility() const;
     };
 
 } // namespace DenOfIz

@@ -27,6 +27,12 @@ VulkanResourceBindGroup::VulkanResourceBindGroup(VulkanContext *context, Resourc
     m_rootSignature = static_cast<VulkanRootSignature *>(m_desc.RootSignature);
 }
 
+void VulkanResourceBindGroup::Update(UpdateDesc desc)
+{
+    m_writeDescriptorSets.clear();
+    IResourceBindGroup::Update(desc);
+}
+
 void VulkanResourceBindGroup::BindTexture(ITextureResource *resource)
 {
     VulkanTextureResource *vulkanResource = static_cast<VulkanTextureResource *>(resource);
@@ -43,9 +49,13 @@ void VulkanResourceBindGroup::BindBuffer(IBufferResource *resource)
     writeDescriptorSet.pBufferInfo             = &vulkanResource->DescriptorInfo;
 }
 
+void VulkanResourceBindGroup::BindSampler(ISampler *sampler)
+{
+    vk::WriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor(sampler->Name);
+}
 vk::WriteDescriptorSet &VulkanResourceBindGroup::CreateWriteDescriptor(std::string &name)
 {
-    ResourceBinding resourceBinding = m_rootSignature->GetResourceBinding(name);
+    ResourceBindingDesc resourceBinding = m_rootSignature->GetResourceBinding(name);
 
     vk::WriteDescriptorSet &writeDescriptorSet = m_writeDescriptorSets.emplace_back();
     writeDescriptorSet.dstSet                  = nullptr;

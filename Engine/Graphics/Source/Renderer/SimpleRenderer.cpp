@@ -34,17 +34,15 @@ namespace DenOfIz
         m_batchResourceCopy = std::make_unique<BatchResourceCopy>(m_logicalDevice.get());
 
         m_program.AddShader(ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" });
-        m_program.AddShader(ShaderDesc{ .Stage = ShaderStage::Fragment, .Path = "Assets/Shaders/fs.hlsl" });
+        m_program.AddShader(ShaderDesc{ .Stage = ShaderStage::Pixel, .Path = "Assets/Shaders/fs.hlsl" });
         m_program.Compile();
 
-        m_rootSignature = m_logicalDevice->CreateRootSignature(RootSignatureDesc{});
-        ResourceBinding timePassedBinding{};
-        timePassedBinding.Name       = "time";
-        timePassedBinding.Binding    = 0;
-        timePassedBinding.Descriptor = ResourceDescriptor::UniformBuffer;
-        timePassedBinding.Stages     = { ShaderStage::Vertex };
-        m_rootSignature->AddResourceBinding(timePassedBinding);
-        m_rootSignature->Create();
+        m_rootSignature = m_logicalDevice->CreateRootSignature(
+            RootSignatureDesc{ .ResourceBindings = {
+                                   ResourceBindingDesc{ .Name = "time", .Binding = 0, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
+                                   ResourceBindingDesc{ .Name = "texture1", .Binding = 0, .Descriptor = ResourceDescriptor::Texture, .Stages = { ShaderStage::Pixel } },
+                                   ResourceBindingDesc{ .Name = "sampler1", .Binding = 0, .Descriptor = ResourceDescriptor::Sampler, .Stages = { ShaderStage::Pixel } },
+                               } });
 
         m_inputLayout = m_logicalDevice->CreateInputLayout(VertexPositionNormalTexture::InputLayout);
 
@@ -67,6 +65,16 @@ namespace DenOfIz
             m_imageRenderedSemaphores.push_back(m_logicalDevice->CreateSemaphore());
         }
 
+        TextureDesc textureDesc{};
+        textureDesc.HeapType     = HeapType::GPU;
+        textureDesc.Descriptor   = BitSet(ResourceDescriptor::Texture) | ResourceDescriptor::Sampler;
+        textureDesc.InitialState = ResourceState::CopyDst;
+        textureDesc.Width        = 420;
+        textureDesc.Height       = 420;
+        textureDesc.Format       = Format::R8G8B8A8Unorm;
+        m_texture                = m_logicalDevice->CreateTextureResource("texture", textureDesc);
+        m_sampler                = m_logicalDevice->CreateSampler("sampler1", SamplerDesc{});
+
         BufferDesc vBufferDesc{};
         vBufferDesc.HeapType     = HeapType::GPU;
         vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
@@ -84,6 +92,7 @@ namespace DenOfIz
         m_batchResourceCopy->Begin();
         m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_vertexBuffer.get(), .Data = m_rect.Vertices.data(), .NumBytes = vBufferDesc.NumBytes });
         m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_indexBuffer.get(), .Data = m_rect.Indices.data(), .NumBytes = iBufferDesc.NumBytes });
+        m_batchResourceCopy->LoadTexture({ .File = "Assets/Textures/Dracolich.png", .DstTexture = m_texture.get() });
         m_batchResourceCopy->End(nullptr);
 
         BufferDesc deltaTimeBufferDesc{};
@@ -97,7 +106,8 @@ namespace DenOfIz
         m_timePassedBuffer->CopyData(&timePassed, sizeof(float));
 
         m_resourceBindGroup = m_logicalDevice->CreateResourceBindGroup(ResourceBindGroupDesc{ .RootSignature = m_rootSignature.get() });
-        m_resourceBindGroup->BindBuffer(m_timePassedBuffer.get());
+        m_resourceBindGroup->Update(UpdateDesc{ .Buffers = { m_timePassedBuffer.get() }, .Textures = { m_texture.get() }, .Samplers = { m_sampler.get() } });
+
         m_time->ListenFps = [](const double fps) { DLOG(INFO) << std::format("FPS: {}", fps); };
 
         LOG(INFO) << "Initialization Complete.";

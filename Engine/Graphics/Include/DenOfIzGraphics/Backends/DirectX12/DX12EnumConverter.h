@@ -249,7 +249,7 @@ namespace DenOfIz
                 return D3D12_SHADER_VISIBILITY_DOMAIN;
             case ShaderStage::Geometry:
                 return D3D12_SHADER_VISIBILITY_GEOMETRY;
-            case ShaderStage::Fragment:
+            case ShaderStage::Pixel:
                 return D3D12_SHADER_VISIBILITY_PIXEL;
             case ShaderStage::Mesh:
                 return D3D12_SHADER_VISIBILITY_MESH;

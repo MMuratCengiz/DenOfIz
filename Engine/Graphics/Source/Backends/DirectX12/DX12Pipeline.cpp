@@ -152,7 +152,7 @@ void DX12Pipeline::SetGraphicsShaders(D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDes
         case ShaderStage::Geometry:
             psoDesc.GS = GetShaderByteCode(compiledShader);
             break;
-        case ShaderStage::Fragment:
+        case ShaderStage::Pixel:
             psoDesc.PS = GetShaderByteCode(compiledShader);
             break;
         default:

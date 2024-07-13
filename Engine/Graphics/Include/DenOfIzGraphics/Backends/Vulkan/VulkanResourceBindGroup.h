@@ -37,9 +37,7 @@ namespace DenOfIz
 
     public:
         VulkanResourceBindGroup(VulkanContext *context, ResourceBindGroupDesc desc);
-
-        void BindTexture(ITextureResource *resource) override;
-        void BindBuffer(IBufferResource *resource) override;
+        void Update(UpdateDesc desc) override;
 
         const std::vector<vk::WriteDescriptorSet> &GetWriteDescriptorSets() const
         {
@@ -47,6 +45,10 @@ namespace DenOfIz
         }
 
         vk::WriteDescriptorSet &CreateWriteDescriptor(std::string &name);
+    protected:
+        void BindTexture(ITextureResource *resource) override;
+        void BindBuffer(IBufferResource *resource) override;
+        void BindSampler(ISampler *sampler) override;
     };
 
 } // namespace DenOfIz

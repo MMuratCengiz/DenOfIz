@@ -53,14 +53,11 @@ int ComputeTest::Run()
     m_program.AddShader(ShaderDesc{ .Stage = ShaderStage::Compute, .Path = "Assets/Shaders/compute.hlsl" });
     m_program.Compile();
 
-    m_rootSignature = m_logicalDevice->CreateRootSignature(RootSignatureDesc{});
-    ResourceBinding bufferBinding{};
-    bufferBinding.Name       = "computeReadBack";
-    bufferBinding.Binding    = 0;
-    bufferBinding.Descriptor = BitSet<ResourceDescriptor>(ResourceDescriptor::RWBuffer);
-    bufferBinding.Stages     = { ShaderStage::Compute };
-    m_rootSignature->AddResourceBinding(bufferBinding);
-    m_rootSignature->Create();
+    m_rootSignature = m_logicalDevice->CreateRootSignature(RootSignatureDesc{
+        .ResourceBindings = {
+            ResourceBindingDesc{ .Name = "computeReadBack", .Binding = 0, .Descriptor = ResourceDescriptor::RWBuffer, .Stages = { ShaderStage::Compute } },
+        },
+    });
 
     BufferDesc bufferDesc{};
     bufferDesc.Descriptor        = ResourceDescriptor::RWBuffer;
@@ -71,7 +68,7 @@ int ComputeTest::Run()
     buffer                       = m_logicalDevice->CreateBufferResource("buffer", bufferDesc);
 
     m_resourceBindGroup = m_logicalDevice->CreateResourceBindGroup(ResourceBindGroupDesc{ .RootSignature = m_rootSignature.get() });
-    m_resourceBindGroup->BindBuffer(buffer.get());
+    m_resourceBindGroup->Update(UpdateDesc{ .Buffers = { buffer.get() } });
 
     m_inputLayout = m_logicalDevice->CreateInputLayout({});
 
@@ -122,7 +119,7 @@ int ComputeTest::Run()
     float *mappedData = reinterpret_cast<float *>(readBack->ReadData());
     for ( UINT i = 0; i < 1024; i++ )
     {
-//        std::cout << "Index " << i << ": " << mappedData[ i ] << std::endl;
+        //        std::cout << "Index " << i << ": " << mappedData[ i ] << std::endl;
     }
     readBack->UnmapMemory();
     return 0;

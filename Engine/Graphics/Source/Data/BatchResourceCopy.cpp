@@ -40,23 +40,23 @@ void BatchResourceCopy::Begin()
     m_copyCommandList->Begin();
 }
 
-void BatchResourceCopy::CopyToGPUBuffer(const CopyToGpuBufferDesc &copyInfo)
+void BatchResourceCopy::CopyToGPUBuffer(const CopyToGpuBufferDesc &copyDesc)
 {
     BufferDesc stagingBufferDesc{};
     stagingBufferDesc.HeapType     = HeapType::CPU_GPU;
     stagingBufferDesc.InitialState = ResourceState::CopySrc;
-    stagingBufferDesc.NumBytes     = copyInfo.NumBytes;
+    stagingBufferDesc.NumBytes     = copyDesc.NumBytes;
 
     auto stagingBuffer = m_device->CreateBufferResource("StagingBuffer", stagingBufferDesc);
 
     stagingBuffer->MapMemory();
-    stagingBuffer->CopyData(copyInfo.Data, copyInfo.NumBytes);
+    stagingBuffer->CopyData(copyDesc.Data, copyDesc.NumBytes);
     stagingBuffer->UnmapMemory();
 
     CopyBufferRegionDesc copyBufferRegionDesc{};
-    copyBufferRegionDesc.DstBuffer = copyInfo.DstBuffer;
+    copyBufferRegionDesc.DstBuffer = copyDesc.DstBuffer;
     copyBufferRegionDesc.SrcBuffer = stagingBuffer.get();
-    copyBufferRegionDesc.NumBytes  = copyInfo.NumBytes;
+    copyBufferRegionDesc.NumBytes  = copyDesc.NumBytes;
 
     CopyBufferRegion(copyBufferRegionDesc);
 
@@ -64,14 +64,51 @@ void BatchResourceCopy::CopyToGPUBuffer(const CopyToGpuBufferDesc &copyInfo)
     m_resourcesToClean.push_back(std::move(stagingBuffer));
 }
 
-void BatchResourceCopy::CopyBufferRegion(const CopyBufferRegionDesc &copyInfo)
+void BatchResourceCopy::CopyBufferRegion(const CopyBufferRegionDesc &copyDesc)
 {
-    m_copyCommandList->CopyBufferRegion(copyInfo);
+    m_copyCommandList->CopyBufferRegion(copyDesc);
 }
 
-void BatchResourceCopy::CopyTextureRegion(const CopyTextureRegionDesc &copyInfo)
+void BatchResourceCopy::CopyTextureRegion(const CopyTextureRegionDesc &copyDesc)
 {
-    m_copyCommandList->CopyTextureRegion(copyInfo);
+    m_copyCommandList->CopyTextureRegion(copyDesc);
+}
+
+void BatchResourceCopy::CopyBufferToTexture(const CopyDataToTextureDesc &copyDesc)
+{
+    BufferDesc stagingBufferDesc{};
+    stagingBufferDesc.HeapType     = HeapType::CPU_GPU;
+    stagingBufferDesc.InitialState = ResourceState::CopySrc;
+    stagingBufferDesc.NumBytes     = copyDesc.NumBytes;
+
+    auto stagingBuffer = m_device->CreateBufferResource("StagingBuffer", stagingBufferDesc);
+
+    stagingBuffer->MapMemory();
+    stagingBuffer->CopyData(copyDesc.Data, copyDesc.NumBytes);
+    stagingBuffer->UnmapMemory();
+
+    CopyBufferToTextureDesc copyBufferToTextureDesc{};
+    copyBufferToTextureDesc.DstTexture = copyDesc.DstTexture;
+    copyBufferToTextureDesc.SrcBuffer  = stagingBuffer.get();
+    copyBufferToTextureDesc.Width      = copyDesc.DstTexture->GetWidth();
+    copyBufferToTextureDesc.Height     = copyDesc.DstTexture->GetHeight();
+
+    m_copyCommandList->CopyBufferToTexture(copyBufferToTextureDesc);
+
+    std::lock_guard<std::mutex> lock(m_resourceCleanLock);
+    m_resourcesToClean.push_back(std::move(stagingBuffer));
+}
+
+void BatchResourceCopy::LoadTexture(const LoadTextureDesc &loadDesc)
+{
+    TextureData loadedTexture = TextureLoader::LoadTexture(loadDesc.File);
+
+    CopyDataToTextureDesc copyDataToTextureDesc{};
+    copyDataToTextureDesc.DstTexture = loadDesc.DstTexture;
+    copyDataToTextureDesc.Data       = loadedTexture.Contents;
+    copyDataToTextureDesc.NumBytes = Utilities::Align(loadedTexture.Width * loadedTexture.Channels, m_device->DeviceInfo().Constants.TexturePitchAlignment) * loadedTexture.Height;
+
+    CopyBufferToTexture(copyDataToTextureDesc);
 }
 
 void BatchResourceCopy::End(ISemaphore *notify)

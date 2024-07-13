@@ -20,6 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <future>
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
+#include "TextureLoader.h"
+#include "DenOfIzCore/Utilities.h"
 
 namespace DenOfIz
 {
@@ -28,6 +30,19 @@ namespace DenOfIz
         IBufferResource *DstBuffer;
         const void      *Data;
         size_t           NumBytes;
+    };
+
+    struct CopyDataToTextureDesc
+    {
+        ITextureResource *DstTexture;
+        const void       *Data;
+        size_t            NumBytes;
+    };
+
+    struct LoadTextureDesc
+    {
+        std::string       File;
+        ITextureResource *DstTexture;
     };
 
     class BatchResourceCopy
@@ -48,9 +63,11 @@ namespace DenOfIz
         ~BatchResourceCopy();
 
         void Begin();
-        void CopyToGPUBuffer(const CopyToGpuBufferDesc &copyInfo);
-        void CopyBufferRegion(const CopyBufferRegionDesc &copyInfo);
-        void CopyTextureRegion(const CopyTextureRegionDesc &copyInfo);
+        void CopyToGPUBuffer(const CopyToGpuBufferDesc &copyDesc);
+        void CopyBufferRegion(const CopyBufferRegionDesc &copyDesc);
+        void CopyTextureRegion(const CopyTextureRegionDesc &copyDesc);
+        void CopyBufferToTexture(const CopyDataToTextureDesc &copyDesc);
+        void LoadTexture(const LoadTextureDesc &loadDesc); // TODO !IMPROVEMENT! Temp needs to be elsewhere
         void End(ISemaphore *notify);
         void CleanResources();
     };

@@ -42,7 +42,7 @@ namespace DenOfIz
                 return vk::ShaderStageFlagBits::eTessellationEvaluation;
             case ShaderStage::Geometry:
                 return vk::ShaderStageFlagBits::eGeometry;
-            case ShaderStage::Fragment:
+            case ShaderStage::Pixel:
                 return vk::ShaderStageFlagBits::eFragment;
             case ShaderStage::Compute:
                 return vk::ShaderStageFlagBits::eCompute;

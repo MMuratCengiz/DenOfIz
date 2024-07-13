@@ -32,6 +32,7 @@ namespace DenOfIz
         D3D12MA::Allocation        *m_allocation;
         ID3D12Resource2            *m_resource;
         D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
+        D3D12_RESOURCE_DESC         m_resourceDesc;
         D3D12_ROOT_PARAMETER_TYPE   m_rootParameterType;
         bool                        isExternalResource = false; // Used for swap chain render targets, might need a better way
 
@@ -40,8 +41,17 @@ namespace DenOfIz
         DX12TextureResource(ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle);
         ~DX12TextureResource() override = default;
 
-        void AttachSampler(SamplerDesc &samplerDesc) override;
         void Deallocate() override;
+
+        const TextureDesc &GetDesc() const
+        {
+            return m_desc;
+        }
+
+        const D3D12_RESOURCE_DESC &GetResourceDesc() const
+        {
+            return m_resourceDesc;
+        }
 
         const D3D12_ROOT_PARAMETER_TYPE &GetRootParameterType() const
         {
@@ -63,9 +73,32 @@ namespace DenOfIz
 
     private:
         void         Validate();
-        D3D12_FILTER CalculateFilter(Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy) const;
         void         CreateTextureSrv();
         void         CreateTextureUav();
     };
 
+    class DX12Sampler : public ISampler
+    {
+    private:
+        DX12Context                *m_context;
+        SamplerDesc                 m_desc;
+        D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
+        D3D12_SAMPLER_DESC          m_samplerDesc;
+    public:
+        DX12Sampler(DX12Context *context, const SamplerDesc &desc);
+        ~DX12Sampler() override = default;
+
+        D3D12_FILTER CalculateFilter(Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy) const;
+
+
+        const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle() const
+        {
+            return m_cpuHandle;
+        }
+
+        const D3D12_SAMPLER_DESC &GetSamplerDesc() const
+        {
+            return m_samplerDesc;
+        }
+    };
 } // namespace DenOfIz

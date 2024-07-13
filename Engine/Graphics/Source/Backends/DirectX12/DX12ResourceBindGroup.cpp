@@ -24,8 +24,16 @@ DX12ResourceBindGroup::DX12ResourceBindGroup(DX12Context *context, ResourceBindG
 {
     DX12RootSignature *rootSignature = static_cast<DX12RootSignature *>(desc.RootSignature);
     DZ_NOT_NULL(rootSignature);
+    m_rootSignature = rootSignature;
+}
 
-    m_rootSignature = rootSignature->GetRootSignature();
+void DX12ResourceBindGroup::Update(UpdateDesc desc)
+{
+    m_cbvSrvUavParams.clear();
+    m_samplerParams.clear();
+    m_resources.clear();
+
+    IResourceBindGroup::Update(desc);
 }
 
 void DX12ResourceBindGroup::BindTexture(ITextureResource *resource)
@@ -34,13 +42,13 @@ void DX12ResourceBindGroup::BindTexture(ITextureResource *resource)
 
     DX12TextureResource *dxResource = static_cast<DX12TextureResource *>(resource);
 
-    uint64_t index = m_cbvSrvUavParams.size();
-    std::unique_ptr<DX12DescriptorHeap> &heap = m_context->ShaderVisibleCbvSrvUavDescriptorHeap;
+    uint64_t                             index = m_cbvSrvUavParams.size();
+    std::unique_ptr<DX12DescriptorHeap> &heap  = m_context->ShaderVisibleCbvSrvUavDescriptorHeap;
 
-    RootParameterHandle& handle = m_cbvSrvUavParams.emplace_back(RootParameterHandle{});
-    handle.Type      = dxResource->GetRootParameterType();
-    handle.Index     = index;
-    handle.GpuHandle = D3D12_GPU_DESCRIPTOR_HANDLE(heap->GetGPUStartHandle().ptr + index * heap->GetDescriptorSize());
+    RootParameterHandle &handle = m_cbvSrvUavParams.emplace_back(RootParameterHandle{});
+    handle.Type                 = dxResource->GetRootParameterType();
+    handle.Index                = index;
+    handle.GpuHandle            = D3D12_GPU_DESCRIPTOR_HANDLE(heap->GetGPUStartHandle().ptr + index * heap->GetDescriptorSize());
 }
 
 void DX12ResourceBindGroup::BindBuffer(IBufferResource *resource)
@@ -50,11 +58,24 @@ void DX12ResourceBindGroup::BindBuffer(IBufferResource *resource)
     DX12BufferResource *dxResource = static_cast<DX12BufferResource *>(resource);
     m_resources.push_back(dxResource->GetResource());
 
-    uint64_t index = m_cbvSrvUavParams.size();
-    std::unique_ptr<DX12DescriptorHeap> &heap = m_context->ShaderVisibleCbvSrvUavDescriptorHeap;
+    uint64_t                             index = m_rootSignature->GetResourceIndex(resource->Name);
+    std::unique_ptr<DX12DescriptorHeap> &heap  = m_context->ShaderVisibleCbvSrvUavDescriptorHeap;
 
-    RootParameterHandle& handle = m_cbvSrvUavParams.emplace_back(RootParameterHandle{});
-    handle.Type      = dxResource->GetRootParameterType();
-    handle.Index     = index;
-    handle.GpuHandle = D3D12_GPU_DESCRIPTOR_HANDLE(heap->GetGPUStartHandle().ptr + index * heap->GetDescriptorSize());
+    RootParameterHandle &handle = m_cbvSrvUavParams.emplace_back(RootParameterHandle{});
+    handle.Type                 = dxResource->GetRootParameterType();
+    handle.Index                = index;
+    handle.GpuHandle            = D3D12_GPU_DESCRIPTOR_HANDLE(heap->GetGPUStartHandle().ptr + index * heap->GetDescriptorSize());
+}
+
+void DX12ResourceBindGroup::BindSampler(ISampler *sampler)
+{
+    DZ_NOT_NULL(sampler);
+    // todo this index is not correct
+    uint64_t                             index = m_rootSignature->GetResourceIndex(sampler->Name);
+    std::unique_ptr<DX12DescriptorHeap> &heap  = m_context->ShaderVisibleSamplerDescriptorHeap;
+
+    RootParameterHandle &handle = m_samplerParams.emplace_back(RootParameterHandle{});
+    handle.Type                 = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    handle.Index                = index;
+    handle.GpuHandle            = D3D12_GPU_DESCRIPTOR_HANDLE(heap->GetGPUStartHandle().ptr + index * heap->GetDescriptorSize());
 }

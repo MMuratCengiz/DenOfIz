@@ -199,7 +199,7 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
                 case D3D12_MESSAGE_SEVERITY_MESSAGE:
                     LOG(INFO) << description;
                     break;
-                };
+                }
             },
             D3D12_MESSAGE_CALLBACK_FLAG_NONE, this, &callbackCookie);
     }
@@ -251,6 +251,8 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
 
     THROW_IF_FAILED(D3D12MA::CreateAllocator(&allocatorDesc, m_context->DX12MemoryAllocator.put()));
     THROW_IF_FAILED(m_context->D3DDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_waitIdleFence.put())));
+
+    m_selectedDeviceInfo.Constants.TexturePitchAlignment = D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
 }
 
 void DX12LogicalDevice::WaitIdle()
@@ -264,7 +266,7 @@ void DX12LogicalDevice::WaitIdle()
         }
     }
 
-    if (m_waitIdleFence)
+    if ( m_waitIdleFence )
     {
         m_waitIdleFence->SetEventOnCompletion(fenceValue, nullptr);
     }
@@ -330,4 +332,11 @@ std::unique_ptr<ITextureResource> DX12LogicalDevice::CreateTextureResource(std::
     DX12TextureResource *image = new DX12TextureResource(m_context.get(), textureDesc);
     image->Name                = name;
     return std::unique_ptr<ITextureResource>(image);
+}
+
+std::unique_ptr<ISampler> DX12LogicalDevice::CreateSampler(std::string name, const SamplerDesc &samplerDesc)
+{
+    DX12Sampler *sampler = new DX12Sampler(m_context.get(), samplerDesc);
+    sampler->Name        = name;
+    return std::unique_ptr<ISampler>(sampler);
 }

@@ -33,6 +33,7 @@ namespace DenOfIz
         std::vector<vk::DescriptorSetLayout>        m_layouts;
         std::vector<vk::DescriptorSetLayoutBinding> m_bindings;
         std::vector<vk::PushConstantRange>          m_pushConstants;
+        std::vector<vk::Sampler>                    m_staticSamplers;
 
     public:
         VulkanRootSignature(VulkanContext *context, RootSignatureDesc desc);
@@ -44,9 +45,11 @@ namespace DenOfIz
         }
 
     protected:
-        void AddResourceBindingInternal(const ResourceBinding &binding) override;
-        void AddRootConstantInternal(const RootConstantBinding &rootConstantBinding) override;
+        void                           AddResourceBindingInternal(const ResourceBindingDesc &binding) override;
+        void                           AddRootConstantInternal(const RootConstantResourceBinding &rootConstantBinding) override;
+        vk::DescriptorSetLayoutBinding CreateDescriptorSetLayoutBinding(const ResourceBindingDesc &binding) const;
 
-        void CreateInternal() override;
+    private:
+        void AddStaticSampler(const StaticSamplerDesc &sampler);
     };
 } // namespace DenOfIz

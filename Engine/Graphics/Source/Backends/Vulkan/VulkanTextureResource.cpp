@@ -24,11 +24,9 @@ using namespace DenOfIz;
 
 VulkanTextureResource::VulkanTextureResource(VulkanContext *context, const TextureDesc &textureDesc) : m_context(context), m_desc(textureDesc)
 {
+    InitDimensions(textureDesc);
+
     vk::ImageCreateInfo imageCreateInfo{};
-
-    m_width  = textureDesc.Width;
-    m_height = textureDesc.Height;
-
     imageCreateInfo.imageType     = vk::ImageType::e2D;
     imageCreateInfo.extent.width  = m_width;
     imageCreateInfo.extent.height = m_height;
@@ -63,6 +61,11 @@ VulkanTextureResource::VulkanTextureResource(VulkanContext *context, const Textu
 
     m_imageView = context->LogicalDevice.createImageView(imageViewCreateInfo);
     m_aspect    = VulkanEnumConverter::ConvertImageAspect(textureDesc.Aspect);
+
+    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::Sampler) )
+    {
+        AttachSampler(m_desc.Sampler);
+    }
 }
 
 void VulkanTextureResource::Allocate(const void *newImage)
@@ -114,28 +117,6 @@ void VulkanTextureResource::Allocate(const void *newImage)
     imageViewCreateInfo.subresourceRange.layerCount     = 1;
 
     m_imageView = m_context->LogicalDevice.createImageView(imageViewCreateInfo);
-    if ( m_hasSampler )
-    {
-        vk::SamplerCreateInfo samplerCreateInfo{};
-
-        samplerCreateInfo.magFilter               = VulkanEnumConverter::ConvertFilter(m_samplerDesc.MagFilter);
-        samplerCreateInfo.minFilter               = VulkanEnumConverter::ConvertFilter(m_samplerDesc.MinFilter);
-        samplerCreateInfo.addressModeU            = VulkanEnumConverter::ConvertAddressMode(m_samplerDesc.AddressModeU);
-        samplerCreateInfo.addressModeV            = VulkanEnumConverter::ConvertAddressMode(m_samplerDesc.AddressModeV);
-        samplerCreateInfo.addressModeW            = VulkanEnumConverter::ConvertAddressMode(m_samplerDesc.AddressModeW);
-        samplerCreateInfo.anisotropyEnable        = m_samplerDesc.AnisotropyEnable;
-        samplerCreateInfo.maxAnisotropy           = m_samplerDesc.MaxAnisotropy;
-        samplerCreateInfo.borderColor             = vk::BorderColor::eFloatOpaqueBlack;
-        samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
-        samplerCreateInfo.compareEnable           = m_samplerDesc.CompareEnable;
-        samplerCreateInfo.compareOp               = VulkanEnumConverter::ConvertCompareOp(m_samplerDesc.CompareOp);
-        samplerCreateInfo.mipmapMode              = VulkanEnumConverter::ConvertMipmapMode(m_samplerDesc.MipmapMode);
-        samplerCreateInfo.mipLodBias              = m_samplerDesc.MipLodBias;
-        samplerCreateInfo.minLod                  = m_samplerDesc.MinLod;
-        samplerCreateInfo.maxLod                  = m_mipLevels;
-
-        m_sampler = m_context->LogicalDevice.createSampler(samplerCreateInfo);
-    }
 
     DZ_RETURN_IF(isEmptyImage);
 
@@ -197,8 +178,6 @@ void VulkanTextureResource::Allocate(const void *newImage)
 
 void VulkanTextureResource::AttachSampler(SamplerDesc &info)
 {
-    m_samplerDesc = info;
-    m_hasSampler  = true;
 }
 
 void VulkanTextureResource::GenerateMipMaps() const
@@ -306,13 +285,40 @@ void VulkanTextureResource::Deallocate()
 
     vmaDestroyImage(m_context->Vma, m_image, m_allocation);
     m_context->LogicalDevice.destroyImageView(m_imageView);
-    if ( m_hasSampler )
+    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::Sampler) )
     {
-        m_context->LogicalDevice.destroySampler(m_sampler);
     }
 }
 
 VulkanTextureResource::~VulkanTextureResource()
 {
     Deallocate();
+}
+
+VulkanSampler::VulkanSampler(VulkanContext *context, const SamplerDesc &desc) : m_context(context), m_desc(desc)
+{
+    vk::SamplerCreateInfo samplerCreateInfo{};
+
+    samplerCreateInfo.magFilter               = VulkanEnumConverter::ConvertFilter(desc.MagFilter);
+    samplerCreateInfo.minFilter               = VulkanEnumConverter::ConvertFilter(desc.MinFilter);
+    samplerCreateInfo.addressModeU            = VulkanEnumConverter::ConvertAddressMode(desc.AddressModeU);
+    samplerCreateInfo.addressModeV            = VulkanEnumConverter::ConvertAddressMode(desc.AddressModeV);
+    samplerCreateInfo.addressModeW            = VulkanEnumConverter::ConvertAddressMode(desc.AddressModeW);
+    samplerCreateInfo.anisotropyEnable        = desc.AnisotropyEnable;
+    samplerCreateInfo.maxAnisotropy           = desc.MaxAnisotropy;
+    samplerCreateInfo.borderColor             = vk::BorderColor::eFloatOpaqueBlack;
+    samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerCreateInfo.compareEnable           = desc.CompareEnable;
+    samplerCreateInfo.compareOp               = VulkanEnumConverter::ConvertCompareOp(desc.CompareOp);
+    samplerCreateInfo.mipmapMode              = VulkanEnumConverter::ConvertMipmapMode(desc.MipmapMode);
+    samplerCreateInfo.mipLodBias              = desc.MipLodBias;
+    samplerCreateInfo.minLod                  = desc.MinLod;
+    samplerCreateInfo.maxLod                  = desc.MaxLod;
+
+    m_sampler = m_context->LogicalDevice.createSampler(samplerCreateInfo);
+}
+
+VulkanSampler::~VulkanSampler()
+{
+    m_context->LogicalDevice.destroySampler(m_sampler);
 }

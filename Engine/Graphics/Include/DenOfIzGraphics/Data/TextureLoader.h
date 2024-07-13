@@ -18,8 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "stb_image.h"
 #include <DenOfIzCore/Common.h>
+#include <DenOfIzGraphics/Backends/Interface/CommonData.h>
+#include "stb_image.h"
 
 #define DZ_USE_STB_IMAGE
 
@@ -50,9 +51,9 @@ namespace DenOfIz
         TextureLoader() = delete;
 
     public:
-        static TextureData LoadTexture(const std::string&path);
+        static TextureData LoadTexture(const std::string &path);
 
     private:
-        static TextureData LoadTextureSTB(const std::string& path);
+        static TextureData LoadTextureSTB(const std::string &path);
     };
 } // namespace DenOfIz

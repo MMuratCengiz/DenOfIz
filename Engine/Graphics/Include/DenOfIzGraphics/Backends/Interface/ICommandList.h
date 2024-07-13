@@ -66,6 +66,22 @@ namespace DenOfIz
         uint64_t         NumBytes  = 0;
     };
 
+    struct CopyBufferToTextureDesc
+    {
+        ITextureResource *DstTexture = nullptr;
+        IBufferResource  *SrcBuffer  = nullptr;
+        uint32_t          SrcOffset  = 0;
+        uint32_t          DstX       = 0;
+        uint32_t          DstY       = 0;
+        uint32_t          DstZ       = 0;
+        Format            Format     = Format::R8G8B8A8Unorm;
+        uint32_t          Width      = 1;
+        uint32_t          Height     = 1;
+        uint32_t          Depth      = 1;
+        uint32_t          MipLevel   = 0;
+        uint32_t          ArrayLayer = 0;
+    };
+
     struct CopyTextureRegionDesc
     {
         ITextureResource *SrcTexture    = nullptr;
@@ -118,8 +134,9 @@ namespace DenOfIz
         virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) = 0;
         virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0)                                 = 0;
         // List of copy commands
-        virtual void CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionInfo)    = 0;
-        virtual void CopyTextureRegion(const CopyTextureRegionDesc &copyTextureRegionInfo) = 0;
+        virtual void CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionInfo)      = 0;
+        virtual void CopyTextureRegion(const CopyTextureRegionDesc &copyTextureRegionInfo)   = 0;
+        virtual void CopyBufferToTexture(const CopyBufferToTextureDesc &copyBufferToTexture) = 0;
         // --
         virtual void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
     };

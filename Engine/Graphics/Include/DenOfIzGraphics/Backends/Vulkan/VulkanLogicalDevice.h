@@ -88,6 +88,7 @@ namespace DenOfIz
         std::unique_ptr<ISemaphore>       CreateSemaphore() override;
         std::unique_ptr<IBufferResource>  CreateBufferResource(std::string name, const BufferDesc &createInfo) override;
         std::unique_ptr<ITextureResource> CreateTextureResource(std::string name, const TextureDesc &createInfo) override;
+        std::unique_ptr<ISampler>           CreateSampler(std::string name, const SamplerDesc &createInfo) override;
 
         ~VulkanLogicalDevice() override;
 

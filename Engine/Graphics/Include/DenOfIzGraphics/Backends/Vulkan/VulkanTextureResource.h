@@ -30,9 +30,6 @@ namespace DenOfIz
         VulkanContext *m_context;
         TextureDesc    m_desc;
 
-        bool        m_hasSampler = false;
-        SamplerDesc m_samplerDesc;
-
         vk::Image            m_image;
         vk::ImageView        m_imageView;
         vk::Format           m_format;
@@ -76,7 +73,7 @@ namespace DenOfIz
             return m_aspect;
         }
 
-        void AttachSampler(SamplerDesc &info) override;
+        void AttachSampler(SamplerDesc &info);
         void Deallocate() override;
 
     protected:
@@ -86,4 +83,19 @@ namespace DenOfIz
         void GenerateMipMaps() const;
     };
 
+    class VulkanSampler : public ISampler
+    {
+    private:
+        VulkanContext *m_context;
+        SamplerDesc    m_desc;
+        vk::Sampler    m_sampler;
+    public:
+        VulkanSampler(VulkanContext *context, const SamplerDesc &desc);
+        ~VulkanSampler() override;
+
+        inline vk::Sampler GetSampler() const
+        {
+            return m_sampler;
+        }
+    };
 } // namespace DenOfIz

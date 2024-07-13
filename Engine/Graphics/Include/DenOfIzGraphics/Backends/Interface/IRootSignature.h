@@ -41,26 +41,32 @@ namespace DenOfIz
         PerDraw = 2
     };
 
-    struct RootSignatureDesc
-    {
-        // Todo
-    };
-
-    struct ResourceBinding
+    struct ResourceBindingDesc
     {
         std::string                Name;
         uint32_t                   Binding;
         uint32_t                   RegisterSpace = 0;
         BitSet<ResourceDescriptor> Descriptor;
-
         // A binding can appear in more than one stage, i.e. both in fragment and vertex shaders.
         std::vector<ShaderStage> Stages;
-
         // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
         int ArraySize = 1;
     };
 
-    struct RootConstantBinding
+    struct StaticSamplerDesc
+    {
+        SamplerDesc         Sampler;
+        ResourceBindingDesc Binding;
+    };
+
+    struct RootSignatureDesc
+    {
+        RootSignatureType                Type;
+        std::vector<ResourceBindingDesc> ResourceBindings;
+        std::vector<StaticSamplerDesc>   StaticSamplers;
+    };
+
+    struct RootConstantResourceBinding
     {
         std::string              Name;
         uint32_t                 Binding;
@@ -72,18 +78,44 @@ namespace DenOfIz
     class IRootSignature
     {
     protected:
-        uint32_t                                             m_resourceCount = 0;
-        std::vector<uint32_t>                                m_resourceCountPerSet;
-        std::unordered_map<std::string, ResourceBinding>     m_resourceBindingMap;
-        std::unordered_map<std::string, RootConstantBinding> m_rootConstantMap;
-        bool                                                 m_created = false;
+        uint32_t                                                     m_resourceCount = 0;
+        std::vector<uint32_t>                                        m_resourceCountPerSet;
+        std::unordered_map<std::string, ResourceBindingDesc>         m_resourceBindingMap;
+        std::unordered_map<std::string, RootConstantResourceBinding> m_rootConstantMap;
+        std::unordered_map<std::string, uint32_t>                    m_indices;
+        bool                                                         m_created = false;
 
     public:
         virtual ~IRootSignature() = default;
 
-        void AddResourceBinding(const ResourceBinding &binding)
+        inline uint32_t GetResourceCount() const
         {
-            ValidateNotCreated();
+            return m_resourceCount;
+        }
+
+        inline uint32_t GetResourceIndex(std::string name) const
+        {
+            return m_indices.at(name);
+        }
+
+        inline uint32_t GetResourceCount(uint32_t registerSpace) const
+        {
+            return m_resourceCountPerSet[ static_cast<uint32_t>(registerSpace) ];
+        }
+
+        inline ResourceBindingDesc GetResourceBinding(std::string name) const
+        {
+            return m_resourceBindingMap.at(name);
+        }
+
+        inline RootConstantResourceBinding GetRootConstantBinding(std::string name)
+        {
+            return m_rootConstantMap.at(name);
+        }
+
+    protected:
+        void AddResourceBinding(const ResourceBindingDesc &binding)
+        {
             if ( m_resourceCountPerSet.size() <= binding.RegisterSpace )
             {
                 m_resourceCountPerSet.resize(binding.RegisterSpace + 1);
@@ -94,50 +126,15 @@ namespace DenOfIz
             AddResourceBindingInternal(binding);
         }
 
-        void AddRootConstant(const RootConstantBinding &rootConstant)
+        void AddRootConstant(const RootConstantResourceBinding &rootConstant)
         {
-            ValidateNotCreated();
             m_rootConstantMap[ rootConstant.Name ] = rootConstant;
             AddRootConstantInternal(rootConstant);
         }
 
-        void Create()
-        {
-            ValidateNotCreated();
-            m_created = true;
-            CreateInternal();
-        }
-
-        inline uint32_t GetResourceCount() const
-        {
-            return m_resourceCount;
-        }
-        inline uint32_t GetResourceCount(uint32_t registerSpace) const
-        {
-            return m_resourceCountPerSet[ static_cast<uint32_t>(registerSpace) ];
-        }
-
-        inline ResourceBinding GetResourceBinding(std::string name) const
-        {
-            return m_resourceBindingMap.at(name);
-        }
-
-        inline RootConstantBinding GetRootConstantBinding(std::string name)
-        {
-            return m_rootConstantMap.at(name);
-        }
-
     protected:
-        virtual void AddResourceBindingInternal(const ResourceBinding &binding)       = 0;
-        virtual void AddRootConstantInternal(const RootConstantBinding &rootConstant) = 0;
-
-        virtual void CreateInternal() = 0;
-
-    private:
-        inline void ValidateNotCreated()
-        {
-            DZ_ASSERTM(!m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior.");
-        }
+        virtual void AddResourceBindingInternal(const ResourceBindingDesc &binding)           = 0;
+        virtual void AddRootConstantInternal(const RootConstantResourceBinding &rootConstant) = 0;
     };
 
 } // namespace DenOfIz

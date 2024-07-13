@@ -24,20 +24,42 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-
     struct ResourceBindGroupDesc
     {
-        IRootSignature         *RootSignature;
+        IRootSignature *RootSignature;
+    };
+
+    struct UpdateDesc
+    {
+        std::vector<IBufferResource *>  Buffers;
+        std::vector<ITextureResource *> Textures;
+        std::vector<ISampler *>         Samplers;
     };
 
     class IResourceBindGroup
     {
     public:
         virtual ~IResourceBindGroup() = default;
+        virtual void Update(UpdateDesc desc)
+        {
+            for (auto buffer : desc.Buffers)
+            {
+                BindBuffer(buffer);
+            }
+            for (auto texture : desc.Textures)
+            {
+                BindTexture(texture);
+            }
+            for (auto sampler : desc.Samplers)
+            {
+                BindSampler(sampler);
+            }
+        }
 
-        // -- Requires a sampler
+    protected:
         virtual void BindTexture(ITextureResource *resource) = 0;
-        virtual void BindBuffer(IBufferResource *resource) = 0;
+        virtual void BindBuffer(IBufferResource *resource)   = 0;
+        virtual void BindSampler(ISampler *sampler)          = 0;
     };
 
 } // namespace DenOfIz

@@ -115,7 +115,7 @@ namespace DenOfIz
         }
 
         ~DX12DescriptorHeap()
-        { /*m_heap.reset();*/
+        {
         }
     };
 
