@@ -65,6 +65,11 @@ namespace DenOfIz
             return m_rootSignature.get();
         }
 
+        inline size_t RootParameterCount() const
+        {
+            return m_rootParameters.size();
+        }
+
         ~DX12RootSignature() override;
 
     protected:

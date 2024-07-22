@@ -31,23 +31,17 @@ namespace DenOfIz
 
     struct SamplerDesc
     {
-        Filter             MagFilter;
-        Filter             MinFilter;
-        SamplerAddressMode AddressModeU;
-        SamplerAddressMode AddressModeV;
-        SamplerAddressMode AddressModeW;
-        bool               AnisotropyEnable = true;
-        float              MaxAnisotropy    = 16.0f;
-        bool               CompareEnable    = false;
+        Filter             MagFilter        = Filter::Linear;
+        Filter             MinFilter        = Filter::Linear;
+        SamplerAddressMode AddressModeU     = SamplerAddressMode::Repeat;
+        SamplerAddressMode AddressModeV     = SamplerAddressMode::Repeat;
+        SamplerAddressMode AddressModeW     = SamplerAddressMode::Repeat;
+        float              MaxAnisotropy    = 0.0f;
         CompareOp          CompareOp        = CompareOp::Always;
-        MipmapMode         MipmapMode;
-        float              MipLodBias;
-        float              MinLod;
-        float              MaxLod;
-
-        uint32_t Width;
-        uint32_t Height;
-        Format   Format;
+        MipmapMode         MipmapMode       = MipmapMode::Linear;
+        float              MipLodBias       = 0.0f;
+        float              MinLod           = 0.0f;
+        float              MaxLod           = 1.0f;
     };
 
     struct TextureDesc
@@ -74,17 +68,20 @@ namespace DenOfIz
     {
 
     protected:
+        Format      m_format;
         uint32_t    m_width;
         uint32_t    m_height;
         uint32_t    m_depth;
         const void *m_data;
 
-        void InitDimensions(const TextureDesc &desc)
+        void InitFields(const TextureDesc &desc)
         {
             m_width  = desc.Width;
             m_height = desc.Height;
             m_depth  = desc.Depth;
+            m_format = desc.Format;
         }
+
     public:
         std::string Name;
         virtual ~ITextureResource() = default;
@@ -102,6 +99,11 @@ namespace DenOfIz
         inline uint32_t GetDepth() const
         {
             return m_depth;
+        }
+
+        inline Format GetFormat()
+        {
+            return m_format;
         }
 
     protected:

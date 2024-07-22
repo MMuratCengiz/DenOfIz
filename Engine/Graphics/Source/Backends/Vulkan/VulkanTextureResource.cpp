@@ -24,7 +24,7 @@ using namespace DenOfIz;
 
 VulkanTextureResource::VulkanTextureResource(VulkanContext *context, const TextureDesc &textureDesc) : m_context(context), m_desc(textureDesc)
 {
-    InitDimensions(textureDesc);
+    InitFields(textureDesc);
 
     vk::ImageCreateInfo imageCreateInfo{};
     imageCreateInfo.imageType     = vk::ImageType::e2D;
@@ -304,11 +304,11 @@ VulkanSampler::VulkanSampler(VulkanContext *context, const SamplerDesc &desc) : 
     samplerCreateInfo.addressModeU            = VulkanEnumConverter::ConvertAddressMode(desc.AddressModeU);
     samplerCreateInfo.addressModeV            = VulkanEnumConverter::ConvertAddressMode(desc.AddressModeV);
     samplerCreateInfo.addressModeW            = VulkanEnumConverter::ConvertAddressMode(desc.AddressModeW);
-    samplerCreateInfo.anisotropyEnable        = desc.AnisotropyEnable;
+    samplerCreateInfo.anisotropyEnable        = desc.MaxAnisotropy > 1.0f ? VK_TRUE : VK_FALSE;
     samplerCreateInfo.maxAnisotropy           = desc.MaxAnisotropy;
     samplerCreateInfo.borderColor             = vk::BorderColor::eFloatOpaqueBlack;
     samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
-    samplerCreateInfo.compareEnable           = desc.CompareEnable;
+    samplerCreateInfo.compareEnable           = desc.CompareOp == CompareOp::Never ? VK_FALSE : VK_TRUE;
     samplerCreateInfo.compareOp               = VulkanEnumConverter::ConvertCompareOp(desc.CompareOp);
     samplerCreateInfo.mipmapMode              = VulkanEnumConverter::ConvertMipmapMode(desc.MipmapMode);
     samplerCreateInfo.mipLodBias              = desc.MipLodBias;

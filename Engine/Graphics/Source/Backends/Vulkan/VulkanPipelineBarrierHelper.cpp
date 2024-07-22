@@ -45,7 +45,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-void VulkanPipelineBarrierHelper::ExecutePipelineBarrier(VulkanContext *context, vk::CommandBuffer commandBuffer, const QueueType &commandQueueType, const PipelineBarrier &barrier)
+void VulkanPipelineBarrierHelper::ExecutePipelineBarrier(VulkanContext *context, vk::CommandBuffer commandBuffer, const QueueType &commandQueueType, const PipelineBarrierDesc &barrier)
 {
     vk::AccessFlags srcAccessFlags = {};
     vk::AccessFlags dstAccessFlags = {};

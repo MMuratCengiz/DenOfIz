@@ -25,7 +25,7 @@ using namespace DenOfIz;
 DX12BufferResource::DX12BufferResource(DX12Context *context, const BufferDesc &desc) : m_context(context), m_desc(desc)
 {
     m_stride                   = GetImageFormatSize(m_desc.Format);
-    m_numBytes                 = m_desc.NumBytes;
+    m_numBytes                 = Utilities::Align(m_desc.NumBytes, std::max<uint32_t>(m_desc.Alignment, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT));
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
 
     if ( m_desc.Descriptor.IsSet(ResourceDescriptor::RWBuffer) )
@@ -61,7 +61,6 @@ DX12BufferResource::DX12BufferResource(DX12Context *context, const BufferDesc &d
 
 void DX12BufferResource::CreateBufferView()
 {
-
     std::unique_ptr<DX12DescriptorHeap> &heap = m_desc.HeapType == HeapType::CPU_GPU || m_desc.HeapType == HeapType::GPU
                                                     ? m_context->ShaderVisibleCbvSrvUavDescriptorHeap
                                                     : m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ];
@@ -117,21 +116,11 @@ void DX12BufferResource::CreateBufferView()
     }
 }
 
-void DX12BufferResource::MapMemory()
+void *DX12BufferResource::MapMemory()
 {
     DZ_ASSERTM(m_mappedMemory == nullptr, std::format("Memory already mapped {}", Name.c_str()));
+    D3D12_RANGE range = { 0, 0 };
     THROW_IF_FAILED(m_resource->Map(0, NULL, &m_mappedMemory));
-}
-
-void DX12BufferResource::CopyData(const void *data, uint32_t size)
-{
-    DZ_ASSERTM(m_mappedMemory != nullptr, std::format("Memory not mapped, buffer: {}", Name.c_str()));
-    memcpy(m_mappedMemory, data, size);
-}
-
-void *DX12BufferResource::ReadData()
-{
-    DZ_ASSERTM(m_mappedMemory != nullptr, std::format("Memory not mapped, buffer: {}", Name.c_str()));
     return m_mappedMemory;
 }
 

@@ -87,6 +87,7 @@ public:
 	SwapChain * p_SwapChain;
 
 	Semaphore* p_ImageAcquiredSemaphore;
+    Texture* p_Texture;
 	uint32_t m_FrameIndex = 0;
 	ProfileToken m_GPUProfileToken;
 

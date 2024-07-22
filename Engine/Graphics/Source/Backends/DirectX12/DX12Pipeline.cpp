@@ -71,7 +71,7 @@ void DX12Pipeline::CreateGraphicsPipeline()
 
 void DX12Pipeline::CreateComputePipeline()
 {
-    const auto &compiledShaders = m_desc.ShaderProgram.GetCompiledShaders();
+    const auto &compiledShaders = m_desc.ShaderProgram->GetCompiledShaders();
     DZ_ASSERTM(compiledShaders.size() == 1, "Compute pipeline must have at least/only one shader");
 
     D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
@@ -136,7 +136,7 @@ void DX12Pipeline::SetMSAASampleCount(const PipelineDesc &desc, D3D12_GRAPHICS_P
 
 void DX12Pipeline::SetGraphicsShaders(D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc)
 {
-    for ( const CompiledShader &compiledShader : m_desc.ShaderProgram.GetCompiledShaders() )
+    for ( const CompiledShader &compiledShader : m_desc.ShaderProgram->GetCompiledShaders() )
     {
         switch ( compiledShader.Stage )
         {
@@ -165,6 +165,7 @@ D3D12_SHADER_BYTECODE DX12Pipeline::GetShaderByteCode(const CompiledShader &comp
 {
     return D3D12_SHADER_BYTECODE(compiledShader.Blob->GetBufferPointer(), compiledShader.Blob->GetBufferSize());
 }
+
 DX12Pipeline::~DX12Pipeline()
 {
     m_graphicsPipeline.reset();

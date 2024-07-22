@@ -21,7 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h"
+
+#define VMA_STATS_STRING_ENABLED 0
+#define VMA_IMPLEMENTATION
+#include "vma/vk_mem_alloc.h"
+
+#ifdef WIN32
 #include "vulkan/vulkan_win32.h"
+#endif
 
 using namespace DenOfIz;
 

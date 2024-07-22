@@ -183,26 +183,31 @@ void DX12CommandList::BindResourceGroup(IResourceBindGroup *bindGroup)
     DX12ResourceBindGroup *pTable = reinterpret_cast<DX12ResourceBindGroup *>(bindGroup);
     SetRootSignature(pTable->GetRootSignature());
 
-    for ( const RootParameterHandle &handle : pTable->GetDescriptorTableHandles() )
+    uint32_t index = 0;
+    if ( pTable->GetCbvSrvUavCount() > 0 )
     {
-        AddDescriptorTable(handle);
+        BindResourceGroup(m_context->ShaderVisibleCbvSrvUavDescriptorHeap.get(), index++, pTable->GetOffset());
     }
 
-    for ( const RootParameterHandle &handle : pTable->GetSamplerHandles() )
+    if ( pTable->GetSamplerCount() > 0 )
     {
-        AddDescriptorTable(handle);
+        BindResourceGroup(m_context->ShaderVisibleSamplerDescriptorHeap.get(), index, pTable->GetOffset());
     }
 }
 
-void DX12CommandList::AddDescriptorTable(const RootParameterHandle &handle)
+void DX12CommandList::BindResourceGroup(const DX12DescriptorHeap *heap, uint32_t index, uint32_t offset)
 {
-    switch ( m_desc.QueueType )
+    switch ( this->m_desc.QueueType )
     {
     case Graphics:
-        m_commandList->SetGraphicsRootDescriptorTable(handle.Index, handle.GpuHandle);
+        {
+            this->m_commandList->SetGraphicsRootDescriptorTable(index, D3D12_GPU_DESCRIPTOR_HANDLE(heap->GetGPUStartHandle().ptr + offset * heap->GetDescriptorSize()));
+        }
         break;
     case Compute:
-        m_commandList->SetComputeRootDescriptorTable(handle.Index, handle.GpuHandle);
+        {
+            this->m_commandList->SetComputeRootDescriptorTable(index, D3D12_GPU_DESCRIPTOR_HANDLE(heap->GetGPUStartHandle().ptr + offset * heap->GetDescriptorSize()));
+        }
         break;
     default:
         LOG(ERROR) << "`BindResourceGroup` is an invalid function for queue type";
@@ -214,7 +219,7 @@ void DX12CommandList::SetDepthBias(float constantFactor, float clamp, float slop
 { /*Move to pipeline state due to reduces support*/
 }
 
-void DX12CommandList::SetPipelineBarrier(const PipelineBarrier &barrier)
+void DX12CommandList::PipelineBarrier(const PipelineBarrierDesc &barrier)
 {
     if ( m_context->DX12Capabilities.EnhancedBarriers )
     {
@@ -261,15 +266,15 @@ void DX12CommandList::CopyTextureRegion(const CopyTextureRegionDesc &copyTexture
     DX12TextureResource *dstTexture = reinterpret_cast<DX12TextureResource *>(copyTextureRegionInfo.DstTexture);
     DX12TextureResource *srcTexture = reinterpret_cast<DX12TextureResource *>(copyTextureRegionInfo.SrcTexture);
 
-    D3D12_TEXTURE_COPY_LOCATION dst = {};
-    dst.pResource                   = dstTexture->GetResource();
-    dst.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-    dst.SubresourceIndex            = copyTextureRegionInfo.DstMipLevel;
-
     D3D12_TEXTURE_COPY_LOCATION src = {};
     src.pResource                   = srcTexture->GetResource();
     src.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     src.SubresourceIndex            = copyTextureRegionInfo.SrcMipLevel;
+
+    D3D12_TEXTURE_COPY_LOCATION dst = {};
+    dst.pResource                   = dstTexture->GetResource();
+    dst.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    dst.SubresourceIndex            = copyTextureRegionInfo.DstMipLevel;
 
     D3D12_BOX box = {};
     box.left      = copyTextureRegionInfo.SrcX;
@@ -290,28 +295,44 @@ void DX12CommandList::CopyBufferToTexture(const CopyBufferToTextureDesc &copyBuf
     DX12TextureResource *dstTexture = reinterpret_cast<DX12TextureResource *>(copyBufferToTexture.DstTexture);
     DX12BufferResource  *srcBuffer  = reinterpret_cast<DX12BufferResource *>(copyBufferToTexture.SrcBuffer);
 
+    TextureDesc                 dstDesc = dstTexture->GetDesc();
+    D3D12_TEXTURE_COPY_LOCATION src     = {};
+    src.pResource                       = srcBuffer->GetResource();
+    src.Type                            = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+    uint32_t subresource                = D3D12CalcSubresource(copyBufferToTexture.MipLevel, copyBufferToTexture.ArrayLayer, 0, dstDesc.MipLevels, dstDesc.ArraySize);
+    m_context->D3DDevice->GetCopyableFootprints(&dstTexture->GetResourceDesc(), subresource, 1, copyBufferToTexture.SrcOffset, &src.PlacedFootprint, NULL, NULL, NULL);
+    src.PlacedFootprint.Offset = copyBufferToTexture.SrcOffset;
+
     D3D12_TEXTURE_COPY_LOCATION dst = {};
     dst.pResource                   = dstTexture->GetResource();
     dst.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     dst.SubresourceIndex            = copyBufferToTexture.MipLevel;
-
-    D3D12_TEXTURE_COPY_LOCATION src = {};
-    src.pResource                   = srcBuffer->GetResource();
-    src.Type                        = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-    src.PlacedFootprint.Offset      = copyBufferToTexture.SrcOffset;
-    src.PlacedFootprint.Footprint.Format   = DX12EnumConverter::ConvertFormat(copyBufferToTexture.Format);
-    src.PlacedFootprint.Footprint.Width    = copyBufferToTexture.Width;
-    src.PlacedFootprint.Footprint.Height   = copyBufferToTexture.Height;
-    src.PlacedFootprint.Footprint.Depth    = copyBufferToTexture.Depth;
-    src.PlacedFootprint.Footprint.RowPitch = DX12DescriptorHeap::RoundUp(copyBufferToTexture.Width * sizeof(DWORD), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
-
-    uint32_t subresource = copyBufferToTexture.ArrayLayer * dstTexture->GetDesc().MipLevels + copyBufferToTexture.MipLevel;
-    m_context->D3DDevice->GetCopyableFootprints(&dstTexture->GetResourceDesc(), subresource, 1, copyBufferToTexture.SrcOffset, &src.PlacedFootprint, NULL, NULL, NULL);
-
-    m_commandList->CopyTextureRegion(&dst, copyBufferToTexture.DstX, copyBufferToTexture.DstY, copyBufferToTexture.DstZ, &src, nullptr);
+    m_commandList->CopyTextureRegion(&dst, 0, 0,0, &src, nullptr);
 }
 
-void DX12CommandList::CompatibilityPipelineBarrier(const PipelineBarrier &barrier)
+void DX12CommandList::CopyTextureToBuffer(const CopyTextureToBufferDesc &copyTextureToBuffer)
+{
+    DZ_NOT_NULL(copyTextureToBuffer.DstBuffer);
+    DZ_NOT_NULL(copyTextureToBuffer.SrcTexture);
+
+    DX12BufferResource  *dstBuffer  = reinterpret_cast<DX12BufferResource *>(copyTextureToBuffer.DstBuffer);
+    DX12TextureResource *srcTexture = reinterpret_cast<DX12TextureResource *>(copyTextureToBuffer.SrcTexture);
+
+    D3D12_TEXTURE_COPY_LOCATION src = {};
+    src.pResource                   = srcTexture->GetResource();
+    src.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    src.SubresourceIndex            = copyTextureToBuffer.MipLevel;
+
+    D3D12_TEXTURE_COPY_LOCATION dst = {};
+    dst.pResource                   = dstBuffer->GetResource();
+    dst.Type                        = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+    uint32_t subresource            = copyTextureToBuffer.ArrayLayer * srcTexture->GetDesc().MipLevels + copyTextureToBuffer.MipLevel;
+    m_context->D3DDevice->GetCopyableFootprints(&srcTexture->GetResourceDesc(), subresource, 1, copyTextureToBuffer.DstOffset, &dst.PlacedFootprint, NULL, NULL, NULL);
+
+    m_commandList->CopyTextureRegion(&dst, copyTextureToBuffer.DstOffset, 0, 0, &src, nullptr);
+}
+
+void DX12CommandList::CompatibilityPipelineBarrier(const PipelineBarrierDesc &barrier)
 {
     std::vector<D3D12_RESOURCE_BARRIER> resourceBarriers;
 
@@ -346,7 +367,7 @@ void DX12CommandList::CompatibilityPipelineBarrier(const PipelineBarrier &barrie
     }
 }
 
-void DX12CommandList::EnhancedPipelineBarrier(const PipelineBarrier &barrier)
+void DX12CommandList::EnhancedPipelineBarrier(const PipelineBarrierDesc &barrier)
 {
     std::vector<D3D12_BARRIER_GROUP> resourceBarriers;
 
@@ -399,6 +420,7 @@ void DX12CommandList::EnhancedPipelineBarrier(const PipelineBarrier &barrier)
         m_commandList->Barrier(resourceBarriers.size(), resourceBarriers.data());
     }
 }
+
 void DX12CommandList::SetRootSignature(ID3D12RootSignature *rootSignature)
 {
     DZ_RETURN_IF(rootSignature == nullptr);

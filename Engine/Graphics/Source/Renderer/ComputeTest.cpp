@@ -49,10 +49,11 @@ int ComputeTest::Run()
 
     auto firstDevice = m_logicalDevice->ListPhysicalDevices()[ 0 ];
     m_logicalDevice->LoadPhysicalDevice(firstDevice);
-
-    m_program.AddShader(ShaderDesc{ .Stage = ShaderStage::Compute, .Path = "Assets/Shaders/compute.hlsl" });
-    m_program.Compile();
-
+    m_program = std::make_unique<ShaderProgram>(ShaderProgramDesc{
+        .Shaders = {
+            ShaderDesc{ .Stage = ShaderStage::Compute, .Path = "Assets/Shaders/compute.hlsl" },
+        }
+    });
     m_rootSignature = m_logicalDevice->CreateRootSignature(RootSignatureDesc{
         .ResourceBindings = {
             ResourceBindingDesc{ .Name = "computeReadBack", .Binding = 0, .Descriptor = ResourceDescriptor::RWBuffer, .Stages = { ShaderStage::Compute } },
@@ -72,7 +73,7 @@ int ComputeTest::Run()
 
     m_inputLayout = m_logicalDevice->CreateInputLayout({});
 
-    PipelineDesc pipelineDesc{ .ShaderProgram = m_program };
+    PipelineDesc pipelineDesc{ .ShaderProgram = m_program.get() };
     pipelineDesc.BlendModes    = { BlendMode::None };
     pipelineDesc.RootSignature = m_rootSignature.get();
     pipelineDesc.InputLayout   = m_inputLayout.get();
@@ -94,9 +95,9 @@ int ComputeTest::Run()
     commandList->BindResourceGroup(m_resourceBindGroup.get());
     commandList->Dispatch(1024, 1, 1);
 
-    PipelineBarrier barrier{};
+    PipelineBarrierDesc barrier{};
     barrier.BufferBarrier(BufferBarrierDesc{ .Resource = buffer.get(), .OldState = ResourceState::UnorderedAccess, .NewState = ResourceState::CopySrc });
-    commandList->SetPipelineBarrier(barrier);
+    commandList->PipelineBarrier(barrier);
 
     CopyBufferRegionDesc copyDesc{};
     copyDesc.DstBuffer = readBack.get();
@@ -106,7 +107,7 @@ int ComputeTest::Run()
 
     barrier = {};
     barrier.BufferBarrier(BufferBarrierDesc{ .Resource = buffer.get(), .OldState = ResourceState::CopySrc, .NewState = ResourceState::UnorderedAccess });
-    commandList->SetPipelineBarrier(barrier);
+    commandList->PipelineBarrier(barrier);
 
     ExecuteDesc executeDesc{};
     executeDesc.Notify = m_fence.get();
@@ -114,9 +115,7 @@ int ComputeTest::Run()
 
     m_fence->Wait();
 
-    readBack->MapMemory();
-    readBack->ReadData();
-    float *mappedData = reinterpret_cast<float *>(readBack->ReadData());
+    float *mappedData = reinterpret_cast<float *>(readBack->MapMemory());
     for ( UINT i = 0; i < 1024; i++ )
     {
         //        std::cout << "Index " << i << ": " << mappedData[ i ] << std::endl;

@@ -29,8 +29,8 @@ void VulkanCubeMapResource::Allocate(std::vector<const void *> data)
     assert(!m_desc.Samplers.empty());
     assert(m_desc.Samplers.size() != data.size());
 
-    int width  = m_desc.Samplers[ 0 ].Width;
-    int height = m_desc.Samplers[ 0 ].Height;
+    int width  = 0;
+    int height = 0;
 
     std::vector<std::pair<vk::Buffer, VmaAllocation>> stagingBuffers(m_desc.Samplers.size());
 
@@ -41,7 +41,7 @@ void VulkanCubeMapResource::Allocate(std::vector<const void *> data)
     {
         auto &[ buffer, allocation ] = stagingBuffers[ mipStagingBufferIndex++ ];
 
-        VulkanUtilities::InitStagingBuffer(m_context, buffer, allocation, data[ index++ ], img.Width * img.Height * 4);
+        VulkanUtilities::InitStagingBuffer(m_context, buffer, allocation, data[ index++ ], width * height * 4);
     }
 
     vk::ImageCreateInfo imageCreateInfo{};

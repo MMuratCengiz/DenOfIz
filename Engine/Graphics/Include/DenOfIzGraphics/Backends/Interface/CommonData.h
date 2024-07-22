@@ -25,55 +25,76 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    enum class FormatSubType
+    {
+        Undefined,
+        Float,
+        Uint,
+        Sint,
+        Unorm,
+        Snorm,
+        Typeless,
+        Srgb
+    };
 
     enum class Format
     {
         Undefined,
         R32G32B32A32Float,
-        R32G32B32A32Uint,
         R32G32B32A32Sint,
+        R32G32B32A32Typeless,
+        R32G32B32A32Uint,
         R32G32B32Float,
         R32G32B32Uint,
         R32G32B32Sint,
         R16G16B16A16Float,
-        R16G16B16A16Unorm,
-        R16G16B16A16Uint,
         R16G16B16A16Snorm,
         R16G16B16A16Sint,
+        R16G16B16A16Typeless,
+        R16G16B16A16Unorm,
+        R16G16B16A16Uint,
         R32G32Float,
-        R32G32Uint,
         R32G32Sint,
-        R10G10B10A2Unorm,
+        R32G32Typeless,
+        R32G32Uint,
+        R10G10B10A2Typeless,
         R10G10B10A2Uint,
+        R10G10B10A2Unorm,
+        R8G8B8A8Uint,
+        R8G8B8A8Sint,
+        R8G8B8A8Snorm,
+        R8G8B8A8Typeless,
         R8G8B8A8Unorm,
         R8G8B8A8UnormSrgb,
-        R8G8B8A8Uint,
-        R8G8B8A8Snorm,
-        R8G8B8A8Sint,
         R16G16Float,
-        R16G16Unorm,
-        R16G16Uint,
-        R16G16Snorm,
         R16G16Sint,
+        R16G16Snorm,
+        R16G16Typeless,
+        R16G16Uint,
+        R16G16Unorm,
         D32Float,
         R32Float,
-        R32Uint,
         R32Sint,
+        R32Typeless,
+        R32Uint,
         D24UnormS8Uint,
-        R8G8Unorm,
-        R8G8Uint,
         R8G8Snorm,
+        R8G8Typeless,
+        R8G8Uint,
+        R8G8Unorm,
         R8G8Sint,
-        R16Float,
         D16Unorm,
-        R16Unorm,
-        R16Uint,
-        R16Snorm,
+        R16Float,
         R16Sint,
-        R8Unorm,
-        R8Uint,
-        R8Snorm,
+        R16Snorm,
+        R16Typeless,
+        R16Uint,
+        R16Unorm,
         R8Sint,
+        R8Snorm,
+        R8Typeless,
+        R8Uint,
+        R8Unorm,
         BC1Unorm,
         BC1UnormSrgb,
         BC2Unorm,
@@ -170,6 +191,187 @@ namespace DenOfIz
         default:
             return 0;
         }
+    }
+
+    static Format FormatToTypeless(const Format &format)
+    {
+        switch ( format )
+        {
+        case Format::R32G32B32A32Float:
+        case Format::R32G32B32A32Uint:
+        case Format::R32G32B32A32Sint:
+            return Format::R32G32B32A32Typeless;
+
+        case Format::R16G16B16A16Float:
+        case Format::R16G16B16A16Unorm:
+        case Format::R16G16B16A16Uint:
+        case Format::R16G16B16A16Snorm:
+        case Format::R16G16B16A16Sint:
+            return Format::R16G16B16A16Typeless;
+
+        case Format::R32G32Float:
+        case Format::R32G32Uint:
+        case Format::R32G32Sint:
+            return Format::R32G32Typeless;
+
+        case Format::R10G10B10A2Unorm:
+        case Format::R10G10B10A2Uint:
+            return Format::R10G10B10A2Typeless;
+
+        case Format::R8G8B8A8Unorm:
+        case Format::R8G8B8A8Uint:
+        case Format::R8G8B8A8Snorm:
+        case Format::R8G8B8A8Sint:
+            return Format::R8G8B8A8Typeless;
+
+        case Format::R16G16Float:
+        case Format::R16G16Unorm:
+        case Format::R16G16Uint:
+        case Format::R16G16Snorm:
+        case Format::R16G16Sint:
+            return Format::R16G16Typeless;
+
+        case Format::R32Float:
+        case Format::R32Uint:
+        case Format::R32Sint:
+            return Format::R32Typeless;
+
+        case Format::R8G8Unorm:
+        case Format::R8G8Uint:
+        case Format::R8G8Snorm:
+        case Format::R8G8Sint:
+            return Format::R8G8Typeless;
+
+        case Format::R16Float:
+        case Format::R16Unorm:
+        case Format::R16Uint:
+        case Format::R16Snorm:
+        case Format::R16Sint:
+            return Format::R16Typeless;
+
+        case Format::R8Unorm:
+        case Format::R8Uint:
+        case Format::R8Snorm:
+        case Format::R8Sint:
+            return Format::R8Typeless;
+
+        default:
+            return format;
+        }
+    }
+
+    static FormatSubType GetFormatSubType(const Format &format)
+    {
+        switch ( format )
+        {
+        case Format::Undefined:
+            return FormatSubType::Undefined;
+        case Format::R32G32B32A32Float:
+        case Format::R32G32B32Float:
+        case Format::R16G16B16A16Float:
+        case Format::R32G32Float:
+        case Format::R16G16Float:
+        case Format::D32Float:
+        case Format::R32Float:
+        case Format::R16Float:
+        case Format::BC6HUfloat16:
+        case Format::BC6HSfloat16:
+            return FormatSubType::Float;
+        case Format::R32G32B32A32Sint:
+        case Format::R32G32B32Sint:
+        case Format::R16G16B16A16Sint:
+        case Format::R32G32Sint:
+        case Format::R8G8B8A8Sint:
+        case Format::R16G16Sint:
+        case Format::R32Sint:
+        case Format::R8G8Sint:
+        case Format::R16Sint:
+        case Format::R8Sint:
+            return FormatSubType::Sint;
+        case Format::R32G32B32A32Typeless:
+        case Format::R16G16B16A16Typeless:
+        case Format::R32G32Typeless:
+        case Format::R10G10B10A2Typeless:
+        case Format::R8G8B8A8Typeless:
+        case Format::R16G16Typeless:
+        case Format::R32Typeless:
+        case Format::R8G8Typeless:
+        case Format::R16Typeless:
+        case Format::R8Typeless:
+            return FormatSubType::Typeless;
+        case Format::R32G32B32A32Uint:
+        case Format::R32G32B32Uint:
+        case Format::R16G16B16A16Uint:
+        case Format::R32G32Uint:
+        case Format::R10G10B10A2Uint:
+        case Format::R8G8B8A8Uint:
+        case Format::R16G16Uint:
+        case Format::R32Uint:
+        case Format::D24UnormS8Uint:
+        case Format::R8G8Uint:
+        case Format::R16Uint:
+        case Format::R8Uint:
+            return FormatSubType::Uint;
+        case Format::R16G16B16A16Snorm:
+        case Format::R8G8B8A8Snorm:
+        case Format::R16G16Snorm:
+        case Format::R8G8Snorm:
+        case Format::R16Snorm:
+        case Format::R8Snorm:
+        case Format::BC4Snorm:
+        case Format::BC5Snorm:
+            return FormatSubType::Snorm;
+        case Format::R16G16B16A16Unorm:
+        case Format::R10G10B10A2Unorm:
+        case Format::R8G8B8A8Unorm:
+        case Format::R16G16Unorm:
+        case Format::R8G8Unorm:
+        case Format::D16Unorm:
+        case Format::R16Unorm:
+        case Format::R8Unorm:
+        case Format::BC1Unorm:
+        case Format::BC2Unorm:
+        case Format::BC3Unorm:
+        case Format::BC4Unorm:
+        case Format::BC5Unorm:
+        case Format::B8G8R8A8Unorm:
+        case Format::BC7Unorm:
+        case Format::R8G8B8A8UnormSrgb:
+        case Format::BC1UnormSrgb:
+        case Format::BC2UnormSrgb:
+        case Format::BC3UnormSrgb:
+        case Format::BC7UnormSrgb:
+            return FormatSubType::Unorm;
+        }
+    }
+
+    static bool IsFormatBC(const Format &format)
+    {
+        switch ( format )
+        {
+        case Format::BC1Unorm:
+        case Format::BC1UnormSrgb:
+        case Format::BC2Unorm:
+        case Format::BC2UnormSrgb:
+        case Format::BC3Unorm:
+        case Format::BC3UnormSrgb:
+        case Format::BC4Unorm:
+        case Format::BC4Snorm:
+        case Format::BC5Unorm:
+        case Format::BC5Snorm:
+        case Format::BC6HUfloat16:
+        case Format::BC6HSfloat16:
+        case Format::BC7Unorm:
+        case Format::BC7UnormSrgb:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    static uint32_t FormatBlockSize(const Format &format)
+    {
+        return IsFormatBC(format) ? 4 : 1;
     }
 
     enum class PrimitiveTopology
@@ -289,15 +491,16 @@ namespace DenOfIz
         DepthWrite                 = 1 << 6,
         DepthRead                  = 1 << 7,
         ShaderResource             = 1 << 8,
-        StreamOut                  = 1 << 9,
-        IndirectArgument           = 1 << 10,
-        CopyDst                    = 1 << 11,
-        CopySrc                    = 1 << 12,
-        GenericRead                = 1 << 13,
-        Present                    = 1 << 14,
-        Common                     = 1 << 15,
-        AccelerationStructureRead  = 1 << 16,
-        AccelerationStructureWrite = 1 << 17
+        PixelShaderResource        = 1 << 9,
+        StreamOut                  = 1 << 10,
+        IndirectArgument           = 1 << 11,
+        CopyDst                    = 1 << 12,
+        CopySrc                    = 1 << 13,
+        GenericRead                = 1 << 14,
+        Present                    = 1 << 15,
+        Common                     = 1 << 16,
+        AccelerationStructureRead  = 1 << 17,
+        AccelerationStructureWrite = 1 << 18
     };
 
     enum class LoadOp
@@ -322,9 +525,11 @@ namespace DenOfIz
         Presentation
     };
 
-    struct Constants
+    struct DeviceConstants
     {
-        uint32_t TexturePitchAlignment;
+        uint32_t ConstantBufferAlignment;
+        uint32_t BufferTextureAlignment;
+        uint32_t BufferTextureRowAlignment;
     };
 
     struct PhysicalDeviceCapabilities
@@ -350,7 +555,8 @@ namespace DenOfIz
         std::string                Name;
         PhysicalDeviceProperties   Properties;
         PhysicalDeviceCapabilities Capabilities;
-        Constants                  Constants;
+        DeviceConstants            Constants;
     };
 
+    typedef unsigned char Byte;
 } // namespace DenOfIz

@@ -457,6 +457,27 @@ namespace DenOfIz
                 return vk::Format::eBc7UnormBlock;
             case Format::BC7UnormSrgb:
                 return vk::Format::eBc7SrgbBlock;
+            case Format::R32G32B32A32Typeless:
+                // No Typeless in Vulkan
+                return vk::Format::eR32G32B32Sint;
+            case Format::R16G16B16A16Typeless:
+                return vk::Format::eR16G16B16A16Sint;
+            case Format::R32G32Typeless:
+                return vk::Format::eR32G32Sint;
+            case Format::R10G10B10A2Typeless:
+                return vk::Format::eA2R10G10B10UintPack32;
+            case Format::R8G8B8A8Typeless:
+                return vk::Format::eR8G8B8A8Sint;
+            case Format::R16G16Typeless:
+                return vk::Format::eR16G16Sint;
+            case Format::R32Typeless:
+                return vk::Format::eR32Sint;
+            case Format::R8G8Typeless:
+                return vk::Format::eR8G8Sint;
+            case Format::R16Typeless:
+                return vk::Format::eR16Sint;
+            case Format::R8Typeless:
+                return vk::Format::eR8Sint;
             }
 
             return vk::Format::eUndefined;

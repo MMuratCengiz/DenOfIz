@@ -26,50 +26,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct RootParameterHandle
-    {
-        D3D12_ROOT_PARAMETER_TYPE   Type;
-        int                         Index;
-        D3D12_GPU_DESCRIPTOR_HANDLE GpuHandle;
-    };
-
-    enum class BindingType
-    {
-        RootConstant,
-        DescriptorTable
-    };
-
+    // For DirectX12 this is kind of a dummy class as resources are bound to heaps. At a given point we only use 2 heaps one for CBV/SRV/UAV and one for Sampler.
     class DX12ResourceBindGroup : public IResourceBindGroup
     {
     private:
-        DX12Context                     *m_context;
-        std::vector<ID3D12Resource2 *>   m_resources;
-        DX12RootSignature               *m_rootSignature;
-        std::vector<RootParameterHandle> m_samplerParams;
-        std::vector<RootParameterHandle> m_cbvSrvUavParams;
-        std::vector<RootParameterHandle> m_rootConstants;
+        ResourceBindGroupDesc m_desc;
+        DX12Context          *m_context;
+        DX12RootSignature    *m_rootSignature;
+        uint32_t              m_samplerCount   = 0;
+        uint32_t              m_cbvSrvUavCount = 0;
 
     public:
         DX12ResourceBindGroup(DX12Context *context, ResourceBindGroupDesc desc);
 
-        const std::vector<RootParameterHandle> &GetRootConstantHandles() const
+        const uint32_t GetOffset() const
         {
-            return m_rootConstants;
+            return m_desc.Offset;
         }
 
-        const std::vector<RootParameterHandle> &GetSamplerHandles() const
+        const uint32_t GetCbvSrvUavCount() const
         {
-            return m_samplerParams;
+            return m_cbvSrvUavCount;
         }
 
-        const std::vector<RootParameterHandle> &GetDescriptorTableHandles() const
+        const uint32_t GetSamplerCount() const
         {
-            return m_cbvSrvUavParams;
-        }
-
-        const std::vector<ID3D12Resource2 *> &GetResources() const
-        {
-            return m_resources;
+            return m_samplerCount;
         }
 
         ID3D12RootSignature *GetRootSignature() const
@@ -78,11 +60,11 @@ namespace DenOfIz
         }
 
         void Update(UpdateDesc desc) override;
+
     protected:
         void BindTexture(ITextureResource *resource) override;
         void BindBuffer(IBufferResource *resource) override;
         void BindSampler(ISampler *sampler) override;
-
     };
 
 } // namespace DenOfIz

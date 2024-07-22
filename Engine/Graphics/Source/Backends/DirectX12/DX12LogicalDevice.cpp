@@ -252,7 +252,9 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
     THROW_IF_FAILED(D3D12MA::CreateAllocator(&allocatorDesc, m_context->DX12MemoryAllocator.put()));
     THROW_IF_FAILED(m_context->D3DDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_waitIdleFence.put())));
 
-    m_selectedDeviceInfo.Constants.TexturePitchAlignment = D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
+    m_selectedDeviceInfo.Constants.ConstantBufferAlignment   = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
+    m_selectedDeviceInfo.Constants.BufferTextureAlignment    = D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT;
+    m_selectedDeviceInfo.Constants.BufferTextureRowAlignment = D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
 }
 
 void DX12LogicalDevice::WaitIdle()

@@ -32,6 +32,11 @@ namespace DenOfIz
         std::string              EntryPoint = "main";
     };
 
+    struct ShaderProgramDesc
+    {
+        std::vector<ShaderDesc> Shaders;
+    };
+
     class ShaderProgram
     {
     private:
@@ -39,14 +44,15 @@ namespace DenOfIz
         std::vector<CompiledShader> m_compiledShaders;
 
     public:
-        ShaderProgram() = default;
-        void                               AddShader(const ShaderDesc &shaderInfo);
-        void                               Compile();
+        ShaderProgram(const ShaderProgramDesc &desc);
         const std::vector<CompiledShader> &GetCompiledShaders() const
         {
             return m_compiledShaders;
         }
         ~ShaderProgram();
+
+    private:
+        void Compile();
     };
 
 } // namespace DenOfIz

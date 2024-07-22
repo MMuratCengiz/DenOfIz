@@ -75,6 +75,7 @@ namespace DenOfIz
         void         Validate();
         void         CreateTextureSrv();
         void         CreateTextureUav();
+        void         CreateView();
     };
 
     class DX12Sampler : public ISampler

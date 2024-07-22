@@ -61,11 +61,10 @@ namespace DenOfIz
         wil::com_ptr<IDXGIAdapter1>      Adapter;
         wil::com_ptr<IDXGIFactory7>      DXGIFactory;
         wil::com_ptr<ID3D12Device9>      D3DDevice;
+        wil::com_ptr<D3D12MA::Allocator> DX12MemoryAllocator;
         wil::com_ptr<ID3D12CommandQueue> GraphicsCommandQueue;
         wil::com_ptr<ID3D12CommandQueue> ComputeCommandQueue;
         wil::com_ptr<ID3D12CommandQueue> CopyCommandQueue;
-
-        wil::com_ptr<D3D12MA::Allocator> DX12MemoryAllocator;
 
         wil::com_ptr<ID3D12CommandAllocator>     CopyCommandListAllocator;
         wil::com_ptr<ID3D12GraphicsCommandList4> CopyCommandList;

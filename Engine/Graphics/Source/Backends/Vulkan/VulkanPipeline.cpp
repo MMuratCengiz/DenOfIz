@@ -24,7 +24,7 @@ using namespace DenOfIz;
 
 VulkanPipeline::VulkanPipeline(VulkanContext *context, const PipelineDesc &createInfo) :
     m_context(context), m_desc(createInfo), BindPoint(VulkanEnumConverter::ConvertPipelineBindPoint(createInfo.BindPoint)),
-    m_programReflection(ShaderReflection(createInfo.ShaderProgram.GetCompiledShaders()))
+    m_programReflection(ShaderReflection(createInfo.ShaderProgram->GetCompiledShaders()))
 {
     m_pipelineCreateInfo.pDepthStencilState = nullptr;
 
@@ -44,7 +44,7 @@ void VulkanPipeline::ConfigureVertexInput()
 {
     bool hasTessellationShaders = false;
 
-    for ( const auto &[ Stage, Blob ] : m_desc.ShaderProgram.GetCompiledShaders() )
+    for ( const auto &[ Stage, Blob ] : m_desc.ShaderProgram->GetCompiledShaders() )
     {
         vk::PipelineShaderStageCreateInfo &shaderStageCreateInfo = m_pipelineStageCreateInfos.emplace_back();
 

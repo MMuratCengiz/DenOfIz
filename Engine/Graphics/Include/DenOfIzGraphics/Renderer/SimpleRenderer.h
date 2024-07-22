@@ -30,32 +30,25 @@ namespace DenOfIz
     class SimpleRenderer
     {
     private:
-        const uint32_t                  mc_framesInFlight = 3;
-        std::unique_ptr<ILogicalDevice> m_logicalDevice;
-        GraphicsWindowHandle           *m_window;
-
-        // clang-format off
-        std::vector<float> m_triangle
-        {
-             1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-            -1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-             0.0f,  1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f
-        };
-        // clang-format on
-        GeometryData                             m_rect = Geometry::BuildQuad({ .Size = XMFLOAT2(1.0f, 1.0f) });
-        ShaderProgram                            m_program;
+        const uint32_t                           mc_framesInFlight = 3;
+        std::unique_ptr<ILogicalDevice>          m_logicalDevice;
+        GraphicsWindowHandle                    *m_window;
+        bool                                     m_isFirstFrame = true;
+        GeometryData                             m_rect         = Geometry::BuildQuad({ .Size = XMFLOAT2(1.0f, 1.0f) });
+        std::unique_ptr<ShaderProgram>           m_program;
         std::unique_ptr<IPipeline>               m_pipeline;
+        std::unique_ptr<BatchResourceCopy>       m_batchResourceCopy;
         std::unique_ptr<IBufferResource>         m_vertexBuffer;
         std::unique_ptr<IBufferResource>         m_indexBuffer;
         std::unique_ptr<ITextureResource>        m_texture;
         std::unique_ptr<ISampler>                m_sampler;
         std::unique_ptr<IBufferResource>         m_timePassedBuffer;
+        void                                    *m_mappedTimePassedBuffer;
         std::unique_ptr<Time>                    m_time = std::make_unique<Time>();
         std::unique_ptr<IInputLayout>            m_inputLayout;
         std::unique_ptr<IRootSignature>          m_rootSignature;
         std::unique_ptr<IResourceBindGroup>      m_resourceBindGroup;
         std::unique_ptr<ISwapChain>              m_swapChain;
-        std::unique_ptr<BatchResourceCopy>       m_batchResourceCopy;
         std::vector<std::unique_ptr<IFence>>     m_fences;
         std::vector<std::unique_ptr<ISemaphore>> m_imageReadySemaphores;
         std::vector<std::unique_ptr<ISemaphore>> m_imageRenderedSemaphores;

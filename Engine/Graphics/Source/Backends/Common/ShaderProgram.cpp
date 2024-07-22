@@ -21,9 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-void ShaderProgram::AddShader(const ShaderDesc &shaderInfo)
+ShaderProgram::ShaderProgram(const ShaderProgramDesc &desc)
 {
-    m_shaders.push_back(shaderInfo);
+    m_shaders = desc.Shaders;
+    Compile();
 }
 
 void ShaderProgram::Compile()
@@ -53,10 +54,9 @@ void ShaderProgram::Compile()
 #endif
 
         IDxcBlob* blob = compiler.CompileHLSL(shader.Path, options);
-        m_compiledShaders.push_back({ .Stage = shader.Stage, .Blob = std::move(blob) });
+        m_compiledShaders.push_back({ .Stage = shader.Stage, .Blob = blob });
     }
 }
-
 ShaderProgram::~ShaderProgram()
 {
     for ( auto &shader : m_compiledShaders )

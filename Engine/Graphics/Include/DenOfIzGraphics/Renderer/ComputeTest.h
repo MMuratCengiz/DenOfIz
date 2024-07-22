@@ -26,7 +26,7 @@ namespace DenOfIz
     {
     private:
         std::unique_ptr<ILogicalDevice>     m_logicalDevice;
-        ShaderProgram                       m_program;
+        std::unique_ptr<ShaderProgram>      m_program;
         std::unique_ptr<ICommandListPool>   m_commandListPool;
         std::unique_ptr<IPipeline>          m_pipeline;
         std::unique_ptr<IBufferResource>    buffer;

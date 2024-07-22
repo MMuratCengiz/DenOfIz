@@ -29,7 +29,7 @@ namespace DenOfIz
     class VulkanPipelineBarrierHelper
     {
     public:
-        static void ExecutePipelineBarrier(VulkanContext *context, vk::CommandBuffer commandBuffer, const QueueType &commandQueueType, const PipelineBarrier &barrier);
+        static void ExecutePipelineBarrier(VulkanContext *context, vk::CommandBuffer commandBuffer, const QueueType &commandQueueType, const PipelineBarrierDesc &barrier);
 
     private:
         static vk::ImageMemoryBarrier  CreateImageBarrier(const TextureBarrierDesc &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags);

@@ -232,7 +232,7 @@ void VulkanCommandList::SetDepthBias(float constantFactor, float clamp, float sl
     m_commandBuffer.setDepthBias(constantFactor, clamp, slopeFactor);
 }
 
-void VulkanCommandList::SetPipelineBarrier(const PipelineBarrier &barrier)
+void VulkanCommandList::PipelineBarrier(const PipelineBarrierDesc &barrier)
 {
     VulkanPipelineBarrierHelper::ExecutePipelineBarrier(m_context, m_commandBuffer, m_desc.QueueType, barrier);
 }
@@ -280,15 +280,31 @@ void VulkanCommandList::CopyBufferToTexture(const CopyBufferToTextureDesc &copyB
     m_commandBuffer.copyBufferToImage(srcBuffer->GetBuffer(), dstTex->GetImage(), vk::ImageLayout::eTransferDstOptimal, 1, &copyRegion);
 }
 
+void VulkanCommandList::CopyTextureToBuffer(const CopyTextureToBufferDesc &copyTextureToBufferDesc)
+{
+    VulkanBufferResource *dstBuffer = dynamic_cast<VulkanBufferResource *>(copyTextureToBufferDesc.DstBuffer);
+    VulkanTextureResource *srcTex   = dynamic_cast<VulkanTextureResource *>(copyTextureToBufferDesc.SrcTexture);
+
+    vk::BufferImageCopy copyRegion{};
+    copyRegion.bufferOffset      = copyTextureToBufferDesc.DstOffset;
+    copyRegion.bufferRowLength   = 0;
+    copyRegion.bufferImageHeight = 0;
+    copyRegion.imageSubresource  = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, copyTextureToBufferDesc.MipLevel, copyTextureToBufferDesc.ArrayLayer, 1);
+    copyRegion.imageOffset       = vk::Offset3D(copyTextureToBufferDesc.SrcX, copyTextureToBufferDesc.SrcY, copyTextureToBufferDesc.SrcZ);
+    copyRegion.imageExtent       = vk::Extent3D(srcTex->GetWidth(), srcTex->GetHeight(), 1);
+
+    m_commandBuffer.copyImageToBuffer(srcTex->GetImage(), vk::ImageLayout::eTransferSrcOptimal, dstBuffer->GetBuffer(), 1, &copyRegion);
+}
+
 void VulkanCommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
     m_commandBuffer.draw(vertexCount, instanceCount, firstVertex, firstInstance);
 }
-
 void VulkanCommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
     DZ_ASSERTM(m_desc.QueueType == QueueType::Compute, "Dispatch can only be called on compute queues.");
 }
+
 void VulkanCommandList::Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks)
 {
     DZ_ASSERTM(m_desc.QueueType == QueueType::Graphics || m_desc.QueueType == QueueType::Presentation, "Present can only be called on presentation queues.");

@@ -194,6 +194,12 @@ bool TFCommon::Load(ReloadDesc* pReloadDesc)
 		}
 	}
 
+    TextureLoadDesc desc = {};
+    desc.pFileName = "test-dxt5.dds";
+    desc.ppTexture = &p_Texture;
+    desc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    addResource(&desc, NULL);
+
 //	UserInterfaceLoadDesc uiLoad = {};
 //	uiLoad.mColorFormat = p_SwapChain->ppRenderTargets[0]->mFormat;
 //	uiLoad.mHeight = mSettings.mHeight;

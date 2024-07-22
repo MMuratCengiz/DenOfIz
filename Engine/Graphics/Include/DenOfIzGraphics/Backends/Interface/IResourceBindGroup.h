@@ -27,6 +27,7 @@ namespace DenOfIz
     struct ResourceBindGroupDesc
     {
         IRootSignature *RootSignature;
+        uint32_t        Offset;
     };
 
     struct UpdateDesc
@@ -42,15 +43,15 @@ namespace DenOfIz
         virtual ~IResourceBindGroup() = default;
         virtual void Update(UpdateDesc desc)
         {
-            for (auto buffer : desc.Buffers)
+            for ( auto buffer : desc.Buffers )
             {
                 BindBuffer(buffer);
             }
-            for (auto texture : desc.Textures)
+            for ( auto texture : desc.Textures )
             {
                 BindTexture(texture);
             }
-            for (auto sampler : desc.Samplers)
+            for ( auto sampler : desc.Samplers )
             {
                 BindSampler(sampler);
             }

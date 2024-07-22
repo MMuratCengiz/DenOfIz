@@ -108,16 +108,13 @@ namespace DenOfIz
     {
         IInputLayout   *InputLayout   = nullptr;
         IRootSignature *RootSignature = nullptr;
+        ShaderProgram  *ShaderProgram = nullptr;
 
         PrimitiveTopology PrimitiveTopology = PrimitiveTopology::Triangle;
         CullMode          CullMode          = CullMode::None;
         BindPoint         BindPoint         = BindPoint::Graphics;
         DepthTest         DepthTest;
         StencilTest       StencilTest;
-
-        ShaderProgram ShaderProgram;
-        // todo remove
-        bool InterleavedMode = true;
 
         std::vector<BlendMode> BlendModes;
 

@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
 #include "DX12Context.h"
 #include "DX12EnumConverter.h"
+#include <DenOfIzCore/Utilities.h>
 
 namespace DenOfIz
 {
@@ -44,9 +45,7 @@ namespace DenOfIz
         {
             return m_resource.get();
         }
-        void  MapMemory() override;
-        void  CopyData(const void *data, uint32_t size) override;
-        void *ReadData() override;
+        void *MapMemory() override;
         void  UnmapMemory() override;
 
         ~DX12BufferResource() override;

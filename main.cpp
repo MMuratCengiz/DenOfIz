@@ -66,7 +66,17 @@ int main()
 
     return 0;
 }
+#else
+#include <TF/Renderer/TriangleRenderer.h>
+int WindowsMain(int argc, char **argv, IApp *app);
+int main(int argc, char **argv)
+{
+    IApp::argc                           = argc;
+    IApp::argv                           = (const char **) argv;
+    static DenOfIz::TriangleRenderer app = {};
+    return WindowsMain(argc, argv, &app);
+}
+
+//DEFINE_APPLICATION_MAIN(DenOfIz::TriangleRenderer)
 #endif
 
-// #include <TF/Renderer/TriangleRenderer.h>
-// DEFINE_APPLICATION_MAIN(DenOfIz::TriangleRenderer)

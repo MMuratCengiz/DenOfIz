@@ -19,9 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <future>
-#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
-#include "TextureLoader.h"
 #include "DenOfIzCore/Utilities.h"
+#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
+#include "Texture.h"
 
 namespace DenOfIz
 {
@@ -35,8 +35,12 @@ namespace DenOfIz
     struct CopyDataToTextureDesc
     {
         ITextureResource *DstTexture;
-        const void       *Data;
+        Byte             *Data;
         size_t            NumBytes;
+        uint32_t          MipLevel;
+        uint32_t          ArrayLayer;
+        uint32_t          RowPitch;
+        uint32_t          SlicePitch;
     };
 
     struct LoadTextureDesc
@@ -56,19 +60,26 @@ namespace DenOfIz
         std::unique_ptr<IFence>                       m_executeFence;
         std::mutex                                    m_resourceCleanLock;
         std::vector<std::unique_ptr<IBufferResource>> m_resourcesToClean;
+        std::vector<Byte *>                           m_freeTextures;
         std::future<void>                             m_cleanResourcesFuture;
 
     public:
         BatchResourceCopy(ILogicalDevice *device);
         ~BatchResourceCopy();
 
-        void Begin();
-        void CopyToGPUBuffer(const CopyToGpuBufferDesc &copyDesc);
-        void CopyBufferRegion(const CopyBufferRegionDesc &copyDesc);
-        void CopyTextureRegion(const CopyTextureRegionDesc &copyDesc);
-        void CopyBufferToTexture(const CopyDataToTextureDesc &copyDesc);
-        void LoadTexture(const LoadTextureDesc &loadDesc); // TODO !IMPROVEMENT! Temp needs to be elsewhere
-        void End(ISemaphore *notify);
-        void CleanResources();
+        void                              Begin();
+        void                              CopyToGPUBuffer(const CopyToGpuBufferDesc &copyDesc);
+        void                              CopyBufferRegion(const CopyBufferRegionDesc &copyDesc);
+        void                              CopyTextureRegion(const CopyTextureRegionDesc &copyDesc);
+        void                              CopyDataToTexture(const CopyDataToTextureDesc &copyDesc);
+        std::unique_ptr<ITextureResource> CreateAndLoadTexture(const std::string &resourceName, const std::string &file);
+        void                              LoadTexture(const LoadTextureDesc &loadDesc);
+        void                              End(ISemaphore *notify);
+        void                              CleanResources();
+
+    private:
+        void     LoadTextureInternal(const Texture &texture, ITextureResource *dstTexture);
+        void     CopyTextureToMemoryAligned(const Texture &texture, const MipData &mipData, Byte *dst);
+        uint32_t GetSubresourceAlignment(uint32_t bitSize);
     };
 } // namespace DenOfIz

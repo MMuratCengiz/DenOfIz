@@ -55,7 +55,7 @@ namespace DenOfIz
         BitSet<ResourceState> NewState;
     };
 
-    class PipelineBarrier
+    class PipelineBarrierDesc
     {
     private:
         std::vector<TextureBarrierDesc> m_textureBarriers;
@@ -63,19 +63,22 @@ namespace DenOfIz
         std::vector<MemoryBarrierDesc>  m_memoryBarriers;
 
     public:
-        inline void TextureBarrier(TextureBarrierDesc barrier)
+        inline PipelineBarrierDesc & TextureBarrier(TextureBarrierDesc barrier)
         {
             m_textureBarriers.push_back(barrier);
+            return *this;
         }
 
-        inline void BufferBarrier(BufferBarrierDesc barrier)
+        inline PipelineBarrierDesc & BufferBarrier(BufferBarrierDesc barrier)
         {
             m_bufferBarriers.push_back(barrier);
+            return *this;
         }
 
-        inline void MemoryBarrier(MemoryBarrierDesc barrier)
+        inline PipelineBarrierDesc & MemoryBarrier(MemoryBarrierDesc barrier)
         {
             m_memoryBarriers.push_back(barrier);
+            return *this;
         }
 
         inline const std::vector<TextureBarrierDesc> &GetTextureBarriers() const
@@ -93,9 +96,9 @@ namespace DenOfIz
             return m_memoryBarriers;
         }
 
-        static PipelineBarrier UndefinedToRenderTarget(ITextureResource *resource)
+        static PipelineBarrierDesc UndefinedToRenderTarget(ITextureResource *resource)
         {
-            PipelineBarrier    barrier;
+            PipelineBarrierDesc barrier;
             TextureBarrierDesc textureBarrier{};
             textureBarrier.OldState = ResourceState::Undefined;
             textureBarrier.NewState = ResourceState::RenderTarget;
@@ -104,9 +107,9 @@ namespace DenOfIz
             return barrier;
         }
 
-        static PipelineBarrier RenderTargetToPresent(ITextureResource *resource)
+        static PipelineBarrierDesc RenderTargetToPresent(ITextureResource *resource)
         {
-            PipelineBarrier    barrier;
+            PipelineBarrierDesc barrier;
             TextureBarrierDesc textureBarrier{};
             textureBarrier.OldState = ResourceState::RenderTarget;
             textureBarrier.NewState = ResourceState::Present;

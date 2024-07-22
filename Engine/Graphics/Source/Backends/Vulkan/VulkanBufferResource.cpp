@@ -62,22 +62,11 @@ VulkanBufferResource::VulkanBufferResource(VulkanContext *context, const BufferD
     DescriptorInfo.range  = m_numBytes;
 }
 
-void VulkanBufferResource::MapMemory()
+void* VulkanBufferResource::MapMemory()
 {
     DZ_ASSERTM(m_desc.HeapType == HeapType::CPU_GPU || m_desc.HeapType == HeapType::CPU, "Can only map to CPU visible buffer");
     DZ_ASSERTM(m_mappedMemory == nullptr, std::format("Memory already mapped {}", Name.c_str()));
     vmaMapMemory(m_context->Vma, m_allocation, &m_mappedMemory);
-}
-
-void VulkanBufferResource::CopyData(const void *data, uint32_t size)
-{
-    DZ_ASSERTM(m_mappedMemory != nullptr, std::format("Memory not mapped  buffer: {}", Name.c_str()));
-    memcpy(m_mappedMemory, data, size);
-}
-
-void *VulkanBufferResource::ReadData()
-{
-    DZ_ASSERTM(m_mappedMemory != nullptr, std::format("Memory not mapped, buffer: {}", Name.c_str()));
     return m_mappedMemory;
 }
 

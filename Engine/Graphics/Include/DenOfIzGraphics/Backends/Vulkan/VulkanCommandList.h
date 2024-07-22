@@ -55,12 +55,13 @@ namespace DenOfIz
         void BindScissorRect(float offsetX, float offsetY, float width, float height) override;
         void BindResourceGroup(IResourceBindGroup *bindGroup) override;
         void SetDepthBias(float constantFactor, float clamp, float slopeFactor) override;
-        void SetPipelineBarrier(const PipelineBarrier &barrier) override;
+        void PipelineBarrier(const PipelineBarrierDesc &barrier) override;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) override;
         void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0) override;
         void CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionDesc) override;
         void CopyTextureRegion(const CopyTextureRegionDesc &copyTextureRegionDesc) override;
         void CopyBufferToTexture(const CopyBufferToTextureDesc &copyBufferToTextureDesc) override;
+        void CopyTextureToBuffer(const CopyTextureToBufferDesc &copyTextureToBufferDesc) override;
         void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
         void Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks) override;
     };

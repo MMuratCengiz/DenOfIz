@@ -90,12 +90,12 @@ namespace DenOfIz
             return m_heap.get();
         }
 
-        D3D12_CPU_DESCRIPTOR_HANDLE GetCPUStartHandle()
+        D3D12_CPU_DESCRIPTOR_HANDLE GetCPUStartHandle() const
         {
             return m_heap->GetCPUDescriptorHandleForHeapStart();
         }
 
-        D3D12_GPU_DESCRIPTOR_HANDLE GetGPUStartHandle()
+        D3D12_GPU_DESCRIPTOR_HANDLE GetGPUStartHandle() const
         {
             return m_heap->GetGPUDescriptorHandleForHeapStart();
         }

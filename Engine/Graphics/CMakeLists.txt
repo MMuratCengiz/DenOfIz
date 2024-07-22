@@ -42,7 +42,7 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
 
         #Renderers
         Source/Data/BatchResourceCopy.cpp
-        Source/Data/TextureLoader.cpp
+        Source/Data/Texture.cpp
         Source/Data/VertexTypes.cpp
         Source/Data/Geometry.cpp
         Source/Renderer/ComputeTest.cpp
@@ -121,6 +121,7 @@ target_include_directories(DenOfIzGraphics
         ${TINYGLTF_INCLUDE_DIRS}
         PUBLIC
         _ThirdParty/D3D12MemoryAllocator #TODO: Remove once dependency to the-forge is removed !TF!
+        _ThirdParty/Tiny/
 )
 
 target_link_libraries(DenOfIzGraphics

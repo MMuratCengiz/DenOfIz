@@ -50,6 +50,7 @@ namespace DenOfIz
 
     struct BufferDesc
     {
+        uint32_t                   Alignment = 0; // None or Constants.BufferAlignment(Api Dependant)
         uint32_t                   NumBytes;
         BufferView                 BufferView; // For Structured Buffers
         Format                     Format = Format::Undefined;
@@ -72,10 +73,8 @@ namespace DenOfIz
         std::string Name;
 
         // Allowed only on CPU visible resources
-        virtual void  MapMemory()                               = 0;
-        virtual void  CopyData(const void *data, uint32_t size) = 0;
-        virtual void *ReadData()                                = 0;
-        virtual void  UnmapMemory()                             = 0;
+        virtual void *MapMemory()   = 0;
+        virtual void  UnmapMemory() = 0;
         //--
 
         inline uint32_t GetSize() const

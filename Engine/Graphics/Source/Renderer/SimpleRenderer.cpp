@@ -33,9 +33,8 @@ namespace DenOfIz
         m_logicalDevice->LoadPhysicalDevice(firstDevice);
         m_batchResourceCopy = std::make_unique<BatchResourceCopy>(m_logicalDevice.get());
 
-        m_program.AddShader(ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" });
-        m_program.AddShader(ShaderDesc{ .Stage = ShaderStage::Pixel, .Path = "Assets/Shaders/fs.hlsl" });
-        m_program.Compile();
+        m_program = std::make_unique<ShaderProgram>(ShaderProgramDesc{ .Shaders = { ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" },
+                                                                                    ShaderDesc{ .Stage = ShaderStage::Pixel, .Path = "Assets/Shaders/fs.hlsl" } } });
 
         m_rootSignature = m_logicalDevice->CreateRootSignature(
             RootSignatureDesc{ .ResourceBindings = {
@@ -49,7 +48,7 @@ namespace DenOfIz
         const GraphicsWindowSurface &surface = m_window->GetSurface();
         m_swapChain = m_logicalDevice->CreateSwapChain(SwapChainDesc{ .Width = surface.Width, .Height = surface.Height, .BufferCount = mc_framesInFlight });
 
-        PipelineDesc pipelineDesc{ .ShaderProgram = m_program };
+        PipelineDesc pipelineDesc{ .ShaderProgram = m_program.get() };
         pipelineDesc.BlendModes    = { BlendMode::None };
         pipelineDesc.RootSignature = m_rootSignature.get();
         pipelineDesc.InputLayout   = m_inputLayout.get();
@@ -65,16 +64,6 @@ namespace DenOfIz
             m_imageRenderedSemaphores.push_back(m_logicalDevice->CreateSemaphore());
         }
 
-        TextureDesc textureDesc{};
-        textureDesc.HeapType     = HeapType::GPU;
-        textureDesc.Descriptor   = BitSet(ResourceDescriptor::Texture) | ResourceDescriptor::Sampler;
-        textureDesc.InitialState = ResourceState::CopyDst;
-        textureDesc.Width        = 420;
-        textureDesc.Height       = 420;
-        textureDesc.Format       = Format::R8G8B8A8Unorm;
-        m_texture                = m_logicalDevice->CreateTextureResource("texture", textureDesc);
-        m_sampler                = m_logicalDevice->CreateSampler("sampler1", SamplerDesc{});
-
         BufferDesc vBufferDesc{};
         vBufferDesc.HeapType     = HeapType::GPU;
         vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
@@ -89,21 +78,24 @@ namespace DenOfIz
         iBufferDesc.NumBytes     = m_rect.SizeOfIndices();
         m_indexBuffer            = m_logicalDevice->CreateBufferResource("ib", iBufferDesc);
 
-        m_batchResourceCopy->Begin();
-        m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_vertexBuffer.get(), .Data = m_rect.Vertices.data(), .NumBytes = vBufferDesc.NumBytes });
-        m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_indexBuffer.get(), .Data = m_rect.Indices.data(), .NumBytes = iBufferDesc.NumBytes });
-        m_batchResourceCopy->LoadTexture({ .File = "Assets/Textures/Dracolich.png", .DstTexture = m_texture.get() });
-        m_batchResourceCopy->End(nullptr);
-
         BufferDesc deltaTimeBufferDesc{};
         deltaTimeBufferDesc.HeapType   = HeapType::CPU_GPU;
         deltaTimeBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
         deltaTimeBufferDesc.NumBytes   = sizeof(float);
 
-        float timePassed   = 1.0f;
-        m_timePassedBuffer = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferDesc);
-        m_timePassedBuffer->MapMemory();
-        m_timePassedBuffer->CopyData(&timePassed, sizeof(float));
+        float timePassed         = 1.0f;
+        m_timePassedBuffer       = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferDesc);
+        m_mappedTimePassedBuffer = m_timePassedBuffer->MapMemory();
+        memcpy(m_mappedTimePassedBuffer, &timePassed, sizeof(float));
+
+        m_batchResourceCopy->Begin();
+        m_texture = m_batchResourceCopy->CreateAndLoadTexture("texture1", "Assets/Textures/test-dxt5.dds");
+        m_sampler = m_logicalDevice->CreateSampler("sampler1", SamplerDesc{});
+        m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_vertexBuffer.get(), .Data = m_rect.Vertices.data(), .NumBytes = vBufferDesc.NumBytes });
+        m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_indexBuffer.get(), .Data = m_rect.Indices.data(), .NumBytes = iBufferDesc.NumBytes });
+        //        m_batchResourceCopy->LoadTexture({ .File = "Assets/Textures/Dracolich.dds", .DstTexture = m_texture.get() });
+//        m_batchResourceCopy->LoadTexture({ .File = "Assets/Textures/test-dxt5.dds", .DstTexture = m_texture.get() });
+        m_batchResourceCopy->End(nullptr);
 
         m_resourceBindGroup = m_logicalDevice->CreateResourceBindGroup(ResourceBindGroupDesc{ .RootSignature = m_rootSignature.get() });
         m_resourceBindGroup->Update(UpdateDesc{ .Buffers = { m_timePassedBuffer.get() }, .Textures = { m_texture.get() }, .Samplers = { m_sampler.get() } });
@@ -116,7 +108,7 @@ namespace DenOfIz
     void SimpleRenderer::Render()
     {
         float timePassed = std::fmax(1.0f, (m_time->DoubleEpochNow() - m_time->GetFirstTickTime()) / 1000000.0f);
-        m_timePassedBuffer->CopyData(&timePassed, sizeof(float));
+        memcpy(m_mappedTimePassedBuffer, &timePassed, sizeof(float));
         m_time->Tick();
 
         auto     nextCommandList = m_commandListRing->GetNext();
@@ -126,13 +118,20 @@ namespace DenOfIz
         uint32_t nextImage = m_swapChain->AcquireNextImage(m_imageReadySemaphores[ currentFrame ].get());
         nextCommandList->Begin();
 
+        if ( m_isFirstFrame )
+        {
+            PipelineBarrierDesc barrier{};
+            barrier.TextureBarrier(TextureBarrierDesc{ .Resource = m_texture.get(), .OldState = ResourceState::CopyDst, .NewState = ResourceState::PixelShaderResource });
+            nextCommandList->PipelineBarrier(barrier);
+        }
+
         RenderingAttachmentDesc renderingAttachmentDesc{};
         renderingAttachmentDesc.Resource = m_swapChain->GetRenderTarget(nextImage);
 
         RenderingDesc renderingInfo{};
         renderingInfo.RTAttachments.push_back(std::move(renderingAttachmentDesc));
 
-        nextCommandList->SetPipelineBarrier(PipelineBarrier::UndefinedToRenderTarget(m_swapChain->GetRenderTarget(nextImage)));
+        nextCommandList->PipelineBarrier(PipelineBarrierDesc::UndefinedToRenderTarget(m_swapChain->GetRenderTarget(nextImage)));
         nextCommandList->BeginRendering(renderingInfo);
 
         const Viewport &viewport = m_swapChain->GetViewport();
@@ -145,7 +144,7 @@ namespace DenOfIz
         nextCommandList->BindIndexBuffer(m_indexBuffer.get(), IndexType::Uint32);
         nextCommandList->DrawIndexed(m_rect.Indices.size(), 1);
         nextCommandList->EndRendering();
-        nextCommandList->SetPipelineBarrier(PipelineBarrier::RenderTargetToPresent(m_swapChain->GetRenderTarget(nextImage)));
+        nextCommandList->PipelineBarrier(PipelineBarrierDesc::RenderTargetToPresent(m_swapChain->GetRenderTarget(nextImage)));
 
         ExecuteDesc submitInfo{};
         submitInfo.Notify = m_fences[ currentFrame ].get();
@@ -153,6 +152,8 @@ namespace DenOfIz
         submitInfo.NotifySemaphores.push_back(m_imageRenderedSemaphores[ currentFrame ].get());
         nextCommandList->Execute(submitInfo);
         nextCommandList->Present(m_swapChain.get(), nextImage, { m_imageRenderedSemaphores[ currentFrame ].get() });
+
+        m_isFirstFrame = false;
     }
 
     void SimpleRenderer::Quit()

@@ -23,13 +23,7 @@
 #ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #endif
-#define VMA_STATS_STRING_ENABLED 0
-
 #include <vulkan/vulkan.hpp>
-
-#define VMA_IMPLEMENTATION
-
-#include "vma/vk_mem_alloc.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 

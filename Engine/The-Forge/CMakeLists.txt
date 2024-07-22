@@ -273,6 +273,8 @@ add_library(TheForge ${LIB_TYPE}
 if (MSVC)
     target_compile_definitions(TheForge PRIVATE -D_UNICODE -DUNICODE)
     target_compile_definitions(TheForge PRIVATE -D_CRT_SECURE_NO_WARNINGS)
+    target_compile_definitions(TheForge PRIVATE -DD3D12_AGILITY_SDK=1)
+    target_compile_definitions(TheForge PRIVATE -DD3D12_AGILITY_SDK_VERSION=611)
 endif ()
 
 if (LINUX)

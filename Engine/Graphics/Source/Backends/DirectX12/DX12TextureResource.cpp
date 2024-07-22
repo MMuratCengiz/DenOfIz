@@ -24,7 +24,7 @@ using namespace DenOfIz;
 DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc &desc) : m_context(context), m_desc(desc)
 {
     Validate();
-    InitDimensions(desc);
+    InitFields(desc);
 
     D3D12_RESOURCE_DESC resourceDesc = {};
 
@@ -80,6 +80,21 @@ DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc
     m_resourceDesc = resourceDesc;
     HRESULT hr     = m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, initialState, NULL, &m_allocation, IID_PPV_ARGS(&m_resource));
     THROW_IF_FAILED(hr);
+
+    CreateView();
+}
+
+DX12TextureResource::DX12TextureResource(ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle) : m_resource(resource), m_cpuHandle(cpuHandle)
+{
+    isExternalResource = true;
+}
+
+void DX12TextureResource::CreateView()
+{
+    std::unique_ptr<DX12DescriptorHeap> &heap = m_desc.HeapType == HeapType::CPU_GPU || m_desc.HeapType == HeapType::GPU
+                                                    ? m_context->ShaderVisibleCbvSrvUavDescriptorHeap
+                                                    : m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ];
+    m_cpuHandle                               = heap->GetNextCPUHandleOffset(1);
 
     if ( m_desc.Descriptor.IsSet(ResourceDescriptor::Texture) )
     {
@@ -185,7 +200,6 @@ void DX12TextureResource::CreateTextureSrv()
         }
     }
 
-    m_cpuHandle = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetCPUStartHandle();
     m_context->D3DDevice->CreateShaderResourceView(m_resource, &srvDesc, m_cpuHandle);
 }
 
@@ -259,11 +273,6 @@ void DX12TextureResource::CreateTextureUav()
     }
 }
 
-DX12TextureResource::DX12TextureResource(ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle) : m_resource(resource), m_cpuHandle(cpuHandle)
-{
-    isExternalResource = true;
-}
-
 void DX12TextureResource::Allocate(const void *data)
 {
     if ( isExternalResource )
@@ -284,19 +293,19 @@ void DX12TextureResource::Deallocate()
 
 DX12Sampler::DX12Sampler(DX12Context *context, const SamplerDesc &desc) : m_context(context), m_desc(desc)
 {
-    m_samplerDesc.Filter             = CalculateFilter(desc.MinFilter, desc.MagFilter, desc.MipmapMode, desc.CompareOp, desc.MaxAnisotropy);
-    m_samplerDesc.AddressU           = DX12EnumConverter::ConvertSamplerAddressMode(desc.AddressModeU);
-    m_samplerDesc.AddressV           = DX12EnumConverter::ConvertSamplerAddressMode(desc.AddressModeV);
-    m_samplerDesc.AddressW           = DX12EnumConverter::ConvertSamplerAddressMode(desc.AddressModeW);
-    m_samplerDesc.MipLODBias         = desc.MipLodBias;
-    m_samplerDesc.MaxAnisotropy      = desc.MaxAnisotropy;
-    m_samplerDesc.ComparisonFunc     = DX12EnumConverter::ConvertCompareOp(desc.CompareOp);
-    m_samplerDesc.BorderColor[ 0 ]   = 0.0f;
-    m_samplerDesc.BorderColor[ 1 ]   = 0.0f;
-    m_samplerDesc.BorderColor[ 2 ]   = 0.0f;
-    m_samplerDesc.BorderColor[ 3 ]   = 0.0f;
-    m_samplerDesc.MinLOD             = desc.MinLod;
-    m_samplerDesc.MaxLOD             = desc.MaxLod;
+    m_samplerDesc.Filter           = CalculateFilter(desc.MinFilter, desc.MagFilter, desc.MipmapMode, desc.CompareOp, desc.MaxAnisotropy);
+    m_samplerDesc.AddressU         = DX12EnumConverter::ConvertSamplerAddressMode(desc.AddressModeU);
+    m_samplerDesc.AddressV         = DX12EnumConverter::ConvertSamplerAddressMode(desc.AddressModeV);
+    m_samplerDesc.AddressW         = DX12EnumConverter::ConvertSamplerAddressMode(desc.AddressModeW);
+    m_samplerDesc.MipLODBias       = desc.MipLodBias;
+    m_samplerDesc.MaxAnisotropy    = desc.MaxAnisotropy;
+    m_samplerDesc.ComparisonFunc   = DX12EnumConverter::ConvertCompareOp(desc.CompareOp);
+    m_samplerDesc.BorderColor[ 0 ] = 1.0f;
+    m_samplerDesc.BorderColor[ 1 ] = 0.0f;
+    m_samplerDesc.BorderColor[ 2 ] = 0.0f;
+    m_samplerDesc.BorderColor[ 3 ] = 1.0f;
+    m_samplerDesc.MinLOD           = desc.MinLod;
+    m_samplerDesc.MaxLOD           = desc.MaxLod;
 
     m_cpuHandle = context->ShaderVisibleSamplerDescriptorHeap->GetNextCPUHandleOffset(1);
     m_context->D3DDevice->CreateSampler(&m_samplerDesc, m_cpuHandle);
@@ -304,11 +313,12 @@ DX12Sampler::DX12Sampler(DX12Context *context, const SamplerDesc &desc) : m_cont
 
 D3D12_FILTER DX12Sampler::CalculateFilter(Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy) const
 {
-    int filter     = (static_cast<int>(min) << 4) | (static_cast<int>(mag) << 2) | static_cast<int>(mode);
-    int baseFilter = compareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D12_FILTER_MIN_MAG_MIP_POINT;
     if ( maxAnisotropy > 0.0f )
     {
-        baseFilter = compareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_ANISOTROPIC : D3D12_FILTER_ANISOTROPIC;
+        return compareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_ANISOTROPIC : D3D12_FILTER_ANISOTROPIC;
     }
+
+    int filter     = (static_cast<int>(min) << 4) | (static_cast<int>(mag) << 2) | static_cast<int>(mode);
+    int baseFilter = compareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D12_FILTER_MIN_MAG_MIP_POINT;
     return static_cast<D3D12_FILTER>(baseFilter + filter);
 }
