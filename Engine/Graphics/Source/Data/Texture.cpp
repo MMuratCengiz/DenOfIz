@@ -85,6 +85,7 @@ void Texture::LoadTextureSTB()
 
     Width        = static_cast<uint32_t>(std::max<int>(0, width));
     Height       = static_cast<uint32_t>(std::max<int>(0, height));
+    Depth        = 1;
     Format       = Format::R8G8B8A8Unorm;
     Dimension    = TextureDimension::Texture2D;
     ArraySize    = 1;
@@ -400,6 +401,7 @@ void Texture::StreamMipData(MipStreamCallback callback) const
         StreamMipDataDDS(callback);
         break;
     default:
+        StreamMipDataSTB(callback);
         break;
     }
 }
@@ -413,7 +415,7 @@ void Texture::StreamMipDataDDS(MipStreamCallback callback) const
             // this.Data already skips the data_offset() but mip_offset() includes it
             auto externalOffset = m_ddsHeader.mip_offset(mip, array) - m_ddsHeader.data_offset();
 
-            MipData mipData {};
+            MipData mipData{};
             mipData.Width      = m_ddsHeader.width() >> mip;
             mipData.Height     = m_ddsHeader.height() >> mip;
             mipData.MipIndex   = mip;
@@ -426,4 +428,19 @@ void Texture::StreamMipDataDDS(MipStreamCallback callback) const
             callback(mipData);
         }
     }
+}
+
+void Texture::StreamMipDataSTB(MipStreamCallback callback) const
+{
+    MipData mipData{};
+    mipData.Width      = Width;
+    mipData.Height     = Height;
+    mipData.MipIndex   = 0;
+    mipData.ArrayIndex = 0;
+    mipData.RowPitch   = RowPitch;
+    mipData.NumRows    = NumRows;
+    mipData.SlicePitch = SlicePitch;
+    mipData.DataOffset = 0;
+
+    callback(mipData);
 }

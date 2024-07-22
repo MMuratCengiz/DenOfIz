@@ -101,6 +101,7 @@ namespace DenOfIz
         void LoadTextureSTB();
         void LoadTextureDDS();
         void StreamMipDataDDS(MipStreamCallback callback) const;
+        void StreamMipDataSTB(MipStreamCallback callback) const;
 #ifdef DZ_USE_DDS
         static enum Format GetFormatFromDDS(const dds::DXGI_FORMAT &format);
 #endif

@@ -89,7 +89,7 @@ namespace DenOfIz
         memcpy(m_mappedTimePassedBuffer, &timePassed, sizeof(float));
 
         m_batchResourceCopy->Begin();
-        m_texture = m_batchResourceCopy->CreateAndLoadTexture("texture1", "Assets/Textures/test-dxt5.dds");
+        m_texture = m_batchResourceCopy->CreateAndLoadTexture("texture1", "Assets/Textures/Dracolich.png");
         m_sampler = m_logicalDevice->CreateSampler("sampler1", SamplerDesc{});
         m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_vertexBuffer.get(), .Data = m_rect.Vertices.data(), .NumBytes = vBufferDesc.NumBytes });
         m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_indexBuffer.get(), .Data = m_rect.Indices.data(), .NumBytes = iBufferDesc.NumBytes });
