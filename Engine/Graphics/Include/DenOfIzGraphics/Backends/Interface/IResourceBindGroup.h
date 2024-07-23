@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <algorithm>
 #include "IBufferResource.h"
 #include "IRootSignature.h"
 #include "ITextureResource.h"
@@ -27,7 +28,10 @@ namespace DenOfIz
     struct ResourceBindGroupDesc
     {
         IRootSignature *RootSignature;
-        uint32_t        Offset;
+        uint32_t        RootParameterIndex;
+        uint32_t        MaxNumBuffers;
+        uint32_t        MaxNumTextures;
+        uint32_t        MaxNumSamplers;
     };
 
     struct UpdateDesc
@@ -39,6 +43,9 @@ namespace DenOfIz
 
     class IResourceBindGroup
     {
+    protected:
+        IRootSignature *m_rootSignature;
+
     public:
         virtual ~IResourceBindGroup() = default;
         virtual void Update(UpdateDesc desc)

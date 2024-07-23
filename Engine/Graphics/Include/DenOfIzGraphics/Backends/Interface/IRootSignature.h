@@ -61,7 +61,8 @@ namespace DenOfIz
 
     struct RootSignatureDesc
     {
-        RootSignatureType                Type;
+        RootSignatureType Type;
+        // The order of the bindings must match the order of the shader inputs!!! TODO might need to be fixed but this is normal for DX12
         std::vector<ResourceBindingDesc> ResourceBindings;
         std::vector<StaticSamplerDesc>   StaticSamplers;
     };
@@ -79,50 +80,42 @@ namespace DenOfIz
     {
     protected:
         uint32_t                                                     m_resourceCount = 0;
-        std::vector<uint32_t>                                        m_resourceCountPerSet;
+        uint32_t                                                     m_samplerCount = 0;
+        std::unordered_map<std::string, uint32_t>                    m_resourceOffsetMap;
         std::unordered_map<std::string, ResourceBindingDesc>         m_resourceBindingMap;
         std::unordered_map<std::string, RootConstantResourceBinding> m_rootConstantMap;
-        std::unordered_map<std::string, uint32_t>                    m_indices;
         bool                                                         m_created = false;
 
     public:
         virtual ~IRootSignature() = default;
 
-        inline uint32_t GetResourceCount() const
+        inline uint32_t GetResourceOffset(std::string name) const
         {
-            return m_resourceCount;
-        }
-
-        inline uint32_t GetResourceIndex(std::string name) const
-        {
-            return m_indices.at(name);
-        }
-
-        inline uint32_t GetResourceCount(uint32_t registerSpace) const
-        {
-            return m_resourceCountPerSet[ static_cast<uint32_t>(registerSpace) ];
+            return SafeGetMapValue(m_resourceOffsetMap, name);
         }
 
         inline ResourceBindingDesc GetResourceBinding(std::string name) const
         {
-            return m_resourceBindingMap.at(name);
+            return SafeGetMapValue(m_resourceBindingMap, name);
         }
 
-        inline RootConstantResourceBinding GetRootConstantBinding(std::string name)
+        inline RootConstantResourceBinding GetRootConstantBinding(std::string name) const
         {
-            return m_rootConstantMap.at(name);
+            return SafeGetMapValue(m_rootConstantMap, name);
         }
 
     protected:
         void AddResourceBinding(const ResourceBindingDesc &binding)
         {
-            if ( m_resourceCountPerSet.size() <= binding.RegisterSpace )
+            if ( binding.Descriptor.IsSet(ResourceDescriptor::Sampler) )
             {
-                m_resourceCountPerSet.resize(binding.RegisterSpace + 1);
+                m_resourceOffsetMap[ binding.Name ] = m_samplerCount++;
+            }
+            else
+            {
+                m_resourceOffsetMap[ binding.Name ] = m_resourceCount++;
             }
             m_resourceBindingMap[ binding.Name ] = binding;
-            m_resourceCount++;
-            m_resourceCountPerSet[ binding.RegisterSpace ] = std::max(m_resourceCountPerSet[ binding.RegisterSpace ], binding.Binding + 1);
             AddResourceBindingInternal(binding);
         }
 
@@ -132,9 +125,20 @@ namespace DenOfIz
             AddRootConstantInternal(rootConstant);
         }
 
-    protected:
         virtual void AddResourceBindingInternal(const ResourceBindingDesc &binding)           = 0;
         virtual void AddRootConstantInternal(const RootConstantResourceBinding &rootConstant) = 0;
+
+    private:
+        template <typename R>
+        R SafeGetMapValue(const std::unordered_map<std::string, R> &map, const std::string &key) const
+        {
+            auto value = map.find(key);
+            if ( value == map.end() )
+            {
+                LOG(ERROR) << "Unable to find key: " << key << ". Make sure the name described in the RootSignature matches the resource name.";
+            }
+            return value->second;
+        }
     };
 
 } // namespace DenOfIz

@@ -186,27 +186,27 @@ void DX12CommandList::BindResourceGroup(IResourceBindGroup *bindGroup)
     uint32_t index = 0;
     if ( pTable->GetCbvSrvUavCount() > 0 )
     {
-        BindResourceGroup(m_context->ShaderVisibleCbvSrvUavDescriptorHeap.get(), index++, pTable->GetOffset());
+        BindResourceGroup(m_context->ShaderVisibleCbvSrvUavDescriptorHeap.get(), index++, pTable->GetCbvSrvUavHandle().Gpu);
     }
 
     if ( pTable->GetSamplerCount() > 0 )
     {
-        BindResourceGroup(m_context->ShaderVisibleSamplerDescriptorHeap.get(), index, pTable->GetOffset());
+        BindResourceGroup(m_context->ShaderVisibleSamplerDescriptorHeap.get(), index, pTable->GetSamplerHandle().Gpu);
     }
 }
 
-void DX12CommandList::BindResourceGroup(const DX12DescriptorHeap *heap, uint32_t index, uint32_t offset)
+void DX12CommandList::BindResourceGroup(const DX12DescriptorHeap *heap, uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
 {
     switch ( this->m_desc.QueueType )
     {
     case Graphics:
         {
-            this->m_commandList->SetGraphicsRootDescriptorTable(index, D3D12_GPU_DESCRIPTOR_HANDLE(heap->GetGPUStartHandle().ptr + offset * heap->GetDescriptorSize()));
+            this->m_commandList->SetGraphicsRootDescriptorTable(index, gpuHandle);
         }
         break;
     case Compute:
         {
-            this->m_commandList->SetComputeRootDescriptorTable(index, D3D12_GPU_DESCRIPTOR_HANDLE(heap->GetGPUStartHandle().ptr + offset * heap->GetDescriptorSize()));
+            this->m_commandList->SetComputeRootDescriptorTable(index, gpuHandle);
         }
         break;
     default:
@@ -307,7 +307,7 @@ void DX12CommandList::CopyBufferToTexture(const CopyBufferToTextureDesc &copyBuf
     dst.pResource                   = dstTexture->GetResource();
     dst.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     dst.SubresourceIndex            = copyBufferToTexture.MipLevel;
-    m_commandList->CopyTextureRegion(&dst, 0, 0,0, &src, nullptr);
+    m_commandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
 }
 
 void DX12CommandList::CopyTextureToBuffer(const CopyTextureToBufferDesc &copyTextureToBuffer)

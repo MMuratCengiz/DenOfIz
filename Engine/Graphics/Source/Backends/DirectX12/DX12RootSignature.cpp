@@ -34,13 +34,11 @@ DX12RootSignature::DX12RootSignature(DX12Context *context, const RootSignatureDe
     for ( const ResourceBindingDesc &binding : desc.ResourceBindings )
     {
         AddResourceBinding(binding);
-        m_indices[ binding.Name ] = index++;
     }
 
     for ( const StaticSamplerDesc &staticSamplerDesc : desc.StaticSamplers )
     {
         AddStaticSampler(staticSamplerDesc);
-        m_indices[ staticSamplerDesc.Binding.Name ] = index++;
     }
 
     D3D12_SHADER_VISIBILITY descShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
@@ -141,7 +139,7 @@ void DX12RootSignature::AddResourceBindingInternal(const ResourceBindingDesc &bi
     CD3DX12_DESCRIPTOR_RANGE descriptorRange = {};
     descriptorRange.Init(DX12EnumConverter::ConvertResourceDescriptorToDescriptorRangeType(binding.Descriptor), binding.ArraySize, binding.Binding, binding.RegisterSpace);
 
-    if ( binding.Descriptor == ResourceDescriptor::Sampler )
+    if ( binding.Descriptor.IsSet(ResourceDescriptor::Sampler) )
     {
         Utilities::SafeGetInnerVec(m_samplerDescriptorRanges, binding.RegisterSpace).push_back(descriptorRange);
     }

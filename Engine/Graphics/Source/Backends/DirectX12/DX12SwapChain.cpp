@@ -76,7 +76,7 @@ void DX12SwapChain::CreateSwapChain()
         rtvDesc.Format                        = swapChainDesc.Format;
         rtvDesc.ViewDimension                 = D3D12_RTV_DIMENSION_TEXTURE2D;
 
-        m_renderTargetCpuHandles[ i ] = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_RTV ]->GetNextCPUHandleOffset(1);
+        m_renderTargetCpuHandles[ i ] = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_RTV ]->GetNextHandle(1).Cpu;
         m_renderTargets[ i ]          = std::make_unique<DX12TextureResource>(buffer.get(), m_renderTargetCpuHandles[ i ]);
         m_context->D3DDevice->CreateRenderTargetView(m_renderTargets[ i ]->GetResource(), &rtvDesc, m_renderTargetCpuHandles[ i ]);
     }
@@ -103,7 +103,7 @@ void DX12SwapChain::CreateSwapChain()
     dsvDesc.Format                        = depthBufferFormat;
     dsvDesc.ViewDimension                 = D3D12_DSV_DIMENSION_TEXTURE2D;
 
-    m_depthStencilCpuHandle = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_DSV ]->GetNextCPUHandleOffset(1);
+    m_depthStencilCpuHandle = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_DSV ]->GetNextHandle(1).Cpu;
     m_context->D3DDevice->CreateDepthStencilView(m_depthStencil.get(), &dsvDesc, m_depthStencilCpuHandle);
 }
 

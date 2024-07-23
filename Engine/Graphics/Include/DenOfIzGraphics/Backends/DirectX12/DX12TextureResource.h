@@ -40,6 +40,7 @@ namespace DenOfIz
         DX12TextureResource(DX12Context *context, const TextureDesc &desc);
         DX12TextureResource(ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle);
         ~DX12TextureResource() override = default;
+        void CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle);
 
         void Deallocate() override;
 
@@ -72,10 +73,9 @@ namespace DenOfIz
         void Allocate(const void *data) override;
 
     private:
-        void         Validate();
-        void         CreateTextureSrv();
-        void         CreateTextureUav();
-        void         CreateView();
+        void Validate();
+        void CreateTextureSrv();
+        void CreateTextureUav();
     };
 
     class DX12Sampler : public ISampler
@@ -85,12 +85,13 @@ namespace DenOfIz
         SamplerDesc                 m_desc;
         D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
         D3D12_SAMPLER_DESC          m_samplerDesc;
+
     public:
         DX12Sampler(DX12Context *context, const SamplerDesc &desc);
+        void CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle);
         ~DX12Sampler() override = default;
 
         D3D12_FILTER CalculateFilter(Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy) const;
-
 
         const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle() const
         {

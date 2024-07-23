@@ -33,12 +33,12 @@ namespace DenOfIz
         m_logicalDevice->LoadPhysicalDevice(firstDevice);
         m_batchResourceCopy = std::make_unique<BatchResourceCopy>(m_logicalDevice.get());
 
-        m_program = std::make_unique<ShaderProgram>(ShaderProgramDesc{ .Shaders = { ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" },
-                                                                                    ShaderDesc{ .Stage = ShaderStage::Pixel, .Path = "Assets/Shaders/fs.hlsl" } } });
-
+        m_program       = std::make_unique<ShaderProgram>(ShaderProgramDesc{ .Shaders = { ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" },
+                                                                                          ShaderDesc{ .Stage = ShaderStage::Pixel, .Path = "Assets/Shaders/fs.hlsl" } } });
         m_rootSignature = m_logicalDevice->CreateRootSignature(
             RootSignatureDesc{ .ResourceBindings = {
-                                   ResourceBindingDesc{ .Name = "time", .Binding = 0, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
+                                   ResourceBindingDesc{ .Name = "mvp", .Binding = 0, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
+                                   ResourceBindingDesc{ .Name = "time", .Binding = 1, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
                                    ResourceBindingDesc{ .Name = "texture1", .Binding = 0, .Descriptor = ResourceDescriptor::Texture, .Stages = { ShaderStage::Pixel } },
                                    ResourceBindingDesc{ .Name = "sampler1", .Binding = 0, .Descriptor = ResourceDescriptor::Sampler, .Stages = { ShaderStage::Pixel } },
                                } });
@@ -64,6 +64,25 @@ namespace DenOfIz
             m_imageRenderedSemaphores.push_back(m_logicalDevice->CreateSemaphore());
         }
 
+        UpdateMVPMatrix();
+
+        BufferDesc deltaTimeBufferDesc{};
+        deltaTimeBufferDesc.HeapType   = HeapType::CPU_GPU;
+        deltaTimeBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
+        deltaTimeBufferDesc.NumBytes   = sizeof(float);
+
+        float timePassed         = 1.0f;
+        m_timePassedBuffer       = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferDesc);
+        m_mappedTimePassedBuffer = m_timePassedBuffer->MapMemory();
+        memcpy(m_mappedTimePassedBuffer, &timePassed, sizeof(float));
+
+        BufferDesc mvpBufferDesc{};
+        mvpBufferDesc.HeapType     = HeapType::GPU;
+        mvpBufferDesc.Descriptor   = ResourceDescriptor::UniformBuffer;
+        mvpBufferDesc.InitialState = ResourceState::CopyDst;
+        mvpBufferDesc.NumBytes     = sizeof(XMMATRIX);
+        m_mvpMatrixBuffer          = m_logicalDevice->CreateBufferResource("mvp", mvpBufferDesc);
+
         BufferDesc vBufferDesc{};
         vBufferDesc.HeapType     = HeapType::GPU;
         vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
@@ -78,31 +97,49 @@ namespace DenOfIz
         iBufferDesc.NumBytes     = m_rect.SizeOfIndices();
         m_indexBuffer            = m_logicalDevice->CreateBufferResource("ib", iBufferDesc);
 
-        BufferDesc deltaTimeBufferDesc{};
-        deltaTimeBufferDesc.HeapType   = HeapType::CPU_GPU;
-        deltaTimeBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
-        deltaTimeBufferDesc.NumBytes   = sizeof(float);
-
-        float timePassed         = 1.0f;
-        m_timePassedBuffer       = m_logicalDevice->CreateBufferResource("time", deltaTimeBufferDesc);
-        m_mappedTimePassedBuffer = m_timePassedBuffer->MapMemory();
-        memcpy(m_mappedTimePassedBuffer, &timePassed, sizeof(float));
-
         m_batchResourceCopy->Begin();
         m_texture = m_batchResourceCopy->CreateAndLoadTexture("texture1", "Assets/Textures/Dracolich.png");
         m_sampler = m_logicalDevice->CreateSampler("sampler1", SamplerDesc{});
+        m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_mvpMatrixBuffer.get(), .Data = &m_mvpMatrix, .NumBytes = sizeof(XMFLOAT4X4) });
         m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_vertexBuffer.get(), .Data = m_rect.Vertices.data(), .NumBytes = vBufferDesc.NumBytes });
         m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_indexBuffer.get(), .Data = m_rect.Indices.data(), .NumBytes = iBufferDesc.NumBytes });
-        //        m_batchResourceCopy->LoadTexture({ .File = "Assets/Textures/Dracolich.dds", .DstTexture = m_texture.get() });
-//        m_batchResourceCopy->LoadTexture({ .File = "Assets/Textures/test-dxt5.dds", .DstTexture = m_texture.get() });
         m_batchResourceCopy->End(nullptr);
 
-        m_resourceBindGroup = m_logicalDevice->CreateResourceBindGroup(ResourceBindGroupDesc{ .RootSignature = m_rootSignature.get() });
-        m_resourceBindGroup->Update(UpdateDesc{ .Buffers = { m_timePassedBuffer.get() }, .Textures = { m_texture.get() }, .Samplers = { m_sampler.get() } });
+        ResourceBindGroupDesc bindGroupDesc = {};
+        bindGroupDesc.RootSignature         = m_rootSignature.get();
+        bindGroupDesc.RootParameterIndex    = 0;
+        bindGroupDesc.MaxNumBuffers         = 2;
+        bindGroupDesc.MaxNumTextures        = 1;
+        bindGroupDesc.MaxNumSamplers        = 1;
+        m_resourceBindGroup                 = m_logicalDevice->CreateResourceBindGroup(bindGroupDesc);
+        UpdateDesc updateDesc               = {};
+        updateDesc.Buffers                  = { m_mvpMatrixBuffer.get(), m_timePassedBuffer.get() };
+        updateDesc.Textures                 = { m_texture.get() };
+        updateDesc.Samplers                 = { m_sampler.get() };
+        m_resourceBindGroup->Update(updateDesc);
 
         m_time->ListenFps = [](const double fps) { DLOG(INFO) << std::format("FPS: {}", fps); };
 
         LOG(INFO) << "Initialization Complete.";
+    }
+
+    void SimpleRenderer::UpdateMVPMatrix()
+    {
+        XMFLOAT3 eyePosition = XMFLOAT3(0.0f, -1.0f, -2.0f);
+        XMFLOAT3 focusPoint  = XMFLOAT3(0.0f, 0.0f, 0.0f);
+        XMFLOAT3 upDirection = XMFLOAT3(0.0f, 1.0f, 0.0f);
+        float    aspectRatio = 800.0f / 600.0f;
+        float    nearZ       = 0.1f;
+        float    farZ        = 100.0f;
+
+        // Set up the matrices
+        XMMATRIX modelMatrix      = XMMatrixIdentity();
+        XMMATRIX viewMatrix       = XMMatrixLookAtLH(XMLoadFloat3(&eyePosition), XMLoadFloat3(&focusPoint), XMLoadFloat3(&upDirection));
+        XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH(XM_PIDIV4, aspectRatio, nearZ, farZ);
+
+        // Compute the MVP matrix
+        XMMATRIX mvpMatrix = modelMatrix * viewMatrix * projectionMatrix;
+        XMStoreFloat4x4(&m_mvpMatrix, XMMatrixTranspose(mvpMatrix));
     }
 
     void SimpleRenderer::Render()

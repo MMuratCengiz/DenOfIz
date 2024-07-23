@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
+#include <algorithm>
 #include "DX12BufferResource.h"
 #include "DX12Context.h"
 #include "DX12RootSignature.h"
@@ -32,16 +33,22 @@ namespace DenOfIz
     private:
         ResourceBindGroupDesc m_desc;
         DX12Context          *m_context;
-        DX12RootSignature    *m_rootSignature;
         uint32_t              m_samplerCount   = 0;
         uint32_t              m_cbvSrvUavCount = 0;
+        DescriptorHandle      m_cbvSrvUavHandle;
+        DescriptorHandle      m_samplerHandle;
 
     public:
         DX12ResourceBindGroup(DX12Context *context, ResourceBindGroupDesc desc);
 
-        const uint32_t GetOffset() const
+        DescriptorHandle GetCbvSrvUavHandle() const
         {
-            return m_desc.Offset;
+            return m_cbvSrvUavHandle;
+        }
+
+        DescriptorHandle GetSamplerHandle() const
+        {
+            return m_samplerHandle;
         }
 
         const uint32_t GetCbvSrvUavCount() const
@@ -56,15 +63,20 @@ namespace DenOfIz
 
         ID3D12RootSignature *GetRootSignature() const
         {
-            return m_rootSignature->GetRootSignature();
+            auto dx12RootSignature = static_cast<DX12RootSignature *>(m_rootSignature);
+            return dx12RootSignature->GetRootSignature();
         }
 
-        void Update(UpdateDesc desc) override;
+        void Update(UpdateDesc first) override;
 
     protected:
         void BindTexture(ITextureResource *resource) override;
         void BindBuffer(IBufferResource *resource) override;
         void BindSampler(ISampler *sampler) override;
+
+    private:
+        D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleCbvSrvUav(uint32_t binding);
+        D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleSampler(uint32_t binding);
     };
 
 } // namespace DenOfIz

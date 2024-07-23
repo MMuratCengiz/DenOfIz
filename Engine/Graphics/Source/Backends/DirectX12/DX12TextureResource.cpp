@@ -80,8 +80,6 @@ DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc
     m_resourceDesc = resourceDesc;
     HRESULT hr     = m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, initialState, NULL, &m_allocation, IID_PPV_ARGS(&m_resource));
     THROW_IF_FAILED(hr);
-
-    CreateView();
 }
 
 DX12TextureResource::DX12TextureResource(ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle) : m_resource(resource), m_cpuHandle(cpuHandle)
@@ -89,12 +87,13 @@ DX12TextureResource::DX12TextureResource(ID3D12Resource2 *resource, const D3D12_
     isExternalResource = true;
 }
 
-void DX12TextureResource::CreateView()
+void DX12TextureResource::CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle)
 {
+    // Todo remove?
     std::unique_ptr<DX12DescriptorHeap> &heap = m_desc.HeapType == HeapType::CPU_GPU || m_desc.HeapType == HeapType::GPU
                                                     ? m_context->ShaderVisibleCbvSrvUavDescriptorHeap
                                                     : m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ];
-    m_cpuHandle                               = heap->GetNextCPUHandleOffset(1);
+    m_cpuHandle                               = cpuHandle;
 
     if ( m_desc.Descriptor.IsSet(ResourceDescriptor::Texture) )
     {
@@ -249,7 +248,6 @@ void DX12TextureResource::CreateTextureUav()
     desc.Format = DX12EnumConverter::ConvertFormat(m_desc.Format);
 
     std::unique_ptr<DX12DescriptorHeap> &heap = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ];
-    m_cpuHandle                               = heap->GetNextCPUHandleOffset(m_desc.MipLevels);
 
     for ( uint32_t i = 0; i < m_desc.MipLevels; ++i )
     {
@@ -306,8 +304,11 @@ DX12Sampler::DX12Sampler(DX12Context *context, const SamplerDesc &desc) : m_cont
     m_samplerDesc.BorderColor[ 3 ] = 1.0f;
     m_samplerDesc.MinLOD           = desc.MinLod;
     m_samplerDesc.MaxLOD           = desc.MaxLod;
+}
 
-    m_cpuHandle = context->ShaderVisibleSamplerDescriptorHeap->GetNextCPUHandleOffset(1);
+void DX12Sampler::CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle)
+{
+    m_cpuHandle = cpuHandle;
     m_context->D3DDevice->CreateSampler(&m_samplerDesc, m_cpuHandle);
 }
 

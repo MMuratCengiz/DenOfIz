@@ -26,18 +26,26 @@ using namespace Microsoft::WRL;
 namespace DenOfIz
 {
 
+    struct DescriptorHandle
+    {
+        bool GpuVisible = false;
+        CD3DX12_CPU_DESCRIPTOR_HANDLE Cpu;
+        CD3DX12_GPU_DESCRIPTOR_HANDLE Gpu;
+    };
+
     class DX12DescriptorHeap
     {
     private:
         std::mutex m_mutex;
 
         wil::com_ptr<ID3D12DescriptorHeap> m_heap;
-        CD3DX12_CPU_DESCRIPTOR_HANDLE      m_cpuStartHandle;
-        CD3DX12_GPU_DESCRIPTOR_HANDLE      m_gpuStartHandle;
+        DescriptorHandle                   m_startHandle;
+        DescriptorHandle                   m_nextHandle;
         uint32_t                           m_descriptorSize;
+        bool                               m_shaderVisible;
 
     public:
-        DX12DescriptorHeap(ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_TYPE type, bool shaderVisible)
+        DX12DescriptorHeap(ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_TYPE type, bool shaderVisible) : m_shaderVisible(shaderVisible)
         {
             D3D12_DESCRIPTOR_HEAP_DESC desc = {};
             if ( shaderVisible )
@@ -75,9 +83,14 @@ namespace DenOfIz
             desc.NodeMask = 0;
 
             device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(m_heap.addressof()));
-            m_descriptorSize = device->GetDescriptorHandleIncrementSize(type);
-            m_cpuStartHandle = m_heap->GetCPUDescriptorHandleForHeapStart();
-            //		m_gpuStartHandle = m_heap->GetGPUDescriptorHandleForHeapStart();
+            m_descriptorSize  = device->GetDescriptorHandleIncrementSize(type);
+            m_startHandle.Cpu = m_heap->GetCPUDescriptorHandleForHeapStart();
+            if ( shaderVisible )
+            {
+                m_startHandle.GpuVisible = true;
+                m_startHandle.Gpu = m_heap->GetGPUDescriptorHandleForHeapStart();
+            }
+            m_nextHandle = m_startHandle;
         }
 
         uint32_t GetDescriptorSize() const
@@ -90,22 +103,21 @@ namespace DenOfIz
             return m_heap.get();
         }
 
-        D3D12_CPU_DESCRIPTOR_HANDLE GetCPUStartHandle() const
+        DescriptorHandle GetStartHandle() const
         {
-            return m_heap->GetCPUDescriptorHandleForHeapStart();
+            return m_startHandle;
         }
 
-        D3D12_GPU_DESCRIPTOR_HANDLE GetGPUStartHandle() const
+        DescriptorHandle GetNextHandle(uint32_t count)
         {
-            return m_heap->GetGPUDescriptorHandleForHeapStart();
-        }
-
-        CD3DX12_CPU_DESCRIPTOR_HANDLE GetNextCPUHandleOffset(uint32_t count)
-        {
-            m_mutex.lock();
-            CD3DX12_CPU_DESCRIPTOR_HANDLE handle = m_cpuStartHandle;
-            m_cpuStartHandle.Offset(count, m_descriptorSize);
-            m_mutex.unlock();
+            std::lock_guard<std::mutex> lock(m_mutex);
+            DescriptorHandle            handle = m_nextHandle;
+            m_nextHandle.Cpu.Offset(count, m_descriptorSize);
+            if ( m_shaderVisible )
+            {
+                m_nextHandle.GpuVisible = true;
+                m_nextHandle.Gpu.Offset(count, m_descriptorSize);
+            }
             return handle;
         }
 

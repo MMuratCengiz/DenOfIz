@@ -41,6 +41,8 @@ namespace DenOfIz
 
     public:
         DX12BufferResource(DX12Context *context, const BufferDesc &desc);
+        void CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle);
+
         ID3D12Resource2 *GetResource()
         {
             return m_resource.get();
@@ -59,9 +61,6 @@ namespace DenOfIz
         {
             return m_stride;
         }
-
-    protected:
-        void CreateBufferView();
     };
 
 } // namespace DenOfIz

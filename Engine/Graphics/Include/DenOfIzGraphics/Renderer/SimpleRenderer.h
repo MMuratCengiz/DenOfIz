@@ -34,10 +34,13 @@ namespace DenOfIz
         std::unique_ptr<ILogicalDevice>          m_logicalDevice;
         GraphicsWindowHandle                    *m_window;
         bool                                     m_isFirstFrame = true;
-        GeometryData                             m_rect         = Geometry::BuildQuad({ .Size = XMFLOAT2(1.0f, 1.0f) });
+        GeometryData                             m_rect         = Geometry::BuildSphere({ .Diameter = 1.0f, .Tessellation = 32 });
+        GeometryData                             m_plane        = Geometry::BuildBox({ .Size = { 1.0f, 1.0f, 1.0f } });
+        XMFLOAT4X4                               m_mvpMatrix;
         std::unique_ptr<ShaderProgram>           m_program;
         std::unique_ptr<IPipeline>               m_pipeline;
         std::unique_ptr<BatchResourceCopy>       m_batchResourceCopy;
+        std::unique_ptr<IBufferResource>         m_mvpMatrixBuffer;
         std::unique_ptr<IBufferResource>         m_vertexBuffer;
         std::unique_ptr<IBufferResource>         m_indexBuffer;
         std::unique_ptr<ITextureResource>        m_texture;
@@ -58,6 +61,8 @@ namespace DenOfIz
         void Init(GraphicsWindowHandle *window);
         void Render();
         void Quit();
+    private:
+        void UpdateMVPMatrix();
     };
 
 } // namespace DenOfIz

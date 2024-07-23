@@ -25,6 +25,9 @@ DX12ResourceBindGroup::DX12ResourceBindGroup(DX12Context *context, ResourceBindG
     DX12RootSignature *rootSignature = static_cast<DX12RootSignature *>(desc.RootSignature);
     DZ_NOT_NULL(rootSignature);
     m_rootSignature = rootSignature;
+
+    m_cbvSrvUavHandle = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetNextHandle(m_desc.MaxNumBuffers + m_desc.MaxNumTextures);
+    m_samplerHandle   = m_context->ShaderVisibleSamplerDescriptorHeap->GetNextHandle(m_desc.MaxNumSamplers);
 }
 
 void DX12ResourceBindGroup::Update(UpdateDesc desc)
@@ -39,6 +42,8 @@ void DX12ResourceBindGroup::BindTexture(ITextureResource *resource)
 {
     DZ_NOT_NULL(resource);
     // Todo is this always the case?
+    uint32_t offset = m_rootSignature->GetResourceOffset(resource->Name);
+    reinterpret_cast<DX12TextureResource *>(resource)->CreateView(CpuHandleCbvSrvUav(offset));
     m_cbvSrvUavCount++;
 }
 
@@ -46,11 +51,25 @@ void DX12ResourceBindGroup::BindBuffer(IBufferResource *resource)
 {
     DZ_NOT_NULL(resource);
     // Todo is this always the case?
+    uint32_t offset = m_rootSignature->GetResourceOffset(resource->Name);
+    reinterpret_cast<DX12BufferResource *>(resource)->CreateView(CpuHandleCbvSrvUav(offset));
     m_cbvSrvUavCount++;
 }
 
 void DX12ResourceBindGroup::BindSampler(ISampler *sampler)
 {
     DZ_NOT_NULL(sampler);
+    uint32_t offset = m_rootSignature->GetResourceOffset(sampler->Name);
+    reinterpret_cast<DX12Sampler *>(sampler)->CreateView(CpuHandleSampler(offset));
     m_samplerCount++;
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DX12ResourceBindGroup::CpuHandleCbvSrvUav(uint32_t binding)
+{
+    return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_cbvSrvUavHandle.Cpu, binding, m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetDescriptorSize());
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DX12ResourceBindGroup::CpuHandleSampler(uint32_t binding)
+{
+    return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_samplerHandle.Cpu, binding, m_context->ShaderVisibleSamplerDescriptorHeap->GetDescriptorSize());
 }

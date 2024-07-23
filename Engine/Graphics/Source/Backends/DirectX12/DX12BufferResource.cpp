@@ -52,15 +52,17 @@ DX12BufferResource::DX12BufferResource(DX12Context *context, const BufferDesc &d
     THROW_IF_FAILED(hr);
     std::wstring name = std::wstring(Name.begin(), Name.end());
     m_resource->SetName(name.c_str());
-
-    if ( !m_desc.Descriptor.None() )
-    {
-        CreateBufferView();
-    }
 }
 
-void DX12BufferResource::CreateBufferView()
+void DX12BufferResource::CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle)
 {
+    if ( m_desc.Descriptor.None() )
+    {
+        LOG(WARNING) << "Unable to create buffer view for buffer without a descriptor.";
+        return;
+    }
+
+    // Todo remove?
     std::unique_ptr<DX12DescriptorHeap> &heap = m_desc.HeapType == HeapType::CPU_GPU || m_desc.HeapType == HeapType::GPU
                                                     ? m_context->ShaderVisibleCbvSrvUavDescriptorHeap
                                                     : m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ];
@@ -68,7 +70,7 @@ void DX12BufferResource::CreateBufferView()
     // The views here are set explicitly in CommandList::BindVertexBuffer and CommandList::BindIndexBuffer
     DZ_RETURN_IF(m_desc.Descriptor.Any({ ResourceDescriptor::VertexBuffer, ResourceDescriptor::IndexBuffer }));
 
-    m_cpuHandle = heap->GetNextCPUHandleOffset(1);
+    m_cpuHandle = cpuHandle;
     if ( m_desc.Descriptor.IsSet(ResourceDescriptor::UniformBuffer) )
     {
         D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
