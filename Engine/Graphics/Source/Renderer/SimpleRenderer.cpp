@@ -28,9 +28,7 @@ namespace DenOfIz
             //            .Windows = APIPreferenceWindows::Vulkan,
         });
 
-        m_logicalDevice  = GraphicsAPI::CreateLogicalDevice(m_window);
-        auto firstDevice = m_logicalDevice->ListPhysicalDevices()[ 0 ];
-        m_logicalDevice->LoadPhysicalDevice(firstDevice);
+        m_logicalDevice  = GraphicsAPI::CreateAndLoadOptimalLogicalDevice(m_window);
         m_batchResourceCopy = std::make_unique<BatchResourceCopy>(m_logicalDevice.get());
 
         m_program       = std::make_unique<ShaderProgram>(ShaderProgramDesc{ .Shaders = { ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" },
@@ -83,26 +81,12 @@ namespace DenOfIz
         mvpBufferDesc.NumBytes     = sizeof(XMMATRIX);
         m_mvpMatrixBuffer          = m_logicalDevice->CreateBufferResource("mvp", mvpBufferDesc);
 
-        BufferDesc vBufferDesc{};
-        vBufferDesc.HeapType     = HeapType::GPU;
-        vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
-        vBufferDesc.InitialState = ResourceState::CopyDst;
-        vBufferDesc.NumBytes     = m_rect.SizeOfVertices();
-        m_vertexBuffer           = m_logicalDevice->CreateBufferResource("vb", vBufferDesc);
-
-        BufferDesc iBufferDesc{};
-        iBufferDesc.HeapType     = HeapType::GPU;
-        iBufferDesc.Descriptor   = ResourceDescriptor::IndexBuffer;
-        iBufferDesc.InitialState = ResourceState::CopyDst;
-        iBufferDesc.NumBytes     = m_rect.SizeOfIndices();
-        m_indexBuffer            = m_logicalDevice->CreateBufferResource("ib", iBufferDesc);
-
         m_batchResourceCopy->Begin();
         m_texture = m_batchResourceCopy->CreateAndLoadTexture("texture1", "Assets/Textures/Dracolich.png");
         m_sampler = m_logicalDevice->CreateSampler("sampler1", SamplerDesc{});
         m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_mvpMatrixBuffer.get(), .Data = &m_mvpMatrix, .NumBytes = sizeof(XMFLOAT4X4) });
-        m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_vertexBuffer.get(), .Data = m_rect.Vertices.data(), .NumBytes = vBufferDesc.NumBytes });
-        m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_indexBuffer.get(), .Data = m_rect.Indices.data(), .NumBytes = iBufferDesc.NumBytes });
+        BufferHelper::CreateGeometryBuffers({.Queue = m_batchResourceCopy.get(), .Device = m_logicalDevice.get(), .GeometryData = m_sphere })
+            .Into(m_vertexBuffer, m_indexBuffer);
         m_batchResourceCopy->End(nullptr);
 
         ResourceBindGroupDesc bindGroupDesc = {};
@@ -174,12 +158,11 @@ namespace DenOfIz
         const Viewport &viewport = m_swapChain->GetViewport();
         nextCommandList->BindViewport(viewport.X, viewport.Y, viewport.Width, viewport.Height);
         nextCommandList->BindScissorRect(viewport.X, viewport.Y, viewport.Width, viewport.Height);
-
         nextCommandList->BindPipeline(m_pipeline.get());
         nextCommandList->BindResourceGroup(m_resourceBindGroup.get());
         nextCommandList->BindVertexBuffer(m_vertexBuffer.get());
         nextCommandList->BindIndexBuffer(m_indexBuffer.get(), IndexType::Uint32);
-        nextCommandList->DrawIndexed(m_rect.Indices.size(), 1);
+        nextCommandList->DrawIndexed(m_sphere.Indices.size(), 1);
         nextCommandList->EndRendering();
         nextCommandList->PipelineBarrier(PipelineBarrierDesc::RenderTargetToPresent(m_swapChain->GetRenderTarget(nextImage)));
 

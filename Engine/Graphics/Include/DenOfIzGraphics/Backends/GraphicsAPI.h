@@ -62,6 +62,24 @@ namespace DenOfIz
             return logicalDevice;
         }
 
+        static std::unique_ptr<ILogicalDevice> CreateAndLoadOptimalLogicalDevice(GraphicsWindowHandle *window)
+        {
+            std::unique_ptr<ILogicalDevice> logicalDevice = CreateLogicalDevice(window);
+
+            // Todo something smarter
+            for ( auto device : logicalDevice->ListPhysicalDevices() )
+            {
+                if ( device.Properties.IsDedicated )
+                {
+                    logicalDevice->LoadPhysicalDevice(device);
+                    return std::move(logicalDevice);
+                }
+            }
+
+            logicalDevice->LoadPhysicalDevice(logicalDevice->ListPhysicalDevices().front());
+            return std::move(logicalDevice);
+        }
+
         static void ReportLiveObjects()
         {
 #ifndef NDEBUG

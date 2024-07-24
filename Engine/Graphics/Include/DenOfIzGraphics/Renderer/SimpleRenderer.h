@@ -17,12 +17,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+
 #include <DenOfIzCore/Time.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <DenOfIzGraphics/Backends/GraphicsAPI.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include <DenOfIzGraphics/Data/Geometry.h>
 #include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
+#include <DenOfIzGraphics/Helpers/BufferHelper.h>
 
 namespace DenOfIz
 {
@@ -34,8 +36,8 @@ namespace DenOfIz
         std::unique_ptr<ILogicalDevice>          m_logicalDevice;
         GraphicsWindowHandle                    *m_window;
         bool                                     m_isFirstFrame = true;
-        GeometryData                             m_rect         = Geometry::BuildSphere({ .Diameter = 1.0f, .Tessellation = 32 });
-        GeometryData                             m_plane        = Geometry::BuildBox({ .Size = { 1.0f, 1.0f, 1.0f } });
+        GeometryData                             m_sphere       = Geometry::BuildSphere({ .Diameter = 1.0f, .Tessellation = 32 });
+        GeometryData                             m_plane        = Geometry::BuildBox({ .Size = { 1.0f, 0.2f, 1.0f } });
         XMFLOAT4X4                               m_mvpMatrix;
         std::unique_ptr<ShaderProgram>           m_program;
         std::unique_ptr<IPipeline>               m_pipeline;

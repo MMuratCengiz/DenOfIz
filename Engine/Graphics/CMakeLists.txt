@@ -40,13 +40,18 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Backends/Common/ShaderReflection.cpp
         Source/Backends/Common/ShaderProgram.cpp
 
-        #Renderers
+        #Data
         Source/Data/BatchResourceCopy.cpp
         Source/Data/Texture.cpp
         Source/Data/VertexTypes.cpp
         Source/Data/Geometry.cpp
+
+        #Renderers
         Source/Renderer/ComputeTest.cpp
         Source/Renderer/SimpleRenderer.cpp
+
+        #Helpers
+        Source/Helpers/BufferHelper.cpp
 )
 
 SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
