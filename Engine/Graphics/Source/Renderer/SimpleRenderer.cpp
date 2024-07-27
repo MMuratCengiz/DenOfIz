@@ -28,18 +28,19 @@ namespace DenOfIz
             //            .Windows = APIPreferenceWindows::Vulkan,
         });
 
-        m_logicalDevice  = GraphicsAPI::CreateAndLoadOptimalLogicalDevice(m_window);
+        m_logicalDevice     = GraphicsAPI::CreateAndLoadOptimalLogicalDevice(m_window);
         m_batchResourceCopy = std::make_unique<BatchResourceCopy>(m_logicalDevice.get());
 
         m_program       = std::make_unique<ShaderProgram>(ShaderProgramDesc{ .Shaders = { ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" },
                                                                                           ShaderDesc{ .Stage = ShaderStage::Pixel, .Path = "Assets/Shaders/fs.hlsl" } } });
-        m_rootSignature = m_logicalDevice->CreateRootSignature(
-            RootSignatureDesc{ .ResourceBindings = {
-                                   ResourceBindingDesc{ .Name = "mvp", .Binding = 0, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
-                                   ResourceBindingDesc{ .Name = "time", .Binding = 1, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
-                                   ResourceBindingDesc{ .Name = "texture1", .Binding = 0, .Descriptor = ResourceDescriptor::Texture, .Stages = { ShaderStage::Pixel } },
-                                   ResourceBindingDesc{ .Name = "sampler1", .Binding = 0, .Descriptor = ResourceDescriptor::Sampler, .Stages = { ShaderStage::Pixel } },
-                               } });
+        m_rootSignature = m_logicalDevice->CreateRootSignature(RootSignatureDesc{
+            .ResourceBindings = {
+                ResourceBindingDesc{ .Name = "model", .Binding = 0, .RegisterSpace = 1, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
+                ResourceBindingDesc{ .Name = "viewProjection", .Binding = 0, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
+                ResourceBindingDesc{ .Name = "time", .Binding = 1, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
+                ResourceBindingDesc{ .Name = "texture1", .Binding = 0, .RegisterSpace = 1, .Descriptor = ResourceDescriptor::Texture, .Stages = { ShaderStage::Pixel } },
+                ResourceBindingDesc{ .Name = "sampler1", .Binding = 0, .RegisterSpace = 1, .Descriptor = ResourceDescriptor::Sampler, .Stages = { ShaderStage::Pixel } },
+            } });
 
         m_inputLayout = m_logicalDevice->CreateInputLayout(VertexPositionNormalTexture::InputLayout);
 
@@ -74,33 +75,45 @@ namespace DenOfIz
         m_mappedTimePassedBuffer = m_timePassedBuffer->MapMemory();
         memcpy(m_mappedTimePassedBuffer, &timePassed, sizeof(float));
 
-        BufferDesc mvpBufferDesc{};
-        mvpBufferDesc.HeapType     = HeapType::GPU;
-        mvpBufferDesc.Descriptor   = ResourceDescriptor::UniformBuffer;
-        mvpBufferDesc.InitialState = ResourceState::CopyDst;
-        mvpBufferDesc.NumBytes     = sizeof(XMMATRIX);
-        m_mvpMatrixBuffer          = m_logicalDevice->CreateBufferResource("mvp", mvpBufferDesc);
+        XMStoreFloat4x4(&m_identityMatrix, XMMatrixIdentity());
+        XMStoreFloat4x4(&m_planeModelMatrix, XMMatrixTranslation(0.0f, -5.0f, 0.0f));
 
-        m_batchResourceCopy->Begin();
-        m_texture = m_batchResourceCopy->CreateAndLoadTexture("texture1", "Assets/Textures/Dracolich.png");
-        m_sampler = m_logicalDevice->CreateSampler("sampler1", SamplerDesc{});
-        m_batchResourceCopy->CopyToGPUBuffer({ .DstBuffer = m_mvpMatrixBuffer.get(), .Data = &m_mvpMatrix, .NumBytes = sizeof(XMFLOAT4X4) });
-        BufferHelper::CreateGeometryBuffers({.Queue = m_batchResourceCopy.get(), .Device = m_logicalDevice.get(), .GeometryData = m_sphere })
-            .Into(m_vertexBuffer, m_indexBuffer);
-        m_batchResourceCopy->End(nullptr);
+        BatchResourceCopyHelper copyHelper(m_logicalDevice.get(), m_batchResourceCopy.get());
+        copyHelper.Begin();
+        copyHelper.CreateUniformBuffer("model", &m_identityMatrix, sizeof(XMFLOAT4X4)).Into(m_sphereModelMatrixBuffer);
+        copyHelper.CreateUniformBuffer("model", &m_planeModelMatrix, sizeof(XMFLOAT4X4)).Into(m_planeModelMatrixBuffer);
+        copyHelper.CreateUniformBuffer("viewProjection", &m_mvpMatrix, sizeof(XMFLOAT4X4)).Into(m_viewProjectionMatrixBuffer);
+        copyHelper.CreateGeometryBuffers(m_sphere).Into(m_sphereVb, m_sphereIb);
+        copyHelper.CreateGeometryBuffers(m_plane).Into(m_planeVb, m_planeIb);
+        copyHelper.CreateSampler("sampler1", SamplerDesc{}).Into(m_sphereSampler);
+        copyHelper.CreateSampler("sampler1", SamplerDesc{}).Into(m_planeSampler);
+        copyHelper.CreateTexture("texture1", "Assets/Textures/Dracolich.png").Into(m_sphereTexture);
+        copyHelper.CreateTexture("texture1", "Assets/Textures/test-dxt5.dds").Into(m_planeTexture);
+        copyHelper.Submit();
 
         ResourceBindGroupDesc bindGroupDesc = {};
         bindGroupDesc.RootSignature         = m_rootSignature.get();
-        bindGroupDesc.RootParameterIndex    = 0;
-        bindGroupDesc.MaxNumBuffers         = 2;
-        bindGroupDesc.MaxNumTextures        = 1;
-        bindGroupDesc.MaxNumSamplers        = 1;
-        m_resourceBindGroup                 = m_logicalDevice->CreateResourceBindGroup(bindGroupDesc);
-        UpdateDesc updateDesc               = {};
-        updateDesc.Buffers                  = { m_mvpMatrixBuffer.get(), m_timePassedBuffer.get() };
-        updateDesc.Textures                 = { m_texture.get() };
-        updateDesc.Samplers                 = { m_sampler.get() };
-        m_resourceBindGroup->Update(updateDesc);
+        bindGroupDesc.RegisterSpace         = 0;
+        bindGroupDesc.NumBuffers            = 2;
+        m_perCameraBindGroup                = m_logicalDevice->CreateResourceBindGroup(bindGroupDesc);
+        bindGroupDesc.RegisterSpace         = 1;
+        bindGroupDesc.NumBuffers            = 1;
+        bindGroupDesc.NumTextures           = 1;
+        bindGroupDesc.NumSamplers           = 1;
+        m_sphereModelBindGroup              = m_logicalDevice->CreateResourceBindGroup(bindGroupDesc);
+        m_planeModelBindGroup               = m_logicalDevice->CreateResourceBindGroup(bindGroupDesc);
+
+        { // Update the bind groups, TODO, can the model bindings be merged somehow?
+            UpdateDesc updateDesc{};
+            updateDesc.Buffer("model", m_sphereModelMatrixBuffer.get()).Texture("texture1", m_sphereTexture.get()).Sampler("sampler1", m_sphereSampler.get());
+            m_sphereModelBindGroup->Update(updateDesc);
+            updateDesc = {};
+            updateDesc.Buffer("model", m_planeModelMatrixBuffer.get()).Texture("texture1", m_planeTexture.get()).Sampler("sampler1", m_planeSampler.get());
+            m_planeModelBindGroup->Update(updateDesc);
+            updateDesc = {};
+            updateDesc.Buffer("viewProjection", m_viewProjectionMatrixBuffer.get()).Buffer("time", m_timePassedBuffer.get());
+            m_perCameraBindGroup->Update(updateDesc);
+        }
 
         m_time->ListenFps = [](const double fps) { DLOG(INFO) << std::format("FPS: {}", fps); };
 
@@ -139,13 +152,6 @@ namespace DenOfIz
         uint32_t nextImage = m_swapChain->AcquireNextImage(m_imageReadySemaphores[ currentFrame ].get());
         nextCommandList->Begin();
 
-        if ( m_isFirstFrame )
-        {
-            PipelineBarrierDesc barrier{};
-            barrier.TextureBarrier(TextureBarrierDesc{ .Resource = m_texture.get(), .OldState = ResourceState::CopyDst, .NewState = ResourceState::PixelShaderResource });
-            nextCommandList->PipelineBarrier(barrier);
-        }
-
         RenderingAttachmentDesc renderingAttachmentDesc{};
         renderingAttachmentDesc.Resource = m_swapChain->GetRenderTarget(nextImage);
 
@@ -159,10 +165,22 @@ namespace DenOfIz
         nextCommandList->BindViewport(viewport.X, viewport.Y, viewport.Width, viewport.Height);
         nextCommandList->BindScissorRect(viewport.X, viewport.Y, viewport.Width, viewport.Height);
         nextCommandList->BindPipeline(m_pipeline.get());
-        nextCommandList->BindResourceGroup(m_resourceBindGroup.get());
-        nextCommandList->BindVertexBuffer(m_vertexBuffer.get());
-        nextCommandList->BindIndexBuffer(m_indexBuffer.get(), IndexType::Uint32);
-        nextCommandList->DrawIndexed(m_sphere.Indices.size(), 1);
+        nextCommandList->BindResourceGroup(m_perCameraBindGroup.get());
+
+        { // Draw the sphere
+            nextCommandList->BindResourceGroup(m_sphereModelBindGroup.get());
+            nextCommandList->BindVertexBuffer(m_sphereVb.get());
+            nextCommandList->BindIndexBuffer(m_sphereIb.get(), IndexType::Uint32);
+            nextCommandList->DrawIndexed(m_sphere.Indices.size(), 1);
+        }
+
+        { // Draw the plane
+            nextCommandList->BindResourceGroup(m_planeModelBindGroup.get());
+            nextCommandList->BindVertexBuffer(m_planeVb.get());
+            nextCommandList->BindIndexBuffer(m_planeIb.get(), IndexType::Uint32);
+            nextCommandList->DrawIndexed(m_plane.Indices.size(), 1);
+        }
+
         nextCommandList->EndRendering();
         nextCommandList->PipelineBarrier(PipelineBarrierDesc::RenderTargetToPresent(m_swapChain->GetRenderTarget(nextImage)));
 
@@ -172,8 +190,6 @@ namespace DenOfIz
         submitInfo.NotifySemaphores.push_back(m_imageRenderedSemaphores[ currentFrame ].get());
         nextCommandList->Execute(submitInfo);
         nextCommandList->Present(m_swapChain.get(), nextImage, { m_imageRenderedSemaphores[ currentFrame ].get() });
-
-        m_isFirstFrame = false;
     }
 
     void SimpleRenderer::Quit()

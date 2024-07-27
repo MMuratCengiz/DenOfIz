@@ -43,7 +43,7 @@ namespace DenOfIz
         }
         ID3D12RootSignature *GetRootSignature() const
         {
-            return m_rootSignature->GetRootSignature();
+            return m_rootSignature->Instance();
         }
         D3D12_PRIMITIVE_TOPOLOGY GetTopology() const
         {

@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanResourceBindGroup::VulkanResourceBindGroup(VulkanContext *context, ResourceBindGroupDesc desc) : m_context(context), m_desc(std::move(desc))
+VulkanResourceBindGroup::VulkanResourceBindGroup(VulkanContext *context, ResourceBindGroupDesc desc) : IResourceBindGroup(desc), m_context(context)
 {
     m_rootSignature = static_cast<VulkanRootSignature *>(m_desc.RootSignature);
 }
@@ -33,7 +33,7 @@ void VulkanResourceBindGroup::Update(UpdateDesc desc)
     IResourceBindGroup::Update(desc);
 }
 
-void VulkanResourceBindGroup::BindTexture(ITextureResource *resource)
+void VulkanResourceBindGroup::BindTexture(const std::string &name, ITextureResource *resource)
 {
     VulkanTextureResource *vulkanResource = static_cast<VulkanTextureResource *>(resource);
 
@@ -41,7 +41,7 @@ void VulkanResourceBindGroup::BindTexture(ITextureResource *resource)
     writeDescriptorSet.pImageInfo              = &vulkanResource->DescriptorInfo;
 }
 
-void VulkanResourceBindGroup::BindBuffer(IBufferResource *resource)
+void VulkanResourceBindGroup::BindBuffer(const std::string &name, IBufferResource *resource)
 {
     VulkanBufferResource *vulkanResource = static_cast<VulkanBufferResource *>(resource);
 
@@ -49,7 +49,7 @@ void VulkanResourceBindGroup::BindBuffer(IBufferResource *resource)
     writeDescriptorSet.pBufferInfo             = &vulkanResource->DescriptorInfo;
 }
 
-void VulkanResourceBindGroup::BindSampler(ISampler *sampler)
+void VulkanResourceBindGroup::BindSampler(const std::string &name, ISampler *sampler)
 {
     vk::WriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor(sampler->Name);
 }

@@ -30,7 +30,6 @@ DX12RootSignature::DX12RootSignature(DX12Context *context, const RootSignatureDe
         m_rootSignatureVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
     }
 
-    uint32_t index = 0;
     for ( const ResourceBindingDesc &binding : desc.ResourceBindings )
     {
         AddResourceBinding(binding);
@@ -55,18 +54,26 @@ DX12RootSignature::DX12RootSignature(DX12Context *context, const RootSignatureDe
 
     std::copy(m_rootConstants.begin(), m_rootConstants.end(), std::back_inserter(m_rootParameters));
 
-    for ( const auto &range : m_descriptorRanges )
+    for ( const auto &range : m_registerSpaceRanges )
     {
-        CD3DX12_ROOT_PARAMETER descriptors = {};
-        descriptors.InitAsDescriptorTable(static_cast<uint32_t>(range.size()), range.data(), descShaderVisibility);
-        m_rootParameters.push_back(descriptors);
-    }
+        if ( range.CbvSrvUavRanges.empty() && range.SamplerRanges.empty() )
+        {
+            LOG(WARNING) << "Register space " << range.Space << " has no bindings somehow, this is likely a developer error.";
+        }
 
-    for ( const auto &range : m_samplerDescriptorRanges )
-    {
-        CD3DX12_ROOT_PARAMETER samplers = {};
-        samplers.InitAsDescriptorTable(static_cast<uint32_t>(range.size()), range.data(), samplerShaderVisibility);
-        m_rootParameters.push_back(samplers);
+        Utilities::SafeAt(m_registerSpaceOffsets, range.Space) = m_rootParameters.size();
+        if ( !range.CbvSrvUavRanges.empty() )
+        {
+            CD3DX12_ROOT_PARAMETER rootParameter = {};
+            rootParameter.InitAsDescriptorTable(static_cast<uint32_t>(range.CbvSrvUavRanges.size()), range.CbvSrvUavRanges.data(), descShaderVisibility);
+            m_rootParameters.push_back(rootParameter);
+        }
+        if ( !range.SamplerRanges.empty() )
+        {
+            CD3DX12_ROOT_PARAMETER samplerRootParameter = {};
+            samplerRootParameter.InitAsDescriptorTable(static_cast<uint32_t>(range.SamplerRanges.size()), range.SamplerRanges.data(), samplerShaderVisibility);
+            m_rootParameters.push_back(samplerRootParameter);
+        }
     }
 
     D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc(static_cast<uint32_t>(m_rootParameters.size()), m_rootParameters.data());
@@ -139,13 +146,15 @@ void DX12RootSignature::AddResourceBindingInternal(const ResourceBindingDesc &bi
     CD3DX12_DESCRIPTOR_RANGE descriptorRange = {};
     descriptorRange.Init(DX12EnumConverter::ConvertResourceDescriptorToDescriptorRangeType(binding.Descriptor), binding.ArraySize, binding.Binding, binding.RegisterSpace);
 
+    RegisterSpaceRangesDesc &spaceDesc = Utilities::SafeAt(m_registerSpaceRanges, binding.RegisterSpace);
+    spaceDesc.Space = binding.RegisterSpace;
     if ( binding.Descriptor.IsSet(ResourceDescriptor::Sampler) )
     {
-        Utilities::SafeGetInnerVec(m_samplerDescriptorRanges, binding.RegisterSpace).push_back(descriptorRange);
+        spaceDesc.SamplerRanges.push_back(descriptorRange);
     }
     else
     {
-        Utilities::SafeGetInnerVec(m_descriptorRanges, binding.RegisterSpace).push_back(descriptorRange);
+        spaceDesc.CbvSrvUavRanges.push_back(descriptorRange);
     }
 
     for ( const auto &stage : binding.Stages )

@@ -20,14 +20,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12ResourceBindGroup::DX12ResourceBindGroup(DX12Context *context, ResourceBindGroupDesc desc) : m_context(context), m_desc(desc)
+DX12ResourceBindGroup::DX12ResourceBindGroup(DX12Context *context, ResourceBindGroupDesc desc) : IResourceBindGroup(desc), m_context(context)
 {
     DX12RootSignature *rootSignature = static_cast<DX12RootSignature *>(desc.RootSignature);
     DZ_NOT_NULL(rootSignature);
-    m_rootSignature = rootSignature;
+    m_dx12RootSignature = rootSignature;
 
-    m_cbvSrvUavHandle = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetNextHandle(m_desc.MaxNumBuffers + m_desc.MaxNumTextures);
-    m_samplerHandle   = m_context->ShaderVisibleSamplerDescriptorHeap->GetNextHandle(m_desc.MaxNumSamplers);
+    m_offset = rootSignature->RegisterSpaceOffset(desc.RegisterSpace);
+    if ( desc.NumBuffers + desc.NumTextures > 0 )
+    {
+        m_cbvSrvUavHandle = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetNextHandle(m_desc.NumBuffers + m_desc.NumTextures);
+    }
+    if ( desc.NumSamplers > 0 )
+    {
+        m_samplerHandle = m_context->ShaderVisibleSamplerDescriptorHeap->GetNextHandle(m_desc.NumSamplers);
+    }
 }
 
 void DX12ResourceBindGroup::Update(UpdateDesc desc)
@@ -35,31 +42,33 @@ void DX12ResourceBindGroup::Update(UpdateDesc desc)
     m_cbvSrvUavCount = 0;
     m_samplerCount   = 0;
 
+    DZ_ASSERTM(desc.Buffers.size()  == m_desc.NumBuffers,  "Number of buffers being updated do not match.");
+    DZ_ASSERTM(desc.Textures.size() == m_desc.NumTextures, "Number of textures being updated do not match.");
+    DZ_ASSERTM(desc.Samplers.size() == m_desc.NumSamplers, "Number of sampler being updated do not match.");
+
     IResourceBindGroup::Update(desc);
 }
 
-void DX12ResourceBindGroup::BindTexture(ITextureResource *resource)
+void DX12ResourceBindGroup::BindTexture(const std::string &name, ITextureResource *resource)
 {
     DZ_NOT_NULL(resource);
-    // Todo is this always the case?
-    uint32_t offset = m_rootSignature->GetResourceOffset(resource->Name);
+    uint32_t offset  = m_rootSignature->GetResourceOffset(m_desc.RegisterSpace, name);
     reinterpret_cast<DX12TextureResource *>(resource)->CreateView(CpuHandleCbvSrvUav(offset));
     m_cbvSrvUavCount++;
 }
 
-void DX12ResourceBindGroup::BindBuffer(IBufferResource *resource)
+void DX12ResourceBindGroup::BindBuffer(const std::string &name, IBufferResource *resource)
 {
     DZ_NOT_NULL(resource);
-    // Todo is this always the case?
-    uint32_t offset = m_rootSignature->GetResourceOffset(resource->Name);
+    uint32_t offset  = m_rootSignature->GetResourceOffset(m_desc.RegisterSpace, name);
     reinterpret_cast<DX12BufferResource *>(resource)->CreateView(CpuHandleCbvSrvUav(offset));
     m_cbvSrvUavCount++;
 }
 
-void DX12ResourceBindGroup::BindSampler(ISampler *sampler)
+void DX12ResourceBindGroup::BindSampler(const std::string &name, ISampler *sampler)
 {
     DZ_NOT_NULL(sampler);
-    uint32_t offset = m_rootSignature->GetResourceOffset(sampler->Name);
+    uint32_t offset  = m_rootSignature->GetResourceOffset(m_desc.RegisterSpace, name);
     reinterpret_cast<DX12Sampler *>(sampler)->CreateView(CpuHandleSampler(offset));
     m_samplerCount++;
 }

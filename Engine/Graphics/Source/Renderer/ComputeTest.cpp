@@ -69,7 +69,7 @@ int ComputeTest::Run()
     buffer                       = m_logicalDevice->CreateBufferResource("buffer", bufferDesc);
 
     m_resourceBindGroup = m_logicalDevice->CreateResourceBindGroup(ResourceBindGroupDesc{ .RootSignature = m_rootSignature.get() });
-    m_resourceBindGroup->Update(UpdateDesc{ .Buffers = { buffer.get() } });
+    m_resourceBindGroup->Update(UpdateDesc{}.Buffer("computeReadBack", buffer.get()));
 
     m_inputLayout = m_logicalDevice->CreateInputLayout({});
 

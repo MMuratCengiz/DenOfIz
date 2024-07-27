@@ -30,7 +30,6 @@ namespace DenOfIz
     private:
         VulkanContext        *m_context;
         VulkanRootSignature  *m_rootSignature;
-        ResourceBindGroupDesc m_desc;
 
         std::vector<vk::DescriptorSet>      m_descriptorSets;
         std::vector<vk::WriteDescriptorSet> m_writeDescriptorSets;
@@ -46,9 +45,9 @@ namespace DenOfIz
 
         vk::WriteDescriptorSet &CreateWriteDescriptor(std::string &name);
     protected:
-        void BindTexture(ITextureResource *resource) override;
-        void BindBuffer(IBufferResource *resource) override;
-        void BindSampler(ISampler *sampler) override;
+        void BindTexture(const std::string &name, ITextureResource *resource) override;
+        void BindBuffer(const std::string &name, IBufferResource *resource) override;
+        void BindSampler(const std::string &name, ISampler *sampler) override;
     };
 
 } // namespace DenOfIz

@@ -31,12 +31,13 @@ namespace DenOfIz
     class DX12ResourceBindGroup : public IResourceBindGroup
     {
     private:
-        ResourceBindGroupDesc m_desc;
-        DX12Context          *m_context;
-        uint32_t              m_samplerCount   = 0;
-        uint32_t              m_cbvSrvUavCount = 0;
-        DescriptorHandle      m_cbvSrvUavHandle;
-        DescriptorHandle      m_samplerHandle;
+        DX12Context       *m_context;
+        uint32_t           m_samplerCount   = 0;
+        uint32_t           m_cbvSrvUavCount = 0;
+        uint32_t           m_offset         = 0;
+        DescriptorHandle   m_cbvSrvUavHandle;
+        DescriptorHandle   m_samplerHandle;
+        DX12RootSignature *m_dx12RootSignature;
 
     public:
         DX12ResourceBindGroup(DX12Context *context, ResourceBindGroupDesc desc);
@@ -61,18 +62,17 @@ namespace DenOfIz
             return m_samplerCount;
         }
 
-        ID3D12RootSignature *GetRootSignature() const
+        inline DX12RootSignature *RootSignature() const
         {
-            auto dx12RootSignature = static_cast<DX12RootSignature *>(m_rootSignature);
-            return dx12RootSignature->GetRootSignature();
+            return m_dx12RootSignature;
         }
 
         void Update(UpdateDesc first) override;
 
     protected:
-        void BindTexture(ITextureResource *resource) override;
-        void BindBuffer(IBufferResource *resource) override;
-        void BindSampler(ISampler *sampler) override;
+        void BindTexture(const std::string &name, ITextureResource *resource) override;
+        void BindBuffer(const std::string &name, IBufferResource *resource) override;
+        void BindSampler(const std::string &name, ISampler *sampler) override;
 
     private:
         D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleCbvSrvUav(uint32_t binding);

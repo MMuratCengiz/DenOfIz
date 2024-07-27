@@ -51,7 +51,7 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Renderer/SimpleRenderer.cpp
 
         #Helpers
-        Source/Helpers/BufferHelper.cpp
+        Source/Helpers/BatchResourceCopyHelper.cpp
 )
 
 SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES

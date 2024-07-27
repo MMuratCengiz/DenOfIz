@@ -36,7 +36,8 @@ namespace DenOfIz
     struct RegisterSpaceRangesDesc
     {
         int                                   Space;
-        std::vector<CD3DX12_DESCRIPTOR_RANGE> DescriptorRanges;
+        std::vector<CD3DX12_DESCRIPTOR_RANGE> CbvSrvUavRanges;
+        std::vector<CD3DX12_DESCRIPTOR_RANGE> SamplerRanges;
     };
 
     class DX12RootSignature : public IRootSignature
@@ -49,18 +50,28 @@ namespace DenOfIz
 
         std::vector<CD3DX12_ROOT_PARAMETER>                m_rootParameters;
         std::vector<CD3DX12_ROOT_PARAMETER>                m_rootConstants;
-        std::vector<std::vector<CD3DX12_DESCRIPTOR_RANGE>> m_descriptorRanges;
-        std::vector<std::vector<CD3DX12_DESCRIPTOR_RANGE>> m_samplerDescriptorRanges;
+        std::vector<RegisterSpaceRangesDesc>               m_registerSpaceRanges;
         std::vector<D3D12_STATIC_SAMPLER_DESC>             m_staticSamplerDescriptorRanges;
 
         std::unordered_set<D3D12_SHADER_VISIBILITY> m_descriptorRangesShaderVisibilities;
         std::unordered_set<D3D12_SHADER_VISIBILITY> m_samplerRangesShaderVisibilities;
         uint32_t                                    m_usedStages = 0;
+        std::vector<uint32_t>                       m_registerSpaceOffsets;
 
     public:
         DX12RootSignature(DX12Context *context, const RootSignatureDesc &desc);
 
-        inline ID3D12RootSignature *GetRootSignature() const
+        inline uint32_t RegisterSpaceOffset(uint32_t registerSpace) const
+        {
+            if ( registerSpace >= m_registerSpaceOffsets.size() )
+            {
+                LOG(ERROR) << "Register space " << registerSpace << " is not bound to any bind group.";
+            }
+
+            return m_registerSpaceOffsets[ registerSpace ];
+        }
+
+        inline ID3D12RootSignature *Instance() const
         {
             return m_rootSignature.get();
         }
@@ -73,9 +84,9 @@ namespace DenOfIz
         ~DX12RootSignature() override;
 
     protected:
-        void AddStaticSampler(const StaticSamplerDesc &desc);
-        void AddResourceBindingInternal(const ResourceBindingDesc &binding) override;
-        void AddRootConstantInternal(const RootConstantResourceBinding &rootConstant) override;
+        void                       AddStaticSampler(const StaticSamplerDesc &desc);
+        void                       AddResourceBindingInternal(const ResourceBindingDesc &binding) override;
+        void                       AddRootConstantInternal(const RootConstantResourceBinding &rootConstant) override;
         D3D12_ROOT_SIGNATURE_FLAGS ComputeShaderVisibility() const;
     };
 

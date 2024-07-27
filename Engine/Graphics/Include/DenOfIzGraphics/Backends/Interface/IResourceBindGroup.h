@@ -28,46 +28,81 @@ namespace DenOfIz
     struct ResourceBindGroupDesc
     {
         IRootSignature *RootSignature;
-        uint32_t        RootParameterIndex;
-        uint32_t        MaxNumBuffers;
-        uint32_t        MaxNumTextures;
-        uint32_t        MaxNumSamplers;
+        uint32_t        RegisterSpace;
+        uint32_t        NumBuffers;
+        uint32_t        NumTextures;
+        uint32_t        NumSamplers;
+    };
+
+    template<typename T>
+    struct UpdateDescItem
+    {
+        std::string Name;
+        T *Resource;
     };
 
     struct UpdateDesc
     {
-        std::vector<IBufferResource *>  Buffers;
-        std::vector<ITextureResource *> Textures;
-        std::vector<ISampler *>         Samplers;
+        std::vector<UpdateDescItem<IBufferResource>>  Buffers;
+        std::vector<UpdateDescItem<ITextureResource>> Textures;
+        std::vector<UpdateDescItem<ISampler>>         Samplers;
+
+        UpdateDesc& Buffer(std::string name, IBufferResource *resource)
+        {
+            Buffers.push_back({name, resource});
+            return *this;
+        }
+
+        UpdateDesc& Texture(std::string name, ITextureResource *resource)
+        {
+            Textures.push_back({name, resource});
+            return *this;
+        }
+
+        UpdateDesc& Sampler(std::string name, ISampler *sampler)
+        {
+            Samplers.push_back({name, sampler});
+            return *this;
+        }
     };
 
     class IResourceBindGroup
     {
     protected:
-        IRootSignature *m_rootSignature;
+        ResourceBindGroupDesc m_desc;
+        IRootSignature       *m_rootSignature;
 
     public:
+        IResourceBindGroup(ResourceBindGroupDesc desc) : m_rootSignature(desc.RootSignature), m_desc(desc)
+        {
+        }
+
+        inline uint32_t RegisterSpace() const
+        {
+            return m_desc.RegisterSpace;
+        }
+
         virtual ~IResourceBindGroup() = default;
         virtual void Update(UpdateDesc desc)
         {
-            for ( auto buffer : desc.Buffers )
+            for ( auto item : desc.Buffers )
             {
-                BindBuffer(buffer);
+                BindBuffer(item.Name, item.Resource);
             }
-            for ( auto texture : desc.Textures )
+            for ( auto item : desc.Textures )
             {
-                BindTexture(texture);
+                BindTexture(item.Name, item.Resource);
             }
-            for ( auto sampler : desc.Samplers )
+            for ( auto item : desc.Samplers )
             {
-                BindSampler(sampler);
+                BindSampler(item.Name, item.Resource);
             }
         }
 
     protected:
-        virtual void BindTexture(ITextureResource *resource) = 0;
-        virtual void BindBuffer(IBufferResource *resource)   = 0;
-        virtual void BindSampler(ISampler *sampler)          = 0;
+        virtual void BindTexture(const std::string &name, ITextureResource *resource) = 0;
+        virtual void BindBuffer(const std::string &name, IBufferResource *resource)   = 0;
+        virtual void BindSampler(const std::string &name, ISampler *sampler)          = 0;
     };
 
 } // namespace DenOfIz

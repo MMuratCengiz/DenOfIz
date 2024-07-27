@@ -79,7 +79,7 @@ namespace DenOfIz
         void     EnhancedPipelineBarrier(const PipelineBarrierDesc &barrier);
         void     SetRootSignature(ID3D12RootSignature *rootSignature);
         uint32_t GetSubresourceIndex(ITextureResource *texture, uint32_t mipLevel, uint32_t arrayLayer);
-        void     BindResourceGroup(const DX12DescriptorHeap *heap, uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
+        void     BindResourceGroup(uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
     };
 
 } // namespace DenOfIz

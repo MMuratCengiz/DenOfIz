@@ -89,7 +89,8 @@ DX12TextureResource::DX12TextureResource(ID3D12Resource2 *resource, const D3D12_
 
 void DX12TextureResource::CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle)
 {
-    // Todo remove?
+    DZ_RETURN_IF( m_cpuHandle.ptr != 0 && m_cpuHandle.ptr == cpuHandle.ptr );
+
     std::unique_ptr<DX12DescriptorHeap> &heap = m_desc.HeapType == HeapType::CPU_GPU || m_desc.HeapType == HeapType::GPU
                                                     ? m_context->ShaderVisibleCbvSrvUavDescriptorHeap
                                                     : m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ];
@@ -308,6 +309,7 @@ DX12Sampler::DX12Sampler(DX12Context *context, const SamplerDesc &desc) : m_cont
 
 void DX12Sampler::CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle)
 {
+    DZ_RETURN_IF( m_cpuHandle.ptr != 0 && m_cpuHandle.ptr == cpuHandle.ptr );
     m_cpuHandle = cpuHandle;
     m_context->D3DDevice->CreateSampler(&m_samplerDesc, m_cpuHandle);
 }

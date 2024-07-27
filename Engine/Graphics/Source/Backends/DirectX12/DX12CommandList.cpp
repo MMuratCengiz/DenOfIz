@@ -180,22 +180,22 @@ void DX12CommandList::BindScissorRect(float x, float y, float width, float heigh
 
 void DX12CommandList::BindResourceGroup(IResourceBindGroup *bindGroup)
 {
-    DX12ResourceBindGroup *pTable = reinterpret_cast<DX12ResourceBindGroup *>(bindGroup);
-    SetRootSignature(pTable->GetRootSignature());
+    DX12ResourceBindGroup *dx12BindGroup = reinterpret_cast<DX12ResourceBindGroup *>(bindGroup);
+    SetRootSignature(dx12BindGroup->RootSignature()->Instance());
 
     uint32_t index = 0;
-    if ( pTable->GetCbvSrvUavCount() > 0 )
+    if ( dx12BindGroup->GetCbvSrvUavCount() > 0 )
     {
-        BindResourceGroup(m_context->ShaderVisibleCbvSrvUavDescriptorHeap.get(), index++, pTable->GetCbvSrvUavHandle().Gpu);
+        BindResourceGroup(dx12BindGroup->RootSignature()->RegisterSpaceOffset(bindGroup->RegisterSpace()) + index++, dx12BindGroup->GetCbvSrvUavHandle().Gpu);
     }
 
-    if ( pTable->GetSamplerCount() > 0 )
+    if ( dx12BindGroup->GetSamplerCount() > 0 )
     {
-        BindResourceGroup(m_context->ShaderVisibleSamplerDescriptorHeap.get(), index, pTable->GetSamplerHandle().Gpu);
+        BindResourceGroup(dx12BindGroup->RootSignature()->RegisterSpaceOffset(bindGroup->RegisterSpace()) + index, dx12BindGroup->GetSamplerHandle().Gpu);
     }
 }
 
-void DX12CommandList::BindResourceGroup(const DX12DescriptorHeap *heap, uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
+void DX12CommandList::BindResourceGroup(uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
 {
     switch ( this->m_desc.QueueType )
     {
@@ -351,7 +351,7 @@ void DX12CommandList::CompatibilityPipelineBarrier(const PipelineBarrierDesc &ba
 
     for ( const BufferBarrierDesc &bufferBarrier : barrier.GetBufferBarriers() )
     {
-        ID3D12Resource        *pResource       = reinterpret_cast<DX12TextureResource *>(bufferBarrier.Resource)->GetResource();
+        ID3D12Resource        *pResource       = reinterpret_cast<DX12BufferResource *>(bufferBarrier.Resource)->GetResource();
         D3D12_RESOURCE_STATES  before          = DX12EnumConverter::ConvertResourceState(bufferBarrier.OldState);
         D3D12_RESOURCE_STATES  after           = DX12EnumConverter::ConvertResourceState(bufferBarrier.NewState);
         D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition(pResource, before, after);
@@ -424,8 +424,9 @@ void DX12CommandList::EnhancedPipelineBarrier(const PipelineBarrierDesc &barrier
 void DX12CommandList::SetRootSignature(ID3D12RootSignature *rootSignature)
 {
     DZ_RETURN_IF(rootSignature == nullptr);
+    DZ_RETURN_IF(rootSignature == m_currentRootSignature);
 
-    if ( m_currentRootSignature != nullptr && rootSignature != m_currentRootSignature )
+    if ( m_currentRootSignature != nullptr )
     {
         LOG(WARNING) << "Root signature is set to a different value, it is not expected to overwrite this value.";
     }

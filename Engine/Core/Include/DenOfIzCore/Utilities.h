@@ -44,7 +44,7 @@ namespace DenOfIz
         }
 
         template<typename T>
-        static std::vector<T>& SafeGetInnerVec(std::vector<std::vector<T>> &vec, size_t index)
+        static T& SafeAt(std::vector<T> &vec, size_t index)
         {
             if (index >= vec.size())
             {

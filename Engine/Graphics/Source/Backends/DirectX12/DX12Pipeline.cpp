@@ -49,7 +49,7 @@ void DX12Pipeline::CreateGraphicsPipeline()
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
     psoDesc.InputLayout                        = inputLayout->GetInputLayout();
-    psoDesc.pRootSignature                     = m_rootSignature->GetRootSignature();
+    psoDesc.pRootSignature                     = m_rootSignature->Instance();
     SetGraphicsShaders(psoDesc);
 
     psoDesc.RasterizerState          = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -75,7 +75,7 @@ void DX12Pipeline::CreateComputePipeline()
     DZ_ASSERTM(compiledShaders.size() == 1, "Compute pipeline must have at least/only one shader");
 
     D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
-    psoDesc.pRootSignature                    = m_rootSignature->GetRootSignature();
+    psoDesc.pRootSignature                    = m_rootSignature->Instance();
     psoDesc.CS                                = GetShaderByteCode(compiledShaders[ 0 ]);
 
     THROW_IF_FAILED(m_context->D3DDevice->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(m_graphicsPipeline.put())));

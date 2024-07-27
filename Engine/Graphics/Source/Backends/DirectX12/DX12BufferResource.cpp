@@ -56,6 +56,7 @@ DX12BufferResource::DX12BufferResource(DX12Context *context, const BufferDesc &d
 
 void DX12BufferResource::CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle)
 {
+    DZ_RETURN_IF( m_cpuHandle.ptr != 0 && m_cpuHandle.ptr == cpuHandle.ptr );
     if ( m_desc.Descriptor.None() )
     {
         LOG(WARNING) << "Unable to create buffer view for buffer without a descriptor.";

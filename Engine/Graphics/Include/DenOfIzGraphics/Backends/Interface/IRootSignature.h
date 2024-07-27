@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzCore/Common.h>
+#include <DenOfIzCore/Utilities.h>
 #include "IBufferResource.h"
 #include "IShader.h"
 #include "ITextureResource.h"
@@ -47,8 +48,7 @@ namespace DenOfIz
         uint32_t                   Binding;
         uint32_t                   RegisterSpace = 0;
         BitSet<ResourceDescriptor> Descriptor;
-        // A binding can appear in more than one stage, i.e. both in fragment and vertex shaders.
-        std::vector<ShaderStage> Stages;
+        std::vector<ShaderStage>   Stages;
         // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
         int ArraySize = 1;
     };
@@ -76,12 +76,17 @@ namespace DenOfIz
         std::vector<ShaderStage> Stages;
     };
 
-    class IRootSignature
+    class IRootSignature : public NonCopyable
     {
     protected:
-        uint32_t                                                     m_resourceCount = 0;
-        uint32_t                                                     m_samplerCount = 0;
-        std::unordered_map<std::string, uint32_t>                    m_resourceOffsetMap;
+        struct RegisterSpaceOrder
+        {
+            uint32_t                                  Space;
+            uint32_t                                  ResourceCount;
+            uint32_t                                  SamplerCount;
+            std::unordered_map<std::string, uint32_t> ResourceOffsetMap;
+        };
+        std::vector<RegisterSpaceOrder>                              m_registerSpaceOrder;
         std::unordered_map<std::string, ResourceBindingDesc>         m_resourceBindingMap;
         std::unordered_map<std::string, RootConstantResourceBinding> m_rootConstantMap;
         bool                                                         m_created = false;
@@ -89,9 +94,14 @@ namespace DenOfIz
     public:
         virtual ~IRootSignature() = default;
 
-        inline uint32_t GetResourceOffset(std::string name) const
+        inline uint32_t GetResourceOffset(uint32_t registerSpace, std::string name) const
         {
-            return SafeGetMapValue(m_resourceOffsetMap, name);
+            if ( registerSpace >= m_registerSpaceOrder.size() )
+            {
+                LOG(ERROR) << "Register space " << registerSpace << " is not bound to any bind group.";
+            }
+
+            return SafeGetMapValue(m_registerSpaceOrder[ registerSpace ].ResourceOffsetMap, name);
         }
 
         inline ResourceBindingDesc GetResourceBinding(std::string name) const
@@ -107,14 +117,17 @@ namespace DenOfIz
     protected:
         void AddResourceBinding(const ResourceBindingDesc &binding)
         {
+            RegisterSpaceOrder &spaceOrder = Utilities::SafeAt(m_registerSpaceOrder, binding.RegisterSpace);
+
             if ( binding.Descriptor.IsSet(ResourceDescriptor::Sampler) )
             {
-                m_resourceOffsetMap[ binding.Name ] = m_samplerCount++;
+                spaceOrder.ResourceOffsetMap[ binding.Name ] = spaceOrder.SamplerCount++;
             }
             else
             {
-                m_resourceOffsetMap[ binding.Name ] = m_resourceCount++;
+                spaceOrder.ResourceOffsetMap[ binding.Name ] = spaceOrder.ResourceCount++;
             }
+            // Todo remove and fix vulkan
             m_resourceBindingMap[ binding.Name ] = binding;
             AddResourceBindingInternal(binding);
         }
