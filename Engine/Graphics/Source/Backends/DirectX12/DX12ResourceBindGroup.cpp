@@ -37,16 +37,12 @@ DX12ResourceBindGroup::DX12ResourceBindGroup(DX12Context *context, ResourceBindG
     }
 }
 
-void DX12ResourceBindGroup::Update(UpdateDesc desc)
+void DX12ResourceBindGroup::Update(const UpdateDesc& desc)
 {
     m_cbvSrvUavCount = 0;
     m_samplerCount   = 0;
 
-    DZ_ASSERTM(desc.Buffers.size()  == m_desc.NumBuffers,  "Number of buffers being updated do not match.");
-    DZ_ASSERTM(desc.Textures.size() == m_desc.NumTextures, "Number of textures being updated do not match.");
-    DZ_ASSERTM(desc.Samplers.size() == m_desc.NumSamplers, "Number of sampler being updated do not match.");
-
-    IResourceBindGroup::Update(desc);
+    IResourceBindGroup::Update( desc );
 }
 
 void DX12ResourceBindGroup::BindTexture(const std::string &name, ITextureResource *resource)

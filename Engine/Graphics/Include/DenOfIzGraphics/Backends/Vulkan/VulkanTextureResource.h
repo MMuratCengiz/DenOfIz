@@ -76,7 +76,7 @@ namespace DenOfIz
          VulkanSampler( VulkanContext *context, const SamplerDesc &desc );
         ~VulkanSampler( ) override;
 
-        [[nodiscard]] VkSampler GetSampler( ) const
+        [[nodiscard]] VkSampler Instance( ) const
         {
             return m_sampler;
         }

@@ -43,14 +43,27 @@ namespace DenOfIz
             return (value + alignment - 1) & ~(alignment - 1);
         }
 
-        template<typename T>
-        static T& SafeAt(std::vector<T> &vec, size_t index)
+        template <typename T>
+        static void EnsureSize( std::vector<T> &vec, size_t index )
         {
             if (index >= vec.size())
             {
                 vec.resize(index + 1);
             }
+        }
+
+        template<typename T>
+        static T& SafeAt(std::vector<T> &vec, size_t index)
+        {
+            EnsureSize( vec, index );
             return vec[index];
+        }
+
+        template<typename T>
+        static void SafeSet(std::vector<T> &vec, size_t index, const T &value)
+        {
+            EnsureSize( vec, index );
+            vec[index] = value;
         }
     };
 

@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzCore/Storage.h>
 #include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
 #include "VulkanContext.h"
 #include "VulkanRootSignature.h"
@@ -32,10 +33,12 @@ namespace DenOfIz
 
         std::vector<VkDescriptorSet>      m_descriptorSets;
         std::vector<VkWriteDescriptorSet> m_writeDescriptorSets;
+        Storage                           m_storage;
 
     public:
-             VulkanResourceBindGroup( VulkanContext *context, ResourceBindGroupDesc desc );
-        void Update( UpdateDesc desc ) override;
+        VulkanResourceBindGroup( VulkanContext *context, ResourceBindGroupDesc desc );
+        ~VulkanResourceBindGroup( ) override;
+        void Update( const UpdateDesc& desc ) override;
 
         const std::vector<VkWriteDescriptorSet> &GetWriteDescriptorSets( ) const
         {

@@ -25,7 +25,7 @@ namespace DenOfIz
     {
         m_window = window;
         GraphicsAPI::SetAPIPreference( APIPreference{
-            //            .Windows = APIPreferenceWindows::Vulkan,
+                        .Windows = APIPreferenceWindows::Vulkan,
         } );
 
         m_logicalDevice     = GraphicsAPI::CreateAndLoadOptimalLogicalDevice( );

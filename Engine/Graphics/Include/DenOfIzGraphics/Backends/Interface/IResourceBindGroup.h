@@ -34,11 +34,11 @@ namespace DenOfIz
         uint32_t        NumSamplers;
     };
 
-    template<typename T>
+    template <typename T>
     struct UpdateDescItem
     {
         std::string Name;
-        T *Resource;
+        T          *Resource;
     };
 
     struct UpdateDesc
@@ -47,21 +47,21 @@ namespace DenOfIz
         std::vector<UpdateDescItem<ITextureResource>> Textures;
         std::vector<UpdateDescItem<ISampler>>         Samplers;
 
-        UpdateDesc& Buffer(std::string name, IBufferResource *resource)
+        UpdateDesc &Buffer( std::string name, IBufferResource *resource )
         {
-            Buffers.push_back({name, resource});
+            Buffers.push_back( { name, resource } );
             return *this;
         }
 
-        UpdateDesc& Texture(std::string name, ITextureResource *resource)
+        UpdateDesc &Texture( std::string name, ITextureResource *resource )
         {
-            Textures.push_back({name, resource});
+            Textures.push_back( { name, resource } );
             return *this;
         }
 
-        UpdateDesc& Sampler(std::string name, ISampler *sampler)
+        UpdateDesc &Sampler( std::string name, ISampler *sampler )
         {
-            Samplers.push_back({name, sampler});
+            Samplers.push_back( { name, sampler } );
             return *this;
         }
     };
@@ -73,36 +73,40 @@ namespace DenOfIz
         IRootSignature       *m_rootSignature;
 
     public:
-        IResourceBindGroup(ResourceBindGroupDesc desc) : m_rootSignature(desc.RootSignature), m_desc(desc)
+        IResourceBindGroup( ResourceBindGroupDesc desc ) : m_rootSignature( desc.RootSignature ), m_desc( desc )
         {
         }
 
-        inline uint32_t RegisterSpace() const
+        inline uint32_t RegisterSpace( ) const
         {
             return m_desc.RegisterSpace;
         }
 
-        virtual ~IResourceBindGroup() = default;
-        virtual void Update(UpdateDesc desc)
+        virtual ~IResourceBindGroup( ) = default;
+        virtual void Update( const UpdateDesc& desc )
         {
+            DZ_ASSERTM(desc.Buffers.size()  == m_desc.NumBuffers,  "Number of buffers being updated do not match.");
+            DZ_ASSERTM(desc.Textures.size() == m_desc.NumTextures, "Number of textures being updated do not match.");
+            DZ_ASSERTM(desc.Samplers.size() == m_desc.NumSamplers, "Number of sampler being updated do not match.");
+
             for ( auto item : desc.Buffers )
             {
-                BindBuffer(item.Name, item.Resource);
+                BindBuffer( item.Name, item.Resource );
             }
             for ( auto item : desc.Textures )
             {
-                BindTexture(item.Name, item.Resource);
+                BindTexture( item.Name, item.Resource );
             }
             for ( auto item : desc.Samplers )
             {
-                BindSampler(item.Name, item.Resource);
+                BindSampler( item.Name, item.Resource );
             }
         }
 
     protected:
-        virtual void BindTexture(const std::string &name, ITextureResource *resource) = 0;
-        virtual void BindBuffer(const std::string &name, IBufferResource *resource)   = 0;
-        virtual void BindSampler(const std::string &name, ISampler *sampler)          = 0;
+        virtual void BindTexture( const std::string &name, ITextureResource *resource ) = 0;
+        virtual void BindBuffer( const std::string &name, IBufferResource *resource )   = 0;
+        virtual void BindSampler( const std::string &name, ISampler *sampler )          = 0;
     };
 
 } // namespace DenOfIz

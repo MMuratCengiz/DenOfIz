@@ -40,43 +40,43 @@ namespace DenOfIz
         DX12RootSignature *m_dx12RootSignature;
 
     public:
-        DX12ResourceBindGroup(DX12Context *context, ResourceBindGroupDesc desc);
+        DX12ResourceBindGroup( DX12Context *context, ResourceBindGroupDesc desc );
 
-        DescriptorHandle GetCbvSrvUavHandle() const
+        DescriptorHandle GetCbvSrvUavHandle( ) const
         {
             return m_cbvSrvUavHandle;
         }
 
-        DescriptorHandle GetSamplerHandle() const
+        DescriptorHandle GetSamplerHandle( ) const
         {
             return m_samplerHandle;
         }
 
-        const uint32_t GetCbvSrvUavCount() const
+        const uint32_t GetCbvSrvUavCount( ) const
         {
             return m_cbvSrvUavCount;
         }
 
-        const uint32_t GetSamplerCount() const
+        const uint32_t GetSamplerCount( ) const
         {
             return m_samplerCount;
         }
 
-        inline DX12RootSignature *RootSignature() const
+        inline DX12RootSignature *RootSignature( ) const
         {
             return m_dx12RootSignature;
         }
 
-        void Update(UpdateDesc first) override;
+        void Update( const UpdateDesc &desc ) override;
 
     protected:
-        void BindTexture(const std::string &name, ITextureResource *resource) override;
-        void BindBuffer(const std::string &name, IBufferResource *resource) override;
-        void BindSampler(const std::string &name, ISampler *sampler) override;
+        void BindTexture( const std::string &name, ITextureResource *resource ) override;
+        void BindBuffer( const std::string &name, IBufferResource *resource ) override;
+        void BindSampler( const std::string &name, ISampler *sampler ) override;
 
     private:
-        D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleCbvSrvUav(uint32_t binding);
-        D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleSampler(uint32_t binding);
+        D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleCbvSrvUav( uint32_t binding );
+        D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleSampler( uint32_t binding );
     };
 
 } // namespace DenOfIz

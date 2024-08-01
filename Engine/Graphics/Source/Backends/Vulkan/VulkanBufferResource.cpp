@@ -56,9 +56,8 @@ VulkanBufferResource::VulkanBufferResource( VulkanContext *context, const Buffer
     VmaAllocationInfo allocationInfo;
     vmaCreateBuffer( m_context->Vma, &bufferCreateInfo, &allocationCreateInfo, &m_instance, &m_allocation, &allocationInfo );
 
-    DescriptorInfo.buffer = m_instance;
-    DescriptorInfo.offset = 0;
-    DescriptorInfo.range  = m_numBytes;
+    m_offset = allocationInfo.offset;
+    m_numBytes = allocationInfo.size;
 }
 
 void *VulkanBufferResource::MapMemory( )

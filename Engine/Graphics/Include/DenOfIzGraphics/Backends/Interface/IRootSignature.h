@@ -89,37 +89,36 @@ namespace DenOfIz
         std::vector<RegisterSpaceOrder>                              m_registerSpaceOrder;
         std::unordered_map<std::string, ResourceBindingDesc>         m_resourceBindingMap;
         std::unordered_map<std::string, RootConstantResourceBinding> m_rootConstantMap;
-        bool                                                         m_created = false;
 
     public:
-        virtual ~IRootSignature() = default;
+        virtual ~IRootSignature( ) = default;
 
-        inline uint32_t GetResourceOffset(uint32_t registerSpace, std::string name) const
+        inline uint32_t GetResourceOffset( uint32_t registerSpace, std::string name ) const
         {
-            if ( registerSpace >= m_registerSpaceOrder.size() )
+            if ( registerSpace >= m_registerSpaceOrder.size( ) )
             {
-                LOG(ERROR) << "Register space " << registerSpace << " is not bound to any bind group.";
+                LOG( ERROR ) << "Register space " << registerSpace << " is not bound to any bind group.";
             }
 
-            return SafeGetMapValue(m_registerSpaceOrder[ registerSpace ].ResourceOffsetMap, name);
+            return SafeGetMapValue( m_registerSpaceOrder[ registerSpace ].ResourceOffsetMap, name );
         }
 
-        inline ResourceBindingDesc GetResourceBinding(std::string name) const
+        inline ResourceBindingDesc GetResourceBinding( std::string name ) const
         {
-            return SafeGetMapValue(m_resourceBindingMap, name);
+            return SafeGetMapValue( m_resourceBindingMap, name );
         }
 
-        inline RootConstantResourceBinding GetRootConstantBinding(std::string name) const
+        inline RootConstantResourceBinding GetRootConstantBinding( std::string name ) const
         {
-            return SafeGetMapValue(m_rootConstantMap, name);
+            return SafeGetMapValue( m_rootConstantMap, name );
         }
 
     protected:
-        void AddResourceBinding(const ResourceBindingDesc &binding)
+        void AddResourceBinding( const ResourceBindingDesc &binding )
         {
-            RegisterSpaceOrder &spaceOrder = Utilities::SafeAt(m_registerSpaceOrder, binding.RegisterSpace);
+            RegisterSpaceOrder &spaceOrder = Utilities::SafeAt( m_registerSpaceOrder, binding.RegisterSpace );
 
-            if ( binding.Descriptor.IsSet(ResourceDescriptor::Sampler) )
+            if ( binding.Descriptor.IsSet( ResourceDescriptor::Sampler ) )
             {
                 spaceOrder.ResourceOffsetMap[ binding.Name ] = spaceOrder.SamplerCount++;
             }
@@ -129,26 +128,26 @@ namespace DenOfIz
             }
             // Todo remove and fix vulkan
             m_resourceBindingMap[ binding.Name ] = binding;
-            AddResourceBindingInternal(binding);
+            AddResourceBindingInternal( binding );
         }
 
-        void AddRootConstant(const RootConstantResourceBinding &rootConstant)
+        void AddRootConstant( const RootConstantResourceBinding &rootConstant )
         {
             m_rootConstantMap[ rootConstant.Name ] = rootConstant;
-            AddRootConstantInternal(rootConstant);
+            AddRootConstantInternal( rootConstant );
         }
 
-        virtual void AddResourceBindingInternal(const ResourceBindingDesc &binding)           = 0;
-        virtual void AddRootConstantInternal(const RootConstantResourceBinding &rootConstant) = 0;
+        virtual void AddResourceBindingInternal( const ResourceBindingDesc &binding )           = 0;
+        virtual void AddRootConstantInternal( const RootConstantResourceBinding &rootConstant ) = 0;
 
     private:
         template <typename R>
-        R SafeGetMapValue(const std::unordered_map<std::string, R> &map, const std::string &key) const
+        R SafeGetMapValue( const std::unordered_map<std::string, R> &map, const std::string &key ) const
         {
-            auto value = map.find(key);
-            if ( value == map.end() )
+            auto value = map.find( key );
+            if ( value == map.end( ) )
             {
-                LOG(ERROR) << "Unable to find key: " << key << ". Make sure the name described in the RootSignature matches the resource name.";
+                LOG( ERROR ) << "Unable to find key: " << key << ". Make sure the name described in the RootSignature matches the resource name.";
             }
             return value->second;
         }

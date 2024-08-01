@@ -27,7 +27,7 @@ VulkanResourceBindGroup::VulkanResourceBindGroup( VulkanContext *context, Resour
     m_rootSignature = dynamic_cast<VulkanRootSignature *>( m_desc.RootSignature );
 }
 
-void VulkanResourceBindGroup::Update( const UpdateDesc desc )
+void VulkanResourceBindGroup::Update( const UpdateDesc &desc )
 {
     m_writeDescriptorSets.clear( );
     IResourceBindGroup::Update( desc );
@@ -37,34 +37,46 @@ void VulkanResourceBindGroup::BindTexture( const std::string &name, ITextureReso
 {
     auto *vulkanResource = dynamic_cast<VulkanTextureResource *>( resource );
 
-    VkWriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor( resource->Name );
-    VkDescriptorImageInfo imageInfo{ };
-    imageInfo.imageLayout         = vulkanResource->Layout( );
-    imageInfo.imageView           = vulkanResource->ImageView( );
-    writeDescriptorSet.pImageInfo = &imageInfo;
+    VkWriteDescriptorSet  &writeDescriptorSet = CreateWriteDescriptor( resource->Name );
+    VkDescriptorImageInfo &imageInfo          = m_storage.Store<VkDescriptorImageInfo>( );
+    imageInfo.imageLayout                     = vulkanResource->Layout( );
+    imageInfo.imageView                       = vulkanResource->ImageView( );
+    writeDescriptorSet.pImageInfo             = &imageInfo;
 }
 
 void VulkanResourceBindGroup::BindBuffer( const std::string &name, IBufferResource *resource )
 {
     const auto *vulkanResource = dynamic_cast<VulkanBufferResource *>( resource );
 
-    VkWriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor( resource->Name );
-    writeDescriptorSet.pBufferInfo           = &vulkanResource->DescriptorInfo;
+    VkWriteDescriptorSet   &writeDescriptorSet = CreateWriteDescriptor( resource->Name );
+    VkDescriptorBufferInfo &bufferInfo         = m_storage.Store<VkDescriptorBufferInfo>( );
+    bufferInfo.buffer                          = vulkanResource->Instance( );
+    bufferInfo.offset                          = vulkanResource->Offset( );
+    bufferInfo.range                           = vulkanResource->NumBytes( );
+    writeDescriptorSet.pBufferInfo             = &bufferInfo;
 }
 
 void VulkanResourceBindGroup::BindSampler( const std::string &name, ISampler *sampler )
 {
-    VkWriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor( sampler->Name );
+    VkWriteDescriptorSet  &writeDescriptorSet = CreateWriteDescriptor( sampler->Name );
+    VkDescriptorImageInfo &samplerInfo        = m_storage.Store<VkDescriptorImageInfo>( );
+    samplerInfo.sampler                       = dynamic_cast<VulkanSampler *>( sampler )->Instance( );
+    writeDescriptorSet.pImageInfo             = &samplerInfo;
 }
 
 VkWriteDescriptorSet &VulkanResourceBindGroup::CreateWriteDescriptor( std::string &name )
 {
-    ResourceBindingDesc resourceBinding = m_rootSignature->GetResourceBinding( name );
-
+    ResourceBindingDesc   resourceBinding    = m_rootSignature->GetResourceBinding( name );
     VkWriteDescriptorSet &writeDescriptorSet = m_writeDescriptorSets.emplace_back( );
-    writeDescriptorSet.dstSet                = nullptr;
+    writeDescriptorSet.sType                 = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDescriptorSet.dstSet                = m_rootSignature->GetDescriptorSet( resourceBinding.RegisterSpace );
     writeDescriptorSet.dstBinding            = resourceBinding.Binding;
     writeDescriptorSet.descriptorType        = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType( resourceBinding.Descriptor );
     writeDescriptorSet.descriptorCount       = resourceBinding.ArraySize;
     return writeDescriptorSet;
+}
+
+VulkanResourceBindGroup::~VulkanResourceBindGroup( )
+{
+    m_storage.Clear( );
 }
