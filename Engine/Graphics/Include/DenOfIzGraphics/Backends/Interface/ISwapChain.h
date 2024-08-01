@@ -18,8 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
-#include <DenOfIzGraphics/Backends/Interface/ILock.h>
+#include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 #include <DenOfIzGraphics/Backends/Interface/ISemaphore.h>
 #include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
 
@@ -28,11 +27,12 @@ namespace DenOfIz
 
     struct SwapChainDesc
     {
-        uint32_t Width             = 0; // 0 means that it will be set to the window width
-        uint32_t Height            = 0; // 0 means that it will be set to the window height
-        uint32_t BufferCount       = 3;
-        Format   BackBufferFormat  = Format::R8G8B8A8Unorm;
-        Format   DepthBufferFormat = Format::D32Float;
+        GraphicsWindowHandle *WindowHandle      = nullptr;
+        uint32_t              Width             = 0; // 0 means that it will be set to the window width
+        uint32_t              Height            = 0; // 0 means that it will be set to the window height
+        uint32_t              BufferCount       = 3;
+        Format                BackBufferFormat  = Format::R8G8B8A8Unorm;
+        Format                DepthBufferFormat = Format::D32Float;
     };
 
     struct Viewport
@@ -46,14 +46,14 @@ namespace DenOfIz
     class ISwapChain
     {
     public:
-        virtual ~ISwapChain() = default;
+        virtual ~ISwapChain( ) = default;
 
-        virtual Format   GetPreferredFormat()                              = 0;
-        virtual uint32_t AcquireNextImage(ISemaphore *imageReadySemaphore) = 0;
-        virtual void     Resize(uint32_t width, uint32_t height)           = 0;
+        virtual Format   GetPreferredFormat( )                               = 0;
+        virtual uint32_t AcquireNextImage( ISemaphore *imageReadySemaphore ) = 0;
+        virtual void     Resize( uint32_t width, uint32_t height )           = 0;
 
-        virtual ITextureResource *GetRenderTarget(uint32_t frame) = 0;
-        virtual Viewport          GetViewport()                   = 0;
+        virtual ITextureResource *GetRenderTarget( uint32_t frame ) = 0;
+        virtual Viewport          GetViewport( )                    = 0;
     };
 
 } // namespace DenOfIz

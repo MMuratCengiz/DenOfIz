@@ -18,14 +18,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+// ReSharper disable once CppUnusedIncludeDirective
+#if defined(_WIN32) || defined(XBOX)
+#define VK_USE_PLATFORM_WIN32_KHR
+#elif defined(__ANDROID__)
+#ifndef VK_USE_PLATFORM_ANDROID_KHR
+#define VK_USE_PLATFORM_ANDROID_KHR
 #endif
-#include <DenOfIzCore/Common.h>
+#elif defined(__linux__) && !defined(VK_USE_PLATFORM_GGP)
+#define VK_USE_PLATFORM_XLIB_KHR
+#define VK_USE_PLATFORM_WAYLAND_KHR
+#elif defined(NX64)
+#define VK_USE_PLATFORM_VI_NN
+#endif
+
+#include <volk.h>
+#include "../Common/ShaderCompiler.h"
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 #include <unordered_map>
-#include <vulkan/vulkan.hpp>
-#include "../Common/ShaderCompiler.h"
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "vma/vk_mem_alloc.h"
 
@@ -40,38 +50,26 @@ namespace DenOfIz
 
     struct VulkanContext
     {
+        bool           IsDeviceLost = false;
         PhysicalDevice SelectedDeviceInfo;
 
-        vk::Instance       Instance;
-        vk::PhysicalDevice GPU;
-        vk::Device         LogicalDevice;
-        VmaAllocator       Vma;
-        Format             SurfaceImageFormat;
-        vk::ColorSpaceKHR  ColorSpace;
-        vk::PresentModeKHR PresentMode;
+        VkInstance       Instance;
+        VkPhysicalDevice PhysicalDevice;
+        VkDevice         LogicalDevice;
+        VmaAllocator     Vma;
 
-        vk::SurfaceKHR             Surface;
-        vk::SwapchainKHR           SwapChain;
-        std::vector<vk::Image>     SwapChainImages;
-        std::vector<vk::ImageView> SwapChainImageViews;
-        vk::Image                  DepthImage;
+        VkImage DepthImage;
 
-        vk::CommandPool    TransferQueueCommandPool;
-        vk::CommandPool    GraphicsQueueCommandPool;
-        vk::CommandPool    ComputeQueueCommandPool;
-        vk::DescriptorPool DescriptorPool;
-
-        vk::Extent2D SurfaceExtent{};
+        VkCommandPool    TransferQueueCommandPool;
+        VkCommandPool    GraphicsQueueCommandPool;
+        VkCommandPool    ComputeQueueCommandPool;
+        VkDescriptorPool DescriptorPool;
 
         GraphicsWindowHandle                      *Window;
         std::unordered_map<QueueType, QueueFamily> QueueFamilies;
-        std::unordered_map<QueueType, vk::Queue>   Queues;
-
-        // Todo move to generic RenderContext when created.
-        ShaderCompiler ShaderCompiler;
-        bool           IsDeviceLost = false;
+        std::unordered_map<QueueType, VkQueue>     Queues;
     };
 
 } // namespace DenOfIz
 
-#define VK_CHECK_RESULT(R) assert((R) == vk::Result::eSuccess)
+#define VK_CHECK_RESULT( R ) assert( ( R ) == VK_SUCCESS )

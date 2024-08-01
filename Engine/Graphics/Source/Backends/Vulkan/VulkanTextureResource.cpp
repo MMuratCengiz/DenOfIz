@@ -18,307 +18,129 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h>
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h"
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanUtilities.h"
 
 using namespace DenOfIz;
 
-VulkanTextureResource::VulkanTextureResource(VulkanContext *context, const TextureDesc &textureDesc) : m_context(context), m_desc(textureDesc)
+VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const TextureDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    InitFields(textureDesc);
+    InitFields( desc );
 
-    vk::ImageCreateInfo imageCreateInfo{};
-    imageCreateInfo.imageType     = vk::ImageType::e2D;
-    imageCreateInfo.extent.width  = m_width;
-    imageCreateInfo.extent.height = m_height;
-    imageCreateInfo.extent.depth  = 1;
-    imageCreateInfo.format        = VulkanEnumConverter::ConvertImageFormat(textureDesc.Format);
-    imageCreateInfo.tiling        = vk::ImageTiling::eOptimal;
-    imageCreateInfo.usage         = VulkanEnumConverter::ConvertTextureDescriptorToUsage(textureDesc.Descriptor, textureDesc.InitialState);
-    imageCreateInfo.sharingMode   = vk::SharingMode::eExclusive;
-    imageCreateInfo.samples       = VulkanEnumConverter::ConvertSampleCount(textureDesc.MSAASampleCount);
-    imageCreateInfo.mipLevels     = 1;
-    imageCreateInfo.arrayLayers   = 1;
-    imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
+    VkImageType     imageType = VK_IMAGE_TYPE_1D;
+    VkImageViewType viewType  = VK_IMAGE_VIEW_TYPE_1D;
 
-    VmaAllocationCreateInfo allocationCreateInfo{};
-    allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-    vmaCreateImage(context->Vma, reinterpret_cast<VkImageCreateInfo *>(&imageCreateInfo), &allocationCreateInfo, reinterpret_cast<VkImage *>(&m_image), &m_allocation, nullptr);
-
-    vk::ImageViewCreateInfo imageViewCreateInfo{};
-    imageViewCreateInfo.image                           = m_image;
-    imageViewCreateInfo.viewType                        = vk::ImageViewType::e2D;
-    imageViewCreateInfo.format                          = VulkanEnumConverter::ConvertImageFormat(textureDesc.Format);
-    imageViewCreateInfo.components.r                    = vk::ComponentSwizzle::eIdentity;
-    imageViewCreateInfo.components.g                    = vk::ComponentSwizzle::eIdentity;
-    imageViewCreateInfo.components.b                    = vk::ComponentSwizzle::eIdentity;
-    imageViewCreateInfo.components.a                    = vk::ComponentSwizzle::eIdentity;
-    imageViewCreateInfo.subresourceRange.aspectMask     = VulkanEnumConverter::ConvertImageAspect(textureDesc.Aspect);
-    imageViewCreateInfo.subresourceRange.baseMipLevel   = 0;
-    imageViewCreateInfo.subresourceRange.levelCount     = 1;
-    imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-    imageViewCreateInfo.subresourceRange.layerCount     = 1;
-
-    m_imageView = context->LogicalDevice.createImageView(imageViewCreateInfo);
-    m_aspect    = VulkanEnumConverter::ConvertImageAspect(textureDesc.Aspect);
-
-    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::Sampler) )
+    if ( m_desc.Depth > 1 )
     {
-        AttachSampler(m_desc.Sampler);
+        imageType = VK_IMAGE_TYPE_3D;
+        viewType  = VK_IMAGE_VIEW_TYPE_3D;
     }
-}
-
-void VulkanTextureResource::Allocate(const void *newImage)
-{
-    m_allocated = true;
-
-    bool isEmptyImage = newImage == nullptr;
-    m_data            = newImage;
-
-    m_mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(m_width, m_height)))) + 1;
-
-    if ( isEmptyImage )
+    else if ( m_desc.Height > 1 )
     {
-        m_mipLevels = 1;
+        imageType = VK_IMAGE_TYPE_2D;
+        viewType  = VK_IMAGE_VIEW_TYPE_2D;
     }
 
-    const vk::Format format = VulkanEnumConverter::ConvertImageFormat(m_desc.Format);
-
-    vk::ImageCreateInfo imageCreateInfo{};
-
-    imageCreateInfo.imageType     = vk::ImageType::e2D;
-    imageCreateInfo.extent.width  = m_width;
-    imageCreateInfo.extent.height = m_height;
-    imageCreateInfo.extent.depth  = 1;
-    imageCreateInfo.mipLevels     = m_mipLevels;
-    imageCreateInfo.arrayLayers   = 1;
-    imageCreateInfo.format        = format;
-    imageCreateInfo.tiling        = vk::ImageTiling::eOptimal;
-    imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
-    imageCreateInfo.usage         = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-    imageCreateInfo.sharingMode   = vk::SharingMode::eExclusive;
-    imageCreateInfo.samples       = vk::SampleCountFlagBits::e1;
-
-    VmaAllocationCreateInfo allocationCreateInfo{};
-    allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-    vmaCreateImage(m_context->Vma, reinterpret_cast<VkImageCreateInfo *>(&imageCreateInfo), &allocationCreateInfo, reinterpret_cast<VkImage *>(&(m_image)), &(m_allocation),
-                   nullptr);
-
-    vk::ImageViewCreateInfo imageViewCreateInfo{};
-
-    imageViewCreateInfo.image                           = m_image;
-    imageViewCreateInfo.viewType                        = vk::ImageViewType::e2D;
-    imageViewCreateInfo.format                          = format;
-    imageViewCreateInfo.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
-    imageViewCreateInfo.subresourceRange.baseMipLevel   = 0;
-    imageViewCreateInfo.subresourceRange.levelCount     = m_mipLevels;
-    imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-    imageViewCreateInfo.subresourceRange.layerCount     = 1;
-
-    m_imageView = m_context->LogicalDevice.createImageView(imageViewCreateInfo);
-
-    DZ_RETURN_IF(isEmptyImage);
-
-    vk::Buffer    stagingBuffer;
-    VmaAllocation stagingAllocation;
-
-    VulkanUtilities::InitStagingBuffer(m_context, stagingBuffer, stagingAllocation, newImage, m_width * m_height * 4);
-    VulkanUtilities::RunOneTimeCommand(m_context,
-                                       [ & ](const vk::CommandBuffer &commandBuffer)
-                                       {
-                                           vk::ImageMemoryBarrier memoryBarrier{};
-
-                                           memoryBarrier.oldLayout                       = vk::ImageLayout::eUndefined;
-                                           memoryBarrier.newLayout                       = vk::ImageLayout::eTransferDstOptimal;
-                                           memoryBarrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-                                           memoryBarrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-                                           memoryBarrier.image                           = m_image;
-                                           memoryBarrier.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
-                                           memoryBarrier.subresourceRange.baseMipLevel   = 0;
-                                           memoryBarrier.subresourceRange.levelCount     = m_mipLevels;
-                                           memoryBarrier.subresourceRange.baseArrayLayer = 0;
-                                           memoryBarrier.subresourceRange.layerCount     = 1;
-                                           memoryBarrier.srcAccessMask                   = {};
-                                           memoryBarrier.dstAccessMask                   = vk::AccessFlagBits::eTransferWrite;
-
-                                           commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer, {}, 0, nullptr, 0, nullptr, 1,
-                                                                         &memoryBarrier);
-
-                                           vk::BufferImageCopy bufferImageCopy{};
-
-                                           bufferImageCopy.bufferOffset                    = 0;
-                                           bufferImageCopy.bufferRowLength                 = 0;
-                                           bufferImageCopy.bufferImageHeight               = 0;
-                                           bufferImageCopy.imageSubresource.aspectMask     = vk::ImageAspectFlagBits::eColor;
-                                           bufferImageCopy.imageSubresource.mipLevel       = 0;
-                                           bufferImageCopy.imageSubresource.baseArrayLayer = 0;
-                                           bufferImageCopy.imageSubresource.layerCount     = 1;
-                                           bufferImageCopy.imageOffset                     = vk::Offset3D{ 0, 0, 0 };
-                                           bufferImageCopy.imageExtent                     = vk::Extent3D{ m_width, m_height, 1 };
-
-                                           commandBuffer.copyBufferToImage(stagingBuffer, m_image, vk::ImageLayout::eTransferDstOptimal, 1, &bufferImageCopy);
-                                       });
-
-    vmaDestroyBuffer(m_context->Vma, stagingBuffer, stagingAllocation);
-
-    const vk::FormatProperties properties = m_context->GPU.getFormatProperties(format);
-
-    if ( (properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImageFilterLinear) != vk::FormatFeatureFlagBits::eSampledImageFilterLinear )
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) )
     {
-        throw std::runtime_error("Unsupported device, VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT must be  supported");
+        viewType = VK_IMAGE_VIEW_TYPE_CUBE;
     }
-
-    GenerateMipMaps();
-
-    DescriptorInfo.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
-    DescriptorInfo.imageView   = m_imageView;
-    DescriptorInfo.sampler     = m_sampler;
-}
-
-void VulkanTextureResource::AttachSampler(SamplerDesc &info)
-{
-}
-
-void VulkanTextureResource::GenerateMipMaps() const
-{
-    int32_t mipWidth = m_width, mipHeight = m_height;
-
-    VulkanUtilities::RunOneTimeCommand(
-        m_context,
-        [ & ](vk::CommandBuffer &commandBuffer)
+    if ( m_desc.ArraySize > 1 )
+    {
+        if ( viewType == VK_IMAGE_VIEW_TYPE_1D )
         {
-            /*
-             * Continuously copy current image( in mip level=index ) to the next, ie.
-             * Iteration 1: i - 1 = 0, 512x512 is copied to i as 512/2
-             * Iteration 2: i - 1 = 0, 512/2 is copied to i as 512/2/2
-             *
-             * In such form every mip level of the image is filled with an image with half the size of the previous image
-             */
-            for ( uint32_t index = 1; index < m_mipLevels; ++index )
-            {
-                vk::ImageMemoryBarrier memoryBarrier{};
+            viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+        }
+        else if ( viewType == VK_IMAGE_VIEW_TYPE_2D )
+        {
+            viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        }
+        else if ( viewType == VK_IMAGE_VIEW_TYPE_CUBE )
+        {
+            viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+        }
+        else
+        {
+            LOG( WARNING ) << "Unsupported array size for image type";
+        }
+    }
 
-                memoryBarrier.oldLayout                       = vk::ImageLayout::eTransferDstOptimal;
-                memoryBarrier.newLayout                       = vk::ImageLayout::eTransferSrcOptimal;
-                memoryBarrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-                memoryBarrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-                memoryBarrier.image                           = m_image;
-                memoryBarrier.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
-                memoryBarrier.subresourceRange.baseMipLevel   = index - 1;
-                memoryBarrier.subresourceRange.levelCount     = 1;
-                memoryBarrier.subresourceRange.baseArrayLayer = 0;
-                memoryBarrier.subresourceRange.layerCount     = 1;
-                memoryBarrier.srcAccessMask                   = vk::AccessFlagBits::eTransferWrite;
-                memoryBarrier.dstAccessMask                   = vk::AccessFlagBits::eTransferRead;
+    VkImageCreateInfo imageCreateInfo{ };
+    imageCreateInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCreateInfo.format        = VulkanEnumConverter::ConvertImageFormat( desc.Format );
+    imageCreateInfo.imageType     = imageType;
+    imageCreateInfo.extent.width  = std::max( 1u, m_desc.Width );
+    imageCreateInfo.extent.height = std::max( 1u, m_desc.Height );
+    imageCreateInfo.extent.depth  = std::max( 1u, m_desc.Depth );
+    imageCreateInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.usage         = VulkanEnumConverter::ConvertTextureDescriptorToUsage( desc.Descriptor, desc.InitialState );
+    imageCreateInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
+    imageCreateInfo.samples       = VulkanEnumConverter::ConvertSampleCount( desc.MSAASampleCount );
+    imageCreateInfo.mipLevels     = desc.MipLevels;
+    imageCreateInfo.arrayLayers   = desc.ArraySize;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-                commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {}, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
+    VmaAllocationCreateInfo allocationCreateInfo{ };
+    allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-                vk::ImageBlit imageBlit{};
+    vmaCreateImage( context->Vma, &imageCreateInfo, &allocationCreateInfo, &m_image, &m_allocation, nullptr );
 
-                imageBlit.srcOffsets[ 0 ] = vk::Offset3D{ 0, 0, 0 };
-                imageBlit.dstOffsets[ 0 ] = vk::Offset3D{ 0, 0, 0 };
-                imageBlit.srcOffsets[ 1 ] = vk::Offset3D{ mipWidth, mipHeight, 1 };
-                imageBlit.dstOffsets[ 1 ] = vk::Offset3D{ mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+    VkImageViewCreateInfo viewCreateInfo{ };
+    viewCreateInfo.image                           = m_image;
+    viewCreateInfo.viewType                        = viewType;
+    viewCreateInfo.format                          = VulkanEnumConverter::ConvertImageFormat( desc.Format );
+    viewCreateInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewCreateInfo.components.g                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewCreateInfo.components.b                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewCreateInfo.components.a                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewCreateInfo.subresourceRange.aspectMask     = VulkanEnumConverter::ConvertImageAspect( desc.Aspect );
+    viewCreateInfo.subresourceRange.baseMipLevel   = 0;
+    viewCreateInfo.subresourceRange.levelCount     = 1; // Todo what to put here?
+    viewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    viewCreateInfo.subresourceRange.layerCount     = 1; // Todo what to put here?
 
-                imageBlit.srcSubresource.aspectMask     = vk::ImageAspectFlagBits::eColor;
-                imageBlit.srcSubresource.mipLevel       = index - 1;
-                imageBlit.srcSubresource.baseArrayLayer = 0;
-                imageBlit.srcSubresource.layerCount     = 1;
-                imageBlit.dstSubresource.aspectMask     = vk::ImageAspectFlagBits::eColor;
-                imageBlit.dstSubresource.mipLevel       = index;
-                imageBlit.dstSubresource.baseArrayLayer = 0;
-                imageBlit.dstSubresource.layerCount     = 1;
+    VK_CHECK_RESULT( vkCreateImageView( m_context->LogicalDevice, &viewCreateInfo, nullptr, &m_imageView ) );
+    m_aspect = VulkanEnumConverter::ConvertImageAspect( desc.Aspect );
 
-                commandBuffer.blitImage(m_image, vk::ImageLayout::eTransferSrcOptimal, m_image, vk::ImageLayout::eTransferDstOptimal, 1, &imageBlit, vk::Filter::eLinear);
-
-                /* After the blit transition the image to the form that will be used by the shader */
-                vk::ImageMemoryBarrier toShaderFormat{};
-
-                toShaderFormat.oldLayout                       = vk::ImageLayout::eTransferSrcOptimal;
-                toShaderFormat.newLayout                       = vk::ImageLayout::eShaderReadOnlyOptimal;
-                toShaderFormat.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-                toShaderFormat.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-                toShaderFormat.image                           = m_image;
-                toShaderFormat.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
-                toShaderFormat.subresourceRange.baseMipLevel   = index - 1;
-                toShaderFormat.subresourceRange.levelCount     = 1;
-                toShaderFormat.subresourceRange.baseArrayLayer = 0;
-                toShaderFormat.subresourceRange.layerCount     = 1;
-                toShaderFormat.srcAccessMask                   = vk::AccessFlagBits::eTransferRead;
-                toShaderFormat.dstAccessMask                   = vk::AccessFlagBits::eShaderRead;
-
-                commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, 0, nullptr, 0, nullptr, 1, &toShaderFormat);
-
-                if ( mipWidth > 1 )
-                {
-                    mipWidth /= 2;
-                }
-                if ( mipHeight > 1 )
-                {
-                    mipHeight /= 2;
-                }
-            }
-
-            vk::ImageMemoryBarrier finalFormat{};
-
-            finalFormat.oldLayout                       = vk::ImageLayout::eTransferDstOptimal;
-            finalFormat.newLayout                       = vk::ImageLayout::eShaderReadOnlyOptimal;
-            finalFormat.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-            finalFormat.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-            finalFormat.image                           = m_image;
-            finalFormat.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
-            finalFormat.subresourceRange.baseMipLevel   = m_mipLevels - 1;
-            finalFormat.subresourceRange.levelCount     = 1;
-            finalFormat.subresourceRange.baseArrayLayer = 0;
-            finalFormat.subresourceRange.layerCount     = 1;
-            finalFormat.srcAccessMask                   = vk::AccessFlagBits::eTransferRead;
-            finalFormat.dstAccessMask                   = vk::AccessFlagBits::eShaderRead;
-
-            commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, 0, nullptr, 0, nullptr, 1, &finalFormat);
-        });
-}
-
-void VulkanTextureResource::Deallocate()
-{
-    DZ_RETURN_IF(!m_allocated);
-
-    vmaDestroyImage(m_context->Vma, m_image, m_allocation);
-    m_context->LogicalDevice.destroyImageView(m_imageView);
-    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::Sampler) )
+    for ( uint32_t i = 0; i < m_desc.ArraySize; ++i )
     {
+        viewCreateInfo.subresourceRange.baseArrayLayer = i;
+        for ( uint32_t j = 0; i < m_desc.MipLevels; ++j )
+        {
+            viewCreateInfo.subresourceRange.baseMipLevel = j;
+            VK_CHECK_RESULT( vkCreateImageView( m_context->LogicalDevice, &viewCreateInfo, nullptr, &m_imageView ) );
+        }
     }
 }
 
-VulkanTextureResource::~VulkanTextureResource()
+VulkanTextureResource::~VulkanTextureResource( )
 {
-    Deallocate();
+    vmaDestroyImage( m_context->Vma, m_image, m_allocation );
+    vkDestroyImageView( m_context->LogicalDevice, m_imageView, nullptr );
 }
 
-VulkanSampler::VulkanSampler(VulkanContext *context, const SamplerDesc &desc) : m_context(context), m_desc(desc)
+VulkanSampler::VulkanSampler( VulkanContext *context, const SamplerDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    vk::SamplerCreateInfo samplerCreateInfo{};
+    VkSamplerCreateInfo samplerCreateInfo{ };
 
-    samplerCreateInfo.magFilter               = VulkanEnumConverter::ConvertFilter(desc.MagFilter);
-    samplerCreateInfo.minFilter               = VulkanEnumConverter::ConvertFilter(desc.MinFilter);
-    samplerCreateInfo.addressModeU            = VulkanEnumConverter::ConvertAddressMode(desc.AddressModeU);
-    samplerCreateInfo.addressModeV            = VulkanEnumConverter::ConvertAddressMode(desc.AddressModeV);
-    samplerCreateInfo.addressModeW            = VulkanEnumConverter::ConvertAddressMode(desc.AddressModeW);
+    samplerCreateInfo.magFilter               = VulkanEnumConverter::ConvertFilter( desc.MagFilter );
+    samplerCreateInfo.minFilter               = VulkanEnumConverter::ConvertFilter( desc.MinFilter );
+    samplerCreateInfo.addressModeU            = VulkanEnumConverter::ConvertAddressMode( desc.AddressModeU );
+    samplerCreateInfo.addressModeV            = VulkanEnumConverter::ConvertAddressMode( desc.AddressModeV );
+    samplerCreateInfo.addressModeW            = VulkanEnumConverter::ConvertAddressMode( desc.AddressModeW );
     samplerCreateInfo.anisotropyEnable        = desc.MaxAnisotropy > 1.0f ? VK_TRUE : VK_FALSE;
     samplerCreateInfo.maxAnisotropy           = desc.MaxAnisotropy;
-    samplerCreateInfo.borderColor             = vk::BorderColor::eFloatOpaqueBlack;
+    samplerCreateInfo.borderColor             = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
     samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
     samplerCreateInfo.compareEnable           = desc.CompareOp == CompareOp::Never ? VK_FALSE : VK_TRUE;
-    samplerCreateInfo.compareOp               = VulkanEnumConverter::ConvertCompareOp(desc.CompareOp);
-    samplerCreateInfo.mipmapMode              = VulkanEnumConverter::ConvertMipmapMode(desc.MipmapMode);
+    samplerCreateInfo.compareOp               = VulkanEnumConverter::ConvertCompareOp( desc.CompareOp );
+    samplerCreateInfo.mipmapMode              = VulkanEnumConverter::ConvertMipmapMode( desc.MipmapMode );
     samplerCreateInfo.mipLodBias              = desc.MipLodBias;
     samplerCreateInfo.minLod                  = desc.MinLod;
     samplerCreateInfo.maxLod                  = desc.MaxLod;
 
-    m_sampler = m_context->LogicalDevice.createSampler(samplerCreateInfo);
+    VK_CHECK_RESULT( vkCreateSampler( m_context->LogicalDevice, &samplerCreateInfo, nullptr, &m_sampler ) );
 }
 
-VulkanSampler::~VulkanSampler()
+VulkanSampler::~VulkanSampler( )
 {
-    m_context->LogicalDevice.destroySampler(m_sampler);
+    vkDestroySampler( m_context->LogicalDevice, m_sampler, nullptr );
 }

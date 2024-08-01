@@ -33,9 +33,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class DX12CommandList : public ICommandList
+    class DX12CommandList final : public ICommandList
     {
-    private:
         CommandListDesc m_desc;
         DX12Context    *m_context;
 
@@ -44,42 +43,42 @@ namespace DenOfIz
         wil::com_ptr<ID3D12DebugCommandList>     m_debugCommandList;
         ID3D12RootSignature                     *m_currentRootSignature = nullptr;
 
-        CD3DX12_RECT                        m_scissor;
-        D3D12_VIEWPORT                      m_viewport;
+        CD3DX12_RECT                        m_scissor{ };
+        D3D12_VIEWPORT                      m_viewport{ };
         ID3D12CommandQueue                 *m_commandQueue;
-        std::vector<ID3D12DescriptorHeap *> m_heaps = { m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetHeap(), m_context->ShaderVisibleSamplerDescriptorHeap->GetHeap() };
+        std::vector<ID3D12DescriptorHeap *> m_heaps = { m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetHeap( ), m_context->ShaderVisibleSamplerDescriptorHeap->GetHeap( ) };
 
     public:
-        DX12CommandList(DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> m_commandAllocator, wil::com_ptr<ID3D12GraphicsCommandList> m_commandList, CommandListDesc desc);
-        ~DX12CommandList() override;
+         DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> commandAllocator, const wil::com_ptr<ID3D12GraphicsCommandList> &m_commandList,
+                          CommandListDesc desc );
+        ~DX12CommandList( ) override = default;
 
-        void Begin() override;
-        void BeginRendering(const RenderingDesc &renderingInfo) override;
-        void EndRendering() override;
-        void Execute(const ExecuteDesc &executeInfo) override;
-        void Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks) override;
-        void BindPipeline(IPipeline *pipeline) override;
-        void BindVertexBuffer(IBufferResource *buffer) override;
-        void BindIndexBuffer(IBufferResource *buffer, const IndexType &indexType) override;
-        void BindViewport(float x, float y, float width, float height) override;
-        void BindScissorRect(float x, float y, float width, float height) override;
-        void BindResourceGroup(IResourceBindGroup *bindGroup) override;
-        void SetDepthBias(float constantFactor, float clamp, float slopeFactor) override;
-        void PipelineBarrier(const PipelineBarrierDesc &barrier) override;
-        void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) override;
-        void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
-        void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
-        void CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionInfo) override;
-        void CopyTextureRegion(const CopyTextureRegionDesc &copyTextureRegionInfo) override;
-        void CopyBufferToTexture(const CopyBufferToTextureDesc &copyBufferToTexture) override;
-        void CopyTextureToBuffer(const CopyTextureToBufferDesc &copyTextureToBuffer) override;
+        void Begin( ) override;
+        void BeginRendering( const RenderingDesc &renderingInfo ) override;
+        void EndRendering( ) override;
+        void Execute( const ExecuteDesc &executeInfo ) override;
+        void Present( ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks ) override;
+        void BindPipeline( IPipeline *pipeline ) override;
+        void BindVertexBuffer( IBufferResource *buffer ) override;
+        void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType ) override;
+        void BindViewport( float x, float y, float width, float height ) override;
+        void BindScissorRect( float x, float y, float width, float height ) override;
+        void BindResourceGroup( IResourceBindGroup *bindGroup ) override;
+        void SetDepthBias( float constantFactor, float clamp, float slopeFactor ) override;
+        void PipelineBarrier( const PipelineBarrierDesc &barrier ) override;
+        void DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance ) override;
+        void Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance ) override;
+        void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
+        void CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionInfo ) override;
+        void CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionInfo ) override;
+        void CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTexture ) override;
+        void CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBuffer ) override;
 
     private:
-        void     CompatibilityPipelineBarrier(const PipelineBarrierDesc &barrier);
-        void     EnhancedPipelineBarrier(const PipelineBarrierDesc &barrier);
-        void     SetRootSignature(ID3D12RootSignature *rootSignature);
-        uint32_t GetSubresourceIndex(ITextureResource *texture, uint32_t mipLevel, uint32_t arrayLayer);
-        void     BindResourceGroup(uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
+        void     CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
+        void     EnhancedPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
+        void     SetRootSignature( ID3D12RootSignature *rootSignature );
+        void     BindResourceGroup( uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle ) const;
     };
 
 } // namespace DenOfIz

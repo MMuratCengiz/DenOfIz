@@ -517,7 +517,7 @@ namespace DenOfIz
         Unidentified
     };
 
-    enum QueueType
+    enum class QueueType
     {
         Graphics,
         Compute,
@@ -534,7 +534,7 @@ namespace DenOfIz
 
     struct PhysicalDeviceCapabilities
     {
-        bool DedicatedTransferQueue;
+        bool DedicatedCopyQueue;
         bool RayTracing;
         bool ComputeShaders;
         bool Tearing;

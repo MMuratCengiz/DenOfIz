@@ -24,18 +24,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class VulkanFence : public IFence
+    class VulkanFence final : public IFence
     {
-    private:
         VulkanContext *m_context;
-        vk::Fence      m_fence;
+        VkFence        m_fence{};
 
     public:
-        VulkanFence(VulkanContext *context);
-        ~VulkanFence();
-        void           Wait() override;
-        void           Reset() override;
-        inline VkFence GetFence() const
+        explicit              VulkanFence( VulkanContext *context );
+        ~                     VulkanFence( ) override;
+        void                  Wait( ) override;
+        void                  Reset( ) override;
+        [[nodiscard]] VkFence GetFence( ) const
         {
             return m_fence;
         }

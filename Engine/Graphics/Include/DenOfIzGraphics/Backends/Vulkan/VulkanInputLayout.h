@@ -24,20 +24,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class VulkanInputLayout : public IInputLayout
+    class VulkanInputLayout final : public IInputLayout
     {
     private:
-        VkPipelineVertexInputStateCreateInfo           m_vertexInputState;
+        VkPipelineVertexInputStateCreateInfo           m_vertexInputState{ };
         std::vector<VkVertexInputBindingDescription>   m_bindingDescriptions;
         std::vector<VkVertexInputAttributeDescription> m_attributeDescriptions;
 
     public:
-        VulkanInputLayout(const InputLayoutDesc &inputLayoutDesc);
-        inline const VkPipelineVertexInputStateCreateInfo &GetVertexInputState() const
+        explicit                                                  VulkanInputLayout( const InputLayoutDesc &inputLayoutDesc );
+        [[nodiscard]] const VkPipelineVertexInputStateCreateInfo &GetVertexInputState( ) const
         {
             return m_vertexInputState;
         }
-        ~VulkanInputLayout() override = default;
+        ~VulkanInputLayout( ) override = default;
     };
 
 } // namespace DenOfIz

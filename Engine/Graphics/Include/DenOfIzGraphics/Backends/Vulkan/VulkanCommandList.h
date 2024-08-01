@@ -30,40 +30,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class VulkanCommandList : public ICommandList
+    class VulkanCommandList final : public ICommandList
     {
-    private:
         CommandListDesc m_desc;
-        VulkanContext  *m_context;
-        VulkanPipeline *m_boundPipeline;
+        VulkanContext  *m_context       = nullptr;
+        VulkanPipeline *m_boundPipeline = nullptr;
 
-        vk::CommandBuffer m_commandBuffer;
-        vk::Viewport      m_viewport;
-        vk::Rect2D        m_scissorRect;
+        VkCommandBuffer m_commandBuffer{ };
+        VkViewport      m_viewport{ };
+        VkRect2D        m_scissorRect{ };
 
     public:
-        VulkanCommandList(VulkanContext *context, CommandListDesc desc);
+        VulkanCommandList( VulkanContext *context, CommandListDesc desc );
 
-        void Begin() override;
-        void BeginRendering(const RenderingDesc &renderingInfo) override;
-        void EndRendering() override;
-        void Execute(const ExecuteDesc &submitInfo) override;
-        void BindPipeline(IPipeline *pipeline) override;
-        void BindVertexBuffer(IBufferResource *buffer) override;
-        void BindIndexBuffer(IBufferResource *buffer, const IndexType &indexType) override;
-        void BindViewport(float offsetX, float offsetY, float width, float height) override;
-        void BindScissorRect(float offsetX, float offsetY, float width, float height) override;
-        void BindResourceGroup(IResourceBindGroup *bindGroup) override;
-        void SetDepthBias(float constantFactor, float clamp, float slopeFactor) override;
-        void PipelineBarrier(const PipelineBarrierDesc &barrier) override;
-        void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) override;
-        void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0) override;
-        void CopyBufferRegion(const CopyBufferRegionDesc &copyBufferRegionDesc) override;
-        void CopyTextureRegion(const CopyTextureRegionDesc &copyTextureRegionDesc) override;
-        void CopyBufferToTexture(const CopyBufferToTextureDesc &copyBufferToTextureDesc) override;
-        void CopyTextureToBuffer(const CopyTextureToBufferDesc &copyTextureToBufferDesc) override;
-        void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
-        void Present(ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks) override;
+        void Begin( ) override;
+        void BeginRendering( const RenderingDesc &renderingInfo ) override;
+        void EndRendering( ) override;
+        void Execute( const ExecuteDesc &executeInfo ) override;
+        void BindPipeline( IPipeline *pipeline ) override;
+        void BindVertexBuffer( IBufferResource *buffer ) override;
+        void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType ) override;
+        void BindViewport( float offsetX, float offsetY, float width, float height ) override;
+        void BindScissorRect( float offsetX, float offsetY, float width, float height ) override;
+        void BindResourceGroup( IResourceBindGroup *bindGroup ) override;
+        void SetDepthBias( float constantFactor, float clamp, float slopeFactor ) override;
+        void PipelineBarrier( const PipelineBarrierDesc &barrier ) override;
+        void DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance ) override;
+        void Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance ) override;
+        void CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionDesc ) override;
+        void CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionDesc ) override;
+        void CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTextureDesc ) override;
+        void CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBufferDesc ) override;
+        void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
+        void Present( ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks ) override;
     };
 
 } // namespace DenOfIz

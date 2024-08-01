@@ -20,6 +20,7 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
+// Todo remove this class
 #ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #endif

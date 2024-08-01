@@ -20,81 +20,84 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanRootSignature::VulkanRootSignature(VulkanContext *context, RootSignatureDesc desc) : m_context(context), m_desc(std::move(desc))
+VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc ) : m_context( context ), m_desc( std::move( desc ) )
 {
-    m_layouts.resize(1);
+    m_layouts.resize( 1 );
 
     for ( const ResourceBindingDesc &binding : desc.ResourceBindings )
     {
-        AddResourceBinding(binding);
+        AddResourceBinding( binding );
     }
 
     for ( const StaticSamplerDesc &staticSamplerDesc : desc.StaticSamplers )
     {
-        AddStaticSampler(staticSamplerDesc);
+        AddStaticSampler( staticSamplerDesc );
     }
 
-    vk::DescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.setBindings(m_bindings);
-    layoutInfo.flags = vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR;
-    m_layouts[ 0 ]   = m_context->LogicalDevice.createDescriptorSetLayout(layoutInfo);
+    VkDescriptorSetLayoutCreateInfo layoutInfo{ };
+    layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = m_bindings.size( );
+    layoutInfo.pBindings    = m_bindings.data( );
+    layoutInfo.flags        = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+
+    VK_CHECK_RESULT( vkCreateDescriptorSetLayout( m_context->LogicalDevice, &layoutInfo, nullptr, &m_layouts[ 0 ] ) );
 }
 
-void VulkanRootSignature::AddStaticSampler(const StaticSamplerDesc &sampler)
+void VulkanRootSignature::AddStaticSampler( const StaticSamplerDesc &sampler )
 {
-    DZ_ASSERTM(!m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior.");
+    DZ_ASSERTM( !m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior." );
 
-    vk::DescriptorSetLayoutBinding layoutBinding = CreateDescriptorSetLayoutBinding(sampler.Binding);
-    layoutBinding.pImmutableSamplers             = nullptr; //TODO
+    VkDescriptorSetLayoutBinding layoutBinding = CreateDescriptorSetLayoutBinding( sampler.Binding );
+    layoutBinding.pImmutableSamplers           = nullptr; // TODO
 
-    m_bindings.push_back(std::move(layoutBinding));
+    m_bindings.push_back( layoutBinding );
 }
 
-void VulkanRootSignature::AddResourceBindingInternal(const ResourceBindingDesc &binding)
+void VulkanRootSignature::AddResourceBindingInternal( const ResourceBindingDesc &binding )
 {
-    DZ_ASSERTM(!m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior.");
+    DZ_ASSERTM( !m_created, "Root signature is already created. Changing the root signature after creation could cause undefined behavior." );
 
-    vk::DescriptorSetLayoutBinding layoutBinding = CreateDescriptorSetLayoutBinding(binding);
+    const VkDescriptorSetLayoutBinding layoutBinding = CreateDescriptorSetLayoutBinding( binding );
 
-    m_bindings.push_back(std::move(layoutBinding));
+    m_bindings.push_back( layoutBinding );
 }
 
-vk::DescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBinding(const ResourceBindingDesc &binding) const
+VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBinding( const ResourceBindingDesc &binding )
 {
-    vk::DescriptorSetLayoutBinding layoutBinding{};
+    VkDescriptorSetLayoutBinding layoutBinding{ };
 
     layoutBinding.binding         = binding.Binding;
-    layoutBinding.descriptorType  = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType(binding.Descriptor);
+    layoutBinding.descriptorType  = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType( binding.Descriptor );
     layoutBinding.descriptorCount = binding.ArraySize;
 
     for ( auto stage : binding.Stages )
     {
-        layoutBinding.stageFlags |= VulkanEnumConverter::ConvertShaderStage(stage);
+        layoutBinding.stageFlags |= VulkanEnumConverter::ConvertShaderStage( stage );
     }
     return layoutBinding;
 }
 
-void VulkanRootSignature::AddRootConstantInternal(const RootConstantResourceBinding &rootConstantBinding)
+void VulkanRootSignature::AddRootConstantInternal( const RootConstantResourceBinding &rootConstantBinding )
 {
     m_rootConstantMap[ rootConstantBinding.Name ] = rootConstantBinding;
 
-    vk::PushConstantRange pushConstantRange{};
+    VkPushConstantRange pushConstantRange{ };
 
     pushConstantRange.offset = rootConstantBinding.Binding;
     pushConstantRange.size   = rootConstantBinding.Size;
 
     for ( auto stage : rootConstantBinding.Stages )
     {
-        pushConstantRange.stageFlags |= VulkanEnumConverter::ConvertShaderStage(stage);
+        pushConstantRange.stageFlags |= VulkanEnumConverter::ConvertShaderStage( stage );
     }
 
-    m_pushConstants.push_back(std::move(pushConstantRange));
+    m_pushConstants.push_back( pushConstantRange );
 }
 
-VulkanRootSignature::~VulkanRootSignature()
+VulkanRootSignature::~VulkanRootSignature( )
 {
-    for ( auto layout : m_layouts )
+    for ( const auto layout : m_layouts )
     {
-        m_context->LogicalDevice.destroyDescriptorSetLayout(layout);
+        vkDestroyDescriptorSetLayout( m_context->LogicalDevice, layout, nullptr );
     }
 }

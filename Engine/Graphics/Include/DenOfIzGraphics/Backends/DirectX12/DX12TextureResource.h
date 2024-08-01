@@ -24,15 +24,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class DX12TextureResource : public ITextureResource
+    class DX12TextureResource final : public ITextureResource
     {
-    private:
         TextureDesc                 m_desc;
-        DX12Context                *m_context;
-        D3D12MA::Allocation        *m_allocation;
+        DX12Context                *m_context{};
+        D3D12MA::Allocation        *m_allocation{};
         ID3D12Resource2            *m_resource;
         D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
-        D3D12_RESOURCE_DESC         m_resourceDesc;
+        D3D12_RESOURCE_DESC         m_resourceDesc{};
         D3D12_ROOT_PARAMETER_TYPE   m_rootParameterType;
         bool                        isExternalResource = false; // Used for swap chain render targets, might need a better way
 
@@ -42,63 +41,58 @@ namespace DenOfIz
         ~DX12TextureResource() override = default;
         void CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle);
 
-        void Deallocate() override;
-
-        const TextureDesc &GetDesc() const
+        [[nodiscard]] const TextureDesc &GetDesc() const
         {
             return m_desc;
         }
 
-        const D3D12_RESOURCE_DESC &GetResourceDesc() const
+        [[nodiscard]] const D3D12_RESOURCE_DESC &GetResourceDesc() const
         {
             return m_resourceDesc;
         }
 
-        const D3D12_ROOT_PARAMETER_TYPE &GetRootParameterType() const
+        [[nodiscard]] const D3D12_ROOT_PARAMETER_TYPE &GetRootParameterType() const
         {
             return m_rootParameterType;
         }
 
-        ID3D12Resource *GetResource() const
+        [[nodiscard]] ID3D12Resource *GetResource() const
         {
             return m_resource;
         }
 
-        const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle() const
+        [[nodiscard]] const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle() const
         {
             return m_cpuHandle;
-        };
-
-    protected:
-        void Allocate(const void *data) override;
+        }
 
     private:
         void Validate();
-        void CreateTextureSrv();
-        void CreateTextureUav();
+        void CreateTextureSrv( ) const;
+        void CreateTextureUav( ) const;
     };
 
-    class DX12Sampler : public ISampler
+    class DX12Sampler final : public ISampler
     {
     private:
         DX12Context                *m_context;
         SamplerDesc                 m_desc;
-        D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
-        D3D12_SAMPLER_DESC          m_samplerDesc;
+        D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle{};
+        D3D12_SAMPLER_DESC          m_samplerDesc{};
 
     public:
         DX12Sampler(DX12Context *context, const SamplerDesc &desc);
         void CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle);
         ~DX12Sampler() override = default;
 
-        D3D12_FILTER CalculateFilter(Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy) const;
+        [[nodiscard]] D3D12_FILTER CalculateFilter(Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy) const;
 
-        const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle() const
+        [[nodiscard]] const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle() const
         {
             return m_cpuHandle;
         }
 
-        const D3D12_SAMPLER_DESC &GetSamplerDesc() const
+        [[nodiscard]] const D3D12_SAMPLER_DESC &GetSamplerDesc() const
         {
             return m_samplerDesc;
         }

@@ -24,19 +24,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class VulkanSemaphore : public ISemaphore
+    class VulkanSemaphore final : public ISemaphore
     {
-    private:
         VulkanContext *m_context;
-        vk::Semaphore  m_semaphore;
+        VkSemaphore  m_semaphore{};
 
     public:
-        VulkanSemaphore(VulkanContext *context);
-        ~VulkanSemaphore();
+        explicit VulkanSemaphore(VulkanContext *context);
+        ~        VulkanSemaphore( ) override;
         void Wait() override;
         void Notify() override;
 
-        vk::Semaphore GetSemaphore() const
+        VkSemaphore GetSemaphore() const
         {
             return m_semaphore;
         }

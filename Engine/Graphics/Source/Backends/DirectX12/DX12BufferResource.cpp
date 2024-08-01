@@ -32,12 +32,12 @@ DX12BufferResource::DX12BufferResource(DX12Context *context, const BufferDesc &d
     {
         flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
-    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::AccelerationStructure) )
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::AccelerationStructure ) )
     {
         flags |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
     }
 
-    CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(DX12DescriptorHeap::RoundUp(m_numBytes), flags);
+    const CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(DX12DescriptorHeap::RoundUp(m_numBytes), flags);
 
     D3D12MA::ALLOCATION_DESC allocationDesc = {};
     allocationDesc.HeapType                 = DX12EnumConverter::ConvertHeapType(m_desc.HeapType);
@@ -48,9 +48,9 @@ DX12BufferResource::DX12BufferResource(DX12Context *context, const BufferDesc &d
 
     D3D12_RESOURCE_STATES start_state = DX12EnumConverter::ConvertResourceState(m_desc.InitialState);
 
-    HRESULT hr = m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, start_state, NULL, &m_allocation, IID_PPV_ARGS(&m_resource));
+    HRESULT hr = m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, start_state, nullptr, &m_allocation, IID_PPV_ARGS(&m_resource));
     THROW_IF_FAILED(hr);
-    std::wstring name = std::wstring(Name.begin(), Name.end());
+    const std::wstring name = std::wstring(Name.begin(), Name.end());
     m_resource->SetName(name.c_str());
 }
 
@@ -123,14 +123,14 @@ void *DX12BufferResource::MapMemory()
 {
     DZ_ASSERTM(m_mappedMemory == nullptr, std::format("Memory already mapped {}", Name.c_str()));
     D3D12_RANGE range = { 0, 0 };
-    THROW_IF_FAILED(m_resource->Map(0, NULL, &m_mappedMemory));
+    THROW_IF_FAILED(m_resource->Map(0, nullptr, &m_mappedMemory));
     return m_mappedMemory;
 }
 
 void DX12BufferResource::UnmapMemory()
 {
     DZ_ASSERTM(m_mappedMemory != nullptr, std::format("Memory not mapped, buffer: {}", Name.c_str()));
-    m_resource->Unmap(0, NULL);
+    m_resource->Unmap(0, nullptr);
     m_mappedMemory = nullptr;
 }
 
@@ -139,7 +139,7 @@ DX12BufferResource::~DX12BufferResource()
     if ( m_mappedMemory != nullptr )
     {
         LOG(WARNING) << "Memory not unmapped before lifetime of the buffer.";
-        m_resource->Unmap(0, NULL);
+        m_resource->Unmap(0, nullptr);
         m_mappedMemory = nullptr;
     }
 }

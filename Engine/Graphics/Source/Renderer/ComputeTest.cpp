@@ -45,7 +45,7 @@ int ComputeTest::Run()
         //            .Windows = APIPreferenceWindows::Vulkan,
     });
 
-    m_logicalDevice = GraphicsAPI::CreateLogicalDevice(nullptr);
+    m_logicalDevice = GraphicsAPI::CreateLogicalDevice( );
 
     auto firstDevice = m_logicalDevice->ListPhysicalDevices()[ 0 ];
     m_logicalDevice->LoadPhysicalDevice(firstDevice);

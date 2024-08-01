@@ -31,7 +31,7 @@ namespace DenOfIz
         }
 
         // TODO, remove the window parameter
-        static std::unique_ptr<ILogicalDevice> CreateLogicalDevice(GraphicsWindowHandle *window)
+        static std::unique_ptr<ILogicalDevice> CreateLogicalDevice( )
         {
             std::unique_ptr<ILogicalDevice> logicalDevice = nullptr;
 
@@ -58,16 +58,16 @@ namespace DenOfIz
             }
 #endif
             DZ_ASSERTM(logicalDevice != nullptr, "No supported API found for this system.");
-            logicalDevice->CreateDevice(window);
+            logicalDevice->CreateDevice();
             return logicalDevice;
         }
 
-        static std::unique_ptr<ILogicalDevice> CreateAndLoadOptimalLogicalDevice(GraphicsWindowHandle *window)
+        static std::unique_ptr<ILogicalDevice> CreateAndLoadOptimalLogicalDevice( )
         {
-            std::unique_ptr<ILogicalDevice> logicalDevice = CreateLogicalDevice(window);
+            std::unique_ptr<ILogicalDevice> logicalDevice = CreateLogicalDevice( );
 
             // Todo something smarter
-            for ( auto device : logicalDevice->ListPhysicalDevices() )
+            for ( const PhysicalDevice& device : logicalDevice->ListPhysicalDevices() )
             {
                 if ( device.Properties.IsDedicated )
                 {

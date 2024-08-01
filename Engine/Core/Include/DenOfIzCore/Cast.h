@@ -24,7 +24,6 @@ namespace DenOfIz
 {
     class CheckedCast
     {
-    private:
         template <typename T>
         static T* Validate(T *ptr)
         {

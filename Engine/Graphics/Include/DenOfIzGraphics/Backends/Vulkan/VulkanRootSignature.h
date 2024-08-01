@@ -24,32 +24,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class VulkanRootSignature : public IRootSignature
+    class VulkanRootSignature final : public IRootSignature
     {
-    private:
         RootSignatureDesc m_desc;
         VulkanContext    *m_context;
 
-        std::vector<vk::DescriptorSetLayout>        m_layouts;
-        std::vector<vk::DescriptorSetLayoutBinding> m_bindings;
-        std::vector<vk::PushConstantRange>          m_pushConstants;
-        std::vector<vk::Sampler>                    m_staticSamplers;
+        std::vector<VkDescriptorSetLayout>        m_layouts;
+        std::vector<VkDescriptorSetLayoutBinding> m_bindings;
+        std::vector<VkPushConstantRange>          m_pushConstants;
+        std::vector<VkSampler>                    m_staticSamplers;
 
     public:
-        VulkanRootSignature(VulkanContext *context, RootSignatureDesc desc);
-        ~VulkanRootSignature();
+         VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc );
+        ~VulkanRootSignature( ) override;
 
-        const std::vector<vk::DescriptorSetLayout> &GetDescriptorSetLayouts() const
+        [[nodiscard]] const std::vector<VkDescriptorSetLayout> &GetDescriptorSetLayouts( ) const
         {
             return m_layouts;
         }
 
     protected:
-        void                           AddResourceBindingInternal(const ResourceBindingDesc &binding) override;
-        void                           AddRootConstantInternal(const RootConstantResourceBinding &rootConstantBinding) override;
-        vk::DescriptorSetLayoutBinding CreateDescriptorSetLayoutBinding(const ResourceBindingDesc &binding) const;
+        void                                              AddResourceBindingInternal( const ResourceBindingDesc &binding ) override;
+        void                                              AddRootConstantInternal( const RootConstantResourceBinding &rootConstantBinding ) override;
+        [[nodiscard]] static VkDescriptorSetLayoutBinding CreateDescriptorSetLayoutBinding( const ResourceBindingDesc &binding );
 
     private:
-        void AddStaticSampler(const StaticSamplerDesc &sampler);
+        void AddStaticSampler( const StaticSamplerDesc &sampler );
     };
 } // namespace DenOfIz

@@ -18,10 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "VulkanBufferResource.h"
 #include "VulkanContext.h"
 #include "VulkanEnumConverter.h"
-#include "VulkanTextureResource.h"
 
 namespace DenOfIz
 {
@@ -29,14 +27,15 @@ namespace DenOfIz
     class VulkanPipelineBarrierHelper
     {
     public:
-        static void ExecutePipelineBarrier(VulkanContext *context, vk::CommandBuffer commandBuffer, const QueueType &commandQueueType, const PipelineBarrierDesc &barrier);
+        static void ExecutePipelineBarrier( const VulkanContext *context, const VkCommandBuffer &commandBuffer, const QueueType &commandQueueType,
+                                            const PipelineBarrierDesc &barrier );
 
     private:
-        static vk::ImageMemoryBarrier  CreateImageBarrier(const TextureBarrierDesc &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags);
-        static vk::BufferMemoryBarrier CreateBufferBarrier(const BufferBarrierDesc &barrier, vk::AccessFlags &srcAccessFlags, vk::AccessFlags &dstAccessFlags);
-        static vk::AccessFlags         GetAccessFlags(const BitSet<ResourceState> &state);
-        static vk::ImageLayout         GetImageLayout(const BitSet<ResourceState> &state);
-        static vk::PipelineStageFlags  GetPipelineStageFlags(VulkanContext *context, QueueType queueType, vk::AccessFlags accessFlags);
+        static VkImageMemoryBarrier  CreateImageBarrier(const TextureBarrierDesc &barrier, VkAccessFlags &srcAccessFlags, VkAccessFlags &dstAccessFlags);
+        static VkBufferMemoryBarrier CreateBufferBarrier(const BufferBarrierDesc &barrier, VkAccessFlags &srcAccessFlags, VkAccessFlags &dstAccessFlags);
+        static VkAccessFlags         GetAccessFlags(const BitSet<ResourceState> &state);
+        static VkImageLayout         GetImageLayout(const BitSet<ResourceState> &state);
+        static VkPipelineStageFlags  GetPipelineStageFlags( const VulkanContext *context, QueueType queueType, VkAccessFlags accessFlags);
     };
 
 } // namespace DenOfIz

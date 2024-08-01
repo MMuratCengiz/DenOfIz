@@ -4,6 +4,7 @@
   "dependencies": [
     "wil",
     "glog",
+    "volk",
     "vulkan",
     "vulkan-memory-allocator",
     "glslang",

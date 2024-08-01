@@ -45,6 +45,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzCore/Common.h>
 
+#define DX_CHECK_RESULT( result ) if( FAILED( result ) ) { LOG(ERROR) << "DirectX12 Layer Error: " << result; }
+
 namespace DenOfIz
 {
     struct DX12Capabilities
@@ -54,7 +56,7 @@ namespace DenOfIz
 
     struct DX12Context : private NonCopyable
     {
-        static const int BackBufferCount = 3;
+        static constexpr int BackBufferCount = 3;
         bool             IsDeviceLost    = false;
 
         // Release Last
@@ -73,7 +75,6 @@ namespace DenOfIz
         std::unique_ptr<DX12DescriptorHeap>                                                   ShaderVisibleCbvSrvUavDescriptorHeap;
         std::unique_ptr<DX12DescriptorHeap>                                                   ShaderVisibleSamplerDescriptorHeap;
 
-        GraphicsWindowHandle *Window;
         PhysicalDevice        SelectedDeviceInfo;
         DX12Capabilities      DX12Capabilities;
     };

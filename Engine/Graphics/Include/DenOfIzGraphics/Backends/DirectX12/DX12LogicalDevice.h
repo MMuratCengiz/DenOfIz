@@ -41,37 +41,34 @@ namespace DenOfIz
         wil::com_ptr<ID3D12Fence>    m_waitIdleFence;
 
     public:
-        DX12LogicalDevice();
-        ~DX12LogicalDevice() override;
+         DX12LogicalDevice( );
+        ~DX12LogicalDevice( ) override;
 
         // Override methods
-        void CreateDevice(GraphicsWindowHandle *window) override;
-
-        std::vector<PhysicalDevice> ListPhysicalDevices() override;
-
-        void LoadPhysicalDevice(const PhysicalDevice &device) override;
-
-        inline bool IsDeviceLost() override
+        void                        CreateDevice( ) override;
+        std::vector<PhysicalDevice> ListPhysicalDevices( ) override;
+        void                        LoadPhysicalDevice( const PhysicalDevice &device ) override;
+        bool                        IsDeviceLost( ) override
         {
             return m_context->IsDeviceLost;
         }
 
-        std::unique_ptr<ICommandListPool>   CreateCommandListPool(const CommandListPoolDesc &poolDesc) override;
-        std::unique_ptr<IPipeline>          CreatePipeline(const PipelineDesc &pipelineDesc) override;
-        std::unique_ptr<ISwapChain>         CreateSwapChain(const SwapChainDesc &swapChainDesc) override;
-        std::unique_ptr<IRootSignature>     CreateRootSignature(const RootSignatureDesc &rootSignatureDesc) override;
-        std::unique_ptr<IInputLayout>       CreateInputLayout(const InputLayoutDesc &inputLayoutDesc) override;
-        std::unique_ptr<IResourceBindGroup> CreateResourceBindGroup(const ResourceBindGroupDesc &descriptorTableDesc) override;
-        std::unique_ptr<IFence>             CreateFence() override;
-        std::unique_ptr<ISemaphore>         CreateSemaphore() override;
-        std::unique_ptr<IBufferResource>    CreateBufferResource(std::string name, const BufferDesc &bufferDesc) override;
-        std::unique_ptr<ITextureResource>   CreateTextureResource(std::string name, const TextureDesc &textureDesc) override;
-        std::unique_ptr<ISampler>           CreateSampler(std::string name, const SamplerDesc &samplerDesc) override;
+        std::unique_ptr<ICommandListPool>   CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
+        std::unique_ptr<IPipeline>          CreatePipeline( const PipelineDesc &pipelineDesc ) override;
+        std::unique_ptr<ISwapChain>         CreateSwapChain( const SwapChainDesc &swapChainDesc ) override;
+        std::unique_ptr<IRootSignature>     CreateRootSignature( const RootSignatureDesc &rootSignatureDesc ) override;
+        std::unique_ptr<IInputLayout>       CreateInputLayout( const InputLayoutDesc &inputLayoutDesc ) override;
+        std::unique_ptr<IResourceBindGroup> CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc ) override;
+        std::unique_ptr<IFence>             CreateFence( ) override;
+        std::unique_ptr<ISemaphore>         CreateSemaphore( ) override;
+        std::unique_ptr<IBufferResource>    CreateBufferResource( std::string name, const BufferDesc &bufferDesc ) override;
+        std::unique_ptr<ITextureResource>   CreateTextureResource( std::string name, const TextureDesc &textureDesc ) override;
+        std::unique_ptr<ISampler>           CreateSampler( std::string name, const SamplerDesc &samplerDesc ) override;
 
-        void WaitIdle() override;
+        void WaitIdle( ) override;
         // --
     private:
-        void CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDevice &physicalDevice);
+        void CreateDeviceInfo( IDXGIAdapter1 &adapter, PhysicalDevice &physicalDevice );
     };
 
 } // namespace DenOfIz

@@ -38,7 +38,7 @@ namespace DenOfIz
     public:
         virtual ~ILogicalDevice() = default;
 
-        virtual void                        CreateDevice(GraphicsWindowHandle *window)       = 0;
+        virtual void                        CreateDevice( )       = 0;
         virtual std::vector<PhysicalDevice> ListPhysicalDevices()                            = 0;
         virtual void                        LoadPhysicalDevice(const PhysicalDevice &device) = 0;
         virtual bool                        IsDeviceLost()                                   = 0;

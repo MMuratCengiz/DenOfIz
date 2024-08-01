@@ -32,9 +32,8 @@ DX12LogicalDevice::~DX12LogicalDevice()
     WaitIdle();
 }
 
-void DX12LogicalDevice::CreateDevice(GraphicsWindowHandle *window)
+void DX12LogicalDevice::CreateDevice( )
 {
-    m_context->Window      = window;
     DWORD dxgiFactoryFlags = 0;
 #ifndef NDEBUG
     {
@@ -101,7 +100,7 @@ void DX12LogicalDevice::CreateDeviceInfo(IDXGIAdapter1 &adapter, PhysicalDevice 
     THROW_IF_FAILED(D3D12CreateDevice(&adapter, m_minFeatureLevel, IID_PPV_ARGS(device.put())));
 
     // Todo actually read these from somewhere:
-    physicalDevice.Capabilities.DedicatedTransferQueue = true;
+    physicalDevice.Capabilities.DedicatedCopyQueue = true;
     physicalDevice.Capabilities.ComputeShaders         = true;
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 opts5 = {};
@@ -128,7 +127,7 @@ void DX12LogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
     LOG(INFO) << "Device Capabilities:";
     LOG(INFO) << "Dedicated GPU " << (device.Properties.IsDedicated ? "Yes" : "No");
     LOG(INFO) << "Available Memory " << device.Properties.MemoryAvailableInMb << "MB";
-    LOG(INFO) << "Dedicated Transfer Queue: " << (device.Capabilities.DedicatedTransferQueue ? "Yes" : "No");
+    LOG(INFO) << "Dedicated Transfer Queue: " << (device.Capabilities.DedicatedCopyQueue ? "Yes" : "No");
     LOG(INFO) << "Compute Shaders: " << (device.Capabilities.ComputeShaders ? "Yes" : "No");
     LOG(INFO) << "Ray Tracing: " << (device.Capabilities.RayTracing ? "Yes" : "No");
     LOG(INFO) << "Tearing: " << (device.Capabilities.Tearing ? "Yes" : "No");

@@ -24,76 +24,59 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class VulkanTextureResource : public ITextureResource
+    class VulkanTextureResource final : public ITextureResource
     {
-    private:
-        VulkanContext *m_context;
-        TextureDesc    m_desc;
+        VulkanContext *m_context = nullptr;
+        TextureDesc    m_desc{ };
 
-        vk::Image            m_image;
-        vk::ImageView        m_imageView;
-        vk::Format           m_format;
-        vk::Sampler          m_sampler;
-        vk::ImageAspectFlags m_aspect;
-
-        VmaAllocation m_allocation;
-        uint32_t      m_mipLevels{};
-
-        bool m_allocated = false;
+        VkImage            m_image{ };
+        VkImageView        m_imageView{ };
+        VkFormat           m_format{ };
+        VkSampler          m_sampler{ };
+        VkImageAspectFlags m_aspect{ };
+        VmaAllocation      m_allocation{ };
+        VkImageLayout      m_layout{ };
+        uint32_t           m_mipLevels{ };
 
     public:
-        vk::DescriptorImageInfo DescriptorInfo;
-        VulkanTextureResource(VulkanContext *context, const TextureDesc &textureDesc);
+        VulkanTextureResource( VulkanContext *context, const TextureDesc &desc );
 
         // Use as render target
-        inline VulkanTextureResource(vk::Image image, vk::ImageView imageView, vk::Format format, vk::ImageAspectFlags imageAspect) :
-            m_image(image), m_imageView(imageView), m_format(format), m_aspect(imageAspect)
+        VulkanTextureResource( const VkImage &image, const VkImageView &imageView, const VkFormat format, const VkImageAspectFlags imageAspect ) :
+            m_image( image ), m_imageView( imageView ), m_format( format ), m_aspect( imageAspect )
         {
         }
 
-        ~VulkanTextureResource();
-        inline vk::Image GetImage() const
+        ~                     VulkanTextureResource( ) override;
+        [[nodiscard]] VkImage Image( ) const
         {
             return m_image;
         }
-        inline vk::ImageView GetImageView() const
+        [[nodiscard]] VkImageView ImageView( ) const
         {
             return m_imageView;
         }
-        inline vk::Format GetFormat() const
+        [[nodiscard]] VkImageLayout Layout( ) const
         {
-            return m_format;
+            return m_layout;
         }
-        inline vk::Sampler GetSampler() const
-        {
-            return m_sampler;
-        }
-        inline vk::ImageAspectFlags GetAspect() const
+        [[nodiscard]] VkImageAspectFlags Aspect( ) const
         {
             return m_aspect;
         }
-
-        void AttachSampler(SamplerDesc &info);
-        void Deallocate() override;
-
-    protected:
-        void Allocate(const void *data) override;
-
-    private:
-        void GenerateMipMaps() const;
     };
 
-    class VulkanSampler : public ISampler
+    class VulkanSampler final : public ISampler
     {
-    private:
         VulkanContext *m_context;
         SamplerDesc    m_desc;
-        vk::Sampler    m_sampler;
-    public:
-        VulkanSampler(VulkanContext *context, const SamplerDesc &desc);
-        ~VulkanSampler() override;
+        VkSampler      m_sampler{ };
 
-        inline vk::Sampler GetSampler() const
+    public:
+         VulkanSampler( VulkanContext *context, const SamplerDesc &desc );
+        ~VulkanSampler( ) override;
+
+        [[nodiscard]] VkSampler GetSampler( ) const
         {
             return m_sampler;
         }

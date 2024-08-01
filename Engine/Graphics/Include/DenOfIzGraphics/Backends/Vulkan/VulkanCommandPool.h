@@ -25,35 +25,32 @@ namespace DenOfIz
 {
     class VulkanCommandPool final : public ICommandListPool
     {
-    private:
         VulkanContext                                  *m_context;
         std::vector<std::unique_ptr<VulkanCommandList>> m_commandLists;
         CommandListPoolDesc                             m_createInfo;
 
     public:
-        VulkanCommandPool(VulkanContext *context, const CommandListPoolDesc &desc)
+        VulkanCommandPool( VulkanContext *context, const CommandListPoolDesc &desc ) : m_context( nullptr ), m_createInfo( desc )
         {
             for ( uint32_t i = 0; i < desc.CommandListCount; i++ )
             {
-                CommandListDesc commandListDesc{};
+                CommandListDesc commandListDesc{ };
                 commandListDesc.QueueType = desc.QueueType;
 
-                m_commandLists.emplace_back(std::make_unique<VulkanCommandList>(context, commandListDesc));
+                m_commandLists.emplace_back( std::make_unique<VulkanCommandList>( context, commandListDesc ) );
             }
         }
 
-        std::vector<ICommandList *> GetCommandLists() override
+        std::vector<ICommandList *> GetCommandLists( ) override
         {
             std::vector<ICommandList *> commandLists;
             for ( auto &commandList : m_commandLists )
             {
-                commandLists.push_back(commandList.get());
+                commandLists.push_back( commandList.get( ) );
             }
             return commandLists;
         }
 
-        ~VulkanCommandPool() override
-        {
-        }
+        ~VulkanCommandPool( ) override = default;
     };
 } // namespace DenOfIz

@@ -19,63 +19,62 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-void VulkanUtilities::InitStagingBuffer(const VulkanContext *context, vk::Buffer &buffer, VmaAllocation &allocation, const void *data, const uint64_t &size)
+void VulkanUtilities::InitStagingBuffer( const VulkanContext *context, VkBuffer &buffer, VmaAllocation &allocation, const void *data, const uint64_t &size )
 {
-    vk::BufferCreateInfo stagingBufferCreateInfo{};
-
-    stagingBufferCreateInfo.usage       = vk::BufferUsageFlagBits::eTransferSrc;
+    VkBufferCreateInfo stagingBufferCreateInfo{ };
+    stagingBufferCreateInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    stagingBufferCreateInfo.usage       = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     stagingBufferCreateInfo.size        = size;
-    stagingBufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
+    stagingBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VmaAllocationCreateInfo stagingAllocationInfo{};
+    VmaAllocationCreateInfo stagingAllocationInfo{ };
     stagingAllocationInfo.usage          = VMA_MEMORY_USAGE_CPU_TO_GPU;
-    stagingAllocationInfo.requiredFlags  = static_cast<VkMemoryPropertyFlagBits>(vk::MemoryPropertyFlagBits::eHostVisible);
-    stagingAllocationInfo.preferredFlags = static_cast<VkMemoryPropertyFlagBits>(vk::MemoryPropertyFlagBits::eHostCoherent);
+    stagingAllocationInfo.requiredFlags  = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    stagingAllocationInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-    vmaCreateBuffer(context->Vma, reinterpret_cast<VkBufferCreateInfo *>(&stagingBufferCreateInfo), &stagingAllocationInfo, reinterpret_cast<VkBuffer *>(&buffer), &allocation,
-                    nullptr);
+    vmaCreateBuffer( context->Vma, &stagingBufferCreateInfo, &stagingAllocationInfo, &buffer, &allocation, nullptr );
 
     void *deviceMemory;
-    vmaMapMemory(context->Vma, allocation, &deviceMemory);
-    memcpy(deviceMemory, data, size);
-    vmaUnmapMemory(context->Vma, allocation);
+    vmaMapMemory( context->Vma, allocation, &deviceMemory );
+    memcpy( deviceMemory, data, size );
+    vmaUnmapMemory( context->Vma, allocation );
 }
 
-void VulkanUtilities::RunOneTimeCommand(const VulkanContext *context, const std::function<void(vk::CommandBuffer &)> &run)
+void VulkanUtilities::RunOneTimeCommand( const VulkanContext *context, const std::function<void( VkCommandBuffer & )> &run )
 {
-    vk::CommandBufferAllocateInfo bufferAllocateInfo{};
-    bufferAllocateInfo.level              = vk::CommandBufferLevel::ePrimary;
+    VkCommandBufferAllocateInfo bufferAllocateInfo{ };
+    bufferAllocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    bufferAllocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     bufferAllocateInfo.commandPool        = context->GraphicsQueueCommandPool;
     bufferAllocateInfo.commandBufferCount = 1;
 
-    vk::CommandBuffer buffer = context->LogicalDevice.allocateCommandBuffers(bufferAllocateInfo)[ 0 ];
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers( context->LogicalDevice, &bufferAllocateInfo, &commandBuffer );
 
-    vk::CommandBufferBeginInfo beginInfo{};
-    beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+    VkCommandBufferBeginInfo beginInfo{ };
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    vk::Result result = buffer.begin(&beginInfo);
-    VK_CHECK_RESULT(result);
+    VK_CHECK_RESULT( vkBeginCommandBuffer( commandBuffer, &beginInfo ) );
 
-    run(buffer);
+    run( commandBuffer );
 
-    buffer.end();
+    VK_CHECK_RESULT( vkEndCommandBuffer( commandBuffer ) );
 
-    vk::SubmitInfo submitInfo{};
+    VkSubmitInfo submitInfo{ };
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &buffer;
+    submitInfo.pCommandBuffers    = &commandBuffer;
 
-    const vk::Queue queue = context->Queues.at(QueueType::Graphics);
-    result                = queue.submit(1, &submitInfo, nullptr);
-    VK_CHECK_RESULT(result);
+    VK_CHECK_RESULT( vkQueueSubmit( context->Queues.at( QueueType::Graphics ), 1, &submitInfo, nullptr ) );
 }
 
-void VulkanUtilities::CopyBuffer(const VulkanContext *context, const vk::Buffer &from, const vk::Buffer &to, const uint32_t size)
+void VulkanUtilities::CopyBuffer( const VulkanContext *context, const VkBuffer &from, const VkBuffer &to, const uint32_t size )
 {
-    RunOneTimeCommand(context,
-                      [ & ](const vk::CommandBuffer &commandBuffer)
-                      {
-                          vk::BufferCopy bufferCopy{};
-                          bufferCopy.size = size;
-                          commandBuffer.copyBuffer(from, to, 1, &bufferCopy);
-                      });
+    RunOneTimeCommand( context,
+                       [ & ]( const VkCommandBuffer &commandBuffer )
+                       {
+                           VkBufferCopy bufferCopy{ };
+                           bufferCopy.size = size;
+                           vkCmdCopyBuffer( commandBuffer, from, to, 1, &bufferCopy );
+                       } );
 }

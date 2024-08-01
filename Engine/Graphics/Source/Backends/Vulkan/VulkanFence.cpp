@@ -20,26 +20,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanFence::VulkanFence(VulkanContext *context) : m_context(context)
+VulkanFence::VulkanFence( VulkanContext *context ) : m_context( context )
 {
-    vk::FenceCreateInfo fenceCreateInfo{};
-    fenceCreateInfo.flags = vk::FenceCreateFlagBits::eSignaled;
-    m_fence               = m_context->LogicalDevice.createFence(fenceCreateInfo);
+    VkFenceCreateInfo fenceCreateInfo{ };
+    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    VK_CHECK_RESULT( vkCreateFence( m_context->LogicalDevice, &fenceCreateInfo, nullptr, &m_fence ) );
 }
 
-void VulkanFence::Wait()
+void VulkanFence::Wait( )
 {
-    const auto result = m_context->LogicalDevice.waitForFences(1, &m_fence, true, UINT64_MAX);
-    VK_CHECK_RESULT(result);
+    VK_CHECK_RESULT( vkWaitForFences( m_context->LogicalDevice, 1, &m_fence, true, UINT64_MAX ) );
 }
 
-void VulkanFence::Reset()
+void VulkanFence::Reset( )
 {
-    const vk::Result result = m_context->LogicalDevice.resetFences(1, &m_fence);
-    VK_CHECK_RESULT(result);
+    VK_CHECK_RESULT( vkResetFences( m_context->LogicalDevice, 1, &m_fence ) );
 }
 
-VulkanFence::~VulkanFence()
+VulkanFence::~VulkanFence( )
 {
-    m_context->LogicalDevice.destroyFence(m_fence);
+    vkDestroyFence( m_context->LogicalDevice, m_fence, nullptr );
 }

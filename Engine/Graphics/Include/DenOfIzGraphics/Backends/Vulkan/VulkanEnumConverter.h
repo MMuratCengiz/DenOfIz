@@ -21,8 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include <DenOfIzGraphics/Backends/Interface/IShader.h>
-#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
 #include "VulkanContext.h"
+#include "VulkanTextureResource.h"
 
 namespace DenOfIz
 {
@@ -30,285 +30,285 @@ namespace DenOfIz
     class VulkanEnumConverter
     {
     public:
-        static vk::ShaderStageFlagBits ConvertShaderStage(const ShaderStage &shaderStage)
+        static VkShaderStageFlagBits ConvertShaderStage(const ShaderStage &shaderStage)
         {
             switch ( shaderStage )
             {
             case ShaderStage::Vertex:
-                return vk::ShaderStageFlagBits::eVertex;
+                return VK_SHADER_STAGE_VERTEX_BIT;
             case ShaderStage::Hull:
-                return vk::ShaderStageFlagBits::eTessellationControl;
+                return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
             case ShaderStage::Domain:
-                return vk::ShaderStageFlagBits::eTessellationEvaluation;
+                return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
             case ShaderStage::Geometry:
-                return vk::ShaderStageFlagBits::eGeometry;
+                return VK_SHADER_STAGE_GEOMETRY_BIT;
             case ShaderStage::Pixel:
-                return vk::ShaderStageFlagBits::eFragment;
+                return VK_SHADER_STAGE_FRAGMENT_BIT;
             case ShaderStage::Compute:
-                return vk::ShaderStageFlagBits::eCompute;
+                return VK_SHADER_STAGE_COMPUTE_BIT;
             case ShaderStage::AllGraphics:
-                return vk::ShaderStageFlagBits::eAllGraphics;
+                return VK_SHADER_STAGE_ALL_GRAPHICS;
             case ShaderStage::All:
-                return vk::ShaderStageFlagBits::eAll;
+                return VK_SHADER_STAGE_ALL;
             case ShaderStage::Raygen:
-                return vk::ShaderStageFlagBits::eRaygenKHR;
+                return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
             case ShaderStage::AnyHit:
-                return vk::ShaderStageFlagBits::eAnyHitKHR;
+                return VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
             case ShaderStage::ClosestHit:
-                return vk::ShaderStageFlagBits::eClosestHitKHR;
+                return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
             case ShaderStage::Miss:
-                return vk::ShaderStageFlagBits::eMissKHR;
+                return VK_SHADER_STAGE_MISS_BIT_KHR;
             case ShaderStage::Intersection:
-                return vk::ShaderStageFlagBits::eIntersectionKHR;
+                return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
             case ShaderStage::Callable:
-                return vk::ShaderStageFlagBits::eCallableKHR;
+                return VK_SHADER_STAGE_CALLABLE_BIT_KHR;
             case ShaderStage::Task:
-                return vk::ShaderStageFlagBits::eTaskEXT;
+                return VK_SHADER_STAGE_TASK_BIT_EXT;
             case ShaderStage::Mesh:
-                return vk::ShaderStageFlagBits::eMeshEXT;
+                return VK_SHADER_STAGE_MESH_BIT_EXT;
             }
 
-            return vk::ShaderStageFlagBits::eVertex;
+            return VK_SHADER_STAGE_VERTEX_BIT;
         }
 
-        static vk::SampleCountFlagBits ConvertSampleCount(const MSAASampleCount &sampleCount)
+        static VkSampleCountFlagBits ConvertSampleCount(const MSAASampleCount &sampleCount)
         {
             switch ( sampleCount )
             {
             case MSAASampleCount::_0:
             case MSAASampleCount::_1:
-                return vk::SampleCountFlagBits::e1;
+                return VK_SAMPLE_COUNT_1_BIT;
             case MSAASampleCount::_2:
-                return vk::SampleCountFlagBits::e2;
+                return VK_SAMPLE_COUNT_2_BIT;
             case MSAASampleCount::_4:
-                return vk::SampleCountFlagBits::e4;
+                return VK_SAMPLE_COUNT_4_BIT;
             case MSAASampleCount::_8:
-                return vk::SampleCountFlagBits::e8;
+                return VK_SAMPLE_COUNT_8_BIT;
             case MSAASampleCount::_16:
-                return vk::SampleCountFlagBits::e16;
+                return VK_SAMPLE_COUNT_16_BIT;
             case MSAASampleCount::_32:
-                return vk::SampleCountFlagBits::e32;
+                return VK_SAMPLE_COUNT_32_BIT;
             case MSAASampleCount::_64:
-                return vk::SampleCountFlagBits::e64;
+                return VK_SAMPLE_COUNT_64_BIT;
             }
 
-            return vk::SampleCountFlagBits::e1;
+            return VK_SAMPLE_COUNT_1_BIT;
         }
 
-        static vk::StencilOp ConvertStencilOp(const StencilOp &stencilOp)
+        static VkStencilOp ConvertStencilOp(const StencilOp &stencilOp)
         {
             switch ( stencilOp )
             {
             case StencilOp::Keep:
-                return vk::StencilOp::eKeep;
+                return VK_STENCIL_OP_KEEP;
             case StencilOp::Zero:
-                return vk::StencilOp::eZero;
+                return VK_STENCIL_OP_ZERO;
             case StencilOp::Replace:
-                return vk::StencilOp::eReplace;
+                return VK_STENCIL_OP_REPLACE;
             case StencilOp::IncrementAndClamp:
-                return vk::StencilOp::eIncrementAndClamp;
+                return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
             case StencilOp::DecrementAndClamp:
-                return vk::StencilOp::eDecrementAndClamp;
+                return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
             case StencilOp::Invert:
-                return vk::StencilOp::eInvert;
+                return VK_STENCIL_OP_INVERT;
             case StencilOp::IncrementAndWrap:
-                return vk::StencilOp::eIncrementAndWrap;
+                return VK_STENCIL_OP_INCREMENT_AND_WRAP;
             case StencilOp::DecrementAndWrap:
-                return vk::StencilOp::eDecrementAndWrap;
+                return VK_STENCIL_OP_DECREMENT_AND_WRAP;
             }
 
-            return vk::StencilOp::eZero;
+            return VK_STENCIL_OP_ZERO;
         }
 
-        static vk::CompareOp ConvertCompareOp(const CompareOp &compareOp)
+        static VkCompareOp ConvertCompareOp(const CompareOp &compareOp)
         {
             switch ( compareOp )
             {
             case CompareOp::Never:
-                return vk::CompareOp::eNever;
+                return VK_COMPARE_OP_NEVER;
             case CompareOp::Always:
-                return vk::CompareOp::eAlways;
+                return VK_COMPARE_OP_ALWAYS;
             case CompareOp::Equal:
-                return vk::CompareOp::eEqual;
+                return VK_COMPARE_OP_EQUAL;
             case CompareOp::NotEqual:
-                return vk::CompareOp::eNotEqual;
+                return VK_COMPARE_OP_NOT_EQUAL;
             case CompareOp::Less:
-                return vk::CompareOp::eLess;
+                return VK_COMPARE_OP_LESS;
             case CompareOp::LessOrEqual:
-                return vk::CompareOp::eLessOrEqual;
+                return VK_COMPARE_OP_LESS_OR_EQUAL;
             case CompareOp::Greater:
-                return vk::CompareOp::eGreater;
+                return VK_COMPARE_OP_GREATER;
             case CompareOp::GreaterOrEqual:
-                return vk::CompareOp::eGreaterOrEqual;
+                return VK_COMPARE_OP_GREATER_OR_EQUAL;
             }
 
-            return vk::CompareOp::eAlways;
+            return VK_COMPARE_OP_ALWAYS;
         }
 
-        static vk::AttachmentLoadOp ConvertLoadOp(const LoadOp &loadOp)
+        static VkAttachmentLoadOp ConvertLoadOp(const LoadOp &loadOp)
         {
             switch ( loadOp )
             {
             case LoadOp::Load:
-                return vk::AttachmentLoadOp::eLoad;
+                return VK_ATTACHMENT_LOAD_OP_LOAD;
             case LoadOp::Clear:
-                return vk::AttachmentLoadOp::eClear;
+                return VK_ATTACHMENT_LOAD_OP_CLEAR;
             case LoadOp::Unidentified:
-                return vk::AttachmentLoadOp::eDontCare;
+                return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             }
 
-            return vk::AttachmentLoadOp::eLoad;
+            return VK_ATTACHMENT_LOAD_OP_LOAD;
         }
 
-        static vk::AttachmentStoreOp ConvertStoreOp(const StoreOp &storeOp)
+        static VkAttachmentStoreOp ConvertStoreOp(const StoreOp &storeOp)
         {
             switch ( storeOp )
             {
             case StoreOp::Store:
-                return vk::AttachmentStoreOp::eStore;
+                return VK_ATTACHMENT_STORE_OP_STORE;
             case StoreOp::None:
-                return vk::AttachmentStoreOp::eNone;
+                return VK_ATTACHMENT_STORE_OP_NONE;
             case StoreOp::Unidentified:
-                return vk::AttachmentStoreOp::eDontCare;
+                return VK_ATTACHMENT_STORE_OP_DONT_CARE;
             }
 
-            return vk::AttachmentStoreOp::eStore;
+            return VK_ATTACHMENT_STORE_OP_STORE;
         }
 
-        static vk::Filter ConvertFilter(const Filter &filter)
+        static VkFilter ConvertFilter(const Filter &filter)
         {
             switch ( filter )
             {
             case Filter::Nearest:
-                return vk::Filter::eNearest;
+                return VK_FILTER_NEAREST;
             case Filter::Linear:
-                return vk::Filter::eLinear;
+                return VK_FILTER_LINEAR;
             }
 
-            return vk::Filter::eLinear;
+            return VK_FILTER_LINEAR;
         }
 
-        static vk::SamplerAddressMode ConvertAddressMode(const SamplerAddressMode &addressMode)
+        static VkSamplerAddressMode ConvertAddressMode(const SamplerAddressMode &addressMode)
         {
             switch ( addressMode )
             {
             case SamplerAddressMode::Repeat:
-                return vk::SamplerAddressMode::eRepeat;
+                return VK_SAMPLER_ADDRESS_MODE_REPEAT;
             case SamplerAddressMode::Mirror:
-                return vk::SamplerAddressMode::eMirroredRepeat;
+                return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
             case SamplerAddressMode::ClampToEdge:
-                return vk::SamplerAddressMode::eClampToEdge;
+                return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
             case SamplerAddressMode::ClampToBorder:
-                return vk::SamplerAddressMode::eClampToBorder;
+                return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
             }
-            return vk::SamplerAddressMode::eRepeat;
+            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
         }
 
-        static vk::SamplerMipmapMode ConvertMipmapMode(const MipmapMode &mipmapMode)
+        static VkSamplerMipmapMode ConvertMipmapMode(const MipmapMode &mipmapMode)
         {
             switch ( mipmapMode )
             {
             case MipmapMode::Nearest:
-                return vk::SamplerMipmapMode::eNearest;
+                return VK_SAMPLER_MIPMAP_MODE_NEAREST;
             case MipmapMode::Linear:
-                return vk::SamplerMipmapMode::eLinear;
+                return VK_SAMPLER_MIPMAP_MODE_LINEAR;
             }
 
-            return vk::SamplerMipmapMode::eLinear;
+            return VK_SAMPLER_MIPMAP_MODE_LINEAR;
         }
 
         // !IMPROVEMENT! This might be incorrect
-        static vk::BufferUsageFlags ConvertBufferUsage(BitSet<ResourceDescriptor> usage, BitSet<ResourceState> initialState)
+        static VkBufferUsageFlags ConvertBufferUsage(BitSet<ResourceDescriptor> usage, BitSet<ResourceState> initialState)
         {
-            vk::BufferUsageFlags flags = {};
+            VkBufferUsageFlags flags = {};
             if ( initialState.IsSet(ResourceState::CopySrc) )
             {
-                flags |= vk::BufferUsageFlagBits::eTransferSrc;
+                flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             }
             if ( initialState.IsSet(ResourceState::CopyDst) )
             {
-                flags |= vk::BufferUsageFlagBits::eTransferDst;
+                flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
             }
             if ( usage.IsSet(ResourceDescriptor::IndexBuffer) )
             {
-                flags |= vk::BufferUsageFlagBits::eIndexBuffer;
+                flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
             }
             if ( usage.IsSet(ResourceDescriptor::VertexBuffer) )
             {
-                flags |= vk::BufferUsageFlagBits::eVertexBuffer;
+                flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
             }
             if ( usage.IsSet(ResourceDescriptor::UniformBuffer) )
             {
-                flags |= vk::BufferUsageFlagBits::eUniformBuffer;
+                flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
             }
             if ( usage.IsSet(ResourceDescriptor::Buffer) )
             {
-                flags |= vk::BufferUsageFlagBits::eStorageBuffer;
+                flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             }
             if ( usage.IsSet(ResourceDescriptor::IndirectBuffer) )
             {
-                flags |= vk::BufferUsageFlagBits::eIndirectBuffer;
+                flags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
             }
             if ( usage.IsSet(ResourceDescriptor::AccelerationStructure) )
             {
-                flags |= vk::BufferUsageFlagBits::eStorageBuffer;
+                flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             }
 
             if ( initialState.IsSet(ResourceState::AccelerationStructureWrite) )
             {
-                flags |= vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress;
+                flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
             }
             if ( initialState.IsSet(ResourceState::AccelerationStructureRead) )
             {
-                flags |= vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress;
+                flags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
             }
 
             return flags;
         }
 
-        static vk::ImageAspectFlagBits ConvertImageAspect(TextureAspect aspect)
+        static VkImageAspectFlagBits ConvertImageAspect(TextureAspect aspect)
         {
             switch ( aspect )
             {
             case TextureAspect::Color:
-                return vk::ImageAspectFlagBits::eColor;
+                return VK_IMAGE_ASPECT_COLOR_BIT;
             case TextureAspect::Depth:
-                return vk::ImageAspectFlagBits::eDepth;
+                return VK_IMAGE_ASPECT_DEPTH_BIT;
             case TextureAspect::Stencil:
-                return vk::ImageAspectFlagBits::eStencil;
+                return VK_IMAGE_ASPECT_STENCIL_BIT;
             case TextureAspect::Metadata:
-                return vk::ImageAspectFlagBits::eMetadata;
+                return VK_IMAGE_ASPECT_METADATA_BIT;
             case TextureAspect::Plane0:
-                return vk::ImageAspectFlagBits::ePlane0;
+                return VK_IMAGE_ASPECT_PLANE_0_BIT;
             case TextureAspect::Plane1:
-                return vk::ImageAspectFlagBits::ePlane1;
+                return VK_IMAGE_ASPECT_PLANE_1_BIT;
             case TextureAspect::Plane2:
-                return vk::ImageAspectFlagBits::ePlane2;
+                return VK_IMAGE_ASPECT_PLANE_2_BIT;
             case TextureAspect::None:
-                return vk::ImageAspectFlagBits::eNone;
+                return VK_IMAGE_ASPECT_NONE;
             }
 
-            return vk::ImageAspectFlagBits::eNone;
+            return VK_IMAGE_ASPECT_NONE;
         }
 
-        static vk::ImageUsageFlags ConvertTextureDescriptorToUsage(BitSet<ResourceDescriptor> descriptor, BitSet<ResourceState> initialState)
+        static VkImageUsageFlags ConvertTextureDescriptorToUsage(BitSet<ResourceDescriptor> descriptor, BitSet<ResourceState> initialState)
         {
-            vk::ImageUsageFlags usage = {};
+            VkImageUsageFlags usage = {};
             if ( descriptor.IsSet(ResourceDescriptor::Sampler) )
             {
-                usage |= vk::ImageUsageFlagBits::eSampled;
+                usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
             }
             if ( descriptor.Any({ ResourceDescriptor::RWBuffer, ResourceDescriptor::RWTexture }) )
             {
-                usage |= vk::ImageUsageFlagBits::eStorage;
+                usage |= VK_IMAGE_USAGE_STORAGE_BIT;
             }
             if ( initialState.IsSet(ResourceState::RenderTarget) )
             {
-                usage |= vk::ImageUsageFlagBits::eColorAttachment;
+                usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
             }
             if ( initialState.Any({ ResourceState::DepthRead, ResourceState::DepthWrite }) )
             {
-                usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+                usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
             }
             return usage;
         }
@@ -331,218 +331,256 @@ namespace DenOfIz
             return VMA_MEMORY_USAGE_AUTO;
         }
 
-        static vk::Format ConvertImageFormat(const Format &imageFormat)
+        static VkFormat ConvertImageFormat(const Format &imageFormat)
         {
             switch ( imageFormat )
             {
             case Format::Undefined:
-                return vk::Format::eUndefined;
+                return VK_FORMAT_UNDEFINED;
             case Format::R32G32B32A32Float:
-                return vk::Format::eR32G32B32A32Sfloat;
+                return VK_FORMAT_R32G32B32A32_SFLOAT;
             case Format::R32G32B32A32Uint:
-                return vk::Format::eR32G32B32A32Uint;
+                return VK_FORMAT_R32G32B32A32_UINT;
             case Format::R32G32B32A32Sint:
-                return vk::Format::eR32G32B32A32Sint;
+                return VK_FORMAT_R32G32B32A32_SINT;
             case Format::R32G32B32Float:
-                return vk::Format::eR32G32B32Sfloat;
+                return VK_FORMAT_R32G32B32_SFLOAT;
             case Format::R32G32B32Uint:
-                return vk::Format::eR32G32B32Uint;
+                return VK_FORMAT_R32G32B32_UINT;
             case Format::R32G32B32Sint:
-                return vk::Format::eR32G32B32Sint;
+                return VK_FORMAT_R32G32B32_SINT;
             case Format::R16G16B16A16Float:
-                return vk::Format::eR16G16B16A16Sfloat;
+                return VK_FORMAT_R16G16B16A16_SFLOAT;
             case Format::R16G16B16A16Unorm:
-                return vk::Format::eR16G16B16A16Unorm;
+                return VK_FORMAT_R16G16B16A16_UNORM;
             case Format::R16G16B16A16Uint:
-                return vk::Format::eR16G16B16A16Uint;
+                return VK_FORMAT_R16G16B16A16_UINT;
             case Format::R16G16B16A16Snorm:
-                return vk::Format::eR16G16B16A16Snorm;
+                return VK_FORMAT_R16G16B16A16_SNORM;
             case Format::R16G16B16A16Sint:
-                return vk::Format::eR16G16B16A16Sint;
+                return VK_FORMAT_R16G16B16A16_SINT;
             case Format::R32G32Float:
-                return vk::Format::eR32G32Sfloat;
+                return VK_FORMAT_R32G32_SFLOAT;
             case Format::R32G32Uint:
-                return vk::Format::eR32G32Uint;
+                return VK_FORMAT_R32G32_UINT;
             case Format::R32G32Sint:
-                return vk::Format::eR32G32Sint;
+                return VK_FORMAT_R32G32_SINT;
             case Format::R10G10B10A2Unorm:
-                return vk::Format::eA2R10G10B10UnormPack32;
+                return VK_FORMAT_A2R10G10B10_UNORM_PACK32;
             case Format::R10G10B10A2Uint:
-                return vk::Format::eA2R10G10B10UintPack32;
+                return VK_FORMAT_A2R10G10B10_UINT_PACK32;
             case Format::R8G8B8A8Unorm:
-                return vk::Format::eR8G8B8A8Unorm;
+                return VK_FORMAT_R8G8B8A8_UNORM;
             case Format::R8G8B8A8UnormSrgb:
-                return vk::Format::eR8G8B8A8Srgb;
+                return VK_FORMAT_R8G8B8A8_SRGB;
             case Format::R8G8B8A8Uint:
-                return vk::Format::eR8G8B8A8Uint;
+                return VK_FORMAT_R8G8B8A8_UINT;
             case Format::R8G8B8A8Snorm:
-                return vk::Format::eR8G8B8A8Snorm;
+                return VK_FORMAT_R8G8B8A8_SNORM;
             case Format::R8G8B8A8Sint:
-                return vk::Format::eR8G8B8A8Sint;
+                return VK_FORMAT_R8G8B8A8_SINT;
             case Format::R16G16Float:
-                return vk::Format::eR16G16Sfloat;
+                return VK_FORMAT_R16G16_SFLOAT;
             case Format::R16G16Unorm:
-                return vk::Format::eR16G16Unorm;
+                return VK_FORMAT_R16G16_UNORM;
             case Format::R16G16Uint:
-                return vk::Format::eR16G16Uint;
+                return VK_FORMAT_R16G16_UINT;
             case Format::R16G16Snorm:
-                return vk::Format::eR16G16Snorm;
+                return VK_FORMAT_R16G16_SNORM;
             case Format::R16G16Sint:
-                return vk::Format::eR16G16Sint;
+                return VK_FORMAT_R16G16_SINT;
             case Format::D32Float:
-                return vk::Format::eD32Sfloat;
+                return VK_FORMAT_D32_SFLOAT;
             case Format::R32Float:
-                return vk::Format::eR32Sfloat;
+                return VK_FORMAT_R32_SFLOAT;
             case Format::R32Uint:
-                return vk::Format::eR32Uint;
+                return VK_FORMAT_R32_UINT;
             case Format::R32Sint:
-                return vk::Format::eR32Sint;
+                return VK_FORMAT_R32_SINT;
             case Format::D24UnormS8Uint:
-                return vk::Format::eD24UnormS8Uint;
+                return VK_FORMAT_D24_UNORM_S8_UINT;
             case Format::R8G8Unorm:
-                return vk::Format::eR8G8Unorm;
+                return VK_FORMAT_R8G8_UNORM;
             case Format::R8G8Uint:
-                return vk::Format::eR8G8Uint;
+                return VK_FORMAT_R8G8_UINT;
             case Format::R8G8Snorm:
-                return vk::Format::eR8G8Snorm;
+                return VK_FORMAT_R8G8_SNORM;
             case Format::R8G8Sint:
-                return vk::Format::eR8G8Sint;
+                return VK_FORMAT_R8G8_SINT;
             case Format::R16Float:
-                return vk::Format::eR16Sfloat;
+                return VK_FORMAT_R16_SFLOAT;
             case Format::D16Unorm:
-                return vk::Format::eD16Unorm;
+                return VK_FORMAT_D16_UNORM;
             case Format::R16Unorm:
-                return vk::Format::eR16Unorm;
+                return VK_FORMAT_R16_UNORM;
             case Format::R16Uint:
-                return vk::Format::eR16Uint;
+                return VK_FORMAT_R16_UINT;
             case Format::R16Snorm:
-                return vk::Format::eR16Snorm;
+                return VK_FORMAT_R16_SNORM;
             case Format::R16Sint:
-                return vk::Format::eR16Sint;
+                return VK_FORMAT_R16_SINT;
             case Format::R8Unorm:
-                return vk::Format::eR8Unorm;
+                return VK_FORMAT_R8_UNORM;
             case Format::R8Uint:
-                return vk::Format::eR8Uint;
+                return VK_FORMAT_R8_UINT;
             case Format::R8Snorm:
-                return vk::Format::eR8Snorm;
+                return VK_FORMAT_R8_SNORM;
             case Format::R8Sint:
-                return vk::Format::eR8Sint;
+                return VK_FORMAT_R8_SINT;
             case Format::BC1Unorm:
-                return vk::Format::eBc1RgbaUnormBlock;
+                return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
             case Format::BC1UnormSrgb:
-                return vk::Format::eBc1RgbUnormBlock;
+                return VK_FORMAT_BC1_RGB_UNORM_BLOCK;
             case Format::BC2Unorm:
-                return vk::Format::eBc2UnormBlock;
+                return VK_FORMAT_BC2_UNORM_BLOCK;
             case Format::BC2UnormSrgb:
-                return vk::Format::eBc2SrgbBlock;
+                return VK_FORMAT_BC2_SRGB_BLOCK;
             case Format::BC3Unorm:
-                return vk::Format::eBc3UnormBlock;
+                return VK_FORMAT_BC3_UNORM_BLOCK;
             case Format::BC3UnormSrgb:
-                return vk::Format::eBc3SrgbBlock;
+                return VK_FORMAT_BC3_SRGB_BLOCK;
             case Format::BC4Unorm:
-                return vk::Format::eBc4UnormBlock;
+                return VK_FORMAT_BC4_UNORM_BLOCK;
             case Format::BC4Snorm:
-                return vk::Format::eBc4SnormBlock;
+                return VK_FORMAT_BC4_SNORM_BLOCK;
             case Format::BC5Unorm:
-                return vk::Format::eBc5UnormBlock;
+                return VK_FORMAT_BC5_UNORM_BLOCK;
             case Format::BC5Snorm:
-                return vk::Format::eBc5SnormBlock;
+                return VK_FORMAT_BC5_SNORM_BLOCK;
             case Format::B8G8R8A8Unorm:
-                return vk::Format::eB8G8R8A8Unorm;
+                return VK_FORMAT_B8G8R8A8_UNORM;
             case Format::BC6HUfloat16:
-                return vk::Format::eBc6HUfloatBlock;
+                return VK_FORMAT_BC6H_UFLOAT_BLOCK;
             case Format::BC6HSfloat16:
-                return vk::Format::eBc6HSfloatBlock;
+                return VK_FORMAT_BC6H_SFLOAT_BLOCK;
             case Format::BC7Unorm:
-                return vk::Format::eBc7UnormBlock;
+                return VK_FORMAT_BC7_UNORM_BLOCK;
             case Format::BC7UnormSrgb:
-                return vk::Format::eBc7SrgbBlock;
+                return VK_FORMAT_BC7_SRGB_BLOCK;
             case Format::R32G32B32A32Typeless:
                 // No Typeless in Vulkan
-                return vk::Format::eR32G32B32Sint;
+                return VK_FORMAT_R32G32B32_SINT;
             case Format::R16G16B16A16Typeless:
-                return vk::Format::eR16G16B16A16Sint;
+                return VK_FORMAT_R16G16B16A16_SINT;
             case Format::R32G32Typeless:
-                return vk::Format::eR32G32Sint;
+                return VK_FORMAT_R32G32_SINT;
             case Format::R10G10B10A2Typeless:
-                return vk::Format::eA2R10G10B10UintPack32;
+                return VK_FORMAT_A2R10G10B10_UINT_PACK32;
             case Format::R8G8B8A8Typeless:
-                return vk::Format::eR8G8B8A8Sint;
+                return VK_FORMAT_R8G8B8A8_SINT;
             case Format::R16G16Typeless:
-                return vk::Format::eR16G16Sint;
+                return VK_FORMAT_R16G16_SINT;
             case Format::R32Typeless:
-                return vk::Format::eR32Sint;
+                return VK_FORMAT_R32_SINT;
             case Format::R8G8Typeless:
-                return vk::Format::eR8G8Sint;
+                return VK_FORMAT_R8G8_SINT;
             case Format::R16Typeless:
-                return vk::Format::eR16Sint;
+                return VK_FORMAT_R16_SINT;
             case Format::R8Typeless:
-                return vk::Format::eR8Sint;
+                return VK_FORMAT_R8_SINT;
             }
 
-            return vk::Format::eUndefined;
+            return VK_FORMAT_UNDEFINED;
         }
 
-        static vk::DescriptorType ConvertResourceDescriptorToDescriptorType(const BitSet<ResourceDescriptor> &descriptor)
+        static VkDescriptorType ConvertResourceDescriptorToDescriptorType(const BitSet<ResourceDescriptor> &descriptor)
         {
             if ( descriptor.IsSet(ResourceDescriptor::Sampler) )
             {
-                return vk::DescriptorType::eSampler;
+                return VK_DESCRIPTOR_TYPE_SAMPLER;
             }
             if ( descriptor.IsSet(ResourceDescriptor::Texture) )
             {
-                return vk::DescriptorType::eSampledImage;
+                return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
             }
             if ( descriptor.IsSet(ResourceDescriptor::RWTexture) )
             {
-                return vk::DescriptorType::eStorageImage;
+                return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
             }
             if ( descriptor.IsSet(ResourceDescriptor::UniformBuffer) )
             {
-                return vk::DescriptorType::eUniformBuffer;
+                return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             }
             if ( descriptor.Any({ ResourceDescriptor::RWBuffer, ResourceDescriptor::Buffer }) )
             {
-                return vk::DescriptorType::eStorageBuffer;
+                return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             }
             if ( descriptor.IsSet(ResourceDescriptor::AccelerationStructure) )
             {
-                return vk::DescriptorType::eAccelerationStructureKHR;
+                return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
             }
 
-            return vk::DescriptorType::eStorageImage;
+            return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
         }
 
-        static vk::PrimitiveTopology ConvertPrimitiveTopology(const PrimitiveTopology &topology)
+        static VkPrimitiveTopology ConvertPrimitiveTopology(const PrimitiveTopology &topology)
         {
             switch ( topology )
             {
             case PrimitiveTopology::Point:
-                return vk::PrimitiveTopology::ePointList;
+                return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
             case PrimitiveTopology::Line:
-                return vk::PrimitiveTopology::eLineList;
+                return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
             case PrimitiveTopology::Triangle:
-                return vk::PrimitiveTopology::eTriangleList;
+                return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             case PrimitiveTopology::Patch:
-                return vk::PrimitiveTopology::ePatchList;
+                return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
             }
 
-            return vk::PrimitiveTopology::eTriangleList;
+            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         }
 
-        static vk::PipelineBindPoint ConvertPipelineBindPoint(const BindPoint &point)
+        static VkPipelineBindPoint ConvertPipelineBindPoint( const BindPoint &point )
         {
             switch ( point )
             {
             case BindPoint::Graphics:
-                return vk::PipelineBindPoint::eGraphics;
+                return VK_PIPELINE_BIND_POINT_GRAPHICS;
             case BindPoint::Compute:
-                return vk::PipelineBindPoint::eCompute;
+                return VK_PIPELINE_BIND_POINT_COMPUTE;
             case BindPoint::RayTracing:
-                return vk::PipelineBindPoint::eRayTracingKHR;
+                return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
             }
 
-            return vk::PipelineBindPoint::eRayTracingKHR;
+            return VK_PIPELINE_BIND_POINT_GRAPHICS;
+        }
+
+        static VkImageUsageFlags ConvertTextureUsage(BitSet<ResourceState> initialState )
+        {
+            VkImageUsageFlags flags = 0;
+            if ( initialState.IsSet(ResourceState::CopySrc) )
+            {
+                flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+            }
+            if ( initialState.IsSet(ResourceState::CopyDst) )
+            {
+                flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+            }
+            if ( initialState.IsSet(ResourceState::AccelerationStructureWrite) )
+            {
+                flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+            }
+            if ( initialState.IsSet(ResourceState::AccelerationStructureRead) )
+            {
+                flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+            }
+            if ( initialState.IsSet(ResourceState::RenderTarget) )
+            {
+                flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            }
+            if ( initialState.IsSet(ResourceState::DepthRead) || initialState.IsSet(ResourceState::DepthWrite) )
+            {
+                flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+            }
+            if ( initialState.IsSet(ResourceState::ShaderResource) )
+            {
+                flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+            }
+            if ( initialState.IsSet(ResourceState::UnorderedAccess) )
+            {
+                flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+            }
+            return flags;
         }
     };
 

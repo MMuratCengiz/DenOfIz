@@ -49,5 +49,11 @@ SpacesInAngles: false
 SpacesInConditionalStatement: true
 SpacesInCStyleCastParentheses: false
 SpacesInSquareBrackets: true
+SpacesInParens: Custom
+SpacesInParensOptions:
+  InConditionalStatements: true
+  InEmptyParentheses: true
+  InCStyleCasts: false
+  Other: true
 TabWidth: 4
 ...

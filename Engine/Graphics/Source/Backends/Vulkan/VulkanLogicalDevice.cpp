@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
+#include <algorithm>
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h"
@@ -26,336 +27,469 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define VMA_IMPLEMENTATION
 #include "vma/vk_mem_alloc.h"
 
-#ifdef WIN32
-#include "vulkan/vulkan_win32.h"
-#endif
-
 using namespace DenOfIz;
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL g_DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                                      const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData)
+// ReSharper disable once CppParameterMayBeConst
+static VKAPI_ATTR VkBool32 VKAPI_CALL g_DebugCallback( VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity, VkDebugUtilsMessageTypeFlagsEXT /*messageType*/,
+                                                       const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void * /*pUserData*/ )
 {
     switch ( messageSeverity )
     {
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT:
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-        DLOG(INFO) << pCallbackData->pMessage;
+        DLOG( INFO ) << pCallbackData->pMessage;
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-        LOG(INFO) << pCallbackData->pMessage;
+        LOG( INFO ) << pCallbackData->pMessage;
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-        LOG(WARNING) << pCallbackData->pMessage;
+        LOG( WARNING ) << pCallbackData->pMessage;
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-        LOG(FATAL) << pCallbackData->pMessage;
+        LOG( FATAL ) << pCallbackData->pMessage;
         break;
     }
     return VK_FALSE;
 }
 
-void VulkanLogicalDevice::LoadExtensionFunctions()
+// clang-format off
+const std::unordered_map<std::string, bool> VulkanLogicalDevice::g_optionalLayers =
 {
-    const vk::DynamicLoader dl;
+#ifndef NDEBUG
+    { "VK_LAYER_KHRONOS_validation", true }
+#endif
+};
 
-    const auto vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
-
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
-}
-
-void VulkanLogicalDevice::CreateDevice(GraphicsWindowHandle *window)
+const std::vector<const char*> VulkanLogicalDevice::g_requiredInstanceExtensions =
 {
-    LoadExtensionFunctions();
+};
 
-    m_context         = std::make_unique<VulkanContext>();
-    m_context->Window = window;
+const std::vector<const char*> VulkanLogicalDevice::g_optionalInstanceExtensions =
+{
+    VK_KHR_SURFACE_EXTENSION_NAME,
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+#endif
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+    VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
+#endif
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+    VK_KHR_XCB_SURFACE_EXTENSION_NAME,
+#endif
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME,
+#endif
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+    VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
+#endif
+#if defined(VK_USE_PLATFORM_GGP)
+    VK_GGP_STREAM_DESCRIPTOR_SURFACE_EXTENSION_NAME,
+#endif
+#if defined(VK_USE_PLATFORM_VI_NN)
+    VK_NN_VI_SURFACE_EXTENSION_NAME,
+#endif
+#if defined( _DEBUG )
+    VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+    VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
+#endif
+    VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME
+};
 
-    vk::ApplicationInfo appInfo{
-        "DenOfIz", VK_MAKE_VERSION(1, 0, 0), "No Engine", VK_MAKE_VERSION(1, 0, 0), VK_API_VERSION_1_3,
-    };
+const std::vector<const char *> VulkanLogicalDevice::g_requiredDeviceExtensions =
+{
+    // Maintenance Extensions
+    VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+    VK_KHR_MAINTENANCE2_EXTENSION_NAME,
+    VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+    // Dynamic Rendering, required we do not support render passes currently.
+    VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+    VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
+    VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
+    VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
+    // Used to pass Viewport and Scissor count.
+    VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
+#if __APPLE_CC__
+    "VK_KHR_portability_subset"
+#endif
+};
 
-    vk::InstanceCreateInfo createInfo{ {}, &appInfo };
+const std::vector<const char *> VulkanLogicalDevice::g_optionalDeviceExtensions =
+{
+    // Ray Tracing
+    VK_KHR_RAY_QUERY_EXTENSION_NAME,
+    VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+    VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+    VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+    VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+    VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+};
 
-    std::vector<const char *> extensions = m_context->Window->GetVkRequiredExtensions();
+// clang-format on
+
+void VulkanLogicalDevice::CreateDevice( )
+{
+    VK_CHECK_RESULT( volkInitialize( ) );
+
+    m_context = std::make_unique<VulkanContext>( );
+
+    VkApplicationInfo appInfo{ };
+    appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName   = "DenOfIz";
+    appInfo.applicationVersion = VK_MAKE_VERSION( 1, 0, 0 );
+    appInfo.pEngineName        = "No Engine";
+    appInfo.engineVersion      = VK_MAKE_VERSION( 1, 0, 0 );
+    appInfo.apiVersion         = VK_API_VERSION_1_3;
+
+    VkInstanceCreateInfo createInfo{ };
+    createInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.pApplicationInfo = &appInfo;
+
+    InitDeviceExtensions( );
     std::vector<const char *> layers;
-    InitSupportedLayers(layers);
+    InitSupportedLayers( layers );
 
-    vk::DebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo;
-    if ( m_supportedLayers.contains("VK_LAYER_KHRONOS_validation") )
+    VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo{ };
+    if ( m_supportedLayers.contains( "VK_LAYER_KHRONOS_validation" ) )
     {
-        debugUtilsCreateInfo = GetDebugUtilsCreateInfo();
-        createInfo.pNext     = &debugUtilsCreateInfo;
-
-        extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    }
-    else
-    {
-        createInfo.pNext = nullptr;
-    }
-
-    createInfo.setPEnabledExtensionNames(extensions);
-    createInfo.setPEnabledLayerNames(layers);
-
-    m_context->Instance = createInstance(createInfo);
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(m_context->Instance);
-
-    const auto extensionProperties = vk::enumerateInstanceExtensionProperties(nullptr);
-    for ( vk::ExtensionProperties prp : extensionProperties )
-    {
-        this->m_supportedExtensions[ prp.extensionName ] = true;
+        debugUtilsCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debugUtilsCreateInfo.messageSeverity =
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+        debugUtilsCreateInfo.messageType =
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        debugUtilsCreateInfo.pfnUserCallback = g_DebugCallback;
+        createInfo.pNext                     = &debugUtilsCreateInfo;
     }
 
-    if ( m_supportedLayers.contains("VK_LAYER_KHRONOS_validation") )
-    {
-        InitDebugMessages(debugUtilsCreateInfo);
-    }
+    std::vector<const char *> enabledExtensions( m_enabledInstanceExtensions.size( ) );
+    std::copy( m_enabledInstanceExtensions.begin( ), m_enabledInstanceExtensions.end( ), enabledExtensions.begin( ) );
 
-    CreateSurface();
-    m_context->ShaderCompiler.Init();
+    createInfo.enabledExtensionCount   = enabledExtensions.size( );
+    createInfo.ppEnabledExtensionNames = enabledExtensions.data( );
+    createInfo.enabledLayerCount       = layers.size( );
+    createInfo.ppEnabledLayerNames     = layers.data( );
+
+    vkCreateInstance( &createInfo, nullptr, &m_context->Instance );
+    volkLoadInstance( m_context->Instance );
+
+    if ( m_supportedLayers.contains( "VK_LAYER_KHRONOS_validation" ) )
+    {
+        DLOG( INFO ) << "Enabling Vk Validation Layers.";
+        VK_CHECK_RESULT( vkCreateDebugUtilsMessengerEXT( m_context->Instance, &debugUtilsCreateInfo, nullptr, &m_debugMessenger ) );
+    }
 }
 
-void VulkanLogicalDevice::InitSupportedLayers(std::vector<const char *> &layers)
+/// <summary> Iterates through the requested extensions and checks appends them into result if found. </summary>
+void CollectExtensions( const std::vector<VkExtensionProperties> &availableExtensions, const std::vector<const char *> &requestedExtensions,
+                        std::unordered_set<const char *> &result, const bool failOnMissing )
 {
-    const auto layerProperties = vk::enumerateInstanceLayerProperties();
-
-    for ( vk::LayerProperties prp : layerProperties )
+    for ( const char *requiredExtension : requestedExtensions )
     {
-        auto layerPair = m_enabledLayers.find(prp.layerName);
-
-        if ( layerPair != m_enabledLayers.end() )
+        bool found = false;
+        for ( const VkExtensionProperties &extension : availableExtensions )
         {
-            m_supportedLayers[ prp.layerName ] = true;
-            layers.emplace_back(layerPair->first.c_str());
-            LOG(INFO) << "Enabled Layer: " + layerPair->first;
+            if ( strcmp( extension.extensionName, requiredExtension ) == 0 )
+            {
+                result.insert( requiredExtension );
+                found = true;
+                break;
+            }
+        }
+
+        if ( !found )
+        {
+            if ( failOnMissing )
+            {
+                LOG( ERROR ) << "Missing Required Extension: " << requiredExtension;
+            }
+            else
+            {
+                LOG( WARNING ) << "Missing Optional Extension: " << requiredExtension;
+            }
         }
     }
 }
 
-vk::DebugUtilsMessengerCreateInfoEXT VulkanLogicalDevice::GetDebugUtilsCreateInfo() const
+void VulkanLogicalDevice::InitDeviceExtensions( )
 {
-    vk::DebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo{};
+    uint32_t                           count = 0;
+    std::vector<VkExtensionProperties> availableProperties;
+    vkEnumerateDeviceExtensionProperties( m_context->PhysicalDevice, nullptr, &count, nullptr );
+    availableProperties.resize( count );
+    vkEnumerateDeviceExtensionProperties( m_context->PhysicalDevice, nullptr, &count, availableProperties.data( ) );
 
-    debugUtilsCreateInfo.setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
-                                            vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning);
-
-    debugUtilsCreateInfo.setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-                                        vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance);
-
-    debugUtilsCreateInfo.setPfnUserCallback(g_DebugCallback);
-    return debugUtilsCreateInfo;
+    CollectExtensions( availableProperties, g_requiredDeviceExtensions, m_enabledDeviceExtensions, true );
+    CollectExtensions( availableProperties, g_optionalDeviceExtensions, m_enabledDeviceExtensions, false );
 }
 
-bool VulkanLogicalDevice::InitDebugMessages(const vk::DebugUtilsMessengerCreateInfoEXT &createInfo)
+void VulkanLogicalDevice::InitInstanceExtensions( )
 {
-    const auto instance = static_cast<VkInstance>(m_context->Instance);
+    uint32_t                           count = 0;
+    std::vector<VkExtensionProperties> availableProperties;
+    vkEnumerateInstanceExtensionProperties( nullptr, &count, nullptr );
+    availableProperties.resize( count );
+    vkEnumerateInstanceExtensionProperties( nullptr, &count, availableProperties.data( ) );
 
-    const auto createDebugUtils = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
+    CollectExtensions( availableProperties, g_requiredInstanceExtensions, m_enabledInstanceExtensions, true );
+    CollectExtensions( availableProperties, g_optionalInstanceExtensions, m_enabledInstanceExtensions, false );
+}
 
-    const auto createInfoCast = static_cast<VkDebugUtilsMessengerCreateInfoEXT>(createInfo);
+void VulkanLogicalDevice::InitSupportedLayers( std::vector<const char *> &layers )
+{
+    uint32_t                       count = 0;
+    std::vector<VkLayerProperties> layerProperties;
+    vkEnumerateInstanceLayerProperties( &count, nullptr );
+    layerProperties.resize( count );
+    vkEnumerateInstanceLayerProperties( &count, layerProperties.data( ) );
 
-    if ( createDebugUtils == nullptr || createDebugUtils(instance, &createInfoCast, nullptr, &m_debugMessenger) != VK_SUCCESS )
+    for ( const VkLayerProperties prp : layerProperties )
     {
-        LOG(WARNING) << "Failed to initialize debugger!";
-        return false;
+        if ( auto layerPair = m_enabledLayers.find( prp.layerName ); layerPair != m_enabledLayers.end( ) )
+        {
+            m_supportedLayers.insert( prp.layerName );
+            layers.emplace_back( layerPair->first.c_str( ) );
+            LOG( INFO ) << "Found Enabled Layer: " + layerPair->first;
+        }
     }
-
-    return true;
 }
 
-std::vector<PhysicalDevice> VulkanLogicalDevice::ListPhysicalDevices()
+std::vector<PhysicalDevice> VulkanLogicalDevice::ListPhysicalDevices( )
 {
-    const auto                  devices = m_context->Instance.enumeratePhysicalDevices();
+    uint32_t count = 0;
+    vkEnumeratePhysicalDevices( m_context->Instance, &count, nullptr );
+    std::vector<VkPhysicalDevice> devices( count );
+    vkEnumeratePhysicalDevices( m_context->Instance, &count, devices.data( ) );
     std::vector<PhysicalDevice> result;
 
     for ( const auto &device : devices )
     {
-        vk::PhysicalDevice physicalDevice = device;
-        PhysicalDevice     deviceInfo{};
-        CreateDeviceInfo(physicalDevice, deviceInfo);
-        result.push_back(deviceInfo);
+        VkPhysicalDevice physicalDevice = device;
+        PhysicalDevice   deviceInfo{ };
+        CreateDeviceInfo( physicalDevice, deviceInfo );
+        result.push_back( deviceInfo );
     }
 
     return result;
 }
 
-void VulkanLogicalDevice::CreateDeviceInfo(const vk::PhysicalDevice &physicalDevice, PhysicalDevice &deviceInfo)
+void VulkanLogicalDevice::CreateDeviceInfo( const VkPhysicalDevice &physicalDevice, PhysicalDevice &deviceInfo ) const
 {
-    vk::PhysicalDeviceFeatures2  deviceFeatures;
-    vk::PhysicalDeviceProperties deviceProperties;
+    VkPhysicalDeviceFeatures2 deviceFeatures;
+    vkGetPhysicalDeviceFeatures2( physicalDevice, &deviceFeatures );
+    VkPhysicalDeviceProperties2 deviceProperties;
+    vkGetPhysicalDeviceProperties2( physicalDevice, &deviceProperties );
 
-    std::vector<vk::QueueFamilyProperties> localQueueFamilies;
+    uint32_t                             queueFamilyCount;
+    std::vector<VkQueueFamilyProperties> localQueueFamilies;
+    vkGetPhysicalDeviceQueueFamilyProperties( physicalDevice, &queueFamilyCount, nullptr );
+    localQueueFamilies.resize( queueFamilyCount );
+    vkGetPhysicalDeviceQueueFamilyProperties( physicalDevice, &queueFamilyCount, localQueueFamilies.data( ) );
 
-    physicalDevice.getProperties(&deviceProperties);
-    physicalDevice.getFeatures2(&deviceFeatures);
+    uint32_t extensionPropertyCount;
+    vkEnumerateDeviceExtensionProperties( physicalDevice, nullptr, &extensionPropertyCount, nullptr );
+    std::vector<VkExtensionProperties> extensions( extensionPropertyCount );
+    vkEnumerateDeviceExtensionProperties( physicalDevice, nullptr, &extensionPropertyCount, extensions.data( ) );
 
-    uint32_t queueFamilyCount;
-    physicalDevice.getQueueFamilyProperties(&queueFamilyCount, nullptr);
-    physicalDevice.getQueueFamilyProperties(&queueFamilyCount, localQueueFamilies.data());
-
-    auto extensions = physicalDevice.enumerateDeviceExtensionProperties(nullptr);
-
-    deviceInfo.Id   = deviceProperties.deviceID;
-    deviceInfo.Name = std::string(deviceProperties.deviceName.data());
+    deviceInfo.Id   = deviceProperties.properties.deviceID;
+    deviceInfo.Name = std::string( deviceProperties.properties.deviceName );
 
     // Todo actually read these from somewhere:
-    deviceInfo.Properties.IsDedicated              = true;
-    deviceInfo.Capabilities.DedicatedTransferQueue = true;
-    deviceInfo.Capabilities.ComputeShaders         = true;
-    deviceInfo.Capabilities.RayTracing             = true;
-    deviceInfo.Capabilities.GeometryShaders        = true;
-    deviceInfo.Capabilities.Tessellation           = true;
+    deviceInfo.Properties.IsDedicated = deviceProperties.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+    if ( m_enabledInstanceExtensions.contains( VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME ) )
+    {
+        deviceInfo.Capabilities.RayTracing = true;
+    }
+    deviceInfo.Capabilities.DedicatedCopyQueue = m_context->QueueFamilies.at( QueueType::Copy ).Index != m_context->QueueFamilies.at( QueueType::Graphics ).Index;
+    deviceInfo.Capabilities.ComputeShaders     = true;
+    deviceInfo.Capabilities.GeometryShaders    = true;
+    deviceInfo.Capabilities.Tessellation       = true;
+    deviceInfo.Capabilities.HDR                = m_enabledInstanceExtensions.contains( VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME );
+    deviceInfo.Capabilities.Tearing            = true;
+
+    deviceInfo.Constants.ConstantBufferAlignment   = deviceProperties.properties.limits.minUniformBufferOffsetAlignment;
+    deviceInfo.Constants.BufferTextureAlignment    = deviceProperties.properties.limits.optimalBufferCopyOffsetAlignment;
+    deviceInfo.Constants.BufferTextureRowAlignment = deviceProperties.properties.limits.optimalBufferCopyRowPitchAlignment;
 }
 
-void VulkanLogicalDevice::LoadPhysicalDevice(const PhysicalDevice &device)
+void VulkanLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
 {
-    DZ_ASSERTM(m_context->GPU == VK_NULL_HANDLE, "A physical device is already selected for this logical device. Create a new Logical Device.");
+    DZ_ASSERTM( m_context->PhysicalDevice == VK_NULL_HANDLE, "A physical device is already selected for this logical device. Create a new Logical Device." );
     m_selectedDeviceInfo          = device;
     m_context->SelectedDeviceInfo = device;
 
-    for ( const vk::PhysicalDevice physicalDevice : m_context->Instance.enumeratePhysicalDevices() )
+    uint32_t count = 0;
+    vkEnumeratePhysicalDevices( m_context->Instance, &count, nullptr );
+    std::vector<VkPhysicalDevice> devices( count );
+    vkEnumeratePhysicalDevices( m_context->Instance, &count, devices.data( ) );
+
+    for ( const VkPhysicalDevice &physicalDevice : devices )
     {
-        const vk::PhysicalDeviceProperties deviceProperties = physicalDevice.getProperties();
+        VkPhysicalDeviceProperties deviceProperties;
+        vkGetPhysicalDeviceProperties( physicalDevice, &deviceProperties );
+
         if ( deviceProperties.deviceID == device.Id )
         {
-            m_context->GPU = physicalDevice;
+            m_context->PhysicalDevice = physicalDevice;
         }
     }
 
-    DZ_ASSERTM(m_context->GPU != VK_NULL_HANDLE, "Invalid DeviceID provided.");
+    DZ_ASSERTM( m_context->PhysicalDevice != VK_NULL_HANDLE, "Invalid DeviceID provided." );
 
-    CreateLogicalDevice();
-    InitializeVma();
-    CreateImageFormat();
-    CreateRenderSurface();
+    CreateLogicalDevice( );
+    InitializeVma( );
 
-    vk::CommandPoolCreateInfo graphicsCommandPoolCreateInfo{};
-    graphicsCommandPoolCreateInfo.flags            = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+    VkCommandPoolCreateInfo graphicsCommandPoolCreateInfo{ };
+    graphicsCommandPoolCreateInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    graphicsCommandPoolCreateInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     graphicsCommandPoolCreateInfo.queueFamilyIndex = m_context->QueueFamilies[ QueueType::Graphics ].Index;
+    vkCreateCommandPool( m_context->LogicalDevice, &graphicsCommandPoolCreateInfo, nullptr, &m_context->GraphicsQueueCommandPool );
 
-    vk::CommandPoolCreateInfo transferCommandPoolCreateInfo{};
-    transferCommandPoolCreateInfo.flags            = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+    VkCommandPoolCreateInfo transferCommandPoolCreateInfo{ };
+    transferCommandPoolCreateInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    transferCommandPoolCreateInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     transferCommandPoolCreateInfo.queueFamilyIndex = m_context->QueueFamilies[ QueueType::Copy ].Index;
+    vkCreateCommandPool( m_context->LogicalDevice, &transferCommandPoolCreateInfo, nullptr, &m_context->TransferQueueCommandPool );
 
-    m_context->GraphicsQueueCommandPool = m_context->LogicalDevice.createCommandPool(graphicsCommandPoolCreateInfo);
-    m_context->TransferQueueCommandPool = m_context->LogicalDevice.createCommandPool(transferCommandPoolCreateInfo);
+    VkCommandPoolCreateInfo computeCommandPoolCreateInfo{ };
+    computeCommandPoolCreateInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    computeCommandPoolCreateInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    computeCommandPoolCreateInfo.queueFamilyIndex = m_context->QueueFamilies[ QueueType::Compute ].Index;
+    vkCreateCommandPool( m_context->LogicalDevice, &computeCommandPoolCreateInfo, nullptr, &m_context->ComputeQueueCommandPool );
 
-    // Todo find a better approach
-    vk::DescriptorPoolCreateInfo        descriptorPoolCreateInfo{ vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1000, 1000 };
-    std::vector<vk::DescriptorPoolSize> poolSizes = { { vk::DescriptorType::eUniformBuffer, 1000 }, { vk::DescriptorType::eCombinedImageSampler, 1000 } };
-    descriptorPoolCreateInfo.setPoolSizes(poolSizes);
-    m_context->DescriptorPool = m_context->LogicalDevice.createDescriptorPool(descriptorPoolCreateInfo);
+    // Todo !IMPROVEMENT! find a better approach
+    VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{ };
+    descriptorPoolCreateInfo.sType   = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptorPoolCreateInfo.flags   = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    descriptorPoolCreateInfo.maxSets = 1000;
+
+    VkDescriptorPoolSize uniformBufferPoolSize{ };
+    uniformBufferPoolSize.type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uniformBufferPoolSize.descriptorCount = 1000;
+
+    VkDescriptorPoolSize combinedImageSamplerPoolSize{ };
+    combinedImageSamplerPoolSize.type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    combinedImageSamplerPoolSize.descriptorCount = 1000;
+
+    const std::vector poolSizes            = { uniformBufferPoolSize, combinedImageSamplerPoolSize };
+    descriptorPoolCreateInfo.poolSizeCount = poolSizes.size( );
+    descriptorPoolCreateInfo.pPoolSizes    = poolSizes.data( );
+
+    vkCreateDescriptorPool( m_context->LogicalDevice, &descriptorPoolCreateInfo, nullptr, &m_context->DescriptorPool );
 }
 
-void VulkanLogicalDevice::SetupQueueFamilies() const
+void VulkanLogicalDevice::SetupQueueFamilies( ) const
 {
-    auto exists = [ & ](const QueueType bit) -> bool { return m_context->QueueFamilies.contains(bit); };
+    auto exists = [ & ]( const QueueType bit ) -> bool { return m_context->QueueFamilies.contains( bit ); };
 
-    const auto localQueueFamilies = m_context->GPU.getQueueFamilyProperties();
+    uint32_t                             count = 0;
+    std::vector<VkQueueFamilyProperties> properties;
+    vkGetPhysicalDeviceQueueFamilyProperties( m_context->PhysicalDevice, &count, nullptr );
+    properties.resize( count );
+    vkGetPhysicalDeviceQueueFamilyProperties( m_context->PhysicalDevice, &count, properties.data( ) );
 
     uint32_t index = 0;
-    for ( const vk::QueueFamilyProperties &property : localQueueFamilies )
+    for ( const VkQueueFamilyProperties &property : properties )
     {
-        const bool hasGraphics = (property.queueFlags & vk::QueueFlagBits::eGraphics) == vk::QueueFlagBits::eGraphics;
-        const bool hasTransfer = (property.queueFlags & vk::QueueFlagBits::eTransfer) == vk::QueueFlagBits::eTransfer;
+        const bool hasGraphics = ( property.queueFlags & VK_QUEUE_GRAPHICS_BIT ) == VK_QUEUE_GRAPHICS_BIT;
+        const bool hasTransfer = ( property.queueFlags & VK_QUEUE_TRANSFER_BIT ) == VK_QUEUE_TRANSFER_BIT;
+        const bool hasCompute  = ( property.queueFlags & VK_QUEUE_COMPUTE_BIT ) == VK_QUEUE_COMPUTE_BIT;
 
-        if ( hasGraphics && !exists(QueueType::Graphics) )
+        if ( hasGraphics && !exists( QueueType::Graphics ) )
         {
-            m_context->QueueFamilies[ QueueType::Graphics ] = QueueFamily{ index, { static_cast<VkQueueFlags>(property.queueFlags) } };
+            m_context->QueueFamilies[ QueueType::Graphics ] = QueueFamily{ index, { static_cast<VkQueueFlags>( property.queueFlags ) } };
         }
-        else if ( hasTransfer && !exists(QueueType::Copy) )
+        else if ( hasTransfer && !exists( QueueType::Copy ) )
         {
             // Try to fetch a unique transfer queue
-            m_context->QueueFamilies[ QueueType::Copy ] = QueueFamily{ index, { static_cast<VkQueueFlags>(property.queueFlags) } };
+            m_context->QueueFamilies[ QueueType::Copy ] = QueueFamily{ index, { static_cast<VkQueueFlags>( property.queueFlags ) } };
         }
-
-        const vk::Bool32 presentationSupport = m_context->GPU.getSurfaceSupportKHR(index, m_context->Surface);
-
-        if ( presentationSupport && !exists(QueueType::Presentation) )
+        else if ( hasCompute && !exists( QueueType::Compute ) )
         {
-            m_context->QueueFamilies[ QueueType::Presentation ] = QueueFamily{ index, { static_cast<VkQueueFlags>(property.queueFlags) } };
+            m_context->QueueFamilies[ QueueType::Compute ] = QueueFamily{ index, { static_cast<VkQueueFlags>( property.queueFlags ) } };
         }
-
         ++index;
     }
 
-    if ( !exists(QueueType::Copy) )
+    if ( !exists( QueueType::Copy ) )
     {
         m_context->QueueFamilies[ QueueType::Copy ] = m_context->QueueFamilies[ QueueType::Graphics ];
     }
 }
 
-void VulkanLogicalDevice::CreateLogicalDevice() const
+void VulkanLogicalDevice::CreateLogicalDevice( )
 {
-    SetupQueueFamilies();
+    SetupQueueFamilies( );
 
-    const std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos = CreateUniqueDeviceCreateInfos();
+    const std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos = CreateUniqueDeviceCreateInfos( );
 
-    vk::PhysicalDeviceFeatures features{};
+    VkPhysicalDeviceFeatures features{ };
     features.samplerAnisotropy  = true;
     features.sampleRateShading  = true;
     features.tessellationShader = true;
 
-    vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT   extendedDynamicStateFeature(VK_TRUE);
-    const vk::PhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature(VK_TRUE, &extendedDynamicStateFeature);
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeature{ };
+    extendedDynamicStateFeature.sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+    extendedDynamicStateFeature.extendedDynamicState = VK_TRUE;
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature{ };
+    dynamicRenderingFeature.sType            = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
+    dynamicRenderingFeature.dynamicRendering = VK_TRUE;
+    dynamicRenderingFeature.pNext            = &extendedDynamicStateFeature;
 
-    vk::DeviceCreateInfo createInfo{};
-    createInfo.queueCreateInfoCount = static_cast<uint32_t>(deviceQueueCreateInfos.size());
-    createInfo.pQueueCreateInfos    = deviceQueueCreateInfos.data();
-    createInfo.setPEnabledExtensionNames(m_requiredExtensions);
-    createInfo.pEnabledFeatures = &features;
-    createInfo.pNext            = &dynamicRenderingFeature;
+    InitInstanceExtensions( );
+    std::vector<const char *> enabledExtensions( m_enabledDeviceExtensions.size( ) );
+    std::copy( m_enabledDeviceExtensions.begin( ), m_enabledDeviceExtensions.end( ), enabledExtensions.begin( ) );
 
-    m_context->LogicalDevice = m_context->GPU.createDevice(createInfo);
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(m_context->LogicalDevice);
+    VkDeviceCreateInfo createInfo{ };
+    createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.queueCreateInfoCount    = static_cast<uint32_t>( deviceQueueCreateInfos.size( ) );
+    createInfo.pQueueCreateInfos       = deviceQueueCreateInfos.data( );
+    createInfo.enabledExtensionCount   = enabledExtensions.size( );
+    createInfo.ppEnabledExtensionNames = enabledExtensions.data( );
+    createInfo.enabledLayerCount       = g_requiredDeviceExtensions.size( );
+    createInfo.ppEnabledLayerNames     = g_requiredDeviceExtensions.data( );
+    createInfo.pEnabledFeatures        = &features;
+    createInfo.pNext                   = &dynamicRenderingFeature;
 
-    m_context->Queues[ QueueType::Graphics ]     = vk::Queue{};
-    m_context->Queues[ QueueType::Presentation ] = vk::Queue{};
-    m_context->Queues[ QueueType::Copy ]         = vk::Queue{};
+    vkCreateDevice( m_context->PhysicalDevice, &createInfo, nullptr, &m_context->LogicalDevice );
+    volkLoadDevice( m_context->LogicalDevice );
 
-    m_context->LogicalDevice.getQueue(m_context->QueueFamilies[ QueueType::Graphics ].Index, 0, &m_context->Queues[ QueueType::Graphics ]);
-    m_context->LogicalDevice.getQueue(m_context->QueueFamilies[ QueueType::Presentation ].Index, 0, &m_context->Queues[ QueueType::Presentation ]);
-    m_context->LogicalDevice.getQueue(m_context->QueueFamilies[ QueueType::Copy ].Index, 0, &m_context->Queues[ QueueType::Copy ]);
+    m_context->Queues[ QueueType::Graphics ]     = VkQueue{ };
+    m_context->Queues[ QueueType::Presentation ] = VkQueue{ };
+    m_context->Queues[ QueueType::Copy ]         = VkQueue{ };
+
+    vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies[ QueueType::Graphics ].Index, 0, &m_context->Queues[ QueueType::Graphics ] );
+    vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies[ QueueType::Presentation ].Index, 0, &m_context->Queues[ QueueType::Presentation ] );
+    vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies[ QueueType::Copy ].Index, 0, &m_context->Queues[ QueueType::Copy ] );
 }
 
-void VulkanLogicalDevice::InitializeVma() const
+void VulkanLogicalDevice::InitializeVma( ) const
 {
-    VmaAllocatorCreateInfo allocatorInfo = {};
+    VmaAllocatorCreateInfo allocatorInfo = { };
     allocatorInfo.vulkanApiVersion       = VK_API_VERSION_1_3;
-    allocatorInfo.physicalDevice         = m_context->GPU;
+    allocatorInfo.physicalDevice         = m_context->PhysicalDevice;
     allocatorInfo.device                 = m_context->LogicalDevice;
     allocatorInfo.instance               = m_context->Instance;
 
-    vmaCreateAllocator(&allocatorInfo, &m_context->Vma);
+    vmaCreateAllocator( &allocatorInfo, &m_context->Vma );
 }
 
-void VulkanLogicalDevice::CreateSurface() const
+std::vector<VkDeviceQueueCreateInfo> VulkanLogicalDevice::CreateUniqueDeviceCreateInfos( ) const
 {
-    const auto instance = static_cast<VkInstance>(m_context->Instance);
-    auto       surface  = static_cast<VkSurfaceKHR>(m_context->Surface);
-#ifdef WIN32
-    VkWin32SurfaceCreateInfoKHR createInfo{};
-    createInfo.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-    createInfo.hwnd      = m_context->Window->GetNativeHandle();
-    createInfo.hinstance = GetModuleHandle(nullptr);
-    DZ_ASSERTM(vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) == VK_SUCCESS, "Failed to create surface");
-#else
-#error "Not implemented yet"
-#endif
-    m_context->Surface = vk::SurfaceKHR(surface);
-}
-
-std::vector<vk::DeviceQueueCreateInfo> VulkanLogicalDevice::CreateUniqueDeviceCreateInfos() const
-{
-    std::unordered_map<uint32_t, bool>     uniqueIndexes;
-    std::vector<vk::DeviceQueueCreateInfo> result;
+    std::unordered_map<uint32_t, bool>   uniqueIndexes;
+    std::vector<VkDeviceQueueCreateInfo> result;
 
     for ( std::pair<QueueType, QueueFamily> key : m_context->QueueFamilies )
     {
-        if ( !uniqueIndexes.contains(key.second.Index) )
+        if ( !uniqueIndexes.contains( key.second.Index ) )
         {
             float priority = key.first == QueueType::Graphics || key.first == QueueType::Presentation ? 1.0f : 0.9f;
 
-            result.emplace_back(vk::DeviceQueueCreateFlagBits(), key.second.Index, 1, &priority);
+            VkDeviceQueueCreateInfo queueCreateInfo{ };
+            queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex = key.second.Index;
+            queueCreateInfo.queueCount       = 1;
+            queueCreateInfo.pQueuePriorities = &priority;
+
+            result.emplace_back( queueCreateInfo );
 
             uniqueIndexes[ key.second.Index ] = true;
         }
@@ -364,165 +498,125 @@ std::vector<vk::DeviceQueueCreateInfo> VulkanLogicalDevice::CreateUniqueDeviceCr
     return result;
 }
 
-void VulkanLogicalDevice::WaitIdle()
+void VulkanLogicalDevice::WaitIdle( )
 {
-    m_context->LogicalDevice.waitIdle();
+    vkDeviceWaitIdle( m_context->LogicalDevice );
 }
 
-void VulkanLogicalDevice::CreateRenderSurface()
+VulkanLogicalDevice::~VulkanLogicalDevice( )
 {
-    m_context->LogicalDevice.waitIdle();
-
-    //	auto* renderSurfacePtr = new VulkanSurface{ m_context.get() };
-    //	this->m_renderSurface = std::unique_ptr<VulkanSurface>(renderSurfacePtr);
-}
-
-VulkanLogicalDevice::~VulkanLogicalDevice()
-{
-    //	m_renderSurface.reset();
-    DestroyDebugUtils();
+    DestroyDebugUtils( );
 
     if ( m_context == nullptr )
     {
         return;
     }
 
-    m_context->LogicalDevice.destroyDescriptorPool(m_context->DescriptorPool);
-    m_context->LogicalDevice.destroyCommandPool(m_context->TransferQueueCommandPool);
-    m_context->LogicalDevice.destroyCommandPool(m_context->GraphicsQueueCommandPool);
-    m_context->LogicalDevice.destroyCommandPool(m_context->ComputeQueueCommandPool);
+    vkDestroyDescriptorPool( m_context->LogicalDevice, m_context->DescriptorPool, nullptr );
+    vkDestroyCommandPool( m_context->LogicalDevice, m_context->TransferQueueCommandPool, nullptr );
+    vkDestroyCommandPool( m_context->LogicalDevice, m_context->GraphicsQueueCommandPool, nullptr );
+    vkDestroyCommandPool( m_context->LogicalDevice, m_context->ComputeQueueCommandPool, nullptr );
 
-    m_context->Instance.destroySurfaceKHR(m_context->Surface);
-    vmaDestroyAllocator(m_context->Vma);
-    m_context->LogicalDevice.destroy();
-    m_context->Instance.destroy();
+    vmaDestroyAllocator( m_context->Vma );
+    vkDestroyDevice( m_context->LogicalDevice, nullptr );
+    vkDestroyInstance( m_context->Instance, nullptr );
 
-    m_context->ShaderCompiler.Destroy();
+    volkFinalize( );
 }
 
-void VulkanLogicalDevice::DestroyDebugUtils() const
+void VulkanLogicalDevice::DestroyDebugUtils( ) const
 {
-    if ( m_debugMessenger == VK_NULL_HANDLE )
-    {
-        return;
-    }
+    DZ_RETURN_IF( m_debugMessenger == nullptr );
 
-    const auto instance = static_cast<VkInstance>(m_context->Instance);
-
-    if ( const auto deleteDebugUtils = PFN_vkDestroyDebugUtilsMessengerEXT(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT")) )
+    if ( const auto deleteDebugUtils = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>( vkGetInstanceProcAddr( m_context->Instance, "vkDestroyDebugUtilsMessengerEXT" ) ) )
     {
-        deleteDebugUtils(instance, m_debugMessenger, nullptr);
+        deleteDebugUtils( m_context->Instance, m_debugMessenger, nullptr );
     }
 }
 
-VulkanContext *VulkanLogicalDevice::GetContext() const
+VulkanContext *VulkanLogicalDevice::GetContext( ) const
 {
-    return m_context.get();
+    return m_context.get( );
 }
 
-void VulkanLogicalDevice::CreateImageFormat() const
+bool VulkanLogicalDevice::ValidateLayer( const std::string &layer ) const
 {
-    const auto surfaceFormats = m_context->GPU.getSurfaceFormatsKHR(m_context->Surface);
-    const auto presentModes   = m_context->GPU.getSurfacePresentModesKHR(m_context->Surface);
-
-    auto presentMode = vk::PresentModeKHR::eImmediate;
-    for ( const auto mode : presentModes )
+    for ( const VkLayerProperties &available : m_availableLayers )
     {
-        if ( mode == vk::PresentModeKHR::eImmediate )
+        if ( layer == available.layerName )
         {
-            presentMode = mode;
+            return true;
         }
     }
 
-    auto surfaceFormat = vk::SurfaceFormatKHR{ vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear };
-    for ( const auto format : surfaceFormats )
-    {
-        if ( format.format == vk::Format::eB8G8R8A8Unorm /*&& format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear*/ )
-        {
-            surfaceFormat = format;
-        }
-    }
-
-    m_context->SurfaceImageFormat = Format::B8G8R8A8Unorm;
-    m_context->ColorSpace         = surfaceFormat.colorSpace;
-    m_context->PresentMode        = presentMode;
+    return false;
 }
 
-uint32_t VulkanLogicalDevice::GetFrameCount() const
+std::unique_ptr<ICommandListPool> VulkanLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &createInfo )
 {
-    return m_context->SwapChainImages.size();
+    auto *pool = new VulkanCommandPool( m_context.get( ), createInfo );
+    return std::unique_ptr<ICommandListPool>( pool );
 }
 
-Format VulkanLogicalDevice::GetSwapChainImageFormat() const
+std::unique_ptr<IPipeline> VulkanLogicalDevice::CreatePipeline( const PipelineDesc &createInfo )
 {
-    return m_context->SurfaceImageFormat;
+    auto *pipeline = new VulkanPipeline( m_context.get( ), createInfo );
+    return std::unique_ptr<IPipeline>( pipeline );
 }
 
-std::unique_ptr<ICommandListPool> VulkanLogicalDevice::CreateCommandListPool(const CommandListPoolDesc &createInfo)
+std::unique_ptr<ISwapChain> VulkanLogicalDevice::CreateSwapChain( const SwapChainDesc &createInfo )
 {
-    VulkanCommandPool *pool = new VulkanCommandPool(m_context.get(), createInfo);
-    return std::unique_ptr<ICommandListPool>(dynamic_cast<ICommandListPool *>(pool));
+    auto *swapChain = new VulkanSwapChain( m_context.get( ), createInfo );
+    return std::unique_ptr<ISwapChain>( swapChain );
 }
 
-std::unique_ptr<IPipeline> VulkanLogicalDevice::CreatePipeline(const PipelineDesc &createInfo)
+std::unique_ptr<IRootSignature> VulkanLogicalDevice::CreateRootSignature( const RootSignatureDesc &createInfo )
 {
-    VulkanPipeline *pipeline = new VulkanPipeline(m_context.get(), createInfo);
-    return std::unique_ptr<IPipeline>(pipeline);
+    auto *rootSignature = new VulkanRootSignature( m_context.get( ), createInfo );
+    return std::unique_ptr<IRootSignature>( rootSignature );
 }
 
-std::unique_ptr<ISwapChain> VulkanLogicalDevice::CreateSwapChain(const SwapChainDesc &createInfo)
+std::unique_ptr<IInputLayout> VulkanLogicalDevice::CreateInputLayout( const InputLayoutDesc &createInfo )
 {
-    VulkanSwapChain *swapChain = new VulkanSwapChain(m_context.get(), createInfo);
-    return std::unique_ptr<ISwapChain>(swapChain);
+    auto *inputLayout = new VulkanInputLayout( createInfo );
+    return std::unique_ptr<IInputLayout>( inputLayout );
 }
 
-std::unique_ptr<IRootSignature> VulkanLogicalDevice::CreateRootSignature(const RootSignatureDesc &createInfo)
+std::unique_ptr<IResourceBindGroup> VulkanLogicalDevice::CreateResourceBindGroup( const ResourceBindGroupDesc &createInfo )
 {
-    VulkanRootSignature *rootSignature = new VulkanRootSignature(m_context.get(), createInfo);
-    return std::unique_ptr<IRootSignature>(rootSignature);
+    auto *descriptorTable = new VulkanResourceBindGroup( m_context.get( ), createInfo );
+    return std::unique_ptr<IResourceBindGroup>( descriptorTable );
 }
 
-std::unique_ptr<IInputLayout> VulkanLogicalDevice::CreateInputLayout(const InputLayoutDesc &createInfo)
+std::unique_ptr<IBufferResource> VulkanLogicalDevice::CreateBufferResource( const std::string name, const BufferDesc &createInfo )
 {
-    VulkanInputLayout *inputLayout = new VulkanInputLayout(createInfo);
-    return std::unique_ptr<IInputLayout>(inputLayout);
+    auto *bufferResource = new VulkanBufferResource( m_context.get( ), createInfo );
+    bufferResource->Name = name;
+    return std::unique_ptr<IBufferResource>( bufferResource );
 }
 
-std::unique_ptr<IResourceBindGroup> VulkanLogicalDevice::CreateResourceBindGroup(const ResourceBindGroupDesc &createInfo)
+std::unique_ptr<ITextureResource> VulkanLogicalDevice::CreateTextureResource( const std::string name, const TextureDesc &createInfo )
 {
-    VulkanResourceBindGroup *descriptorTable = new VulkanResourceBindGroup(m_context.get(), createInfo);
-    return std::unique_ptr<IResourceBindGroup>(descriptorTable);
+    auto *imageResource = new VulkanTextureResource( m_context.get( ), createInfo );
+    imageResource->Name = name;
+    return std::unique_ptr<ITextureResource>( imageResource );
 }
 
-std::unique_ptr<IBufferResource> VulkanLogicalDevice::CreateBufferResource(std::string name, const BufferDesc &createInfo)
+std::unique_ptr<IFence> VulkanLogicalDevice::CreateFence( )
 {
-    VulkanBufferResource *bufferResource = new VulkanBufferResource(m_context.get(), createInfo);
-    bufferResource->Name                 = name;
-    return std::unique_ptr<IBufferResource>(bufferResource);
+    auto *fence = new VulkanFence( m_context.get( ) );
+    return std::unique_ptr<IFence>( fence );
 }
 
-std::unique_ptr<ITextureResource> VulkanLogicalDevice::CreateTextureResource(std::string name, const TextureDesc &createInfo)
+std::unique_ptr<ISemaphore> VulkanLogicalDevice::CreateSemaphore( )
 {
-    VulkanTextureResource *imageResource = new VulkanTextureResource(m_context.get(), createInfo);
-    imageResource->Name                  = name;
-    return std::unique_ptr<ITextureResource>(imageResource);
+    auto *semaphore = new VulkanSemaphore( m_context.get( ) );
+    return std::unique_ptr<ISemaphore>( semaphore );
 }
 
-std::unique_ptr<IFence> VulkanLogicalDevice::CreateFence()
+std::unique_ptr<ISampler> VulkanLogicalDevice::CreateSampler( const std::string name, const SamplerDesc &createInfo )
 {
-    VulkanFence *fence = new VulkanFence(m_context.get());
-    return std::unique_ptr<IFence>(fence);
-}
-
-std::unique_ptr<ISemaphore> VulkanLogicalDevice::CreateSemaphore()
-{
-    VulkanSemaphore *semaphore = new VulkanSemaphore(m_context.get());
-    return std::unique_ptr<ISemaphore>(semaphore);
-}
-
-std::unique_ptr<ISampler> VulkanLogicalDevice::CreateSampler(std::string name, const SamplerDesc &createInfo)
-{
-    VulkanSampler *sampler = new VulkanSampler(m_context.get(), createInfo);
-    sampler->Name          = name;
-    return std::unique_ptr<ISampler>(sampler);
+    auto *sampler = new VulkanSampler( m_context.get( ), createInfo );
+    sampler->Name = name;
+    return std::unique_ptr<ISampler>( sampler );
 }

@@ -20,32 +20,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanSemaphore::VulkanSemaphore(VulkanContext *context) : m_context(context)
+VulkanSemaphore::VulkanSemaphore( VulkanContext *context ) : m_context( context )
 {
-    vk::SemaphoreCreateInfo semaphoreCreateInfo{};
-    m_semaphore = m_context->LogicalDevice.createSemaphore(semaphoreCreateInfo);
+    VkSemaphoreCreateInfo semaphoreCreateInfo{ };
+    semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    vkCreateSemaphore( m_context->LogicalDevice, &semaphoreCreateInfo, nullptr, &m_semaphore );
 }
 
-void VulkanSemaphore::Wait()
+void VulkanSemaphore::Wait( )
 {
-    vk::SemaphoreWaitInfo waitInfo{};
+    VkSemaphoreWaitInfo waitInfo{ };
+    waitInfo.sType          = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
     waitInfo.semaphoreCount = 1;
     waitInfo.pSemaphores    = &m_semaphore;
-    waitInfo.flags          = vk::SemaphoreWaitFlagBits::eAny;
+    waitInfo.flags          = VK_SEMAPHORE_WAIT_ANY_BIT;
 
-    auto result = m_context->LogicalDevice.waitSemaphores(waitInfo, UINT64_MAX);
-    VK_CHECK_RESULT(result);
+    VK_CHECK_RESULT( vkWaitSemaphores( m_context->LogicalDevice, &waitInfo, UINT64_MAX ) );
 }
 
-void VulkanSemaphore::Notify()
+void VulkanSemaphore::Notify( )
 {
-    vk::SemaphoreSignalInfo signalInfo{};
+    VkSemaphoreSignalInfo signalInfo{ };
+    signalInfo.sType     = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
     signalInfo.semaphore = m_semaphore;
 
-    m_context->LogicalDevice.signalSemaphore(signalInfo);
+    VK_CHECK_RESULT( vkSignalSemaphore( m_context->LogicalDevice, &signalInfo ) );
 }
 
-VulkanSemaphore::~VulkanSemaphore()
+VulkanSemaphore::~VulkanSemaphore( )
 {
-    m_context->LogicalDevice.destroySemaphore(m_semaphore);
+    vkDestroySemaphore( m_context->LogicalDevice, m_semaphore, nullptr );
 }

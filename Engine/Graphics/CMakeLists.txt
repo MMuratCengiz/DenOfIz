@@ -13,6 +13,7 @@ else ()
 endif ()
 
 if (WIN32 OR LINUX)
+    find_package(volk CONFIG REQUIRED)
     find_package(Vulkan REQUIRED)
     find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 endif ()
@@ -59,7 +60,6 @@ SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanCommandList.cpp
         Source/Backends/Vulkan/VulkanResourceBindGroup.cpp
         Source/Backends/Vulkan/VulkanInputLayout.cpp
-        Source/Backends/Vulkan/VulkanSurface.cpp
         Source/Backends/Vulkan/VulkanUtilities.cpp
         Source/Backends/Vulkan/VulkanPipeline.cpp
         Source/Backends/Vulkan/VulkanRootSignature.cpp
@@ -70,7 +70,6 @@ SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanSemaphore.cpp
         Source/Backends/Vulkan/VulkanBufferResource.cpp
         Source/Backends/Vulkan/VulkanTextureResource.cpp
-        Source/Backends/Vulkan/VulkanCubeMapResource.cpp
         Source/Backends/Vulkan/VulkanPipelineBarrierHelper.cpp
 )
 
@@ -225,6 +224,8 @@ if (WIN32 OR LINUX)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_VK)
     target_link_libraries(DenOfIzGraphics PUBLIC
             Vulkan::Vulkan
+            volk::volk
+            volk::volk_headers
             GPUOpen::VulkanMemoryAllocator)
 endif ()
 

@@ -25,29 +25,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class VulkanResourceBindGroup : public IResourceBindGroup
+    class VulkanResourceBindGroup final : public IResourceBindGroup
     {
-    private:
-        VulkanContext        *m_context;
-        VulkanRootSignature  *m_rootSignature;
+        VulkanContext       *m_context;
+        VulkanRootSignature *m_rootSignature;
 
-        std::vector<vk::DescriptorSet>      m_descriptorSets;
-        std::vector<vk::WriteDescriptorSet> m_writeDescriptorSets;
+        std::vector<VkDescriptorSet>      m_descriptorSets;
+        std::vector<VkWriteDescriptorSet> m_writeDescriptorSets;
 
     public:
-        VulkanResourceBindGroup(VulkanContext *context, ResourceBindGroupDesc desc);
-        void Update(UpdateDesc desc) override;
+             VulkanResourceBindGroup( VulkanContext *context, ResourceBindGroupDesc desc );
+        void Update( UpdateDesc desc ) override;
 
-        const std::vector<vk::WriteDescriptorSet> &GetWriteDescriptorSets() const
+        const std::vector<VkWriteDescriptorSet> &GetWriteDescriptorSets( ) const
         {
             return m_writeDescriptorSets;
         }
 
-        vk::WriteDescriptorSet &CreateWriteDescriptor(std::string &name);
+        VkWriteDescriptorSet &CreateWriteDescriptor( std::string &name );
+
     protected:
-        void BindTexture(const std::string &name, ITextureResource *resource) override;
-        void BindBuffer(const std::string &name, IBufferResource *resource) override;
-        void BindSampler(const std::string &name, ISampler *sampler) override;
+        void BindTexture( const std::string &name, ITextureResource *resource ) override;
+        void BindBuffer( const std::string &name, IBufferResource *resource ) override;
+        void BindSampler( const std::string &name, ISampler *sampler ) override;
     };
 
 } // namespace DenOfIz

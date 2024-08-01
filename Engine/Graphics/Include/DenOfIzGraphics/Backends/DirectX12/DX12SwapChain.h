@@ -28,9 +28,8 @@ namespace DenOfIz
 
     class DX12SwapChain : public ISwapChain
     {
-    private:
         DX12Context                  *m_context;
-        SwapChainDesc                 m_swapChainCreateInfo;
+        SwapChainDesc                 m_desc;
         wil::com_ptr<IDXGISwapChain4> m_swapChain;
 
         std::vector<std::unique_ptr<DX12TextureResource>> m_renderTargets;
@@ -42,22 +41,22 @@ namespace DenOfIz
         Viewport              m_viewport;
 
     public:
-        DX12SwapChain(DX12Context *context, const SwapChainDesc &desc);
-        ~DX12SwapChain() override;
+         DX12SwapChain( DX12Context *context, const SwapChainDesc &desc );
+        ~DX12SwapChain( ) override;
 
-        IDXGISwapChain4 *GetSwapChain()
+        IDXGISwapChain4 *GetSwapChain( ) const
         {
-            return m_swapChain.get();
+            return m_swapChain.get( );
         }
 
-        uint32_t          AcquireNextImage(ISemaphore *imageAvailableSemaphore) override;
-        Format            GetPreferredFormat() override;
-        ITextureResource *GetRenderTarget(uint32_t frame) override;
-        Viewport          GetViewport() override;
-        void              Resize(uint32_t width, uint32_t height) override;
-        void              CreateSwapChain();
+        uint32_t          AcquireNextImage( ISemaphore *imageAvailableSemaphore ) override;
+        Format            GetPreferredFormat( ) override;
+        ITextureResource *GetRenderTarget( uint32_t frame ) override;
+        Viewport          GetViewport( ) override;
+        void              Resize( uint32_t width, uint32_t height ) override;
+        void              CreateSwapChain( );
 
-        void SetColorSpace();
+        void SetColorSpace( );
     };
 
 } // namespace DenOfIz

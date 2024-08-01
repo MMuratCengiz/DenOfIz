@@ -31,23 +31,23 @@ namespace DenOfIz
 
     struct SamplerDesc
     {
-        Filter             MagFilter        = Filter::Linear;
-        Filter             MinFilter        = Filter::Linear;
-        SamplerAddressMode AddressModeU     = SamplerAddressMode::Repeat;
-        SamplerAddressMode AddressModeV     = SamplerAddressMode::Repeat;
-        SamplerAddressMode AddressModeW     = SamplerAddressMode::Repeat;
-        float              MaxAnisotropy    = 0.0f;
-        CompareOp          CompareOp        = CompareOp::Always;
-        MipmapMode         MipmapMode       = MipmapMode::Linear;
-        float              MipLodBias       = 0.0f;
-        float              MinLod           = 0.0f;
-        float              MaxLod           = 1.0f;
+        Filter             MagFilter     = Filter::Linear;
+        Filter             MinFilter     = Filter::Linear;
+        SamplerAddressMode AddressModeU  = SamplerAddressMode::Repeat;
+        SamplerAddressMode AddressModeV  = SamplerAddressMode::Repeat;
+        SamplerAddressMode AddressModeW  = SamplerAddressMode::Repeat;
+        float              MaxAnisotropy = 0.0f;
+        CompareOp          CompareOp     = CompareOp::Always;
+        MipmapMode         MipmapMode    = MipmapMode::Linear;
+        float              MipLodBias    = 0.0f;
+        float              MinLod        = 0.0f;
+        float              MaxLod        = 1.0f;
     };
 
     struct TextureDesc
     {
         TextureAspect              Aspect = TextureAspect::Color;
-        Format                     Format;
+        Format                     Format = Format::Undefined;
         BitSet<ResourceDescriptor> Descriptor;
 
         HeapType              HeapType        = HeapType::GPU;
@@ -55,9 +55,9 @@ namespace DenOfIz
         BitSet<ResourceState> InitialState;
         SamplerDesc           Sampler; // Requires `| Descriptor::Sampler`
 
-        uint32_t Width;
+        uint32_t Width = 1;
         // if Height is > 1, it is a 2D texture
-        uint32_t Height;
+        uint32_t Height = 1;
         // if Depth is > 1, it is a 3D texture
         uint32_t Depth     = 1;
         uint32_t ArraySize = 1;
@@ -68,13 +68,13 @@ namespace DenOfIz
     {
 
     protected:
-        Format      m_format;
-        uint32_t    m_width;
-        uint32_t    m_height;
-        uint32_t    m_depth;
-        const void *m_data;
+        Format      m_format = Format::Undefined;
+        uint32_t    m_width  = 1;
+        uint32_t    m_height = 1;
+        uint32_t    m_depth  = 1;
+        const void *m_data   = nullptr;
 
-        void InitFields(const TextureDesc &desc)
+        void InitFields( const TextureDesc &desc )
         {
             m_width  = desc.Width;
             m_height = desc.Height;
@@ -84,36 +84,30 @@ namespace DenOfIz
 
     public:
         std::string Name;
-        virtual ~ITextureResource() = default;
+        virtual ~   ITextureResource( ) = default;
 
-        virtual void Deallocate() = 0;
-
-        inline uint32_t GetWidth() const
+        [[nodiscard]] uint32_t GetWidth( ) const
         {
             return m_width;
         }
-        inline uint32_t GetHeight() const
+        [[nodiscard]] uint32_t GetHeight( ) const
         {
             return m_height;
         }
-        inline uint32_t GetDepth() const
+        [[nodiscard]] uint32_t GetDepth( ) const
         {
             return m_depth;
         }
-
-        inline Format GetFormat()
+        [[nodiscard]] Format GetFormat( ) const
         {
             return m_format;
         }
-
-    protected:
-        virtual void Allocate(const void *data) = 0;
     };
 
     class ISampler
     {
     public:
         std::string Name;
-        virtual ~ISampler() = default;
+        virtual ~   ISampler( ) = default;
     };
 } // namespace DenOfIz

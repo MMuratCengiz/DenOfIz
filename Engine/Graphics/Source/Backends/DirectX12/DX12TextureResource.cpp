@@ -78,7 +78,7 @@ DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc
 
     // Used for certain commands
     m_resourceDesc = resourceDesc;
-    HRESULT hr     = m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, initialState, NULL, &m_allocation, IID_PPV_ARGS(&m_resource));
+    HRESULT hr     = m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, initialState, nullptr, &m_allocation, IID_PPV_ARGS(&m_resource));
     THROW_IF_FAILED(hr);
 }
 
@@ -87,7 +87,7 @@ DX12TextureResource::DX12TextureResource(ID3D12Resource2 *resource, const D3D12_
     isExternalResource = true;
 }
 
-void DX12TextureResource::CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle)
+void DX12TextureResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle)
 {
     DZ_RETURN_IF( m_cpuHandle.ptr != 0 && m_cpuHandle.ptr == cpuHandle.ptr );
 
@@ -144,7 +144,7 @@ void DX12TextureResource::Validate()
     }
 }
 
-void DX12TextureResource::CreateTextureSrv()
+void DX12TextureResource::CreateTextureSrv( ) const
 {
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Format                          = DX12EnumConverter::ConvertFormat(m_desc.Format);
@@ -203,7 +203,7 @@ void DX12TextureResource::CreateTextureSrv()
     m_context->D3DDevice->CreateShaderResourceView(m_resource, &srvDesc, m_cpuHandle);
 }
 
-void DX12TextureResource::CreateTextureUav()
+void DX12TextureResource::CreateTextureUav( ) const
 {
     D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {};
     if ( m_desc.Depth > 1 )
@@ -252,7 +252,7 @@ void DX12TextureResource::CreateTextureUav()
 
     for ( uint32_t i = 0; i < m_desc.MipLevels; ++i )
     {
-        D3D12_CPU_DESCRIPTOR_HANDLE handle = D3D12_CPU_DESCRIPTOR_HANDLE(m_cpuHandle.ptr + i * heap->GetDescriptorSize());
+        auto handle = D3D12_CPU_DESCRIPTOR_HANDLE(m_cpuHandle.ptr + i * heap->GetDescriptorSize());
         desc.Texture1DArray.MipSlice       = i;
         desc.Texture1DArray.ArraySize      = m_desc.ArraySize;
         desc.Texture1D.MipSlice            = i;
@@ -269,24 +269,6 @@ void DX12TextureResource::CreateTextureUav()
             desc.Texture2DArray.ArraySize = m_desc.ArraySize;
         }
         m_context->D3DDevice->CreateUnorderedAccessView(m_resource, nullptr, &desc, handle);
-    }
-}
-
-void DX12TextureResource::Allocate(const void *data)
-{
-    if ( isExternalResource )
-    {
-        LOG(WARNING) << "Allocating an externally managed resource(i.e. a swapchain render target).";
-        return;
-    }
-}
-
-void DX12TextureResource::Deallocate()
-{
-    if ( !isExternalResource )
-    {
-        m_allocation->Release();
-        m_resource->Release();
     }
 }
 

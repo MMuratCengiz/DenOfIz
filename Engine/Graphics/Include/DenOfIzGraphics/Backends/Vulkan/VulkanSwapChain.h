@@ -19,22 +19,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
-#include "VulkanEnumConverter.h"
 #include "VulkanSemaphore.h"
 #include "VulkanTextureResource.h"
 
 namespace DenOfIz
 {
 
-    class VulkanSwapChain : public ISwapChain
+    class VulkanSwapChain final : public ISwapChain
     {
-    private:
-        SwapChainDesc              m_desc;
-        VulkanContext             *m_context;
-        vk::SurfaceKHR             m_surface;
-        vk::SwapchainKHR           m_swapChain;
-        std::vector<vk::Image>     m_swapChainImages;
-        std::vector<vk::ImageView> m_swapChainImageViews;
+        SwapChainDesc            m_desc;
+        VulkanContext           *m_context;
+        VkSurfaceKHR             m_surface{ };
+        VkSwapchainKHR           m_swapChain{ };
+        std::vector<VkImage>     m_swapChainImages;
+        std::vector<VkImageView> m_swapChainImageViews;
+
+        Format           m_surfaceImageFormat{ };
+        VkColorSpaceKHR  m_colorSpace{ };
+        VkPresentModeKHR m_presentMode{ };
+        QueueFamily      m_presentationQueueFamily{ };
 
         std::vector<std::unique_ptr<VulkanTextureResource>> m_renderTargets;
 
@@ -42,32 +45,37 @@ namespace DenOfIz
         uint32_t m_height = 0;
 
     public:
-        VulkanSwapChain(VulkanContext *context, const SwapChainDesc &desc);
-        ~VulkanSwapChain() override;
+         VulkanSwapChain( VulkanContext *context, const SwapChainDesc &desc );
+        ~VulkanSwapChain( ) override;
 
-        uint32_t AcquireNextImage(ISemaphore *imageReadySemaphore) override;
-        void     Resize(uint32_t width, uint32_t height) override;
-        Format   GetPreferredFormat() override;
+        uint32_t AcquireNextImage( ISemaphore *imageReadySemaphore ) override;
+        void     CreateSurface( );
+        void     Resize( uint32_t width, uint32_t height ) override;
+        Format   GetPreferredFormat( ) override;
 
-        inline ITextureResource *GetRenderTarget(uint32_t frame) override
+        [[nodiscard]] QueueFamily GetPresentationQueueFamily( ) const
         {
-            return m_renderTargets.at(frame).get();
+            return m_presentationQueueFamily;
         }
-        inline vk::SwapchainKHR *GetSwapChain()
+        ITextureResource *GetRenderTarget( const uint32_t frame ) override
+        {
+            return m_renderTargets.at( frame ).get( );
+        }
+        VkSwapchainKHR *GetSwapChain( )
         {
             return &m_swapChain;
         }
-        inline Viewport GetViewport() override
+        Viewport GetViewport( ) override
         {
-            return { 0.0f, 0.0f, static_cast<float>(m_width), static_cast<float>(m_height) };
+            return { 0.0f, 0.0f, static_cast<float>( m_width ), static_cast<float>( m_height ) };
         }
 
     private:
-        void CreateSwapChain();
-        void CreateImageView(vk::ImageView &imageView, const vk::Image &image, const vk::Format &format, const vk::ImageAspectFlags &aspectFlags) const;
-        void ChooseExtent2D(const vk::SurfaceCapabilitiesKHR &capabilities);
-        void CreateSwapChainImages(vk::Format format);
-        void Dispose() const;
+        void CreateSwapChain( );
+        void CreateImageView( VkImageView &imageView, const VkImage &image, const VkFormat &format, const VkImageAspectFlags &aspectFlags ) const;
+        void ChooseExtent2D( const VkSurfaceCapabilitiesKHR &capabilities );
+        void CreateSwapChainImages( VkFormat format );
+        void Dispose( );
     };
 
 } // namespace DenOfIz

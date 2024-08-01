@@ -17,72 +17,72 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h"
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanUtilities.h"
 
 using namespace DenOfIz;
 
-VulkanBufferResource::VulkanBufferResource(VulkanContext *context, const BufferDesc &desc) : m_desc(desc), m_context(context), m_allocation(nullptr)
+VulkanBufferResource::VulkanBufferResource( VulkanContext *context, const BufferDesc &desc ) : m_desc( desc ), m_context( context ), m_allocation( nullptr )
 {
     m_numBytes = m_desc.NumBytes;
 
-    vk::BufferCreateInfo bufferCreateInfo{};
-    bufferCreateInfo.usage       = VulkanEnumConverter::ConvertBufferUsage(m_desc.Descriptor, m_desc.InitialState);
+    VkBufferCreateInfo bufferCreateInfo{ };
+    bufferCreateInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferCreateInfo.usage       = VulkanEnumConverter::ConvertBufferUsage( m_desc.Descriptor, m_desc.InitialState );
     bufferCreateInfo.size        = m_numBytes;
-    bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
+    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VmaAllocationCreateInfo allocationCreateInfo{};
+    VmaAllocationCreateInfo allocationCreateInfo{ };
 
-    allocationCreateInfo.usage = VulkanEnumConverter::ConvertHeapType(m_desc.HeapType);
+    allocationCreateInfo.usage = VulkanEnumConverter::ConvertHeapType( m_desc.HeapType );
 
     // Todo more flexibility, or a clearer interface here:
     if ( m_desc.HeapType == HeapType::CPU || m_desc.HeapType == HeapType::CPU_GPU )
     {
-        allocationCreateInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eHostVisible);
+        allocationCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     }
     if ( m_desc.HeapType == HeapType::CPU_GPU )
     {
-        allocationCreateInfo.preferredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eDeviceLocal);
+        allocationCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     }
     if ( m_desc.HeapType == HeapType::GPU || m_desc.HeapType == HeapType::GPU_CPU )
     {
-        allocationCreateInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eDeviceLocal);
+        allocationCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     }
     if ( m_desc.HeapType == HeapType::GPU_CPU )
     {
-        allocationCreateInfo.preferredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eHostVisible);
+        allocationCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     }
 
-    bufferCreateInfo.usage = VulkanEnumConverter::ConvertBufferUsage(m_desc.Descriptor, m_desc.InitialState);
+    bufferCreateInfo.usage = VulkanEnumConverter::ConvertBufferUsage( m_desc.Descriptor, m_desc.InitialState );
     VmaAllocationInfo allocationInfo;
-    vmaCreateBuffer(m_context->Vma, reinterpret_cast<VkBufferCreateInfo *>(&bufferCreateInfo), &allocationCreateInfo, reinterpret_cast<VkBuffer *>(&Instance), &m_allocation,
-                    &allocationInfo);
+    vmaCreateBuffer( m_context->Vma, &bufferCreateInfo, &allocationCreateInfo, &m_instance, &m_allocation, &allocationInfo );
 
-    DescriptorInfo.buffer = Instance;
+    DescriptorInfo.buffer = m_instance;
     DescriptorInfo.offset = 0;
     DescriptorInfo.range  = m_numBytes;
 }
 
-void* VulkanBufferResource::MapMemory()
+void *VulkanBufferResource::MapMemory( )
 {
-    DZ_ASSERTM(m_desc.HeapType == HeapType::CPU_GPU || m_desc.HeapType == HeapType::CPU, "Can only map to CPU visible buffer");
-    DZ_ASSERTM(m_mappedMemory == nullptr, std::format("Memory already mapped {}", Name.c_str()));
-    vmaMapMemory(m_context->Vma, m_allocation, &m_mappedMemory);
+    DZ_ASSERTM( m_desc.HeapType == HeapType::CPU_GPU || m_desc.HeapType == HeapType::CPU, "Can only map to CPU visible buffer" );
+    DZ_ASSERTM( m_mappedMemory == nullptr, std::format( "Memory already mapped {}", Name ) );
+    vmaMapMemory( m_context->Vma, m_allocation, &m_mappedMemory );
     return m_mappedMemory;
 }
 
-void VulkanBufferResource::UnmapMemory()
+void VulkanBufferResource::UnmapMemory( )
 {
-    DZ_ASSERTM(m_mappedMemory != nullptr, std::format("Memory not mapped, buffer: {}", Name.c_str()));
-    vmaUnmapMemory(m_context->Vma, m_allocation);
+    DZ_ASSERTM( m_mappedMemory != nullptr, std::format( "Memory not mapped, buffer: {}", Name ) );
+    vmaUnmapMemory( m_context->Vma, m_allocation );
     m_mappedMemory = nullptr;
 }
-VulkanBufferResource::~VulkanBufferResource()
+
+VulkanBufferResource::~VulkanBufferResource( )
 {
     if ( m_mappedMemory != nullptr )
     {
-        LOG(WARNING) << "Memory not unmapped before lifetime of the buffer.";
-        vmaUnmapMemory(m_context->Vma, m_allocation);
+        LOG( WARNING ) << "Memory not unmapped before lifetime of the buffer.";
+        vmaUnmapMemory( m_context->Vma, m_allocation );
     }
 
-    vmaDestroyBuffer(m_context->Vma, Instance, m_allocation);
+    vmaDestroyBuffer( m_context->Vma, m_instance, m_allocation );
 }
