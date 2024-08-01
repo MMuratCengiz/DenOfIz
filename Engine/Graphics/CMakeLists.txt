@@ -223,9 +223,9 @@ endif ()
 if (WIN32 OR LINUX)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_VK)
     target_link_libraries(DenOfIzGraphics PUBLIC
-            Vulkan::Vulkan
             volk::volk
             volk::volk_headers
+            Vulkan::Vulkan
             GPUOpen::VulkanMemoryAllocator)
 endif ()
 

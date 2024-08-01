@@ -22,18 +22,18 @@ using namespace DenOfIz;
 
 VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc ) : m_context( context ), m_desc( std::move( desc ) )
 {
-    for ( const ResourceBindingDesc &binding : desc.ResourceBindings )
+    for ( const ResourceBindingDesc &binding : m_desc.ResourceBindings )
     {
         AddResourceBinding( binding );
     }
 
-    for ( const StaticSamplerDesc &staticSamplerDesc : desc.StaticSamplers )
+    for ( const StaticSamplerDesc &staticSamplerDesc : m_desc.StaticSamplers )
     {
         AddStaticSampler( staticSamplerDesc );
     }
 
     int registerSpace = 0;
-    for ( int i = 0; i < m_layoutBindings.size( );)
+    for ( int i = 0; i < m_layoutBindings.size( ); )
     {
         if ( m_layoutBindings.find( i ) == m_layoutBindings.end( ) )
         {
@@ -47,6 +47,7 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
         layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = layoutBindings.size( );
         layoutInfo.pBindings    = layoutBindings.data( );
+        layoutInfo.flags        = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
 
         VkDescriptorSetLayout layout;
         VK_CHECK_RESULT( vkCreateDescriptorSetLayout( m_context->LogicalDevice, &layoutInfo, nullptr, &layout ) );
@@ -112,6 +113,7 @@ void VulkanRootSignature::AddResourceBindingInternal( const ResourceBindingDesc 
 VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBinding( const ResourceBindingDesc &binding )
 {
     VkDescriptorSetLayoutBinding layoutBinding{ };
+    // Todo binding from binding slot
     layoutBinding.binding         = binding.Binding;
     layoutBinding.descriptorType  = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType( binding.Descriptor );
     layoutBinding.descriptorCount = binding.ArraySize;

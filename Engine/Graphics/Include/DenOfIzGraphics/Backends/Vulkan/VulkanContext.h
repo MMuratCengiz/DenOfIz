@@ -58,12 +58,9 @@ namespace DenOfIz
         VkDevice         LogicalDevice;
         VmaAllocator     Vma;
 
-        VkImage DepthImage;
-
         VkCommandPool    TransferQueueCommandPool;
         VkCommandPool    GraphicsQueueCommandPool;
         VkCommandPool    ComputeQueueCommandPool;
-        VkDescriptorPool DescriptorPool;
 
         GraphicsWindowHandle                      *Window;
         std::unordered_map<QueueType, QueueFamily> QueueFamilies;

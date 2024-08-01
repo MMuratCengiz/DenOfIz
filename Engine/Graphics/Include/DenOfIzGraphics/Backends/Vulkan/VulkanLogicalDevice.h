@@ -30,8 +30,6 @@ namespace DenOfIz
 
     class VulkanLogicalDevice final : public ILogicalDevice
     {
-        const std::unordered_map<std::string, bool> m_enabledLayers;
-
         static const std::unordered_map<std::string, bool> g_optionalLayers;
         static const std::vector<const char *>             g_requiredDeviceExtensions;
         static const std::vector<const char *>             g_optionalDeviceExtensions;

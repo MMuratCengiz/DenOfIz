@@ -108,21 +108,6 @@ namespace DenOfIz
 #error "Not implemented yet"
 #endif
         }
-
-#ifdef BUILD_VK
-        const std::vector<const char *> GetVkRequiredExtensions() const
-        {
-#ifdef WINDOW_MANAGER_SDL
-            uint32_t extensionCount = 0;
-            SDL_Vulkan_GetInstanceExtensions(m_sdlWindow, &extensionCount, nullptr);
-            std::vector<const char *> extensions(extensionCount);
-            SDL_Vulkan_GetInstanceExtensions(m_sdlWindow, &extensionCount, extensions.data());
-            return extensions;
-#else
-#error "Not implemented yet"
-#endif
-        }
-#endif
         ~GraphicsWindowHandle() = default;
     };
 

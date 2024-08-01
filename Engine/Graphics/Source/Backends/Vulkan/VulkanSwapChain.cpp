@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h>
 
 using namespace DenOfIz;
 
@@ -30,12 +30,16 @@ VulkanSwapChain::VulkanSwapChain( VulkanContext *context, const SwapChainDesc &d
 
 void VulkanSwapChain::CreateSurface( )
 {
+    DZ_NOT_NULL( m_context );
+    DZ_NOT_NULL( m_desc.WindowHandle->GetNativeHandle() );
 #ifdef WIN32
     VkWin32SurfaceCreateInfoKHR createInfo{ };
     createInfo.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     createInfo.hwnd      = m_desc.WindowHandle->GetNativeHandle( );
-    createInfo.hinstance = GetModuleHandle( nullptr );
-    DZ_ASSERTM( vkCreateWin32SurfaceKHR( m_context->Instance, &createInfo, nullptr, &m_surface ) == VK_SUCCESS, "Failed to create surface" );
+    createInfo.hinstance = ::GetModuleHandle( nullptr );
+    createInfo.flags     = 0;
+    createInfo.pNext     = nullptr;
+    VK_CHECK_RESULT( vkCreateWin32SurfaceKHR( m_context->Instance, &createInfo, nullptr, &m_surface ) );
 #else
 #error "Not implemented yet"
 #endif

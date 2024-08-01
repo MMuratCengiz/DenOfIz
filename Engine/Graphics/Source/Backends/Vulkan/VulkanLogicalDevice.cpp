@@ -144,7 +144,7 @@ void VulkanLogicalDevice::CreateDevice( )
     createInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
 
-    InitDeviceExtensions( );
+    InitInstanceExtensions( );
     std::vector<const char *> layers;
     InitSupportedLayers( layers );
 
@@ -243,7 +243,7 @@ void VulkanLogicalDevice::InitSupportedLayers( std::vector<const char *> &layers
 
     for ( const VkLayerProperties prp : layerProperties )
     {
-        if ( auto layerPair = m_enabledLayers.find( prp.layerName ); layerPair != m_enabledLayers.end( ) )
+        if ( auto layerPair = g_optionalLayers.find( prp.layerName ); layerPair != g_optionalLayers.end( ) )
         {
             m_supportedLayers.insert( prp.layerName );
             layers.emplace_back( layerPair->first.c_str( ) );
@@ -262,9 +262,8 @@ std::vector<PhysicalDevice> VulkanLogicalDevice::ListPhysicalDevices( )
 
     for ( const auto &device : devices )
     {
-        VkPhysicalDevice physicalDevice = device;
-        PhysicalDevice   deviceInfo{ };
-        CreateDeviceInfo( physicalDevice, deviceInfo );
+        PhysicalDevice deviceInfo{ };
+        CreateDeviceInfo( device, deviceInfo );
         result.push_back( deviceInfo );
     }
 
@@ -273,10 +272,11 @@ std::vector<PhysicalDevice> VulkanLogicalDevice::ListPhysicalDevices( )
 
 void VulkanLogicalDevice::CreateDeviceInfo( const VkPhysicalDevice &physicalDevice, PhysicalDevice &deviceInfo ) const
 {
-    VkPhysicalDeviceFeatures2 deviceFeatures;
-    vkGetPhysicalDeviceFeatures2( physicalDevice, &deviceFeatures );
-    VkPhysicalDeviceProperties2 deviceProperties;
-    vkGetPhysicalDeviceProperties2( physicalDevice, &deviceProperties );
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceFeatures( physicalDevice, &deviceFeatures );
+
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties( physicalDevice, &deviceProperties );
 
     uint32_t                             queueFamilyCount;
     std::vector<VkQueueFamilyProperties> localQueueFamilies;
@@ -289,25 +289,24 @@ void VulkanLogicalDevice::CreateDeviceInfo( const VkPhysicalDevice &physicalDevi
     std::vector<VkExtensionProperties> extensions( extensionPropertyCount );
     vkEnumerateDeviceExtensionProperties( physicalDevice, nullptr, &extensionPropertyCount, extensions.data( ) );
 
-    deviceInfo.Id   = deviceProperties.properties.deviceID;
-    deviceInfo.Name = std::string( deviceProperties.properties.deviceName );
+    deviceInfo.Id   = deviceProperties.deviceID;
+    deviceInfo.Name = std::string( deviceProperties.deviceName );
 
     // Todo actually read these from somewhere:
-    deviceInfo.Properties.IsDedicated = deviceProperties.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+    deviceInfo.Properties.IsDedicated = deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
     if ( m_enabledInstanceExtensions.contains( VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME ) )
     {
         deviceInfo.Capabilities.RayTracing = true;
     }
-    deviceInfo.Capabilities.DedicatedCopyQueue = m_context->QueueFamilies.at( QueueType::Copy ).Index != m_context->QueueFamilies.at( QueueType::Graphics ).Index;
-    deviceInfo.Capabilities.ComputeShaders     = true;
-    deviceInfo.Capabilities.GeometryShaders    = true;
-    deviceInfo.Capabilities.Tessellation       = true;
-    deviceInfo.Capabilities.HDR                = m_enabledInstanceExtensions.contains( VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME );
-    deviceInfo.Capabilities.Tearing            = true;
+    deviceInfo.Capabilities.ComputeShaders  = true;
+    deviceInfo.Capabilities.GeometryShaders = true;
+    deviceInfo.Capabilities.Tessellation    = true;
+    deviceInfo.Capabilities.HDR             = m_enabledInstanceExtensions.contains( VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME );
+    deviceInfo.Capabilities.Tearing         = true;
 
-    deviceInfo.Constants.ConstantBufferAlignment   = deviceProperties.properties.limits.minUniformBufferOffsetAlignment;
-    deviceInfo.Constants.BufferTextureAlignment    = deviceProperties.properties.limits.optimalBufferCopyOffsetAlignment;
-    deviceInfo.Constants.BufferTextureRowAlignment = deviceProperties.properties.limits.optimalBufferCopyRowPitchAlignment;
+    deviceInfo.Constants.ConstantBufferAlignment   = deviceProperties.limits.minUniformBufferOffsetAlignment;
+    deviceInfo.Constants.BufferTextureAlignment    = deviceProperties.limits.optimalBufferCopyOffsetAlignment;
+    deviceInfo.Constants.BufferTextureRowAlignment = deviceProperties.limits.optimalBufferCopyRowPitchAlignment;
 }
 
 void VulkanLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
@@ -354,26 +353,6 @@ void VulkanLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     computeCommandPoolCreateInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     computeCommandPoolCreateInfo.queueFamilyIndex = m_context->QueueFamilies[ QueueType::Compute ].Index;
     vkCreateCommandPool( m_context->LogicalDevice, &computeCommandPoolCreateInfo, nullptr, &m_context->ComputeQueueCommandPool );
-
-    // Todo !IMPROVEMENT! find a better approach
-    VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{ };
-    descriptorPoolCreateInfo.sType   = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    descriptorPoolCreateInfo.flags   = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    descriptorPoolCreateInfo.maxSets = 1000;
-
-    VkDescriptorPoolSize uniformBufferPoolSize{ };
-    uniformBufferPoolSize.type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uniformBufferPoolSize.descriptorCount = 1000;
-
-    VkDescriptorPoolSize combinedImageSamplerPoolSize{ };
-    combinedImageSamplerPoolSize.type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    combinedImageSamplerPoolSize.descriptorCount = 1000;
-
-    const std::vector poolSizes            = { uniformBufferPoolSize, combinedImageSamplerPoolSize };
-    descriptorPoolCreateInfo.poolSizeCount = poolSizes.size( );
-    descriptorPoolCreateInfo.pPoolSizes    = poolSizes.data( );
-
-    vkCreateDescriptorPool( m_context->LogicalDevice, &descriptorPoolCreateInfo, nullptr, &m_context->DescriptorPool );
 }
 
 void VulkanLogicalDevice::SetupQueueFamilies( ) const
@@ -434,7 +413,7 @@ void VulkanLogicalDevice::CreateLogicalDevice( )
     dynamicRenderingFeature.dynamicRendering = VK_TRUE;
     dynamicRenderingFeature.pNext            = &extendedDynamicStateFeature;
 
-    InitInstanceExtensions( );
+    InitDeviceExtensions( );
     std::vector<const char *> enabledExtensions( m_enabledDeviceExtensions.size( ) );
     std::copy( m_enabledDeviceExtensions.begin( ), m_enabledDeviceExtensions.end( ), enabledExtensions.begin( ) );
 
@@ -444,8 +423,8 @@ void VulkanLogicalDevice::CreateLogicalDevice( )
     createInfo.pQueueCreateInfos       = deviceQueueCreateInfos.data( );
     createInfo.enabledExtensionCount   = enabledExtensions.size( );
     createInfo.ppEnabledExtensionNames = enabledExtensions.data( );
-    createInfo.enabledLayerCount       = g_requiredDeviceExtensions.size( );
-    createInfo.ppEnabledLayerNames     = g_requiredDeviceExtensions.data( );
+    createInfo.enabledLayerCount       = 0;
+    createInfo.ppEnabledLayerNames     = nullptr;
     createInfo.pEnabledFeatures        = &features;
     createInfo.pNext                   = &dynamicRenderingFeature;
 
@@ -459,15 +438,39 @@ void VulkanLogicalDevice::CreateLogicalDevice( )
     vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies[ QueueType::Graphics ].Index, 0, &m_context->Queues[ QueueType::Graphics ] );
     vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies[ QueueType::Presentation ].Index, 0, &m_context->Queues[ QueueType::Presentation ] );
     vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies[ QueueType::Copy ].Index, 0, &m_context->Queues[ QueueType::Copy ] );
+    m_context->SelectedDeviceInfo.Capabilities.DedicatedCopyQueue =
+        m_context->QueueFamilies.at( QueueType::Copy ).Index != m_context->QueueFamilies.at( QueueType::Graphics ).Index;
 }
 
 void VulkanLogicalDevice::InitializeVma( ) const
 {
+    VmaVulkanFunctions vmaVkFunctions{ };
+    vmaVkFunctions.vkGetInstanceProcAddr               = vkGetInstanceProcAddr;
+    vmaVkFunctions.vkGetDeviceProcAddr                 = vkGetDeviceProcAddr;
+    vmaVkFunctions.vkAllocateMemory                    = vkAllocateMemory;
+    vmaVkFunctions.vkBindBufferMemory                  = vkBindBufferMemory;
+    vmaVkFunctions.vkBindImageMemory                   = vkBindImageMemory;
+    vmaVkFunctions.vkCreateBuffer                      = vkCreateBuffer;
+    vmaVkFunctions.vkCreateImage                       = vkCreateImage;
+    vmaVkFunctions.vkDestroyBuffer                     = vkDestroyBuffer;
+    vmaVkFunctions.vkDestroyImage                      = vkDestroyImage;
+    vmaVkFunctions.vkFlushMappedMemoryRanges           = vkFlushMappedMemoryRanges;
+    vmaVkFunctions.vkFreeMemory                        = vkFreeMemory;
+    vmaVkFunctions.vkGetBufferMemoryRequirements       = vkGetBufferMemoryRequirements;
+    vmaVkFunctions.vkGetImageMemoryRequirements        = vkGetImageMemoryRequirements;
+    vmaVkFunctions.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+    vmaVkFunctions.vkGetPhysicalDeviceProperties       = vkGetPhysicalDeviceProperties;
+    vmaVkFunctions.vkInvalidateMappedMemoryRanges      = vkInvalidateMappedMemoryRanges;
+    vmaVkFunctions.vkMapMemory                         = vkMapMemory;
+    vmaVkFunctions.vkUnmapMemory                       = vkUnmapMemory;
+    vmaVkFunctions.vkCmdCopyBuffer                     = vkCmdCopyBuffer;
+
     VmaAllocatorCreateInfo allocatorInfo = { };
     allocatorInfo.vulkanApiVersion       = VK_API_VERSION_1_3;
     allocatorInfo.physicalDevice         = m_context->PhysicalDevice;
     allocatorInfo.device                 = m_context->LogicalDevice;
     allocatorInfo.instance               = m_context->Instance;
+    allocatorInfo.pVulkanFunctions       = &vmaVkFunctions;
 
     vmaCreateAllocator( &allocatorInfo, &m_context->Vma );
 }
@@ -483,15 +486,12 @@ std::vector<VkDeviceQueueCreateInfo> VulkanLogicalDevice::CreateUniqueDeviceCrea
         {
             float priority = key.first == QueueType::Graphics || key.first == QueueType::Presentation ? 1.0f : 0.9f;
 
-            VkDeviceQueueCreateInfo queueCreateInfo{ };
-            queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = key.second.Index;
-            queueCreateInfo.queueCount       = 1;
-            queueCreateInfo.pQueuePriorities = &priority;
-
-            result.emplace_back( queueCreateInfo );
-
-            uniqueIndexes[ key.second.Index ] = true;
+            VkDeviceQueueCreateInfo &queueCreateInfo = result.emplace_back( VkDeviceQueueCreateInfo{ } );
+            queueCreateInfo.sType                    = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex         = key.second.Index;
+            queueCreateInfo.queueCount               = 1;
+            queueCreateInfo.pQueuePriorities         = &priority;
+            uniqueIndexes[ key.second.Index ]        = true;
         }
     }
 
@@ -512,7 +512,6 @@ VulkanLogicalDevice::~VulkanLogicalDevice( )
         return;
     }
 
-    vkDestroyDescriptorPool( m_context->LogicalDevice, m_context->DescriptorPool, nullptr );
     vkDestroyCommandPool( m_context->LogicalDevice, m_context->TransferQueueCommandPool, nullptr );
     vkDestroyCommandPool( m_context->LogicalDevice, m_context->GraphicsQueueCommandPool, nullptr );
     vkDestroyCommandPool( m_context->LogicalDevice, m_context->ComputeQueueCommandPool, nullptr );
