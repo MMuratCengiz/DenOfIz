@@ -71,19 +71,35 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
     imageCreateInfo.extent.height = std::max( 1u, m_desc.Height );
     imageCreateInfo.extent.depth  = std::max( 1u, m_desc.Depth );
     imageCreateInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
-    imageCreateInfo.usage         = VulkanEnumConverter::ConvertTextureDescriptorToUsage( desc.Descriptor, desc.InitialState );
+    imageCreateInfo.usage         = VulkanEnumConverter::ConvertTextureUsage( desc.Descriptor, desc.InitialState );
     imageCreateInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
     imageCreateInfo.samples       = VulkanEnumConverter::ConvertSampleCount( desc.MSAASampleCount );
     imageCreateInfo.mipLevels     = desc.MipLevels;
     imageCreateInfo.arrayLayers   = desc.ArraySize;
+    imageCreateInfo.initialLayout = VulkanEnumConverter::ConvertTextureDescriptorToLayout( desc.InitialState );
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VmaAllocationCreateInfo allocationCreateInfo{ };
+    switch ( desc.HeapType )
+    {
+    case HeapType::GPU:
+        allocationCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        break;
+    case HeapType::CPU:
+        allocationCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        break;
+    case HeapType::GPU_CPU:
+    case HeapType::CPU_GPU:
+        allocationCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        allocationCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        break;
+    }
     allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-    vmaCreateImage( context->Vma, &imageCreateInfo, &allocationCreateInfo, &m_image, &m_allocation, nullptr );
+    VK_CHECK_RESULT( vmaCreateImage( context->Vma, &imageCreateInfo, &allocationCreateInfo, &m_image, &m_allocation, nullptr ) );
 
     VkImageViewCreateInfo viewCreateInfo{ };
+    viewCreateInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewCreateInfo.image                           = m_image;
     viewCreateInfo.viewType                        = viewType;
     viewCreateInfo.format                          = VulkanEnumConverter::ConvertImageFormat( desc.Format );
@@ -97,13 +113,12 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
     viewCreateInfo.subresourceRange.baseArrayLayer = 0;
     viewCreateInfo.subresourceRange.layerCount     = 1; // Todo what to put here?
 
-    VK_CHECK_RESULT( vkCreateImageView( m_context->LogicalDevice, &viewCreateInfo, nullptr, &m_imageView ) );
     m_aspect = VulkanEnumConverter::ConvertImageAspect( desc.Aspect );
 
     for ( uint32_t i = 0; i < m_desc.ArraySize; ++i )
     {
         viewCreateInfo.subresourceRange.baseArrayLayer = i;
-        for ( uint32_t j = 0; i < m_desc.MipLevels; ++j )
+        for ( uint32_t j = 0; j < m_desc.MipLevels; ++j )
         {
             viewCreateInfo.subresourceRange.baseMipLevel = j;
             VK_CHECK_RESULT( vkCreateImageView( m_context->LogicalDevice, &viewCreateInfo, nullptr, &m_imageView ) );
@@ -120,7 +135,7 @@ VulkanTextureResource::~VulkanTextureResource( )
 VulkanSampler::VulkanSampler( VulkanContext *context, const SamplerDesc &desc ) : m_context( context ), m_desc( desc )
 {
     VkSamplerCreateInfo samplerCreateInfo{ };
-
+    samplerCreateInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerCreateInfo.magFilter               = VulkanEnumConverter::ConvertFilter( desc.MagFilter );
     samplerCreateInfo.minFilter               = VulkanEnumConverter::ConvertFilter( desc.MinFilter );
     samplerCreateInfo.addressModeU            = VulkanEnumConverter::ConvertAddressMode( desc.AddressModeU );

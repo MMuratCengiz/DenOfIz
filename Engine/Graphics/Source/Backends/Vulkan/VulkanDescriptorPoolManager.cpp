@@ -25,9 +25,22 @@ VulkanDescriptorPoolManager::VulkanDescriptorPool::VulkanDescriptorPool( const V
     std::vector<VkDescriptorPoolSize> poolSizes;
 
     VkDescriptorPoolSize poolSize{ };
-    for ( int i = 0; i < VK_DESCRIPTOR_TYPE_MAX_ENUM; i++ )
+    VkDescriptorType     supportedTypes[] = { VK_DESCRIPTOR_TYPE_SAMPLER,
+                                              VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                              VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                              VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                              VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+                                              VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                              VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                              VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
+                                              VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+                                              VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR };
+
+    for ( VkDescriptorType& i : supportedTypes )
     {
-        poolSize.type            = static_cast<VkDescriptorType>( i );
+        poolSize.type            = i;
         poolSize.descriptorCount = numSets;
         poolSizes.push_back( poolSize );
     }

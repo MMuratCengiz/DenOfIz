@@ -27,15 +27,16 @@ namespace DenOfIz
     class VulkanSemaphore final : public ISemaphore
     {
         VulkanContext *m_context;
-        VkSemaphore  m_semaphore{};
+        VkSemaphore    m_semaphore{ };
+        uint64_t       m_value = 0;
 
     public:
-        explicit VulkanSemaphore(VulkanContext *context);
-        ~        VulkanSemaphore( ) override;
-        void Wait() override;
-        void Notify() override;
+        explicit VulkanSemaphore( VulkanContext *context );
+        ~VulkanSemaphore( ) override;
+        void Wait( ) override;
+        void Notify( ) override;
 
-        VkSemaphore GetSemaphore() const
+        VkSemaphore GetSemaphore( ) const
         {
             return m_semaphore;
         }

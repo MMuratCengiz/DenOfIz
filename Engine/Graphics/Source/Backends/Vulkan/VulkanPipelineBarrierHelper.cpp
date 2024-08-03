@@ -125,7 +125,10 @@ VkImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier( const Text
 VkBufferMemoryBarrier VulkanPipelineBarrierHelper::CreateBufferBarrier( const BufferBarrierDesc &barrier, VkAccessFlags &srcAccessFlags, VkAccessFlags &dstAccessFlags )
 {
     VkBufferMemoryBarrier memoryBarrier{ };
-    memoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    memoryBarrier.sType  = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    memoryBarrier.buffer = dynamic_cast<VulkanBufferResource *>( barrier.Resource )->Instance( );
+    memoryBarrier.offset = 0;
+    memoryBarrier.size   = VK_WHOLE_SIZE;
 
     if ( barrier.OldState.IsSet( ResourceState::UnorderedAccess ) && barrier.NewState.IsSet( ResourceState::UnorderedAccess ) )
     {

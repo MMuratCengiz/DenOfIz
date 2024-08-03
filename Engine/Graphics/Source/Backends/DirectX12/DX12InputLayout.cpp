@@ -77,7 +77,7 @@ DX12InputLayout::DX12InputLayout(const InputLayoutDesc &desc)
             element.AlignedByteOffset    = offset;
             element.InstanceDataStepRate = instanceDataStepRate;
 
-            offset += GetImageFormatSize(inputElement.Format);
+            offset += FormatNumBytes( inputElement.Format );
         }
 
         bindingIndex++;

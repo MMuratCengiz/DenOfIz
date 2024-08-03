@@ -17,12 +17,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h"
+#include "DenOfIzCore/Utilities.h"
 
 using namespace DenOfIz;
 
 VulkanBufferResource::VulkanBufferResource( VulkanContext *context, const BufferDesc &desc ) : m_desc( desc ), m_context( context ), m_allocation( nullptr )
 {
-    m_numBytes = m_desc.NumBytes;
+    m_numBytes = Utilities::Align(m_desc.NumBytes, m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment);
 
     VkBufferCreateInfo bufferCreateInfo{ };
     bufferCreateInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

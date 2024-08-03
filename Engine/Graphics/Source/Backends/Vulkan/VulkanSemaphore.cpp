@@ -33,9 +33,11 @@ void VulkanSemaphore::Wait( )
     waitInfo.sType          = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
     waitInfo.semaphoreCount = 1;
     waitInfo.pSemaphores    = &m_semaphore;
+    waitInfo.pValues        = &m_value;
     waitInfo.flags          = VK_SEMAPHORE_WAIT_ANY_BIT;
 
     VK_CHECK_RESULT( vkWaitSemaphores( m_context->LogicalDevice, &waitInfo, UINT64_MAX ) );
+    m_value = 0;
 }
 
 void VulkanSemaphore::Notify( )
@@ -43,6 +45,7 @@ void VulkanSemaphore::Notify( )
     VkSemaphoreSignalInfo signalInfo{ };
     signalInfo.sType     = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
     signalInfo.semaphore = m_semaphore;
+    signalInfo.value     = m_value;
 
     VK_CHECK_RESULT( vkSignalSemaphore( m_context->LogicalDevice, &signalInfo ) );
 }

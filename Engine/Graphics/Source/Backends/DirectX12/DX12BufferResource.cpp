@@ -24,7 +24,7 @@ using namespace DenOfIz;
 
 DX12BufferResource::DX12BufferResource(DX12Context *context, const BufferDesc &desc) : m_context(context), m_desc(desc)
 {
-    m_stride                   = GetImageFormatSize(m_desc.Format);
+    m_stride                   = FormatNumBytes( m_desc.Format );
     m_numBytes                 = Utilities::Align(m_desc.NumBytes, std::max<uint32_t>(m_desc.Alignment, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT));
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
 

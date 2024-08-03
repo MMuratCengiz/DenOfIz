@@ -37,7 +37,7 @@ VulkanInputLayout::VulkanInputLayout( const InputLayoutDesc &inputLayoutDesc )
             attributeDescription.location                           = static_cast<int>( inputElement.Semantic ) + inputElement.SemanticIndex; // Is this correct? !CHECK_VK!
             attributeDescription.format                             = VulkanEnumConverter::ConvertImageFormat( inputElement.Format );
             attributeDescription.offset                             = offset;
-            offset += GetImageFormatSize( inputElement.Format );
+            offset += FormatNumBytes( inputElement.Format );
         }
         bindingDescription.stride = inputGroup.Elements.size( ) * sizeof( float );
         bindingIndex++;

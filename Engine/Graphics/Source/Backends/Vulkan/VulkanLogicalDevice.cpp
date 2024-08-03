@@ -119,6 +119,7 @@ const std::vector<const char *> VulkanLogicalDevice::g_requiredDeviceExtensions 
 
 const std::vector<const char *> VulkanLogicalDevice::g_optionalDeviceExtensions =
 {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     // Ray Tracing
     VK_KHR_RAY_QUERY_EXTENSION_NAME,
     VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
@@ -302,9 +303,14 @@ void VulkanLogicalDevice::CreateDeviceInfo( const VkPhysicalDevice &physicalDevi
     {
         deviceInfo.Capabilities.RayTracing = true;
     }
+
+    VkPhysicalDeviceFeatures2 deviceFeatures2{ };
+    deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    vkGetPhysicalDeviceFeatures2( physicalDevice, &deviceFeatures2 );
+
     deviceInfo.Capabilities.ComputeShaders  = true;
-    deviceInfo.Capabilities.GeometryShaders = true;
-    deviceInfo.Capabilities.Tessellation    = true;
+    deviceInfo.Capabilities.GeometryShaders = deviceFeatures2.features.geometryShader;
+    deviceInfo.Capabilities.Tessellation    = deviceFeatures2.features.tessellationShader;
     deviceInfo.Capabilities.HDR             = m_enabledInstanceExtensions.contains( VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME );
     deviceInfo.Capabilities.Tearing         = true;
 
@@ -407,7 +413,14 @@ void VulkanLogicalDevice::CreateLogicalDevice( )
     VkPhysicalDeviceFeatures features{ };
     features.samplerAnisotropy  = true;
     features.sampleRateShading  = true;
-    features.tessellationShader = true;
+    if ( m_context->SelectedDeviceInfo.Capabilities.Tessellation )
+    {
+        features.tessellationShader = true;
+    }
+    if ( m_context->SelectedDeviceInfo.Capabilities.GeometryShaders )
+    {
+        features.geometryShader     = true;
+    }
 
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeature{ };
     extendedDynamicStateFeature.sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;

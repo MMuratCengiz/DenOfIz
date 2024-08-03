@@ -30,7 +30,7 @@ namespace DenOfIz
     class VulkanEnumConverter
     {
     public:
-        static VkShaderStageFlagBits ConvertShaderStage(const ShaderStage &shaderStage)
+        static VkShaderStageFlagBits ConvertShaderStage( const ShaderStage &shaderStage )
         {
             switch ( shaderStage )
             {
@@ -71,7 +71,7 @@ namespace DenOfIz
             return VK_SHADER_STAGE_VERTEX_BIT;
         }
 
-        static VkSampleCountFlagBits ConvertSampleCount(const MSAASampleCount &sampleCount)
+        static VkSampleCountFlagBits ConvertSampleCount( const MSAASampleCount &sampleCount )
         {
             switch ( sampleCount )
             {
@@ -95,7 +95,7 @@ namespace DenOfIz
             return VK_SAMPLE_COUNT_1_BIT;
         }
 
-        static VkStencilOp ConvertStencilOp(const StencilOp &stencilOp)
+        static VkStencilOp ConvertStencilOp( const StencilOp &stencilOp )
         {
             switch ( stencilOp )
             {
@@ -120,7 +120,7 @@ namespace DenOfIz
             return VK_STENCIL_OP_ZERO;
         }
 
-        static VkCompareOp ConvertCompareOp(const CompareOp &compareOp)
+        static VkCompareOp ConvertCompareOp( const CompareOp &compareOp )
         {
             switch ( compareOp )
             {
@@ -145,7 +145,7 @@ namespace DenOfIz
             return VK_COMPARE_OP_ALWAYS;
         }
 
-        static VkAttachmentLoadOp ConvertLoadOp(const LoadOp &loadOp)
+        static VkAttachmentLoadOp ConvertLoadOp( const LoadOp &loadOp )
         {
             switch ( loadOp )
             {
@@ -160,7 +160,7 @@ namespace DenOfIz
             return VK_ATTACHMENT_LOAD_OP_LOAD;
         }
 
-        static VkAttachmentStoreOp ConvertStoreOp(const StoreOp &storeOp)
+        static VkAttachmentStoreOp ConvertStoreOp( const StoreOp &storeOp )
         {
             switch ( storeOp )
             {
@@ -175,7 +175,7 @@ namespace DenOfIz
             return VK_ATTACHMENT_STORE_OP_STORE;
         }
 
-        static VkFilter ConvertFilter(const Filter &filter)
+        static VkFilter ConvertFilter( const Filter &filter )
         {
             switch ( filter )
             {
@@ -188,7 +188,7 @@ namespace DenOfIz
             return VK_FILTER_LINEAR;
         }
 
-        static VkSamplerAddressMode ConvertAddressMode(const SamplerAddressMode &addressMode)
+        static VkSamplerAddressMode ConvertAddressMode( const SamplerAddressMode &addressMode )
         {
             switch ( addressMode )
             {
@@ -204,7 +204,7 @@ namespace DenOfIz
             return VK_SAMPLER_ADDRESS_MODE_REPEAT;
         }
 
-        static VkSamplerMipmapMode ConvertMipmapMode(const MipmapMode &mipmapMode)
+        static VkSamplerMipmapMode ConvertMipmapMode( const MipmapMode &mipmapMode )
         {
             switch ( mipmapMode )
             {
@@ -218,47 +218,47 @@ namespace DenOfIz
         }
 
         // !IMPROVEMENT! This might be incorrect
-        static VkBufferUsageFlags ConvertBufferUsage(BitSet<ResourceDescriptor> usage, BitSet<ResourceState> initialState)
+        static VkBufferUsageFlags ConvertBufferUsage( BitSet<ResourceDescriptor> usage, BitSet<ResourceState> initialState )
         {
-            VkBufferUsageFlags flags = {};
-            if ( initialState.IsSet(ResourceState::CopySrc) )
+            VkBufferUsageFlags flags = { };
+            if ( initialState.IsSet( ResourceState::CopySrc ) )
             {
                 flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             }
-            if ( initialState.IsSet(ResourceState::CopyDst) )
+            if ( initialState.IsSet( ResourceState::CopyDst ) )
             {
                 flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
             }
-            if ( usage.IsSet(ResourceDescriptor::IndexBuffer) )
+            if ( usage.IsSet( ResourceDescriptor::IndexBuffer ) )
             {
                 flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
             }
-            if ( usage.IsSet(ResourceDescriptor::VertexBuffer) )
+            if ( usage.IsSet( ResourceDescriptor::VertexBuffer ) )
             {
                 flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
             }
-            if ( usage.IsSet(ResourceDescriptor::UniformBuffer) )
+            if ( usage.IsSet( ResourceDescriptor::UniformBuffer ) )
             {
                 flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
             }
-            if ( usage.IsSet(ResourceDescriptor::Buffer) )
+            if ( usage.IsSet( ResourceDescriptor::Buffer ) )
             {
                 flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             }
-            if ( usage.IsSet(ResourceDescriptor::IndirectBuffer) )
+            if ( usage.IsSet( ResourceDescriptor::IndirectBuffer ) )
             {
                 flags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
             }
-            if ( usage.IsSet(ResourceDescriptor::AccelerationStructure) )
+            if ( usage.IsSet( ResourceDescriptor::AccelerationStructure ) )
             {
                 flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             }
 
-            if ( initialState.IsSet(ResourceState::AccelerationStructureWrite) )
+            if ( initialState.IsSet( ResourceState::AccelerationStructureWrite ) )
             {
                 flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
             }
-            if ( initialState.IsSet(ResourceState::AccelerationStructureRead) )
+            if ( initialState.IsSet( ResourceState::AccelerationStructureRead ) )
             {
                 flags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
             }
@@ -266,7 +266,7 @@ namespace DenOfIz
             return flags;
         }
 
-        static VkImageAspectFlagBits ConvertImageAspect(TextureAspect aspect)
+        static VkImageAspectFlagBits ConvertImageAspect( TextureAspect aspect )
         {
             switch ( aspect )
             {
@@ -291,22 +291,23 @@ namespace DenOfIz
             return VK_IMAGE_ASPECT_NONE;
         }
 
-        static VkImageUsageFlags ConvertTextureDescriptorToUsage(BitSet<ResourceDescriptor> descriptor, BitSet<ResourceState> initialState)
+        static VkImageUsageFlags ConvertTextureDescriptorToUsage( BitSet<ResourceDescriptor> descriptor, BitSet<ResourceState> initialState )
         {
-            VkImageUsageFlags usage = {};
-            if ( descriptor.IsSet(ResourceDescriptor::Sampler) )
+            VkImageUsageFlags usage = { };
+
+            if ( initialState.IsSet( ResourceState::CopySrc ) )
             {
-                usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+                usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
             }
-            if ( descriptor.Any({ ResourceDescriptor::RWBuffer, ResourceDescriptor::RWTexture }) )
+            if ( initialState.IsSet( ResourceState::CopyDst ) )
             {
-                usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+                usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
             }
-            if ( initialState.IsSet(ResourceState::RenderTarget) )
+            if ( initialState.IsSet( ResourceState::RenderTarget ) )
             {
                 usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
             }
-            if ( initialState.Any({ ResourceState::DepthRead, ResourceState::DepthWrite }) )
+            if ( initialState.Any( { ResourceState::DepthRead, ResourceState::DepthWrite } ) )
             {
                 usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
             }
@@ -314,7 +315,7 @@ namespace DenOfIz
         }
 
         // Weird naming on Vma or my side, either way location
-        static VmaMemoryUsage ConvertHeapType(HeapType location)
+        static VmaMemoryUsage ConvertHeapType( HeapType location )
         {
             switch ( location )
             {
@@ -331,7 +332,7 @@ namespace DenOfIz
             return VMA_MEMORY_USAGE_AUTO;
         }
 
-        static VkFormat ConvertImageFormat(const Format &imageFormat)
+        static VkFormat ConvertImageFormat( const Format &imageFormat )
         {
             switch ( imageFormat )
             {
@@ -483,29 +484,29 @@ namespace DenOfIz
             return VK_FORMAT_UNDEFINED;
         }
 
-        static VkDescriptorType ConvertResourceDescriptorToDescriptorType(const BitSet<ResourceDescriptor> &descriptor)
+        static VkDescriptorType ConvertResourceDescriptorToDescriptorType( const BitSet<ResourceDescriptor> &descriptor )
         {
-            if ( descriptor.IsSet(ResourceDescriptor::Sampler) )
+            if ( descriptor.IsSet( ResourceDescriptor::Sampler ) )
             {
                 return VK_DESCRIPTOR_TYPE_SAMPLER;
             }
-            if ( descriptor.IsSet(ResourceDescriptor::Texture) )
+            if ( descriptor.IsSet( ResourceDescriptor::Texture ) )
             {
                 return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
             }
-            if ( descriptor.IsSet(ResourceDescriptor::RWTexture) )
+            if ( descriptor.IsSet( ResourceDescriptor::RWTexture ) )
             {
                 return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
             }
-            if ( descriptor.IsSet(ResourceDescriptor::UniformBuffer) )
+            if ( descriptor.IsSet( ResourceDescriptor::UniformBuffer ) )
             {
                 return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             }
-            if ( descriptor.Any({ ResourceDescriptor::RWBuffer, ResourceDescriptor::Buffer }) )
+            if ( descriptor.Any( { ResourceDescriptor::RWBuffer, ResourceDescriptor::Buffer } ) )
             {
                 return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             }
-            if ( descriptor.IsSet(ResourceDescriptor::AccelerationStructure) )
+            if ( descriptor.IsSet( ResourceDescriptor::AccelerationStructure ) )
             {
                 return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
             }
@@ -513,7 +514,7 @@ namespace DenOfIz
             return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
         }
 
-        static VkPrimitiveTopology ConvertPrimitiveTopology(const PrimitiveTopology &topology)
+        static VkPrimitiveTopology ConvertPrimitiveTopology( const PrimitiveTopology &topology )
         {
             switch ( topology )
             {
@@ -545,42 +546,84 @@ namespace DenOfIz
             return VK_PIPELINE_BIND_POINT_GRAPHICS;
         }
 
-        static VkImageUsageFlags ConvertTextureUsage(BitSet<ResourceState> initialState )
+        static VkImageUsageFlags ConvertTextureUsage( BitSet<ResourceDescriptor> descriptor, BitSet<ResourceState> initialState )
         {
             VkImageUsageFlags flags = 0;
-            if ( initialState.IsSet(ResourceState::CopySrc) )
-            {
-                flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-            }
-            if ( initialState.IsSet(ResourceState::CopyDst) )
-            {
-                flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-            }
-            if ( initialState.IsSet(ResourceState::AccelerationStructureWrite) )
-            {
-                flags |= VK_IMAGE_USAGE_STORAGE_BIT;
-            }
-            if ( initialState.IsSet(ResourceState::AccelerationStructureRead) )
-            {
-                flags |= VK_IMAGE_USAGE_STORAGE_BIT;
-            }
-            if ( initialState.IsSet(ResourceState::RenderTarget) )
-            {
-                flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-            }
-            if ( initialState.IsSet(ResourceState::DepthRead) || initialState.IsSet(ResourceState::DepthWrite) )
-            {
-                flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-            }
-            if ( initialState.IsSet(ResourceState::ShaderResource) )
+            if ( descriptor.IsSet( ResourceDescriptor::Texture ) )
             {
                 flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
             }
-            if ( initialState.IsSet(ResourceState::UnorderedAccess) )
+            if ( descriptor.Any( { ResourceDescriptor::RWBuffer, ResourceDescriptor::RWTexture, ResourceDescriptor::AccelerationStructure } ) )
             {
                 flags |= VK_IMAGE_USAGE_STORAGE_BIT;
             }
+            if ( initialState.IsSet( ResourceState::CopySrc ) )
+            {
+                flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+            }
+            if ( initialState.IsSet( ResourceState::CopyDst ) )
+            {
+                flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+            }
+            if ( initialState.IsSet( ResourceState::AccelerationStructureWrite ) )
+            {
+                flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+            }
+            if ( initialState.IsSet( ResourceState::AccelerationStructureRead ) )
+            {
+                flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+            }
+            if ( initialState.IsSet( ResourceState::RenderTarget ) )
+            {
+                flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            }
+            if ( initialState.IsSet( ResourceState::DepthRead ) || initialState.IsSet( ResourceState::DepthWrite ) )
+            {
+                flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+            }
+            if ( initialState.IsSet( ResourceState::ShaderResource ) )
+            {
+                flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+            }
+            if ( initialState.IsSet( ResourceState::UnorderedAccess ) )
+            {
+                flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+            }
+            if ( flags == 0 )
+            {
+                LOG( WARNING ) << "No suitable descriptor specified for texture.";
+            }
             return flags;
+        }
+
+        // TODO !IMPROVEMENT! This needs to be more complete
+        static VkImageLayout ConvertTextureDescriptorToLayout( BitSet<ResourceState> initialState )
+        {
+            if ( initialState.IsSet( ResourceState::Common ) )
+            {
+                return VK_IMAGE_LAYOUT_GENERAL;
+            }
+            if ( initialState.IsSet( ResourceState::RenderTarget ) )
+            {
+                return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            }
+            if ( initialState.All( { ResourceState::DepthRead, ResourceState::DepthWrite } ) )
+            {
+                return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            }
+            if ( initialState.Any( { ResourceState::ShaderResource, ResourceState::PixelShaderResource } ) )
+            {
+                return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+            if ( initialState.IsSet( ResourceState::CopySrc ) )
+            {
+                return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            }
+            if ( initialState.IsSet( ResourceState::CopyDst ) )
+            {
+                return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            }
+            return VK_IMAGE_LAYOUT_UNDEFINED;
         }
     };
 

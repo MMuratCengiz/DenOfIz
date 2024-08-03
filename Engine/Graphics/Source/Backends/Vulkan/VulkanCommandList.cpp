@@ -173,7 +173,7 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeInfo )
 void VulkanCommandList::BindPipeline( IPipeline *pipeline )
 {
     m_boundPipeline = dynamic_cast<VulkanPipeline *>( pipeline );
-    vkCmdBindPipeline( m_commandBuffer, m_boundPipeline->BindPoint(), m_boundPipeline->Instance() );
+    vkCmdBindPipeline( m_commandBuffer, m_boundPipeline->BindPoint( ), m_boundPipeline->Instance( ) );
 }
 
 void VulkanCommandList::BindVertexBuffer( IBufferResource *buffer )
@@ -230,7 +230,7 @@ void VulkanCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     const std::vector<VkWriteDescriptorSet> writeDescriptorSets = vkTable->GetWriteDescriptorSets( );
     const VkPipelineBindPoint               bindPoint           = m_desc.QueueType == QueueType::Graphics ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
 
-    vkCmdPushDescriptorSetKHR( m_commandBuffer, bindPoint, m_boundPipeline->Layout(), 0, writeDescriptorSets.size( ), writeDescriptorSets.data( ) );
+    vkCmdPushDescriptorSetKHR( m_commandBuffer, bindPoint, m_boundPipeline->Layout( ), 0, writeDescriptorSets.size( ), writeDescriptorSets.data( ) );
 }
 
 void VulkanCommandList::SetDepthBias( const float constantFactor, const float clamp, const float slopeFactor )
@@ -281,13 +281,25 @@ void VulkanCommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copy
     const auto *srcBuffer = dynamic_cast<VulkanBufferResource *>( copyBufferToTextureDesc.SrcBuffer );
     const auto *dstTex    = dynamic_cast<VulkanTextureResource *>( copyBufferToTextureDesc.DstTexture );
 
+    uint32_t width  = std::max( 1u, dstTex->GetWidth( ) >> copyBufferToTextureDesc.MipLevel );
+    uint32_t height = std::max( 1u, dstTex->GetHeight( ) >> copyBufferToTextureDesc.MipLevel );
+    uint32_t depth  = std::max( 1u, dstTex->GetDepth( ) >> copyBufferToTextureDesc.MipLevel );
+
+    uint32_t formatSize      = FormatNumBytes( copyBufferToTextureDesc.Format );
+    uint32_t blockSize       = FormatBlockSize( copyBufferToTextureDesc.Format );
+    uint32_t rowPitch        = std::max( 1U, ( width + ( blockSize - 1 ) ) / blockSize ) * formatSize;
+    uint32_t numRows         = std::max( 1U, ( height + ( blockSize - 1 ) ) / blockSize );
+    uint32_t alignedRowPitch = Utilities::Align( rowPitch, m_context->SelectedDeviceInfo.Constants.BufferTextureRowAlignment );
+
     VkBufferImageCopy copyRegion{ };
-    copyRegion.bufferOffset      = copyBufferToTextureDesc.SrcOffset;
-    copyRegion.bufferRowLength   = 0;
-    copyRegion.bufferImageHeight = 0;
-    copyRegion.imageSubresource  = VkImageSubresourceLayers( VK_IMAGE_ASPECT_COLOR_BIT, copyBufferToTextureDesc.MipLevel, copyBufferToTextureDesc.ArrayLayer, 1 );
-    copyRegion.imageOffset       = VkOffset3D( 0, 0, 0 );
-    copyRegion.imageExtent       = VkExtent3D( dstTex->GetWidth( ), dstTex->GetHeight( ), 1 );
+    copyRegion.bufferOffset       = copyBufferToTextureDesc.SrcOffset;
+    copyRegion.bufferRowLength    = ( alignedRowPitch / formatSize ) * blockSize;
+    copyRegion.bufferImageHeight  = numRows * blockSize;
+    copyRegion.imageSubresource   = VkImageSubresourceLayers( dstTex->Aspect( ), copyBufferToTextureDesc.MipLevel, copyBufferToTextureDesc.ArrayLayer, 1 );
+    copyRegion.imageOffset        = VkOffset3D( 0, 0, 0 );
+    copyRegion.imageExtent.width  = width;
+    copyRegion.imageExtent.height = height;
+    copyRegion.imageExtent.depth  = depth;
 
     vkCmdCopyBufferToImage( m_commandBuffer, srcBuffer->Instance( ), dstTex->Image( ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion );
 }

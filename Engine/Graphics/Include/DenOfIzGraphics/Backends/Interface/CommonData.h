@@ -112,7 +112,7 @@ namespace DenOfIz
         BC7UnormSrgb
     };
 
-    static uint32_t GetImageFormatSize( const Format &format )
+    static uint32_t FormatNumBytes( const Format &format )
     {
         switch ( format )
         {
@@ -170,26 +170,27 @@ namespace DenOfIz
         // Recheck what the below are and what the expected sizes are.
         case Format::BC1Unorm:
         case Format::BC1UnormSrgb:
+            return 8;
         case Format::BC2Unorm:
         case Format::BC2UnormSrgb:
         case Format::BC3Unorm:
         case Format::BC3UnormSrgb:
+            return 16;
         case Format::BC4Unorm:
         case Format::BC4Snorm:
+            return 8;
         case Format::BC5Unorm:
         case Format::BC5Snorm:
-            return 1;
+            return 16;
         case Format::B8G8R8A8Unorm:
             return 4;
         case Format::BC6HUfloat16:
         case Format::BC6HSfloat16:
-            return 2;
         case Format::BC7Unorm:
-            return 1;
         case Format::BC7UnormSrgb:
-            return 1;
+            return 16;
         default:
-            return 0;
+            return 1;
         }
     }
 
