@@ -32,6 +32,7 @@ namespace DenOfIz
         return true;
     }
 
+    // ReSharper disable once CppMemberFunctionMayBeConst
     void ShaderCompiler::Destroy( )
     {
         m_dxcUtils->Release( );
@@ -172,9 +173,9 @@ namespace DenOfIz
 
     std::vector<uint32_t> ShaderCompiler::CompileGLSL( const std::string &filename, const CompileOptions &compileOptions ) const
     {
-        auto        glslContents = Utilities::ReadFile( filename );
-        ShaderStage shaderType   = compileOptions.Stage;
-        EShLanguage stage        = FindLanguage( shaderType );
+        const auto        glslContents = Utilities::ReadFile( filename );
+        const ShaderStage shaderType   = compileOptions.Stage;
+        const EShLanguage stage        = FindLanguage( shaderType );
 
         TBuiltInResource resources = { };
         InitResources( resources );
@@ -186,7 +187,7 @@ namespace DenOfIz
         shaderStrings[ 0 ] = glslContents.c_str( );
         shader.setStrings( shaderStrings, 1 );
 
-        auto messages = static_cast<EShMessages>( EShMsgSpvRules | EShMsgVulkanRules );
+        constexpr auto messages = static_cast<EShMessages>( EShMsgSpvRules | EShMsgVulkanRules );
 
         std::vector<uint32_t> spirv;
         if ( !shader.parse( &resources, 100, false, messages ) )
@@ -204,7 +205,7 @@ namespace DenOfIz
             return spirv;
         }
 
-        glslang::TIntermediate *intermediate = program.getIntermediate( stage );
+        const glslang::TIntermediate *intermediate = program.getIntermediate( stage );
         if ( intermediate == nullptr )
         {
             return spirv;
@@ -215,7 +216,7 @@ namespace DenOfIz
 
     IDxcBlob *ShaderCompiler::CompileHLSL( const std::string &filename, const CompileOptions &compileOptions ) const
     {
-        // Attribute to source: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
+        // Attribute to reference: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
         // https://github.com/KhronosGroup/Vulkan-Guide
         std::string       path     = Utilities::AppPath( filename );
         uint32_t          codePage = DXC_CP_ACP;
@@ -270,40 +271,40 @@ namespace DenOfIz
             arguments.push_back( L"-spirv" );
             // Vulkan requires unique binding for each descriptor, hlsl has a binding per buffer view.
             // Docs suggest shifting the binding to avoid conflicts.
-            static const std::wstring VkShiftCbvWs     = std::to_wstring(VkShiftCbv);
-            static const std::wstring VkShiftSrvWs     = std::to_wstring(VkShiftSrv);
-            static const std::wstring VkShiftUavWs     = std::to_wstring(VkShiftUav);
-            static const std::wstring VkShiftSamplerWs = std::to_wstring(VkShiftSampler);
+            static const std::wstring VkShiftCbvWs     = std::to_wstring( VkShiftCbv );
+            static const std::wstring VkShiftSrvWs     = std::to_wstring( VkShiftSrv );
+            static const std::wstring VkShiftUavWs     = std::to_wstring( VkShiftUav );
+            static const std::wstring VkShiftSamplerWs = std::to_wstring( VkShiftSampler );
 
             {
                 // Shift Cbv for Vk
                 arguments.push_back( L"-fvk-b-shift" );
-                arguments.push_back( VkShiftCbvWs.c_str() );
+                arguments.push_back( VkShiftCbvWs.c_str( ) );
                 arguments.push_back( L"all" );
             }
             {
                 // Shift Srv for Vk
                 arguments.push_back( L"-fvk-t-shift" );
-                arguments.push_back( VkShiftSrvWs.c_str() );
+                arguments.push_back( VkShiftSrvWs.c_str( ) );
                 arguments.push_back( L"all" );
             }
             {
                 // Shift Uav for Vk
                 arguments.push_back( L"-fvk-u-shift" );
-                arguments.push_back( VkShiftUavWs.c_str() );
+                arguments.push_back( VkShiftUavWs.c_str( ) );
                 arguments.push_back( L"all" );
             }
             {
                 // Shift Sampler for Vk
                 arguments.push_back( L"-fvk-s-shift" );
-                arguments.push_back( VkShiftSamplerWs.c_str() );
+                arguments.push_back( VkShiftSamplerWs.c_str( ) );
                 arguments.push_back( L"all" );
             }
         }
         for ( const auto &define : compileOptions.Defines )
         {
             arguments.push_back( L"-D" );
-            arguments.push_back( LPCWSTR( define.c_str( ) ) );
+            arguments.push_back( reinterpret_cast<LPCWSTR>( define.c_str( ) ) );
         }
         arguments.push_back( L"-HV" );
         arguments.push_back( L"2021" );
@@ -321,10 +322,13 @@ namespace DenOfIz
 
         if ( SUCCEEDED( result ) )
         {
-            dxcResult->GetStatus( &result );
+            if ( FAILED( dxcResult->GetStatus( &result ) ) )
+            {
+                LOG( WARNING ) << "Unable to get shader status";
+            }
         }
 
-        if ( FAILED( result ) && ( dxcResult ) )
+        if ( FAILED( result ) && dxcResult )
         {
             IDxcBlobEncoding *errorBlob;
             result = dxcResult->GetErrorBuffer( &errorBlob );
@@ -337,7 +341,10 @@ namespace DenOfIz
         }
 
         IDxcBlob *code;
-        dxcResult->GetResult( &code );
+        if ( FAILED( dxcResult->GetResult( &code ) ) )
+        {
+            LOG( ERROR ) << "Failed to get shader code";
+        }
 
         dxcResult->Release( );
         sourceBlob->Release( );

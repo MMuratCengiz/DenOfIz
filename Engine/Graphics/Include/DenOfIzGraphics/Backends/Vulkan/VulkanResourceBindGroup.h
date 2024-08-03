@@ -36,7 +36,7 @@ namespace DenOfIz
         Storage                           m_storage;
 
     public:
-        VulkanResourceBindGroup( VulkanContext *context, ResourceBindGroupDesc desc );
+        VulkanResourceBindGroup( VulkanContext *context, const ResourceBindGroupDesc &desc );
         ~VulkanResourceBindGroup( ) override;
         void Update( const UpdateDesc& desc ) override;
 
@@ -45,7 +45,7 @@ namespace DenOfIz
             return m_writeDescriptorSets;
         }
 
-        VkWriteDescriptorSet &CreateWriteDescriptor( std::string &name );
+        VkWriteDescriptorSet &CreateWriteDescriptor( const std::string &name );
 
     protected:
         void BindTexture( const std::string &name, ITextureResource *resource ) override;

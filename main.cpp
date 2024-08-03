@@ -28,9 +28,6 @@ int main()
 
     uint32_t windowFlags = SDL_WINDOW_SHOWN;
 #ifdef BUILD_VK
-#ifdef WIN32
-    SDL_Vulkan_LoadLibrary("vulkan-1.dll");
-#endif
     windowFlags |= SDL_WINDOW_VULKAN;
 #endif
 

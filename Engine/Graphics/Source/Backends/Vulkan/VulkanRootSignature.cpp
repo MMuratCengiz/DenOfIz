@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc ) : m_context( context ), m_desc( std::move( desc ) )
+VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc ) : m_desc( std::move( desc ) ), m_context( context )
 {
     for ( const ResourceBindingDesc &binding : m_desc.ResourceBindings )
     {
@@ -32,35 +32,27 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
         AddStaticSampler( staticSamplerDesc );
     }
 
-    int registerSpace = 0;
-    for ( int i = 0; i < m_layoutBindings.size( ); )
+    // Each entry of the vector below represents a register space
+    std::vector<std::vector<VkDescriptorSetLayout>> spaceLayouts;
+    for ( const auto &registerSpaceLayout : m_registerSpaceLayouts )
     {
-        if ( m_layoutBindings.find( i ) == m_layoutBindings.end( ) )
+        if ( spaceLayouts.size( ) <= registerSpaceLayout.first )
         {
-            registerSpace++;
-            continue;
+            spaceLayouts.resize( registerSpaceLayout.first + 1 );
         }
 
-        const auto &layoutBindings = m_layoutBindings[ i++ ];
+        const auto &layoutBindings = registerSpaceLayout.second.LayoutBindings;
 
         VkDescriptorSetLayoutCreateInfo layoutInfo{ };
         layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = layoutBindings.size( );
         layoutInfo.pBindings    = layoutBindings.data( );
-        layoutInfo.flags        = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+        // layoutInfo.flags        = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
 
         VkDescriptorSetLayout layout;
         VK_CHECK_RESULT( vkCreateDescriptorSetLayout( m_context->LogicalDevice, &layoutInfo, nullptr, &layout ) );
-        m_layouts.push_back( layout );
+        spaceLayouts[ registerSpaceLayout.first ].push_back( layout );
     }
-
-    VkDescriptorSetLayoutCreateInfo layoutInfo{ };
-    layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = m_bindings.size( );
-    layoutInfo.pBindings    = m_bindings.data( );
-    layoutInfo.flags        = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
-
-    VK_CHECK_RESULT( vkCreateDescriptorSetLayout( m_context->LogicalDevice, &layoutInfo, nullptr, &m_layouts[ 0 ] ) );
 
     std::vector<VkDescriptorPoolSize> poolSizes;
     for ( const auto &bindingDesc : m_resourceBindingMap )
@@ -76,24 +68,21 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
     poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = poolSizes.size( );
     poolInfo.pPoolSizes    = poolSizes.data( );
-    poolInfo.maxSets       = m_layouts.size( );
+    poolInfo.maxSets       = spaceLayouts.size( );
 
     VK_CHECK_RESULT( vkCreateDescriptorPool( m_context->LogicalDevice, &poolInfo, nullptr, &m_descriptorPool ) );
 
-    std::vector<VkDescriptorSetLayout> layouts( m_layouts.size( ) );
-    for ( const auto &layout : m_layouts )
+    for ( int i = 0; i < spaceLayouts.size( ); ++i )
     {
-        layouts.push_back( layout );
+        auto                       &layout = spaceLayouts[ i ];
+        VkDescriptorSetAllocateInfo setAllocateInfo{ };
+        setAllocateInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        setAllocateInfo.descriptorPool     = m_descriptorPool;
+        setAllocateInfo.descriptorSetCount = layout.size( );
+        setAllocateInfo.pSetLayouts        = layout.data( );
+
+        VK_CHECK_RESULT( vkAllocateDescriptorSets( m_context->LogicalDevice, &setAllocateInfo, m_registerSpaceLayouts[ i ].DescriptorSets.data( ) ) );
     }
-
-    VkDescriptorSetAllocateInfo setAllocateInfo{ };
-    setAllocateInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    setAllocateInfo.descriptorPool     = m_descriptorPool;
-    setAllocateInfo.descriptorSetCount = m_layouts.size( );
-    setAllocateInfo.pSetLayouts        = m_layouts.data( );
-
-    m_descriptorSets.resize( m_layouts.size( ) );
-    VK_CHECK_RESULT( vkAllocateDescriptorSets( m_context->LogicalDevice, &setAllocateInfo, m_descriptorSets.data( ) ) );
 }
 
 void VulkanRootSignature::AddStaticSampler( const StaticSamplerDesc &sampler )
@@ -139,6 +128,7 @@ VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBindi
     {
         layoutBinding.stageFlags |= VulkanEnumConverter::ConvertShaderStage( stage );
     }
+    m_registerSpaceLayouts[ binding.RegisterSpace ].LayoutBindings.push_back( layoutBinding );
     m_layoutBindings[ binding.RegisterSpace ].push_back( layoutBinding );
     // Update binding to include the offset
     m_resourceBindingMap[ binding.Name ].Binding = layoutBinding.binding;

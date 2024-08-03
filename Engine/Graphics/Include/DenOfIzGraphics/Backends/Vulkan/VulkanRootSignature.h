@@ -23,28 +23,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-
     class VulkanRootSignature final : public IRootSignature
     {
-        RootSignatureDesc m_desc;
-        VulkanContext    *m_context;
+        struct RegisterSpaceLayout
+        {
+            std::vector<VkDescriptorSetLayoutBinding> LayoutBindings;
+            std::vector<VkDescriptorSetLayout>        Layouts;
+            std::vector<VkDescriptorSet>              DescriptorSets;
+        };
 
-        VkDescriptorPool                          m_descriptorPool;
-        std::vector<VkDescriptorSetLayout>        m_layouts;
-        std::vector<VkDescriptorSetLayoutBinding> m_bindings;
-        std::vector<VkPushConstantRange>          m_pushConstants;
-        std::vector<VkSampler>                    m_staticSamplers;
-        std::vector<VkDescriptorSet>              m_descriptorSets;
+        RootSignatureDesc m_desc;
+        VulkanContext    *m_context = nullptr;
+
+        VkDescriptorPool                                  m_descriptorPool{ };
+        std::unordered_map<uint32_t, RegisterSpaceLayout> m_registerSpaceLayouts;
+        std::vector<VkDescriptorSetLayout>                m_layouts;
+        std::vector<VkDescriptorSetLayoutBinding>         m_bindings;
+        std::vector<VkPushConstantRange>                  m_pushConstants;
+        std::vector<VkSampler>                            m_staticSamplers;
+        std::vector<VkDescriptorSet>                      m_descriptorSets;
         // Stores the layout bindings for each set
         std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> m_layoutBindings;
 
     public:
-        VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc );
+         VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc );
         ~VulkanRootSignature( ) override;
 
-        [[nodiscard]] VkDescriptorSet GetDescriptorSet( uint32_t registerSpace ) const
+        [[nodiscard]] VkDescriptorSet GetDescriptorSet( const uint32_t registerSpace ) const
         {
-            if ( registerSpace >= m_descriptorSets.size( ) )
+            if ( registerSpace >= m_registerSpaceLayouts.size( ) )
             {
                 LOG( ERROR ) << "Descriptor set not found for register space " << registerSpace;
             }

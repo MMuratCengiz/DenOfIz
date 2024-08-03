@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzCore/Utilities.h>
+#include <DenOfIzCore/ContainerUtilities.h>
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
 #include <unordered_set>
 #include "DX12Context.h"
@@ -40,18 +40,17 @@ namespace DenOfIz
         std::vector<CD3DX12_DESCRIPTOR_RANGE> SamplerRanges;
     };
 
-    class DX12RootSignature : public IRootSignature
+    class DX12RootSignature final : public IRootSignature
     {
-    private:
         D3D_ROOT_SIGNATURE_VERSION        m_rootSignatureVersion;
         DX12Context                      *m_context;
         RootSignatureDesc                 m_desc;
         wil::com_ptr<ID3D12RootSignature> m_rootSignature;
 
-        std::vector<CD3DX12_ROOT_PARAMETER>                m_rootParameters;
-        std::vector<CD3DX12_ROOT_PARAMETER>                m_rootConstants;
-        std::vector<RegisterSpaceRangesDesc>               m_registerSpaceRanges;
-        std::vector<D3D12_STATIC_SAMPLER_DESC>             m_staticSamplerDescriptorRanges;
+        std::vector<CD3DX12_ROOT_PARAMETER>    m_rootParameters;
+        std::vector<CD3DX12_ROOT_PARAMETER>    m_rootConstants;
+        std::vector<RegisterSpaceRangesDesc>   m_registerSpaceRanges;
+        std::vector<D3D12_STATIC_SAMPLER_DESC> m_staticSamplerDescriptorRanges;
 
         std::unordered_set<D3D12_SHADER_VISIBILITY> m_descriptorRangesShaderVisibilities;
         std::unordered_set<D3D12_SHADER_VISIBILITY> m_samplerRangesShaderVisibilities;
@@ -59,35 +58,45 @@ namespace DenOfIz
         std::vector<uint32_t>                       m_registerSpaceOffsets;
 
     public:
-        DX12RootSignature(DX12Context *context, const RootSignatureDesc &desc);
+        DX12RootSignature( DX12Context *context, const RootSignatureDesc &desc );
 
-        inline uint32_t RegisterSpaceOffset(uint32_t registerSpace) const
+        [[nodiscard]] uint32_t GetResourceOffset( const uint32_t registerSpace, const std::string &name ) const
         {
-            if ( registerSpace >= m_registerSpaceOffsets.size() )
+            if ( registerSpace >= m_registerSpaceOrder.size( ) )
             {
-                LOG(ERROR) << "Register space " << registerSpace << " is not bound to any bind group.";
+                LOG( ERROR ) << "Register space " << registerSpace << " is not bound to any bind group.";
+            }
+
+            return ContainerUtilities::SafeGetMapValue( m_registerSpaceOrder[ registerSpace ].ResourceOffsetMap, name );
+        }
+
+        [[nodiscard]] uint32_t RegisterSpaceOffset( const uint32_t registerSpace ) const
+        {
+            if ( registerSpace >= m_registerSpaceOffsets.size( ) )
+            {
+                LOG( ERROR ) << "Register space " << registerSpace << " is not bound to any bind group.";
             }
 
             return m_registerSpaceOffsets[ registerSpace ];
         }
 
-        inline ID3D12RootSignature *Instance() const
+        [[nodiscard]] ID3D12RootSignature *Instance( ) const
         {
-            return m_rootSignature.get();
+            return m_rootSignature.get( );
         }
 
-        inline size_t RootParameterCount() const
+        [[nodiscard]] size_t RootParameterCount( ) const
         {
-            return m_rootParameters.size();
+            return m_rootParameters.size( );
         }
 
-        ~DX12RootSignature() override;
+        ~DX12RootSignature( ) override;
 
     protected:
-        void                       AddStaticSampler(const StaticSamplerDesc &desc);
-        void                       AddResourceBindingInternal(const ResourceBindingDesc &binding) override;
-        void                       AddRootConstantInternal(const RootConstantResourceBinding &rootConstant) override;
-        D3D12_ROOT_SIGNATURE_FLAGS ComputeShaderVisibility() const;
+        void                                     AddStaticSampler( const StaticSamplerDesc &desc );
+        void                                     AddResourceBindingInternal( const ResourceBindingDesc &binding ) override;
+        void                                     AddRootConstantInternal( const RootConstantResourceBinding &rootConstant ) override;
+        [[nodiscard]] D3D12_ROOT_SIGNATURE_FLAGS ComputeShaderVisibility( ) const;
     };
 
 } // namespace DenOfIz

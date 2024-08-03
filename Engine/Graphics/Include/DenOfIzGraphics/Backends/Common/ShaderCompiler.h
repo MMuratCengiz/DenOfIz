@@ -33,27 +33,26 @@ namespace DenOfIz
 
     class ShaderCompiler
     {
-    private:
-        IDxcLibrary   *m_dxcLibrary;
-        IDxcCompiler3 *m_dxcCompiler;
-        IDxcUtils     *m_dxcUtils;
+        IDxcLibrary   *m_dxcLibrary = nullptr;
+        IDxcCompiler3 *m_dxcCompiler = nullptr;
+        IDxcUtils     *m_dxcUtils = nullptr;
 
 #if defined( __APPLE__ )
-        IRCompiler *mp_compiler;
+        IRCompiler *mp_compiler = nullptr;
 #endif
 
     public:
-        static const uint32_t VkShiftCbv     = 1000;
-        static const uint32_t VkShiftSrv     = 2000;
-        static const uint32_t VkShiftUav     = 3000;
-        static const uint32_t VkShiftSampler = 4000;
+        static constexpr uint32_t VkShiftCbv     = 1000;
+        static constexpr uint32_t VkShiftSrv     = 2000;
+        static constexpr uint32_t VkShiftUav     = 3000;
+        static constexpr uint32_t VkShiftSampler = 4000;
 
-        bool                  Init( );
-        void                  Destroy( );
-        void                  InitResources( TBuiltInResource &Resources ) const;
-        EShLanguage           FindLanguage( ShaderStage shaderType ) const;
-        IDxcBlob             *CompileHLSL( const std::string &path, const CompileOptions &compileOptions ) const;
-        std::vector<uint32_t> CompileGLSL( const std::string &filename, const CompileOptions &compileOptions ) const;
+        bool                                Init( );
+        void                                Destroy( );
+        void                                InitResources( TBuiltInResource &Resources ) const;
+        [[nodiscard]] EShLanguage           FindLanguage( ShaderStage shaderType ) const;
+        [[nodiscard]] IDxcBlob             *CompileHLSL( const std::string &path, const CompileOptions &compileOptions ) const;
+        [[nodiscard]] std::vector<uint32_t> CompileGLSL( const std::string &filename, const CompileOptions &compileOptions ) const;
     };
 
 } // namespace DenOfIz

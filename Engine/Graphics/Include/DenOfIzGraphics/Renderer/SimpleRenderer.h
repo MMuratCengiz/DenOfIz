@@ -31,15 +31,14 @@ namespace DenOfIz
 
     class SimpleRenderer
     {
-    private:
         const uint32_t                           mc_framesInFlight = 3;
         std::unique_ptr<ILogicalDevice>          m_logicalDevice;
-        GraphicsWindowHandle                    *m_window;
-        GeometryData                             m_sphere       = Geometry::BuildSphere({ .Diameter = 1.0f, .Tessellation = 32 });
-        GeometryData                             m_plane        = Geometry::BuildBox({ .Size = { 1.0f, 0.2f, 1.0f } });
-        XMFLOAT4X4                               m_identityMatrix;
-        XMFLOAT4X4                               m_planeModelMatrix;
-        XMFLOAT4X4                               m_mvpMatrix;
+        GraphicsWindowHandle                    *m_window           = nullptr;
+        GeometryData                             m_sphere           = Geometry::BuildSphere( { .Diameter = 1.0f, .Tessellation = 32 } );
+        GeometryData                             m_plane            = Geometry::BuildBox( { .Size = { 1.0f, 0.2f, 1.0f } } );
+        XMFLOAT4X4                               m_identityMatrix   = { };
+        XMFLOAT4X4                               m_planeModelMatrix = { };
+        XMFLOAT4X4                               m_mvpMatrix        = { };
         std::unique_ptr<ShaderProgram>           m_program;
         std::unique_ptr<IPipeline>               m_pipeline;
         std::unique_ptr<BatchResourceCopy>       m_batchResourceCopy;
@@ -55,8 +54,8 @@ namespace DenOfIz
         std::unique_ptr<ITextureResource>        m_planeTexture;
         std::unique_ptr<ISampler>                m_planeSampler;
         std::unique_ptr<IBufferResource>         m_timePassedBuffer;
-        void                                    *m_mappedTimePassedBuffer;
-        std::unique_ptr<Time>                    m_time = std::make_unique<Time>();
+        void                                    *m_mappedTimePassedBuffer = nullptr;
+        std::unique_ptr<Time>                    m_time = std::make_unique<Time>( );
         std::unique_ptr<IInputLayout>            m_inputLayout;
         std::unique_ptr<IRootSignature>          m_rootSignature;
         std::unique_ptr<IResourceBindGroup>      m_perCameraBindGroup;
@@ -70,11 +69,12 @@ namespace DenOfIz
         std::unique_ptr<CommandListRing>         m_commandListRing;
 
     public:
-        void Init(GraphicsWindowHandle *window);
-        void Render();
-        void Quit();
+        void Init( GraphicsWindowHandle *window );
+        void Render( );
+        void Quit( );
+
     private:
-        void UpdateMVPMatrix();
+        void UpdateMVPMatrix( );
     };
 
 } // namespace DenOfIz

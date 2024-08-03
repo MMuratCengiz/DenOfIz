@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzCore/Common.h>
-#include <DenOfIzCore/Utilities.h>
+#include <DenOfIzCore/ContainerUtilities.h>
 #include "IBufferResource.h"
 #include "IShader.h"
 #include "ITextureResource.h"
@@ -71,9 +71,9 @@ namespace DenOfIz
     struct RootConstantResourceBinding
     {
         std::string              Name;
-        uint32_t                 Binding;
+        uint32_t                 Binding{ };
         uint32_t                 RegisterSpace = 0;
-        int                      Size;
+        int                      Size{ };
         std::vector<ShaderStage> Stages;
     };
 
@@ -82,9 +82,9 @@ namespace DenOfIz
     protected:
         struct RegisterSpaceOrder
         {
-            uint32_t                                  Space;
-            uint32_t                                  ResourceCount;
-            uint32_t                                  SamplerCount;
+            uint32_t                                  Space{ };
+            uint32_t                                  ResourceCount{ };
+            uint32_t                                  SamplerCount{ };
             std::unordered_map<std::string, uint32_t> ResourceOffsetMap;
         };
         std::vector<RegisterSpaceOrder>                              m_registerSpaceOrder;
@@ -94,30 +94,20 @@ namespace DenOfIz
     public:
         virtual ~IRootSignature( ) = default;
 
-        inline uint32_t GetResourceOffset( uint32_t registerSpace, std::string name ) const
+        [[nodiscard]] ResourceBindingDesc GetResourceBinding( const std::string &name ) const
         {
-            if ( registerSpace >= m_registerSpaceOrder.size( ) )
-            {
-                LOG( ERROR ) << "Register space " << registerSpace << " is not bound to any bind group.";
-            }
-
-            return SafeGetMapValue( m_registerSpaceOrder[ registerSpace ].ResourceOffsetMap, name );
+            return ContainerUtilities::SafeGetMapValue( m_resourceBindingMap, name );
         }
 
-        inline ResourceBindingDesc GetResourceBinding( std::string name ) const
+        [[nodiscard]] RootConstantResourceBinding GetRootConstantBinding( const std::string &name ) const
         {
-            return SafeGetMapValue( m_resourceBindingMap, name );
-        }
-
-        inline RootConstantResourceBinding GetRootConstantBinding( std::string name ) const
-        {
-            return SafeGetMapValue( m_rootConstantMap, name );
+            return ContainerUtilities::SafeGetMapValue( m_rootConstantMap, name );
         }
 
     protected:
         void AddResourceBinding( const ResourceBindingDesc &binding )
         {
-            RegisterSpaceOrder &spaceOrder = Utilities::SafeAt( m_registerSpaceOrder, binding.RegisterSpace );
+            RegisterSpaceOrder &spaceOrder = ContainerUtilities::SafeAt( m_registerSpaceOrder, binding.RegisterSpace );
 
             if ( binding.Descriptor.IsSet( ResourceDescriptor::Sampler ) )
             {
@@ -140,18 +130,6 @@ namespace DenOfIz
 
         virtual void AddResourceBindingInternal( const ResourceBindingDesc &binding )           = 0;
         virtual void AddRootConstantInternal( const RootConstantResourceBinding &rootConstant ) = 0;
-
-    private:
-        template <typename R>
-        R SafeGetMapValue( const std::unordered_map<std::string, R> &map, const std::string &key ) const
-        {
-            auto value = map.find( key );
-            if ( value == map.end( ) )
-            {
-                LOG( ERROR ) << "Unable to find key: " << key << ". Make sure the name described in the RootSignature matches the resource name.";
-            }
-            return value->second;
-        }
     };
 
 } // namespace DenOfIz
