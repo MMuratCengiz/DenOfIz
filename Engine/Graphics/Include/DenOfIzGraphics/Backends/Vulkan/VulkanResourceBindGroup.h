@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
 #include "VulkanContext.h"
 #include "VulkanRootSignature.h"
+#include "VulkanDescriptorPoolManager.h"
 
 namespace DenOfIz
 {
@@ -31,7 +32,7 @@ namespace DenOfIz
         VulkanContext       *m_context;
         VulkanRootSignature *m_rootSignature;
 
-        std::vector<VkDescriptorSet>      m_descriptorSets;
+        VkDescriptorSet                   m_descriptorSet;
         std::vector<VkWriteDescriptorSet> m_writeDescriptorSets;
         Storage                           m_storage;
 

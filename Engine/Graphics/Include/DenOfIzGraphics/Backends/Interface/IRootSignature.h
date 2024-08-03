@@ -79,57 +79,8 @@ namespace DenOfIz
 
     class IRootSignature : public NonCopyable
     {
-    protected:
-        struct RegisterSpaceOrder
-        {
-            uint32_t                                  Space{ };
-            uint32_t                                  ResourceCount{ };
-            uint32_t                                  SamplerCount{ };
-            std::unordered_map<std::string, uint32_t> ResourceOffsetMap;
-        };
-        std::vector<RegisterSpaceOrder>                              m_registerSpaceOrder;
-        std::unordered_map<std::string, ResourceBindingDesc>         m_resourceBindingMap;
-        std::unordered_map<std::string, RootConstantResourceBinding> m_rootConstantMap;
-
     public:
         virtual ~IRootSignature( ) = default;
-
-        [[nodiscard]] ResourceBindingDesc GetResourceBinding( const std::string &name ) const
-        {
-            return ContainerUtilities::SafeGetMapValue( m_resourceBindingMap, name );
-        }
-
-        [[nodiscard]] RootConstantResourceBinding GetRootConstantBinding( const std::string &name ) const
-        {
-            return ContainerUtilities::SafeGetMapValue( m_rootConstantMap, name );
-        }
-
-    protected:
-        void AddResourceBinding( const ResourceBindingDesc &binding )
-        {
-            RegisterSpaceOrder &spaceOrder = ContainerUtilities::SafeAt( m_registerSpaceOrder, binding.RegisterSpace );
-
-            if ( binding.Descriptor.IsSet( ResourceDescriptor::Sampler ) )
-            {
-                spaceOrder.ResourceOffsetMap[ binding.Name ] = spaceOrder.SamplerCount++;
-            }
-            else
-            {
-                spaceOrder.ResourceOffsetMap[ binding.Name ] = spaceOrder.ResourceCount++;
-            }
-            // Todo remove and fix vulkan
-            m_resourceBindingMap[ binding.Name ] = binding;
-            AddResourceBindingInternal( binding );
-        }
-
-        void AddRootConstant( const RootConstantResourceBinding &rootConstant )
-        {
-            m_rootConstantMap[ rootConstant.Name ] = rootConstant;
-            AddRootConstantInternal( rootConstant );
-        }
-
-        virtual void AddResourceBindingInternal( const ResourceBindingDesc &binding )           = 0;
-        virtual void AddRootConstantInternal( const RootConstantResourceBinding &rootConstant ) = 0;
     };
 
 } // namespace DenOfIz

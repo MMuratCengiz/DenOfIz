@@ -20,176 +20,186 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12RootSignature::DX12RootSignature(DX12Context *context, const RootSignatureDesc &desc) : m_context(context), m_desc(desc)
+DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
-    m_rootSignatureVersion                        = D3D_ROOT_SIGNATURE_VERSION_1_1;
+    D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData          = { };
+    D3D_ROOT_SIGNATURE_VERSION        rootSignatureVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
 
-    if ( FAILED(context->D3DDevice->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))) )
+    if ( FAILED( context->D3DDevice->CheckFeatureSupport( D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof( featureData ) ) ) )
     {
-        m_rootSignatureVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+        rootSignatureVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
     }
 
     for ( const ResourceBindingDesc &binding : desc.ResourceBindings )
     {
-        AddResourceBinding(binding);
+        AddResourceBinding( binding );
     }
 
     for ( const StaticSamplerDesc &staticSamplerDesc : desc.StaticSamplers )
     {
-        AddStaticSampler(staticSamplerDesc);
+        AddStaticSampler( staticSamplerDesc );
     }
 
     D3D12_SHADER_VISIBILITY descShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-    if ( m_descriptorRangesShaderVisibilities.size() == 1 )
+    if ( m_descriptorRangesShaderVisibilities.size( ) == 1 )
     {
-        descShaderVisibility = *m_descriptorRangesShaderVisibilities.begin();
+        descShaderVisibility = *m_descriptorRangesShaderVisibilities.begin( );
     }
 
     D3D12_SHADER_VISIBILITY samplerShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-    if ( m_samplerRangesShaderVisibilities.size() == 1 )
+    if ( m_samplerRangesShaderVisibilities.size( ) == 1 )
     {
-        samplerShaderVisibility = *m_samplerRangesShaderVisibilities.begin();
+        samplerShaderVisibility = *m_samplerRangesShaderVisibilities.begin( );
     }
 
-    std::copy(m_rootConstants.begin(), m_rootConstants.end(), std::back_inserter(m_rootParameters));
+    std::copy( m_rootConstants.begin( ), m_rootConstants.end( ), std::back_inserter( m_rootParameters ) );
 
     for ( const auto &range : m_registerSpaceRanges )
     {
-        if ( range.CbvSrvUavRanges.empty() && range.SamplerRanges.empty() )
+        if ( range.CbvSrvUavRanges.empty( ) && range.SamplerRanges.empty( ) )
         {
-            LOG(WARNING) << "Register space " << range.Space << " has no bindings somehow, this is likely a developer error.";
+            LOG( WARNING ) << "Register space " << range.Space << " has no bindings somehow, this is likely a developer error.";
         }
 
-        Utilities::SafeAt(m_registerSpaceOffsets, range.Space) = m_rootParameters.size();
-        if ( !range.CbvSrvUavRanges.empty() )
+        ContainerUtilities::SafeAt( m_registerSpaceOffsets, range.Space ) = m_rootParameters.size( );
+        if ( !range.CbvSrvUavRanges.empty( ) )
         {
-            CD3DX12_ROOT_PARAMETER rootParameter = {};
-            rootParameter.InitAsDescriptorTable(static_cast<uint32_t>(range.CbvSrvUavRanges.size()), range.CbvSrvUavRanges.data(), descShaderVisibility);
-            m_rootParameters.push_back(rootParameter);
+            CD3DX12_ROOT_PARAMETER rootParameter = { };
+            rootParameter.InitAsDescriptorTable( static_cast<uint32_t>( range.CbvSrvUavRanges.size( ) ), range.CbvSrvUavRanges.data( ), descShaderVisibility );
+            m_rootParameters.push_back( rootParameter );
         }
-        if ( !range.SamplerRanges.empty() )
+        if ( !range.SamplerRanges.empty( ) )
         {
-            CD3DX12_ROOT_PARAMETER samplerRootParameter = {};
-            samplerRootParameter.InitAsDescriptorTable(static_cast<uint32_t>(range.SamplerRanges.size()), range.SamplerRanges.data(), samplerShaderVisibility);
-            m_rootParameters.push_back(samplerRootParameter);
+            CD3DX12_ROOT_PARAMETER samplerRootParameter = { };
+            samplerRootParameter.InitAsDescriptorTable( static_cast<uint32_t>( range.SamplerRanges.size( ) ), range.SamplerRanges.data( ), samplerShaderVisibility );
+            m_rootParameters.push_back( samplerRootParameter );
         }
     }
 
-    D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc(static_cast<uint32_t>(m_rootParameters.size()), m_rootParameters.data());
+    D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc( static_cast<uint32_t>( m_rootParameters.size( ) ), m_rootParameters.data( ) );
     wil::com_ptr<ID3DBlob>    signature;
     wil::com_ptr<ID3DBlob>    error;
-    rootSignatureDesc.Flags             = ComputeShaderVisibility();
-    rootSignatureDesc.NumStaticSamplers = m_staticSamplerDescriptorRanges.size();
-    rootSignatureDesc.pStaticSamplers   = m_staticSamplerDescriptorRanges.data();
-    THROW_IF_FAILED(D3D12SerializeRootSignature(&rootSignatureDesc, m_rootSignatureVersion, &signature, &error));
-    THROW_IF_FAILED(m_context->D3DDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(m_rootSignature.put())));
+    rootSignatureDesc.Flags             = ComputeShaderVisibility( );
+    rootSignatureDesc.NumStaticSamplers = m_staticSamplerDescriptorRanges.size( );
+    rootSignatureDesc.pStaticSamplers   = m_staticSamplerDescriptorRanges.data( );
+    THROW_IF_FAILED( D3D12SerializeRootSignature( &rootSignatureDesc, rootSignatureVersion, &signature, &error ) );
+    THROW_IF_FAILED( m_context->D3DDevice->CreateRootSignature( 0, signature->GetBufferPointer( ), signature->GetBufferSize( ), IID_PPV_ARGS( m_rootSignature.put( ) ) ) );
 }
 
-D3D12_ROOT_SIGNATURE_FLAGS DX12RootSignature::ComputeShaderVisibility() const
+D3D12_ROOT_SIGNATURE_FLAGS DX12RootSignature::ComputeShaderVisibility( ) const
 {
     D3D12_ROOT_SIGNATURE_FLAGS flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-    if ( !(m_usedStages & D3D12_SHADER_VISIBILITY_VERTEX) )
+    if ( !( m_usedStages & D3D12_SHADER_VISIBILITY_VERTEX ) )
     {
         flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS;
     }
-    if ( !(m_usedStages & D3D12_SHADER_VISIBILITY_HULL) )
+    if ( !( m_usedStages & D3D12_SHADER_VISIBILITY_HULL ) )
     {
         flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS;
     }
-    if ( !(m_usedStages & D3D12_SHADER_VISIBILITY_DOMAIN) )
+    if ( !( m_usedStages & D3D12_SHADER_VISIBILITY_DOMAIN ) )
     {
         flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
     }
-    if ( !(m_usedStages & D3D12_SHADER_VISIBILITY_GEOMETRY) )
+    if ( !( m_usedStages & D3D12_SHADER_VISIBILITY_GEOMETRY ) )
     {
         flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
     }
-    if ( !(m_usedStages & D3D12_SHADER_VISIBILITY_PIXEL) )
+    if ( !( m_usedStages & D3D12_SHADER_VISIBILITY_PIXEL ) )
     {
         flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
     }
     return flags;
 }
 
-void DX12RootSignature::AddStaticSampler(const StaticSamplerDesc &staticSamplerDesc)
+void DX12RootSignature::AddStaticSampler( const StaticSamplerDesc &staticSamplerDesc )
 {
     const SamplerDesc        &samplerDesc = staticSamplerDesc.Sampler;
-    D3D12_STATIC_SAMPLER_DESC desc        = {};
+    D3D12_STATIC_SAMPLER_DESC desc        = { };
 
-    int filter     = (static_cast<int>(samplerDesc.MinFilter) << 4) | (static_cast<int>(samplerDesc.MagFilter) << 2) | static_cast<int>(samplerDesc.MipmapMode);
+    int filter     = ( static_cast<int>( samplerDesc.MinFilter ) << 4 ) | ( static_cast<int>( samplerDesc.MagFilter ) << 2 ) | static_cast<int>( samplerDesc.MipmapMode );
     int baseFilter = samplerDesc.CompareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D12_FILTER_MIN_MAG_MIP_POINT;
     if ( samplerDesc.MaxAnisotropy > 0.0f )
     {
         baseFilter = samplerDesc.CompareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_ANISOTROPIC : D3D12_FILTER_ANISOTROPIC;
     }
 
-    desc.Filter         = static_cast<D3D12_FILTER>(baseFilter + filter);
-    desc.AddressU       = DX12EnumConverter::ConvertSamplerAddressMode(samplerDesc.AddressModeU);
-    desc.AddressV       = DX12EnumConverter::ConvertSamplerAddressMode(samplerDesc.AddressModeV);
-    desc.AddressW       = DX12EnumConverter::ConvertSamplerAddressMode(samplerDesc.AddressModeW);
+    desc.Filter         = static_cast<D3D12_FILTER>( baseFilter + filter );
+    desc.AddressU       = DX12EnumConverter::ConvertSamplerAddressMode( samplerDesc.AddressModeU );
+    desc.AddressV       = DX12EnumConverter::ConvertSamplerAddressMode( samplerDesc.AddressModeV );
+    desc.AddressW       = DX12EnumConverter::ConvertSamplerAddressMode( samplerDesc.AddressModeW );
     desc.MipLODBias     = samplerDesc.MipLodBias;
     desc.MaxAnisotropy  = samplerDesc.MaxAnisotropy;
-    desc.ComparisonFunc = DX12EnumConverter::ConvertCompareOp(samplerDesc.CompareOp);
+    desc.ComparisonFunc = DX12EnumConverter::ConvertCompareOp( samplerDesc.CompareOp );
     desc.MinLOD         = samplerDesc.MinLod;
     desc.MaxLOD         = samplerDesc.MaxLod;
 
     desc.ShaderRegister   = staticSamplerDesc.Binding.Binding;
     desc.RegisterSpace    = staticSamplerDesc.Binding.RegisterSpace;
-    desc.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility(staticSamplerDesc.Binding.Stages[ 0 ]);
+    desc.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( staticSamplerDesc.Binding.Stages[ 0 ] );
 
-    m_staticSamplerDescriptorRanges.push_back(desc);
+    m_staticSamplerDescriptorRanges.push_back( desc );
 }
 
-void DX12RootSignature::AddResourceBindingInternal(const ResourceBindingDesc &binding)
+void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
 {
-    CD3DX12_DESCRIPTOR_RANGE descriptorRange = {};
-    descriptorRange.Init(DX12EnumConverter::ConvertResourceDescriptorToDescriptorRangeType(binding.Descriptor), binding.ArraySize, binding.Binding, binding.RegisterSpace);
-
-    RegisterSpaceRangesDesc &spaceDesc = Utilities::SafeAt(m_registerSpaceRanges, binding.RegisterSpace);
-    spaceDesc.Space = binding.RegisterSpace;
-    if ( binding.Descriptor.IsSet(ResourceDescriptor::Sampler) )
+    RegisterSpaceOrder &spaceOrder = ContainerUtilities::SafeAt( m_registerSpaceOrder, binding.RegisterSpace );
+    if ( binding.Descriptor.IsSet( ResourceDescriptor::Sampler ) )
     {
-        spaceDesc.SamplerRanges.push_back(descriptorRange);
+        spaceOrder.ResourceOffsetMap[ binding.Name ] = spaceOrder.SamplerCount++;
     }
     else
     {
-        spaceDesc.CbvSrvUavRanges.push_back(descriptorRange);
+        spaceOrder.ResourceOffsetMap[ binding.Name ] = spaceOrder.ResourceCount++;
+    }
+
+    CD3DX12_DESCRIPTOR_RANGE descriptorRange = { };
+    descriptorRange.Init( DX12EnumConverter::ConvertResourceDescriptorToDescriptorRangeType( binding.Descriptor ), binding.ArraySize, binding.Binding, binding.RegisterSpace );
+
+    RegisterSpaceRangesDesc &spaceDesc = ContainerUtilities::SafeAt( m_registerSpaceRanges, binding.RegisterSpace );
+    spaceDesc.Space                    = binding.RegisterSpace;
+    if ( binding.Descriptor.IsSet( ResourceDescriptor::Sampler ) )
+    {
+        spaceDesc.SamplerRanges.push_back( descriptorRange );
+    }
+    else
+    {
+        spaceDesc.CbvSrvUavRanges.push_back( descriptorRange );
     }
 
     for ( const auto &stage : binding.Stages )
     {
-        D3D12_SHADER_VISIBILITY usedStage = DX12EnumConverter::ConvertShaderStageToShaderVisibility(stage);
+        D3D12_SHADER_VISIBILITY usedStage = DX12EnumConverter::ConvertShaderStageToShaderVisibility( stage );
         if ( binding.Descriptor == ResourceDescriptor::Sampler )
         {
-            m_samplerRangesShaderVisibilities.insert(usedStage);
+            m_samplerRangesShaderVisibilities.insert( usedStage );
         }
         else
         {
-            m_descriptorRangesShaderVisibilities.insert(usedStage);
+            m_descriptorRangesShaderVisibilities.insert( usedStage );
         }
         m_usedStages |= usedStage;
     }
 }
 
-void DX12RootSignature::AddRootConstantInternal(const RootConstantResourceBinding &rootConstant)
+void DX12RootSignature::AddRootConstant( const RootConstantResourceBinding &rootConstant )
 {
-    CD3DX12_ROOT_PARAMETER dxRootConstant = {};
+    CD3DX12_ROOT_PARAMETER dxRootConstant = { };
     dxRootConstant.ParameterType          = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-    if ( rootConstant.Stages.size() > 1 || rootConstant.Stages.empty() )
+    if ( rootConstant.Stages.size( ) > 1 || rootConstant.Stages.empty( ) )
     {
         dxRootConstant.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     }
     else
     {
-        dxRootConstant.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility(rootConstant.Stages[ 0 ]);
+        dxRootConstant.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( rootConstant.Stages[ 0 ] );
     }
-    dxRootConstant.Constants.Num32BitValues = rootConstant.Size / sizeof(uint32_t);
+    dxRootConstant.Constants.Num32BitValues = rootConstant.Size / sizeof( uint32_t );
     dxRootConstant.Constants.ShaderRegister = rootConstant.Binding;
     dxRootConstant.Constants.RegisterSpace  = rootConstant.RegisterSpace;
-    m_rootConstants.push_back(dxRootConstant);
+    m_rootConstants.push_back( dxRootConstant );
 }
 
-DX12RootSignature::~DX12RootSignature()
+DX12RootSignature::~DX12RootSignature( )
 {
 }

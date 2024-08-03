@@ -25,6 +25,20 @@ using namespace DenOfIz;
 VulkanResourceBindGroup::VulkanResourceBindGroup( VulkanContext *context, const ResourceBindGroupDesc &desc ) : IResourceBindGroup( desc ), m_context( context )
 {
     m_rootSignature = dynamic_cast<VulkanRootSignature *>( m_desc.RootSignature );
+
+    const auto &layout = m_rootSignature->GetDescriptorSetLayout( m_desc.RegisterSpace );
+
+    if ( layout == VK_NULL_HANDLE )
+    {
+        LOG( ERROR ) << "Descriptor set layout not found for register space: " << m_desc.RegisterSpace;
+    }
+
+    VkDescriptorSetAllocateInfo setAllocateInfo{ };
+    setAllocateInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    setAllocateInfo.descriptorSetCount = 1;
+    setAllocateInfo.pSetLayouts        = &layout;
+
+    m_context->DescriptorPoolManager->AllocateDescriptorSets( setAllocateInfo, &m_descriptorSet );
 }
 
 void VulkanResourceBindGroup::Update( const UpdateDesc &desc )
@@ -69,7 +83,7 @@ VkWriteDescriptorSet &VulkanResourceBindGroup::CreateWriteDescriptor( const std:
     const ResourceBindingDesc resourceBinding    = m_rootSignature->GetResourceBinding( name );
     VkWriteDescriptorSet     &writeDescriptorSet = m_writeDescriptorSets.emplace_back( );
     writeDescriptorSet.sType                     = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeDescriptorSet.dstSet                    = m_rootSignature->GetDescriptorSet( resourceBinding.RegisterSpace );
+    writeDescriptorSet.dstSet                    = m_descriptorSet;
     writeDescriptorSet.dstBinding                = resourceBinding.Binding;
     writeDescriptorSet.descriptorType            = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType( resourceBinding.Descriptor );
     writeDescriptorSet.descriptorCount           = resourceBinding.ArraySize;

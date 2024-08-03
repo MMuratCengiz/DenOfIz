@@ -70,6 +70,7 @@ SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanBufferResource.cpp
         Source/Backends/Vulkan/VulkanTextureResource.cpp
         Source/Backends/Vulkan/VulkanPipelineBarrierHelper.cpp
+        Source/Backends/Vulkan/VulkanDescriptorPoolManager.cpp
 )
 
 

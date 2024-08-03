@@ -32,16 +32,22 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
         AddStaticSampler( staticSamplerDesc );
     }
 
-    // Each entry of the vector below represents a register space
-    std::vector<std::vector<VkDescriptorSetLayout>> spaceLayouts;
-    for ( const auto &registerSpaceLayout : m_registerSpaceLayouts )
+    uint32_t maxRegisterSpace = 0;
+    for ( const auto &binding : m_layoutBindings )
     {
-        if ( spaceLayouts.size( ) <= registerSpaceLayout.first )
+        maxRegisterSpace = std::max( maxRegisterSpace, binding.first );
+    }
+
+    for ( uint32_t i = 0; i <= maxRegisterSpace; ++i )
+    {
+        const auto &it = m_layoutBindings.find( i );
+        if ( it == m_layoutBindings.end( ) )
         {
-            spaceLayouts.resize( registerSpaceLayout.first + 1 );
+            m_layouts.push_back( VK_NULL_HANDLE );
+            continue;
         }
 
-        const auto &layoutBindings = registerSpaceLayout.second.LayoutBindings;
+        const auto &layoutBindings = it->second;
 
         VkDescriptorSetLayoutCreateInfo layoutInfo{ };
         layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -51,37 +57,7 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
 
         VkDescriptorSetLayout layout;
         VK_CHECK_RESULT( vkCreateDescriptorSetLayout( m_context->LogicalDevice, &layoutInfo, nullptr, &layout ) );
-        spaceLayouts[ registerSpaceLayout.first ].push_back( layout );
-    }
-
-    std::vector<VkDescriptorPoolSize> poolSizes;
-    for ( const auto &bindingDesc : m_resourceBindingMap )
-    {
-        const auto          &binding = bindingDesc.second;
-        VkDescriptorPoolSize poolSize{ };
-        poolSize.type            = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType( binding.Descriptor );
-        poolSize.descriptorCount = binding.ArraySize;
-        poolSizes.push_back( poolSize );
-    }
-
-    VkDescriptorPoolCreateInfo poolInfo{ };
-    poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = poolSizes.size( );
-    poolInfo.pPoolSizes    = poolSizes.data( );
-    poolInfo.maxSets       = spaceLayouts.size( );
-
-    VK_CHECK_RESULT( vkCreateDescriptorPool( m_context->LogicalDevice, &poolInfo, nullptr, &m_descriptorPool ) );
-
-    for ( int i = 0; i < spaceLayouts.size( ); ++i )
-    {
-        auto                       &layout = spaceLayouts[ i ];
-        VkDescriptorSetAllocateInfo setAllocateInfo{ };
-        setAllocateInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        setAllocateInfo.descriptorPool     = m_descriptorPool;
-        setAllocateInfo.descriptorSetCount = layout.size( );
-        setAllocateInfo.pSetLayouts        = layout.data( );
-
-        VK_CHECK_RESULT( vkAllocateDescriptorSets( m_context->LogicalDevice, &setAllocateInfo, m_registerSpaceLayouts[ i ].DescriptorSets.data( ) ) );
+        m_layouts.push_back( layout );
     }
 }
 
@@ -93,8 +69,10 @@ void VulkanRootSignature::AddStaticSampler( const StaticSamplerDesc &sampler )
     m_bindings.push_back( layoutBinding );
 }
 
-void VulkanRootSignature::AddResourceBindingInternal( const ResourceBindingDesc &binding )
+void VulkanRootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
 {
+    m_resourceBindingMap[ binding.Name ] = binding;
+
     const VkDescriptorSetLayoutBinding layoutBinding = CreateDescriptorSetLayoutBinding( binding );
     m_bindings.push_back( layoutBinding );
 }
@@ -128,14 +106,13 @@ VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBindi
     {
         layoutBinding.stageFlags |= VulkanEnumConverter::ConvertShaderStage( stage );
     }
-    m_registerSpaceLayouts[ binding.RegisterSpace ].LayoutBindings.push_back( layoutBinding );
     m_layoutBindings[ binding.RegisterSpace ].push_back( layoutBinding );
     // Update binding to include the offset
     m_resourceBindingMap[ binding.Name ].Binding = layoutBinding.binding;
     return layoutBinding;
 }
 
-void VulkanRootSignature::AddRootConstantInternal( const RootConstantResourceBinding &rootConstantBinding )
+void VulkanRootSignature::AddRootConstant( const RootConstantResourceBinding &rootConstantBinding )
 {
     m_rootConstantMap[ rootConstantBinding.Name ] = rootConstantBinding;
 
@@ -158,5 +135,4 @@ VulkanRootSignature::~VulkanRootSignature( )
     {
         vkDestroyDescriptorSetLayout( m_context->LogicalDevice, layout, nullptr );
     }
-    vkDestroyDescriptorPool( m_context->LogicalDevice, m_descriptorPool, nullptr );
 }

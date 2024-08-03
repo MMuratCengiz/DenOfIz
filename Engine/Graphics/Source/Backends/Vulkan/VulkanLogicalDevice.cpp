@@ -444,6 +444,7 @@ void VulkanLogicalDevice::CreateLogicalDevice( )
     vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies[ QueueType::Copy ].Index, 0, &m_context->Queues[ QueueType::Copy ] );
     m_context->SelectedDeviceInfo.Capabilities.DedicatedCopyQueue =
         m_context->QueueFamilies.at( QueueType::Copy ).Index != m_context->QueueFamilies.at( QueueType::Graphics ).Index;
+    m_context->DescriptorPoolManager = std::make_unique<VulkanDescriptorPoolManager>( m_context->LogicalDevice );
 }
 
 void VulkanLogicalDevice::InitializeVma( ) const

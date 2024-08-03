@@ -25,38 +25,37 @@ namespace DenOfIz
 {
     class VulkanRootSignature final : public IRootSignature
     {
-        struct RegisterSpaceLayout
-        {
-            std::vector<VkDescriptorSetLayoutBinding> LayoutBindings;
-            std::vector<VkDescriptorSetLayout>        Layouts;
-            std::vector<VkDescriptorSet>              DescriptorSets;
-        };
-
         RootSignatureDesc m_desc;
         VulkanContext    *m_context = nullptr;
 
-        VkDescriptorPool                                  m_descriptorPool{ };
-        std::unordered_map<uint32_t, RegisterSpaceLayout> m_registerSpaceLayouts;
-        std::vector<VkDescriptorSetLayout>                m_layouts;
-        std::vector<VkDescriptorSetLayoutBinding>         m_bindings;
-        std::vector<VkPushConstantRange>                  m_pushConstants;
-        std::vector<VkSampler>                            m_staticSamplers;
-        std::vector<VkDescriptorSet>                      m_descriptorSets;
+        std::vector<VkDescriptorSetLayout>                           m_layouts;
+        std::vector<VkDescriptorSetLayoutBinding>                    m_bindings;
+        std::vector<VkPushConstantRange>                             m_pushConstants;
+        std::vector<VkSampler>                                       m_staticSamplers;
+        std::unordered_map<std::string, ResourceBindingDesc>         m_resourceBindingMap;
+        std::unordered_map<std::string, RootConstantResourceBinding> m_rootConstantMap;
         // Stores the layout bindings for each set
         std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> m_layoutBindings;
 
     public:
-         VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc );
+        VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc );
         ~VulkanRootSignature( ) override;
 
-        [[nodiscard]] VkDescriptorSet GetDescriptorSet( const uint32_t registerSpace ) const
+        [[nodiscard]] ResourceBindingDesc GetResourceBinding( const std::string &name ) const
         {
-            if ( registerSpace >= m_registerSpaceLayouts.size( ) )
+            return ContainerUtilities::SafeGetMapValue( m_resourceBindingMap, name );
+        }
+
+        /// <returns> VK_NULL_HANDLE if register space is between 0 and max register space. </returns>
+        /// <throws> std::runtime_error if register space is larger than the max set. </throws>
+        [[nodiscard]] const VkDescriptorSetLayout &GetDescriptorSetLayout( const uint32_t registerSpace ) const
+        {
+            if ( registerSpace >= m_layouts.size( ) )
             {
                 LOG( ERROR ) << "Descriptor set not found for register space " << registerSpace;
             }
 
-            return m_descriptorSets[ registerSpace ];
+            return m_layouts[ registerSpace ];
         }
 
         [[nodiscard]] const std::vector<VkDescriptorSetLayout> &GetDescriptorSetLayouts( ) const
@@ -64,12 +63,10 @@ namespace DenOfIz
             return m_layouts;
         }
 
-    protected:
-        void                                       AddResourceBindingInternal( const ResourceBindingDesc &binding ) override;
-        void                                       AddRootConstantInternal( const RootConstantResourceBinding &rootConstantBinding ) override;
-        [[nodiscard]] VkDescriptorSetLayoutBinding CreateDescriptorSetLayoutBinding( const ResourceBindingDesc &binding );
-
     private:
-        void AddStaticSampler( const StaticSamplerDesc &sampler );
+        void                                       AddResourceBinding( const ResourceBindingDesc &binding );
+        void                                       AddRootConstant( const RootConstantResourceBinding &rootConstantBinding );
+        void                                       AddStaticSampler( const StaticSamplerDesc &sampler );
+        [[nodiscard]] VkDescriptorSetLayoutBinding CreateDescriptorSetLayoutBinding( const ResourceBindingDesc &binding );
     };
 } // namespace DenOfIz

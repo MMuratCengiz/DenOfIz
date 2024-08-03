@@ -26,12 +26,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct MultiRangeDesc
-    {
-        CD3DX12_DESCRIPTOR_RANGE Resource;
-        // Samplers must be bound to separate tables
-        CD3DX12_DESCRIPTOR_RANGE Sampler;
-    };
 
     struct RegisterSpaceRangesDesc
     {
@@ -42,11 +36,19 @@ namespace DenOfIz
 
     class DX12RootSignature final : public IRootSignature
     {
-        D3D_ROOT_SIGNATURE_VERSION        m_rootSignatureVersion;
+        struct RegisterSpaceOrder
+        {
+            uint32_t                                  Space{ };
+            uint32_t                                  ResourceCount{ };
+            uint32_t                                  SamplerCount{ };
+            std::unordered_map<std::string, uint32_t> ResourceOffsetMap;
+        };
+
         DX12Context                      *m_context;
         RootSignatureDesc                 m_desc;
         wil::com_ptr<ID3D12RootSignature> m_rootSignature;
 
+        std::vector<RegisterSpaceOrder>        m_registerSpaceOrder;
         std::vector<CD3DX12_ROOT_PARAMETER>    m_rootParameters;
         std::vector<CD3DX12_ROOT_PARAMETER>    m_rootConstants;
         std::vector<RegisterSpaceRangesDesc>   m_registerSpaceRanges;
@@ -92,10 +94,10 @@ namespace DenOfIz
 
         ~DX12RootSignature( ) override;
 
-    protected:
+    private:
         void                                     AddStaticSampler( const StaticSamplerDesc &desc );
-        void                                     AddResourceBindingInternal( const ResourceBindingDesc &binding ) override;
-        void                                     AddRootConstantInternal( const RootConstantResourceBinding &rootConstant ) override;
+        void                                     AddResourceBinding( const ResourceBindingDesc &binding );
+        void                                     AddRootConstant( const RootConstantResourceBinding &rootConstant );
         [[nodiscard]] D3D12_ROOT_SIGNATURE_FLAGS ComputeShaderVisibility( ) const;
     };
 

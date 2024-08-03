@@ -48,7 +48,7 @@ void DX12ResourceBindGroup::Update(const UpdateDesc& desc)
 void DX12ResourceBindGroup::BindTexture(const std::string &name, ITextureResource *resource)
 {
     DZ_NOT_NULL(resource);
-    uint32_t offset  = m_rootSignature->GetResourceOffset(m_desc.RegisterSpace, name);
+    uint32_t offset  = m_dx12RootSignature->GetResourceOffset(m_desc.RegisterSpace, name);
     reinterpret_cast<DX12TextureResource *>(resource)->CreateView(CpuHandleCbvSrvUav(offset));
     m_cbvSrvUavCount++;
 }
@@ -56,7 +56,7 @@ void DX12ResourceBindGroup::BindTexture(const std::string &name, ITextureResourc
 void DX12ResourceBindGroup::BindBuffer(const std::string &name, IBufferResource *resource)
 {
     DZ_NOT_NULL(resource);
-    uint32_t offset  = m_rootSignature->GetResourceOffset(m_desc.RegisterSpace, name);
+    uint32_t offset  = m_dx12RootSignature->GetResourceOffset(m_desc.RegisterSpace, name);
     reinterpret_cast<DX12BufferResource *>(resource)->CreateView(CpuHandleCbvSrvUav(offset));
     m_cbvSrvUavCount++;
 }
@@ -64,7 +64,7 @@ void DX12ResourceBindGroup::BindBuffer(const std::string &name, IBufferResource 
 void DX12ResourceBindGroup::BindSampler(const std::string &name, ISampler *sampler)
 {
     DZ_NOT_NULL(sampler);
-    uint32_t offset  = m_rootSignature->GetResourceOffset(m_desc.RegisterSpace, name);
+    uint32_t offset  = m_dx12RootSignature->GetResourceOffset(m_desc.RegisterSpace, name);
     reinterpret_cast<DX12Sampler *>(sampler)->CreateView(CpuHandleSampler(offset));
     m_samplerCount++;
 }
