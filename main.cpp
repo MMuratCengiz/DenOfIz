@@ -11,7 +11,6 @@
 int main()
 {
     DenOfIz::Engine::Init();
-
 /*    DenOfIz::ComputeTest computeTest;
     if (computeTest.Run() == 0) {
         return 0;
@@ -22,16 +21,20 @@ int main()
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
 #endif
-    int * n = new int[5];
     if ( SDL_Init(SDL_INIT_EVERYTHING) != 0 )
     {
         exit(1);
     }
 
     uint32_t windowFlags = SDL_WINDOW_SHOWN;
-#if defined WIN32 || defined __linux__
+#ifdef BUILD_VK
+#ifdef WIN32
+    SDL_Vulkan_LoadLibrary("vulkan-1.dll");
+#endif
     windowFlags |= SDL_WINDOW_VULKAN;
-#elif __APPLE__
+#endif
+
+#if __APPLE__
     windowFlags |= SDL_WINDOW_METAL;
 #endif
 

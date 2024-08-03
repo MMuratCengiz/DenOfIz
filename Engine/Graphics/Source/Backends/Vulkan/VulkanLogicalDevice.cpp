@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
 #include <algorithm>
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h"
@@ -22,6 +23,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h"
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h"
+
+#define VOLK_IMPLEMENTATION
+#include "volk.h"
 
 #define VMA_STATS_STRING_ENABLED 0
 #define VMA_IMPLEMENTATION

@@ -64,7 +64,6 @@ SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanPipeline.cpp
         Source/Backends/Vulkan/VulkanRootSignature.cpp
         Source/Backends/Vulkan/VulkanSwapChain.cpp
-        Source/Backends/Vulkan/VmaImplementation.cpp
         # Vulkan Resources
         Source/Backends/Vulkan/VulkanFence.cpp
         Source/Backends/Vulkan/VulkanSemaphore.cpp
@@ -225,7 +224,7 @@ if (WIN32 OR LINUX)
     target_link_libraries(DenOfIzGraphics PUBLIC
             volk::volk
             volk::volk_headers
-            Vulkan::Vulkan
+#            Vulkan::Vulkan
             GPUOpen::VulkanMemoryAllocator)
 endif ()
 

@@ -142,7 +142,7 @@ void VulkanSwapChain::CreateSwapChain( )
     createInfo.clipped        = VK_TRUE;
     createInfo.oldSwapchain   = m_swapChain;
 
-    vkCreateSwapchainKHR( m_context->LogicalDevice, &createInfo, nullptr, &m_swapChain );
+    VK_CHECK_RESULT( vkCreateSwapchainKHR( m_context->LogicalDevice, &createInfo, nullptr, &m_swapChain ) );
     CreateSwapChainImages( VulkanEnumConverter::ConvertImageFormat( m_surfaceImageFormat ) );
 }
 

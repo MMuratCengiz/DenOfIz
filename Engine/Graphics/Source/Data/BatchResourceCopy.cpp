@@ -18,6 +18,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 
+#ifndef STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image.h"
+#endif
+/* TODO !THEFORGE! Uncomment once The reference is removed.
+#ifndef TINYGLTF_IMPLEMENTATION
+#define TINYGLTF_IMPLEMENTATION
+#define TINYGLTF_NOEXCEPTION
+#define JSON_NOEXCEPTION
+#include <tiny_gltf.h>
+#endif
+*/
+
 using namespace DenOfIz;
 
 BatchResourceCopy::BatchResourceCopy(ILogicalDevice *device) : m_device(device)

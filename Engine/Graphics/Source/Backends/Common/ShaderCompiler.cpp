@@ -4,47 +4,47 @@
 namespace DenOfIz
 {
 
-    bool ShaderCompiler::Init()
+    bool ShaderCompiler::Init( )
     {
-        glslang::InitializeProcess();
+        glslang::InitializeProcess( );
 
-        HRESULT result = DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&m_dxcLibrary));
-        if ( FAILED(result) )
+        HRESULT result = DxcCreateInstance( CLSID_DxcLibrary, IID_PPV_ARGS( &m_dxcLibrary ) );
+        if ( FAILED( result ) )
         {
-            LOG(FATAL) << "Failed to initialize DXC Library";
+            LOG( FATAL ) << "Failed to initialize DXC Library";
             return false;
         }
 
-        result = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&m_dxcCompiler));
-        if ( FAILED(result) )
+        result = DxcCreateInstance( CLSID_DxcCompiler, IID_PPV_ARGS( &m_dxcCompiler ) );
+        if ( FAILED( result ) )
         {
-            LOG(FATAL) << "Failed to initialize DXC Compiler";
+            LOG( FATAL ) << "Failed to initialize DXC Compiler";
             return false;
         }
 
-        result = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&m_dxcUtils));
-        if ( FAILED(result) )
+        result = DxcCreateInstance( CLSID_DxcUtils, IID_PPV_ARGS( &m_dxcUtils ) );
+        if ( FAILED( result ) )
         {
-            LOG(FATAL) << "Failed to initialize DXC Utils";
+            LOG( FATAL ) << "Failed to initialize DXC Utils";
             return false;
         }
 
         return true;
     }
 
-    void ShaderCompiler::Destroy()
+    void ShaderCompiler::Destroy( )
     {
-        m_dxcUtils->Release();
-        m_dxcCompiler->Release();
-        m_dxcLibrary->Release();
+        m_dxcUtils->Release( );
+        m_dxcCompiler->Release( );
+        m_dxcLibrary->Release( );
 
-        glslang::FinalizeProcess();
+        glslang::FinalizeProcess( );
 #ifdef __APPLE__
-        IRCompilerDestroy(mp_compiler);
+        IRCompilerDestroy( mp_compiler );
 #endif
     }
 
-    void ShaderCompiler::InitResources(TBuiltInResource &Resources) const
+    void ShaderCompiler::InitResources( TBuiltInResource &Resources ) const
     {
         Resources.maxLights                                   = 32;
         Resources.maxClipPlanes                               = 6;
@@ -149,7 +149,7 @@ namespace DenOfIz
         Resources.limits.generalConstantMatrixVectorIndexing  = true;
     }
 
-    EShLanguage ShaderCompiler::FindLanguage(const ShaderStage shader_type) const
+    EShLanguage ShaderCompiler::FindLanguage( const ShaderStage shader_type ) const
     {
         switch ( shader_type )
         {
@@ -170,61 +170,61 @@ namespace DenOfIz
         }
     }
 
-    std::vector<uint32_t> ShaderCompiler::CompileGLSL(const std::string &filename, const CompileOptions &compileOptions) const
+    std::vector<uint32_t> ShaderCompiler::CompileGLSL( const std::string &filename, const CompileOptions &compileOptions ) const
     {
-        auto        glslContents = Utilities::ReadFile(filename);
+        auto        glslContents = Utilities::ReadFile( filename );
         ShaderStage shaderType   = compileOptions.Stage;
-        EShLanguage stage        = FindLanguage(shaderType);
+        EShLanguage stage        = FindLanguage( shaderType );
 
-        TBuiltInResource resources = {};
-        InitResources(resources);
+        TBuiltInResource resources = { };
+        InitResources( resources );
 
-        glslang::TShader  shader(stage);
+        glslang::TShader  shader( stage );
         glslang::TProgram program;
 
         const char *shaderStrings[ 1 ];
-        shaderStrings[ 0 ] = glslContents.c_str();
-        shader.setStrings(shaderStrings, 1);
+        shaderStrings[ 0 ] = glslContents.c_str( );
+        shader.setStrings( shaderStrings, 1 );
 
-        auto messages = static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules);
+        auto messages = static_cast<EShMessages>( EShMsgSpvRules | EShMsgVulkanRules );
 
         std::vector<uint32_t> spirv;
-        if ( !shader.parse(&resources, 100, false, messages) )
+        if ( !shader.parse( &resources, 100, false, messages ) )
         {
-            LOG(WARNING) << std::string(shader.getInfoLog());
-            LOG(FATAL) << std::string(shader.getInfoDebugLog());
+            LOG( WARNING ) << std::string( shader.getInfoLog( ) );
+            LOG( FATAL ) << std::string( shader.getInfoDebugLog( ) );
             return spirv;
         }
 
-        program.addShader(&shader);
-        if ( !program.link(messages) )
+        program.addShader( &shader );
+        if ( !program.link( messages ) )
         {
-            LOG(WARNING) << std::string(shader.getInfoLog());
-            LOG(WARNING) << std::string(shader.getInfoDebugLog());
+            LOG( WARNING ) << std::string( shader.getInfoLog( ) );
+            LOG( WARNING ) << std::string( shader.getInfoDebugLog( ) );
             return spirv;
         }
 
-        glslang::TIntermediate *intermediate = program.getIntermediate(stage);
+        glslang::TIntermediate *intermediate = program.getIntermediate( stage );
         if ( intermediate == nullptr )
         {
             return spirv;
         }
-        GlslangToSpv(*intermediate, spirv);
-        return std::move(spirv);
+        GlslangToSpv( *intermediate, spirv );
+        return std::move( spirv );
     }
 
-    IDxcBlob *ShaderCompiler::CompileHLSL(const std::string &filename, const CompileOptions &compileOptions) const
+    IDxcBlob *ShaderCompiler::CompileHLSL( const std::string &filename, const CompileOptions &compileOptions ) const
     {
         // Attribute to source: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
         // https://github.com/KhronosGroup/Vulkan-Guide
-        std::string       path     = Utilities::AppPath(filename);
+        std::string       path     = Utilities::AppPath( filename );
         uint32_t          codePage = DXC_CP_ACP;
         IDxcBlobEncoding *sourceBlob;
-        std::wstring      wsShaderPath(path.begin(), path.end());
-        HRESULT           result = m_dxcUtils->LoadFile(wsShaderPath.c_str(), &codePage, &sourceBlob);
-        if ( FAILED(result) )
+        std::wstring      wsShaderPath( path.begin( ), path.end( ) );
+        HRESULT           result = m_dxcUtils->LoadFile( wsShaderPath.c_str( ), &codePage, &sourceBlob );
+        if ( FAILED( result ) )
         {
-            LOG(FATAL) << "Could not load shader file: " << path << " error code: " << GetLastError();
+            LOG( FATAL ) << "Could not load shader file: " << path << " error code: " << GetLastError( );
         }
 
         std::string hlslVersion = "6_6";
@@ -250,66 +250,97 @@ namespace DenOfIz
             targetProfile = "cs";
             break;
         default:
-            DZ_ASSERTM(false, "Invalid shader stage");
+            DZ_ASSERTM( false, "Invalid shader stage" );
             break;
         }
         targetProfile += "_" + hlslVersion;
 
         std::vector<LPCWSTR> arguments;
-        arguments.push_back(wsShaderPath.c_str());
+        arguments.push_back( wsShaderPath.c_str( ) );
         // Set the entry point
-        arguments.push_back(L"-E");
-        std::wstring wsEntryPoint(compileOptions.EntryPoint.begin(), compileOptions.EntryPoint.end());
-        arguments.push_back(wsEntryPoint.c_str());
+        arguments.push_back( L"-E" );
+        std::wstring wsEntryPoint( compileOptions.EntryPoint.begin( ), compileOptions.EntryPoint.end( ) );
+        arguments.push_back( wsEntryPoint.c_str( ) );
         // Set shader stage
-        arguments.push_back(L"-T");
-        std::wstring wsTargetProfile(targetProfile.begin(), targetProfile.end());
-        arguments.push_back(wsTargetProfile.c_str());
+        arguments.push_back( L"-T" );
+        std::wstring wsTargetProfile( targetProfile.begin( ), targetProfile.end( ) );
+        arguments.push_back( wsTargetProfile.c_str( ) );
         if ( compileOptions.TargetIL == TargetIL::SPIRV )
         {
-            arguments.push_back(L"-spirv");
+            arguments.push_back( L"-spirv" );
+            // Vulkan requires unique binding for each descriptor, hlsl has a binding per buffer view.
+            // Docs suggest shifting the binding to avoid conflicts.
+            static const std::wstring VkShiftCbvWs     = std::to_wstring(VkShiftCbv);
+            static const std::wstring VkShiftSrvWs     = std::to_wstring(VkShiftSrv);
+            static const std::wstring VkShiftUavWs     = std::to_wstring(VkShiftUav);
+            static const std::wstring VkShiftSamplerWs = std::to_wstring(VkShiftSampler);
+
+            {
+                // Shift Cbv for Vk
+                arguments.push_back( L"-fvk-b-shift" );
+                arguments.push_back( VkShiftCbvWs.c_str() );
+                arguments.push_back( L"all" );
+            }
+            {
+                // Shift Srv for Vk
+                arguments.push_back( L"-fvk-t-shift" );
+                arguments.push_back( VkShiftSrvWs.c_str() );
+                arguments.push_back( L"all" );
+            }
+            {
+                // Shift Uav for Vk
+                arguments.push_back( L"-fvk-u-shift" );
+                arguments.push_back( VkShiftUavWs.c_str() );
+                arguments.push_back( L"all" );
+            }
+            {
+                // Shift Sampler for Vk
+                arguments.push_back( L"-fvk-s-shift" );
+                arguments.push_back( VkShiftSamplerWs.c_str() );
+                arguments.push_back( L"all" );
+            }
         }
         for ( const auto &define : compileOptions.Defines )
         {
-            arguments.push_back(L"-D");
-            arguments.push_back(LPCWSTR(define.c_str()));
+            arguments.push_back( L"-D" );
+            arguments.push_back( LPCWSTR( define.c_str( ) ) );
         }
-        arguments.push_back(L"-HV");
-        arguments.push_back(L"2021");
+        arguments.push_back( L"-HV" );
+        arguments.push_back( L"2021" );
 #ifndef NDEBUG
-        arguments.push_back(L"-Zi");
+        arguments.push_back( L"-Zi" );
 #endif
 
-        DxcBuffer buffer{};
+        DxcBuffer buffer{ };
         buffer.Encoding = DXC_CP_ACP; // or? DXC_CP_UTF8;
-        buffer.Ptr      = sourceBlob->GetBufferPointer();
-        buffer.Size     = sourceBlob->GetBufferSize();
+        buffer.Ptr      = sourceBlob->GetBufferPointer( );
+        buffer.Size     = sourceBlob->GetBufferSize( );
 
         IDxcResult *dxcResult{ nullptr };
-        result = m_dxcCompiler->Compile(&buffer, arguments.data(), static_cast<uint32_t>(arguments.size()), nullptr, IID_PPV_ARGS(&dxcResult));
+        result = m_dxcCompiler->Compile( &buffer, arguments.data( ), static_cast<uint32_t>( arguments.size( ) ), nullptr, IID_PPV_ARGS( &dxcResult ) );
 
-        if ( SUCCEEDED(result) )
+        if ( SUCCEEDED( result ) )
         {
-            dxcResult->GetStatus(&result);
+            dxcResult->GetStatus( &result );
         }
 
-        if ( FAILED(result) && (dxcResult) )
+        if ( FAILED( result ) && ( dxcResult ) )
         {
             IDxcBlobEncoding *errorBlob;
-            result = dxcResult->GetErrorBuffer(&errorBlob);
-            if ( SUCCEEDED(result) && errorBlob )
+            result = dxcResult->GetErrorBuffer( &errorBlob );
+            if ( SUCCEEDED( result ) && errorBlob )
             {
-                std::cerr << "Shader compilation failed :\n\n" << static_cast<const char *>(errorBlob->GetBufferPointer());
-                errorBlob->Release();
-                throw std::runtime_error("Compilation failed");
+                std::cerr << "Shader compilation failed :\n\n" << static_cast<const char *>( errorBlob->GetBufferPointer( ) );
+                errorBlob->Release( );
+                throw std::runtime_error( "Compilation failed" );
             }
         }
 
         IDxcBlob *code;
-        dxcResult->GetResult(&code);
+        dxcResult->GetResult( &code );
 
-        dxcResult->Release();
-        sourceBlob->Release();
+        dxcResult->Release( );
+        sourceBlob->Release( );
 
         return code;
     }

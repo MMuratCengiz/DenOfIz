@@ -112,7 +112,7 @@ namespace DenOfIz
         BC7UnormSrgb
     };
 
-    static uint32_t GetImageFormatSize(const Format &format)
+    static uint32_t GetImageFormatSize( const Format &format )
     {
         switch ( format )
         {
@@ -193,7 +193,7 @@ namespace DenOfIz
         }
     }
 
-    static Format FormatToTypeless(const Format &format)
+    static Format FormatToTypeless( const Format &format )
     {
         switch ( format )
         {
@@ -260,7 +260,7 @@ namespace DenOfIz
         }
     }
 
-    static FormatSubType GetFormatSubType(const Format &format)
+    static FormatSubType GetFormatSubType( const Format &format )
     {
         switch ( format )
         {
@@ -345,7 +345,7 @@ namespace DenOfIz
         }
     }
 
-    static bool IsFormatBC(const Format &format)
+    static bool IsFormatBC( const Format &format )
     {
         switch ( format )
         {
@@ -369,9 +369,9 @@ namespace DenOfIz
         }
     }
 
-    static uint32_t FormatBlockSize(const Format &format)
+    static uint32_t FormatBlockSize( const Format &format )
     {
-        return IsFormatBC(format) ? 4 : 1;
+        return IsFormatBC( format ) ? 4 : 1;
     }
 
     enum class PrimitiveTopology
@@ -502,6 +502,32 @@ namespace DenOfIz
         AccelerationStructureRead  = 1 << 17,
         AccelerationStructureWrite = 1 << 18
     };
+
+    enum class DescriptorBufferBindingType
+    {
+        ConstantBuffer,
+        ShaderResource,
+        UnorderedAccess,
+        Sampler
+    };
+
+    static DescriptorBufferBindingType ResourceDescriptorBindingType( const BitSet<ResourceDescriptor> &descriptor )
+    {
+        if ( descriptor.Any( { ResourceDescriptor::RWTexture, ResourceDescriptor::RWBuffer } ) )
+        {
+            return DescriptorBufferBindingType::UnorderedAccess;
+        }
+        if ( descriptor.IsSet( ResourceDescriptor::Sampler ) )
+        {
+            return DescriptorBufferBindingType::Sampler;
+        }
+        if ( descriptor.IsSet( ResourceDescriptor::UniformBuffer ) )
+        {
+            return DescriptorBufferBindingType::ConstantBuffer;
+        }
+
+        return DescriptorBufferBindingType::ShaderResource;
+    }
 
     enum class LoadOp
     {

@@ -113,8 +113,25 @@ void VulkanRootSignature::AddResourceBindingInternal( const ResourceBindingDesc 
 VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBinding( const ResourceBindingDesc &binding )
 {
     VkDescriptorSetLayoutBinding layoutBinding{ };
-    // Todo binding from binding slot
-    layoutBinding.binding         = binding.Binding;
+    // HLSL buffer views in vulkan each have a specific offset
+    uint32_t bindingTypeOffset = 0;
+    switch ( ResourceDescriptorBindingType( binding.Descriptor ) )
+    {
+    case DescriptorBufferBindingType::ConstantBuffer:
+        bindingTypeOffset = ShaderCompiler::VkShiftCbv;
+        break;
+    case DescriptorBufferBindingType::ShaderResource:
+        bindingTypeOffset = ShaderCompiler::VkShiftSrv;
+        break;
+    case DescriptorBufferBindingType::UnorderedAccess:
+        bindingTypeOffset = ShaderCompiler::VkShiftUav;
+        break;
+    case DescriptorBufferBindingType::Sampler:
+        bindingTypeOffset = ShaderCompiler::VkShiftSampler;
+        break;
+    }
+
+    layoutBinding.binding         = bindingTypeOffset + binding.Binding;
     layoutBinding.descriptorType  = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType( binding.Descriptor );
     layoutBinding.descriptorCount = binding.ArraySize;
     layoutBinding.stageFlags      = 0;
@@ -123,6 +140,8 @@ VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBindi
         layoutBinding.stageFlags |= VulkanEnumConverter::ConvertShaderStage( stage );
     }
     m_layoutBindings[ binding.RegisterSpace ].push_back( layoutBinding );
+    // Update binding to include the offset
+    m_resourceBindingMap[ binding.Name ].Binding = layoutBinding.binding;
     return layoutBinding;
 }
 

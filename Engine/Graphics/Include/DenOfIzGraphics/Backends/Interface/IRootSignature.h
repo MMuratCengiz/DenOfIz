@@ -44,11 +44,12 @@ namespace DenOfIz
 
     struct ResourceBindingDesc
     {
-        std::string                Name;
-        uint32_t                   Binding;
-        uint32_t                   RegisterSpace = 0;
-        BitSet<ResourceDescriptor> Descriptor;
-        std::vector<ShaderStage>   Stages;
+        std::string                 Name;
+        DescriptorBufferBindingType BindingType;
+        uint32_t                    Binding;
+        uint32_t                    RegisterSpace = 0;
+        BitSet<ResourceDescriptor>  Descriptor;
+        std::vector<ShaderStage>    Stages;
         // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
         int ArraySize = 1;
     };
