@@ -24,6 +24,7 @@ VulkanSemaphore::VulkanSemaphore( VulkanContext *context ) : m_context( context 
 {
     VkSemaphoreCreateInfo semaphoreCreateInfo{ };
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphoreCreateInfo.flags = VK_SEMAPHORE_TYPE_BINARY;
     vkCreateSemaphore( m_context->LogicalDevice, &semaphoreCreateInfo, nullptr, &m_semaphore );
 }
 

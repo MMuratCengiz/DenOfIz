@@ -31,7 +31,7 @@ namespace DenOfIz
         {
             friend class VulkanDescriptorPoolManager;
             VkDevice         m_device;
-            VkDescriptorPool m_pool;
+            VkDescriptorPool m_pool{};
             uint32_t         m_numSets;
             uint32_t         m_setsAllocated = 0;
 
@@ -46,8 +46,8 @@ namespace DenOfIz
         const uint32_t                                     m_maxSets = 100;
 
     public:
-        VulkanDescriptorPoolManager( const VkDevice& device );
-        ~VulkanDescriptorPoolManager( );
+        explicit VulkanDescriptorPoolManager( const VkDevice& device );
+        ~VulkanDescriptorPoolManager( ) = default;
 
         /// <param name="allocateInfo">Pool parameter is filled in automatically </param>
         void AllocateDescriptorSets( const VkDescriptorSetAllocateInfo &allocateInfo, VkDescriptorSet *sets );

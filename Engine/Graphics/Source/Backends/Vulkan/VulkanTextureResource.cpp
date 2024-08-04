@@ -17,6 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanUtilities.h>
+
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h"
 
 using namespace DenOfIz;
@@ -76,7 +78,6 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
     imageCreateInfo.samples       = VulkanEnumConverter::ConvertSampleCount( desc.MSAASampleCount );
     imageCreateInfo.mipLevels     = desc.MipLevels;
     imageCreateInfo.arrayLayers   = desc.ArraySize;
-    imageCreateInfo.initialLayout = VulkanEnumConverter::ConvertTextureDescriptorToLayout( desc.InitialState );
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VmaAllocationCreateInfo allocationCreateInfo{ };
@@ -90,7 +91,7 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
         break;
     case HeapType::GPU_CPU:
     case HeapType::CPU_GPU:
-        allocationCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        allocationCreateInfo.requiredFlags  = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         allocationCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         break;
     }
@@ -109,9 +110,9 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
     viewCreateInfo.components.a                    = VK_COMPONENT_SWIZZLE_IDENTITY;
     viewCreateInfo.subresourceRange.aspectMask     = VulkanEnumConverter::ConvertImageAspect( desc.Aspect );
     viewCreateInfo.subresourceRange.baseMipLevel   = 0;
-    viewCreateInfo.subresourceRange.levelCount     = 1; // Todo what to put here?
+    viewCreateInfo.subresourceRange.levelCount     = 1; // desc.MipLevels; Mip levels are created individually
     viewCreateInfo.subresourceRange.baseArrayLayer = 0;
-    viewCreateInfo.subresourceRange.layerCount     = 1; // Todo what to put here?
+    viewCreateInfo.subresourceRange.layerCount     = desc.ArraySize;
 
     m_aspect = VulkanEnumConverter::ConvertImageAspect( desc.Aspect );
 
@@ -124,6 +125,65 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
             VK_CHECK_RESULT( vkCreateImageView( m_context->LogicalDevice, &viewCreateInfo, nullptr, &m_imageView ) );
         }
     }
+
+    // This is not super efficient, but vulkan is the only api that doesn't support initial layouts. So this is a simple adaptation.
+    // Performance implications can be considered in the future after benchmarking.
+    TransitionToInitialLayout(  );
+}
+
+// Todo transitition all mip levels
+void VulkanTextureResource::TransitionToInitialLayout( ) const
+{
+    const VkImageLayout initialLayout = VulkanEnumConverter::ConvertTextureDescriptorToLayout( m_desc.InitialState );
+    if ( initialLayout == VK_IMAGE_LAYOUT_UNDEFINED )
+    {
+        return;
+    }
+
+    VkCommandBufferAllocateInfo bufferAllocateInfo{ };
+    bufferAllocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    bufferAllocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    bufferAllocateInfo.commandPool        = m_context->GraphicsQueueCommandPool;
+    bufferAllocateInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers( m_context->LogicalDevice, &bufferAllocateInfo, &commandBuffer );
+
+    VkCommandBufferBeginInfo beginInfo{ };
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    VK_CHECK_RESULT( vkBeginCommandBuffer( commandBuffer, &beginInfo ) );
+
+    VkImageMemoryBarrier barrier{ };
+    barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout                       = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout                       = initialLayout;
+    barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image                           = m_image;
+    barrier.subresourceRange.aspectMask     = m_aspect;
+    barrier.subresourceRange.baseMipLevel   = 0;
+    barrier.subresourceRange.levelCount     = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount     = m_desc.ArraySize;
+    barrier.srcAccessMask                   = 0;
+    barrier.dstAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+    for ( uint32_t j = 0; j < m_desc.MipLevels; ++j )
+    {
+        barrier.subresourceRange.baseMipLevel = j;
+        vkCmdPipelineBarrier( commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier );
+    }
+
+    VK_CHECK_RESULT( vkEndCommandBuffer( commandBuffer ) );
+
+    VkSubmitInfo submitInfo{ };
+    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers    = &commandBuffer;
+
+    VK_CHECK_RESULT( vkQueueSubmit( m_context->Queues.at( QueueType::Graphics ), 1, &submitInfo, nullptr ) );
 }
 
 VulkanTextureResource::~VulkanTextureResource( )

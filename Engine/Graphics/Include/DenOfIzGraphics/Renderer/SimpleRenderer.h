@@ -70,8 +70,8 @@ namespace DenOfIz
 
     public:
         void Init( GraphicsWindowHandle *window );
-        void Render( );
-        void Quit( );
+        void Render( ) const;
+        void Quit( ) const;
 
     private:
         void UpdateMVPMatrix( );

@@ -67,11 +67,10 @@ namespace DenOfIz
         }
     };
     /// \brief Wrapper class for BatchResourceCopy which also provides helper functions for creating resources.
-    /// \details This class is not thread-safe.
+    /// \details Synchronization between direct queue must be done.
     /// \note This class transitions resources to ShaderResource state after copying data to GPU.
     class BatchResourceCopyHelper
     {
-    private:
         ILogicalDevice                   *m_device;
         BatchResourceCopy                *m_batchCopy;
         std::unique_ptr<ICommandListPool> m_syncCommandPool;
@@ -80,12 +79,12 @@ namespace DenOfIz
     public:
         BatchResourceCopyHelper(ILogicalDevice *device, BatchResourceCopy *batchCopy);
 
-        void                                Begin();
-        [[nodiscard]] UniformBufferHolder   CreateUniformBuffer(std::string name, void *data, uint32_t numBytes);
-        [[nodiscard]] VertexIndexBufferPairHolder CreateGeometryBuffers(const GeometryData &GeometryData);
-        [[nodiscard]] SamplerHolder         CreateSampler(const std::string& name, const SamplerDesc &desc);
-        [[nodiscard]] TextureHolder         CreateTexture(const std::string& name, const std::string& path);
-        void                                Submit();
+        void                                Begin( ) const;
+        [[nodiscard]] UniformBufferHolder   CreateUniformBuffer(std::string name, const void *data, uint32_t numBytes ) const;
+        [[nodiscard]] VertexIndexBufferPairHolder CreateGeometryBuffers(const GeometryData &GeometryData ) const;
+        [[nodiscard]] SamplerHolder         CreateSampler(const std::string& name, const SamplerDesc &desc ) const;
+        [[nodiscard]] TextureHolder         CreateTexture(const std::string& name, const std::string& path ) const;
+        void                                Submit( ) const;
 
     private:
         static std::string NextId(const std::string &prefix);

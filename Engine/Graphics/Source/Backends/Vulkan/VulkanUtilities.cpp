@@ -42,30 +42,6 @@ void VulkanUtilities::InitStagingBuffer( const VulkanContext *context, VkBuffer 
 
 void VulkanUtilities::RunOneTimeCommand( const VulkanContext *context, const std::function<void( VkCommandBuffer & )> &run )
 {
-    VkCommandBufferAllocateInfo bufferAllocateInfo{ };
-    bufferAllocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    bufferAllocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    bufferAllocateInfo.commandPool        = context->GraphicsQueueCommandPool;
-    bufferAllocateInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers( context->LogicalDevice, &bufferAllocateInfo, &commandBuffer );
-
-    VkCommandBufferBeginInfo beginInfo{ };
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    VK_CHECK_RESULT( vkBeginCommandBuffer( commandBuffer, &beginInfo ) );
-
-    run( commandBuffer );
-
-    VK_CHECK_RESULT( vkEndCommandBuffer( commandBuffer ) );
-
-    VkSubmitInfo submitInfo{ };
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &commandBuffer;
-
-    VK_CHECK_RESULT( vkQueueSubmit( context->Queues.at( QueueType::Graphics ), 1, &submitInfo, nullptr ) );
 }
 
 void VulkanUtilities::CopyBuffer( const VulkanContext *context, const VkBuffer &from, const VkBuffer &to, const uint32_t size )

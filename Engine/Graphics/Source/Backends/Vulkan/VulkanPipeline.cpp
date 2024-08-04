@@ -26,6 +26,19 @@ VulkanPipeline::VulkanPipeline( VulkanContext *context, const PipelineDesc &crea
     m_context( context ), m_programReflection( ShaderReflection( createInfo.ShaderProgram->GetCompiledShaders( ) ) ), m_desc( createInfo ),
     m_bindPoint( VulkanEnumConverter::ConvertPipelineBindPoint( createInfo.BindPoint ) )
 {
+    CreatePipelineLayout( );
+
+    switch ( createInfo.BindPoint )
+    {
+    case BindPoint::Graphics:
+        CreateGraphicsPipeline( );
+        break;
+    case BindPoint::Compute:
+        CreateComputePipeline( );
+        break;
+    case BindPoint::RayTracing:
+        break;
+    }
 }
 
 void VulkanPipeline::CreateGraphicsPipeline( )
@@ -48,6 +61,7 @@ void VulkanPipeline::CreateGraphicsPipeline( )
 
     // Configure Dynamic States:
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{ };
+    dynamicStateCreateInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicStateCreateInfo.dynamicStateCount = g_dynamicStates.size( );
     dynamicStateCreateInfo.pDynamicStates    = g_dynamicStates.data( );
     pipelineCreateInfo.pDynamicState         = &dynamicStateCreateInfo;
@@ -74,6 +88,21 @@ void VulkanPipeline::CreateGraphicsPipeline( )
     VK_CHECK_RESULT( vkCreateGraphicsPipelines( m_context->LogicalDevice, nullptr, 1, &pipelineCreateInfo, nullptr, &m_instance ) );
 }
 
+void VulkanPipeline::CreateComputePipeline( )
+{
+    VkComputePipelineCreateInfo pipelineCreateInfo{ };
+    pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+
+    const std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos = ConfigurePipelineStages( );
+    // Render pass configuration, disabled for now
+    pipelineCreateInfo.basePipelineHandle = nullptr;
+    pipelineCreateInfo.basePipelineIndex  = -1;
+    // --
+    pipelineCreateInfo.stage  = pipelineStageCreateInfos[ 0 ];
+    pipelineCreateInfo.layout = m_layout;
+    VK_CHECK_RESULT( vkCreateComputePipelines( m_context->LogicalDevice, nullptr, 1, &pipelineCreateInfo, nullptr, &m_instance ) );
+}
+
 // clang-format off
 const std::array<VkDynamicState, 4> VulkanPipeline::g_dynamicStates =
 {
@@ -90,6 +119,7 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
     for ( const auto &[ Stage, Blob ] : m_desc.ShaderProgram->GetCompiledShaders( ) )
     {
         VkPipelineShaderStageCreateInfo &shaderStageCreateInfo = pipelineStageCreateInfos.emplace_back( );
+        shaderStageCreateInfo.sType                            = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 
         const VkShaderStageFlagBits stage        = VulkanEnumConverter::ConvertShaderStage( Stage );
         const VkShaderModule       &shaderModule = m_shaderModules.emplace_back( this->CreateShaderModule( Blob ) );
@@ -126,10 +156,6 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
     tessellationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
     // Todo read this value from somewhere
     tessellationStateCreateInfo.patchControlPoints = 3;
-    if ( m_desc.PrimitiveTopology != PrimitiveTopology::Patch )
-    {
-        LOG( WARNING ) << "Tessellation is enabled but the primitive topology is not set to Patch";
-    }
     return tessellationStateCreateInfo;
 }
 
@@ -335,6 +361,7 @@ VkPipelineDepthStencilStateCreateInfo VulkanPipeline::CreateDepthAttachmentImage
 VkShaderModule VulkanPipeline::CreateShaderModule( IDxcBlob *blob ) const
 {
     VkShaderModuleCreateInfo shaderModuleCreateInfo{ };
+    shaderModuleCreateInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     shaderModuleCreateInfo.codeSize = blob->GetBufferSize( );
     shaderModuleCreateInfo.pCode    = static_cast<const uint32_t *>( blob->GetBufferPointer( ) );
 

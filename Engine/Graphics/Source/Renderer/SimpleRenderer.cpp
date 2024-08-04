@@ -25,7 +25,7 @@ namespace DenOfIz
     {
         m_window = window;
         GraphicsAPI::SetAPIPreference( APIPreference{
-                        .Windows = APIPreferenceWindows::Vulkan,
+            .Windows = APIPreferenceWindows::Vulkan,
         } );
 
         m_logicalDevice     = GraphicsAPI::CreateAndLoadOptimalLogicalDevice( );
@@ -123,41 +123,41 @@ namespace DenOfIz
 
     void SimpleRenderer::UpdateMVPMatrix( )
     {
-        XMFLOAT3 eyePosition = XMFLOAT3( 0.0f, -1.0f, -2.0f );
-        XMFLOAT3 focusPoint  = XMFLOAT3( 0.0f, 0.0f, 0.0f );
-        XMFLOAT3 upDirection = XMFLOAT3( 0.0f, 1.0f, 0.0f );
-        float    aspectRatio = 800.0f / 600.0f;
-        float    nearZ       = 0.1f;
-        float    farZ        = 100.0f;
+        constexpr XMFLOAT3 eyePosition = XMFLOAT3( 0.0f, -1.0f, -2.0f );
+        constexpr XMFLOAT3 focusPoint  = XMFLOAT3( 0.0f, 0.0f, 0.0f );
+        constexpr XMFLOAT3 upDirection = XMFLOAT3( 0.0f, 1.0f, 0.0f );
+        constexpr float    aspectRatio = 800.0f / 600.0f;
+        constexpr float    nearZ       = 0.1f;
+        constexpr float    farZ        = 100.0f;
 
         // Set up the matrices
-        XMMATRIX modelMatrix      = XMMatrixIdentity( );
-        XMMATRIX viewMatrix       = XMMatrixLookAtLH( XMLoadFloat3( &eyePosition ), XMLoadFloat3( &focusPoint ), XMLoadFloat3( &upDirection ) );
-        XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH( XM_PIDIV4, aspectRatio, nearZ, farZ );
+        const XMMATRIX modelMatrix      = XMMatrixIdentity( );
+        const XMMATRIX viewMatrix       = XMMatrixLookAtLH( XMLoadFloat3( &eyePosition ), XMLoadFloat3( &focusPoint ), XMLoadFloat3( &upDirection ) );
+        const XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH( XM_PIDIV4, aspectRatio, nearZ, farZ );
 
         // Compute the MVP matrix
-        XMMATRIX mvpMatrix = modelMatrix * viewMatrix * projectionMatrix;
+        const XMMATRIX mvpMatrix = modelMatrix * viewMatrix * projectionMatrix;
         XMStoreFloat4x4( &m_mvpMatrix, XMMatrixTranspose( mvpMatrix ) );
     }
 
-    void SimpleRenderer::Render( )
+    void SimpleRenderer::Render( ) const
     {
-        float timePassed = std::fmax( 1.0f, ( m_time->DoubleEpochNow( ) - m_time->GetFirstTickTime( ) ) / 1000000.0f );
+        const float timePassed = std::fmax( 1.0f, ( m_time->DoubleEpochNow( ) - m_time->GetFirstTickTime( ) ) / 1000000.0f );
         memcpy( m_mappedTimePassedBuffer, &timePassed, sizeof( float ) );
         m_time->Tick( );
 
-        auto     nextCommandList = m_commandListRing->GetNext( );
-        uint32_t currentFrame    = m_commandListRing->GetCurrentFrame( );
+        const auto     nextCommandList = m_commandListRing->GetNext( );
+        const uint32_t currentFrame    = m_commandListRing->GetCurrentFrame( );
         m_fences[ currentFrame ]->Wait( );
 
-        uint32_t nextImage = m_swapChain->AcquireNextImage( m_imageReadySemaphores[ currentFrame ].get( ) );
+        const uint32_t nextImage = m_swapChain->AcquireNextImage( m_imageReadySemaphores[ currentFrame ].get( ) );
         nextCommandList->Begin( );
 
         RenderingAttachmentDesc renderingAttachmentDesc{ };
         renderingAttachmentDesc.Resource = m_swapChain->GetRenderTarget( nextImage );
 
         RenderingDesc renderingInfo{ };
-        renderingInfo.RTAttachments.push_back( std::move( renderingAttachmentDesc ) );
+        renderingInfo.RTAttachments.push_back( renderingAttachmentDesc );
 
         nextCommandList->PipelineBarrier( PipelineBarrierDesc::UndefinedToRenderTarget( m_swapChain->GetRenderTarget( nextImage ) ) );
         nextCommandList->BeginRendering( renderingInfo );
@@ -193,7 +193,7 @@ namespace DenOfIz
         nextCommandList->Present( m_swapChain.get( ), nextImage, { m_imageRenderedSemaphores[ currentFrame ].get( ) } );
     }
 
-    void SimpleRenderer::Quit( )
+    void SimpleRenderer::Quit( ) const
     {
         m_timePassedBuffer->UnmapMemory( );
         for ( uint32_t i = 0; i < mc_framesInFlight; ++i )

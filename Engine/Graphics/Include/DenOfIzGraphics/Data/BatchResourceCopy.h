@@ -64,22 +64,22 @@ namespace DenOfIz
         std::future<void>                             m_cleanResourcesFuture;
 
     public:
-        BatchResourceCopy(ILogicalDevice *device);
-        ~BatchResourceCopy();
+        explicit BatchResourceCopy( ILogicalDevice *device );
+        ~        BatchResourceCopy( );
 
-        void                              Begin();
-        void                              CopyToGPUBuffer(const CopyToGpuBufferDesc &copyDesc);
-        void                              CopyBufferRegion(const CopyBufferRegionDesc &copyDesc);
-        void                              CopyTextureRegion(const CopyTextureRegionDesc &copyDesc);
-        void                              CopyDataToTexture(const CopyDataToTextureDesc &copyDesc);
-        std::unique_ptr<ITextureResource> CreateAndLoadTexture(const std::string &resourceName, const std::string &file);
-        void                              LoadTexture(const LoadTextureDesc &loadDesc);
-        void                              End(ISemaphore *notify);
-        void                              CleanResources();
+        void                              Begin( ) const;
+        void                              CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc );
+        void                              CopyBufferRegion( const CopyBufferRegionDesc &copyDesc ) const;
+        void                              CopyTextureRegion( const CopyTextureRegionDesc &copyDesc ) const;
+        void                              CopyDataToTexture( const CopyDataToTextureDesc &copyDesc );
+        std::unique_ptr<ITextureResource> CreateAndLoadTexture( const std::string &resourceName, const std::string &file );
+        void                              LoadTexture( const LoadTextureDesc &loadDesc );
+        void                              End( ISemaphore *notify );
+        void                              CleanResources( );
 
     private:
-        void     LoadTextureInternal(const Texture &texture, ITextureResource *dstTexture);
-        void     CopyTextureToMemoryAligned(const Texture &texture, const MipData &mipData, Byte *dst);
-        uint32_t GetSubresourceAlignment(uint32_t bitSize);
+        void     LoadTextureInternal( const Texture &texture, ITextureResource *dstTexture );
+        void     CopyTextureToMemoryAligned( const Texture &texture, const MipData &mipData, Byte *dst ) const;
+        uint32_t GetSubresourceAlignment( uint32_t bitSize ) const;
     };
 } // namespace DenOfIz

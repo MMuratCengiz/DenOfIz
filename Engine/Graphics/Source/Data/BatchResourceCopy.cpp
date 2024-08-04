@@ -37,7 +37,7 @@ using namespace DenOfIz;
 BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device ) : m_device( device )
 {
     m_commandListPool = m_device->CreateCommandListPool( { QueueType::Copy } );
-    DZ_ASSERTM( m_commandListPool->GetCommandLists( ).size( ) > 0, "Command list pool did not produce any command lists." );
+    DZ_ASSERTM( !m_commandListPool->GetCommandLists( ).empty( ), "Command list pool did not produce any command lists." );
 
     m_copyCommandList = m_commandListPool->GetCommandLists( )[ 0 ];
     m_executeFence    = m_device->CreateFence( );
@@ -49,7 +49,7 @@ BatchResourceCopy::~BatchResourceCopy( )
     m_commandListPool.reset( );
 }
 
-void BatchResourceCopy::Begin( )
+void BatchResourceCopy::Begin( ) const
 {
     m_copyCommandList->Begin( );
 }
@@ -72,16 +72,16 @@ void BatchResourceCopy::CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc )
 
     CopyBufferRegion( copyBufferRegionDesc );
 
-    std::lock_guard<std::mutex> lock( m_resourceCleanLock );
+    std::lock_guard lock( m_resourceCleanLock );
     m_resourcesToClean.push_back( std::move( stagingBuffer ) );
 }
 
-void BatchResourceCopy::CopyBufferRegion( const CopyBufferRegionDesc &copyDesc )
+void BatchResourceCopy::CopyBufferRegion( const CopyBufferRegionDesc &copyDesc ) const
 {
     m_copyCommandList->CopyBufferRegion( copyDesc );
 }
 
-void BatchResourceCopy::CopyTextureRegion( const CopyTextureRegionDesc &copyDesc )
+void BatchResourceCopy::CopyTextureRegion( const CopyTextureRegionDesc &copyDesc ) const
 {
     m_copyCommandList->CopyTextureRegion( copyDesc );
 }
@@ -106,7 +106,7 @@ void BatchResourceCopy::CopyDataToTexture( const CopyDataToTextureDesc &copyDesc
     copyBufferToTextureDesc.ArrayLayer = copyDesc.ArrayLayer;
     m_copyCommandList->CopyBufferToTexture( copyBufferToTextureDesc );
 
-    std::lock_guard<std::mutex> lock( m_resourceCleanLock );
+    std::lock_guard lock( m_resourceCleanLock );
     m_resourcesToClean.push_back( std::move( stagingBuffer ) );
 }
 
@@ -132,7 +132,7 @@ std::unique_ptr<ITextureResource> BatchResourceCopy::CreateAndLoadTexture( const
 
 void BatchResourceCopy::LoadTexture( const LoadTextureDesc &loadDesc )
 {
-    Texture texture( loadDesc.File );
+    const Texture texture( loadDesc.File );
     LoadTextureInternal( texture, loadDesc.DstTexture );
 }
 
@@ -152,11 +152,11 @@ void BatchResourceCopy::End( ISemaphore *notify )
 
 void BatchResourceCopy::CleanResources( )
 {
-    std::lock_guard<std::mutex> lock( m_resourceCleanLock );
+    std::lock_guard lock( m_resourceCleanLock );
     m_executeFence->Wait( );
     m_resourcesToClean.clear( );
 
-    for ( auto &texture : m_freeTextures )
+    for ( const auto &texture : m_freeTextures )
     {
         free( texture );
     }
@@ -170,17 +170,17 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
 
     for ( uint32_t i = 0; i < texture.MipLevels; ++i )
     {
-        uint32_t mipRowPitch   = Utilities::Align( std::max( 1u, texture.RowPitch >> i ), m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
-        uint32_t mipNumRows    = std::max( 1u, texture.NumRows >> i );
-        uint32_t mipSlicePitch = Utilities::Align( texture.Depth * mipRowPitch * mipNumRows, m_device->DeviceInfo( ).Constants.BufferTextureAlignment );
+        const uint32_t mipRowPitch   = Utilities::Align( std::max( 1u, texture.RowPitch >> i ), m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
+        const uint32_t mipNumRows    = std::max( 1u, texture.NumRows >> i );
+        const uint32_t mipSlicePitch = Utilities::Align( texture.Depth * mipRowPitch * mipNumRows, m_device->DeviceInfo( ).Constants.BufferTextureAlignment );
         stagingBufferDesc.NumBytes += mipSlicePitch;
     }
 
     auto  stagingBuffer       = m_device->CreateBufferResource( "StagingBuffer", stagingBufferDesc );
-    Byte *stagingMappedMemory = (Byte *)stagingBuffer->MapMemory( );
+    Byte *stagingMappedMemory = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
 
     texture.StreamMipData(
-        [ & ]( MipData mipData )
+        [ & ]( const MipData &mipData )
         {
             CopyTextureToMemoryAligned( texture, mipData, stagingMappedMemory + mipData.DataOffset );
 
@@ -197,20 +197,20 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
         } );
 
     stagingBuffer->UnmapMemory( );
-    std::lock_guard<std::mutex> lock( m_resourceCleanLock );
+    std::lock_guard lock( m_resourceCleanLock );
     m_resourcesToClean.push_back( std::move( stagingBuffer ) );
 }
 
-void BatchResourceCopy::CopyTextureToMemoryAligned( const Texture &texture, const MipData &mipData, Byte *dst )
+void BatchResourceCopy::CopyTextureToMemoryAligned( const Texture &texture, const MipData &mipData, Byte *dst ) const
 {
-    uint32_t alignedRowPitch   = Utilities::Align( mipData.RowPitch, m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
-    uint32_t alignedSlicePitch = Utilities::Align( alignedRowPitch * mipData.NumRows, GetSubresourceAlignment( texture.BitsPerPixel ) );
+    const uint32_t alignedRowPitch   = Utilities::Align( mipData.RowPitch, m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
+    const uint32_t alignedSlicePitch = Utilities::Align( alignedRowPitch * mipData.NumRows, GetSubresourceAlignment( texture.BitsPerPixel ) );
 
     const Byte *pSrcData = texture.Data.data( ) + mipData.DataOffset;
     for ( uint32_t z = 0; z < texture.ArraySize; ++z )
     {
-        auto dstSlice = dst + alignedSlicePitch * z;
-        auto srcSlice = pSrcData + mipData.SlicePitch * z;
+        const auto dstSlice = dst + alignedSlicePitch * z;
+        const auto srcSlice = pSrcData + mipData.SlicePitch * z;
         for ( uint32_t y = 0; y < mipData.NumRows; ++y )
         {
             memcpy( dstSlice + alignedRowPitch * y, srcSlice + mipData.RowPitch * y, mipData.RowPitch );
@@ -218,9 +218,9 @@ void BatchResourceCopy::CopyTextureToMemoryAligned( const Texture &texture, cons
     }
 }
 
-uint32_t BatchResourceCopy::GetSubresourceAlignment( uint32_t bitSize )
+uint32_t BatchResourceCopy::GetSubresourceAlignment( const uint32_t bitSize ) const
 {
-    uint32_t blockSize = std::max( 1u, bitSize >> 3 );
-    uint32_t alignment = Utilities::Align( m_device->DeviceInfo( ).Constants.BufferTextureAlignment, blockSize );
+    const uint32_t blockSize = std::max( 1u, bitSize >> 3 );
+    const uint32_t alignment = Utilities::Align( m_device->DeviceInfo( ).Constants.BufferTextureAlignment, blockSize );
     return Utilities::Align( alignment, m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
 }

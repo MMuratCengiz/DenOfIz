@@ -59,10 +59,11 @@ void VulkanCommandList::Begin( )
     VK_CHECK_RESULT( vkBeginCommandBuffer( m_commandBuffer, &beginInfo ) );
 }
 
+// Todo !IMPROVEMENT! this function may not need to exist.
 void VulkanCommandList::BeginRendering( const RenderingDesc &renderingInfo )
 {
     VkRenderingInfo renderInfo{ };
-    renderInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderInfo.sType             = VK_STRUCTURE_TYPE_RENDERING_INFO;
     renderInfo.renderArea.extent = VkExtent2D( renderingInfo.RenderAreaWidth, renderingInfo.RenderAreaHeight );
     renderInfo.renderArea.offset = VkOffset2D( renderingInfo.RenderAreaOffsetX, renderingInfo.RenderAreaOffsetY );
     renderInfo.layerCount        = renderingInfo.LayerCount;
@@ -75,7 +76,7 @@ void VulkanCommandList::BeginRendering( const RenderingDesc &renderingInfo )
         auto *vkColorAttachmentResource = dynamic_cast<VulkanTextureResource *>( colorAttachment.Resource );
 
         VkRenderingAttachmentInfo colorAttachmentInfo{ };
-        colorAttachmentInfo.sType                         = VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO;
+        colorAttachmentInfo.sType                         = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
         colorAttachmentInfo.imageView                     = vkColorAttachmentResource->ImageView( );
         colorAttachmentInfo.imageLayout                   = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         colorAttachmentInfo.loadOp                        = VulkanEnumConverter::ConvertLoadOp( colorAttachment.LoadOp );
@@ -84,6 +85,12 @@ void VulkanCommandList::BeginRendering( const RenderingDesc &renderingInfo )
         colorAttachmentInfo.clearValue.color.float32[ 1 ] = colorAttachment.ClearColor[ 1 ];
         colorAttachmentInfo.clearValue.color.float32[ 2 ] = colorAttachment.ClearColor[ 2 ];
         colorAttachmentInfo.clearValue.color.float32[ 3 ] = colorAttachment.ClearColor[ 3 ];
+
+        if ( renderInfo.renderArea.extent.height == 0 )
+        {
+            renderInfo.renderArea.extent.width  = vkColorAttachmentResource->GetWidth( );
+            renderInfo.renderArea.extent.height = vkColorAttachmentResource->GetHeight( );
+        }
 
         colorAttachments.push_back( colorAttachmentInfo );
     }
@@ -97,7 +104,7 @@ void VulkanCommandList::BeginRendering( const RenderingDesc &renderingInfo )
         const auto *vkDepthStencilResource = dynamic_cast<VulkanTextureResource *>( renderingInfo.DepthAttachment.Resource );
 
         VkRenderingAttachmentInfo depthAttachmentInfo{ };
-        depthAttachmentInfo.sType                   = VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO;
+        depthAttachmentInfo.sType                   = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
         depthAttachmentInfo.imageView               = vkDepthStencilResource->ImageView( );
         depthAttachmentInfo.imageLayout             = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         depthAttachmentInfo.loadOp                  = VulkanEnumConverter::ConvertLoadOp( renderingInfo.DepthAttachment.LoadOp );
@@ -112,7 +119,7 @@ void VulkanCommandList::BeginRendering( const RenderingDesc &renderingInfo )
         const auto *vkDepthStencilResource = dynamic_cast<VulkanTextureResource *>( renderingInfo.StencilAttachment.Resource );
 
         VkRenderingAttachmentInfo stencilAttachmentInfo{ };
-        stencilAttachmentInfo.sType                   = VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO;
+        stencilAttachmentInfo.sType                   = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
         stencilAttachmentInfo.imageView               = vkDepthStencilResource->ImageView( );
         stencilAttachmentInfo.imageLayout             = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         stencilAttachmentInfo.loadOp                  = VulkanEnumConverter::ConvertLoadOp( renderingInfo.StencilAttachment.LoadOp );
@@ -281,15 +288,15 @@ void VulkanCommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copy
     const auto *srcBuffer = dynamic_cast<VulkanBufferResource *>( copyBufferToTextureDesc.SrcBuffer );
     const auto *dstTex    = dynamic_cast<VulkanTextureResource *>( copyBufferToTextureDesc.DstTexture );
 
-    uint32_t width  = std::max( 1u, dstTex->GetWidth( ) >> copyBufferToTextureDesc.MipLevel );
-    uint32_t height = std::max( 1u, dstTex->GetHeight( ) >> copyBufferToTextureDesc.MipLevel );
-    uint32_t depth  = std::max( 1u, dstTex->GetDepth( ) >> copyBufferToTextureDesc.MipLevel );
+    const uint32_t width  = std::max( 1u, dstTex->GetWidth( ) >> copyBufferToTextureDesc.MipLevel );
+    const uint32_t height = std::max( 1u, dstTex->GetHeight( ) >> copyBufferToTextureDesc.MipLevel );
+    const uint32_t depth  = std::max( 1u, dstTex->GetDepth( ) >> copyBufferToTextureDesc.MipLevel );
 
-    uint32_t formatSize      = FormatNumBytes( copyBufferToTextureDesc.Format );
-    uint32_t blockSize       = FormatBlockSize( copyBufferToTextureDesc.Format );
-    uint32_t rowPitch        = std::max( 1U, ( width + ( blockSize - 1 ) ) / blockSize ) * formatSize;
-    uint32_t numRows         = std::max( 1U, ( height + ( blockSize - 1 ) ) / blockSize );
-    uint32_t alignedRowPitch = Utilities::Align( rowPitch, m_context->SelectedDeviceInfo.Constants.BufferTextureRowAlignment );
+    const uint32_t formatSize      = FormatNumBytes( copyBufferToTextureDesc.Format );
+    const uint32_t blockSize       = FormatBlockSize( copyBufferToTextureDesc.Format );
+    const uint32_t rowPitch        = std::max( 1U, ( width + ( blockSize - 1 ) ) / blockSize ) * formatSize;
+    const uint32_t numRows         = std::max( 1U, ( height + ( blockSize - 1 ) ) / blockSize );
+    const uint32_t alignedRowPitch = Utilities::Align( rowPitch, m_context->SelectedDeviceInfo.Constants.BufferTextureRowAlignment );
 
     VkBufferImageCopy copyRegion{ };
     copyRegion.bufferOffset       = copyBufferToTextureDesc.SrcOffset;

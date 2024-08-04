@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanDescriptorPoolManager::VulkanDescriptorPool::VulkanDescriptorPool( const VkDevice &device, uint32_t numSets ) : m_device( device ), m_numSets( numSets )
+VulkanDescriptorPoolManager::VulkanDescriptorPool::VulkanDescriptorPool( const VkDevice &device, const uint32_t numSets ) : m_device( device ), m_numSets( numSets )
 {
     std::vector<VkDescriptorPoolSize> poolSizes;
 
@@ -38,7 +38,7 @@ VulkanDescriptorPoolManager::VulkanDescriptorPool::VulkanDescriptorPool( const V
                                               VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
                                               VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR };
 
-    for ( VkDescriptorType& i : supportedTypes )
+    for ( const VkDescriptorType & i : supportedTypes )
     {
         poolSize.type            = i;
         poolSize.descriptorCount = numSets;
@@ -50,6 +50,8 @@ VulkanDescriptorPoolManager::VulkanDescriptorPool::VulkanDescriptorPool( const V
     poolInfo.poolSizeCount = poolSizes.size( );
     poolInfo.pPoolSizes    = poolSizes.data( );
     poolInfo.maxSets       = numSets * poolSizes.size( );
+
+    VK_CHECK_RESULT( vkCreateDescriptorPool( device, &poolInfo, nullptr, &m_pool ) );
 }
 
 VulkanDescriptorPoolManager::VulkanDescriptorPool::~VulkanDescriptorPool( )
@@ -60,10 +62,6 @@ VulkanDescriptorPoolManager::VulkanDescriptorPool::~VulkanDescriptorPool( )
 VulkanDescriptorPoolManager::VulkanDescriptorPoolManager( const VkDevice &device ) : m_device( device )
 {
     m_currentPool = std::make_unique<VulkanDescriptorPool>( m_device, m_maxSets );
-}
-
-VulkanDescriptorPoolManager::~VulkanDescriptorPoolManager( )
-{
 }
 
 void VulkanDescriptorPoolManager::AllocateDescriptorSets( const VkDescriptorSetAllocateInfo &allocateInfo, VkDescriptorSet *sets )

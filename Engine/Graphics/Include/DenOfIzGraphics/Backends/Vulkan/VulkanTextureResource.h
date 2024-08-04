@@ -64,6 +64,9 @@ namespace DenOfIz
         {
             return m_aspect;
         }
+
+    private:
+        void TransitionToInitialLayout( ) const;
     };
 
     class VulkanSampler final : public ISampler

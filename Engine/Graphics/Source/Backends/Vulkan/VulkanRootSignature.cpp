@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h>
+#include <ranges>
 
 using namespace DenOfIz;
 
@@ -33,9 +34,9 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
     }
 
     uint32_t maxRegisterSpace = 0;
-    for ( const auto &binding : m_layoutBindings )
+    for ( const auto &key : m_layoutBindings | std::views::keys )
     {
-        maxRegisterSpace = std::max( maxRegisterSpace, binding.first );
+        maxRegisterSpace = std::max( maxRegisterSpace, key );
     }
 
     for ( uint32_t i = 0; i <= maxRegisterSpace; ++i )
@@ -43,7 +44,7 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
         const auto &it = m_layoutBindings.find( i );
         if ( it == m_layoutBindings.end( ) )
         {
-            m_layouts.push_back( VK_NULL_HANDLE );
+            m_layouts.push_back( nullptr );
             continue;
         }
 
