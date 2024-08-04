@@ -42,7 +42,7 @@ VulkanInputLayout::VulkanInputLayout( const InputLayoutDesc &inputLayoutDesc )
             attributeDescription.offset                             = offset;
             offset += FormatNumBytes( inputElement.Format );
         }
-        bindingDescription.stride = inputGroup.Elements.size( ) * sizeof( float );
+        bindingDescription.stride = offset;
         bindingIndex++;
     }
 
