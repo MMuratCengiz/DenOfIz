@@ -31,7 +31,7 @@ VulkanSwapChain::VulkanSwapChain( VulkanContext *context, const SwapChainDesc &d
 void VulkanSwapChain::CreateSurface( )
 {
     DZ_NOT_NULL( m_context );
-    DZ_NOT_NULL( m_desc.WindowHandle->GetNativeHandle() );
+    DZ_NOT_NULL( m_desc.WindowHandle->GetNativeHandle( ) );
 #ifdef WIN32
     VkWin32SurfaceCreateInfoKHR createInfo{ };
     createInfo.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -236,6 +236,7 @@ VulkanSwapChain::~VulkanSwapChain( )
 {
     Dispose( );
     vkDestroySwapchainKHR( m_context->LogicalDevice, m_swapChain, nullptr );
+    vkDestroySurfaceKHR( m_context->Instance, m_surface, nullptr );
 }
 
 Format VulkanSwapChain::GetPreferredFormat( )

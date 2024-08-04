@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    /// TODO This class is extremely crude at this moment, rotating pools and correctly managing them is not yet implemented.
     class VulkanDescriptorPoolManager final
     {
         class VulkanDescriptorPool final
@@ -51,5 +52,6 @@ namespace DenOfIz
 
         /// <param name="allocateInfo">Pool parameter is filled in automatically </param>
         void AllocateDescriptorSets( const VkDescriptorSetAllocateInfo &allocateInfo, VkDescriptorSet *sets );
+        void FreeDescriptorSets( uint32_t count, const VkDescriptorSet *sets );
     };
 } // namespace DenOfIz

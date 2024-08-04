@@ -21,8 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzCore/Storage.h>
 #include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
 #include "VulkanContext.h"
-#include "VulkanRootSignature.h"
 #include "VulkanDescriptorPoolManager.h"
+#include "VulkanRootSignature.h"
 
 namespace DenOfIz
 {
@@ -39,19 +39,24 @@ namespace DenOfIz
     public:
         VulkanResourceBindGroup( VulkanContext *context, const ResourceBindGroupDesc &desc );
         ~VulkanResourceBindGroup( ) override;
-        void Update( const UpdateDesc& desc ) override;
+        void Update( const UpdateDesc &desc ) override;
 
-        const std::vector<VkWriteDescriptorSet> &GetWriteDescriptorSets( ) const
+        [[nodiscard]] const VkDescriptorSet& GetDescriptorSet( ) const
+        {
+            return m_descriptorSet;
+        }
+
+        [[nodiscard]] const std::vector<VkWriteDescriptorSet> &GetWriteDescriptorSets( ) const
         {
             return m_writeDescriptorSets;
         }
-
-        VkWriteDescriptorSet &CreateWriteDescriptor( const std::string &name );
 
     protected:
         void BindTexture( const std::string &name, ITextureResource *resource ) override;
         void BindBuffer( const std::string &name, IBufferResource *resource ) override;
         void BindSampler( const std::string &name, ISampler *sampler ) override;
+    private:
+        VkWriteDescriptorSet &CreateWriteDescriptor( const std::string &name );
     };
 
 } // namespace DenOfIz

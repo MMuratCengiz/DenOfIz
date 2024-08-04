@@ -251,6 +251,7 @@ namespace DenOfIz
             targetProfile = "cs";
             break;
         default:
+            LOG( WARNING ) << "Invalid shader stage";
             DZ_ASSERTM( false, "Invalid shader stage" );
             break;
         }
@@ -269,6 +270,8 @@ namespace DenOfIz
         if ( compileOptions.TargetIL == TargetIL::SPIRV )
         {
             arguments.push_back( L"-spirv" );
+            // TODO !IMPROVEMENT! uncomment the below was shader reflection is added. To help support properly.
+//            arguments.push_back( L"--fvk-stage-io-order=alpha" );
             // Vulkan requires unique binding for each descriptor, hlsl has a binding per buffer view.
             // Docs suggest shifting the binding to avoid conflicts.
             static const std::wstring VkShiftCbvWs     = std::to_wstring( VkShiftCbv );

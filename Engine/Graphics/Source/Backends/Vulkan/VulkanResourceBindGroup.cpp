@@ -45,6 +45,8 @@ void VulkanResourceBindGroup::Update( const UpdateDesc &desc )
 {
     m_writeDescriptorSets.clear( );
     IResourceBindGroup::Update( desc );
+
+    vkUpdateDescriptorSets( m_context->LogicalDevice, m_writeDescriptorSets.size( ), m_writeDescriptorSets.data( ), 0, NULL );
 }
 
 void VulkanResourceBindGroup::BindTexture( const std::string &name, ITextureResource *resource )
@@ -93,4 +95,5 @@ VkWriteDescriptorSet &VulkanResourceBindGroup::CreateWriteDescriptor( const std:
 VulkanResourceBindGroup::~VulkanResourceBindGroup( )
 {
     m_storage.Clear( );
+    m_context->DescriptorPoolManager->FreeDescriptorSets( 1, &m_descriptorSet );
 }

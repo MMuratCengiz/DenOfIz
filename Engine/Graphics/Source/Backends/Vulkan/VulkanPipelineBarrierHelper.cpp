@@ -72,7 +72,7 @@ void VulkanPipelineBarrierHelper::ExecutePipelineBarrier( const VulkanContext *c
     const VkPipelineStageFlags dstStageMask = GetPipelineStageFlags( context, commandQueueType, dstAccessFlags );
 
     vkCmdPipelineBarrier( commandBuffer, srcStageMask, dstStageMask, VkDependencyFlags{ }, memoryBarriers.size( ), memoryBarriers.data( ), bufferBarriers.size( ),
-                          bufferBarriers.data( ), static_cast<uint32_t>( imageBarriers.size( ) ), imageBarriers.data( ) );
+                          bufferBarriers.data( ), imageBarriers.size( ), imageBarriers.data( ) );
 }
 
 VkImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier( const TextureBarrierDesc &barrier, VkAccessFlags &srcAccessFlags, VkAccessFlags &dstAccessFlags )
@@ -118,7 +118,7 @@ VkImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier( const Text
 
     srcAccessFlags |= imageMemoryBarrier.srcAccessMask;
     dstAccessFlags |= imageMemoryBarrier.dstAccessMask;
-
+    imageResource->NotifyLayoutChange( imageMemoryBarrier.newLayout );
     return imageMemoryBarrier;
 }
 

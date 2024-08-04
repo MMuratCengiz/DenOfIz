@@ -23,6 +23,9 @@ using namespace DenOfIz;
 VulkanInputLayout::VulkanInputLayout( const InputLayoutDesc &inputLayoutDesc )
 {
     int bindingIndex = 0;
+    // TODO: !IMPROVEMENT! --fvk-stage-io-order=alpha should be used as a proper solution, but it is not implemented yet. Check ShaderCompiler.CompileHLSL.
+    uint32_t location = 0;
+    // TODO: !IMPROVEMENT! Does multiple input groups work
     for ( const InputGroupDesc &inputGroup : inputLayoutDesc.InputGroups )
     {
         VkVertexInputBindingDescription &bindingDescription = m_bindingDescriptions.emplace_back( VkVertexInputBindingDescription{ } );
@@ -34,7 +37,7 @@ VulkanInputLayout::VulkanInputLayout( const InputLayoutDesc &inputLayoutDesc )
         {
             VkVertexInputAttributeDescription &attributeDescription = m_attributeDescriptions.emplace_back( VkVertexInputAttributeDescription{ } );
             attributeDescription.binding                            = bindingIndex;
-            attributeDescription.location                           = static_cast<int>( inputElement.Semantic ) + inputElement.SemanticIndex; // Is this correct? !CHECK_VK!
+            attributeDescription.location                           = location++; // Is this correct? !CHECK_VK!
             attributeDescription.format                             = VulkanEnumConverter::ConvertImageFormat( inputElement.Format );
             attributeDescription.offset                             = offset;
             offset += FormatNumBytes( inputElement.Format );

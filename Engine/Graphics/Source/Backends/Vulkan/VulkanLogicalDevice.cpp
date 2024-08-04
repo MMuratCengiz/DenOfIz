@@ -529,6 +529,7 @@ VulkanLogicalDevice::~VulkanLogicalDevice( )
     {
         return;
     }
+    m_context->DescriptorPoolManager.reset( );
 
     vkDestroyCommandPool( m_context->LogicalDevice, m_context->TransferQueueCommandPool, nullptr );
     vkDestroyCommandPool( m_context->LogicalDevice, m_context->GraphicsQueueCommandPool, nullptr );

@@ -234,10 +234,11 @@ void VulkanCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 
     const auto *vkTable = dynamic_cast<VulkanResourceBindGroup *>( bindGroup );
 
-    const std::vector<VkWriteDescriptorSet> writeDescriptorSets = vkTable->GetWriteDescriptorSets( );
-    const VkPipelineBindPoint               bindPoint           = m_desc.QueueType == QueueType::Graphics ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
-
-    vkCmdPushDescriptorSetKHR( m_commandBuffer, bindPoint, m_boundPipeline->Layout( ), 0, writeDescriptorSets.size( ), writeDescriptorSets.data( ) );
+    if ( m_boundPipeline )
+    {
+        vkCmdBindDescriptorSets( m_commandBuffer, m_boundPipeline->BindPoint( ), m_boundPipeline->Layout( ), bindGroup->RegisterSpace( ), 1, &vkTable->GetDescriptorSet( ), 0,
+                                 nullptr );
+    }
 }
 
 void VulkanCommandList::SetDepthBias( const float constantFactor, const float clamp, const float slopeFactor )

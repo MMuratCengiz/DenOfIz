@@ -28,33 +28,41 @@ namespace DenOfIz
     {
         VulkanContext *m_context = nullptr;
         TextureDesc    m_desc{ };
+        bool           m_isExternal = false;
 
-        VkImage            m_image{ };
-        VkImageView        m_imageView{ };
-        VkFormat           m_format{ };
-        VkSampler          m_sampler{ };
-        VkImageAspectFlags m_aspect{ };
-        VmaAllocation      m_allocation{ };
-        VkImageLayout      m_layout{ };
-        uint32_t           m_mipLevels{ };
+        VkImage                  m_image{ };
+        std::vector<VkImageView> m_imageViews{ };
+        VkFormat                 m_format{ };
+        VkSampler                m_sampler{ };
+        VkImageAspectFlags       m_aspect{ };
+        VmaAllocation            m_allocation{ };
+        uint32_t                 m_mipLevels{ };
+        // Mutable because this value is already changed elsewhere, NotifyLayoutChange is simply letting state tracker know.
+        mutable VkImageLayout m_layout{ };
 
     public:
         VulkanTextureResource( VulkanContext *context, const TextureDesc &desc );
 
         // Use as render target
         VulkanTextureResource( const VkImage &image, const VkImageView &imageView, const VkFormat format, const VkImageAspectFlags imageAspect ) :
-            m_image( image ), m_imageView( imageView ), m_format( format ), m_aspect( imageAspect )
+            m_image( image ), m_imageViews( { imageView } ), m_format( format ), m_aspect( imageAspect )
         {
+            m_isExternal = true;
         }
 
-        ~                     VulkanTextureResource( ) override;
+        void NotifyLayoutChange( const VkImageLayout newLayout ) const
+        {
+            m_layout = newLayout;
+        }
+
+        ~VulkanTextureResource( ) override;
         [[nodiscard]] VkImage Image( ) const
         {
             return m_image;
         }
-        [[nodiscard]] VkImageView ImageView( ) const
+        [[nodiscard]] VkImageView ImageView( uint32_t mipLevel = 0 ) const
         {
-            return m_imageView;
+            return m_imageViews[ mipLevel ];
         }
         [[nodiscard]] VkImageLayout Layout( ) const
         {
@@ -76,7 +84,7 @@ namespace DenOfIz
         VkSampler      m_sampler{ };
 
     public:
-         VulkanSampler( VulkanContext *context, const SamplerDesc &desc );
+        VulkanSampler( VulkanContext *context, const SamplerDesc &desc );
         ~VulkanSampler( ) override;
 
         [[nodiscard]] VkSampler Instance( ) const

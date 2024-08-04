@@ -57,7 +57,7 @@ VulkanBufferResource::VulkanBufferResource( VulkanContext *context, const Buffer
     VmaAllocationInfo allocationInfo;
     vmaCreateBuffer( m_context->Vma, &bufferCreateInfo, &allocationCreateInfo, &m_instance, &m_allocation, &allocationInfo );
 
-    m_offset = allocationInfo.offset;
+    m_offset = 0; // This used to be allocationInfo.offset, but seems to be applied automatically in almost every case, not sure if required.
     m_numBytes = allocationInfo.size;
 }
 

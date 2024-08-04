@@ -116,22 +116,26 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
 
     m_aspect = VulkanEnumConverter::ConvertImageAspect( desc.Aspect );
 
+    /* TODO. Support array layers:
     for ( uint32_t i = 0; i < m_desc.ArraySize; ++i )
     {
         viewCreateInfo.subresourceRange.baseArrayLayer = i;
-        for ( uint32_t j = 0; j < m_desc.MipLevels; ++j )
-        {
-            viewCreateInfo.subresourceRange.baseMipLevel = j;
-            VK_CHECK_RESULT( vkCreateImageView( m_context->LogicalDevice, &viewCreateInfo, nullptr, &m_imageView ) );
-        }
+    }
+    */
+
+    m_imageViews.resize( m_desc.MipLevels );
+    for ( uint32_t j = 0; j < m_desc.MipLevels; ++j )
+    {
+        viewCreateInfo.subresourceRange.baseMipLevel = j;
+        VK_CHECK_RESULT( vkCreateImageView( m_context->LogicalDevice, &viewCreateInfo, nullptr, &m_imageViews[ j ] ) );
     }
 
     // This is not super efficient, but vulkan is the only api that doesn't support initial layouts. So this is a simple adaptation.
     // Performance implications can be considered in the future after benchmarking.
-    TransitionToInitialLayout(  );
+    TransitionToInitialLayout( );
 }
 
-// Todo transitition all mip levels
+// Todo transition all mip levels
 void VulkanTextureResource::TransitionToInitialLayout( ) const
 {
     const VkImageLayout initialLayout = VulkanEnumConverter::ConvertTextureDescriptorToLayout( m_desc.InitialState );
@@ -184,12 +188,21 @@ void VulkanTextureResource::TransitionToInitialLayout( ) const
     submitInfo.pCommandBuffers    = &commandBuffer;
 
     VK_CHECK_RESULT( vkQueueSubmit( m_context->Queues.at( QueueType::Graphics ), 1, &submitInfo, nullptr ) );
+
+    NotifyLayoutChange( initialLayout );
 }
 
 VulkanTextureResource::~VulkanTextureResource( )
 {
-    vmaDestroyImage( m_context->Vma, m_image, m_allocation );
-    vkDestroyImageView( m_context->LogicalDevice, m_imageView, nullptr );
+    if ( !m_isExternal )
+    {
+        vmaDestroyImage( m_context->Vma, m_image, m_allocation );
+
+        for ( auto &imageView : m_imageViews )
+        {
+            vkDestroyImageView( m_context->LogicalDevice, imageView, nullptr );
+        }
+    }
 }
 
 VulkanSampler::VulkanSampler( VulkanContext *context, const SamplerDesc &desc ) : m_context( context ), m_desc( desc )

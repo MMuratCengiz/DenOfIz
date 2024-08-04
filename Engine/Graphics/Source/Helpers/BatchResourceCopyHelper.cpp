@@ -118,6 +118,7 @@ std::string BatchResourceCopyHelper::NextId( const std::string &prefix )
     const int                        next = idCounter.fetch_add( 1, std::memory_order_relaxed );
     return prefix + "_BufferHelperResource#" + std::to_string( next );
 }
+
 void BatchResourceCopyHelper::Submit( ) const
 {
     const std::unique_ptr<ISemaphore> batchCopyWait = m_device->CreateSemaphore( );

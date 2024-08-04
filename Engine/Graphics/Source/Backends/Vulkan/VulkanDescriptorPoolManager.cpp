@@ -38,7 +38,7 @@ VulkanDescriptorPoolManager::VulkanDescriptorPool::VulkanDescriptorPool( const V
                                               VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
                                               VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR };
 
-    for ( const VkDescriptorType & i : supportedTypes )
+    for ( const VkDescriptorType &i : supportedTypes )
     {
         poolSize.type            = i;
         poolSize.descriptorCount = numSets;
@@ -50,6 +50,7 @@ VulkanDescriptorPoolManager::VulkanDescriptorPool::VulkanDescriptorPool( const V
     poolInfo.poolSizeCount = poolSizes.size( );
     poolInfo.pPoolSizes    = poolSizes.data( );
     poolInfo.maxSets       = numSets * poolSizes.size( );
+    poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
     VK_CHECK_RESULT( vkCreateDescriptorPool( device, &poolInfo, nullptr, &m_pool ) );
 }
@@ -82,4 +83,11 @@ void VulkanDescriptorPoolManager::AllocateDescriptorSets( const VkDescriptorSetA
 
     VK_CHECK_RESULT( vkAllocateDescriptorSets( m_device, &copyAllocateInfo, sets ) );
     m_currentPool->m_setsAllocated += allocateInfo.descriptorSetCount;
+}
+
+// TODO Proxy to VulkanDescriptorPool::FreeDescriptorSets
+void VulkanDescriptorPoolManager::FreeDescriptorSets( uint32_t count, const VkDescriptorSet *sets )
+{
+    m_currentPool->m_setsAllocated -= count;
+    vkFreeDescriptorSets( m_device, m_currentPool->m_pool, count, sets );
 }
