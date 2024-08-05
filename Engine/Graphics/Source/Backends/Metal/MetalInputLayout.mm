@@ -18,4 +18,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Metal/MetalInputLayout.h>
 
+#include <utility>
+
 using namespace DenOfIz;
+
+MetalInputLayout::MetalInputLayout( MetalContext *context, InputLayoutDesc desc ) : m_context( context ), m_desc( std::move( desc ) )
+{
+}
+
+MetalInputLayout::~MetalInputLayout( )
+{
+}

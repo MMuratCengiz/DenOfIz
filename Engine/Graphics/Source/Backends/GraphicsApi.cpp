@@ -48,11 +48,10 @@ std::unique_ptr<ILogicalDevice> GraphicsApi::CreateLogicalDevice( ) const
     }
 #endif
 #ifdef BUILD_METAL
-    if ( IsMetalPreferred( preference ) )
+    if ( IsMetalPreferred( ) )
     {
         LOG( INFO ) << "Graphics API: Metal.";
-        // TODO
-        return nullptr;
+        logicalDevice = std::make_unique<MetalLogicalDevice>( );
     }
 #endif
     DZ_ASSERTM( logicalDevice != nullptr, "No supported API found for this system." );
@@ -92,11 +91,26 @@ std::unique_ptr<ShaderProgram> GraphicsApi::CreateShaderProgram( const std::vect
         programDesc.TargetIL = TargetIL::SPIRV;
     }
 #elif defined( __APPLE__ )
+    if ( m_apiPreference.OSX == APIPreferenceOSX::Metal )
+    {
+        programDesc.TargetIL = TargetIL::MSL;
+    }
+    else
+    {
+        LOG( ERROR ) << "No supported API found for this system.";
+    }
     programDesc.TargetIL = TargetIL::MSL;
 #elif defined( __linux__ )
-    programDesc.TargetIL = TargetIL::SPIRV;
+    if ( m_apiPreference.Linux == APIPreferenceLinux::Vulkan )
+    {
+        programDesc.TargetIL = TargetIL::SPIRV;
+    }
+    else
+    {
+        LOG( ERROR ) << "No supported API found for this system.";
+    }
 #endif
-    ShaderProgram *program = new ShaderProgram( programDesc );
+    auto *program = new ShaderProgram( programDesc );
     return std::unique_ptr<ShaderProgram>( program );
 }
 
@@ -117,50 +131,51 @@ void GraphicsApi::ReportLiveObjects( ) const
 
 bool GraphicsApi::IsVulkanPreferred( ) const
 {
-#ifdef _WIN32
     if ( m_apiPreference.Windows == APIPreferenceWindows::Vulkan )
     {
+#ifdef _WIN32
         return true;
-    }
 #endif
+    }
 
-#ifdef __APPLE__
     if ( m_apiPreference.OSX == APIPreferenceOSX::Vulkan )
     {
+#ifdef __APPLE__
         return true;
-    }
 #endif
+    }
 
-#ifdef __linux__
     if ( m_apiPreference.Linux == APIPreferenceLinux::Vulkan )
     {
+#ifdef __linux__
         return true;
-    }
 #endif
+    }
 
+    LOG( ERROR ) << "No supported API found for this system.";
     return false;
 }
 
 bool GraphicsApi::IsDX12Preferred( ) const
 {
-#ifdef _WIN32
     if ( m_apiPreference.Windows == APIPreferenceWindows::DirectX12 )
     {
+#ifdef _WIN32
         return true;
-    }
 #endif
+    }
 
     return false;
 }
 
 bool GraphicsApi::IsMetalPreferred( ) const
 {
-#ifdef __APPLE__
     if ( m_apiPreference.OSX == APIPreferenceOSX::Metal )
     {
+#ifdef __APPLE__
         return true;
-    }
 #endif
+    }
 
     return false;
 }

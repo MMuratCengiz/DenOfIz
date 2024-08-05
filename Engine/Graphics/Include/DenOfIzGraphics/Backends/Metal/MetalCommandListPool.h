@@ -8,11 +8,12 @@ namespace DenOfIz
     class MetalCommandListPool : public ICommandListPool
     {
     private:
-        MetalContext       *m_context;
+        MetalContext       *m_context{};
         CommandListPoolDesc m_desc;
 
     public:
         MetalCommandListPool( MetalContext *context, CommandListPoolDesc desc );
+        std::vector<ICommandList *> GetCommandLists( ) override;
         ~MetalCommandListPool( ) override = default;
     };
 } // namespace DenOfIz

@@ -74,7 +74,7 @@ namespace DenOfIz
         uint32_t    m_depth  = 1;
         const void *m_data   = nullptr;
 
-        void InitFields( const TextureDesc &desc )
+        ITextureResource( const TextureDesc &desc )
         {
             m_width  = desc.Width;
             m_height = desc.Height;

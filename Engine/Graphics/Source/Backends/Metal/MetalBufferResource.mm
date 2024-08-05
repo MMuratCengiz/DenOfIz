@@ -19,3 +19,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #import <DenOfIzGraphics/Backends/Metal/MetalBufferResource.h>
 
 using namespace DenOfIz;
+
+MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDesc &desc ) : m_context( context ), m_desc( desc )
+{
+}
+
+void *MetalBufferResource::MapMemory( )
+{
+    return nullptr;
+}
+
+void MetalBufferResource::UnmapMemory( )
+{
+}

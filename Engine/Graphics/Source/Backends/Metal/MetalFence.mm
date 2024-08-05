@@ -19,3 +19,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #import "DenOfIzGraphics/Backends/Metal/MetalFence.h"
 
 using namespace DenOfIz;
+MetalFence::MetalFence( MetalContext *context )
+{
+    m_context = context;
+    m_fence   = [m_context->Device newFence];
+}
+
+void MetalFence::Wait( )
+{
+}
+
+void MetalFence::Reset( )
+{
+}

@@ -105,16 +105,16 @@ void VulkanSwapChain::CreateSwapChain( )
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR( m_context->PhysicalDevice, m_surface, &capabilities );
 
     ChooseExtent2D( capabilities );
-    if ( const uint32_t imageCount = std::min( capabilities.maxImageCount, capabilities.minImageCount + 1 ); imageCount < m_desc.BufferCount )
+    if ( const uint32_t imageCount = std::min( capabilities.maxImageCount, capabilities.minImageCount + 1 ); imageCount < m_desc.NumBuffers )
     {
         LOG( WARNING ) << "Requested buffer count is not supported. Using the maximum supported buffer count: " << imageCount;
-        m_desc.BufferCount = imageCount;
+        m_desc.NumBuffers = imageCount;
     }
 
     VkSwapchainCreateInfoKHR createInfo{ };
     createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     createInfo.surface          = m_surface;
-    createInfo.minImageCount    = m_desc.BufferCount;
+    createInfo.minImageCount    = m_desc.NumBuffers;
     createInfo.imageFormat      = VulkanEnumConverter::ConvertImageFormat( m_surfaceImageFormat );
     createInfo.imageColorSpace  = m_colorSpace;
     createInfo.imageExtent      = VkExtent2D( m_width, m_height );

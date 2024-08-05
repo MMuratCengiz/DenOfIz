@@ -23,10 +23,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const TextureDesc &desc ) : m_context( context ), m_desc( desc )
+VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const TextureDesc &desc ) :
+    ITextureResource(desc), m_context( context ), m_desc( desc )
 {
-    InitFields( desc );
-
     VkImageType     imageType = VK_IMAGE_TYPE_1D;
     VkImageViewType viewType  = VK_IMAGE_VIEW_TYPE_1D;
 
@@ -136,9 +135,9 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
 }
 
 VulkanTextureResource::VulkanTextureResource( VkImage const &image, VkImageView const &imageView, const VkFormat format, const VkImageAspectFlags imageAspect,
-                                              const TextureDesc &desc ) : m_image( image ), m_imageViews( { imageView } ), m_format( format ), m_aspect( imageAspect )
+                                              const TextureDesc &desc ) :
+    ITextureResource( desc ), m_image( image ), m_imageViews( { imageView } ), m_format( format ), m_aspect( imageAspect )
 {
-    InitFields( desc );
     m_isExternal = true;
 }
 

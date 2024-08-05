@@ -44,7 +44,7 @@ void DX12SwapChain::CreateSwapChain( )
     swapChainDesc.Height                = m_desc.Height;
     swapChainDesc.Format                = DX12EnumConverter::ConvertFormat( m_desc.BackBufferFormat );
     swapChainDesc.BufferUsage           = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapChainDesc.BufferCount           = m_context->BackBufferCount;
+    swapChainDesc.NumBuffers           = m_context->BackBufferCount;
     swapChainDesc.SampleDesc.Count      = 1;
     swapChainDesc.SampleDesc.Quality    = 0;
     swapChainDesc.Scaling               = DXGI_SCALING_STRETCH;
@@ -167,7 +167,7 @@ void DX12SwapChain::Resize( uint32_t width, uint32_t height )
     m_desc.Width  = width;
     m_desc.Height = height;
 
-    HRESULT hr = m_swapChain->ResizeBuffers( m_desc.BufferCount, width, height, DX12EnumConverter::ConvertFormat( m_desc.BackBufferFormat ),
+    HRESULT hr = m_swapChain->ResizeBuffers( m_desc.NumBuffers, width, height, DX12EnumConverter::ConvertFormat( m_desc.BackBufferFormat ),
                                              m_context->SelectedDeviceInfo.Capabilities.Tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u );
 
     if ( hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET )

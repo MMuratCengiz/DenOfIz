@@ -27,11 +27,13 @@ namespace DenOfIz
     class MetalFence : public IFence
     {
     private:
-        MetalContext                    *m_context;
+        MetalContext *m_context;
+        id<MTLFence> m_fence;
+
     public:
-        MetalFence(MetalContext *context);
-        void Wait() override;
-        void Reset() override;
+        MetalFence( MetalContext *context );
+        void Wait( ) override;
+        void Reset( ) override;
     };
 
 } // namespace DenOfIz

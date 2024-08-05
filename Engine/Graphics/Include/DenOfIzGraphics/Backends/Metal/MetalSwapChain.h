@@ -19,16 +19,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
-#include "MetalTextureResource.h"
 #include "MetalContext.h"
+#include "MetalTextureResource.h"
 
 namespace DenOfIz
 {
 
     class MetalSwapChain : public ISwapChain
     {
-        MetalContext                 *m_context;
-        SwapChainDesc                 m_desc;
+        MetalContext       *m_context;
+        SwapChainDesc       m_desc;
+        id<CAMetalDrawable> m_currentDrawable;
+        NSView             *m_view;
+        CAMetalLayer       *m_layer;
+        uint32_t            m_currentFrame = 0;
+        std::vector<std::unique_ptr<MetalTextureResource>> m_renderTargets;
+
     public:
         MetalSwapChain( MetalContext *context, const SwapChainDesc &desc );
         ~MetalSwapChain( ) override;
@@ -39,8 +45,6 @@ namespace DenOfIz
         Viewport          GetViewport( ) override;
         void              Resize( uint32_t width, uint32_t height ) override;
         void              CreateSwapChain( );
-
-        void SetColorSpace( );
     };
 
 } // namespace DenOfIz

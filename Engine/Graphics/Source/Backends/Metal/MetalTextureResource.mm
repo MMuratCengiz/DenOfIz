@@ -19,3 +19,41 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Metal/MetalTextureResource.h>
 
 using namespace DenOfIz;
+
+MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc ) : ITextureResource( desc ), m_context( context )
+{
+    m_context = context;
+    m_desc    = desc;
+
+    MTLTextureDescriptor *descriptor = nil;
+
+    MTLPixelFormat format = MTLPixelFormatInvalid;
+    switch ( m_desc.Format )
+    {
+
+    }
+    if ( m_desc.ArraySize > 1 )
+    {
+    }
+    else
+    {
+        if ( m_depth > 1 )
+        {
+
+        }
+        else
+        {
+            descriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatR8Unorm width:m_desc.Width height:m_desc.Height mipmapped:m_desc.MipLevels > 1];
+        }
+    }
+
+    m_texture = [m_context->Device newTextureWithDescriptor:descriptor];
+}
+
+MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc, id<MTLTexture> texture ) :
+    ITextureResource( m_desc ), m_context( context ), m_texture( texture )
+{
+    m_context = context;
+    m_desc    = desc;
+    m_texture = texture;
+}

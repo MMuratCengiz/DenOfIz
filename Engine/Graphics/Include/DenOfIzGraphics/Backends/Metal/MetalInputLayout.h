@@ -26,9 +26,12 @@ namespace DenOfIz
 
     class MetalInputLayout : public IInputLayout
     {
+        MetalContext   *m_context;
+        InputLayoutDesc m_desc;
+
     public:
-        MetalInputLayout(const InputLayoutDesc &desc);
-        ~MetalInputLayout() override;
+        MetalInputLayout( MetalContext *context, InputLayoutDesc desc );
+        ~MetalInputLayout( ) override;
     };
 
 } // namespace DenOfIz

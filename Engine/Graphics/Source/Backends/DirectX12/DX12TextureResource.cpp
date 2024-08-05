@@ -21,10 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc &desc) : m_context(context), m_desc(desc)
+DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc &desc) :
+    ITextureResource(desc), m_context(context), m_desc(desc)
 {
     Validate();
-    InitFields(desc);
 
     D3D12_RESOURCE_DESC resourceDesc = {};
 
@@ -82,7 +82,8 @@ DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc
     THROW_IF_FAILED(hr);
 }
 
-DX12TextureResource::DX12TextureResource(ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle) : m_resource(resource), m_cpuHandle(cpuHandle)
+DX12TextureResource::DX12TextureResource(ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle) :
+    ITextureResource({ /*TODO !IMPROVEMENT!*/}), m_resource(resource), m_cpuHandle(cpuHandle)
 {
     isExternalResource = true;
 }

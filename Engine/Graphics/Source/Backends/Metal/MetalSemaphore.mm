@@ -19,3 +19,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Metal/MetalSemaphore.h>
 
 using namespace DenOfIz;
+
+MetalSemaphore::MetalSemaphore( MetalContext *context ) : m_context( context )
+{
+    m_semaphore = [m_context->Device newEvent];
+}
+
+void MetalSemaphore::Wait( )
+{
+    dispatch_semaphore_wait( m_semaphore, DISPATCH_TIME_FOREVER );
+}
+
+void MetalSemaphore::Notify( )
+{
+    dispatch_semaphore_signal( m_semaphore );
+}

@@ -37,9 +37,10 @@ namespace DenOfIz
     {
         CommandListDesc m_desc;
         MetalContext    *m_context;
+        id<MTLCommandBuffer> m_commandBuffer;
     public:
          MetalCommandList( MetalContext *context, CommandListDesc desc );
-        ~MetalCommandList( ) override = default;
+        ~MetalCommandList( ) override;
 
         void Begin( ) override;
         void BeginRendering( const RenderingDesc &renderingInfo ) override;

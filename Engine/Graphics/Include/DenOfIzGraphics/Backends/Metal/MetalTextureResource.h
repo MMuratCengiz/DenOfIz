@@ -28,10 +28,12 @@ namespace DenOfIz
     {
         TextureDesc                 m_desc;
         MetalContext                *m_context{};
+        id<MTLTexture>              m_texture{};
         bool                        isExternalResource = false; // Used for swap chain render targets, might need a better way
 
     public:
         MetalTextureResource(MetalContext *context, const TextureDesc &desc);
+        MetalTextureResource(MetalContext *context, const TextureDesc &desc, id<MTLTexture> texture);
         ~MetalTextureResource() override = default;
     private:
         void Validate();

@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
 #include <DenOfIzCore/Utilities.h>
+#include "MetalContext.h"
 
 namespace DenOfIz
 {
@@ -27,10 +28,12 @@ namespace DenOfIz
     class MetalBufferResource : public IBufferResource
     {
     private:
-        MetalContext                      *m_context;
+        MetalContext                      *m_context{};
         BufferDesc                        m_desc;
     public:
         MetalBufferResource(MetalContext *context, const BufferDesc &desc);
+        void *MapMemory( ) override;
+        void  UnmapMemory( ) override;
     };
 
 } // namespace DenOfIz

@@ -49,7 +49,7 @@ namespace DenOfIz
 
         const GraphicsWindowSurface &surface = m_window->GetSurface( );
         m_swapChain =
-            m_logicalDevice->CreateSwapChain( SwapChainDesc{ .WindowHandle = m_window, .Width = surface.Width, .Height = surface.Height, .BufferCount = mc_framesInFlight } );
+            m_logicalDevice->CreateSwapChain( SwapChainDesc{ .WindowHandle = m_window, .Width = surface.Width, .Height = surface.Height, .NumBuffers = mc_framesInFlight } );
 
         PipelineDesc pipelineDesc{ .ShaderProgram = m_program.get( ) };
         pipelineDesc.BlendModes    = { BlendMode::None };

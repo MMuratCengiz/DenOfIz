@@ -19,3 +19,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #import <DenOfIzGraphics/Backends/Metal/MetalCommandListPool.h>
 
 using namespace DenOfIz;
+
+std::vector<ICommandList *> MetalCommandListPool::GetCommandLists( )
+{
+    return { };
+}
+
+MetalCommandListPool::MetalCommandListPool( MetalContext *context, CommandListPoolDesc desc ) : m_context( context ), m_desc( desc )
+{
+}

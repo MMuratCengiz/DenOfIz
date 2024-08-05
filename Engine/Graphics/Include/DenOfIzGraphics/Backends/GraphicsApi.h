@@ -9,6 +9,7 @@
 #endif
 
 #ifdef BUILD_METAL
+#include <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
 #endif
 
 #include "Interface/IFence.h"

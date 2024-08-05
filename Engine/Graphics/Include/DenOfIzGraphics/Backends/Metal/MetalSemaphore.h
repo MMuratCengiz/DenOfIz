@@ -27,11 +27,13 @@ namespace DenOfIz
     class MetalSemaphore : public ISemaphore
     {
     private:
-        MetalContext                    *m_context;
+        MetalContext *m_context;
+        dispatch_semaphore_t  m_semaphore;
+
     public:
-        MetalSemaphore(MetalContext *context);
-        ~MetalSemaphore() override;
-        void Wait() override;
-        void Notify() override;
+        MetalSemaphore( MetalContext *context );
+        ~MetalSemaphore( ) override = default;
+        void Wait( ) override;
+        void Notify( ) override;
     };
 } // namespace DenOfIz
