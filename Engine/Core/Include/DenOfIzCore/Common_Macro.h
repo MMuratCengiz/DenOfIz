@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define DZ_RETURN_IF(condition)                                                                                                                                                    \
     if ( condition )                                                                                                                                                               \
     return
-#define DZ_ASSERTM(exp, msg) if ( !(exp) ) DLOG(ERROR) << msg;
+#define DZ_ASSERTM(exp, msg) if ( !(exp) ) DLOG(ERROR) << msg
 #define DZ_NOT_NULL(exp)                                                                                                                                                           \
     do                                                                                                                                                                             \
     {                                                                                                                                                                              \

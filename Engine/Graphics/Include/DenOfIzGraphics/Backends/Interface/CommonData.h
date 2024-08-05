@@ -465,7 +465,6 @@ namespace DenOfIz
         DecrementAndWrap
     };
 
-    // TODO both ResourceDescriptor and ResourceState contain UnorderedAccess. Also set together most of the time, investigate improving it.
     enum class ResourceDescriptor : uint32_t
     {
         Buffer                = 1 << 1,

@@ -56,16 +56,16 @@ namespace DenOfIz
         explicit GraphicsApi( const APIPreference &preference );
         ~GraphicsApi( );
 
-        std::unique_ptr<ILogicalDevice> CreateLogicalDevice( );
-        std::unique_ptr<ILogicalDevice> CreateAndLoadOptimalLogicalDevice( );
-        std::unique_ptr<ShaderProgram>  CreateShaderProgram( const std::vector<ShaderDesc> &shaders );
+        std::unique_ptr<ILogicalDevice> CreateLogicalDevice( ) const;
+        std::unique_ptr<ILogicalDevice> CreateAndLoadOptimalLogicalDevice( ) const;
+        std::unique_ptr<ShaderProgram>  CreateShaderProgram( const std::vector<ShaderDesc> &shaders ) const;
 
-        void ReportLiveObjects( );
+        void ReportLiveObjects( ) const;
 
     private:
-        bool IsVulkanPreferred( );
-        bool IsDX12Preferred( );
-        bool IsMetalPreferred( );
+        bool IsVulkanPreferred( ) const;
+        bool IsDX12Preferred( ) const;
+        bool IsMetalPreferred( ) const;
     };
 
 } // namespace DenOfIz

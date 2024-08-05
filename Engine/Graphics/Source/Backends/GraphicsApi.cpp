@@ -29,7 +29,7 @@ GraphicsApi::~GraphicsApi( )
     ReportLiveObjects( );
 }
 
-std::unique_ptr<ILogicalDevice> GraphicsApi::CreateLogicalDevice( )
+std::unique_ptr<ILogicalDevice> GraphicsApi::CreateLogicalDevice( ) const
 {
     std::unique_ptr<ILogicalDevice> logicalDevice = nullptr;
 
@@ -60,7 +60,7 @@ std::unique_ptr<ILogicalDevice> GraphicsApi::CreateLogicalDevice( )
     return logicalDevice;
 }
 
-std::unique_ptr<ILogicalDevice> GraphicsApi::CreateAndLoadOptimalLogicalDevice( )
+std::unique_ptr<ILogicalDevice> GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
 {
     std::unique_ptr<ILogicalDevice> logicalDevice = CreateLogicalDevice( );
 
@@ -78,7 +78,7 @@ std::unique_ptr<ILogicalDevice> GraphicsApi::CreateAndLoadOptimalLogicalDevice( 
     return std::move( logicalDevice );
 }
 
-std::unique_ptr<ShaderProgram> GraphicsApi::CreateShaderProgram( const std::vector<ShaderDesc> &shaders )
+std::unique_ptr<ShaderProgram> GraphicsApi::CreateShaderProgram( const std::vector<ShaderDesc> &shaders ) const
 {
     ShaderProgramDesc programDesc{ };
     programDesc.Shaders = shaders;
@@ -100,7 +100,7 @@ std::unique_ptr<ShaderProgram> GraphicsApi::CreateShaderProgram( const std::vect
     return std::unique_ptr<ShaderProgram>( program );
 }
 
-void GraphicsApi::ReportLiveObjects( )
+void GraphicsApi::ReportLiveObjects( ) const
 {
 #ifndef NDEBUG
 #if defined( BUILD_DX12 )
@@ -115,7 +115,7 @@ void GraphicsApi::ReportLiveObjects( )
 #endif
 }
 
-bool GraphicsApi::IsVulkanPreferred( )
+bool GraphicsApi::IsVulkanPreferred( ) const
 {
 #ifdef _WIN32
     if ( m_apiPreference.Windows == APIPreferenceWindows::Vulkan )
@@ -141,7 +141,7 @@ bool GraphicsApi::IsVulkanPreferred( )
     return false;
 }
 
-bool GraphicsApi::IsDX12Preferred( )
+bool GraphicsApi::IsDX12Preferred( ) const
 {
 #ifdef _WIN32
     if ( m_apiPreference.Windows == APIPreferenceWindows::DirectX12 )
@@ -153,7 +153,7 @@ bool GraphicsApi::IsDX12Preferred( )
     return false;
 }
 
-bool GraphicsApi::IsMetalPreferred( )
+bool GraphicsApi::IsMetalPreferred( ) const
 {
 #ifdef __APPLE__
     if ( m_apiPreference.OSX == APIPreferenceOSX::Metal )
