@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzCore/Time.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
-#include <DenOfIzGraphics/Backends/GraphicsAPI.h>
+#include <DenOfIzGraphics/Backends/GraphicsApi.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include <DenOfIzGraphics/Data/Geometry.h>
 #include <DenOfIzGraphics/Helpers/BatchResourceCopyHelper.h>
@@ -32,6 +32,7 @@ namespace DenOfIz
     class SimpleRenderer
     {
         const uint32_t                           mc_framesInFlight = 3;
+        GraphicsApi                              m_gApi;
         std::unique_ptr<ILogicalDevice>          m_logicalDevice;
         GraphicsWindowHandle                    *m_window           = nullptr;
         GeometryData                             m_sphere           = Geometry::BuildSphere( { .Diameter = 1.0f, .Tessellation = 32 } );
@@ -69,6 +70,7 @@ namespace DenOfIz
         std::unique_ptr<CommandListRing>         m_commandListRing;
 
     public:
+        SimpleRenderer( );
         void Init( GraphicsWindowHandle *window );
         void Render( ) const;
         void Quit( ) const;

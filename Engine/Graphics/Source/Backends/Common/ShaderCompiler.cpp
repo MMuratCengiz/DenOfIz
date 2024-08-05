@@ -4,7 +4,7 @@
 namespace DenOfIz
 {
 
-    bool ShaderCompiler::Init( )
+    ShaderCompiler::ShaderCompiler( )
     {
         glslang::InitializeProcess( );
 
@@ -12,33 +12,24 @@ namespace DenOfIz
         if ( FAILED( result ) )
         {
             LOG( FATAL ) << "Failed to initialize DXC Library";
-            return false;
         }
 
         result = DxcCreateInstance( CLSID_DxcCompiler, IID_PPV_ARGS( &m_dxcCompiler ) );
         if ( FAILED( result ) )
         {
             LOG( FATAL ) << "Failed to initialize DXC Compiler";
-            return false;
         }
 
         result = DxcCreateInstance( CLSID_DxcUtils, IID_PPV_ARGS( &m_dxcUtils ) );
         if ( FAILED( result ) )
         {
             LOG( FATAL ) << "Failed to initialize DXC Utils";
-            return false;
         }
-
-        return true;
     }
 
     // ReSharper disable once CppMemberFunctionMayBeConst
-    void ShaderCompiler::Destroy( )
+    ShaderCompiler::~ShaderCompiler( )
     {
-        m_dxcUtils->Release( );
-        m_dxcCompiler->Release( );
-        m_dxcLibrary->Release( );
-
         glslang::FinalizeProcess( );
 #ifdef __APPLE__
         IRCompilerDestroy( mp_compiler );
@@ -271,7 +262,7 @@ namespace DenOfIz
         {
             arguments.push_back( L"-spirv" );
             // TODO !IMPROVEMENT! uncomment the below was shader reflection is added. To help support properly.
-//            arguments.push_back( L"--fvk-stage-io-order=alpha" );
+            //            arguments.push_back( L"--fvk-stage-io-order=alpha" );
             // Vulkan requires unique binding for each descriptor, hlsl has a binding per buffer view.
             // Docs suggest shifting the binding to avoid conflicts.
             static const std::wstring VkShiftCbvWs     = std::to_wstring( VkShiftCbv );

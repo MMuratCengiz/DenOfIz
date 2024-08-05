@@ -18,13 +18,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/GraphicsAPI.h>
+#include <DenOfIzGraphics/Backends/GraphicsApi.h>
 
 namespace DenOfIz
 {
     class ComputeTest
     {
     private:
+        GraphicsApi                         m_gApi;
         std::unique_ptr<ILogicalDevice>     m_logicalDevice;
         std::unique_ptr<ShaderProgram>      m_program;
         std::unique_ptr<ICommandListPool>   m_commandListPool;
@@ -36,9 +37,9 @@ namespace DenOfIz
         std::unique_ptr<IFence>             m_fence;
 
     public:
-        ComputeTest();
-        ~ComputeTest();
+        ComputeTest( );
+        ~ComputeTest( );
 
-        int Run();
+        int Run( );
     };
 } // namespace DenOfIz

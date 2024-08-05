@@ -35,8 +35,8 @@ find_package(directxmath CONFIG REQUIRED)
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 
 SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
+        Source/Backends/GraphicsApi.cpp
         #Shader Compiler
-        Source/Backends/Common/GfxGlobal.cpp
         Source/Backends/Common/ShaderCompiler.cpp
         Source/Backends/Common/ShaderReflection.cpp
         Source/Backends/Common/ShaderProgram.cpp
@@ -230,3 +230,7 @@ if (WIN32 OR LINUX)
 endif ()
 
 set_target_default_properties(DenOfIzGraphics)
+
+if (BUILD_TESTING)
+    add_subdirectory(Tests)
+endif ()

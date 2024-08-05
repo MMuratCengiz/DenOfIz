@@ -34,25 +34,30 @@ namespace DenOfIz
 
     struct ShaderProgramDesc
     {
+        TargetIL                TargetIL;
         std::vector<ShaderDesc> Shaders;
     };
 
     class ShaderProgram
     {
+        friend class GraphicsApi;
+
     private:
-        std::vector<ShaderDesc>     m_shaders;
         std::vector<CompiledShader> m_compiledShaders;
+        const ShaderProgramDesc    &m_desc;
+
+        ShaderProgram( const ShaderProgramDesc &desc );
 
     public:
-        ShaderProgram(const ShaderProgramDesc &desc);
-        const std::vector<CompiledShader> &GetCompiledShaders() const
+        const std::vector<CompiledShader> &GetCompiledShaders( ) const
         {
             return m_compiledShaders;
         }
-        ~ShaderProgram();
+        ~ShaderProgram( );
 
     private:
-        void Compile();
+        const ShaderCompiler &GetShaderCompiler( );
+        void                  Compile( );
     };
 
 } // namespace DenOfIz

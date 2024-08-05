@@ -59,8 +59,6 @@ int main()
         renderer.Quit();
     }
 
-    DenOfIz::GraphicsAPI::ReportLiveObjects();
-
     SDL_DestroyWindow(window);
     SDL_Quit();
 

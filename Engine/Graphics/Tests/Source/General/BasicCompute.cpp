@@ -16,32 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Common/GfxGlobal.h>
+#include "gtest/gtest.h"
 
-using namespace DenOfIz;
-
-std::unique_ptr<GfxGlobal> GfxGlobal::s_instance;
-std::mutex                 GfxGlobal::s_mutex;
-
-GfxGlobal *GfxGlobal::GetInstance()
+TEST(GeneralTest, GeneralTest)
 {
-    s_mutex.lock();
-    if ( !s_instance )
-    {
-        s_instance = std::make_unique<GfxGlobal>();
-        s_instance->m_shaderCompiler.Init();
-    }
-    s_mutex.unlock();
-    return s_instance.get();
-}
 
-void GfxGlobal::Destroy()
-{
-    s_mutex.lock();
-    if ( s_instance )
-    {
-        s_instance->m_shaderCompiler.Destroy();
-        s_instance.reset();
-    }
-    s_mutex.unlock();
 }

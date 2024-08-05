@@ -31,11 +31,11 @@ namespace DenOfIz
         std::vector<std::string> Defines;
     };
 
-    class ShaderCompiler
+    class ShaderCompiler final : public NonCopyable
     {
-        IDxcLibrary   *m_dxcLibrary = nullptr;
+        IDxcLibrary   *m_dxcLibrary  = nullptr;
         IDxcCompiler3 *m_dxcCompiler = nullptr;
-        IDxcUtils     *m_dxcUtils = nullptr;
+        IDxcUtils     *m_dxcUtils    = nullptr;
 
 #if defined( __APPLE__ )
         IRCompiler *mp_compiler = nullptr;
@@ -47,8 +47,8 @@ namespace DenOfIz
         static constexpr uint32_t VkShiftUav     = 3000;
         static constexpr uint32_t VkShiftSampler = 4000;
 
-        bool                                Init( );
-        void                                Destroy( );
+        ShaderCompiler( );
+        ~ShaderCompiler( );
         void                                InitResources( TBuiltInResource &Resources ) const;
         [[nodiscard]] EShLanguage           FindLanguage( ShaderStage shaderType ) const;
         [[nodiscard]] IDxcBlob             *CompileHLSL( const std::string &path, const CompileOptions &compileOptions ) const;

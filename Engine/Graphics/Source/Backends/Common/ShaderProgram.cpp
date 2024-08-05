@@ -17,54 +17,45 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
-#include "DenOfIzGraphics/Backends/Common/GfxGlobal.h"
 
 using namespace DenOfIz;
 
-ShaderProgram::ShaderProgram(const ShaderProgramDesc &desc)
+ShaderProgram::ShaderProgram( const ShaderProgramDesc &desc ) : m_desc( desc )
 {
-    m_shaders = desc.Shaders;
-    Compile();
+    Compile( );
 }
 
-void ShaderProgram::Compile()
+void ShaderProgram::Compile( )
 {
-    ShaderCompiler compiler = GfxGlobal::GetInstance()->GetShaderCompiler();
+    const ShaderCompiler& compiler = GetShaderCompiler( );
 
-    for ( auto &shader : m_shaders )
+    for ( auto &shader : m_desc.Shaders )
     {
-        CompileOptions options = {};
+        CompileOptions options = { };
         options.Defines        = shader.Defines;
         options.EntryPoint     = shader.EntryPoint;
         options.Stage          = shader.Stage;
+        options.TargetIL       = m_desc.TargetIL;
 
-#if defined(WIN32)
-        if ( GfxGlobal::GetInstance()->GetAPIPreference().Windows == APIPreferenceWindows::DirectX12 )
-        {
-            options.TargetIL = TargetIL::DXIL;
-        }
-        else
-        {
-            options.TargetIL = TargetIL::SPIRV;
-        }
-#elif defined(__APPLE__)
-        options.TargetIL = TargetIL::MSL;
-#elif defined(__linux__)
-        options.TargetIL = TargetIL::SPIRV;
-#endif
-
-        IDxcBlob* blob = compiler.CompileHLSL(shader.Path, options);
-        m_compiledShaders.push_back({ .Stage = shader.Stage, .Blob = blob });
+        IDxcBlob *blob = compiler.CompileHLSL( shader.Path, options );
+        m_compiledShaders.push_back( { .Stage = shader.Stage, .Blob = blob } );
     }
 }
-ShaderProgram::~ShaderProgram()
+
+ShaderProgram::~ShaderProgram( )
 {
     for ( auto &shader : m_compiledShaders )
     {
         if ( shader.Blob )
         {
-            shader.Blob->Release();
+            shader.Blob->Release( );
             shader.Blob = nullptr;
         }
     }
+}
+
+const ShaderCompiler &ShaderProgram::GetShaderCompiler( )
+{
+    static ShaderCompiler compiler;
+    return compiler;
 }

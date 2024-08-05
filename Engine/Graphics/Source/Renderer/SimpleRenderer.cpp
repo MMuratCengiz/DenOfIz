@@ -21,18 +21,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
+    SimpleRenderer::SimpleRenderer( ) : m_gApi( { .Windows = APIPreferenceWindows::DirectX12 } )
+    {
+    }
+
     void SimpleRenderer::Init( GraphicsWindowHandle *window )
     {
-        m_window = window;
-        GraphicsAPI::SetAPIPreference( APIPreference{
-            .Windows = APIPreferenceWindows::Vulkan,
-        } );
-
-        m_logicalDevice     = GraphicsAPI::CreateAndLoadOptimalLogicalDevice( );
+        m_window            = window;
+        m_logicalDevice     = m_gApi.CreateAndLoadOptimalLogicalDevice( );
         m_batchResourceCopy = std::make_unique<BatchResourceCopy>( m_logicalDevice.get( ) );
 
-        m_program       = std::make_unique<ShaderProgram>( ShaderProgramDesc{ .Shaders = { ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" },
-                                                                                           ShaderDesc{ .Stage = ShaderStage::Pixel, .Path = "Assets/Shaders/fs.hlsl" } } } );
+        m_program = m_gApi.CreateShaderProgram({
+            ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" },
+            ShaderDesc{ .Stage = ShaderStage::Pixel, .Path = "Assets/Shaders/fs.hlsl" }
+        } );
+
         m_rootSignature = m_logicalDevice->CreateRootSignature( RootSignatureDesc{
             .ResourceBindings = {
                 ResourceBindingDesc{ .Name = "model", .Binding = 0, .RegisterSpace = 1, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
@@ -201,7 +204,6 @@ namespace DenOfIz
             m_fences[ i ]->Wait( );
         }
         m_logicalDevice->WaitIdle( );
-        GfxGlobal::Destroy( );
     }
 
 } // namespace DenOfIz

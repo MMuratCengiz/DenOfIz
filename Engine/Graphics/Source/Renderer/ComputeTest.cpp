@@ -20,106 +20,99 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-ComputeTest::ComputeTest()
-{
-}
-
-ComputeTest::~ComputeTest()
-{
-    m_fence->Wait();
-
-    m_commandListPool.reset();
-    m_fence.reset();
-    buffer.reset();
-    m_rootSignature.reset();
-    m_inputLayout.reset();
-    m_pipeline.reset();
-    m_logicalDevice.reset();
-    GfxGlobal::Destroy();
-    GraphicsAPI::ReportLiveObjects();
-}
-
-int ComputeTest::Run()
-{
-    GraphicsAPI::SetAPIPreference(APIPreference{
+ComputeTest::ComputeTest( ) :
+    m_gApi( APIPreference{
         //            .Windows = APIPreferenceWindows::Vulkan,
-    });
+    } )
+{
+}
 
-    m_logicalDevice = GraphicsAPI::CreateLogicalDevice( );
+ComputeTest::~ComputeTest( )
+{
+    m_fence->Wait( );
 
-    auto firstDevice = m_logicalDevice->ListPhysicalDevices()[ 0 ];
-    m_logicalDevice->LoadPhysicalDevice(firstDevice);
-    m_program = std::make_unique<ShaderProgram>(ShaderProgramDesc{
-        .Shaders = {
-            ShaderDesc{ .Stage = ShaderStage::Compute, .Path = "Assets/Shaders/compute.hlsl" },
-        }
-    });
+    m_commandListPool.reset( );
+    m_fence.reset( );
+    buffer.reset( );
+    m_rootSignature.reset( );
+    m_inputLayout.reset( );
+    m_pipeline.reset( );
+    m_logicalDevice.reset( );
+    m_gApi.ReportLiveObjects( );
+}
+
+int ComputeTest::Run( )
+{
+    m_logicalDevice = m_gApi.CreateAndLoadOptimalLogicalDevice( );
+    m_program       = m_gApi.CreateShaderProgram( {
+        ShaderDesc{ .Stage = ShaderStage::Compute, .Path = "Assets/Shaders/compute.hlsl" },
+    } );
     m_rootSignature = m_logicalDevice->CreateRootSignature(RootSignatureDesc{
         .ResourceBindings = {
             ResourceBindingDesc{ .Name = "computeReadBack", .Binding = 0, .Descriptor = ResourceDescriptor::RWBuffer, .Stages = { ShaderStage::Compute } },
         },
     });
 
-    BufferDesc bufferDesc{};
+    BufferDesc bufferDesc{ };
     bufferDesc.Descriptor        = ResourceDescriptor::RWBuffer;
-    bufferDesc.NumBytes          = 1024 * sizeof(float);
-    bufferDesc.BufferView.Stride = sizeof(float);
+    bufferDesc.NumBytes          = 1024 * sizeof( float );
+    bufferDesc.BufferView.Stride = sizeof( float );
     bufferDesc.HeapType          = HeapType::GPU;
     bufferDesc.InitialState      = ResourceState::UnorderedAccess;
-    buffer                       = m_logicalDevice->CreateBufferResource("buffer", bufferDesc);
+    buffer                       = m_logicalDevice->CreateBufferResource( "buffer", bufferDesc );
 
-    m_resourceBindGroup = m_logicalDevice->CreateResourceBindGroup(ResourceBindGroupDesc{ .RootSignature = m_rootSignature.get() });
-    m_resourceBindGroup->Update(UpdateDesc{}.Buffer("computeReadBack", buffer.get()));
+    m_resourceBindGroup = m_logicalDevice->CreateResourceBindGroup( ResourceBindGroupDesc{ .RootSignature = m_rootSignature.get( ) } );
+    m_resourceBindGroup->Update( UpdateDesc{ }.Buffer( "computeReadBack", buffer.get( ) ) );
 
-    m_inputLayout = m_logicalDevice->CreateInputLayout({});
+    m_inputLayout = m_logicalDevice->CreateInputLayout( { } );
 
-    PipelineDesc pipelineDesc{ .ShaderProgram = m_program.get() };
+    PipelineDesc pipelineDesc{ .ShaderProgram = m_program.get( ) };
     pipelineDesc.BlendModes    = { BlendMode::None };
-    pipelineDesc.RootSignature = m_rootSignature.get();
-    pipelineDesc.InputLayout   = m_inputLayout.get();
+    pipelineDesc.RootSignature = m_rootSignature.get( );
+    pipelineDesc.InputLayout   = m_inputLayout.get( );
     pipelineDesc.BindPoint     = BindPoint::Compute;
 
-    m_pipeline = m_logicalDevice->CreatePipeline(pipelineDesc);
-    m_fence    = m_logicalDevice->CreateFence();
+    m_pipeline = m_logicalDevice->CreatePipeline( pipelineDesc );
+    m_fence    = m_logicalDevice->CreateFence( );
 
-    m_commandListPool = m_logicalDevice->CreateCommandListPool(CommandListPoolDesc{ .QueueType = QueueType::Compute });
-    auto commandList  = m_commandListPool->GetCommandLists()[ 0 ];
+    m_commandListPool = m_logicalDevice->CreateCommandListPool( CommandListPoolDesc{ .QueueType = QueueType::Compute } );
+    auto commandList  = m_commandListPool->GetCommandLists( )[ 0 ];
 
-    bufferDesc.Descriptor   = BitSet<ResourceDescriptor>();
+    bufferDesc.Descriptor   = BitSet<ResourceDescriptor>( );
     bufferDesc.HeapType     = HeapType::GPU_CPU;
     bufferDesc.InitialState = ResourceState::CopyDst;
-    auto readBack           = m_logicalDevice->CreateBufferResource("readBack", bufferDesc);
+    auto readBack           = m_logicalDevice->CreateBufferResource( "readBack", bufferDesc );
 
-    commandList->Begin();
-    commandList->BindPipeline(m_pipeline.get());
-    commandList->BindResourceGroup(m_resourceBindGroup.get());
-    commandList->Dispatch(1024, 1, 1);
+    commandList->Begin( );
+    commandList->BindPipeline( m_pipeline.get( ) );
+    commandList->BindResourceGroup( m_resourceBindGroup.get( ) );
+    commandList->Dispatch( 1024, 1, 1 );
 
-    PipelineBarrierDesc barrier{};
-    barrier.BufferBarrier(BufferBarrierDesc{ .Resource = buffer.get(), .OldState = ResourceState::UnorderedAccess, .NewState = ResourceState::CopySrc });
-    commandList->PipelineBarrier(barrier);
+    PipelineBarrierDesc barrier{ };
+    barrier.BufferBarrier( BufferBarrierDesc{ .Resource = buffer.get( ), .OldState = ResourceState::UnorderedAccess, .NewState = ResourceState::CopySrc } );
+    commandList->PipelineBarrier( barrier );
 
-    CopyBufferRegionDesc copyDesc{};
-    copyDesc.DstBuffer = readBack.get();
-    copyDesc.SrcBuffer = buffer.get();
-    copyDesc.NumBytes  = 1024 * sizeof(float);
-    commandList->CopyBufferRegion(copyDesc);
+    CopyBufferRegionDesc copyDesc{ };
+    copyDesc.DstBuffer = readBack.get( );
+    copyDesc.SrcBuffer = buffer.get( );
+    copyDesc.NumBytes  = 1024 * sizeof( float );
+    commandList->CopyBufferRegion( copyDesc );
 
-    barrier = {};
-    barrier.BufferBarrier(BufferBarrierDesc{ .Resource = buffer.get(), .OldState = ResourceState::CopySrc, .NewState = ResourceState::UnorderedAccess });
-    commandList->PipelineBarrier(barrier);
+    barrier = { };
+    barrier.BufferBarrier( BufferBarrierDesc{ .Resource = buffer.get( ), .OldState = ResourceState::CopySrc, .NewState = ResourceState::UnorderedAccess } );
+    commandList->PipelineBarrier( barrier );
 
-    ExecuteDesc executeDesc{};
-    executeDesc.Notify = m_fence.get();
-    commandList->Execute(executeDesc);
+    ExecuteDesc executeDesc{ };
+    executeDesc.Notify = m_fence.get( );
+    commandList->Execute( executeDesc );
 
-    m_fence->Wait();
+    m_fence->Wait( );
 
-    float *mappedData = reinterpret_cast<float *>(readBack->MapMemory());
+    float *mappedData = reinterpret_cast<float *>( readBack->MapMemory( ) );
     for ( UINT i = 0; i < 1024; i++ )
     {
         //        std::cout << "Index " << i << ": " << mappedData[ i ] << std::endl;
     }
-    readBack->UnmapMemory();
+    readBack->UnmapMemory( );
     return 0;
 }
