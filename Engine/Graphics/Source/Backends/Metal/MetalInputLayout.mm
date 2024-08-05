@@ -16,30 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include <DenOfIzGraphics/Backends/Metal/MetalInputLayout.h>
 
-#include "DX12Context.h"
-#include <DenOfIzGraphics/Backends/Interface/ISemaphore.h>
-
-namespace DenOfIz
-{
-
-    class DX12Semaphore : public ISemaphore
-    {
-    private:
-        DX12Context                    *m_context;
-        wil::com_ptr<ID3D12Fence>       m_fence;
-        Microsoft::WRL::Wrappers::Event m_fenceEvent;
-        UINT64                          m_fenceValue;
-
-    public:
-        DX12Semaphore(DX12Context *context);
-        ID3D12Fence *GetFence() const
-        {
-            return m_fence.get();
-        }
-        ~DX12Semaphore() override;
-        void Wait() override;
-        void Notify() override;
-    };
-} // namespace DenOfIz
+using namespace DenOfIz;

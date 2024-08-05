@@ -18,30 +18,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IFence.h>
-#include "DX12Context.h"
+#include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
+#include <DenOfIzCore/Utilities.h>
 
 namespace DenOfIz
 {
 
-    class DX12Fence : public IFence
+    class MetalBufferResource : public IBufferResource
     {
     private:
-        DX12Context                    *m_context;
-        wil::com_ptr<ID3D12Fence>       m_fence;
-        UINT32                          m_fenceValue = 1;
-        Microsoft::WRL::Wrappers::Event m_fenceEvent;
-        bool                            m_submitted = false;
-
+        MetalContext                      *m_context;
+        BufferDesc                        m_desc;
     public:
-        DX12Fence(DX12Context *context);
-        ID3D12Fence *GetFence() const
-        {
-            return m_fence.get();
-        }
-        ~DX12Fence() override;
-        void Wait() override;
-        void Reset() override;
+        MetalBufferResource(MetalContext *context, const BufferDesc &desc);
     };
 
 } // namespace DenOfIz

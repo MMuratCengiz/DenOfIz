@@ -93,7 +93,18 @@ set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
 )
 
 set(DEN_OF_IZ_GRAPHICS_METAL_SOURCES
-        Source/Backends/Metal/MetalImpl.cpp
+        Source/Backends/Metal/MetalBufferResource.mm
+        Source/Backends/Metal/MetalCommandList.mm
+        Source/Backends/Metal/MetalCommandListPool.mm
+        Source/Backends/Metal/MetalFence.mm
+        Source/Backends/Metal/MetalInputLayout.mm
+        Source/Backends/Metal/MetalLogicalDevice.mm
+        Source/Backends/Metal/MetalPipeline.mm
+        Source/Backends/Metal/MetalResourceBindGroup.mm
+        Source/Backends/Metal/MetalRootSignature.mm
+        Source/Backends/Metal/MetalSemaphore.mm
+        Source/Backends/Metal/MetalSwapChain.mm
+        Source/Backends/Metal/MetalTextureResource.mm
 )
 
 if (WIN32)
