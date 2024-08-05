@@ -44,11 +44,7 @@ namespace DenOfIz
         VulkanTextureResource( VulkanContext *context, const TextureDesc &desc );
 
         // Use as render target
-        VulkanTextureResource( const VkImage &image, const VkImageView &imageView, const VkFormat format, const VkImageAspectFlags imageAspect ) :
-            m_image( image ), m_imageViews( { imageView } ), m_format( format ), m_aspect( imageAspect )
-        {
-            m_isExternal = true;
-        }
+        VulkanTextureResource( const VkImage &image, const VkImageView &imageView, const VkFormat format, const VkImageAspectFlags imageAspect, const TextureDesc& desc );
 
         void NotifyLayoutChange( const VkImageLayout newLayout ) const
         {

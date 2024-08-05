@@ -158,7 +158,11 @@ void VulkanSwapChain::CreateSwapChainImages( const VkFormat format )
     for ( auto image : m_swapChainImages )
     {
         CreateImageView( m_swapChainImageViews[ index ], image, format, VK_IMAGE_ASPECT_COLOR_BIT );
-        m_renderTargets.push_back( std::make_unique<VulkanTextureResource>( image, m_swapChainImageViews[ index ], format, VK_IMAGE_ASPECT_COLOR_BIT ) );
+        TextureDesc desc{ };
+        desc.Width  = m_width;
+        desc.Height = m_height;
+        desc.Format = m_surfaceImageFormat;
+        m_renderTargets.push_back( std::make_unique<VulkanTextureResource>( image, m_swapChainImageViews[ index ], format, VK_IMAGE_ASPECT_COLOR_BIT, desc ) );
         index++;
     }
 }

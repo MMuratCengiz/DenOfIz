@@ -135,6 +135,13 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
     TransitionToInitialLayout( );
 }
 
+VulkanTextureResource::VulkanTextureResource( VkImage const &image, VkImageView const &imageView, const VkFormat format, const VkImageAspectFlags imageAspect,
+                                              const TextureDesc &desc ) : m_image( image ), m_imageViews( { imageView } ), m_format( format ), m_aspect( imageAspect )
+{
+    InitFields( desc );
+    m_isExternal = true;
+}
+
 // Todo transition all mip levels
 void VulkanTextureResource::TransitionToInitialLayout( ) const
 {
