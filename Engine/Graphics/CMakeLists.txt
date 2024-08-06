@@ -58,6 +58,7 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
 SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanLogicalDevice.cpp
         Source/Backends/Vulkan/VulkanCommandList.cpp
+        Source/Backends/Vulkan/VulkanEnumConverter.cpp
         Source/Backends/Vulkan/VulkanResourceBindGroup.cpp
         Source/Backends/Vulkan/VulkanInputLayout.cpp
         Source/Backends/Vulkan/VulkanUtilities.cpp
@@ -77,7 +78,7 @@ SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
 set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
         #DirectX12 Backend
         Source/Backends/DirectX12/DX12LogicalDevice.cpp
-        Source/Backends/DirectX12/DeviceResources.cpp
+        Source/Backends/DirectX12/DX12EnumConverter.cpp
         Source/Backends/DirectX12/DX12Pipeline.cpp
         Source/Backends/DirectX12/DX12SwapChain.cpp
         Source/Backends/DirectX12/DX12RootSignature.cpp
