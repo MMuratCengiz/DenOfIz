@@ -20,40 +20,106 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc ) : ITextureResource( desc ), m_context( context )
+MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc, std::string name ) : ITextureResource( desc ), m_context( context )
 {
     m_context = context;
     m_desc    = desc;
+    ValidateTextureDesc( m_desc );
 
-    MTLTextureDescriptor *descriptor = nil;
+    MTLTextureDescriptor *textureDesc = [[MTLTextureDescriptor alloc] init];
 
-    MTLPixelFormat format = MTLPixelFormatInvalid;
-    switch ( m_desc.Format )
+    textureDesc.width            = std::max( 1u, m_desc.Width );
+    textureDesc.height           = std::max( 1u, m_desc.Height );
+    textureDesc.depth            = std::max( 1u, m_desc.Depth );
+    textureDesc.arrayLength      = std::max( 1u, m_desc.ArraySize );
+    textureDesc.mipmapLevelCount = m_desc.MipLevels;
+    textureDesc.sampleCount      = MSAASampleCountToNumSamples( m_desc.MSAASampleCount );
+    textureDesc.pixelFormat      = MetalEnumConverter::ConvertFormat( m_desc.Format );
+
+    // TODO validate:
+    switch ( m_desc.HeapType )
     {
-
+    case HeapType::GPU:
+        textureDesc.resourceOptions = MTLResourceStorageModePrivate;
+        textureDesc.storageMode     = MTLStorageModePrivate;
+        break;
+    case HeapType::CPU:
+        textureDesc.resourceOptions = MTLResourceStorageModeShared;
+        textureDesc.storageMode     = MTLStorageModeShared;
+        break;
+    case HeapType::GPU_CPU:
+    case HeapType::CPU_GPU:
+        textureDesc.resourceOptions = MTLResourceStorageModeManaged;
+        textureDesc.storageMode     = MTLStorageModeManaged;
+        break;
     }
-    if ( m_desc.ArraySize > 1 )
+
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) )
     {
+        textureDesc.usage |= MTLTextureUsageShaderWrite;
     }
-    else
+
+    if ( m_desc.InitialState.Any( { ResourceState::RenderTarget, ResourceState::DepthWrite } ) )
     {
-        if ( m_depth > 1 )
-        {
-
-        }
-        else
-        {
-            descriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatR8Unorm width:m_desc.Width height:m_desc.Height mipmapped:m_desc.MipLevels > 1];
-        }
+        textureDesc.usage |= MTLTextureUsageRenderTarget;
     }
 
-    m_texture = [m_context->Device newTextureWithDescriptor:descriptor];
+    // Create the texture resource
+    m_texture = [m_context->Device newTextureWithDescriptor:textureDesc];
+
+    if ( !m_texture )
+    {
+        LOG( ERROR ) << "Failed to create Metal texture resource: " << m_name;
+    }
 }
 
-MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc, id<MTLTexture> texture ) :
+MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc, id<MTLTexture> texture, std::string name ) :
     ITextureResource( m_desc ), m_context( context ), m_texture( texture )
 {
-    m_context = context;
-    m_desc    = desc;
+    m_context          = context;
+    m_desc             = desc;
+    m_texture          = texture;
+    m_name             = name;
+    isExternalResource = true;
+}
+
+void MetalTextureResource::UpdateTexture( id<MTLTexture> texture )
+{
     m_texture = texture;
+}
+
+MetalTextureResource::~MetalTextureResource( )
+{
+    if ( !isExternalResource )
+    {
+        [m_texture release];
+    }
+}
+
+MetalSampler::MetalSampler( MetalContext *context, const SamplerDesc &desc, std::string name )
+{
+    m_name                            = name;
+    MTLSamplerDescriptor *samplerDesc = [[MTLSamplerDescriptor alloc] init];
+
+    samplerDesc.minFilter       = MetalEnumConverter::ConvertFilter( desc.MinFilter );
+    samplerDesc.magFilter       = MetalEnumConverter::ConvertFilter( desc.MagFilter );
+    samplerDesc.mipFilter       = MetalEnumConverter::ConvertMipMapFilter( desc.MipmapMode );
+    samplerDesc.sAddressMode    = MetalEnumConverter::ConvertSamplerAddressMode( desc.AddressModeU );
+    samplerDesc.tAddressMode    = MetalEnumConverter::ConvertSamplerAddressMode( desc.AddressModeV );
+    samplerDesc.rAddressMode    = MetalEnumConverter::ConvertSamplerAddressMode( desc.AddressModeW );
+    samplerDesc.lodMinClamp     = desc.MinLod;
+    samplerDesc.lodMaxClamp     = desc.MaxLod;
+    samplerDesc.compareFunction = MetalEnumConverter::ConvertCompareFunction( desc.CompareOp );
+    samplerDesc.maxAnisotropy   = desc.MaxAnisotropy;
+
+    m_sampler = [m_context->Device newSamplerStateWithDescriptor:samplerDesc];
+    if ( !m_sampler )
+    {
+        LOG( ERROR ) << "Failed to create Metal sampler state: " << name;
+    }
+}
+
+MetalSampler::~MetalSampler( )
+{
+    [m_sampler release];
 }

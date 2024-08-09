@@ -66,11 +66,11 @@ namespace DenOfIz
         size_t Size;
         void  *Data;
 
-        ~ShaderBlob()
+        ~ShaderBlob( )
         {
             if ( Data != nullptr )
             {
-                free(Data);
+                free( Data );
             }
         }
     };
@@ -79,6 +79,7 @@ namespace DenOfIz
     {
         ShaderStage Stage;
         IDxcBlob   *Blob;
+        std::string EntryPoint;
     };
 
     struct VertexInput

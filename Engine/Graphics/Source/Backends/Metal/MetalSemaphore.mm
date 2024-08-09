@@ -27,10 +27,8 @@ MetalSemaphore::MetalSemaphore( MetalContext *context ) : m_context( context )
 
 void MetalSemaphore::Wait( )
 {
-    dispatch_semaphore_wait( m_semaphore, DISPATCH_TIME_FOREVER );
 }
 
 void MetalSemaphore::Notify( )
 {
-    dispatch_semaphore_signal( m_semaphore );
 }

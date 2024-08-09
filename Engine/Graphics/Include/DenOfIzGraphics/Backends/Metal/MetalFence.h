@@ -28,10 +28,11 @@ namespace DenOfIz
     {
     private:
         MetalContext *m_context;
-        id<MTLFence> m_fence;
+        dispatch_semaphore_t m_fence;
 
     public:
         MetalFence( MetalContext *context );
+        ~MetalFence( ) override;
         void Wait( ) override;
         void Reset( ) override;
     };

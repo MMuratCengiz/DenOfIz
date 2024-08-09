@@ -26,26 +26,20 @@ MetalSwapChain::MetalSwapChain( MetalContext *context, const SwapChainDesc &desc
     m_view.autoresizesSubviews = TRUE;
 
     m_layer = [CAMetalLayer layer];
-
-    for ( int i = 0; i < m_desc.NumBuffers; i++ )
-    {
-        m_renderTargets.push_back(
-            new MetalTextureResource( m_context, TextureDesc( m_desc.Width, m_desc.Height, Format::R8Unorm, Usa::RenderTarget ) ) );
-    }
+    Resize( m_desc.Width, m_desc.Height );
 }
 
 MetalSwapChain::~MetalSwapChain( )
 {
+    [m_layer release];
 }
 
 uint32_t MetalSwapChain::AcquireNextImage( ISemaphore *imageAvailableSemaphore )
 {
     m_currentDrawable = [m_layer nextDrawable];
+    m_currentFrame    = ( m_currentFrame + 1 ) % m_desc.NumBuffers;
 
-    m_currentFrame = ( m_currentFrame + 1 ) % m_desc.NumBuffers;
-    *pImageIndex       = pSwapChain->mIndex;
-
-    pSwapChain->ppRenderTargets[ pSwapChain->mIndex ]->pTexture->pTexture = pSwapChain->mMTKDrawable.texture;
+    m_renderTargets[ m_currentFrame ]->UpdateTexture( m_currentDrawable.texture );
     return m_currentFrame;
 }
 
@@ -66,8 +60,23 @@ Viewport MetalSwapChain::GetViewport( )
 
 void MetalSwapChain::Resize( uint32_t width, uint32_t height )
 {
+    TextureDesc textureDesc{ };
+    textureDesc.Width        = width;
+    textureDesc.Height       = height;
+    textureDesc.Format       = Format::R8Unorm;
+    textureDesc.InitialState = ResourceState::RenderTarget;
+    textureDesc.HeapType     = HeapType::GPU;
+
+    m_renderTargets.resize( m_desc.NumBuffers );
+
+    for ( uint32_t i = 0; i < m_desc.NumBuffers; ++i )
+    {
+        id<CAMetalDrawable> drawable = [m_layer nextDrawable];
+        m_renderTargets[ i ]         = std::make_unique<MetalTextureResource>( m_context, textureDesc, drawable.texture, "SwapChainImage" );
+    }
 }
 
-void MetalSwapChain::CreateSwapChain( )
+id<MTLDrawable> MetalSwapChain::Drawable( )
 {
+    return m_currentDrawable;
 }

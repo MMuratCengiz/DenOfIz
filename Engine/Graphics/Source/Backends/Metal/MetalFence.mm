@@ -19,16 +19,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #import "DenOfIzGraphics/Backends/Metal/MetalFence.h"
 
 using namespace DenOfIz;
-MetalFence::MetalFence( MetalContext *context )
+MetalFence::MetalFence( MetalContext *context ) : m_context( context )
 {
     m_context = context;
-    m_fence   = [m_context->Device newFence];
+    m_fence = dispatch_semaphore_create( 0 );
+}
+
+MetalFence::~MetalFence( )
+{
+    dispatch_release( m_fence );
 }
 
 void MetalFence::Wait( )
 {
+    dispatch_semaphore_wait( m_fence, DISPATCH_TIME_FOREVER );
 }
 
 void MetalFence::Reset( )
 {
+    dispatch_semaphore_signal( m_fence );
 }

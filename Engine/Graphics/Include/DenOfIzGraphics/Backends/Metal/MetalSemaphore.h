@@ -28,7 +28,7 @@ namespace DenOfIz
     {
     private:
         MetalContext *m_context;
-        dispatch_semaphore_t  m_semaphore;
+        id<MTLEvent>  m_semaphore;
 
     public:
         MetalSemaphore( MetalContext *context );

@@ -90,12 +90,15 @@ namespace DenOfIz
         ITextureResource *DstTexture = nullptr;
         IBufferResource  *SrcBuffer  = nullptr;
         size_t            SrcOffset  = 0;
+        uint32_t          DstX       = 0;
+        uint32_t          DstY       = 0;
+        uint32_t          DstZ       = 0;
         Format            Format     = Format::R8G8B8A8Unorm;
         uint32_t          MipLevel   = 0;
         uint32_t          ArrayLayer = 0;
         // Information below is optional, 0 tries to calculate it automatically, sometimes it may be needed to be set manually
-        uint32_t RowPitch   = 0;
-        uint32_t NumRows = 0;
+        uint32_t RowPitch = 0;
+        uint32_t NumRows  = 0;
     };
 
     struct CopyTextureToBufferDesc
@@ -109,6 +112,9 @@ namespace DenOfIz
         Format            Format     = Format::R8G8B8A8Unorm;
         uint32_t          MipLevel   = 0;
         uint32_t          ArrayLayer = 0;
+        // Information below is optional, 0 tries to calculate it automatically, sometimes it may be needed to be set manually
+        uint32_t RowPitch = 0;
+        uint32_t NumRows  = 0;
     };
 
     struct ExecuteDesc

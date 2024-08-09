@@ -27,12 +27,12 @@ namespace DenOfIz
 
     class MetalSwapChain : public ISwapChain
     {
-        MetalContext       *m_context;
-        SwapChainDesc       m_desc;
-        id<CAMetalDrawable> m_currentDrawable;
-        NSView             *m_view;
-        CAMetalLayer       *m_layer;
-        uint32_t            m_currentFrame = 0;
+        MetalContext                                      *m_context;
+        SwapChainDesc                                      m_desc;
+        id<CAMetalDrawable>                                m_currentDrawable;
+        NSView                                            *m_view;
+        CAMetalLayer                                      *m_layer;
+        uint32_t                                           m_currentFrame = 0;
         std::vector<std::unique_ptr<MetalTextureResource>> m_renderTargets;
 
     public:
@@ -43,8 +43,8 @@ namespace DenOfIz
         Format            GetPreferredFormat( ) override;
         ITextureResource *GetRenderTarget( uint32_t frame ) override;
         Viewport          GetViewport( ) override;
+        id<MTLDrawable>   Drawable( );
         void              Resize( uint32_t width, uint32_t height ) override;
-        void              CreateSwapChain( );
     };
 
 } // namespace DenOfIz

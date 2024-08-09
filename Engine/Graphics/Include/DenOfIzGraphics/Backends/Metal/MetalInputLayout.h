@@ -28,9 +28,13 @@ namespace DenOfIz
     {
         MetalContext   *m_context;
         InputLayoutDesc m_desc;
-
+        MTLVertexDescriptor *m_vertexDescriptor;
     public:
         MetalInputLayout( MetalContext *context, InputLayoutDesc desc );
+        [[nodiscard]] MTLVertexDescriptor *GetVertexDescriptor( ) const
+        {
+            return m_vertexDescriptor;
+        }
         ~MetalInputLayout( ) override;
     };
 

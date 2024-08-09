@@ -38,7 +38,7 @@ void ShaderProgram::Compile( )
         options.TargetIL       = m_desc.TargetIL;
 
         IDxcBlob *blob = compiler.CompileHLSL( shader.Path, options );
-        m_compiledShaders.push_back( { .Stage = shader.Stage, .Blob = blob } );
+        m_compiledShaders.push_back( { .Stage = shader.Stage, .Blob = blob, .EntryPoint = shader.EntryPoint } );
     }
 }
 

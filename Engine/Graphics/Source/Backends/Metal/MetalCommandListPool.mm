@@ -22,9 +22,21 @@ using namespace DenOfIz;
 
 std::vector<ICommandList *> MetalCommandListPool::GetCommandLists( )
 {
-    return { };
+    std::vector<ICommandList *> commandLists;
+    for ( auto &commandList : m_commandLists )
+    {
+        commandLists.push_back( commandList.get( ) );
+    }
+    return commandLists;
 }
 
 MetalCommandListPool::MetalCommandListPool( MetalContext *context, CommandListPoolDesc desc ) : m_context( context ), m_desc( desc )
 {
+    CommandListDesc commandListDesc;
+    commandListDesc.QueueType = desc.QueueType;
+
+    for ( uint32_t i = 0; i < m_desc.CommandListCount; i++ )
+    {
+        m_commandLists.push_back( std::make_unique<MetalCommandList>( m_context, commandListDesc ) );
+    }
 }

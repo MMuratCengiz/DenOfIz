@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Backends/Metal/MetalEnumConverter.h>
 #include <DenOfIzGraphics/Backends/Metal/MetalInputLayout.h>
 
 #include <utility>
@@ -24,8 +25,32 @@ using namespace DenOfIz;
 
 MetalInputLayout::MetalInputLayout( MetalContext *context, InputLayoutDesc desc ) : m_context( context ), m_desc( std::move( desc ) )
 {
+    m_vertexDescriptor = [[MTLVertexDescriptor alloc] init];
+
+    int      bindingIndex = 0;
+    uint32_t location     = 0;
+
+    for ( const InputGroupDesc &inputGroup : desc.InputGroups )
+    {
+        auto *layout        = [m_vertexDescriptor.layouts objectAtIndexedSubscript:bindingIndex];
+        layout.stepFunction = inputGroup.StepRate == StepRate::PerInstance ? MTLVertexStepFunctionPerInstance : MTLVertexStepFunctionPerVertex;
+
+        uint32_t offset = 0;
+        for ( const InputLayoutElementDesc &inputElement : inputGroup.Elements )
+        {
+            auto *attribute       = [m_vertexDescriptor.attributes objectAtIndexedSubscript:location];
+            attribute.bufferIndex = bindingIndex;
+            attribute.offset      = offset;
+            attribute.format      = MetalEnumConverter::ConvertFormatToVertexFormat( inputElement.Format, false );
+            offset += FormatNumBytes( inputElement.Format );
+            location++;
+        }
+        layout.stride = offset;
+        bindingIndex++;
+    }
 }
 
 MetalInputLayout::~MetalInputLayout( )
 {
+    [m_vertexDescriptor release];
 }

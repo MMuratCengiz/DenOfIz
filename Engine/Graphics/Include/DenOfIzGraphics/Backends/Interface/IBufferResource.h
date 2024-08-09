@@ -65,24 +65,28 @@ namespace DenOfIz
         uint32_t              m_numBytes;
         const void           *m_data;
         void                 *m_mappedMemory = nullptr;
+        std::string           m_name;
         BitSet<ResourceState> m_state;
 
     public:
-        virtual ~IBufferResource() = default;
-
-        std::string Name;
+        virtual ~IBufferResource( ) = default;
 
         // Allowed only on CPU visible resources
-        virtual void *MapMemory()   = 0;
-        virtual void  UnmapMemory() = 0;
+        virtual void *MapMemory( )   = 0;
+        virtual void  UnmapMemory( ) = 0;
         //--
 
-        inline uint32_t GetSize() const
+        inline const std::string &Name( ) const
+        {
+            return m_name;
+        }
+
+        inline uint32_t GetSize( ) const
         {
             return m_numBytes;
         }
 
-        inline const void *GetData() const
+        inline const void *GetData( ) const
         {
             return m_data;
         }

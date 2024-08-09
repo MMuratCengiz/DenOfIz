@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include "MetalContext.h"
-#include "MetalRootSignature.h"
 #include "MetalInputLayout.h"
+#include "MetalRootSignature.h"
 
 namespace DenOfIz
 {
@@ -29,12 +29,32 @@ namespace DenOfIz
     class MetalPipeline : public IPipeline
     {
     private:
-        MetalContext                      *m_context;
-        PipelineDesc                      m_desc;
+        MetalContext *m_context;
+        PipelineDesc  m_desc;
+
+        id<MTLRenderPipelineState>  m_graphicsPipelineState;
+        id<MTLComputePipelineState> m_computePipelineState;
 
     public:
-        MetalPipeline(MetalContext *context, const PipelineDesc &desc);
-        ~MetalPipeline() override;
+        MetalPipeline( MetalContext *context, const PipelineDesc &desc );
+        ~MetalPipeline( ) override;
+
+        const id<MTLRenderPipelineState> &GraphicsPipelineState( ) const
+        {
+            return m_graphicsPipelineState;
+        }
+
+        const id<MTLComputePipelineState> &ComputePipelineState( ) const
+        {
+            return m_computePipelineState;
+        }
+
+    private:
+        void CreateGraphicsPipeline( );
+        void CreateComputePipeline( );
+        void CreateRayTracingPipeline( );
+
+        id<MTLFunction> CreateShaderFunction( const std::string &shaderSource, const std::string &entryPoint, NSError **error );
     };
 
 } // namespace DenOfIz

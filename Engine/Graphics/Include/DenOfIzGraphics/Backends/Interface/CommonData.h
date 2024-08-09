@@ -401,6 +401,31 @@ namespace DenOfIz
         _64,
     };
 
+    int MSAASampleCountToNumSamples( const MSAASampleCount &sampleCount )
+    {
+        switch ( sampleCount )
+        {
+        case MSAASampleCount::_0:
+            return 1;
+        case MSAASampleCount::_1:
+            return 1;
+        case MSAASampleCount::_2:
+            return 2;
+        case MSAASampleCount::_4:
+            return 4;
+        case MSAASampleCount::_8:
+            return 8;
+        case MSAASampleCount::_16:
+            return 16;
+        case MSAASampleCount::_32:
+            return 32;
+        case MSAASampleCount::_64:
+            return 64;
+        default:
+            return 1;
+        }
+    }
+
     enum class HeapType
     {
         GPU,

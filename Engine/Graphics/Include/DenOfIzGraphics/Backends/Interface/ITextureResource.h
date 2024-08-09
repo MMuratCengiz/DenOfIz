@@ -72,6 +72,7 @@ namespace DenOfIz
         uint32_t    m_width  = 1;
         uint32_t    m_height = 1;
         uint32_t    m_depth  = 1;
+        std::string m_name   = "";
         const void *m_data   = nullptr;
 
         ITextureResource( const TextureDesc &desc )
@@ -83,8 +84,12 @@ namespace DenOfIz
         }
 
     public:
-        std::string Name;
-        virtual ~   ITextureResource( ) = default;
+        virtual ~ITextureResource( ) = default;
+
+        [[nodiscard]] const std::string &Name( ) const
+        {
+            return m_name;
+        }
 
         [[nodiscard]] uint32_t GetWidth( ) const
         {
@@ -104,10 +109,52 @@ namespace DenOfIz
         }
     };
 
+    void ValidateTextureDesc( TextureDesc &desc )
+    {
+        if ( desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) && desc.MSAASampleCount != MSAASampleCount::_0 )
+        {
+            LOG( WARNING ) << "MSAA textures cannot be used as UAVs. Resetting MSAASampleCount to 0.";
+            desc.MSAASampleCount = MSAASampleCount::_0;
+        }
+
+        if ( desc.MSAASampleCount != MSAASampleCount::_0 && desc.MipLevels > 1 )
+        {
+            LOG( WARNING ) << "Mip mapped textures cannot be sampled. Resetting MSAASampleCount to 0.";
+            desc.MSAASampleCount = MSAASampleCount::_0;
+        }
+
+        if ( desc.ArraySize > 1 && desc.Depth > 1 )
+        {
+            LOG( WARNING ) << "Array textures cannot have depth. Resetting depth to 1.";
+            desc.Depth = 1;
+        }
+
+        if ( !desc.Descriptor.IsSet( ResourceDescriptor::Texture ) || !desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) )
+        {
+            LOG( WARNING ) << "Descriptor for texture contains neither Texture nor TextureCube.";
+        }
+
+        if ( desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) && desc.ArraySize != 6 )
+        {
+            LOG( WARNING ) << "TextureCube does not have an array size of 6. ";
+        }
+
+        if ( desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) && desc.Height != desc.Width )
+        {
+            LOG( WARNING ) << "TextureCube does not have equal width and height.";
+        }
+    }
+
     class ISampler
     {
+    protected:
+        std::string m_name;
+
     public:
-        std::string Name;
-        virtual ~   ISampler( ) = default;
+        virtual ~ISampler( ) = default;
+        [[nodiscard]] const std::string &Name( ) const
+        {
+            return m_name;
+        }
     };
 } // namespace DenOfIz

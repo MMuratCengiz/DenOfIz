@@ -20,7 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzCore/Cast.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
-#include "DX12EnumConverter.h"
 #include "MetalBufferResource.h"
 #include "MetalContext.h"
 #include "MetalFence.h"
@@ -35,11 +34,20 @@ namespace DenOfIz
 
     class MetalCommandList final : public ICommandList
     {
-        CommandListDesc m_desc;
-        MetalContext    *m_context;
-        id<MTLCommandBuffer> m_commandBuffer;
+        CommandListDesc              m_desc;
+        MetalContext                *m_context;
+        id<MTLCommandBuffer>         m_commandBuffer;
+        id<MTLRenderCommandEncoder>  m_renderEncoder;
+        id<MTLComputeCommandEncoder> m_computeEncoder;
+        id<MTLBlitCommandEncoder>    m_blitEncoder;
+
+        // States:
+        id<MTLBuffer> m_indexBuffer;
+        MTLIndexType  m_indexType;
+        // --
+
     public:
-         MetalCommandList( MetalContext *context, CommandListDesc desc );
+        MetalCommandList( MetalContext *context, CommandListDesc desc );
         ~MetalCommandList( ) override;
 
         void Begin( ) override;

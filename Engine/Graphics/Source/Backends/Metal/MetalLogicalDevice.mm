@@ -25,6 +25,12 @@ MetalLogicalDevice::MetalLogicalDevice( )
     m_context = std::make_unique<MetalContext>( );
 }
 
+MetalLogicalDevice::~MetalLogicalDevice( )
+{
+    [m_context->CommandQueue release];
+    [m_context->Device release];
+}
+
 void MetalLogicalDevice::CreateDevice( )
 {
 }
@@ -125,22 +131,19 @@ std::unique_ptr<ISemaphore> MetalLogicalDevice::CreateSemaphore( )
 
 std::unique_ptr<IBufferResource> MetalLogicalDevice::CreateBufferResource( std::string name, const BufferDesc &bufferDesc )
 {
-    auto *buffer = new MetalBufferResource( m_context.get( ), bufferDesc );
-    buffer->Name = name;
+    auto *buffer = new MetalBufferResource( m_context.get( ), bufferDesc, name );
     return std::unique_ptr<IBufferResource>( buffer );
 }
 
 std::unique_ptr<ITextureResource> MetalLogicalDevice::CreateTextureResource( std::string name, const TextureDesc &textureDesc )
 {
-    auto *texture = new MetalTextureResource( m_context.get( ), textureDesc );
-    texture->Name = name;
+    auto *texture = new MetalTextureResource( m_context.get( ), textureDesc, name );
     return std::unique_ptr<ITextureResource>( texture );
 }
 
 std::unique_ptr<ISampler> MetalLogicalDevice::CreateSampler( std::string name, const SamplerDesc &samplerDesc )
 {
-    auto *sampler = new MetalSampler( m_context.get( ), samplerDesc );
-    sampler->Name = name;
+    auto *sampler = new MetalSampler( m_context.get( ), samplerDesc, name );
     return std::unique_ptr<ISampler>( sampler );
 }
 

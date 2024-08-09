@@ -67,7 +67,6 @@ namespace DenOfIz
         }
 
     private:
-        void Validate();
         void CreateTextureSrv( ) const;
         void CreateTextureUav( ) const;
     };

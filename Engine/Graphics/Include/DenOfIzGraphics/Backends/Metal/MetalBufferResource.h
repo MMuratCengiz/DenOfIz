@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
 #include <DenOfIzCore/Utilities.h>
+#include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
 #include "MetalContext.h"
 
 namespace DenOfIz
@@ -28,10 +28,19 @@ namespace DenOfIz
     class MetalBufferResource : public IBufferResource
     {
     private:
-        MetalContext                      *m_context{};
-        BufferDesc                        m_desc;
+        MetalContext *m_context{ };
+        BufferDesc    m_desc;
+        id<MTLBuffer> m_buffer{ };
+        MTLResourceUsage m_usage{ };
+        void            *m_mappedMemory{ };
+
     public:
-        MetalBufferResource(MetalContext *context, const BufferDesc &desc);
+        MetalBufferResource( MetalContext *context, const BufferDesc &desc, std::string name );
+        ~MetalBufferResource( ) override;
+        const id<MTLBuffer> &Instance( ) const
+        {
+            return m_buffer;
+        }
         void *MapMemory( ) override;
         void  UnmapMemory( ) override;
     };

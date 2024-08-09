@@ -18,21 +18,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "ICommandList.h"
+#include <DenOfIzCore/Common_Macro.h>
+#include "MetalContext.h"
 
 namespace DenOfIz
 {
-    struct CommandListPoolDesc
+    class MetalEnumConverter : public NonCopyable
     {
-        QueueType QueueType;
-        // Rename to NumCommandLists
-        uint32_t  CommandListCount = 1;
-    };
+        MetalEnumConverter( ) = delete;
 
-    class ICommandListPool
-    {
     public:
-        virtual std::vector<ICommandList *> GetCommandLists() = 0;
-        virtual ~ICommandListPool()                           = default;
+        static MTLPixelFormat            ConvertFormat( Format format );
+        static MTLVertexFormat           ConvertFormatToVertexFormat( Format format );
+        static MTLPrimitiveTopologyClass ConvertTopologyClass( PrimitiveTopology topology );
+        static MTLSamplerMinMagFilter    ConvertFilter( Filter filter );
+        static MTLSamplerMipFilter       ConvertMipMapFilter( MipmapMode mode );
+        static MTLSamplerAddressMode     ConvertSamplerAddressMode( SamplerAddressMode mode );
+        static MTLCompareFunction        ConvertCompareFunction( CompareOp op );
     };
 } // namespace DenOfIz

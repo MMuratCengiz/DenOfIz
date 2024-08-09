@@ -24,7 +24,7 @@ using namespace DenOfIz;
 DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc &desc) :
     ITextureResource(desc), m_context(context), m_desc(desc)
 {
-    Validate();
+    ValidateTextureDesc( m_desc );
 
     D3D12_RESOURCE_DESC resourceDesc = {};
 
@@ -106,42 +106,6 @@ void DX12TextureResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandl
     {
         CreateTextureUav();
         m_rootParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
-    }
-}
-
-void DX12TextureResource::Validate()
-{
-    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::RWTexture) && m_desc.MSAASampleCount != MSAASampleCount::_0 )
-    {
-        LOG(WARNING) << "MSAA textures cannot be used as UAVs. Resetting MSAASampleCount to 0.";
-        m_desc.MSAASampleCount = MSAASampleCount::_0;
-    }
-
-    if ( m_desc.MSAASampleCount != MSAASampleCount::_0 && m_desc.MipLevels > 1 )
-    {
-        LOG(WARNING) << "Mip mapped textures cannot be sampled. Resetting MSAASampleCount to 0.";
-        m_desc.MSAASampleCount = MSAASampleCount::_0;
-    }
-
-    if ( m_desc.ArraySize > 1 && m_desc.Depth > 1 )
-    {
-        LOG(WARNING) << "Array textures cannot have depth. Resetting depth to 1.";
-        m_desc.Depth = 1;
-    }
-
-    if ( !this->m_desc.Descriptor.IsSet(ResourceDescriptor::Texture) || !m_desc.Descriptor.IsSet(ResourceDescriptor::TextureCube) )
-    {
-        LOG(WARNING) << "Descriptor for texture contains neither Texture nor TextureCube.";
-    }
-
-    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::TextureCube) && m_desc.ArraySize != 6 )
-    {
-        LOG(WARNING) << "TextureCube does not have an array size of 6. ";
-    }
-
-    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::TextureCube) && m_desc.Height != m_desc.Width )
-    {
-        LOG(WARNING) << "TextureCube does not have equal width and height.";
     }
 }
 

@@ -20,35 +20,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
 #include "MetalContext.h"
+#include "MetalEnumConverter.h"
 
 namespace DenOfIz
 {
 
     class MetalTextureResource final : public ITextureResource
     {
-        TextureDesc                 m_desc;
-        MetalContext                *m_context{};
-        id<MTLTexture>              m_texture{};
-        bool                        isExternalResource = false; // Used for swap chain render targets, might need a better way
+        friend class MetalSwapChain;
+        TextureDesc    m_desc;
+        MetalContext  *m_context{ };
+        id<MTLTexture> m_texture{ };
+        bool           isExternalResource = false; // Used for swap chain render targets, might need a better way
+    private:
+        void UpdateTexture( id<MTLTexture> texture );
 
     public:
-        MetalTextureResource(MetalContext *context, const TextureDesc &desc);
-        MetalTextureResource(MetalContext *context, const TextureDesc &desc, id<MTLTexture> texture);
-        ~MetalTextureResource() override = default;
-    private:
-        void Validate();
-        void CreateTextureSrv( ) const;
-        void CreateTextureUav( ) const;
+        MetalTextureResource( MetalContext *context, const TextureDesc &desc, std::string name );
+        MetalTextureResource( MetalContext *context, const TextureDesc &desc, id<MTLTexture> texture, std::string name );
+        const id<MTLTexture> &Instance( ) const
+        {
+            return m_texture;
+        }
+        ~MetalTextureResource( ) override;
     };
 
     class MetalSampler final : public ISampler
     {
     private:
-        MetalContext                *m_context;
-        SamplerDesc                 m_desc;
+        MetalContext       *m_context;
+        SamplerDesc         m_desc;
+        id<MTLSamplerState> m_sampler{ };
 
     public:
-        MetalSampler(MetalContext *context, const SamplerDesc &desc);
-        ~MetalSampler() override = default;
+        MetalSampler( MetalContext *context, const SamplerDesc &desc, std::string name );
+        ~MetalSampler( ) override;
     };
 } // namespace DenOfIz
