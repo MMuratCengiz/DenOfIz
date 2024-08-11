@@ -18,8 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "DenOfIzGraphics/Backends/Interface/IInputLayout.h"
+#include "DenOfIzGraphics/Backends/Interface/IRootSignature.h"
 #include "DenOfIzGraphics/Backends/Interface/IShader.h"
 #include "ShaderCompiler.h"
+#include "directx/d3d12shader.h"
 
 namespace DenOfIz
 {
@@ -38,26 +41,31 @@ namespace DenOfIz
         std::vector<ShaderDesc> Shaders;
     };
 
+    struct ShaderReflectDesc
+    {
+        InputLayoutDesc   InputLayout;
+        RootSignatureDesc RootSignature;
+    };
+
     class ShaderProgram
     {
         friend class GraphicsApi;
 
     private:
-        std::vector<CompiledShader> m_compiledShaders;
-        const ShaderProgramDesc    &m_desc;
+        std::vector<std::unique_ptr<CompiledShader>> m_compiledShaders;
+        const ShaderProgramDesc                     &m_desc;
 
         ShaderProgram( const ShaderProgramDesc &desc );
 
     public:
-        const std::vector<CompiledShader> &GetCompiledShaders( ) const
-        {
-            return m_compiledShaders;
-        }
-        ~ShaderProgram( );
+        const std::vector<CompiledShader *> GetCompiledShaders( ) const;
+        ShaderReflectDesc                   Reflect( ) const;
 
     private:
-        const ShaderCompiler &GetShaderCompiler( );
+        const ShaderCompiler &ShaderCompilerInstance( ) const;
         void                  Compile( );
+        void                  InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
+        void                  ProcessRootSignature( ID3D12ShaderReflection *shaderReflection, RootSignatureDesc &rootSignatureDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
     };
 
 } // namespace DenOfIz

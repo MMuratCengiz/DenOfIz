@@ -42,6 +42,49 @@ namespace DenOfIz
         TextureCoordinate,
     };
 
+    Semantic SemanticFromString( const std::string &semantic )
+    {
+        if ( semantic == "POSITION" )
+        {
+            return Semantic::Position;
+        }
+        if ( semantic == "NORMAL" )
+        {
+            return Semantic::Normal;
+        }
+        if ( semantic == "COLOR" )
+        {
+            return Semantic::Color;
+        }
+        if ( semantic == "TANGENT" )
+        {
+            return Semantic::Tangent;
+        }
+        if ( semantic == "BINORMAL" )
+        {
+            return Semantic::Binormal;
+        }
+        if ( semantic == "BITANGENT" )
+        {
+            return Semantic::Bitangent;
+        }
+        if ( semantic == "BLENDJOINTS" )
+        {
+            return Semantic::BlendJoints;
+        }
+        if ( semantic == "BLENDWEIGHTS" )
+        {
+            return Semantic::BlendWeights;
+        }
+        if ( semantic.starts_with("TEXCOORD") )
+        {
+            return Semantic::TextureCoordinate;
+        }
+
+        LOG (ERROR) << "Unknown semantic: " << semantic;
+        return Semantic::Position;
+    }
+
     struct InputLayoutElementDesc
     {
         Semantic Semantic;

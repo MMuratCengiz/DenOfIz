@@ -19,3 +19,38 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Metal/MetalResourceBindGroup.h>
 
 using namespace DenOfIz;
+
+MetalResourceBindGroup::MetalResourceBindGroup( MetalContext *context, ResourceBindGroupDesc desc ) : IResourceBindGroup( desc ), m_context( context )
+{
+    m_context = context;
+}
+
+void MetalResourceBindGroup::Update( const UpdateDesc &desc )
+{
+    m_updateDesc = desc;
+}
+
+const std::vector<UpdateDescItem<IBufferResource>> &MetalResourceBindGroup::Buffers( ) const
+{
+    return m_updateDesc.Buffers;
+}
+
+const std::vector<UpdateDescItem<ITextureResource>> &MetalResourceBindGroup::Textures( ) const
+{
+    return m_updateDesc.Textures;
+}
+
+const std::vector<UpdateDescItem<ISampler>> &MetalResourceBindGroup::Samplers( ) const
+{
+    return m_updateDesc.Samplers;
+}
+
+void MetalResourceBindGroup::BindTexture( const std::string &name, ITextureResource *resource )
+{
+}
+void MetalResourceBindGroup::BindBuffer( const std::string &name, IBufferResource *resource )
+{
+}
+void MetalResourceBindGroup::BindSampler( const std::string &name, ISampler *sampler )
+{
+}

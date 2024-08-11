@@ -20,10 +20,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
 #include <algorithm>
+#include "MetalBufferResource.h"
 #include "MetalContext.h"
 #include "MetalRootSignature.h"
 #include "MetalTextureResource.h"
-#include "MetalBufferResource.h"
 
 namespace DenOfIz
 {
@@ -33,10 +33,15 @@ namespace DenOfIz
     private:
         MetalContext       *m_context;
         MetalRootSignature *m_rootSignature;
+        UpdateDesc          m_updateDesc;
 
     public:
         MetalResourceBindGroup( MetalContext *context, ResourceBindGroupDesc desc );
         void Update( const UpdateDesc &desc ) override;
+
+        const std::vector<UpdateDescItem<IBufferResource>>  &Buffers( ) const;
+        const std::vector<UpdateDescItem<ITextureResource>> &Textures( ) const;
+        const std::vector<UpdateDescItem<ISampler>>         &Samplers( ) const;
 
     protected:
         void BindTexture( const std::string &name, ITextureResource *resource ) override;

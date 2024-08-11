@@ -32,11 +32,9 @@ namespace DenOfIz
     {
         static const std::array<VkDynamicState, 4> g_dynamicStates;
 
-        VulkanContext   *m_context;
-        ShaderReflection m_programReflection;
+        VulkanContext *m_context;
 
         std::vector<VkShaderModule>        m_shaderModules;
-        std::vector<VkPushConstantRange>   m_pushConstants;
         std::vector<VkDescriptorSetLayout> m_layouts;
 
         PipelineDesc m_desc;
@@ -61,8 +59,8 @@ namespace DenOfIz
             return m_bindPoint;
         }
         [[nodiscard]] VkWriteDescriptorSet GetWriteDescriptorSet( const std::string &name );
-                                           VulkanPipeline( VulkanContext *context, const PipelineDesc                                    &);
-        ~                                  VulkanPipeline( ) override;
+        VulkanPipeline( VulkanContext *context, const PipelineDesc & );
+        ~VulkanPipeline( ) override;
 
     private:
         void                                                       CreateGraphicsPipeline( );

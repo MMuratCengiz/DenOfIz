@@ -61,25 +61,28 @@ namespace DenOfIz
         std::string Path;
     };
 
-    struct ShaderBlob
-    {
-        size_t Size;
-        void  *Data;
-
-        ~ShaderBlob( )
-        {
-            if ( Data != nullptr )
-            {
-                free( Data );
-            }
-        }
-    };
-
-    struct CompiledShader
+    // Needs to be used as a pointer as Blob/Reflection might be deleted multiple times otherwise
+    struct CompiledShader : private NonCopyable
     {
         ShaderStage Stage;
         IDxcBlob   *Blob;
+        IDxcBlob   *Reflection;
         std::string EntryPoint;
+
+        ~CompiledShader( )
+        {
+            if ( Blob )
+            {
+                Blob->Release( );
+                Blob = nullptr;
+            }
+
+            if ( Reflection )
+            {
+                Reflection->Release( );
+                Reflection = nullptr;
+            }
+        }
     };
 
     struct VertexInput

@@ -19,3 +19,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Metal/MetalRootSignature.h>
 
 using namespace DenOfIz;
+
+MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
+{
+
+}
+
+MetalRootSignature::~MetalRootSignature( )
+{
+
+}

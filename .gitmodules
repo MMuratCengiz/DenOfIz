@@ -10,3 +10,6 @@
 [submodule "Engine/Graphics/_ThirdParty/DirectXShaderCompiler"]
 	path = Engine/Graphics/_ThirdParty/DirectXShaderCompiler
 	url = https://github.com/microsoft/DirectXShaderCompiler.git
+[submodule "Engine/Graphics/_ThirdParty/DirectX-Headers"]
+	path = Engine/Graphics/_ThirdParty/DirectX-Headers
+	url = https://github.com/microsoft/DirectX-Headers.git

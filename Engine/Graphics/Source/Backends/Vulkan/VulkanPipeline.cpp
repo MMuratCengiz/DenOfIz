@@ -23,8 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 
 VulkanPipeline::VulkanPipeline( VulkanContext *context, const PipelineDesc &createInfo ) :
-    m_context( context ), m_programReflection( ShaderReflection( createInfo.ShaderProgram->GetCompiledShaders( ) ) ), m_desc( createInfo ),
-    m_bindPoint( VulkanEnumConverter::ConvertPipelineBindPoint( createInfo.BindPoint ) )
+    m_context( context ), m_desc( createInfo ), m_bindPoint( VulkanEnumConverter::ConvertPipelineBindPoint( createInfo.BindPoint ) )
 {
     CreatePipelineLayout( );
 
@@ -116,17 +115,17 @@ const std::array<VkDynamicState, 4> VulkanPipeline::g_dynamicStates =
 std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineStages( )
 {
     std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos;
-    for ( const auto &[ Stage, Blob ] : m_desc.ShaderProgram->GetCompiledShaders( ) )
+    for ( const auto &compiledShader : m_desc.ShaderProgram->GetCompiledShaders( ) )
     {
         VkPipelineShaderStageCreateInfo &shaderStageCreateInfo = pipelineStageCreateInfos.emplace_back( );
         shaderStageCreateInfo.sType                            = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 
-        const VkShaderStageFlagBits stage        = VulkanEnumConverter::ConvertShaderStage( Stage );
-        const VkShaderModule       &shaderModule = m_shaderModules.emplace_back( this->CreateShaderModule( Blob ) );
+        const VkShaderStageFlagBits stage        = VulkanEnumConverter::ConvertShaderStage( compiledShader->Stage );
+        const VkShaderModule       &shaderModule = m_shaderModules.emplace_back( this->CreateShaderModule( compiledShader->Blob ) );
 
         shaderStageCreateInfo.stage  = stage;
         shaderStageCreateInfo.module = shaderModule;
-        shaderStageCreateInfo.pName  = "main";
+        shaderStageCreateInfo.pName  = compiledShader->EntryPoint.c_str( );
         shaderStageCreateInfo.pNext  = nullptr;
     }
 
@@ -308,16 +307,8 @@ void VulkanPipeline::CreatePipelineLayout( )
     pipelineLayoutCreateInfo.setLayoutCount = vulkanRootSignature->GetDescriptorSetLayouts( ).size( );
     pipelineLayoutCreateInfo.pSetLayouts    = vulkanRootSignature->GetDescriptorSetLayouts( ).data( );
 
-    for ( const PushConstant &pushConstant : m_programReflection.PushConstants( ) )
-    {
-        VkPushConstantRange &pushConstantRange = m_pushConstants.emplace_back( );
-        pushConstantRange.stageFlags           = VulkanEnumConverter::ConvertShaderStage( pushConstant.Stage );
-        pushConstantRange.offset               = pushConstant.Offset;
-        pushConstantRange.size                 = pushConstant.Size;
-    }
-
-    pipelineLayoutCreateInfo.pushConstantRangeCount = m_pushConstants.size( );
-    pipelineLayoutCreateInfo.pPushConstantRanges    = m_pushConstants.data( );
+    pipelineLayoutCreateInfo.pushConstantRangeCount = vulkanRootSignature->PushConstants().size( );
+    pipelineLayoutCreateInfo.pPushConstantRanges    = vulkanRootSignature->PushConstants().data( );
 
     VK_CHECK_RESULT( vkCreatePipelineLayout( m_context->LogicalDevice, &pipelineLayoutCreateInfo, nullptr, &m_layout ) );
 }

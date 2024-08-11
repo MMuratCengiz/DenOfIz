@@ -63,6 +63,11 @@ namespace DenOfIz
             return m_layouts;
         }
 
+        [[nodiscard]] const std::vector<VkPushConstantRange> &PushConstants( ) const
+        {
+            return m_pushConstants;
+        }
+
     private:
         void                                       AddResourceBinding( const ResourceBindingDesc &binding );
         void                                       AddRootConstant( const RootConstantResourceBinding &rootConstantBinding );

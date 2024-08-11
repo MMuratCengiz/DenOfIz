@@ -1,349 +1,551 @@
 #include <DenOfIzCore/Utilities.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
 
-namespace DenOfIz
+using namespace DenOfIz;
+
+ShaderCompiler::ShaderCompiler( )
 {
+    glslang::InitializeProcess( );
 
-    ShaderCompiler::ShaderCompiler( )
+    HRESULT result = DxcCreateInstance( CLSID_DxcLibrary, IID_PPV_ARGS( &m_dxcLibrary ) );
+    if ( FAILED( result ) )
     {
-        glslang::InitializeProcess( );
-
-        HRESULT result = DxcCreateInstance( CLSID_DxcLibrary, IID_PPV_ARGS( &m_dxcLibrary ) );
-        if ( FAILED( result ) )
-        {
-            LOG( FATAL ) << "Failed to initialize DXC Library";
-        }
-
-        result = DxcCreateInstance( CLSID_DxcCompiler, IID_PPV_ARGS( &m_dxcCompiler ) );
-        if ( FAILED( result ) )
-        {
-            LOG( FATAL ) << "Failed to initialize DXC Compiler";
-        }
-
-        result = DxcCreateInstance( CLSID_DxcUtils, IID_PPV_ARGS( &m_dxcUtils ) );
-        if ( FAILED( result ) )
-        {
-            LOG( FATAL ) << "Failed to initialize DXC Utils";
-        }
+        LOG( FATAL ) << "Failed to initialize DXC Library";
     }
 
-    // ReSharper disable once CppMemberFunctionMayBeConst
-    ShaderCompiler::~ShaderCompiler( )
+    result = DxcCreateInstance( CLSID_DxcCompiler, IID_PPV_ARGS( &m_dxcCompiler ) );
+    if ( FAILED( result ) )
     {
-        glslang::FinalizeProcess( );
+        LOG( FATAL ) << "Failed to initialize DXC Compiler";
+    }
+
+    result = DxcCreateInstance( CLSID_DxcUtils, IID_PPV_ARGS( &m_dxcUtils ) );
+    if ( FAILED( result ) )
+    {
+        LOG( FATAL ) << "Failed to initialize DXC Utils";
+    }
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+ShaderCompiler::~ShaderCompiler( )
+{
+    glslang::FinalizeProcess( );
 #ifdef __APPLE__
-        IRCompilerDestroy( mp_compiler );
+    IRCompilerDestroy( m_irCompiler );
 #endif
+}
+
+IDxcUtils *ShaderCompiler::DxcUtils( ) const
+{
+    return m_dxcUtils;
+}
+
+void ShaderCompiler::InitResources( TBuiltInResource &Resources ) const
+{
+    Resources.maxLights                                   = 32;
+    Resources.maxClipPlanes                               = 6;
+    Resources.maxTextureUnits                             = 32;
+    Resources.maxTextureCoords                            = 32;
+    Resources.maxVertexAttribs                            = 64;
+    Resources.maxVertexUniformComponents                  = 4096;
+    Resources.maxVaryingFloats                            = 64;
+    Resources.maxVertexTextureImageUnits                  = 32;
+    Resources.maxCombinedTextureImageUnits                = 80;
+    Resources.maxTextureImageUnits                        = 32;
+    Resources.maxFragmentUniformComponents                = 4096;
+    Resources.maxDrawBuffers                              = 32;
+    Resources.maxVertexUniformVectors                     = 128;
+    Resources.maxVaryingVectors                           = 8;
+    Resources.maxFragmentUniformVectors                   = 16;
+    Resources.maxVertexOutputVectors                      = 16;
+    Resources.maxFragmentInputVectors                     = 15;
+    Resources.minProgramTexelOffset                       = -8;
+    Resources.maxProgramTexelOffset                       = 7;
+    Resources.maxClipDistances                            = 8;
+    Resources.maxComputeWorkGroupCountX                   = 65535;
+    Resources.maxComputeWorkGroupCountY                   = 65535;
+    Resources.maxComputeWorkGroupCountZ                   = 65535;
+    Resources.maxComputeWorkGroupSizeX                    = 1024;
+    Resources.maxComputeWorkGroupSizeY                    = 1024;
+    Resources.maxComputeWorkGroupSizeZ                    = 64;
+    Resources.maxComputeUniformComponents                 = 1024;
+    Resources.maxComputeTextureImageUnits                 = 16;
+    Resources.maxComputeImageUniforms                     = 8;
+    Resources.maxComputeAtomicCounters                    = 8;
+    Resources.maxComputeAtomicCounterBuffers              = 1;
+    Resources.maxVaryingComponents                        = 60;
+    Resources.maxVertexOutputComponents                   = 64;
+    Resources.maxGeometryInputComponents                  = 64;
+    Resources.maxGeometryOutputComponents                 = 128;
+    Resources.maxFragmentInputComponents                  = 128;
+    Resources.maxImageUnits                               = 8;
+    Resources.maxCombinedImageUnitsAndFragmentOutputs     = 8;
+    Resources.maxCombinedShaderOutputResources            = 8;
+    Resources.maxImageSamples                             = 0;
+    Resources.maxVertexImageUniforms                      = 0;
+    Resources.maxTessControlImageUniforms                 = 0;
+    Resources.maxTessEvaluationImageUniforms              = 0;
+    Resources.maxGeometryImageUniforms                    = 0;
+    Resources.maxFragmentImageUniforms                    = 8;
+    Resources.maxCombinedImageUniforms                    = 8;
+    Resources.maxGeometryTextureImageUnits                = 16;
+    Resources.maxGeometryOutputVertices                   = 256;
+    Resources.maxGeometryTotalOutputComponents            = 1024;
+    Resources.maxGeometryUniformComponents                = 1024;
+    Resources.maxGeometryVaryingComponents                = 64;
+    Resources.maxTessControlInputComponents               = 128;
+    Resources.maxTessControlOutputComponents              = 128;
+    Resources.maxTessControlTextureImageUnits             = 16;
+    Resources.maxTessControlUniformComponents             = 1024;
+    Resources.maxTessControlTotalOutputComponents         = 4096;
+    Resources.maxTessEvaluationInputComponents            = 128;
+    Resources.maxTessEvaluationOutputComponents           = 128;
+    Resources.maxTessEvaluationTextureImageUnits          = 16;
+    Resources.maxTessEvaluationUniformComponents          = 1024;
+    Resources.maxTessPatchComponents                      = 120;
+    Resources.maxPatchVertices                            = 32;
+    Resources.maxTessGenLevel                             = 64;
+    Resources.maxViewports                                = 16;
+    Resources.maxVertexAtomicCounters                     = 0;
+    Resources.maxTessControlAtomicCounters                = 0;
+    Resources.maxTessEvaluationAtomicCounters             = 0;
+    Resources.maxGeometryAtomicCounters                   = 0;
+    Resources.maxFragmentAtomicCounters                   = 8;
+    Resources.maxCombinedAtomicCounters                   = 8;
+    Resources.maxAtomicCounterBindings                    = 1;
+    Resources.maxVertexAtomicCounterBuffers               = 0;
+    Resources.maxTessControlAtomicCounterBuffers          = 0;
+    Resources.maxTessEvaluationAtomicCounterBuffers       = 0;
+    Resources.maxGeometryAtomicCounterBuffers             = 0;
+    Resources.maxFragmentAtomicCounterBuffers             = 1;
+    Resources.maxCombinedAtomicCounterBuffers             = 1;
+    Resources.maxAtomicCounterBufferSize                  = 16384;
+    Resources.maxTransformFeedbackBuffers                 = 4;
+    Resources.maxTransformFeedbackInterleavedComponents   = 64;
+    Resources.maxCullDistances                            = 8;
+    Resources.maxCombinedClipAndCullDistances             = 8;
+    Resources.maxSamples                                  = 4;
+    Resources.maxMeshOutputVerticesNV                     = 256;
+    Resources.maxMeshOutputPrimitivesNV                   = 512;
+    Resources.maxMeshWorkGroupSizeX_NV                    = 32;
+    Resources.maxMeshWorkGroupSizeY_NV                    = 1;
+    Resources.maxMeshWorkGroupSizeZ_NV                    = 1;
+    Resources.maxTaskWorkGroupSizeX_NV                    = 32;
+    Resources.maxTaskWorkGroupSizeY_NV                    = 1;
+    Resources.maxTaskWorkGroupSizeZ_NV                    = 1;
+    Resources.maxMeshViewCountNV                          = 4;
+    Resources.limits.nonInductiveForLoops                 = true;
+    Resources.limits.whileLoops                           = true;
+    Resources.limits.doWhileLoops                         = true;
+    Resources.limits.generalUniformIndexing               = true;
+    Resources.limits.generalAttributeMatrixVectorIndexing = true;
+    Resources.limits.generalVaryingIndexing               = true;
+    Resources.limits.generalSamplerIndexing               = true;
+    Resources.limits.generalVariableIndexing              = true;
+    Resources.limits.generalConstantMatrixVectorIndexing  = true;
+}
+
+EShLanguage ShaderCompiler::FindLanguage( const ShaderStage shader_type ) const
+{
+    switch ( shader_type )
+    {
+    case ShaderStage::Vertex:
+        return EShLangVertex;
+    case ShaderStage::Hull:
+        return EShLangTessControl;
+    case ShaderStage::Domain:
+        return EShLangTessEvaluation;
+    case ShaderStage::Geometry:
+        return EShLangGeometry;
+    case ShaderStage::Pixel:
+        return EShLangFragment;
+    case ShaderStage::Compute:
+        return EShLangCompute;
+    default:
+        return EShLangVertex;
+    }
+}
+
+std::vector<uint32_t> ShaderCompiler::CompileGLSL( const std::string &filename, const CompileOptions &compileOptions ) const
+{
+    const auto        glslContents = Utilities::ReadFile( filename );
+    const ShaderStage shaderType   = compileOptions.Stage;
+    const EShLanguage stage        = FindLanguage( shaderType );
+
+    TBuiltInResource resources = { };
+    InitResources( resources );
+
+    glslang::TShader  shader( stage );
+    glslang::TProgram program;
+
+    const char *shaderStrings[ 1 ];
+    shaderStrings[ 0 ] = glslContents.c_str( );
+    shader.setStrings( shaderStrings, 1 );
+
+    constexpr auto messages = static_cast<EShMessages>( EShMsgSpvRules | EShMsgVulkanRules );
+
+    std::vector<uint32_t> spirv;
+    if ( !shader.parse( &resources, 100, false, messages ) )
+    {
+        LOG( WARNING ) << std::string( shader.getInfoLog( ) );
+        LOG( FATAL ) << std::string( shader.getInfoDebugLog( ) );
+        return spirv;
     }
 
-    void ShaderCompiler::InitResources( TBuiltInResource &Resources ) const
+    program.addShader( &shader );
+    if ( !program.link( messages ) )
     {
-        Resources.maxLights                                   = 32;
-        Resources.maxClipPlanes                               = 6;
-        Resources.maxTextureUnits                             = 32;
-        Resources.maxTextureCoords                            = 32;
-        Resources.maxVertexAttribs                            = 64;
-        Resources.maxVertexUniformComponents                  = 4096;
-        Resources.maxVaryingFloats                            = 64;
-        Resources.maxVertexTextureImageUnits                  = 32;
-        Resources.maxCombinedTextureImageUnits                = 80;
-        Resources.maxTextureImageUnits                        = 32;
-        Resources.maxFragmentUniformComponents                = 4096;
-        Resources.maxDrawBuffers                              = 32;
-        Resources.maxVertexUniformVectors                     = 128;
-        Resources.maxVaryingVectors                           = 8;
-        Resources.maxFragmentUniformVectors                   = 16;
-        Resources.maxVertexOutputVectors                      = 16;
-        Resources.maxFragmentInputVectors                     = 15;
-        Resources.minProgramTexelOffset                       = -8;
-        Resources.maxProgramTexelOffset                       = 7;
-        Resources.maxClipDistances                            = 8;
-        Resources.maxComputeWorkGroupCountX                   = 65535;
-        Resources.maxComputeWorkGroupCountY                   = 65535;
-        Resources.maxComputeWorkGroupCountZ                   = 65535;
-        Resources.maxComputeWorkGroupSizeX                    = 1024;
-        Resources.maxComputeWorkGroupSizeY                    = 1024;
-        Resources.maxComputeWorkGroupSizeZ                    = 64;
-        Resources.maxComputeUniformComponents                 = 1024;
-        Resources.maxComputeTextureImageUnits                 = 16;
-        Resources.maxComputeImageUniforms                     = 8;
-        Resources.maxComputeAtomicCounters                    = 8;
-        Resources.maxComputeAtomicCounterBuffers              = 1;
-        Resources.maxVaryingComponents                        = 60;
-        Resources.maxVertexOutputComponents                   = 64;
-        Resources.maxGeometryInputComponents                  = 64;
-        Resources.maxGeometryOutputComponents                 = 128;
-        Resources.maxFragmentInputComponents                  = 128;
-        Resources.maxImageUnits                               = 8;
-        Resources.maxCombinedImageUnitsAndFragmentOutputs     = 8;
-        Resources.maxCombinedShaderOutputResources            = 8;
-        Resources.maxImageSamples                             = 0;
-        Resources.maxVertexImageUniforms                      = 0;
-        Resources.maxTessControlImageUniforms                 = 0;
-        Resources.maxTessEvaluationImageUniforms              = 0;
-        Resources.maxGeometryImageUniforms                    = 0;
-        Resources.maxFragmentImageUniforms                    = 8;
-        Resources.maxCombinedImageUniforms                    = 8;
-        Resources.maxGeometryTextureImageUnits                = 16;
-        Resources.maxGeometryOutputVertices                   = 256;
-        Resources.maxGeometryTotalOutputComponents            = 1024;
-        Resources.maxGeometryUniformComponents                = 1024;
-        Resources.maxGeometryVaryingComponents                = 64;
-        Resources.maxTessControlInputComponents               = 128;
-        Resources.maxTessControlOutputComponents              = 128;
-        Resources.maxTessControlTextureImageUnits             = 16;
-        Resources.maxTessControlUniformComponents             = 1024;
-        Resources.maxTessControlTotalOutputComponents         = 4096;
-        Resources.maxTessEvaluationInputComponents            = 128;
-        Resources.maxTessEvaluationOutputComponents           = 128;
-        Resources.maxTessEvaluationTextureImageUnits          = 16;
-        Resources.maxTessEvaluationUniformComponents          = 1024;
-        Resources.maxTessPatchComponents                      = 120;
-        Resources.maxPatchVertices                            = 32;
-        Resources.maxTessGenLevel                             = 64;
-        Resources.maxViewports                                = 16;
-        Resources.maxVertexAtomicCounters                     = 0;
-        Resources.maxTessControlAtomicCounters                = 0;
-        Resources.maxTessEvaluationAtomicCounters             = 0;
-        Resources.maxGeometryAtomicCounters                   = 0;
-        Resources.maxFragmentAtomicCounters                   = 8;
-        Resources.maxCombinedAtomicCounters                   = 8;
-        Resources.maxAtomicCounterBindings                    = 1;
-        Resources.maxVertexAtomicCounterBuffers               = 0;
-        Resources.maxTessControlAtomicCounterBuffers          = 0;
-        Resources.maxTessEvaluationAtomicCounterBuffers       = 0;
-        Resources.maxGeometryAtomicCounterBuffers             = 0;
-        Resources.maxFragmentAtomicCounterBuffers             = 1;
-        Resources.maxCombinedAtomicCounterBuffers             = 1;
-        Resources.maxAtomicCounterBufferSize                  = 16384;
-        Resources.maxTransformFeedbackBuffers                 = 4;
-        Resources.maxTransformFeedbackInterleavedComponents   = 64;
-        Resources.maxCullDistances                            = 8;
-        Resources.maxCombinedClipAndCullDistances             = 8;
-        Resources.maxSamples                                  = 4;
-        Resources.maxMeshOutputVerticesNV                     = 256;
-        Resources.maxMeshOutputPrimitivesNV                   = 512;
-        Resources.maxMeshWorkGroupSizeX_NV                    = 32;
-        Resources.maxMeshWorkGroupSizeY_NV                    = 1;
-        Resources.maxMeshWorkGroupSizeZ_NV                    = 1;
-        Resources.maxTaskWorkGroupSizeX_NV                    = 32;
-        Resources.maxTaskWorkGroupSizeY_NV                    = 1;
-        Resources.maxTaskWorkGroupSizeZ_NV                    = 1;
-        Resources.maxMeshViewCountNV                          = 4;
-        Resources.limits.nonInductiveForLoops                 = true;
-        Resources.limits.whileLoops                           = true;
-        Resources.limits.doWhileLoops                         = true;
-        Resources.limits.generalUniformIndexing               = true;
-        Resources.limits.generalAttributeMatrixVectorIndexing = true;
-        Resources.limits.generalVaryingIndexing               = true;
-        Resources.limits.generalSamplerIndexing               = true;
-        Resources.limits.generalVariableIndexing              = true;
-        Resources.limits.generalConstantMatrixVectorIndexing  = true;
+        LOG( WARNING ) << std::string( shader.getInfoLog( ) );
+        LOG( WARNING ) << std::string( shader.getInfoDebugLog( ) );
+        return spirv;
     }
 
-    EShLanguage ShaderCompiler::FindLanguage( const ShaderStage shader_type ) const
+    const glslang::TIntermediate *intermediate = program.getIntermediate( stage );
+    if ( intermediate == nullptr )
     {
-        switch ( shader_type )
-        {
-        case ShaderStage::Vertex:
-            return EShLangVertex;
-        case ShaderStage::Hull:
-            return EShLangTessControl;
-        case ShaderStage::Domain:
-            return EShLangTessEvaluation;
-        case ShaderStage::Geometry:
-            return EShLangGeometry;
-        case ShaderStage::Pixel:
-            return EShLangFragment;
-        case ShaderStage::Compute:
-            return EShLangCompute;
-        default:
-            return EShLangVertex;
-        }
+        return spirv;
+    }
+    GlslangToSpv( *intermediate, spirv );
+    return std::move( spirv );
+}
+
+struct MetalDxcBlob_Impl : IDxcBlob
+{
+    uint16_t m_refCount = 0;
+    uint8_t *m_data;
+    size_t   m_size;
+
+    MetalDxcBlob_Impl( uint8_t *data, size_t size ) : m_data( data ), m_size( size )
+    {
     }
 
-    std::vector<uint32_t> ShaderCompiler::CompileGLSL( const std::string &filename, const CompileOptions &compileOptions ) const
+    HRESULT STDMETHODCALLTYPE QueryInterface( REFIID riid, void **ppvObject ) override
     {
-        const auto        glslContents = Utilities::ReadFile( filename );
-        const ShaderStage shaderType   = compileOptions.Stage;
-        const EShLanguage stage        = FindLanguage( shaderType );
-
-        TBuiltInResource resources = { };
-        InitResources( resources );
-
-        glslang::TShader  shader( stage );
-        glslang::TProgram program;
-
-        const char *shaderStrings[ 1 ];
-        shaderStrings[ 0 ] = glslContents.c_str( );
-        shader.setStrings( shaderStrings, 1 );
-
-        constexpr auto messages = static_cast<EShMessages>( EShMsgSpvRules | EShMsgVulkanRules );
-
-        std::vector<uint32_t> spirv;
-        if ( !shader.parse( &resources, 100, false, messages ) )
-        {
-            LOG( WARNING ) << std::string( shader.getInfoLog( ) );
-            LOG( FATAL ) << std::string( shader.getInfoDebugLog( ) );
-            return spirv;
-        }
-
-        program.addShader( &shader );
-        if ( !program.link( messages ) )
-        {
-            LOG( WARNING ) << std::string( shader.getInfoLog( ) );
-            LOG( WARNING ) << std::string( shader.getInfoDebugLog( ) );
-            return spirv;
-        }
-
-        const glslang::TIntermediate *intermediate = program.getIntermediate( stage );
-        if ( intermediate == nullptr )
-        {
-            return spirv;
-        }
-        GlslangToSpv( *intermediate, spirv );
-        return std::move( spirv );
+        return E_NOINTERFACE;
     }
 
-    IDxcBlob *ShaderCompiler::CompileHLSL( const std::string &filename, const CompileOptions &compileOptions ) const
+    ULONG STDMETHODCALLTYPE AddRef( ) override
     {
-        // Attribute to reference: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
-        // https://github.com/KhronosGroup/Vulkan-Guide
-        std::string       path     = Utilities::AppPath( filename );
-        uint32_t          codePage = DXC_CP_ACP;
-        IDxcBlobEncoding *sourceBlob;
-        std::wstring      wsShaderPath( path.begin( ), path.end( ) );
-        HRESULT           result = m_dxcUtils->LoadFile( wsShaderPath.c_str( ), &codePage, &sourceBlob );
-        if ( FAILED( result ) )
-        {
-            LOG( FATAL ) << "Could not load shader file: " << path << " error code: " << GetLastError( );
-        }
+        return ++m_refCount;
+    }
 
-        std::string hlslVersion = "6_6";
-        std::string targetProfile;
-        switch ( compileOptions.Stage )
+    ULONG STDMETHODCALLTYPE Release( ) override
+    {
+        if ( --m_refCount == 0 )
         {
-        case ShaderStage::Vertex:
-            targetProfile = "vs";
-            break;
-        case ShaderStage::Hull:
-            targetProfile = "hs";
-            break;
-        case ShaderStage::Domain:
-            targetProfile = "ds";
-            break;
-        case ShaderStage::Geometry:
-            targetProfile = "gs";
-            break;
-        case ShaderStage::Pixel:
-            targetProfile = "ps";
-            break;
-        case ShaderStage::Compute:
-            targetProfile = "cs";
-            break;
-        default:
-            LOG( WARNING ) << "Invalid shader stage";
-            DZ_ASSERTM( false, "Invalid shader stage" );
-            break;
+            delete[] m_data;
+            delete this;
         }
-        targetProfile += "_" + hlslVersion;
+        return m_refCount;
+    }
 
-        std::vector<LPCWSTR> arguments;
-        arguments.push_back( wsShaderPath.c_str( ) );
-        // Set the entry point
-        arguments.push_back( L"-E" );
-        std::wstring wsEntryPoint( compileOptions.EntryPoint.begin( ), compileOptions.EntryPoint.end( ) );
-        arguments.push_back( wsEntryPoint.c_str( ) );
-        // Set shader stage
-        arguments.push_back( L"-T" );
-        std::wstring wsTargetProfile( targetProfile.begin( ), targetProfile.end( ) );
-        arguments.push_back( wsTargetProfile.c_str( ) );
-        if ( compileOptions.TargetIL == TargetIL::SPIRV )
-        {
-            arguments.push_back( L"-spirv" );
-            // TODO !IMPROVEMENT! uncomment the below was shader reflection is added. To help support properly.
-            //            arguments.push_back( L"--fvk-stage-io-order=alpha" );
-            // Vulkan requires unique binding for each descriptor, hlsl has a binding per buffer view.
-            // Docs suggest shifting the binding to avoid conflicts.
-            static const std::wstring VkShiftCbvWs     = std::to_wstring( VkShiftCbv );
-            static const std::wstring VkShiftSrvWs     = std::to_wstring( VkShiftSrv );
-            static const std::wstring VkShiftUavWs     = std::to_wstring( VkShiftUav );
-            static const std::wstring VkShiftSamplerWs = std::to_wstring( VkShiftSampler );
+    LPVOID STDMETHODCALLTYPE GetBufferPointer( ) override
+    {
+        return m_data;
+    }
 
-            {
-                // Shift Cbv for Vk
-                arguments.push_back( L"-fvk-b-shift" );
-                arguments.push_back( VkShiftCbvWs.c_str( ) );
-                arguments.push_back( L"all" );
-            }
-            {
-                // Shift Srv for Vk
-                arguments.push_back( L"-fvk-t-shift" );
-                arguments.push_back( VkShiftSrvWs.c_str( ) );
-                arguments.push_back( L"all" );
-            }
-            {
-                // Shift Uav for Vk
-                arguments.push_back( L"-fvk-u-shift" );
-                arguments.push_back( VkShiftUavWs.c_str( ) );
-                arguments.push_back( L"all" );
-            }
-            {
-                // Shift Sampler for Vk
-                arguments.push_back( L"-fvk-s-shift" );
-                arguments.push_back( VkShiftSamplerWs.c_str( ) );
-                arguments.push_back( L"all" );
-            }
-        }
-        for ( const auto &define : compileOptions.Defines )
+    SIZE_T STDMETHODCALLTYPE GetBufferSize( ) override
+    {
+        return m_size;
+    }
+};
+
+std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const std::string &filename, const CompileOptions &compileOptions ) const
+{
+    // Attribute to reference: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
+    // https://github.com/KhronosGroup/Vulkan-Guide
+    std::string       path     = Utilities::AppPath( filename );
+    uint32_t          codePage = DXC_CP_ACP;
+    IDxcBlobEncoding *sourceBlob;
+    std::wstring      wsShaderPath( path.begin( ), path.end( ) );
+    HRESULT           result = m_dxcUtils->LoadFile( wsShaderPath.c_str( ), &codePage, &sourceBlob );
+    if ( FAILED( result ) )
+    {
+        LOG( FATAL ) << "Could not load shader file: " << path << " error code: " << GetLastError( );
+    }
+
+    std::string hlslVersion = "6_6";
+    std::string targetProfile;
+    switch ( compileOptions.Stage )
+    {
+    case ShaderStage::Vertex:
+        targetProfile = "vs";
+        break;
+    case ShaderStage::Hull:
+        targetProfile = "hs";
+        break;
+    case ShaderStage::Domain:
+        targetProfile = "ds";
+        break;
+    case ShaderStage::Geometry:
+        targetProfile = "gs";
+        break;
+    case ShaderStage::Pixel:
+        targetProfile = "ps";
+        break;
+    case ShaderStage::Compute:
+        targetProfile = "cs";
+        break;
+    default:
+        LOG( WARNING ) << "Invalid shader stage";
+        DZ_ASSERTM( false, "Invalid shader stage" );
+        break;
+    }
+    targetProfile += "_" + hlslVersion;
+
+    std::vector<LPCWSTR> arguments;
+    arguments.push_back( wsShaderPath.c_str( ) );
+    // Set the entry point
+    arguments.push_back( L"-E" );
+    std::wstring wsEntryPoint( compileOptions.EntryPoint.begin( ), compileOptions.EntryPoint.end( ) );
+    arguments.push_back( wsEntryPoint.c_str( ) );
+    // Set shader stage
+    arguments.push_back( L"-T" );
+    std::wstring wsTargetProfile( targetProfile.begin( ), targetProfile.end( ) );
+    arguments.push_back( wsTargetProfile.c_str( ) );
+    if ( compileOptions.TargetIL == TargetIL::SPIRV )
+    {
+        arguments.push_back( L"-spirv" );
+        // TODO !IMPROVEMENT! uncomment the below was shader reflection is added. To help support properly.
+        //            arguments.push_back( L"--fvk-stage-io-order=alpha" );
+        // Vulkan requires unique binding for each descriptor, hlsl has a binding per buffer view.
+        // Docs suggest shifting the binding to avoid conflicts.
+        static const std::wstring VkShiftCbvWs     = std::to_wstring( VkShiftCbv );
+        static const std::wstring VkShiftSrvWs     = std::to_wstring( VkShiftSrv );
+        static const std::wstring VkShiftUavWs     = std::to_wstring( VkShiftUav );
+        static const std::wstring VkShiftSamplerWs = std::to_wstring( VkShiftSampler );
+
         {
-            arguments.push_back( L"-D" );
-            arguments.push_back( reinterpret_cast<LPCWSTR>( define.c_str( ) ) );
+            // Shift Cbv for Vk
+            arguments.push_back( L"-fvk-b-shift" );
+            arguments.push_back( VkShiftCbvWs.c_str( ) );
+            arguments.push_back( L"all" );
         }
-        arguments.push_back( L"-HV" );
-        arguments.push_back( L"2021" );
+        {
+            // Shift Srv for Vk
+            arguments.push_back( L"-fvk-t-shift" );
+            arguments.push_back( VkShiftSrvWs.c_str( ) );
+            arguments.push_back( L"all" );
+        }
+        {
+            // Shift Uav for Vk
+            arguments.push_back( L"-fvk-u-shift" );
+            arguments.push_back( VkShiftUavWs.c_str( ) );
+            arguments.push_back( L"all" );
+        }
+        {
+            // Shift Sampler for Vk
+            arguments.push_back( L"-fvk-s-shift" );
+            arguments.push_back( VkShiftSamplerWs.c_str( ) );
+            arguments.push_back( L"all" );
+        }
+    }
+    for ( const auto &define : compileOptions.Defines )
+    {
+        arguments.push_back( L"-D" );
+        arguments.push_back( reinterpret_cast<LPCWSTR>( define.c_str( ) ) );
+    }
+    arguments.push_back( L"-HV" );
+    arguments.push_back( L"2021" );
 #ifndef NDEBUG
-        arguments.push_back( L"-Zi" );
+    arguments.push_back( L"-Zi" );
 #endif
 
-        DxcBuffer buffer{ };
-        buffer.Encoding = DXC_CP_ACP; // or? DXC_CP_UTF8;
-        buffer.Ptr      = sourceBlob->GetBufferPointer( );
-        buffer.Size     = sourceBlob->GetBufferSize( );
+    DxcBuffer buffer{ };
+    buffer.Encoding = DXC_CP_ACP; // or? DXC_CP_UTF8;
+    buffer.Ptr      = sourceBlob->GetBufferPointer( );
+    buffer.Size     = sourceBlob->GetBufferSize( );
 
-        IDxcResult *dxcResult{ nullptr };
-        result = m_dxcCompiler->Compile( &buffer, arguments.data( ), static_cast<uint32_t>( arguments.size( ) ), nullptr, IID_PPV_ARGS( &dxcResult ) );
+    IDxcResult *dxcResult{ nullptr };
+    result = m_dxcCompiler->Compile( &buffer, arguments.data( ), static_cast<uint32_t>( arguments.size( ) ), nullptr, IID_PPV_ARGS( &dxcResult ) );
 
-        if ( SUCCEEDED( result ) )
+    if ( SUCCEEDED( result ) )
+    {
+        if ( FAILED( dxcResult->GetStatus( &result ) ) )
         {
-            if ( FAILED( dxcResult->GetStatus( &result ) ) )
-            {
-                LOG( WARNING ) << "Unable to get shader status";
-            }
+            LOG( WARNING ) << "Unable to get shader status";
         }
-
-        if ( FAILED( result ) && dxcResult )
-        {
-            IDxcBlobEncoding *errorBlob;
-            result = dxcResult->GetErrorBuffer( &errorBlob );
-            if ( SUCCEEDED( result ) && errorBlob )
-            {
-                std::cerr << "Shader compilation failed :\n\n" << static_cast<const char *>( errorBlob->GetBufferPointer( ) );
-                errorBlob->Release( );
-                throw std::runtime_error( "Compilation failed" );
-            }
-        }
-
-        IDxcBlob *code;
-        if ( FAILED( dxcResult->GetResult( &code ) ) )
-        {
-            LOG( ERROR ) << "Failed to get shader code";
-        }
-
-        dxcResult->Release( );
-        sourceBlob->Release( );
-
-        return code;
     }
 
-} // namespace DenOfIz
+    if ( FAILED( result ) && dxcResult )
+    {
+        IDxcBlobEncoding *errorBlob;
+        result = dxcResult->GetErrorBuffer( &errorBlob );
+        if ( SUCCEEDED( result ) && errorBlob )
+        {
+            std::cerr << "Shader compilation failed :\n\n" << static_cast<const char *>( errorBlob->GetBufferPointer( ) );
+            errorBlob->Release( );
+            throw std::runtime_error( "Compilation failed" );
+        }
+    }
+
+    IDxcBlob *code;
+    if ( FAILED( dxcResult->GetResult( &code ) ) )
+    {
+        LOG( ERROR ) << "Failed to get shader code";
+    }
+
+    IDxcBlob *reflection;
+    if ( FAILED( dxcResult->GetOutput( DXC_OUT_REFLECTION, IID_PPV_ARGS( &reflection ), nullptr ) ) )
+    {
+        LOG( ERROR ) << "Failed to get shader reflection";
+    }
+
+    dxcResult->Release( );
+    sourceBlob->Release( );
+
+#ifdef BUILD_METAL
+    if ( compileOptions.TargetIL == TargetIL::MSL )
+    {
+        IDxcBlob *metalBlob = DxilToMsl( compileOptions, code );
+        code->Release( );
+        code = metalBlob;
+    }
+#endif
+    CompiledShader *compiledShader = new CompiledShader( );
+    compiledShader->Stage          = compileOptions.Stage;
+    compiledShader->Blob           = code;
+    compiledShader->Reflection     = reflection;
+    compiledShader->EntryPoint     = compileOptions.EntryPoint;
+    return std::unique_ptr<CompiledShader>( compiledShader );
+}
+
+IDxcBlob *const ShaderCompiler::DxilToMsl( const CompileOptions &compileOptions, IDxcBlob *code ) const
+{
+#ifdef BUILD_METAL
+    IRCompilerSetEntryPointName( this->m_irCompiler, compileOptions.EntryPoint.c_str( ) );
+    IRObject *irDxil = IRObjectCreateFromDXIL( (const uint8_t *)code->GetBufferPointer( ), code->GetBufferSize( ), IRBytecodeOwnershipNone );
+
+    IRError  *irError = nullptr;
+    IRObject *outIr   = IRCompilerAllocCompileAndLink( this->m_irCompiler, NULL, irDxil, &irError );
+
+    if ( !outIr )
+    {
+        uint32_t irCode = IRErrorGetCode( irError );
+
+        switch ( irCode )
+        {
+        case IRErrorCodeNoError:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeNoError";
+            break;
+        case IRErrorCodeShaderRequiresRootSignature:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeShaderRequiresRootSignature";
+            break;
+        case IRErrorCodeUnrecognizedRootSignatureDescriptor:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnrecognizedRootSignatureDescriptor";
+            break;
+        case IRErrorCodeUnrecognizedParameterTypeInRootSignature:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnrecognizedParameterTypeInRootSignature";
+            break;
+        case IRErrorCodeResourceNotReferencedByRootSignature:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeResourceNotReferencedByRootSignature";
+            break;
+        case IRErrorCodeShaderIncompatibleWithDualSourceBlending:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeShaderIncompatibleWithDualSourceBlending";
+            break;
+        case IRErrorCodeUnsupportedWaveSize:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnsupportedWaveSize";
+            break;
+        case IRErrorCodeUnsupportedInstruction:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnsupportedInstruction";
+            break;
+        case IRErrorCodeCompilationError:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeCompilationError";
+            break;
+        case IRErrorCodeFailedToSynthesizeStageInFunction:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeFailedToSynthesizeStageInFunction";
+            break;
+        case IRErrorCodeFailedToSynthesizeStreamOutFunction:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeFailedToSynthesizeStreamOutFunction";
+            break;
+        case IRErrorCodeFailedToSynthesizeIndirectIntersectionFunction:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeFailedToSynthesizeIndirectIntersectionFunction";
+            break;
+        case IRErrorCodeUnableToVerifyModule:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnableToVerifyModule";
+            break;
+        case IRErrorCodeUnableToLinkModule:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnableToLinkModule";
+            break;
+        case IRErrorCodeUnrecognizedDXILHeader:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnrecognizedDXILHeader";
+            break;
+        case IRErrorCodeInvalidRaytracingAttribute:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeInvalidRaytracingAttribute";
+            break;
+        case IRErrorCodeNullHullShaderInputOutputMismatch:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeNullHullShaderInputOutputMismatch";
+            break;
+        case IRErrorCodeUnknown:
+            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnknown";
+            break;
+        }
+        LOG( ERROR ) << "Failed to compile and link DXIL to MSL: " << irCode;
+        IRErrorDestroy( irError );
+    }
+
+    IRShaderStage stage;
+    switch ( compileOptions.Stage )
+    {
+    case ShaderStage::Vertex:
+        stage = IRShaderStageVertex;
+        break;
+    case ShaderStage::Pixel:
+        stage = IRShaderStageFragment;
+        break;
+    case ShaderStage::Hull:
+        stage = IRShaderStageHull;
+        break;
+    case ShaderStage::Domain:
+        stage = IRShaderStageDomain;
+        break;
+    case ShaderStage::Geometry:
+        stage = IRShaderStageGeometry;
+        break;
+    case ShaderStage::Compute:
+        stage = IRShaderStageCompute;
+        break;
+    case ShaderStage::AllGraphics:
+    case ShaderStage::All:
+    case ShaderStage::Task:
+        // TODO
+        LOG( WARNING ) << "Unsupported metal stage `All/AllGraphics/Task`";
+        stage = IRShaderStageInvalid;
+        break;
+    case ShaderStage::Raygen:
+        stage = IRShaderStageRayGeneration;
+        break;
+    case ShaderStage::AnyHit:
+        stage = IRShaderStageAnyHit;
+        break;
+    case ShaderStage::ClosestHit:
+        stage = IRShaderStageClosestHit;
+        break;
+    case ShaderStage::Miss:
+        stage = IRShaderStageMiss;
+        break;
+    case ShaderStage::Intersection:
+        stage = IRShaderStageIntersection;
+        break;
+    case ShaderStage::Callable:
+        stage = IRShaderStageCallable;
+        break;
+    case ShaderStage::Mesh:
+        stage = IRShaderStageMesh;
+        break;
+    }
+
+    IRMetalLibBinary *metalLib = IRMetalLibBinaryCreate( );
+    IRObjectGetMetalLibBinary( outIr, stage, metalLib );
+    size_t   metalLibSize     = IRMetalLibGetBytecodeSize( metalLib );
+    uint8_t *metalLibByteCode = new uint8_t[ metalLibSize ];
+    IRMetalLibGetBytecode( metalLib, metalLibByteCode );
+
+    MetalDxcBlob_Impl *mslBlob = new MetalDxcBlob_Impl( metalLibByteCode, metalLibSize );
+
+    IRMetalLibBinaryDestroy( metalLib );
+    IRObjectDestroy( irDxil );
+    IRObjectDestroy( outIr );
+    return mslBlob;
+#endif
+}

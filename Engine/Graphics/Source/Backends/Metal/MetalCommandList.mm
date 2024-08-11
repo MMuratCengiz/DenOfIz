@@ -156,6 +156,20 @@ void MetalCommandList::BindScissorRect( float x, float y, float width, float hei
 
 void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 {
+    MetalResourceBindGroup *mtkBindGroup = static_cast<MetalResourceBindGroup *>( bindGroup );
+
+    switch ( m_desc.QueueType )
+    {
+    case QueueType::Copy:
+        break;
+    case QueueType::Compute:
+
+        [m_computeEncoder setBuffer:static_cast<MetalResourceBindGroup *>( bindGroup )->Buffers( )[ 0 ].Resource->Instance( ) offset:0 atIndex:0];
+        break;
+    case QueueType::Graphics:
+        [m_renderEncoder setFragmentBuffer:static_cast<MetalResourceBindGroup *>( bindGroup )->Buffers( )[ 0 ].Resource->Instance( ) offset:0 atIndex:0];
+        break;
+    }
 }
 
 void MetalCommandList::SetDepthBias( float constantFactor, float clamp, float slopeFactor )

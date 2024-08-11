@@ -206,6 +206,7 @@ if (APPLE)
     target_include_directories(DenOfIzGraphics
             PUBLIC
             _ThirdParty/DirectXShaderCompiler/include/dxc
+            _ThirdParty/DirectX-Headers/include
     )
 
     include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_metalirconverter.cmake)

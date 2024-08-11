@@ -38,7 +38,7 @@ namespace DenOfIz
         IDxcUtils     *m_dxcUtils    = nullptr;
 
 #if defined( __APPLE__ )
-        IRCompiler *mp_compiler = nullptr;
+        IRCompiler *m_irCompiler = nullptr;
 #endif
 
     public:
@@ -46,13 +46,15 @@ namespace DenOfIz
         static constexpr uint32_t VkShiftSrv     = 2000;
         static constexpr uint32_t VkShiftUav     = 3000;
         static constexpr uint32_t VkShiftSampler = 4000;
+        IDxcUtils *DxcUtils( ) const;
 
         ShaderCompiler( );
         ~ShaderCompiler( );
-        void                                InitResources( TBuiltInResource &Resources ) const;
-        [[nodiscard]] EShLanguage           FindLanguage( ShaderStage shaderType ) const;
-        [[nodiscard]] IDxcBlob             *CompileHLSL( const std::string &path, const CompileOptions &compileOptions ) const;
-        [[nodiscard]] std::vector<uint32_t> CompileGLSL( const std::string &filename, const CompileOptions &compileOptions ) const;
+        void                                          InitResources( TBuiltInResource &Resources ) const;
+        [[nodiscard]] EShLanguage                     FindLanguage( ShaderStage shaderType ) const;
+        [[nodiscard]] std::unique_ptr<CompiledShader> CompileHLSL( const std::string &path, const CompileOptions &compileOptions ) const;
+        [[nodiscard]] std::vector<uint32_t>           CompileGLSL( const std::string &filename, const CompileOptions &compileOptions ) const;
+        [[nodiscard]] IDxcBlob *const                 DxilToMsl( const CompileOptions &compileOptions, IDxcBlob *code ) const;
     };
 
 } // namespace DenOfIz
