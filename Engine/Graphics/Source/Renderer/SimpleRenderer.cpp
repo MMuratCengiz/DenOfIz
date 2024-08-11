@@ -31,19 +31,26 @@ namespace DenOfIz
         m_logicalDevice     = m_gApi.CreateAndLoadOptimalLogicalDevice( );
         m_batchResourceCopy = std::make_unique<BatchResourceCopy>( m_logicalDevice.get( ) );
 
-        m_program = m_gApi.CreateShaderProgram({
-            ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" },
-            ShaderDesc{ .Stage = ShaderStage::Pixel, .Path = "Assets/Shaders/fs.hlsl" }
-        } );
+        m_program = m_gApi.CreateShaderProgram(
+            { ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" }, ShaderDesc{ .Stage = ShaderStage::Pixel, .Path = "Assets/Shaders/fs.hlsl" } } );
 
-        m_rootSignature = m_logicalDevice->CreateRootSignature( RootSignatureDesc{
-            .ResourceBindings = {
-                ResourceBindingDesc{ .Name = "model", .Binding = 0, .RegisterSpace = 1, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
-                ResourceBindingDesc{ .Name = "viewProjection", .Binding = 0, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
-                ResourceBindingDesc{ .Name = "time", .Binding = 1, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
-                ResourceBindingDesc{ .Name = "texture1", .Binding = 0, .RegisterSpace = 1, .Descriptor = ResourceDescriptor::Texture, .Stages = { ShaderStage::Pixel } },
-                ResourceBindingDesc{ .Name = "sampler1", .Binding = 0, .RegisterSpace = 1, .Descriptor = ResourceDescriptor::Sampler, .Stages = { ShaderStage::Pixel } },
-            } } );
+        RootSignatureDesc
+            rootSigDesc{ .ResourceBindings = {
+                             ResourceBindingDesc{
+                                 .Name = "model", .Binding = 0, .RegisterSpace = 1, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
+                             ResourceBindingDesc{ .Name = "viewProjection", .Binding = 0, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
+                             ResourceBindingDesc{ .Name = "time", .Binding = 1, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
+                             ResourceBindingDesc{
+                                 .Name = "texture1", .Binding = 0, .RegisterSpace = 1, .Descriptor = ResourceDescriptor::Texture, .Stages = { ShaderStage::Pixel } },
+                             ResourceBindingDesc{
+                                 .Name = "sampler1", .Binding = 0, .RegisterSpace = 1, .Descriptor = ResourceDescriptor::Sampler, .Stages = { ShaderStage::Pixel } },
+                         } };
+
+        ShaderReflectDesc reflection = m_program->Reflect();
+        // Testing... :
+        rootSigDesc = reflection.RootSignature;
+
+        m_rootSignature = m_logicalDevice->CreateRootSignature( rootSigDesc );
 
         m_inputLayout = m_logicalDevice->CreateInputLayout( VertexPositionNormalTexture::InputLayout );
 

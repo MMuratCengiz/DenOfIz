@@ -158,17 +158,46 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 {
     MetalResourceBindGroup *mtkBindGroup = static_cast<MetalResourceBindGroup *>( bindGroup );
 
-    switch ( m_desc.QueueType )
+    if ( m_desc.QueueType == QueueType::Copy )
     {
-    case QueueType::Copy:
-        break;
-    case QueueType::Compute:
+        LOG( WARNING ) << "BindResourceGroup is not supported for Copy queue";
+        return;
+    }
 
-        [m_computeEncoder setBuffer:static_cast<MetalResourceBindGroup *>( bindGroup )->Buffers( )[ 0 ].Resource->Instance( ) offset:0 atIndex:0];
-        break;
-    case QueueType::Graphics:
-        [m_renderEncoder setFragmentBuffer:static_cast<MetalResourceBindGroup *>( bindGroup )->Buffers( )[ 0 ].Resource->Instance( ) offset:0 atIndex:0];
-        break;
+    for ( const auto &buffer : mtkBindGroup->Buffers( ) )
+    {
+        if ( m_desc.QueueType == QueueType::Compute )
+        {
+            [m_computeEncoder setBuffer:buffer.Resource->Instance( ) offset:0 atIndex:buffer.Slot];
+        }
+        else
+        {
+            [m_renderEncoder setVertexBuffer:buffer.Resource->Instance( ) offset:0 atIndex:buffer.Slot];
+        }
+    }
+
+    for ( const auto &texture : mtkBindGroup->Textures( ) )
+    {
+        if ( m_desc.QueueType == QueueType::Compute )
+        {
+            [m_computeEncoder setTexture:texture.Resource->Instance( ) atIndex:texture.Slot];
+        }
+        else
+        {
+            [m_renderEncoder setFragmentTexture:texture.Resource->Instance( ) atIndex:texture.Slot];
+        }
+    }
+
+    for ( const auto &sampler : mtkBindGroup->Samplers( ) )
+    {
+        if ( m_desc.QueueType == QueueType::Compute )
+        {
+            [m_computeEncoder setSamplerState:sampler.Resource->Instance( ) atIndex:sampler.Slot];
+        }
+        else
+        {
+            [m_renderEncoder setFragmentSamplerState:sampler.Resource->Instance( ) atIndex:sampler.Slot];
+        }
     }
 }
 
@@ -244,7 +273,7 @@ void MetalCommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copyB
                      sourceOffset:copyBufferToTexture.SrcOffset
                 sourceBytesPerRow:copyBufferToTexture.RowPitch
               sourceBytesPerImage:copyBufferToTexture.RowPitch * copyBufferToTexture.NumRows
-                       sourceSize:MTLSizeMake( dstTexture->GetWidth(), dstTexture->GetHeight(), dstTexture->GetDepth( ) )
+                       sourceSize:MTLSizeMake( dstTexture->GetWidth( ), dstTexture->GetHeight( ), dstTexture->GetDepth( ) )
                         toTexture:dstTexture->Instance( )
                  destinationSlice:copyBufferToTexture.ArrayLayer
                  destinationLevel:copyBufferToTexture.MipLevel
@@ -262,7 +291,7 @@ void MetalCommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyT
                        sourceSlice:copyTextureToBuffer.ArrayLayer
                        sourceLevel:copyTextureToBuffer.MipLevel
                       sourceOrigin:MTLOriginMake( copyTextureToBuffer.SrcX, copyTextureToBuffer.SrcY, copyTextureToBuffer.SrcZ )
-                        sourceSize:MTLSizeMake( srcTexture->GetWidth(), srcTexture->GetHeight(), srcTexture->GetDepth( )  )
+                        sourceSize:MTLSizeMake( srcTexture->GetWidth( ), srcTexture->GetHeight( ), srcTexture->GetDepth( ) )
                           toBuffer:dstBuffer->Instance( )
                  destinationOffset:copyTextureToBuffer.DstOffset
             destinationBytesPerRow:copyTextureToBuffer.RowPitch

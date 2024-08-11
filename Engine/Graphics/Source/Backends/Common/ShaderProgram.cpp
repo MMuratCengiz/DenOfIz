@@ -76,54 +76,6 @@ Format MaskToFormat( uint32_t mask )
     }
 }
 
-ShaderReflectDesc ShaderProgram::Reflect( ) const
-{
-    ShaderReflectDesc result{ };
-
-    InputLayoutDesc   &inputLayout   = result.InputLayout;
-    RootSignatureDesc &rootSignature = result.RootSignature;
-
-    for ( auto &shader : m_compiledShaders )
-    {
-        IDxcBlob       *reflectionBlob = shader->Reflection;
-        const DxcBuffer reflectionBuffer{
-            .Ptr      = reflectionBlob->GetBufferPointer( ),
-            .Size     = reflectionBlob->GetBufferSize( ),
-            .Encoding = 0,
-        };
-
-        ID3D12ShaderReflection *shaderReflection{ };
-
-        ShaderCompilerInstance( ).DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) );
-        D3D12_SHADER_DESC shaderDesc{ };
-        shaderReflection->GetDesc( &shaderDesc );
-
-        if ( shader->Stage == ShaderStage::Vertex )
-        {
-            InitInputLayout( shaderReflection, inputLayout, shaderDesc );
-        }
-
-        ProcessRootSignature( shaderReflection, rootSignature, shaderDesc );
-    }
-
-    return result;
-}
-
-void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const
-{
-    InputGroupDesc &inputGroupDesc = inputLayoutDesc.InputGroups.emplace_back( );
-    for ( const uint32_t parameterIndex : std::views::iota( 0u, shaderDesc.InputParameters ) )
-    {
-        D3D12_SIGNATURE_PARAMETER_DESC signatureParameterDesc{ };
-        shaderReflection->GetInputParameterDesc( parameterIndex, &signatureParameterDesc );
-        InputLayoutElementDesc &inputElementDesc = inputGroupDesc.Elements.emplace_back( );
-
-        inputElementDesc.Semantic      = SemanticFromString( signatureParameterDesc.SemanticName );
-        inputElementDesc.SemanticIndex = signatureParameterDesc.SemanticIndex;
-        inputElementDesc.Format        = MaskToFormat( signatureParameterDesc.Mask );
-    }
-}
-
 ResourceDescriptor SetRootSignatureType( D3D_SHADER_INPUT_TYPE type )
 {
     switch ( type )
@@ -152,21 +104,93 @@ ResourceDescriptor SetRootSignatureType( D3D_SHADER_INPUT_TYPE type )
     }
 }
 
+ShaderReflectDesc ShaderProgram::Reflect( ) const
+{
+    ShaderReflectDesc result{ };
+
+    InputLayoutDesc   &inputLayout   = result.InputLayout;
+    RootSignatureDesc &rootSignature = result.RootSignature;
+
+    for ( auto &shader : m_compiledShaders )
+    {
+        IDxcBlob       *reflectionBlob = shader->Reflection;
+        const DxcBuffer reflectionBuffer{
+            .Ptr      = reflectionBlob->GetBufferPointer( ),
+            .Size     = reflectionBlob->GetBufferSize( ),
+            .Encoding = 0,
+        };
+
+        ID3D12ShaderReflection *shaderReflection{ };
+
+        ShaderCompilerInstance( ).DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) );
+        D3D12_SHADER_DESC shaderDesc{ };
+        shaderReflection->GetDesc( &shaderDesc );
+
+        if ( shader->Stage == ShaderStage::Vertex )
+        {
+            InitInputLayout( shaderReflection, inputLayout, shaderDesc );
+        }
+
+        ProcessRootSignature( shaderReflection, rootSignature, shaderDesc );
+
+#ifdef BUILD_METAL
+        IRObject           *outIr;
+        IRShaderReflection *irReflection = IRShaderReflectionCreate( );
+        IRObjectGetReflection( outIr, ShaderCompiler::ConvertIrShaderStage( shader->Stage ), irReflection );
+
+        std::vector<IRResourceLocation> resources( IRShaderReflectionGetResourceCount( irReflection ) );
+        IRShaderReflectionGetResourceLocations( irReflection, resources.data( ) );
+#endif
+
+        for ( const uint32_t i : std::views::iota( 0u, shaderDesc.BoundResources ) )
+        {
+            D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
+            shaderReflection->GetResourceBindingDesc( i, &shaderInputBindDesc );
+
+            ResourceBindingDesc &resourceBindingDesc = rootSignature.ResourceBindings.emplace_back( );
+            resourceBindingDesc.Name                 = shaderInputBindDesc.Name;
+            resourceBindingDesc.Binding              = shaderInputBindDesc.BindPoint;
+            resourceBindingDesc.RegisterSpace        = shaderInputBindDesc.Space;
+            resourceBindingDesc.BindingType          = DescriptorBufferBindingType::ConstantBuffer;
+            resourceBindingDesc.ArraySize            = shaderInputBindDesc.BindCount;
+            resourceBindingDesc.Descriptor           = SetRootSignatureType( shaderInputBindDesc.Type );
+
+#ifdef BUILD_METAL
+            for ( const IRResourceLocation &resource : resources )
+            {
+                if ( resource.resourceName == shaderInputBindDesc.Name )
+                {
+                    resourceBindingDesc.LocationHint = resource.slot;
+                    break;
+                }
+            }
+#endif
+        }
+
+#ifdef BUILD_METAL
+        IRShaderReflectionDestroy( irReflection );
+#endif
+        shaderReflection->Release( );
+    }
+
+    return result;
+}
+
+void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const
+{
+    InputGroupDesc &inputGroupDesc = inputLayoutDesc.InputGroups.emplace_back( );
+    for ( const uint32_t parameterIndex : std::views::iota( 0u, shaderDesc.InputParameters ) )
+    {
+        D3D12_SIGNATURE_PARAMETER_DESC signatureParameterDesc{ };
+        shaderReflection->GetInputParameterDesc( parameterIndex, &signatureParameterDesc );
+        InputLayoutElementDesc &inputElementDesc = inputGroupDesc.Elements.emplace_back( );
+
+        inputElementDesc.Semantic      = SemanticFromString( signatureParameterDesc.SemanticName );
+        inputElementDesc.SemanticIndex = signatureParameterDesc.SemanticIndex;
+        inputElementDesc.Format        = MaskToFormat( signatureParameterDesc.Mask );
+    }
+}
+
 void ShaderProgram::ProcessRootSignature( ID3D12ShaderReflection *shaderReflection, RootSignatureDesc &rootSignatureDesc, const D3D12_SHADER_DESC &shaderDesc ) const
 {
-    for ( const uint32_t i : std::views::iota( 0u, shaderDesc.BoundResources ) )
-    {
-        D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
-        shaderReflection->GetResourceBindingDesc( i, &shaderInputBindDesc );
-
-        ResourceDescriptor   resourceDescriptor  = SetRootSignatureType( shaderInputBindDesc.Type );
-
-        ResourceBindingDesc &resourceBindingDesc = rootSignatureDesc.ResourceBindings.emplace_back( );
-        resourceBindingDesc.Name                 = shaderInputBindDesc.Name;
-        resourceBindingDesc.Binding              = shaderInputBindDesc.BindPoint;
-        resourceBindingDesc.RegisterSpace        = shaderInputBindDesc.Space;
-        resourceBindingDesc.BindingType          = DescriptorBufferBindingType::ConstantBuffer;
-        resourceBindingDesc.ArraySize            = shaderInputBindDesc.BindCount;
-        resourceBindingDesc.Descriptor           = resourceDescriptor;
-    }
 }

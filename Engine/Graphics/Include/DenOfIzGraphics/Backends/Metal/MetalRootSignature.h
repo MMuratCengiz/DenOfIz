@@ -25,13 +25,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct MetalBindingDesc
+    {
+        std::string     Name;
+        uint32_t        Slot;
+        MTLRenderStages Stages;
+    };
+
     class MetalRootSignature final : public IRootSignature
     {
         MetalContext     *m_context;
         RootSignatureDesc m_desc;
 
+        std::unordered_map<std::string, MetalBindingDesc> m_bindings;
+
     public:
         MetalRootSignature( MetalContext *context, const RootSignatureDesc &desc );
+        const MetalBindingDesc &FindBinding( const std::string &name ) const;
         ~MetalRootSignature( ) override;
     };
 

@@ -28,29 +28,55 @@ MetalResourceBindGroup::MetalResourceBindGroup( MetalContext *context, ResourceB
 void MetalResourceBindGroup::Update( const UpdateDesc &desc )
 {
     m_updateDesc = desc;
+
+    m_buffers.clear( );
+    m_textures.clear( );
+    m_samplers.clear( );
+
+    IResourceBindGroup::Update( desc );
 }
 
-const std::vector<UpdateDescItem<IBufferResource>> &MetalResourceBindGroup::Buffers( ) const
+const std::vector<MetalUpdateDescItem<MetalBufferResource>> &MetalResourceBindGroup::Buffers( ) const
 {
-    return m_updateDesc.Buffers;
+    return m_buffers;
 }
 
-const std::vector<UpdateDescItem<ITextureResource>> &MetalResourceBindGroup::Textures( ) const
+const std::vector<MetalUpdateDescItem<MetalTextureResource>> &MetalResourceBindGroup::Textures( ) const
 {
-    return m_updateDesc.Textures;
+    return m_textures;
 }
 
-const std::vector<UpdateDescItem<ISampler>> &MetalResourceBindGroup::Samplers( ) const
+const std::vector<MetalUpdateDescItem<MetalSampler>> &MetalResourceBindGroup::Samplers( ) const
 {
-    return m_updateDesc.Samplers;
+    return m_samplers;
 }
 
 void MetalResourceBindGroup::BindTexture( const std::string &name, ITextureResource *resource )
 {
+    uint32_t slot = m_rootSignature->FindBinding( name ).Slot;
+    m_textures.push_back( MetalUpdateDescItem<MetalTextureResource>{
+        .Name     = name,
+        .Resource = static_cast<MetalTextureResource *>( resource ),
+        .Slot     = slot,
+    } );
 }
+
 void MetalResourceBindGroup::BindBuffer( const std::string &name, IBufferResource *resource )
 {
+    uint32_t slot = m_rootSignature->FindBinding( name ).Slot;
+    m_buffers.push_back( MetalUpdateDescItem<MetalBufferResource>{
+        .Name     = name,
+        .Resource = static_cast<MetalBufferResource *>( resource ),
+        .Slot     = slot,
+    } );
 }
+
 void MetalResourceBindGroup::BindSampler( const std::string &name, ISampler *sampler )
 {
+    uint32_t slot = m_rootSignature->FindBinding( name ).Slot;
+    m_samplers.push_back( MetalUpdateDescItem<MetalSampler>{
+        .Name     = name,
+        .Resource = static_cast<MetalSampler *>( sampler ),
+        .Slot     = slot,
+    } );
 }

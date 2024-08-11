@@ -52,6 +52,11 @@ namespace DenOfIz
         std::vector<ShaderStage>    Stages;
         // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
         int ArraySize = 1;
+        // Metal workaround since it is a bit hard to migrate HLSL bindings to Metal.
+        // This is normally set by the compiler, If this field is not set then(because you manually built the ResourceBinding)
+        // This may not always be correct, this is okay to be set manually to fix such issues, using the ShaderCompiler
+        // to generate the locations and overwriting other fields
+        uint32_t LocationHint = 0;
     };
 
     struct StaticSamplerDesc

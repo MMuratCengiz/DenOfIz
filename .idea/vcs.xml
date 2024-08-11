@@ -2,6 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Engine/Graphics/_ThirdParty/DirectX-Headers" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Engine/Graphics/_ThirdParty/DirectXShaderCompiler" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Engine/Graphics/_ThirdParty/DirectXShaderCompiler/external/DirectX-Headers" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Engine/Graphics/_ThirdParty/DirectXShaderCompiler/external/SPIRV-Headers" vcs="Git" />

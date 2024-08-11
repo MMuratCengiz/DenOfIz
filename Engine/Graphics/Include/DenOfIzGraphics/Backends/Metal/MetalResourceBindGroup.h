@@ -27,6 +27,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    template <typename T>
+    struct MetalUpdateDescItem
+    {
+        std::string Name;
+        T          *Resource;
+        uint32_t    Slot;
+    };
+
     // For DirectX12 this is kind of a dummy class as resources are bound to heaps. At a given point we only use 2 heaps one for CBV/SRV/UAV and one for Sampler.
     class MetalResourceBindGroup : public IResourceBindGroup
     {
@@ -35,13 +43,17 @@ namespace DenOfIz
         MetalRootSignature *m_rootSignature;
         UpdateDesc          m_updateDesc;
 
+        std::vector<MetalUpdateDescItem<MetalBufferResource>>  m_buffers;
+        std::vector<MetalUpdateDescItem<MetalTextureResource>> m_textures;
+        std::vector<MetalUpdateDescItem<MetalSampler>>         m_samplers;
+
     public:
         MetalResourceBindGroup( MetalContext *context, ResourceBindGroupDesc desc );
         void Update( const UpdateDesc &desc ) override;
 
-        const std::vector<UpdateDescItem<IBufferResource>>  &Buffers( ) const;
-        const std::vector<UpdateDescItem<ITextureResource>> &Textures( ) const;
-        const std::vector<UpdateDescItem<ISampler>>         &Samplers( ) const;
+        const std::vector<MetalUpdateDescItem<MetalBufferResource>>  &Buffers( ) const;
+        const std::vector<MetalUpdateDescItem<MetalTextureResource>> &Textures( ) const;
+        const std::vector<MetalUpdateDescItem<MetalSampler>>         &Samplers( ) const;
 
     protected:
         void BindTexture( const std::string &name, ITextureResource *resource ) override;

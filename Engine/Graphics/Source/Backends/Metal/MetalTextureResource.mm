@@ -123,3 +123,8 @@ MetalSampler::~MetalSampler( )
 {
     [m_sampler release];
 }
+
+const id<MTLSamplerState> &MetalSampler::Instance( ) const
+{
+    return m_sampler;
+}

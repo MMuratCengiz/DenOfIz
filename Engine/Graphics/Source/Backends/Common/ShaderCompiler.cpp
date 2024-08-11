@@ -484,59 +484,8 @@ IDxcBlob *const ShaderCompiler::DxilToMsl( const CompileOptions &compileOptions,
         IRErrorDestroy( irError );
     }
 
-    IRShaderStage stage;
-    switch ( compileOptions.Stage )
-    {
-    case ShaderStage::Vertex:
-        stage = IRShaderStageVertex;
-        break;
-    case ShaderStage::Pixel:
-        stage = IRShaderStageFragment;
-        break;
-    case ShaderStage::Hull:
-        stage = IRShaderStageHull;
-        break;
-    case ShaderStage::Domain:
-        stage = IRShaderStageDomain;
-        break;
-    case ShaderStage::Geometry:
-        stage = IRShaderStageGeometry;
-        break;
-    case ShaderStage::Compute:
-        stage = IRShaderStageCompute;
-        break;
-    case ShaderStage::AllGraphics:
-    case ShaderStage::All:
-    case ShaderStage::Task:
-        // TODO
-        LOG( WARNING ) << "Unsupported metal stage `All/AllGraphics/Task`";
-        stage = IRShaderStageInvalid;
-        break;
-    case ShaderStage::Raygen:
-        stage = IRShaderStageRayGeneration;
-        break;
-    case ShaderStage::AnyHit:
-        stage = IRShaderStageAnyHit;
-        break;
-    case ShaderStage::ClosestHit:
-        stage = IRShaderStageClosestHit;
-        break;
-    case ShaderStage::Miss:
-        stage = IRShaderStageMiss;
-        break;
-    case ShaderStage::Intersection:
-        stage = IRShaderStageIntersection;
-        break;
-    case ShaderStage::Callable:
-        stage = IRShaderStageCallable;
-        break;
-    case ShaderStage::Mesh:
-        stage = IRShaderStageMesh;
-        break;
-    }
-
     IRMetalLibBinary *metalLib = IRMetalLibBinaryCreate( );
-    IRObjectGetMetalLibBinary( outIr, stage, metalLib );
+    IRObjectGetMetalLibBinary( outIr, ConvertIrShaderStage( compileOptions.Stage ), metalLib );
     size_t   metalLibSize     = IRMetalLibGetBytecodeSize( metalLib );
     uint8_t *metalLibByteCode = new uint8_t[ metalLibSize ];
     IRMetalLibGetBytecode( metalLib, metalLibByteCode );
@@ -549,3 +498,44 @@ IDxcBlob *const ShaderCompiler::DxilToMsl( const CompileOptions &compileOptions,
     return mslBlob;
 #endif
 }
+
+#ifdef BUILD_METAL
+IRShaderStage ShaderCompiler::ConvertIrShaderStage( const ShaderStage &stage )
+{
+    switch ( stage )
+    {
+    case ShaderStage::Vertex:
+        return IRShaderStageVertex;
+    case ShaderStage::Pixel:
+        return IRShaderStageFragment;
+    case ShaderStage::Hull:
+        return IRShaderStageHull;
+    case ShaderStage::Domain:
+        return IRShaderStageDomain;
+    case ShaderStage::Geometry:
+        return IRShaderStageGeometry;
+    case ShaderStage::Compute:
+        return IRShaderStageCompute;
+    case ShaderStage::AllGraphics:
+    case ShaderStage::All:
+    case ShaderStage::Task:
+        // TODO
+        LOG( WARNING ) << "Unsupported metal stage `All/AllGraphics/Task`";
+        return IRShaderStageInvalid;
+    case ShaderStage::Raygen:
+        return IRShaderStageRayGeneration;
+    case ShaderStage::AnyHit:
+        return IRShaderStageAnyHit;
+    case ShaderStage::ClosestHit:
+        return IRShaderStageClosestHit;
+    case ShaderStage::Miss:
+        return IRShaderStageMiss;
+    case ShaderStage::Intersection:
+        return IRShaderStageIntersection;
+    case ShaderStage::Callable:
+        return IRShaderStageCallable;
+    case ShaderStage::Mesh:
+        return IRShaderStageMesh;
+    }
+}
+#endif
