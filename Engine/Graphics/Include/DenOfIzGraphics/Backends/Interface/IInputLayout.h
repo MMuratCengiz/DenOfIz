@@ -42,7 +42,7 @@ namespace DenOfIz
         TextureCoordinate,
     };
 
-    Semantic SemanticFromString( const std::string &semantic )
+    static Semantic SemanticFromString( const std::string &semantic )
     {
         if ( semantic == "POSITION" )
         {

@@ -109,7 +109,7 @@ namespace DenOfIz
         }
     };
 
-    void ValidateTextureDesc( TextureDesc &desc )
+    static void ValidateTextureDesc( TextureDesc &desc )
     {
         if ( desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) && desc.MSAASampleCount != MSAASampleCount::_0 )
         {

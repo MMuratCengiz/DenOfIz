@@ -41,7 +41,7 @@ MetalInputLayout::MetalInputLayout( MetalContext *context, InputLayoutDesc desc 
             auto *attribute       = [m_vertexDescriptor.attributes objectAtIndexedSubscript:location];
             attribute.bufferIndex = bindingIndex;
             attribute.offset      = offset;
-            attribute.format      = MetalEnumConverter::ConvertFormatToVertexFormat( inputElement.Format, false );
+            attribute.format      = MetalEnumConverter::ConvertFormatToVertexFormat( inputElement.Format );
             offset += FormatNumBytes( inputElement.Format );
             location++;
         }

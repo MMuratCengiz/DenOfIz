@@ -48,26 +48,26 @@ void MetalPipeline::CreateGraphicsPipeline( )
     id<MTLFunction> vertexFunction   = nullptr;
     id<MTLFunction> fragmentFunction = nullptr;
 
-    for ( const CompiledShader &shader : m_desc.ShaderProgram->GetCompiledShaders( ) )
+    for ( const auto &shader : m_desc.ShaderProgram->GetCompiledShaders( ) )
     {
-        const char *rawSource = reinterpret_cast<const char *>( shader.Blob->GetBufferPointer( ) );
+        const char *rawSource = reinterpret_cast<const char *>( shader->Blob->GetBufferPointer( ) );
         // TODO validate:
-        std::string mslSource = std::string( rawSource, shader.Blob->GetBufferSize( ) );
+        std::string mslSource = std::string( rawSource, shader->Blob->GetBufferSize( ) );
 
         std::string entryPoint;
 
-        switch ( shader.Stage )
+        switch ( shader->Stage )
         {
         case ShaderStage::Vertex:
-            entryPoint     = shader.EntryPoint;
+            entryPoint     = shader->EntryPoint;
             vertexFunction = CreateShaderFunction( mslSource, entryPoint, &error );
             break;
         case ShaderStage::Pixel:
-            entryPoint       = shader.EntryPoint;
+            entryPoint       = shader->EntryPoint;
             fragmentFunction = CreateShaderFunction( mslSource, entryPoint, &error );
             break;
         default:
-            LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader.Stage );
+            LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage );
             break;
         }
 
@@ -115,20 +115,20 @@ void MetalPipeline::CreateComputePipeline( )
     NSError        *error           = nullptr;
     id<MTLFunction> computeFunction = nullptr;
 
-    for ( const CompiledShader &shader : m_desc.ShaderProgram->GetCompiledShaders( ) )
+    for ( const auto &shader : m_desc.ShaderProgram->GetCompiledShaders( ) )
     {
-        const char *rawSource = reinterpret_cast<const char *>( shader.Blob->GetBufferPointer( ) );
+        const char *rawSource = reinterpret_cast<const char *>( shader->Blob->GetBufferPointer( ) );
         // TODO validate:
-        std::string mslSource = std::string( rawSource, shader.Blob->GetBufferSize( ) );
+        std::string mslSource = std::string( rawSource, shader->Blob->GetBufferSize( ) );
         std::string entryPoint;
-        switch ( shader.Stage )
+        switch ( shader->Stage )
         {
         case ShaderStage::Compute:
-            entryPoint      = shader.EntryPoint;
+            entryPoint      = shader->EntryPoint;
             computeFunction = CreateShaderFunction( mslSource, entryPoint, &error );
             break;
         default:
-            LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader.Stage );
+            LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage );
             break;
         }
 

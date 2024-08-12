@@ -144,6 +144,7 @@ target_include_directories(DenOfIzGraphics
 target_link_libraries(DenOfIzGraphics
         PUBLIC
         DenOfIzCore
+        Microsoft::DirectXMath
         PRIVATE
         SDL2::SDL2
         SDL2::SDL2main
@@ -159,7 +160,6 @@ target_link_libraries(DenOfIzGraphics
         glslang::glslang-default-resource-limits
         glslang::SPIRV
         glslang::SPVRemapper
-        Microsoft::DirectXMath
 )
 
 if (WIN32)
@@ -206,15 +206,14 @@ if (APPLE)
     target_include_directories(DenOfIzGraphics
             PUBLIC
             _ThirdParty/DirectXShaderCompiler/include/dxc
-            _ThirdParty/DirectX-Headers/include
+            _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include
+            _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include/wsl/stubs
     )
 
     include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_metalirconverter.cmake)
 
     target_include_directories(DenOfIzGraphics
             PUBLIC
-            _ThirdParty/metal-cpp
-            _ThirdParty/metal-cpp-extensions
             ${metal_irconverter_INCLUDE_DIRS}
             ${metal_irconverter_runtime_INCLUDE_DIRS}
     )
@@ -226,6 +225,7 @@ if (APPLE)
             PRIVATE "-framework Metal"
             PRIVATE "-framework MetalKit"
             PRIVATE dxcompiler
+            PUBLIC  DirectX-Headers
     )
 
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_METAL)
@@ -239,7 +239,7 @@ if (WIN32 OR LINUX)
     target_link_libraries(DenOfIzGraphics PUBLIC
             volk::volk
             volk::volk_headers
-#            Vulkan::Vulkan
+            #            Vulkan::Vulkan
             GPUOpen::VulkanMemoryAllocator)
 endif ()
 

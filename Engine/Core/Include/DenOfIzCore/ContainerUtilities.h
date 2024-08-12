@@ -52,7 +52,7 @@ namespace DenOfIz
         }
 
         template <typename R>
-        static [[nodiscard]] R SafeGetMapValue( const std::unordered_map<std::string, R> &map, const std::string &key )
+        static R SafeGetMapValue( const std::unordered_map<std::string, R> &map, const std::string &key )
         {
             auto value = map.find( key );
             if ( value == map.end( ) )

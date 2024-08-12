@@ -22,6 +22,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Backends/Interface/IRootSignature.h"
 #include "DenOfIzGraphics/Backends/Interface/IShader.h"
 #include "ShaderCompiler.h"
+
+#if not defined( _WIN32 )
+#define interface struct
+#endif
+
 #include "directx/d3d12shader.h"
 
 namespace DenOfIz

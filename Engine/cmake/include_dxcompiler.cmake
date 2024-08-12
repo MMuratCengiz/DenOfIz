@@ -27,6 +27,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# DirectXShaderCompiler doesn't provide artifacts for MacOS yet, so we build it from source, there are a few tricks
+# to make it work for the sake of keeping all the information in one place all them are explained here:
+# 1. Use DirectX-Headers from the source code of DirectXShaderCompiler, ie. external/DirectX-Headers, latest DirectX-Headers has conflicts.
+# 2. Set the specific settings below
+# 3. Add `#define interface struct` before including d3d12shader.h (ShaderProgram.h)
+# 4. #define #define __EMULATE_UUID before including WinAdapter.h (IShader.h)
+# Next steps: Patiently wait for DirectXShaderCompiler to provide MacOS artifacts
 function(build_dxcompiler dxc_directory)
     set(HLSL_OPTIONAL_PROJS_IN_DEFAULT OFF)
     set(HLSL_ENABLE_ANALYZE OFF)
@@ -46,7 +53,7 @@ function(build_dxcompiler dxc_directory)
     set(LLVM_APPEND_VC_REV OFF)
     set(LLVM_ENABLE_RTTI ON)
     set(LLVM_ENABLE_EH ON)
-#    set(LLVM_INCLUDE_TOOLS OFF)
+    #    set(LLVM_INCLUDE_TOOLS OFF)
     set(LLVM_BUILD_TOOLS OFF)
     set(LLVM_INCLUDE_UTILS OFF)
     set(CLANG_CL OFF)
@@ -63,5 +70,6 @@ function(build_dxcompiler dxc_directory)
     set(BUILD_TESTING OFF)
 
     add_subdirectory(${dxc_directory} EXCLUDE_FROM_ALL)
+    add_subdirectory(${dxc_directory}/external/DirectX-Headers)
     set_target_properties(dxcompiler PROPERTIES EXCLUDE_FROM_ALL FALSE)
 endfunction()

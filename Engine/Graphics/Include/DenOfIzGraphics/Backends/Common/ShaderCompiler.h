@@ -1,16 +1,17 @@
 #pragma once
 
-#include <DenOfIzCore/Common.h>
-#include <DenOfIzGraphics/Backends/Interface/IShader.h>
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
 
 #if defined( __APPLE__ )
-#include <metal_irconverter/metal_irconverter.h>
-#include <simd/simd.h>
 #include "Metal/Metal.h"
 #include "MetalKit/MetalKit.h"
+#include <metal_irconverter/metal_irconverter.h>
+#include <simd/simd.h>
 #endif
+
+#include <DenOfIzCore/Common.h>
+#include <DenOfIzGraphics/Backends/Interface/IShader.h>
 
 namespace DenOfIz
 {

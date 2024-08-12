@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "MetalContext.h"
 #include <DenOfIzCore/ContainerUtilities.h>
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
 #include <unordered_set>
-#include "MetalContext.h"
 
 namespace DenOfIz
 {

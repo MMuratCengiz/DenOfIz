@@ -401,7 +401,7 @@ namespace DenOfIz
         _64,
     };
 
-    int MSAASampleCountToNumSamples( const MSAASampleCount &sampleCount )
+    static int MSAASampleCountToNumSamples( const MSAASampleCount &sampleCount )
     {
         switch ( sampleCount )
         {
