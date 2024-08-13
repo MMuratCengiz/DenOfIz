@@ -83,20 +83,17 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
     isExternalResource = true;
 }
 
-void MetalTextureResource::UpdateTexture( id<MTLTexture> texture )
+void MetalTextureResource::UpdateTexture( const TextureDesc &desc, id<MTLTexture> texture )
 {
     m_texture = texture;
+    m_desc    = desc;
 }
 
 MetalTextureResource::~MetalTextureResource( )
 {
-    if ( !isExternalResource )
-    {
-        [m_texture release];
-    }
 }
 
-MetalSampler::MetalSampler( MetalContext *context, const SamplerDesc &desc, std::string name )
+MetalSampler::MetalSampler( MetalContext *context, const SamplerDesc &desc, std::string name ) : m_context( context ), m_desc( desc )
 {
     m_name                            = name;
     MTLSamplerDescriptor *samplerDesc = [[MTLSamplerDescriptor alloc] init];
@@ -121,7 +118,6 @@ MetalSampler::MetalSampler( MetalContext *context, const SamplerDesc &desc, std:
 
 MetalSampler::~MetalSampler( )
 {
-    [m_sampler release];
 }
 
 const id<MTLSamplerState> &MetalSampler::Instance( ) const

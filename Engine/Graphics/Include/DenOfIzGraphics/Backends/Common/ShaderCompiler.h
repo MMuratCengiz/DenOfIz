@@ -62,4 +62,55 @@ namespace DenOfIz
 
     };
 
+    struct MetalDxcBlob_Impl : IDxcBlob
+    {
+        uint16_t m_refCount = 0;
+        uint8_t *m_data;
+        size_t   m_size;
+#ifdef BUILD_METAL
+        // This is not a very nice solution, might need to revisit this later
+        IRObject *IrObject = nullptr;
+#endif
+
+        MetalDxcBlob_Impl( uint8_t *data, size_t size ) : m_data( data ), m_size( size )
+        {
+            m_refCount = 1;
+        }
+
+        HRESULT STDMETHODCALLTYPE QueryInterface( REFIID riid, void **ppvObject ) override
+        {
+            return E_NOINTERFACE;
+        }
+
+        ULONG STDMETHODCALLTYPE AddRef( ) override
+        {
+            return ++m_refCount;
+        }
+
+        ULONG STDMETHODCALLTYPE Release( ) override
+        {
+            if ( --m_refCount == 0 )
+            {
+#ifdef BUILD_METAL
+                if ( IrObject )
+                {
+                    IRObjectDestroy( IrObject );
+                }
+#endif
+                delete[] m_data;
+                delete this;
+            }
+            return m_refCount;
+        }
+
+        LPVOID STDMETHODCALLTYPE GetBufferPointer( ) override
+        {
+            return m_data;
+        }
+
+        SIZE_T STDMETHODCALLTYPE GetBufferSize( ) override
+        {
+            return m_size;
+        }
+    };
 } // namespace DenOfIz

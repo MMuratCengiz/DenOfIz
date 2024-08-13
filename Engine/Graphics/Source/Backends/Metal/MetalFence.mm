@@ -27,7 +27,6 @@ MetalFence::MetalFence( MetalContext *context ) : m_context( context )
 
 MetalFence::~MetalFence( )
 {
-    dispatch_release( m_fence );
 }
 
 void MetalFence::Wait( )

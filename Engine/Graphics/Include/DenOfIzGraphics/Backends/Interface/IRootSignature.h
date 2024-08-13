@@ -33,13 +33,37 @@ namespace DenOfIz
         Compute
     };
 
-    // Static = 0th set, Dynamic = 1, PerDraw = 2
-    // Frequency is mapped 1 to 1 with DX12s RootSignature 'RegisterSpace' and Vulkan's 'Set'
-    enum class ResourceUpdateFrequency : uint32_t
+    struct ResourceBindingSlot
     {
-        Static  = 0,
-        Dynamic = 1,
-        PerDraw = 2
+        uint32_t                    Binding  = 0;
+        uint32_t                    Register = 0;
+        DescriptorBufferBindingType Type;
+
+        static ResourceBindingSlot Cbv( uint32_t binding = 0, uint32_t reg = 0 )
+        {
+            return ResourceBindingSlot{ binding, reg, DescriptorBufferBindingType::ConstantBuffer };
+        }
+
+        static ResourceBindingSlot Uav( uint32_t binding = 0, uint32_t reg = 0 )
+        {
+            return ResourceBindingSlot{ binding, reg, DescriptorBufferBindingType::UnorderedAccess };
+        }
+
+        static ResourceBindingSlot Srv( uint32_t binding = 0, uint32_t reg = 0 )
+        {
+            return ResourceBindingSlot{ binding, reg, DescriptorBufferBindingType::ShaderResource };
+        }
+
+        static ResourceBindingSlot Sampler( uint32_t binding = 0, uint32_t reg = 0 )
+        {
+            return ResourceBindingSlot{ binding, reg, DescriptorBufferBindingType::Sampler };
+        }
+
+        // To simplify having a really odd looking vector of ResourceBindingSlots
+        uint32_t Key( ) const
+        {
+            return static_cast<uint32_t>( Type ) * 1000 + Register * 100 + Binding;
+        }
     };
 
     struct ResourceBindingDesc
@@ -65,14 +89,6 @@ namespace DenOfIz
         ResourceBindingDesc Binding;
     };
 
-    struct RootSignatureDesc
-    {
-        RootSignatureType Type;
-        // The order of the bindings must match the order of the shader inputs!!! TODO might need to be fixed but this is normal for DX12
-        std::vector<ResourceBindingDesc> ResourceBindings;
-        std::vector<StaticSamplerDesc>   StaticSamplers;
-    };
-
     struct RootConstantResourceBinding
     {
         std::string              Name;
@@ -82,9 +98,44 @@ namespace DenOfIz
         std::vector<ShaderStage> Stages;
     };
 
+    struct RootSignatureDesc
+    {
+        RootSignatureType Type;
+        // The order of the bindings must match the order of the shader inputs!!! TODO might need to be fixed but this is normal for DX12
+        std::vector<ResourceBindingDesc>         ResourceBindings;
+        std::vector<StaticSamplerDesc>           StaticSamplers;
+        std::vector<RootConstantResourceBinding> RootConstants;
+    };
+
     class IRootSignature : public NonCopyable
     {
+    protected:
+        std::unordered_map<int, ResourceBindingDesc> m_resourceBindings;
+
     public:
+        IRootSignature( const RootSignatureDesc &desc )
+        {
+            for ( const auto &binding : desc.ResourceBindings )
+            {
+                ResourceBindingSlot slot{
+                    .Register = binding.Binding,
+                    .Binding  = binding.RegisterSpace,
+                    .Type     = binding.BindingType,
+                };
+                m_resourceBindings[ slot.Key( ) ] = binding;
+            }
+        };
+
+        const ResourceBindingDesc &FindBinding( const ResourceBindingSlot &slot )
+        {
+            auto it = m_resourceBindings.find( slot.Key( ) );
+            if ( it == m_resourceBindings.end( ) )
+            {
+                LOG( ERROR ) << "Unable to find slot with type[" << static_cast<int>( slot.Type ) << "],binding[" << slot.Binding << "],register[" << slot.Register << "].";
+            }
+            return it->second;
+        }
+
         virtual ~IRootSignature( ) = default;
     };
 

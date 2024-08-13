@@ -232,6 +232,7 @@ if (APPLE)
     target_compile_options(DenOfIzGraphics PRIVATE
             $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
             $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
+    set_property (TARGET DenOfIzGraphics APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
 endif ()
 
 if (WIN32 OR LINUX)

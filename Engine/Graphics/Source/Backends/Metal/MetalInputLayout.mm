@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Metal/MetalInputLayout.h>
 
 #include <utility>
+#include <metal_irconverter_runtime/metal_irconverter_runtime.h>
 
 using namespace DenOfIz;
 
@@ -28,9 +29,9 @@ MetalInputLayout::MetalInputLayout( MetalContext *context, InputLayoutDesc desc 
     m_vertexDescriptor = [[MTLVertexDescriptor alloc] init];
 
     int      bindingIndex = 0;
-    uint32_t location     = 0;
+    uint32_t location     = kIRStageInAttributeStartIndex;
 
-    for ( const InputGroupDesc &inputGroup : desc.InputGroups )
+    for ( const InputGroupDesc &inputGroup : m_desc.InputGroups )
     {
         auto *layout        = [m_vertexDescriptor.layouts objectAtIndexedSubscript:bindingIndex];
         layout.stepFunction = inputGroup.StepRate == StepRate::PerInstance ? MTLVertexStepFunctionPerInstance : MTLVertexStepFunctionPerVertex;
@@ -52,5 +53,4 @@ MetalInputLayout::MetalInputLayout( MetalContext *context, InputLayoutDesc desc 
 
 MetalInputLayout::~MetalInputLayout( )
 {
-    [m_vertexDescriptor release];
 }

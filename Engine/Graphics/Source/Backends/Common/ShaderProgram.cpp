@@ -76,7 +76,7 @@ Format MaskToFormat( uint32_t mask )
     }
 }
 
-ResourceDescriptor SetRootSignatureType( D3D_SHADER_INPUT_TYPE type )
+ResourceDescriptor ReflectTypeToRootSignatureType( D3D_SHADER_INPUT_TYPE type )
 {
     switch ( type )
     {
@@ -102,6 +102,38 @@ ResourceDescriptor SetRootSignatureType( D3D_SHADER_INPUT_TYPE type )
     case D3D_SIT_UAV_FEEDBACKTEXTURE:
         break;
     }
+    LOG( ERROR ) << "Unknown resource type";
+    return ResourceDescriptor::Texture;
+}
+
+DescriptorBufferBindingType ReflectTypeToBufferBindingType( D3D_SHADER_INPUT_TYPE type )
+{
+    switch ( type )
+    {
+    case D3D_SIT_CBUFFER:
+        return DescriptorBufferBindingType::ConstantBuffer;
+    case D3D_SIT_TEXTURE:
+        return DescriptorBufferBindingType::ShaderResource;
+    case D3D_SIT_SAMPLER:
+        return DescriptorBufferBindingType::Sampler;
+    case D3D_SIT_TBUFFER:
+        return DescriptorBufferBindingType::ShaderResource;
+    case D3D_SIT_BYTEADDRESS:
+    case D3D_SIT_STRUCTURED:
+        return DescriptorBufferBindingType::ShaderResource;
+    case D3D_SIT_UAV_APPEND_STRUCTURED:
+    case D3D_SIT_UAV_CONSUME_STRUCTURED:
+    case D3D_SIT_UAV_RWSTRUCTURED:
+    case D3D_SIT_UAV_RWTYPED:
+    case D3D_SIT_UAV_RWBYTEADDRESS:
+    case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
+    case D3D_SIT_RTACCELERATIONSTRUCTURE:
+        return DescriptorBufferBindingType::UnorderedAccess;
+    case D3D_SIT_UAV_FEEDBACKTEXTURE:
+        break;
+    }
+    LOG( ERROR ) << "Unknown resource type";
+    return DescriptorBufferBindingType::ConstantBuffer;
 }
 
 ShaderReflectDesc ShaderProgram::Reflect( ) const
@@ -113,6 +145,11 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
 
     for ( auto &shader : m_compiledShaders )
     {
+#ifdef BUILD_METAL
+        IRObject           *ir           = dynamic_cast<MetalDxcBlob_Impl *>( shader->Blob )->IrObject;
+        IRShaderReflection *irReflection = IRShaderReflectionCreate( );
+        IRObjectGetReflection( ir, ShaderCompiler::ConvertIrShaderStage( shader->Stage ), irReflection );
+#endif
         IDxcBlob       *reflectionBlob = shader->Reflection;
         const DxcBuffer reflectionBuffer{
             .Ptr      = reflectionBlob->GetBufferPointer( ),
@@ -134,10 +171,6 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
         ProcessRootSignature( shaderReflection, rootSignature, shaderDesc );
 
 #ifdef BUILD_METAL
-        IRObject           *outIr;
-        IRShaderReflection *irReflection = IRShaderReflectionCreate( );
-        IRObjectGetReflection( outIr, ShaderCompiler::ConvertIrShaderStage( shader->Stage ), irReflection );
-
         std::vector<IRResourceLocation> resources( IRShaderReflectionGetResourceCount( irReflection ) );
         IRShaderReflectionGetResourceLocations( irReflection, resources.data( ) );
 #endif
@@ -151,18 +184,48 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
             resourceBindingDesc.Name                 = shaderInputBindDesc.Name;
             resourceBindingDesc.Binding              = shaderInputBindDesc.BindPoint;
             resourceBindingDesc.RegisterSpace        = shaderInputBindDesc.Space;
-            resourceBindingDesc.BindingType          = DescriptorBufferBindingType::ConstantBuffer;
             resourceBindingDesc.ArraySize            = shaderInputBindDesc.BindCount;
-            resourceBindingDesc.Descriptor           = SetRootSignatureType( shaderInputBindDesc.Type );
-
+            resourceBindingDesc.BindingType          = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
+            resourceBindingDesc.Descriptor           = ReflectTypeToRootSignatureType( shaderInputBindDesc.Type );
+            // Todo !IMPROVEMENT! We should keep track of resources created and provide multiple stages if required.
+            resourceBindingDesc.Stages.push_back( shader->Stage );
 #ifdef BUILD_METAL
+            int locationHint = 0;
             for ( const IRResourceLocation &resource : resources )
             {
-                if ( resource.resourceName == shaderInputBindDesc.Name )
+                bool match = resource.space == shaderInputBindDesc.Space && resource.slot == shaderInputBindDesc.BindPoint;
+                if ( resource.resourceName != nullptr )
                 {
-                    resourceBindingDesc.LocationHint = resource.slot;
+                    match = match || ( strcmp( resource.resourceName, shaderInputBindDesc.Name ) == 0 );
+                }
+
+                switch ( resource.resourceType )
+                {
+                case IRResourceTypeCBV:
+                    match = match && resourceBindingDesc.BindingType == DescriptorBufferBindingType::ConstantBuffer;
+                    break;
+                case IRResourceTypeSRV:
+                    match = match && resourceBindingDesc.BindingType == DescriptorBufferBindingType::ShaderResource;
+                    break;
+                case IRResourceTypeUAV:
+                    match = match && resourceBindingDesc.BindingType == DescriptorBufferBindingType::UnorderedAccess;
+                    break;
+                case IRResourceTypeSampler:
+                    match = match && resourceBindingDesc.BindingType == DescriptorBufferBindingType::Sampler;
+                    break;
+                case IRResourceTypeTable:
+                case IRResourceTypeConstant:
+                case IRResourceTypeInvalid:
+                    LOG( ERROR ) << "Unsupported type produced by reflection.";
                     break;
                 }
+
+                if ( match )
+                {
+                    resourceBindingDesc.LocationHint = locationHint;
+                    break;
+                }
+                locationHint++;
             }
 #endif
         }

@@ -18,6 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
 
+#define IR_PRIVATE_IMPLEMENTATION
+#include <metal_irconverter_runtime/metal_irconverter_runtime.h>
+
 using namespace DenOfIz;
 
 MetalLogicalDevice::MetalLogicalDevice( )
@@ -27,8 +30,6 @@ MetalLogicalDevice::MetalLogicalDevice( )
 
 MetalLogicalDevice::~MetalLogicalDevice( )
 {
-    [m_context->CommandQueue release];
-    [m_context->Device release];
 }
 
 void MetalLogicalDevice::CreateDevice( )
@@ -79,6 +80,11 @@ void MetalLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     }
 
     m_context->CommandQueue = [m_context->Device newCommandQueue];
+    m_selectedDeviceInfo    = device;
+
+    m_selectedDeviceInfo.Constants.ConstantBufferAlignment   = 256;
+    m_selectedDeviceInfo.Constants.BufferTextureAlignment    = 16;
+    m_selectedDeviceInfo.Constants.BufferTextureRowAlignment = 1;
 }
 
 std::unique_ptr<ICommandListPool> MetalLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &poolDesc )

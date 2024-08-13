@@ -54,7 +54,7 @@ namespace DenOfIz
         void CreateComputePipeline( );
         void CreateRayTracingPipeline( );
 
-        id<MTLFunction> CreateShaderFunction( const std::string &shaderSource, const std::string &entryPoint, NSError **error );
+        id<MTLFunction> CreateShaderFunction( IDxcBlob *&blob, const std::string &entryPoint );
     };
 
 } // namespace DenOfIz

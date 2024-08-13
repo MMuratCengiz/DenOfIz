@@ -51,32 +51,29 @@ const std::vector<MetalUpdateDescItem<MetalSampler>> &MetalResourceBindGroup::Sa
     return m_samplers;
 }
 
-void MetalResourceBindGroup::BindTexture( const std::string &name, ITextureResource *resource )
+void MetalResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource )
 {
-    uint32_t slot = m_rootSignature->FindBinding( name ).Slot;
+    uint32_t location = m_rootSignature->FindBinding( slot ).Location;
     m_textures.push_back( MetalUpdateDescItem<MetalTextureResource>{
-        .Name     = name,
         .Resource = static_cast<MetalTextureResource *>( resource ),
-        .Slot     = slot,
+        .Location = location,
     } );
 }
 
-void MetalResourceBindGroup::BindBuffer( const std::string &name, IBufferResource *resource )
+void MetalResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )
 {
-    uint32_t slot = m_rootSignature->FindBinding( name ).Slot;
+    uint32_t location = m_rootSignature->FindBinding( slot ).Location;
     m_buffers.push_back( MetalUpdateDescItem<MetalBufferResource>{
-        .Name     = name,
         .Resource = static_cast<MetalBufferResource *>( resource ),
-        .Slot     = slot,
+        .Location = location,
     } );
 }
 
-void MetalResourceBindGroup::BindSampler( const std::string &name, ISampler *sampler )
+void MetalResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )
 {
-    uint32_t slot = m_rootSignature->FindBinding( name ).Slot;
+    uint32_t location = m_rootSignature->FindBinding( slot ).Location;
     m_samplers.push_back( MetalUpdateDescItem<MetalSampler>{
-        .Name     = name,
         .Resource = static_cast<MetalSampler *>( sampler ),
-        .Slot     = slot,
+        .Location = location,
     } );
 }

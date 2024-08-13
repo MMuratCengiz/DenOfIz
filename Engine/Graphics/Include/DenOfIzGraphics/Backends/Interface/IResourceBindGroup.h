@@ -37,8 +37,8 @@ namespace DenOfIz
     template <typename T>
     struct UpdateDescItem
     {
-        std::string Name;
-        T          *Resource;
+        ResourceBindingSlot Slot;
+        T                  *Resource;
     };
 
     struct UpdateDesc
@@ -47,21 +47,21 @@ namespace DenOfIz
         std::vector<UpdateDescItem<ITextureResource>> Textures;
         std::vector<UpdateDescItem<ISampler>>         Samplers;
 
-        UpdateDesc &Buffer( std::string name, IBufferResource *resource )
+        UpdateDesc &Buffer( const ResourceBindingSlot &slot, IBufferResource *resource )
         {
-            Buffers.push_back( { name, resource } );
+            Buffers.push_back( { slot, resource } );
             return *this;
         }
 
-        UpdateDesc &Texture( std::string name, ITextureResource *resource )
+        UpdateDesc &Texture( const ResourceBindingSlot &slot, ITextureResource *resource )
         {
-            Textures.push_back( { name, resource } );
+            Textures.push_back( { slot, resource } );
             return *this;
         }
 
-        UpdateDesc &Sampler( std::string name, ISampler *sampler )
+        UpdateDesc &Sampler( const ResourceBindingSlot &slot, ISampler *sampler )
         {
-            Samplers.push_back( { name, sampler } );
+            Samplers.push_back( { slot, sampler } );
             return *this;
         }
     };
@@ -83,30 +83,30 @@ namespace DenOfIz
         }
 
         virtual ~IResourceBindGroup( ) = default;
-        virtual void Update( const UpdateDesc& desc )
+        virtual void Update( const UpdateDesc &desc )
         {
-            DZ_ASSERTM(desc.Buffers.size()  == m_desc.NumBuffers,  "Number of buffers being updated do not match.");
-            DZ_ASSERTM(desc.Textures.size() == m_desc.NumTextures, "Number of textures being updated do not match.");
-            DZ_ASSERTM(desc.Samplers.size() == m_desc.NumSamplers, "Number of sampler being updated do not match.");
+            DZ_ASSERTM( desc.Buffers.size( ) == m_desc.NumBuffers, "Number of buffers being updated do not match." );
+            DZ_ASSERTM( desc.Textures.size( ) == m_desc.NumTextures, "Number of textures being updated do not match." );
+            DZ_ASSERTM( desc.Samplers.size( ) == m_desc.NumSamplers, "Number of sampler being updated do not match." );
 
             for ( auto item : desc.Buffers )
             {
-                BindBuffer( item.Name, item.Resource );
+                BindBuffer( item.Slot, item.Resource );
             }
             for ( auto item : desc.Textures )
             {
-                BindTexture( item.Name, item.Resource );
+                BindTexture( item.Slot, item.Resource );
             }
             for ( auto item : desc.Samplers )
             {
-                BindSampler( item.Name, item.Resource );
+                BindSampler( item.Slot, item.Resource );
             }
         }
 
     protected:
-        virtual void BindTexture( const std::string &name, ITextureResource *resource ) = 0;
-        virtual void BindBuffer( const std::string &name, IBufferResource *resource )   = 0;
-        virtual void BindSampler( const std::string &name, ISampler *sampler )          = 0;
+        virtual void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) = 0;
+        virtual void BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )   = 0;
+        virtual void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )          = 0;
     };
 
 } // namespace DenOfIz

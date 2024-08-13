@@ -46,8 +46,8 @@ namespace DenOfIz
                                  .Name = "sampler1", .Binding = 0, .RegisterSpace = 1, .Descriptor = ResourceDescriptor::Sampler, .Stages = { ShaderStage::Pixel } },
                          } };
 
-        ShaderReflectDesc reflection = m_program->Reflect();
-        // Testing... :
+        ShaderReflectDesc reflection = m_program->Reflect( );
+        // Testing... :D
         rootSigDesc = reflection.RootSignature;
 
         m_rootSignature = m_logicalDevice->CreateRootSignature( rootSigDesc );
@@ -116,13 +116,17 @@ namespace DenOfIz
 
         { // Update the bind groups, TODO, can the model bindings be merged somehow?
             UpdateDesc updateDesc{ };
-            updateDesc.Buffer( "model", m_sphereModelMatrixBuffer.get( ) ).Texture( "texture1", m_sphereTexture.get( ) ).Sampler( "sampler1", m_sphereSampler.get( ) );
+            updateDesc.Buffer( ResourceBindingSlot::Cbv( 0, 1 ), m_sphereModelMatrixBuffer.get( ) )
+                .Texture( ResourceBindingSlot::Srv( 0, 1 ), m_sphereTexture.get( ) )
+                .Sampler( ResourceBindingSlot::Sampler( 0, 1 ), m_sphereSampler.get( ) );
             m_sphereModelBindGroup->Update( updateDesc );
             updateDesc = { };
-            updateDesc.Buffer( "model", m_planeModelMatrixBuffer.get( ) ).Texture( "texture1", m_planeTexture.get( ) ).Sampler( "sampler1", m_planeSampler.get( ) );
+            updateDesc.Buffer( ResourceBindingSlot::Cbv( 0, 1 ), m_planeModelMatrixBuffer.get( ) )
+                .Texture( ResourceBindingSlot::Srv( 0, 1 ), m_planeTexture.get( ) )
+                .Sampler( ResourceBindingSlot::Sampler( 0, 1 ), m_planeSampler.get( ) );
             m_planeModelBindGroup->Update( updateDesc );
             updateDesc = { };
-            updateDesc.Buffer( "viewProjection", m_viewProjectionMatrixBuffer.get( ) ).Buffer( "time", m_timePassedBuffer.get( ) );
+            updateDesc.Buffer( ResourceBindingSlot::Cbv( ), m_viewProjectionMatrixBuffer.get( ) ).Buffer( ResourceBindingSlot::Cbv( 1 ), m_timePassedBuffer.get( ) );
             m_perCameraBindGroup->Update( updateDesc );
         }
 

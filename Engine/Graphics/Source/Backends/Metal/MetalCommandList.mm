@@ -87,6 +87,10 @@ void MetalCommandList::EndRendering( )
 
 void MetalCommandList::Execute( const ExecuteDesc &executeInfo )
 {
+    if ( m_desc.QueueType == QueueType::Copy )
+    {
+        [m_blitEncoder endEncoding];
+    }
 
     [m_commandBuffer commit];
 }
@@ -168,11 +172,11 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     {
         if ( m_desc.QueueType == QueueType::Compute )
         {
-            [m_computeEncoder setBuffer:buffer.Resource->Instance( ) offset:0 atIndex:buffer.Slot];
+            [m_computeEncoder setBuffer:buffer.Resource->Instance( ) offset:0 atIndex:buffer.Location];
         }
         else
         {
-            [m_renderEncoder setVertexBuffer:buffer.Resource->Instance( ) offset:0 atIndex:buffer.Slot];
+            [m_renderEncoder setVertexBuffer:buffer.Resource->Instance( ) offset:0 atIndex:buffer.Location];
         }
     }
 
@@ -180,11 +184,11 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     {
         if ( m_desc.QueueType == QueueType::Compute )
         {
-            [m_computeEncoder setTexture:texture.Resource->Instance( ) atIndex:texture.Slot];
+            [m_computeEncoder setTexture:texture.Resource->Instance( ) atIndex:texture.Location];
         }
         else
         {
-            [m_renderEncoder setFragmentTexture:texture.Resource->Instance( ) atIndex:texture.Slot];
+            [m_renderEncoder setFragmentTexture:texture.Resource->Instance( ) atIndex:texture.Location];
         }
     }
 
@@ -192,11 +196,11 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     {
         if ( m_desc.QueueType == QueueType::Compute )
         {
-            [m_computeEncoder setSamplerState:sampler.Resource->Instance( ) atIndex:sampler.Slot];
+            [m_computeEncoder setSamplerState:sampler.Resource->Instance( ) atIndex:sampler.Location];
         }
         else
         {
-            [m_renderEncoder setFragmentSamplerState:sampler.Resource->Instance( ) atIndex:sampler.Slot];
+            [m_renderEncoder setFragmentSamplerState:sampler.Resource->Instance( ) atIndex:sampler.Location];
         }
     }
 }
@@ -237,20 +241,17 @@ void MetalCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferR
 {
     MetalBufferResource *srcBuffer = dynamic_cast<MetalBufferResource *>( copyBufferRegionInfo.SrcBuffer );
     MetalBufferResource *dstBuffer = dynamic_cast<MetalBufferResource *>( copyBufferRegionInfo.DstBuffer );
-    m_blitEncoder                  = [m_commandBuffer blitCommandEncoder];
     [m_blitEncoder copyFromBuffer:srcBuffer->Instance( )
                      sourceOffset:copyBufferRegionInfo.SrcOffset
                          toBuffer:dstBuffer->Instance( )
                 destinationOffset:copyBufferRegionInfo.DstOffset
                              size:copyBufferRegionInfo.NumBytes];
-    [m_blitEncoder endEncoding];
 }
 
 void MetalCommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionInfo )
 {
     MetalTextureResource *srcTexture = dynamic_cast<MetalTextureResource *>( copyTextureRegionInfo.SrcTexture );
     MetalTextureResource *dstTexture = dynamic_cast<MetalTextureResource *>( copyTextureRegionInfo.DstTexture );
-    m_blitEncoder                    = [m_commandBuffer blitCommandEncoder];
     [m_blitEncoder copyFromTexture:srcTexture->Instance( )
                        sourceSlice:copyTextureRegionInfo.SrcArrayLayer
                        sourceLevel:copyTextureRegionInfo.SrcMipLevel
@@ -260,7 +261,6 @@ void MetalCommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyTextu
                   destinationSlice:copyTextureRegionInfo.DstArrayLayer
                   destinationLevel:copyTextureRegionInfo.DstMipLevel
                  destinationOrigin:MTLOriginMake( copyTextureRegionInfo.DstX, copyTextureRegionInfo.DstY, copyTextureRegionInfo.DstZ )];
-    [m_blitEncoder endEncoding];
 }
 
 void MetalCommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTexture )
@@ -268,7 +268,6 @@ void MetalCommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copyB
     // TODO Calculate RowPitch and NumRows automatically if possible
     MetalBufferResource  *srcBuffer  = dynamic_cast<MetalBufferResource *>( copyBufferToTexture.SrcBuffer );
     MetalTextureResource *dstTexture = dynamic_cast<MetalTextureResource *>( copyBufferToTexture.DstTexture );
-    m_blitEncoder                    = [m_commandBuffer blitCommandEncoder];
     [m_blitEncoder copyFromBuffer:srcBuffer->Instance( )
                      sourceOffset:copyBufferToTexture.SrcOffset
                 sourceBytesPerRow:copyBufferToTexture.RowPitch
@@ -278,7 +277,6 @@ void MetalCommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copyB
                  destinationSlice:copyBufferToTexture.ArrayLayer
                  destinationLevel:copyBufferToTexture.MipLevel
                 destinationOrigin:MTLOriginMake( copyBufferToTexture.DstX, copyBufferToTexture.DstY, copyBufferToTexture.DstZ )];
-    [m_blitEncoder endEncoding];
 }
 
 void MetalCommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBuffer )
@@ -286,7 +284,6 @@ void MetalCommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyT
     // TODO Calculate RowPitch and NumRows automatically if possible
     MetalTextureResource *srcTexture = dynamic_cast<MetalTextureResource *>( copyTextureToBuffer.SrcTexture );
     MetalBufferResource  *dstBuffer  = dynamic_cast<MetalBufferResource *>( copyTextureToBuffer.DstBuffer );
-    m_blitEncoder                    = [m_commandBuffer blitCommandEncoder];
     [m_blitEncoder copyFromTexture:srcTexture->Instance( )
                        sourceSlice:copyTextureToBuffer.ArrayLayer
                        sourceLevel:copyTextureToBuffer.MipLevel
@@ -296,5 +293,4 @@ void MetalCommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyT
                  destinationOffset:copyTextureToBuffer.DstOffset
             destinationBytesPerRow:copyTextureToBuffer.RowPitch
           destinationBytesPerImage:copyTextureToBuffer.RowPitch * copyTextureToBuffer.NumRows];
-    [m_blitEncoder endEncoding];
 }

@@ -55,7 +55,6 @@ MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDes
 
 MetalBufferResource::~MetalBufferResource( )
 {
-    [m_buffer release];
 }
 
 void *MetalBufferResource::MapMemory( )

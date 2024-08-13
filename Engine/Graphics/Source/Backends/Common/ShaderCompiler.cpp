@@ -24,6 +24,10 @@ ShaderCompiler::ShaderCompiler( )
     {
         LOG( FATAL ) << "Failed to initialize DXC Utils";
     }
+
+#ifdef __APPLE__
+    m_irCompiler = IRCompilerCreate( );
+#endif
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -209,47 +213,6 @@ std::vector<uint32_t> ShaderCompiler::CompileGLSL( const std::string &filename, 
     return std::move( spirv );
 }
 
-struct MetalDxcBlob_Impl : IDxcBlob
-{
-    uint16_t m_refCount = 0;
-    uint8_t *m_data;
-    size_t   m_size;
-
-    MetalDxcBlob_Impl( uint8_t *data, size_t size ) : m_data( data ), m_size( size )
-    {
-    }
-
-    HRESULT STDMETHODCALLTYPE QueryInterface( REFIID riid, void **ppvObject ) override
-    {
-        return E_NOINTERFACE;
-    }
-
-    ULONG STDMETHODCALLTYPE AddRef( ) override
-    {
-        return ++m_refCount;
-    }
-
-    ULONG STDMETHODCALLTYPE Release( ) override
-    {
-        if ( --m_refCount == 0 )
-        {
-            delete[] m_data;
-            delete this;
-        }
-        return m_refCount;
-    }
-
-    LPVOID STDMETHODCALLTYPE GetBufferPointer( ) override
-    {
-        return m_data;
-    }
-
-    SIZE_T STDMETHODCALLTYPE GetBufferSize( ) override
-    {
-        return m_size;
-    }
-};
-
 std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const std::string &filename, const CompileOptions &compileOptions ) const
 {
     // Attribute to reference: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
@@ -414,6 +377,8 @@ IDxcBlob *const ShaderCompiler::DxilToMsl( const CompileOptions &compileOptions,
 {
 #ifdef BUILD_METAL
     IRCompilerSetEntryPointName( this->m_irCompiler, compileOptions.EntryPoint.c_str( ) );
+    IRCompilerSetMinimumDeploymentTarget( this->m_irCompiler, IROperatingSystem_macOS, "14.0" );
+
     IRObject *irDxil = IRObjectCreateFromDXIL( (const uint8_t *)code->GetBufferPointer( ), code->GetBufferSize( ), IRBytecodeOwnershipNone );
 
     IRError  *irError = nullptr;
@@ -491,10 +456,10 @@ IDxcBlob *const ShaderCompiler::DxilToMsl( const CompileOptions &compileOptions,
     IRMetalLibGetBytecode( metalLib, metalLibByteCode );
 
     MetalDxcBlob_Impl *mslBlob = new MetalDxcBlob_Impl( metalLibByteCode, metalLibSize );
+    mslBlob->IrObject = outIr;
 
     IRMetalLibBinaryDestroy( metalLib );
     IRObjectDestroy( irDxil );
-    IRObjectDestroy( outIr );
     return mslBlob;
 #endif
 }

@@ -45,6 +45,7 @@ if (APPLE)
             MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/OS/MacOS/MacOSBundleInfo.plist.in
             RESOURCE ${PROJECT_SOURCE_DIR}/OS/MacOS/MainMenu.xib
     )
+    set_target_properties(DenOfIz PROPERTIES XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--deep")
 endif ()
 
 target_link_libraries(DenOfIz

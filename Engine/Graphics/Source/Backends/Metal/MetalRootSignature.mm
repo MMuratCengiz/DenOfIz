@@ -21,10 +21,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
+MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatureDesc &desc ) : IRootSignature( desc ), m_context( context ), m_desc( desc )
 {
     for ( const auto &binding : m_desc.ResourceBindings )
     {
+        ResourceBindingSlot slot = {
+            .Register = binding.RegisterSpace,
+            .Binding  = binding.Binding,
+            .Type     = binding.BindingType,
+        };
+
         MTLRenderStages stages = 0;
         for ( const auto &stage : binding.Stages )
         {
@@ -38,25 +44,26 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
             }
         }
 
-        m_bindings[ binding.Name ] = MetalBindingDesc{
-            .Name   = binding.Name,
-            .Slot   = binding.LocationHint,
-            .Stages = stages,
-        };
+        ContainerUtilities::SafeSet( m_bindings, slot.Key( ),
+                                     MetalBindingDesc{
+                                         .Name   = binding.Name,
+                                         .Location = binding.LocationHint,
+                                         .Stages = stages,
+                                     } );
     }
+}
+
+const MetalBindingDesc &MetalRootSignature::FindBinding( const ResourceBindingSlot &slot ) const
+{
+    uint32_t slotIndex = slot.Key( );
+    if ( slotIndex >= m_bindings.size( ) )
+    {
+        LOG( ERROR ) << "Resource slot not found, Register: " << slot.Register << " Binding: " << slot.Binding << " Type: " << static_cast<uint32_t>( slot.Type );
+        return MetalBindingDesc( );
+    }
+    return m_bindings[ slotIndex ];
 }
 
 MetalRootSignature::~MetalRootSignature( )
 {
-}
-
-const MetalBindingDesc &MetalRootSignature::FindBinding( const std::string &name ) const
-{
-    const auto &binding = m_bindings.find( name );
-    if ( binding != m_bindings.end( ) )
-    {
-        return binding->second;
-    }
-    LOG( ERROR ) << "Binding not found: " << name;
-    return MetalBindingDesc( );
 }

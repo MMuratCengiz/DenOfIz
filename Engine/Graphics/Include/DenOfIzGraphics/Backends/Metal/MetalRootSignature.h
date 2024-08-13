@@ -18,17 +18,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "MetalContext.h"
 #include <DenOfIzCore/ContainerUtilities.h>
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
 #include <unordered_set>
+#include "MetalContext.h"
 
 namespace DenOfIz
 {
     struct MetalBindingDesc
     {
         std::string     Name;
-        uint32_t        Slot;
+        uint32_t        Location;
         MTLRenderStages Stages;
     };
 
@@ -37,11 +37,10 @@ namespace DenOfIz
         MetalContext     *m_context;
         RootSignatureDesc m_desc;
 
-        std::unordered_map<std::string, MetalBindingDesc> m_bindings;
-
+        std::vector<MetalBindingDesc> m_bindings;
     public:
         MetalRootSignature( MetalContext *context, const RootSignatureDesc &desc );
-        const MetalBindingDesc &FindBinding( const std::string &name ) const;
+        const MetalBindingDesc &FindBinding( const ResourceBindingSlot& slot ) const;
         ~MetalRootSignature( ) override;
     };
 

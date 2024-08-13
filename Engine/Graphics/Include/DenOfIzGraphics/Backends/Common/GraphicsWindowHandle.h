@@ -30,6 +30,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "SDL2/SDL_vulkan.h"
 #endif
 #endif
+#ifdef __APPLE__
+#import <AppKit/NSWindow.h>
+#import <AppKit/NSView.h>
+#endif
 
 #ifdef WINDOW_MANAGER_NATIVE
 #error "Not implemented yet"
@@ -95,6 +99,13 @@ namespace DenOfIz
         {
             return m_windowHandle;
         }
+#ifdef __APPLE__
+        [[nodiscard]] NSView *GetNativeView() const
+        {
+
+            return m_windowHandle.contentView;
+        }
+#endif
 
         [[nodiscard]] const GraphicsWindowSurface GetSurface() const
         {

@@ -29,6 +29,7 @@ namespace DenOfIz
     {
         MetalContext                                      *m_context;
         SwapChainDesc                                      m_desc;
+        TextureDesc                                        m_drawableDesc{ };
         id<CAMetalDrawable>                                m_currentDrawable;
         NSView                                            *m_view;
         CAMetalLayer                                      *m_layer;

@@ -76,12 +76,12 @@ namespace DenOfIz
         {
             return Semantic::BlendWeights;
         }
-        if ( semantic.starts_with("TEXCOORD") )
+        if ( semantic.starts_with( "TEXCOORD" ) )
         {
             return Semantic::TextureCoordinate;
         }
 
-        LOG (ERROR) << "Unknown semantic: " << semantic;
+        LOG( ERROR ) << "Unknown semantic: " << semantic;
         return Semantic::Position;
     }
 
@@ -112,7 +112,7 @@ namespace DenOfIz
     class IInputLayout
     {
     public:
-        virtual ~IInputLayout() = default;
+        virtual ~IInputLayout( ) = default;
     };
 
 } // namespace DenOfIz

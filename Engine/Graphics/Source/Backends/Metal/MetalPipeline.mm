@@ -43,38 +43,23 @@ MetalPipeline::~MetalPipeline( )
 
 void MetalPipeline::CreateGraphicsPipeline( )
 {
-    NSError *error = nullptr;
-
     id<MTLFunction> vertexFunction   = nullptr;
     id<MTLFunction> fragmentFunction = nullptr;
 
     for ( const auto &shader : m_desc.ShaderProgram->GetCompiledShaders( ) )
     {
-        const char *rawSource = reinterpret_cast<const char *>( shader->Blob->GetBufferPointer( ) );
-        // TODO validate:
-        std::string mslSource = std::string( rawSource, shader->Blob->GetBufferSize( ) );
-
-        std::string entryPoint;
-
+        std::string entryPoint = shader->EntryPoint;
         switch ( shader->Stage )
         {
         case ShaderStage::Vertex:
-            entryPoint     = shader->EntryPoint;
-            vertexFunction = CreateShaderFunction( mslSource, entryPoint, &error );
+            vertexFunction = CreateShaderFunction( shader->Blob, shader->EntryPoint );
             break;
         case ShaderStage::Pixel:
-            entryPoint       = shader->EntryPoint;
-            fragmentFunction = CreateShaderFunction( mslSource, entryPoint, &error );
+            fragmentFunction = CreateShaderFunction( shader->Blob, shader->EntryPoint );
             break;
         default:
             LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage );
             break;
-        }
-
-        if ( error != nullptr )
-        {
-            LOG( ERROR ) << "Error creating shader function: " << [error localizedDescription];
-            return;
         }
     }
 
@@ -102,40 +87,29 @@ void MetalPipeline::CreateGraphicsPipeline( )
     pipelineStateDescriptor.depthAttachmentPixelFormat   = MetalEnumConverter::ConvertFormat( m_desc.Rendering.DepthAttachmentFormat );
     pipelineStateDescriptor.stencilAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Rendering.StencilAttachmentFormat );
 
+    NSError *error          = nullptr;
     m_graphicsPipelineState = [m_context->Device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
 
     if ( !m_graphicsPipelineState )
     {
-        LOG( ERROR ) << "Failed to create pipeline state" << error;
+        DZ_LOG_NS_ERROR( "Failed to create pipeline state", error );
     }
 }
 
 void MetalPipeline::CreateComputePipeline( )
 {
-    NSError        *error           = nullptr;
     id<MTLFunction> computeFunction = nullptr;
 
     for ( const auto &shader : m_desc.ShaderProgram->GetCompiledShaders( ) )
     {
-        const char *rawSource = reinterpret_cast<const char *>( shader->Blob->GetBufferPointer( ) );
-        // TODO validate:
-        std::string mslSource = std::string( rawSource, shader->Blob->GetBufferSize( ) );
-        std::string entryPoint;
         switch ( shader->Stage )
         {
         case ShaderStage::Compute:
-            entryPoint      = shader->EntryPoint;
-            computeFunction = CreateShaderFunction( mslSource, entryPoint, &error );
+            computeFunction = CreateShaderFunction( shader->Blob, shader->EntryPoint );
             break;
         default:
             LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage );
             break;
-        }
-
-        if ( error != nullptr )
-        {
-            LOG( ERROR ) << "Error creating shader function: " << [error localizedDescription];
-            return;
         }
     }
 
@@ -153,16 +127,17 @@ void MetalPipeline::CreateComputePipeline( )
     MTLNewComputePipelineStateCompletionHandler completionHandler = ^( id<MTLComputePipelineState> pipelineState, NSError *err ) {
       if ( err != nil )
       {
-          LOG( ERROR ) << "Error creating pipeline state: " << [err localizedDescription];
+          DZ_LOG_NS_ERROR( "Error creating pipeline state", err );
       }
     };
 
+    NSError          *error   = nil;
     MTLPipelineOption options = MTLPipelineOptionArgumentInfo;
     m_computePipelineState    = [m_context->Device newComputePipelineStateWithDescriptor:pipelineStateDescriptor options:MTLPipelineOptionNone reflection:nil error:&error];
 
     if ( !m_computePipelineState )
     {
-        LOG( ERROR ) << "Failed to create pipeline state: " << error;
+        DZ_LOG_NS_ERROR( "Failed to create pipeline state", error );
     }
 }
 
@@ -171,13 +146,14 @@ void MetalPipeline::CreateRayTracingPipeline( )
     // TODO
 }
 
-id<MTLFunction> MetalPipeline::CreateShaderFunction( const std::string &shaderSource, const std::string &entryPoint, NSError **error )
+id<MTLFunction> MetalPipeline::CreateShaderFunction( IDxcBlob *&blob, const std::string &entryPoint )
 {
-    NSString      *mslSource = [NSString stringWithUTF8String:shaderSource.c_str( )];
-    id<MTLLibrary> library   = [m_context->Device newLibraryWithSource:mslSource options:nil error:error];
-    if ( *error != nil )
+    NSError        *error      = nullptr;
+    dispatch_data_t shaderData = dispatch_data_create( blob->GetBufferPointer( ), blob->GetBufferSize( ), NULL, DISPATCH_DATA_DESTRUCTOR_DEFAULT );
+    id<MTLLibrary>  library    = [m_context->Device newLibraryWithData:shaderData error:&error];
+    if ( error != nil )
     {
-        LOG( ERROR ) << "Error creating library: " << [*error localizedDescription];
+        DZ_LOG_NS_ERROR( "Error creating library", error );
         return nil;
     }
 
@@ -188,6 +164,5 @@ id<MTLFunction> MetalPipeline::CreateShaderFunction( const std::string &shaderSo
     {
         LOG( ERROR ) << "Error creating function for entry point: " << entryPointName;
     }
-    [library release];
     return function;
 }

@@ -33,7 +33,7 @@ namespace DenOfIz
         id<MTLTexture> m_texture{ };
         bool           isExternalResource = false; // Used for swap chain render targets, might need a better way
     private:
-        void UpdateTexture( id<MTLTexture> texture );
+        void UpdateTexture( const TextureDesc& desc, id<MTLTexture> texture );
 
     public:
         MetalTextureResource( MetalContext *context, const TextureDesc &desc, std::string name );

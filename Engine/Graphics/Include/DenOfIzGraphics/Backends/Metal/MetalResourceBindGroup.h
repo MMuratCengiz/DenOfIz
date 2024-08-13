@@ -32,7 +32,7 @@ namespace DenOfIz
     {
         std::string Name;
         T          *Resource;
-        uint32_t    Slot;
+        uint32_t    Location;
     };
 
     // For DirectX12 this is kind of a dummy class as resources are bound to heaps. At a given point we only use 2 heaps one for CBV/SRV/UAV and one for Sampler.
@@ -56,9 +56,9 @@ namespace DenOfIz
         const std::vector<MetalUpdateDescItem<MetalSampler>>         &Samplers( ) const;
 
     protected:
-        void BindTexture( const std::string &name, ITextureResource *resource ) override;
-        void BindBuffer( const std::string &name, IBufferResource *resource ) override;
-        void BindSampler( const std::string &name, ISampler *sampler ) override;
+        void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) override;
+        void BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource ) override;
+        void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler ) override;
     };
 
 } // namespace DenOfIz
