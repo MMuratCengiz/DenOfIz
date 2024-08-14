@@ -26,8 +26,8 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
     for ( const auto &binding : m_desc.ResourceBindings )
     {
         ResourceBindingSlot slot = {
-            .Register = binding.RegisterSpace,
             .Binding  = binding.Binding,
+            .Register = binding.RegisterSpace,
             .Type     = binding.BindingType,
         };
 
@@ -44,24 +44,22 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
             }
         }
 
-        ContainerUtilities::SafeSet( m_bindings, slot.Key( ),
-                                     MetalBindingDesc{
-                                         .Name   = binding.Name,
-                                         .Location = binding.LocationHint,
-                                         .Stages = stages,
-                                     } );
+        m_metalBindings[ slot.Key( ) ] = {
+            .Name     = binding.Name,
+            .Location = binding.LocationHint,
+            .Stages   = stages,
+        };
     }
 }
 
-const MetalBindingDesc &MetalRootSignature::FindBinding( const ResourceBindingSlot &slot ) const
+const MetalBindingDesc &MetalRootSignature::FindMetalBinding( const ResourceBindingSlot &slot ) const
 {
-    uint32_t slotIndex = slot.Key( );
-    if ( slotIndex >= m_bindings.size( ) )
+    auto it = m_metalBindings.find( slot.Key( ) );
+    if ( it == m_metalBindings.end( ) )
     {
-        LOG( ERROR ) << "Resource slot not found, Register: " << slot.Register << " Binding: " << slot.Binding << " Type: " << static_cast<uint32_t>( slot.Type );
-        return MetalBindingDesc( );
+        LOG( ERROR ) << "Unable to find slot with type[" << static_cast<int>( slot.Type ) << "],binding[" << slot.Binding << "],register[" << slot.Register << "].";
     }
-    return m_bindings[ slotIndex ];
+    return it->second;
 }
 
 MetalRootSignature::~MetalRootSignature( )

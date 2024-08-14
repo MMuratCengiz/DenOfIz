@@ -30,6 +30,9 @@ BatchResourceCopyHelper::BatchResourceCopyHelper( ILogicalDevice *device, BatchR
 
     m_syncCommandPool = m_device->CreateCommandListPool( poolDesc );
     m_syncCommandList = m_syncCommandPool->GetCommandLists( ).front( );
+
+    m_batchCopyWait = m_device->CreateSemaphore( );
+    m_syncWait      = m_device->CreateFence( );
 }
 
 void BatchResourceCopyHelper::Begin( ) const
@@ -121,14 +124,12 @@ std::string BatchResourceCopyHelper::NextId( const std::string &prefix )
 
 void BatchResourceCopyHelper::Submit( ) const
 {
-    const std::unique_ptr<ISemaphore> batchCopyWait = m_device->CreateSemaphore( );
-    m_batchCopy->End( batchCopyWait.get( ) );
+    m_batchCopy->End( m_batchCopyWait.get( ) );
 
-    const std::unique_ptr<IFence> syncWait = m_device->CreateFence( );
-    ExecuteDesc                   executeDesc{ };
-    executeDesc.WaitOnSemaphores.push_back( batchCopyWait.get( ) );
-    executeDesc.Notify = syncWait.get( );
+    m_syncWait->Reset( );
+    ExecuteDesc executeDesc{ };
+    executeDesc.WaitOnSemaphores.push_back( m_batchCopyWait.get( ) );
+    executeDesc.Notify = m_syncWait.get( );
     m_syncCommandList->Execute( executeDesc );
-
-    syncWait->Wait( );
+    m_syncWait->Wait( );
 }

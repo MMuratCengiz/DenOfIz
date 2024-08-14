@@ -12,6 +12,7 @@ namespace DenOfIz
     {
         id<MTLDevice>       Device;
         id<MTLCommandQueue> CommandQueue;
+        PhysicalDevice      SelectedDeviceInfo;
     };
 
 } // namespace DenOfIz

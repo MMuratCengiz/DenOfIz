@@ -45,7 +45,7 @@ namespace DenOfIz
 
         void Begin( ) override;
         void BeginRendering( const RenderingDesc &renderingInfo ) override;
-        void EndRendering( ) override;
+        void EndRendering( ) override; // TODO remove
         void Execute( const ExecuteDesc &executeInfo ) override;
         void BindPipeline( IPipeline *pipeline ) override;
         void BindVertexBuffer( IBufferResource *buffer ) override;

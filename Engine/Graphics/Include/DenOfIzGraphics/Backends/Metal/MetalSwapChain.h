@@ -31,6 +31,7 @@ namespace DenOfIz
         SwapChainDesc                                      m_desc;
         TextureDesc                                        m_drawableDesc{ };
         id<CAMetalDrawable>                                m_currentDrawable;
+        id<MTLCommandBuffer>                               m_presentCommandBuffer;
         NSView                                            *m_view;
         CAMetalLayer                                      *m_layer;
         uint32_t                                           m_currentFrame = 0;
@@ -46,6 +47,7 @@ namespace DenOfIz
         Viewport          GetViewport( ) override;
         id<MTLDrawable>   Drawable( );
         void              Resize( uint32_t width, uint32_t height ) override;
+        void              Present( std::vector<ISemaphore *> waitOnSemaphores );
     };
 
 } // namespace DenOfIz

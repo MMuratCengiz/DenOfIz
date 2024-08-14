@@ -110,7 +110,7 @@ namespace DenOfIz
     class IRootSignature : public NonCopyable
     {
     protected:
-        std::unordered_map<int, ResourceBindingDesc> m_resourceBindings;
+        std::unordered_map<uint32_t, ResourceBindingDesc> m_resourceBindings;
 
     public:
         IRootSignature( const RootSignatureDesc &desc )
@@ -118,8 +118,8 @@ namespace DenOfIz
             for ( const auto &binding : desc.ResourceBindings )
             {
                 ResourceBindingSlot slot{
-                    .Register = binding.Binding,
-                    .Binding  = binding.RegisterSpace,
+                    .Binding  = binding.Binding,
+                    .Register = binding.RegisterSpace,
                     .Type     = binding.BindingType,
                 };
                 m_resourceBindings[ slot.Key( ) ] = binding;

@@ -32,6 +32,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
+    enum class MetalEncoderType
+    {
+        Render,
+        Compute,
+        Blit,
+        None
+    };
     class MetalCommandList final : public ICommandList
     {
         CommandListDesc              m_desc;
@@ -40,6 +47,7 @@ namespace DenOfIz
         id<MTLRenderCommandEncoder>  m_renderEncoder;
         id<MTLComputeCommandEncoder> m_computeEncoder;
         id<MTLBlitCommandEncoder>    m_blitEncoder;
+        MetalEncoderType             m_activeEncoderType = MetalEncoderType::None;
 
         // States:
         id<MTLBuffer> m_indexBuffer;
@@ -70,6 +78,11 @@ namespace DenOfIz
         void CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionInfo ) override;
         void CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTexture ) override;
         void CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBuffer ) override;
+
+    private:
+        void EnsureEncoder( MetalEncoderType encoderType, std::string errorMessage );
+        // This is used because Vulkan+DX12 both support more operations in their graphics command list, so seamless transition is provided here
+        void SwitchEncoder( MetalEncoderType encoderType );
     };
 
 } // namespace DenOfIz

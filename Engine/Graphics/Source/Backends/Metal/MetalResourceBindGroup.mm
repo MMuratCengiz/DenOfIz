@@ -23,6 +23,7 @@ using namespace DenOfIz;
 MetalResourceBindGroup::MetalResourceBindGroup( MetalContext *context, ResourceBindGroupDesc desc ) : IResourceBindGroup( desc ), m_context( context )
 {
     m_context = context;
+    m_rootSignature = static_cast<MetalRootSignature *>( desc.RootSignature );
 }
 
 void MetalResourceBindGroup::Update( const UpdateDesc &desc )
@@ -53,7 +54,7 @@ const std::vector<MetalUpdateDescItem<MetalSampler>> &MetalResourceBindGroup::Sa
 
 void MetalResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource )
 {
-    uint32_t location = m_rootSignature->FindBinding( slot ).Location;
+    uint32_t location = m_rootSignature->FindMetalBinding( slot ).Location;
     m_textures.push_back( MetalUpdateDescItem<MetalTextureResource>{
         .Resource = static_cast<MetalTextureResource *>( resource ),
         .Location = location,
@@ -62,7 +63,7 @@ void MetalResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, IText
 
 void MetalResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )
 {
-    uint32_t location = m_rootSignature->FindBinding( slot ).Location;
+    uint32_t location = m_rootSignature->FindMetalBinding( slot ).Location;
     m_buffers.push_back( MetalUpdateDescItem<MetalBufferResource>{
         .Resource = static_cast<MetalBufferResource *>( resource ),
         .Location = location,
@@ -71,7 +72,7 @@ void MetalResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBuffe
 
 void MetalResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )
 {
-    uint32_t location = m_rootSignature->FindBinding( slot ).Location;
+    uint32_t location = m_rootSignature->FindMetalBinding( slot ).Location;
     m_samplers.push_back( MetalUpdateDescItem<MetalSampler>{
         .Resource = static_cast<MetalSampler *>( sampler ),
         .Location = location,

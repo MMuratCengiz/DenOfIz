@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Metal/MetalSwapChain.h>
+#include "DenOfIzGraphics/Backends/Metal/MetalSemaphore.h"
 
 using namespace DenOfIz;
 
@@ -54,7 +55,7 @@ Format MetalSwapChain::GetPreferredFormat( )
 
 ITextureResource *MetalSwapChain::GetRenderTarget( uint32_t frame )
 {
-    return nullptr;
+    return m_renderTargets[ frame ].get( );
 }
 
 Viewport MetalSwapChain::GetViewport( )
@@ -91,4 +92,16 @@ void MetalSwapChain::Resize( uint32_t width, uint32_t height )
 id<MTLDrawable> MetalSwapChain::Drawable( )
 {
     return m_currentDrawable;
+}
+
+void MetalSwapChain::Present( std::vector<ISemaphore *> waitOnSemaphores )
+{
+    m_presentCommandBuffer = [m_context->CommandQueue commandBuffer];
+    for ( ISemaphore *semaphore : waitOnSemaphores )
+    {
+        MetalSemaphore *metalSemaphore = static_cast<MetalSemaphore *>( semaphore );
+        metalSemaphore->NotifyOnCommandBufferCompletion( m_presentCommandBuffer );
+    }
+    [m_presentCommandBuffer presentDrawable:m_currentDrawable];
+    [m_presentCommandBuffer commit];
 }

@@ -37,10 +37,10 @@ namespace DenOfIz
         MetalContext     *m_context;
         RootSignatureDesc m_desc;
 
-        std::vector<MetalBindingDesc> m_bindings;
+        std::unordered_map<uint32_t, MetalBindingDesc> m_metalBindings;
     public:
         MetalRootSignature( MetalContext *context, const RootSignatureDesc &desc );
-        const MetalBindingDesc &FindBinding( const ResourceBindingSlot& slot ) const;
+        const MetalBindingDesc &FindMetalBinding( const ResourceBindingSlot &slot ) const;
         ~MetalRootSignature( ) override;
     };
 

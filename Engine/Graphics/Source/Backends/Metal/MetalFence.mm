@@ -22,7 +22,7 @@ using namespace DenOfIz;
 MetalFence::MetalFence( MetalContext *context ) : m_context( context )
 {
     m_context = context;
-    m_fence = dispatch_semaphore_create( 0 );
+    m_signaled = true;
 }
 
 MetalFence::~MetalFence( )
@@ -31,10 +31,27 @@ MetalFence::~MetalFence( )
 
 void MetalFence::Wait( )
 {
-    dispatch_semaphore_wait( m_fence, DISPATCH_TIME_FOREVER );
+    std::unique_lock<std::mutex> lock( m_mutex );
+    if ( !m_signaled )
+    {
+        m_condition.wait( lock, [ this ] { return m_signaled; } );
+    }
 }
 
 void MetalFence::Reset( )
 {
-    dispatch_semaphore_signal( m_fence );
+    std::lock_guard<std::mutex> lock( m_mutex );
+    m_signaled = false;
+}
+
+void MetalFence::Notify( )
+{
+    std::lock_guard<std::mutex> lock( m_mutex );
+    m_signaled = true;
+    m_condition.notify_all( );
+}
+
+void MetalFence::NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer>& commandBuffer )
+{
+    [commandBuffer addCompletedHandler:^( id<MTLCommandBuffer> _unused ) { this->Notify(); }];
 }

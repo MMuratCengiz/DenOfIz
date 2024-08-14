@@ -119,6 +119,7 @@ namespace DenOfIz
 
     struct ExecuteDesc
     {
+        // Objects specified below must live until the command list is executed
         IFence                   *Notify           = nullptr;
         std::vector<ISemaphore *> WaitOnSemaphores = { };
         std::vector<ISemaphore *> NotifySemaphores = { };

@@ -85,6 +85,8 @@ void MetalLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     m_selectedDeviceInfo.Constants.ConstantBufferAlignment   = 256;
     m_selectedDeviceInfo.Constants.BufferTextureAlignment    = 16;
     m_selectedDeviceInfo.Constants.BufferTextureRowAlignment = 1;
+
+    m_context->SelectedDeviceInfo = m_selectedDeviceInfo;
 }
 
 std::unique_ptr<ICommandListPool> MetalLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &poolDesc )

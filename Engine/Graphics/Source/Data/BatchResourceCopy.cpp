@@ -140,6 +140,7 @@ void BatchResourceCopy::End( ISemaphore *notify )
 {
     ExecuteDesc desc{ };
 
+    m_executeFence->Reset( );
     desc.Notify = m_executeFence.get( );
     if ( notify )
     {

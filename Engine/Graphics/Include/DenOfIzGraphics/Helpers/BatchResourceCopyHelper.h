@@ -30,10 +30,10 @@ namespace DenOfIz
         std::unique_ptr<IBufferResource> VertexBuffer;
         std::unique_ptr<IBufferResource> IndexBuffer;
 
-        void Into(std::unique_ptr<IBufferResource> &vertexBuffer, std::unique_ptr<IBufferResource> &indexBuffer)
+        void Into( std::unique_ptr<IBufferResource> &vertexBuffer, std::unique_ptr<IBufferResource> &indexBuffer )
         {
-            vertexBuffer = std::move(VertexBuffer);
-            indexBuffer  = std::move(IndexBuffer);
+            vertexBuffer = std::move( VertexBuffer );
+            indexBuffer  = std::move( IndexBuffer );
         }
     };
 
@@ -41,9 +41,9 @@ namespace DenOfIz
     {
         std::unique_ptr<IBufferResource> Buffer;
 
-        void Into(std::unique_ptr<IBufferResource> &buffer)
+        void Into( std::unique_ptr<IBufferResource> &buffer )
         {
-            buffer = std::move(Buffer);
+            buffer = std::move( Buffer );
         }
     };
 
@@ -51,9 +51,9 @@ namespace DenOfIz
     {
         std::unique_ptr<ISampler> Sampler;
 
-        void Into(std::unique_ptr<ISampler> &sampler)
+        void Into( std::unique_ptr<ISampler> &sampler )
         {
-            sampler = std::move(Sampler);
+            sampler = std::move( Sampler );
         }
     };
 
@@ -61,9 +61,9 @@ namespace DenOfIz
     {
         std::unique_ptr<ITextureResource> Texture;
 
-        void Into(std::unique_ptr<ITextureResource> &texture)
+        void Into( std::unique_ptr<ITextureResource> &texture )
         {
-            texture = std::move(Texture);
+            texture = std::move( Texture );
         }
     };
     /// \brief Wrapper class for BatchResourceCopy which also provides helper functions for creating resources.
@@ -75,18 +75,20 @@ namespace DenOfIz
         BatchResourceCopy                *m_batchCopy;
         std::unique_ptr<ICommandListPool> m_syncCommandPool;
         ICommandList                     *m_syncCommandList;
+        std::unique_ptr<ISemaphore>       m_batchCopyWait;
+        std::unique_ptr<IFence>           m_syncWait;
 
     public:
-        BatchResourceCopyHelper(ILogicalDevice *device, BatchResourceCopy *batchCopy);
+        BatchResourceCopyHelper( ILogicalDevice *device, BatchResourceCopy *batchCopy );
 
-        void                                Begin( ) const;
-        [[nodiscard]] UniformBufferHolder   CreateUniformBuffer(std::string name, const void *data, uint32_t numBytes ) const;
-        [[nodiscard]] VertexIndexBufferPairHolder CreateGeometryBuffers(const GeometryData &GeometryData ) const;
-        [[nodiscard]] SamplerHolder         CreateSampler(const std::string& name, const SamplerDesc &desc ) const;
-        [[nodiscard]] TextureHolder         CreateTexture(const std::string& name, const std::string& path ) const;
-        void                                Submit( ) const;
+        void                                      Begin( ) const;
+        [[nodiscard]] UniformBufferHolder         CreateUniformBuffer( std::string name, const void *data, uint32_t numBytes ) const;
+        [[nodiscard]] VertexIndexBufferPairHolder CreateGeometryBuffers( const GeometryData &GeometryData ) const;
+        [[nodiscard]] SamplerHolder               CreateSampler( const std::string &name, const SamplerDesc &desc ) const;
+        [[nodiscard]] TextureHolder               CreateTexture( const std::string &name, const std::string &path ) const;
+        void                                      Submit( ) const;
 
     private:
-        static std::string NextId(const std::string &prefix);
+        static std::string NextId( const std::string &prefix );
     };
 } // namespace DenOfIz
