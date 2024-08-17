@@ -22,19 +22,76 @@ using namespace DenOfIz;
 
 MetalResourceBindGroup::MetalResourceBindGroup( MetalContext *context, ResourceBindGroupDesc desc ) : IResourceBindGroup( desc ), m_context( context )
 {
-    m_context = context;
-    m_rootSignature = static_cast<MetalRootSignature *>( desc.RootSignature );
+    m_context         = context;
+    m_rootSignature   = static_cast<MetalRootSignature *>( desc.RootSignature );
+    m_descriptorTable = m_rootSignature->DescriptorTable( desc.RegisterSpace );
+
+    unsigned long alignedSize = Utilities::Align( m_descriptorTable.size( ) * sizeof( uint64_t ), 8 );
+    m_argumentBuffer          = [m_context->Device newBufferWithLength:alignedSize options:MTLResourceStorageModeShared];
 }
 
 void MetalResourceBindGroup::Update( const UpdateDesc &desc )
 {
     m_updateDesc = desc;
-
-    m_buffers.clear( );
-    m_textures.clear( );
-    m_samplers.clear( );
-
     IResourceBindGroup::Update( desc );
+    std::memcpy( m_argumentBuffer.contents, m_descriptorTable.data( ), m_descriptorTable.size( ) * sizeof( uint64_t ) );
+}
+
+void MetalResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource )
+{
+    MetalTextureResource *metalTexture = static_cast<MetalTextureResource *>( resource );
+
+    bool                    readonlyHeap   = ( metalTexture->Usage( ) & MTLTextureUsageRenderTarget ) == 0 && ( metalTexture->Usage( ) & MTLTextureUsageShaderWrite ) == 0;
+    id<MTLBuffer>           texturePointer = CreateEntryBuffer( readonlyHeap );
+    IRDescriptorTableEntry *entry          = (IRDescriptorTableEntry *)texturePointer.contents;
+
+    IRDescriptorTableSetTexture( entry, metalTexture->Instance( ), 0, 0 );
+    SetGpuAddress( slot.Binding, texturePointer.gpuAddress );
+}
+
+void MetalResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )
+{
+    const MetalBindingDesc &binding     = m_rootSignature->FindMetalBinding( slot );
+    MetalBufferResource    *metalBuffer = static_cast<MetalBufferResource *>( resource );
+
+    id<MTLBuffer>           bufferPointer = CreateEntryBuffer( false );
+    IRDescriptorTableEntry *entry         = (IRDescriptorTableEntry *)bufferPointer.contents;
+
+    IRDescriptorTableSetBuffer( entry, metalBuffer->Instance( ).gpuAddress, 0 );
+    SetGpuAddress( slot.Binding, bufferPointer.gpuAddress );
+}
+
+void MetalResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )
+{
+    MetalSampler *metalSampler = static_cast<MetalSampler *>( sampler );
+
+    id<MTLBuffer>           samplerPointer = CreateEntryBuffer( true );
+    IRDescriptorTableEntry *entry          = (IRDescriptorTableEntry *)samplerPointer.contents;
+
+    IRDescriptorTableSetSampler( entry, metalSampler->Instance( ), 0 );
+    SetGpuAddress( slot.Binding, samplerPointer.gpuAddress );
+}
+
+id<MTLBuffer> MetalResourceBindGroup::CreateEntryBuffer( bool readonlyHeap )
+{
+    if ( readonlyHeap )
+    {
+        m_bindHeap = true;
+        return [m_context->ReadOnlyHeap newBufferWithLength:sizeof( IRDescriptorTableEntry ) options:MTLResourceStorageModeShared];
+    }
+
+    m_bindBuffer = true;
+    return [m_context->Device newBufferWithLength:sizeof( IRDescriptorTableEntry ) options:MTLResourceStorageModeShared];
+}
+
+void MetalResourceBindGroup::SetGpuAddress( uint32_t binding, uint64_t address )
+{
+    if ( m_descriptorTable.size( ) <= binding )
+    {
+        LOG( ERROR ) << "Unable to find binding[" << binding << "].";
+    }
+
+    m_descriptorTable[ binding ] = address;
 }
 
 const std::vector<MetalUpdateDescItem<MetalBufferResource>> &MetalResourceBindGroup::Buffers( ) const
@@ -50,31 +107,4 @@ const std::vector<MetalUpdateDescItem<MetalTextureResource>> &MetalResourceBindG
 const std::vector<MetalUpdateDescItem<MetalSampler>> &MetalResourceBindGroup::Samplers( ) const
 {
     return m_samplers;
-}
-
-void MetalResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource )
-{
-    uint32_t location = m_rootSignature->FindMetalBinding( slot ).Location;
-    m_textures.push_back( MetalUpdateDescItem<MetalTextureResource>{
-        .Resource = static_cast<MetalTextureResource *>( resource ),
-        .Location = location,
-    } );
-}
-
-void MetalResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )
-{
-    uint32_t location = m_rootSignature->FindMetalBinding( slot ).Location;
-    m_buffers.push_back( MetalUpdateDescItem<MetalBufferResource>{
-        .Resource = static_cast<MetalBufferResource *>( resource ),
-        .Location = location,
-    } );
-}
-
-void MetalResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )
-{
-    uint32_t location = m_rootSignature->FindMetalBinding( slot ).Location;
-    m_samplers.push_back( MetalUpdateDescItem<MetalSampler>{
-        .Resource = static_cast<MetalSampler *>( sampler ),
-        .Location = location,
-    } );
 }

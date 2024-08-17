@@ -37,11 +37,11 @@ namespace DenOfIz
 
     enum class ShaderStage
     {
-        Vertex,
-        Pixel,
+        Geometry,
         Hull,
         Domain,
-        Geometry,
+        Vertex,
+        Pixel,
         Compute,
         AllGraphics,
         All,

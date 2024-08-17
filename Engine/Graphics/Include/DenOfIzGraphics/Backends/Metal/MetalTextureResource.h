@@ -28,12 +28,14 @@ namespace DenOfIz
     class MetalTextureResource final : public ITextureResource
     {
         friend class MetalSwapChain;
-        TextureDesc    m_desc;
-        MetalContext  *m_context{ };
-        id<MTLTexture> m_texture{ };
-        bool           isExternalResource = false; // Used for swap chain render targets, might need a better way
+        TextureDesc     m_desc;
+        MetalContext   *m_context{ };
+        id<MTLTexture>  m_texture{ };
+        MTLTextureType  m_textureType;
+        MTLTextureUsage m_textureUsage;
+        bool            isExternalResource = false; // Used for swap chain render targets, might need a better way
     private:
-        void UpdateTexture( const TextureDesc& desc, id<MTLTexture> texture );
+        void UpdateTexture( const TextureDesc &desc, id<MTLTexture> texture );
 
     public:
         MetalTextureResource( MetalContext *context, const TextureDesc &desc, std::string name );
@@ -42,7 +44,18 @@ namespace DenOfIz
         {
             return m_texture;
         }
+        const MTLTextureType &Type( ) const
+        {
+            return m_textureType;
+        }
+        const MTLTextureUsage &Usage( ) const
+        {
+            return m_textureUsage;
+        }
         ~MetalTextureResource( ) override;
+
+    private:
+        void SetTextureType( );
     };
 
     class MetalSampler final : public ISampler

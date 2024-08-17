@@ -28,10 +28,11 @@ namespace DenOfIz
     class MetalBufferResource : public IBufferResource
     {
     private:
-        MetalContext *m_context{ };
-        BufferDesc    m_desc;
-        id<MTLBuffer> m_buffer{ };
+        MetalContext    *m_context{ };
+        BufferDesc       m_desc;
+        id<MTLBuffer>    m_buffer{ };
         MTLResourceUsage m_usage{ };
+        MTLDataType      m_dataType{ };
         void            *m_mappedMemory{ };
 
     public:
@@ -40,6 +41,10 @@ namespace DenOfIz
         const id<MTLBuffer> &Instance( ) const
         {
             return m_buffer;
+        }
+        const MTLDataType &Type( ) const
+        {
+            return m_dataType;
         }
         void *MapMemory( ) override;
         void  UnmapMemory( ) override;

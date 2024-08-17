@@ -281,6 +281,102 @@ MTLVertexFormat MetalEnumConverter::ConvertFormatToVertexFormat( Format format )
     return MTLVertexFormatInvalid;
 }
 
+MTLDataType MetalEnumConverter::ConvertFormatToDataType( Format format )
+{
+    switch ( format )
+    {
+    case Format::Undefined:
+        return MTLDataTypeNone;
+    case Format::R32G32B32A32Float:
+        return MTLDataTypeFloat4;
+    case Format::R32G32B32A32Sint:
+        return MTLDataTypeInt4;
+    case Format::R32G32B32A32Uint:
+        return MTLDataTypeUInt4;
+    case Format::R32G32B32Float:
+        return MTLDataTypeFloat3;
+    case Format::R32G32B32Sint:
+        return MTLDataTypeInt3;
+    case Format::R32G32B32Uint:
+        return MTLDataTypeUInt3;
+    case Format::R16G16B16A16Float:
+        return MTLDataTypeHalf4;
+    case Format::R16G16B16A16Snorm:
+    case Format::R16G16B16A16Sint:
+    case Format::R16G16B16A16Typeless:
+    case Format::R16G16B16A16Unorm:
+    case Format::R16G16B16A16Uint:
+        return MTLDataTypeUShort4;
+    case Format::R32G32Float:
+        return MTLDataTypeFloat2;
+    case Format::R32G32Sint:
+        return MTLDataTypeInt2;
+    case Format::R32G32Uint:
+        return MTLDataTypeUInt2;
+    case Format::R10G10B10A2Uint:
+        return MTLDataTypeUInt;
+    case Format::R10G10B10A2Unorm:
+        return MTLDataTypeUInt;
+    case Format::R8G8B8A8Uint:
+        return MTLDataTypeUChar4;
+    case Format::R8G8B8A8Sint:
+        return MTLDataTypeChar4;
+    case Format::R8G8B8A8Unorm:
+    case Format::R8G8B8A8UnormSrgb:
+        return MTLDataTypeUChar4;
+    case Format::R8G8B8A8Snorm:
+        return MTLDataTypeChar4;
+    case Format::R16G16Float:
+        return MTLDataTypeHalf2;
+    case Format::R16G16Sint:
+        return MTLDataTypeShort2;
+    case Format::R16G16Uint:
+        return MTLDataTypeUShort2;
+    case Format::R16G16Unorm:
+        return MTLDataTypeUShort2;
+    case Format::R16G16Snorm:
+        return MTLDataTypeShort2;
+    case Format::D32Float:
+        return MTLDataTypeFloat;
+    case Format::R32Float:
+        return MTLDataTypeFloat;
+    case Format::R32Sint:
+        return MTLDataTypeInt;
+    case Format::R32Uint:
+        return MTLDataTypeUInt;
+    case Format::R8G8Uint:
+        return MTLDataTypeUChar2;
+    case Format::R8G8Sint:
+        return MTLDataTypeChar2;
+    case Format::R8G8Unorm:
+        return MTLDataTypeUChar2;
+    case Format::R8G8Snorm:
+        return MTLDataTypeChar2;
+    case Format::R16Float:
+        return MTLDataTypeHalf;
+    case Format::R16Sint:
+        return MTLDataTypeShort;
+    case Format::R16Uint:
+        return MTLDataTypeUShort;
+    case Format::R16Unorm:
+        return MTLDataTypeUShort;
+    case Format::R16Snorm:
+        return MTLDataTypeShort;
+    case Format::R8Uint:
+        return MTLDataTypeUChar;
+    case Format::R8Sint:
+        return MTLDataTypeChar;
+    case Format::R8Unorm:
+        return MTLDataTypeUChar;
+    case Format::R8Snorm:
+        return MTLDataTypeChar;
+    default:
+        break;
+    }
+
+    return MTLDataTypeNone;
+}
+
 MTLSamplerMinMagFilter MetalEnumConverter::ConvertFilter( Filter filter )
 {
     switch ( filter )

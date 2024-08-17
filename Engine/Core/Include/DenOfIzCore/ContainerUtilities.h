@@ -25,23 +25,23 @@ namespace DenOfIz
 
     class ContainerUtilities
     {
-        ContainerUtilities() = delete;
+        ContainerUtilities( ) = delete;
 
     public:
         template <typename T>
         static void EnsureSize( std::vector<T> &vec, size_t index )
         {
-            if (index >= vec.size())
+            if ( index >= vec.size( ) )
             {
-                vec.resize(index + 1);
+                vec.resize( index + 1 );
             }
         }
 
-        template<typename T>
-        static T& SafeAt(std::vector<T> &vec, size_t index)
+        template <typename T>
+        static T &SafeAt( std::vector<T> &vec, size_t index )
         {
             EnsureSize( vec, index );
-            return vec[index];
+            return vec[ index ];
         }
 
         template <typename T>
@@ -49,6 +49,20 @@ namespace DenOfIz
         {
             EnsureSize( vec, index );
             vec[ index ] = value;
+        }
+
+        template <typename T>
+        static void Compute( std::vector<T> &vec, size_t index, const T &newValue, std::function<void( T &existingValue )> modify )
+        {
+            if ( index >= vec.size( ) )
+            {
+                vec.resize( index + 1 );
+                vec[ index ] = newValue;
+            }
+            else
+            {
+                modify( vec[ index ] );
+            }
         }
 
         template <typename R>

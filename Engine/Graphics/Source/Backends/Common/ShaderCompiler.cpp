@@ -365,6 +365,9 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const std::string &
         code = metalBlob;
     }
 #endif
+
+    CacheCompiledShader( filename, compileOptions.TargetIL, code );
+
     CompiledShader *compiledShader = new CompiledShader( );
     compiledShader->Stage          = compileOptions.Stage;
     compiledShader->Blob           = code;
@@ -456,12 +459,44 @@ IDxcBlob *const ShaderCompiler::DxilToMsl( const CompileOptions &compileOptions,
     IRMetalLibGetBytecode( metalLib, metalLibByteCode );
 
     MetalDxcBlob_Impl *mslBlob = new MetalDxcBlob_Impl( metalLibByteCode, metalLibSize );
-    mslBlob->IrObject = outIr;
+    mslBlob->IrObject          = outIr;
 
     IRMetalLibBinaryDestroy( metalLib );
     IRObjectDestroy( irDxil );
     return mslBlob;
+#else
+    return nullptr;
 #endif
+}
+
+void ShaderCompiler::CacheCompiledShader( const std::string &filename, const TargetIL &targetIL, IDxcBlob *code ) const
+{
+    // Cache the compiled shader into the matching binary format, it is dxil for hlsl and msl for metal,
+    // Simply replace the extension with the corresponding value:
+    std::string compiledFilename = filename;
+    size_t      extensionLength  = filename.size( ) - filename.find_last_of( '.' );
+
+    if ( targetIL == TargetIL::SPIRV )
+    {
+        compiledFilename.replace( compiledFilename.find_last_of( '.' ), extensionLength, ".spv" );
+    }
+    else if ( targetIL == TargetIL::DXIL )
+    {
+        compiledFilename.replace( compiledFilename.find_last_of( '.' ), extensionLength, ".dxil" );
+    }
+    else if ( targetIL == TargetIL::MSL )
+    {
+        compiledFilename.replace( compiledFilename.find_last_of( '.' ), extensionLength, ".metallib" );
+    }
+
+    std::string appPath = Utilities::AppPath( compiledFilename );
+
+    std::ofstream compiledFile( appPath, std::ios::binary );
+    if ( compiledFile.is_open( ) )
+    {
+        compiledFile.write( static_cast<const char *>( code->GetBufferPointer( ) ), code->GetBufferSize( ) );
+        compiledFile.close( );
+    }
 }
 
 #ifdef BUILD_METAL

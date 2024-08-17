@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #import <DenOfIzGraphics/Backends/Metal/MetalBufferResource.h>
+#import <DenOfIzGraphics/Backends/Metal/MetalEnumConverter.h>
 
 using namespace DenOfIz;
 
@@ -51,6 +52,8 @@ MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDes
     {
         m_usage = MTLResourceUsageRead;
     }
+
+    m_dataType = MetalEnumConverter::ConvertFormatToDataType( m_desc.Format );
 }
 
 MetalBufferResource::~MetalBufferResource( )

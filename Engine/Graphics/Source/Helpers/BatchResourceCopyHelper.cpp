@@ -48,6 +48,7 @@ UniformBufferHolder BatchResourceCopyHelper::CreateUniformBuffer( std::string na
     bufferDesc.Descriptor   = ResourceDescriptor::UniformBuffer;
     bufferDesc.InitialState = ResourceState::CopyDst;
     bufferDesc.NumBytes     = numBytes;
+    
 
     auto buffer = m_device->CreateBufferResource( std::move( name ), bufferDesc );
 
@@ -72,6 +73,7 @@ VertexIndexBufferPairHolder BatchResourceCopyHelper::CreateGeometryBuffers( cons
     vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
     vBufferDesc.InitialState = ResourceState::CopyDst;
     vBufferDesc.NumBytes     = geometryData.SizeOfVertices( );
+
     result.VertexBuffer      = m_device->CreateBufferResource( NextId( "Vertex" ), vBufferDesc );
 
     BufferDesc iBufferDesc{ };

@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
 #include <algorithm>
+#include <metal_irconverter_runtime/metal_irconverter_runtime.h>
 #include "MetalBufferResource.h"
 #include "MetalContext.h"
 #include "MetalRootSignature.h"
@@ -30,9 +31,19 @@ namespace DenOfIz
     template <typename T>
     struct MetalUpdateDescItem
     {
-        std::string Name;
-        T          *Resource;
-        uint32_t    Location;
+        std::string      Name;
+        T               *Resource;
+        uint32_t         Location;
+        MTLRenderStages  ShaderStages;
+        MTLResourceUsage Usage;
+    };
+
+    struct MetalTopLevelAbBinding
+    {
+        bool                  BindBuffer;
+        id<MTLBuffer>         ArgumentBuffer;
+        bool                  BindHeap;
+        id<MTLHeap>           Heap;
     };
 
     // For DirectX12 this is kind of a dummy class as resources are bound to heaps. At a given point we only use 2 heaps one for CBV/SRV/UAV and one for Sampler.
@@ -47,6 +58,11 @@ namespace DenOfIz
         std::vector<MetalUpdateDescItem<MetalTextureResource>> m_textures;
         std::vector<MetalUpdateDescItem<MetalSampler>>         m_samplers;
 
+        bool                  m_bindBuffer;
+        id<MTLBuffer>         m_argumentBuffer;
+        bool                  m_bindHeap;
+        std::vector<uint64_t> m_descriptorTable;
+
     public:
         MetalResourceBindGroup( MetalContext *context, ResourceBindGroupDesc desc );
         void Update( const UpdateDesc &desc ) override;
@@ -59,6 +75,10 @@ namespace DenOfIz
         void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) override;
         void BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource ) override;
         void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler ) override;
+
+    private:
+        id<MTLBuffer> CreateEntryBuffer( bool readonlyHeap );
+        void          SetGpuAddress( uint32_t index, uint64_t address );
     };
 
 } // namespace DenOfIz

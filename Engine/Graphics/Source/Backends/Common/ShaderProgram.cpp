@@ -173,6 +173,8 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
 #ifdef BUILD_METAL
         std::vector<IRResourceLocation> resources( IRShaderReflectionGetResourceCount( irReflection ) );
         IRShaderReflectionGetResourceLocations( irReflection, resources.data( ) );
+
+        uint32_t sortStart = rootSignature.ResourceBindings.size( );
 #endif
 
         for ( const uint32_t i : std::views::iota( 0u, shaderDesc.BoundResources ) )
@@ -193,7 +195,7 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
             int locationHint = 0;
             for ( const IRResourceLocation &resource : resources )
             {
-                bool match = resource.space == shaderInputBindDesc.Space && resource.slot == shaderInputBindDesc.BindPoint;
+                    bool match = resource.space == shaderInputBindDesc.Space && resource.slot == shaderInputBindDesc.BindPoint;
                 if ( resource.resourceName != nullptr )
                 {
                     match = match || ( strcmp( resource.resourceName, shaderInputBindDesc.Name ) == 0 );
@@ -231,9 +233,14 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
         }
 
 #ifdef BUILD_METAL
+        std::sort( rootSignature.ResourceBindings.begin( ) + sortStart, rootSignature.ResourceBindings.end( ), []( const ResourceBindingDesc &lhs, const ResourceBindingDesc &rhs ) {
+            return lhs.LocationHint < rhs.LocationHint;
+        } );
         IRShaderReflectionDestroy( irReflection );
 #endif
         shaderReflection->Release( );
+
+
     }
 
     return result;

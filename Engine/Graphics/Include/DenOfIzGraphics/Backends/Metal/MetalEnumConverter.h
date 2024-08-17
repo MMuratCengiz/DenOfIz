@@ -30,6 +30,7 @@ namespace DenOfIz
     public:
         static MTLPixelFormat            ConvertFormat( Format format );
         static MTLVertexFormat           ConvertFormatToVertexFormat( Format format );
+        static MTLDataType               ConvertFormatToDataType( Format format );
         static MTLPrimitiveTopologyClass ConvertTopologyClass( PrimitiveTopology topology );
         static MTLSamplerMinMagFilter    ConvertFilter( Filter filter );
         static MTLSamplerMipFilter       ConvertMipMapFilter( MipmapMode mode );

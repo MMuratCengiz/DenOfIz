@@ -99,6 +99,7 @@ set(DEN_OF_IZ_GRAPHICS_METAL_SOURCES
         Source/Backends/Metal/MetalCommandListPool.mm
         Source/Backends/Metal/MetalEnumConverter.mm
         Source/Backends/Metal/MetalFence.mm
+        Source/Backends/Metal/MetalHeap.mm
         Source/Backends/Metal/MetalInputLayout.mm
         Source/Backends/Metal/MetalLogicalDevice.mm
         Source/Backends/Metal/MetalPipeline.mm

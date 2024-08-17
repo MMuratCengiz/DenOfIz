@@ -27,7 +27,6 @@ using namespace DenOfIz;
 MetalInputLayout::MetalInputLayout( MetalContext *context, InputLayoutDesc desc ) : m_context( context ), m_desc( std::move( desc ) )
 {
     m_vertexDescriptor = [[MTLVertexDescriptor alloc] init];
-
     int      bindingIndex = 0;
     uint32_t location     = kIRStageInAttributeStartIndex;
 

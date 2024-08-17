@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzCore/ContainerUtilities.h>
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
 #include <unordered_set>
-#include "MetalContext.h"
+#include "MetalHeap.h"
 
 namespace DenOfIz
 {
@@ -32,15 +32,26 @@ namespace DenOfIz
         MTLRenderStages Stages;
     };
 
+    struct TopLevelArgumentBuffer
+    {
+        uint32_t              RegisterSpace;
+        std::vector<uint64_t> DescriptorTables;
+    };
+
     class MetalRootSignature final : public IRootSignature
     {
         MetalContext     *m_context;
         RootSignatureDesc m_desc;
 
         std::unordered_map<uint32_t, MetalBindingDesc> m_metalBindings;
+        std::vector<id<MTLBuffer>>                     m_rootParameters;
+        std::vector<id<MTLBuffer>>                     m_registerSpaceArgumentBuffers;
+        std::vector<TopLevelArgumentBuffer>            m_topLevelArgumentBuffers;
+
     public:
         MetalRootSignature( MetalContext *context, const RootSignatureDesc &desc );
-        const MetalBindingDesc &FindMetalBinding( const ResourceBindingSlot &slot ) const;
+        const MetalBindingDesc      &FindMetalBinding( const ResourceBindingSlot &slot ) const;
+        const std::vector<uint64_t> &DescriptorTable( uint32_t registerSpace ) const;
         ~MetalRootSignature( ) override;
     };
 

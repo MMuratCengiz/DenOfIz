@@ -25,6 +25,7 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
     m_context = context;
     m_desc    = desc;
     ValidateTextureDesc( m_desc );
+    SetTextureType( );
 
     MTLTextureDescriptor *textureDesc = [[MTLTextureDescriptor alloc] init];
 
@@ -35,6 +36,7 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
     textureDesc.mipmapLevelCount = m_desc.MipLevels;
     textureDesc.sampleCount      = MSAASampleCountToNumSamples( m_desc.MSAASampleCount );
     textureDesc.pixelFormat      = MetalEnumConverter::ConvertFormat( m_desc.Format );
+    textureDesc.textureType      = m_textureType;
 
     // TODO validate:
     switch ( m_desc.HeapType )
@@ -65,7 +67,8 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
     }
 
     // Create the texture resource
-    m_texture = [m_context->Device newTextureWithDescriptor:textureDesc];
+    m_texture      = [m_context->Device newTextureWithDescriptor:textureDesc];
+    m_textureUsage = textureDesc.usage;
 
     if ( !m_texture )
     {
@@ -87,6 +90,58 @@ void MetalTextureResource::UpdateTexture( const TextureDesc &desc, id<MTLTexture
 {
     m_texture = texture;
     m_desc    = desc;
+    SetTextureType( );
+}
+
+void MetalTextureResource::SetTextureType( )
+{
+    bool isArray       = m_desc.ArraySize > 1;
+    bool isTexture     = m_desc.Descriptor == ResourceDescriptor::Texture;
+    bool isTextureCube = m_desc.Descriptor == ResourceDescriptor::TextureCube;
+    bool hasDepth      = m_desc.Depth > 1;
+    bool hasHeight     = m_desc.Height > 1;
+
+    if ( isTexture && !isArray )
+    {
+        if ( hasDepth )
+        {
+            m_textureType = MTLTextureType3D;
+        }
+        else if ( hasHeight )
+        {
+            m_textureType = MTLTextureType2D;
+        }
+        else
+        {
+            m_textureType = MTLTextureType1D;
+        }
+    }
+    else if ( isTexture && isArray )
+    {
+        if ( hasDepth )
+        {
+            LOG( ERROR ) << "Array textures cannot have depth.";
+        }
+        else if ( hasHeight )
+        {
+            m_textureType = MTLTextureType2DArray;
+        }
+        else
+        {
+            m_textureType = MTLTextureType1DArray;
+        }
+    }
+    else if ( isTextureCube )
+    {
+        if ( isArray )
+        {
+            m_textureType = MTLTextureTypeCubeArray;
+        }
+        else
+        {
+            m_textureType = MTLTextureTypeCube;
+        }
+    }
 }
 
 MetalTextureResource::~MetalTextureResource( )
@@ -98,16 +153,17 @@ MetalSampler::MetalSampler( MetalContext *context, const SamplerDesc &desc, std:
     m_name                            = name;
     MTLSamplerDescriptor *samplerDesc = [[MTLSamplerDescriptor alloc] init];
 
-    samplerDesc.minFilter       = MetalEnumConverter::ConvertFilter( desc.MinFilter );
-    samplerDesc.magFilter       = MetalEnumConverter::ConvertFilter( desc.MagFilter );
-    samplerDesc.mipFilter       = MetalEnumConverter::ConvertMipMapFilter( desc.MipmapMode );
-    samplerDesc.sAddressMode    = MetalEnumConverter::ConvertSamplerAddressMode( desc.AddressModeU );
-    samplerDesc.tAddressMode    = MetalEnumConverter::ConvertSamplerAddressMode( desc.AddressModeV );
-    samplerDesc.rAddressMode    = MetalEnumConverter::ConvertSamplerAddressMode( desc.AddressModeW );
-    samplerDesc.lodMinClamp     = desc.MinLod;
-    samplerDesc.lodMaxClamp     = desc.MaxLod;
-    samplerDesc.compareFunction = MetalEnumConverter::ConvertCompareFunction( desc.CompareOp );
-    samplerDesc.maxAnisotropy   = desc.MaxAnisotropy;
+    samplerDesc.supportArgumentBuffers = YES;
+    samplerDesc.minFilter              = MetalEnumConverter::ConvertFilter( desc.MinFilter );
+    samplerDesc.magFilter              = MetalEnumConverter::ConvertFilter( desc.MagFilter );
+    samplerDesc.mipFilter              = MetalEnumConverter::ConvertMipMapFilter( desc.MipmapMode );
+    samplerDesc.sAddressMode           = MetalEnumConverter::ConvertSamplerAddressMode( desc.AddressModeU );
+    samplerDesc.tAddressMode           = MetalEnumConverter::ConvertSamplerAddressMode( desc.AddressModeV );
+    samplerDesc.rAddressMode           = MetalEnumConverter::ConvertSamplerAddressMode( desc.AddressModeW );
+    samplerDesc.lodMinClamp            = desc.MinLod;
+    samplerDesc.lodMaxClamp            = desc.MaxLod;
+    samplerDesc.compareFunction        = MetalEnumConverter::ConvertCompareFunction( desc.CompareOp );
+    samplerDesc.maxAnisotropy          = std::max( 1.0f, desc.MaxAnisotropy );
 
     m_sampler = [m_context->Device newSamplerStateWithDescriptor:samplerDesc];
     if ( !m_sampler )

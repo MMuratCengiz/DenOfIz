@@ -48,7 +48,10 @@ void MetalCommandList::Begin( )
 
 void MetalCommandList::BeginRendering( const RenderingDesc &renderingInfo )
 {
-    SwitchEncoder( MetalEncoderType::Render );
+    if ( m_blitEncoder || m_computeEncoder )
+    {
+        LOG( ERROR ) << "Expected null blit or compute encoder, make sure the CommandList order is correct.";
+    }
 
     m_activeEncoderType = MetalEncoderType::Render;
     // Begin rendering with the provided rendering information
@@ -190,7 +193,7 @@ void MetalCommandList::BindScissorRect( float x, float y, float width, float hei
 
 void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 {
-    MetalResourceBindGroup *mtkBindGroup = static_cast<MetalResourceBindGroup *>( bindGroup );
+    MetalResourceBindGroup *metalBindGroup = static_cast<MetalResourceBindGroup *>( bindGroup );
 
     if ( m_desc.QueueType == QueueType::Copy )
     {
@@ -198,7 +201,24 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
         return;
     }
 
-    for ( const auto &buffer : mtkBindGroup->Buffers( ) )
+    if ( m_desc.QueueType == QueueType::Compute )
+    {
+        return;
+    }
+    else
+    {
+        return;
+    }
+
+    /*
+     *
+     * TODO METAL:
+     * - Make sure descriptor tables are set correctly in resource bind group
+     * - Make sure to useResource correctly below.
+     * - Make sure that heaps are used correctly for read only resources
+     */
+
+    for ( const auto &buffer : metalBindGroup->Buffers( ) )
     {
         if ( m_desc.QueueType == QueueType::Compute )
         {
@@ -206,11 +226,18 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
         }
         else
         {
-            [m_renderEncoder setVertexBuffer:buffer.Resource->Instance( ) offset:0 atIndex:buffer.Location];
+            if ( ( buffer.ShaderStages & MTLRenderStageVertex ) == MTLRenderStageVertex )
+            {
+                [m_renderEncoder setVertexBuffer:buffer.Resource->Instance( ) offset:0 atIndex:buffer.Location];
+            }
+            if ( ( buffer.ShaderStages & MTLRenderStageFragment ) == MTLRenderStageFragment )
+            {
+                [m_renderEncoder setFragmentBuffer:buffer.Resource->Instance( ) offset:0 atIndex:buffer.Location];
+            }
         }
     }
 
-    for ( const auto &texture : mtkBindGroup->Textures( ) )
+    for ( const auto &texture : metalBindGroup->Textures( ) )
     {
         if ( m_desc.QueueType == QueueType::Compute )
         {
@@ -218,11 +245,19 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
         }
         else
         {
-            [m_renderEncoder setFragmentTexture:texture.Resource->Instance( ) atIndex:texture.Location];
+            [m_renderEncoder useResource:texture.Resource->Instance( ) usage:MTLResourceUsageSample];
+            if ( ( texture.ShaderStages & MTLRenderStageVertex ) == MTLRenderStageVertex )
+            {
+                [m_renderEncoder setVertexTexture:texture.Resource->Instance( ) atIndex:texture.Location];
+            }
+            if ( ( texture.ShaderStages & MTLRenderStageFragment ) == MTLRenderStageFragment )
+            {
+                [m_renderEncoder setFragmentTexture:texture.Resource->Instance( ) atIndex:texture.Location];
+            }
         }
     }
 
-    for ( const auto &sampler : mtkBindGroup->Samplers( ) )
+    for ( const auto &sampler : metalBindGroup->Samplers( ) )
     {
         if ( m_desc.QueueType == QueueType::Compute )
         {
@@ -230,7 +265,14 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
         }
         else
         {
-            [m_renderEncoder setFragmentSamplerState:sampler.Resource->Instance( ) atIndex:sampler.Location];
+            if ( ( sampler.ShaderStages & MTLRenderStageVertex ) == MTLRenderStageVertex )
+            {
+                [m_renderEncoder setVertexSamplerState:sampler.Resource->Instance( ) atIndex:sampler.Location];
+            }
+            if ( ( sampler.ShaderStages & MTLRenderStageFragment ) == MTLRenderStageFragment )
+            {
+                [m_renderEncoder setFragmentSamplerState:sampler.Resource->Instance( ) atIndex:sampler.Location];
+            }
         }
     }
 }

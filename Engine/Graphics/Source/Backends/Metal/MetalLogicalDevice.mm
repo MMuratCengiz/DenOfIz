@@ -39,7 +39,7 @@ void MetalLogicalDevice::CreateDevice( )
 std::vector<PhysicalDevice> MetalLogicalDevice::ListPhysicalDevices( )
 {
     NSArray<id<MTLDevice>> *devices     = MTLCopyAllDevices( );
-    auto                    deviceCount = ( uint32_t )[ devices count ];
+    auto                    deviceCount = (uint32_t)[devices count];
 
     std::vector<PhysicalDevice> physicalDevices;
     physicalDevices.reserve( deviceCount );
@@ -68,7 +68,7 @@ std::vector<PhysicalDevice> MetalLogicalDevice::ListPhysicalDevices( )
 void MetalLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
 {
     NSArray<id<MTLDevice>> *devices     = MTLCopyAllDevices( );
-    auto                    deviceCount = ( uint32_t )[ devices count ];
+    auto                    deviceCount = (uint32_t)[devices count];
 
     for ( uint32_t i = 0; i < deviceCount; i++ )
     {
@@ -87,6 +87,13 @@ void MetalLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     m_selectedDeviceInfo.Constants.BufferTextureRowAlignment = 1;
 
     m_context->SelectedDeviceInfo = m_selectedDeviceInfo;
+
+    MTLHeapDescriptor *heapDesc   = [[MTLHeapDescriptor alloc] init];
+    heapDesc.size                 = 4 * 1024;
+    heapDesc.storageMode          = MTLStorageModeShared;
+    heapDesc.hazardTrackingMode   = MTLHazardTrackingModeTracked;
+    heapDesc.type                 = MTLHeapTypeAutomatic;
+    m_context->ReadOnlyHeap       = [m_context->Device newHeapWithDescriptor:heapDesc];
 }
 
 std::unique_ptr<ICommandListPool> MetalLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &poolDesc )

@@ -13,6 +13,11 @@ namespace DenOfIz
         id<MTLDevice>       Device;
         id<MTLCommandQueue> CommandQueue;
         PhysicalDevice      SelectedDeviceInfo;
+
+        id<MTLHeap>   ReadOnlyHeap;
+        id<MTLBuffer> BufferTable;
+        id<MTLBuffer> TextureTable;
+        id<MTLBuffer> SamplerTable;
     };
 
 } // namespace DenOfIz

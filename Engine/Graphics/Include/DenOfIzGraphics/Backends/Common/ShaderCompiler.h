@@ -60,6 +60,7 @@ namespace DenOfIz
         [[nodiscard]] static IRShaderStage ConvertIrShaderStage( const ShaderStage& stage );
 #endif
 
+        void CacheCompiledShader( const std::string &filename, const TargetIL &targetIL, IDxcBlob *code ) const;
     };
 
     struct MetalDxcBlob_Impl : IDxcBlob

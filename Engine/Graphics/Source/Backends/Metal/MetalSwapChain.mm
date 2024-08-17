@@ -50,7 +50,7 @@ uint32_t MetalSwapChain::AcquireNextImage( ISemaphore *imageAvailableSemaphore )
 
 Format MetalSwapChain::GetPreferredFormat( )
 {
-    return Format::R8Unorm;
+    return m_desc.BackBufferFormat;
 }
 
 ITextureResource *MetalSwapChain::GetRenderTarget( uint32_t frame )
@@ -69,7 +69,7 @@ void MetalSwapChain::Resize( uint32_t width, uint32_t height )
 
     m_drawableDesc.Width        = width;
     m_drawableDesc.Height       = height;
-    m_drawableDesc.Format       = Format::R8Unorm;
+    m_drawableDesc.Format       = m_desc.BackBufferFormat;
     m_drawableDesc.InitialState = ResourceState::RenderTarget;
     m_drawableDesc.HeapType     = HeapType::GPU;
 

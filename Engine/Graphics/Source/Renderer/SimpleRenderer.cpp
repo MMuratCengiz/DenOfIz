@@ -47,7 +47,7 @@ namespace DenOfIz
                          } };
 
         ShaderReflectDesc reflection = m_program->Reflect( );
-        // Testing... :D
+        // Testing...
         rootSigDesc = reflection.RootSignature;
 
         m_rootSignature = m_logicalDevice->CreateRootSignature( rootSigDesc );
