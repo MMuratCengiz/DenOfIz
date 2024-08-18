@@ -71,9 +71,9 @@ namespace DenOfIz
         std::unique_ptr<IResourceBindGroup> CreateResourceBindGroup( const ResourceBindGroupDesc &createInfo ) override;
         std::unique_ptr<IFence>             CreateFence( ) override;
         std::unique_ptr<ISemaphore>         CreateSemaphore( ) override;
-        std::unique_ptr<IBufferResource>    CreateBufferResource( std::string name, const BufferDesc &createInfo ) override;
-        std::unique_ptr<ITextureResource>   CreateTextureResource( std::string name, const TextureDesc &createInfo ) override;
-        std::unique_ptr<ISampler>           CreateSampler( std::string name, const SamplerDesc &createInfo ) override;
+        std::unique_ptr<IBufferResource>    CreateBufferResource( const BufferDesc &createInfo ) override;
+        std::unique_ptr<ITextureResource>   CreateTextureResource( const TextureDesc &createInfo ) override;
+        std::unique_ptr<ISampler>           CreateSampler( const SamplerDesc &createInfo ) override;
 
         ~VulkanLogicalDevice( ) override;
 

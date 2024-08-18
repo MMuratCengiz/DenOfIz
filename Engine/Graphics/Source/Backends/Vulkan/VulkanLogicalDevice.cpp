@@ -606,17 +606,15 @@ std::unique_ptr<IResourceBindGroup> VulkanLogicalDevice::CreateResourceBindGroup
     return std::unique_ptr<IResourceBindGroup>( descriptorTable );
 }
 
-std::unique_ptr<IBufferResource> VulkanLogicalDevice::CreateBufferResource( const std::string name, const BufferDesc &createInfo )
+std::unique_ptr<IBufferResource> VulkanLogicalDevice::CreateBufferResource( const BufferDesc &createInfo )
 {
     auto *bufferResource = new VulkanBufferResource( m_context.get( ), createInfo );
-    bufferResource->Name = name;
     return std::unique_ptr<IBufferResource>( bufferResource );
 }
 
-std::unique_ptr<ITextureResource> VulkanLogicalDevice::CreateTextureResource( const std::string name, const TextureDesc &createInfo )
+std::unique_ptr<ITextureResource> VulkanLogicalDevice::CreateTextureResource( const TextureDesc &createInfo )
 {
     auto *imageResource = new VulkanTextureResource( m_context.get( ), createInfo );
-    imageResource->Name = name;
     return std::unique_ptr<ITextureResource>( imageResource );
 }
 
@@ -632,9 +630,8 @@ std::unique_ptr<ISemaphore> VulkanLogicalDevice::CreateSemaphore( )
     return std::unique_ptr<ISemaphore>( semaphore );
 }
 
-std::unique_ptr<ISampler> VulkanLogicalDevice::CreateSampler( const std::string name, const SamplerDesc &createInfo )
+std::unique_ptr<ISampler> VulkanLogicalDevice::CreateSampler( const SamplerDesc &createInfo )
 {
     auto *sampler = new VulkanSampler( m_context.get( ), createInfo );
-    sampler->Name = name;
     return std::unique_ptr<ISampler>( sampler );
 }

@@ -72,7 +72,7 @@ namespace DenOfIz
         void                              CopyBufferRegion( const CopyBufferRegionDesc &copyDesc ) const;
         void                              CopyTextureRegion( const CopyTextureRegionDesc &copyDesc ) const;
         void                              CopyDataToTexture( const CopyDataToTextureDesc &copyDesc );
-        std::unique_ptr<ITextureResource> CreateAndLoadTexture( const std::string &resourceName, const std::string &file );
+        std::unique_ptr<ITextureResource> CreateAndLoadTexture( const std::string &file );
         void                              LoadTexture( const LoadTextureDesc &loadDesc );
         void                              End( ISemaphore *notify );
         void                              CleanResources( );
@@ -80,6 +80,6 @@ namespace DenOfIz
     private:
         void     LoadTextureInternal( const Texture &texture, ITextureResource *dstTexture );
         void     CopyTextureToMemoryAligned( const Texture &texture, const MipData &mipData, Byte *dst ) const;
-        uint32_t GetSubresourceAlignment( uint32_t bitSize ) const;
+        [[nodiscard]] uint32_t GetSubresourceAlignment( uint32_t bitSize ) const;
     };
 } // namespace DenOfIz

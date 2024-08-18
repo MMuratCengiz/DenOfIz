@@ -32,16 +32,16 @@ namespace DenOfIz
         VulkanContext       *m_context;
         VulkanRootSignature *m_rootSignature;
 
-        VkDescriptorSet                   m_descriptorSet;
+        VkDescriptorSet                   m_descriptorSet{};
         std::vector<VkWriteDescriptorSet> m_writeDescriptorSets;
         Storage                           m_storage;
 
     public:
-        VulkanResourceBindGroup( VulkanContext *context, const ResourceBindGroupDesc &desc );
-        ~VulkanResourceBindGroup( ) override;
+             VulkanResourceBindGroup( VulkanContext *context, const ResourceBindGroupDesc &desc );
+        ~    VulkanResourceBindGroup( ) override;
         void Update( const UpdateDesc &desc ) override;
 
-        [[nodiscard]] const VkDescriptorSet& GetDescriptorSet( ) const
+        [[nodiscard]] const VkDescriptorSet &GetDescriptorSet( ) const
         {
             return m_descriptorSet;
         }
@@ -52,11 +52,12 @@ namespace DenOfIz
         }
 
     protected:
-        void BindTexture( const std::string &name, ITextureResource *resource ) override;
-        void BindBuffer( const std::string &name, IBufferResource *resource ) override;
-        void BindSampler( const std::string &name, ISampler *sampler ) override;
+        void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) override;
+        void BindBuffer( const ResourceBindingSlot &name, IBufferResource *resource ) override;
+        void BindSampler( const ResourceBindingSlot &name, ISampler *sampler ) override;
+
     private:
-        VkWriteDescriptorSet &CreateWriteDescriptor( const std::string &name );
+        VkWriteDescriptorSet &CreateWriteDescriptor( const ResourceBindingSlot &slot );
     };
 
 } // namespace DenOfIz

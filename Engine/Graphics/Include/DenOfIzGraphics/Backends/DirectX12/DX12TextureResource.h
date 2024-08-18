@@ -18,50 +18,50 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DX12Context.h"
 #include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
+#include "DX12Context.h"
 
 namespace DenOfIz
 {
 
     class DX12TextureResource final : public ITextureResource
     {
-        TextureDesc                 m_desc;
-        DX12Context                *m_context{};
-        D3D12MA::Allocation        *m_allocation{};
-        ID3D12Resource2            *m_resource;
-        D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle;
-        D3D12_RESOURCE_DESC         m_resourceDesc{};
-        D3D12_ROOT_PARAMETER_TYPE   m_rootParameterType;
+        TextureDesc                 m_desc{ };
+        DX12Context                *m_context    = nullptr;
+        D3D12MA::Allocation        *m_allocation = nullptr;
+        ID3D12Resource2            *m_resource   = nullptr;
+        D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle{ };
+        D3D12_RESOURCE_DESC         m_resourceDesc{ };
+        D3D12_ROOT_PARAMETER_TYPE   m_rootParameterType{ };
         bool                        isExternalResource = false; // Used for swap chain render targets, might need a better way
 
     public:
-        DX12TextureResource(DX12Context *context, const TextureDesc &desc);
-        DX12TextureResource(ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle);
-        ~DX12TextureResource() override = default;
-        void CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle);
+             DX12TextureResource( DX12Context *context, const TextureDesc &desc );
+             DX12TextureResource( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle );
+        ~    DX12TextureResource( ) override = default;
+        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle );
 
-        [[nodiscard]] const TextureDesc &GetDesc() const
+        [[nodiscard]] const TextureDesc &GetDesc( ) const
         {
             return m_desc;
         }
 
-        [[nodiscard]] const D3D12_RESOURCE_DESC &GetResourceDesc() const
+        [[nodiscard]] const D3D12_RESOURCE_DESC &GetResourceDesc( ) const
         {
             return m_resourceDesc;
         }
 
-        [[nodiscard]] const D3D12_ROOT_PARAMETER_TYPE &GetRootParameterType() const
+        [[nodiscard]] const D3D12_ROOT_PARAMETER_TYPE &GetRootParameterType( ) const
         {
             return m_rootParameterType;
         }
 
-        [[nodiscard]] ID3D12Resource *GetResource() const
+        [[nodiscard]] ID3D12Resource *GetResource( ) const
         {
             return m_resource;
         }
 
-        [[nodiscard]] const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle() const
+        [[nodiscard]] const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle( ) const
         {
             return m_cpuHandle;
         }
@@ -76,22 +76,22 @@ namespace DenOfIz
     private:
         DX12Context                *m_context;
         SamplerDesc                 m_desc;
-        D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle{};
-        D3D12_SAMPLER_DESC          m_samplerDesc{};
+        D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle{ };
+        D3D12_SAMPLER_DESC          m_samplerDesc{ };
 
     public:
-        DX12Sampler(DX12Context *context, const SamplerDesc &desc);
-        void CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle);
-        ~DX12Sampler() override = default;
+             DX12Sampler( DX12Context *context, const SamplerDesc &desc );
+        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle );
+        ~    DX12Sampler( ) override = default;
 
-        [[nodiscard]] D3D12_FILTER CalculateFilter(Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy) const;
+        [[nodiscard]] D3D12_FILTER CalculateFilter( Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy ) const;
 
-        [[nodiscard]] const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle() const
+        [[nodiscard]] const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle( ) const
         {
             return m_cpuHandle;
         }
 
-        [[nodiscard]] const D3D12_SAMPLER_DESC &GetSamplerDesc() const
+        [[nodiscard]] const D3D12_SAMPLER_DESC &GetSamplerDesc( ) const
         {
             return m_samplerDesc;
         }

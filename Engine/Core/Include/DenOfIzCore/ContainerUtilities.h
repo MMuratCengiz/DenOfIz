@@ -65,8 +65,8 @@ namespace DenOfIz
             }
         }
 
-        template <typename R>
-        static R SafeGetMapValue( const std::unordered_map<std::string, R> &map, const std::string &key )
+        template <typename K, typename R>
+        static R SafeGetMapValue( const std::unordered_map<K, R> &map, const K &key )
         {
             auto value = map.find( key );
             if ( value == map.end( ) )

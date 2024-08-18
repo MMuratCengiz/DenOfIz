@@ -1,5 +1,6 @@
 #include <DenOfIzCore/Utilities.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
+#include <fstream>
 
 using namespace DenOfIz;
 
@@ -368,15 +369,15 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const std::string &
 
     CacheCompiledShader( filename, compileOptions.TargetIL, code );
 
-    CompiledShader *compiledShader = new CompiledShader( );
-    compiledShader->Stage          = compileOptions.Stage;
-    compiledShader->Blob           = code;
-    compiledShader->Reflection     = reflection;
-    compiledShader->EntryPoint     = compileOptions.EntryPoint;
+    auto *compiledShader       = new CompiledShader( );
+    compiledShader->Stage      = compileOptions.Stage;
+    compiledShader->Blob       = code;
+    compiledShader->Reflection = reflection;
+    compiledShader->EntryPoint = compileOptions.EntryPoint;
     return std::unique_ptr<CompiledShader>( compiledShader );
 }
 
-IDxcBlob *const ShaderCompiler::DxilToMsl( const CompileOptions &compileOptions, IDxcBlob *code ) const
+IDxcBlob *ShaderCompiler::DxilToMsl( const CompileOptions &compileOptions, IDxcBlob *code ) const
 {
 #ifdef BUILD_METAL
     IRCompilerSetEntryPointName( this->m_irCompiler, compileOptions.EntryPoint.c_str( ) );
@@ -473,8 +474,8 @@ void ShaderCompiler::CacheCompiledShader( const std::string &filename, const Tar
 {
     // Cache the compiled shader into the matching binary format, it is dxil for hlsl and msl for metal,
     // Simply replace the extension with the corresponding value:
-    std::string compiledFilename = filename;
-    size_t      extensionLength  = filename.size( ) - filename.find_last_of( '.' );
+    std::string  compiledFilename = filename;
+    const size_t extensionLength  = filename.size( ) - filename.find_last_of( '.' );
 
     if ( targetIL == TargetIL::SPIRV )
     {
@@ -489,10 +490,9 @@ void ShaderCompiler::CacheCompiledShader( const std::string &filename, const Tar
         compiledFilename.replace( compiledFilename.find_last_of( '.' ), extensionLength, ".metallib" );
     }
 
-    std::string appPath = Utilities::AppPath( compiledFilename );
+    const std::string appPath = Utilities::AppPath( compiledFilename );
 
-    std::ofstream compiledFile( appPath, std::ios::binary );
-    if ( compiledFile.is_open( ) )
+    if ( std::ofstream compiledFile( appPath, std::ios::binary ); compiledFile.is_open( ) )
     {
         compiledFile.write( static_cast<const char *>( code->GetBufferPointer( ) ), code->GetBufferSize( ) );
         compiledFile.close( );

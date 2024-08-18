@@ -73,16 +73,16 @@ namespace DenOfIz
         IRootSignature       *m_rootSignature;
 
     public:
-        IResourceBindGroup( ResourceBindGroupDesc desc ) : m_rootSignature( desc.RootSignature ), m_desc( desc )
+        explicit IResourceBindGroup( const ResourceBindGroupDesc &desc ) : m_desc( desc ), m_rootSignature( desc.RootSignature )
         {
         }
 
-        inline uint32_t RegisterSpace( ) const
+        [[nodiscard]] uint32_t RegisterSpace( ) const
         {
             return m_desc.RegisterSpace;
         }
 
-        virtual ~IResourceBindGroup( ) = default;
+        virtual ~    IResourceBindGroup( ) = default;
         virtual void Update( const UpdateDesc &desc )
         {
             DZ_ASSERTM( desc.Buffers.size( ) == m_desc.NumBuffers, "Number of buffers being updated do not match." );

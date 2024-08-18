@@ -26,9 +26,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class DX12BufferResource : public IBufferResource
+    class DX12BufferResource final : public IBufferResource
     {
-    private:
         DX12Context                      *m_context;
         BufferDesc                        m_desc;
         wil::com_ptr<ID3D12Resource2>     m_resource;
@@ -40,10 +39,10 @@ namespace DenOfIz
         uint32_t m_stride  = 0;
 
     public:
-        DX12BufferResource(DX12Context *context, const BufferDesc &desc);
+        DX12BufferResource(DX12Context *context, BufferDesc desc);
         void CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle);
 
-        ID3D12Resource2 *GetResource() const
+        [[nodiscard]] ID3D12Resource2 *GetResource() const
         {
             return m_resource.get();
         }
@@ -52,12 +51,12 @@ namespace DenOfIz
 
         ~DX12BufferResource() override;
 
-        const D3D12_ROOT_PARAMETER_TYPE &GetRootParameterType() const
+        [[nodiscard]] const D3D12_ROOT_PARAMETER_TYPE &GetRootParameterType() const
         {
             return m_rootParameterType;
         }
 
-        uint32_t GetStride() const
+        [[nodiscard]] uint32_t GetStride() const
         {
             return m_stride;
         }

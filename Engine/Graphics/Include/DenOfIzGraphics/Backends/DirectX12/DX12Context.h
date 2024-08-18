@@ -56,7 +56,6 @@ namespace DenOfIz
 
     struct DX12Context : private NonCopyable
     {
-        static constexpr int BackBufferCount = 3;
         bool             IsDeviceLost    = false;
 
         // Release Last

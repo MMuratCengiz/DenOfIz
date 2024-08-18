@@ -42,6 +42,7 @@ namespace DenOfIz
         float              MipLodBias    = 0.0f;
         float              MinLod        = 0.0f;
         float              MaxLod        = 1.0f;
+        std::string        DebugName;
     };
 
     struct TextureDesc
@@ -59,9 +60,10 @@ namespace DenOfIz
         // if Height is > 1, it is a 2D texture
         uint32_t Height = 1;
         // if Depth is > 1, it is a 3D texture
-        uint32_t Depth     = 1;
-        uint32_t ArraySize = 1;
-        uint32_t MipLevels = 1;
+        uint32_t    Depth     = 1;
+        uint32_t    ArraySize = 1;
+        uint32_t    MipLevels = 1;
+        std::string DebugName;
     };
 
     class ITextureResource
@@ -72,10 +74,9 @@ namespace DenOfIz
         uint32_t    m_width  = 1;
         uint32_t    m_height = 1;
         uint32_t    m_depth  = 1;
-        std::string m_name   = "";
         const void *m_data   = nullptr;
 
-        ITextureResource( const TextureDesc &desc )
+        explicit ITextureResource( const TextureDesc &desc )
         {
             m_width  = desc.Width;
             m_height = desc.Height;
@@ -85,11 +86,6 @@ namespace DenOfIz
 
     public:
         virtual ~ITextureResource( ) = default;
-
-        [[nodiscard]] const std::string &Name( ) const
-        {
-            return m_name;
-        }
 
         [[nodiscard]] uint32_t GetWidth( ) const
         {
@@ -151,7 +147,7 @@ namespace DenOfIz
         std::string m_name;
 
     public:
-        virtual ~ISampler( ) = default;
+        virtual ~                        ISampler( ) = default;
         [[nodiscard]] const std::string &Name( ) const
         {
             return m_name;

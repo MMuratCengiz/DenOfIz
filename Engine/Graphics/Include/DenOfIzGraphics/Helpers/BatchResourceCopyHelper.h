@@ -82,10 +82,10 @@ namespace DenOfIz
         BatchResourceCopyHelper( ILogicalDevice *device, BatchResourceCopy *batchCopy );
 
         void                                      Begin( ) const;
-        [[nodiscard]] UniformBufferHolder         CreateUniformBuffer( std::string name, const void *data, uint32_t numBytes ) const;
+        [[nodiscard]] UniformBufferHolder         CreateUniformBuffer( const void *data, uint32_t numBytes ) const;
         [[nodiscard]] VertexIndexBufferPairHolder CreateGeometryBuffers( const GeometryData &GeometryData ) const;
-        [[nodiscard]] SamplerHolder               CreateSampler( const std::string &name, const SamplerDesc &desc ) const;
-        [[nodiscard]] TextureHolder               CreateTexture( const std::string &name, const std::string &path ) const;
+        [[nodiscard]] SamplerHolder               CreateSampler( const SamplerDesc &desc ) const;
+        [[nodiscard]] TextureHolder               CreateTexture( const std::string &path ) const;
         void                                      Submit( ) const;
 
     private:

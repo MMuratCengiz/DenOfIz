@@ -41,16 +41,16 @@ void BatchResourceCopyHelper::Begin( ) const
     m_syncCommandList->Begin( );
 }
 
-UniformBufferHolder BatchResourceCopyHelper::CreateUniformBuffer( std::string name, const void *data, const uint32_t numBytes ) const
+UniformBufferHolder BatchResourceCopyHelper::CreateUniformBuffer( const void *data, const uint32_t numBytes ) const
 {
     BufferDesc bufferDesc{ };
     bufferDesc.HeapType     = HeapType::GPU;
     bufferDesc.Descriptor   = ResourceDescriptor::UniformBuffer;
     bufferDesc.InitialState = ResourceState::CopyDst;
     bufferDesc.NumBytes     = numBytes;
-    
+    bufferDesc.DebugName    = NextId( "Uniform" );
 
-    auto buffer = m_device->CreateBufferResource( std::move( name ), bufferDesc );
+    auto buffer = m_device->CreateBufferResource( bufferDesc );
 
     CopyToGpuBufferDesc copyDesc{ };
     copyDesc.DstBuffer = buffer.get( );
@@ -73,15 +73,18 @@ VertexIndexBufferPairHolder BatchResourceCopyHelper::CreateGeometryBuffers( cons
     vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
     vBufferDesc.InitialState = ResourceState::CopyDst;
     vBufferDesc.NumBytes     = geometryData.SizeOfVertices( );
+    vBufferDesc.DebugName    = NextId( "Vertex" );
 
-    result.VertexBuffer      = m_device->CreateBufferResource( NextId( "Vertex" ), vBufferDesc );
+    result.VertexBuffer = m_device->CreateBufferResource( vBufferDesc );
 
     BufferDesc iBufferDesc{ };
     iBufferDesc.HeapType     = HeapType::GPU;
     iBufferDesc.Descriptor   = ResourceDescriptor::IndexBuffer;
     iBufferDesc.InitialState = ResourceState::CopyDst;
     iBufferDesc.NumBytes     = geometryData.SizeOfIndices( );
-    result.IndexBuffer       = m_device->CreateBufferResource( NextId( "Index" ), iBufferDesc );
+    iBufferDesc.DebugName    = NextId( "Index" );
+
+    result.IndexBuffer = m_device->CreateBufferResource( iBufferDesc );
 
     CopyToGpuBufferDesc vbCopyDesc{ };
     vbCopyDesc.DstBuffer = result.VertexBuffer.get( );
@@ -104,14 +107,14 @@ VertexIndexBufferPairHolder BatchResourceCopyHelper::CreateGeometryBuffers( cons
     return result;
 }
 
-SamplerHolder BatchResourceCopyHelper::CreateSampler( const std::string &name, const SamplerDesc &desc ) const
+SamplerHolder BatchResourceCopyHelper::CreateSampler( const SamplerDesc &desc ) const
 {
-    return SamplerHolder{ .Sampler = m_device->CreateSampler( name, SamplerDesc{ } ) };
+    return SamplerHolder{ .Sampler = m_device->CreateSampler( desc ) };
 }
 
-TextureHolder BatchResourceCopyHelper::CreateTexture( const std::string &name, const std::string &path ) const
+TextureHolder BatchResourceCopyHelper::CreateTexture( const std::string &path ) const
 {
-    auto texture = m_batchCopy->CreateAndLoadTexture( name, path );
+    auto texture = m_batchCopy->CreateAndLoadTexture( path );
     m_syncCommandList->PipelineBarrier(
         PipelineBarrierDesc{ }.TextureBarrier( { .Resource = texture.get( ), .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } ) );
     return TextureHolder{ .Texture = std::move( texture ) };
@@ -119,9 +122,13 @@ TextureHolder BatchResourceCopyHelper::CreateTexture( const std::string &name, c
 
 std::string BatchResourceCopyHelper::NextId( const std::string &prefix )
 {
+#ifndef NDEBUG
     static std::atomic<unsigned int> idCounter( 0 );
     const int                        next = idCounter.fetch_add( 1, std::memory_order_relaxed );
     return prefix + "_BufferHelperResource#" + std::to_string( next );
+#else
+    return prefix + "_BufferHelperResource";
+#endif
 }
 
 void BatchResourceCopyHelper::Submit( ) const

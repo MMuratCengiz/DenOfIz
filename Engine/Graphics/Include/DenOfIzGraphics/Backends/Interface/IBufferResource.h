@@ -51,21 +51,21 @@ namespace DenOfIz
     struct BufferDesc
     {
         uint32_t                   Alignment = 0; // None or Constants.BufferAlignment(Api Dependant)
-        uint32_t                   NumBytes;
-        BufferView                 BufferView; // For Structured Buffers
+        uint32_t                   NumBytes{ };
+        BufferView                 BufferView{ }; // For Structured Buffers
         Format                     Format = Format::Undefined;
         BitSet<ResourceDescriptor> Descriptor;
         BitSet<ResourceState>      InitialState;
         HeapType                   HeapType;
+        std::string                DebugName;
     };
 
     class IBufferResource
     {
     protected:
-        uint32_t              m_numBytes;
-        const void           *m_data;
+        uint32_t              m_numBytes     = 0;
+        const void           *m_data         = nullptr;
         void                 *m_mappedMemory = nullptr;
-        std::string           m_name;
         BitSet<ResourceState> m_state;
 
     public:
@@ -76,17 +76,12 @@ namespace DenOfIz
         virtual void  UnmapMemory( ) = 0;
         //--
 
-        inline const std::string &Name( ) const
-        {
-            return m_name;
-        }
-
-        inline uint32_t GetSize( ) const
+        [[nodiscard]] uint32_t GetSize( ) const
         {
             return m_numBytes;
         }
 
-        inline const void *GetData( ) const
+        [[nodiscard]] const void *GetData( ) const
         {
             return m_data;
         }

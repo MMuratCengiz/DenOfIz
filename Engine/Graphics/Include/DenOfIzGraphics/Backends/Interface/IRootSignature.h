@@ -37,30 +37,30 @@ namespace DenOfIz
     {
         uint32_t                    Binding  = 0;
         uint32_t                    Register = 0;
-        DescriptorBufferBindingType Type;
+        DescriptorBufferBindingType Type     = DescriptorBufferBindingType::ConstantBuffer;
 
-        static ResourceBindingSlot Cbv( uint32_t binding = 0, uint32_t reg = 0 )
+        static ResourceBindingSlot Cbv( const uint32_t binding = 0, const uint32_t reg = 0 )
         {
             return ResourceBindingSlot{ binding, reg, DescriptorBufferBindingType::ConstantBuffer };
         }
 
-        static ResourceBindingSlot Uav( uint32_t binding = 0, uint32_t reg = 0 )
+        static ResourceBindingSlot Uav( const uint32_t binding = 0, const uint32_t reg = 0 )
         {
             return ResourceBindingSlot{ binding, reg, DescriptorBufferBindingType::UnorderedAccess };
         }
 
-        static ResourceBindingSlot Srv( uint32_t binding = 0, uint32_t reg = 0 )
+        static ResourceBindingSlot Srv( const uint32_t binding = 0, const uint32_t reg = 0 )
         {
             return ResourceBindingSlot{ binding, reg, DescriptorBufferBindingType::ShaderResource };
         }
 
-        static ResourceBindingSlot Sampler( uint32_t binding = 0, uint32_t reg = 0 )
+        static ResourceBindingSlot Sampler( const uint32_t binding = 0, const uint32_t reg = 0 )
         {
             return ResourceBindingSlot{ binding, reg, DescriptorBufferBindingType::Sampler };
         }
 
         // To simplify having a really odd looking vector of ResourceBindingSlots
-        uint32_t Key( ) const
+        [[nodiscard]] uint32_t Key( ) const
         {
             return static_cast<uint32_t>( Type ) * 1000 + Register * 100 + Binding;
         }
@@ -69,8 +69,8 @@ namespace DenOfIz
     struct ResourceBindingDesc
     {
         std::string                 Name;
-        DescriptorBufferBindingType BindingType;
-        uint32_t                    Binding;
+        DescriptorBufferBindingType BindingType = DescriptorBufferBindingType::ConstantBuffer;
+        uint32_t                    Binding{ };
         uint32_t                    RegisterSpace = 0;
         BitSet<ResourceDescriptor>  Descriptor;
         std::vector<ShaderStage>    Stages;
@@ -113,7 +113,7 @@ namespace DenOfIz
         std::unordered_map<uint32_t, ResourceBindingDesc> m_resourceBindings;
 
     public:
-        IRootSignature( const RootSignatureDesc &desc )
+        explicit IRootSignature( const RootSignatureDesc &desc )
         {
             for ( const auto &binding : desc.ResourceBindings )
             {
@@ -128,7 +128,7 @@ namespace DenOfIz
 
         const ResourceBindingDesc &FindBinding( const ResourceBindingSlot &slot )
         {
-            auto it = m_resourceBindings.find( slot.Key( ) );
+            const auto it = m_resourceBindings.find( slot.Key( ) );
             if ( it == m_resourceBindings.end( ) )
             {
                 LOG( ERROR ) << "Unable to find slot with type[" << static_cast<int>( slot.Type ) << "],binding[" << slot.Binding << "],register[" << slot.Register << "].";

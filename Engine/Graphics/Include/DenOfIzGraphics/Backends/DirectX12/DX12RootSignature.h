@@ -38,10 +38,10 @@ namespace DenOfIz
     {
         struct RegisterSpaceOrder
         {
-            uint32_t                                  Space{ };
-            uint32_t                                  ResourceCount{ };
-            uint32_t                                  SamplerCount{ };
-            std::unordered_map<std::string, uint32_t> ResourceOffsetMap;
+            uint32_t                               Space{ };
+            uint32_t                               ResourceCount{ };
+            uint32_t                               SamplerCount{ };
+            std::unordered_map<uint32_t, uint32_t> ResourceOffsetMap;
         };
 
         DX12Context                      *m_context;
@@ -62,14 +62,14 @@ namespace DenOfIz
     public:
         DX12RootSignature( DX12Context *context, const RootSignatureDesc &desc );
 
-        [[nodiscard]] uint32_t GetResourceOffset( const uint32_t registerSpace, const std::string &name ) const
+        [[nodiscard]] uint32_t GetResourceOffset( const uint32_t registerSpace, const ResourceBindingSlot &slot ) const
         {
             if ( registerSpace >= m_registerSpaceOrder.size( ) )
             {
                 LOG( ERROR ) << "Register space " << registerSpace << " is not bound to any bind group.";
             }
 
-            return ContainerUtilities::SafeGetMapValue( m_registerSpaceOrder[ registerSpace ].ResourceOffsetMap, name );
+            return ContainerUtilities::SafeGetMapValue( m_registerSpaceOrder[ registerSpace ].ResourceOffsetMap, slot.Key( ) );
         }
 
         [[nodiscard]] uint32_t RegisterSpaceOffset( const uint32_t registerSpace ) const

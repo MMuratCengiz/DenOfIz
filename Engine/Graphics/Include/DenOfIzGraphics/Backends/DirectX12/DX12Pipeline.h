@@ -26,39 +26,38 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class DX12Pipeline : public IPipeline
+    class DX12Pipeline final : public IPipeline
     {
-    private:
-        DX12Context                      *m_context;
-        wil::com_ptr<ID3D12PipelineState> m_graphicsPipeline;
-        DX12RootSignature                *m_rootSignature;
-        PipelineDesc                      m_desc;
-        D3D12_PRIMITIVE_TOPOLOGY          m_topology;
+        DX12Context                      *m_context          = nullptr;
+        wil::com_ptr<ID3D12PipelineState> m_graphicsPipeline = nullptr;
+        DX12RootSignature                *m_rootSignature    = nullptr;
+        PipelineDesc                      m_desc{ };
+        D3D12_PRIMITIVE_TOPOLOGY          m_topology{ };
 
     public:
-        DX12Pipeline(DX12Context *context, const PipelineDesc &desc);
-        ID3D12PipelineState *GetPipeline() const
+                                           DX12Pipeline( DX12Context *context, PipelineDesc desc );
+        [[nodiscard]] ID3D12PipelineState *GetPipeline( ) const
         {
-            return m_graphicsPipeline.get();
+            return m_graphicsPipeline.get( );
         }
-        ID3D12RootSignature *GetRootSignature() const
+        [[nodiscard]] ID3D12RootSignature *GetRootSignature( ) const
         {
-            return m_rootSignature->Instance();
+            return m_rootSignature->Instance( );
         }
-        D3D12_PRIMITIVE_TOPOLOGY GetTopology() const
+        [[nodiscard]] D3D12_PRIMITIVE_TOPOLOGY GetTopology( ) const
         {
             return m_topology;
         }
-        ~DX12Pipeline() override;
+        ~DX12Pipeline( ) override;
 
     private:
-        void                  SetMSAASampleCount(const PipelineDesc &desc, D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc) const;
-        void                  SetGraphicsShaders(D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc);
-        D3D12_SHADER_BYTECODE GetShaderByteCode(const CompiledShader &compiledShader) const;
-        void                  CreateGraphicsPipeline();
-        void                  CreateComputePipeline();
-        void                  InitStencilFace(D3D12_DEPTH_STENCILOP_DESC &stencilFace, const StencilFace &face) const;
-        void                  InitDepthStencil(D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc) const;
+        void                  SetMSAASampleCount( const PipelineDesc &desc, D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const;
+        void                  SetGraphicsShaders( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const;
+        D3D12_SHADER_BYTECODE GetShaderByteCode( const CompiledShader *compiledShader ) const;
+        void                  CreateGraphicsPipeline( );
+        void                  CreateComputePipeline( );
+        void                  InitStencilFace( D3D12_DEPTH_STENCILOP_DESC &stencilFace, const StencilFace &face ) const;
+        void                  InitDepthStencil( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const;
     };
 
 } // namespace DenOfIz

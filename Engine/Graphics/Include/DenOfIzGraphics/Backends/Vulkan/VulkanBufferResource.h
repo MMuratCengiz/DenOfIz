@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class VulkanBufferResource final : public IBufferResource, private NonCopyable
+    class VulkanBufferResource final : public IBufferResource, NonCopyable
     {
         BufferDesc     m_desc{ };
         VulkanContext *m_context = nullptr;
@@ -37,7 +37,7 @@ namespace DenOfIz
         void *MapMemory( ) override;
         void  UnmapMemory( ) override;
 
-        explicit VulkanBufferResource( VulkanContext *context, const BufferDesc &desc );
+        explicit VulkanBufferResource( VulkanContext *context, BufferDesc desc );
         ~VulkanBufferResource( ) override;
 
         [[nodiscard]] size_t NumBytes( ) const

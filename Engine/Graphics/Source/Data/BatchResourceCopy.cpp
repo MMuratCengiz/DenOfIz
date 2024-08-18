@@ -60,8 +60,9 @@ void BatchResourceCopy::CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc )
     stagingBufferDesc.HeapType     = HeapType::CPU_GPU;
     stagingBufferDesc.InitialState = ResourceState::CopySrc;
     stagingBufferDesc.NumBytes     = Utilities::Align( copyDesc.NumBytes, m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
+    stagingBufferDesc.DebugName    = "CopyToGPUBuffer_StagingBuffer";
 
-    auto stagingBuffer = m_device->CreateBufferResource( "StagingBuffer", stagingBufferDesc );
+    auto stagingBuffer = m_device->CreateBufferResource( stagingBufferDesc );
     memcpy( stagingBuffer->MapMemory( ), copyDesc.Data, copyDesc.NumBytes );
     stagingBuffer->UnmapMemory( );
 
@@ -92,8 +93,9 @@ void BatchResourceCopy::CopyDataToTexture( const CopyDataToTextureDesc &copyDesc
     stagingBufferDesc.HeapType     = HeapType::CPU_GPU;
     stagingBufferDesc.InitialState = ResourceState::CopySrc;
     stagingBufferDesc.NumBytes     = copyDesc.NumBytes;
+    stagingBufferDesc.DebugName    = "CopyDataToTexture_StagingBuffer";
 
-    auto  stagingBuffer = m_device->CreateBufferResource( "StagingBuffer", stagingBufferDesc );
+    auto  stagingBuffer = m_device->CreateBufferResource( stagingBufferDesc );
     void *dst           = stagingBuffer->MapMemory( );
     memcpy( dst, copyDesc.Data, copyDesc.NumBytes );
     stagingBuffer->UnmapMemory( );
@@ -110,7 +112,7 @@ void BatchResourceCopy::CopyDataToTexture( const CopyDataToTextureDesc &copyDesc
     m_resourcesToClean.push_back( std::move( stagingBuffer ) );
 }
 
-std::unique_ptr<ITextureResource> BatchResourceCopy::CreateAndLoadTexture( const std::string &resourceName, const std::string &file )
+std::unique_ptr<ITextureResource> BatchResourceCopy::CreateAndLoadTexture( const std::string &file )
 {
     Texture texture( file );
 
@@ -124,8 +126,9 @@ std::unique_ptr<ITextureResource> BatchResourceCopy::CreateAndLoadTexture( const
     textureDesc.Depth        = texture.Depth;
     textureDesc.ArraySize    = texture.ArraySize;
     textureDesc.MipLevels    = texture.MipLevels;
+    textureDesc.DebugName    = "LoadTexture_Texture";
 
-    auto outTex = m_device->CreateTextureResource( resourceName, textureDesc );
+    auto outTex = m_device->CreateTextureResource( textureDesc );
     LoadTextureInternal( texture, outTex.get( ) );
     return std::move( outTex );
 }
@@ -168,6 +171,7 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
     BufferDesc stagingBufferDesc   = { };
     stagingBufferDesc.HeapType     = HeapType::CPU_GPU;
     stagingBufferDesc.InitialState = ResourceState::CopySrc;
+    stagingBufferDesc.DebugName    = "LoadTexture_StagingBuffer";
 
     for ( uint32_t i = 0; i < texture.MipLevels; ++i )
     {
@@ -177,7 +181,7 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
         stagingBufferDesc.NumBytes += mipSlicePitch;
     }
 
-    auto  stagingBuffer       = m_device->CreateBufferResource( "StagingBuffer", stagingBufferDesc );
+    auto  stagingBuffer       = m_device->CreateBufferResource( stagingBufferDesc );
     Byte *stagingMappedMemory = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
 
     texture.StreamMipData(

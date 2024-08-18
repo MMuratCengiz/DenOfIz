@@ -73,7 +73,18 @@ std::unique_ptr<ILogicalDevice> GraphicsApi::CreateAndLoadOptimalLogicalDevice( 
         }
     }
 
-    logicalDevice->LoadPhysicalDevice( logicalDevice->ListPhysicalDevices( ).front( ) );
+    const auto gpuDesc = logicalDevice->ListPhysicalDevices( ).front( );
+    logicalDevice->LoadPhysicalDevice( gpuDesc );
+
+    LOG( INFO ) << "Loaded device: " << gpuDesc.Name;
+    LOG( INFO ) << "Device Capabilities:";
+    LOG( INFO ) << "Dedicated GPU " << ( gpuDesc.Properties.IsDedicated ? "Yes" : "No" );
+    LOG( INFO ) << "Available Memory " << gpuDesc.Properties.MemoryAvailableInMb << "MB";
+    LOG( INFO ) << "Dedicated Transfer Queue: " << ( gpuDesc.Capabilities.DedicatedCopyQueue ? "Yes" : "No" );
+    LOG( INFO ) << "Compute Shaders: " << ( gpuDesc.Capabilities.ComputeShaders ? "Yes" : "No" );
+    LOG( INFO ) << "Ray Tracing: " << ( gpuDesc.Capabilities.RayTracing ? "Yes" : "No" );
+    LOG( INFO ) << "Tearing: " << ( gpuDesc.Capabilities.Tearing ? "Yes" : "No" );
+
     return std::move( logicalDevice );
 }
 
@@ -81,8 +92,7 @@ std::unique_ptr<ShaderProgram> GraphicsApi::CreateShaderProgram( const std::vect
 {
     ShaderProgramDesc programDesc{ };
     programDesc.Shaders = shaders;
-#if defined( WIN32 )
-    if ( m_apiPreference.Windows == APIPreferenceWindows::DirectX12 )
+    if ( IsDX12Preferred( ) )
     {
         programDesc.TargetIL = TargetIL::DXIL;
     }
@@ -90,8 +100,7 @@ std::unique_ptr<ShaderProgram> GraphicsApi::CreateShaderProgram( const std::vect
     {
         programDesc.TargetIL = TargetIL::SPIRV;
     }
-#elif defined( __APPLE__ )
-    if ( m_apiPreference.OSX == APIPreferenceOSX::Metal )
+    if ( IsMetalPreferred( ) )
     {
         programDesc.TargetIL = TargetIL::MSL;
     }
@@ -100,8 +109,7 @@ std::unique_ptr<ShaderProgram> GraphicsApi::CreateShaderProgram( const std::vect
         LOG( ERROR ) << "No supported API found for this system.";
     }
     programDesc.TargetIL = TargetIL::MSL;
-#elif defined( __linux__ )
-    if ( m_apiPreference.Linux == APIPreferenceLinux::Vulkan )
+    if ( IsVulkanPreferred( ) )
     {
         programDesc.TargetIL = TargetIL::SPIRV;
     }
@@ -109,7 +117,6 @@ std::unique_ptr<ShaderProgram> GraphicsApi::CreateShaderProgram( const std::vect
     {
         LOG( ERROR ) << "No supported API found for this system.";
     }
-#endif
     auto *program = new ShaderProgram( programDesc );
     return std::unique_ptr<ShaderProgram>( program );
 }
@@ -119,10 +126,10 @@ void GraphicsApi::ReportLiveObjects( ) const
 #ifndef NDEBUG
 #if defined( BUILD_DX12 )
     {
-        wil::com_ptr<IDXGIDebug1> dxgi_debug;
-        if ( SUCCEEDED( DXGIGetDebugInterface1( 0, IID_PPV_ARGS( dxgi_debug.addressof( ) ) ) ) )
+        if ( wil::com_ptr<IDXGIDebug1> dxgi_debug; SUCCEEDED( DXGIGetDebugInterface1( 0, IID_PPV_ARGS( dxgi_debug.addressof( ) ) ) ) )
         {
-            dxgi_debug->ReportLiveObjects( DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS( DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL ) );
+            const HRESULT hr = dxgi_debug->ReportLiveObjects( DXGI_DEBUG_ALL, static_cast<DXGI_DEBUG_RLO_FLAGS>( DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL ) );
+            DX_CHECK_RESULT( hr );
         }
     }
 #endif

@@ -16,14 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h"
+
+#include <utility>
 #include "DenOfIzCore/Utilities.h"
+#include "DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h"
 
 using namespace DenOfIz;
 
-VulkanBufferResource::VulkanBufferResource( VulkanContext *context, const BufferDesc &desc ) : m_desc( desc ), m_context( context ), m_allocation( nullptr )
+VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc desc ) : m_desc( std::move( desc ) ), m_context( context )
 {
-    m_numBytes = Utilities::Align(m_desc.NumBytes, m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment);
+    m_numBytes = Utilities::Align( m_desc.NumBytes, m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment );
 
     VkBufferCreateInfo bufferCreateInfo{ };
     bufferCreateInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -57,21 +59,21 @@ VulkanBufferResource::VulkanBufferResource( VulkanContext *context, const Buffer
     VmaAllocationInfo allocationInfo;
     vmaCreateBuffer( m_context->Vma, &bufferCreateInfo, &allocationCreateInfo, &m_instance, &m_allocation, &allocationInfo );
 
-    m_offset = 0; // This used to be allocationInfo.offset, but seems to be applied automatically in almost every case, not sure if required.
+    m_offset   = 0; // This used to be allocationInfo.offset, but seems to be applied automatically in almost every case, not sure if required.
     m_numBytes = allocationInfo.size;
 }
 
 void *VulkanBufferResource::MapMemory( )
 {
     DZ_ASSERTM( m_desc.HeapType == HeapType::CPU_GPU || m_desc.HeapType == HeapType::CPU, "Can only map to CPU visible buffer" );
-    DZ_ASSERTM( m_mappedMemory == nullptr, std::format( "Memory already mapped {}", Name ) );
+    DZ_ASSERTM( m_mappedMemory == nullptr, std::format( "Memory already mapped {}", m_desc.DebugName ) );
     vmaMapMemory( m_context->Vma, m_allocation, &m_mappedMemory );
     return m_mappedMemory;
 }
 
 void VulkanBufferResource::UnmapMemory( )
 {
-    DZ_ASSERTM( m_mappedMemory != nullptr, std::format( "Memory not mapped, buffer: {}", Name ) );
+    DZ_ASSERTM( m_mappedMemory != nullptr, std::format( "Memory not mapped, buffer: {}", m_desc.DebugName ) );
     vmaUnmapMemory( m_context->Vma, m_allocation );
     m_mappedMemory = nullptr;
 }

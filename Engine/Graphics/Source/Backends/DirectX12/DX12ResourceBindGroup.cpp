@@ -20,24 +20,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12ResourceBindGroup::DX12ResourceBindGroup(DX12Context *context, ResourceBindGroupDesc desc) : IResourceBindGroup(desc), m_context(context)
+DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const ResourceBindGroupDesc &desc ) : IResourceBindGroup( desc ), m_context( context )
 {
-    DX12RootSignature *rootSignature = static_cast<DX12RootSignature *>(desc.RootSignature);
-    DZ_NOT_NULL(rootSignature);
+    const auto rootSignature = dynamic_cast<DX12RootSignature *>( desc.RootSignature );
+    DZ_NOT_NULL( rootSignature );
     m_dx12RootSignature = rootSignature;
 
-    m_offset = rootSignature->RegisterSpaceOffset(desc.RegisterSpace);
+    m_offset = rootSignature->RegisterSpaceOffset( desc.RegisterSpace );
     if ( desc.NumBuffers + desc.NumTextures > 0 )
     {
-        m_cbvSrvUavHandle = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetNextHandle(m_desc.NumBuffers + m_desc.NumTextures);
+        m_cbvSrvUavHandle = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetNextHandle( m_desc.NumBuffers + m_desc.NumTextures );
     }
     if ( desc.NumSamplers > 0 )
     {
-        m_samplerHandle = m_context->ShaderVisibleSamplerDescriptorHeap->GetNextHandle(m_desc.NumSamplers);
+        m_samplerHandle = m_context->ShaderVisibleSamplerDescriptorHeap->GetNextHandle( m_desc.NumSamplers );
     }
 }
 
-void DX12ResourceBindGroup::Update(const UpdateDesc& desc)
+void DX12ResourceBindGroup::Update( const UpdateDesc &desc )
 {
     m_cbvSrvUavCount = 0;
     m_samplerCount   = 0;
@@ -45,36 +45,36 @@ void DX12ResourceBindGroup::Update(const UpdateDesc& desc)
     IResourceBindGroup::Update( desc );
 }
 
-void DX12ResourceBindGroup::BindTexture(const std::string &name, ITextureResource *resource)
+void DX12ResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource )
 {
-    DZ_NOT_NULL(resource);
-    uint32_t offset  = m_dx12RootSignature->GetResourceOffset(m_desc.RegisterSpace, name);
-    reinterpret_cast<DX12TextureResource *>(resource)->CreateView(CpuHandleCbvSrvUav(offset));
+    DZ_NOT_NULL( resource );
+    const uint32_t offset = m_dx12RootSignature->GetResourceOffset( m_desc.RegisterSpace, slot );
+    reinterpret_cast<DX12TextureResource *>( resource )->CreateView( CpuHandleCbvSrvUav( offset ) );
     m_cbvSrvUavCount++;
 }
 
-void DX12ResourceBindGroup::BindBuffer(const std::string &name, IBufferResource *resource)
+void DX12ResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )
 {
-    DZ_NOT_NULL(resource);
-    uint32_t offset  = m_dx12RootSignature->GetResourceOffset(m_desc.RegisterSpace, name);
-    reinterpret_cast<DX12BufferResource *>(resource)->CreateView(CpuHandleCbvSrvUav(offset));
+    DZ_NOT_NULL( resource );
+    const uint32_t offset = m_dx12RootSignature->GetResourceOffset( m_desc.RegisterSpace, slot );
+    reinterpret_cast<DX12BufferResource *>( resource )->CreateView( CpuHandleCbvSrvUav( offset ) );
     m_cbvSrvUavCount++;
 }
 
-void DX12ResourceBindGroup::BindSampler(const std::string &name, ISampler *sampler)
+void DX12ResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )
 {
-    DZ_NOT_NULL(sampler);
-    uint32_t offset  = m_dx12RootSignature->GetResourceOffset(m_desc.RegisterSpace, name);
-    reinterpret_cast<DX12Sampler *>(sampler)->CreateView(CpuHandleSampler(offset));
+    DZ_NOT_NULL( sampler );
+    const uint32_t offset = m_dx12RootSignature->GetResourceOffset( m_desc.RegisterSpace, slot );
+    reinterpret_cast<DX12Sampler *>( sampler )->CreateView( CpuHandleSampler( offset ) );
     m_samplerCount++;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DX12ResourceBindGroup::CpuHandleCbvSrvUav(uint32_t binding)
+D3D12_CPU_DESCRIPTOR_HANDLE DX12ResourceBindGroup::CpuHandleCbvSrvUav( const uint32_t binding ) const
 {
-    return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_cbvSrvUavHandle.Cpu, binding, m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetDescriptorSize());
+    return CD3DX12_CPU_DESCRIPTOR_HANDLE( m_cbvSrvUavHandle.Cpu, binding, m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetDescriptorSize( ) );
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DX12ResourceBindGroup::CpuHandleSampler(uint32_t binding)
+D3D12_CPU_DESCRIPTOR_HANDLE DX12ResourceBindGroup::CpuHandleSampler( const uint32_t binding ) const
 {
-    return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_samplerHandle.Cpu, binding, m_context->ShaderVisibleSamplerDescriptorHeap->GetDescriptorSize());
+    return CD3DX12_CPU_DESCRIPTOR_HANDLE( m_samplerHandle.Cpu, binding, m_context->ShaderVisibleSamplerDescriptorHeap->GetDescriptorSize( ) );
 }

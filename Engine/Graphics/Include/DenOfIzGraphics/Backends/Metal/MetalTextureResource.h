@@ -38,8 +38,8 @@ namespace DenOfIz
         void UpdateTexture( const TextureDesc &desc, id<MTLTexture> texture );
 
     public:
-        MetalTextureResource( MetalContext *context, const TextureDesc &desc, std::string name );
-        MetalTextureResource( MetalContext *context, const TextureDesc &desc, id<MTLTexture> texture, std::string name );
+        MetalTextureResource( MetalContext *context, const TextureDesc &desc );
+        MetalTextureResource( MetalContext *context, const TextureDesc &desc, id<MTLTexture> texture );
         const id<MTLTexture> &Instance( ) const
         {
             return m_texture;

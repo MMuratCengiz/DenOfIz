@@ -18,9 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12Pipeline.h>
 
+#include <utility>
+
 using namespace DenOfIz;
 
-DX12Pipeline::DX12Pipeline( DX12Context *context, const PipelineDesc &desc ) : m_context( context ), m_desc( desc )
+DX12Pipeline::DX12Pipeline( DX12Context *context, PipelineDesc desc ) : m_context( context ), m_desc( std::move( desc ) )
 {
     DZ_NOT_NULL( context );
 
@@ -44,8 +46,8 @@ DX12Pipeline::DX12Pipeline( DX12Context *context, const PipelineDesc &desc ) : m
 
 void DX12Pipeline::CreateGraphicsPipeline( )
 {
-    m_topology                   = DX12EnumConverter::ConvertPrimitiveTopology( m_desc.PrimitiveTopology );
-    DX12InputLayout *inputLayout = reinterpret_cast<DX12InputLayout *>( m_desc.InputLayout );
+    m_topology             = DX12EnumConverter::ConvertPrimitiveTopology( m_desc.PrimitiveTopology );
+    const auto inputLayout = reinterpret_cast<DX12InputLayout *>( m_desc.InputLayout );
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = { };
     psoDesc.InputLayout                        = inputLayout->GetInputLayout( );
@@ -66,7 +68,7 @@ void DX12Pipeline::CreateGraphicsPipeline( )
     psoDesc.RTVFormats[ 0 ]  = DXGI_FORMAT_R8G8B8A8_UNORM;
 
     SetMSAASampleCount( m_desc, psoDesc );
-    THROW_IF_FAILED( m_context->D3DDevice->CreateGraphicsPipelineState( &psoDesc, IID_PPV_ARGS( m_graphicsPipeline.put( ) ) ) );
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateGraphicsPipelineState( &psoDesc, IID_PPV_ARGS( m_graphicsPipeline.put( ) ) ) );
 }
 
 void DX12Pipeline::CreateComputePipeline( )
@@ -78,7 +80,7 @@ void DX12Pipeline::CreateComputePipeline( )
     psoDesc.pRootSignature                    = m_rootSignature->Instance( );
     psoDesc.CS                                = GetShaderByteCode( compiledShaders[ 0 ] );
 
-    THROW_IF_FAILED( m_context->D3DDevice->CreateComputePipelineState( &psoDesc, IID_PPV_ARGS( m_graphicsPipeline.put( ) ) ) );
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateComputePipelineState( &psoDesc, IID_PPV_ARGS( m_graphicsPipeline.put( ) ) ) );
 }
 
 void DX12Pipeline::InitDepthStencil( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const
@@ -124,8 +126,6 @@ void DX12Pipeline::SetMSAASampleCount( const PipelineDesc &desc, D3D12_GRAPHICS_
         psoDesc.SampleDesc.Count = 16;
         break;
     case MSAASampleCount::_32:
-        psoDesc.SampleDesc.Count = 32;
-        break;
     case MSAASampleCount::_64:
         psoDesc.SampleDesc.Count = 32;
         break;
@@ -134,11 +134,11 @@ void DX12Pipeline::SetMSAASampleCount( const PipelineDesc &desc, D3D12_GRAPHICS_
     }
 }
 
-void DX12Pipeline::SetGraphicsShaders( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc )
+void DX12Pipeline::SetGraphicsShaders( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const
 {
-    for ( const CompiledShader &compiledShader : m_desc.ShaderProgram->GetCompiledShaders( ) )
+    for ( const auto compiledShader : m_desc.ShaderProgram->GetCompiledShaders( ) )
     {
-        switch ( compiledShader.Stage )
+        switch ( compiledShader->Stage )
         {
         case ShaderStage::Vertex:
             psoDesc.VS = GetShaderByteCode( compiledShader );
@@ -161,7 +161,7 @@ void DX12Pipeline::SetGraphicsShaders( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDe
     }
 }
 
-D3D12_SHADER_BYTECODE DX12Pipeline::GetShaderByteCode( CompiledShader *compiledShader ) const
+D3D12_SHADER_BYTECODE DX12Pipeline::GetShaderByteCode( const CompiledShader *compiledShader ) const
 {
     return D3D12_SHADER_BYTECODE( compiledShader->Blob->GetBufferPointer( ), compiledShader->Blob->GetBufferSize( ) );
 }

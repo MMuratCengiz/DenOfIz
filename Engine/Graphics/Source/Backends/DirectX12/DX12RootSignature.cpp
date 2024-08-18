@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
+DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureDesc &desc ) : IRootSignature( desc ), m_context( context ), m_desc( desc )
 {
     D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData          = { };
     D3D_ROOT_SIGNATURE_VERSION        rootSignatureVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
@@ -82,8 +82,8 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
     rootSignatureDesc.Flags             = ComputeShaderVisibility( );
     rootSignatureDesc.NumStaticSamplers = m_staticSamplerDescriptorRanges.size( );
     rootSignatureDesc.pStaticSamplers   = m_staticSamplerDescriptorRanges.data( );
-    THROW_IF_FAILED( D3D12SerializeRootSignature( &rootSignatureDesc, rootSignatureVersion, &signature, &error ) );
-    THROW_IF_FAILED( m_context->D3DDevice->CreateRootSignature( 0, signature->GetBufferPointer( ), signature->GetBufferSize( ), IID_PPV_ARGS( m_rootSignature.put( ) ) ) );
+    DX_CHECK_RESULT( D3D12SerializeRootSignature( &rootSignatureDesc, rootSignatureVersion, &signature, &error ) );
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateRootSignature( 0, signature->GetBufferPointer( ), signature->GetBufferSize( ), IID_PPV_ARGS( m_rootSignature.put( ) ) ) );
 }
 
 D3D12_ROOT_SIGNATURE_FLAGS DX12RootSignature::ComputeShaderVisibility( ) const
@@ -117,8 +117,8 @@ void DX12RootSignature::AddStaticSampler( const StaticSamplerDesc &staticSampler
     const SamplerDesc        &samplerDesc = staticSamplerDesc.Sampler;
     D3D12_STATIC_SAMPLER_DESC desc        = { };
 
-    int filter     = ( static_cast<int>( samplerDesc.MinFilter ) << 4 ) | ( static_cast<int>( samplerDesc.MagFilter ) << 2 ) | static_cast<int>( samplerDesc.MipmapMode );
-    int baseFilter = samplerDesc.CompareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D12_FILTER_MIN_MAG_MIP_POINT;
+    const int filter     = ( static_cast<int>( samplerDesc.MinFilter ) << 4 ) | ( static_cast<int>( samplerDesc.MagFilter ) << 2 ) | static_cast<int>( samplerDesc.MipmapMode );
+    int       baseFilter = samplerDesc.CompareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D12_FILTER_MIN_MAG_MIP_POINT;
     if ( samplerDesc.MaxAnisotropy > 0.0f )
     {
         baseFilter = samplerDesc.CompareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_ANISOTROPIC : D3D12_FILTER_ANISOTROPIC;
@@ -143,14 +143,19 @@ void DX12RootSignature::AddStaticSampler( const StaticSamplerDesc &staticSampler
 
 void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
 {
-    RegisterSpaceOrder &spaceOrder = ContainerUtilities::SafeAt( m_registerSpaceOrder, binding.RegisterSpace );
+    RegisterSpaceOrder       &spaceOrder = ContainerUtilities::SafeAt( m_registerSpaceOrder, binding.RegisterSpace );
+    const ResourceBindingSlot slot{
+        .Binding  = binding.Binding,
+        .Register = binding.RegisterSpace,
+        .Type     = binding.BindingType,
+    };
     if ( binding.Descriptor.IsSet( ResourceDescriptor::Sampler ) )
     {
-        spaceOrder.ResourceOffsetMap[ binding.Name ] = spaceOrder.SamplerCount++;
+        spaceOrder.ResourceOffsetMap[ slot.Key( ) ] = spaceOrder.SamplerCount++;
     }
     else
     {
-        spaceOrder.ResourceOffsetMap[ binding.Name ] = spaceOrder.ResourceCount++;
+        spaceOrder.ResourceOffsetMap[ slot.Key( ) ] = spaceOrder.ResourceCount++;
     }
 
     CD3DX12_DESCRIPTOR_RANGE descriptorRange = { };
@@ -200,6 +205,4 @@ void DX12RootSignature::AddRootConstant( const RootConstantResourceBinding &root
     m_rootConstants.push_back( dxRootConstant );
 }
 
-DX12RootSignature::~DX12RootSignature( )
-{
-}
+DX12RootSignature::~DX12RootSignature( ) = default;

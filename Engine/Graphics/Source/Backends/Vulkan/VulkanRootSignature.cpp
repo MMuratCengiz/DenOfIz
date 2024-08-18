@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc ) : m_desc( std::move( desc ) ), m_context( context )
+VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc ) : IRootSignature( desc ), m_desc( std::move( desc ) ), m_context( context )
 {
     for ( const ResourceBindingDesc &binding : m_desc.ResourceBindings )
     {
@@ -54,7 +54,7 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
         layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = layoutBindings.size( );
         layoutInfo.pBindings    = layoutBindings.data( );
-//        layoutInfo.flags        = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+        //        layoutInfo.flags        = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
 
         VkDescriptorSetLayout layout;
         VK_CHECK_RESULT( vkCreateDescriptorSetLayout( m_context->LogicalDevice, &layoutInfo, nullptr, &layout ) );

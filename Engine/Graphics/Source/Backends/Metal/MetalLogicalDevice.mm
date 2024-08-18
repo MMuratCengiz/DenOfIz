@@ -144,19 +144,19 @@ std::unique_ptr<ISemaphore> MetalLogicalDevice::CreateSemaphore( )
     return std::unique_ptr<ISemaphore>( semaphore );
 }
 
-std::unique_ptr<IBufferResource> MetalLogicalDevice::CreateBufferResource( std::string name, const BufferDesc &bufferDesc )
+std::unique_ptr<IBufferResource> MetalLogicalDevice::CreateBufferResource( const BufferDesc &bufferDesc )
 {
-    auto *buffer = new MetalBufferResource( m_context.get( ), bufferDesc, name );
+    auto *buffer = new MetalBufferResource( m_context.get( ), bufferDesc );
     return std::unique_ptr<IBufferResource>( buffer );
 }
 
-std::unique_ptr<ITextureResource> MetalLogicalDevice::CreateTextureResource( std::string name, const TextureDesc &textureDesc )
+std::unique_ptr<ITextureResource> MetalLogicalDevice::CreateTextureResource( const TextureDesc &textureDesc )
 {
-    auto *texture = new MetalTextureResource( m_context.get( ), textureDesc, name );
+    auto *texture = new MetalTextureResource( m_context.get( ), textureDesc );
     return std::unique_ptr<ITextureResource>( texture );
 }
 
-std::unique_ptr<ISampler> MetalLogicalDevice::CreateSampler( std::string name, const SamplerDesc &samplerDesc )
+std::unique_ptr<ISampler> MetalLogicalDevice::CreateSampler( const SamplerDesc &samplerDesc )
 {
     auto *sampler = new MetalSampler( m_context.get( ), samplerDesc, name );
     return std::unique_ptr<ISampler>( sampler );

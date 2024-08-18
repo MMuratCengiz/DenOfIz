@@ -28,7 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
     // For DirectX12 this is kind of a dummy class as resources are bound to heaps. At a given point we only use 2 heaps one for CBV/SRV/UAV and one for Sampler.
-    class DX12ResourceBindGroup : public IResourceBindGroup
+    class DX12ResourceBindGroup final : public IResourceBindGroup
     {
     private:
         DX12Context       *m_context;
@@ -40,29 +40,29 @@ namespace DenOfIz
         DX12RootSignature *m_dx12RootSignature;
 
     public:
-        DX12ResourceBindGroup( DX12Context *context, ResourceBindGroupDesc desc );
+        DX12ResourceBindGroup( DX12Context *context, const ResourceBindGroupDesc &desc );
 
-        DescriptorHandle GetCbvSrvUavHandle( ) const
+        [[nodiscard]] DescriptorHandle GetCbvSrvUavHandle( ) const
         {
             return m_cbvSrvUavHandle;
         }
 
-        DescriptorHandle GetSamplerHandle( ) const
+        [[nodiscard]] DescriptorHandle GetSamplerHandle( ) const
         {
             return m_samplerHandle;
         }
 
-        const uint32_t GetCbvSrvUavCount( ) const
+        [[nodiscard]] uint32_t GetCbvSrvUavCount( ) const
         {
             return m_cbvSrvUavCount;
         }
 
-        const uint32_t GetSamplerCount( ) const
+        [[nodiscard]] uint32_t GetSamplerCount( ) const
         {
             return m_samplerCount;
         }
 
-        inline DX12RootSignature *RootSignature( ) const
+        [[nodiscard]] DX12RootSignature *RootSignature( ) const
         {
             return m_dx12RootSignature;
         }
@@ -70,13 +70,13 @@ namespace DenOfIz
         void Update( const UpdateDesc &desc ) override;
 
     protected:
-        void BindTexture( const std::string &name, ITextureResource *resource ) override;
-        void BindBuffer( const std::string &name, IBufferResource *resource ) override;
-        void BindSampler( const std::string &name, ISampler *sampler ) override;
+        void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) override;
+        void BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource ) override;
+        void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler ) override;
 
     private:
-        D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleCbvSrvUav( uint32_t binding );
-        D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleSampler( uint32_t binding );
+        [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleCbvSrvUav( uint32_t binding ) const;
+        [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleSampler( uint32_t binding ) const;
     };
 
 } // namespace DenOfIz

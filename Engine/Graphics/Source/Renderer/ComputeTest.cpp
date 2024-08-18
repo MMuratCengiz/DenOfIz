@@ -59,7 +59,8 @@ int ComputeTest::Run( )
     bufferDesc.BufferView.Stride = sizeof( float );
     bufferDesc.HeapType          = HeapType::GPU;
     bufferDesc.InitialState      = ResourceState::UnorderedAccess;
-    buffer                       = m_logicalDevice->CreateBufferResource( "buffer", bufferDesc );
+    bufferDesc.DebugName         = "ComputeTestBuffer";
+    buffer                       = m_logicalDevice->CreateBufferResource( bufferDesc );
 
     m_resourceBindGroup = m_logicalDevice->CreateResourceBindGroup( ResourceBindGroupDesc{ .RootSignature = m_rootSignature.get( ) } );
     m_resourceBindGroup->Update( UpdateDesc{ }.Buffer( ResourceBindingSlot::Uav(), buffer.get( ) ) );
@@ -81,7 +82,8 @@ int ComputeTest::Run( )
     bufferDesc.Descriptor   = BitSet<ResourceDescriptor>( );
     bufferDesc.HeapType     = HeapType::GPU_CPU;
     bufferDesc.InitialState = ResourceState::CopyDst;
-    auto readBack           = m_logicalDevice->CreateBufferResource( "readBack", bufferDesc );
+    bufferDesc.DebugName    = "ComputeTestReadBackBuffer";
+    auto readBack           = m_logicalDevice->CreateBufferResource( bufferDesc );
 
     commandList->Begin( );
     commandList->BindPipeline( m_pipeline.get( ) );
@@ -108,7 +110,7 @@ int ComputeTest::Run( )
 
     m_fence->Wait( );
 
-    float *mappedData = reinterpret_cast<float *>( readBack->MapMemory( ) );
+    float *mappedData = static_cast<float *>( readBack->MapMemory( ) );
     for ( UINT i = 0; i < 1024; i++ )
     {
         //        std::cout << "Index " << i << ": " << mappedData[ i ] << std::endl;

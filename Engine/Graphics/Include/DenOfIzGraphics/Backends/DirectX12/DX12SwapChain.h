@@ -26,25 +26,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class DX12SwapChain : public ISwapChain
+    class DX12SwapChain final : public ISwapChain
     {
-        DX12Context                  *m_context;
-        SwapChainDesc                 m_desc;
-        wil::com_ptr<IDXGISwapChain4> m_swapChain;
+        DX12Context                  *m_context = nullptr;
+        SwapChainDesc                 m_desc{ };
+        wil::com_ptr<IDXGISwapChain4> m_swapChain = nullptr;
 
-        std::vector<std::unique_ptr<DX12TextureResource>> m_renderTargets;
-        std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>          m_renderTargetCpuHandles;
-        wil::com_ptr<ID3D12Resource>                      m_depthStencil;
-        D3D12_CPU_DESCRIPTOR_HANDLE                       m_depthStencilCpuHandle;
+        std::vector<std::unique_ptr<DX12TextureResource>> m_renderTargets{ };
+        std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>          m_renderTargetCpuHandles{ };
+        wil::com_ptr<ID3D12Resource>                      m_depthStencil = nullptr;
+        D3D12_CPU_DESCRIPTOR_HANDLE                       m_depthStencilCpuHandle{ };
 
-        DXGI_COLOR_SPACE_TYPE m_colorSpace;
-        Viewport              m_viewport;
+        DXGI_COLOR_SPACE_TYPE m_colorSpace{ };
+        Viewport              m_viewport{ };
 
     public:
          DX12SwapChain( DX12Context *context, const SwapChainDesc &desc );
         ~DX12SwapChain( ) override;
 
-        IDXGISwapChain4 *GetSwapChain( ) const
+        [[nodiscard]] IDXGISwapChain4 *GetSwapChain( ) const
         {
             return m_swapChain.get( );
         }

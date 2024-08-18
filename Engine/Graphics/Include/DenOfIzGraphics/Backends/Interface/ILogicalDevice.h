@@ -33,34 +33,34 @@ namespace DenOfIz
     class ILogicalDevice
     {
     protected:
-        PhysicalDevice m_selectedDeviceInfo;
+        PhysicalDevice m_selectedDeviceInfo{ };
 
     public:
-        virtual ~ILogicalDevice() = default;
+        virtual ~ILogicalDevice( ) = default;
 
-        virtual void                        CreateDevice( )       = 0;
-        virtual std::vector<PhysicalDevice> ListPhysicalDevices()                            = 0;
-        virtual void                        LoadPhysicalDevice(const PhysicalDevice &device) = 0;
-        virtual bool                        IsDeviceLost()                                   = 0;
-        virtual void                        WaitIdle()                                       = 0;
+        virtual void                        CreateDevice( )                                    = 0;
+        virtual std::vector<PhysicalDevice> ListPhysicalDevices( )                             = 0;
+        virtual void                        LoadPhysicalDevice( const PhysicalDevice &device ) = 0;
+        virtual bool                        IsDeviceLost( )                                    = 0;
+        virtual void                        WaitIdle( )                                        = 0;
 
-        inline const PhysicalDevice &DeviceInfo()
+        const PhysicalDevice &DeviceInfo( )
         {
             return m_selectedDeviceInfo;
         };
 
         // Factory methods
-        virtual std::unique_ptr<ICommandListPool>   CreateCommandListPool(const CommandListPoolDesc &createInfo)           = 0;
-        virtual std::unique_ptr<IPipeline>          CreatePipeline(const PipelineDesc &createInfo)                         = 0;
-        virtual std::unique_ptr<ISwapChain>         CreateSwapChain(const SwapChainDesc &createInfo)                       = 0;
-        virtual std::unique_ptr<IRootSignature>     CreateRootSignature(const RootSignatureDesc &createInfo)               = 0;
-        virtual std::unique_ptr<IInputLayout>       CreateInputLayout(const InputLayoutDesc &createInfo)                   = 0;
-        virtual std::unique_ptr<IResourceBindGroup> CreateResourceBindGroup(const ResourceBindGroupDesc &createInfo)       = 0;
-        virtual std::unique_ptr<IFence>             CreateFence()                                                          = 0;
-        virtual std::unique_ptr<ISemaphore>         CreateSemaphore()                                                      = 0;
-        virtual std::unique_ptr<IBufferResource>    CreateBufferResource(std::string name, const BufferDesc &createInfo)   = 0;
-        virtual std::unique_ptr<ITextureResource>   CreateTextureResource(std::string name, const TextureDesc &createInfo) = 0;
-        virtual std::unique_ptr<ISampler>           CreateSampler(std::string name, const SamplerDesc &createInfo)         = 0;
+        virtual std::unique_ptr<ICommandListPool>   CreateCommandListPool( const CommandListPoolDesc &createInfo )     = 0;
+        virtual std::unique_ptr<IPipeline>          CreatePipeline( const PipelineDesc &createInfo )                   = 0;
+        virtual std::unique_ptr<ISwapChain>         CreateSwapChain( const SwapChainDesc &createInfo )                 = 0;
+        virtual std::unique_ptr<IRootSignature>     CreateRootSignature( const RootSignatureDesc &createInfo )         = 0;
+        virtual std::unique_ptr<IInputLayout>       CreateInputLayout( const InputLayoutDesc &createInfo )             = 0;
+        virtual std::unique_ptr<IResourceBindGroup> CreateResourceBindGroup( const ResourceBindGroupDesc &createInfo ) = 0;
+        virtual std::unique_ptr<IFence>             CreateFence( )                                                     = 0;
+        virtual std::unique_ptr<ISemaphore>         CreateSemaphore( )                                                 = 0;
+        virtual std::unique_ptr<IBufferResource>    CreateBufferResource( const BufferDesc &createInfo )               = 0;
+        virtual std::unique_ptr<ITextureResource>   CreateTextureResource( const TextureDesc &createInfo )             = 0;
+        virtual std::unique_ptr<ISampler>           CreateSampler( const SamplerDesc &createInfo )                     = 0;
     };
 
 } // namespace DenOfIz

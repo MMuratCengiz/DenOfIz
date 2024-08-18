@@ -21,12 +21,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc &desc) :
-    ITextureResource(desc), m_context(context), m_desc(desc)
+DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDesc &desc ) : ITextureResource( desc ), m_context( context ), m_desc( desc )
 {
     ValidateTextureDesc( m_desc );
 
-    D3D12_RESOURCE_DESC resourceDesc = {};
+    D3D12_RESOURCE_DESC resourceDesc = { };
 
     if ( m_desc.Depth > 1 )
     {
@@ -42,53 +41,56 @@ DX12TextureResource::DX12TextureResource(DX12Context *context, const TextureDesc
     }
 
     resourceDesc.Alignment          = 0;
-    resourceDesc.Width              = std::max(1u, m_desc.Width);
-    resourceDesc.Height             = std::max(1u, m_desc.Height);
-    resourceDesc.DepthOrArraySize   = std::max(1u, std::max(m_desc.ArraySize, m_desc.Depth));
+    resourceDesc.Width              = std::max( 1u, m_desc.Width );
+    resourceDesc.Height             = std::max( 1u, m_desc.Height );
+    resourceDesc.DepthOrArraySize   = std::max( 1u, std::max( m_desc.ArraySize, m_desc.Depth ) );
     resourceDesc.MipLevels          = m_desc.MipLevels;
-    resourceDesc.Format             = DX12EnumConverter::ConvertFormat(m_desc.Format);
-    resourceDesc.SampleDesc.Count   = DX12EnumConverter::ConvertSampleCount(m_desc.MSAASampleCount);
+    resourceDesc.Format             = DX12EnumConverter::ConvertFormat( m_desc.Format );
+    resourceDesc.SampleDesc.Count   = DX12EnumConverter::ConvertSampleCount( m_desc.MSAASampleCount );
     resourceDesc.SampleDesc.Quality = 0;
     resourceDesc.Layout             = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     resourceDesc.Flags              = D3D12_RESOURCE_FLAG_NONE;
 
-    D3D12MA::ALLOCATION_DESC allocationDesc = {};
+    D3D12MA::ALLOCATION_DESC allocationDesc = { };
     allocationDesc.HeapType                 = D3D12_HEAP_TYPE_DEFAULT;
     // Remove the following line to once dependency to The Forge is removed !TF!
     allocationDesc.CreationNodeMask = 1;
     allocationDesc.VisibleNodeMask  = 1;
     // --
 
-    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::RWTexture) )
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) )
     {
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
 
-    D3D12_RESOURCE_STATES initialState = DX12EnumConverter::ConvertResourceState(m_desc.InitialState);
-    if ( m_desc.InitialState.IsSet(ResourceState::RenderTarget) )
+    D3D12_RESOURCE_STATES initialState = DX12EnumConverter::ConvertResourceState( m_desc.InitialState );
+    if ( m_desc.InitialState.IsSet( ResourceState::RenderTarget ) )
     {
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-        initialState = DX12EnumConverter::ConvertResourceState(ResourceState::RenderTarget);
+        initialState = DX12EnumConverter::ConvertResourceState( ResourceState::RenderTarget );
     }
-    else if ( m_desc.InitialState.IsSet(ResourceState::DepthWrite) )
+    else if ( m_desc.InitialState.IsSet( ResourceState::DepthWrite ) )
     {
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-        initialState = DX12EnumConverter::ConvertResourceState(ResourceState::DepthWrite);
+        initialState = DX12EnumConverter::ConvertResourceState( ResourceState::DepthWrite );
     }
 
     // Used for certain commands
     m_resourceDesc = resourceDesc;
-    HRESULT hr     = m_context->DX12MemoryAllocator->CreateResource(&allocationDesc, &resourceDesc, initialState, nullptr, &m_allocation, IID_PPV_ARGS(&m_resource));
-    THROW_IF_FAILED(hr);
+    HRESULT hr     = m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, initialState, nullptr, &m_allocation, IID_PPV_ARGS( &m_resource ) );
+    DX_CHECK_RESULT( hr );
+
+    const std::wstring name = std::wstring( m_desc.DebugName.begin( ), m_desc.DebugName.end( ) );
+    DX_CHECK_RESULT( m_resource->SetName( name.c_str( ) ) );
 }
 
-DX12TextureResource::DX12TextureResource(ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle) :
-    ITextureResource({ /*TODO !IMPROVEMENT!*/}), m_resource(resource), m_cpuHandle(cpuHandle)
+DX12TextureResource::DX12TextureResource( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle ) :
+    ITextureResource( { /*TODO !IMPROVEMENT!*/ } ), m_resource( resource ), m_cpuHandle( cpuHandle )
 {
     isExternalResource = true;
 }
 
-void DX12TextureResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle)
+void DX12TextureResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle )
 {
     DZ_RETURN_IF( m_cpuHandle.ptr != 0 && m_cpuHandle.ptr == cpuHandle.ptr );
 
@@ -97,22 +99,22 @@ void DX12TextureResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandl
                                                     : m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ];
     m_cpuHandle                               = cpuHandle;
 
-    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::Texture) )
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::Texture ) )
     {
-        CreateTextureSrv();
+        CreateTextureSrv( );
         m_rootParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
     }
-    if ( m_desc.Descriptor.IsSet(ResourceDescriptor::RWTexture) )
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) )
     {
-        CreateTextureUav();
+        CreateTextureUav( );
         m_rootParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
     }
 }
 
 void DX12TextureResource::CreateTextureSrv( ) const
 {
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format                          = DX12EnumConverter::ConvertFormat(m_desc.Format);
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = { };
+    srvDesc.Format                          = DX12EnumConverter::ConvertFormat( m_desc.Format );
     srvDesc.Shader4ComponentMapping         = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
     if ( m_desc.Depth > 1 )
@@ -165,12 +167,12 @@ void DX12TextureResource::CreateTextureSrv( ) const
         }
     }
 
-    m_context->D3DDevice->CreateShaderResourceView(m_resource, &srvDesc, m_cpuHandle);
+    m_context->D3DDevice->CreateShaderResourceView( m_resource, &srvDesc, m_cpuHandle );
 }
 
 void DX12TextureResource::CreateTextureUav( ) const
 {
-    D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {};
+    D3D12_UNORDERED_ACCESS_VIEW_DESC desc = { };
     if ( m_desc.Depth > 1 )
     {
         if ( m_desc.ArraySize > 1 )
@@ -211,20 +213,20 @@ void DX12TextureResource::CreateTextureUav( ) const
         desc.Texture3D.WSize       = m_desc.ArraySize;
     }
 
-    desc.Format = DX12EnumConverter::ConvertFormat(m_desc.Format);
+    desc.Format = DX12EnumConverter::ConvertFormat( m_desc.Format );
 
     std::unique_ptr<DX12DescriptorHeap> &heap = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ];
 
     for ( uint32_t i = 0; i < m_desc.MipLevels; ++i )
     {
-        auto handle = D3D12_CPU_DESCRIPTOR_HANDLE(m_cpuHandle.ptr + i * heap->GetDescriptorSize());
-        desc.Texture1DArray.MipSlice       = i;
-        desc.Texture1DArray.ArraySize      = m_desc.ArraySize;
-        desc.Texture1D.MipSlice            = i;
+        auto handle                   = D3D12_CPU_DESCRIPTOR_HANDLE( m_cpuHandle.ptr + i * heap->GetDescriptorSize( ) );
+        desc.Texture1DArray.MipSlice  = i;
+        desc.Texture1DArray.ArraySize = m_desc.ArraySize;
+        desc.Texture1D.MipSlice       = i;
 
         if ( m_desc.Depth > 1 )
         {
-            desc.Texture3D.WSize    = m_desc.ArraySize / pow(2, int(i));
+            desc.Texture3D.WSize    = m_desc.ArraySize / pow( 2, static_cast<int>( i ) );
             desc.Texture3D.MipSlice = i;
         }
         else if ( m_height > 1 )
@@ -233,19 +235,19 @@ void DX12TextureResource::CreateTextureUav( ) const
             desc.Texture2DArray.MipSlice  = i;
             desc.Texture2DArray.ArraySize = m_desc.ArraySize;
         }
-        m_context->D3DDevice->CreateUnorderedAccessView(m_resource, nullptr, &desc, handle);
+        m_context->D3DDevice->CreateUnorderedAccessView( m_resource, nullptr, &desc, handle );
     }
 }
 
-DX12Sampler::DX12Sampler(DX12Context *context, const SamplerDesc &desc) : m_context(context), m_desc(desc)
+DX12Sampler::DX12Sampler( DX12Context *context, const SamplerDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_samplerDesc.Filter           = CalculateFilter(desc.MinFilter, desc.MagFilter, desc.MipmapMode, desc.CompareOp, desc.MaxAnisotropy);
-    m_samplerDesc.AddressU         = DX12EnumConverter::ConvertSamplerAddressMode(desc.AddressModeU);
-    m_samplerDesc.AddressV         = DX12EnumConverter::ConvertSamplerAddressMode(desc.AddressModeV);
-    m_samplerDesc.AddressW         = DX12EnumConverter::ConvertSamplerAddressMode(desc.AddressModeW);
+    m_samplerDesc.Filter           = CalculateFilter( desc.MinFilter, desc.MagFilter, desc.MipmapMode, desc.CompareOp, desc.MaxAnisotropy );
+    m_samplerDesc.AddressU         = DX12EnumConverter::ConvertSamplerAddressMode( desc.AddressModeU );
+    m_samplerDesc.AddressV         = DX12EnumConverter::ConvertSamplerAddressMode( desc.AddressModeV );
+    m_samplerDesc.AddressW         = DX12EnumConverter::ConvertSamplerAddressMode( desc.AddressModeW );
     m_samplerDesc.MipLODBias       = desc.MipLodBias;
     m_samplerDesc.MaxAnisotropy    = desc.MaxAnisotropy;
-    m_samplerDesc.ComparisonFunc   = DX12EnumConverter::ConvertCompareOp(desc.CompareOp);
+    m_samplerDesc.ComparisonFunc   = DX12EnumConverter::ConvertCompareOp( desc.CompareOp );
     m_samplerDesc.BorderColor[ 0 ] = 1.0f;
     m_samplerDesc.BorderColor[ 1 ] = 0.0f;
     m_samplerDesc.BorderColor[ 2 ] = 0.0f;
@@ -254,21 +256,21 @@ DX12Sampler::DX12Sampler(DX12Context *context, const SamplerDesc &desc) : m_cont
     m_samplerDesc.MaxLOD           = desc.MaxLod;
 }
 
-void DX12Sampler::CreateView(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle)
+void DX12Sampler::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle )
 {
     DZ_RETURN_IF( m_cpuHandle.ptr != 0 && m_cpuHandle.ptr == cpuHandle.ptr );
     m_cpuHandle = cpuHandle;
-    m_context->D3DDevice->CreateSampler(&m_samplerDesc, m_cpuHandle);
+    m_context->D3DDevice->CreateSampler( &m_samplerDesc, m_cpuHandle );
 }
 
-D3D12_FILTER DX12Sampler::CalculateFilter(Filter min, Filter mag, MipmapMode mode, CompareOp compareOp, float maxAnisotropy) const
+D3D12_FILTER DX12Sampler::CalculateFilter( Filter min, Filter mag, MipmapMode mode, const CompareOp compareOp, const float maxAnisotropy ) const
 {
     if ( maxAnisotropy > 0.0f )
     {
         return compareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_ANISOTROPIC : D3D12_FILTER_ANISOTROPIC;
     }
 
-    int filter     = (static_cast<int>(min) << 4) | (static_cast<int>(mag) << 2) | static_cast<int>(mode);
-    int baseFilter = compareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D12_FILTER_MIN_MAG_MIP_POINT;
-    return static_cast<D3D12_FILTER>(baseFilter + filter);
+    const int filter     = ( static_cast<int>( min ) << 4 ) | ( static_cast<int>( mag ) << 2 ) | static_cast<int>( mode );
+    const int baseFilter = compareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D12_FILTER_MIN_MAG_MIP_POINT;
+    return static_cast<D3D12_FILTER>( baseFilter + filter );
 }

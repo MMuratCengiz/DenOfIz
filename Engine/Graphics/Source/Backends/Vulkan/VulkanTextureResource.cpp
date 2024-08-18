@@ -23,8 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const TextureDesc &desc ) :
-    ITextureResource(desc), m_context( context ), m_desc( desc )
+VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const TextureDesc &desc ) : ITextureResource( desc ), m_context( context ), m_desc( desc )
 {
     VkImageType     imageType = VK_IMAGE_TYPE_1D;
     VkImageViewType viewType  = VK_IMAGE_VIEW_TYPE_1D;
@@ -204,7 +203,7 @@ VulkanTextureResource::~VulkanTextureResource( )
     {
         vmaDestroyImage( m_context->Vma, m_image, m_allocation );
 
-        for ( auto &imageView : m_imageViews )
+        for ( const auto &imageView : m_imageViews )
         {
             vkDestroyImageView( m_context->LogicalDevice, imageView, nullptr );
         }

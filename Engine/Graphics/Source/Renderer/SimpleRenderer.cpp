@@ -80,9 +80,10 @@ namespace DenOfIz
         deltaTimeBufferDesc.HeapType   = HeapType::CPU_GPU;
         deltaTimeBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
         deltaTimeBufferDesc.NumBytes   = sizeof( float );
+        deltaTimeBufferDesc.DebugName  = "TimePassedBuffer";
 
         float timePassed         = 1.0f;
-        m_timePassedBuffer       = m_logicalDevice->CreateBufferResource( "time", deltaTimeBufferDesc );
+        m_timePassedBuffer       = m_logicalDevice->CreateBufferResource( deltaTimeBufferDesc );
         m_mappedTimePassedBuffer = m_timePassedBuffer->MapMemory( );
         memcpy( m_mappedTimePassedBuffer, &timePassed, sizeof( float ) );
 
@@ -91,15 +92,15 @@ namespace DenOfIz
 
         BatchResourceCopyHelper copyHelper( m_logicalDevice.get( ), m_batchResourceCopy.get( ) );
         copyHelper.Begin( );
-        copyHelper.CreateUniformBuffer( "model", &m_identityMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_sphereModelMatrixBuffer );
-        copyHelper.CreateUniformBuffer( "model", &m_planeModelMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_planeModelMatrixBuffer );
-        copyHelper.CreateUniformBuffer( "viewProjection", &m_mvpMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_viewProjectionMatrixBuffer );
+        copyHelper.CreateUniformBuffer( &m_identityMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_sphereModelMatrixBuffer );
+        copyHelper.CreateUniformBuffer( &m_planeModelMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_planeModelMatrixBuffer );
+        copyHelper.CreateUniformBuffer( &m_mvpMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_viewProjectionMatrixBuffer );
         copyHelper.CreateGeometryBuffers( m_sphere ).Into( m_sphereVb, m_sphereIb );
         copyHelper.CreateGeometryBuffers( m_plane ).Into( m_planeVb, m_planeIb );
-        copyHelper.CreateSampler( "sampler1", SamplerDesc{ } ).Into( m_sphereSampler );
-        copyHelper.CreateSampler( "sampler1", SamplerDesc{ } ).Into( m_planeSampler );
-        copyHelper.CreateTexture( "texture1", "Assets/Textures/Dracolich.png" ).Into( m_sphereTexture );
-        copyHelper.CreateTexture( "texture1", "Assets/Textures/test-dxt5.dds" ).Into( m_planeTexture );
+        copyHelper.CreateSampler( SamplerDesc{ } ).Into( m_sphereSampler );
+        copyHelper.CreateSampler( SamplerDesc{ } ).Into( m_planeSampler );
+        copyHelper.CreateTexture( "Assets/Textures/Dracolich.png" ).Into( m_sphereTexture );
+        copyHelper.CreateTexture( "Assets/Textures/test-dxt5.dds" ).Into( m_planeTexture );
         copyHelper.Submit( );
 
         ResourceBindGroupDesc bindGroupDesc = { };

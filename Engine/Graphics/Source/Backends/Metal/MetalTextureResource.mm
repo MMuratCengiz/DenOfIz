@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc, std::string name ) : ITextureResource( desc ), m_context( context )
+MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc ) : ITextureResource( desc ), m_context( context )
 {
     m_context = context;
     m_desc    = desc;
@@ -72,7 +72,7 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
 
     if ( !m_texture )
     {
-        LOG( ERROR ) << "Failed to create Metal texture resource: " << m_name;
+        LOG( ERROR ) << "Failed to create Metal texture resource: " << m_desc.DebugName;
     }
 }
 
@@ -82,7 +82,6 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
     m_context          = context;
     m_desc             = desc;
     m_texture          = texture;
-    m_name             = name;
     isExternalResource = true;
 }
 
@@ -148,9 +147,8 @@ MetalTextureResource::~MetalTextureResource( )
 {
 }
 
-MetalSampler::MetalSampler( MetalContext *context, const SamplerDesc &desc, std::string name ) : m_context( context ), m_desc( desc )
+MetalSampler::MetalSampler( MetalContext *context, const SamplerDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_name                            = name;
     MTLSamplerDescriptor *samplerDesc = [[MTLSamplerDescriptor alloc] init];
 
     samplerDesc.supportArgumentBuffers = YES;
@@ -168,7 +166,7 @@ MetalSampler::MetalSampler( MetalContext *context, const SamplerDesc &desc, std:
     m_sampler = [m_context->Device newSamplerStateWithDescriptor:samplerDesc];
     if ( !m_sampler )
     {
-        LOG( ERROR ) << "Failed to create Metal sampler state: " << name;
+        LOG( ERROR ) << "Failed to create Metal sampler state: " << desc.DebugName;
     }
 }
 
