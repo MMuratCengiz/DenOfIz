@@ -38,7 +38,7 @@ void Time::Tick()
 
     if ( now - lastFrameTick >= 1000000 )
     {
-        ListenFps(frames);
+        OnEachSecond(frames);
         lastFrameTick = now;
         frames        = 0;
     }

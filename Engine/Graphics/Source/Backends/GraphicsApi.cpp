@@ -96,22 +96,14 @@ std::unique_ptr<ShaderProgram> GraphicsApi::CreateShaderProgram( const std::vect
     {
         programDesc.TargetIL = TargetIL::DXIL;
     }
-    else
+    else if ( IsVulkanPreferred( ) )
     {
         programDesc.TargetIL = TargetIL::SPIRV;
     }
-    if ( IsMetalPreferred( ) )
+    // ReSharper disable once CppDFAConstantConditions
+    else if ( IsMetalPreferred( ) )
     {
         programDesc.TargetIL = TargetIL::MSL;
-    }
-    else
-    {
-        LOG( ERROR ) << "No supported API found for this system.";
-    }
-    programDesc.TargetIL = TargetIL::MSL;
-    if ( IsVulkanPreferred( ) )
-    {
-        programDesc.TargetIL = TargetIL::SPIRV;
     }
     else
     {
@@ -159,7 +151,6 @@ bool GraphicsApi::IsVulkanPreferred( ) const
 #endif
     }
 
-    LOG( ERROR ) << "No supported API found for this system.";
     return false;
 }
 

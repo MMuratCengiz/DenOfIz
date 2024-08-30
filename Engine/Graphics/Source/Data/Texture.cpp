@@ -114,7 +114,7 @@ void Texture::LoadTextureDDS( )
         return;
     }
 
-    std::streamsize size = file.tellg( );
+    const std::streamsize size = file.tellg( );
     file.seekg( 0, std::ios::beg );
 
     std::vector<Byte> fileDataHeap( size );
@@ -155,7 +155,7 @@ void Texture::LoadTextureDDS( )
     }
     else if ( m_ddsHeader.is_3d( ) )
     {
-        Dimension = TextureDimension::Texture1D;
+        Dimension = TextureDimension::Texture3D;
     }
     else
     {
@@ -374,9 +374,10 @@ Format Texture::GetFormatFromDDS( const dds::DXGI_FORMAT &format )
     case dds::DXGI_FORMAT_FORCE_DWORD:
         return Format::Undefined;
     }
+    return Format::Undefined;
 }
 
-void Texture::StreamMipData( MipStreamCallback callback ) const
+void Texture::StreamMipData( const MipStreamCallback &callback ) const
 {
     switch ( Extension )
     {
@@ -389,14 +390,14 @@ void Texture::StreamMipData( MipStreamCallback callback ) const
     }
 }
 
-void Texture::StreamMipDataDDS( MipStreamCallback callback ) const
+void Texture::StreamMipDataDDS( const MipStreamCallback &callback ) const
 {
     for ( uint32_t array = 0; array < ArraySize; ++array )
     {
         for ( uint32_t mip = 0; mip < MipLevels; ++mip )
         {
             // this.Data already skips the data_offset() but mip_offset() includes it
-            auto externalOffset = m_ddsHeader.mip_offset( mip, array ) - m_ddsHeader.data_offset( );
+            const auto externalOffset = m_ddsHeader.mip_offset( mip, array ) - m_ddsHeader.data_offset( );
 
             MipData mipData{ };
             mipData.Width      = m_ddsHeader.width( ) >> mip;
@@ -413,7 +414,7 @@ void Texture::StreamMipDataDDS( MipStreamCallback callback ) const
     }
 }
 
-void Texture::StreamMipDataSTB( MipStreamCallback callback ) const
+void Texture::StreamMipDataSTB( const MipStreamCallback& callback ) const
 {
     MipData mipData{ };
     mipData.Width      = Width;

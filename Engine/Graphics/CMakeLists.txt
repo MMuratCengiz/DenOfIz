@@ -1,5 +1,4 @@
 include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
-include("${PROJECT_SOURCE_DIR}/Engine/The-Forge/cmake/theforge_helper.cmake")
 
 # On windows use dxc from vcpkg, on other platforms build it from source
 if (WIN32)
@@ -18,16 +17,6 @@ if (WIN32 OR LINUX)
     find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 endif ()
 
-find_package(glslang CONFIG REQUIRED)
-find_package(spirv_cross_core CONFIG REQUIRED)
-find_package(spirv_cross_glsl CONFIG REQUIRED)
-find_package(spirv_cross_reflect CONFIG REQUIRED)
-find_package(spirv_cross_util CONFIG REQUIRED)
-find_package(spirv_cross_cpp CONFIG REQUIRED)
-find_package(spirv_cross_hlsl CONFIG REQUIRED)
-find_package(spirv_cross_msl CONFIG REQUIRED)
-find_package(spirv_cross_c CONFIG REQUIRED)
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 find_package(wil CONFIG REQUIRED)
 find_package(directxmath CONFIG REQUIRED)
@@ -38,7 +27,6 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Backends/GraphicsApi.cpp
         #Shader Compiler
         Source/Backends/Common/ShaderCompiler.cpp
-        Source/Backends/Common/ShaderReflection.cpp
         Source/Backends/Common/ShaderProgram.cpp
 
         #Data
@@ -150,23 +138,15 @@ target_link_libraries(DenOfIzGraphics
         SDL2::SDL2
         SDL2::SDL2main
         SDL2::SDL2-static
-        spirv-cross-glsl
-        spirv-cross-hlsl
-        spirv-cross-cpp
-        spirv-cross-reflect
-        spirv-cross-msl
-        spirv-cross-util
-        spirv-cross-core
-        glslang::glslang
-        glslang::glslang-default-resource-limits
-        glslang::SPIRV
-        glslang::SPVRemapper
 )
 
 if (WIN32)
+    # Non VCPKG because github repo is more up to date, and the one in vcpkg is unofficial
+    add_subdirectory(_ThirdParty/D3D12MemoryAllocator)
+
     target_include_directories(DenOfIzGraphics
-            PRIVATE
-            _ThirdParty/dxc/inc
+            PUBLIC
+            _ThirdParty/D3D12MemoryAllocator/include
     )
 
     target_link_directories(
@@ -187,6 +167,7 @@ if (WIN32)
             Microsoft::DirectX-Headers
             Microsoft::DirectXTK12
             Microsoft::DirectX-Guids
+            D3D12MemoryAllocator
     )
 
     if (TARGET Microsoft::DirectX12-Agility)
@@ -241,7 +222,6 @@ if (WIN32 OR LINUX)
     target_link_libraries(DenOfIzGraphics PUBLIC
             volk::volk
             volk::volk_headers
-            #            Vulkan::Vulkan
             GPUOpen::VulkanMemoryAllocator)
 endif ()
 

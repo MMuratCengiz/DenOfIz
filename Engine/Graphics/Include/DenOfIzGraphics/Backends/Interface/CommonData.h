@@ -344,6 +344,8 @@ namespace DenOfIz
         case Format::BC7UnormSrgb:
             return FormatSubType::Unorm;
         }
+
+        return FormatSubType::Undefined;
     }
 
     static bool IsFormatBC( const Format &format )
@@ -405,8 +407,6 @@ namespace DenOfIz
     {
         switch ( sampleCount )
         {
-        case MSAASampleCount::_0:
-            return 1;
         case MSAASampleCount::_1:
             return 1;
         case MSAASampleCount::_2:

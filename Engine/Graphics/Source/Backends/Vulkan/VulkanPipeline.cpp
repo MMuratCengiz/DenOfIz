@@ -16,9 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanPipeline.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h>
 #include <ranges>
-#include "DenOfIzGraphics/Backends/Common/ShaderReflection.h"
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h"
 
 using namespace DenOfIz;
 

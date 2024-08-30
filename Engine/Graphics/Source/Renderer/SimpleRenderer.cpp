@@ -34,24 +34,8 @@ namespace DenOfIz
         m_program = m_gApi.CreateShaderProgram(
             { ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" }, ShaderDesc{ .Stage = ShaderStage::Pixel, .Path = "Assets/Shaders/fs.hlsl" } } );
 
-        RootSignatureDesc
-            rootSigDesc{ .ResourceBindings = {
-                             ResourceBindingDesc{
-                                 .Name = "model", .Binding = 0, .RegisterSpace = 1, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
-                             ResourceBindingDesc{ .Name = "viewProjection", .Binding = 0, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
-                             ResourceBindingDesc{ .Name = "time", .Binding = 1, .Descriptor = ResourceDescriptor::UniformBuffer, .Stages = { ShaderStage::Vertex } },
-                             ResourceBindingDesc{
-                                 .Name = "texture1", .Binding = 0, .RegisterSpace = 1, .Descriptor = ResourceDescriptor::Texture, .Stages = { ShaderStage::Pixel } },
-                             ResourceBindingDesc{
-                                 .Name = "sampler1", .Binding = 0, .RegisterSpace = 1, .Descriptor = ResourceDescriptor::Sampler, .Stages = { ShaderStage::Pixel } },
-                         } };
-
         ShaderReflectDesc reflection = m_program->Reflect( );
-        // Testing...
-        rootSigDesc = reflection.RootSignature;
-
-        m_rootSignature = m_logicalDevice->CreateRootSignature( rootSigDesc );
-
+        m_rootSignature = m_logicalDevice->CreateRootSignature( reflection.RootSignature );
         m_inputLayout = m_logicalDevice->CreateInputLayout( VertexPositionNormalTexture::InputLayout );
 
         const GraphicsWindowSurface &surface = m_window->GetSurface( );
@@ -131,7 +115,7 @@ namespace DenOfIz
             m_perCameraBindGroup->Update( updateDesc );
         }
 
-        m_time->ListenFps = []( const double fps ) { DLOG( INFO ) << std::format( "FPS: {}", fps ); };
+        m_time->OnEachSecond = []( const double fps ) { DLOG( INFO ) << std::format( "FPS: {}", fps ); };
 
         LOG( INFO ) << "Initialization Complete.";
     }
@@ -180,8 +164,8 @@ namespace DenOfIz
         const Viewport &viewport = m_swapChain->GetViewport( );
         nextCommandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
         nextCommandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-        nextCommandList->BindPipeline( m_pipeline.get( ) );
         nextCommandList->BindResourceGroup( m_perCameraBindGroup.get( ) );
+        nextCommandList->BindPipeline( m_pipeline.get( ) );
 
         { // Draw the sphere
             nextCommandList->BindResourceGroup( m_sphereModelBindGroup.get( ) );

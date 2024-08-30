@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDesc &desc ) : ITextureResource( desc ), m_context( context ), m_desc( desc )
+DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDesc &desc ) : ITextureResource( desc ), m_desc( desc ), m_context( context )
 {
     ValidateTextureDesc( m_desc );
 
@@ -53,10 +53,6 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
 
     D3D12MA::ALLOCATION_DESC allocationDesc = { };
     allocationDesc.HeapType                 = D3D12_HEAP_TYPE_DEFAULT;
-    // Remove the following line to once dependency to The Forge is removed !TF!
-    allocationDesc.CreationNodeMask = 1;
-    allocationDesc.VisibleNodeMask  = 1;
-    // --
 
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) )
     {
@@ -256,7 +252,7 @@ DX12Sampler::DX12Sampler( DX12Context *context, const SamplerDesc &desc ) : m_co
     m_samplerDesc.MaxLOD           = desc.MaxLod;
 }
 
-void DX12Sampler::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle )
+void DX12Sampler::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle )
 {
     DZ_RETURN_IF( m_cpuHandle.ptr != 0 && m_cpuHandle.ptr == cpuHandle.ptr );
     m_cpuHandle = cpuHandle;

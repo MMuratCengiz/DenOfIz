@@ -7,11 +7,8 @@
     "volk",
     "vulkan",
     "vulkan-memory-allocator",
-    "glslang",
-    "spirv-cross",
     "stb",
     "tinygltf",
-    "python3",
     "gtest",
     "directxmath",
     {
@@ -23,10 +20,8 @@
       "name": "sdl2",
       "platform": "osx"
     },
-    { "name": "d3d12-memory-allocator", "platform": "windows" },
     { "name": "directx12-agility", "platform": "windows" },
     { "name": "directxtk12", "platform": "windows" },
-    { "name": "directxtex", "platform": "windows" },
     { "name": "directx-headers", "platform": "windows" }
   ]
 }

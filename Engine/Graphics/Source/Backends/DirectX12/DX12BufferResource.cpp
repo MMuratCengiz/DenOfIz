@@ -43,10 +43,6 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
 
     D3D12MA::ALLOCATION_DESC allocationDesc = { };
     allocationDesc.HeapType                 = DX12EnumConverter::ConvertHeapType( m_desc.HeapType );
-    // Remove the following line to once dependency to The Forge is removed !TF!
-    allocationDesc.CreationNodeMask = 1;
-    allocationDesc.VisibleNodeMask  = 1;
-    // --
 
     const D3D12_RESOURCE_STATES start_state = DX12EnumConverter::ConvertResourceState( m_desc.InitialState );
 

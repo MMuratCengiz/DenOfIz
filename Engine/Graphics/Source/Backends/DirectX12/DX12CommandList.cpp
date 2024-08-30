@@ -87,11 +87,13 @@ void DX12CommandList::Execute( const ExecuteDesc &executeInfo )
     m_commandQueue->ExecuteCommandLists( 1, CommandListCast( m_commandList.addressof( ) ) );
     for ( ISemaphore* semaphore : executeInfo.NotifySemaphores )
     {
-        DX_CHECK_RESULT( m_commandQueue->Signal( reinterpret_cast<DX12Semaphore *>( semaphore )->GetFence( ), 1 ) );
+        const auto dx12Semaphore = reinterpret_cast<DX12Semaphore *>( semaphore );
+        dx12Semaphore->NotifyCommandQueue( m_commandQueue );
     }
     if ( executeInfo.Notify != nullptr )
     {
-        DX_CHECK_RESULT( m_commandQueue->Signal( reinterpret_cast<DX12Fence *>( executeInfo.Notify )->GetFence( ), 1 ) );
+        const auto dx12Fence = reinterpret_cast<DX12Fence *>( executeInfo.Notify );
+        dx12Fence->NotifyCommandQueue( m_commandQueue );
     }
 }
 

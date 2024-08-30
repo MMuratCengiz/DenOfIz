@@ -60,17 +60,17 @@ namespace DenOfIz
         std::vector<std::unique_ptr<CompiledShader>> m_compiledShaders;
         const ShaderProgramDesc                     &m_desc;
 
-        ShaderProgram( const ShaderProgramDesc &desc );
+        explicit ShaderProgram( const ShaderProgramDesc &desc );
 
     public:
-        const std::vector<CompiledShader *> GetCompiledShaders( ) const;
-        ShaderReflectDesc                   Reflect( ) const;
+        [[nodiscard]] const std::vector<CompiledShader *> GetCompiledShaders( ) const;
+        [[nodiscard]] ShaderReflectDesc                   Reflect( ) const;
 
     private:
-        const ShaderCompiler &ShaderCompilerInstance( ) const;
-        void                  Compile( );
-        void                  InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
-        void                  ProcessRootSignature( ID3D12ShaderReflection *shaderReflection, RootSignatureDesc &rootSignatureDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
+        [[nodiscard]] const ShaderCompiler &ShaderCompilerInstance( ) const;
+        void                                Compile( );
+        void InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
+        void ProcessRootSignature( ID3D12ShaderReflection *shaderReflection, RootSignatureDesc &rootSignatureDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
     };
 
 } // namespace DenOfIz

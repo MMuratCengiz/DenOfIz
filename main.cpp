@@ -1,4 +1,3 @@
-#ifndef DISABLED
 // Include first to ensure NOMINMAX
 #include <DenOfIzCore/Engine.h>
 
@@ -35,9 +34,9 @@ int main()
     windowFlags |= SDL_WINDOW_METAL;
 #endif
 
-    auto window = SDL_CreateWindow("Hello C++", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, windowFlags);
+    const auto window = SDL_CreateWindow( "Hello C++", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, windowFlags );
 
-    auto windowHandle = std::make_unique<DenOfIz::GraphicsWindowHandle>();
+    const auto windowHandle = std::make_unique<DenOfIz::GraphicsWindowHandle>();
     windowHandle->Create(window);
     { // SimpleRenderer scope
         auto renderer = DenOfIz::SimpleRenderer();
@@ -64,17 +63,4 @@ int main()
 
     return 0;
 }
-#else
-#include <TF/Renderer/TriangleRenderer.h>
-int WindowsMain(int argc, char **argv, IApp *app);
-int main(int argc, char **argv)
-{
-    IApp::argc                           = argc;
-    IApp::argv                           = (const char **) argv;
-    static DenOfIz::TriangleRenderer app = {};
-    return WindowsMain(argc, argv, &app);
-}
-
-//DEFINE_APPLICATION_MAIN(DenOfIz::TriangleRenderer)
-#endif
 

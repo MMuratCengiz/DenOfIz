@@ -27,7 +27,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define VOLK_IMPLEMENTATION
 #include "volk.h"
 
-#define VMA_STATS_STRING_ENABLED 0
 #define VMA_IMPLEMENTATION
 #include "vma/vk_mem_alloc.h"
 

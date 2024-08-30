@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "VulkanContext.h"
 #include "VulkanInputLayout.h"
 #include "VulkanPipeline.h"
+#include <unordered_set>
 
 namespace DenOfIz
 {

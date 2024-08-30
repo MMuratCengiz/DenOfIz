@@ -4,6 +4,7 @@ struct PSInput {
 };
 
 Texture2D texture1 : register(t0, space1);
+// Texture2D tint : register(t1, space1);
 SamplerState sampler1 : register(s0, space1);
 
 float4 main(PSInput input) : SV_TARGET {

@@ -1,8 +1,5 @@
 #pragma once
 
-#include <glslang/Public/ShaderLang.h>
-#include <glslang/SPIRV/GlslangToSpv.h>
-
 #if defined( __APPLE__ )
 #include <metal_irconverter/metal_irconverter.h>
 #include <simd/simd.h>
@@ -47,14 +44,11 @@ namespace DenOfIz
         static constexpr uint32_t VkShiftSrv     = 2000;
         static constexpr uint32_t VkShiftUav     = 3000;
         static constexpr uint32_t VkShiftSampler = 4000;
-        IDxcUtils                *DxcUtils( ) const;
+        [[nodiscard]] IDxcUtils  *DxcUtils( ) const;
 
                                                       ShaderCompiler( );
         ~                                             ShaderCompiler( );
-        void                                          InitResources( TBuiltInResource &Resources ) const;
-        [[nodiscard]] EShLanguage                     FindLanguage( ShaderStage shaderType ) const;
         [[nodiscard]] std::unique_ptr<CompiledShader> CompileHLSL( const std::string &path, const CompileOptions &compileOptions ) const;
-        [[nodiscard]] std::vector<uint32_t>           CompileGLSL( const std::string &filename, const CompileOptions &compileOptions ) const;
         [[nodiscard]] IDxcBlob                       *DxilToMsl( const CompileOptions &compileOptions, IDxcBlob *code ) const;
 #ifdef BUILD_METAL
         [[nodiscard]] static IRShaderStage ConvertIrShaderStage( const ShaderStage &stage );

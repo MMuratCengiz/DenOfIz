@@ -34,10 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DX12DescriptorHeap.h"
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 
-// !TF! remove
-#include "Direct3D12MemoryAllocator.h"
-// #include "D3D12MemAlloc.h"
-//  --
+#include "D3D12MemAlloc.h"
 
 #ifndef NDEBUG
 #include <dxgidebug.h>

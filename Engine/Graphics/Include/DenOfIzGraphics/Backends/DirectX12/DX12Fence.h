@@ -24,24 +24,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class DX12Fence : public IFence
+    class DX12Fence final : public IFence
     {
-    private:
-        DX12Context                    *m_context;
-        wil::com_ptr<ID3D12Fence>       m_fence;
-        UINT32                          m_fenceValue = 1;
-        Microsoft::WRL::Wrappers::Event m_fenceEvent;
-        bool                            m_submitted = false;
+        constexpr static UINT64   MAX_FENCE_VALUE = 1000000;
+        DX12Context              *m_context;
+        wil::com_ptr<ID3D12Fence> m_fence;
+        UINT32                    m_fenceValue = 1;
+        Wrappers::Event           m_fenceEvent;
+        bool                      m_submitted = false;
 
     public:
-        DX12Fence(DX12Context *context);
-        ID3D12Fence *GetFence() const
+
+        explicit                   DX12Fence( DX12Context *context );
+        [[nodiscard]] ID3D12Fence *GetFence( ) const
         {
-            return m_fence.get();
+            return m_fence.get( );
         }
-        ~DX12Fence() override;
-        void Wait() override;
-        void Reset() override;
+        ~    DX12Fence( ) override;
+        void Wait( ) override;
+        void Reset( ) override;
+        void NotifyCommandQueue( ID3D12CommandQueue *commandQueue );
     };
 
 } // namespace DenOfIz

@@ -69,41 +69,41 @@ namespace DenOfIz
         uint32_t DataOffset;
     };
 
-    typedef std::function<void(MipData mipData)> MipStreamCallback;
+    typedef std::function<void( MipData mipData )> MipStreamCallback;
     class Texture
     {
     private:
         std::string          m_path;
         std::vector<MipData> m_mipData;
-        dds::Header          m_ddsHeader;
-        Byte                *m_contentData;
+        dds::Header          m_ddsHeader{ };
+        Byte                *m_contentData{ };
 
     public:
-        uint32_t          Width;
-        uint32_t          Height;
-        uint32_t          Depth;
+        uint32_t          Width{ };
+        uint32_t          Height{ };
+        uint32_t          Depth{ };
         uint32_t          MipLevels = 1;
         uint32_t          ArraySize = 1;
-        uint32_t          BitsPerPixel;
-        uint32_t          BlockSize;
-        uint32_t          RowPitch;
-        uint32_t          NumRows;
-        uint32_t          SlicePitch;
-        Format            Format;
-        TextureDimension  Dimension;
-        TextureExtension  Extension;
-        std::vector<Byte> Data;
-        explicit Texture(const std::string &path);
+        uint32_t          BitsPerPixel{ };
+        uint32_t          BlockSize{ };
+        uint32_t          RowPitch{ };
+        uint32_t          NumRows{ };
+        uint32_t          SlicePitch{ };
+        Format            Format    = Format::Undefined;
+        TextureDimension  Dimension = TextureDimension::Undefined;
+        TextureExtension  Extension = TextureExtension::DDS;
+        std::vector<Byte> Data{ };
+        explicit          Texture( const std::string &path );
 
-        void StreamMipData(MipStreamCallback callback) const;
+        void StreamMipData( const MipStreamCallback &callback ) const;
 
     private:
-        void LoadTextureSTB();
-        void LoadTextureDDS();
-        void StreamMipDataDDS(MipStreamCallback callback) const;
-        void StreamMipDataSTB(MipStreamCallback callback) const;
+        void LoadTextureSTB( );
+        void LoadTextureDDS( );
+        void StreamMipDataDDS( const MipStreamCallback &callback ) const;
+        void StreamMipDataSTB( const MipStreamCallback &callback ) const;
 #ifdef DZ_USE_DDS
-        static enum Format GetFormatFromDDS(const dds::DXGI_FORMAT &format);
+        static enum Format GetFormatFromDDS( const dds::DXGI_FORMAT &format );
 #endif
     };
 } // namespace DenOfIz

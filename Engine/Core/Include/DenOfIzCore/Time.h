@@ -26,19 +26,19 @@ namespace DenOfIz
 
     class Time
     {
-        int    frames;
-        double prev      = 0;
-        double deltaTime = 0;
-        double firstTickTime;
-        double lastFrameTick;
+        int    frames        = 0;
+        double prev          = 0;
+        double deltaTime     = 0;
+        double firstTickTime = 0;
+        double lastFrameTick = 0;
 
     public:
-        std::function<void(double)> ListenFps;
+        std::function<void( double )> OnEachSecond;
 
-        void          Tick();
-        const double  GetDeltaTime() const;
-        const double  GetFirstTickTime() const;
-        static double DoubleEpochNow();
+        void                       Tick( );
+        [[nodiscard]] const double GetDeltaTime( ) const;
+        [[nodiscard]] const double GetFirstTickTime( ) const;
+        static double              DoubleEpochNow( );
     };
 
 } // namespace DenOfIz

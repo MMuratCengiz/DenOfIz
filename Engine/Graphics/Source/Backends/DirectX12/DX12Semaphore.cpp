@@ -20,30 +20,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12Semaphore::DX12Semaphore(DX12Context *context)
+DX12Semaphore::DX12Semaphore( DX12Context *context ) : m_context( context ), m_fenceValue( 0 )
 {
-    m_context    = context;
-    m_fenceValue = 1;
-    context->D3DDevice->CreateFence(m_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.put()));
-    m_fenceEvent.Attach(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( m_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( m_fence.put( ) ) ) );
+    m_fenceEvent.Attach( CreateEventEx( nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE ) );
 }
 
-DX12Semaphore::~DX12Semaphore()
+DX12Semaphore::~DX12Semaphore( )
 {
     m_fence = nullptr;
 }
 
-void DX12Semaphore::Wait()
+void DX12Semaphore::Wait( )
 {
-    if ( m_fence->GetCompletedValue() != 1 )
+    if ( m_fence->GetCompletedValue( ) != m_fenceValue )
     {
-        THROW_IF_FAILED(m_fence->SetEventOnCompletion(m_fenceValue, m_fenceEvent.Get()));
-        WaitForSingleObjectEx(m_fenceEvent.Get(), INFINITE, FALSE);
-        m_fence->Signal(0);
+        DX_CHECK_RESULT( m_fence->SetEventOnCompletion( m_fenceValue, m_fenceEvent.Get( ) ) );
+        WaitForSingleObjectEx( m_fenceEvent.Get( ), INFINITE, FALSE );
     }
 }
 
-void DX12Semaphore::Notify()
+void DX12Semaphore::Notify( )
 {
-    m_fence->Signal(1);
+    m_fenceValue = m_fenceValue + 1 % MAX_FENCE_VALUE;
+    DX_CHECK_RESULT( m_fence->Signal( m_fenceValue ) );
+}
+
+void DX12Semaphore::NotifyCommandQueue( ID3D12CommandQueue *commandQueue )
+{
+    m_fenceValue = m_fenceValue + 1 % MAX_FENCE_VALUE;
+    DX_CHECK_RESULT( commandQueue->Signal( m_fence.get( ), m_fenceValue ) );
 }

@@ -14,7 +14,7 @@ set(VCPKG_MANIFEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
-set(SUB_PROJECTS Engine Game)
+set(SUB_PROJECTS Engine)
 foreach(SUB_PROJECT IN LISTS SUB_PROJECTS)
     add_subdirectory(${SUB_PROJECT})
 endforeach()
@@ -51,7 +51,6 @@ endif ()
 target_link_libraries(DenOfIz
         PRIVATE
         DenOfIzEngine
-        DenOfIzGame
 )
 
 if (APPLE)

@@ -18,28 +18,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DX12Context.h"
 #include <DenOfIzGraphics/Backends/Interface/ISemaphore.h>
+#include "DX12Context.h"
 
 namespace DenOfIz
 {
 
-    class DX12Semaphore : public ISemaphore
+    class DX12Semaphore final : public ISemaphore
     {
-    private:
-        DX12Context                    *m_context;
-        wil::com_ptr<ID3D12Fence>       m_fence;
-        Microsoft::WRL::Wrappers::Event m_fenceEvent;
-        UINT64                          m_fenceValue;
+        constexpr static UINT64   MAX_FENCE_VALUE = 1000000;
+        DX12Context              *m_context;
+        wil::com_ptr<ID3D12Fence> m_fence;
+        Wrappers::Event           m_fenceEvent;
+        UINT64                    m_fenceValue;
 
     public:
-        DX12Semaphore(DX12Context *context);
-        ID3D12Fence *GetFence() const
+        explicit                   DX12Semaphore( DX12Context *context );
+        [[nodiscard]] ID3D12Fence *GetFence( ) const
         {
-            return m_fence.get();
+            return m_fence.get( );
         }
-        ~DX12Semaphore() override;
-        void Wait() override;
-        void Notify() override;
+        ~    DX12Semaphore( ) override;
+        void Wait( ) override;
+        void Notify( ) override;
+        void NotifyCommandQueue( ID3D12CommandQueue *commandQueue );
     };
 } // namespace DenOfIz
