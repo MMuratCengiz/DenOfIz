@@ -22,12 +22,10 @@ using namespace DenOfIz;
 
 GraphicsApi::GraphicsApi( const APIPreference &preference ) : m_apiPreference( preference )
 {
+    std::atexit( ReportLiveObjects );
 }
 
-GraphicsApi::~GraphicsApi( )
-{
-    ReportLiveObjects( );
-}
+GraphicsApi::~GraphicsApi( ) = default;
 
 std::unique_ptr<ILogicalDevice> GraphicsApi::CreateLogicalDevice( ) const
 {
@@ -113,7 +111,7 @@ std::unique_ptr<ShaderProgram> GraphicsApi::CreateShaderProgram( const std::vect
     return std::unique_ptr<ShaderProgram>( program );
 }
 
-void GraphicsApi::ReportLiveObjects( ) const
+void GraphicsApi::ReportLiveObjects( )
 {
 #ifndef NDEBUG
 #if defined( BUILD_DX12 )

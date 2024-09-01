@@ -24,9 +24,8 @@ namespace DenOfIz
 {
     class ComputeTest
     {
-    private:
-        GraphicsApi                         m_gApi;
-        std::unique_ptr<ILogicalDevice>     m_logicalDevice;
+        GraphicsApi                        *m_gApi;
+        ILogicalDevice                     *m_logicalDevice;
         std::unique_ptr<ShaderProgram>      m_program;
         std::unique_ptr<ICommandListPool>   m_commandListPool;
         std::unique_ptr<IPipeline>          m_pipeline;
@@ -37,7 +36,7 @@ namespace DenOfIz
         std::unique_ptr<IFence>             m_fence;
 
     public:
-        ComputeTest( );
+         ComputeTest( GraphicsApi *gApi, ILogicalDevice *logicalDevice );
         ~ComputeTest( );
 
         int Run( );

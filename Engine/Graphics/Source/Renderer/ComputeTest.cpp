@@ -20,31 +20,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-ComputeTest::ComputeTest( ) :
-    m_gApi( APIPreference{
-        //            .Windows = APIPreferenceWindows::Vulkan,
-    } )
+ComputeTest::ComputeTest( GraphicsApi *gApi, ILogicalDevice *logicalDevice ) : m_gApi( gApi ), m_logicalDevice( logicalDevice )
 {
 }
 
 ComputeTest::~ComputeTest( )
 {
     m_fence->Wait( );
-
-    m_commandListPool.reset( );
-    m_fence.reset( );
-    buffer.reset( );
-    m_rootSignature.reset( );
-    m_inputLayout.reset( );
-    m_pipeline.reset( );
-    m_logicalDevice.reset( );
-    m_gApi.ReportLiveObjects( );
 }
 
 int ComputeTest::Run( )
 {
-    m_logicalDevice = m_gApi.CreateAndLoadOptimalLogicalDevice( );
-    m_program       = m_gApi.CreateShaderProgram( {
+    m_program = m_gApi->CreateShaderProgram( {
         ShaderDesc{ .Stage = ShaderStage::Compute, .Path = "Assets/Shaders/compute.hlsl" },
     } );
     m_rootSignature = m_logicalDevice->CreateRootSignature(RootSignatureDesc{
@@ -63,7 +50,7 @@ int ComputeTest::Run( )
     buffer                       = m_logicalDevice->CreateBufferResource( bufferDesc );
 
     m_resourceBindGroup = m_logicalDevice->CreateResourceBindGroup( ResourceBindGroupDesc{ .RootSignature = m_rootSignature.get( ) } );
-    m_resourceBindGroup->Update( UpdateDesc{ }.Buffer( ResourceBindingSlot::Uav(), buffer.get( ) ) );
+    m_resourceBindGroup->Update( UpdateDesc{ }.Buffer( ResourceBindingSlot::Uav( ), buffer.get( ) ) );
 
     m_inputLayout = m_logicalDevice->CreateInputLayout( { } );
 
@@ -113,7 +100,7 @@ int ComputeTest::Run( )
     float *mappedData = static_cast<float *>( readBack->MapMemory( ) );
     for ( UINT i = 0; i < 1024; i++ )
     {
-        //        std::cout << "Index " << i << ": " << mappedData[ i ] << std::endl;
+        std::cout << "Index " << i << ": " << mappedData[ i ] << std::endl;
     }
     readBack->UnmapMemory( );
     return 0;

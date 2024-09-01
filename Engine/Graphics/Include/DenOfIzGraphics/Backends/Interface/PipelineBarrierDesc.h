@@ -29,8 +29,8 @@ namespace DenOfIz
     struct TextureBarrierDesc
     {
         ITextureResource     *Resource;
-        BitSet<ResourceState> OldState{};
-        BitSet<ResourceState> NewState{};
+        BitSet<ResourceState> OldState{ };
+        BitSet<ResourceState> NewState{ };
 
         bool     EnableQueueBarrier = false;
         uint32_t SourceQueue;
@@ -57,64 +57,63 @@ namespace DenOfIz
 
     class PipelineBarrierDesc
     {
-    private:
         std::vector<TextureBarrierDesc> m_textureBarriers;
         std::vector<BufferBarrierDesc>  m_bufferBarriers;
         std::vector<MemoryBarrierDesc>  m_memoryBarriers;
 
     public:
-        inline PipelineBarrierDesc & TextureBarrier(TextureBarrierDesc barrier)
+        PipelineBarrierDesc &TextureBarrier( const TextureBarrierDesc &barrier )
         {
-            m_textureBarriers.push_back(barrier);
+            m_textureBarriers.push_back( barrier );
             return *this;
         }
 
-        inline PipelineBarrierDesc & BufferBarrier(BufferBarrierDesc barrier)
+        PipelineBarrierDesc &BufferBarrier( const BufferBarrierDesc barrier )
         {
-            m_bufferBarriers.push_back(barrier);
+            m_bufferBarriers.push_back( barrier );
             return *this;
         }
 
-        inline PipelineBarrierDesc & MemoryBarrier(MemoryBarrierDesc barrier)
+        PipelineBarrierDesc &MemoryBarrier( const MemoryBarrierDesc barrier )
         {
-            m_memoryBarriers.push_back(barrier);
+            m_memoryBarriers.push_back( barrier );
             return *this;
         }
 
-        inline const std::vector<TextureBarrierDesc> &GetTextureBarriers() const
+        [[nodiscard]] const std::vector<TextureBarrierDesc> &GetTextureBarriers( ) const
         {
             return m_textureBarriers;
         }
 
-        inline const std::vector<BufferBarrierDesc> &GetBufferBarriers() const
+        [[nodiscard]] const std::vector<BufferBarrierDesc> &GetBufferBarriers( ) const
         {
             return m_bufferBarriers;
         }
 
-        inline const std::vector<MemoryBarrierDesc> &GetMemoryBarriers() const
+        [[nodiscard]] const std::vector<MemoryBarrierDesc> &GetMemoryBarriers( ) const
         {
             return m_memoryBarriers;
         }
 
-        static PipelineBarrierDesc UndefinedToRenderTarget(ITextureResource *resource)
+        static PipelineBarrierDesc UndefinedToRenderTarget( ITextureResource *resource )
         {
             PipelineBarrierDesc barrier;
-            TextureBarrierDesc textureBarrier{};
+            TextureBarrierDesc  textureBarrier{ };
             textureBarrier.OldState = ResourceState::Undefined;
             textureBarrier.NewState = ResourceState::RenderTarget;
             textureBarrier.Resource = resource;
-            barrier.TextureBarrier(textureBarrier);
+            barrier.TextureBarrier( textureBarrier );
             return barrier;
         }
 
-        static PipelineBarrierDesc RenderTargetToPresent(ITextureResource *resource)
+        static PipelineBarrierDesc RenderTargetToPresent( ITextureResource *resource )
         {
             PipelineBarrierDesc barrier;
-            TextureBarrierDesc textureBarrier{};
+            TextureBarrierDesc  textureBarrier{ };
             textureBarrier.OldState = ResourceState::RenderTarget;
             textureBarrier.NewState = ResourceState::Present;
             textureBarrier.Resource = resource;
-            barrier.TextureBarrier(textureBarrier);
+            barrier.TextureBarrier( textureBarrier );
             return barrier;
         }
     };

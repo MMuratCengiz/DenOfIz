@@ -114,9 +114,10 @@ SamplerHolder BatchResourceCopyHelper::CreateSampler( const SamplerDesc &desc ) 
 
 TextureHolder BatchResourceCopyHelper::CreateTexture( const std::string &path ) const
 {
-    auto texture = m_batchCopy->CreateAndLoadTexture( path );
-    m_syncCommandList->PipelineBarrier(
-        PipelineBarrierDesc{ }.TextureBarrier( { .Resource = texture.get( ), .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } ) );
+    auto                      texture = m_batchCopy->CreateAndLoadTexture( path );
+    const PipelineBarrierDesc barrierDesc =
+        PipelineBarrierDesc{ }.TextureBarrier( { .Resource = texture.get( ), .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
+    m_syncCommandList->PipelineBarrier( barrierDesc );
     return TextureHolder{ .Texture = std::move( texture ) };
 }
 

@@ -21,22 +21,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    SimpleRenderer::SimpleRenderer( ) : m_gApi( { .Windows = APIPreferenceWindows::DirectX12 } )
+    SimpleRenderer::SimpleRenderer( GraphicsApi *gApi, ILogicalDevice *logicalDevice ) : m_gApi( gApi ), m_logicalDevice( logicalDevice )
     {
     }
 
     void SimpleRenderer::Init( GraphicsWindowHandle *window )
     {
-        m_window            = window;
-        m_logicalDevice     = m_gApi.CreateAndLoadOptimalLogicalDevice( );
-        m_batchResourceCopy = std::make_unique<BatchResourceCopy>( m_logicalDevice.get( ) );
+        m_window = window;
 
-        m_program = m_gApi.CreateShaderProgram(
+        m_program = m_gApi->CreateShaderProgram(
             { ShaderDesc{ .Stage = ShaderStage::Vertex, .Path = "Assets/Shaders/vs.hlsl" }, ShaderDesc{ .Stage = ShaderStage::Pixel, .Path = "Assets/Shaders/fs.hlsl" } } );
 
         ShaderReflectDesc reflection = m_program->Reflect( );
-        m_rootSignature = m_logicalDevice->CreateRootSignature( reflection.RootSignature );
-        m_inputLayout = m_logicalDevice->CreateInputLayout( VertexPositionNormalTexture::InputLayout );
+        m_rootSignature              = m_logicalDevice->CreateRootSignature( reflection.RootSignature );
+        m_inputLayout                = m_logicalDevice->CreateInputLayout( VertexPositionNormalTexture::InputLayout );
 
         const GraphicsWindowSurface &surface = m_window->GetSurface( );
         m_swapChain =
@@ -49,7 +47,7 @@ namespace DenOfIz
         pipelineDesc.Rendering.ColorAttachmentFormats.push_back( m_swapChain->GetPreferredFormat( ) );
 
         m_pipeline        = m_logicalDevice->CreatePipeline( pipelineDesc );
-        m_commandListRing = std::make_unique<CommandListRing>( m_logicalDevice.get( ) );
+        m_commandListRing = std::make_unique<CommandListRing>( m_logicalDevice );
 
         for ( uint32_t i = 0; i < mc_framesInFlight; ++i )
         {
@@ -74,7 +72,8 @@ namespace DenOfIz
         XMStoreFloat4x4( &m_identityMatrix, XMMatrixIdentity( ) );
         XMStoreFloat4x4( &m_planeModelMatrix, XMMatrixTranslation( 0.0f, -5.0f, 0.0f ) );
 
-        BatchResourceCopyHelper copyHelper( m_logicalDevice.get( ), m_batchResourceCopy.get( ) );
+        BatchResourceCopy       batchResourceCopy( m_logicalDevice );
+        BatchResourceCopyHelper copyHelper( m_logicalDevice, &batchResourceCopy );
         copyHelper.Begin( );
         copyHelper.CreateUniformBuffer( &m_identityMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_sphereModelMatrixBuffer );
         copyHelper.CreateUniformBuffer( &m_planeModelMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_planeModelMatrixBuffer );
@@ -141,7 +140,7 @@ namespace DenOfIz
 
     void SimpleRenderer::Render( ) const
     {
-        const float timePassed = std::fmax( 1.0f, ( m_time->DoubleEpochNow( ) - m_time->GetFirstTickTime( ) ) / 1000000.0f );
+        const float timePassed = std::fmax( 1.0f, ( Time::DoubleEpochNow( ) - m_time->GetFirstTickTime( ) ) / 1000000.0f );
         memcpy( m_mappedTimePassedBuffer, &timePassed, sizeof( float ) );
         m_time->Tick( );
 

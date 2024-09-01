@@ -38,7 +38,7 @@ namespace DenOfIz
     public:
              DX12TextureResource( DX12Context *context, const TextureDesc &desc );
              DX12TextureResource( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle );
-        ~    DX12TextureResource( ) override = default;
+        ~    DX12TextureResource( ) override;
         void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle );
 
         [[nodiscard]] const TextureDesc &GetDesc( ) const

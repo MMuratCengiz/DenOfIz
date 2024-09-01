@@ -78,12 +78,24 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
 
     const std::wstring name = std::wstring( m_desc.DebugName.begin( ), m_desc.DebugName.end( ) );
     DX_CHECK_RESULT( m_resource->SetName( name.c_str( ) ) );
+    m_allocation->SetName( name.c_str( ) );
 }
 
 DX12TextureResource::DX12TextureResource( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle ) :
     ITextureResource( { /*TODO !IMPROVEMENT!*/ } ), m_resource( resource ), m_cpuHandle( cpuHandle )
 {
     isExternalResource = true;
+}
+
+DX12TextureResource::~DX12TextureResource( )
+{
+    if ( !isExternalResource )
+    {
+        // DX12TextureResource is a unique use case, since it can also be initialized by SwapChain which owns its own resource
+        // Therefore manual memory management is required in this specific use case.
+        m_allocation->Release( );
+        m_resource->Release( );
+    }
 }
 
 void DX12TextureResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle )

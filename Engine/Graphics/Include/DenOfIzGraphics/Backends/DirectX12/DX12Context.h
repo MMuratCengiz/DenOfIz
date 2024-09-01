@@ -34,15 +34,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DX12DescriptorHeap.h"
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 
-#include "D3D12MemAlloc.h"
-
 #ifndef NDEBUG
+#define D3D12MA_DEBUG_LOG(format, ...) do { \
+            wprintf(format, __VA_ARGS__); \
+            wprintf(L"\n"); \
+        } while(false)
 #include <dxgidebug.h>
 #endif
 
+#include "D3D12MemAlloc.h"
+
 #include <DenOfIzCore/Common.h>
 
-#define DX_CHECK_RESULT( result ) if( FAILED( result ) ) { LOG(ERROR) << "DirectX12 Layer Error: " << result; }
+#define DX_CHECK_RESULT( result )                                                                                                                                                  \
+    if ( FAILED( result ) )                                                                                                                                                        \
+    {                                                                                                                                                                              \
+        LOG( ERROR ) << "DirectX12 Layer Error: " << result;                                                                                                                       \
+    }
 
 namespace DenOfIz
 {
@@ -53,7 +61,7 @@ namespace DenOfIz
 
     struct DX12Context : private NonCopyable
     {
-        bool             IsDeviceLost    = false;
+        bool IsDeviceLost = false;
 
         // Release Last
         wil::com_ptr<IDXGIAdapter1>      Adapter;
@@ -71,8 +79,8 @@ namespace DenOfIz
         std::unique_ptr<DX12DescriptorHeap>                                                   ShaderVisibleCbvSrvUavDescriptorHeap;
         std::unique_ptr<DX12DescriptorHeap>                                                   ShaderVisibleSamplerDescriptorHeap;
 
-        PhysicalDevice        SelectedDeviceInfo;
-        DX12Capabilities      DX12Capabilities;
+        PhysicalDevice   SelectedDeviceInfo;
+        DX12Capabilities DX12Capabilities;
     };
 } // namespace DenOfIz
 

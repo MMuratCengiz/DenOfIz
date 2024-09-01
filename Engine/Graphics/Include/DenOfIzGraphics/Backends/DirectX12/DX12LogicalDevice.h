@@ -68,7 +68,7 @@ namespace DenOfIz
         void WaitIdle( ) override;
         // --
     private:
-        void CreateDeviceInfo( IDXGIAdapter1 &adapter, PhysicalDevice &physicalDevice );
+        void CreateDeviceInfo( IDXGIAdapter1 &adapter, PhysicalDevice &physicalDevice ) const;
     };
 
 } // namespace DenOfIz

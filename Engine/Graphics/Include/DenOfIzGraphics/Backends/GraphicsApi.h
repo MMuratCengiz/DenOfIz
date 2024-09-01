@@ -50,18 +50,17 @@ namespace DenOfIz
     /// </summary>
     class GraphicsApi
     {
-    private:
         APIPreference m_apiPreference;
 
     public:
         explicit GraphicsApi( const APIPreference &preference );
-        ~GraphicsApi( );
+        ~        GraphicsApi( );
 
         std::unique_ptr<ILogicalDevice> CreateLogicalDevice( ) const;
         std::unique_ptr<ILogicalDevice> CreateAndLoadOptimalLogicalDevice( ) const;
         std::unique_ptr<ShaderProgram>  CreateShaderProgram( const std::vector<ShaderDesc> &shaders ) const;
 
-        void ReportLiveObjects( ) const;
+        static void ReportLiveObjects( );
 
     private:
         bool IsVulkanPreferred( ) const;

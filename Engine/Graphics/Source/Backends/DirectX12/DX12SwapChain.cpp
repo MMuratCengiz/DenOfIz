@@ -61,7 +61,6 @@ void DX12SwapChain::CreateSwapChain( )
     DX_CHECK_RESULT( m_context->DXGIFactory->CreateSwapChainForHwnd( m_context->GraphicsCommandQueue.get( ), hwnd, &swapChainDesc, &fsSwapChainDesc, nullptr, swapChain.put( ) ) );
     DX_CHECK_RESULT( swapChain->QueryInterface( IID_PPV_ARGS( m_swapChain.put( ) ) ) );
     DX_CHECK_RESULT( m_context->DXGIFactory->MakeWindowAssociation( hwnd, DXGI_MWA_VALID ) );
-    //    swapChain->Release();
 
     m_renderTargets.resize( m_desc.NumBuffers );
     m_renderTargetCpuHandles.resize( m_desc.NumBuffers );

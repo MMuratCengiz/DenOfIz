@@ -50,6 +50,7 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
     DX_CHECK_RESULT( hr );
     const std::wstring name = std::wstring( m_desc.DebugName.begin( ), m_desc.DebugName.end( ) );
     DX_CHECK_RESULT( m_resource->SetName( name.c_str( ) ) );
+    m_allocation->SetName( name.c_str( ) );
 }
 
 void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle )

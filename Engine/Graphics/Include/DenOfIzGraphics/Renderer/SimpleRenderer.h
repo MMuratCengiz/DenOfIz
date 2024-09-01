@@ -32,17 +32,17 @@ namespace DenOfIz
     class SimpleRenderer
     {
         const uint32_t                           mc_framesInFlight = 3;
-        GraphicsApi                              m_gApi;
-        std::unique_ptr<ILogicalDevice>          m_logicalDevice;
-        GraphicsWindowHandle                    *m_window           = nullptr;
-        GeometryData                             m_sphere           = Geometry::BuildSphere( { .Diameter = 1.0f, .Tessellation = 32 } );
-        GeometryData                             m_plane            = Geometry::BuildBox( { .Size = { 1.0f, 0.2f, 1.0f } } );
-        XMFLOAT4X4                               m_identityMatrix   = { };
+        GraphicsApi                             *m_gApi;
+        ILogicalDevice                          *m_logicalDevice;
+        GraphicsWindowHandle                    *m_window = nullptr;
+        GeometryData                             m_sphere = Geometry::BuildSphere( { .Diameter = 1.0f, .Tessellation = 32 } );
+        GeometryData                             m_plane  = Geometry::BuildBox( { .Size = { 1.0f, 0.2f, 1.0f } } );
+        XMFLOAT4X4                               m_identityMatrix = { };
         XMFLOAT4X4                               m_planeModelMatrix = { };
         XMFLOAT4X4                               m_mvpMatrix        = { };
+        std::unique_ptr<CommandListRing>         m_commandListRing;
         std::unique_ptr<ShaderProgram>           m_program;
         std::unique_ptr<IPipeline>               m_pipeline;
-        std::unique_ptr<BatchResourceCopy>       m_batchResourceCopy;
         std::unique_ptr<IBufferResource>         m_sphereModelMatrixBuffer;
         std::unique_ptr<IBufferResource>         m_planeModelMatrixBuffer;
         std::unique_ptr<IBufferResource>         m_viewProjectionMatrixBuffer;
@@ -56,7 +56,7 @@ namespace DenOfIz
         std::unique_ptr<ISampler>                m_planeSampler;
         std::unique_ptr<IBufferResource>         m_timePassedBuffer;
         void                                    *m_mappedTimePassedBuffer = nullptr;
-        std::unique_ptr<Time>                    m_time = std::make_unique<Time>( );
+        std::unique_ptr<Time>                    m_time                   = std::make_unique<Time>( );
         std::unique_ptr<IInputLayout>            m_inputLayout;
         std::unique_ptr<IRootSignature>          m_rootSignature;
         std::unique_ptr<IResourceBindGroup>      m_perCameraBindGroup;
@@ -67,10 +67,9 @@ namespace DenOfIz
         std::vector<std::unique_ptr<IFence>>     m_fences;
         std::vector<std::unique_ptr<ISemaphore>> m_imageReadySemaphores;
         std::vector<std::unique_ptr<ISemaphore>> m_imageRenderedSemaphores;
-        std::unique_ptr<CommandListRing>         m_commandListRing;
 
     public:
-        SimpleRenderer( );
+             SimpleRenderer( GraphicsApi *gApi, ILogicalDevice *logicalDevice );
         void Init( GraphicsWindowHandle *window );
         void Render( ) const;
         void Quit( ) const;

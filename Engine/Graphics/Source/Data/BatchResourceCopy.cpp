@@ -45,6 +45,7 @@ BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device ) : m_device( devic
 
 BatchResourceCopy::~BatchResourceCopy( )
 {
+    m_cleanResourcesFuture.wait( );
     m_executeFence.reset( );
     m_commandListPool.reset( );
 }
@@ -126,7 +127,7 @@ std::unique_ptr<ITextureResource> BatchResourceCopy::CreateAndLoadTexture( const
     textureDesc.Depth        = texture.Depth;
     textureDesc.ArraySize    = texture.ArraySize;
     textureDesc.MipLevels    = texture.MipLevels;
-    textureDesc.DebugName    = "LoadTexture_Texture";
+    textureDesc.DebugName    = "CreateAndLoadTexture(" + file + ")";
 
     auto outTex = m_device->CreateTextureResource( textureDesc );
     LoadTextureInternal( texture, outTex.get( ) );
@@ -151,7 +152,7 @@ void BatchResourceCopy::End( ISemaphore *notify )
     }
 
     m_copyCommandList->Execute( desc );
-    m_cleanResourcesFuture = std::async( std::launch::async, [ this ]( ) { CleanResources( ); } );
+    m_cleanResourcesFuture = std::async( std::launch::async, [ this ] { CleanResources( ); } );
 }
 
 void BatchResourceCopy::CleanResources( )

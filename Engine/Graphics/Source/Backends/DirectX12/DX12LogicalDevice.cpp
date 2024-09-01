@@ -83,10 +83,10 @@ std::vector<PhysicalDevice> DX12LogicalDevice::ListPhysicalDevices( )
     return result;
 }
 
-void DX12LogicalDevice::CreateDeviceInfo( IDXGIAdapter1 &adapter, PhysicalDevice &physicalDevice )
+void DX12LogicalDevice::CreateDeviceInfo( IDXGIAdapter1 &adapter, PhysicalDevice &physicalDevice ) const
 {
     DXGI_ADAPTER_DESC adapterDesc;
-    adapter.GetDesc( &adapterDesc );
+    DX_CHECK_RESULT( adapter.GetDesc( &adapterDesc ) );
     physicalDevice.Id = adapterDesc.DeviceId;
     std::wstring adapterName( adapterDesc.Description );
     physicalDevice.Name = std::string( adapterName.begin( ), adapterName.end( ) );
@@ -259,7 +259,10 @@ void DX12LogicalDevice::WaitIdle( )
 
     if ( m_waitIdleFence )
     {
-        DX_CHECK_RESULT( m_waitIdleFence->SetEventOnCompletion( fenceValue, nullptr ) );
+        Wrappers::Event eventHandle;
+        eventHandle.Attach( CreateEventEx( nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE ) );
+        DX_CHECK_RESULT( m_waitIdleFence->SetEventOnCompletion( fenceValue, eventHandle.Get( ) ) );
+        WaitForSingleObjectEx( eventHandle.Get( ), INFINITE, FALSE );
     }
 }
 
