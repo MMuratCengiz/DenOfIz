@@ -163,8 +163,8 @@ namespace DenOfIz
         const Viewport &viewport = m_swapChain->GetViewport( );
         nextCommandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
         nextCommandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-        nextCommandList->BindResourceGroup( m_perCameraBindGroup.get( ) );
         nextCommandList->BindPipeline( m_pipeline.get( ) );
+        nextCommandList->BindResourceGroup( m_perCameraBindGroup.get( ) );
 
         { // Draw the sphere
             nextCommandList->BindResourceGroup( m_sphereModelBindGroup.get( ) );

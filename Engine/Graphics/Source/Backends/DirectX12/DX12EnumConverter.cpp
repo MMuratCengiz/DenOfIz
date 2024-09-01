@@ -245,7 +245,7 @@ DXGI_FORMAT DX12EnumConverter::ConvertFormat( const Format &format )
         return DXGI_FORMAT_R16_TYPELESS;
     case Format::R8Typeless:
         return DXGI_FORMAT_R8_TYPELESS;
-    };
+    }
 
     return DXGI_FORMAT_UNKNOWN;
 }

@@ -179,8 +179,8 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeInfo )
 
 void VulkanCommandList::BindPipeline( IPipeline *pipeline )
 {
-    m_boundPipeline = dynamic_cast<VulkanPipeline *>( pipeline );
-    vkCmdBindPipeline( m_commandBuffer, m_boundPipeline->BindPoint( ), m_boundPipeline->Instance( ) );
+    auto vkPipeline = dynamic_cast<VulkanPipeline *>( pipeline );
+    vkCmdBindPipeline( m_commandBuffer, vkPipeline->BindPoint( ), vkPipeline->Instance( ) );
 }
 
 void VulkanCommandList::BindVertexBuffer( IBufferResource *buffer )
@@ -230,15 +230,13 @@ void VulkanCommandList::BindScissorRect( const float offsetX, const float offset
 
 void VulkanCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 {
-    DZ_ASSERTM( m_boundPipeline != VK_NULL_HANDLE, "Pipeline must be bound before binding descriptor table." );
+    const auto *vkBindGroup = dynamic_cast<VulkanResourceBindGroup *>( bindGroup );
 
-    const auto *vkTable = dynamic_cast<VulkanResourceBindGroup *>( bindGroup );
+    // Remember more bind points will be added in the future.
+    const VkPipelineBindPoint bindPoint = m_desc.QueueType == QueueType::Graphics ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
 
-    if ( m_boundPipeline )
-    {
-        vkCmdBindDescriptorSets( m_commandBuffer, m_boundPipeline->BindPoint( ), m_boundPipeline->Layout( ), bindGroup->RegisterSpace( ), 1, &vkTable->GetDescriptorSet( ), 0,
-                                 nullptr );
-    }
+    vkCmdBindDescriptorSets( m_commandBuffer, bindPoint, vkBindGroup->RootSignature( )->PipelineLayout( ), bindGroup->RegisterSpace( ), 1,
+                             &vkBindGroup->GetDescriptorSet( ), 0, nullptr );
 }
 
 void VulkanCommandList::SetDepthBias( const float constantFactor, const float clamp, const float slopeFactor )

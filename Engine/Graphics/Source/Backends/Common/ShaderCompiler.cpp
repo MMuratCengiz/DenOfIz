@@ -80,7 +80,6 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const std::string &
         break;
     default:
         LOG( WARNING ) << "Invalid shader stage";
-        DZ_ASSERTM( false, "Invalid shader stage" );
         break;
     }
     targetProfile += "_" + hlslVersion;
@@ -98,8 +97,6 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const std::string &
     if ( compileOptions.TargetIL == TargetIL::SPIRV )
     {
         arguments.push_back( L"-spirv" );
-        // TODO !IMPROVEMENT! uncomment the below was shader reflection is added. To help support properly.
-        //            arguments.push_back( L"--fvk-stage-io-order=alpha" );
         // Vulkan requires unique binding for each descriptor, hlsl has a binding per buffer view.
         // Docs suggest shifting the binding to avoid conflicts.
         static const std::wstring VkShiftCbvWs     = std::to_wstring( VkShiftCbv );
@@ -165,7 +162,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const std::string &
         result = dxcResult->GetErrorBuffer( &errorBlob );
         if ( SUCCEEDED( result ) && errorBlob )
         {
-            std::cerr << "Shader compilation failed :\n\n" << static_cast<const char *>( errorBlob->GetBufferPointer( ) );
+            LOG( ERROR ) << "Shader compilation failed :\n\n" << static_cast<const char *>( errorBlob->GetBufferPointer( ) );
             errorBlob->Release( );
             throw std::runtime_error( "Compilation failed" );
         }
@@ -178,9 +175,21 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const std::string &
     }
 
     IDxcBlob *reflection;
-    if ( FAILED( dxcResult->GetOutput( DXC_OUT_REFLECTION, IID_PPV_ARGS( &reflection ), nullptr ) ) )
+    if ( compileOptions.TargetIL == TargetIL::SPIRV )
     {
-        LOG( ERROR ) << "Failed to get shader reflection";
+        // Unfortunately, seems like reflection data using SPIRV doesn't work with DXC, so we need to double compile :/
+        CompileOptions compileOptionsHLSL = compileOptions;
+        compileOptionsHLSL.TargetIL       = TargetIL::DXIL;
+        auto hlslBlob                     = CompileHLSL( filename, compileOptionsHLSL );
+        reflection                        = std::move( hlslBlob->Reflection );
+        hlslBlob->Reflection              = nullptr;
+    }
+    else
+    {
+        if ( FAILED( dxcResult->GetOutput( DXC_OUT_REFLECTION, IID_PPV_ARGS( &reflection ), nullptr ) ) )
+        {
+            LOG( ERROR ) << "Failed to get shader reflection";
+        }
     }
 
     dxcResult->Release( );

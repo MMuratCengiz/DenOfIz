@@ -46,6 +46,11 @@ namespace DenOfIz
             return m_descriptorSet;
         }
 
+        [[nodiscard]] VulkanRootSignature *RootSignature( ) const
+        {
+            return m_rootSignature;
+        }
+
         [[nodiscard]] const std::vector<VkWriteDescriptorSet> &GetWriteDescriptorSets( ) const
         {
             return m_writeDescriptorSets;

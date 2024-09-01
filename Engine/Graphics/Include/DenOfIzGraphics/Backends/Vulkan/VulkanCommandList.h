@@ -34,7 +34,6 @@ namespace DenOfIz
     {
         CommandListDesc m_desc;
         VulkanContext  *m_context       = nullptr;
-        VulkanPipeline *m_boundPipeline = nullptr;
 
         VkCommandBuffer m_commandBuffer{ };
         VkViewport      m_viewport{ };

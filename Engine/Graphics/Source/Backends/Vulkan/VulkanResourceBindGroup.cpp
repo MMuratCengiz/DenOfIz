@@ -82,7 +82,7 @@ void VulkanResourceBindGroup::BindSampler( const ResourceBindingSlot& slot, ISam
 
 VkWriteDescriptorSet &VulkanResourceBindGroup::CreateWriteDescriptor( const ResourceBindingSlot& slot )
 {
-    const ResourceBindingDesc resourceBinding    = m_rootSignature->FindBinding( slot );
+    const ResourceBindingDesc resourceBinding    = m_rootSignature->GetVkShiftedBinding( slot );
     VkWriteDescriptorSet     &writeDescriptorSet = m_writeDescriptorSets.emplace_back( );
     writeDescriptorSet.sType                     = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     writeDescriptorSet.dstSet                    = m_descriptorSet;

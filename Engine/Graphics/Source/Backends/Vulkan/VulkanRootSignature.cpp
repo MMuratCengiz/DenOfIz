@@ -54,12 +54,19 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
         layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = layoutBindings.size( );
         layoutInfo.pBindings    = layoutBindings.data( );
-        //        layoutInfo.flags        = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
 
         VkDescriptorSetLayout layout;
         VK_CHECK_RESULT( vkCreateDescriptorSetLayout( m_context->LogicalDevice, &layoutInfo, nullptr, &layout ) );
         m_layouts.push_back( layout );
     }
+
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{ };
+    pipelineLayoutCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutCreateInfo.setLayoutCount         = m_layouts.size( );
+    pipelineLayoutCreateInfo.pSetLayouts            = m_layouts.data( );
+    pipelineLayoutCreateInfo.pushConstantRangeCount = m_pushConstants.size( );
+    pipelineLayoutCreateInfo.pPushConstantRanges    = m_pushConstants.data( );
+    VK_CHECK_RESULT( vkCreatePipelineLayout( m_context->LogicalDevice, &pipelineLayoutCreateInfo, nullptr, &m_pipelineLayout ) );
 }
 
 void VulkanRootSignature::AddStaticSampler( const StaticSamplerDesc &sampler )
@@ -72,7 +79,13 @@ void VulkanRootSignature::AddStaticSampler( const StaticSamplerDesc &sampler )
 
 void VulkanRootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
 {
-    m_resourceBindingMap[ binding.Name ] = binding;
+    ResourceBindingSlot slot{
+        .Binding  = binding.Binding,
+        .Register = binding.RegisterSpace,
+        .Type     = binding.BindingType,
+    };
+
+    m_resourceBindingMap[ slot.Key( ) ] = binding;
 
     const VkDescriptorSetLayoutBinding layoutBinding = CreateDescriptorSetLayoutBinding( binding );
     m_bindings.push_back( layoutBinding );
@@ -109,7 +122,12 @@ VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBindi
     }
     m_layoutBindings[ binding.RegisterSpace ].push_back( layoutBinding );
     // Update binding to include the offset
-    m_resourceBindingMap[ binding.Name ].Binding = layoutBinding.binding;
+    ResourceBindingSlot slot{
+        .Binding  = binding.Binding,
+        .Register = binding.RegisterSpace,
+        .Type     = binding.BindingType,
+    };
+    m_resourceBindingMap[ slot.Key( ) ].Binding = layoutBinding.binding;
     return layoutBinding;
 }
 

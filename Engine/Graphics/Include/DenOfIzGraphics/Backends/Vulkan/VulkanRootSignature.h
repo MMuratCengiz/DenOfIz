@@ -32,18 +32,20 @@ namespace DenOfIz
         std::vector<VkDescriptorSetLayoutBinding>                    m_bindings;
         std::vector<VkPushConstantRange>                             m_pushConstants;
         std::vector<VkSampler>                                       m_staticSamplers;
-        std::unordered_map<std::string, ResourceBindingDesc>         m_resourceBindingMap;
+        std::unordered_map<uint32_t, ResourceBindingDesc>            m_resourceBindingMap;
         std::unordered_map<std::string, RootConstantResourceBinding> m_rootConstantMap;
         // Stores the layout bindings for each set
         std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> m_layoutBindings;
+        // Weirdly enough, seems to make the most sense here
+        VkPipelineLayout m_pipelineLayout{ };
 
     public:
         VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc );
         ~VulkanRootSignature( ) override;
 
-        [[nodiscard]] ResourceBindingDesc GetResourceBinding( const std::string &name ) const
+        [[nodiscard]] ResourceBindingDesc GetVkShiftedBinding( const ResourceBindingSlot &slot ) const
         {
-            return ContainerUtilities::SafeGetMapValue( m_resourceBindingMap, name );
+            return ContainerUtilities::SafeGetMapValue( m_resourceBindingMap, slot.Key( ) );
         }
 
         /// <returns> VK_NULL_HANDLE if register space is between 0 and max register space. </returns>
@@ -58,14 +60,9 @@ namespace DenOfIz
             return m_layouts[ registerSpace ];
         }
 
-        [[nodiscard]] const std::vector<VkDescriptorSetLayout> &GetDescriptorSetLayouts( ) const
+        [[nodiscard]] VkPipelineLayout PipelineLayout( ) const
         {
-            return m_layouts;
-        }
-
-        [[nodiscard]] const std::vector<VkPushConstantRange> &PushConstants( ) const
-        {
-            return m_pushConstants;
+            return m_pipelineLayout;
         }
 
     private:

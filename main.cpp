@@ -38,7 +38,7 @@ int main( )
     const auto windowHandle = std::make_unique<DenOfIz::GraphicsWindowHandle>( );
     windowHandle->Create( window );
     DenOfIz::APIPreference apiPreferences;
-    apiPreferences.Windows   = DenOfIz::APIPreferenceWindows::DirectX12;
+    apiPreferences.Windows   = DenOfIz::APIPreferenceWindows::Vulkan;
     apiPreferences.Linux     = DenOfIz::APIPreferenceLinux::Vulkan;
     apiPreferences.OSX       = DenOfIz::APIPreferenceOSX::Metal;
     const auto gApi          = std::make_unique<DenOfIz::GraphicsApi>( apiPreferences );

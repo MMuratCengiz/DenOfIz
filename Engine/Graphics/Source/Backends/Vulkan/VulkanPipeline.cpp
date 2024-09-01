@@ -21,12 +21,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanPipeline::VulkanPipeline( VulkanContext *context, const PipelineDesc &createInfo ) :
-    m_context( context ), m_desc( createInfo ), m_bindPoint( VulkanEnumConverter::ConvertPipelineBindPoint( createInfo.BindPoint ) )
+VulkanPipeline::VulkanPipeline( VulkanContext *context, const PipelineDesc &desc ) :
+    m_context( context ), m_desc( desc ), m_bindPoint( VulkanEnumConverter::ConvertPipelineBindPoint( desc.BindPoint ) )
 {
-    CreatePipelineLayout( );
+    auto rootSignature = reinterpret_cast<VulkanRootSignature *>( desc.RootSignature );
+    m_layout           = rootSignature->PipelineLayout( );
 
-    switch ( createInfo.BindPoint )
+    switch ( desc.BindPoint )
     {
     case BindPoint::Graphics:
         CreateGraphicsPipeline( );
@@ -297,21 +298,6 @@ VkPipelineColorBlendStateCreateInfo VulkanPipeline::ConfigureColorBlend( std::ve
     return colorBlending;
 }
 
-void VulkanPipeline::CreatePipelineLayout( )
-{
-    const auto                *vulkanRootSignature = dynamic_cast<VulkanRootSignature *>( m_desc.RootSignature );
-    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{ };
-    pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-
-    pipelineLayoutCreateInfo.setLayoutCount = vulkanRootSignature->GetDescriptorSetLayouts( ).size( );
-    pipelineLayoutCreateInfo.pSetLayouts    = vulkanRootSignature->GetDescriptorSetLayouts( ).data( );
-
-    pipelineLayoutCreateInfo.pushConstantRangeCount = vulkanRootSignature->PushConstants().size( );
-    pipelineLayoutCreateInfo.pPushConstantRanges    = vulkanRootSignature->PushConstants().data( );
-
-    VK_CHECK_RESULT( vkCreatePipelineLayout( m_context->LogicalDevice, &pipelineLayoutCreateInfo, nullptr, &m_layout ) );
-}
-
 VkPipelineDepthStencilStateCreateInfo VulkanPipeline::CreateDepthAttachmentImages( ) const
 {
     VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo{ };
@@ -358,16 +344,6 @@ VkShaderModule VulkanPipeline::CreateShaderModule( IDxcBlob *blob ) const
     VkShaderModule shaderModule;
     VK_CHECK_RESULT( vkCreateShaderModule( m_context->LogicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule ) );
     return shaderModule;
-}
-
-VkWriteDescriptorSet VulkanPipeline::GetWriteDescriptorSet( const std::string &name )
-{
-    if ( !m_descriptorSets.contains( name ) )
-    {
-        LOG( FATAL ) << "Invalid descriptor set, about to crash!";
-    }
-
-    return m_descriptorSets[ name ];
 }
 
 VulkanPipeline::~VulkanPipeline( )

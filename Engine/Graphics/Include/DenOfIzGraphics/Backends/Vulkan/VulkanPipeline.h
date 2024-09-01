@@ -41,23 +41,18 @@ namespace DenOfIz
         std::unordered_map<std::string, VkWriteDescriptorSet> m_descriptorSets;
 
         VkPipeline          m_instance{ };
-        VkPipelineLayout    m_layout{ };
         VkPipelineBindPoint m_bindPoint{ };
+        VkPipelineLayout    m_layout{ };
 
     public:
         [[nodiscard]] VkPipeline Instance( ) const
         {
             return m_instance;
         }
-        [[nodiscard]] VkPipelineLayout Layout( ) const
-        {
-            return m_layout;
-        }
         [[nodiscard]] VkPipelineBindPoint BindPoint( ) const
         {
             return m_bindPoint;
         }
-        [[nodiscard]] VkWriteDescriptorSet GetWriteDescriptorSet( const std::string &name );
         VulkanPipeline( VulkanContext *context, const PipelineDesc & );
         ~VulkanPipeline( ) override;
 
@@ -75,7 +70,6 @@ namespace DenOfIz
         [[nodiscard]] VkPipelineRasterizationStateCreateInfo       ConfigureRasterization( ) const;
         [[nodiscard]] VkPipelineViewportStateCreateInfo            ConfigureViewport( ) const;
         [[nodiscard]] VkPipelineMultisampleStateCreateInfo         ConfigureMultisampling( ) const;
-        void                                                       CreatePipelineLayout( );
         [[nodiscard]] VkPipelineDepthStencilStateCreateInfo        CreateDepthAttachmentImages( ) const;
         VkShaderModule                                             CreateShaderModule( IDxcBlob *blob ) const;
     };
