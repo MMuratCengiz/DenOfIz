@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzCore/Common_Macro.h>
+#include <DenOfIzGraphics/Backends/Interface/ReflectionData.h>
 #include "MetalContext.h"
 
 namespace DenOfIz
@@ -28,9 +29,11 @@ namespace DenOfIz
         MetalEnumConverter( ) = delete;
 
     public:
+        static MTLBindingAccess          ConvertDescriptorToBindingAccess( const BitSet<ResourceDescriptor> &descriptor );
         static MTLPixelFormat            ConvertFormat( Format format );
         static MTLVertexFormat           ConvertFormatToVertexFormat( Format format );
         static MTLDataType               ConvertFormatToDataType( Format format );
+        static MTLDataType               ConvertReflectionFieldToMTLDataType( const ReflectionResourceField &field );
         static MTLPrimitiveTopologyClass ConvertTopologyClass( PrimitiveTopology topology );
         static MTLSamplerMinMagFilter    ConvertFilter( Filter filter );
         static MTLSamplerMipFilter       ConvertMipMapFilter( MipmapMode mode );

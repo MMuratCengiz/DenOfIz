@@ -201,13 +201,29 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
         return;
     }
 
-    if ( m_desc.QueueType == QueueType::Compute )
+    if ( metalBindGroup->BindBuffer( ) )
     {
-        return;
+        if ( m_desc.QueueType == QueueType::Compute )
+        {
+            [m_computeEncoder setBuffer:metalBindGroup->ArgumentBuffer( ) offset:0 atIndex:metalBindGroup->RegisterSpace( )];
+        }
+        else
+        {
+            [m_renderEncoder setVertexBuffer:metalBindGroup->ArgumentBuffer( ) offset:0 atIndex:metalBindGroup->RegisterSpace( )];
+            [m_renderEncoder setFragmentBuffer:metalBindGroup->ArgumentBuffer( ) offset:0 atIndex:metalBindGroup->RegisterSpace( )];
+        }
     }
-    else
+
+    if ( metalBindGroup->BindHeap( ) )
     {
-        return;
+        if ( m_desc.QueueType == QueueType::Compute )
+        {
+            [m_computeEncoder useHeap:m_context->ReadOnlyHeap];
+        }
+        else
+        {
+            [m_renderEncoder useHeap:m_context->ReadOnlyHeap];
+        }
     }
 
     /*
@@ -222,18 +238,11 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     {
         if ( m_desc.QueueType == QueueType::Compute )
         {
-            [m_computeEncoder setBuffer:buffer.Resource->Instance( ) offset:0 atIndex:buffer.Location];
+            [m_computeEncoder useResource:buffer.Resource->Instance() usage:buffer.Usage];
         }
         else
         {
-            if ( ( buffer.ShaderStages & MTLRenderStageVertex ) == MTLRenderStageVertex )
-            {
-                [m_renderEncoder setVertexBuffer:buffer.Resource->Instance( ) offset:0 atIndex:buffer.Location];
-            }
-            if ( ( buffer.ShaderStages & MTLRenderStageFragment ) == MTLRenderStageFragment )
-            {
-                [m_renderEncoder setFragmentBuffer:buffer.Resource->Instance( ) offset:0 atIndex:buffer.Location];
-            }
+            [m_renderEncoder useResource:buffer.Resource->Instance() usage:buffer.Usage stages:buffer.ShaderStages];
         }
     }
 
@@ -241,19 +250,11 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     {
         if ( m_desc.QueueType == QueueType::Compute )
         {
-            [m_computeEncoder setTexture:texture.Resource->Instance( ) atIndex:texture.Location];
+            [m_computeEncoder useResource:texture.Resource->Instance( ) usage:texture.Usage];
         }
         else
         {
-            [m_renderEncoder useResource:texture.Resource->Instance( ) usage:MTLResourceUsageSample];
-            if ( ( texture.ShaderStages & MTLRenderStageVertex ) == MTLRenderStageVertex )
-            {
-                [m_renderEncoder setVertexTexture:texture.Resource->Instance( ) atIndex:texture.Location];
-            }
-            if ( ( texture.ShaderStages & MTLRenderStageFragment ) == MTLRenderStageFragment )
-            {
-                [m_renderEncoder setFragmentTexture:texture.Resource->Instance( ) atIndex:texture.Location];
-            }
+            [m_renderEncoder useResource:texture.Resource->Instance( ) usage:texture.Usage stages:texture.ShaderStages];
         }
     }
 
@@ -261,18 +262,10 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     {
         if ( m_desc.QueueType == QueueType::Compute )
         {
-            [m_computeEncoder setSamplerState:sampler.Resource->Instance( ) atIndex:sampler.Location];
+            // Not required?
         }
         else
         {
-            if ( ( sampler.ShaderStages & MTLRenderStageVertex ) == MTLRenderStageVertex )
-            {
-                [m_renderEncoder setVertexSamplerState:sampler.Resource->Instance( ) atIndex:sampler.Location];
-            }
-            if ( ( sampler.ShaderStages & MTLRenderStageFragment ) == MTLRenderStageFragment )
-            {
-                [m_renderEncoder setFragmentSamplerState:sampler.Resource->Instance( ) atIndex:sampler.Location];
-            }
         }
     }
 }

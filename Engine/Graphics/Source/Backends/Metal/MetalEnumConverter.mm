@@ -20,6 +20,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
+MTLBindingAccess MetalEnumConverter::ConvertDescriptorToBindingAccess( const BitSet<ResourceDescriptor> &descriptor )
+{
+    // Todo is this correct?
+    if ( descriptor.Any( { ResourceDescriptor::RWTexture, ResourceDescriptor::RWBuffer } ) )
+    {
+        return MTLBindingAccessReadWrite;
+    }
+
+    return MTLBindingAccessReadOnly;
+}
+
 MTLPixelFormat MetalEnumConverter::ConvertFormat( Format format )
 {
     switch ( format )
@@ -375,6 +386,146 @@ MTLDataType MetalEnumConverter::ConvertFormatToDataType( Format format )
     }
 
     return MTLDataTypeNone;
+}
+
+MTLDataType ReflectionFieldToMTLDataType( const ReflectionResourceField &field )
+{
+    switch ( field.Type )
+    {
+    case ReflectionFieldType::Undefined:
+    case ReflectionFieldType::Void:
+        return MTLDataTypeNone;
+
+    case ReflectionFieldType::Bool:
+        return field.NumColumns == 1   ? MTLDataTypeBool
+               : field.NumColumns == 2 ? MTLDataTypeBool2
+               : field.NumColumns == 3 ? MTLDataTypeBool3
+               : field.NumColumns == 4 ? MTLDataTypeBool4
+                                       : MTLDataTypeNone;
+
+    case ReflectionFieldType::Int:
+        return field.NumColumns == 1   ? MTLDataTypeInt
+               : field.NumColumns == 2 ? MTLDataTypeInt2
+               : field.NumColumns == 3 ? MTLDataTypeInt3
+               : field.NumColumns == 4 ? MTLDataTypeInt4
+                                       : MTLDataTypeNone;
+
+    case ReflectionFieldType::Uint:
+        return field.NumColumns == 1   ? MTLDataTypeUInt
+               : field.NumColumns == 2 ? MTLDataTypeUInt2
+               : field.NumColumns == 3 ? MTLDataTypeUInt3
+               : field.NumColumns == 4 ? MTLDataTypeUInt4
+                                       : MTLDataTypeNone;
+
+    case ReflectionFieldType::Double:
+    case ReflectionFieldType::Float:
+        if ( field.NumRows == 2 && field.NumColumns == 2 )
+            return MTLDataTypeFloat2x2;
+        if ( field.NumRows == 2 && field.NumColumns == 3 )
+            return MTLDataTypeFloat2x3;
+        if ( field.NumRows == 2 && field.NumColumns == 4 )
+            return MTLDataTypeFloat2x4;
+        if ( field.NumRows == 3 && field.NumColumns == 2 )
+            return MTLDataTypeFloat3x2;
+        if ( field.NumRows == 3 && field.NumColumns == 3 )
+            return MTLDataTypeFloat3x3;
+        if ( field.NumRows == 3 && field.NumColumns == 4 )
+            return MTLDataTypeFloat3x4;
+        if ( field.NumRows == 4 && field.NumColumns == 2 )
+            return MTLDataTypeFloat4x2;
+        if ( field.NumRows == 4 && field.NumColumns == 3 )
+            return MTLDataTypeFloat4x3;
+        if ( field.NumRows == 4 && field.NumColumns == 4 )
+            return MTLDataTypeFloat4x4;
+        return field.NumColumns == 1   ? MTLDataTypeFloat
+               : field.NumColumns == 2 ? MTLDataTypeFloat2
+               : field.NumColumns == 3 ? MTLDataTypeFloat3
+               : field.NumColumns == 4 ? MTLDataTypeFloat4
+                                       : MTLDataTypeNone;
+
+    case ReflectionFieldType::Float16:
+        return field.NumColumns == 1   ? MTLDataTypeHalf
+               : field.NumColumns == 2 ? MTLDataTypeHalf2
+               : field.NumColumns == 3 ? MTLDataTypeHalf3
+               : field.NumColumns == 4 ? MTLDataTypeHalf4
+                                       : MTLDataTypeNone;
+
+    case ReflectionFieldType::Min8Float:
+    case ReflectionFieldType::Min10Float:
+    case ReflectionFieldType::Min16Float:
+    case ReflectionFieldType::Min12Int:
+    case ReflectionFieldType::Min16Int:
+    case ReflectionFieldType::Min16UInt:
+    case ReflectionFieldType::Int16:
+        return MTLDataTypeShort; // Short values map to 16-bit integer types in Metal.
+
+    case ReflectionFieldType::UInt16:
+        return MTLDataTypeUShort;
+
+    case ReflectionFieldType::Int64:
+        return MTLDataTypeLong;
+
+    case ReflectionFieldType::UInt64:
+        return MTLDataTypeULong;
+
+    case ReflectionFieldType::Texture:
+    case ReflectionFieldType::Texture1D:
+    case ReflectionFieldType::Texture2D:
+    case ReflectionFieldType::Texture3D:
+    case ReflectionFieldType::TextureCube:
+    case ReflectionFieldType::RWTexture1D:
+    case ReflectionFieldType::RWTexture1DArray:
+    case ReflectionFieldType::RWTexture2D:
+    case ReflectionFieldType::RWTexture2DArray:
+    case ReflectionFieldType::RWTexture3D:
+    case ReflectionFieldType::Texture1DArray:
+    case ReflectionFieldType::Texture2DArray:
+    case ReflectionFieldType::Texture2Dms:
+    case ReflectionFieldType::Texture2DmsArray:
+    case ReflectionFieldType::TextureCubeArray:
+        return MTLDataTypeTexture;
+
+    case ReflectionFieldType::Sampler:
+    case ReflectionFieldType::Sampler1d:
+    case ReflectionFieldType::Sampler2d:
+    case ReflectionFieldType::Sampler3d:
+    case ReflectionFieldType::SamplerCube:
+        return MTLDataTypeSampler;
+
+    case ReflectionFieldType::InterfacePointer:
+    case ReflectionFieldType::RenderTargetView:
+    case ReflectionFieldType::DepthStencilView:
+    case ReflectionFieldType::DepthStencil:
+    case ReflectionFieldType::Blend:
+    case ReflectionFieldType::PixelFragment:
+    case ReflectionFieldType::VertexFragment:
+        return MTLDataTypePointer;
+
+    case ReflectionFieldType::CBuffer:
+    case ReflectionFieldType::TBuffer:
+    case ReflectionFieldType::RWBuffer:
+    case ReflectionFieldType::ByteAddressBuffer:
+    case ReflectionFieldType::RWByteAddressBuffer:
+    case ReflectionFieldType::StructuredBuffer:
+    case ReflectionFieldType::RWStructuredBuffer:
+    case ReflectionFieldType::AppendStructuredBuffer:
+    case ReflectionFieldType::ConsumeStructuredBuffer:
+        return MTLDataTypeStruct;
+
+    case ReflectionFieldType::Uint8:
+        return MTLDataTypeUChar;
+
+    case ReflectionFieldType::PixelShader:
+    case ReflectionFieldType::VertexShader:
+    case ReflectionFieldType::GeometryShader:
+    case ReflectionFieldType::HullShader:
+    case ReflectionFieldType::DomainShader:
+    case ReflectionFieldType::ComputeShader:
+        return MTLDataTypePointer;
+
+    default:
+        return MTLDataTypeNone;
+    }
 }
 
 MTLSamplerMinMagFilter MetalEnumConverter::ConvertFilter( Filter filter )

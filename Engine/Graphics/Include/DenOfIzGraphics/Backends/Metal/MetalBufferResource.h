@@ -36,11 +36,15 @@ namespace DenOfIz
         void            *m_mappedMemory{ };
 
     public:
-        MetalBufferResource( MetalContext *context, const BufferDesc &desc, std::string name );
+        MetalBufferResource( MetalContext *context, const BufferDesc &desc );
         ~MetalBufferResource( ) override;
         const id<MTLBuffer> &Instance( ) const
         {
             return m_buffer;
+        }
+        const MTLResourceUsage &Usage( ) const
+        {
+            return m_usage;
         }
         const MTLDataType &Type( ) const
         {

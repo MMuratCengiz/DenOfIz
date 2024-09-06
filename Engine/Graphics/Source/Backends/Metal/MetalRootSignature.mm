@@ -16,9 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Backends/Metal/MetalEnumConverter.h>
 #include <DenOfIzGraphics/Backends/Metal/MetalRootSignature.h>
-#import <metal_irconverter/metal_irconverter.h>
-#import <metal_irconverter_runtime/metal_irconverter_runtime.h>
 
 using namespace DenOfIz;
 
@@ -48,6 +47,13 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
         }
 
         uint32_t previousStageOffset = 0;
+
+        ContainerUtilities::EnsureSize( m_argumentDescriptors, binding.RegisterSpace );
+        if ( m_argumentDescriptors[ binding.RegisterSpace ] == nullptr )
+        {
+            m_argumentDescriptors[ binding.RegisterSpace ] = [[NSMutableArray alloc] init];
+        }
+
         if ( m_topLevelArgumentBuffers.size( ) >= binding.RegisterSpace )
         {
             previousStageOffset = m_topLevelArgumentBuffers[ binding.RegisterSpace ].DescriptorTables.size( );
@@ -56,16 +62,8 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
         // We're simply allocating a new descriptor table for each binding for now.
         ContainerUtilities::Compute<TopLevelArgumentBuffer>( m_topLevelArgumentBuffers, binding.RegisterSpace,
                                                              { .RegisterSpace = binding.RegisterSpace, .DescriptorTables = { 0 } },
-                                                             [ = ]( TopLevelArgumentBuffer &ab )
-                                                             {
-                                                                 ab.DescriptorTables.emplace_back( 0 );
-                                                             } );
-
-        m_metalBindings[ slot.Key( ) ] = {
-            .Name     = binding.Name,
-            .Location = binding.LocationHint,
-            .Stages   = stages,
-        };
+                                                             [ = ]( TopLevelArgumentBuffer &ab ) { ab.DescriptorTables.emplace_back( 0 ); } );
+        m_metalBindings[ slot.Key( ) ] = { .Parent = binding, .Stages = stages };
     }
 }
 
@@ -88,6 +86,7 @@ const MetalBindingDesc &MetalRootSignature::FindMetalBinding( const ResourceBind
     }
     return it->second;
 }
+
 MetalRootSignature::~MetalRootSignature( )
 {
 }

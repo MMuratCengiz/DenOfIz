@@ -21,11 +21,7 @@ endforeach()
 
 set(SOURCES main.cpp)
 if (APPLE)
-    set(SOURCES main.cpp
-            ${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/Darwin/macOSAppDelegate.h
-            ${PROJECT_SOURCE_DIR}/_External/The-Forge/Common_3/OS/Darwin/macOSAppDelegate.m
-            ${PROJECT_SOURCE_DIR}/OS/MacOS/MainMenu.xib
-    )
+    set(SOURCES main.cpp ${PROJECT_SOURCE_DIR}/OS/MacOS/MainMenu.xib)
 endif ()
 
 add_executable(DenOfIz MACOSX_BUNDLE ${SOURCES})

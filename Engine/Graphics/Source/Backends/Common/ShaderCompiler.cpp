@@ -1,6 +1,7 @@
 #include <DenOfIzCore/Utilities.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
 #include <fstream>
+#include <ranges>
 
 using namespace DenOfIz;
 
@@ -42,11 +43,18 @@ IDxcUtils *ShaderCompiler::DxcUtils( ) const
     return m_dxcUtils;
 }
 
-std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const std::string &filename, const CompileOptions &compileOptions ) const
+std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) const
 {
+    if ( compileDesc.TargetIL == TargetIL::MSL )
+    {
+        LOG( FATAL ) << "MSL requires a root signature to provide an accurate metallib with the context of all shaders. Using shader reflection create an IRRootSignature and pass "
+                        "it to the DxilToMsl function. See ShaderProgram::ProduceMSL().";
+        return nullptr;
+    }
+
     // Attribute to reference: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
     // https://github.com/KhronosGroup/Vulkan-Guide
-    std::string       path     = Utilities::AppPath( filename );
+    std::string       path     = Utilities::AppPath( compileDesc.Path );
     uint32_t          codePage = DXC_CP_ACP;
     IDxcBlobEncoding *sourceBlob;
     std::wstring      wsShaderPath( path.begin( ), path.end( ) );
@@ -58,7 +66,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const std::string &
 
     std::string hlslVersion = "6_6";
     std::string targetProfile;
-    switch ( compileOptions.Stage )
+    switch ( compileDesc.Stage )
     {
     case ShaderStage::Vertex:
         targetProfile = "vs";
@@ -88,13 +96,13 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const std::string &
     arguments.push_back( wsShaderPath.c_str( ) );
     // Set the entry point
     arguments.push_back( L"-E" );
-    std::wstring wsEntryPoint( compileOptions.EntryPoint.begin( ), compileOptions.EntryPoint.end( ) );
+    std::wstring wsEntryPoint( compileDesc.EntryPoint.begin( ), compileDesc.EntryPoint.end( ) );
     arguments.push_back( wsEntryPoint.c_str( ) );
     // Set shader stage
     arguments.push_back( L"-T" );
     std::wstring wsTargetProfile( targetProfile.begin( ), targetProfile.end( ) );
     arguments.push_back( wsTargetProfile.c_str( ) );
-    if ( compileOptions.TargetIL == TargetIL::SPIRV )
+    if ( compileDesc.TargetIL == TargetIL::SPIRV )
     {
         arguments.push_back( L"-spirv" );
         // Vulkan requires unique binding for each descriptor, hlsl has a binding per buffer view.
@@ -129,7 +137,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const std::string &
             arguments.push_back( L"all" );
         }
     }
-    for ( const auto &define : compileOptions.Defines )
+    for ( const auto &define : compileDesc.Defines )
     {
         arguments.push_back( L"-D" );
         arguments.push_back( reinterpret_cast<LPCWSTR>( define.c_str( ) ) );
@@ -175,14 +183,14 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const std::string &
     }
 
     IDxcBlob *reflection;
-    if ( compileOptions.TargetIL == TargetIL::SPIRV )
+    if ( compileDesc.TargetIL == TargetIL::SPIRV )
     {
         // Unfortunately, seems like reflection data using SPIRV doesn't work with DXC, so we need to double compile :/
-        CompileOptions compileOptionsHLSL = compileOptions;
-        compileOptionsHLSL.TargetIL       = TargetIL::DXIL;
-        auto hlslBlob                     = CompileHLSL( filename, compileOptionsHLSL );
-        reflection                        = std::move( hlslBlob->Reflection );
-        hlslBlob->Reflection              = nullptr;
+        CompileDesc compileOptionsHLSL = compileDesc;
+        compileOptionsHLSL.TargetIL    = TargetIL::DXIL;
+        auto hlslBlob                  = CompileHLSL( compileOptionsHLSL );
+        reflection                     = std::move( hlslBlob->Reflection );
+        hlslBlob->Reflection           = nullptr;
     }
     else
     {
@@ -195,98 +203,32 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const std::string &
     dxcResult->Release( );
     sourceBlob->Release( );
 
-#ifdef BUILD_METAL
-    if ( compileOptions.TargetIL == TargetIL::MSL )
-    {
-        IDxcBlob *metalBlob = DxilToMsl( compileOptions, code );
-        code->Release( );
-        code = metalBlob;
-    }
-#endif
-
-    CacheCompiledShader( filename, compileOptions.TargetIL, code );
+    CacheCompiledShader( compileDesc.Path, compileDesc.TargetIL, code );
 
     auto *compiledShader       = new CompiledShader( );
-    compiledShader->Stage      = compileOptions.Stage;
+    compiledShader->Stage      = compileDesc.Stage;
     compiledShader->Blob       = code;
     compiledShader->Reflection = reflection;
-    compiledShader->EntryPoint = compileOptions.EntryPoint;
+    compiledShader->EntryPoint = compileDesc.EntryPoint;
     return std::unique_ptr<CompiledShader>( compiledShader );
 }
 
-IDxcBlob *ShaderCompiler::DxilToMsl( const CompileOptions &compileOptions, IDxcBlob *code ) const
-{
 #ifdef BUILD_METAL
-    IRCompilerSetEntryPointName( this->m_irCompiler, compileOptions.EntryPoint.c_str( ) );
-    IRCompilerSetMinimumDeploymentTarget( this->m_irCompiler, IROperatingSystem_macOS, "14.0" );
+IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob *code, IRRootSignature *rootSignature ) const
+{
+    IRCompiler *irCompiler = IRCompilerCreate( );
+    IRCompilerSetEntryPointName( irCompiler, compileOptions.EntryPoint.c_str( ) );
+    IRCompilerSetMinimumDeploymentTarget( irCompiler, IROperatingSystem_macOS, "14.0" );
+    IRCompilerSetGlobalRootSignature( irCompiler, rootSignature );
 
     IRObject *irDxil = IRObjectCreateFromDXIL( (const uint8_t *)code->GetBufferPointer( ), code->GetBufferSize( ), IRBytecodeOwnershipNone );
 
     IRError  *irError = nullptr;
-    IRObject *outIr   = IRCompilerAllocCompileAndLink( this->m_irCompiler, NULL, irDxil, &irError );
+    IRObject *outIr   = IRCompilerAllocCompileAndLink( irCompiler, NULL, irDxil, &irError );
 
     if ( !outIr )
     {
-        uint32_t irCode = IRErrorGetCode( irError );
-
-        switch ( irCode )
-        {
-        case IRErrorCodeNoError:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeNoError";
-            break;
-        case IRErrorCodeShaderRequiresRootSignature:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeShaderRequiresRootSignature";
-            break;
-        case IRErrorCodeUnrecognizedRootSignatureDescriptor:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnrecognizedRootSignatureDescriptor";
-            break;
-        case IRErrorCodeUnrecognizedParameterTypeInRootSignature:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnrecognizedParameterTypeInRootSignature";
-            break;
-        case IRErrorCodeResourceNotReferencedByRootSignature:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeResourceNotReferencedByRootSignature";
-            break;
-        case IRErrorCodeShaderIncompatibleWithDualSourceBlending:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeShaderIncompatibleWithDualSourceBlending";
-            break;
-        case IRErrorCodeUnsupportedWaveSize:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnsupportedWaveSize";
-            break;
-        case IRErrorCodeUnsupportedInstruction:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnsupportedInstruction";
-            break;
-        case IRErrorCodeCompilationError:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeCompilationError";
-            break;
-        case IRErrorCodeFailedToSynthesizeStageInFunction:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeFailedToSynthesizeStageInFunction";
-            break;
-        case IRErrorCodeFailedToSynthesizeStreamOutFunction:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeFailedToSynthesizeStreamOutFunction";
-            break;
-        case IRErrorCodeFailedToSynthesizeIndirectIntersectionFunction:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeFailedToSynthesizeIndirectIntersectionFunction";
-            break;
-        case IRErrorCodeUnableToVerifyModule:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnableToVerifyModule";
-            break;
-        case IRErrorCodeUnableToLinkModule:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnableToLinkModule";
-            break;
-        case IRErrorCodeUnrecognizedDXILHeader:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnrecognizedDXILHeader";
-            break;
-        case IRErrorCodeInvalidRaytracingAttribute:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeInvalidRaytracingAttribute";
-            break;
-        case IRErrorCodeNullHullShaderInputOutputMismatch:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeNullHullShaderInputOutputMismatch";
-            break;
-        case IRErrorCodeUnknown:
-            LOG( WARNING ) << "DXIL to MSL Error: IRErrorCodeUnknown";
-            break;
-        }
-        LOG( ERROR ) << "Failed to compile and link DXIL to MSL: " << irCode;
+        LOG( ERROR ) << "Failed to compile and link DXIL to MSL, ErrorCode[" << IRErrorGetCode( irError ) << "]";
         IRErrorDestroy( irError );
     }
 
@@ -299,13 +241,14 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileOptions &compileOptions, IDxcB
     MetalDxcBlob_Impl *mslBlob = new MetalDxcBlob_Impl( metalLibByteCode, metalLibSize );
     mslBlob->IrObject          = outIr;
 
+    CacheCompiledShader( compileOptions.Path, compileOptions.TargetIL, mslBlob );
+
     IRMetalLibBinaryDestroy( metalLib );
     IRObjectDestroy( irDxil );
+    IRCompilerDestroy( irCompiler );
     return mslBlob;
-#else
-    return nullptr;
-#endif
 }
+#endif
 
 void ShaderCompiler::CacheCompiledShader( const std::string &filename, const TargetIL &targetIL, IDxcBlob *code ) const
 {

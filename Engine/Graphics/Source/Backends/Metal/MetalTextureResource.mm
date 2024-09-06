@@ -76,7 +76,7 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
     }
 }
 
-MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc, id<MTLTexture> texture, std::string name ) :
+MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc, id<MTLTexture> texture ) :
     ITextureResource( m_desc ), m_context( context ), m_texture( texture )
 {
     m_context          = context;

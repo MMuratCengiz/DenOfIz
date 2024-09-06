@@ -1,10 +1,10 @@
 #pragma once
 
 #if defined( __APPLE__ )
-#include <metal_irconverter/metal_irconverter.h>
 #include <simd/simd.h>
 #include "Metal/Metal.h"
 #include "MetalKit/MetalKit.h"
+#include <metal_irconverter/metal_irconverter.h>
 #endif
 
 #include <DenOfIzCore/Common.h>
@@ -20,8 +20,9 @@ namespace DenOfIz
         SPIRV
     };
 
-    struct CompileOptions
+    struct CompileDesc
     {
+        std::string Path;
         std::string EntryPoint = "main";
         ShaderStage Stage;
         TargetIL    TargetIL;
@@ -48,9 +49,9 @@ namespace DenOfIz
 
                                                       ShaderCompiler( );
         ~                                             ShaderCompiler( );
-        [[nodiscard]] std::unique_ptr<CompiledShader> CompileHLSL( const std::string &path, const CompileOptions &compileOptions ) const;
-        [[nodiscard]] IDxcBlob                       *DxilToMsl( const CompileOptions &compileOptions, IDxcBlob *code ) const;
+        [[nodiscard]] std::unique_ptr<CompiledShader> CompileHLSL( const CompileDesc &compileDesc ) const;
 #ifdef BUILD_METAL
+        [[nodiscard]] IDxcBlob                       *DxilToMsl( const CompileDesc &compileOptions, IDxcBlob *code, IRRootSignature *rootSignature ) const;
         [[nodiscard]] static IRShaderStage ConvertIrShaderStage( const ShaderStage &stage );
 #endif
 

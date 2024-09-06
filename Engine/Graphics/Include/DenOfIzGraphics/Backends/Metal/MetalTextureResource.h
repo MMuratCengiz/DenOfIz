@@ -66,7 +66,7 @@ namespace DenOfIz
         id<MTLSamplerState> m_sampler{ };
 
     public:
-        MetalSampler( MetalContext *context, const SamplerDesc &desc, std::string name );
+        MetalSampler( MetalContext *context, const SamplerDesc &desc );
         const id<MTLSamplerState> &Instance( ) const;
         ~MetalSampler( ) override;
     };

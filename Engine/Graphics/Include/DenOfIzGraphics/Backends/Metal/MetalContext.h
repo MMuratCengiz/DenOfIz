@@ -5,6 +5,9 @@
 #import "Metal/Metal.h"
 #import "MetalKit/MetalKit.h"
 
+#import <metal_irconverter/metal_irconverter.h>
+#import <metal_irconverter_runtime/metal_irconverter_runtime.h>
+
 namespace DenOfIz
 {
 

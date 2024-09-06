@@ -21,9 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDesc &desc, std::string name ) : m_context( context ), m_desc( desc )
+MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_name                      = name;
     NSUInteger         numBytes = m_desc.NumBytes;
     MTLResourceOptions options  = MTLResourceStorageModeShared;
 
@@ -38,8 +37,8 @@ MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDes
         LOG( ERROR ) << "Failed to create Metal buffer";
     }
 
-    NSString *nsName = [NSString stringWithUTF8String:m_name.c_str( )];
-    m_buffer.label = nsName;
+    NSString *nsName = [NSString stringWithUTF8String:desc.DebugName.c_str( )];
+    m_buffer.label   = nsName;
 
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::UniformBuffer ) )
     {
@@ -64,12 +63,12 @@ void *MetalBufferResource::MapMemory( )
 {
     if ( m_mappedMemory != nullptr )
     {
-        LOG( WARNING ) << "Memory already mapped, buffer: " << m_name.c_str( );
+        LOG( WARNING ) << "Memory already mapped, buffer: " << m_desc.DebugName.c_str( );
         return m_mappedMemory;
     }
     if ( m_buffer.storageMode != MTLStorageModeShared )
     {
-        LOG( WARNING ) << "Buffer is not shared, buffer: " << m_name.c_str( );
+        LOG( WARNING ) << "Buffer is not shared, buffer: " << m_desc.DebugName.c_str( );
         return nullptr;
     }
 
@@ -81,11 +80,11 @@ void MetalBufferResource::UnmapMemory( )
 {
     if ( m_mappedMemory == nullptr )
     {
-        LOG( WARNING ) << "Memory not mapped, buffer: " << m_name.c_str( );
+        LOG( WARNING ) << "Memory not mapped, buffer: " << m_desc.DebugName.c_str( );
     }
     if ( m_buffer.storageMode != MTLStorageModeShared )
     {
-        LOG( ERROR ) << "Buffer is not shared, buffer: " << m_name.c_str( );
+        LOG( ERROR ) << "Buffer is not shared, buffer: " << m_desc.DebugName.c_str( );
     }
 
     m_mappedMemory = nullptr;

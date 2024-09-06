@@ -20,7 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Metal/MetalInputLayout.h>
 
 #include <utility>
-#include <metal_irconverter_runtime/metal_irconverter_runtime.h>
 
 using namespace DenOfIz;
 

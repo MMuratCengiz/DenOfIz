@@ -27,9 +27,8 @@ namespace DenOfIz
 {
     struct MetalBindingDesc
     {
-        std::string     Name;
-        uint32_t        Location;
-        MTLRenderStages Stages;
+        ResourceBindingDesc Parent;
+        MTLRenderStages     Stages;
     };
 
     struct TopLevelArgumentBuffer
@@ -43,10 +42,11 @@ namespace DenOfIz
         MetalContext     *m_context;
         RootSignatureDesc m_desc;
 
-        std::unordered_map<uint32_t, MetalBindingDesc> m_metalBindings;
-        std::vector<id<MTLBuffer>>                     m_rootParameters;
-        std::vector<id<MTLBuffer>>                     m_registerSpaceArgumentBuffers;
-        std::vector<TopLevelArgumentBuffer>            m_topLevelArgumentBuffers;
+        std::unordered_map<uint32_t, MetalBindingDesc>  m_metalBindings;
+        std::vector<id<MTLBuffer>>                      m_rootParameters;
+        std::vector<id<MTLBuffer>>                      m_registerSpaceArgumentBuffers;
+        std::vector<NSArray<MTLArgumentDescriptor *> *> m_argumentDescriptors;
+        std::vector<TopLevelArgumentBuffer>             m_topLevelArgumentBuffers;
 
     public:
         MetalRootSignature( MetalContext *context, const RootSignatureDesc &desc );

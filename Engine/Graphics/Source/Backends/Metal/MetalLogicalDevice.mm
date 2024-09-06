@@ -16,10 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
-
 #define IR_PRIVATE_IMPLEMENTATION
-#include <metal_irconverter_runtime/metal_irconverter_runtime.h>
+#import "Metal/Metal.h"
+#import <metal_irconverter/metal_irconverter.h>
+#import <metal_irconverter_runtime/metal_irconverter_runtime.h>
+
+#include <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
 
 using namespace DenOfIz;
 
@@ -158,7 +160,7 @@ std::unique_ptr<ITextureResource> MetalLogicalDevice::CreateTextureResource( con
 
 std::unique_ptr<ISampler> MetalLogicalDevice::CreateSampler( const SamplerDesc &samplerDesc )
 {
-    auto *sampler = new MetalSampler( m_context.get( ), samplerDesc, name );
+    auto *sampler = new MetalSampler( m_context.get( ), samplerDesc );
     return std::unique_ptr<ISampler>( sampler );
 }
 

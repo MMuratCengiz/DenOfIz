@@ -14,6 +14,5 @@ MetalHeap::MetalHeap( MetalContext *context, const MetalHeapDesc &desc ) : m_con
 
 uint64_t MetalHeap::GetNextHandle( uint32_t count )
 {
-
     return 0;
 }

@@ -20,9 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzCore/Common.h>
 #include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
+#include "MetalContext.h"
 #include "MetalBufferResource.h"
 #include "MetalCommandListPool.h"
-#include "MetalContext.h"
 #include "MetalFence.h"
 #include "MetalResourceBindGroup.h"
 #include "MetalTextureResource.h"
@@ -54,9 +54,9 @@ namespace DenOfIz
         std::unique_ptr<IResourceBindGroup> CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc ) override;
         std::unique_ptr<IFence>             CreateFence( ) override;
         std::unique_ptr<ISemaphore>         CreateSemaphore( ) override;
-        std::unique_ptr<IBufferResource>    CreateBufferResource( std::string name, const BufferDesc &bufferDesc ) override;
-        std::unique_ptr<ITextureResource>   CreateTextureResource( std::string name, const TextureDesc &textureDesc ) override;
-        std::unique_ptr<ISampler>           CreateSampler( std::string name, const SamplerDesc &samplerDesc ) override;
+        std::unique_ptr<IBufferResource>    CreateBufferResource(const BufferDesc &bufferDesc ) override;
+        std::unique_ptr<ITextureResource>   CreateTextureResource( const TextureDesc &textureDesc ) override;
+        std::unique_ptr<ISampler>           CreateSampler( const SamplerDesc &samplerDesc ) override;
 
         void WaitIdle( ) override;
         // --

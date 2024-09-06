@@ -72,6 +72,7 @@ void MetalSwapChain::Resize( uint32_t width, uint32_t height )
     m_drawableDesc.Format       = m_desc.BackBufferFormat;
     m_drawableDesc.InitialState = ResourceState::RenderTarget;
     m_drawableDesc.HeapType     = HeapType::GPU;
+    m_drawableDesc.DebugName    = "SwapChain";
 
     m_renderTargets.resize( m_desc.NumBuffers );
 
@@ -84,7 +85,7 @@ void MetalSwapChain::Resize( uint32_t width, uint32_t height )
         }
         else
         {
-            m_renderTargets[ i ] = std::make_unique<MetalTextureResource>( m_context, m_drawableDesc, drawable.texture, "SwapChainImage" );
+            m_renderTargets[ i ] = std::make_unique<MetalTextureResource>( m_context, m_drawableDesc, drawable.texture );
         }
     }
 }

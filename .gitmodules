@@ -1,9 +1,6 @@
 [submodule "vcpkg"]
 	path = vcpkg
 	url = https://github.com/microsoft/vcpkg.git
-[submodule "_External/VulkanMemoryAllocator"]
-	path = _External/VulkanMemoryAllocator
-	url = git@github.com:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
 [submodule "Engine/Graphics/_ThirdParty/DirectXShaderCompiler"]
 	path = Engine/Graphics/_ThirdParty/DirectXShaderCompiler
 	url = https://github.com/microsoft/DirectXShaderCompiler.git

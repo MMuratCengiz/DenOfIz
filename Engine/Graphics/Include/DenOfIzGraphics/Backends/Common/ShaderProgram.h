@@ -69,8 +69,15 @@ namespace DenOfIz
     private:
         [[nodiscard]] const ShaderCompiler &ShaderCompilerInstance( ) const;
         void                                Compile( );
-        void InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
-        void ProcessRootSignature( ID3D12ShaderReflection *shaderReflection, RootSignatureDesc &rootSignatureDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
+        void                                FillReflectionData( ID3D12ShaderReflection *shaderReflection, ReflectionDesc &reflectionDesc, int resourceIndex ) const;
+        void                    InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
+        void                    ProcessRootSignature( ID3D12ShaderReflection *shaderReflection, RootSignatureDesc &rootSignatureDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
+        ID3D12ShaderReflection *ShaderReflection( CompiledShader *compiledShader ) const;
+#ifdef BUILD_METAL
+        void ProduceMSL( );
+        void SetLocationHint( std::vector<IRResourceLocation> &resources, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc,
+                               ResourceBindingDesc &resourceBindingDesc, uint32_t locationHint ) const;
+#endif
     };
 
 } // namespace DenOfIz
