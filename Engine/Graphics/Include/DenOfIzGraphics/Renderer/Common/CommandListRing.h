@@ -26,31 +26,32 @@ namespace DenOfIz
     class CommandListRing
     {
     private:
-        std::vector<std::unique_ptr<IFence>>           m_frameFences;
-        std::vector<std::unique_ptr<ICommandListPool>> m_commandListPools;
-        uint32_t                                       m_currentFrame = 0;
-        uint32_t                                       m_frame        = 0;
+        static constexpr uint16_t            NumCommandLists = 3;
+        std::vector<std::unique_ptr<IFence>> m_frameFences;
+        std::unique_ptr<ICommandListPool>    m_commandListPool;
+        uint32_t                             m_currentFrame = 0;
+        uint32_t                             m_frame        = 0;
 
         ILogicalDevice *m_logicalDevice;
 
     public:
-        CommandListRing(ILogicalDevice *logicalDevice) : m_logicalDevice(logicalDevice)
+        CommandListRing( ILogicalDevice *logicalDevice ) : m_logicalDevice( logicalDevice )
         {
-            CommandListPoolDesc createInfo{};
-            createInfo.QueueType        = QueueType::Graphics;
-            createInfo.CommandListCount = 3;
-            m_commandListPools.push_back(m_logicalDevice->CreateCommandListPool(createInfo));
+            CommandListPoolDesc createInfo{ };
+            createInfo.QueueType       = QueueType::Graphics;
+            createInfo.NumCommandLists = NumCommandLists;
+            m_commandListPool          = m_logicalDevice->CreateCommandListPool( createInfo );
         }
 
-        ICommandList *GetNext()
+        ICommandList *GetNext( )
         {
             m_currentFrame = m_frame;
-            auto next      = m_commandListPools[ m_frame ]->GetCommandLists()[ m_frame ];
-            m_frame        = (m_frame + 1) % m_commandListPools.size();
+            auto next      = m_commandListPool->GetCommandLists( )[ m_frame ];
+            m_frame        = ( m_frame + 1 ) % NumCommandLists;
             return next;
         }
 
-        inline uint32_t GetCurrentFrame() const
+        inline uint32_t GetCurrentFrame( ) const
         {
             return m_currentFrame;
         }

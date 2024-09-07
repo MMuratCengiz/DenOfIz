@@ -44,6 +44,9 @@ void MetalCommandList::Begin( )
         // Initialized in BeginRendering
         break;
     }
+
+    m_rootSignature          = nullptr;
+    m_lastBoundRootSignature = nullptr;
 }
 
 void MetalCommandList::BeginRendering( const RenderingDesc &renderingInfo )
@@ -201,29 +204,24 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
         return;
     }
 
-    if ( metalBindGroup->BindBuffer( ) )
-    {
-        if ( m_desc.QueueType == QueueType::Compute )
-        {
-            [m_computeEncoder setBuffer:metalBindGroup->ArgumentBuffer( ) offset:0 atIndex:metalBindGroup->RegisterSpace( )];
-        }
-        else
-        {
-            [m_renderEncoder setVertexBuffer:metalBindGroup->ArgumentBuffer( ) offset:0 atIndex:metalBindGroup->RegisterSpace( )];
-            [m_renderEncoder setFragmentBuffer:metalBindGroup->ArgumentBuffer( ) offset:0 atIndex:metalBindGroup->RegisterSpace( )];
-        }
-    }
+    const MetalDescriptorTableBinding *bufferTable        = metalBindGroup->BufferTable( );
+    m_rootSignature                                       = metalBindGroup->RootSignature( );
+    TrackedTopLevelArgumentBuffer &argumentBuffer         = CommandListAbForRootSignature( m_rootSignature );
+    MetalArgumentBuffer           *topLevelArgumentBuffer = argumentBuffer.ArgumentBuffer;
 
-    if ( metalBindGroup->BindHeap( ) )
+    if ( bufferTable != nullptr && bufferTable->NumEntries > 0 )
     {
-        if ( m_desc.QueueType == QueueType::Compute )
-        {
-            [m_computeEncoder useHeap:m_context->ReadOnlyHeap];
-        }
-        else
-        {
-            [m_renderEncoder useHeap:m_context->ReadOnlyHeap];
-        }
+        topLevelArgumentBuffer->EncodeAddress( argumentBuffer.CommandListOffset, bufferTable->TLABOffset, bufferTable->Table.Buffer( ).gpuAddress );
+    }
+    const MetalDescriptorTableBinding *textureTable = metalBindGroup->TextureTable( );
+    if ( textureTable != nullptr && textureTable->NumEntries > 0 )
+    {
+        topLevelArgumentBuffer->EncodeAddress( argumentBuffer.CommandListOffset, textureTable->TLABOffset, textureTable->Table.Buffer( ).gpuAddress );
+    }
+    const MetalDescriptorTableBinding *samplerTable = metalBindGroup->SamplerTable( );
+    if ( samplerTable != nullptr && samplerTable->NumEntries > 0 )
+    {
+        topLevelArgumentBuffer->EncodeAddress( argumentBuffer.CommandListOffset, samplerTable->TLABOffset, samplerTable->Table.Buffer( ).gpuAddress );
     }
 
     /*
@@ -238,11 +236,11 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     {
         if ( m_desc.QueueType == QueueType::Compute )
         {
-            [m_computeEncoder useResource:buffer.Resource->Instance() usage:buffer.Usage];
+            [m_computeEncoder useResource:buffer.Resource->Instance( ) usage:buffer.Usage];
         }
         else
         {
-            [m_renderEncoder useResource:buffer.Resource->Instance() usage:buffer.Usage stages:buffer.ShaderStages];
+            [m_renderEncoder useResource:buffer.Resource->Instance( ) usage:buffer.Usage stages:buffer.ShaderStages];
         }
     }
 
@@ -280,6 +278,8 @@ void MetalCommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )
 
 void MetalCommandList::DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance )
 {
+    BindTopLevelArgumentBuffer( );
+
     EnsureEncoder( MetalEncoderType::Render, "DrawIndexed called without a render encoder. Make sure to call BeginRendering" );
     [m_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                 indexCount:indexCount
@@ -293,6 +293,8 @@ void MetalCommandList::DrawIndexed( uint32_t indexCount, uint32_t instanceCount,
 
 void MetalCommandList::Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance )
 {
+    BindTopLevelArgumentBuffer( );
+
     EnsureEncoder( MetalEncoderType::Render, "Draw called without a render encoder. Make sure to call BeginRendering" );
     [m_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:firstVertex vertexCount:vertexCount instanceCount:instanceCount];
 }
@@ -380,6 +382,28 @@ void MetalCommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyT
           destinationBytesPerImage:copyTextureToBuffer.RowPitch * copyTextureToBuffer.NumRows];
 }
 
+void MetalCommandList::BindTopLevelArgumentBuffer( )
+{
+    DZ_RETURN_IF( m_rootSignature == nullptr || m_rootSignature == m_lastBoundRootSignature );
+    TrackedTopLevelArgumentBuffer &topLevelArgumentBuffer = CommandListAbForRootSignature( m_rootSignature );
+    id<MTLBuffer>                  buffer                 = topLevelArgumentBuffer.ArgumentBuffer->Buffer( );
+    uint64_t                       offset                 = topLevelArgumentBuffer.CommandListOffset;
+
+    if ( m_desc.QueueType == QueueType::Compute )
+    {
+        [m_computeEncoder setBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+    }
+    else
+    {
+        void *zeroBytes = malloc( 1 );
+        [m_renderEncoder setVertexBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+        [m_renderEncoder setFragmentBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+        free( zeroBytes );
+    }
+
+    m_lastBoundRootSignature = m_rootSignature;
+}
+
 void MetalCommandList::EnsureEncoder( MetalEncoderType encoderType, std::string errorMessage )
 {
     if ( m_activeEncoderType != encoderType )
@@ -452,4 +476,21 @@ void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType )
         LOG( ERROR ) << "Invalid new encoder type, None should only be used after ending another encoder.";
         break;
     }
+}
+
+TrackedTopLevelArgumentBuffer &MetalCommandList::CommandListAbForRootSignature( DenOfIz::MetalRootSignature *rootSignature )
+{
+    auto it = m_argumentBuffers.find( rootSignature->UniqueKey( ) );
+    if ( it == m_argumentBuffers.end( ) )
+    {
+        MetalArgumentBuffer *topLevelArgumentBuffer = rootSignature->TopLevelArgumentBuffer( );
+
+        m_argumentBuffers[ m_rootSignature->UniqueKey( ) ] = {
+            .CommandListOffset = topLevelArgumentBuffer->Allocate( ).second,
+            .ArgumentBuffer    = topLevelArgumentBuffer,
+        };
+
+        it = m_argumentBuffers.find( rootSignature->UniqueKey( ) );
+    }
+    return it->second;
 }

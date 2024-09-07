@@ -82,6 +82,7 @@ set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
 )
 
 set(DEN_OF_IZ_GRAPHICS_METAL_SOURCES
+        Source/Backends/Metal/MetalArgumentBuffer.mm
         Source/Backends/Metal/MetalBufferResource.mm
         Source/Backends/Metal/MetalCommandList.mm
         Source/Backends/Metal/MetalCommandListPool.mm

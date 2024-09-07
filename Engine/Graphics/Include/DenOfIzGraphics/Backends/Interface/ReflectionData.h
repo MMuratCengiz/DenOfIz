@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CommonData.h"
+
 namespace DenOfIz
 {
     enum class ReflectionBindingType
@@ -89,10 +91,9 @@ namespace DenOfIz
         std::string                          Name;
         ReflectionBindingType                Type;
         std::vector<ReflectionResourceField> Fields;
-        // Metal workaround since it is a bit hard to migrate HLSL bindings to Metal.
-        // This is normally set by the compiler, If this field is not set then(because you manually built the ResourceBinding)
-        // This may not always be correct, this is okay to be set manually to fix such issues, using the ShaderCompiler
-        // to generate the locations and overwriting other fields
-        uint32_t LocationHint = 0;
+        // Index into the descriptor table
+        uint32_t DescriptorTableIndex = 0;
+        // Also for metal, this keeps track of the offset of the descriptor table bound in the top level argument buffer, textures and samplers need to be bound on separate tables
+        uint32_t DescriptorOffset = 0;
     };
 } // namespace DenOfIz

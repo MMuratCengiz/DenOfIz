@@ -26,7 +26,7 @@ BatchResourceCopyHelper::BatchResourceCopyHelper( ILogicalDevice *device, BatchR
 {
     CommandListPoolDesc poolDesc{ };
     poolDesc.QueueType        = QueueType::Graphics;
-    poolDesc.CommandListCount = 1;
+    poolDesc.NumCommandLists  = 1;
 
     m_syncCommandPool = m_device->CreateCommandListPool( poolDesc );
     m_syncCommandList = m_syncCommandPool->GetCommandLists( ).front( );

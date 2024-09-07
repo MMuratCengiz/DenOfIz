@@ -39,6 +39,13 @@ namespace DenOfIz
         Blit,
         None
     };
+
+    struct TrackedTopLevelArgumentBuffer
+    {
+        uint64_t             CommandListOffset;
+        MetalArgumentBuffer *ArgumentBuffer;
+    };
+
     class MetalCommandList final : public ICommandList
     {
         CommandListDesc              m_desc;
@@ -52,6 +59,10 @@ namespace DenOfIz
         // States:
         id<MTLBuffer> m_indexBuffer;
         MTLIndexType  m_indexType;
+
+        MetalRootSignature                                         *m_lastBoundRootSignature;
+        MetalRootSignature                                         *m_rootSignature;
+        std::unordered_map<uint32_t, TrackedTopLevelArgumentBuffer> m_argumentBuffers;
         // --
 
     public:
@@ -80,9 +91,11 @@ namespace DenOfIz
         void CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBuffer ) override;
 
     private:
+        void BindTopLevelArgumentBuffer( );
         void EnsureEncoder( MetalEncoderType encoderType, std::string errorMessage );
         // This is used because Vulkan+DX12 both support more operations in their graphics command list, so seamless transition is provided here
-        void SwitchEncoder( MetalEncoderType encoderType );
+        void                           SwitchEncoder( MetalEncoderType encoderType );
+        TrackedTopLevelArgumentBuffer &CommandListAbForRootSignature( MetalRootSignature *rootSignature );
     };
 
 } // namespace DenOfIz

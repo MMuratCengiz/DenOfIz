@@ -52,6 +52,16 @@ namespace DenOfIz
         RootSignatureDesc RootSignature;
     };
 
+#ifdef BUILD_METAL
+    struct MetalDescriptorOffsets
+    {
+        // -1 is used for debugging purposes to show that no descriptor table exists in this root signature of that type
+        int BufferOffset  = -1;
+        int TextureOffset = -1;
+        int SamplerOffset = -1;
+    };
+#endif
+
     class ShaderProgram
     {
         friend class GraphicsApi;
@@ -59,6 +69,9 @@ namespace DenOfIz
     private:
         std::vector<std::unique_ptr<CompiledShader>> m_compiledShaders;
         const ShaderProgramDesc                     &m_desc;
+#ifdef BUILD_METAL
+        std::vector<MetalDescriptorOffsets> m_metalDescriptorOffsets;
+#endif
 
         explicit ShaderProgram( const ShaderProgramDesc &desc );
 
@@ -71,12 +84,9 @@ namespace DenOfIz
         void                                Compile( );
         void                                FillReflectionData( ID3D12ShaderReflection *shaderReflection, ReflectionDesc &reflectionDesc, int resourceIndex ) const;
         void                    InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
-        void                    ProcessRootSignature( ID3D12ShaderReflection *shaderReflection, RootSignatureDesc &rootSignatureDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
         ID3D12ShaderReflection *ShaderReflection( CompiledShader *compiledShader ) const;
 #ifdef BUILD_METAL
         void ProduceMSL( );
-        void SetLocationHint( std::vector<IRResourceLocation> &resources, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc,
-                               ResourceBindingDesc &resourceBindingDesc, uint32_t locationHint ) const;
 #endif
     };
 

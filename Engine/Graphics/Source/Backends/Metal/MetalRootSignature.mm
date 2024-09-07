@@ -25,6 +25,7 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
 {
     std::vector<uint32_t> registerSpaceSize;
 
+    int numTables = 0;
     for ( const auto &binding : m_desc.ResourceBindings )
     {
         ResourceBindingSlot slot = {
@@ -54,27 +55,16 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
             m_argumentDescriptors[ binding.RegisterSpace ] = [[NSMutableArray alloc] init];
         }
 
-        if ( m_topLevelArgumentBuffers.size( ) >= binding.RegisterSpace )
+        if ( binding.Reflection.DescriptorOffset >= numTables )
         {
-            previousStageOffset = m_topLevelArgumentBuffers[ binding.RegisterSpace ].DescriptorTables.size( );
+            numTables = binding.Reflection.DescriptorOffset + 1;
         }
 
-        // We're simply allocating a new descriptor table for each binding for now.
-        ContainerUtilities::Compute<TopLevelArgumentBuffer>( m_topLevelArgumentBuffers, binding.RegisterSpace,
-                                                             { .RegisterSpace = binding.RegisterSpace, .DescriptorTables = { 0 } },
-                                                             [ = ]( TopLevelArgumentBuffer &ab ) { ab.DescriptorTables.emplace_back( 0 ); } );
         m_metalBindings[ slot.Key( ) ] = { .Parent = binding, .Stages = stages };
     }
-}
 
-const std::vector<uint64_t> &MetalRootSignature::DescriptorTable( uint32_t registerSpace ) const
-{
-    if ( m_topLevelArgumentBuffers.size( ) <= registerSpace )
-    {
-        LOG( ERROR ) << "Unable to find descriptor table at index[" << registerSpace << "].";
-    }
-
-    return m_topLevelArgumentBuffers[ registerSpace ].DescriptorTables;
+    // Todo 10 is arbitrary, find a good number
+    m_topLevelArgumentBuffer = std::make_unique<MetalArgumentBuffer>(m_context, numTables, 10);
 }
 
 const MetalBindingDesc &MetalRootSignature::FindMetalBinding( const ResourceBindingSlot &slot ) const

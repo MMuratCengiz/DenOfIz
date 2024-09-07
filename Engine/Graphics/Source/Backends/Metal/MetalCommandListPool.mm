@@ -35,7 +35,7 @@ MetalCommandListPool::MetalCommandListPool( MetalContext *context, CommandListPo
     CommandListDesc commandListDesc;
     commandListDesc.QueueType = desc.QueueType;
 
-    for ( uint32_t i = 0; i < m_desc.CommandListCount; i++ )
+    for ( uint32_t i = 0; i < m_desc.NumCommandLists; i++ )
     {
         m_commandLists.push_back( std::make_unique<MetalCommandList>( m_context, commandListDesc ) );
     }

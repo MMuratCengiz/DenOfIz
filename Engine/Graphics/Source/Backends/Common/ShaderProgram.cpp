@@ -62,6 +62,7 @@ void PutRootParameter( std::vector<IRRootParameter1> &rootParameters, IRShaderVi
 
     IRRootParameter1 rootParameter                    = { };
     rootParameter.ParameterType                       = IRRootParameterTypeDescriptorTable;
+    rootParameter.ShaderVisibility                    = visibility; // TODO test once All works
     rootParameter.ShaderVisibility                    = IRShaderVisibilityAll;
     rootParameter.DescriptorTable.NumDescriptorRanges = ranges.size( );
     rootParameter.DescriptorTable.pDescriptorRanges   = ranges.data( );
@@ -185,12 +186,39 @@ void ShaderProgram::ProduceMSL( )
         }
     }
 
+    m_metalDescriptorOffsets.resize( registerSpaceRanges.size( ) );
+
     std::vector<IRRootParameter1> rootParameters;
+    int                           registerSpace       = 0;
+    int                           registerSpaceOffset = 0;
     for ( auto &registerSpaceRange : registerSpaceRanges )
     {
+        MetalDescriptorOffsets &offsets = m_metalDescriptorOffsets[ registerSpace ];
+
+        int numTables = registerSpaceOffset;
+        // Only keep set offset if there are any resources in that set for debugging purposes
+        if ( !registerSpaceRange.BufferRanges.empty( ) )
+        {
+            offsets.BufferOffset = numTables;
+            ++numTables;
+        }
+        if ( !registerSpaceRange.TextureRanges.empty( ) )
+        {
+            offsets.TextureOffset = numTables;
+            ++numTables;
+        }
+        if ( !registerSpaceRange.SamplerRanges.empty( ) )
+        {
+            offsets.SamplerOffset = numTables;
+            ++numTables;
+        }
+
         PutRootParameter( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.BufferRanges );
         PutRootParameter( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.TextureRanges );
         PutRootParameter( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.SamplerRanges );
+        ++registerSpace;
+
+        registerSpaceOffset += numTables;
     }
 
     IRVersionedRootSignatureDescriptor desc;
@@ -333,7 +361,7 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
     InputLayoutDesc   &inputLayout   = result.InputLayout;
     RootSignatureDesc &rootSignature = result.RootSignature;
 #ifdef BUILD_METAL
-    std::vector<uint32_t> spaceLocationHints;
+    std::vector<uint32_t> descriptorTableLocations;
 #endif
 
     for ( auto &shader : m_compiledShaders )
@@ -361,13 +389,10 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
             InitInputLayout( shaderReflection, inputLayout, shaderDesc );
         }
 
-        ProcessRootSignature( shaderReflection, rootSignature, shaderDesc );
-
 #ifdef BUILD_METAL
         std::vector<IRResourceLocation> resources( IRShaderReflectionGetResourceCount( irReflection ) );
         IRShaderReflectionGetResourceLocations( irReflection, resources.data( ) );
 
-        uint32_t sortStart = rootSignature.ResourceBindings.size( );
 #endif
 
         for ( const uint32_t i : std::views::iota( 0u, shaderDesc.BoundResources ) )
@@ -386,16 +411,26 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
             resourceBindingDesc.Stages.push_back( shader->Stage );
             FillReflectionData( shaderReflection, resourceBindingDesc.Reflection, i );
 #ifdef BUILD_METAL
-            ContainerUtilities::EnsureSize( spaceLocationHints, shaderInputBindDesc.Space );
-            uint32_t &locationHint = spaceLocationHints[ shaderInputBindDesc.Space ];
-            resourceBindingDesc.Reflection.LocationHint = locationHint++;
-            SetLocationHint( resources, shaderInputBindDesc, resourceBindingDesc, locationHint );
+            switch ( resourceBindingDesc.Reflection.Type )
+            {
+            case ReflectionBindingType::Pointer:
+            case ReflectionBindingType::Struct:
+                resourceBindingDesc.Reflection.DescriptorOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].BufferOffset;
+                break;
+            case ReflectionBindingType::SamplerDesc:
+                resourceBindingDesc.Reflection.DescriptorOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].SamplerOffset;
+                break;
+            case ReflectionBindingType::Texture:
+                resourceBindingDesc.Reflection.DescriptorOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].TextureOffset;
+                break;
+            }
+            ContainerUtilities::EnsureSize( descriptorTableLocations, resourceBindingDesc.Reflection.DescriptorOffset );
+            uint32_t &locationHint                              = descriptorTableLocations[ resourceBindingDesc.Reflection.DescriptorOffset ];
+            resourceBindingDesc.Reflection.DescriptorTableIndex = locationHint++;
 #endif
         }
 
 #ifdef BUILD_METAL
-        std::sort( rootSignature.ResourceBindings.begin( ) + sortStart, rootSignature.ResourceBindings.end( ),
-                   []( const ResourceBindingDesc &lhs, const ResourceBindingDesc &rhs ) { return lhs.Reflection.LocationHint < rhs.Reflection.LocationHint; } );
         IRShaderReflectionDestroy( irReflection );
 #endif
         shaderReflection->Release( );
@@ -601,47 +636,6 @@ void ShaderProgram::FillReflectionData( ID3D12ShaderReflection *shaderReflection
     }
 }
 
-#ifdef BUILD_METAL
-void ShaderProgram::SetLocationHint( std::vector<IRResourceLocation> &resources, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, ResourceBindingDesc &resourceBindingDesc,
-                                     uint32_t locationHint ) const
-{
-    for ( const IRResourceLocation &resource : resources )
-    {
-        bool match = resource.space == shaderInputBindDesc.Space && resource.slot == shaderInputBindDesc.BindPoint;
-        if ( resource.resourceName != nullptr )
-        {
-            match = match || ( strcmp( resource.resourceName, shaderInputBindDesc.Name ) == 0 );
-        }
-
-        switch ( resource.resourceType )
-        {
-        case IRResourceTypeCBV:
-            match = match && resourceBindingDesc.BindingType == DescriptorBufferBindingType::ConstantBuffer;
-            break;
-        case IRResourceTypeSRV:
-            match = match && resourceBindingDesc.BindingType == DescriptorBufferBindingType::ShaderResource;
-            break;
-        case IRResourceTypeUAV:
-            match = match && resourceBindingDesc.BindingType == DescriptorBufferBindingType::UnorderedAccess;
-            break;
-        case IRResourceTypeSampler:
-            match = match && resourceBindingDesc.BindingType == DescriptorBufferBindingType::Sampler;
-            break;
-        case IRResourceTypeTable:
-        case IRResourceTypeConstant:
-        case IRResourceTypeInvalid:
-            LOG( ERROR ) << "Unsupported type produced by reflection.";
-            break;
-        }
-        if ( match )
-        {
-            resourceBindingDesc.Reflection.LocationHint = locationHint;
-            break;
-        }
-    }
-}
-#endif
-
 ID3D12ShaderReflection *ShaderProgram::ShaderReflection( CompiledShader *compiledShader ) const
 {
     IDxcBlob       *reflectionBlob = compiledShader->Reflection;
@@ -669,8 +663,4 @@ void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, I
         inputElementDesc.SemanticIndex = signatureParameterDesc.SemanticIndex;
         inputElementDesc.Format        = MaskToFormat( signatureParameterDesc.Mask );
     }
-}
-
-void ShaderProgram::ProcessRootSignature( ID3D12ShaderReflection *shaderReflection, RootSignatureDesc &rootSignatureDesc, const D3D12_SHADER_DESC &shaderDesc ) const
-{
 }

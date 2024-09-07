@@ -26,7 +26,7 @@ namespace DenOfIz
     {
         QueueType QueueType;
         // Rename to NumCommandLists
-        uint32_t  CommandListCount = 1;
+        uint32_t NumCommandLists = 1;
     };
 
     class ICommandListPool

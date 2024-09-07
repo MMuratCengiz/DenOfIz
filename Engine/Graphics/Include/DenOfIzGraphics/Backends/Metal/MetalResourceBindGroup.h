@@ -37,6 +37,29 @@ namespace DenOfIz
         MTLResourceUsage Usage;
     };
 
+    struct MetalArgumentDescriptor
+    {
+        MTLArgumentDescriptor *Descriptor;
+        union
+        {
+            MetalBufferResource  *Buffer;
+            MetalTextureResource *Texture;
+            MetalSampler         *Sampler;
+        } Resource;
+    };
+
+    struct MetalDescriptorTableBinding
+    {
+        // Top level argument buffer offset
+        uint32_t        TLABOffset = 0;
+        uint32_t        NumEntries = 0;
+        DescriptorTable Table;
+
+        MetalDescriptorTableBinding( uint32_t tlabOffset, DescriptorTable table ) : TLABOffset( tlabOffset ), Table( table )
+        {
+        }
+    };
+
     class MetalResourceBindGroup : public IResourceBindGroup
     {
     private:
@@ -48,52 +71,32 @@ namespace DenOfIz
         std::vector<MetalUpdateDescItem<MetalTextureResource>> m_textures;
         std::vector<MetalUpdateDescItem<MetalSampler>>         m_samplers;
 
-        bool                                     m_bindBuffer;
-        NSMutableArray<MTLArgumentDescriptor *> *m_argumentDescriptors;
-        id<MTLBuffer>                            m_argumentBuffer;
-        id<MTLArgumentEncoder>                   m_argumentEncoder;
-        bool                                     m_bindHeap;
-        id<MTLHeap>                              m_heap;
-        std::vector<uint64_t>                    m_descriptorTable;
-        BitSet<ShaderStage>                      m_shaderStages;
+        std::unique_ptr<MetalDescriptorTableBinding> m_bufferTable;
+        std::unique_ptr<MetalDescriptorTableBinding> m_textureTable;
+        std::unique_ptr<MetalDescriptorTableBinding> m_samplerTable;
 
     public:
         MetalResourceBindGroup( MetalContext *context, ResourceBindGroupDesc desc );
         void Update( const UpdateDesc &desc ) override;
 
+        // Nullable if nothing is bound to the pertinent table
+        [[nodiscard]] const MetalDescriptorTableBinding *BufferTable( ) const;
+        [[nodiscard]] const MetalDescriptorTableBinding *TextureTable( ) const;
+        [[nodiscard]] const MetalDescriptorTableBinding *SamplerTable( ) const;
+
         const std::vector<MetalUpdateDescItem<MetalBufferResource>>  &Buffers( ) const;
         const std::vector<MetalUpdateDescItem<MetalTextureResource>> &Textures( ) const;
         const std::vector<MetalUpdateDescItem<MetalSampler>>         &Samplers( ) const;
 
-        [[nodiscard]] bool                 BindBuffer( ) const;
-        [[nodiscard]] const id<MTLBuffer> &ArgumentBuffer( ) const;
-        [[nodiscard]] bool                 BindHeap( ) const;
-        [[nodiscard]] const id<MTLHeap>   &Heap( ) const;
+        [[nodiscard]] MetalRootSignature *RootSignature( ) const;
 
     protected:
-        void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) override;
         void BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource ) override;
+        void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) override;
         void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler ) override;
 
     private:
-        MTLArgumentDescriptor *CreateArgumentDescriptor( const ResourceBindingSlot &slot );
-        id<MTLBuffer>          CreateEntryBuffer( bool readonlyHeap );
-        void                   SetGpuAddress( uint32_t index, uint64_t address );
-
-        template <typename T>
-        void PushUpdateDesc( const ResourceBindingSlot &slot, MTLResourceUsage usage, T *resource, std::vector<MetalUpdateDescItem<T>> &items )
-        {
-            const MetalBindingDesc &metalBinding = m_rootSignature->FindMetalBinding( slot );
-
-            MetalUpdateDescItem<T> item{ };
-            item.Usage        = usage;
-            item.Resource     = resource;
-            item.ShaderStages = metalBinding.Stages;
-            item.Location     = metalBinding.Parent.Reflection.LocationHint;
-            item.Name         = metalBinding.Parent.Name;
-
-            items.push_back( item );
-        }
+        void UpdateDescriptorTable( const MetalBindingDesc &binding, MetalDescriptorTableBinding *table );
     };
 
 } // namespace DenOfIz
