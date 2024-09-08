@@ -40,14 +40,12 @@ MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDes
     NSString *nsName = [NSString stringWithUTF8String:desc.DebugName.c_str( )];
     m_buffer.label   = nsName;
 
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::UniformBuffer ) )
-    {
-    }
-    else if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWBuffer ) )
+    if ( m_desc.Descriptor.Any( { ResourceDescriptor::RWBuffer, ResourceDescriptor::AccelerationStructure } ) ||
+         m_desc.InitialState.Any( { ResourceState::UnorderedAccess, ResourceState::DepthWrite, ResourceState::AccelerationStructureWrite, ResourceState::CopyDst } ) )
     {
         m_usage = MTLResourceUsageRead | MTLResourceUsageWrite;
     }
-    else if ( m_desc.Descriptor.IsSet( ResourceDescriptor::VertexBuffer ) || m_desc.Descriptor.IsSet( ResourceDescriptor::IndexBuffer ) )
+    else
     {
         m_usage = MTLResourceUsageRead;
     }

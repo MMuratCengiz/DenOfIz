@@ -21,8 +21,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 MetalFence::MetalFence( MetalContext *context ) : m_context( context )
 {
-    m_context = context;
-    m_signaled = true;
+    m_context   = context;
+    m_fence     = dispatch_semaphore_create( 0 );
+    m_submitted = false;
 }
 
 MetalFence::~MetalFence( )
@@ -31,27 +32,26 @@ MetalFence::~MetalFence( )
 
 void MetalFence::Wait( )
 {
-    std::unique_lock<std::mutex> lock( m_mutex );
-    if ( !m_signaled )
+    if ( m_submitted )
     {
-        m_condition.wait( lock, [ this ] { return m_signaled; } );
+        dispatch_semaphore_wait( m_fence, DISPATCH_TIME_FOREVER );
     }
 }
 
 void MetalFence::Reset( )
 {
-    std::lock_guard<std::mutex> lock( m_mutex );
-    m_signaled = false;
+    m_submitted = true;
 }
 
 void MetalFence::Notify( )
 {
-    std::lock_guard<std::mutex> lock( m_mutex );
-    m_signaled = true;
-    m_condition.notify_all( );
+    if ( m_fence )
+    {
+        dispatch_semaphore_signal( m_fence );
+    }
 }
 
-void MetalFence::NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer>& commandBuffer )
+void MetalFence::NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer> &commandBuffer )
 {
     [commandBuffer addCompletedHandler:^( id<MTLCommandBuffer> _unused ) { this->Notify(); }];
 }

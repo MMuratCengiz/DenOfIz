@@ -143,7 +143,7 @@ VkAttachmentLoadOp VulkanEnumConverter::ConvertLoadOp( const LoadOp &loadOp )
         return VK_ATTACHMENT_LOAD_OP_LOAD;
     case LoadOp::Clear:
         return VK_ATTACHMENT_LOAD_OP_CLEAR;
-    case LoadOp::Unidentified:
+    case LoadOp::DontCare:
         return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     }
 
@@ -158,7 +158,7 @@ VkAttachmentStoreOp VulkanEnumConverter::ConvertStoreOp( const StoreOp &storeOp 
         return VK_ATTACHMENT_STORE_OP_STORE;
     case StoreOp::None:
         return VK_ATTACHMENT_STORE_OP_NONE;
-    case StoreOp::Unidentified:
+    case StoreOp::DontCare:
         return VK_ATTACHMENT_STORE_OP_DONT_CARE;
     }
 

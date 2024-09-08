@@ -94,7 +94,8 @@ void MetalTextureResource::UpdateTexture( const TextureDesc &desc, id<MTLTexture
 
 void MetalTextureResource::SetTextureType( )
 {
-    bool isArray       = m_desc.ArraySize > 1;
+    // When using Metal Shader Converter + HLSL, the conversion is always an array.
+    bool isArray       = true; //m_desc.ArraySize > 1;
     bool isTexture     = m_desc.Descriptor == ResourceDescriptor::Texture;
     bool isTextureCube = m_desc.Descriptor == ResourceDescriptor::TextureCube;
     bool hasDepth      = m_desc.Depth > 1;
@@ -143,6 +144,11 @@ void MetalTextureResource::SetTextureType( )
     }
 }
 
+float MetalTextureResource::MinLODClamp( )
+{
+    return 0;
+}
+
 MetalTextureResource::~MetalTextureResource( )
 {
 }
@@ -152,6 +158,7 @@ MetalSampler::MetalSampler( MetalContext *context, const SamplerDesc &desc ) : m
     MTLSamplerDescriptor *samplerDesc = [[MTLSamplerDescriptor alloc] init];
 
     samplerDesc.supportArgumentBuffers = YES;
+    samplerDesc.normalizedCoordinates  = YES;
     samplerDesc.minFilter              = MetalEnumConverter::ConvertFilter( desc.MinFilter );
     samplerDesc.magFilter              = MetalEnumConverter::ConvertFilter( desc.MagFilter );
     samplerDesc.mipFilter              = MetalEnumConverter::ConvertMipMapFilter( desc.MipmapMode );
@@ -162,6 +169,7 @@ MetalSampler::MetalSampler( MetalContext *context, const SamplerDesc &desc ) : m
     samplerDesc.lodMaxClamp            = desc.MaxLod;
     samplerDesc.compareFunction        = MetalEnumConverter::ConvertCompareFunction( desc.CompareOp );
     samplerDesc.maxAnisotropy          = std::max( 1.0f, desc.MaxAnisotropy );
+    samplerDesc.label                  = [NSString stringWithUTF8String:desc.DebugName.c_str( )];
 
     m_sampler = [m_context->Device newSamplerStateWithDescriptor:samplerDesc];
     if ( !m_sampler )
@@ -177,4 +185,9 @@ MetalSampler::~MetalSampler( )
 const id<MTLSamplerState> &MetalSampler::Instance( ) const
 {
     return m_sampler;
+}
+
+const float MetalSampler::LODBias( ) const
+{
+    return m_desc.MipLodBias;
 }

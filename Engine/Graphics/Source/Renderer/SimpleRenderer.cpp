@@ -124,7 +124,7 @@ namespace DenOfIz
         constexpr XMFLOAT3 eyePosition = XMFLOAT3( 0.0f, -1.0f, -2.0f );
         constexpr XMFLOAT3 focusPoint  = XMFLOAT3( 0.0f, 0.0f, 0.0f );
         constexpr XMFLOAT3 upDirection = XMFLOAT3( 0.0f, 1.0f, 0.0f );
-        constexpr float    aspectRatio = 800.0f / 600.0f;
+        float              aspectRatio = m_window->GetSurface( ).Width / m_window->GetSurface( ).Height;
         constexpr float    nearZ       = 0.1f;
         constexpr float    farZ        = 100.0f;
 

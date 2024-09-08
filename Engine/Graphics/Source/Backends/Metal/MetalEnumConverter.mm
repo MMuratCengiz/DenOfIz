@@ -591,3 +591,32 @@ MTLCompareFunction MetalEnumConverter::ConvertCompareFunction( CompareOp op )
     }
     return MTLCompareFunctionGreaterEqual;
 }
+
+MTLLoadAction MetalEnumConverter::ConvertLoadAction( LoadOp op )
+{
+    switch ( op )
+    {
+    case LoadOp::Load:
+        return MTLLoadActionLoad;
+    case LoadOp::Clear:
+        return MTLLoadActionClear;
+    case LoadOp::DontCare:
+        return MTLLoadActionDontCare;
+    }
+
+    return MTLLoadActionDontCare;
+}
+
+MTLStoreAction MetalEnumConverter::ConvertStoreAction( StoreOp op )
+{
+    switch ( op )
+    {
+    case StoreOp::Store:
+        return MTLStoreActionStore;
+    case StoreOp::DontCare:
+    case StoreOp::None:
+        break;
+    }
+
+    return MTLStoreActionDontCare;
+}

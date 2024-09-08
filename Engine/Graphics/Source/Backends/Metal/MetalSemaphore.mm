@@ -22,20 +22,21 @@ using namespace DenOfIz;
 
 MetalSemaphore::MetalSemaphore( MetalContext *context ) : m_context( context )
 {
-    m_semaphore = dispatch_semaphore_create( 0 );
+    m_fence      = [m_context->Device newEvent];
+    m_fenceValue = 0;
+    m_signaled   = false;
 }
 
 void MetalSemaphore::Wait( )
 {
-    dispatch_semaphore_wait( m_semaphore, DISPATCH_TIME_FOREVER );
 }
 
 void MetalSemaphore::Notify( )
 {
-    dispatch_semaphore_signal( m_semaphore );
 }
 
-void MetalSemaphore::NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer>& commandBuffer )
+void MetalSemaphore::NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer> &commandBuffer )
 {
-    [commandBuffer addCompletedHandler:^( id<MTLCommandBuffer> _unused ) { this->Notify(); }];
+    m_fenceValue = m_fenceValue + 1 % MAX_FENCE_VALUE;
+    [commandBuffer encodeSignalEvent:m_fence value:m_fenceValue];
 }

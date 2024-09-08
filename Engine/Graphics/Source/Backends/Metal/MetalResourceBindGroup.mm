@@ -33,14 +33,17 @@ void MetalResourceBindGroup::Update( const UpdateDesc &desc )
     if ( !desc.Buffers.empty( ) )
     {
         m_bufferTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, desc.Buffers.size( ) ) );
+        m_bufferTable->Table.SetDebugName( "Buffer Table[Space: " + std::to_string( m_desc.RegisterSpace ) + "]" );
     }
     if ( !desc.Textures.empty( ) )
     {
         m_textureTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, desc.Textures.size( ) ) );
+        m_textureTable->Table.SetDebugName( "Texture Table[Space: " + std::to_string( m_desc.RegisterSpace ) + "]" );
     }
     if ( !desc.Samplers.empty( ) )
     {
         m_samplerTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, desc.Samplers.size( ) ) );
+        m_samplerTable->Table.SetDebugName( "Sampler Table[Space: " + std::to_string( m_desc.RegisterSpace ) + "]" );
     }
 
     IResourceBindGroup::Update( desc );
@@ -52,22 +55,25 @@ void MetalResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBuffe
     const MetalBindingDesc &binding     = m_rootSignature->FindMetalBinding( slot );
     m_bufferTable->Table.EncodeBuffer( metalBuffer->Instance( ), binding.Parent.Reflection.DescriptorTableIndex );
     UpdateDescriptorTable( binding, m_bufferTable.get( ) );
+    m_buffers.push_back( { metalBuffer, binding.Stages, metalBuffer->Usage( ) } );
 }
 
 void MetalResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource )
 {
     MetalTextureResource   *metalTexture = static_cast<MetalTextureResource *>( resource );
     const MetalBindingDesc &binding      = m_rootSignature->FindMetalBinding( slot );
-    m_textureTable->Table.EncodeTexture( metalTexture->Instance( ), binding.Parent.Reflection.DescriptorTableIndex );
+    m_textureTable->Table.EncodeTexture( metalTexture->Instance( ), metalTexture->MinLODClamp( ), binding.Parent.Reflection.DescriptorTableIndex );
     UpdateDescriptorTable( binding, m_textureTable.get( ) );
+    m_textures.push_back( { metalTexture, binding.Stages, metalTexture->Usage( ) } );
 }
 
 void MetalResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )
 {
     MetalSampler           *metalSampler = static_cast<MetalSampler *>( sampler );
     const MetalBindingDesc &binding      = m_rootSignature->FindMetalBinding( slot );
-    m_samplerTable->Table.EncodeSampler( metalSampler->Instance( ), binding.Parent.Reflection.DescriptorTableIndex );
+    m_samplerTable->Table.EncodeSampler( metalSampler->Instance( ), metalSampler->LODBias( ), binding.Parent.Reflection.DescriptorTableIndex );
     UpdateDescriptorTable( binding, m_samplerTable.get( ) );
+    m_samplers.push_back( { metalSampler, binding.Stages, MTLResourceUsageRead } );
 }
 
 const MetalDescriptorTableBinding *MetalResourceBindGroup::BufferTable( ) const
@@ -104,6 +110,7 @@ const std::vector<MetalUpdateDescItem<MetalSampler>> &MetalResourceBindGroup::Sa
 {
     return m_samplers;
 }
+
 void MetalResourceBindGroup::UpdateDescriptorTable( const MetalBindingDesc &binding, MetalDescriptorTableBinding *table )
 {
     table->TLABOffset = binding.Parent.Reflection.DescriptorOffset;

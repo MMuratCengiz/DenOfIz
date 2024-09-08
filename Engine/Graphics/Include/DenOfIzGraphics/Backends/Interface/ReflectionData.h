@@ -8,8 +8,8 @@ namespace DenOfIz
     {
         Pointer,
         Struct,
-        SamplerDesc,
         Texture,
+        SamplerDesc,
     };
     enum class ReflectionFieldType
     {

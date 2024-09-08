@@ -29,20 +29,23 @@ MetalCommandList::~MetalCommandList( ) = default;
 
 void MetalCommandList::Begin( )
 {
-    m_commandBuffer = [m_context->CommandQueue commandBuffer];
-    switch ( m_desc.QueueType )
+    @autoreleasepool
     {
-    case QueueType::Copy:
-        m_activeEncoderType = MetalEncoderType::Blit;
-        m_blitEncoder       = [m_commandBuffer blitCommandEncoder];
-        break;
-    case QueueType::Compute:
-        m_activeEncoderType = MetalEncoderType::Compute;
-        m_computeEncoder    = [m_commandBuffer computeCommandEncoder];
-        break;
-    case QueueType::Graphics:
-        // Initialized in BeginRendering
-        break;
+        m_commandBuffer = [m_context->CommandQueue commandBuffer];
+        switch ( m_desc.QueueType )
+        {
+        case QueueType::Copy:
+            m_activeEncoderType = MetalEncoderType::Blit;
+            m_blitEncoder       = [m_commandBuffer blitCommandEncoder];
+            break;
+        case QueueType::Compute:
+            m_activeEncoderType = MetalEncoderType::Compute;
+            m_computeEncoder    = [m_commandBuffer computeCommandEncoder];
+            break;
+        case QueueType::Graphics:
+            // Initialized in BeginRendering
+            break;
+        }
     }
 
     m_rootSignature          = nullptr;
@@ -59,36 +62,39 @@ void MetalCommandList::BeginRendering( const RenderingDesc &renderingInfo )
     m_activeEncoderType = MetalEncoderType::Render;
     // Begin rendering with the provided rendering information
     auto passDesc = MTLRenderPassDescriptor.renderPassDescriptor;
-    for ( auto i = 0; i < renderingInfo.RTAttachments.size( ); i++ )
+    @autoreleasepool
     {
-        const RenderingAttachmentDesc &attachment      = renderingInfo.RTAttachments[ i ];
-        MetalTextureResource          *metalRtResource = static_cast<MetalTextureResource *>( attachment.Resource );
-        passDesc.colorAttachments[ i ].texture         = metalRtResource->Instance( );
-        passDesc.colorAttachments[ i ].loadAction      = MTLLoadActionClear;
-        passDesc.colorAttachments[ i ].storeAction     = MTLStoreActionStore;
-        passDesc.colorAttachments[ i ].clearColor =
-            MTLClearColorMake( attachment.ClearColor[ 0 ], attachment.ClearColor[ 1 ], attachment.ClearColor[ 2 ], attachment.ClearColor[ 3 ] );
-    }
+        for ( auto i = 0; i < renderingInfo.RTAttachments.size( ); i++ )
+        {
+            const RenderingAttachmentDesc &attachment      = renderingInfo.RTAttachments[ i ];
+            MetalTextureResource          *metalRtResource = static_cast<MetalTextureResource *>( attachment.Resource );
+            passDesc.colorAttachments[ i ].texture         = metalRtResource->Instance( );
+            passDesc.colorAttachments[ i ].loadAction      = MetalEnumConverter::ConvertLoadAction( attachment.LoadOp );
+            passDesc.colorAttachments[ i ].storeAction     = MetalEnumConverter::ConvertStoreAction( attachment.StoreOp );
+            passDesc.colorAttachments[ i ].clearColor =
+                MTLClearColorMake( attachment.ClearColor[ 0 ], attachment.ClearColor[ 1 ], attachment.ClearColor[ 2 ], attachment.ClearColor[ 3 ] );
+        }
 
-    if ( renderingInfo.DepthAttachment.Resource )
-    {
-        const RenderingAttachmentDesc &attachment = renderingInfo.DepthAttachment;
-        passDesc.depthAttachment.texture          = static_cast<MetalTextureResource *>( renderingInfo.DepthAttachment.Resource )->Instance( );
-        passDesc.depthAttachment.loadAction       = MTLLoadActionClear;
-        passDesc.depthAttachment.storeAction      = MTLStoreActionStore;
-        passDesc.depthAttachment.clearDepth       = attachment.ClearDepth[ 0 ]; // Validate
-    }
+        if ( renderingInfo.DepthAttachment.Resource )
+        {
+            const RenderingAttachmentDesc &attachment = renderingInfo.DepthAttachment;
+            passDesc.depthAttachment.texture          = static_cast<MetalTextureResource *>( renderingInfo.DepthAttachment.Resource )->Instance( );
+            passDesc.depthAttachment.loadAction       = MetalEnumConverter::ConvertLoadAction( attachment.LoadOp );
+            passDesc.depthAttachment.storeAction      = MetalEnumConverter::ConvertStoreAction( attachment.StoreOp );
+            passDesc.depthAttachment.clearDepth       = attachment.ClearDepth[ 0 ]; // Validate
+        }
 
-    if ( renderingInfo.StencilAttachment.Resource )
-    {
-        const RenderingAttachmentDesc &attachment = renderingInfo.StencilAttachment;
-        passDesc.stencilAttachment.texture        = static_cast<MetalTextureResource *>( renderingInfo.StencilAttachment.Resource )->Instance( );
-        passDesc.stencilAttachment.loadAction     = MTLLoadActionClear;
-        passDesc.stencilAttachment.storeAction    = MTLStoreActionStore;
-        passDesc.stencilAttachment.clearStencil   = attachment.ClearDepth[ 0 ]; // Validate
-    }
+        if ( renderingInfo.StencilAttachment.Resource )
+        {
+            const RenderingAttachmentDesc &attachment = renderingInfo.StencilAttachment;
+            passDesc.stencilAttachment.texture        = static_cast<MetalTextureResource *>( renderingInfo.StencilAttachment.Resource )->Instance( );
+            passDesc.stencilAttachment.loadAction     = MetalEnumConverter::ConvertLoadAction( attachment.LoadOp );
+            passDesc.stencilAttachment.storeAction    = MetalEnumConverter::ConvertStoreAction( attachment.StoreOp );
+            passDesc.stencilAttachment.clearStencil   = attachment.ClearDepth[ 0 ]; // Validate
+        }
 
-    m_renderEncoder = [m_commandBuffer renderCommandEncoderWithDescriptor:passDesc];
+        m_renderEncoder = [m_commandBuffer renderCommandEncoderWithDescriptor:passDesc];
+    }
 }
 
 void MetalCommandList::EndRendering( )
@@ -97,37 +103,38 @@ void MetalCommandList::EndRendering( )
 
 void MetalCommandList::Execute( const ExecuteDesc &executeInfo )
 {
-    MetalFence *fence      = static_cast<MetalFence *>( executeInfo.Notify );
-    bool        hasEncoder = false;
-    if ( m_blitEncoder )
+    @autoreleasepool
     {
-        [m_blitEncoder endEncoding];
-        m_blitEncoder = nil;
-    }
-    else if ( m_computeEncoder )
-    {
-        [m_computeEncoder endEncoding];
-        m_computeEncoder = nil;
-    }
-    else if ( m_renderEncoder )
-    {
-        [m_renderEncoder endEncoding];
-        m_renderEncoder = nil;
-    }
+        if ( m_blitEncoder )
+        {
+            [m_blitEncoder endEncoding];
+            m_blitEncoder = nil;
+        }
+        else if ( m_computeEncoder )
+        {
+            [m_computeEncoder endEncoding];
+            m_computeEncoder = nil;
+        }
+        else if ( m_renderEncoder )
+        {
+            [m_renderEncoder endEncoding];
+            m_renderEncoder = nil;
+        }
 
-    if ( executeInfo.Notify )
-    {
-        MetalFence *metalFence = static_cast<MetalFence *>( executeInfo.Notify );
-        metalFence->NotifyOnCommandBufferCompletion( m_commandBuffer );
-    }
+        if ( executeInfo.Notify )
+        {
+            MetalFence *metalFence = static_cast<MetalFence *>( executeInfo.Notify );
+            metalFence->NotifyOnCommandBufferCompletion( m_commandBuffer );
+        }
 
-    for ( ISemaphore *notifySemaphore : executeInfo.NotifySemaphores )
-    {
-        MetalSemaphore *metalSemaphore = static_cast<MetalSemaphore *>( notifySemaphore );
-        metalSemaphore->NotifyOnCommandBufferCompletion( m_commandBuffer );
-    }
+        for ( ISemaphore *notifySemaphore : executeInfo.NotifySemaphores )
+        {
+            MetalSemaphore *metalSemaphore = static_cast<MetalSemaphore *>( notifySemaphore );
+            metalSemaphore->NotifyOnCommandBufferCompletion( m_commandBuffer );
+        }
 
-    [m_commandBuffer commit];
+        [m_commandBuffer commit];
+    }
 }
 
 void MetalCommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks )
@@ -138,21 +145,26 @@ void MetalCommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, std:
 
 void MetalCommandList::BindPipeline( IPipeline *pipeline )
 {
-    switch ( m_desc.QueueType )
+    @autoreleasepool
     {
-    case QueueType::Copy:
-        break;
-    case QueueType::Compute:
-        [m_computeEncoder setComputePipelineState:static_cast<MetalPipeline *>( pipeline )->ComputePipelineState( )];
-        break;
-    case QueueType::Graphics:
-        [m_renderEncoder setRenderPipelineState:static_cast<MetalPipeline *>( pipeline )->GraphicsPipelineState( )];
-        break;
+        switch ( m_desc.QueueType )
+        {
+        case QueueType::Copy:
+            break;
+        case QueueType::Compute:
+            [m_computeEncoder setComputePipelineState:static_cast<MetalPipeline *>( pipeline )->ComputePipelineState( )];
+            break;
+        case QueueType::Graphics:
+            [m_renderEncoder setRenderPipelineState:static_cast<MetalPipeline *>( pipeline )->GraphicsPipelineState( )];
+            break;
+        }
     }
 }
 
 void MetalCommandList::BindVertexBuffer( IBufferResource *buffer )
 {
+    id<MTLBuffer> vertexBuffer = static_cast<MetalBufferResource *>( buffer )->Instance( );
+
     switch ( m_desc.QueueType )
     {
     case QueueType::Copy:
@@ -160,7 +172,9 @@ void MetalCommandList::BindVertexBuffer( IBufferResource *buffer )
         LOG( WARNING ) << "BindVertexBuffer is not supported for Copy and Compute queues";
         break;
     case QueueType::Graphics:
-        [m_renderEncoder setVertexBuffer:static_cast<MetalBufferResource *>( buffer )->Instance( ) offset:0 atIndex:0];
+        {
+            [m_renderEncoder setVertexBuffer:vertexBuffer offset:0 atIndex:0];
+        }
         break;
     }
 }
@@ -212,16 +226,19 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     if ( bufferTable != nullptr && bufferTable->NumEntries > 0 )
     {
         topLevelArgumentBuffer->EncodeAddress( argumentBuffer.CommandListOffset, bufferTable->TLABOffset, bufferTable->Table.Buffer( ).gpuAddress );
+        UseResource( bufferTable->Table.Buffer( ) );
     }
     const MetalDescriptorTableBinding *textureTable = metalBindGroup->TextureTable( );
     if ( textureTable != nullptr && textureTable->NumEntries > 0 )
     {
         topLevelArgumentBuffer->EncodeAddress( argumentBuffer.CommandListOffset, textureTable->TLABOffset, textureTable->Table.Buffer( ).gpuAddress );
+        UseResource( textureTable->Table.Buffer( ) );
     }
     const MetalDescriptorTableBinding *samplerTable = metalBindGroup->SamplerTable( );
     if ( samplerTable != nullptr && samplerTable->NumEntries > 0 )
     {
         topLevelArgumentBuffer->EncodeAddress( argumentBuffer.CommandListOffset, samplerTable->TLABOffset, samplerTable->Table.Buffer( ).gpuAddress );
+        UseResource( samplerTable->Table.Buffer( ) );
     }
 
     /*
@@ -234,37 +251,16 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 
     for ( const auto &buffer : metalBindGroup->Buffers( ) )
     {
-        if ( m_desc.QueueType == QueueType::Compute )
-        {
-            [m_computeEncoder useResource:buffer.Resource->Instance( ) usage:buffer.Usage];
-        }
-        else
-        {
-            [m_renderEncoder useResource:buffer.Resource->Instance( ) usage:buffer.Usage stages:buffer.ShaderStages];
-        }
+        UseResource( buffer.Resource->Instance( ), buffer.Usage, buffer.ShaderStages );
     }
 
     for ( const auto &texture : metalBindGroup->Textures( ) )
     {
-        if ( m_desc.QueueType == QueueType::Compute )
-        {
-            [m_computeEncoder useResource:texture.Resource->Instance( ) usage:texture.Usage];
-        }
-        else
-        {
-            [m_renderEncoder useResource:texture.Resource->Instance( ) usage:texture.Usage stages:texture.ShaderStages];
-        }
+        UseResource( texture.Resource->Instance( ), texture.Usage, texture.ShaderStages );
     }
 
     for ( const auto &sampler : metalBindGroup->Samplers( ) )
     {
-        if ( m_desc.QueueType == QueueType::Compute )
-        {
-            // Not required?
-        }
-        else
-        {
-        }
     }
 }
 
@@ -278,25 +274,16 @@ void MetalCommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )
 
 void MetalCommandList::DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance )
 {
-    BindTopLevelArgumentBuffer( );
-
     EnsureEncoder( MetalEncoderType::Render, "DrawIndexed called without a render encoder. Make sure to call BeginRendering" );
-    [m_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                indexCount:indexCount
-                                 indexType:m_indexType
-                               indexBuffer:m_indexBuffer
-                         indexBufferOffset:0
-                             instanceCount:instanceCount
-                                baseVertex:vertexOffset
-                              baseInstance:firstInstance];
+    BindTopLevelArgumentBuffer( );
+    IRRuntimeDrawIndexedPrimitives( m_renderEncoder, MTLPrimitiveTypeTriangle, indexCount, m_indexType, m_indexBuffer, firstIndex, instanceCount, vertexOffset, firstInstance );
 }
 
 void MetalCommandList::Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance )
 {
-    BindTopLevelArgumentBuffer( );
-
     EnsureEncoder( MetalEncoderType::Render, "Draw called without a render encoder. Make sure to call BeginRendering" );
-    [m_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:firstVertex vertexCount:vertexCount instanceCount:instanceCount];
+    BindTopLevelArgumentBuffer( );
+    IRRuntimeDrawPrimitives( m_renderEncoder, MTLPrimitiveTypeTriangle, firstVertex, vertexCount, instanceCount );
 }
 
 void MetalCommandList::Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ )
@@ -395,10 +382,8 @@ void MetalCommandList::BindTopLevelArgumentBuffer( )
     }
     else
     {
-        void *zeroBytes = malloc( 1 );
         [m_renderEncoder setVertexBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
         [m_renderEncoder setFragmentBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
-        free( zeroBytes );
     }
 
     m_lastBoundRootSignature = m_rootSignature;
@@ -439,42 +424,45 @@ void MetalCommandList::EnsureEncoder( MetalEncoderType encoderType, std::string 
 
 void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType )
 {
-    if ( m_activeEncoderType == encoderType )
+    @autoreleasepool
     {
-        return;
-    }
+        if ( m_activeEncoderType == encoderType )
+        {
+            return;
+        }
 
-    switch ( m_activeEncoderType )
-    {
-    case MetalEncoderType::Blit:
-        [m_blitEncoder endEncoding];
-        break;
-    case MetalEncoderType::Compute:
-        [m_computeEncoder endEncoding];
-        break;
-    case MetalEncoderType::Render:
-        [m_renderEncoder endEncoding];
-        break;
-    case MetalEncoderType::None:
-        break;
-    }
+        switch ( m_activeEncoderType )
+        {
+        case MetalEncoderType::Blit:
+            [m_blitEncoder endEncoding];
+            break;
+        case MetalEncoderType::Compute:
+            [m_computeEncoder endEncoding];
+            break;
+        case MetalEncoderType::Render:
+            [m_renderEncoder endEncoding];
+            break;
+        case MetalEncoderType::None:
+            break;
+        }
 
-    switch ( encoderType )
-    {
-    case MetalEncoderType::Blit:
-        m_activeEncoderType = MetalEncoderType::Blit;
-        m_blitEncoder       = [m_commandBuffer blitCommandEncoder];
-        break;
-    case MetalEncoderType::Compute:
-        m_activeEncoderType = MetalEncoderType::Compute;
-        m_computeEncoder    = [m_commandBuffer computeCommandEncoder];
-        break;
-    case MetalEncoderType::Render:
-        LOG( ERROR ) << "Using metal, render encoder should be initialized in BeginRendering. This error means the order of your commands ";
-        break;
-    case MetalEncoderType::None:
-        LOG( ERROR ) << "Invalid new encoder type, None should only be used after ending another encoder.";
-        break;
+        switch ( encoderType )
+        {
+        case MetalEncoderType::Blit:
+            m_activeEncoderType = MetalEncoderType::Blit;
+            m_blitEncoder       = [m_commandBuffer blitCommandEncoder];
+            break;
+        case MetalEncoderType::Compute:
+            m_activeEncoderType = MetalEncoderType::Compute;
+            m_computeEncoder    = [m_commandBuffer computeCommandEncoder];
+            break;
+        case MetalEncoderType::Render:
+            LOG( ERROR ) << "Using metal, render encoder should be initialized in BeginRendering. This error means the order of your commands ";
+            break;
+        case MetalEncoderType::None:
+            LOG( ERROR ) << "Invalid new encoder type, None should only be used after ending another encoder.";
+            break;
+        }
     }
 }
 

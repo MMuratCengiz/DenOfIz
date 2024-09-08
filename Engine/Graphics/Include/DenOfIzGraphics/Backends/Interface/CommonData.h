@@ -558,14 +558,14 @@ namespace DenOfIz
     {
         Clear,
         Load,
-        Unidentified
+        DontCare
     };
 
     enum class StoreOp
     {
         Store,
         None,
-        Unidentified
+        DontCare
     };
 
     enum class QueueType

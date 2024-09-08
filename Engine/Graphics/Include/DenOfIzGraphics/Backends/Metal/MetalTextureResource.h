@@ -54,6 +54,8 @@ namespace DenOfIz
         }
         ~MetalTextureResource( ) override;
 
+        float MinLODClamp( );
+
     private:
         void SetTextureType( );
     };
@@ -68,6 +70,7 @@ namespace DenOfIz
     public:
         MetalSampler( MetalContext *context, const SamplerDesc &desc );
         const id<MTLSamplerState> &Instance( ) const;
+        const float LODBias( ) const;
         ~MetalSampler( ) override;
     };
 } // namespace DenOfIz

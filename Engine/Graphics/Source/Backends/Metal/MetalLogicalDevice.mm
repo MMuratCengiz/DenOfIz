@@ -81,7 +81,7 @@ void MetalLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
         }
     }
 
-    m_context->CommandQueue = [m_context->Device newCommandQueue];
+    m_context->CommandQueue = [m_context->Device newCommandQueueWithMaxCommandBufferCount:512];
     m_selectedDeviceInfo    = device;
 
     m_selectedDeviceInfo.Constants.ConstantBufferAlignment   = 256;

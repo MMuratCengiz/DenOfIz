@@ -41,7 +41,7 @@ namespace DenOfIz
         MipmapMode         MipmapMode    = MipmapMode::Linear;
         float              MipLodBias    = 0.0f;
         float              MinLod        = 0.0f;
-        float              MaxLod        = 1.0f;
+        float              MaxLod        = 0.0f;
         std::string        DebugName;
     };
 

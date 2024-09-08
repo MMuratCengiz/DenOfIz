@@ -30,22 +30,9 @@ namespace DenOfIz
     template <typename T>
     struct MetalUpdateDescItem
     {
-        std::string      Name;
         T               *Resource;
-        uint32_t         Location;
         MTLRenderStages  ShaderStages;
         MTLResourceUsage Usage;
-    };
-
-    struct MetalArgumentDescriptor
-    {
-        MTLArgumentDescriptor *Descriptor;
-        union
-        {
-            MetalBufferResource  *Buffer;
-            MetalTextureResource *Texture;
-            MetalSampler         *Sampler;
-        } Resource;
     };
 
     struct MetalDescriptorTableBinding

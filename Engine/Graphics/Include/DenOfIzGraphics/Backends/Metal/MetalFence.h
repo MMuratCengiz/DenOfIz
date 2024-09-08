@@ -27,10 +27,10 @@ namespace DenOfIz
     class MetalFence : public IFence
     {
     private:
-        MetalContext           *m_context;
-        std::mutex              m_mutex;
-        std::condition_variable m_condition;
-        bool                    m_signaled;
+        MetalContext        *m_context;
+        dispatch_semaphore_t m_fence;
+        bool                 m_submitted = false;
+
     public:
         MetalFence( MetalContext *context );
         ~MetalFence( ) override;
@@ -38,7 +38,7 @@ namespace DenOfIz
         void Reset( ) override;
         void Notify( );
 
-        void NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer>& commandBuffer );
+        void NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer> &commandBuffer );
     };
 
 } // namespace DenOfIz

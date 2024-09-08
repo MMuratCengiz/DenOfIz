@@ -27,14 +27,20 @@ namespace DenOfIz
     class MetalSemaphore : public ISemaphore
     {
     private:
-        MetalContext        *m_context;
-        dispatch_semaphore_t m_semaphore;
+        constexpr static uint64_t MAX_FENCE_VALUE = 1000000;
+
+        MetalContext *m_context;
+        id<MTLEvent>  m_fence;
+        uint64_t      m_fenceValue = 0;
+        bool          m_signaled : 1;
 
     public:
         MetalSemaphore( MetalContext *context );
         ~MetalSemaphore( ) override = default;
         void Wait( ) override;
         void Notify( ) override;
-        void NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer>& commandBuffer );
+        void NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer> &commandBuffer );
+
+        [[nodiscard]] const id<MTLEvent> &GetFence( ) const { return m_fence; }
     };
 } // namespace DenOfIz

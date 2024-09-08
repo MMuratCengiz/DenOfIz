@@ -32,8 +32,7 @@ namespace DenOfIz
         TextureDesc                                        m_drawableDesc{ };
         id<CAMetalDrawable>                                m_currentDrawable;
         id<MTLCommandBuffer>                               m_presentCommandBuffer;
-        NSView                                            *m_view;
-        CAMetalLayer                                      *m_layer;
+        MTKView                                           *m_view;
         uint32_t                                           m_currentFrame = 0;
         std::vector<std::unique_ptr<MetalTextureResource>> m_renderTargets;
 

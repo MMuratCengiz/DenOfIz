@@ -33,7 +33,8 @@ namespace DenOfIz
         static MTLPixelFormat            ConvertFormat( Format format );
         static MTLVertexFormat           ConvertFormatToVertexFormat( Format format );
         static MTLDataType               ConvertFormatToDataType( Format format );
-        static MTLDataType               ConvertReflectionFieldToMTLDataType( const ReflectionResourceField &field );
+        static MTLLoadAction             ConvertLoadAction( LoadOp op );
+        static MTLStoreAction            ConvertStoreAction( StoreOp op );
         static MTLPrimitiveTopologyClass ConvertTopologyClass( PrimitiveTopology topology );
         static MTLSamplerMinMagFilter    ConvertFilter( Filter filter );
         static MTLSamplerMipFilter       ConvertMipMapFilter( MipmapMode mode );

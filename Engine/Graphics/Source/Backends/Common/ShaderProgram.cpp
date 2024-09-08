@@ -417,11 +417,11 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
             case ReflectionBindingType::Struct:
                 resourceBindingDesc.Reflection.DescriptorOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].BufferOffset;
                 break;
-            case ReflectionBindingType::SamplerDesc:
-                resourceBindingDesc.Reflection.DescriptorOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].SamplerOffset;
-                break;
             case ReflectionBindingType::Texture:
                 resourceBindingDesc.Reflection.DescriptorOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].TextureOffset;
+                break;
+            case ReflectionBindingType::SamplerDesc:
+                resourceBindingDesc.Reflection.DescriptorOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].SamplerOffset;
                 break;
             }
             ContainerUtilities::EnsureSize( descriptorTableLocations, resourceBindingDesc.Reflection.DescriptorOffset );

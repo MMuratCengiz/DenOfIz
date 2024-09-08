@@ -381,7 +381,7 @@ D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE DX12EnumConverter::ConvertLoadOp( const 
         return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR;
     case LoadOp::Load:
         return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE;
-    case LoadOp::Unidentified:
+    case LoadOp::DontCare:
         return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD;
     }
 
@@ -394,7 +394,7 @@ D3D12_RENDER_PASS_ENDING_ACCESS_TYPE DX12EnumConverter::ConvertStoreOp( const St
     {
     case StoreOp::Store:
         return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE;
-    case StoreOp::Unidentified:
+    case StoreOp::DontCare:
         return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;
     case StoreOp::None:
         return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS;
