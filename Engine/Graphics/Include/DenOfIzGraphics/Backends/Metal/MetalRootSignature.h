@@ -19,11 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzCore/ContainerUtilities.h>
-#include <DenOfIzCore/IdGen.h>
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
 #include <unordered_set>
-#include "MetalArgumentBuffer.h"
-#include "MetalHeap.h"
 
 namespace DenOfIz
 {
@@ -42,19 +39,14 @@ namespace DenOfIz
         std::vector<id<MTLBuffer>>                      m_rootParameters;
         std::vector<id<MTLBuffer>>                      m_registerSpaceArgumentBuffers;
         std::vector<NSArray<MTLArgumentDescriptor *> *> m_argumentDescriptors;
-        std::unique_ptr<MetalArgumentBuffer>            m_topLevelArgumentBuffer;
-        DZ_CLASS_UNIQUE_ID_PROVIDER( m_id )
+        uint32_t                                        m_numTLABAddresses = 0;
 
     public:
         MetalRootSignature( MetalContext *context, const RootSignatureDesc &desc );
         const MetalBindingDesc &FindMetalBinding( const ResourceBindingSlot &slot ) const;
-        MetalArgumentBuffer    *TopLevelArgumentBuffer( ) const
+        const uint32_t          NumTLABAddresses( ) const
         {
-            return m_topLevelArgumentBuffer.get( );
-        }
-        uint32_t UniqueKey( ) const
-        {
-            return m_id;
+            return m_numTLABAddresses;
         }
         ~MetalRootSignature( ) override;
     };

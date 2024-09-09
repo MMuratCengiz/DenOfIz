@@ -35,11 +35,10 @@ void DescriptorTable::EncodeSampler( id<MTLSamplerState> sampler, float lodBias,
     IRDescriptorTableSetSampler( &m_contents[ index ], sampler, lodBias );
 }
 
-MetalArgumentBuffer::MetalArgumentBuffer( MetalContext *context, size_t numAddresses, size_t numSets ) : m_context( context ), m_numAddresses( numAddresses )
+MetalArgumentBuffer::MetalArgumentBuffer( MetalContext *context, size_t capacity ) : m_context( context ), m_capacity( capacity )
 {
-    m_offset   = 0;
-    m_capacity = numSets * Utilities::Align( sizeof( uint64_t ) * numAddresses, 8 );
-    m_buffer   = [m_context->Device newBufferWithLength:m_capacity options:MTLResourceStorageModeShared];
+    m_nextOffset = 0;
+    m_buffer     = [m_context->Device newBufferWithLength:m_capacity options:MTLResourceStorageModeShared];
     if ( !m_buffer )
     {
         LOG( ERROR ) << "Failed to allocate Metal argument buffer";
@@ -48,19 +47,27 @@ MetalArgumentBuffer::MetalArgumentBuffer( MetalContext *context, size_t numAddre
     m_contents = (uint64_t *)m_buffer.contents;
 }
 
-std::pair<uint64_t *, uint64_t> MetalArgumentBuffer::Allocate( )
+std::pair<uint64_t *, uint64_t> MetalArgumentBuffer::Reserve( size_t numAddresses )
 {
-    auto size = Utilities::Align( sizeof( uint64_t ) * m_numAddresses, 8 );
-    if ( m_offset + size > m_capacity )
+    auto size = Utilities::Align( sizeof( uint64_t ) * numAddresses, 8 );
+    if ( m_nextOffset + size > m_capacity )
     {
         LOG( ERROR ) << "MetalArgumentBuffer::Allocate: out of memory";
         return std::pair<uint64_t *, uint64_t>( nullptr, 0 );
     }
 
-    uint64_t  offsetBefore = m_offset;
-    uint64_t *ptr          = m_contents + ( m_offset / sizeof( uint64_t ) );
-    m_offset += size;
-    return std::pair<uint64_t *, uint64_t>( ptr, offsetBefore );
+    m_currentOffset = m_nextOffset;
+    uint64_t *ptr   = m_contents + ( m_nextOffset / sizeof( uint64_t ) );
+    m_nextOffset += size;
+    return std::pair<uint64_t *, uint64_t>( ptr, m_currentOffset );
+}
+
+std::pair<uint64_t *, uint64_t> MetalArgumentBuffer::Duplicate( size_t numAddresses )
+{
+    uint64_t *prevPtr = &m_contents[ m_currentOffset / sizeof( uint64_t ) ];
+    auto      result  = Reserve( numAddresses );
+    std::memcpy( result.first, prevPtr, numAddresses * sizeof( uint64_t ) );
+    return result;
 }
 
 void MetalArgumentBuffer::EncodeAddress( uint64_t offset, uint32_t index, uint64_t address ) const
@@ -78,5 +85,5 @@ void MetalArgumentBuffer::EncodeAddress( uint64_t offset, uint32_t index, uint64
 
 void MetalArgumentBuffer::Reset( )
 {
-    m_offset = 0;
+    m_nextOffset = 0;
 }

@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "MetalSemaphore.h"
 #include "MetalSwapChain.h"
 #include "MetalTextureResource.h"
+#include "MetalArgumentBuffer.h"
 
 namespace DenOfIz
 {
@@ -38,12 +39,6 @@ namespace DenOfIz
         Compute,
         Blit,
         None
-    };
-
-    struct TrackedTopLevelArgumentBuffer
-    {
-        uint64_t             CommandListOffset;
-        MetalArgumentBuffer *ArgumentBuffer;
     };
 
     class MetalCommandList final : public ICommandList
@@ -57,12 +52,11 @@ namespace DenOfIz
         MetalEncoderType             m_activeEncoderType = MetalEncoderType::None;
 
         // States:
-        id<MTLBuffer> m_indexBuffer;
-        MTLIndexType  m_indexType;
-
-        MetalRootSignature                                         *m_lastBoundRootSignature;
-        MetalRootSignature                                         *m_rootSignature;
-        std::unordered_map<uint32_t, TrackedTopLevelArgumentBuffer> m_argumentBuffers;
+        id<MTLBuffer>                        m_indexBuffer;
+        MTLIndexType                         m_indexType;
+        uint64_t                             m_currentBufferOffset = 0;
+        std::unique_ptr<MetalArgumentBuffer> m_argumentBuffer;
+        MetalRootSignature                  *m_rootSignature;
         // --
 
     public:
@@ -92,10 +86,10 @@ namespace DenOfIz
 
     private:
         void BindTopLevelArgumentBuffer( );
+        void TopLevelArgumentBufferNextOffset( );
         void EnsureEncoder( MetalEncoderType encoderType, std::string errorMessage );
         // This is used because Vulkan+DX12 both support more operations in their graphics command list, so seamless transition is provided here
-        void                           SwitchEncoder( MetalEncoderType encoderType );
-        TrackedTopLevelArgumentBuffer &CommandListAbForRootSignature( MetalRootSignature *rootSignature );
+        void SwitchEncoder( MetalEncoderType encoderType );
 
         template <typename T>
         void UseResource( const T &resource, MTLResourceUsage usage = MTLResourceUsageRead, MTLRenderStages stages = MTLRenderStageVertex | MTLRenderStageFragment )

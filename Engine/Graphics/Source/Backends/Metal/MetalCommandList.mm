@@ -22,7 +22,8 @@ using namespace DenOfIz;
 
 MetalCommandList::MetalCommandList( MetalContext *context, CommandListDesc desc ) : m_context( context ), m_desc( desc )
 {
-    m_commandBuffer = [m_context->CommandQueue commandBuffer];
+    m_commandBuffer  = [m_context->CommandQueue commandBuffer];
+    m_argumentBuffer = std::make_unique<MetalArgumentBuffer>( m_context, 256 * 1024 );
 }
 
 MetalCommandList::~MetalCommandList( ) = default;
@@ -48,8 +49,9 @@ void MetalCommandList::Begin( )
         }
     }
 
-    m_rootSignature          = nullptr;
-    m_lastBoundRootSignature = nullptr;
+    m_currentBufferOffset = 0;
+    m_argumentBuffer->Reset( );
+    m_rootSignature = nullptr;
 }
 
 void MetalCommandList::BeginRendering( const RenderingDesc &renderingInfo )
@@ -145,6 +147,7 @@ void MetalCommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, std:
 
 void MetalCommandList::BindPipeline( IPipeline *pipeline )
 {
+    MetalPipeline *metalPipeline = static_cast<MetalPipeline *>( pipeline );
     @autoreleasepool
     {
         switch ( m_desc.QueueType )
@@ -152,10 +155,10 @@ void MetalCommandList::BindPipeline( IPipeline *pipeline )
         case QueueType::Copy:
             break;
         case QueueType::Compute:
-            [m_computeEncoder setComputePipelineState:static_cast<MetalPipeline *>( pipeline )->ComputePipelineState( )];
+            [m_computeEncoder setComputePipelineState:metalPipeline->ComputePipelineState( )];
             break;
         case QueueType::Graphics:
-            [m_renderEncoder setRenderPipelineState:static_cast<MetalPipeline *>( pipeline )->GraphicsPipelineState( )];
+            [m_renderEncoder setRenderPipelineState:metalPipeline->GraphicsPipelineState( )];
             break;
         }
     }
@@ -218,26 +221,28 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
         return;
     }
 
-    const MetalDescriptorTableBinding *bufferTable        = metalBindGroup->BufferTable( );
-    m_rootSignature                                       = metalBindGroup->RootSignature( );
-    TrackedTopLevelArgumentBuffer &argumentBuffer         = CommandListAbForRootSignature( m_rootSignature );
-    MetalArgumentBuffer           *topLevelArgumentBuffer = argumentBuffer.ArgumentBuffer;
+    if ( m_rootSignature == nullptr && m_rootSignature != metalBindGroup->RootSignature( ) )
+    {
+        m_rootSignature = metalBindGroup->RootSignature( );
+        m_argumentBuffer->Reserve( m_rootSignature->NumTLABAddresses( ) );
+    }
 
+    const MetalDescriptorTableBinding *bufferTable = metalBindGroup->BufferTable( );
     if ( bufferTable != nullptr && bufferTable->NumEntries > 0 )
     {
-        topLevelArgumentBuffer->EncodeAddress( argumentBuffer.CommandListOffset, bufferTable->TLABOffset, bufferTable->Table.Buffer( ).gpuAddress );
+        m_argumentBuffer->EncodeAddress( m_currentBufferOffset, bufferTable->TLABOffset, bufferTable->Table.Buffer( ).gpuAddress );
         UseResource( bufferTable->Table.Buffer( ) );
     }
     const MetalDescriptorTableBinding *textureTable = metalBindGroup->TextureTable( );
     if ( textureTable != nullptr && textureTable->NumEntries > 0 )
     {
-        topLevelArgumentBuffer->EncodeAddress( argumentBuffer.CommandListOffset, textureTable->TLABOffset, textureTable->Table.Buffer( ).gpuAddress );
+        m_argumentBuffer->EncodeAddress( m_currentBufferOffset, textureTable->TLABOffset, textureTable->Table.Buffer( ).gpuAddress );
         UseResource( textureTable->Table.Buffer( ) );
     }
     const MetalDescriptorTableBinding *samplerTable = metalBindGroup->SamplerTable( );
     if ( samplerTable != nullptr && samplerTable->NumEntries > 0 )
     {
-        topLevelArgumentBuffer->EncodeAddress( argumentBuffer.CommandListOffset, samplerTable->TLABOffset, samplerTable->Table.Buffer( ).gpuAddress );
+        m_argumentBuffer->EncodeAddress( m_currentBufferOffset, samplerTable->TLABOffset, samplerTable->Table.Buffer( ).gpuAddress );
         UseResource( samplerTable->Table.Buffer( ) );
     }
 
@@ -266,6 +271,8 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 
 void MetalCommandList::SetDepthBias( float constantFactor, float clamp, float slopeFactor )
 {
+    EnsureEncoder( MetalEncoderType::Render, "SetDepthBias called without a render encoder. Make sure to call BeginRendering" );
+    [m_renderEncoder setDepthBias:constantFactor slopeScale:slopeFactor clamp:clamp];
 }
 
 void MetalCommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )
@@ -277,6 +284,7 @@ void MetalCommandList::DrawIndexed( uint32_t indexCount, uint32_t instanceCount,
     EnsureEncoder( MetalEncoderType::Render, "DrawIndexed called without a render encoder. Make sure to call BeginRendering" );
     BindTopLevelArgumentBuffer( );
     IRRuntimeDrawIndexedPrimitives( m_renderEncoder, MTLPrimitiveTypeTriangle, indexCount, m_indexType, m_indexBuffer, firstIndex, instanceCount, vertexOffset, firstInstance );
+    TopLevelArgumentBufferNextOffset( );
 }
 
 void MetalCommandList::Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance )
@@ -284,6 +292,7 @@ void MetalCommandList::Draw( uint32_t vertexCount, uint32_t instanceCount, uint3
     EnsureEncoder( MetalEncoderType::Render, "Draw called without a render encoder. Make sure to call BeginRendering" );
     BindTopLevelArgumentBuffer( );
     IRRuntimeDrawPrimitives( m_renderEncoder, MTLPrimitiveTypeTriangle, firstVertex, vertexCount, instanceCount );
+    TopLevelArgumentBufferNextOffset( );
 }
 
 void MetalCommandList::Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ )
@@ -371,22 +380,37 @@ void MetalCommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyT
 
 void MetalCommandList::BindTopLevelArgumentBuffer( )
 {
-    DZ_RETURN_IF( m_rootSignature == nullptr || m_rootSignature == m_lastBoundRootSignature );
-    TrackedTopLevelArgumentBuffer &topLevelArgumentBuffer = CommandListAbForRootSignature( m_rootSignature );
-    id<MTLBuffer>                  buffer                 = topLevelArgumentBuffer.ArgumentBuffer->Buffer( );
-    uint64_t                       offset                 = topLevelArgumentBuffer.CommandListOffset;
-
-    if ( m_desc.QueueType == QueueType::Compute )
+    id<MTLBuffer> buffer = m_argumentBuffer->Buffer( );
+    uint64_t      offset = m_currentBufferOffset;
+    if (m_currentBufferOffset == 0)
     {
-        [m_computeEncoder setBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+        if ( m_desc.QueueType == QueueType::Compute )
+        {
+            [m_computeEncoder setBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+        }
+        else
+        {
+            [m_renderEncoder setVertexBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+            [m_renderEncoder setFragmentBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+        }
     }
     else
     {
-        [m_renderEncoder setVertexBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
-        [m_renderEncoder setFragmentBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+        if ( m_desc.QueueType == QueueType::Compute )
+        {
+            [m_computeEncoder setBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
+        }
+        else
+        {
+            [m_renderEncoder setVertexBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
+            [m_renderEncoder setFragmentBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
+        }
     }
+}
 
-    m_lastBoundRootSignature = m_rootSignature;
+void MetalCommandList::TopLevelArgumentBufferNextOffset( )
+{
+    m_currentBufferOffset = m_argumentBuffer->Duplicate( m_rootSignature->NumTLABAddresses( ) ).second;
 }
 
 void MetalCommandList::EnsureEncoder( MetalEncoderType encoderType, std::string errorMessage )
@@ -464,21 +488,4 @@ void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType )
             break;
         }
     }
-}
-
-TrackedTopLevelArgumentBuffer &MetalCommandList::CommandListAbForRootSignature( DenOfIz::MetalRootSignature *rootSignature )
-{
-    auto it = m_argumentBuffers.find( rootSignature->UniqueKey( ) );
-    if ( it == m_argumentBuffers.end( ) )
-    {
-        MetalArgumentBuffer *topLevelArgumentBuffer = rootSignature->TopLevelArgumentBuffer( );
-
-        m_argumentBuffers[ m_rootSignature->UniqueKey( ) ] = {
-            .CommandListOffset = topLevelArgumentBuffer->Allocate( ).second,
-            .ArgumentBuffer    = topLevelArgumentBuffer,
-        };
-
-        it = m_argumentBuffers.find( rootSignature->UniqueKey( ) );
-    }
-    return it->second;
 }

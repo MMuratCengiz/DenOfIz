@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "MetalContext.h"
 #include "MetalRootSignature.h"
 #include "MetalTextureResource.h"
+#include "MetalArgumentBuffer.h"
 
 namespace DenOfIz
 {

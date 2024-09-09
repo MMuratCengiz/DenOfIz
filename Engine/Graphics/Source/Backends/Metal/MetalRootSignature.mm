@@ -55,16 +55,13 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
             m_argumentDescriptors[ binding.RegisterSpace ] = [[NSMutableArray alloc] init];
         }
 
-        if ( binding.Reflection.DescriptorOffset >= numTables )
+        if ( binding.Reflection.DescriptorOffset >= m_numTLABAddresses )
         {
-            numTables = binding.Reflection.DescriptorOffset + 1;
+            m_numTLABAddresses = binding.Reflection.DescriptorOffset + 1;
         }
 
         m_metalBindings[ slot.Key( ) ] = { .Parent = binding, .Stages = stages };
     }
-
-    // Todo 10 is arbitrary, find a good number
-    m_topLevelArgumentBuffer = std::make_unique<MetalArgumentBuffer>(m_context, numTables, 10);
 }
 
 const MetalBindingDesc &MetalRootSignature::FindMetalBinding( const ResourceBindingSlot &slot ) const
