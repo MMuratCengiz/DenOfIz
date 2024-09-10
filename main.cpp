@@ -10,10 +10,6 @@
 int main( )
 {
     DenOfIz::Engine::Init( );
-    /*    DenOfIz::ComputeTest computeTest;
-        if (computeTest.Run() == 0) {
-            return 0;
-        }*/
 
 #if defined WIN32 && defined DEBUG
     _CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
@@ -44,6 +40,12 @@ int main( )
     const auto gApi          = std::make_unique<DenOfIz::GraphicsApi>( apiPreferences );
     const auto logicalDevice = gApi->CreateAndLoadOptimalLogicalDevice( );
 
+    {
+        DenOfIz::ComputeTest computeTest( gApi.get( ), logicalDevice.get( ) );
+        if (computeTest.Run() == 0) {
+            return 0;
+        }
+    }
     { // SimpleRenderer scope
         auto renderer = DenOfIz::SimpleRenderer( gApi.get( ), logicalDevice.get( ) );
         renderer.Init( windowHandle.get( ) );

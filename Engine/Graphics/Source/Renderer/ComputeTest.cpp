@@ -34,11 +34,8 @@ int ComputeTest::Run( )
     m_program = m_gApi->CreateShaderProgram( {
         ShaderDesc{ .Stage = ShaderStage::Compute, .Path = "Assets/Shaders/compute.hlsl" },
     } );
-    m_rootSignature = m_logicalDevice->CreateRootSignature(RootSignatureDesc{
-        .ResourceBindings = {
-            ResourceBindingDesc{ .Name = "computeReadBack", .Binding = 0, .Descriptor = ResourceDescriptor::RWBuffer, .Stages = { ShaderStage::Compute } },
-        },
-    });
+    auto programReflection = m_program->Reflect();
+    m_rootSignature = m_logicalDevice->CreateRootSignature(programReflection.RootSignature);
 
     BufferDesc bufferDesc{ };
     bufferDesc.Descriptor        = ResourceDescriptor::RWBuffer;

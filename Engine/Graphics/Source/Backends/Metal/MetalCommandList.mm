@@ -284,10 +284,10 @@ void MetalCommandList::Draw( uint32_t vertexCount, uint32_t instanceCount, uint3
 void MetalCommandList::Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ )
 {
     EnsureEncoder( MetalEncoderType::Compute, "Dispatch called without a compute encoder. Make sure to call Begin with QueueType::Compute" );
-
+    BindTopLevelArgumentBuffer();
     MTLSize threadGroupsPerGrid = MTLSizeMake( groupCountX, groupCountY, groupCountZ );
     [m_computeEncoder dispatchThreadgroups:threadGroupsPerGrid threadsPerThreadgroup:MTLSizeMake( 1, 1, 1 )];
-    [m_computeEncoder endEncoding];
+    TopLevelArgumentBufferNextOffset( );
 }
 
 void MetalCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionInfo )
