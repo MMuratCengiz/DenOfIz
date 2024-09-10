@@ -56,8 +56,7 @@ namespace DenOfIz
     struct MetalDescriptorOffsets
     {
         // -1 is used for debugging purposes to show that no descriptor table exists in this root signature of that type
-        int BufferOffset  = -1;
-        int TextureOffset = -1;
+        int CbvSrvUavOffset = -1;
         int SamplerOffset = -1;
     };
 #endif

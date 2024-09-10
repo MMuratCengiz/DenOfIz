@@ -227,17 +227,11 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
         m_argumentBuffer->Reserve( m_rootSignature->NumTLABAddresses( ) );
     }
 
-    const MetalDescriptorTableBinding *bufferTable = metalBindGroup->BufferTable( );
-    if ( bufferTable != nullptr && bufferTable->NumEntries > 0 )
+    const MetalDescriptorTableBinding *cbvSrvUavTable = metalBindGroup->CbvSrvUavTable( );
+    if ( cbvSrvUavTable != nullptr && cbvSrvUavTable->NumEntries > 0 )
     {
-        m_argumentBuffer->EncodeAddress( m_currentBufferOffset, bufferTable->TLABOffset, bufferTable->Table.Buffer( ).gpuAddress );
-        UseResource( bufferTable->Table.Buffer( ) );
-    }
-    const MetalDescriptorTableBinding *textureTable = metalBindGroup->TextureTable( );
-    if ( textureTable != nullptr && textureTable->NumEntries > 0 )
-    {
-        m_argumentBuffer->EncodeAddress( m_currentBufferOffset, textureTable->TLABOffset, textureTable->Table.Buffer( ).gpuAddress );
-        UseResource( textureTable->Table.Buffer( ) );
+        m_argumentBuffer->EncodeAddress( m_currentBufferOffset, cbvSrvUavTable->TLABOffset, cbvSrvUavTable->Table.Buffer( ).gpuAddress );
+        UseResource( cbvSrvUavTable->Table.Buffer( ) );
     }
     const MetalDescriptorTableBinding *samplerTable = metalBindGroup->SamplerTable( );
     if ( samplerTable != nullptr && samplerTable->NumEntries > 0 )
@@ -245,14 +239,6 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
         m_argumentBuffer->EncodeAddress( m_currentBufferOffset, samplerTable->TLABOffset, samplerTable->Table.Buffer( ).gpuAddress );
         UseResource( samplerTable->Table.Buffer( ) );
     }
-
-    /*
-     *
-     * TODO METAL:
-     * - Make sure descriptor tables are set correctly in resource bind group
-     * - Make sure to useResource correctly below.
-     * - Make sure that heaps are used correctly for read only resources
-     */
 
     for ( const auto &buffer : metalBindGroup->Buffers( ) )
     {

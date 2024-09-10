@@ -99,9 +99,8 @@ void ShaderProgram::ProduceMSL( )
     // In Metal, we need a separate descriptor table for samplers/textures and buffers.
     struct RegisterSpaceRange
     {
-        std::vector<IRDescriptorRange1> TextureRanges;
+        std::vector<IRDescriptorRange1> CbvSrvUavRanges;
         std::vector<IRDescriptorRange1> SamplerRanges;
-        std::vector<IRDescriptorRange1> BufferRanges;
         IRShaderVisibility              ShaderVisibility;
     };
     std::vector<RegisterSpaceRange>              registerSpaceRanges;
@@ -153,17 +152,14 @@ void ShaderProgram::ProduceMSL( )
             case D3D_SIT_CBUFFER:
             case D3D_SIT_TBUFFER:
                 descriptorRange.RangeType = IRDescriptorRangeTypeCBV;
-                registerSpaceRange.BufferRanges.push_back( descriptorRange );
+                registerSpaceRange.CbvSrvUavRanges.push_back( descriptorRange );
                 break;
             case D3D_SIT_TEXTURE:
-                descriptorRange.RangeType = IRDescriptorRangeTypeSRV;
-                registerSpaceRange.TextureRanges.push_back( descriptorRange );
-                break;
             case D3D_SIT_STRUCTURED:
             case D3D_SIT_BYTEADDRESS:
             case D3D_SIT_RTACCELERATIONSTRUCTURE:
                 descriptorRange.RangeType = IRDescriptorRangeTypeSRV;
-                registerSpaceRange.BufferRanges.push_back( descriptorRange );
+                registerSpaceRange.CbvSrvUavRanges.push_back( descriptorRange );
                 break;
             case D3D_SIT_SAMPLER:
                 descriptorRange.RangeType = IRDescriptorRangeTypeSampler;
@@ -177,7 +173,7 @@ void ShaderProgram::ProduceMSL( )
             case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
             case D3D_SIT_UAV_FEEDBACKTEXTURE:
                 descriptorRange.RangeType = IRDescriptorRangeTypeUAV;
-                registerSpaceRange.BufferRanges.push_back( descriptorRange );
+                registerSpaceRange.CbvSrvUavRanges.push_back( descriptorRange );
                 break;
             default:
                 LOG( ERROR ) << "Unknown resource type";
@@ -197,14 +193,9 @@ void ShaderProgram::ProduceMSL( )
 
         int numTables = registerSpaceOffset;
         // Only keep set offset if there are any resources in that set for debugging purposes
-        if ( !registerSpaceRange.BufferRanges.empty( ) )
+        if ( !registerSpaceRange.CbvSrvUavRanges.empty( ) )
         {
-            offsets.BufferOffset = numTables;
-            ++numTables;
-        }
-        if ( !registerSpaceRange.TextureRanges.empty( ) )
-        {
-            offsets.TextureOffset = numTables;
+            offsets.CbvSrvUavOffset = numTables;
             ++numTables;
         }
         if ( !registerSpaceRange.SamplerRanges.empty( ) )
@@ -213,8 +204,7 @@ void ShaderProgram::ProduceMSL( )
             ++numTables;
         }
 
-        PutRootParameter( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.BufferRanges );
-        PutRootParameter( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.TextureRanges );
+        PutRootParameter( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.CbvSrvUavRanges );
         PutRootParameter( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.SamplerRanges );
         ++registerSpace;
 
@@ -415,10 +405,8 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
             {
             case ReflectionBindingType::Pointer:
             case ReflectionBindingType::Struct:
-                resourceBindingDesc.Reflection.DescriptorOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].BufferOffset;
-                break;
             case ReflectionBindingType::Texture:
-                resourceBindingDesc.Reflection.DescriptorOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].TextureOffset;
+                resourceBindingDesc.Reflection.DescriptorOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].CbvSrvUavOffset;
                 break;
             case ReflectionBindingType::SamplerDesc:
                 resourceBindingDesc.Reflection.DescriptorOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].SamplerOffset;

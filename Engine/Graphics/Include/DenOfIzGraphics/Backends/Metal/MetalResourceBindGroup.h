@@ -59,8 +59,7 @@ namespace DenOfIz
         std::vector<MetalUpdateDescItem<MetalTextureResource>> m_textures;
         std::vector<MetalUpdateDescItem<MetalSampler>>         m_samplers;
 
-        std::unique_ptr<MetalDescriptorTableBinding> m_bufferTable;
-        std::unique_ptr<MetalDescriptorTableBinding> m_textureTable;
+        std::unique_ptr<MetalDescriptorTableBinding> m_cbvSrvUavTable;
         std::unique_ptr<MetalDescriptorTableBinding> m_samplerTable;
 
     public:
@@ -68,8 +67,7 @@ namespace DenOfIz
         void Update( const UpdateDesc &desc ) override;
 
         // Nullable if nothing is bound to the pertinent table
-        [[nodiscard]] const MetalDescriptorTableBinding *BufferTable( ) const;
-        [[nodiscard]] const MetalDescriptorTableBinding *TextureTable( ) const;
+        [[nodiscard]] const MetalDescriptorTableBinding *CbvSrvUavTable( ) const;
         [[nodiscard]] const MetalDescriptorTableBinding *SamplerTable( ) const;
 
         const std::vector<MetalUpdateDescItem<MetalBufferResource>>  &Buffers( ) const;

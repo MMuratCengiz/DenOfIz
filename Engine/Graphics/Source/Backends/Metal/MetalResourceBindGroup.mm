@@ -30,15 +30,10 @@ void MetalResourceBindGroup::Update( const UpdateDesc &desc )
 {
     m_updateDesc = desc;
 
-    if ( !desc.Buffers.empty( ) )
+    if ( !desc.Buffers.empty( ) || !desc.Textures.empty( ) )
     {
-        m_bufferTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, desc.Buffers.size( ) ) );
-        m_bufferTable->Table.SetDebugName( "Buffer Table[Space: " + std::to_string( m_desc.RegisterSpace ) + "]" );
-    }
-    if ( !desc.Textures.empty( ) )
-    {
-        m_textureTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, desc.Textures.size( ) ) );
-        m_textureTable->Table.SetDebugName( "Texture Table[Space: " + std::to_string( m_desc.RegisterSpace ) + "]" );
+        m_cbvSrvUavTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, desc.Buffers.size( ) + desc.Textures.size( ) ) );
+        m_cbvSrvUavTable->Table.SetDebugName( "CbvSrvUav Table[Space: " + std::to_string( m_desc.RegisterSpace ) + "]" );
     }
     if ( !desc.Samplers.empty( ) )
     {
@@ -53,8 +48,8 @@ void MetalResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBuffe
 {
     MetalBufferResource    *metalBuffer = static_cast<MetalBufferResource *>( resource );
     const MetalBindingDesc &binding     = m_rootSignature->FindMetalBinding( slot );
-    m_bufferTable->Table.EncodeBuffer( metalBuffer->Instance( ), binding.Parent.Reflection.DescriptorTableIndex );
-    UpdateDescriptorTable( binding, m_bufferTable.get( ) );
+    m_cbvSrvUavTable->Table.EncodeBuffer( metalBuffer->Instance( ), binding.Parent.Reflection.DescriptorTableIndex );
+    UpdateDescriptorTable( binding, m_cbvSrvUavTable.get( ) );
     m_buffers.push_back( { metalBuffer, binding.Stages, metalBuffer->Usage( ) } );
 }
 
@@ -62,8 +57,8 @@ void MetalResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, IText
 {
     MetalTextureResource   *metalTexture = static_cast<MetalTextureResource *>( resource );
     const MetalBindingDesc &binding      = m_rootSignature->FindMetalBinding( slot );
-    m_textureTable->Table.EncodeTexture( metalTexture->Instance( ), metalTexture->MinLODClamp( ), binding.Parent.Reflection.DescriptorTableIndex );
-    UpdateDescriptorTable( binding, m_textureTable.get( ) );
+    m_cbvSrvUavTable->Table.EncodeTexture( metalTexture->Instance( ), metalTexture->MinLODClamp( ), binding.Parent.Reflection.DescriptorTableIndex );
+    UpdateDescriptorTable( binding, m_cbvSrvUavTable.get( ) );
     m_textures.push_back( { metalTexture, binding.Stages, metalTexture->Usage( ) } );
 }
 
@@ -76,14 +71,9 @@ void MetalResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISamp
     m_samplers.push_back( { metalSampler, binding.Stages, MTLResourceUsageRead } );
 }
 
-const MetalDescriptorTableBinding *MetalResourceBindGroup::BufferTable( ) const
+const MetalDescriptorTableBinding *MetalResourceBindGroup::CbvSrvUavTable( ) const
 {
-    return m_bufferTable.get( );
-}
-
-const MetalDescriptorTableBinding *MetalResourceBindGroup::TextureTable( ) const
-{
-    return m_textureTable.get( );
+    return m_cbvSrvUavTable.get( );
 }
 
 const MetalDescriptorTableBinding *MetalResourceBindGroup::SamplerTable( ) const
