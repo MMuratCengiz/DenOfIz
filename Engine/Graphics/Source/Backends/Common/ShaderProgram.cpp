@@ -35,8 +35,10 @@ void ShaderProgram::Compile( )
 
     if ( m_desc.TargetIL == TargetIL::MSL )
     {
+#ifdef BUILD_METAL
         ProduceMSL( );
         return;
+#endif
     }
 
     for ( auto &shader : m_desc.Shaders )

@@ -36,10 +36,10 @@ namespace DenOfIz
         DX12CommandListPool(DX12Context *context, CommandListPoolDesc desc) : m_desc(desc)
         {
             DZ_NOT_NULL(context);
-            DZ_ASSERTM(desc.CommandListCount > 0, "CommandListCount must be greater than 0");
+            DZ_ASSERTM(desc.NumCommandLists > 0, "CommandListCount must be greater than 0");
 
             m_context = context;
-            for ( uint32_t i = 0; i < desc.CommandListCount; i++ )
+            for ( uint32_t i = 0; i < desc.NumCommandLists; i++ )
             {
                 wil::com_ptr<ID3D12CommandAllocator> commandAllocator;
 
@@ -56,7 +56,7 @@ namespace DenOfIz
             CommandListDesc commandListCreateInfo{};
             commandListCreateInfo.QueueType = m_desc.QueueType;
 
-            for ( uint32_t i = 0; i < desc.CommandListCount; i++ )
+            for ( uint32_t i = 0; i < desc.NumCommandLists; i++ )
             {
                 m_commandLists.push_back(std::make_unique<DX12CommandList>(m_context, m_commandAllocators[ i ], m_commandList, commandListCreateInfo));
             }

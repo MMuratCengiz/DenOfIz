@@ -32,7 +32,7 @@ namespace DenOfIz
     public:
         VulkanCommandPool( VulkanContext *context, const CommandListPoolDesc &desc ) : m_context( nullptr ), m_createInfo( desc )
         {
-            for ( uint32_t i = 0; i < desc.CommandListCount; i++ )
+            for ( uint32_t i = 0; i < desc.NumCommandLists; i++ )
             {
                 CommandListDesc commandListDesc{ };
                 commandListDesc.QueueType = desc.QueueType;
