@@ -26,11 +26,12 @@ namespace DenOfIz
     class CommandListRing
     {
     private:
-        static constexpr uint16_t            NumCommandLists = 3;
-        std::vector<std::unique_ptr<IFence>> m_frameFences;
-        std::unique_ptr<ICommandListPool>    m_commandListPool;
-        uint32_t                             m_currentFrame = 0;
-        uint32_t                             m_frame        = 0;
+        static constexpr uint16_t NumCommandPools = 3;
+
+        std::vector<std::unique_ptr<IFence>>           m_frameFences;
+        std::vector<std::unique_ptr<ICommandListPool>> m_commandListPools;
+        uint32_t                                       m_currentFrame = 0;
+        uint32_t                                       m_frame        = 0;
 
         ILogicalDevice *m_logicalDevice;
 
@@ -38,16 +39,19 @@ namespace DenOfIz
         CommandListRing( ILogicalDevice *logicalDevice ) : m_logicalDevice( logicalDevice )
         {
             CommandListPoolDesc createInfo{ };
-            createInfo.QueueType       = QueueType::Graphics;
-            createInfo.NumCommandLists = NumCommandLists;
-            m_commandListPool          = m_logicalDevice->CreateCommandListPool( createInfo );
+            createInfo.QueueType = QueueType::Graphics;
+            for ( uint32_t i = 0; i < NumCommandPools; i++ )
+            {
+                createInfo.NumCommandLists = 1;
+                m_commandListPools.push_back( m_logicalDevice->CreateCommandListPool( createInfo ) );
+            }
         }
 
         ICommandList *GetNext( )
         {
             m_currentFrame = m_frame;
-            auto next      = m_commandListPool->GetCommandLists( )[ m_frame ];
-            m_frame        = ( m_frame + 1 ) % NumCommandLists;
+            auto next      = m_commandListPools[ m_frame ]->GetCommandLists( )[ 0 ];
+            m_frame        = ( m_frame + 1 ) % m_commandListPools.size( );
             return next;
         }
 

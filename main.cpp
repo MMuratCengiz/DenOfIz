@@ -41,10 +41,10 @@ int main( )
     const auto logicalDevice = gApi->CreateAndLoadOptimalLogicalDevice( );
 
     {
-        DenOfIz::ComputeTest computeTest( gApi.get( ), logicalDevice.get( ) );
-        if (computeTest.Run() == 0) {
-            return 0;
-        }
+//        DenOfIz::ComputeTest computeTest( gApi.get( ), logicalDevice.get( ) );
+//        if (computeTest.Run() == 0) {
+//            return 0;
+//        }
     }
     { // SimpleRenderer scope
         auto renderer = DenOfIz::SimpleRenderer( gApi.get( ), logicalDevice.get( ) );
