@@ -22,43 +22,47 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    /// Manages a rotating group of command lists, commonly used in games to create a command list per frame.
+    /// It can also manage synchronization objects to make sure each frame is synchronized correctly.
+    /// It should be mostly used in the beginning of the frame and at the end of it. Todo provide sample
+    struct CommandListRingDesc
+    {
+        bool    CreateSyncObjects       = true;
+        uint8_t NumFrames               = 3;
+        uint8_t NumCommandListsPerFrame = 1;
+    };
 
     class CommandListRing
     {
-    private:
-        static constexpr uint16_t NumCommandPools = 3;
-
         std::vector<std::unique_ptr<IFence>>           m_frameFences;
+        std::vector<std::unique_ptr<ISemaphore>>       m_imageReadySemaphores;
+        std::vector<std::unique_ptr<ISemaphore>>       m_imageRenderedSemaphores;
         std::vector<std::unique_ptr<ICommandListPool>> m_commandListPools;
         uint32_t                                       m_currentFrame = 0;
         uint32_t                                       m_frame        = 0;
 
-        ILogicalDevice *m_logicalDevice;
+        ILogicalDevice     *m_logicalDevice;
+        CommandListRingDesc m_desc;
 
     public:
-        CommandListRing( ILogicalDevice *logicalDevice ) : m_logicalDevice( logicalDevice )
-        {
-            CommandListPoolDesc createInfo{ };
-            createInfo.QueueType = QueueType::Graphics;
-            for ( uint32_t i = 0; i < NumCommandPools; i++ )
-            {
-                createInfo.NumCommandLists = 1;
-                m_commandListPools.push_back( m_logicalDevice->CreateCommandListPool( createInfo ) );
-            }
-        }
-
-        ICommandList *GetNext( )
-        {
-            m_currentFrame = m_frame;
-            auto next      = m_commandListPools[ m_frame ]->GetCommandLists( )[ 0 ];
-            m_frame        = ( m_frame + 1 ) % m_commandListPools.size( );
-            return next;
-        }
-
-        inline uint32_t GetCurrentFrame( ) const
-        {
-            return m_currentFrame;
-        }
+        explicit CommandListRing( ILogicalDevice *logicalDevice );
+        /// Move the CommandListRing to the next frame.
+        void NextFrame( );
+        /// Return a command list from the pool of the current frame.
+        /// @param index cannot be larger or equal @ref CommandListRingDesc::NuNumCommandListsPerFrame
+        ICommandList *FrameCommandList( const uint32_t index );
+        /// Will execute the command list with the created sync objects and then present the results to the swap chain.
+        /// If you do not need to render instead use the Execute command
+        /// @param commandList command list to execute with given sync objects
+        /// @param swapChain swapChain object to present
+        /// @param image the index of the swap chain image, can be acquired view @ref ISwapChain::AcquireNextImage(  )
+        void ExecuteAndPresent( ICommandList *commandList, ISwapChain *swapChain, const uint32_t image ) const;
+        /// Execute the last commandList in the pool of the current frame, this is different as it will notify the built-in Sync object.
+        /// @param commandList the last command list in this pool
+        void                   ExecuteLast( ICommandList *commandList ) const;
+        void                   WaitIdle( ) const;
+        [[nodiscard]] uint32_t CurrentImage( ISwapChain *swapChain ) const;
+        [[nodiscard]] uint32_t CurrentFrame( ) const;
     };
 
 } // namespace DenOfIz

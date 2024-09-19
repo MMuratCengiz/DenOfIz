@@ -11,3 +11,7 @@ target_link_libraries(DenOfIzEngine
         DenOfIzGraphics
 )
 set_target_default_properties(DenOfIzEngine)
+
+if (BUILD_EXAMPLES)
+    add_subdirectory(Examples)
+endif ()

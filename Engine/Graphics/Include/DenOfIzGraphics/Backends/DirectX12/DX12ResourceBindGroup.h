@@ -34,7 +34,6 @@ namespace DenOfIz
         DX12Context       *m_context;
         uint32_t           m_samplerCount   = 0;
         uint32_t           m_cbvSrvUavCount = 0;
-        uint32_t           m_offset         = 0;
         DescriptorHandle   m_cbvSrvUavHandle;
         DescriptorHandle   m_samplerHandle;
         DX12RootSignature *m_dx12RootSignature;

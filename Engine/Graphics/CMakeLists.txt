@@ -36,6 +36,7 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Data/Geometry.cpp
 
         #Renderers
+        Source/Renderer/Common/CommandListRing.cpp
         Source/Renderer/ComputeTest.cpp
         Source/Renderer/SimpleRenderer.cpp
 
@@ -114,6 +115,7 @@ else ()
     set(DEN_OF_IZ_GRAPHICS_SOURCES
             ${DEN_OF_IZ_GRAPHICS_COMMON_SOURCES}
             ${DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES}
+            Source/Renderer/Common/CommandListRing.cpp
     )
 endif ()
 
@@ -228,6 +230,6 @@ endif ()
 
 set_target_default_properties(DenOfIzGraphics)
 
-if (BUILD_TESTING)
+if (BUILD_TESTS)
     add_subdirectory(Tests)
 endif ()

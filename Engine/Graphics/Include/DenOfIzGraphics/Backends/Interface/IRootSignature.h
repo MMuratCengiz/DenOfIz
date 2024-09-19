@@ -40,26 +40,6 @@ namespace DenOfIz
         uint32_t                    Register = 0;
         DescriptorBufferBindingType Type     = DescriptorBufferBindingType::ConstantBuffer;
 
-        static ResourceBindingSlot Cbv( const uint32_t binding = 0, const uint32_t reg = 0 )
-        {
-            return ResourceBindingSlot{ binding, reg, DescriptorBufferBindingType::ConstantBuffer };
-        }
-
-        static ResourceBindingSlot Uav( const uint32_t binding = 0, const uint32_t reg = 0 )
-        {
-            return ResourceBindingSlot{ binding, reg, DescriptorBufferBindingType::UnorderedAccess };
-        }
-
-        static ResourceBindingSlot Srv( const uint32_t binding = 0, const uint32_t reg = 0 )
-        {
-            return ResourceBindingSlot{ binding, reg, DescriptorBufferBindingType::ShaderResource };
-        }
-
-        static ResourceBindingSlot Sampler( const uint32_t binding = 0, const uint32_t reg = 0 )
-        {
-            return ResourceBindingSlot{ binding, reg, DescriptorBufferBindingType::Sampler };
-        }
-
         // To simplify having a really odd looking vector of ResourceBindingSlots
         [[nodiscard]] uint32_t Key( ) const
         {

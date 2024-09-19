@@ -31,7 +31,6 @@ namespace DenOfIz
 
     class SimpleRenderer
     {
-        const uint32_t                           mc_framesInFlight = 3;
         GraphicsApi                             *m_gApi;
         ILogicalDevice                          *m_logicalDevice;
         GraphicsWindowHandle                    *m_window = nullptr;
@@ -64,9 +63,6 @@ namespace DenOfIz
         std::unique_ptr<IResourceBindGroup>      m_planeModelBindGroup;
         std::unique_ptr<IResourceBindGroup>      m_perModelBindGroup;
         std::unique_ptr<ISwapChain>              m_swapChain;
-        std::vector<std::unique_ptr<IFence>>     m_fences;
-        std::vector<std::unique_ptr<ISemaphore>> m_imageReadySemaphores;
-        std::vector<std::unique_ptr<ISemaphore>> m_imageRenderedSemaphores;
 
     public:
              SimpleRenderer( GraphicsApi *gApi, ILogicalDevice *logicalDevice );

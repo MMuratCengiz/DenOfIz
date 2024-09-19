@@ -31,11 +31,11 @@ ComputeTest::~ComputeTest( )
 
 int ComputeTest::Run( )
 {
-    m_program = m_gApi->CreateShaderProgram( {
+    m_program              = m_gApi->CreateShaderProgram( {
         ShaderDesc{ .Stage = ShaderStage::Compute, .Path = "Assets/Shaders/compute.hlsl" },
     } );
-    auto programReflection = m_program->Reflect();
-    m_rootSignature = m_logicalDevice->CreateRootSignature(programReflection.RootSignature);
+    auto programReflection = m_program->Reflect( );
+    m_rootSignature        = m_logicalDevice->CreateRootSignature( programReflection.RootSignature );
 
     BufferDesc bufferDesc{ };
     bufferDesc.Descriptor        = ResourceDescriptor::RWBuffer;
@@ -47,7 +47,7 @@ int ComputeTest::Run( )
     buffer                       = m_logicalDevice->CreateBufferResource( bufferDesc );
 
     m_resourceBindGroup = m_logicalDevice->CreateResourceBindGroup( ResourceBindGroupDesc{ .RootSignature = m_rootSignature.get( ) } );
-    m_resourceBindGroup->Update( UpdateDesc{ }.Buffer( ResourceBindingSlot::Uav( ), buffer.get( ) ) );
+    m_resourceBindGroup->Update( UpdateDesc( 0 ).Uav( 0, buffer.get( ) ) );
 
     m_inputLayout = m_logicalDevice->CreateInputLayout( { } );
 

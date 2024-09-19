@@ -37,8 +37,7 @@ namespace DenOfIz
         m_inputLayout                = m_logicalDevice->CreateInputLayout( VertexPositionNormalTexture::InputLayout );
 
         const GraphicsWindowSurface &surface = m_window->GetSurface( );
-        m_swapChain =
-            m_logicalDevice->CreateSwapChain( SwapChainDesc{ .WindowHandle = m_window, .Width = surface.Width, .Height = surface.Height, .NumBuffers = mc_framesInFlight } );
+        m_swapChain                          = m_logicalDevice->CreateSwapChain( SwapChainDesc{ .WindowHandle = m_window, .Width = surface.Width, .Height = surface.Height } );
 
         PipelineDesc pipelineDesc{ .ShaderProgram = m_program.get( ) };
         pipelineDesc.BlendModes    = { BlendMode::None };
@@ -48,13 +47,6 @@ namespace DenOfIz
 
         m_pipeline        = m_logicalDevice->CreatePipeline( pipelineDesc );
         m_commandListRing = std::make_unique<CommandListRing>( m_logicalDevice );
-
-        for ( uint32_t i = 0; i < mc_framesInFlight; ++i )
-        {
-            m_fences.push_back( m_logicalDevice->CreateFence( ) );
-            m_imageReadySemaphores.push_back( m_logicalDevice->CreateSemaphore( ) );
-            m_imageRenderedSemaphores.push_back( m_logicalDevice->CreateSemaphore( ) );
-        }
 
         UpdateMVPMatrix( );
 
@@ -99,18 +91,11 @@ namespace DenOfIz
         m_planeModelBindGroup               = m_logicalDevice->CreateResourceBindGroup( bindGroupDesc );
 
         { // Update the bind groups, TODO, can the model bindings be merged somehow?
-            UpdateDesc updateDesc{ };
-            updateDesc.Buffer( ResourceBindingSlot::Cbv( 0, 1 ), m_sphereModelMatrixBuffer.get( ) )
-                .Texture( ResourceBindingSlot::Srv( 0, 1 ), m_sphereTexture.get( ) )
-                .Sampler( ResourceBindingSlot::Sampler( 0, 1 ), m_sphereSampler.get( ) );
+            UpdateDesc updateDesc = UpdateDesc( 1 ).Cbv( 0, m_sphereModelMatrixBuffer.get( ) ).Srv( 0, m_sphereTexture.get( ) ).Sampler( 0, m_sphereSampler.get( ) );
             m_sphereModelBindGroup->Update( updateDesc );
-            updateDesc = { };
-            updateDesc.Buffer( ResourceBindingSlot::Cbv( 0, 1 ), m_planeModelMatrixBuffer.get( ) )
-                .Texture( ResourceBindingSlot::Srv( 0, 1 ), m_planeTexture.get( ) )
-                .Sampler( ResourceBindingSlot::Sampler( 0, 1 ), m_planeSampler.get( ) );
+            updateDesc = UpdateDesc( 1 ).Cbv( 0, m_planeModelMatrixBuffer.get( ) ).Srv( 0, m_planeTexture.get( ) ).Sampler( 0, m_planeSampler.get( ) );
             m_planeModelBindGroup->Update( updateDesc );
-            updateDesc = { };
-            updateDesc.Buffer( ResourceBindingSlot::Cbv( ), m_viewProjectionMatrixBuffer.get( ) ).Buffer( ResourceBindingSlot::Cbv( 1 ), m_timePassedBuffer.get( ) );
+            updateDesc = UpdateDesc( 0 ).Cbv( 0, m_viewProjectionMatrixBuffer.get( ) ).Cbv( 1, m_timePassedBuffer.get( ) );
             m_perCameraBindGroup->Update( updateDesc );
         }
 
@@ -144,60 +129,49 @@ namespace DenOfIz
         memcpy( m_mappedTimePassedBuffer, &timePassed, sizeof( float ) );
         m_time->Tick( );
 
-        const auto     nextCommandList = m_commandListRing->GetNext( );
-        const uint32_t currentFrame    = m_commandListRing->GetCurrentFrame( );
-        m_fences[ currentFrame ]->Wait( );
-
-        const uint32_t nextImage = m_swapChain->AcquireNextImage( m_imageReadySemaphores[ currentFrame ].get( ) );
-        nextCommandList->Begin( );
+        m_commandListRing->NextFrame( );
+        const auto     currentCommandList = m_commandListRing->FrameCommandList( 0 );
+        const uint32_t currentImageIndex  = m_commandListRing->CurrentImage( m_swapChain.get( ) );
+        currentCommandList->Begin( );
 
         RenderingAttachmentDesc renderingAttachmentDesc{ };
-        renderingAttachmentDesc.Resource = m_swapChain->GetRenderTarget( nextImage );
+        renderingAttachmentDesc.Resource = m_swapChain->GetRenderTarget( currentImageIndex );
 
         RenderingDesc renderingInfo{ };
         renderingInfo.RTAttachments.push_back( renderingAttachmentDesc );
 
-        nextCommandList->PipelineBarrier( PipelineBarrierDesc::UndefinedToRenderTarget( m_swapChain->GetRenderTarget( nextImage ) ) );
-        nextCommandList->BeginRendering( renderingInfo );
+        currentCommandList->PipelineBarrier( PipelineBarrierDesc::UndefinedToRenderTarget( m_swapChain->GetRenderTarget( currentImageIndex ) ) );
+        currentCommandList->BeginRendering( renderingInfo );
 
         const Viewport &viewport = m_swapChain->GetViewport( );
-        nextCommandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-        nextCommandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-        nextCommandList->BindPipeline( m_pipeline.get( ) );
-        nextCommandList->BindResourceGroup( m_perCameraBindGroup.get( ) );
+        currentCommandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+        currentCommandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+        currentCommandList->BindPipeline( m_pipeline.get( ) );
+        currentCommandList->BindResourceGroup( m_perCameraBindGroup.get( ) );
 
         { // Draw the sphere
-            nextCommandList->BindResourceGroup( m_sphereModelBindGroup.get( ) );
-            nextCommandList->BindVertexBuffer( m_sphereVb.get( ) );
-            nextCommandList->BindIndexBuffer( m_sphereIb.get( ), IndexType::Uint32 );
-            nextCommandList->DrawIndexed( m_sphere.Indices.size( ), 1 );
+            currentCommandList->BindResourceGroup( m_sphereModelBindGroup.get( ) );
+            currentCommandList->BindVertexBuffer( m_sphereVb.get( ) );
+            currentCommandList->BindIndexBuffer( m_sphereIb.get( ), IndexType::Uint32 );
+            currentCommandList->DrawIndexed( m_sphere.Indices.size( ), 1 );
         }
 
         { // Draw the plane
-            nextCommandList->BindResourceGroup( m_planeModelBindGroup.get( ) );
-            nextCommandList->BindVertexBuffer( m_planeVb.get( ) );
-            nextCommandList->BindIndexBuffer( m_planeIb.get( ), IndexType::Uint32 );
-            nextCommandList->DrawIndexed( m_plane.Indices.size( ), 1 );
+            currentCommandList->BindResourceGroup( m_planeModelBindGroup.get( ) );
+            currentCommandList->BindVertexBuffer( m_planeVb.get( ) );
+            currentCommandList->BindIndexBuffer( m_planeIb.get( ), IndexType::Uint32 );
+            currentCommandList->DrawIndexed( m_plane.Indices.size( ), 1 );
         }
 
-        nextCommandList->EndRendering( );
-        nextCommandList->PipelineBarrier( PipelineBarrierDesc::RenderTargetToPresent( m_swapChain->GetRenderTarget( nextImage ) ) );
-
-        ExecuteDesc submitInfo{ };
-        submitInfo.Notify = m_fences[ currentFrame ].get( );
-        submitInfo.WaitOnSemaphores.push_back( m_imageReadySemaphores[ currentFrame ].get( ) );
-        submitInfo.NotifySemaphores.push_back( m_imageRenderedSemaphores[ currentFrame ].get( ) );
-        nextCommandList->Execute( submitInfo );
-        nextCommandList->Present( m_swapChain.get( ), nextImage, { m_imageRenderedSemaphores[ currentFrame ].get( ) } );
+        currentCommandList->EndRendering( );
+        currentCommandList->PipelineBarrier( PipelineBarrierDesc::RenderTargetToPresent( m_swapChain->GetRenderTarget( currentImageIndex ) ) );
+        m_commandListRing->ExecuteAndPresent( currentCommandList, m_swapChain.get( ), currentImageIndex );
     }
 
     void SimpleRenderer::Quit( ) const
     {
         m_timePassedBuffer->UnmapMemory( );
-        for ( uint32_t i = 0; i < mc_framesInFlight; ++i )
-        {
-            m_fences[ i ]->Wait( );
-        }
+        m_commandListRing->WaitIdle( );
         m_logicalDevice->WaitIdle( );
     }
 

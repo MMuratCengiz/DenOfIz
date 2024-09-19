@@ -8,6 +8,8 @@ endif ()
 project(DenOfIz LANGUAGES ${LANGUAGES})
 
 option(CRT_LINKAGE_STATIC "Link MSVC runtime statically" 1)
+option(BUILD_TESTS OFF)
+option(BUILD_EXAMPLES OFF)
 
 set(Boost_NO_WARN_NEW_VERSIONS 1)
 set(VCPKG_MANIFEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})

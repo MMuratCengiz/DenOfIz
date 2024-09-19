@@ -43,9 +43,64 @@ namespace DenOfIz
 
     struct UpdateDesc
     {
+        uint32_t                                      RegisterSpace;
         std::vector<UpdateDescItem<IBufferResource>>  Buffers;
         std::vector<UpdateDescItem<ITextureResource>> Textures;
         std::vector<UpdateDescItem<ISampler>>         Samplers;
+
+        explicit UpdateDesc( const uint32_t registerSpace ) : RegisterSpace( registerSpace )
+        {
+        }
+
+        UpdateDesc &Cbv( const uint32_t binding, IBufferResource *resource )
+        {
+            ResourceBindingSlot slot{ };
+            slot.Register = RegisterSpace;
+            slot.Binding  = binding;
+            slot.Type     = DescriptorBufferBindingType::ConstantBuffer;
+            Buffers.push_back( { slot, resource } );
+            return *this;
+        }
+
+        UpdateDesc &Srv( const uint32_t binding, IBufferResource *resource )
+        {
+            ResourceBindingSlot slot{ };
+            slot.Register = RegisterSpace;
+            slot.Binding  = binding;
+            slot.Type     = DescriptorBufferBindingType::ConstantBuffer;
+            Buffers.push_back( { slot, resource } );
+            return *this;
+        }
+
+        UpdateDesc &Srv( const uint32_t binding, ITextureResource *resource )
+        {
+            ResourceBindingSlot slot{ };
+            slot.Register = RegisterSpace;
+            slot.Binding  = binding;
+            slot.Type     = DescriptorBufferBindingType::ShaderResource;
+            Textures.push_back( { slot, resource } );
+            return *this;
+        }
+
+        UpdateDesc &Uav( const uint32_t binding, IBufferResource *resource )
+        {
+            ResourceBindingSlot slot{ };
+            slot.Register = RegisterSpace;
+            slot.Binding  = binding;
+            slot.Type     = DescriptorBufferBindingType::ShaderResource;
+            Buffers.push_back( { slot, resource } );
+            return *this;
+        }
+
+        UpdateDesc &Uav( const uint32_t binding, ITextureResource *resource )
+        {
+            ResourceBindingSlot slot{ };
+            slot.Register = RegisterSpace;
+            slot.Binding  = binding;
+            slot.Type     = DescriptorBufferBindingType::UnorderedAccess;
+            Textures.push_back( { slot, resource } );
+            return *this;
+        }
 
         UpdateDesc &Buffer( const ResourceBindingSlot &slot, IBufferResource *resource )
         {
@@ -62,6 +117,12 @@ namespace DenOfIz
         UpdateDesc &Sampler( const ResourceBindingSlot &slot, ISampler *sampler )
         {
             Samplers.push_back( { slot, sampler } );
+            return *this;
+        }
+
+        UpdateDesc &Sampler( const uint32_t binding, ISampler *sampler )
+        {
+            Samplers.push_back( { ResourceBindingSlot{ .Binding = binding, .Register = RegisterSpace, .Type = DescriptorBufferBindingType::Sampler }, sampler } );
             return *this;
         }
     };

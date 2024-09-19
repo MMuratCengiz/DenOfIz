@@ -15,17 +15,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzCore/Engine.h>
 
 #define SDL_MAIN_HANDLED
-#include <DenOfIzGraphics/Renderer/ComputeTest.h>
-#include <DenOfIzGraphics/Renderer/SimpleRenderer.h>
+#include <DenOfIzCore/Engine.h>
+#include <DenOfIzExamples/IExample.h>
+#include <DenOfIzExamples/Main.h>
+#include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
+#include <DenOfIzGraphics/Backends/GraphicsApi.h>
 #include <SDL2/SDL.h>
-#include <filesystem>
+#include <SDL2/SDL_video.h>
 
-int main( )
+int DenOfIz::Main( IExample *example )
 {
-    DenOfIz::Engine::Init( );
+    Engine::Init( );
 
 #if defined WIN32 && defined DEBUG
     _CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
@@ -45,26 +47,28 @@ int main( )
     windowFlags |= SDL_WINDOW_METAL;
 #endif
 
-    const auto window = SDL_CreateWindow( "Hello C++", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, windowFlags );
+    const auto windowDesc = example->WindowDesc( );
+    if ( windowDesc.Resizable )
+    {
+        windowFlags |= SDL_WINDOW_RESIZABLE;
+    }
+    const auto window = SDL_CreateWindow( windowDesc.Title.c_str( ), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowDesc.Width, windowDesc.Height, windowFlags );
 
-    const auto windowHandle = std::make_unique<DenOfIz::GraphicsWindowHandle>( );
+    const auto windowHandle = std::make_unique<GraphicsWindowHandle>( );
     windowHandle->Create( window );
-    DenOfIz::APIPreference apiPreferences;
-    apiPreferences.Windows   = DenOfIz::APIPreferenceWindows::Vulkan;
-    apiPreferences.Linux     = DenOfIz::APIPreferenceLinux::Vulkan;
-    apiPreferences.OSX       = DenOfIz::APIPreferenceOSX::Metal;
-    const auto gApi          = std::make_unique<DenOfIz::GraphicsApi>( apiPreferences );
+    APIPreference apiPreferences;
+    apiPreferences.Windows = APIPreferenceWindows::DirectX12;
+    apiPreferences.Linux   = APIPreferenceLinux::Vulkan;
+    apiPreferences.OSX     = APIPreferenceOSX::Metal;
+    example->ModifyApiPreferences( apiPreferences );
+    const auto gApi          = std::make_unique<GraphicsApi>( apiPreferences );
     const auto logicalDevice = gApi->CreateAndLoadOptimalLogicalDevice( );
 
     {
-//        DenOfIz::ComputeTest computeTest( gApi.get( ), logicalDevice.get( ) );
-//        if (computeTest.Run() == 0) {
-//            return 0;
-//        }
-    }
-    { // SimpleRenderer scope
-        auto renderer = DenOfIz::SimpleRenderer( gApi.get( ), logicalDevice.get( ) );
-        renderer.Init( windowHandle.get( ) );
+        GraphicsWindowHandle graphicsWindowHandle{};
+        graphicsWindowHandle.Create( window );
+
+        example->Init( &graphicsWindowHandle, gApi.get( ), logicalDevice.get( ) );
         auto      running = true;
         SDL_Event event;
         while ( running )
@@ -75,15 +79,14 @@ int main( )
                 {
                     running = false;
                 }
+                example->HandleEvent( event );
             }
-
-            renderer.Render( );
+            example->Tick( );
         }
-        renderer.Quit( );
     }
 
+    example->Quit( );
     SDL_DestroyWindow( window );
     SDL_Quit( );
-
     return 0;
 }

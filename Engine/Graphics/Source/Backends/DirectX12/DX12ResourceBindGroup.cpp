@@ -26,7 +26,6 @@ DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const Resour
     DZ_NOT_NULL( rootSignature );
     m_dx12RootSignature = rootSignature;
 
-    m_offset = rootSignature->RegisterSpaceOffset( desc.RegisterSpace );
     if ( desc.NumBuffers + desc.NumTextures > 0 )
     {
         m_cbvSrvUavHandle = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetNextHandle( m_desc.NumBuffers + m_desc.NumTextures );
