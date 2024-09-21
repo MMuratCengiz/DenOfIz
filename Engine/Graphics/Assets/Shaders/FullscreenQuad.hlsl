@@ -10,7 +10,7 @@ Output main(uint id: SV_VertexID)
 {
     Output output;
 
-    output.texcoord = float2((id << 1) & 2, id &
+    output.texcoord = float2(id % 2, (id % 4) >> 1);
     output.position_cs = float4(output.texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
 
     return output;

@@ -18,9 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzCore/Utilities.h>
+#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
+#include <DenOfIzGraphics/Data/Geometry.h>
+#include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
 #include <future>
-#include "DenOfIzCore/Utilities.h"
-#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 #include "Texture.h"
 
 namespace DenOfIz
@@ -49,6 +51,48 @@ namespace DenOfIz
         ITextureResource *DstTexture;
     };
 
+    struct VertexIndexBufferPairHolder
+    {
+        std::unique_ptr<IBufferResource> VertexBuffer;
+        std::unique_ptr<IBufferResource> IndexBuffer;
+
+        void Into( std::unique_ptr<IBufferResource> &vertexBuffer, std::unique_ptr<IBufferResource> &indexBuffer )
+        {
+            vertexBuffer = std::move( VertexBuffer );
+            indexBuffer  = std::move( IndexBuffer );
+        }
+    };
+
+    struct UniformBufferHolder
+    {
+        std::unique_ptr<IBufferResource> Buffer;
+
+        void Into( std::unique_ptr<IBufferResource> &buffer )
+        {
+            buffer = std::move( Buffer );
+        }
+    };
+
+    struct SamplerHolder
+    {
+        std::unique_ptr<ISampler> Sampler;
+
+        void Into( std::unique_ptr<ISampler> &sampler )
+        {
+            sampler = std::move( Sampler );
+        }
+    };
+
+    struct TextureHolder
+    {
+        std::unique_ptr<ITextureResource> Texture;
+
+        void Into( std::unique_ptr<ITextureResource> &texture )
+        {
+            texture = std::move( Texture );
+        }
+    };
+
     class BatchResourceCopy
     {
     private:
@@ -62,24 +106,39 @@ namespace DenOfIz
         std::vector<std::unique_ptr<IBufferResource>> m_resourcesToClean;
         std::vector<Byte *>                           m_freeTextures;
         std::future<void>                             m_cleanResourcesFuture;
+        // Syncing
+        std::unique_ptr<ICommandListPool> m_syncCommandPool;
+        ICommandList                     *m_syncCommandList;
+        std::unique_ptr<ISemaphore>       m_batchCopyWait;
+        std::unique_ptr<IFence>           m_syncWait;
+        bool                              m_issueBarriers;
 
     public:
-        explicit BatchResourceCopy( ILogicalDevice *device );
-        ~        BatchResourceCopy( );
+        explicit BatchResourceCopy( ILogicalDevice *device, bool issueBarriers = true );
+        ~BatchResourceCopy( );
 
-        void                              Begin( ) const;
-        void                              CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc );
-        void                              CopyBufferRegion( const CopyBufferRegionDesc &copyDesc ) const;
-        void                              CopyTextureRegion( const CopyTextureRegionDesc &copyDesc ) const;
-        void                              CopyDataToTexture( const CopyDataToTextureDesc &copyDesc );
-        std::unique_ptr<ITextureResource> CreateAndLoadTexture( const std::string &file );
-        void                              LoadTexture( const LoadTextureDesc &loadDesc );
-        void                              End( ISemaphore *notify );
-        void                              CleanResources( );
+        void                                      Begin( ) const;
+        void                                      CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc );
+        void                                      CopyBufferRegion( const CopyBufferRegionDesc &copyDesc ) const;
+        void                                      CopyTextureRegion( const CopyTextureRegionDesc &copyDesc ) const;
+        void                                      CopyDataToTexture( const CopyDataToTextureDesc &copyDesc );
+        std::unique_ptr<ITextureResource>         CreateAndLoadTexture( const std::string &file );
+        void                                      LoadTexture( const LoadTextureDesc &loadDesc );
+        [[nodiscard]] UniformBufferHolder         CreateAndStoreUniformBuffer( const void *data, uint32_t numBytes );
+        [[nodiscard]] VertexIndexBufferPairHolder CreateAndStoreGeometryBuffers( const GeometryData &GeometryData );
+        [[nodiscard]] std::unique_ptr<AssetData>  CreateGeometryAssetData( const GeometryData &GeometryData );
+        [[nodiscard]] SamplerHolder               CreateAndStoreSampler( const SamplerDesc &desc ) const;
+        [[nodiscard]] TextureHolder               CreateAndStoreTexture( const std::string &path );
+        void                                      Submit( ISemaphore *notify = nullptr );
+
+        /// <summary> A synchronized batch resource copy operation, ensures copying is finalized. </summary>
+        static void SyncOp( ILogicalDevice *device, std::function<void( BatchResourceCopy * )> op );
 
     private:
-        void     LoadTextureInternal( const Texture &texture, ITextureResource *dstTexture );
-        void     CopyTextureToMemoryAligned( const Texture &texture, const MipData &mipData, Byte *dst ) const;
+        void                   CleanResources( );
+        void                   LoadTextureInternal( const Texture &texture, ITextureResource *dstTexture );
+        void                   CopyTextureToMemoryAligned( const Texture &texture, const MipData &mipData, Byte *dst ) const;
         [[nodiscard]] uint32_t GetSubresourceAlignment( uint32_t bitSize ) const;
+        static std::string     NextId( const std::string &prefix );
     };
 } // namespace DenOfIz

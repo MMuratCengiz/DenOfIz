@@ -23,7 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/GraphicsApi.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include <DenOfIzGraphics/Data/Geometry.h>
-#include <DenOfIzGraphics/Helpers/BatchResourceCopyHelper.h>
 #include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
 
 namespace DenOfIz

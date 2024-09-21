@@ -65,18 +65,17 @@ namespace DenOfIz
         XMStoreFloat4x4( &m_planeModelMatrix, XMMatrixTranslation( 0.0f, -5.0f, 0.0f ) );
 
         BatchResourceCopy       batchResourceCopy( m_logicalDevice );
-        BatchResourceCopyHelper copyHelper( m_logicalDevice, &batchResourceCopy );
-        copyHelper.Begin( );
-        copyHelper.CreateUniformBuffer( &m_identityMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_sphereModelMatrixBuffer );
-        copyHelper.CreateUniformBuffer( &m_planeModelMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_planeModelMatrixBuffer );
-        copyHelper.CreateUniformBuffer( &m_mvpMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_viewProjectionMatrixBuffer );
-        copyHelper.CreateGeometryBuffers( m_sphere ).Into( m_sphereVb, m_sphereIb );
-        copyHelper.CreateGeometryBuffers( m_plane ).Into( m_planeVb, m_planeIb );
-        copyHelper.CreateSampler( SamplerDesc{ } ).Into( m_sphereSampler );
-        copyHelper.CreateSampler( SamplerDesc{ } ).Into( m_planeSampler );
-        copyHelper.CreateTexture( "Assets/Textures/Dracolich.png" ).Into( m_sphereTexture );
-        copyHelper.CreateTexture( "Assets/Textures/test-dxt5.dds" ).Into( m_planeTexture );
-        copyHelper.Submit( );
+        batchResourceCopy.Begin( );
+        batchResourceCopy.CreateAndStoreUniformBuffer( &m_identityMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_sphereModelMatrixBuffer );
+        batchResourceCopy.CreateAndStoreUniformBuffer( &m_planeModelMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_planeModelMatrixBuffer );
+        batchResourceCopy.CreateAndStoreUniformBuffer( &m_mvpMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_viewProjectionMatrixBuffer );
+        batchResourceCopy.CreateAndStoreGeometryBuffers( m_sphere ).Into( m_sphereVb, m_sphereIb );
+        batchResourceCopy.CreateAndStoreGeometryBuffers( m_plane ).Into( m_planeVb, m_planeIb );
+        batchResourceCopy.CreateAndStoreSampler( SamplerDesc{ } ).Into( m_sphereSampler );
+        batchResourceCopy.CreateAndStoreSampler( SamplerDesc{ } ).Into( m_planeSampler );
+        batchResourceCopy.CreateAndStoreTexture( "Assets/Textures/Dracolich.png" ).Into( m_sphereTexture );
+        batchResourceCopy.CreateAndStoreTexture( "Assets/Textures/test-dxt5.dds" ).Into( m_planeTexture );
+        batchResourceCopy.Submit( );
 
         ResourceBindGroupDesc bindGroupDesc = { };
         bindGroupDesc.RootSignature         = m_rootSignature.get( );

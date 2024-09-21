@@ -34,25 +34,44 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device ) : m_device( device )
+BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device, bool issueBarriers ) : m_device( device ), m_issueBarriers( issueBarriers )
 {
     m_commandListPool = m_device->CreateCommandListPool( { QueueType::Copy } );
     DZ_ASSERTM( !m_commandListPool->GetCommandLists( ).empty( ), "Command list pool did not produce any command lists." );
 
     m_copyCommandList = m_commandListPool->GetCommandLists( )[ 0 ];
     m_executeFence    = m_device->CreateFence( );
+
+    if ( m_issueBarriers )
+    {
+        CommandListPoolDesc poolDesc{ };
+        poolDesc.QueueType       = QueueType::Graphics;
+        poolDesc.NumCommandLists = 1;
+        m_syncCommandPool        = m_device->CreateCommandListPool( poolDesc );
+
+        m_syncCommandList = m_syncCommandPool->GetCommandLists( ).front( );
+        m_batchCopyWait   = m_device->CreateSemaphore( );
+        m_syncWait        = m_device->CreateFence( );
+    }
 }
 
 BatchResourceCopy::~BatchResourceCopy( )
 {
-    m_cleanResourcesFuture.wait( );
-    m_executeFence.reset( );
+    if ( m_issueBarriers )
+    {
+        m_cleanResourcesFuture.wait( );
+        m_executeFence.reset( );
+    }
     m_commandListPool.reset( );
 }
 
 void BatchResourceCopy::Begin( ) const
 {
     m_copyCommandList->Begin( );
+    if ( m_issueBarriers )
+    {
+        m_syncCommandList->Begin( );
+    }
 }
 
 void BatchResourceCopy::CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc )
@@ -131,7 +150,112 @@ std::unique_ptr<ITextureResource> BatchResourceCopy::CreateAndLoadTexture( const
 
     auto outTex = m_device->CreateTextureResource( textureDesc );
     LoadTextureInternal( texture, outTex.get( ) );
+
+    if ( m_issueBarriers )
+    {
+        const PipelineBarrierDesc barrierDesc =
+            PipelineBarrierDesc{ }.TextureBarrier( { .Resource = outTex.get( ), .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
+        m_syncCommandList->PipelineBarrier( barrierDesc );
+    }
     return std::move( outTex );
+}
+
+UniformBufferHolder BatchResourceCopy::CreateAndStoreUniformBuffer( const void *data, const uint32_t numBytes )
+{
+    BufferDesc bufferDesc{ };
+    bufferDesc.HeapType     = HeapType::GPU;
+    bufferDesc.Descriptor   = ResourceDescriptor::UniformBuffer;
+    bufferDesc.InitialState = ResourceState::CopyDst;
+    bufferDesc.NumBytes     = numBytes;
+    bufferDesc.DebugName    = NextId( "Uniform" );
+
+    auto buffer = m_device->CreateBufferResource( bufferDesc );
+
+    CopyToGpuBufferDesc copyDesc{ };
+    copyDesc.DstBuffer = buffer.get( );
+    copyDesc.Data      = data;
+    copyDesc.NumBytes  = numBytes;
+    CopyToGPUBuffer( copyDesc );
+
+    if ( m_issueBarriers )
+    {
+        PipelineBarrierDesc barrierDesc =
+            PipelineBarrierDesc{ }.BufferBarrier( { .Resource = buffer.get( ), .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
+        m_syncCommandList->PipelineBarrier( barrierDesc );
+    }
+
+    return UniformBufferHolder{ .Buffer = std::move( buffer ) };
+}
+
+VertexIndexBufferPairHolder BatchResourceCopy::CreateAndStoreGeometryBuffers( const GeometryData &geometryData )
+{
+    VertexIndexBufferPairHolder result{ };
+
+    BufferDesc vBufferDesc{ };
+    vBufferDesc.HeapType     = HeapType::GPU;
+    vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
+    vBufferDesc.InitialState = ResourceState::CopyDst;
+    vBufferDesc.NumBytes     = geometryData.SizeOfVertices( );
+    vBufferDesc.DebugName    = NextId( "Vertex" );
+
+    result.VertexBuffer = m_device->CreateBufferResource( vBufferDesc );
+
+    BufferDesc iBufferDesc{ };
+    iBufferDesc.HeapType     = HeapType::GPU;
+    iBufferDesc.Descriptor   = ResourceDescriptor::IndexBuffer;
+    iBufferDesc.InitialState = ResourceState::CopyDst;
+    iBufferDesc.NumBytes     = geometryData.SizeOfIndices( );
+    iBufferDesc.DebugName    = NextId( "Index" );
+
+    result.IndexBuffer = m_device->CreateBufferResource( iBufferDesc );
+
+    CopyToGpuBufferDesc vbCopyDesc{ };
+    vbCopyDesc.DstBuffer = result.VertexBuffer.get( );
+    vbCopyDesc.Data      = geometryData.Vertices.data( );
+    vbCopyDesc.NumBytes  = geometryData.SizeOfVertices( );
+    CopyToGPUBuffer( vbCopyDesc );
+
+    CopyToGpuBufferDesc ibCopyDesc{ };
+    ibCopyDesc.DstBuffer = result.IndexBuffer.get( );
+    ibCopyDesc.Data      = geometryData.Indices.data( );
+    ibCopyDesc.NumBytes  = geometryData.SizeOfIndices( );
+    CopyToGPUBuffer( ibCopyDesc );
+
+    if ( m_issueBarriers )
+    {
+        const PipelineBarrierDesc barrierDesc =
+            PipelineBarrierDesc{ }
+                .BufferBarrier( { .Resource = result.VertexBuffer.get( ), .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } )
+                .BufferBarrier( { .Resource = result.IndexBuffer.get( ), .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
+        m_syncCommandList->PipelineBarrier( barrierDesc );
+    }
+    return result;
+}
+
+std::unique_ptr<AssetData> BatchResourceCopy::CreateGeometryAssetData( const GeometryData &geometryData )
+{
+    std::unique_ptr<IBufferResource> vertexBuffer;
+    std::unique_ptr<IBufferResource> indexBuffer;
+
+    CreateAndStoreGeometryBuffers( geometryData ).Into( vertexBuffer, indexBuffer );
+
+    AssetDataDesc assetDataDesc = AssetDataDesc{ .VertexBuffer = std::move( vertexBuffer ),
+                                                 .IndexBuffer  = std::move( indexBuffer ),
+                                                 .MaterialData = nullptr,
+                                                 .NumVertices  = geometryData.Vertices.size( ),
+                                                 .NumIndices   = geometryData.Indices.size( ) };
+    return std::make_unique<AssetData>( assetDataDesc );
+}
+
+SamplerHolder BatchResourceCopy::CreateAndStoreSampler( const SamplerDesc &desc ) const
+{
+    return SamplerHolder{ .Sampler = m_device->CreateSampler( desc ) };
+}
+
+TextureHolder BatchResourceCopy::CreateAndStoreTexture( const std::string &path )
+{
+    auto texture = CreateAndLoadTexture( path );
+    return TextureHolder{ .Texture = std::move( texture ) };
 }
 
 void BatchResourceCopy::LoadTexture( const LoadTextureDesc &loadDesc )
@@ -140,12 +264,13 @@ void BatchResourceCopy::LoadTexture( const LoadTextureDesc &loadDesc )
     LoadTextureInternal( texture, loadDesc.DstTexture );
 }
 
-void BatchResourceCopy::End( ISemaphore *notify )
+void BatchResourceCopy::Submit( ISemaphore *notify )
 {
     ExecuteDesc desc{ };
 
     m_executeFence->Reset( );
     desc.Notify = m_executeFence.get( );
+    desc.NotifySemaphores.push_back( m_batchCopyWait.get( ) );
     if ( notify )
     {
         desc.NotifySemaphores.push_back( notify );
@@ -153,6 +278,16 @@ void BatchResourceCopy::End( ISemaphore *notify )
 
     m_copyCommandList->Execute( desc );
     m_cleanResourcesFuture = std::async( std::launch::async, [ this ] { CleanResources( ); } );
+
+    if ( m_issueBarriers )
+    {
+        m_syncWait->Reset( );
+        ExecuteDesc executeDesc{ };
+        executeDesc.WaitOnSemaphores.push_back( m_batchCopyWait.get( ) );
+        executeDesc.Notify = m_syncWait.get( );
+        m_syncCommandList->Execute( executeDesc );
+        m_syncWait->Wait( );
+    }
 }
 
 void BatchResourceCopy::CleanResources( )
@@ -229,4 +364,25 @@ uint32_t BatchResourceCopy::GetSubresourceAlignment( const uint32_t bitSize ) co
     const uint32_t blockSize = std::max( 1u, bitSize >> 3 );
     const uint32_t alignment = Utilities::Align( m_device->DeviceInfo( ).Constants.BufferTextureAlignment, blockSize );
     return Utilities::Align( alignment, m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
+}
+
+void BatchResourceCopy::SyncOp( ILogicalDevice *device, std::function<void( BatchResourceCopy * )> op )
+{
+    BatchResourceCopy batchResourceCopy( device );
+    batchResourceCopy.Begin( );
+    op( &batchResourceCopy );
+    auto copySemaphore = device->CreateSemaphore( );
+    batchResourceCopy.Submit( copySemaphore.get( ) );
+    copySemaphore->Wait( );
+}
+
+std::string BatchResourceCopy::NextId( const std::string &prefix )
+{
+#ifndef NDEBUG
+    static std::atomic<unsigned int> idCounter( 0 );
+    const int                        next = idCounter.fetch_add( 1, std::memory_order_relaxed );
+    return prefix + "_BatchResourceCopyResource#" + std::to_string( next );
+#else
+    return prefix + "_BatchResourceCopyResource";
+#endif
 }

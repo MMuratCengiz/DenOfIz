@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cstring>
 #include <directx/d3d12shader.h>
 #include <ranges>
+#include <unordered_set>
 
 using namespace DenOfIz;
 
@@ -642,15 +643,35 @@ ID3D12ShaderReflection *ShaderProgram::ShaderReflection( CompiledShader *compile
 
 void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const
 {
+    constexpr D3D_NAME providedSemantics[ 8 ] = {
+        D3D_NAME_VERTEX_ID, D3D_NAME_INSTANCE_ID,   D3D_NAME_PRIMITIVE_ID, D3D_NAME_RENDER_TARGET_ARRAY_INDEX, D3D_NAME_VIEWPORT_ARRAY_INDEX,
+        D3D_NAME_VERTEX_ID, D3D_NAME_CLIP_DISTANCE, D3D_NAME_CULL_DISTANCE
+    };
+
     InputGroupDesc &inputGroupDesc = inputLayoutDesc.InputGroups.emplace_back( );
     for ( const uint32_t parameterIndex : std::views::iota( 0u, shaderDesc.InputParameters ) )
     {
         D3D12_SIGNATURE_PARAMETER_DESC signatureParameterDesc{ };
         shaderReflection->GetInputParameterDesc( parameterIndex, &signatureParameterDesc );
-        InputLayoutElementDesc &inputElementDesc = inputGroupDesc.Elements.emplace_back( );
 
-        inputElementDesc.Semantic      = SemanticFromString( signatureParameterDesc.SemanticName );
-        inputElementDesc.SemanticIndex = signatureParameterDesc.SemanticIndex;
-        inputElementDesc.Format        = MaskToFormat( signatureParameterDesc.Mask );
+        bool isSemanticProvided = false;
+        for ( const uint32_t i : std::views::iota( 0u, 8u ) )
+        {
+            if ( signatureParameterDesc.SystemValueType == providedSemantics[ i ] )
+            {
+                isSemanticProvided = true;
+                break;
+            }
+        }
+
+        if ( isSemanticProvided )
+        {
+            continue;
+        }
+
+        InputLayoutElementDesc &inputElementDesc = inputGroupDesc.Elements.emplace_back( );
+        inputElementDesc.Semantic                = SemanticFromString( signatureParameterDesc.SemanticName );
+        inputElementDesc.SemanticIndex           = signatureParameterDesc.SemanticIndex;
+        inputElementDesc.Format                  = MaskToFormat( signatureParameterDesc.Mask );
     }
 }

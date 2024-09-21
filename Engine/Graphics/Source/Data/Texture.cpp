@@ -86,9 +86,8 @@ void Texture::LoadTextureSTB( )
         LOG( WARNING ) << "Error loading texture: " << m_path << ", reason:" << stbi_failure_reason( );
         return;
     }
-
-    Width        = static_cast<uint32_t>( std::max<int>( 0, width ) );
-    Height       = static_cast<uint32_t>( std::max<int>( 0, height ) );
+    Width        = static_cast<uint32_t>( std::max<int>( 1, width ) );
+    Height       = static_cast<uint32_t>( std::max<int>( 1, height ) );
     Depth        = 1;
     Format       = Format::R8G8B8A8Unorm;
     Dimension    = TextureDimension::Texture2D;
@@ -96,7 +95,7 @@ void Texture::LoadTextureSTB( )
     MipLevels    = 1;
     BitsPerPixel = 32;
     BlockSize    = 1;
-    RowPitch     = Width * channels;
+    RowPitch     = Width * 4;
     NumRows      = Height;
     SlicePitch   = RowPitch * NumRows;
     Data.resize( SlicePitch );
@@ -414,7 +413,7 @@ void Texture::StreamMipDataDDS( const MipStreamCallback &callback ) const
     }
 }
 
-void Texture::StreamMipDataSTB( const MipStreamCallback& callback ) const
+void Texture::StreamMipDataSTB( const MipStreamCallback &callback ) const
 {
     MipData mipData{ };
     mipData.Width      = Width;

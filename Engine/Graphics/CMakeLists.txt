@@ -36,12 +36,11 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Data/Geometry.cpp
 
         #Renderers
+        Source/Renderer/Assets/AssetData.cpp
+        Source/Renderer/Assets/MaterialData.cpp
         Source/Renderer/Common/CommandListRing.cpp
         Source/Renderer/ComputeTest.cpp
         Source/Renderer/SimpleRenderer.cpp
-
-        #Helpers
-        Source/Helpers/BatchResourceCopyHelper.cpp
 )
 
 SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES

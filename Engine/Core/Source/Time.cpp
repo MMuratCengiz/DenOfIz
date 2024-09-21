@@ -17,44 +17,48 @@
 
 using namespace DenOfIz;
 
-void Time::Tick()
+void Time::Tick( )
 {
     if ( firstTickTime == 0 )
     {
-        firstTickTime = DoubleEpochNow();
+        firstTickTime = DoubleEpochNow( );
     }
 
     if ( prev == 0 )
     {
-        prev = DoubleEpochNow();
+        prev = DoubleEpochNow( );
         return;
     }
 
-    double now = DoubleEpochNow();
+    double now = DoubleEpochNow( );
 
-    deltaTime = (now - prev) / 1000000.0; // std::max( now - prev, (double) 1 / 60.f );
+    deltaTime = ( now - prev ) / 1000000.0; // std::max( now - prev, (double) 1 / 60.f );
     prev      = now;
     frames++;
 
     if ( now - lastFrameTick >= 1000000 )
     {
-        OnEachSecond(frames);
+        if ( OnEachSecond )
+        {
+            OnEachSecond( frames );
+        }
+
         lastFrameTick = now;
         frames        = 0;
     }
 }
 
-const double Time::GetDeltaTime() const
+const double Time::GetDeltaTime( ) const
 {
     return deltaTime;
 }
 
-const double Time::GetFirstTickTime() const
+const double Time::GetFirstTickTime( ) const
 {
     return firstTickTime;
 }
 
-double Time::DoubleEpochNow()
+double Time::DoubleEpochNow( )
 {
-    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    return std::chrono::duration_cast<std::chrono::microseconds>( std::chrono::system_clock::now( ).time_since_epoch( ) ).count( );
 }

@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SDL_MAIN_HANDLED
 #include <DenOfIzGraphics/Backends/GraphicsApi.h>
 #include <SDL2/SDL_video.h>
+#include "WorldData.h"
 
 namespace DenOfIz
 {
@@ -38,10 +39,13 @@ namespace DenOfIz
         ILogicalDevice             *m_logicalDevice = nullptr;
         std::unique_ptr<ISwapChain> m_swapChain     = nullptr;
         WindowDesc                  m_windowDesc;
+        std::unique_ptr<Camera>     m_camera;
+        WorldData                   m_worldData{ };
+        bool                        m_isRunning = true;
 
     public:
         virtual ~IExample( ) = default;
-        void     Init( GraphicsWindowHandle *window, GraphicsApi *graphicsApi, ILogicalDevice *device )
+        void Init( GraphicsWindowHandle *window, GraphicsApi *graphicsApi, ILogicalDevice *device )
         {
             m_windowHandle  = window;
             m_graphicsApi   = graphicsApi;
@@ -53,22 +57,45 @@ namespace DenOfIz
             swapChainDesc.Height       = m_windowDesc.Height;
             swapChainDesc.WindowHandle = m_windowHandle;
 
-            m_swapChain = m_logicalDevice->CreateSwapChain( swapChainDesc );
+            m_swapChain        = m_logicalDevice->CreateSwapChain( swapChainDesc );
+            m_camera           = std::make_unique<Camera>( static_cast<float>( m_windowDesc.Width ) / m_windowDesc.Height );
+            m_worldData.Camera = m_camera.get( );
+
             Init( );
         }
+
         virtual void Init( ) = 0;
         virtual void ModifyApiPreferences( APIPreference &defaultApiPreference )
         {
         }
         virtual void HandleEvent( SDL_Event &event )
         {
+            if ( event.type == SDL_KEYDOWN )
+            {
+                switch ( event.key.keysym.sym )
+                {
+                case SDLK_ESCAPE:
+                    m_isRunning = false;
+                    break;
+                default:
+                    break;
+                }
+            }
         }
-        virtual void       Tick( ) = 0;
-        virtual void       Quit( ) = 0;
+        virtual void Update( ) = 0;
+        virtual void Quit( )
+        {
+            m_logicalDevice->WaitIdle( );
+            m_logicalDevice = nullptr;
+        }
         virtual WindowDesc WindowDesc( )
         {
             struct WindowDesc windowDesc;
             return windowDesc;
+        }
+        [[nodiscard]] bool IsRunning( ) const
+        {
+            return m_isRunning;
         }
     };
 } // namespace DenOfIz

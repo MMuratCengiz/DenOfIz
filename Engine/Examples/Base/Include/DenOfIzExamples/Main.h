@@ -21,12 +21,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    // Note this function will delete example object to ensure leaked objects are reported correctly
     int Main( IExample *example );
-}
+} // namespace DenOfIz
 
-#define DZ_EXAMPLE_MAIN( ExampleType )                                                                                                                                                 \
+#define DZ_EXAMPLE_MAIN( ExampleType )                                                                                                                                             \
     int main( )                                                                                                                                                                    \
     {                                                                                                                                                                              \
-        ExampleType example{ };                                                                                                                                                    \
-        DenOfIz::Main( &example );                                                                                                                                                          \
+        ExampleType *example = new ExampleType();                                                                                                                                                      \
+        DenOfIz::Main( example );                                                                                                                                                  \
     }

@@ -16,7 +16,36 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzExamples/Main.h>
-#include <DenOfIzExamples/RenderTargetExample.h>
+#pragma once
 
-DZ_EXAMPLE_MAIN(DenOfIz::RenderTargetExample)
+#include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
+#include "Camera.h"
+
+namespace DenOfIz
+{
+    using namespace DirectX;
+
+    struct RenderItem
+    {
+        XMFLOAT4X4 Model;
+        AssetData *Data;
+    };
+
+    struct MaterialBatch
+    {
+        MaterialData           *Material;
+        std::vector<RenderItem> RenderItems;
+    };
+
+    struct RenderBatch
+    {
+        std::vector<MaterialBatch> MaterialBatches;
+    };
+
+    struct WorldData
+    {
+        RenderBatch RenderBatch;
+        Camera     *Camera;
+        float       DeltaTime;
+    };
+} // namespace DenOfIz

@@ -32,6 +32,8 @@ CommandListRing::CommandListRing( ILogicalDevice *logicalDevice ) : m_logicalDev
     if ( m_desc.CreateSyncObjects )
     {
         m_frameFences.resize( m_desc.NumFrames );
+        m_imageReadySemaphores.resize( m_desc.NumFrames );
+        m_imageRenderedSemaphores.resize( m_desc.NumFrames );
 
         for ( uint8_t i = 0; i < m_desc.NumFrames; ++i )
         {
@@ -112,7 +114,7 @@ void CommandListRing::WaitIdle( ) const
 
 [[nodiscard]] uint32_t CommandListRing::CurrentImage( ISwapChain *swapChain ) const
 {
-    if ( m_desc.CreateSyncObjects )
+    if ( !m_desc.CreateSyncObjects )
     {
         LOG( ERROR ) << "When providing your own sync objects make sure to call ISwapChain::AcquireNextImage yourself, to ensure the call is synchronized";
     }

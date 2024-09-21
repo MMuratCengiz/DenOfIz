@@ -125,9 +125,10 @@ namespace DenOfIz
             desc.Depth = 1;
         }
 
-        if ( !desc.Descriptor.IsSet( ResourceDescriptor::Texture ) || !desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) )
+        if ( !desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) && !desc.Descriptor.IsSet( ResourceDescriptor::Texture ) &&
+             !desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) )
         {
-            LOG( WARNING ) << "Descriptor for texture contains neither Texture nor TextureCube.";
+            LOG( WARNING ) << "Descriptor does not specify a texture: [ResourceDescriptor::(RWTexture/Texture/TextureCube)].";
         }
 
         if ( desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) && desc.ArraySize != 6 )
@@ -147,7 +148,7 @@ namespace DenOfIz
         std::string m_name;
 
     public:
-        virtual ~                        ISampler( ) = default;
+        virtual ~ISampler( ) = default;
         [[nodiscard]] const std::string &Name( ) const
         {
             return m_name;

@@ -17,13 +17,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #define SDL_MAIN_HANDLED
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_video.h>
 #include <DenOfIzCore/Engine.h>
 #include <DenOfIzExamples/IExample.h>
 #include <DenOfIzExamples/Main.h>
 #include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 #include <DenOfIzGraphics/Backends/GraphicsApi.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_video.h>
 
 int DenOfIz::Main( IExample *example )
 {
@@ -38,7 +38,11 @@ int DenOfIz::Main( IExample *example )
         exit( 1 );
     }
 
-    uint32_t windowFlags = SDL_WINDOW_SHOWN;
+    uint32_t windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_INPUT_FOCUS;
+    SDL_SetRelativeMouseMode( SDL_TRUE );
+    SDL_SetHint( SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1" );
+    SDL_SetHint( SDL_HINT_MOUSE_RELATIVE_MODE_CENTER, "1" );
+
 #ifdef BUILD_VK
     windowFlags |= SDL_WINDOW_VULKAN;
 #endif
@@ -64,28 +68,32 @@ int DenOfIz::Main( IExample *example )
     const auto gApi          = std::make_unique<GraphicsApi>( apiPreferences );
     const auto logicalDevice = gApi->CreateAndLoadOptimalLogicalDevice( );
 
-    {
-        GraphicsWindowHandle graphicsWindowHandle{};
-        graphicsWindowHandle.Create( window );
+    GraphicsWindowHandle graphicsWindowHandle{ };
+    graphicsWindowHandle.Create( window );
 
-        example->Init( &graphicsWindowHandle, gApi.get( ), logicalDevice.get( ) );
-        auto      running = true;
-        SDL_Event event;
-        while ( running )
+    example->Init( &graphicsWindowHandle, gApi.get( ), logicalDevice.get( ) );
+    auto      running = true;
+    SDL_Event event;
+    while ( running )
+    {
+        while ( SDL_PollEvent( &event ) )
         {
-            while ( SDL_PollEvent( &event ) )
+            if ( event.type == SDL_QUIT )
             {
-                if ( event.type == SDL_QUIT )
-                {
-                    running = false;
-                }
-                example->HandleEvent( event );
+                running = false;
             }
-            example->Tick( );
+            example->HandleEvent( event );
+            if ( ! example->IsRunning( ) )
+            {
+                running = false;
+            }
         }
+        example->Update( );
     }
 
     example->Quit( );
+    delete example;
+
     SDL_DestroyWindow( window );
     SDL_Quit( );
     return 0;

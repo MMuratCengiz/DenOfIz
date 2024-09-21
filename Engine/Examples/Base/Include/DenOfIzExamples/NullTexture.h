@@ -16,7 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzExamples/Main.h>
-#include <DenOfIzExamples/RenderTargetExample.h>
+#pragma once
 
-DZ_EXAMPLE_MAIN(DenOfIz::RenderTargetExample)
+#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
+
+namespace DenOfIz
+{
+    class NullTexture
+    {
+        std::unique_ptr<ITextureResource> m_texture;
+
+    public:
+        NullTexture( ILogicalDevice *device );
+        [[nodiscard]] ITextureResource *Texture( ) const;
+    };
+}

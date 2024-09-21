@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    // Todo deprecate the fields, possible either use RootSignature+RegisterSpace or rely on UpdateDesc
     struct ResourceBindGroupDesc
     {
         IRootSignature *RootSignature;
@@ -98,18 +99,6 @@ namespace DenOfIz
             slot.Register = RegisterSpace;
             slot.Binding  = binding;
             slot.Type     = DescriptorBufferBindingType::UnorderedAccess;
-            Textures.push_back( { slot, resource } );
-            return *this;
-        }
-
-        UpdateDesc &Buffer( const ResourceBindingSlot &slot, IBufferResource *resource )
-        {
-            Buffers.push_back( { slot, resource } );
-            return *this;
-        }
-
-        UpdateDesc &Texture( const ResourceBindingSlot &slot, ITextureResource *resource )
-        {
             Textures.push_back( { slot, resource } );
             return *this;
         }

@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DirectXMath.h>
-#include <SDl2/SDL.h>
+#include <SDL2/SDL.h>
 
 class Camera
 {
@@ -26,28 +26,25 @@ public:
     explicit Camera( float aspectRatio, float fovY = DirectX::XM_PIDIV4, float nearZ = 0.1f, float farZ = 100.0f );
 
     void                            Update( float deltaTime );
-    [[nodiscard]] DirectX::XMMATRIX ViewMatrix( ) const;
-    [[nodiscard]] DirectX::XMMATRIX ProjectionMatrix( ) const;
     [[nodiscard]] DirectX::XMMATRIX ViewProjectionMatrix( ) const;
 
     void HandleEvent( const SDL_Event &event );
 
-    // Set camera position and rotation
-    void SetPosition( const DirectX::XMVECTOR &position );
-    void SetRotation( const DirectX::XMVECTOR &rotation );
-
 private:
-    DirectX::XMVECTOR m_position;
-    DirectX::XMVECTOR m_rotation;
-
-    DirectX::XMMATRIX m_viewMatrix{};
-    DirectX::XMMATRIX m_projectionMatrix{};
+    DirectX::XMVECTOR m_position{ };
+    DirectX::XMMATRIX m_viewMatrix{ };
+    DirectX::XMMATRIX m_projectionMatrix{ };
+    DirectX::XMVECTOR m_rotationQuaternion = DirectX::XMQuaternionIdentity( );
+    DirectX::XMVECTOR m_front;
+    DirectX::XMVECTOR m_right;
+    DirectX::XMVECTOR m_up;
+    DirectX::XMVECTOR m_worldUp;
 
     float m_moveSpeed;
     float m_rotateSpeed;
 
-    float m_yaw;
-    float m_pitch;
+    float             m_yaw;
+    float             m_pitch;
 
     void UpdateViewMatrix( );
 };

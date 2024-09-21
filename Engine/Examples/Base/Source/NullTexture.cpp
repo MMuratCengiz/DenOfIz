@@ -16,7 +16,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzExamples/Main.h>
-#include <DenOfIzExamples/RenderTargetExample.h>
+#include "../Include/DenOfIzExamples/NullTexture.h"
 
-DZ_EXAMPLE_MAIN(DenOfIz::RenderTargetExample)
+using namespace DenOfIz;
+
+NullTexture::NullTexture( ILogicalDevice *device )
+{
+    TextureDesc desc{ };
+    desc.Width        = 1;
+    desc.Height       = 1;
+    desc.Format       = Format::R8G8B8A8Unorm;
+    desc.DebugName    = "NullTexture";
+    desc.Descriptor   = ResourceDescriptor::Texture;
+    m_texture         = device->CreateTextureResource( desc );
+}
+
+ITextureResource *NullTexture::Texture( ) const
+{
+    return m_texture.get( );
+}

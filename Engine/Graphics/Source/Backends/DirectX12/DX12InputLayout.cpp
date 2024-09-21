@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12InputLayout::DX12InputLayout(const InputLayoutDesc &desc)
+DX12InputLayout::DX12InputLayout( const InputLayoutDesc &desc )
 {
     int bindingIndex = 0;
     for ( const InputGroupDesc &inputGroup : desc.InputGroups )
@@ -37,7 +37,7 @@ DX12InputLayout::DX12InputLayout(const InputLayoutDesc &desc)
         uint32_t offset = 0;
         for ( const InputLayoutElementDesc &inputElement : inputGroup.Elements )
         {
-            D3D12_INPUT_ELEMENT_DESC &element = m_inputElements.emplace_back(D3D12_INPUT_ELEMENT_DESC{});
+            D3D12_INPUT_ELEMENT_DESC &element = m_inputElements.emplace_back( D3D12_INPUT_ELEMENT_DESC{ } );
 
             switch ( inputElement.Semantic )
             {
@@ -71,7 +71,7 @@ DX12InputLayout::DX12InputLayout(const InputLayoutDesc &desc)
             }
 
             element.SemanticIndex        = inputElement.SemanticIndex;
-            element.Format               = DX12EnumConverter::ConvertFormat(inputElement.Format);
+            element.Format               = DX12EnumConverter::ConvertFormat( inputElement.Format );
             element.InputSlot            = bindingIndex;
             element.InputSlotClass       = inputSlotClass;
             element.AlignedByteOffset    = offset;
@@ -83,11 +83,11 @@ DX12InputLayout::DX12InputLayout(const InputLayoutDesc &desc)
         bindingIndex++;
     }
 
-    m_inputLayout                    = {};
-    m_inputLayout.pInputElementDescs = m_inputElements.data();
-    m_inputLayout.NumElements        = m_inputElements.size();
+    m_inputLayout                    = { };
+    m_inputLayout.pInputElementDescs = m_inputElements.data( );
+    m_inputLayout.NumElements        = m_inputElements.size( );
 }
 
-DX12InputLayout::~DX12InputLayout()
+DX12InputLayout::~DX12InputLayout( )
 {
 }
