@@ -25,9 +25,9 @@ namespace DenOfIz
 
     class ContainerUtilities
     {
+    public:
         ContainerUtilities( ) = delete;
 
-    public:
         template <typename T>
         static void EnsureSize( std::vector<T> &vec, size_t index )
         {
@@ -42,6 +42,12 @@ namespace DenOfIz
         {
             EnsureSize( vec, index );
             return vec[ index ];
+        }
+
+        template <typename T>
+        static bool Contains( const std::vector<T> &vec, const T &value )
+        {
+            return std::find( vec.begin( ), vec.end( ), value ) != vec.end( );
         }
 
         template <typename T>
@@ -66,12 +72,12 @@ namespace DenOfIz
         }
 
         template <typename K, typename R>
-        static R SafeGetMapValue( const std::unordered_map<K, R> &map, const K &key )
+        static R SafeGetMapValue( const std::unordered_map<K, R> &map, const K &key, std::string notFoundMessage = "" )
         {
             auto value = map.find( key );
             if ( value == map.end( ) )
             {
-                LOG( ERROR ) << "Unable to find key: " << key << ". Make sure the name described in the RootSignature matches the resource name.";
+                LOG( ERROR ) << "Unable to find key [" << key << "]. " << notFoundMessage;
             }
             return value->second;
         }

@@ -68,16 +68,19 @@ void Camera::Update( const float deltaTime )
 
 void Camera::HandleEvent( const SDL_Event &event )
 {
+    return;
     if ( event.type == SDL_MOUSEMOTION )
     {
-        int mouseX, mouseY;
-        SDL_GetRelativeMouseState( &mouseX, &mouseY );
+        int mouseX = event.motion.xrel;
+        int mouseY = event.motion.yrel;
         DZ_RETURN_IF( mouseX == 0 && mouseY == 0 );
+        // mouseX = std::clamp( mouseX, -1, 1 );
+        // mouseY = std::clamp( mouseY, -1, 1 );
         mouseX *= -1;
         mouseY *= -1;
 
-        float xOffset = static_cast<float>( mouseX );
-        float yOffset = static_cast<float>( mouseY );
+        auto xOffset = static_cast<float>( mouseX );
+        auto yOffset = static_cast<float>( mouseY );
 
         xOffset *= m_rotateSpeed;
         yOffset *= m_rotateSpeed;
@@ -85,9 +88,9 @@ void Camera::HandleEvent( const SDL_Event &event )
         m_yaw += xOffset;
         m_pitch += yOffset;
 
-        m_pitch           = std::clamp( m_pitch, -89.0f, 89.0f );
-        XMVECTOR newFront = XMVectorSet( cos( XMConvertToRadians( m_yaw ) ) * cos( XMConvertToRadians( m_pitch ) ), sin( XMConvertToRadians( m_pitch ) ),
-                                         sin( XMConvertToRadians( m_yaw ) ) * cos( XMConvertToRadians( m_pitch ) ), 0.0f );
+        m_pitch                 = std::clamp( m_pitch, -89.0f, 89.0f );
+        const XMVECTOR newFront = XMVectorSet( cos( XMConvertToRadians( m_yaw ) ) * cos( XMConvertToRadians( m_pitch ) ), sin( XMConvertToRadians( m_pitch ) ),
+                                               sin( XMConvertToRadians( m_yaw ) ) * cos( XMConvertToRadians( m_pitch ) ), 0.0f );
 
         m_front = XMVector3Normalize( newFront );
         UpdateViewMatrix( );

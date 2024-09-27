@@ -27,24 +27,21 @@ PerMaterialBinding::PerMaterialBinding( ILogicalDevice *device, IRootSignature *
 
     ResourceBindGroupDesc bindGroupDesc{ };
     bindGroupDesc.RegisterSpace = RegisterSpace;
-    bindGroupDesc.NumSamplers   = 1;
-    bindGroupDesc.NumTextures   = 1; // TODO: 5
     bindGroupDesc.RootSignature = rootSignature;
 
     m_bindGroup = device->CreateResourceBindGroup( bindGroupDesc );
 }
 
-void PerMaterialBinding::Update( MaterialData *materialData )
+void PerMaterialBinding::Update( const MaterialData *materialData ) const
 {
     m_bindGroup->Update( UpdateDesc( RegisterSpace )
                              .Sampler( 0, materialData->Sampler( ) )
-                             .Srv( 0, OrNull( materialData->AlbedoTexture( ) ) ) );
-//                             TODO:
-//                             .Srv( 1, OrNull( materialData->NormalTexture( ) ) )
-//                             .Srv( 2, OrNull( materialData->HeightTexture( ) ) )
-//                             .Srv( 3, OrNull( materialData->MetallicTexture( ) ) )
-//                             .Srv( 4, OrNull( materialData->RoughnessTexture( ) ) )
-//                             .Srv( 5, OrNull( materialData->AoTexture( ) ) ) );
+                             .Srv( 0, OrNull( materialData->AlbedoTexture( ) ) )
+                             .Srv( 1, OrNull( materialData->NormalTexture( ) ) )
+                             .Srv( 2, OrNull( materialData->HeightTexture( ) ) )
+                             // .Srv( 3, OrNull( materialData->MetallicTexture( ) ) )
+                             .Srv( 3, OrNull( materialData->RoughnessTexture( ) ) )
+                             .Srv( 4, OrNull( materialData->AoTexture( ) ) ) );
 }
 
 IResourceBindGroup *PerMaterialBinding::BindGroup( ) const

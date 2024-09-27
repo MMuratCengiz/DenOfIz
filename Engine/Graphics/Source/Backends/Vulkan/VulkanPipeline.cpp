@@ -144,8 +144,8 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
     renderingCreateInfo.viewMask                = m_desc.Rendering.ViewMask;
     renderingCreateInfo.colorAttachmentCount    = colorAttachmentsStore.size( );
     renderingCreateInfo.pColorAttachmentFormats = colorAttachmentsStore.data( );
-    renderingCreateInfo.depthAttachmentFormat   = VulkanEnumConverter::ConvertImageFormat( m_desc.Rendering.DepthAttachmentFormat );
-    renderingCreateInfo.stencilAttachmentFormat = VulkanEnumConverter::ConvertImageFormat( m_desc.Rendering.StencilAttachmentFormat );
+    renderingCreateInfo.depthAttachmentFormat   = VulkanEnumConverter::ConvertImageFormat( m_desc.Rendering.DepthStencilAttachmentFormat );
+    renderingCreateInfo.stencilAttachmentFormat = VulkanEnumConverter::ConvertImageFormat( m_desc.Rendering.DepthStencilAttachmentFormat );
     return renderingCreateInfo;
 }
 

@@ -146,7 +146,7 @@ void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
     RegisterSpaceOrder       &spaceOrder = ContainerUtilities::SafeAt( m_registerSpaceOrder, binding.RegisterSpace );
     const ResourceBindingSlot slot{
         .Binding  = binding.Binding,
-        .Register = binding.RegisterSpace,
+        .RegisterSpace = binding.RegisterSpace,
         .Type     = binding.BindingType,
     };
     if ( binding.Descriptor.IsSet( ResourceDescriptor::Sampler ) )

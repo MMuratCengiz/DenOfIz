@@ -35,10 +35,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 
 #ifndef NDEBUG
-#define D3D12MA_DEBUG_LOG(format, ...) do { \
-            wprintf(format, __VA_ARGS__); \
-            wprintf(L"\n"); \
-        } while(false)
+#define D3D12MA_DEBUG_LOG( format, ... )                                                                                                                                           \
+    do                                                                                                                                                                             \
+    {                                                                                                                                                                              \
+        wprintf( format, __VA_ARGS__ );                                                                                                                                            \
+        wprintf( L"\n" );                                                                                                                                                          \
+    }                                                                                                                                                                              \
+    while ( false )
 #include <dxgidebug.h>
 #endif
 
@@ -76,6 +79,7 @@ namespace DenOfIz
         wil::com_ptr<ID3D12GraphicsCommandList4> CopyCommandList;
 
         std::array<std::unique_ptr<DX12DescriptorHeap>, D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES> CpuDescriptorHeaps;
+        std::unique_ptr<DX12DescriptorHeap>                                                   RtvDescriptorHeap;
         std::unique_ptr<DX12DescriptorHeap>                                                   ShaderVisibleCbvSrvUavDescriptorHeap;
         std::unique_ptr<DX12DescriptorHeap>                                                   ShaderVisibleSamplerDescriptorHeap;
 

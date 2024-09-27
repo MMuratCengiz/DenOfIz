@@ -30,7 +30,7 @@ namespace DenOfIz
         DX12Context                *m_context    = nullptr;
         D3D12MA::Allocation        *m_allocation = nullptr;
         ID3D12Resource2            *m_resource   = nullptr;
-        D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle{ };
+        D3D12_CPU_DESCRIPTOR_HANDLE m_rtvHandle{ };
         D3D12_RESOURCE_DESC         m_resourceDesc{ };
         D3D12_ROOT_PARAMETER_TYPE   m_rootParameterType{ };
         bool                        isExternalResource = false; // Used for swap chain render targets, might need a better way
@@ -61,19 +61,15 @@ namespace DenOfIz
             return m_resource;
         }
 
-        [[nodiscard]] const D3D12_CPU_DESCRIPTOR_HANDLE &GetCpuHandle( ) const
-        {
-            return m_cpuHandle;
-        }
+        [[nodiscard]] const D3D12_CPU_DESCRIPTOR_HANDLE &GetOrCreateRtvHandle( );
 
     private:
-        void CreateTextureSrv( ) const;
-        void CreateTextureUav( ) const;
+        void CreateTextureSrv( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle ) const;
+        void CreateTextureUav( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle ) const;
     };
 
     class DX12Sampler final : public ISampler
     {
-    private:
         DX12Context                *m_context;
         SamplerDesc                 m_desc;
         D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle{ };

@@ -43,9 +43,9 @@ namespace DenOfIz
         VulkanCommandList( VulkanContext *context, CommandListDesc desc );
 
         void Begin( ) override;
-        void BeginRendering( const RenderingDesc &renderingInfo ) override;
+        void BeginRendering( const RenderingDesc &renderingDesc ) override;
         void EndRendering( ) override; // TODO remove
-        void Execute( const ExecuteDesc &executeInfo ) override;
+        void Execute( const ExecuteDesc &executeDesc ) override;
         void BindPipeline( IPipeline *pipeline ) override;
         void BindVertexBuffer( IBufferResource *buffer ) override;
         void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType ) override;

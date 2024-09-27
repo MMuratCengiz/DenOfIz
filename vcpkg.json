@@ -10,6 +10,7 @@
     "stb",
     "tinygltf",
     "gtest",
+    "taskflow",
     "directxmath",
     {
       "name": "sdl2",

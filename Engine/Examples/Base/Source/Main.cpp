@@ -57,6 +57,7 @@ int DenOfIz::Main( IExample *example )
         windowFlags |= SDL_WINDOW_RESIZABLE;
     }
     const auto window = SDL_CreateWindow( windowDesc.Title.c_str( ), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowDesc.Width, windowDesc.Height, windowFlags );
+    SDL_WarpMouseInWindow( window, windowDesc.Width / 2, windowDesc.Height / 2 );
 
     const auto windowHandle = std::make_unique<GraphicsWindowHandle>( );
     windowHandle->Create( window );

@@ -33,7 +33,7 @@ namespace DenOfIz
 
     public:
         PerMaterialBinding( ILogicalDevice *device, IRootSignature *rootSignature );
-        void                              Update( MaterialData *materialData );
+        void                              Update( const MaterialData *materialData ) const;
         [[nodiscard]] IResourceBindGroup *BindGroup( ) const;
 
     private:

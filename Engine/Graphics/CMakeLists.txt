@@ -20,6 +20,7 @@ endif ()
 find_package(SDL2 CONFIG REQUIRED)
 find_package(wil CONFIG REQUIRED)
 find_package(directxmath CONFIG REQUIRED)
+find_package(Taskflow CONFIG REQUIRED)
 
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 
@@ -39,6 +40,7 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Renderer/Assets/AssetData.cpp
         Source/Renderer/Assets/MaterialData.cpp
         Source/Renderer/Common/CommandListRing.cpp
+        Source/Renderer/Graph/RenderGraph.cpp
         Source/Renderer/ComputeTest.cpp
         Source/Renderer/SimpleRenderer.cpp
 )
@@ -140,6 +142,7 @@ target_link_libraries(DenOfIzGraphics
         SDL2::SDL2
         SDL2::SDL2main
         SDL2::SDL2-static
+        Taskflow::Taskflow
 )
 
 if (WIN32)

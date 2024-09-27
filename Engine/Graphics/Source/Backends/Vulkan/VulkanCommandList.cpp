@@ -60,18 +60,18 @@ void VulkanCommandList::Begin( )
 }
 
 // Todo !IMPROVEMENT! this function may not need to exist.
-void VulkanCommandList::BeginRendering( const RenderingDesc &renderingInfo )
+void VulkanCommandList::BeginRendering( const RenderingDesc &renderingDesc )
 {
     VkRenderingInfo renderInfo{ };
     renderInfo.sType             = VK_STRUCTURE_TYPE_RENDERING_INFO;
-    renderInfo.renderArea.extent = VkExtent2D( renderingInfo.RenderAreaWidth, renderingInfo.RenderAreaHeight );
-    renderInfo.renderArea.offset = VkOffset2D( renderingInfo.RenderAreaOffsetX, renderingInfo.RenderAreaOffsetY );
-    renderInfo.layerCount        = renderingInfo.LayerCount;
+    renderInfo.renderArea.extent = VkExtent2D( renderingDesc.RenderAreaWidth, renderingDesc.RenderAreaHeight );
+    renderInfo.renderArea.offset = VkOffset2D( renderingDesc.RenderAreaOffsetX, renderingDesc.RenderAreaOffsetY );
+    renderInfo.layerCount        = renderingDesc.LayerCount;
     renderInfo.viewMask          = 0;
 
     std::vector<VkRenderingAttachmentInfo> colorAttachments;
 
-    for ( const auto &colorAttachment : renderingInfo.RTAttachments )
+    for ( const auto &colorAttachment : renderingDesc.RTAttachments )
     {
         auto *vkColorAttachmentResource = dynamic_cast<VulkanTextureResource *>( colorAttachment.Resource );
 
@@ -99,32 +99,32 @@ void VulkanCommandList::BeginRendering( const RenderingDesc &renderingInfo )
     renderInfo.pColorAttachments    = colorAttachments.data( );
 
     // Todo these need to be fixed.
-    if ( renderingInfo.DepthAttachment.Resource != nullptr )
+    if ( renderingDesc.DepthAttachment.Resource != nullptr )
     {
-        const auto *vkDepthStencilResource = dynamic_cast<VulkanTextureResource *>( renderingInfo.DepthAttachment.Resource );
+        const auto *vkDepthStencilResource = dynamic_cast<VulkanTextureResource *>( renderingDesc.DepthAttachment.Resource );
 
         VkRenderingAttachmentInfo depthAttachmentInfo{ };
         depthAttachmentInfo.sType                   = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
         depthAttachmentInfo.imageView               = vkDepthStencilResource->ImageView( );
         depthAttachmentInfo.imageLayout             = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        depthAttachmentInfo.loadOp                  = VulkanEnumConverter::ConvertLoadOp( renderingInfo.DepthAttachment.LoadOp );
-        depthAttachmentInfo.storeOp                 = VulkanEnumConverter::ConvertStoreOp( renderingInfo.DepthAttachment.StoreOp );
-        depthAttachmentInfo.clearValue.depthStencil = VkClearDepthStencilValue( renderingInfo.DepthAttachment.ClearDepth[ 0 ], renderingInfo.DepthAttachment.ClearDepth[ 1 ] );
+        depthAttachmentInfo.loadOp                  = VulkanEnumConverter::ConvertLoadOp( renderingDesc.DepthAttachment.LoadOp );
+        depthAttachmentInfo.storeOp                 = VulkanEnumConverter::ConvertStoreOp( renderingDesc.DepthAttachment.StoreOp );
+        depthAttachmentInfo.clearValue.depthStencil = VkClearDepthStencilValue( renderingDesc.DepthAttachment.ClearDepth[ 0 ], renderingDesc.DepthAttachment.ClearDepth[ 1 ] );
 
         renderInfo.pDepthAttachment = &depthAttachmentInfo;
     }
 
-    if ( renderingInfo.StencilAttachment.Resource != nullptr )
+    if ( renderingDesc.StencilAttachment.Resource != nullptr )
     {
-        const auto *vkDepthStencilResource = dynamic_cast<VulkanTextureResource *>( renderingInfo.StencilAttachment.Resource );
+        const auto *vkDepthStencilResource = dynamic_cast<VulkanTextureResource *>( renderingDesc.StencilAttachment.Resource );
 
         VkRenderingAttachmentInfo stencilAttachmentInfo{ };
         stencilAttachmentInfo.sType                   = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
         stencilAttachmentInfo.imageView               = vkDepthStencilResource->ImageView( );
         stencilAttachmentInfo.imageLayout             = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        stencilAttachmentInfo.loadOp                  = VulkanEnumConverter::ConvertLoadOp( renderingInfo.StencilAttachment.LoadOp );
-        stencilAttachmentInfo.storeOp                 = VulkanEnumConverter::ConvertStoreOp( renderingInfo.StencilAttachment.StoreOp );
-        stencilAttachmentInfo.clearValue.depthStencil = VkClearDepthStencilValue( renderingInfo.StencilAttachment.ClearDepth[ 0 ], renderingInfo.DepthAttachment.ClearDepth[ 1 ] );
+        stencilAttachmentInfo.loadOp                  = VulkanEnumConverter::ConvertLoadOp( renderingDesc.StencilAttachment.LoadOp );
+        stencilAttachmentInfo.storeOp                 = VulkanEnumConverter::ConvertStoreOp( renderingDesc.StencilAttachment.StoreOp );
+        stencilAttachmentInfo.clearValue.depthStencil = VkClearDepthStencilValue( renderingDesc.StencilAttachment.ClearDepth[ 0 ], renderingDesc.DepthAttachment.ClearDepth[ 1 ] );
 
         renderInfo.pStencilAttachment = &stencilAttachmentInfo;
     }
@@ -137,7 +137,7 @@ void VulkanCommandList::EndRendering( )
     vkCmdEndRendering( m_commandBuffer );
 }
 
-void VulkanCommandList::Execute( const ExecuteDesc &executeInfo )
+void VulkanCommandList::Execute( const ExecuteDesc &executeDesc )
 {
     VK_CHECK_RESULT( vkEndCommandBuffer( m_commandBuffer ) );
 
@@ -146,13 +146,13 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeInfo )
 
     std::vector<VkPipelineStageFlags> waitStages;
     std::vector<VkSemaphore>          waitOnSemaphores;
-    for ( ISemaphore *waitOn : executeInfo.WaitOnSemaphores )
+    for ( ISemaphore *waitOn : executeDesc.WaitOnSemaphores )
     {
         waitOnSemaphores.push_back( reinterpret_cast<VulkanSemaphore *>( waitOn )->GetSemaphore( ) );
         waitStages.push_back( VK_PIPELINE_STAGE_ALL_COMMANDS_BIT );
     }
     std::vector<VkSemaphore> signalSemaphores;
-    for ( ISemaphore *signal : executeInfo.NotifySemaphores )
+    for ( ISemaphore *signal : executeDesc.NotifySemaphores )
     {
         signalSemaphores.push_back( reinterpret_cast<VulkanSemaphore *>( signal )->GetSemaphore( ) );
     }
@@ -167,9 +167,9 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeInfo )
     vkSubmitInfo.pSignalSemaphores    = signalSemaphores.data( );
 
     VkFence vkNotifyFence = nullptr;
-    if ( executeInfo.Notify != nullptr )
+    if ( executeDesc.Notify != nullptr )
     {
-        auto *notify = reinterpret_cast<VulkanFence *>( executeInfo.Notify );
+        auto *notify = reinterpret_cast<VulkanFence *>( executeDesc.Notify );
         notify->Reset( );
         vkNotifyFence = notify->GetFence( );
     }

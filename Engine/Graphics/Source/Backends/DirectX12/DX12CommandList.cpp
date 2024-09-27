@@ -57,15 +57,15 @@ void DX12CommandList::Begin( )
     }
 }
 
-void DX12CommandList::BeginRendering( const RenderingDesc &renderingInfo )
+void DX12CommandList::BeginRendering( const RenderingDesc &renderingDesc )
 {
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> renderTargets( renderingInfo.RTAttachments.size( ) );
-    for ( int i = 0; i < renderingInfo.RTAttachments.size( ); i++ )
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> renderTargets( renderingDesc.RTAttachments.size( ) );
+    for ( int i = 0; i < renderingDesc.RTAttachments.size( ); i++ )
     {
-        const DX12TextureResource *pImageResource = reinterpret_cast<DX12TextureResource *>( renderingInfo.RTAttachments[ i ].Resource );
-        renderTargets[ i ]                        = pImageResource->GetCpuHandle( );
+        auto *pImageResource = reinterpret_cast<DX12TextureResource *>( renderingDesc.RTAttachments[ i ].Resource );
+        renderTargets[ i ]   = pImageResource->GetOrCreateRtvHandle( );
 
-        m_commandList->ClearRenderTargetView( renderTargets[ i ], renderingInfo.RTAttachments[ i ].ClearColor.data( ), 0, nullptr );
+        m_commandList->ClearRenderTargetView( renderTargets[ i ], renderingDesc.RTAttachments[ i ].ClearColor.data( ), 0, nullptr );
     }
 
     D3D12_RENDER_PASS_DEPTH_STENCIL_DESC depthStencilDesc = { };
@@ -76,23 +76,23 @@ void DX12CommandList::EndRendering( )
 {
 }
 
-void DX12CommandList::Execute( const ExecuteDesc &executeInfo )
+void DX12CommandList::Execute( const ExecuteDesc &executeDesc )
 {
     DX_CHECK_RESULT( m_commandList->Close( ) );
 
-    for ( ISemaphore* semaphore : executeInfo.WaitOnSemaphores )
+    for ( ISemaphore *semaphore : executeDesc.WaitOnSemaphores )
     {
         DX_CHECK_RESULT( m_commandQueue->Wait( reinterpret_cast<DX12Semaphore *>( semaphore )->GetFence( ), 1 ) );
     }
     m_commandQueue->ExecuteCommandLists( 1, CommandListCast( m_commandList.addressof( ) ) );
-    for ( ISemaphore* semaphore : executeInfo.NotifySemaphores )
+    for ( ISemaphore *semaphore : executeDesc.NotifySemaphores )
     {
         const auto dx12Semaphore = reinterpret_cast<DX12Semaphore *>( semaphore );
         dx12Semaphore->NotifyCommandQueue( m_commandQueue );
     }
-    if ( executeInfo.Notify != nullptr )
+    if ( executeDesc.Notify != nullptr )
     {
-        const auto dx12Fence = reinterpret_cast<DX12Fence *>( executeInfo.Notify );
+        const auto dx12Fence = reinterpret_cast<DX12Fence *>( executeDesc.Notify );
         dx12Fence->NotifyCommandQueue( m_commandQueue );
     }
 }

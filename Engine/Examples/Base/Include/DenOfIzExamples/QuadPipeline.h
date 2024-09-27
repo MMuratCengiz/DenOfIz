@@ -26,7 +26,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    // TODO this should accept a fragment shader for post processing, the name should also be renamed to PostProcessingPipeline
     class QuadPipeline
     {
         std::unique_ptr<ShaderProgram>      m_program;
@@ -37,7 +36,8 @@ namespace DenOfIz
         std::unique_ptr<ISampler>           m_sampler;
 
     public:
-        QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice );
-        void Update( ITextureResource *texture );
+             QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice, const std::string &pixelShader );
+        [[nodiscard]] IResourceBindGroup* BindGroup( ) const;
+        void Render( ICommandList *commandList ) const;
     };
 } // namespace DenOfIz

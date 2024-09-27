@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice )
+QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice, const std::string &pixelShader )
 {
     std::vector<ShaderDesc> shaders{ };
     ShaderDesc              vertexShaderDesc{ };
@@ -28,7 +28,7 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
     vertexShaderDesc.Stage = ShaderStage::Vertex;
     shaders.push_back( vertexShaderDesc );
     ShaderDesc pixelShaderDesc{ };
-    pixelShaderDesc.Path  = "Assets/Shaders/SampleBasic.ps.hlsl";
+    pixelShaderDesc.Path  = pixelShader;
     pixelShaderDesc.Stage = ShaderStage::Pixel;
     shaders.push_back( pixelShaderDesc );
 
@@ -38,6 +38,7 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
     m_rootSignature = logicalDevice->CreateRootSignature( programReflection.RootSignature );
     m_inputLayout   = logicalDevice->CreateInputLayout( programReflection.InputLayout );
     PipelineDesc pipelineDesc{ };
+    pipelineDesc.Rendering.ColorAttachmentFormats.push_back( Format::R8G8B8A8Unorm );
     pipelineDesc.InputLayout   = m_inputLayout.get( );
     pipelineDesc.RootSignature = m_rootSignature.get( );
     pipelineDesc.ShaderProgram = m_program.get( );
@@ -46,13 +47,18 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
 
     ResourceBindGroupDesc bindGroupDesc{ };
     bindGroupDesc.RootSignature = m_rootSignature.get( );
-    bindGroupDesc.NumTextures   = 1;
-    bindGroupDesc.NumSamplers   = 1;
     m_bindGroup                 = logicalDevice->CreateResourceBindGroup( bindGroupDesc );
     m_sampler                   = logicalDevice->CreateSampler( SamplerDesc{ } );
 }
 
-void QuadPipeline::Update( ITextureResource *texture )
+IResourceBindGroup *QuadPipeline::BindGroup( ) const
 {
-    m_bindGroup->Update( UpdateDesc{ 0 }.Srv( 0, texture ).Sampler( 0, m_sampler.get( ) ) );
+    return m_bindGroup.get( );
+}
+
+void QuadPipeline::Render( ICommandList *commandList ) const
+{
+    commandList->BindPipeline( m_pipeline.get( ) );
+    commandList->BindResourceGroup( m_bindGroup.get( ) );
+    commandList->Draw( 3, 1, 0, 0 );
 }

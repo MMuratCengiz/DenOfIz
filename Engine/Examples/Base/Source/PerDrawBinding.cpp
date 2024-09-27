@@ -26,7 +26,6 @@ PerDrawBinding::PerDrawBinding( ILogicalDevice *device, IRootSignature *rootSign
 {
     ResourceBindGroupDesc bindGroupDesc{ };
     bindGroupDesc.RegisterSpace = RegisterSpace;
-    bindGroupDesc.NumBuffers    = 1;
     bindGroupDesc.RootSignature = rootSignature;
 
     m_bindGroup = device->CreateResourceBindGroup( bindGroupDesc );

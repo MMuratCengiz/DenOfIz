@@ -54,9 +54,9 @@ namespace DenOfIz
         ~DX12CommandList( ) override = default;
 
         void Begin( ) override;
-        void BeginRendering( const RenderingDesc &renderingInfo ) override;
+        void BeginRendering( const RenderingDesc &renderingDesc ) override;
         void EndRendering( ) override;
-        void Execute( const ExecuteDesc &executeInfo ) override;
+        void Execute( const ExecuteDesc &executeDesc ) override;
         void Present( ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks ) override;
         void BindPipeline( IPipeline *pipeline ) override;
         void BindVertexBuffer( IBufferResource *buffer ) override;

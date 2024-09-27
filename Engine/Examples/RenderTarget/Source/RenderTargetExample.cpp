@@ -25,16 +25,19 @@ void RenderTargetExample::Init( )
     m_commandListRing = std::make_unique<CommandListRing>( m_logicalDevice );
     BatchResourceCopy::SyncOp( m_logicalDevice, [ & ]( BatchResourceCopy *batchResourceCopy ) { m_sphere = std::make_unique<SphereAsset>( m_logicalDevice, batchResourceCopy ); } );
 
-    m_quadPipeline   = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice );
+    m_quadPipeline   = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice, "Assets/Shaders/SampleBasic.ps.hlsl" );
     m_renderPipeline = std::make_unique<DefaultRenderPipeline>( m_graphicsApi, m_logicalDevice );
 
     TextureDesc textureDesc{ };
     textureDesc.Width        = m_windowDesc.Width;
     textureDesc.Height       = m_windowDesc.Height;
-    textureDesc.Format       = Format::R32G32B32A32Float;
+    textureDesc.Format       = Format::R8G8B8A8Unorm;
     textureDesc.Descriptor   = ResourceDescriptor::RWTexture;
     textureDesc.InitialState = ResourceState::RenderTarget;
+    textureDesc.DebugName    = "Deferred Render Target";
     m_deferredRenderTarget   = m_logicalDevice->CreateTextureResource( textureDesc );
+    m_defaultSampler         = m_logicalDevice->CreateSampler( SamplerDesc{ } );
+    m_quadPipeline->BindGroup( )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTarget.get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
 
     auto &materialBatch    = m_worldData.RenderBatch.MaterialBatches.emplace_back( );
     materialBatch.Material = m_sphere->Data( )->MaterialData( );
@@ -50,7 +53,7 @@ void RenderTargetExample::ModifyApiPreferences( APIPreference &defaultApiPrefere
 void RenderTargetExample::Update( )
 {
     m_time.Tick( );
-    m_worldData.DeltaTime = m_time.GetDeltaTime();
+    m_worldData.DeltaTime = m_time.GetDeltaTime( );
     m_worldData.Camera->Update( m_worldData.DeltaTime );
     m_commandListRing->NextFrame( );
     const auto     currentCommandList = m_commandListRing->FrameCommandList( 0 );
@@ -58,13 +61,14 @@ void RenderTargetExample::Update( )
     currentCommandList->Begin( );
 
     RenderingAttachmentDesc renderingAttachmentDesc{ };
-    renderingAttachmentDesc.Resource = m_swapChain->GetRenderTarget( currentImageIndex );
+    // renderingAttachmentDesc.Resource = m_swapChain->GetRenderTarget( currentImageIndex );
+    renderingAttachmentDesc.Resource = m_deferredRenderTarget.get( );
 
-    RenderingDesc renderingInfo{ };
-    renderingInfo.RTAttachments.push_back( renderingAttachmentDesc );
+    RenderingDesc renderingDesc{ };
+    renderingDesc.RTAttachments.push_back( renderingAttachmentDesc );
 
-    currentCommandList->PipelineBarrier( PipelineBarrierDesc::UndefinedToRenderTarget( m_swapChain->GetRenderTarget( currentImageIndex ) ) );
-    currentCommandList->BeginRendering( renderingInfo );
+    // currentCommandList->PipelineBarrier( PipelineBarrierDesc::UndefinedToRenderTarget( m_deferredRenderTarget.get( ) ) );
+    currentCommandList->BeginRendering( renderingDesc );
 
     const Viewport &viewport = m_swapChain->GetViewport( );
     currentCommandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
@@ -73,6 +77,21 @@ void RenderTargetExample::Update( )
     m_renderPipeline->Render( currentCommandList, m_worldData );
 
     currentCommandList->EndRendering( );
+    ExecuteDesc executeDesc{ };
+    currentCommandList->Execute( executeDesc );
+    currentCommandList->Begin( );
+    currentCommandList->PipelineBarrier( PipelineBarrierDesc::RenderTargetToShaderResource( m_deferredRenderTarget.get( ) ) );
+    currentCommandList->PipelineBarrier( PipelineBarrierDesc::UndefinedToRenderTarget( m_swapChain->GetRenderTarget( currentImageIndex ) ) );
+    RenderingAttachmentDesc quadAttachmentDesc{ };
+    quadAttachmentDesc.Resource = m_swapChain->GetRenderTarget( currentImageIndex );
+
+    RenderingDesc quadRenderingDesc{ };
+    quadRenderingDesc.RTAttachments.push_back( quadAttachmentDesc );
+
+    currentCommandList->BeginRendering( quadRenderingDesc );
+    m_quadPipeline->Render( currentCommandList );
+    currentCommandList->EndRendering( );
+
     currentCommandList->PipelineBarrier( PipelineBarrierDesc::RenderTargetToPresent( m_swapChain->GetRenderTarget( currentImageIndex ) ) );
     m_commandListRing->ExecuteAndPresent( currentCommandList, m_swapChain.get( ), currentImageIndex );
 }

@@ -67,63 +67,63 @@ namespace DenOfIz
     struct SphereDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Diameter;
-        size_t            Tessellation;
+        float             Diameter{};
+        size_t            Tessellation{};
     };
 
     struct GeoSphereDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Diameter;
-        size_t            Tessellation;
+        float             Diameter{};
+        size_t            Tessellation{};
     };
 
     struct CylinderDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Diameter;
-        float             Height;
-        size_t            Tessellation;
+        float             Diameter{};
+        float             Height{};
+        size_t            Tessellation{};
     };
 
     struct ConeDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Diameter;
-        float             Height;
-        size_t            Tessellation;
+        float             Diameter{};
+        float             Height{};
+        size_t            Tessellation{};
     };
 
     struct TorusDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Diameter;
-        float             Thickness;
-        size_t            Tessellation;
+        float             Diameter{};
+        float             Thickness{};
+        size_t            Tessellation{};
     };
 
     struct TetrahedronDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Size;
+        float             Size{};
     };
 
     struct OctahedronDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Size;
+        float             Size{};
     };
 
     struct DodecahedronDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Size;
+        float             Size{};
     };
 
     struct IcosahedronDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Size;
+        float             Size{};
     };
 
     struct GeometryData
@@ -131,12 +131,12 @@ namespace DenOfIz
         std::vector<VertexPositionNormalTexture> Vertices;
         std::vector<geometry_index_t>            Indices;
 
-        size_t SizeOfVertices() const
+        [[nodiscard]] size_t SizeOfVertices() const
         {
             return Vertices.size() * sizeof(VertexPositionNormalTexture);
         }
 
-        size_t SizeOfIndices() const
+        [[nodiscard]] size_t SizeOfIndices() const
         {
             return Indices.size() * sizeof(geometry_index_t);
         }

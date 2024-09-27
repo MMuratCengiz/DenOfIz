@@ -76,8 +76,7 @@ namespace DenOfIz
         uint32_t ViewMask = 0;
 
         std::vector<Format> ColorAttachmentFormats;
-        Format              DepthAttachmentFormat;
-        Format              StencilAttachmentFormat;
+        Format              DepthStencilAttachmentFormat = Format::Undefined;
     };
 
     struct DepthTest
@@ -125,7 +124,7 @@ namespace DenOfIz
     class IPipeline
     {
     public:
-        virtual ~IPipeline() = default;
+        virtual ~IPipeline( ) = default;
     };
 
 } // namespace DenOfIz

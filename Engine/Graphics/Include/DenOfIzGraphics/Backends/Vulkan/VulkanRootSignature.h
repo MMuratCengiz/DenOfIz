@@ -40,12 +40,12 @@ namespace DenOfIz
         VkPipelineLayout m_pipelineLayout{ };
 
     public:
-        VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc );
+         VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc );
         ~VulkanRootSignature( ) override;
 
         [[nodiscard]] ResourceBindingDesc GetVkShiftedBinding( const ResourceBindingSlot &slot ) const
         {
-            return ContainerUtilities::SafeGetMapValue( m_resourceBindingMap, slot.Key( ) );
+            return ContainerUtilities::SafeGetMapValue( m_resourceBindingMap, slot.Key( ), "Binding slot does not exist in root signature: " + slot.ToString( ) );
         }
 
         /// <returns> VK_NULL_HANDLE if register space is between 0 and max register space. </returns>

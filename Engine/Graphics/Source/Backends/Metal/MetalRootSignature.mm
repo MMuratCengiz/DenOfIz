@@ -29,9 +29,9 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
     for ( const auto &binding : m_desc.ResourceBindings )
     {
         ResourceBindingSlot slot = {
-            .Binding  = binding.Binding,
-            .Register = binding.RegisterSpace,
-            .Type     = binding.BindingType,
+            .Binding       = binding.Binding,
+            .RegisterSpace = binding.RegisterSpace,
+            .Type          = binding.BindingType,
         };
 
         MTLRenderStages stages = 0;

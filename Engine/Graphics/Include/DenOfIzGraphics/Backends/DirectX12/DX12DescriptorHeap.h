@@ -28,26 +28,25 @@ namespace DenOfIz
 
     struct DescriptorHandle
     {
-        bool GpuVisible = false;
-        CD3DX12_CPU_DESCRIPTOR_HANDLE Cpu;
-        CD3DX12_GPU_DESCRIPTOR_HANDLE Gpu;
+        bool                          GpuVisible = false;
+        CD3DX12_CPU_DESCRIPTOR_HANDLE Cpu{};
+        CD3DX12_GPU_DESCRIPTOR_HANDLE Gpu{};
     };
 
     class DX12DescriptorHeap
     {
-    private:
         std::mutex m_mutex;
 
         wil::com_ptr<ID3D12DescriptorHeap> m_heap;
-        DescriptorHandle                   m_startHandle;
+        DescriptorHandle                   m_startHandle{ };
         DescriptorHandle                   m_nextHandle;
         uint32_t                           m_descriptorSize;
         bool                               m_shaderVisible;
 
     public:
-        DX12DescriptorHeap(ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_TYPE type, bool shaderVisible) : m_shaderVisible(shaderVisible)
+        DX12DescriptorHeap( ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_TYPE type, bool shaderVisible ) : m_shaderVisible( shaderVisible )
         {
-            D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+            D3D12_DESCRIPTOR_HEAP_DESC desc = { };
             if ( shaderVisible )
             {
                 desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -82,53 +81,55 @@ namespace DenOfIz
             desc.Type     = type;
             desc.NodeMask = 0;
 
-            device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(m_heap.addressof()));
-            m_descriptorSize  = device->GetDescriptorHandleIncrementSize(type);
-            m_startHandle.Cpu = m_heap->GetCPUDescriptorHandleForHeapStart();
+            if( FAILED( device->CreateDescriptorHeap( &desc, IID_PPV_ARGS( m_heap.addressof( ) ) ) ) )
+            {
+                LOG( ERROR ) << "Failed to create descriptor heap.";
+            }
+
+            m_descriptorSize  = device->GetDescriptorHandleIncrementSize( type );
+            m_startHandle.Cpu = m_heap->GetCPUDescriptorHandleForHeapStart( );
             if ( shaderVisible )
             {
                 m_startHandle.GpuVisible = true;
-                m_startHandle.Gpu = m_heap->GetGPUDescriptorHandleForHeapStart();
+                m_startHandle.Gpu        = m_heap->GetGPUDescriptorHandleForHeapStart( );
             }
             m_nextHandle = m_startHandle;
         }
 
-        uint32_t GetDescriptorSize() const
+        [[nodiscard]] uint32_t GetDescriptorSize( ) const
         {
             return m_descriptorSize;
         }
 
-        ID3D12DescriptorHeap *GetHeap()
+        [[nodiscard]] ID3D12DescriptorHeap *GetHeap( ) const
         {
-            return m_heap.get();
+            return m_heap.get( );
         }
 
-        DescriptorHandle GetStartHandle() const
+        [[nodiscard]] DescriptorHandle GetStartHandle( ) const
         {
             return m_startHandle;
         }
 
-        DescriptorHandle GetNextHandle(uint32_t count)
+        DescriptorHandle GetNextHandle( const uint32_t count = 1 )
         {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            DescriptorHandle            handle = m_nextHandle;
-            m_nextHandle.Cpu.Offset(count, m_descriptorSize);
+            std::lock_guard        lock( m_mutex );
+            const DescriptorHandle handle = m_nextHandle;
+            m_nextHandle.Cpu.Offset( count, m_descriptorSize );
             if ( m_shaderVisible )
             {
                 m_nextHandle.GpuVisible = true;
-                m_nextHandle.Gpu.Offset(count, m_descriptorSize);
+                m_nextHandle.Gpu.Offset( count, m_descriptorSize );
             }
             return handle;
         }
 
-        static const uint32_t RoundUp(uint32_t size, uint32_t alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT)
+        static uint32_t RoundUp( const uint32_t size, const uint32_t alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT )
         {
-            return (size + (alignment - 1)) & ~(alignment - 1);
+            return ( size + ( alignment - 1 ) ) & ~( alignment - 1 );
         }
 
-        ~DX12DescriptorHeap()
-        {
-        }
+        ~DX12DescriptorHeap( ) = default;
     };
 
 } // namespace DenOfIz

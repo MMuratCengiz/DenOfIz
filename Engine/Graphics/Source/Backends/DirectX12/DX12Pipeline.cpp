@@ -64,8 +64,15 @@ void DX12Pipeline::CreateGraphicsPipeline( )
     psoDesc.SampleMask            = UINT_MAX;
     psoDesc.PrimitiveTopologyType = DX12EnumConverter::ConvertPrimitiveTopologyToType( m_desc.PrimitiveTopology );
 
-    psoDesc.NumRenderTargets = 1;
-    psoDesc.RTVFormats[ 0 ]  = DXGI_FORMAT_R8G8B8A8_UNORM;
+    psoDesc.NumRenderTargets = m_desc.Rendering.ColorAttachmentFormats.size( );
+    for ( uint32_t i = 0; i < m_desc.Rendering.ColorAttachmentFormats.size( ); ++i )
+    {
+        psoDesc.RTVFormats[ i ] = DX12EnumConverter::ConvertFormat( m_desc.Rendering.ColorAttachmentFormats[ i ] );
+    }
+    if ( m_desc.Rendering.DepthStencilAttachmentFormat != Format::Undefined )
+    {
+        psoDesc.DSVFormat = DX12EnumConverter::ConvertFormat( m_desc.Rendering.DepthStencilAttachmentFormat );
+    }
 
     SetMSAASampleCount( m_desc, psoDesc );
     DX_CHECK_RESULT( m_context->D3DDevice->CreateGraphicsPipelineState( &psoDesc, IID_PPV_ARGS( m_graphicsPipeline.put( ) ) ) );

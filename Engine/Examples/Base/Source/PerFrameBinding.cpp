@@ -25,7 +25,6 @@ PerFrameBinding::PerFrameBinding( ILogicalDevice *device, IRootSignature *rootSi
 {
     ResourceBindGroupDesc bindGroupDesc{ };
     bindGroupDesc.RegisterSpace = RegisterSpace;
-    bindGroupDesc.NumBuffers    = 2;
     bindGroupDesc.RootSignature = rootSignature;
 
     m_bindGroup = device->CreateResourceBindGroup( bindGroupDesc );

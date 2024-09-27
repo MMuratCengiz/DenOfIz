@@ -68,8 +68,8 @@ namespace DenOfIz
             {
                 LOG( ERROR ) << "Register space " << registerSpace << " is not bound to any bind group.";
             }
-
-            return ContainerUtilities::SafeGetMapValue( m_registerSpaceOrder[ registerSpace ].ResourceOffsetMap, slot.Key( ) );
+            return ContainerUtilities::SafeGetMapValue( m_registerSpaceOrder[ registerSpace ].ResourceOffsetMap, slot.Key( ),
+                                                        "Binding slot does not exist in root signature: " + slot.ToString( ) );
         }
 
         [[nodiscard]] uint32_t RegisterSpaceOffset( const uint32_t registerSpace ) const
@@ -87,9 +87,9 @@ namespace DenOfIz
             return m_rootSignature.get( );
         }
 
-        [[nodiscard]] size_t RootParameterCount( ) const
+        [[nodiscard]] const std::vector<CD3DX12_ROOT_PARAMETER> &RootParameters( ) const
         {
-            return m_rootParameters.size( );
+            return m_rootParameters;
         }
 
         ~DX12RootSignature( ) override;

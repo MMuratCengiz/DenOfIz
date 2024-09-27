@@ -116,6 +116,17 @@ namespace DenOfIz
             barrier.TextureBarrier( textureBarrier );
             return barrier;
         }
+
+        static PipelineBarrierDesc RenderTargetToShaderResource( ITextureResource *resource )
+        {
+            PipelineBarrierDesc barrier;
+            TextureBarrierDesc  textureBarrier{ };
+            textureBarrier.OldState = ResourceState::RenderTarget;
+            textureBarrier.NewState = ResourceState::PixelShaderResource;
+            textureBarrier.Resource = resource;
+            barrier.TextureBarrier( textureBarrier );
+            return barrier;
+        }
     };
 
 } // namespace DenOfIz

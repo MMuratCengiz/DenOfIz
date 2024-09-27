@@ -23,8 +23,8 @@ using namespace DenOfIz;
 
 SphereAsset::SphereAsset( ILogicalDevice *device, BatchResourceCopy *batchResourceCopy )
 {
-    m_materialData              = std::make_unique<MaterialData>( );
-    std::string baseTexturePath = "Assets/Textures/Bricks_005/Stylized_Bricks_005_";
+    m_materialData                    = std::make_unique<MaterialData>( );
+    const std::string baseTexturePath = "Assets/Textures/Bricks_005/Stylized_Bricks_005_";
 
     m_materialData->AttachSampler( device->CreateSampler( SamplerDesc{ } ) );
     m_materialData->AttachAlbedoData( batchResourceCopy->CreateAndLoadTexture( baseTexturePath + "basecolor.png" ) );
@@ -36,7 +36,7 @@ SphereAsset::SphereAsset( ILogicalDevice *device, BatchResourceCopy *batchResour
     std::unique_ptr<IBufferResource> vertexBuffer;
     std::unique_ptr<IBufferResource> indexBuffer;
 
-    GeometryData sphere = Geometry::BuildSphere( { .Diameter = 1.0f, .Tessellation = 64 } );
+    const GeometryData sphere = Geometry::BuildSphere( { .Diameter = 1.0f, .Tessellation = 64  } );
 
     m_assetData = batchResourceCopy->CreateGeometryAssetData( sphere );
     m_assetData->UpdateMaterialData( m_materialData.get( ) );

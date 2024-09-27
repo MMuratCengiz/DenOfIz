@@ -25,6 +25,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ITextureResource.h"
 #include "ReflectionData.h"
 
+#include <ranges>
+#include <unordered_set>
+
 namespace DenOfIz
 {
 
@@ -36,14 +39,40 @@ namespace DenOfIz
 
     struct ResourceBindingSlot
     {
-        uint32_t                    Binding  = 0;
-        uint32_t                    Register = 0;
-        DescriptorBufferBindingType Type     = DescriptorBufferBindingType::ConstantBuffer;
+        uint32_t                    Binding       = 0;
+        uint32_t                    RegisterSpace = 0;
+        DescriptorBufferBindingType Type          = DescriptorBufferBindingType::ConstantBuffer;
 
         // To simplify having a really odd looking vector of ResourceBindingSlots
         [[nodiscard]] uint32_t Key( ) const
         {
-            return static_cast<uint32_t>( Type ) * 1000 + Register * 100 + Binding;
+            return static_cast<uint32_t>( Type ) * 1000 + RegisterSpace * 100 + Binding;
+        }
+
+        bool operator==( const ResourceBindingSlot &other ) const
+        {
+            return Binding == other.Binding && RegisterSpace == other.RegisterSpace && Type == other.Type;
+        }
+
+        [[nodiscard]] std::string ToString( ) const
+        {
+            std::string typeString;
+            switch ( Type )
+            {
+            case DescriptorBufferBindingType::ConstantBuffer:
+                typeString = "b";
+                break;
+            case DescriptorBufferBindingType::ShaderResource:
+                typeString = "t";
+                break;
+            case DescriptorBufferBindingType::UnorderedAccess:
+                typeString = "u";
+                break;
+            case DescriptorBufferBindingType::Sampler:
+                typeString = "s";
+                break;
+            }
+            return "(" + typeString + std::to_string( Binding ) + ", space" + std::to_string( RegisterSpace )  + ")";
         }
     };
 
@@ -87,6 +116,7 @@ namespace DenOfIz
     {
     protected:
         std::unordered_map<uint32_t, ResourceBindingDesc> m_resourceBindings;
+        std::vector<ResourceBindingSlot>                  m_requiredBindings;
 
     public:
         explicit IRootSignature( const RootSignatureDesc &desc )
@@ -94,20 +124,26 @@ namespace DenOfIz
             for ( const auto &binding : desc.ResourceBindings )
             {
                 ResourceBindingSlot slot{
-                    .Binding  = binding.Binding,
-                    .Register = binding.RegisterSpace,
-                    .Type     = binding.BindingType,
+                    .Binding       = binding.Binding,
+                    .RegisterSpace = binding.RegisterSpace,
+                    .Type          = binding.BindingType,
                 };
                 m_resourceBindings[ slot.Key( ) ] = binding;
+                m_requiredBindings.push_back( slot );
             }
-        };
+        }
 
-        const ResourceBindingDesc &FindBinding( const ResourceBindingSlot &slot )
+        [[nodiscard]] std::vector<ResourceBindingSlot> Bindings( ) const
+        {
+            return m_requiredBindings;
+        }
+
+        [[nodiscard]] const ResourceBindingDesc &FindBinding( const ResourceBindingSlot &slot )
         {
             const auto it = m_resourceBindings.find( slot.Key( ) );
             if ( it == m_resourceBindings.end( ) )
             {
-                LOG( ERROR ) << "Unable to find slot with type[" << static_cast<int>( slot.Type ) << "],binding[" << slot.Binding << "],register[" << slot.Register << "].";
+                LOG( ERROR ) << "Unable to find slot with type[" << static_cast<int>( slot.Type ) << "],binding[" << slot.Binding << "],register[" << slot.RegisterSpace << "].";
             }
             return it->second;
         }

@@ -80,12 +80,8 @@ namespace DenOfIz
         ResourceBindGroupDesc bindGroupDesc = { };
         bindGroupDesc.RootSignature         = m_rootSignature.get( );
         bindGroupDesc.RegisterSpace         = 0;
-        bindGroupDesc.NumBuffers            = 2;
         m_perCameraBindGroup                = m_logicalDevice->CreateResourceBindGroup( bindGroupDesc );
         bindGroupDesc.RegisterSpace         = 1;
-        bindGroupDesc.NumBuffers            = 1;
-        bindGroupDesc.NumTextures           = 1;
-        bindGroupDesc.NumSamplers           = 1;
         m_sphereModelBindGroup              = m_logicalDevice->CreateResourceBindGroup( bindGroupDesc );
         m_planeModelBindGroup               = m_logicalDevice->CreateResourceBindGroup( bindGroupDesc );
 

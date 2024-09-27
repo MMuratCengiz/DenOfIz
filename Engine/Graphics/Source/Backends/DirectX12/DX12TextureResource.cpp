@@ -82,7 +82,7 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
 }
 
 DX12TextureResource::DX12TextureResource( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle ) :
-    ITextureResource( { /*TODO !IMPROVEMENT!*/ } ), m_resource( resource ), m_cpuHandle( cpuHandle )
+    ITextureResource( { /*TODO !IMPROVEMENT!*/ } ), m_resource( resource ), m_rtvHandle( cpuHandle )
 {
     isExternalResource = true;
 }
@@ -100,26 +100,68 @@ DX12TextureResource::~DX12TextureResource( )
 
 void DX12TextureResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle )
 {
-    DZ_RETURN_IF( m_cpuHandle.ptr != 0 && m_cpuHandle.ptr == cpuHandle.ptr );
-
-    std::unique_ptr<DX12DescriptorHeap> &heap = m_desc.HeapType == HeapType::CPU_GPU || m_desc.HeapType == HeapType::GPU
-                                                    ? m_context->ShaderVisibleCbvSrvUavDescriptorHeap
-                                                    : m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ];
-    m_cpuHandle                               = cpuHandle;
-
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::Texture ) )
     {
-        CreateTextureSrv( );
+        CreateTextureSrv( cpuHandle );
         m_rootParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
     }
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) )
     {
-        CreateTextureUav( );
+        CreateTextureUav( cpuHandle );
         m_rootParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
     }
 }
 
-void DX12TextureResource::CreateTextureSrv( ) const
+const D3D12_CPU_DESCRIPTOR_HANDLE &DX12TextureResource::GetOrCreateRtvHandle( )
+{
+    if ( m_rtvHandle.ptr != 0 )
+    {
+        return m_rtvHandle;
+    }
+
+    m_rtvHandle                           = m_context->RtvDescriptorHeap->GetNextHandle( 1 ).Cpu;
+    D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = { };
+    rtvDesc.Format                        = DX12EnumConverter::ConvertFormat( m_desc.Format );
+
+    if ( m_desc.Depth > 1 )
+    {
+        rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
+    }
+    else if ( m_desc.Height > 1 )
+    {
+        if ( m_desc.MSAASampleCount != MSAASampleCount::_0 )
+        {
+            rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
+        }
+        else
+        {
+            if ( m_desc.ArraySize > 1 )
+            {
+                rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+            }
+            else
+            {
+                rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+            }
+        }
+    }
+    else
+    {
+        if ( m_desc.ArraySize > 1 )
+        {
+            rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1DARRAY;
+        }
+        else
+        {
+            rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1D;
+        }
+    }
+
+    m_context->D3DDevice->CreateRenderTargetView( m_resource, &rtvDesc, m_rtvHandle );
+    return m_rtvHandle;
+}
+
+void DX12TextureResource::CreateTextureSrv( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle ) const
 {
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = { };
     srvDesc.Format                          = DX12EnumConverter::ConvertFormat( m_desc.Format );
@@ -175,10 +217,10 @@ void DX12TextureResource::CreateTextureSrv( ) const
         }
     }
 
-    m_context->D3DDevice->CreateShaderResourceView( m_resource, &srvDesc, m_cpuHandle );
+    m_context->D3DDevice->CreateShaderResourceView( m_resource, &srvDesc, cpuHandle );
 }
 
-void DX12TextureResource::CreateTextureUav( ) const
+void DX12TextureResource::CreateTextureUav( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle ) const
 {
     D3D12_UNORDERED_ACCESS_VIEW_DESC desc = { };
     if ( m_desc.Depth > 1 )
@@ -227,7 +269,7 @@ void DX12TextureResource::CreateTextureUav( ) const
 
     for ( uint32_t i = 0; i < m_desc.MipLevels; ++i )
     {
-        auto handle                   = D3D12_CPU_DESCRIPTOR_HANDLE( m_cpuHandle.ptr + i * heap->GetDescriptorSize( ) );
+        auto handle                   = D3D12_CPU_DESCRIPTOR_HANDLE( cpuHandle.ptr + i * heap->GetDescriptorSize( ) );
         desc.Texture1DArray.MipSlice  = i;
         desc.Texture1DArray.ArraySize = m_desc.ArraySize;
         desc.Texture1D.MipSlice       = i;

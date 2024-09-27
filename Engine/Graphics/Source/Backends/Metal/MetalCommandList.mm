@@ -54,7 +54,7 @@ void MetalCommandList::Begin( )
     m_rootSignature = nullptr;
 }
 
-void MetalCommandList::BeginRendering( const RenderingDesc &renderingInfo )
+void MetalCommandList::BeginRendering( const RenderingDesc &renderingDesc )
 {
     if ( m_blitEncoder || m_computeEncoder )
     {
@@ -66,9 +66,9 @@ void MetalCommandList::BeginRendering( const RenderingDesc &renderingInfo )
     auto passDesc = MTLRenderPassDescriptor.renderPassDescriptor;
     @autoreleasepool
     {
-        for ( auto i = 0; i < renderingInfo.RTAttachments.size( ); i++ )
+        for ( auto i = 0; i < renderingDesc.RTAttachments.size( ); i++ )
         {
-            const RenderingAttachmentDesc &attachment      = renderingInfo.RTAttachments[ i ];
+            const RenderingAttachmentDesc &attachment      = renderingDesc.RTAttachments[ i ];
             MetalTextureResource          *metalRtResource = static_cast<MetalTextureResource *>( attachment.Resource );
             passDesc.colorAttachments[ i ].texture         = metalRtResource->Instance( );
             passDesc.colorAttachments[ i ].loadAction      = MetalEnumConverter::ConvertLoadAction( attachment.LoadOp );
@@ -77,19 +77,19 @@ void MetalCommandList::BeginRendering( const RenderingDesc &renderingInfo )
                 MTLClearColorMake( attachment.ClearColor[ 0 ], attachment.ClearColor[ 1 ], attachment.ClearColor[ 2 ], attachment.ClearColor[ 3 ] );
         }
 
-        if ( renderingInfo.DepthAttachment.Resource )
+        if ( renderingDesc.DepthAttachment.Resource )
         {
-            const RenderingAttachmentDesc &attachment = renderingInfo.DepthAttachment;
-            passDesc.depthAttachment.texture          = static_cast<MetalTextureResource *>( renderingInfo.DepthAttachment.Resource )->Instance( );
+            const RenderingAttachmentDesc &attachment = renderingDesc.DepthAttachment;
+            passDesc.depthAttachment.texture          = static_cast<MetalTextureResource *>( renderingDesc.DepthAttachment.Resource )->Instance( );
             passDesc.depthAttachment.loadAction       = MetalEnumConverter::ConvertLoadAction( attachment.LoadOp );
             passDesc.depthAttachment.storeAction      = MetalEnumConverter::ConvertStoreAction( attachment.StoreOp );
             passDesc.depthAttachment.clearDepth       = attachment.ClearDepth[ 0 ]; // Validate
         }
 
-        if ( renderingInfo.StencilAttachment.Resource )
+        if ( renderingDesc.StencilAttachment.Resource )
         {
-            const RenderingAttachmentDesc &attachment = renderingInfo.StencilAttachment;
-            passDesc.stencilAttachment.texture        = static_cast<MetalTextureResource *>( renderingInfo.StencilAttachment.Resource )->Instance( );
+            const RenderingAttachmentDesc &attachment = renderingDesc.StencilAttachment;
+            passDesc.stencilAttachment.texture        = static_cast<MetalTextureResource *>( renderingDesc.StencilAttachment.Resource )->Instance( );
             passDesc.stencilAttachment.loadAction     = MetalEnumConverter::ConvertLoadAction( attachment.LoadOp );
             passDesc.stencilAttachment.storeAction    = MetalEnumConverter::ConvertStoreAction( attachment.StoreOp );
             passDesc.stencilAttachment.clearStencil   = attachment.ClearDepth[ 0 ]; // Validate
@@ -103,7 +103,7 @@ void MetalCommandList::EndRendering( )
 {
 }
 
-void MetalCommandList::Execute( const ExecuteDesc &executeInfo )
+void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
 {
     @autoreleasepool
     {
@@ -123,13 +123,13 @@ void MetalCommandList::Execute( const ExecuteDesc &executeInfo )
             m_renderEncoder = nil;
         }
 
-        if ( executeInfo.Notify )
+        if ( executeDesc.Notify )
         {
-            MetalFence *metalFence = static_cast<MetalFence *>( executeInfo.Notify );
+            MetalFence *metalFence = static_cast<MetalFence *>( executeDesc.Notify );
             metalFence->NotifyOnCommandBufferCompletion( m_commandBuffer );
         }
 
-        for ( ISemaphore *notifySemaphore : executeInfo.NotifySemaphores )
+        for ( ISemaphore *notifySemaphore : executeDesc.NotifySemaphores )
         {
             MetalSemaphore *metalSemaphore = static_cast<MetalSemaphore *>( notifySemaphore );
             metalSemaphore->NotifyOnCommandBufferCompletion( m_commandBuffer );

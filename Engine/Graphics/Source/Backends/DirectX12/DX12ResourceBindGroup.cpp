@@ -26,13 +26,38 @@ DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const Resour
     DZ_NOT_NULL( rootSignature );
     m_dx12RootSignature = rootSignature;
 
-    if ( desc.NumBuffers + desc.NumTextures > 0 )
+    uint16_t numCbvSrvUav = 0;
+    uint16_t numSamplers  = 0;
+
+    for ( const auto &rootParameter : m_dx12RootSignature->RootParameters( ) )
     {
-        m_cbvSrvUavHandle = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetNextHandle( m_desc.NumBuffers + m_desc.NumTextures );
+        if ( rootParameter.ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE )
+        {
+            for ( auto i = 0u; i < rootParameter.DescriptorTable.NumDescriptorRanges; i++ )
+            {
+                const auto &range = rootParameter.DescriptorTable.pDescriptorRanges[ i ];
+                if ( range.RegisterSpace != desc.RegisterSpace )
+                {
+                    continue;
+                }
+                if ( range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER )
+                {
+                    numSamplers += range.NumDescriptors;
+                }
+                else
+                {
+                    numCbvSrvUav += range.NumDescriptors;
+                }
+            }
+        }
     }
-    if ( desc.NumSamplers > 0 )
+    if ( numCbvSrvUav > 0 )
     {
-        m_samplerHandle = m_context->ShaderVisibleSamplerDescriptorHeap->GetNextHandle( m_desc.NumSamplers );
+        m_cbvSrvUavHandle = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetNextHandle( numCbvSrvUav );
+    }
+    if ( numSamplers > 0 )
+    {
+        m_samplerHandle = m_context->ShaderVisibleSamplerDescriptorHeap->GetNextHandle( numSamplers );
     }
 }
 

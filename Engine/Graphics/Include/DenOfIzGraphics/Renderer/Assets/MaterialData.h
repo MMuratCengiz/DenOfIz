@@ -26,7 +26,6 @@ namespace DenOfIz
     /// <summary> Material data class that holds the texture data for the material. </summary>
     class MaterialData
     {
-    private:
         std::unique_ptr<ISampler>         m_sampler;
         std::unique_ptr<ITextureResource> m_albedoTexture;
         std::unique_ptr<ITextureResource> m_normalTexture;
@@ -36,7 +35,7 @@ namespace DenOfIz
         std::unique_ptr<ITextureResource> m_aoTexture;
 
     public:
-        MaterialData( )  = default;
+         MaterialData( ) = default;
         ~MaterialData( ) = default;
 
         void AttachSampler( std::unique_ptr<ISampler> sampler );
@@ -47,12 +46,12 @@ namespace DenOfIz
         void AttachRoughnessData( std::unique_ptr<ITextureResource> texture );
         void AttachAoData( std::unique_ptr<ITextureResource> texture );
 
-        ISampler         *Sampler( ) const;
-        ITextureResource *AlbedoTexture( ) const;
-        ITextureResource *NormalTexture( ) const;
-        ITextureResource *HeightTexture( ) const;
-        ITextureResource *MetallicTexture( ) const;
-        ITextureResource *RoughnessTexture( ) const;
-        ITextureResource *AoTexture( ) const;
+        [[nodiscard]] ISampler         *Sampler( ) const;
+        [[nodiscard]] ITextureResource *AlbedoTexture( ) const;
+        [[nodiscard]] ITextureResource *NormalTexture( ) const;
+        [[nodiscard]] ITextureResource *HeightTexture( ) const;
+        [[nodiscard]] ITextureResource *MetallicTexture( ) const;
+        [[nodiscard]] ITextureResource *RoughnessTexture( ) const;
+        [[nodiscard]] ITextureResource *AoTexture( ) const;
     };
 } // namespace DenOfIz

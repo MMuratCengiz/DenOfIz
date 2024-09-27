@@ -81,7 +81,7 @@ void VulkanRootSignature::AddResourceBinding( const ResourceBindingDesc &binding
 {
     ResourceBindingSlot slot{
         .Binding  = binding.Binding,
-        .Register = binding.RegisterSpace,
+        .RegisterSpace = binding.RegisterSpace,
         .Type     = binding.BindingType,
     };
 
@@ -124,7 +124,7 @@ VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBindi
     // Update binding to include the offset
     ResourceBindingSlot slot{
         .Binding  = binding.Binding,
-        .Register = binding.RegisterSpace,
+        .RegisterSpace = binding.RegisterSpace,
         .Type     = binding.BindingType,
     };
     m_resourceBindingMap[ slot.Key( ) ].Binding = layoutBinding.binding;

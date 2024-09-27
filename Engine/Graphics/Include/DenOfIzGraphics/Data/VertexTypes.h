@@ -25,18 +25,18 @@ namespace DenOfIz
         VertexPosition &operator=(const VertexPosition &) = default;
 
         VertexPosition(VertexPosition &&)            = default;
-        VertexPosition &operator=(VertexPosition &&) = default;
+        VertexPosition &operator=( VertexPosition && )               = default;
 
-        VertexPosition(XMFLOAT3 const &iposition) noexcept : Position(iposition)
+        explicit VertexPosition(XMFLOAT3 const &iposition) noexcept : Position(iposition)
         {
         }
 
-        VertexPosition(FXMVECTOR iposition) noexcept
+        explicit VertexPosition(FXMVECTOR iposition) noexcept
         {
             XMStoreFloat3(&this->Position, iposition);
         }
 
-        XMFLOAT3 Position;
+        XMFLOAT3 Position{};
 
         static const InputLayoutDesc InputLayout;
 
@@ -65,8 +65,8 @@ namespace DenOfIz
             XMStoreFloat4(&this->Color, icolor);
         }
 
-        XMFLOAT3 Position;
-        XMFLOAT4 Color;
+        XMFLOAT3 Position{};
+        XMFLOAT4 Color{};
 
         static const InputLayoutDesc InputLayout;
 
@@ -95,8 +95,8 @@ namespace DenOfIz
             XMStoreFloat2(&this->TextureCoordinate, itextureCoordinate);
         }
 
-        XMFLOAT3 Position;
-        XMFLOAT2 TextureCoordinate;
+        XMFLOAT3 Position{};
+        XMFLOAT2 TextureCoordinate{};
 
         static const InputLayoutDesc InputLayout;
 
@@ -127,9 +127,9 @@ namespace DenOfIz
             XMStoreFloat2(&this->TextureCoordinate1, itextureCoordinate1);
         }
 
-        XMFLOAT3 Position;
-        XMFLOAT2 TextureCoordinate0;
-        XMFLOAT2 TextureCoordinate1;
+        XMFLOAT3 Position{};
+        XMFLOAT2 TextureCoordinate0{};
+        XMFLOAT2 TextureCoordinate1{};
 
         static const InputLayoutDesc InputLayout;
 
@@ -158,8 +158,8 @@ namespace DenOfIz
             XMStoreFloat3(&this->Normal, inormal);
         }
 
-        XMFLOAT3 Position;
-        XMFLOAT3 Normal;
+        XMFLOAT3 Position{};
+        XMFLOAT3 Normal{};
 
         static const InputLayoutDesc InputLayout;
 
@@ -190,9 +190,9 @@ namespace DenOfIz
             XMStoreFloat2(&this->TextureCoordinate, itextureCoordinate);
         }
 
-        XMFLOAT3 Position;
-        XMFLOAT4 Color;
-        XMFLOAT2 TextureCoordinate;
+        XMFLOAT3 Position{};
+        XMFLOAT4 Color{};
+        XMFLOAT2 TextureCoordinate{};
 
         static const InputLayoutDesc InputLayout;
 
@@ -222,9 +222,9 @@ namespace DenOfIz
             XMStoreFloat4(&this->Color, icolor);
         }
 
-        XMFLOAT3 Position;
-        XMFLOAT3 Normal;
-        XMFLOAT4 Color;
+        XMFLOAT3 Position{};
+        XMFLOAT3 Normal{};
+        XMFLOAT4 Color{};
 
         static const InputLayoutDesc InputLayout;
 
@@ -255,9 +255,9 @@ namespace DenOfIz
             XMStoreFloat2(&this->TextureCoordinate, itextureCoordinate);
         }
 
-        XMFLOAT3 Position;
-        XMFLOAT3 Normal;
-        XMFLOAT2 TextureCoordinate;
+        XMFLOAT3 Position{};
+        XMFLOAT3 Normal{};
+        XMFLOAT2 TextureCoordinate{};
 
         static const InputLayoutDesc InputLayout;
 
@@ -289,10 +289,10 @@ namespace DenOfIz
             XMStoreFloat2(&this->TextureCoordinate, itextureCoordinate);
         }
 
-        XMFLOAT3 Position;
-        XMFLOAT3 Normal;
-        XMFLOAT4 Color;
-        XMFLOAT2 TextureCoordinate;
+        XMFLOAT3 Position{};
+        XMFLOAT3 Normal{};
+        XMFLOAT4 Color{};
+        XMFLOAT2 TextureCoordinate{};
 
         static const InputLayoutDesc InputLayout;
 

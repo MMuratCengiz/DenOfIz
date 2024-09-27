@@ -261,7 +261,7 @@ const ShaderCompiler &ShaderProgram::ShaderCompilerInstance( ) const
     return compiler;
 }
 
-const std::vector<CompiledShader *> ShaderProgram::GetCompiledShaders( ) const
+std::vector<CompiledShader *> ShaderProgram::GetCompiledShaders( ) const
 {
     std::vector<CompiledShader *> compiledShaders;
     for ( auto &shader : m_compiledShaders )
@@ -328,7 +328,6 @@ DescriptorBufferBindingType ReflectTypeToBufferBindingType( D3D_SHADER_INPUT_TYP
     case D3D_SIT_SAMPLER:
         return DescriptorBufferBindingType::Sampler;
     case D3D_SIT_TBUFFER:
-        return DescriptorBufferBindingType::ShaderResource;
     case D3D_SIT_BYTEADDRESS:
     case D3D_SIT_STRUCTURED:
         return DescriptorBufferBindingType::ShaderResource;
@@ -392,6 +391,21 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
         {
             D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
             shaderReflection->GetResourceBindingDesc( i, &shaderInputBindDesc );
+
+            bool found = false;
+            for ( auto &boundBinding : rootSignature.ResourceBindings )
+            {
+                if ( boundBinding.RegisterSpace == shaderInputBindDesc.Space && boundBinding.Binding == shaderInputBindDesc.BindPoint &&
+                     boundBinding.BindingType == ReflectTypeToBufferBindingType( shaderInputBindDesc.Type ) )
+                {
+                    found = true;
+                    boundBinding.Stages.push_back( shader->Stage );
+                }
+            }
+            if ( found )
+            {
+                continue;
+            }
 
             ResourceBindingDesc &resourceBindingDesc = rootSignature.ResourceBindings.emplace_back( );
             resourceBindingDesc.Name                 = shaderInputBindDesc.Name;

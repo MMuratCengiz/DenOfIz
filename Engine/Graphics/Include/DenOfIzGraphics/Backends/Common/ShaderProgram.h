@@ -57,7 +57,7 @@ namespace DenOfIz
     {
         // -1 is used for debugging purposes to show that no descriptor table exists in this root signature of that type
         int CbvSrvUavOffset = -1;
-        int SamplerOffset = -1;
+        int SamplerOffset   = -1;
     };
 #endif
 
@@ -65,7 +65,6 @@ namespace DenOfIz
     {
         friend class GraphicsApi;
 
-    private:
         std::vector<std::unique_ptr<CompiledShader>> m_compiledShaders;
         const ShaderProgramDesc                     &m_desc;
 #ifdef BUILD_METAL
@@ -75,7 +74,7 @@ namespace DenOfIz
         explicit ShaderProgram( const ShaderProgramDesc &desc );
 
     public:
-        [[nodiscard]] const std::vector<CompiledShader *> GetCompiledShaders( ) const;
+        [[nodiscard]] std::vector<CompiledShader *>       GetCompiledShaders( ) const;
         [[nodiscard]] ShaderReflectDesc                   Reflect( ) const;
 
     private:
