@@ -70,22 +70,29 @@ namespace DenOfIz
     {
 
     protected:
-        Format      m_format = Format::Undefined;
-        uint32_t    m_width  = 1;
-        uint32_t    m_height = 1;
-        uint32_t    m_depth  = 1;
-        const void *m_data   = nullptr;
+        Format                m_format       = Format::Undefined;
+        uint32_t              m_width        = 1;
+        uint32_t              m_height       = 1;
+        uint32_t              m_depth        = 1;
+        BitSet<ResourceState> m_initialState = ResourceState::Undefined;
+        const void           *m_data         = nullptr;
 
         explicit ITextureResource( const TextureDesc &desc )
         {
-            m_width  = desc.Width;
-            m_height = desc.Height;
-            m_depth  = desc.Depth;
-            m_format = desc.Format;
+            m_width        = desc.Width;
+            m_height       = desc.Height;
+            m_depth        = desc.Depth;
+            m_format       = desc.Format;
+            m_initialState = desc.InitialState;
         }
 
     public:
         virtual ~ITextureResource( ) = default;
+
+        [[nodiscard]] BitSet<ResourceState> InitialState( )
+        {
+            return m_initialState;
+        }
 
         [[nodiscard]] uint32_t GetWidth( ) const
         {

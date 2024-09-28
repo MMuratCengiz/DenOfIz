@@ -24,7 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) : m_context( context ), m_desc( std::move( desc ) ), m_cpuHandle( ), m_rootParameterType( )
+DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) :
+    IBufferResource( desc ), m_context( context ), m_desc( std::move( desc ) ), m_cpuHandle( ), m_rootParameterType( )
 {
     m_stride                   = FormatNumBytes( m_desc.Format );
     m_numBytes                 = Utilities::Align( m_desc.NumBytes, std::max<uint32_t>( m_desc.Alignment, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT ) );

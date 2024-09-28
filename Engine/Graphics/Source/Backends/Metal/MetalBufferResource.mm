@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDesc &desc ) : m_context( context ), m_desc( desc )
+MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDesc &desc ) : IBufferResource( desc ), m_context( context ), m_desc( desc )
 {
     NSUInteger         numBytes = m_desc.NumBytes;
     MTLResourceOptions options  = MTLResourceStorageModeShared;

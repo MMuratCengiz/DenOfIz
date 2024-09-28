@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc desc ) : m_desc( std::move( desc ) ), m_context( context )
+VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc desc ) : IBufferResource( desc ), m_desc( std::move( desc ) ), m_context( context )
 {
     m_numBytes = Utilities::Align( m_desc.NumBytes, m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment );
 

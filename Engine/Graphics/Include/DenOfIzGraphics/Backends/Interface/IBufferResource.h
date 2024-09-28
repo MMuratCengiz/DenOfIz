@@ -69,12 +69,19 @@ namespace DenOfIz
         BitSet<ResourceState> m_state;
 
     public:
+        IBufferResource( const BufferDesc &desc ) : m_numBytes( desc.NumBytes ), m_state( desc.InitialState )
+        {
+        }
         virtual ~IBufferResource( ) = default;
 
         // Allowed only on CPU visible resources
         virtual void *MapMemory( )   = 0;
         virtual void  UnmapMemory( ) = 0;
         //--
+        [[nodiscard]] virtual BitSet<ResourceState> InitialState( ) const
+        {
+            return m_state;
+        }
 
         [[nodiscard]] uint32_t GetSize( ) const
         {
