@@ -24,22 +24,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzExamples/SimplifiedPipeline.h>
 #include <DenOfIzExamples/SphereAsset.h>
 #include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
+#include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
 
 namespace DenOfIz
 {
     class RenderTargetExample final : public IExample
     {
         Time                                   m_time;
-        std::unique_ptr<CommandListRing>       m_commandListRing;
         std::unique_ptr<QuadPipeline>          m_quadPipeline;
         std::unique_ptr<DefaultRenderPipeline> m_renderPipeline;
         std::unique_ptr<SphereAsset>           m_sphere;
 
-        std::unique_ptr<ITextureResource> m_deferredRenderTarget;
-        std::unique_ptr<ISampler>         m_defaultSampler;
+        std::vector<std::unique_ptr<ITextureResource>> m_deferredRenderTargets;
+        std::unique_ptr<ISampler>                      m_defaultSampler;
+
+        std::unique_ptr<RenderGraph> m_renderGraph;
 
     public:
-        ~                 RenderTargetExample( ) override = default;
+        ~RenderTargetExample( ) override = default;
         void              Init( ) override;
         void              ModifyApiPreferences( APIPreference &defaultApiPreference ) override;
         void              HandleEvent( SDL_Event &event ) override;

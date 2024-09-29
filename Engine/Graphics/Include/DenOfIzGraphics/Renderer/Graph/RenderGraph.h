@@ -26,35 +26,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /// </summary>
 namespace DenOfIz
 {
-    namespace RenderGraphInternal
+    enum class NodeResourceUsageType
     {
-        enum class NodeResourceUsageType
-        {
-            Buffer,
-            Texture
-        };
-
-        struct FrameExecutionContext
-        {
-            uint32_t FrameIndex;
-        };
-
-        struct NodeExecutionContext
-        {
-            ICommandList                                                  *CommandList;
-            std::vector<ISemaphore *>                                      WaitOnSemaphores;
-            std::vector<ISemaphore *>                                      NotifySemaphores;
-            PipelineBarrierDesc                                            BarrierDesc;
-            std::function<void( FrameExecutionContext *, ICommandList * )> Execute;
-        };
-
-        struct GraphNode
-        {
-            uint32_t                                           Index;
-            std::vector<std::unique_ptr<NodeExecutionContext>> Contexts;
-        };
-    } // namespace RenderGraphInternal
-    using namespace RenderGraphInternal;
+        Buffer,
+        Texture
+    };
 
     struct NodeResourceUsageDesc
     {
@@ -62,47 +38,80 @@ namespace DenOfIz
         NodeResourceUsageDesc( ) = default;
 
     public:
-        ResourceState         State = ResourceState::Undefined;
-        NodeResourceUsageType Type  = NodeResourceUsageType::Buffer;
+        uint32_t              FrameIndex = 0;
+        ResourceState         State      = ResourceState::Undefined;
+        NodeResourceUsageType Type       = NodeResourceUsageType::Buffer;
         union
         {
             IBufferResource  *BufferResource;
             ITextureResource *TextureResource;
         };
 
-        static NodeResourceUsageDesc BufferUsage( IBufferResource *bufferResource, const ResourceState usage )
+        static NodeResourceUsageDesc BufferState( uint32_t frameIndex, IBufferResource *bufferResource, const ResourceState state )
         {
             NodeResourceUsageDesc desc{ };
-            desc.State          = usage;
+            desc.FrameIndex     = frameIndex;
+            desc.State          = state;
             desc.Type           = NodeResourceUsageType::Buffer;
             desc.BufferResource = bufferResource;
             return desc;
         }
 
-        static NodeResourceUsageDesc TextureUsage( ITextureResource *textureResource, const ResourceState usage )
+        static NodeResourceUsageDesc TextureState( uint32_t frameIndex, ITextureResource *textureResource, const ResourceState state )
         {
             NodeResourceUsageDesc desc{ };
-            desc.State           = usage;
+            desc.FrameIndex      = frameIndex;
+            desc.State           = state;
             desc.Type            = NodeResourceUsageType::Texture;
             desc.TextureResource = textureResource;
             return desc;
         }
     };
 
+    namespace RenderGraphInternal
+    {
+        // Odd placement due to dependency on NodeResourceUsageDesc
+        struct NodeExecutionContext
+        {
+            ICommandList                                   *CommandList;
+            std::vector<ISemaphore *>                       WaitOnSemaphores;
+            std::vector<ISemaphore *>                       NotifySemaphores;
+            std::vector<NodeResourceUsageDesc>              ResourceUsagesPerFrame;
+            std::mutex                                      SelfMutex;
+            std::function<void( uint32_t, ICommandList * )> Execute;
+        };
+
+        struct GraphNode
+        {
+            uint32_t                                           Index;
+            std::vector<std::unique_ptr<NodeExecutionContext>> Contexts;
+        };
+
+        struct PresentContext
+        {
+            std::vector<NodeResourceUsageDesc> ResourceUsagesPerFrame;
+            std::vector<ISemaphore *>          PresentDependencySemaphores;
+            ICommandList                      *PresentCommandList;
+            std::unique_ptr<ISemaphore>        ImageReadySemaphore;
+            std::unique_ptr<ISemaphore>        ImageRenderedSemaphore;
+        };
+    } // namespace RenderGraphInternal
+    using namespace RenderGraphInternal;
+
     struct NodeDesc
     {
-        std::string                                                    Name;
-        std::vector<std::string>                                       Dependencies;
-        std::vector<NodeResourceUsageDesc>                             ResourceStates;
-        std::function<void( FrameExecutionContext *, ICommandList * )> Execute;
+        std::string                                     Name;
+        std::vector<std::string>                        Dependencies;
+        std::vector<NodeResourceUsageDesc>              RequiredResourceStates;
+        std::function<void( uint32_t, ICommandList * )> Execute;
     };
 
     struct PresentNodeDesc
     {
-        std::vector<std::string>                                                           Dependencies;
-        std::vector<NodeResourceUsageDesc>                                                 ResourceUsages;
-        ISwapChain                                                                        *SwapChain;
-        std::function<void( FrameExecutionContext *, ICommandList *, ITextureResource * )> Execute;
+        std::vector<std::string>                                            Dependencies;
+        std::vector<NodeResourceUsageDesc>                                  RequiredResourceStates;
+        ISwapChain                                                         *SwapChain;
+        std::function<void( uint32_t, ICommandList *, ITextureResource * )> Execute;
     };
 
     struct RenderGraphDesc
@@ -110,34 +119,48 @@ namespace DenOfIz
         GraphicsApi    *GraphicsApi;
         ILogicalDevice *LogicalDevice;
         ISwapChain     *SwapChain;
-        uint8_t         NumFrames;
+        uint8_t         NumFrames       = 3;
         uint32_t        NumCommandLists = 16;
+    };
+
+    struct ResourceLockedState
+    {
+        ResourceState State = ResourceState::Undefined;
+        std::mutex    Mutex;
+    };
+
+    struct ResourceLocking
+    {
+        std::unordered_map<ITextureResource *, ResourceLockedState> TextureStates;
+        std::unordered_map<IBufferResource *, ResourceLockedState>  BufferStates;
     };
 
     class RenderGraph
     {
-        uint32_t                                              m_frameIndex     = 0;
-        bool                                                  m_hasPresentNode = false;
-        std::vector<NodeDesc>                                 m_nodeDescriptions;
-        std::vector<std::unique_ptr<GraphNode>>               m_nodes;
-        PresentNodeDesc                                       m_presentNode;
-        std::unordered_map<ITextureResource *, ResourceState> m_textureStates;
-        std::unordered_map<IBufferResource *, ResourceState>  m_bufferStates;
-        RenderGraphDesc                                       m_desc;
-        std::vector<std::unique_ptr<ICommandListPool>>        m_commandListPools; // Each entry is for a single frame
-        std::vector<std::unique_ptr<ICommandList>>            m_commandLists;
-        std::vector<std::unique_ptr<ISemaphore>>              m_nodeSemaphores;
-        std::vector<std::unique_ptr<IFence>>                  m_frameFences;
-        std::vector<std::vector<ISemaphore *>>                m_presentDependencySemaphores; // Each entry is for a single frame
-        std::vector<std::unique_ptr<ISemaphore>>              m_imageReadySemaphores;
-        std::vector<std::unique_ptr<ISemaphore>>              m_imageRenderedSemaphores;
+        uint32_t                                       m_frameIndex     = 0;
+        bool                                           m_hasPresentNode = false;
+        std::vector<NodeDesc>                          m_nodeDescriptions;
+        std::vector<std::unique_ptr<GraphNode>>        m_nodes;
+        PresentNodeDesc                                m_presentNode;
+        RenderGraphDesc                                m_desc;
+        std::vector<std::unique_ptr<ICommandListPool>> m_commandListPools; // Each entry is for a single frame
+        std::vector<std::unique_ptr<ICommandList>>     m_commandLists;
+        std::vector<std::unique_ptr<ISemaphore>>       m_nodeSemaphores;
+        std::vector<std::unique_ptr<IFence>>           m_frameFences;
+        std::vector<PresentContext>                    m_presentContexts;
+
+        std::vector<tf::Taskflow> m_frameTaskflows;
+        tf::Executor              m_executor;
+
+        ResourceLocking m_resourceLocking;
 
     public:
         explicit RenderGraph( const RenderGraphDesc &desc );
         void Reset( );
         void AddNode( const NodeDesc &desc );
-        void AddPresentNode( const PresentNodeDesc &desc );
+        void SetPresentNode( const PresentNodeDesc &desc );
         void BuildGraph( );
+        void BuildTaskflow( );
         void Update( );
         void WaitIdle( );
 

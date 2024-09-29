@@ -24,14 +24,14 @@ using namespace RenderGraphInternal;
 RenderGraph::RenderGraph( const RenderGraphDesc &desc ) : m_presentNode( { } ), m_desc( desc )
 {
     m_frameFences.resize( m_desc.NumFrames );
-    m_imageReadySemaphores.resize( m_desc.NumFrames );
-    m_imageRenderedSemaphores.resize( m_desc.NumFrames );
-
     for ( uint8_t i = 0; i < m_desc.NumFrames; ++i )
     {
-        m_frameFences[ i ]             = desc.LogicalDevice->CreateFence( );
-        m_imageReadySemaphores[ i ]    = desc.LogicalDevice->CreateSemaphore( );
-        m_imageRenderedSemaphores[ i ] = desc.LogicalDevice->CreateSemaphore( );
+        PresentContext presentContext{ };
+        presentContext.ImageReadySemaphore    = m_desc.LogicalDevice->CreateSemaphore( );
+        presentContext.ImageRenderedSemaphore = m_desc.LogicalDevice->CreateSemaphore( );
+        m_presentContexts.push_back( std::move( presentContext ) );
+
+        m_frameFences[ i ] = desc.LogicalDevice->CreateFence( );
     }
 
     CommandListPoolDesc poolDesc{ };
@@ -40,25 +40,64 @@ RenderGraph::RenderGraph( const RenderGraphDesc &desc ) : m_presentNode( { } ), 
     for ( int i = 0; i < m_desc.NumFrames; ++i )
     {
         m_commandListPools.push_back( m_desc.LogicalDevice->CreateCommandListPool( poolDesc ) );
+        m_presentContexts[ i ].PresentCommandList = m_commandListPools[ i ]->GetCommandLists( )[ 0 ];
     }
+
+    Reset( );
 }
 
 void RenderGraph::Reset( )
 {
+    m_resourceLocking.TextureStates.clear( );
+    m_resourceLocking.BufferStates.clear( );
     m_nodes.clear( );
-    m_presentDependencySemaphores.clear( );
-    m_presentDependencySemaphores.resize( m_desc.NumFrames );
+    for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
+    {
+        m_presentContexts[ i ].PresentDependencySemaphores.clear( );
+    }
+    m_frameTaskflows.clear( );
     m_nodeDescriptions.clear( );
     m_hasPresentNode = false;
 }
 
 void RenderGraph::AddNode( const NodeDesc &desc )
 {
+    if ( desc.Name.empty( ) )
+    {
+        LOG( FATAL ) << "Node must have a name.";
+    }
+
     m_nodeDescriptions.push_back( desc );
+
+    for ( const NodeResourceUsageDesc &requiredResourceState : desc.RequiredResourceStates )
+    {
+        if ( requiredResourceState.Type == NodeResourceUsageType::Texture )
+        {
+            if ( requiredResourceState.TextureResource == nullptr )
+            {
+                LOG( FATAL ) << "Texture resource must be valid.";
+            }
+
+            m_resourceLocking.TextureStates.emplace( requiredResourceState.TextureResource, requiredResourceState.TextureResource->InitialState( ) );
+        }
+        else
+        {
+            if ( requiredResourceState.BufferResource == nullptr )
+            {
+                LOG( FATAL ) << "Buffer resource must be valid.";
+            }
+            m_resourceLocking.BufferStates.emplace( requiredResourceState.BufferResource, requiredResourceState.BufferResource->InitialState( ) );
+        }
+    }
 }
 
-void RenderGraph::AddPresentNode( const PresentNodeDesc &desc )
+void RenderGraph::SetPresentNode( const PresentNodeDesc &desc )
 {
+    if ( desc.SwapChain == nullptr )
+    {
+        LOG( FATAL ) << "Present node must have a valid swap chain.";
+    }
+
     m_hasPresentNode = true;
     m_presentNode    = desc;
 }
@@ -68,6 +107,7 @@ void RenderGraph::BuildGraph( )
     InitAllNodes( );
     ValidateNodes( );
     ConfigureGraph( );
+    BuildTaskflow( );
 }
 
 void RenderGraph::InitAllNodes( )
@@ -82,6 +122,13 @@ void RenderGraph::InitAllNodes( )
             auto newContext         = std::make_unique<NodeExecutionContext>( );
             newContext->CommandList = m_commandListPools[ i ]->GetCommandLists( )[ graphNode->Index + 1 ]; // +1 for the present node
             newContext->Execute     = node.Execute;
+            for ( auto &resourceState : node.RequiredResourceStates )
+            {
+                if ( resourceState.FrameIndex == i )
+                {
+                    newContext->ResourceUsagesPerFrame.push_back( resourceState );
+                }
+            }
             graphNode->Contexts.push_back( std::move( newContext ) );
         }
         m_nodes.push_back( std::move( graphNode ) );
@@ -131,8 +178,95 @@ void RenderGraph::ConfigureGraph( )
         ISemaphore *semaphore = GetOrCreateSemaphore( freeSemaphoreIndex );
         for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
         {
-            m_presentDependencySemaphores[ i ].push_back( semaphore );
+            m_presentContexts[ i ].PresentDependencySemaphores.push_back( semaphore );
             m_nodes[ processedNodes[ dependency ] ]->Contexts[ i ]->NotifySemaphores.push_back( semaphore );
+        }
+    }
+
+    for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
+    {
+        for ( auto &resourceState : m_presentNode.RequiredResourceStates )
+        {
+            if ( resourceState.FrameIndex == i )
+            {
+                m_presentContexts[ i ].ResourceUsagesPerFrame.push_back( resourceState );
+            }
+        }
+    }
+}
+
+void RenderGraph::BuildTaskflow( )
+{
+    m_frameTaskflows.clear( );
+    std::unordered_map<std::string, tf::Task> tasks;
+
+    for ( uint32_t frame = 0; frame < m_desc.NumFrames; frame++ )
+    {
+        tf::Taskflow &taskflow  = m_frameTaskflows.emplace_back( );
+        uint32_t      nodeIndex = 0;
+
+        for ( auto &node : m_nodes )
+        {
+            NodeDesc    &nodeDesc = m_nodeDescriptions[ nodeIndex ];
+            std::string &nodeName = nodeDesc.Name;
+
+            tasks[ nodeName ] = taskflow
+                                    .emplace(
+                                        [ this, frame, &node, nodeIndex ]
+                                        {
+                                            std::unique_ptr<NodeExecutionContext> &context = node->Contexts[ frame ];
+                                            std::lock_guard<std::mutex>            selfLock( context->SelfMutex );
+                                            ICommandList                         *&commandList = context->CommandList;
+
+                                            commandList->Begin( );
+                                            IssueBarriers( commandList, context->ResourceUsagesPerFrame );
+                                            context->Execute( frame, commandList );
+
+                                            ExecuteDesc executeDesc{ };
+                                            if ( nodeIndex == m_nodes.size( ) - 1 && !m_hasPresentNode )
+                                            {
+                                                executeDesc.Notify = m_frameFences[ frame ].get( );
+                                            }
+                                            executeDesc.WaitOnSemaphores = context->WaitOnSemaphores;
+                                            executeDesc.NotifySemaphores = context->NotifySemaphores;
+                                            commandList->Execute( executeDesc );
+                                        } )
+                                    .name( nodeName );
+
+            for ( auto &dependency : nodeDesc.Dependencies )
+            {
+                tasks[ nodeName ].succeed( tasks[ dependency ] );
+            }
+            nodeIndex++;
+        }
+
+        tf::Task presentTask = taskflow.emplace(
+            [ this, frame ]
+            {
+                PresentContext &presentContext     = m_presentContexts[ frame ];
+                uint32_t        image              = m_presentNode.SwapChain->AcquireNextImage( presentContext.ImageReadySemaphore.get( ) );
+                ICommandList  *&presentCommandList = presentContext.PresentCommandList;
+                presentCommandList->Begin( );
+                IssueBarriers( presentCommandList, presentContext.ResourceUsagesPerFrame );
+                ITextureResource *swapChainRenderTarget = m_presentNode.SwapChain->GetRenderTarget( image );
+
+                presentCommandList->PipelineBarrier( PipelineBarrierDesc::UndefinedToRenderTarget( swapChainRenderTarget ) );
+                m_presentNode.Execute( frame, presentCommandList, swapChainRenderTarget );
+                presentCommandList->PipelineBarrier( PipelineBarrierDesc::RenderTargetToPresent( swapChainRenderTarget ) );
+
+                ExecuteDesc presentExecuteDesc{ };
+                presentExecuteDesc.Notify           = m_frameFences[ frame ].get( );
+                presentExecuteDesc.WaitOnSemaphores = { presentContext.ImageReadySemaphore.get( ) };
+                std::copy( presentContext.PresentDependencySemaphores.begin( ), presentContext.PresentDependencySemaphores.end( ),
+                           std::back_inserter( presentExecuteDesc.WaitOnSemaphores ) );
+                presentExecuteDesc.NotifySemaphores = { presentContext.ImageRenderedSemaphore.get( ) };
+                presentCommandList->Execute( presentExecuteDesc );
+                presentCommandList->Present( m_presentNode.SwapChain, image, { presentContext.ImageRenderedSemaphore.get( ) } );
+            } );
+
+        for ( auto &dependency : m_presentNode.Dependencies )
+        {
+            presentTask.succeed( tasks[ dependency ] );
         }
     }
 }
@@ -140,47 +274,7 @@ void RenderGraph::ConfigureGraph( )
 void RenderGraph::Update( )
 {
     m_frameFences[ m_frameIndex ]->Wait( );
-
-    FrameExecutionContext frameExecutionContext{ };
-    frameExecutionContext.FrameIndex = m_frameIndex;
-
-    uint32_t nodeIndex = 0;
-    for ( auto &node : m_nodes )
-    {
-        std::unique_ptr<NodeExecutionContext> &context     = node->Contexts[ m_frameIndex ];
-        ICommandList                         *&commandList = context->CommandList;
-        commandList->Begin( );
-        IssueBarriers( commandList, m_nodeDescriptions[ nodeIndex ].ResourceStates );
-        context->Execute( &frameExecutionContext, commandList );
-
-        ExecuteDesc executeDesc{ };
-        if ( nodeIndex == m_nodes.size( ) - 1 && !m_hasPresentNode )
-        {
-            executeDesc.Notify = m_frameFences[ m_frameIndex ].get( );
-        }
-        executeDesc.WaitOnSemaphores = context->WaitOnSemaphores;
-        executeDesc.NotifySemaphores = context->NotifySemaphores;
-        commandList->Execute( executeDesc );
-        nodeIndex++;
-    }
-
-    DZ_RETURN_IF( !m_hasPresentNode );
-
-    uint32_t image              = m_presentNode.SwapChain->AcquireNextImage( m_imageReadySemaphores[ m_frameIndex ].get( ) );
-    auto     presentCommandList = m_commandListPools[ m_frameIndex ]->GetCommandLists( )[ 0 ];
-    presentCommandList->Begin( );
-    IssueBarriers( presentCommandList, m_presentNode.ResourceUsages );
-    m_presentNode.Execute( &frameExecutionContext, presentCommandList, m_presentNode.SwapChain->GetRenderTarget( image ) );
-
-    ExecuteDesc presentExecuteDesc{ };
-    presentExecuteDesc.Notify           = m_frameFences[ m_frameIndex ].get( );
-    presentExecuteDesc.WaitOnSemaphores = { m_imageReadySemaphores[ m_frameIndex ].get( ) };
-    std::copy( m_presentDependencySemaphores[ m_frameIndex ].begin( ), m_presentDependencySemaphores[ m_frameIndex ].end( ),
-               std::back_inserter( presentExecuteDesc.WaitOnSemaphores ) );
-    presentExecuteDesc.NotifySemaphores = { m_imageRenderedSemaphores[ m_frameIndex ].get( ) };
-    presentCommandList->Execute( presentExecuteDesc );
-    presentCommandList->Present( m_presentNode.SwapChain, image, { m_imageRenderedSemaphores[ m_frameIndex ].get( ) } );
-
+    m_executor.run( m_frameTaskflows[ m_frameIndex ] ).wait( );
     m_frameIndex = ( m_frameIndex + 1 ) % m_desc.NumFrames;
 }
 
@@ -228,29 +322,43 @@ void RenderGraph::ValidateDependencies( const std::unordered_set<std::string> &a
 
 void RenderGraph::IssueBarriers( ICommandList *commandList, std::vector<NodeResourceUsageDesc> &resourceUsages )
 {
-    PipelineBarrierDesc barrierDesc{ };
+    PipelineBarrierDesc       barrierDesc{ };
+    std::vector<std::mutex *> m_unlocks;
+
     for ( auto &resourceState : resourceUsages )
     {
         if ( resourceState.Type == NodeResourceUsageType::Texture )
         {
-            auto texture = resourceState.TextureResource;
-            if ( !m_textureStates.contains( texture ) )
+            auto  texture     = resourceState.TextureResource;
+            auto &lockedState = m_resourceLocking.TextureStates[ texture ];
+            if ( lockedState.State != resourceState.State )
             {
-                m_textureStates[ texture ] = texture->InitialState( );
+                lockedState.Mutex.lock( );
+                lockedState.State = resourceState.State;
+                m_unlocks.push_back( &lockedState.Mutex );
+                barrierDesc.TextureBarrier( TextureBarrierDesc{ texture, lockedState.State, resourceState.State } );
             }
-            barrierDesc.TextureBarrier( TextureBarrierDesc{ texture, m_textureStates[ texture ], resourceState.State } );
-            m_textureStates[ texture ] = resourceState.State;
         }
         else
         {
-            auto buffer = resourceState.BufferResource;
-            if ( !m_bufferStates.contains( buffer ) )
+            auto  buffer      = resourceState.BufferResource;
+            auto &lockedState = m_resourceLocking.BufferStates[ buffer ];
+            if ( lockedState.State != resourceState.State )
             {
-                m_bufferStates[ buffer ] = buffer->InitialState( );
+                lockedState.Mutex.lock( );
+                lockedState.State = resourceState.State;
+                m_unlocks.push_back( &lockedState.Mutex );
+                barrierDesc.BufferBarrier( BufferBarrierDesc{ buffer, lockedState.State, resourceState.State } );
             }
-            barrierDesc.BufferBarrier( BufferBarrierDesc{ buffer, m_bufferStates[ buffer ], resourceState.State } );
-            m_bufferStates[ buffer ] = resourceState.State;
         }
     }
-    commandList->PipelineBarrier( barrierDesc );
+
+    if ( !barrierDesc.GetTextureBarriers( ).empty( ) || !barrierDesc.GetBufferBarriers( ).empty( ) )
+    {
+        commandList->PipelineBarrier( barrierDesc );
+        for ( auto &mutex : m_unlocks )
+        {
+            mutex->unlock( );
+        }
+    }
 }

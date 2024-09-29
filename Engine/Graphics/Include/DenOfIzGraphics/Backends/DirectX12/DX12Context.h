@@ -50,10 +50,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzCore/Common.h>
 
 #define DX_CHECK_RESULT( result )                                                                                                                                                  \
-    if ( FAILED( result ) )                                                                                                                                                        \
+    do                                                                                                                                                                             \
     {                                                                                                                                                                              \
-        LOG( ERROR ) << "DirectX12 Layer Error: " << result;                                                                                                                       \
-    }
+        if ( FAILED( result ) )                                                                                                                                                    \
+        {                                                                                                                                                                          \
+            LOG( ERROR ) << "DirectX12 Layer Error: " << result;                                                                                                                   \
+        }                                                                                                                                                                          \
+    }                                                                                                                                                                              \
+    while ( false )
 
 namespace DenOfIz
 {

@@ -28,16 +28,16 @@ namespace DenOfIz
 {
     class QuadPipeline
     {
-        std::unique_ptr<ShaderProgram>      m_program;
-        std::unique_ptr<IPipeline>          m_pipeline;
-        std::unique_ptr<IRootSignature>     m_rootSignature;
-        std::unique_ptr<IInputLayout>       m_inputLayout;
-        std::unique_ptr<IResourceBindGroup> m_bindGroup;
-        std::unique_ptr<ISampler>           m_sampler;
+        std::unique_ptr<ShaderProgram>                   m_program;
+        std::unique_ptr<IPipeline>                       m_pipeline;
+        std::unique_ptr<IRootSignature>                  m_rootSignature;
+        std::unique_ptr<IInputLayout>                    m_inputLayout;
+        std::vector<std::unique_ptr<IResourceBindGroup>> m_bindGroups;
+        std::unique_ptr<ISampler>                        m_sampler;
 
     public:
-             QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice, const std::string &pixelShader );
-        [[nodiscard]] IResourceBindGroup* BindGroup( ) const;
-        void Render( ICommandList *commandList ) const;
+        QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice, const std::string &pixelShader );
+        [[nodiscard]] IResourceBindGroup *BindGroup( uint32_t frame ) const;
+        void                              Render( ICommandList *commandList, uint32_t frame  ) const;
     };
 } // namespace DenOfIz

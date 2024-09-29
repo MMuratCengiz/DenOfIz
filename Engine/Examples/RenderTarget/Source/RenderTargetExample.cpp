@@ -22,7 +22,6 @@ using namespace DenOfIz;
 
 void RenderTargetExample::Init( )
 {
-    m_commandListRing = std::make_unique<CommandListRing>( m_logicalDevice );
     BatchResourceCopy::SyncOp( m_logicalDevice, [ & ]( BatchResourceCopy *batchResourceCopy ) { m_sphere = std::make_unique<SphereAsset>( m_logicalDevice, batchResourceCopy ); } );
 
     m_quadPipeline   = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice, "Assets/Shaders/SampleBasic.ps.hlsl" );
@@ -35,15 +34,77 @@ void RenderTargetExample::Init( )
     textureDesc.Descriptor   = ResourceDescriptor::RWTexture;
     textureDesc.InitialState = ResourceState::RenderTarget;
     textureDesc.DebugName    = "Deferred Render Target";
-    m_deferredRenderTarget   = m_logicalDevice->CreateTextureResource( textureDesc );
-    m_defaultSampler         = m_logicalDevice->CreateSampler( SamplerDesc{ } );
-    m_quadPipeline->BindGroup( )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTarget.get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
+    for ( uint32_t i = 0; i < 3; ++i )
+    {
+        textureDesc.DebugName = "Deferred Render Target " + std::to_string( i );
+        m_deferredRenderTargets.push_back( m_logicalDevice->CreateTextureResource( textureDesc ) );
+    }
+    m_defaultSampler = m_logicalDevice->CreateSampler( SamplerDesc{ } );
+    m_quadPipeline->BindGroup( 0 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 0 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
+    m_quadPipeline->BindGroup( 1 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 1 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
+    m_quadPipeline->BindGroup( 2 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 2 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
 
     auto &materialBatch    = m_worldData.RenderBatch.MaterialBatches.emplace_back( );
     materialBatch.Material = m_sphere->Data( )->MaterialData( );
     auto &sphereRenderItem = materialBatch.RenderItems.emplace_back( );
     sphereRenderItem.Data  = m_sphere->Data( );
     sphereRenderItem.Model = m_sphere->ModelMatrix( );
+
+    RenderGraphDesc renderGraphDesc{ };
+    renderGraphDesc.GraphicsApi   = m_graphicsApi;
+    renderGraphDesc.LogicalDevice = m_logicalDevice;
+    renderGraphDesc.SwapChain     = m_swapChain.get( );
+
+    m_renderGraph = std::make_unique<RenderGraph>( renderGraphDesc );
+
+    NodeDesc deferredNode{ };
+    deferredNode.Name = "Deferred";
+    deferredNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::RenderTarget ) );
+    deferredNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::RenderTarget ) );
+    deferredNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::RenderTarget ) );
+    deferredNode.Execute = [ this ]( uint32_t frame, ICommandList *commandList )
+    {
+        RenderingAttachmentDesc renderingAttachmentDesc{ };
+        renderingAttachmentDesc.Resource = m_deferredRenderTargets[ frame ].get( );
+
+        RenderingDesc renderingDesc{ };
+        renderingDesc.RTAttachments.push_back( renderingAttachmentDesc );
+
+        commandList->BeginRendering( renderingDesc );
+
+        const Viewport &viewport = m_swapChain->GetViewport( );
+        commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+        commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+
+        m_renderPipeline->Render( commandList, m_worldData );
+
+        commandList->EndRendering( );
+    };
+
+    PresentNodeDesc presentNode{ };
+    presentNode.SwapChain = m_swapChain.get( );
+    presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::ShaderResource ) );
+    presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::ShaderResource ) );
+    presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::ShaderResource ) );
+    presentNode.Dependencies.push_back( "Deferred" );
+    presentNode.Execute = [ this ]( uint32_t frame, ICommandList *commandList, ITextureResource *renderTarget )
+    {
+        RenderingAttachmentDesc quadAttachmentDesc{ };
+        quadAttachmentDesc.Resource = renderTarget;
+
+        RenderingDesc quadRenderingDesc{ };
+        quadRenderingDesc.RTAttachments.push_back( quadAttachmentDesc );
+
+        commandList->BeginRendering( quadRenderingDesc );
+        m_quadPipeline->Render( commandList, frame );
+        commandList->EndRendering( );
+    };
+
+    m_renderGraph->AddNode( deferredNode );
+    m_renderGraph->SetPresentNode( presentNode );
+    m_renderGraph->BuildGraph( );
+
+    m_time.OnEachSecond = []( double fps ) { LOG( WARNING ) << "FPS: " << fps; };
 }
 
 void RenderTargetExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
@@ -55,45 +116,7 @@ void RenderTargetExample::Update( )
     m_time.Tick( );
     m_worldData.DeltaTime = m_time.GetDeltaTime( );
     m_worldData.Camera->Update( m_worldData.DeltaTime );
-    m_commandListRing->NextFrame( );
-    const auto     currentCommandList = m_commandListRing->FrameCommandList( 0 );
-    const uint32_t currentImageIndex  = m_commandListRing->CurrentImage( m_swapChain.get( ) );
-    currentCommandList->Begin( );
-
-    RenderingAttachmentDesc renderingAttachmentDesc{ };
-    // renderingAttachmentDesc.Resource = m_swapChain->GetRenderTarget( currentImageIndex );
-    renderingAttachmentDesc.Resource = m_deferredRenderTarget.get( );
-
-    RenderingDesc renderingDesc{ };
-    renderingDesc.RTAttachments.push_back( renderingAttachmentDesc );
-
-    // currentCommandList->PipelineBarrier( PipelineBarrierDesc::UndefinedToRenderTarget( m_deferredRenderTarget.get( ) ) );
-    currentCommandList->BeginRendering( renderingDesc );
-
-    const Viewport &viewport = m_swapChain->GetViewport( );
-    currentCommandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-    currentCommandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-
-    m_renderPipeline->Render( currentCommandList, m_worldData );
-
-    currentCommandList->EndRendering( );
-    ExecuteDesc executeDesc{ };
-    currentCommandList->Execute( executeDesc );
-    currentCommandList->Begin( );
-    currentCommandList->PipelineBarrier( PipelineBarrierDesc::RenderTargetToShaderResource( m_deferredRenderTarget.get( ) ) );
-    currentCommandList->PipelineBarrier( PipelineBarrierDesc::UndefinedToRenderTarget( m_swapChain->GetRenderTarget( currentImageIndex ) ) );
-    RenderingAttachmentDesc quadAttachmentDesc{ };
-    quadAttachmentDesc.Resource = m_swapChain->GetRenderTarget( currentImageIndex );
-
-    RenderingDesc quadRenderingDesc{ };
-    quadRenderingDesc.RTAttachments.push_back( quadAttachmentDesc );
-
-    currentCommandList->BeginRendering( quadRenderingDesc );
-    m_quadPipeline->Render( currentCommandList );
-    currentCommandList->EndRendering( );
-
-    currentCommandList->PipelineBarrier( PipelineBarrierDesc::RenderTargetToPresent( m_swapChain->GetRenderTarget( currentImageIndex ) ) );
-    m_commandListRing->ExecuteAndPresent( currentCommandList, m_swapChain.get( ), currentImageIndex );
+    m_renderGraph->Update( );
 }
 
 void RenderTargetExample::HandleEvent( SDL_Event &event )
@@ -104,6 +127,6 @@ void RenderTargetExample::HandleEvent( SDL_Event &event )
 
 void RenderTargetExample::Quit( )
 {
-    m_commandListRing->WaitIdle( );
+    m_renderGraph->WaitIdle( );
     IExample::Quit( );
 }

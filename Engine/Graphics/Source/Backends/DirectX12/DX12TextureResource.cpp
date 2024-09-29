@@ -72,9 +72,32 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
     }
 
     // Used for certain commands
-    m_resourceDesc = resourceDesc;
-    HRESULT hr     = m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, initialState, nullptr, &m_allocation, IID_PPV_ARGS( &m_resource ) );
-    DX_CHECK_RESULT( hr );
+    m_resourceDesc               = resourceDesc;
+    D3D12_CLEAR_VALUE clearValue = { };
+    clearValue.Format            = resourceDesc.Format;
+    if ( m_desc.InitialState.IsSet( ResourceState::RenderTarget ) )
+    {
+        clearValue.Color[ 0 ] = 0.0f;
+        clearValue.Color[ 1 ] = 0.0f;
+        clearValue.Color[ 2 ] = 0.0f;
+        clearValue.Color[ 3 ] = 1.0f;
+    }
+    else if ( m_desc.InitialState.IsSet( ResourceState::DepthWrite ) )
+    {
+        clearValue.DepthStencil.Depth   = 1.0f;
+        clearValue.DepthStencil.Stencil = 0.0f;
+    }
+
+    if ( m_desc.InitialState.Any({ ResourceState::DepthWrite, ResourceState::RenderTarget }) )
+    {
+        HRESULT hr = m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, initialState, &clearValue, &m_allocation, IID_PPV_ARGS( &m_resource ) );
+        DX_CHECK_RESULT( hr );
+    }
+    else
+    {
+        HRESULT hr = m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, initialState, nullptr, &m_allocation, IID_PPV_ARGS( &m_resource ) );
+        DX_CHECK_RESULT( hr );
+    }
 
     const std::wstring name = std::wstring( m_desc.DebugName.begin( ), m_desc.DebugName.end( ) );
     DX_CHECK_RESULT( m_resource->SetName( name.c_str( ) ) );

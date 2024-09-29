@@ -47,18 +47,21 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
 
     ResourceBindGroupDesc bindGroupDesc{ };
     bindGroupDesc.RootSignature = m_rootSignature.get( );
-    m_bindGroup                 = logicalDevice->CreateResourceBindGroup( bindGroupDesc );
-    m_sampler                   = logicalDevice->CreateSampler( SamplerDesc{ } );
+    for ( uint32_t i = 0; i < 3; ++i )
+    {
+        m_bindGroups.push_back( logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
+    }
+    m_sampler = logicalDevice->CreateSampler( SamplerDesc{ } );
 }
 
-IResourceBindGroup *QuadPipeline::BindGroup( ) const
+IResourceBindGroup *QuadPipeline::BindGroup( uint32_t frame ) const
 {
-    return m_bindGroup.get( );
+    return m_bindGroups[ frame ].get( );
 }
 
-void QuadPipeline::Render( ICommandList *commandList ) const
+void QuadPipeline::Render( ICommandList *commandList, uint32_t frame ) const
 {
     commandList->BindPipeline( m_pipeline.get( ) );
-    commandList->BindResourceGroup( m_bindGroup.get( ) );
+    commandList->BindResourceGroup( m_bindGroups[ frame ].get( ) );
     commandList->Draw( 3, 1, 0, 0 );
 }
