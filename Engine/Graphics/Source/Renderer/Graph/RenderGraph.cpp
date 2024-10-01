@@ -334,9 +334,9 @@ void RenderGraph::IssueBarriers( ICommandList *commandList, std::vector<NodeReso
             if ( lockedState.State != resourceState.State )
             {
                 lockedState.Mutex.lock( );
-                lockedState.State = resourceState.State;
                 m_unlocks.push_back( &lockedState.Mutex );
                 barrierDesc.TextureBarrier( TextureBarrierDesc{ texture, lockedState.State, resourceState.State } );
+                lockedState.State = resourceState.State;
             }
         }
         else
@@ -346,9 +346,9 @@ void RenderGraph::IssueBarriers( ICommandList *commandList, std::vector<NodeReso
             if ( lockedState.State != resourceState.State )
             {
                 lockedState.Mutex.lock( );
-                lockedState.State = resourceState.State;
                 m_unlocks.push_back( &lockedState.Mutex );
                 barrierDesc.BufferBarrier( BufferBarrierDesc{ buffer, lockedState.State, resourceState.State } );
+                lockedState.State = resourceState.State;
             }
         }
     }

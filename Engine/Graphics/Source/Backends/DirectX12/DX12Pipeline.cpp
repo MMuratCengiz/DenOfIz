@@ -57,18 +57,30 @@ void DX12Pipeline::CreateGraphicsPipeline( )
     psoDesc.RasterizerState          = CD3DX12_RASTERIZER_DESC( D3D12_DEFAULT );
     psoDesc.RasterizerState.CullMode = DX12EnumConverter::ConvertCullMode( m_desc.CullMode );
 
-    psoDesc.BlendState = CD3DX12_BLEND_DESC( D3D12_DEFAULT );
-
     InitDepthStencil( psoDesc );
 
-    psoDesc.SampleMask            = UINT_MAX;
-    psoDesc.PrimitiveTopologyType = DX12EnumConverter::ConvertPrimitiveTopologyToType( m_desc.PrimitiveTopology );
-
-    psoDesc.NumRenderTargets = m_desc.Rendering.ColorAttachmentFormats.size( );
-    for ( uint32_t i = 0; i < m_desc.Rendering.ColorAttachmentFormats.size( ); ++i )
+    psoDesc.BlendState.AlphaToCoverageEnable  = m_desc.Rendering.AlphaToCoverageEnable;
+    psoDesc.BlendState.IndependentBlendEnable = m_desc.Rendering.IndependentBlendEnable;
+    psoDesc.SampleMask                        = UINT_MAX;
+    psoDesc.PrimitiveTopologyType             = DX12EnumConverter::ConvertPrimitiveTopologyToType( m_desc.PrimitiveTopology );
+    psoDesc.NumRenderTargets                  = m_desc.Rendering.RenderTargets.size( );
+    for ( uint32_t i = 0; i < m_desc.Rendering.RenderTargets.size( ); ++i )
     {
-        psoDesc.RTVFormats[ i ] = DX12EnumConverter::ConvertFormat( m_desc.Rendering.ColorAttachmentFormats[ i ] );
+        BlendDesc &blendDesc                                       = m_desc.Rendering.RenderTargets[ i ].Blend;
+        psoDesc.BlendState.RenderTarget[ i ].BlendEnable           = blendDesc.Enable;
+        psoDesc.BlendState.RenderTarget[ i ].LogicOpEnable         = m_desc.Rendering.BlendLogicOpEnable;
+        psoDesc.BlendState.RenderTarget[ i ].SrcBlend              = DX12EnumConverter::ConvertBlend( blendDesc.SrcBlend );
+        psoDesc.BlendState.RenderTarget[ i ].DestBlend             = DX12EnumConverter::ConvertBlend( blendDesc.DestBlend );
+        psoDesc.BlendState.RenderTarget[ i ].BlendOp               = DX12EnumConverter::ConvertBlendOp( blendDesc.BlendOp );
+        psoDesc.BlendState.RenderTarget[ i ].SrcBlendAlpha         = DX12EnumConverter::ConvertBlend( blendDesc.SrcBlendAlpha );
+        psoDesc.BlendState.RenderTarget[ i ].DestBlendAlpha        = DX12EnumConverter::ConvertBlend( blendDesc.DestBlendAlpha );
+        psoDesc.BlendState.RenderTarget[ i ].BlendOpAlpha          = DX12EnumConverter::ConvertBlendOp( blendDesc.BlendOpAlpha );
+        psoDesc.BlendState.RenderTarget[ i ].LogicOp               = DX12EnumConverter::ConvertLogicOp( m_desc.Rendering.BlendLogicOp );
+        psoDesc.BlendState.RenderTarget[ i ].RenderTargetWriteMask = blendDesc.RenderTargetWriteMask;
+
+        psoDesc.RTVFormats[ i ] = DX12EnumConverter::ConvertFormat( m_desc.Rendering.RenderTargets[ i ].Format );
     }
+
     if ( m_desc.Rendering.DepthStencilAttachmentFormat != Format::Undefined )
     {
         psoDesc.DSVFormat = DX12EnumConverter::ConvertFormat( m_desc.Rendering.DepthStencilAttachmentFormat );

@@ -39,6 +39,7 @@ namespace DenOfIz
 
     public:
         DefaultRenderPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice );
+        [[nodiscard]] PerMaterialBinding *PerMaterialBinding( ) const;
         void Render( ICommandList *commandList, const WorldData &worldData ) const;
     };
 } // namespace DenOfIz

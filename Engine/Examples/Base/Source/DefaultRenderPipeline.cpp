@@ -42,13 +42,13 @@ DefaultRenderPipeline::DefaultRenderPipeline( const GraphicsApi *graphicsApi, IL
     pipelineDesc.RootSignature = m_rootSignature.get( );
     pipelineDesc.ShaderProgram = m_program.get( );
     pipelineDesc.CullMode      = CullMode::BackFace;
-    pipelineDesc.Rendering.ColorAttachmentFormats.push_back( Format::R8G8B8A8Unorm );
+    pipelineDesc.Rendering.RenderTargets.push_back( { .Format = Format::B8G8R8A8Unorm } );
 
     m_pipeline = logicalDevice->CreatePipeline( pipelineDesc );
 
     m_perDrawBinding     = std::make_unique<PerDrawBinding>( logicalDevice, m_rootSignature.get( ) );
     m_perFrameBinding    = std::make_unique<PerFrameBinding>( logicalDevice, m_rootSignature.get( ) );
-    m_perMaterialBinding = std::make_unique<PerMaterialBinding>( logicalDevice, m_rootSignature.get( ) );
+    m_perMaterialBinding = std::make_unique<class PerMaterialBinding>( logicalDevice, m_rootSignature.get( ) );
 }
 
 void DefaultRenderPipeline::Render( ICommandList *commandList, const WorldData &worldData ) const
@@ -59,9 +59,7 @@ void DefaultRenderPipeline::Render( ICommandList *commandList, const WorldData &
 
     for ( auto &materialBatch : worldData.RenderBatch.MaterialBatches )
     {
-        m_perMaterialBinding->Update( materialBatch.Material );
-        commandList->BindResourceGroup( m_perMaterialBinding->BindGroup( ) );
-
+        commandList->BindResourceGroup( materialBatch.MaterialBinding->BindGroup( ) );
         for ( const auto &renderItem : materialBatch.RenderItems )
         {
             commandList->BindVertexBuffer( renderItem.Data->VertexBuffer( ) );
@@ -71,4 +69,8 @@ void DefaultRenderPipeline::Render( ICommandList *commandList, const WorldData &
             commandList->DrawIndexed( renderItem.Data->NumIndices( ), 1, 0, 0, 0 );
         }
     }
+}
+PerMaterialBinding *DefaultRenderPipeline::PerMaterialBinding( ) const
+{
+    return m_perMaterialBinding.get( );
 }

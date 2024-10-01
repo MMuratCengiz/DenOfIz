@@ -41,6 +41,9 @@ namespace DenOfIz
         static D3D12_CULL_MODE                         ConvertCullMode( CullMode mode );
         static D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE ConvertLoadOp( const LoadOp &op );
         static D3D12_RENDER_PASS_ENDING_ACCESS_TYPE    ConvertStoreOp( const StoreOp &op );
+        static D3D12_BLEND_OP                          ConvertBlendOp( const BlendOp &op );
+        static D3D12_LOGIC_OP                          ConvertLogicOp( const LogicOp &op );
+        static D3D12_BLEND                             ConvertBlend( const Blend &factor );
         static D3D12_RESOURCE_STATES                   ConvertResourceState( const BitSet<ResourceState> &state );
         static D3D12_BARRIER_LAYOUT                    ConvertResourceStateToBarrierLayout( const BitSet<ResourceState> &state, const QueueType &queueType );
         static D3D12_BARRIER_ACCESS                    ConvertResourceStateToBarrierAccess( const BitSet<ResourceState> &state );

@@ -80,9 +80,9 @@ void MetalPipeline::CreateGraphicsPipeline( )
     pipelineStateDescriptor.vertexDescriptor = mtkInputLayout->GetVertexDescriptor( );
 
     int attachmentIdx = 0;
-    for ( const auto &attachment : m_desc.Rendering.ColorAttachmentFormats )
+    for ( const auto &attachment : m_desc.Rendering.RenderTargets )
     {
-        pipelineStateDescriptor.colorAttachments[ attachmentIdx ].pixelFormat = MetalEnumConverter::ConvertFormat( attachment );
+        pipelineStateDescriptor.colorAttachments[ attachmentIdx ].pixelFormat = MetalEnumConverter::ConvertFormat( attachment.Format );
     }
     pipelineStateDescriptor.depthAttachmentPixelFormat   = MetalEnumConverter::ConvertFormat( m_desc.Rendering.DepthAttachmentFormat );
     pipelineStateDescriptor.stencilAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Rendering.StencilAttachmentFormat );

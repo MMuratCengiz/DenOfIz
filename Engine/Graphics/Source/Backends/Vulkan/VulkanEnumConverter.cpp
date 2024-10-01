@@ -165,6 +165,105 @@ VkAttachmentStoreOp VulkanEnumConverter::ConvertStoreOp( const StoreOp &storeOp 
     return VK_ATTACHMENT_STORE_OP_STORE;
 }
 
+VkBlendOp VulkanEnumConverter::ConvertBlendOp( const BlendOp &op )
+{
+    switch ( op )
+    {
+    case BlendOp::Add:
+        return VK_BLEND_OP_ADD;
+    case BlendOp::Subtract:
+        return VK_BLEND_OP_SUBTRACT;
+    case BlendOp::ReverseSubtract:
+        return VK_BLEND_OP_REVERSE_SUBTRACT;
+    case BlendOp::Min:
+        return VK_BLEND_OP_MIN;
+    case BlendOp::Max:
+        return VK_BLEND_OP_MAX;
+    }
+
+    return VK_BLEND_OP_ADD;
+}
+
+VkLogicOp VulkanEnumConverter::ConvertLogicOp( const LogicOp &op )
+{
+    switch ( op )
+    {
+    case LogicOp::Clear:
+        return VK_LOGIC_OP_CLEAR;
+    case LogicOp::And:
+        return VK_LOGIC_OP_AND;
+    case LogicOp::AndReverse:
+        return VK_LOGIC_OP_AND_REVERSE;
+    case LogicOp::Copy:
+        return VK_LOGIC_OP_COPY;
+    case LogicOp::AndInverted:
+        return VK_LOGIC_OP_AND_INVERTED;
+    case LogicOp::Noop:
+        return VK_LOGIC_OP_NO_OP;
+    case LogicOp::Xor:
+        return VK_LOGIC_OP_XOR;
+    case LogicOp::Or:
+        return VK_LOGIC_OP_OR;
+    case LogicOp::Nor:
+        return VK_LOGIC_OP_NOR;
+    case LogicOp::Equiv:
+        return VK_LOGIC_OP_EQUIVALENT;
+    case LogicOp::Invert:
+        return VK_LOGIC_OP_INVERT;
+    case LogicOp::OrReverse:
+        return VK_LOGIC_OP_OR_REVERSE;
+    case LogicOp::CopyInverted:
+        return VK_LOGIC_OP_COPY_INVERTED;
+    case LogicOp::OrInverted:
+        return VK_LOGIC_OP_OR_INVERTED;
+    case LogicOp::Nand:
+        return VK_LOGIC_OP_NAND;
+    case LogicOp::Set:
+        return VK_LOGIC_OP_SET;
+    }
+
+    return VK_LOGIC_OP_CLEAR;
+}
+
+VkBlendFactor VulkanEnumConverter::ConvertBlend( const Blend &blend )
+{
+    switch ( blend )
+    {
+    case Blend::Zero:
+        return VK_BLEND_FACTOR_ZERO;
+    case Blend::One:
+        return VK_BLEND_FACTOR_ONE;
+    case Blend::SrcColor:
+        return VK_BLEND_FACTOR_SRC_COLOR;
+    case Blend::DestColor:
+        return VK_BLEND_FACTOR_DST_COLOR;
+    case Blend::SrcAlpha:
+        return VK_BLEND_FACTOR_SRC_ALPHA;
+    case Blend::DestAlpha:
+        return VK_BLEND_FACTOR_DST_ALPHA;
+    case Blend::SrcAlphaSaturate:
+        return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+    case Blend::Src1Color:
+        return VK_BLEND_FACTOR_SRC1_COLOR;
+    case Blend::Src1Alpha:
+        return VK_BLEND_FACTOR_SRC1_ALPHA;
+    case Blend::InvSrcColor:
+        return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+    case Blend::InvSrcAlpha:
+        return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    case Blend::InvDestAlpha:
+        return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+    case Blend::InvDestColor:
+        return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+    case Blend::InvSrc1Color:
+        return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+    case Blend::InvSrc1Alpha:
+        return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+    }
+
+    return VK_BLEND_FACTOR_ZERO;
+}
+
 VkFilter VulkanEnumConverter::ConvertFilter( const Filter &filter )
 {
     switch ( filter )

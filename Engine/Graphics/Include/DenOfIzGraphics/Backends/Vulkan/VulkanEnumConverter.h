@@ -36,6 +36,9 @@ namespace DenOfIz
         static VkCompareOp           ConvertCompareOp( const CompareOp &compareOp );
         static VkAttachmentLoadOp    ConvertLoadOp( const LoadOp &loadOp );
         static VkAttachmentStoreOp   ConvertStoreOp( const StoreOp &storeOp );
+        static VkBlendOp             ConvertBlendOp( const BlendOp &op );
+        static VkLogicOp             ConvertLogicOp( const LogicOp &op );
+        static VkBlendFactor         ConvertBlend( const Blend &blend );
         static VkFilter              ConvertFilter( const Filter &filter );
         static VkSamplerAddressMode  ConvertAddressMode( const SamplerAddressMode &addressMode );
         static VkSamplerMipmapMode   ConvertMipmapMode( const MipmapMode &mipmapMode );

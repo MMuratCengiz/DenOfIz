@@ -134,9 +134,9 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
 
 [[nodiscard]] VkPipelineRenderingCreateInfo VulkanPipeline::ConfigureRenderingInfo( std::vector<VkFormat> &colorAttachmentsStore ) const
 {
-    for ( auto attachment : m_desc.Rendering.ColorAttachmentFormats )
+    for ( auto attachment : m_desc.Rendering.RenderTargets )
     {
-        colorAttachmentsStore.push_back( VulkanEnumConverter::ConvertImageFormat( attachment ) );
+        colorAttachmentsStore.push_back( VulkanEnumConverter::ConvertImageFormat( attachment.Format ) );
     }
 
     VkPipelineRenderingCreateInfo renderingCreateInfo{ };
@@ -263,32 +263,28 @@ VkPipelineRasterizationStateCreateInfo VulkanPipeline::ConfigureRasterization( )
 
 VkPipelineColorBlendStateCreateInfo VulkanPipeline::ConfigureColorBlend( std::vector<VkPipelineColorBlendAttachmentState> &colorBlendAttachments ) const
 {
-    const uint32_t attachmentCount = m_desc.BlendModes.size( );
+    const uint32_t attachmentCount = m_desc.Rendering.RenderTargets.size( );
     colorBlendAttachments.resize( attachmentCount );
 
     for ( uint32_t i = 0; i < attachmentCount; ++i )
     {
+        auto &attachment                          = m_desc.Rendering.RenderTargets[ i ];
         colorBlendAttachments[ i ].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
-        if ( m_desc.BlendModes[ i ] == BlendMode::AlphaBlend )
-        {
-            colorBlendAttachments[ i ].blendEnable         = true;
-            colorBlendAttachments[ i ].srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-            colorBlendAttachments[ i ].dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
-
-            colorBlendAttachments[ i ].srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-            colorBlendAttachments[ i ].dstAlphaBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
-
-            colorBlendAttachments[ i ].colorBlendOp = VK_BLEND_OP_ADD;
-            colorBlendAttachments[ i ].alphaBlendOp = VK_BLEND_OP_ADD;
-        }
+        colorBlendAttachments[ i ].blendEnable         = attachment.Blend.Enable;
+        colorBlendAttachments[ i ].srcColorBlendFactor = VulkanEnumConverter::ConvertBlend( attachment.Blend.SrcBlend );
+        colorBlendAttachments[ i ].dstColorBlendFactor = VulkanEnumConverter::ConvertBlend( attachment.Blend.DestBlend );
+        colorBlendAttachments[ i ].srcAlphaBlendFactor = VulkanEnumConverter::ConvertBlend( attachment.Blend.SrcBlendAlpha );
+        colorBlendAttachments[ i ].dstAlphaBlendFactor = VulkanEnumConverter::ConvertBlend( attachment.Blend.DestBlendAlpha );
+        colorBlendAttachments[ i ].colorBlendOp        = VulkanEnumConverter::ConvertBlendOp( attachment.Blend.BlendOp );
+        colorBlendAttachments[ i ].alphaBlendOp        = VulkanEnumConverter::ConvertBlendOp( attachment.Blend.BlendOpAlpha );
     }
 
     // This overwrites the above
     VkPipelineColorBlendStateCreateInfo colorBlending{ };
     colorBlending.sType               = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable       = false;
-    colorBlending.logicOp             = VK_LOGIC_OP_COPY;
+    colorBlending.logicOpEnable       = m_desc.Rendering.BlendLogicOpEnable;
+    colorBlending.logicOp             = VulkanEnumConverter::ConvertLogicOp( m_desc.Rendering.BlendLogicOp );
     colorBlending.attachmentCount     = attachmentCount;
     colorBlending.pAttachments        = colorBlendAttachments.data( );
     colorBlending.blendConstants[ 0 ] = 0.0f;

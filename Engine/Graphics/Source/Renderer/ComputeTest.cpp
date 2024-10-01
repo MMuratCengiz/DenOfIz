@@ -52,7 +52,6 @@ int ComputeTest::Run( )
     m_inputLayout = m_logicalDevice->CreateInputLayout( { } );
 
     PipelineDesc pipelineDesc{ .ShaderProgram = m_program.get( ) };
-    pipelineDesc.BlendModes    = { BlendMode::None };
     pipelineDesc.RootSignature = m_rootSignature.get( );
     pipelineDesc.InputLayout   = m_inputLayout.get( );
     pipelineDesc.BindPoint     = BindPoint::Compute;

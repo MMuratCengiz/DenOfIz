@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
 #include "Camera.h"
+#include "PerMaterialBinding.h"
 
 namespace DenOfIz
 {
@@ -33,8 +34,13 @@ namespace DenOfIz
 
     struct MaterialBatch
     {
-        MaterialData           *Material;
-        std::vector<RenderItem> RenderItems;
+        const PerMaterialBinding *MaterialBinding;
+        std::vector<RenderItem>   RenderItems;
+
+        MaterialBatch( PerMaterialBinding *materialBinding, const MaterialData *material ) : MaterialBinding( materialBinding )
+        {
+            MaterialBinding->Update( material );
+        }
     };
 
     struct RenderBatch

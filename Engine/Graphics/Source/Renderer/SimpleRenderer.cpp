@@ -40,10 +40,9 @@ namespace DenOfIz
         m_swapChain                          = m_logicalDevice->CreateSwapChain( SwapChainDesc{ .WindowHandle = m_window, .Width = surface.Width, .Height = surface.Height } );
 
         PipelineDesc pipelineDesc{ .ShaderProgram = m_program.get( ) };
-        pipelineDesc.BlendModes    = { BlendMode::None };
         pipelineDesc.RootSignature = m_rootSignature.get( );
         pipelineDesc.InputLayout   = m_inputLayout.get( );
-        pipelineDesc.Rendering.ColorAttachmentFormats.push_back( m_swapChain->GetPreferredFormat( ) );
+        pipelineDesc.Rendering.RenderTargets.push_back( { .Format = m_swapChain->GetPreferredFormat( ) } );
 
         m_pipeline        = m_logicalDevice->CreatePipeline( pipelineDesc );
         m_commandListRing = std::make_unique<CommandListRing>( m_logicalDevice );

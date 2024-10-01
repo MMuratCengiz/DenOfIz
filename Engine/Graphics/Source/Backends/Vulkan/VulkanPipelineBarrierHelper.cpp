@@ -232,7 +232,7 @@ VkImageLayout VulkanPipelineBarrierHelper::GetImageLayout( const BitSet<Resource
     {
         return VK_IMAGE_LAYOUT_GENERAL;
     }
-    if ( state.IsSet( ResourceState::ShaderResource ) )
+    if ( state.Any( { ResourceState::ShaderResource, ResourceState::PixelShaderResource } ) )
     {
         return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }

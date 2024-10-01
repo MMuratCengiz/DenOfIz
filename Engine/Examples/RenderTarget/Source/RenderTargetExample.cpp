@@ -30,8 +30,8 @@ void RenderTargetExample::Init( )
     TextureDesc textureDesc{ };
     textureDesc.Width        = m_windowDesc.Width;
     textureDesc.Height       = m_windowDesc.Height;
-    textureDesc.Format       = Format::R8G8B8A8Unorm;
-    textureDesc.Descriptor   = ResourceDescriptor::RWTexture;
+    textureDesc.Format       = Format::B8G8R8A8Unorm;
+    textureDesc.Descriptor   = ResourceDescriptor::Texture;
     textureDesc.InitialState = ResourceState::RenderTarget;
     textureDesc.DebugName    = "Deferred Render Target";
     for ( uint32_t i = 0; i < 3; ++i )
@@ -44,8 +44,7 @@ void RenderTargetExample::Init( )
     m_quadPipeline->BindGroup( 1 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 1 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
     m_quadPipeline->BindGroup( 2 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 2 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
 
-    auto &materialBatch    = m_worldData.RenderBatch.MaterialBatches.emplace_back( );
-    materialBatch.Material = m_sphere->Data( )->MaterialData( );
+    auto &materialBatch    = m_worldData.RenderBatch.MaterialBatches.emplace_back( m_renderPipeline->PerMaterialBinding( ), m_sphere->Data( )->MaterialData( ) );
     auto &sphereRenderItem = materialBatch.RenderItems.emplace_back( );
     sphereRenderItem.Data  = m_sphere->Data( );
     sphereRenderItem.Model = m_sphere->ModelMatrix( );
@@ -96,6 +95,10 @@ void RenderTargetExample::Init( )
         quadRenderingDesc.RTAttachments.push_back( quadAttachmentDesc );
 
         commandList->BeginRendering( quadRenderingDesc );
+
+        const Viewport &viewport = m_swapChain->GetViewport( );
+        commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+        commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
         m_quadPipeline->Render( commandList, frame );
         commandList->EndRendering( );
     };
@@ -109,6 +112,7 @@ void RenderTargetExample::Init( )
 
 void RenderTargetExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
+    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void RenderTargetExample::Update( )

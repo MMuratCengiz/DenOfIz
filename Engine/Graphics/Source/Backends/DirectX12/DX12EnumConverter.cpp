@@ -403,6 +403,105 @@ D3D12_RENDER_PASS_ENDING_ACCESS_TYPE DX12EnumConverter::ConvertStoreOp( const St
     return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;
 }
 
+D3D12_BLEND_OP DX12EnumConverter::ConvertBlendOp( const BlendOp &op )
+{
+    switch ( op )
+    {
+    case BlendOp::Add:
+        return D3D12_BLEND_OP_ADD;
+    case BlendOp::Subtract:
+        return D3D12_BLEND_OP_SUBTRACT;
+    case BlendOp::ReverseSubtract:
+        return D3D12_BLEND_OP_REV_SUBTRACT;
+    case BlendOp::Min:
+        return D3D12_BLEND_OP_MIN;
+    case BlendOp::Max:
+        return D3D12_BLEND_OP_MAX;
+    }
+
+    return D3D12_BLEND_OP_ADD;
+}
+
+D3D12_LOGIC_OP DX12EnumConverter::ConvertLogicOp( const LogicOp &op )
+{
+    switch ( op )
+    {
+    case LogicOp::Clear:
+        return D3D12_LOGIC_OP_CLEAR;
+    case LogicOp::Set:
+        return D3D12_LOGIC_OP_SET;
+    case LogicOp::Copy:
+        return D3D12_LOGIC_OP_COPY;
+    case LogicOp::CopyInverted:
+        return D3D12_LOGIC_OP_COPY_INVERTED;
+    case LogicOp::Noop:
+        return D3D12_LOGIC_OP_NOOP;
+    case LogicOp::Invert:
+        return D3D12_LOGIC_OP_INVERT;
+    case LogicOp::And:
+        return D3D12_LOGIC_OP_AND;
+    case LogicOp::Nand:
+        return D3D12_LOGIC_OP_NAND;
+    case LogicOp::Or:
+        return D3D12_LOGIC_OP_OR;
+    case LogicOp::Nor:
+        return D3D12_LOGIC_OP_NOR;
+    case LogicOp::Xor:
+        return D3D12_LOGIC_OP_XOR;
+    case LogicOp::Equiv:
+        return D3D12_LOGIC_OP_EQUIV;
+    case LogicOp::AndReverse:
+        return D3D12_LOGIC_OP_AND_REVERSE;
+    case LogicOp::AndInverted:
+        return D3D12_LOGIC_OP_AND_INVERTED;
+    case LogicOp::OrReverse:
+        return D3D12_LOGIC_OP_OR_REVERSE;
+    case LogicOp::OrInverted:
+        return D3D12_LOGIC_OP_OR_INVERTED;
+    }
+
+    return D3D12_LOGIC_OP_CLEAR;
+}
+
+D3D12_BLEND DX12EnumConverter::ConvertBlend( const Blend &factor )
+{
+    switch ( factor )
+    {
+    case Blend::Zero:
+        return D3D12_BLEND_ZERO;
+    case Blend::One:
+        return D3D12_BLEND_ONE;
+    case Blend::SrcColor:
+        return D3D12_BLEND_SRC_COLOR;
+    case Blend::InvSrcColor:
+        return D3D12_BLEND_INV_SRC_COLOR;
+    case Blend::SrcAlpha:
+        return D3D12_BLEND_SRC_ALPHA;
+    case Blend::InvSrcAlpha:
+        return D3D12_BLEND_INV_SRC_ALPHA;
+    case Blend::DestAlpha:
+        return D3D12_BLEND_DEST_ALPHA;
+    case Blend::InvDestAlpha:
+        return D3D12_BLEND_INV_DEST_ALPHA;
+    case Blend::DestColor:
+        return D3D12_BLEND_DEST_COLOR;
+    case Blend::InvDestColor:
+        return D3D12_BLEND_INV_DEST_COLOR;
+    case Blend::SrcAlphaSaturate:
+        return D3D12_BLEND_SRC_ALPHA_SAT;
+    case Blend::Src1Color:
+        return D3D12_BLEND_SRC1_COLOR;
+    case Blend::InvSrc1Color:
+        return D3D12_BLEND_INV_SRC1_COLOR;
+    case Blend::Src1Alpha:
+        return D3D12_BLEND_SRC1_ALPHA;
+    case Blend::InvSrc1Alpha:
+        return D3D12_BLEND_INV_SRC1_ALPHA;
+    }
+
+    return D3D12_BLEND_ZERO;
+}
+
 D3D12_RESOURCE_STATES DX12EnumConverter::ConvertResourceState( const BitSet<ResourceState> &state )
 {
     D3D12_RESOURCE_STATES result = D3D12_RESOURCE_STATE_COMMON;

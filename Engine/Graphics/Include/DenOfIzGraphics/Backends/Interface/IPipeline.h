@@ -27,20 +27,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-
-    struct StencilTestState
-    {
-        bool      enabled = false;
-        CompareOp compareOp;
-        uint32_t  compareMask;
-        uint32_t  writeMask;
-        uint32_t  ref;
-
-        StencilOp failOp;
-        StencilOp passOp;
-        StencilOp depthFailOp;
-    };
-
     enum class BindPoint
     {
         Graphics,
@@ -71,12 +57,81 @@ namespace DenOfIz
         constexpr int A = 0x00000008;
     }; // namespace ViewMask
 
+    enum class Blend
+    {
+        Zero,
+        One,
+        SrcColor,
+        InvSrcColor,
+        SrcAlpha,
+        InvSrcAlpha,
+        DestAlpha,
+        InvDestAlpha,
+        DestColor,
+        InvDestColor,
+        SrcAlphaSaturate,
+        Src1Color,
+        InvSrc1Color,
+        Src1Alpha,
+        InvSrc1Alpha
+    };
+
+    enum class BlendOp
+    {
+        Add,
+        Subtract,
+        ReverseSubtract,
+        Min,
+        Max
+    };
+
+    enum class LogicOp
+    {
+        Clear,
+        Set,
+        Copy,
+        CopyInverted,
+        Noop,
+        Invert,
+        And,
+        Nand,
+        Or,
+        Nor,
+        Xor,
+        Equiv,
+        AndReverse,
+        AndInverted,
+        OrReverse,
+        OrInverted
+    };
+
+    struct BlendDesc
+    {
+        bool         Enable                = false;
+        Blend        SrcBlend              = Blend::One;
+        Blend        DestBlend             = Blend::Zero;
+        Blend        SrcBlendAlpha         = Blend::One;
+        Blend        DestBlendAlpha        = Blend::Zero;
+        BlendOp      BlendOp               = BlendOp::Add;
+        enum BlendOp BlendOpAlpha          = BlendOp::Add;
+        uint8_t      RenderTargetWriteMask = 0x0F;
+    };
+
+    struct RenderTargetDesc
+    {
+        BlendDesc Blend  = { };
+        Format    Format = Format::Undefined;
+    };
+
     struct PipelineRendering
     {
-        uint32_t ViewMask = 0;
-
-        std::vector<Format> ColorAttachmentFormats;
-        Format              DepthStencilAttachmentFormat = Format::Undefined;
+        uint32_t                      ViewMask               = 0;
+        bool                          AlphaToCoverageEnable  = false; // Todo check if required
+        bool                          IndependentBlendEnable = false; // Todo check if required
+        bool                          BlendLogicOpEnable  = false;
+        LogicOp                       BlendLogicOp        = LogicOp::Noop;
+        std::vector<RenderTargetDesc> RenderTargets;
+        Format                        DepthStencilAttachmentFormat = Format::Undefined;
     };
 
     struct DepthTest
@@ -114,8 +169,6 @@ namespace DenOfIz
         BindPoint         BindPoint         = BindPoint::Graphics;
         DepthTest         DepthTest;
         StencilTest       StencilTest;
-
-        std::vector<BlendMode> BlendModes;
 
         PipelineRendering Rendering;
         MSAASampleCount   MSAASampleCount = MSAASampleCount::_0; // 0 Disables MSAA
