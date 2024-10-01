@@ -25,42 +25,15 @@ using namespace DenOfIz;
 
 VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const TextureDesc &desc ) : ITextureResource( desc ), m_context( context ), m_desc( desc )
 {
-    VkImageType     imageType = VK_IMAGE_TYPE_1D;
-    VkImageViewType viewType  = VK_IMAGE_VIEW_TYPE_1D;
+    VkImageType imageType = VK_IMAGE_TYPE_1D;
 
     if ( m_desc.Depth > 1 )
     {
         imageType = VK_IMAGE_TYPE_3D;
-        viewType  = VK_IMAGE_VIEW_TYPE_3D;
     }
     else if ( m_desc.Height > 1 )
     {
         imageType = VK_IMAGE_TYPE_2D;
-        viewType  = VK_IMAGE_VIEW_TYPE_2D;
-    }
-
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) )
-    {
-        viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-    }
-    if ( m_desc.ArraySize > 1 )
-    {
-        if ( viewType == VK_IMAGE_VIEW_TYPE_1D )
-        {
-            viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
-        }
-        else if ( viewType == VK_IMAGE_VIEW_TYPE_2D )
-        {
-            viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-        }
-        else if ( viewType == VK_IMAGE_VIEW_TYPE_CUBE )
-        {
-            viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
-        }
-        else
-        {
-            LOG( WARNING ) << "Unsupported array size for image type";
-        }
     }
 
     VkImageCreateInfo imageCreateInfo{ };
@@ -96,23 +69,64 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
     allocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
     VK_CHECK_RESULT( vmaCreateImage( context->Vma, &imageCreateInfo, &allocationCreateInfo, &m_image, &m_allocation, nullptr ) );
+    CreateImageView( );
 
+    // This is not super efficient, but vulkan is the only api that doesn't support initial layouts. So this is a simple adaptation.
+    // Performance implications can be considered in the future after benchmarking.
+    TransitionToInitialLayout( );
+}
+
+void VulkanTextureResource::CreateImageView( )
+{
+    VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_1D;
+    if ( m_desc.Depth > 1 )
+    {
+        viewType  = VK_IMAGE_VIEW_TYPE_3D;
+    }
+    else if ( m_desc.Height > 1 )
+    {
+        viewType  = VK_IMAGE_VIEW_TYPE_2D;
+    }
+
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) )
+    {
+        viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+    }
+    if ( m_desc.ArraySize > 1 )
+    {
+        if ( viewType == VK_IMAGE_VIEW_TYPE_1D )
+        {
+            viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+        }
+        else if ( viewType == VK_IMAGE_VIEW_TYPE_2D )
+        {
+            viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        }
+        else if ( viewType == VK_IMAGE_VIEW_TYPE_CUBE )
+        {
+            viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+        }
+        else
+        {
+            LOG( WARNING ) << "Unsupported array size for image type";
+        }
+    }
     VkImageViewCreateInfo viewCreateInfo{ };
     viewCreateInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewCreateInfo.image                           = m_image;
     viewCreateInfo.viewType                        = viewType;
-    viewCreateInfo.format                          = VulkanEnumConverter::ConvertImageFormat( desc.Format );
+    viewCreateInfo.format                          = VulkanEnumConverter::ConvertImageFormat( m_desc.Format );
     viewCreateInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;
     viewCreateInfo.components.g                    = VK_COMPONENT_SWIZZLE_IDENTITY;
     viewCreateInfo.components.b                    = VK_COMPONENT_SWIZZLE_IDENTITY;
     viewCreateInfo.components.a                    = VK_COMPONENT_SWIZZLE_IDENTITY;
-    viewCreateInfo.subresourceRange.aspectMask     = VulkanEnumConverter::ConvertImageAspect( desc.Aspect );
+    viewCreateInfo.subresourceRange.aspectMask     = VulkanEnumConverter::ConvertImageAspect( m_desc.Aspect );
     viewCreateInfo.subresourceRange.baseMipLevel   = 0;
     viewCreateInfo.subresourceRange.levelCount     = 1; // desc.MipLevels; Mip levels are created individually
     viewCreateInfo.subresourceRange.baseArrayLayer = 0;
-    viewCreateInfo.subresourceRange.layerCount     = desc.ArraySize;
+    viewCreateInfo.subresourceRange.layerCount     = m_desc.ArraySize;
 
-    m_aspect = VulkanEnumConverter::ConvertImageAspect( desc.Aspect );
+    m_aspect = VulkanEnumConverter::ConvertImageAspect( m_desc.Aspect );
 
     /* TODO. Support array layers:
     for ( uint32_t i = 0; i < m_desc.ArraySize; ++i )
@@ -127,10 +141,6 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
         viewCreateInfo.subresourceRange.baseMipLevel = j;
         VK_CHECK_RESULT( vkCreateImageView( m_context->LogicalDevice, &viewCreateInfo, nullptr, &m_imageViews[ j ] ) );
     }
-
-    // This is not super efficient, but vulkan is the only api that doesn't support initial layouts. So this is a simple adaptation.
-    // Performance implications can be considered in the future after benchmarking.
-    TransitionToInitialLayout( );
 }
 
 VulkanTextureResource::VulkanTextureResource( VkImage const &image, VkImageView const &imageView, const VkFormat format, const VkImageAspectFlags imageAspect,

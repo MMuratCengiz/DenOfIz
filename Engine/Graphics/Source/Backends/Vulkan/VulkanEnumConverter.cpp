@@ -637,7 +637,7 @@ VkPipelineBindPoint VulkanEnumConverter::ConvertPipelineBindPoint( const BindPoi
 VkImageUsageFlags VulkanEnumConverter::ConvertTextureUsage( BitSet<ResourceDescriptor> descriptor, BitSet<ResourceState> initialState )
 {
     VkImageUsageFlags flags = 0;
-    if ( descriptor.IsSet( ResourceDescriptor::Texture ) )
+    if ( descriptor.IsSet( ResourceDescriptor::Texture ) || initialState.IsSet( ResourceState::ShaderResource ) )
     {
         flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
     }
@@ -668,10 +668,6 @@ VkImageUsageFlags VulkanEnumConverter::ConvertTextureUsage( BitSet<ResourceDescr
     if ( initialState.IsSet( ResourceState::DepthRead ) || initialState.IsSet( ResourceState::DepthWrite ) )
     {
         flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    }
-    if ( initialState.IsSet( ResourceState::ShaderResource ) )
-    {
-        flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
     }
     if ( initialState.IsSet( ResourceState::UnorderedAccess ) )
     {

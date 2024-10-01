@@ -71,6 +71,7 @@ namespace DenOfIz
 
     private:
         void TransitionToInitialLayout( ) const;
+        void CreateImageView( );
     };
 
     class VulkanSampler final : public ISampler
