@@ -51,4 +51,13 @@ VulkanInputLayout::VulkanInputLayout( const InputLayoutDesc &inputLayoutDesc )
     m_vertexInputState.pVertexBindingDescriptions      = m_bindingDescriptions.data( );
     m_vertexInputState.vertexAttributeDescriptionCount = static_cast<uint32_t>( m_attributeDescriptions.size( ) );
     m_vertexInputState.pVertexAttributeDescriptions    = m_attributeDescriptions.data( );
+
+    if ( m_vertexInputState.vertexBindingDescriptionCount == 0 )
+    {
+        m_vertexInputState.pVertexBindingDescriptions = nullptr;
+    }
+    if ( m_vertexInputState.vertexAttributeDescriptionCount == 0 )
+    {
+        m_vertexInputState.pVertexAttributeDescriptions = nullptr;
+    }
 }
