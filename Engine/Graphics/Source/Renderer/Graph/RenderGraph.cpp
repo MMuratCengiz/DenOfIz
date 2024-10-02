@@ -214,9 +214,9 @@ void RenderGraph::BuildTaskflow( )
                                     .emplace(
                                         [ this, frame, &node, nodeIndex ]
                                         {
-                                            std::unique_ptr<NodeExecutionContext> &context = node->Contexts[ frame ];
-                                            std::lock_guard<std::mutex>            selfLock( context->SelfMutex );
-                                            ICommandList                         *&commandList = context->CommandList;
+                                            const std::unique_ptr<NodeExecutionContext> &context = node->Contexts[ frame ];
+                                            std::lock_guard                              selfLock( context->SelfMutex );
+                                            ICommandList                               *&commandList = context->CommandList;
 
                                             commandList->Begin( );
                                             IssueBarriers( commandList, context->ResourceUsagesPerFrame );
@@ -244,7 +244,7 @@ void RenderGraph::BuildTaskflow( )
             [ this, frame ]
             {
                 PresentContext &presentContext     = m_presentContexts[ frame ];
-                uint32_t        image              = m_presentNode.SwapChain->AcquireNextImage( presentContext.ImageReadySemaphore.get( ) );
+                const uint32_t  image              = m_presentNode.SwapChain->AcquireNextImage( presentContext.ImageReadySemaphore.get( ) );
                 ICommandList  *&presentCommandList = presentContext.PresentCommandList;
                 presentCommandList->Begin( );
                 IssueBarriers( presentCommandList, presentContext.ResourceUsagesPerFrame );
@@ -278,7 +278,7 @@ void RenderGraph::Update( )
     m_frameIndex = ( m_frameIndex + 1 ) % m_desc.NumFrames;
 }
 
-void RenderGraph::WaitIdle( )
+void RenderGraph::WaitIdle( ) const
 {
     m_frameFences[ m_frameIndex ]->Wait( );
 }
@@ -292,7 +292,7 @@ ISemaphore *RenderGraph::GetOrCreateSemaphore( uint32_t &index )
     return m_nodeSemaphores[ index++ ].get( );
 }
 
-void RenderGraph::ValidateNodes( )
+void RenderGraph::ValidateNodes( ) const
 {
     std::unordered_set<std::string> allNodes;
     for ( auto &node : m_nodeDescriptions )
@@ -309,7 +309,7 @@ void RenderGraph::ValidateNodes( )
     }
 }
 
-void RenderGraph::ValidateDependencies( const std::unordered_set<std::string> &allNodes, const std::vector<std::string> &dependencies )
+void RenderGraph::ValidateDependencies( const std::unordered_set<std::string> &allNodes, const std::vector<std::string> &dependencies ) const
 {
     for ( auto &dependency : dependencies )
     {
@@ -320,7 +320,7 @@ void RenderGraph::ValidateDependencies( const std::unordered_set<std::string> &a
     }
 }
 
-void RenderGraph::IssueBarriers( ICommandList *commandList, std::vector<NodeResourceUsageDesc> &resourceUsages )
+void RenderGraph::IssueBarriers( ICommandList *commandList, const std::vector<NodeResourceUsageDesc> &resourceUsages )
 {
     PipelineBarrierDesc       barrierDesc{ };
     std::vector<std::mutex *> m_unlocks;
@@ -356,7 +356,7 @@ void RenderGraph::IssueBarriers( ICommandList *commandList, std::vector<NodeReso
     if ( !barrierDesc.GetTextureBarriers( ).empty( ) || !barrierDesc.GetBufferBarriers( ).empty( ) )
     {
         commandList->PipelineBarrier( barrierDesc );
-        for ( auto &mutex : m_unlocks )
+        for ( const auto &mutex : m_unlocks )
         {
             mutex->unlock( );
         }

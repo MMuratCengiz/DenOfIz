@@ -60,35 +60,34 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
     }
 
     D3D12_RESOURCE_STATES initialState = DX12EnumConverter::ConvertResourceState( m_desc.InitialState );
-    if ( m_desc.InitialState.IsSet( ResourceState::RenderTarget ) )
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RenderTarget ) )
     {
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-        initialState = DX12EnumConverter::ConvertResourceState( ResourceState::RenderTarget );
     }
-    else if ( m_desc.InitialState.IsSet( ResourceState::DepthWrite ) )
+    else if ( m_desc.Descriptor.IsSet( ResourceDescriptor::DepthStencil ) )
     {
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-        initialState = DX12EnumConverter::ConvertResourceState( ResourceState::DepthWrite );
     }
 
     // Used for certain commands
     m_resourceDesc               = resourceDesc;
     D3D12_CLEAR_VALUE clearValue = { };
     clearValue.Format            = resourceDesc.Format;
-    if ( m_desc.InitialState.IsSet( ResourceState::RenderTarget ) )
+
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RenderTarget ) )
     {
         clearValue.Color[ 0 ] = 0.0f;
         clearValue.Color[ 1 ] = 0.0f;
         clearValue.Color[ 2 ] = 0.0f;
         clearValue.Color[ 3 ] = 1.0f;
     }
-    else if ( m_desc.InitialState.IsSet( ResourceState::DepthWrite ) )
+    else if ( m_desc.Descriptor.IsSet( ResourceDescriptor::DepthStencil ) )
     {
         clearValue.DepthStencil.Depth   = 1.0f;
         clearValue.DepthStencil.Stencil = 0.0f;
     }
 
-    if ( m_desc.InitialState.Any({ ResourceState::DepthWrite, ResourceState::RenderTarget }) )
+    if ( m_desc.Descriptor.Any({ ResourceDescriptor::DepthStencil, ResourceDescriptor::RenderTarget }) )
     {
         HRESULT hr = m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, initialState, &clearValue, &m_allocation, IID_PPV_ARGS( &m_resource ) );
         DX_CHECK_RESULT( hr );
@@ -343,7 +342,7 @@ D3D12_FILTER DX12Sampler::CalculateFilter( Filter min, Filter mag, MipmapMode mo
         return compareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_ANISOTROPIC : D3D12_FILTER_ANISOTROPIC;
     }
 
-    const int filter     = ( static_cast<int>( min ) << 4 ) | ( static_cast<int>( mag ) << 2 ) | static_cast<int>( mode );
+    const int filter     = static_cast<int>( min ) << 4 | static_cast<int>( mag ) << 2 | static_cast<int>( mode );
     const int baseFilter = compareOp != CompareOp::Never ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D12_FILTER_MIN_MAG_MIP_POINT;
     return static_cast<D3D12_FILTER>( baseFilter + filter );
 }

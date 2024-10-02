@@ -34,7 +34,6 @@ namespace DenOfIz
         std::vector<VkImage>     m_swapChainImages;
         std::vector<VkImageView> m_swapChainImageViews;
 
-        Format           m_surfaceImageFormat{ };
         VkColorSpaceKHR  m_colorSpace{ };
         VkPresentModeKHR m_presentMode{ };
         QueueFamily      m_presentationQueueFamily{ };

@@ -35,7 +35,12 @@ namespace DenOfIz
     struct NodeResourceUsageDesc
     {
     private:
-        NodeResourceUsageDesc( ) = default;
+        explicit NodeResourceUsageDesc( IBufferResource *resource ) : BufferResource( resource )
+        {
+        }
+        explicit NodeResourceUsageDesc( ITextureResource *resource ) : Type( NodeResourceUsageType::Texture ), TextureResource( resource )
+        {
+        }
 
     public:
         uint32_t              FrameIndex = 0;
@@ -47,23 +52,19 @@ namespace DenOfIz
             ITextureResource *TextureResource;
         };
 
-        static NodeResourceUsageDesc BufferState( uint32_t frameIndex, IBufferResource *bufferResource, const ResourceState state )
+        static NodeResourceUsageDesc BufferState( const uint32_t frameIndex, IBufferResource *bufferResource, const ResourceState state )
         {
-            NodeResourceUsageDesc desc{ };
-            desc.FrameIndex     = frameIndex;
-            desc.State          = state;
-            desc.Type           = NodeResourceUsageType::Buffer;
-            desc.BufferResource = bufferResource;
+            NodeResourceUsageDesc desc( bufferResource );
+            desc.FrameIndex = frameIndex;
+            desc.State      = state;
             return desc;
         }
 
-        static NodeResourceUsageDesc TextureState( uint32_t frameIndex, ITextureResource *textureResource, const ResourceState state )
+        static NodeResourceUsageDesc TextureState( const uint32_t frameIndex, ITextureResource *textureResource, const ResourceState state )
         {
-            NodeResourceUsageDesc desc{ };
-            desc.FrameIndex      = frameIndex;
-            desc.State           = state;
-            desc.Type            = NodeResourceUsageType::Texture;
-            desc.TextureResource = textureResource;
+            NodeResourceUsageDesc desc( textureResource );
+            desc.FrameIndex = frameIndex;
+            desc.State      = state;
             return desc;
         }
     };
@@ -156,20 +157,20 @@ namespace DenOfIz
 
     public:
         explicit RenderGraph( const RenderGraphDesc &desc );
-        void Reset( );
-        void AddNode( const NodeDesc &desc );
-        void SetPresentNode( const PresentNodeDesc &desc );
-        void BuildGraph( );
-        void BuildTaskflow( );
-        void Update( );
-        void WaitIdle( );
+        void     Reset( );
+        void     AddNode( const NodeDesc &desc );
+        void     SetPresentNode( const PresentNodeDesc &desc );
+        void     BuildGraph( );
+        void     BuildTaskflow( );
+        void     Update( );
+        void     WaitIdle( ) const;
 
     private:
         ISemaphore *GetOrCreateSemaphore( uint32_t &index );
         void        InitAllNodes( );
         void        ConfigureGraph( );
-        void        ValidateDependencies( const std::unordered_set<std::string> &allNodes, const std::vector<std::string> &dependencies );
-        void        ValidateNodes( );
-        void        IssueBarriers( ICommandList *commandList, std::vector<NodeResourceUsageDesc> &resourceUsages );
+        void        ValidateDependencies( const std::unordered_set<std::string> &allNodes, const std::vector<std::string> &dependencies ) const;
+        void        ValidateNodes( ) const;
+        void        IssueBarriers( ICommandList *commandList, const std::vector<NodeResourceUsageDesc> &resourceUsages );
     };
 } // namespace DenOfIz

@@ -38,10 +38,11 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
     m_rootSignature = logicalDevice->CreateRootSignature( programReflection.RootSignature );
     m_inputLayout   = logicalDevice->CreateInputLayout( programReflection.InputLayout );
     PipelineDesc pipelineDesc{ };
-    pipelineDesc.Rendering.RenderTargets.push_back( { .Format = Format::R8G8B8A8Unorm } );
+    pipelineDesc.Rendering.RenderTargets.push_back( { .Format = Format::B8G8R8A8Unorm } );
     pipelineDesc.InputLayout   = m_inputLayout.get( );
     pipelineDesc.RootSignature = m_rootSignature.get( );
     pipelineDesc.ShaderProgram = m_program.get( );
+    pipelineDesc.CullMode      = CullMode::FrontFace;
 
     m_pipeline = logicalDevice->CreatePipeline( pipelineDesc );
 
@@ -54,14 +55,14 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
     m_sampler = logicalDevice->CreateSampler( SamplerDesc{ } );
 }
 
-IResourceBindGroup *QuadPipeline::BindGroup( uint32_t frame ) const
+IResourceBindGroup *QuadPipeline::BindGroup( const uint32_t frame ) const
 {
     return m_bindGroups[ frame ].get( );
 }
 
-void QuadPipeline::Render( ICommandList *commandList, uint32_t frame ) const
+void QuadPipeline::Render( ICommandList *commandList, const uint32_t frame ) const
 {
     commandList->BindPipeline( m_pipeline.get( ) );
     commandList->BindResourceGroup( m_bindGroups[ frame ].get( ) );
-    commandList->Draw( 4, 1, 0, 0 );
+    commandList->Draw( 3, 1, 0, 0 );
 }

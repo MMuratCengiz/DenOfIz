@@ -82,7 +82,7 @@ namespace DenOfIz
         void                                Compile( );
         void                                FillReflectionData( ID3D12ShaderReflection *shaderReflection, ReflectionDesc &reflectionDesc, int resourceIndex ) const;
         void                    InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
-        ID3D12ShaderReflection *ShaderReflection( CompiledShader *compiledShader ) const;
+        ID3D12ShaderReflection *ShaderReflection( const CompiledShader *compiledShader ) const;
 #ifdef BUILD_METAL
         void ProduceMSL( );
 #endif

@@ -95,7 +95,6 @@ namespace DenOfIz
 
     class BatchResourceCopy
     {
-    private:
         ILogicalDevice *m_device;
 
         std::unique_ptr<ICommandListPool> m_commandListPool;
@@ -132,7 +131,7 @@ namespace DenOfIz
         void                                      Submit( ISemaphore *notify = nullptr );
 
         /// <summary> A synchronized batch resource copy operation, ensures copying is finalized. </summary>
-        static void SyncOp( ILogicalDevice *device, std::function<void( BatchResourceCopy * )> op );
+        static void SyncOp( ILogicalDevice *device, const std::function<void( BatchResourceCopy * )> &op );
 
     private:
         void                   CleanResources( );

@@ -25,6 +25,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
+#define DXC_CHECK_RESULT( result )                                                                                                                                                      \
+    do                                                                                                                                                                             \
+    {                                                                                                                                                                              \
+        if ( FAILED( result ) )                                                                                                                                                    \
+        {                                                                                                                                                                          \
+            LOG( ERROR ) << "DXC Error: " << result;                                                                                                                   \
+        }                                                                                                                                                                          \
+    }                                                                                                                                                                              \
+    while ( false )
+
 ShaderProgram::ShaderProgram( const ShaderProgramDesc &desc ) : m_desc( desc )
 {
     Compile( );
@@ -93,7 +103,7 @@ IRShaderVisibility ShaderStageToShaderVisibility( ShaderStage stage )
     }
 }
 
-// For metal we need to produce a root signature to compile a correct metallib
+// For metal, we need to produce a root signature to compile a correct metallib
 void ShaderProgram::ProduceMSL( )
 {
     const ShaderCompiler           &compiler = ShaderCompilerInstance( );
@@ -271,7 +281,7 @@ std::vector<CompiledShader *> ShaderProgram::GetCompiledShaders( ) const
     return compiledShaders;
 }
 
-Format MaskToFormat( uint32_t mask )
+Format MaskToFormat( const uint32_t mask )
 {
     switch ( mask )
     {
@@ -288,7 +298,7 @@ Format MaskToFormat( uint32_t mask )
     }
 }
 
-ResourceDescriptor ReflectTypeToRootSignatureType( D3D_SHADER_INPUT_TYPE type )
+ResourceDescriptor ReflectTypeToRootSignatureType( const D3D_SHADER_INPUT_TYPE type )
 {
     switch ( type )
     {
@@ -317,7 +327,7 @@ ResourceDescriptor ReflectTypeToRootSignatureType( D3D_SHADER_INPUT_TYPE type )
     return ResourceDescriptor::Texture;
 }
 
-DescriptorBufferBindingType ReflectTypeToBufferBindingType( D3D_SHADER_INPUT_TYPE type )
+DescriptorBufferBindingType ReflectTypeToBufferBindingType( const D3D_SHADER_INPUT_TYPE type )
 {
     switch ( type )
     {
@@ -372,9 +382,9 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
 
         ID3D12ShaderReflection *shaderReflection{ };
 
-        ShaderCompilerInstance( ).DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) );
+        DXC_CHECK_RESULT( ShaderCompilerInstance( ).DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) ) );
         D3D12_SHADER_DESC shaderDesc{ };
-        shaderReflection->GetDesc( &shaderDesc );
+        DXC_CHECK_RESULT( shaderReflection->GetDesc( &shaderDesc ) );
 
         if ( shader->Stage == ShaderStage::Vertex )
         {
@@ -384,13 +394,12 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
 #ifdef BUILD_METAL
         std::vector<IRResourceLocation> resources( IRShaderReflectionGetResourceCount( irReflection ) );
         IRShaderReflectionGetResourceLocations( irReflection, resources.data( ) );
-
 #endif
 
         for ( const uint32_t i : std::views::iota( 0u, shaderDesc.BoundResources ) )
         {
             D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
-            shaderReflection->GetResourceBindingDesc( i, &shaderInputBindDesc );
+            DXC_CHECK_RESULT( shaderReflection->GetResourceBindingDesc( i, &shaderInputBindDesc ) );
 
             bool found = false;
             for ( auto &boundBinding : rootSignature.ResourceBindings )
@@ -577,11 +586,11 @@ ReflectionFieldType DXCVariableTypeToReflectionType( const D3D_SHADER_VARIABLE_T
     }
 }
 
-void ShaderProgram::FillReflectionData( ID3D12ShaderReflection *shaderReflection, ReflectionDesc &reflectionDesc, int resourceIndex ) const
+void ShaderProgram::FillReflectionData( ID3D12ShaderReflection *shaderReflection, ReflectionDesc &reflectionDesc, const int resourceIndex ) const
 {
     D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
 
-    shaderReflection->GetResourceBindingDesc( resourceIndex, &shaderInputBindDesc );
+    DXC_CHECK_RESULT( shaderReflection->GetResourceBindingDesc( resourceIndex, &shaderInputBindDesc ) );
 
     reflectionDesc.Name = shaderInputBindDesc.Name;
 
@@ -613,24 +622,21 @@ void ShaderProgram::FillReflectionData( ID3D12ShaderReflection *shaderReflection
         break;
     }
 
+    DZ_RETURN_IF( reflectionDesc.Type != ReflectionBindingType::Struct );
+
     ID3D12ShaderReflectionConstantBuffer *constantBuffer = shaderReflection->GetConstantBufferByIndex( resourceIndex );
     D3D12_SHADER_BUFFER_DESC              bufferDesc;
-    constantBuffer->GetDesc( &bufferDesc );
-
-    if ( reflectionDesc.Type != ReflectionBindingType::Struct )
-    {
-        return;
-    }
+    DXC_CHECK_RESULT( constantBuffer->GetDesc( &bufferDesc ) );
 
     for ( const uint32_t i : std::views::iota( 0u, bufferDesc.Variables ) )
     {
         ID3D12ShaderReflectionVariable *variable = constantBuffer->GetVariableByIndex( i );
         D3D12_SHADER_VARIABLE_DESC      variableDesc;
-        variable->GetDesc( &variableDesc );
+        DXC_CHECK_RESULT( variable->GetDesc( &variableDesc ) );
 
         ID3D12ShaderReflectionType *reflectionType = variable->GetType( );
         D3D12_SHADER_TYPE_DESC      typeDesc;
-        reflectionType->GetDesc( &typeDesc );
+        DXC_CHECK_RESULT( reflectionType->GetDesc( &typeDesc ) );
 
         ReflectionResourceField subField{ };
         subField.Name       = variableDesc.Name;
@@ -641,7 +647,7 @@ void ShaderProgram::FillReflectionData( ID3D12ShaderReflection *shaderReflection
     }
 }
 
-ID3D12ShaderReflection *ShaderProgram::ShaderReflection( CompiledShader *compiledShader ) const
+ID3D12ShaderReflection *ShaderProgram::ShaderReflection( const CompiledShader *compiledShader ) const
 {
     IDxcBlob       *reflectionBlob = compiledShader->Reflection;
     const DxcBuffer reflectionBuffer{
@@ -651,7 +657,7 @@ ID3D12ShaderReflection *ShaderProgram::ShaderReflection( CompiledShader *compile
     };
 
     ID3D12ShaderReflection *shaderReflection{ };
-    ShaderCompilerInstance( ).DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) );
+    DXC_CHECK_RESULT( ShaderCompilerInstance( ).DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) ) );
     return shaderReflection;
 }
 
@@ -662,11 +668,11 @@ void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, I
         D3D_NAME_VERTEX_ID, D3D_NAME_CLIP_DISTANCE, D3D_NAME_CULL_DISTANCE
     };
 
-    InputGroupDesc &inputGroupDesc = inputLayoutDesc.InputGroups.emplace_back( );
+    std::vector<InputLayoutElementDesc> inputElements;
     for ( const uint32_t parameterIndex : std::views::iota( 0u, shaderDesc.InputParameters ) )
     {
         D3D12_SIGNATURE_PARAMETER_DESC signatureParameterDesc{ };
-        shaderReflection->GetInputParameterDesc( parameterIndex, &signatureParameterDesc );
+        DXC_CHECK_RESULT( shaderReflection->GetInputParameterDesc( parameterIndex, &signatureParameterDesc ) );
 
         bool isSemanticProvided = false;
         for ( const uint32_t i : std::views::iota( 0u, 8u ) )
@@ -683,9 +689,14 @@ void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, I
             continue;
         }
 
-        InputLayoutElementDesc &inputElementDesc = inputGroupDesc.Elements.emplace_back( );
+        InputLayoutElementDesc &inputElementDesc = inputElements.emplace_back( );
         inputElementDesc.Semantic                = SemanticFromString( signatureParameterDesc.SemanticName );
         inputElementDesc.SemanticIndex           = signatureParameterDesc.SemanticIndex;
         inputElementDesc.Format                  = MaskToFormat( signatureParameterDesc.Mask );
+    }
+
+    if ( !inputElements.empty( ) )
+    {
+        inputLayoutDesc.InputGroups.push_back( { inputElements } );
     }
 }

@@ -55,7 +55,7 @@ namespace DenOfIz
         constexpr int G = 0x00000002;
         constexpr int B = 0x00000004;
         constexpr int A = 0x00000008;
-    }; // namespace ViewMask
+    } // namespace ViewMask
 
     enum class Blend
     {
@@ -65,10 +65,10 @@ namespace DenOfIz
         InvSrcColor,
         SrcAlpha,
         InvSrcAlpha,
-        DestAlpha,
-        InvDestAlpha,
-        DestColor,
-        InvDestColor,
+        DstAlpha,
+        InvDstAlpha,
+        DstColor,
+        InvDstColor,
         SrcAlphaSaturate,
         Src1Color,
         InvSrc1Color,
@@ -109,9 +109,9 @@ namespace DenOfIz
     {
         bool         Enable                = false;
         Blend        SrcBlend              = Blend::One;
-        Blend        DestBlend             = Blend::Zero;
+        Blend        DstBlend              = Blend::Zero;
         Blend        SrcBlendAlpha         = Blend::One;
-        Blend        DestBlendAlpha        = Blend::Zero;
+        Blend        DstBlendAlpha         = Blend::Zero;
         BlendOp      BlendOp               = BlendOp::Add;
         enum BlendOp BlendOpAlpha          = BlendOp::Add;
         uint8_t      RenderTargetWriteMask = 0x0F;
@@ -128,8 +128,8 @@ namespace DenOfIz
         uint32_t                      ViewMask               = 0;
         bool                          AlphaToCoverageEnable  = false; // Todo check if required
         bool                          IndependentBlendEnable = false; // Todo check if required
-        bool                          BlendLogicOpEnable  = false;
-        LogicOp                       BlendLogicOp        = LogicOp::Noop;
+        bool                          BlendLogicOpEnable     = false;
+        LogicOp                       BlendLogicOp           = LogicOp::Noop;
         std::vector<RenderTargetDesc> RenderTargets;
         Format                        DepthStencilAttachmentFormat = Format::Undefined;
     };
@@ -138,7 +138,7 @@ namespace DenOfIz
     {
         bool      Enable    = true;
         CompareOp CompareOp = CompareOp::Always;
-        bool      Write;
+        bool      Write     = true;
     };
 
     struct StencilFace

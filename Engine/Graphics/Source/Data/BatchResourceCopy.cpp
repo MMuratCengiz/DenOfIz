@@ -179,7 +179,7 @@ UniformBufferHolder BatchResourceCopy::CreateAndStoreUniformBuffer( const void *
 
     if ( m_issueBarriers )
     {
-        PipelineBarrierDesc barrierDesc =
+        const PipelineBarrierDesc barrierDesc =
             PipelineBarrierDesc{ }.BufferBarrier( { .Resource = buffer.get( ), .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
         m_syncCommandList->PipelineBarrier( barrierDesc );
     }
@@ -366,14 +366,13 @@ uint32_t BatchResourceCopy::GetSubresourceAlignment( const uint32_t bitSize ) co
     return Utilities::Align( alignment, m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
 }
 
-void BatchResourceCopy::SyncOp( ILogicalDevice *device, std::function<void( BatchResourceCopy * )> op )
+void BatchResourceCopy::SyncOp( ILogicalDevice *device, const std::function<void( BatchResourceCopy * )> &op )
 {
     BatchResourceCopy batchResourceCopy( device );
     batchResourceCopy.Begin( );
     op( &batchResourceCopy );
-    auto copySemaphore = device->CreateSemaphore( );
-    batchResourceCopy.Submit( copySemaphore.get( ) );
-    copySemaphore->Wait( );
+    batchResourceCopy.Submit( );
+    // BatchResourceCopy destructor will ensure that copy finishes
 }
 
 std::string BatchResourceCopy::NextId( const std::string &prefix )

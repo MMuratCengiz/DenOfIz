@@ -235,11 +235,11 @@ VkBlendFactor VulkanEnumConverter::ConvertBlend( const Blend &blend )
         return VK_BLEND_FACTOR_ONE;
     case Blend::SrcColor:
         return VK_BLEND_FACTOR_SRC_COLOR;
-    case Blend::DestColor:
+    case Blend::DstColor:
         return VK_BLEND_FACTOR_DST_COLOR;
     case Blend::SrcAlpha:
         return VK_BLEND_FACTOR_SRC_ALPHA;
-    case Blend::DestAlpha:
+    case Blend::DstAlpha:
         return VK_BLEND_FACTOR_DST_ALPHA;
     case Blend::SrcAlphaSaturate:
         return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
@@ -251,9 +251,9 @@ VkBlendFactor VulkanEnumConverter::ConvertBlend( const Blend &blend )
         return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
     case Blend::InvSrcAlpha:
         return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    case Blend::InvDestAlpha:
+    case Blend::InvDstAlpha:
         return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
-    case Blend::InvDestColor:
+    case Blend::InvDstColor:
         return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
     case Blend::InvSrc1Color:
         return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
@@ -645,6 +645,10 @@ VkImageUsageFlags VulkanEnumConverter::ConvertTextureUsage( BitSet<ResourceDescr
     {
         flags |= VK_IMAGE_USAGE_STORAGE_BIT;
     }
+    if ( descriptor.IsSet( ResourceDescriptor::RenderTarget ) )
+    {
+        flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    }
     if ( initialState.IsSet( ResourceState::CopySrc ) )
     {
         flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -683,6 +687,10 @@ VkImageUsageFlags VulkanEnumConverter::ConvertTextureUsage( BitSet<ResourceDescr
 // TODO !IMPROVEMENT! This needs to be more complete
 VkImageLayout VulkanEnumConverter::ConvertTextureDescriptorToLayout( BitSet<ResourceState> initialState )
 {
+    if ( initialState.Any( { ResourceState::ShaderResource, ResourceState::PixelShaderResource } ) )
+    {
+        return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
     if ( initialState.IsSet( ResourceState::Common ) )
     {
         return VK_IMAGE_LAYOUT_GENERAL;
@@ -694,10 +702,6 @@ VkImageLayout VulkanEnumConverter::ConvertTextureDescriptorToLayout( BitSet<Reso
     if ( initialState.All( { ResourceState::DepthRead, ResourceState::DepthWrite } ) )
     {
         return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    }
-    if ( initialState.Any( { ResourceState::ShaderResource, ResourceState::PixelShaderResource } ) )
-    {
-        return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
     if ( initialState.IsSet( ResourceState::CopySrc ) )
     {

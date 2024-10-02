@@ -479,13 +479,13 @@ D3D12_BLEND DX12EnumConverter::ConvertBlend( const Blend &factor )
         return D3D12_BLEND_SRC_ALPHA;
     case Blend::InvSrcAlpha:
         return D3D12_BLEND_INV_SRC_ALPHA;
-    case Blend::DestAlpha:
+    case Blend::DstAlpha:
         return D3D12_BLEND_DEST_ALPHA;
-    case Blend::InvDestAlpha:
+    case Blend::InvDstAlpha:
         return D3D12_BLEND_INV_DEST_ALPHA;
-    case Blend::DestColor:
+    case Blend::DstColor:
         return D3D12_BLEND_DEST_COLOR;
-    case Blend::InvDestColor:
+    case Blend::InvDstColor:
         return D3D12_BLEND_INV_DEST_COLOR;
     case Blend::SrcAlphaSaturate:
         return D3D12_BLEND_SRC_ALPHA_SAT;

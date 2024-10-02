@@ -1,17 +1,15 @@
-#pragma pack_matrix (row_major)
+#pragma pack_matrix( row_major )
 
-struct Output
+struct PSInput
 {
-    float4 position_cs : SV_POSITION;
-    float2 texcoord : TEXCOORD;
+    float4 position : SV_POSITION;
+    float2 texCoord : TEXCOORD;
 };
 
-Output main(uint id: SV_VertexID)
+PSInput main( uint id : SV_VertexID )
 {
-    Output output;
-
-    output.texcoord = float2(id % 2, (id % 4) >> 1);
-    output.position_cs = float4(output.texcoord * float2(2, -2) + float2(-1, 1), 0, 1);
-
-    return output;
+    PSInput result;
+    result.texCoord = float2( id << 1 & 2, id & 2 );
+    result.position = float4( result.texCoord * float2( 2.0f, -2.0f ) + float2( -1.0f, 1.0f ), 0.0f, 1.0f );
+    return result;
 }

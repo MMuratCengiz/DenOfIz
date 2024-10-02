@@ -62,17 +62,7 @@ void VulkanSwapChain::CreateSurface( )
         }
     }
 
-    auto surfaceFormat = VkSurfaceFormatKHR{ VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
-    for ( const auto format : surfaceFormats )
-    {
-        if ( format.format == VK_FORMAT_B8G8R8A8_UNORM /*&& format.colorSpace == VkColorSpaceKHR::eSrgbNonlinear*/ )
-        {
-            surfaceFormat = format;
-        }
-    }
-
-    m_surfaceImageFormat = Format::B8G8R8A8Unorm;
-    m_colorSpace         = surfaceFormat.colorSpace;
+    m_colorSpace         = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     m_presentMode        = presentMode;
 
     std::vector<VkQueueFamilyProperties> properties;
@@ -115,7 +105,7 @@ void VulkanSwapChain::CreateSwapChain( )
     createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     createInfo.surface          = m_surface;
     createInfo.minImageCount    = m_desc.NumBuffers;
-    createInfo.imageFormat      = VulkanEnumConverter::ConvertImageFormat( m_surfaceImageFormat );
+    createInfo.imageFormat      = VulkanEnumConverter::ConvertImageFormat( m_desc.BackBufferFormat );
     createInfo.imageColorSpace  = m_colorSpace;
     createInfo.imageExtent      = VkExtent2D( m_width, m_height );
     createInfo.imageArrayLayers = 1;
@@ -143,7 +133,7 @@ void VulkanSwapChain::CreateSwapChain( )
     createInfo.oldSwapchain   = m_swapChain;
 
     VK_CHECK_RESULT( vkCreateSwapchainKHR( m_context->LogicalDevice, &createInfo, nullptr, &m_swapChain ) );
-    CreateSwapChainImages( VulkanEnumConverter::ConvertImageFormat( m_surfaceImageFormat ) );
+    CreateSwapChainImages( VulkanEnumConverter::ConvertImageFormat( m_desc.BackBufferFormat ) );
 }
 
 void VulkanSwapChain::CreateSwapChainImages( const VkFormat format )
@@ -161,7 +151,7 @@ void VulkanSwapChain::CreateSwapChainImages( const VkFormat format )
         TextureDesc desc{ };
         desc.Width  = m_width;
         desc.Height = m_height;
-        desc.Format = m_surfaceImageFormat;
+        desc.Format = m_desc.BackBufferFormat;
         m_renderTargets.push_back( std::make_unique<VulkanTextureResource>( image, m_swapChainImageViews[ index ], format, VK_IMAGE_ASPECT_COLOR_BIT, desc ) );
         index++;
     }

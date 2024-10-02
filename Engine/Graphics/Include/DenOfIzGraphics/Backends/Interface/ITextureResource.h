@@ -51,10 +51,10 @@ namespace DenOfIz
         Format                     Format = Format::Undefined;
         BitSet<ResourceDescriptor> Descriptor;
 
-        HeapType              HeapType        = HeapType::GPU;
-        MSAASampleCount       MSAASampleCount = MSAASampleCount::_0;
-        BitSet<ResourceState> InitialState;
-        SamplerDesc           Sampler; // Requires `| Descriptor::Sampler`
+        HeapType        HeapType        = HeapType::GPU;
+        MSAASampleCount MSAASampleCount = MSAASampleCount::_0;
+        ResourceState   InitialState;
+        SamplerDesc     Sampler; // Requires `| Descriptor::Sampler`
 
         uint32_t Width = 1;
         // if Height is > 1, it is a 2D texture
@@ -70,12 +70,12 @@ namespace DenOfIz
     {
 
     protected:
-        Format                m_format       = Format::Undefined;
-        uint32_t              m_width        = 1;
-        uint32_t              m_height       = 1;
-        uint32_t              m_depth        = 1;
-        BitSet<ResourceState> m_initialState = ResourceState::Undefined;
-        const void           *m_data         = nullptr;
+        Format        m_format       = Format::Undefined;
+        uint32_t      m_width        = 1;
+        uint32_t      m_height       = 1;
+        uint32_t      m_depth        = 1;
+        ResourceState m_initialState = ResourceState::Undefined;
+        const void   *m_data         = nullptr;
 
         explicit ITextureResource( const TextureDesc &desc )
         {
@@ -89,7 +89,7 @@ namespace DenOfIz
     public:
         virtual ~ITextureResource( ) = default;
 
-        [[nodiscard]] BitSet<ResourceState> InitialState( )
+        [[nodiscard]] BitSet<ResourceState> InitialState( ) const
         {
             return m_initialState;
         }
@@ -155,7 +155,7 @@ namespace DenOfIz
         std::string m_name;
 
     public:
-        virtual ~ISampler( ) = default;
+        virtual ~                        ISampler( ) = default;
         [[nodiscard]] const std::string &Name( ) const
         {
             return m_name;

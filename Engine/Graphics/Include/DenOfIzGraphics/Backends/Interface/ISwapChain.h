@@ -31,7 +31,7 @@ namespace DenOfIz
         uint32_t              Width             = 0; // 0 means that it will be set to the window width
         uint32_t              Height            = 0; // 0 means that it will be set to the window height
         uint32_t              NumBuffers        = 3;
-        Format                BackBufferFormat  = Format::R8G8B8A8Unorm;
+        Format                BackBufferFormat  = Format::B8G8R8A8Unorm;
         Format                DepthBufferFormat = Format::D32Float;
     };
 

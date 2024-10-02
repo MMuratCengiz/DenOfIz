@@ -31,8 +31,8 @@ void RenderTargetExample::Init( )
     textureDesc.Width        = m_windowDesc.Width;
     textureDesc.Height       = m_windowDesc.Height;
     textureDesc.Format       = Format::B8G8R8A8Unorm;
-    textureDesc.Descriptor   = ResourceDescriptor::Texture;
-    textureDesc.InitialState = BitSet<ResourceState>(ResourceState::ShaderResource) | ResourceState::RenderTarget;
+    textureDesc.Descriptor   = BitSet(ResourceDescriptor::Texture) | ResourceDescriptor::RenderTarget;
+    textureDesc.InitialState = ResourceState::ShaderResource;
     textureDesc.DebugName    = "Deferred Render Target";
     for ( uint32_t i = 0; i < 3; ++i )
     {
@@ -61,7 +61,7 @@ void RenderTargetExample::Init( )
     deferredNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::RenderTarget ) );
     deferredNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::RenderTarget ) );
     deferredNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::RenderTarget ) );
-    deferredNode.Execute = [ this ]( uint32_t frame, ICommandList *commandList )
+    deferredNode.Execute = [ this ]( const uint32_t frame, ICommandList *commandList )
     {
         RenderingAttachmentDesc renderingAttachmentDesc{ };
         renderingAttachmentDesc.Resource = m_deferredRenderTargets[ frame ].get( );
@@ -85,8 +85,8 @@ void RenderTargetExample::Init( )
     presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::ShaderResource ) );
     presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::ShaderResource ) );
     presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::ShaderResource ) );
-    presentNode.Dependencies.push_back( "Deferred" );
-    presentNode.Execute = [ this ]( uint32_t frame, ICommandList *commandList, ITextureResource *renderTarget )
+    presentNode.Dependencies.emplace_back("Deferred" );
+    presentNode.Execute = [ this ]( const uint32_t frame, ICommandList *commandList, ITextureResource *renderTarget )
     {
         RenderingAttachmentDesc quadAttachmentDesc{ };
         quadAttachmentDesc.Resource = renderTarget;
@@ -107,7 +107,7 @@ void RenderTargetExample::Init( )
     m_renderGraph->SetPresentNode( presentNode );
     m_renderGraph->BuildGraph( );
 
-    m_time.OnEachSecond = []( double fps ) { LOG( WARNING ) << "FPS: " << fps; };
+    m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
 }
 
 void RenderTargetExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
