@@ -112,7 +112,7 @@ void RenderTargetExample::Init( )
 
 void RenderTargetExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    defaultApiPreference.Windows = APIPreferenceWindows::DirectX12;
 }
 
 void RenderTargetExample::Update( )

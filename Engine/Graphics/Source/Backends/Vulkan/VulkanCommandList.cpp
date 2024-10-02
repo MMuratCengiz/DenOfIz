@@ -179,7 +179,7 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeDesc )
 
 void VulkanCommandList::BindPipeline( IPipeline *pipeline )
 {
-    auto vkPipeline = dynamic_cast<VulkanPipeline *>( pipeline );
+    const auto vkPipeline = dynamic_cast<VulkanPipeline *>( pipeline );
     vkCmdBindPipeline( m_commandBuffer, vkPipeline->BindPoint( ), vkPipeline->Instance( ) );
 }
 
@@ -235,8 +235,8 @@ void VulkanCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     // Remember more bind points will be added in the future.
     const VkPipelineBindPoint bindPoint = m_desc.QueueType == QueueType::Graphics ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
 
-    vkCmdBindDescriptorSets( m_commandBuffer, bindPoint, vkBindGroup->RootSignature( )->PipelineLayout( ), bindGroup->RegisterSpace( ), 1,
-                             &vkBindGroup->GetDescriptorSet( ), 0, nullptr );
+    vkCmdBindDescriptorSets( m_commandBuffer, bindPoint, vkBindGroup->RootSignature( )->PipelineLayout( ), bindGroup->RegisterSpace( ), 1, &vkBindGroup->GetDescriptorSet( ), 0,
+                             nullptr );
 }
 
 void VulkanCommandList::SetDepthBias( const float constantFactor, const float clamp, const float slopeFactor )
@@ -299,7 +299,7 @@ void VulkanCommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copy
 
     VkBufferImageCopy copyRegion{ };
     copyRegion.bufferOffset       = copyBufferToTextureDesc.SrcOffset;
-    copyRegion.bufferRowLength    = ( alignedRowPitch / formatSize ) * blockSize;
+    copyRegion.bufferRowLength    = alignedRowPitch / formatSize * blockSize;
     copyRegion.bufferImageHeight  = numRows * blockSize;
     copyRegion.imageSubresource   = VkImageSubresourceLayers( dstTex->Aspect( ), copyBufferToTextureDesc.MipLevel, copyBufferToTextureDesc.ArrayLayer, 1 );
     copyRegion.imageOffset        = VkOffset3D( 0, 0, 0 );
