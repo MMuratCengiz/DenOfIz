@@ -32,12 +32,24 @@ namespace DenOfIz
         MetalContext *m_context;
         PipelineDesc  m_desc;
 
+        id<MTLDepthStencilState>    m_depthStencilState;
         id<MTLRenderPipelineState>  m_graphicsPipelineState;
         id<MTLComputePipelineState> m_computePipelineState;
+        MTLCullMode                 m_cullMode;
 
     public:
         MetalPipeline( MetalContext *context, const PipelineDesc &desc );
         ~MetalPipeline( ) override;
+
+        const MTLCullMode& CullMode( ) const
+        {
+            return m_cullMode;
+        }
+
+        const id<MTLDepthStencilState> &DepthStencilState( ) const
+        {
+            return m_depthStencilState;
+        }
 
         const id<MTLRenderPipelineState> &GraphicsPipelineState( ) const
         {
@@ -53,6 +65,7 @@ namespace DenOfIz
         void CreateGraphicsPipeline( );
         void CreateComputePipeline( );
         void CreateRayTracingPipeline( );
+        void InitStencilFace( MTLStencilDescriptor *stencilDesc, const StencilFace &stencilFace );
 
         id<MTLFunction> CreateShaderFunction( IDxcBlob *&blob, const std::string &entryPoint );
     };

@@ -361,7 +361,6 @@ D3D12_CULL_MODE DX12EnumConverter::ConvertCullMode( CullMode mode )
 {
     switch ( mode )
     {
-    case CullMode::FrontAndBackFace: // Todo remove
     case CullMode::FrontFace:
         return D3D12_CULL_MODE_FRONT;
     case CullMode::BackFace:

@@ -69,7 +69,7 @@ const MetalBindingDesc &MetalRootSignature::FindMetalBinding( const ResourceBind
     auto it = m_metalBindings.find( slot.Key( ) );
     if ( it == m_metalBindings.end( ) )
     {
-        LOG( ERROR ) << "Unable to find slot with type[" << static_cast<int>( slot.Type ) << "],binding[" << slot.Binding << "],register[" << slot.Register << "].";
+        LOG( ERROR ) << "Unable to find slot with type[" << static_cast<int>( slot.Type ) << "],binding[" << slot.Binding << "],register[" << slot.RegisterSpace << "].";
     }
     return it->second;
 }

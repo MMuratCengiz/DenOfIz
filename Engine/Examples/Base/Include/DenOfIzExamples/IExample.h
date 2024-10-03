@@ -17,9 +17,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#define SDL_MAIN_HANDLED
+
+#include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 #include <DenOfIzGraphics/Backends/GraphicsApi.h>
-#include <SDL2/SDL_video.h>
 #include "WorldData.h"
 
 namespace DenOfIz

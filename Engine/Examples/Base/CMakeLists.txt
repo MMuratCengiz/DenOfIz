@@ -14,8 +14,9 @@ set(DEN_OF_IZ_EXAMPLES_BASE_SOURCES
 
 add_library(DenOfIzExamples-Base ${LIB_TYPE} ${DEN_OF_IZ_EXAMPLES_BASE_SOURCES})
 target_include_default_directories(DenOfIzExamples-Base)
-copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 target_link_libraries(DenOfIzExamples-Base
         PUBLIC
         DenOfIzGraphics
 )
+
+apple_lib(DenOfIzExamples-Base)

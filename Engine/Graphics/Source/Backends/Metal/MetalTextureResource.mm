@@ -20,10 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc ) : ITextureResource( desc ), m_context( context )
+MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc ) : ITextureResource( desc ), m_context( context ), m_desc( desc )
 {
-    m_context = context;
-    m_desc    = desc;
     ValidateTextureDesc( m_desc );
     SetTextureType( );
 
@@ -61,7 +59,7 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
         textureDesc.usage |= MTLTextureUsageShaderWrite;
     }
 
-    if ( m_desc.InitialState.Any( { ResourceState::RenderTarget, ResourceState::DepthWrite } ) )
+    if ( m_desc.Descriptor.Any( { ResourceDescriptor::RenderTarget, ResourceDescriptor::DepthStencil } ) )
     {
         textureDesc.usage |= MTLTextureUsageRenderTarget;
     }
@@ -95,8 +93,8 @@ void MetalTextureResource::UpdateTexture( const TextureDesc &desc, id<MTLTexture
 void MetalTextureResource::SetTextureType( )
 {
     // When using Metal Shader Converter + HLSL, the conversion is always an array.
-    bool isArray       = true; //m_desc.ArraySize > 1;
-    bool isTexture     = m_desc.Descriptor == ResourceDescriptor::Texture;
+    bool isArray   = true; // m_desc.ArraySize > 1;
+    bool isTexture = m_desc.Descriptor.Any( { ResourceDescriptor::Texture, ResourceDescriptor::RWTexture, ResourceDescriptor::RenderTarget, ResourceDescriptor::DepthStencil } );
     bool isTextureCube = m_desc.Descriptor == ResourceDescriptor::TextureCube;
     bool hasDepth      = m_desc.Depth > 1;
     bool hasHeight     = m_desc.Height > 1;
@@ -116,7 +114,18 @@ void MetalTextureResource::SetTextureType( )
             m_textureType = MTLTextureType1D;
         }
     }
-    else if ( isTexture && isArray )
+    else if ( isTextureCube )
+    {
+        if ( isArray )
+        {
+            m_textureType = MTLTextureTypeCubeArray;
+        }
+        else
+        {
+            m_textureType = MTLTextureTypeCube;
+        }
+    }
+    else if ( isArray )
     {
         if ( hasDepth )
         {
@@ -129,17 +138,6 @@ void MetalTextureResource::SetTextureType( )
         else
         {
             m_textureType = MTLTextureType1DArray;
-        }
-    }
-    else if ( isTextureCube )
-    {
-        if ( isArray )
-        {
-            m_textureType = MTLTextureTypeCubeArray;
-        }
-        else
-        {
-            m_textureType = MTLTextureTypeCube;
         }
     }
 }

@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzExamples/Camera.h>
-#include <DirectXMath.h>
 #include <algorithm>
 #include "DenOfIzCore/Common_Macro.h"
 

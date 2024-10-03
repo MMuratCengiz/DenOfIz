@@ -24,87 +24,87 @@
 
 using namespace DenOfIz;
 
-std::string Utilities::ReadFile(const std::string &filename)
+std::string Utilities::ReadFile( const std::string &filename )
 {
-    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+    std::ifstream file( filename, std::ios::ate | std::ios::binary );
 
-    if ( !file.is_open() )
+    if ( !file.is_open( ) )
     {
-        throw std::runtime_error("failed to open file!");
+        throw std::runtime_error( "failed to open file!" );
     }
 
     std::string data;
 
-    file.seekg(0, std::ios::end);
-    data.reserve(file.tellg());
-    file.seekg(0, std::ios::beg);
-    data.assign((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.seekg( 0, std::ios::end );
+    data.reserve( file.tellg( ) );
+    file.seekg( 0, std::ios::beg );
+    data.assign( ( std::istreambuf_iterator<char>( file ) ), std::istreambuf_iterator<char>( ) );
 
-    return std::move(data);
+    return std::move( data );
 }
 
-std::string Utilities::GetFileDirectory(const std::string &file, bool includeFinalSep)
+std::string Utilities::GetFileDirectory( const std::string &file, bool includeFinalSep )
 {
-    size_t sepUnixIdx = file.find_last_of("/\\");
-    size_t sepWinIdx  = file.find_last_of("\\\\");
+    size_t sepUnixIdx = file.find_last_of( "/\\" );
+    size_t sepWinIdx  = file.find_last_of( "\\\\" );
 
     int finalSepSub = includeFinalSep ? 1 : 0;
 
     if ( sepUnixIdx != -1 )
     {
-        return file.substr(0, sepUnixIdx + finalSepSub);
+        return file.substr( 0, sepUnixIdx + finalSepSub );
     }
     if ( sepWinIdx != -1 )
     {
-        return file.substr(0, sepWinIdx - finalSepSub);
+        return file.substr( 0, sepWinIdx - finalSepSub );
     }
 
     return file;
 }
 
-std::string Utilities::GetFilename(const std::string &file)
+std::string Utilities::GetFilename( const std::string &file )
 {
-    size_t sepUnixIdx = file.find_last_of("/\\");
-    size_t sepWinIdx  = file.find_last_of("\\\\");
+    size_t sepUnixIdx = file.find_last_of( "/\\" );
+    size_t sepWinIdx  = file.find_last_of( "\\\\" );
 
     if ( sepUnixIdx != -1 )
     {
-        return file.substr(sepUnixIdx + 1);
+        return file.substr( sepUnixIdx + 1 );
     }
     if ( sepWinIdx != -1 )
     {
-        return file.substr(0, sepWinIdx + 1);
+        return file.substr( 0, sepWinIdx + 1 );
     }
 
     return file;
 }
 
-std::string Utilities::CombineDirectories(const std::string &directory, const std::string &file)
+std::string Utilities::CombineDirectories( const std::string &directory, const std::string &file )
 {
-    std::string dir = GetFileDirectory(directory);
-    std::string f   = GetFilename(file);
+    std::string dir = GetFileDirectory( directory );
+    std::string f   = GetFilename( file );
 
     return dir + f;
 }
 
-std::string Utilities::AppPath(const std::string &resourcePath)
+std::string Utilities::AppPath( const std::string &resourcePath )
 {
-    std::filesystem::path testRel(resourcePath);
-    if (testRel.is_absolute())
+    std::filesystem::path testRel( resourcePath );
+    if ( testRel.is_absolute( ) )
     {
         return resourcePath;
     }
 #if __APPLE__
-    CFBundleRef mainBundle   = CFBundleGetMainBundle();
-    CFURLRef    resourcesURL = CFBundleCopyResourcesDirectoryURL(mainBundle);
+    CFBundleRef mainBundle   = CFBundleGetMainBundle( );
+    CFURLRef    resourcesURL = CFBundleCopyResourcesDirectoryURL( mainBundle );
     char        path[ PATH_MAX ];
-    if ( CFURLGetFileSystemRepresentation(resourcesURL, TRUE, (UInt8 *)path, PATH_MAX) )
+    if ( CFURLGetFileSystemRepresentation( resourcesURL, TRUE, (UInt8 *)path, PATH_MAX ) )
     {
-        CFRelease(resourcesURL);
-        return std::string(path) + "/" + resourcePath;
+        CFRelease( resourcesURL );
+        return std::string( path ) + "/" + resourcePath;
     }
-    CFRelease(resourcesURL);
-    LOG(WARNING) << "Unable to load file: " << resourcePath;
+    CFRelease( resourcesURL );
+    LOG( WARNING ) << "Unable to load file: " << resourcePath;
     return "";
 #else
     return resourcePath;

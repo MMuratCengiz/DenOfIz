@@ -620,3 +620,113 @@ MTLStoreAction MetalEnumConverter::ConvertStoreAction( StoreOp op )
 
     return MTLStoreActionDontCare;
 }
+
+MTLBlendFactor MetalEnumConverter::ConvertBlendFactor( Blend blend )
+{
+    switch ( blend )
+    {
+    case Blend::Zero:
+        return MTLBlendFactorZero;
+    case Blend::One:
+        return MTLBlendFactorOne;
+    case Blend::SrcColor:
+        return MTLBlendFactorSourceColor;
+    case Blend::InvSrcColor:
+        return MTLBlendFactorOneMinusSourceColor;
+    case Blend::SrcAlpha:
+        return MTLBlendFactorSourceAlpha;
+    case Blend::InvSrcAlpha:
+        return MTLBlendFactorOneMinusSourceAlpha;
+    case Blend::DstAlpha:
+        return MTLBlendFactorDestinationAlpha;
+    case Blend::InvDstAlpha:
+        return MTLBlendFactorOneMinusDestinationAlpha;
+    case Blend::DstColor:
+        return MTLBlendFactorDestinationColor;
+    case Blend::InvDstColor:
+        return MTLBlendFactorOneMinusDestinationColor;
+    case Blend::SrcAlphaSaturate:
+        return MTLBlendFactorSourceAlphaSaturated;
+    case Blend::BlendFactor:
+        return MTLBlendFactorBlendColor;
+    case Blend::InvBlendFactor:
+        return MTLBlendFactorOneMinusBlendColor;
+    case Blend::Src1Color:
+        return MTLBlendFactorSource1Color;
+    case Blend::InvSrc1Color:
+        return MTLBlendFactorOneMinusSource1Color;
+    case Blend::Src1Alpha:
+        return MTLBlendFactorSource1Alpha;
+    case Blend::InvSrc1Alpha:
+        return MTLBlendFactorOneMinusSource1Alpha;
+    }
+    return MTLBlendFactorZero;
+}
+
+MTLBlendOperation MetalEnumConverter::ConvertBlendOp( BlendOp op )
+{
+    switch ( op )
+    {
+    case BlendOp::Add:
+        return MTLBlendOperationAdd;
+    case BlendOp::Subtract:
+        return MTLBlendOperationSubtract;
+    case BlendOp::ReverseSubtract:
+        return MTLBlendOperationReverseSubtract;
+    case BlendOp::Min:
+        return MTLBlendOperationMin;
+    case BlendOp::Max:
+        return MTLBlendOperationMax;
+    }
+
+    return MTLBlendOperationMin;
+}
+
+MTLStencilOperation MetalEnumConverter::ConvertStencilOp( StencilOp op )
+{
+    switch ( op )
+    {
+    case StencilOp::Keep:
+        return MTLStencilOperationKeep;
+    case StencilOp::Zero:
+        return MTLStencilOperationZero;
+    case StencilOp::Replace:
+        return MTLStencilOperationReplace;
+    case StencilOp::IncrementAndClamp:
+        return MTLStencilOperationIncrementClamp;
+    case StencilOp::DecrementAndClamp:
+        return MTLStencilOperationDecrementClamp;
+    case StencilOp::Invert:
+        return MTLStencilOperationInvert;
+    case StencilOp::IncrementAndWrap:
+        return MTLStencilOperationIncrementWrap;
+    case StencilOp::DecrementAndWrap:
+        return MTLStencilOperationDecrementWrap;
+    }
+
+    return MTLStencilOperationZero;
+}
+
+MTLCompareFunction MetalEnumConverter::ConvertCompareOp( CompareOp op )
+{
+    switch ( op )
+    {
+    case CompareOp::Never:
+        return MTLCompareFunctionNever;
+    case CompareOp::Less:
+        return MTLCompareFunctionLess;
+    case CompareOp::Equal:
+        return MTLCompareFunctionEqual;
+    case CompareOp::LessOrEqual:
+        return MTLCompareFunctionLessEqual;
+    case CompareOp::Greater:
+        return MTLCompareFunctionGreater;
+    case CompareOp::NotEqual:
+        return MTLCompareFunctionNotEqual;
+    case CompareOp::GreaterOrEqual:
+        return MTLCompareFunctionGreaterEqual;
+    case CompareOp::Always:
+        return MTLCompareFunctionAlways;
+    }
+    return MTLCompareFunctionGreaterEqual;
+}

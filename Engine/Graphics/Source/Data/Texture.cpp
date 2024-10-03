@@ -17,6 +17,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Data/Texture.h>
+
+#if not defined(STB_IMAGE_IMPLEMENTATION) and defined(DZ_USE_STB_IMAGE)
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image.h"
+#endif
+
 #include <filesystem>
 #include <fstream>
 
@@ -30,7 +37,7 @@ Texture::Texture( const std::string &path ) : m_path( Utilities::AppPath( path )
         return;
     }
 
-    const std::filesystem::path &extension = std::filesystem::path( path ).extension( );
+    const std::filesystem::path &extension = std::filesystem::path( m_path ).extension( );
     if ( extension == ".dds" )
     {
         Extension = TextureExtension::DDS;

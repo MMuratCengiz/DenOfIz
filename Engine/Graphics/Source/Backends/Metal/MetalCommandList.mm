@@ -159,6 +159,9 @@ void MetalCommandList::BindPipeline( IPipeline *pipeline )
             break;
         case QueueType::Graphics:
             [m_renderEncoder setRenderPipelineState:metalPipeline->GraphicsPipelineState( )];
+            [m_renderEncoder setDepthStencilState:metalPipeline->DepthStencilState( )];
+            [m_renderEncoder setCullMode:metalPipeline->CullMode( )];
+            [m_renderEncoder setFrontFacingWinding:MTLWindingClockwise];
             break;
         }
     }
@@ -201,6 +204,9 @@ void MetalCommandList::BindViewport( float x, float y, float width, float height
 {
     EnsureEncoder( MetalEncoderType::Render, "BindViewport called without a render encoder. Make sure to call BeginRendering" );
     MTLViewport viewport = { x, y, width, height, 0.0, 1.0 };
+    // Adjust viewport to be compatible with DirectX
+    viewport.originY += viewport.height;
+    viewport.height = -viewport.height;
     [m_renderEncoder setViewport:viewport];
 }
 
@@ -284,7 +290,7 @@ void MetalCommandList::Draw( uint32_t vertexCount, uint32_t instanceCount, uint3
 void MetalCommandList::Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ )
 {
     EnsureEncoder( MetalEncoderType::Compute, "Dispatch called without a compute encoder. Make sure to call Begin with QueueType::Compute" );
-    BindTopLevelArgumentBuffer();
+    BindTopLevelArgumentBuffer( );
     MTLSize threadGroupsPerGrid = MTLSizeMake( groupCountX, groupCountY, groupCountZ );
     [m_computeEncoder dispatchThreadgroups:threadGroupsPerGrid threadsPerThreadgroup:MTLSizeMake( 1, 1, 1 )];
     TopLevelArgumentBufferNextOffset( );
@@ -368,7 +374,7 @@ void MetalCommandList::BindTopLevelArgumentBuffer( )
 {
     id<MTLBuffer> buffer = m_argumentBuffer->Buffer( );
     uint64_t      offset = m_currentBufferOffset;
-    if (m_currentBufferOffset == 0)
+    if ( m_currentBufferOffset == 0 )
     {
         if ( m_desc.QueueType == QueueType::Compute )
         {

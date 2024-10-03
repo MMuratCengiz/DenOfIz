@@ -17,8 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
+#include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 #include <DirectXMath.h>
-#include <SDL2/SDL.h>
 
 class Camera
 {

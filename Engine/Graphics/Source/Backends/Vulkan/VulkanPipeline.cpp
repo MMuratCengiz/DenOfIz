@@ -239,9 +239,6 @@ VkPipelineRasterizationStateCreateInfo VulkanPipeline::ConfigureRasterization( )
 
     switch ( m_desc.CullMode )
     {
-    case CullMode::FrontAndBackFace:
-        rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_FRONT_AND_BACK;
-        break;
     case CullMode::BackFace:
         rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
         break;
@@ -253,7 +250,7 @@ VkPipelineRasterizationStateCreateInfo VulkanPipeline::ConfigureRasterization( )
         break;
     }
 
-    rasterizationStateCreateInfo.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterizationStateCreateInfo.frontFace               = VK_FRONT_FACE_CLOCKWISE;
     rasterizationStateCreateInfo.depthBiasEnable         = false; // Todo, test if works with dynamic state
     rasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
     rasterizationStateCreateInfo.depthBiasClamp          = 0.0f;

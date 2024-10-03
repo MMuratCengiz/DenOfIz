@@ -26,10 +26,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define DZ_USE_DDS
 #define DZ_USE_STB_IMAGE
 
-#ifdef DZ_USE_STB_IMAGE
-#include "stb_image.h"
-#endif
-
 #ifdef DZ_USE_DDS
 #include "dds.h"
 #endif

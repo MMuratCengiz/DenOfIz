@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS FOR A PARTICUL   AR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -82,10 +82,28 @@ void MetalPipeline::CreateGraphicsPipeline( )
     int attachmentIdx = 0;
     for ( const auto &attachment : m_desc.Rendering.RenderTargets )
     {
-        pipelineStateDescriptor.colorAttachments[ attachmentIdx ].pixelFormat = MetalEnumConverter::ConvertFormat( attachment.Format );
+        MTLRenderPipelineColorAttachmentDescriptor *metalColorAttachment = pipelineStateDescriptor.colorAttachments[ attachmentIdx ];
+        metalColorAttachment.pixelFormat                                 = MetalEnumConverter::ConvertFormat( attachment.Format );
+
+        const BlendDesc &blendDesc = attachment.Blend;
+
+        metalColorAttachment.blendingEnabled = blendDesc.Enable;
+
+        metalColorAttachment.sourceRGBBlendFactor      = MetalEnumConverter::ConvertBlendFactor( blendDesc.SrcBlend );
+        metalColorAttachment.destinationRGBBlendFactor = MetalEnumConverter::ConvertBlendFactor( blendDesc.DstBlend );
+        metalColorAttachment.rgbBlendOperation         = MetalEnumConverter::ConvertBlendOp( blendDesc.BlendOp );
+
+        metalColorAttachment.sourceAlphaBlendFactor      = MetalEnumConverter::ConvertBlendFactor( blendDesc.SrcBlendAlpha );
+        metalColorAttachment.destinationAlphaBlendFactor = MetalEnumConverter::ConvertBlendFactor( blendDesc.DstBlendAlpha );
+        metalColorAttachment.alphaBlendOperation         = MetalEnumConverter::ConvertBlendOp( blendDesc.BlendOpAlpha );
+
+        metalColorAttachment.writeMask = blendDesc.RenderTargetWriteMask;
     }
-    pipelineStateDescriptor.depthAttachmentPixelFormat   = MetalEnumConverter::ConvertFormat( m_desc.Rendering.DepthAttachmentFormat );
-    pipelineStateDescriptor.stencilAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Rendering.StencilAttachmentFormat );
+
+    pipelineStateDescriptor.depthAttachmentPixelFormat   = MetalEnumConverter::ConvertFormat( m_desc.Rendering.DepthStencilAttachmentFormat );
+    pipelineStateDescriptor.stencilAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Rendering.DepthStencilAttachmentFormat );
+    pipelineStateDescriptor.alphaToCoverageEnabled       = m_desc.Rendering.AlphaToCoverageEnable;
+    pipelineStateDescriptor.alphaToOneEnabled            = m_desc.Rendering.IndependentBlendEnable;
 
     NSError *error          = nullptr;
     m_graphicsPipelineState = [m_context->Device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
@@ -93,6 +111,28 @@ void MetalPipeline::CreateGraphicsPipeline( )
     if ( !m_graphicsPipelineState )
     {
         DZ_LOG_NS_ERROR( "Failed to create pipeline state", error );
+    }
+
+    MTLDepthStencilDescriptor *depthStencilDescriptor = [[MTLDepthStencilDescriptor alloc] init];
+    depthStencilDescriptor.depthCompareFunction       = MetalEnumConverter::ConvertCompareOp( m_desc.DepthTest.CompareOp );
+    depthStencilDescriptor.depthWriteEnabled          = m_desc.DepthTest.Write;
+    depthStencilDescriptor.frontFaceStencil           = [[MTLStencilDescriptor alloc] init];
+    InitStencilFace( depthStencilDescriptor.frontFaceStencil, m_desc.StencilTest.FrontFace );
+    depthStencilDescriptor.backFaceStencil = [[MTLStencilDescriptor alloc] init];
+    InitStencilFace( depthStencilDescriptor.backFaceStencil, m_desc.StencilTest.BackFace );
+    m_depthStencilState = [m_context->Device newDepthStencilStateWithDescriptor:depthStencilDescriptor];
+
+    switch ( m_desc.CullMode )
+    {
+    case CullMode::None:
+        m_cullMode = MTLCullModeNone;
+        break;
+    case CullMode::FrontFace:
+        m_cullMode = MTLCullModeFront;
+        break;
+    case CullMode::BackFace:
+        m_cullMode = MTLCullModeBack;
+        break;
     }
 }
 
@@ -165,4 +205,14 @@ id<MTLFunction> MetalPipeline::CreateShaderFunction( IDxcBlob *&blob, const std:
         LOG( ERROR ) << "Error creating function for entry point: " << entryPointName;
     }
     return function;
+}
+
+void MetalPipeline::InitStencilFace( MTLStencilDescriptor *stencilDesc, const StencilFace &stencilFace )
+{
+    stencilDesc.stencilCompareFunction    = MetalEnumConverter::ConvertCompareOp( stencilFace.CompareOp );
+    stencilDesc.stencilFailureOperation   = MetalEnumConverter::ConvertStencilOp( stencilFace.FailOp );
+    stencilDesc.depthFailureOperation     = MetalEnumConverter::ConvertStencilOp( stencilFace.DepthFailOp );
+    stencilDesc.depthStencilPassOperation = MetalEnumConverter::ConvertStencilOp( stencilFace.PassOp );
+    stencilDesc.readMask                  = m_desc.StencilTest.ReadMask;
+    stencilDesc.writeMask                 = m_desc.StencilTest.WriteMask;
 }

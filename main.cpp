@@ -16,11 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzCore/Engine.h>
+#include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 
-#define SDL_MAIN_HANDLED
 #include <DenOfIzGraphics/Renderer/ComputeTest.h>
 #include <DenOfIzGraphics/Renderer/SimpleRenderer.h>
-#include <SDL2/SDL.h>
 #include <filesystem>
 
 int main( )

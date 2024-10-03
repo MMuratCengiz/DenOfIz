@@ -42,8 +42,6 @@ namespace DenOfIz
 
     enum class CullMode
     {
-        // Remove?
-        FrontAndBackFace,
         BackFace,
         FrontFace,
         None
@@ -70,6 +68,8 @@ namespace DenOfIz
         DstColor,
         InvDstColor,
         SrcAlphaSaturate,
+        BlendFactor,
+        InvBlendFactor,
         Src1Color,
         InvSrc1Color,
         Src1Alpha,
@@ -136,9 +136,9 @@ namespace DenOfIz
 
     struct DepthTest
     {
-        bool      Enable    = true;
+        bool      Enable    = false;
         CompareOp CompareOp = CompareOp::Always;
-        bool      Write     = true;
+        bool      Write     = false;
     };
 
     struct StencilFace

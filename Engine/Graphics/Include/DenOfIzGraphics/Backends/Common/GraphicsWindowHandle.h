@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifdef WINDOW_MANAGER_SDL
 #define SDL_MAIN_HANDLED
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 #ifdef BUILD_VK
@@ -38,6 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifdef WINDOW_MANAGER_NATIVE
 #error "Not implemented yet"
 #endif
+
 
 namespace DenOfIz
 {

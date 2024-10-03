@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzCore/Common_Macro.h>
 #include <DenOfIzGraphics/Backends/Interface/ReflectionData.h>
 #include "MetalContext.h"
+#include "MetalPipeline.h"
 
 namespace DenOfIz
 {
@@ -35,6 +36,10 @@ namespace DenOfIz
         static MTLDataType               ConvertFormatToDataType( Format format );
         static MTLLoadAction             ConvertLoadAction( LoadOp op );
         static MTLStoreAction            ConvertStoreAction( StoreOp op );
+        static MTLBlendFactor            ConvertBlendFactor( Blend blend );
+        static MTLBlendOperation         ConvertBlendOp( BlendOp op );
+        static MTLStencilOperation       ConvertStencilOp( StencilOp op );
+        static MTLCompareFunction        ConvertCompareOp( CompareOp op );
         static MTLPrimitiveTopologyClass ConvertTopologyClass( PrimitiveTopology topology );
         static MTLSamplerMinMagFilter    ConvertFilter( Filter filter );
         static MTLSamplerMipFilter       ConvertMipMapFilter( MipmapMode mode );
