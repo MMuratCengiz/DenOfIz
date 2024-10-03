@@ -62,10 +62,10 @@ void DefaultRenderPipeline::Render( ICommandList *commandList, const WorldData &
         commandList->BindResourceGroup( materialBatch.MaterialBinding->BindGroup( ) );
         for ( const auto &renderItem : materialBatch.RenderItems )
         {
-            commandList->BindVertexBuffer( renderItem.Data->VertexBuffer( ) );
-            commandList->BindIndexBuffer( renderItem.Data->IndexBuffer( ), IndexType::Uint32 );
             m_perDrawBinding->Update( renderItem.Model );
             commandList->BindResourceGroup( m_perDrawBinding->BindGroup( ) );
+            commandList->BindVertexBuffer( renderItem.Data->VertexBuffer( ) );
+            commandList->BindIndexBuffer( renderItem.Data->IndexBuffer( ), IndexType::Uint32 );
             commandList->DrawIndexed( renderItem.Data->NumIndices( ), 1, 0, 0, 0 );
         }
     }

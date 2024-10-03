@@ -211,7 +211,7 @@ void VulkanCommandList::BindViewport( const float offsetX, float offsetY, const 
     DZ_RETURN_IF( width == 0 || height == 0 );
     m_viewport.x = offsetX;
     // Vulkan has inverted y-axis
-    m_viewport.y      = height;
+    m_viewport.y      = offsetY + height;
     m_viewport.height = -height;
     // --
     m_viewport.width    = width;

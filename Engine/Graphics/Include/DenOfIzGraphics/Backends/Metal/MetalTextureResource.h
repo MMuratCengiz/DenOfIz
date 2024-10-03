@@ -33,7 +33,6 @@ namespace DenOfIz
         id<MTLTexture>  m_texture{ };
         MTLTextureType  m_textureType;
         MTLTextureUsage m_textureUsage;
-        bool            isExternalResource = false; // Used for swap chain render targets, might need a better way
     private:
         void UpdateTexture( const TextureDesc &desc, id<MTLTexture> texture );
 

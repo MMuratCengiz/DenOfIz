@@ -25,12 +25,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-#define DXC_CHECK_RESULT( result )                                                                                                                                                      \
+#define DXC_CHECK_RESULT( result )                                                                                                                                                 \
     do                                                                                                                                                                             \
     {                                                                                                                                                                              \
         if ( FAILED( result ) )                                                                                                                                                    \
         {                                                                                                                                                                          \
-            LOG( ERROR ) << "DXC Error: " << result;                                                                                                                   \
+            LOG( ERROR ) << "DXC Error: " << result;                                                                                                                               \
         }                                                                                                                                                                          \
     }                                                                                                                                                                              \
     while ( false )
@@ -118,6 +118,7 @@ void ShaderProgram::ProduceMSL( )
     };
     std::vector<RegisterSpaceRange>              registerSpaceRanges;
     std::vector<std::unique_ptr<CompiledShader>> dxilShaders;
+    std::vector<D3D12_SHADER_INPUT_BIND_DESC>    processedInputs; // Handle duplicate inputs
 
     for ( auto &shader : m_desc.Shaders )
     {
@@ -139,6 +140,22 @@ void ShaderProgram::ProduceMSL( )
         {
             D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
             shaderReflection->GetResourceBindingDesc( i, &shaderInputBindDesc );
+
+            bool alreadyProcessed = false;
+            for ( auto &processedInput : processedInputs )
+            {
+                if ( processedInput.BindPoint == shaderInputBindDesc.BindPoint && processedInput.Space == shaderInputBindDesc.Space &&
+                     processedInput.Type == shaderInputBindDesc.Type )
+                {
+                    alreadyProcessed = true;
+                    break;
+                }
+            }
+            if ( alreadyProcessed )
+            {
+                continue;
+            }
+            processedInputs.push_back( shaderInputBindDesc );
 
             ContainerUtilities::EnsureSize( registerSpaceRanges, shaderInputBindDesc.Space );
             auto &registerSpaceRange = registerSpaceRanges[ shaderInputBindDesc.Space ];
@@ -198,14 +215,11 @@ void ShaderProgram::ProduceMSL( )
     m_metalDescriptorOffsets.resize( registerSpaceRanges.size( ) );
 
     std::vector<IRRootParameter1> rootParameters;
-    int                           registerSpace       = 0;
-    int                           registerSpaceOffset = 0;
+    int                           registerSpace = 0;
+    int                           numTables     = 0;
     for ( auto &registerSpaceRange : registerSpaceRanges )
     {
         MetalDescriptorOffsets &offsets = m_metalDescriptorOffsets[ registerSpace ];
-
-        int numTables = registerSpaceOffset;
-        // Only keep set offset if there are any resources in that set for debugging purposes
         if ( !registerSpaceRange.CbvSrvUavRanges.empty( ) )
         {
             offsets.CbvSrvUavOffset = numTables;
@@ -220,8 +234,6 @@ void ShaderProgram::ProduceMSL( )
         PutRootParameter( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.CbvSrvUavRanges );
         PutRootParameter( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.SamplerRanges );
         ++registerSpace;
-
-        registerSpaceOffset += numTables;
     }
 
     IRVersionedRootSignatureDescriptor desc;

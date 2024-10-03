@@ -59,6 +59,10 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
         textureDesc.usage |= MTLTextureUsageShaderWrite;
     }
 
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::DepthStencil ) )
+    {
+        textureDesc.usage |= MTLTextureUsageShaderRead;
+    }
     if ( m_desc.Descriptor.Any( { ResourceDescriptor::RenderTarget, ResourceDescriptor::DepthStencil } ) )
     {
         textureDesc.usage |= MTLTextureUsageRenderTarget;
@@ -80,7 +84,6 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
     m_context          = context;
     m_desc             = desc;
     m_texture          = texture;
-    isExternalResource = true;
 }
 
 void MetalTextureResource::UpdateTexture( const TextureDesc &desc, id<MTLTexture> texture )

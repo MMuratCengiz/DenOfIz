@@ -204,9 +204,6 @@ void MetalCommandList::BindViewport( float x, float y, float width, float height
 {
     EnsureEncoder( MetalEncoderType::Render, "BindViewport called without a render encoder. Make sure to call BeginRendering" );
     MTLViewport viewport = { x, y, width, height, 0.0, 1.0 };
-    // Adjust viewport to be compatible with DirectX
-    viewport.originY += viewport.height;
-    viewport.height = -viewport.height;
     [m_renderEncoder setViewport:viewport];
 }
 
