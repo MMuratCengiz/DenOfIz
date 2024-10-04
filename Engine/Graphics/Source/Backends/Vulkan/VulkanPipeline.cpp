@@ -58,6 +58,7 @@ void VulkanPipeline::CreateGraphicsPipeline( )
     VkPipelineDepthStencilStateCreateInfo            depthStencilStateCreateInfo  = CreateDepthAttachmentImages( );
     VkPipelineVertexInputStateCreateInfo             inputStateCreateInfo         = ConfigureVertexInputState( );
 
+
     // Configure Dynamic States:
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{ };
     dynamicStateCreateInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;

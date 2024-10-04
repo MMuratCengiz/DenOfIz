@@ -33,6 +33,12 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
         AddStaticSampler( staticSamplerDesc );
     }
 
+    m_pushConstants.resize( m_desc.RootConstants.size( ) );
+    for ( const RootConstantResourceBinding &rootConstantBinding : m_desc.RootConstants )
+    {
+        AddRootConstant( rootConstantBinding );
+    }
+
     uint32_t maxRegisterSpace = 0;
     for ( const auto &key : m_layoutBindings | std::views::keys )
     {
@@ -79,10 +85,10 @@ void VulkanRootSignature::AddStaticSampler( const StaticSamplerDesc &sampler )
 
 void VulkanRootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
 {
-    ResourceBindingSlot slot{
-        .Binding  = binding.Binding,
+    const ResourceBindingSlot slot{
+        .Binding       = binding.Binding,
         .RegisterSpace = binding.RegisterSpace,
-        .Type     = binding.BindingType,
+        .Type          = binding.BindingType,
     };
 
     m_resourceBindingMap[ slot.Key( ) ] = binding;
@@ -122,10 +128,10 @@ VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBindi
     }
     m_layoutBindings[ binding.RegisterSpace ].push_back( layoutBinding );
     // Update binding to include the offset
-    ResourceBindingSlot slot{
-        .Binding  = binding.Binding,
+    const ResourceBindingSlot slot{
+        .Binding       = binding.Binding,
         .RegisterSpace = binding.RegisterSpace,
-        .Type     = binding.BindingType,
+        .Type          = binding.BindingType,
     };
     m_resourceBindingMap[ slot.Key( ) ].Binding = layoutBinding.binding;
     return layoutBinding;
@@ -133,19 +139,28 @@ VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBindi
 
 void VulkanRootSignature::AddRootConstant( const RootConstantResourceBinding &rootConstantBinding )
 {
-    m_rootConstantMap[ rootConstantBinding.Name ] = rootConstantBinding;
+    if ( rootConstantBinding.Binding >= m_pushConstants.size( ) )
+    {
+        LOG( FATAL ) << "Root constant binding out of range: " << rootConstantBinding.Binding;
+    }
 
-    VkPushConstantRange pushConstantRange{ };
+    uint32_t offset = 0;
+    for ( const RootConstantResourceBinding& binding : m_desc.RootConstants )
+    {
+        if ( binding.Binding < rootConstantBinding.Binding )
+        {
+            offset += binding.Size;
+        }
+    }
 
-    pushConstantRange.offset = rootConstantBinding.Binding;
-    pushConstantRange.size   = rootConstantBinding.Size;
+    VkPushConstantRange &pushConstantRange = m_pushConstants[ rootConstantBinding.Binding ];
+    pushConstantRange.offset               = offset;
+    pushConstantRange.size                 = rootConstantBinding.Size;
 
     for ( auto stage : rootConstantBinding.Stages )
     {
         pushConstantRange.stageFlags |= VulkanEnumConverter::ConvertShaderStage( stage );
     }
-
-    m_pushConstants.push_back( pushConstantRange );
 }
 
 VulkanRootSignature::~VulkanRootSignature( )

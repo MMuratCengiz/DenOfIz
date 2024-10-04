@@ -28,12 +28,11 @@ namespace DenOfIz
         RootSignatureDesc m_desc;
         VulkanContext    *m_context = nullptr;
 
-        std::vector<VkDescriptorSetLayout>                           m_layouts;
-        std::vector<VkDescriptorSetLayoutBinding>                    m_bindings;
-        std::vector<VkPushConstantRange>                             m_pushConstants;
-        std::vector<VkSampler>                                       m_staticSamplers;
-        std::unordered_map<uint32_t, ResourceBindingDesc>            m_resourceBindingMap;
-        std::unordered_map<std::string, RootConstantResourceBinding> m_rootConstantMap;
+        std::vector<VkDescriptorSetLayout>                m_layouts;
+        std::vector<VkDescriptorSetLayoutBinding>         m_bindings;
+        std::vector<VkPushConstantRange>                  m_pushConstants;
+        std::vector<VkSampler>                            m_staticSamplers;
+        std::unordered_map<uint32_t, ResourceBindingDesc> m_resourceBindingMap;
         // Stores the layout bindings for each set
         std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> m_layoutBindings;
         // Weirdly enough, seems to make the most sense here
@@ -48,9 +47,22 @@ namespace DenOfIz
             return ContainerUtilities::SafeGetMapValue( m_resourceBindingMap, slot.Key( ), "Binding slot does not exist in root signature: " + slot.ToString( ) );
         }
 
+        [[nodiscard]] uint32_t NumRootConstants( ) const
+        {
+            return m_pushConstants.size( );
+        }
+
+        [[nodiscard]] VkPushConstantRange PushConstantRange( const uint32_t binding ) const
+        {
+            if ( binding >= m_pushConstants.size( ) )
+            {
+                LOG( ERROR ) << "Root constant not found for binding " << binding;
+            }
+            return m_pushConstants[ binding ];
+        }
         /// <returns> VK_NULL_HANDLE if register space is between 0 and max register space. </returns>
         /// <throws> std::runtime_error if register space is larger than the max set. </throws>
-        [[nodiscard]] const VkDescriptorSetLayout &GetDescriptorSetLayout( const uint32_t registerSpace ) const
+        [[nodiscard]] const VkDescriptorSetLayout &DescriptorSetLayout( const uint32_t registerSpace ) const
         {
             if ( registerSpace >= m_layouts.size( ) )
             {

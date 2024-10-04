@@ -26,20 +26,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct VulkanRootConstantBinding
+    {
+        VkPipelineLayout   PipelineLayout;
+        VkShaderStageFlags ShaderStage;
+        uint32_t           Binding;
+        uint32_t           Offset;
+        uint32_t           Size;
+        void              *Data;
+    };
 
     class VulkanResourceBindGroup final : public IResourceBindGroup
     {
         VulkanContext       *m_context;
         VulkanRootSignature *m_rootSignature;
 
-        VkDescriptorSet                   m_descriptorSet{};
-        std::vector<VkWriteDescriptorSet> m_writeDescriptorSets;
-        Storage                           m_storage;
+        VkDescriptorSet                        m_descriptorSet{ };
+        std::vector<VkWriteDescriptorSet>      m_writeDescriptorSets;
+        Storage                                m_storage;
+        std::vector<VulkanRootConstantBinding> m_rootConstants;
 
     public:
              VulkanResourceBindGroup( VulkanContext *context, const ResourceBindGroupDesc &desc );
         ~    VulkanResourceBindGroup( ) override;
+        void SetRootConstants( uint32_t binding, void *data ) override;
         void Update( const UpdateDesc &desc ) override;
+
+        [[nodiscard]] const std::vector<VulkanRootConstantBinding> &RootConstants( ) const
+        {
+            return m_rootConstants;
+        }
 
         [[nodiscard]] const VkDescriptorSet &GetDescriptorSet( ) const
         {

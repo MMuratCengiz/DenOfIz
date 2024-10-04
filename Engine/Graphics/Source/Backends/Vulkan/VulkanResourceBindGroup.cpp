@@ -26,7 +26,7 @@ VulkanResourceBindGroup::VulkanResourceBindGroup( VulkanContext *context, const 
 {
     m_rootSignature = dynamic_cast<VulkanRootSignature *>( m_desc.RootSignature );
 
-    const auto &layout = m_rootSignature->GetDescriptorSetLayout( m_desc.RegisterSpace );
+    const auto &layout = m_rootSignature->DescriptorSetLayout( m_desc.RegisterSpace );
 
     if ( layout == nullptr )
     {
@@ -39,6 +39,20 @@ VulkanResourceBindGroup::VulkanResourceBindGroup( VulkanContext *context, const 
     setAllocateInfo.pSetLayouts        = &layout;
 
     m_context->DescriptorPoolManager->AllocateDescriptorSets( setAllocateInfo, &m_descriptorSet );
+
+    m_rootConstants.resize( m_rootSignature->NumRootConstants( ) );
+}
+
+void VulkanResourceBindGroup::SetRootConstants( const uint32_t binding, void *data )
+{
+    const VkPushConstantRange  pushConstantRange   = m_rootSignature->PushConstantRange( binding );
+    VulkanRootConstantBinding &rootConstantBinding = m_rootConstants.emplace_back( VulkanRootConstantBinding{ } );
+    rootConstantBinding.PipelineLayout             = m_rootSignature->PipelineLayout( );
+    rootConstantBinding.ShaderStage                = pushConstantRange.stageFlags;
+    rootConstantBinding.Binding                    = binding;
+    rootConstantBinding.Offset                     = pushConstantRange.offset;
+    rootConstantBinding.Size                       = pushConstantRange.size;
+    rootConstantBinding.Data                       = data;
 }
 
 void VulkanResourceBindGroup::Update( const UpdateDesc &desc )
@@ -49,7 +63,7 @@ void VulkanResourceBindGroup::Update( const UpdateDesc &desc )
     vkUpdateDescriptorSets( m_context->LogicalDevice, m_writeDescriptorSets.size( ), m_writeDescriptorSets.data( ), 0, nullptr );
 }
 
-void VulkanResourceBindGroup::BindTexture( const ResourceBindingSlot& slot, ITextureResource *resource )
+void VulkanResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource )
 {
     const auto *vulkanResource = dynamic_cast<VulkanTextureResource *>( resource );
 
@@ -60,7 +74,7 @@ void VulkanResourceBindGroup::BindTexture( const ResourceBindingSlot& slot, ITex
     writeDescriptorSet.pImageInfo            = &imageInfo;
 }
 
-void VulkanResourceBindGroup::BindBuffer( const ResourceBindingSlot& slot, IBufferResource *resource )
+void VulkanResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )
 {
     const auto *vulkanResource = dynamic_cast<VulkanBufferResource *>( resource );
 
@@ -72,7 +86,7 @@ void VulkanResourceBindGroup::BindBuffer( const ResourceBindingSlot& slot, IBuff
     writeDescriptorSet.pBufferInfo           = &bufferInfo;
 }
 
-void VulkanResourceBindGroup::BindSampler( const ResourceBindingSlot& slot, ISampler *sampler )
+void VulkanResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )
 {
     VkWriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor( slot );
     auto                 &samplerInfo        = m_storage.Store<VkDescriptorImageInfo>( );
@@ -80,7 +94,7 @@ void VulkanResourceBindGroup::BindSampler( const ResourceBindingSlot& slot, ISam
     writeDescriptorSet.pImageInfo            = &samplerInfo;
 }
 
-VkWriteDescriptorSet &VulkanResourceBindGroup::CreateWriteDescriptor( const ResourceBindingSlot& slot )
+VkWriteDescriptorSet &VulkanResourceBindGroup::CreateWriteDescriptor( const ResourceBindingSlot &slot )
 {
     const ResourceBindingDesc resourceBinding    = m_rootSignature->GetVkShiftedBinding( slot );
     VkWriteDescriptorSet     &writeDescriptorSet = m_writeDescriptorSets.emplace_back( );

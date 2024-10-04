@@ -250,6 +250,11 @@ void VulkanCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 
     vkCmdBindDescriptorSets( m_commandBuffer, bindPoint, vkBindGroup->RootSignature( )->PipelineLayout( ), bindGroup->RegisterSpace( ), 1, &vkBindGroup->GetDescriptorSet( ), 0,
                              nullptr );
+
+    for ( const auto &rootConstant : vkBindGroup->RootConstants( ) )
+    {
+        vkCmdPushConstants( m_commandBuffer, rootConstant.PipelineLayout, VK_SHADER_STAGE_ALL, rootConstant.Offset, rootConstant.Size, rootConstant.Data );
+    }
 }
 
 void VulkanCommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )
