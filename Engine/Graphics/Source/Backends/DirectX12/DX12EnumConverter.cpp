@@ -46,7 +46,6 @@ D3D12_COMMAND_LIST_TYPE DX12EnumConverter::ConvertQueueType( QueueType queueType
 {
     switch ( queueType )
     {
-    case QueueType::Presentation:
     case QueueType::Graphics:
         return D3D12_COMMAND_LIST_TYPE_DIRECT;
     case QueueType::Compute:
@@ -580,7 +579,6 @@ D3D12_BARRIER_LAYOUT DX12EnumConverter::ConvertResourceStateToBarrierLayout( con
         switch ( queueType )
         {
         case QueueType::Graphics:
-        case QueueType::Presentation:
             return direct;
         case QueueType::Compute:
             return compute;

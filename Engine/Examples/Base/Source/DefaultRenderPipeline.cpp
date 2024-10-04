@@ -41,7 +41,7 @@ DefaultRenderPipeline::DefaultRenderPipeline( const GraphicsApi *graphicsApi, IL
     pipelineDesc.InputLayout   = m_inputLayout.get( );
     pipelineDesc.RootSignature = m_rootSignature.get( );
     pipelineDesc.ShaderProgram = m_program.get( );
-    pipelineDesc.CullMode      = CullMode::None;
+    pipelineDesc.CullMode      = CullMode::BackFace;
     pipelineDesc.Rendering.RenderTargets.push_back( { .Format = Format::B8G8R8A8Unorm } );
 
     m_pipeline = logicalDevice->CreatePipeline( pipelineDesc );

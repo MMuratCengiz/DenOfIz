@@ -37,8 +37,6 @@ namespace DenOfIz
         static const std::vector<const char *>             g_requiredInstanceExtensions;
         static const std::vector<const char *>             g_optionalInstanceExtensions;
 
-        const std::vector<QueueType> m_queueTypes = { QueueType::Graphics, QueueType::Copy, QueueType::Presentation };
-
         std::vector<VkLayerProperties>   m_availableLayers;
         VkDebugUtilsMessengerEXT         m_debugMessenger = nullptr;
         DeviceConstants                  m_deviceConstants{ };

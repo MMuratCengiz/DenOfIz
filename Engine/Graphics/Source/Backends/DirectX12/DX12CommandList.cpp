@@ -28,7 +28,6 @@ DX12CommandList::DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12Comma
 
     switch ( desc.QueueType )
     {
-    case QueueType::Presentation:
     case QueueType::Graphics:
         m_commandQueue = m_context->GraphicsCommandQueue.get( );
         break;
@@ -212,10 +211,6 @@ void DX12CommandList::BindResourceGroup( const uint32_t index, const D3D12_GPU_D
         LOG( ERROR ) << "`BindResourceGroup` is an invalid function for queue type";
         break;
     }
-}
-
-void DX12CommandList::SetDepthBias( float constantFactor, float clamp, float slopeFactor )
-{ /*Move to pipeline state due to reduces support*/
 }
 
 void DX12CommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )

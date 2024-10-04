@@ -72,7 +72,7 @@ namespace DenOfIz
                 typeString = "s";
                 break;
             }
-            return "(" + typeString + std::to_string( Binding ) + ", space" + std::to_string( RegisterSpace )  + ")";
+            return "(" + typeString + std::to_string( Binding ) + ", space" + std::to_string( RegisterSpace ) + ")";
         }
     };
 
@@ -94,11 +94,12 @@ namespace DenOfIz
         ResourceBindingDesc Binding;
     };
 
+    // For cross api compatibility the RegisterSpace is hardcoded to 99, make sure to use the same value in the HLSL Shader
     struct RootConstantResourceBinding
     {
         std::string              Name;
         uint32_t                 Binding{ };
-        uint32_t                 RegisterSpace = 0;
+        const uint32_t           RegisterSpace = 99;
         int                      Size{ };
         std::vector<ShaderStage> Stages;
     };
@@ -115,6 +116,7 @@ namespace DenOfIz
     class IRootSignature : public NonCopyable
     {
     protected:
+        constexpr static uint32_t                         RootConstantsRegisterSpace = 99;
         std::unordered_map<uint32_t, ResourceBindingDesc> m_resourceBindings;
         std::vector<ResourceBindingSlot>                  m_requiredBindings;
 

@@ -267,7 +267,6 @@ VkPipelineStageFlags VulkanPipelineBarrierHelper::GetPipelineStageFlags( const V
 
     switch ( queueType )
     {
-    case QueueType::Presentation:
     case QueueType::Graphics:
         {
             if ( accessFlags & ( VK_ACCESS_INDEX_READ_BIT | VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT ) )

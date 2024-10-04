@@ -22,8 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <unordered_map>
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "DenOfIzGraphics/Backends/Common/ShaderCompiler.h"
-#include "VulkanInclude.h"
 #include "VulkanDescriptorPoolManager.h"
+#include "VulkanInclude.h"
 
 namespace DenOfIz
 {
@@ -31,6 +31,15 @@ namespace DenOfIz
     {
         uint32_t                Index;
         VkQueueFamilyProperties Properties;
+    };
+
+    // Additional queue type for Vulkan since it has a presentation queue
+    enum class VulkanQueueType
+    {
+        Graphics,
+        Copy,
+        Compute,
+        Presentation,
     };
 
     struct VulkanContext
@@ -47,10 +56,10 @@ namespace DenOfIz
         VkCommandPool GraphicsQueueCommandPool;
         VkCommandPool ComputeQueueCommandPool;
 
-        GraphicsWindowHandle                        *Window;
-        std::unique_ptr<VulkanDescriptorPoolManager> DescriptorPoolManager;
-        std::unordered_map<QueueType, QueueFamily>   QueueFamilies;
-        std::unordered_map<QueueType, VkQueue>       Queues;
+        GraphicsWindowHandle                            *Window;
+        std::unique_ptr<VulkanDescriptorPoolManager>     DescriptorPoolManager;
+        std::unordered_map<VulkanQueueType, QueueFamily> QueueFamilies;
+        std::unordered_map<VulkanQueueType, VkQueue>     Queues;
     };
 
 } // namespace DenOfIz

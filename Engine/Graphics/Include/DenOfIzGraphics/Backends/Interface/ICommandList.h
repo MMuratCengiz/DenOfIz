@@ -138,7 +138,7 @@ namespace DenOfIz
         virtual void Begin( )                                                                                                                                   = 0;
         virtual void BeginRendering( const RenderingDesc &renderingDesc )                                                                                       = 0;
         virtual void EndRendering( )                                                                                                                            = 0;
-        virtual void Execute( const ExecuteDesc &executeDesc )                                                                                                   = 0;
+        virtual void Execute( const ExecuteDesc &executeDesc )                                                                                                  = 0;
         virtual void Present( ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks )                                               = 0;
         virtual void BindPipeline( IPipeline *pipeline )                                                                                                        = 0;
         virtual void BindVertexBuffer( IBufferResource *buffer )                                                                                                = 0;
@@ -146,7 +146,6 @@ namespace DenOfIz
         virtual void BindViewport( float x, float y, float width, float height )                                                                                = 0;
         virtual void BindScissorRect( float x, float y, float width, float height )                                                                             = 0;
         virtual void BindResourceGroup( IResourceBindGroup *bindGroup )                                                                                         = 0;
-        virtual void SetDepthBias( float constantFactor, float clamp, float slopeFactor )                                                                       = 0;
         virtual void PipelineBarrier( const PipelineBarrierDesc &barrier )                                                                                      = 0;
         virtual void DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0 ) = 0;
         virtual void Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0 )                                 = 0;

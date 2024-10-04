@@ -130,6 +130,7 @@ namespace DenOfIz
         }
 
         virtual ~    IResourceBindGroup( ) = default;
+
         virtual void Update( const UpdateDesc &desc )
         {
             std::vector<ResourceBindingSlot> boundBindings;

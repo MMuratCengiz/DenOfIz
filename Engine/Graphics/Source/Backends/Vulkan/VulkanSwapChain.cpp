@@ -85,7 +85,7 @@ void VulkanSwapChain::CreateSurface( )
 
     if ( !presentationSupport )
     {
-        m_presentationQueueFamily = m_context->QueueFamilies.at( QueueType::Graphics );
+        m_presentationQueueFamily = m_context->QueueFamilies.at( VulkanQueueType::Graphics );
     }
 }
 
@@ -111,7 +111,7 @@ void VulkanSwapChain::CreateSwapChain( )
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    const uint32_t qfIndexes[ 2 ] = { m_context->QueueFamilies.at( QueueType::Graphics ).Index, m_context->QueueFamilies.at( QueueType::Presentation ).Index };
+    const uint32_t qfIndexes[ 2 ] = { m_context->QueueFamilies.at( VulkanQueueType::Graphics ).Index, m_context->QueueFamilies.at( VulkanQueueType::Presentation ).Index };
 
     if ( qfIndexes[ 0 ] != qfIndexes[ 1 ] )
     {

@@ -574,8 +574,7 @@ namespace DenOfIz
     {
         Graphics,
         Compute,
-        Copy,
-        Presentation
+        Copy
     };
 
     struct DeviceConstants

@@ -202,7 +202,7 @@ void VulkanTextureResource::TransitionToInitialLayout( ) const
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers    = &commandBuffer;
 
-    VK_CHECK_RESULT( vkQueueSubmit( m_context->Queues.at( QueueType::Graphics ), 1, &submitInfo, nullptr ) );
+    VK_CHECK_RESULT( vkQueueSubmit( m_context->Queues.at( VulkanQueueType::Graphics ), 1, &submitInfo, nullptr ) );
 
     NotifyLayoutChange( initialLayout );
 }

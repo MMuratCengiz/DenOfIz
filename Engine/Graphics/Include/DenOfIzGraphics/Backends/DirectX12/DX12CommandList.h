@@ -64,7 +64,6 @@ namespace DenOfIz
         void BindViewport( float x, float y, float width, float height ) override;
         void BindScissorRect( float x, float y, float width, float height ) override;
         void BindResourceGroup( IResourceBindGroup *bindGroup ) override;
-        void SetDepthBias( float constantFactor, float clamp, float slopeFactor ) override;
         void PipelineBarrier( const PipelineBarrierDesc &barrier ) override;
         void DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance ) override;
         void Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance ) override;
@@ -75,10 +74,10 @@ namespace DenOfIz
         void CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBuffer ) override;
 
     private:
-        void     CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
-        void     EnhancedPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
-        void     SetRootSignature( ID3D12RootSignature *rootSignature );
-        void     BindResourceGroup( uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle ) const;
+        void CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
+        void EnhancedPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
+        void SetRootSignature( ID3D12RootSignature *rootSignature );
+        void BindResourceGroup( uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle ) const;
     };
 
 } // namespace DenOfIz

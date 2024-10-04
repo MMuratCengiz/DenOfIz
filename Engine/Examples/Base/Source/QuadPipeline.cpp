@@ -42,7 +42,7 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
     pipelineDesc.InputLayout   = m_inputLayout.get( );
     pipelineDesc.RootSignature = m_rootSignature.get( );
     pipelineDesc.ShaderProgram = m_program.get( );
-    pipelineDesc.CullMode      = CullMode::None;
+    pipelineDesc.CullMode      = CullMode::BackFace;
 
     m_pipeline = logicalDevice->CreatePipeline( pipelineDesc );
 

@@ -40,6 +40,11 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
         AddStaticSampler( staticSamplerDesc );
     }
 
+    for ( const RootConstantResourceBinding &rootConstant : desc.RootConstants )
+    {
+        AddRootConstant( rootConstant );
+    }
+
     D3D12_SHADER_VISIBILITY descShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     if ( m_descriptorRangesShaderVisibilities.size( ) == 1 )
     {
@@ -202,6 +207,10 @@ void DX12RootSignature::AddRootConstant( const RootConstantResourceBinding &root
     dxRootConstant.Constants.Num32BitValues = rootConstant.Size / sizeof( uint32_t );
     dxRootConstant.Constants.ShaderRegister = rootConstant.Binding;
     dxRootConstant.Constants.RegisterSpace  = rootConstant.RegisterSpace;
+    if ( rootConstant.RegisterSpace != RootConstantsRegisterSpace )
+    {
+        LOG( FATAL ) << "For cross api compatibiliy.";
+    }
     m_rootConstants.push_back( dxRootConstant );
 }
 

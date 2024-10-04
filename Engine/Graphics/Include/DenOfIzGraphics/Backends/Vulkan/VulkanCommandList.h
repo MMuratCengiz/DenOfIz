@@ -33,7 +33,7 @@ namespace DenOfIz
     class VulkanCommandList final : public ICommandList
     {
         CommandListDesc m_desc;
-        VulkanContext  *m_context       = nullptr;
+        VulkanContext  *m_context = nullptr;
 
         VkCommandBuffer m_commandBuffer{ };
         VkViewport      m_viewport{ };
@@ -52,7 +52,6 @@ namespace DenOfIz
         void BindViewport( float offsetX, float offsetY, float width, float height ) override;
         void BindScissorRect( float offsetX, float offsetY, float width, float height ) override;
         void BindResourceGroup( IResourceBindGroup *bindGroup ) override;
-        void SetDepthBias( float constantFactor, float clamp, float slopeFactor ) override;
         void PipelineBarrier( const PipelineBarrierDesc &barrier ) override;
         void DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance ) override;
         void Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance ) override;

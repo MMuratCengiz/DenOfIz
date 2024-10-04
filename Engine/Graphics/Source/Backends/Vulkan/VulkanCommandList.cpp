@@ -27,7 +27,6 @@ VulkanCommandList::VulkanCommandList( VulkanContext *context, const CommandListD
     auto commandPool = m_context->GraphicsQueueCommandPool;
     switch ( m_desc.QueueType )
     {
-    case QueueType::Presentation:
     case QueueType::Graphics:
         commandPool = m_context->GraphicsQueueCommandPool;
         break;
@@ -174,7 +173,21 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeDesc )
         vkNotifyFence = notify->GetFence( );
     }
 
-    VK_CHECK_RESULT( vkQueueSubmit( m_context->Queues[ m_desc.QueueType ], 1, &vkSubmitInfo, vkNotifyFence ) );
+    VulkanQueueType queueType = VulkanQueueType::Graphics;
+    switch ( m_desc.QueueType )
+    {
+    case QueueType::Graphics:
+        queueType = VulkanQueueType::Graphics;
+        break;
+    case QueueType::Compute:
+        queueType = VulkanQueueType::Compute;
+        break;
+    case QueueType::Copy:
+        queueType = VulkanQueueType::Copy;
+        break;
+    }
+
+    VK_CHECK_RESULT( vkQueueSubmit( m_context->Queues[ queueType ], 1, &vkSubmitInfo, vkNotifyFence ) );
 }
 
 void VulkanCommandList::BindPipeline( IPipeline *pipeline )
@@ -237,11 +250,6 @@ void VulkanCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 
     vkCmdBindDescriptorSets( m_commandBuffer, bindPoint, vkBindGroup->RootSignature( )->PipelineLayout( ), bindGroup->RegisterSpace( ), 1, &vkBindGroup->GetDescriptorSet( ), 0,
                              nullptr );
-}
-
-void VulkanCommandList::SetDepthBias( const float constantFactor, const float clamp, const float slopeFactor )
-{
-    vkCmdSetDepthBias( m_commandBuffer, constantFactor, clamp, slopeFactor );
 }
 
 void VulkanCommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )
@@ -339,7 +347,7 @@ void VulkanCommandList::Dispatch( const uint32_t groupCountX, const uint32_t gro
 
 void VulkanCommandList::Present( ISwapChain *swapChain, const uint32_t imageIndex, const std::vector<ISemaphore *> waitOnLocks )
 {
-    DZ_ASSERTM( m_desc.QueueType == QueueType::Graphics || m_desc.QueueType == QueueType::Presentation, "Present can only be called on presentation queues." );
+    DZ_ASSERTM( m_desc.QueueType == QueueType::Graphics, "Present can only be called on graphics queue." );
 
     VkPresentInfoKHR presentInfo{ };
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -357,7 +365,7 @@ void VulkanCommandList::Present( ISwapChain *swapChain, const uint32_t imageInde
     presentInfo.pImageIndices      = &imageIndex;
     presentInfo.pResults           = nullptr;
 
-    const VkResult presentResult = vkQueuePresentKHR( m_context->Queues[ QueueType::Presentation ], &presentInfo );
+    const VkResult presentResult = vkQueuePresentKHR( m_context->Queues[ VulkanQueueType::Presentation ], &presentInfo );
 
     if ( presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR )
     {
