@@ -32,6 +32,13 @@ namespace DenOfIz
         uint32_t        RegisterSpace;
     };
 
+    struct RootConstantBindGroupDesc : ResourceBindGroupDesc
+    {
+        RootConstantBindGroupDesc( IRootSignature *rootSignature ) : ResourceBindGroupDesc{ rootSignature, RootConstantRegisterSpace }
+        {
+        }
+    };
+
     template <typename T>
     struct UpdateDescItem
     {

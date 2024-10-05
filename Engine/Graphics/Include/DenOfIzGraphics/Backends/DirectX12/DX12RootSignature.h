@@ -92,12 +92,17 @@ namespace DenOfIz
             return m_rootParameters;
         }
 
+        [[nodiscard]] const std::vector<CD3DX12_ROOT_PARAMETER> &RootConstants( ) const
+        {
+            return m_rootConstants;
+        }
+
         ~DX12RootSignature( ) override;
 
     private:
         void                                     AddStaticSampler( const StaticSamplerDesc &desc );
         void                                     AddResourceBinding( const ResourceBindingDesc &binding );
-        void                                     AddRootConstant( const RootConstantResourceBinding &rootConstant );
+        void                                     AddRootConstant( const RootConstantResourceBindingDesc &rootConstant );
         [[nodiscard]] D3D12_ROOT_SIGNATURE_FLAGS ComputeShaderVisibility( ) const;
     };
 

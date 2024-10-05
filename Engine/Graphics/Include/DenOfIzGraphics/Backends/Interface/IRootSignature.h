@@ -95,12 +95,12 @@ namespace DenOfIz
     };
 
     // For cross api compatibility the RegisterSpace is hardcoded to 99, make sure to use the same value in the HLSL Shader
-    struct RootConstantResourceBinding
+    struct RootConstantResourceBindingDesc
     {
         std::string              Name;
         uint32_t                 Binding{ };
-        const uint32_t           RegisterSpace = 99;
-        int                      Size{ };
+        const uint32_t           RegisterSpace = RootConstantRegisterSpace;
+        int                      NumBytes{ };
         std::vector<ShaderStage> Stages;
     };
 
@@ -108,15 +108,14 @@ namespace DenOfIz
     {
         RootSignatureType Type;
         // The order of the bindings must match the order of the shader inputs!!! TODO might need to be fixed but this is normal for DX12
-        std::vector<ResourceBindingDesc>         ResourceBindings;
-        std::vector<StaticSamplerDesc>           StaticSamplers;
-        std::vector<RootConstantResourceBinding> RootConstants;
+        std::vector<ResourceBindingDesc>             ResourceBindings;
+        const std::vector<StaticSamplerDesc>         StaticSamplers; // Not supported yet due to lack of support in Metal
+        std::vector<RootConstantResourceBindingDesc> RootConstants;
     };
 
     class IRootSignature : public NonCopyable
     {
     protected:
-        constexpr static uint32_t                         RootConstantsRegisterSpace = 99;
         std::unordered_map<uint32_t, ResourceBindingDesc> m_resourceBindings;
         std::vector<ResourceBindingSlot>                  m_requiredBindings;
 

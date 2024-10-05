@@ -49,8 +49,8 @@ namespace DenOfIz
         std::vector<ID3D12DescriptorHeap *> m_heaps = { m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetHeap( ), m_context->ShaderVisibleSamplerDescriptorHeap->GetHeap( ) };
 
     public:
-         DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> commandAllocator, const wil::com_ptr<ID3D12GraphicsCommandList> &m_commandList,
-                          CommandListDesc desc );
+        DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> commandAllocator, const wil::com_ptr<ID3D12GraphicsCommandList> &m_commandList,
+                         CommandListDesc desc );
         ~DX12CommandList( ) override = default;
 
         void Begin( ) override;
@@ -77,6 +77,7 @@ namespace DenOfIz
         void CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
         void EnhancedPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
         void SetRootSignature( ID3D12RootSignature *rootSignature );
+        void SetRootConstants( const DX12RootConstant &rootConstant ) const;
         void BindResourceGroup( uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle ) const;
     };
 

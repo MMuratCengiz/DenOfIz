@@ -41,20 +41,26 @@ namespace DenOfIz
         VulkanContext       *m_context;
         VulkanRootSignature *m_rootSignature;
 
+        VkDescriptorSetLayout                  m_emptyLayout{ };
         VkDescriptorSet                        m_descriptorSet{ };
         std::vector<VkWriteDescriptorSet>      m_writeDescriptorSets;
         Storage                                m_storage;
         std::vector<VulkanRootConstantBinding> m_rootConstants;
 
     public:
-             VulkanResourceBindGroup( VulkanContext *context, const ResourceBindGroupDesc &desc );
-        ~    VulkanResourceBindGroup( ) override;
+        VulkanResourceBindGroup( VulkanContext *context, const ResourceBindGroupDesc &desc );
+        ~VulkanResourceBindGroup( ) override;
         void SetRootConstants( uint32_t binding, void *data ) override;
         void Update( const UpdateDesc &desc ) override;
 
         [[nodiscard]] const std::vector<VulkanRootConstantBinding> &RootConstants( ) const
         {
             return m_rootConstants;
+        }
+
+        bool HasDescriptorSet( ) const
+        {
+            return m_descriptorSet != VK_NULL_HANDLE;
         }
 
         [[nodiscard]] const VkDescriptorSet &GetDescriptorSet( ) const

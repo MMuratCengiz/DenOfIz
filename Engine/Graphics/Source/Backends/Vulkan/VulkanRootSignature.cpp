@@ -34,7 +34,7 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
     }
 
     m_pushConstants.resize( m_desc.RootConstants.size( ) );
-    for ( const RootConstantResourceBinding &rootConstantBinding : m_desc.RootConstants )
+    for ( const RootConstantResourceBindingDesc &rootConstantBinding : m_desc.RootConstants )
     {
         AddRootConstant( rootConstantBinding );
     }
@@ -45,27 +45,30 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
         maxRegisterSpace = std::max( maxRegisterSpace, key );
     }
 
-    for ( uint32_t i = 0; i <= maxRegisterSpace; ++i )
+    // No bindings layout
+    if ( !m_layoutBindings.empty( ) )
     {
-        const auto &it = m_layoutBindings.find( i );
-        if ( it == m_layoutBindings.end( ) )
+        for ( uint32_t i = 0; i <= maxRegisterSpace; ++i )
         {
-            m_layouts.push_back( nullptr );
-            continue;
+            const auto &it = m_layoutBindings.find( i );
+            if ( it == m_layoutBindings.end( ) )
+            {
+                m_layouts.push_back( nullptr );
+                continue;
+            }
+
+            const auto &layoutBindings = it->second;
+
+            VkDescriptorSetLayoutCreateInfo layoutInfo{ };
+            layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            layoutInfo.bindingCount = layoutBindings.size( );
+            layoutInfo.pBindings    = layoutBindings.data( );
+
+            VkDescriptorSetLayout layout;
+            VK_CHECK_RESULT( vkCreateDescriptorSetLayout( m_context->LogicalDevice, &layoutInfo, nullptr, &layout ) );
+            m_layouts.push_back( layout );
         }
-
-        const auto &layoutBindings = it->second;
-
-        VkDescriptorSetLayoutCreateInfo layoutInfo{ };
-        layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = layoutBindings.size( );
-        layoutInfo.pBindings    = layoutBindings.data( );
-
-        VkDescriptorSetLayout layout;
-        VK_CHECK_RESULT( vkCreateDescriptorSetLayout( m_context->LogicalDevice, &layoutInfo, nullptr, &layout ) );
-        m_layouts.push_back( layout );
     }
-
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{ };
     pipelineLayoutCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutCreateInfo.setLayoutCount         = m_layouts.size( );
@@ -137,7 +140,7 @@ VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBindi
     return layoutBinding;
 }
 
-void VulkanRootSignature::AddRootConstant( const RootConstantResourceBinding &rootConstantBinding )
+void VulkanRootSignature::AddRootConstant( const RootConstantResourceBindingDesc &rootConstantBinding )
 {
     if ( rootConstantBinding.Binding >= m_pushConstants.size( ) )
     {
@@ -145,18 +148,17 @@ void VulkanRootSignature::AddRootConstant( const RootConstantResourceBinding &ro
     }
 
     uint32_t offset = 0;
-    for ( const RootConstantResourceBinding& binding : m_desc.RootConstants )
+    for ( const RootConstantResourceBindingDesc &binding : m_desc.RootConstants )
     {
         if ( binding.Binding < rootConstantBinding.Binding )
         {
-            offset += binding.Size;
+            offset += binding.NumBytes;
         }
     }
 
     VkPushConstantRange &pushConstantRange = m_pushConstants[ rootConstantBinding.Binding ];
     pushConstantRange.offset               = offset;
-    pushConstantRange.size                 = rootConstantBinding.Size;
-
+    pushConstantRange.size                 = rootConstantBinding.NumBytes;
     for ( auto stage : rootConstantBinding.Stages )
     {
         pushConstantRange.stageFlags |= VulkanEnumConverter::ConvertShaderStage( stage );

@@ -26,19 +26,17 @@ VulkanResourceBindGroup::VulkanResourceBindGroup( VulkanContext *context, const 
 {
     m_rootSignature = dynamic_cast<VulkanRootSignature *>( m_desc.RootSignature );
 
-    const auto &layout = m_rootSignature->DescriptorSetLayout( m_desc.RegisterSpace );
-
-    if ( layout == nullptr )
+    if ( m_desc.RegisterSpace != RootConstantRegisterSpace )
     {
-        LOG( ERROR ) << "Descriptor set layout not found for register space: " << m_desc.RegisterSpace;
+        const auto &layout = m_rootSignature->DescriptorSetLayout( m_desc.RegisterSpace );
+
+        VkDescriptorSetAllocateInfo setAllocateInfo{ };
+        setAllocateInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        setAllocateInfo.descriptorSetCount = 1;
+        setAllocateInfo.pSetLayouts        = &layout;
+
+        m_context->DescriptorPoolManager->AllocateDescriptorSets( setAllocateInfo, &m_descriptorSet );
     }
-
-    VkDescriptorSetAllocateInfo setAllocateInfo{ };
-    setAllocateInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    setAllocateInfo.descriptorSetCount = 1;
-    setAllocateInfo.pSetLayouts        = &layout;
-
-    m_context->DescriptorPoolManager->AllocateDescriptorSets( setAllocateInfo, &m_descriptorSet );
 
     m_rootConstants.resize( m_rootSignature->NumRootConstants( ) );
 }
@@ -46,7 +44,7 @@ VulkanResourceBindGroup::VulkanResourceBindGroup( VulkanContext *context, const 
 void VulkanResourceBindGroup::SetRootConstants( const uint32_t binding, void *data )
 {
     const VkPushConstantRange  pushConstantRange   = m_rootSignature->PushConstantRange( binding );
-    VulkanRootConstantBinding &rootConstantBinding = m_rootConstants.emplace_back( VulkanRootConstantBinding{ } );
+    VulkanRootConstantBinding &rootConstantBinding = m_rootConstants[ binding ];
     rootConstantBinding.PipelineLayout             = m_rootSignature->PipelineLayout( );
     rootConstantBinding.ShaderStage                = pushConstantRange.stageFlags;
     rootConstantBinding.Binding                    = binding;

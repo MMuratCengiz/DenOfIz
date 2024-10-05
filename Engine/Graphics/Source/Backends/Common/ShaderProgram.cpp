@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <algorithm>
-#include <cstring>
 #include <directx/d3d12shader.h>
 #include <ranges>
 #include <unordered_set>
@@ -412,12 +411,16 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
         {
             D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
             DXC_CHECK_RESULT( shaderReflection->GetResourceBindingDesc( i, &shaderInputBindDesc ) );
+            DescriptorBufferBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
+            if ( bindingType != DescriptorBufferBindingType::ConstantBuffer && shaderInputBindDesc.Space == RootConstantRegisterSpace )
+            {
+                LOG( FATAL ) << "RegisterSpace [" << RootConstantRegisterSpace << "] is reserved for root constants. Which can only be used with constant buffers.";
+            }
 
             bool found = false;
             for ( auto &boundBinding : rootSignature.ResourceBindings )
             {
-                if ( boundBinding.RegisterSpace == shaderInputBindDesc.Space && boundBinding.Binding == shaderInputBindDesc.BindPoint &&
-                     boundBinding.BindingType == ReflectTypeToBufferBindingType( shaderInputBindDesc.Type ) )
+                if ( boundBinding.RegisterSpace == shaderInputBindDesc.Space && boundBinding.Binding == shaderInputBindDesc.BindPoint && boundBinding.BindingType == bindingType )
                 {
                     found = true;
                     boundBinding.Stages.push_back( shader->Stage );
@@ -428,14 +431,25 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
                 continue;
             }
 
+            if ( shaderInputBindDesc.Space == RootConstantRegisterSpace )
+            {
+                RootConstantResourceBindingDesc &rootConstantBinding = rootSignature.RootConstants.emplace_back( );
+                rootConstantBinding.Name                             = shaderInputBindDesc.Name;
+                rootConstantBinding.Binding                          = shaderInputBindDesc.BindPoint;
+                rootConstantBinding.Stages.push_back( shader->Stage );
+                ReflectionDesc rootConstantReflection;
+                FillReflectionData( shaderReflection, rootConstantReflection, i );
+                rootConstantBinding.NumBytes = rootConstantReflection.NumBytes;
+                continue;
+            }
+
             ResourceBindingDesc &resourceBindingDesc = rootSignature.ResourceBindings.emplace_back( );
             resourceBindingDesc.Name                 = shaderInputBindDesc.Name;
             resourceBindingDesc.Binding              = shaderInputBindDesc.BindPoint;
             resourceBindingDesc.RegisterSpace        = shaderInputBindDesc.Space;
             resourceBindingDesc.ArraySize            = shaderInputBindDesc.BindCount;
-            resourceBindingDesc.BindingType          = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
+            resourceBindingDesc.BindingType          = bindingType;
             resourceBindingDesc.Descriptor           = ReflectTypeToRootSignatureType( shaderInputBindDesc.Type );
-            // Todo !IMPROVEMENT! We should keep track of resources created and provide multiple stages if required.
             resourceBindingDesc.Stages.push_back( shader->Stage );
             FillReflectionData( shaderReflection, resourceBindingDesc.Reflection, i );
 #ifdef BUILD_METAL
@@ -639,6 +653,7 @@ void ShaderProgram::FillReflectionData( ID3D12ShaderReflection *shaderReflection
     ID3D12ShaderReflectionConstantBuffer *constantBuffer = shaderReflection->GetConstantBufferByIndex( resourceIndex );
     D3D12_SHADER_BUFFER_DESC              bufferDesc;
     DXC_CHECK_RESULT( constantBuffer->GetDesc( &bufferDesc ) );
+    reflectionDesc.NumBytes = bufferDesc.Size;
 
     for ( const uint32_t i : std::views::iota( 0u, bufferDesc.Variables ) )
     {
@@ -650,12 +665,11 @@ void ShaderProgram::FillReflectionData( ID3D12ShaderReflection *shaderReflection
         D3D12_SHADER_TYPE_DESC      typeDesc;
         DXC_CHECK_RESULT( reflectionType->GetDesc( &typeDesc ) );
 
-        ReflectionResourceField subField{ };
-        subField.Name       = variableDesc.Name;
-        subField.Type       = DXCVariableTypeToReflectionType( typeDesc.Type );
-        subField.NumColumns = typeDesc.Columns;
-        subField.NumRows    = typeDesc.Rows;
-        reflectionDesc.Fields.push_back( subField );
+        ReflectionResourceField subField = reflectionDesc.Fields.emplace_back( );
+        subField.Name                    = variableDesc.Name;
+        subField.Type                    = DXCVariableTypeToReflectionType( typeDesc.Type );
+        subField.NumColumns              = typeDesc.Columns;
+        subField.NumRows                 = typeDesc.Rows;
     }
 }
 

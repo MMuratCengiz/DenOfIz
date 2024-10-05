@@ -11,6 +11,7 @@ namespace DenOfIz
         Texture,
         SamplerDesc,
     };
+
     enum class ReflectionFieldType
     {
         Undefined,
@@ -91,9 +92,12 @@ namespace DenOfIz
         std::string                          Name;
         ReflectionBindingType                Type;
         std::vector<ReflectionResourceField> Fields;
+        size_t                               NumBytes = 0;
         // Index into the descriptor table
         uint32_t DescriptorTableIndex = 0;
         // Also for metal, this keeps track of the offset of the descriptor table bound in the top level argument buffer, textures and samplers need to be bound on separate tables
         uint32_t DescriptorOffset = 0;
     };
+
+    static constexpr uint32_t RootConstantRegisterSpace = 99;
 } // namespace DenOfIz

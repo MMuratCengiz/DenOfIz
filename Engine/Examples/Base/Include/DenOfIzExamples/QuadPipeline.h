@@ -37,7 +37,9 @@ namespace DenOfIz
 
     public:
         QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice, const std::string &pixelShader );
-        [[nodiscard]] IResourceBindGroup *BindGroup( uint32_t frame ) const;
-        void                              Render( ICommandList *commandList, uint32_t frame  ) const;
+        [[nodiscard]] IPipeline          *Pipeline( ) const;
+        [[nodiscard]] IRootSignature     *RootSignature( ) const;
+        [[nodiscard]] IResourceBindGroup *BindGroup( uint32_t frame, uint32_t registerSpace = 0 ) const;
+        void                              Render( ICommandList *commandList, uint32_t frame ) const;
     };
 } // namespace DenOfIz

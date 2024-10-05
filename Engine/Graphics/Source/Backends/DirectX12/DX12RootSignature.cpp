@@ -40,7 +40,7 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
         AddStaticSampler( staticSamplerDesc );
     }
 
-    for ( const RootConstantResourceBinding &rootConstant : desc.RootConstants )
+    for ( const RootConstantResourceBindingDesc &rootConstant : desc.RootConstants )
     {
         AddRootConstant( rootConstant );
     }
@@ -150,9 +150,9 @@ void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
 {
     RegisterSpaceOrder       &spaceOrder = ContainerUtilities::SafeAt( m_registerSpaceOrder, binding.RegisterSpace );
     const ResourceBindingSlot slot{
-        .Binding  = binding.Binding,
+        .Binding       = binding.Binding,
         .RegisterSpace = binding.RegisterSpace,
-        .Type     = binding.BindingType,
+        .Type          = binding.BindingType,
     };
     if ( binding.Descriptor.IsSet( ResourceDescriptor::Sampler ) )
     {
@@ -192,10 +192,10 @@ void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
     }
 }
 
-void DX12RootSignature::AddRootConstant( const RootConstantResourceBinding &rootConstant )
+void DX12RootSignature::AddRootConstant( const RootConstantResourceBindingDesc &rootConstant )
 {
-    CD3DX12_ROOT_PARAMETER dxRootConstant = { };
-    dxRootConstant.ParameterType          = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+    CD3DX12_ROOT_PARAMETER &dxRootConstant = m_rootConstants.emplace_back( CD3DX12_ROOT_PARAMETER{ } );
+    dxRootConstant.ParameterType           = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
     if ( rootConstant.Stages.size( ) > 1 || rootConstant.Stages.empty( ) )
     {
         dxRootConstant.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
@@ -204,14 +204,10 @@ void DX12RootSignature::AddRootConstant( const RootConstantResourceBinding &root
     {
         dxRootConstant.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( rootConstant.Stages[ 0 ] );
     }
-    dxRootConstant.Constants.Num32BitValues = rootConstant.Size / sizeof( uint32_t );
+    dxRootConstant.Constants.Num32BitValues = rootConstant.NumBytes / sizeof( uint32_t );
     dxRootConstant.Constants.ShaderRegister = rootConstant.Binding;
     dxRootConstant.Constants.RegisterSpace  = rootConstant.RegisterSpace;
-    if ( rootConstant.RegisterSpace != RootConstantsRegisterSpace )
-    {
-        LOG( FATAL ) << "For cross api compatibiliy.";
-    }
-    m_rootConstants.push_back( dxRootConstant );
+    m_usedStages |= dxRootConstant.ShaderVisibility;
 }
 
 DX12RootSignature::~DX12RootSignature( ) = default;

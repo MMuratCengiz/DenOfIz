@@ -248,12 +248,15 @@ void VulkanCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     // Remember more bind points will be added in the future.
     const VkPipelineBindPoint bindPoint = m_desc.QueueType == QueueType::Graphics ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
 
-    vkCmdBindDescriptorSets( m_commandBuffer, bindPoint, vkBindGroup->RootSignature( )->PipelineLayout( ), bindGroup->RegisterSpace( ), 1, &vkBindGroup->GetDescriptorSet( ), 0,
-                             nullptr );
+    if ( vkBindGroup->HasDescriptorSet( ) )
+    {
+        vkCmdBindDescriptorSets( m_commandBuffer, bindPoint, vkBindGroup->RootSignature( )->PipelineLayout( ), bindGroup->RegisterSpace( ), 1, &vkBindGroup->GetDescriptorSet( ), 0,
+                                 nullptr );
+    }
 
     for ( const auto &rootConstant : vkBindGroup->RootConstants( ) )
     {
-        vkCmdPushConstants( m_commandBuffer, rootConstant.PipelineLayout, VK_SHADER_STAGE_ALL, rootConstant.Offset, rootConstant.Size, rootConstant.Data );
+        vkCmdPushConstants( m_commandBuffer, rootConstant.PipelineLayout, rootConstant.ShaderStage, rootConstant.Offset, rootConstant.Size, rootConstant.Data );
     }
 }
 

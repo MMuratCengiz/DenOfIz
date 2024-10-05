@@ -61,6 +61,16 @@ DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const Resour
     }
 }
 
+void DX12ResourceBindGroup::SetRootConstants( uint32_t binding, void *data )
+{
+    DZ_NOT_NULL( data );
+    ContainerUtilities::EnsureSize( m_rootConstants, binding + 1 );
+
+    DX12RootConstant &rootConstant = m_rootConstants[ binding ];
+    rootConstant.Data              = data;
+    rootConstant.NumBytes          = m_dx12RootSignature->RootConstants( )[ binding ].Constants.Num32BitValues * sizeof( uint32_t );
+}
+
 void DX12ResourceBindGroup::Update( const UpdateDesc &desc )
 {
     m_cbvSrvUavCount = 0;

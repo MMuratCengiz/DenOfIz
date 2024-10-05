@@ -191,6 +191,11 @@ void DX12CommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     {
         BindResourceGroup( dx12BindGroup->RootSignature( )->RegisterSpaceOffset( bindGroup->RegisterSpace( ) ) + index, dx12BindGroup->GetSamplerHandle( ).Gpu );
     }
+
+    for ( const auto &rootConstant : dx12BindGroup->RootConstants( ) )
+    {
+        SetRootConstants( rootConstant );
+    }
 }
 
 void DX12CommandList::BindResourceGroup( const uint32_t index, const D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle ) const
@@ -209,6 +214,22 @@ void DX12CommandList::BindResourceGroup( const uint32_t index, const D3D12_GPU_D
         break;
     default:
         LOG( ERROR ) << "`BindResourceGroup` is an invalid function for queue type";
+        break;
+    }
+}
+
+void DX12CommandList::SetRootConstants( const DX12RootConstant &rootConstant ) const
+{
+    switch ( m_desc.QueueType )
+    {
+    case QueueType::Graphics:
+        m_commandList->SetGraphicsRoot32BitConstants( rootConstant.Binding, rootConstant.NumBytes / 4, rootConstant.Data, 0 );
+        break;
+    case QueueType::Compute:
+        m_commandList->SetComputeRoot32BitConstants( rootConstant.Binding, rootConstant.NumBytes / 4, rootConstant.Data, 0 );
+        break;
+    default:
+        LOG( ERROR ) << "`SetRootConstants` is an invalid function for queue type";
         break;
     }
 }

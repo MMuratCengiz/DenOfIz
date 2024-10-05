@@ -66,7 +66,7 @@ namespace DenOfIz
         friend class GraphicsApi;
 
         std::vector<std::unique_ptr<CompiledShader>> m_compiledShaders;
-        const ShaderProgramDesc                     &m_desc;
+        ShaderProgramDesc                            m_desc;
 #ifdef BUILD_METAL
         std::vector<MetalDescriptorOffsets> m_metalDescriptorOffsets;
 #endif
@@ -74,8 +74,8 @@ namespace DenOfIz
         explicit ShaderProgram( const ShaderProgramDesc &desc );
 
     public:
-        [[nodiscard]] std::vector<CompiledShader *>       GetCompiledShaders( ) const;
-        [[nodiscard]] ShaderReflectDesc                   Reflect( ) const;
+        [[nodiscard]] std::vector<CompiledShader *> GetCompiledShaders( ) const;
+        [[nodiscard]] ShaderReflectDesc             Reflect( ) const;
 
     private:
         [[nodiscard]] const ShaderCompiler &ShaderCompilerInstance( ) const;

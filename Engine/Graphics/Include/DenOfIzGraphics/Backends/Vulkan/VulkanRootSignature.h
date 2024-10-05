@@ -79,7 +79,7 @@ namespace DenOfIz
 
     private:
         void                                       AddResourceBinding( const ResourceBindingDesc &binding );
-        void                                       AddRootConstant( const RootConstantResourceBinding &rootConstantBinding );
+        void                                       AddRootConstant( const RootConstantResourceBindingDesc &rootConstantBinding );
         void                                       AddStaticSampler( const StaticSamplerDesc &sampler );
         [[nodiscard]] VkDescriptorSetLayoutBinding CreateDescriptorSetLayoutBinding( const ResourceBindingDesc &binding );
     };

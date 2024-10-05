@@ -27,16 +27,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct DX12RootConstant
+    {
+        const uint32_t RegisterSpace = 99;
+        uint32_t       Binding;
+        void          *Data;
+        uint32_t       NumBytes;
+    };
+
     // For DirectX12 this is kind of a dummy class as resources are bound to heaps. At a given point we only use 2 heaps one for CBV/SRV/UAV and one for Sampler.
     class DX12ResourceBindGroup final : public IResourceBindGroup
     {
     private:
-        DX12Context       *m_context;
-        uint32_t           m_samplerCount   = 0;
-        uint32_t           m_cbvSrvUavCount = 0;
-        DescriptorHandle   m_cbvSrvUavHandle;
-        DescriptorHandle   m_samplerHandle;
-        DX12RootSignature *m_dx12RootSignature;
+        DX12Context                  *m_context;
+        uint32_t                      m_samplerCount   = 0;
+        uint32_t                      m_cbvSrvUavCount = 0;
+        DescriptorHandle              m_cbvSrvUavHandle;
+        DescriptorHandle              m_samplerHandle;
+        DX12RootSignature            *m_dx12RootSignature;
+        std::vector<DX12RootConstant> m_rootConstants;
 
     public:
         DX12ResourceBindGroup( DX12Context *context, const ResourceBindGroupDesc &desc );
@@ -66,6 +75,12 @@ namespace DenOfIz
             return m_dx12RootSignature;
         }
 
+        [[nodiscard]] const std::vector<DX12RootConstant> &RootConstants( ) const
+        {
+            return m_rootConstants;
+        }
+
+        void SetRootConstants( uint32_t binding, void *data ) override;
         void Update( const UpdateDesc &desc ) override;
 
     protected:
