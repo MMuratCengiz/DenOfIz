@@ -110,3 +110,27 @@ std::string Utilities::AppPath( const std::string &resourcePath )
     return resourcePath;
 #endif
 }
+
+uint32_t Utilities::Align( const uint32_t value, const uint32_t alignment )
+{
+    return ( value + alignment - 1 ) & ~( alignment - 1 );
+}
+
+uint32_t Utilities::HashInts( uint32_t args, ... )
+{
+    va_list ap;
+    va_start( ap, args );
+
+    uint32_t       hash  = 2166136261u;
+    const uint32_t prime = 16777619u;
+
+    for ( uint32_t i = 0; i < args; i++ )
+    {
+        uint32_t value = va_arg( ap, uint32_t );
+        hash ^= value;
+        hash *= prime;
+    }
+
+    va_end( ap );
+    return hash;
+}

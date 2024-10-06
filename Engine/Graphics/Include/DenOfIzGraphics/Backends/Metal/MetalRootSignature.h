@@ -30,24 +30,27 @@ namespace DenOfIz
         MTLRenderStages     Stages;
     };
 
+    struct MetalRootConstant
+    {
+        uint32_t Offset;
+        int      NumBytes;
+    };
+
     class MetalRootSignature final : public IRootSignature
     {
         MetalContext     *m_context;
         RootSignatureDesc m_desc;
 
         std::unordered_map<uint32_t, MetalBindingDesc>  m_metalBindings;
-        std::vector<id<MTLBuffer>>                      m_rootParameters;
-        std::vector<id<MTLBuffer>>                      m_registerSpaceArgumentBuffers;
         std::vector<NSArray<MTLArgumentDescriptor *> *> m_argumentDescriptors;
         uint32_t                                        m_numTLABAddresses = 0;
+        std::vector<MetalRootConstant>                  m_rootConstants;
 
     public:
         MetalRootSignature( MetalContext *context, const RootSignatureDesc &desc );
-        const MetalBindingDesc &FindMetalBinding( const ResourceBindingSlot &slot ) const;
-        const uint32_t          NumTLABAddresses( ) const
-        {
-            return m_numTLABAddresses;
-        }
+        const MetalBindingDesc                             &FindMetalBinding( const ResourceBindingSlot &slot ) const;
+        const uint32_t                                      NumTLABAddresses( ) const;
+        [[nodiscard]] const std::vector<MetalRootConstant> &RootConstants( ) const;
         ~MetalRootSignature( ) override;
     };
 

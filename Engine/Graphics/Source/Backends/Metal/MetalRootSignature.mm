@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Metal/MetalEnumConverter.h>
 #include <DenOfIzGraphics/Backends/Metal/MetalRootSignature.h>
+#include <algorithm>
 
 using namespace DenOfIz;
 
@@ -55,12 +56,26 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
             m_argumentDescriptors[ binding.RegisterSpace ] = [[NSMutableArray alloc] init];
         }
 
-        if ( binding.Reflection.DescriptorOffset >= m_numTLABAddresses )
+        if ( binding.Reflection.TLABOffset >= m_numTLABAddresses )
         {
-            m_numTLABAddresses = binding.Reflection.DescriptorOffset + 1;
+            m_numTLABAddresses = binding.Reflection.TLABOffset + 1;
         }
 
         m_metalBindings[ slot.Key( ) ] = { .Parent = binding, .Stages = stages };
+    }
+
+    uint32_t rootConstantOffset = 0;
+    m_rootConstants.resize( m_desc.RootConstants.size( ) );
+    for ( int i = 0; i < m_desc.RootConstants.size( ); i++ )
+    {
+        const auto &trueIndex = m_desc.RootConstants[ i ].Binding;
+        if ( trueIndex >= m_desc.RootConstants.size( ) )
+        {
+            LOG( FATAL ) << "Root constant binding index is out of range. Make sure all bindings are provided in ascending order.";
+        }
+        const auto &rootConstant     = m_desc.RootConstants[ trueIndex ];
+        m_rootConstants[ trueIndex ] = { .Offset = rootConstantOffset, .NumBytes = rootConstant.NumBytes };
+        rootConstantOffset += rootConstant.NumBytes;
     }
 }
 
@@ -72,6 +87,16 @@ const MetalBindingDesc &MetalRootSignature::FindMetalBinding( const ResourceBind
         LOG( ERROR ) << "Unable to find slot with type[" << static_cast<int>( slot.Type ) << "],binding[" << slot.Binding << "],register[" << slot.RegisterSpace << "].";
     }
     return it->second;
+}
+
+const uint32_t MetalRootSignature::NumTLABAddresses( ) const
+{
+    return m_numTLABAddresses;
+}
+
+const std::vector<MetalRootConstant> &MetalRootSignature::RootConstants( ) const
+{
+    return m_rootConstants;
 }
 
 MetalRootSignature::~MetalRootSignature( )

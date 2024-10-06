@@ -74,7 +74,6 @@ namespace DenOfIz
         void BindViewport( float x, float y, float width, float height ) override;
         void BindScissorRect( float x, float y, float width, float height ) override;
         void BindResourceGroup( IResourceBindGroup *bindGroup ) override;
-        void SetDepthBias( float constantFactor, float clamp, float slopeFactor ) override;
         void PipelineBarrier( const PipelineBarrierDesc &barrier ) override;
         void DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance ) override;
         void Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance ) override;

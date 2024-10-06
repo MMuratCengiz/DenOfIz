@@ -27,13 +27,32 @@ MetalResourceBindGroup::MetalResourceBindGroup( MetalContext *context, ResourceB
     m_rootSignature = static_cast<MetalRootSignature *>( desc.RootSignature );
 }
 
+void MetalResourceBindGroup::SetRootConstants( uint32_t binding, void *data )
+{
+    // Find binding offset and copy data to m_rootConstant
+    const auto &rootConstants = m_rootSignature->RootConstants( );
+    if ( binding >= rootConstants.size( ) )
+    {
+        LOG( FATAL ) << "Root constant binding out of range";
+    }
+
+    std::memcpy( m_rootConstant.data( ) + rootConstants[ binding ].Offset, data, rootConstants[ binding ].NumBytes );
+}
+
 void MetalResourceBindGroup::Update( const UpdateDesc &desc )
 {
     m_updateDesc = desc;
 
-    if ( !desc.Buffers.empty( ) || !desc.Textures.empty( ) )
+    size_t cbvSrvUavTableSize = desc.Buffers.size( ) + desc.Textures.size( );
+    if ( desc.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
     {
-        m_cbvSrvUavTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, desc.Buffers.size( ) + desc.Textures.size( ) ) );
+        // Buffers will be bound separately
+        cbvSrvUavTableSize = desc.Textures.size( );
+    }
+
+    if ( cbvSrvUavTableSize > 0 )
+    {
+        m_cbvSrvUavTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, cbvSrvUavTableSize ) );
         m_cbvSrvUavTable->Table.SetDebugName( "CbvSrvUav Table[Space: " + std::to_string( m_desc.RegisterSpace ) + "]" );
     }
     if ( !desc.Samplers.empty( ) )
@@ -49,9 +68,14 @@ void MetalResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBuffe
 {
     MetalBufferResource    *metalBuffer = static_cast<MetalBufferResource *>( resource );
     const MetalBindingDesc &binding     = m_rootSignature->FindMetalBinding( slot );
+    if ( slot.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
+    {
+        m_rootParameterBindings.emplace_back( binding.Parent.Reflection.TLABOffset, metalBuffer->Instance( ).gpuAddress );
+        return;
+    }
     m_cbvSrvUavTable->Table.EncodeBuffer( metalBuffer->Instance( ), binding.Parent.Reflection.DescriptorTableIndex );
     UpdateDescriptorTable( binding, m_cbvSrvUavTable.get( ) );
-    m_buffers.push_back( { metalBuffer, binding.Stages, metalBuffer->Usage( ) } );
+    m_buffers.emplace_back( metalBuffer, binding.Stages, metalBuffer->Usage( ) );
 }
 
 void MetalResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource )
@@ -60,7 +84,7 @@ void MetalResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, IText
     const MetalBindingDesc &binding      = m_rootSignature->FindMetalBinding( slot );
     m_cbvSrvUavTable->Table.EncodeTexture( metalTexture->Instance( ), metalTexture->MinLODClamp( ), binding.Parent.Reflection.DescriptorTableIndex );
     UpdateDescriptorTable( binding, m_cbvSrvUavTable.get( ) );
-    m_textures.push_back( { metalTexture, binding.Stages, metalTexture->Usage( ) } );
+    m_textures.emplace_back( metalTexture, binding.Stages, metalTexture->Usage( ) );
 }
 
 void MetalResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )
@@ -69,7 +93,17 @@ void MetalResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISamp
     const MetalBindingDesc &binding      = m_rootSignature->FindMetalBinding( slot );
     m_samplerTable->Table.EncodeSampler( metalSampler->Instance( ), metalSampler->LODBias( ), binding.Parent.Reflection.DescriptorTableIndex );
     UpdateDescriptorTable( binding, m_samplerTable.get( ) );
-    m_samplers.push_back( { metalSampler, binding.Stages, MTLResourceUsageRead } );
+    m_samplers.emplace_back( metalSampler, binding.Stages, MTLResourceUsageRead );
+}
+
+const std::vector<Byte> &MetalResourceBindGroup::RootConstant( ) const
+{
+    return m_rootConstant;
+}
+
+const std::vector<MetalRootParameterBinding> &MetalResourceBindGroup::RootParameters( ) const
+{
+    return m_rootParameterBindings;
 }
 
 const MetalDescriptorTableBinding *MetalResourceBindGroup::CbvSrvUavTable( ) const
@@ -104,6 +138,6 @@ const std::vector<MetalUpdateDescItem<MetalSampler>> &MetalResourceBindGroup::Sa
 
 void MetalResourceBindGroup::UpdateDescriptorTable( const MetalBindingDesc &binding, MetalDescriptorTableBinding *table )
 {
-    table->TLABOffset = binding.Parent.Reflection.DescriptorOffset;
+    table->TLABOffset = binding.Parent.Reflection.TLABOffset;
     table->NumEntries++;
 }

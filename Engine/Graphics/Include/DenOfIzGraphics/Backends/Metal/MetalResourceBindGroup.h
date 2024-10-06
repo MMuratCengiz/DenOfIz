@@ -20,11 +20,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
 #include <algorithm>
+#include "MetalArgumentBuffer.h"
 #include "MetalBufferResource.h"
 #include "MetalContext.h"
 #include "MetalRootSignature.h"
 #include "MetalTextureResource.h"
-#include "MetalArgumentBuffer.h"
 
 namespace DenOfIz
 {
@@ -34,6 +34,12 @@ namespace DenOfIz
         T               *Resource;
         MTLRenderStages  ShaderStages;
         MTLResourceUsage Usage;
+    };
+
+    struct MetalRootParameterBinding
+    {
+        uint32_t TLABOffset = 0;
+        uint64_t BufferAddress;
     };
 
     struct MetalDescriptorTableBinding
@@ -59,13 +65,18 @@ namespace DenOfIz
         std::vector<MetalUpdateDescItem<MetalTextureResource>> m_textures;
         std::vector<MetalUpdateDescItem<MetalSampler>>         m_samplers;
 
+        std::vector<Byte>                            m_rootConstant;
+        std::vector<MetalRootParameterBinding>       m_rootParameterBindings;
         std::unique_ptr<MetalDescriptorTableBinding> m_cbvSrvUavTable;
         std::unique_ptr<MetalDescriptorTableBinding> m_samplerTable;
 
     public:
         MetalResourceBindGroup( MetalContext *context, ResourceBindGroupDesc desc );
+        void SetRootConstants( uint32_t binding, void *data ) override;
         void Update( const UpdateDesc &desc ) override;
 
+        [[nodiscard]] const std::vector<Byte>                      &RootConstant( ) const;
+        [[nodiscard]] const std::vector<MetalRootParameterBinding> &RootParameters( ) const;
         // Nullable if nothing is bound to the pertinent table
         [[nodiscard]] const MetalDescriptorTableBinding *CbvSrvUavTable( ) const;
         [[nodiscard]] const MetalDescriptorTableBinding *SamplerTable( ) const;

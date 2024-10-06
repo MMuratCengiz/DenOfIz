@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzCore/Utilities.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <algorithm>
 #include <directx/d3d12shader.h>
@@ -68,7 +69,7 @@ void ShaderProgram::Compile( )
 }
 
 #ifdef BUILD_METAL
-void PutRootParameter( std::vector<IRRootParameter1> &rootParameters, IRShaderVisibility visibility, std::vector<IRDescriptorRange1> &ranges )
+void PutRootParameterDescriptorTable( std::vector<IRRootParameter1> &rootParameters, IRShaderVisibility visibility, std::vector<IRDescriptorRange1> &ranges )
 {
     if ( ranges.empty( ) )
     {
@@ -105,7 +106,24 @@ IRShaderVisibility ShaderStageToShaderVisibility( ShaderStage stage )
     }
 }
 
+IRRootParameterType BindingTypeToIRRootParameterType( const DescriptorBufferBindingType &type )
+{
+    switch ( type )
+    {
+    case DescriptorBufferBindingType::ConstantBuffer:
+        return IRRootParameterTypeCBV;
+    case DescriptorBufferBindingType::ShaderResource:
+        return IRRootParameterTypeSRV;
+    case DescriptorBufferBindingType::UnorderedAccess:
+        return IRRootParameterTypeUAV;
+    default:
+        break;
+    }
+
+    return IRRootParameterTypeCBV;
+}
 // For metal, we need to produce a root signature to compile a correct metallib
+// We also keep track of how the root parameter layout looks like so
 void ShaderProgram::ProduceMSL( )
 {
     const ShaderCompiler           &compiler = ShaderCompilerInstance( );
@@ -114,9 +132,12 @@ void ShaderProgram::ProduceMSL( )
     // In Metal, we need a separate descriptor table for samplers/textures and buffers.
     struct RegisterSpaceRange
     {
-        std::vector<IRDescriptorRange1> CbvSrvUavRanges;
-        std::vector<IRDescriptorRange1> SamplerRanges;
-        IRShaderVisibility              ShaderVisibility;
+        std::vector<IRRootConstants>     RootConstants;
+        std::vector<IRRootDescriptor>    RootArguments;
+        std::vector<IRRootParameterType> RootArgumentTypes;
+        std::vector<IRDescriptorRange1>  CbvSrvUavRanges;
+        std::vector<IRDescriptorRange1>  SamplerRanges;
+        IRShaderVisibility               ShaderVisibility;
     };
     std::vector<RegisterSpaceRange>              registerSpaceRanges;
     std::vector<std::unique_ptr<CompiledShader>> dxilShaders;
@@ -173,6 +194,18 @@ void ShaderProgram::ProduceMSL( )
                 registerSpaceRange.ShaderVisibility = shaderVisibility;
             }
 
+            if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootConstantRegisterSpace && shaderInputBindDesc.Type == D3D_SIT_CBUFFER )
+            {
+                IRRootConstants &rootConstants = registerSpaceRange.RootConstants.emplace_back( );
+                rootConstants.RegisterSpace    = shaderInputBindDesc.Space;
+                rootConstants.ShaderRegister   = shaderInputBindDesc.BindPoint;
+
+                ReflectionDesc rootConstantReflection;
+                FillReflectionData( shaderReflection, rootConstantReflection, i );
+                rootConstants.Num32BitValues = rootConstantReflection.NumBytes / 4;
+                continue;
+            }
+
             IRDescriptorRange1 descriptorRange                = { };
             descriptorRange.BaseShaderRegister                = shaderInputBindDesc.BindPoint;
             descriptorRange.NumDescriptors                    = shaderInputBindDesc.BindCount;
@@ -211,6 +244,29 @@ void ShaderProgram::ProduceMSL( )
                 LOG( ERROR ) << "Unknown resource type";
                 break;
             }
+
+            if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace && shaderInputBindDesc.Type == D3D_SIT_CBUFFER )
+            {
+                IRRootDescriptor &rootDescriptor = registerSpaceRange.RootArguments.emplace_back( );
+                rootDescriptor.RegisterSpace     = shaderInputBindDesc.Space;
+                rootDescriptor.ShaderRegister    = shaderInputBindDesc.BindPoint;
+
+                switch ( descriptorRange.RangeType )
+                {
+                case IRDescriptorRangeTypeCBV:
+                    registerSpaceRange.RootArgumentTypes.push_back( IRRootParameterTypeCBV );
+                    break;
+                case IRDescriptorRangeTypeSRV:
+                    registerSpaceRange.RootArgumentTypes.push_back( IRRootParameterTypeSRV );
+                    break;
+                case IRDescriptorRangeTypeUAV:
+                    registerSpaceRange.RootArgumentTypes.push_back( IRRootParameterTypeUAV );
+                    break;
+                case IRDescriptorRangeTypeSampler:
+                    break;
+                }
+                continue;
+            }
         }
     }
 
@@ -233,8 +289,33 @@ void ShaderProgram::ProduceMSL( )
             ++numTables;
         }
 
-        PutRootParameter( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.CbvSrvUavRanges );
-        PutRootParameter( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.SamplerRanges );
+        for ( auto &rootConstant : registerSpaceRange.RootConstants )
+        {
+            IRRootParameter1 rootParameter         = { };
+            rootParameter.ParameterType            = IRRootParameterType32BitConstants;
+            rootParameter.ShaderVisibility         = IRShaderVisibilityAll;
+            rootParameter.Constants.Num32BitValues = rootConstant.Num32BitValues;
+            rootParameter.Constants.RegisterSpace  = rootConstant.RegisterSpace;
+            rootParameter.Constants.ShaderRegister = rootConstant.ShaderRegister;
+            rootParameters.push_back( rootParameter );
+        }
+
+        int rootArgumentTypeIndex = 0;
+        for ( auto &rootArgument : registerSpaceRange.RootArguments )
+        {
+            IRRootParameter1 rootParameter          = { };
+            rootParameter.ParameterType             = registerSpaceRange.RootArgumentTypes[ rootArgumentTypeIndex++ ];
+            rootParameter.ShaderVisibility          = IRShaderVisibilityAll;
+            rootParameter.Descriptor.RegisterSpace  = rootArgument.RegisterSpace;
+            rootParameter.Descriptor.ShaderRegister = rootArgument.ShaderRegister;
+            rootParameters.push_back( rootParameter );
+            uint32_t hash                          = Utilities::HashInts( rootParameter.ParameterType, rootArgument.RegisterSpace, rootArgument.ShaderRegister );
+            offsets.RootDescriptorsOffsets[ hash ] = numTables++;
+            ++numTables;
+        }
+
+        PutRootParameterDescriptorTable( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.CbvSrvUavRanges );
+        PutRootParameterDescriptorTable( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.SamplerRanges );
         ++registerSpace;
     }
 
@@ -415,12 +496,8 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
             D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
             DXC_CHECK_RESULT( shaderReflection->GetResourceBindingDesc( i, &shaderInputBindDesc ) );
             DescriptorBufferBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
-            if ( bindingType != DescriptorBufferBindingType::ConstantBuffer && shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootConstantRegisterSpace )
-            {
-                LOG( FATAL ) << "RegisterSpace [" << DZConfiguration::Instance( ).RootConstantRegisterSpace
-                             << "] is reserved for root constants. Which can only be used with constant buffers.";
-            }
 
+            // Check if Resource is already bound, if so add the stage to the existing binding and continue
             bool found = false;
             for ( auto &boundBinding : rootSignature.ResourceBindings )
             {
@@ -435,14 +512,20 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
                 continue;
             }
 
+            // Root constants are reserved for a specific register space
             if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootConstantRegisterSpace )
             {
+                ReflectionDesc rootConstantReflection;
+                FillReflectionData( shaderReflection, rootConstantReflection, i );
+                if ( rootConstantReflection.Type != ReflectionBindingType::Pointer || rootConstantReflection.Type != ReflectionBindingType::Struct )
+                {
+                    LOG( FATAL ) << "Root constant reflection type mismatch. RegisterSpace [" << shaderInputBindDesc.Space
+                                 << "] is reserved for root constants. Which cannot be samplers or textures.";
+                }
                 RootConstantResourceBindingDesc &rootConstantBinding = rootSignature.RootConstants.emplace_back( );
                 rootConstantBinding.Name                             = shaderInputBindDesc.Name;
                 rootConstantBinding.Binding                          = shaderInputBindDesc.BindPoint;
                 rootConstantBinding.Stages.push_back( shader->Stage );
-                ReflectionDesc rootConstantReflection;
-                FillReflectionData( shaderReflection, rootConstantReflection, i );
                 rootConstantBinding.NumBytes = rootConstantReflection.NumBytes;
                 continue;
             }
@@ -457,19 +540,27 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
             resourceBindingDesc.Stages.push_back( shader->Stage );
             FillReflectionData( shaderReflection, resourceBindingDesc.Reflection, i );
 #ifdef BUILD_METAL
+            if ( resourceBindingDesc.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
+            {
+                uint32_t hash =
+                    Utilities::HashInts( BindingTypeToIRRootParameterType( resourceBindingDesc.BindingType ), shaderInputBindDesc.Space, shaderInputBindDesc.BindPoint );
+                resourceBindingDesc.Reflection.TLABOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].RootDescriptorsOffsets.at( hash );
+                continue;
+            }
+            // Hint metal resource bind group where descriptor table lies in the top level argument buffer
             switch ( resourceBindingDesc.Reflection.Type )
             {
             case ReflectionBindingType::Pointer:
             case ReflectionBindingType::Struct:
             case ReflectionBindingType::Texture:
-                resourceBindingDesc.Reflection.DescriptorOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].CbvSrvUavOffset;
+                resourceBindingDesc.Reflection.TLABOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].CbvSrvUavOffset;
                 break;
             case ReflectionBindingType::SamplerDesc:
-                resourceBindingDesc.Reflection.DescriptorOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].SamplerOffset;
+                resourceBindingDesc.Reflection.TLABOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].SamplerOffset;
                 break;
             }
-            ContainerUtilities::EnsureSize( descriptorTableLocations, resourceBindingDesc.Reflection.DescriptorOffset );
-            uint32_t &locationHint                              = descriptorTableLocations[ resourceBindingDesc.Reflection.DescriptorOffset ];
+            ContainerUtilities::EnsureSize( descriptorTableLocations, resourceBindingDesc.Reflection.TLABOffset );
+            uint32_t &locationHint                              = descriptorTableLocations[ resourceBindingDesc.Reflection.TLABOffset ];
             resourceBindingDesc.Reflection.DescriptorTableIndex = locationHint++;
 #endif
         }

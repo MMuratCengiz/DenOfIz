@@ -87,18 +87,29 @@ namespace DenOfIz
         uint32_t            NumRows    = 0;
     };
 
+    enum class ReflectRootParameterType
+    {
+        DescriptorTable,
+        RootConstant,
+        RootDescriptor,
+    };
+
     struct ReflectionDesc
     {
         std::string                          Name;
         ReflectionBindingType                Type;
         std::vector<ReflectionResourceField> Fields;
         size_t                               NumBytes = 0;
+#ifdef BUILD_METAL
         /**
          * Metal specific information to simulate register spaces. We use a top level argument buffers:
-         * DescriptorTableIndex: The index of the descriptor table in the argument buffer.
-         * DescriptorOffset: The offset of the descriptor within the descriptor table.
+         * TLABOffset: The index of the descriptor table in the argument buffer.
+         * DescriptorTableIndex: The offset of the descriptor within the descriptor table.
+         *
+         * Valid when RootParameterType is DescriptorTable.
          */
-        uint32_t DescriptorTableIndex = 0;
-        uint32_t DescriptorOffset     = 0;
+        uint32_t                 DescriptorTableIndex = 0;
+        uint32_t                 TLABOffset           = 0;
+#endif
     };
 } // namespace DenOfIz

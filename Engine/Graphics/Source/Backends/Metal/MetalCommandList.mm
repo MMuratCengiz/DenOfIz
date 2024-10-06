@@ -230,6 +230,23 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
         m_argumentBuffer->Reserve( m_rootSignature->NumTLABAddresses( ) );
     }
 
+    const auto &rootConstant = metalBindGroup->RootConstant( );
+    if ( !rootConstant.empty( ) )
+    {
+        // TODO
+        if ( m_desc.QueueType == QueueType::Compute )
+        {
+        }
+        else
+        {
+        }
+    }
+
+    for ( const auto &rootParameter : metalBindGroup->RootParameters( ) )
+    {
+        m_argumentBuffer->EncodeAddress( m_currentBufferOffset, rootParameter.TLABOffset, rootParameter.BufferAddress );
+    }
+
     const MetalDescriptorTableBinding *cbvSrvUavTable = metalBindGroup->CbvSrvUavTable( );
     if ( cbvSrvUavTable != nullptr && cbvSrvUavTable->NumEntries > 0 )
     {
@@ -256,12 +273,6 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     for ( const auto &sampler : metalBindGroup->Samplers( ) )
     {
     }
-}
-
-void MetalCommandList::SetDepthBias( float constantFactor, float clamp, float slopeFactor )
-{
-    EnsureEncoder( MetalEncoderType::Render, "SetDepthBias called without a render encoder. Make sure to call BeginRendering" );
-    [m_renderEncoder setDepthBias:constantFactor slopeScale:slopeFactor clamp:clamp];
 }
 
 void MetalCommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )
