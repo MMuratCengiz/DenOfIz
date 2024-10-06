@@ -16,11 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzCore/Time.h>
-#include <DenOfIzExamples/PushConstantExample.h>
+#include <DenOfIzExamples/RootConstantExample.h>
 
 using namespace DenOfIz;
 
-void PushConstantExample::Init( )
+void RootConstantExample::Init( )
 {
     m_quadPipeline      = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice, "Assets/Shaders/PushConstantColor.ps.hlsl" );
     m_resourceBindGroup = m_logicalDevice->CreateResourceBindGroup( RootConstantBindGroupDesc( m_quadPipeline->RootSignature( ) ) );
@@ -58,12 +58,12 @@ void PushConstantExample::Init( )
     m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
 }
 
-void PushConstantExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
+void RootConstantExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
     defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
-void PushConstantExample::Update( )
+void RootConstantExample::Update( )
 {
     m_time.Tick( );
     m_color[ m_rgbIterator ] += m_time.GetDeltaTime( );
@@ -78,13 +78,13 @@ void PushConstantExample::Update( )
     m_renderGraph->Update( );
 }
 
-void PushConstantExample::HandleEvent( SDL_Event &event )
+void RootConstantExample::HandleEvent( SDL_Event &event )
 {
     m_worldData.Camera->HandleEvent( event );
     IExample::HandleEvent( event );
 }
 
-void PushConstantExample::Quit( )
+void RootConstantExample::Quit( )
 {
     m_renderGraph->WaitIdle( );
     IExample::Quit( );

@@ -1,3 +1,3 @@
 add_subdirectory(Base)
-add_subdirectory(PushConstants)
+add_subdirectory(RootConstants)
 add_subdirectory(RenderTarget)

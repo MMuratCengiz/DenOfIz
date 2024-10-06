@@ -42,7 +42,7 @@ D3D12_DESCRIPTOR_RANGE_TYPE DX12EnumConverter::ConvertResourceDescriptorToDescri
     return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 }
 
-D3D12_COMMAND_LIST_TYPE DX12EnumConverter::ConvertQueueType( QueueType queueType )
+D3D12_COMMAND_LIST_TYPE DX12EnumConverter::ConvertQueueType( const QueueType queueType )
 {
     switch ( queueType )
     {
@@ -78,7 +78,6 @@ uint32_t DX12EnumConverter::ConvertSampleCount( const MSAASampleCount &sampleCou
     switch ( sampleCount )
     {
     case MSAASampleCount::_0:
-        return 1;
     case MSAASampleCount::_1:
         return 1;
     case MSAASampleCount::_2:
@@ -268,8 +267,6 @@ D3D12_SHADER_VISIBILITY DX12EnumConverter::ConvertShaderStageToShaderVisibility(
     default:
         return D3D12_SHADER_VISIBILITY_ALL;
     }
-
-    return D3D12_SHADER_VISIBILITY_ALL;
 }
 
 D3D12_COMPARISON_FUNC DX12EnumConverter::ConvertCompareOp( const CompareOp &op )
@@ -319,13 +316,13 @@ D3D12_PRIMITIVE_TOPOLOGY DX12EnumConverter::ConvertPrimitiveTopology( const Prim
     switch ( topology )
     {
     case PrimitiveTopology::Point:
-        return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+        return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
     case PrimitiveTopology::Line:
-        return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+        return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
     case PrimitiveTopology::Triangle:
-        return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
     case PrimitiveTopology::Patch:
-        return D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST; // Todo could require more control points
+        return D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST; // Todo could require more control points
     }
 
     return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -356,7 +353,7 @@ D3D12_STENCIL_OP DX12EnumConverter::ConvertStencilOp( const StencilOp &op )
     return D3D12_STENCIL_OP_KEEP;
 }
 
-D3D12_CULL_MODE DX12EnumConverter::ConvertCullMode( CullMode mode )
+D3D12_CULL_MODE DX12EnumConverter::ConvertCullMode( const CullMode mode )
 {
     switch ( mode )
     {
@@ -495,6 +492,10 @@ D3D12_BLEND DX12EnumConverter::ConvertBlend( const Blend &factor )
         return D3D12_BLEND_SRC1_ALPHA;
     case Blend::InvSrc1Alpha:
         return D3D12_BLEND_INV_SRC1_ALPHA;
+    case Blend::BlendFactor:
+        return D3D12_BLEND_BLEND_FACTOR;
+    case Blend::InvBlendFactor:
+        return D3D12_BLEND_INV_BLEND_FACTOR;
     }
 
     return D3D12_BLEND_ZERO;
@@ -574,7 +575,7 @@ D3D12_RESOURCE_STATES DX12EnumConverter::ConvertResourceState( const BitSet<Reso
 
 D3D12_BARRIER_LAYOUT DX12EnumConverter::ConvertResourceStateToBarrierLayout( const BitSet<ResourceState> &state, const QueueType &queueType )
 {
-    auto queueSpecificResult = [ = ]( D3D12_BARRIER_LAYOUT direct, D3D12_BARRIER_LAYOUT compute, D3D12_BARRIER_LAYOUT other )
+    auto queueSpecificResult = [ = ]( const D3D12_BARRIER_LAYOUT direct, const D3D12_BARRIER_LAYOUT compute, const D3D12_BARRIER_LAYOUT other )
     {
         switch ( queueType )
         {

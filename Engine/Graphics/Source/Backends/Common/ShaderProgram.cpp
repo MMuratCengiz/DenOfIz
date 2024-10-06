@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <directx/d3d12shader.h>
 #include <ranges>
 #include <unordered_set>
+#include <utility>
 
 using namespace DenOfIz;
 
@@ -34,11 +35,13 @@ using namespace DenOfIz;
     }                                                                                                                                                                              \
     while ( false )
 
-ShaderProgram::ShaderProgram( const ShaderProgramDesc &desc ) : m_desc( desc )
+ShaderProgram::ShaderProgram( ShaderProgramDesc desc ) : m_desc( std::move( desc ) )
 {
     Compile( );
 }
-
+/**
+ * \brief Compiles the shaders targeting MSL/DXIL/SPIR-V. MSL is double compiled, first time to DXIL and reflect and provide a root signature to the second compilation.
+ */
 void ShaderProgram::Compile( )
 {
     const ShaderCompiler &compiler = ShaderCompilerInstance( );
@@ -51,7 +54,7 @@ void ShaderProgram::Compile( )
 #endif
     }
 
-    for ( auto &shader : m_desc.Shaders )
+    for ( const auto &shader : m_desc.Shaders )
     {
         CompileDesc compileDesc = { };
         compileDesc.Path        = shader.Path;

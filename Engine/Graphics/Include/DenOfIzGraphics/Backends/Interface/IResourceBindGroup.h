@@ -31,13 +31,10 @@ namespace DenOfIz
         IRootSignature *RootSignature;
         uint32_t        RegisterSpace;
     };
-
-    struct RootConstantBindGroupDesc : ResourceBindGroupDesc
+    static ResourceBindGroupDesc RootConstantBindGroupDesc( IRootSignature *rootSignature )
     {
-        RootConstantBindGroupDesc( IRootSignature *rootSignature ) : ResourceBindGroupDesc{ rootSignature, RootConstantRegisterSpace }
-        {
-        }
-    };
+        return { rootSignature, 99 };
+    }
 
     template <typename T>
     struct UpdateDescItem
@@ -61,8 +58,8 @@ namespace DenOfIz
         {
             ResourceBindingSlot slot{ };
             slot.RegisterSpace = RegisterSpace;
-            slot.Binding  = binding;
-            slot.Type     = DescriptorBufferBindingType::ConstantBuffer;
+            slot.Binding       = binding;
+            slot.Type          = DescriptorBufferBindingType::ConstantBuffer;
             Buffers.push_back( { slot, resource } );
             return *this;
         }
@@ -71,8 +68,8 @@ namespace DenOfIz
         {
             ResourceBindingSlot slot{ };
             slot.RegisterSpace = RegisterSpace;
-            slot.Binding  = binding;
-            slot.Type     = DescriptorBufferBindingType::ConstantBuffer;
+            slot.Binding       = binding;
+            slot.Type          = DescriptorBufferBindingType::ConstantBuffer;
             Buffers.push_back( { slot, resource } );
             return *this;
         }
@@ -81,8 +78,8 @@ namespace DenOfIz
         {
             ResourceBindingSlot slot{ };
             slot.RegisterSpace = RegisterSpace;
-            slot.Binding  = binding;
-            slot.Type     = DescriptorBufferBindingType::ShaderResource;
+            slot.Binding       = binding;
+            slot.Type          = DescriptorBufferBindingType::ShaderResource;
             Textures.push_back( { slot, resource } );
             return *this;
         }
@@ -91,8 +88,8 @@ namespace DenOfIz
         {
             ResourceBindingSlot slot{ };
             slot.RegisterSpace = RegisterSpace;
-            slot.Binding  = binding;
-            slot.Type     = DescriptorBufferBindingType::ShaderResource;
+            slot.Binding       = binding;
+            slot.Type          = DescriptorBufferBindingType::ShaderResource;
             Buffers.push_back( { slot, resource } );
             return *this;
         }
@@ -101,8 +98,8 @@ namespace DenOfIz
         {
             ResourceBindingSlot slot{ };
             slot.RegisterSpace = RegisterSpace;
-            slot.Binding  = binding;
-            slot.Type     = DescriptorBufferBindingType::UnorderedAccess;
+            slot.Binding       = binding;
+            slot.Type          = DescriptorBufferBindingType::UnorderedAccess;
             Textures.push_back( { slot, resource } );
             return *this;
         }
@@ -136,44 +133,9 @@ namespace DenOfIz
             return m_desc.RegisterSpace;
         }
 
-        virtual ~    IResourceBindGroup( ) = default;
+        virtual ~    IResourceBindGroup( )                            = default;
         virtual void SetRootConstants( uint32_t binding, void *data ) = 0;
-        virtual void Update( const UpdateDesc &desc )
-        {
-            std::vector<ResourceBindingSlot> boundBindings;
-
-            for ( auto item : desc.Buffers )
-            {
-                BindBuffer( item.Slot, item.Resource );
-#ifndef NDEBUG
-                boundBindings.push_back( item.Slot );
-#endif
-            }
-            for ( auto item : desc.Textures )
-            {
-                BindTexture( item.Slot, item.Resource );
-#ifndef NDEBUG
-                boundBindings.push_back( item.Slot );
-#endif
-            }
-            for ( auto item : desc.Samplers )
-            {
-                BindSampler( item.Slot, item.Resource );
-#ifndef NDEBUG
-                boundBindings.push_back( item.Slot );
-#endif
-            }
-
-#ifndef NDEBUG
-            for ( const auto &binding : m_rootSignature->Bindings( ) )
-            {
-                if ( ! ContainerUtilities::Contains( boundBindings, binding ) && binding.RegisterSpace == m_desc.RegisterSpace )
-                {
-                    LOG( ERROR ) << "Binding slot defined in root signature " << binding.ToString() << " is not bound.";
-                }
-            }
-#endif
-        }
+        virtual void Update( const UpdateDesc &desc );
 
     protected:
         virtual void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) = 0;
@@ -181,4 +143,40 @@ namespace DenOfIz
         virtual void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )          = 0;
     };
 
+    inline void IResourceBindGroup::Update( const UpdateDesc &desc )
+    {
+        std::vector<ResourceBindingSlot> boundBindings;
+
+        for ( auto item : desc.Buffers )
+        {
+            BindBuffer( item.Slot, item.Resource );
+#ifndef NDEBUG
+            boundBindings.push_back( item.Slot );
+#endif
+        }
+        for ( auto item : desc.Textures )
+        {
+            BindTexture( item.Slot, item.Resource );
+#ifndef NDEBUG
+            boundBindings.push_back( item.Slot );
+#endif
+        }
+        for ( auto item : desc.Samplers )
+        {
+            BindSampler( item.Slot, item.Resource );
+#ifndef NDEBUG
+            boundBindings.push_back( item.Slot );
+#endif
+        }
+
+#ifndef NDEBUG
+        for ( const auto &binding : m_rootSignature->Bindings( ) )
+        {
+            if ( !ContainerUtilities::Contains( boundBindings, binding ) && binding.RegisterSpace == m_desc.RegisterSpace )
+            {
+                LOG( ERROR ) << "Binding slot defined in root signature " << binding.ToString( ) << " is not bound.";
+            }
+        }
+#endif
+    }
 } // namespace DenOfIz

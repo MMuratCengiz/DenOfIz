@@ -41,7 +41,7 @@ PerDrawBinding::PerDrawBinding( ILogicalDevice *device, IRootSignature *rootSign
     m_bindGroup->Update( UpdateDesc( RegisterSpace ).Cbv( 0, m_modelMatrixBuffer.get( ) ) );
 }
 
-void PerDrawBinding::Update( XMFLOAT4X4 modelMatrix )
+void PerDrawBinding::Update( const XMFLOAT4X4 &modelMatrix ) const
 {
     memcpy( m_modelMatrixMappedData, &modelMatrix, sizeof( XMFLOAT4X4 ) );
 }

@@ -71,7 +71,7 @@ namespace DenOfIz
         std::vector<MetalDescriptorOffsets> m_metalDescriptorOffsets;
 #endif
 
-        explicit ShaderProgram( const ShaderProgramDesc &desc );
+        explicit ShaderProgram( ShaderProgramDesc desc );
 
     public:
         [[nodiscard]] std::vector<CompiledShader *> GetCompiledShaders( ) const;

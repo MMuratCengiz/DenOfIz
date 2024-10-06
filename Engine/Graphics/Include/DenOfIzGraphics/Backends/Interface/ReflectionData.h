@@ -93,11 +93,22 @@ namespace DenOfIz
         ReflectionBindingType                Type;
         std::vector<ReflectionResourceField> Fields;
         size_t                               NumBytes = 0;
-        // Index into the descriptor table
+        /**
+         * Metal specific information to simulate register spaces. We use a top level argument buffers:
+         * DescriptorTableIndex: The index of the descriptor table in the argument buffer.
+         * DescriptorOffset: The offset of the descriptor within the descriptor table.
+         */
         uint32_t DescriptorTableIndex = 0;
-        // Also for metal, this keeps track of the offset of the descriptor table bound in the top level argument buffer, textures and samplers need to be bound on separate tables
-        uint32_t DescriptorOffset = 0;
+        uint32_t DescriptorOffset     = 0;
     };
 
+    /**
+     * These custom register spaces give hints to the binding model.
+     * - RootConstantRegisterSpace: This register space is reserved for root constants/push constant.
+     * - OptimizedRegisterSpace:
+     *      - For (D3D12/Metal) this will use direct buffers/root buffers instead of descriptor tables.
+     *      - For (Vulkan) this doesn't have any effect.
+     */
     static constexpr uint32_t RootConstantRegisterSpace = 99;
+    static constexpr uint32_t OptimizedRegisterSpace    = 2;
 } // namespace DenOfIz

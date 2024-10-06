@@ -37,7 +37,7 @@ namespace DenOfIz
     public:
         PerDrawBinding( ILogicalDevice *device, IRootSignature *rootSignature );
         ~PerDrawBinding( );
-        void                              Update( XMFLOAT4X4 modelMatrix );
+        void                              Update( const XMFLOAT4X4 &modelMatrix ) const;
         [[nodiscard]] IResourceBindGroup *BindGroup( ) const;
     };
 } // namespace DenOfIz

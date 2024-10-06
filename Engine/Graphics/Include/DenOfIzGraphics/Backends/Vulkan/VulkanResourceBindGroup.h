@@ -58,9 +58,9 @@ namespace DenOfIz
             return m_rootConstants;
         }
 
-        bool HasDescriptorSet( ) const
+        [[nodiscard]] bool HasDescriptorSet( ) const
         {
-            return m_descriptorSet != VK_NULL_HANDLE;
+            return m_descriptorSet != nullptr;
         }
 
         [[nodiscard]] const VkDescriptorSet &GetDescriptorSet( ) const

@@ -33,6 +33,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
+    struct QueueSpecificAction
+    {
+        std::function<void( )> Graphics;
+        std::function<void( )> Compute;
+        std::function<void( )> Copy;
+        void                   Run( const QueueType &queueType ) const;
+    };
+
     class DX12CommandList final : public ICommandList
     {
         CommandListDesc m_desc;
@@ -49,8 +57,8 @@ namespace DenOfIz
         std::vector<ID3D12DescriptorHeap *> m_heaps = { m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetHeap( ), m_context->ShaderVisibleSamplerDescriptorHeap->GetHeap( ) };
 
     public:
-        DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> commandAllocator, const wil::com_ptr<ID3D12GraphicsCommandList> &m_commandList,
-                         CommandListDesc desc );
+         DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> commandAllocator, const wil::com_ptr<ID3D12GraphicsCommandList> &m_commandList,
+                          CommandListDesc desc );
         ~DX12CommandList( ) override = default;
 
         void Begin( ) override;
@@ -77,8 +85,8 @@ namespace DenOfIz
         void CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
         void EnhancedPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
         void SetRootSignature( ID3D12RootSignature *rootSignature );
+        void BindRootDescriptors( const DX12RootDescriptor &rootDescriptor ) const;
         void SetRootConstants( const DX12RootConstant &rootConstant ) const;
-        void BindResourceGroup( uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle ) const;
+        void BindResourceGroup( uint32_t index, const D3D12_GPU_DESCRIPTOR_HANDLE& gpuDescriptorHandle ) const;
     };
-
 } // namespace DenOfIz

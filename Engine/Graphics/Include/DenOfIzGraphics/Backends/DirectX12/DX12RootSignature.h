@@ -27,9 +27,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
+    struct RootLevelDescriptorRange
+    {
+        CD3DX12_DESCRIPTOR_RANGE Range;
+        D3D12_SHADER_VISIBILITY  Visibility;
+    };
+
     struct RegisterSpaceRangesDesc
     {
         int                                   Space;
+        std::vector<RootLevelDescriptorRange> RootLevelRanges;
         std::vector<CD3DX12_DESCRIPTOR_RANGE> CbvSrvUavRanges;
         std::vector<CD3DX12_DESCRIPTOR_RANGE> SamplerRanges;
     };
@@ -39,6 +46,7 @@ namespace DenOfIz
         struct RegisterSpaceOrder
         {
             uint32_t                               Space{ };
+            uint32_t                               RootLevelBufferCount{ };
             uint32_t                               ResourceCount{ };
             uint32_t                               SamplerCount{ };
             std::unordered_map<uint32_t, uint32_t> ResourceOffsetMap;
@@ -59,49 +67,25 @@ namespace DenOfIz
         uint32_t                                    m_usedStages = 0;
         std::vector<uint32_t>                       m_registerSpaceOffsets;
 
+        D3D12_SHADER_VISIBILITY m_cbvSrvUavVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        D3D12_SHADER_VISIBILITY m_samplerVisibility   = D3D12_SHADER_VISIBILITY_ALL;
+
     public:
         DX12RootSignature( DX12Context *context, const RootSignatureDesc &desc );
-
-        [[nodiscard]] uint32_t GetResourceOffset( const uint32_t registerSpace, const ResourceBindingSlot &slot ) const
-        {
-            if ( registerSpace >= m_registerSpaceOrder.size( ) )
-            {
-                LOG( ERROR ) << "Register space " << registerSpace << " is not bound to any bind group.";
-            }
-            return ContainerUtilities::SafeGetMapValue( m_registerSpaceOrder[ registerSpace ].ResourceOffsetMap, slot.Key( ),
-                                                        "Binding slot does not exist in root signature: " + slot.ToString( ) );
-        }
-
-        [[nodiscard]] uint32_t RegisterSpaceOffset( const uint32_t registerSpace ) const
-        {
-            if ( registerSpace >= m_registerSpaceOffsets.size( ) )
-            {
-                LOG( ERROR ) << "Register space " << registerSpace << " is not bound to any bind group.";
-            }
-
-            return m_registerSpaceOffsets[ registerSpace ];
-        }
-
-        [[nodiscard]] ID3D12RootSignature *Instance( ) const
-        {
-            return m_rootSignature.get( );
-        }
-
-        [[nodiscard]] const std::vector<CD3DX12_ROOT_PARAMETER> &RootParameters( ) const
-        {
-            return m_rootParameters;
-        }
-
-        [[nodiscard]] const std::vector<CD3DX12_ROOT_PARAMETER> &RootConstants( ) const
-        {
-            return m_rootConstants;
-        }
-
+        // Properties: --
+        [[nodiscard]] uint32_t                                   GetResourceOffset( const ResourceBindingSlot &slot ) const;
+        [[nodiscard]] uint32_t                                   RegisterSpaceOffset( uint32_t registerSpace ) const;
+        [[nodiscard]] ID3D12RootSignature                       *Instance( ) const;
+        [[nodiscard]] const std::vector<CD3DX12_ROOT_PARAMETER> &RootParameters( ) const;
+        [[nodiscard]] const std::vector<CD3DX12_ROOT_PARAMETER> &RootConstants( ) const;
+        // --
         ~DX12RootSignature( ) override;
 
     private:
+        void                                     AddRootParameter( const RegisterSpaceRangesDesc &range );
         void                                     AddStaticSampler( const StaticSamplerDesc &desc );
         void                                     AddResourceBinding( const ResourceBindingDesc &binding );
+        void                                     AddRootBinding( const ResourceBindingDesc &binding );
         void                                     AddRootConstant( const RootConstantResourceBindingDesc &rootConstant );
         [[nodiscard]] D3D12_ROOT_SIGNATURE_FLAGS ComputeShaderVisibility( ) const;
     };

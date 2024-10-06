@@ -17,6 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzExamples/Main.h>
-#include <DenOfIzExamples/PushConstantExample.h>
+#include <DenOfIzExamples/RootConstantExample.h>
 
-DZ_EXAMPLE_MAIN(DenOfIz::PushConstantExample)
+DZ_EXAMPLE_MAIN(DenOfIz::RootConstantExample)

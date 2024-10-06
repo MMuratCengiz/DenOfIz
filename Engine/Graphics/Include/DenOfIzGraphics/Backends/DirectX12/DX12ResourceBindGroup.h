@@ -29,57 +29,42 @@ namespace DenOfIz
 {
     struct DX12RootConstant
     {
-        const uint32_t RegisterSpace = 99;
-        uint32_t       Binding;
-        void          *Data;
-        uint32_t       NumBytes;
+        const uint32_t RegisterSpace = RootConstantRegisterSpace;
+        uint32_t       Binding{ };
+        void          *Data{ };
+        uint32_t       NumBytes{ };
+    };
+
+    struct DX12RootDescriptor
+    {
+        uint32_t                  RootParameterIndex;
+        D3D12_ROOT_PARAMETER_TYPE ParameterType;
+        D3D12_GPU_VIRTUAL_ADDRESS GpuAddress;
     };
 
     // For DirectX12 this is kind of a dummy class as resources are bound to heaps. At a given point we only use 2 heaps one for CBV/SRV/UAV and one for Sampler.
     class DX12ResourceBindGroup final : public IResourceBindGroup
     {
-    private:
-        DX12Context                  *m_context;
-        uint32_t                      m_samplerCount   = 0;
-        uint32_t                      m_cbvSrvUavCount = 0;
-        DescriptorHandle              m_cbvSrvUavHandle;
-        DescriptorHandle              m_samplerHandle;
-        DX12RootSignature            *m_dx12RootSignature;
-        std::vector<DX12RootConstant> m_rootConstants;
+        DX12Context                    *m_context;
+        uint32_t                        m_samplerCount   = 0;
+        uint32_t                        m_cbvSrvUavCount = 0;
+        DescriptorHandle                m_cbvSrvUavHandle;
+        DescriptorHandle                m_samplerHandle;
+        DX12RootSignature              *m_dx12RootSignature;
+        std::vector<DX12RootConstant>   m_rootConstants;
+        std::vector<DX12RootDescriptor> m_rootDescriptors;
 
     public:
         DX12ResourceBindGroup( DX12Context *context, const ResourceBindGroupDesc &desc );
-
-        [[nodiscard]] DescriptorHandle GetCbvSrvUavHandle( ) const
-        {
-            return m_cbvSrvUavHandle;
-        }
-
-        [[nodiscard]] DescriptorHandle GetSamplerHandle( ) const
-        {
-            return m_samplerHandle;
-        }
-
-        [[nodiscard]] uint32_t GetCbvSrvUavCount( ) const
-        {
-            return m_cbvSrvUavCount;
-        }
-
-        [[nodiscard]] uint32_t GetSamplerCount( ) const
-        {
-            return m_samplerCount;
-        }
-
-        [[nodiscard]] DX12RootSignature *RootSignature( ) const
-        {
-            return m_dx12RootSignature;
-        }
-
-        [[nodiscard]] const std::vector<DX12RootConstant> &RootConstants( ) const
-        {
-            return m_rootConstants;
-        }
-
+        // Properties: --
+        [[nodiscard]] DescriptorHandle                       CbvSrvUavHandle( ) const;
+        [[nodiscard]] DescriptorHandle                       SamplerHandle( ) const;
+        [[nodiscard]] uint32_t                               CbvSrvUavCount( ) const;
+        [[nodiscard]] uint32_t                               SamplerCount( ) const;
+        [[nodiscard]] DX12RootSignature                     *RootSignature( ) const;
+        [[nodiscard]] const std::vector<DX12RootDescriptor> &RootDescriptors( ) const;
+        [[nodiscard]] const std::vector<DX12RootConstant>   &RootConstants( ) const;
+        // --
         void SetRootConstants( uint32_t binding, void *data ) override;
         void Update( const UpdateDesc &desc ) override;
 
@@ -89,6 +74,7 @@ namespace DenOfIz
         void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler ) override;
 
     private:
+        bool                                      UpdateRootDescriptor( const ResourceBindingSlot &slot, const D3D12_GPU_VIRTUAL_ADDRESS &gpuAddress );
         [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleCbvSrvUav( uint32_t binding ) const;
         [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleSampler( uint32_t binding ) const;
     };

@@ -21,6 +21,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
+void QueueSpecificAction::Run( const QueueType &queueType ) const
+{
+    switch ( queueType )
+    {
+    case QueueType::Graphics:
+        Graphics( );
+        break;
+    case QueueType::Compute:
+        Compute( );
+        break;
+    case QueueType::Copy:
+        Copy( );
+        break;
+    }
+}
+
 DX12CommandList::DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> commandAllocator, const wil::com_ptr<ID3D12GraphicsCommandList> &commandList,
                                   const CommandListDesc desc ) : m_desc( desc ), m_context( context ), m_commandAllocator( std::move( commandAllocator ) )
 {
@@ -67,7 +83,6 @@ void DX12CommandList::BeginRendering( const RenderingDesc &renderingDesc )
         m_commandList->ClearRenderTargetView( renderTargets[ i ], renderingDesc.RTAttachments[ i ].ClearColor.data( ), 0, nullptr );
     }
 
-    D3D12_RENDER_PASS_DEPTH_STENCIL_DESC depthStencilDesc = { };
     m_commandList->OMSetRenderTargets( renderTargets.size( ), renderTargets.data( ), FALSE, nullptr );
 }
 
@@ -182,23 +197,28 @@ void DX12CommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     SetRootSignature( dx12BindGroup->RootSignature( )->Instance( ) );
 
     uint32_t index = 0;
-    if ( dx12BindGroup->GetCbvSrvUavCount( ) > 0 )
+    if ( dx12BindGroup->CbvSrvUavCount( ) > 0 )
     {
-        BindResourceGroup( dx12BindGroup->RootSignature( )->RegisterSpaceOffset( bindGroup->RegisterSpace( ) ) + index++, dx12BindGroup->GetCbvSrvUavHandle( ).Gpu );
+        BindResourceGroup( dx12BindGroup->RootSignature( )->RegisterSpaceOffset( bindGroup->RegisterSpace( ) ) + index++, dx12BindGroup->CbvSrvUavHandle( ).Gpu );
     }
 
-    if ( dx12BindGroup->GetSamplerCount( ) > 0 )
+    if ( dx12BindGroup->SamplerCount( ) > 0 )
     {
-        BindResourceGroup( dx12BindGroup->RootSignature( )->RegisterSpaceOffset( bindGroup->RegisterSpace( ) ) + index, dx12BindGroup->GetSamplerHandle( ).Gpu );
+        BindResourceGroup( dx12BindGroup->RootSignature( )->RegisterSpaceOffset( bindGroup->RegisterSpace( ) ) + index, dx12BindGroup->SamplerHandle( ).Gpu );
     }
 
     for ( const auto &rootConstant : dx12BindGroup->RootConstants( ) )
     {
         SetRootConstants( rootConstant );
     }
+
+    for ( const auto &rootDescriptor : dx12BindGroup->RootDescriptors( ) )
+    {
+        BindRootDescriptors( rootDescriptor );
+    }
 }
 
-void DX12CommandList::BindResourceGroup( const uint32_t index, const D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle ) const
+void DX12CommandList::BindResourceGroup( const uint32_t index, const D3D12_GPU_DESCRIPTOR_HANDLE &gpuHandle ) const
 {
     switch ( this->m_desc.QueueType )
     {
@@ -214,6 +234,46 @@ void DX12CommandList::BindResourceGroup( const uint32_t index, const D3D12_GPU_D
         break;
     default:
         LOG( ERROR ) << "`BindResourceGroup` is an invalid function for queue type";
+        break;
+    }
+}
+
+void DX12CommandList::BindRootDescriptors( const DX12RootDescriptor &rootDescriptor ) const
+{
+    switch ( rootDescriptor.ParameterType )
+    {
+    case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE:
+    case D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS:
+        break;
+    case D3D12_ROOT_PARAMETER_TYPE_CBV:
+        if ( m_desc.QueueType == QueueType::Graphics )
+        {
+            m_commandList->SetGraphicsRootConstantBufferView( rootDescriptor.RootParameterIndex, rootDescriptor.GpuAddress );
+        }
+        else
+        {
+            m_commandList->SetComputeRootConstantBufferView( rootDescriptor.RootParameterIndex, rootDescriptor.GpuAddress );
+        }
+        break;
+    case D3D12_ROOT_PARAMETER_TYPE_SRV:
+        if ( m_desc.QueueType == QueueType::Graphics )
+        {
+            m_commandList->SetGraphicsRootShaderResourceView( rootDescriptor.RootParameterIndex, rootDescriptor.GpuAddress );
+        }
+        else
+        {
+            m_commandList->SetComputeRootShaderResourceView( rootDescriptor.RootParameterIndex, rootDescriptor.GpuAddress );
+        }
+        break;
+    case D3D12_ROOT_PARAMETER_TYPE_UAV:
+        if ( m_desc.QueueType == QueueType::Graphics )
+        {
+            m_commandList->SetGraphicsRootUnorderedAccessView( rootDescriptor.RootParameterIndex, rootDescriptor.GpuAddress );
+        }
+        else
+        {
+            m_commandList->SetComputeRootUnorderedAccessView( rootDescriptor.RootParameterIndex, rootDescriptor.GpuAddress );
+        }
         break;
     }
 }

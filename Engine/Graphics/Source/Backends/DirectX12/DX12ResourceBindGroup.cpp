@@ -26,13 +26,15 @@ DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const Resour
     DZ_NOT_NULL( rootSignature );
     m_dx12RootSignature = rootSignature;
 
-    uint16_t numCbvSrvUav = 0;
-    uint16_t numSamplers  = 0;
+    uint16_t numCbvSrvUav       = 0;
+    uint16_t numSamplers        = 0;
+    uint32_t rootParameterIndex = 0;
 
     for ( const auto &rootParameter : m_dx12RootSignature->RootParameters( ) )
     {
-        if ( rootParameter.ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE )
+        switch ( rootParameter.ParameterType )
         {
+        case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE:
             for ( auto i = 0u; i < rootParameter.DescriptorTable.NumDescriptorRanges; i++ )
             {
                 const auto &range = rootParameter.DescriptorTable.pDescriptorRanges[ i ];
@@ -49,8 +51,19 @@ DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const Resour
                     numCbvSrvUav += range.NumDescriptors;
                 }
             }
+            break;
+        case D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS:
+            break;
+        case D3D12_ROOT_PARAMETER_TYPE_CBV:
+        case D3D12_ROOT_PARAMETER_TYPE_SRV:
+        case D3D12_ROOT_PARAMETER_TYPE_UAV:
+            ContainerUtilities::EnsureSize( m_rootDescriptors, rootParameter.Descriptor.ShaderRegister );
+            m_rootDescriptors[ rootParameter.Descriptor.ShaderRegister ] = { rootParameterIndex, rootParameter.ParameterType, 0 };
+            break;
         }
+        ++rootParameterIndex;
     }
+
     if ( numCbvSrvUav > 0 )
     {
         m_cbvSrvUavHandle = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetNextHandle( numCbvSrvUav );
@@ -61,10 +74,10 @@ DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const Resour
     }
 }
 
-void DX12ResourceBindGroup::SetRootConstants( uint32_t binding, void *data )
+void DX12ResourceBindGroup::SetRootConstants( const uint32_t binding, void *data )
 {
     DZ_NOT_NULL( data );
-    ContainerUtilities::EnsureSize( m_rootConstants, binding + 1 );
+    ContainerUtilities::EnsureSize( m_rootConstants, binding );
 
     DX12RootConstant &rootConstant = m_rootConstants[ binding ];
     rootConstant.Data              = data;
@@ -82,7 +95,7 @@ void DX12ResourceBindGroup::Update( const UpdateDesc &desc )
 void DX12ResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource )
 {
     DZ_NOT_NULL( resource );
-    const uint32_t offset = m_dx12RootSignature->GetResourceOffset( m_desc.RegisterSpace, slot );
+    const uint32_t offset = m_dx12RootSignature->GetResourceOffset( slot );
     reinterpret_cast<DX12TextureResource *>( resource )->CreateView( CpuHandleCbvSrvUav( offset ) );
     m_cbvSrvUavCount++;
 }
@@ -90,7 +103,9 @@ void DX12ResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextu
 void DX12ResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )
 {
     DZ_NOT_NULL( resource );
-    const uint32_t offset = m_dx12RootSignature->GetResourceOffset( m_desc.RegisterSpace, slot );
+    DZ_RETURN_IF( UpdateRootDescriptor( slot, dynamic_cast<DX12BufferResource *>( resource )->GetResource( )->GetGPUVirtualAddress( ) ) );
+
+    const uint32_t offset = m_dx12RootSignature->GetResourceOffset( slot );
     reinterpret_cast<DX12BufferResource *>( resource )->CreateView( CpuHandleCbvSrvUav( offset ) );
     m_cbvSrvUavCount++;
 }
@@ -98,9 +113,25 @@ void DX12ResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBuffer
 void DX12ResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )
 {
     DZ_NOT_NULL( sampler );
-    const uint32_t offset = m_dx12RootSignature->GetResourceOffset( m_desc.RegisterSpace, slot );
+    const uint32_t offset = m_dx12RootSignature->GetResourceOffset( slot );
     reinterpret_cast<DX12Sampler *>( sampler )->CreateView( CpuHandleSampler( offset ) );
     m_samplerCount++;
+}
+
+bool DX12ResourceBindGroup::UpdateRootDescriptor( const ResourceBindingSlot &slot, const D3D12_GPU_VIRTUAL_ADDRESS &gpuAddress )
+{
+    if ( slot.RegisterSpace == OptimizedRegisterSpace )
+    {
+        if ( slot.Binding >= m_rootDescriptors.size( ) )
+        {
+            LOG( ERROR ) << "Root descriptor binding [" << slot.Binding << "] is out of range.";
+        }
+
+        m_rootDescriptors[ slot.Binding ].GpuAddress = gpuAddress;
+        return true;
+    }
+
+    return false;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DX12ResourceBindGroup::CpuHandleCbvSrvUav( const uint32_t binding ) const
@@ -111,4 +142,38 @@ D3D12_CPU_DESCRIPTOR_HANDLE DX12ResourceBindGroup::CpuHandleCbvSrvUav( const uin
 D3D12_CPU_DESCRIPTOR_HANDLE DX12ResourceBindGroup::CpuHandleSampler( const uint32_t binding ) const
 {
     return CD3DX12_CPU_DESCRIPTOR_HANDLE( m_samplerHandle.Cpu, binding, m_context->ShaderVisibleSamplerDescriptorHeap->GetDescriptorSize( ) );
+}
+DescriptorHandle DX12ResourceBindGroup::CbvSrvUavHandle( ) const
+{
+    return m_cbvSrvUavHandle;
+}
+
+DescriptorHandle DX12ResourceBindGroup::SamplerHandle( ) const
+{
+    return m_samplerHandle;
+}
+
+uint32_t DX12ResourceBindGroup::CbvSrvUavCount( ) const
+{
+    return m_cbvSrvUavCount;
+}
+
+uint32_t DX12ResourceBindGroup::SamplerCount( ) const
+{
+    return m_samplerCount;
+}
+
+DX12RootSignature *DX12ResourceBindGroup::RootSignature( ) const
+{
+    return m_dx12RootSignature;
+}
+
+const std::vector<DX12RootDescriptor> &DX12ResourceBindGroup::RootDescriptors( ) const
+{
+    return m_rootDescriptors;
+}
+
+const std::vector<DX12RootConstant> &DX12ResourceBindGroup::RootConstants( ) const
+{
+    return m_rootConstants;
 }
