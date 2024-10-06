@@ -26,7 +26,7 @@ VulkanResourceBindGroup::VulkanResourceBindGroup( VulkanContext *context, const 
 {
     m_rootSignature = dynamic_cast<VulkanRootSignature *>( m_desc.RootSignature );
 
-    if ( m_desc.RegisterSpace != RootConstantRegisterSpace )
+    if ( m_desc.RegisterSpace != DZConfiguration::Instance().RootConstantRegisterSpace )
     {
         const auto &layout = m_rootSignature->DescriptorSetLayout( m_desc.RegisterSpace );
 

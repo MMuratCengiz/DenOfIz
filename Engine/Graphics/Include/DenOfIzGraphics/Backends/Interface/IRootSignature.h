@@ -99,7 +99,7 @@ namespace DenOfIz
     {
         std::string              Name;
         uint32_t                 Binding{ };
-        const uint32_t           RegisterSpace = RootConstantRegisterSpace;
+        const uint32_t           RegisterSpace = DZConfiguration::Instance( ).RootConstantRegisterSpace;
         int                      NumBytes{ };
         std::vector<ShaderStage> Stages;
     };

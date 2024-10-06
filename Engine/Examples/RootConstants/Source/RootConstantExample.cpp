@@ -60,7 +60,7 @@ void RootConstantExample::Init( )
 
 void RootConstantExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    defaultApiPreference.Windows = APIPreferenceWindows::DirectX12;
 }
 
 void RootConstantExample::Update( )

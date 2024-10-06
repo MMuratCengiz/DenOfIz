@@ -33,6 +33,9 @@ namespace DenOfIz
         D3D12_SHADER_VISIBILITY  Visibility;
     };
 
+    /*
+     * Given a register space, this structure holds the root level descriptor ranges, cbv/srv/uav ranges and sampler ranges.
+     */
     struct RegisterSpaceRangesDesc
     {
         int                                   Space;
@@ -82,10 +85,9 @@ namespace DenOfIz
         ~DX12RootSignature( ) override;
 
     private:
-        void                                     AddRootParameter( const RegisterSpaceRangesDesc &range );
+        void                                     ProcessRegisterSpaceRange( const RegisterSpaceRangesDesc &range );
         void                                     AddStaticSampler( const StaticSamplerDesc &desc );
         void                                     AddResourceBinding( const ResourceBindingDesc &binding );
-        void                                     AddRootBinding( const ResourceBindingDesc &binding );
         void                                     AddRootConstant( const RootConstantResourceBindingDesc &rootConstant );
         [[nodiscard]] D3D12_ROOT_SIGNATURE_FLAGS ComputeShaderVisibility( ) const;
     };

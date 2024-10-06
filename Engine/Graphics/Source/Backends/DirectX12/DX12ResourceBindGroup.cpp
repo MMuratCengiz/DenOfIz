@@ -120,7 +120,7 @@ void DX12ResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISampl
 
 bool DX12ResourceBindGroup::UpdateRootDescriptor( const ResourceBindingSlot &slot, const D3D12_GPU_VIRTUAL_ADDRESS &gpuAddress )
 {
-    if ( slot.RegisterSpace == OptimizedRegisterSpace )
+    if ( slot.RegisterSpace == DZConfiguration::Instance().RootLevelBufferRegisterSpace )
     {
         if ( slot.Binding >= m_rootDescriptors.size( ) )
         {

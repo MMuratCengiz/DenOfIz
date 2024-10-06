@@ -610,5 +610,27 @@ namespace DenOfIz
         DeviceConstants            Constants;
     };
 
+    struct DZConfiguration
+    {
+        /**
+         *  Specify the register space where all bindings are stored as root level buffer.
+         *  for best performance results only include buffers and not textures. As Textures and Samplers usually are bound on a descriptor table.
+         *  - For (D3D12/Metal) this will use direct buffers/root buffers instead of descriptor tables.
+         *  - For (Vulkan) this doesn't have any effect.
+         */
+        uint32_t RootLevelBufferRegisterSpace = 98;
+        /**
+         * Specify the register space where all bindings are stored as root constants(in DirectX12) or push constants(in Vulkan). In Metal these behave the same as root level
+         * buffers.
+         */
+        uint32_t RootConstantRegisterSpace = 99;
+
+        static DZConfiguration Instance( )
+        {
+            static DZConfiguration instance;
+            return instance;
+        }
+    };
+
     typedef unsigned char Byte;
 } // namespace DenOfIz

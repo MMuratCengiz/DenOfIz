@@ -29,7 +29,6 @@ namespace DenOfIz
 {
     struct DX12RootConstant
     {
-        const uint32_t RegisterSpace = RootConstantRegisterSpace;
         uint32_t       Binding{ };
         void          *Data{ };
         uint32_t       NumBytes{ };

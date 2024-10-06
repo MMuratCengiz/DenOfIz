@@ -415,9 +415,10 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
             D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
             DXC_CHECK_RESULT( shaderReflection->GetResourceBindingDesc( i, &shaderInputBindDesc ) );
             DescriptorBufferBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
-            if ( bindingType != DescriptorBufferBindingType::ConstantBuffer && shaderInputBindDesc.Space == RootConstantRegisterSpace )
+            if ( bindingType != DescriptorBufferBindingType::ConstantBuffer && shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootConstantRegisterSpace )
             {
-                LOG( FATAL ) << "RegisterSpace [" << RootConstantRegisterSpace << "] is reserved for root constants. Which can only be used with constant buffers.";
+                LOG( FATAL ) << "RegisterSpace [" << DZConfiguration::Instance( ).RootConstantRegisterSpace
+                             << "] is reserved for root constants. Which can only be used with constant buffers.";
             }
 
             bool found = false;
@@ -434,7 +435,7 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
                 continue;
             }
 
-            if ( shaderInputBindDesc.Space == RootConstantRegisterSpace )
+            if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootConstantRegisterSpace )
             {
                 RootConstantResourceBindingDesc &rootConstantBinding = rootSignature.RootConstants.emplace_back( );
                 rootConstantBinding.Name                             = shaderInputBindDesc.Name;

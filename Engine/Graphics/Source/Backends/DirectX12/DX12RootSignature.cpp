@@ -59,13 +59,8 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
 
     for ( const auto &range : m_registerSpaceRanges )
     {
-        if ( range.RootLevelRanges.empty( ) && range.CbvSrvUavRanges.empty( ) && range.SamplerRanges.empty( ) )
-        {
-            LOG( WARNING ) << "Register space " << range.Space << " has no bindings, this is likely a developer error.";
-        }
-
-        ContainerUtilities::SafeAt( m_registerSpaceOffsets, range.Space ) = m_rootParameters.size( );
-        AddRootParameter( range );
+        ContainerUtilities::SafeSet( m_registerSpaceOffsets, range.Space, static_cast<uint32_t>( m_rootParameters.size( ) ) );
+        ProcessRegisterSpaceRange( range );
     }
 
     D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc( static_cast<uint32_t>( m_rootParameters.size( ) ), m_rootParameters.data( ) );
@@ -88,8 +83,19 @@ uint32_t DX12RootSignature::GetResourceOffset( const ResourceBindingSlot &slot )
                                                 "Binding slot does not exist in root signature: " + slot.ToString( ) );
 }
 
-void DX12RootSignature::AddRootParameter( const RegisterSpaceRangesDesc &range )
+void DX12RootSignature::ProcessRegisterSpaceRange( const RegisterSpaceRangesDesc &range )
 {
+    if ( !range.CbvSrvUavRanges.empty( ) )
+    {
+        CD3DX12_ROOT_PARAMETER &rootParameter = m_rootParameters.emplace_back( );
+        rootParameter.InitAsDescriptorTable( static_cast<uint32_t>( range.CbvSrvUavRanges.size( ) ), range.CbvSrvUavRanges.data( ), m_cbvSrvUavVisibility );
+    }
+    if ( !range.SamplerRanges.empty( ) )
+    {
+        CD3DX12_ROOT_PARAMETER &samplerRootParameter = m_rootParameters.emplace_back( );
+        samplerRootParameter.InitAsDescriptorTable( static_cast<uint32_t>( range.SamplerRanges.size( ) ), range.SamplerRanges.data( ), m_samplerVisibility );
+    }
+
     for ( const auto &rootRange : range.RootLevelRanges )
     {
         CD3DX12_ROOT_PARAMETER &rootParameter = m_rootParameters.emplace_back( );
@@ -107,16 +113,6 @@ void DX12RootSignature::AddRootParameter( const RegisterSpaceRangesDesc &range )
         case D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER:
             break;
         }
-    }
-    if ( !range.CbvSrvUavRanges.empty( ) )
-    {
-        CD3DX12_ROOT_PARAMETER &rootParameter = m_rootParameters.emplace_back( );
-        rootParameter.InitAsDescriptorTable( static_cast<uint32_t>( range.CbvSrvUavRanges.size( ) ), range.CbvSrvUavRanges.data( ), m_cbvSrvUavVisibility );
-    }
-    if ( !range.SamplerRanges.empty( ) )
-    {
-        CD3DX12_ROOT_PARAMETER &samplerRootParameter = m_rootParameters.emplace_back( );
-        samplerRootParameter.InitAsDescriptorTable( static_cast<uint32_t>( range.SamplerRanges.size( ) ), range.SamplerRanges.data( ), m_samplerVisibility );
     }
 }
 
@@ -210,7 +206,8 @@ void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
     /**
      * OptimizedRegisterSpace means Root level descriptor binding.
      */
-    else if ( spaceDesc.Space == OptimizedRegisterSpace && binding.Descriptor.IsSet( ResourceDescriptor::Buffer ) )
+    else if ( spaceDesc.Space == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace && binding.Reflection.Type == ReflectionBindingType::Struct ||
+              binding.Reflection.Type == ReflectionBindingType::Pointer )
     {
         RootLevelDescriptorRange &rootLevelRange = spaceDesc.RootLevelRanges.emplace_back( );
         rootLevelRange.Range                     = descriptorRange;
