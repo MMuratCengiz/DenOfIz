@@ -44,43 +44,62 @@ MetalArgumentBuffer::MetalArgumentBuffer( MetalContext *context, size_t capacity
         LOG( ERROR ) << "Failed to allocate Metal argument buffer";
     }
     [m_buffer setLabel:@"MetalArgumentBuffer"];
-    m_contents = (uint64_t *)m_buffer.contents;
+    m_contents = (Byte *)m_buffer.contents;
 }
 
-std::pair<uint64_t *, uint64_t> MetalArgumentBuffer::Reserve( size_t numAddresses )
+std::pair<Byte *, uint64_t> MetalArgumentBuffer::Reserve( size_t numAddresses, uint32_t numRootConstantBytes )
 {
-    auto size = Utilities::Align( sizeof( uint64_t ) * numAddresses, 8 );
-    if ( m_nextOffset + size > m_capacity )
+    m_numRootConstantBytes = numRootConstantBytes;
+    auto numBytes          = Utilities::Align( sizeof( uint64_t ) * numAddresses + numRootConstantBytes, 8 );
+    if ( m_nextOffset + numBytes > m_capacity )
     {
         LOG( ERROR ) << "MetalArgumentBuffer::Allocate: out of memory";
-        return std::pair<uint64_t *, uint64_t>( nullptr, 0 );
+        return std::pair<Byte *, uint64_t>( nullptr, 0 );
     }
 
     m_currentOffset = m_nextOffset;
-    uint64_t *ptr   = m_contents + ( m_nextOffset / sizeof( uint64_t ) );
-    m_nextOffset += size;
-    return std::pair<uint64_t *, uint64_t>( ptr, m_currentOffset );
+    Byte *ptr       = m_contents + m_nextOffset;
+    m_nextOffset += numBytes;
+    return std::pair<Byte *, uint64_t>( ptr, m_currentOffset );
 }
 
-std::pair<uint64_t *, uint64_t> MetalArgumentBuffer::Duplicate( size_t numAddresses )
+std::pair<Byte *, uint64_t> MetalArgumentBuffer::Duplicate( size_t numAddresses, uint32_t numRootConstantBytes )
 {
-    uint64_t *prevPtr = &m_contents[ m_currentOffset / sizeof( uint64_t ) ];
-    auto      result  = Reserve( numAddresses );
-    std::memcpy( result.first, prevPtr, numAddresses * sizeof( uint64_t ) );
+    Byte *prevPtr = &m_contents[ m_currentOffset ];
+    auto  result  = Reserve( numAddresses, numRootConstantBytes );
+    std::memcpy( result.first, prevPtr, numRootConstantBytes + numAddresses * sizeof( uint64_t ) );
     return result;
+}
+
+void MetalArgumentBuffer::EncodeRootConstant( const Byte *data ) const
+{
+    if ( m_numRootConstantBytes == 0 )
+    {
+        LOG( ERROR ) << "MetalArgumentBuffer::EncodeRootConstant: No bytes reserved for root constants";
+        return;
+    }
+
+    if ( m_numRootConstantBytes > m_capacity )
+    {
+        LOG( ERROR ) << "MetalArgumentBuffer::EncodeRootConstant: Index or offset out of bounds";
+        return;
+    }
+
+    std::memcpy( &m_contents[ 0 ], data, m_numRootConstantBytes );
 }
 
 void MetalArgumentBuffer::EncodeAddress( uint64_t offset, uint32_t index, uint64_t address ) const
 {
-    uint64_t abOffset = offset / sizeof( uint64_t );
+    uint64_t addressLocation = offset + m_numRootConstantBytes + ( index * sizeof( uint64_t ) );
+    uint64_t abOffset        = offset / sizeof( uint64_t );
 
-    if ( ( offset + ( index * sizeof( uint64_t ) ) ) > m_capacity )
+    if ( addressLocation > m_capacity )
     {
         LOG( ERROR ) << "MetalArgumentBuffer::EncodeAddress: Index or offset out of bounds";
         return;
     }
 
-    m_contents[ abOffset + index ] = address;
+    std::memcpy( &m_contents[ addressLocation ], &address, sizeof( uint64_t ) );
 }
 
 void MetalArgumentBuffer::Reset( )

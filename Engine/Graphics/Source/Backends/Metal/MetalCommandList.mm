@@ -233,13 +233,7 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     const auto &rootConstant = metalBindGroup->RootConstant( );
     if ( !rootConstant.empty( ) )
     {
-        // TODO
-        if ( m_desc.QueueType == QueueType::Compute )
-        {
-        }
-        else
-        {
-        }
+        m_argumentBuffer->EncodeRootConstant( rootConstant.data( ) );
     }
 
     for ( const auto &rootParameter : metalBindGroup->RootParameters( ) )
@@ -410,7 +404,7 @@ void MetalCommandList::BindTopLevelArgumentBuffer( )
 
 void MetalCommandList::TopLevelArgumentBufferNextOffset( )
 {
-    m_currentBufferOffset = m_argumentBuffer->Duplicate( m_rootSignature->NumTLABAddresses( ) ).second;
+    m_currentBufferOffset = m_argumentBuffer->Duplicate( m_rootSignature->NumTLABAddresses( ), m_rootSignature->NumRootConstantBytes( ) ).second;
 }
 
 void MetalCommandList::EnsureEncoder( MetalEncoderType encoderType, std::string errorMessage )

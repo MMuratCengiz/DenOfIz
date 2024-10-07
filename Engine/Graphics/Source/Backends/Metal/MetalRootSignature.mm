@@ -64,7 +64,6 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
         m_metalBindings[ slot.Key( ) ] = { .Parent = binding, .Stages = stages };
     }
 
-    uint32_t rootConstantOffset = 0;
     m_rootConstants.resize( m_desc.RootConstants.size( ) );
     for ( int i = 0; i < m_desc.RootConstants.size( ); i++ )
     {
@@ -74,8 +73,8 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
             LOG( FATAL ) << "Root constant binding index is out of range. Make sure all bindings are provided in ascending order.";
         }
         const auto &rootConstant     = m_desc.RootConstants[ trueIndex ];
-        m_rootConstants[ trueIndex ] = { .Offset = rootConstantOffset, .NumBytes = rootConstant.NumBytes };
-        rootConstantOffset += rootConstant.NumBytes;
+        m_rootConstants[ trueIndex ] = { .Offset = m_numRootConstantBytes, .NumBytes = rootConstant.NumBytes };
+        m_numRootConstantBytes += rootConstant.NumBytes;
     }
 }
 
@@ -92,6 +91,11 @@ const MetalBindingDesc &MetalRootSignature::FindMetalBinding( const ResourceBind
 const uint32_t MetalRootSignature::NumTLABAddresses( ) const
 {
     return m_numTLABAddresses;
+}
+
+[[nodiscard]] const uint32_t &MetalRootSignature::NumRootConstantBytes( ) const
+{
+    return m_numRootConstantBytes;
 }
 
 const std::vector<MetalRootConstant> &MetalRootSignature::RootConstants( ) const

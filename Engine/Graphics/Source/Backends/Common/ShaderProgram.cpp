@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzCore/Utilities.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
-#include <algorithm>
 #include <directx/d3d12shader.h>
 #include <ranges>
 #include <unordered_set>
@@ -274,44 +273,45 @@ void ShaderProgram::ProduceMSL( )
 
     std::vector<IRRootParameter1> rootParameters;
     int                           registerSpace = 0;
-    int                           numTables     = 0;
+    int                           numEntries    = 0;
     for ( auto &registerSpaceRange : registerSpaceRanges )
     {
-        MetalDescriptorOffsets &offsets = m_metalDescriptorOffsets[ registerSpace ];
-        if ( !registerSpaceRange.CbvSrvUavRanges.empty( ) )
-        {
-            offsets.CbvSrvUavOffset = numTables;
-            ++numTables;
-        }
-        if ( !registerSpaceRange.SamplerRanges.empty( ) )
-        {
-            offsets.SamplerOffset = numTables;
-            ++numTables;
-        }
-
         for ( auto &rootConstant : registerSpaceRange.RootConstants )
         {
-            IRRootParameter1 rootParameter         = { };
+            IRRootParameter1 &rootParameter        = rootParameters.emplace_back( );
             rootParameter.ParameterType            = IRRootParameterType32BitConstants;
             rootParameter.ShaderVisibility         = IRShaderVisibilityAll;
             rootParameter.Constants.Num32BitValues = rootConstant.Num32BitValues;
             rootParameter.Constants.RegisterSpace  = rootConstant.RegisterSpace;
             rootParameter.Constants.ShaderRegister = rootConstant.ShaderRegister;
-            rootParameters.push_back( rootParameter );
+        }
+    }
+    for ( auto &registerSpaceRange : registerSpaceRanges )
+    {
+        MetalDescriptorOffsets &offsets = m_metalDescriptorOffsets[ registerSpace ];
+        if ( !registerSpaceRange.CbvSrvUavRanges.empty( ) )
+        {
+            offsets.CbvSrvUavOffset = numEntries;
+            ++numEntries;
+        }
+        if ( !registerSpaceRange.SamplerRanges.empty( ) )
+        {
+            offsets.SamplerOffset = numEntries;
+            ++numEntries;
         }
 
         int rootArgumentTypeIndex = 0;
         for ( auto &rootArgument : registerSpaceRange.RootArguments )
         {
-            IRRootParameter1 rootParameter          = { };
+            IRRootParameter1 &rootParameter         = rootParameters.emplace_back( );
             rootParameter.ParameterType             = registerSpaceRange.RootArgumentTypes[ rootArgumentTypeIndex++ ];
             rootParameter.ShaderVisibility          = IRShaderVisibilityAll;
             rootParameter.Descriptor.RegisterSpace  = rootArgument.RegisterSpace;
             rootParameter.Descriptor.ShaderRegister = rootArgument.ShaderRegister;
             rootParameters.push_back( rootParameter );
-            uint32_t hash                          = Utilities::HashInts( rootParameter.ParameterType, rootArgument.RegisterSpace, rootArgument.ShaderRegister );
-            offsets.RootDescriptorsOffsets[ hash ] = numTables++;
-            ++numTables;
+            uint32_t hash                   = Utilities::HashInts( rootParameter.ParameterType, rootArgument.RegisterSpace, rootArgument.ShaderRegister );
+            offsets.UniqueTLABIndex[ hash ] = numEntries++;
+            ++numEntries;
         }
 
         PutRootParameterDescriptorTable( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.CbvSrvUavRanges );
@@ -526,7 +526,8 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
                 rootConstantBinding.Name                             = shaderInputBindDesc.Name;
                 rootConstantBinding.Binding                          = shaderInputBindDesc.BindPoint;
                 rootConstantBinding.Stages.push_back( shader->Stage );
-                rootConstantBinding.NumBytes = rootConstantReflection.NumBytes;
+                rootConstantBinding.NumBytes   = rootConstantReflection.NumBytes;
+                rootConstantBinding.Reflection = rootConstantReflection;
                 continue;
             }
 
@@ -544,7 +545,7 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
             {
                 uint32_t hash =
                     Utilities::HashInts( BindingTypeToIRRootParameterType( resourceBindingDesc.BindingType ), shaderInputBindDesc.Space, shaderInputBindDesc.BindPoint );
-                resourceBindingDesc.Reflection.TLABOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].RootDescriptorsOffsets.at( hash );
+                resourceBindingDesc.Reflection.TLABOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].UniqueTLABIndex.at( hash );
                 continue;
             }
             // Hint metal resource bind group where descriptor table lies in the top level argument buffer

@@ -30,17 +30,19 @@ namespace DenOfIz
         MetalContext *m_context;
         id<MTLBuffer> m_buffer;
         uint64_t      m_currentOffset = 0;
-        uint64_t      m_nextOffset = 0;
+        uint64_t      m_nextOffset    = 0;
         uint64_t      m_capacity;
-        uint64_t     *m_contents;
+        size_t        m_numRootConstantBytes = 0;
+        Byte         *m_contents;
 
     public:
         MetalArgumentBuffer( MetalContext *context, size_t capacity );
-        void                            EncodeAddress( uint64_t offset, uint32_t index, uint64_t address ) const;
-        std::pair<uint64_t *, uint64_t> Reserve( size_t numAddresses );
-        std::pair<uint64_t *, uint64_t> Duplicate( size_t numAddresses  );
-        void                            Reset( );
-        [[nodiscard]] uint64_t          Offset( ) const
+        void                        EncodeRootConstant( const Byte *data ) const;
+        void                        EncodeAddress( uint64_t offset, uint32_t index, uint64_t address ) const;
+        std::pair<Byte *, uint64_t> Reserve( size_t numAddresses, uint32_t numRootConstantBytes = 0 );
+        std::pair<Byte *, uint64_t> Duplicate( size_t numAddresses, uint32_t numRootConstantBytes = 0 );
+        void                        Reset( );
+        [[nodiscard]] uint64_t      Offset( ) const
         {
             return m_nextOffset;
         }

@@ -56,10 +56,9 @@ namespace DenOfIz
     struct MetalDescriptorOffsets
     {
         // -1 is used for debugging purposes to show that no descriptor table exists in this root signature of that type
-        int CbvSrvUavOffset = -1;
-        int SamplerOffset   = -1;
-        // This is the start off the offset as there would be multiple root descriptors.
-        std::unordered_map<uint32_t, uint32_t> RootDescriptorsOffsets{ };
+        int                                    CbvSrvUavOffset = -1;
+        int                                    SamplerOffset   = -1;
+        std::unordered_map<uint32_t, uint32_t> UniqueTLABIndex{ };
     };
 #endif
 

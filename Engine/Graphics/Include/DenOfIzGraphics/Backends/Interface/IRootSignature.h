@@ -102,6 +102,7 @@ namespace DenOfIz
         const uint32_t           RegisterSpace = DZConfiguration::Instance( ).RootConstantRegisterSpace;
         int                      NumBytes{ };
         std::vector<ShaderStage> Stages;
+        ReflectionDesc           Reflection{ };
     };
 
     struct RootSignatureDesc

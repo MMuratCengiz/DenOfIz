@@ -75,7 +75,7 @@ namespace DenOfIz
         void SetRootConstants( uint32_t binding, void *data ) override;
         void Update( const UpdateDesc &desc ) override;
 
-        [[nodiscard]] const std::vector<Byte>                      &RootConstant( ) const;
+        [[nodiscard]] const std::vector<Byte>                    &RootConstant( ) const;
         [[nodiscard]] const std::vector<MetalRootParameterBinding> &RootParameters( ) const;
         // Nullable if nothing is bound to the pertinent table
         [[nodiscard]] const MetalDescriptorTableBinding *CbvSrvUavTable( ) const;
