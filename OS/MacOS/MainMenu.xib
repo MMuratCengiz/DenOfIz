@@ -15,9 +15,9 @@
         <customObject id="YLy-65-1bz" customClass="NSFontManager"/>
         <menu title="Main Menu" systemMenu="main" id="AYu-sK-qS6">
             <items>
-                <menuItem title="Metal Example: 01_Transformations" id="1Xt-HY-uBw" userLabel="Metal Example - 05_StructuredBuffer">
+                <menuItem title="DenOfIz Metal" id="1Xt-HY-uBw" userLabel="">
                     <modifierMask key="keyEquivalentModifierMask"/>
-                    <menu key="submenu" title="Metal Example: 01_Transformations" systemMenu="apple" id="uQy-DD-JDr">
+                    <menu key="submenu" title="DenOfIz Metal " systemMenu="apple" id="uQy-DD-JDr">
                         <items>
                             <menuItem title="Hide Metal Mac Template" keyEquivalent="h" id="Olw-nP-bQN">
                                 <connections>

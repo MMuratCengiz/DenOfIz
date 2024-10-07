@@ -83,6 +83,8 @@ function(APPLE_APP target)
         target_compile_options(${target} PRIVATE
                 $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
                 $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
+
+        set_property(TARGET ${target} APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
     endif ()
 endfunction()
 function(APPLE_LIB target)
@@ -90,7 +92,7 @@ function(APPLE_LIB target)
         target_compile_options(${target} PRIVATE
                 $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
                 $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
-        set_property (TARGET ${target} APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
+        set_property(TARGET ${target} APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
     endif ()
 endfunction()
 

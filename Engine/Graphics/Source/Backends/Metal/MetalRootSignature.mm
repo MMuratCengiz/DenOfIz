@@ -49,13 +49,6 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
         }
 
         uint32_t previousStageOffset = 0;
-
-        ContainerUtilities::EnsureSize( m_argumentDescriptors, binding.RegisterSpace );
-        if ( m_argumentDescriptors[ binding.RegisterSpace ] == nullptr )
-        {
-            m_argumentDescriptors[ binding.RegisterSpace ] = [[NSMutableArray alloc] init];
-        }
-
         if ( binding.Reflection.TLABOffset >= m_numTLABAddresses )
         {
             m_numTLABAddresses = binding.Reflection.TLABOffset + 1;

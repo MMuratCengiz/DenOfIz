@@ -37,6 +37,7 @@ namespace DenOfIz
 
         std::vector<std::unique_ptr<ITextureResource>> m_deferredRenderTargets;
         std::unique_ptr<ISampler>                      m_defaultSampler;
+        std::unique_ptr<IResourceBindGroup>            m_rootConstantBindGroup;
 
         std::unique_ptr<RenderGraph> m_renderGraph;
 

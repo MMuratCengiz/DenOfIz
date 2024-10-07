@@ -29,7 +29,7 @@ namespace DenOfIz
 {
     class PerDrawBinding final
     {
-        constexpr static uint8_t            RegisterSpace = 2;
+        const static uint32_t               RegisterSpace;
         void                               *m_modelMatrixMappedData;
         std::unique_ptr<IBufferResource>    m_modelMatrixBuffer;
         std::unique_ptr<IResourceBindGroup> m_bindGroup;

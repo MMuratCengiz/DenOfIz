@@ -22,6 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 using namespace DirectX;
 
+const uint32_t PerDrawBinding::RegisterSpace = DZConfiguration::Instance( ).RootLevelBufferRegisterSpace;
+
 PerDrawBinding::PerDrawBinding( ILogicalDevice *device, IRootSignature *rootSignature )
 {
     ResourceBindGroupDesc bindGroupDesc{ };

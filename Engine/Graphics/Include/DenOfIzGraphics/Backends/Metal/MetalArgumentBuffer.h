@@ -32,12 +32,12 @@ namespace DenOfIz
         uint64_t      m_currentOffset = 0;
         uint64_t      m_nextOffset    = 0;
         uint64_t      m_capacity;
-        size_t        m_numRootConstantBytes = 0;
         Byte         *m_contents;
+        std::mutex    m_reserveMutex;
 
     public:
         MetalArgumentBuffer( MetalContext *context, size_t capacity );
-        void                        EncodeRootConstant( const Byte *data ) const;
+        void                        EncodeRootConstant( uint64_t offset, uint32_t numRootConstantBytes, const Byte *data ) const;
         void                        EncodeAddress( uint64_t offset, uint32_t index, uint64_t address ) const;
         std::pair<Byte *, uint64_t> Reserve( size_t numAddresses, uint32_t numRootConstantBytes = 0 );
         std::pair<Byte *, uint64_t> Duplicate( size_t numAddresses, uint32_t numRootConstantBytes = 0 );

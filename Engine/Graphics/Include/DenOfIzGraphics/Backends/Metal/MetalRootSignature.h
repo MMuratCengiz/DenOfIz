@@ -42,7 +42,6 @@ namespace DenOfIz
         RootSignatureDesc m_desc;
 
         std::unordered_map<uint32_t, MetalBindingDesc>  m_metalBindings;
-        std::vector<NSArray<MTLArgumentDescriptor *> *> m_argumentDescriptors;
         uint32_t                                        m_numTLABAddresses   = 0;
         uint32_t                                        m_numRootConstantBytes = 0;
         std::vector<MetalRootConstant>                  m_rootConstants;

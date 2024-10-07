@@ -1,4 +1,5 @@
 #include <DenOfIzGraphics/Backends/Metal/MetalArgumentBuffer.h>
+#include <future>
 #import "DenOfIzCore/ContainerUtilities.h"
 #import "DenOfIzCore/Utilities.h"
 
@@ -49,8 +50,9 @@ MetalArgumentBuffer::MetalArgumentBuffer( MetalContext *context, size_t capacity
 
 std::pair<Byte *, uint64_t> MetalArgumentBuffer::Reserve( size_t numAddresses, uint32_t numRootConstantBytes )
 {
-    m_numRootConstantBytes = numRootConstantBytes;
-    auto numBytes          = Utilities::Align( sizeof( uint64_t ) * numAddresses + numRootConstantBytes, 8 );
+    std::lock_guard<std::mutex> lock( m_reserveMutex );
+
+    auto numBytes = Utilities::Align( sizeof( uint64_t ) * numAddresses + numRootConstantBytes, 8 );
     if ( m_nextOffset + numBytes > m_capacity )
     {
         LOG( ERROR ) << "MetalArgumentBuffer::Allocate: out of memory";
@@ -58,7 +60,7 @@ std::pair<Byte *, uint64_t> MetalArgumentBuffer::Reserve( size_t numAddresses, u
     }
 
     m_currentOffset = m_nextOffset;
-    Byte *ptr       = m_contents + m_nextOffset;
+    Byte *ptr       = m_contents + m_currentOffset;
     m_nextOffset += numBytes;
     return std::pair<Byte *, uint64_t>( ptr, m_currentOffset );
 }
@@ -71,38 +73,38 @@ std::pair<Byte *, uint64_t> MetalArgumentBuffer::Duplicate( size_t numAddresses,
     return result;
 }
 
-void MetalArgumentBuffer::EncodeRootConstant( const Byte *data ) const
+void MetalArgumentBuffer::EncodeRootConstant( uint64_t offset, uint32_t numRootConstantBytes, const Byte *data ) const
 {
-    if ( m_numRootConstantBytes == 0 )
+    //    LOG ( INFO ) << "Encoding root constant at offset: " << offset << " numRootConstantBytes: " << numRootConstantBytes << " data: " << data;
+    if ( numRootConstantBytes == 0 )
     {
         LOG( ERROR ) << "MetalArgumentBuffer::EncodeRootConstant: No bytes reserved for root constants";
         return;
     }
 
-    if ( m_numRootConstantBytes > m_capacity )
+    if ( numRootConstantBytes + offset > m_capacity )
     {
         LOG( ERROR ) << "MetalArgumentBuffer::EncodeRootConstant: Index or offset out of bounds";
         return;
     }
 
-    std::memcpy( &m_contents[ 0 ], data, m_numRootConstantBytes );
+    std::memcpy( &m_contents[ offset ], data, numRootConstantBytes );
 }
 
 void MetalArgumentBuffer::EncodeAddress( uint64_t offset, uint32_t index, uint64_t address ) const
 {
-    uint64_t addressLocation = offset + m_numRootConstantBytes + ( index * sizeof( uint64_t ) );
-    uint64_t abOffset        = offset / sizeof( uint64_t );
-
+    uint64_t addressLocation = Utilities::Align( offset + ( index * sizeof( uint64_t ) ), 8 );
+    //    LOG( INFO ) << "Address location: " << addressLocation << " offset: " << offset << " index: " << index << " sizeof(uint64_t): " << sizeof( uint64_t );
     if ( addressLocation > m_capacity )
     {
         LOG( ERROR ) << "MetalArgumentBuffer::EncodeAddress: Index or offset out of bounds";
         return;
     }
-
     std::memcpy( &m_contents[ addressLocation ], &address, sizeof( uint64_t ) );
 }
 
 void MetalArgumentBuffer::Reset( )
 {
-    m_nextOffset = 0;
+    m_nextOffset    = 0;
+    m_currentOffset = 0;
 }

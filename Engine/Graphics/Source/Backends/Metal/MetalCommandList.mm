@@ -227,30 +227,32 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     if ( m_rootSignature == nullptr && m_rootSignature != metalBindGroup->RootSignature( ) )
     {
         m_rootSignature = metalBindGroup->RootSignature( );
-        m_argumentBuffer->Reserve( m_rootSignature->NumTLABAddresses( ) );
+        m_currentBufferOffset = m_argumentBuffer->Reserve( m_rootSignature->NumTLABAddresses( ), m_rootSignature->NumRootConstantBytes( ) ).second;
     }
 
     const auto &rootConstant = metalBindGroup->RootConstant( );
     if ( !rootConstant.empty( ) )
     {
-        m_argumentBuffer->EncodeRootConstant( rootConstant.data( ) );
+        m_argumentBuffer->EncodeRootConstant( m_currentBufferOffset, m_rootSignature->NumRootConstantBytes( ), rootConstant.data( ) );
     }
 
+    uint64_t addressesOffset = m_currentBufferOffset + m_rootSignature->NumRootConstantBytes( );
     for ( const auto &rootParameter : metalBindGroup->RootParameters( ) )
     {
-        m_argumentBuffer->EncodeAddress( m_currentBufferOffset, rootParameter.TLABOffset, rootParameter.BufferAddress );
+        m_argumentBuffer->EncodeAddress( addressesOffset, rootParameter.TLABOffset, rootParameter.Buffer.gpuAddress );
+        UseResource( rootParameter.Buffer );
     }
 
     const MetalDescriptorTableBinding *cbvSrvUavTable = metalBindGroup->CbvSrvUavTable( );
     if ( cbvSrvUavTable != nullptr && cbvSrvUavTable->NumEntries > 0 )
     {
-        m_argumentBuffer->EncodeAddress( m_currentBufferOffset, cbvSrvUavTable->TLABOffset, cbvSrvUavTable->Table.Buffer( ).gpuAddress );
+        m_argumentBuffer->EncodeAddress( addressesOffset, cbvSrvUavTable->TLABOffset, cbvSrvUavTable->Table.Buffer( ).gpuAddress );
         UseResource( cbvSrvUavTable->Table.Buffer( ) );
     }
     const MetalDescriptorTableBinding *samplerTable = metalBindGroup->SamplerTable( );
     if ( samplerTable != nullptr && samplerTable->NumEntries > 0 )
     {
-        m_argumentBuffer->EncodeAddress( m_currentBufferOffset, samplerTable->TLABOffset, samplerTable->Table.Buffer( ).gpuAddress );
+        m_argumentBuffer->EncodeAddress( addressesOffset, samplerTable->TLABOffset, samplerTable->Table.Buffer( ).gpuAddress );
         UseResource( samplerTable->Table.Buffer( ) );
     }
 
@@ -262,10 +264,6 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     for ( const auto &texture : metalBindGroup->Textures( ) )
     {
         UseResource( texture.Resource->Instance( ), texture.Usage, texture.ShaderStages );
-    }
-
-    for ( const auto &sampler : metalBindGroup->Samplers( ) )
-    {
     }
 }
 

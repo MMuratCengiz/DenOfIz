@@ -25,6 +25,10 @@ MetalResourceBindGroup::MetalResourceBindGroup( MetalContext *context, ResourceB
 {
     m_context       = context;
     m_rootSignature = static_cast<MetalRootSignature *>( desc.RootSignature );
+    if ( desc.RegisterSpace == DZConfiguration::Instance( ).RootConstantRegisterSpace )
+    {
+        m_rootConstant.resize( m_rootSignature->NumRootConstantBytes( ) );
+    }
 }
 
 void MetalResourceBindGroup::SetRootConstants( uint32_t binding, void *data )
@@ -35,8 +39,8 @@ void MetalResourceBindGroup::SetRootConstants( uint32_t binding, void *data )
     {
         LOG( FATAL ) << "Root constant binding out of range";
     }
-
-    std::memcpy( m_rootConstant.data( ) + rootConstants[ binding ].Offset, data, rootConstants[ binding ].NumBytes );
+    const auto &rootConstantBinding = rootConstants[ binding ];
+    std::memcpy( &m_rootConstant[ rootConstantBinding.Offset ], data, rootConstantBinding.NumBytes );
 }
 
 void MetalResourceBindGroup::Update( const UpdateDesc &desc )
@@ -70,7 +74,7 @@ void MetalResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBuffe
     const MetalBindingDesc &binding     = m_rootSignature->FindMetalBinding( slot );
     if ( slot.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
     {
-        m_rootParameterBindings.emplace_back( binding.Parent.Reflection.TLABOffset, metalBuffer->Instance( ).gpuAddress );
+        m_rootParameterBindings.emplace_back( binding.Parent.Reflection.TLABOffset, metalBuffer->Instance( ) );
         return;
     }
     m_cbvSrvUavTable->Table.EncodeBuffer( metalBuffer->Instance( ), binding.Parent.Reflection.DescriptorTableIndex );
