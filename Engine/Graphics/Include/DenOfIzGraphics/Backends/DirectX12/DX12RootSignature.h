@@ -38,7 +38,8 @@ namespace DenOfIz
      */
     struct RegisterSpaceRangesDesc
     {
-        int                                   Space;
+        // -1 is here to denote that the space is not set, i.e. nothing is bound to this space.
+        int                                   Space = -1;
         std::vector<RootLevelDescriptorRange> RootLevelRanges;
         std::vector<CD3DX12_DESCRIPTOR_RANGE> CbvSrvUavRanges;
         std::vector<CD3DX12_DESCRIPTOR_RANGE> SamplerRanges;

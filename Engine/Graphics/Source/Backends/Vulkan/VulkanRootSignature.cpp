@@ -45,6 +45,11 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
         maxRegisterSpace = std::max( maxRegisterSpace, key );
     }
 
+    VkDescriptorSetLayoutCreateInfo emptyLayoutInfo = { };
+    emptyLayoutInfo.sType                           = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    emptyLayoutInfo.bindingCount                    = 0;
+    VK_CHECK_RESULT( vkCreateDescriptorSetLayout( m_context->LogicalDevice, &emptyLayoutInfo, nullptr, &m_emptyLayout ) );
+
     // No bindings layout
     if ( !m_layoutBindings.empty( ) )
     {
@@ -53,7 +58,7 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
             const auto &it = m_layoutBindings.find( i );
             if ( it == m_layoutBindings.end( ) )
             {
-                m_layouts.push_back( nullptr );
+                m_layouts.push_back( m_emptyLayout );
                 continue;
             }
 
@@ -169,6 +174,11 @@ VulkanRootSignature::~VulkanRootSignature( )
 {
     for ( const auto layout : m_layouts )
     {
-        vkDestroyDescriptorSetLayout( m_context->LogicalDevice, layout, nullptr );
+        if ( layout != m_emptyLayout )
+        {
+            vkDestroyDescriptorSetLayout( m_context->LogicalDevice, layout, nullptr );
+        }
     }
+
+    vkDestroyDescriptorSetLayout( m_context->LogicalDevice, m_emptyLayout, nullptr );
 }

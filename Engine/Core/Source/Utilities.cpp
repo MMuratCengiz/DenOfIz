@@ -15,6 +15,7 @@
 //  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzCore/Utilities.h>
+#include <cstdarg>
 #include <filesystem>
 #include <fstream>
 
@@ -121,12 +122,12 @@ uint32_t Utilities::HashInts( uint32_t args, ... )
     va_list ap;
     va_start( ap, args );
 
-    uint32_t       hash  = 2166136261u;
-    const uint32_t prime = 16777619u;
+    uint32_t hash = 2166136261u;
 
     for ( uint32_t i = 0; i < args; i++ )
     {
-        uint32_t value = va_arg( ap, uint32_t );
+        constexpr uint32_t prime = 16777619u;
+        const uint32_t     value = va_arg( ap, uint32_t );
         hash ^= value;
         hash *= prime;
     }
