@@ -610,7 +610,7 @@ namespace DenOfIz
         DeviceConstants            Constants;
     };
 
-    s truct DZConfiguration
+    struct DZConfiguration
     {
         /**
          *  NOTE: Maximum register space for Vulkan is 32(number of sets). Therefore the register spaces take the last two up.
