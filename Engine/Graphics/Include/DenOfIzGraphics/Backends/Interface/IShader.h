@@ -34,7 +34,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-
     enum class ShaderStage
     {
         Geometry,
@@ -53,12 +52,6 @@ namespace DenOfIz
         Callable,
         Task,
         Mesh,
-    };
-
-    struct Shader
-    {
-        ShaderStage Stage;
-        std::string Path;
     };
 
     // Needs to be used as a pointer as Blob/Reflection might be deleted multiple times otherwise
@@ -84,35 +77,4 @@ namespace DenOfIz
             }
         }
     };
-
-    struct VertexInput
-    {
-        uint32_t    BoundBufferIndex;
-        uint32_t    Location;
-        uint32_t    Size;
-        uint32_t    Offset;
-        uint32_t    Stride;
-        std::string Name;
-        Format      Format;
-    };
-
-    enum class UniformType
-    {
-        Struct,
-        Sampler
-    };
-
-    struct ShaderUniformInput
-    {
-        ShaderStage Stage;
-        uint32_t    BoundDescriptorSet;
-        uint32_t    Location;
-        uint32_t    Binding;
-        uint32_t    ArraySize;
-        uint32_t    Size;
-        UniformType Type;
-        Format      Format;
-        std::string Name;
-    };
-
 } // namespace DenOfIz

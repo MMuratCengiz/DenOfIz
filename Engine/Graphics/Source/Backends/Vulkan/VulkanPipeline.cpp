@@ -355,3 +355,13 @@ VulkanPipeline::~VulkanPipeline( )
     vkDestroyPipeline( m_context->LogicalDevice, m_instance, nullptr );
     vkDestroyPipelineLayout( m_context->LogicalDevice, m_layout, nullptr );
 }
+
+VkPipeline VulkanPipeline::Instance( ) const
+{
+    return m_instance;
+}
+
+VkPipelineBindPoint VulkanPipeline::BindPoint( ) const
+{
+    return m_bindPoint;
+}

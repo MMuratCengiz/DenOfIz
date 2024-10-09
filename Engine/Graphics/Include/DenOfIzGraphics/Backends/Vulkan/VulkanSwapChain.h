@@ -44,7 +44,7 @@ namespace DenOfIz
         uint32_t m_height = 0;
 
     public:
-         VulkanSwapChain( VulkanContext *context, const SwapChainDesc &desc );
+        VulkanSwapChain( VulkanContext *context, const SwapChainDesc &desc );
         ~VulkanSwapChain( ) override;
 
         uint32_t AcquireNextImage( ISemaphore *imageReadySemaphore ) override;
@@ -52,22 +52,10 @@ namespace DenOfIz
         void     Resize( uint32_t width, uint32_t height ) override;
         Format   GetPreferredFormat( ) override;
 
-        [[nodiscard]] QueueFamily GetPresentationQueueFamily( ) const
-        {
-            return m_presentationQueueFamily;
-        }
-        ITextureResource *GetRenderTarget( const uint32_t frame ) override
-        {
-            return m_renderTargets.at( frame ).get( );
-        }
-        VkSwapchainKHR *GetSwapChain( )
-        {
-            return &m_swapChain;
-        }
-        Viewport GetViewport( ) override
-        {
-            return { 0.0f, 0.0f, static_cast<float>( m_width ), static_cast<float>( m_height ) };
-        }
+        [[nodiscard]] QueueFamily GetPresentationQueueFamily( ) const;
+        ITextureResource         *GetRenderTarget( const uint32_t frame ) override;
+        VkSwapchainKHR           *GetSwapChain( );
+        Viewport                  GetViewport( ) override;
 
     private:
         void CreateSwapChain( );

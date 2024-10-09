@@ -48,10 +48,7 @@ namespace DenOfIz
         void                        CreateDevice( ) override;
         std::vector<PhysicalDevice> ListPhysicalDevices( ) override;
         void                        LoadPhysicalDevice( const PhysicalDevice &device ) override;
-        bool                        IsDeviceLost( ) override
-        {
-            return m_context->IsDeviceLost;
-        }
+        bool                        IsDeviceLost( ) override;
 
         std::unique_ptr<ICommandListPool>   CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
         std::unique_ptr<IPipeline>          CreatePipeline( const PipelineDesc &pipelineDesc ) override;

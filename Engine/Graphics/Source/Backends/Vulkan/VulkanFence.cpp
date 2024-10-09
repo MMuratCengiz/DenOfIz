@@ -42,3 +42,8 @@ VulkanFence::~VulkanFence( )
 {
     vkDestroyFence( m_context->LogicalDevice, m_fence, nullptr );
 }
+
+VkFence VulkanFence::GetFence( ) const
+{
+    return m_fence;
+}

@@ -22,10 +22,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Backends/DirectX12/DX12Fence.h"
 #include "directxtk12/BufferHelpers.h"
 
+typedef size_t i;
 using namespace DenOfIz;
 
-DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) :
-    IBufferResource( desc ), m_context( context ), m_desc( std::move( desc ) ), m_cpuHandle( ), m_rootParameterType( )
+DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) : m_context( context ), m_desc( std::move( desc ) ), m_cpuHandle( ), m_rootParameterType( )
 {
     m_stride                   = FormatNumBytes( m_desc.Format );
     m_numBytes                 = Utilities::Align( m_desc.NumBytes, std::max<uint32_t>( m_desc.Alignment, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT ) );
@@ -142,4 +142,24 @@ DX12BufferResource::~DX12BufferResource( )
         m_resource->Unmap( 0, nullptr );
         m_mappedMemory = nullptr;
     }
+}
+
+ID3D12Resource2 *DX12BufferResource::GetResource( ) const
+{
+    return m_resource.get( );
+}
+
+BitSet<ResourceState> DX12BufferResource::InitialState( ) const
+{
+    return m_state;
+}
+
+i DX12BufferResource::NumBytes( ) const
+{
+    return m_numBytes;
+}
+
+const void *DX12BufferResource::Data( ) const
+{
+    return m_data;
 }

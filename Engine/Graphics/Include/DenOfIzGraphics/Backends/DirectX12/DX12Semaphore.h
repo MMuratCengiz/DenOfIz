@@ -33,12 +33,9 @@ namespace DenOfIz
         UINT64                    m_fenceValue;
 
     public:
-        explicit                   DX12Semaphore( DX12Context *context );
-        [[nodiscard]] ID3D12Fence *GetFence( ) const
-        {
-            return m_fence.get( );
-        }
-        ~    DX12Semaphore( ) override;
+        explicit DX12Semaphore( DX12Context *context );
+        [[nodiscard]] ID3D12Fence *GetFence( ) const;
+        ~DX12Semaphore( ) override;
         void Wait( ) override;
         void Notify( ) override;
         void NotifyCommandQueue( ID3D12CommandQueue *commandQueue );

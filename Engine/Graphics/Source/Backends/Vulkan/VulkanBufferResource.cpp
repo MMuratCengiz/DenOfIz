@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc desc ) : IBufferResource( desc ), m_desc( std::move( desc ) ), m_context( context )
+VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc desc ) : m_desc( std::move( desc ) ), m_context( context )
 {
     m_numBytes = Utilities::Align( m_desc.NumBytes, m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment );
 
@@ -87,4 +87,29 @@ VulkanBufferResource::~VulkanBufferResource( )
     }
 
     vmaDestroyBuffer( m_context->Vma, m_instance, m_allocation );
+}
+
+BitSet<ResourceState> VulkanBufferResource::InitialState( ) const
+{
+    return m_state;
+}
+
+size_t VulkanBufferResource::NumBytes( ) const
+{
+    return m_numBytes;
+}
+
+const void *VulkanBufferResource::Data( ) const
+{
+    return m_mappedMemory;
+}
+
+size_t VulkanBufferResource::Offset( ) const
+{
+    return m_offset;
+}
+
+const VkBuffer &VulkanBufferResource::Instance( ) const
+{
+    return m_instance;
 }

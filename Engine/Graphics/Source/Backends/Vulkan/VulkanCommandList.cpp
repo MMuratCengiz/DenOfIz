@@ -250,8 +250,8 @@ void VulkanCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 
     if ( vkBindGroup->HasDescriptorSet( ) )
     {
-        vkCmdBindDescriptorSets( m_commandBuffer, bindPoint, vkBindGroup->RootSignature( )->PipelineLayout( ), bindGroup->RegisterSpace( ), 1, &vkBindGroup->GetDescriptorSet( ), 0,
-                                 nullptr );
+        vkCmdBindDescriptorSets( m_commandBuffer, bindPoint, vkBindGroup->RootSignature( )->PipelineLayout( ), vkBindGroup->RegisterSpace( ), 1, &vkBindGroup->GetDescriptorSet( ),
+                                 0, nullptr );
     }
 
     for ( const auto &rootConstant : vkBindGroup->RootConstants( ) )

@@ -36,10 +36,7 @@ namespace DenOfIz
         void Wait( ) override;
         void Notify( ) override;
 
-        [[nodiscard]] VkSemaphore GetSemaphore( ) const
-        {
-            return m_semaphore;
-        }
+        [[nodiscard]] VkSemaphore GetSemaphore( ) const;
     };
 
 } // namespace DenOfIz

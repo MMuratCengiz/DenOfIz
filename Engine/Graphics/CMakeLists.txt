@@ -48,6 +48,7 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
 SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanLogicalDevice.cpp
         Source/Backends/Vulkan/VulkanCommandList.cpp
+        Source/Backends/Vulkan/VulkanCommandPool.cpp
         Source/Backends/Vulkan/VulkanEnumConverter.cpp
         Source/Backends/Vulkan/VulkanResourceBindGroup.cpp
         Source/Backends/Vulkan/VulkanInputLayout.cpp
@@ -75,6 +76,8 @@ set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
         Source/Backends/DirectX12/DX12InputLayout.cpp
         Source/Backends/DirectX12/DX12ResourceBindGroup.cpp
         Source/Backends/DirectX12/DX12CommandList.cpp
+        Source/Backends/DirectX12/DX12DescriptorHeap.cpp
+        Source/Backends/DirectX12/DX12CommandListPool.cpp
 
         #DirectX12 Resources
         Source/Backends/DirectX12/DX12BufferResource.cpp
@@ -212,14 +215,14 @@ if (APPLE)
             PRIVATE "-framework Metal"
             PRIVATE "-framework MetalKit"
             PRIVATE dxcompiler
-            PUBLIC  DirectX-Headers
+            PUBLIC DirectX-Headers
     )
 
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_METAL)
     target_compile_options(DenOfIzGraphics PRIVATE
             $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
             $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
-    set_property (TARGET DenOfIzGraphics APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
+    set_property(TARGET DenOfIzGraphics APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
 endif ()
 
 if (WIN32 OR LINUX)

@@ -33,45 +33,9 @@ namespace DenOfIz
         CommandListPoolDesc                                  m_desc;
 
     public:
-        DX12CommandListPool( DX12Context *context, CommandListPoolDesc desc ) : m_desc( desc )
-        {
-            DZ_NOT_NULL( context );
-            DZ_ASSERTM( desc.NumCommandLists > 0, "CommandListCount must be greater than 0" );
+        DX12CommandListPool( DX12Context *context, CommandListPoolDesc desc );
 
-            m_context = context;
-            for ( uint32_t i = 0; i < desc.NumCommandLists; i++ )
-            {
-                D3D12_COMMAND_LIST_TYPE commandListType = DX12EnumConverter::ConvertQueueType( desc.QueueType );
-
-                wil::com_ptr<ID3D12CommandAllocator> commandAllocator;
-                DX_CHECK_RESULT( context->D3DDevice->CreateCommandAllocator( commandListType, IID_PPV_ARGS( commandAllocator.put( ) ) ) );
-
-                wil::com_ptr<ID3D12GraphicsCommandList> dx12CommandList;
-                DX_CHECK_RESULT( context->D3DDevice->CreateCommandList( 0, commandListType, commandAllocator.get( ), nullptr, IID_PPV_ARGS( dx12CommandList.put( ) ) ) );
-                dx12CommandList->Close( );
-
-                m_dx12CommandLists.push_back( std::move( dx12CommandList ) );
-                m_commandAllocators.push_back( std::move( commandAllocator ) );
-            }
-
-            CommandListDesc commandListCreateInfo{ };
-            commandListCreateInfo.QueueType = m_desc.QueueType;
-
-            for ( uint32_t i = 0; i < desc.NumCommandLists; i++ )
-            {
-                m_commandLists.push_back( std::make_unique<DX12CommandList>( m_context, m_commandAllocators[ i ], m_dx12CommandLists[ i ], commandListCreateInfo ) );
-            }
-        }
-
-        virtual std::vector<ICommandList *> GetCommandLists( ) override
-        {
-            std::vector<ICommandList *> commandLists;
-            for ( auto &commandList : m_commandLists )
-            {
-                commandLists.push_back( commandList.get( ) );
-            }
-            return commandLists;
-        }
+        virtual std::vector<ICommandList *> GetCommandLists( ) override;
 
         ~DX12CommandListPool( ) override = default;
     };

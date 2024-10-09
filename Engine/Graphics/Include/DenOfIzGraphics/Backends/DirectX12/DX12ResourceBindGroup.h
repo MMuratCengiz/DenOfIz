@@ -29,9 +29,9 @@ namespace DenOfIz
 {
     struct DX12RootConstant
     {
-        uint32_t       Binding{ };
-        void          *Data{ };
-        uint32_t       NumBytes{ };
+        uint32_t Binding{ };
+        void    *Data{ };
+        uint32_t NumBytes{ };
     };
 
     struct DX12RootDescriptor
@@ -45,6 +45,7 @@ namespace DenOfIz
     class DX12ResourceBindGroup final : public IResourceBindGroup
     {
         DX12Context                    *m_context;
+        ResourceBindGroupDesc           m_desc;
         uint32_t                        m_samplerCount   = 0;
         uint32_t                        m_cbvSrvUavCount = 0;
         DescriptorHandle                m_cbvSrvUavHandle;
@@ -63,6 +64,7 @@ namespace DenOfIz
         [[nodiscard]] DX12RootSignature                     *RootSignature( ) const;
         [[nodiscard]] const std::vector<DX12RootDescriptor> &RootDescriptors( ) const;
         [[nodiscard]] const std::vector<DX12RootConstant>   &RootConstants( ) const;
+        [[nodiscard]] uint32_t                               RegisterSpace( ) const;
         // --
         void SetRootConstants( uint32_t binding, void *data ) override;
         void Update( const UpdateDesc &desc ) override;

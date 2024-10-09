@@ -21,8 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDesc &desc ) : ITextureResource( desc ), m_desc( desc ), m_context( context )
+DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDesc &desc ) : m_desc( desc ), m_context( context )
 {
+    m_width        = desc.Width;
+    m_height       = desc.Height;
+    m_depth        = desc.Depth;
+    m_format       = desc.Format;
+    m_initialState = desc.InitialState;
+
     ValidateTextureDesc( m_desc );
 
     D3D12_RESOURCE_DESC resourceDesc = { };
@@ -87,7 +93,7 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
         clearValue.DepthStencil.Stencil = 0.0f;
     }
 
-    if ( m_desc.Descriptor.Any({ ResourceDescriptor::DepthStencil, ResourceDescriptor::RenderTarget }) )
+    if ( m_desc.Descriptor.Any( { ResourceDescriptor::DepthStencil, ResourceDescriptor::RenderTarget } ) )
     {
         HRESULT hr = m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, initialState, &clearValue, &m_allocation, IID_PPV_ARGS( &m_resource ) );
         DX_CHECK_RESULT( hr );
@@ -103,8 +109,7 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
     m_allocation->SetName( name.c_str( ) );
 }
 
-DX12TextureResource::DX12TextureResource( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle ) :
-    ITextureResource( { /*TODO !IMPROVEMENT!*/ } ), m_resource( resource ), m_rtvHandle( cpuHandle )
+DX12TextureResource::DX12TextureResource( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle ) : m_resource( resource ), m_rtvHandle( cpuHandle )
 {
     isExternalResource = true;
 }
@@ -309,6 +314,51 @@ void DX12TextureResource::CreateTextureUav( const D3D12_CPU_DESCRIPTOR_HANDLE cp
         }
         m_context->D3DDevice->CreateUnorderedAccessView( m_resource, nullptr, &desc, handle );
     }
+}
+
+const TextureDesc &DX12TextureResource::GetDesc( ) const
+{
+    return m_desc;
+}
+
+const D3D12_RESOURCE_DESC &DX12TextureResource::GetResourceDesc( ) const
+{
+    return m_resourceDesc;
+}
+
+const D3D12_ROOT_PARAMETER_TYPE &DX12TextureResource::GetRootParameterType( ) const
+{
+    return m_rootParameterType;
+}
+
+ID3D12Resource *DX12TextureResource::GetResource( ) const
+{
+    return m_resource;
+}
+
+BitSet<ResourceState> DX12TextureResource::InitialState( ) const
+{
+    return m_initialState;
+}
+
+uint32_t DX12TextureResource::GetWidth( ) const
+{
+    return m_width;
+}
+
+uint32_t DX12TextureResource::GetHeight( ) const
+{
+    return m_height;
+}
+
+uint32_t DX12TextureResource::GetDepth( ) const
+{
+    return m_depth;
+}
+
+Format DX12TextureResource::GetFormat( ) const
+{
+    return m_format;
 }
 
 DX12Sampler::DX12Sampler( DX12Context *context, const SamplerDesc &desc ) : m_context( context ), m_desc( desc )

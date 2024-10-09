@@ -36,10 +36,7 @@ namespace DenOfIz
     public:
 
         explicit                   DX12Fence( DX12Context *context );
-        [[nodiscard]] ID3D12Fence *GetFence( ) const
-        {
-            return m_fence.get( );
-        }
+        [[nodiscard]] ID3D12Fence *GetFence( ) const;
         ~    DX12Fence( ) override;
         void Wait( ) override;
         void Reset( ) override;

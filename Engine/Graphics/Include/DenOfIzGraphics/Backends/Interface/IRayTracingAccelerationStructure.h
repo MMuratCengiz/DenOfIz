@@ -16,13 +16,44 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "IBufferResource.h"
+
 #pragma once
 
 namespace DenOfIz
 {
+    enum class AccelerationStructureGeometryType
+    {
+        Triangles,
+        AABBs
+    };
+
+    struct AccelerationStructureGeometryDesc
+    {
+        AccelerationStructureGeometryType Type;
+        IBufferResource                  *VertexBuffer;
+        IBufferResource                  *IndexBuffer;
+        IBufferResource                  *TransformBuffer;
+    };
+
+    struct AccelerationStructureTopLevelDesc
+    {
+    };
+
+    struct AccelerationStructureBottomLevelDesc
+    {
+
+    };
+
+    struct AccelerationStructureDesc
+    {
+        AccelerationStructureTopLevelDesc    TopLevelDesc;
+        AccelerationStructureBottomLevelDesc BottomLevelDesc;
+    };
+
     class IRayTracingAccelerationStructure
     {
     public:
-        virtual ~IRayTracingAccelerationStructure() = default;
+        virtual ~IRayTracingAccelerationStructure( ) = default;
     };
 } // namespace DenOfIz

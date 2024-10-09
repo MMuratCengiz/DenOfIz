@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const ResourceBindGroupDesc &desc ) : IResourceBindGroup( desc ), m_context( context )
+DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const ResourceBindGroupDesc &desc ) : m_desc( desc ), m_context( context )
 {
     const auto rootSignature = dynamic_cast<DX12RootSignature *>( desc.RootSignature );
     DZ_NOT_NULL( rootSignature );
@@ -92,7 +92,20 @@ void DX12ResourceBindGroup::Update( const UpdateDesc &desc )
     m_cbvSrvUavCount = 0;
     m_samplerCount   = 0;
 
-    IResourceBindGroup::Update( desc );
+    std::vector<ResourceBindingSlot> boundBindings;
+
+    for ( auto item : desc.Buffers )
+    {
+        BindBuffer( item.Slot, item.Resource );
+    }
+    for ( auto item : desc.Textures )
+    {
+        BindTexture( item.Slot, item.Resource );
+    }
+    for ( auto item : desc.Samplers )
+    {
+        BindSampler( item.Slot, item.Resource );
+    }
 }
 
 void DX12ResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource )
@@ -180,4 +193,9 @@ const std::vector<DX12RootDescriptor> &DX12ResourceBindGroup::RootDescriptors( )
 const std::vector<DX12RootConstant> &DX12ResourceBindGroup::RootConstants( ) const
 {
     return m_rootConstants;
+}
+
+uint32_t DX12ResourceBindGroup::RegisterSpace( ) const
+{
+    return m_desc.RegisterSpace;
 }

@@ -18,7 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzCore/Common_Windows.h>
+#include <DenOfIzCore/Common_Macro.h>
 #include <directx/d3d12.h>
+#include <directx/d3dx12.h>
+#include <wil/com.h>
 #include <mutex>
 
 using namespace Microsoft::WRL;
@@ -44,91 +48,14 @@ namespace DenOfIz
         bool                               m_shaderVisible;
 
     public:
-        DX12DescriptorHeap( ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_TYPE type, bool shaderVisible ) : m_shaderVisible( shaderVisible )
-        {
-            D3D12_DESCRIPTOR_HEAP_DESC desc = { };
-            if ( shaderVisible )
-            {
-                desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-                if ( type == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV )
-                {
-                    desc.NumDescriptors = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1;
-                }
-                else if ( type == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER )
-                {
-                    desc.NumDescriptors = D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE;
-                }
-            }
-            else
-            {
-                switch ( type )
-                {
-                case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
-                    desc.NumDescriptors = 1024 * 256;
-                    break;
-                case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
-                    desc.NumDescriptors = 2048;
-                    break;
-                case D3D12_DESCRIPTOR_HEAP_TYPE_RTV:
-                case D3D12_DESCRIPTOR_HEAP_TYPE_DSV:
-                    desc.NumDescriptors = 512;
-                    break;
-                case D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES:
-                    break;
-                }
-            }
+        DX12DescriptorHeap( ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_TYPE type, bool shaderVisible );
 
-            desc.Type     = type;
-            desc.NodeMask = 0;
+        DescriptorHandle GetNextHandle( const uint32_t count = 1 );
+        [[nodiscard]] uint32_t GetDescriptorSize( ) const;
+        [[nodiscard]] ID3D12DescriptorHeap *GetHeap( ) const;
+        [[nodiscard]] DescriptorHandle GetStartHandle( ) const;
 
-            if( FAILED( device->CreateDescriptorHeap( &desc, IID_PPV_ARGS( m_heap.addressof( ) ) ) ) )
-            {
-                LOG( ERROR ) << "Failed to create descriptor heap.";
-            }
-
-            m_descriptorSize  = device->GetDescriptorHandleIncrementSize( type );
-            m_startHandle.Cpu = m_heap->GetCPUDescriptorHandleForHeapStart( );
-            if ( shaderVisible )
-            {
-                m_startHandle.GpuVisible = true;
-                m_startHandle.Gpu        = m_heap->GetGPUDescriptorHandleForHeapStart( );
-            }
-            m_nextHandle = m_startHandle;
-        }
-
-        [[nodiscard]] uint32_t GetDescriptorSize( ) const
-        {
-            return m_descriptorSize;
-        }
-
-        [[nodiscard]] ID3D12DescriptorHeap *GetHeap( ) const
-        {
-            return m_heap.get( );
-        }
-
-        [[nodiscard]] DescriptorHandle GetStartHandle( ) const
-        {
-            return m_startHandle;
-        }
-
-        DescriptorHandle GetNextHandle( const uint32_t count = 1 )
-        {
-            std::lock_guard        lock( m_mutex );
-            const DescriptorHandle handle = m_nextHandle;
-            m_nextHandle.Cpu.Offset( count, m_descriptorSize );
-            if ( m_shaderVisible )
-            {
-                m_nextHandle.GpuVisible = true;
-                m_nextHandle.Gpu.Offset( count, m_descriptorSize );
-            }
-            return handle;
-        }
-
-        static uint32_t RoundUp( const uint32_t size, const uint32_t alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT )
-        {
-            return ( size + ( alignment - 1 ) ) & ~( alignment - 1 );
-        }
-
+        static uint32_t RoundUp( const uint32_t size, const uint32_t alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT );
         ~DX12DescriptorHeap( ) = default;
     };
 

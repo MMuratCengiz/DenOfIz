@@ -26,12 +26,15 @@ namespace DenOfIz
 
     class VulkanBufferResource final : public IBufferResource, NonCopyable
     {
-        BufferDesc     m_desc{ };
-        VulkanContext *m_context = nullptr;
-        VmaAllocation  m_allocation{ };
-        VkBuffer       m_instance{ };
-        size_t         m_offset{ };
-        size_t         m_numBytes{ };
+        BufferDesc            m_desc{ };
+        VulkanContext        *m_context = nullptr;
+        VmaAllocation         m_allocation{ };
+        VkBuffer              m_instance{ };
+        size_t                m_offset{ };
+        size_t                m_numBytes{ };
+        const void           *m_data         = nullptr;
+        void                 *m_mappedMemory = nullptr;
+        BitSet<ResourceState> m_state;
 
     public:
         void *MapMemory( ) override;
@@ -40,20 +43,12 @@ namespace DenOfIz
         explicit VulkanBufferResource( VulkanContext *context, BufferDesc desc );
         ~VulkanBufferResource( ) override;
 
-        [[nodiscard]] size_t NumBytes( ) const
-        {
-            return m_numBytes;
-        }
+        [[nodiscard]] BitSet<ResourceState> InitialState( ) const override;
+        [[nodiscard]] size_t                NumBytes( ) const override;
+        [[nodiscard]] const void           *Data( ) const override;
 
-        [[nodiscard]] size_t Offset( ) const
-        {
-            return m_offset;
-        }
-
-        [[nodiscard]] const VkBuffer& Instance( ) const
-        {
-            return m_instance;
-        }
+        [[nodiscard]] size_t          Offset( ) const;
+        [[nodiscard]] const VkBuffer &Instance( ) const;
     };
 
 } // namespace DenOfIz

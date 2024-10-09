@@ -551,6 +551,9 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
             resourceBindingDesc.Stages.push_back( shader->Stage );
             FillReflectionData( shaderReflection, resourceBindingDesc.Reflection, i );
 #ifdef BUILD_METAL
+            /*
+             * This reflection information is unfortunately required to hint the MetalResourceBindGroup where a binding(i.e. b0, space0) lies in the top level argument buffer.
+             */
             if ( resourceBindingDesc.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
             {
                 uint32_t hash =

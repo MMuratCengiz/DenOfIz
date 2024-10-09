@@ -636,3 +636,4 @@ namespace DenOfIz
 
     typedef unsigned char Byte;
 } // namespace DenOfIz
+

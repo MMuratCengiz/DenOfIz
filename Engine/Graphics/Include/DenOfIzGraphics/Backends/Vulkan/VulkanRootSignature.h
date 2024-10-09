@@ -43,40 +43,13 @@ namespace DenOfIz
          VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc );
         ~VulkanRootSignature( ) override;
 
-        [[nodiscard]] ResourceBindingDesc GetVkShiftedBinding( const ResourceBindingSlot &slot ) const
-        {
-            return ContainerUtilities::SafeGetMapValue( m_resourceBindingMap, slot.Key( ), "Binding slot does not exist in root signature: " + slot.ToString( ) );
-        }
-
-        [[nodiscard]] uint32_t NumRootConstants( ) const
-        {
-            return m_pushConstants.size( );
-        }
-
-        [[nodiscard]] VkPushConstantRange PushConstantRange( const uint32_t binding ) const
-        {
-            if ( binding >= m_pushConstants.size( ) )
-            {
-                LOG( ERROR ) << "Root constant not found for binding " << binding;
-            }
-            return m_pushConstants[ binding ];
-        }
-        /// <returns> VK_NULL_HANDLE if register space is between 0 and max register space. </returns>
-        /// <throws> std::runtime_error if register space is larger than the max set. </throws>
-        [[nodiscard]] const VkDescriptorSetLayout &DescriptorSetLayout( const uint32_t registerSpace ) const
-        {
-            if ( registerSpace >= m_layouts.size( ) )
-            {
-                LOG( ERROR ) << "Descriptor set not found for register space " << registerSpace;
-            }
-
-            return m_layouts[ registerSpace ];
-        }
-
-        [[nodiscard]] VkPipelineLayout PipelineLayout( ) const
-        {
-            return m_pipelineLayout;
-        }
+        [[nodiscard]] ResourceBindingDesc GetVkShiftedBinding( const ResourceBindingSlot &slot ) const;
+        [[nodiscard]] uint32_t NumRootConstants( ) const;
+        [[nodiscard]] VkPushConstantRange PushConstantRange( const uint32_t binding ) const;
+        //! @return VK_NULL_HANDLE if register space is between 0 and max register space. </returns>
+        //! @throw std::runtime_error if register space is larger than the max set. </throws>
+        [[nodiscard]] const VkDescriptorSetLayout &DescriptorSetLayout( const uint32_t registerSpace ) const;
+        [[nodiscard]] VkPipelineLayout PipelineLayout( ) const;
 
     private:
         void                                       AddResourceBinding( const ResourceBindingDesc &binding );

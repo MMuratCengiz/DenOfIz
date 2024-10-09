@@ -41,13 +41,10 @@ namespace DenOfIz
         Viewport              m_viewport{ };
 
     public:
-         DX12SwapChain( DX12Context *context, const SwapChainDesc &desc );
+        DX12SwapChain( DX12Context *context, const SwapChainDesc &desc );
         ~DX12SwapChain( ) override;
 
-        [[nodiscard]] IDXGISwapChain4 *GetSwapChain( ) const
-        {
-            return m_swapChain.get( );
-        }
+        [[nodiscard]] IDXGISwapChain4 *GetSwapChain( ) const;
 
         uint32_t          AcquireNextImage( ISemaphore *imageAvailableSemaphore ) override;
         Format            GetPreferredFormat( ) override;

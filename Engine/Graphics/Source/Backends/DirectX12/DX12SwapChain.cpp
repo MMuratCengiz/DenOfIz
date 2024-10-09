@@ -199,4 +199,9 @@ Format DX12SwapChain::GetPreferredFormat( )
     return Format::R8Unorm;
 }
 
+IDXGISwapChain4 *DX12SwapChain::GetSwapChain( ) const
+{
+    return m_swapChain.get( );
+}
+
 DX12SwapChain::~DX12SwapChain( ) = default;

@@ -35,19 +35,10 @@ namespace DenOfIz
         D3D12_PRIMITIVE_TOPOLOGY          m_topology{ };
 
     public:
-                                           DX12Pipeline( DX12Context *context, PipelineDesc desc );
-        [[nodiscard]] ID3D12PipelineState *GetPipeline( ) const
-        {
-            return m_graphicsPipeline.get( );
-        }
-        [[nodiscard]] ID3D12RootSignature *GetRootSignature( ) const
-        {
-            return m_rootSignature->Instance( );
-        }
-        [[nodiscard]] D3D12_PRIMITIVE_TOPOLOGY GetTopology( ) const
-        {
-            return m_topology;
-        }
+        DX12Pipeline( DX12Context *context, PipelineDesc desc );
+        [[nodiscard]] ID3D12PipelineState     *GetPipeline( ) const;
+        [[nodiscard]] ID3D12RootSignature     *GetRootSignature( ) const;
+        [[nodiscard]] D3D12_PRIMITIVE_TOPOLOGY GetTopology( ) const;
         ~DX12Pipeline( ) override;
 
     private:

@@ -119,64 +119,14 @@ namespace DenOfIz
 
     class IResourceBindGroup
     {
-    protected:
-        ResourceBindGroupDesc m_desc;
-        IRootSignature       *m_rootSignature;
-
     public:
-        explicit IResourceBindGroup( const ResourceBindGroupDesc &desc ) : m_desc( desc ), m_rootSignature( desc.RootSignature )
-        {
-        }
-
-        [[nodiscard]] uint32_t RegisterSpace( ) const
-        {
-            return m_desc.RegisterSpace;
-        }
-
-        virtual ~    IResourceBindGroup( )                            = default;
+        virtual ~IResourceBindGroup( )                                = default;
         virtual void SetRootConstants( uint32_t binding, void *data ) = 0;
-        virtual void Update( const UpdateDesc &desc );
+        virtual void Update( const UpdateDesc &desc )                 = 0;
 
     protected:
         virtual void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) = 0;
         virtual void BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )   = 0;
         virtual void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )          = 0;
     };
-
-    inline void IResourceBindGroup::Update( const UpdateDesc &desc )
-    {
-        std::vector<ResourceBindingSlot> boundBindings;
-
-        for ( auto item : desc.Buffers )
-        {
-            BindBuffer( item.Slot, item.Resource );
-#ifndef NDEBUG
-            boundBindings.push_back( item.Slot );
-#endif
-        }
-        for ( auto item : desc.Textures )
-        {
-            BindTexture( item.Slot, item.Resource );
-#ifndef NDEBUG
-            boundBindings.push_back( item.Slot );
-#endif
-        }
-        for ( auto item : desc.Samplers )
-        {
-            BindSampler( item.Slot, item.Resource );
-#ifndef NDEBUG
-            boundBindings.push_back( item.Slot );
-#endif
-        }
-
-#ifndef NDEBUG
-        for ( const auto &binding : m_rootSignature->Bindings( ) )
-        {
-            if ( !ContainerUtilities::Contains( boundBindings, binding ) && binding.RegisterSpace == m_desc.RegisterSpace )
-            {
-                LOG( ERROR ) << "Binding slot defined in root signature " << binding.ToString( ) << " is not bound.";
-            }
-        }
-#endif
-    }
 } // namespace DenOfIz

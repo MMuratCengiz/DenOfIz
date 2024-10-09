@@ -189,3 +189,18 @@ DX12Pipeline::~DX12Pipeline( )
 {
     m_graphicsPipeline.reset( );
 }
+
+ID3D12PipelineState *DX12Pipeline::GetPipeline( ) const
+{
+    return m_graphicsPipeline.get( );
+}
+
+ID3D12RootSignature *DX12Pipeline::GetRootSignature( ) const
+{
+    return m_rootSignature->Instance( );
+}
+
+D3D12_PRIMITIVE_TOPOLOGY DX12Pipeline::GetTopology( ) const
+{
+    return m_topology;
+}

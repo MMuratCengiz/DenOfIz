@@ -27,18 +27,18 @@ namespace DenOfIz
 
     class MetalTextureResource final : public ITextureResource
     {
+        Format        m_format       = Format::Undefined;
+        uint32_t      m_width        = 1;
+        uint32_t      m_height       = 1;
+        uint32_t      m_depth        = 1;
+        ResourceState m_initialState = ResourceState::Undefined;
+
         friend class MetalSwapChain;
         TextureDesc     m_desc;
         MetalContext   *m_context{ };
         id<MTLTexture>  m_texture{ };
         MTLTextureType  m_textureType;
         MTLTextureUsage m_textureUsage;
-
-        Format        m_format       = Format::Undefined;
-        uint32_t      m_width        = 1;
-        uint32_t      m_height       = 1;
-        uint32_t      m_depth        = 1;
-        ResourceState m_initialState = ResourceState::Undefined;
 
     private:
         void UpdateTexture( const TextureDesc &desc, id<MTLTexture> texture );
@@ -51,11 +51,11 @@ namespace DenOfIz
         const MTLTextureType  &Type( ) const;
         const MTLTextureUsage &Usage( ) const;
 
-        [[nodiscard]] BitSet<ResourceState> InitialState( ) const;
+        [[nodiscard]] BitSet<ResourceState> InitialState( ) const override;
         [[nodiscard]] uint32_t              GetWidth( ) const;
         [[nodiscard]] uint32_t              GetHeight( ) const;
         [[nodiscard]] uint32_t              GetDepth( ) const;
-        [[nodiscard]] Format                GetFormat( ) const;
+        [[nodiscard]] Format                GetFormat( ) const override;
 
         ~MetalTextureResource( ) override;
 

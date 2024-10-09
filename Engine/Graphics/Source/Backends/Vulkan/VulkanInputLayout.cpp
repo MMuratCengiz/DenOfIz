@@ -61,3 +61,8 @@ VulkanInputLayout::VulkanInputLayout( const InputLayoutDesc &inputLayoutDesc )
         m_vertexInputState.pVertexAttributeDescriptions = nullptr;
     }
 }
+
+const VkPipelineVertexInputStateCreateInfo &VulkanInputLayout::GetVertexInputState( ) const
+{
+    return m_vertexInputState;
+}

@@ -153,7 +153,7 @@ void DX12CommandList::BindVertexBuffer( IBufferResource *buffer )
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView = { };
     vertexBufferView.BufferLocation           = pBuffer->GetResource( )->GetGPUVirtualAddress( );
     vertexBufferView.StrideInBytes            = 8 * sizeof( float ); // pBuffer->GetStride();
-    vertexBufferView.SizeInBytes              = pBuffer->GetSize( );
+    vertexBufferView.SizeInBytes              = pBuffer->NumBytes( );
 
     m_commandList->IASetVertexBuffers( 0, 1, &vertexBufferView );
 }
@@ -166,7 +166,7 @@ void DX12CommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType 
 
     D3D12_INDEX_BUFFER_VIEW indexBufferView = { };
     indexBufferView.BufferLocation          = pBuffer->GetResource( )->GetGPUVirtualAddress( );
-    indexBufferView.SizeInBytes             = pBuffer->GetSize( );
+    indexBufferView.SizeInBytes             = pBuffer->NumBytes( );
     switch ( indexType )
     {
     case IndexType::Uint16:
@@ -199,12 +199,12 @@ void DX12CommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     uint32_t index = 0;
     if ( dx12BindGroup->CbvSrvUavCount( ) > 0 )
     {
-        BindResourceGroup( dx12BindGroup->RootSignature( )->RegisterSpaceOffset( bindGroup->RegisterSpace( ) ) + index++, dx12BindGroup->CbvSrvUavHandle( ).Gpu );
+        BindResourceGroup( dx12BindGroup->RootSignature( )->RegisterSpaceOffset( dx12BindGroup->RegisterSpace( ) ) + index++, dx12BindGroup->CbvSrvUavHandle( ).Gpu );
     }
 
     if ( dx12BindGroup->SamplerCount( ) > 0 )
     {
-        BindResourceGroup( dx12BindGroup->RootSignature( )->RegisterSpaceOffset( bindGroup->RegisterSpace( ) ) + index, dx12BindGroup->SamplerHandle( ).Gpu );
+        BindResourceGroup( dx12BindGroup->RootSignature( )->RegisterSpaceOffset( dx12BindGroup->RegisterSpace( ) ) + index, dx12BindGroup->SamplerHandle( ).Gpu );
     }
 
     for ( const auto &rootConstant : dx12BindGroup->RootConstants( ) )

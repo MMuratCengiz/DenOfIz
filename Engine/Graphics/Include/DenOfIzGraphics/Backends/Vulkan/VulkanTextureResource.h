@@ -26,13 +26,19 @@ namespace DenOfIz
 
     class VulkanTextureResource final : public ITextureResource
     {
+        Format        m_format       = Format::Undefined;
+        uint32_t      m_width        = 1;
+        uint32_t      m_height       = 1;
+        uint32_t      m_depth        = 1;
+        ResourceState m_initialState = ResourceState::Undefined;
+
         VulkanContext *m_context = nullptr;
         TextureDesc    m_desc{ };
         bool           m_isExternal = false;
 
         VkImage                  m_image{ };
         std::vector<VkImageView> m_imageViews{ };
-        VkFormat                 m_format{ };
+        VkFormat                 m_vkFormat{ };
         VkSampler                m_sampler{ };
         VkImageAspectFlags       m_aspect{ };
         VmaAllocation            m_allocation{ };
@@ -44,30 +50,20 @@ namespace DenOfIz
         VulkanTextureResource( VulkanContext *context, const TextureDesc &desc );
 
         // Use as render target
-        VulkanTextureResource( const VkImage &image, const VkImageView &imageView, const VkFormat format, const VkImageAspectFlags imageAspect, const TextureDesc& desc );
-
-        void NotifyLayoutChange( const VkImageLayout newLayout ) const
-        {
-            m_layout = newLayout;
-        }
+        VulkanTextureResource( const VkImage &image, const VkImageView &imageView, const VkFormat format, const VkImageAspectFlags imageAspect, const TextureDesc &desc );
+        void NotifyLayoutChange( const VkImageLayout newLayout ) const;
 
         ~VulkanTextureResource( ) override;
-        [[nodiscard]] VkImage Image( ) const
-        {
-            return m_image;
-        }
-        [[nodiscard]] VkImageView ImageView( uint32_t mipLevel = 0 ) const
-        {
-            return m_imageViews[ mipLevel ];
-        }
-        [[nodiscard]] VkImageLayout Layout( ) const
-        {
-            return m_layout;
-        }
-        [[nodiscard]] VkImageAspectFlags Aspect( ) const
-        {
-            return m_aspect;
-        }
+        [[nodiscard]] VkImage            Image( ) const;
+        [[nodiscard]] VkImageView        ImageView( uint32_t mipLevel = 0 ) const;
+        [[nodiscard]] VkImageLayout      Layout( ) const;
+        [[nodiscard]] VkImageAspectFlags Aspect( ) const;
+
+        [[nodiscard]] BitSet<ResourceState> InitialState( ) const override;
+        [[nodiscard]] uint32_t              GetWidth( ) const;
+        [[nodiscard]] uint32_t              GetHeight( ) const;
+        [[nodiscard]] uint32_t              GetDepth( ) const;
+        [[nodiscard]] Format                GetFormat( ) const override;
 
     private:
         void TransitionToInitialLayout( ) const;
@@ -84,9 +80,6 @@ namespace DenOfIz
         VulkanSampler( VulkanContext *context, const SamplerDesc &desc );
         ~VulkanSampler( ) override;
 
-        [[nodiscard]] VkSampler Instance( ) const
-        {
-            return m_sampler;
-        }
+        [[nodiscard]] VkSampler Instance( ) const;
     };
 } // namespace DenOfIz

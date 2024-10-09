@@ -261,3 +261,23 @@ void VulkanSwapChain::Resize( const uint32_t width, const uint32_t height )
     CreateSurface( );
     CreateSwapChain( );
 }
+
+QueueFamily VulkanSwapChain::GetPresentationQueueFamily( ) const
+{
+    return m_presentationQueueFamily;
+}
+
+ITextureResource *VulkanSwapChain::GetRenderTarget( const uint32_t frame )
+{
+    return m_renderTargets.at( frame ).get( );
+}
+
+VkSwapchainKHR *VulkanSwapChain::GetSwapChain( )
+{
+    return &m_swapChain;
+}
+
+Viewport VulkanSwapChain::GetViewport( )
+{
+    return { 0.0f, 0.0f, static_cast<float>( m_width ), static_cast<float>( m_height ) };
+}

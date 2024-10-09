@@ -32,11 +32,8 @@ namespace DenOfIz
         std::vector<VkVertexInputAttributeDescription> m_attributeDescriptions;
 
     public:
-        explicit                                                  VulkanInputLayout( const InputLayoutDesc &inputLayoutDesc );
-        [[nodiscard]] const VkPipelineVertexInputStateCreateInfo &GetVertexInputState( ) const
-        {
-            return m_vertexInputState;
-        }
+        explicit VulkanInputLayout( const InputLayoutDesc &inputLayoutDesc );
+        [[nodiscard]] const VkPipelineVertexInputStateCreateInfo &GetVertexInputState( ) const;
         ~VulkanInputLayout( ) override = default;
     };
 

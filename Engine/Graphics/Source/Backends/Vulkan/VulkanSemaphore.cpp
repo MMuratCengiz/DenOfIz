@@ -55,3 +55,8 @@ VulkanSemaphore::~VulkanSemaphore( )
 {
     vkDestroySemaphore( m_context->LogicalDevice, m_semaphore, nullptr );
 }
+
+VkSemaphore VulkanSemaphore::GetSemaphore( ) const
+{
+    return m_semaphore;
+}

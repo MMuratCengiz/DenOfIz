@@ -45,14 +45,8 @@ namespace DenOfIz
         VkPipelineLayout    m_layout{ };
 
     public:
-        [[nodiscard]] VkPipeline Instance( ) const
-        {
-            return m_instance;
-        }
-        [[nodiscard]] VkPipelineBindPoint BindPoint( ) const
-        {
-            return m_bindPoint;
-        }
+        [[nodiscard]] VkPipeline          Instance( ) const;
+        [[nodiscard]] VkPipelineBindPoint BindPoint( ) const;
         VulkanPipeline( VulkanContext *context, const PipelineDesc & );
         ~VulkanPipeline( ) override;
 

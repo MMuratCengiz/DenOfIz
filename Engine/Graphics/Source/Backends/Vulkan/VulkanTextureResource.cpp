@@ -23,8 +23,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const TextureDesc &desc ) : ITextureResource( desc ), m_context( context ), m_desc( desc )
+VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const TextureDesc &desc ) : m_context( context ), m_desc( desc )
 {
+    m_width        = desc.Width;
+    m_height       = desc.Height;
+    m_depth        = desc.Depth;
+    m_format       = desc.Format;
+    m_initialState = desc.InitialState;
+
     VkImageType imageType = VK_IMAGE_TYPE_1D;
 
     if ( m_desc.Depth > 1 )
@@ -81,11 +87,11 @@ void VulkanTextureResource::CreateImageView( )
     VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_1D;
     if ( m_desc.Depth > 1 )
     {
-        viewType  = VK_IMAGE_VIEW_TYPE_3D;
+        viewType = VK_IMAGE_VIEW_TYPE_3D;
     }
     else if ( m_desc.Height > 1 )
     {
-        viewType  = VK_IMAGE_VIEW_TYPE_2D;
+        viewType = VK_IMAGE_VIEW_TYPE_2D;
     }
 
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) )
@@ -145,7 +151,7 @@ void VulkanTextureResource::CreateImageView( )
 
 VulkanTextureResource::VulkanTextureResource( VkImage const &image, VkImageView const &imageView, const VkFormat format, const VkImageAspectFlags imageAspect,
                                               const TextureDesc &desc ) :
-    ITextureResource( desc ), m_image( image ), m_imageViews( { imageView } ), m_format( format ), m_aspect( imageAspect )
+    m_desc( desc ), m_image( image ), m_imageViews( { imageView } ), m_vkFormat( format ), m_aspect( imageAspect )
 {
     m_isExternal = true;
 }
@@ -220,6 +226,56 @@ VulkanTextureResource::~VulkanTextureResource( )
     }
 }
 
+Format VulkanTextureResource::GetFormat( ) const
+{
+    return m_format;
+}
+
+uint32_t VulkanTextureResource::GetDepth( ) const
+{
+    return m_depth;
+}
+
+uint32_t VulkanTextureResource::GetHeight( ) const
+{
+    return m_height;
+}
+
+uint32_t VulkanTextureResource::GetWidth( ) const
+{
+    return m_width;
+}
+
+BitSet<ResourceState> VulkanTextureResource::InitialState( ) const
+{
+    return m_initialState;
+}
+
+VkImageAspectFlags VulkanTextureResource::Aspect( ) const
+{
+    return m_aspect;
+}
+
+VkImageLayout VulkanTextureResource::Layout( ) const
+{
+    return m_layout;
+}
+
+VkImageView VulkanTextureResource::ImageView( uint32_t mipLevel ) const
+{
+    return m_imageViews[ mipLevel ];
+}
+
+VkImage VulkanTextureResource::Image( ) const
+{
+    return m_image;
+}
+
+void VulkanTextureResource::NotifyLayoutChange( const VkImageLayout newLayout ) const
+{
+    m_layout = newLayout;
+}
+
 VulkanSampler::VulkanSampler( VulkanContext *context, const SamplerDesc &desc ) : m_context( context ), m_desc( desc )
 {
     VkSamplerCreateInfo samplerCreateInfo{ };
@@ -246,4 +302,9 @@ VulkanSampler::VulkanSampler( VulkanContext *context, const SamplerDesc &desc ) 
 VulkanSampler::~VulkanSampler( )
 {
     vkDestroySampler( m_context->LogicalDevice, m_sampler, nullptr );
+}
+
+VkSampler VulkanSampler::Instance( ) const
+{
+    return m_sampler;
 }

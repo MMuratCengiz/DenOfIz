@@ -38,8 +38,9 @@ namespace DenOfIz
 
     class VulkanResourceBindGroup final : public IResourceBindGroup
     {
-        VulkanContext       *m_context;
-        VulkanRootSignature *m_rootSignature;
+        VulkanContext        *m_context;
+        VulkanRootSignature  *m_rootSignature;
+        ResourceBindGroupDesc m_desc;
 
         VkDescriptorSetLayout                  m_emptyLayout{ };
         VkDescriptorSet                        m_descriptorSet{ };
@@ -53,30 +54,11 @@ namespace DenOfIz
         void SetRootConstants( uint32_t binding, void *data ) override;
         void Update( const UpdateDesc &desc ) override;
 
-        [[nodiscard]] const std::vector<VulkanRootConstantBinding> &RootConstants( ) const
-        {
-            return m_rootConstants;
-        }
-
-        [[nodiscard]] bool HasDescriptorSet( ) const
-        {
-            return m_descriptorSet != nullptr;
-        }
-
-        [[nodiscard]] const VkDescriptorSet &GetDescriptorSet( ) const
-        {
-            return m_descriptorSet;
-        }
-
-        [[nodiscard]] VulkanRootSignature *RootSignature( ) const
-        {
-            return m_rootSignature;
-        }
-
-        [[nodiscard]] const std::vector<VkWriteDescriptorSet> &GetWriteDescriptorSets( ) const
-        {
-            return m_writeDescriptorSets;
-        }
+        [[nodiscard]] const std::vector<VulkanRootConstantBinding> &RootConstants( ) const;
+        [[nodiscard]] bool                                          HasDescriptorSet( ) const;
+        [[nodiscard]] const VkDescriptorSet                        &GetDescriptorSet( ) const;
+        [[nodiscard]] VulkanRootSignature                          *RootSignature( ) const;
+        [[nodiscard]] uint32_t                                      RegisterSpace( ) const;
 
     protected:
         void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) override;

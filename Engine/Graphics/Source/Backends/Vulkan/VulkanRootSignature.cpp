@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc ) : IRootSignature( desc ), m_desc( std::move( desc ) ), m_context( context )
+VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc ) : m_desc( std::move( desc ) ), m_context( context )
 {
     for ( const ResourceBindingDesc &binding : m_desc.ResourceBindings )
     {
@@ -181,4 +181,38 @@ VulkanRootSignature::~VulkanRootSignature( )
     }
 
     vkDestroyDescriptorSetLayout( m_context->LogicalDevice, m_emptyLayout, nullptr );
+}
+
+ResourceBindingDesc VulkanRootSignature::GetVkShiftedBinding( const ResourceBindingSlot &slot ) const
+{
+    return ContainerUtilities::SafeGetMapValue( m_resourceBindingMap, slot.Key( ), "Binding slot does not exist in root signature: " + slot.ToString( ) );
+}
+
+uint32_t VulkanRootSignature::NumRootConstants( ) const
+{
+    return m_pushConstants.size( );
+}
+
+VkPushConstantRange VulkanRootSignature::PushConstantRange( const uint32_t binding ) const
+{
+    if ( binding >= m_pushConstants.size( ) )
+    {
+        LOG( ERROR ) << "Root constant not found for binding " << binding;
+    }
+    return m_pushConstants[ binding ];
+}
+
+const VkDescriptorSetLayout &VulkanRootSignature::DescriptorSetLayout( const uint32_t registerSpace ) const
+{
+    if ( registerSpace >= m_layouts.size( ) )
+    {
+        LOG( ERROR ) << "Descriptor set not found for register space " << registerSpace;
+    }
+
+    return m_layouts[ registerSpace ];
+}
+
+VkPipelineLayout VulkanRootSignature::PipelineLayout( ) const
+{
+    return m_pipelineLayout;
 }

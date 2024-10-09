@@ -22,11 +22,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanResourceBindGroup::VulkanResourceBindGroup( VulkanContext *context, const ResourceBindGroupDesc &desc ) : IResourceBindGroup( desc ), m_context( context )
+VulkanResourceBindGroup::VulkanResourceBindGroup( VulkanContext *context, const ResourceBindGroupDesc &desc ) : m_desc( desc ), m_context( context )
 {
     m_rootSignature = dynamic_cast<VulkanRootSignature *>( m_desc.RootSignature );
 
-    if ( m_desc.RegisterSpace != DZConfiguration::Instance().RootConstantRegisterSpace )
+    if ( m_desc.RegisterSpace != DZConfiguration::Instance( ).RootConstantRegisterSpace )
     {
         const auto &layout = m_rootSignature->DescriptorSetLayout( m_desc.RegisterSpace );
 
@@ -56,7 +56,18 @@ void VulkanResourceBindGroup::SetRootConstants( const uint32_t binding, void *da
 void VulkanResourceBindGroup::Update( const UpdateDesc &desc )
 {
     m_writeDescriptorSets.clear( );
-    IResourceBindGroup::Update( desc );
+    for ( auto item : desc.Buffers )
+    {
+        BindBuffer( item.Slot, item.Resource );
+    }
+    for ( auto item : desc.Textures )
+    {
+        BindTexture( item.Slot, item.Resource );
+    }
+    for ( auto item : desc.Samplers )
+    {
+        BindSampler( item.Slot, item.Resource );
+    }
 
     vkUpdateDescriptorSets( m_context->LogicalDevice, m_writeDescriptorSets.size( ), m_writeDescriptorSets.data( ), 0, nullptr );
 }
@@ -108,4 +119,29 @@ VulkanResourceBindGroup::~VulkanResourceBindGroup( )
 {
     m_storage.Clear( );
     m_context->DescriptorPoolManager->FreeDescriptorSets( 1, &m_descriptorSet );
+}
+
+const std::vector<VulkanRootConstantBinding> &VulkanResourceBindGroup::RootConstants( ) const
+{
+    return m_rootConstants;
+}
+
+bool VulkanResourceBindGroup::HasDescriptorSet( ) const
+{
+    return m_descriptorSet != nullptr;
+}
+
+const VkDescriptorSet &VulkanResourceBindGroup::GetDescriptorSet( ) const
+{
+    return m_descriptorSet;
+}
+
+VulkanRootSignature *VulkanResourceBindGroup::RootSignature( ) const
+{
+    return m_rootSignature;
+}
+
+uint32_t VulkanResourceBindGroup::RegisterSpace( ) const
+{
+    return m_desc.RegisterSpace;
 }

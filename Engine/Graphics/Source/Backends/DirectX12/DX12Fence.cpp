@@ -48,3 +48,8 @@ void DX12Fence::NotifyCommandQueue( ID3D12CommandQueue *commandQueue )
     Reset( );
     DX_CHECK_RESULT( commandQueue->Signal( m_fence.get( ), m_fenceValue ) );
 }
+
+ID3D12Fence *DX12Fence::GetFence( ) const
+{
+    return m_fence.get( );
+}

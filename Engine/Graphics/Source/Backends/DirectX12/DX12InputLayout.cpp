@@ -91,3 +91,8 @@ DX12InputLayout::DX12InputLayout( const InputLayoutDesc &desc )
 DX12InputLayout::~DX12InputLayout( )
 {
 }
+
+const D3D12_INPUT_LAYOUT_DESC &DX12InputLayout::GetInputLayout( ) const
+{
+    return m_inputLayout;
+}

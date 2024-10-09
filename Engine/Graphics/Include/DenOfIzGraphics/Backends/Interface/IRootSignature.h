@@ -116,40 +116,7 @@ namespace DenOfIz
 
     class IRootSignature : public NonCopyable
     {
-    protected:
-        std::unordered_map<uint32_t, ResourceBindingDesc> m_resourceBindings;
-        std::vector<ResourceBindingSlot>                  m_requiredBindings;
-
     public:
-        explicit IRootSignature( const RootSignatureDesc &desc )
-        {
-            for ( const auto &binding : desc.ResourceBindings )
-            {
-                ResourceBindingSlot slot{
-                    .Binding       = binding.Binding,
-                    .RegisterSpace = binding.RegisterSpace,
-                    .Type          = binding.BindingType,
-                };
-                m_resourceBindings[ slot.Key( ) ] = binding;
-                m_requiredBindings.push_back( slot );
-            }
-        }
-
-        [[nodiscard]] std::vector<ResourceBindingSlot> Bindings( ) const
-        {
-            return m_requiredBindings;
-        }
-
-        [[nodiscard]] const ResourceBindingDesc &FindBinding( const ResourceBindingSlot &slot )
-        {
-            const auto it = m_resourceBindings.find( slot.Key( ) );
-            if ( it == m_resourceBindings.end( ) )
-            {
-                LOG( ERROR ) << "Unable to find slot with type[" << static_cast<int>( slot.Type ) << "],binding[" << slot.Binding << "],register[" << slot.RegisterSpace << "].";
-            }
-            return it->second;
-        }
-
         virtual ~IRootSignature( ) = default;
     };
 

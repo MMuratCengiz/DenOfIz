@@ -68,48 +68,10 @@ namespace DenOfIz
 
     class ITextureResource
     {
-
-    protected:
-        Format        m_format       = Format::Undefined;
-        uint32_t      m_width        = 1;
-        uint32_t      m_height       = 1;
-        uint32_t      m_depth        = 1;
-        ResourceState m_initialState = ResourceState::Undefined;
-        const void   *m_data         = nullptr;
-
-        explicit ITextureResource( const TextureDesc &desc )
-        {
-            m_width        = desc.Width;
-            m_height       = desc.Height;
-            m_depth        = desc.Depth;
-            m_format       = desc.Format;
-            m_initialState = desc.InitialState;
-        }
-
     public:
-        virtual ~ITextureResource( ) = default;
-
-        [[nodiscard]] BitSet<ResourceState> InitialState( ) const
-        {
-            return m_initialState;
-        }
-
-        [[nodiscard]] uint32_t GetWidth( ) const
-        {
-            return m_width;
-        }
-        [[nodiscard]] uint32_t GetHeight( ) const
-        {
-            return m_height;
-        }
-        [[nodiscard]] uint32_t GetDepth( ) const
-        {
-            return m_depth;
-        }
-        [[nodiscard]] Format GetFormat( ) const
-        {
-            return m_format;
-        }
+        virtual ~ITextureResource( )                        = default;
+        virtual BitSet<ResourceState> InitialState( ) const = 0;
+        virtual Format                GetFormat( ) const    = 0;
     };
 
     static void ValidateTextureDesc( TextureDesc &desc )
@@ -151,9 +113,6 @@ namespace DenOfIz
 
     class ISampler
     {
-    protected:
-        std::string m_name;
-
     public:
         virtual ~ISampler( ) = default;
     };

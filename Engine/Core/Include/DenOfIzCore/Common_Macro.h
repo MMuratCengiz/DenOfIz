@@ -21,16 +21,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "exception"
 #include "glog/logging.h"
 
-#define DZ_RETURN_IF(condition)                                                                                                                                                    \
+#define DZ_RETURN_IF( condition )                                                                                                                                                  \
     if ( condition )                                                                                                                                                               \
     return
-#define DZ_ASSERTM(exp, msg) if ( !(exp) ) DLOG(ERROR) << msg
-#define DZ_NOT_NULL(exp)                                                                                                                                                           \
+#define DZ_ASSERTM( exp, msg )                                                                                                                                                     \
+    if ( !( exp ) )                                                                                                                                                                \
+    DLOG( ERROR ) << msg
+#define DZ_NOT_NULL( exp )                                                                                                                                                         \
     do                                                                                                                                                                             \
     {                                                                                                                                                                              \
         if ( !exp )                                                                                                                                                                \
         {                                                                                                                                                                          \
-            throw std::runtime_error(#exp " is null");                                                                                                                             \
+            throw std::runtime_error( #exp " is null" );                                                                                                                           \
         }                                                                                                                                                                          \
     }                                                                                                                                                                              \
     while ( 0 )
@@ -39,13 +41,21 @@ namespace DenOfIz
 {
     class NonCopyable
     {
-        NonCopyable(NonCopyable const &)            = delete;
-        NonCopyable(NonCopyable &&)                 = delete;
-        NonCopyable &operator=(NonCopyable const &) = delete;
-        NonCopyable &operator=(NonCopyable &&)      = delete;
+        NonCopyable( NonCopyable const & )            = delete;
+        NonCopyable( NonCopyable && )                 = delete;
+        NonCopyable &operator=( NonCopyable const & ) = delete;
+        NonCopyable &operator=( NonCopyable && )      = delete;
 
     protected:
-        NonCopyable()  = default;
-        ~NonCopyable() = default;
+        NonCopyable( )  = default;
+        ~NonCopyable( ) = default;
     };
 } // namespace DenOfIz
+
+#ifdef DZ_OPTIMIZED
+#define DZ_METHOD_INTERFACE( signature )
+#define DZ_METHOD_IMPLEMENTATION( signature ) signature
+#else
+#define DZ_METHOD_INTERFACE( signature ) virtual signature = 0
+#define DZ_METHOD_IMPLEMENTATION( signature ) signature override
+#endif

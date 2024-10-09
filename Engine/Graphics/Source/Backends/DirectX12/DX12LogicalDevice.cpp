@@ -332,3 +332,8 @@ std::unique_ptr<ISampler> DX12LogicalDevice::CreateSampler( const SamplerDesc &s
     const auto sampler = new DX12Sampler( m_context.get( ), samplerDesc );
     return std::unique_ptr<ISampler>( sampler );
 }
+
+bool DX12LogicalDevice::IsDeviceLost( )
+{
+    return m_context->IsDeviceLost;
+}

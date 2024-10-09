@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
+    //! \brief Cpu-Gpu synchronization primitive.
     class IFence
     {
     public:

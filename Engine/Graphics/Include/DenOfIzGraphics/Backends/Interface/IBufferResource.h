@@ -51,7 +51,7 @@ namespace DenOfIz
     struct BufferDesc
     {
         uint32_t                   Alignment = 0; // None or Constants.BufferAlignment(Api Dependant)
-        uint32_t                   NumBytes{ };
+        size_t                     NumBytes{ };
         BufferView                 BufferView{ }; // For Structured Buffers
         Format                     Format = Format::Undefined;
         BitSet<ResourceDescriptor> Descriptor;
@@ -62,35 +62,15 @@ namespace DenOfIz
 
     class IBufferResource
     {
-    protected:
-        uint32_t              m_numBytes     = 0;
-        const void           *m_data         = nullptr;
-        void                 *m_mappedMemory = nullptr;
-        BitSet<ResourceState> m_state;
-
     public:
-        IBufferResource( const BufferDesc &desc ) : m_numBytes( desc.NumBytes ), m_state( desc.InitialState )
-        {
-        }
         virtual ~IBufferResource( ) = default;
 
         // Allowed only on CPU visible resources
         virtual void *MapMemory( )   = 0;
         virtual void  UnmapMemory( ) = 0;
         //--
-        [[nodiscard]] virtual BitSet<ResourceState> InitialState( ) const
-        {
-            return m_state;
-        }
-
-        [[nodiscard]] uint32_t GetSize( ) const
-        {
-            return m_numBytes;
-        }
-
-        [[nodiscard]] const void *GetData( ) const
-        {
-            return m_data;
-        }
+        [[nodiscard]] virtual BitSet<ResourceState> InitialState( ) const = 0;
+        [[nodiscard]] virtual size_t                NumBytes( ) const     = 0;
+        [[nodiscard]] virtual const void           *Data( ) const         = 0;
     };
 } // namespace DenOfIz

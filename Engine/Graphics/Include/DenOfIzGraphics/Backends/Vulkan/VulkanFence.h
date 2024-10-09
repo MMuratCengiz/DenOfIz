@@ -34,10 +34,7 @@ namespace DenOfIz
         ~                     VulkanFence( ) override;
         void                  Wait( ) override;
         void                  Reset( ) override;
-        [[nodiscard]] VkFence GetFence( ) const
-        {
-            return m_fence;
-        }
+        [[nodiscard]] VkFence GetFence( ) const;
     };
 
 } // namespace DenOfIz

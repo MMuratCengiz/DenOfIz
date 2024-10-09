@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
+    //! \brief Creation parameters for a swap chain.
     struct SwapChainDesc
     {
         GraphicsWindowHandle *WindowHandle      = nullptr;
@@ -43,6 +44,14 @@ namespace DenOfIz
         float Height = 0.0f;
     };
 
+    //! @brief To render to screen by 1. imageIndex = AcquireNextImage( ) and 2. GetRenderTarget( imageIndex ). The render target can then be used in {@ref ICommandList::BeginRendering( )}.
+    //! @see
+    //! @code
+    //! auto imageIndex = swapChain->AcquireNextImage( imageReadySemaphore );
+    //! SwapChainDesc swapChainDesc { ... };
+    //! auto swapChain = logicalDevice->CreateSwapChain( swapChainDesc );
+    //! auto renderTarget = swapChain->GetRenderTarget( imageIndex );
+    //! @endcode
     class ISwapChain
     {
     public:

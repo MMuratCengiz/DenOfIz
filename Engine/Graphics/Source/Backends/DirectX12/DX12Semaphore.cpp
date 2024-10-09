@@ -51,3 +51,8 @@ void DX12Semaphore::NotifyCommandQueue( ID3D12CommandQueue *commandQueue )
     m_fenceValue = m_fenceValue + 1 % MAX_FENCE_VALUE;
     DX_CHECK_RESULT( commandQueue->Signal( m_fence.get( ), m_fenceValue ) );
 }
+
+ID3D12Fence *DX12Semaphore::GetFence( ) const
+{
+    return m_fence.get( );
+}
