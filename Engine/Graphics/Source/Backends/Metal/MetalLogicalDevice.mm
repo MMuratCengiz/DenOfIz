@@ -167,3 +167,8 @@ std::unique_ptr<ISampler> MetalLogicalDevice::CreateSampler( const SamplerDesc &
 void MetalLogicalDevice::WaitIdle( )
 {
 }
+
+bool MetalLogicalDevice::IsDeviceLost( )
+{
+    return false;
+}

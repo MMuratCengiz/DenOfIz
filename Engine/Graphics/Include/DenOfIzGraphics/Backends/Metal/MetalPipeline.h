@@ -41,25 +41,10 @@ namespace DenOfIz
         MetalPipeline( MetalContext *context, const PipelineDesc &desc );
         ~MetalPipeline( ) override;
 
-        const MTLCullMode& CullMode( ) const
-        {
-            return m_cullMode;
-        }
-
-        const id<MTLDepthStencilState> &DepthStencilState( ) const
-        {
-            return m_depthStencilState;
-        }
-
-        const id<MTLRenderPipelineState> &GraphicsPipelineState( ) const
-        {
-            return m_graphicsPipelineState;
-        }
-
-        const id<MTLComputePipelineState> &ComputePipelineState( ) const
-        {
-            return m_computePipelineState;
-        }
+        const MTLCullMode                 &CullMode( ) const;
+        const id<MTLDepthStencilState>    &DepthStencilState( ) const;
+        const id<MTLRenderPipelineState>  &GraphicsPipelineState( ) const;
+        const id<MTLComputePipelineState> &ComputePipelineState( ) const;
 
     private:
         void CreateGraphicsPipeline( );

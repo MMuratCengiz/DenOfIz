@@ -108,3 +108,13 @@ void MetalArgumentBuffer::Reset( )
     m_nextOffset    = 0;
     m_currentOffset = 0;
 }
+
+uint64_t MetalArgumentBuffer::Offset( ) const
+{
+    return m_nextOffset;
+}
+
+id<MTLBuffer> MetalArgumentBuffer::Buffer( ) const
+{
+    return m_buffer;
+}

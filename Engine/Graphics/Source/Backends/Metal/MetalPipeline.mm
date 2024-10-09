@@ -216,3 +216,23 @@ void MetalPipeline::InitStencilFace( MTLStencilDescriptor *stencilDesc, const St
     stencilDesc.readMask                  = m_desc.StencilTest.ReadMask;
     stencilDesc.writeMask                 = m_desc.StencilTest.WriteMask;
 }
+
+const MTLCullMode &MetalPipeline::CullMode( ) const
+{
+    return m_cullMode;
+}
+
+const id<MTLDepthStencilState> &MetalPipeline::DepthStencilState( ) const
+{
+    return m_depthStencilState;
+}
+
+const id<MTLRenderPipelineState> &MetalPipeline::GraphicsPipelineState( ) const
+{
+    return m_graphicsPipelineState;
+}
+
+const id<MTLComputePipelineState> &MetalPipeline::ComputePipelineState( ) const
+{
+    return m_computePipelineState;
+}

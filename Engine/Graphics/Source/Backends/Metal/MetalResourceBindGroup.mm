@@ -20,8 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-MetalResourceBindGroup::MetalResourceBindGroup( MetalContext *context, ResourceBindGroupDesc desc ) :
-    IResourceBindGroup(desc), m_desc( desc ), m_context( context ), m_updateDesc( desc.RegisterSpace )
+MetalResourceBindGroup::MetalResourceBindGroup( MetalContext *context, ResourceBindGroupDesc desc ) : m_desc( desc ), m_context( context ), m_updateDesc( desc.RegisterSpace )
 {
     m_context       = context;
     m_rootSignature = static_cast<MetalRootSignature *>( desc.RootSignature );

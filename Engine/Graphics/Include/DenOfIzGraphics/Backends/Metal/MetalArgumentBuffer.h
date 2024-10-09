@@ -42,13 +42,7 @@ namespace DenOfIz
         std::pair<Byte *, uint64_t> Reserve( size_t numAddresses, uint32_t numRootConstantBytes = 0 );
         std::pair<Byte *, uint64_t> Duplicate( size_t numAddresses, uint32_t numRootConstantBytes = 0 );
         void                        Reset( );
-        [[nodiscard]] uint64_t      Offset( ) const
-        {
-            return m_nextOffset;
-        }
-        [[nodiscard]] id<MTLBuffer> Buffer( ) const
-        {
-            return m_buffer;
-        }
+        [[nodiscard]] uint64_t      Offset( ) const;
+        [[nodiscard]] id<MTLBuffer> Buffer( ) const;
     };
 } // namespace DenOfIz

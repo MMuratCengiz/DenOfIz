@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class MetalBufferResource : public IBufferResource
+    class MetalBufferResource final : public IBufferResource
     {
     private:
         MetalContext    *m_context{ };
@@ -39,20 +39,15 @@ namespace DenOfIz
     public:
         MetalBufferResource( MetalContext *context, const BufferDesc &desc );
         ~MetalBufferResource( ) override;
-        const id<MTLBuffer> &Instance( ) const
-        {
-            return m_buffer;
-        }
-        const MTLResourceUsage &Usage( ) const
-        {
-            return m_usage;
-        }
-        const MTLDataType &Type( ) const
-        {
-            return m_dataType;
-        }
-        void *MapMemory( ) override;
-        void  UnmapMemory( ) override;
+        const id<MTLBuffer>    &Instance( ) const;
+        const MTLResourceUsage &Usage( ) const;
+        const MTLDataType      &Type( ) const;
+        void                   *MapMemory( ) override;
+        void                    UnmapMemory( ) override;
+
+        [[nodiscard]] size_t                NumBytes( ) const override;
+        [[nodiscard]] const void           *Data( ) const override;
+        [[nodiscard]] BitSet<ResourceState> InitialState( ) const override;
     };
 
 } // namespace DenOfIz

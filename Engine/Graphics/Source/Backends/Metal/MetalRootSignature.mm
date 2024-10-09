@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatureDesc &desc ) : IRootSignature( desc ), m_context( context ), m_desc( desc )
+MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
 {
     std::vector<uint32_t> registerSpaceSize;
 

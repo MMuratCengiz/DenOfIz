@@ -52,3 +52,8 @@ MetalInputLayout::MetalInputLayout( MetalContext *context, InputLayoutDesc desc 
 MetalInputLayout::~MetalInputLayout( )
 {
 }
+
+MTLVertexDescriptor *MetalInputLayout::GetVertexDescriptor( ) const
+{
+    return m_vertexDescriptor;
+}

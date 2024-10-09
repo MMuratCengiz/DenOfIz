@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc ) : ITextureResource( desc ), m_context( context ), m_desc( desc )
+MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc ) : m_context( context ), m_desc( desc )
 {
     m_width        = desc.Width;
     m_height       = desc.Height;
@@ -84,12 +84,11 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
     }
 }
 
-MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc, id<MTLTexture> texture ) :
-    ITextureResource( m_desc ), m_context( context ), m_texture( texture )
+MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc, id<MTLTexture> texture ) : m_context( context ), m_texture( texture )
 {
-    m_context          = context;
-    m_desc             = desc;
-    m_texture          = texture;
+    m_context = context;
+    m_desc    = desc;
+    m_texture = texture;
 }
 
 void MetalTextureResource::UpdateTexture( const TextureDesc &desc, id<MTLTexture> texture )
