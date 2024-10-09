@@ -57,8 +57,11 @@ DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const Resour
         case D3D12_ROOT_PARAMETER_TYPE_CBV:
         case D3D12_ROOT_PARAMETER_TYPE_SRV:
         case D3D12_ROOT_PARAMETER_TYPE_UAV:
-            ContainerUtilities::EnsureSize( m_rootDescriptors, rootParameter.Descriptor.ShaderRegister );
-            m_rootDescriptors[ rootParameter.Descriptor.ShaderRegister ] = { rootParameterIndex, rootParameter.ParameterType, 0 };
+            if ( rootParameter.Descriptor.RegisterSpace == desc.RegisterSpace )
+            {
+                ContainerUtilities::EnsureSize( m_rootDescriptors, rootParameter.Descriptor.ShaderRegister );
+                m_rootDescriptors[ rootParameter.Descriptor.ShaderRegister ] = { rootParameterIndex, rootParameter.ParameterType, 0 };
+            }
             break;
         }
         ++rootParameterIndex;
@@ -143,6 +146,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE DX12ResourceBindGroup::CpuHandleSampler( const uint3
 {
     return CD3DX12_CPU_DESCRIPTOR_HANDLE( m_samplerHandle.Cpu, binding, m_context->ShaderVisibleSamplerDescriptorHeap->GetDescriptorSize( ) );
 }
+
 DescriptorHandle DX12ResourceBindGroup::CbvSrvUavHandle( ) const
 {
     return m_cbvSrvUavHandle;

@@ -8,7 +8,7 @@ struct PushConstants {
     float4 color;
 };
 
-[[vk::push_constant]] ConstantBuffer<PushConstants> pushConstants : register(b0, space99);
+[[vk::push_constant]] ConstantBuffer<PushConstants> pushConstants : register(b0, space31);
 
 float4 main(PSInput input) : SV_TARGET {
     return pushConstants.color;

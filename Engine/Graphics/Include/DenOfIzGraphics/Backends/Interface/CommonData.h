@@ -613,17 +613,19 @@ namespace DenOfIz
     struct DZConfiguration
     {
         /**
+         *  NOTE: Maximum register space for Vulkan is 32(number of sets). Therefore the register spaces take the last two up.
+         *
          *  Specify the register space where all bindings are stored as root level buffer.
          *  for best performance results only include buffers and not textures. As Textures and Samplers usually are bound on a descriptor table.
          *  - For (D3D12/Metal) this will use direct buffers/root buffers instead of descriptor tables.
          *  - For (Vulkan) this doesn't have any effect.
          */
-        uint32_t RootLevelBufferRegisterSpace = 98;
+        uint32_t RootLevelBufferRegisterSpace = 30;
         /**
          * Specify the register space where all bindings are stored as root constants(in DirectX12) or push constants(in Vulkan). In Metal these behave the same as root level
          * buffers.
          */
-        uint32_t RootConstantRegisterSpace = 99;
+        uint32_t RootConstantRegisterSpace = 31;
 
         static DZConfiguration Instance( )
         {

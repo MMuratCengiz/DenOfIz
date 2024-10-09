@@ -37,6 +37,7 @@ namespace DenOfIz
         std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> m_layoutBindings;
         // Weirdly enough, seems to make the most sense here
         VkPipelineLayout m_pipelineLayout{ };
+        VkDescriptorSetLayout m_emptyLayout{ };
 
     public:
          VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc );

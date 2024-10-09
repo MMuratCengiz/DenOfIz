@@ -5,7 +5,7 @@ struct PSInput
     float2 texCoord : TEXCOORD;
 };
 
-cbuffer ConstantBuffer : register( b0, space98 )
+cbuffer ConstantBuffer : register( b0, space30 )
 {
     float4x4 model;
 };

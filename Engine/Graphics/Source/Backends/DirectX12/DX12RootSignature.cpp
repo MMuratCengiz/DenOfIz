@@ -56,11 +56,13 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
     }
 
     std::copy( m_rootConstants.begin( ), m_rootConstants.end( ), std::back_inserter( m_rootParameters ) );
-
     for ( const auto &range : m_registerSpaceRanges )
     {
-        ContainerUtilities::SafeSet( m_registerSpaceOffsets, range.Space, static_cast<uint32_t>( m_rootParameters.size( ) ) );
-        ProcessRegisterSpaceRange( range );
+        if ( range.Space != -1 )
+        {
+            ContainerUtilities::SafeSet( m_registerSpaceOffsets, range.Space, static_cast<uint32_t>( m_rootParameters.size( ) ) );
+            ProcessRegisterSpaceRange( range );
+        }
     }
 
     D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc( static_cast<uint32_t>( m_rootParameters.size( ) ), m_rootParameters.data( ) );
