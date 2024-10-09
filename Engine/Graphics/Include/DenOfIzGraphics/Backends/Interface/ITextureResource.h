@@ -155,10 +155,6 @@ namespace DenOfIz
         std::string m_name;
 
     public:
-        virtual ~                        ISampler( ) = default;
-        [[nodiscard]] const std::string &Name( ) const
-        {
-            return m_name;
-        }
+        virtual ~ISampler( ) = default;
     };
 } // namespace DenOfIz

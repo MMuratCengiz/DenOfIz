@@ -22,6 +22,12 @@ using namespace DenOfIz;
 
 MetalTextureResource::MetalTextureResource( MetalContext *context, const TextureDesc &desc ) : ITextureResource( desc ), m_context( context ), m_desc( desc )
 {
+    m_width        = desc.Width;
+    m_height       = desc.Height;
+    m_depth        = desc.Depth;
+    m_format       = desc.Format;
+    m_initialState = desc.InitialState;
+
     ValidateTextureDesc( m_desc );
     SetTextureType( );
 
@@ -153,6 +159,43 @@ float MetalTextureResource::MinLODClamp( )
 MetalTextureResource::~MetalTextureResource( )
 {
 }
+const id<MTLTexture> &MetalTextureResource::Instance( ) const
+{
+    return m_texture;
+}
+const MTLTextureType &MetalTextureResource::Type( ) const
+{
+    return m_textureType;
+}
+const MTLTextureUsage &MetalTextureResource::Usage( ) const
+{
+    return m_textureUsage;
+}
+
+DenOfIz::BitSet<ResourceState> MetalTextureResource::InitialState( ) const
+{
+    return m_initialState;
+}
+
+uint32_t MetalTextureResource::GetWidth( ) const
+{
+    return m_width;
+}
+
+uint32_t MetalTextureResource::GetHeight( ) const
+{
+    return m_height;
+}
+
+uint32_t MetalTextureResource::GetDepth( ) const
+{
+    return m_depth;
+}
+
+Format MetalTextureResource::GetFormat( ) const
+{
+    return m_format;
+}
 
 MetalSampler::MetalSampler( MetalContext *context, const SamplerDesc &desc ) : m_context( context ), m_desc( desc )
 {
@@ -191,4 +234,9 @@ const id<MTLSamplerState> &MetalSampler::Instance( ) const
 const float MetalSampler::LODBias( ) const
 {
     return m_desc.MipLodBias;
+}
+
+const std::string &MetalSampler::Name( ) const
+{
+    return m_name;
 }

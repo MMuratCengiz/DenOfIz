@@ -33,24 +33,30 @@ namespace DenOfIz
         id<MTLTexture>  m_texture{ };
         MTLTextureType  m_textureType;
         MTLTextureUsage m_textureUsage;
+
+        Format        m_format       = Format::Undefined;
+        uint32_t      m_width        = 1;
+        uint32_t      m_height       = 1;
+        uint32_t      m_depth        = 1;
+        ResourceState m_initialState = ResourceState::Undefined;
+
     private:
         void UpdateTexture( const TextureDesc &desc, id<MTLTexture> texture );
 
     public:
         MetalTextureResource( MetalContext *context, const TextureDesc &desc );
         MetalTextureResource( MetalContext *context, const TextureDesc &desc, id<MTLTexture> texture );
-        const id<MTLTexture> &Instance( ) const
-        {
-            return m_texture;
-        }
-        const MTLTextureType &Type( ) const
-        {
-            return m_textureType;
-        }
-        const MTLTextureUsage &Usage( ) const
-        {
-            return m_textureUsage;
-        }
+
+        const id<MTLTexture>  &Instance( ) const;
+        const MTLTextureType  &Type( ) const;
+        const MTLTextureUsage &Usage( ) const;
+
+        [[nodiscard]] BitSet<ResourceState> InitialState( ) const;
+        [[nodiscard]] uint32_t              GetWidth( ) const;
+        [[nodiscard]] uint32_t              GetHeight( ) const;
+        [[nodiscard]] uint32_t              GetDepth( ) const;
+        [[nodiscard]] Format                GetFormat( ) const;
+
         ~MetalTextureResource( ) override;
 
         float MinLODClamp( );
@@ -65,11 +71,13 @@ namespace DenOfIz
         MetalContext       *m_context;
         SamplerDesc         m_desc;
         id<MTLSamplerState> m_sampler{ };
+        std::string         m_name;
 
     public:
         MetalSampler( MetalContext *context, const SamplerDesc &desc );
-        const id<MTLSamplerState> &Instance( ) const;
-        const float LODBias( ) const;
+        const id<MTLSamplerState>       &Instance( ) const;
+        const float                      LODBias( ) const;
+        [[nodiscard]] const std::string &Name( ) const;
         ~MetalSampler( ) override;
     };
 } // namespace DenOfIz

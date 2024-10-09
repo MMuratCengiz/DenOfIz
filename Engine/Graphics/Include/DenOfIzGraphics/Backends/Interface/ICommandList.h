@@ -21,7 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <array>
 #include "IBufferResource.h"
 #include "IFence.h"
-#include "ILock.h"
 #include "IPipeline.h"
 #include "IRayTracingAccelerationStructure.h"
 #include "IResourceBindGroup.h"

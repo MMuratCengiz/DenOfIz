@@ -15,7 +15,6 @@
 #include "Interface/IFence.h"
 #include "Interface/ILogicalDevice.h"
 #include "Interface/IPipeline.h"
-#include "Interface/IRenderTarget.h"
 #include "Interface/ISemaphore.h"
 #include "Interface/IShader.h"
 

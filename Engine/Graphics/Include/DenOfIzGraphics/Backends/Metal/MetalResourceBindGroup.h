@@ -57,9 +57,10 @@ namespace DenOfIz
     class MetalResourceBindGroup : public IResourceBindGroup
     {
     private:
-        MetalContext       *m_context;
-        MetalRootSignature *m_rootSignature;
-        UpdateDesc          m_updateDesc;
+        ResourceBindGroupDesc m_desc;
+        MetalContext         *m_context;
+        MetalRootSignature   *m_rootSignature;
+        UpdateDesc            m_updateDesc;
 
         std::vector<MetalUpdateDescItem<MetalBufferResource>>  m_buffers;
         std::vector<MetalUpdateDescItem<MetalTextureResource>> m_textures;

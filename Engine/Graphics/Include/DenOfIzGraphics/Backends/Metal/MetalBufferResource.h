@@ -33,7 +33,8 @@ namespace DenOfIz
         id<MTLBuffer>    m_buffer{ };
         MTLResourceUsage m_usage{ };
         MTLDataType      m_dataType{ };
-        void            *m_mappedMemory{ };
+        uint32_t         m_numBytes     = 0;
+        void            *m_mappedMemory = nullptr;
 
     public:
         MetalBufferResource( MetalContext *context, const BufferDesc &desc );

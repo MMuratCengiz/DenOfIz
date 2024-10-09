@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 
 MetalResourceBindGroup::MetalResourceBindGroup( MetalContext *context, ResourceBindGroupDesc desc ) :
-    IResourceBindGroup( desc ), m_context( context ), m_updateDesc( desc.RegisterSpace )
+    IResourceBindGroup(desc), m_desc( desc ), m_context( context ), m_updateDesc( desc.RegisterSpace )
 {
     m_context       = context;
     m_rootSignature = static_cast<MetalRootSignature *>( desc.RootSignature );
@@ -65,7 +65,18 @@ void MetalResourceBindGroup::Update( const UpdateDesc &desc )
         m_samplerTable->Table.SetDebugName( "Sampler Table[Space: " + std::to_string( m_desc.RegisterSpace ) + "]" );
     }
 
-    IResourceBindGroup::Update( desc );
+    for ( auto item : desc.Buffers )
+    {
+        BindBuffer( item.Slot, item.Resource );
+    }
+    for ( auto item : desc.Textures )
+    {
+        BindTexture( item.Slot, item.Resource );
+    }
+    for ( auto item : desc.Samplers )
+    {
+        BindSampler( item.Slot, item.Resource );
+    }
 }
 
 void MetalResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )
