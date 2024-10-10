@@ -1,0 +1,136 @@
+/*
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+#include <DenOfIzGraphics/Utilities/Time.h>
+#include <DenOfIzExamples/RenderTargetExample.h>
+
+using namespace DenOfIz;
+
+void RenderTargetExample::Init( )
+{
+    BatchResourceCopy::SyncOp( m_logicalDevice, [ & ]( BatchResourceCopy *batchResourceCopy ) { m_sphere = std::make_unique<SphereAsset>( m_logicalDevice, batchResourceCopy ); } );
+
+    m_quadPipeline   = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice, "Assets/Shaders/SampleBasic.ps.hlsl" );
+    m_renderPipeline = std::make_unique<DefaultRenderPipeline>( m_graphicsApi, m_logicalDevice );
+
+    TextureDesc textureDesc{ };
+    textureDesc.Width        = m_windowDesc.Width;
+    textureDesc.Height       = m_windowDesc.Height;
+    textureDesc.Format       = Format::B8G8R8A8Unorm;
+    textureDesc.Descriptor   = BitSet(ResourceDescriptor::Texture) | ResourceDescriptor::RenderTarget;
+    textureDesc.InitialState = ResourceState::ShaderResource;
+    textureDesc.DebugName    = "Deferred Render Target";
+    for ( uint32_t i = 0; i < 3; ++i )
+    {
+        textureDesc.DebugName = "Deferred Render Target " + std::to_string( i );
+        m_deferredRenderTargets.push_back( m_logicalDevice->CreateTextureResource( textureDesc ) );
+    }
+    m_defaultSampler = m_logicalDevice->CreateSampler( SamplerDesc{ } );
+    m_quadPipeline->BindGroup( 0 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 0 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
+    m_quadPipeline->BindGroup( 1 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 1 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
+    m_quadPipeline->BindGroup( 2 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 2 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
+
+    auto &materialBatch    = m_worldData.RenderBatch.MaterialBatches.emplace_back( m_renderPipeline->PerMaterialBinding( ), m_sphere->Data( )->MaterialData( ) );
+    auto &sphereRenderItem = materialBatch.RenderItems.emplace_back( );
+    sphereRenderItem.Data  = m_sphere->Data( );
+    sphereRenderItem.Model = m_sphere->ModelMatrix( );
+
+    RenderGraphDesc renderGraphDesc{ };
+    renderGraphDesc.GraphicsApi   = m_graphicsApi;
+    renderGraphDesc.LogicalDevice = m_logicalDevice;
+    renderGraphDesc.SwapChain     = m_swapChain.get( );
+
+    m_renderGraph = std::make_unique<RenderGraph>( renderGraphDesc );
+
+    NodeDesc deferredNode{ };
+    deferredNode.Name = "Deferred";
+    deferredNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::RenderTarget ) );
+    deferredNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::RenderTarget ) );
+    deferredNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::RenderTarget ) );
+    deferredNode.Execute = [ this ]( const uint32_t frame, ICommandList *commandList )
+    {
+        RenderingAttachmentDesc renderingAttachmentDesc{ };
+        renderingAttachmentDesc.Resource = m_deferredRenderTargets[ frame ].get( );
+
+        RenderingDesc renderingDesc{ };
+        renderingDesc.RTAttachments.push_back( renderingAttachmentDesc );
+
+        commandList->BeginRendering( renderingDesc );
+
+        const Viewport &viewport = m_swapChain->GetViewport( );
+        commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+        commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+
+        m_renderPipeline->Render( commandList, m_worldData );
+
+        commandList->EndRendering( );
+    };
+
+    PresentNodeDesc presentNode{ };
+    presentNode.SwapChain = m_swapChain.get( );
+    presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::ShaderResource ) );
+    presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::ShaderResource ) );
+    presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::ShaderResource ) );
+    presentNode.Dependencies.emplace_back("Deferred" );
+    presentNode.Execute = [ this ]( const uint32_t frame, ICommandList *commandList, ITextureResource *renderTarget )
+    {
+        RenderingAttachmentDesc quadAttachmentDesc{ };
+        quadAttachmentDesc.Resource = renderTarget;
+
+        RenderingDesc quadRenderingDesc{ };
+        quadRenderingDesc.RTAttachments.push_back( quadAttachmentDesc );
+
+        commandList->BeginRendering( quadRenderingDesc );
+
+        const Viewport &viewport = m_swapChain->GetViewport( );
+        commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+        commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+        m_quadPipeline->Render( commandList, frame );
+        commandList->EndRendering( );
+    };
+
+    m_renderGraph->AddNode( deferredNode );
+    m_renderGraph->SetPresentNode( presentNode );
+    m_renderGraph->BuildGraph( );
+
+    m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
+}
+
+void RenderTargetExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
+{
+    defaultApiPreference.Windows = APIPreferenceWindows::DirectX12;
+}
+
+void RenderTargetExample::Update( )
+{
+    m_time.Tick( );
+    m_worldData.DeltaTime = m_time.GetDeltaTime( );
+    m_worldData.Camera->Update( m_worldData.DeltaTime );
+    m_renderGraph->Update( );
+}
+
+void RenderTargetExample::HandleEvent( SDL_Event &event )
+{
+    m_worldData.Camera->HandleEvent( event );
+    IExample::HandleEvent( event );
+}
+
+void RenderTargetExample::Quit( )
+{
+    m_renderGraph->WaitIdle( );
+    IExample::Quit( );
+}

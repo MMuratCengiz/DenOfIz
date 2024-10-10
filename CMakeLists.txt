@@ -16,10 +16,14 @@ set(VCPKG_MANIFEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
-set(SUB_PROJECTS Engine)
+set(SUB_PROJECTS Graphics)
 foreach(SUB_PROJECT IN LISTS SUB_PROJECTS)
     add_subdirectory(${SUB_PROJECT})
 endforeach()
+
+if (BUILD_EXAMPLES)
+    add_subdirectory(Examples)
+endif ()
 
 set(SOURCES main.cpp)
 if (APPLE)
@@ -47,8 +51,8 @@ if (APPLE)
 endif ()
 
 target_link_libraries(DenOfIz
-        PRIVATE
-        DenOfIzEngine
+        PUBLIC
+        DenOfIzGraphics
 )
 
 if (APPLE)
