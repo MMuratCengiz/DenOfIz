@@ -35,7 +35,6 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         #Data
         Source/Data/BatchResourceCopy.cpp
         Source/Data/Texture.cpp
-        Source/Data/VertexTypes.cpp
         Source/Data/Geometry.cpp
 
         #Renderers

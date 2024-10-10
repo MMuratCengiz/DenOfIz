@@ -36,7 +36,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <map>
 #include <numbers>
 #include <vector>
-#include "VertexTypes.h"
+
+// #include "VertexTypes.h"
+using namespace DirectX;
 
 namespace DenOfIz
 {
@@ -67,97 +69,94 @@ namespace DenOfIz
     struct SphereDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Diameter{};
-        size_t            Tessellation{};
+        float             Diameter{ };
+        size_t            Tessellation{ };
     };
 
     struct GeoSphereDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Diameter{};
-        size_t            Tessellation{};
+        float             Diameter{ };
+        size_t            Tessellation{ };
     };
 
     struct CylinderDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Diameter{};
-        float             Height{};
-        size_t            Tessellation{};
+        float             Diameter{ };
+        float             Height{ };
+        size_t            Tessellation{ };
     };
 
     struct ConeDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Diameter{};
-        float             Height{};
-        size_t            Tessellation{};
+        float             Diameter{ };
+        float             Height{ };
+        size_t            Tessellation{ };
     };
 
     struct TorusDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Diameter{};
-        float             Thickness{};
-        size_t            Tessellation{};
+        float             Diameter{ };
+        float             Thickness{ };
+        size_t            Tessellation{ };
     };
 
     struct TetrahedronDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Size{};
+        float             Size{ };
     };
 
     struct OctahedronDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Size{};
+        float             Size{ };
     };
 
     struct DodecahedronDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Size{};
+        float             Size{ };
     };
 
     struct IcosahedronDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float             Size{};
+        float             Size{ };
+    };
+
+    struct GeometryVertexData
+    {
+        XMFLOAT3 Position{ };
+        XMFLOAT3 Normal{ };
+        XMFLOAT2 TextureCoordinate{ };
     };
 
     struct GeometryData
     {
-        std::vector<VertexPositionNormalTexture> Vertices;
-        std::vector<geometry_index_t>            Indices;
-
-        [[nodiscard]] size_t SizeOfVertices() const
-        {
-            return Vertices.size() * sizeof(VertexPositionNormalTexture);
-        }
-
-        [[nodiscard]] size_t SizeOfIndices() const
-        {
-            return Indices.size() * sizeof(geometry_index_t);
-        }
+        std::vector<GeometryVertexData> Vertices;
+        std::vector<geometry_index_t>   Indices;
     };
 
     class Geometry
     {
     public:
-        Geometry()  = delete;
-        ~Geometry() = delete;
+        Geometry( )  = delete;
+        ~Geometry( ) = delete;
 
-        static GeometryData BuildQuad(const QuadDesc &desc);
-        static GeometryData BuildBox(const BoxDesc &desc);
-        static GeometryData BuildSphere(const SphereDesc &desc);
-        static GeometryData BuildGeoSphere(const GeoSphereDesc &desc);
-        static GeometryData BuildCylinder(const CylinderDesc &desc);
-        static GeometryData BuildCone(const ConeDesc &desc);
-        static GeometryData BuildTorus(const TorusDesc &desc);
-        static GeometryData BuildTetrahedron(const TetrahedronDesc &tetrahedronDesc);
-        static GeometryData BuildOctahedron(const OctahedronDesc &octahedronDesc);
-        static GeometryData BuildDodecahedron(const DodecahedronDesc &dodecahedronDesc);
-        static GeometryData BuildIcosahedron(const IcosahedronDesc &desc);
+        static GeometryData BuildQuad( const QuadDesc &desc );
+        static GeometryData BuildBox( const BoxDesc &desc );
+        static GeometryData BuildSphere( const SphereDesc &desc );
+        static GeometryData BuildGeoSphere( const GeoSphereDesc &desc );
+        static GeometryData BuildCylinder( const CylinderDesc &desc );
+        static GeometryData BuildCone( const ConeDesc &desc );
+        static GeometryData BuildTorus( const TorusDesc &desc );
+        static GeometryData BuildTetrahedron( const TetrahedronDesc &tetrahedronDesc );
+        static GeometryData BuildOctahedron( const OctahedronDesc &octahedronDesc );
+        static GeometryData BuildDodecahedron( const DodecahedronDesc &dodecahedronDesc );
+        static GeometryData BuildIcosahedron( const IcosahedronDesc &desc );
     };
 } // namespace DenOfIz

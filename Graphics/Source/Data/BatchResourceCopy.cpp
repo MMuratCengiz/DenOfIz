@@ -190,7 +190,7 @@ VertexIndexBufferPairHolder BatchResourceCopy::CreateAndStoreGeometryBuffers( co
     vBufferDesc.HeapType     = HeapType::GPU;
     vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
     vBufferDesc.InitialState = ResourceState::CopyDst;
-    vBufferDesc.NumBytes     = geometryData.SizeOfVertices( );
+    vBufferDesc.NumBytes     = geometryData.Vertices.size( ) * sizeof( GeometryVertexData );
     vBufferDesc.DebugName    = NextId( "Vertex" );
 
     result.VertexBuffer = m_device->CreateBufferResource( vBufferDesc );
@@ -199,7 +199,7 @@ VertexIndexBufferPairHolder BatchResourceCopy::CreateAndStoreGeometryBuffers( co
     iBufferDesc.HeapType     = HeapType::GPU;
     iBufferDesc.Descriptor   = ResourceDescriptor::IndexBuffer;
     iBufferDesc.InitialState = ResourceState::CopyDst;
-    iBufferDesc.NumBytes     = geometryData.SizeOfIndices( );
+    iBufferDesc.NumBytes     = geometryData.Indices.size( ) * sizeof( geometry_index_t );
     iBufferDesc.DebugName    = NextId( "Index" );
 
     result.IndexBuffer = m_device->CreateBufferResource( iBufferDesc );
@@ -207,13 +207,13 @@ VertexIndexBufferPairHolder BatchResourceCopy::CreateAndStoreGeometryBuffers( co
     CopyToGpuBufferDesc vbCopyDesc{ };
     vbCopyDesc.DstBuffer = result.VertexBuffer.get( );
     vbCopyDesc.Data      = geometryData.Vertices.data( );
-    vbCopyDesc.NumBytes  = geometryData.SizeOfVertices( );
+    vbCopyDesc.NumBytes  = geometryData.Vertices.size( ) * sizeof( GeometryVertexData );
     CopyToGPUBuffer( vbCopyDesc );
 
     CopyToGpuBufferDesc ibCopyDesc{ };
     ibCopyDesc.DstBuffer = result.IndexBuffer.get( );
     ibCopyDesc.Data      = geometryData.Indices.data( );
-    ibCopyDesc.NumBytes  = geometryData.SizeOfIndices( );
+    ibCopyDesc.NumBytes  = geometryData.Indices.size( ) * sizeof( geometry_index_t );
     CopyToGPUBuffer( ibCopyDesc );
 
     if ( m_issueBarriers )

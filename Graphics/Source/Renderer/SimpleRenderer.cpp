@@ -34,7 +34,7 @@ namespace DenOfIz
 
         ShaderReflectDesc reflection = m_program->Reflect( );
         m_rootSignature              = m_logicalDevice->CreateRootSignature( reflection.RootSignature );
-        m_inputLayout                = m_logicalDevice->CreateInputLayout( VertexPositionNormalTexture::InputLayout );
+        m_inputLayout                = m_logicalDevice->CreateInputLayout( reflection.InputLayout );
 
         const GraphicsWindowSurface &surface = m_window->GetSurface( );
         m_swapChain                          = m_logicalDevice->CreateSwapChain( SwapChainDesc{ .WindowHandle = m_window, .Width = surface.Width, .Height = surface.Height } );

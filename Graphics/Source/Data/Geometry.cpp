@@ -45,11 +45,19 @@ inline void CheckIndexOverflow( const size_t value )
     }
 }
 
+void VertexEmplace( std::vector<GeometryVertexData> &vertices, FXMVECTOR iposition, FXMVECTOR inormal, FXMVECTOR itextureCoordinate )
+{
+    GeometryVertexData &vertexData = vertices.emplace_back( );
+    DirectX::XMStoreFloat3( &vertexData.Position, iposition );
+    DirectX::XMStoreFloat3( &vertexData.Normal, inormal );
+    DirectX::XMStoreFloat2( &vertexData.TextureCoordinate, itextureCoordinate );
+}
+
 // Collection types used when generating the geometry.
-inline void IndexPushBack( GeometryData &data, const size_t value )
+inline void EmplaceIndex( GeometryData &data, const size_t value )
 {
     CheckIndexOverflow( value );
-    data.Indices.push_back( static_cast<geometry_index_t>( value ) );
+    data.Indices.emplace_back( static_cast<geometry_index_t>( value ) );
 }
 
 // Helper for flipping winding of geometric primitives for LH vs. RH coordinates
@@ -108,21 +116,21 @@ GeometryData Geometry::BuildQuad( const QuadDesc &quadDesc )
 
     // Four vertices per quad
     // (normal - side1 - side2) * tsize // normal // t0
-    vertices.emplace_back( XMVectorMultiply( XMVectorSubtract( XMVectorSubtract( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 0 ] );
+    VertexEmplace( vertices, XMVectorMultiply( XMVectorSubtract( XMVectorSubtract( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 0 ] );
     // (normal - side1 + side2) * tsize // normal // t1
-    vertices.emplace_back( XMVectorMultiply( XMVectorAdd( XMVectorSubtract( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 1 ] );
+    VertexEmplace( vertices, XMVectorMultiply( XMVectorAdd( XMVectorSubtract( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 1 ] );
     // (normal + side1 + side2) * tsize // normal // t2
-    vertices.emplace_back( XMVectorMultiply( XMVectorAdd( normal, XMVectorAdd( side1, side2 ) ), tsize ), normal, textureCoordinates[ 2 ] );
+    VertexEmplace( vertices, XMVectorMultiply( XMVectorAdd( normal, XMVectorAdd( side1, side2 ) ), tsize ), normal, textureCoordinates[ 2 ] );
     // (normal + side1 - side2) * tsize // normal // t3
-    vertices.emplace_back( XMVectorMultiply( XMVectorSubtract( XMVectorAdd( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 3 ] );
+    VertexEmplace( vertices, XMVectorMultiply( XMVectorSubtract( XMVectorAdd( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 3 ] );
 
     // Six indices (two triangles) per quad
-    IndexPushBack( result, 0 );
-    IndexPushBack( result, 1 );
-    IndexPushBack( result, 2 );
-    IndexPushBack( result, 0 );
-    IndexPushBack( result, 2 );
-    IndexPushBack( result, 3 );
+    EmplaceIndex( result, 0 );
+    EmplaceIndex( result, 1 );
+    EmplaceIndex( result, 2 );
+    EmplaceIndex( result, 0 );
+    EmplaceIndex( result, 2 );
+    EmplaceIndex( result, 3 );
 
     // Adjust for RH if necessary
     if ( !rightHanded )
@@ -179,26 +187,26 @@ GeometryData Geometry::BuildBox( const BoxDesc &boxDesc )
 
         // Six indices (two triangles) per face.
         const size_t vbase = vertices.size( );
-        IndexPushBack( result, vbase + 0 );
-        IndexPushBack( result, vbase + 1 );
-        IndexPushBack( result, vbase + 2 );
+        EmplaceIndex( result, vbase + 0 );
+        EmplaceIndex( result, vbase + 1 );
+        EmplaceIndex( result, vbase + 2 );
 
-        IndexPushBack( result, vbase + 0 );
-        IndexPushBack( result, vbase + 2 );
-        IndexPushBack( result, vbase + 3 );
+        EmplaceIndex( result, vbase + 0 );
+        EmplaceIndex( result, vbase + 2 );
+        EmplaceIndex( result, vbase + 3 );
 
         // Four vertices per face.
         // (normal - side1 - side2) * tsize // normal // t0
-        vertices.emplace_back( XMVectorMultiply( XMVectorSubtract( XMVectorSubtract( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 0 ] );
+        VertexEmplace( vertices, XMVectorMultiply( XMVectorSubtract( XMVectorSubtract( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 0 ] );
 
         // (normal - side1 + side2) * tsize // normal // t1
-        vertices.emplace_back( XMVectorMultiply( XMVectorAdd( XMVectorSubtract( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 1 ] );
+        VertexEmplace( vertices, XMVectorMultiply( XMVectorAdd( XMVectorSubtract( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 1 ] );
 
         // (normal + side1 + side2) * tsize // normal // t2
-        vertices.emplace_back( XMVectorMultiply( XMVectorAdd( normal, XMVectorAdd( side1, side2 ) ), tsize ), normal, textureCoordinates[ 2 ] );
+        VertexEmplace( vertices, XMVectorMultiply( XMVectorAdd( normal, XMVectorAdd( side1, side2 ) ), tsize ), normal, textureCoordinates[ 2 ] );
 
         // (normal + side1 - side2) * tsize // normal // t3
-        vertices.emplace_back( XMVectorMultiply( XMVectorSubtract( XMVectorAdd( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 3 ] );
+        VertexEmplace( vertices, XMVectorMultiply( XMVectorSubtract( XMVectorAdd( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 3 ] );
     }
 
     // Build RH above
@@ -263,7 +271,7 @@ GeometryData Geometry::BuildSphere( const SphereDesc &sphereDesc )
             const XMVECTOR normal            = XMVectorSet( dx, dy, dz, 0 );
             const XMVECTOR textureCoordinate = XMVectorSet( u, v, 0, 0 );
 
-            vertices.emplace_back( XMVectorScale( normal, radius ), normal, textureCoordinate );
+            VertexEmplace( vertices, XMVectorScale( normal, radius ), normal, textureCoordinate );
         }
     }
 
@@ -277,13 +285,13 @@ GeometryData Geometry::BuildSphere( const SphereDesc &sphereDesc )
             const size_t nextI = i + 1;
             const size_t nextJ = ( j + 1 ) % stride;
 
-            IndexPushBack( result, i * stride + j );
-            IndexPushBack( result, nextI * stride + j );
-            IndexPushBack( result, i * stride + nextJ );
+            EmplaceIndex( result, i * stride + j );
+            EmplaceIndex( result, nextI * stride + j );
+            EmplaceIndex( result, i * stride + nextJ );
 
-            IndexPushBack( result, i * stride + nextJ );
-            IndexPushBack( result, nextI * stride + j );
-            IndexPushBack( result, nextI * stride + nextJ );
+            EmplaceIndex( result, i * stride + nextJ );
+            EmplaceIndex( result, nextI * stride + j );
+            EmplaceIndex( result, nextI * stride + nextJ );
         }
     }
 
@@ -461,7 +469,7 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
         const float v = latitude / XM_PI;
 
         auto const texCoord = XMVectorSet( 1.0f - u, v, 0.0f, 0.0f );
-        vertices.emplace_back( pos, normal, texCoord );
+        VertexEmplace( vertices, pos, normal, texCoord );
     }
 
     // There are a couple of fixes to do. One is a texture coordinate wraparound fixup. At some point, there will be
@@ -487,8 +495,8 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
             CheckIndexOverflow( newIndex );
 
             // copy this vertex, correct the texture coordinate, and add the vertex
-            VertexPositionNormalTexture v = vertices[ i ];
-            v.TextureCoordinate.x         = 1.0f;
+            GeometryVertexData v  = vertices[ i ];
+            v.TextureCoordinate.x = 1.0f;
             vertices.push_back( v );
 
             // Now find all the triangles which contain this vertex and update them if necessary
@@ -520,9 +528,9 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
                 assert( *triIndex0 == i );
                 assert( *triIndex1 != i && *triIndex2 != i ); // assume no degenerate triangles
 
-                const VertexPositionNormalTexture &v0 = vertices[ *triIndex0 ];
-                const VertexPositionNormalTexture &v1 = vertices[ *triIndex1 ];
-                const VertexPositionNormalTexture &v2 = vertices[ *triIndex2 ];
+                const GeometryVertexData &v0 = vertices[ *triIndex0 ];
+                const GeometryVertexData &v1 = vertices[ *triIndex1 ];
+                const GeometryVertexData &v2 = vertices[ *triIndex2 ];
 
                 // check the other two vertices to see if we might need to fix this triangle
 
@@ -580,9 +588,9 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
             const auto &otherVertex1 = vertices[ *pOtherIndex1 ];
 
             // Calculate the texture coordinates for the new pole vertex, add it to the vertices and update the index
-            VertexPositionNormalTexture newPoleVertex = poleVertex;
-            newPoleVertex.TextureCoordinate.x         = ( otherVertex0.TextureCoordinate.x + otherVertex1.TextureCoordinate.x ) / 2;
-            newPoleVertex.TextureCoordinate.y         = poleVertex.TextureCoordinate.y;
+            GeometryVertexData newPoleVertex  = poleVertex;
+            newPoleVertex.TextureCoordinate.x = ( otherVertex0.TextureCoordinate.x + otherVertex1.TextureCoordinate.x ) / 2;
+            newPoleVertex.TextureCoordinate.y = poleVertex.TextureCoordinate.y;
 
             if ( !overwrittenPoleVertex )
             {
@@ -654,9 +662,9 @@ void CreateCylinderCap( GeometryData &result, const size_t tessellation, const f
         }
 
         const size_t vbase = vertices.size( );
-        IndexPushBack( result, vbase );
-        IndexPushBack( result, vbase + i1 );
-        IndexPushBack( result, vbase + i2 );
+        EmplaceIndex( result, vbase );
+        EmplaceIndex( result, vbase + i1 );
+        EmplaceIndex( result, vbase + i2 );
     }
 
     // Which end of the cylinder is this?
@@ -678,7 +686,7 @@ void CreateCylinderCap( GeometryData &result, const size_t tessellation, const f
 
         const XMVECTOR textureCoordinate = XMVectorMultiplyAdd( XMVectorSwizzle<0, 2, 3, 3>( circleVector ), textureScale, g_XMOneHalf );
 
-        vertices.emplace_back( position, normal, textureCoordinate );
+        VertexEmplace( vertices, position, normal, textureCoordinate );
     }
 }
 
@@ -712,16 +720,16 @@ GeometryData Geometry::BuildCylinder( const CylinderDesc &cylinderDesc )
 
         const XMVECTOR textureCoordinate = XMLoadFloat( &u );
 
-        vertices.emplace_back( XMVectorAdd( sideOffset, topOffset ), normal, textureCoordinate );
-        vertices.emplace_back( XMVectorSubtract( sideOffset, topOffset ), normal, XMVectorAdd( textureCoordinate, g_XMIdentityR1 ) );
+        VertexEmplace( vertices, XMVectorAdd( sideOffset, topOffset ), normal, textureCoordinate );
+        VertexEmplace( vertices, XMVectorSubtract( sideOffset, topOffset ), normal, XMVectorAdd( textureCoordinate, g_XMIdentityR1 ) );
 
-        IndexPushBack( result, i * 2 );
-        IndexPushBack( result, ( i * 2 + 2 ) % ( stride * 2 ) );
-        IndexPushBack( result, i * 2 + 1 );
+        EmplaceIndex( result, i * 2 );
+        EmplaceIndex( result, ( i * 2 + 2 ) % ( stride * 2 ) );
+        EmplaceIndex( result, i * 2 + 1 );
 
-        IndexPushBack( result, i * 2 + 1 );
-        IndexPushBack( result, ( i * 2 + 2 ) % ( stride * 2 ) );
-        IndexPushBack( result, ( i * 2 + 3 ) % ( stride * 2 ) );
+        EmplaceIndex( result, i * 2 + 1 );
+        EmplaceIndex( result, ( i * 2 + 2 ) % ( stride * 2 ) );
+        EmplaceIndex( result, ( i * 2 + 3 ) % ( stride * 2 ) );
     }
 
     // Create flat triangle fan caps to seal the top and bottom.
@@ -774,12 +782,12 @@ GeometryData Geometry::BuildCone( const ConeDesc &coneDesc )
         normal          = XMVector3Normalize( normal );
 
         // Duplicate the top vertex for distinct normals
-        vertices.emplace_back( topOffset, normal, g_XMZero );
-        vertices.emplace_back( pt, normal, XMVectorAdd( textureCoordinate, g_XMIdentityR1 ) );
+        VertexEmplace( vertices, topOffset, normal, g_XMZero );
+        VertexEmplace( vertices, pt, normal, XMVectorAdd( textureCoordinate, g_XMIdentityR1 ) );
 
-        IndexPushBack( result, i * 2 );
-        IndexPushBack( result, ( i * 2 + 3 ) % ( stride * 2 ) );
-        IndexPushBack( result, ( i * 2 + 1 ) % ( stride * 2 ) );
+        EmplaceIndex( result, i * 2 );
+        EmplaceIndex( result, ( i * 2 + 3 ) % ( stride * 2 ) );
+        EmplaceIndex( result, ( i * 2 + 1 ) % ( stride * 2 ) );
     }
 
     // Create flat triangle fan caps to seal the bottom.
@@ -840,19 +848,19 @@ GeometryData Geometry::BuildTorus( const TorusDesc &torusDesc )
             position = XMVector3Transform( position, transform );
             normal   = XMVector3TransformNormal( normal, transform );
 
-            vertices.emplace_back( position, normal, textureCoordinate );
+            VertexEmplace( vertices, position, normal, textureCoordinate );
 
             // And create indices for two triangles.
             const size_t nextI = ( i + 1 ) % stride;
             const size_t nextJ = ( j + 1 ) % stride;
 
-            IndexPushBack( result, i * stride + j );
-            IndexPushBack( result, i * stride + nextJ );
-            IndexPushBack( result, nextI * stride + j );
+            EmplaceIndex( result, i * stride + j );
+            EmplaceIndex( result, i * stride + nextJ );
+            EmplaceIndex( result, nextI * stride + j );
 
-            IndexPushBack( result, i * stride + nextJ );
-            IndexPushBack( result, nextI * stride + nextJ );
-            IndexPushBack( result, nextI * stride + j );
+            EmplaceIndex( result, i * stride + nextJ );
+            EmplaceIndex( result, nextI * stride + nextJ );
+            EmplaceIndex( result, nextI * stride + j );
         }
     }
 
@@ -895,19 +903,19 @@ GeometryData Geometry::BuildTetrahedron( const TetrahedronDesc &tetrahedronDesc 
         normal          = XMVector3Normalize( normal );
 
         const size_t base = vertices.size( );
-        IndexPushBack( result, base );
-        IndexPushBack( result, base + 1 );
-        IndexPushBack( result, base + 2 );
+        EmplaceIndex( result, base );
+        EmplaceIndex( result, base + 1 );
+        EmplaceIndex( result, base + 2 );
 
         // Duplicate vertices to use face normals
         XMVECTOR position = XMVectorScale( verts[ v0 ], size );
-        vertices.emplace_back( position, normal, g_XMZero /* 0, 0 */ );
+        VertexEmplace( vertices, position, normal, g_XMZero /* 0, 0 */ );
 
         position = XMVectorScale( verts[ v1 ], size );
-        vertices.emplace_back( position, normal, g_XMIdentityR0 /* 1, 0 */ );
+        VertexEmplace( vertices, position, normal, g_XMIdentityR0 /* 1, 0 */ );
 
         position = XMVectorScale( verts[ v2 ], size );
-        vertices.emplace_back( position, normal, g_XMIdentityR1 /* 0, 1 */ );
+        VertexEmplace( vertices, position, normal, g_XMIdentityR1 /* 0, 1 */ );
     }
 
     // Built LH above
@@ -947,19 +955,19 @@ GeometryData Geometry::BuildOctahedron( const OctahedronDesc &octahedronDesc )
         normal          = XMVector3Normalize( normal );
 
         const size_t base = vertices.size( );
-        IndexPushBack( result, base );
-        IndexPushBack( result, base + 1 );
-        IndexPushBack( result, base + 2 );
+        EmplaceIndex( result, base );
+        EmplaceIndex( result, base + 1 );
+        EmplaceIndex( result, base + 2 );
 
         // Duplicate vertices to use face normals
         XMVECTOR position = XMVectorScale( verts[ v0 ], size );
-        vertices.emplace_back( position, normal, g_XMZero /* 0, 0 */ );
+        VertexEmplace(vertices, position, normal, g_XMZero /* 0, 0 */ );
 
         position = XMVectorScale( verts[ v1 ], size );
-        vertices.emplace_back( position, normal, g_XMIdentityR0 /* 1, 0 */ );
+        VertexEmplace(vertices, position, normal, g_XMIdentityR0 /* 1, 0 */ );
 
         position = XMVectorScale( verts[ v2 ], size );
-        vertices.emplace_back( position, normal, g_XMIdentityR1 /* 0, 1*/ );
+        VertexEmplace(vertices, position, normal, g_XMIdentityR1 /* 0, 1*/ );
     }
 
     // Built LH above
@@ -1023,33 +1031,33 @@ GeometryData Geometry::BuildDodecahedron( const DodecahedronDesc &dodecahedronDe
 
         const size_t base = vertices.size( );
 
-        IndexPushBack( result, base );
-        IndexPushBack( result, base + 1 );
-        IndexPushBack( result, base + 2 );
+        EmplaceIndex( result, base );
+        EmplaceIndex( result, base + 1 );
+        EmplaceIndex( result, base + 2 );
 
-        IndexPushBack( result, base );
-        IndexPushBack( result, base + 2 );
-        IndexPushBack( result, base + 3 );
+        EmplaceIndex( result, base );
+        EmplaceIndex( result, base + 2 );
+        EmplaceIndex( result, base + 3 );
 
-        IndexPushBack( result, base );
-        IndexPushBack( result, base + 3 );
-        IndexPushBack( result, base + 4 );
+        EmplaceIndex( result, base );
+        EmplaceIndex( result, base + 3 );
+        EmplaceIndex( result, base + 4 );
 
         // Duplicate vertices to use face normals
         XMVECTOR position = XMVectorScale( verts[ v0 ], size );
-        vertices.emplace_back( position, normal, textureCoordinates[ textureIndex[ t ][ 0 ] ] );
+        VertexEmplace(vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 0 ] ] );
 
         position = XMVectorScale( verts[ v1 ], size );
-        vertices.emplace_back( position, normal, textureCoordinates[ textureIndex[ t ][ 1 ] ] );
+        VertexEmplace(vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 1 ] ] );
 
         position = XMVectorScale( verts[ v2 ], size );
-        vertices.emplace_back( position, normal, textureCoordinates[ textureIndex[ t ][ 2 ] ] );
+        VertexEmplace(vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 2 ] ] );
 
         position = XMVectorScale( verts[ v3 ], size );
-        vertices.emplace_back( position, normal, textureCoordinates[ textureIndex[ t ][ 3 ] ] );
+        VertexEmplace(vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 3 ] ] );
 
         position = XMVectorScale( verts[ v4 ], size );
-        vertices.emplace_back( position, normal, textureCoordinates[ textureIndex[ t ][ 4 ] ] );
+        VertexEmplace(vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 4 ] ] );
     }
 
     // Built LH above
@@ -1095,19 +1103,19 @@ GeometryData Geometry::BuildIcosahedron( const IcosahedronDesc &icosahedronDesc 
         normal          = XMVector3Normalize( normal );
 
         const size_t base = vertices.size( );
-        IndexPushBack( result, base );
-        IndexPushBack( result, base + 1 );
-        IndexPushBack( result, base + 2 );
+        EmplaceIndex( result, base );
+        EmplaceIndex( result, base + 1 );
+        EmplaceIndex( result, base + 2 );
 
         // Duplicate vertices to use face normals
         XMVECTOR position = XMVectorScale( verts[ v0 ], size );
-        vertices.emplace_back( position, normal, g_XMZero /* 0, 0 */ );
+        VertexEmplace(vertices, position, normal, g_XMZero /* 0, 0 */ );
 
         position = XMVectorScale( verts[ v1 ], size );
-        vertices.emplace_back( position, normal, g_XMIdentityR0 /* 1, 0 */ );
+        VertexEmplace(vertices, position, normal, g_XMIdentityR0 /* 1, 0 */ );
 
         position = XMVectorScale( verts[ v2 ], size );
-        vertices.emplace_back( position, normal, g_XMIdentityR1 /* 0, 1 */ );
+        VertexEmplace(vertices, position, normal, g_XMIdentityR1 /* 0, 1 */ );
     }
 
     // Built LH above
