@@ -63,17 +63,19 @@ namespace DenOfIz
         XMStoreFloat4x4( &m_identityMatrix, XMMatrixIdentity( ) );
         XMStoreFloat4x4( &m_planeModelMatrix, XMMatrixTranslation( 0.0f, -5.0f, 0.0f ) );
 
-        BatchResourceCopy       batchResourceCopy( m_logicalDevice );
+        BatchResourceCopy batchResourceCopy( m_logicalDevice );
         batchResourceCopy.Begin( );
-        batchResourceCopy.CreateAndStoreUniformBuffer( &m_identityMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_sphereModelMatrixBuffer );
-        batchResourceCopy.CreateAndStoreUniformBuffer( &m_planeModelMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_planeModelMatrixBuffer );
-        batchResourceCopy.CreateAndStoreUniformBuffer( &m_mvpMatrix, sizeof( XMFLOAT4X4 ) ).Into( m_viewProjectionMatrixBuffer );
-        batchResourceCopy.CreateAndStoreGeometryBuffers( m_sphere ).Into( m_sphereVb, m_sphereIb );
-        batchResourceCopy.CreateAndStoreGeometryBuffers( m_plane ).Into( m_planeVb, m_planeIb );
-        batchResourceCopy.CreateAndStoreSampler( SamplerDesc{ } ).Into( m_sphereSampler );
-        batchResourceCopy.CreateAndStoreSampler( SamplerDesc{ } ).Into( m_planeSampler );
-        batchResourceCopy.CreateAndStoreTexture( "Assets/Textures/Dracolich.png" ).Into( m_sphereTexture );
-        batchResourceCopy.CreateAndStoreTexture( "Assets/Textures/test-dxt5.dds" ).Into( m_planeTexture );
+        m_sphereModelMatrixBuffer    = batchResourceCopy.CreateUniformBuffer( &m_identityMatrix, sizeof( XMFLOAT4X4 ) );
+        m_planeModelMatrixBuffer     = batchResourceCopy.CreateUniformBuffer( &m_planeModelMatrix, sizeof( XMFLOAT4X4 ) );
+        m_viewProjectionMatrixBuffer = batchResourceCopy.CreateUniformBuffer( &m_mvpMatrix, sizeof( XMFLOAT4X4 ) );
+        m_sphereVb                   = batchResourceCopy.CreateGeometryVertexBuffer( m_sphere );
+        m_sphereIb                   = batchResourceCopy.CreateGeometryIndexBuffer( m_sphere );
+        m_planeVb                    = batchResourceCopy.CreateGeometryVertexBuffer( m_plane );
+        m_planeIb                    = batchResourceCopy.CreateGeometryIndexBuffer( m_plane );
+        m_sphereSampler              = m_logicalDevice->CreateSampler( SamplerDesc{ } );
+        m_planeSampler               = m_logicalDevice->CreateSampler( SamplerDesc{ } );
+        m_sphereTexture              = batchResourceCopy.CreateAndLoadTexture( "Assets/Textures/Dracolich.png" );
+        m_planeTexture               = batchResourceCopy.CreateAndLoadTexture( "Assets/Textures/test-dxt5.dds" );
         batchResourceCopy.Submit( );
 
         ResourceBindGroupDesc bindGroupDesc = { };

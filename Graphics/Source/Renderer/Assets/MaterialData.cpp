@@ -20,39 +20,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-void MaterialData::AttachSampler( std::unique_ptr<ISampler> sampler )
+MaterialData::MaterialData( const MaterialDesc &desc )
 {
-    this->m_sampler = std::move( sampler );
-}
 
-void MaterialData::AttachAlbedoData( std::unique_ptr<ITextureResource> texture )
-{
-    this->m_albedoTexture = std::move( texture );
-}
-
-void MaterialData::AttachNormalData( std::unique_ptr<ITextureResource> texture )
-{
-    this->m_normalTexture = std::move( texture );
-}
-
-void MaterialData::AttachHeightData( std::unique_ptr<ITextureResource> texture )
-{
-    this->m_heightTexture = std::move( texture );
-}
-
-void MaterialData::AttachMetallicData( std::unique_ptr<ITextureResource> texture )
-{
-    this->m_metallicTexture = std::move( texture );
-}
-
-void MaterialData::AttachRoughnessData( std::unique_ptr<ITextureResource> texture )
-{
-    this->m_roughnessTexture = std::move( texture );
-}
-
-void MaterialData::AttachAoData( std::unique_ptr<ITextureResource> texture )
-{
-    this->m_aoTexture = std::move( texture );
+    m_sampler = desc.Device->CreateSampler( SamplerDesc{ } );
+    if ( !desc.AlbedoTexture.empty( ) )
+    {
+        m_albedoTexture = desc.BatchCopy->CreateAndLoadTexture( desc.AlbedoTexture );
+    }
+    if ( !desc.NormalTexture.empty( ) )
+    {
+        m_normalTexture = desc.BatchCopy->CreateAndLoadTexture( desc.NormalTexture );
+    }
+    if ( !desc.HeightTexture.empty( ) )
+    {
+        m_heightTexture = desc.BatchCopy->CreateAndLoadTexture( desc.HeightTexture );
+    }
+    if ( !desc.MetallicTexture.empty( ) )
+    {
+        m_metallicTexture = desc.BatchCopy->CreateAndLoadTexture( desc.MetallicTexture );
+    }
+    if ( !desc.RoughnessTexture.empty( ) )
+    {
+        m_roughnessTexture = desc.BatchCopy->CreateAndLoadTexture( desc.RoughnessTexture );
+    }
+    if ( !desc.AoTexture.empty( ) )
+    {
+        m_aoTexture = desc.BatchCopy->CreateAndLoadTexture( desc.AoTexture );
+    }
 }
 
 ISampler *MaterialData::Sampler( ) const

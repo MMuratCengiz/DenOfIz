@@ -19,10 +19,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
+#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
 #include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
+#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 
 namespace DenOfIz
 {
+    struct MaterialDesc
+    {
+        ILogicalDevice    *Device;
+        BatchResourceCopy *BatchCopy;
+        std::string        AlbedoTexture;
+        std::string        NormalTexture;
+        std::string        HeightTexture;
+        std::string        MetallicTexture;
+        std::string        RoughnessTexture;
+        std::string        AoTexture;
+    };
+
     /// <summary> Material data class that holds the texture data for the material. </summary>
     class MaterialData
     {
@@ -35,16 +49,8 @@ namespace DenOfIz
         std::unique_ptr<ITextureResource> m_aoTexture;
 
     public:
-         MaterialData( ) = default;
+        MaterialData( const MaterialDesc &desc );
         ~MaterialData( ) = default;
-
-        void AttachSampler( std::unique_ptr<ISampler> sampler );
-        void AttachAlbedoData( std::unique_ptr<ITextureResource> texture );
-        void AttachNormalData( std::unique_ptr<ITextureResource> texture );
-        void AttachHeightData( std::unique_ptr<ITextureResource> texture );
-        void AttachMetallicData( std::unique_ptr<ITextureResource> texture );
-        void AttachRoughnessData( std::unique_ptr<ITextureResource> texture );
-        void AttachAoData( std::unique_ptr<ITextureResource> texture );
 
         [[nodiscard]] ISampler         *Sampler( ) const;
         [[nodiscard]] ITextureResource *AlbedoTexture( ) const;

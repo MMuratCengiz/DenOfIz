@@ -24,3 +24,4 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
 #include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
+#include <DenOfIzGraphics/Renderer/Assets/AssetData.h>

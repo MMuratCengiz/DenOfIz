@@ -23,22 +23,24 @@ using namespace DenOfIz;
 
 SphereAsset::SphereAsset( ILogicalDevice *device, BatchResourceCopy *batchResourceCopy )
 {
-    m_materialData                    = std::make_unique<MaterialData>( );
     const std::string baseTexturePath = "Assets/Textures/Bricks_005/Stylized_Bricks_005_";
+    MaterialDesc      materialDesc{ };
+    materialDesc.Device           = device;
+    materialDesc.BatchCopy        = batchResourceCopy;
+    materialDesc.AlbedoTexture    = baseTexturePath + "basecolor.png";
+    materialDesc.NormalTexture    = baseTexturePath + "normal.png";
+    materialDesc.HeightTexture    = baseTexturePath + "height.png";
+    materialDesc.RoughnessTexture = baseTexturePath + "roughness.png";
+    materialDesc.AoTexture        = baseTexturePath + "ambientOcclusion.png";
+    m_materialData                = std::make_unique<MaterialData>( materialDesc );
 
-    m_materialData->AttachSampler( device->CreateSampler( SamplerDesc{ } ) );
-    m_materialData->AttachAlbedoData( batchResourceCopy->CreateAndLoadTexture( baseTexturePath + "basecolor.png" ) );
-    m_materialData->AttachNormalData( batchResourceCopy->CreateAndLoadTexture( baseTexturePath + "normal.png" ) );
-    m_materialData->AttachHeightData( batchResourceCopy->CreateAndLoadTexture( baseTexturePath + "height.png" ) );
-    m_materialData->AttachRoughnessData( batchResourceCopy->CreateAndLoadTexture( baseTexturePath + "roughness.png" ) );
-    m_materialData->AttachAoData( batchResourceCopy->CreateAndLoadTexture( baseTexturePath + "ambientOcclusion.png" ) );
+    const GeometryData sphere = Geometry::BuildSphere( { .Diameter = 1.0f, .Tessellation = 64 } );
 
-    std::unique_ptr<IBufferResource> vertexBuffer;
-    std::unique_ptr<IBufferResource> indexBuffer;
-
-    const GeometryData sphere = Geometry::BuildSphere( { .Diameter = 1.0f, .Tessellation = 64  } );
-
-    m_assetData = batchResourceCopy->CreateGeometryAssetData( sphere );
+    AssetDataDesc assetDataDesc{ };
+    assetDataDesc.Device       = device;
+    assetDataDesc.BatchCopy    = batchResourceCopy;
+    assetDataDesc.GeometryData = sphere;
+    m_assetData                = std::make_unique<AssetData>( assetDataDesc );
     m_assetData->UpdateMaterialData( m_materialData.get( ) );
 
     XMStoreFloat4x4( &m_modelMatrix, XMMatrixIdentity( ) );

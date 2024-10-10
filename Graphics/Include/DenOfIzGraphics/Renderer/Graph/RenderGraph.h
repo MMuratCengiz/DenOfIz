@@ -96,6 +96,18 @@ namespace DenOfIz
             std::unique_ptr<ISemaphore>        ImageReadySemaphore;
             std::unique_ptr<ISemaphore>        ImageRenderedSemaphore;
         };
+
+        struct ResourceLockedState
+        {
+            ResourceState State = ResourceState::Undefined;
+            std::mutex    Mutex;
+        };
+
+        struct ResourceLocking
+        {
+            std::unordered_map<ITextureResource *, ResourceLockedState> TextureStates;
+            std::unordered_map<IBufferResource *, ResourceLockedState>  BufferStates;
+        };
     } // namespace RenderGraphInternal
     using namespace RenderGraphInternal;
 
@@ -122,18 +134,6 @@ namespace DenOfIz
         ISwapChain     *SwapChain;
         uint8_t         NumFrames       = 3;
         uint32_t        NumCommandLists = 16;
-    };
-
-    struct ResourceLockedState
-    {
-        ResourceState State = ResourceState::Undefined;
-        std::mutex    Mutex;
-    };
-
-    struct ResourceLocking
-    {
-        std::unordered_map<ITextureResource *, ResourceLockedState> TextureStates;
-        std::unordered_map<IBufferResource *, ResourceLockedState>  BufferStates;
     };
 
     class RenderGraph

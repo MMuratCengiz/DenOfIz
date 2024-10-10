@@ -18,10 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
 #include <DenOfIzGraphics/Data/Geometry.h>
-#include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
+#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <future>
 #include "Texture.h"
 
@@ -51,48 +50,6 @@ namespace DenOfIz
         ITextureResource *DstTexture;
     };
 
-    struct VertexIndexBufferPairHolder
-    {
-        std::unique_ptr<IBufferResource> VertexBuffer;
-        std::unique_ptr<IBufferResource> IndexBuffer;
-
-        void Into( std::unique_ptr<IBufferResource> &vertexBuffer, std::unique_ptr<IBufferResource> &indexBuffer )
-        {
-            vertexBuffer = std::move( VertexBuffer );
-            indexBuffer  = std::move( IndexBuffer );
-        }
-    };
-
-    struct UniformBufferHolder
-    {
-        std::unique_ptr<IBufferResource> Buffer;
-
-        void Into( std::unique_ptr<IBufferResource> &buffer )
-        {
-            buffer = std::move( Buffer );
-        }
-    };
-
-    struct SamplerHolder
-    {
-        std::unique_ptr<ISampler> Sampler;
-
-        void Into( std::unique_ptr<ISampler> &sampler )
-        {
-            sampler = std::move( Sampler );
-        }
-    };
-
-    struct TextureHolder
-    {
-        std::unique_ptr<ITextureResource> Texture;
-
-        void Into( std::unique_ptr<ITextureResource> &texture )
-        {
-            texture = std::move( Texture );
-        }
-    };
-
     class BatchResourceCopy
     {
         ILogicalDevice *m_device;
@@ -116,19 +73,17 @@ namespace DenOfIz
         explicit BatchResourceCopy( ILogicalDevice *device, bool issueBarriers = true );
         ~BatchResourceCopy( );
 
-        void                                      Begin( ) const;
-        void                                      CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc );
-        void                                      CopyBufferRegion( const CopyBufferRegionDesc &copyDesc ) const;
-        void                                      CopyTextureRegion( const CopyTextureRegionDesc &copyDesc ) const;
-        void                                      CopyDataToTexture( const CopyDataToTextureDesc &copyDesc );
-        std::unique_ptr<ITextureResource>         CreateAndLoadTexture( const std::string &file );
-        void                                      LoadTexture( const LoadTextureDesc &loadDesc );
-        [[nodiscard]] UniformBufferHolder         CreateAndStoreUniformBuffer( const void *data, uint32_t numBytes );
-        [[nodiscard]] VertexIndexBufferPairHolder CreateAndStoreGeometryBuffers( const GeometryData &GeometryData );
-        [[nodiscard]] std::unique_ptr<AssetData>  CreateGeometryAssetData( const GeometryData &GeometryData );
-        [[nodiscard]] SamplerHolder               CreateAndStoreSampler( const SamplerDesc &desc ) const;
-        [[nodiscard]] TextureHolder               CreateAndStoreTexture( const std::string &path );
-        void                                      Submit( ISemaphore *notify = nullptr );
+        void                                           Begin( ) const;
+        void                                           CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc );
+        void                                           CopyBufferRegion( const CopyBufferRegionDesc &copyDesc ) const;
+        void                                           CopyTextureRegion( const CopyTextureRegionDesc &copyDesc ) const;
+        void                                           CopyDataToTexture( const CopyDataToTextureDesc &copyDesc );
+        std::unique_ptr<ITextureResource>              CreateAndLoadTexture( const std::string &file );
+        void                                           LoadTexture( const LoadTextureDesc &loadDesc );
+        [[nodiscard]] std::unique_ptr<IBufferResource> CreateUniformBuffer( const void *data, uint32_t numBytes );
+        [[nodiscard]] std::unique_ptr<IBufferResource> CreateGeometryVertexBuffer( const GeometryData &geometryData );
+        [[nodiscard]] std::unique_ptr<IBufferResource> CreateGeometryIndexBuffer( const GeometryData &geometryData );
+        void                                           Submit( ISemaphore *notify = nullptr );
 
         /// <summary> A synchronized batch resource copy operation, ensures copying is finalized. </summary>
         static void SyncOp( ILogicalDevice *device, const std::function<void( BatchResourceCopy * )> &op );

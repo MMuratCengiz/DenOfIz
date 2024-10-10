@@ -20,6 +20,11 @@
 %unique_ptr(DenOfIz::ITextureResource)
 %unique_ptr(DenOfIz::ISampler)
 
+%ignore DenOfIz::RenderGraphInternal::NodeExecutionContext;
+%ignore DenOfIz::RenderGraphInternal::GraphNode;
+%ignore DenOfIz::RenderGraphInternal::PresentContext;
+%ignore DenOfIz::RenderGraphInternal::ResourceLockedState;
+%ignore DenOfIz::RenderGraphInternal::ResourceLocking;
 
 %include <DenOfIzGraphics/Utilities/BitSet.h>
 %include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
@@ -45,9 +50,9 @@
 %include <DenOfIzGraphics/Backends/GraphicsApi.h>
 %include <DenOfIzGraphics/Data/Geometry.h>
 %include <DenOfIzGraphics/Data/Texture.h>
+%include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 %include <DenOfIzGraphics/Renderer/Assets/MaterialData.h>
 %include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
-%include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 %include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
 %include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
 

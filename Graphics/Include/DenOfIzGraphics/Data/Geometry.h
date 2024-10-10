@@ -37,9 +37,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <numbers>
 #include <vector>
 
-// #include "VertexTypes.h"
-using namespace DirectX;
-
 namespace DenOfIz
 {
     typedef uint32_t geometry_index_t;
@@ -57,13 +54,13 @@ namespace DenOfIz
     struct QuadDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        XMFLOAT2          Size;
+        DirectX::XMFLOAT2 Size;
     };
 
     struct BoxDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        XMFLOAT3          Size;
+        DirectX::XMFLOAT3 Size;
     };
 
     struct SphereDesc
@@ -130,9 +127,9 @@ namespace DenOfIz
 
     struct GeometryVertexData
     {
-        XMFLOAT3 Position{ };
-        XMFLOAT3 Normal{ };
-        XMFLOAT2 TextureCoordinate{ };
+        DirectX::XMFLOAT3 Position{ };
+        DirectX::XMFLOAT3 Normal{ };
+        DirectX::XMFLOAT2 TextureCoordinate{ };
     };
 
     struct GeometryData

@@ -18,6 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
+#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
+#include <DenOfIzGraphics/Data/Geometry.h>
 #include "MaterialData.h"
 
 namespace DenOfIz
@@ -25,11 +28,9 @@ namespace DenOfIz
     /// <summary> AssetData class is a container class for asset information, reduces clutter. </summary>
     struct AssetDataDesc
     {
-        std::unique_ptr<IBufferResource> VertexBuffer;
-        std::unique_ptr<IBufferResource> IndexBuffer;
-        MaterialData                    *MaterialData;
-        size_t                           NumVertices = 0;
-        size_t                           NumIndices  = 0;
+        ILogicalDevice    *Device;
+        BatchResourceCopy *BatchCopy;
+        GeometryData       GeometryData;
     };
 
     class AssetData
@@ -43,7 +44,7 @@ namespace DenOfIz
 
     public:
         AssetData( AssetDataDesc &desc );
-        void UpdateMaterialData( MaterialData *materialData );
+        void             UpdateMaterialData( MaterialData *materialData );
         IBufferResource *VertexBuffer( ) const;
         IBufferResource *IndexBuffer( ) const;
         MaterialData    *MaterialData( ) const;

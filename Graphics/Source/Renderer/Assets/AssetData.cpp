@@ -20,10 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-AssetData::AssetData( AssetDataDesc &desc ) :
-    m_vertexBuffer( std::move( desc.VertexBuffer ) ), m_indexBuffer( std::move( desc.IndexBuffer ) ), m_materialData( desc.MaterialData ), m_numVertices( desc.NumVertices ),
-    m_numIndices( desc.NumIndices )
+AssetData::AssetData( AssetDataDesc &desc )
 {
+    m_vertexBuffer = desc.BatchCopy->CreateGeometryVertexBuffer( desc.GeometryData );
+    m_indexBuffer  = desc.BatchCopy->CreateGeometryIndexBuffer( desc.GeometryData );
+    m_numVertices  = desc.GeometryData.Vertices.size( );
+    m_numIndices   = desc.GeometryData.Indices.size( );
 }
 
 void AssetData::UpdateMaterialData( class MaterialData *materialData )

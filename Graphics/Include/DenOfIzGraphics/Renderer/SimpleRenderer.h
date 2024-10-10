@@ -25,6 +25,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Data/Geometry.h>
 #include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
 
+using namespace DirectX;
+
 namespace DenOfIz
 {
 
