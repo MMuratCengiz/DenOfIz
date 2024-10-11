@@ -15,34 +15,50 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#pragma once
 
 #include "IBufferResource.h"
 
-#pragma once
-
 namespace DenOfIz
 {
-    enum class AccelerationStructureGeometryType
-    {
-        Triangles,
-        AABBs
-    };
-
     struct AccelerationStructureGeometryDesc
     {
-        AccelerationStructureGeometryType Type;
-        IBufferResource                  *VertexBuffer;
-        IBufferResource                  *IndexBuffer;
-        IBufferResource                  *TransformBuffer;
+        enum class GeometryType
+        {
+            Triangles,
+            AABBs
+        };
+
+        GeometryType     Type;
+        IBufferResource *VertexBuffer;
+        uint64_t         VertexOffset;
+        uint32_t         VertexStride;
+        IBufferResource *IndexBuffer;
+        uint64_t         IndexOffset;
+        uint32_t         IndexCount;
+        uint32_t         VertexCount;
+        uint32_t         PrimitiveCount;
+        bool             IsOpaque;
     };
 
-    struct AccelerationStructureTopLevelDesc
+    struct AccelerationStructureInstanceDesc
     {
+        IBufferResource *InstanceBuffer;
+        uint64_t         InstanceOffset;
+        uint32_t         InstanceCount;
+        uint32_t         Flags;
     };
 
     struct AccelerationStructureBottomLevelDesc
     {
+        std::vector<AccelerationStructureGeometryDesc> Geometries;
+        uint32_t                                       Flags;
+    };
 
+    struct AccelerationStructureTopLevelDesc
+    {
+        std::vector<AccelerationStructureInstanceDesc> Instances;
+        uint32_t                                       Flags;
     };
 
     struct AccelerationStructureDesc
@@ -55,5 +71,8 @@ namespace DenOfIz
     {
     public:
         virtual ~IRayTracingAccelerationStructure( ) = default;
+
+        virtual void BuildAccelerationStructure( const AccelerationStructureDesc &desc )  = 0;
+        virtual void UpdateAccelerationStructure( const AccelerationStructureDesc &desc ) = 0;
     };
 } // namespace DenOfIz
