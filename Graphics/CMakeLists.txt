@@ -128,7 +128,7 @@ endif ()
 
 copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 
-add_library(DenOfIzGraphics ${DEN_OF_IZ_GRAPHICS_SOURCES})
+add_library(DenOfIzGraphics ${LIB_TYPE} ${DEN_OF_IZ_GRAPHICS_SOURCES})
 
 install_target(DenOfIzGraphics)
 install(FILES ${SPVHeaders} DESTINATION Include/DenOfIzGraphics)
@@ -138,7 +138,6 @@ target_include_directories(DenOfIzGraphics
         PRIVATE
         ${TINYGLTF_INCLUDE_DIRS}
         PUBLIC
-        _ThirdParty/D3D12MemoryAllocator #TODO: Remove once dependency to the-forge is removed !TF!
         _ThirdParty/Tiny/
         ${STB_INCLUDE_DIRS}
 )
@@ -149,12 +148,19 @@ target_link_libraries(DenOfIzGraphics
         Microsoft::DirectXMath
         SDL2::SDL2
         SDL2::SDL2main
-        SDL2::SDL2-static
         Taskflow::Taskflow
 )
 
+if (LIB_TYPE STREQUAL "STATIC")
+    target_link_libraries(DenOfIzGraphics
+            PUBLIC
+            SDL2::SDL2-static
+    )
+endif ()
+
 if (WIN32)
     # Non VCPKG because github repo is more up to date, and the one in vcpkg is unofficial
+    # Propagate BUILD_SHARED_LIBS to D3D12MemoryAllocator
     add_subdirectory(_ThirdParty/D3D12MemoryAllocator)
 
     target_include_directories(DenOfIzGraphics
@@ -243,7 +249,6 @@ set_target_default_properties(DenOfIzGraphics)
 if (BUILD_TESTS)
     add_subdirectory(Tests)
 endif ()
-
 
 if (SWIG_CSHARP)
     add_subdirectory(Swig)

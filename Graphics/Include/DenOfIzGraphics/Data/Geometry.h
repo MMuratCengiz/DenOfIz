@@ -41,7 +41,7 @@ namespace DenOfIz
 {
     typedef uint32_t geometry_index_t;
 
-    enum class BuildDesc : uint32_t
+    enum class BuildDesc
     {
         BuildNormal    = 1 << 0,
         BuildTangent   = 1 << 1,

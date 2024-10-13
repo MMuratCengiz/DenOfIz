@@ -43,7 +43,7 @@ IBufferResource *AssetData::IndexBuffer( ) const
     return m_indexBuffer.get( );
 }
 
-MaterialData *AssetData::MaterialData( ) const
+MaterialData *AssetData::Material( ) const
 {
     return m_materialData;
 }

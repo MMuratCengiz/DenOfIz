@@ -490,7 +490,7 @@ namespace DenOfIz
         DecrementAndWrap
     };
 
-    enum class ResourceDescriptor : uint32_t
+    enum class ResourceDescriptor
     {
         Buffer                = 1 << 1,
         RWBuffer              = 1 << 2,
@@ -508,7 +508,7 @@ namespace DenOfIz
         AccelerationStructure = 1 << 14,
     };
 
-    enum class ResourceState : uint32_t
+    enum class ResourceState
     {
         Undefined                  = 1 << 1,
         VertexAndConstantBuffer    = 1 << 2,

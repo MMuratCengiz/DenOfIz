@@ -44,7 +44,7 @@ void RenderTargetExample::Init( )
     m_quadPipeline->BindGroup( 1 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 1 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
     m_quadPipeline->BindGroup( 2 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 2 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
 
-    auto &materialBatch    = m_worldData.RenderBatch.MaterialBatches.emplace_back( m_renderPipeline->PerMaterialBinding( ), m_sphere->Data( )->MaterialData( ) );
+    auto &materialBatch    = m_worldData.RenderBatch.MaterialBatches.emplace_back( m_renderPipeline->PerMaterialBinding( ), m_sphere->Data( )->Material( ) );
     auto &sphereRenderItem = materialBatch.RenderItems.emplace_back( );
     sphereRenderItem.Data  = m_sphere->Data( );
     sphereRenderItem.Model = m_sphere->ModelMatrix( );

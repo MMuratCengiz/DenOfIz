@@ -47,7 +47,7 @@ namespace DenOfIz
         void             UpdateMaterialData( MaterialData *materialData );
         IBufferResource *VertexBuffer( ) const;
         IBufferResource *IndexBuffer( ) const;
-        MaterialData    *MaterialData( ) const;
+        MaterialData    *Material( ) const;
         uint32_t         NumVertices( ) const;
         uint32_t         NumIndices( ) const;
     };

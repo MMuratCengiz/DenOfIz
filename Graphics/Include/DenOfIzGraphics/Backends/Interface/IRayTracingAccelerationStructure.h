@@ -21,24 +21,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    enum class AccelerationStructureGeometryType
+    {
+        Triangles,
+        AABBs
+    };
+
     struct AccelerationStructureGeometryDesc
     {
-        enum class GeometryType
-        {
-            Triangles,
-            AABBs
-        };
-
-        GeometryType     Type;
-        IBufferResource *VertexBuffer;
-        uint64_t         VertexOffset;
-        uint32_t         VertexStride;
-        IBufferResource *IndexBuffer;
-        uint64_t         IndexOffset;
-        uint32_t         IndexCount;
-        uint32_t         VertexCount;
-        uint32_t         PrimitiveCount;
-        bool             IsOpaque;
+        AccelerationStructureGeometryType Type;
+        IBufferResource                  *VertexBuffer;
+        uint64_t                          VertexOffset;
+        uint32_t                          VertexStride;
+        IBufferResource                  *IndexBuffer;
+        uint64_t                          IndexOffset;
+        uint32_t                          IndexCount;
+        uint32_t                          VertexCount;
+        uint32_t                          PrimitiveCount;
+        bool                              IsOpaque;
     };
 
     struct AccelerationStructureInstanceDesc

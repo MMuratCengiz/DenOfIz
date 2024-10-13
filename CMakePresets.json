@@ -20,7 +20,22 @@
         "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
         "CMAKE_CXX_FLAGS": "-D_DEBUG -Od -Zi -W3 /c /EHsc -DNOMINMAX  /wd\"4267\" /wd\"4244\"",
         "BUILD_TESTS": "ON",
-        "BUILD_EXAMPLES": "ON"
+        "BUILD_EXAMPLES": "ON",
+        "SWIG_CSHARP": "ON"
+      }
+    },
+    {
+      "name": "Debug_Shared_MSVC",
+      "inherits": "Base",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CRT_LINKAGE_STATIC": "0",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_CXX_FLAGS": "-D_DEBUG -Od -Zi -W3 /c /EHsc -DNOMINMAX  /wd\"4267\" /wd\"4244\"",
+        "BUILD_TESTS": "ON",
+        "BUILD_EXAMPLES": "ON",
+        "SWIG_CSHARP": "ON"
       }
     },
     {

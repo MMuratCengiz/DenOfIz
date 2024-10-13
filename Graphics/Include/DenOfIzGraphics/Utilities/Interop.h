@@ -21,23 +21,4 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-#ifdef DZ_BIND_LIB
-    template <typename T>
-    typedef T *Ptr;
-
-    template <typename T>
-    static void ResetPtr( Ptr<T> &ptr )
-    {
-        delete ptr;
-    }
-#else
-    template <typename T>
-    typedef std::unique_ptr<T> Ptr;
-
-    template <typename T>
-    static void ResetPtr( Ptr<T> &ptr )
-    {
-        ptr.reset( );
-    }
-#endif
 }
