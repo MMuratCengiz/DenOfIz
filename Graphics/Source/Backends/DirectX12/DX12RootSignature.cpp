@@ -30,9 +30,9 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
         rootSignatureVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
     }
 
-    for ( const ResourceBindingDesc &binding : desc.ResourceBindings )
+    for ( int i = 0; i < desc.ResourceBindings.NumElements; ++i )
     {
-        AddResourceBinding( binding );
+        AddResourceBinding( desc.ResourceBindings.Array[ i ] );
     }
 
     for ( const StaticSamplerDesc &staticSamplerDesc : desc.StaticSamplers )
@@ -40,9 +40,9 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
         AddStaticSampler( staticSamplerDesc );
     }
 
-    for ( const RootConstantResourceBindingDesc &rootConstant : desc.RootConstants )
+    for ( int i = 0; i < desc.RootConstants.NumElements; ++i )
     {
-        AddRootConstant( rootConstant );
+        AddRootConstant( desc.RootConstants.Array[ i ] );
     }
 
     if ( m_descriptorRangesShaderVisibilities.size( ) == 1 )
@@ -168,7 +168,7 @@ void DX12RootSignature::AddStaticSampler( const StaticSamplerDesc &staticSampler
 
     desc.ShaderRegister   = staticSamplerDesc.Binding.Binding;
     desc.RegisterSpace    = staticSamplerDesc.Binding.RegisterSpace;
-    desc.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( staticSamplerDesc.Binding.Stages[ 0 ] );
+    desc.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( staticSamplerDesc.Binding.Stages.Array[ 0 ] );
 
     m_staticSamplerDescriptorRanges.push_back( desc );
 }
@@ -198,8 +198,9 @@ void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
         spaceDesc.SamplerRanges.push_back( descriptorRange );
         spaceOrder.ResourceOffsetMap[ slot.Key( ) ] = spaceOrder.SamplerCount++;
 
-        for ( const auto &stage : binding.Stages )
+        for ( int i = 0; i < binding.Stages.NumElements; ++i )
         {
+            const auto             &stage     = binding.Stages.Array[ i ];
             D3D12_SHADER_VISIBILITY usedStage = DX12EnumConverter::ConvertShaderStageToShaderVisibility( stage );
             m_samplerRangesShaderVisibilities.insert( usedStage );
             m_usedStages |= usedStage;
@@ -215,14 +216,14 @@ void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
         rootLevelRange.Range                     = descriptorRange;
 
         // Shader visibilities are skipped as they are not part of the same descriptor table. No need to track via a hash set.
-        if ( binding.Stages.empty( ) || binding.Stages.size( ) > 1 )
+        if ( binding.Stages.NumElements == 0 || binding.Stages.NumElements > 1 )
         {
             rootLevelRange.Visibility = D3D12_SHADER_VISIBILITY_ALL;
             m_usedStages |= D3D12_SHADER_VISIBILITY_ALL;
         }
         else
         {
-            rootLevelRange.Visibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( binding.Stages[ 0 ] );
+            rootLevelRange.Visibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( binding.Stages.Array[ 0 ] );
             m_usedStages |= rootLevelRange.Visibility;
         }
         spaceOrder.ResourceOffsetMap[ slot.Key( ) ] = spaceOrder.RootLevelBufferCount++;
@@ -232,8 +233,9 @@ void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
         spaceDesc.CbvSrvUavRanges.push_back( descriptorRange );
         spaceOrder.ResourceOffsetMap[ slot.Key( ) ] = spaceOrder.ResourceCount++;
 
-        for ( const auto &stage : binding.Stages )
+        for ( int i = 0; i < binding.Stages.NumElements; ++i )
         {
+            const auto             &stage     = binding.Stages.Array[ i ];
             D3D12_SHADER_VISIBILITY usedStage = DX12EnumConverter::ConvertShaderStageToShaderVisibility( stage );
             m_descriptorRangesShaderVisibilities.insert( usedStage );
             m_usedStages |= usedStage;
@@ -246,9 +248,9 @@ void DX12RootSignature::AddRootConstant( const RootConstantResourceBindingDesc &
     CD3DX12_ROOT_PARAMETER &dxRootConstant = m_rootConstants.emplace_back( );
     dxRootConstant.ParameterType           = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
     dxRootConstant.ShaderVisibility        = D3D12_SHADER_VISIBILITY_ALL;
-    if ( rootConstant.Stages.size( ) == 1 )
+    if ( rootConstant.Stages.NumElements == 1 )
     {
-        dxRootConstant.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( rootConstant.Stages[ 0 ] );
+        dxRootConstant.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( rootConstant.Stages.Array[ 0 ] );
     }
     dxRootConstant.Constants.Num32BitValues = rootConstant.NumBytes / sizeof( uint32_t );
     dxRootConstant.Constants.ShaderRegister = rootConstant.Binding;

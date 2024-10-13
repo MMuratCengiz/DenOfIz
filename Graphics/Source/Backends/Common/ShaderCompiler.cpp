@@ -1,5 +1,5 @@
-#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
+#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <fstream>
 #include <ranges>
 
@@ -137,10 +137,11 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
             arguments.push_back( L"all" );
         }
     }
-    for ( const auto &define : compileDesc.Defines )
+    for ( int i = 0; i < compileDesc.Defines.NumElements; ++i )
     {
+        const auto &define = compileDesc.Defines.Array[ i ];
         arguments.push_back( L"-D" );
-        arguments.push_back( reinterpret_cast<LPCWSTR>( define.c_str( ) ) );
+        arguments.push_back( reinterpret_cast<LPCWSTR>( define ) );
     }
     arguments.push_back( L"-HV" );
     arguments.push_back( L"2021" );

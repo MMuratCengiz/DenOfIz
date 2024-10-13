@@ -61,9 +61,10 @@ ICommandList *CommandListRing::FrameCommandList( const uint32_t index )
         LOG( ERROR ) << "index cannot be larger or equal @ref CommandListRingDesc::NuNumCommandListsPerFrame";
     }
 
-    m_currentFrame  = m_frame;
-    const auto next = m_commandListPools[ m_frame ]->GetCommandLists( )[ index ];
-    m_frame         = ( m_frame + 1 ) % m_commandListPools.size( );
+    m_currentFrame                   = m_frame;
+    const CommandLists &commandLists = m_commandListPools[ m_frame ]->GetCommandLists( );
+    const auto          next         = commandLists.Array[ index ];
+    m_frame                          = ( m_frame + 1 ) % m_commandListPools.size( );
     if ( m_desc.CreateSyncObjects )
     {
         m_frameFences[ m_currentFrame ]->Wait( );
@@ -80,9 +81,11 @@ void CommandListRing::ExecuteAndPresent( ICommandList *commandList, ISwapChain *
     }
     else
     {
-        executeDesc.Notify = m_frameFences[ m_currentFrame ].get( );
-        executeDesc.WaitOnSemaphores.push_back( m_imageReadySemaphores[ m_currentFrame ].get( ) );
-        executeDesc.NotifySemaphores.push_back( m_imageRenderedSemaphores[ m_currentFrame ].get( ) );
+        executeDesc.Notify                       = m_frameFences[ m_currentFrame ].get( );
+        executeDesc.WaitOnSemaphores.NumElements = 1;
+        executeDesc.WaitOnSemaphores.Array[ 0 ]  = m_imageReadySemaphores[ m_currentFrame ].get( );
+        executeDesc.NotifySemaphores.NumElements = 1;
+        executeDesc.NotifySemaphores.Array[ 0 ]  = m_imageRenderedSemaphores[ m_currentFrame ].get( );
     }
     commandList->Execute( executeDesc );
     commandList->Present( swapChain, image, { m_imageRenderedSemaphores[ m_currentFrame ].get( ) } );

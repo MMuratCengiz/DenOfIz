@@ -22,6 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+#define DZ_MAX_COMMAND_LISTS 32
+    struct CommandLists
+    {
+        size_t        NumElements = 0;
+        ICommandList *Array[ DZ_MAX_COMMAND_LISTS ];
+    };
+
     struct CommandListPoolDesc
     {
         QueueType QueueType;
@@ -32,7 +39,7 @@ namespace DenOfIz
     class ICommandListPool
     {
     public:
-        virtual std::vector<ICommandList *> GetCommandLists() = 0;
-        virtual ~ICommandListPool()                           = default;
+        virtual CommandLists GetCommandLists( ) = 0;
+        virtual ~ICommandListPool( )            = default;
     };
 } // namespace DenOfIz

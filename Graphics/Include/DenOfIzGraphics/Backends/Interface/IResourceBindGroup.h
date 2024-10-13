@@ -36,93 +36,19 @@ namespace DenOfIz
         return { rootSignature, DZConfiguration::Instance( ).RootConstantRegisterSpace };
     }
 
-    template <typename T>
-    struct UpdateDescItem
-    {
-        ResourceBindingSlot Slot;
-        T                  *Resource;
-    };
-
-    struct UpdateDesc
-    {
-        uint32_t                                      RegisterSpace;
-        std::vector<UpdateDescItem<IBufferResource>>  Buffers;
-        std::vector<UpdateDescItem<ITextureResource>> Textures;
-        std::vector<UpdateDescItem<ISampler>>         Samplers;
-
-        explicit UpdateDesc( const uint32_t registerSpace ) : RegisterSpace( registerSpace )
-        {
-        }
-
-        UpdateDesc &Cbv( const uint32_t binding, IBufferResource *resource )
-        {
-            ResourceBindingSlot slot{ };
-            slot.RegisterSpace = RegisterSpace;
-            slot.Binding       = binding;
-            slot.Type          = DescriptorBufferBindingType::ConstantBuffer;
-            Buffers.push_back( { slot, resource } );
-            return *this;
-        }
-
-        UpdateDesc &Srv( const uint32_t binding, IBufferResource *resource )
-        {
-            ResourceBindingSlot slot{ };
-            slot.RegisterSpace = RegisterSpace;
-            slot.Binding       = binding;
-            slot.Type          = DescriptorBufferBindingType::ConstantBuffer;
-            Buffers.push_back( { slot, resource } );
-            return *this;
-        }
-
-        UpdateDesc &Srv( const uint32_t binding, ITextureResource *resource )
-        {
-            ResourceBindingSlot slot{ };
-            slot.RegisterSpace = RegisterSpace;
-            slot.Binding       = binding;
-            slot.Type          = DescriptorBufferBindingType::ShaderResource;
-            Textures.push_back( { slot, resource } );
-            return *this;
-        }
-
-        UpdateDesc &Uav( const uint32_t binding, IBufferResource *resource )
-        {
-            ResourceBindingSlot slot{ };
-            slot.RegisterSpace = RegisterSpace;
-            slot.Binding       = binding;
-            slot.Type          = DescriptorBufferBindingType::ShaderResource;
-            Buffers.push_back( { slot, resource } );
-            return *this;
-        }
-
-        UpdateDesc &Uav( const uint32_t binding, ITextureResource *resource )
-        {
-            ResourceBindingSlot slot{ };
-            slot.RegisterSpace = RegisterSpace;
-            slot.Binding       = binding;
-            slot.Type          = DescriptorBufferBindingType::UnorderedAccess;
-            Textures.push_back( { slot, resource } );
-            return *this;
-        }
-
-        UpdateDesc &Sampler( const ResourceBindingSlot &slot, ISampler *sampler )
-        {
-            Samplers.push_back( { slot, sampler } );
-            return *this;
-        }
-
-        UpdateDesc &Sampler( const uint32_t binding, ISampler *sampler )
-        {
-            Samplers.push_back( { ResourceBindingSlot{ .Binding = binding, .RegisterSpace = RegisterSpace, .Type = DescriptorBufferBindingType::Sampler }, sampler } );
-            return *this;
-        }
-    };
-
     class IResourceBindGroup
     {
     public:
-        virtual ~IResourceBindGroup( )                                = default;
-        virtual void SetRootConstants( uint32_t binding, void *data ) = 0;
-        virtual void Update( const UpdateDesc &desc )                 = 0;
+        virtual ~IResourceBindGroup( )                                                        = default;
+        virtual void                SetRootConstants( uint32_t binding, void *data )          = 0;
+        virtual IResourceBindGroup *BeginUpdate( )                                            = 0;
+        virtual IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource )  = 0;
+        virtual IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource )  = 0;
+        virtual IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource ) = 0;
+        virtual IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource )  = 0;
+        virtual IResourceBindGroup *Uav( const uint32_t binding, ITextureResource *resource ) = 0;
+        virtual IResourceBindGroup *Sampler( const uint32_t binding, ISampler *sampler )      = 0;
+        virtual void                EndUpdate( )                                              = 0;
 
     protected:
         virtual void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) = 0;

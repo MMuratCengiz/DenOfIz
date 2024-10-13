@@ -39,21 +39,29 @@ namespace DenOfIz
 
         ITextureResource *Resource = nullptr;
 
-        std::array<float, 4> ClearColor{ 0.0f, 0.0f, 0.0f, 1.0f };
-        std::array<float, 2> ClearDepth{ 1.0f, 0.0f };
+        float ClearColor[ 4 ]{ 0.0f, 0.0f, 0.0f, 1.0f };
+        float ClearDepth[ 2 ]{ 1.0f, 0.0f };
+    };
+
+#define DZ_MAX_RT_ATTACHMENTS 8
+    struct RenderingAttachments
+    {
+        size_t                  NumElements = 0;
+        RenderingAttachmentDesc Array[ DZ_MAX_RT_ATTACHMENTS ];
     };
 
     struct RenderingDesc
     {
-        std::vector<RenderingAttachmentDesc> RTAttachments;
-        RenderingAttachmentDesc              DepthAttachment;
-        RenderingAttachmentDesc              StencilAttachment;
+        RenderingAttachmentDesc DepthAttachment;
+        RenderingAttachmentDesc StencilAttachment;
 
         float    RenderAreaWidth   = 0.0f;
         float    RenderAreaHeight  = 0.0f;
         float    RenderAreaOffsetX = 0.0f;
         float    RenderAreaOffsetY = 0.0f;
         uint32_t LayerCount        = 1;
+
+        RenderingAttachments RTAttachments;
     };
 
     struct CopyBufferRegionDesc
@@ -119,9 +127,9 @@ namespace DenOfIz
     struct ExecuteDesc
     {
         // Objects specified below must live until the command list is executed
-        IFence                   *Notify           = nullptr;
-        std::vector<ISemaphore *> WaitOnSemaphores = { };
-        std::vector<ISemaphore *> NotifySemaphores = { };
+        IFence    *Notify           = nullptr;
+        Semaphores WaitOnSemaphores = { 0, nullptr };
+        Semaphores NotifySemaphores = { 0, nullptr };
     };
 
     struct CommandListDesc

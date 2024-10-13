@@ -50,7 +50,10 @@ PerFrameBinding::PerFrameBinding( ILogicalDevice *device, IRootSignature *rootSi
     XMStoreFloat4x4( &viewProjectionMatrix, XMMatrixIdentity( ) );
     memcpy( m_viewProjectionMappedData, &viewProjectionMatrix, sizeof( XMFLOAT4X4 ) );
 
-    m_bindGroup->Update( UpdateDesc( 0 ).Cbv( 0, m_viewProjectionBuffer.get( ) ).Cbv( 1, m_deltaTimeBuffer.get( ) ) );
+    m_bindGroup->BeginUpdate();
+    m_bindGroup->Cbv( 0, m_viewProjectionBuffer.get( ) );
+    m_bindGroup->Cbv( 1, m_deltaTimeBuffer.get( ) );
+    m_bindGroup->EndUpdate();
 }
 
 void PerFrameBinding::Update( const Camera *camera, float deltaTime ) const

@@ -66,8 +66,15 @@ namespace DenOfIz
         [[nodiscard]] const std::vector<DX12RootConstant>   &RootConstants( ) const;
         [[nodiscard]] uint32_t                               RegisterSpace( ) const;
         // --
-        void SetRootConstants( uint32_t binding, void *data ) override;
-        void Update( const UpdateDesc &desc ) override;
+        void                SetRootConstants( uint32_t binding, void *data ) override;
+        IResourceBindGroup *BeginUpdate( ) override;
+        IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource ) override;
+        IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Uav( const uint32_t binding, ITextureResource *resource ) override;
+        IResourceBindGroup *Sampler( const uint32_t binding, ISampler *sampler ) override;
+        void                EndUpdate( ) override;
 
     protected:
         void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) override;
@@ -78,6 +85,7 @@ namespace DenOfIz
         bool                                      UpdateRootDescriptor( const ResourceBindingSlot &slot, const D3D12_GPU_VIRTUAL_ADDRESS &gpuAddress );
         [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleCbvSrvUav( uint32_t binding ) const;
         [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleSampler( uint32_t binding ) const;
+        ResourceBindingSlot                       GetSlot( uint32_t binding, const DescriptorBufferBindingType &type ) const;
     };
 
 } // namespace DenOfIz

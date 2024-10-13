@@ -32,9 +32,9 @@ using namespace DenOfIz;
 BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device, const bool issueBarriers ) : m_device( device ), m_issueBarriers( issueBarriers )
 {
     m_commandListPool = std::unique_ptr<ICommandListPool>( m_device->CreateCommandListPool( { QueueType::Copy } ) );
-    DZ_ASSERTM( !m_commandListPool->GetCommandLists( ).empty( ), "Command list pool did not produce any command lists." );
+    DZ_ASSERTM( m_commandListPool->GetCommandLists( ).NumElements != 0, "Command list pool did not produce any command lists." );
 
-    m_copyCommandList = m_commandListPool->GetCommandLists( )[ 0 ];
+    m_copyCommandList = m_commandListPool->GetCommandLists( ).Array[ 0 ];
     m_executeFence    = std::unique_ptr<IFence>( m_device->CreateFence( ) );
 
     if ( m_issueBarriers )
@@ -44,7 +44,7 @@ BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device, const bool issueBa
         poolDesc.NumCommandLists = 1;
         m_syncCommandPool        = std::unique_ptr<ICommandListPool>( m_device->CreateCommandListPool( poolDesc ) );
 
-        m_syncCommandList = m_syncCommandPool->GetCommandLists( ).front( );
+        m_syncCommandList = m_syncCommandPool->GetCommandLists( ).Array[ 0 ];
         m_batchCopyWait   = std::unique_ptr<ISemaphore>( m_device->CreateSemaphore( ) );
         m_syncWait        = std::unique_ptr<IFence>( m_device->CreateFence( ) );
     }
@@ -246,11 +246,13 @@ void BatchResourceCopy::Submit( ISemaphore *notify )
     ExecuteDesc desc{ };
 
     m_executeFence->Reset( );
-    desc.Notify = m_executeFence.get( );
-    desc.NotifySemaphores.push_back( m_batchCopyWait.get( ) );
+    desc.Notify                       = m_executeFence.get( );
+    desc.NotifySemaphores.NumElements = 1;
+    desc.NotifySemaphores.Array[ 0 ]  = m_batchCopyWait.get( );
     if ( notify )
     {
-        desc.NotifySemaphores.push_back( notify );
+        desc.NotifySemaphores.NumElements++;
+        desc.NotifySemaphores.Array[ 1 ] = notify;
     }
 
     m_copyCommandList->Execute( desc );
@@ -260,8 +262,9 @@ void BatchResourceCopy::Submit( ISemaphore *notify )
     {
         m_syncWait->Reset( );
         ExecuteDesc executeDesc{ };
-        executeDesc.WaitOnSemaphores.push_back( m_batchCopyWait.get( ) );
-        executeDesc.Notify = m_syncWait.get( );
+        executeDesc.WaitOnSemaphores.NumElements = 1;
+        executeDesc.WaitOnSemaphores.Array[ 0 ]  = m_batchCopyWait.get( );
+        executeDesc.Notify                       = m_syncWait.get( );
         m_syncCommandList->Execute( executeDesc );
         m_syncWait->Wait( );
     }

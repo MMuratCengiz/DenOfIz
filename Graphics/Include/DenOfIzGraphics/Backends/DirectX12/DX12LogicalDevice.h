@@ -19,8 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 #ifdef BUILD_DX12
 
-#include <DenOfIzGraphics/Utilities/Common.h>
 #include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
+#include <DenOfIzGraphics/Utilities/Common.h>
 #include "DX12BufferResource.h"
 #include "DX12CommandListPool.h"
 #include "DX12Context.h"
@@ -40,14 +40,14 @@ namespace DenOfIz
         wil::com_ptr<ID3D12Fence>    m_waitIdleFence;
 
     public:
-         DX12LogicalDevice( );
+        DX12LogicalDevice( );
         ~DX12LogicalDevice( ) override;
 
         // Override methods
-        void                        CreateDevice( ) override;
-        std::vector<PhysicalDevice> ListPhysicalDevices( ) override;
-        void                        LoadPhysicalDevice( const PhysicalDevice &device ) override;
-        bool                        IsDeviceLost( ) override;
+        void            CreateDevice( ) override;
+        PhysicalDevices ListPhysicalDevices( ) override;
+        void            LoadPhysicalDevice( const PhysicalDevice &device ) override;
+        bool            IsDeviceLost( ) override;
 
         ICommandListPool   *CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
         IPipeline          *CreatePipeline( const PipelineDesc &pipelineDesc ) override;

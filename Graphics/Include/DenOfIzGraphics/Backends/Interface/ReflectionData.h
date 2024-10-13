@@ -94,12 +94,19 @@ namespace DenOfIz
         RootDescriptor,
     };
 
+#define DZ_MAX_FIELDS 32
+    struct ResourceFields
+    {
+        size_t                  NumElements = 0;
+        ReflectionResourceField Array[ DZ_MAX_FIELDS ];
+    };
+
     struct ReflectionDesc
     {
-        std::string                          Name;
-        ReflectionBindingType                Type;
-        std::vector<ReflectionResourceField> Fields;
-        size_t                               NumBytes = 0;
+        std::string           Name;
+        ReflectionBindingType Type;
+        ResourceFields        Fields;
+        size_t                NumBytes = 0;
 #ifdef BUILD_METAL
         /**
          * Metal specific information to simulate register spaces. We use a top level argument buffers:
@@ -108,8 +115,8 @@ namespace DenOfIz
          *
          * Valid when RootParameterType is DescriptorTable.
          */
-        uint32_t                 DescriptorTableIndex = 0;
-        uint32_t                 TLABOffset           = 0;
+        uint32_t DescriptorTableIndex = 0;
+        uint32_t TLABOffset           = 0;
 #endif
     };
 } // namespace DenOfIz

@@ -40,7 +40,9 @@ PerDrawBinding::PerDrawBinding( ILogicalDevice *device, IRootSignature *rootSign
     m_modelMatrixBuffer        = std::unique_ptr<IBufferResource>( device->CreateBufferResource( modelBufferDesc ) );
     m_modelMatrixMappedData    = m_modelMatrixBuffer->MapMemory( );
 
-    m_bindGroup->Update( UpdateDesc( RegisterSpace ).Cbv( 0, m_modelMatrixBuffer.get( ) ) );
+    m_bindGroup->BeginUpdate();
+    m_bindGroup->Cbv( 0, m_modelMatrixBuffer.get( ) );
+    m_bindGroup->EndUpdate( );
 }
 
 void PerDrawBinding::Update( const XMFLOAT4X4 &modelMatrix ) const

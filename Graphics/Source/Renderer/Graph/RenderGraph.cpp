@@ -40,7 +40,7 @@ RenderGraph::RenderGraph( const RenderGraphDesc &desc ) : m_presentNode( { } ), 
     for ( int i = 0; i < m_desc.NumFrames; ++i )
     {
         m_commandListPools.push_back( std::unique_ptr<ICommandListPool>( m_desc.LogicalDevice->CreateCommandListPool( poolDesc ) ) );
-        m_presentContexts[ i ].PresentCommandList = m_commandListPools[ i ]->GetCommandLists( )[ 0 ];
+        m_presentContexts[ i ].PresentCommandList = m_commandListPools[ i ]->GetCommandLists( ).Array[ 0 ];
     }
 
     Reset( );
@@ -120,7 +120,7 @@ void RenderGraph::InitAllNodes( )
         for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
         {
             auto newContext         = std::make_unique<NodeExecutionContext>( );
-            newContext->CommandList = m_commandListPools[ i ]->GetCommandLists( )[ graphNode->Index + 1 ]; // +1 for the present node
+            newContext->CommandList = m_commandListPools[ i ]->GetCommandLists( ).Array[ graphNode->Index + 1 ]; // +1 for the present node
             newContext->Execute     = node.Execute;
             for ( auto &resourceState : node.RequiredResourceStates )
             {
@@ -164,8 +164,9 @@ void RenderGraph::ConfigureGraph( )
                 ISemaphore *semaphore = GetOrCreateSemaphore( freeSemaphoreIndex );
                 for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
                 {
-                    m_nodes[ nodeIndex ]->Contexts[ i ]->WaitOnSemaphores.push_back( semaphore );
-                    m_nodes[ processedNodes[ dependency ] ]->Contexts[ i ]->NotifySemaphores.push_back( semaphore );
+                    m_nodes[ nodeIndex ]->Contexts[ i ]->WaitOnSemaphores.Array[ 0 ] = semaphore;
+                    Semaphores &notifySemaphores                                     = m_nodes[ processedNodes[ dependency ] ]->Contexts[ i ]->NotifySemaphores;
+                    notifySemaphores.Array[ notifySemaphores.NumElements++ ]         = semaphore;
                 }
             }
             processedNodes[ node.Name ] = nodeIndex;
@@ -179,7 +180,8 @@ void RenderGraph::ConfigureGraph( )
         for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
         {
             m_presentContexts[ i ].PresentDependencySemaphores.push_back( semaphore );
-            m_nodes[ processedNodes[ dependency ] ]->Contexts[ i ]->NotifySemaphores.push_back( semaphore );
+            Semaphores &semaphores                       = m_nodes[ processedNodes[ dependency ] ]->Contexts[ i ]->NotifySemaphores;
+            semaphores.Array[ semaphores.NumElements++ ] = semaphore;
         }
     }
 
@@ -255,11 +257,15 @@ void RenderGraph::BuildTaskflow( )
                 presentCommandList->PipelineBarrier( PipelineBarrierDesc::RenderTargetToPresent( swapChainRenderTarget ) );
 
                 ExecuteDesc presentExecuteDesc{ };
-                presentExecuteDesc.Notify           = m_frameFences[ frame ].get( );
-                presentExecuteDesc.WaitOnSemaphores = { presentContext.ImageReadySemaphore.get( ) };
-                std::copy( presentContext.PresentDependencySemaphores.begin( ), presentContext.PresentDependencySemaphores.end( ),
-                           std::back_inserter( presentExecuteDesc.WaitOnSemaphores ) );
-                presentExecuteDesc.NotifySemaphores = { presentContext.ImageRenderedSemaphore.get( ) };
+                presentExecuteDesc.Notify                       = m_frameFences[ frame ].get( );
+                presentExecuteDesc.WaitOnSemaphores.NumElements = 1;
+                presentExecuteDesc.WaitOnSemaphores.Array[ 0 ]  = presentContext.ImageReadySemaphore.get( );
+                for ( auto &dependency : presentContext.PresentDependencySemaphores )
+                {
+                    presentExecuteDesc.WaitOnSemaphores.Array[ presentExecuteDesc.WaitOnSemaphores.NumElements++ ] = dependency;
+                }
+                presentExecuteDesc.NotifySemaphores.NumElements = 1;
+                presentExecuteDesc.NotifySemaphores.Array[ 0 ]  = presentContext.ImageRenderedSemaphore.get( );
                 presentCommandList->Execute( presentExecuteDesc );
                 presentCommandList->Present( m_presentNode.SwapChain, image, { presentContext.ImageRenderedSemaphore.get( ) } );
             } );

@@ -34,16 +34,23 @@ namespace DenOfIz
 
     struct ShaderDesc
     {
-        ShaderStage              Stage;
-        std::string              Path;
-        std::vector<std::string> Defines;
-        std::string              EntryPoint = "main";
+        ShaderStage   Stage;
+        std::string   Path;
+        ShaderDefines Defines;
+        std::string   EntryPoint = "main";
+    };
+
+#define DZ_MAX_SHADER_DESCS 16
+    struct ShaderDescs
+    {
+        size_t     NumElements = 0;
+        ShaderDesc Array[ DZ_MAX_SHADER_DESCS ];
     };
 
     struct ShaderProgramDesc
     {
-        TargetIL                TargetIL;
-        std::vector<ShaderDesc> Shaders;
+        TargetIL    TargetIL;
+        ShaderDescs Shaders;
     };
 
     struct ShaderReflectDesc
@@ -52,6 +59,12 @@ namespace DenOfIz
         RootSignatureDesc RootSignature;
     };
 
+#define DZ_MAX_COMPILED_SHADERS 8
+    struct CompiledShaders
+    {
+        size_t          NumElements = 0;
+        CompiledShader *Array[ DZ_MAX_COMPILED_SHADERS ];
+    };
 #ifdef BUILD_METAL
     struct MetalDescriptorOffsets
     {
@@ -76,9 +89,10 @@ namespace DenOfIz
         explicit ShaderProgram( ShaderProgramDesc desc );
 
     public:
-        [[nodiscard]] std::vector<CompiledShader *> GetCompiledShaders( ) const;
-        [[nodiscard]] ShaderReflectDesc             Reflect( ) const;
+        [[nodiscard]] CompiledShaders   GetCompiledShaders( ) const;
+        [[nodiscard]] ShaderReflectDesc Reflect( ) const;
         ~ShaderProgram( );
+
     private:
         [[nodiscard]] const ShaderCompiler &ShaderCompilerInstance( ) const;
         void                                Compile( );

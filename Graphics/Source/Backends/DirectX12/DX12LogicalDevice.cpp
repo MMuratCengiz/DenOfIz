@@ -69,17 +69,17 @@ void DX12LogicalDevice::CreateDevice( )
     DX_CHECK_RESULT( CreateDXGIFactory2( dxgiFactoryFlags, IID_PPV_ARGS( m_context->DXGIFactory.put( ) ) ) );
 }
 
-std::vector<PhysicalDevice> DX12LogicalDevice::ListPhysicalDevices( )
+PhysicalDevices DX12LogicalDevice::ListPhysicalDevices( )
 {
-    std::vector<PhysicalDevice> result;
+    PhysicalDevices result;
     wil::com_ptr<IDXGIAdapter1> adapter;
     for ( UINT adapterIndex = 0; SUCCEEDED( m_context->DXGIFactory->EnumAdapters1( adapterIndex, adapter.put( ) ) ); adapterIndex++ )
     {
         PhysicalDevice deviceInfo{ };
         CreateDeviceInfo( *adapter.get( ), deviceInfo );
-        result.push_back( deviceInfo );
+        result.NumElements++;
+        result.Array[ adapterIndex ] = deviceInfo;
     }
-
     return result;
 }
 

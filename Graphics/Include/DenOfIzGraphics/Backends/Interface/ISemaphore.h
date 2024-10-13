@@ -26,10 +26,16 @@ namespace DenOfIz
     class ISemaphore
     {
     public:
-        virtual void Wait()   = 0;
-        virtual void Notify() = 0;
+        virtual void Wait( )   = 0;
+        virtual void Notify( ) = 0;
 
-        virtual ~ISemaphore(){};
+        virtual ~ISemaphore( ) {};
     };
 
+#define DZ_MAX_SEMAPHORES 16
+    struct Semaphores
+    {
+        size_t      NumElements = 0;
+        ISemaphore *Array[ DZ_MAX_SEMAPHORES ];
+    };
 } // namespace DenOfIz

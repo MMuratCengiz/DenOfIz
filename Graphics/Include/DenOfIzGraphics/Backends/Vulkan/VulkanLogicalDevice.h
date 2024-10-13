@@ -19,12 +19,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
+#include <unordered_set>
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 #include "VulkanCommandPool.h"
 #include "VulkanContext.h"
 #include "VulkanInputLayout.h"
 #include "VulkanPipeline.h"
-#include <unordered_set>
 
 namespace DenOfIz
 {
@@ -50,13 +50,10 @@ namespace DenOfIz
     public:
         VulkanLogicalDevice( ) = default;
 
-        void                        CreateDevice( ) override;
-        std::vector<PhysicalDevice> ListPhysicalDevices( ) override;
-        void                        LoadPhysicalDevice( const PhysicalDevice &device ) override;
-        bool                        IsDeviceLost( ) override
-        {
-            return m_context->IsDeviceLost;
-        }
+        void            CreateDevice( ) override;
+        PhysicalDevices ListPhysicalDevices( ) override;
+        void            LoadPhysicalDevice( const PhysicalDevice &device ) override;
+        bool            IsDeviceLost( ) override;
 
         void                         WaitIdle( ) override;
         [[nodiscard]] VulkanContext *GetContext( ) const;

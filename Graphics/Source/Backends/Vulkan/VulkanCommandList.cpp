@@ -70,9 +70,10 @@ void VulkanCommandList::BeginRendering( const RenderingDesc &renderingDesc )
 
     std::vector<VkRenderingAttachmentInfo> colorAttachments;
 
-    for ( const auto &colorAttachment : renderingDesc.RTAttachments )
+    for ( int i = 0; i < renderingDesc.RTAttachments.NumElements; ++i )
     {
-        auto *vkColorAttachmentResource = dynamic_cast<VulkanTextureResource *>( colorAttachment.Resource );
+        const auto &colorAttachment           = renderingDesc.RTAttachments.Array[ i ];
+        auto       *vkColorAttachmentResource = dynamic_cast<VulkanTextureResource *>( colorAttachment.Resource );
 
         VkRenderingAttachmentInfo colorAttachmentInfo{ };
         colorAttachmentInfo.sType                         = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
@@ -145,15 +146,18 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeDesc )
 
     std::vector<VkPipelineStageFlags> waitStages;
     std::vector<VkSemaphore>          waitOnSemaphores;
-    for ( ISemaphore *waitOn : executeDesc.WaitOnSemaphores )
+    for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements; i++ )
     {
-        waitOnSemaphores.push_back( reinterpret_cast<VulkanSemaphore *>( waitOn )->GetSemaphore( ) );
+        auto *waitOn = dynamic_cast<VulkanSemaphore *>( executeDesc.WaitOnSemaphores.Array[ i ] );
+        waitOnSemaphores.push_back( waitOn->GetSemaphore( ) );
         waitStages.push_back( VK_PIPELINE_STAGE_ALL_COMMANDS_BIT );
     }
+
     std::vector<VkSemaphore> signalSemaphores;
-    for ( ISemaphore *signal : executeDesc.NotifySemaphores )
+    for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements; i++ )
     {
-        signalSemaphores.push_back( reinterpret_cast<VulkanSemaphore *>( signal )->GetSemaphore( ) );
+        auto *signal = dynamic_cast<VulkanSemaphore *>( executeDesc.NotifySemaphores.Array[ i ] );
+        signalSemaphores.push_back( signal->GetSemaphore( ) );
     }
 
     vkSubmitInfo.waitSemaphoreCount   = waitOnSemaphores.size( );
@@ -236,12 +240,12 @@ void VulkanCommandList::BindViewport( const float offsetX, float offsetY, const 
 
 void VulkanCommandList::BindScissorRect( const float offsetX, const float offsetY, const float width, const float height )
 {
-    m_scissorRect = VkRect2D( );
-    m_scissorRect.offset.x = offsetX;
-    m_scissorRect.offset.y = offsetY;
-    m_scissorRect.extent.width = width;
+    m_scissorRect               = VkRect2D( );
+    m_scissorRect.offset.x      = offsetX;
+    m_scissorRect.offset.y      = offsetY;
+    m_scissorRect.extent.width  = width;
     m_scissorRect.extent.height = height;
-    vkCmdSetScissor( m_commandBuffer, 0, 1, &m_scissorRect );
+    vkCmdSetScissorWithCount( m_commandBuffer, 1, &m_scissorRect );
 }
 
 void VulkanCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )

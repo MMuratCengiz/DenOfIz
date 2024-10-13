@@ -49,16 +49,30 @@ namespace DenOfIz
         uint32_t         Flags;
     };
 
+#define DZ_MAX_ACCELERATION_STRUCTURE_GEOMETRIES 32
+    struct AccelerationStructureGeometries
+    {
+        size_t                            NumElements = 0;
+        AccelerationStructureGeometryDesc Array[ DZ_MAX_ACCELERATION_STRUCTURE_GEOMETRIES ];
+    };
+
     struct AccelerationStructureBottomLevelDesc
     {
-        std::vector<AccelerationStructureGeometryDesc> Geometries;
-        uint32_t                                       Flags;
+        AccelerationStructureGeometries Geometries;
+        uint32_t                        Flags;
+    };
+
+#define DZ_MAX_ACCELERATION_STRUCTURE_INSTANCES 32
+    struct AccelerationStructureInstances
+    {
+        size_t                            NumElements = 0;
+        AccelerationStructureGeometryDesc Array[ DZ_MAX_ACCELERATION_STRUCTURE_GEOMETRIES ];
     };
 
     struct AccelerationStructureTopLevelDesc
     {
-        std::vector<AccelerationStructureInstanceDesc> Instances;
-        uint32_t                                       Flags;
+        AccelerationStructureInstances Instances;
+        uint32_t                       Flags;
     };
 
     struct AccelerationStructureDesc

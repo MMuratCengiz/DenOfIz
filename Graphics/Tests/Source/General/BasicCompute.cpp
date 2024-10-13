@@ -43,7 +43,7 @@ void BasicCompute( const GraphicsApi &gApi )
 
     std::unique_ptr<IResourceBindGroup> resourceBindGroup =
         std::unique_ptr<IResourceBindGroup>( logicalDevice->CreateResourceBindGroup( ResourceBindGroupDesc{ .RootSignature = rootSignature.get( ) } ) );
-    resourceBindGroup->Update( UpdateDesc{ 0 }.Uav( 0, buffer.get( ) ) );
+    resourceBindGroup->BeginUpdate()->Uav( 0, buffer.get( ) )->EndUpdate();
 
     std::unique_ptr<IInputLayout> inputLayout = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( { } ) );
 

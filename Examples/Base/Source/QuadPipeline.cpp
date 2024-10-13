@@ -22,35 +22,39 @@ using namespace DenOfIz;
 
 QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice, const std::string &pixelShader )
 {
-    std::vector<ShaderDesc> shaders{ };
-    ShaderDesc              vertexShaderDesc{ };
+    ShaderDescs shaders{ };
+    ShaderDesc  vertexShaderDesc{ };
     vertexShaderDesc.Path  = "Assets/Shaders/FullscreenQuad.vs.hlsl";
     vertexShaderDesc.Stage = ShaderStage::Vertex;
-    shaders.push_back( vertexShaderDesc );
+    shaders.Array[ 0 ]     = vertexShaderDesc;
     ShaderDesc pixelShaderDesc{ };
     pixelShaderDesc.Path  = pixelShader;
     pixelShaderDesc.Stage = ShaderStage::Pixel;
-    shaders.push_back( pixelShaderDesc );
+    shaders.Array[ 1 ]    = pixelShaderDesc;
+    shaders.NumElements   = 2;
 
     m_program              = std::unique_ptr<ShaderProgram>( graphicsApi->CreateShaderProgram( shaders ) );
     auto programReflection = m_program->Reflect( );
 
     m_rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( programReflection.RootSignature ) );
     m_inputLayout   = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( programReflection.InputLayout ) );
+
     PipelineDesc pipelineDesc{ };
-    pipelineDesc.Rendering.RenderTargets.push_back( { .Format = Format::B8G8R8A8Unorm } );
-    pipelineDesc.InputLayout   = m_inputLayout.get( );
-    pipelineDesc.RootSignature = m_rootSignature.get( );
-    pipelineDesc.ShaderProgram = m_program.get( );
-    pipelineDesc.CullMode      = CullMode::BackFace;
+    pipelineDesc.Rendering.RenderTargets.NumElements = 1;
+    pipelineDesc.Rendering.RenderTargets.Array[ 0 ]  = { .Format = Format::B8G8R8A8Unorm };
+    pipelineDesc.InputLayout                         = m_inputLayout.get( );
+    pipelineDesc.RootSignature                       = m_rootSignature.get( );
+    pipelineDesc.ShaderProgram                       = m_program.get( );
+    pipelineDesc.CullMode                            = CullMode::BackFace;
 
     m_pipeline = std::unique_ptr<IPipeline>( logicalDevice->CreatePipeline( pipelineDesc ) );
 
     ResourceBindGroupDesc bindGroupDesc{ };
     bindGroupDesc.RootSignature = m_rootSignature.get( );
 
-    for ( const auto &resourceBinding : programReflection.RootSignature.ResourceBindings )
+    for ( int bindingIndex = 0; bindingIndex < programReflection.RootSignature.ResourceBindings.NumElements; ++bindingIndex )
     {
+        const auto &resourceBinding = programReflection.RootSignature.ResourceBindings.Array[ bindingIndex ];
         bindGroupDesc.RegisterSpace = resourceBinding.RegisterSpace;
         for ( uint32_t i = 0; i < 3; ++i )
         {

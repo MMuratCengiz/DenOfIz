@@ -75,8 +75,8 @@ namespace DenOfIz
         struct NodeExecutionContext
         {
             ICommandList                                   *CommandList;
-            std::vector<ISemaphore *>                       WaitOnSemaphores;
-            std::vector<ISemaphore *>                       NotifySemaphores;
+            Semaphores                                      WaitOnSemaphores;
+            Semaphores                                      NotifySemaphores;
             std::vector<NodeResourceUsageDesc>              ResourceUsagesPerFrame;
             std::mutex                                      SelfMutex;
             std::function<void( uint32_t, ICommandList * )> Execute;
@@ -157,13 +157,13 @@ namespace DenOfIz
 
     public:
         explicit RenderGraph( const RenderGraphDesc &desc );
-        void     Reset( );
-        void     AddNode( const NodeDesc &desc );
-        void     SetPresentNode( const PresentNodeDesc &desc );
-        void     BuildGraph( );
-        void     BuildTaskflow( );
-        void     Update( );
-        void     WaitIdle( ) const;
+        void Reset( );
+        void AddNode( const NodeDesc &desc );
+        void SetPresentNode( const PresentNodeDesc &desc );
+        void BuildGraph( );
+        void BuildTaskflow( );
+        void Update( );
+        void WaitIdle( ) const;
 
     private:
         ISemaphore *GetOrCreateSemaphore( uint32_t &index );

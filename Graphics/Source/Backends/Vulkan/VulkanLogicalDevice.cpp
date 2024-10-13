@@ -256,19 +256,23 @@ void VulkanLogicalDevice::InitSupportedLayers( std::vector<const char *> &layers
     }
 }
 
-std::vector<PhysicalDevice> VulkanLogicalDevice::ListPhysicalDevices( )
+PhysicalDevices VulkanLogicalDevice::ListPhysicalDevices( )
 {
     uint32_t count = 0;
     vkEnumeratePhysicalDevices( m_context->Instance, &count, nullptr );
     std::vector<VkPhysicalDevice> devices( count );
     vkEnumeratePhysicalDevices( m_context->Instance, &count, devices.data( ) );
-    std::vector<PhysicalDevice> result;
+    PhysicalDevices result;
+    result.NumElements = count;
+    DZ_ASSERTM( count > 0, "No Vulkan Devices Found." );
+    DZ_ASSERTM( count < 4, "Too many devices, consider upgrading library limits." );
 
+    int index = 0;
     for ( const auto &device : devices )
     {
         PhysicalDevice deviceInfo{ };
         CreateDeviceInfo( device, deviceInfo );
-        result.push_back( deviceInfo );
+        result.Array[ index++ ] = ( deviceInfo );
     }
 
     return result;
@@ -567,6 +571,11 @@ bool VulkanLogicalDevice::ValidateLayer( const std::string &layer ) const
     }
 
     return false;
+}
+
+bool VulkanLogicalDevice::IsDeviceLost( )
+{
+    return m_context->IsDeviceLost;
 }
 
 ICommandListPool* VulkanLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &createInfo )

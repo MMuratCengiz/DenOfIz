@@ -53,22 +53,51 @@ void VulkanResourceBindGroup::SetRootConstants( const uint32_t binding, void *da
     rootConstantBinding.Data                       = data;
 }
 
-void VulkanResourceBindGroup::Update( const UpdateDesc &desc )
+
+IResourceBindGroup* VulkanResourceBindGroup::BeginUpdate( )
 {
     m_writeDescriptorSets.clear( );
-    for ( auto item : desc.Buffers )
-    {
-        BindBuffer( item.Slot, item.Resource );
-    }
-    for ( auto item : desc.Textures )
-    {
-        BindTexture( item.Slot, item.Resource );
-    }
-    for ( auto item : desc.Samplers )
-    {
-        BindSampler( item.Slot, item.Resource );
-    }
+    return this;
+}
 
+IResourceBindGroup* VulkanResourceBindGroup::Cbv( const uint32_t binding, IBufferResource *resource )
+{
+    BindBuffer( GetSlot( binding, DescriptorBufferBindingType::ConstantBuffer ), resource );
+    return this;
+}
+
+IResourceBindGroup* VulkanResourceBindGroup::Srv( const uint32_t binding, IBufferResource *resource )
+{
+    BindBuffer( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), resource );
+    return this;
+}
+
+IResourceBindGroup* VulkanResourceBindGroup::Srv( const uint32_t binding, ITextureResource *resource )
+{
+    BindTexture( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), resource );
+    return this;
+}
+
+IResourceBindGroup* VulkanResourceBindGroup::Uav( const uint32_t binding, IBufferResource *resource )
+{
+    BindBuffer( GetSlot( binding, DescriptorBufferBindingType::UnorderedAccess ), resource );
+    return this;
+}
+
+IResourceBindGroup* VulkanResourceBindGroup::Uav( const uint32_t binding, ITextureResource *resource )
+{
+    BindTexture( GetSlot( binding, DescriptorBufferBindingType::UnorderedAccess ), resource );
+    return this;
+}
+
+IResourceBindGroup* VulkanResourceBindGroup::Sampler( const uint32_t binding, ISampler *sampler )
+{
+    BindSampler( GetSlot( binding, DescriptorBufferBindingType::Sampler ), sampler );
+    return this;
+}
+
+void VulkanResourceBindGroup::EndUpdate( )
+{
     vkUpdateDescriptorSets( m_context->LogicalDevice, m_writeDescriptorSets.size( ), m_writeDescriptorSets.data( ), 0, nullptr );
 }
 
@@ -144,4 +173,9 @@ VulkanRootSignature *VulkanResourceBindGroup::RootSignature( ) const
 uint32_t VulkanResourceBindGroup::RegisterSpace( ) const
 {
     return m_desc.RegisterSpace;
+}
+
+ResourceBindingSlot VulkanResourceBindGroup::GetSlot( uint32_t binding, const DescriptorBufferBindingType &type ) const
+{
+    return ResourceBindingSlot{.Binding = binding,.RegisterSpace = m_desc.RegisterSpace, .Type = type };
 }

@@ -123,15 +123,22 @@ namespace DenOfIz
         Format    Format = Format::Undefined;
     };
 
+#define DZ_MAX_RENDER_TARGETS 8
+    struct RenderTargetDescs
+    {
+        size_t           NumElements = 0;
+        RenderTargetDesc Array[ DZ_MAX_RENDER_TARGETS ];
+    };
+
     struct PipelineRendering
     {
-        uint32_t                      ViewMask               = 0;
-        bool                          AlphaToCoverageEnable  = false; // Todo check if required
-        bool                          IndependentBlendEnable = false; // Todo check if required
-        bool                          BlendLogicOpEnable     = false;
-        LogicOp                       BlendLogicOp           = LogicOp::Noop;
-        std::vector<RenderTargetDesc> RenderTargets;
-        Format                        DepthStencilAttachmentFormat = Format::Undefined;
+        uint32_t          ViewMask               = 0;
+        bool              AlphaToCoverageEnable  = false; // Todo check if required
+        bool              IndependentBlendEnable = false; // Todo check if required
+        bool              BlendLogicOpEnable     = false;
+        LogicOp           BlendLogicOp           = LogicOp::Noop;
+        RenderTargetDescs RenderTargets;
+        Format            DepthStencilAttachmentFormat = Format::Undefined;
     };
 
     struct DepthTest

@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
+#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <directx/d3d12shader.h>
 #include <ranges>
 #include <unordered_set>
@@ -54,8 +54,9 @@ void ShaderProgram::Compile( )
 #endif
     }
 
-    for ( const auto &shader : m_desc.Shaders )
+    for ( int i = 0; i < m_desc.Shaders.NumElements; ++i )
     {
+        const auto &shader      = m_desc.Shaders.Array[ i ];
         CompileDesc compileDesc = { };
         compileDesc.Path        = shader.Path;
         compileDesc.Defines     = shader.Defines;
@@ -321,8 +322,8 @@ void ShaderProgram::ProduceMSL( )
             rootParameter.ShaderVisibility          = IRShaderVisibilityAll;
             rootParameter.Descriptor.RegisterSpace  = rootArgument.RegisterSpace;
             rootParameter.Descriptor.ShaderRegister = rootArgument.ShaderRegister;
-            uint32_t hash                   = Utilities::HashInts( rootParameter.ParameterType, rootArgument.RegisterSpace, rootArgument.ShaderRegister );
-            offsets.UniqueTLABIndex[ hash ] = numEntries++;
+            uint32_t hash                           = Utilities::HashInts( rootParameter.ParameterType, rootArgument.RegisterSpace, rootArgument.ShaderRegister );
+            offsets.UniqueTLABIndex[ hash ]         = numEntries++;
             LOG( INFO ) << "Root argument offset: " << offsets.UniqueTLABIndex[ hash ] << " for register space: " << registerSpace << " R";
         }
 
@@ -376,12 +377,12 @@ const ShaderCompiler &ShaderProgram::ShaderCompilerInstance( ) const
     return compiler;
 }
 
-std::vector<CompiledShader *> ShaderProgram::GetCompiledShaders( ) const
+CompiledShaders ShaderProgram::GetCompiledShaders( ) const
 {
-    std::vector<CompiledShader *> compiledShaders;
+    CompiledShaders compiledShaders;
     for ( auto &shader : m_compiledShaders )
     {
-        compiledShaders.push_back( shader.get( ) );
+        compiledShaders.Array[ compiledShaders.NumElements++ ] = shader.get( );
     }
     return compiledShaders;
 }
@@ -509,12 +510,13 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
 
             // Check if Resource is already bound, if so add the stage to the existing binding and continue
             bool found = false;
-            for ( auto &boundBinding : rootSignature.ResourceBindings )
+            for ( int bindingIndex = 0; bindingIndex < rootSignature.ResourceBindings.NumElements; ++bindingIndex )
             {
+                auto &boundBinding = rootSignature.ResourceBindings.Array[ bindingIndex ];
                 if ( boundBinding.RegisterSpace == shaderInputBindDesc.Space && boundBinding.Binding == shaderInputBindDesc.BindPoint && boundBinding.BindingType == bindingType )
                 {
-                    found = true;
-                    boundBinding.Stages.push_back( shader->Stage );
+                    found                                                          = true;
+                    boundBinding.Stages.Array[ boundBinding.Stages.NumElements++ ] = shader->Stage;
                 }
             }
             if ( found )
@@ -532,23 +534,23 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
                     LOG( FATAL ) << "Root constant reflection type mismatch. RegisterSpace [" << shaderInputBindDesc.Space
                                  << "] is reserved for root constants. Which cannot be samplers or textures.";
                 }
-                RootConstantResourceBindingDesc &rootConstantBinding = rootSignature.RootConstants.emplace_back( );
-                rootConstantBinding.Name                             = shaderInputBindDesc.Name;
-                rootConstantBinding.Binding                          = shaderInputBindDesc.BindPoint;
-                rootConstantBinding.Stages.push_back( shader->Stage );
-                rootConstantBinding.NumBytes   = rootConstantReflection.NumBytes;
-                rootConstantBinding.Reflection = rootConstantReflection;
+                RootConstantResourceBindingDesc &rootConstantBinding                         = rootSignature.RootConstants.Array[ rootSignature.RootConstants.NumElements++ ];
+                rootConstantBinding.Name                                                     = shaderInputBindDesc.Name;
+                rootConstantBinding.Binding                                                  = shaderInputBindDesc.BindPoint;
+                rootConstantBinding.Stages.Array[ rootConstantBinding.Stages.NumElements++ ] = shader->Stage;
+                rootConstantBinding.NumBytes                                                 = rootConstantReflection.NumBytes;
+                rootConstantBinding.Reflection                                               = rootConstantReflection;
                 continue;
             }
 
-            ResourceBindingDesc &resourceBindingDesc = rootSignature.ResourceBindings.emplace_back( );
-            resourceBindingDesc.Name                 = shaderInputBindDesc.Name;
-            resourceBindingDesc.Binding              = shaderInputBindDesc.BindPoint;
-            resourceBindingDesc.RegisterSpace        = shaderInputBindDesc.Space;
-            resourceBindingDesc.ArraySize            = shaderInputBindDesc.BindCount;
-            resourceBindingDesc.BindingType          = bindingType;
-            resourceBindingDesc.Descriptor           = ReflectTypeToRootSignatureType( shaderInputBindDesc.Type );
-            resourceBindingDesc.Stages.push_back( shader->Stage );
+            ResourceBindingDesc &resourceBindingDesc                                     = rootSignature.ResourceBindings.Array[ rootSignature.ResourceBindings.NumElements++ ];
+            resourceBindingDesc.Name                                                     = shaderInputBindDesc.Name;
+            resourceBindingDesc.Binding                                                  = shaderInputBindDesc.BindPoint;
+            resourceBindingDesc.RegisterSpace                                            = shaderInputBindDesc.Space;
+            resourceBindingDesc.ArraySize                                                = shaderInputBindDesc.BindCount;
+            resourceBindingDesc.BindingType                                              = bindingType;
+            resourceBindingDesc.Descriptor                                               = ReflectTypeToRootSignatureType( shaderInputBindDesc.Type );
+            resourceBindingDesc.Stages.Array[ resourceBindingDesc.Stages.NumElements++ ] = shader->Stage;
             FillReflectionData( shaderReflection, resourceBindingDesc.Reflection, i );
 #ifdef BUILD_METAL
             /*
@@ -774,11 +776,11 @@ void ShaderProgram::FillReflectionData( ID3D12ShaderReflection *shaderReflection
         D3D12_SHADER_TYPE_DESC      typeDesc;
         DXC_CHECK_RESULT( reflectionType->GetDesc( &typeDesc ) );
 
-        ReflectionResourceField subField = reflectionDesc.Fields.emplace_back( );
-        subField.Name                    = variableDesc.Name;
-        subField.Type                    = DXCVariableTypeToReflectionType( typeDesc.Type );
-        subField.NumColumns              = typeDesc.Columns;
-        subField.NumRows                 = typeDesc.Rows;
+        ReflectionResourceField &subField = reflectionDesc.Fields.Array[ reflectionDesc.Fields.NumElements++ ];
+        subField.Name                     = variableDesc.Name;
+        subField.Type                     = DXCVariableTypeToReflectionType( typeDesc.Type );
+        subField.NumColumns               = typeDesc.Columns;
+        subField.NumRows                  = typeDesc.Rows;
     }
 }
 
@@ -832,7 +834,12 @@ void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, I
 
     if ( !inputElements.empty( ) )
     {
-        inputLayoutDesc.InputGroups.push_back( { inputElements } );
+        auto &inputElementsArray       = inputLayoutDesc.InputGroups[ inputLayoutDesc.NumInputGroups++ ];
+        inputElementsArray.NumElements = inputElements.size( );
+        for ( int i = 0; i < inputElementsArray.NumElements; ++i )
+        {
+            inputElementsArray.Elements[ i ] = inputElements[ i ];
+        }
     }
 }
 

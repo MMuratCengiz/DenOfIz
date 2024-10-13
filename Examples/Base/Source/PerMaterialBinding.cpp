@@ -34,14 +34,15 @@ PerMaterialBinding::PerMaterialBinding( ILogicalDevice *device, IRootSignature *
 
 void PerMaterialBinding::Update( const MaterialData *materialData ) const
 {
-    m_bindGroup->Update( UpdateDesc( RegisterSpace )
-                             .Sampler( 0, materialData->Sampler( ) )
-                             .Srv( 0, OrNull( materialData->AlbedoTexture( ) ) )
-                             .Srv( 1, OrNull( materialData->NormalTexture( ) ) )
-                             .Srv( 2, OrNull( materialData->HeightTexture( ) ) )
-                             // .Srv( 3, OrNull( materialData->MetallicTexture( ) ) )
-                             .Srv( 3, OrNull( materialData->RoughnessTexture( ) ) )
-                             .Srv( 4, OrNull( materialData->AoTexture( ) ) ) );
+    m_bindGroup->BeginUpdate( );
+    m_bindGroup->Sampler( 0, materialData->Sampler( ) );
+    m_bindGroup->Srv( 0, OrNull( materialData->AlbedoTexture( ) ) );
+    m_bindGroup->Srv( 1, OrNull( materialData->NormalTexture( ) ) );
+    m_bindGroup->Srv( 2, OrNull( materialData->HeightTexture( ) ) );
+    //    m_bindGroup->Srv( 3, OrNull( materialData->MetallicTexture( ) ) );
+    m_bindGroup->Srv( 3, OrNull( materialData->RoughnessTexture( ) ) );
+    m_bindGroup->Srv( 4, OrNull( materialData->AoTexture( ) ) );
+    m_bindGroup->EndUpdate( );
 }
 
 IResourceBindGroup *PerMaterialBinding::BindGroup( ) const

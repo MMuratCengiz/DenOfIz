@@ -34,9 +34,7 @@ namespace DenOfIz
 
     public:
         DX12CommandListPool( DX12Context *context, CommandListPoolDesc desc );
-
-        virtual std::vector<ICommandList *> GetCommandLists( ) override;
-
+        virtual CommandLists GetCommandLists( ) override;
         ~DX12CommandListPool( ) override = default;
     };
 } // namespace DenOfIz

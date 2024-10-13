@@ -74,13 +74,13 @@ void DX12CommandList::Begin( )
 
 void DX12CommandList::BeginRendering( const RenderingDesc &renderingDesc )
 {
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> renderTargets( renderingDesc.RTAttachments.size( ) );
-    for ( int i = 0; i < renderingDesc.RTAttachments.size( ); i++ )
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> renderTargets( renderingDesc.RTAttachments.NumElements );
+    for ( int i = 0; i < renderingDesc.RTAttachments.NumElements; i++ )
     {
-        auto *pImageResource = reinterpret_cast<DX12TextureResource *>( renderingDesc.RTAttachments[ i ].Resource );
+        auto *pImageResource = reinterpret_cast<DX12TextureResource *>( renderingDesc.RTAttachments.Array[ i ].Resource );
         renderTargets[ i ]   = pImageResource->GetOrCreateRtvHandle( );
 
-        m_commandList->ClearRenderTargetView( renderTargets[ i ], renderingDesc.RTAttachments[ i ].ClearColor.data( ), 0, nullptr );
+        m_commandList->ClearRenderTargetView( renderTargets[ i ], renderingDesc.RTAttachments.Array[ i ].ClearColor, 0, nullptr );
     }
 
     m_commandList->OMSetRenderTargets( renderTargets.size( ), renderTargets.data( ), FALSE, nullptr );
@@ -94,14 +94,15 @@ void DX12CommandList::Execute( const ExecuteDesc &executeDesc )
 {
     DX_CHECK_RESULT( m_commandList->Close( ) );
 
-    for ( ISemaphore *semaphore : executeDesc.WaitOnSemaphores )
+    for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements; i++ )
     {
-        DX_CHECK_RESULT( m_commandQueue->Wait( reinterpret_cast<DX12Semaphore *>( semaphore )->GetFence( ), 1 ) );
+        DX_CHECK_RESULT( m_commandQueue->Wait( reinterpret_cast<DX12Semaphore *>( executeDesc.WaitOnSemaphores.Array[ i ] )->GetFence( ), 1 ) );
     }
     m_commandQueue->ExecuteCommandLists( 1, CommandListCast( m_commandList.addressof( ) ) );
-    for ( ISemaphore *semaphore : executeDesc.NotifySemaphores )
+
+    for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements; i++ )
     {
-        const auto dx12Semaphore = reinterpret_cast<DX12Semaphore *>( semaphore );
+        const auto dx12Semaphore = reinterpret_cast<DX12Semaphore *>( executeDesc.NotifySemaphores.Array[ i ] );
         dx12Semaphore->NotifyCommandQueue( m_commandQueue );
     }
     if ( executeDesc.Notify != nullptr )

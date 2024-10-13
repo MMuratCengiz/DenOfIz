@@ -22,12 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct SubresourceDesc
-    {
-        uint32_t MipSlice   = 0;
-        uint32_t ArraySlice = 0;
-        uint32_t PlaneSlice = 0;
-    };
 
     struct SamplerDesc
     {

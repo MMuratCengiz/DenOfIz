@@ -22,19 +22,20 @@ using namespace DenOfIz;
 
 VulkanInputLayout::VulkanInputLayout( const InputLayoutDesc &inputLayoutDesc )
 {
-    int bindingIndex = 0;
     // TODO: !IMPROVEMENT! --fvk-stage-io-order=alpha should be used as a proper solution, but it is not implemented yet. Check ShaderCompiler.CompileHLSL.
     uint32_t location = 0;
     // TODO: !IMPROVEMENT! Does multiple input groups work
-    for ( const InputGroupDesc &inputGroup : inputLayoutDesc.InputGroups )
+    for ( int bindingIndex = 0; bindingIndex < inputLayoutDesc.NumInputGroups; bindingIndex++ )
     {
+        const InputGroupDesc            &inputGroup         = inputLayoutDesc.InputGroups[ bindingIndex ];
         VkVertexInputBindingDescription &bindingDescription = m_bindingDescriptions.emplace_back( VkVertexInputBindingDescription{ } );
         bindingDescription.binding                          = bindingIndex;
         bindingDescription.inputRate                        = inputGroup.StepRate == StepRate::PerInstance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
 
         uint32_t offset = 0;
-        for ( const InputLayoutElementDesc &inputElement : inputGroup.Elements )
+        for ( int inputElementIndex = 0; inputElementIndex < inputGroup.NumElements; inputElementIndex++ )
         {
+            const InputLayoutElementDesc      &inputElement         = inputGroup.Elements[ inputElementIndex ];
             VkVertexInputAttributeDescription &attributeDescription = m_attributeDescriptions.emplace_back( VkVertexInputAttributeDescription{ } );
             attributeDescription.binding                            = bindingIndex;
             attributeDescription.location                           = location++; // Is this correct? !CHECK_VK!
@@ -43,7 +44,6 @@ VulkanInputLayout::VulkanInputLayout( const InputLayoutDesc &inputLayoutDesc )
             offset += FormatNumBytes( inputElement.Format );
         }
         bindingDescription.stride = offset;
-        bindingIndex++;
     }
 
     m_vertexInputState.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

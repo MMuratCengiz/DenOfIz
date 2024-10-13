@@ -7,8 +7,8 @@
 #include "MetalKit/MetalKit.h"
 #endif
 
-#include <DenOfIzGraphics/Utilities/Common.h>
 #include <DenOfIzGraphics/Backends/Interface/IShader.h>
+#include <DenOfIzGraphics/Utilities/Common.h>
 
 namespace DenOfIz
 {
@@ -20,6 +20,13 @@ namespace DenOfIz
         SPIRV
     };
 
+#define DZ_MAX_DEFINES 16
+    struct ShaderDefines
+    {
+        size_t NumElements = 0;
+        char  *Array[ DZ_MAX_DEFINES ];
+    };
+
     struct CompileDesc
     {
         std::string Path;
@@ -27,7 +34,7 @@ namespace DenOfIz
         ShaderStage Stage;
         TargetIL    TargetIL;
 
-        std::vector<std::string> Defines;
+        ShaderDefines Defines;
     };
 
     class ShaderCompiler final

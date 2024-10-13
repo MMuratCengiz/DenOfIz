@@ -71,6 +71,13 @@ namespace DenOfIz
         }
     };
 
+#define DZ_MAX_SHADER_STAGES 5
+    struct ShaderStages
+    {
+        size_t      NumElements = 0;
+        ShaderStage Array[ DZ_MAX_SHADER_STAGES ];
+    };
+
     struct ResourceBindingDesc
     {
         std::string                 Name;
@@ -78,7 +85,7 @@ namespace DenOfIz
         uint32_t                    Binding{ };
         uint32_t                    RegisterSpace = 0;
         BitSet<ResourceDescriptor>  Descriptor;
-        std::vector<ShaderStage>    Stages;
+        ShaderStages                Stages;
         int                         ArraySize = 1; // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
         ReflectionDesc              Reflection{ };
     };
@@ -92,20 +99,33 @@ namespace DenOfIz
     // For cross api compatibility the RegisterSpace is hardcoded to 99, make sure to use the same value in the HLSL Shader
     struct RootConstantResourceBindingDesc
     {
-        std::string              Name;
-        uint32_t                 Binding{ };
-        int                      NumBytes{ };
-        std::vector<ShaderStage> Stages;
-        ReflectionDesc           Reflection{ };
+        std::string    Name;
+        uint32_t       Binding{ };
+        int            NumBytes{ };
+        ShaderStages   Stages;
+        ReflectionDesc Reflection{ };
+    };
+
+#define DZ_MAX_ROOT_CONSTANTS 5
+    struct RootConstantBindings
+    {
+        size_t                          NumElements = 0;
+        RootConstantResourceBindingDesc Array[ DZ_MAX_ROOT_CONSTANTS ];
+    };
+#define DZ_MAX_RESOURCE_BINDINGS 32
+    struct ResourceBindings
+    {
+        size_t              NumElements = 0;
+        ResourceBindingDesc Array[ DZ_MAX_RESOURCE_BINDINGS ];
     };
 
     struct RootSignatureDesc
     {
         RootSignatureType Type;
         // The order of the bindings must match the order of the shader inputs!!! TODO might need to be fixed but this is normal for DX12
-        std::vector<ResourceBindingDesc>             ResourceBindings;
-        const std::vector<StaticSamplerDesc>         StaticSamplers; // Not supported yet due to lack of support in Metal
-        std::vector<RootConstantResourceBindingDesc> RootConstants;
+        ResourceBindings                     ResourceBindings;
+        const std::vector<StaticSamplerDesc> StaticSamplers; // Not supported yet due to lack of support in Metal
+        RootConstantBindings                 RootConstants;
     };
 
     class IRootSignature

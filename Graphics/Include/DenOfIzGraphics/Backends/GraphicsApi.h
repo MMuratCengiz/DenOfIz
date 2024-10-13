@@ -57,7 +57,7 @@ namespace DenOfIz
 
         ILogicalDevice *CreateLogicalDevice( ) const;
         ILogicalDevice *CreateAndLoadOptimalLogicalDevice( ) const;
-        ShaderProgram  *CreateShaderProgram( const std::vector<ShaderDesc> &shaders ) const;
+        ShaderProgram  *CreateShaderProgram( const ShaderDescs &shaders ) const;
 
         static void ReportLiveObjects( );
 

@@ -31,12 +31,13 @@ VulkanCommandPool::VulkanCommandPool( VulkanContext *context, const CommandListP
     }
 }
 
-std::vector<ICommandList *> VulkanCommandPool::GetCommandLists( )
+CommandLists VulkanCommandPool::GetCommandLists( )
 {
-    std::vector<ICommandList *> commandLists;
-    for ( auto &commandList : m_commandLists )
+    CommandLists commandLists;
+    commandLists.NumElements = m_commandLists.size( );
+    for ( int i = 0; i < m_commandLists.size( ); i++ )
     {
-        commandLists.push_back( commandList.get( ) );
+        commandLists.Array[ i ] = m_commandLists[ i ].get( );
     }
     return commandLists;
 }

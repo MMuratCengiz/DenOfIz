@@ -27,9 +27,9 @@ GraphicsApi::GraphicsApi( const APIPreference &preference ) : m_apiPreference( p
 
 GraphicsApi::~GraphicsApi( ) = default;
 
-ILogicalDevice* GraphicsApi::CreateLogicalDevice( ) const
+ILogicalDevice *GraphicsApi::CreateLogicalDevice( ) const
 {
-    ILogicalDevice* logicalDevice = nullptr;
+    ILogicalDevice *logicalDevice = nullptr;
 
 #ifdef BUILD_VK
     if ( IsVulkanPreferred( ) )
@@ -52,7 +52,7 @@ ILogicalDevice* GraphicsApi::CreateLogicalDevice( ) const
         logicalDevice = std::make_unique<MetalLogicalDevice>( );
     }
 #endif
-    if (logicalDevice == nullptr)
+    if ( logicalDevice == nullptr )
     {
         throw std::runtime_error( "No supported API found for this system." );
     }
@@ -60,13 +60,14 @@ ILogicalDevice* GraphicsApi::CreateLogicalDevice( ) const
     return logicalDevice;
 }
 
-ILogicalDevice* GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
+ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
 {
-    ILogicalDevice* logicalDevice = CreateLogicalDevice( );
+    ILogicalDevice *logicalDevice = CreateLogicalDevice( );
 
-    // Todo something smarter
-    for ( const PhysicalDevice &device : logicalDevice->ListPhysicalDevices( ) )
+    const PhysicalDevices &devices = logicalDevice->ListPhysicalDevices( );
+    for ( int i = 0; i < devices.NumElements; ++i )
     {
+        const PhysicalDevice &device = devices.Array[ i ];
         if ( device.Properties.IsDedicated )
         {
             logicalDevice->LoadPhysicalDevice( device );
@@ -74,7 +75,7 @@ ILogicalDevice* GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
         }
     }
 
-    const auto gpuDesc = logicalDevice->ListPhysicalDevices( ).front( );
+    const auto gpuDesc = devices.Array[ 0 ];
     logicalDevice->LoadPhysicalDevice( gpuDesc );
 
     LOG( INFO ) << "Loaded device: " << gpuDesc.Name;
@@ -89,7 +90,7 @@ ILogicalDevice* GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
     return logicalDevice;
 }
 
-ShaderProgram* GraphicsApi::CreateShaderProgram( const std::vector<ShaderDesc> &shaders ) const
+ShaderProgram *GraphicsApi::CreateShaderProgram( const ShaderDescs &shaders ) const
 {
     ShaderProgramDesc programDesc{ };
     programDesc.Shaders = shaders;

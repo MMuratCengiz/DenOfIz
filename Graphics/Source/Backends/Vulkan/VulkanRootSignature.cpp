@@ -23,8 +23,9 @@ using namespace DenOfIz;
 
 VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc ) : m_desc( std::move( desc ) ), m_context( context )
 {
-    for ( const ResourceBindingDesc &binding : m_desc.ResourceBindings )
+    for ( int i = 0; i < m_desc.ResourceBindings.NumElements; ++i )
     {
+        const ResourceBindingDesc &binding = m_desc.ResourceBindings.Array[ i ];
         AddResourceBinding( binding );
     }
 
@@ -33,9 +34,10 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
         AddStaticSampler( staticSamplerDesc );
     }
 
-    m_pushConstants.resize( m_desc.RootConstants.size( ) );
-    for ( const RootConstantResourceBindingDesc &rootConstantBinding : m_desc.RootConstants )
+    m_pushConstants.resize( m_desc.RootConstants.NumElements );
+    for ( int i = 0; i < m_desc.RootConstants.NumElements; ++i )
     {
+        const RootConstantResourceBindingDesc &rootConstantBinding = m_desc.RootConstants.Array[ i ];
         AddRootConstant( rootConstantBinding );
     }
 
@@ -130,10 +132,12 @@ VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBindi
     layoutBinding.descriptorType  = VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType( binding.Descriptor );
     layoutBinding.descriptorCount = binding.ArraySize;
     layoutBinding.stageFlags      = 0;
-    for ( auto stage : binding.Stages )
+    for ( int i = 0; i < binding.Stages.NumElements; ++i )
     {
+        auto &stage = binding.Stages.Array[ i ];
         layoutBinding.stageFlags |= VulkanEnumConverter::ConvertShaderStage( stage );
     }
+
     m_layoutBindings[ binding.RegisterSpace ].push_back( layoutBinding );
     // Update binding to include the offset
     const ResourceBindingSlot slot{
@@ -153,8 +157,9 @@ void VulkanRootSignature::AddRootConstant( const RootConstantResourceBindingDesc
     }
 
     uint32_t offset = 0;
-    for ( const RootConstantResourceBindingDesc &binding : m_desc.RootConstants )
+    for ( int i = 0; i < m_desc.RootConstants.NumElements; ++i )
     {
+        const RootConstantResourceBindingDesc &binding = m_desc.RootConstants.Array[ i ];
         if ( binding.Binding < rootConstantBinding.Binding )
         {
             offset += binding.NumBytes;
@@ -164,8 +169,9 @@ void VulkanRootSignature::AddRootConstant( const RootConstantResourceBindingDesc
     VkPushConstantRange &pushConstantRange = m_pushConstants[ rootConstantBinding.Binding ];
     pushConstantRange.offset               = offset;
     pushConstantRange.size                 = rootConstantBinding.NumBytes;
-    for ( auto stage : rootConstantBinding.Stages )
+    for ( int i = 0; i < rootConstantBinding.Stages.NumElements; ++i )
     {
+        const auto &stage = rootConstantBinding.Stages.Array[ i ];
         pushConstantRange.stageFlags |= VulkanEnumConverter::ConvertShaderStage( stage );
     }
 }

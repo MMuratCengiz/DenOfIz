@@ -31,7 +31,7 @@ namespace DenOfIz
 
     public:
         VulkanCommandPool( VulkanContext *context, const CommandListPoolDesc &desc );
-        std::vector<ICommandList *> GetCommandLists( ) override;
+        CommandLists GetCommandLists( ) override;
         ~VulkanCommandPool( ) override = default;
     };
 } // namespace DenOfIz

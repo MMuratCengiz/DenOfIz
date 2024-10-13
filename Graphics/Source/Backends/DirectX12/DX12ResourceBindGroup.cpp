@@ -87,25 +87,51 @@ void DX12ResourceBindGroup::SetRootConstants( const uint32_t binding, void *data
     rootConstant.NumBytes          = m_dx12RootSignature->RootConstants( )[ binding ].Constants.Num32BitValues * sizeof( uint32_t );
 }
 
-void DX12ResourceBindGroup::Update( const UpdateDesc &desc )
+IResourceBindGroup* DX12ResourceBindGroup::BeginUpdate( )
 {
     m_cbvSrvUavCount = 0;
     m_samplerCount   = 0;
+    return this;
+}
 
-    std::vector<ResourceBindingSlot> boundBindings;
+IResourceBindGroup* DX12ResourceBindGroup::Cbv( const uint32_t binding, IBufferResource *resource )
+{
+    BindBuffer( GetSlot( binding, DescriptorBufferBindingType::ConstantBuffer ), resource );
+    return this;
+}
 
-    for ( auto item : desc.Buffers )
-    {
-        BindBuffer( item.Slot, item.Resource );
-    }
-    for ( auto item : desc.Textures )
-    {
-        BindTexture( item.Slot, item.Resource );
-    }
-    for ( auto item : desc.Samplers )
-    {
-        BindSampler( item.Slot, item.Resource );
-    }
+IResourceBindGroup* DX12ResourceBindGroup::Srv( const uint32_t binding, IBufferResource *resource )
+{
+    BindBuffer( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), resource );
+    return this;
+}
+
+IResourceBindGroup* DX12ResourceBindGroup::Srv( const uint32_t binding, ITextureResource *resource )
+{
+    BindTexture( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), resource );
+    return this;
+}
+
+IResourceBindGroup* DX12ResourceBindGroup::Uav( const uint32_t binding, IBufferResource *resource )
+{
+    BindBuffer( GetSlot( binding, DescriptorBufferBindingType::UnorderedAccess ), resource );
+    return this;
+}
+
+IResourceBindGroup* DX12ResourceBindGroup::Uav( const uint32_t binding, ITextureResource *resource )
+{
+    BindTexture( GetSlot( binding, DescriptorBufferBindingType::UnorderedAccess ), resource );
+    return this;
+}
+
+IResourceBindGroup* DX12ResourceBindGroup::Sampler( const uint32_t binding, ISampler *sampler )
+{
+    BindSampler( GetSlot( binding, DescriptorBufferBindingType::Sampler ), sampler );
+    return this;
+}
+
+void DX12ResourceBindGroup::EndUpdate( )
+{
 }
 
 void DX12ResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource )
@@ -136,7 +162,7 @@ void DX12ResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISampl
 
 bool DX12ResourceBindGroup::UpdateRootDescriptor( const ResourceBindingSlot &slot, const D3D12_GPU_VIRTUAL_ADDRESS &gpuAddress )
 {
-    if ( slot.RegisterSpace == DZConfiguration::Instance().RootLevelBufferRegisterSpace )
+    if ( slot.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
     {
         if ( slot.Binding >= m_rootDescriptors.size( ) )
         {
@@ -198,4 +224,9 @@ const std::vector<DX12RootConstant> &DX12ResourceBindGroup::RootConstants( ) con
 uint32_t DX12ResourceBindGroup::RegisterSpace( ) const
 {
     return m_desc.RegisterSpace;
+}
+
+ResourceBindingSlot DX12ResourceBindGroup::GetSlot( uint32_t binding, const DescriptorBufferBindingType& type ) const
+{
+    return ResourceBindingSlot{ binding, m_desc.RegisterSpace, type };
 }

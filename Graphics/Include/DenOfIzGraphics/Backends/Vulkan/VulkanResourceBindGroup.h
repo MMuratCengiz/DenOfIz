@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Storage.h>
 #include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
+#include <DenOfIzGraphics/Utilities/Storage.h>
 #include "VulkanContext.h"
 #include "VulkanDescriptorPoolManager.h"
 #include "VulkanRootSignature.h"
@@ -52,7 +52,17 @@ namespace DenOfIz
         VulkanResourceBindGroup( VulkanContext *context, const ResourceBindGroupDesc &desc );
         ~VulkanResourceBindGroup( ) override;
         void SetRootConstants( uint32_t binding, void *data ) override;
-        void Update( const UpdateDesc &desc ) override;
+
+        IResourceBindGroup *BeginUpdate( ) override;
+        IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource ) override;
+        IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Uav( const uint32_t binding, ITextureResource *resource ) override;
+        IResourceBindGroup *Sampler( const uint32_t binding, ISampler *sampler ) override;
+        void                EndUpdate( ) override;
+
+        [[nodiscard]] const ResourceBindGroupDesc &Desc( ) const;
 
         [[nodiscard]] const std::vector<VulkanRootConstantBinding> &RootConstants( ) const;
         [[nodiscard]] bool                                          HasDescriptorSet( ) const;
@@ -67,6 +77,7 @@ namespace DenOfIz
 
     private:
         VkWriteDescriptorSet &CreateWriteDescriptor( const ResourceBindingSlot &slot );
+        ResourceBindingSlot   GetSlot( uint32_t binding, const DescriptorBufferBindingType &type ) const;
     };
 
 } // namespace DenOfIz

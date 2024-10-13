@@ -40,9 +40,9 @@ void RenderTargetExample::Init( )
         m_deferredRenderTargets.push_back( std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) ) );
     }
     m_defaultSampler = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( SamplerDesc{ } ) );
-    m_quadPipeline->BindGroup( 0 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 0 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
-    m_quadPipeline->BindGroup( 1 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 1 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
-    m_quadPipeline->BindGroup( 2 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 2 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
+    m_quadPipeline->BindGroup( 0 )->BeginUpdate( )->Srv( 0, m_deferredRenderTargets[ 0 ].get( ) )->Sampler( 0, m_defaultSampler.get( ) )->EndUpdate( );
+    m_quadPipeline->BindGroup( 1 )->BeginUpdate( )->Srv( 0, m_deferredRenderTargets[ 1 ].get( ) )->Sampler( 0, m_defaultSampler.get( ) )->EndUpdate( );
+    m_quadPipeline->BindGroup( 2 )->BeginUpdate( )->Srv( 0, m_deferredRenderTargets[ 2 ].get( ) )->Sampler( 0, m_defaultSampler.get( ) )->EndUpdate( );
 
     auto &materialBatch    = m_worldData.RenderBatch.MaterialBatches.emplace_back( m_renderPipeline->PerMaterialBinding( ), m_sphere->Data( )->Material( ) );
     auto &sphereRenderItem = materialBatch.RenderItems.emplace_back( );
@@ -67,7 +67,8 @@ void RenderTargetExample::Init( )
         renderingAttachmentDesc.Resource = m_deferredRenderTargets[ frame ].get( );
 
         RenderingDesc renderingDesc{ };
-        renderingDesc.RTAttachments.push_back( renderingAttachmentDesc );
+        renderingDesc.RTAttachments.NumElements = 1;
+        renderingDesc.RTAttachments.Array[ 0 ]  = renderingAttachmentDesc;
 
         commandList->BeginRendering( renderingDesc );
 
@@ -92,7 +93,8 @@ void RenderTargetExample::Init( )
         quadAttachmentDesc.Resource = renderTarget;
 
         RenderingDesc quadRenderingDesc{ };
-        quadRenderingDesc.RTAttachments.push_back( quadAttachmentDesc );
+        quadRenderingDesc.RTAttachments.NumElements = 1;
+        quadRenderingDesc.RTAttachments.Array[ 0 ]  = quadAttachmentDesc;
 
         commandList->BeginRendering( quadRenderingDesc );
 
@@ -112,7 +114,7 @@ void RenderTargetExample::Init( )
 
 void RenderTargetExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::DirectX12;
+    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void RenderTargetExample::Update( )

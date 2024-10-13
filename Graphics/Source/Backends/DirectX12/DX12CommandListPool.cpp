@@ -50,12 +50,13 @@ DX12CommandListPool::DX12CommandListPool( DX12Context *context, CommandListPoolD
     }
 }
 
-std::vector<ICommandList *> DX12CommandListPool::GetCommandLists( )
+CommandLists DX12CommandListPool::GetCommandLists( )
 {
-    std::vector<ICommandList *> commandLists;
-    for ( auto &commandList : m_commandLists )
+    CommandLists commandLists;
+    commandLists.NumElements = m_commandLists.size( );
+    for ( int i = 0; i < m_commandLists.size( ); i++ )
     {
-        commandLists.push_back( commandList.get( ) );
+        commandLists.Array[ i ] = m_commandLists[ i ].get( );
     }
     return commandLists;
 }
