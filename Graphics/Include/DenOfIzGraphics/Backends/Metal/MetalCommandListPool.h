@@ -5,7 +5,7 @@
 
 namespace DenOfIz
 {
-    class MetalCommandListPool : public ICommandListPool
+    class MetalCommandListPool final : public ICommandListPool
     {
     private:
         MetalContext                              *m_context{ };
@@ -14,7 +14,7 @@ namespace DenOfIz
 
     public:
         MetalCommandListPool( MetalContext *context, CommandListPoolDesc desc );
-        std::vector<ICommandList *> GetCommandLists( ) override;
+        CommandLists GetCommandLists( ) override;
         ~MetalCommandListPool( ) override = default;
     };
 } // namespace DenOfIz

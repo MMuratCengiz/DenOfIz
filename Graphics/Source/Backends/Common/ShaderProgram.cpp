@@ -142,8 +142,9 @@ void ShaderProgram::ProduceMSL( )
     std::vector<std::unique_ptr<CompiledShader>> dxilShaders;
     std::vector<D3D12_SHADER_INPUT_BIND_DESC>    processedInputs; // Handle duplicate inputs
 
-    for ( auto &shader : m_desc.Shaders )
+    for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements; ++shaderIndex )
     {
+        auto &shader = m_desc.Shaders.Array[ shaderIndex ];
         CompileDesc compileDesc = { };
         compileDesc.Path        = shader.Path;
         compileDesc.Defines     = shader.Defines;
@@ -349,9 +350,9 @@ void ShaderProgram::ProduceMSL( )
         IRErrorDestroy( error );
     }
 
-    int i = 0;
-    for ( auto &shader : m_desc.Shaders )
+    for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements; ++shaderIndex )
     {
+        auto &shader = m_desc.Shaders.Array[ shaderIndex ];
         CompileDesc compileDesc = { };
         compileDesc.Path        = shader.Path;
         compileDesc.Defines     = shader.Defines;
@@ -359,7 +360,7 @@ void ShaderProgram::ProduceMSL( )
         compileDesc.Stage       = shader.Stage;
         compileDesc.TargetIL    = TargetIL::MSL;
 
-        auto     &compiledShader = dxilShaders[ i++ ];
+        auto     &compiledShader = dxilShaders[ shaderIndex ];
         IDxcBlob *mslBlob        = compiler.DxilToMsl( compileDesc, compiledShader->Blob, rootSignature );
         compiledShader->Blob->Release( );
         compiledShader->Blob = mslBlob;

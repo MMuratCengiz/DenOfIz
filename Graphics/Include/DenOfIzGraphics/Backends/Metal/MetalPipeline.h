@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class MetalPipeline : public IPipeline
+    class MetalPipeline final : public IPipeline
     {
     private:
         MetalContext *m_context;

@@ -20,16 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-std::vector<ICommandList *> MetalCommandListPool::GetCommandLists( )
-{
-    std::vector<ICommandList *> commandLists;
-    for ( auto &commandList : m_commandLists )
-    {
-        commandLists.push_back( commandList.get( ) );
-    }
-    return commandLists;
-}
-
 MetalCommandListPool::MetalCommandListPool( MetalContext *context, CommandListPoolDesc desc ) : m_context( context ), m_desc( desc )
 {
     CommandListDesc commandListDesc;
@@ -39,4 +29,15 @@ MetalCommandListPool::MetalCommandListPool( MetalContext *context, CommandListPo
     {
         m_commandLists.push_back( std::make_unique<MetalCommandList>( m_context, commandListDesc ) );
     }
+}
+
+CommandLists MetalCommandListPool::GetCommandLists( )
+{
+    CommandLists commandLists;
+    for ( int i = 0; i < m_commandLists.size( ); i++ )
+    {
+        commandLists.NumElements++;
+        commandLists.Array[ i ] = m_commandLists[ i ].get( );
+    }
+    return commandLists;
 }

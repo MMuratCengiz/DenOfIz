@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class MetalInputLayout : public IInputLayout
+    class MetalInputLayout final : public IInputLayout
     {
         MetalContext   *m_context;
         InputLayoutDesc m_desc;

@@ -25,18 +25,20 @@ using namespace DenOfIz;
 
 MetalInputLayout::MetalInputLayout( MetalContext *context, InputLayoutDesc desc ) : m_context( context ), m_desc( std::move( desc ) )
 {
-    m_vertexDescriptor = [[MTLVertexDescriptor alloc] init];
+    m_vertexDescriptor    = [[MTLVertexDescriptor alloc] init];
     int      bindingIndex = 0;
     uint32_t location     = kIRStageInAttributeStartIndex;
 
-    for ( const InputGroupDesc &inputGroup : m_desc.InputGroups )
+    for ( int i = 0; i < m_desc.NumInputGroups; i++ )
     {
-        auto *layout        = [m_vertexDescriptor.layouts objectAtIndexedSubscript:bindingIndex];
-        layout.stepFunction = inputGroup.StepRate == StepRate::PerInstance ? MTLVertexStepFunctionPerInstance : MTLVertexStepFunctionPerVertex;
+        const InputGroupDesc &inputGroup = m_desc.InputGroups[ i ];
+        auto                 *layout     = [m_vertexDescriptor.layouts objectAtIndexedSubscript:bindingIndex];
+        layout.stepFunction              = inputGroup.StepRate == StepRate::PerInstance ? MTLVertexStepFunctionPerInstance : MTLVertexStepFunctionPerVertex;
 
         uint32_t offset = 0;
-        for ( const InputLayoutElementDesc &inputElement : inputGroup.Elements )
+        for ( int elementIndex = 0; elementIndex < inputGroup.NumElements; ++elementIndex )
         {
+            const InputLayoutElementDesc &inputElement = inputGroup.Elements[ elementIndex ];
             auto *attribute       = [m_vertexDescriptor.attributes objectAtIndexedSubscript:location];
             attribute.bufferIndex = bindingIndex;
             attribute.offset      = offset;

@@ -49,7 +49,7 @@ ILogicalDevice *GraphicsApi::CreateLogicalDevice( ) const
     if ( IsMetalPreferred( ) )
     {
         LOG( INFO ) << "Graphics API: Metal.";
-        logicalDevice = std::make_unique<MetalLogicalDevice>( );
+        logicalDevice = new MetalLogicalDevice( );
     }
 #endif
     if ( logicalDevice == nullptr )

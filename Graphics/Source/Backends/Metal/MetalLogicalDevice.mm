@@ -38,13 +38,13 @@ void MetalLogicalDevice::CreateDevice( )
 {
 }
 
-std::vector<PhysicalDevice> MetalLogicalDevice::ListPhysicalDevices( )
+PhysicalDevices MetalLogicalDevice::ListPhysicalDevices( )
 {
     NSArray<id<MTLDevice>> *devices     = MTLCopyAllDevices( );
     auto                    deviceCount = (uint32_t)[devices count];
 
-    std::vector<PhysicalDevice> physicalDevices;
-    physicalDevices.reserve( deviceCount );
+    PhysicalDevices physicalDevices;
+    physicalDevices.NumElements = deviceCount;
 
     for ( uint32_t i = 0; i < deviceCount; i++ )
     {
@@ -61,7 +61,7 @@ std::vector<PhysicalDevice> MetalLogicalDevice::ListPhysicalDevices( )
         physicalDevice.Capabilities.RayTracing         = [device supportsRaytracing];
         physicalDevice.Properties.IsDedicated          = ![device isLowPower];
         physicalDevice.Properties.MemoryAvailableInMb  = 0;
-        physicalDevices.push_back( physicalDevice );
+        physicalDevices.Array[ i ] = physicalDevice;
     }
 
     return physicalDevices;

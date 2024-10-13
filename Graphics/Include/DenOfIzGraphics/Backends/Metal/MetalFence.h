@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class MetalFence : public IFence
+    class MetalFence final : public IFence
     {
     private:
         MetalContext        *m_context;

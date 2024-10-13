@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class MetalSemaphore : public ISemaphore
+    class MetalSemaphore final : public ISemaphore
     {
     private:
         constexpr static uint64_t MAX_FENCE_VALUE = 1000000;
@@ -41,6 +41,9 @@ namespace DenOfIz
         void Notify( ) override;
         void NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer> &commandBuffer );
 
-        [[nodiscard]] const id<MTLEvent> &GetFence( ) const { return m_fence; }
+        [[nodiscard]] const id<MTLEvent> &GetFence( ) const
+        {
+            return m_fence;
+        }
     };
 } // namespace DenOfIz

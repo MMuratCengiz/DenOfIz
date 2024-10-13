@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class MetalSwapChain : public ISwapChain
+    class MetalSwapChain final : public ISwapChain
     {
         MetalContext                                      *m_context;
         SwapChainDesc                                      m_desc;

@@ -54,13 +54,15 @@ namespace DenOfIz
         }
     };
 
-    class MetalResourceBindGroup : public IResourceBindGroup
+    class MetalResourceBindGroup final : public IResourceBindGroup
     {
     private:
-        ResourceBindGroupDesc m_desc;
-        MetalContext         *m_context;
-        MetalRootSignature   *m_rootSignature;
-        UpdateDesc            m_updateDesc;
+        ResourceBindGroupDesc                                           m_desc;
+        MetalContext                                                   *m_context;
+        MetalRootSignature                                             *m_rootSignature;
+        std::vector<std::pair<ResourceBindingSlot, IBufferResource *>>  m_boundBuffers;
+        std::vector<std::pair<ResourceBindingSlot, ITextureResource *>> m_boundTextures;
+        std::vector<std::pair<ResourceBindingSlot, ISampler *>>         m_boundSamplers;
 
         std::vector<MetalUpdateDescItem<MetalBufferResource>>  m_buffers;
         std::vector<MetalUpdateDescItem<MetalTextureResource>> m_textures;
@@ -73,8 +75,15 @@ namespace DenOfIz
 
     public:
         MetalResourceBindGroup( MetalContext *context, ResourceBindGroupDesc desc );
-        void SetRootConstants( uint32_t binding, void *data ) override;
-        void Update( const UpdateDesc &desc ) override;
+        void                SetRootConstants( uint32_t binding, void *data ) override;
+        IResourceBindGroup *BeginUpdate( ) override;
+        IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource ) override;
+        IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Uav( const uint32_t binding, ITextureResource *resource ) override;
+        IResourceBindGroup *Sampler( const uint32_t binding, ISampler *sampler ) override;
+        void                EndUpdate( ) override;
 
         [[nodiscard]] const std::vector<Byte>                      &RootConstant( ) const;
         [[nodiscard]] const std::vector<MetalRootParameterBinding> &RootParameters( ) const;
@@ -94,7 +103,8 @@ namespace DenOfIz
         void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler ) override;
 
     private:
-        void UpdateDescriptorTable( const MetalBindingDesc &binding, MetalDescriptorTableBinding *table );
+        void                UpdateDescriptorTable( const MetalBindingDesc &binding, MetalDescriptorTableBinding *table );
+        ResourceBindingSlot GetSlot( uint32_t binding, const DescriptorBufferBindingType &type ) const;
     };
 
 } // namespace DenOfIz

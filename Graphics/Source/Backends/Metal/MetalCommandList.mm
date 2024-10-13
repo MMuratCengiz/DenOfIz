@@ -66,9 +66,9 @@ void MetalCommandList::BeginRendering( const RenderingDesc &renderingDesc )
     auto passDesc = MTLRenderPassDescriptor.renderPassDescriptor;
     @autoreleasepool
     {
-        for ( auto i = 0; i < renderingDesc.RTAttachments.size( ); i++ )
+        for ( auto i = 0; i < renderingDesc.RTAttachments.NumElements; i++ )
         {
-            const RenderingAttachmentDesc &attachment      = renderingDesc.RTAttachments[ i ];
+            const RenderingAttachmentDesc &attachment      = renderingDesc.RTAttachments.Array[ i ];
             MetalTextureResource          *metalRtResource = static_cast<MetalTextureResource *>( attachment.Resource );
             passDesc.colorAttachments[ i ].texture         = metalRtResource->Instance( );
             passDesc.colorAttachments[ i ].loadAction      = MetalEnumConverter::ConvertLoadAction( attachment.LoadOp );
@@ -129,9 +129,9 @@ void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
             metalFence->NotifyOnCommandBufferCompletion( m_commandBuffer );
         }
 
-        for ( ISemaphore *notifySemaphore : executeDesc.NotifySemaphores )
+        for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements; ++i )
         {
-            MetalSemaphore *metalSemaphore = static_cast<MetalSemaphore *>( notifySemaphore );
+            MetalSemaphore *metalSemaphore = static_cast<MetalSemaphore *>( executeDesc.NotifySemaphores.Array[ i ] );
             metalSemaphore->NotifyOnCommandBufferCompletion( m_commandBuffer );
         }
 
