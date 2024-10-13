@@ -98,70 +98,59 @@ void MetalLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     m_context->ReadOnlyHeap       = [m_context->Device newHeapWithDescriptor:heapDesc];
 }
 
-std::unique_ptr<ICommandListPool> MetalLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &poolDesc )
+ICommandListPool* MetalLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &poolDesc )
 {
-    auto *pool = new MetalCommandListPool( m_context.get( ), poolDesc );
-    return std::unique_ptr<ICommandListPool>( pool );
+    return new MetalCommandListPool( m_context.get( ), poolDesc );
 }
 
-std::unique_ptr<IPipeline> MetalLogicalDevice::CreatePipeline( const PipelineDesc &pipelineDesc )
+IPipeline* MetalLogicalDevice::CreatePipeline( const PipelineDesc &pipelineDesc )
 {
-    auto *pipeline = new MetalPipeline( m_context.get( ), pipelineDesc );
-    return std::unique_ptr<IPipeline>( pipeline );
+    return new MetalPipeline( m_context.get( ), pipelineDesc );
 }
 
-std::unique_ptr<ISwapChain> MetalLogicalDevice::CreateSwapChain( const SwapChainDesc &swapChainDesc )
+ISwapChain* MetalLogicalDevice::CreateSwapChain( const SwapChainDesc &swapChainDesc )
 {
-    auto *swapChain = new MetalSwapChain( m_context.get( ), swapChainDesc );
-    return std::unique_ptr<ISwapChain>( swapChain );
+    return new MetalSwapChain( m_context.get( ), swapChainDesc );
 }
 
-std::unique_ptr<IRootSignature> MetalLogicalDevice::CreateRootSignature( const RootSignatureDesc &rootSignatureDesc )
+IRootSignature* MetalLogicalDevice::CreateRootSignature( const RootSignatureDesc &rootSignatureDesc )
 {
-    auto *rootSignature = new MetalRootSignature( m_context.get( ), rootSignatureDesc );
-    return std::unique_ptr<IRootSignature>( rootSignature );
+    return new MetalRootSignature( m_context.get( ), rootSignatureDesc );
 }
 
-std::unique_ptr<IInputLayout> MetalLogicalDevice::CreateInputLayout( const InputLayoutDesc &inputLayoutDesc )
+IInputLayout* MetalLogicalDevice::CreateInputLayout( const InputLayoutDesc &inputLayoutDesc )
 {
-    auto *inputLayout = new MetalInputLayout( m_context.get( ), inputLayoutDesc );
-    return std::unique_ptr<IInputLayout>( inputLayout );
+    return new MetalInputLayout( m_context.get( ), inputLayoutDesc );
 }
 
-std::unique_ptr<IResourceBindGroup> MetalLogicalDevice::CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc )
+IResourceBindGroup* MetalLogicalDevice::CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc )
 {
-    auto *resourceBindGroup = new MetalResourceBindGroup( m_context.get( ), descriptorTableDesc );
-    return std::unique_ptr<IResourceBindGroup>( resourceBindGroup );
+    return new MetalResourceBindGroup( m_context.get( ), descriptorTableDesc );
 }
 
-std::unique_ptr<IFence> MetalLogicalDevice::CreateFence( )
+IFence* MetalLogicalDevice::CreateFence( )
 {
-    auto *fence = new MetalFence( m_context.get( ) );
-    return std::unique_ptr<IFence>( fence );
+    return new MetalFence( m_context.get( ) );
 }
 
-std::unique_ptr<ISemaphore> MetalLogicalDevice::CreateSemaphore( )
+ISemaphore* MetalLogicalDevice::CreateSemaphore( )
 {
-    auto *semaphore = new MetalSemaphore( m_context.get( ) );
-    return std::unique_ptr<ISemaphore>( semaphore );
+    return new MetalSemaphore( m_context.get( ) );
 }
 
-std::unique_ptr<IBufferResource> MetalLogicalDevice::CreateBufferResource( const BufferDesc &bufferDesc )
+IBufferResource* MetalLogicalDevice::CreateBufferResource( const BufferDesc &bufferDesc )
 {
-    auto *buffer = new MetalBufferResource( m_context.get( ), bufferDesc );
-    return std::unique_ptr<IBufferResource>( buffer );
+    return new MetalBufferResource( m_context.get( ), bufferDesc );
 }
 
-std::unique_ptr<ITextureResource> MetalLogicalDevice::CreateTextureResource( const TextureDesc &textureDesc )
+ITextureResource* MetalLogicalDevice::CreateTextureResource( const TextureDesc &textureDesc )
 {
-    auto *texture = new MetalTextureResource( m_context.get( ), textureDesc );
-    return std::unique_ptr<ITextureResource>( texture );
+    return new MetalTextureResource( m_context.get( ), textureDesc );
 }
 
-std::unique_ptr<ISampler> MetalLogicalDevice::CreateSampler( const SamplerDesc &samplerDesc )
+ISampler* MetalLogicalDevice::CreateSampler( const SamplerDesc &samplerDesc )
 {
-    auto *sampler = new MetalSampler( m_context.get( ), samplerDesc );
-    return std::unique_ptr<ISampler>( sampler );
+    return new MetalSampler( m_context.get( ), samplerDesc );
 }
 
 void MetalLogicalDevice::WaitIdle( )

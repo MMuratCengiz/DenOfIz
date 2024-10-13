@@ -32,11 +32,11 @@ DefaultRenderPipeline::DefaultRenderPipeline( const GraphicsApi *graphicsApi, IL
     pixelShaderDesc.Stage = ShaderStage::Pixel;
     shaders.push_back( pixelShaderDesc );
 
-    m_program              = graphicsApi->CreateShaderProgram( shaders );
+    m_program              = std::unique_ptr<ShaderProgram>( graphicsApi->CreateShaderProgram( shaders ) );
     auto programReflection = m_program->Reflect( );
 
-    m_rootSignature = logicalDevice->CreateRootSignature( programReflection.RootSignature );
-    m_inputLayout   = logicalDevice->CreateInputLayout( programReflection.InputLayout );
+    m_rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( programReflection.RootSignature ) );
+    m_inputLayout   = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( programReflection.InputLayout ) );
     PipelineDesc pipelineDesc{ };
     pipelineDesc.InputLayout   = m_inputLayout.get( );
     pipelineDesc.RootSignature = m_rootSignature.get( );
@@ -44,7 +44,7 @@ DefaultRenderPipeline::DefaultRenderPipeline( const GraphicsApi *graphicsApi, IL
     pipelineDesc.CullMode      = CullMode::BackFace;
     pipelineDesc.Rendering.RenderTargets.push_back( { .Format = Format::B8G8R8A8Unorm } );
 
-    m_pipeline = logicalDevice->CreatePipeline( pipelineDesc );
+    m_pipeline = std::unique_ptr<IPipeline>( logicalDevice->CreatePipeline( pipelineDesc ) );
 
     m_perDrawBinding     = std::make_unique<PerDrawBinding>( logicalDevice, m_rootSignature.get( ) );
     m_perFrameBinding    = std::make_unique<PerFrameBinding>( logicalDevice, m_rootSignature.get( ) );

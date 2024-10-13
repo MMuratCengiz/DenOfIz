@@ -27,15 +27,15 @@ PerFrameBinding::PerFrameBinding( ILogicalDevice *device, IRootSignature *rootSi
     bindGroupDesc.RegisterSpace = RegisterSpace;
     bindGroupDesc.RootSignature = rootSignature;
 
-    m_bindGroup = device->CreateResourceBindGroup( bindGroupDesc );
+    m_bindGroup = std::unique_ptr<IResourceBindGroup>( device->CreateResourceBindGroup( bindGroupDesc ) );
 
     BufferDesc deltaTimeBufferDesc{ };
     deltaTimeBufferDesc.HeapType   = HeapType::CPU_GPU;
     deltaTimeBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
     deltaTimeBufferDesc.NumBytes   = sizeof( float );
     deltaTimeBufferDesc.DebugName  = "deltaTimeBuffer";
-    float timePassed               = 1.0f;
-    m_deltaTimeBuffer              = device->CreateBufferResource( deltaTimeBufferDesc );
+    constexpr float timePassed     = 1.0f;
+    m_deltaTimeBuffer              = std::unique_ptr<IBufferResource>( device->CreateBufferResource( deltaTimeBufferDesc ) );
     m_deltaTimeMappedData          = m_deltaTimeBuffer->MapMemory( );
     memcpy( m_deltaTimeMappedData, &timePassed, sizeof( float ) );
 
@@ -44,20 +44,20 @@ PerFrameBinding::PerFrameBinding( ILogicalDevice *device, IRootSignature *rootSi
     deltaTimeBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
     deltaTimeBufferDesc.NumBytes   = sizeof( XMFLOAT4X4 );
     deltaTimeBufferDesc.DebugName  = "viewProjectionBuffer";
-    m_viewProjectionBuffer         = device->CreateBufferResource( deltaTimeBufferDesc );
+    m_viewProjectionBuffer         = std::unique_ptr<IBufferResource>( device->CreateBufferResource( deltaTimeBufferDesc ) );
     m_viewProjectionMappedData     = m_viewProjectionBuffer->MapMemory( );
-    XMFLOAT4X4 viewProjectionMatrix;
+    XMFLOAT4X4 viewProjectionMatrix{ };
     XMStoreFloat4x4( &viewProjectionMatrix, XMMatrixIdentity( ) );
     memcpy( m_viewProjectionMappedData, &viewProjectionMatrix, sizeof( XMFLOAT4X4 ) );
 
     m_bindGroup->Update( UpdateDesc( 0 ).Cbv( 0, m_viewProjectionBuffer.get( ) ).Cbv( 1, m_deltaTimeBuffer.get( ) ) );
 }
 
-void PerFrameBinding::Update( Camera *camera, float deltaTime )
+void PerFrameBinding::Update( const Camera *camera, float deltaTime ) const
 {
-    float deltaTimeTemp = 1.0f; // deltaTime is not quite used yet, maybe not even required
+    constexpr float deltaTimeTemp = 1.0f; // deltaTime is not quite used yet, maybe not even required
     memcpy( m_deltaTimeMappedData, &deltaTimeTemp, sizeof( float ) );
-    XMFLOAT4X4 viewProjectionMatrix;
+    XMFLOAT4X4 viewProjectionMatrix{ };
     XMStoreFloat4x4( &viewProjectionMatrix, camera->ViewProjectionMatrix( ) );
     memcpy( m_viewProjectionMappedData, &viewProjectionMatrix, sizeof( XMFLOAT4X4 ) );
 }

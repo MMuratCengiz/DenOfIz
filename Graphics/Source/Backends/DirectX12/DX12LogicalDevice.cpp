@@ -225,7 +225,7 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
         m_context->CpuDescriptorHeaps[ i ] = std::make_unique<DX12DescriptorHeap>( m_context->D3DDevice.get( ), static_cast<D3D12_DESCRIPTOR_HEAP_TYPE>( i ), false );
     }
 
-    m_context->RtvDescriptorHeap                              = std::make_unique<DX12DescriptorHeap>( m_context->D3DDevice.get( ), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, false );
+    m_context->RtvDescriptorHeap                    = std::make_unique<DX12DescriptorHeap>( m_context->D3DDevice.get( ), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, false );
     m_context->ShaderVisibleCbvSrvUavDescriptorHeap = std::make_unique<DX12DescriptorHeap>( m_context->D3DDevice.get( ), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true );
     m_context->ShaderVisibleSamplerDescriptorHeap   = std::make_unique<DX12DescriptorHeap>( m_context->D3DDevice.get( ), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, true );
 
@@ -267,70 +267,59 @@ void DX12LogicalDevice::WaitIdle( )
     }
 }
 
-std::unique_ptr<ICommandListPool> DX12LogicalDevice::CreateCommandListPool( const CommandListPoolDesc &poolDesc )
+ICommandListPool *DX12LogicalDevice::CreateCommandListPool( const CommandListPoolDesc &poolDesc )
 {
-    const auto pool = new DX12CommandListPool( m_context.get( ), poolDesc );
-    return std::unique_ptr<ICommandListPool>( pool );
+    return new DX12CommandListPool( m_context.get( ), poolDesc );
 }
 
-std::unique_ptr<IPipeline> DX12LogicalDevice::CreatePipeline( const PipelineDesc &pipelineDesc )
+IPipeline *DX12LogicalDevice::CreatePipeline( const PipelineDesc &pipelineDesc )
 {
-    const auto pipeline = new DX12Pipeline( m_context.get( ), pipelineDesc );
-    return std::unique_ptr<IPipeline>( pipeline );
+    return new DX12Pipeline( m_context.get( ), pipelineDesc );
 }
 
-std::unique_ptr<ISwapChain> DX12LogicalDevice::CreateSwapChain( const SwapChainDesc &swapChainDesc )
+ISwapChain *DX12LogicalDevice::CreateSwapChain( const SwapChainDesc &swapChainDesc )
 {
-    const auto swapChain = new DX12SwapChain( m_context.get( ), swapChainDesc );
-    return std::unique_ptr<ISwapChain>( swapChain );
+    return new DX12SwapChain( m_context.get( ), swapChainDesc );
 }
 
-std::unique_ptr<IRootSignature> DX12LogicalDevice::CreateRootSignature( const RootSignatureDesc &rootSignatureDesc )
+IRootSignature *DX12LogicalDevice::CreateRootSignature( const RootSignatureDesc &rootSignatureDesc )
 {
-    const auto rootSignature = new DX12RootSignature( m_context.get( ), rootSignatureDesc );
-    return std::unique_ptr<IRootSignature>( rootSignature );
+    return new DX12RootSignature( m_context.get( ), rootSignatureDesc );
 }
 
-std::unique_ptr<IInputLayout> DX12LogicalDevice::CreateInputLayout( const InputLayoutDesc &inputLayoutDesc )
+IInputLayout *DX12LogicalDevice::CreateInputLayout( const InputLayoutDesc &inputLayoutDesc )
 {
-    const auto inputLayout = new DX12InputLayout( inputLayoutDesc );
-    return std::unique_ptr<IInputLayout>( inputLayout );
+    return new DX12InputLayout( inputLayoutDesc );
 }
 
-std::unique_ptr<IResourceBindGroup> DX12LogicalDevice::CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc )
+IResourceBindGroup *DX12LogicalDevice::CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc )
 {
-    const auto descriptorTable = new DX12ResourceBindGroup( m_context.get( ), descriptorTableDesc );
-    return std::unique_ptr<IResourceBindGroup>( descriptorTable );
+    return new DX12ResourceBindGroup( m_context.get( ), descriptorTableDesc );
 }
 
-std::unique_ptr<IFence> DX12LogicalDevice::CreateFence( )
+IFence *DX12LogicalDevice::CreateFence( )
 {
-    const auto fence = new DX12Fence( m_context.get( ) );
-    return std::unique_ptr<IFence>( fence );
+    return new DX12Fence( m_context.get( ) );
 }
 
-std::unique_ptr<ISemaphore> DX12LogicalDevice::CreateSemaphore( )
+ISemaphore *DX12LogicalDevice::CreateSemaphore( )
 {
-    const auto semaphore = new DX12Semaphore( m_context.get( ) );
-    return std::unique_ptr<ISemaphore>( semaphore );
+    return new DX12Semaphore( m_context.get( ) );
 }
 
-std::unique_ptr<IBufferResource> DX12LogicalDevice::CreateBufferResource( const BufferDesc &bufferDesc )
+IBufferResource *DX12LogicalDevice::CreateBufferResource( const BufferDesc &bufferDesc )
 {
-    const auto buffer = new DX12BufferResource( m_context.get( ), bufferDesc );
-    return std::unique_ptr<IBufferResource>( buffer );
+    return new DX12BufferResource( m_context.get( ), bufferDesc );
 }
 
-std::unique_ptr<ITextureResource> DX12LogicalDevice::CreateTextureResource( const TextureDesc &textureDesc )
+ITextureResource *DX12LogicalDevice::CreateTextureResource( const TextureDesc &textureDesc )
 {
-    const auto image = new DX12TextureResource( m_context.get( ), textureDesc );
-    return std::unique_ptr<ITextureResource>( image );
+    return new DX12TextureResource( m_context.get( ), textureDesc );
 }
 
-std::unique_ptr<ISampler> DX12LogicalDevice::CreateSampler( const SamplerDesc &samplerDesc )
+ISampler *DX12LogicalDevice::CreateSampler( const SamplerDesc &samplerDesc )
 {
-    const auto sampler = new DX12Sampler( m_context.get( ), samplerDesc );
-    return std::unique_ptr<ISampler>( sampler );
+    return new DX12Sampler( m_context.get( ), samplerDesc );
 }
 
 bool DX12LogicalDevice::IsDeviceLost( )

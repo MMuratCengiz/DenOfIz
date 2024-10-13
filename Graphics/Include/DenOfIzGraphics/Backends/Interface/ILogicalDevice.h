@@ -50,17 +50,17 @@ namespace DenOfIz
         };
 
         // Factory methods
-        virtual std::unique_ptr<ICommandListPool>   CreateCommandListPool( const CommandListPoolDesc &createInfo )     = 0;
-        virtual std::unique_ptr<IPipeline>          CreatePipeline( const PipelineDesc &createInfo )                   = 0;
-        virtual std::unique_ptr<ISwapChain>         CreateSwapChain( const SwapChainDesc &createInfo )                 = 0;
-        virtual std::unique_ptr<IRootSignature>     CreateRootSignature( const RootSignatureDesc &createInfo )         = 0;
-        virtual std::unique_ptr<IInputLayout>       CreateInputLayout( const InputLayoutDesc &createInfo )             = 0;
-        virtual std::unique_ptr<IResourceBindGroup> CreateResourceBindGroup( const ResourceBindGroupDesc &createInfo ) = 0;
-        virtual std::unique_ptr<IFence>             CreateFence( )                                                     = 0;
-        virtual std::unique_ptr<ISemaphore>         CreateSemaphore( )                                                 = 0;
-        virtual std::unique_ptr<IBufferResource>    CreateBufferResource( const BufferDesc &createInfo )               = 0;
-        virtual std::unique_ptr<ITextureResource>   CreateTextureResource( const TextureDesc &createInfo )             = 0;
-        virtual std::unique_ptr<ISampler>           CreateSampler( const SamplerDesc &createInfo )                     = 0;
+        virtual ICommandListPool   *CreateCommandListPool( const CommandListPoolDesc &createInfo )     = 0;
+        virtual IPipeline          *CreatePipeline( const PipelineDesc &createInfo )                   = 0;
+        virtual ISwapChain         *CreateSwapChain( const SwapChainDesc &createInfo )                 = 0;
+        virtual IRootSignature     *CreateRootSignature( const RootSignatureDesc &createInfo )         = 0;
+        virtual IInputLayout       *CreateInputLayout( const InputLayoutDesc &createInfo )             = 0;
+        virtual IResourceBindGroup *CreateResourceBindGroup( const ResourceBindGroupDesc &createInfo ) = 0;
+        virtual IFence             *CreateFence( )                                                     = 0;
+        virtual ISemaphore         *CreateSemaphore( )                                                 = 0;
+        virtual IBufferResource    *CreateBufferResource( const BufferDesc &createInfo )               = 0;
+        virtual ITextureResource   *CreateTextureResource( const TextureDesc &createInfo )             = 0;
+        virtual ISampler           *CreateSampler( const SamplerDesc &createInfo )                     = 0;
     };
 
 } // namespace DenOfIz

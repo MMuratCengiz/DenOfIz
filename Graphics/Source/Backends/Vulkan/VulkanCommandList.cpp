@@ -236,9 +236,12 @@ void VulkanCommandList::BindViewport( const float offsetX, float offsetY, const 
 
 void VulkanCommandList::BindScissorRect( const float offsetX, const float offsetY, const float width, const float height )
 {
-    m_scissorRect.offset = VkOffset2D( offsetX, offsetY );
-    m_scissorRect.extent = VkExtent2D( width, height );
-    vkCmdSetScissorWithCount( m_commandBuffer, 1, &m_scissorRect );
+    m_scissorRect = VkRect2D( );
+    m_scissorRect.offset.x = offsetX;
+    m_scissorRect.offset.y = offsetY;
+    m_scissorRect.extent.width = width;
+    m_scissorRect.extent.height = height;
+    vkCmdSetScissor( m_commandBuffer, 0, 1, &m_scissorRect );
 }
 
 void VulkanCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )

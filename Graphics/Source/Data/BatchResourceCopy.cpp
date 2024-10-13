@@ -29,24 +29,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device, bool issueBarriers ) : m_device( device ), m_issueBarriers( issueBarriers )
+BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device, const bool issueBarriers ) : m_device( device ), m_issueBarriers( issueBarriers )
 {
-    m_commandListPool = m_device->CreateCommandListPool( { QueueType::Copy } );
+    m_commandListPool = std::unique_ptr<ICommandListPool>( m_device->CreateCommandListPool( { QueueType::Copy } ) );
     DZ_ASSERTM( !m_commandListPool->GetCommandLists( ).empty( ), "Command list pool did not produce any command lists." );
 
     m_copyCommandList = m_commandListPool->GetCommandLists( )[ 0 ];
-    m_executeFence    = m_device->CreateFence( );
+    m_executeFence    = std::unique_ptr<IFence>( m_device->CreateFence( ) );
 
     if ( m_issueBarriers )
     {
         CommandListPoolDesc poolDesc{ };
         poolDesc.QueueType       = QueueType::Graphics;
         poolDesc.NumCommandLists = 1;
-        m_syncCommandPool        = m_device->CreateCommandListPool( poolDesc );
+        m_syncCommandPool        = std::unique_ptr<ICommandListPool>( m_device->CreateCommandListPool( poolDesc ) );
 
         m_syncCommandList = m_syncCommandPool->GetCommandLists( ).front( );
-        m_batchCopyWait   = m_device->CreateSemaphore( );
-        m_syncWait        = m_device->CreateFence( );
+        m_batchCopyWait   = std::unique_ptr<ISemaphore>( m_device->CreateSemaphore( ) );
+        m_syncWait        = std::unique_ptr<IFence>( m_device->CreateFence( ) );
     }
 }
 
@@ -77,19 +77,19 @@ void BatchResourceCopy::CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc )
     stagingBufferDesc.NumBytes     = Utilities::Align( copyDesc.NumBytes, m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
     stagingBufferDesc.DebugName    = "CopyToGPUBuffer_StagingBuffer";
 
-    auto stagingBuffer = m_device->CreateBufferResource( stagingBufferDesc );
+    const auto stagingBuffer = m_device->CreateBufferResource( stagingBufferDesc );
     memcpy( stagingBuffer->MapMemory( ), copyDesc.Data, copyDesc.NumBytes );
     stagingBuffer->UnmapMemory( );
 
     CopyBufferRegionDesc copyBufferRegionDesc{ };
     copyBufferRegionDesc.DstBuffer = copyDesc.DstBuffer;
-    copyBufferRegionDesc.SrcBuffer = stagingBuffer.get( );
+    copyBufferRegionDesc.SrcBuffer = stagingBuffer;
     copyBufferRegionDesc.NumBytes  = copyDesc.NumBytes;
 
     CopyBufferRegion( copyBufferRegionDesc );
 
     std::lock_guard lock( m_resourceCleanLock );
-    m_resourcesToClean.push_back( std::move( stagingBuffer ) );
+    m_resourcesToClean.push_back( std::unique_ptr<IBufferResource>( stagingBuffer ) );
 }
 
 void BatchResourceCopy::CopyBufferRegion( const CopyBufferRegionDesc &copyDesc ) const
@@ -110,24 +110,24 @@ void BatchResourceCopy::CopyDataToTexture( const CopyDataToTextureDesc &copyDesc
     stagingBufferDesc.NumBytes     = copyDesc.NumBytes;
     stagingBufferDesc.DebugName    = "CopyDataToTexture_StagingBuffer";
 
-    auto  stagingBuffer = m_device->CreateBufferResource( stagingBufferDesc );
-    void *dst           = stagingBuffer->MapMemory( );
+    const auto stagingBuffer = m_device->CreateBufferResource( stagingBufferDesc );
+    void      *dst           = stagingBuffer->MapMemory( );
     memcpy( dst, copyDesc.Data, copyDesc.NumBytes );
     stagingBuffer->UnmapMemory( );
 
     CopyBufferToTextureDesc copyBufferToTextureDesc{ };
     copyBufferToTextureDesc.DstTexture = copyDesc.DstTexture;
-    copyBufferToTextureDesc.SrcBuffer  = stagingBuffer.get( );
+    copyBufferToTextureDesc.SrcBuffer  = stagingBuffer;
     copyBufferToTextureDesc.Format     = FormatToTypeless( copyDesc.DstTexture->GetFormat( ) );
     copyBufferToTextureDesc.MipLevel   = copyDesc.MipLevel;
     copyBufferToTextureDesc.ArrayLayer = copyDesc.ArrayLayer;
     m_copyCommandList->CopyBufferToTexture( copyBufferToTextureDesc );
 
     std::lock_guard lock( m_resourceCleanLock );
-    m_resourcesToClean.push_back( std::move( stagingBuffer ) );
+    m_resourcesToClean.push_back( std::unique_ptr<IBufferResource>( stagingBuffer ) );
 }
 
-std::unique_ptr<ITextureResource> BatchResourceCopy::CreateAndLoadTexture( const std::string &file )
+ITextureResource *BatchResourceCopy::CreateAndLoadTexture( const std::string &file )
 {
     Texture texture( file );
 
@@ -144,18 +144,18 @@ std::unique_ptr<ITextureResource> BatchResourceCopy::CreateAndLoadTexture( const
     textureDesc.DebugName    = "CreateAndLoadTexture(" + file + ")";
 
     auto outTex = m_device->CreateTextureResource( textureDesc );
-    LoadTextureInternal( texture, outTex.get( ) );
+    LoadTextureInternal( texture, outTex );
 
     if ( m_issueBarriers )
     {
         const PipelineBarrierDesc barrierDesc =
-            PipelineBarrierDesc{ }.TextureBarrier( { .Resource = outTex.get( ), .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
+            PipelineBarrierDesc{ }.TextureBarrier( { .Resource = outTex, .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
         m_syncCommandList->PipelineBarrier( barrierDesc );
     }
-    return std::move( outTex );
+    return outTex;
 }
 
-std::unique_ptr<IBufferResource> BatchResourceCopy::CreateUniformBuffer( const void *data, uint32_t numBytes )
+IBufferResource *BatchResourceCopy::CreateUniformBuffer( const void *data, const uint32_t numBytes )
 {
     BufferDesc bufferDesc{ };
     bufferDesc.HeapType     = HeapType::GPU;
@@ -164,10 +164,10 @@ std::unique_ptr<IBufferResource> BatchResourceCopy::CreateUniformBuffer( const v
     bufferDesc.NumBytes     = numBytes;
     bufferDesc.DebugName    = NextId( "Uniform" );
 
-    auto buffer = m_device->CreateBufferResource( bufferDesc );
+    const auto buffer = m_device->CreateBufferResource( bufferDesc );
 
     CopyToGpuBufferDesc copyDesc{ };
-    copyDesc.DstBuffer = buffer.get( );
+    copyDesc.DstBuffer = buffer;
     copyDesc.Data      = data;
     copyDesc.NumBytes  = numBytes;
     CopyToGPUBuffer( copyDesc );
@@ -175,14 +175,14 @@ std::unique_ptr<IBufferResource> BatchResourceCopy::CreateUniformBuffer( const v
     if ( m_issueBarriers )
     {
         const PipelineBarrierDesc barrierDesc =
-            PipelineBarrierDesc{ }.BufferBarrier( { .Resource = buffer.get( ), .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
+            PipelineBarrierDesc{ }.BufferBarrier( { .Resource = buffer, .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
         m_syncCommandList->PipelineBarrier( barrierDesc );
     }
 
-    return std::move( buffer );
+    return buffer;
 }
 
-[[nodiscard]] std::unique_ptr<IBufferResource> BatchResourceCopy::CreateGeometryVertexBuffer( const GeometryData &geometryData )
+[[nodiscard]] IBufferResource *BatchResourceCopy::CreateGeometryVertexBuffer( const GeometryData &geometryData )
 {
     BufferDesc vBufferDesc{ };
     vBufferDesc.HeapType     = HeapType::GPU;
@@ -191,10 +191,10 @@ std::unique_ptr<IBufferResource> BatchResourceCopy::CreateUniformBuffer( const v
     vBufferDesc.NumBytes     = geometryData.Vertices.size( ) * sizeof( GeometryVertexData );
     vBufferDesc.DebugName    = NextId( "Vertex" );
 
-    auto vertexBuffer = m_device->CreateBufferResource( vBufferDesc );
+    const auto vertexBuffer = m_device->CreateBufferResource( vBufferDesc );
 
     CopyToGpuBufferDesc vbCopyDesc{ };
-    vbCopyDesc.DstBuffer = vertexBuffer.get( );
+    vbCopyDesc.DstBuffer = vertexBuffer;
     vbCopyDesc.Data      = geometryData.Vertices.data( );
     vbCopyDesc.NumBytes  = geometryData.Vertices.size( ) * sizeof( GeometryVertexData );
     CopyToGPUBuffer( vbCopyDesc );
@@ -202,14 +202,14 @@ std::unique_ptr<IBufferResource> BatchResourceCopy::CreateUniformBuffer( const v
     if ( m_issueBarriers )
     {
         const PipelineBarrierDesc barrierDesc =
-            PipelineBarrierDesc{ }.BufferBarrier( { .Resource = vertexBuffer.get( ), .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
+            PipelineBarrierDesc{ }.BufferBarrier( { .Resource = vertexBuffer, .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
         m_syncCommandList->PipelineBarrier( barrierDesc );
     }
 
     return vertexBuffer;
 }
 
-[[nodiscard]] std::unique_ptr<IBufferResource> BatchResourceCopy::CreateGeometryIndexBuffer( const GeometryData &geometryData )
+[[nodiscard]] IBufferResource *BatchResourceCopy::CreateGeometryIndexBuffer( const GeometryData &geometryData )
 {
     BufferDesc iBufferDesc{ };
     iBufferDesc.HeapType     = HeapType::GPU;
@@ -218,10 +218,10 @@ std::unique_ptr<IBufferResource> BatchResourceCopy::CreateUniformBuffer( const v
     iBufferDesc.NumBytes     = geometryData.Indices.size( ) * sizeof( geometry_index_t );
     iBufferDesc.DebugName    = NextId( "Index" );
 
-    auto indexBuffer = m_device->CreateBufferResource( iBufferDesc );
+    const auto indexBuffer = m_device->CreateBufferResource( iBufferDesc );
 
     CopyToGpuBufferDesc ibCopyDesc{ };
-    ibCopyDesc.DstBuffer = indexBuffer.get( );
+    ibCopyDesc.DstBuffer = indexBuffer;
     ibCopyDesc.Data      = geometryData.Indices.data( );
     ibCopyDesc.NumBytes  = geometryData.Indices.size( ) * sizeof( geometry_index_t );
     CopyToGPUBuffer( ibCopyDesc );
@@ -229,7 +229,7 @@ std::unique_ptr<IBufferResource> BatchResourceCopy::CreateUniformBuffer( const v
     if ( m_issueBarriers )
     {
         const PipelineBarrierDesc barrierDesc =
-            PipelineBarrierDesc{ }.BufferBarrier( { .Resource = indexBuffer.get( ), .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
+            PipelineBarrierDesc{ }.BufferBarrier( { .Resource = indexBuffer, .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
         m_syncCommandList->PipelineBarrier( barrierDesc );
     }
     return indexBuffer;
@@ -294,8 +294,8 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
         stagingBufferDesc.NumBytes += mipSlicePitch;
     }
 
-    auto  stagingBuffer       = m_device->CreateBufferResource( stagingBufferDesc );
-    Byte *stagingMappedMemory = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
+    const auto stagingBuffer       = m_device->CreateBufferResource( stagingBufferDesc );
+    Byte      *stagingMappedMemory = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
 
     texture.StreamMipData(
         [ & ]( const MipData &mipData )
@@ -304,7 +304,7 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
 
             CopyBufferToTextureDesc copyBufferToTextureDesc{ };
             copyBufferToTextureDesc.DstTexture = dstTexture;
-            copyBufferToTextureDesc.SrcBuffer  = stagingBuffer.get( );
+            copyBufferToTextureDesc.SrcBuffer  = stagingBuffer;
             copyBufferToTextureDesc.SrcOffset  = mipData.DataOffset;
             copyBufferToTextureDesc.Format     = dstTexture->GetFormat( );
             copyBufferToTextureDesc.MipLevel   = mipData.MipIndex;
@@ -316,7 +316,7 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
 
     stagingBuffer->UnmapMemory( );
     std::lock_guard lock( m_resourceCleanLock );
-    m_resourcesToClean.push_back( std::move( stagingBuffer ) );
+    m_resourcesToClean.push_back( std::unique_ptr<IBufferResource>( stagingBuffer ) );
 }
 
 void BatchResourceCopy::CopyTextureToMemoryAligned( const Texture &texture, const MipData &mipData, Byte *dst ) const

@@ -43,17 +43,17 @@ namespace DenOfIz
         void                        LoadPhysicalDevice( const PhysicalDevice &device ) override;
         bool                        IsDeviceLost( ) override;
 
-        std::unique_ptr<ICommandListPool>   CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
-        std::unique_ptr<IPipeline>          CreatePipeline( const PipelineDesc &pipelineDesc ) override;
-        std::unique_ptr<ISwapChain>         CreateSwapChain( const SwapChainDesc &swapChainDesc ) override;
-        std::unique_ptr<IRootSignature>     CreateRootSignature( const RootSignatureDesc &rootSignatureDesc ) override;
-        std::unique_ptr<IInputLayout>       CreateInputLayout( const InputLayoutDesc &inputLayoutDesc ) override;
-        std::unique_ptr<IResourceBindGroup> CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc ) override;
-        std::unique_ptr<IFence>             CreateFence( ) override;
-        std::unique_ptr<ISemaphore>         CreateSemaphore( ) override;
-        std::unique_ptr<IBufferResource>    CreateBufferResource(const BufferDesc &bufferDesc ) override;
-        std::unique_ptr<ITextureResource>   CreateTextureResource( const TextureDesc &textureDesc ) override;
-        std::unique_ptr<ISampler>           CreateSampler( const SamplerDesc &samplerDesc ) override;
+        ICommandListPool*   CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
+        IPipeline*          CreatePipeline( const PipelineDesc &pipelineDesc ) override;
+        ISwapChain*         CreateSwapChain( const SwapChainDesc &swapChainDesc ) override;
+        IRootSignature*     CreateRootSignature( const RootSignatureDesc &rootSignatureDesc ) override;
+        IInputLayout*       CreateInputLayout( const InputLayoutDesc &inputLayoutDesc ) override;
+        IResourceBindGroup* CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc ) override;
+        IFence*             CreateFence( ) override;
+        ISemaphore*         CreateSemaphore( ) override;
+        IBufferResource*    CreateBufferResource(const BufferDesc &bufferDesc ) override;
+        ITextureResource*   CreateTextureResource( const TextureDesc &textureDesc ) override;
+        ISampler*           CreateSampler( const SamplerDesc &samplerDesc ) override;
 
         void WaitIdle( ) override;
         // --

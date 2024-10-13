@@ -26,7 +26,7 @@ CommandListRing::CommandListRing( ILogicalDevice *logicalDevice ) : m_logicalDev
     for ( uint32_t i = 0; i < m_desc.NumFrames; i++ )
     {
         createInfo.NumCommandLists = m_desc.NumCommandListsPerFrame;
-        m_commandListPools.push_back( m_logicalDevice->CreateCommandListPool( createInfo ) );
+        m_commandListPools.push_back( std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( createInfo ) ) );
     }
 
     if ( m_desc.CreateSyncObjects )
@@ -37,9 +37,9 @@ CommandListRing::CommandListRing( ILogicalDevice *logicalDevice ) : m_logicalDev
 
         for ( uint8_t i = 0; i < m_desc.NumFrames; ++i )
         {
-            m_frameFences[ i ]             = logicalDevice->CreateFence( );
-            m_imageReadySemaphores[ i ]    = logicalDevice->CreateSemaphore( );
-            m_imageRenderedSemaphores[ i ] = logicalDevice->CreateSemaphore( );
+            m_frameFences[ i ]             = std::unique_ptr<IFence>( logicalDevice->CreateFence( ) );
+            m_imageReadySemaphores[ i ]    = std::unique_ptr<ISemaphore>( logicalDevice->CreateSemaphore( ) );
+            m_imageRenderedSemaphores[ i ] = std::unique_ptr<ISemaphore>( logicalDevice->CreateSemaphore( ) );
         }
     }
 }

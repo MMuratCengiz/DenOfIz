@@ -62,17 +62,17 @@ namespace DenOfIz
         [[nodiscard]] VulkanContext *GetContext( ) const;
 
         // Factory methods
-        std::unique_ptr<ICommandListPool>   CreateCommandListPool( const CommandListPoolDesc &createInfo ) override;
-        std::unique_ptr<IPipeline>          CreatePipeline( const PipelineDesc &createInfo ) override;
-        std::unique_ptr<ISwapChain>         CreateSwapChain( const SwapChainDesc &createInfo ) override;
-        std::unique_ptr<IRootSignature>     CreateRootSignature( const RootSignatureDesc &createInfo ) override;
-        std::unique_ptr<IInputLayout>       CreateInputLayout( const InputLayoutDesc &createInfo ) override;
-        std::unique_ptr<IResourceBindGroup> CreateResourceBindGroup( const ResourceBindGroupDesc &createInfo ) override;
-        std::unique_ptr<IFence>             CreateFence( ) override;
-        std::unique_ptr<ISemaphore>         CreateSemaphore( ) override;
-        std::unique_ptr<IBufferResource>    CreateBufferResource( const BufferDesc &createInfo ) override;
-        std::unique_ptr<ITextureResource>   CreateTextureResource( const TextureDesc &createInfo ) override;
-        std::unique_ptr<ISampler>           CreateSampler( const SamplerDesc &createInfo ) override;
+        ICommandListPool   *CreateCommandListPool( const CommandListPoolDesc &createInfo ) override;
+        IPipeline          *CreatePipeline( const PipelineDesc &createInfo ) override;
+        ISwapChain         *CreateSwapChain( const SwapChainDesc &createInfo ) override;
+        IRootSignature     *CreateRootSignature( const RootSignatureDesc &createInfo ) override;
+        IInputLayout       *CreateInputLayout( const InputLayoutDesc &createInfo ) override;
+        IResourceBindGroup *CreateResourceBindGroup( const ResourceBindGroupDesc &createInfo ) override;
+        IFence             *CreateFence( ) override;
+        ISemaphore         *CreateSemaphore( ) override;
+        IBufferResource    *CreateBufferResource( const BufferDesc &createInfo ) override;
+        ITextureResource   *CreateTextureResource( const TextureDesc &createInfo ) override;
+        ISampler           *CreateSampler( const SamplerDesc &createInfo ) override;
 
         ~VulkanLogicalDevice( ) override;
 

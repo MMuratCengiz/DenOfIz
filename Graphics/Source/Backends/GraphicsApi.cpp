@@ -27,22 +27,22 @@ GraphicsApi::GraphicsApi( const APIPreference &preference ) : m_apiPreference( p
 
 GraphicsApi::~GraphicsApi( ) = default;
 
-std::unique_ptr<ILogicalDevice> GraphicsApi::CreateLogicalDevice( ) const
+ILogicalDevice* GraphicsApi::CreateLogicalDevice( ) const
 {
-    std::unique_ptr<ILogicalDevice> logicalDevice = nullptr;
+    ILogicalDevice* logicalDevice = nullptr;
 
 #ifdef BUILD_VK
     if ( IsVulkanPreferred( ) )
     {
         LOG( INFO ) << "Graphics API: Vulkan.";
-        logicalDevice = std::make_unique<VulkanLogicalDevice>( );
+        logicalDevice = new VulkanLogicalDevice( );
     }
 #endif
 #ifdef BUILD_DX12
     if ( IsDX12Preferred( ) )
     {
         LOG( INFO ) << "Graphics API: DirectX12.";
-        logicalDevice = std::make_unique<DX12LogicalDevice>( );
+        logicalDevice = new DX12LogicalDevice( );
     }
 #endif
 #ifdef BUILD_METAL
@@ -52,14 +52,17 @@ std::unique_ptr<ILogicalDevice> GraphicsApi::CreateLogicalDevice( ) const
         logicalDevice = std::make_unique<MetalLogicalDevice>( );
     }
 #endif
-    DZ_ASSERTM( logicalDevice != nullptr, "No supported API found for this system." );
+    if (logicalDevice == nullptr)
+    {
+        throw std::runtime_error( "No supported API found for this system." );
+    }
     logicalDevice->CreateDevice( );
     return logicalDevice;
 }
 
-std::unique_ptr<ILogicalDevice> GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
+ILogicalDevice* GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
 {
-    std::unique_ptr<ILogicalDevice> logicalDevice = CreateLogicalDevice( );
+    ILogicalDevice* logicalDevice = CreateLogicalDevice( );
 
     // Todo something smarter
     for ( const PhysicalDevice &device : logicalDevice->ListPhysicalDevices( ) )
@@ -67,7 +70,7 @@ std::unique_ptr<ILogicalDevice> GraphicsApi::CreateAndLoadOptimalLogicalDevice( 
         if ( device.Properties.IsDedicated )
         {
             logicalDevice->LoadPhysicalDevice( device );
-            return std::move( logicalDevice );
+            return logicalDevice;
         }
     }
 
@@ -83,10 +86,10 @@ std::unique_ptr<ILogicalDevice> GraphicsApi::CreateAndLoadOptimalLogicalDevice( 
     LOG( INFO ) << "Ray Tracing: " << ( gpuDesc.Capabilities.RayTracing ? "Yes" : "No" );
     LOG( INFO ) << "Tearing: " << ( gpuDesc.Capabilities.Tearing ? "Yes" : "No" );
 
-    return std::move( logicalDevice );
+    return logicalDevice;
 }
 
-std::unique_ptr<ShaderProgram> GraphicsApi::CreateShaderProgram( const std::vector<ShaderDesc> &shaders ) const
+ShaderProgram* GraphicsApi::CreateShaderProgram( const std::vector<ShaderDesc> &shaders ) const
 {
     ShaderProgramDesc programDesc{ };
     programDesc.Shaders = shaders;
@@ -107,8 +110,7 @@ std::unique_ptr<ShaderProgram> GraphicsApi::CreateShaderProgram( const std::vect
     {
         LOG( ERROR ) << "No supported API found for this system.";
     }
-    auto *program = new ShaderProgram( programDesc );
-    return std::unique_ptr<ShaderProgram>( program );
+    return new ShaderProgram( programDesc );
 }
 
 void GraphicsApi::ReportLiveObjects( )

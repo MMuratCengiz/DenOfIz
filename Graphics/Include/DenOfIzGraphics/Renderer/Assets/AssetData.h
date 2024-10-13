@@ -28,14 +28,13 @@ namespace DenOfIz
     /// <summary> AssetData class is a container class for asset information, reduces clutter. </summary>
     struct AssetDataDesc
     {
-        ILogicalDevice    *Device;
-        BatchResourceCopy *BatchCopy;
+        ILogicalDevice    *Device{ };
+        BatchResourceCopy *BatchCopy{ };
         GeometryData       GeometryData;
     };
 
     class AssetData
     {
-    private:
         std::unique_ptr<IBufferResource> m_vertexBuffer;
         std::unique_ptr<IBufferResource> m_indexBuffer;
         MaterialData                    *m_materialData;
@@ -43,12 +42,12 @@ namespace DenOfIz
         uint32_t                         m_numIndices  = 0;
 
     public:
-        AssetData( AssetDataDesc &desc );
-        void             UpdateMaterialData( MaterialData *materialData );
-        IBufferResource *VertexBuffer( ) const;
-        IBufferResource *IndexBuffer( ) const;
-        MaterialData    *Material( ) const;
-        uint32_t         NumVertices( ) const;
-        uint32_t         NumIndices( ) const;
+        explicit                       AssetData( const AssetDataDesc &desc );
+        void                           UpdateMaterialData( MaterialData *materialData );
+        [[nodiscard]] IBufferResource *VertexBuffer( ) const;
+        [[nodiscard]] IBufferResource *IndexBuffer( ) const;
+        [[nodiscard]] MaterialData    *Material( ) const;
+        [[nodiscard]] uint32_t         NumVertices( ) const;
+        [[nodiscard]] uint32_t         NumIndices( ) const;
     };
 } // namespace DenOfIz

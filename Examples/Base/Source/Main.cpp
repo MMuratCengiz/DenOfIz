@@ -16,9 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 #include <DenOfIzExamples/IExample.h>
 #include <DenOfIzExamples/Main.h>
+#include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 #include <DenOfIzGraphics/Backends/GraphicsApi.h>
 
 int DenOfIz::Main( IExample *example )
@@ -63,7 +63,7 @@ int DenOfIz::Main( IExample *example )
     apiPreferences.OSX     = APIPreferenceOSX::Metal;
     example->ModifyApiPreferences( apiPreferences );
     const auto gApi          = std::make_unique<GraphicsApi>( apiPreferences );
-    const auto logicalDevice = gApi->CreateAndLoadOptimalLogicalDevice( );
+    auto       logicalDevice = std::unique_ptr<ILogicalDevice>( gApi->CreateAndLoadOptimalLogicalDevice( ) );
 
     GraphicsWindowHandle graphicsWindowHandle{ };
     graphicsWindowHandle.Create( window );
@@ -80,7 +80,7 @@ int DenOfIz::Main( IExample *example )
                 running = false;
             }
             example->HandleEvent( event );
-            if ( ! example->IsRunning( ) )
+            if ( !example->IsRunning( ) )
             {
                 running = false;
             }
@@ -90,6 +90,8 @@ int DenOfIz::Main( IExample *example )
 
     example->Quit( );
     delete example;
+    logicalDevice.reset(  );
+    GraphicsApi::ReportLiveObjects( );
 
     SDL_DestroyWindow( window );
     SDL_Quit( );

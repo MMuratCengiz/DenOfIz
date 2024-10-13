@@ -21,17 +21,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-void BasicCompute( const GraphicsApi& gApi )
+void BasicCompute( const GraphicsApi &gApi )
 {
     std::unique_ptr<ILogicalDevice> logicalDevice = gApi.CreateAndLoadOptimalLogicalDevice( );
     std::unique_ptr<ShaderProgram>  program       = gApi.CreateShaderProgram( {
         ShaderDesc{ .Stage = ShaderStage::Compute, .Path = "Assets/Shaders/Tests/GeneralTests/BasicCompute.hlsl" },
     } );
-    std::unique_ptr<IRootSignature> rootSignature = logicalDevice->CreateRootSignature(RootSignatureDesc{
+    std::unique_ptr<IRootSignature> rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature(RootSignatureDesc{
         .ResourceBindings = {
             ResourceBindingDesc{ .Name = "computeReadBack", .Binding = 0, .Descriptor = ResourceDescriptor::RWBuffer, .Stages = { ShaderStage::Compute } },
         },
-    });
+    }) );
 
     BufferDesc bufferDesc{ };
     bufferDesc.Descriptor                   = ResourceDescriptor::RWBuffer;
@@ -39,28 +39,30 @@ void BasicCompute( const GraphicsApi& gApi )
     bufferDesc.BufferView.Stride            = sizeof( float );
     bufferDesc.HeapType                     = HeapType::GPU;
     bufferDesc.InitialState                 = ResourceState::UnorderedAccess;
-    std::unique_ptr<IBufferResource> buffer = logicalDevice->CreateBufferResource( bufferDesc );
+    std::unique_ptr<IBufferResource> buffer = std::unique_ptr<IBufferResource>( logicalDevice->CreateBufferResource( bufferDesc ) );
 
-    std::unique_ptr<IResourceBindGroup> resourceBindGroup = logicalDevice->CreateResourceBindGroup( ResourceBindGroupDesc{ .RootSignature = rootSignature.get( ) } );
+    std::unique_ptr<IResourceBindGroup> resourceBindGroup =
+        std::unique_ptr<IResourceBindGroup>( logicalDevice->CreateResourceBindGroup( ResourceBindGroupDesc{ .RootSignature = rootSignature.get( ) } ) );
     resourceBindGroup->Update( UpdateDesc{ 0 }.Uav( 0, buffer.get( ) ) );
 
-    std::unique_ptr<IInputLayout> inputLayout = logicalDevice->CreateInputLayout( { } );
+    std::unique_ptr<IInputLayout> inputLayout = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( { } ) );
 
     PipelineDesc pipelineDesc{ .ShaderProgram = program.get( ) };
     pipelineDesc.RootSignature = rootSignature.get( );
     pipelineDesc.InputLayout   = inputLayout.get( );
     pipelineDesc.BindPoint     = BindPoint::Compute;
 
-    std::unique_ptr<IPipeline> pipeline = logicalDevice->CreatePipeline( pipelineDesc );
-    std::unique_ptr<IFence>    fence    = logicalDevice->CreateFence( );
+    std::unique_ptr<IPipeline> pipeline = std::unique_ptr<IPipeline>( logicalDevice->CreatePipeline( pipelineDesc ) );
+    std::unique_ptr<IFence>    fence    = std::unique_ptr<IFence>( logicalDevice->CreateFence( ) );
 
-    std::unique_ptr<ICommandListPool> commandListPool = logicalDevice->CreateCommandListPool( CommandListPoolDesc{ .QueueType = QueueType::Compute } );
-    auto                              commandList     = commandListPool->GetCommandLists( )[ 0 ];
+    std::unique_ptr<ICommandListPool> commandListPool =
+        std::unique_ptr<ICommandListPool>( logicalDevice->CreateCommandListPool( CommandListPoolDesc{ .QueueType = QueueType::Compute } ) );
+    auto commandList = commandListPool->GetCommandLists( )[ 0 ];
 
     bufferDesc.Descriptor   = BitSet<ResourceDescriptor>( );
     bufferDesc.HeapType     = HeapType::GPU_CPU;
     bufferDesc.InitialState = ResourceState::CopyDst;
-    auto readBack           = logicalDevice->CreateBufferResource( bufferDesc );
+    auto readBack           = std::unique_ptr<IBufferResource>( logicalDevice->CreateBufferResource( bufferDesc ) );
 
     commandList->Begin( );
     commandList->BindPipeline( pipeline.get( ) );
@@ -87,7 +89,7 @@ void BasicCompute( const GraphicsApi& gApi )
 
     fence->Wait( );
 
-    float *mappedData = reinterpret_cast<float *>( readBack->MapMemory( ) );
+    auto *mappedData = static_cast<float *>( readBack->MapMemory( ) );
     for ( UINT i = 0; i < 1024; i++ )
     {
         ASSERT_EQ( mappedData[ i ], i * 10.0f );
@@ -97,12 +99,12 @@ void BasicCompute( const GraphicsApi& gApi )
 
 TEST( General, BasicCompute_Win32_DX12 )
 {
-    GraphicsApi gApi( { .Windows = APIPreferenceWindows::DirectX12 } );
+    const GraphicsApi gApi( { .Windows = APIPreferenceWindows::DirectX12 } );
     BasicCompute( gApi );
 }
 
 TEST( General, BasicCompute_Win32_Vulkan )
 {
-    GraphicsApi gApi( { .Windows = APIPreferenceWindows::Vulkan } );
+    const GraphicsApi gApi( { .Windows = APIPreferenceWindows::Vulkan } );
     BasicCompute( gApi );
 }

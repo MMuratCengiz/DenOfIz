@@ -71,19 +71,19 @@ namespace DenOfIz
 
     public:
         explicit BatchResourceCopy( ILogicalDevice *device, bool issueBarriers = true );
-        ~BatchResourceCopy( );
+        ~        BatchResourceCopy( );
 
-        void                                           Begin( ) const;
-        void                                           CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc );
-        void                                           CopyBufferRegion( const CopyBufferRegionDesc &copyDesc ) const;
-        void                                           CopyTextureRegion( const CopyTextureRegionDesc &copyDesc ) const;
-        void                                           CopyDataToTexture( const CopyDataToTextureDesc &copyDesc );
-        std::unique_ptr<ITextureResource>              CreateAndLoadTexture( const std::string &file );
-        void                                           LoadTexture( const LoadTextureDesc &loadDesc );
-        [[nodiscard]] std::unique_ptr<IBufferResource> CreateUniformBuffer( const void *data, uint32_t numBytes );
-        [[nodiscard]] std::unique_ptr<IBufferResource> CreateGeometryVertexBuffer( const GeometryData &geometryData );
-        [[nodiscard]] std::unique_ptr<IBufferResource> CreateGeometryIndexBuffer( const GeometryData &geometryData );
-        void                                           Submit( ISemaphore *notify = nullptr );
+        void                           Begin( ) const;
+        void                           CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc );
+        void                           CopyBufferRegion( const CopyBufferRegionDesc &copyDesc ) const;
+        void                           CopyTextureRegion( const CopyTextureRegionDesc &copyDesc ) const;
+        void                           CopyDataToTexture( const CopyDataToTextureDesc &copyDesc );
+        ITextureResource              *CreateAndLoadTexture( const std::string &file );
+        void                           LoadTexture( const LoadTextureDesc &loadDesc );
+        [[nodiscard]] IBufferResource *CreateUniformBuffer( const void *data, uint32_t numBytes );
+        [[nodiscard]] IBufferResource *CreateGeometryVertexBuffer( const GeometryData &geometryData );
+        [[nodiscard]] IBufferResource *CreateGeometryIndexBuffer( const GeometryData &geometryData );
+        void                           Submit( ISemaphore *notify = nullptr );
 
         /// <summary> A synchronized batch resource copy operation, ensures copying is finalized. </summary>
         static void SyncOp( ILogicalDevice *device, const std::function<void( BatchResourceCopy * )> &op );

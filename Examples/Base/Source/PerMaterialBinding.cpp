@@ -29,7 +29,7 @@ PerMaterialBinding::PerMaterialBinding( ILogicalDevice *device, IRootSignature *
     bindGroupDesc.RegisterSpace = RegisterSpace;
     bindGroupDesc.RootSignature = rootSignature;
 
-    m_bindGroup = device->CreateResourceBindGroup( bindGroupDesc );
+    m_bindGroup = std::unique_ptr<IResourceBindGroup>( device->CreateResourceBindGroup( bindGroupDesc ) );
 }
 
 void PerMaterialBinding::Update( const MaterialData *materialData ) const

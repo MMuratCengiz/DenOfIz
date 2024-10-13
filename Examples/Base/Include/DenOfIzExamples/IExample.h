@@ -45,7 +45,7 @@ namespace DenOfIz
 
     public:
         virtual ~IExample( ) = default;
-        void Init( GraphicsWindowHandle *window, GraphicsApi *graphicsApi, ILogicalDevice *device )
+        void     Init( GraphicsWindowHandle *window, GraphicsApi *graphicsApi, ILogicalDevice *device )
         {
             m_windowHandle  = window;
             m_graphicsApi   = graphicsApi;
@@ -57,7 +57,7 @@ namespace DenOfIz
             swapChainDesc.Height       = m_windowDesc.Height;
             swapChainDesc.WindowHandle = m_windowHandle;
 
-            m_swapChain        = m_logicalDevice->CreateSwapChain( swapChainDesc );
+            m_swapChain        = std::unique_ptr<ISwapChain>( m_logicalDevice->CreateSwapChain( swapChainDesc ) );
             m_camera           = std::make_unique<Camera>( static_cast<float>( m_windowDesc.Width ) / m_windowDesc.Height );
             m_worldData.Camera = m_camera.get( );
 

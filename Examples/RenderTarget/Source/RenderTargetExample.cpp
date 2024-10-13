@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzGraphics/Utilities/Time.h>
 #include <DenOfIzExamples/RenderTargetExample.h>
+#include <DenOfIzGraphics/Utilities/Time.h>
 
 using namespace DenOfIz;
 
@@ -31,15 +31,15 @@ void RenderTargetExample::Init( )
     textureDesc.Width        = m_windowDesc.Width;
     textureDesc.Height       = m_windowDesc.Height;
     textureDesc.Format       = Format::B8G8R8A8Unorm;
-    textureDesc.Descriptor   = BitSet(ResourceDescriptor::Texture) | ResourceDescriptor::RenderTarget;
+    textureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture ) | ResourceDescriptor::RenderTarget;
     textureDesc.InitialState = ResourceState::ShaderResource;
     textureDesc.DebugName    = "Deferred Render Target";
     for ( uint32_t i = 0; i < 3; ++i )
     {
         textureDesc.DebugName = "Deferred Render Target " + std::to_string( i );
-        m_deferredRenderTargets.push_back( m_logicalDevice->CreateTextureResource( textureDesc ) );
+        m_deferredRenderTargets.push_back( std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) ) );
     }
-    m_defaultSampler = m_logicalDevice->CreateSampler( SamplerDesc{ } );
+    m_defaultSampler = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( SamplerDesc{ } ) );
     m_quadPipeline->BindGroup( 0 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 0 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
     m_quadPipeline->BindGroup( 1 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 1 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
     m_quadPipeline->BindGroup( 2 )->Update( UpdateDesc( 0 ).Srv( 0, m_deferredRenderTargets[ 2 ].get( ) ).Sampler( 0, m_defaultSampler.get( ) ) );
@@ -85,7 +85,7 @@ void RenderTargetExample::Init( )
     presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::ShaderResource ) );
     presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::ShaderResource ) );
     presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::ShaderResource ) );
-    presentNode.Dependencies.emplace_back("Deferred" );
+    presentNode.Dependencies.emplace_back( "Deferred" );
     presentNode.Execute = [ this ]( const uint32_t frame, ICommandList *commandList, ITextureResource *renderTarget )
     {
         RenderingAttachmentDesc quadAttachmentDesc{ };

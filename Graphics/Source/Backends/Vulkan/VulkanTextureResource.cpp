@@ -153,7 +153,12 @@ VulkanTextureResource::VulkanTextureResource( VkImage const &image, VkImageView 
                                               const TextureDesc &desc ) :
     m_desc( desc ), m_image( image ), m_imageViews( { imageView } ), m_vkFormat( format ), m_aspect( imageAspect )
 {
-    m_isExternal = true;
+    m_width        = desc.Width;
+    m_height       = desc.Height;
+    m_depth        = desc.Depth;
+    m_format       = desc.Format;
+    m_initialState = desc.InitialState;
+    m_isExternal   = true;
 }
 
 // Todo transition all mip levels

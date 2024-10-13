@@ -30,14 +30,14 @@ PerDrawBinding::PerDrawBinding( ILogicalDevice *device, IRootSignature *rootSign
     bindGroupDesc.RegisterSpace = RegisterSpace;
     bindGroupDesc.RootSignature = rootSignature;
 
-    m_bindGroup = device->CreateResourceBindGroup( bindGroupDesc );
+    m_bindGroup = std::unique_ptr<IResourceBindGroup>( device->CreateResourceBindGroup( bindGroupDesc ) );
 
     BufferDesc modelBufferDesc{ };
     modelBufferDesc.HeapType   = HeapType::CPU_GPU;
     modelBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
     modelBufferDesc.NumBytes   = sizeof( XMFLOAT4X4 );
     modelBufferDesc.DebugName  = "modelMatrixBuffer";
-    m_modelMatrixBuffer        = device->CreateBufferResource( modelBufferDesc );
+    m_modelMatrixBuffer        = std::unique_ptr<IBufferResource>( device->CreateBufferResource( modelBufferDesc ) );
     m_modelMatrixMappedData    = m_modelMatrixBuffer->MapMemory( );
 
     m_bindGroup->Update( UpdateDesc( RegisterSpace ).Cbv( 0, m_modelMatrixBuffer.get( ) ) );

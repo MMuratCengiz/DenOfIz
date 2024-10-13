@@ -36,7 +36,7 @@ namespace DenOfIz
     public:
         PerFrameBinding( ILogicalDevice *device, IRootSignature *rootSignature );
         ~PerFrameBinding( );
-        void                              Update( Camera* camera, float deltaTime );
+        void                              Update( const Camera* camera, float deltaTime ) const;
         [[nodiscard]] IResourceBindGroup *BindGroup( ) const;
     };
 } // namespace DenOfIz

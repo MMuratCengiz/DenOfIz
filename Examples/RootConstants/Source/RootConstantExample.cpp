@@ -23,7 +23,7 @@ using namespace DenOfIz;
 void RootConstantExample::Init( )
 {
     m_quadPipeline      = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice, "Assets/Shaders/PushConstantColor.ps.hlsl" );
-    m_resourceBindGroup = m_logicalDevice->CreateResourceBindGroup( RootConstantBindGroupDesc( m_quadPipeline->RootSignature( ) ) );
+    m_resourceBindGroup = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( RootConstantBindGroupDesc( m_quadPipeline->RootSignature( ) ) ) );
 
     RenderGraphDesc renderGraphDesc{ };
     renderGraphDesc.GraphicsApi   = m_graphicsApi;

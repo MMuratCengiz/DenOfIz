@@ -27,11 +27,11 @@ RenderGraph::RenderGraph( const RenderGraphDesc &desc ) : m_presentNode( { } ), 
     for ( uint8_t i = 0; i < m_desc.NumFrames; ++i )
     {
         PresentContext presentContext{ };
-        presentContext.ImageReadySemaphore    = m_desc.LogicalDevice->CreateSemaphore( );
-        presentContext.ImageRenderedSemaphore = m_desc.LogicalDevice->CreateSemaphore( );
+        presentContext.ImageReadySemaphore    = std::unique_ptr<ISemaphore>( m_desc.LogicalDevice->CreateSemaphore( ) );
+        presentContext.ImageRenderedSemaphore = std::unique_ptr<ISemaphore>( m_desc.LogicalDevice->CreateSemaphore( ) );
         m_presentContexts.push_back( std::move( presentContext ) );
 
-        m_frameFences[ i ] = desc.LogicalDevice->CreateFence( );
+        m_frameFences[ i ] = std::unique_ptr<IFence>( desc.LogicalDevice->CreateFence( ) );
     }
 
     CommandListPoolDesc poolDesc{ };
@@ -39,7 +39,7 @@ RenderGraph::RenderGraph( const RenderGraphDesc &desc ) : m_presentNode( { } ), 
     m_commandListPools.clear( );
     for ( int i = 0; i < m_desc.NumFrames; ++i )
     {
-        m_commandListPools.push_back( m_desc.LogicalDevice->CreateCommandListPool( poolDesc ) );
+        m_commandListPools.push_back( std::unique_ptr<ICommandListPool>( m_desc.LogicalDevice->CreateCommandListPool( poolDesc ) ) );
         m_presentContexts[ i ].PresentCommandList = m_commandListPools[ i ]->GetCommandLists( )[ 0 ];
     }
 

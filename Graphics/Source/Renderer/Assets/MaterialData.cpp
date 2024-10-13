@@ -23,30 +23,30 @@ using namespace DenOfIz;
 MaterialData::MaterialData( const MaterialDesc &desc )
 {
 
-    m_sampler = desc.Device->CreateSampler( SamplerDesc{ } );
+    m_sampler = std::unique_ptr<ISampler>( desc.Device->CreateSampler( SamplerDesc{ } ) );
     if ( !desc.AlbedoTexture.empty( ) )
     {
-        m_albedoTexture = desc.BatchCopy->CreateAndLoadTexture( desc.AlbedoTexture );
+        m_albedoTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.AlbedoTexture ) );
     }
     if ( !desc.NormalTexture.empty( ) )
     {
-        m_normalTexture = desc.BatchCopy->CreateAndLoadTexture( desc.NormalTexture );
+        m_normalTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.NormalTexture ) );
     }
     if ( !desc.HeightTexture.empty( ) )
     {
-        m_heightTexture = desc.BatchCopy->CreateAndLoadTexture( desc.HeightTexture );
+        m_heightTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.HeightTexture ) );
     }
     if ( !desc.MetallicTexture.empty( ) )
     {
-        m_metallicTexture = desc.BatchCopy->CreateAndLoadTexture( desc.MetallicTexture );
+        m_metallicTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.MetallicTexture ) );
     }
     if ( !desc.RoughnessTexture.empty( ) )
     {
-        m_roughnessTexture = desc.BatchCopy->CreateAndLoadTexture( desc.RoughnessTexture );
+        m_roughnessTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.RoughnessTexture ) );
     }
     if ( !desc.AoTexture.empty( ) )
     {
-        m_aoTexture = desc.BatchCopy->CreateAndLoadTexture( desc.AoTexture );
+        m_aoTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.AoTexture ) );
     }
 }
 

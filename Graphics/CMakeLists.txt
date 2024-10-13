@@ -42,8 +42,6 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Renderer/Assets/MaterialData.cpp
         Source/Renderer/Common/CommandListRing.cpp
         Source/Renderer/Graph/RenderGraph.cpp
-        Source/Renderer/ComputeTest.cpp
-        Source/Renderer/SimpleRenderer.cpp
 
         Source/Utilities/Utilities.cpp
         Source/Utilities/Time.cpp

@@ -32,11 +32,11 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
     pixelShaderDesc.Stage = ShaderStage::Pixel;
     shaders.push_back( pixelShaderDesc );
 
-    m_program              = graphicsApi->CreateShaderProgram( shaders );
+    m_program              = std::unique_ptr<ShaderProgram>( graphicsApi->CreateShaderProgram( shaders ) );
     auto programReflection = m_program->Reflect( );
 
-    m_rootSignature = logicalDevice->CreateRootSignature( programReflection.RootSignature );
-    m_inputLayout   = logicalDevice->CreateInputLayout( programReflection.InputLayout );
+    m_rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( programReflection.RootSignature ) );
+    m_inputLayout   = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( programReflection.InputLayout ) );
     PipelineDesc pipelineDesc{ };
     pipelineDesc.Rendering.RenderTargets.push_back( { .Format = Format::B8G8R8A8Unorm } );
     pipelineDesc.InputLayout   = m_inputLayout.get( );
@@ -44,7 +44,7 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
     pipelineDesc.ShaderProgram = m_program.get( );
     pipelineDesc.CullMode      = CullMode::BackFace;
 
-    m_pipeline = logicalDevice->CreatePipeline( pipelineDesc );
+    m_pipeline = std::unique_ptr<IPipeline>( logicalDevice->CreatePipeline( pipelineDesc ) );
 
     ResourceBindGroupDesc bindGroupDesc{ };
     bindGroupDesc.RootSignature = m_rootSignature.get( );
@@ -54,11 +54,11 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
         bindGroupDesc.RegisterSpace = resourceBinding.RegisterSpace;
         for ( uint32_t i = 0; i < 3; ++i )
         {
-            m_bindGroups.push_back( logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
+            m_bindGroups.push_back( std::unique_ptr<IResourceBindGroup>( logicalDevice->CreateResourceBindGroup( bindGroupDesc ) ) );
         }
     }
 
-    m_sampler = logicalDevice->CreateSampler( SamplerDesc{ } );
+    m_sampler = std::unique_ptr<ISampler>( logicalDevice->CreateSampler( SamplerDesc{ } ) );
 }
 
 IPipeline *QuadPipeline::Pipeline( ) const

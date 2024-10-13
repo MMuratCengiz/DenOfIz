@@ -55,9 +55,9 @@ namespace DenOfIz
         explicit GraphicsApi( const APIPreference &preference );
         ~        GraphicsApi( );
 
-        std::unique_ptr<ILogicalDevice> CreateLogicalDevice( ) const;
-        std::unique_ptr<ILogicalDevice> CreateAndLoadOptimalLogicalDevice( ) const;
-        std::unique_ptr<ShaderProgram>  CreateShaderProgram( const std::vector<ShaderDesc> &shaders ) const;
+        ILogicalDevice *CreateLogicalDevice( ) const;
+        ILogicalDevice *CreateAndLoadOptimalLogicalDevice( ) const;
+        ShaderProgram  *CreateShaderProgram( const std::vector<ShaderDesc> &shaders ) const;
 
         static void ReportLiveObjects( );
 

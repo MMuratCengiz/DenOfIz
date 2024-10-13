@@ -28,7 +28,7 @@ NullTexture::NullTexture( ILogicalDevice *device )
     desc.Format       = Format::R8G8B8A8Unorm;
     desc.DebugName    = "NullTexture";
     desc.Descriptor   = ResourceDescriptor::Texture;
-    m_texture         = device->CreateTextureResource( desc );
+    m_texture         = std::unique_ptr<ITextureResource>( device->CreateTextureResource( desc ) );
 }
 
 ITextureResource *NullTexture::Texture( ) const

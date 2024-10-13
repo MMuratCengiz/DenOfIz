@@ -33,7 +33,7 @@ namespace DenOfIz
     };
     static ResourceBindGroupDesc RootConstantBindGroupDesc( IRootSignature *rootSignature )
     {
-        return { rootSignature, 99 };
+        return { rootSignature, DZConfiguration::Instance( ).RootConstantRegisterSpace };
     }
 
     template <typename T>

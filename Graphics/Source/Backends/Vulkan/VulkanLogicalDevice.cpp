@@ -569,68 +569,57 @@ bool VulkanLogicalDevice::ValidateLayer( const std::string &layer ) const
     return false;
 }
 
-std::unique_ptr<ICommandListPool> VulkanLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &createInfo )
+ICommandListPool* VulkanLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &createInfo )
 {
-    auto *pool = new VulkanCommandPool( m_context.get( ), createInfo );
-    return std::unique_ptr<ICommandListPool>( pool );
+    return new VulkanCommandPool( m_context.get( ), createInfo );
 }
 
-std::unique_ptr<IPipeline> VulkanLogicalDevice::CreatePipeline( const PipelineDesc &createInfo )
+IPipeline* VulkanLogicalDevice::CreatePipeline( const PipelineDesc &createInfo )
 {
-    auto *pipeline = new VulkanPipeline( m_context.get( ), createInfo );
-    return std::unique_ptr<IPipeline>( pipeline );
+    return new VulkanPipeline( m_context.get( ), createInfo );
 }
 
-std::unique_ptr<ISwapChain> VulkanLogicalDevice::CreateSwapChain( const SwapChainDesc &createInfo )
+ISwapChain* VulkanLogicalDevice::CreateSwapChain( const SwapChainDesc &createInfo )
 {
-    auto *swapChain = new VulkanSwapChain( m_context.get( ), createInfo );
-    return std::unique_ptr<ISwapChain>( swapChain );
+    return new VulkanSwapChain( m_context.get( ), createInfo );
 }
 
-std::unique_ptr<IRootSignature> VulkanLogicalDevice::CreateRootSignature( const RootSignatureDesc &createInfo )
+IRootSignature* VulkanLogicalDevice::CreateRootSignature( const RootSignatureDesc &createInfo )
 {
-    auto *rootSignature = new VulkanRootSignature( m_context.get( ), createInfo );
-    return std::unique_ptr<IRootSignature>( rootSignature );
+    return new VulkanRootSignature( m_context.get( ), createInfo );
 }
 
-std::unique_ptr<IInputLayout> VulkanLogicalDevice::CreateInputLayout( const InputLayoutDesc &createInfo )
+IInputLayout* VulkanLogicalDevice::CreateInputLayout( const InputLayoutDesc &createInfo )
 {
-    auto *inputLayout = new VulkanInputLayout( createInfo );
-    return std::unique_ptr<IInputLayout>( inputLayout );
+    return new VulkanInputLayout( createInfo );
 }
 
-std::unique_ptr<IResourceBindGroup> VulkanLogicalDevice::CreateResourceBindGroup( const ResourceBindGroupDesc &createInfo )
+IResourceBindGroup* VulkanLogicalDevice::CreateResourceBindGroup( const ResourceBindGroupDesc &createInfo )
 {
-    auto *descriptorTable = new VulkanResourceBindGroup( m_context.get( ), createInfo );
-    return std::unique_ptr<IResourceBindGroup>( descriptorTable );
+    return new VulkanResourceBindGroup( m_context.get( ), createInfo );
 }
 
-std::unique_ptr<IBufferResource> VulkanLogicalDevice::CreateBufferResource( const BufferDesc &createInfo )
+IBufferResource* VulkanLogicalDevice::CreateBufferResource( const BufferDesc &createInfo )
 {
-    auto *bufferResource = new VulkanBufferResource( m_context.get( ), createInfo );
-    return std::unique_ptr<IBufferResource>( bufferResource );
+    return new VulkanBufferResource( m_context.get( ), createInfo );
 }
 
-std::unique_ptr<ITextureResource> VulkanLogicalDevice::CreateTextureResource( const TextureDesc &createInfo )
+ITextureResource* VulkanLogicalDevice::CreateTextureResource( const TextureDesc &createInfo )
 {
-    auto *imageResource = new VulkanTextureResource( m_context.get( ), createInfo );
-    return std::unique_ptr<ITextureResource>( imageResource );
+    return new VulkanTextureResource( m_context.get( ), createInfo );
 }
 
-std::unique_ptr<IFence> VulkanLogicalDevice::CreateFence( )
+IFence* VulkanLogicalDevice::CreateFence( )
 {
-    auto *fence = new VulkanFence( m_context.get( ) );
-    return std::unique_ptr<IFence>( fence );
+    return new VulkanFence( m_context.get( ) );
 }
 
-std::unique_ptr<ISemaphore> VulkanLogicalDevice::CreateSemaphore( )
+ISemaphore* VulkanLogicalDevice::CreateSemaphore( )
 {
-    auto *semaphore = new VulkanSemaphore( m_context.get( ) );
-    return std::unique_ptr<ISemaphore>( semaphore );
+    return new VulkanSemaphore( m_context.get( ) );
 }
 
-std::unique_ptr<ISampler> VulkanLogicalDevice::CreateSampler( const SamplerDesc &createInfo )
+ISampler* VulkanLogicalDevice::CreateSampler( const SamplerDesc &createInfo )
 {
-    auto *sampler = new VulkanSampler( m_context.get( ), createInfo );
-    return std::unique_ptr<ISampler>( sampler );
+    return new VulkanSampler( m_context.get( ), createInfo );
 }
