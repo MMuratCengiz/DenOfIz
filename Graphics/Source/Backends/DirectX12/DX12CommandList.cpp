@@ -112,7 +112,7 @@ void DX12CommandList::Execute( const ExecuteDesc &executeDesc )
     }
 }
 
-void DX12CommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks )
+void DX12CommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, Semaphores waitOnLocks )
 {
     DZ_NOT_NULL( swapChain );
 
@@ -412,11 +412,15 @@ void DX12CommandList::CompatibilityPipelineBarrier( const PipelineBarrierDesc &b
 {
     std::vector<D3D12_RESOURCE_BARRIER> resourceBarriers;
 
-    for ( const TextureBarrierDesc &imageBarrier : barrier.GetTextureBarriers( ) )
+    const TextureBarriers &textureBarriers = barrier.GetTextureBarriers( );
+    const BufferBarriers  &bufferBarriers  = barrier.GetBufferBarriers( );
+
+    for ( int i = 0; i < textureBarriers.NumElements; i++ )
     {
-        ID3D12Resource             *pResource       = reinterpret_cast<DX12TextureResource *>( imageBarrier.Resource )->GetResource( );
-        const D3D12_RESOURCE_STATES before          = DX12EnumConverter::ConvertResourceState( imageBarrier.OldState );
-        const D3D12_RESOURCE_STATES after           = DX12EnumConverter::ConvertResourceState( imageBarrier.NewState );
+        const TextureBarrierDesc   &textureBarrier  = textureBarriers.Array[ i ];
+        ID3D12Resource             *pResource       = reinterpret_cast<DX12TextureResource *>( textureBarrier.Resource )->GetResource( );
+        const D3D12_RESOURCE_STATES before          = DX12EnumConverter::ConvertResourceState( textureBarrier.OldState );
+        const D3D12_RESOURCE_STATES after           = DX12EnumConverter::ConvertResourceState( textureBarrier.NewState );
         D3D12_RESOURCE_BARRIER      resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition( pResource, before, after );
 
         if ( before != after )
@@ -425,8 +429,9 @@ void DX12CommandList::CompatibilityPipelineBarrier( const PipelineBarrierDesc &b
         }
     }
 
-    for ( const BufferBarrierDesc &bufferBarrier : barrier.GetBufferBarriers( ) )
+    for ( int i = 0; i < bufferBarriers.NumElements; i++ )
     {
+        const BufferBarrierDesc    &bufferBarrier   = bufferBarriers.Array[ i ];
         ID3D12Resource             *pResource       = reinterpret_cast<DX12BufferResource *>( bufferBarrier.Resource )->GetResource( );
         const D3D12_RESOURCE_STATES before          = DX12EnumConverter::ConvertResourceState( bufferBarrier.OldState );
         const D3D12_RESOURCE_STATES after           = DX12EnumConverter::ConvertResourceState( bufferBarrier.NewState );
@@ -451,9 +456,13 @@ void DX12CommandList::EnhancedPipelineBarrier( const PipelineBarrierDesc &barrie
     std::vector<D3D12_BUFFER_BARRIER>  dxBufferBarriers  = { };
     std::vector<D3D12_TEXTURE_BARRIER> dxTextureBarriers = { };
 
-    for ( const TextureBarrierDesc &textureBarrier : barrier.GetTextureBarriers( ) )
+    const TextureBarriers &textureBarriers = barrier.GetTextureBarriers( );
+    const BufferBarriers  &bufferBarriers  = barrier.GetBufferBarriers( );
+
+    for ( int i = 0; i < textureBarriers.NumElements; i++ )
     {
-        ID3D12Resource *pResource = reinterpret_cast<DX12TextureResource *>( textureBarrier.Resource )->GetResource( );
+        const TextureBarrierDesc &textureBarrier = textureBarriers.Array[ i ];
+        ID3D12Resource           *pResource      = reinterpret_cast<DX12TextureResource *>( textureBarrier.Resource )->GetResource( );
 
         D3D12_TEXTURE_BARRIER dxTextureBarrier = dxTextureBarriers.emplace_back( D3D12_TEXTURE_BARRIER{ } );
         dxTextureBarrier.pResource             = pResource;
@@ -469,9 +478,10 @@ void DX12CommandList::EnhancedPipelineBarrier( const PipelineBarrierDesc &barrie
         }
     }
 
-    for ( const BufferBarrierDesc &bufferBarrier : barrier.GetBufferBarriers( ) )
+    for ( int i = 0; i < bufferBarriers.NumElements; i++ )
     {
-        ID3D12Resource *pResource = reinterpret_cast<DX12TextureResource *>( bufferBarrier.Resource )->GetResource( );
+        const BufferBarrierDesc &bufferBarrier = bufferBarriers.Array[ i ];
+        ID3D12Resource          *pResource     = reinterpret_cast<DX12TextureResource *>( bufferBarrier.Resource )->GetResource( );
 
         D3D12_BUFFER_BARRIER dxBufferBarrier = dxBufferBarriers.emplace_back( D3D12_BUFFER_BARRIER{ } );
         dxBufferBarrier.pResource            = pResource;

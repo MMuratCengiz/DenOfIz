@@ -107,7 +107,7 @@ id<MTLDrawable> MetalSwapChain::Drawable( )
     return m_currentDrawable;
 }
 
-void MetalSwapChain::Present( std::vector<ISemaphore *> waitOnSemaphores )
+void MetalSwapChain::Present( Semaphores waitOnSemaphores )
 {
     @autoreleasepool
     {

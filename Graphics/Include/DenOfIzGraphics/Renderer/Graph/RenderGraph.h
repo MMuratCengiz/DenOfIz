@@ -34,7 +34,6 @@ namespace DenOfIz
 
     struct NodeResourceUsageDesc
     {
-    private:
         explicit NodeResourceUsageDesc( IBufferResource *resource ) : BufferResource( resource )
         {
         }
@@ -42,7 +41,8 @@ namespace DenOfIz
         {
         }
 
-    public:
+        NodeResourceUsageDesc( ) = default;
+
         uint32_t              FrameIndex = 0;
         ResourceState         State      = ResourceState::Undefined;
         NodeResourceUsageType Type       = NodeResourceUsageType::Buffer;
@@ -111,18 +111,32 @@ namespace DenOfIz
     } // namespace RenderGraphInternal
     using namespace RenderGraphInternal;
 
+#define DZ_MAX_DEPENDENCIES 16
+    struct NodeDependencies
+    {
+        size_t NumElements = 0;
+        char  *Array[ DZ_MAX_DEPENDENCIES ];
+    };
+
+#define DZ_MAX_REQUIRED_RESOURCE_STATES 16
+    struct RequiredResourceStates
+    {
+        size_t                NumElements = 0;
+        NodeResourceUsageDesc Array[ DZ_MAX_REQUIRED_RESOURCE_STATES ];
+    };
+
     struct NodeDesc
     {
         std::string                                     Name;
-        std::vector<std::string>                        Dependencies;
-        std::vector<NodeResourceUsageDesc>              RequiredResourceStates;
+        NodeDependencies                                Dependencies;
+        RequiredResourceStates                          RequiredStates;
         std::function<void( uint32_t, ICommandList * )> Execute;
     };
 
     struct PresentNodeDesc
     {
-        std::vector<std::string>                                            Dependencies;
-        std::vector<NodeResourceUsageDesc>                                  RequiredResourceStates;
+        NodeDependencies                                                    Dependencies;
+        RequiredResourceStates                                              RequiredStates;
         ISwapChain                                                         *SwapChain;
         std::function<void( uint32_t, ICommandList *, ITextureResource * )> Execute;
     };
@@ -169,7 +183,7 @@ namespace DenOfIz
         ISemaphore *GetOrCreateSemaphore( uint32_t &index );
         void        InitAllNodes( );
         void        ConfigureGraph( );
-        void        ValidateDependencies( const std::unordered_set<std::string> &allNodes, const std::vector<std::string> &dependencies ) const;
+        void        ValidateDependencies( const std::unordered_set<std::string> &allNodes, const NodeDependencies &dependencies ) const;
         void        ValidateNodes( ) const;
         void        IssueBarriers( ICommandList *commandList, const std::vector<NodeResourceUsageDesc> &resourceUsages );
     };

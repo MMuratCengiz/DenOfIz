@@ -29,8 +29,9 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
         AddResourceBinding( binding );
     }
 
-    for ( const StaticSamplerDesc &staticSamplerDesc : m_desc.StaticSamplers )
+    for ( int i = 0; i < m_desc.StaticSamplers.NumElements; ++i )
     {
+        const StaticSamplerDesc &staticSamplerDesc = m_desc.StaticSamplers.Array[ i ];
         AddStaticSampler( staticSamplerDesc );
     }
 

@@ -35,8 +35,9 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
         AddResourceBinding( desc.ResourceBindings.Array[ i ] );
     }
 
-    for ( const StaticSamplerDesc &staticSamplerDesc : desc.StaticSamplers )
+    for ( int i = 0; i < m_desc.StaticSamplers.NumElements; ++i )
     {
+        const StaticSamplerDesc &staticSamplerDesc = m_desc.StaticSamplers.Array[ i ];
         AddStaticSampler( staticSamplerDesc );
     }
 

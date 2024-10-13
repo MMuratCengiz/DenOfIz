@@ -58,9 +58,9 @@ void RenderTargetExample::Init( )
 
     NodeDesc deferredNode{ };
     deferredNode.Name = "Deferred";
-    deferredNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::RenderTarget ) );
-    deferredNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::RenderTarget ) );
-    deferredNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::RenderTarget ) );
+    deferredNode.RequiredStates.push_back( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::RenderTarget ) );
+    deferredNode.RequiredStates.push_back( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::RenderTarget ) );
+    deferredNode.RequiredStates.push_back( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::RenderTarget ) );
     deferredNode.Execute = [ this ]( const uint32_t frame, ICommandList *commandList )
     {
         RenderingAttachmentDesc renderingAttachmentDesc{ };
@@ -83,9 +83,9 @@ void RenderTargetExample::Init( )
 
     PresentNodeDesc presentNode{ };
     presentNode.SwapChain = m_swapChain.get( );
-    presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::ShaderResource ) );
-    presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::ShaderResource ) );
-    presentNode.RequiredResourceStates.push_back( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::ShaderResource ) );
+    presentNode.RequiredStates.push_back( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::ShaderResource ) );
+    presentNode.RequiredStates.push_back( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::ShaderResource ) );
+    presentNode.RequiredStates.push_back( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::ShaderResource ) );
     presentNode.Dependencies.emplace_back( "Deferred" );
     presentNode.Execute = [ this ]( const uint32_t frame, ICommandList *commandList, ITextureResource *renderTarget )
     {

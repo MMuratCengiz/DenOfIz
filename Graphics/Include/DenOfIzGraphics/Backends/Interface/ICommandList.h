@@ -146,7 +146,7 @@ namespace DenOfIz
         virtual void BeginRendering( const RenderingDesc &renderingDesc )                                                                                       = 0;
         virtual void EndRendering( )                                                                                                                            = 0;
         virtual void Execute( const ExecuteDesc &executeDesc )                                                                                                  = 0;
-        virtual void Present( ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks )                                               = 0;
+        virtual void Present( ISwapChain *swapChain, uint32_t imageIndex, Semaphores waitOnLocks )                                               = 0;
         virtual void BindPipeline( IPipeline *pipeline )                                                                                                        = 0;
         virtual void BindVertexBuffer( IBufferResource *buffer )                                                                                                = 0;
         virtual void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType )                                                                     = 0;

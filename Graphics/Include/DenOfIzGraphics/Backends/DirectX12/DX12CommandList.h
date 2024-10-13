@@ -65,7 +65,7 @@ namespace DenOfIz
         void BeginRendering( const RenderingDesc &renderingDesc ) override;
         void EndRendering( ) override;
         void Execute( const ExecuteDesc &executeDesc ) override;
-        void Present( ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks ) override;
+        void Present( ISwapChain *swapChain, uint32_t imageIndex, Semaphores waitOnLocks ) override;
         void BindPipeline( IPipeline *pipeline ) override;
         void BindVertexBuffer( IBufferResource *buffer ) override;
         void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType ) override;

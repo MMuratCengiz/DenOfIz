@@ -360,17 +360,17 @@ void VulkanCommandList::Dispatch( const uint32_t groupCountX, const uint32_t gro
     vkCmdDispatch( m_commandBuffer, groupCountX, groupCountY, groupCountZ );
 }
 
-void VulkanCommandList::Present( ISwapChain *swapChain, const uint32_t imageIndex, const std::vector<ISemaphore *> waitOnLocks )
+void VulkanCommandList::Present( ISwapChain *swapChain, const uint32_t imageIndex, const Semaphores waitOnLocks )
 {
     DZ_ASSERTM( m_desc.QueueType == QueueType::Graphics, "Present can only be called on graphics queue." );
 
     VkPresentInfoKHR presentInfo{ };
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-    std::vector<VkSemaphore> vkWaitOnSemaphores( waitOnLocks.size( ) );
-    for ( int i = 0; i < waitOnLocks.size( ); i++ )
+    std::vector<VkSemaphore> vkWaitOnSemaphores( waitOnLocks.NumElements );
+    for ( int i = 0; i < waitOnLocks.NumElements; i++ )
     {
-        vkWaitOnSemaphores[ i ] = reinterpret_cast<VulkanSemaphore *>( waitOnLocks[ i ] )->GetSemaphore( );
+        vkWaitOnSemaphores[ i ] = reinterpret_cast<VulkanSemaphore *>( waitOnLocks.Array[ i ] )->GetSemaphore( );
     }
 
     presentInfo.waitSemaphoreCount = vkWaitOnSemaphores.size( );

@@ -53,26 +53,30 @@ void VulkanPipelineBarrierHelper::ExecutePipelineBarrier( const VulkanContext *c
     VkAccessFlags srcAccessFlags = { };
     VkAccessFlags dstAccessFlags = { };
 
-    std::vector<VkImageMemoryBarrier> imageBarriers;
-    for ( const TextureBarrierDesc &imageBarrier : barrier.GetTextureBarriers( ) )
+    std::vector<VkImageMemoryBarrier> vkImageBarriers;
+    const TextureBarriers            &textureBarriers = barrier.GetTextureBarriers( );
+    for ( int i = 0; i < textureBarriers.NumElements; i++ )
     {
-        VkImageMemoryBarrier imageMemoryBarrier = CreateImageBarrier( imageBarrier, srcAccessFlags, dstAccessFlags );
-        imageBarriers.push_back( imageMemoryBarrier );
+        const TextureBarrierDesc &imageBarrier       = textureBarriers.Array[ i ];
+        VkImageMemoryBarrier      imageMemoryBarrier = CreateImageBarrier( imageBarrier, srcAccessFlags, dstAccessFlags );
+        vkImageBarriers.push_back( imageMemoryBarrier );
     }
 
-    std::vector<VkBufferMemoryBarrier> bufferBarriers;
-    for ( const BufferBarrierDesc &bufferBarrier : barrier.GetBufferBarriers( ) )
+    std::vector<VkBufferMemoryBarrier> vkBufferBarriers;
+    const BufferBarriers              &bufferBarriers = barrier.GetBufferBarriers( );
+    for ( int i = 0; i < bufferBarriers.NumElements; i++ )
     {
-        VkBufferMemoryBarrier bufferMemoryBarrier = CreateBufferBarrier( bufferBarrier, srcAccessFlags, dstAccessFlags );
-        bufferBarriers.push_back( bufferMemoryBarrier );
+        const BufferBarrierDesc &bufferBarrier       = bufferBarriers.Array[ i ];
+        VkBufferMemoryBarrier    bufferMemoryBarrier = CreateBufferBarrier( bufferBarrier, srcAccessFlags, dstAccessFlags );
+        vkBufferBarriers.push_back( bufferMemoryBarrier );
     }
     const std::vector<VkMemoryBarrier> memoryBarriers; // Todo
 
     const VkPipelineStageFlags srcStageMask = GetPipelineStageFlags( context, commandQueueType, srcAccessFlags );
     const VkPipelineStageFlags dstStageMask = GetPipelineStageFlags( context, commandQueueType, dstAccessFlags );
 
-    vkCmdPipelineBarrier( commandBuffer, srcStageMask, dstStageMask, VkDependencyFlags{ }, memoryBarriers.size( ), memoryBarriers.data( ), bufferBarriers.size( ),
-                          bufferBarriers.data( ), imageBarriers.size( ), imageBarriers.data( ) );
+    vkCmdPipelineBarrier( commandBuffer, srcStageMask, dstStageMask, VkDependencyFlags{ }, memoryBarriers.size( ), memoryBarriers.data( ), vkBufferBarriers.size( ),
+                          vkBufferBarriers.data( ), vkImageBarriers.size( ), vkImageBarriers.data( ) );
 }
 
 VkImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier( const TextureBarrierDesc &barrier, VkAccessFlags &srcAccessFlags, VkAccessFlags &dstAccessFlags )

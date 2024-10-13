@@ -88,7 +88,10 @@ void CommandListRing::ExecuteAndPresent( ICommandList *commandList, ISwapChain *
         executeDesc.NotifySemaphores.Array[ 0 ]  = m_imageRenderedSemaphores[ m_currentFrame ].get( );
     }
     commandList->Execute( executeDesc );
-    commandList->Present( swapChain, image, { m_imageRenderedSemaphores[ m_currentFrame ].get( ) } );
+    Semaphores semaphores{ };
+    semaphores.NumElements = 1;
+    semaphores.Array[ 0 ]  = m_imageReadySemaphores[ m_currentFrame ].get( );
+    commandList->Present( swapChain, image, semaphores );
 }
 
 /// Execute the last commandList in the pool of the current frame, this is different as it will notify the built-in Sync object.

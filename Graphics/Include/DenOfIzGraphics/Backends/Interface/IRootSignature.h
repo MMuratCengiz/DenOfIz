@@ -119,13 +119,20 @@ namespace DenOfIz
         ResourceBindingDesc Array[ DZ_MAX_RESOURCE_BINDINGS ];
     };
 
+#define DZ_MAX_STATIC_SAMPLERS 32
+    struct StaticSamplers
+    {
+        size_t            NumElements = 0;
+        StaticSamplerDesc Array[ DZ_MAX_STATIC_SAMPLERS ];
+    };
+
     struct RootSignatureDesc
     {
         RootSignatureType Type;
         // The order of the bindings must match the order of the shader inputs!!! TODO might need to be fixed but this is normal for DX12
-        ResourceBindings                     ResourceBindings;
-        const std::vector<StaticSamplerDesc> StaticSamplers; // Not supported yet due to lack of support in Metal
-        RootConstantBindings                 RootConstants;
+        ResourceBindings     ResourceBindings;
+        StaticSamplers       StaticSamplers; // Not supported yet due to lack of support in Metal
+        RootConstantBindings RootConstants;
     };
 
     class IRootSignature

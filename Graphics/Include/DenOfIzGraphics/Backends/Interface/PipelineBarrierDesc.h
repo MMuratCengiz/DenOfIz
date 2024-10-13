@@ -55,42 +55,61 @@ namespace DenOfIz
         BitSet<ResourceState> NewState;
     };
 
+#define DZ_MAX_BARRIERS 16
+    struct BufferBarriers
+    {
+        size_t            NumElements = 0;
+        BufferBarrierDesc Array[ DZ_MAX_BARRIERS ];
+    };
+
+    struct TextureBarriers
+    {
+        size_t             NumElements = 0;
+        TextureBarrierDesc Array[ DZ_MAX_BARRIERS ];
+    };
+
+    struct MemoryBarriers
+    {
+        size_t            NumElements = 0;
+        MemoryBarrierDesc Array[ DZ_MAX_BARRIERS ];
+    };
+
     class PipelineBarrierDesc
     {
-        std::vector<TextureBarrierDesc> m_textureBarriers;
-        std::vector<BufferBarrierDesc>  m_bufferBarriers;
-        std::vector<MemoryBarrierDesc>  m_memoryBarriers;
+        TextureBarriers m_textureBarriers;
+        BufferBarriers  m_bufferBarriers;
+        MemoryBarriers  m_memoryBarriers;
 
     public:
         PipelineBarrierDesc &TextureBarrier( const TextureBarrierDesc &barrier )
         {
-            m_textureBarriers.push_back( barrier );
+            m_textureBarriers.Array[ m_textureBarriers.NumElements++ ] = barrier;
             return *this;
         }
 
         PipelineBarrierDesc &BufferBarrier( const BufferBarrierDesc barrier )
         {
-            m_bufferBarriers.push_back( barrier );
+            m_bufferBarriers.Array[ m_textureBarriers.NumElements++ ] = barrier;
             return *this;
         }
 
         PipelineBarrierDesc &MemoryBarrier( const MemoryBarrierDesc barrier )
         {
-            m_memoryBarriers.push_back( barrier );
+            m_memoryBarriers.Array[ m_textureBarriers.NumElements++ ] = barrier;
             return *this;
         }
 
-        [[nodiscard]] const std::vector<TextureBarrierDesc> &GetTextureBarriers( ) const
+        [[nodiscard]] const TextureBarriers &GetTextureBarriers( ) const
         {
             return m_textureBarriers;
         }
 
-        [[nodiscard]] const std::vector<BufferBarrierDesc> &GetBufferBarriers( ) const
+        [[nodiscard]] const BufferBarriers &GetBufferBarriers( ) const
         {
             return m_bufferBarriers;
         }
 
-        [[nodiscard]] const std::vector<MemoryBarrierDesc> &GetMemoryBarriers( ) const
+        [[nodiscard]] const MemoryBarriers &GetMemoryBarriers( ) const
         {
             return m_memoryBarriers;
         }

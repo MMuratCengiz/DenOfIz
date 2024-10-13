@@ -139,7 +139,7 @@ void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
     }
 }
 
-void MetalCommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, std::vector<ISemaphore *> waitOnLocks )
+void MetalCommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, Semaphores waitOnLocks )
 {
     MetalSwapChain *metalSwapChain = static_cast<MetalSwapChain *>( swapChain );
     metalSwapChain->Present( waitOnLocks );

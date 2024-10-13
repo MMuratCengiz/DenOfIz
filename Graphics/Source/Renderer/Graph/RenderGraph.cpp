@@ -69,24 +69,25 @@ void RenderGraph::AddNode( const NodeDesc &desc )
 
     m_nodeDescriptions.push_back( desc );
 
-    for ( const NodeResourceUsageDesc &requiredResourceState : desc.RequiredResourceStates )
+    for ( int stateIndex = 0; stateIndex < m_presentNode.RequiredStates.NumElements; stateIndex++ )
     {
-        if ( requiredResourceState.Type == NodeResourceUsageType::Texture )
+        auto &resourceState = m_presentNode.RequiredStates.Array[ stateIndex ];
+        if ( resourceState.Type == NodeResourceUsageType::Texture )
         {
-            if ( requiredResourceState.TextureResource == nullptr )
+            if ( resourceState.TextureResource == nullptr )
             {
                 LOG( FATAL ) << "Texture resource must be valid.";
             }
 
-            m_resourceLocking.TextureStates.emplace( requiredResourceState.TextureResource, requiredResourceState.TextureResource->InitialState( ) );
+            m_resourceLocking.TextureStates.emplace( resourceState.TextureResource, resourceState.TextureResource->InitialState( ) );
         }
         else
         {
-            if ( requiredResourceState.BufferResource == nullptr )
+            if ( resourceState.BufferResource == nullptr )
             {
                 LOG( FATAL ) << "Buffer resource must be valid.";
             }
-            m_resourceLocking.BufferStates.emplace( requiredResourceState.BufferResource, requiredResourceState.BufferResource->InitialState( ) );
+            m_resourceLocking.BufferStates.emplace( resourceState.BufferResource, resourceState.BufferResource->InitialState( ) );
         }
     }
 }
@@ -122,8 +123,9 @@ void RenderGraph::InitAllNodes( )
             auto newContext         = std::make_unique<NodeExecutionContext>( );
             newContext->CommandList = m_commandListPools[ i ]->GetCommandLists( ).Array[ graphNode->Index + 1 ]; // +1 for the present node
             newContext->Execute     = node.Execute;
-            for ( auto &resourceState : node.RequiredResourceStates )
+            for ( int stateIndex = 0; stateIndex < m_presentNode.RequiredStates.NumElements; stateIndex++ )
             {
+                auto &resourceState = m_presentNode.RequiredStates.Array[ stateIndex ];
                 if ( resourceState.FrameIndex == i )
                 {
                     newContext->ResourceUsagesPerFrame.push_back( resourceState );
@@ -145,8 +147,10 @@ void RenderGraph::ConfigureGraph( )
         {
             auto &node                 = m_nodeDescriptions[ nodeIndex ];
             bool  isDependencyResolved = true;
-            for ( auto &dependency : node.Dependencies )
+
+            for ( int i = 0; i < node.Dependencies.NumElements; ++i )
             {
+                auto &dependency = node.Dependencies.Array[ i ];
                 if ( !processedNodes.contains( dependency ) )
                 {
                     isDependencyResolved = false;
@@ -159,14 +163,15 @@ void RenderGraph::ConfigureGraph( )
                 continue;
             }
 
-            for ( auto &dependency : node.Dependencies )
+            for ( int i = 0; i < node.Dependencies.NumElements; ++i )
             {
-                ISemaphore *semaphore = GetOrCreateSemaphore( freeSemaphoreIndex );
-                for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
+                auto       &dependency = node.Dependencies.Array[ i ];
+                ISemaphore *semaphore  = GetOrCreateSemaphore( freeSemaphoreIndex );
+                for ( uint8_t frameIndex = 0; frameIndex < m_desc.NumFrames; frameIndex++ )
                 {
-                    m_nodes[ nodeIndex ]->Contexts[ i ]->WaitOnSemaphores.Array[ 0 ] = semaphore;
-                    Semaphores &notifySemaphores                                     = m_nodes[ processedNodes[ dependency ] ]->Contexts[ i ]->NotifySemaphores;
-                    notifySemaphores.Array[ notifySemaphores.NumElements++ ]         = semaphore;
+                    m_nodes[ nodeIndex ]->Contexts[ frameIndex ]->WaitOnSemaphores.Array[ 0 ] = semaphore;
+                    Semaphores &notifySemaphores                                              = m_nodes[ processedNodes[ dependency ] ]->Contexts[ frameIndex ]->NotifySemaphores;
+                    notifySemaphores.Array[ notifySemaphores.NumElements++ ]                  = semaphore;
                 }
             }
             processedNodes[ node.Name ] = nodeIndex;
@@ -174,21 +179,23 @@ void RenderGraph::ConfigureGraph( )
     }
 
     DZ_RETURN_IF( !m_hasPresentNode );
-    for ( auto &dependency : m_presentNode.Dependencies )
+    for ( int i = 0; i < m_presentNode.Dependencies.NumElements; ++i )
     {
-        ISemaphore *semaphore = GetOrCreateSemaphore( freeSemaphoreIndex );
-        for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
+        auto       &dependency = m_presentNode.Dependencies.Array[ i ];
+        ISemaphore *semaphore  = GetOrCreateSemaphore( freeSemaphoreIndex );
+        for ( uint8_t frameIndex = 0; frameIndex < m_desc.NumFrames; frameIndex++ )
         {
-            m_presentContexts[ i ].PresentDependencySemaphores.push_back( semaphore );
-            Semaphores &semaphores                       = m_nodes[ processedNodes[ dependency ] ]->Contexts[ i ]->NotifySemaphores;
+            m_presentContexts[ frameIndex ].PresentDependencySemaphores.push_back( semaphore );
+            Semaphores &semaphores                       = m_nodes[ processedNodes[ dependency ] ]->Contexts[ frameIndex ]->NotifySemaphores;
             semaphores.Array[ semaphores.NumElements++ ] = semaphore;
         }
     }
 
     for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
     {
-        for ( auto &resourceState : m_presentNode.RequiredResourceStates )
+        for ( int stateIndex = 0; stateIndex < m_presentNode.RequiredStates.NumElements; stateIndex++ )
         {
+            auto &resourceState = m_presentNode.RequiredStates.Array[ stateIndex ];
             if ( resourceState.FrameIndex == i )
             {
                 m_presentContexts[ i ].ResourceUsagesPerFrame.push_back( resourceState );
@@ -235,8 +242,9 @@ void RenderGraph::BuildTaskflow( )
                                         } )
                                     .name( nodeName );
 
-            for ( auto &dependency : nodeDesc.Dependencies )
+            for ( int i = 0; i < m_presentNode.Dependencies.NumElements; ++i )
             {
+                auto &dependency = m_presentNode.Dependencies.Array[ i ];
                 tasks[ nodeName ].succeed( tasks[ dependency ] );
             }
             nodeIndex++;
@@ -267,11 +275,16 @@ void RenderGraph::BuildTaskflow( )
                 presentExecuteDesc.NotifySemaphores.NumElements = 1;
                 presentExecuteDesc.NotifySemaphores.Array[ 0 ]  = presentContext.ImageRenderedSemaphore.get( );
                 presentCommandList->Execute( presentExecuteDesc );
-                presentCommandList->Present( m_presentNode.SwapChain, image, { presentContext.ImageRenderedSemaphore.get( ) } );
+
+                Semaphores presentSemaphores;
+                presentSemaphores.NumElements = 1;
+                presentSemaphores.Array[ 0 ]  = presentContext.ImageRenderedSemaphore.get( );
+                presentCommandList->Present( m_presentNode.SwapChain, image, presentSemaphores );
             } );
 
-        for ( auto &dependency : m_presentNode.Dependencies )
+        for ( int i = 0; i < m_presentNode.Dependencies.NumElements; ++i )
         {
+            auto &dependency = m_presentNode.Dependencies.Array[ i ];
             presentTask.succeed( tasks[ dependency ] );
         }
     }
@@ -315,10 +328,11 @@ void RenderGraph::ValidateNodes( ) const
     }
 }
 
-void RenderGraph::ValidateDependencies( const std::unordered_set<std::string> &allNodes, const std::vector<std::string> &dependencies ) const
+void RenderGraph::ValidateDependencies( const std::unordered_set<std::string> &allNodes, const NodeDependencies &dependencies ) const
 {
-    for ( auto &dependency : dependencies )
+    for ( int i = 0; i < dependencies.NumElements; ++i )
     {
+        auto &dependency = dependencies.Array[ i ];
         if ( !allNodes.contains( dependency ) )
         {
             LOG( ERROR ) << "Node has a dependency " << dependency << " that does not exist.";
@@ -359,7 +373,7 @@ void RenderGraph::IssueBarriers( ICommandList *commandList, const std::vector<No
         }
     }
 
-    if ( !barrierDesc.GetTextureBarriers( ).empty( ) || !barrierDesc.GetBufferBarriers( ).empty( ) )
+    if ( barrierDesc.GetTextureBarriers( ).NumElements != 0 || barrierDesc.GetBufferBarriers( ).NumElements != 0 )
     {
         commandList->PipelineBarrier( barrierDesc );
         for ( const auto &mutex : m_unlocks )

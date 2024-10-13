@@ -46,7 +46,7 @@ namespace DenOfIz
         Viewport          GetViewport( ) override;
         id<MTLDrawable>   Drawable( );
         void              Resize( uint32_t width, uint32_t height ) override;
-        void              Present( std::vector<ISemaphore *> waitOnSemaphores );
+        void              Present( Semaphores waitOnSemaphores );
     };
 
 } // namespace DenOfIz
