@@ -39,8 +39,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    typedef uint32_t geometry_index_t;
-
     enum class BuildDesc
     {
         BuildNormal    = 1 << 0,
@@ -54,13 +52,16 @@ namespace DenOfIz
     struct QuadDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        DirectX::XMFLOAT2 Size;
+        float            Width;
+        float            Height;
     };
 
     struct BoxDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        DirectX::XMFLOAT3 Size;
+        float            Width;
+        float            Height;
+        float            Depth;
     };
 
     struct SphereDesc
@@ -155,7 +156,7 @@ namespace DenOfIz
     struct GeometryData
     {
         std::vector<GeometryVertexData> Vertices;
-        std::vector<geometry_index_t>   Indices;
+        std::vector<uint32_t>   Indices;
     };
 
     class Geometry

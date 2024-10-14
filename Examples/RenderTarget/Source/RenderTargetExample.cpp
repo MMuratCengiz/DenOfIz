@@ -62,25 +62,7 @@ void RenderTargetExample::Init( )
     deferredNode.RequiredStates.Array[ 0 ]  = NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::RenderTarget );
     deferredNode.RequiredStates.Array[ 1 ]  = NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::RenderTarget );
     deferredNode.RequiredStates.Array[ 2 ]  = NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::RenderTarget );
-    deferredNode.Execute                    = [ this ]( const uint32_t frame, ICommandList *commandList )
-    {
-        RenderingAttachmentDesc renderingAttachmentDesc{ };
-        renderingAttachmentDesc.Resource = m_deferredRenderTargets[ frame ].get( );
-
-        RenderingDesc renderingDesc{ };
-        renderingDesc.RTAttachments.NumElements = 1;
-        renderingDesc.RTAttachments.Array[ 0 ]  = renderingAttachmentDesc;
-
-        commandList->BeginRendering( renderingDesc );
-
-        const Viewport &viewport = m_swapChain->GetViewport( );
-        commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-        commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-
-        m_renderPipeline->Render( commandList, m_worldData );
-
-        commandList->EndRendering( );
-    };
+    deferredNode.Execute                    = this;
 
     PresentNodeDesc presentNode{ };
     presentNode.SwapChain                  = m_swapChain.get( );
@@ -90,29 +72,52 @@ void RenderTargetExample::Init( )
     presentNode.RequiredStates.Array[ 2 ]  = NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::ShaderResource );
     presentNode.Dependencies.NumElements   = 1;
     presentNode.Dependencies.Array[ 0 ]    = "Deferred";
-    presentNode.Execute                    = [ this ]( const uint32_t frame, ICommandList *commandList, ITextureResource *renderTarget )
-    {
-        RenderingAttachmentDesc quadAttachmentDesc{ };
-        quadAttachmentDesc.Resource = renderTarget;
-
-        RenderingDesc quadRenderingDesc{ };
-        quadRenderingDesc.RTAttachments.NumElements = 1;
-        quadRenderingDesc.RTAttachments.Array[ 0 ]  = quadAttachmentDesc;
-
-        commandList->BeginRendering( quadRenderingDesc );
-
-        const Viewport &viewport = m_swapChain->GetViewport( );
-        commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-        commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-        m_quadPipeline->Render( commandList, frame );
-        commandList->EndRendering( );
-    };
+    presentNode.Execute                    = this;
 
     m_renderGraph->AddNode( deferredNode );
     m_renderGraph->SetPresentNode( presentNode );
     m_renderGraph->BuildGraph( );
 
     m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
+}
+
+// Node execution
+void RenderTargetExample::Execute( uint32_t frameIndex, ICommandList *commandList )
+{
+    RenderingAttachmentDesc renderingAttachmentDesc{ };
+    renderingAttachmentDesc.Resource = m_deferredRenderTargets[ frameIndex ].get( );
+
+    RenderingDesc renderingDesc{ };
+    renderingDesc.RTAttachments.NumElements = 1;
+    renderingDesc.RTAttachments.Array[ 0 ]  = renderingAttachmentDesc;
+
+    commandList->BeginRendering( renderingDesc );
+
+    const Viewport &viewport = m_swapChain->GetViewport( );
+    commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+    commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+
+    m_renderPipeline->Render( commandList, m_worldData );
+
+    commandList->EndRendering( );
+}
+
+void RenderTargetExample::Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget )
+{
+    RenderingAttachmentDesc quadAttachmentDesc{ };
+    quadAttachmentDesc.Resource = renderTarget;
+
+    RenderingDesc quadRenderingDesc{ };
+    quadRenderingDesc.RTAttachments.NumElements = 1;
+    quadRenderingDesc.RTAttachments.Array[ 0 ]  = quadAttachmentDesc;
+
+    commandList->BeginRendering( quadRenderingDesc );
+
+    const Viewport &viewport = m_swapChain->GetViewport( );
+    commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+    commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+    m_quadPipeline->Render( commandList, frameIndex );
+    commandList->EndRendering( );
 }
 
 void RenderTargetExample::ModifyApiPreferences( APIPreference &defaultApiPreference )

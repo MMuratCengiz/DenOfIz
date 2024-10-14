@@ -1,12 +1,14 @@
-%module DenOfIzGraphics
+%module(directors="1") DenOfIzGraphics
 
 %{
 #include "DenOfIzGraphics/DenOfIzGraphics.h"
 %}
 
-%include <std_string.i>
-%include <std_vector.i>
-%include <carrays.i>
+%include "stdint.i"
+%include "std_string.i"
+%include "std_vector.i"
+%include "carrays.i"
+%include "cpointer.i"
 
 %ignore DenOfIz::RenderGraphInternal::NodeExecutionContext;
 %ignore DenOfIz::RenderGraphInternal::GraphNode;
@@ -15,7 +17,11 @@
 %ignore DenOfIz::RenderGraphInternal::ResourceLocking;
 %ignore DenOfIz::CompiledShader;
 %ignore DenOfIz::CompiledShaders;
-%ignore DenOfIz::ShaderProgram::GetCompiledShader;
+%ignore DenOfIz::ShaderProgram::GetCompiledShaders;
+%ignore DenOfIz::BatchResourceCopy::SyncOp;
+%ignore DenOfIz::GraphicsWindowHandle::CreateFromSDLWindow;
+%ignore TWindowHandle;
+%ignore DenOfIz::GraphicsWindowHandle::GetNativeHandle;
 
 // BitSet ignores:
 %ignore DenOfIz::BitSet::operator DenOfIz::ResourceState;
@@ -32,6 +38,12 @@
 %ignore DenOfIz::BitSet::None;
 %ignore DenOfIz::BitSet::All;
 %ignore DenOfIz::BitSet::Any;
+
+%template(GeometryVertexDataVector) std::vector<DenOfIz::GeometryVertexData>;
+%template(IndexVector) std::vector<uint32_t>;
+
+%feature("director") DenOfIz::NodeExecutionCallback;
+%feature("director") DenOfIz::PresentExecutionCallback;
 
 %include <DenOfIzGraphics/Utilities/BitSet.h>
 %include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
@@ -69,5 +81,6 @@ typedef DenOfIz::BitSet<DenOfIz::BuildDesc> BuildDescBitSet;
 
 typedef DenOfIz::BitSet<DenOfIz::ResourceDescriptor> ResourceDescriptorBitSet;
 %template(ResourceDescriptorBitSet) DenOfIz::BitSet<DenOfIz::ResourceDescriptor>;
+
 
 

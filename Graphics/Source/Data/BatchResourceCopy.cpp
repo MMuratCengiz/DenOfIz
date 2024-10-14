@@ -215,7 +215,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const void *data, const
     iBufferDesc.HeapType     = HeapType::GPU;
     iBufferDesc.Descriptor   = ResourceDescriptor::IndexBuffer;
     iBufferDesc.InitialState = ResourceState::CopyDst;
-    iBufferDesc.NumBytes     = geometryData.Indices.size( ) * sizeof( geometry_index_t );
+    iBufferDesc.NumBytes     = geometryData.Indices.size( ) * sizeof( uint32_t );
     iBufferDesc.DebugName    = NextId( "Index" );
 
     const auto indexBuffer = m_device->CreateBufferResource( iBufferDesc );
@@ -223,7 +223,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const void *data, const
     CopyToGpuBufferDesc ibCopyDesc{ };
     ibCopyDesc.DstBuffer = indexBuffer;
     ibCopyDesc.Data      = geometryData.Indices.data( );
-    ibCopyDesc.NumBytes  = geometryData.Indices.size( ) * sizeof( geometry_index_t );
+    ibCopyDesc.NumBytes  = geometryData.Indices.size( ) * sizeof( uint32_t );
     CopyToGPUBuffer( ibCopyDesc );
 
     if ( m_issueBarriers )

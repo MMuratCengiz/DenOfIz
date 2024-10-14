@@ -47,7 +47,7 @@ int main( )
     const auto window = SDL_CreateWindow( "Hello C++", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, windowFlags );
 
     const auto windowHandle = std::make_unique<DenOfIz::GraphicsWindowHandle>( );
-    windowHandle->Create( window );
+    windowHandle->CreateFromSDLWindow( window );
     DenOfIz::APIPreference apiPreferences;
     apiPreferences.Windows   = DenOfIz::APIPreferenceWindows::DirectX12;
     apiPreferences.Linux     = DenOfIz::APIPreferenceLinux::Vulkan;

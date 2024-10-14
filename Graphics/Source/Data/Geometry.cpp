@@ -62,7 +62,7 @@ void VertexEmplace( std::vector<GeometryVertexData> &vertices, FXMVECTOR ipositi
 inline void EmplaceIndex( GeometryData &data, const size_t value )
 {
     CheckIndexOverflow( value );
-    data.Indices.emplace_back( static_cast<geometry_index_t>( value ) );
+    data.Indices.emplace_back( static_cast<uint32_t>( value ) );
 }
 
 // Helper for flipping winding of geometric primitives for LH vs. RH coordinates
@@ -96,7 +96,7 @@ inline void InvertNormals( GeometryData &data )
 //--------------------------------------------------------------------------------------
 GeometryData Geometry::BuildQuad( const QuadDesc &quadDesc )
 {
-    const XMFLOAT2 size          = quadDesc.Size;
+    const XMFLOAT2 size( quadDesc.Width, quadDesc.Height );
     const bool     rightHanded   = quadDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
     const bool     invertNormals = quadDesc.BuildDesc.IsSet( BuildDesc::InvertNormals );
     GeometryData   result{ };
@@ -156,7 +156,7 @@ GeometryData Geometry::BuildQuad( const QuadDesc &quadDesc )
 //--------------------------------------------------------------------------------------
 GeometryData Geometry::BuildBox( const BoxDesc &boxDesc )
 {
-    const XMFLOAT3 size          = boxDesc.Size;
+    const XMFLOAT3 size( boxDesc.Width, boxDesc.Height, boxDesc.Depth );
     const bool     rightHanded   = boxDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
     const bool     invertNormals = boxDesc.BuildDesc.IsSet( BuildDesc::InvertNormals );
     GeometryData   result{ };
@@ -381,7 +381,7 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
         EdgeSubdivisionMap subdividedEdges;
 
         // The new index collection after subdivision.
-        std::vector<geometry_index_t> newIndices;
+        std::vector<uint32_t> newIndices;
 
         const size_t triangleCount = indices.size( ) / 3;
         for ( size_t iTriangle = 0; iTriangle < triangleCount; ++iTriangle )
@@ -507,9 +507,9 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
             // Now find all the triangles which contain this vertex and update them if necessary
             for ( size_t j = 0; j < indices.size( ); j += 3 )
             {
-                geometry_index_t *triIndex0 = &indices[ j + 0 ];
-                geometry_index_t *triIndex1 = &indices[ j + 1 ];
-                geometry_index_t *triIndex2 = &indices[ j + 2 ];
+                uint32_t *triIndex0 = &indices[ j + 0 ];
+                uint32_t *triIndex1 = &indices[ j + 1 ];
+                uint32_t *triIndex2 = &indices[ j + 2 ];
 
                 if ( *triIndex0 == i )
                 {
@@ -563,9 +563,9 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
             // These pointers point to the three indices which make up this triangle. pPoleIndex is the pointer to the
             // entry in the index array which represents the pole index, and the other two pointers point to the other
             // two indices making up this triangle.
-            geometry_index_t *pPoleIndex;
-            geometry_index_t *pOtherIndex0;
-            geometry_index_t *pOtherIndex1;
+            uint32_t *pPoleIndex;
+            uint32_t *pOtherIndex0;
+            uint32_t *pOtherIndex1;
             if ( indices[ i + 0 ] == poleIndex )
             {
                 pPoleIndex   = &indices[ i + 0 ];

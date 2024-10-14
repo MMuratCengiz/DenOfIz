@@ -17,17 +17,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Time.h>
 #include <DenOfIzExamples/DefaultRenderPipeline.h>
 #include <DenOfIzExamples/IExample.h>
 #include <DenOfIzExamples/QuadPipeline.h>
 #include <DenOfIzExamples/SphereAsset.h>
 #include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
 #include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
+#include <DenOfIzGraphics/Utilities/Time.h>
 
 namespace DenOfIz
 {
-    class RenderTargetExample final : public IExample
+    class RenderTargetExample final : public IExample, public NodeExecutionCallback, public PresentExecutionCallback
     {
         Time                                   m_time;
         std::unique_ptr<QuadPipeline>          m_quadPipeline;
@@ -47,6 +47,8 @@ namespace DenOfIz
         void              HandleEvent( SDL_Event &event ) override;
         void              Update( ) override;
         void              Quit( ) override;
+        void              Execute( uint32_t frameIndex, ICommandList *commandList ) override;
+        void              Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget ) override;
         struct WindowDesc WindowDesc( ) override
         {
             auto windowDesc  = DenOfIz::WindowDesc( );

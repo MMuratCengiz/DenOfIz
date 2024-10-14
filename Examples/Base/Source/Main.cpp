@@ -56,7 +56,7 @@ int DenOfIz::Main( IExample *example )
     SDL_WarpMouseInWindow( window, windowDesc.Width / 2, windowDesc.Height / 2 );
 
     const auto windowHandle = std::make_unique<GraphicsWindowHandle>( );
-    windowHandle->Create( window );
+    windowHandle->CreateFromSDLWindow( window );
     APIPreference apiPreferences;
     apiPreferences.Windows = APIPreferenceWindows::DirectX12;
     apiPreferences.Linux   = APIPreferenceLinux::Vulkan;
@@ -66,7 +66,7 @@ int DenOfIz::Main( IExample *example )
     auto       logicalDevice = std::unique_ptr<ILogicalDevice>( gApi->CreateAndLoadOptimalLogicalDevice( ) );
 
     GraphicsWindowHandle graphicsWindowHandle{ };
-    graphicsWindowHandle.Create( window );
+    graphicsWindowHandle.CreateFromSDLWindow( window );
 
     example->Init( &graphicsWindowHandle, gApi.get( ), logicalDevice.get( ) );
     auto      running = true;

@@ -23,15 +23,30 @@ using namespace DenOfIz;
 
 void BasicCompute( const GraphicsApi &gApi )
 {
-    std::unique_ptr<ILogicalDevice> logicalDevice = gApi.CreateAndLoadOptimalLogicalDevice( );
-    std::unique_ptr<ShaderProgram>  program       = gApi.CreateShaderProgram( {
-        ShaderDesc{ .Stage = ShaderStage::Compute, .Path = "Assets/Shaders/Tests/GeneralTests/BasicCompute.hlsl" },
-    } );
-    std::unique_ptr<IRootSignature> rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature(RootSignatureDesc{
-        .ResourceBindings = {
-            ResourceBindingDesc{ .Name = "computeReadBack", .Binding = 0, .Descriptor = ResourceDescriptor::RWBuffer, .Stages = { ShaderStage::Compute } },
-        },
-    }) );
+    std::unique_ptr<ILogicalDevice> logicalDevice = std::unique_ptr<ILogicalDevice>( gApi.CreateAndLoadOptimalLogicalDevice( ) );
+    ShaderDesc                      shaderDesc{ };
+    shaderDesc.Stage = ShaderStage::Compute;
+    shaderDesc.Path  = "Assets/Shaders/Tests/GeneralTests/BasicCompute.hlsl";
+    ShaderDescs shaderDescs{ };
+    shaderDescs.NumElements = 1;
+    shaderDescs.Array[ 0 ]  = shaderDesc;
+
+    std::unique_ptr<ShaderProgram> program = std::unique_ptr<ShaderProgram>( gApi.CreateShaderProgram( shaderDescs ) );
+
+    ResourceBindings    resourceBindings{ };
+    ResourceBindingDesc resourceBindingDesc{ };
+    resourceBindingDesc.Name               = "computeReadBack";
+    resourceBindingDesc.Binding            = 0;
+    resourceBindingDesc.Descriptor         = ResourceDescriptor::RWBuffer;
+    resourceBindingDesc.Stages.NumElements = 1;
+    resourceBindingDesc.Stages.Array[ 0 ]  = { ShaderStage::Compute };
+    resourceBindings.NumElements           = 1;
+    resourceBindings.Array[ 0 ]            = resourceBindingDesc;
+
+    RootSignatureDesc rootSignatureDesc{ };
+    rootSignatureDesc.ResourceBindings = resourceBindings;
+
+    std::unique_ptr<IRootSignature> rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( rootSignatureDesc ) );
 
     BufferDesc bufferDesc{ };
     bufferDesc.Descriptor                   = ResourceDescriptor::RWBuffer;
@@ -43,7 +58,7 @@ void BasicCompute( const GraphicsApi &gApi )
 
     std::unique_ptr<IResourceBindGroup> resourceBindGroup =
         std::unique_ptr<IResourceBindGroup>( logicalDevice->CreateResourceBindGroup( ResourceBindGroupDesc{ .RootSignature = rootSignature.get( ) } ) );
-    resourceBindGroup->BeginUpdate()->Uav( 0, buffer.get( ) )->EndUpdate();
+    resourceBindGroup->BeginUpdate( )->Uav( 0, buffer.get( ) )->EndUpdate( );
 
     std::unique_ptr<IInputLayout> inputLayout = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( { } ) );
 
@@ -57,7 +72,7 @@ void BasicCompute( const GraphicsApi &gApi )
 
     std::unique_ptr<ICommandListPool> commandListPool =
         std::unique_ptr<ICommandListPool>( logicalDevice->CreateCommandListPool( CommandListPoolDesc{ .QueueType = QueueType::Compute } ) );
-    auto commandList = commandListPool->GetCommandLists( )[ 0 ];
+    auto commandList = commandListPool->GetCommandLists( ).Array[ 0 ];
 
     bufferDesc.Descriptor   = BitSet<ResourceDescriptor>( );
     bufferDesc.HeapType     = HeapType::GPU_CPU;

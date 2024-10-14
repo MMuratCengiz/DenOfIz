@@ -69,17 +69,25 @@ namespace DenOfIz
         }
     };
 
+    // Interop friendly callback
+    class NodeExecutionCallback
+    {
+    public:
+        virtual ~NodeExecutionCallback( ) {};
+        virtual void Execute( uint32_t frameIndex, ICommandList *commandList ) {};
+    };
+
     namespace RenderGraphInternal
     {
         // Odd placement due to dependency on NodeResourceUsageDesc
         struct NodeExecutionContext
         {
-            ICommandList                                   *CommandList;
-            Semaphores                                      WaitOnSemaphores;
-            Semaphores                                      NotifySemaphores;
-            std::vector<NodeResourceUsageDesc>              ResourceUsagesPerFrame;
-            std::mutex                                      SelfMutex;
-            std::function<void( uint32_t, ICommandList * )> Execute;
+            ICommandList                      *CommandList;
+            Semaphores                         WaitOnSemaphores;
+            Semaphores                         NotifySemaphores;
+            std::vector<NodeResourceUsageDesc> ResourceUsagesPerFrame;
+            std::mutex                         SelfMutex;
+            NodeExecutionCallback             *Execute;
         };
 
         struct GraphNode
@@ -115,7 +123,7 @@ namespace DenOfIz
     struct NodeDependencies
     {
         size_t      NumElements = 0;
-        std::string Array[ DZ_MAX_DEPENDENCIES ];
+        const char *Array[ DZ_MAX_DEPENDENCIES ];
     };
 
 #define DZ_MAX_REQUIRED_RESOURCE_STATES 16
@@ -127,18 +135,25 @@ namespace DenOfIz
 
     struct NodeDesc
     {
-        std::string                                     Name;
-        NodeDependencies                                Dependencies;
-        RequiredResourceStates                          RequiredStates;
-        std::function<void( uint32_t, ICommandList * )> Execute;
+        std::string            Name;
+        NodeDependencies       Dependencies;
+        RequiredResourceStates RequiredStates;
+        NodeExecutionCallback *Execute;
+    };
+
+    class PresentExecutionCallback
+    {
+    public:
+        virtual ~PresentExecutionCallback( ) {};
+        virtual void Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *texture ) {};
     };
 
     struct PresentNodeDesc
     {
-        NodeDependencies                                                    Dependencies;
-        RequiredResourceStates                                              RequiredStates;
-        ISwapChain                                                         *SwapChain;
-        std::function<void( uint32_t, ICommandList *, ITextureResource * )> Execute;
+        NodeDependencies          Dependencies;
+        RequiredResourceStates    RequiredStates;
+        ISwapChain               *SwapChain;
+        PresentExecutionCallback *Execute;
     };
 
     struct RenderGraphDesc

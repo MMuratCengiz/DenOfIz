@@ -229,7 +229,7 @@ void RenderGraph::BuildTaskflow( )
 
                                             commandList->Begin( );
                                             IssueBarriers( commandList, context->ResourceUsagesPerFrame );
-                                            context->Execute( frame, commandList );
+                                            context->Execute->Execute( frame, commandList );
 
                                             ExecuteDesc executeDesc{ };
                                             if ( nodeIndex == m_nodes.size( ) - 1 && !m_hasPresentNode )
@@ -265,7 +265,7 @@ void RenderGraph::BuildTaskflow( )
                 ITextureResource *swapChainRenderTarget = m_presentNode.SwapChain->GetRenderTarget( image );
 
                 presentCommandList->PipelineBarrier( PipelineBarrierDesc::UndefinedToRenderTarget( swapChainRenderTarget ) );
-                m_presentNode.Execute( frame, presentCommandList, swapChainRenderTarget );
+                m_presentNode.Execute->Execute( frame, presentCommandList, swapChainRenderTarget );
                 presentCommandList->PipelineBarrier( PipelineBarrierDesc::RenderTargetToPresent( swapChainRenderTarget ) );
 
                 ExecuteDesc presentExecuteDesc{ };

@@ -324,7 +324,7 @@ void VulkanLogicalDevice::CreateDeviceInfo( const VkPhysicalDevice &physicalDevi
 
 void VulkanLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
 {
-    DZ_ASSERTM( m_context->PhysicalDevice == VK_NULL_HANDLE, "A physical device is already selected for this logical device. Create a new Logical Device." );
+    DZ_ASSERTM( m_context->PhysicalDevice == VK_NULL_HANDLE, "A physical device is already selected for this logical device. CreateFromSDLWindow a new Logical Device." );
     m_selectedDeviceInfo          = device;
     m_context->SelectedDeviceInfo = device;
 

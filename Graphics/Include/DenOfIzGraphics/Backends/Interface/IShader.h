@@ -64,10 +64,10 @@ namespace DenOfIz
 #define DZ_MAX_DEFINES 16
     struct ShaderDefines
     {
-        size_t NumElements = 0;
-        char  *Array[ DZ_MAX_DEFINES ];
+        size_t      NumElements = 0;
+        const char *Array[ DZ_MAX_DEFINES ];
 
-        void SetElement( size_t index, char *value )
+        void SetElement( size_t index, const char *value )
         {
             Array[ index ] = value;
         }

@@ -71,7 +71,7 @@ namespace DenOfIz
         GraphicsWindowHandle( ) = default;
 
 #ifdef WINDOW_MANAGER_SDL
-        void Create( SDL_Window *window )
+        void CreateFromSDLWindow( SDL_Window *window )
         {
             m_sdlWindow = window;
             SDL_SysWMinfo info;
@@ -89,6 +89,11 @@ namespace DenOfIz
             {
                 LOG( FATAL ) << "Failed to get window handle";
             }
+        }
+
+        void CreateViaSDLWindowID( uint32_t windowID )
+        {
+            CreateFromSDLWindow( SDL_GetWindowFromID( windowID ) );
         }
 #else
 #error "Not implemented yet"
