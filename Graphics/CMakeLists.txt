@@ -126,10 +126,8 @@ endif ()
 
 copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 
-add_library(DenOfIzGraphics ${LIB_TYPE} ${DEN_OF_IZ_GRAPHICS_SOURCES})
-
+add_library(DenOfIzGraphics ${DEN_OF_IZ_GRAPHICS_SOURCES})
 install_target(DenOfIzGraphics)
-install(FILES ${SPVHeaders} DESTINATION Include/DenOfIzGraphics)
 target_include_default_directories(DenOfIzGraphics)
 
 target_include_directories(DenOfIzGraphics
@@ -158,13 +156,7 @@ endif ()
 
 if (WIN32)
     # Non VCPKG because github repo is more up to date, and the one in vcpkg is unofficial
-    # Propagate BUILD_SHARED_LIBS to D3D12MemoryAllocator
     add_subdirectory(_ThirdParty/D3D12MemoryAllocator)
-
-    target_include_directories(DenOfIzGraphics
-            PUBLIC
-            _ThirdParty/D3D12MemoryAllocator/include
-    )
 
     target_link_directories(
             DenOfIzGraphics
@@ -176,7 +168,7 @@ if (WIN32)
     configure_file(_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/dxil.dll COPYONLY)
 
     target_link_libraries(DenOfIzGraphics
-            PRIVATE
+            PUBLIC
             WIL::WIL
             dxgi
             d3d12
@@ -246,8 +238,4 @@ set_target_default_properties(DenOfIzGraphics)
 
 if (BUILD_TESTS)
     add_subdirectory(Tests)
-endif ()
-
-if (SWIG_CSHARP)
-    add_subdirectory(Swig)
 endif ()

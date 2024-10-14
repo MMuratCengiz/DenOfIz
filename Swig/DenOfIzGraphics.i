@@ -6,6 +6,7 @@
 
 %include <std_string.i>
 %include <std_vector.i>
+%include <carrays.i>
 
 %ignore DenOfIz::RenderGraphInternal::NodeExecutionContext;
 %ignore DenOfIz::RenderGraphInternal::GraphNode;
