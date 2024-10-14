@@ -54,6 +54,15 @@ namespace DenOfIz
     {
         size_t                            NumElements = 0;
         AccelerationStructureGeometryDesc Array[ DZ_MAX_ACCELERATION_STRUCTURE_GEOMETRIES ];
+
+        void SetElement( size_t index, const AccelerationStructureGeometryDesc &value )
+        {
+            Array[ index ] = value;
+        }
+        const AccelerationStructureGeometryDesc &GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 
     struct AccelerationStructureBottomLevelDesc
@@ -67,6 +76,15 @@ namespace DenOfIz
     {
         size_t                            NumElements = 0;
         AccelerationStructureGeometryDesc Array[ DZ_MAX_ACCELERATION_STRUCTURE_GEOMETRIES ];
+
+        void SetElement( size_t index, const AccelerationStructureGeometryDesc &value )
+        {
+            Array[ index ] = value;
+        }
+        const AccelerationStructureGeometryDesc &GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 
     struct AccelerationStructureTopLevelDesc

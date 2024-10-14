@@ -45,7 +45,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <dxgidebug.h>
 #endif
 
-#include "D3D12MemAlloc.h"
+#include <D3D12MemAlloc.h>
 
 #include <DenOfIzGraphics/Utilities/Common.h>
 

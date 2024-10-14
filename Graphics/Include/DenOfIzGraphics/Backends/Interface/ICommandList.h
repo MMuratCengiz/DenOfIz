@@ -48,6 +48,15 @@ namespace DenOfIz
     {
         size_t                  NumElements = 0;
         RenderingAttachmentDesc Array[ DZ_MAX_RT_ATTACHMENTS ];
+
+        void SetElement( size_t index, const RenderingAttachmentDesc &value )
+        {
+            Array[ index ] = value;
+        }
+        const RenderingAttachmentDesc &GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 
     struct RenderingDesc
@@ -146,7 +155,7 @@ namespace DenOfIz
         virtual void BeginRendering( const RenderingDesc &renderingDesc )                                                                                       = 0;
         virtual void EndRendering( )                                                                                                                            = 0;
         virtual void Execute( const ExecuteDesc &executeDesc )                                                                                                  = 0;
-        virtual void Present( ISwapChain *swapChain, uint32_t imageIndex, Semaphores waitOnLocks )                                               = 0;
+        virtual void Present( ISwapChain *swapChain, uint32_t imageIndex, Semaphores waitOnLocks )                                                              = 0;
         virtual void BindPipeline( IPipeline *pipeline )                                                                                                        = 0;
         virtual void BindVertexBuffer( IBufferResource *buffer )                                                                                                = 0;
         virtual void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType )                                                                     = 0;

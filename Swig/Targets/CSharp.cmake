@@ -23,9 +23,10 @@ target_link_libraries(DenOfIzGraphicsCSharp
         DenOfIzGraphics
 )
 
-file(MAKE_DIRECTORY ${SWIG_CSHARP_LIB_DIR})
 add_custom_command(
         TARGET DenOfIzGraphicsCSharp POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E remove_directory ${SWIG_CSHARP_LIB_DIR}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIG_CSHARP_LIB_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:DenOfIzGraphicsCSharp> ${SWIG_CSHARP_LIB_DIR}
         COMMAND_EXPAND_LISTS
 )

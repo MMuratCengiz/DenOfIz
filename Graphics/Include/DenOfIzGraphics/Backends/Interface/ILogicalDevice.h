@@ -34,6 +34,11 @@ namespace DenOfIz
     {
         size_t         NumElements = 0;
         PhysicalDevice Array[ DZ_MAX_PHYSICAL_DEVICES ];
+
+        const PhysicalDevice &GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 
     class ILogicalDevice

@@ -13,27 +13,12 @@
 namespace DenOfIz
 {
 
-    enum class TargetIL
-    {
-        DXIL,
-        MSL,
-        SPIRV
-    };
-
-#define DZ_MAX_DEFINES 16
-    struct ShaderDefines
-    {
-        size_t NumElements = 0;
-        char  *Array[ DZ_MAX_DEFINES ];
-    };
-
     struct CompileDesc
     {
-        std::string Path;
-        std::string EntryPoint = "main";
-        ShaderStage Stage;
-        TargetIL    TargetIL;
-
+        std::string   Path;
+        std::string   EntryPoint = "main";
+        ShaderStage   Stage;
+        TargetIL      TargetIL;
         ShaderDefines Defines;
     };
 

@@ -60,18 +60,45 @@ namespace DenOfIz
     {
         size_t            NumElements = 0;
         BufferBarrierDesc Array[ DZ_MAX_BARRIERS ];
+
+        void SetElement( size_t index, const BufferBarrierDesc &value )
+        {
+            Array[ index ] = value;
+        }
+        const BufferBarrierDesc &GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 
     struct TextureBarriers
     {
         size_t             NumElements = 0;
         TextureBarrierDesc Array[ DZ_MAX_BARRIERS ];
+
+        void SetElement( size_t index, const TextureBarrierDesc &value )
+        {
+            Array[ index ] = value;
+        }
+        const TextureBarrierDesc &GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 
     struct MemoryBarriers
     {
         size_t            NumElements = 0;
         MemoryBarrierDesc Array[ DZ_MAX_BARRIERS ];
+
+        void SetElement( size_t index, const MemoryBarrierDesc &value )
+        {
+            Array[ index ] = value;
+        }
+        const MemoryBarrierDesc &GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 
     class PipelineBarrierDesc
@@ -89,13 +116,13 @@ namespace DenOfIz
 
         PipelineBarrierDesc &BufferBarrier( const BufferBarrierDesc barrier )
         {
-            m_bufferBarriers.Array[ m_textureBarriers.NumElements++ ] = barrier;
+            m_bufferBarriers.Array[ m_bufferBarriers.NumElements++ ] = barrier;
             return *this;
         }
 
         PipelineBarrierDesc &MemoryBarrier( const MemoryBarrierDesc barrier )
         {
-            m_memoryBarriers.Array[ m_textureBarriers.NumElements++ ] = barrier;
+            m_memoryBarriers.Array[ m_memoryBarriers.NumElements++ ] = barrier;
             return *this;
         }
 

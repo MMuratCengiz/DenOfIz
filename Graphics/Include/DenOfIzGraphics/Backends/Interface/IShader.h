@@ -54,6 +54,29 @@ namespace DenOfIz
         Mesh
     };
 
+    enum class TargetIL
+    {
+        DXIL,
+        MSL,
+        SPIRV
+    };
+
+#define DZ_MAX_DEFINES 16
+    struct ShaderDefines
+    {
+        size_t NumElements = 0;
+        char  *Array[ DZ_MAX_DEFINES ];
+
+        void SetElement( size_t index, char *value )
+        {
+            Array[ index ] = value;
+        }
+        const char *GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
+    };
+
     // Needs to be used as a pointer as Blob/Reflection might be deleted multiple times otherwise
     struct CompiledShader : private NonCopyable
     {

@@ -39,5 +39,14 @@ namespace DenOfIz
     {
         size_t      NumElements = 0;
         ISemaphore *Array[ DZ_MAX_SEMAPHORES ];
+
+        void SetElement( size_t index, ISemaphore *value )
+        {
+            Array[ index ] = value;
+        }
+        const ISemaphore *GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 } // namespace DenOfIz

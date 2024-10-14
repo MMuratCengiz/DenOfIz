@@ -48,9 +48,14 @@ inline void CheckIndexOverflow( const size_t value )
 void VertexEmplace( std::vector<GeometryVertexData> &vertices, FXMVECTOR iposition, FXMVECTOR inormal, FXMVECTOR itextureCoordinate )
 {
     GeometryVertexData &vertexData = vertices.emplace_back( );
-    DirectX::XMStoreFloat3( &vertexData.Position, iposition );
-    DirectX::XMStoreFloat3( &vertexData.Normal, inormal );
-    DirectX::XMStoreFloat2( &vertexData.TextureCoordinate, itextureCoordinate );
+    vertexData.Position.X          = XMVectorGetX( iposition );
+    vertexData.Position.Y          = XMVectorGetY( iposition );
+    vertexData.Position.Z          = XMVectorGetZ( iposition );
+    vertexData.Normal.X            = XMVectorGetX( inormal );
+    vertexData.Normal.Y            = XMVectorGetY( inormal );
+    vertexData.Normal.Z            = XMVectorGetZ( inormal );
+    vertexData.TextureCoordinate.U = XMVectorGetX( itextureCoordinate );
+    vertexData.TextureCoordinate.V = XMVectorGetY( itextureCoordinate );
 }
 
 // Collection types used when generating the geometry.
@@ -71,7 +76,7 @@ inline void ReverseWinding( GeometryData &data )
 
     for ( auto &it : data.Vertices )
     {
-        it.TextureCoordinate.x = ( 1.f - it.TextureCoordinate.x );
+        it.TextureCoordinate.U = ( 1.f - it.TextureCoordinate.U );
     }
 }
 
@@ -80,9 +85,9 @@ inline void InvertNormals( GeometryData &data )
 {
     for ( auto &it : data.Vertices )
     {
-        it.Normal.x = -it.Normal.x;
-        it.Normal.y = -it.Normal.y;
-        it.Normal.z = -it.Normal.z;
+        it.Normal.X = -it.Normal.X;
+        it.Normal.Y = -it.Normal.Y;
+        it.Normal.Z = -it.Normal.Z;
     }
 }
 
@@ -487,7 +492,7 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
     {
         // This vertex is on the prime meridian if position.x and texture coordinates are both zero (allowing for small epsilon).
         const bool isOnPrimeMeridian =
-            XMVector2NearEqual( XMVectorSet( vertices[ i ].Position.x, vertices[ i ].TextureCoordinate.x, 0.0f, 0.0f ), XMVectorZero( ), XMVectorSplatEpsilon( ) );
+            XMVector2NearEqual( XMVectorSet( vertices[ i ].Position.X, vertices[ i ].TextureCoordinate.U, 0.0f, 0.0f ), XMVectorZero( ), XMVectorSplatEpsilon( ) );
 
         if ( isOnPrimeMeridian )
         {
@@ -496,7 +501,7 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
 
             // copy this vertex, correct the texture coordinate, and add the vertex
             GeometryVertexData v  = vertices[ i ];
-            v.TextureCoordinate.x = 1.0f;
+            v.TextureCoordinate.U = 1.0f;
             vertices.push_back( v );
 
             // Now find all the triangles which contain this vertex and update them if necessary
@@ -534,7 +539,7 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
 
                 // check the other two vertices to see if we might need to fix this triangle
 
-                if ( abs( v0.TextureCoordinate.x - v1.TextureCoordinate.x ) > 0.5f || abs( v0.TextureCoordinate.x - v2.TextureCoordinate.x ) > 0.5f )
+                if ( abs( v0.TextureCoordinate.U - v1.TextureCoordinate.U ) > 0.5f || abs( v0.TextureCoordinate.U - v2.TextureCoordinate.U ) > 0.5f )
                 {
                     // yep; replace the specified index to point to the new, corrected vertex
                     *triIndex0 = static_cast<uint16_t>( newIndex );
@@ -589,8 +594,8 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
 
             // Calculate the texture coordinates for the new pole vertex, add it to the vertices and update the index
             GeometryVertexData newPoleVertex  = poleVertex;
-            newPoleVertex.TextureCoordinate.x = ( otherVertex0.TextureCoordinate.x + otherVertex1.TextureCoordinate.x ) / 2;
-            newPoleVertex.TextureCoordinate.y = poleVertex.TextureCoordinate.y;
+            newPoleVertex.TextureCoordinate.U = ( otherVertex0.TextureCoordinate.U + otherVertex1.TextureCoordinate.U ) / 2;
+            newPoleVertex.TextureCoordinate.V = poleVertex.TextureCoordinate.V;
 
             if ( !overwrittenPoleVertex )
             {
@@ -961,13 +966,13 @@ GeometryData Geometry::BuildOctahedron( const OctahedronDesc &octahedronDesc )
 
         // Duplicate vertices to use face normals
         XMVECTOR position = XMVectorScale( verts[ v0 ], size );
-        VertexEmplace(vertices, position, normal, g_XMZero /* 0, 0 */ );
+        VertexEmplace( vertices, position, normal, g_XMZero /* 0, 0 */ );
 
         position = XMVectorScale( verts[ v1 ], size );
-        VertexEmplace(vertices, position, normal, g_XMIdentityR0 /* 1, 0 */ );
+        VertexEmplace( vertices, position, normal, g_XMIdentityR0 /* 1, 0 */ );
 
         position = XMVectorScale( verts[ v2 ], size );
-        VertexEmplace(vertices, position, normal, g_XMIdentityR1 /* 0, 1*/ );
+        VertexEmplace( vertices, position, normal, g_XMIdentityR1 /* 0, 1*/ );
     }
 
     // Built LH above
@@ -1045,19 +1050,19 @@ GeometryData Geometry::BuildDodecahedron( const DodecahedronDesc &dodecahedronDe
 
         // Duplicate vertices to use face normals
         XMVECTOR position = XMVectorScale( verts[ v0 ], size );
-        VertexEmplace(vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 0 ] ] );
+        VertexEmplace( vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 0 ] ] );
 
         position = XMVectorScale( verts[ v1 ], size );
-        VertexEmplace(vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 1 ] ] );
+        VertexEmplace( vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 1 ] ] );
 
         position = XMVectorScale( verts[ v2 ], size );
-        VertexEmplace(vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 2 ] ] );
+        VertexEmplace( vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 2 ] ] );
 
         position = XMVectorScale( verts[ v3 ], size );
-        VertexEmplace(vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 3 ] ] );
+        VertexEmplace( vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 3 ] ] );
 
         position = XMVectorScale( verts[ v4 ], size );
-        VertexEmplace(vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 4 ] ] );
+        VertexEmplace( vertices, position, normal, textureCoordinates[ textureIndex[ t ][ 4 ] ] );
     }
 
     // Built LH above
@@ -1109,13 +1114,13 @@ GeometryData Geometry::BuildIcosahedron( const IcosahedronDesc &icosahedronDesc 
 
         // Duplicate vertices to use face normals
         XMVECTOR position = XMVectorScale( verts[ v0 ], size );
-        VertexEmplace(vertices, position, normal, g_XMZero /* 0, 0 */ );
+        VertexEmplace( vertices, position, normal, g_XMZero /* 0, 0 */ );
 
         position = XMVectorScale( verts[ v1 ], size );
-        VertexEmplace(vertices, position, normal, g_XMIdentityR0 /* 1, 0 */ );
+        VertexEmplace( vertices, position, normal, g_XMIdentityR0 /* 1, 0 */ );
 
         position = XMVectorScale( verts[ v2 ], size );
-        VertexEmplace(vertices, position, normal, g_XMIdentityR1 /* 0, 1 */ );
+        VertexEmplace( vertices, position, normal, g_XMIdentityR1 /* 0, 1 */ );
     }
 
     // Built LH above

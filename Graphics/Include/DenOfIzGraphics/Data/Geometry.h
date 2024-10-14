@@ -125,11 +125,31 @@ namespace DenOfIz
         float             Size{ };
     };
 
+    struct GeometryPositionVertexData
+    {
+        float X;
+        float Y;
+        float Z;
+    };
+
+    struct GeometryNormalVertexData
+    {
+        float X;
+        float Y;
+        float Z;
+    };
+
+    struct GeometryTextureCoordinateVertexData
+    {
+        float U;
+        float V;
+    };
+
     struct GeometryVertexData
     {
-        DirectX::XMFLOAT3 Position{ };
-        DirectX::XMFLOAT3 Normal{ };
-        DirectX::XMFLOAT2 TextureCoordinate{ };
+        GeometryPositionVertexData          Position{ };
+        GeometryNormalVertexData            Normal{ };
+        GeometryTextureCoordinateVertexData TextureCoordinate{ };
     };
 
     struct GeometryData

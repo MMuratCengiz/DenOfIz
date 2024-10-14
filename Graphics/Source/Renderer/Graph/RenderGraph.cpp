@@ -69,9 +69,9 @@ void RenderGraph::AddNode( const NodeDesc &desc )
 
     m_nodeDescriptions.push_back( desc );
 
-    for ( int stateIndex = 0; stateIndex < m_presentNode.RequiredStates.NumElements; stateIndex++ )
+    for ( int stateIndex = 0; stateIndex < desc.RequiredStates.NumElements; stateIndex++ )
     {
-        auto &resourceState = m_presentNode.RequiredStates.Array[ stateIndex ];
+        auto &resourceState = desc.RequiredStates.Array[ stateIndex ];
         if ( resourceState.Type == NodeResourceUsageType::Texture )
         {
             if ( resourceState.TextureResource == nullptr )
@@ -123,9 +123,9 @@ void RenderGraph::InitAllNodes( )
             auto newContext         = std::make_unique<NodeExecutionContext>( );
             newContext->CommandList = m_commandListPools[ i ]->GetCommandLists( ).Array[ graphNode->Index + 1 ]; // +1 for the present node
             newContext->Execute     = node.Execute;
-            for ( int stateIndex = 0; stateIndex < m_presentNode.RequiredStates.NumElements; stateIndex++ )
+            for ( int stateIndex = 0; stateIndex < node.RequiredStates.NumElements; stateIndex++ )
             {
-                auto &resourceState = m_presentNode.RequiredStates.Array[ stateIndex ];
+                auto &resourceState = node.RequiredStates.Array[ stateIndex ];
                 if ( resourceState.FrameIndex == i )
                 {
                     newContext->ResourceUsagesPerFrame.push_back( resourceState );
@@ -242,14 +242,18 @@ void RenderGraph::BuildTaskflow( )
                                         } )
                                     .name( nodeName );
 
-            for ( int i = 0; i < m_presentNode.Dependencies.NumElements; ++i )
+            for ( int i = 0; i < nodeDesc.Dependencies.NumElements; ++i )
             {
-                auto &dependency = m_presentNode.Dependencies.Array[ i ];
+                auto &dependency = nodeDesc.Dependencies.Array[ i ];
                 tasks[ nodeName ].succeed( tasks[ dependency ] );
             }
             nodeIndex++;
         }
 
+        if ( !m_hasPresentNode )
+        {
+            continue;
+        }
         tf::Task presentTask = taskflow.emplace(
             [ this, frame ]
             {

@@ -17,8 +17,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <memory>
-
 namespace DenOfIz
 {
 }
+
+#ifdef WIN32
+#define DZ_DLL_EXPORT __declspec( dllexport )
+#endif
+
+#define DZ_API_METHOD( func ) DZ_DLL_EXPORT func

@@ -105,6 +105,15 @@ namespace DenOfIz
         size_t                 NumElements = 0;
         InputLayoutElementDesc Elements[ DZ_MAX_INPUT_LAYOUT_ELEMENTS ];
         StepRate               StepRate = StepRate::PerVertex;
+
+        void SetElement( size_t index, const InputLayoutElementDesc &value )
+        {
+            Elements[ index ] = value;
+        }
+        const InputLayoutElementDesc &GetElement( size_t index )
+        {
+            return Elements[ index ];
+        }
     };
 
     /**

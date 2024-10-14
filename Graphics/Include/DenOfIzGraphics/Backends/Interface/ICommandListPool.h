@@ -27,6 +27,15 @@ namespace DenOfIz
     {
         size_t        NumElements = 0;
         ICommandList *Array[ DZ_MAX_COMMAND_LISTS ];
+
+        void SetElement( size_t index, ICommandList *value )
+        {
+            Array[ index ] = value;
+        }
+        const ICommandList *GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 
     struct CommandListPoolDesc

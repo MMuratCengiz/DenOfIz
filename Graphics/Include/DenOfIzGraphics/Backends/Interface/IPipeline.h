@@ -128,6 +128,15 @@ namespace DenOfIz
     {
         size_t           NumElements = 0;
         RenderTargetDesc Array[ DZ_MAX_RENDER_TARGETS ];
+
+        void SetElement( size_t index, const RenderTargetDesc &value )
+        {
+            Array[ index ] = value;
+        }
+        const RenderTargetDesc &GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 
     struct PipelineRendering

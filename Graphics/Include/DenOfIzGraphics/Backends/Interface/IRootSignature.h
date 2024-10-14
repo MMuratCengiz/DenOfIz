@@ -76,6 +76,15 @@ namespace DenOfIz
     {
         size_t      NumElements = 0;
         ShaderStage Array[ DZ_MAX_SHADER_STAGES ];
+
+        void SetElement( size_t index, const ShaderStage &value )
+        {
+            Array[ index ] = value;
+        }
+        const ShaderStage &GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 
     struct ResourceBindingDesc
@@ -111,12 +120,30 @@ namespace DenOfIz
     {
         size_t                          NumElements = 0;
         RootConstantResourceBindingDesc Array[ DZ_MAX_ROOT_CONSTANTS ];
+
+        void SetElement( size_t index, const RootConstantResourceBindingDesc &value )
+        {
+            Array[ index ] = value;
+        }
+        const RootConstantResourceBindingDesc &GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 #define DZ_MAX_RESOURCE_BINDINGS 32
     struct ResourceBindings
     {
         size_t              NumElements = 0;
         ResourceBindingDesc Array[ DZ_MAX_RESOURCE_BINDINGS ];
+
+        void SetElement( size_t index, const ResourceBindingDesc &value )
+        {
+            Array[ index ] = value;
+        }
+        const ResourceBindingDesc &GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 
 #define DZ_MAX_STATIC_SAMPLERS 32
@@ -124,6 +151,15 @@ namespace DenOfIz
     {
         size_t            NumElements = 0;
         StaticSamplerDesc Array[ DZ_MAX_STATIC_SAMPLERS ];
+
+        void SetElement( size_t index, const StaticSamplerDesc &value )
+        {
+            Array[ index ] = value;
+        }
+        const StaticSamplerDesc &GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 
     struct RootSignatureDesc

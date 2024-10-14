@@ -114,8 +114,8 @@ namespace DenOfIz
 #define DZ_MAX_DEPENDENCIES 16
     struct NodeDependencies
     {
-        size_t NumElements = 0;
-        char  *Array[ DZ_MAX_DEPENDENCIES ];
+        size_t      NumElements = 0;
+        std::string Array[ DZ_MAX_DEPENDENCIES ];
     };
 
 #define DZ_MAX_REQUIRED_RESOURCE_STATES 16

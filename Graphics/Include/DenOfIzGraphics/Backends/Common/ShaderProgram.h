@@ -45,6 +45,15 @@ namespace DenOfIz
     {
         size_t     NumElements = 0;
         ShaderDesc Array[ DZ_MAX_SHADER_DESCS ];
+
+        void SetElement( size_t index, const ShaderDesc &value )
+        {
+            Array[ index ] = value;
+        }
+        const ShaderDesc &GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 
     struct ShaderProgramDesc
@@ -64,6 +73,15 @@ namespace DenOfIz
     {
         size_t          NumElements = 0;
         CompiledShader *Array[ DZ_MAX_COMPILED_SHADERS ];
+
+        void SetElement( size_t index, CompiledShader *&value )
+        {
+            Array[ index ] = value;
+        }
+        const CompiledShader *GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 #ifdef BUILD_METAL
     struct MetalDescriptorOffsets

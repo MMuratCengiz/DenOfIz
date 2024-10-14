@@ -57,11 +57,12 @@ void RenderTargetExample::Init( )
     m_renderGraph = std::make_unique<RenderGraph>( renderGraphDesc );
 
     NodeDesc deferredNode{ };
-    deferredNode.Name = "Deferred";
-    deferredNode.RequiredStates.push_back( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::RenderTarget ) );
-    deferredNode.RequiredStates.push_back( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::RenderTarget ) );
-    deferredNode.RequiredStates.push_back( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::RenderTarget ) );
-    deferredNode.Execute = [ this ]( const uint32_t frame, ICommandList *commandList )
+    deferredNode.Name                       = "Deferred";
+    deferredNode.RequiredStates.NumElements = 3;
+    deferredNode.RequiredStates.Array[ 0 ]  = NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::RenderTarget );
+    deferredNode.RequiredStates.Array[ 1 ]  = NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::RenderTarget );
+    deferredNode.RequiredStates.Array[ 2 ]  = NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::RenderTarget );
+    deferredNode.Execute                    = [ this ]( const uint32_t frame, ICommandList *commandList )
     {
         RenderingAttachmentDesc renderingAttachmentDesc{ };
         renderingAttachmentDesc.Resource = m_deferredRenderTargets[ frame ].get( );
@@ -82,12 +83,14 @@ void RenderTargetExample::Init( )
     };
 
     PresentNodeDesc presentNode{ };
-    presentNode.SwapChain = m_swapChain.get( );
-    presentNode.RequiredStates.push_back( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::ShaderResource ) );
-    presentNode.RequiredStates.push_back( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::ShaderResource ) );
-    presentNode.RequiredStates.push_back( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::ShaderResource ) );
-    presentNode.Dependencies.emplace_back( "Deferred" );
-    presentNode.Execute = [ this ]( const uint32_t frame, ICommandList *commandList, ITextureResource *renderTarget )
+    presentNode.SwapChain                  = m_swapChain.get( );
+    presentNode.RequiredStates.NumElements = 3;
+    presentNode.RequiredStates.Array[ 0 ]  = NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::ShaderResource );
+    presentNode.RequiredStates.Array[ 1 ]  = NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::ShaderResource );
+    presentNode.RequiredStates.Array[ 2 ]  = NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::ShaderResource );
+    presentNode.Dependencies.NumElements   = 1;
+    presentNode.Dependencies.Array[ 0 ]    = "Deferred";
+    presentNode.Execute                    = [ this ]( const uint32_t frame, ICommandList *commandList, ITextureResource *renderTarget )
     {
         RenderingAttachmentDesc quadAttachmentDesc{ };
         quadAttachmentDesc.Resource = renderTarget;
@@ -114,7 +117,7 @@ void RenderTargetExample::Init( )
 
 void RenderTargetExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    defaultApiPreference.Windows = APIPreferenceWindows::DirectX12;
 }
 
 void RenderTargetExample::Update( )

@@ -29,95 +29,108 @@ namespace DenOfIz
     private:
         uint32_t m_bits;
 
-        explicit BitSet(uint32_t bits) : m_bits(bits)
+        explicit BitSet( uint32_t bits ) : m_bits( bits )
         {
         }
 
     public:
-        inline BitSet() : m_bits(0)
+        inline BitSet( ) : m_bits( 0 )
         {
         }
 
-        inline BitSet(const Enum &en) : m_bits((uint32_t)en)
+        inline BitSet( const Enum &en ) : m_bits( (uint32_t)en )
         {
         }
 
-        inline constexpr operator Enum() const
+        inline constexpr operator Enum( ) const
         {
             return (Enum)m_bits;
         }
 
-        inline constexpr BitSet<Enum> operator|(const Enum &other)
+        inline constexpr BitSet<Enum> operator|( const Enum &other )
         {
-            return BitSet<Enum>(m_bits | (uint32_t)other);
+            return BitSet<Enum>( m_bits | (uint32_t)other );
         }
 
-        inline constexpr BitSet<Enum> operator|(const BitSet<Enum> &other)
+        inline constexpr BitSet<Enum> operator|( const BitSet<Enum> &other )
         {
-            return BitSet<Enum>(m_bits | other.m_bits);
+            return BitSet<Enum>( m_bits | other.m_bits );
         }
 
-        inline BitSet<Enum> &operator|=(const Enum &other)
+        inline BitSet<Enum> &operator|=( const Enum &other )
         {
             m_bits |= (uint32_t)other;
             return *this;
         }
 
-        inline constexpr BitSet<Enum> operator&(const Enum &other)
+        inline constexpr BitSet<Enum> operator&( const Enum &other )
         {
-            return BitSet<Enum>(m_bits & (uint32_t)other);
+            return BitSet<Enum>( m_bits & (uint32_t)other );
         }
 
-        inline constexpr BitSet<Enum> operator&(const BitSet<Enum> &other)
+        inline constexpr BitSet<Enum> operator&( const BitSet<Enum> &other )
         {
-            return BitSet<Enum>(m_bits & other.m_bits);
+            return BitSet<Enum>( m_bits & other.m_bits );
         }
 
-        inline BitSet<Enum> &operator&=(const Enum &other)
+        inline BitSet<Enum> &operator&=( const Enum &other )
         {
             m_bits &= (uint32_t)other;
             return *this;
         }
 
-        inline constexpr BitSet<Enum> operator~()
+        inline constexpr BitSet<Enum> operator~( )
         {
-            return BitSet<Enum>(~m_bits);
+            return BitSet<Enum>( ~m_bits );
         }
 
-        inline BitSet<Enum> &operator=(const Enum &other)
+        inline BitSet<Enum> &operator=( const Enum &other )
         {
             m_bits = (uint32_t)other;
             return *this;
         }
 
-        inline constexpr bool operator==(const Enum &other)
+        inline constexpr bool operator==( const Enum &other )
         {
-            return m_bits == ((uint32_t)other);
+            return m_bits == ( (uint32_t)other );
         }
 
-        inline constexpr bool operator!=(const Enum &other)
+        inline constexpr bool operator!=( const Enum &other )
         {
-            return m_bits != ((uint32_t)other);
+            return m_bits != ( (uint32_t)other );
         }
 
-        inline bool None()
+        // Interop
+        inline bool None( )
         {
             return m_bits == 0;
         }
 
-        inline bool IsSet(const Enum &other) const
+        // Interop
+        inline void Set( const Enum &other )
         {
-            return (m_bits & ((uint32_t)other)) == ((uint32_t)other);
+            m_bits |= (uint32_t)other;
         }
 
+        inline void Unset( const Enum &other )
+        {
+            m_bits &= ~(uint32_t)other;
+        }
+
+        inline bool IsSet( const Enum &other ) const
+        {
+            return ( m_bits & ( (uint32_t)other ) ) == ( (uint32_t)other );
+        }
+        // Interop
+
         template <typename T>
-        inline bool All(std::initializer_list<T> others) const
+        inline bool All( std::initializer_list<T> others ) const
         {
             bool result = true;
 
             for ( auto &other : others )
             {
-                result &= (m_bits & ((uint32_t)other)) == ((uint32_t)other);
+                result &= ( m_bits & ( (uint32_t)other ) ) == ( (uint32_t)other );
                 if ( !result )
                 {
                     return false;
@@ -127,12 +140,12 @@ namespace DenOfIz
         }
 
         template <typename T>
-        inline bool Any(std::initializer_list<T> others) const
+        inline bool Any( std::initializer_list<T> others ) const
         {
             bool result = false;
             for ( auto &other : others )
             {
-                result |= (m_bits & ((uint32_t)other)) == ((uint32_t)other);
+                result |= ( m_bits & ( (uint32_t)other ) ) == ( (uint32_t)other );
                 if ( result )
                 {
                     return true;
