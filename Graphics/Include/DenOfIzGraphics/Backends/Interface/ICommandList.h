@@ -32,6 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
+    // Swig Note: ClearColor/ClearDepth are ignored, use SetClearColor/SetClearDepth instead.
     struct RenderingAttachmentDesc
     {
         LoadOp  LoadOp  = LoadOp::Clear;
@@ -40,7 +41,21 @@ namespace DenOfIz
         ITextureResource *Resource = nullptr;
 
         float ClearColor[ 4 ]{ 0.0f, 0.0f, 0.0f, 1.0f };
-        float ClearDepth[ 2 ]{ 1.0f, 0.0f };
+        float ClearDepthStencil[ 2 ]{ 1.0f, 0.0f };
+
+        void SetClearColor( float r, float g, float b, float a )
+        {
+            ClearColor[ 0 ] = r;
+            ClearColor[ 1 ] = g;
+            ClearColor[ 2 ] = b;
+            ClearColor[ 3 ] = a;
+        }
+
+        void SetClearDepthStencil( float depth, float stencil )
+        {
+            ClearDepthStencil[ 0 ] = depth;
+            ClearDepthStencil[ 1 ] = stencil;
+        }
     };
 
 #define DZ_MAX_RT_ATTACHMENTS 8

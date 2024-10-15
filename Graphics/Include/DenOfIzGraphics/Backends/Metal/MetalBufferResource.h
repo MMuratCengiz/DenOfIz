@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
+#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include "MetalContext.h"
 
 namespace DenOfIz
@@ -48,6 +48,10 @@ namespace DenOfIz
         [[nodiscard]] size_t                NumBytes( ) const override;
         [[nodiscard]] const void           *Data( ) const override;
         [[nodiscard]] BitSet<ResourceState> InitialState( ) const override;
+
+        // Interop API
+        std::vector<Byte> GetData( ) const override;
+        void              SetData( const std::vector<Byte> &data, bool keepMapped ) override;
     };
 
 } // namespace DenOfIz

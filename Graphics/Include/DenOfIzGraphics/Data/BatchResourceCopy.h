@@ -31,17 +31,31 @@ namespace DenOfIz
         IBufferResource *DstBuffer;
         const void      *Data;
         size_t           NumBytes;
+
+        // Swig Note: void* management
+        void SetData( const std::vector<Byte>& data )
+        {
+            Data     = data.data();
+            NumBytes = data.size( );
+        }
     };
 
     struct CopyDataToTextureDesc
     {
         ITextureResource *DstTexture;
-        Byte             *Data;
+        const void       *Data;
         size_t            NumBytes;
         uint32_t          MipLevel;
         uint32_t          ArrayLayer;
         uint32_t          RowPitch;
         uint32_t          SlicePitch;
+
+        // Swig Note: void* management
+        void SetData( const std::vector<Byte>& data )
+        {
+            Data     = data.data();
+            NumBytes = data.size( );
+        }
     };
 
     struct LoadTextureDesc
@@ -71,7 +85,7 @@ namespace DenOfIz
 
     public:
         explicit BatchResourceCopy( ILogicalDevice *device, bool issueBarriers = true );
-        ~        BatchResourceCopy( );
+        ~BatchResourceCopy( );
 
         void                           Begin( ) const;
         void                           CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc );

@@ -10,6 +10,9 @@ swig_add_library(DenOfIzGraphicsCSharp
         OUTPUT_DIR ${SWIG_CSHARP_PROJECT_DIR}
         OUTFILE_DIR ${SWIG_CSHARP_CXX_DIR}
 )
+set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
+        SWIG_FLAGS "-E"
+)
 
 set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${SWIG_CSHARP_LIB_DIR}
@@ -34,4 +37,9 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIG_CSHARP_LIB_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:DenOfIzGraphicsCSharp> ${SWIG_CSHARP_LIB_DIR}
         COMMAND_EXPAND_LISTS
+)
+
+add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DenOfIzGraphicsCSharp> ${SWIG_CSHARP_LIB_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DenOfIzGraphics> ${SWIG_CSHARP_LIB_DIR}
 )

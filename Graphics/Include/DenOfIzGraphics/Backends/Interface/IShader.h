@@ -65,13 +65,13 @@ namespace DenOfIz
     struct ShaderDefines
     {
         size_t      NumElements = 0;
-        const char *Array[ DZ_MAX_DEFINES ];
+        std::string Array[ DZ_MAX_DEFINES ];
 
-        void SetElement( size_t index, const char *value )
+        void SetElement( size_t index, std::string value )
         {
             Array[ index ] = value;
         }
-        const char *GetElement( size_t index )
+        std::string GetElement( size_t index )
         {
             return Array[ index ];
         }

@@ -77,6 +77,17 @@ DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const Resour
     }
 }
 
+void DX12ResourceBindGroup::SetRootConstantsData( uint32_t binding, const std::vector<Byte> &data )
+{
+    size_t numBytes = m_dx12RootSignature->RootConstants( )[ binding ].Constants.Num32BitValues * sizeof( uint32_t );
+    if ( data.size( ) != numBytes )
+    {
+        LOG( ERROR ) << "Root constant size mismatch. Expected: " << numBytes << ", Got: " << data.size( );
+        return;
+    }
+    SetRootConstants( binding, (void *)data.data( ) );
+}
+
 void DX12ResourceBindGroup::SetRootConstants( const uint32_t binding, void *data )
 {
     DZ_NOT_NULL( data );

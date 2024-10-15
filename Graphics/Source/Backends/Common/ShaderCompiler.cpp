@@ -141,7 +141,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     {
         const auto &define = compileDesc.Defines.Array[ i ];
         arguments.push_back( L"-D" );
-        arguments.push_back( reinterpret_cast<LPCWSTR>( define ) );
+        arguments.push_back( reinterpret_cast<LPCWSTR>( define.c_str() ) );
     }
     arguments.push_back( L"-HV" );
     arguments.push_back( L"2021" );

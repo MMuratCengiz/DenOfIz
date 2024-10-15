@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
+#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include "DX12Context.h"
 #include "DX12EnumConverter.h"
 
@@ -54,6 +54,10 @@ namespace DenOfIz
         BitSet<ResourceState> InitialState( ) const override;
         size_t                NumBytes( ) const override;
         const void           *Data( ) const override;
+
+        // Interop API
+        std::vector<Byte> GetData( ) const override;
+        void              SetData( const std::vector<Byte> &data, bool keepMapped ) override;
     };
 
 } // namespace DenOfIz

@@ -24,6 +24,7 @@ using namespace DenOfIz;
 MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDesc &desc ) : m_context( context ), m_desc( desc )
 {
     NSUInteger         numBytes = m_desc.NumBytes;
+    m_numBytes                  = numBytes;
     MTLResourceOptions options  = MTLResourceStorageModeShared;
 
     if ( m_desc.HeapType == HeapType::GPU )
@@ -86,6 +87,28 @@ void MetalBufferResource::UnmapMemory( )
     }
 
     m_mappedMemory = nullptr;
+}
+
+std::vector<Byte> MetalBufferResource::GetData( ) const
+{
+    std::vector<Byte> data( m_numBytes );
+    std::memcpy( data.data( ), m_mappedMemory, m_numBytes );
+    return std::move( data );
+}
+
+void MetalBufferResource::SetData( const std::vector<Byte> &data, bool keepMapped )
+{
+    if ( m_mappedMemory == nullptr )
+    {
+        MapMemory( );
+    }
+
+    std::memcpy( m_mappedMemory, data.data( ), data.size( ) );
+
+    if ( !keepMapped )
+    {
+        UnmapMemory( );
+    }
 }
 
 [[nodiscard]] size_t                MetalBufferResource::NumBytes( ) const

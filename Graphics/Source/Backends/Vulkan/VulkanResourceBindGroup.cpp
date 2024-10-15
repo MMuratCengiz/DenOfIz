@@ -41,6 +41,17 @@ VulkanResourceBindGroup::VulkanResourceBindGroup( VulkanContext *context, const 
     m_rootConstants.resize( m_rootSignature->NumRootConstants( ) );
 }
 
+void VulkanResourceBindGroup::SetRootConstantsData( uint32_t binding, const std::vector<Byte> &data )
+{
+    const VkPushConstantRange pushConstantRange = m_rootSignature->PushConstantRange( binding );
+    if ( data.size( ) != pushConstantRange.size )
+    {
+        LOG( ERROR ) << "Root constant size mismatch. Expected: " << pushConstantRange.size << ", Got: " << data.size( );
+        return;
+    }
+    SetRootConstants( binding, (void *)data.data( ) );
+}
+
 void VulkanResourceBindGroup::SetRootConstants( const uint32_t binding, void *data )
 {
     const VkPushConstantRange  pushConstantRange   = m_rootSignature->PushConstantRange( binding );
@@ -53,44 +64,43 @@ void VulkanResourceBindGroup::SetRootConstants( const uint32_t binding, void *da
     rootConstantBinding.Data                       = data;
 }
 
-
-IResourceBindGroup* VulkanResourceBindGroup::BeginUpdate( )
+IResourceBindGroup *VulkanResourceBindGroup::BeginUpdate( )
 {
     m_writeDescriptorSets.clear( );
     return this;
 }
 
-IResourceBindGroup* VulkanResourceBindGroup::Cbv( const uint32_t binding, IBufferResource *resource )
+IResourceBindGroup *VulkanResourceBindGroup::Cbv( const uint32_t binding, IBufferResource *resource )
 {
     BindBuffer( GetSlot( binding, DescriptorBufferBindingType::ConstantBuffer ), resource );
     return this;
 }
 
-IResourceBindGroup* VulkanResourceBindGroup::Srv( const uint32_t binding, IBufferResource *resource )
+IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, IBufferResource *resource )
 {
     BindBuffer( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), resource );
     return this;
 }
 
-IResourceBindGroup* VulkanResourceBindGroup::Srv( const uint32_t binding, ITextureResource *resource )
+IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, ITextureResource *resource )
 {
     BindTexture( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), resource );
     return this;
 }
 
-IResourceBindGroup* VulkanResourceBindGroup::Uav( const uint32_t binding, IBufferResource *resource )
+IResourceBindGroup *VulkanResourceBindGroup::Uav( const uint32_t binding, IBufferResource *resource )
 {
     BindBuffer( GetSlot( binding, DescriptorBufferBindingType::UnorderedAccess ), resource );
     return this;
 }
 
-IResourceBindGroup* VulkanResourceBindGroup::Uav( const uint32_t binding, ITextureResource *resource )
+IResourceBindGroup *VulkanResourceBindGroup::Uav( const uint32_t binding, ITextureResource *resource )
 {
     BindTexture( GetSlot( binding, DescriptorBufferBindingType::UnorderedAccess ), resource );
     return this;
 }
 
-IResourceBindGroup* VulkanResourceBindGroup::Sampler( const uint32_t binding, ISampler *sampler )
+IResourceBindGroup *VulkanResourceBindGroup::Sampler( const uint32_t binding, ISampler *sampler )
 {
     BindSampler( GetSlot( binding, DescriptorBufferBindingType::Sampler ), sampler );
     return this;
@@ -177,5 +187,5 @@ uint32_t VulkanResourceBindGroup::RegisterSpace( ) const
 
 ResourceBindingSlot VulkanResourceBindGroup::GetSlot( uint32_t binding, const DescriptorBufferBindingType &type ) const
 {
-    return ResourceBindingSlot{.Binding = binding,.RegisterSpace = m_desc.RegisterSpace, .Type = type };
+    return ResourceBindingSlot{ .Binding = binding, .RegisterSpace = m_desc.RegisterSpace, .Type = type };
 }

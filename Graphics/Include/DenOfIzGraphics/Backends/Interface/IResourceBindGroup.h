@@ -39,16 +39,17 @@ namespace DenOfIz
     class IResourceBindGroup
     {
     public:
-        virtual ~IResourceBindGroup( )                                                        = default;
-        virtual void                SetRootConstants( uint32_t binding, void *data )          = 0;
-        virtual IResourceBindGroup *BeginUpdate( )                                            = 0;
-        virtual IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource )  = 0;
-        virtual IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource )  = 0;
-        virtual IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource ) = 0;
-        virtual IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource )  = 0;
-        virtual IResourceBindGroup *Uav( const uint32_t binding, ITextureResource *resource ) = 0;
-        virtual IResourceBindGroup *Sampler( const uint32_t binding, ISampler *sampler )      = 0;
-        virtual void                EndUpdate( )                                              = 0;
+        virtual ~IResourceBindGroup( )                                                                      = default;
+        virtual void                SetRootConstantsData( uint32_t binding, const std::vector<Byte> &data ) = 0;
+        virtual void                SetRootConstants( uint32_t binding, void *data )                        = 0;
+        virtual IResourceBindGroup *BeginUpdate( )                                                          = 0;
+        virtual IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource )                = 0;
+        virtual IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource )                = 0;
+        virtual IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource )               = 0;
+        virtual IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource )                = 0;
+        virtual IResourceBindGroup *Uav( const uint32_t binding, ITextureResource *resource )               = 0;
+        virtual IResourceBindGroup *Sampler( const uint32_t binding, ISampler *sampler )                    = 0;
+        virtual void                EndUpdate( )                                                            = 0;
 
     protected:
         virtual void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) = 0;

@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "CommonData.h"
 #include <DenOfIzGraphics/Utilities/Interop.h>
+#include "CommonData.h"
 
 namespace DenOfIz
 {
@@ -53,6 +53,10 @@ namespace DenOfIz
         [[nodiscard]] virtual BitSet<ResourceState> InitialState( ) const = 0;
         [[nodiscard]] virtual size_t                NumBytes( ) const     = 0;
         [[nodiscard]] virtual const void           *Data( ) const         = 0;
+
+        // Interop API
+        virtual std::vector<Byte> GetData( ) const                                          = 0;
+        virtual void              SetData( const std::vector<Byte> &data, bool keepMapped ) = 0;
     };
 
     struct BufferSlice

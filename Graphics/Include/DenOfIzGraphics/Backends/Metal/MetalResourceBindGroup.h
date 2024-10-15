@@ -75,6 +75,7 @@ namespace DenOfIz
 
     public:
         MetalResourceBindGroup( MetalContext *context, ResourceBindGroupDesc desc );
+        void                SetRootConstantsData( uint32_t binding, const std::vector<Byte> &data ) override;
         void                SetRootConstants( uint32_t binding, void *data ) override;
         IResourceBindGroup *BeginUpdate( ) override;
         IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource ) override;

@@ -23,6 +23,27 @@
 %ignore TWindowHandle;
 %ignore DenOfIz::GraphicsWindowHandle::GetNativeHandle;
 
+// Array ignores that do not translate well to C#, exposed via functions instead
+%ignore DenOfIz::Semaphores::Array;
+%ignore DenOfIz::ShaderStages::Array;
+%ignore DenOfIz::CommandLists::Array;
+%ignore DenOfIz::NodeDependencies::Array;
+%ignore DenOfIz::ShaderDefines::Array;
+%ignore DenOfIz::RenderingAttachmentDesc::ClearColor;
+%ignore DenOfIz::RenderingAttachmentDesc::ClearDepthStencil;
+// ByteVector ignores:
+%ignore DenOfIz::CopyToGpuBufferDesc::Data;
+%ignore DenOfIz::CopyToGpuBufferDesc::NumBytes;
+%ignore DenOfIz::CopyDataToTextureDesc::Data;
+%ignore DenOfIz::CopyDataToTextureDesc::NumBytes;
+%ignore DenOfIz::BatchResourceCopy::CreateUniformBuffer;
+%ignore DenOfIz::IBufferResource::MapMemory;
+%ignore DenOfIz::IBufferResource::InitialState;
+%ignore DenOfIz::IBufferResource::Data;
+%ignore DenOfIz::IBufferResource::NumBytes;
+%ignore DenOfIz::IResourceBindGroup::SetRootConstants;
+
+
 // BitSet ignores:
 %ignore DenOfIz::BitSet::operator DenOfIz::ResourceState;
 %ignore DenOfIz::BitSet::operator DenOfIz::BuildDesc;
@@ -41,6 +62,7 @@
 
 %template(GeometryVertexDataVector) std::vector<DenOfIz::GeometryVertexData>;
 %template(IndexVector) std::vector<uint32_t>;
+%template(ByteVector) std::vector<unsigned char>;
 
 %feature("director") DenOfIz::NodeExecutionCallback;
 %feature("director") DenOfIz::PresentExecutionCallback;
@@ -81,6 +103,3 @@ typedef DenOfIz::BitSet<DenOfIz::BuildDesc> BuildDescBitSet;
 
 typedef DenOfIz::BitSet<DenOfIz::ResourceDescriptor> ResourceDescriptorBitSet;
 %template(ResourceDescriptorBitSet) DenOfIz::BitSet<DenOfIz::ResourceDescriptor>;
-
-
-

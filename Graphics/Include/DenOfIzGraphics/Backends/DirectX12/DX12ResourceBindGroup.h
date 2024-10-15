@@ -66,6 +66,7 @@ namespace DenOfIz
         [[nodiscard]] const std::vector<DX12RootConstant>   &RootConstants( ) const;
         [[nodiscard]] uint32_t                               RegisterSpace( ) const;
         // --
+        void                SetRootConstantsData( uint32_t binding, const std::vector<Byte> &data ) override;
         void                SetRootConstants( uint32_t binding, void *data ) override;
         IResourceBindGroup *BeginUpdate( ) override;
         IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource ) override;

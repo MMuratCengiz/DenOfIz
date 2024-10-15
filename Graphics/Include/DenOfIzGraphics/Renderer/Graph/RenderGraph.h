@@ -123,7 +123,16 @@ namespace DenOfIz
     struct NodeDependencies
     {
         size_t      NumElements = 0;
-        const char *Array[ DZ_MAX_DEPENDENCIES ];
+        std::string Array[ DZ_MAX_DEPENDENCIES ];
+
+        void SetElement( size_t index, const std::string &value )
+        {
+            Array[ index ] = value;
+        }
+        const std::string &GetElement( size_t index )
+        {
+            return Array[ index ];
+        }
     };
 
 #define DZ_MAX_REQUIRED_RESOURCE_STATES 16

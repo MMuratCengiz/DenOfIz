@@ -30,6 +30,22 @@ MetalResourceBindGroup::MetalResourceBindGroup( MetalContext *context, ResourceB
     }
 }
 
+void MetalResourceBindGroup::SetRootConstantsData( uint32_t binding, const std::vector<Byte> &data )
+{
+    const auto &rootConstants = m_rootSignature->RootConstants( );
+    if ( binding >= rootConstants.size( ) )
+    {
+        LOG( FATAL ) << "Root constant binding out of range";
+    }
+    const auto &rootConstantBinding = rootConstants[ binding ];
+    if ( data.size( ) != rootConstantBinding.NumBytes )
+    {
+        LOG( ERROR ) << "Root constant size mismatch. Expected: " << rootConstantBinding.NumBytes << ", Got: " << data.size( );
+        return;
+    }
+    SetRootConstants( binding, (void *)data.data( ) );
+}
+
 void MetalResourceBindGroup::SetRootConstants( uint32_t binding, void *data )
 {
     // Find binding offset and copy data to m_rootConstant

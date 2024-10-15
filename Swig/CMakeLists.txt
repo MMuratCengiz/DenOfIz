@@ -8,3 +8,4 @@ endif ()
 if (SWIG_JAVA)
     include(Targets/Java.cmake)
 endif ()
+

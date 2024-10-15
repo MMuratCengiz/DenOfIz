@@ -49,6 +49,10 @@ namespace DenOfIz
 
         [[nodiscard]] size_t          Offset( ) const;
         [[nodiscard]] const VkBuffer &Instance( ) const;
+
+        // Interop API
+        std::vector<Byte> GetData( ) const override;
+        void              SetData( const std::vector<Byte> &data, bool keepMapped ) override;
     };
 
 } // namespace DenOfIz
