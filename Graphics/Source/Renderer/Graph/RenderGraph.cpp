@@ -62,7 +62,7 @@ void RenderGraph::Reset( )
 
 void RenderGraph::AddNode( const NodeDesc &desc )
 {
-    if ( desc.Name.empty( ) )
+    if ( desc.Name.Str( ).empty( ) )
     {
         LOG( FATAL ) << "Node must have a name.";
     }
@@ -174,7 +174,7 @@ void RenderGraph::ConfigureGraph( )
                     notifySemaphores.Array[ notifySemaphores.NumElements++ ]                  = semaphore;
                 }
             }
-            processedNodes[ node.Name ] = nodeIndex;
+            processedNodes[ node.Name.Str( ) ] = nodeIndex;
         }
     }
 
@@ -216,8 +216,8 @@ void RenderGraph::BuildTaskflow( )
 
         for ( auto &node : m_nodes )
         {
-            NodeDesc    &nodeDesc = m_nodeDescriptions[ nodeIndex ];
-            std::string &nodeName = nodeDesc.Name;
+            NodeDesc   &nodeDesc = m_nodeDescriptions[ nodeIndex ];
+            std::string nodeName = nodeDesc.Name.Str( );
 
             tasks[ nodeName ] = taskflow
                                     .emplace(
@@ -320,7 +320,7 @@ void RenderGraph::ValidateNodes( ) const
     std::unordered_set<std::string> allNodes;
     for ( auto &node : m_nodeDescriptions )
     {
-        allNodes.insert( node.Name );
+        allNodes.insert( node.Name.Str( ) );
     }
     for ( auto &node : m_nodeDescriptions )
     {

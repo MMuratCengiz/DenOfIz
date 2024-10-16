@@ -36,6 +36,7 @@ constexpr float SQRT2 = 1.41421356237309504880f;
 constexpr float SQRT3 = 1.73205080756887729352f;
 constexpr float SQRT6 = 2.44948974278317809820f;
 
+
 inline void CheckIndexOverflow( const size_t value )
 {
     // Use >=, not > comparison, because some D3D level 9_x hardware does not support 0xFFFF index values.

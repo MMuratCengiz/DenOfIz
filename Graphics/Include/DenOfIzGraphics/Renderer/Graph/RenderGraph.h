@@ -32,7 +32,7 @@ namespace DenOfIz
         Texture
     };
 
-    struct NodeResourceUsageDesc
+    struct DZ_API NodeResourceUsageDesc
     {
         explicit NodeResourceUsageDesc( IBufferResource *resource ) : BufferResource( resource )
         {
@@ -70,7 +70,7 @@ namespace DenOfIz
     };
 
     // Interop friendly callback
-    class NodeExecutionCallback
+    class DZ_API NodeExecutionCallback
     {
     public:
         virtual ~NodeExecutionCallback( ) {};
@@ -125,39 +125,39 @@ namespace DenOfIz
         size_t      NumElements = 0;
         std::string Array[ DZ_MAX_DEPENDENCIES ];
 
-        void SetElement( size_t index, const std::string &value )
+        DZ_API void SetElement( size_t index, const char *value )
         {
             Array[ index ] = value;
         }
-        const std::string &GetElement( size_t index )
+        DZ_API const char *GetElement( size_t index )
         {
-            return Array[ index ];
+            return Array[ index ].c_str( );
         }
     };
 
 #define DZ_MAX_REQUIRED_RESOURCE_STATES 16
-    struct RequiredResourceStates
+    struct DZ_API RequiredResourceStates
     {
         size_t                NumElements = 0;
         NodeResourceUsageDesc Array[ DZ_MAX_REQUIRED_RESOURCE_STATES ];
     };
 
-    struct NodeDesc
+    struct DZ_API NodeDesc
     {
-        std::string            Name;
+        InteropString          Name;
         NodeDependencies       Dependencies;
         RequiredResourceStates RequiredStates;
         NodeExecutionCallback *Execute;
     };
 
-    class PresentExecutionCallback
+    class DZ_API PresentExecutionCallback
     {
     public:
         virtual ~PresentExecutionCallback( ) {};
         virtual void Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *texture ) {};
     };
 
-    struct PresentNodeDesc
+    struct DZ_API PresentNodeDesc
     {
         NodeDependencies          Dependencies;
         RequiredResourceStates    RequiredStates;
@@ -165,7 +165,7 @@ namespace DenOfIz
         PresentExecutionCallback *Execute;
     };
 
-    struct RenderGraphDesc
+    struct DZ_API RenderGraphDesc
     {
         GraphicsApi    *GraphicsApi;
         ILogicalDevice *LogicalDevice;
@@ -194,14 +194,14 @@ namespace DenOfIz
         ResourceLocking m_resourceLocking;
 
     public:
-        explicit RenderGraph( const RenderGraphDesc &desc );
-        void Reset( );
-        void AddNode( const NodeDesc &desc );
-        void SetPresentNode( const PresentNodeDesc &desc );
-        void BuildGraph( );
-        void BuildTaskflow( );
-        void Update( );
-        void WaitIdle( ) const;
+        DZ_API explicit RenderGraph( const RenderGraphDesc &desc );
+        DZ_API void Reset( );
+        DZ_API void AddNode( const NodeDesc &desc );
+        DZ_API void SetPresentNode( const PresentNodeDesc &desc );
+        DZ_API void BuildGraph( );
+        DZ_API void BuildTaskflow( );
+        DZ_API void Update( );
+        DZ_API void WaitIdle( ) const;
 
     private:
         ISemaphore *GetOrCreateSemaphore( uint32_t &index );

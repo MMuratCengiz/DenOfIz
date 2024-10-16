@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "exception"
 #include "glog/logging.h"
+#include "Interop.h"
 
 #define DZ_RETURN_IF( condition )                                                                                                                                                  \
     if ( condition )                                                                                                                                                               \
@@ -39,7 +40,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class NonCopyable
+    class DZ_API NonCopyable
     {
         NonCopyable( NonCopyable const & )            = delete;
         NonCopyable( NonCopyable && )                 = delete;

@@ -25,16 +25,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct MaterialDesc
+    struct DZ_API MaterialDesc
     {
         ILogicalDevice    *Device;
         BatchResourceCopy *BatchCopy;
-        std::string        AlbedoTexture;
-        std::string        NormalTexture;
-        std::string        HeightTexture;
-        std::string        MetallicTexture;
-        std::string        RoughnessTexture;
-        std::string        AoTexture;
+        InteropString      AlbedoTexture;
+        InteropString      NormalTexture;
+        InteropString      HeightTexture;
+        InteropString      MetallicTexture;
+        InteropString      RoughnessTexture;
+        InteropString      AoTexture;
     };
 
     /// <summary> Material data class that holds the texture data for the material. </summary>
@@ -49,15 +49,15 @@ namespace DenOfIz
         std::unique_ptr<ITextureResource> m_aoTexture;
 
     public:
-        MaterialData( const MaterialDesc &desc );
-        ~MaterialData( ) = default;
+        DZ_API MaterialData( const MaterialDesc &desc );
+        DZ_API ~MaterialData( ) = default;
 
-        [[nodiscard]] ISampler         *Sampler( ) const;
-        [[nodiscard]] ITextureResource *AlbedoTexture( ) const;
-        [[nodiscard]] ITextureResource *NormalTexture( ) const;
-        [[nodiscard]] ITextureResource *HeightTexture( ) const;
-        [[nodiscard]] ITextureResource *MetallicTexture( ) const;
-        [[nodiscard]] ITextureResource *RoughnessTexture( ) const;
-        [[nodiscard]] ITextureResource *AoTexture( ) const;
+        [[nodiscard]] DZ_API ISampler         *Sampler( ) const;
+        [[nodiscard]] DZ_API ITextureResource *AlbedoTexture( ) const;
+        [[nodiscard]] DZ_API ITextureResource *NormalTexture( ) const;
+        [[nodiscard]] DZ_API ITextureResource *HeightTexture( ) const;
+        [[nodiscard]] DZ_API ITextureResource *MetallicTexture( ) const;
+        [[nodiscard]] DZ_API ITextureResource *RoughnessTexture( ) const;
+        [[nodiscard]] DZ_API ITextureResource *AoTexture( ) const;
     };
 } // namespace DenOfIz

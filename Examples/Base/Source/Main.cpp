@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 #include <DenOfIzGraphics/Backends/GraphicsApi.h>
 
+
 int DenOfIz::Main( IExample *example )
 {
     Engine::Init( );
@@ -52,7 +53,7 @@ int DenOfIz::Main( IExample *example )
     {
         windowFlags |= SDL_WINDOW_RESIZABLE;
     }
-    const auto window = SDL_CreateWindow( windowDesc.Title.c_str( ), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowDesc.Width, windowDesc.Height, windowFlags );
+    const auto window = SDL_CreateWindow( windowDesc.Title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowDesc.Width, windowDesc.Height, windowFlags );
     SDL_WarpMouseInWindow( window, windowDesc.Width / 2, windowDesc.Height / 2 );
 
     const auto windowHandle = std::make_unique<GraphicsWindowHandle>( );

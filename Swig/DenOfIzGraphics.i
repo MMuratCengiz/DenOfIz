@@ -3,12 +3,16 @@
 %{
 #include "DenOfIzGraphics/DenOfIzGraphics.h"
 %}
+#define DZ_API
 
 %include "stdint.i"
 %include "std_string.i"
 %include "std_vector.i"
 %include "carrays.i"
 %include "cpointer.i"
+
+
+%apply void *VOID_INT_PTR { void * }
 
 %ignore DenOfIz::RenderGraphInternal::NodeExecutionContext;
 %ignore DenOfIz::RenderGraphInternal::GraphNode;
@@ -20,6 +24,7 @@
 %ignore DenOfIz::ShaderProgram::GetCompiledShaders;
 %ignore DenOfIz::BatchResourceCopy::SyncOp;
 %ignore DenOfIz::GraphicsWindowHandle::CreateFromSDLWindow;
+%ignore DenOfIz::GraphicsWindowHandle::CreateViaSDLWindowID;
 %ignore TWindowHandle;
 %ignore DenOfIz::GraphicsWindowHandle::GetNativeHandle;
 
@@ -42,6 +47,12 @@
 %ignore DenOfIz::IBufferResource::Data;
 %ignore DenOfIz::IBufferResource::NumBytes;
 %ignore DenOfIz::IResourceBindGroup::SetRootConstants;
+
+// Fix InteropString:
+%ignore DenOfIz::InteropString::operator std::string;
+%ignore DenOfIz::InteropString::operator DenOfIz::InteropString;
+%ignore DenOfIz::InteropString::Str;
+%ignore DenOfIz::InteropString::CStr;
 
 
 // BitSet ignores:
@@ -67,6 +78,8 @@
 %feature("director") DenOfIz::NodeExecutionCallback;
 %feature("director") DenOfIz::PresentExecutionCallback;
 
+%include <DenOfIzGraphics/Utilities/Common_Macro.h>
+%include <DenOfIzGraphics/Utilities/Interop.h>
 %include <DenOfIzGraphics/Utilities/BitSet.h>
 %include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 %include <DenOfIzGraphics/Backends/Interface/CommonData.h>

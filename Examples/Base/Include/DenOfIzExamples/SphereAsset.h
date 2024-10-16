@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "Interop.h"
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
 #include <DirectXMath.h>
@@ -35,11 +36,11 @@ namespace DenOfIz
         std::unique_ptr<MaterialData>    m_materialData;
 
     public:
-        SphereAsset( ILogicalDevice *device, BatchResourceCopy *batchResourceCopy );
-        void       Translate( XMFLOAT4 translation );
-        void       Rotate( XMFLOAT4 rotation );
-        void       Scale( XMFLOAT4 scale );
-        AssetData *Data( ) const;
-        XMFLOAT4X4 ModelMatrix( ) const;
+        DZ_EXAMPLES_API            SphereAsset( ILogicalDevice *device, BatchResourceCopy *batchResourceCopy );
+        DZ_EXAMPLES_API void       Translate( XMFLOAT4 translation );
+        DZ_EXAMPLES_API void       Rotate( XMFLOAT4 rotation );
+        DZ_EXAMPLES_API void       Scale( XMFLOAT4 scale );
+        DZ_EXAMPLES_API AssetData *Data( ) const;
+        DZ_EXAMPLES_API XMFLOAT4X4 ModelMatrix( ) const;
     };
 } // namespace DenOfIz

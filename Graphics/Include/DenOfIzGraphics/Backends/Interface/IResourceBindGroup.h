@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
     // Todo deprecate the fields, possible either use RootSignature+RegisterSpace or rely on UpdateDesc
-    struct ResourceBindGroupDesc
+    struct DZ_API ResourceBindGroupDesc
     {
         IRootSignature *RootSignature;
         uint32_t        RegisterSpace;
@@ -36,7 +36,7 @@ namespace DenOfIz
         return { rootSignature, DZConfiguration::Instance( ).RootConstantRegisterSpace };
     }
 
-    class IResourceBindGroup
+    class DZ_API IResourceBindGroup
     {
     public:
         virtual ~IResourceBindGroup( )                                                                      = default;

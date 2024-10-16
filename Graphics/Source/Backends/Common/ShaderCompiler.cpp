@@ -54,7 +54,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
 
     // Attribute to reference: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
     // https://github.com/KhronosGroup/Vulkan-Guide
-    std::string       path     = Utilities::AppPath( compileDesc.Path );
+    std::string       path     = Utilities::AppPath( compileDesc.Path.Str( ) );
     uint32_t          codePage = DXC_CP_ACP;
     IDxcBlobEncoding *sourceBlob;
     std::wstring      wsShaderPath( path.begin( ), path.end( ) );
@@ -96,7 +96,8 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     arguments.push_back( wsShaderPath.c_str( ) );
     // Set the entry point
     arguments.push_back( L"-E" );
-    std::wstring wsEntryPoint( compileDesc.EntryPoint.begin( ), compileDesc.EntryPoint.end( ) );
+    std::string  entryPoint = compileDesc.EntryPoint.Str( );
+    std::wstring wsEntryPoint( entryPoint.begin( ), entryPoint.end( ) );
     arguments.push_back( wsEntryPoint.c_str( ) );
     // Set shader stage
     arguments.push_back( L"-T" );
@@ -141,7 +142,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     {
         const auto &define = compileDesc.Defines.Array[ i ];
         arguments.push_back( L"-D" );
-        arguments.push_back( reinterpret_cast<LPCWSTR>( define.c_str() ) );
+        arguments.push_back( reinterpret_cast<LPCWSTR>( define ) );
     }
     arguments.push_back( L"-HV" );
     arguments.push_back( L"2021" );
@@ -204,13 +205,13 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     dxcResult->Release( );
     sourceBlob->Release( );
 
-    CacheCompiledShader( compileDesc.Path, compileDesc.TargetIL, code );
+    CacheCompiledShader( compileDesc.Path.Str(), compileDesc.TargetIL, code );
 
     auto *compiledShader       = new CompiledShader( );
     compiledShader->Stage      = compileDesc.Stage;
     compiledShader->Blob       = code;
     compiledShader->Reflection = reflection;
-    compiledShader->EntryPoint = compileDesc.EntryPoint;
+    compiledShader->EntryPoint = compileDesc.EntryPoint.CStr();
     return std::unique_ptr<CompiledShader>( compiledShader );
 }
 

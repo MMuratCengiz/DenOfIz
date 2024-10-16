@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "Interop.h"
 #include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
@@ -35,9 +36,9 @@ namespace DenOfIz
         std::unique_ptr<IResourceBindGroup> m_bindGroup;
 
     public:
-        PerDrawBinding( ILogicalDevice *device, IRootSignature *rootSignature );
-        ~PerDrawBinding( );
-        void                              Update( const XMFLOAT4X4 &modelMatrix ) const;
-        [[nodiscard]] IResourceBindGroup *BindGroup( ) const;
+        DZ_EXAMPLES_API PerDrawBinding( ILogicalDevice *device, IRootSignature *rootSignature );
+        DZ_EXAMPLES_API ~PerDrawBinding( );
+        DZ_EXAMPLES_API void                              Update( const XMFLOAT4X4 &modelMatrix ) const;
+        [[nodiscard]] DZ_EXAMPLES_API IResourceBindGroup *BindGroup( ) const;
     };
 } // namespace DenOfIz

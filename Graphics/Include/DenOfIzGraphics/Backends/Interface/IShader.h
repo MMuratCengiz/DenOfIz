@@ -62,27 +62,27 @@ namespace DenOfIz
     };
 
 #define DZ_MAX_DEFINES 16
-    struct ShaderDefines
+    struct DZ_API ShaderDefines
     {
         size_t      NumElements = 0;
-        std::string Array[ DZ_MAX_DEFINES ];
+        const char *Array[ DZ_MAX_DEFINES ];
 
-        void SetElement( size_t index, std::string value )
+        void SetElement( size_t index, const char *value )
         {
             Array[ index ] = value;
         }
-        std::string GetElement( size_t index )
+        const char *GetElement( size_t index )
         {
             return Array[ index ];
         }
     };
 
     // Needs to be used as a pointer as Blob/Reflection might be deleted multiple times otherwise
-    struct CompiledShader : private NonCopyable
+    struct DZ_API CompiledShader : private NonCopyable
     {
-        ShaderStage Stage;
-        IDxcBlob   *Blob;
-        IDxcBlob   *Reflection;
-        std::string EntryPoint;
+        ShaderStage   Stage;
+        IDxcBlob     *Blob;
+        IDxcBlob     *Reflection;
+        InteropString EntryPoint;
     };
 } // namespace DenOfIz

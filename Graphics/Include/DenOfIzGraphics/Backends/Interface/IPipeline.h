@@ -105,7 +105,7 @@ namespace DenOfIz
         OrInverted
     };
 
-    struct BlendDesc
+    struct DZ_API BlendDesc
     {
         bool         Enable                = false;
         Blend        SrcBlend              = Blend::One;
@@ -117,14 +117,14 @@ namespace DenOfIz
         uint8_t      RenderTargetWriteMask = 0x0F;
     };
 
-    struct RenderTargetDesc
+    struct DZ_API RenderTargetDesc
     {
         BlendDesc Blend  = { };
         Format    Format = Format::Undefined;
     };
 
 #define DZ_MAX_RENDER_TARGETS 8
-    struct RenderTargetDescs
+    struct DZ_API RenderTargetDescs
     {
         size_t           NumElements = 0;
         RenderTargetDesc Array[ DZ_MAX_RENDER_TARGETS ];
@@ -139,7 +139,7 @@ namespace DenOfIz
         }
     };
 
-    struct PipelineRendering
+    struct DZ_API PipelineRendering
     {
         uint32_t          ViewMask               = 0;
         bool              AlphaToCoverageEnable  = false; // Todo check if required
@@ -150,14 +150,14 @@ namespace DenOfIz
         Format            DepthStencilAttachmentFormat = Format::Undefined;
     };
 
-    struct DepthTest
+    struct DZ_API DepthTest
     {
         bool      Enable    = false;
         CompareOp CompareOp = CompareOp::Always;
         bool      Write     = false;
     };
 
-    struct StencilFace
+    struct DZ_API StencilFace
     {
         CompareOp CompareOp   = CompareOp::Always;
         StencilOp FailOp      = StencilOp::Keep;
@@ -165,7 +165,7 @@ namespace DenOfIz
         StencilOp DepthFailOp = StencilOp::Keep;
     };
 
-    struct StencilTest
+    struct DZ_API StencilTest
     {
         bool        Enable    = false;
         uint32_t    WriteMask = 0;
@@ -174,7 +174,7 @@ namespace DenOfIz
         StencilFace BackFace;
     };
 
-    struct PipelineDesc
+    struct DZ_API PipelineDesc
     {
         IInputLayout   *InputLayout   = nullptr;
         IRootSignature *RootSignature = nullptr;
@@ -190,7 +190,7 @@ namespace DenOfIz
         MSAASampleCount   MSAASampleCount = MSAASampleCount::_0; // 0 Disables MSAA
     };
 
-    class IPipeline
+    class DZ_API IPipeline
     {
     public:
         virtual ~IPipeline( ) = default;

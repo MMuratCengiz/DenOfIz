@@ -19,13 +19,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <stddef.h>
+#include <DenOfIzGraphics/Utilities/Interop.h>
 
 namespace DenOfIz
 {
 
     //! \brief Synchronization primitive for command lists.
     //
-    class ISemaphore
+    class DZ_API ISemaphore
     {
     public:
         virtual void Wait( )   = 0;
@@ -35,7 +36,7 @@ namespace DenOfIz
     };
 
 #define DZ_MAX_SEMAPHORES 16
-    struct Semaphores
+    struct DZ_API Semaphores
     {
         size_t      NumElements = 0;
         ISemaphore *Array[ DZ_MAX_SEMAPHORES ];

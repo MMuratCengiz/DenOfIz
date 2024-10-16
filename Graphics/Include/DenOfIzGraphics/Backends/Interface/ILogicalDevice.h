@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 #define DZ_MAX_PHYSICAL_DEVICES 4
-    struct PhysicalDevices
+    struct DZ_API PhysicalDevices
     {
         size_t         NumElements = 0;
         PhysicalDevice Array[ DZ_MAX_PHYSICAL_DEVICES ];
@@ -41,7 +41,7 @@ namespace DenOfIz
         }
     };
 
-    class ILogicalDevice
+    class DZ_API ILogicalDevice
     {
     protected:
         PhysicalDevice m_selectedDeviceInfo{ };

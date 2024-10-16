@@ -298,7 +298,7 @@ void VulkanLogicalDevice::CreateDeviceInfo( const VkPhysicalDevice &physicalDevi
     vkEnumerateDeviceExtensionProperties( physicalDevice, nullptr, &extensionPropertyCount, extensions.data( ) );
 
     deviceInfo.Id   = deviceProperties.deviceID;
-    deviceInfo.Name = std::string( deviceProperties.deviceName );
+    deviceInfo.Name = deviceProperties.deviceName;
 
     // Todo actually read these from somewhere:
     deviceInfo.Properties.IsDedicated = deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;

@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    struct SamplerDesc
+    struct DZ_API SamplerDesc
     {
         Filter             MagFilter     = Filter::Linear;
         Filter             MinFilter     = Filter::Linear;
@@ -36,10 +36,10 @@ namespace DenOfIz
         float              MipLodBias    = 0.0f;
         float              MinLod        = 0.0f;
         float              MaxLod        = 0.0f;
-        std::string        DebugName;
+        InteropString      DebugName;
     };
 
-    struct TextureDesc
+    struct DZ_API TextureDesc
     {
         TextureAspect              Aspect = TextureAspect::Color;
         Format                     Format = Format::Undefined;
@@ -54,13 +54,13 @@ namespace DenOfIz
         // if Height is > 1, it is a 2D texture
         uint32_t Height = 1;
         // if Depth is > 1, it is a 3D texture
-        uint32_t    Depth     = 1;
-        uint32_t    ArraySize = 1;
-        uint32_t    MipLevels = 1;
-        std::string DebugName;
+        uint32_t      Depth     = 1;
+        uint32_t      ArraySize = 1;
+        uint32_t      MipLevels = 1;
+        InteropString DebugName;
     };
 
-    class ITextureResource
+    class DZ_API ITextureResource
     {
     public:
         virtual ~ITextureResource( )                        = default;
@@ -68,44 +68,9 @@ namespace DenOfIz
         virtual Format                GetFormat( ) const    = 0;
     };
 
-    static void ValidateTextureDesc( TextureDesc &desc )
-    {
-        if ( desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) && desc.MSAASampleCount != MSAASampleCount::_0 )
-        {
-            LOG( WARNING ) << "MSAA textures cannot be used as UAVs. Resetting MSAASampleCount to 0.";
-            desc.MSAASampleCount = MSAASampleCount::_0;
-        }
+    DZ_API void ValidateTextureDesc( TextureDesc &desc );
 
-        if ( desc.MSAASampleCount != MSAASampleCount::_0 && desc.MipLevels > 1 )
-        {
-            LOG( WARNING ) << "Mip mapped textures cannot be sampled. Resetting MSAASampleCount to 0.";
-            desc.MSAASampleCount = MSAASampleCount::_0;
-        }
-
-        if ( desc.ArraySize > 1 && desc.Depth > 1 )
-        {
-            LOG( WARNING ) << "Array textures cannot have depth. Resetting depth to 1.";
-            desc.Depth = 1;
-        }
-
-        if ( !desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) && !desc.Descriptor.IsSet( ResourceDescriptor::Texture ) &&
-             !desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) )
-        {
-            LOG( WARNING ) << "Descriptor does not specify a texture: [ResourceDescriptor::(RWTexture/Texture/TextureCube)].";
-        }
-
-        if ( desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) && desc.ArraySize != 6 )
-        {
-            LOG( WARNING ) << "TextureCube does not have an array size of 6. ";
-        }
-
-        if ( desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) && desc.Height != desc.Width )
-        {
-            LOG( WARNING ) << "TextureCube does not have equal width and height.";
-        }
-    }
-
-    class ISampler
+    class DZ_API ISampler
     {
     public:
         virtual ~ISampler( ) = default;

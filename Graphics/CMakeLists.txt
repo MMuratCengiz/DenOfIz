@@ -29,6 +29,7 @@ find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Backends/GraphicsApi.cpp
         #Shader Compiler
+        Source/Backends/Common/GraphicsWindowHandle.cpp
         Source/Backends/Common/ShaderCompiler.cpp
         Source/Backends/Common/ShaderProgram.cpp
 
@@ -45,6 +46,11 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
 
         Source/Utilities/Utilities.cpp
         Source/Utilities/Time.cpp
+
+        # Interface utilities
+        Source/Backends/Interface/CommonData.cpp
+        Source/Backends/Interface/IInputLayout.cpp
+        Source/Backends/Interface/ITextureResource.cpp
 )
 
 SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
@@ -147,7 +153,10 @@ target_link_libraries(DenOfIzGraphics
         Taskflow::Taskflow
 )
 
-if (LIB_TYPE STREQUAL "STATIC")
+if (BUILD_SHARED_LIBS)
+    target_compile_definitions(DenOfIzGraphics PRIVATE DZ_GRAPHICS_EXPORTS)
+    target_compile_definitions(DenOfIzGraphics INTERFACE DZ_GRAPHICS_IMPORTS)
+else ()
     target_link_libraries(DenOfIzGraphics
             PUBLIC
             SDL2::SDL2-static
@@ -156,7 +165,7 @@ endif ()
 
 if (WIN32)
     # Non VCPKG because github repo is more up to date, and the one in vcpkg is unofficial
-    add_subdirectory(_ThirdParty/D3D12MemoryAllocator)
+    include(_ThirdParty/ExternalSystem_D3D12MemoryAllocator.cmake)
 
     target_link_directories(
             DenOfIzGraphics

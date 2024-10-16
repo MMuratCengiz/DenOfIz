@@ -27,7 +27,7 @@ namespace DenOfIz
         AABBs
     };
 
-    struct AccelerationStructureGeometryDesc
+    struct DZ_API AccelerationStructureGeometryDesc
     {
         AccelerationStructureGeometryType Type;
         IBufferResource                  *VertexBuffer;
@@ -41,7 +41,7 @@ namespace DenOfIz
         bool                              IsOpaque;
     };
 
-    struct AccelerationStructureInstanceDesc
+    struct DZ_API AccelerationStructureInstanceDesc
     {
         IBufferResource *InstanceBuffer;
         uint64_t         InstanceOffset;
@@ -50,7 +50,7 @@ namespace DenOfIz
     };
 
 #define DZ_MAX_ACCELERATION_STRUCTURE_GEOMETRIES 32
-    struct AccelerationStructureGeometries
+    struct DZ_API AccelerationStructureGeometries
     {
         size_t                            NumElements = 0;
         AccelerationStructureGeometryDesc Array[ DZ_MAX_ACCELERATION_STRUCTURE_GEOMETRIES ];
@@ -65,14 +65,14 @@ namespace DenOfIz
         }
     };
 
-    struct AccelerationStructureBottomLevelDesc
+    struct DZ_API AccelerationStructureBottomLevelDesc
     {
         AccelerationStructureGeometries Geometries;
         uint32_t                        Flags;
     };
 
 #define DZ_MAX_ACCELERATION_STRUCTURE_INSTANCES 32
-    struct AccelerationStructureInstances
+    struct DZ_API AccelerationStructureInstances
     {
         size_t                            NumElements = 0;
         AccelerationStructureGeometryDesc Array[ DZ_MAX_ACCELERATION_STRUCTURE_GEOMETRIES ];
@@ -87,19 +87,19 @@ namespace DenOfIz
         }
     };
 
-    struct AccelerationStructureTopLevelDesc
+    struct DZ_API AccelerationStructureTopLevelDesc
     {
         AccelerationStructureInstances Instances;
         uint32_t                       Flags;
     };
 
-    struct AccelerationStructureDesc
+    struct DZ_API AccelerationStructureDesc
     {
         AccelerationStructureTopLevelDesc    TopLevelDesc;
         AccelerationStructureBottomLevelDesc BottomLevelDesc;
     };
 
-    class IRayTracingAccelerationStructure
+    class DZ_API IRayTracingAccelerationStructure
     {
     public:
         virtual ~IRayTracingAccelerationStructure( ) = default;

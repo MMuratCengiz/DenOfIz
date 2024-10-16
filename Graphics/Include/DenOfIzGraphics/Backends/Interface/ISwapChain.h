@@ -26,7 +26,7 @@ namespace DenOfIz
 {
 
     //! \brief Creation parameters for a swap chain.
-    struct SwapChainDesc
+    struct DZ_API SwapChainDesc
     {
         GraphicsWindowHandle *WindowHandle      = nullptr;
         uint32_t              Width             = 0; // 0 means that it will be set to the window width
@@ -36,7 +36,7 @@ namespace DenOfIz
         Format                DepthBufferFormat = Format::D32Float;
     };
 
-    struct Viewport
+    struct DZ_API Viewport
     {
         float X      = 0.0f;
         float Y      = 0.0f;
@@ -52,7 +52,7 @@ namespace DenOfIz
     //! auto swapChain = logicalDevice->CreateSwapChain( swapChainDesc );
     //! auto renderTarget = swapChain->GetRenderTarget( imageIndex );
     //! @endcode
-    class ISwapChain
+    class DZ_API ISwapChain
     {
     public:
         virtual ~ISwapChain( ) = default;

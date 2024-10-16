@@ -26,21 +26,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct CopyToGpuBufferDesc
+    struct DZ_API CopyToGpuBufferDesc
     {
         IBufferResource *DstBuffer;
         const void      *Data;
         size_t           NumBytes;
 
         // Swig Note: void* management
-        void SetData( const std::vector<Byte>& data )
+        void SetData( const std::vector<Byte> &data )
         {
-            Data     = data.data();
+            Data     = data.data( );
             NumBytes = data.size( );
         }
     };
 
-    struct CopyDataToTextureDesc
+    struct DZ_API CopyDataToTextureDesc
     {
         ITextureResource *DstTexture;
         const void       *Data;
@@ -51,20 +51,28 @@ namespace DenOfIz
         uint32_t          SlicePitch;
 
         // Swig Note: void* management
-        void SetData( const std::vector<Byte>& data )
+        void SetData( const std::vector<Byte> &data )
         {
-            Data     = data.data();
+            Data     = data.data( );
             NumBytes = data.size( );
         }
     };
 
-    struct LoadTextureDesc
+    struct DZ_API LoadTextureDesc
     {
-        std::string       File;
+        InteropString     File;
         ITextureResource *DstTexture;
     };
 
-    class BatchResourceCopy
+    /// <code>
+    /// { // Scope batch resource copy to make sure it waits for the copy to finish, will clean up resources too
+    ///     BatchResourceCopy batchResourceCopy( logicalDevice );
+    ///     batchResourceCopy.Begin( );
+    ///     m_sphere = std::make_unique<SphereAsset>( m_logicalDevice, &batchResourceCopy );
+    ///     batchResourceCopy.Submit( );
+    /// }
+    /// </code>
+    class BatchResourceCopy : public NonCopyable
     {
         ILogicalDevice *m_device;
 
@@ -84,29 +92,25 @@ namespace DenOfIz
         bool                              m_issueBarriers;
 
     public:
-        explicit BatchResourceCopy( ILogicalDevice *device, bool issueBarriers = true );
-        ~BatchResourceCopy( );
+        DZ_API explicit BatchResourceCopy( ILogicalDevice *device, bool issueBarriers = true );
+        DZ_API ~BatchResourceCopy( );
 
-        void                           Begin( ) const;
-        void                           CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc );
-        void                           CopyBufferRegion( const CopyBufferRegionDesc &copyDesc ) const;
-        void                           CopyTextureRegion( const CopyTextureRegionDesc &copyDesc ) const;
-        void                           CopyDataToTexture( const CopyDataToTextureDesc &copyDesc );
-        ITextureResource              *CreateAndLoadTexture( const std::string &file );
-        void                           LoadTexture( const LoadTextureDesc &loadDesc );
-        [[nodiscard]] IBufferResource *CreateUniformBuffer( const void *data, uint32_t numBytes );
-        [[nodiscard]] IBufferResource *CreateGeometryVertexBuffer( const GeometryData &geometryData );
-        [[nodiscard]] IBufferResource *CreateGeometryIndexBuffer( const GeometryData &geometryData );
-        void                           Submit( ISemaphore *notify = nullptr );
-
-        /// <summary> A synchronized batch resource copy operation, ensures copying is finalized. </summary>
-        static void SyncOp( ILogicalDevice *device, const std::function<void( BatchResourceCopy * )> &op );
-
+        DZ_API void                           Begin( ) const;
+        DZ_API void                           CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc );
+        DZ_API void                           CopyBufferRegion( const CopyBufferRegionDesc &copyDesc ) const;
+        DZ_API void                           CopyTextureRegion( const CopyTextureRegionDesc &copyDesc ) const;
+        DZ_API void                           CopyDataToTexture( const CopyDataToTextureDesc &copyDesc );
+        DZ_API ITextureResource              *CreateAndLoadTexture( const std::string &file );
+        DZ_API void                           LoadTexture( const LoadTextureDesc &loadDesc );
+        [[nodiscard]] DZ_API IBufferResource *CreateUniformBuffer( const void *data, uint32_t numBytes );
+        [[nodiscard]] DZ_API IBufferResource *CreateGeometryVertexBuffer( const GeometryData &geometryData );
+        [[nodiscard]] DZ_API IBufferResource *CreateGeometryIndexBuffer( const GeometryData &geometryData );
+        DZ_API void                           Submit( ISemaphore *notify = nullptr );
     private:
         void                   CleanResources( );
         void                   LoadTextureInternal( const Texture &texture, ITextureResource *dstTexture );
         void                   CopyTextureToMemoryAligned( const Texture &texture, const MipData &mipData, Byte *dst ) const;
         [[nodiscard]] uint32_t GetSubresourceAlignment( uint32_t bitSize ) const;
-        static std::string     NextId( const std::string &prefix );
+        static const char     *NextId( const char *prefix );
     };
 } // namespace DenOfIz

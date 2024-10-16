@@ -25,7 +25,7 @@ namespace DenOfIz
     /// Manages a rotating group of command lists, commonly used in games to create a command list per frame.
     /// It can also manage synchronization objects to make sure each frame is synchronized correctly.
     /// It should be mostly used in the beginning of the frame and at the end of it. Todo provide sample
-    struct CommandListRingDesc
+    struct DZ_API CommandListRingDesc
     {
         bool    CreateSyncObjects       = true;
         uint8_t NumFrames               = 3;
@@ -45,24 +45,24 @@ namespace DenOfIz
         CommandListRingDesc m_desc;
 
     public:
-        explicit CommandListRing( ILogicalDevice *logicalDevice );
+        DZ_API explicit CommandListRing( ILogicalDevice *logicalDevice );
         /// Move the CommandListRing to the next frame.
-        void NextFrame( );
+        DZ_API void NextFrame( );
         /// Return a command list from the pool of the current frame.
         /// @param index cannot be larger or equal @ref CommandListRingDesc::NuNumCommandListsPerFrame
-        ICommandList *FrameCommandList( const uint32_t index );
+        DZ_API ICommandList *FrameCommandList( const uint32_t index );
         /// Will execute the command list with the created sync objects and then present the results to the swap chain.
         /// If you do not need to render instead use the Execute command
         /// @param commandList command list to execute with given sync objects
         /// @param swapChain swapChain object to present
         /// @param image the index of the swap chain image, can be acquired view @ref ISwapChain::AcquireNextImage(  )
-        void ExecuteAndPresent( ICommandList *commandList, ISwapChain *swapChain, const uint32_t image ) const;
+        DZ_API void ExecuteAndPresent( ICommandList *commandList, ISwapChain *swapChain, const uint32_t image ) const;
         /// Execute the last commandList in the pool of the current frame, this is different as it will notify the built-in Sync object.
         /// @param commandList the last command list in this pool
-        void                   ExecuteLast( ICommandList *commandList ) const;
-        void                   WaitIdle( ) const;
-        [[nodiscard]] uint32_t CurrentImage( ISwapChain *swapChain ) const;
-        [[nodiscard]] uint32_t CurrentFrame( ) const;
+        void                   DZ_API  ExecuteLast( ICommandList *commandList ) const;
+        void                   DZ_API  WaitIdle( ) const;
+        [[nodiscard]] uint32_t DZ_API  CurrentImage( ISwapChain *swapChain ) const;
+        [[nodiscard]] uint32_t DZ_API  CurrentFrame( ) const;
     };
 
 } // namespace DenOfIz

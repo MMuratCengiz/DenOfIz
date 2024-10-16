@@ -35,10 +35,10 @@ namespace DenOfIz
     public:
         std::function<void( double )> OnEachSecond;
 
-        void                       Tick( );
-        [[nodiscard]] const double GetDeltaTime( ) const;
-        [[nodiscard]] const double GetFirstTickTime( ) const;
-        static double              DoubleEpochNow( );
+        DZ_API void                       Tick( );
+        [[nodiscard]] DZ_API const double GetDeltaTime( ) const;
+        [[nodiscard]] DZ_API const double GetFirstTickTime( ) const;
+        DZ_API static double              DoubleEpochNow( );
     };
 
 } // namespace DenOfIz

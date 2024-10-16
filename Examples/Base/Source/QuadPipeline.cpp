@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice, const std::string &pixelShader )
+QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice, const char *pixelShader )
 {
     ShaderDescs shaders{ };
     ShaderDesc  vertexShaderDesc{ };
@@ -33,8 +33,8 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
     shaders.Array[ 1 ]    = pixelShaderDesc;
     shaders.NumElements   = 2;
 
-    m_program              = std::unique_ptr<ShaderProgram>( graphicsApi->CreateShaderProgram( shaders ) );
-    auto programReflection = m_program->Reflect( );
+    auto program           = std::unique_ptr<ShaderProgram>( graphicsApi->CreateShaderProgram( shaders ) );
+    auto programReflection = program->Reflect( );
 
     m_rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( programReflection.RootSignature ) );
     m_inputLayout   = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( programReflection.InputLayout ) );
@@ -44,7 +44,7 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
     pipelineDesc.Rendering.RenderTargets.Array[ 0 ]  = { .Format = Format::B8G8R8A8Unorm };
     pipelineDesc.InputLayout                         = m_inputLayout.get( );
     pipelineDesc.RootSignature                       = m_rootSignature.get( );
-    pipelineDesc.ShaderProgram                       = m_program.get( );
+    pipelineDesc.ShaderProgram                       = program.get( );
     pipelineDesc.CullMode                            = CullMode::BackFace;
 
     m_pipeline = std::unique_ptr<IPipeline>( logicalDevice->CreatePipeline( pipelineDesc ) );
@@ -58,11 +58,9 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
         bindGroupDesc.RegisterSpace = resourceBinding.RegisterSpace;
         for ( uint32_t i = 0; i < 3; ++i )
         {
-            m_bindGroups.push_back( std::unique_ptr<IResourceBindGroup>( logicalDevice->CreateResourceBindGroup( bindGroupDesc ) ) );
+            m_bindGroups[ i ] = std::unique_ptr<IResourceBindGroup>( logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
         }
     }
-
-    m_sampler = std::unique_ptr<ISampler>( logicalDevice->CreateSampler( SamplerDesc{ } ) );
 }
 
 IPipeline *QuadPipeline::Pipeline( ) const

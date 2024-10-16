@@ -1,13 +1,14 @@
 set(SWIG_CSHARP_DIR ${CMAKE_BINARY_DIR}/CSharp)
-set(SWIG_CSHARP_PROJECT_DIR ${SWIG_CSHARP_DIR}/Project)
 set(SWIG_CSHARP_CXX_DIR ${SWIG_CSHARP_DIR}/Swig)
-set(SWIG_CSHARP_LIB_DIR ${SWIG_CSHARP_PROJECT_DIR}/Native)
+set(SWIG_CSHARP_PROJECT_DIR ${SWIG_CSHARP_DIR}/Project)
+set(SWIG_CSHARP_CODE_DIR ${SWIG_CSHARP_PROJECT_DIR}/Code)
+set(SWIG_CSHARP_LIB_DIR ${SWIG_CSHARP_PROJECT_DIR}/Lib)
 
 swig_add_library(DenOfIzGraphicsCSharp
         TYPE SHARED
         LANGUAGE CSharp
         SOURCES DenOfIzGraphics.i
-        OUTPUT_DIR ${SWIG_CSHARP_PROJECT_DIR}
+        OUTPUT_DIR ${SWIG_CSHARP_CODE_DIR}
         OUTFILE_DIR ${SWIG_CSHARP_CXX_DIR}
 )
 set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
@@ -21,10 +22,7 @@ set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
         CXX_STANDARD_REQUIRED TRUE
 )
 
-target_link_libraries(DenOfIzGraphicsCSharp
-        PUBLIC
-        DenOfIzGraphics
-)
+swig_link_libraries(DenOfIzGraphicsCSharp DenOfIzGraphics)
 
 add_custom_command(
         TARGET DenOfIzGraphicsCSharp PRE_BUILD

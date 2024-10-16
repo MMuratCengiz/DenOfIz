@@ -26,7 +26,7 @@ namespace DenOfIz
 {
     struct WindowDesc
     {
-        std::string Title     = "DenOfIzExample";
+        const char *Title     = "DenOfIzExample";
         uint32_t    Width     = 800;
         uint32_t    Height    = 600;
         bool        Resizable = false;
@@ -45,7 +45,7 @@ namespace DenOfIz
 
     public:
         virtual ~IExample( ) = default;
-        void     Init( GraphicsWindowHandle *window, GraphicsApi *graphicsApi, ILogicalDevice *device )
+        void Init( GraphicsWindowHandle *window, GraphicsApi *graphicsApi, ILogicalDevice *device )
         {
             m_windowHandle  = window;
             m_graphicsApi   = graphicsApi;

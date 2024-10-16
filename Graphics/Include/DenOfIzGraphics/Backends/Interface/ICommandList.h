@@ -33,7 +33,7 @@ namespace DenOfIz
 {
 
     // Swig Note: ClearColor/ClearDepth are ignored, use SetClearColor/SetClearDepth instead.
-    struct RenderingAttachmentDesc
+    struct DZ_API RenderingAttachmentDesc
     {
         LoadOp  LoadOp  = LoadOp::Clear;
         StoreOp StoreOp = StoreOp::Store;
@@ -59,7 +59,7 @@ namespace DenOfIz
     };
 
 #define DZ_MAX_RT_ATTACHMENTS 8
-    struct RenderingAttachments
+    struct DZ_API RenderingAttachments
     {
         size_t                  NumElements = 0;
         RenderingAttachmentDesc Array[ DZ_MAX_RT_ATTACHMENTS ];
@@ -74,7 +74,7 @@ namespace DenOfIz
         }
     };
 
-    struct RenderingDesc
+    struct DZ_API RenderingDesc
     {
         RenderingAttachmentDesc DepthAttachment;
         RenderingAttachmentDesc StencilAttachment;
@@ -88,7 +88,7 @@ namespace DenOfIz
         RenderingAttachments RTAttachments;
     };
 
-    struct CopyBufferRegionDesc
+    struct DZ_API CopyBufferRegionDesc
     {
         IBufferResource *DstBuffer = nullptr;
         uint64_t         DstOffset = 0;
@@ -97,7 +97,7 @@ namespace DenOfIz
         uint64_t         NumBytes  = 0;
     };
 
-    struct CopyTextureRegionDesc
+    struct DZ_API CopyTextureRegionDesc
     {
         ITextureResource *SrcTexture    = nullptr;
         ITextureResource *DstTexture    = nullptr;
@@ -116,7 +116,7 @@ namespace DenOfIz
         uint32_t          DstArrayLayer = 0;
     };
 
-    struct CopyBufferToTextureDesc
+    struct DZ_API CopyBufferToTextureDesc
     {
         ITextureResource *DstTexture = nullptr;
         IBufferResource  *SrcBuffer  = nullptr;
@@ -132,7 +132,7 @@ namespace DenOfIz
         uint32_t NumRows  = 0;
     };
 
-    struct CopyTextureToBufferDesc
+    struct DZ_API CopyTextureToBufferDesc
     {
         IBufferResource  *DstBuffer  = nullptr;
         ITextureResource *SrcTexture = nullptr;
@@ -148,7 +148,7 @@ namespace DenOfIz
         uint32_t NumRows  = 0;
     };
 
-    struct ExecuteDesc
+    struct DZ_API ExecuteDesc
     {
         // Objects specified below must live until the command list is executed
         IFence    *Notify           = nullptr;
@@ -156,12 +156,12 @@ namespace DenOfIz
         Semaphores NotifySemaphores = { 0, nullptr };
     };
 
-    struct CommandListDesc
+    struct DZ_API CommandListDesc
     {
         QueueType QueueType = QueueType::Graphics;
     };
 
-    class ICommandList
+    class DZ_API ICommandList
     {
     public:
         virtual ~ICommandList( ) = default;

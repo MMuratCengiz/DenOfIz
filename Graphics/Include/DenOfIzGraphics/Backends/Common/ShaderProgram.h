@@ -32,16 +32,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    struct ShaderDesc
+    struct DZ_API ShaderDesc
     {
         ShaderStage   Stage;
-        std::string   Path;
+        InteropString Path;
         ShaderDefines Defines;
-        std::string   EntryPoint = "main";
+        InteropString EntryPoint = "main";
     };
 
 #define DZ_MAX_SHADER_DESCS 16
-    struct ShaderDescs
+    struct DZ_API ShaderDescs
     {
         size_t     NumElements = 0;
         ShaderDesc Array[ DZ_MAX_SHADER_DESCS ];
@@ -56,20 +56,20 @@ namespace DenOfIz
         }
     };
 
-    struct ShaderProgramDesc
+    struct DZ_API ShaderProgramDesc
     {
         TargetIL    TargetIL;
         ShaderDescs Shaders;
     };
 
-    struct ShaderReflectDesc
+    struct DZ_API ShaderReflectDesc
     {
         InputLayoutDesc   InputLayout;
         RootSignatureDesc RootSignature;
     };
 
 #define DZ_MAX_COMPILED_SHADERS 8
-    struct CompiledShaders
+    struct DZ_API CompiledShaders
     {
         size_t          NumElements = 0;
         CompiledShader *Array[ DZ_MAX_COMPILED_SHADERS ];
@@ -95,21 +95,17 @@ namespace DenOfIz
 
     class ShaderProgram
     {
-        friend class GraphicsApi;
-
+    private:
         std::vector<std::unique_ptr<CompiledShader>> m_compiledShaders;
         ShaderProgramDesc                            m_desc;
 #ifdef BUILD_METAL
         std::vector<MetalDescriptorOffsets> m_metalDescriptorOffsets;
-
 #endif
-
-        explicit ShaderProgram( ShaderProgramDesc desc );
-
     public:
-        [[nodiscard]] CompiledShaders   GetCompiledShaders( ) const;
-        [[nodiscard]] ShaderReflectDesc Reflect( ) const;
-        ~ShaderProgram( );
+        DZ_API explicit ShaderProgram( ShaderProgramDesc desc );
+        [[nodiscard]] DZ_API CompiledShaders   GetCompiledShaders( ) const;
+        [[nodiscard]] DZ_API ShaderReflectDesc Reflect( ) const;
+        DZ_API ~ShaderProgram( );
 
     private:
         [[nodiscard]] const ShaderCompiler &ShaderCompilerInstance( ) const;

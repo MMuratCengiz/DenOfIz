@@ -13,16 +13,16 @@
 namespace DenOfIz
 {
 
-    struct CompileDesc
+    struct DZ_API CompileDesc
     {
-        std::string   Path;
-        std::string   EntryPoint = "main";
+        InteropString Path;
+        InteropString EntryPoint = "main";
         ShaderStage   Stage;
         TargetIL      TargetIL;
         ShaderDefines Defines;
     };
 
-    class ShaderCompiler final
+    class DZ_API ShaderCompiler final
     {
         IDxcLibrary   *m_dxcLibrary  = nullptr;
         IDxcCompiler3 *m_dxcCompiler = nullptr;

@@ -18,19 +18,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Interop.h>
+#ifdef _WIN32
+#ifdef DZ_EXAMPLES_EXPORTS
+#define DZ_EXAMPLES_API __declspec( dllexport )
+#elif DZ_EXAMPLES_IMPORTS
+#define DZ_EXAMPLES_API __declspec( dllimport )
+#endif
+#endif
 
-namespace DenOfIz
-{
-
-    //! \brief Cpu-Gpu synchronization primitive.
-    class DZ_API IFence
-    {
-    public:
-        virtual void Wait()  = 0;
-        virtual void Reset() = 0;
-
-        virtual ~IFence(){};
-    };
-
-} // namespace DenOfIz
+#ifndef DZ_EXAMPLES_API
+#define DZ_EXAMPLES_API
+#endif

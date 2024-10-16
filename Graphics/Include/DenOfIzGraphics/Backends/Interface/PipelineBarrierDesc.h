@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    struct TextureBarrierDesc
+    struct DZ_API TextureBarrierDesc
     {
         ITextureResource     *Resource;
         BitSet<ResourceState> OldState{ };
@@ -41,14 +41,14 @@ namespace DenOfIz
         uint32_t ArrayLayer               = 0;
     };
 
-    struct BufferBarrierDesc
+    struct DZ_API BufferBarrierDesc
     {
         IBufferResource      *Resource;
         BitSet<ResourceState> OldState;
         BitSet<ResourceState> NewState;
     };
 
-    struct MemoryBarrierDesc
+    struct DZ_API MemoryBarrierDesc
     {
         // todo
         BitSet<ResourceState> OldState;
@@ -56,7 +56,7 @@ namespace DenOfIz
     };
 
 #define DZ_MAX_BARRIERS 16
-    struct BufferBarriers
+    struct DZ_API BufferBarriers
     {
         size_t            NumElements = 0;
         BufferBarrierDesc Array[ DZ_MAX_BARRIERS ];
@@ -71,7 +71,7 @@ namespace DenOfIz
         }
     };
 
-    struct TextureBarriers
+    struct DZ_API TextureBarriers
     {
         size_t             NumElements = 0;
         TextureBarrierDesc Array[ DZ_MAX_BARRIERS ];
@@ -86,7 +86,7 @@ namespace DenOfIz
         }
     };
 
-    struct MemoryBarriers
+    struct DZ_API MemoryBarriers
     {
         size_t            NumElements = 0;
         MemoryBarrierDesc Array[ DZ_MAX_BARRIERS ];
@@ -101,7 +101,7 @@ namespace DenOfIz
         }
     };
 
-    class PipelineBarrierDesc
+    class DZ_API PipelineBarrierDesc
     {
         TextureBarriers m_textureBarriers;
         BufferBarriers  m_bufferBarriers;

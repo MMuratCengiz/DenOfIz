@@ -17,12 +17,57 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-namespace DenOfIz
-{
-}
+#include <string>
 
-#ifdef WIN32
-#define DZ_DLL_EXPORT __declspec( dllexport )
+#ifdef _WIN32
+#ifdef DZ_GRAPHICS_EXPORTS
+#define DZ_API __declspec( dllexport )
+#elif DZ_GRAPHICS_IMPORTS
+#define DZ_API __declspec( dllimport )
+#endif
 #endif
 
-#define DZ_API_METHOD( func ) DZ_DLL_EXPORT func
+#ifndef DZ_API
+#define DZ_API
+#endif
+
+namespace DenOfIz
+{
+#define DZ_MAX_INTEROP_STRING_SIZE 512
+    class DZ_API InteropString
+    {
+    private:
+        char m_string[ DZ_MAX_INTEROP_STRING_SIZE ] = { 0 };
+
+    public:
+        InteropString( ) = default;
+        // Use bounded char array for interop
+        InteropString( const char bounded[ DZ_MAX_INTEROP_STRING_SIZE ], size_t numChars = DZ_MAX_INTEROP_STRING_SIZE )
+        {
+            if ( numChars > DZ_MAX_INTEROP_STRING_SIZE )
+            {
+                numChars = DZ_MAX_INTEROP_STRING_SIZE;
+            }
+            strncpy_s( m_string, bounded, numChars );
+        }
+
+        InteropString( const std::string &str )
+        {
+            strncpy_s( m_string, str.c_str(), DZ_MAX_INTEROP_STRING_SIZE );
+        }
+
+        InteropString( const InteropString &other ) : InteropString( other.m_string )
+        {
+        }
+
+        const char *CStr( ) const
+        {
+            return m_string;
+        }
+
+        std::string Str( ) const
+        {
+            return m_string;
+        }
+    };
+} // namespace DenOfIz

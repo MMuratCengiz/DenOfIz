@@ -37,7 +37,7 @@ namespace DenOfIz
         Compute
     };
 
-    struct ResourceBindingSlot
+    struct DZ_API ResourceBindingSlot
     {
         uint32_t                    Binding       = 0;
         uint32_t                    RegisterSpace = 0;
@@ -72,7 +72,7 @@ namespace DenOfIz
     };
 
 #define DZ_MAX_SHADER_STAGES 5
-    struct ShaderStages
+    struct DZ_API ShaderStages
     {
         size_t      NumElements = 0;
         ShaderStage Array[ DZ_MAX_SHADER_STAGES ];
@@ -87,9 +87,9 @@ namespace DenOfIz
         }
     };
 
-    struct ResourceBindingDesc
+    struct DZ_API ResourceBindingDesc
     {
-        std::string                 Name;
+        InteropString               Name;
         DescriptorBufferBindingType BindingType = DescriptorBufferBindingType::ConstantBuffer;
         uint32_t                    Binding{ };
         uint32_t                    RegisterSpace = 0;
@@ -99,16 +99,16 @@ namespace DenOfIz
         ReflectionDesc              Reflection{ };
     };
 
-    struct StaticSamplerDesc
+    struct DZ_API StaticSamplerDesc
     {
         SamplerDesc         Sampler;
         ResourceBindingDesc Binding;
     };
 
     // For cross api compatibility the RegisterSpace is hardcoded to 99, make sure to use the same value in the HLSL Shader
-    struct RootConstantResourceBindingDesc
+    struct DZ_API RootConstantResourceBindingDesc
     {
-        std::string    Name;
+        InteropString  Name;
         uint32_t       Binding{ };
         int            NumBytes{ };
         ShaderStages   Stages;
@@ -116,7 +116,7 @@ namespace DenOfIz
     };
 
 #define DZ_MAX_ROOT_CONSTANTS 5
-    struct RootConstantBindings
+    struct DZ_API RootConstantBindings
     {
         size_t                          NumElements = 0;
         RootConstantResourceBindingDesc Array[ DZ_MAX_ROOT_CONSTANTS ];
@@ -131,7 +131,7 @@ namespace DenOfIz
         }
     };
 #define DZ_MAX_RESOURCE_BINDINGS 32
-    struct ResourceBindings
+    struct DZ_API ResourceBindings
     {
         size_t              NumElements = 0;
         ResourceBindingDesc Array[ DZ_MAX_RESOURCE_BINDINGS ];
@@ -146,8 +146,8 @@ namespace DenOfIz
         }
     };
 
-#define DZ_MAX_STATIC_SAMPLERS 32
-    struct StaticSamplers
+#define DZ_MAX_STATIC_SAMPLERS 1
+    struct DZ_API StaticSamplers
     {
         size_t            NumElements = 0;
         StaticSamplerDesc Array[ DZ_MAX_STATIC_SAMPLERS ];
@@ -162,7 +162,7 @@ namespace DenOfIz
         }
     };
 
-    struct RootSignatureDesc
+    struct DZ_API RootSignatureDesc
     {
         RootSignatureType Type;
         // The order of the bindings must match the order of the shader inputs!!! TODO might need to be fixed but this is normal for DX12
@@ -171,7 +171,7 @@ namespace DenOfIz
         RootConstantBindings RootConstants;
     };
 
-    class IRootSignature
+    class DZ_API IRootSignature
     {
     public:
         virtual ~IRootSignature( ) = default;

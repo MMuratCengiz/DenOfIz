@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "Camera.h"
 #include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
 #include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
-#include "Camera.h"
 
 namespace DenOfIz
 {
@@ -34,9 +34,9 @@ namespace DenOfIz
         std::unique_ptr<IResourceBindGroup> m_bindGroup;
 
     public:
-        PerFrameBinding( ILogicalDevice *device, IRootSignature *rootSignature );
-        ~PerFrameBinding( );
-        void                              Update( const Camera* camera, float deltaTime ) const;
-        [[nodiscard]] IResourceBindGroup *BindGroup( ) const;
+        DZ_EXAMPLES_API PerFrameBinding( ILogicalDevice *device, IRootSignature *rootSignature );
+        DZ_EXAMPLES_API ~PerFrameBinding( );
+        DZ_EXAMPLES_API void                              Update( const Camera *camera, float deltaTime ) const;
+        [[nodiscard]] DZ_EXAMPLES_API IResourceBindGroup *BindGroup( ) const;
     };
 } // namespace DenOfIz

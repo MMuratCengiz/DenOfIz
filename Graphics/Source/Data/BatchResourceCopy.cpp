@@ -212,11 +212,12 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const void *data, const
 [[nodiscard]] IBufferResource *BatchResourceCopy::CreateGeometryIndexBuffer( const GeometryData &geometryData )
 {
     BufferDesc iBufferDesc{ };
-    iBufferDesc.HeapType     = HeapType::GPU;
-    iBufferDesc.Descriptor   = ResourceDescriptor::IndexBuffer;
-    iBufferDesc.InitialState = ResourceState::CopyDst;
-    iBufferDesc.NumBytes     = geometryData.Indices.size( ) * sizeof( uint32_t );
-    iBufferDesc.DebugName    = NextId( "Index" );
+    iBufferDesc.HeapType        = HeapType::GPU;
+    iBufferDesc.Descriptor      = ResourceDescriptor::IndexBuffer;
+    iBufferDesc.InitialState    = ResourceState::CopyDst;
+    iBufferDesc.NumBytes        = geometryData.Indices.size( ) * sizeof( uint32_t );
+    const char *indexBufferName = "IndexBuffer";
+    iBufferDesc.DebugName       = NextId( indexBufferName );
 
     const auto indexBuffer = m_device->CreateBufferResource( iBufferDesc );
 
@@ -237,7 +238,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const void *data, const
 
 void BatchResourceCopy::LoadTexture( const LoadTextureDesc &loadDesc )
 {
-    const Texture texture( loadDesc.File );
+    const Texture texture( loadDesc.File.Str( ) );
     LoadTextureInternal( texture, loadDesc.DstTexture );
 }
 
@@ -346,21 +347,12 @@ uint32_t BatchResourceCopy::GetSubresourceAlignment( const uint32_t bitSize ) co
     return Utilities::Align( alignment, m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
 }
 
-void BatchResourceCopy::SyncOp( ILogicalDevice *device, const std::function<void( BatchResourceCopy * )> &op )
-{
-    BatchResourceCopy batchResourceCopy( device );
-    batchResourceCopy.Begin( );
-    op( &batchResourceCopy );
-    batchResourceCopy.Submit( );
-    // BatchResourceCopy destructor will ensure that copy finishes
-}
-
-std::string BatchResourceCopy::NextId( const std::string &prefix )
+const char *BatchResourceCopy::NextId( const char *prefix )
 {
 #ifndef NDEBUG
     static std::atomic<unsigned int> idCounter( 0 );
     const int                        next = idCounter.fetch_add( 1, std::memory_order_relaxed );
-    return prefix + "_BatchResourceCopyResource#" + std::to_string( next );
+    return ( std::string( prefix ) + "_BatchResourceCopyResource#" + std::to_string( next ) ).c_str( );
 #else
     return prefix + "_BatchResourceCopyResource";
 #endif

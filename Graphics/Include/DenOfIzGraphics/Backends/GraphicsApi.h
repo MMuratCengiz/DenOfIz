@@ -37,7 +37,7 @@ namespace DenOfIz
         Vulkan
     };
 
-    struct APIPreference
+    struct DZ_API APIPreference
     {
         APIPreferenceWindows Windows = APIPreferenceWindows::DirectX12;
         APIPreferenceOSX     OSX     = APIPreferenceOSX::Metal;
@@ -47,7 +47,7 @@ namespace DenOfIz
     /// A class that provides a factory for creating API agnostic structures
     /// Currently creates a logical device and a shader program
     /// </summary>
-    class GraphicsApi
+    class DZ_API GraphicsApi
     {
         APIPreference m_apiPreference;
 

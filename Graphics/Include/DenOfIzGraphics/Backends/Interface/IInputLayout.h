@@ -47,50 +47,9 @@ namespace DenOfIz
         TextureCoordinate,
     };
 
-    static Semantic SemanticFromString( const std::string &semantic )
-    {
-        if ( semantic == "POSITION" )
-        {
-            return Semantic::Position;
-        }
-        if ( semantic == "NORMAL" )
-        {
-            return Semantic::Normal;
-        }
-        if ( semantic == "COLOR" )
-        {
-            return Semantic::Color;
-        }
-        if ( semantic == "TANGENT" )
-        {
-            return Semantic::Tangent;
-        }
-        if ( semantic == "BINORMAL" )
-        {
-            return Semantic::Binormal;
-        }
-        if ( semantic == "BITANGENT" )
-        {
-            return Semantic::Bitangent;
-        }
-        if ( semantic == "BLENDJOINTS" )
-        {
-            return Semantic::BlendJoints;
-        }
-        if ( semantic == "BLENDWEIGHTS" )
-        {
-            return Semantic::BlendWeights;
-        }
-        if ( semantic.starts_with( "TEXCOORD" ) )
-        {
-            return Semantic::TextureCoordinate;
-        }
+    DZ_API Semantic SemanticFromString( const std::string &semantic );
 
-        LOG( ERROR ) << "Unknown semantic: " << semantic;
-        return Semantic::Position;
-    }
-
-    struct InputLayoutElementDesc
+    struct DZ_API InputLayoutElementDesc
     {
         Semantic Semantic;
         uint32_t SemanticIndex;
@@ -100,7 +59,7 @@ namespace DenOfIz
     /**
      * @brief Describes a group of input elements that are bound to a single vertex buffer.
      */
-    struct InputGroupDesc
+    struct DZ_API InputGroupDesc
     {
         size_t                 NumElements = 0;
         InputLayoutElementDesc Elements[ DZ_MAX_INPUT_LAYOUT_ELEMENTS ];
@@ -119,13 +78,13 @@ namespace DenOfIz
     /**
      * @brief Describes the input layout of a the input assembler stage. The order the groups are added determines the buffer binding.
      */
-    struct InputLayoutDesc
+    struct DZ_API InputLayoutDesc
     {
         size_t         NumInputGroups = 0;
         InputGroupDesc InputGroups[ DZ_MAX_INPUT_LAYOUT_GROUPS ];
     };
 
-    class IInputLayout
+    class DZ_API IInputLayout
     {
     public:
         virtual ~IInputLayout( ) = default;

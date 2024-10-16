@@ -18,10 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzGraphics/Utilities/BitSet.h>
+#include <DenOfIzGraphics/Utilities/Common_Macro.h>
+#include <DenOfIzGraphics/Utilities/Interop.h>
 #include <string>
 #include <vector>
-#include "DenOfIzGraphics/Utilities/BitSet.h"
-#include "DenOfIzGraphics/Utilities/Common_Macro.h"
 
 namespace DenOfIz
 {
@@ -112,270 +113,11 @@ namespace DenOfIz
         BC7UnormSrgb
     };
 
-    static uint32_t FormatNumBytes( const Format &format )
-    {
-        switch ( format )
-        {
-        case Format::R32G32B32A32Float:
-        case Format::R32G32B32A32Uint:
-        case Format::R32G32B32A32Sint:
-            return 16;
-        case Format::R32G32B32Float:
-        case Format::R32G32B32Uint:
-        case Format::R32G32B32Sint:
-            return 12;
-        case Format::R16G16B16A16Float:
-        case Format::R16G16B16A16Unorm:
-        case Format::R16G16B16A16Uint:
-        case Format::R16G16B16A16Snorm:
-        case Format::R16G16B16A16Sint:
-        case Format::R32G32Float:
-        case Format::R32G32Uint:
-        case Format::R32G32Sint:
-            return 8;
-        case Format::R10G10B10A2Unorm:
-        case Format::R10G10B10A2Uint:
-        case Format::R8G8B8A8Unorm:
-        case Format::R8G8B8A8UnormSrgb:
-        case Format::R8G8B8A8Uint:
-        case Format::R8G8B8A8Snorm:
-        case Format::R8G8B8A8Sint:
-        case Format::R16G16Float:
-        case Format::R16G16Unorm:
-        case Format::R16G16Uint:
-        case Format::R16G16Snorm:
-        case Format::R16G16Sint:
-        case Format::D32Float:
-        case Format::R32Float:
-        case Format::R32Uint:
-        case Format::R32Sint:
-        case Format::D24UnormS8Uint:
-            return 4;
-        case Format::R8G8Unorm:
-        case Format::R8G8Uint:
-        case Format::R8G8Snorm:
-        case Format::R8G8Sint:
-        case Format::R16Float:
-        case Format::D16Unorm:
-        case Format::R16Unorm:
-        case Format::R16Uint:
-            return 2;
-        case Format::R16Snorm:
-        case Format::R16Sint:
-        case Format::R8Unorm:
-        case Format::R8Uint:
-        case Format::R8Snorm:
-        case Format::R8Sint:
-            return 1;
-        // Recheck what the below are and what the expected sizes are.
-        case Format::BC1Unorm:
-        case Format::BC1UnormSrgb:
-            return 8;
-        case Format::BC2Unorm:
-        case Format::BC2UnormSrgb:
-        case Format::BC3Unorm:
-        case Format::BC3UnormSrgb:
-            return 16;
-        case Format::BC4Unorm:
-        case Format::BC4Snorm:
-            return 8;
-        case Format::BC5Unorm:
-        case Format::BC5Snorm:
-            return 16;
-        case Format::B8G8R8A8Unorm:
-            return 4;
-        case Format::BC6HUfloat16:
-        case Format::BC6HSfloat16:
-        case Format::BC7Unorm:
-        case Format::BC7UnormSrgb:
-            return 16;
-        default:
-            return 1;
-        }
-    }
-
-    static Format FormatToTypeless( const Format &format )
-    {
-        switch ( format )
-        {
-        case Format::R32G32B32A32Float:
-        case Format::R32G32B32A32Uint:
-        case Format::R32G32B32A32Sint:
-            return Format::R32G32B32A32Typeless;
-
-        case Format::R16G16B16A16Float:
-        case Format::R16G16B16A16Unorm:
-        case Format::R16G16B16A16Uint:
-        case Format::R16G16B16A16Snorm:
-        case Format::R16G16B16A16Sint:
-            return Format::R16G16B16A16Typeless;
-
-        case Format::R32G32Float:
-        case Format::R32G32Uint:
-        case Format::R32G32Sint:
-            return Format::R32G32Typeless;
-
-        case Format::R10G10B10A2Unorm:
-        case Format::R10G10B10A2Uint:
-            return Format::R10G10B10A2Typeless;
-
-        case Format::R8G8B8A8Unorm:
-        case Format::R8G8B8A8Uint:
-        case Format::R8G8B8A8Snorm:
-        case Format::R8G8B8A8Sint:
-            return Format::R8G8B8A8Typeless;
-
-        case Format::R16G16Float:
-        case Format::R16G16Unorm:
-        case Format::R16G16Uint:
-        case Format::R16G16Snorm:
-        case Format::R16G16Sint:
-            return Format::R16G16Typeless;
-
-        case Format::R32Float:
-        case Format::R32Uint:
-        case Format::R32Sint:
-            return Format::R32Typeless;
-
-        case Format::R8G8Unorm:
-        case Format::R8G8Uint:
-        case Format::R8G8Snorm:
-        case Format::R8G8Sint:
-            return Format::R8G8Typeless;
-
-        case Format::R16Float:
-        case Format::R16Unorm:
-        case Format::R16Uint:
-        case Format::R16Snorm:
-        case Format::R16Sint:
-            return Format::R16Typeless;
-
-        case Format::R8Unorm:
-        case Format::R8Uint:
-        case Format::R8Snorm:
-        case Format::R8Sint:
-            return Format::R8Typeless;
-
-        default:
-            return format;
-        }
-    }
-
-    static FormatSubType GetFormatSubType( const Format &format )
-    {
-        switch ( format )
-        {
-        case Format::Undefined:
-            return FormatSubType::Undefined;
-        case Format::R32G32B32A32Float:
-        case Format::R32G32B32Float:
-        case Format::R16G16B16A16Float:
-        case Format::R32G32Float:
-        case Format::R16G16Float:
-        case Format::D32Float:
-        case Format::R32Float:
-        case Format::R16Float:
-        case Format::BC6HUfloat16:
-        case Format::BC6HSfloat16:
-            return FormatSubType::Float;
-        case Format::R32G32B32A32Sint:
-        case Format::R32G32B32Sint:
-        case Format::R16G16B16A16Sint:
-        case Format::R32G32Sint:
-        case Format::R8G8B8A8Sint:
-        case Format::R16G16Sint:
-        case Format::R32Sint:
-        case Format::R8G8Sint:
-        case Format::R16Sint:
-        case Format::R8Sint:
-            return FormatSubType::Sint;
-        case Format::R32G32B32A32Typeless:
-        case Format::R16G16B16A16Typeless:
-        case Format::R32G32Typeless:
-        case Format::R10G10B10A2Typeless:
-        case Format::R8G8B8A8Typeless:
-        case Format::R16G16Typeless:
-        case Format::R32Typeless:
-        case Format::R8G8Typeless:
-        case Format::R16Typeless:
-        case Format::R8Typeless:
-            return FormatSubType::Typeless;
-        case Format::R32G32B32A32Uint:
-        case Format::R32G32B32Uint:
-        case Format::R16G16B16A16Uint:
-        case Format::R32G32Uint:
-        case Format::R10G10B10A2Uint:
-        case Format::R8G8B8A8Uint:
-        case Format::R16G16Uint:
-        case Format::R32Uint:
-        case Format::D24UnormS8Uint:
-        case Format::R8G8Uint:
-        case Format::R16Uint:
-        case Format::R8Uint:
-            return FormatSubType::Uint;
-        case Format::R16G16B16A16Snorm:
-        case Format::R8G8B8A8Snorm:
-        case Format::R16G16Snorm:
-        case Format::R8G8Snorm:
-        case Format::R16Snorm:
-        case Format::R8Snorm:
-        case Format::BC4Snorm:
-        case Format::BC5Snorm:
-            return FormatSubType::Snorm;
-        case Format::R16G16B16A16Unorm:
-        case Format::R10G10B10A2Unorm:
-        case Format::R8G8B8A8Unorm:
-        case Format::R16G16Unorm:
-        case Format::R8G8Unorm:
-        case Format::D16Unorm:
-        case Format::R16Unorm:
-        case Format::R8Unorm:
-        case Format::BC1Unorm:
-        case Format::BC2Unorm:
-        case Format::BC3Unorm:
-        case Format::BC4Unorm:
-        case Format::BC5Unorm:
-        case Format::B8G8R8A8Unorm:
-        case Format::BC7Unorm:
-        case Format::R8G8B8A8UnormSrgb:
-        case Format::BC1UnormSrgb:
-        case Format::BC2UnormSrgb:
-        case Format::BC3UnormSrgb:
-        case Format::BC7UnormSrgb:
-            return FormatSubType::Unorm;
-        }
-
-        return FormatSubType::Undefined;
-    }
-
-    static bool IsFormatBC( const Format &format )
-    {
-        switch ( format )
-        {
-        case Format::BC1Unorm:
-        case Format::BC1UnormSrgb:
-        case Format::BC2Unorm:
-        case Format::BC2UnormSrgb:
-        case Format::BC3Unorm:
-        case Format::BC3UnormSrgb:
-        case Format::BC4Unorm:
-        case Format::BC4Snorm:
-        case Format::BC5Unorm:
-        case Format::BC5Snorm:
-        case Format::BC6HUfloat16:
-        case Format::BC6HSfloat16:
-        case Format::BC7Unorm:
-        case Format::BC7UnormSrgb:
-            return true;
-        default:
-            return false;
-        }
-    }
-
-    static uint32_t FormatBlockSize( const Format &format )
-    {
-        return IsFormatBC( format ) ? 4 : 1;
-    }
+    DZ_API uint32_t      FormatNumBytes( const Format &format );
+    DZ_API Format        FormatToTypeless( const Format &format );
+    DZ_API FormatSubType GetFormatSubType( const Format &format );
+    DZ_API bool          IsFormatBC( const Format &format );
+    DZ_API uint32_t      FormatBlockSize( const Format &format );
 
     enum class PrimitiveTopology
     {
@@ -403,28 +145,7 @@ namespace DenOfIz
         _64,
     };
 
-    static int MSAASampleCountToNumSamples( const MSAASampleCount &sampleCount )
-    {
-        switch ( sampleCount )
-        {
-        case MSAASampleCount::_1:
-            return 1;
-        case MSAASampleCount::_2:
-            return 2;
-        case MSAASampleCount::_4:
-            return 4;
-        case MSAASampleCount::_8:
-            return 8;
-        case MSAASampleCount::_16:
-            return 16;
-        case MSAASampleCount::_32:
-            return 32;
-        case MSAASampleCount::_64:
-            return 64;
-        default:
-            return 1;
-        }
-    }
+    DZ_API int MSAASampleCountToNumSamples( const MSAASampleCount &sampleCount );
 
     enum class HeapType
     {
@@ -538,23 +259,7 @@ namespace DenOfIz
         Sampler
     };
 
-    static DescriptorBufferBindingType ResourceDescriptorBindingType( const BitSet<ResourceDescriptor> &descriptor )
-    {
-        if ( descriptor.Any( { ResourceDescriptor::RWTexture, ResourceDescriptor::RWBuffer } ) )
-        {
-            return DescriptorBufferBindingType::UnorderedAccess;
-        }
-        if ( descriptor.IsSet( ResourceDescriptor::Sampler ) )
-        {
-            return DescriptorBufferBindingType::Sampler;
-        }
-        if ( descriptor.IsSet( ResourceDescriptor::UniformBuffer ) )
-        {
-            return DescriptorBufferBindingType::ConstantBuffer;
-        }
-
-        return DescriptorBufferBindingType::ShaderResource;
-    }
+    DZ_API DescriptorBufferBindingType ResourceDescriptorBindingType( const BitSet<ResourceDescriptor> &descriptor );
 
     enum class LoadOp
     {
@@ -577,14 +282,14 @@ namespace DenOfIz
         Copy
     };
 
-    struct DeviceConstants
+    struct DZ_API DeviceConstants
     {
         uint32_t ConstantBufferAlignment;
         uint32_t BufferTextureAlignment;
         uint32_t BufferTextureRowAlignment;
     };
 
-    struct PhysicalDeviceCapabilities
+    struct DZ_API PhysicalDeviceCapabilities
     {
         bool DedicatedCopyQueue;
         bool RayTracing;
@@ -595,22 +300,22 @@ namespace DenOfIz
         bool HDR;
     };
 
-    struct PhysicalDeviceProperties
+    struct DZ_API PhysicalDeviceProperties
     {
         bool         IsDedicated;
         unsigned int MemoryAvailableInMb;
     };
 
-    struct PhysicalDevice
+    struct DZ_API PhysicalDevice
     {
         long                       Id;
-        std::string                Name;
+        InteropString              Name;
         PhysicalDeviceProperties   Properties;
         PhysicalDeviceCapabilities Capabilities;
         DeviceConstants            Constants;
     };
 
-    struct DZConfiguration
+    struct DZ_API DZConfiguration
     {
         /**
          *  NOTE: Maximum register space for Vulkan is 32(number of sets). Therefore the register spaces take the last two up.
@@ -635,5 +340,8 @@ namespace DenOfIz
     };
 
     typedef unsigned char Byte;
-} // namespace DenOfIz
 
+    // Export instantiation of BitSet templates with ResourceDescriptor and ResourceState enums.
+    template class DZ_API DenOfIz::BitSet<ResourceDescriptor>;
+    template class DZ_API DenOfIz::BitSet<ResourceState>;
+} // namespace DenOfIz

@@ -17,18 +17,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
+#include "Interop.h"
 #include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 #include <DirectXMath.h>
 
 class Camera
 {
 public:
-    explicit Camera( float aspectRatio, float fovY = DirectX::XM_PIDIV4, float nearZ = 0.1f, float farZ = 100.0f );
+    DZ_EXAMPLES_API explicit Camera( float aspectRatio, float fovY = DirectX::XM_PIDIV4, float nearZ = 0.1f, float farZ = 100.0f );
 
-    void                            Update( float deltaTime );
-    [[nodiscard]] DirectX::XMMATRIX ViewProjectionMatrix( ) const;
+    DZ_EXAMPLES_API void          Update( float deltaTime );
+    [[nodiscard]] DZ_EXAMPLES_API DirectX::XMMATRIX ViewProjectionMatrix( ) const;
 
-    void HandleEvent( const SDL_Event &event );
+    DZ_EXAMPLES_API void HandleEvent( const SDL_Event &event );
 
 private:
     DirectX::XMVECTOR m_position{ };
@@ -43,8 +44,8 @@ private:
     float m_moveSpeed;
     float m_rotateSpeed;
 
-    float             m_yaw;
-    float             m_pitch;
+    float m_yaw;
+    float m_pitch;
 
     void UpdateViewMatrix( );
 };

@@ -23,13 +23,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct BufferView
+    struct DZ_API BufferView
     {
         uint64_t Offset;
         uint64_t Stride;
     };
 
-    struct BufferDesc
+    struct DZ_API BufferDesc
     {
         uint32_t                   Alignment = 0; // None or Constants.BufferAlignment(Api Dependant)
         size_t                     NumBytes{ };
@@ -38,10 +38,10 @@ namespace DenOfIz
         BitSet<ResourceDescriptor> Descriptor;
         BitSet<ResourceState>      InitialState;
         HeapType                   HeapType;
-        std::string                DebugName;
+        InteropString              DebugName;
     };
 
-    class IBufferResource
+    class DZ_API IBufferResource
     {
     public:
         virtual ~IBufferResource( ) = default;

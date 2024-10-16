@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
     // Note this function will delete example object to ensure leaked objects are reported correctly
-    int Main( IExample *example );
+    DZ_EXAMPLES_API int Main( IExample *example );
 } // namespace DenOfIz
 
 #define DZ_EXAMPLE_MAIN( ExampleType )                                                                                                                                             \

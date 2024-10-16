@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "Interop.h"
 #include <DenOfIzGraphics/Backends/GraphicsApi.h>
 #include "PerDrawBinding.h"
 #include "PerFrameBinding.h"
@@ -26,20 +27,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class QuadPipeline
+
+    class QuadPipeline final
     {
-        std::unique_ptr<ShaderProgram>                   m_program;
-        std::unique_ptr<IPipeline>                       m_pipeline;
-        std::unique_ptr<IRootSignature>                  m_rootSignature;
-        std::unique_ptr<IInputLayout>                    m_inputLayout;
-        std::vector<std::unique_ptr<IResourceBindGroup>> m_bindGroups;
-        std::unique_ptr<ISampler>                        m_sampler;
+        std::unique_ptr<IPipeline>          m_pipeline;
+        std::unique_ptr<IRootSignature>     m_rootSignature;
+        std::unique_ptr<IInputLayout>       m_inputLayout;
+        std::unique_ptr<IResourceBindGroup> m_bindGroups[ 15 ];
 
     public:
-        QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice, const std::string &pixelShader );
-        [[nodiscard]] IPipeline          *Pipeline( ) const;
-        [[nodiscard]] IRootSignature     *RootSignature( ) const;
-        [[nodiscard]] IResourceBindGroup *BindGroup( uint32_t frame, uint32_t registerSpace = 0 ) const;
-        void                              Render( ICommandList *commandList, uint32_t frame ) const;
+        DZ_EXAMPLES_API                                   QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice, const char *pixelShader );
+        [[nodiscard]] DZ_EXAMPLES_API IPipeline          *Pipeline( ) const;
+        [[nodiscard]] DZ_EXAMPLES_API IRootSignature     *RootSignature( ) const;
+        [[nodiscard]] DZ_EXAMPLES_API IResourceBindGroup *BindGroup( uint32_t frame, uint32_t registerSpace = 0 ) const;
+        DZ_EXAMPLES_API void                              Render( ICommandList *commandList, uint32_t frame ) const;
     };
 } // namespace DenOfIz

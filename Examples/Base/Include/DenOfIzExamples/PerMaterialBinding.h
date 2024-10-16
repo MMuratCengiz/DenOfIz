@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
-#include <DenOfIzGraphics/Renderer/Assets/MaterialData.h>
 #include "Camera.h"
 #include "NullTexture.h"
+#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
+#include <DenOfIzGraphics/Renderer/Assets/MaterialData.h>
 
 namespace DenOfIz
 {
@@ -32,9 +32,9 @@ namespace DenOfIz
         std::unique_ptr<NullTexture>        m_nullTexture;
 
     public:
-        PerMaterialBinding( ILogicalDevice *device, IRootSignature *rootSignature );
-        void                              Update( const MaterialData *materialData ) const;
-        [[nodiscard]] IResourceBindGroup *BindGroup( ) const;
+        DZ_EXAMPLES_API                                   PerMaterialBinding( ILogicalDevice *device, IRootSignature *rootSignature );
+        DZ_EXAMPLES_API void                              Update( const MaterialData *materialData ) const;
+        [[nodiscard]] DZ_EXAMPLES_API IResourceBindGroup *BindGroup( ) const;
 
     private:
         [[nodiscard]] ITextureResource *OrNull( ITextureResource *texture ) const;

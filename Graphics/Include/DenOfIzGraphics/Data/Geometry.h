@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Utilities/BitSet.h>
+#include <DenOfIzGraphics/Utilities/Interop.h>
 #include <DirectXMath.h>
 #include <cmath>
 #include <cstdint>
@@ -49,44 +50,38 @@ namespace DenOfIz
         InvertNormals  = 1 << 5,
     };
 
-    struct QuadDesc
+    template class DZ_API DenOfIz::BitSet<BuildDesc>;
+
+    struct DZ_API QuadDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float            Width;
-        float            Height;
+        float             Width;
+        float             Height;
     };
 
-    struct BoxDesc
+    struct DZ_API BoxDesc
     {
         BitSet<BuildDesc> BuildDesc;
-        float            Width;
-        float            Height;
-        float            Depth;
+        float             Width;
+        float             Height;
+        float             Depth;
     };
 
-    struct SphereDesc
-    {
-        BitSet<BuildDesc> BuildDesc;
-        float             Diameter{ };
-        size_t            Tessellation{ };
-    };
-
-    struct GeoSphereDesc
+    struct DZ_API SphereDesc
     {
         BitSet<BuildDesc> BuildDesc;
         float             Diameter{ };
         size_t            Tessellation{ };
     };
 
-    struct CylinderDesc
+    struct DZ_API GeoSphereDesc
     {
         BitSet<BuildDesc> BuildDesc;
         float             Diameter{ };
-        float             Height{ };
         size_t            Tessellation{ };
     };
 
-    struct ConeDesc
+    struct DZ_API CylinderDesc
     {
         BitSet<BuildDesc> BuildDesc;
         float             Diameter{ };
@@ -94,7 +89,15 @@ namespace DenOfIz
         size_t            Tessellation{ };
     };
 
-    struct TorusDesc
+    struct DZ_API ConeDesc
+    {
+        BitSet<BuildDesc> BuildDesc;
+        float             Diameter{ };
+        float             Height{ };
+        size_t            Tessellation{ };
+    };
+
+    struct DZ_API TorusDesc
     {
         BitSet<BuildDesc> BuildDesc;
         float             Diameter{ };
@@ -102,64 +105,64 @@ namespace DenOfIz
         size_t            Tessellation{ };
     };
 
-    struct TetrahedronDesc
+    struct DZ_API TetrahedronDesc
     {
         BitSet<BuildDesc> BuildDesc;
         float             Size{ };
     };
 
-    struct OctahedronDesc
+    struct DZ_API OctahedronDesc
     {
         BitSet<BuildDesc> BuildDesc;
         float             Size{ };
     };
 
-    struct DodecahedronDesc
+    struct DZ_API DodecahedronDesc
     {
         BitSet<BuildDesc> BuildDesc;
         float             Size{ };
     };
 
-    struct IcosahedronDesc
+    struct DZ_API IcosahedronDesc
     {
         BitSet<BuildDesc> BuildDesc;
         float             Size{ };
     };
 
-    struct GeometryPositionVertexData
+    struct DZ_API GeometryPositionVertexData
     {
         float X;
         float Y;
         float Z;
     };
 
-    struct GeometryNormalVertexData
+    struct DZ_API GeometryNormalVertexData
     {
         float X;
         float Y;
         float Z;
     };
 
-    struct GeometryTextureCoordinateVertexData
+    struct DZ_API GeometryTextureCoordinateVertexData
     {
         float U;
         float V;
     };
 
-    struct GeometryVertexData
+    struct DZ_API GeometryVertexData
     {
         GeometryPositionVertexData          Position{ };
         GeometryNormalVertexData            Normal{ };
         GeometryTextureCoordinateVertexData TextureCoordinate{ };
     };
 
-    struct GeometryData
+    struct DZ_API GeometryData
     {
         std::vector<GeometryVertexData> Vertices;
-        std::vector<uint32_t>   Indices;
+        std::vector<uint32_t>           Indices;
     };
 
-    class Geometry
+    class DZ_API Geometry
     {
     public:
         Geometry( )  = delete;
@@ -178,3 +181,6 @@ namespace DenOfIz
         static GeometryData BuildIcosahedron( const IcosahedronDesc &desc );
     };
 } // namespace DenOfIz
+
+template class DZ_API std::vector<DenOfIz::GeometryVertexData>;
+template class DZ_API std::vector<uint32_t>;

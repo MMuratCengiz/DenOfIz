@@ -79,9 +79,9 @@ namespace DenOfIz
         ComputeShader,
     };
 
-    struct ReflectionResourceField
+    struct DZ_API ReflectionResourceField
     {
-        std::string         Name;
+        InteropString       Name;
         ReflectionFieldType Type;
         uint32_t            NumColumns = 1;
         uint32_t            NumRows    = 0;
@@ -95,15 +95,15 @@ namespace DenOfIz
     };
 
 #define DZ_MAX_FIELDS 32
-    struct ResourceFields
+    struct DZ_API ResourceFields
     {
         size_t                  NumElements = 0;
         ReflectionResourceField Array[ DZ_MAX_FIELDS ];
     };
 
-    struct ReflectionDesc
+    struct DZ_API ReflectionDesc
     {
-        std::string           Name;
+        InteropString         Name;
         ReflectionBindingType Type;
         ResourceFields        Fields;
         size_t                NumBytes = 0;

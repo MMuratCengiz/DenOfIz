@@ -78,7 +78,7 @@ ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
     const auto gpuDesc = devices.Array[ 0 ];
     logicalDevice->LoadPhysicalDevice( gpuDesc );
 
-    LOG( INFO ) << "Loaded device: " << gpuDesc.Name;
+    LOG( INFO ) << "Loaded device: " << gpuDesc.Name.Str();
     LOG( INFO ) << "Device Capabilities:";
     LOG( INFO ) << "Dedicated GPU " << ( gpuDesc.Properties.IsDedicated ? "Yes" : "No" );
     LOG( INFO ) << "Available Memory " << gpuDesc.Properties.MemoryAvailableInMb << "MB";

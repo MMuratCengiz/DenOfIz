@@ -22,7 +22,27 @@ using namespace DenOfIz;
 
 void RenderTargetExample::Init( )
 {
-    BatchResourceCopy::SyncOp( m_logicalDevice, [ & ]( BatchResourceCopy *batchResourceCopy ) { m_sphere = std::make_unique<SphereAsset>( m_logicalDevice, batchResourceCopy ); } );
+//    RootSignatureType Type;
+    ResourceBindings     ResourceBindings1;
+    ResourceBindings     ResourceBindings2;
+    ResourceBindings     ResourceBindings3;
+    ResourceBindings     ResourceBindings4;
+    ResourceBindings     ResourceBindings5;
+    ResourceBindings     ResourceBindings6;
+//    StaticSamplers       StaticSamplers; // Not supported yet due to lack of support in Metal
+//    RootConstantBindings RootConstants;
+//    auto programReflection = program->Reflect( );
+
+//    auto rootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( programReflection.RootSignature ) );
+//    auto inputLayout   = std::unique_ptr<IInputLayout>( m_logicalDevice->CreateInputLayout( programReflection.InputLayout ) );
+
+
+    {
+        BatchResourceCopy batchResourceCopy( m_logicalDevice );
+        batchResourceCopy.Begin( );
+        m_sphere = std::make_unique<SphereAsset>( m_logicalDevice, &batchResourceCopy );
+        batchResourceCopy.Submit( );
+    }
 
     m_quadPipeline   = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice, "Assets/Shaders/SampleBasic.ps.hlsl" );
     m_renderPipeline = std::make_unique<DefaultRenderPipeline>( m_graphicsApi, m_logicalDevice );

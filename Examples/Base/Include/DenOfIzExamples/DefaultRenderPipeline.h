@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "Interop.h"
 #include <DenOfIzGraphics/Backends/GraphicsApi.h>
 #include "PerDrawBinding.h"
 #include "PerFrameBinding.h"
@@ -38,8 +39,8 @@ namespace DenOfIz
         std::unique_ptr<PerMaterialBinding> m_perMaterialBinding;
 
     public:
-        DefaultRenderPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice );
-        [[nodiscard]] PerMaterialBinding *PerMaterialBinding( ) const;
-        void Render( ICommandList *commandList, const WorldData &worldData ) const;
+        DZ_EXAMPLES_API                                   DefaultRenderPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice );
+        [[nodiscard]] DZ_EXAMPLES_API PerMaterialBinding *PerMaterialBinding( ) const;
+        DZ_EXAMPLES_API void                              Render( ICommandList *commandList, const WorldData &worldData ) const;
     };
 } // namespace DenOfIz

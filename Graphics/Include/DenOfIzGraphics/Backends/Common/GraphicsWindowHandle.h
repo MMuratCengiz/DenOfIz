@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Utilities/Engine.h>
+#include <DenOfIzGraphics/Utilities/Interop.h>
 
 #define WINDOW_MANAGER_SDL
 
@@ -28,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 #ifdef BUILD_VK
+#include "DenOfIzGraphics/Utilities/Interop.h"
 #include "SDL2/SDL_vulkan.h"
 #endif
 #endif
@@ -52,57 +54,32 @@ typedef void *TWindowHandle;
 namespace DenOfIz
 {
 
-    struct GraphicsWindowSurface
+    struct DZ_API GraphicsWindowSurface
     {
         uint32_t Width;
         uint32_t Height;
     };
 
-    class GraphicsWindowHandle
+    class DZ_API GraphicsWindowHandle
     {
     private:
 #ifdef WINDOW_MANAGER_SDL
         SDL_Window *m_sdlWindow;
 #endif
-
         TWindowHandle m_windowHandle;
 
     public:
         GraphicsWindowHandle( ) = default;
 
 #ifdef WINDOW_MANAGER_SDL
-        void CreateFromSDLWindow( SDL_Window *window )
-        {
-            m_sdlWindow = window;
-            SDL_SysWMinfo info;
-            SDL_VERSION( &info.version );
-            if ( SDL_GetWindowWMInfo( window, &info ) )
-            {
-#ifdef _WIN32
-                m_windowHandle = info.info.win.window;
-#elif __APPLE__
-                m_windowHandle = info.info.cocoa.window;
-#endif
-            }
-
-            if ( m_windowHandle == nullptr )
-            {
-                LOG( FATAL ) << "Failed to get window handle";
-            }
-        }
-
-        void CreateViaSDLWindowID( uint32_t windowID )
-        {
-            CreateFromSDLWindow( SDL_GetWindowFromID( windowID ) );
-        }
+        void CreateFromSDLWindow( SDL_Window *window );
+        void CreateViaSDLWindowID( uint32_t windowID );
+        void CreateFromSDLWindowRawPtr( void *);
 #else
 #error "Not implemented yet"
 #endif
 
-        [[nodiscard]] TWindowHandle GetNativeHandle( ) const
-        {
-            return m_windowHandle;
-        }
+        [[nodiscard]] TWindowHandle GetNativeHandle( ) const;
 
 #ifdef __APPLE__
         [[nodiscard]] NSView *GetNativeView( ) const
@@ -112,19 +89,13 @@ namespace DenOfIz
         }
 #endif
 
-        [[nodiscard]] const GraphicsWindowSurface GetSurface( ) const
-        {
-#ifdef WINDOW_MANAGER_SDL
-            GraphicsWindowSurface result{ };
-            SDL_Surface          *surface = SDL_GetWindowSurface( m_sdlWindow );
-            result.Width                  = surface->w;
-            result.Height                 = surface->h;
-            return result;
-#else
-#error "Not implemented yet"
-#endif
-        }
+        [[nodiscard]] const GraphicsWindowSurface GetSurface( ) const;
         ~GraphicsWindowHandle( ) = default;
+
+#ifdef WINDOW_MANAGER_SDL
+    private:
+        void InitSDL( );
+#endif
     };
 
 } // namespace DenOfIz

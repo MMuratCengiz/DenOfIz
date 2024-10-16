@@ -128,7 +128,7 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
 
         shaderStageCreateInfo.stage  = stage;
         shaderStageCreateInfo.module = shaderModule;
-        shaderStageCreateInfo.pName  = compiledShader->EntryPoint.c_str( );
+        shaderStageCreateInfo.pName  = compiledShader->EntryPoint.CStr();
         shaderStageCreateInfo.pNext  = nullptr;
     }
 

@@ -12,5 +12,4 @@ target_link_libraries(DenOfIzExamples-RenderTarget
         PUBLIC
         DenOfIzExamples-Base
 )
-
 apple_app(DenOfIzExamples-RenderTarget)
