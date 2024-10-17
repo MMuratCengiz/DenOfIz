@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <string>
 #include <vector>
+#include <glog/logging.h>
 
 #ifdef _WIN32
 #ifdef DZ_GRAPHICS_EXPORTS
@@ -36,7 +37,8 @@ namespace DenOfIz
 {
     class DZ_API InteropString
     {
-        char *m_data = nullptr;
+        char     *m_data              = nullptr;
+        const int s_nullTerminatorLen = 1;
 
     public:
         InteropString( const char *str = nullptr )
@@ -45,7 +47,7 @@ namespace DenOfIz
             {
                 size_t len = strlen( str );
                 m_data     = new char[ len + 1 ];
-                strcpy_s( m_data, len, str );
+                strcpy_s( m_data, len + s_nullTerminatorLen, str );
             }
         }
 
@@ -60,7 +62,7 @@ namespace DenOfIz
             {
                 size_t len = strlen( other.m_data );
                 m_data     = new char[ len + 1 ];
-                strcpy_s( m_data, len, other.m_data );
+                strcpy_s( m_data, len + s_nullTerminatorLen, other.m_data );
             }
             else
             {
@@ -77,7 +79,7 @@ namespace DenOfIz
                 {
                     size_t len = strlen( other.m_data );
                     m_data     = new char[ len + 1 ];
-                    strcpy_s( m_data, len, other.m_data );
+                    strcpy_s( m_data, len + s_nullTerminatorLen, other.m_data );
                 }
                 else
                 {
@@ -114,10 +116,10 @@ namespace DenOfIz
             char  *newData = new char[ oldLen + len + 1 ];
             if ( m_data != nullptr )
             {
-                strcpy_s( newData, oldLen, m_data );
+                strcpy_s( newData, oldLen + s_nullTerminatorLen, m_data );
                 delete[] m_data;
             }
-            strcpy_s( newData + oldLen, len, str );
+            strcpy_s( newData + oldLen, len + s_nullTerminatorLen, str );
             m_data = newData;
             return *this;
         }
@@ -148,10 +150,19 @@ namespace DenOfIz
     {
         T     *m_array       = nullptr;
         size_t m_numElements = 0;
+        size_t m_capacity    = 10;
+        size_t m_size        = 0;
 
     public:
-        InteropArray( size_t numElements = 0 ) : m_numElements( numElements ), m_array( numElements ? new T[ numElements ] : nullptr )
+        InteropArray( size_t size = 0 )
         {
+            if ( size > m_capacity )
+            {
+                m_capacity = size;
+            }
+            m_size        = size;
+            m_numElements = 0;
+            m_array       = new T[ m_capacity ];
         }
 
         ~InteropArray( )
@@ -161,67 +172,74 @@ namespace DenOfIz
 
         InteropArray( const InteropArray &other )
         {
-            m_numElements = other.m_numElements;
-            if ( m_numElements != 0 )
-            {
-                m_array = new T[ m_numElements ];
-                for ( size_t i = 0; i < m_numElements; ++i )
-                {
-                    m_array[ i ] = other.m_array[ i ];
-                }
-            }
+            Clear( *this );
+            CopyFrom( other );
         }
 
         InteropArray &operator=( const InteropArray &other )
         {
             if ( this != &other )
             {
-                delete[] m_array; // Free existing data
-                m_numElements = other.m_numElements;
-                m_array       = new T[ m_numElements ];
-                for ( size_t i = 0; i < m_numElements; ++i )
-                {
-                    m_array[ i ] = other.m_array[ i ];
-                }
+                Clear( *this );
+                CopyFrom( other );
             }
             return *this;
         }
 
-        InteropArray( InteropArray &&other ) noexcept : m_numElements( other.m_numElements ), m_array( other.m_array )
+        InteropArray( InteropArray &&other ) noexcept
         {
-            other.m_numElements = 0;
-            other.m_array       = nullptr;
+            Clear( *this );
+            CopyFrom( other );
+            Clear( other );
         }
 
         InteropArray &operator=( InteropArray &&other ) noexcept
         {
             if ( this != &other )
             {
-                delete[] m_array; // Free existing data
-                m_numElements       = other.m_numElements;
-                m_array             = other.m_array;
-                other.m_numElements = 0;
-                other.m_array       = nullptr; // Nullify the moved-from object
+                Clear( *this );
+                CopyFrom( other );
+                Clear( other );
             }
             return *this;
         }
 
+        void CopyFrom( const InteropArray &other )
+        {
+            m_size        = other.m_size;
+            m_capacity    = other.m_capacity;
+            m_numElements = other.m_numElements;
+            if ( m_capacity > 0 )
+            {
+                m_array = new T[ m_capacity ];
+                CopyArray( other.m_array, m_array, m_numElements );
+            }
+        }
+
+        void Clear( InteropArray &arr )
+        {
+            delete[] arr.m_array;
+            arr.m_array       = nullptr;
+            arr.m_numElements = 0;
+            arr.m_capacity    = 0;
+            arr.m_size        = 0;
+        }
+
         T &EmplaceElement( )
         {
-            size_t index = m_numElements;
-            Resize( m_numElements );
-            return m_array[ index ] = T( );
+            return m_array[ NewElement( ) ] = T( );
         }
 
         T &AddElement( const T &element )
         {
-            size_t index = m_numElements;
-            Resize( m_numElements );
-            return m_array[ index ] = element;
+            return m_array[ NewElement( ) ] = element;
         }
 
         void Swap( int index1, int index2 )
         {
+            CheckBounds( index1 );
+            CheckBounds( index2 );
+
             T temp            = m_array[ index1 ];
             m_array[ index1 ] = m_array[ index2 ];
             m_array[ index2 ] = temp;
@@ -229,27 +247,34 @@ namespace DenOfIz
 
         [[nodiscard]] const T &GetElement( const size_t index ) const
         {
+            CheckBounds( index );
             return m_array[ index ];
         }
 
         [[nodiscard]] T &GetElement( const size_t index )
         {
+            CheckBounds( index );
             return m_array[ index ];
         }
 
         void SetElement( const size_t index, const T &element )
         {
-            static_assert( std::is_copy_assignable<T>::value, "T must be copy assignable for this function to work." );
+            CheckBounds( index );
             m_array[ index ] = element;
         }
 
         // For rvalue references (movable objects)
         void SetElement( const size_t index, T &&element )
         {
+            CheckBounds( index );
             m_array[ index ] = std::move( element );
+            if ( index >= m_numElements )
+            {
+                m_numElements = index + 1;
+            }
         }
 
-        const T *Data( ) const
+        [[nodiscard]] const T *Data( ) const
         {
             return m_array;
         }
@@ -259,23 +284,40 @@ namespace DenOfIz
             return m_numElements;
         }
 
-        void Resize( const size_t numElements )
+        void Resize( const size_t size )
         {
-            if ( m_numElements <= numElements )
+            if ( m_capacity <= size )
             {
-                // Resize the array
-                m_numElements = numElements + ( numElements / 2 );
-                T *newArray   = new T[ m_numElements ];
-                for ( size_t i = 0; i < m_numElements; ++i )
-                {
-                    newArray[ i ] = std::move( m_array[ i ] );
-                }
+                m_capacity  = m_capacity + ( m_capacity / 2 );
+                T *newArray = new T[ m_capacity ];
+                CopyArray( newArray, m_array, m_numElements );
                 delete[] m_array;
+                m_array = newArray;
+            }
+            m_size = size;
+        }
+
+    private:
+        void CopyArray( const T *src, T *dst, const size_t numElements )
+        {
+            std::copy( std::make_move_iterator( src ), std::make_move_iterator( src + numElements ), dst );
+        }
+        size_t NewElement( )
+        {
+            size_t index = m_numElements;
+            Resize( index + 1 );
+            m_numElements++;
+            return index;
+        }
+
+        void CheckBounds( const size_t index ) const
+        {
+            if ( index >= m_size )
+            {
+                LOG( ERROR ) << "Index out of bounds." << index << " >= " << m_size;
             }
         }
     };
 
     template class DZ_API InteropArray<InteropString>;
-    template class DZ_API InteropArray<int>;
-    template class DZ_API InteropArray<float>;
 } // namespace DenOfIz

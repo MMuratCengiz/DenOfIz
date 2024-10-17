@@ -44,7 +44,7 @@ namespace DenOfIz
     private:
         void                  SetMSAASampleCount( const PipelineDesc &desc, D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const;
         void                  SetGraphicsShaders( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const;
-        D3D12_SHADER_BYTECODE GetShaderByteCode( const CompiledShader *compiledShader ) const;
+        D3D12_SHADER_BYTECODE GetShaderByteCode( const CompiledShader *const&compiledShader ) const;
         void                  CreateGraphicsPipeline( );
         void                  CreateComputePipeline( );
         void                  InitStencilFace( D3D12_DEPTH_STENCILOP_DESC &stencilFace, const StencilFace &face ) const;

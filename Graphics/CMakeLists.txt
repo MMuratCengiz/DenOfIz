@@ -44,8 +44,8 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Renderer/Common/CommandListRing.cpp
         Source/Renderer/Graph/RenderGraph.cpp
 
-        Source/Utilities/Utilities.cpp
         Source/Utilities/Time.cpp
+        Source/Utilities/Utilities.cpp
 
         # Interface utilities
         Source/Backends/Interface/CommonData.cpp

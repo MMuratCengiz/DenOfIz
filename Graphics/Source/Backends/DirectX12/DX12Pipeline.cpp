@@ -182,7 +182,7 @@ void DX12Pipeline::SetGraphicsShaders( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDe
     }
 }
 
-D3D12_SHADER_BYTECODE DX12Pipeline::GetShaderByteCode( const CompiledShader *compiledShader ) const
+D3D12_SHADER_BYTECODE DX12Pipeline::GetShaderByteCode( const CompiledShader *const &compiledShader ) const
 {
     return D3D12_SHADER_BYTECODE( compiledShader->Blob->GetBufferPointer( ), compiledShader->Blob->GetBufferSize( ) );
 }
