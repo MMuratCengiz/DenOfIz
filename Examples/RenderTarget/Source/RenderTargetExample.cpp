@@ -22,21 +22,6 @@ using namespace DenOfIz;
 
 void RenderTargetExample::Init( )
 {
-//    RootSignatureType Type;
-    ResourceBindings     ResourceBindings1;
-    ResourceBindings     ResourceBindings2;
-    ResourceBindings     ResourceBindings3;
-    ResourceBindings     ResourceBindings4;
-    ResourceBindings     ResourceBindings5;
-    ResourceBindings     ResourceBindings6;
-//    StaticSamplers       StaticSamplers; // Not supported yet due to lack of support in Metal
-//    RootConstantBindings RootConstants;
-//    auto programReflection = program->Reflect( );
-
-//    auto rootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( programReflection.RootSignature ) );
-//    auto inputLayout   = std::unique_ptr<IInputLayout>( m_logicalDevice->CreateInputLayout( programReflection.InputLayout ) );
-
-
     {
         BatchResourceCopy batchResourceCopy( m_logicalDevice );
         batchResourceCopy.Begin( );

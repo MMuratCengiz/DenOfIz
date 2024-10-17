@@ -30,20 +30,20 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
         rootSignatureVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
     }
 
-    for ( int i = 0; i < desc.ResourceBindings.NumElements; ++i )
+    for ( int i = 0; i < desc.ResourceBindings.NumElements( ); ++i )
     {
-        AddResourceBinding( desc.ResourceBindings.Array[ i ] );
+        AddResourceBinding( desc.ResourceBindings.GetElement( i ) );
     }
 
-    for ( int i = 0; i < m_desc.StaticSamplers.NumElements; ++i )
+    for ( int i = 0; i < m_desc.StaticSamplers.NumElements( ); ++i )
     {
-        const StaticSamplerDesc &staticSamplerDesc = m_desc.StaticSamplers.Array[ i ];
+        const StaticSamplerDesc &staticSamplerDesc = m_desc.StaticSamplers.GetElement( i );
         AddStaticSampler( staticSamplerDesc );
     }
 
-    for ( int i = 0; i < desc.RootConstants.NumElements; ++i )
+    for ( int i = 0; i < desc.RootConstants.NumElements( ); ++i )
     {
-        AddRootConstant( desc.RootConstants.Array[ i ] );
+        AddRootConstant( desc.RootConstants.GetElement( i ) );
     }
 
     if ( m_descriptorRangesShaderVisibilities.size( ) == 1 )
@@ -83,7 +83,7 @@ uint32_t DX12RootSignature::GetResourceOffset( const ResourceBindingSlot &slot )
         LOG( ERROR ) << "Register space " << slot.RegisterSpace << " is not bound to any bind group.";
     }
     return ContainerUtilities::SafeGetMapValue( m_registerSpaceOrder[ slot.RegisterSpace ].ResourceOffsetMap, slot.Key( ),
-                                                "Binding slot does not exist in root signature: " + slot.ToString( ) );
+                                                "Binding slot does not exist in root signature: " + slot.ToString( ).Str( ) );
 }
 
 void DX12RootSignature::ProcessRegisterSpaceRange( const RegisterSpaceRangesDesc &range )
@@ -169,7 +169,7 @@ void DX12RootSignature::AddStaticSampler( const StaticSamplerDesc &staticSampler
 
     desc.ShaderRegister   = staticSamplerDesc.Binding.Binding;
     desc.RegisterSpace    = staticSamplerDesc.Binding.RegisterSpace;
-    desc.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( staticSamplerDesc.Binding.Stages.Array[ 0 ] );
+    desc.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( staticSamplerDesc.Binding.Stages.GetElement( 0 ) );
 
     m_staticSamplerDescriptorRanges.push_back( desc );
 }
@@ -199,9 +199,9 @@ void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
         spaceDesc.SamplerRanges.push_back( descriptorRange );
         spaceOrder.ResourceOffsetMap[ slot.Key( ) ] = spaceOrder.SamplerCount++;
 
-        for ( int i = 0; i < binding.Stages.NumElements; ++i )
+        for ( int i = 0; i < binding.Stages.NumElements( ); ++i )
         {
-            const auto             &stage     = binding.Stages.Array[ i ];
+            const auto             &stage     = binding.Stages.GetElement( i );
             D3D12_SHADER_VISIBILITY usedStage = DX12EnumConverter::ConvertShaderStageToShaderVisibility( stage );
             m_samplerRangesShaderVisibilities.insert( usedStage );
             m_usedStages |= usedStage;
@@ -217,14 +217,14 @@ void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
         rootLevelRange.Range                     = descriptorRange;
 
         // Shader visibilities are skipped as they are not part of the same descriptor table. No need to track via a hash set.
-        if ( binding.Stages.NumElements == 0 || binding.Stages.NumElements > 1 )
+        if ( binding.Stages.NumElements( ) == 0 || binding.Stages.NumElements( ) > 1 )
         {
             rootLevelRange.Visibility = D3D12_SHADER_VISIBILITY_ALL;
             m_usedStages |= D3D12_SHADER_VISIBILITY_ALL;
         }
         else
         {
-            rootLevelRange.Visibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( binding.Stages.Array[ 0 ] );
+            rootLevelRange.Visibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( binding.Stages.GetElement( 0 ) );
             m_usedStages |= rootLevelRange.Visibility;
         }
         spaceOrder.ResourceOffsetMap[ slot.Key( ) ] = spaceOrder.RootLevelBufferCount++;
@@ -234,9 +234,9 @@ void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
         spaceDesc.CbvSrvUavRanges.push_back( descriptorRange );
         spaceOrder.ResourceOffsetMap[ slot.Key( ) ] = spaceOrder.ResourceCount++;
 
-        for ( int i = 0; i < binding.Stages.NumElements; ++i )
+        for ( int i = 0; i < binding.Stages.NumElements( ); ++i )
         {
-            const auto             &stage     = binding.Stages.Array[ i ];
+            const auto             &stage     = binding.Stages.GetElement( i );
             D3D12_SHADER_VISIBILITY usedStage = DX12EnumConverter::ConvertShaderStageToShaderVisibility( stage );
             m_descriptorRangesShaderVisibilities.insert( usedStage );
             m_usedStages |= usedStage;
@@ -249,9 +249,9 @@ void DX12RootSignature::AddRootConstant( const RootConstantResourceBindingDesc &
     CD3DX12_ROOT_PARAMETER &dxRootConstant = m_rootConstants.emplace_back( );
     dxRootConstant.ParameterType           = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
     dxRootConstant.ShaderVisibility        = D3D12_SHADER_VISIBILITY_ALL;
-    if ( rootConstant.Stages.NumElements == 1 )
+    if ( rootConstant.Stages.NumElements( ) == 1 )
     {
-        dxRootConstant.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( rootConstant.Stages.Array[ 0 ] );
+        dxRootConstant.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( rootConstant.Stages.GetElement( 0 ) );
     }
     dxRootConstant.Constants.Num32BitValues = rootConstant.NumBytes / sizeof( uint32_t );
     dxRootConstant.Constants.ShaderRegister = rootConstant.Binding;

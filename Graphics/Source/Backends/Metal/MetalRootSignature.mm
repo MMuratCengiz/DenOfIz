@@ -27,9 +27,9 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
     std::vector<uint32_t> registerSpaceSize;
 
     int numTables = 0;
-    for ( int i = 0; i < m_desc.ResourceBindings.NumElements; ++i )
+    for ( int i = 0; i < m_desc.ResourceBindings.NumElements( ); ++i )
     {
-        const auto &binding = m_desc.ResourceBindings.Array[ i ];
+        const auto &binding = m_desc.ResourceBindings.GetElement( i );
 
         ResourceBindingSlot slot = {
             .Binding       = binding.Binding,
@@ -38,9 +38,9 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
         };
 
         MTLRenderStages stages = 0;
-        for ( int stageIndex = 0; stageIndex < binding.Stages.NumElements; ++stageIndex )
+        for ( int stageIndex = 0; stageIndex < binding.Stages.NumElements( ); ++stageIndex )
         {
-            const auto &stage = binding.Stages.Array[ stageIndex ];
+            const auto &stage = binding.Stages.GetElement( stageIndex );
             if ( stage == ShaderStage::Vertex )
             {
                 stages |= MTLRenderStageVertex;
@@ -60,15 +60,15 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
         m_metalBindings[ slot.Key( ) ] = { .Parent = binding, .Stages = stages };
     }
 
-    m_rootConstants.resize( m_desc.RootConstants.NumElements );
-    for ( int i = 0; i < m_desc.RootConstants.NumElements; i++ )
+    m_rootConstants.resize( m_desc.RootConstants.NumElements( ) );
+    for ( int i = 0; i < m_desc.RootConstants.NumElements( ); i++ )
     {
-        const auto &trueIndex = m_desc.RootConstants.Array[ i ].Binding;
-        if ( trueIndex >= m_desc.RootConstants.NumElements )
+        const auto &trueIndex = m_desc.RootConstants.GetElement( i ).Binding;
+        if ( trueIndex >= m_desc.RootConstants.NumElements( ) )
         {
             LOG( FATAL ) << "Root constant binding index is out of range. Make sure all bindings are provided in ascending order.";
         }
-        const auto &rootConstant     = m_desc.RootConstants.Array[ trueIndex ];
+        const auto &rootConstant     = m_desc.RootConstants.GetElement( trueIndex );
         m_rootConstants[ trueIndex ] = { .Offset = m_numRootConstantBytes, .NumBytes = rootConstant.NumBytes };
         m_numRootConstantBytes += rootConstant.NumBytes;
     }

@@ -44,48 +44,12 @@ namespace DenOfIz
         DescriptorBufferBindingType Type          = DescriptorBufferBindingType::ConstantBuffer;
 
         // To simplify having a really odd looking vector of ResourceBindingSlots
-        [[nodiscard]] uint32_t Key( ) const
-        {
-            return static_cast<uint32_t>( Type ) * 1000 + RegisterSpace * 100 + Binding;
-        }
-
-        [[nodiscard]] std::string ToString( ) const
-        {
-            std::string typeString;
-            switch ( Type )
-            {
-            case DescriptorBufferBindingType::ConstantBuffer:
-                typeString = "b";
-                break;
-            case DescriptorBufferBindingType::ShaderResource:
-                typeString = "t";
-                break;
-            case DescriptorBufferBindingType::UnorderedAccess:
-                typeString = "u";
-                break;
-            case DescriptorBufferBindingType::Sampler:
-                typeString = "s";
-                break;
-            }
-            return "(" + typeString + std::to_string( Binding ) + ", space" + std::to_string( RegisterSpace ) + ")";
-        }
+        [[nodiscard]] uint32_t      Key( ) const;
+        [[nodiscard]] InteropString ToString( ) const;
     };
 
-#define DZ_MAX_SHADER_STAGES 5
-    struct DZ_API ShaderStages
-    {
-        size_t      NumElements = 0;
-        ShaderStage Array[ DZ_MAX_SHADER_STAGES ];
-
-        void SetElement( size_t index, const ShaderStage &value )
-        {
-            Array[ index ] = value;
-        }
-        const ShaderStage &GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
-    };
+    template class DZ_API InteropArray<ResourceBindingSlot>;
+    template class DZ_API InteropArray<ShaderStage>;
 
     struct DZ_API ResourceBindingDesc
     {
@@ -94,7 +58,7 @@ namespace DenOfIz
         uint32_t                    Binding{ };
         uint32_t                    RegisterSpace = 0;
         BitSet<ResourceDescriptor>  Descriptor;
-        ShaderStages                Stages;
+        InteropArray<ShaderStage>   Stages;
         int                         ArraySize = 1; // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
         ReflectionDesc              Reflection{ };
     };
@@ -108,67 +72,24 @@ namespace DenOfIz
     // For cross api compatibility the RegisterSpace is hardcoded to 99, make sure to use the same value in the HLSL Shader
     struct DZ_API RootConstantResourceBindingDesc
     {
-        InteropString  Name;
-        uint32_t       Binding{ };
-        int            NumBytes{ };
-        ShaderStages   Stages;
-        ReflectionDesc Reflection{ };
+        InteropString             Name;
+        uint32_t                  Binding{ };
+        int                       NumBytes{ };
+        InteropArray<ShaderStage> Stages;
+        ReflectionDesc            Reflection{ };
     };
 
-#define DZ_MAX_ROOT_CONSTANTS 5
-    struct DZ_API RootConstantBindings
-    {
-        size_t                          NumElements = 0;
-        RootConstantResourceBindingDesc Array[ DZ_MAX_ROOT_CONSTANTS ];
-
-        void SetElement( size_t index, const RootConstantResourceBindingDesc &value )
-        {
-            Array[ index ] = value;
-        }
-        const RootConstantResourceBindingDesc &GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
-    };
-#define DZ_MAX_RESOURCE_BINDINGS 32
-    struct DZ_API ResourceBindings
-    {
-        size_t              NumElements = 0;
-        ResourceBindingDesc Array[ DZ_MAX_RESOURCE_BINDINGS ];
-
-        void SetElement( size_t index, const ResourceBindingDesc &value )
-        {
-            Array[ index ] = value;
-        }
-        const ResourceBindingDesc &GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
-    };
-
-#define DZ_MAX_STATIC_SAMPLERS 1
-    struct DZ_API StaticSamplers
-    {
-        size_t            NumElements = 0;
-        StaticSamplerDesc Array[ DZ_MAX_STATIC_SAMPLERS ];
-
-        void SetElement( size_t index, const StaticSamplerDesc &value )
-        {
-            Array[ index ] = value;
-        }
-        const StaticSamplerDesc &GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
-    };
+    template class DZ_API InteropArray<ResourceBindingDesc>;
+    template class DZ_API InteropArray<StaticSamplerDesc>;
+    template class DZ_API InteropArray<RootConstantResourceBindingDesc>;
 
     struct DZ_API RootSignatureDesc
     {
-        RootSignatureType Type;
+        RootSignatureType Type = RootSignatureType::Graphics;
         // The order of the bindings must match the order of the shader inputs!!! TODO might need to be fixed but this is normal for DX12
-        ResourceBindings     ResourceBindings;
-        StaticSamplers       StaticSamplers; // Not supported yet due to lack of support in Metal
-        RootConstantBindings RootConstants;
+        InteropArray<ResourceBindingDesc>             ResourceBindings;
+        InteropArray<StaticSamplerDesc>               StaticSamplers; // Not supported yet due to lack of support in Metal
+        InteropArray<RootConstantResourceBindingDesc> RootConstants;
     };
 
     class DZ_API IRootSignature

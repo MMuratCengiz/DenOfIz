@@ -1,0 +1,47 @@
+/*
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
+
+using namespace DenOfIz;
+
+uint32_t ResourceBindingSlot::Key( ) const
+{
+    return static_cast<uint32_t>( Type ) * 1000 + RegisterSpace * 100 + Binding;
+}
+
+InteropString ResourceBindingSlot::ToString( ) const
+{
+    std::string typeString;
+    switch ( Type )
+    {
+    case DescriptorBufferBindingType::ConstantBuffer:
+        typeString = "b";
+        break;
+    case DescriptorBufferBindingType::ShaderResource:
+        typeString = "t";
+        break;
+    case DescriptorBufferBindingType::UnorderedAccess:
+        typeString = "u";
+        break;
+    case DescriptorBufferBindingType::Sampler:
+        typeString = "s";
+        break;
+    }
+    return "(" + typeString + std::to_string( Binding ) + ", space" + std::to_string( RegisterSpace ) + ")";
+}

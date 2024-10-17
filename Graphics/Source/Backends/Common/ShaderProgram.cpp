@@ -144,7 +144,7 @@ void ShaderProgram::ProduceMSL( )
 
     for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements; ++shaderIndex )
     {
-        auto &shader = m_desc.Shaders.Array[ shaderIndex ];
+        auto       &shader      = m_desc.Shaders.Array[ shaderIndex ];
         CompileDesc compileDesc = { };
         compileDesc.Path        = shader.Path;
         compileDesc.Defines     = shader.Defines;
@@ -352,7 +352,7 @@ void ShaderProgram::ProduceMSL( )
 
     for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements; ++shaderIndex )
     {
-        auto &shader = m_desc.Shaders.Array[ shaderIndex ];
+        auto       &shader      = m_desc.Shaders.Array[ shaderIndex ];
         CompileDesc compileDesc = { };
         compileDesc.Path        = shader.Path;
         compileDesc.Defines     = shader.Defines;
@@ -511,13 +511,13 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
 
             // Check if Resource is already bound, if so add the stage to the existing binding and continue
             bool found = false;
-            for ( int bindingIndex = 0; bindingIndex < rootSignature.ResourceBindings.NumElements; ++bindingIndex )
+            for ( int bindingIndex = 0; bindingIndex < rootSignature.ResourceBindings.NumElements( ); ++bindingIndex )
             {
-                auto &boundBinding = rootSignature.ResourceBindings.Array[ bindingIndex ];
+                auto &boundBinding = rootSignature.ResourceBindings.GetElement( bindingIndex );
                 if ( boundBinding.RegisterSpace == shaderInputBindDesc.Space && boundBinding.Binding == shaderInputBindDesc.BindPoint && boundBinding.BindingType == bindingType )
                 {
-                    found                                                          = true;
-                    boundBinding.Stages.Array[ boundBinding.Stages.NumElements++ ] = shader->Stage;
+                    found = true;
+                    boundBinding.Stages.AddElement( shader->Stage );
                 }
             }
             if ( found )
@@ -535,23 +535,23 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
                     LOG( FATAL ) << "Root constant reflection type mismatch. RegisterSpace [" << shaderInputBindDesc.Space
                                  << "] is reserved for root constants. Which cannot be samplers or textures.";
                 }
-                RootConstantResourceBindingDesc &rootConstantBinding                         = rootSignature.RootConstants.Array[ rootSignature.RootConstants.NumElements++ ];
-                rootConstantBinding.Name                                                     = shaderInputBindDesc.Name;
-                rootConstantBinding.Binding                                                  = shaderInputBindDesc.BindPoint;
-                rootConstantBinding.Stages.Array[ rootConstantBinding.Stages.NumElements++ ] = shader->Stage;
-                rootConstantBinding.NumBytes                                                 = rootConstantReflection.NumBytes;
-                rootConstantBinding.Reflection                                               = rootConstantReflection;
+                RootConstantResourceBindingDesc &rootConstantBinding = rootSignature.RootConstants.EmplaceElement( );
+                rootConstantBinding.Name                             = shaderInputBindDesc.Name;
+                rootConstantBinding.Binding                          = shaderInputBindDesc.BindPoint;
+                rootConstantBinding.Stages.AddElement( shader->Stage );
+                rootConstantBinding.NumBytes   = rootConstantReflection.NumBytes;
+                rootConstantBinding.Reflection = rootConstantReflection;
                 continue;
             }
 
-            ResourceBindingDesc &resourceBindingDesc                                     = rootSignature.ResourceBindings.Array[ rootSignature.ResourceBindings.NumElements++ ];
-            resourceBindingDesc.Name                                                     = shaderInputBindDesc.Name;
-            resourceBindingDesc.Binding                                                  = shaderInputBindDesc.BindPoint;
-            resourceBindingDesc.RegisterSpace                                            = shaderInputBindDesc.Space;
-            resourceBindingDesc.ArraySize                                                = shaderInputBindDesc.BindCount;
-            resourceBindingDesc.BindingType                                              = bindingType;
-            resourceBindingDesc.Descriptor                                               = ReflectTypeToRootSignatureType( shaderInputBindDesc.Type );
-            resourceBindingDesc.Stages.Array[ resourceBindingDesc.Stages.NumElements++ ] = shader->Stage;
+            ResourceBindingDesc &resourceBindingDesc = rootSignature.ResourceBindings.EmplaceElement( );
+            resourceBindingDesc.Name                 = shaderInputBindDesc.Name;
+            resourceBindingDesc.Binding              = shaderInputBindDesc.BindPoint;
+            resourceBindingDesc.RegisterSpace        = shaderInputBindDesc.Space;
+            resourceBindingDesc.ArraySize            = shaderInputBindDesc.BindCount;
+            resourceBindingDesc.BindingType          = bindingType;
+            resourceBindingDesc.Descriptor           = ReflectTypeToRootSignatureType( shaderInputBindDesc.Type );
+            resourceBindingDesc.Stages.AddElement( shader->Stage );
             FillReflectionData( shaderReflection, resourceBindingDesc.Reflection, i );
 #ifdef BUILD_METAL
             /*
