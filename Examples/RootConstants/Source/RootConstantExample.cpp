@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzGraphics/Utilities/Time.h>
 #include <DenOfIzExamples/RootConstantExample.h>
+#include <DenOfIzGraphics/Utilities/Time.h>
 
 using namespace DenOfIz;
 
@@ -34,28 +34,30 @@ void RootConstantExample::Init( )
 
     PresentNodeDesc presentNode{ };
     presentNode.SwapChain = m_swapChain.get( );
-    presentNode.Execute   = [ this ]( const uint32_t frame, ICommandList *commandList, ITextureResource *renderTarget )
-    {
-        RenderingAttachmentDesc quadAttachmentDesc{ };
-        quadAttachmentDesc.Resource = renderTarget;
-
-        RenderingDesc quadRenderingDesc{ };
-        quadRenderingDesc.RTAttachments.push_back( quadAttachmentDesc );
-
-        commandList->BeginRendering( quadRenderingDesc );
-        const Viewport &viewport = m_swapChain->GetViewport( );
-        commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-        commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-        commandList->BindPipeline( m_quadPipeline->Pipeline( ) );
-        commandList->BindResourceGroup( m_resourceBindGroup.get( ) );
-        commandList->Draw( 3, 1, 0, 0 );
-        commandList->EndRendering( );
-    };
+    presentNode.Execute   = this;
 
     m_renderGraph->SetPresentNode( presentNode );
     m_renderGraph->BuildGraph( );
 
     m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
+}
+
+void RootConstantExample::Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *texture )
+{
+    RenderingAttachmentDesc quadAttachmentDesc{ };
+    quadAttachmentDesc.Resource = texture;
+
+    RenderingDesc quadRenderingDesc{ };
+    quadRenderingDesc.RTAttachments.AddElement( quadAttachmentDesc );
+
+    commandList->BeginRendering( quadRenderingDesc );
+    const Viewport &viewport = m_swapChain->GetViewport( );
+    commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+    commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+    commandList->BindPipeline( m_quadPipeline->Pipeline( ) );
+    commandList->BindResourceGroup( m_resourceBindGroup.get( ) );
+    commandList->Draw( 3, 1, 0, 0 );
+    commandList->EndRendering( );
 }
 
 void RootConstantExample::ModifyApiPreferences( APIPreference &defaultApiPreference )

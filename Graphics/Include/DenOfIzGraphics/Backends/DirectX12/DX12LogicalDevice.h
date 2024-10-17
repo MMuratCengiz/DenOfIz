@@ -44,10 +44,10 @@ namespace DenOfIz
         ~DX12LogicalDevice( ) override;
 
         // Override methods
-        void            CreateDevice( ) override;
-        PhysicalDevices ListPhysicalDevices( ) override;
-        void            LoadPhysicalDevice( const PhysicalDevice &device ) override;
-        bool            IsDeviceLost( ) override;
+        void                         CreateDevice( ) override;
+        InteropArray<PhysicalDevice> ListPhysicalDevices( ) override;
+        void                         LoadPhysicalDevice( const PhysicalDevice &device ) override;
+        bool                         IsDeviceLost( ) override;
 
         ICommandListPool   *CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
         IPipeline          *CreatePipeline( const PipelineDesc &pipelineDesc ) override;

@@ -14,7 +14,7 @@ namespace DenOfIz
 
     public:
         MetalCommandListPool( MetalContext *context, CommandListPoolDesc desc );
-        CommandLists GetCommandLists( ) override;
+        InteropArray<ICommandList *> GetCommandLists( ) override;
         ~MetalCommandListPool( ) override = default;
     };
 } // namespace DenOfIz

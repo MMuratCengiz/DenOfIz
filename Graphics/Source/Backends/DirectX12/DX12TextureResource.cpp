@@ -104,7 +104,7 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
         DX_CHECK_RESULT( hr );
     }
 
-    const std::string debugName = m_desc.DebugName.Str();
+    const std::string debugName = m_desc.DebugName.Get( );
     const std::wstring name = std::wstring( debugName.begin(), debugName.end() );
     DX_CHECK_RESULT( m_resource->SetName( name.c_str( ) ) );
     m_allocation->SetName( name.c_str( ) );

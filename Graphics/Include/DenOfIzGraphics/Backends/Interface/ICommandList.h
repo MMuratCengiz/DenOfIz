@@ -58,22 +58,6 @@ namespace DenOfIz
         }
     };
 
-#define DZ_MAX_RT_ATTACHMENTS 8
-    struct DZ_API RenderingAttachments
-    {
-        size_t                  NumElements = 0;
-        RenderingAttachmentDesc Array[ DZ_MAX_RT_ATTACHMENTS ];
-
-        void SetElement( size_t index, const RenderingAttachmentDesc &value )
-        {
-            Array[ index ] = value;
-        }
-        const RenderingAttachmentDesc &GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
-    };
-
     struct DZ_API RenderingDesc
     {
         RenderingAttachmentDesc DepthAttachment;
@@ -85,8 +69,9 @@ namespace DenOfIz
         float    RenderAreaOffsetY = 0.0f;
         uint32_t LayerCount        = 1;
 
-        RenderingAttachments RTAttachments;
+        InteropArray<RenderingAttachmentDesc> RTAttachments;
     };
+    template class DZ_API InteropArray<RenderingAttachmentDesc>;
 
     struct DZ_API CopyBufferRegionDesc
     {
@@ -151,9 +136,9 @@ namespace DenOfIz
     struct DZ_API ExecuteDesc
     {
         // Objects specified below must live until the command list is executed
-        IFence    *Notify           = nullptr;
-        Semaphores WaitOnSemaphores = { 0, nullptr };
-        Semaphores NotifySemaphores = { 0, nullptr };
+        IFence                    *Notify = nullptr;
+        InteropArray<ISemaphore *> WaitOnSemaphores;
+        InteropArray<ISemaphore *> NotifySemaphores;
     };
 
     struct DZ_API CommandListDesc
@@ -170,7 +155,7 @@ namespace DenOfIz
         virtual void BeginRendering( const RenderingDesc &renderingDesc )                                                                                       = 0;
         virtual void EndRendering( )                                                                                                                            = 0;
         virtual void Execute( const ExecuteDesc &executeDesc )                                                                                                  = 0;
-        virtual void Present( ISwapChain *swapChain, uint32_t imageIndex, Semaphores waitOnLocks )                                                              = 0;
+        virtual void Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> &waitOnLocks )                                       = 0;
         virtual void BindPipeline( IPipeline *pipeline )                                                                                                        = 0;
         virtual void BindVertexBuffer( IBufferResource *buffer )                                                                                                = 0;
         virtual void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType )                                                                     = 0;
@@ -188,5 +173,5 @@ namespace DenOfIz
         // --
         virtual void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) = 0;
     };
-
+    template class DZ_API InteropArray<ICommandList *>;
 } // namespace DenOfIz

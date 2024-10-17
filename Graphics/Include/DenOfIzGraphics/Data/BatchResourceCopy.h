@@ -31,13 +31,6 @@ namespace DenOfIz
         IBufferResource *DstBuffer;
         const void      *Data;
         size_t           NumBytes;
-
-        // Swig Note: void* management
-        void SetData( const std::vector<Byte> &data )
-        {
-            Data     = data.data( );
-            NumBytes = data.size( );
-        }
     };
 
     struct DZ_API CopyDataToTextureDesc
@@ -49,13 +42,6 @@ namespace DenOfIz
         uint32_t          ArrayLayer;
         uint32_t          RowPitch;
         uint32_t          SlicePitch;
-
-        // Swig Note: void* management
-        void SetData( const std::vector<Byte> &data )
-        {
-            Data     = data.data( );
-            NumBytes = data.size( );
-        }
     };
 
     struct DZ_API LoadTextureDesc
@@ -100,7 +86,7 @@ namespace DenOfIz
         DZ_API void                           CopyBufferRegion( const CopyBufferRegionDesc &copyDesc ) const;
         DZ_API void                           CopyTextureRegion( const CopyTextureRegionDesc &copyDesc ) const;
         DZ_API void                           CopyDataToTexture( const CopyDataToTextureDesc &copyDesc );
-        DZ_API ITextureResource              *CreateAndLoadTexture( const std::string &file );
+        DZ_API ITextureResource              *CreateAndLoadTexture( const InteropString &file );
         DZ_API void                           LoadTexture( const LoadTextureDesc &loadDesc );
         [[nodiscard]] DZ_API IBufferResource *CreateUniformBuffer( const void *data, uint32_t numBytes );
         [[nodiscard]] DZ_API IBufferResource *CreateGeometryVertexBuffer( const GeometryData &geometryData );

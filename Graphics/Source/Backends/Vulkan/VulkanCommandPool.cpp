@@ -31,13 +31,12 @@ VulkanCommandPool::VulkanCommandPool( VulkanContext *context, const CommandListP
     }
 }
 
-CommandLists VulkanCommandPool::GetCommandLists( )
+InteropArray<ICommandList *> VulkanCommandPool::GetCommandLists( )
 {
-    CommandLists commandLists;
-    commandLists.NumElements = m_commandLists.size( );
+    InteropArray<ICommandList *> commandLists( m_commandLists.size( ) );
     for ( int i = 0; i < m_commandLists.size( ); i++ )
     {
-        commandLists.Array[ i ] = m_commandLists[ i ].get( );
+        commandLists.SetElement( i, m_commandLists[ i ].get( ) );
     }
     return commandLists;
 }

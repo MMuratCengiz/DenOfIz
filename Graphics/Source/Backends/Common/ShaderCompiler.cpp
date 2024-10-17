@@ -54,7 +54,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
 
     // Attribute to reference: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
     // https://github.com/KhronosGroup/Vulkan-Guide
-    std::string       path     = Utilities::AppPath( compileDesc.Path.Str( ) );
+    std::string       path     = Utilities::AppPath( compileDesc.Path.Get( ) );
     uint32_t          codePage = DXC_CP_ACP;
     IDxcBlobEncoding *sourceBlob;
     std::wstring      wsShaderPath( path.begin( ), path.end( ) );
@@ -96,7 +96,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     arguments.push_back( wsShaderPath.c_str( ) );
     // Set the entry point
     arguments.push_back( L"-E" );
-    std::string  entryPoint = compileDesc.EntryPoint.Str( );
+    std::string  entryPoint = compileDesc.EntryPoint.Get( );
     std::wstring wsEntryPoint( entryPoint.begin( ), entryPoint.end( ) );
     arguments.push_back( wsEntryPoint.c_str( ) );
     // Set shader stage
@@ -138,11 +138,11 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
             arguments.push_back( L"all" );
         }
     }
-    for ( int i = 0; i < compileDesc.Defines.NumElements; ++i )
+    for ( int i = 0; i < compileDesc.Defines.NumElements( ); ++i )
     {
-        const auto &define = compileDesc.Defines.Array[ i ];
+        const auto &define = compileDesc.Defines.GetElement( i );
         arguments.push_back( L"-D" );
-        arguments.push_back( reinterpret_cast<LPCWSTR>( define ) );
+        arguments.push_back( reinterpret_cast<LPCWSTR>( define.Get( ) ) );
     }
     arguments.push_back( L"-HV" );
     arguments.push_back( L"2021" );
@@ -205,13 +205,13 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     dxcResult->Release( );
     sourceBlob->Release( );
 
-    CacheCompiledShader( compileDesc.Path.Str(), compileDesc.TargetIL, code );
+    CacheCompiledShader( compileDesc.Path.Get( ), compileDesc.TargetIL, code );
 
     auto *compiledShader       = new CompiledShader( );
     compiledShader->Stage      = compileDesc.Stage;
     compiledShader->Blob       = code;
     compiledShader->Reflection = reflection;
-    compiledShader->EntryPoint = compileDesc.EntryPoint.CStr();
+    compiledShader->EntryPoint = compileDesc.EntryPoint.Get( );
     return std::unique_ptr<CompiledShader>( compiledShader );
 }
 

@@ -53,11 +53,11 @@ namespace DenOfIz
 
     public:
         explicit GraphicsApi( const APIPreference &preference );
-        ~        GraphicsApi( );
+        ~GraphicsApi( );
 
         ILogicalDevice *CreateLogicalDevice( ) const;
         ILogicalDevice *CreateAndLoadOptimalLogicalDevice( ) const;
-        ShaderProgram  *CreateShaderProgram( const ShaderDescs &shaders ) const;
+        ShaderProgram  *CreateShaderProgram( const InteropArray<ShaderDesc> &shaders ) const;
 
         static void ReportLiveObjects( );
 

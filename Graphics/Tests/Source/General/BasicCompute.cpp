@@ -27,21 +27,17 @@ void BasicCompute( const GraphicsApi &gApi )
     ShaderDesc                      shaderDesc{ };
     shaderDesc.Stage = ShaderStage::Compute;
     shaderDesc.Path  = "Assets/Shaders/Tests/GeneralTests/BasicCompute.hlsl";
-    ShaderDescs shaderDescs{ };
-    shaderDescs.NumElements = 1;
-    shaderDescs.Array[ 0 ]  = shaderDesc;
+    InteropArray<ShaderDesc> shaderDescs{ };
+    shaderDescs.AddElement( shaderDesc );
 
     std::unique_ptr<ShaderProgram> program = std::unique_ptr<ShaderProgram>( gApi.CreateShaderProgram( shaderDescs ) );
 
-    ResourceBindings    resourceBindings{ };
-    ResourceBindingDesc resourceBindingDesc{ };
-    resourceBindingDesc.Name               = "computeReadBack";
-    resourceBindingDesc.Binding            = 0;
-    resourceBindingDesc.Descriptor         = ResourceDescriptor::RWBuffer;
-    resourceBindingDesc.Stages.NumElements = 1;
-    resourceBindingDesc.Stages.Array[ 0 ]  = { ShaderStage::Compute };
-    resourceBindings.NumElements           = 1;
-    resourceBindings.Array[ 0 ]            = resourceBindingDesc;
+    InteropArray<ResourceBindingDesc> resourceBindings{ };
+    ResourceBindingDesc              &resourceBindingDesc = resourceBindings.EmplaceElement( );
+    resourceBindingDesc.Name                              = "computeReadBack";
+    resourceBindingDesc.Binding                           = 0;
+    resourceBindingDesc.Descriptor                        = ResourceDescriptor::RWBuffer;
+    resourceBindingDesc.Stages.AddElement( { ShaderStage::Compute } );
 
     RootSignatureDesc rootSignatureDesc{ };
     rootSignatureDesc.ResourceBindings = resourceBindings;

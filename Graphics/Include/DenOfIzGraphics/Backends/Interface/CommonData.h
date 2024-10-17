@@ -314,6 +314,7 @@ namespace DenOfIz
         PhysicalDeviceCapabilities Capabilities;
         DeviceConstants            Constants;
     };
+    template class DZ_API InteropArray<PhysicalDevice>;
 
     struct DZ_API DZConfiguration
     {

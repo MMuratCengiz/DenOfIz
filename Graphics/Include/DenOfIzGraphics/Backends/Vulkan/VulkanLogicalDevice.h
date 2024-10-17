@@ -50,10 +50,10 @@ namespace DenOfIz
     public:
         VulkanLogicalDevice( ) = default;
 
-        void            CreateDevice( ) override;
-        PhysicalDevices ListPhysicalDevices( ) override;
-        void            LoadPhysicalDevice( const PhysicalDevice &device ) override;
-        bool            IsDeviceLost( ) override;
+        void                         CreateDevice( ) override;
+        InteropArray<PhysicalDevice> ListPhysicalDevices( ) override;
+        void                         LoadPhysicalDevice( const PhysicalDevice &device ) override;
+        bool                         IsDeviceLost( ) override;
 
         void                         WaitIdle( ) override;
         [[nodiscard]] VulkanContext *GetContext( ) const;

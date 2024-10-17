@@ -66,9 +66,9 @@ void MetalCommandList::BeginRendering( const RenderingDesc &renderingDesc )
     auto passDesc = MTLRenderPassDescriptor.renderPassDescriptor;
     @autoreleasepool
     {
-        for ( auto i = 0; i < renderingDesc.RTAttachments.NumElements; i++ )
+        for ( auto i = 0; i < renderingDesc.RTAttachments.NumElements( ); i++ )
         {
-            const RenderingAttachmentDesc &attachment      = renderingDesc.RTAttachments.Array[ i ];
+            const RenderingAttachmentDesc &attachment      = renderingDesc.RTAttachments.GetElement( i );
             MetalTextureResource          *metalRtResource = static_cast<MetalTextureResource *>( attachment.Resource );
             passDesc.colorAttachments[ i ].texture         = metalRtResource->Instance( );
             passDesc.colorAttachments[ i ].loadAction      = MetalEnumConverter::ConvertLoadAction( attachment.LoadOp );
@@ -129,9 +129,9 @@ void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
             metalFence->NotifyOnCommandBufferCompletion( m_commandBuffer );
         }
 
-        for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements; ++i )
+        for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements( ); ++i )
         {
-            MetalSemaphore *metalSemaphore = static_cast<MetalSemaphore *>( executeDesc.NotifySemaphores.Array[ i ] );
+            MetalSemaphore *metalSemaphore = static_cast<MetalSemaphore *>( executeDesc.NotifySemaphores.GetElement( i ) );
             metalSemaphore->NotifyOnCommandBufferCompletion( m_commandBuffer );
         }
 
@@ -139,7 +139,7 @@ void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
     }
 }
 
-void MetalCommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, Semaphores waitOnLocks )
+void MetalCommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> & waitOnLocks )
 {
     MetalSwapChain *metalSwapChain = static_cast<MetalSwapChain *>( swapChain );
     metalSwapChain->Present( waitOnLocks );

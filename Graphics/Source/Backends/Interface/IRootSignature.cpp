@@ -43,5 +43,12 @@ InteropString ResourceBindingSlot::ToString( ) const
         typeString = "s";
         break;
     }
-    return "(" + typeString + std::to_string( Binding ) + ", space" + std::to_string( RegisterSpace ) + ")";
+
+    return InteropString( )
+        .Append( "(" )
+        .Append( typeString.c_str( ) )
+        .Append( std::to_string( Binding ).c_str( ) )
+        .Append( ", space" )
+        .Append( std::to_string( RegisterSpace ).c_str( ) )
+        .Append( ")" );
 }

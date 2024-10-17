@@ -49,7 +49,7 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
 
     const HRESULT hr = m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, start_state, nullptr, &m_allocation, IID_PPV_ARGS( &m_resource ) );
     DX_CHECK_RESULT( hr );
-    std::string debugName = m_desc.DebugName.Str( );
+    std::string debugName = m_desc.DebugName.Get( );
     const std::wstring name = std::wstring( debugName.begin( ), debugName.end( ) );
     DX_CHECK_RESULT( m_resource->SetName( name.c_str( ) ) );
     m_allocation->SetName( name.c_str( ) );
@@ -122,7 +122,7 @@ void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle )
 
 void *DX12BufferResource::MapMemory( )
 {
-    DZ_ASSERTM( m_mappedMemory == nullptr, std::format( "Memory already mapped {}", m_desc.DebugName.Str() ) );
+    DZ_ASSERTM( m_mappedMemory == nullptr, std::format( "Memory already mapped {}", m_desc.DebugName.Get( ) ) );
     D3D12_RANGE range = { 0, 0 };
     DX_CHECK_RESULT( m_resource->Map( 0, nullptr, &m_mappedMemory ) );
     return m_mappedMemory;
@@ -130,7 +130,7 @@ void *DX12BufferResource::MapMemory( )
 
 void DX12BufferResource::UnmapMemory( )
 {
-    DZ_ASSERTM( m_mappedMemory != nullptr, std::format( "Memory not mapped, buffer: {}", m_desc.DebugName.Str() ) );
+    DZ_ASSERTM( m_mappedMemory != nullptr, std::format( "Memory not mapped, buffer: {}", m_desc.DebugName.Get( ) ) );
     m_resource->Unmap( 0, nullptr );
     m_mappedMemory = nullptr;
 }

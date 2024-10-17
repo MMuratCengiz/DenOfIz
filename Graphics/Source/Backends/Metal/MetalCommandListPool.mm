@@ -31,13 +31,12 @@ MetalCommandListPool::MetalCommandListPool( MetalContext *context, CommandListPo
     }
 }
 
-CommandLists MetalCommandListPool::GetCommandLists( )
+InteropArray<ICommandList *> MetalCommandListPool::GetCommandLists( )
 {
-    CommandLists commandLists;
+    InteropArray<ICommandList *> commandLists( m_commandLists.size( ) );
     for ( int i = 0; i < m_commandLists.size( ); i++ )
     {
-        commandLists.NumElements++;
-        commandLists.Array[ i ] = m_commandLists[ i ].get( );
+        commandLists.SetElement( i, m_commandLists[ i ].get( ) );
     }
     return commandLists;
 }

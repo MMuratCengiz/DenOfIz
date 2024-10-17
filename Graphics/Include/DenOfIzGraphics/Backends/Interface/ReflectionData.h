@@ -86,6 +86,7 @@ namespace DenOfIz
         uint32_t            NumColumns = 1;
         uint32_t            NumRows    = 0;
     };
+    template class DZ_API InteropArray<ReflectionResourceField>;
 
     enum class ReflectRootParameterType
     {
@@ -94,19 +95,12 @@ namespace DenOfIz
         RootDescriptor,
     };
 
-#define DZ_MAX_FIELDS 32
-    struct DZ_API ResourceFields
-    {
-        size_t                  NumElements = 0;
-        ReflectionResourceField Array[ DZ_MAX_FIELDS ];
-    };
-
     struct DZ_API ReflectionDesc
     {
-        InteropString         Name;
-        ReflectionBindingType Type;
-        ResourceFields        Fields;
-        size_t                NumBytes = 0;
+        InteropString                         Name;
+        ReflectionBindingType                 Type;
+        InteropArray<ReflectionResourceField> Fields;
+        size_t                                NumBytes = 0;
 #ifdef BUILD_METAL
         /**
          * Metal specific information to simulate register spaces. We use a top level argument buffers:

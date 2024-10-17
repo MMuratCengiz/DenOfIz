@@ -22,12 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-
-    // -- Constraints --
-#define DZ_MAX_INPUT_LAYOUT_ELEMENTS 16
-#define DZ_MAX_INPUT_LAYOUT_GROUPS 16
-    // --
-
     enum class StepRate
     {
         PerVertex,
@@ -61,18 +55,8 @@ namespace DenOfIz
      */
     struct DZ_API InputGroupDesc
     {
-        size_t                 NumElements = 0;
-        InputLayoutElementDesc Elements[ DZ_MAX_INPUT_LAYOUT_ELEMENTS ];
-        StepRate               StepRate = StepRate::PerVertex;
-
-        void SetElement( size_t index, const InputLayoutElementDesc &value )
-        {
-            Elements[ index ] = value;
-        }
-        const InputLayoutElementDesc &GetElement( size_t index )
-        {
-            return Elements[ index ];
-        }
+        StepRate                             StepRate = StepRate::PerVertex;
+        InteropArray<InputLayoutElementDesc> Elements;
     };
 
     /**
@@ -80,8 +64,7 @@ namespace DenOfIz
      */
     struct DZ_API InputLayoutDesc
     {
-        size_t         NumInputGroups = 0;
-        InputGroupDesc InputGroups[ DZ_MAX_INPUT_LAYOUT_GROUPS ];
+        InteropArray<InputGroupDesc> InputGroups;
     };
 
     class DZ_API IInputLayout

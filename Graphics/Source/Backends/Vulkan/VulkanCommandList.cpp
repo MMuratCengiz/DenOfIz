@@ -70,9 +70,9 @@ void VulkanCommandList::BeginRendering( const RenderingDesc &renderingDesc )
 
     std::vector<VkRenderingAttachmentInfo> colorAttachments;
 
-    for ( int i = 0; i < renderingDesc.RTAttachments.NumElements; ++i )
+    for ( int i = 0; i < renderingDesc.RTAttachments.NumElements( ); ++i )
     {
-        const auto &colorAttachment           = renderingDesc.RTAttachments.Array[ i ];
+        const auto &colorAttachment           = renderingDesc.RTAttachments.GetElement( i );
         auto       *vkColorAttachmentResource = dynamic_cast<VulkanTextureResource *>( colorAttachment.Resource );
 
         VkRenderingAttachmentInfo colorAttachmentInfo{ };
@@ -146,17 +146,17 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeDesc )
 
     std::vector<VkPipelineStageFlags> waitStages;
     std::vector<VkSemaphore>          waitOnSemaphores;
-    for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements; i++ )
+    for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements( ); i++ )
     {
-        auto *waitOn = dynamic_cast<VulkanSemaphore *>( executeDesc.WaitOnSemaphores.Array[ i ] );
+        auto *waitOn = dynamic_cast<VulkanSemaphore *>( executeDesc.WaitOnSemaphores.GetElement( i ) );
         waitOnSemaphores.push_back( waitOn->GetSemaphore( ) );
         waitStages.push_back( VK_PIPELINE_STAGE_ALL_COMMANDS_BIT );
     }
 
     std::vector<VkSemaphore> signalSemaphores;
-    for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements; i++ )
+    for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements( ); i++ )
     {
-        auto *signal = dynamic_cast<VulkanSemaphore *>( executeDesc.NotifySemaphores.Array[ i ] );
+        auto *signal = dynamic_cast<VulkanSemaphore *>( executeDesc.NotifySemaphores.GetElement( i ) );
         signalSemaphores.push_back( signal->GetSemaphore( ) );
     }
 
@@ -360,17 +360,17 @@ void VulkanCommandList::Dispatch( const uint32_t groupCountX, const uint32_t gro
     vkCmdDispatch( m_commandBuffer, groupCountX, groupCountY, groupCountZ );
 }
 
-void VulkanCommandList::Present( ISwapChain *swapChain, const uint32_t imageIndex, const Semaphores waitOnLocks )
+void VulkanCommandList::Present( ISwapChain *swapChain, const uint32_t imageIndex, const InteropArray<ISemaphore *> & waitOnLocks )
 {
     DZ_ASSERTM( m_desc.QueueType == QueueType::Graphics, "Present can only be called on graphics queue." );
 
     VkPresentInfoKHR presentInfo{ };
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-    std::vector<VkSemaphore> vkWaitOnSemaphores( waitOnLocks.NumElements );
-    for ( int i = 0; i < waitOnLocks.NumElements; i++ )
+    std::vector<VkSemaphore> vkWaitOnSemaphores( waitOnLocks.NumElements( ) );
+    for ( int i = 0; i < waitOnLocks.NumElements( ); i++ )
     {
-        vkWaitOnSemaphores[ i ] = reinterpret_cast<VulkanSemaphore *>( waitOnLocks.Array[ i ] )->GetSemaphore( );
+        vkWaitOnSemaphores[ i ] = reinterpret_cast<VulkanSemaphore *>( waitOnLocks.GetElement( i ) )->GetSemaphore( );
     }
 
     presentInfo.waitSemaphoreCount = vkWaitOnSemaphores.size( );

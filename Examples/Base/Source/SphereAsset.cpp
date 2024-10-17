@@ -27,11 +27,11 @@ SphereAsset::SphereAsset( ILogicalDevice *device, BatchResourceCopy *batchResour
     MaterialDesc      materialDesc{ };
     materialDesc.Device           = device;
     materialDesc.BatchCopy        = batchResourceCopy;
-    materialDesc.AlbedoTexture    = baseTexturePath + "basecolor.png";
-    materialDesc.NormalTexture    = baseTexturePath + "normal.png";
-    materialDesc.HeightTexture    = baseTexturePath + "height.png";
-    materialDesc.RoughnessTexture = baseTexturePath + "roughness.png";
-    materialDesc.AoTexture        = baseTexturePath + "ambientOcclusion.png";
+    materialDesc.AlbedoTexture    = ( baseTexturePath + "basecolor.png" ).c_str( );
+    materialDesc.NormalTexture    = ( baseTexturePath + "normal.png" ).c_str( );
+    materialDesc.HeightTexture    = ( baseTexturePath + "height.png" ).c_str( );
+    materialDesc.RoughnessTexture = ( baseTexturePath + "roughness.png" ).c_str( );
+    materialDesc.AoTexture        = ( baseTexturePath + "ambientOcclusion.png" ).c_str( );
     m_materialData                = std::make_unique<MaterialData>( materialDesc );
 
     const GeometryData sphere = Geometry::BuildSphere( { .Diameter = 1.0f, .Tessellation = 64 } );

@@ -63,10 +63,10 @@ void DX12Pipeline::CreateGraphicsPipeline( )
     psoDesc.BlendState.IndependentBlendEnable = m_desc.Rendering.IndependentBlendEnable;
     psoDesc.SampleMask                        = UINT_MAX;
     psoDesc.PrimitiveTopologyType             = DX12EnumConverter::ConvertPrimitiveTopologyToType( m_desc.PrimitiveTopology );
-    psoDesc.NumRenderTargets                  = m_desc.Rendering.RenderTargets.NumElements;
-    for ( uint32_t i = 0; i < m_desc.Rendering.RenderTargets.NumElements; ++i )
+    psoDesc.NumRenderTargets                  = m_desc.Rendering.RenderTargets.NumElements( );
+    for ( uint32_t i = 0; i < m_desc.Rendering.RenderTargets.NumElements( ); ++i )
     {
-        BlendDesc &blendDesc                                       = m_desc.Rendering.RenderTargets.Array[ i ].Blend;
+        BlendDesc &blendDesc                                       = m_desc.Rendering.RenderTargets.GetElement( i ).Blend;
         psoDesc.BlendState.RenderTarget[ i ].BlendEnable           = blendDesc.Enable;
         psoDesc.BlendState.RenderTarget[ i ].LogicOpEnable         = m_desc.Rendering.BlendLogicOpEnable;
         psoDesc.BlendState.RenderTarget[ i ].SrcBlend              = DX12EnumConverter::ConvertBlend( blendDesc.SrcBlend );
@@ -78,7 +78,7 @@ void DX12Pipeline::CreateGraphicsPipeline( )
         psoDesc.BlendState.RenderTarget[ i ].LogicOp               = DX12EnumConverter::ConvertLogicOp( m_desc.Rendering.BlendLogicOp );
         psoDesc.BlendState.RenderTarget[ i ].RenderTargetWriteMask = blendDesc.RenderTargetWriteMask;
 
-        psoDesc.RTVFormats[ i ] = DX12EnumConverter::ConvertFormat( m_desc.Rendering.RenderTargets.Array[ i ].Format );
+        psoDesc.RTVFormats[ i ] = DX12EnumConverter::ConvertFormat( m_desc.Rendering.RenderTargets.GetElement( i ).Format );
     }
 
     if ( m_desc.Rendering.DepthStencilAttachmentFormat != Format::Undefined )
@@ -93,11 +93,11 @@ void DX12Pipeline::CreateGraphicsPipeline( )
 void DX12Pipeline::CreateComputePipeline( )
 {
     const auto &compiledShaders = m_desc.ShaderProgram->GetCompiledShaders( );
-    DZ_ASSERTM( compiledShaders.NumElements == 1, "Compute pipeline must have at least/only one shader" );
+    DZ_ASSERTM( compiledShaders.NumElements( ) == 1, "Compute pipeline must have at least/only one shader" );
 
     D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = { };
     psoDesc.pRootSignature                    = m_rootSignature->Instance( );
-    psoDesc.CS                                = GetShaderByteCode( compiledShaders.Array[ 0 ] );
+    psoDesc.CS                                = GetShaderByteCode( compiledShaders.GetElement( 0 ) );
 
     DX_CHECK_RESULT( m_context->D3DDevice->CreateComputePipelineState( &psoDesc, IID_PPV_ARGS( m_graphicsPipeline.put( ) ) ) );
 }
@@ -156,9 +156,9 @@ void DX12Pipeline::SetMSAASampleCount( const PipelineDesc &desc, D3D12_GRAPHICS_
 void DX12Pipeline::SetGraphicsShaders( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const
 {
     const auto &compiledShaders = m_desc.ShaderProgram->GetCompiledShaders( );
-    for ( int i = 0; i < compiledShaders.NumElements; ++i )
+    for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
     {
-        const auto &compiledShader = compiledShaders.Array[ i ];
+        const auto &compiledShader = compiledShaders.GetElement( i );
         switch ( compiledShader->Stage )
         {
         case ShaderStage::Vertex:

@@ -36,7 +36,6 @@ constexpr float SQRT2 = 1.41421356237309504880f;
 constexpr float SQRT3 = 1.73205080756887729352f;
 constexpr float SQRT6 = 2.44948974278317809820f;
 
-
 inline void CheckIndexOverflow( const size_t value )
 {
     // Use >=, not > comparison, because some D3D level 9_x hardware does not support 0xFFFF index values.
@@ -46,9 +45,9 @@ inline void CheckIndexOverflow( const size_t value )
     }
 }
 
-void VertexEmplace( std::vector<GeometryVertexData> &vertices, FXMVECTOR iposition, FXMVECTOR inormal, FXMVECTOR itextureCoordinate )
+void VertexEmplace( InteropArray<GeometryVertexData> &vertices, FXMVECTOR iposition, FXMVECTOR inormal, FXMVECTOR itextureCoordinate )
 {
-    GeometryVertexData &vertexData = vertices.emplace_back( );
+    GeometryVertexData &vertexData = vertices.EmplaceElement( );
     vertexData.Position.X          = XMVectorGetX( iposition );
     vertexData.Position.Y          = XMVectorGetY( iposition );
     vertexData.Position.Z          = XMVectorGetZ( iposition );
@@ -63,29 +62,30 @@ void VertexEmplace( std::vector<GeometryVertexData> &vertices, FXMVECTOR ipositi
 inline void EmplaceIndex( GeometryData &data, const size_t value )
 {
     CheckIndexOverflow( value );
-    data.Indices.emplace_back( static_cast<uint32_t>( value ) );
+    data.Indices.AddElement( static_cast<uint32_t>( value ) );
 }
 
 // Helper for flipping winding of geometric primitives for LH vs. RH coordinates
 inline void ReverseWinding( GeometryData &data )
 {
-    assert( ( data.Indices.size( ) % 3 ) == 0 );
-    for ( auto it = data.Indices.begin( ); it != data.Indices.end( ); it += 3 )
+    assert( ( data.Indices.NumElements( ) % 3 ) == 0 );
+    for ( int i = 0; i < data.Indices.NumElements( ); i += 3 )
     {
-        std::swap( *it, *( it + 2 ) );
+        data.Indices.Swap( i, i + 2 );
     }
 
-    for ( auto &it : data.Vertices )
+    for ( int i = 0; i < data.Vertices.NumElements( ); ++i )
     {
-        it.TextureCoordinate.U = ( 1.f - it.TextureCoordinate.U );
+        data.Vertices.GetElement( i ).TextureCoordinate.U = ( 1.f - data.Vertices.GetElement( i ).TextureCoordinate.U );
     }
 }
 
 // Helper for inverting normals of geometric primitives for 'inside' vs. 'outside' viewing
 inline void InvertNormals( GeometryData &data )
 {
-    for ( auto &it : data.Vertices )
+    for ( int i = 0; i < data.Vertices.NumElements( ); ++i )
     {
+        auto &it    = data.Vertices.GetElement( i );
         it.Normal.X = -it.Normal.X;
         it.Normal.Y = -it.Normal.Y;
         it.Normal.Z = -it.Normal.Z;
@@ -192,7 +192,7 @@ GeometryData Geometry::BuildBox( const BoxDesc &boxDesc )
         const XMVECTOR side2 = XMVector3Cross( normal, side1 );
 
         // Six indices (two triangles) per face.
-        const size_t vbase = vertices.size( );
+        const size_t vbase = vertices.NumElements( );
         EmplaceIndex( result, vbase + 0 );
         EmplaceIndex( result, vbase + 1 );
         EmplaceIndex( result, vbase + 2 );
@@ -366,7 +366,10 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
 
     std::vector<XMFLOAT3> vertexPositions( std::begin( OctahedronVertices ), std::end( OctahedronVertices ) );
 
-    indices.insert( indices.begin( ), std::begin( OctahedronIndices ), std::end( OctahedronIndices ) );
+    for ( auto &octahedronIndex : OctahedronIndices )
+    {
+        indices.AddElement( octahedronIndex );
+    }
 
     // We know these values by looking at the above index list for the octahedron. Despite the subdivisions that are
     // about to go on, these values aren't ever going to change because the vertices don't move around in the array.
@@ -376,24 +379,24 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
 
     for ( size_t iSubdivision = 0; iSubdivision < tessellation; ++iSubdivision )
     {
-        assert( indices.size( ) % 3 == 0 ); // sanity
+        assert( indices.NumElements( ) % 3 == 0 ); // sanity
 
         // We use this to keep track of which edges have already been subdivided.
         EdgeSubdivisionMap subdividedEdges;
 
         // The new index collection after subdivision.
-        std::vector<uint32_t> newIndices;
+        InteropArray<uint32_t> newIndices;
 
-        const size_t triangleCount = indices.size( ) / 3;
+        const size_t triangleCount = indices.NumElements( ) / 3;
         for ( size_t iTriangle = 0; iTriangle < triangleCount; ++iTriangle )
         {
             // For each edge on this triangle, create a new vertex in the middle of that edge.
             // The winding order of the triangles we output are the same as the winding order of the inputs.
 
             // Indices of the vertices making up this triangle
-            const uint16_t iv0 = indices[ iTriangle * 3 + 0 ];
-            const uint16_t iv1 = indices[ iTriangle * 3 + 1 ];
-            const uint16_t iv2 = indices[ iTriangle * 3 + 2 ];
+            const uint16_t iv0 = indices.GetElement( iTriangle * 3 + 0 );
+            const uint16_t iv1 = indices.GetElement( iTriangle * 3 + 1 );
+            const uint16_t iv2 = indices.GetElement( iTriangle * 3 + 2 );
 
             // Get the new vertices
             XMFLOAT3 v01{ }; // vertex on the midpoint of v0 and v1
@@ -451,14 +454,18 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
                 iv20, iv01, iv12, // c
                 iv01, iv1,  iv12, // d
             };
-            newIndices.insert( newIndices.end( ), std::begin( indicesToAdd ), std::end( indicesToAdd ) );
+
+            for ( const auto &indexToAdd : indicesToAdd )
+            {
+                newIndices.AddElement( indexToAdd );
+            }
         }
 
         indices = std::move( newIndices );
     }
 
     // Now that we've completed subdivision, fill in the final vertex collection
-    vertices.reserve( vertexPositions.size( ) );
+    vertices.Resize( vertexPositions.size( ) );
     for ( const auto &it : vertexPositions )
     {
         auto const normal = XMVector3Normalize( XMLoadFloat3( &it ) );
@@ -488,29 +495,29 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
     // completed sphere. If you imagine the vertices along that edge, they circumscribe a semicircular arc starting at
     // y=1 and ending at y=-1, and sweeping across the range of z=0 to z=1. x stays zero. It's along this edge that we
     // need to duplicate our vertices - and provide the correct texture coordinates.
-    const size_t preFixupVertexCount = vertices.size( );
+    const size_t preFixupVertexCount = vertices.NumElements( );
     for ( size_t i = 0; i < preFixupVertexCount; ++i )
     {
         // This vertex is on the prime meridian if position.x and texture coordinates are both zero (allowing for small epsilon).
         const bool isOnPrimeMeridian =
-            XMVector2NearEqual( XMVectorSet( vertices[ i ].Position.X, vertices[ i ].TextureCoordinate.U, 0.0f, 0.0f ), XMVectorZero( ), XMVectorSplatEpsilon( ) );
+            XMVector2NearEqual( XMVectorSet( vertices.GetElement( i ).Position.X, vertices.GetElement( i ).TextureCoordinate.U, 0.0f, 0.0f ), XMVectorZero( ), XMVectorSplatEpsilon( ) );
 
         if ( isOnPrimeMeridian )
         {
-            size_t newIndex = vertices.size( ); // the index of this vertex that we're about to add
+            size_t newIndex = vertices.NumElements( ); // the index of this vertex that we're about to add
             CheckIndexOverflow( newIndex );
 
             // copy this vertex, correct the texture coordinate, and add the vertex
-            GeometryVertexData v  = vertices[ i ];
+            GeometryVertexData v  = vertices.GetElement( i );
             v.TextureCoordinate.U = 1.0f;
-            vertices.push_back( v );
+            vertices.AddElement( v );
 
             // Now find all the triangles which contain this vertex and update them if necessary
-            for ( size_t j = 0; j < indices.size( ); j += 3 )
+            for ( size_t j = 0; j < indices.NumElements( ); j += 3 )
             {
-                uint32_t *triIndex0 = &indices[ j + 0 ];
-                uint32_t *triIndex1 = &indices[ j + 1 ];
-                uint32_t *triIndex2 = &indices[ j + 2 ];
+                uint32_t *triIndex0 = &indices.GetElement( j + 0 );
+                uint32_t *triIndex1 = &indices.GetElement( j + 1 );
+                uint32_t *triIndex2 = &indices.GetElement( j + 2 );
 
                 if ( *triIndex0 == i )
                 {
@@ -534,9 +541,9 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
                 assert( *triIndex0 == i );
                 assert( *triIndex1 != i && *triIndex2 != i ); // assume no degenerate triangles
 
-                const GeometryVertexData &v0 = vertices[ *triIndex0 ];
-                const GeometryVertexData &v1 = vertices[ *triIndex1 ];
-                const GeometryVertexData &v2 = vertices[ *triIndex2 ];
+                const GeometryVertexData &v0 = vertices.GetElement( *triIndex0 );
+                const GeometryVertexData &v1 = vertices.GetElement( *triIndex1 );
+                const GeometryVertexData &v2 = vertices.GetElement( *triIndex2 );
 
                 // check the other two vertices to see if we might need to fix this triangle
 
@@ -556,10 +563,10 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
     // poles, but reduce stretching.
     auto const fixPole = [ & ]( const size_t poleIndex )
     {
-        const auto &poleVertex            = vertices[ poleIndex ];
+        const auto &poleVertex            = vertices.GetElement( poleIndex );
         bool        overwrittenPoleVertex = false; // overwriting the original pole vertex saves us one vertex
 
-        for ( size_t i = 0; i < indices.size( ); i += 3 )
+        for ( size_t i = 0; i < indices.NumElements( ); i += 3 )
         {
             // These pointers point to the three indices which make up this triangle. pPoleIndex is the pointer to the
             // entry in the index array which represents the pole index, and the other two pointers point to the other
@@ -567,31 +574,31 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
             uint32_t *pPoleIndex;
             uint32_t *pOtherIndex0;
             uint32_t *pOtherIndex1;
-            if ( indices[ i + 0 ] == poleIndex )
+            if ( indices.GetElement( i + 0 ) == poleIndex )
             {
-                pPoleIndex   = &indices[ i + 0 ];
-                pOtherIndex0 = &indices[ i + 1 ];
-                pOtherIndex1 = &indices[ i + 2 ];
+                pPoleIndex   = &indices.GetElement( i + 0 );
+                pOtherIndex0 = &indices.GetElement( i + 1 );
+                pOtherIndex1 = &indices.GetElement( i + 2 );
             }
-            else if ( indices[ i + 1 ] == poleIndex )
+            else if ( indices.GetElement( i + 1 ) == poleIndex )
             {
-                pPoleIndex   = &indices[ i + 1 ];
-                pOtherIndex0 = &indices[ i + 2 ];
-                pOtherIndex1 = &indices[ i + 0 ];
+                pPoleIndex   = &indices.GetElement( i + 1 );
+                pOtherIndex0 = &indices.GetElement( i + 2 );
+                pOtherIndex1 = &indices.GetElement( i + 0 );
             }
-            else if ( indices[ i + 2 ] == poleIndex )
+            else if ( indices.GetElement( i + 2 ) == poleIndex )
             {
-                pPoleIndex   = &indices[ i + 2 ];
-                pOtherIndex0 = &indices[ i + 0 ];
-                pOtherIndex1 = &indices[ i + 1 ];
+                pPoleIndex   = &indices.GetElement( i + 2 );
+                pOtherIndex0 = &indices.GetElement( i + 0 );
+                pOtherIndex1 = &indices.GetElement( i + 1 );
             }
             else
             {
                 continue;
             }
 
-            const auto &otherVertex0 = vertices[ *pOtherIndex0 ];
-            const auto &otherVertex1 = vertices[ *pOtherIndex1 ];
+            const auto &otherVertex0 = vertices.GetElement( *pOtherIndex0 );
+            const auto &otherVertex1 = vertices.GetElement( *pOtherIndex1 );
 
             // Calculate the texture coordinates for the new pole vertex, add it to the vertices and update the index
             GeometryVertexData newPoleVertex  = poleVertex;
@@ -600,15 +607,15 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
 
             if ( !overwrittenPoleVertex )
             {
-                vertices[ poleIndex ] = newPoleVertex;
+                vertices.GetElement( poleIndex ) = newPoleVertex;
                 overwrittenPoleVertex = true;
             }
             else
             {
-                CheckIndexOverflow( vertices.size( ) );
+                CheckIndexOverflow( vertices.NumElements( ) );
 
-                *pPoleIndex = static_cast<uint16_t>( vertices.size( ) );
-                vertices.push_back( newPoleVertex );
+                *pPoleIndex = static_cast<uint16_t>( vertices.NumElements( ) );
+                vertices.AddElement( newPoleVertex );
             }
         }
     };
@@ -667,7 +674,7 @@ void CreateCylinderCap( GeometryData &result, const size_t tessellation, const f
             std::swap( i1, i2 );
         }
 
-        const size_t vbase = vertices.size( );
+        const size_t vbase = vertices.NumElements( );
         EmplaceIndex( result, vbase );
         EmplaceIndex( result, vbase + i1 );
         EmplaceIndex( result, vbase + i2 );
@@ -908,7 +915,7 @@ GeometryData Geometry::BuildTetrahedron( const TetrahedronDesc &tetrahedronDesc 
         XMVECTOR normal = XMVector3Cross( XMVectorSubtract( verts[ v1 ].v, verts[ v0 ].v ), XMVectorSubtract( verts[ v2 ].v, verts[ v0 ].v ) );
         normal          = XMVector3Normalize( normal );
 
-        const size_t base = vertices.size( );
+        const size_t base = vertices.NumElements( );
         EmplaceIndex( result, base );
         EmplaceIndex( result, base + 1 );
         EmplaceIndex( result, base + 2 );
@@ -930,8 +937,8 @@ GeometryData Geometry::BuildTetrahedron( const TetrahedronDesc &tetrahedronDesc 
         ReverseWinding( result );
     }
 
-    assert( vertices.size( ) == 4 * 3 );
-    assert( indices.size( ) == 4 * 3 );
+    assert( vertices.NumElements( ) == 4 * 3 );
+    assert( indices.NumElements( ) == 4 * 3 );
     return result;
 }
 
@@ -960,7 +967,7 @@ GeometryData Geometry::BuildOctahedron( const OctahedronDesc &octahedronDesc )
         XMVECTOR normal = XMVector3Cross( XMVectorSubtract( verts[ v1 ].v, verts[ v0 ].v ), XMVectorSubtract( verts[ v2 ].v, verts[ v0 ].v ) );
         normal          = XMVector3Normalize( normal );
 
-        const size_t base = vertices.size( );
+        const size_t base = vertices.NumElements( );
         EmplaceIndex( result, base );
         EmplaceIndex( result, base + 1 );
         EmplaceIndex( result, base + 2 );
@@ -982,8 +989,8 @@ GeometryData Geometry::BuildOctahedron( const OctahedronDesc &octahedronDesc )
         ReverseWinding( result );
     }
 
-    assert( vertices.size( ) == 8 * 3 );
-    assert( indices.size( ) == 8 * 3 );
+    assert( vertices.NumElements( ) == 8 * 3 );
+    assert( indices.NumElements( ) == 8 * 3 );
     return result;
 }
 
@@ -1035,7 +1042,7 @@ GeometryData Geometry::BuildDodecahedron( const DodecahedronDesc &dodecahedronDe
         XMVECTOR normal = XMVector3Cross( XMVectorSubtract( verts[ v1 ].v, verts[ v0 ].v ), XMVectorSubtract( verts[ v2 ].v, verts[ v0 ].v ) );
         normal          = XMVector3Normalize( normal );
 
-        const size_t base = vertices.size( );
+        const size_t base = vertices.NumElements( );
 
         EmplaceIndex( result, base );
         EmplaceIndex( result, base + 1 );
@@ -1072,8 +1079,8 @@ GeometryData Geometry::BuildDodecahedron( const DodecahedronDesc &dodecahedronDe
         ReverseWinding( result );
     }
 
-    assert( vertices.size( ) == 12 * 5 );
-    assert( indices.size( ) == 12 * 3 * 3 );
+    assert( vertices.NumElements( ) == 12 * 5 );
+    assert( indices.NumElements( ) == 12 * 3 * 3 );
 
     return result;
 }
@@ -1108,7 +1115,7 @@ GeometryData Geometry::BuildIcosahedron( const IcosahedronDesc &icosahedronDesc 
         XMVECTOR normal = XMVector3Cross( XMVectorSubtract( verts[ v1 ].v, verts[ v0 ].v ), XMVectorSubtract( verts[ v2 ].v, verts[ v0 ].v ) );
         normal          = XMVector3Normalize( normal );
 
-        const size_t base = vertices.size( );
+        const size_t base = vertices.NumElements( );
         EmplaceIndex( result, base );
         EmplaceIndex( result, base + 1 );
         EmplaceIndex( result, base + 2 );
@@ -1130,6 +1137,6 @@ GeometryData Geometry::BuildIcosahedron( const IcosahedronDesc &icosahedronDesc 
         ReverseWinding( result );
     }
 
-    assert( vertices.size( ) == 20 * 3 );
+    assert( vertices.NumElements( ) == 20 * 3 );
     return result;
 }

@@ -54,9 +54,9 @@ void ShaderProgram::Compile( )
 #endif
     }
 
-    for ( int i = 0; i < m_desc.Shaders.NumElements; ++i )
+    for ( int i = 0; i < m_desc.Shaders.NumElements( ); ++i )
     {
-        const auto &shader      = m_desc.Shaders.Array[ i ];
+        const auto &shader      = m_desc.Shaders.GetElement( i );
         CompileDesc compileDesc = { };
         compileDesc.Path        = shader.Path;
         compileDesc.Defines     = shader.Defines;
@@ -142,9 +142,9 @@ void ShaderProgram::ProduceMSL( )
     std::vector<std::unique_ptr<CompiledShader>> dxilShaders;
     std::vector<D3D12_SHADER_INPUT_BIND_DESC>    processedInputs; // Handle duplicate inputs
 
-    for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements; ++shaderIndex )
+    for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements( ); ++shaderIndex )
     {
-        auto       &shader      = m_desc.Shaders.Array[ shaderIndex ];
+        auto       &shader      = m_desc.Shaders.GetElement( shaderIndex );
         CompileDesc compileDesc = { };
         compileDesc.Path        = shader.Path;
         compileDesc.Defines     = shader.Defines;
@@ -378,12 +378,12 @@ const ShaderCompiler &ShaderProgram::ShaderCompilerInstance( ) const
     return compiler;
 }
 
-CompiledShaders ShaderProgram::GetCompiledShaders( ) const
+InteropArray<CompiledShader*> ShaderProgram::GetCompiledShaders( ) const
 {
-    CompiledShaders compiledShaders;
+    InteropArray<CompiledShader*> compiledShaders;
     for ( auto &shader : m_compiledShaders )
     {
-        compiledShaders.Array[ compiledShaders.NumElements++ ] = shader.get( );
+        compiledShaders.AddElement( shader.get( ) );
     }
     return compiledShaders;
 }
@@ -777,7 +777,7 @@ void ShaderProgram::FillReflectionData( ID3D12ShaderReflection *shaderReflection
         D3D12_SHADER_TYPE_DESC      typeDesc;
         DXC_CHECK_RESULT( reflectionType->GetDesc( &typeDesc ) );
 
-        ReflectionResourceField &subField = reflectionDesc.Fields.Array[ reflectionDesc.Fields.NumElements++ ];
+        ReflectionResourceField &subField = reflectionDesc.Fields.EmplaceElement( );
         subField.Name                     = variableDesc.Name;
         subField.Type                     = DXCVariableTypeToReflectionType( typeDesc.Type );
         subField.NumColumns               = typeDesc.Columns;
@@ -835,11 +835,10 @@ void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, I
 
     if ( !inputElements.empty( ) )
     {
-        auto &inputElementsArray       = inputLayoutDesc.InputGroups[ inputLayoutDesc.NumInputGroups++ ];
-        inputElementsArray.NumElements = inputElements.size( );
-        for ( int i = 0; i < inputElementsArray.NumElements; ++i )
+        auto &inputElementsArray = inputLayoutDesc.InputGroups.EmplaceElement( );
+        for ( int i = 0; i < inputElements.size( ); ++i )
         {
-            inputElementsArray.Elements[ i ] = inputElements[ i ];
+            inputElementsArray.Elements.AddElement( inputElements[ i ] );
         }
     }
 }

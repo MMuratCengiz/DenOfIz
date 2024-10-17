@@ -17,9 +17,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #define IR_PRIVATE_IMPLEMENTATION
-#import "Metal/Metal.h"
 #import <metal_irconverter/metal_irconverter.h>
 #import <metal_irconverter_runtime/metal_irconverter_runtime.h>
+#import "Metal/Metal.h"
 
 #include <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
 
@@ -38,14 +38,12 @@ void MetalLogicalDevice::CreateDevice( )
 {
 }
 
-PhysicalDevices MetalLogicalDevice::ListPhysicalDevices( )
+InteropArray<PhysicalDevice> MetalLogicalDevice::ListPhysicalDevices( )
 {
     NSArray<id<MTLDevice>> *devices     = MTLCopyAllDevices( );
     auto                    deviceCount = (uint32_t)[devices count];
 
-    PhysicalDevices physicalDevices;
-    physicalDevices.NumElements = deviceCount;
-
+    InteropArray<PhysicalDevice> physicalDevices( deviceCount );
     for ( uint32_t i = 0; i < deviceCount; i++ )
     {
         auto          *device = [devices objectAtIndex:i];
@@ -61,7 +59,7 @@ PhysicalDevices MetalLogicalDevice::ListPhysicalDevices( )
         physicalDevice.Capabilities.RayTracing         = [device supportsRaytracing];
         physicalDevice.Properties.IsDedicated          = ![device isLowPower];
         physicalDevice.Properties.MemoryAvailableInMb  = 0;
-        physicalDevices.Array[ i ] = physicalDevice;
+        physicalDevices.SetElement( i, physicalDevice );
     }
 
     return physicalDevices;
@@ -90,65 +88,65 @@ void MetalLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
 
     m_context->SelectedDeviceInfo = m_selectedDeviceInfo;
 
-    MTLHeapDescriptor *heapDesc   = [[MTLHeapDescriptor alloc] init];
-    heapDesc.size                 = 4 * 1024;
-    heapDesc.storageMode          = MTLStorageModeShared;
-    heapDesc.hazardTrackingMode   = MTLHazardTrackingModeTracked;
-    heapDesc.type                 = MTLHeapTypeAutomatic;
-    m_context->ReadOnlyHeap       = [m_context->Device newHeapWithDescriptor:heapDesc];
+    MTLHeapDescriptor *heapDesc = [[MTLHeapDescriptor alloc] init];
+    heapDesc.size               = 4 * 1024;
+    heapDesc.storageMode        = MTLStorageModeShared;
+    heapDesc.hazardTrackingMode = MTLHazardTrackingModeTracked;
+    heapDesc.type               = MTLHeapTypeAutomatic;
+    m_context->ReadOnlyHeap     = [m_context->Device newHeapWithDescriptor:heapDesc];
 }
 
-ICommandListPool* MetalLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &poolDesc )
+ICommandListPool *MetalLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &poolDesc )
 {
     return new MetalCommandListPool( m_context.get( ), poolDesc );
 }
 
-IPipeline* MetalLogicalDevice::CreatePipeline( const PipelineDesc &pipelineDesc )
+IPipeline *MetalLogicalDevice::CreatePipeline( const PipelineDesc &pipelineDesc )
 {
     return new MetalPipeline( m_context.get( ), pipelineDesc );
 }
 
-ISwapChain* MetalLogicalDevice::CreateSwapChain( const SwapChainDesc &swapChainDesc )
+ISwapChain *MetalLogicalDevice::CreateSwapChain( const SwapChainDesc &swapChainDesc )
 {
     return new MetalSwapChain( m_context.get( ), swapChainDesc );
 }
 
-IRootSignature* MetalLogicalDevice::CreateRootSignature( const RootSignatureDesc &rootSignatureDesc )
+IRootSignature *MetalLogicalDevice::CreateRootSignature( const RootSignatureDesc &rootSignatureDesc )
 {
     return new MetalRootSignature( m_context.get( ), rootSignatureDesc );
 }
 
-IInputLayout* MetalLogicalDevice::CreateInputLayout( const InputLayoutDesc &inputLayoutDesc )
+IInputLayout *MetalLogicalDevice::CreateInputLayout( const InputLayoutDesc &inputLayoutDesc )
 {
     return new MetalInputLayout( m_context.get( ), inputLayoutDesc );
 }
 
-IResourceBindGroup* MetalLogicalDevice::CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc )
+IResourceBindGroup *MetalLogicalDevice::CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc )
 {
     return new MetalResourceBindGroup( m_context.get( ), descriptorTableDesc );
 }
 
-IFence* MetalLogicalDevice::CreateFence( )
+IFence *MetalLogicalDevice::CreateFence( )
 {
     return new MetalFence( m_context.get( ) );
 }
 
-ISemaphore* MetalLogicalDevice::CreateSemaphore( )
+ISemaphore *MetalLogicalDevice::CreateSemaphore( )
 {
     return new MetalSemaphore( m_context.get( ) );
 }
 
-IBufferResource* MetalLogicalDevice::CreateBufferResource( const BufferDesc &bufferDesc )
+IBufferResource *MetalLogicalDevice::CreateBufferResource( const BufferDesc &bufferDesc )
 {
     return new MetalBufferResource( m_context.get( ), bufferDesc );
 }
 
-ITextureResource* MetalLogicalDevice::CreateTextureResource( const TextureDesc &textureDesc )
+ITextureResource *MetalLogicalDevice::CreateTextureResource( const TextureDesc &textureDesc )
 {
     return new MetalTextureResource( m_context.get( ), textureDesc );
 }
 
-ISampler* MetalLogicalDevice::CreateSampler( const SamplerDesc &samplerDesc )
+ISampler *MetalLogicalDevice::CreateSampler( const SamplerDesc &samplerDesc )
 {
     return new MetalSampler( m_context.get( ), samplerDesc );
 }

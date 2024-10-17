@@ -69,16 +69,15 @@ void DX12LogicalDevice::CreateDevice( )
     DX_CHECK_RESULT( CreateDXGIFactory2( dxgiFactoryFlags, IID_PPV_ARGS( m_context->DXGIFactory.put( ) ) ) );
 }
 
-PhysicalDevices DX12LogicalDevice::ListPhysicalDevices( )
+InteropArray<PhysicalDevice> DX12LogicalDevice::ListPhysicalDevices( )
 {
-    PhysicalDevices result;
+    InteropArray<PhysicalDevice> result;
     wil::com_ptr<IDXGIAdapter1> adapter;
     for ( UINT adapterIndex = 0; SUCCEEDED( m_context->DXGIFactory->EnumAdapters1( adapterIndex, adapter.put( ) ) ); adapterIndex++ )
     {
         PhysicalDevice deviceInfo{ };
         CreateDeviceInfo( *adapter.get( ), deviceInfo );
-        result.NumElements++;
-        result.Array[ adapterIndex ] = deviceInfo;
+        result.AddElement( deviceInfo );
     }
     return result;
 }
@@ -89,7 +88,7 @@ void DX12LogicalDevice::CreateDeviceInfo( IDXGIAdapter1 &adapter, PhysicalDevice
     DX_CHECK_RESULT( adapter.GetDesc( &adapterDesc ) );
     physicalDevice.Id = adapterDesc.DeviceId;
     std::wstring adapterName( adapterDesc.Description );
-    physicalDevice.Name = std::string( adapterName.begin( ), adapterName.end( ) );
+    physicalDevice.Name = std::string( adapterName.begin( ), adapterName.end( ) ).c_str();
 
     DXGI_ADAPTER_DESC1 desc;
     DX_CHECK_RESULT( adapter.GetDesc1( &desc ) );

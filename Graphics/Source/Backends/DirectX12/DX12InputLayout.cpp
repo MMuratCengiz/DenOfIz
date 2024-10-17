@@ -22,9 +22,9 @@ using namespace DenOfIz;
 
 DX12InputLayout::DX12InputLayout( const InputLayoutDesc &desc )
 {
-    for ( int bindingIndex = 0; bindingIndex < desc.NumInputGroups; bindingIndex++ )
+    for ( int bindingIndex = 0; bindingIndex < desc.InputGroups.NumElements( ); bindingIndex++ )
     {
-        const InputGroupDesc      &inputGroup           = desc.InputGroups[ bindingIndex ];
+        const InputGroupDesc      &inputGroup           = desc.InputGroups.GetElement( bindingIndex );
         D3D12_INPUT_CLASSIFICATION inputSlotClass       = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
         uint32_t                   instanceDataStepRate = 0;
 
@@ -35,9 +35,9 @@ DX12InputLayout::DX12InputLayout( const InputLayoutDesc &desc )
         }
 
         uint32_t offset = 0;
-        for ( int layoutElementIndex = 0; layoutElementIndex < inputGroup.NumElements; layoutElementIndex++ )
+        for ( int layoutElementIndex = 0; layoutElementIndex < inputGroup.Elements.NumElements( ); layoutElementIndex++ )
         {
-            const InputLayoutElementDesc &inputElement = inputGroup.Elements[ layoutElementIndex ];
+            const InputLayoutElementDesc &inputElement = inputGroup.Elements.GetElement( layoutElementIndex );
             D3D12_INPUT_ELEMENT_DESC &element = m_inputElements.emplace_back( D3D12_INPUT_ELEMENT_DESC{ } );
 
             switch ( inputElement.Semantic )

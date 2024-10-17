@@ -41,7 +41,7 @@ void RenderTargetExample::Init( )
     textureDesc.DebugName    = "Deferred Render Target";
     for ( uint32_t i = 0; i < 3; ++i )
     {
-        textureDesc.DebugName = "Deferred Render Target " + std::to_string( i );
+        textureDesc.DebugName.Append( "Deferred Render Target " ).Append( std::to_string( i ).c_str( ) );
         m_deferredRenderTargets.push_back( std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) ) );
     }
     m_defaultSampler = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( SamplerDesc{ } ) );
@@ -62,22 +62,19 @@ void RenderTargetExample::Init( )
     m_renderGraph = std::make_unique<RenderGraph>( renderGraphDesc );
 
     NodeDesc deferredNode{ };
-    deferredNode.Name                       = "Deferred";
-    deferredNode.RequiredStates.NumElements = 3;
-    deferredNode.RequiredStates.Array[ 0 ]  = NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::RenderTarget );
-    deferredNode.RequiredStates.Array[ 1 ]  = NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::RenderTarget );
-    deferredNode.RequiredStates.Array[ 2 ]  = NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::RenderTarget );
-    deferredNode.Execute                    = this;
+    deferredNode.Name = "Deferred";
+    deferredNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::RenderTarget ) );
+    deferredNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::RenderTarget ) );
+    deferredNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::RenderTarget ) );
+    deferredNode.Execute = this;
 
     PresentNodeDesc presentNode{ };
-    presentNode.SwapChain                  = m_swapChain.get( );
-    presentNode.RequiredStates.NumElements = 3;
-    presentNode.RequiredStates.Array[ 0 ]  = NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::ShaderResource );
-    presentNode.RequiredStates.Array[ 1 ]  = NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::ShaderResource );
-    presentNode.RequiredStates.Array[ 2 ]  = NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::ShaderResource );
-    presentNode.Dependencies.NumElements   = 1;
-    presentNode.Dependencies.Array[ 0 ]    = "Deferred";
-    presentNode.Execute                    = this;
+    presentNode.SwapChain = m_swapChain.get( );
+    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::ShaderResource ) );
+    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::ShaderResource ) );
+    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::ShaderResource ) );
+    presentNode.Dependencies.AddElement( "Deferred" );
+    presentNode.Execute = this;
 
     m_renderGraph->AddNode( deferredNode );
     m_renderGraph->SetPresentNode( presentNode );
@@ -93,8 +90,7 @@ void RenderTargetExample::Execute( uint32_t frameIndex, ICommandList *commandLis
     renderingAttachmentDesc.Resource = m_deferredRenderTargets[ frameIndex ].get( );
 
     RenderingDesc renderingDesc{ };
-    renderingDesc.RTAttachments.NumElements = 1;
-    renderingDesc.RTAttachments.Array[ 0 ]  = renderingAttachmentDesc;
+    renderingDesc.RTAttachments.AddElement( renderingAttachmentDesc );
 
     commandList->BeginRendering( renderingDesc );
 
@@ -113,8 +109,7 @@ void RenderTargetExample::Execute( uint32_t frameIndex, ICommandList *commandLis
     quadAttachmentDesc.Resource = renderTarget;
 
     RenderingDesc quadRenderingDesc{ };
-    quadRenderingDesc.RTAttachments.NumElements = 1;
-    quadRenderingDesc.RTAttachments.Array[ 0 ]  = quadAttachmentDesc;
+    quadRenderingDesc.RTAttachments.AddElement( quadAttachmentDesc );
 
     commandList->BeginRendering( quadRenderingDesc );
 

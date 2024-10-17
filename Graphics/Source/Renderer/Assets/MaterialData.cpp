@@ -24,29 +24,29 @@ MaterialData::MaterialData( const MaterialDesc &desc )
 {
 
     m_sampler = std::unique_ptr<ISampler>( desc.Device->CreateSampler( SamplerDesc{ } ) );
-    if ( !desc.AlbedoTexture.Str( ).empty( ) )
+    if ( !desc.AlbedoTexture.IsEmpty( ) )
     {
-        m_albedoTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.AlbedoTexture.Str( ) ) );
+        m_albedoTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.AlbedoTexture ) );
     }
-    if ( !desc.NormalTexture.Str( ).empty( ) )
+    if ( !desc.NormalTexture.IsEmpty( ) )
     {
-        m_normalTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.NormalTexture.Str( ) ) );
+        m_normalTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.NormalTexture ) );
     }
-    if ( !desc.HeightTexture.Str( ).empty( ) )
+    if ( !desc.HeightTexture.IsEmpty( ) )
     {
-        m_heightTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.HeightTexture.Str( ) ) );
+        m_heightTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.HeightTexture ) );
     }
-    if ( !desc.MetallicTexture.Str( ).empty( ) )
+    if ( !desc.MetallicTexture.IsEmpty( ) )
     {
-        m_metallicTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.MetallicTexture.Str( ) ) );
+        m_metallicTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.MetallicTexture ) );
     }
-    if ( !desc.RoughnessTexture.Str( ).empty( ) )
+    if ( !desc.RoughnessTexture.IsEmpty( ) )
     {
-        m_roughnessTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.RoughnessTexture.Str( ) ) );
+        m_roughnessTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.RoughnessTexture ) );
     }
-    if ( !desc.AoTexture.Str( ).empty( ) )
+    if ( !desc.AoTexture.IsEmpty( ) )
     {
-        m_aoTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.AoTexture.Str( ) ) );
+        m_aoTexture = std::unique_ptr<ITextureResource>( desc.BatchCopy->CreateAndLoadTexture( desc.AoTexture ) );
     }
 }
 

@@ -29,18 +29,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-#define DZ_MAX_PHYSICAL_DEVICES 4
-    struct DZ_API PhysicalDevices
-    {
-        size_t         NumElements = 0;
-        PhysicalDevice Array[ DZ_MAX_PHYSICAL_DEVICES ];
-
-        const PhysicalDevice &GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
-    };
-
     class DZ_API ILogicalDevice
     {
     protected:
@@ -49,11 +37,11 @@ namespace DenOfIz
     public:
         virtual ~ILogicalDevice( ) = default;
 
-        virtual void            CreateDevice( )                                    = 0;
-        virtual PhysicalDevices ListPhysicalDevices( )                             = 0;
-        virtual void            LoadPhysicalDevice( const PhysicalDevice &device ) = 0;
-        virtual bool            IsDeviceLost( )                                    = 0;
-        virtual void            WaitIdle( )                                        = 0;
+        virtual void                         CreateDevice( )                                    = 0;
+        virtual InteropArray<PhysicalDevice> ListPhysicalDevices( )                             = 0;
+        virtual void                         LoadPhysicalDevice( const PhysicalDevice &device ) = 0;
+        virtual bool                         IsDeviceLost( )                                    = 0;
+        virtual void                         WaitIdle( )                                        = 0;
 
         const PhysicalDevice &DeviceInfo( )
         {

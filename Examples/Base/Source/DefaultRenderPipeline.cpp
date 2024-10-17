@@ -22,16 +22,13 @@ using namespace DenOfIz;
 
 DefaultRenderPipeline::DefaultRenderPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice )
 {
-    ShaderDescs shaders{ };
-    ShaderDesc  vertexShaderDesc{ };
-    vertexShaderDesc.Path  = "Assets/Shaders/DefaultRenderPipeline.vs.hlsl";
-    vertexShaderDesc.Stage = ShaderStage::Vertex;
-    shaders.Array[ 0 ]     = vertexShaderDesc;
-    ShaderDesc pixelShaderDesc{ };
-    pixelShaderDesc.Path  = "Assets/Shaders/DefaultRenderPipeline.ps.hlsl";
-    pixelShaderDesc.Stage = ShaderStage::Pixel;
-    shaders.Array[ 1 ]    = pixelShaderDesc;
-    shaders.NumElements   = 2;
+    InteropArray<ShaderDesc> shaders{ };
+    ShaderDesc              &vertexShaderDesc = shaders.EmplaceElement( );
+    vertexShaderDesc.Path                     = "Assets/Shaders/DefaultRenderPipeline.vs.hlsl";
+    vertexShaderDesc.Stage                    = ShaderStage::Vertex;
+    ShaderDesc &pixelShaderDesc               = shaders.EmplaceElement( );
+    pixelShaderDesc.Path                      = "Assets/Shaders/DefaultRenderPipeline.ps.hlsl";
+    pixelShaderDesc.Stage                     = ShaderStage::Pixel;
 
     m_program              = std::unique_ptr<ShaderProgram>( graphicsApi->CreateShaderProgram( shaders ) );
     auto programReflection = m_program->Reflect( );
@@ -43,8 +40,7 @@ DefaultRenderPipeline::DefaultRenderPipeline( const GraphicsApi *graphicsApi, IL
     pipelineDesc.RootSignature = m_rootSignature.get( );
     pipelineDesc.ShaderProgram = m_program.get( );
     pipelineDesc.CullMode      = CullMode::BackFace;
-    pipelineDesc.Rendering.RenderTargets.NumElements = 1;
-    pipelineDesc.Rendering.RenderTargets.Array[ 0 ] = { .Format = Format::B8G8R8A8Unorm };
+    pipelineDesc.Rendering.RenderTargets.AddElement( { .Format = Format::B8G8R8A8Unorm } );
 
     m_pipeline = std::unique_ptr<IPipeline>( logicalDevice->CreatePipeline( pipelineDesc ) );
 

@@ -17,17 +17,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Time.h>
 #include <DenOfIzExamples/DefaultRenderPipeline.h>
 #include <DenOfIzExamples/IExample.h>
 #include <DenOfIzExamples/QuadPipeline.h>
 #include <DenOfIzExamples/SphereAsset.h>
 #include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
 #include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
+#include <DenOfIzGraphics/Utilities/Time.h>
 
 namespace DenOfIz
 {
-    class RootConstantExample final : public IExample
+    class RootConstantExample final : public IExample, public PresentExecutionCallback
     {
         std::array<float, 4>                m_color = { 0.3f, 0.1f, 0.7f, 1.0f };
         Time                                m_time;
@@ -43,6 +43,7 @@ namespace DenOfIz
         void              HandleEvent( SDL_Event &event ) override;
         void              Update( ) override;
         void              Quit( ) override;
+        void              Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *texture ) override;
         struct WindowDesc WindowDesc( ) override
         {
             auto windowDesc  = DenOfIz::WindowDesc( );

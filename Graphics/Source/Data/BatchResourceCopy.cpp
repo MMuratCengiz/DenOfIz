@@ -32,9 +32,9 @@ using namespace DenOfIz;
 BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device, const bool issueBarriers ) : m_device( device ), m_issueBarriers( issueBarriers )
 {
     m_commandListPool = std::unique_ptr<ICommandListPool>( m_device->CreateCommandListPool( { QueueType::Copy } ) );
-    DZ_ASSERTM( m_commandListPool->GetCommandLists( ).NumElements != 0, "Command list pool did not produce any command lists." );
+    DZ_ASSERTM( m_commandListPool->GetCommandLists( ).NumElements( ) != 0, "Command list pool did not produce any command lists." );
 
-    m_copyCommandList = m_commandListPool->GetCommandLists( ).Array[ 0 ];
+    m_copyCommandList = m_commandListPool->GetCommandLists( ).GetElement( 0 );
     m_executeFence    = std::unique_ptr<IFence>( m_device->CreateFence( ) );
 
     if ( m_issueBarriers )
@@ -44,7 +44,7 @@ BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device, const bool issueBa
         poolDesc.NumCommandLists = 1;
         m_syncCommandPool        = std::unique_ptr<ICommandListPool>( m_device->CreateCommandListPool( poolDesc ) );
 
-        m_syncCommandList = m_syncCommandPool->GetCommandLists( ).Array[ 0 ];
+        m_syncCommandList = m_syncCommandPool->GetCommandLists( ).GetElement( 0 );
         m_batchCopyWait   = std::unique_ptr<ISemaphore>( m_device->CreateSemaphore( ) );
         m_syncWait        = std::unique_ptr<IFence>( m_device->CreateFence( ) );
     }
@@ -127,9 +127,9 @@ void BatchResourceCopy::CopyDataToTexture( const CopyDataToTextureDesc &copyDesc
     m_resourcesToClean.push_back( std::unique_ptr<IBufferResource>( stagingBuffer ) );
 }
 
-ITextureResource *BatchResourceCopy::CreateAndLoadTexture( const std::string &file )
+ITextureResource *BatchResourceCopy::CreateAndLoadTexture( const InteropString &file )
 {
-    Texture texture( file );
+    Texture texture( file.Get( ) );
 
     TextureDesc textureDesc{ };
     textureDesc.HeapType     = HeapType::GPU;
@@ -141,7 +141,7 @@ ITextureResource *BatchResourceCopy::CreateAndLoadTexture( const std::string &fi
     textureDesc.Depth        = texture.Depth;
     textureDesc.ArraySize    = texture.ArraySize;
     textureDesc.MipLevels    = texture.MipLevels;
-    textureDesc.DebugName    = "CreateAndLoadTexture(" + file + ")";
+    textureDesc.DebugName.Append( "CreateAndLoadTexture(" ).Append( file.Get( ) ).Append( ")" );
 
     auto outTex = m_device->CreateTextureResource( textureDesc );
     LoadTextureInternal( texture, outTex );
@@ -188,15 +188,15 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const void *data, const
     vBufferDesc.HeapType     = HeapType::GPU;
     vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
     vBufferDesc.InitialState = ResourceState::CopyDst;
-    vBufferDesc.NumBytes     = geometryData.Vertices.size( ) * sizeof( GeometryVertexData );
+    vBufferDesc.NumBytes     = geometryData.Vertices.NumElements( ) * sizeof( GeometryVertexData );
     vBufferDesc.DebugName    = NextId( "Vertex" );
 
     const auto vertexBuffer = m_device->CreateBufferResource( vBufferDesc );
 
     CopyToGpuBufferDesc vbCopyDesc{ };
     vbCopyDesc.DstBuffer = vertexBuffer;
-    vbCopyDesc.Data      = geometryData.Vertices.data( );
-    vbCopyDesc.NumBytes  = geometryData.Vertices.size( ) * sizeof( GeometryVertexData );
+    vbCopyDesc.Data      = geometryData.Vertices.Data( );
+    vbCopyDesc.NumBytes  = geometryData.Vertices.NumElements( ) * sizeof( GeometryVertexData );
     CopyToGPUBuffer( vbCopyDesc );
 
     if ( m_issueBarriers )
@@ -215,7 +215,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const void *data, const
     iBufferDesc.HeapType        = HeapType::GPU;
     iBufferDesc.Descriptor      = ResourceDescriptor::IndexBuffer;
     iBufferDesc.InitialState    = ResourceState::CopyDst;
-    iBufferDesc.NumBytes        = geometryData.Indices.size( ) * sizeof( uint32_t );
+    iBufferDesc.NumBytes        = geometryData.Indices.NumElements( ) * sizeof( uint32_t );
     const char *indexBufferName = "IndexBuffer";
     iBufferDesc.DebugName       = NextId( indexBufferName );
 
@@ -223,8 +223,8 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const void *data, const
 
     CopyToGpuBufferDesc ibCopyDesc{ };
     ibCopyDesc.DstBuffer = indexBuffer;
-    ibCopyDesc.Data      = geometryData.Indices.data( );
-    ibCopyDesc.NumBytes  = geometryData.Indices.size( ) * sizeof( uint32_t );
+    ibCopyDesc.Data      = geometryData.Indices.Data( );
+    ibCopyDesc.NumBytes  = geometryData.Indices.NumElements( ) * sizeof( uint32_t );
     CopyToGPUBuffer( ibCopyDesc );
 
     if ( m_issueBarriers )
@@ -238,7 +238,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const void *data, const
 
 void BatchResourceCopy::LoadTexture( const LoadTextureDesc &loadDesc )
 {
-    const Texture texture( loadDesc.File.Str( ) );
+    const Texture texture( loadDesc.File.Get( ) );
     LoadTextureInternal( texture, loadDesc.DstTexture );
 }
 
@@ -247,13 +247,11 @@ void BatchResourceCopy::Submit( ISemaphore *notify )
     ExecuteDesc desc{ };
 
     m_executeFence->Reset( );
-    desc.Notify                       = m_executeFence.get( );
-    desc.NotifySemaphores.NumElements = 1;
-    desc.NotifySemaphores.Array[ 0 ]  = m_batchCopyWait.get( );
+    desc.Notify = m_executeFence.get( );
+    desc.NotifySemaphores.AddElement( m_batchCopyWait.get( ) );
     if ( notify )
     {
-        desc.NotifySemaphores.NumElements++;
-        desc.NotifySemaphores.Array[ 1 ] = notify;
+        desc.NotifySemaphores.AddElement( notify );
     }
 
     m_copyCommandList->Execute( desc );
@@ -263,9 +261,8 @@ void BatchResourceCopy::Submit( ISemaphore *notify )
     {
         m_syncWait->Reset( );
         ExecuteDesc executeDesc{ };
-        executeDesc.WaitOnSemaphores.NumElements = 1;
-        executeDesc.WaitOnSemaphores.Array[ 0 ]  = m_batchCopyWait.get( );
-        executeDesc.Notify                       = m_syncWait.get( );
+        executeDesc.WaitOnSemaphores.AddElement( m_batchCopyWait.get( ) );
+        executeDesc.Notify = m_syncWait.get( );
         m_syncCommandList->Execute( executeDesc );
         m_syncWait->Wait( );
     }

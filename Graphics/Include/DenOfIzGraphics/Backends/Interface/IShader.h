@@ -61,22 +61,6 @@ namespace DenOfIz
         SPIRV
     };
 
-#define DZ_MAX_DEFINES 16
-    struct DZ_API ShaderDefines
-    {
-        size_t      NumElements = 0;
-        const char *Array[ DZ_MAX_DEFINES ];
-
-        void SetElement( size_t index, const char *value )
-        {
-            Array[ index ] = value;
-        }
-        const char *GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
-    };
-
     // Needs to be used as a pointer as Blob/Reflection might be deleted multiple times otherwise
     struct DZ_API CompiledShader : private NonCopyable
     {
@@ -85,4 +69,5 @@ namespace DenOfIz
         IDxcBlob     *Reflection;
         InteropString EntryPoint;
     };
+    template class DZ_API InteropArray<CompiledShader*>;
 } // namespace DenOfIz

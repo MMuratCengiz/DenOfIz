@@ -34,20 +34,5 @@ namespace DenOfIz
 
         virtual ~ISemaphore( ) {};
     };
-
-#define DZ_MAX_SEMAPHORES 16
-    struct DZ_API Semaphores
-    {
-        size_t      NumElements = 0;
-        ISemaphore *Array[ DZ_MAX_SEMAPHORES ];
-
-        void SetElement( size_t index, ISemaphore *value )
-        {
-            Array[ index ] = value;
-        }
-        const ISemaphore *GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
-    };
+    template class DZ_API InteropArray<ISemaphore*>;
 } // namespace DenOfIz

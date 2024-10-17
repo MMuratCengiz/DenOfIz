@@ -21,6 +21,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 using namespace RenderGraphInternal;
 
+NodeResourceUsageDesc::NodeResourceUsageDesc( IBufferResource *resource ) : BufferResource( resource )
+{
+}
+
+NodeResourceUsageDesc::NodeResourceUsageDesc( ITextureResource *resource ) : Type( NodeResourceUsageType::Texture ), TextureResource( resource )
+{
+}
+
+NodeResourceUsageDesc NodeResourceUsageDesc::BufferState( const uint32_t frameIndex, IBufferResource *bufferResource, const ResourceState state )
+{
+    NodeResourceUsageDesc desc( bufferResource );
+    desc.FrameIndex = frameIndex;
+    desc.State      = state;
+    return desc;
+}
+NodeResourceUsageDesc NodeResourceUsageDesc::TextureState( const uint32_t frameIndex, ITextureResource *textureResource, const ResourceState state )
+{
+    NodeResourceUsageDesc desc( textureResource );
+    desc.FrameIndex = frameIndex;
+    desc.State      = state;
+    return desc;
+}
+
 RenderGraph::RenderGraph( const RenderGraphDesc &desc ) : m_presentNode( { } ), m_desc( desc )
 {
     m_frameFences.resize( m_desc.NumFrames );
@@ -40,7 +63,7 @@ RenderGraph::RenderGraph( const RenderGraphDesc &desc ) : m_presentNode( { } ), 
     for ( int i = 0; i < m_desc.NumFrames; ++i )
     {
         m_commandListPools.push_back( std::unique_ptr<ICommandListPool>( m_desc.LogicalDevice->CreateCommandListPool( poolDesc ) ) );
-        m_presentContexts[ i ].PresentCommandList = m_commandListPools[ i ]->GetCommandLists( ).Array[ 0 ];
+        m_presentContexts[ i ].PresentCommandList = m_commandListPools[ i ]->GetCommandLists( ).GetElement( 0 );
     }
 
     Reset( );
@@ -62,16 +85,16 @@ void RenderGraph::Reset( )
 
 void RenderGraph::AddNode( const NodeDesc &desc )
 {
-    if ( desc.Name.Str( ).empty( ) )
+    if ( desc.Name.IsEmpty( ) )
     {
         LOG( FATAL ) << "Node must have a name.";
     }
 
     m_nodeDescriptions.push_back( desc );
 
-    for ( int stateIndex = 0; stateIndex < desc.RequiredStates.NumElements; stateIndex++ )
+    for ( int stateIndex = 0; stateIndex < desc.RequiredStates.NumElements( ); stateIndex++ )
     {
-        auto &resourceState = desc.RequiredStates.Array[ stateIndex ];
+        auto &resourceState = desc.RequiredStates.GetElement( stateIndex );
         if ( resourceState.Type == NodeResourceUsageType::Texture )
         {
             if ( resourceState.TextureResource == nullptr )
@@ -121,11 +144,11 @@ void RenderGraph::InitAllNodes( )
         for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
         {
             auto newContext         = std::make_unique<NodeExecutionContext>( );
-            newContext->CommandList = m_commandListPools[ i ]->GetCommandLists( ).Array[ graphNode->Index + 1 ]; // +1 for the present node
+            newContext->CommandList = m_commandListPools[ i ]->GetCommandLists( ).GetElement( graphNode->Index + 1 ); // +1 for the present node
             newContext->Execute     = node.Execute;
-            for ( int stateIndex = 0; stateIndex < node.RequiredStates.NumElements; stateIndex++ )
+            for ( int stateIndex = 0; stateIndex < node.RequiredStates.NumElements( ); stateIndex++ )
             {
-                auto &resourceState = node.RequiredStates.Array[ stateIndex ];
+                auto &resourceState = node.RequiredStates.GetElement( stateIndex );
                 if ( resourceState.FrameIndex == i )
                 {
                     newContext->ResourceUsagesPerFrame.push_back( resourceState );
@@ -148,10 +171,10 @@ void RenderGraph::ConfigureGraph( )
             auto &node                 = m_nodeDescriptions[ nodeIndex ];
             bool  isDependencyResolved = true;
 
-            for ( int i = 0; i < node.Dependencies.NumElements; ++i )
+            for ( int i = 0; i < node.Dependencies.NumElements( ); ++i )
             {
-                auto &dependency = node.Dependencies.Array[ i ];
-                if ( !processedNodes.contains( dependency ) )
+                auto &dependency = node.Dependencies.GetElement( i );
+                if ( !processedNodes.contains( dependency.Get( ) ) )
                 {
                     isDependencyResolved = false;
                     break;
@@ -163,39 +186,39 @@ void RenderGraph::ConfigureGraph( )
                 continue;
             }
 
-            for ( int i = 0; i < node.Dependencies.NumElements; ++i )
+            for ( int i = 0; i < node.Dependencies.NumElements( ); ++i )
             {
-                auto       &dependency = node.Dependencies.Array[ i ];
+                auto       &dependency = node.Dependencies.GetElement( i );
                 ISemaphore *semaphore  = GetOrCreateSemaphore( freeSemaphoreIndex );
                 for ( uint8_t frameIndex = 0; frameIndex < m_desc.NumFrames; frameIndex++ )
                 {
-                    m_nodes[ nodeIndex ]->Contexts[ frameIndex ]->WaitOnSemaphores.Array[ 0 ] = semaphore;
-                    Semaphores &notifySemaphores                                              = m_nodes[ processedNodes[ dependency ] ]->Contexts[ frameIndex ]->NotifySemaphores;
-                    notifySemaphores.Array[ notifySemaphores.NumElements++ ]                  = semaphore;
+                    m_nodes[ nodeIndex ]->Contexts[ frameIndex ]->WaitOnSemaphores.SetElement( 0, semaphore );
+                    auto &notifySemaphores = m_nodes[ processedNodes[ dependency.Get( ) ] ]->Contexts[ frameIndex ]->NotifySemaphores;
+                    notifySemaphores.AddElement( semaphore );
                 }
             }
-            processedNodes[ node.Name.Str( ) ] = nodeIndex;
+            processedNodes[ node.Name.Get( ) ] = nodeIndex;
         }
     }
 
     DZ_RETURN_IF( !m_hasPresentNode );
-    for ( int i = 0; i < m_presentNode.Dependencies.NumElements; ++i )
+    for ( int i = 0; i < m_presentNode.Dependencies.NumElements( ); ++i )
     {
-        auto       &dependency = m_presentNode.Dependencies.Array[ i ];
+        auto       &dependency = m_presentNode.Dependencies.GetElement( i );
         ISemaphore *semaphore  = GetOrCreateSemaphore( freeSemaphoreIndex );
         for ( uint8_t frameIndex = 0; frameIndex < m_desc.NumFrames; frameIndex++ )
         {
             m_presentContexts[ frameIndex ].PresentDependencySemaphores.push_back( semaphore );
-            Semaphores &semaphores                       = m_nodes[ processedNodes[ dependency ] ]->Contexts[ frameIndex ]->NotifySemaphores;
-            semaphores.Array[ semaphores.NumElements++ ] = semaphore;
+            auto &semaphores = m_nodes[ processedNodes[ dependency.Get( ) ] ]->Contexts[ frameIndex ]->NotifySemaphores;
+            semaphores.AddElement( semaphore );
         }
     }
 
     for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
     {
-        for ( int stateIndex = 0; stateIndex < m_presentNode.RequiredStates.NumElements; stateIndex++ )
+        for ( int stateIndex = 0; stateIndex < m_presentNode.RequiredStates.NumElements( ); stateIndex++ )
         {
-            auto &resourceState = m_presentNode.RequiredStates.Array[ stateIndex ];
+            auto &resourceState = m_presentNode.RequiredStates.GetElement( stateIndex );
             if ( resourceState.FrameIndex == i )
             {
                 m_presentContexts[ i ].ResourceUsagesPerFrame.push_back( resourceState );
@@ -217,7 +240,7 @@ void RenderGraph::BuildTaskflow( )
         for ( auto &node : m_nodes )
         {
             NodeDesc   &nodeDesc = m_nodeDescriptions[ nodeIndex ];
-            std::string nodeName = nodeDesc.Name.Str( );
+            std::string nodeName = nodeDesc.Name.Get( );
 
             tasks[ nodeName ] = taskflow
                                     .emplace(
@@ -242,10 +265,10 @@ void RenderGraph::BuildTaskflow( )
                                         } )
                                     .name( nodeName );
 
-            for ( int i = 0; i < nodeDesc.Dependencies.NumElements; ++i )
+            for ( int i = 0; i < nodeDesc.Dependencies.NumElements( ); ++i )
             {
-                auto &dependency = nodeDesc.Dependencies.Array[ i ];
-                tasks[ nodeName ].succeed( tasks[ dependency ] );
+                auto &dependency = nodeDesc.Dependencies.GetElement( i );
+                tasks[ nodeName ].succeed( tasks[ dependency.Get( ) ] );
             }
             nodeIndex++;
         }
@@ -269,27 +292,24 @@ void RenderGraph::BuildTaskflow( )
                 presentCommandList->PipelineBarrier( PipelineBarrierDesc::RenderTargetToPresent( swapChainRenderTarget ) );
 
                 ExecuteDesc presentExecuteDesc{ };
-                presentExecuteDesc.Notify                       = m_frameFences[ frame ].get( );
-                presentExecuteDesc.WaitOnSemaphores.NumElements = 1;
-                presentExecuteDesc.WaitOnSemaphores.Array[ 0 ]  = presentContext.ImageReadySemaphore.get( );
+                presentExecuteDesc.Notify                            = m_frameFences[ frame ].get( );
+                presentExecuteDesc.WaitOnSemaphores.AddElement( presentContext.ImageReadySemaphore.get( ) );
                 for ( auto &dependency : presentContext.PresentDependencySemaphores )
                 {
-                    presentExecuteDesc.WaitOnSemaphores.Array[ presentExecuteDesc.WaitOnSemaphores.NumElements++ ] = dependency;
+                    presentExecuteDesc.WaitOnSemaphores.AddElement( dependency );
                 }
-                presentExecuteDesc.NotifySemaphores.NumElements = 1;
-                presentExecuteDesc.NotifySemaphores.Array[ 0 ]  = presentContext.ImageRenderedSemaphore.get( );
+                presentExecuteDesc.NotifySemaphores.AddElement( presentContext.ImageRenderedSemaphore.get( ) );
                 presentCommandList->Execute( presentExecuteDesc );
 
-                Semaphores presentSemaphores;
-                presentSemaphores.NumElements = 1;
-                presentSemaphores.Array[ 0 ]  = presentContext.ImageRenderedSemaphore.get( );
+                InteropArray<ISemaphore*> presentSemaphores;
+                presentSemaphores.AddElement( presentContext.ImageRenderedSemaphore.get( ) );
                 presentCommandList->Present( m_presentNode.SwapChain, image, presentSemaphores );
             } );
 
-        for ( int i = 0; i < m_presentNode.Dependencies.NumElements; ++i )
+        for ( int i = 0; i < m_presentNode.Dependencies.NumElements( ); ++i )
         {
-            auto &dependency = m_presentNode.Dependencies.Array[ i ];
-            presentTask.succeed( tasks[ dependency ] );
+            auto &dependency = m_presentNode.Dependencies.GetElement( i );
+            presentTask.succeed( tasks[ dependency.Get( ) ] );
         }
     }
 }
@@ -320,7 +340,7 @@ void RenderGraph::ValidateNodes( ) const
     std::unordered_set<std::string> allNodes;
     for ( auto &node : m_nodeDescriptions )
     {
-        allNodes.insert( node.Name.Str( ) );
+        allNodes.insert( node.Name.Get( ) );
     }
     for ( auto &node : m_nodeDescriptions )
     {
@@ -332,14 +352,14 @@ void RenderGraph::ValidateNodes( ) const
     }
 }
 
-void RenderGraph::ValidateDependencies( const std::unordered_set<std::string> &allNodes, const NodeDependencies &dependencies ) const
+void RenderGraph::ValidateDependencies( const std::unordered_set<std::string> &allNodes, const InteropArray<InteropString> &dependencies ) const
 {
-    for ( int i = 0; i < dependencies.NumElements; ++i )
+    for ( int i = 0; i < dependencies.NumElements( ); ++i )
     {
-        auto &dependency = dependencies.Array[ i ];
-        if ( !allNodes.contains( dependency ) )
+        auto &dependency = dependencies.GetElement( i );
+        if ( !allNodes.contains( dependency.Get( ) ) )
         {
-            LOG( ERROR ) << "Node has a dependency " << dependency << " that does not exist.";
+            LOG( ERROR ) << "Node has a dependency " << dependency.Get( ) << " that does not exist.";
         }
     }
 }
@@ -377,7 +397,7 @@ void RenderGraph::IssueBarriers( ICommandList *commandList, const std::vector<No
         }
     }
 
-    if ( barrierDesc.GetTextureBarriers( ).NumElements != 0 || barrierDesc.GetBufferBarriers( ).NumElements != 0 )
+    if ( barrierDesc.GetTextureBarriers( ).NumElements( ) != 0 || barrierDesc.GetBufferBarriers( ).NumElements( ) != 0 )
     {
         commandList->PipelineBarrier( barrierDesc );
         for ( const auto &mutex : m_unlocks )

@@ -256,14 +256,13 @@ void VulkanLogicalDevice::InitSupportedLayers( std::vector<const char *> &layers
     }
 }
 
-PhysicalDevices VulkanLogicalDevice::ListPhysicalDevices( )
+InteropArray<PhysicalDevice> VulkanLogicalDevice::ListPhysicalDevices( )
 {
     uint32_t count = 0;
     vkEnumeratePhysicalDevices( m_context->Instance, &count, nullptr );
     std::vector<VkPhysicalDevice> devices( count );
     vkEnumeratePhysicalDevices( m_context->Instance, &count, devices.data( ) );
-    PhysicalDevices result;
-    result.NumElements = count;
+    InteropArray<PhysicalDevice> result( count );
     DZ_ASSERTM( count > 0, "No Vulkan Devices Found." );
     DZ_ASSERTM( count < 4, "Too many devices, consider upgrading library limits." );
 
@@ -272,7 +271,7 @@ PhysicalDevices VulkanLogicalDevice::ListPhysicalDevices( )
     {
         PhysicalDevice deviceInfo{ };
         CreateDeviceInfo( device, deviceInfo );
-        result.Array[ index++ ] = ( deviceInfo );
+        result.SetElement( index, deviceInfo );
     }
 
     return result;

@@ -40,6 +40,7 @@ namespace DenOfIz
         uint32_t                          PrimitiveCount;
         bool                              IsOpaque;
     };
+    template class DZ_API InteropArray<AccelerationStructureGeometryDesc>;
 
     struct DZ_API AccelerationStructureInstanceDesc
     {
@@ -48,49 +49,18 @@ namespace DenOfIz
         uint32_t         InstanceCount;
         uint32_t         Flags;
     };
-
-#define DZ_MAX_ACCELERATION_STRUCTURE_GEOMETRIES 32
-    struct DZ_API AccelerationStructureGeometries
-    {
-        size_t                            NumElements = 0;
-        AccelerationStructureGeometryDesc Array[ DZ_MAX_ACCELERATION_STRUCTURE_GEOMETRIES ];
-
-        void SetElement( size_t index, const AccelerationStructureGeometryDesc &value )
-        {
-            Array[ index ] = value;
-        }
-        const AccelerationStructureGeometryDesc &GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
-    };
+    template class DZ_API InteropArray<AccelerationStructureInstanceDesc>;
 
     struct DZ_API AccelerationStructureBottomLevelDesc
     {
-        AccelerationStructureGeometries Geometries;
-        uint32_t                        Flags;
-    };
-
-#define DZ_MAX_ACCELERATION_STRUCTURE_INSTANCES 32
-    struct DZ_API AccelerationStructureInstances
-    {
-        size_t                            NumElements = 0;
-        AccelerationStructureGeometryDesc Array[ DZ_MAX_ACCELERATION_STRUCTURE_GEOMETRIES ];
-
-        void SetElement( size_t index, const AccelerationStructureGeometryDesc &value )
-        {
-            Array[ index ] = value;
-        }
-        const AccelerationStructureGeometryDesc &GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
+        InteropArray<AccelerationStructureGeometryDesc> Geometries;
+        uint32_t                                        Flags;
     };
 
     struct DZ_API AccelerationStructureTopLevelDesc
     {
-        AccelerationStructureInstances Instances;
-        uint32_t                       Flags;
+        InteropArray<AccelerationStructureInstanceDesc> Instances;
+        uint32_t                                        Flags;
     };
 
     struct DZ_API AccelerationStructureDesc

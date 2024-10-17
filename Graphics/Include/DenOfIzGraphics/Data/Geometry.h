@@ -158,8 +158,8 @@ namespace DenOfIz
 
     struct DZ_API GeometryData
     {
-        std::vector<GeometryVertexData> Vertices;
-        std::vector<uint32_t>           Indices;
+        InteropArray<GeometryVertexData> Vertices;
+        InteropArray<uint32_t>           Indices;
     };
 
     class DZ_API Geometry
@@ -182,5 +182,5 @@ namespace DenOfIz
     };
 } // namespace DenOfIz
 
-template class DZ_API std::vector<DenOfIz::GeometryVertexData>;
-template class DZ_API std::vector<uint32_t>;
+template class DZ_API DenOfIz::InteropArray<DenOfIz::GeometryVertexData>;
+template class DZ_API DenOfIz::InteropArray<uint32_t>;

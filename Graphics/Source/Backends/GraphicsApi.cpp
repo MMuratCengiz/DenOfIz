@@ -64,10 +64,10 @@ ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
 {
     ILogicalDevice *logicalDevice = CreateLogicalDevice( );
 
-    const PhysicalDevices &devices = logicalDevice->ListPhysicalDevices( );
-    for ( int i = 0; i < devices.NumElements; ++i )
+    const InteropArray<PhysicalDevice> &devices = logicalDevice->ListPhysicalDevices( );
+    for ( int i = 0; i < devices.NumElements( ); ++i )
     {
-        const PhysicalDevice &device = devices.Array[ i ];
+        const PhysicalDevice &device = devices.GetElement( i );
         if ( device.Properties.IsDedicated )
         {
             logicalDevice->LoadPhysicalDevice( device );
@@ -75,10 +75,10 @@ ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
         }
     }
 
-    const auto gpuDesc = devices.Array[ 0 ];
+    const auto gpuDesc = devices.GetElement( 0 );
     logicalDevice->LoadPhysicalDevice( gpuDesc );
 
-    LOG( INFO ) << "Loaded device: " << gpuDesc.Name.Str();
+    LOG( INFO ) << "Loaded device: " << gpuDesc.Name.Get( );
     LOG( INFO ) << "Device Capabilities:";
     LOG( INFO ) << "Dedicated GPU " << ( gpuDesc.Properties.IsDedicated ? "Yes" : "No" );
     LOG( INFO ) << "Available Memory " << gpuDesc.Properties.MemoryAvailableInMb << "MB";
@@ -90,7 +90,7 @@ ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
     return logicalDevice;
 }
 
-ShaderProgram *GraphicsApi::CreateShaderProgram( const ShaderDescs &shaders ) const
+ShaderProgram *GraphicsApi::CreateShaderProgram( const InteropArray<ShaderDesc> &shaders ) const
 {
     ShaderProgramDesc programDesc{ };
     programDesc.Shaders = shaders;

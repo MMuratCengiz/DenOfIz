@@ -24,8 +24,8 @@ AssetData::AssetData( const AssetDataDesc &desc ) : m_materialData( nullptr )
 {
     m_vertexBuffer = std::unique_ptr<IBufferResource>( desc.BatchCopy->CreateGeometryVertexBuffer( desc.GeometryData ) );
     m_indexBuffer  = std::unique_ptr<IBufferResource>( desc.BatchCopy->CreateGeometryIndexBuffer( desc.GeometryData ) );
-    m_numVertices  = desc.GeometryData.Vertices.size( );
-    m_numIndices   = desc.GeometryData.Indices.size( );
+    m_numVertices  = desc.GeometryData.Vertices.NumElements( );
+    m_numIndices   = desc.GeometryData.Indices.NumElements( );
 }
 
 void AssetData::UpdateMaterialData( MaterialData *materialData )

@@ -40,6 +40,7 @@ namespace DenOfIz
         uint32_t MipLevel                 = 0;
         uint32_t ArrayLayer               = 0;
     };
+    template class DZ_API InteropArray<TextureBarrierDesc>;
 
     struct DZ_API BufferBarrierDesc
     {
@@ -47,6 +48,7 @@ namespace DenOfIz
         BitSet<ResourceState> OldState;
         BitSet<ResourceState> NewState;
     };
+    template class DZ_API InteropArray<BufferBarrierDesc>;
 
     struct DZ_API MemoryBarrierDesc
     {
@@ -54,89 +56,44 @@ namespace DenOfIz
         BitSet<ResourceState> OldState;
         BitSet<ResourceState> NewState;
     };
-
-#define DZ_MAX_BARRIERS 16
-    struct DZ_API BufferBarriers
-    {
-        size_t            NumElements = 0;
-        BufferBarrierDesc Array[ DZ_MAX_BARRIERS ];
-
-        void SetElement( size_t index, const BufferBarrierDesc &value )
-        {
-            Array[ index ] = value;
-        }
-        const BufferBarrierDesc &GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
-    };
-
-    struct DZ_API TextureBarriers
-    {
-        size_t             NumElements = 0;
-        TextureBarrierDesc Array[ DZ_MAX_BARRIERS ];
-
-        void SetElement( size_t index, const TextureBarrierDesc &value )
-        {
-            Array[ index ] = value;
-        }
-        const TextureBarrierDesc &GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
-    };
-
-    struct DZ_API MemoryBarriers
-    {
-        size_t            NumElements = 0;
-        MemoryBarrierDesc Array[ DZ_MAX_BARRIERS ];
-
-        void SetElement( size_t index, const MemoryBarrierDesc &value )
-        {
-            Array[ index ] = value;
-        }
-        const MemoryBarrierDesc &GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
-    };
+    template class DZ_API InteropArray<MemoryBarrierDesc>;
 
     class DZ_API PipelineBarrierDesc
     {
-        TextureBarriers m_textureBarriers;
-        BufferBarriers  m_bufferBarriers;
-        MemoryBarriers  m_memoryBarriers;
+        InteropArray<TextureBarrierDesc> m_textureBarriers;
+        InteropArray<BufferBarrierDesc>  m_bufferBarriers;
+        InteropArray<MemoryBarrierDesc>  m_memoryBarriers;
 
     public:
         PipelineBarrierDesc &TextureBarrier( const TextureBarrierDesc &barrier )
         {
-            m_textureBarriers.Array[ m_textureBarriers.NumElements++ ] = barrier;
+            m_textureBarriers.AddElement( barrier );
             return *this;
         }
 
         PipelineBarrierDesc &BufferBarrier( const BufferBarrierDesc barrier )
         {
-            m_bufferBarriers.Array[ m_bufferBarriers.NumElements++ ] = barrier;
+            m_bufferBarriers.AddElement( barrier );
             return *this;
         }
 
         PipelineBarrierDesc &MemoryBarrier( const MemoryBarrierDesc barrier )
         {
-            m_memoryBarriers.Array[ m_memoryBarriers.NumElements++ ] = barrier;
+            m_memoryBarriers.AddElement( barrier );
             return *this;
         }
 
-        [[nodiscard]] const TextureBarriers &GetTextureBarriers( ) const
+        [[nodiscard]] const InteropArray<TextureBarrierDesc> &GetTextureBarriers( ) const
         {
             return m_textureBarriers;
         }
 
-        [[nodiscard]] const BufferBarriers &GetBufferBarriers( ) const
+        [[nodiscard]] const InteropArray<BufferBarrierDesc> &GetBufferBarriers( ) const
         {
             return m_bufferBarriers;
         }
 
-        [[nodiscard]] const MemoryBarriers &GetMemoryBarriers( ) const
+        [[nodiscard]] const InteropArray<MemoryBarrierDesc> &GetMemoryBarriers( ) const
         {
             return m_memoryBarriers;
         }

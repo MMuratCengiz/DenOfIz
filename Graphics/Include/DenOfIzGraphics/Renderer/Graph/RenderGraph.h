@@ -34,13 +34,8 @@ namespace DenOfIz
 
     struct DZ_API NodeResourceUsageDesc
     {
-        explicit NodeResourceUsageDesc( IBufferResource *resource ) : BufferResource( resource )
-        {
-        }
-        explicit NodeResourceUsageDesc( ITextureResource *resource ) : Type( NodeResourceUsageType::Texture ), TextureResource( resource )
-        {
-        }
-
+        explicit NodeResourceUsageDesc( IBufferResource *resource );
+        explicit NodeResourceUsageDesc( ITextureResource *resource );
         NodeResourceUsageDesc( ) = default;
 
         uint32_t              FrameIndex = 0;
@@ -51,23 +46,10 @@ namespace DenOfIz
             IBufferResource  *BufferResource;
             ITextureResource *TextureResource;
         };
-
-        static NodeResourceUsageDesc BufferState( const uint32_t frameIndex, IBufferResource *bufferResource, const ResourceState state )
-        {
-            NodeResourceUsageDesc desc( bufferResource );
-            desc.FrameIndex = frameIndex;
-            desc.State      = state;
-            return desc;
-        }
-
-        static NodeResourceUsageDesc TextureState( const uint32_t frameIndex, ITextureResource *textureResource, const ResourceState state )
-        {
-            NodeResourceUsageDesc desc( textureResource );
-            desc.FrameIndex = frameIndex;
-            desc.State      = state;
-            return desc;
-        }
+        static NodeResourceUsageDesc BufferState( const uint32_t frameIndex, IBufferResource *bufferResource, const ResourceState state );
+        static NodeResourceUsageDesc TextureState( const uint32_t frameIndex, ITextureResource *textureResource, const ResourceState state );
     };
+    template class DZ_API InteropArray<NodeResourceUsageDesc>;
 
     // Interop friendly callback
     class DZ_API NodeExecutionCallback
@@ -83,8 +65,8 @@ namespace DenOfIz
         struct NodeExecutionContext
         {
             ICommandList                      *CommandList;
-            Semaphores                         WaitOnSemaphores;
-            Semaphores                         NotifySemaphores;
+            InteropArray<ISemaphore *>         WaitOnSemaphores;
+            InteropArray<ISemaphore *>         NotifySemaphores;
             std::vector<NodeResourceUsageDesc> ResourceUsagesPerFrame;
             std::mutex                         SelfMutex;
             NodeExecutionCallback             *Execute;
@@ -119,35 +101,12 @@ namespace DenOfIz
     } // namespace RenderGraphInternal
     using namespace RenderGraphInternal;
 
-#define DZ_MAX_DEPENDENCIES 16
-    struct NodeDependencies
-    {
-        size_t      NumElements = 0;
-        std::string Array[ DZ_MAX_DEPENDENCIES ];
-
-        DZ_API void SetElement( size_t index, const char *value )
-        {
-            Array[ index ] = value;
-        }
-        DZ_API const char *GetElement( size_t index )
-        {
-            return Array[ index ].c_str( );
-        }
-    };
-
-#define DZ_MAX_REQUIRED_RESOURCE_STATES 16
-    struct DZ_API RequiredResourceStates
-    {
-        size_t                NumElements = 0;
-        NodeResourceUsageDesc Array[ DZ_MAX_REQUIRED_RESOURCE_STATES ];
-    };
-
     struct DZ_API NodeDesc
     {
-        InteropString          Name;
-        NodeDependencies       Dependencies;
-        RequiredResourceStates RequiredStates;
-        NodeExecutionCallback *Execute;
+        InteropString                       Name;
+        InteropArray<InteropString>         Dependencies;
+        InteropArray<NodeResourceUsageDesc> RequiredStates;
+        NodeExecutionCallback              *Execute;
     };
 
     class DZ_API PresentExecutionCallback
@@ -159,10 +118,10 @@ namespace DenOfIz
 
     struct DZ_API PresentNodeDesc
     {
-        NodeDependencies          Dependencies;
-        RequiredResourceStates    RequiredStates;
-        ISwapChain               *SwapChain;
-        PresentExecutionCallback *Execute;
+        InteropArray<InteropString>         Dependencies;
+        InteropArray<NodeResourceUsageDesc> RequiredStates;
+        ISwapChain                         *SwapChain;
+        PresentExecutionCallback           *Execute;
     };
 
     struct DZ_API RenderGraphDesc
@@ -207,7 +166,7 @@ namespace DenOfIz
         ISemaphore *GetOrCreateSemaphore( uint32_t &index );
         void        InitAllNodes( );
         void        ConfigureGraph( );
-        void        ValidateDependencies( const std::unordered_set<std::string> &allNodes, const NodeDependencies &dependencies ) const;
+        void        ValidateDependencies( const std::unordered_set<std::string> &allNodes, const InteropArray<InteropString> &dependencies ) const;
         void        ValidateNodes( ) const;
         void        IssueBarriers( ICommandList *commandList, const std::vector<NodeResourceUsageDesc> &resourceUsages );
     };

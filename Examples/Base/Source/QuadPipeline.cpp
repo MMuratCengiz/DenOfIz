@@ -22,16 +22,13 @@ using namespace DenOfIz;
 
 QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice, const char *pixelShader )
 {
-    ShaderDescs shaders{ };
-    ShaderDesc  vertexShaderDesc{ };
-    vertexShaderDesc.Path  = "Assets/Shaders/FullscreenQuad.vs.hlsl";
-    vertexShaderDesc.Stage = ShaderStage::Vertex;
-    shaders.Array[ 0 ]     = vertexShaderDesc;
-    ShaderDesc pixelShaderDesc{ };
-    pixelShaderDesc.Path  = pixelShader;
-    pixelShaderDesc.Stage = ShaderStage::Pixel;
-    shaders.Array[ 1 ]    = pixelShaderDesc;
-    shaders.NumElements   = 2;
+    InteropArray<ShaderDesc> shaders;
+    ShaderDesc              &vertexShaderDesc = shaders.EmplaceElement( );
+    vertexShaderDesc.Path                     = "Assets/Shaders/FullscreenQuad.vs.hlsl";
+    vertexShaderDesc.Stage                    = ShaderStage::Vertex;
+    ShaderDesc &pixelShaderDesc               = shaders.EmplaceElement( );
+    pixelShaderDesc.Path                      = pixelShader;
+    pixelShaderDesc.Stage                     = ShaderStage::Pixel;
 
     auto program           = std::unique_ptr<ShaderProgram>( graphicsApi->CreateShaderProgram( shaders ) );
     auto programReflection = program->Reflect( );
@@ -40,21 +37,20 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
     m_inputLayout   = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( programReflection.InputLayout ) );
 
     PipelineDesc pipelineDesc{ };
-    pipelineDesc.Rendering.RenderTargets.NumElements = 1;
-    pipelineDesc.Rendering.RenderTargets.Array[ 0 ]  = { .Format = Format::B8G8R8A8Unorm };
-    pipelineDesc.InputLayout                         = m_inputLayout.get( );
-    pipelineDesc.RootSignature                       = m_rootSignature.get( );
-    pipelineDesc.ShaderProgram                       = program.get( );
-    pipelineDesc.CullMode                            = CullMode::BackFace;
+    pipelineDesc.Rendering.RenderTargets.AddElement( { .Format = Format::B8G8R8A8Unorm } );
+    pipelineDesc.InputLayout   = m_inputLayout.get( );
+    pipelineDesc.RootSignature = m_rootSignature.get( );
+    pipelineDesc.ShaderProgram = program.get( );
+    pipelineDesc.CullMode      = CullMode::BackFace;
 
     m_pipeline = std::unique_ptr<IPipeline>( logicalDevice->CreatePipeline( pipelineDesc ) );
 
     ResourceBindGroupDesc bindGroupDesc{ };
     bindGroupDesc.RootSignature = m_rootSignature.get( );
 
-    for ( int bindingIndex = 0; bindingIndex < programReflection.RootSignature.ResourceBindings.NumElements; ++bindingIndex )
+    for ( int bindingIndex = 0; bindingIndex < programReflection.RootSignature.ResourceBindings.NumElements( ); ++bindingIndex )
     {
-        const auto &resourceBinding = programReflection.RootSignature.ResourceBindings.Array[ bindingIndex ];
+        const auto &resourceBinding = programReflection.RootSignature.ResourceBindings.GetElement( bindingIndex );
         bindGroupDesc.RegisterSpace = resourceBinding.RegisterSpace;
         for ( uint32_t i = 0; i < 3; ++i )
         {

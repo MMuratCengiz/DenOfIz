@@ -117,9 +117,9 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
     std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos;
 
     const auto &compiledShaders = m_desc.ShaderProgram->GetCompiledShaders( );
-    for ( int i = 0; i < compiledShaders.NumElements; ++i )
+    for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
     {
-        const auto                      &compiledShader        = compiledShaders.Array[ i ];
+        const auto                      &compiledShader        = compiledShaders.GetElement( i );
         VkPipelineShaderStageCreateInfo &shaderStageCreateInfo = pipelineStageCreateInfos.emplace_back( );
         shaderStageCreateInfo.sType                            = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 
@@ -128,7 +128,7 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
 
         shaderStageCreateInfo.stage  = stage;
         shaderStageCreateInfo.module = shaderModule;
-        shaderStageCreateInfo.pName  = compiledShader->EntryPoint.CStr();
+        shaderStageCreateInfo.pName  = compiledShader->EntryPoint.Get( );
         shaderStageCreateInfo.pNext  = nullptr;
     }
 
@@ -137,9 +137,9 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
 
 [[nodiscard]] VkPipelineRenderingCreateInfo VulkanPipeline::ConfigureRenderingInfo( std::vector<VkFormat> &colorAttachmentsStore ) const
 {
-    for ( int i = 0; i < m_desc.Rendering.RenderTargets.NumElements; ++i )
+    for ( int i = 0; i < m_desc.Rendering.RenderTargets.NumElements( ); ++i )
     {
-        colorAttachmentsStore.push_back( VulkanEnumConverter::ConvertImageFormat( m_desc.Rendering.RenderTargets.Array[ i ].Format ) );
+        colorAttachmentsStore.push_back( VulkanEnumConverter::ConvertImageFormat( m_desc.Rendering.RenderTargets.GetElement( i ).Format ) );
     }
 
     VkPipelineRenderingCreateInfo renderingCreateInfo{ };
@@ -263,12 +263,12 @@ VkPipelineRasterizationStateCreateInfo VulkanPipeline::ConfigureRasterization( )
 
 VkPipelineColorBlendStateCreateInfo VulkanPipeline::ConfigureColorBlend( std::vector<VkPipelineColorBlendAttachmentState> &colorBlendAttachments ) const
 {
-    const uint32_t attachmentCount = m_desc.Rendering.RenderTargets.NumElements;
+    const uint32_t attachmentCount = m_desc.Rendering.RenderTargets.NumElements( );
     colorBlendAttachments.resize( attachmentCount );
 
     for ( uint32_t i = 0; i < attachmentCount; ++i )
     {
-        auto &attachment                          = m_desc.Rendering.RenderTargets.Array[ i ];
+        auto &attachment                          = m_desc.Rendering.RenderTargets.GetElement( i );
         colorBlendAttachments[ i ].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
         colorBlendAttachments[ i ].blendEnable         = attachment.Blend.Enable;

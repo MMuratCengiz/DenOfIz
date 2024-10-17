@@ -29,16 +29,16 @@ MetalInputLayout::MetalInputLayout( MetalContext *context, InputLayoutDesc desc 
     int      bindingIndex = 0;
     uint32_t location     = kIRStageInAttributeStartIndex;
 
-    for ( int i = 0; i < m_desc.NumInputGroups; i++ )
+    for ( int i = 0; i < m_desc.InputGroups.NumElements( ); i++ )
     {
-        const InputGroupDesc &inputGroup = m_desc.InputGroups[ i ];
+        const InputGroupDesc &inputGroup = m_desc.InputGroups.GetElement( i );
         auto                 *layout     = [m_vertexDescriptor.layouts objectAtIndexedSubscript:bindingIndex];
         layout.stepFunction              = inputGroup.StepRate == StepRate::PerInstance ? MTLVertexStepFunctionPerInstance : MTLVertexStepFunctionPerVertex;
 
         uint32_t offset = 0;
-        for ( int elementIndex = 0; elementIndex < inputGroup.NumElements; ++elementIndex )
+        for ( int elementIndex = 0; elementIndex < inputGroup.Elements.NumElements( ); ++elementIndex )
         {
-            const InputLayoutElementDesc &inputElement = inputGroup.Elements[ elementIndex ];
+            const InputLayoutElementDesc &inputElement = inputGroup.Elements.GetElement( elementIndex );
             auto *attribute       = [m_vertexDescriptor.attributes objectAtIndexedSubscript:location];
             attribute.bufferIndex = bindingIndex;
             attribute.offset      = offset;

@@ -15,11 +15,11 @@ namespace DenOfIz
 
     struct DZ_API CompileDesc
     {
-        InteropString Path;
-        InteropString EntryPoint = "main";
-        ShaderStage   Stage;
-        TargetIL      TargetIL;
-        ShaderDefines Defines;
+        InteropString               Path;
+        InteropString               EntryPoint = "main";
+        ShaderStage                 Stage;
+        TargetIL                    TargetIL;
+        InteropArray<InteropString> Defines;
     };
 
     class DZ_API ShaderCompiler final

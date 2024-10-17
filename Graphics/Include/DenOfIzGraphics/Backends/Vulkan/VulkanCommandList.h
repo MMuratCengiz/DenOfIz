@@ -60,7 +60,7 @@ namespace DenOfIz
         void CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTextureDesc ) override;
         void CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBufferDesc ) override;
         void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
-        void Present( ISwapChain *swapChain, uint32_t imageIndex, Semaphores waitOnLocks ) override;
+        void Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> & waitOnLocks ) override;
     };
 
 } // namespace DenOfIz

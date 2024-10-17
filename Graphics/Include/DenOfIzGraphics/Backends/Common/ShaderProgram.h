@@ -34,33 +34,18 @@ namespace DenOfIz
 
     struct DZ_API ShaderDesc
     {
-        ShaderStage   Stage;
-        InteropString Path;
-        ShaderDefines Defines;
-        InteropString EntryPoint = "main";
-    };
-
-#define DZ_MAX_SHADER_DESCS 16
-    struct DZ_API ShaderDescs
-    {
-        size_t     NumElements = 0;
-        ShaderDesc Array[ DZ_MAX_SHADER_DESCS ];
-
-        void SetElement( size_t index, const ShaderDesc &value )
-        {
-            Array[ index ] = value;
-        }
-        const ShaderDesc &GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
+        ShaderStage                 Stage;
+        InteropString               Path;
+        InteropArray<InteropString> Defines;
+        InteropString               EntryPoint = "main";
     };
 
     struct DZ_API ShaderProgramDesc
     {
-        TargetIL    TargetIL;
-        ShaderDescs Shaders;
+        TargetIL                 TargetIL;
+        InteropArray<ShaderDesc> Shaders;
     };
+    template class DZ_API InteropArray<ShaderDesc>;
 
     struct DZ_API ShaderReflectDesc
     {
@@ -68,21 +53,6 @@ namespace DenOfIz
         RootSignatureDesc RootSignature;
     };
 
-#define DZ_MAX_COMPILED_SHADERS 8
-    struct DZ_API CompiledShaders
-    {
-        size_t          NumElements = 0;
-        CompiledShader *Array[ DZ_MAX_COMPILED_SHADERS ];
-
-        void SetElement( size_t index, CompiledShader *&value )
-        {
-            Array[ index ] = value;
-        }
-        const CompiledShader *GetElement( size_t index )
-        {
-            return Array[ index ];
-        }
-    };
 #ifdef BUILD_METAL
     struct MetalDescriptorOffsets
     {
@@ -103,8 +73,8 @@ namespace DenOfIz
 #endif
     public:
         DZ_API explicit ShaderProgram( ShaderProgramDesc desc );
-        [[nodiscard]] DZ_API CompiledShaders   GetCompiledShaders( ) const;
-        [[nodiscard]] DZ_API ShaderReflectDesc Reflect( ) const;
+        [[nodiscard]] DZ_API InteropArray<CompiledShader *> GetCompiledShaders( ) const;
+        [[nodiscard]] DZ_API ShaderReflectDesc              Reflect( ) const;
         DZ_API ~ShaderProgram( );
 
     private:

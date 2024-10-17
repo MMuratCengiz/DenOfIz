@@ -47,9 +47,9 @@ void MetalPipeline::CreateGraphicsPipeline( )
     id<MTLFunction> fragmentFunction = nullptr;
 
     const auto &shaders = m_desc.ShaderProgram->GetCompiledShaders( );
-    for ( int i = 0; i < shaders.NumElements; ++i )
+    for ( int i = 0; i < shaders.NumElements( ); ++i )
     {
-        const auto &shader     = shaders.Array[ i ];
+        const auto &shader     = shaders.GetElement( i );
         std::string entryPoint = shader->EntryPoint;
         switch ( shader->Stage )
         {
@@ -82,9 +82,9 @@ void MetalPipeline::CreateGraphicsPipeline( )
     pipelineStateDescriptor.vertexDescriptor = mtkInputLayout->GetVertexDescriptor( );
 
     int attachmentIdx = 0;
-    for ( int i = 0; i < m_desc.Rendering.RenderTargets.NumElements; ++i )
+    for ( int i = 0; i < m_desc.Rendering.RenderTargets.NumElements( ); ++i )
     {
-        const auto                                 &attachment           = m_desc.Rendering.RenderTargets.Array[ i ];
+        const auto                                 &attachment           = m_desc.Rendering.RenderTargets.GetElement( i );
         MTLRenderPipelineColorAttachmentDescriptor *metalColorAttachment = pipelineStateDescriptor.colorAttachments[ attachmentIdx ];
         metalColorAttachment.pixelFormat                                 = MetalEnumConverter::ConvertFormat( attachment.Format );
 
@@ -144,9 +144,9 @@ void MetalPipeline::CreateComputePipeline( )
     id<MTLFunction> computeFunction = nullptr;
 
     const auto &shaders = m_desc.ShaderProgram->GetCompiledShaders( );
-    for ( int i = 0; i < shaders.NumElements; ++i )
+    for ( int i = 0; i < shaders.NumElements( ); ++i )
     {
-        const auto &shader = shaders.Array[ i ];
+        const auto &shader = shaders.Array.GetElement( i );
         switch ( shader->Stage )
         {
         case ShaderStage::Compute:
