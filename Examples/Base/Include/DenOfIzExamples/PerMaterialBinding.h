@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "Camera.h"
 #include "NullTexture.h"
 #include <DenOfIzGraphics/Renderer/Assets/MaterialData.h>
 

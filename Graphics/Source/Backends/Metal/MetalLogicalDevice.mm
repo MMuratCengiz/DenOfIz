@@ -17,10 +17,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #import "Metal/Metal.h"
-#include <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
 #define IR_PRIVATE_IMPLEMENTATION
 #import <metal_irconverter/metal_irconverter.h>
 #import <metal_irconverter_runtime/metal_irconverter_runtime.h>
+#include <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
 
 using namespace DenOfIz;
 

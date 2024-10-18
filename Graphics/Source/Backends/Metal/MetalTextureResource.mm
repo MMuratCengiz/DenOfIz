@@ -75,8 +75,9 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
     }
 
     // Create the texture resource
-    m_texture      = [m_context->Device newTextureWithDescriptor:textureDesc];
-    m_textureUsage = textureDesc.usage;
+    m_texture       = [m_context->Device newTextureWithDescriptor:textureDesc];
+    m_textureUsage  = textureDesc.usage;
+    m_texture.label = [NSString stringWithUTF8String:desc.DebugName.Get( )];
 
     if ( !m_texture )
     {
@@ -213,8 +214,7 @@ MetalSampler::MetalSampler( MetalContext *context, const SamplerDesc &desc ) : m
     samplerDesc.compareFunction        = MetalEnumConverter::ConvertCompareFunction( desc.CompareOp );
     samplerDesc.maxAnisotropy          = std::max( 1.0f, desc.MaxAnisotropy );
     samplerDesc.label                  = [NSString stringWithUTF8String:desc.DebugName.Get( )];
-
-    m_sampler = [m_context->Device newSamplerStateWithDescriptor:samplerDesc];
+    m_sampler                          = [m_context->Device newSamplerStateWithDescriptor:samplerDesc];
     if ( !m_sampler )
     {
         LOG( ERROR ) << "Failed to create Metal sampler state: " << desc.DebugName.Get( );
