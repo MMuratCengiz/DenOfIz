@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <string>
-#include <vector>
 #include <glog/logging.h>
+#include <iterator>
 
 #ifdef _WIN32
 #ifdef DZ_GRAPHICS_EXPORTS
@@ -31,6 +31,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef DZ_API
 #define DZ_API
+#endif
+
+#if _WIN32
+#define SafeCopyString( dst, dstSize, src ) strcpy_s( dst, dstSize, src )
+#elif __APPLE__ || __linux__
+#define SafeCopyString( dst, dstSize, src ) strncpy( dst, src, dstSize )
 #endif
 
 namespace DenOfIz
@@ -47,7 +53,7 @@ namespace DenOfIz
             {
                 size_t len = strlen( str );
                 m_data     = new char[ len + 1 ];
-                strcpy_s( m_data, len + s_nullTerminatorLen, str );
+                SafeCopyString( m_data, len + s_nullTerminatorLen, str );
             }
         }
 
@@ -62,7 +68,7 @@ namespace DenOfIz
             {
                 size_t len = strlen( other.m_data );
                 m_data     = new char[ len + 1 ];
-                strcpy_s( m_data, len + s_nullTerminatorLen, other.m_data );
+                SafeCopyString( m_data, len + s_nullTerminatorLen, other.m_data );
             }
             else
             {
@@ -79,7 +85,7 @@ namespace DenOfIz
                 {
                     size_t len = strlen( other.m_data );
                     m_data     = new char[ len + 1 ];
-                    strcpy_s( m_data, len + s_nullTerminatorLen, other.m_data );
+                    SafeCopyString( m_data, len + s_nullTerminatorLen, other.m_data );
                 }
                 else
                 {
@@ -116,10 +122,10 @@ namespace DenOfIz
             char  *newData = new char[ oldLen + len + 1 ];
             if ( m_data != nullptr )
             {
-                strcpy_s( newData, oldLen + s_nullTerminatorLen, m_data );
+                SafeCopyString( newData, oldLen + s_nullTerminatorLen, m_data );
                 delete[] m_data;
             }
-            strcpy_s( newData + oldLen, len + s_nullTerminatorLen, str );
+            SafeCopyString( newData + oldLen, len + s_nullTerminatorLen, str );
             m_data = newData;
             return *this;
         }
@@ -314,7 +320,7 @@ namespace DenOfIz
         {
             if ( index >= m_size )
             {
-                LOG( ERROR ) << "Index out of bounds." << index << " >= " << m_size;
+//                LOG( ERROR ) << "Index out of bounds." << index << " >= " << m_size;
             }
         }
     };

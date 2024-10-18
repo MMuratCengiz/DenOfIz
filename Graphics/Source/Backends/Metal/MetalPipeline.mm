@@ -50,14 +50,14 @@ void MetalPipeline::CreateGraphicsPipeline( )
     for ( int i = 0; i < shaders.NumElements( ); ++i )
     {
         const auto &shader     = shaders.GetElement( i );
-        std::string entryPoint = shader->EntryPoint;
+        std::string entryPoint = shader->EntryPoint.Get( );
         switch ( shader->Stage )
         {
         case ShaderStage::Vertex:
-            vertexFunction = CreateShaderFunction( shader->Blob, shader->EntryPoint );
+            vertexFunction = CreateShaderFunction( shader->Blob, shader->EntryPoint.Get( ) );
             break;
         case ShaderStage::Pixel:
-            fragmentFunction = CreateShaderFunction( shader->Blob, shader->EntryPoint );
+                fragmentFunction = CreateShaderFunction( shader->Blob, shader->EntryPoint.Get( ) );
             break;
         default:
             LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage );
@@ -146,11 +146,11 @@ void MetalPipeline::CreateComputePipeline( )
     const auto &shaders = m_desc.ShaderProgram->GetCompiledShaders( );
     for ( int i = 0; i < shaders.NumElements( ); ++i )
     {
-        const auto &shader = shaders.Array.GetElement( i );
+        const auto &shader = shaders.GetElement( i );
         switch ( shader->Stage )
         {
         case ShaderStage::Compute:
-            computeFunction = CreateShaderFunction( shader->Blob, shader->EntryPoint );
+            computeFunction = CreateShaderFunction( shader->Blob, shader->EntryPoint.Get( ) );
             break;
         default:
             LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage );

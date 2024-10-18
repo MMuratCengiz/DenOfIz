@@ -219,7 +219,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
 IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob *code, IRRootSignature *rootSignature ) const
 {
     IRCompiler *irCompiler = IRCompilerCreate( );
-    IRCompilerSetEntryPointName( irCompiler, compileOptions.EntryPoint.c_str( ) );
+	IRCompilerSetEntryPointName( irCompiler, compileOptions.EntryPoint.Get( ) );
     IRCompilerSetMinimumDeploymentTarget( irCompiler, IROperatingSystem_macOS, "14.0" );
     IRCompilerSetGlobalRootSignature( irCompiler, rootSignature );
 
@@ -243,7 +243,7 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob
     MetalDxcBlob_Impl *mslBlob = new MetalDxcBlob_Impl( metalLibByteCode, metalLibSize );
     mslBlob->IrObject          = outIr;
 
-    CacheCompiledShader( compileOptions.Path, compileOptions.TargetIL, mslBlob );
+    CacheCompiledShader( compileOptions.Path.Get( ), compileOptions.TargetIL, mslBlob );
 
     IRMetalLibBinaryDestroy( metalLib );
     IRObjectDestroy( irDxil );

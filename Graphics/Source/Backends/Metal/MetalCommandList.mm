@@ -83,7 +83,7 @@ void MetalCommandList::BeginRendering( const RenderingDesc &renderingDesc )
             passDesc.depthAttachment.texture          = static_cast<MetalTextureResource *>( renderingDesc.DepthAttachment.Resource )->Instance( );
             passDesc.depthAttachment.loadAction       = MetalEnumConverter::ConvertLoadAction( attachment.LoadOp );
             passDesc.depthAttachment.storeAction      = MetalEnumConverter::ConvertStoreAction( attachment.StoreOp );
-            passDesc.depthAttachment.clearDepth       = attachment.ClearDepth[ 0 ]; // Validate
+            passDesc.depthAttachment.clearDepth       = attachment.ClearDepthStencil[ 0 ]; // Validate
         }
 
         if ( renderingDesc.StencilAttachment.Resource )
@@ -92,7 +92,7 @@ void MetalCommandList::BeginRendering( const RenderingDesc &renderingDesc )
             passDesc.stencilAttachment.texture        = static_cast<MetalTextureResource *>( renderingDesc.StencilAttachment.Resource )->Instance( );
             passDesc.stencilAttachment.loadAction     = MetalEnumConverter::ConvertLoadAction( attachment.LoadOp );
             passDesc.stencilAttachment.storeAction    = MetalEnumConverter::ConvertStoreAction( attachment.StoreOp );
-            passDesc.stencilAttachment.clearStencil   = attachment.ClearDepth[ 0 ]; // Validate
+            passDesc.stencilAttachment.clearStencil   = attachment.ClearDepthStencil[ 1 ]; // Validate
         }
 
         m_renderEncoder = [m_commandBuffer renderCommandEncoderWithDescriptor:passDesc];

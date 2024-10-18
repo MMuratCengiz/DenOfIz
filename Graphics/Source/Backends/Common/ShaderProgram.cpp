@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <DenOfIzGraphics/Utilities/Utilities.h>
+#include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
 #include <directx/d3d12shader.h>
 #include <ranges>
 #include <unordered_set>
@@ -350,9 +351,9 @@ void ShaderProgram::ProduceMSL( )
         IRErrorDestroy( error );
     }
 
-    for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements; ++shaderIndex )
+    for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements( ); ++shaderIndex )
     {
-        auto       &shader      = m_desc.Shaders.Array[ shaderIndex ];
+        auto       &shader      = m_desc.Shaders.GetElement( shaderIndex );
         CompileDesc compileDesc = { };
         compileDesc.Path        = shader.Path;
         compileDesc.Defines     = shader.Defines;

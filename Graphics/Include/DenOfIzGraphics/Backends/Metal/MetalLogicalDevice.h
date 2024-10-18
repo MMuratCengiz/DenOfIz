@@ -18,11 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "MetalContext.h"
 #include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
 #include <DenOfIzGraphics/Utilities/Common.h>
 #include "MetalBufferResource.h"
 #include "MetalCommandListPool.h"
-#include "MetalContext.h"
 #include "MetalFence.h"
 #include "MetalResourceBindGroup.h"
 #include "MetalTextureResource.h"

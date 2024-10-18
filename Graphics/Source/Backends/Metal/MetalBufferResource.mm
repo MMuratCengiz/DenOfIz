@@ -38,7 +38,7 @@ MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDes
         LOG( ERROR ) << "Failed to create Metal buffer";
     }
 
-    NSString *nsName = [NSString stringWithUTF8String:desc.DebugName.c_str( )];
+    NSString *nsName = [NSString stringWithUTF8String:desc.DebugName.Get( )];
     m_buffer.label   = nsName;
 
     if ( m_desc.Descriptor.Any( { ResourceDescriptor::RWBuffer, ResourceDescriptor::AccelerationStructure } ) ||
@@ -62,12 +62,12 @@ void *MetalBufferResource::MapMemory( )
 {
     if ( m_mappedMemory != nullptr )
     {
-        LOG( WARNING ) << "Memory already mapped, buffer: " << m_desc.DebugName.c_str( );
+        LOG( WARNING ) << "Memory already mapped, buffer: " << m_desc.DebugName.Get( );
         return m_mappedMemory;
     }
     if ( m_buffer.storageMode != MTLStorageModeShared )
     {
-        LOG( WARNING ) << "Buffer is not shared, buffer: " << m_desc.DebugName.c_str( );
+        LOG( WARNING ) << "Buffer is not shared, buffer: " << m_desc.DebugName.Get( );
         return nullptr;
     }
 
@@ -79,11 +79,11 @@ void MetalBufferResource::UnmapMemory( )
 {
     if ( m_mappedMemory == nullptr )
     {
-        LOG( WARNING ) << "Memory not mapped, buffer: " << m_desc.DebugName.c_str( );
+        LOG( WARNING ) << "Memory not mapped, buffer: " << m_desc.DebugName.Get( );
     }
     if ( m_buffer.storageMode != MTLStorageModeShared )
     {
-        LOG( ERROR ) << "Buffer is not shared, buffer: " << m_desc.DebugName.c_str( );
+        LOG( ERROR ) << "Buffer is not shared, buffer: " << m_desc.DebugName.Get( );
     }
 
     m_mappedMemory = nullptr;

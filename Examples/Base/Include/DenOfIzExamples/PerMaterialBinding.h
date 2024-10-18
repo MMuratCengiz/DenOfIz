@@ -20,7 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Camera.h"
 #include "NullTexture.h"
-#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
 #include <DenOfIzGraphics/Renderer/Assets/MaterialData.h>
 
 namespace DenOfIz
