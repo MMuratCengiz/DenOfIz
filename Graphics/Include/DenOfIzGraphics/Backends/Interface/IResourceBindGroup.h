@@ -40,7 +40,7 @@ namespace DenOfIz
     {
     public:
         virtual ~IResourceBindGroup( )                                                                      = default;
-        virtual void                SetRootConstantsData( uint32_t binding, const std::vector<Byte> &data ) = 0;
+        virtual void                SetRootConstantsData( uint32_t binding, const InteropArray<Byte> &data ) = 0;
         virtual void                SetRootConstants( uint32_t binding, void *data )                        = 0;
         virtual IResourceBindGroup *BeginUpdate( )                                                          = 0;
         virtual IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource )                = 0;

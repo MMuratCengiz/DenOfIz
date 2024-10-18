@@ -29,19 +29,9 @@
 %ignore TWindowHandle;
 %ignore DenOfIz::GraphicsWindowHandle::GetNativeHandle;
 
-// Array ignores that do not translate well to C#, exposed via functions instead
-%ignore DenOfIz::Semaphores::Array;
-%ignore DenOfIz::ShaderStages::Array;
-%ignore DenOfIz::CommandLists::Array;
-%ignore DenOfIz::NodeDependencies::Array;
-%ignore DenOfIz::ShaderDefines::Array;
 %ignore DenOfIz::RenderingAttachmentDesc::ClearColor;
 %ignore DenOfIz::RenderingAttachmentDesc::ClearDepthStencil;
 // ByteVector ignores:
-%ignore DenOfIz::CopyToGpuBufferDesc::Data;
-%ignore DenOfIz::CopyToGpuBufferDesc::NumBytes;
-%ignore DenOfIz::CopyDataToTextureDesc::Data;
-%ignore DenOfIz::CopyDataToTextureDesc::NumBytes;
 %ignore DenOfIz::BatchResourceCopy::CreateUniformBuffer;
 %ignore DenOfIz::IBufferResource::MapMemory;
 %ignore DenOfIz::IBufferResource::InitialState;
@@ -54,7 +44,9 @@
 %ignore DenOfIz::InteropString::operator DenOfIz::InteropString;
 %ignore DenOfIz::InteropString::operator=;
 %ignore DenOfIz::InteropArray::operator=;
-
+%ignore DenOfIz::InteropArray::Data;
+%ignore DenOfIz::InteropArray::EmplaceElement;
+%ignore DenOfIz::InteropArray::MemCpy;
 
 // BitSet ignores:
 %ignore DenOfIz::BitSet::operator DenOfIz::ResourceState;
@@ -75,8 +67,8 @@
 %feature("director") DenOfIz::NodeExecutionCallback;
 %feature("director") DenOfIz::PresentExecutionCallback;
 
-%include <DenOfIzGraphics/Utilities/Common_Macro.h>
 %include <DenOfIzGraphics/Utilities/Interop.h>
+%include <DenOfIzGraphics/Utilities/Common_Macro.h>
 %include <DenOfIzGraphics/Utilities/BitSet.h>
 %include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 %include <DenOfIzGraphics/Backends/Interface/CommonData.h>

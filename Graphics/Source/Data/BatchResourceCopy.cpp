@@ -74,17 +74,17 @@ void BatchResourceCopy::CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc )
     BufferDesc stagingBufferDesc{ };
     stagingBufferDesc.HeapType     = HeapType::CPU_GPU;
     stagingBufferDesc.InitialState = ResourceState::CopySrc;
-    stagingBufferDesc.NumBytes     = Utilities::Align( copyDesc.NumBytes, m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
+    stagingBufferDesc.NumBytes     = Utilities::Align( copyDesc.Data.NumElements( ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
     stagingBufferDesc.DebugName    = "CopyToGPUBuffer_StagingBuffer";
 
     const auto stagingBuffer = m_device->CreateBufferResource( stagingBufferDesc );
-    memcpy( stagingBuffer->MapMemory( ), copyDesc.Data, copyDesc.NumBytes );
+    memcpy( stagingBuffer->MapMemory( ), copyDesc.Data.Data( ), copyDesc.Data.NumElements( ) );
     stagingBuffer->UnmapMemory( );
 
     CopyBufferRegionDesc copyBufferRegionDesc{ };
     copyBufferRegionDesc.DstBuffer = copyDesc.DstBuffer;
     copyBufferRegionDesc.SrcBuffer = stagingBuffer;
-    copyBufferRegionDesc.NumBytes  = copyDesc.NumBytes;
+    copyBufferRegionDesc.NumBytes  = copyDesc.Data.NumElements( );
 
     CopyBufferRegion( copyBufferRegionDesc );
 
@@ -107,12 +107,12 @@ void BatchResourceCopy::CopyDataToTexture( const CopyDataToTextureDesc &copyDesc
     BufferDesc stagingBufferDesc{ };
     stagingBufferDesc.HeapType     = HeapType::CPU_GPU;
     stagingBufferDesc.InitialState = ResourceState::CopySrc;
-    stagingBufferDesc.NumBytes     = copyDesc.NumBytes;
+    stagingBufferDesc.NumBytes     = copyDesc.Data.NumElements( );
     stagingBufferDesc.DebugName    = "CopyDataToTexture_StagingBuffer";
 
     const auto stagingBuffer = m_device->CreateBufferResource( stagingBufferDesc );
     void      *dst           = stagingBuffer->MapMemory( );
-    memcpy( dst, copyDesc.Data, copyDesc.NumBytes );
+    memcpy( dst, copyDesc.Data.Data( ), copyDesc.Data.NumElements( ) );
     stagingBuffer->UnmapMemory( );
 
     CopyBufferToTextureDesc copyBufferToTextureDesc{ };
@@ -155,7 +155,7 @@ ITextureResource *BatchResourceCopy::CreateAndLoadTexture( const InteropString &
     return outTex;
 }
 
-IBufferResource *BatchResourceCopy::CreateUniformBuffer( const void *data, const uint32_t numBytes )
+IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte> &data, const uint32_t numBytes )
 {
     BufferDesc bufferDesc{ };
     bufferDesc.HeapType     = HeapType::GPU;
@@ -169,7 +169,6 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const void *data, const
     CopyToGpuBufferDesc copyDesc{ };
     copyDesc.DstBuffer = buffer;
     copyDesc.Data      = data;
-    copyDesc.NumBytes  = numBytes;
     CopyToGPUBuffer( copyDesc );
 
     if ( m_issueBarriers )
@@ -184,19 +183,21 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const void *data, const
 
 [[nodiscard]] IBufferResource *BatchResourceCopy::CreateGeometryVertexBuffer( const GeometryData &geometryData )
 {
+    size_t numBytes = geometryData.Vertices.NumElements( ) * sizeof( GeometryVertexData );
+
     BufferDesc vBufferDesc{ };
     vBufferDesc.HeapType     = HeapType::GPU;
     vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
     vBufferDesc.InitialState = ResourceState::CopyDst;
-    vBufferDesc.NumBytes     = geometryData.Vertices.NumElements( ) * sizeof( GeometryVertexData );
+    vBufferDesc.NumBytes     = numBytes;
     vBufferDesc.DebugName    = NextId( "Vertex" );
 
     const auto vertexBuffer = m_device->CreateBufferResource( vBufferDesc );
 
     CopyToGpuBufferDesc vbCopyDesc{ };
     vbCopyDesc.DstBuffer = vertexBuffer;
-    vbCopyDesc.Data      = geometryData.Vertices.Data( );
-    vbCopyDesc.NumBytes  = geometryData.Vertices.NumElements( ) * sizeof( GeometryVertexData );
+    // Todo not efficient at all, fix later
+    vbCopyDesc.Data.MemCpy( geometryData.Vertices.Data( ), numBytes );
     CopyToGPUBuffer( vbCopyDesc );
 
     if ( m_issueBarriers )
@@ -211,11 +212,13 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const void *data, const
 
 [[nodiscard]] IBufferResource *BatchResourceCopy::CreateGeometryIndexBuffer( const GeometryData &geometryData )
 {
+    size_t numBytes = geometryData.Indices.NumElements( ) * sizeof( uint32_t );
+
     BufferDesc iBufferDesc{ };
     iBufferDesc.HeapType        = HeapType::GPU;
     iBufferDesc.Descriptor      = ResourceDescriptor::IndexBuffer;
     iBufferDesc.InitialState    = ResourceState::CopyDst;
-    iBufferDesc.NumBytes        = geometryData.Indices.NumElements( ) * sizeof( uint32_t );
+    iBufferDesc.NumBytes        = numBytes;
     const char *indexBufferName = "IndexBuffer";
     iBufferDesc.DebugName       = NextId( indexBufferName );
 
@@ -223,8 +226,8 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const void *data, const
 
     CopyToGpuBufferDesc ibCopyDesc{ };
     ibCopyDesc.DstBuffer = indexBuffer;
-    ibCopyDesc.Data      = geometryData.Indices.Data( );
-    ibCopyDesc.NumBytes  = geometryData.Indices.NumElements( ) * sizeof( uint32_t );
+    // Todo not efficient at all, fix later
+    ibCopyDesc.Data.MemCpy( geometryData.Indices.Data( ), numBytes );
     CopyToGPUBuffer( ibCopyDesc );
 
     if ( m_issueBarriers )

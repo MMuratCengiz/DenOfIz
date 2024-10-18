@@ -41,15 +41,15 @@ VulkanResourceBindGroup::VulkanResourceBindGroup( VulkanContext *context, const 
     m_rootConstants.resize( m_rootSignature->NumRootConstants( ) );
 }
 
-void VulkanResourceBindGroup::SetRootConstantsData( uint32_t binding, const std::vector<Byte> &data )
+void VulkanResourceBindGroup::SetRootConstantsData( uint32_t binding, const InteropArray<Byte> &data )
 {
     const VkPushConstantRange pushConstantRange = m_rootSignature->PushConstantRange( binding );
-    if ( data.size( ) != pushConstantRange.size )
+    if ( data.NumElements( ) != pushConstantRange.size )
     {
-        LOG( ERROR ) << "Root constant size mismatch. Expected: " << pushConstantRange.size << ", Got: " << data.size( );
+        LOG( ERROR ) << "Root constant size mismatch. Expected: " << pushConstantRange.size << ", Got: " << data.NumElements( );
         return;
     }
-    SetRootConstants( binding, (void *)data.data( ) );
+    SetRootConstants( binding, (void *)data.Data( ) );
 }
 
 void VulkanResourceBindGroup::SetRootConstants( const uint32_t binding, void *data )

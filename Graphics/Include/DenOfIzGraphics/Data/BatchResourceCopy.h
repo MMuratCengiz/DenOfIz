@@ -28,20 +28,18 @@ namespace DenOfIz
 {
     struct DZ_API CopyToGpuBufferDesc
     {
-        IBufferResource *DstBuffer;
-        const void      *Data;
-        size_t           NumBytes;
+        IBufferResource   *DstBuffer;
+        InteropArray<Byte> Data;
     };
 
     struct DZ_API CopyDataToTextureDesc
     {
-        ITextureResource *DstTexture;
-        const void       *Data;
-        size_t            NumBytes;
-        uint32_t          MipLevel;
-        uint32_t          ArrayLayer;
-        uint32_t          RowPitch;
-        uint32_t          SlicePitch;
+        ITextureResource  *DstTexture;
+        InteropArray<Byte> Data;
+        uint32_t           MipLevel;
+        uint32_t           ArrayLayer;
+        uint32_t           RowPitch;
+        uint32_t           SlicePitch;
     };
 
     struct DZ_API LoadTextureDesc
@@ -88,10 +86,11 @@ namespace DenOfIz
         DZ_API void                           CopyDataToTexture( const CopyDataToTextureDesc &copyDesc );
         DZ_API ITextureResource              *CreateAndLoadTexture( const InteropString &file );
         DZ_API void                           LoadTexture( const LoadTextureDesc &loadDesc );
-        [[nodiscard]] DZ_API IBufferResource *CreateUniformBuffer( const void *data, uint32_t numBytes );
+        [[nodiscard]] DZ_API IBufferResource *CreateUniformBuffer( const InteropArray<Byte> &, uint32_t numBytes );
         [[nodiscard]] DZ_API IBufferResource *CreateGeometryVertexBuffer( const GeometryData &geometryData );
         [[nodiscard]] DZ_API IBufferResource *CreateGeometryIndexBuffer( const GeometryData &geometryData );
         DZ_API void                           Submit( ISemaphore *notify = nullptr );
+
     private:
         void                   CleanResources( );
         void                   LoadTextureInternal( const Texture &texture, ITextureResource *dstTexture );

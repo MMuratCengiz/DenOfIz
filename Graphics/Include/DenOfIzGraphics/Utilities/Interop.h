@@ -261,11 +261,10 @@ namespace DenOfIz
             return m_array[ index ];
         }
 
-        T &AddElement( const T &element )
+        void AddElement( const T &element )
         {
             size_t index     = NewElement( );
             m_array[ index ] = element;
-            return m_array[ index ];
         }
 
         void Swap( int index1, int index2 )
@@ -296,15 +295,14 @@ namespace DenOfIz
             m_array[ index ] = element;
         }
 
-        // For rvalue references (movable objects)
-        void SetElement( const size_t index, T &&element )
+        void MemCpy( const void *src, const size_t numBytes )
         {
-            CheckBounds( index );
-            m_array[ index ] = std::move( element );
-            if ( index >= m_numElements )
-            {
-                m_numElements = index + 1;
-            }
+            size_t numElements = numBytes / sizeof( T );
+            Resize( numElements );
+            std::memcpy( m_array, src, numBytes );
+            m_numElements = numElements;
+            m_size        = numElements;
+            m_capacity    = numElements;
         }
 
         [[nodiscard]] const T *Data( ) const
@@ -326,7 +324,12 @@ namespace DenOfIz
         {
             if ( m_capacity < size )
             {
-                m_capacity  = m_capacity * 2;
+                m_capacity = m_capacity * 2;
+                if ( m_capacity < size )
+                {
+                    m_capacity = size;
+                    m_capacity = ( m_capacity + 7 ) & ( ~7 );
+                }
                 T *newArray = new T[ m_capacity ];
                 MoveArray( m_array, newArray, m_numElements );
                 delete[] m_array;
