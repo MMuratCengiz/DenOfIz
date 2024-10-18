@@ -295,6 +295,11 @@ namespace DenOfIz
             m_array[ index ] = element;
         }
 
+        void CopyBytes( unsigned char *inputBytes, int nbytes )
+        {
+            MemCpy( inputBytes, nbytes );
+        }
+
         void MemCpy( const void *src, const size_t numBytes )
         {
             size_t numElements = numBytes / sizeof( T );

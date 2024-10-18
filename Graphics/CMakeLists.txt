@@ -138,10 +138,9 @@ install_target(DenOfIzGraphics)
 target_include_default_directories(DenOfIzGraphics)
 
 target_include_directories(DenOfIzGraphics
-        PRIVATE
         ${TINYGLTF_INCLUDE_DIRS}
         PUBLIC
-        _ThirdParty/Tiny/
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/Tiny> $<INSTALL_INTERFACE:_ThirdParty/Tiny>
         ${STB_INCLUDE_DIRS}
 )
 
@@ -166,7 +165,7 @@ endif ()
 
 if (WIN32)
     # Non VCPKG because github repo is more up to date, and the one in vcpkg is unofficial
-    include(_ThirdParty/ExternalSystem_D3D12MemoryAllocator.cmake)
+    add_subdirectory(_ThirdParty/D3D12MemoryAllocator)
 
     target_link_directories(
             DenOfIzGraphics

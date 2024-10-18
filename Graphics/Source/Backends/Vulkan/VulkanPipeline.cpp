@@ -337,7 +337,7 @@ VkShaderModule VulkanPipeline::CreateShaderModule( IDxcBlob *blob ) const
     shaderModuleCreateInfo.codeSize = blob->GetBufferSize( );
     shaderModuleCreateInfo.pCode    = static_cast<const uint32_t *>( blob->GetBufferPointer( ) );
 
-    VkShaderModule shaderModule;
+    VkShaderModule shaderModule{};
     VK_CHECK_RESULT( vkCreateShaderModule( m_context->LogicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule ) );
     return shaderModule;
 }

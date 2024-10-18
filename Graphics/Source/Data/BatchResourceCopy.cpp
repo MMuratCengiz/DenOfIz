@@ -354,6 +354,6 @@ const char *BatchResourceCopy::NextId( const char *prefix )
     const int                        next = idCounter.fetch_add( 1, std::memory_order_relaxed );
     return ( std::string( prefix ) + "_BatchResourceCopyResource#" + std::to_string( next ) ).c_str( );
 #else
-    return prefix + "_BatchResourceCopyResource";
+    return "BatchResourceCopyResource";
 #endif
 }

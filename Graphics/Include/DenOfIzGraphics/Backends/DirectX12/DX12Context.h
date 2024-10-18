@@ -19,8 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 #ifdef BUILD_DX12
 
-#include <DenOfIzGraphics/Utilities/Common_Windows.h>
 #include <DenOfIzGraphics/Backends/Interface/CommonData.h>
+#include <DenOfIzGraphics/Utilities/Common_Windows.h>
 #include <array>
 #include <directx/d3d12.h>
 #include <directx/d3dx12.h>
@@ -45,8 +45,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <dxgidebug.h>
 #endif
 
+/*
+ *
+ * D3D12 Memory Allocator has 2 warnings that clutter output, not sure if important
+ * When building a shared library the following warnings are generated:
+ * warning C4251: 'D3D12MA::IUnknownImpl::m_RefCount': 'std::atomic<unsigned int>' needs to have dll-interface to be used by clients of 'D3D12MA::IUnknownImpl'
+ * warning C4251: 'D3D12MA::Allocation::m_PackedData': 'D3D12MA::Allocation::PackedData' needs to have dll-interface to be used by clients of 'D3D12MA::Allocation'
+ */
+#pragma warning( push )
+#pragma warning( disable : 4251 )
 #include <D3D12MemAlloc.h>
-
+#pragma warning( pop )
 #include <DenOfIzGraphics/Utilities/Common.h>
 
 #define DX_CHECK_RESULT( result )                                                                                                                                                  \

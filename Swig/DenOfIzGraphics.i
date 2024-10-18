@@ -12,8 +12,10 @@
 %include "std_vector.i"
 %include "carrays.i"
 %include "cpointer.i"
+%include "arrays_csharp.i"
 
 %apply void *VOID_INT_PTR { void * }
+%apply unsigned char INPUT[]  {unsigned char *inputBytes}
 
 %ignore DenOfIz::RenderGraphInternal::NodeExecutionContext;
 %ignore DenOfIz::RenderGraphInternal::GraphNode;

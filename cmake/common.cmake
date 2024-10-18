@@ -39,21 +39,20 @@ function(copy_to_binary RootSource Dir FileSelect)
 endfunction()
 
 function(INSTALL_TARGET target)
-    if (INSTALL_LIBS)
-        install(TARGETS ${target}
-                EXPORT ${target}-export
-                LIBRARY DESTINATION lib
-                ARCHIVE DESTINATION lib
-        )
+    install(TARGETS ${target}
+            EXPORT ${target}-export
+            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+    )
 
-        install(EXPORT ${target}-export
-                FILE ${target}Targets.cmake
-                NAMESPACE DenOfIz::
-                DESTINATION cmake/${target}
-        )
+    install(EXPORT ${target}-export
+            FILE ${target}Targets.cmake
+            NAMESPACE DenOfIz::
+            DESTINATION share/cmake/${target}
+    )
 
-        install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Include/ DESTINATION Include)
-    endif ()
+    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Include/ DESTINATION Include)
 endfunction()
 
 function(SET_TARGET_DEFAULT_PROPERTIES target)

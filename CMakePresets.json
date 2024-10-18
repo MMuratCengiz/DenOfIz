@@ -49,6 +49,18 @@
       }
     },
     {
+      "name": "Release_Shared_MSVC",
+      "inherits": "Base",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON",
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CRT_LINKAGE_STATIC": "0",
+        "CMAKE_CXX_FLAGS": "-Od -Zi -W3 /c /EHsc -DNOMINMAX  /wd\"4267\" /wd\"4244\"",
+        "SWIG_CSHARP": "ON"
+      }
+    },
+    {
       "name": "Debug_OSX",
       "inherits": "Base",
       "generator": "Xcode",

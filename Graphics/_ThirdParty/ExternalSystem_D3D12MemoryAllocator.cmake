@@ -1,7 +1,0 @@
-if (BUILD_SHARED_LIBS)
-    set(BUILD_SHARED_LIBS OFF)
-    add_subdirectory(_ThirdParty/D3D12MemoryAllocator)
-    set(BUILD_SHARED_LIBS ON)
-else ()
-    add_subdirectory(_ThirdParty/D3D12MemoryAllocator)
-endif ()

@@ -4,7 +4,7 @@ set(LANGUAGES C CXX)
 if (APPLE)
     set(LANGUAGES C CXX OBJCXX OBJC)
 endif ()
-
+set(X_VCPKG_APPLOCAL_DEPS_INSTALL ON)
 project(DenOfIz LANGUAGES ${LANGUAGES})
 
 option(CRT_LINKAGE_STATIC "Link MSVC runtime statically" 1)
@@ -63,3 +63,5 @@ if (APPLE)
             $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
             $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
 endif ()
+
+include(CPack)
