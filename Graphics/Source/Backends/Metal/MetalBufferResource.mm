@@ -89,21 +89,21 @@ void MetalBufferResource::UnmapMemory( )
     m_mappedMemory = nullptr;
 }
 
-std::vector<Byte> MetalBufferResource::GetData( ) const
+InteropArray<Byte> MetalBufferResource::GetData( ) const
 {
-    std::vector<Byte> data( m_numBytes );
-    std::memcpy( data.data( ), m_mappedMemory, m_numBytes );
+    InteropArray<Byte> data( m_numBytes );
+    std::memcpy( data.Data( ), m_mappedMemory, m_numBytes );
     return std::move( data );
 }
 
-void MetalBufferResource::SetData( const std::vector<Byte> &data, bool keepMapped )
+void MetalBufferResource::SetData( const InteropArray<Byte> &data, bool keepMapped )
 {
     if ( m_mappedMemory == nullptr )
     {
         MapMemory( );
     }
 
-    std::memcpy( m_mappedMemory, data.data( ), data.size( ) );
+    std::memcpy( m_mappedMemory, data.Data( ), data.NumElements( ) );
 
     if ( !keepMapped )
     {

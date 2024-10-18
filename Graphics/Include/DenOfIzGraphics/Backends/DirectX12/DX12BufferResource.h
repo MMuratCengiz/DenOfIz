@@ -56,8 +56,8 @@ namespace DenOfIz
         const void           *Data( ) const override;
 
         // Interop API
-        std::vector<Byte> GetData( ) const override;
-        void              SetData( const std::vector<Byte> &data, bool keepMapped ) override;
+        [[nodiscard]] InteropArray<Byte> GetData( ) const override;
+        void                             SetData( const InteropArray<Byte> &data, bool keepMapped ) override;
     };
 
 } // namespace DenOfIz

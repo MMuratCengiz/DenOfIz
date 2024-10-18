@@ -89,21 +89,21 @@ VulkanBufferResource::~VulkanBufferResource( )
     vmaDestroyBuffer( m_context->Vma, m_instance, m_allocation );
 }
 
-std::vector<Byte> VulkanBufferResource::GetData( ) const
+InteropArray<Byte> VulkanBufferResource::GetData( ) const
 {
-    std::vector<Byte> data( m_numBytes );
-    std::memcpy( data.data( ), m_mappedMemory, m_numBytes );
+    InteropArray<Byte> data( m_numBytes );
+    std::memcpy( data.Data( ), m_mappedMemory, m_numBytes );
     return std::move( data );
 }
 
-void VulkanBufferResource::SetData( const std::vector<Byte> &data, bool keepMapped )
+void VulkanBufferResource::SetData( const InteropArray<Byte> &data, bool keepMapped )
 {
     if ( m_mappedMemory == nullptr )
     {
         MapMemory( );
     }
 
-    std::memcpy( m_mappedMemory, data.data( ), data.size( ) );
+    std::memcpy( m_mappedMemory, data.Data( ), data.NumElements( ) );
 
     if ( !keepMapped )
     {

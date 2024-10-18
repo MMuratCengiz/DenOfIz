@@ -72,10 +72,6 @@
 %ignore DenOfIz::BitSet::All;
 %ignore DenOfIz::BitSet::Any;
 
-%template(GeometryVertexDataVector) std::vector<DenOfIz::GeometryVertexData>;
-%template(IndexVector) std::vector<uint32_t>;
-%template(ByteVector) std::vector<unsigned char>;
-
 %feature("director") DenOfIz::NodeExecutionCallback;
 %feature("director") DenOfIz::PresentExecutionCallback;
 
@@ -145,6 +141,7 @@ typedef DenOfIz::InteropArray<DenOfIz::ShaderStage> ShaderStageArray;
 typedef DenOfIz::InteropArray<DenOfIz::StaticSamplerDesc> StaticSamplerDescArray;
 typedef DenOfIz::InteropArray<DenOfIz::TextureBarrierDesc> TextureBarrierDescArray;
 typedef DenOfIz::InteropArray<unsigned int> UnsignedIntArray;
+typedef DenOfIz::InteropArray<unsigned char> ByteArray;
 // Instantiations:
 %template(AccelerationStructureGeometryDescArray) DenOfIz::InteropArray<DenOfIz::AccelerationStructureGeometryDesc>;
 %template(AccelerationStructureInstanceDescArray) DenOfIz::InteropArray<DenOfIz::AccelerationStructureInstanceDesc>;
@@ -168,4 +165,5 @@ typedef DenOfIz::InteropArray<unsigned int> UnsignedIntArray;
 %template(StaticSamplerDescArray) DenOfIz::InteropArray<DenOfIz::StaticSamplerDesc>;
 %template(TextureBarrierDescArray) DenOfIz::InteropArray<DenOfIz::TextureBarrierDesc>;
 %template(UnsignedIntArray) DenOfIz::InteropArray<unsigned int>;
+%template(ByteArray) DenOfIz::InteropArray<unsigned char>;
 // --

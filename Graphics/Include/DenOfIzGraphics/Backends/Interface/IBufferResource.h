@@ -55,8 +55,8 @@ namespace DenOfIz
         [[nodiscard]] virtual const void           *Data( ) const         = 0;
 
         // Interop API
-        virtual std::vector<Byte> GetData( ) const                                          = 0;
-        virtual void              SetData( const std::vector<Byte> &data, bool keepMapped ) = 0;
+        [[nodiscard]] virtual InteropArray<Byte> GetData( ) const                                           = 0;
+        virtual void                             SetData( const InteropArray<Byte> &data, bool keepMapped ) = 0;
     };
 
     struct BufferSlice

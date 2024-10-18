@@ -41,7 +41,7 @@ namespace DenOfIz
         void  UnmapMemory( ) override;
 
         explicit VulkanBufferResource( VulkanContext *context, BufferDesc desc );
-        ~VulkanBufferResource( ) override;
+        ~        VulkanBufferResource( ) override;
 
         [[nodiscard]] BitSet<ResourceState> InitialState( ) const override;
         [[nodiscard]] size_t                NumBytes( ) const override;
@@ -51,8 +51,8 @@ namespace DenOfIz
         [[nodiscard]] const VkBuffer &Instance( ) const;
 
         // Interop API
-        std::vector<Byte> GetData( ) const override;
-        void              SetData( const std::vector<Byte> &data, bool keepMapped ) override;
+        [[nodiscard]] InteropArray<Byte> GetData( ) const override;
+        void                             SetData( const InteropArray<Byte> &data, bool keepMapped ) override;
     };
 
 } // namespace DenOfIz

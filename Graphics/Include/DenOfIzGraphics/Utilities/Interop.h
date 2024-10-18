@@ -312,6 +312,11 @@ namespace DenOfIz
             return m_array;
         }
 
+        [[nodiscard]] T *Data( )
+        {
+            return m_array;
+        }
+
         [[nodiscard]] size_t NumElements( ) const
         {
             return m_numElements;

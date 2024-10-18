@@ -135,21 +135,21 @@ void DX12BufferResource::UnmapMemory( )
     m_mappedMemory = nullptr;
 }
 
-std::vector<Byte> DX12BufferResource::GetData( ) const
+InteropArray<Byte> DX12BufferResource::GetData( ) const
 {
-    std::vector<Byte> data( m_numBytes );
-    std::memcpy( data.data( ), m_mappedMemory, m_numBytes );
+    InteropArray<Byte> data( m_numBytes );
+    std::memcpy( data.Data( ), m_mappedMemory, m_numBytes );
     return std::move( data );
 }
 
-void DX12BufferResource::SetData( const std::vector<Byte> &data, bool keepMapped )
+void DX12BufferResource::SetData( const InteropArray<Byte> &data, bool keepMapped )
 {
     if ( m_mappedMemory == nullptr )
     {
         MapMemory( );
     }
 
-    std::memcpy( m_mappedMemory, data.data( ), data.size( ) );
+    std::memcpy( m_mappedMemory, data.Data( ), data.NumElements( ) );
 
     if ( !keepMapped )
     {
