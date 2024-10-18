@@ -290,7 +290,7 @@ namespace DenOfIz
             {
                 m_capacity  = m_capacity + ( m_capacity / 2 );
                 T *newArray = new T[ m_capacity ];
-                CopyArray( newArray, m_array, m_numElements );
+                CopyArray( m_array, newArray, m_numElements );
                 delete[] m_array;
                 m_array = newArray;
             }

@@ -385,7 +385,7 @@ InteropArray<CompiledShader*> ShaderProgram::GetCompiledShaders( ) const
     {
         compiledShaders.AddElement( shader.get( ) );
     }
-    return compiledShaders;
+    return std::move( compiledShaders );
 }
 
 Format MaskToFormat( const uint32_t mask )
