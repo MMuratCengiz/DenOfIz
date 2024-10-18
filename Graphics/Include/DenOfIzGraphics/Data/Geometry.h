@@ -50,7 +50,7 @@ namespace DenOfIz
         InvertNormals  = 1 << 5,
     };
 
-    template class DZ_API DenOfIz::BitSet<BuildDesc>;
+    template class DZ_API BitSet<BuildDesc>;
 
     struct DZ_API QuadDesc
     {

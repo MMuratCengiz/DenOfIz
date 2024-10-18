@@ -48,12 +48,13 @@ namespace DenOfIz
         const int s_nullTerminatorLen = 1;
 
     public:
-        InteropString( const char *str = nullptr )
+        // ReSharper disable once CppNonExplicitConvertingConstructor
+        InteropString( const char *str = nullptr ) // NOLINT(*-explicit-constructor)
         {
             if ( str )
             {
-                size_t len = strlen( str );
-                m_data     = new char[ len + 1 ];
+                const size_t len = strlen( str );
+                m_data           = new char[ len + 1 ];
                 SafeCopyString( m_data, len + s_nullTerminatorLen, str );
             }
         }
@@ -68,8 +69,8 @@ namespace DenOfIz
         {
             if ( other.m_data )
             {
-                size_t len = strlen( other.m_data );
-                m_data     = new char[ len + 1 ];
+                const size_t len = strlen( other.m_data );
+                m_data           = new char[ len + 1 ];
                 SafeCopyString( m_data, len + s_nullTerminatorLen, other.m_data );
             }
             else
@@ -86,8 +87,8 @@ namespace DenOfIz
                 m_data = nullptr;
                 if ( other.m_data )
                 {
-                    size_t len = strlen( other.m_data );
-                    m_data     = new char[ len + 1 ];
+                    const size_t len = strlen( other.m_data );
+                    m_data           = new char[ len + 1 ];
                     SafeCopyString( m_data, len + s_nullTerminatorLen, other.m_data );
                 }
                 else
@@ -120,9 +121,9 @@ namespace DenOfIz
             {
                 return *this;
             }
-            size_t len     = strlen( str );
-            size_t oldLen  = NumChars( );
-            char  *newData = new char[ oldLen + len + 1 ];
+            const size_t len     = strlen( str );
+            const size_t oldLen  = NumChars( );
+            char        *newData = new char[ oldLen + len + 1 ];
             if ( m_data != nullptr )
             {
                 SafeCopyString( newData, oldLen + s_nullTerminatorLen, m_data );
@@ -168,7 +169,8 @@ namespace DenOfIz
         size_t m_size        = 0;
 
     public:
-        InteropArray( size_t size = 0 )
+        // ReSharper disable once CppNonExplicitConvertingConstructor
+        InteropArray( const size_t size = 0 ) // NOLINT(*-explicit-constructor)
         {
             if ( size > m_capacity )
             {
@@ -223,24 +225,24 @@ namespace DenOfIz
 
         void MoveFrom( InteropArray &other )
         {
-            m_array = other.m_array;
-            m_size = other.m_size;
-            m_capacity = other.m_capacity;
+            m_array       = other.m_array;
+            m_size        = other.m_size;
+            m_capacity    = other.m_capacity;
             m_numElements = other.m_numElements;
 
-            other.m_array = nullptr;
-            other.m_size = 0;
-            other.m_capacity = 0;
+            other.m_array       = nullptr;
+            other.m_size        = 0;
+            other.m_capacity    = 0;
             other.m_numElements = 0;
         }
 
         void CopyFrom( const InteropArray &other )
         {
-            Clear();
-            m_size = other.m_size;
-            m_capacity = other.m_capacity;
+            Clear( );
+            m_size        = other.m_size;
+            m_capacity    = other.m_capacity;
             m_numElements = other.m_numElements;
-            m_array = new T[m_capacity];
+            m_array       = new T[ m_capacity ];
             CopyArray( other.m_array, m_array, m_numElements );
         }
 
@@ -255,13 +257,13 @@ namespace DenOfIz
 
         T &EmplaceElement( )
         {
-            size_t index = NewElement();
+            size_t index = NewElement( );
             return m_array[ index ];
         }
 
         T &AddElement( const T &element )
         {
-            size_t index = NewElement();
+            size_t index     = NewElement( );
             m_array[ index ] = element;
             return m_array[ index ];
         }
@@ -341,7 +343,7 @@ namespace DenOfIz
 
         size_t NewElement( )
         {
-            size_t index = m_numElements;
+            const size_t index = m_numElements;
             Resize( index + 1 );
             m_numElements++;
             return index;

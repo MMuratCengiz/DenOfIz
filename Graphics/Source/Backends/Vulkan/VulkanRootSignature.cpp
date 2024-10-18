@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h>
+#include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
 #include <ranges>
 
 using namespace DenOfIz;

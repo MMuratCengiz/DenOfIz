@@ -1,16 +1,17 @@
 %module(directors="1") DenOfIzGraphics
+#pragma SWIG nowarn=320
 
 %{
 #include "DenOfIzGraphics/DenOfIzGraphics.h"
 %}
 #define DZ_API
+%warnfilter(516) InteropArray;
 
 %include "stdint.i"
 %include "std_string.i"
 %include "std_vector.i"
 %include "carrays.i"
 %include "cpointer.i"
-
 
 %apply void *VOID_INT_PTR { void * }
 
@@ -48,11 +49,11 @@
 %ignore DenOfIz::IBufferResource::NumBytes;
 %ignore DenOfIz::IResourceBindGroup::SetRootConstants;
 
-// Fix InteropString:
-%ignore DenOfIz::InteropString::operator std::string;
+// Fix InteropString/InteropArray:
+%ignore DenOfIz::InteropString::InteropString(InteropString &&);
 %ignore DenOfIz::InteropString::operator DenOfIz::InteropString;
-%ignore DenOfIz::InteropString::Str;
-%ignore DenOfIz::InteropString::CStr;
+%ignore DenOfIz::InteropString::operator=;
+%ignore DenOfIz::InteropArray::operator=;
 
 
 // BitSet ignores:
@@ -107,12 +108,64 @@
 %include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
 %include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
 %include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
+//%include <DenOfIzGraphics/DenOfIzGraphics.h>
 
+// -- BitSet definitions
+// Convenience typedefs
 typedef DenOfIz::BitSet<DenOfIz::ResourceState> ResourceStateBitSet;
-%template(ResourceStateBitSet) DenOfIz::BitSet<DenOfIz::ResourceState>;
-
 typedef DenOfIz::BitSet<DenOfIz::BuildDesc> BuildDescBitSet;
-%template(BuildDescBitSet) DenOfIz::BitSet<DenOfIz::BuildDesc>;
-
 typedef DenOfIz::BitSet<DenOfIz::ResourceDescriptor> ResourceDescriptorBitSet;
+// Instantiations
+%template(ResourceStateBitSet) DenOfIz::BitSet<DenOfIz::ResourceState>;
+%template(BuildDescBitSet) DenOfIz::BitSet<DenOfIz::BuildDesc>;
 %template(ResourceDescriptorBitSet) DenOfIz::BitSet<DenOfIz::ResourceDescriptor>;
+// --
+
+// -- Interop Array definitons
+// Convenience typedefs
+typedef DenOfIz::InteropArray<DenOfIz::AccelerationStructureGeometryDesc> AccelerationStructureGeometryDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::AccelerationStructureInstanceDesc> AccelerationStructureInstanceDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::BufferBarrierDesc> BufferBarrierDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::GeometryVertexData> GeometryVertexDataArray;
+typedef DenOfIz::InteropArray<DenOfIz::ICommandList*> ICommandListArray;
+typedef DenOfIz::InteropArray<DenOfIz::InputGroupDesc> InputGroupDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::InputLayoutElementDesc> InputLayoutElementDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::InteropString> InteropStringArray;
+typedef DenOfIz::InteropArray<DenOfIz::ISemaphore*> ISemaphoreArray;
+typedef DenOfIz::InteropArray<DenOfIz::MemoryBarrierDesc> MemoryBarrierDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::NodeResourceUsageDesc> NodeResourceUsageDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::PhysicalDevice> PhysicalDeviceArray;
+typedef DenOfIz::InteropArray<DenOfIz::ReflectionResourceField> ReflectionResourceFieldArray;
+typedef DenOfIz::InteropArray<DenOfIz::RenderingAttachmentDesc> RenderingAttachmentDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::RenderTargetDesc> RenderTargetDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::ResourceBindingDesc> ResourceBindingDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::RootConstantResourceBindingDesc> RootConstantResourceBindingDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::ShaderDesc> ShaderDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::ShaderStage> ShaderStageArray;
+typedef DenOfIz::InteropArray<DenOfIz::StaticSamplerDesc> StaticSamplerDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::TextureBarrierDesc> TextureBarrierDescArray;
+typedef DenOfIz::InteropArray<unsigned int> UnsignedIntArray;
+// Instantiations:
+%template(AccelerationStructureGeometryDescArray) DenOfIz::InteropArray<DenOfIz::AccelerationStructureGeometryDesc>;
+%template(AccelerationStructureInstanceDescArray) DenOfIz::InteropArray<DenOfIz::AccelerationStructureInstanceDesc>;
+%template(BufferBarrierDescArray) DenOfIz::InteropArray<DenOfIz::BufferBarrierDesc>;
+%template(GeometryVertexDataArray) DenOfIz::InteropArray<DenOfIz::GeometryVertexData>;
+%template(ICommandListArray) DenOfIz::InteropArray<DenOfIz::ICommandList*>;
+%template(InputGroupDescArray) DenOfIz::InteropArray<DenOfIz::InputGroupDesc>;
+%template(InputLayoutElementDescArray) DenOfIz::InteropArray<DenOfIz::InputLayoutElementDesc>;
+%template(InteropStringArray) DenOfIz::InteropArray<DenOfIz::InteropString>;
+%template(ISemaphoreArray) DenOfIz::InteropArray<DenOfIz::ISemaphore*>;
+%template(MemoryBarrierDescArray) DenOfIz::InteropArray<DenOfIz::MemoryBarrierDesc>;
+%template(NodeResourceUsageDescArray) DenOfIz::InteropArray<DenOfIz::NodeResourceUsageDesc>;
+%template(PhysicalDeviceArray) DenOfIz::InteropArray<DenOfIz::PhysicalDevice>;
+%template(ReflectionResourceFieldArray) DenOfIz::InteropArray<DenOfIz::ReflectionResourceField>;
+%template(RenderingAttachmentDescArray) DenOfIz::InteropArray<DenOfIz::RenderingAttachmentDesc>;
+%template(RenderTargetDescArray) DenOfIz::InteropArray<DenOfIz::RenderTargetDesc>;
+%template(ResourceBindingDescArray) DenOfIz::InteropArray<DenOfIz::ResourceBindingDesc>;
+%template(RootConstantResourceBindingDescArray) DenOfIz::InteropArray<DenOfIz::RootConstantResourceBindingDesc>;
+%template(ShaderDescArray) DenOfIz::InteropArray<DenOfIz::ShaderDesc>;
+%template(ShaderStageArray) DenOfIz::InteropArray<DenOfIz::ShaderStage>;
+%template(StaticSamplerDescArray) DenOfIz::InteropArray<DenOfIz::StaticSamplerDesc>;
+%template(TextureBarrierDescArray) DenOfIz::InteropArray<DenOfIz::TextureBarrierDesc>;
+%template(UnsignedIntArray) DenOfIz::InteropArray<unsigned int>;
+// --

@@ -343,6 +343,6 @@ namespace DenOfIz
     typedef unsigned char Byte;
 
     // Export instantiation of BitSet templates with ResourceDescriptor and ResourceState enums.
-    template class DZ_API DenOfIz::BitSet<ResourceDescriptor>;
-    template class DZ_API DenOfIz::BitSet<ResourceState>;
+    template class DZ_API BitSet<ResourceDescriptor>;
+    template class DZ_API BitSet<ResourceState>;
 } // namespace DenOfIz

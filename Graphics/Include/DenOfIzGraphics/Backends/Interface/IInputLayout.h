@@ -49,6 +49,7 @@ namespace DenOfIz
         uint32_t SemanticIndex;
         Format   Format;
     };
+    template class DZ_API InteropArray<InputLayoutElementDesc>;
 
     /**
      * @brief Describes a group of input elements that are bound to a single vertex buffer.
@@ -58,6 +59,7 @@ namespace DenOfIz
         StepRate                             StepRate = StepRate::PerVertex;
         InteropArray<InputLayoutElementDesc> Elements;
     };
+    template class DZ_API InteropArray<InputGroupDesc>;
 
     /**
      * @brief Describes the input layout of a the input assembler stage. The order the groups are added determines the buffer binding.
