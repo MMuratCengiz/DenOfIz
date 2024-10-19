@@ -74,7 +74,7 @@ namespace DenOfIz
     public:
         virtual ~IRayTracingAccelerationStructure( ) = default;
 
-        virtual void BuildAccelerationStructure( const AccelerationStructureDesc &desc )  = 0;
-        virtual void UpdateAccelerationStructure( const AccelerationStructureDesc &desc ) = 0;
+        virtual void Build( const AccelerationStructureDesc &desc )  = 0;
+        virtual void Update( const AccelerationStructureDesc &desc ) = 0;
     };
 } // namespace DenOfIz
