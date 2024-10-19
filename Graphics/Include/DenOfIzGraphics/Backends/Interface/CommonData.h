@@ -282,6 +282,21 @@ namespace DenOfIz
         Copy
     };
 
+    enum class AccelerationStructureBuildFlags
+    {
+        None,
+        AllowUpdate,
+        AllowCompaction,
+        PreferFastTrace,
+        PreferFastBuild,
+        LowMemory,
+        FastTrace,
+        FastBuild,
+        MinimizeMemory,
+        PerformUpdate
+    };
+    template class DZ_API BitSet<AccelerationStructureBuildFlags>;
+
     struct DZ_API DeviceConstants
     {
         uint32_t ConstantBufferAlignment;

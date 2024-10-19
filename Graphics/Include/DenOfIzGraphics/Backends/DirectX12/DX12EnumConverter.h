@@ -28,26 +28,27 @@ namespace DenOfIz
     class DX12EnumConverter
     {
     public:
-        static D3D12_DESCRIPTOR_RANGE_TYPE             ConvertResourceDescriptorToDescriptorRangeType( const BitSet<ResourceDescriptor> &descriptor );
-        static D3D12_COMMAND_LIST_TYPE                 ConvertQueueType( QueueType queueType );
-        static D3D12_HEAP_TYPE                         ConvertHeapType( const HeapType &heapType );
-        static uint32_t                                ConvertSampleCount( const MSAASampleCount &sampleCount );
-        static DXGI_FORMAT                             ConvertFormat( const Format &format );
-        static D3D12_SHADER_VISIBILITY                 ConvertShaderStageToShaderVisibility( const ShaderStage &stage );
-        static D3D12_COMPARISON_FUNC                   ConvertCompareOp( const CompareOp &op );
-        static D3D12_PRIMITIVE_TOPOLOGY_TYPE           ConvertPrimitiveTopologyToType( const PrimitiveTopology &topology );
-        static D3D12_PRIMITIVE_TOPOLOGY                ConvertPrimitiveTopology( const PrimitiveTopology &topology );
-        static D3D12_STENCIL_OP                        ConvertStencilOp( const StencilOp &op );
-        static D3D12_CULL_MODE                         ConvertCullMode( CullMode mode );
-        static D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE ConvertLoadOp( const LoadOp &op );
-        static D3D12_RENDER_PASS_ENDING_ACCESS_TYPE    ConvertStoreOp( const StoreOp &op );
-        static D3D12_BLEND_OP                          ConvertBlendOp( const BlendOp &op );
-        static D3D12_LOGIC_OP                          ConvertLogicOp( const LogicOp &op );
-        static D3D12_BLEND                             ConvertBlend( const Blend &factor );
-        static D3D12_RESOURCE_STATES                   ConvertResourceState( const BitSet<ResourceState> &state );
-        static D3D12_BARRIER_LAYOUT                    ConvertResourceStateToBarrierLayout( const BitSet<ResourceState> &state, const QueueType &queueType );
-        static D3D12_BARRIER_ACCESS                    ConvertResourceStateToBarrierAccess( const BitSet<ResourceState> &state );
-        static D3D12_TEXTURE_ADDRESS_MODE              ConvertSamplerAddressMode( const SamplerAddressMode &mode );
+        static D3D12_DESCRIPTOR_RANGE_TYPE                         ConvertResourceDescriptorToDescriptorRangeType( const BitSet<ResourceDescriptor> &descriptor );
+        static D3D12_COMMAND_LIST_TYPE                             ConvertQueueType( QueueType queueType );
+        static D3D12_HEAP_TYPE                                     ConvertHeapType( const HeapType &heapType );
+        static uint32_t                                            ConvertSampleCount( const MSAASampleCount &sampleCount );
+        static DXGI_FORMAT                                         ConvertFormat( const Format &format );
+        static D3D12_SHADER_VISIBILITY                             ConvertShaderStageToShaderVisibility( const ShaderStage &stage );
+        static D3D12_COMPARISON_FUNC                               ConvertCompareOp( const CompareOp &op );
+        static D3D12_PRIMITIVE_TOPOLOGY_TYPE                       ConvertPrimitiveTopologyToType( const PrimitiveTopology &topology );
+        static D3D12_PRIMITIVE_TOPOLOGY                            ConvertPrimitiveTopology( const PrimitiveTopology &topology );
+        static D3D12_STENCIL_OP                                    ConvertStencilOp( const StencilOp &op );
+        static D3D12_CULL_MODE                                     ConvertCullMode( CullMode mode );
+        static D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE             ConvertLoadOp( const LoadOp &op );
+        static D3D12_RENDER_PASS_ENDING_ACCESS_TYPE                ConvertStoreOp( const StoreOp &op );
+        static D3D12_BLEND_OP                                      ConvertBlendOp( const BlendOp &op );
+        static D3D12_LOGIC_OP                                      ConvertLogicOp( const LogicOp &op );
+        static D3D12_BLEND                                         ConvertBlend( const Blend &factor );
+        static D3D12_RESOURCE_STATES                               ConvertResourceState( const BitSet<ResourceState> &state );
+        static D3D12_BARRIER_LAYOUT                                ConvertResourceStateToBarrierLayout( const BitSet<ResourceState> &state, const QueueType &queueType );
+        static D3D12_BARRIER_ACCESS                                ConvertResourceStateToBarrierAccess( const BitSet<ResourceState> &state );
+        static D3D12_TEXTURE_ADDRESS_MODE                          ConvertSamplerAddressMode( const SamplerAddressMode &mode );
+        static D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS ConvertAccelerationStructureBuildFlags( const BitSet<AccelerationStructureBuildFlags> &flags );
     };
 
 } // namespace DenOfIz

@@ -131,12 +131,10 @@ void DX12TextureResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandl
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::Texture ) )
     {
         CreateTextureSrv( cpuHandle );
-        m_rootParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
     }
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) )
     {
         CreateTextureUav( cpuHandle );
-        m_rootParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
     }
 }
 
@@ -325,11 +323,6 @@ const TextureDesc &DX12TextureResource::GetDesc( ) const
 const D3D12_RESOURCE_DESC &DX12TextureResource::GetResourceDesc( ) const
 {
     return m_resourceDesc;
-}
-
-const D3D12_ROOT_PARAMETER_TYPE &DX12TextureResource::GetRootParameterType( ) const
-{
-    return m_rootParameterType;
 }
 
 ID3D12Resource *DX12TextureResource::GetResource( ) const

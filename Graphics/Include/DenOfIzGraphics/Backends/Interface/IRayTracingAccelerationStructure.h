@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+
     enum class AccelerationStructureGeometryType
     {
         Triangles,
@@ -31,12 +32,14 @@ namespace DenOfIz
     {
         AccelerationStructureGeometryType Type;
         IBufferResource                  *VertexBuffer;
-        uint64_t                          VertexOffset;
+        uint32_t                          VertexOffset;
         uint32_t                          VertexStride;
+        uint32_t                          NumVertices;
+        Format                            VertexFormat;
         IBufferResource                  *IndexBuffer;
-        uint64_t                          IndexOffset;
-        uint32_t                          IndexCount;
-        uint32_t                          VertexCount;
+        uint32_t                          IndexOffset;
+        uint32_t                          NumIndices;
+        IndexType                         IndexType;
         uint32_t                          PrimitiveCount;
         bool                              IsOpaque;
     };
@@ -44,9 +47,11 @@ namespace DenOfIz
 
     struct DZ_API AccelerationStructureInstanceDesc
     {
-        IBufferResource *InstanceBuffer;
-        uint64_t         InstanceOffset;
-        uint32_t         InstanceCount;
+        IBufferResource *Buffer;
+        float            Transform[ 12 ];
+        uint32_t         ContributionToHitGroupIndex;
+        uint32_t         ID;
+        uint32_t         Mask;
         uint32_t         Flags;
     };
     template class DZ_API InteropArray<AccelerationStructureInstanceDesc>;
@@ -55,12 +60,14 @@ namespace DenOfIz
     {
         InteropArray<AccelerationStructureGeometryDesc> Geometries;
         uint32_t                                        Flags;
+        AccelerationStructureBuildFlags                 BuildFlags; // Todo see where this needs to go
     };
 
     struct DZ_API AccelerationStructureTopLevelDesc
     {
         InteropArray<AccelerationStructureInstanceDesc> Instances;
         uint32_t                                        Flags;
+        AccelerationStructureBuildFlags                 BuildFlags; // Todo see where this needs to go
     };
 
     struct DZ_API AccelerationStructureDesc

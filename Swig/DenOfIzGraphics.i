@@ -105,10 +105,12 @@
 typedef DenOfIz::BitSet<DenOfIz::ResourceState> ResourceStateBitSet;
 typedef DenOfIz::BitSet<DenOfIz::BuildDesc> BuildDescBitSet;
 typedef DenOfIz::BitSet<DenOfIz::ResourceDescriptor> ResourceDescriptorBitSet;
+typedef DenOfIz::BitSet<DenOfIz::AccelerationStructureBuildFlags> AccelerationStructureBuildFlagsBitSet;
 // Instantiations
 %template(ResourceStateBitSet) DenOfIz::BitSet<DenOfIz::ResourceState>;
 %template(BuildDescBitSet) DenOfIz::BitSet<DenOfIz::BuildDesc>;
 %template(ResourceDescriptorBitSet) DenOfIz::BitSet<DenOfIz::ResourceDescriptor>;
+%template(AccelerationStructureBuildFlags) DenOfIz::BitSet<DenOfIz::AccelerationStructureBuildFlags>;
 // --
 
 // -- Interop Array definitons

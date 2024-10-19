@@ -713,3 +713,33 @@ D3D12_TEXTURE_ADDRESS_MODE DX12EnumConverter::ConvertSamplerAddressMode( const S
     }
     return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 }
+
+D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS DX12EnumConverter::ConvertAccelerationStructureBuildFlags( const BitSet<AccelerationStructureBuildFlags> &flags )
+{
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS result = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+    if ( flags.IsSet( AccelerationStructureBuildFlags::AllowUpdate ) )
+    {
+        result |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+    }
+    if ( flags.IsSet( AccelerationStructureBuildFlags::AllowCompaction ) )
+    {
+        result |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_COMPACTION;
+    }
+    if ( flags.IsSet( AccelerationStructureBuildFlags::PreferFastTrace ) )
+    {
+        result |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+    }
+    if ( flags.IsSet( AccelerationStructureBuildFlags::PreferFastBuild ) )
+    {
+        result |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
+    }
+    if ( flags.IsSet( AccelerationStructureBuildFlags::MinimizeMemory ) )
+    {
+        result |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_MINIMIZE_MEMORY;
+    }
+    if ( flags.IsSet( AccelerationStructureBuildFlags::PerformUpdate ) )
+    {
+        result |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+    }
+    return result;
+}

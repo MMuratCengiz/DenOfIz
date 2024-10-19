@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/IRayTracingAccelerationStructure.h>
-#include "DX12Context.h"
+#include "DX12BufferResource.h"
 
 namespace DenOfIz
 {
@@ -27,6 +27,14 @@ namespace DenOfIz
     {
     private:
         DX12Context *m_context;
+        std::unique_ptr<DX12BufferResource> m_tlasScratch;
+        std::unique_ptr<DX12BufferResource> m_blasScratch;
+        std::unique_ptr<DX12BufferResource> m_blasBuffer;
+        std::unique_ptr<DX12BufferResource> m_tlasBuffer;
+        std::unique_ptr<DX12BufferResource> m_instanceBuffer;
+        D3D12_CPU_DESCRIPTOR_HANDLE m_asSrvHandle;
+
+        std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> m_geometryDescs;
     public:
         DX12RayTracingAccelerationStructure( DX12Context * context );
         void Build( const AccelerationStructureDesc &desc ) override;

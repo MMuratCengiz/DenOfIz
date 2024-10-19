@@ -159,7 +159,7 @@ void DX12ResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBuffer
     DZ_RETURN_IF( UpdateRootDescriptor( slot, dynamic_cast<DX12BufferResource *>( resource )->GetResource( )->GetGPUVirtualAddress( ) ) );
 
     const uint32_t offset = m_dx12RootSignature->GetResourceOffset( slot );
-    reinterpret_cast<DX12BufferResource *>( resource )->CreateView( CpuHandleCbvSrvUav( offset ) );
+    reinterpret_cast<DX12BufferResource *>( resource )->CreateDefaultView( CpuHandleCbvSrvUav( offset ) );
     m_cbvSrvUavCount++;
 }
 

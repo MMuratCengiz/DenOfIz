@@ -26,25 +26,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
+    enum class DX12BufferViewType
+    {
+        ShaderResource,
+        UnorderedAccess,
+        ConstantBuffer,
+        AccelerationStructure,
+    };
+
     class DX12BufferResource final : public IBufferResource
     {
-        DX12Context                      *m_context;
-        BufferDesc                        m_desc;
-        wil::com_ptr<ID3D12Resource2>     m_resource;
-        wil::com_ptr<D3D12MA::Allocation> m_allocation;
-        D3D12_CPU_DESCRIPTOR_HANDLE       m_cpuHandle;
-        D3D12_ROOT_PARAMETER_TYPE         m_rootParameterType;
-        uint32_t                          m_numBytes     = 0;
-        const void                       *m_data         = nullptr;
-        void                             *m_mappedMemory = nullptr;
-        BitSet<ResourceState>             m_state;
+        DX12Context                               *m_context;
+        BufferDesc                                 m_desc;
+        wil::com_ptr<ID3D12Resource2>              m_resource;
+        wil::com_ptr<D3D12MA::Allocation>          m_allocation;
+        D3D12_CPU_DESCRIPTOR_HANDLE                m_cpuHandle;
+        uint32_t                                   m_numBytes     = 0;
+        const void                                *m_data         = nullptr;
+        void                                      *m_mappedMemory = nullptr;
+        BitSet<ResourceState>                      m_state;
+        std::array<D3D12_CPU_DESCRIPTOR_HANDLE, 4> m_cpuHandles;
 
         bool     allocated = false;
         uint32_t m_stride  = 0;
 
     public:
         DX12BufferResource( DX12Context *context, BufferDesc desc );
-        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle );
+        void CreateDefaultView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle );
+        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type );
 
         [[nodiscard]] ID3D12Resource2 *GetResource( ) const;
         void                          *MapMemory( ) override;

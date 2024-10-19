@@ -38,7 +38,6 @@ namespace DenOfIz
         ID3D12Resource2            *m_resource   = nullptr;
         D3D12_CPU_DESCRIPTOR_HANDLE m_rtvHandle{ };
         D3D12_RESOURCE_DESC         m_resourceDesc{ };
-        D3D12_ROOT_PARAMETER_TYPE   m_rootParameterType{ };
         bool                        isExternalResource = false; // Used for swap chain render targets, might need a better way
 
     public:
@@ -49,7 +48,6 @@ namespace DenOfIz
 
         [[nodiscard]] const TextureDesc               &GetDesc( ) const;
         [[nodiscard]] const D3D12_RESOURCE_DESC       &GetResourceDesc( ) const;
-        [[nodiscard]] const D3D12_ROOT_PARAMETER_TYPE &GetRootParameterType( ) const;
         [[nodiscard]] ID3D12Resource                  *GetResource( ) const;
 
         [[nodiscard]] BitSet<ResourceState> InitialState( ) const override;
