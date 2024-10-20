@@ -82,12 +82,13 @@ set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
         Source/Backends/DirectX12/DX12Pipeline.cpp
         Source/Backends/DirectX12/DX12SwapChain.cpp
         Source/Backends/DirectX12/DX12RootSignature.cpp
-        Source/Backends/DirectX12/DX12RayTracingAccelerationStructure.cpp
         Source/Backends/DirectX12/DX12InputLayout.cpp
         Source/Backends/DirectX12/DX12ResourceBindGroup.cpp
         Source/Backends/DirectX12/DX12CommandList.cpp
         Source/Backends/DirectX12/DX12DescriptorHeap.cpp
         Source/Backends/DirectX12/DX12CommandListPool.cpp
+        Source/Backends/DirectX12/RayTracing/DX12BottomLevelAS.cpp
+        Source/Backends/DirectX12/RayTracing/DX12TopLevelAS.cpp
 
         #DirectX12 Resources
         Source/Backends/DirectX12/DX12BufferResource.cpp

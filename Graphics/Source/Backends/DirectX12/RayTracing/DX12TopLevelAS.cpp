@@ -1,0 +1,105 @@
+/*
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
+
+This program is free software: you can redistribute it and/or modify
+                                                                     it under the terms of the GNU General Public License as published by
+                                                                         the Free Software Foundation, either version 3 of the License, or
+                                         (at your option) any later version.
+
+                                         This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLeveLAS.h>
+
+using namespace DenOfIz;
+
+DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, TopLevelASDesc &desc ) : m_context( context )
+{
+    std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDescs( desc.Instances.NumElements( ) );
+    for ( uint32_t i = 0; i < desc.Instances.NumElements( ); ++i )
+    {
+        const ASInstanceDesc &instanceDesc       = desc.Instances.GetElement( i );
+        DX12BufferResource   *dx12InstanceBuffer = dynamic_cast<DX12BufferResource *>( instanceDesc.Buffer );
+        if ( dx12InstanceBuffer == nullptr )
+        {
+            LOG( WARNING ) << "Instance buffer is null.";
+            continue;
+        }
+
+        instanceDescs[ i ].AccelerationStructure               = dx12InstanceBuffer->Resource( )->GetGPUVirtualAddress( );
+        instanceDescs[ i ].Flags                               = D3D12_RAYTRACING_INSTANCE_FLAG_NONE; // todo
+        instanceDescs[ i ].InstanceContributionToHitGroupIndex = instanceDesc.ContributionToHitGroupIndex;
+        instanceDescs[ i ].InstanceID                          = instanceDesc.ID;
+        instanceDescs[ i ].InstanceMask                        = instanceDesc.Mask;
+
+        memcpy( instanceDescs[ i ].Transform, instanceDesc.Transform.Data( ), sizeof( float[ 12 ] ) );
+    }
+
+    // Calculate required size for the acceleration structure
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS prebuildDesc = { };
+    prebuildDesc.DescsLayout                                          = D3D12_ELEMENTS_LAYOUT_ARRAY;
+    prebuildDesc.Flags                                                = DX12EnumConverter::ConvertAccelerationStructureBuildFlags( desc.BuildFlags );
+    prebuildDesc.NumDescs                                             = desc.Instances.NumElements( );
+    prebuildDesc.Type                                                 = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = { };
+    m_context->D3DDevice->GetRaytracingAccelerationStructurePrebuildInfo( &prebuildDesc, &info );
+
+    BufferDesc instanceDesc    = { };
+    instanceDesc.HeapType      = HeapType::CPU_GPU;
+    instanceDesc.NumBytes      = desc.Instances.NumElements( ) * sizeof( instanceDescs[ 0 ] );
+    m_instanceBuffer           = std::make_unique<DX12BufferResource>( m_context, instanceDesc );
+    void *instanceBufferMemory = m_instanceBuffer->MapMemory( );
+    memcpy( instanceBufferMemory, instanceDescs.data( ), instanceDesc.NumBytes );
+
+    BufferDesc bufferDesc   = { };
+    bufferDesc.Descriptor   = BitSet<ResourceDescriptor>( ResourceDescriptor::RWBuffer ) | ResourceDescriptor::AccelerationStructure;
+    bufferDesc.HeapType     = HeapType::GPU;
+    bufferDesc.NumBytes     = info.ResultDataMaxSizeInBytes;
+    bufferDesc.InitialState = ResourceState::AccelerationStructureWrite;
+    bufferDesc.DebugName    = "Top Level Acceleration Structure Buffer";
+
+    m_buffer      = std::make_unique<DX12BufferResource>( m_context, bufferDesc );
+    m_asSrvHandle = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetNextHandle( ).Cpu;
+    m_buffer->CreateDefaultView( m_asSrvHandle );
+
+    BufferDesc scratchBufferDesc   = { };
+    scratchBufferDesc.HeapType     = HeapType::GPU;
+    scratchBufferDesc.NumBytes     = (UINT)info.ScratchDataSizeInBytes;
+    scratchBufferDesc.Descriptor   = BitSet<ResourceDescriptor>( ResourceDescriptor::RWBuffer );
+    scratchBufferDesc.InitialState = ResourceState::AccelerationStructureWrite;
+    m_scratch                      = std::make_unique<DX12BufferResource>( m_context, scratchBufferDesc );
+}
+
+D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS DX12TopLevelAS::Flags( ) const
+{
+    return m_flags;
+}
+
+const size_t DX12TopLevelAS::NumInstances( ) const
+{
+    return m_instanceDescs.size( );
+}
+
+const DX12BufferResource *DX12TopLevelAS::InstanceBuffer( ) const
+{
+    return m_instanceBuffer.get( );
+}
+
+const DX12BufferResource *DX12TopLevelAS::Buffer( ) const
+{
+    return m_buffer.get( );
+}
+const DX12BufferResource *DX12TopLevelAS::Scratch( ) const
+{
+    return m_scratch.get( );
+}
+void DX12TopLevelAS::Update( const TopLevelASDesc &desc )
+{
+}

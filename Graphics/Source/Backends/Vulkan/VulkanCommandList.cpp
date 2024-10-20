@@ -172,7 +172,7 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeDesc )
     VkFence vkNotifyFence = nullptr;
     if ( executeDesc.Notify != nullptr )
     {
-        auto *notify = reinterpret_cast<VulkanFence *>( executeDesc.Notify );
+        auto *notify = dynamic_cast<VulkanFence *>( executeDesc.Notify );
         notify->Reset( );
         vkNotifyFence = notify->GetFence( );
     }
@@ -354,6 +354,17 @@ void VulkanCommandList::Draw( const uint32_t vertexCount, const uint32_t instanc
     vkCmdDraw( m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance );
 }
 
+
+void VulkanCommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )
+{
+
+};
+
+void VulkanCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc )
+{
+
+};
+
 void VulkanCommandList::Dispatch( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
 {
     DZ_ASSERTM( m_desc.QueueType == QueueType::Compute, "Dispatch can only be called on compute queues." );
@@ -370,13 +381,13 @@ void VulkanCommandList::Present( ISwapChain *swapChain, const uint32_t imageInde
     std::vector<VkSemaphore> vkWaitOnSemaphores( waitOnLocks.NumElements( ) );
     for ( int i = 0; i < waitOnLocks.NumElements( ); i++ )
     {
-        vkWaitOnSemaphores[ i ] = reinterpret_cast<VulkanSemaphore *>( waitOnLocks.GetElement( i ) )->GetSemaphore( );
+        vkWaitOnSemaphores[ i ] = dynamic_cast<VulkanSemaphore *>( waitOnLocks.GetElement( i ) )->GetSemaphore( );
     }
 
     presentInfo.waitSemaphoreCount = vkWaitOnSemaphores.size( );
     presentInfo.pWaitSemaphores    = vkWaitOnSemaphores.data( );
     presentInfo.swapchainCount     = 1;
-    presentInfo.pSwapchains        = reinterpret_cast<VulkanSwapChain *>( swapChain )->GetSwapChain( );
+    presentInfo.pSwapchains        = dynamic_cast<VulkanSwapChain *>( swapChain )->GetSwapChain( );
     presentInfo.pImageIndices      = &imageIndex;
     presentInfo.pResults           = nullptr;
 

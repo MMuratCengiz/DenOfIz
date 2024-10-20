@@ -1,0 +1,115 @@
+/*
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
+
+This program is free software: you can redistribute it and/or modify
+                                                                     it under the terms of the GNU General Public License as published by
+                                                                         the Free Software Foundation, either version 3 of the License, or
+                                         (at your option) any later version.
+
+                                         This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
+
+using namespace DenOfIz;
+
+DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, BottomLevelASDesc &desc ) : m_context( context )
+{
+    m_flags              = DX12EnumConverter::ConvertAccelerationStructureBuildFlags( desc.BuildFlags );
+    size_t numGeometries = desc.Geometries.NumElements( );
+    m_geometryDescs.resize( numGeometries );
+    for ( uint32_t i = 0; i < numGeometries; ++i )
+    {
+        const ASGeometryDesc &geometry = desc.Geometries.GetElement( i );
+
+        DX12BufferResource *dx12VertexBuffer = dynamic_cast<DX12BufferResource *>( geometry.VertexBuffer );
+        if ( geometry.NumVertices == 0 || dx12VertexBuffer == nullptr )
+        {
+            LOG( WARNING ) << "Geometry has no vertices, or vertex buffer is null.";
+            continue;
+        }
+
+        D3D12_RAYTRACING_GEOMETRY_DESC &dx12Geometry = m_geometryDescs[ i ];
+        dx12Geometry.Flags                           = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE; // todo
+
+        if ( geometry.NumIndices > 0 )
+        {
+            DX12BufferResource *dx12IndexBuffer = dynamic_cast<DX12BufferResource *>( geometry.IndexBuffer );
+            if ( dx12IndexBuffer == nullptr )
+            {
+                LOG( WARNING ) << "Geometry.NumIndices > 0, but Geometry.IndexBuffer == nullptr.";
+                continue;
+            }
+
+            dx12Geometry.Triangles.IndexBuffer = dx12IndexBuffer->Resource( )->GetGPUVirtualAddress( ) + geometry.IndexOffset;
+            dx12Geometry.Triangles.IndexCount  = geometry.NumIndices;
+            dx12Geometry.Triangles.IndexFormat = geometry.IndexType == IndexType::Uint16 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
+        }
+
+        dx12Geometry.Triangles.VertexBuffer.StartAddress  = dx12VertexBuffer->Resource( )->GetGPUVirtualAddress( ) + geometry.VertexOffset;
+        dx12Geometry.Triangles.VertexBuffer.StrideInBytes = geometry.VertexStride;
+        dx12Geometry.Triangles.VertexCount                = geometry.NumVertices;
+        dx12Geometry.Triangles.VertexFormat               = DX12EnumConverter::ConvertFormat( geometry.VertexFormat );
+
+        const static std::unordered_set<Format> allowedFormats{ Format::R32G32Float,       Format::R32G32B32Float, Format::R16G16Float,
+                                                                Format::R16G16B16A16Float, Format::R16G16Snorm,    Format::R16G16B16A16Snorm };
+        if ( !allowedFormats.contains( geometry.VertexFormat ) )
+        {
+            LOG( WARNING ) << "Invalid vertex format for acceleration structure geometry.";
+        }
+    }
+
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS prebuildDesc = { };
+    prebuildDesc.DescsLayout                                          = D3D12_ELEMENTS_LAYOUT_ARRAY;
+    prebuildDesc.Flags                                                = m_flags;
+    prebuildDesc.NumDescs                                             = (UINT)m_geometryDescs.size( );
+    prebuildDesc.pGeometryDescs                                       = m_geometryDescs.data( );
+    prebuildDesc.Type                                                 = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = { };
+    m_context->D3DDevice->GetRaytracingAccelerationStructurePrebuildInfo( &prebuildDesc, &info );
+
+    BufferDesc bufferDesc   = { };
+    bufferDesc.Descriptor   = BitSet<ResourceDescriptor>( ResourceDescriptor::RWBuffer ) | ResourceDescriptor::AccelerationStructure;
+    bufferDesc.HeapType     = HeapType::GPU;
+    bufferDesc.NumBytes     = info.ResultDataMaxSizeInBytes;
+    bufferDesc.InitialState = ResourceState::AccelerationStructureWrite;
+    m_asBuffer              = std::make_unique<DX12BufferResource>( m_context, bufferDesc );
+
+    BufferDesc scratchBufferDesc   = { };
+    scratchBufferDesc.HeapType     = HeapType::GPU;
+    scratchBufferDesc.NumBytes     = (UINT)info.ScratchDataSizeInBytes;
+    scratchBufferDesc.Descriptor   = BitSet<ResourceDescriptor>( ResourceDescriptor::RWBuffer );
+    scratchBufferDesc.InitialState = ResourceState::AccelerationStructureWrite;
+    m_scratch                      = std::make_unique<DX12BufferResource>( m_context, scratchBufferDesc );
+}
+
+void DX12BottomLevelAS::Update( const BottomLevelASDesc &desc )
+{
+}
+
+D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS DX12BottomLevelAS::Flags( ) const
+{
+    return m_flags;
+}
+
+const std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> &DX12BottomLevelAS::GeometryDescs( ) const
+{
+    return m_geometryDescs;
+}
+
+const DX12BufferResource *DX12BottomLevelAS::Buffer( ) const
+{
+    return m_asBuffer.get( );
+}
+
+const DX12BufferResource *DX12BottomLevelAS::Scratch( ) const
+{
+    return m_scratch.get( );
+}

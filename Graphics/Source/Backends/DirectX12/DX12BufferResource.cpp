@@ -195,7 +195,12 @@ DX12BufferResource::~DX12BufferResource( )
     }
 }
 
-ID3D12Resource2 *DX12BufferResource::GetResource( ) const
+D3D12_CPU_DESCRIPTOR_HANDLE DX12BufferResource::CPUHandle( DX12BufferViewType type ) const
+{
+    return m_cpuHandles[ static_cast<int>( type ) ];
+}
+
+ID3D12Resource2 *DX12BufferResource::Resource( ) const
 {
     return m_resource.get( );
 }
@@ -204,7 +209,6 @@ BitSet<ResourceState> DX12BufferResource::InitialState( ) const
 {
     return m_state;
 }
-
 i DX12BufferResource::NumBytes( ) const
 {
     return m_numBytes;

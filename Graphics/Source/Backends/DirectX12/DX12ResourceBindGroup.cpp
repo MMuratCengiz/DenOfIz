@@ -156,7 +156,7 @@ void DX12ResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextu
 void DX12ResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )
 {
     DZ_NOT_NULL( resource );
-    DZ_RETURN_IF( UpdateRootDescriptor( slot, dynamic_cast<DX12BufferResource *>( resource )->GetResource( )->GetGPUVirtualAddress( ) ) );
+    DZ_RETURN_IF( UpdateRootDescriptor( slot, dynamic_cast<DX12BufferResource *>( resource )->Resource( )->GetGPUVirtualAddress( ) ) );
 
     const uint32_t offset = m_dx12RootSignature->GetResourceOffset( slot );
     reinterpret_cast<DX12BufferResource *>( resource )->CreateDefaultView( CpuHandleCbvSrvUav( offset ) );

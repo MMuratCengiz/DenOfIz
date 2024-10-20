@@ -22,7 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IBufferResource.h"
 #include "IFence.h"
 #include "IPipeline.h"
-#include "IRayTracingAccelerationStructure.h"
+#include "RayTracing/IBottomLevelAS.h"
+#include "RayTracing/ITopLevelAS.h"
 #include "IResourceBindGroup.h"
 #include "ISemaphore.h"
 #include "ISwapChain.h"
@@ -146,6 +147,16 @@ namespace DenOfIz
         QueueType QueueType = QueueType::Graphics;
     };
 
+    struct DZ_API BuildTopLevelASDesc
+    {
+        ITopLevelAS *TopLevelAS = nullptr;
+    };
+
+    struct DZ_API BuildBottomLevelASDesc
+    {
+        IBottomLevelAS *BottomLevelAS = nullptr;
+    };
+
     class DZ_API ICommandList
     {
     public:
@@ -166,11 +177,13 @@ namespace DenOfIz
         virtual void DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0 ) = 0;
         virtual void Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0 )                                 = 0;
         // List of copy commands
-        virtual void CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionInfo )      = 0;
-        virtual void CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionInfo )   = 0;
+        virtual void CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionDesc )      = 0;
+        virtual void CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionDesc )   = 0;
         virtual void CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTexture ) = 0;
         virtual void CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBuffer ) = 0;
         // --
+        virtual void BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )            = 0;
+        virtual void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc )   = 0;
         virtual void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) = 0;
     };
     template class DZ_API InteropArray<ICommandList *>;

@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include <DenOfIzGraphics/Backends/Interface/IShader.h>
+#include <DenOfIzGraphics/Backends/Interface/RayTracing/RayTracingData.h>
 #include "DX12Context.h"
 
 namespace DenOfIz
@@ -48,7 +49,7 @@ namespace DenOfIz
         static D3D12_BARRIER_LAYOUT                                ConvertResourceStateToBarrierLayout( const BitSet<ResourceState> &state, const QueueType &queueType );
         static D3D12_BARRIER_ACCESS                                ConvertResourceStateToBarrierAccess( const BitSet<ResourceState> &state );
         static D3D12_TEXTURE_ADDRESS_MODE                          ConvertSamplerAddressMode( const SamplerAddressMode &mode );
-        static D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS ConvertAccelerationStructureBuildFlags( const BitSet<AccelerationStructureBuildFlags> &flags );
+        static D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS ConvertAccelerationStructureBuildFlags( const BitSet<ASBuildFlags> &flags );
     };
 
 } // namespace DenOfIz

@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Cast.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
+#include <DenOfIzGraphics/Utilities/Cast.h>
 #include "DX12BufferResource.h"
 #include "DX12Context.h"
 #include "DX12EnumConverter.h"
@@ -32,15 +32,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-
-    struct QueueSpecificAction
-    {
-        std::function<void( )> Graphics;
-        std::function<void( )> Compute;
-        std::function<void( )> Copy;
-        void                   Run( const QueueType &queueType ) const;
-    };
-
     class DX12CommandList final : public ICommandList
     {
         CommandListDesc m_desc;
@@ -57,15 +48,15 @@ namespace DenOfIz
         std::vector<ID3D12DescriptorHeap *> m_heaps = { m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetHeap( ), m_context->ShaderVisibleSamplerDescriptorHeap->GetHeap( ) };
 
     public:
-         DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> commandAllocator, const wil::com_ptr<ID3D12GraphicsCommandList> &m_commandList,
-                          CommandListDesc desc );
+        DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> commandAllocator, const wil::com_ptr<ID3D12GraphicsCommandList> &m_commandList,
+                         CommandListDesc desc );
         ~DX12CommandList( ) override = default;
 
         void Begin( ) override;
         void BeginRendering( const RenderingDesc &renderingDesc ) override;
         void EndRendering( ) override;
         void Execute( const ExecuteDesc &executeDesc ) override;
-        void Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> & waitOnLocks ) override;
+        void Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> &waitOnLocks ) override;
         void BindPipeline( IPipeline *pipeline ) override;
         void BindVertexBuffer( IBufferResource *buffer ) override;
         void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType ) override;
@@ -76,10 +67,14 @@ namespace DenOfIz
         void DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance ) override;
         void Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance ) override;
         void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
+        // List of copy commands
         void CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionInfo ) override;
         void CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionInfo ) override;
         void CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTexture ) override;
         void CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBuffer ) override;
+        // Ray tracing commands
+        void BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc ) override;
+        void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc ) override;
 
     private:
         void CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
@@ -87,6 +82,6 @@ namespace DenOfIz
         void SetRootSignature( ID3D12RootSignature *rootSignature );
         void BindRootDescriptors( const DX12RootDescriptor &rootDescriptor ) const;
         void SetRootConstants( const DX12RootConstant &rootConstant ) const;
-        void BindResourceGroup( uint32_t index, const D3D12_GPU_DESCRIPTOR_HANDLE& gpuDescriptorHandle ) const;
+        void BindResourceGroup( uint32_t index, const D3D12_GPU_DESCRIPTOR_HANDLE &gpuDescriptorHandle ) const;
     };
 } // namespace DenOfIz

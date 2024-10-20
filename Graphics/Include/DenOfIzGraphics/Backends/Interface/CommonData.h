@@ -279,23 +279,9 @@ namespace DenOfIz
     {
         Graphics,
         Compute,
-        Copy
+        Copy,
+        RayTracing
     };
-
-    enum class AccelerationStructureBuildFlags
-    {
-        None,
-        AllowUpdate,
-        AllowCompaction,
-        PreferFastTrace,
-        PreferFastBuild,
-        LowMemory,
-        FastTrace,
-        FastBuild,
-        MinimizeMemory,
-        PerformUpdate
-    };
-    template class DZ_API BitSet<AccelerationStructureBuildFlags>;
 
     struct DZ_API DeviceConstants
     {

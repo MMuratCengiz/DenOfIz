@@ -24,7 +24,7 @@ using namespace DenOfIz;
 VulkanPipeline::VulkanPipeline( VulkanContext *context, const PipelineDesc &desc ) :
     m_context( context ), m_desc( desc ), m_bindPoint( VulkanEnumConverter::ConvertPipelineBindPoint( desc.BindPoint ) )
 {
-    auto rootSignature = reinterpret_cast<VulkanRootSignature *>( desc.RootSignature );
+    auto rootSignature = dynamic_cast<VulkanRootSignature *>( desc.RootSignature );
     m_layout           = rootSignature->PipelineLayout( );
 
     switch ( desc.BindPoint )
@@ -172,7 +172,7 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
 
 [[nodiscard]] VkPipelineVertexInputStateCreateInfo VulkanPipeline::ConfigureVertexInputState( ) const
 {
-    const auto                                *inputLayout          = reinterpret_cast<VulkanInputLayout *>( m_desc.InputLayout );
+    const auto                                *inputLayout          = dynamic_cast<VulkanInputLayout *>( m_desc.InputLayout );
     const VkPipelineVertexInputStateCreateInfo inputStateCreateInfo = inputLayout->GetVertexInputState( );
     return inputStateCreateInfo;
 }

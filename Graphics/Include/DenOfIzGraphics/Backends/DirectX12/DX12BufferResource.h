@@ -55,9 +55,10 @@ namespace DenOfIz
         void CreateDefaultView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle );
         void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type );
 
-        [[nodiscard]] ID3D12Resource2 *GetResource( ) const;
-        void                          *MapMemory( ) override;
-        void                           UnmapMemory( ) override;
+        [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CPUHandle( DX12BufferViewType type ) const;
+        [[nodiscard]] ID3D12Resource2            *Resource( ) const;
+        void                                     *MapMemory( ) override;
+        void                                      UnmapMemory( ) override;
 
         ~DX12BufferResource( ) override;
         BitSet<ResourceState> InitialState( ) const override;

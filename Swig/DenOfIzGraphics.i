@@ -54,6 +54,7 @@
 %ignore DenOfIz::BitSet::operator DenOfIz::ResourceState;
 %ignore DenOfIz::BitSet::operator DenOfIz::BuildDesc;
 %ignore DenOfIz::BitSet::operator DenOfIz::ResourceDescriptor;
+%ignore DenOfIz::BitSet::operator DenOfIz::ASBuildFlags;
 %ignore DenOfIz::BitSet::operator|;
 %ignore DenOfIz::BitSet::operator|=;
 %ignore DenOfIz::BitSet::operator&;
@@ -84,7 +85,9 @@
 %include <DenOfIzGraphics/Backends/Interface/IInputLayout.h>
 %include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
 %include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
-%include <DenOfIzGraphics/Backends/Interface/IRayTracingAccelerationStructure.h>
+%include <DenOfIzGraphics/Backends/Interface/RayTracing/RayTracingData.h>
+%include <DenOfIzGraphics/Backends/Interface/RayTracing/IBottomLevelAS.h>
+%include <DenOfIzGraphics/Backends/Interface/RayTracing/ITopLevelAS.h>
 %include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
 %include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 %include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
@@ -105,18 +108,18 @@
 typedef DenOfIz::BitSet<DenOfIz::ResourceState> ResourceStateBitSet;
 typedef DenOfIz::BitSet<DenOfIz::BuildDesc> BuildDescBitSet;
 typedef DenOfIz::BitSet<DenOfIz::ResourceDescriptor> ResourceDescriptorBitSet;
-typedef DenOfIz::BitSet<DenOfIz::AccelerationStructureBuildFlags> AccelerationStructureBuildFlagsBitSet;
+typedef DenOfIz::BitSet<DenOfIz::ASBuildFlags> ASBuildFlagsBitSet;
 // Instantiations
 %template(ResourceStateBitSet) DenOfIz::BitSet<DenOfIz::ResourceState>;
 %template(BuildDescBitSet) DenOfIz::BitSet<DenOfIz::BuildDesc>;
 %template(ResourceDescriptorBitSet) DenOfIz::BitSet<DenOfIz::ResourceDescriptor>;
-%template(AccelerationStructureBuildFlags) DenOfIz::BitSet<DenOfIz::AccelerationStructureBuildFlags>;
+%template(ASBuildFlagsBitSet) DenOfIz::BitSet<DenOfIz::ASBuildFlags>;
 // --
 
 // -- Interop Array definitons
 // Convenience typedefs
-typedef DenOfIz::InteropArray<DenOfIz::AccelerationStructureGeometryDesc> AccelerationStructureGeometryDescArray;
-typedef DenOfIz::InteropArray<DenOfIz::AccelerationStructureInstanceDesc> AccelerationStructureInstanceDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::ASGeometryDesc> ASGeometryDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::ASInstanceDesc> ASInstanceDescArray;
 typedef DenOfIz::InteropArray<DenOfIz::BufferBarrierDesc> BufferBarrierDescArray;
 typedef DenOfIz::InteropArray<DenOfIz::GeometryVertexData> GeometryVertexDataArray;
 typedef DenOfIz::InteropArray<DenOfIz::ICommandList*> ICommandListArray;
@@ -139,8 +142,8 @@ typedef DenOfIz::InteropArray<DenOfIz::TextureBarrierDesc> TextureBarrierDescArr
 typedef DenOfIz::InteropArray<unsigned int> UnsignedIntArray;
 typedef DenOfIz::InteropArray<unsigned char> ByteArray;
 // Instantiations:
-%template(AccelerationStructureGeometryDescArray) DenOfIz::InteropArray<DenOfIz::AccelerationStructureGeometryDesc>;
-%template(AccelerationStructureInstanceDescArray) DenOfIz::InteropArray<DenOfIz::AccelerationStructureInstanceDesc>;
+%template(ASGeometryDescArray) DenOfIz::InteropArray<DenOfIz::ASGeometryDesc>;
+%template(ASInstanceDescArray) DenOfIz::InteropArray<DenOfIz::ASInstanceDesc>;
 %template(BufferBarrierDescArray) DenOfIz::InteropArray<DenOfIz::BufferBarrierDesc>;
 %template(GeometryVertexDataArray) DenOfIz::InteropArray<DenOfIz::GeometryVertexData>;
 %template(ICommandListArray) DenOfIz::InteropArray<DenOfIz::ICommandList*>;

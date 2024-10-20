@@ -29,7 +29,7 @@ DX12Pipeline::DX12Pipeline( DX12Context *context, PipelineDesc desc ) : m_contex
     DZ_ASSERTM( m_desc.RootSignature != nullptr, "Root signature is not set for the pipeline" );
     DZ_ASSERTM( m_desc.InputLayout != nullptr, "Input layout is not set for the pipeline" );
 
-    m_rootSignature = reinterpret_cast<DX12RootSignature *>( m_desc.RootSignature );
+    m_rootSignature = dynamic_cast<DX12RootSignature *>( m_desc.RootSignature );
 
     switch ( m_desc.BindPoint )
     {
@@ -47,7 +47,7 @@ DX12Pipeline::DX12Pipeline( DX12Context *context, PipelineDesc desc ) : m_contex
 void DX12Pipeline::CreateGraphicsPipeline( )
 {
     m_topology             = DX12EnumConverter::ConvertPrimitiveTopology( m_desc.PrimitiveTopology );
-    const auto inputLayout = reinterpret_cast<DX12InputLayout *>( m_desc.InputLayout );
+    const auto inputLayout = dynamic_cast<DX12InputLayout *>( m_desc.InputLayout );
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = { };
     psoDesc.InputLayout                        = inputLayout->GetInputLayout( );
