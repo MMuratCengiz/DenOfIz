@@ -43,11 +43,12 @@ void RayTracedTriangleExample::Init( )
     m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
 
     PipelineDesc pipelineDesc{ };
-    pipelineDesc.BindPoint     = BindPoint::RayTracing;
-    pipelineDesc.RootSignature = m_rayTracingRootSignature.get( );
-    pipelineDesc.ShaderProgram = m_rayTracingProgram.get( );
-    pipelineDesc.RayTracing.MaxNumPayloadBytes = 4 * sizeof( float );
-    m_rayTracingPipeline       = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
+    pipelineDesc.BindPoint                       = BindPoint::RayTracing;
+    pipelineDesc.RootSignature                   = m_rayTracingRootSignature.get( );
+    pipelineDesc.ShaderProgram                   = m_rayTracingProgram.get( );
+    pipelineDesc.RayTracing.MaxNumPayloadBytes   = 4 * sizeof( float );
+    pipelineDesc.RayTracing.MaxNumAttributeBytes = 2 * sizeof( float );
+    m_rayTracingPipeline                         = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 
     {
         BatchResourceCopy batchResourceCopy( m_logicalDevice );

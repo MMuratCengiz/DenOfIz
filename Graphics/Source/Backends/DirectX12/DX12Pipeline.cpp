@@ -129,7 +129,7 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     std::vector<D3D12_DXIL_LIBRARY_DESC> dxilLibs;
     std::unordered_set<std::string>      visitedShaders;
     std::vector<std::wstring>            entryPoints; // To out live the scope of the loop
-    const auto                          &compiledShaders = m_desc.ShaderProgram->GetCompiledShaders( );
+    auto                                 compiledShaders = m_desc.ShaderProgram->GetCompiledShaders( );
     for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
     {
         const auto   &compiledShader = compiledShaders.GetElement( i );
@@ -163,9 +163,10 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     }
     subObjects.push_back( { D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP, &hitGroupDesc } );
 
-    D3D12_STATE_SUBOBJECT rootSignatureSubObject = { };
-    rootSignatureSubObject.Type                  = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
-    rootSignatureSubObject.pDesc                 = rootSignature->Instance( );
+    D3D12_GLOBAL_ROOT_SIGNATURE globalRootSignature    = { rootSignature->Instance( ) };
+    D3D12_STATE_SUBOBJECT       rootSignatureSubObject = { };
+    rootSignatureSubObject.Type                        = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
+    rootSignatureSubObject.pDesc                       = &globalRootSignature;
     subObjects.push_back( rootSignatureSubObject );
 
     D3D12_RAYTRACING_SHADER_CONFIG shaderConfig = { };
