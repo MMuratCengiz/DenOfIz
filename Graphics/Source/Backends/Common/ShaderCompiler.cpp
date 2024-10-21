@@ -24,6 +24,11 @@ ShaderCompiler::ShaderCompiler( )
     {
         LOG( FATAL ) << "Failed to initialize DXC Utils";
     }
+    result = m_dxcUtils->CreateDefaultIncludeHandler( &m_dxcIncludeHandler );
+    if ( FAILED( result ) )
+    {
+        LOG( FATAL ) << "Failed to initialize DXC Include Handler";
+    }
 
 #ifdef __APPLE__
     m_irCompiler = IRCompilerCreate( );
@@ -52,6 +57,25 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
         return nullptr;
     }
 
+    if ( !compileDesc.OverwriteCache )
+    {
+        auto cachedBlob = LoadCachedShader( CachedShaderFile( compileDesc.Path.Get( ), compileDesc.TargetIL ) );
+        if ( cachedBlob )
+        {
+            auto cachedReflection = LoadCachedReflection( CachedReflectionFile( compileDesc.Path.Get( ) ) );
+            if ( cachedReflection )
+            { // We are heavily dependent on reflection data, so we need to ensure it is always available.
+                auto *compiledShader       = new CompiledShader( );
+                compiledShader->Path       = compileDesc.Path.Get( );
+                compiledShader->Stage      = compileDesc.Stage;
+                compiledShader->Blob       = std::move( cachedBlob );
+                compiledShader->Reflection = std::move( cachedReflection );
+                compiledShader->EntryPoint = compileDesc.EntryPoint.Get( );
+                return std::unique_ptr<CompiledShader>( compiledShader );
+            }
+        }
+    }
+
     // Attribute to reference: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
     // https://github.com/KhronosGroup/Vulkan-Guide
     std::string       path     = Utilities::AppPath( compileDesc.Path.Get( ) );
@@ -68,6 +92,12 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     std::string targetProfile;
     switch ( compileDesc.Stage )
     {
+    case ShaderStage::Raygen:
+    case ShaderStage::AnyHit:
+    case ShaderStage::ClosestHit:
+    case ShaderStage::Miss:
+        targetProfile = "lib";
+        break;
     case ShaderStage::Vertex:
         targetProfile = "vs";
         break;
@@ -156,7 +186,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     buffer.Size     = sourceBlob->GetBufferSize( );
 
     IDxcResult *dxcResult{ nullptr };
-    result = m_dxcCompiler->Compile( &buffer, arguments.data( ), static_cast<uint32_t>( arguments.size( ) ), nullptr, IID_PPV_ARGS( &dxcResult ) );
+    result = m_dxcCompiler->Compile( &buffer, arguments.data( ), static_cast<uint32_t>( arguments.size( ) ), m_dxcIncludeHandler, IID_PPV_ARGS( &dxcResult ) );
 
     if ( SUCCEEDED( result ) )
     {
@@ -205,9 +235,10 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     dxcResult->Release( );
     sourceBlob->Release( );
 
-    CacheCompiledShader( compileDesc.Path.Get( ), compileDesc.TargetIL, code );
+    CacheCompiledShader( compileDesc.Path.Get( ), compileDesc.TargetIL, code, reflection );
 
     auto *compiledShader       = new CompiledShader( );
+    compiledShader->Path       = compileDesc.Path.Get( );
     compiledShader->Stage      = compileDesc.Stage;
     compiledShader->Blob       = code;
     compiledShader->Reflection = reflection;
@@ -219,7 +250,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
 IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob *code, IRRootSignature *rootSignature ) const
 {
     IRCompiler *irCompiler = IRCompilerCreate( );
-	IRCompilerSetEntryPointName( irCompiler, compileOptions.EntryPoint.Get( ) );
+    IRCompilerSetEntryPointName( irCompiler, compileOptions.EntryPoint.Get( ) );
     IRCompilerSetMinimumDeploymentTarget( irCompiler, IROperatingSystem_macOS, "14.0" );
     IRCompilerSetGlobalRootSignature( irCompiler, rootSignature );
 
@@ -252,10 +283,27 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob
 }
 #endif
 
-void ShaderCompiler::CacheCompiledShader( const std::string &filename, const TargetIL &targetIL, IDxcBlob *code ) const
+void ShaderCompiler::CacheCompiledShader( const std::string &filename, const TargetIL &targetIL, IDxcBlob *code, IDxcBlob *reflection ) const
 {
     // Cache the compiled shader into the matching binary format, it is dxil for hlsl and msl for metal,
     // Simply replace the extension with the corresponding value:
+    const std::string appPath = Utilities::AppPath( CachedShaderFile( filename, targetIL ) );
+    if ( std::ofstream compiledFile( appPath, std::ios::binary ); compiledFile.is_open( ) )
+    {
+        compiledFile.write( static_cast<const char *>( code->GetBufferPointer( ) ), code->GetBufferSize( ) );
+        compiledFile.close( );
+    }
+
+    const std::string reflectionPath = Utilities::AppPath( CachedReflectionFile( filename ) );
+    if ( std::ofstream reflectionFile( reflectionPath, std::ios::binary ); reflectionFile.is_open( ) )
+    {
+        reflectionFile.write( static_cast<const char *>( reflection->GetBufferPointer( ) ), reflection->GetBufferSize( ) );
+        reflectionFile.close( );
+    }
+}
+
+std::string ShaderCompiler::CachedShaderFile( const std::string &filename, const TargetIL &targetIL ) const
+{
     std::string  compiledFilename = filename;
     const size_t extensionLength  = filename.size( ) - filename.find_last_of( '.' );
 
@@ -271,14 +319,42 @@ void ShaderCompiler::CacheCompiledShader( const std::string &filename, const Tar
     {
         compiledFilename.replace( compiledFilename.find_last_of( '.' ), extensionLength, ".metallib" );
     }
+    return Utilities::AppPath( compiledFilename );
+}
 
-    const std::string appPath = Utilities::AppPath( compiledFilename );
+std::string ShaderCompiler::CachedReflectionFile( const std::string &filename ) const
+{
+    std::string  reflectionFilename = filename;
+    const size_t extensionLength    = filename.size( ) - filename.find_last_of( '.' );
+    reflectionFilename.replace( reflectionFilename.find_last_of( '.' ), extensionLength, ".reflection" );
+    return reflectionFilename;
+}
 
-    if ( std::ofstream compiledFile( appPath, std::ios::binary ); compiledFile.is_open( ) )
+[[nodiscard]] IDxcBlob *ShaderCompiler::LoadCachedShader( const std::string &filename ) const
+{
+    if ( std::ifstream compiledFile( filename, std::ios::binary ); compiledFile.is_open( ) )
     {
-        compiledFile.write( static_cast<const char *>( code->GetBufferPointer( ) ), code->GetBufferSize( ) );
+        compiledFile.seekg( 0, std::ios::end );
+        const size_t fileSize = compiledFile.tellg( );
+        compiledFile.seekg( 0, std::ios::beg );
+        std::vector<char> fileData( fileSize );
+        compiledFile.read( fileData.data( ), fileSize );
         compiledFile.close( );
+        IDxcBlobEncoding *blob = nullptr;
+
+        HRESULT result = m_dxcLibrary->CreateBlobWithEncodingOnHeapCopy( fileData.data( ), fileSize, DXC_CP_ACP, &blob );
+        if ( FAILED( result ) )
+        {
+            LOG( ERROR ) << "Failed to create blob from file";
+        }
+        return blob;
     }
+    return nullptr;
+}
+
+[[nodiscard]] IDxcBlob *ShaderCompiler::LoadCachedReflection( const std::string &filename ) const
+{
+    return LoadCachedShader( CachedReflectionFile( filename ) );
 }
 
 #ifdef BUILD_METAL

@@ -28,15 +28,17 @@ namespace DenOfIz
 
     class DX12Pipeline final : public IPipeline
     {
-        DX12Context                      *m_context          = nullptr;
-        wil::com_ptr<ID3D12PipelineState> m_graphicsPipeline = nullptr;
-        DX12RootSignature                *m_rootSignature    = nullptr;
+        DX12Context                      *m_context       = nullptr;
+        wil::com_ptr<ID3D12PipelineState> m_pipeline      = nullptr;
+        wil::com_ptr<ID3D12StateObject>   m_rayTracingSO  = nullptr;
+        DX12RootSignature                *m_rootSignature = nullptr;
         PipelineDesc                      m_desc{ };
         D3D12_PRIMITIVE_TOPOLOGY          m_topology{ };
 
     public:
         DX12Pipeline( DX12Context *context, PipelineDesc desc );
         [[nodiscard]] ID3D12PipelineState     *GetPipeline( ) const;
+        [[nodiscard]] ID3D12StateObject       *GetRayTracingSO( ) const;
         [[nodiscard]] ID3D12RootSignature     *GetRootSignature( ) const;
         [[nodiscard]] D3D12_PRIMITIVE_TOPOLOGY GetTopology( ) const;
         ~DX12Pipeline( ) override;
@@ -44,9 +46,10 @@ namespace DenOfIz
     private:
         void                  SetMSAASampleCount( const PipelineDesc &desc, D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const;
         void                  SetGraphicsShaders( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const;
-        D3D12_SHADER_BYTECODE GetShaderByteCode( const CompiledShader *const&compiledShader ) const;
+        D3D12_SHADER_BYTECODE GetShaderByteCode( const CompiledShader *const &compiledShader ) const;
         void                  CreateGraphicsPipeline( );
         void                  CreateComputePipeline( );
+        void                  CreateRayTracingPipeline( );
         void                  InitStencilFace( D3D12_DEPTH_STENCILOP_DESC &stencilFace, const StencilFace &face ) const;
         void                  InitDepthStencil( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const;
     };

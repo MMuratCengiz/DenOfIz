@@ -177,7 +177,7 @@ namespace DenOfIz
                 m_capacity = size + 1;
             }
             m_size        = size;
-            m_numElements = 0;
+            m_numElements = size;
             m_array       = new T[ m_capacity ];
         }
 

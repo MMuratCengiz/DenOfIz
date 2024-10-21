@@ -124,17 +124,6 @@ namespace DenOfIz
     };
     template class DZ_API InteropArray<RenderTargetDesc>;
 
-    struct DZ_API PipelineRendering
-    {
-        uint32_t                       ViewMask               = 0;
-        bool                           AlphaToCoverageEnable  = false; // Todo check if required
-        bool                           IndependentBlendEnable = false; // Todo check if required
-        bool                           BlendLogicOpEnable     = false;
-        LogicOp                        BlendLogicOp           = LogicOp::Noop;
-        InteropArray<RenderTargetDesc> RenderTargets;
-        Format                         DepthStencilAttachmentFormat = Format::Undefined;
-    };
-
     struct DZ_API DepthTest
     {
         bool      Enable    = false;
@@ -159,20 +148,42 @@ namespace DenOfIz
         StencilFace BackFace;
     };
 
+    struct DZ_API GraphicsPipelineDesc
+    {
+        uint32_t                       ViewMask               = 0;
+        bool                           AlphaToCoverageEnable  = false; // Todo check if required
+        bool                           IndependentBlendEnable = false; // Todo check if required
+        bool                           BlendLogicOpEnable     = false;
+        LogicOp                        BlendLogicOp           = LogicOp::Noop;
+        InteropArray<RenderTargetDesc> RenderTargets;
+        Format                         DepthStencilAttachmentFormat = Format::Undefined;
+
+        PrimitiveTopology PrimitiveTopology = PrimitiveTopology::Triangle;
+        CullMode          CullMode          = CullMode::None;
+        DepthTest         DepthTest;
+        StencilTest       StencilTest;
+        MSAASampleCount   MSAASampleCount = MSAASampleCount::_0; // 0 Disables MSAA
+    };
+
+    struct DZ_API RayTracingPipelineDesc
+    {
+        uint32_t MaxRecursionDepth = 1;
+        uint32_t MaxNumPayloadBytes   = 0;
+        uint32_t MaxNumAttributeBytes = 0;
+    };
+
+    struct DZ_API ComputePipelineDesc{ };
+
     struct DZ_API PipelineDesc
     {
+        BindPoint       BindPoint     = BindPoint::Graphics;
         IInputLayout   *InputLayout   = nullptr;
         IRootSignature *RootSignature = nullptr;
         ShaderProgram  *ShaderProgram = nullptr;
 
-        PrimitiveTopology PrimitiveTopology = PrimitiveTopology::Triangle;
-        CullMode          CullMode          = CullMode::None;
-        BindPoint         BindPoint         = BindPoint::Graphics;
-        DepthTest         DepthTest;
-        StencilTest       StencilTest;
-
-        PipelineRendering Rendering;
-        MSAASampleCount   MSAASampleCount = MSAASampleCount::_0; // 0 Disables MSAA
+        GraphicsPipelineDesc   Graphics;
+        RayTracingPipelineDesc RayTracing;
+        ComputePipelineDesc    Compute;
     };
 
     class DZ_API IPipeline

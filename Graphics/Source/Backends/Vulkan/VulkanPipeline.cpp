@@ -137,18 +137,18 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
 
 [[nodiscard]] VkPipelineRenderingCreateInfo VulkanPipeline::ConfigureRenderingInfo( std::vector<VkFormat> &colorAttachmentsStore ) const
 {
-    for ( int i = 0; i < m_desc.Rendering.RenderTargets.NumElements( ); ++i )
+    for ( int i = 0; i < m_desc.Graphics.RenderTargets.NumElements( ); ++i )
     {
-        colorAttachmentsStore.push_back( VulkanEnumConverter::ConvertImageFormat( m_desc.Rendering.RenderTargets.GetElement( i ).Format ) );
+        colorAttachmentsStore.push_back( VulkanEnumConverter::ConvertImageFormat( m_desc.Graphics.RenderTargets.GetElement( i ).Format ) );
     }
 
     VkPipelineRenderingCreateInfo renderingCreateInfo{ };
     renderingCreateInfo.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-    renderingCreateInfo.viewMask                = m_desc.Rendering.ViewMask;
+    renderingCreateInfo.viewMask                = m_desc.Graphics.ViewMask;
     renderingCreateInfo.colorAttachmentCount    = colorAttachmentsStore.size( );
     renderingCreateInfo.pColorAttachmentFormats = colorAttachmentsStore.data( );
-    renderingCreateInfo.depthAttachmentFormat   = VulkanEnumConverter::ConvertImageFormat( m_desc.Rendering.DepthStencilAttachmentFormat );
-    renderingCreateInfo.stencilAttachmentFormat = VulkanEnumConverter::ConvertImageFormat( m_desc.Rendering.DepthStencilAttachmentFormat );
+    renderingCreateInfo.depthAttachmentFormat   = VulkanEnumConverter::ConvertImageFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
+    renderingCreateInfo.stencilAttachmentFormat = VulkanEnumConverter::ConvertImageFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
     return renderingCreateInfo;
 }
 
@@ -165,7 +165,7 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
 {
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyCreateInfo{ };
     inputAssemblyCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssemblyCreateInfo.topology               = VulkanEnumConverter::ConvertPrimitiveTopology( m_desc.PrimitiveTopology );
+    inputAssemblyCreateInfo.topology               = VulkanEnumConverter::ConvertPrimitiveTopology( m_desc.Graphics.PrimitiveTopology );
     inputAssemblyCreateInfo.primitiveRestartEnable = VK_FALSE;
     return inputAssemblyCreateInfo;
 }
@@ -183,7 +183,7 @@ VkPipelineMultisampleStateCreateInfo VulkanPipeline::ConfigureMultisampling( ) c
     multisampleStateCreateInfo.sType               = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampleStateCreateInfo.sampleShadingEnable = VK_TRUE;
 
-    switch ( m_desc.MSAASampleCount )
+    switch ( m_desc.Graphics.MSAASampleCount )
     {
     case MSAASampleCount::_0:
         multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
@@ -240,7 +240,7 @@ VkPipelineRasterizationStateCreateInfo VulkanPipeline::ConfigureRasterization( )
     rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
     rasterizationStateCreateInfo.lineWidth               = 1.0f;
 
-    switch ( m_desc.CullMode )
+    switch ( m_desc.Graphics.CullMode )
     {
     case CullMode::BackFace:
         rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
@@ -263,12 +263,12 @@ VkPipelineRasterizationStateCreateInfo VulkanPipeline::ConfigureRasterization( )
 
 VkPipelineColorBlendStateCreateInfo VulkanPipeline::ConfigureColorBlend( std::vector<VkPipelineColorBlendAttachmentState> &colorBlendAttachments ) const
 {
-    const uint32_t attachmentCount = m_desc.Rendering.RenderTargets.NumElements( );
+    const uint32_t attachmentCount = m_desc.Graphics.RenderTargets.NumElements( );
     colorBlendAttachments.resize( attachmentCount );
 
     for ( uint32_t i = 0; i < attachmentCount; ++i )
     {
-        auto &attachment                          = m_desc.Rendering.RenderTargets.GetElement( i );
+        auto &attachment                          = m_desc.Graphics.RenderTargets.GetElement( i );
         colorBlendAttachments[ i ].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
         colorBlendAttachments[ i ].blendEnable         = attachment.Blend.Enable;
@@ -283,8 +283,8 @@ VkPipelineColorBlendStateCreateInfo VulkanPipeline::ConfigureColorBlend( std::ve
     // This overwrites the above
     VkPipelineColorBlendStateCreateInfo colorBlending{ };
     colorBlending.sType               = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable       = m_desc.Rendering.BlendLogicOpEnable;
-    colorBlending.logicOp             = VulkanEnumConverter::ConvertLogicOp( m_desc.Rendering.BlendLogicOp );
+    colorBlending.logicOpEnable       = m_desc.Graphics.BlendLogicOpEnable;
+    colorBlending.logicOp             = VulkanEnumConverter::ConvertLogicOp( m_desc.Graphics.BlendLogicOp );
     colorBlending.attachmentCount     = attachmentCount;
     colorBlending.pAttachments        = colorBlendAttachments.data( );
     colorBlending.blendConstants[ 0 ] = 0.0f;
@@ -298,14 +298,14 @@ VkPipelineDepthStencilStateCreateInfo VulkanPipeline::CreateDepthAttachmentImage
 {
     VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo{ };
     depthStencilStateCreateInfo.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencilStateCreateInfo.depthTestEnable       = m_desc.DepthTest.Enable;
-    depthStencilStateCreateInfo.depthWriteEnable      = m_desc.DepthTest.Write;
-    depthStencilStateCreateInfo.depthCompareOp        = VulkanEnumConverter::ConvertCompareOp( m_desc.DepthTest.CompareOp );
+    depthStencilStateCreateInfo.depthTestEnable       = m_desc.Graphics.DepthTest.Enable;
+    depthStencilStateCreateInfo.depthWriteEnable      = m_desc.Graphics.DepthTest.Write;
+    depthStencilStateCreateInfo.depthCompareOp        = VulkanEnumConverter::ConvertCompareOp( m_desc.Graphics.DepthTest.CompareOp );
     depthStencilStateCreateInfo.depthBoundsTestEnable = VK_FALSE;
     depthStencilStateCreateInfo.minDepthBounds        = 0.0f;
     depthStencilStateCreateInfo.maxDepthBounds        = 1.0f;
 
-    depthStencilStateCreateInfo.stencilTestEnable = m_desc.StencilTest.Enable;
+    depthStencilStateCreateInfo.stencilTestEnable = m_desc.Graphics.StencilTest.Enable;
 
     depthStencilStateCreateInfo.front = VkStencilOpState{ };
     depthStencilStateCreateInfo.back  = VkStencilOpState{ };
@@ -313,18 +313,18 @@ VkPipelineDepthStencilStateCreateInfo VulkanPipeline::CreateDepthAttachmentImage
     auto initStencilState = [ =, this ]( VkStencilOpState &vkState, const StencilFace &state )
     {
         vkState.compareOp   = VulkanEnumConverter::ConvertCompareOp( state.CompareOp );
-        vkState.compareMask = m_desc.StencilTest.ReadMask;
-        vkState.writeMask   = m_desc.StencilTest.WriteMask;
+        vkState.compareMask = m_desc.Graphics.StencilTest.ReadMask;
+        vkState.writeMask   = m_desc.Graphics.StencilTest.WriteMask;
         vkState.reference   = 0;
         vkState.failOp      = VulkanEnumConverter::ConvertStencilOp( state.FailOp );
         vkState.passOp      = VulkanEnumConverter::ConvertStencilOp( state.PassOp );
         vkState.depthFailOp = VulkanEnumConverter::ConvertStencilOp( state.DepthFailOp );
     };
 
-    if ( m_desc.StencilTest.Enable )
+    if ( m_desc.Graphics.StencilTest.Enable )
     {
-        initStencilState( depthStencilStateCreateInfo.front, m_desc.StencilTest.FrontFace );
-        initStencilState( depthStencilStateCreateInfo.back, m_desc.StencilTest.BackFace );
+        initStencilState( depthStencilStateCreateInfo.front, m_desc.Graphics.StencilTest.FrontFace );
+        initStencilState( depthStencilStateCreateInfo.back, m_desc.Graphics.StencilTest.BackFace );
     }
 
     return depthStencilStateCreateInfo;

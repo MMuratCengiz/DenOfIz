@@ -100,6 +100,7 @@ const DX12BufferResource *DX12TopLevelAS::Scratch( ) const
 {
     return m_scratch.get( );
 }
+
 void DX12TopLevelAS::Update( const TopLevelASDesc &desc )
 {
 }

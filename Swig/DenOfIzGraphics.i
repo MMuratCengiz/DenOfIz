@@ -25,6 +25,7 @@
 %ignore DenOfIz::CompiledShader;
 %ignore DenOfIz::CompiledShaders;
 %ignore DenOfIz::ShaderProgram::GetCompiledShaders;
+%ignore DenOfIz::ReflectionState;
 %ignore DenOfIz::BatchResourceCopy::SyncOp;
 %ignore DenOfIz::GraphicsWindowHandle::CreateFromSDLWindow;
 %ignore DenOfIz::GraphicsWindowHandle::CreateViaSDLWindowID;

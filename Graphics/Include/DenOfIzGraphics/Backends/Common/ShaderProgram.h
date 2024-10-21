@@ -63,6 +63,20 @@ namespace DenOfIz
     };
 #endif
 
+    // State data for reflection processing during `ShaderProgram::Reflect( );`
+    struct ReflectionState
+    {
+        RootSignatureDesc                        *RootSignatureDesc;
+        InputLayoutDesc                          *InputLayoutDesc;
+        CompiledShader                           *CompiledShader;
+        ID3D12ShaderReflection                   *ShaderReflection;
+        ID3D12LibraryReflection                  *LibraryReflection;
+        ID3D12FunctionReflection                 *FunctionReflection;
+        std::unordered_set<std::string>           ProcessedFiles;
+        // For metal:
+        std::vector<uint32_t> *DescriptorTableLocations;
+    };
+
     class ShaderProgram
     {
     private:
@@ -80,9 +94,15 @@ namespace DenOfIz
     private:
         [[nodiscard]] const ShaderCompiler &ShaderCompilerInstance( ) const;
         void                                Compile( );
-        void                                FillReflectionData( ID3D12ShaderReflection *shaderReflection, ReflectionDesc &reflectionDesc, int resourceIndex ) const;
+        void                                FillReflectionData( ReflectionState &state, ReflectionDesc &reflectionDesc, int resourceIndex ) const;
         void                    InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
         ID3D12ShaderReflection *ShaderReflection( const CompiledShader *compiledShader ) const;
+        void                    ReflectShader( ReflectionState &state ) const;
+        void                    ReflectLibrary( ReflectionState &state ) const;
+        void                    ProcessBoundResource( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex ) const;
+        // Returns true if the bound resource is found(and an update is performed), false otherwise
+        // Adds additional stages if existing stages are found
+        bool UpdateBoundResourceStage( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
 #ifdef BUILD_METAL
         void ProduceMSL( );
 #endif

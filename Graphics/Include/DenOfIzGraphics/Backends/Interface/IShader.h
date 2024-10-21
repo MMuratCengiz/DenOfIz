@@ -64,10 +64,11 @@ namespace DenOfIz
     // Needs to be used as a pointer as Blob/Reflection might be deleted multiple times otherwise
     struct DZ_API CompiledShader : private NonCopyable
     {
+        std::string   Path;
         ShaderStage   Stage;
         IDxcBlob     *Blob;
         IDxcBlob     *Reflection;
         InteropString EntryPoint;
     };
-    template class DZ_API InteropArray<CompiledShader*>;
+    template class DZ_API InteropArray<CompiledShader *>;
 } // namespace DenOfIz

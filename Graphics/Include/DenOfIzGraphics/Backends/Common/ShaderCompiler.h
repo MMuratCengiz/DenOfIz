@@ -20,13 +20,15 @@ namespace DenOfIz
         ShaderStage                 Stage;
         TargetIL                    TargetIL;
         InteropArray<InteropString> Defines;
+        bool                        OverwriteCache = false;
     };
 
     class DZ_API ShaderCompiler final
     {
-        IDxcLibrary   *m_dxcLibrary  = nullptr;
-        IDxcCompiler3 *m_dxcCompiler = nullptr;
-        IDxcUtils     *m_dxcUtils    = nullptr;
+        IDxcLibrary        *m_dxcLibrary        = nullptr;
+        IDxcCompiler3      *m_dxcCompiler       = nullptr;
+        IDxcUtils          *m_dxcUtils          = nullptr;
+        IDxcIncludeHandler *m_dxcIncludeHandler = nullptr;
 
 #if defined( __APPLE__ )
         IRCompiler *m_irCompiler = nullptr;
@@ -47,7 +49,11 @@ namespace DenOfIz
         [[nodiscard]] static IRShaderStage ConvertIrShaderStage( const ShaderStage &stage );
 #endif
 
-        void CacheCompiledShader( const std::string &filename, const TargetIL &targetIL, IDxcBlob *code ) const;
+        void                    CacheCompiledShader( const std::string &filename, const TargetIL &targetIL, IDxcBlob *code, IDxcBlob *reflection ) const;
+        std::string             CachedShaderFile( const std::string &filename, const TargetIL &targetIL ) const;
+        std::string             CachedReflectionFile( const std::string &filename ) const;
+        [[nodiscard]] IDxcBlob *LoadCachedShader( const std::string &filename ) const;
+        [[nodiscard]] IDxcBlob *LoadCachedReflection( const std::string &filename ) const;
     };
 
 #ifdef BUILD_METAL

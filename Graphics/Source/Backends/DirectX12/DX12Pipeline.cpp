@@ -17,7 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12Pipeline.h>
-
 #include <utility>
 
 using namespace DenOfIz;
@@ -27,7 +26,11 @@ DX12Pipeline::DX12Pipeline( DX12Context *context, PipelineDesc desc ) : m_contex
     DZ_NOT_NULL( context );
 
     DZ_ASSERTM( m_desc.RootSignature != nullptr, "Root signature is not set for the pipeline" );
-    DZ_ASSERTM( m_desc.InputLayout != nullptr, "Input layout is not set for the pipeline" );
+    DZ_ASSERTM( m_desc.ShaderProgram != nullptr, "Shader program is not set for the pipeline" );
+    if ( m_desc.BindPoint != BindPoint::RayTracing )
+    {
+        DZ_ASSERTM( m_desc.InputLayout != nullptr, "Input layout is not set for the pipeline" );
+    }
 
     m_rootSignature = dynamic_cast<DX12RootSignature *>( m_desc.RootSignature );
 
@@ -40,13 +43,14 @@ DX12Pipeline::DX12Pipeline( DX12Context *context, PipelineDesc desc ) : m_contex
         CreateComputePipeline( );
         break;
     case BindPoint::RayTracing:
+        CreateRayTracingPipeline( );
         break;
     }
 }
 
 void DX12Pipeline::CreateGraphicsPipeline( )
 {
-    m_topology             = DX12EnumConverter::ConvertPrimitiveTopology( m_desc.PrimitiveTopology );
+    m_topology             = DX12EnumConverter::ConvertPrimitiveTopology( m_desc.Graphics.PrimitiveTopology );
     const auto inputLayout = dynamic_cast<DX12InputLayout *>( m_desc.InputLayout );
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = { };
@@ -55,39 +59,39 @@ void DX12Pipeline::CreateGraphicsPipeline( )
     SetGraphicsShaders( psoDesc );
 
     psoDesc.RasterizerState          = CD3DX12_RASTERIZER_DESC( D3D12_DEFAULT );
-    psoDesc.RasterizerState.CullMode = DX12EnumConverter::ConvertCullMode( m_desc.CullMode );
+    psoDesc.RasterizerState.CullMode = DX12EnumConverter::ConvertCullMode( m_desc.Graphics.CullMode );
 
     InitDepthStencil( psoDesc );
 
-    psoDesc.BlendState.AlphaToCoverageEnable  = m_desc.Rendering.AlphaToCoverageEnable;
-    psoDesc.BlendState.IndependentBlendEnable = m_desc.Rendering.IndependentBlendEnable;
+    psoDesc.BlendState.AlphaToCoverageEnable  = m_desc.Graphics.AlphaToCoverageEnable;
+    psoDesc.BlendState.IndependentBlendEnable = m_desc.Graphics.IndependentBlendEnable;
     psoDesc.SampleMask                        = UINT_MAX;
-    psoDesc.PrimitiveTopologyType             = DX12EnumConverter::ConvertPrimitiveTopologyToType( m_desc.PrimitiveTopology );
-    psoDesc.NumRenderTargets                  = m_desc.Rendering.RenderTargets.NumElements( );
-    for ( uint32_t i = 0; i < m_desc.Rendering.RenderTargets.NumElements( ); ++i )
+    psoDesc.PrimitiveTopologyType             = DX12EnumConverter::ConvertPrimitiveTopologyToType( m_desc.Graphics.PrimitiveTopology );
+    psoDesc.NumRenderTargets                  = m_desc.Graphics.RenderTargets.NumElements( );
+    for ( uint32_t i = 0; i < m_desc.Graphics.RenderTargets.NumElements( ); ++i )
     {
-        BlendDesc &blendDesc                                       = m_desc.Rendering.RenderTargets.GetElement( i ).Blend;
+        BlendDesc &blendDesc                                       = m_desc.Graphics.RenderTargets.GetElement( i ).Blend;
         psoDesc.BlendState.RenderTarget[ i ].BlendEnable           = blendDesc.Enable;
-        psoDesc.BlendState.RenderTarget[ i ].LogicOpEnable         = m_desc.Rendering.BlendLogicOpEnable;
+        psoDesc.BlendState.RenderTarget[ i ].LogicOpEnable         = m_desc.Graphics.BlendLogicOpEnable;
         psoDesc.BlendState.RenderTarget[ i ].SrcBlend              = DX12EnumConverter::ConvertBlend( blendDesc.SrcBlend );
         psoDesc.BlendState.RenderTarget[ i ].DestBlend             = DX12EnumConverter::ConvertBlend( blendDesc.DstBlend );
         psoDesc.BlendState.RenderTarget[ i ].BlendOp               = DX12EnumConverter::ConvertBlendOp( blendDesc.BlendOp );
         psoDesc.BlendState.RenderTarget[ i ].SrcBlendAlpha         = DX12EnumConverter::ConvertBlend( blendDesc.SrcBlendAlpha );
         psoDesc.BlendState.RenderTarget[ i ].DestBlendAlpha        = DX12EnumConverter::ConvertBlend( blendDesc.DstBlendAlpha );
         psoDesc.BlendState.RenderTarget[ i ].BlendOpAlpha          = DX12EnumConverter::ConvertBlendOp( blendDesc.BlendOpAlpha );
-        psoDesc.BlendState.RenderTarget[ i ].LogicOp               = DX12EnumConverter::ConvertLogicOp( m_desc.Rendering.BlendLogicOp );
+        psoDesc.BlendState.RenderTarget[ i ].LogicOp               = DX12EnumConverter::ConvertLogicOp( m_desc.Graphics.BlendLogicOp );
         psoDesc.BlendState.RenderTarget[ i ].RenderTargetWriteMask = blendDesc.RenderTargetWriteMask;
 
-        psoDesc.RTVFormats[ i ] = DX12EnumConverter::ConvertFormat( m_desc.Rendering.RenderTargets.GetElement( i ).Format );
+        psoDesc.RTVFormats[ i ] = DX12EnumConverter::ConvertFormat( m_desc.Graphics.RenderTargets.GetElement( i ).Format );
     }
 
-    if ( m_desc.Rendering.DepthStencilAttachmentFormat != Format::Undefined )
+    if ( m_desc.Graphics.DepthStencilAttachmentFormat != Format::Undefined )
     {
-        psoDesc.DSVFormat = DX12EnumConverter::ConvertFormat( m_desc.Rendering.DepthStencilAttachmentFormat );
+        psoDesc.DSVFormat = DX12EnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
     }
 
     SetMSAASampleCount( m_desc, psoDesc );
-    DX_CHECK_RESULT( m_context->D3DDevice->CreateGraphicsPipelineState( &psoDesc, IID_PPV_ARGS( m_graphicsPipeline.put( ) ) ) );
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateGraphicsPipelineState( &psoDesc, IID_PPV_ARGS( m_pipeline.put( ) ) ) );
 }
 
 void DX12Pipeline::CreateComputePipeline( )
@@ -99,21 +103,100 @@ void DX12Pipeline::CreateComputePipeline( )
     psoDesc.pRootSignature                    = m_rootSignature->Instance( );
     psoDesc.CS                                = GetShaderByteCode( compiledShaders.GetElement( 0 ) );
 
-    DX_CHECK_RESULT( m_context->D3DDevice->CreateComputePipelineState( &psoDesc, IID_PPV_ARGS( m_graphicsPipeline.put( ) ) ) );
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateComputePipelineState( &psoDesc, IID_PPV_ARGS( m_pipeline.put( ) ) ) );
+}
+
+void DX12Pipeline::CreateRayTracingPipeline( )
+{
+    if ( m_desc.InputLayout )
+    {
+        LOG( WARNING ) << "Input layout is provided to a ray tracing pipeline, this has no effect.";
+    }
+    DX12RootSignature *rootSignature = dynamic_cast<DX12RootSignature *>( m_desc.RootSignature );
+    if ( rootSignature->Instance( ) == nullptr )
+    {
+        LOG( ERROR ) << "Root signature is not initialized";
+    }
+
+    D3D12_STATE_OBJECT_DESC stateObjectDesc = { };
+    stateObjectDesc.Type                    = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
+    std::vector<D3D12_STATE_SUBOBJECT> subObjects;
+
+    D3D12_HIT_GROUP_DESC hitGroupDesc = { };
+    hitGroupDesc.HitGroupExport       = L"HitGroup";
+    hitGroupDesc.Type                 = D3D12_HIT_GROUP_TYPE_TRIANGLES;
+
+    std::vector<D3D12_DXIL_LIBRARY_DESC> dxilLibs;
+    std::unordered_set<std::string>      visitedShaders;
+    std::vector<std::wstring>            entryPoints; // To out live the scope of the loop
+    const auto                          &compiledShaders = m_desc.ShaderProgram->GetCompiledShaders( );
+    for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
+    {
+        const auto   &compiledShader = compiledShaders.GetElement( i );
+        std::string   entryPoint     = compiledShader->EntryPoint.Get( );
+        std::wstring &wsEntryPoint   = entryPoints.emplace_back( entryPoint.begin( ), entryPoint.end( ) );
+
+        switch ( compiledShader->Stage )
+        {
+        case ShaderStage::ClosestHit:
+            hitGroupDesc.ClosestHitShaderImport = wsEntryPoint.c_str( );
+            break;
+        case ShaderStage::AnyHit:
+            hitGroupDesc.AnyHitShaderImport = wsEntryPoint.c_str( );
+            break;
+        case ShaderStage::Intersection:
+            hitGroupDesc.IntersectionShaderImport = wsEntryPoint.c_str( );
+            hitGroupDesc.Type                     = D3D12_HIT_GROUP_TYPE_PROCEDURAL_PRIMITIVE;
+            break;
+        default:
+            break;
+        }
+
+        if ( visitedShaders.find( compiledShader->Path ) == visitedShaders.end( ) )
+        {
+            dxilLibs.push_back( {
+                .DXILLibrary = { .pShaderBytecode = compiledShader->Blob->GetBufferPointer( ), .BytecodeLength = compiledShader->Blob->GetBufferSize( ) },
+            } );
+            subObjects.push_back( { D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &dxilLibs.back( ) } );
+            visitedShaders.insert( compiledShader->Path );
+        }
+    }
+    subObjects.push_back( { D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP, &hitGroupDesc } );
+
+    D3D12_STATE_SUBOBJECT rootSignatureSubObject = { };
+    rootSignatureSubObject.Type                  = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
+    rootSignatureSubObject.pDesc                 = rootSignature->Instance( );
+    subObjects.push_back( rootSignatureSubObject );
+
+    D3D12_RAYTRACING_SHADER_CONFIG shaderConfig = { };
+    shaderConfig.MaxAttributeSizeInBytes        = m_desc.RayTracing.MaxNumAttributeBytes;
+    shaderConfig.MaxPayloadSizeInBytes          = m_desc.RayTracing.MaxNumPayloadBytes;
+    subObjects.push_back( { D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG, &shaderConfig } );
+
+    D3D12_RAYTRACING_PIPELINE_CONFIG pipelineConfig = { };
+    pipelineConfig.MaxTraceRecursionDepth           = m_desc.RayTracing.MaxRecursionDepth;
+    subObjects.push_back( { D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG, &pipelineConfig } );
+
+    D3D12_STATE_OBJECT_DESC pipelineStateDesc = { };
+    pipelineStateDesc.Type                    = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
+    pipelineStateDesc.NumSubobjects           = (UINT)subObjects.size( );
+    pipelineStateDesc.pSubobjects             = subObjects.data( );
+
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateStateObject( &pipelineStateDesc, IID_PPV_ARGS( m_rayTracingSO.put( ) ) ) );
 }
 
 void DX12Pipeline::InitDepthStencil( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const
 {
-    psoDesc.DepthStencilState.DepthEnable    = m_desc.DepthTest.Enable;
-    psoDesc.DepthStencilState.DepthFunc      = DX12EnumConverter::ConvertCompareOp( m_desc.DepthTest.CompareOp );
-    psoDesc.DepthStencilState.DepthWriteMask = m_desc.DepthTest.Write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+    psoDesc.DepthStencilState.DepthEnable    = m_desc.Graphics.DepthTest.Enable;
+    psoDesc.DepthStencilState.DepthFunc      = DX12EnumConverter::ConvertCompareOp( m_desc.Graphics.DepthTest.CompareOp );
+    psoDesc.DepthStencilState.DepthWriteMask = m_desc.Graphics.DepthTest.Write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
 
-    psoDesc.DepthStencilState.StencilEnable    = m_desc.StencilTest.Enable;
-    psoDesc.DepthStencilState.StencilReadMask  = m_desc.StencilTest.ReadMask;
-    psoDesc.DepthStencilState.StencilWriteMask = m_desc.StencilTest.WriteMask;
+    psoDesc.DepthStencilState.StencilEnable    = m_desc.Graphics.StencilTest.Enable;
+    psoDesc.DepthStencilState.StencilReadMask  = m_desc.Graphics.StencilTest.ReadMask;
+    psoDesc.DepthStencilState.StencilWriteMask = m_desc.Graphics.StencilTest.WriteMask;
 
-    InitStencilFace( psoDesc.DepthStencilState.FrontFace, m_desc.StencilTest.FrontFace );
-    InitStencilFace( psoDesc.DepthStencilState.BackFace, m_desc.StencilTest.BackFace );
+    InitStencilFace( psoDesc.DepthStencilState.FrontFace, m_desc.Graphics.StencilTest.FrontFace );
+    InitStencilFace( psoDesc.DepthStencilState.BackFace, m_desc.Graphics.StencilTest.BackFace );
 }
 
 void DX12Pipeline::InitStencilFace( D3D12_DEPTH_STENCILOP_DESC &stencilFace, const StencilFace &face ) const
@@ -126,7 +209,7 @@ void DX12Pipeline::InitStencilFace( D3D12_DEPTH_STENCILOP_DESC &stencilFace, con
 
 void DX12Pipeline::SetMSAASampleCount( const PipelineDesc &desc, D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const
 {
-    switch ( desc.MSAASampleCount )
+    switch ( desc.Graphics.MSAASampleCount )
     {
     case MSAASampleCount::_0:
     case MSAASampleCount::_1:
@@ -189,12 +272,17 @@ D3D12_SHADER_BYTECODE DX12Pipeline::GetShaderByteCode( const CompiledShader *con
 
 DX12Pipeline::~DX12Pipeline( )
 {
-    m_graphicsPipeline.reset( );
+    m_pipeline.reset( );
 }
 
 ID3D12PipelineState *DX12Pipeline::GetPipeline( ) const
 {
-    return m_graphicsPipeline.get( );
+    return m_pipeline.get( );
+}
+
+ID3D12StateObject *DX12Pipeline::GetRayTracingSO( ) const
+{
+    return m_rayTracingSO.get( );
 }
 
 ID3D12RootSignature *DX12Pipeline::GetRootSignature( ) const

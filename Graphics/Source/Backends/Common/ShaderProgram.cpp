@@ -17,8 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
-#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
+#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <directx/d3d12shader.h>
 #include <ranges>
 #include <unordered_set>
@@ -379,9 +379,9 @@ const ShaderCompiler &ShaderProgram::ShaderCompilerInstance( ) const
     return compiler;
 }
 
-InteropArray<CompiledShader*> ShaderProgram::GetCompiledShaders( ) const
+InteropArray<CompiledShader *> ShaderProgram::GetCompiledShaders( ) const
 {
-    InteropArray<CompiledShader*> compiledShaders;
+    InteropArray<CompiledShader *> compiledShaders;
     for ( auto &shader : m_compiledShaders )
     {
         compiledShaders.AddElement( shader.get( ) );
@@ -419,6 +419,7 @@ ResourceDescriptor ReflectTypeToRootSignatureType( const D3D_SHADER_INPUT_TYPE t
         return ResourceDescriptor::Sampler;
     case D3D_SIT_BYTEADDRESS:
     case D3D_SIT_STRUCTURED:
+    case D3D_SIT_RTACCELERATIONSTRUCTURE:
         return ResourceDescriptor::Buffer;
     case D3D_SIT_UAV_APPEND_STRUCTURED:
     case D3D_SIT_UAV_CONSUME_STRUCTURED:
@@ -426,7 +427,6 @@ ResourceDescriptor ReflectTypeToRootSignatureType( const D3D_SHADER_INPUT_TYPE t
     case D3D_SIT_UAV_RWTYPED:
     case D3D_SIT_UAV_RWBYTEADDRESS:
     case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
-    case D3D_SIT_RTACCELERATIONSTRUCTURE:
         return ResourceDescriptor::RWBuffer;
     case D3D_SIT_UAV_FEEDBACKTEXTURE:
         break;
@@ -448,6 +448,7 @@ DescriptorBufferBindingType ReflectTypeToBufferBindingType( const D3D_SHADER_INP
     case D3D_SIT_TBUFFER:
     case D3D_SIT_BYTEADDRESS:
     case D3D_SIT_STRUCTURED:
+    case D3D_SIT_RTACCELERATIONSTRUCTURE:
         return DescriptorBufferBindingType::ShaderResource;
     case D3D_SIT_UAV_APPEND_STRUCTURED:
     case D3D_SIT_UAV_CONSUME_STRUCTURED:
@@ -455,7 +456,6 @@ DescriptorBufferBindingType ReflectTypeToBufferBindingType( const D3D_SHADER_INP
     case D3D_SIT_UAV_RWTYPED:
     case D3D_SIT_UAV_RWBYTEADDRESS:
     case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
-    case D3D_SIT_RTACCELERATIONSTRUCTURE:
         return DescriptorBufferBindingType::UnorderedAccess;
     case D3D_SIT_UAV_FEEDBACKTEXTURE:
         break;
@@ -468,19 +468,19 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
 {
     ShaderReflectDesc result{ };
 
-    InputLayoutDesc   &inputLayout   = result.InputLayout;
-    RootSignatureDesc &rootSignature = result.RootSignature;
-#ifdef BUILD_METAL
+    InputLayoutDesc      &inputLayout   = result.InputLayout;
+    RootSignatureDesc    &rootSignature = result.RootSignature;
     std::vector<uint32_t> descriptorTableLocations;
-#endif
+
+    ReflectionState reflectionState          = { };
+    reflectionState.RootSignatureDesc        = &rootSignature;
+    reflectionState.InputLayoutDesc          = &inputLayout;
+    reflectionState.DescriptorTableLocations = &descriptorTableLocations;
 
     for ( auto &shader : m_compiledShaders )
     {
-#ifdef BUILD_METAL
-        IRObject           *ir           = dynamic_cast<MetalDxcBlob_Impl *>( shader->Blob )->IrObject;
-        IRShaderReflection *irReflection = IRShaderReflectionCreate( );
-        IRObjectGetReflection( ir, ShaderCompiler::ConvertIrShaderStage( shader->Stage ), irReflection );
-#endif
+        reflectionState.CompiledShader = shader.get( );
+
         IDxcBlob       *reflectionBlob = shader->Reflection;
         const DxcBuffer reflectionBuffer{
             .Ptr      = reflectionBlob->GetBufferPointer( ),
@@ -488,108 +488,188 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
             .Encoding = 0,
         };
 
-        ID3D12ShaderReflection *shaderReflection{ };
+        ID3D12ShaderReflection  *shaderReflection  = nullptr;
+        ID3D12LibraryReflection *libraryReflection = nullptr;
 
-        DXC_CHECK_RESULT( ShaderCompilerInstance( ).DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) ) );
-        D3D12_SHADER_DESC shaderDesc{ };
-        DXC_CHECK_RESULT( shaderReflection->GetDesc( &shaderDesc ) );
-
-        if ( shader->Stage == ShaderStage::Vertex )
+        switch ( shader->Stage )
         {
-            InitInputLayout( shaderReflection, inputLayout, shaderDesc );
-        }
-
-#ifdef BUILD_METAL
-        std::vector<IRResourceLocation> resources( IRShaderReflectionGetResourceCount( irReflection ) );
-        IRShaderReflectionGetResourceLocations( irReflection, resources.data( ) );
-#endif
-
-        for ( const uint32_t i : std::views::iota( 0u, shaderDesc.BoundResources ) )
-        {
-            D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
-            DXC_CHECK_RESULT( shaderReflection->GetResourceBindingDesc( i, &shaderInputBindDesc ) );
-            DescriptorBufferBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
-
-            // Check if Resource is already bound, if so add the stage to the existing binding and continue
-            bool found = false;
-            for ( int bindingIndex = 0; bindingIndex < rootSignature.ResourceBindings.NumElements( ); ++bindingIndex )
-            {
-                auto &boundBinding = rootSignature.ResourceBindings.GetElement( bindingIndex );
-                if ( boundBinding.RegisterSpace == shaderInputBindDesc.Space && boundBinding.Binding == shaderInputBindDesc.BindPoint && boundBinding.BindingType == bindingType )
-                {
-                    found = true;
-                    boundBinding.Stages.AddElement( shader->Stage );
-                }
-            }
-            if ( found )
-            {
-                continue;
-            }
-
-            // Root constants are reserved for a specific register space
-            if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootConstantRegisterSpace )
-            {
-                ReflectionDesc rootConstantReflection;
-                FillReflectionData( shaderReflection, rootConstantReflection, i );
-                if ( rootConstantReflection.Type != ReflectionBindingType::Pointer && rootConstantReflection.Type != ReflectionBindingType::Struct )
-                {
-                    LOG( FATAL ) << "Root constant reflection type mismatch. RegisterSpace [" << shaderInputBindDesc.Space
-                                 << "] is reserved for root constants. Which cannot be samplers or textures.";
-                }
-                RootConstantResourceBindingDesc &rootConstantBinding = rootSignature.RootConstants.EmplaceElement( );
-                rootConstantBinding.Name                             = shaderInputBindDesc.Name;
-                rootConstantBinding.Binding                          = shaderInputBindDesc.BindPoint;
-                rootConstantBinding.Stages.AddElement( shader->Stage );
-                rootConstantBinding.NumBytes   = rootConstantReflection.NumBytes;
-                rootConstantBinding.Reflection = rootConstantReflection;
-                continue;
-            }
-
-            ResourceBindingDesc &resourceBindingDesc = rootSignature.ResourceBindings.EmplaceElement( );
-            resourceBindingDesc.Name                 = shaderInputBindDesc.Name;
-            resourceBindingDesc.Binding              = shaderInputBindDesc.BindPoint;
-            resourceBindingDesc.RegisterSpace        = shaderInputBindDesc.Space;
-            resourceBindingDesc.ArraySize            = shaderInputBindDesc.BindCount;
-            resourceBindingDesc.BindingType          = bindingType;
-            resourceBindingDesc.Descriptor           = ReflectTypeToRootSignatureType( shaderInputBindDesc.Type );
-            resourceBindingDesc.Stages.AddElement( shader->Stage );
-            FillReflectionData( shaderReflection, resourceBindingDesc.Reflection, i );
-#ifdef BUILD_METAL
-            /*
-             * This reflection information is unfortunately required to hint the MetalResourceBindGroup where a binding(i.e. b0, space0) lies in the top level argument buffer.
-             */
-            if ( resourceBindingDesc.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
-            {
-                uint32_t hash =
-                    Utilities::HashInts( BindingTypeToIRRootParameterType( resourceBindingDesc.BindingType ), shaderInputBindDesc.Space, shaderInputBindDesc.BindPoint );
-                resourceBindingDesc.Reflection.TLABOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].UniqueTLABIndex.at( hash );
-                continue;
-            }
-            // Hint metal resource bind group where descriptor table lies in the top level argument buffer
-            switch ( resourceBindingDesc.Reflection.Type )
-            {
-            case ReflectionBindingType::Pointer:
-            case ReflectionBindingType::Struct:
-            case ReflectionBindingType::Texture:
-                resourceBindingDesc.Reflection.TLABOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].CbvSrvUavOffset;
-                break;
-            case ReflectionBindingType::SamplerDesc:
-                resourceBindingDesc.Reflection.TLABOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].SamplerOffset;
-                break;
-            }
-            ContainerUtilities::EnsureSize( descriptorTableLocations, resourceBindingDesc.Reflection.TLABOffset );
-            uint32_t &locationHint                              = descriptorTableLocations[ resourceBindingDesc.Reflection.TLABOffset ];
-            resourceBindingDesc.Reflection.DescriptorTableIndex = locationHint++;
-#endif
+        case ShaderStage::AnyHit:
+        case ShaderStage::ClosestHit:
+        case ShaderStage::Raygen:
+        case ShaderStage::Miss:
+            DXC_CHECK_RESULT( ShaderCompilerInstance( ).DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &libraryReflection ) ) );
+            reflectionState.LibraryReflection = libraryReflection;
+            ReflectLibrary( reflectionState );
+            break;
+        case ShaderStage::Vertex:
+        default:
+            DXC_CHECK_RESULT( ShaderCompilerInstance( ).DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) ) );
+            reflectionState.ShaderReflection = shaderReflection;
+            ReflectShader( reflectionState );
+            break;
         }
 
 #ifdef BUILD_METAL
         IRShaderReflectionDestroy( irReflection );
 #endif
-        shaderReflection->Release( );
+        if ( shaderReflection )
+        {
+            shaderReflection->Release( );
+        }
+        if ( libraryReflection )
+        {
+            libraryReflection->Release( );
+        }
     }
 
     return result;
+}
+
+void ShaderProgram::ReflectShader( ReflectionState &state ) const
+{
+    std::vector<uint32_t>  &descriptorTableLocations = *state.DescriptorTableLocations;
+    ID3D12ShaderReflection *shaderReflection         = state.ShaderReflection;
+
+    D3D12_SHADER_DESC shaderDesc{ };
+    DXC_CHECK_RESULT( shaderReflection->GetDesc( &shaderDesc ) );
+
+    if ( state.CompiledShader->Stage == ShaderStage::Vertex )
+    {
+        InitInputLayout( shaderReflection, *state.InputLayoutDesc, shaderDesc );
+    }
+
+    DXC_CHECK_RESULT( shaderReflection->GetDesc( &shaderDesc ) );
+#ifdef BUILD_METAL
+    IRObject           *ir           = dynamic_cast<MetalDxcBlob_Impl *>( shader->Blob )->IrObject;
+    IRShaderReflection *irReflection = IRShaderReflectionCreate( );
+    IRObjectGetReflection( ir, ShaderCompiler::ConvertIrShaderStage( shader->Stage ), irReflection );
+
+    std::vector<IRResourceLocation> resources( IRShaderReflectionGetResourceCount( irReflection ) );
+    IRShaderReflectionGetResourceLocations( irReflection, resources.data( ) );
+#endif
+
+    for ( const uint32_t i : std::views::iota( 0u, shaderDesc.BoundResources ) )
+    {
+        D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
+        DXC_CHECK_RESULT( shaderReflection->GetResourceBindingDesc( i, &shaderInputBindDesc ) );
+        ProcessBoundResource( state, shaderInputBindDesc, i );
+    }
+}
+
+void ShaderProgram::ReflectLibrary( ReflectionState &state ) const
+{
+    // It is common to include the same shader in multiple libraries in raytracing shaders.
+    // TODO Check if this is a good way to go about it
+    if ( state.ProcessedFiles.find( state.CompiledShader->Path ) != state.ProcessedFiles.end( ) )
+    {
+        return;
+    }
+    state.ProcessedFiles.insert( state.CompiledShader->Path );
+
+    std::vector<uint32_t>   &descriptorTableLocations = *state.DescriptorTableLocations;
+    ID3D12LibraryReflection *libraryReflection        = state.LibraryReflection;
+
+    D3D12_LIBRARY_DESC libraryDesc{ };
+    DXC_CHECK_RESULT( libraryReflection->GetDesc( &libraryDesc ) );
+
+    for ( const uint32_t i : std::views::iota( 0u, libraryDesc.FunctionCount ) )
+    {
+        ID3D12FunctionReflection *functionReflection = libraryReflection->GetFunctionByIndex( i );
+        D3D12_FUNCTION_DESC       functionDesc{ };
+        DXC_CHECK_RESULT( functionReflection->GetDesc( &functionDesc ) );
+        state.FunctionReflection = functionReflection;
+        for ( const uint32_t j : std::views::iota( 0u, functionDesc.BoundResources ) )
+        {
+            D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
+            DXC_CHECK_RESULT( functionReflection->GetResourceBindingDesc( j, &shaderInputBindDesc ) );
+            ProcessBoundResource( state, shaderInputBindDesc, j );
+        }
+    }
+}
+
+void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex ) const
+{
+    if ( UpdateBoundResourceStage( state, shaderInputBindDesc ) )
+    {
+        return;
+    }
+
+    DescriptorBufferBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
+    // Root constants are reserved for a specific register space
+    if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootConstantRegisterSpace )
+    {
+        ReflectionDesc rootConstantReflection;
+        FillReflectionData( state, rootConstantReflection, resourceIndex );
+        if ( rootConstantReflection.Type != ReflectionBindingType::Pointer && rootConstantReflection.Type != ReflectionBindingType::Struct )
+        {
+            LOG( FATAL ) << "Root constant reflection type mismatch. RegisterSpace [" << shaderInputBindDesc.Space
+                         << "] is reserved for root constants. Which cannot be samplers or textures.";
+        }
+        RootConstantResourceBindingDesc &rootConstantBinding = state.RootSignatureDesc->RootConstants.EmplaceElement( );
+        rootConstantBinding.Name                             = shaderInputBindDesc.Name;
+        rootConstantBinding.Binding                          = shaderInputBindDesc.BindPoint;
+        rootConstantBinding.Stages.AddElement( state.CompiledShader->Stage );
+        rootConstantBinding.NumBytes   = rootConstantReflection.NumBytes;
+        rootConstantBinding.Reflection = rootConstantReflection;
+        return;
+    }
+
+    ResourceBindingDesc &resourceBindingDesc = state.RootSignatureDesc->ResourceBindings.EmplaceElement( );
+    resourceBindingDesc.Name                 = shaderInputBindDesc.Name;
+    resourceBindingDesc.Binding              = shaderInputBindDesc.BindPoint;
+    resourceBindingDesc.RegisterSpace        = shaderInputBindDesc.Space;
+    resourceBindingDesc.ArraySize            = shaderInputBindDesc.BindCount;
+    resourceBindingDesc.BindingType          = bindingType;
+    resourceBindingDesc.Descriptor           = ReflectTypeToRootSignatureType( shaderInputBindDesc.Type );
+    resourceBindingDesc.Stages.AddElement( state.CompiledShader->Stage );
+    FillReflectionData( state, resourceBindingDesc.Reflection, resourceIndex );
+#ifdef BUILD_METAL
+    /*
+     * This reflection information is unfortunately required to hint the MetalResourceBindGroup where a binding(i.e. b0, space0) lies in the top level argument buffer.
+     */
+    if ( resourceBindingDesc.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
+    {
+        uint32_t hash = Utilities::HashInts( BindingTypeToIRRootParameterType( resourceBindingDesc.BindingType ), shaderInputBindDesc.Space, shaderInputBindDesc.BindPoint );
+        resourceBindingDesc.Reflection.TLABOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].UniqueTLABIndex.at( hash );
+        continue;
+    }
+    // Hint metal resource bind group where descriptor table lies in the top level argument buffer
+    switch ( resourceBindingDesc.Reflection.Type )
+    {
+    case ReflectionBindingType::Pointer:
+    case ReflectionBindingType::Struct:
+    case ReflectionBindingType::Texture:
+        resourceBindingDesc.Reflection.TLABOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].CbvSrvUavOffset;
+        break;
+    case ReflectionBindingType::SamplerDesc:
+        resourceBindingDesc.Reflection.TLABOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].SamplerOffset;
+        break;
+    }
+    ContainerUtilities::EnsureSize( ( *state.DescriptorTableLocations ), resourceBindingDesc.Reflection.TLABOffset );
+    uint32_t &locationHint                              = ( *state.DescriptorTableLocations )[ resourceBindingDesc.Reflection.TLABOffset ];
+    resourceBindingDesc.Reflection.DescriptorTableIndex = locationHint++;
+#endif
+}
+
+bool ShaderProgram::UpdateBoundResourceStage( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
+{
+    DescriptorBufferBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
+    // Check if Resource is already bound, if so add the stage to the existing binding and continue
+    bool found = false;
+    for ( int bindingIndex = 0; bindingIndex < state.RootSignatureDesc->ResourceBindings.NumElements( ); ++bindingIndex )
+    {
+        auto &boundBinding  = state.RootSignatureDesc->ResourceBindings.GetElement( bindingIndex );
+        bool  isSameBinding = boundBinding.RegisterSpace == shaderInputBindDesc.Space;
+        isSameBinding       = isSameBinding && boundBinding.Binding == shaderInputBindDesc.BindPoint;
+        isSameBinding       = isSameBinding && boundBinding.BindingType == bindingType;
+        isSameBinding       = isSameBinding && strcmp( boundBinding.Name.Get( ), shaderInputBindDesc.Name ) == 0;
+        if ( isSameBinding )
+        {
+            found = true;
+            boundBinding.Stages.AddElement( state.CompiledShader->Stage );
+        }
+    }
+    return found;
 }
 
 ReflectionFieldType DXCVariableTypeToReflectionType( const D3D_SHADER_VARIABLE_TYPE &type )
@@ -725,17 +805,25 @@ ReflectionFieldType DXCVariableTypeToReflectionType( const D3D_SHADER_VARIABLE_T
     }
 }
 
-void ShaderProgram::FillReflectionData( ID3D12ShaderReflection *shaderReflection, ReflectionDesc &reflectionDesc, const int resourceIndex ) const
+void ShaderProgram::FillReflectionData( ReflectionState &state, ReflectionDesc &reflectionDesc, const int resourceIndex ) const
 {
     D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
-
-    DXC_CHECK_RESULT( shaderReflection->GetResourceBindingDesc( resourceIndex, &shaderInputBindDesc ) );
+    if ( state.ShaderReflection )
+    {
+        DXC_CHECK_RESULT( state.ShaderReflection->GetResourceBindingDesc( resourceIndex, &shaderInputBindDesc ) );
+    }
+    else if ( state.FunctionReflection )
+    {
+        DXC_CHECK_RESULT( state.FunctionReflection->GetResourceBindingDesc( resourceIndex, &shaderInputBindDesc ) );
+    }
+    else
+    {
+        LOG( FATAL ) << "No shader reflection object found, make sure no compilation errors occurred.";
+    }
 
     reflectionDesc.Name = shaderInputBindDesc.Name;
-
     switch ( shaderInputBindDesc.Type )
     {
-
     case D3D_SIT_CBUFFER:
         reflectionDesc.Type = ReflectionBindingType::Struct;
         break;
@@ -763,8 +851,17 @@ void ShaderProgram::FillReflectionData( ID3D12ShaderReflection *shaderReflection
 
     DZ_RETURN_IF( reflectionDesc.Type != ReflectionBindingType::Struct );
 
-    ID3D12ShaderReflectionConstantBuffer *constantBuffer = shaderReflection->GetConstantBufferByIndex( resourceIndex );
-    D3D12_SHADER_BUFFER_DESC              bufferDesc;
+    ID3D12ShaderReflectionConstantBuffer *constantBuffer = nullptr;
+    if ( state.ShaderReflection )
+    {
+        constantBuffer = state.ShaderReflection->GetConstantBufferByIndex( resourceIndex );
+    }
+    else if ( state.FunctionReflection )
+    {
+        constantBuffer = state.FunctionReflection->GetConstantBufferByIndex( resourceIndex );
+    }
+
+    D3D12_SHADER_BUFFER_DESC bufferDesc;
     DXC_CHECK_RESULT( constantBuffer->GetDesc( &bufferDesc ) );
     reflectionDesc.NumBytes = bufferDesc.Size;
 

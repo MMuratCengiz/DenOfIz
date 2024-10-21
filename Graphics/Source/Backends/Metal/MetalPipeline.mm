@@ -75,8 +75,8 @@ void MetalPipeline::CreateGraphicsPipeline( )
     pipelineStateDescriptor.label                        = @"Graphics Pipeline#";
     pipelineStateDescriptor.vertexFunction               = vertexFunction;
     pipelineStateDescriptor.fragmentFunction             = fragmentFunction;
-    pipelineStateDescriptor.inputPrimitiveTopology       = MetalEnumConverter::ConvertTopologyClass( m_desc.PrimitiveTopology );
-    pipelineStateDescriptor.sampleCount                  = MSAASampleCountToNumSamples( m_desc.MSAASampleCount );
+    pipelineStateDescriptor.inputPrimitiveTopology       = MetalEnumConverter::ConvertTopologyClass( m_desc.Graphics.PrimitiveTopology );
+    pipelineStateDescriptor.sampleCount                  = MSAASampleCountToNumSamples( m_desc.Graphics.MSAASampleCount );
 
     auto *mtkInputLayout                     = dynamic_cast<MetalInputLayout *>( m_desc.InputLayout );
     pipelineStateDescriptor.vertexDescriptor = mtkInputLayout->GetVertexDescriptor( );
@@ -117,15 +117,15 @@ void MetalPipeline::CreateGraphicsPipeline( )
     }
 
     MTLDepthStencilDescriptor *depthStencilDescriptor = [[MTLDepthStencilDescriptor alloc] init];
-    depthStencilDescriptor.depthCompareFunction       = MetalEnumConverter::ConvertCompareOp( m_desc.DepthTest.CompareOp );
-    depthStencilDescriptor.depthWriteEnabled          = m_desc.DepthTest.Write;
+    depthStencilDescriptor.depthCompareFunction       = MetalEnumConverter::ConvertCompareOp( m_desc.Graphics.DepthTest.CompareOp );
+    depthStencilDescriptor.depthWriteEnabled          = m_desc.Graphics.DepthTest.Write;
     depthStencilDescriptor.frontFaceStencil           = [[MTLStencilDescriptor alloc] init];
-    InitStencilFace( depthStencilDescriptor.frontFaceStencil, m_desc.StencilTest.FrontFace );
+    InitStencilFace( depthStencilDescriptor.frontFaceStencil, m_desc.Graphics.StencilTest.FrontFace );
     depthStencilDescriptor.backFaceStencil = [[MTLStencilDescriptor alloc] init];
-    InitStencilFace( depthStencilDescriptor.backFaceStencil, m_desc.StencilTest.BackFace );
+    InitStencilFace( depthStencilDescriptor.backFaceStencil, m_desc.Graphics.StencilTest.BackFace );
     m_depthStencilState = [m_context->Device newDepthStencilStateWithDescriptor:depthStencilDescriptor];
 
-    switch ( m_desc.CullMode )
+    switch ( m_desc.Graphics.CullMode )
     {
     case CullMode::None:
         m_cullMode = MTLCullModeNone;
@@ -218,8 +218,8 @@ void MetalPipeline::InitStencilFace( MTLStencilDescriptor *stencilDesc, const St
     stencilDesc.stencilFailureOperation   = MetalEnumConverter::ConvertStencilOp( stencilFace.FailOp );
     stencilDesc.depthFailureOperation     = MetalEnumConverter::ConvertStencilOp( stencilFace.DepthFailOp );
     stencilDesc.depthStencilPassOperation = MetalEnumConverter::ConvertStencilOp( stencilFace.PassOp );
-    stencilDesc.readMask                  = m_desc.StencilTest.ReadMask;
-    stencilDesc.writeMask                 = m_desc.StencilTest.WriteMask;
+    stencilDesc.readMask                  = m_desc.Graphics.StencilTest.ReadMask;
+    stencilDesc.writeMask                 = m_desc.Graphics.StencilTest.WriteMask;
 }
 
 const MTLCullMode &MetalPipeline::CullMode( ) const

@@ -210,8 +210,8 @@ void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
     /**
      * OptimizedRegisterSpace means Root level descriptor binding.
      */
-    else if ( spaceDesc.Space == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace && binding.Reflection.Type == ReflectionBindingType::Struct ||
-              binding.Reflection.Type == ReflectionBindingType::Pointer )
+    else if ( spaceDesc.Space == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace &&
+              ( binding.Reflection.Type == ReflectionBindingType::Struct || binding.Reflection.Type == ReflectionBindingType::Pointer ) )
     {
         RootLevelDescriptorRange &rootLevelRange = spaceDesc.RootLevelRanges.emplace_back( );
         rootLevelRange.Range                     = descriptorRange;

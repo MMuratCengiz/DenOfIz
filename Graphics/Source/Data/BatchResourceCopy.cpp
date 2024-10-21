@@ -32,9 +32,10 @@ using namespace DenOfIz;
 BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device, const bool issueBarriers ) : m_device( device ), m_issueBarriers( issueBarriers )
 {
     m_commandListPool = std::unique_ptr<ICommandListPool>( m_device->CreateCommandListPool( { QueueType::Copy } ) );
-    DZ_ASSERTM( m_commandListPool->GetCommandLists( ).NumElements( ) != 0, "Command list pool did not produce any command lists." );
+    auto commandLists = m_commandListPool->GetCommandLists( );
+    DZ_ASSERTM( commandLists.NumElements( ) != 0, "Command list pool did not produce any command lists." );
 
-    m_copyCommandList = m_commandListPool->GetCommandLists( ).GetElement( 0 );
+    m_copyCommandList = commandLists.GetElement( 0 );
     m_executeFence    = std::unique_ptr<IFence>( m_device->CreateFence( ) );
 
     if ( m_issueBarriers )

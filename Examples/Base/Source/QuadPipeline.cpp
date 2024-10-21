@@ -37,11 +37,11 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
     m_inputLayout   = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( programReflection.InputLayout ) );
 
     PipelineDesc pipelineDesc{ };
-    pipelineDesc.Rendering.RenderTargets.AddElement( { .Format = Format::B8G8R8A8Unorm } );
-    pipelineDesc.InputLayout   = m_inputLayout.get( );
-    pipelineDesc.RootSignature = m_rootSignature.get( );
-    pipelineDesc.ShaderProgram = program.get( );
-    pipelineDesc.CullMode      = CullMode::BackFace;
+    pipelineDesc.InputLayout       = m_inputLayout.get( );
+    pipelineDesc.RootSignature     = m_rootSignature.get( );
+    pipelineDesc.ShaderProgram     = program.get( );
+    pipelineDesc.Graphics.RenderTargets.AddElement( { .Format = Format::B8G8R8A8Unorm } );
+    pipelineDesc.Graphics.CullMode = CullMode::BackFace;
 
     m_pipeline = std::unique_ptr<IPipeline>( logicalDevice->CreatePipeline( pipelineDesc ) );
 
