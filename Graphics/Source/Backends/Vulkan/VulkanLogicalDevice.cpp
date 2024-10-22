@@ -577,57 +577,73 @@ bool VulkanLogicalDevice::IsDeviceLost( )
     return m_context->IsDeviceLost;
 }
 
-ICommandListPool* VulkanLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &createInfo )
+ICommandListPool *VulkanLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &createInfo )
 {
     return new VulkanCommandPool( m_context.get( ), createInfo );
 }
 
-IPipeline* VulkanLogicalDevice::CreatePipeline( const PipelineDesc &createInfo )
+IPipeline *VulkanLogicalDevice::CreatePipeline( const PipelineDesc &createInfo )
 {
     return new VulkanPipeline( m_context.get( ), createInfo );
 }
 
-ISwapChain* VulkanLogicalDevice::CreateSwapChain( const SwapChainDesc &createInfo )
+ISwapChain *VulkanLogicalDevice::CreateSwapChain( const SwapChainDesc &createInfo )
 {
     return new VulkanSwapChain( m_context.get( ), createInfo );
 }
 
-IRootSignature* VulkanLogicalDevice::CreateRootSignature( const RootSignatureDesc &createInfo )
+IRootSignature *VulkanLogicalDevice::CreateRootSignature( const RootSignatureDesc &createInfo )
 {
     return new VulkanRootSignature( m_context.get( ), createInfo );
 }
 
-IInputLayout* VulkanLogicalDevice::CreateInputLayout( const InputLayoutDesc &createInfo )
+IInputLayout *VulkanLogicalDevice::CreateInputLayout( const InputLayoutDesc &createInfo )
 {
     return new VulkanInputLayout( createInfo );
 }
 
-IResourceBindGroup* VulkanLogicalDevice::CreateResourceBindGroup( const ResourceBindGroupDesc &createInfo )
+IResourceBindGroup *VulkanLogicalDevice::CreateResourceBindGroup( const ResourceBindGroupDesc &createInfo )
 {
     return new VulkanResourceBindGroup( m_context.get( ), createInfo );
 }
 
-IBufferResource* VulkanLogicalDevice::CreateBufferResource( const BufferDesc &createInfo )
+IBufferResource *VulkanLogicalDevice::CreateBufferResource( const BufferDesc &createInfo )
 {
     return new VulkanBufferResource( m_context.get( ), createInfo );
 }
 
-ITextureResource* VulkanLogicalDevice::CreateTextureResource( const TextureDesc &createInfo )
+ITextureResource *VulkanLogicalDevice::CreateTextureResource( const TextureDesc &createInfo )
 {
     return new VulkanTextureResource( m_context.get( ), createInfo );
 }
 
-IFence* VulkanLogicalDevice::CreateFence( )
+IFence *VulkanLogicalDevice::CreateFence( )
 {
     return new VulkanFence( m_context.get( ) );
 }
 
-ISemaphore* VulkanLogicalDevice::CreateSemaphore( )
+ISemaphore *VulkanLogicalDevice::CreateSemaphore( )
 {
     return new VulkanSemaphore( m_context.get( ) );
 }
 
-ISampler* VulkanLogicalDevice::CreateSampler( const SamplerDesc &createInfo )
+ISampler *VulkanLogicalDevice::CreateSampler( const SamplerDesc &createInfo )
 {
     return new VulkanSampler( m_context.get( ), createInfo );
+}
+
+// TODO:
+ITopLevelAS *VulkanLogicalDevice::CreateTopLevelAS( const TopLevelASDesc &desc )
+{
+    return nullptr;
+}
+
+IBottomLevelAS *VulkanLogicalDevice::CreateBottomLevelAS( const BottomLevelASDesc &desc )
+{
+    return nullptr;
+}
+
+IShaderBindingTable *VulkanLogicalDevice::CreateShaderTable( const ShaderTableDesc &desc )
+{
+    return nullptr;
 }

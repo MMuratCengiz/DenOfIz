@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, BottomLevelASDesc &desc ) : m_context( context )
+DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASDesc &desc ) : m_context( context )
 {
     m_flags              = DX12EnumConverter::ConvertAccelerationStructureBuildFlags( desc.BuildFlags );
     size_t numGeometries = desc.Geometries.NumElements( );

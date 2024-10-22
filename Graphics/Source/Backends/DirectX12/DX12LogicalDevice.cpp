@@ -17,6 +17,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12LogicalDevice.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLeveLAS.h>
 
 #include "SDL2/SDL_syswm.h"
 
@@ -72,7 +75,7 @@ void DX12LogicalDevice::CreateDevice( )
 InteropArray<PhysicalDevice> DX12LogicalDevice::ListPhysicalDevices( )
 {
     InteropArray<PhysicalDevice> result;
-    wil::com_ptr<IDXGIAdapter1> adapter;
+    wil::com_ptr<IDXGIAdapter1>  adapter;
     for ( UINT adapterIndex = 0; SUCCEEDED( m_context->DXGIFactory->EnumAdapters1( adapterIndex, adapter.put( ) ) ); adapterIndex++ )
     {
         PhysicalDevice deviceInfo{ };
@@ -88,7 +91,7 @@ void DX12LogicalDevice::CreateDeviceInfo( IDXGIAdapter1 &adapter, PhysicalDevice
     DX_CHECK_RESULT( adapter.GetDesc( &adapterDesc ) );
     physicalDevice.Id = adapterDesc.DeviceId;
     std::wstring adapterName( adapterDesc.Description );
-    physicalDevice.Name = std::string( adapterName.begin( ), adapterName.end( ) ).c_str();
+    physicalDevice.Name = std::string( adapterName.begin( ), adapterName.end( ) ).c_str( );
 
     DXGI_ADAPTER_DESC1 desc;
     DX_CHECK_RESULT( adapter.GetDesc1( &desc ) );
@@ -319,6 +322,21 @@ ITextureResource *DX12LogicalDevice::CreateTextureResource( const TextureDesc &t
 ISampler *DX12LogicalDevice::CreateSampler( const SamplerDesc &samplerDesc )
 {
     return new DX12Sampler( m_context.get( ), samplerDesc );
+}
+
+ITopLevelAS *DX12LogicalDevice::CreateTopLevelAS( const TopLevelASDesc &topLevelAsDesc )
+{
+    return new DX12TopLevelAS( m_context.get( ), topLevelAsDesc );
+}
+
+IBottomLevelAS *DX12LogicalDevice::CreateBottomLevelAS( const BottomLevelASDesc &bottomLevelAsDesc )
+{
+    return new DX12BottomLevelAS( m_context.get( ), bottomLevelAsDesc );
+}
+
+IShaderBindingTable *DX12LogicalDevice::CreateShaderTable( const ShaderTableDesc &sbtDesc )
+{
+    return new DX12ShaderBindingTable( m_context.get( ), sbtDesc );
 }
 
 bool DX12LogicalDevice::IsDeviceLost( )

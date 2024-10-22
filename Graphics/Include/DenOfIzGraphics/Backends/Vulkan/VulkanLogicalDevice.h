@@ -59,17 +59,20 @@ namespace DenOfIz
         [[nodiscard]] VulkanContext *GetContext( ) const;
 
         // Factory methods
-        ICommandListPool   *CreateCommandListPool( const CommandListPoolDesc &createInfo ) override;
-        IPipeline          *CreatePipeline( const PipelineDesc &createInfo ) override;
-        ISwapChain         *CreateSwapChain( const SwapChainDesc &createInfo ) override;
-        IRootSignature     *CreateRootSignature( const RootSignatureDesc &createInfo ) override;
-        IInputLayout       *CreateInputLayout( const InputLayoutDesc &createInfo ) override;
-        IResourceBindGroup *CreateResourceBindGroup( const ResourceBindGroupDesc &createInfo ) override;
-        IFence             *CreateFence( ) override;
-        ISemaphore         *CreateSemaphore( ) override;
-        IBufferResource    *CreateBufferResource( const BufferDesc &createInfo ) override;
-        ITextureResource   *CreateTextureResource( const TextureDesc &createInfo ) override;
-        ISampler           *CreateSampler( const SamplerDesc &createInfo ) override;
+        ICommandListPool    *CreateCommandListPool( const CommandListPoolDesc &desc ) override;
+        IPipeline           *CreatePipeline( const PipelineDesc &desc ) override;
+        ISwapChain          *CreateSwapChain( const SwapChainDesc &desc ) override;
+        IRootSignature      *CreateRootSignature( const RootSignatureDesc &desc ) override;
+        IInputLayout        *CreateInputLayout( const InputLayoutDesc &desc ) override;
+        IResourceBindGroup  *CreateResourceBindGroup( const ResourceBindGroupDesc &desc ) override;
+        IFence              *CreateFence( ) override;
+        ISemaphore          *CreateSemaphore( ) override;
+        IBufferResource     *CreateBufferResource( const BufferDesc &desc ) override;
+        ITextureResource    *CreateTextureResource( const TextureDesc &desc ) override;
+        ISampler            *CreateSampler( const SamplerDesc &desc ) override;
+        ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &desc ) override;
+        IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &desc ) override;
+        IShaderBindingTable *CreateShaderTable( const ShaderTableDesc &desc ) override;
 
         ~VulkanLogicalDevice( ) override;
 

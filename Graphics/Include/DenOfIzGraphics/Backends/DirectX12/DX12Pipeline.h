@@ -28,17 +28,20 @@ namespace DenOfIz
 
     class DX12Pipeline final : public IPipeline
     {
-        DX12Context                      *m_context       = nullptr;
-        wil::com_ptr<ID3D12PipelineState> m_pipeline      = nullptr;
-        wil::com_ptr<ID3D12StateObject>   m_rayTracingSO  = nullptr;
-        DX12RootSignature                *m_rootSignature = nullptr;
-        PipelineDesc                      m_desc{ };
-        D3D12_PRIMITIVE_TOPOLOGY          m_topology{ };
+        DX12Context                              *m_context       = nullptr;
+        wil::com_ptr<ID3D12PipelineState>         m_pipeline      = nullptr;
+        wil::com_ptr<ID3D12StateObject>           m_rayTracingSO  = nullptr;
+        wil::com_ptr<ID3D12StateObjectProperties> m_soProperties  = nullptr;
+        std::unordered_map<std::string, void *>   m_shaderIdentifiers;
+        DX12RootSignature                        *m_rootSignature = nullptr;
+        PipelineDesc                              m_desc{ };
+        D3D12_PRIMITIVE_TOPOLOGY                  m_topology{ };
 
     public:
         DX12Pipeline( DX12Context *context, PipelineDesc desc );
         [[nodiscard]] ID3D12PipelineState     *GetPipeline( ) const;
         [[nodiscard]] ID3D12StateObject       *GetRayTracingSO( ) const;
+        [[nodiscard]] void                    *GetShaderIdentifier( const std::string &exportName );
         [[nodiscard]] ID3D12RootSignature     *GetRootSignature( ) const;
         [[nodiscard]] D3D12_PRIMITIVE_TOPOLOGY GetTopology( ) const;
         ~DX12Pipeline( ) override;

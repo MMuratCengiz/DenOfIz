@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ISemaphore.h"
 #include "ISwapChain.h"
 #include "ITextureResource.h"
+#include "RayTracing/IShaderBindingTable.h"
 
 namespace DenOfIz
 {
@@ -50,17 +51,21 @@ namespace DenOfIz
         };
 
         // Factory methods
-        virtual ICommandListPool   *CreateCommandListPool( const CommandListPoolDesc &createInfo )     = 0;
-        virtual IPipeline          *CreatePipeline( const PipelineDesc &createInfo )                   = 0;
-        virtual ISwapChain         *CreateSwapChain( const SwapChainDesc &createInfo )                 = 0;
-        virtual IRootSignature     *CreateRootSignature( const RootSignatureDesc &createInfo )         = 0;
-        virtual IInputLayout       *CreateInputLayout( const InputLayoutDesc &createInfo )             = 0;
-        virtual IResourceBindGroup *CreateResourceBindGroup( const ResourceBindGroupDesc &createInfo ) = 0;
+        virtual ICommandListPool   *CreateCommandListPool( const CommandListPoolDesc &desc )     = 0;
+        virtual IPipeline          *CreatePipeline( const PipelineDesc &desc )                   = 0;
+        virtual ISwapChain         *CreateSwapChain( const SwapChainDesc &desc )                 = 0;
+        virtual IRootSignature     *CreateRootSignature( const RootSignatureDesc &desc )         = 0;
+        virtual IInputLayout       *CreateInputLayout( const InputLayoutDesc &desc )             = 0;
+        virtual IResourceBindGroup *CreateResourceBindGroup( const ResourceBindGroupDesc &desc ) = 0;
         virtual IFence             *CreateFence( )                                                     = 0;
         virtual ISemaphore         *CreateSemaphore( )                                                 = 0;
-        virtual IBufferResource    *CreateBufferResource( const BufferDesc &createInfo )               = 0;
-        virtual ITextureResource   *CreateTextureResource( const TextureDesc &createInfo )             = 0;
-        virtual ISampler           *CreateSampler( const SamplerDesc &createInfo )                     = 0;
+        virtual IBufferResource    *CreateBufferResource( const BufferDesc &desc )               = 0;
+        virtual ITextureResource   *CreateTextureResource( const TextureDesc &desc )             = 0;
+        virtual ISampler           *CreateSampler( const SamplerDesc &desc )                     = 0;
+        // RayTracing:
+        virtual ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &desc )       = 0;
+        virtual IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &desc ) = 0;
+        virtual IShaderBindingTable *CreateShaderTable( const ShaderTableDesc &desc )     = 0;
     };
 
 } // namespace DenOfIz

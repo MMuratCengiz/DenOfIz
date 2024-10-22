@@ -184,6 +184,7 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     pipelineStateDesc.pSubobjects             = subObjects.data( );
 
     DX_CHECK_RESULT( m_context->D3DDevice->CreateStateObject( &pipelineStateDesc, IID_PPV_ARGS( m_rayTracingSO.put( ) ) ) );
+    DX_CHECK_RESULT( m_rayTracingSO->QueryInterface( IID_PPV_ARGS( m_soProperties.put( ) ) ) );
 }
 
 void DX12Pipeline::InitDepthStencil( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const
@@ -294,4 +295,22 @@ ID3D12RootSignature *DX12Pipeline::GetRootSignature( ) const
 D3D12_PRIMITIVE_TOPOLOGY DX12Pipeline::GetTopology( ) const
 {
     return m_topology;
+}
+
+void *DX12Pipeline::GetShaderIdentifier( const std::string &exportName )
+{
+    if ( m_soProperties )
+    {
+        auto existingIdentifier = m_shaderIdentifiers.find( exportName );
+        if ( existingIdentifier != m_shaderIdentifiers.end( ) )
+        {
+            return existingIdentifier->second;
+        }
+
+        std::wstring wExportName( exportName.begin( ), exportName.end( ) );
+        void        *identifier           = m_soProperties->GetShaderIdentifier( wExportName.c_str( ) );
+        m_shaderIdentifiers[ exportName ] = identifier;
+        return identifier;
+    }
+    return nullptr;
 }

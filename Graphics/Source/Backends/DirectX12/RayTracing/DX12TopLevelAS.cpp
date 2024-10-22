@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, TopLevelASDesc &desc ) : m_context( context )
+DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc ) : m_context( context )
 {
     std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDescs( desc.Instances.NumElements( ) );
     for ( uint32_t i = 0; i < desc.Instances.NumElements( ); ++i )

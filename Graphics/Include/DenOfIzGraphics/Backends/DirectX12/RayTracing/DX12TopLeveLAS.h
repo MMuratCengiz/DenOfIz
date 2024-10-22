@@ -35,7 +35,7 @@ namespace DenOfIz
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS m_flags;
 
     public:
-        DX12TopLevelAS( DX12Context *context, TopLevelASDesc &desc );
+        DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc );
         ~DX12TopLevelAS( ) override = default;
         [[nodiscard]] D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Flags( ) const;
         [[nodiscard]] const size_t                                        NumInstances( ) const;

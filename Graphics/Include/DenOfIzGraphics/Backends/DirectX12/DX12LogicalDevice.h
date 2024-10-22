@@ -60,6 +60,10 @@ namespace DenOfIz
         IBufferResource    *CreateBufferResource( const BufferDesc &bufferDesc ) override;
         ITextureResource   *CreateTextureResource( const TextureDesc &textureDesc ) override;
         ISampler           *CreateSampler( const SamplerDesc &samplerDesc ) override;
+        // RayTracing:
+        ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &createDesc ) override;
+        IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &createDesc ) override;
+        IShaderBindingTable *CreateShaderTable( const ShaderTableDesc &createDesc ) override;
 
         void WaitIdle( ) override;
         // --
