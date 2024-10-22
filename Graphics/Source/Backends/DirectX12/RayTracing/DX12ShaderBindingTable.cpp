@@ -29,21 +29,25 @@ DX12ShaderBindingTable::DX12ShaderBindingTable( DX12Context *context, const Shad
 void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
     uint32_t totalNumEntries = desc.NumRayGenerationShaders + desc.NumMissShaders + ( desc.NumHitGroups * desc.NumInstances * desc.NumRayTypes );
+    m_numBufferBytes         = totalNumEntries * D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
 
     BufferDesc bufferDesc   = { };
-    bufferDesc.NumBytes     = totalNumEntries * D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
+    bufferDesc.NumBytes     = m_numBufferBytes;
     bufferDesc.HeapType     = HeapType::GPU_CPU;
     bufferDesc.InitialState = ResourceState::CopySrc;
     bufferDesc.Descriptor   = ResourceDescriptor::Buffer;
 
-    auto newBuffer = std::unique_ptr<DX12BufferResource>( new DX12BufferResource( m_context, bufferDesc ) );
-
-    m_mappedMemory = newBuffer->MapMemory( );
+    m_stagingBuffer = std::unique_ptr<DX12BufferResource>( new DX12BufferResource( m_context, bufferDesc ) );
+    m_mappedMemory  = m_stagingBuffer->MapMemory( );
 
     if ( !m_mappedMemory )
     {
         LOG( ERROR ) << "Failed to map memory for shader binding table.";
     }
+
+    bufferDesc.HeapType     = HeapType::GPU;
+    bufferDesc.InitialState = ResourceState::CopyDst;
+    m_buffer                = std::unique_ptr<DX12BufferResource>( new DX12BufferResource( m_context, bufferDesc ) );
 }
 
 void DX12ShaderBindingTable::BindRayGenerationShader( const RayGenerationBindingDesc &desc )
@@ -80,8 +84,8 @@ void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
 
 void DX12ShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 {
-    uint32_t offset          = m_desc.SizeDesc.NumRayGenerationShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-    void    *missShaderEntry = static_cast<Byte *>( m_mappedMemory ) + offset;
+    uint32_t    offset           = m_desc.SizeDesc.NumRayGenerationShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    void       *missShaderEntry  = static_cast<Byte *>( m_mappedMemory ) + offset;
     const void *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
     memcpy( missShaderEntry, shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
 }
@@ -89,6 +93,19 @@ void DX12ShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 void DX12ShaderBindingTable::Build( )
 {
     m_stagingBuffer->UnmapMemory( );
+
+    auto commandList = m_context->CopyCommandList;
+    commandList->Reset( m_context->CopyCommandListAllocator.get( ), nullptr );
+    commandList->CopyBufferRegion( m_buffer->Resource( ), 0, m_buffer->Resource( ), 0, m_numBufferBytes );
+    // Pipeline barrier to shader resource:
+    D3D12_RESOURCE_BARRIER barrier = { };
+    barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource   = m_buffer->Resource();
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+    barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    commandList->ResourceBarrier( 1, &barrier );
+    commandList->Close( );
 }
 
 IBufferResource *DX12ShaderBindingTable::Buffer( ) const

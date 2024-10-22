@@ -32,6 +32,7 @@ namespace DenOfIz
         ShaderTableDesc m_desc;
         DX12Pipeline   *m_pipeline;
 
+        uint32_t                            m_numBufferBytes = 0;
         std::unique_ptr<DX12BufferResource> m_buffer;
         std::unique_ptr<DX12BufferResource> m_stagingBuffer;
         void                               *m_mappedMemory = nullptr;

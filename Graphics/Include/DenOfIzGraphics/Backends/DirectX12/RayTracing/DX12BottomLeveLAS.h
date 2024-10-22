@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IBottomLevelAS.h>
 #include <DenOfIzGraphics/Backends/DirectX12/DX12BufferResource.h>
+#include <DenOfIzGraphics/Backends/Interface/RayTracing/IBottomLevelAS.h>
 
 namespace DenOfIz
 {
@@ -37,7 +37,7 @@ namespace DenOfIz
         ~DX12BottomLevelAS( ) override = default;
         [[nodiscard]] D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Flags( ) const;
         [[nodiscard]] const std::vector<D3D12_RAYTRACING_GEOMETRY_DESC>  &GeometryDescs( ) const;
-        [[nodiscard]] const DX12BufferResource                           *Buffer( ) const;
+        [[nodiscard]] IBufferResource                              *Buffer( ) const override;
         [[nodiscard]] const DX12BufferResource                           *Scratch( ) const;
         void                                                              Update( const BottomLevelASDesc &desc ) override;
     };

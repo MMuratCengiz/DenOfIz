@@ -22,13 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IBufferResource.h"
 #include "IFence.h"
 #include "IPipeline.h"
-#include "RayTracing/IBottomLevelAS.h"
-#include "RayTracing/ITopLevelAS.h"
 #include "IResourceBindGroup.h"
 #include "ISemaphore.h"
 #include "ISwapChain.h"
 #include "ITextureResource.h"
 #include "PipelineBarrierDesc.h"
+#include "RayTracing/IBottomLevelAS.h"
+#include "RayTracing/ITopLevelAS.h"
 
 namespace DenOfIz
 {
@@ -132,6 +132,10 @@ namespace DenOfIz
         // Information below is optional, 0 tries to calculate it automatically, sometimes it may be needed to be set manually
         uint32_t RowPitch = 0;
         uint32_t NumRows  = 0;
+    };
+
+    struct DZ_API DispatchRaysDesc
+    {
     };
 
     struct DZ_API ExecuteDesc

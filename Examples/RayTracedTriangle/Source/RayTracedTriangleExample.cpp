@@ -22,40 +22,9 @@ using namespace DenOfIz;
 
 void RayTracedTriangleExample::Init( )
 {
-    InteropArray<ShaderDesc> shaderDescs;
-    ShaderDesc               rayGenShaderDesc{ };
-    rayGenShaderDesc.Stage      = ShaderStage::Raygen;
-    rayGenShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
-    rayGenShaderDesc.EntryPoint = "MyRaygenShader";
-    shaderDescs.AddElement( rayGenShaderDesc );
-    ShaderDesc closestHitShaderDesc{ };
-    closestHitShaderDesc.Stage      = ShaderStage::ClosestHit;
-    closestHitShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
-    closestHitShaderDesc.EntryPoint = "MyClosestHitShader";
-    shaderDescs.AddElement( closestHitShaderDesc );
-    ShaderDesc missShaderDesc{ };
-    missShaderDesc.Stage      = ShaderStage::Miss;
-    missShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
-    missShaderDesc.EntryPoint = "MyMissShader";
-    shaderDescs.AddElement( missShaderDesc );
-    m_rayTracingProgram       = std::unique_ptr<ShaderProgram>( m_graphicsApi->CreateShaderProgram( shaderDescs ) );
-    auto reflection           = m_rayTracingProgram->Reflect( );
-    m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
-
-    PipelineDesc pipelineDesc{ };
-    pipelineDesc.BindPoint                       = BindPoint::RayTracing;
-    pipelineDesc.RootSignature                   = m_rayTracingRootSignature.get( );
-    pipelineDesc.ShaderProgram                   = m_rayTracingProgram.get( );
-    pipelineDesc.RayTracing.MaxNumPayloadBytes   = 4 * sizeof( float );
-    pipelineDesc.RayTracing.MaxNumAttributeBytes = 2 * sizeof( float );
-    m_rayTracingPipeline                         = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
-
-    {
-        BatchResourceCopy batchResourceCopy( m_logicalDevice );
-        batchResourceCopy.Begin( );
-        m_sphere = std::make_unique<SphereAsset>( m_logicalDevice, &batchResourceCopy );
-        batchResourceCopy.Submit( );
-    }
+    CreateGeometry( );
+    CreateRayTracingPipeline( );
+    CreateAccelerationStructures( );
 
     m_quadPipeline = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice, "Assets/Shaders/SampleBasic.ps.hlsl" );
 
@@ -163,4 +132,104 @@ void RayTracedTriangleExample::Quit( )
 {
     m_renderGraph->WaitIdle( );
     IExample::Quit( );
+}
+
+void RayTracedTriangleExample::CreateRayTracingPipeline( )
+{
+    InteropArray<ShaderDesc> shaderDescs;
+    ShaderDesc               rayGenShaderDesc{ };
+    rayGenShaderDesc.Stage      = ShaderStage::Raygen;
+    rayGenShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
+    rayGenShaderDesc.EntryPoint = "MyRaygenShader";
+    shaderDescs.AddElement( rayGenShaderDesc );
+    ShaderDesc closestHitShaderDesc{ };
+    closestHitShaderDesc.Stage      = ShaderStage::ClosestHit;
+    closestHitShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
+    closestHitShaderDesc.EntryPoint = "MyClosestHitShader";
+    shaderDescs.AddElement( closestHitShaderDesc );
+    ShaderDesc missShaderDesc{ };
+    missShaderDesc.Stage      = ShaderStage::Miss;
+    missShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
+    missShaderDesc.EntryPoint = "MyMissShader";
+    shaderDescs.AddElement( missShaderDesc );
+    m_rayTracingProgram       = std::unique_ptr<ShaderProgram>( m_graphicsApi->CreateShaderProgram( shaderDescs ) );
+    auto reflection           = m_rayTracingProgram->Reflect( );
+    m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
+
+    PipelineDesc pipelineDesc{ };
+    pipelineDesc.BindPoint                       = BindPoint::RayTracing;
+    pipelineDesc.RootSignature                   = m_rayTracingRootSignature.get( );
+    pipelineDesc.ShaderProgram                   = m_rayTracingProgram.get( );
+    pipelineDesc.RayTracing.MaxNumPayloadBytes   = 4 * sizeof( float );
+    pipelineDesc.RayTracing.MaxNumAttributeBytes = 2 * sizeof( float );
+    m_rayTracingPipeline                         = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
+}
+
+void RayTracedTriangleExample::CreateGeometry( )
+{
+    uint32_t indices[]  = { 0, 1, 2 };
+    float    depthValue = 1.0;
+    float    offset     = 0.7f;
+
+    struct Vertex
+    {
+        float x, y, z;
+    };
+    Vertex vertices[] = { { 0, -offset, depthValue }, { -offset, offset, depthValue }, { offset, offset, depthValue } };
+
+    InteropArray<Byte> vertexArray( sizeof( vertices ) );
+    vertexArray.MemCpy( vertices, sizeof( vertices ) );
+
+    InteropArray<Byte> indexArray( sizeof( indices ) );
+    indexArray.MemCpy( indices, sizeof( indices ) );
+
+    BatchResourceCopy batchResourceCopy( m_logicalDevice );
+    batchResourceCopy.Begin( );
+
+    CopyToGpuBufferDesc vertexCopy{ };
+    vertexCopy.DstBuffer = m_vertexBuffer.get( );
+    vertexCopy.Data      = vertexArray;
+    batchResourceCopy.CopyToGPUBuffer( vertexCopy );
+
+    CopyToGpuBufferDesc indexCopy{ };
+    indexCopy.DstBuffer = m_indexBuffer.get( );
+    indexCopy.Data      = indexArray;
+    batchResourceCopy.CopyToGPUBuffer( indexCopy );
+    batchResourceCopy.Submit( );
+}
+
+void RayTracedTriangleExample::CreateAccelerationStructures( )
+{
+    ASGeometryDesc geometryDesc{ };
+    geometryDesc.Type        = ASGeometryType::Triangles;
+    geometryDesc.IndexBuffer = m_indexBuffer.get( );
+    geometryDesc.NumIndices  = 3;
+    geometryDesc.IndexType   = IndexType::Uint32;
+    //    geometryDesc.Transform3x4               = 0;
+    geometryDesc.VertexFormat = Format::R32G32B32Float;
+    geometryDesc.NumVertices  = 3;
+    geometryDesc.VertexBuffer = m_vertexBuffer.get( );
+    geometryDesc.VertexStride = 3 * sizeof( float );
+    geometryDesc.IsOpaque     = true; // Todo does nothing
+
+    BottomLevelASDesc bottomLevelASDesc{ };
+    bottomLevelASDesc.Geometries.AddElement( geometryDesc );
+    bottomLevelASDesc.BuildFlags = ASBuildFlags::PreferFastTrace;
+    m_bottomLevelAS              = std::unique_ptr<IBottomLevelAS>( m_logicalDevice->CreateBottomLevelAS( bottomLevelASDesc ) );
+
+    ASInstanceDesc instanceDesc{ };
+    instanceDesc.Buffer                      = m_bottomLevelAS->Buffer( );
+    instanceDesc.ID                          = 0;
+    instanceDesc.Mask                        = 1;
+    instanceDesc.ContributionToHitGroupIndex = 0;
+
+    float transform[ 3 ][ 4 ] = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } };
+    instanceDesc.Transform.MemCpy( transform, sizeof( transform ) );
+
+    TopLevelASDesc topLevelASDesc{ };
+    topLevelASDesc.BuildFlags = ASBuildFlags::PreferFastTrace;
+    topLevelASDesc.Instances.AddElement( instanceDesc );
+    m_topLevelAS = std::unique_ptr<ITopLevelAS>( m_logicalDevice->CreateTopLevelAS( topLevelASDesc ) );
+
+
 }

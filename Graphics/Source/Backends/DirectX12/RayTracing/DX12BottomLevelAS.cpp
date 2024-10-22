@@ -104,7 +104,7 @@ const std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> &DX12BottomLevelAS::GeometryDe
     return m_geometryDescs;
 }
 
-const DX12BufferResource *DX12BottomLevelAS::Buffer( ) const
+DX12BufferResource *DX12BottomLevelAS::Buffer( ) const
 {
     return m_asBuffer.get( );
 }
