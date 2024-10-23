@@ -21,6 +21,8 @@ using namespace DenOfIz;
 
 DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc ) : m_context( context )
 {
+    m_flags = DX12EnumConverter::ConvertAccelerationStructureBuildFlags( desc.BuildFlags );
+
     std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDescs( desc.Instances.NumElements( ) );
     for ( uint32_t i = 0; i < desc.Instances.NumElements( ); ++i )
     {
@@ -40,11 +42,10 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
 
         memcpy( instanceDescs[ i ].Transform, instanceDesc.Transform.Data( ), sizeof( float[ 12 ] ) );
     }
-
     // Calculate required size for the acceleration structure
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS prebuildDesc = { };
     prebuildDesc.DescsLayout                                          = D3D12_ELEMENTS_LAYOUT_ARRAY;
-    prebuildDesc.Flags                                                = DX12EnumConverter::ConvertAccelerationStructureBuildFlags( desc.BuildFlags );
+    prebuildDesc.Flags                                                = m_flags;
     prebuildDesc.NumDescs                                             = desc.Instances.NumElements( );
     prebuildDesc.Type                                                 = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
@@ -73,7 +74,7 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
     scratchBufferDesc.HeapType     = HeapType::GPU;
     scratchBufferDesc.NumBytes     = (UINT)info.ScratchDataSizeInBytes;
     scratchBufferDesc.Descriptor   = BitSet<ResourceDescriptor>( ResourceDescriptor::RWBuffer );
-    scratchBufferDesc.InitialState = ResourceState::AccelerationStructureWrite;
+    scratchBufferDesc.InitialState = ResourceState::UnorderedAccess;
     m_scratch                      = std::make_unique<DX12BufferResource>( m_context, scratchBufferDesc );
 }
 
@@ -92,15 +93,20 @@ const DX12BufferResource *DX12TopLevelAS::InstanceBuffer( ) const
     return m_instanceBuffer.get( );
 }
 
-const DX12BufferResource *DX12TopLevelAS::Buffer( ) const
+const DX12BufferResource *DX12TopLevelAS::DX12Buffer( ) const
 {
     return m_buffer.get( );
 }
+
+IBufferResource *DX12TopLevelAS::Buffer( ) const
+{
+    return m_buffer.get( );
+}
+
 const DX12BufferResource *DX12TopLevelAS::Scratch( ) const
 {
     return m_scratch.get( );
 }
-
 void DX12TopLevelAS::Update( const TopLevelASDesc &desc )
 {
 }

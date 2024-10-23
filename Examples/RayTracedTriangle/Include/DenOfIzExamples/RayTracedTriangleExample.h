@@ -27,21 +27,38 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct NormalizedViewport
+    {
+        float Left;
+        float Top;
+        float Right;
+        float Bottom;
+    };
+
+    struct RayGenConstantBuffer
+    {
+        NormalizedViewport Viewport;
+        NormalizedViewport Stencil;
+    };
+
     class RayTracedTriangleExample final : public IExample, public NodeExecutionCallback, public PresentExecutionCallback
     {
-        Time                                           m_time;
-        std::unique_ptr<QuadPipeline>                  m_presentOutputPipeline;
-        std::vector<std::unique_ptr<ITextureResource>> m_raytracingOutput;
-        std::unique_ptr<ISampler>                      m_defaultSampler;
-        std::unique_ptr<IResourceBindGroup>            m_rootConstantBindGroup;
+        Time                                             m_time;
+        std::unique_ptr<QuadPipeline>                    m_presentOutputPipeline;
+        std::array<std::unique_ptr<ITextureResource>, 3> m_raytracingOutput;
+        std::unique_ptr<ISampler>                        m_defaultSampler;
+        std::unique_ptr<IResourceBindGroup>              m_rootConstantBindGroup;
 
         // Raytracing:
-        std::unique_ptr<ShaderProgram>       m_rayTracingProgram;
-        std::unique_ptr<IPipeline>           m_rayTracingPipeline;
-        std::unique_ptr<IRootSignature>      m_rayTracingRootSignature;
-        std::unique_ptr<IShaderBindingTable> m_shaderBindingTable;
-        std::unique_ptr<IBottomLevelAS>      m_bottomLevelAS;
-        std::unique_ptr<ITopLevelAS>         m_topLevelAS;
+        RayGenConstantBuffer                               m_rayGenCB;
+        std::unique_ptr<IBufferResource>                   m_rayGenCBResource;
+        std::unique_ptr<ShaderProgram>                     m_rayTracingProgram;
+        std::unique_ptr<IPipeline>                         m_rayTracingPipeline;
+        std::unique_ptr<IRootSignature>                    m_rayTracingRootSignature;
+        std::array<std::unique_ptr<IResourceBindGroup>, 3> m_rayTracingBindGroups;
+        std::unique_ptr<IShaderBindingTable>               m_shaderBindingTable;
+        std::unique_ptr<IBottomLevelAS>                    m_bottomLevelAS;
+        std::unique_ptr<ITopLevelAS>                       m_topLevelAS;
 
         // RayTraced Triangle:
         std::unique_ptr<IBufferResource> m_vertexBuffer;
@@ -68,7 +85,7 @@ namespace DenOfIz
 
     private:
         void CreateRayTracingPipeline( );
-        void CreateGeometry( ) const;
+        void CreateResources( );
         void CreateAccelerationStructures( );
         void CreateShaderBindingTable( );
     };

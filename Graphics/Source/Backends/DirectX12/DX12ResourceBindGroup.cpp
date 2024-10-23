@@ -156,6 +156,7 @@ void DX12ResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextu
 void DX12ResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )
 {
     DZ_NOT_NULL( resource );
+    // If the register space is "DZConfiguration::Instance( ).RootLevelBufferRegisterSpace" then we do not create a descriptor table but bind directly at root level.
     DZ_RETURN_IF( UpdateRootDescriptor( slot, dynamic_cast<DX12BufferResource *>( resource )->Resource( )->GetGPUVirtualAddress( ) ) );
 
     const uint32_t offset = m_dx12RootSignature->GetResourceOffset( slot );

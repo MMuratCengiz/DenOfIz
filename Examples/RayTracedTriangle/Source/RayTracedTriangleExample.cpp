@@ -22,12 +22,6 @@ using namespace DenOfIz;
 
 void RayTracedTriangleExample::Init( )
 {
-    CreateGeometry( );
-    CreateRayTracingPipeline( );
-    CreateAccelerationStructures( );
-
-    m_presentOutputPipeline = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice, "Assets/Shaders/SampleBasic.ps.hlsl" );
-
     TextureDesc textureDesc{ };
     textureDesc.Width        = m_windowDesc.Width;
     textureDesc.Height       = m_windowDesc.Height;
@@ -38,9 +32,16 @@ void RayTracedTriangleExample::Init( )
     for ( uint32_t i = 0; i < 3; ++i )
     {
         textureDesc.DebugName.Append( "RayTracing Output " ).Append( std::to_string( i ).c_str( ) );
-        m_raytracingOutput.push_back( std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) ) );
+        m_raytracingOutput[ i ] = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
     }
-    m_defaultSampler = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( SamplerDesc{ } ) );
+
+    CreateResources( );
+    CreateAccelerationStructures( );
+    CreateRayTracingPipeline( );
+    CreateShaderBindingTable( );
+
+    m_defaultSampler        = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( SamplerDesc{ } ) );
+    m_presentOutputPipeline = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice, "Assets/Shaders/SampleBasic.ps.hlsl" );
     m_presentOutputPipeline->BindGroup( 0 )->BeginUpdate( )->Srv( 0, m_raytracingOutput[ 0 ].get( ) )->Sampler( 0, m_defaultSampler.get( ) )->EndUpdate( );
     m_presentOutputPipeline->BindGroup( 1 )->BeginUpdate( )->Srv( 0, m_raytracingOutput[ 1 ].get( ) )->Sampler( 0, m_defaultSampler.get( ) )->EndUpdate( );
     m_presentOutputPipeline->BindGroup( 2 )->BeginUpdate( )->Srv( 0, m_raytracingOutput[ 2 ].get( ) )->Sampler( 0, m_defaultSampler.get( ) )->EndUpdate( );
@@ -53,7 +54,8 @@ void RayTracedTriangleExample::Init( )
     m_renderGraph = std::make_unique<RenderGraph>( renderGraphDesc );
 
     NodeDesc raytracingNode{ };
-    raytracingNode.Name = "RayTracing";
+    raytracingNode.Name      = "RayTracing";
+    raytracingNode.QueueType = QueueType::RayTracing;
     raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_raytracingOutput[ 0 ].get( ), ResourceState::UnorderedAccess ) );
     raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_raytracingOutput[ 1 ].get( ), ResourceState::UnorderedAccess ) );
     raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceState::UnorderedAccess ) );
@@ -64,7 +66,7 @@ void RayTracedTriangleExample::Init( )
     presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_raytracingOutput[ 0 ].get( ), ResourceState::ShaderResource ) );
     presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_raytracingOutput[ 1 ].get( ), ResourceState::ShaderResource ) );
     presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceState::ShaderResource ) );
-    presentNode.Dependencies.AddElement( "Deferred" );
+    presentNode.Dependencies.AddElement( "RayTracing" );
     presentNode.Execute = this;
 
     m_renderGraph->AddNode( raytracingNode );
@@ -77,18 +79,16 @@ void RayTracedTriangleExample::Init( )
 // Node execution
 void RayTracedTriangleExample::Execute( uint32_t frameIndex, ICommandList *commandList )
 {
-    RenderingAttachmentDesc renderingAttachmentDesc{ };
-    renderingAttachmentDesc.Resource = m_raytracingOutput[ frameIndex ].get( );
-
-    RenderingDesc renderingDesc{ };
-    renderingDesc.RTAttachments.AddElement( renderingAttachmentDesc );
-
     const Viewport &viewport = m_swapChain->GetViewport( );
 
-    commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-    commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+    commandList->BindPipeline( m_rayTracingPipeline.get( ) );
 
-    commandList->EndRendering( );
+    DispatchRaysDesc dispatchRaysDesc{ };
+    dispatchRaysDesc.Width              = viewport.Width;
+    dispatchRaysDesc.Height             = viewport.Height;
+    dispatchRaysDesc.Depth              = 1;
+    dispatchRaysDesc.ShaderBindingTable = m_shaderBindingTable.get( );
+    commandList->DispatchRays( dispatchRaysDesc );
 }
 
 void RayTracedTriangleExample::Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget )
@@ -155,6 +155,19 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     auto reflection           = m_rayTracingProgram->Reflect( );
     m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
 
+    ResourceBindGroupDesc bindGroupDesc{ };
+    bindGroupDesc.RootSignature = m_rayTracingRootSignature.get( );
+    bindGroupDesc.RegisterSpace = 0;
+    for ( int i = 0; i < 3; ++i )
+    {
+        m_rayTracingBindGroups[ i ] = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
+        m_rayTracingBindGroups[ i ]->BeginUpdate( );
+        m_rayTracingBindGroups[ i ]->Srv( 0, m_topLevelAS->Buffer( ) );
+        m_rayTracingBindGroups[ i ]->Uav( 0, m_raytracingOutput[ i ].get( ) );
+        m_rayTracingBindGroups[ i ]->Cbv( 0, m_rayGenCBResource.get( ) );
+        m_rayTracingBindGroups[ i ]->EndUpdate( );
+    }
+
     PipelineDesc pipelineDesc{ };
     pipelineDesc.BindPoint                       = BindPoint::RayTracing;
     pipelineDesc.RootSignature                   = m_rayTracingRootSignature.get( );
@@ -164,7 +177,7 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     m_rayTracingPipeline                         = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 }
 
-void RayTracedTriangleExample::CreateGeometry( ) const
+void RayTracedTriangleExample::CreateResources( )
 {
     constexpr uint32_t indices[]  = { 0, 1, 2 };
     constexpr float    depthValue = 1.0;
@@ -176,11 +189,34 @@ void RayTracedTriangleExample::CreateGeometry( ) const
     };
     constexpr Vertex vertices[] = { { 0, -offset, depthValue }, { -offset, offset, depthValue }, { offset, offset, depthValue } };
 
+    BufferDesc vbDesc{ };
+    vbDesc.Descriptor = ResourceDescriptor::VertexBuffer;
+    vbDesc.NumBytes   = sizeof( vertices );
+    m_vertexBuffer    = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vbDesc ) );
+
+    BufferDesc ibDesc{ };
+    ibDesc.Descriptor = ResourceDescriptor::IndexBuffer;
+    ibDesc.NumBytes   = sizeof( indices );
+    m_indexBuffer     = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( ibDesc ) );
+
+    BufferDesc rayGenCbDesc{ };
+    rayGenCbDesc.Descriptor = ResourceDescriptor::UniformBuffer;
+    rayGenCbDesc.NumBytes   = sizeof( m_rayGenCB );
+    m_rayGenCBResource      = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( rayGenCbDesc ) );
+
     InteropArray<Byte> vertexArray( sizeof( vertices ) );
     vertexArray.MemCpy( vertices, sizeof( vertices ) );
 
     InteropArray<Byte> indexArray( sizeof( indices ) );
     indexArray.MemCpy( indices, sizeof( indices ) );
+
+    float border        = 1.0f;
+    float aspect        = static_cast<float>( m_windowDesc.Width ) / static_cast<float>( m_windowDesc.Height );
+    m_rayGenCB.Viewport = { -1.0f, -1.0f, 1.0f, 1.0f };
+    m_rayGenCB.Stencil  = { -1 + border / aspect, -1 + border, 1 - border / aspect, 1.0f - border };
+
+    InteropArray<Byte> rayGenCBArray( sizeof( m_rayGenCB ) );
+    rayGenCBArray.MemCpy( &m_rayGenCB, sizeof( m_rayGenCB ) );
 
     BatchResourceCopy batchResourceCopy( m_logicalDevice );
     batchResourceCopy.Begin( );
@@ -194,6 +230,12 @@ void RayTracedTriangleExample::CreateGeometry( ) const
     indexCopy.DstBuffer = m_indexBuffer.get( );
     indexCopy.Data      = indexArray;
     batchResourceCopy.CopyToGPUBuffer( indexCopy );
+
+    CopyToGpuBufferDesc rayGenCBCopy{ };
+    rayGenCBCopy.DstBuffer = m_rayGenCBResource.get( );
+    rayGenCBCopy.Data      = rayGenCBArray;
+    batchResourceCopy.CopyToGPUBuffer( rayGenCBCopy );
+
     batchResourceCopy.Submit( );
 }
 
@@ -237,6 +279,11 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
     commandList->Begin( );
     commandList->BuildBottomLevelAS( BuildBottomLevelASDesc{ m_bottomLevelAS.get( ) } );
     commandList->BuildTopLevelAS( BuildTopLevelASDesc{ m_topLevelAS.get( ) } );
+    // Pipeline barriers:
+    // - Transition bottom level AS to AS state
+    // - Transition top level AS to AS state
+    //    commandList->PipelineBarrier( PipelineBarrierDesc{ }.BufferBarrier(
+    //        BufferBarrierDesc{ .Resource = m_bottomLevelAS->Buffer( ), .OldState = ResourceState::AccelerationStructureWrite, .NewState = ResourceState::UnorderedAccess } ) );
     ExecuteDesc executeDesc{ };
     executeDesc.Notify = syncFence.get( );
     commandList->Execute( executeDesc );
@@ -250,7 +297,6 @@ void RayTracedTriangleExample::CreateShaderBindingTable( )
     bindingTableDesc.Pipeline              = m_rayTracingPipeline.get( );
     bindingTableDesc.SizeDesc.NumInstances = 1;
     bindingTableDesc.SizeDesc.NumRayTypes  = 1;
-    bindingTableDesc.SizeDesc.NumHitGroups = 1;
 
     m_shaderBindingTable = std::unique_ptr<IShaderBindingTable>( m_logicalDevice->CreateShaderBindingTable( bindingTableDesc ) );
 
@@ -263,7 +309,7 @@ void RayTracedTriangleExample::CreateShaderBindingTable( )
     m_shaderBindingTable->BindMissShader( missDesc );
 
     HitGroupBindingDesc hitGroupDesc{ };
-    hitGroupDesc.ClosestHitShaderName = "MyClosestHitShader";
+    hitGroupDesc.HitGroupExportName = "HitGroup";
     m_shaderBindingTable->BindHitGroup( hitGroupDesc );
     m_shaderBindingTable->Build( );
 }

@@ -28,7 +28,7 @@ DX12ShaderBindingTable::DX12ShaderBindingTable( DX12Context *context, const Shad
 
 void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
-    uint32_t totalNumEntries = desc.NumRayGenerationShaders + desc.NumMissShaders + ( desc.NumHitGroups * desc.NumInstances * desc.NumRayTypes );
+    uint32_t totalNumEntries = desc.NumRayGenerationShaders + desc.NumMissShaders + ( desc.NumInstances * desc.NumGeometries * desc.NumRayTypes );
     m_numBufferBytes         = totalNumEntries * D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
 
     BufferDesc bufferDesc   = { };
@@ -55,70 +55,142 @@ void DX12ShaderBindingTable::BindRayGenerationShader( const RayGenerationBinding
     const void *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
     memcpy( m_mappedMemory, shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
 
-    m_rayGenerationShaderRange.StartAddress = m_buffer->Resource( )->GetGPUVirtualAddress( );
-    m_rayGenerationShaderRange.SizeInBytes  = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    m_rayGenerationShaderRange.StartAddress = Utilities::Align( m_buffer->Resource( )->GetGPUVirtualAddress( ), D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT );
+    m_rayGenerationShaderRange.SizeInBytes  = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
 }
 
 void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
 {
-    const uint32_t offset        = ( desc.InstanceIndex * desc.GeometryIndex * desc.RayTypeIndex ) * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    if ( BindHitGroupRecursive( desc ) )
+    {
+        return;
+    }
+
+    const uint32_t instanceOffset = desc.InstanceIndex * m_desc.SizeDesc.NumGeometries * m_desc.SizeDesc.NumRayTypes;
+    const uint32_t geometryOffset = desc.GeometryIndex * m_desc.SizeDesc.NumRayTypes;
+    const uint32_t rayTypeOffset  = desc.RayTypeIndex;
+
+    const uint32_t offset        = ( instanceOffset + geometryOffset + rayTypeOffset ) * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
     void          *hitGroupEntry = static_cast<Byte *>( m_mappedMemory ) + offset;
 
-    const void *closestHitIdentifier   = m_pipeline->GetShaderIdentifier( desc.ClosestHitShaderName.Get( ) );
-    const void *anyHitIdentifier       = m_pipeline->GetShaderIdentifier( desc.AnyHitShaderName.Get( ) );
-    const void *intersectionIdentifier = m_pipeline->GetShaderIdentifier( desc.IntersectionShaderName.Get( ) );
-
-    if ( desc.ClosestHitShaderName.IsEmpty( ) )
+    const void *hitGroupIdentifier = m_pipeline->GetShaderIdentifier( desc.HitGroupExportName.Get( ) );
+    if ( desc.HitGroupExportName.IsEmpty( ) )
     {
-        LOG( ERROR ) << "Closest hit shader name cannot be empty.";
-    }
-    uint32_t numHitGroupShaders = 1;
-    memcpy( hitGroupEntry, closestHitIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
-    if ( !desc.AnyHitShaderName.IsEmpty( ) )
-    {
-        memcpy( static_cast<Byte *>( hitGroupEntry ) + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, anyHitIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
-        numHitGroupShaders++;
+        LOG( ERROR ) << "Hit group name cannot be empty.";
+        return;
     }
 
-    if ( !desc.IntersectionShaderName.IsEmpty( ) )
+    memcpy( hitGroupEntry, hitGroupIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+
+    m_hitGroupShaderRange.StartAddress  = m_buffer->Resource( )->GetGPUVirtualAddress( ) +  + ( offset & ~( D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT - 1 ) );
+    m_hitGroupShaderRange.SizeInBytes   = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
+    m_hitGroupShaderRange.StrideInBytes = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
+}
+
+bool DX12ShaderBindingTable::BindHitGroupRecursive( const HitGroupBindingDesc &desc )
+{
+    if ( desc.InstanceIndex == -1 )
     {
-        memcpy( static_cast<Byte *>( hitGroupEntry ) + 2 * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, intersectionIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
-        numHitGroupShaders++;
+        if ( desc.GeometryIndex == -1 || desc.RayTypeIndex == -1 )
+        {
+            LOG( ERROR ) << "InstanceIndex/GeometryIndex/RayTypeIndex work in a parent child relationship. If InstanceIndex == -1, then GeometryIndex/RayTypeIndex cannot be -1.";
+            return true;
+        }
+
+        for ( uint32_t i = 0; i < m_desc.SizeDesc.NumInstances; ++i )
+        {
+            HitGroupBindingDesc hitGroupDesc = desc;
+            hitGroupDesc.InstanceIndex       = i;
+            hitGroupDesc.GeometryIndex       = -1;
+            hitGroupDesc.RayTypeIndex        = -1;
+            BindHitGroupRecursive( hitGroupDesc );
+        }
+
+        return true;
     }
 
-    m_hitGroupShaderRange.StartAddress  = m_buffer->Resource( )->GetGPUVirtualAddress( ) + offset;
-    m_hitGroupShaderRange.SizeInBytes   = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES * numHitGroupShaders;
-    m_hitGroupShaderRange.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES * numHitGroupShaders;;
+    if ( desc.GeometryIndex == -1 )
+    {
+        if ( desc.RayTypeIndex == -1 )
+        {
+            LOG( ERROR ) << "InstanceIndex/GeometryIndex/RayTypeIndex work in a parent child relationship. If GeometryIndex == -1, then RayTypeIndex cannot be -1.";
+            return true;
+        }
+
+        for ( uint32_t i = 0; i < m_desc.SizeDesc.NumGeometries; ++i )
+        {
+            HitGroupBindingDesc hitGroupDesc = desc;
+            hitGroupDesc.GeometryIndex       = i;
+            hitGroupDesc.RayTypeIndex        = -1;
+            BindHitGroupRecursive( hitGroupDesc );
+        }
+
+        return true;
+    }
+
+    if ( desc.RayTypeIndex == -1 )
+    {
+        for ( uint32_t i = 0; i < m_desc.SizeDesc.NumRayTypes; ++i )
+        {
+            HitGroupBindingDesc hitGroupDesc = desc;
+            hitGroupDesc.RayTypeIndex        = i;
+            BindHitGroup( hitGroupDesc );
+        }
+        return true;
+    }
+
+    return false;
 }
 
 void DX12ShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 {
-    const uint32_t offset           = m_desc.SizeDesc.NumRayGenerationShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    const uint32_t baseOffset       = m_desc.SizeDesc.NumRayGenerationShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    const uint32_t offset           = baseOffset + desc.RayTypeIndex * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
     void          *missShaderEntry  = static_cast<Byte *>( m_mappedMemory ) + offset;
     const void    *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
+
     memcpy( missShaderEntry, shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
 
-    m_missShaderRange.StartAddress  = m_buffer->Resource( )->GetGPUVirtualAddress( ) + offset;
-    m_missShaderRange.SizeInBytes   = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-    m_missShaderRange.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    m_missShaderRange.StartAddress  = m_buffer->Resource( )->GetGPUVirtualAddress( ) + ( offset & ~( D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT - 1 ) );
+    m_missShaderRange.SizeInBytes   = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
+    m_missShaderRange.StrideInBytes = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
 }
 
 void DX12ShaderBindingTable::Build( )
 {
     m_stagingBuffer->UnmapMemory( );
 
+    // Todo move this to some utility function:
+    // Create a fence:
+    wil::com_ptr<ID3D12Fence> copyFence;
+    wil::com_ptr<ID3D12Fence> barrierFence;
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( 0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( copyFence.put( ) ) ) );
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( 0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( barrierFence.put( ) ) ) );
+
     const auto commandList = m_context->CopyCommandList;
     commandList->Reset( m_context->CopyCommandListAllocator.get( ), nullptr );
-    commandList->CopyBufferRegion( m_buffer->Resource( ), 0, m_buffer->Resource( ), 0, m_numBufferBytes );
-    // Pipeline barrier to shader resource:
-    D3D12_RESOURCE_BARRIER barrier = { };
-    barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource   = m_buffer->Resource( );
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-    barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    commandList->ResourceBarrier( 1, &barrier );
+    commandList->CopyBufferRegion( m_stagingBuffer->Resource( ), 0, m_buffer->Resource( ), 0, m_numBufferBytes );
     commandList->Close( );
+    m_context->CopyCommandQueue->ExecuteCommandLists( 1, CommandListCast( commandList.addressof( ) ) );
+    m_context->CopyCommandQueue->Signal( copyFence.get( ), 1 );
+
+    // Create a direct command list to barrier the resource to shader resource state:
+    wil::com_ptr<ID3D12CommandAllocator>    commandAllocator;
+    wil::com_ptr<ID3D12GraphicsCommandList> directCommandList;
+
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandAllocator( D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS( commandAllocator.put( ) ) ) );
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandList( 0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.get( ), nullptr, IID_PPV_ARGS( directCommandList.put( ) ) ) );
+
+    directCommandList->Close( );
+    commandAllocator->Reset( );
+    directCommandList->Reset( commandAllocator.get( ), nullptr );
+    const auto &barrier = CD3DX12_RESOURCE_BARRIER::Transition( m_buffer->Resource( ), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE );
+    directCommandList->ResourceBarrier( 1, &barrier );
+    directCommandList->Close( );
+    m_context->GraphicsCommandQueue->Wait( copyFence.get( ), 1 );
+    m_context->GraphicsCommandQueue->ExecuteCommandLists( 1, CommandListCast( directCommandList.addressof( ) ) );
+    m_context->GraphicsCommandQueue->Signal( barrierFence.get( ), 1 );
+    m_context->GraphicsCommandQueue->Wait( barrierFence.get( ), 1 );
 }
 
 IBufferResource *DX12ShaderBindingTable::Buffer( ) const
@@ -126,7 +198,7 @@ IBufferResource *DX12ShaderBindingTable::Buffer( ) const
     return m_buffer.get( );
 }
 
-D3D12_GPU_VIRTUAL_ADDRESS_RANGE DX12ShaderBindingTable::RayGenerationShaderRange( ) const
+D3D12_GPU_VIRTUAL_ADDRESS_RANGE DX12ShaderBindingTable::RayGenerationShaderRecord( ) const
 {
     return m_rayGenerationShaderRange;
 }
@@ -135,7 +207,6 @@ D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE DX12ShaderBindingTable::HitGroupShade
 {
     return m_hitGroupShaderRange;
 }
-
 D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE DX12ShaderBindingTable::MissShaderRange( ) const
 {
     return m_missShaderRange;

@@ -120,16 +120,23 @@ void DX12CommandList::BindPipeline( IPipeline *pipeline )
     const DX12Pipeline *dx12Pipeline = dynamic_cast<DX12Pipeline *>( pipeline );
     m_currentRootSignature           = dx12Pipeline->GetRootSignature( );
 
-    if ( m_desc.QueueType == QueueType::Graphics )
+    switch ( m_desc.QueueType )
     {
+    case QueueType::Graphics:
         m_commandList->SetGraphicsRootSignature( dx12Pipeline->GetRootSignature( ) );
         m_commandList->IASetPrimitiveTopology( dx12Pipeline->GetTopology( ) );
         m_commandList->SetPipelineState( dx12Pipeline->GetPipeline( ) );
-    }
-    else
-    {
+        break;
+    case QueueType::RayTracing:
+        m_commandList->SetComputeRootSignature( dx12Pipeline->GetRootSignature( ) );
+        m_commandList->SetPipelineState1( dx12Pipeline->GetRayTracingSO( ) );
+        break;
+    case QueueType::Compute:
         m_commandList->SetComputeRootSignature( dx12Pipeline->GetRootSignature( ) );
         m_commandList->SetPipelineState( dx12Pipeline->GetPipeline( ) );
+    case QueueType::Copy:
+        LOG ( ERROR ) << "Copy queue type is not supported for `BindPipeline`";
+        break;
     }
 }
 
@@ -406,7 +413,7 @@ void DX12CommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelA
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc = { };
     buildDesc.Inputs.DescsLayout                                 = D3D12_ELEMENTS_LAYOUT_ARRAY;
     buildDesc.Inputs.Type                                        = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-    buildDesc.DestAccelerationStructureData                      = dx12TopLevelAS->Buffer( )->Resource( )->GetGPUVirtualAddress( );
+    buildDesc.DestAccelerationStructureData                      = dx12TopLevelAS->DX12Buffer( )->Resource( )->GetGPUVirtualAddress( );
     buildDesc.Inputs.Flags                                       = dx12TopLevelAS->Flags( );
     buildDesc.Inputs.NumDescs                                    = dx12TopLevelAS->NumInstances( );
     buildDesc.Inputs.InstanceDescs                               = dx12TopLevelAS->InstanceBuffer( )->Resource( )->GetGPUVirtualAddress( );
@@ -436,22 +443,16 @@ void DX12CommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBot
 
 void DX12CommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
-    if ( m_viewport.Width == 0 || m_viewport.Height == 0 )
-    {
-        LOG( ERROR ) << "Please call  must be set before calling DispatchRays";
-        return;
-    }
-
     const DX12ShaderBindingTable *sbt  = dynamic_cast<DX12ShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
     D3D12_DISPATCH_RAYS_DESC      desc = { };
-    desc.RayGenerationShaderRecord     = sbt->RayGenerationShaderRange( );
+    desc.RayGenerationShaderRecord     = sbt->RayGenerationShaderRecord( );
     desc.MissShaderTable               = sbt->MissShaderRange( );
     desc.HitGroupTable                 = sbt->HitGroupShaderRange( );
 
-    desc.Width  = m_viewport.Width;
-    desc.Height = m_viewport.Height;
-    desc.Depth  = 1;
-    m_commandList->DispatchRays( nullptr );
+    desc.Width  = dispatchRaysDesc.Width;
+    desc.Height = dispatchRaysDesc.Height;
+    desc.Depth  = dispatchRaysDesc.Depth;
+    m_commandList->DispatchRays( &desc );
 }
 
 void DX12CommandList::CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const
@@ -570,6 +571,7 @@ void DX12CommandList::SetRootSignature( ID3D12RootSignature *rootSignature )
         m_commandList->SetGraphicsRootSignature( rootSignature );
         break;
     case QueueType::Compute:
+    case QueueType::RayTracing:
         m_commandList->SetComputeRootSignature( rootSignature );
         break;
     default:

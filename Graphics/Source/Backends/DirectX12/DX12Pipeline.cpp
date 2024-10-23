@@ -118,13 +118,16 @@ void DX12Pipeline::CreateRayTracingPipeline( )
         LOG( ERROR ) << "Root signature is not initialized";
     }
 
+    std::string  hitGroupExportName = m_desc.RayTracing.HitGroupExportName.Get( );
+    std::wstring wsHitGroupExportName( hitGroupExportName.begin( ), hitGroupExportName.end( ) );
+
+    D3D12_HIT_GROUP_DESC hitGroupDesc = { };
+    hitGroupDesc.HitGroupExport       = wsHitGroupExportName.c_str( );
+    hitGroupDesc.Type                 = D3D12_HIT_GROUP_TYPE_TRIANGLES;
+
     D3D12_STATE_OBJECT_DESC stateObjectDesc = { };
     stateObjectDesc.Type                    = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
     std::vector<D3D12_STATE_SUBOBJECT> subObjects;
-
-    D3D12_HIT_GROUP_DESC hitGroupDesc = { };
-    hitGroupDesc.HitGroupExport       = L"HitGroup";
-    hitGroupDesc.Type                 = D3D12_HIT_GROUP_TYPE_TRIANGLES;
 
     std::vector<D3D12_DXIL_LIBRARY_DESC> dxilLibs;
     std::unordered_set<std::string>      visitedShaders;

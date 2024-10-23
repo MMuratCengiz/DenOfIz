@@ -366,7 +366,7 @@ namespace DenOfIz
         {
             if ( index >= m_size )
             {
-                LOG( ERROR ) << "Index out of bounds." << index << " >= " << m_size;
+                LOG( FATAL ) << "Index out of bounds." << index << " >= " << m_size;
             }
         }
     };

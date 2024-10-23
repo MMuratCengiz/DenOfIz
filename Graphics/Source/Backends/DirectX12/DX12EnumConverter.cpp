@@ -49,6 +49,7 @@ D3D12_COMMAND_LIST_TYPE DX12EnumConverter::ConvertQueueType( const QueueType que
     case QueueType::Graphics:
         return D3D12_COMMAND_LIST_TYPE_DIRECT;
     case QueueType::Compute:
+    case QueueType::RayTracing:
         return D3D12_COMMAND_LIST_TYPE_COMPUTE;
     case QueueType::Copy:
         return D3D12_COMMAND_LIST_TYPE_COPY;

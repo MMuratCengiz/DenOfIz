@@ -49,8 +49,10 @@ namespace DenOfIz
         void                           Build( ) override;
         [[nodiscard]] IBufferResource *Buffer( ) const override;
 
-        [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS_RANGE            RayGenerationShaderRange( ) const;
+        [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS_RANGE            RayGenerationShaderRecord( ) const;
         [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE HitGroupShaderRange( ) const;
         [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE MissShaderRange( ) const;
+    private:
+        bool BindHitGroupRecursive( const HitGroupBindingDesc &desc );
     };
 } // namespace DenOfIz

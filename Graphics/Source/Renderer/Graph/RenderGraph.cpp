@@ -57,13 +57,41 @@ RenderGraph::RenderGraph( const RenderGraphDesc &desc ) : m_presentNode( { } ), 
         m_frameFences[ i ] = std::unique_ptr<IFence>( desc.LogicalDevice->CreateFence( ) );
     }
 
+    m_queueCommandListPools.emplace( QueueType::Graphics, 3 );
+    m_queueCommandListPools.emplace( QueueType::RayTracing, 3 );
+    m_queueCommandListPools.emplace( QueueType::Compute, 3 );
+    m_queueCommandListPools.emplace( QueueType::Copy, 3 );
+
     CommandListPoolDesc poolDesc{ };
-    poolDesc.NumCommandLists = m_desc.NumCommandLists;
-    m_commandListPools.clear( );
-    for ( int i = 0; i < m_desc.NumFrames; ++i )
+    for ( auto &pool : m_queueCommandListPools )
     {
-        m_commandListPools.push_back( std::unique_ptr<ICommandListPool>( m_desc.LogicalDevice->CreateCommandListPool( poolDesc ) ) );
-        m_presentContexts[ i ].PresentCommandList = m_commandListPools[ i ]->GetCommandLists( ).GetElement( 0 );
+        switch ( pool.first )
+        {
+        case QueueType::Graphics:
+            poolDesc.QueueType       = QueueType::Graphics;
+            poolDesc.NumCommandLists = m_desc.NumGraphicsCommandLists;
+            break;
+        case QueueType::RayTracing:
+            poolDesc.QueueType       = QueueType::RayTracing;
+            poolDesc.NumCommandLists = m_desc.NumRayTracingCommandLists;
+            break;
+        case QueueType::Compute:
+            poolDesc.QueueType       = QueueType::Compute;
+            poolDesc.NumCommandLists = m_desc.NumComputeCommandLists;
+            break;
+        case QueueType::Copy:
+            poolDesc.QueueType       = QueueType::Copy;
+            poolDesc.NumCommandLists = m_desc.NumCopyCommandLists;
+            break;
+        }
+        for ( int i = 0; i < m_desc.NumFrames; ++i )
+        {
+            pool.second[ i ] = std::unique_ptr<ICommandListPool>( m_desc.LogicalDevice->CreateCommandListPool( poolDesc ) );
+            if ( pool.first == QueueType::Graphics )
+            {
+                m_presentContexts[ i ].PresentCommandList = pool.second[ i ]->GetCommandLists( ).GetElement( 0 );
+            }
+        }
     }
 
     Reset( );
@@ -81,6 +109,16 @@ void RenderGraph::Reset( )
     m_frameTaskflows.clear( );
     m_nodeDescriptions.clear( );
     m_hasPresentNode = false;
+
+    m_remainingCommandLists[ QueueType::Graphics ]   = m_desc.NumGraphicsCommandLists;
+    m_remainingCommandLists[ QueueType::RayTracing ] = m_desc.NumRayTracingCommandLists;
+    m_remainingCommandLists[ QueueType::Compute ]    = m_desc.NumComputeCommandLists;
+    m_remainingCommandLists[ QueueType::Copy ]       = m_desc.NumCopyCommandLists;
+
+    m_commandListIndexAtQueue[ QueueType::Graphics ]   = 0;
+    m_commandListIndexAtQueue[ QueueType::RayTracing ] = 0;
+    m_commandListIndexAtQueue[ QueueType::Compute ]    = 0;
+    m_commandListIndexAtQueue[ QueueType::Copy ]       = 0;
 }
 
 void RenderGraph::AddNode( const NodeDesc &desc )
@@ -138,13 +176,25 @@ void RenderGraph::InitAllNodes( )
 {
     for ( auto &node : m_nodeDescriptions )
     {
-        auto graphNode   = std::make_unique<GraphNode>( );
-        graphNode->Index = m_nodes.size( );
+        auto graphNode              = std::make_unique<GraphNode>( );
+        graphNode->CommandListIndex = m_nodes.size( );
+
+        uint32_t &remaining        = m_remainingCommandLists[ node.QueueType ];
+        uint32_t &commandListIndex = m_commandListIndexAtQueue[ node.QueueType ];
+
+        if ( --remaining < 0 )
+        {
+            LOG( FATAL ) << "Not enough command lists for the queue type " << (uint32_t)node.QueueType << ", add more via `RenderGraphDesc`.";
+        }
+
+        CommandListPoolList &poolList = m_queueCommandListPools[ node.QueueType ];
+        // First command list is reserved for present node
+        uint32_t presentPadding = node.QueueType == QueueType::Graphics ? 1 : 0;
 
         for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
         {
             auto newContext         = std::make_unique<NodeExecutionContext>( );
-            newContext->CommandList = m_commandListPools[ i ]->GetCommandLists( ).GetElement( graphNode->Index + 1 ); // +1 for the present node
+            newContext->CommandList = poolList[ i ]->GetCommandLists( ).GetElement( commandListIndex + presentPadding );
             newContext->Execute     = node.Execute;
             for ( int stateIndex = 0; stateIndex < node.RequiredStates.NumElements( ); stateIndex++ )
             {
@@ -157,6 +207,7 @@ void RenderGraph::InitAllNodes( )
             graphNode->Contexts.push_back( std::move( newContext ) );
         }
         m_nodes.push_back( std::move( graphNode ) );
+        ++commandListIndex;
     }
 }
 
@@ -292,7 +343,7 @@ void RenderGraph::BuildTaskflow( )
                 presentCommandList->PipelineBarrier( PipelineBarrierDesc::RenderTargetToPresent( swapChainRenderTarget ) );
 
                 ExecuteDesc presentExecuteDesc{ };
-                presentExecuteDesc.Notify                            = m_frameFences[ frame ].get( );
+                presentExecuteDesc.Notify = m_frameFences[ frame ].get( );
                 presentExecuteDesc.WaitOnSemaphores.AddElement( presentContext.ImageReadySemaphore.get( ) );
                 for ( auto &dependency : presentContext.PresentDependencySemaphores )
                 {
@@ -301,7 +352,7 @@ void RenderGraph::BuildTaskflow( )
                 presentExecuteDesc.NotifySemaphores.AddElement( presentContext.ImageRenderedSemaphore.get( ) );
                 presentCommandList->Execute( presentExecuteDesc );
 
-                InteropArray<ISemaphore*> presentSemaphores;
+                InteropArray<ISemaphore *> presentSemaphores;
                 presentSemaphores.AddElement( presentContext.ImageRenderedSemaphore.get( ) );
                 presentCommandList->Present( m_presentNode.SwapChain, image, presentSemaphores );
             } );

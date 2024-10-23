@@ -141,7 +141,7 @@ void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12
             desc.ViewDimension                            = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
             desc.Shader4ComponentMapping                  = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             desc.RaytracingAccelerationStructure.Location = m_allocation->GetResource( )->GetGPUVirtualAddress( );
-            m_context->D3DDevice->CreateShaderResourceView( m_resource.get( ), &desc, m_cpuHandle );
+            m_context->D3DDevice->CreateShaderResourceView( nullptr, &desc, m_cpuHandle );
         }
         break;
     }

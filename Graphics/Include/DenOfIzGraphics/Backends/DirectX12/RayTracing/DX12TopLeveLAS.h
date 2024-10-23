@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/ITopLevelAS.h>
 #include <DenOfIzGraphics/Backends/DirectX12/DX12BufferResource.h>
+#include <DenOfIzGraphics/Backends/Interface/RayTracing/ITopLevelAS.h>
 
 namespace DenOfIz
 {
@@ -40,7 +40,8 @@ namespace DenOfIz
         [[nodiscard]] D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Flags( ) const;
         [[nodiscard]] const size_t                                        NumInstances( ) const;
         [[nodiscard]] const DX12BufferResource                           *InstanceBuffer( ) const;
-        [[nodiscard]] const DX12BufferResource                           *Buffer( ) const;
+        [[nodiscard]] const DX12BufferResource                           *DX12Buffer( ) const;
+        [[nodiscard]] IBufferResource                                    *Buffer( ) const override;
         [[nodiscard]] const DX12BufferResource                           *Scratch( ) const;
         void                                                              Update( const TopLevelASDesc &desc ) override;
     };

@@ -86,7 +86,7 @@ DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASD
     scratchBufferDesc.HeapType     = HeapType::GPU;
     scratchBufferDesc.NumBytes     = (UINT)info.ScratchDataSizeInBytes;
     scratchBufferDesc.Descriptor   = BitSet<ResourceDescriptor>( ResourceDescriptor::RWBuffer );
-    scratchBufferDesc.InitialState = ResourceState::AccelerationStructureWrite;
+    scratchBufferDesc.InitialState = ResourceState::UnorderedAccess;
     m_scratch                      = std::make_unique<DX12BufferResource>( m_context, scratchBufferDesc );
 }
 

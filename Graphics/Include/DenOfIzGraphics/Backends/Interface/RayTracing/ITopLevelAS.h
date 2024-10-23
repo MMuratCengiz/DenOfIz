@@ -44,7 +44,8 @@ namespace DenOfIz
     class DZ_API ITopLevelAS
     {
     public:
-        virtual ~ITopLevelAS( )                           = default;
-        virtual void Update( const TopLevelASDesc &desc ) = 0;
+        virtual ~ITopLevelAS( )                                                     = default;
+        [[nodiscard]] virtual IBufferResource *Buffer( ) const                      = 0;
+        virtual void                           Update( const TopLevelASDesc &desc ) = 0;
     };
 } // namespace DenOfIz

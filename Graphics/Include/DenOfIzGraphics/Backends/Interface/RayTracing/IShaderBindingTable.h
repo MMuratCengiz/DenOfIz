@@ -26,12 +26,10 @@ namespace DenOfIz
 {
     struct DZ_API HitGroupBindingDesc
     {
-        int           InstanceIndex = -1; // -1 means all instances
-        int           GeometryIndex = -1; // -1 means all geometries
-        int           RayTypeIndex  = 0;
-        InteropString ClosestHitShaderName;
-        InteropString AnyHitShaderName;
-        InteropString IntersectionShaderName;
+        int           InstanceIndex      = -1; // -1 means all instances
+        int           GeometryIndex      = -1; // -1 means all geometries
+        int           RayTypeIndex       = 0;
+        InteropString HitGroupExportName = "HitGroup"; // Same as provided in the pipeline creation
     };
 
     struct DZ_API MissBindingDesc
@@ -49,8 +47,8 @@ namespace DenOfIz
     {
         uint32_t NumRayGenerationShaders = 1;
         uint32_t NumMissShaders          = 1;
-        uint32_t NumHitGroups            = 0;
-        uint32_t NumInstances            = 0;
+        uint32_t NumInstances            = 1;
+        uint32_t NumGeometries           = 1;
         uint32_t NumRayTypes             = 1;
     };
 
@@ -64,7 +62,7 @@ namespace DenOfIz
     {
     public:
         // TODO TBD if we want to keep this
-        virtual void                           Resize( const SBTSizeDesc                           &)          = 0;
+        virtual void                           Resize( const SBTSizeDesc                           &)                                   = 0;
         virtual void                           BindRayGenerationShader( const RayGenerationBindingDesc &desc ) = 0;
         virtual void                           BindHitGroup( const HitGroupBindingDesc &desc )                 = 0;
         virtual void                           BindMissShader( const MissBindingDesc &desc )                   = 0;
