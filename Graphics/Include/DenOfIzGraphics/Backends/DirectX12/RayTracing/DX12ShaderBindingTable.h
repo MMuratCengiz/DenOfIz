@@ -25,25 +25,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class DX12ShaderBindingTable : public IShaderBindingTable
+    class DX12ShaderBindingTable final : public IShaderBindingTable
     {
-    private:
-        DX12Context    *m_context;
-        ShaderTableDesc m_desc;
-        DX12Pipeline   *m_pipeline;
+        DX12Context           *m_context;
+        ShaderBindingTableDesc m_desc;
+        DX12Pipeline          *m_pipeline;
 
         uint32_t                            m_numBufferBytes = 0;
         std::unique_ptr<DX12BufferResource> m_buffer;
         std::unique_ptr<DX12BufferResource> m_stagingBuffer;
         void                               *m_mappedMemory = nullptr;
 
+        D3D12_GPU_VIRTUAL_ADDRESS_RANGE            m_rayGenerationShaderRange{};
+        D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE m_hitGroupShaderRange{};
+        D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE m_missShaderRange{};
+
     public:
-        DX12ShaderBindingTable( DX12Context *context, const ShaderTableDesc &desc );
-        void             Resize( const SBTSizeDesc &desc ) override;
-        void             BindRayGenerationShader( const RayGenerationBindingDesc &desc ) override;
-        void             BindHitGroup( const HitGroupBindingDesc &desc ) override;
-        void             BindMissShader( const MissBindingDesc &desc ) override;
-        void             Build( ) override;
-        IBufferResource *Buffer( ) const override;
+                                       DX12ShaderBindingTable( DX12Context *context, const ShaderBindingTableDesc &desc );
+        void                           Resize( const SBTSizeDesc &desc ) override;
+        void                           BindRayGenerationShader( const RayGenerationBindingDesc &desc ) override;
+        void                           BindHitGroup( const HitGroupBindingDesc &desc ) override;
+        void                           BindMissShader( const MissBindingDesc &desc ) override;
+        void                           Build( ) override;
+        [[nodiscard]] IBufferResource *Buffer( ) const override;
+
+        [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS_RANGE            RayGenerationShaderRange( ) const;
+        [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE HitGroupShaderRange( ) const;
+        [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE MissShaderRange( ) const;
     };
 } // namespace DenOfIz

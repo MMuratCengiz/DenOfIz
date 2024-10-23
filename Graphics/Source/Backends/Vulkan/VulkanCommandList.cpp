@@ -358,12 +358,17 @@ void VulkanCommandList::Draw( const uint32_t vertexCount, const uint32_t instanc
 void VulkanCommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )
 {
 
-};
+}
 
 void VulkanCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc )
 {
 
-};
+}
+
+void VulkanCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
+{
+
+}
 
 void VulkanCommandList::Dispatch( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
 {

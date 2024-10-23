@@ -30,8 +30,8 @@ namespace DenOfIz
     class RayTracedTriangleExample final : public IExample, public NodeExecutionCallback, public PresentExecutionCallback
     {
         Time                                           m_time;
-        std::unique_ptr<QuadPipeline>                  m_quadPipeline;
-        std::vector<std::unique_ptr<ITextureResource>> m_deferredRenderTargets;
+        std::unique_ptr<QuadPipeline>                  m_presentOutputPipeline;
+        std::vector<std::unique_ptr<ITextureResource>> m_raytracingOutput;
         std::unique_ptr<ISampler>                      m_defaultSampler;
         std::unique_ptr<IResourceBindGroup>            m_rootConstantBindGroup;
 
@@ -68,7 +68,8 @@ namespace DenOfIz
 
     private:
         void CreateRayTracingPipeline( );
-        void CreateGeometry( );
+        void CreateGeometry( ) const;
         void CreateAccelerationStructures( );
+        void CreateShaderBindingTable( );
     };
 } // namespace DenOfIz

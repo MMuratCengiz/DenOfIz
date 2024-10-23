@@ -48,8 +48,8 @@ namespace DenOfIz
         std::vector<ID3D12DescriptorHeap *> m_heaps = { m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetHeap( ), m_context->ShaderVisibleSamplerDescriptorHeap->GetHeap( ) };
 
     public:
-        DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> commandAllocator, const wil::com_ptr<ID3D12GraphicsCommandList> &m_commandList,
-                         CommandListDesc desc );
+         DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> commandAllocator, const wil::com_ptr<ID3D12GraphicsCommandList> &m_commandList,
+                          CommandListDesc desc );
         ~DX12CommandList( ) override = default;
 
         void Begin( ) override;
@@ -75,6 +75,7 @@ namespace DenOfIz
         // Ray tracing commands
         void BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc ) override;
         void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc ) override;
+        void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
 
     private:
         void CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const;

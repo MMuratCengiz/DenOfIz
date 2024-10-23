@@ -643,7 +643,7 @@ IBottomLevelAS *VulkanLogicalDevice::CreateBottomLevelAS( const BottomLevelASDes
     return nullptr;
 }
 
-IShaderBindingTable *VulkanLogicalDevice::CreateShaderTable( const ShaderTableDesc &desc )
+IShaderBindingTable *VulkanLogicalDevice::CreateShaderBindingTable( const ShaderBindingTableDesc &desc )
 {
     return nullptr;
 }

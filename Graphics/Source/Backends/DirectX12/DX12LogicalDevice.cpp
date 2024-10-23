@@ -334,7 +334,7 @@ IBottomLevelAS *DX12LogicalDevice::CreateBottomLevelAS( const BottomLevelASDesc 
     return new DX12BottomLevelAS( m_context.get( ), bottomLevelAsDesc );
 }
 
-IShaderBindingTable *DX12LogicalDevice::CreateShaderTable( const ShaderTableDesc &sbtDesc )
+IShaderBindingTable *DX12LogicalDevice::CreateShaderBindingTable( const ShaderBindingTableDesc &sbtDesc )
 {
     return new DX12ShaderBindingTable( m_context.get( ), sbtDesc );
 }

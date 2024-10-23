@@ -61,6 +61,7 @@ namespace DenOfIz
         void CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBufferDesc ) override;
         void BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )            override;
         void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc )   override;
+        void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
         void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
         void Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> & waitOnLocks ) override;
     };

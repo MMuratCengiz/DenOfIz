@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12CommandList.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLevelAS.h>
 #include <utility>
 
@@ -397,7 +398,7 @@ void DX12CommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTe
     m_commandList->CopyTextureRegion( &dst, copyTextureToBuffer.DstOffset, 0, 0, &src, nullptr );
 }
 
-void DX12CommandList::BuildTopLevelAS( const DenOfIz::BuildTopLevelASDesc &buildTopLevelASDesc )
+void DX12CommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )
 {
     const auto dx12TopLevelAS = dynamic_cast<DX12TopLevelAS *>( buildTopLevelASDesc.TopLevelAS );
     DZ_NOT_NULL( dx12TopLevelAS );
@@ -419,7 +420,7 @@ void DX12CommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBot
     const auto dx12BottomLevelAS = dynamic_cast<DX12BottomLevelAS *>( buildBottomLevelASDesc.BottomLevelAS );
     DZ_NOT_NULL( dx12BottomLevelAS );
 
-    DX12BufferResource                                *dx12blasBuffer = dynamic_cast<DX12BufferResource *>( dx12BottomLevelAS->Buffer( ) );
+    const auto                                        *dx12blasBuffer = dynamic_cast<DX12BufferResource *>( dx12BottomLevelAS->Buffer( ) );
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc      = { };
     buildDesc.Inputs.DescsLayout                                      = D3D12_ELEMENTS_LAYOUT_ARRAY;
     buildDesc.Inputs.Type                                             = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
@@ -431,6 +432,26 @@ void DX12CommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBot
     buildDesc.ScratchAccelerationStructureData                        = dx12BottomLevelAS->Scratch( )->Resource( )->GetGPUVirtualAddress( );
 
     m_commandList->BuildRaytracingAccelerationStructure( &buildDesc, 0, nullptr );
+}
+
+void DX12CommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
+{
+    if ( m_viewport.Width == 0 || m_viewport.Height == 0 )
+    {
+        LOG( ERROR ) << "Please call  must be set before calling DispatchRays";
+        return;
+    }
+
+    const DX12ShaderBindingTable *sbt  = dynamic_cast<DX12ShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
+    D3D12_DISPATCH_RAYS_DESC      desc = { };
+    desc.RayGenerationShaderRecord     = sbt->RayGenerationShaderRange( );
+    desc.MissShaderTable               = sbt->MissShaderRange( );
+    desc.HitGroupTable                 = sbt->HitGroupShaderRange( );
+
+    desc.Width  = m_viewport.Width;
+    desc.Height = m_viewport.Height;
+    desc.Depth  = 1;
+    m_commandList->DispatchRays( nullptr );
 }
 
 void DX12CommandList::CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const

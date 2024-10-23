@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ITextureResource.h"
 #include "PipelineBarrierDesc.h"
 #include "RayTracing/IBottomLevelAS.h"
+#include "RayTracing/IShaderBindingTable.h"
 #include "RayTracing/ITopLevelAS.h"
 
 namespace DenOfIz
@@ -136,6 +137,7 @@ namespace DenOfIz
 
     struct DZ_API DispatchRaysDesc
     {
+        IShaderBindingTable *ShaderBindingTable = nullptr;
     };
 
     struct DZ_API ExecuteDesc
@@ -188,6 +190,7 @@ namespace DenOfIz
         // --
         virtual void BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )            = 0;
         virtual void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc )   = 0;
+        virtual void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )                     = 0;
         virtual void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) = 0;
     };
     template class DZ_API InteropArray<ICommandList *>;

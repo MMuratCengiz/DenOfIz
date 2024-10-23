@@ -54,7 +54,7 @@ namespace DenOfIz
         uint32_t NumRayTypes             = 1;
     };
 
-    struct DZ_API ShaderTableDesc
+    struct DZ_API ShaderBindingTableDesc
     {
         IPipeline  *Pipeline = nullptr;
         SBTSizeDesc SizeDesc;
@@ -64,12 +64,12 @@ namespace DenOfIz
     {
     public:
         // TODO TBD if we want to keep this
-        virtual void             Resize( const SBTSizeDesc             &)                                   = 0;
-        virtual void             BindRayGenerationShader( const RayGenerationBindingDesc &desc ) = 0;
-        virtual void             BindHitGroup( const HitGroupBindingDesc &desc )                 = 0;
-        virtual void             BindMissShader( const MissBindingDesc &desc )                   = 0;
-        virtual void             Build( )                                                        = 0;
-        virtual IBufferResource *Buffer( ) const                                                 = 0;
+        virtual void                           Resize( const SBTSizeDesc                           &)          = 0;
+        virtual void                           BindRayGenerationShader( const RayGenerationBindingDesc &desc ) = 0;
+        virtual void                           BindHitGroup( const HitGroupBindingDesc &desc )                 = 0;
+        virtual void                           BindMissShader( const MissBindingDesc &desc )                   = 0;
+        virtual void                           Build( )                                                        = 0;
+        [[nodiscard]] virtual IBufferResource *Buffer( ) const                                                 = 0;
         //.. omw
         virtual ~IShaderBindingTable( ) = default;
     };

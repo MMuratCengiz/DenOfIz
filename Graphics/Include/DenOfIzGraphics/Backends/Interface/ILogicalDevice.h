@@ -65,7 +65,7 @@ namespace DenOfIz
         // RayTracing:
         virtual ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &desc )       = 0;
         virtual IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &desc ) = 0;
-        virtual IShaderBindingTable *CreateShaderTable( const ShaderTableDesc &desc )     = 0;
+        virtual IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &desc )     = 0;
     };
 
 } // namespace DenOfIz
