@@ -63,7 +63,7 @@ namespace DenOfIz
         // RayTracing:
         ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &createDesc ) override;
         IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &createDesc ) override;
-        IShaderBindingTable *CreateShaderTable( const ShaderTableDesc &createDesc ) override;
+        IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &createDesc ) override;
 
         void WaitIdle( ) override;
         // --

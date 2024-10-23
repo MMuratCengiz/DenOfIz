@@ -72,7 +72,7 @@ namespace DenOfIz
         ISampler            *CreateSampler( const SamplerDesc &desc ) override;
         ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &desc ) override;
         IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &desc ) override;
-        IShaderBindingTable *CreateShaderTable( const ShaderTableDesc &desc ) override;
+        IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &desc ) override;
 
         ~VulkanLogicalDevice( ) override;
 
