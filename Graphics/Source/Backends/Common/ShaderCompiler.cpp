@@ -57,7 +57,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
         return nullptr;
     }
 
-    if ( !compileDesc.EnableCaching )
+    if ( compileDesc.EnableCaching )
     {
         auto cachedBlob = LoadCachedShader( CachedShaderFile( compileDesc.Path.Get( ), compileDesc.TargetIL ) );
         if ( cachedBlob )

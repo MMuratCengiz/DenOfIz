@@ -279,10 +279,8 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
     m_bottomLevelAS              = std::unique_ptr<IBottomLevelAS>( m_logicalDevice->CreateBottomLevelAS( bottomLevelASDesc ) );
 
     ASInstanceDesc instanceDesc{ };
-    instanceDesc.BLASBuffer                  = m_bottomLevelAS->Buffer( );
-    instanceDesc.ID                          = 1;
-    instanceDesc.Mask                        = 1;
-    instanceDesc.ContributionToHitGroupIndex = 0;
+    instanceDesc.BLASBuffer = m_bottomLevelAS->Buffer( );
+    instanceDesc.Mask       = 1;
 
     constexpr float transform[ 3 ][ 4 ] = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } };
     instanceDesc.Transform.MemCpy( transform, sizeof( transform ) );
