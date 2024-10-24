@@ -90,7 +90,7 @@ ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
     return logicalDevice;
 }
 
-ShaderProgram *GraphicsApi::CreateShaderProgram( const InteropArray<ShaderDesc> &shaders ) const
+ShaderProgram *GraphicsApi::CreateShaderProgram( const InteropArray<ShaderDesc> &shaders, bool enableCaching ) const
 {
     ShaderProgramDesc programDesc{ };
     programDesc.Shaders = shaders;
@@ -111,6 +111,7 @@ ShaderProgram *GraphicsApi::CreateShaderProgram( const InteropArray<ShaderDesc> 
     {
         LOG( ERROR ) << "No supported API found for this system.";
     }
+    programDesc.EnableCaching = enableCaching;
     return new ShaderProgram( programDesc );
 }
 

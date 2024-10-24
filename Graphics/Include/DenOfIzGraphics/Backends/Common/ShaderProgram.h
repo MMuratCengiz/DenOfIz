@@ -44,6 +44,7 @@ namespace DenOfIz
     {
         TargetIL                 TargetIL;
         InteropArray<ShaderDesc> Shaders;
+        bool                     EnableCaching = true;
     };
     template class DZ_API InteropArray<ShaderDesc>;
 
@@ -66,13 +67,13 @@ namespace DenOfIz
     // State data for reflection processing during `ShaderProgram::Reflect( );`
     struct ReflectionState
     {
-        RootSignatureDesc                        *RootSignatureDesc;
-        InputLayoutDesc                          *InputLayoutDesc;
-        CompiledShader                           *CompiledShader;
-        ID3D12ShaderReflection                   *ShaderReflection;
-        ID3D12LibraryReflection                  *LibraryReflection;
-        ID3D12FunctionReflection                 *FunctionReflection;
-        std::unordered_set<std::string>           ProcessedFiles;
+        RootSignatureDesc              *RootSignatureDesc;
+        InputLayoutDesc                *InputLayoutDesc;
+        CompiledShader                 *CompiledShader;
+        ID3D12ShaderReflection         *ShaderReflection;
+        ID3D12LibraryReflection        *LibraryReflection;
+        ID3D12FunctionReflection       *FunctionReflection;
+        std::unordered_set<std::string> ProcessedFiles;
         // For metal:
         std::vector<uint32_t> *DescriptorTableLocations;
     };

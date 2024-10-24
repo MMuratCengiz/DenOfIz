@@ -20,7 +20,7 @@ namespace DenOfIz
         ShaderStage                 Stage;
         TargetIL                    TargetIL;
         InteropArray<InteropString> Defines;
-        bool                        OverwriteCache = false;
+        bool                        EnableCaching = false;
     };
 
     class DZ_API ShaderCompiler final

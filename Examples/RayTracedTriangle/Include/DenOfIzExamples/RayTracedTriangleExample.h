@@ -78,8 +78,8 @@ namespace DenOfIz
         {
             auto windowDesc   = DenOfIz::WindowDesc( );
             windowDesc.Title  = "RayTracedTriangleExample";
-            windowDesc.Width  = 1920;
-            windowDesc.Height = 1080;
+            windowDesc.Width  = 1280;
+            windowDesc.Height = 720;
             return windowDesc;
         }
 

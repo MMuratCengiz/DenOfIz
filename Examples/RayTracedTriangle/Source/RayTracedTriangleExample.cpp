@@ -41,6 +41,9 @@ void RayTracedTriangleExample::Init( )
     raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_raytracingOutput[ 0 ].get( ), ResourceState::UnorderedAccess ) );
     raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_raytracingOutput[ 1 ].get( ), ResourceState::UnorderedAccess ) );
     raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceState::UnorderedAccess ) );
+    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::BufferState( 0, m_rayGenCBResource.get( ), ResourceState::VertexAndConstantBuffer ) );
+    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::BufferState( 1, m_rayGenCBResource.get( ), ResourceState::VertexAndConstantBuffer ) );
+    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::BufferState( 2, m_rayGenCBResource.get( ), ResourceState::VertexAndConstantBuffer ) );
     raytracingNode.Execute = this;
 
     NodeDesc copyToRenderTargetNode{ };
@@ -162,7 +165,7 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     missShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
     missShaderDesc.EntryPoint = "MyMissShader";
     shaderDescs.AddElement( missShaderDesc );
-    m_rayTracingProgram       = std::unique_ptr<ShaderProgram>( m_graphicsApi->CreateShaderProgram( shaderDescs ) );
+    m_rayTracingProgram       = std::unique_ptr<ShaderProgram>( m_graphicsApi->CreateShaderProgram( shaderDescs, false ) );
     auto reflection           = m_rayTracingProgram->Reflect( );
     m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
 
@@ -201,19 +204,25 @@ void RayTracedTriangleExample::CreateResources( )
     constexpr Vertex vertices[] = { { 0, -offset, depthValue }, { -offset, offset, depthValue }, { offset, offset, depthValue } };
 
     BufferDesc vbDesc{ };
-    vbDesc.Descriptor = ResourceDescriptor::VertexBuffer;
-    vbDesc.NumBytes   = sizeof( vertices );
-    m_vertexBuffer    = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vbDesc ) );
+    vbDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
+    vbDesc.NumBytes     = sizeof( vertices );
+    vbDesc.InitialState = ResourceState::CopyDst;
+    vbDesc.DebugName    = "VertexBuffer";
+    m_vertexBuffer      = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vbDesc ) );
 
     BufferDesc ibDesc{ };
-    ibDesc.Descriptor = ResourceDescriptor::IndexBuffer;
-    ibDesc.NumBytes   = sizeof( indices );
-    m_indexBuffer     = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( ibDesc ) );
+    ibDesc.Descriptor   = ResourceDescriptor::IndexBuffer;
+    ibDesc.NumBytes     = sizeof( indices );
+    ibDesc.InitialState = ResourceState::CopyDst;
+    ibDesc.DebugName    = "IndexBuffer";
+    m_indexBuffer       = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( ibDesc ) );
 
     BufferDesc rayGenCbDesc{ };
-    rayGenCbDesc.Descriptor = ResourceDescriptor::UniformBuffer;
-    rayGenCbDesc.NumBytes   = sizeof( m_rayGenCB );
-    m_rayGenCBResource      = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( rayGenCbDesc ) );
+    rayGenCbDesc.Descriptor   = ResourceDescriptor::UniformBuffer;
+    rayGenCbDesc.NumBytes     = sizeof( m_rayGenCB );
+    rayGenCbDesc.InitialState = ResourceState::CopyDst;
+    rayGenCbDesc.DebugName    = "RayGenCB";
+    m_rayGenCBResource        = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( rayGenCbDesc ) );
 
     InteropArray<Byte> vertexArray( sizeof( vertices ) );
     vertexArray.MemCpy( vertices, sizeof( vertices ) );

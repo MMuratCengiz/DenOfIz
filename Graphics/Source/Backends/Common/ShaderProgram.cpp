@@ -57,13 +57,14 @@ void ShaderProgram::Compile( )
 
     for ( int i = 0; i < m_desc.Shaders.NumElements( ); ++i )
     {
-        const auto &shader      = m_desc.Shaders.GetElement( i );
-        CompileDesc compileDesc = { };
-        compileDesc.Path        = shader.Path;
-        compileDesc.Defines     = shader.Defines;
-        compileDesc.EntryPoint  = shader.EntryPoint;
-        compileDesc.Stage       = shader.Stage;
-        compileDesc.TargetIL    = m_desc.TargetIL;
+        const auto &shader        = m_desc.Shaders.GetElement( i );
+        CompileDesc compileDesc   = { };
+        compileDesc.Path          = shader.Path;
+        compileDesc.Defines       = shader.Defines;
+        compileDesc.EntryPoint    = shader.EntryPoint;
+        compileDesc.Stage         = shader.Stage;
+        compileDesc.TargetIL      = m_desc.TargetIL;
+        compileDesc.EnableCaching = m_desc.EnableCaching;
 
         m_compiledShaders.push_back( compiler.CompileHLSL( compileDesc ) );
     }
