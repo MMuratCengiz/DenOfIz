@@ -25,11 +25,11 @@ namespace DenOfIz
 {
     struct DZ_API ASInstanceDesc
     {
-        IBufferResource    *Buffer;
+        IBufferResource    *BLASBuffer;
         InteropArray<float> Transform; // TODO: InteropArray so it can be used in other languages interop, find a way to force size
         uint32_t            ContributionToHitGroupIndex;
         uint32_t            ID;
-        uint32_t            Mask;
+        uint32_t            Mask = 1;
         uint32_t            Flags;
     };
     template class DZ_API InteropArray<ASInstanceDesc>;

@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Interop.h>
+#include <DenOfIzGraphics/Backends/GraphicsApi.h>
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
 #include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
-#include <DenOfIzGraphics/Backends/GraphicsApi.h>
+#include <DenOfIzGraphics/Utilities/Interop.h>
 
 namespace DenOfIz
 {
@@ -50,13 +50,28 @@ namespace DenOfIz
     };
     template class DZ_API InteropArray<NodeResourceUsageDesc>;
 
-
     // Interop friendly callback
     class DZ_API NodeExecutionCallback
     {
     public:
         virtual ~NodeExecutionCallback( ) {};
         virtual void Execute( uint32_t frameIndex, ICommandList *commandList ) {};
+    };
+
+    // Intentionally not DZ_API as this does not translate well interop
+    class NodeExecutionCallbackHolder : public NodeExecutionCallback
+    {
+    private:
+        std::function<void( uint32_t, ICommandList * )> m_callback;
+
+    public:
+        NodeExecutionCallbackHolder( std::function<void( uint32_t, ICommandList * )> callback ) : m_callback( callback )
+        {
+        }
+        void Execute( uint32_t frameIndex, ICommandList *commandList ) override
+        {
+            m_callback( frameIndex, commandList );
+        }
     };
 
     struct DZ_API NodeDesc
@@ -82,4 +97,4 @@ namespace DenOfIz
         ISwapChain                         *SwapChain;
         PresentExecutionCallback           *Execute;
     };
-}
+} // namespace DenOfIz

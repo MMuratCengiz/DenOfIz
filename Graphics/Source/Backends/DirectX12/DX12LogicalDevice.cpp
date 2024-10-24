@@ -38,7 +38,7 @@ DX12LogicalDevice::~DX12LogicalDevice( )
 void DX12LogicalDevice::CreateDevice( )
 {
     DWORD dxgiFactoryFlags = 0;
-#ifndef NDEBUG
+#if not defined(NDEBUG) && not defined (NSIGHT_ENABLE)
     {
         wil::com_ptr<ID3D12Debug> debugController;
         if ( SUCCEEDED( D3D12GetDebugInterface( IID_PPV_ARGS( debugController.put( ) ) ) ) )
@@ -155,7 +155,7 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
         throw std::exception( "Requires Shader Model 6.3 or better support" );
     }
 
-#ifndef NDEBUG
+#if not defined(NDEBUG) && not defined (NSIGHT_ENABLE)
     // Configure debug device (if active).
     if ( wil::com_ptr<ID3D12InfoQueue1> d3dInfoQueue = m_context->D3DDevice.query<ID3D12InfoQueue1>( ) )
     {
@@ -215,12 +215,15 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     queueDesc.Flags                    = D3D12_COMMAND_QUEUE_FLAG_NONE;
     queueDesc.Type                     = D3D12_COMMAND_LIST_TYPE_DIRECT;
     DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandQueue( &queueDesc, IID_PPV_ARGS( m_context->GraphicsCommandQueue.put( ) ) ) );
+    m_context->GraphicsCommandQueue->SetName( L"Graphics Command Queue" );
 
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
     DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandQueue( &queueDesc, IID_PPV_ARGS( m_context->ComputeCommandQueue.put( ) ) ) );
+    m_context->ComputeCommandQueue->SetName( L"Compute Command Queue" );
 
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
     DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandQueue( &queueDesc, IID_PPV_ARGS( m_context->CopyCommandQueue.put( ) ) ) );
+    m_context->CopyCommandQueue->SetName( L"Copy Command Queue" );
 
     for ( int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; i++ )
     {

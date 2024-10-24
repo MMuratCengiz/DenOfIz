@@ -44,11 +44,9 @@ namespace DenOfIz
     class RayTracedTriangleExample final : public IExample, public NodeExecutionCallback, public PresentExecutionCallback
     {
         Time                                             m_time;
-        std::unique_ptr<QuadPipeline>                    m_presentOutputPipeline;
         std::array<std::unique_ptr<ITextureResource>, 3> m_raytracingOutput;
-        std::unique_ptr<ISampler>                        m_defaultSampler;
         std::unique_ptr<IResourceBindGroup>              m_rootConstantBindGroup;
-
+        std::unique_ptr<NodeExecutionCallbackHolder>     m_copyToPresentCallback;
         // Raytracing:
         RayGenConstantBuffer                               m_rayGenCB;
         std::unique_ptr<IBufferResource>                   m_rayGenCBResource;
@@ -78,12 +76,15 @@ namespace DenOfIz
         void              Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget ) override;
         struct WindowDesc WindowDesc( ) override
         {
-            auto windowDesc  = DenOfIz::WindowDesc( );
-            windowDesc.Title = "RayTracedTriangleExample";
+            auto windowDesc   = DenOfIz::WindowDesc( );
+            windowDesc.Title  = "RayTracedTriangleExample";
+            windowDesc.Width  = 1920;
+            windowDesc.Height = 1080;
             return windowDesc;
         }
 
     private:
+        void CreateRenderTargets( );
         void CreateRayTracingPipeline( );
         void CreateResources( );
         void CreateAccelerationStructures( );

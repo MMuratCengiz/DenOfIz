@@ -28,14 +28,17 @@ DX12ShaderBindingTable::DX12ShaderBindingTable( DX12Context *context, const Shad
 
 void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
-    uint32_t totalNumEntries = desc.NumRayGenerationShaders + desc.NumMissShaders + ( desc.NumInstances * desc.NumGeometries * desc.NumRayTypes );
-    m_numBufferBytes         = totalNumEntries * D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
+    uint32_t rayGenerationShaderNumBytes = AlignRecord( desc.NumRayGenerationShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+    uint32_t hitGroupNumBytes            = AlignRecord( desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+    uint32_t missShaderNumBytes          = AlignRecord( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES * desc.NumMissShaders );
+    m_numBufferBytes         = rayGenerationShaderNumBytes + hitGroupNumBytes + missShaderNumBytes;
 
     BufferDesc bufferDesc   = { };
     bufferDesc.NumBytes     = m_numBufferBytes;
     bufferDesc.HeapType     = HeapType::GPU_CPU;
     bufferDesc.InitialState = ResourceState::CopySrc;
     bufferDesc.Descriptor   = ResourceDescriptor::Buffer;
+    bufferDesc.DebugName    = "Shader Binding Table Staging Buffer";
 
     m_stagingBuffer = std::make_unique<DX12BufferResource>( m_context, bufferDesc );
     m_mappedMemory  = m_stagingBuffer->MapMemory( );
@@ -47,16 +50,27 @@ void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
 
     bufferDesc.HeapType     = HeapType::GPU;
     bufferDesc.InitialState = ResourceState::CopyDst;
+    bufferDesc.DebugName    = "Shader Binding Table Buffer";
     m_buffer                = std::make_unique<DX12BufferResource>( m_context, bufferDesc );
+
+    m_rayGenerationShaderRange.StartAddress = m_buffer->Resource( )->GetGPUVirtualAddress( );
+    m_rayGenerationShaderRange.SizeInBytes  = rayGenerationShaderNumBytes;;
+    m_hitGroupOffset                        = m_rayGenerationShaderRange.SizeInBytes;
+
+    m_hitGroupShaderRange.StartAddress  = m_buffer->Resource( )->GetGPUVirtualAddress( ) + m_hitGroupOffset;
+    m_hitGroupShaderRange.SizeInBytes   = hitGroupNumBytes;
+    m_hitGroupShaderRange.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+
+    m_missGroupOffset               = m_hitGroupOffset + hitGroupNumBytes;
+    m_missShaderRange.StartAddress  = AlignRecord( m_buffer->Resource( )->GetGPUVirtualAddress( ) + m_missGroupOffset );
+    m_missShaderRange.SizeInBytes   = missShaderNumBytes;
+    m_missShaderRange.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 }
 
 void DX12ShaderBindingTable::BindRayGenerationShader( const RayGenerationBindingDesc &desc )
 {
     const void *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
     memcpy( m_mappedMemory, shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
-
-    m_rayGenerationShaderRange.StartAddress = Utilities::Align( m_buffer->Resource( )->GetGPUVirtualAddress( ), D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT );
-    m_rayGenerationShaderRange.SizeInBytes  = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
 }
 
 void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
@@ -70,7 +84,7 @@ void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     const uint32_t geometryOffset = desc.GeometryIndex * m_desc.SizeDesc.NumRayTypes;
     const uint32_t rayTypeOffset  = desc.RayTypeIndex;
 
-    const uint32_t offset        = ( instanceOffset + geometryOffset + rayTypeOffset ) * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    const uint32_t offset        = m_hitGroupOffset + ( instanceOffset + geometryOffset + rayTypeOffset ) * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
     void          *hitGroupEntry = static_cast<Byte *>( m_mappedMemory ) + offset;
 
     const void *hitGroupIdentifier = m_pipeline->GetShaderIdentifier( desc.HitGroupExportName.Get( ) );
@@ -81,19 +95,16 @@ void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     }
 
     memcpy( hitGroupEntry, hitGroupIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
-
-    m_hitGroupShaderRange.StartAddress  = m_buffer->Resource( )->GetGPUVirtualAddress( ) +  + ( offset & ~( D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT - 1 ) );
-    m_hitGroupShaderRange.SizeInBytes   = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
-    m_hitGroupShaderRange.StrideInBytes = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
 }
 
 bool DX12ShaderBindingTable::BindHitGroupRecursive( const HitGroupBindingDesc &desc )
 {
     if ( desc.InstanceIndex == -1 )
     {
-        if ( desc.GeometryIndex == -1 || desc.RayTypeIndex == -1 )
+        if ( desc.GeometryIndex != -1 || desc.RayTypeIndex != -1 )
         {
-            LOG( ERROR ) << "InstanceIndex/GeometryIndex/RayTypeIndex work in a parent child relationship. If InstanceIndex == -1, then GeometryIndex/RayTypeIndex cannot be -1.";
+            LOG( ERROR )
+                << "InstanceIndex/GeometryIndex/RayTypeIndex work in a parent child relationship. If InstanceIndex == -1, then GeometryIndex/RayTypeIndex must also be -1.";
             return true;
         }
 
@@ -111,9 +122,9 @@ bool DX12ShaderBindingTable::BindHitGroupRecursive( const HitGroupBindingDesc &d
 
     if ( desc.GeometryIndex == -1 )
     {
-        if ( desc.RayTypeIndex == -1 )
+        if ( desc.RayTypeIndex != -1 )
         {
-            LOG( ERROR ) << "InstanceIndex/GeometryIndex/RayTypeIndex work in a parent child relationship. If GeometryIndex == -1, then RayTypeIndex cannot be -1.";
+            LOG( ERROR ) << "InstanceIndex/GeometryIndex/RayTypeIndex work in a parent child relationship. If GeometryIndex == -1, then RayTypeIndex must also be -1.";
             return true;
         }
 
@@ -144,16 +155,16 @@ bool DX12ShaderBindingTable::BindHitGroupRecursive( const HitGroupBindingDesc &d
 
 void DX12ShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 {
-    const uint32_t baseOffset       = m_desc.SizeDesc.NumRayGenerationShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-    const uint32_t offset           = baseOffset + desc.RayTypeIndex * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-    void          *missShaderEntry  = static_cast<Byte *>( m_mappedMemory ) + offset;
-    const void    *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
+    uint32_t    offset           = m_missGroupOffset + desc.RayTypeIndex * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    void       *missShaderEntry  = static_cast<Byte *>( m_mappedMemory ) + offset;
+    const void *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
 
     memcpy( missShaderEntry, shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+}
 
-    m_missShaderRange.StartAddress  = m_buffer->Resource( )->GetGPUVirtualAddress( ) + ( offset & ~( D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT - 1 ) );
-    m_missShaderRange.SizeInBytes   = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
-    m_missShaderRange.StrideInBytes = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
+uint32_t DX12ShaderBindingTable::AlignRecord( uint32_t size )
+{
+    return Utilities::Align( size, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT );
 }
 
 void DX12ShaderBindingTable::Build( )
@@ -169,7 +180,7 @@ void DX12ShaderBindingTable::Build( )
 
     const auto commandList = m_context->CopyCommandList;
     commandList->Reset( m_context->CopyCommandListAllocator.get( ), nullptr );
-    commandList->CopyBufferRegion( m_stagingBuffer->Resource( ), 0, m_buffer->Resource( ), 0, m_numBufferBytes );
+    commandList->CopyBufferRegion( m_buffer->Resource( ), 0, m_stagingBuffer->Resource( ), 0, m_numBufferBytes );
     commandList->Close( );
     m_context->CopyCommandQueue->ExecuteCommandLists( 1, CommandListCast( commandList.addressof( ) ) );
     m_context->CopyCommandQueue->Signal( copyFence.get( ), 1 );

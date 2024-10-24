@@ -189,7 +189,7 @@ DX12BufferResource::~DX12BufferResource( )
 {
     if ( m_mappedMemory != nullptr )
     {
-        LOG( WARNING ) << "Memory not unmapped before lifetime of the buffer.";
+        LOG( WARNING ) << "Memory for buffer: " << m_desc.DebugName.Get( ) << " not unmapped before lifetime of the buffer.";
         m_resource->Unmap( 0, nullptr );
         m_mappedMemory = nullptr;
     }

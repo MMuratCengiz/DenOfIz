@@ -23,24 +23,24 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
 {
     m_flags = DX12EnumConverter::ConvertAccelerationStructureBuildFlags( desc.BuildFlags );
 
-    std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDescs( desc.Instances.NumElements( ) );
+    m_instanceDescs.resize( desc.Instances.NumElements( ) );
     for ( uint32_t i = 0; i < desc.Instances.NumElements( ); ++i )
     {
         const ASInstanceDesc &instanceDesc       = desc.Instances.GetElement( i );
-        DX12BufferResource   *dx12InstanceBuffer = dynamic_cast<DX12BufferResource *>( instanceDesc.Buffer );
+        DX12BufferResource   *dx12InstanceBuffer = dynamic_cast<DX12BufferResource *>( instanceDesc.BLASBuffer );
         if ( dx12InstanceBuffer == nullptr )
         {
             LOG( WARNING ) << "Instance buffer is null.";
             continue;
         }
 
-        instanceDescs[ i ].AccelerationStructure               = dx12InstanceBuffer->Resource( )->GetGPUVirtualAddress( );
-        instanceDescs[ i ].Flags                               = D3D12_RAYTRACING_INSTANCE_FLAG_NONE; // todo
-        instanceDescs[ i ].InstanceContributionToHitGroupIndex = instanceDesc.ContributionToHitGroupIndex;
-        instanceDescs[ i ].InstanceID                          = instanceDesc.ID;
-        instanceDescs[ i ].InstanceMask                        = instanceDesc.Mask;
+        m_instanceDescs[ i ].AccelerationStructure               = dx12InstanceBuffer->Resource( )->GetGPUVirtualAddress( );
+        m_instanceDescs[ i ].Flags                               = D3D12_RAYTRACING_INSTANCE_FLAG_NONE; // todo
+        m_instanceDescs[ i ].InstanceContributionToHitGroupIndex = instanceDesc.ContributionToHitGroupIndex;
+        m_instanceDescs[ i ].InstanceID                          = instanceDesc.ID;
+        m_instanceDescs[ i ].InstanceMask                        = instanceDesc.Mask;
 
-        memcpy( instanceDescs[ i ].Transform, instanceDesc.Transform.Data( ), sizeof( float[ 12 ] ) );
+        memcpy( m_instanceDescs[ i ].Transform, instanceDesc.Transform.Data( ), sizeof( float[ 12 ] ) );
     }
     // Calculate required size for the acceleration structure
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS prebuildDesc = { };
@@ -54,10 +54,11 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
 
     BufferDesc instanceDesc    = { };
     instanceDesc.HeapType      = HeapType::CPU_GPU;
-    instanceDesc.NumBytes      = desc.Instances.NumElements( ) * sizeof( instanceDescs[ 0 ] );
+    instanceDesc.NumBytes      = desc.Instances.NumElements( ) * sizeof( D3D12_RAYTRACING_INSTANCE_DESC );
     m_instanceBuffer           = std::make_unique<DX12BufferResource>( m_context, instanceDesc );
     void *instanceBufferMemory = m_instanceBuffer->MapMemory( );
-    memcpy( instanceBufferMemory, instanceDescs.data( ), instanceDesc.NumBytes );
+    memcpy( instanceBufferMemory, m_instanceDescs.data( ), instanceDesc.NumBytes );
+    m_instanceBuffer->UnmapMemory( );
 
     BufferDesc bufferDesc   = { };
     bufferDesc.Descriptor   = BitSet<ResourceDescriptor>( ResourceDescriptor::RWBuffer ) | ResourceDescriptor::AccelerationStructure;

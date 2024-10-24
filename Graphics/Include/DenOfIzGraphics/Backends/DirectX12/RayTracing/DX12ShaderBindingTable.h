@@ -36,12 +36,16 @@ namespace DenOfIz
         std::unique_ptr<DX12BufferResource> m_stagingBuffer;
         void                               *m_mappedMemory = nullptr;
 
-        D3D12_GPU_VIRTUAL_ADDRESS_RANGE            m_rayGenerationShaderRange{};
-        D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE m_hitGroupShaderRange{};
-        D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE m_missShaderRange{};
+        D3D12_GPU_VIRTUAL_ADDRESS_RANGE            m_rayGenerationShaderRange{ };
+        D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE m_hitGroupShaderRange{ };
+        D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE m_missShaderRange{ };
+
+        uint32_t m_missGroupOffset = 0;
+        uint32_t m_hitGroupOffset  = 0;
 
     public:
-                                       DX12ShaderBindingTable( DX12Context *context, const ShaderBindingTableDesc &desc );
+        DX12ShaderBindingTable( DX12Context *context, const ShaderBindingTableDesc &desc );
+        ~DX12ShaderBindingTable( ) override = default;
         void                           Resize( const SBTSizeDesc &desc ) override;
         void                           BindRayGenerationShader( const RayGenerationBindingDesc &desc ) override;
         void                           BindHitGroup( const HitGroupBindingDesc &desc ) override;
@@ -52,7 +56,9 @@ namespace DenOfIz
         [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS_RANGE            RayGenerationShaderRecord( ) const;
         [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE HitGroupShaderRange( ) const;
         [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE MissShaderRange( ) const;
+
     private:
-        bool BindHitGroupRecursive( const HitGroupBindingDesc &desc );
+        bool     BindHitGroupRecursive( const HitGroupBindingDesc &desc );
+        uint32_t AlignRecord( uint32_t size );
     };
 } // namespace DenOfIz

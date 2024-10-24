@@ -22,29 +22,11 @@ using namespace DenOfIz;
 
 void RayTracedTriangleExample::Init( )
 {
-    TextureDesc textureDesc{ };
-    textureDesc.Width        = m_windowDesc.Width;
-    textureDesc.Height       = m_windowDesc.Height;
-    textureDesc.Format       = Format::B8G8R8A8Unorm;
-    textureDesc.Descriptor   = ResourceDescriptor::RWTexture;
-    textureDesc.InitialState = ResourceState::ShaderResource;
-    textureDesc.DebugName    = "RayTracing Output";
-    for ( uint32_t i = 0; i < 3; ++i )
-    {
-        textureDesc.DebugName.Append( "RayTracing Output " ).Append( std::to_string( i ).c_str( ) );
-        m_raytracingOutput[ i ] = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
-    }
-
+    CreateRenderTargets( );
     CreateResources( );
     CreateAccelerationStructures( );
     CreateRayTracingPipeline( );
     CreateShaderBindingTable( );
-
-    m_defaultSampler        = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( SamplerDesc{ } ) );
-    m_presentOutputPipeline = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice, "Assets/Shaders/SampleBasic.ps.hlsl" );
-    m_presentOutputPipeline->BindGroup( 0 )->BeginUpdate( )->Srv( 0, m_raytracingOutput[ 0 ].get( ) )->Sampler( 0, m_defaultSampler.get( ) )->EndUpdate( );
-    m_presentOutputPipeline->BindGroup( 1 )->BeginUpdate( )->Srv( 0, m_raytracingOutput[ 1 ].get( ) )->Sampler( 0, m_defaultSampler.get( ) )->EndUpdate( );
-    m_presentOutputPipeline->BindGroup( 2 )->BeginUpdate( )->Srv( 0, m_raytracingOutput[ 2 ].get( ) )->Sampler( 0, m_defaultSampler.get( ) )->EndUpdate( );
 
     RenderGraphDesc renderGraphDesc{ };
     renderGraphDesc.GraphicsApi   = m_graphicsApi;
@@ -61,15 +43,39 @@ void RayTracedTriangleExample::Init( )
     raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceState::UnorderedAccess ) );
     raytracingNode.Execute = this;
 
+    NodeDesc copyToRenderTargetNode{ };
+    copyToRenderTargetNode.Name = "CopyToRenderTarget";
+    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_raytracingOutput[ 0 ].get( ), ResourceState::CopySrc ) );
+    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_raytracingOutput[ 1 ].get( ), ResourceState::CopySrc ) );
+    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceState::CopySrc ) );
+    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_swapChain->GetRenderTarget( 0 ), ResourceState::CopyDst ) );
+    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_swapChain->GetRenderTarget( 1 ), ResourceState::CopyDst ) );
+    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_swapChain->GetRenderTarget( 2 ), ResourceState::CopyDst ) );
+    copyToRenderTargetNode.Dependencies.AddElement( "RayTracing" );
+
+    m_copyToPresentCallback = std::make_unique<NodeExecutionCallbackHolder>(
+        [ this ]( uint32_t frameIndex, ICommandList *commandList )
+        {
+            CopyTextureRegionDesc copyTextureRegionDesc{ };
+            copyTextureRegionDesc.SrcTexture = m_raytracingOutput[ frameIndex ].get( );
+            copyTextureRegionDesc.DstTexture = m_swapChain->GetRenderTarget( frameIndex );
+            copyTextureRegionDesc.Width      = m_windowDesc.Width;
+            copyTextureRegionDesc.Height     = m_windowDesc.Height;
+            copyTextureRegionDesc.Depth      = 1;
+            commandList->CopyTextureRegion( copyTextureRegionDesc );
+        } );
+    copyToRenderTargetNode.Execute = m_copyToPresentCallback.get( );
+
     PresentNodeDesc presentNode{ };
     presentNode.SwapChain = m_swapChain.get( );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_raytracingOutput[ 0 ].get( ), ResourceState::ShaderResource ) );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_raytracingOutput[ 1 ].get( ), ResourceState::ShaderResource ) );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceState::ShaderResource ) );
-    presentNode.Dependencies.AddElement( "RayTracing" );
+    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_swapChain->GetRenderTarget( 0 ), ResourceState::Present ) );
+    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_swapChain->GetRenderTarget( 1 ), ResourceState::Present ) );
+    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_swapChain->GetRenderTarget( 2 ), ResourceState::Present ) );
+    presentNode.Dependencies.AddElement( "CopyToRenderTarget" );
     presentNode.Execute = this;
 
     m_renderGraph->AddNode( raytracingNode );
+    m_renderGraph->AddNode( copyToRenderTargetNode );
     m_renderGraph->SetPresentNode( presentNode );
     m_renderGraph->BuildGraph( );
 
@@ -82,6 +88,7 @@ void RayTracedTriangleExample::Execute( uint32_t frameIndex, ICommandList *comma
     const Viewport &viewport = m_swapChain->GetViewport( );
 
     commandList->BindPipeline( m_rayTracingPipeline.get( ) );
+    commandList->BindResourceGroup( m_rayTracingBindGroups[ frameIndex ].get( ) );
 
     DispatchRaysDesc dispatchRaysDesc{ };
     dispatchRaysDesc.Width              = viewport.Width;
@@ -93,19 +100,6 @@ void RayTracedTriangleExample::Execute( uint32_t frameIndex, ICommandList *comma
 
 void RayTracedTriangleExample::Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget )
 {
-    RenderingAttachmentDesc quadAttachmentDesc{ };
-    quadAttachmentDesc.Resource = renderTarget;
-
-    RenderingDesc quadRenderingDesc{ };
-    quadRenderingDesc.RTAttachments.AddElement( quadAttachmentDesc );
-
-    commandList->BeginRendering( quadRenderingDesc );
-
-    const Viewport &viewport = m_swapChain->GetViewport( );
-    commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-    commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-    m_presentOutputPipeline->Render( commandList, frameIndex );
-    commandList->EndRendering( );
 }
 
 void RayTracedTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
@@ -131,6 +125,23 @@ void RayTracedTriangleExample::Quit( )
 {
     m_renderGraph->WaitIdle( );
     IExample::Quit( );
+}
+
+void RayTracedTriangleExample::CreateRenderTargets( )
+{
+    TextureDesc textureDesc{ };
+    textureDesc.Width        = m_windowDesc.Width;
+    textureDesc.Height       = m_windowDesc.Height;
+    textureDesc.Format       = Format::B8G8R8A8Unorm;
+    textureDesc.Descriptor   = ResourceDescriptor::RWTexture;
+    textureDesc.InitialState = ResourceState::ShaderResource;
+    textureDesc.DebugName    = "RayTracing Output";
+    for ( uint32_t i = 0; i < 3; ++i )
+    {
+        textureDesc.DebugName = InteropString( );
+        textureDesc.DebugName.Append( "RayTracing Output " ).Append( std::to_string( i ).c_str( ) );
+        m_raytracingOutput[ i ] = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
+    }
 }
 
 void RayTracedTriangleExample::CreateRayTracingPipeline( )
@@ -259,8 +270,8 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
     m_bottomLevelAS              = std::unique_ptr<IBottomLevelAS>( m_logicalDevice->CreateBottomLevelAS( bottomLevelASDesc ) );
 
     ASInstanceDesc instanceDesc{ };
-    instanceDesc.Buffer                      = m_bottomLevelAS->Buffer( );
-    instanceDesc.ID                          = 0;
+    instanceDesc.BLASBuffer                  = m_bottomLevelAS->Buffer( );
+    instanceDesc.ID                          = 1;
     instanceDesc.Mask                        = 1;
     instanceDesc.ContributionToHitGroupIndex = 0;
 
@@ -290,7 +301,6 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
 
     syncFence->Wait( );
 }
-
 void RayTracedTriangleExample::CreateShaderBindingTable( )
 {
     ShaderBindingTableDesc bindingTableDesc{ };

@@ -22,14 +22,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz::RenderGraphInternal
 {
+    struct ResourceBarrier
+    {
+        ITextureResource *Texture;
+        IBufferResource  *Buffer;
+        ResourceState     OldState;
+        ResourceState     NewState;
+    };
+
     // Odd placement due to dependency on NodeResourceUsageDesc
     struct NodeExecutionContext
     {
         ICommandList                      *CommandList;
         InteropArray<ISemaphore *>         WaitOnSemaphores;
         InteropArray<ISemaphore *>         NotifySemaphores;
+        std::vector<ResourceBarrier>       ResourceBarriers;
         std::vector<NodeResourceUsageDesc> ResourceUsagesPerFrame;
-        std::mutex                         SelfMutex;
+        std::mutex                         SelfMutex; // Ensure the same node is not executed concurrently in really fast graphs
         NodeExecutionCallback             *Execute;
     };
 
@@ -59,4 +68,4 @@ namespace DenOfIz::RenderGraphInternal
         std::unordered_map<ITextureResource *, ResourceLockedState> TextureStates;
         std::unordered_map<IBufferResource *, ResourceLockedState>  BufferStates;
     };
-}
+} // namespace DenOfIz::RenderGraphInternal

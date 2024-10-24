@@ -139,7 +139,6 @@ void RenderGraph::AddNode( const NodeDesc &desc )
             {
                 LOG( FATAL ) << "Texture resource must be valid.";
             }
-
             m_resourceLocking.TextureStates.emplace( resourceState.TextureResource, resourceState.TextureResource->InitialState( ) );
         }
         else
@@ -176,20 +175,21 @@ void RenderGraph::InitAllNodes( )
 {
     for ( auto &node : m_nodeDescriptions )
     {
-        auto graphNode              = std::make_unique<GraphNode>( );
-        graphNode->CommandListIndex = m_nodes.size( );
+        uint32_t &remaining         = m_remainingCommandLists[ node.QueueType ];
+        uint32_t &commandListIndex  = m_commandListIndexAtQueue[ node.QueueType ];
 
-        uint32_t &remaining        = m_remainingCommandLists[ node.QueueType ];
-        uint32_t &commandListIndex = m_commandListIndexAtQueue[ node.QueueType ];
+        auto graphNode = std::make_unique<GraphNode>( );
+        graphNode->CommandListIndex = commandListIndex;
 
-        if ( --remaining < 0 )
+        if ( remaining <= 0 )
         {
             LOG( FATAL ) << "Not enough command lists for the queue type " << (uint32_t)node.QueueType << ", add more via `RenderGraphDesc`.";
         }
+        remaining--;
 
         CommandListPoolList &poolList = m_queueCommandListPools[ node.QueueType ];
         // First command list is reserved for present node
-        uint32_t presentPadding = node.QueueType == QueueType::Graphics ? 1 : 0;
+        uint32_t presentPadding = node.QueueType == QueueType::Graphics && m_hasPresentNode ? 1 : 0;
 
         for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
         {
@@ -243,7 +243,7 @@ void RenderGraph::ConfigureGraph( )
                 ISemaphore *semaphore  = GetOrCreateSemaphore( freeSemaphoreIndex );
                 for ( uint8_t frameIndex = 0; frameIndex < m_desc.NumFrames; frameIndex++ )
                 {
-                    m_nodes[ nodeIndex ]->Contexts[ frameIndex ]->WaitOnSemaphores.SetElement( 0, semaphore );
+                    m_nodes[ nodeIndex ]->Contexts[ frameIndex ]->WaitOnSemaphores.AddElement( semaphore );
                     auto &notifySemaphores = m_nodes[ processedNodes[ dependency.Get( ) ] ]->Contexts[ frameIndex ]->NotifySemaphores;
                     notifySemaphores.AddElement( semaphore );
                 }
@@ -431,6 +431,7 @@ void RenderGraph::IssueBarriers( ICommandList *commandList, const std::vector<No
                 lockedState.Mutex.lock( );
                 m_unlocks.push_back( &lockedState.Mutex );
                 barrierDesc.TextureBarrier( TextureBarrierDesc{ texture, lockedState.State, resourceState.State } );
+//                LOG( INFO ) << "Texture barrier issued for " << texture << " from " << std::to_string( (int)lockedState.State ) << " to " << std::to_string( (int)resourceState.State );
                 lockedState.State = resourceState.State;
             }
         }
