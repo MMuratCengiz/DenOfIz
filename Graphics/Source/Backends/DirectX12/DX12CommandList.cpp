@@ -43,7 +43,7 @@ DX12CommandList::DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12Comma
         break;
     }
 
-#ifndef NDEBUG
+#if not defined(NDEBUG) && not defined(NSIGHT_ENABLE)
     DX_CHECK_RESULT( m_commandList->QueryInterface( IID_PPV_ARGS( m_debugCommandList.put( ) ) ) );
 #endif
 }
