@@ -30,8 +30,8 @@ void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
     uint32_t rayGenerationShaderNumBytes = AlignRecord( desc.NumRayGenerationShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
     uint32_t hitGroupNumBytes            = AlignRecord( desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
-    uint32_t missShaderNumBytes          = AlignRecord( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES * desc.NumMissShaders );
-    m_numBufferBytes         = rayGenerationShaderNumBytes + hitGroupNumBytes + missShaderNumBytes;
+    uint32_t missShaderNumBytes          = AlignRecord( desc.NumMissShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+    m_numBufferBytes                     = rayGenerationShaderNumBytes + hitGroupNumBytes + missShaderNumBytes;
 
     BufferDesc bufferDesc   = { };
     bufferDesc.NumBytes     = m_numBufferBytes;
@@ -54,16 +54,16 @@ void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
     m_buffer                = std::make_unique<DX12BufferResource>( m_context, bufferDesc );
 
     m_rayGenerationShaderRange.StartAddress = m_buffer->Resource( )->GetGPUVirtualAddress( );
-    m_rayGenerationShaderRange.SizeInBytes  = rayGenerationShaderNumBytes;;
+    m_rayGenerationShaderRange.SizeInBytes  = rayGenerationShaderNumBytes;
     m_hitGroupOffset                        = m_rayGenerationShaderRange.SizeInBytes;
 
     m_hitGroupShaderRange.StartAddress  = m_buffer->Resource( )->GetGPUVirtualAddress( ) + m_hitGroupOffset;
-    m_hitGroupShaderRange.SizeInBytes   = hitGroupNumBytes;
+    m_hitGroupShaderRange.SizeInBytes   = desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
     m_hitGroupShaderRange.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
     m_missGroupOffset               = m_hitGroupOffset + hitGroupNumBytes;
     m_missShaderRange.StartAddress  = AlignRecord( m_buffer->Resource( )->GetGPUVirtualAddress( ) + m_missGroupOffset );
-    m_missShaderRange.SizeInBytes   = missShaderNumBytes;
+    m_missShaderRange.SizeInBytes   = desc.NumMissShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
     m_missShaderRange.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 }
 

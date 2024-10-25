@@ -43,7 +43,7 @@ DX12CommandList::DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12Comma
         break;
     }
 
-#if not defined(NDEBUG) && not defined(NSIGHT_ENABLE)
+#if not defined( NDEBUG ) && not defined( NSIGHT_ENABLE )
     DX_CHECK_RESULT( m_commandList->QueryInterface( IID_PPV_ARGS( m_debugCommandList.put( ) ) ) );
 #endif
 }
@@ -135,7 +135,7 @@ void DX12CommandList::BindPipeline( IPipeline *pipeline )
         m_commandList->SetComputeRootSignature( dx12Pipeline->GetRootSignature( ) );
         m_commandList->SetPipelineState( dx12Pipeline->GetPipeline( ) );
     case QueueType::Copy:
-        LOG ( ERROR ) << "Copy queue type is not supported for `BindPipeline`";
+        LOG( ERROR ) << "Copy queue type is not supported for `BindPipeline`";
         break;
     }
 }
@@ -411,9 +411,9 @@ void DX12CommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelA
     DZ_NOT_NULL( dx12TopLevelAS );
 
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc = { };
+    buildDesc.DestAccelerationStructureData                      = dx12TopLevelAS->DX12Buffer( )->Resource( )->GetGPUVirtualAddress( );
     buildDesc.Inputs.DescsLayout                                 = D3D12_ELEMENTS_LAYOUT_ARRAY;
     buildDesc.Inputs.Type                                        = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-    buildDesc.DestAccelerationStructureData                      = dx12TopLevelAS->DX12Buffer( )->Resource( )->GetGPUVirtualAddress( );
     buildDesc.Inputs.Flags                                       = dx12TopLevelAS->Flags( );
     buildDesc.Inputs.NumDescs                                    = dx12TopLevelAS->NumInstances( );
     buildDesc.Inputs.InstanceDescs                               = dx12TopLevelAS->InstanceBuffer( )->Resource( )->GetGPUVirtualAddress( );
@@ -428,14 +428,14 @@ void DX12CommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBot
     DZ_NOT_NULL( dx12BottomLevelAS );
 
     const auto                                        *dx12blasBuffer = dynamic_cast<DX12BufferResource *>( dx12BottomLevelAS->Buffer( ) );
+    const std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> &geometryDescs  = dx12BottomLevelAS->GeometryDescs( );
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc      = { };
     buildDesc.Inputs.DescsLayout                                      = D3D12_ELEMENTS_LAYOUT_ARRAY;
     buildDesc.Inputs.Type                                             = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-    buildDesc.DestAccelerationStructureData                           = dx12blasBuffer->Resource( )->GetGPUVirtualAddress( );
     buildDesc.Inputs.Flags                                            = dx12BottomLevelAS->Flags( );
-    const std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> &geometryDescs  = dx12BottomLevelAS->GeometryDescs( );
     buildDesc.Inputs.NumDescs                                         = geometryDescs.size( );
     buildDesc.Inputs.pGeometryDescs                                   = geometryDescs.data( );
+    buildDesc.DestAccelerationStructureData                           = dx12blasBuffer->Resource( )->GetGPUVirtualAddress( );
     buildDesc.ScratchAccelerationStructureData                        = dx12BottomLevelAS->Scratch( )->Resource( )->GetGPUVirtualAddress( );
 
     m_commandList->BuildRaytracingAccelerationStructure( &buildDesc, 0, nullptr );

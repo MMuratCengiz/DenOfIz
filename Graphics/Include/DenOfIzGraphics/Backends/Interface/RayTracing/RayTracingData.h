@@ -25,16 +25,16 @@ namespace DenOfIz
 {
     enum class ASBuildFlags
     {
-        None,
-        AllowUpdate,
-        AllowCompaction,
-        PreferFastTrace,
-        PreferFastBuild,
-        LowMemory,
-        FastTrace,
-        FastBuild,
-        MinimizeMemory,
-        PerformUpdate
+        None            = 1 << 1,
+        AllowUpdate     = 1 << 2,
+        AllowCompaction = 1 << 3,
+        PreferFastTrace = 1 << 4,
+        PreferFastBuild = 1 << 5,
+        LowMemory       = 1 << 6,
+        FastTrace       = 1 << 7,
+        FastBuild       = 1 << 8,
+        MinimizeMemory  = 1 << 9,
+        PerformUpdate   = 1 << 10,
     };
     template class DZ_API BitSet<ASBuildFlags>;
 
@@ -42,4 +42,4 @@ namespace DenOfIz
     {
         bool IsOpaque;
     };
-}
+} // namespace DenOfIz

@@ -30,9 +30,8 @@ namespace DenOfIz
         AABBs
     };
 
-    struct DZ_API ASGeometryDesc
+    struct DZ_API ASGeometryTriangleDesc
     {
-        ASGeometryType   Type;
         IBufferResource *VertexBuffer;
         uint32_t         VertexOffset;
         uint32_t         VertexStride;
@@ -42,16 +41,30 @@ namespace DenOfIz
         uint32_t         IndexOffset;
         uint32_t         NumIndices;
         IndexType        IndexType;
-        uint32_t         PrimitiveCount;
-        bool             IsOpaque;
     };
+
+    struct DZ_API ASGeometryAABBDesc
+    {
+        IBufferResource *Buffer;
+        uint32_t         Offset;
+        uint32_t         Stride;
+        uint32_t         NumAABBs;
+    };
+
+    struct DZ_API ASGeometryDesc
+    {
+        ASGeometryType         Type;
+        ASGeometryTriangleDesc Triangles;
+        ASGeometryAABBDesc     AABBs;
+        bool                   IsOpaque;
+    };
+
     template class DZ_API InteropArray<ASGeometryDesc>;
 
     struct DZ_API BottomLevelASDesc
     {
         InteropArray<ASGeometryDesc> Geometries;
-        uint32_t                     Flags;
-        ASBuildFlags                 BuildFlags;
+        BitSet<ASBuildFlags>         BuildFlags;
     };
 
     class DZ_API IBottomLevelAS

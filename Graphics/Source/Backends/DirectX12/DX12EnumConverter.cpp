@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12EnumConverter.h>
+#include "DenOfIzGraphics/Backends/Interface/RayTracing/IBottomLevelAS.h"
 
 using namespace DenOfIz;
 
@@ -743,4 +744,16 @@ D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS DX12EnumConverter::ConvertAc
         result |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
     }
     return result;
+}
+
+D3D12_RAYTRACING_GEOMETRY_TYPE DX12EnumConverter::ConvertGeometryType( const ASGeometryType& type )
+{
+    switch ( type )
+    {
+    case ASGeometryType::Triangles:
+        return D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+    case ASGeometryType::AABBs:
+        return D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS;
+    }
+    return D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
 }

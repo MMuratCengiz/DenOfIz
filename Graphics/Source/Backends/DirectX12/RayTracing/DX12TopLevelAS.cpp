@@ -40,7 +40,7 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
         m_instanceDescs[ i ].InstanceID                          = instanceDesc.ID;
         m_instanceDescs[ i ].InstanceMask                        = instanceDesc.Mask;
 
-        memcpy( m_instanceDescs[ i ].Transform, instanceDesc.Transform.Data( ), sizeof( float[ 12 ] ) );
+        memcpy( m_instanceDescs[ i ].Transform, instanceDesc.Transform.Data( ), 12 * sizeof( float ) );
     }
     // Calculate required size for the acceleration structure
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS prebuildDesc = { };
@@ -76,6 +76,7 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
     scratchBufferDesc.NumBytes     = (UINT)info.ScratchDataSizeInBytes;
     scratchBufferDesc.Descriptor   = BitSet<ResourceDescriptor>( ResourceDescriptor::RWBuffer );
     scratchBufferDesc.InitialState = ResourceState::UnorderedAccess;
+    scratchBufferDesc.DebugName    = "Top Level Acceleration Structure Scratch Buffer";
     m_scratch                      = std::make_unique<DX12BufferResource>( m_context, scratchBufferDesc );
 }
 

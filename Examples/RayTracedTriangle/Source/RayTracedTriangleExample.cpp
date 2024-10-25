@@ -193,7 +193,7 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
 
 void RayTracedTriangleExample::CreateResources( )
 {
-    constexpr uint32_t indices[]  = { 0, 1, 2 };
+    constexpr uint16_t indices[]  = { 0, 1, 2 };
     constexpr float    depthValue = 1.0;
     constexpr float    offset     = 0.7f;
 
@@ -230,7 +230,7 @@ void RayTracedTriangleExample::CreateResources( )
     InteropArray<Byte> indexArray( sizeof( indices ) );
     indexArray.MemCpy( indices, sizeof( indices ) );
 
-    float border        = 1.0f;
+    float border        = 0.1f;
     float aspect        = static_cast<float>( m_windowDesc.Width ) / static_cast<float>( m_windowDesc.Height );
     m_rayGenCB.Viewport = { -1.0f, -1.0f, 1.0f, 1.0f };
     m_rayGenCB.Stencil  = { -1 + border / aspect, -1 + border, 1 - border / aspect, 1.0f - border };
@@ -262,16 +262,15 @@ void RayTracedTriangleExample::CreateResources( )
 void RayTracedTriangleExample::CreateAccelerationStructures( )
 {
     ASGeometryDesc geometryDesc{ };
-    geometryDesc.Type        = ASGeometryType::Triangles;
-    geometryDesc.IndexBuffer = m_indexBuffer.get( );
-    geometryDesc.NumIndices  = 3;
-    geometryDesc.IndexType   = IndexType::Uint32;
-    //    geometryDesc.Transform3x4               = 0;
-    geometryDesc.VertexFormat = Format::R32G32B32Float;
-    geometryDesc.NumVertices  = 3;
-    geometryDesc.VertexBuffer = m_vertexBuffer.get( );
-    geometryDesc.VertexStride = 3 * sizeof( float );
-    geometryDesc.IsOpaque     = true; // Todo does nothing
+    geometryDesc.Type                   = ASGeometryType::Triangles;
+    geometryDesc.Triangles.IndexBuffer  = m_indexBuffer.get( );
+    geometryDesc.Triangles.NumIndices   = 3;
+    geometryDesc.Triangles.IndexType    = IndexType::Uint16;
+    geometryDesc.Triangles.VertexFormat = Format::R32G32B32Float;
+    geometryDesc.Triangles.NumVertices  = 3;
+    geometryDesc.Triangles.VertexBuffer = m_vertexBuffer.get( );
+    geometryDesc.Triangles.VertexStride = 3 * sizeof( float );
+    geometryDesc.IsOpaque               = true; // Todo does nothing
 
     BottomLevelASDesc bottomLevelASDesc{ };
     bottomLevelASDesc.Geometries.AddElement( geometryDesc );
@@ -296,6 +295,8 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
 
     commandList->Begin( );
     commandList->BuildBottomLevelAS( BuildBottomLevelASDesc{ m_bottomLevelAS.get( ) } );
+//    commandList->PipelineBarrier( PipelineBarrierDesc{ }.BufferBarrier(
+//        BufferBarrierDesc{ .Resource = m_bottomLevelAS->Buffer( ), .OldState = ResourceState::AccelerationStructureWrite, .NewState = ResourceState::UnorderedAccess } ) );
     commandList->BuildTopLevelAS( BuildTopLevelASDesc{ m_topLevelAS.get( ) } );
     // Pipeline barriers:
     // - Transition bottom level AS to AS state

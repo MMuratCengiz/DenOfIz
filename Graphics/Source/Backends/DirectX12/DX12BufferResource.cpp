@@ -37,7 +37,7 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
     }
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::AccelerationStructure ) )
     {
-        flags |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
+//        flags |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
     }
 
     const CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer( DX12DescriptorHeap::RoundUp( m_numBytes ), flags );
@@ -209,10 +209,12 @@ BitSet<ResourceState> DX12BufferResource::InitialState( ) const
 {
     return m_state;
 }
+
 i DX12BufferResource::NumBytes( ) const
 {
     return m_numBytes;
 }
+
 const void *DX12BufferResource::Data( ) const
 {
     return m_data;

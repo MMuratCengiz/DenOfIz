@@ -27,41 +27,19 @@ DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASD
     for ( uint32_t i = 0; i < numGeometries; ++i )
     {
         const ASGeometryDesc &geometry = desc.Geometries.GetElement( i );
-
-        DX12BufferResource *dx12VertexBuffer = dynamic_cast<DX12BufferResource *>( geometry.VertexBuffer );
-        if ( geometry.NumVertices == 0 || dx12VertexBuffer == nullptr )
-        {
-            LOG( WARNING ) << "Geometry has no vertices, or vertex buffer is null.";
-            continue;
-        }
-
         D3D12_RAYTRACING_GEOMETRY_DESC &dx12Geometry = m_geometryDescs[ i ];
-        dx12Geometry.Flags                           = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE; // todo
-
-        if ( geometry.NumIndices > 0 )
+        if ( geometry.IsOpaque )
         {
-            DX12BufferResource *dx12IndexBuffer = dynamic_cast<DX12BufferResource *>( geometry.IndexBuffer );
-            if ( dx12IndexBuffer == nullptr )
-            {
-                LOG( WARNING ) << "Geometry.NumIndices > 0, but Geometry.IndexBuffer == nullptr.";
-                continue;
-            }
-
-            dx12Geometry.Triangles.IndexBuffer = dx12IndexBuffer->Resource( )->GetGPUVirtualAddress( ) + geometry.IndexOffset;
-            dx12Geometry.Triangles.IndexCount  = geometry.NumIndices;
-            dx12Geometry.Triangles.IndexFormat = geometry.IndexType == IndexType::Uint16 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
+            dx12Geometry.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
         }
-
-        dx12Geometry.Triangles.VertexBuffer.StartAddress  = dx12VertexBuffer->Resource( )->GetGPUVirtualAddress( ) + geometry.VertexOffset;
-        dx12Geometry.Triangles.VertexBuffer.StrideInBytes = geometry.VertexStride;
-        dx12Geometry.Triangles.VertexCount                = geometry.NumVertices;
-        dx12Geometry.Triangles.VertexFormat               = DX12EnumConverter::ConvertFormat( geometry.VertexFormat );
-
-        const static std::unordered_set<Format> allowedFormats{ Format::R32G32Float,       Format::R32G32B32Float, Format::R16G16Float,
-                                                                Format::R16G16B16A16Float, Format::R16G16Snorm,    Format::R16G16B16A16Snorm };
-        if ( !allowedFormats.contains( geometry.VertexFormat ) )
+        switch ( geometry.Type )
         {
-            LOG( WARNING ) << "Invalid vertex format for acceleration structure geometry.";
+        case ASGeometryType::Triangles:
+            InitializeTriangles( geometry.Triangles, dx12Geometry );
+            break;
+        case ASGeometryType::AABBs:
+            InitializeAABBs( geometry.AABBs, dx12Geometry );
+            break;
         }
     }
 
@@ -80,6 +58,7 @@ DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASD
     bufferDesc.HeapType     = HeapType::GPU;
     bufferDesc.NumBytes     = info.ResultDataMaxSizeInBytes;
     bufferDesc.InitialState = ResourceState::AccelerationStructureWrite;
+    bufferDesc.DebugName    = "Bottom Level Acceleration Structure";
     m_asBuffer              = std::make_unique<DX12BufferResource>( m_context, bufferDesc );
 
     BufferDesc scratchBufferDesc   = { };
@@ -87,7 +66,63 @@ DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASD
     scratchBufferDesc.NumBytes     = (UINT)info.ScratchDataSizeInBytes;
     scratchBufferDesc.Descriptor   = BitSet<ResourceDescriptor>( ResourceDescriptor::RWBuffer );
     scratchBufferDesc.InitialState = ResourceState::UnorderedAccess;
+    scratchBufferDesc.DebugName    = "Bottom Level Acceleration Structure Scratch";
     m_scratch                      = std::make_unique<DX12BufferResource>( m_context, scratchBufferDesc );
+}
+
+void DX12BottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &triangle, D3D12_RAYTRACING_GEOMETRY_DESC &dx12Geometry )
+{
+    DX12BufferResource *dx12VertexBuffer = dynamic_cast<DX12BufferResource *>( triangle.VertexBuffer );
+    if ( triangle.NumVertices == 0 || dx12VertexBuffer == nullptr )
+    {
+        LOG( WARNING ) << "Geometry has no vertices, or vertex buffer is null.";
+        return;
+    }
+
+    dx12Geometry.Type  = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+
+    if ( triangle.NumIndices > 0 )
+    {
+        DX12BufferResource *dx12IndexBuffer = dynamic_cast<DX12BufferResource *>( triangle.IndexBuffer );
+        if ( dx12IndexBuffer == nullptr )
+        {
+            LOG( WARNING ) << "Geometry.NumIndices > 0, but Geometry.IndexBuffer == nullptr.";
+            return;
+        }
+
+        dx12Geometry.Triangles.IndexBuffer = dx12IndexBuffer->Resource( )->GetGPUVirtualAddress( ) + triangle.IndexOffset;
+        dx12Geometry.Triangles.IndexCount  = triangle.NumIndices;
+        dx12Geometry.Triangles.IndexFormat = triangle.IndexType == IndexType::Uint16 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
+    }
+
+    dx12Geometry.Triangles.VertexBuffer.StartAddress  = dx12VertexBuffer->Resource( )->GetGPUVirtualAddress( ) + triangle.VertexOffset;
+    dx12Geometry.Triangles.VertexBuffer.StrideInBytes = triangle.VertexStride;
+    dx12Geometry.Triangles.VertexCount                = triangle.NumVertices;
+    dx12Geometry.Triangles.VertexFormat               = DX12EnumConverter::ConvertFormat( triangle.VertexFormat );
+
+    const static std::unordered_set<Format> allowedFormats{ Format::R32G32Float,       Format::R32G32B32Float, Format::R16G16Float,
+                                                            Format::R16G16B16A16Float, Format::R16G16Snorm,    Format::R16G16B16A16Snorm };
+    if ( !allowedFormats.contains( triangle.VertexFormat ) )
+    {
+        LOG( WARNING ) << "Invalid vertex format for acceleration structure geometry.";
+    }
+}
+
+void DX12BottomLevelAS::InitializeAABBs( const ASGeometryAABBDesc &aabb, D3D12_RAYTRACING_GEOMETRY_DESC &dx12Geometry )
+{
+    DX12BufferResource *dx12AABBBuffer = dynamic_cast<DX12BufferResource *>( aabb.Buffer );
+    if ( aabb.NumAABBs == 0 || dx12AABBBuffer == nullptr )
+    {
+        LOG( WARNING ) << "Geometry has no AABBs, or AABB buffer is null.";
+        return;
+    }
+
+    dx12Geometry.Type  = D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS;
+    dx12Geometry.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE; // todo
+
+    dx12Geometry.AABBs.AABBs.StartAddress  = dx12AABBBuffer->Resource( )->GetGPUVirtualAddress( ) + aabb.Offset;
+    dx12Geometry.AABBs.AABBs.StrideInBytes = aabb.Stride;
+    dx12Geometry.AABBs.AABBCount           = aabb.NumAABBs;
 }
 
 void DX12BottomLevelAS::Update( const BottomLevelASDesc &desc )

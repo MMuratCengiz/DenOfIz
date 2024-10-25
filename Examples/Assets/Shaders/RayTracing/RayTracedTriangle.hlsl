@@ -41,7 +41,6 @@ void MyRaygenShader()
         lerp(g_rayGenCB.viewport.left, g_rayGenCB.viewport.right, lerpValues.x),
         lerp(g_rayGenCB.viewport.top, g_rayGenCB.viewport.bottom, lerpValues.y),
         0.0f);
-
     if (IsInsideViewport(origin.xy, g_rayGenCB.stencil))
     {
         // Trace the ray.
@@ -54,7 +53,7 @@ void MyRaygenShader()
         ray.TMin = 0.001;
         ray.TMax = 10000.0;
         RayPayload payload = { float4(0, 0, 0, 0) };
-        TraceRay(Scene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, ~0, 0, 1, 0, ray, payload);
+        TraceRay(Scene, RAY_FLAG_NONE, ~0, 0, 1, 0, ray, payload);
 
         // Write the raytraced color to the output texture.
         RenderTarget[DispatchRaysIndex().xy] = payload.color;
