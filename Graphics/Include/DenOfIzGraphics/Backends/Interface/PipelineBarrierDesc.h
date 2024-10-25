@@ -52,7 +52,8 @@ namespace DenOfIz
 
     struct DZ_API MemoryBarrierDesc
     {
-        // todo
+        IBufferResource      *BufferResource  = nullptr;
+        ITextureResource     *TextureResource = nullptr;
         BitSet<ResourceState> OldState;
         BitSet<ResourceState> NewState;
     };

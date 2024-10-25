@@ -295,8 +295,8 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
 
     commandList->Begin( );
     commandList->BuildBottomLevelAS( BuildBottomLevelASDesc{ m_bottomLevelAS.get( ) } );
-//    commandList->PipelineBarrier( PipelineBarrierDesc{ }.BufferBarrier(
-//        BufferBarrierDesc{ .Resource = m_bottomLevelAS->Buffer( ), .OldState = ResourceState::AccelerationStructureWrite, .NewState = ResourceState::UnorderedAccess } ) );
+    commandList->PipelineBarrier( PipelineBarrierDesc{ }.MemoryBarrier( MemoryBarrierDesc{
+        .BufferResource = m_bottomLevelAS->Buffer( ), .OldState = ResourceState::AccelerationStructureWrite, .NewState = ResourceState::AccelerationStructureRead } ) );
     commandList->BuildTopLevelAS( BuildTopLevelASDesc{ m_topLevelAS.get( ) } );
     // Pipeline barriers:
     // - Transition bottom level AS to AS state

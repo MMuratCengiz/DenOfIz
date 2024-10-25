@@ -489,6 +489,40 @@ void DX12CommandList::CompatibilityPipelineBarrier( const PipelineBarrierDesc &b
         }
     }
 
+    for ( int i = 0; i < barrier.GetMemoryBarriers( ).NumElements( ); i++ )
+    {
+        const MemoryBarrierDesc &memoryBarrier = barrier.GetMemoryBarriers( ).GetElement( i );
+
+        // Special Cases, Uav Barrier:
+        bool isUavBarrier = memoryBarrier.OldState.IsSet( ResourceState::AccelerationStructureWrite ) && memoryBarrier.NewState.IsSet( ResourceState::AccelerationStructureRead );
+        isUavBarrier |= memoryBarrier.OldState.IsSet( ResourceState::DepthWrite ) && memoryBarrier.NewState.IsSet( ResourceState::DepthRead );
+
+        ID3D12Resource *dx12Resource = nullptr;
+        if ( memoryBarrier.BufferResource != nullptr )
+        {
+            const auto *bufferResource = dynamic_cast<DX12BufferResource *>( memoryBarrier.BufferResource );
+            dx12Resource               = bufferResource->Resource( );
+        }
+        if ( memoryBarrier.TextureResource != nullptr )
+        {
+            const auto *textureResource = dynamic_cast<DX12TextureResource *>( memoryBarrier.TextureResource );
+            dx12Resource                = textureResource->GetResource( );
+        }
+        if ( isUavBarrier )
+        {
+            D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::UAV( dx12Resource );
+            resourceBarriers.push_back( resourceBarrier );
+        }
+        else
+        {
+            const D3D12_RESOURCE_STATES before = DX12EnumConverter::ConvertResourceState( memoryBarrier.OldState );
+            const D3D12_RESOURCE_STATES after  = DX12EnumConverter::ConvertResourceState( memoryBarrier.NewState );
+
+            D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition( dx12Resource, before, after );
+            resourceBarriers.push_back( resourceBarrier );
+        }
+    }
+
     if ( !resourceBarriers.empty( ) )
     {
         m_commandList->ResourceBarrier( resourceBarriers.size( ), resourceBarriers.data( ) );

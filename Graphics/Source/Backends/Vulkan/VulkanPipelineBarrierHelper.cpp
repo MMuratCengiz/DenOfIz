@@ -70,12 +70,21 @@ void VulkanPipelineBarrierHelper::ExecutePipelineBarrier( const VulkanContext *c
         VkBufferMemoryBarrier    bufferMemoryBarrier = CreateBufferBarrier( bufferBarrier, srcAccessFlags, dstAccessFlags );
         vkBufferBarriers.push_back( bufferMemoryBarrier );
     }
-    const std::vector<VkMemoryBarrier> memoryBarriers; // Todo
+    std::vector<VkMemoryBarrier>           vkMemoryBarriers;
+    const InteropArray<MemoryBarrierDesc> &memoryBarriers = barrier.GetMemoryBarriers( );
+    for ( int i = 0; i < memoryBarriers.NumElements( ); i++ )
+    {
+        const MemoryBarrierDesc &memoryBarrier   = memoryBarriers.GetElement( i );
+        VkMemoryBarrier         &vkMemoryBarrier = vkMemoryBarriers.emplace_back( VkMemoryBarrier{ } );
+        vkMemoryBarrier.sType                    = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+        vkMemoryBarrier.srcAccessMask            = GetAccessFlags( memoryBarrier.OldState );
+        vkMemoryBarrier.dstAccessMask            = GetAccessFlags( memoryBarrier.NewState );
+    }
 
     const VkPipelineStageFlags srcStageMask = GetPipelineStageFlags( context, commandQueueType, srcAccessFlags );
     const VkPipelineStageFlags dstStageMask = GetPipelineStageFlags( context, commandQueueType, dstAccessFlags );
 
-    vkCmdPipelineBarrier( commandBuffer, srcStageMask, dstStageMask, VkDependencyFlags{ }, memoryBarriers.size( ), memoryBarriers.data( ), vkBufferBarriers.size( ),
+    vkCmdPipelineBarrier( commandBuffer, srcStageMask, dstStageMask, VkDependencyFlags{ }, vkMemoryBarriers.size( ), vkMemoryBarriers.data( ), vkBufferBarriers.size( ),
                           vkBufferBarriers.data( ), vkImageBarriers.size( ), vkImageBarriers.data( ) );
 }
 
