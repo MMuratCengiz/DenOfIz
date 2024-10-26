@@ -65,6 +65,10 @@ SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanPipeline.cpp
         Source/Backends/Vulkan/VulkanRootSignature.cpp
         Source/Backends/Vulkan/VulkanSwapChain.cpp
+        # RayTracing
+        Source/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.cpp
+        Source/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.cpp
+        Source/Backends/Vulkan/RayTracing/VulkanTopLevelAS.cpp
         # Vulkan Resources
         Source/Backends/Vulkan/VulkanFence.cpp
         Source/Backends/Vulkan/VulkanSemaphore.cpp
@@ -87,6 +91,7 @@ set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
         Source/Backends/DirectX12/DX12CommandList.cpp
         Source/Backends/DirectX12/DX12DescriptorHeap.cpp
         Source/Backends/DirectX12/DX12CommandListPool.cpp
+        # RayTracing
         Source/Backends/DirectX12/RayTracing/DX12BottomLevelAS.cpp
         Source/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.cpp
         Source/Backends/DirectX12/RayTracing/DX12TopLevelAS.cpp
@@ -113,6 +118,10 @@ set(DEN_OF_IZ_GRAPHICS_METAL_SOURCES
         Source/Backends/Metal/MetalSemaphore.mm
         Source/Backends/Metal/MetalSwapChain.mm
         Source/Backends/Metal/MetalTextureResource.mm
+        # RayTracing
+        Source/Backends/Metal/RayTracing/MetalBottomLevelAS.cpp
+        Source/Backends/Metal/RayTracing/MetalShaderBindingTable.cpp
+        Source/Backends/Metal/RayTracing/MetalTopLevelAS.cpp
 )
 
 if (WIN32)

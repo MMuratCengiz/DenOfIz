@@ -16,11 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#include <DenOfIzGraphics/Backends/Vulkan//RayTracing/VulkanShaderBindingTable.h>
 
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderBindingTable.h>
-
-namespace DenOfIz
-{
-
-}
+using namespace DenOfIz;
