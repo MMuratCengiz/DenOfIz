@@ -713,3 +713,29 @@ VkImageLayout VulkanEnumConverter::ConvertTextureDescriptorToLayout( BitSet<Reso
     }
     return VK_IMAGE_LAYOUT_UNDEFINED;
 }
+
+VkBuildAccelerationStructureFlagsKHR VulkanEnumConverter::ConvertAccelerationStructureBuildFlags( BitSet<ASBuildFlags> buildFlags )
+{
+    VkBuildAccelerationStructureFlagsKHR flags = 0;
+    if ( buildFlags.IsSet( ASBuildFlags::AllowUpdate ) )
+    {
+        flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+    }
+    if ( buildFlags.IsSet( ASBuildFlags::AllowCompaction ) )
+    {
+        flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR;
+    }
+    if ( buildFlags.IsSet( ASBuildFlags::PreferFastTrace ) )
+    {
+        flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    }
+    if ( buildFlags.IsSet( ASBuildFlags::PreferFastBuild ) )
+    {
+        flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+    }
+    if ( buildFlags.IsSet( ASBuildFlags::LowMemory ) )
+    {
+        flags |= VK_BUILD_ACCELERATION_STRUCTURE_LOW_MEMORY_BIT_KHR;
+    }
+    return flags;
+}

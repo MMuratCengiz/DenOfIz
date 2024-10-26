@@ -26,11 +26,15 @@ DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASD
     m_geometryDescs.resize( numGeometries );
     for ( uint32_t i = 0; i < numGeometries; ++i )
     {
-        const ASGeometryDesc &geometry = desc.Geometries.GetElement( i );
+        const ASGeometryDesc           &geometry     = desc.Geometries.GetElement( i );
         D3D12_RAYTRACING_GEOMETRY_DESC &dx12Geometry = m_geometryDescs[ i ];
-        if ( geometry.IsOpaque )
+        if ( geometry.Flags.IsSet( GeometryFlags::Opaque ) )
         {
-            dx12Geometry.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+            dx12Geometry.Flags |= D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+        }
+        if ( geometry.Flags.IsSet( GeometryFlags::NoDuplicateAnyHitInvocation ) )
+        {
+            dx12Geometry.Flags |= D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION;
         }
         switch ( geometry.Type )
         {
@@ -79,7 +83,7 @@ void DX12BottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &trian
         return;
     }
 
-    dx12Geometry.Type  = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+    dx12Geometry.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
 
     if ( triangle.NumIndices > 0 )
     {

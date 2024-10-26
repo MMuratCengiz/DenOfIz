@@ -52,6 +52,7 @@ namespace DenOfIz
         static VkPipelineBindPoint   ConvertPipelineBindPoint( const BindPoint &point );
         static VkImageUsageFlags     ConvertTextureUsage( BitSet<ResourceDescriptor> descriptor, BitSet<ResourceState> initialState );
         static VkImageLayout         ConvertTextureDescriptorToLayout( BitSet<ResourceState> initialState );
+        static VkBuildAccelerationStructureFlagsKHR ConvertAccelerationStructureBuildFlags( BitSet<ASBuildFlags> buildFlags );
     };
 
 } // namespace DenOfIz
