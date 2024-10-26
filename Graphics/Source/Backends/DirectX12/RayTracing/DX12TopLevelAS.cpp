@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLeveLAS.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLevelAS.h>
 
 using namespace DenOfIz;
 
