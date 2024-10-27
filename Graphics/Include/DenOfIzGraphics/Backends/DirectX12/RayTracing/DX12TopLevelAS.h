@@ -23,14 +23,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class DX12TopLevelAS : public ITopLevelAS
+    class DX12TopLevelAS final : public ITopLevelAS
     {
-    private:
         DX12Context                                        *m_context;
         std::unique_ptr<DX12BufferResource>                 m_instanceBuffer;
         std::unique_ptr<DX12BufferResource>                 m_buffer;
         std::unique_ptr<DX12BufferResource>                 m_scratch;
-        D3D12_CPU_DESCRIPTOR_HANDLE                         m_asSrvHandle;
+        D3D12_CPU_DESCRIPTOR_HANDLE                         m_asSrvHandle{};
         std::vector<D3D12_RAYTRACING_INSTANCE_DESC>         m_instanceDescs;
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS m_flags;
 
@@ -38,7 +37,7 @@ namespace DenOfIz
         DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc );
         ~DX12TopLevelAS( ) override = default;
         [[nodiscard]] D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Flags( ) const;
-        [[nodiscard]] const size_t                                        NumInstances( ) const;
+        [[nodiscard]] size_t                                              NumInstances( ) const;
         [[nodiscard]] const DX12BufferResource                           *InstanceBuffer( ) const;
         [[nodiscard]] const DX12BufferResource                           *DX12Buffer( ) const;
         [[nodiscard]] IBufferResource                                    *Buffer( ) const override;

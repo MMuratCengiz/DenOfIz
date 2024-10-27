@@ -27,8 +27,8 @@ namespace DenOfIz
     {
     private:
         VulkanContext                                  *m_context;
-        VkAccelerationStructureKHR                      m_accelerationStructure;
-        VkDeviceMemory                                  m_memory;
+        VkAccelerationStructureKHR                      m_accelerationStructure{};
+        VkDeviceMemory                                  m_memory{};
         VkBuildAccelerationStructureFlagsKHR            m_flags;
         std::vector<VkAccelerationStructureInstanceKHR> m_instances;
         std::unique_ptr<VulkanBufferResource>           m_instanceBuffer;
@@ -36,12 +36,13 @@ namespace DenOfIz
         std::unique_ptr<VulkanBufferResource>           m_scratch;
 
     public:
-        VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc &desc );
-        VkBuildAccelerationStructureFlagsKHR Flags( ) const;
-        const size_t                         NumInstances( ) const;
-        const VulkanBufferResource          *InstanceBuffer( ) const;
-        const IBufferResource               *Buffer( ) const;
-        const VulkanBufferResource          *Scratch( ) const;
-        ~VulkanTopLevelAS( ) override;
+                                                           VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc &desc );
+        [[nodiscard]] VkBuildAccelerationStructureFlagsKHR Flags( ) const;
+        [[nodiscard]] size_t                               NumInstances( ) const;
+        [[nodiscard]] const VulkanBufferResource          *InstanceBuffer( ) const;
+        [[nodiscard]] VulkanBufferResource                *VulkanBuffer( ) const;
+        [[nodiscard]] IBufferResource                     *Buffer( ) const override;
+        [[nodiscard]] const VulkanBufferResource          *Scratch( ) const;
+        ~                                                  VulkanTopLevelAS( ) override;
     };
 } // namespace DenOfIz

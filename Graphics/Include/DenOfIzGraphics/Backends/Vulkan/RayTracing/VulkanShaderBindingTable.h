@@ -19,8 +19,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderBindingTable.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanPipeline.h>
 
 namespace DenOfIz
 {
+    class VulkanShaderBindingTable final : public IShaderBindingTable
+    {
+        VulkanContext         *m_context;
+        VulkanPipeline        *m_pipeline;
+        ShaderBindingTableDesc m_desc;
 
-}
+    public:
+                                       VulkanShaderBindingTable( VulkanContext *context, const ShaderBindingTableDesc &desc );
+        void                           Resize( const SBTSizeDesc                           &) override;
+        void                           BindRayGenerationShader( const RayGenerationBindingDesc &desc ) override;
+        void                           BindHitGroup( const HitGroupBindingDesc &desc ) override;
+        void                           BindMissShader( const MissBindingDesc &desc ) override;
+        void                           Build( ) override;
+        [[nodiscard]] IBufferResource *Buffer( ) const override;
+
+    private:
+        [[nodiscard]] uint32_t AlignRecord( uint32_t size ) const;
+    };
+} // namespace DenOfIz

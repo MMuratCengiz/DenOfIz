@@ -23,9 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class DX12BottomLevelAS : public IBottomLevelAS
+    class DX12BottomLevelAS final : public IBottomLevelAS
     {
-    private:
         DX12Context                                        *m_context;
         std::unique_ptr<DX12BufferResource>                 m_scratch;
         std::unique_ptr<DX12BufferResource>                 m_asBuffer;
@@ -41,7 +40,7 @@ namespace DenOfIz
         [[nodiscard]] const DX12BufferResource                           *Scratch( ) const;
         void                                                              Update( const BottomLevelASDesc &desc ) override;
     private:
-        void InitializeTriangles( const ASGeometryTriangleDesc &triangle, D3D12_RAYTRACING_GEOMETRY_DESC& dx12Geometry);
-        void InitializeAABBs( const ASGeometryAABBDesc &aabb, D3D12_RAYTRACING_GEOMETRY_DESC& dx12Geometry );
+        void InitializeTriangles( const ASGeometryTriangleDesc &triangle, D3D12_RAYTRACING_GEOMETRY_DESC& dx12Geometry ) const;
+        void InitializeAABBs( const ASGeometryAABBDesc &aabb, D3D12_RAYTRACING_GEOMETRY_DESC& dx12Geometry ) const;
     };
 } // namespace DenOfIz

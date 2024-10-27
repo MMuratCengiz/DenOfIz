@@ -26,8 +26,8 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
     m_instanceDescs.resize( desc.Instances.NumElements( ) );
     for ( uint32_t i = 0; i < desc.Instances.NumElements( ); ++i )
     {
-        const ASInstanceDesc &instanceDesc       = desc.Instances.GetElement( i );
-        DX12BufferResource   *dx12InstanceBuffer = dynamic_cast<DX12BufferResource *>( instanceDesc.BLASBuffer );
+        const ASInstanceDesc     &instanceDesc       = desc.Instances.GetElement( i );
+        const DX12BufferResource *dx12InstanceBuffer = dynamic_cast<DX12BufferResource *>( instanceDesc.BLASBuffer );
         if ( dx12InstanceBuffer == nullptr )
         {
             LOG( WARNING ) << "Instance buffer is null.";
@@ -61,7 +61,7 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
     m_instanceBuffer->UnmapMemory( );
 
     BufferDesc bufferDesc   = { };
-    bufferDesc.Descriptor   = BitSet<ResourceDescriptor>( ResourceDescriptor::RWBuffer ) | ResourceDescriptor::AccelerationStructure;
+    bufferDesc.Descriptor   = BitSet( ResourceDescriptor::RWBuffer ) | ResourceDescriptor::AccelerationStructure;
     bufferDesc.HeapType     = HeapType::GPU;
     bufferDesc.NumBytes     = info.ResultDataMaxSizeInBytes;
     bufferDesc.InitialState = ResourceState::AccelerationStructureWrite;
@@ -73,8 +73,8 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
 
     BufferDesc scratchBufferDesc   = { };
     scratchBufferDesc.HeapType     = HeapType::GPU;
-    scratchBufferDesc.NumBytes     = (UINT)info.ScratchDataSizeInBytes;
-    scratchBufferDesc.Descriptor   = BitSet<ResourceDescriptor>( ResourceDescriptor::RWBuffer );
+    scratchBufferDesc.NumBytes     = static_cast<UINT>( info.ScratchDataSizeInBytes );
+    scratchBufferDesc.Descriptor   = BitSet( ResourceDescriptor::RWBuffer );
     scratchBufferDesc.InitialState = ResourceState::UnorderedAccess;
     scratchBufferDesc.DebugName    = "Top Level Acceleration Structure Scratch Buffer";
     m_scratch                      = std::make_unique<DX12BufferResource>( m_context, scratchBufferDesc );
@@ -85,7 +85,7 @@ D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS DX12TopLevelAS::Flags( ) con
     return m_flags;
 }
 
-const size_t DX12TopLevelAS::NumInstances( ) const
+size_t DX12TopLevelAS::NumInstances( ) const
 {
     return m_instanceDescs.size( );
 }

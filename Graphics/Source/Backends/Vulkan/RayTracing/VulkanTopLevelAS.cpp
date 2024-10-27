@@ -30,19 +30,25 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
     for ( uint32_t i = 0; i < desc.Instances.NumElements( ); ++i )
     {
         const ASInstanceDesc &instanceDesc = desc.Instances.GetElement( i );
-        VulkanBufferResource *vkBLASBuffer = dynamic_cast<VulkanBufferResource *>( instanceDesc.BLASBuffer );
+        auto                 *vkBLASBuffer = dynamic_cast<VulkanBufferResource *>( instanceDesc.BLASBuffer );
         if ( vkBLASBuffer == nullptr )
         {
             LOG( WARNING ) << "BLAS buffer is null.";
             continue;
         }
 
-        VkAccelerationStructureInstanceKHR &vkInstance    = m_instances[ i ];
-        vkInstance.transform                              = instanceDesc.Transform;
+        VkBuffer                  buffer                  = vkBLASBuffer->Instance( );
+        VkBufferDeviceAddressInfo bufferDeviceAddressInfo = { };
+        bufferDeviceAddressInfo.sType                     = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        bufferDeviceAddressInfo.buffer                    = buffer;
+        VkDeviceAddress bufferDeviceAddress               = vkGetBufferDeviceAddress( m_context->LogicalDevice, &bufferDeviceAddressInfo );
+
+        VkAccelerationStructureInstanceKHR &vkInstance = m_instances[ i ];
+        memcpy( vkInstance.transform.matrix, instanceDesc.Transform.Data( ), 12 * sizeof( float ) );
         vkInstance.instanceCustomIndex                    = instanceDesc.ID;
         vkInstance.mask                                   = instanceDesc.Mask;
         vkInstance.instanceShaderBindingTableRecordOffset = instanceDesc.ContributionToHitGroupIndex;
-        vkInstance.accelerationStructureReference         = vkBLASBuffer->DeviceAddress( );
+        vkInstance.accelerationStructureReference         = bufferDeviceAddress;
         vkInstance.flags                                  = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
     }
 
@@ -90,7 +96,7 @@ VkBuildAccelerationStructureFlagsKHR VulkanTopLevelAS::Flags( ) const
     return m_flags;
 }
 
-const size_t VulkanTopLevelAS::NumInstances( ) const
+size_t VulkanTopLevelAS::NumInstances( ) const
 {
     return m_instances.size( );
 }
@@ -100,7 +106,12 @@ const VulkanBufferResource *VulkanTopLevelAS::InstanceBuffer( ) const
     return m_instanceBuffer.get( );
 }
 
-const IBufferResource *VulkanTopLevelAS::Buffer( ) const
+VulkanBufferResource *VulkanTopLevelAS::VulkanBuffer( ) const
+{
+    return m_buffer.get( );
+}
+
+IBufferResource *VulkanTopLevelAS::Buffer( ) const
 {
     return m_buffer.get( );
 }
@@ -110,7 +121,4 @@ const VulkanBufferResource *VulkanTopLevelAS::Scratch( ) const
     return m_scratch.get( );
 }
 
-VulkanTopLevelAS::~VulkanTopLevelAS( )
-{
-
-}
+VulkanTopLevelAS::~VulkanTopLevelAS( ) = default;

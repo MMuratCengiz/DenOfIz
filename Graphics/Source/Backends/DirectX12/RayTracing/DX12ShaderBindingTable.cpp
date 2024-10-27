@@ -28,10 +28,10 @@ DX12ShaderBindingTable::DX12ShaderBindingTable( DX12Context *context, const Shad
 
 void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
-    uint32_t rayGenerationShaderNumBytes = AlignRecord( desc.NumRayGenerationShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
-    uint32_t hitGroupNumBytes            = AlignRecord( desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
-    uint32_t missShaderNumBytes          = AlignRecord( desc.NumMissShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
-    m_numBufferBytes                     = rayGenerationShaderNumBytes + hitGroupNumBytes + missShaderNumBytes;
+    const uint32_t rayGenerationShaderNumBytes = AlignRecord( desc.NumRayGenerationShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+    const uint32_t hitGroupNumBytes            = AlignRecord( desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+    const uint32_t missShaderNumBytes          = AlignRecord( desc.NumMissShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+    m_numBufferBytes                           = rayGenerationShaderNumBytes + hitGroupNumBytes + missShaderNumBytes;
 
     BufferDesc bufferDesc   = { };
     bufferDesc.NumBytes     = m_numBufferBytes;
@@ -162,7 +162,7 @@ void DX12ShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
     memcpy( missShaderEntry, shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
 }
 
-uint32_t DX12ShaderBindingTable::AlignRecord( uint32_t size )
+uint32_t DX12ShaderBindingTable::AlignRecord( const uint32_t size ) const
 {
     return Utilities::Align( size, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT );
 }
@@ -179,11 +179,11 @@ void DX12ShaderBindingTable::Build( )
     DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( 0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( barrierFence.put( ) ) ) );
 
     const auto commandList = m_context->CopyCommandList;
-    commandList->Reset( m_context->CopyCommandListAllocator.get( ), nullptr );
+    DX_CHECK_RESULT( commandList->Reset( m_context->CopyCommandListAllocator.get( ), nullptr ) );
     commandList->CopyBufferRegion( m_buffer->Resource( ), 0, m_stagingBuffer->Resource( ), 0, m_numBufferBytes );
-    commandList->Close( );
+    DX_CHECK_RESULT( commandList->Close( ) );
     m_context->CopyCommandQueue->ExecuteCommandLists( 1, CommandListCast( commandList.addressof( ) ) );
-    m_context->CopyCommandQueue->Signal( copyFence.get( ), 1 );
+    DX_CHECK_RESULT( m_context->CopyCommandQueue->Signal( copyFence.get( ), 1 ) );
 
     // Create a direct command list to barrier the resource to shader resource state:
     wil::com_ptr<ID3D12CommandAllocator>    commandAllocator;
@@ -192,16 +192,16 @@ void DX12ShaderBindingTable::Build( )
     DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandAllocator( D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS( commandAllocator.put( ) ) ) );
     DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandList( 0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.get( ), nullptr, IID_PPV_ARGS( directCommandList.put( ) ) ) );
 
-    directCommandList->Close( );
-    commandAllocator->Reset( );
-    directCommandList->Reset( commandAllocator.get( ), nullptr );
+    DX_CHECK_RESULT( directCommandList->Close( ) );
+    DX_CHECK_RESULT( commandAllocator->Reset( ) );
+    DX_CHECK_RESULT( directCommandList->Reset( commandAllocator.get( ), nullptr ) );
     const auto &barrier = CD3DX12_RESOURCE_BARRIER::Transition( m_buffer->Resource( ), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE );
     directCommandList->ResourceBarrier( 1, &barrier );
-    directCommandList->Close( );
-    m_context->GraphicsCommandQueue->Wait( copyFence.get( ), 1 );
+    DX_CHECK_RESULT( directCommandList->Close( ) );
+    DX_CHECK_RESULT( m_context->GraphicsCommandQueue->Wait( copyFence.get( ), 1 ) );
     m_context->GraphicsCommandQueue->ExecuteCommandLists( 1, CommandListCast( directCommandList.addressof( ) ) );
-    m_context->GraphicsCommandQueue->Signal( barrierFence.get( ), 1 );
-    m_context->GraphicsCommandQueue->Wait( barrierFence.get( ), 1 );
+    DX_CHECK_RESULT( m_context->GraphicsCommandQueue->Signal( barrierFence.get( ), 1 ) );
+    DX_CHECK_RESULT( m_context->GraphicsCommandQueue->Wait( barrierFence.get( ), 1 ) );
 }
 
 IBufferResource *DX12ShaderBindingTable::Buffer( ) const
@@ -218,6 +218,7 @@ D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE DX12ShaderBindingTable::HitGroupShade
 {
     return m_hitGroupShaderRange;
 }
+
 D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE DX12ShaderBindingTable::MissShaderRange( ) const
 {
     return m_missShaderRange;

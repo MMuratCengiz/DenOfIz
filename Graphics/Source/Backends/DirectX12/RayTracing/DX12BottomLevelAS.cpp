@@ -21,8 +21,8 @@ using namespace DenOfIz;
 
 DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASDesc &desc ) : m_context( context )
 {
-    m_flags              = DX12EnumConverter::ConvertAccelerationStructureBuildFlags( desc.BuildFlags );
-    size_t numGeometries = desc.Geometries.NumElements( );
+    m_flags                    = DX12EnumConverter::ConvertAccelerationStructureBuildFlags( desc.BuildFlags );
+    const size_t numGeometries = desc.Geometries.NumElements( );
     m_geometryDescs.resize( numGeometries );
     for ( uint32_t i = 0; i < numGeometries; ++i )
     {
@@ -50,7 +50,7 @@ DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASD
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS prebuildDesc = { };
     prebuildDesc.DescsLayout                                          = D3D12_ELEMENTS_LAYOUT_ARRAY;
     prebuildDesc.Flags                                                = m_flags;
-    prebuildDesc.NumDescs                                             = (UINT)m_geometryDescs.size( );
+    prebuildDesc.NumDescs                                             = static_cast<UINT>( m_geometryDescs.size( ) );
     prebuildDesc.pGeometryDescs                                       = m_geometryDescs.data( );
     prebuildDesc.Type                                                 = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
 
@@ -58,7 +58,7 @@ DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASD
     m_context->D3DDevice->GetRaytracingAccelerationStructurePrebuildInfo( &prebuildDesc, &info );
 
     BufferDesc bufferDesc   = { };
-    bufferDesc.Descriptor   = BitSet<ResourceDescriptor>( ResourceDescriptor::RWBuffer ) | ResourceDescriptor::AccelerationStructure;
+    bufferDesc.Descriptor   = BitSet( ResourceDescriptor::RWBuffer ) | ResourceDescriptor::AccelerationStructure;
     bufferDesc.HeapType     = HeapType::GPU;
     bufferDesc.NumBytes     = info.ResultDataMaxSizeInBytes;
     bufferDesc.InitialState = ResourceState::AccelerationStructureWrite;
@@ -67,16 +67,16 @@ DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASD
 
     BufferDesc scratchBufferDesc   = { };
     scratchBufferDesc.HeapType     = HeapType::GPU;
-    scratchBufferDesc.NumBytes     = (UINT)info.ScratchDataSizeInBytes;
-    scratchBufferDesc.Descriptor   = BitSet<ResourceDescriptor>( ResourceDescriptor::RWBuffer );
+    scratchBufferDesc.NumBytes     = static_cast<UINT>( info.ScratchDataSizeInBytes );
+    scratchBufferDesc.Descriptor   = BitSet( ResourceDescriptor::RWBuffer );
     scratchBufferDesc.InitialState = ResourceState::UnorderedAccess;
     scratchBufferDesc.DebugName    = "Bottom Level Acceleration Structure Scratch";
     m_scratch                      = std::make_unique<DX12BufferResource>( m_context, scratchBufferDesc );
 }
 
-void DX12BottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &triangle, D3D12_RAYTRACING_GEOMETRY_DESC &dx12Geometry )
+void DX12BottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &triangle, D3D12_RAYTRACING_GEOMETRY_DESC &dx12Geometry ) const
 {
-    DX12BufferResource *dx12VertexBuffer = dynamic_cast<DX12BufferResource *>( triangle.VertexBuffer );
+    const DX12BufferResource *dx12VertexBuffer = dynamic_cast<DX12BufferResource *>( triangle.VertexBuffer );
     if ( triangle.NumVertices == 0 || dx12VertexBuffer == nullptr )
     {
         LOG( WARNING ) << "Geometry has no vertices, or vertex buffer is null.";
@@ -87,7 +87,7 @@ void DX12BottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &trian
 
     if ( triangle.NumIndices > 0 )
     {
-        DX12BufferResource *dx12IndexBuffer = dynamic_cast<DX12BufferResource *>( triangle.IndexBuffer );
+        const DX12BufferResource *dx12IndexBuffer = dynamic_cast<DX12BufferResource *>( triangle.IndexBuffer );
         if ( dx12IndexBuffer == nullptr )
         {
             LOG( WARNING ) << "Geometry.NumIndices > 0, but Geometry.IndexBuffer == nullptr.";
@@ -104,26 +104,24 @@ void DX12BottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &trian
     dx12Geometry.Triangles.VertexCount                = triangle.NumVertices;
     dx12Geometry.Triangles.VertexFormat               = DX12EnumConverter::ConvertFormat( triangle.VertexFormat );
 
-    const static std::unordered_set<Format> allowedFormats{ Format::R32G32Float,       Format::R32G32B32Float, Format::R16G16Float,
-                                                            Format::R16G16B16A16Float, Format::R16G16Snorm,    Format::R16G16B16A16Snorm };
+    const static std::unordered_set allowedFormats{ Format::R32G32Float,       Format::R32G32B32Float, Format::R16G16Float,
+                                                    Format::R16G16B16A16Float, Format::R16G16Snorm,    Format::R16G16B16A16Snorm };
     if ( !allowedFormats.contains( triangle.VertexFormat ) )
     {
         LOG( WARNING ) << "Invalid vertex format for acceleration structure geometry.";
     }
 }
 
-void DX12BottomLevelAS::InitializeAABBs( const ASGeometryAABBDesc &aabb, D3D12_RAYTRACING_GEOMETRY_DESC &dx12Geometry )
+void DX12BottomLevelAS::InitializeAABBs( const ASGeometryAABBDesc &aabb, D3D12_RAYTRACING_GEOMETRY_DESC &dx12Geometry ) const
 {
-    DX12BufferResource *dx12AABBBuffer = dynamic_cast<DX12BufferResource *>( aabb.Buffer );
+    const DX12BufferResource *dx12AABBBuffer = dynamic_cast<DX12BufferResource *>( aabb.Buffer );
     if ( aabb.NumAABBs == 0 || dx12AABBBuffer == nullptr )
     {
         LOG( WARNING ) << "Geometry has no AABBs, or AABB buffer is null.";
         return;
     }
 
-    dx12Geometry.Type  = D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS;
-    dx12Geometry.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE; // todo
-
+    dx12Geometry.Type                      = D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS;
     dx12Geometry.AABBs.AABBs.StartAddress  = dx12AABBBuffer->Resource( )->GetGPUVirtualAddress( ) + aabb.Offset;
     dx12Geometry.AABBs.AABBs.StrideInBytes = aabb.Stride;
     dx12Geometry.AABBs.AABBCount           = aabb.NumAABBs;

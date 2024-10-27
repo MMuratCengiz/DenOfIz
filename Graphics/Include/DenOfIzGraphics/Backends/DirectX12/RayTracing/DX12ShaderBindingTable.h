@@ -59,6 +59,6 @@ namespace DenOfIz
 
     private:
         bool     BindHitGroupRecursive( const HitGroupBindingDesc &desc );
-        uint32_t AlignRecord( uint32_t size );
+        uint32_t AlignRecord( uint32_t size ) const;
     };
 } // namespace DenOfIz
