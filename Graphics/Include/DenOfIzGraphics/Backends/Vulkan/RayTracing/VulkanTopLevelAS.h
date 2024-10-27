@@ -19,8 +19,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/RayTracing/ITopLevelAS.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
 
 namespace DenOfIz
 {
+    class VulkanTopLevelAS : public ITopLevelAS
+    {
+    private:
+        VulkanContext                                  *m_context;
+        VkAccelerationStructureKHR                      m_accelerationStructure;
+        VkDeviceMemory                                  m_memory;
+        VkBuildAccelerationStructureFlagsKHR            m_flags;
+        std::vector<VkAccelerationStructureInstanceKHR> m_instances;
+        std::unique_ptr<VulkanBufferResource>           m_instanceBuffer;
+        std::unique_ptr<VulkanBufferResource>           m_buffer;
+        std::unique_ptr<VulkanBufferResource>           m_scratch;
 
-}
+    public:
+        VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc &desc );
+        VkBuildAccelerationStructureFlagsKHR Flags( ) const;
+        const size_t                         NumInstances( ) const;
+        const VulkanBufferResource          *InstanceBuffer( ) const;
+        const IBufferResource               *Buffer( ) const;
+        const VulkanBufferResource          *Scratch( ) const;
+        ~VulkanTopLevelAS( ) override;
+    };
+} // namespace DenOfIz

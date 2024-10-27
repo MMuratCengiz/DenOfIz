@@ -39,6 +39,11 @@ namespace DenOfIz
         ASBuildFlags                 BuildFlags;
     };
 
+    struct DZ_API TopLevelASUpdateDesc
+    {
+
+    };
+
     class DZ_API ITopLevelAS
     {
     public:
