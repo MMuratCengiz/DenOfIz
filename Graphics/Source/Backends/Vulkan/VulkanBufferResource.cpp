@@ -61,6 +61,11 @@ VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc d
 
     m_offset   = 0; // This used to be allocationInfo.offset, but seems to be applied automatically in almost every case, not sure if required.
     m_numBytes = allocationInfo.size;
+
+    VkBufferDeviceAddressInfo bufferDeviceAddressInfo{ };
+    bufferDeviceAddressInfo.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    bufferDeviceAddressInfo.buffer = m_instance;
+    m_deviceAddress = vkGetBufferDeviceAddress( m_context->LogicalDevice, &bufferDeviceAddressInfo );
 }
 
 void *VulkanBufferResource::MapMemory( )
@@ -134,4 +139,9 @@ size_t VulkanBufferResource::Offset( ) const
 const VkBuffer &VulkanBufferResource::Instance( ) const
 {
     return m_instance;
+}
+
+const VkDeviceAddress &VulkanBufferResource::DeviceAddress( ) const
+{
+    return m_deviceAddress;
 }

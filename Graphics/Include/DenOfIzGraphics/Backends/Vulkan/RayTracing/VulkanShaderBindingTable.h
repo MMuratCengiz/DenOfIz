@@ -26,20 +26,40 @@ namespace DenOfIz
 {
     class VulkanShaderBindingTable final : public IShaderBindingTable
     {
-        VulkanContext         *m_context;
-        VulkanPipeline        *m_pipeline;
-        ShaderBindingTableDesc m_desc;
+        VulkanContext                        *m_context;
+        VulkanPipeline                       *m_pipeline;
+        ShaderBindingTableDesc                m_desc;
+        size_t                                m_numBufferBytes;
+        void                                 *m_mappedMemory;
+        std::unique_ptr<VulkanBufferResource> m_stagingBuffer;
+        std::unique_ptr<VulkanBufferResource> m_buffer;
+
+        VkStridedDeviceAddressRegionKHR m_rayGenerationShaderRange;
+        VkStridedDeviceAddressRegionKHR m_missShaderRange;
+        VkStridedDeviceAddressRegionKHR m_hitGroupShaderRange;
+
+        uint32_t m_missGroupOffset = 0;
+        uint32_t m_hitGroupOffset  = 0;
+
+        uint32_t shaderGroupHandleSize;
+        uint32_t shaderGroupBaseAlignment;
 
     public:
-                                       VulkanShaderBindingTable( VulkanContext *context, const ShaderBindingTableDesc &desc );
-        void                           Resize( const SBTSizeDesc                           &) override;
-        void                           BindRayGenerationShader( const RayGenerationBindingDesc &desc ) override;
-        void                           BindHitGroup( const HitGroupBindingDesc &desc ) override;
-        void                           BindMissShader( const MissBindingDesc &desc ) override;
-        void                           Build( ) override;
-        [[nodiscard]] IBufferResource *Buffer( ) const override;
+        VulkanShaderBindingTable( VulkanContext *context, const ShaderBindingTableDesc &desc );
+        void                                Resize( const SBTSizeDesc                                &) override;
+        void                                BindRayGenerationShader( const RayGenerationBindingDesc &desc ) override;
+        void                                BindHitGroup( const HitGroupBindingDesc &desc ) override;
+        void                                BindMissShader( const MissBindingDesc &desc ) override;
+        void                                Build( ) override;
+        [[nodiscard]] VulkanBufferResource *VulkanBuffer( ) const;
+        [[nodiscard]] IBufferResource      *Buffer( ) const override;
+
+        [[nodiscard]] const VkStridedDeviceAddressRegionKHR *RayGenerationShaderRange( ) const;
+        [[nodiscard]] const VkStridedDeviceAddressRegionKHR *MissShaderRange( ) const;
+        [[nodiscard]] const VkStridedDeviceAddressRegionKHR *HitGroupShaderRange( ) const;
 
     private:
         [[nodiscard]] uint32_t AlignRecord( uint32_t size ) const;
+        bool                   BindHitGroupRecursive( const HitGroupBindingDesc &desc );
     };
 } // namespace DenOfIz

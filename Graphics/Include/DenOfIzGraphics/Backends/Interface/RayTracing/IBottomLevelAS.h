@@ -78,6 +78,5 @@ namespace DenOfIz
     public:
         virtual ~IBottomLevelAS( )                                       = default;
         virtual IBufferResource *Buffer( ) const                         = 0;
-        virtual void             Update( const BottomLevelASDesc &desc ) = 0;
     };
 } // namespace DenOfIz

@@ -34,6 +34,7 @@ namespace DenOfIz
         size_t                m_numBytes{ };
         const void           *m_data         = nullptr;
         void                 *m_mappedMemory = nullptr;
+        VkDeviceAddress       m_deviceAddress{ };
         BitSet<ResourceState> m_state;
 
     public:
@@ -41,14 +42,15 @@ namespace DenOfIz
         void  UnmapMemory( ) override;
 
         explicit VulkanBufferResource( VulkanContext *context, BufferDesc desc );
-        ~        VulkanBufferResource( ) override;
+        ~VulkanBufferResource( ) override;
 
         [[nodiscard]] BitSet<ResourceState> InitialState( ) const override;
         [[nodiscard]] size_t                NumBytes( ) const override;
         [[nodiscard]] const void           *Data( ) const override;
 
-        [[nodiscard]] size_t          Offset( ) const;
-        [[nodiscard]] const VkBuffer &Instance( ) const;
+        [[nodiscard]] size_t                 Offset( ) const;
+        [[nodiscard]] const VkBuffer        &Instance( ) const;
+        [[nodiscard]] const VkDeviceAddress &DeviceAddress( ) const;
 
         // Interop API
         [[nodiscard]] InteropArray<Byte> GetData( ) const override;

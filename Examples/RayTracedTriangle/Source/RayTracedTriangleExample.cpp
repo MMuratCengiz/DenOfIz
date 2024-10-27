@@ -270,7 +270,7 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
     geometryDesc.Triangles.NumVertices  = 3;
     geometryDesc.Triangles.VertexBuffer = m_vertexBuffer.get( );
     geometryDesc.Triangles.VertexStride = 3 * sizeof( float );
-    geometryDesc.IsOpaque               = true; // Todo does nothing
+    geometryDesc.Flags                  = GeometryFlags::Opaque;
 
     BottomLevelASDesc bottomLevelASDesc{ };
     bottomLevelASDesc.Geometries.AddElement( geometryDesc );

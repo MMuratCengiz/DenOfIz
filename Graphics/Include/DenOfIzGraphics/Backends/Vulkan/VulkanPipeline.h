@@ -18,11 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanInputLayout.h>
+#include <DenOfIzGraphics/Utilities/Utilities.h>
 
 namespace DenOfIz
 {
@@ -44,15 +44,20 @@ namespace DenOfIz
         VkPipelineBindPoint m_bindPoint{ };
         VkPipelineLayout    m_layout{ };
 
+        std::unordered_map<std::string, uint32_t> m_shaderIdentifierOffsets;
+        std::vector<uint8_t>                      m_shaderIdentifiers;
+
     public:
         [[nodiscard]] VkPipeline          Instance( ) const;
         [[nodiscard]] VkPipelineBindPoint BindPoint( ) const;
+        [[nodiscard]] void               *GetShaderIdentifier( const std::string &exportName );
         VulkanPipeline( VulkanContext *context, const PipelineDesc & );
         ~VulkanPipeline( ) override;
 
     private:
         void                                                       CreateGraphicsPipeline( );
         void                                                       CreateComputePipeline( );
+        void                                                       CreateRayTracingPipeline( );
         [[nodiscard]] std::vector<VkPipelineShaderStageCreateInfo> ConfigurePipelineStages( );
         [[nodiscard]] VkPipelineRenderingCreateInfo                ConfigureRenderingInfo( std::vector<VkFormat> &colorAttachmentsStore ) const;
         [[nodiscard]] VkPipelineTessellationStateCreateInfo        ConfigureTessellation( ) const;

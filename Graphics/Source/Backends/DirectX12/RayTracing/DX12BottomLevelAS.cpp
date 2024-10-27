@@ -127,10 +127,6 @@ void DX12BottomLevelAS::InitializeAABBs( const ASGeometryAABBDesc &aabb, D3D12_R
     dx12Geometry.AABBs.AABBCount           = aabb.NumAABBs;
 }
 
-void DX12BottomLevelAS::Update( const BottomLevelASDesc &desc )
-{
-}
-
 D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS DX12BottomLevelAS::Flags( ) const
 {
     return m_flags;

@@ -37,20 +37,21 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
             continue;
         }
 
-        VkBuffer                  buffer                  = vkBLASBuffer->Instance( );
-        VkBufferDeviceAddressInfo bufferDeviceAddressInfo = { };
-        bufferDeviceAddressInfo.sType                     = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-        bufferDeviceAddressInfo.buffer                    = buffer;
-        VkDeviceAddress bufferDeviceAddress               = vkGetBufferDeviceAddress( m_context->LogicalDevice, &bufferDeviceAddressInfo );
+        VkBuffer buffer = vkBLASBuffer->Instance( );
 
         VkAccelerationStructureInstanceKHR &vkInstance = m_instances[ i ];
         memcpy( vkInstance.transform.matrix, instanceDesc.Transform.Data( ), 12 * sizeof( float ) );
         vkInstance.instanceCustomIndex                    = instanceDesc.ID;
         vkInstance.mask                                   = instanceDesc.Mask;
         vkInstance.instanceShaderBindingTableRecordOffset = instanceDesc.ContributionToHitGroupIndex;
-        vkInstance.accelerationStructureReference         = bufferDeviceAddress;
+        vkInstance.accelerationStructureReference         = vkBLASBuffer->DeviceAddress( );
         vkInstance.flags                                  = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
     }
+
+    m_buildRangeInfo.primitiveCount  = desc.Instances.NumElements( );
+    m_buildRangeInfo.primitiveOffset = 0;
+    m_buildRangeInfo.firstVertex     = 0;
+    m_buildRangeInfo.transformOffset = 0;
 
     // Calculate size requirements for top-level acceleration structure
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = { };
@@ -91,6 +92,10 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
     m_scratch                      = std::make_unique<VulkanBufferResource>( m_context, scratchBufferDesc );
 }
 
+void VulkanTopLevelAS::Update( const TopLevelASDesc &desc )
+{
+}
+
 VkBuildAccelerationStructureFlagsKHR VulkanTopLevelAS::Flags( ) const
 {
     return m_flags;
@@ -99,6 +104,16 @@ VkBuildAccelerationStructureFlagsKHR VulkanTopLevelAS::Flags( ) const
 size_t VulkanTopLevelAS::NumInstances( ) const
 {
     return m_instances.size( );
+}
+
+const VkAccelerationStructureKHR &VulkanTopLevelAS::AccelerationStructure( ) const
+{
+    return m_accelerationStructure;
+}
+
+const VkAccelerationStructureBuildRangeInfoKHR &VulkanTopLevelAS::BuildRangeInfo( ) const
+{
+    return m_buildRangeInfo;
 }
 
 const VulkanBufferResource *VulkanTopLevelAS::InstanceBuffer( ) const

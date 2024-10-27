@@ -16,9 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.h>
+#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.h>
+#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h>
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h"
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h"
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h>
 
 using namespace DenOfIz;
 
@@ -31,6 +34,7 @@ VulkanCommandList::VulkanCommandList( VulkanContext *context, const CommandListD
         commandPool = m_context->GraphicsQueueCommandPool;
         break;
     case QueueType::Compute:
+    case QueueType::RayTracing:
         commandPool = m_context->ComputeQueueCommandPool;
         break;
     case QueueType::Copy:
@@ -104,12 +108,13 @@ void VulkanCommandList::BeginRendering( const RenderingDesc &renderingDesc )
         const auto *vkDepthStencilResource = dynamic_cast<VulkanTextureResource *>( renderingDesc.DepthAttachment.Resource );
 
         VkRenderingAttachmentInfo depthAttachmentInfo{ };
-        depthAttachmentInfo.sType                   = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-        depthAttachmentInfo.imageView               = vkDepthStencilResource->ImageView( );
-        depthAttachmentInfo.imageLayout             = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        depthAttachmentInfo.loadOp                  = VulkanEnumConverter::ConvertLoadOp( renderingDesc.DepthAttachment.LoadOp );
-        depthAttachmentInfo.storeOp                 = VulkanEnumConverter::ConvertStoreOp( renderingDesc.DepthAttachment.StoreOp );
-        depthAttachmentInfo.clearValue.depthStencil = VkClearDepthStencilValue( renderingDesc.DepthAttachment.ClearDepthStencil[ 0 ], renderingDesc.DepthAttachment.ClearDepthStencil[ 1 ] );
+        depthAttachmentInfo.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        depthAttachmentInfo.imageView   = vkDepthStencilResource->ImageView( );
+        depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depthAttachmentInfo.loadOp      = VulkanEnumConverter::ConvertLoadOp( renderingDesc.DepthAttachment.LoadOp );
+        depthAttachmentInfo.storeOp     = VulkanEnumConverter::ConvertStoreOp( renderingDesc.DepthAttachment.StoreOp );
+        depthAttachmentInfo.clearValue.depthStencil =
+            VkClearDepthStencilValue( renderingDesc.DepthAttachment.ClearDepthStencil[ 0 ], renderingDesc.DepthAttachment.ClearDepthStencil[ 1 ] );
 
         renderInfo.pDepthAttachment = &depthAttachmentInfo;
     }
@@ -119,12 +124,13 @@ void VulkanCommandList::BeginRendering( const RenderingDesc &renderingDesc )
         const auto *vkDepthStencilResource = dynamic_cast<VulkanTextureResource *>( renderingDesc.StencilAttachment.Resource );
 
         VkRenderingAttachmentInfo stencilAttachmentInfo{ };
-        stencilAttachmentInfo.sType                   = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-        stencilAttachmentInfo.imageView               = vkDepthStencilResource->ImageView( );
-        stencilAttachmentInfo.imageLayout             = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        stencilAttachmentInfo.loadOp                  = VulkanEnumConverter::ConvertLoadOp( renderingDesc.StencilAttachment.LoadOp );
-        stencilAttachmentInfo.storeOp                 = VulkanEnumConverter::ConvertStoreOp( renderingDesc.StencilAttachment.StoreOp );
-        stencilAttachmentInfo.clearValue.depthStencil = VkClearDepthStencilValue( renderingDesc.StencilAttachment.ClearDepthStencil[ 0 ], renderingDesc.DepthAttachment.ClearDepthStencil[ 1 ] );
+        stencilAttachmentInfo.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        stencilAttachmentInfo.imageView   = vkDepthStencilResource->ImageView( );
+        stencilAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        stencilAttachmentInfo.loadOp      = VulkanEnumConverter::ConvertLoadOp( renderingDesc.StencilAttachment.LoadOp );
+        stencilAttachmentInfo.storeOp     = VulkanEnumConverter::ConvertStoreOp( renderingDesc.StencilAttachment.StoreOp );
+        stencilAttachmentInfo.clearValue.depthStencil =
+            VkClearDepthStencilValue( renderingDesc.StencilAttachment.ClearDepthStencil[ 0 ], renderingDesc.DepthAttachment.ClearDepthStencil[ 1 ] );
 
         renderInfo.pStencilAttachment = &stencilAttachmentInfo;
     }
@@ -184,6 +190,7 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeDesc )
         queueType = VulkanQueueType::Graphics;
         break;
     case QueueType::Compute:
+    case QueueType::RayTracing:
         queueType = VulkanQueueType::Compute;
         break;
     case QueueType::Copy:
@@ -354,20 +361,61 @@ void VulkanCommandList::Draw( const uint32_t vertexCount, const uint32_t instanc
     vkCmdDraw( m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance );
 }
 
-
 void VulkanCommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )
 {
+    const VulkanTopLevelAS *topLevelAS = dynamic_cast<VulkanTopLevelAS *>( buildTopLevelASDesc.TopLevelAS );
 
+    VkAccelerationStructureGeometryInstancesDataKHR instanceData{ };
+    instanceData.sType              = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+    instanceData.arrayOfPointers    = VK_FALSE;
+    instanceData.data.deviceAddress = topLevelAS->InstanceBuffer( )->DeviceAddress( );
+
+    VkAccelerationStructureGeometryKHR geometry{ };
+    geometry.sType              = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+    geometry.geometryType       = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+    geometry.geometry.instances = instanceData;
+
+    VkAccelerationStructureBuildGeometryInfoKHR buildInfo{ };
+    buildInfo.sType                     = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+    buildInfo.type                      = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    buildInfo.flags                     = topLevelAS->Flags( );
+    buildInfo.mode                      = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    buildInfo.dstAccelerationStructure  = topLevelAS->AccelerationStructure( );
+    buildInfo.geometryCount             = 1;
+    buildInfo.pGeometries               = &geometry;
+    buildInfo.scratchData.deviceAddress = topLevelAS->Scratch( )->DeviceAddress( );
+
+    std::array<const VkAccelerationStructureBuildRangeInfoKHR*, 1> buildRangeInfo = { &topLevelAS->BuildRangeInfo( ) };
+    vkCmdBuildAccelerationStructuresKHR( m_commandBuffer, 1, &buildInfo, buildRangeInfo.data( ) );
 }
 
 void VulkanCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc )
 {
+    auto *vkBottomLevelAS = dynamic_cast<VulkanBottomLevelAS *>( buildBottomLevelASDesc.BottomLevelAS );
+    DZ_NOT_NULL( vkBottomLevelAS );
 
+    const auto &geometryDescs = vkBottomLevelAS->GeometryDescs( );
+
+    VkAccelerationStructureBuildGeometryInfoKHR buildInfo{ };
+    buildInfo.sType                     = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+    buildInfo.type                      = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    buildInfo.flags                     = vkBottomLevelAS->Flags( );
+    buildInfo.mode                      = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    buildInfo.dstAccelerationStructure  = vkBottomLevelAS->AccelerationStructure( );
+    buildInfo.geometryCount             = static_cast<uint32_t>( geometryDescs.size( ) );
+    buildInfo.pGeometries               = geometryDescs.data( );
+    buildInfo.scratchData.deviceAddress = vkBottomLevelAS->ScratchBuffer( )->DeviceAddress( );
+
+    auto& buildRangeInfos = vkBottomLevelAS->BuildRangeInfos( );
+    vkCmdBuildAccelerationStructuresKHR( m_commandBuffer, 1, &buildInfo, buildRangeInfos.data( ) );
 }
 
 void VulkanCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
+    VulkanShaderBindingTable *bindingTable = dynamic_cast<VulkanShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
 
+    vkCmdTraceRaysKHR( m_commandBuffer, bindingTable->RayGenerationShaderRange( ), bindingTable->MissShaderRange( ), bindingTable->HitGroupShaderRange( ), VK_NULL_HANDLE,
+                       dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth );
 }
 
 void VulkanCommandList::Dispatch( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
@@ -376,7 +424,7 @@ void VulkanCommandList::Dispatch( const uint32_t groupCountX, const uint32_t gro
     vkCmdDispatch( m_commandBuffer, groupCountX, groupCountY, groupCountZ );
 }
 
-void VulkanCommandList::Present( ISwapChain *swapChain, const uint32_t imageIndex, const InteropArray<ISemaphore *> & waitOnLocks )
+void VulkanCommandList::Present( ISwapChain *swapChain, const uint32_t imageIndex, const InteropArray<ISemaphore *> &waitOnLocks )
 {
     DZ_ASSERTM( m_desc.QueueType == QueueType::Graphics, "Present can only be called on graphics queue." );
 

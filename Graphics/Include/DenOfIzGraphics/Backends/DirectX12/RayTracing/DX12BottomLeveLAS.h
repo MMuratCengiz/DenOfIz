@@ -38,7 +38,6 @@ namespace DenOfIz
         [[nodiscard]] const std::vector<D3D12_RAYTRACING_GEOMETRY_DESC>  &GeometryDescs( ) const;
         [[nodiscard]] IBufferResource                                    *Buffer( ) const override;
         [[nodiscard]] const DX12BufferResource                           *Scratch( ) const;
-        void                                                              Update( const BottomLevelASDesc &desc ) override;
     private:
         void InitializeTriangles( const ASGeometryTriangleDesc &triangle, D3D12_RAYTRACING_GEOMETRY_DESC& dx12Geometry ) const;
         void InitializeAABBs( const ASGeometryAABBDesc &aabb, D3D12_RAYTRACING_GEOMETRY_DESC& dx12Geometry ) const;

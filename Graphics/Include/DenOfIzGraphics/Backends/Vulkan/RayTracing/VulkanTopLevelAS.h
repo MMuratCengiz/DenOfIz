@@ -27,22 +27,26 @@ namespace DenOfIz
     {
     private:
         VulkanContext                                  *m_context;
-        VkAccelerationStructureKHR                      m_accelerationStructure{};
-        VkDeviceMemory                                  m_memory{};
+        VkAccelerationStructureKHR                      m_accelerationStructure{ };
+        VkDeviceMemory                                  m_memory{ };
         VkBuildAccelerationStructureFlagsKHR            m_flags;
         std::vector<VkAccelerationStructureInstanceKHR> m_instances;
+        VkAccelerationStructureBuildRangeInfoKHR        m_buildRangeInfo;
         std::unique_ptr<VulkanBufferResource>           m_instanceBuffer;
         std::unique_ptr<VulkanBufferResource>           m_buffer;
         std::unique_ptr<VulkanBufferResource>           m_scratch;
 
     public:
-                                                           VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc &desc );
-        [[nodiscard]] VkBuildAccelerationStructureFlagsKHR Flags( ) const;
-        [[nodiscard]] size_t                               NumInstances( ) const;
-        [[nodiscard]] const VulkanBufferResource          *InstanceBuffer( ) const;
-        [[nodiscard]] VulkanBufferResource                *VulkanBuffer( ) const;
-        [[nodiscard]] IBufferResource                     *Buffer( ) const override;
-        [[nodiscard]] const VulkanBufferResource          *Scratch( ) const;
-        ~                                                  VulkanTopLevelAS( ) override;
+        VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc &desc );
+        void Update( const TopLevelASDesc &desc ) override;
+        [[nodiscard]] VkBuildAccelerationStructureFlagsKHR            Flags( ) const;
+        [[nodiscard]] size_t                                          NumInstances( ) const;
+        [[nodiscard]] const VkAccelerationStructureKHR               &AccelerationStructure( ) const;
+        [[nodiscard]] const VkAccelerationStructureBuildRangeInfoKHR &BuildRangeInfo( ) const;
+        [[nodiscard]] const VulkanBufferResource                     *InstanceBuffer( ) const;
+        [[nodiscard]] VulkanBufferResource                           *VulkanBuffer( ) const;
+        [[nodiscard]] IBufferResource                                *Buffer( ) const override;
+        [[nodiscard]] const VulkanBufferResource                     *Scratch( ) const;
+        ~VulkanTopLevelAS( ) override;
     };
 } // namespace DenOfIz

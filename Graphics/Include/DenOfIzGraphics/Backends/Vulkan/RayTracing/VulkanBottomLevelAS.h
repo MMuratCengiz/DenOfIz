@@ -26,21 +26,27 @@ namespace DenOfIz
     class VulkanBottomLevelAS : public IBottomLevelAS
     {
     private:
-        VulkanContext                                  *m_context;
-        VkAccelerationStructureKHR                      m_accelerationStructure;
-        BottomLevelASDesc                               m_desc;
-        std::vector<VkAccelerationStructureGeometryKHR> m_geometryDescs;
-        std::unique_ptr<VulkanBufferResource>           m_asBuffer;
-        std::unique_ptr<VulkanBufferResource>           m_scratchBuffer;
-        VkBuildAccelerationStructureFlagsKHR            m_flags;
+        VulkanContext                                                *m_context;
+        VkAccelerationStructureKHR                                    m_accelerationStructure;
+        BottomLevelASDesc                                             m_desc;
+        std::vector<VkAccelerationStructureGeometryKHR>               m_geometryDescs;
+        std::vector<VkAccelerationStructureBuildRangeInfoKHR>         m_buildRangeInfos;    // More convenient for memory management
+        std::vector<const VkAccelerationStructureBuildRangeInfoKHR *> m_buildRangeInfoPtrs; // Required for vkCmdBuildAccelerationStructuresKHR
+        std::unique_ptr<VulkanBufferResource>                         m_asBuffer;
+        std::unique_ptr<VulkanBufferResource>                         m_scratchBuffer;
+        VkBuildAccelerationStructureFlagsKHR                          m_flags;
 
     public:
         VulkanBottomLevelAS( VulkanContext *context, const BottomLevelASDesc &desc );
         ~VulkanBottomLevelAS( ) override;
 
-        [[nodiscard]] VkAccelerationStructureKHR  Instance( ) const;
-        [[nodiscard]] const VulkanBufferResource *ASBuffer( ) const;
-        [[nodiscard]] const VulkanBufferResource *ScratchBuffer( ) const;
+        [[nodiscard]] VkAccelerationStructureKHR                                           Instance( ) const;
+        [[nodiscard]] IBufferResource                                                     *Buffer( ) const override;
+        [[nodiscard]] const VkAccelerationStructureKHR                                    &AccelerationStructure( ) const;
+        [[nodiscard]] const std::vector<VkAccelerationStructureGeometryKHR>               &GeometryDescs( ) const;
+        [[nodiscard]] const std::vector<const VkAccelerationStructureBuildRangeInfoKHR *> &BuildRangeInfos( ) const;
+        [[nodiscard]] const VkBuildAccelerationStructureFlagsKHR                          &Flags( ) const;
+        [[nodiscard]] const VulkanBufferResource                                          *ScratchBuffer( ) const;
 
     private:
         void InitializeTriangles( const ASGeometryTriangleDesc &triangle, VkAccelerationStructureGeometryKHR &vkGeometry );

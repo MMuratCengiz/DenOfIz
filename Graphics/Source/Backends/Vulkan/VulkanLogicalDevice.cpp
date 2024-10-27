@@ -16,13 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.h>
+#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.h>
+#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h>
 #include <algorithm>
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h"
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h"
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h"
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h"
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h"
 
 #define VOLK_IMPLEMENTATION
 #include "volk.h"
@@ -365,6 +368,11 @@ void VulkanLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     computeCommandPoolCreateInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     computeCommandPoolCreateInfo.queueFamilyIndex = m_context->QueueFamilies[ VulkanQueueType::Compute ].Index;
     vkCreateCommandPool( m_context->LogicalDevice, &computeCommandPoolCreateInfo, nullptr, &m_context->ComputeQueueCommandPool );
+
+    VkPhysicalDeviceProperties2 properties{ };
+    properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    properties.pNext = &m_context->RayTracingProperties;
+    vkGetPhysicalDeviceProperties2( m_context->PhysicalDevice, &properties );
 }
 
 void VulkanLogicalDevice::SetupQueueFamilies( ) const
@@ -632,18 +640,17 @@ ISampler *VulkanLogicalDevice::CreateSampler( const SamplerDesc &createInfo )
     return new VulkanSampler( m_context.get( ), createInfo );
 }
 
-// TODO:
 ITopLevelAS *VulkanLogicalDevice::CreateTopLevelAS( const TopLevelASDesc &desc )
 {
-    return nullptr;
+    return new VulkanTopLevelAS( m_context.get( ), desc );
 }
 
 IBottomLevelAS *VulkanLogicalDevice::CreateBottomLevelAS( const BottomLevelASDesc &desc )
 {
-    return nullptr;
+    return new VulkanBottomLevelAS( m_context.get( ), desc );
 }
 
 IShaderBindingTable *VulkanLogicalDevice::CreateShaderBindingTable( const ShaderBindingTableDesc &desc )
 {
-    return nullptr;
+    return new VulkanShaderBindingTable( m_context.get( ), desc );
 }

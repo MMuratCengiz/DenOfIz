@@ -52,6 +52,8 @@ namespace DenOfIz
         VkDevice         LogicalDevice;
         VmaAllocator     Vma;
 
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR RayTracingProperties;
+
         VkCommandPool TransferQueueCommandPool;
         VkCommandPool GraphicsQueueCommandPool;
         VkCommandPool ComputeQueueCommandPool;

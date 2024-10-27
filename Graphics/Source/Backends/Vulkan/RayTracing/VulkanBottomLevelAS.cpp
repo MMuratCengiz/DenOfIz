@@ -26,6 +26,7 @@ VulkanBottomLevelAS::VulkanBottomLevelAS( VulkanContext *context, const BottomLe
     m_flags              = VulkanEnumConverter::ConvertAccelerationStructureBuildFlags( desc.BuildFlags );
     size_t numGeometries = desc.Geometries.NumElements( );
     m_geometryDescs.resize( numGeometries );
+    m_buildRangeInfos.resize( numGeometries );
 
     for ( uint32_t i = 0; i < numGeometries; ++i )
     {
@@ -41,17 +42,27 @@ VulkanBottomLevelAS::VulkanBottomLevelAS( VulkanContext *context, const BottomLe
             vkGeometry.flags |= VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR;
         }
 
+        size_t numPrimitives = 0;
         switch ( geometry.Type )
         {
         case ASGeometryType::Triangles:
             InitializeTriangles( geometry.Triangles, vkGeometry );
+            numPrimitives = geometry.Triangles.NumVertices / 3;
             break;
         case ASGeometryType::AABBs:
             InitializeAABBs( geometry.AABBs, vkGeometry );
+            numPrimitives = geometry.AABBs.NumAABBs;
             break;
         }
 
         m_geometryDescs[ i ] = vkGeometry;
+
+        VkAccelerationStructureBuildRangeInfoKHR &rangeInfo = m_buildRangeInfos[ i ];
+        rangeInfo.primitiveCount                            = numPrimitives;
+        rangeInfo.primitiveOffset                           = 0;
+        rangeInfo.firstVertex                               = 0;
+        rangeInfo.transformOffset                           = 0;
+        m_buildRangeInfoPtrs.push_back( &rangeInfo );
     }
 
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo = { };
@@ -109,24 +120,16 @@ void VulkanBottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &tri
         return;
     }
 
-    VkBufferDeviceAddressInfo vkBufferDeviceAddressInfo = { };
-    vkBufferDeviceAddressInfo.sType                     = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-    vkBufferDeviceAddressInfo.buffer                    = vertexBuffer->Instance( );
-    VkDeviceAddress vbAddress = vkGetBufferDeviceAddress( m_context->LogicalDevice, &vkBufferDeviceAddressInfo );
-
     VkAccelerationStructureGeometryTrianglesDataKHR &triangles = vkGeometry.geometry.triangles;
     triangles.sType                                            = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-    triangles.vertexData.deviceAddress                         = vbAddress + triangle.VertexOffset;
+    triangles.vertexData.deviceAddress                         = vertexBuffer->DeviceAddress( ) + triangle.VertexOffset;
     triangles.vertexStride                                     = triangle.VertexStride;
     triangles.maxVertex                                        = triangle.NumVertices;
     triangles.vertexFormat                                     = VulkanEnumConverter::ConvertImageFormat( triangle.VertexFormat );
 
     if ( triangle.NumIndices > 0 )
     {
-        vkBufferDeviceAddressInfo.buffer                    = indexBuffer->Instance( );
-        VkDeviceAddress ibAddress = vkGetBufferDeviceAddress( m_context->LogicalDevice, &vkBufferDeviceAddressInfo );
-
-        triangles.indexData.deviceAddress = ibAddress + triangle.IndexOffset;
+        triangles.indexData.deviceAddress = indexBuffer->DeviceAddress( ) + triangle.IndexOffset;
         triangles.indexType               = triangle.IndexType == IndexType::Uint16 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
     }
 
@@ -143,17 +146,11 @@ void VulkanBottomLevelAS::InitializeAABBs( const ASGeometryAABBDesc &aabb, VkAcc
 {
     vkGeometry.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
 
-    const VulkanBufferResource *aabbBuffer = dynamic_cast<VulkanBufferResource *>( aabb.Buffer );
-
-    VkBufferDeviceAddressInfo vkBufferDeviceAddressInfo = { };
-    vkBufferDeviceAddressInfo.sType                     = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-    vkBufferDeviceAddressInfo.buffer                    = aabbBuffer->Instance( );
-    VkDeviceAddress bufferAddress = vkGetBufferDeviceAddress( m_context->LogicalDevice, &vkBufferDeviceAddressInfo );
-
-    VkAccelerationStructureGeometryAabbsDataKHR &aabbs = vkGeometry.geometry.aabbs;
-    aabbs.sType                                        = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
-    aabbs.data.deviceAddress                           = bufferAddress + aabb.Offset;
-    aabbs.stride                                       = aabb.Stride;
+    const VulkanBufferResource                  *aabbBuffer = dynamic_cast<VulkanBufferResource *>( aabb.Buffer );
+    VkAccelerationStructureGeometryAabbsDataKHR &aabbs      = vkGeometry.geometry.aabbs;
+    aabbs.sType                                             = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
+    aabbs.data.deviceAddress                                = aabbBuffer->DeviceAddress( ) + aabb.Offset;
+    aabbs.stride                                            = aabb.Stride;
 }
 
 VkAccelerationStructureKHR VulkanBottomLevelAS::Instance( ) const
@@ -161,9 +158,29 @@ VkAccelerationStructureKHR VulkanBottomLevelAS::Instance( ) const
     return m_accelerationStructure;
 }
 
-const VulkanBufferResource *VulkanBottomLevelAS::ASBuffer( ) const
+IBufferResource *VulkanBottomLevelAS::Buffer( ) const
 {
     return m_asBuffer.get( );
+}
+
+const VkAccelerationStructureKHR &VulkanBottomLevelAS::AccelerationStructure( ) const
+{
+    return m_accelerationStructure;
+}
+
+const std::vector<VkAccelerationStructureGeometryKHR> &VulkanBottomLevelAS::GeometryDescs( ) const
+{
+    return m_geometryDescs;
+}
+
+const std::vector<const VkAccelerationStructureBuildRangeInfoKHR *> &VulkanBottomLevelAS::BuildRangeInfos( ) const
+{
+    return m_buildRangeInfoPtrs;
+}
+
+const VkBuildAccelerationStructureFlagsKHR &VulkanBottomLevelAS::Flags( ) const
+{
+    return m_flags;
 }
 
 const VulkanBufferResource *VulkanBottomLevelAS::ScratchBuffer( ) const
