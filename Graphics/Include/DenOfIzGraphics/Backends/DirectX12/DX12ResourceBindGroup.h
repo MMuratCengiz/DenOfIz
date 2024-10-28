@@ -72,17 +72,17 @@ namespace DenOfIz
         IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource ) override;
         IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource ) override;
         IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource ) override;
+        IResourceBindGroup *Srv( const uint32_t binding, ITopLevelAS *accelerationStructure ) override;
         IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource ) override;
         IResourceBindGroup *Uav( const uint32_t binding, ITextureResource *resource ) override;
         IResourceBindGroup *Sampler( const uint32_t binding, ISampler *sampler ) override;
         void                EndUpdate( ) override;
 
-    protected:
-        void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) override;
-        void BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource ) override;
-        void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler ) override;
-
     private:
+        void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource );
+        void BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource );
+        void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler );
+
         bool                                      UpdateRootDescriptor( const ResourceBindingSlot &slot, const D3D12_GPU_VIRTUAL_ADDRESS &gpuAddress );
         [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleCbvSrvUav( uint32_t binding ) const;
         [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleSampler( uint32_t binding ) const;

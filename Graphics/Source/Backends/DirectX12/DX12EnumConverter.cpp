@@ -503,79 +503,79 @@ D3D12_BLEND DX12EnumConverter::ConvertBlend( const Blend &factor )
     return D3D12_BLEND_ZERO;
 }
 
-D3D12_RESOURCE_STATES DX12EnumConverter::ConvertResourceState( const BitSet<ResourceState> &state )
+D3D12_RESOURCE_STATES DX12EnumConverter::ConvertResourceUsage( const BitSet<ResourceUsage> &usage )
 {
     D3D12_RESOURCE_STATES result = D3D12_RESOURCE_STATE_COMMON;
-    if ( state.IsSet( ResourceState::GenericRead ) )
+    if ( usage.IsSet( ResourceUsage::GenericRead ) )
     {
         return D3D12_RESOURCE_STATE_GENERIC_READ;
     }
-    if ( state.IsSet( ResourceState::Common ) )
+    if ( usage.IsSet( ResourceUsage::Common ) )
     {
         return D3D12_RESOURCE_STATE_COMMON;
     }
-    if ( state.IsSet( ResourceState::Present ) )
+    if ( usage.IsSet( ResourceUsage::Present ) )
     {
         return D3D12_RESOURCE_STATE_PRESENT;
     }
 
-    if ( state.IsSet( ResourceState::VertexAndConstantBuffer ) )
+    if ( usage.IsSet( ResourceUsage::VertexAndConstantBuffer ) )
     {
         result |= D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
     }
-    if ( state.IsSet( ResourceState::IndexBuffer ) )
+    if ( usage.IsSet( ResourceUsage::IndexBuffer ) )
     {
         result |= D3D12_RESOURCE_STATE_INDEX_BUFFER;
     }
-    if ( state.IsSet( ResourceState::RenderTarget ) )
+    if ( usage.IsSet( ResourceUsage::RenderTarget ) )
     {
         result |= D3D12_RESOURCE_STATE_RENDER_TARGET;
     }
-    if ( state.IsSet( ResourceState::UnorderedAccess ) )
+    if ( usage.IsSet( ResourceUsage::UnorderedAccess ) )
     {
         result |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
     }
-    if ( state.IsSet( ResourceState::DepthWrite ) )
+    if ( usage.IsSet( ResourceUsage::DepthWrite ) )
     {
         result |= D3D12_RESOURCE_STATE_DEPTH_WRITE;
     }
-    else if ( state.IsSet( ResourceState::DepthRead ) )
+    else if ( usage.IsSet( ResourceUsage::DepthRead ) )
     {
         result |= D3D12_RESOURCE_STATE_DEPTH_READ;
     }
 
-    if ( state.IsSet( ResourceState::StreamOut ) )
+    if ( usage.IsSet( ResourceUsage::StreamOut ) )
     {
         result |= D3D12_RESOURCE_STATE_STREAM_OUT;
     }
-    if ( state.IsSet( ResourceState::IndirectArgument ) )
+    if ( usage.IsSet( ResourceUsage::IndirectArgument ) )
     {
         result |= D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
     }
-    if ( state.IsSet( ResourceState::CopyDst ) )
+    if ( usage.IsSet( ResourceUsage::CopyDst ) )
     {
         result |= D3D12_RESOURCE_STATE_COPY_DEST;
     }
-    if ( state.IsSet( ResourceState::CopySrc ) )
+    if ( usage.IsSet( ResourceUsage::CopySrc ) )
     {
         result |= D3D12_RESOURCE_STATE_COPY_SOURCE;
     }
-    if ( state.IsSet( ResourceState::ShaderResource ) )
+    if ( usage.IsSet( ResourceUsage::ShaderResource ) )
     {
         result |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
     }
-    if ( state.IsSet( ResourceState::PixelShaderResource ) )
+    if ( usage.IsSet( ResourceUsage::PixelShaderResource ) )
     {
         result |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
     }
-    if ( state.IsSet( ResourceState::AccelerationStructureRead ) || state.IsSet( ResourceState::AccelerationStructureWrite ) )
+    if ( usage.IsSet( ResourceUsage::AccelerationStructureRead ) || usage.IsSet( ResourceUsage::AccelerationStructureWrite ) )
     {
         result |= D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
     }
     return result;
 }
 
-D3D12_BARRIER_LAYOUT DX12EnumConverter::ConvertResourceStateToBarrierLayout( const BitSet<ResourceState> &state, const QueueType &queueType )
+D3D12_BARRIER_LAYOUT DX12EnumConverter::ConvertResourceStateToBarrierLayout( const BitSet<ResourceUsage> &state, const QueueType &queueType )
 {
     auto queueSpecificResult = [ = ]( const D3D12_BARRIER_LAYOUT direct, const D3D12_BARRIER_LAYOUT compute, const D3D12_BARRIER_LAYOUT other )
     {
@@ -590,41 +590,41 @@ D3D12_BARRIER_LAYOUT DX12EnumConverter::ConvertResourceStateToBarrierLayout( con
         }
     };
 
-    if ( state.IsSet( ResourceState::Common ) || state.IsSet( ResourceState::Present ) )
+    if ( state.IsSet( ResourceUsage::Common ) || state.IsSet( ResourceUsage::Present ) )
     {
         return queueSpecificResult( D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMMON );
     }
-    if ( state.IsSet( ResourceState::GenericRead ) )
+    if ( state.IsSet( ResourceUsage::GenericRead ) )
     {
         return queueSpecificResult( D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_GENERIC_READ, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_GENERIC_READ, D3D12_BARRIER_LAYOUT_GENERIC_READ );
     }
-    if ( state.IsSet( ResourceState::CopySrc ) )
+    if ( state.IsSet( ResourceUsage::CopySrc ) )
     {
         return queueSpecificResult( D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_SOURCE, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COPY_SOURCE, D3D12_BARRIER_LAYOUT_COPY_SOURCE );
     }
-    if ( state.IsSet( ResourceState::CopyDst ) )
+    if ( state.IsSet( ResourceUsage::CopyDst ) )
     {
         return queueSpecificResult( D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_DEST, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COPY_DEST, D3D12_BARRIER_LAYOUT_COPY_DEST );
     }
-    if ( state.IsSet( ResourceState::UnorderedAccess ) )
+    if ( state.IsSet( ResourceUsage::UnorderedAccess ) )
     {
         return queueSpecificResult( D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_UNORDERED_ACCESS, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_UNORDERED_ACCESS,
                                     D3D12_BARRIER_LAYOUT_UNORDERED_ACCESS );
     }
-    if ( state.Any( { ResourceState::ShaderResource, ResourceState::PixelShaderResource } ) )
+    if ( state.Any( { ResourceUsage::ShaderResource, ResourceUsage::PixelShaderResource } ) )
     {
         return queueSpecificResult( D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE );
     }
 
-    if ( state.IsSet( ResourceState::RenderTarget ) )
+    if ( state.IsSet( ResourceUsage::RenderTarget ) )
     {
         return D3D12_BARRIER_LAYOUT_RENDER_TARGET;
     }
-    if ( state.IsSet( ResourceState::DepthRead ) )
+    if ( state.IsSet( ResourceUsage::DepthRead ) )
     {
         return D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ;
     }
-    if ( state.IsSet( ResourceState::DepthWrite ) )
+    if ( state.IsSet( ResourceUsage::DepthWrite ) )
     {
         return D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE;
     }
@@ -632,68 +632,68 @@ D3D12_BARRIER_LAYOUT DX12EnumConverter::ConvertResourceStateToBarrierLayout( con
     return queueSpecificResult( D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMMON );
 }
 
-D3D12_BARRIER_ACCESS DX12EnumConverter::ConvertResourceStateToBarrierAccess( const BitSet<ResourceState> &state )
+D3D12_BARRIER_ACCESS DX12EnumConverter::ConvertResourceStateToBarrierAccess( const BitSet<ResourceUsage> &state )
 {
     D3D12_BARRIER_ACCESS result = D3D12_BARRIER_ACCESS_COMMON;
-    if ( state.IsSet( ResourceState::GenericRead ) )
+    if ( state.IsSet( ResourceUsage::GenericRead ) )
     {
         return result;
     }
-    if ( state.IsSet( ResourceState::Common ) || state.IsSet( ResourceState::Present ) )
+    if ( state.IsSet( ResourceUsage::Common ) || state.IsSet( ResourceUsage::Present ) )
     {
         return D3D12_BARRIER_ACCESS_COMMON;
     }
 
-    if ( state.IsSet( ResourceState::VertexAndConstantBuffer ) )
+    if ( state.IsSet( ResourceUsage::VertexAndConstantBuffer ) )
     {
         result |= D3D12_BARRIER_ACCESS_VERTEX_BUFFER | D3D12_BARRIER_ACCESS_CONSTANT_BUFFER;
     }
-    if ( state.IsSet( ResourceState::IndexBuffer ) )
+    if ( state.IsSet( ResourceUsage::IndexBuffer ) )
     {
         result |= D3D12_BARRIER_ACCESS_INDEX_BUFFER;
     }
-    if ( state.IsSet( ResourceState::RenderTarget ) )
+    if ( state.IsSet( ResourceUsage::RenderTarget ) )
     {
         result |= D3D12_BARRIER_ACCESS_RENDER_TARGET;
     }
-    if ( state.IsSet( ResourceState::UnorderedAccess ) )
+    if ( state.IsSet( ResourceUsage::UnorderedAccess ) )
     {
         result |= D3D12_BARRIER_ACCESS_UNORDERED_ACCESS;
     }
-    if ( state.IsSet( ResourceState::DepthWrite ) )
+    if ( state.IsSet( ResourceUsage::DepthWrite ) )
     {
         result |= D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE;
     }
-    else if ( state.IsSet( ResourceState::DepthRead ) )
+    else if ( state.IsSet( ResourceUsage::DepthRead ) )
     {
         result |= D3D12_BARRIER_ACCESS_DEPTH_STENCIL_READ;
     }
 
-    if ( state.IsSet( ResourceState::StreamOut ) )
+    if ( state.IsSet( ResourceUsage::StreamOut ) )
     {
         result |= D3D12_BARRIER_ACCESS_STREAM_OUTPUT;
     }
-    if ( state.IsSet( ResourceState::IndirectArgument ) )
+    if ( state.IsSet( ResourceUsage::IndirectArgument ) )
     {
         result |= D3D12_BARRIER_ACCESS_INDIRECT_ARGUMENT;
     }
-    if ( state.IsSet( ResourceState::CopyDst ) )
+    if ( state.IsSet( ResourceUsage::CopyDst ) )
     {
         result |= D3D12_BARRIER_ACCESS_COPY_DEST;
     }
-    if ( state.IsSet( ResourceState::CopySrc ) )
+    if ( state.IsSet( ResourceUsage::CopySrc ) )
     {
         result |= D3D12_BARRIER_ACCESS_COPY_SOURCE;
     }
-    if ( state.Any( { ResourceState::ShaderResource, ResourceState::PixelShaderResource } ) )
+    if ( state.Any( { ResourceUsage::ShaderResource, ResourceUsage::PixelShaderResource } ) )
     {
         result |= D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
     }
-    if ( state.IsSet( ResourceState::AccelerationStructureRead ) )
+    if ( state.IsSet( ResourceUsage::AccelerationStructureRead ) )
     {
         result |= D3D12_BARRIER_ACCESS_RAYTRACING_ACCELERATION_STRUCTURE_READ;
     }
-    if ( state.IsSet( ResourceState::AccelerationStructureWrite ) )
+    if ( state.IsSet( ResourceUsage::AccelerationStructureWrite ) )
     {
         result |= D3D12_BARRIER_ACCESS_RAYTRACING_ACCELERATION_STRUCTURE_WRITE;
     }

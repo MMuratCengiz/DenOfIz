@@ -17,8 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanUtilities.h>
-
 #include "DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h"
 
 using namespace DenOfIz;
@@ -29,7 +27,7 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
     m_height       = desc.Height;
     m_depth        = desc.Depth;
     m_format       = desc.Format;
-    m_initialState = desc.InitialState;
+    m_initialState = desc.InitialUsage;
 
     VkImageType imageType = VK_IMAGE_TYPE_1D;
 
@@ -42,6 +40,9 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
         imageType = VK_IMAGE_TYPE_2D;
     }
 
+    BitSet<ResourceUsage> usage = m_desc.Usages;
+    usage |= m_desc.InitialUsage;
+
     VkImageCreateInfo imageCreateInfo{ };
     imageCreateInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageCreateInfo.format        = VulkanEnumConverter::ConvertImageFormat( desc.Format );
@@ -50,7 +51,7 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
     imageCreateInfo.extent.height = std::max( 1u, m_desc.Height );
     imageCreateInfo.extent.depth  = std::max( 1u, m_desc.Depth );
     imageCreateInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
-    imageCreateInfo.usage         = VulkanEnumConverter::ConvertTextureUsage( desc.Descriptor, desc.InitialState );
+    imageCreateInfo.usage         = VulkanEnumConverter::ConvertTextureUsage( desc.Descriptor, usage );
     imageCreateInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
     imageCreateInfo.samples       = VulkanEnumConverter::ConvertSampleCount( desc.MSAASampleCount );
     imageCreateInfo.mipLevels     = desc.MipLevels;
@@ -157,14 +158,14 @@ VulkanTextureResource::VulkanTextureResource( VkImage const &image, VkImageView 
     m_height       = desc.Height;
     m_depth        = desc.Depth;
     m_format       = desc.Format;
-    m_initialState = desc.InitialState;
+    m_initialState = desc.InitialUsage;
     m_isExternal   = true;
 }
 
 // Todo transition all mip levels
 void VulkanTextureResource::TransitionToInitialLayout( ) const
 {
-    const VkImageLayout initialLayout = VulkanEnumConverter::ConvertTextureDescriptorToLayout( m_desc.InitialState );
+    const VkImageLayout initialLayout = VulkanEnumConverter::ConvertTextureDescriptorToLayout( m_desc.InitialUsage );
     if ( initialLayout == VK_IMAGE_LAYOUT_UNDEFINED )
     {
         return;
@@ -251,7 +252,7 @@ uint32_t VulkanTextureResource::GetWidth( ) const
     return m_width;
 }
 
-BitSet<ResourceState> VulkanTextureResource::InitialState( ) const
+BitSet<ResourceUsage> VulkanTextureResource::InitialState( ) const
 {
     return m_initialState;
 }

@@ -37,12 +37,12 @@ namespace DenOfIz
         VkStridedDeviceAddressRegionKHR m_rayGenerationShaderRange;
         VkStridedDeviceAddressRegionKHR m_missShaderRange;
         VkStridedDeviceAddressRegionKHR m_hitGroupShaderRange;
+        VkStridedDeviceAddressRegionKHR m_callableShaderRange;
 
         uint32_t m_missGroupOffset = 0;
         uint32_t m_hitGroupOffset  = 0;
 
-        uint32_t shaderGroupHandleSize;
-        uint32_t shaderGroupBaseAlignment;
+        uint32_t m_shaderGroupHandleSize;
 
     public:
         VulkanShaderBindingTable( VulkanContext *context, const ShaderBindingTableDesc &desc );
@@ -57,6 +57,7 @@ namespace DenOfIz
         [[nodiscard]] const VkStridedDeviceAddressRegionKHR *RayGenerationShaderRange( ) const;
         [[nodiscard]] const VkStridedDeviceAddressRegionKHR *MissShaderRange( ) const;
         [[nodiscard]] const VkStridedDeviceAddressRegionKHR *HitGroupShaderRange( ) const;
+        [[nodiscard]] const VkStridedDeviceAddressRegionKHR *CallableShaderRange( ) const;
 
     private:
         [[nodiscard]] uint32_t AlignRecord( uint32_t size ) const;

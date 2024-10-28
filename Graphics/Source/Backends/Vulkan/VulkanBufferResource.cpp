@@ -27,15 +27,19 @@ VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc d
 {
     m_numBytes = Utilities::Align( m_desc.NumBytes, m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment );
 
+    BitSet<ResourceUsage> usage = m_desc.Usages;
+    usage |= m_desc.InitialUsage;
+
     VkBufferCreateInfo bufferCreateInfo{ };
     bufferCreateInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferCreateInfo.usage       = VulkanEnumConverter::ConvertBufferUsage( m_desc.Descriptor, m_desc.InitialState );
+    bufferCreateInfo.usage       = VulkanEnumConverter::ConvertBufferUsage( m_desc.Descriptor, usage );
     bufferCreateInfo.size        = m_numBytes;
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferCreateInfo.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     VmaAllocationCreateInfo allocationCreateInfo{ };
 
-    allocationCreateInfo.usage = VulkanEnumConverter::ConvertHeapType( m_desc.HeapType );
+    allocationCreateInfo.usage = VulkanEnumConverter::ConvertHeapType( m_desc.HeapType ) ;
 
     // Todo more flexibility, or a clearer interface here:
     if ( m_desc.HeapType == HeapType::CPU || m_desc.HeapType == HeapType::CPU_GPU )
@@ -55,7 +59,6 @@ VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc d
         allocationCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     }
 
-    bufferCreateInfo.usage = VulkanEnumConverter::ConvertBufferUsage( m_desc.Descriptor, m_desc.InitialState );
     VmaAllocationInfo allocationInfo;
     vmaCreateBuffer( m_context->Vma, &bufferCreateInfo, &allocationCreateInfo, &m_instance, &m_allocation, &allocationInfo );
 
@@ -65,7 +68,7 @@ VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc d
     VkBufferDeviceAddressInfo bufferDeviceAddressInfo{ };
     bufferDeviceAddressInfo.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     bufferDeviceAddressInfo.buffer = m_instance;
-    m_deviceAddress = vkGetBufferDeviceAddress( m_context->LogicalDevice, &bufferDeviceAddressInfo );
+    m_deviceAddress                = vkGetBufferDeviceAddress( m_context->LogicalDevice, &bufferDeviceAddressInfo );
 }
 
 void *VulkanBufferResource::MapMemory( )
@@ -116,7 +119,7 @@ void VulkanBufferResource::SetData( const InteropArray<Byte> &data, bool keepMap
     }
 }
 
-BitSet<ResourceState> VulkanBufferResource::InitialState( ) const
+BitSet<ResourceUsage> VulkanBufferResource::InitialState( ) const
 {
     return m_state;
 }

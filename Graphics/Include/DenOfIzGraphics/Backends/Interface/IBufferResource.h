@@ -36,7 +36,8 @@ namespace DenOfIz
         BufferView                 BufferView{ }; // For Structured Buffers
         Format                     Format = Format::Undefined;
         BitSet<ResourceDescriptor> Descriptor;
-        BitSet<ResourceState>      InitialState;
+        ResourceUsage              InitialUsage;
+        BitSet<ResourceUsage>      Usages;
         HeapType                   HeapType;
         InteropString              DebugName;
     };
@@ -50,7 +51,7 @@ namespace DenOfIz
         virtual void *MapMemory( )   = 0;
         virtual void  UnmapMemory( ) = 0;
         //--
-        [[nodiscard]] virtual BitSet<ResourceState> InitialState( ) const = 0;
+        [[nodiscard]] virtual BitSet<ResourceUsage> InitialState( ) const = 0;
         [[nodiscard]] virtual size_t                NumBytes( ) const     = 0;
         [[nodiscard]] virtual const void           *Data( ) const         = 0;
 

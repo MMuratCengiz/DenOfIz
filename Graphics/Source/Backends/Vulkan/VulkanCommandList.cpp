@@ -169,7 +169,6 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeDesc )
     vkSubmitInfo.waitSemaphoreCount   = waitOnSemaphores.size( );
     vkSubmitInfo.pWaitSemaphores      = waitOnSemaphores.data( );
     vkSubmitInfo.pWaitDstStageMask    = waitStages.data( );
-    vkSubmitInfo.pWaitDstStageMask    = waitStages.data( );
     vkSubmitInfo.commandBufferCount   = 1;
     vkSubmitInfo.pCommandBuffers      = &m_commandBuffer;
     vkSubmitInfo.signalSemaphoreCount = signalSemaphores.size( );
@@ -260,7 +259,21 @@ void VulkanCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
     const auto *vkBindGroup = dynamic_cast<VulkanResourceBindGroup *>( bindGroup );
 
     // Remember more bind points will be added in the future.
-    const VkPipelineBindPoint bindPoint = m_desc.QueueType == QueueType::Graphics ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
+    VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+    switch ( m_desc.QueueType )
+    {
+    case QueueType::Graphics:
+        bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        break;
+    case QueueType::Compute:
+        bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+        break;
+    case QueueType::RayTracing:
+        bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+        break;
+    default:
+        break;
+    }
 
     if ( vkBindGroup->HasDescriptorSet( ) )
     {
@@ -364,29 +377,19 @@ void VulkanCommandList::Draw( const uint32_t vertexCount, const uint32_t instanc
 void VulkanCommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )
 {
     const VulkanTopLevelAS *topLevelAS = dynamic_cast<VulkanTopLevelAS *>( buildTopLevelASDesc.TopLevelAS );
-
-    VkAccelerationStructureGeometryInstancesDataKHR instanceData{ };
-    instanceData.sType              = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-    instanceData.arrayOfPointers    = VK_FALSE;
-    instanceData.data.deviceAddress = topLevelAS->InstanceBuffer( )->DeviceAddress( );
-
-    VkAccelerationStructureGeometryKHR geometry{ };
-    geometry.sType              = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-    geometry.geometryType       = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-    geometry.geometry.instances = instanceData;
+    DZ_NOT_NULL( topLevelAS );
 
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo{ };
     buildInfo.sType                     = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
     buildInfo.type                      = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
     buildInfo.flags                     = topLevelAS->Flags( );
     buildInfo.mode                      = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-    buildInfo.dstAccelerationStructure  = topLevelAS->AccelerationStructure( );
+    buildInfo.dstAccelerationStructure  = topLevelAS->Instance( );
     buildInfo.geometryCount             = 1;
-    buildInfo.pGeometries               = &geometry;
+    buildInfo.pGeometries               = topLevelAS->GeometryDesc( );
     buildInfo.scratchData.deviceAddress = topLevelAS->Scratch( )->DeviceAddress( );
 
-    std::array<const VkAccelerationStructureBuildRangeInfoKHR*, 1> buildRangeInfo = { &topLevelAS->BuildRangeInfo( ) };
-    vkCmdBuildAccelerationStructuresKHR( m_commandBuffer, 1, &buildInfo, buildRangeInfo.data( ) );
+    vkCmdBuildAccelerationStructuresKHR( m_commandBuffer, 1, &buildInfo, topLevelAS->BuildRangeInfo( ) );
 }
 
 void VulkanCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc )
@@ -401,21 +404,21 @@ void VulkanCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildB
     buildInfo.type                      = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     buildInfo.flags                     = vkBottomLevelAS->Flags( );
     buildInfo.mode                      = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-    buildInfo.dstAccelerationStructure  = vkBottomLevelAS->AccelerationStructure( );
+    buildInfo.dstAccelerationStructure  = vkBottomLevelAS->Instance( );
     buildInfo.geometryCount             = static_cast<uint32_t>( geometryDescs.size( ) );
     buildInfo.pGeometries               = geometryDescs.data( );
     buildInfo.scratchData.deviceAddress = vkBottomLevelAS->ScratchBuffer( )->DeviceAddress( );
 
-    auto& buildRangeInfos = vkBottomLevelAS->BuildRangeInfos( );
-    vkCmdBuildAccelerationStructuresKHR( m_commandBuffer, 1, &buildInfo, buildRangeInfos.data( ) );
+    vkCmdBuildAccelerationStructuresKHR( m_commandBuffer, 1, &buildInfo, vkBottomLevelAS->BuildRangeInfos( ) );
 }
 
 void VulkanCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
     VulkanShaderBindingTable *bindingTable = dynamic_cast<VulkanShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
+    DZ_NOT_NULL( bindingTable );
 
-    vkCmdTraceRaysKHR( m_commandBuffer, bindingTable->RayGenerationShaderRange( ), bindingTable->MissShaderRange( ), bindingTable->HitGroupShaderRange( ), VK_NULL_HANDLE,
-                       dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth );
+    vkCmdTraceRaysKHR( m_commandBuffer, bindingTable->RayGenerationShaderRange( ), bindingTable->MissShaderRange( ), bindingTable->HitGroupShaderRange( ),
+                       bindingTable->CallableShaderRange( ), dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth );
 }
 
 void VulkanCommandList::Dispatch( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )

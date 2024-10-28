@@ -44,14 +44,17 @@ namespace DenOfIz
         VkPipelineBindPoint m_bindPoint{ };
         VkPipelineLayout    m_layout{ };
 
-        std::unordered_map<std::string, uint32_t> m_shaderIdentifierOffsets;
-        std::vector<uint8_t>                      m_shaderIdentifiers;
+        std::unordered_map<std::string, uint32_t>     m_shaderIdentifierOffsets;
+        std::vector<uint8_t>                          m_shaderIdentifiers;
+        std::vector<std::pair<ShaderStage, uint32_t>> m_hitGroupIdentifiers;
 
     public:
-        [[nodiscard]] VkPipeline          Instance( ) const;
-        [[nodiscard]] VkPipelineBindPoint BindPoint( ) const;
-        [[nodiscard]] void               *GetShaderIdentifier( const std::string &exportName );
-        VulkanPipeline( VulkanContext *context, const PipelineDesc & );
+        [[nodiscard]] VkPipeline                                           Instance( ) const;
+        [[nodiscard]] VkPipelineBindPoint                                  BindPoint( ) const;
+        [[nodiscard]] void                                                *GetShaderIdentifier( const std::string &exportName );
+        [[nodiscard]] void                                                *GetShaderIdentifier( uint32_t offset );
+        [[nodiscard]] const std::vector<std::pair<ShaderStage, uint32_t>> &HitGroupIdentifiers( ) const;
+        [[nodiscard]] VulkanPipeline( VulkanContext *context, const PipelineDesc & );
         ~VulkanPipeline( ) override;
 
     private:

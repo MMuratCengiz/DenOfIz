@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12ResourceBindGroup.h>
+#include "DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLevelAS.h"
 
 using namespace DenOfIz;
 
@@ -121,6 +122,11 @@ IResourceBindGroup* DX12ResourceBindGroup::Srv( const uint32_t binding, ITexture
 {
     BindTexture( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), resource );
     return this;
+}
+
+IResourceBindGroup *DX12ResourceBindGroup::Srv( const uint32_t binding, ITopLevelAS *accelerationStructure )
+{
+    return Srv( binding, dynamic_cast<DX12TopLevelAS *>( accelerationStructure )->Buffer( ) );
 }
 
 IResourceBindGroup* DX12ResourceBindGroup::Uav( const uint32_t binding, IBufferResource *resource )
@@ -237,7 +243,6 @@ uint32_t DX12ResourceBindGroup::RegisterSpace( ) const
 {
     return m_desc.RegisterSpace;
 }
-
 ResourceBindingSlot DX12ResourceBindGroup::GetSlot( uint32_t binding, const DescriptorBufferBindingType& type ) const
 {
     return ResourceBindingSlot{ binding, m_desc.RegisterSpace, type };

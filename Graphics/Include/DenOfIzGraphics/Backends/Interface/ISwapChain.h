@@ -34,6 +34,7 @@ namespace DenOfIz
         uint32_t              NumBuffers        = 3;
         Format                BackBufferFormat  = Format::B8G8R8A8Unorm;
         Format                DepthBufferFormat = Format::D32Float;
+        BitSet<ResourceUsage> ImageUsages;
     };
 
     struct DZ_API Viewport

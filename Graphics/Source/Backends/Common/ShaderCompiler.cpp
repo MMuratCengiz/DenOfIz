@@ -136,6 +136,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     if ( compileDesc.TargetIL == TargetIL::SPIRV )
     {
         arguments.push_back( L"-spirv" );
+        arguments.push_back( L"-fspv-target-env=vulkan1.3" );
         // Vulkan requires unique binding for each descriptor, hlsl has a binding per buffer view.
         // Docs suggest shifting the binding to avoid conflicts.
         static const std::wstring VkShiftCbvWs     = std::to_wstring( VkShiftCbv );

@@ -37,7 +37,7 @@ void RenderTargetExample::Init( )
     textureDesc.Height       = m_windowDesc.Height;
     textureDesc.Format       = Format::B8G8R8A8Unorm;
     textureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture ) | ResourceDescriptor::RenderTarget;
-    textureDesc.InitialState = ResourceState::ShaderResource;
+    textureDesc.InitialUsage = ResourceUsage::ShaderResource;
     textureDesc.DebugName    = "Deferred Render Target";
     for ( uint32_t i = 0; i < 3; ++i )
     {
@@ -63,16 +63,16 @@ void RenderTargetExample::Init( )
 
     NodeDesc deferredNode{ };
     deferredNode.Name = "Deferred";
-    deferredNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::RenderTarget ) );
-    deferredNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::RenderTarget ) );
-    deferredNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::RenderTarget ) );
+    deferredNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceUsage::RenderTarget ) );
+    deferredNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceUsage::RenderTarget ) );
+    deferredNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceUsage::RenderTarget ) );
     deferredNode.Execute = this;
 
     PresentNodeDesc presentNode{ };
     presentNode.SwapChain = m_swapChain.get( );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceState::ShaderResource ) );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceState::ShaderResource ) );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceState::ShaderResource ) );
+    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceUsage::ShaderResource ) );
+    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceUsage::ShaderResource ) );
+    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceUsage::ShaderResource ) );
     presentNode.Dependencies.AddElement( "Deferred" );
     presentNode.Execute = this;
 

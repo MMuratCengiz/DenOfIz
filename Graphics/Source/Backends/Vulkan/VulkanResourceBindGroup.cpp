@@ -17,8 +17,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h>
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h"
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h"
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h>
+#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h>
 
 using namespace DenOfIz;
 
@@ -88,6 +89,25 @@ IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, ITextu
     return this;
 }
 
+IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, ITopLevelAS *accelerationStructure )
+{
+    VulkanTopLevelAS *vkAccelerationStructure = dynamic_cast<VulkanTopLevelAS *>( accelerationStructure );
+
+    auto& writeDescriptorSet = BindBuffer( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), vkAccelerationStructure->Buffer( ) );
+
+    if ( writeDescriptorSet.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR )
+    {
+        VkWriteDescriptorSetAccelerationStructureKHR &accelerationStructureInfo = m_storage.Store<VkWriteDescriptorSetAccelerationStructureKHR>( );
+        accelerationStructureInfo.sType                                         = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+        accelerationStructureInfo.pNext                                         = nullptr;
+        accelerationStructureInfo.accelerationStructureCount                    = 1;
+        accelerationStructureInfo.pAccelerationStructures                       = &vkAccelerationStructure->Instance( );
+        writeDescriptorSet.pNext                                                = &accelerationStructureInfo;
+    }
+
+    return this;
+}
+
 IResourceBindGroup *VulkanResourceBindGroup::Uav( const uint32_t binding, IBufferResource *resource )
 {
     BindBuffer( GetSlot( binding, DescriptorBufferBindingType::UnorderedAccess ), resource );
@@ -122,7 +142,7 @@ void VulkanResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITex
     writeDescriptorSet.pImageInfo            = &imageInfo;
 }
 
-void VulkanResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )
+VkWriteDescriptorSet &VulkanResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )
 {
     const auto *vulkanResource = dynamic_cast<VulkanBufferResource *>( resource );
 
@@ -132,6 +152,8 @@ void VulkanResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBuff
     bufferInfo.offset                        = vulkanResource->Offset( );
     bufferInfo.range                         = vulkanResource->NumBytes( );
     writeDescriptorSet.pBufferInfo           = &bufferInfo;
+
+    return writeDescriptorSet;
 }
 
 void VulkanResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )

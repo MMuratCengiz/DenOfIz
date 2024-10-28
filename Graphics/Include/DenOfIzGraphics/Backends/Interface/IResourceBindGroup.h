@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IBufferResource.h"
 #include "IRootSignature.h"
 #include "ITextureResource.h"
+#include "RayTracing/ITopLevelAS.h"
 
 namespace DenOfIz
 {
@@ -39,21 +40,17 @@ namespace DenOfIz
     class DZ_API IResourceBindGroup
     {
     public:
-        virtual ~IResourceBindGroup( )                                                                      = default;
+        virtual ~IResourceBindGroup( )                                                                       = default;
         virtual void                SetRootConstantsData( uint32_t binding, const InteropArray<Byte> &data ) = 0;
-        virtual void                SetRootConstants( uint32_t binding, void *data )                        = 0;
-        virtual IResourceBindGroup *BeginUpdate( )                                                          = 0;
-        virtual IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource )                = 0;
-        virtual IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource )                = 0;
-        virtual IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource )               = 0;
-        virtual IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource )                = 0;
-        virtual IResourceBindGroup *Uav( const uint32_t binding, ITextureResource *resource )               = 0;
-        virtual IResourceBindGroup *Sampler( const uint32_t binding, ISampler *sampler )                    = 0;
-        virtual void                EndUpdate( )                                                            = 0;
-
-    protected:
-        virtual void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) = 0;
-        virtual void BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )   = 0;
-        virtual void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )          = 0;
+        virtual void                SetRootConstants( uint32_t binding, void *data )                         = 0;
+        virtual IResourceBindGroup *BeginUpdate( )                                                           = 0;
+        virtual IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource )                 = 0;
+        virtual IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource )                 = 0;
+        virtual IResourceBindGroup *Srv( const uint32_t binding, ITopLevelAS *accelerationStructure )        = 0;
+        virtual IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource )                = 0;
+        virtual IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource )                 = 0;
+        virtual IResourceBindGroup *Uav( const uint32_t binding, ITextureResource *resource )                = 0;
+        virtual IResourceBindGroup *Sampler( const uint32_t binding, ISampler *sampler )                     = 0;
+        virtual void                EndUpdate( )                                                             = 0;
     };
 } // namespace DenOfIz

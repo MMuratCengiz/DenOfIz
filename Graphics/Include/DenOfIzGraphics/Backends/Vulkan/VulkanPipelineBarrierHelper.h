@@ -31,11 +31,13 @@ namespace DenOfIz
                                             const PipelineBarrierDesc &barrier );
 
     private:
-        static VkImageMemoryBarrier  CreateImageBarrier(const TextureBarrierDesc &barrier, VkAccessFlags &srcAccessFlags, VkAccessFlags &dstAccessFlags);
-        static VkBufferMemoryBarrier CreateBufferBarrier(const BufferBarrierDesc &barrier, VkAccessFlags &srcAccessFlags, VkAccessFlags &dstAccessFlags);
-        static VkAccessFlags         GetAccessFlags(const BitSet<ResourceState> &state);
-        static VkImageLayout         GetImageLayout(const BitSet<ResourceState> &state);
-        static VkPipelineStageFlags  GetPipelineStageFlags( const VulkanContext *context, QueueType queueType, VkAccessFlags accessFlags);
+        static VkImageMemoryBarrier  CreateImageBarrier( const TextureBarrierDesc &barrier, VkAccessFlags &srcAccessFlags, VkAccessFlags &dstAccessFlags,
+                                                         const QueueType queueType );
+        static VkBufferMemoryBarrier CreateBufferBarrier( const BufferBarrierDesc &barrier, VkAccessFlags &srcAccessFlags, VkAccessFlags &dstAccessFlags,
+                                                          const QueueType queueType );
+        static VkAccessFlags         GetAccessFlags( const BitSet<ResourceUsage> &state, const QueueType queueType );
+        static VkImageLayout         GetImageLayout( const BitSet<ResourceUsage> &state );
+        static VkPipelineStageFlags  GetPipelineStageFlags( const VulkanContext *context, QueueType queueType, VkAccessFlags accessFlags );
     };
 
 } // namespace DenOfIz

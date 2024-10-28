@@ -307,47 +307,54 @@ VkSamplerMipmapMode VulkanEnumConverter::ConvertMipmapMode( const MipmapMode &mi
 }
 
 // TODO !IMPROVEMENT! This might be incorrect
-VkBufferUsageFlags VulkanEnumConverter::ConvertBufferUsage( BitSet<ResourceDescriptor> usage, BitSet<ResourceState> initialState )
+VkBufferUsageFlags VulkanEnumConverter::ConvertBufferUsage( BitSet<ResourceDescriptor> descriptor, BitSet<ResourceUsage> usages )
 {
     VkBufferUsageFlags flags = { };
-    if ( initialState.IsSet( ResourceState::CopySrc ) )
+    if ( usages.IsSet( ResourceUsage::CopySrc ) )
     {
         flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     }
-    if ( initialState.IsSet( ResourceState::CopyDst ) )
+    if ( usages.IsSet( ResourceUsage::CopyDst ) )
     {
         flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     }
-    if ( usage.IsSet( ResourceDescriptor::IndexBuffer ) )
+    if ( descriptor.IsSet( ResourceDescriptor::IndexBuffer ) )
     {
         flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     }
-    if ( usage.IsSet( ResourceDescriptor::VertexBuffer ) )
+    if ( descriptor.IsSet( ResourceDescriptor::VertexBuffer ) )
     {
         flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     }
-    if ( usage.IsSet( ResourceDescriptor::UniformBuffer ) )
+    if ( descriptor.IsSet( ResourceDescriptor::UniformBuffer ) )
     {
         flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     }
-    if ( usage.IsSet( ResourceDescriptor::Buffer ) )
+    if ( descriptor.Any( { ResourceDescriptor::Buffer, ResourceDescriptor::RWBuffer } ) )
     {
         flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     }
-    if ( usage.IsSet( ResourceDescriptor::IndirectBuffer ) )
+    if ( descriptor.IsSet( ResourceDescriptor::IndirectBuffer ) )
     {
         flags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     }
-    if ( usage.IsSet( ResourceDescriptor::AccelerationStructure ) )
+    if ( usages.IsSet( ResourceUsage::ShaderBindingTable ) )
     {
-        flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        flags |= VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
     }
-
-    if ( initialState.IsSet( ResourceState::AccelerationStructureWrite ) )
+    if ( usages.IsSet( ResourceUsage::AccelerationStructureGeometry ) )
+    {
+        flags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+    }
+    if ( descriptor.IsSet( ResourceDescriptor::AccelerationStructure ) )
+    {
+        flags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+    }
+    if ( usages.IsSet( ResourceUsage::AccelerationStructureWrite ) )
     {
         flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     }
-    if ( initialState.IsSet( ResourceState::AccelerationStructureRead ) )
+    if ( usages.IsSet( ResourceUsage::AccelerationStructureRead ) )
     {
         flags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     }
@@ -380,23 +387,23 @@ VkImageAspectFlagBits VulkanEnumConverter::ConvertImageAspect( TextureAspect asp
     return VK_IMAGE_ASPECT_NONE;
 }
 
-VkImageUsageFlags VulkanEnumConverter::ConvertTextureDescriptorToUsage( BitSet<ResourceDescriptor> descriptor, BitSet<ResourceState> initialState )
+VkImageUsageFlags VulkanEnumConverter::ConvertTextureDescriptorToUsage( BitSet<ResourceDescriptor> descriptor, BitSet<ResourceUsage> initialState )
 {
     VkImageUsageFlags usage = { };
 
-    if ( initialState.IsSet( ResourceState::CopySrc ) )
+    if ( initialState.IsSet( ResourceUsage::CopySrc ) )
     {
         usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     }
-    if ( initialState.IsSet( ResourceState::CopyDst ) )
+    if ( initialState.IsSet( ResourceUsage::CopyDst ) )
     {
         usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     }
-    if ( initialState.IsSet( ResourceState::RenderTarget ) )
+    if ( initialState.IsSet( ResourceUsage::RenderTarget ) )
     {
         usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
-    if ( initialState.Any( { ResourceState::DepthRead, ResourceState::DepthWrite } ) )
+    if ( initialState.Any( { ResourceUsage::DepthRead, ResourceUsage::DepthWrite } ) )
     {
         usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     }
@@ -574,6 +581,10 @@ VkFormat VulkanEnumConverter::ConvertImageFormat( const Format &imageFormat )
 
 VkDescriptorType VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType( const BitSet<ResourceDescriptor> &descriptor )
 {
+    if ( descriptor.IsSet( ResourceDescriptor::AccelerationStructure ) )
+    {
+        return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    }
     if ( descriptor.IsSet( ResourceDescriptor::Sampler ) )
     {
         return VK_DESCRIPTOR_TYPE_SAMPLER;
@@ -593,10 +604,6 @@ VkDescriptorType VulkanEnumConverter::ConvertResourceDescriptorToDescriptorType(
     if ( descriptor.Any( { ResourceDescriptor::RWBuffer, ResourceDescriptor::Buffer } ) )
     {
         return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    }
-    if ( descriptor.IsSet( ResourceDescriptor::AccelerationStructure ) )
-    {
-        return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     }
 
     return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
@@ -634,10 +641,10 @@ VkPipelineBindPoint VulkanEnumConverter::ConvertPipelineBindPoint( const BindPoi
     return VK_PIPELINE_BIND_POINT_GRAPHICS;
 }
 
-VkImageUsageFlags VulkanEnumConverter::ConvertTextureUsage( BitSet<ResourceDescriptor> descriptor, BitSet<ResourceState> initialState )
+VkImageUsageFlags VulkanEnumConverter::ConvertTextureUsage( BitSet<ResourceDescriptor> descriptor, BitSet<ResourceUsage> usage )
 {
     VkImageUsageFlags flags = 0;
-    if ( descriptor.IsSet( ResourceDescriptor::Texture ) || initialState.IsSet( ResourceState::ShaderResource ) )
+    if ( descriptor.IsSet( ResourceDescriptor::Texture ) || usage.IsSet( ResourceUsage::ShaderResource ) )
     {
         flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
     }
@@ -649,31 +656,31 @@ VkImageUsageFlags VulkanEnumConverter::ConvertTextureUsage( BitSet<ResourceDescr
     {
         flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
-    if ( initialState.IsSet( ResourceState::CopySrc ) )
+    if ( usage.IsSet( ResourceUsage::CopySrc ) )
     {
         flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     }
-    if ( initialState.IsSet( ResourceState::CopyDst ) )
+    if ( usage.IsSet( ResourceUsage::CopyDst ) )
     {
         flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     }
-    if ( initialState.IsSet( ResourceState::AccelerationStructureWrite ) )
+    if ( usage.IsSet( ResourceUsage::AccelerationStructureWrite ) )
     {
         flags |= VK_IMAGE_USAGE_STORAGE_BIT;
     }
-    if ( initialState.IsSet( ResourceState::AccelerationStructureRead ) )
+    if ( usage.IsSet( ResourceUsage::AccelerationStructureRead ) )
     {
         flags |= VK_IMAGE_USAGE_STORAGE_BIT;
     }
-    if ( initialState.IsSet( ResourceState::RenderTarget ) )
+    if ( usage.IsSet( ResourceUsage::RenderTarget ) )
     {
         flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
-    if ( initialState.IsSet( ResourceState::DepthRead ) || initialState.IsSet( ResourceState::DepthWrite ) )
+    if ( usage.IsSet( ResourceUsage::DepthRead ) || usage.IsSet( ResourceUsage::DepthWrite ) )
     {
         flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     }
-    if ( initialState.IsSet( ResourceState::UnorderedAccess ) )
+    if ( usage.IsSet( ResourceUsage::UnorderedAccess ) )
     {
         flags |= VK_IMAGE_USAGE_STORAGE_BIT;
     }
@@ -685,29 +692,29 @@ VkImageUsageFlags VulkanEnumConverter::ConvertTextureUsage( BitSet<ResourceDescr
 }
 
 // TODO !IMPROVEMENT! This needs to be more complete
-VkImageLayout VulkanEnumConverter::ConvertTextureDescriptorToLayout( BitSet<ResourceState> initialState )
+VkImageLayout VulkanEnumConverter::ConvertTextureDescriptorToLayout( BitSet<ResourceUsage> initialState )
 {
-    if ( initialState.Any( { ResourceState::ShaderResource, ResourceState::PixelShaderResource } ) )
+    if ( initialState.Any( { ResourceUsage::ShaderResource, ResourceUsage::PixelShaderResource } ) )
     {
         return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
-    if ( initialState.IsSet( ResourceState::Common ) )
+    if ( initialState.Any( { ResourceUsage::Common, ResourceUsage::UnorderedAccess } ) )
     {
         return VK_IMAGE_LAYOUT_GENERAL;
     }
-    if ( initialState.IsSet( ResourceState::RenderTarget ) )
+    if ( initialState.IsSet( ResourceUsage::RenderTarget ) )
     {
         return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
-    if ( initialState.All( { ResourceState::DepthRead, ResourceState::DepthWrite } ) )
+    if ( initialState.All( { ResourceUsage::DepthRead, ResourceUsage::DepthWrite } ) )
     {
         return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     }
-    if ( initialState.IsSet( ResourceState::CopySrc ) )
+    if ( initialState.IsSet( ResourceUsage::CopySrc ) )
     {
         return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     }
-    if ( initialState.IsSet( ResourceState::CopyDst ) )
+    if ( initialState.IsSet( ResourceUsage::CopyDst ) )
     {
         return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     }

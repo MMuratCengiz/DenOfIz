@@ -466,8 +466,8 @@ void DX12CommandList::CompatibilityPipelineBarrier( const PipelineBarrierDesc &b
     {
         const TextureBarrierDesc   &textureBarrier  = textureBarriers.GetElement( i );
         ID3D12Resource             *pResource       = dynamic_cast<DX12TextureResource *>( textureBarrier.Resource )->GetResource( );
-        const D3D12_RESOURCE_STATES before          = DX12EnumConverter::ConvertResourceState( textureBarrier.OldState );
-        const D3D12_RESOURCE_STATES after           = DX12EnumConverter::ConvertResourceState( textureBarrier.NewState );
+        const D3D12_RESOURCE_STATES before          = DX12EnumConverter::ConvertResourceUsage( textureBarrier.OldState );
+        const D3D12_RESOURCE_STATES after           = DX12EnumConverter::ConvertResourceUsage( textureBarrier.NewState );
         D3D12_RESOURCE_BARRIER      resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition( pResource, before, after );
 
         if ( before != after )
@@ -480,8 +480,8 @@ void DX12CommandList::CompatibilityPipelineBarrier( const PipelineBarrierDesc &b
     {
         const BufferBarrierDesc    &bufferBarrier   = bufferBarriers.GetElement( i );
         ID3D12Resource             *pResource       = dynamic_cast<DX12BufferResource *>( bufferBarrier.Resource )->Resource( );
-        const D3D12_RESOURCE_STATES before          = DX12EnumConverter::ConvertResourceState( bufferBarrier.OldState );
-        const D3D12_RESOURCE_STATES after           = DX12EnumConverter::ConvertResourceState( bufferBarrier.NewState );
+        const D3D12_RESOURCE_STATES before          = DX12EnumConverter::ConvertResourceUsage( bufferBarrier.OldState );
+        const D3D12_RESOURCE_STATES after           = DX12EnumConverter::ConvertResourceUsage( bufferBarrier.NewState );
         D3D12_RESOURCE_BARRIER      resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition( pResource, before, after );
         if ( before != after )
         {
@@ -494,8 +494,8 @@ void DX12CommandList::CompatibilityPipelineBarrier( const PipelineBarrierDesc &b
         const MemoryBarrierDesc &memoryBarrier = barrier.GetMemoryBarriers( ).GetElement( i );
 
         // Special Cases, Uav Barrier:
-        bool isUavBarrier = memoryBarrier.OldState.IsSet( ResourceState::AccelerationStructureWrite ) && memoryBarrier.NewState.IsSet( ResourceState::AccelerationStructureRead );
-        isUavBarrier |= memoryBarrier.OldState.IsSet( ResourceState::DepthWrite ) && memoryBarrier.NewState.IsSet( ResourceState::DepthRead );
+        bool isUavBarrier = memoryBarrier.OldState.IsSet( ResourceUsage::AccelerationStructureWrite ) && memoryBarrier.NewState.IsSet( ResourceUsage::AccelerationStructureRead );
+        isUavBarrier |= memoryBarrier.OldState.IsSet( ResourceUsage::DepthWrite ) && memoryBarrier.NewState.IsSet( ResourceUsage::DepthRead );
 
         ID3D12Resource *dx12Resource = nullptr;
         if ( memoryBarrier.BufferResource != nullptr )
@@ -515,8 +515,8 @@ void DX12CommandList::CompatibilityPipelineBarrier( const PipelineBarrierDesc &b
         }
         else
         {
-            const D3D12_RESOURCE_STATES before = DX12EnumConverter::ConvertResourceState( memoryBarrier.OldState );
-            const D3D12_RESOURCE_STATES after  = DX12EnumConverter::ConvertResourceState( memoryBarrier.NewState );
+            const D3D12_RESOURCE_STATES before = DX12EnumConverter::ConvertResourceUsage( memoryBarrier.OldState );
+            const D3D12_RESOURCE_STATES after  = DX12EnumConverter::ConvertResourceUsage( memoryBarrier.NewState );
 
             D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition( dx12Resource, before, after );
             resourceBarriers.push_back( resourceBarrier );

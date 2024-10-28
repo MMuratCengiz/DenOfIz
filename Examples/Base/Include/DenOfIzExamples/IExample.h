@@ -56,6 +56,7 @@ namespace DenOfIz
             swapChainDesc.Width        = m_windowDesc.Width;
             swapChainDesc.Height       = m_windowDesc.Height;
             swapChainDesc.WindowHandle = m_windowHandle;
+            swapChainDesc.ImageUsages  = ResourceUsage::CopyDst;
 
             m_swapChain        = std::unique_ptr<ISwapChain>( m_logicalDevice->CreateSwapChain( swapChainDesc ) );
             m_camera           = std::make_unique<Camera>( static_cast<float>( m_windowDesc.Width ) / m_windowDesc.Height );

@@ -81,6 +81,7 @@ namespace DenOfIz
         IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource ) override;
         IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource ) override;
         IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource ) override;
+        IResourceBindGroup *Srv( const uint32_t binding, ITopLevelAS *accelerationStructure ) override;
         IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource ) override;
         IResourceBindGroup *Uav( const uint32_t binding, ITextureResource *resource ) override;
         IResourceBindGroup *Sampler( const uint32_t binding, ISampler *sampler ) override;
@@ -98,12 +99,11 @@ namespace DenOfIz
 
         [[nodiscard]] MetalRootSignature *RootSignature( ) const;
 
-    protected:
-        void BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource ) override;
-        void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) override;
-        void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler ) override;
-
     private:
+        void BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource );
+        void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource );
+        void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler );
+
         void                UpdateDescriptorTable( const MetalBindingDesc &binding, MetalDescriptorTableBinding *table );
         ResourceBindingSlot GetSlot( uint32_t binding, const DescriptorBufferBindingType &type ) const;
     };

@@ -45,9 +45,9 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
     D3D12MA::ALLOCATION_DESC allocationDesc = { };
     allocationDesc.HeapType                 = DX12EnumConverter::ConvertHeapType( m_desc.HeapType );
 
-    const D3D12_RESOURCE_STATES start_state = DX12EnumConverter::ConvertResourceState( m_desc.InitialState );
+    const D3D12_RESOURCE_STATES startState = DX12EnumConverter::ConvertResourceUsage( m_desc.InitialUsage );
 
-    const HRESULT hr = m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, start_state, nullptr, &m_allocation, IID_PPV_ARGS( &m_resource ) );
+    const HRESULT hr = m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, startState, nullptr, &m_allocation, IID_PPV_ARGS( &m_resource ) );
     DX_CHECK_RESULT( hr );
     std::string        debugName = m_desc.DebugName.Get( );
     const std::wstring name      = std::wstring( debugName.begin( ), debugName.end( ) );
@@ -205,7 +205,7 @@ ID3D12Resource2 *DX12BufferResource::Resource( ) const
     return m_resource.get( );
 }
 
-BitSet<ResourceState> DX12BufferResource::InitialState( ) const
+BitSet<ResourceUsage> DX12BufferResource::InitialState( ) const
 {
     return m_state;
 }

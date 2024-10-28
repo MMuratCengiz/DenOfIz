@@ -38,22 +38,23 @@ void RayTracedTriangleExample::Init( )
     NodeDesc raytracingNode{ };
     raytracingNode.Name      = "RayTracing";
     raytracingNode.QueueType = QueueType::RayTracing;
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_raytracingOutput[ 0 ].get( ), ResourceState::UnorderedAccess ) );
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_raytracingOutput[ 1 ].get( ), ResourceState::UnorderedAccess ) );
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceState::UnorderedAccess ) );
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::BufferState( 0, m_rayGenCBResource.get( ), ResourceState::VertexAndConstantBuffer ) );
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::BufferState( 1, m_rayGenCBResource.get( ), ResourceState::VertexAndConstantBuffer ) );
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::BufferState( 2, m_rayGenCBResource.get( ), ResourceState::VertexAndConstantBuffer ) );
+    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_raytracingOutput[ 0 ].get( ), ResourceUsage::UnorderedAccess ) );
+    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_raytracingOutput[ 1 ].get( ), ResourceUsage::UnorderedAccess ) );
+    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceUsage::UnorderedAccess ) );
+    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::BufferState( 0, m_rayGenCBResource.get( ), ResourceUsage::VertexAndConstantBuffer ) );
+    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::BufferState( 1, m_rayGenCBResource.get( ), ResourceUsage::VertexAndConstantBuffer ) );
+    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::BufferState( 2, m_rayGenCBResource.get( ), ResourceUsage::VertexAndConstantBuffer ) );
     raytracingNode.Execute = this;
 
+    // !!! Note to be able to do this in Vulkan you need to set the line: `swapChainDesc.ImageUsages  = ResourceUsage::CopyDst;` from IExample.h
     NodeDesc copyToRenderTargetNode{ };
     copyToRenderTargetNode.Name = "CopyToRenderTarget";
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_raytracingOutput[ 0 ].get( ), ResourceState::CopySrc ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_raytracingOutput[ 1 ].get( ), ResourceState::CopySrc ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceState::CopySrc ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_swapChain->GetRenderTarget( 0 ), ResourceState::CopyDst ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_swapChain->GetRenderTarget( 1 ), ResourceState::CopyDst ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_swapChain->GetRenderTarget( 2 ), ResourceState::CopyDst ) );
+    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_raytracingOutput[ 0 ].get( ), ResourceUsage::CopySrc ) );
+    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_raytracingOutput[ 1 ].get( ), ResourceUsage::CopySrc ) );
+    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceUsage::CopySrc ) );
+    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_swapChain->GetRenderTarget( 0 ), ResourceUsage::CopyDst ) );
+    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_swapChain->GetRenderTarget( 1 ), ResourceUsage::CopyDst ) );
+    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_swapChain->GetRenderTarget( 2 ), ResourceUsage::CopyDst ) );
     copyToRenderTargetNode.Dependencies.AddElement( "RayTracing" );
 
     m_copyToPresentCallback = std::make_unique<NodeExecutionCallbackHolder>(
@@ -71,9 +72,9 @@ void RayTracedTriangleExample::Init( )
 
     PresentNodeDesc presentNode{ };
     presentNode.SwapChain = m_swapChain.get( );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_swapChain->GetRenderTarget( 0 ), ResourceState::Present ) );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_swapChain->GetRenderTarget( 1 ), ResourceState::Present ) );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_swapChain->GetRenderTarget( 2 ), ResourceState::Present ) );
+    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_swapChain->GetRenderTarget( 0 ), ResourceUsage::Present ) );
+    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_swapChain->GetRenderTarget( 1 ), ResourceUsage::Present ) );
+    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_swapChain->GetRenderTarget( 2 ), ResourceUsage::Present ) );
     presentNode.Dependencies.AddElement( "CopyToRenderTarget" );
     presentNode.Execute = this;
 
@@ -107,7 +108,7 @@ void RayTracedTriangleExample::Execute( uint32_t frameIndex, ICommandList *comma
 
 void RayTracedTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::DirectX12;
+    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void RayTracedTriangleExample::Update( )
@@ -136,8 +137,9 @@ void RayTracedTriangleExample::CreateRenderTargets( )
     textureDesc.Width        = m_windowDesc.Width;
     textureDesc.Height       = m_windowDesc.Height;
     textureDesc.Format       = Format::B8G8R8A8Unorm;
-    textureDesc.Descriptor   = ResourceDescriptor::RWTexture;
-    textureDesc.InitialState = ResourceState::ShaderResource;
+    textureDesc.Descriptor   = BitSet( ResourceDescriptor::RWTexture );
+    textureDesc.InitialUsage = ResourceUsage::UnorderedAccess;
+    textureDesc.Usages       = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::UnorderedAccess;
     textureDesc.DebugName    = "RayTracing Output";
     for ( uint32_t i = 0; i < 3; ++i )
     {
@@ -176,7 +178,7 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     {
         m_rayTracingBindGroups[ i ] = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
         m_rayTracingBindGroups[ i ]->BeginUpdate( );
-        m_rayTracingBindGroups[ i ]->Srv( 0, m_topLevelAS->Buffer( ) );
+        m_rayTracingBindGroups[ i ]->Srv( 0, m_topLevelAS.get( ) );
         m_rayTracingBindGroups[ i ]->Uav( 0, m_raytracingOutput[ i ].get( ) );
         m_rayTracingBindGroups[ i ]->Cbv( 0, m_rayGenCBResource.get( ) );
         m_rayTracingBindGroups[ i ]->EndUpdate( );
@@ -204,23 +206,25 @@ void RayTracedTriangleExample::CreateResources( )
     constexpr Vertex vertices[] = { { 0, -offset, depthValue }, { -offset, offset, depthValue }, { offset, offset, depthValue } };
 
     BufferDesc vbDesc{ };
-    vbDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
+    vbDesc.Descriptor   = BitSet( ResourceDescriptor::VertexBuffer );
+    vbDesc.InitialUsage = ResourceUsage::CopyDst;
+    vbDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::VertexAndConstantBuffer | ResourceUsage::AccelerationStructureGeometry;
     vbDesc.NumBytes     = sizeof( vertices );
-    vbDesc.InitialState = ResourceState::CopyDst;
     vbDesc.DebugName    = "VertexBuffer";
     m_vertexBuffer      = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vbDesc ) );
 
     BufferDesc ibDesc{ };
-    ibDesc.Descriptor   = ResourceDescriptor::IndexBuffer;
+    ibDesc.Descriptor   = BitSet( ResourceDescriptor::IndexBuffer );
     ibDesc.NumBytes     = sizeof( indices );
-    ibDesc.InitialState = ResourceState::CopyDst;
+    ibDesc.InitialUsage = ResourceUsage::CopyDst;
+    ibDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::IndexBuffer | ResourceUsage::AccelerationStructureGeometry;
     ibDesc.DebugName    = "IndexBuffer";
     m_indexBuffer       = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( ibDesc ) );
 
     BufferDesc rayGenCbDesc{ };
     rayGenCbDesc.Descriptor   = ResourceDescriptor::UniformBuffer;
     rayGenCbDesc.NumBytes     = sizeof( m_rayGenCB );
-    rayGenCbDesc.InitialState = ResourceState::CopyDst;
+    rayGenCbDesc.InitialUsage = ResourceUsage::CopyDst;
     rayGenCbDesc.DebugName    = "RayGenCB";
     m_rayGenCBResource        = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( rayGenCbDesc ) );
 
@@ -296,19 +300,15 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
     commandList->Begin( );
     commandList->BuildBottomLevelAS( BuildBottomLevelASDesc{ m_bottomLevelAS.get( ) } );
     commandList->PipelineBarrier( PipelineBarrierDesc{ }.MemoryBarrier( MemoryBarrierDesc{
-        .BufferResource = m_bottomLevelAS->Buffer( ), .OldState = ResourceState::AccelerationStructureWrite, .NewState = ResourceState::AccelerationStructureRead } ) );
+        .BufferResource = m_bottomLevelAS->Buffer( ), .OldState = ResourceUsage::AccelerationStructureWrite, .NewState = ResourceUsage::AccelerationStructureRead } ) );
     commandList->BuildTopLevelAS( BuildTopLevelASDesc{ m_topLevelAS.get( ) } );
-    // Pipeline barriers:
-    // - Transition bottom level AS to AS state
-    // - Transition top level AS to AS state
-    //    commandList->PipelineBarrier( PipelineBarrierDesc{ }.BufferBarrier(
-    //        BufferBarrierDesc{ .Resource = m_bottomLevelAS->Buffer( ), .OldState = ResourceState::AccelerationStructureWrite, .NewState = ResourceState::UnorderedAccess } ) );
     ExecuteDesc executeDesc{ };
     executeDesc.Notify = syncFence.get( );
     commandList->Execute( executeDesc );
 
     syncFence->Wait( );
 }
+
 void RayTracedTriangleExample::CreateShaderBindingTable( )
 {
     ShaderBindingTableDesc bindingTableDesc{ };

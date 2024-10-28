@@ -49,7 +49,7 @@ void BasicCompute( const GraphicsApi &gApi )
     bufferDesc.NumBytes                     = 1024 * sizeof( float );
     bufferDesc.BufferView.Stride            = sizeof( float );
     bufferDesc.HeapType                     = HeapType::GPU;
-    bufferDesc.InitialState                 = ResourceState::UnorderedAccess;
+    bufferDesc.InitialUsage                 = ResourceUsage::UnorderedAccess;
     std::unique_ptr<IBufferResource> buffer = std::unique_ptr<IBufferResource>( logicalDevice->CreateBufferResource( bufferDesc ) );
 
     std::unique_ptr<IResourceBindGroup> resourceBindGroup =
@@ -72,7 +72,7 @@ void BasicCompute( const GraphicsApi &gApi )
 
     bufferDesc.Descriptor   = BitSet<ResourceDescriptor>( );
     bufferDesc.HeapType     = HeapType::GPU_CPU;
-    bufferDesc.InitialState = ResourceState::CopyDst;
+    bufferDesc.InitialUsage = ResourceUsage::CopyDst;
     auto readBack           = std::unique_ptr<IBufferResource>( logicalDevice->CreateBufferResource( bufferDesc ) );
 
     commandList->Begin( );
@@ -81,7 +81,7 @@ void BasicCompute( const GraphicsApi &gApi )
     commandList->Dispatch( 1024, 1, 1 );
 
     PipelineBarrierDesc barrier{ };
-    barrier.BufferBarrier( BufferBarrierDesc{ .Resource = buffer.get( ), .OldState = ResourceState::UnorderedAccess, .NewState = ResourceState::CopySrc } );
+    barrier.BufferBarrier( BufferBarrierDesc{ .Resource = buffer.get( ), .OldState = ResourceUsage::UnorderedAccess, .NewState = ResourceUsage::CopySrc } );
     commandList->PipelineBarrier( barrier );
 
     CopyBufferRegionDesc copyDesc{ };
@@ -91,7 +91,7 @@ void BasicCompute( const GraphicsApi &gApi )
     commandList->CopyBufferRegion( copyDesc );
 
     barrier = { };
-    barrier.BufferBarrier( BufferBarrierDesc{ .Resource = buffer.get( ), .OldState = ResourceState::CopySrc, .NewState = ResourceState::UnorderedAccess } );
+    barrier.BufferBarrier( BufferBarrierDesc{ .Resource = buffer.get( ), .OldState = ResourceUsage::CopySrc, .NewState = ResourceUsage::UnorderedAccess } );
     commandList->PipelineBarrier( barrier );
 
     ExecuteDesc executeDesc{ };

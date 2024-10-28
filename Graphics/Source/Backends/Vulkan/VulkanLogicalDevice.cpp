@@ -103,6 +103,7 @@ const std::vector<const char*> VulkanLogicalDevice::g_optionalInstanceExtensions
 
 const std::vector<const char *> VulkanLogicalDevice::g_requiredDeviceExtensions =
 {
+    VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
     // Maintenance Extensions
     VK_KHR_MAINTENANCE1_EXTENSION_NAME,
     VK_KHR_MAINTENANCE2_EXTENSION_NAME,
@@ -123,6 +124,7 @@ const std::vector<const char *> VulkanLogicalDevice::g_optionalDeviceExtensions 
 {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     // Ray Tracing
+    VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
     VK_KHR_RAY_QUERY_EXTENSION_NAME,
     VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
     VK_KHR_SPIRV_1_4_EXTENSION_NAME,
@@ -130,7 +132,6 @@ const std::vector<const char *> VulkanLogicalDevice::g_optionalDeviceExtensions 
     VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
     VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
 };
-
 // clang-format on
 
 void VulkanLogicalDevice::CreateDevice( )
@@ -304,9 +305,12 @@ void VulkanLogicalDevice::CreateDeviceInfo( const VkPhysicalDevice &physicalDevi
 
     // Todo actually read these from somewhere:
     deviceInfo.Properties.IsDedicated = deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-    if ( m_enabledInstanceExtensions.contains( VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME ) )
+    for ( VkExtensionProperties extension : extensions )
     {
-        deviceInfo.Capabilities.RayTracing = true;
+        if ( strcmp( extension.extensionName, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME ) == 0 )
+        {
+            deviceInfo.Capabilities.RayTracing = true;
+        }
     }
 
     VkPhysicalDeviceFeatures2 deviceFeatures2{ };
@@ -369,6 +373,8 @@ void VulkanLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     computeCommandPoolCreateInfo.queueFamilyIndex = m_context->QueueFamilies[ VulkanQueueType::Compute ].Index;
     vkCreateCommandPool( m_context->LogicalDevice, &computeCommandPoolCreateInfo, nullptr, &m_context->ComputeQueueCommandPool );
 
+    m_context->RayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+
     VkPhysicalDeviceProperties2 properties{ };
     properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     properties.pNext = &m_context->RayTracingProperties;
@@ -418,7 +424,7 @@ void VulkanLogicalDevice::CreateLogicalDevice( )
 {
     SetupQueueFamilies( );
 
-    const std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos = CreateUniqueDeviceCreateInfos( );
+    const std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos = CreateUniqueDeviceQueueCreateInfos( );
 
     VkPhysicalDeviceFeatures features{ };
     features.samplerAnisotropy = true;
@@ -432,9 +438,33 @@ void VulkanLogicalDevice::CreateLogicalDevice( )
         features.geometryShader = true;
     }
 
+    VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{ };
+    rayQueryFeatures.sType    = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+    rayQueryFeatures.rayQuery = VK_TRUE;
+
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingFeatures{ };
+    rayTracingFeatures.sType              = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+    rayTracingFeatures.rayTracingPipeline = VK_TRUE;
+    rayTracingFeatures.pNext              = &rayQueryFeatures;
+
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeature{ };
+    accelerationStructureFeature.sType                 = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+    accelerationStructureFeature.accelerationStructure = VK_TRUE;
+    accelerationStructureFeature.pNext                 = &rayTracingFeatures;
+
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeature{ };
+    bufferDeviceAddressFeature.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
+    bufferDeviceAddressFeature.bufferDeviceAddress = VK_TRUE;
+    if ( m_context->SelectedDeviceInfo.Capabilities.RayTracing )
+    {
+        bufferDeviceAddressFeature.pNext = &accelerationStructureFeature;
+    }
+
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeature{ };
     extendedDynamicStateFeature.sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
     extendedDynamicStateFeature.extendedDynamicState = VK_TRUE;
+    extendedDynamicStateFeature.pNext                = &bufferDeviceAddressFeature;
+
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature{ };
     dynamicRenderingFeature.sType            = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
     dynamicRenderingFeature.dynamicRendering = VK_TRUE;
@@ -459,10 +489,12 @@ void VulkanLogicalDevice::CreateLogicalDevice( )
     volkLoadDevice( m_context->LogicalDevice );
 
     m_context->Queues[ VulkanQueueType::Graphics ]     = VkQueue{ };
+    m_context->Queues[ VulkanQueueType::Compute ]      = VkQueue{ };
     m_context->Queues[ VulkanQueueType::Presentation ] = VkQueue{ };
     m_context->Queues[ VulkanQueueType::Copy ]         = VkQueue{ };
 
     vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies[ VulkanQueueType::Graphics ].Index, 0, &m_context->Queues[ VulkanQueueType::Graphics ] );
+    vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies[ VulkanQueueType::Compute ].Index, 0, &m_context->Queues[ VulkanQueueType::Compute ] );
     vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies[ VulkanQueueType::Presentation ].Index, 0, &m_context->Queues[ VulkanQueueType::Presentation ] );
     vkGetDeviceQueue( m_context->LogicalDevice, m_context->QueueFamilies[ VulkanQueueType::Copy ].Index, 0, &m_context->Queues[ VulkanQueueType::Copy ] );
     m_context->SelectedDeviceInfo.Capabilities.DedicatedCopyQueue =
@@ -499,11 +531,12 @@ void VulkanLogicalDevice::InitializeVma( ) const
     allocatorInfo.device                 = m_context->LogicalDevice;
     allocatorInfo.instance               = m_context->Instance;
     allocatorInfo.pVulkanFunctions       = &vmaVkFunctions;
+    allocatorInfo.flags                  = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
     vmaCreateAllocator( &allocatorInfo, &m_context->Vma );
 }
 
-std::vector<VkDeviceQueueCreateInfo> VulkanLogicalDevice::CreateUniqueDeviceCreateInfos( ) const
+std::vector<VkDeviceQueueCreateInfo> VulkanLogicalDevice::CreateUniqueDeviceQueueCreateInfos( ) const
 {
     std::unordered_map<uint32_t, bool>   uniqueIndexes;
     std::vector<VkDeviceQueueCreateInfo> result;

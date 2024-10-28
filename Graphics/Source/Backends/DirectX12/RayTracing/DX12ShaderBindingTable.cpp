@@ -36,7 +36,7 @@ void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
     BufferDesc bufferDesc   = { };
     bufferDesc.NumBytes     = m_numBufferBytes;
     bufferDesc.HeapType     = HeapType::GPU_CPU;
-    bufferDesc.InitialState = ResourceState::CopySrc;
+    bufferDesc.InitialUsage = ResourceUsage::CopySrc;
     bufferDesc.Descriptor   = ResourceDescriptor::Buffer;
     bufferDesc.DebugName    = "Shader Binding Table Staging Buffer";
 
@@ -49,7 +49,7 @@ void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
     }
 
     bufferDesc.HeapType     = HeapType::GPU;
-    bufferDesc.InitialState = ResourceState::CopyDst;
+    bufferDesc.InitialUsage = ResourceUsage::CopyDst;
     bufferDesc.DebugName    = "Shader Binding Table Buffer";
     m_buffer                = std::make_unique<DX12BufferResource>( m_context, bufferDesc );
 

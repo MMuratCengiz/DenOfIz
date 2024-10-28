@@ -48,6 +48,10 @@ VulkanBottomLevelAS::VulkanBottomLevelAS( VulkanContext *context, const BottomLe
         case ASGeometryType::Triangles:
             InitializeTriangles( geometry.Triangles, vkGeometry );
             numPrimitives = geometry.Triangles.NumVertices / 3;
+            if ( geometry.Triangles.NumIndices > 0 )
+            {
+                numPrimitives = geometry.Triangles.NumIndices / 3;
+            }
             break;
         case ASGeometryType::AABBs:
             InitializeAABBs( geometry.AABBs, vkGeometry );
@@ -80,11 +84,11 @@ VulkanBottomLevelAS::VulkanBottomLevelAS( VulkanContext *context, const BottomLe
     BufferDesc asBufferDesc   = { };
     asBufferDesc.Descriptor   = ResourceDescriptor::AccelerationStructure;
     asBufferDesc.NumBytes     = sizeInfo.accelerationStructureSize;
-    asBufferDesc.InitialState = ResourceState::AccelerationStructureWrite;
+    asBufferDesc.InitialUsage = ResourceUsage::AccelerationStructureWrite;
     m_asBuffer                = std::make_unique<VulkanBufferResource>( m_context, asBufferDesc );
 
     BufferDesc scratchBufferDesc = { };
-    scratchBufferDesc.Descriptor = ResourceDescriptor::RWBuffer;
+    scratchBufferDesc.Descriptor = ResourceDescriptor::Buffer;
     scratchBufferDesc.NumBytes   = sizeInfo.buildScratchSize;
     m_scratchBuffer              = std::make_unique<VulkanBufferResource>( m_context, scratchBufferDesc );
 
@@ -153,17 +157,12 @@ void VulkanBottomLevelAS::InitializeAABBs( const ASGeometryAABBDesc &aabb, VkAcc
     aabbs.stride                                            = aabb.Stride;
 }
 
-VkAccelerationStructureKHR VulkanBottomLevelAS::Instance( ) const
-{
-    return m_accelerationStructure;
-}
-
 IBufferResource *VulkanBottomLevelAS::Buffer( ) const
 {
     return m_asBuffer.get( );
 }
 
-const VkAccelerationStructureKHR &VulkanBottomLevelAS::AccelerationStructure( ) const
+const VkAccelerationStructureKHR &VulkanBottomLevelAS::Instance( ) const
 {
     return m_accelerationStructure;
 }
@@ -173,9 +172,9 @@ const std::vector<VkAccelerationStructureGeometryKHR> &VulkanBottomLevelAS::Geom
     return m_geometryDescs;
 }
 
-const std::vector<const VkAccelerationStructureBuildRangeInfoKHR *> &VulkanBottomLevelAS::BuildRangeInfos( ) const
+const VkAccelerationStructureBuildRangeInfoKHR *const *VulkanBottomLevelAS::BuildRangeInfos( ) const
 {
-    return m_buildRangeInfoPtrs;
+    return m_buildRangeInfoPtrs.data( );
 }
 
 const VkBuildAccelerationStructureFlagsKHR &VulkanBottomLevelAS::Flags( ) const

@@ -105,15 +105,12 @@ void VulkanPipeline::CreateComputePipeline( )
 
 void VulkanPipeline::CreateRayTracingPipeline( )
 {
-    VkRayTracingPipelineCreateInfoKHR pipelineCreateInfo{ };
-    pipelineCreateInfo.sType        = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-    VkPipelineLayout pipelineLayout = m_layout;
+    VkRayTracingPipelineCreateInfoKHR pipelineCreateInfo = { };
+    pipelineCreateInfo.sType                             = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+    VkPipelineLayout pipelineLayout                      = m_layout;
 
-    // Shader stages - convert each shader stage in the compiled shader list
-    std::vector<VkPipelineShaderStageCreateInfo>    shaderStages;
-    std::unordered_map<ShaderStage, std::string>    stageEntryNames;
-    std::unordered_map<std::string, VkShaderModule> visitedShaders;
-
+    std::vector<VkPipelineShaderStageCreateInfo>      shaderStages;
+    std::unordered_map<std::string, VkShaderModule>   visitedShaders;
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups;
 
     const InteropArray<CompiledShader *> &compiledShaders = m_desc.ShaderProgram->GetCompiledShaders( );
@@ -125,65 +122,72 @@ void VulkanPipeline::CreateRayTracingPipeline( )
 
         switch ( compiledShader->Stage )
         {
+        case ShaderStage::Raygen:
+            stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+            break;
         case ShaderStage::ClosestHit:
-            stage                                      = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-            stageEntryNames[ ShaderStage::ClosestHit ] = compiledShader->EntryPoint.Get( );
+            stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
             break;
         case ShaderStage::AnyHit:
-            stage                                  = VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
-            stageEntryNames[ ShaderStage::AnyHit ] = compiledShader->EntryPoint.Get( );
+            stage = VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
             break;
         case ShaderStage::Intersection:
-            stage                                        = VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
-            groupType                                    = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
-            stageEntryNames[ ShaderStage::Intersection ] = compiledShader->EntryPoint.Get( );
+            stage     = VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+            groupType = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
+            break;
+        case ShaderStage::Miss:
+            stage = VK_SHADER_STAGE_MISS_BIT_KHR;
             break;
         default:
             continue;
         }
 
-        // Ensure we only load each shader once
         if ( visitedShaders.find( compiledShader->Path ) == visitedShaders.end( ) )
         {
-            const VkShaderModule &shaderModule     = m_shaderModules.emplace_back( this->CreateShaderModule( compiledShader->Blob ) );
+            VkShaderModule shaderModule = this->CreateShaderModule( compiledShader->Blob );
+            m_shaderModules.push_back( shaderModule );
             visitedShaders[ compiledShader->Path ] = shaderModule;
-
-            // Set up shader stage create info
-            VkPipelineShaderStageCreateInfo shaderStage = { };
-            shaderStage.sType                           = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-            shaderStage.stage                           = stage;
-            shaderStage.module                          = shaderModule;
-            shaderStage.pName                           = compiledShader->EntryPoint.Get( );
-
-            m_shaderIdentifierOffsets[ compiledShader->EntryPoint.Get( ) ] = shaderStages.size( );
-            shaderStages.push_back( shaderStage );
         }
 
-        // Configure shader group
-        VkRayTracingShaderGroupCreateInfoKHR shaderGroup = { };
-        shaderGroup.sType                                = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-        shaderGroup.type                                 = groupType;
-        shaderGroup.generalShader                        = VK_SHADER_UNUSED_KHR;
-        shaderGroup.closestHitShader                     = VK_SHADER_UNUSED_KHR;
-        shaderGroup.anyHitShader                         = VK_SHADER_UNUSED_KHR;
-        shaderGroup.intersectionShader                   = VK_SHADER_UNUSED_KHR;
+        VkPipelineShaderStageCreateInfo &shaderStage = shaderStages.emplace_back( );
+        shaderStage.sType                            = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStage.stage                            = stage;
+        shaderStage.module                           = visitedShaders[ compiledShader->Path ];
+        shaderStage.pName                            = compiledShader->EntryPoint.Get( );
 
-        if ( stage == VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR )
+        VkRayTracingShaderGroupCreateInfoKHR &shaderGroup = shaderGroups.emplace_back( );
+        shaderGroup.sType                                 = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        shaderGroup.type                                  = groupType;
+        shaderGroup.closestHitShader                      = VK_SHADER_UNUSED_KHR;
+        shaderGroup.anyHitShader                          = VK_SHADER_UNUSED_KHR;
+        shaderGroup.intersectionShader                    = VK_SHADER_UNUSED_KHR;
+        shaderGroup.generalShader                         = VK_SHADER_UNUSED_KHR;
+
+        auto shaderOffset = shaderStages.size( ) - 1;
+
+        switch ( compiledShader->Stage )
         {
-            shaderGroup.closestHitShader = static_cast<uint32_t>( shaderStages.size( ) - 1 );
-        }
-        else if ( stage == VK_SHADER_STAGE_ANY_HIT_BIT_KHR )
-        {
-            shaderGroup.anyHitShader = static_cast<uint32_t>( shaderStages.size( ) - 1 );
-        }
-        else
-        {
-            shaderGroup.intersectionShader = static_cast<uint32_t>( shaderStages.size( ) - 1 );
+        case ShaderStage::ClosestHit:
+            shaderGroup.closestHitShader = static_cast<uint32_t>( shaderOffset );
+            m_hitGroupIdentifiers.push_back( std::pair( compiledShader->Stage, shaderOffset ) );
+            break;
+        case ShaderStage::AnyHit:
+            shaderGroup.anyHitShader = static_cast<uint32_t>( shaderOffset );
+            m_hitGroupIdentifiers.push_back( std::pair( compiledShader->Stage, shaderOffset ) );
+            break;
+        case ShaderStage::Intersection:
+            shaderGroup.intersectionShader = static_cast<uint32_t>( shaderOffset );
+            m_hitGroupIdentifiers.push_back( std::pair( compiledShader->Stage, shaderOffset ) );
+            break;
+        default:
+            shaderGroup.generalShader = static_cast<uint32_t>( shaderOffset );
+            break;
         }
 
-        shaderGroups.push_back( shaderGroup );
+        m_shaderIdentifierOffsets[ compiledShader->EntryPoint.Get( ) ] = shaderOffset * m_context->RayTracingProperties.shaderGroupHandleSize;
     }
 
+    // Pipeline Interface and Configurations
     VkRayTracingPipelineInterfaceCreateInfoKHR pipelineInterface = { };
     pipelineInterface.sType                                      = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_INTERFACE_CREATE_INFO_KHR;
     pipelineInterface.maxPipelineRayPayloadSize                  = m_desc.RayTracing.MaxNumPayloadBytes;
@@ -202,6 +206,7 @@ void VulkanPipeline::CreateRayTracingPipeline( )
 
     VK_CHECK_RESULT( vkCreateRayTracingPipelinesKHR( m_context->LogicalDevice, nullptr, nullptr, 1, &pipelineInfo, nullptr, &m_instance ) );
 
+    // Get shader identifiers for the SBT
     m_shaderIdentifiers.resize( pipelineInfo.groupCount * m_context->RayTracingProperties.shaderGroupHandleSize );
     VK_CHECK_RESULT(
         vkGetRayTracingShaderGroupHandlesKHR( m_context->LogicalDevice, m_instance, 0, pipelineInfo.groupCount, m_shaderIdentifiers.size( ), m_shaderIdentifiers.data( ) ) );
@@ -210,6 +215,16 @@ void VulkanPipeline::CreateRayTracingPipeline( )
 void *VulkanPipeline::GetShaderIdentifier( const std::string &exportName )
 {
     return m_shaderIdentifiers.data( ) + m_shaderIdentifierOffsets[ exportName ];
+}
+
+void *VulkanPipeline::GetShaderIdentifier( const uint32_t offset )
+{
+    return m_shaderIdentifiers.data( ) + offset;
+}
+
+const std::vector<std::pair<ShaderStage, uint32_t>> &VulkanPipeline::HitGroupIdentifiers( ) const
+{
+    return m_hitGroupIdentifiers;
 }
 
 // clang-format off
@@ -472,7 +487,6 @@ VkPipeline VulkanPipeline::Instance( ) const
 {
     return m_instance;
 }
-
 VkPipelineBindPoint VulkanPipeline::BindPoint( ) const
 {
     return m_bindPoint;

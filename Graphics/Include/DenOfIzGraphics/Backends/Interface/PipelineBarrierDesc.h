@@ -29,8 +29,8 @@ namespace DenOfIz
     struct DZ_API TextureBarrierDesc
     {
         ITextureResource     *Resource;
-        BitSet<ResourceState> OldState{ };
-        BitSet<ResourceState> NewState{ };
+        BitSet<ResourceUsage> OldState{ };
+        BitSet<ResourceUsage> NewState{ };
 
         bool     EnableQueueBarrier = false;
         uint32_t SourceQueue;
@@ -45,8 +45,8 @@ namespace DenOfIz
     struct DZ_API BufferBarrierDesc
     {
         IBufferResource      *Resource;
-        BitSet<ResourceState> OldState;
-        BitSet<ResourceState> NewState;
+        BitSet<ResourceUsage> OldState;
+        BitSet<ResourceUsage> NewState;
     };
     template class DZ_API InteropArray<BufferBarrierDesc>;
 
@@ -54,8 +54,8 @@ namespace DenOfIz
     {
         IBufferResource      *BufferResource  = nullptr;
         ITextureResource     *TextureResource = nullptr;
-        BitSet<ResourceState> OldState;
-        BitSet<ResourceState> NewState;
+        BitSet<ResourceUsage> OldState;
+        BitSet<ResourceUsage> NewState;
     };
     template class DZ_API InteropArray<MemoryBarrierDesc>;
 
@@ -103,8 +103,8 @@ namespace DenOfIz
         {
             PipelineBarrierDesc barrier;
             TextureBarrierDesc  textureBarrier{ };
-            textureBarrier.OldState = ResourceState::Undefined;
-            textureBarrier.NewState = ResourceState::RenderTarget;
+            textureBarrier.OldState = ResourceUsage::Undefined;
+            textureBarrier.NewState = ResourceUsage::RenderTarget;
             textureBarrier.Resource = resource;
             barrier.TextureBarrier( textureBarrier );
             return barrier;
@@ -114,8 +114,8 @@ namespace DenOfIz
         {
             PipelineBarrierDesc barrier;
             TextureBarrierDesc  textureBarrier{ };
-            textureBarrier.OldState = ResourceState::RenderTarget;
-            textureBarrier.NewState = ResourceState::Present;
+            textureBarrier.OldState = ResourceUsage::RenderTarget;
+            textureBarrier.NewState = ResourceUsage::Present;
             textureBarrier.Resource = resource;
             barrier.TextureBarrier( textureBarrier );
             return barrier;
@@ -125,8 +125,8 @@ namespace DenOfIz
         {
             PipelineBarrierDesc barrier;
             TextureBarrierDesc  textureBarrier{ };
-            textureBarrier.OldState = ResourceState::RenderTarget;
-            textureBarrier.NewState = ResourceState::PixelShaderResource;
+            textureBarrier.OldState = ResourceUsage::RenderTarget;
+            textureBarrier.NewState = ResourceUsage::PixelShaderResource;
             textureBarrier.Resource = resource;
             barrier.TextureBarrier( textureBarrier );
             return barrier;

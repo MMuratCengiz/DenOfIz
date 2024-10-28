@@ -26,8 +26,8 @@ namespace DenOfIz::RenderGraphInternal
     {
         ITextureResource *Texture;
         IBufferResource  *Buffer;
-        ResourceState     OldState;
-        ResourceState     NewState;
+        ResourceUsage     OldState;
+        ResourceUsage     NewState;
     };
 
     // Odd placement due to dependency on NodeResourceUsageDesc
@@ -59,7 +59,7 @@ namespace DenOfIz::RenderGraphInternal
 
     struct ResourceLockedState
     {
-        ResourceState State = ResourceState::Undefined;
+        ResourceUsage State = ResourceUsage::Undefined;
         std::mutex    Mutex;
     };
 

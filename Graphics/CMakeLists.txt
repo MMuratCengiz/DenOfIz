@@ -61,7 +61,6 @@ SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanEnumConverter.cpp
         Source/Backends/Vulkan/VulkanResourceBindGroup.cpp
         Source/Backends/Vulkan/VulkanInputLayout.cpp
-        Source/Backends/Vulkan/VulkanUtilities.cpp
         Source/Backends/Vulkan/VulkanPipeline.cpp
         Source/Backends/Vulkan/VulkanRootSignature.cpp
         Source/Backends/Vulkan/VulkanSwapChain.cpp

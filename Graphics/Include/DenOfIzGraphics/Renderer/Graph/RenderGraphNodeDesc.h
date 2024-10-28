@@ -38,15 +38,15 @@ namespace DenOfIz
         NodeResourceUsageDesc( ) = default;
 
         uint32_t              FrameIndex = 0;
-        ResourceState         State      = ResourceState::Undefined;
+        ResourceUsage         State      = ResourceUsage::Undefined;
         NodeResourceUsageType Type       = NodeResourceUsageType::Buffer;
         union
         {
             IBufferResource  *BufferResource;
             ITextureResource *TextureResource;
         };
-        static NodeResourceUsageDesc BufferState( const uint32_t frameIndex, IBufferResource *bufferResource, const ResourceState state );
-        static NodeResourceUsageDesc TextureState( const uint32_t frameIndex, ITextureResource *textureResource, const ResourceState state );
+        static NodeResourceUsageDesc BufferState( const uint32_t frameIndex, IBufferResource *bufferResource, const ResourceUsage state );
+        static NodeResourceUsageDesc TextureState( const uint32_t frameIndex, ITextureResource *textureResource, const ResourceUsage state );
     };
     template class DZ_API InteropArray<NodeResourceUsageDesc>;
 

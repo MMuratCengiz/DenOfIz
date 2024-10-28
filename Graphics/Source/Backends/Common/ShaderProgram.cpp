@@ -407,10 +407,12 @@ Format MaskToFormat( const uint32_t mask )
     }
 }
 
-ResourceDescriptor ReflectTypeToRootSignatureType( const D3D_SHADER_INPUT_TYPE type )
+ResourceDescriptor ReflectTypeToRootSignatureType( const D3D_SHADER_INPUT_TYPE type, const D3D_SRV_DIMENSION dimension )
 {
     switch ( type )
     {
+    case D3D_SIT_RTACCELERATIONSTRUCTURE:
+        return ResourceDescriptor::AccelerationStructure;
     case D3D_SIT_CBUFFER:
         return ResourceDescriptor::UniformBuffer;
     case D3D_SIT_TBUFFER:
@@ -420,7 +422,6 @@ ResourceDescriptor ReflectTypeToRootSignatureType( const D3D_SHADER_INPUT_TYPE t
         return ResourceDescriptor::Sampler;
     case D3D_SIT_BYTEADDRESS:
     case D3D_SIT_STRUCTURED:
-    case D3D_SIT_RTACCELERATIONSTRUCTURE:
         return ResourceDescriptor::Buffer;
     case D3D_SIT_UAV_APPEND_STRUCTURED:
     case D3D_SIT_UAV_CONSUME_STRUCTURED:
@@ -428,6 +429,23 @@ ResourceDescriptor ReflectTypeToRootSignatureType( const D3D_SHADER_INPUT_TYPE t
     case D3D_SIT_UAV_RWTYPED:
     case D3D_SIT_UAV_RWBYTEADDRESS:
     case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
+        switch ( dimension )
+        {
+        case D3D_SRV_DIMENSION_BUFFER:
+            return ResourceDescriptor::RWBuffer;
+        case D3D_SRV_DIMENSION_TEXTURE1D:
+        case D3D_SRV_DIMENSION_TEXTURE1DARRAY:
+        case D3D_SRV_DIMENSION_TEXTURE2D:
+        case D3D_SRV_DIMENSION_TEXTURE2DARRAY:
+        case D3D_SRV_DIMENSION_TEXTURE2DMS:
+        case D3D_SRV_DIMENSION_TEXTURE2DMSARRAY:
+        case D3D_SRV_DIMENSION_TEXTURE3D:
+        case D3D_SRV_DIMENSION_TEXTURECUBE:
+        case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:
+            return ResourceDescriptor::RWTexture;
+        default:
+            break;
+        }
         return ResourceDescriptor::RWBuffer;
     case D3D_SIT_UAV_FEEDBACKTEXTURE:
         break;
@@ -621,7 +639,7 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
     resourceBindingDesc.RegisterSpace        = shaderInputBindDesc.Space;
     resourceBindingDesc.ArraySize            = shaderInputBindDesc.BindCount;
     resourceBindingDesc.BindingType          = bindingType;
-    resourceBindingDesc.Descriptor           = ReflectTypeToRootSignatureType( shaderInputBindDesc.Type );
+    resourceBindingDesc.Descriptor           = ReflectTypeToRootSignatureType( shaderInputBindDesc.Type, shaderInputBindDesc.Dimension );
     resourceBindingDesc.Stages.AddElement( state.CompiledShader->Stage );
     FillReflectionData( state, resourceBindingDesc.Reflection, resourceIndex );
 #ifdef BUILD_METAL

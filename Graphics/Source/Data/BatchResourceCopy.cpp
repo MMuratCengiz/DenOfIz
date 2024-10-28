@@ -74,7 +74,7 @@ void BatchResourceCopy::CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc )
 {
     BufferDesc stagingBufferDesc{ };
     stagingBufferDesc.HeapType     = HeapType::CPU_GPU;
-    stagingBufferDesc.InitialState = ResourceState::CopySrc;
+    stagingBufferDesc.InitialUsage = ResourceUsage::CopySrc;
     stagingBufferDesc.NumBytes     = Utilities::Align( copyDesc.Data.NumElements( ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
     stagingBufferDesc.DebugName    = "CopyToGPUBuffer_StagingBuffer";
 
@@ -107,7 +107,7 @@ void BatchResourceCopy::CopyDataToTexture( const CopyDataToTextureDesc &copyDesc
 {
     BufferDesc stagingBufferDesc{ };
     stagingBufferDesc.HeapType     = HeapType::CPU_GPU;
-    stagingBufferDesc.InitialState = ResourceState::CopySrc;
+    stagingBufferDesc.InitialUsage = ResourceUsage::CopySrc;
     stagingBufferDesc.NumBytes     = copyDesc.Data.NumElements( );
     stagingBufferDesc.DebugName    = "CopyDataToTexture_StagingBuffer";
 
@@ -135,7 +135,7 @@ ITextureResource *BatchResourceCopy::CreateAndLoadTexture( const InteropString &
     TextureDesc textureDesc{ };
     textureDesc.HeapType     = HeapType::GPU;
     textureDesc.Descriptor   = ResourceDescriptor::Texture;
-    textureDesc.InitialState = ResourceState::CopyDst;
+    textureDesc.InitialUsage = ResourceUsage::CopyDst;
     textureDesc.Width        = texture.Width;
     textureDesc.Height       = texture.Height;
     textureDesc.Format       = texture.Format;
@@ -150,7 +150,7 @@ ITextureResource *BatchResourceCopy::CreateAndLoadTexture( const InteropString &
     if ( m_issueBarriers )
     {
         const PipelineBarrierDesc barrierDesc =
-            PipelineBarrierDesc{ }.TextureBarrier( { .Resource = outTex, .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
+            PipelineBarrierDesc{ }.TextureBarrier( { .Resource = outTex, .OldState = ResourceUsage::CopyDst, .NewState = ResourceUsage::ShaderResource } );
         m_syncCommandList->PipelineBarrier( barrierDesc );
     }
     return outTex;
@@ -161,7 +161,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
     BufferDesc bufferDesc{ };
     bufferDesc.HeapType     = HeapType::GPU;
     bufferDesc.Descriptor   = ResourceDescriptor::UniformBuffer;
-    bufferDesc.InitialState = ResourceState::CopyDst;
+    bufferDesc.InitialUsage = ResourceUsage::CopyDst;
     bufferDesc.NumBytes     = numBytes;
     bufferDesc.DebugName    = NextId( "Uniform" );
 
@@ -175,7 +175,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
     if ( m_issueBarriers )
     {
         const PipelineBarrierDesc barrierDesc =
-            PipelineBarrierDesc{ }.BufferBarrier( { .Resource = buffer, .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
+            PipelineBarrierDesc{ }.BufferBarrier( { .Resource = buffer, .OldState = ResourceUsage::CopyDst, .NewState = ResourceUsage::ShaderResource } );
         m_syncCommandList->PipelineBarrier( barrierDesc );
     }
 
@@ -189,7 +189,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
     BufferDesc vBufferDesc{ };
     vBufferDesc.HeapType     = HeapType::GPU;
     vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
-    vBufferDesc.InitialState = ResourceState::CopyDst;
+    vBufferDesc.InitialUsage = ResourceUsage::CopyDst;
     vBufferDesc.NumBytes     = numBytes;
     vBufferDesc.DebugName    = NextId( "Vertex" );
 
@@ -204,7 +204,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
     if ( m_issueBarriers )
     {
         const PipelineBarrierDesc barrierDesc =
-            PipelineBarrierDesc{ }.BufferBarrier( { .Resource = vertexBuffer, .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
+            PipelineBarrierDesc{ }.BufferBarrier( { .Resource = vertexBuffer, .OldState = ResourceUsage::CopyDst, .NewState = ResourceUsage::ShaderResource } );
         m_syncCommandList->PipelineBarrier( barrierDesc );
     }
 
@@ -218,7 +218,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
     BufferDesc iBufferDesc{ };
     iBufferDesc.HeapType        = HeapType::GPU;
     iBufferDesc.Descriptor      = ResourceDescriptor::IndexBuffer;
-    iBufferDesc.InitialState    = ResourceState::CopyDst;
+    iBufferDesc.InitialUsage    = ResourceUsage::CopyDst;
     iBufferDesc.NumBytes        = numBytes;
     const char *indexBufferName = "IndexBuffer";
     iBufferDesc.DebugName       = NextId( indexBufferName );
@@ -234,7 +234,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
     if ( m_issueBarriers )
     {
         const PipelineBarrierDesc barrierDesc =
-            PipelineBarrierDesc{ }.BufferBarrier( { .Resource = indexBuffer, .OldState = ResourceState::CopyDst, .NewState = ResourceState::ShaderResource } );
+            PipelineBarrierDesc{ }.BufferBarrier( { .Resource = indexBuffer, .OldState = ResourceUsage::CopyDst, .NewState = ResourceUsage::ShaderResource } );
         m_syncCommandList->PipelineBarrier( barrierDesc );
     }
     return indexBuffer;
@@ -288,7 +288,7 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
 {
     BufferDesc stagingBufferDesc   = { };
     stagingBufferDesc.HeapType     = HeapType::CPU_GPU;
-    stagingBufferDesc.InitialState = ResourceState::CopySrc;
+    stagingBufferDesc.InitialUsage = ResourceUsage::CopySrc;
     stagingBufferDesc.DebugName    = "LoadTexture_StagingBuffer";
 
     for ( uint32_t i = 0; i < texture.MipLevels; ++i )

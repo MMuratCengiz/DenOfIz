@@ -87,7 +87,7 @@ namespace DenOfIz
         [[nodiscard]] bool                                 ValidateLayer( const std::string &layer ) const;
         void                                               InitializeVma( ) const;
         void                                               CreateDeviceInfo( const VkPhysicalDevice &physicalDevice, PhysicalDevice &deviceInfo ) const;
-        [[nodiscard]] std::vector<VkDeviceQueueCreateInfo> CreateUniqueDeviceCreateInfos( ) const;
+        [[nodiscard]] std::vector<VkDeviceQueueCreateInfo> CreateUniqueDeviceQueueCreateInfos( ) const;
         void                                               DestroyDebugUtils( ) const;
     };
 

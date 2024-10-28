@@ -30,7 +30,7 @@ namespace DenOfIz
         uint32_t      m_width        = 1;
         uint32_t      m_height       = 1;
         uint32_t      m_depth        = 1;
-        ResourceState m_initialState = ResourceState::Undefined;
+        ResourceUsage m_initialState = ResourceUsage::Undefined;
 
         TextureDesc                 m_desc{ };
         DX12Context                *m_context    = nullptr;
@@ -50,7 +50,7 @@ namespace DenOfIz
         [[nodiscard]] const D3D12_RESOURCE_DESC       &GetResourceDesc( ) const;
         [[nodiscard]] ID3D12Resource                  *GetResource( ) const;
 
-        [[nodiscard]] BitSet<ResourceState> InitialState( ) const override;
+        [[nodiscard]] BitSet<ResourceUsage> InitialState( ) const override;
         [[nodiscard]] uint32_t              GetWidth( ) const;
         [[nodiscard]] uint32_t              GetHeight( ) const;
         [[nodiscard]] uint32_t              GetDepth( ) const;

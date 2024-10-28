@@ -62,8 +62,8 @@ void VulkanSwapChain::CreateSurface( )
         }
     }
 
-    m_colorSpace         = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-    m_presentMode        = presentMode;
+    m_colorSpace  = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+    m_presentMode = presentMode;
 
     std::vector<VkQueueFamilyProperties> properties;
     vkGetPhysicalDeviceQueueFamilyProperties( m_context->PhysicalDevice, &count, nullptr );
@@ -109,7 +109,7 @@ void VulkanSwapChain::CreateSwapChain( )
     createInfo.imageColorSpace  = m_colorSpace;
     createInfo.imageExtent      = VkExtent2D( m_width, m_height );
     createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    createInfo.imageUsage       = VulkanEnumConverter::ConvertTextureUsage( ResourceDescriptor::RenderTarget, m_desc.ImageUsages );
 
     const uint32_t qfIndexes[ 2 ] = { m_context->QueueFamilies.at( VulkanQueueType::Graphics ).Index, m_context->QueueFamilies.at( VulkanQueueType::Presentation ).Index };
 

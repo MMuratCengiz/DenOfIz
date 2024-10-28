@@ -29,14 +29,14 @@ NodeResourceUsageDesc::NodeResourceUsageDesc( ITextureResource *resource ) : Typ
 {
 }
 
-NodeResourceUsageDesc NodeResourceUsageDesc::BufferState( const uint32_t frameIndex, IBufferResource *bufferResource, const ResourceState state )
+NodeResourceUsageDesc NodeResourceUsageDesc::BufferState( const uint32_t frameIndex, IBufferResource *bufferResource, const ResourceUsage state )
 {
     NodeResourceUsageDesc desc( bufferResource );
     desc.FrameIndex = frameIndex;
     desc.State      = state;
     return desc;
 }
-NodeResourceUsageDesc NodeResourceUsageDesc::TextureState( const uint32_t frameIndex, ITextureResource *textureResource, const ResourceState state )
+NodeResourceUsageDesc NodeResourceUsageDesc::TextureState( const uint32_t frameIndex, ITextureResource *textureResource, const ResourceUsage state )
 {
     NodeResourceUsageDesc desc( textureResource );
     desc.FrameIndex = frameIndex;

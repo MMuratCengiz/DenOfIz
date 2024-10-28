@@ -27,7 +27,7 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
     m_height       = desc.Height;
     m_depth        = desc.Depth;
     m_format       = desc.Format;
-    m_initialState = desc.InitialState;
+    m_initialState = desc.InitialUsage;
 
     ValidateTextureDesc( m_desc );
 
@@ -65,7 +65,7 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
 
-    D3D12_RESOURCE_STATES initialState = DX12EnumConverter::ConvertResourceState( m_desc.InitialState );
+    D3D12_RESOURCE_STATES initialState = DX12EnumConverter::ConvertResourceUsage( m_desc.InitialUsage );
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RenderTarget ) )
     {
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
@@ -330,7 +330,7 @@ ID3D12Resource *DX12TextureResource::GetResource( ) const
     return m_resource;
 }
 
-BitSet<ResourceState> DX12TextureResource::InitialState( ) const
+BitSet<ResourceUsage> DX12TextureResource::InitialState( ) const
 {
     return m_initialState;
 }

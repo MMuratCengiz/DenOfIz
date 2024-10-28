@@ -57,12 +57,11 @@ namespace DenOfIz
         IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource ) override;
         IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource ) override;
         IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource ) override;
+        IResourceBindGroup *Srv( const uint32_t binding, ITopLevelAS *accelerationStructure ) override;
         IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource ) override;
         IResourceBindGroup *Uav( const uint32_t binding, ITextureResource *resource ) override;
         IResourceBindGroup *Sampler( const uint32_t binding, ISampler *sampler ) override;
         void                EndUpdate( ) override;
-
-        [[nodiscard]] const ResourceBindGroupDesc &Desc( ) const;
 
         [[nodiscard]] const std::vector<VulkanRootConstantBinding> &RootConstants( ) const;
         [[nodiscard]] bool                                          HasDescriptorSet( ) const;
@@ -70,12 +69,10 @@ namespace DenOfIz
         [[nodiscard]] VulkanRootSignature                          *RootSignature( ) const;
         [[nodiscard]] uint32_t                                      RegisterSpace( ) const;
 
-    protected:
-        void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource ) override;
-        void BindBuffer( const ResourceBindingSlot &name, IBufferResource *resource ) override;
-        void BindSampler( const ResourceBindingSlot &name, ISampler *sampler ) override;
-
     private:
+        void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource );
+        VkWriteDescriptorSet& BindBuffer( const ResourceBindingSlot &name, IBufferResource *resource );
+        void BindSampler( const ResourceBindingSlot &name, ISampler *sampler );
         VkWriteDescriptorSet &CreateWriteDescriptor( const ResourceBindingSlot &slot );
         ResourceBindingSlot   GetSlot( uint32_t binding, const DescriptorBufferBindingType &type ) const;
     };

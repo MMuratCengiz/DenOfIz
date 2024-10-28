@@ -46,9 +46,9 @@ namespace DenOfIz
         static D3D12_BLEND_OP                                      ConvertBlendOp( const BlendOp &op );
         static D3D12_LOGIC_OP                                      ConvertLogicOp( const LogicOp &op );
         static D3D12_BLEND                                         ConvertBlend( const Blend &factor );
-        static D3D12_RESOURCE_STATES                               ConvertResourceState( const BitSet<ResourceState> &state );
-        static D3D12_BARRIER_LAYOUT                                ConvertResourceStateToBarrierLayout( const BitSet<ResourceState> &state, const QueueType &queueType );
-        static D3D12_BARRIER_ACCESS                                ConvertResourceStateToBarrierAccess( const BitSet<ResourceState> &state );
+        static D3D12_RESOURCE_STATES                               ConvertResourceUsage( const BitSet<ResourceUsage> &usage );
+        static D3D12_BARRIER_LAYOUT                                ConvertResourceStateToBarrierLayout( const BitSet<ResourceUsage> &state, const QueueType &queueType );
+        static D3D12_BARRIER_ACCESS                                ConvertResourceStateToBarrierAccess( const BitSet<ResourceUsage> &state );
         static D3D12_TEXTURE_ADDRESS_MODE                          ConvertSamplerAddressMode( const SamplerAddressMode &mode );
         static D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS ConvertAccelerationStructureBuildFlags( const BitSet<ASBuildFlags> &flags );
         static D3D12_RAYTRACING_GEOMETRY_TYPE                      ConvertGeometryType( const ASGeometryType& type );

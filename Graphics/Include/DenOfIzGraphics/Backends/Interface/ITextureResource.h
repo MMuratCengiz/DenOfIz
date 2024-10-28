@@ -45,10 +45,11 @@ namespace DenOfIz
         Format                     Format = Format::Undefined;
         BitSet<ResourceDescriptor> Descriptor;
 
-        HeapType        HeapType        = HeapType::GPU;
-        MSAASampleCount MSAASampleCount = MSAASampleCount::_0;
-        ResourceState   InitialState;
-        SamplerDesc     Sampler; // Requires `| Descriptor::Sampler`
+        HeapType              HeapType        = HeapType::GPU;
+        MSAASampleCount       MSAASampleCount = MSAASampleCount::_0;
+        ResourceUsage         InitialUsage;
+        BitSet<ResourceUsage> Usages;
+        SamplerDesc           Sampler; // Requires `| Descriptor::Sampler`
 
         uint32_t Width = 1;
         // if Height is > 1, it is a 2D texture
@@ -64,7 +65,7 @@ namespace DenOfIz
     {
     public:
         virtual ~ITextureResource( )                        = default;
-        virtual BitSet<ResourceState> InitialState( ) const = 0;
+        virtual BitSet<ResourceUsage> InitialState( ) const = 0;
         virtual Format                GetFormat( ) const    = 0;
     };
 

@@ -35,7 +35,7 @@ namespace DenOfIz
         const void           *m_data         = nullptr;
         void                 *m_mappedMemory = nullptr;
         VkDeviceAddress       m_deviceAddress{ };
-        BitSet<ResourceState> m_state;
+        BitSet<ResourceUsage> m_state;
 
     public:
         void *MapMemory( ) override;
@@ -44,7 +44,7 @@ namespace DenOfIz
         explicit VulkanBufferResource( VulkanContext *context, BufferDesc desc );
         ~VulkanBufferResource( ) override;
 
-        [[nodiscard]] BitSet<ResourceState> InitialState( ) const override;
+        [[nodiscard]] BitSet<ResourceUsage> InitialState( ) const override;
         [[nodiscard]] size_t                NumBytes( ) const override;
         [[nodiscard]] const void           *Data( ) const override;
 
