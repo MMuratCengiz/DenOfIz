@@ -219,7 +219,7 @@ void *VulkanPipeline::GetShaderIdentifier( const std::string &exportName )
 
 void *VulkanPipeline::GetShaderIdentifier( const uint32_t offset )
 {
-    return m_shaderIdentifiers.data( ) + offset;
+    return m_shaderIdentifiers.data( ) + offset * m_context->RayTracingProperties.shaderGroupHandleSize;
 }
 
 const std::vector<std::pair<ShaderStage, uint32_t>> &VulkanPipeline::HitGroupIdentifiers( ) const
