@@ -244,7 +244,7 @@ void MetalPipeline::CreateRayTracingPipeline( )
     }
 
     MTLVisibleFunctionTableDescriptor *vftDesc = [[MTLVisibleFunctionTableDescriptor alloc] init];
-    vftDesc.functionCount                      = compiledShaders.NumElements( );
+    vftDesc.functionCount                      = numVisibleFunctions;
     m_visibleFunctionTable                     = [m_computePipelineState newVisibleFunctionTableWithDescriptor:vftDesc];
 
     int shaderIndex = 0;
@@ -253,8 +253,8 @@ void MetalPipeline::CreateRayTracingPipeline( )
         ShaderFunction &shaderFunction = functions.second;
         shaderFunction.Handle          = [m_computePipelineState functionHandleWithFunction:shaderFunction.Function];
         [m_visibleFunctionTable setFunction:shaderFunction.Handle atIndex:shaderIndex];
+        ++shaderIndex;
     }
-    shaderIndex                            = 0;
     m_intersectionExport.ClosestHit.Handle = [m_computePipelineState functionHandleWithFunction:m_intersectionExport.ClosestHit.Function];
     if ( m_intersectionExport.HasAnyHit )
     {
@@ -268,12 +268,6 @@ void MetalPipeline::CreateRayTracingPipeline( )
 
 id<MTLLibrary> MetalPipeline::LoadLibrary( IDxcBlob *&blob, const std::string &shaderPath )
 {
-    auto existingLibrary = m_libraries.find( shaderPath );
-    if ( existingLibrary != m_libraries.end( ) )
-    {
-        return existingLibrary->second;
-    }
-
     NSError        *error      = nullptr;
     dispatch_data_t shaderData = dispatch_data_create( blob->GetBufferPointer( ), blob->GetBufferSize( ), NULL, DISPATCH_DATA_DESTRUCTOR_DEFAULT );
     id<MTLLibrary>  library    = [m_context->Device newLibraryWithData:shaderData error:&error];
@@ -282,7 +276,6 @@ id<MTLLibrary> MetalPipeline::LoadLibrary( IDxcBlob *&blob, const std::string &s
         DZ_LOG_NS_ERROR( "Error creating library", error );
         return nil;
     }
-    m_libraries[ shaderPath ] = library;
     return library;
 }
 

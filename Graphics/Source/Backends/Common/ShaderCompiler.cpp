@@ -259,14 +259,14 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob
 
     // TODO some of these values are hardcoded because metal is odd. The only possible way I can think of is to move the compilation to pipeline creation.
     // But will try this way for now.
-    IRCompilerSetRayTracingPipelineArguments( irCompiler, 1024, IRRaytracingPipelineFlagNone, compileMslDesc.ClosestHitMask, compileMslDesc.MissMask, compileMslDesc.AnyHitMask, ~0,
-                                              IRRayTracingUnlimitedRecursionDepth );
+    IRCompilerSetRayTracingPipelineArguments( irCompiler, 4 * sizeof(float), IRRaytracingPipelineFlagNone, IRIntrinsicMaskClosestHitAll, IRIntrinsicMaskMissShaderAll,
+                                              IRIntrinsicMaskAnyHitShaderAll, ~0, IRRayTracingUnlimitedRecursionDepth );
     IRCompilerSetHitgroupType( irCompiler, IRHitGroupTypeTriangles );
 
     IRObject *irDxil = IRObjectCreateFromDXIL( (const uint8_t *)code->GetBufferPointer( ), code->GetBufferSize( ), IRBytecodeOwnershipNone );
 
     IRError  *irError = nullptr;
-    IRObject *outIr   = IRCompilerAllocCompileAndLink( irCompiler, NULL, irDxil, &irError );
+    IRObject *outIr   = IRCompilerAllocCompileAndLink( irCompiler, compileOptions.EntryPoint.Get( ), irDxil, &irError );
 
     if ( !outIr )
     {
@@ -275,7 +275,8 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob
     }
 
     IRMetalLibBinary *metalLib = IRMetalLibBinaryCreate( );
-    IRObjectGetMetalLibBinary( outIr, ConvertIrShaderStage( compileOptions.Stage ), metalLib );
+	IRShaderStage stage = IRObjectGetMetalIRShaderStage( outIr );
+    IRObjectGetMetalLibBinary( outIr, stage, metalLib );
     size_t   metalLibSize     = IRMetalLibGetBytecodeSize( metalLib );
     uint8_t *metalLibByteCode = new uint8_t[ metalLibSize ];
     IRMetalLibGetBytecode( metalLib, metalLibByteCode );

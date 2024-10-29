@@ -85,6 +85,8 @@ namespace DenOfIz
     class ShaderProgram
     {
     private:
+        typedef const std::function<void( D3D12_SHADER_INPUT_BIND_DESC &, int )> ReflectionCallback;
+
         std::vector<std::unique_ptr<CompiledShader>> m_compiledShaders;
         ShaderProgramDesc                            m_desc;
 #ifdef BUILD_METAL
@@ -108,9 +110,9 @@ namespace DenOfIz
         // Returns true if the bound resource is found(and an update is performed), false otherwise
         // Adds additional stages if existing stages are found
         bool UpdateBoundResourceStage( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
+        void IterateBoundResources( CompiledShader* shader, ReflectionState &state, ReflectionCallback &callback ) const;
 #ifdef BUILD_METAL
         void ProduceMSL( );
-        void GatherMetalIntrinsics( const std::vector<std::unique_ptr<CompiledShader>> &shaders, uint64_t &outClosestHitMask, uint64_t &outMissMask, uint64_t &anyHitMask ) const;
 #endif
     };
 

@@ -29,16 +29,31 @@ MetalShaderBindingTable::MetalShaderBindingTable( MetalContext *context, const S
 
 void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
+    uint32_t numHitGroups     = desc.NumInstances * desc.NumGeometries * desc.NumRayTypes;
+    auto     hitGroupNumBytes = numHitGroups * sizeof( IRShaderIdentifier );
     m_numBufferBytes =
         desc.NumRayGenerationShaders * sizeof( IRShaderIdentifier ) + desc.NumGeometries * sizeof( IRShaderIdentifier ) + desc.NumMissShaders * sizeof( IRShaderIdentifier );
-    m_buffer       = [m_context->Device newBufferWithLength:m_numBufferBytes options:MTLResourceStorageModeShared];
+
+    m_buffer = [m_context->Device newBufferWithLength:m_numBufferBytes options:MTLResourceStorageModeShared];
+    [m_buffer setLabel:@"Shader Binding Table"];
+
     m_mappedMemory = static_cast<IRShaderIdentifier *>( [m_buffer contents] );
 
-    uint32_t numFunctions = desc.NumInstances * desc.NumGeometries * desc.NumRayTypes;
-
     MTLIntersectionFunctionTableDescriptor *iftDesc = [[MTLIntersectionFunctionTableDescriptor alloc] init];
-    iftDesc.functionCount                           = numFunctions;
+    iftDesc.functionCount                           = numHitGroups;
     m_intersectionFunctionTable                     = [m_pipeline->ComputePipelineState( ) newIntersectionFunctionTableWithDescriptor:iftDesc];
+
+    m_rayGenerationShaderRange.StartAddress = m_buffer.gpuAddress;
+    m_rayGenerationShaderRange.SizeInBytes  = desc.NumRayGenerationShaders * sizeof( IRShaderIdentifier );
+
+    uint64_t hitGroupOffset             = m_rayGenerationShaderRange.SizeInBytes;
+    m_hitGroupShaderRange.StartAddress  = m_buffer.gpuAddress + hitGroupOffset;
+    m_hitGroupShaderRange.SizeInBytes   = hitGroupNumBytes;
+    m_hitGroupShaderRange.StrideInBytes = sizeof( IRShaderIdentifier );
+
+    m_missShaderRange.StartAddress  = m_buffer.gpuAddress + hitGroupOffset + hitGroupNumBytes;
+    m_missShaderRange.SizeInBytes   = desc.NumMissShaders * sizeof( IRShaderIdentifier );
+    m_missShaderRange.StrideInBytes = sizeof( IRShaderIdentifier );
 }
 
 void MetalShaderBindingTable::BindRayGenerationShader( const RayGenerationBindingDesc &desc )

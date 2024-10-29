@@ -61,10 +61,12 @@ void MetalResourceBindGroup::SetRootConstants( uint32_t binding, void *data )
 
 IResourceBindGroup *MetalResourceBindGroup::BeginUpdate( )
 {
+    m_boundAccelerationStructures.clear( );
     m_boundBuffers.clear( );
     m_boundTextures.clear( );
     m_boundSamplers.clear( );
     m_rootParameterBindings.clear( );
+    m_indirectResources.clear();
     m_buffers.clear( );
     m_textures.clear( );
     m_samplers.clear( );
@@ -156,8 +158,10 @@ void MetalResourceBindGroup::BindAccelerationStructure( const ResourceBindingSlo
     MetalTopLevelAS     *metalAS      = static_cast<MetalTopLevelAS *>( accelerationStructure );
     MetalBufferResource *headerBuffer = metalAS->HeaderBuffer( );
 
-    m_buffers.emplace_back( headerBuffer, MTLRenderStageObject, MTLResourceUsageRead );
-    m_buffers.emplace_back( metalAS->MetalBuffer( ), MTLRenderStageObject, MTLResourceUsageRead );
+    for ( const auto &item : metalAS->IndirectResources( ) )
+    {
+        m_indirectResources.emplace_back( item );
+    }
 
     const MetalBindingDesc &metalBinding = m_rootSignature->FindMetalBinding( slot );
     if ( slot.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
@@ -225,6 +229,11 @@ const MetalDescriptorTableBinding *MetalResourceBindGroup::SamplerTable( ) const
 MetalRootSignature *MetalResourceBindGroup::RootSignature( ) const
 {
     return m_rootSignature;
+}
+
+const std::vector<id<MTLResource>> &MetalResourceBindGroup::IndirectResources( ) const
+{
+    return m_indirectResources;
 }
 
 const std::vector<MetalUpdateDescItem<MetalBufferResource>> &MetalResourceBindGroup::Buffers( ) const

@@ -36,6 +36,8 @@ namespace DenOfIz
         std::unique_ptr<MetalBufferResource>        m_scratch;
         MTLAccelerationStructureInstanceDescriptor *m_instanceDescriptors;
         std::vector<uint32_t>                       m_contributionsToHitGroupIndices;
+        std::vector<id<MTLResource>>                m_indirectResources;
+        NSMutableArray                             *m_blasList;
 
     public:
         MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &desc );
@@ -50,9 +52,10 @@ namespace DenOfIz
         [[nodiscard]] const MetalBufferResource                  *InstanceBuffer( ) const;
         [[nodiscard]] MetalBufferResource                        *Scratch( ) const;
         [[nodiscard]] MTLAccelerationStructureDescriptor         *Descriptor( );
+        const std::vector<id<MTLResource>>                       &IndirectResources( ) const;
         [[nodiscard]] MTLAccelerationStructureInstanceDescriptor *InstanceDescriptors( );
 
     private:
-        id<MTLBuffer> createInstanceBuffer( );
+        void createInstanceBuffer( );
     };
 } // namespace DenOfIz

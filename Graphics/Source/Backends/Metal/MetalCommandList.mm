@@ -126,6 +126,11 @@ void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
             [m_renderEncoder endEncoding];
             m_renderEncoder = nil;
         }
+        else if ( m_accelerationStructureEncoder )
+        {
+            [m_accelerationStructureEncoder endEncoding];
+            m_accelerationStructureEncoder = nil;
+        }
 
         if ( executeDesc.Notify )
         {
@@ -262,6 +267,11 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
         UseResource( samplerTable->Table.Buffer( ) );
     }
 
+    for ( const auto &resource : metalBindGroup->IndirectResources( ) )
+    {
+        UseResource( resource );
+    }
+
     for ( const auto &buffer : metalBindGroup->Buffers( ) )
     {
         UseResource( buffer.Resource->Instance( ), buffer.Usage, buffer.ShaderStages );
@@ -378,6 +388,8 @@ void MetalCommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyT
 
 void MetalCommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )
 {
+    SwitchEncoder( MetalEncoderType::AccelerationStructure );
+
     MetalTopLevelAS *metalTopLevelAS = static_cast<MetalTopLevelAS *>( buildTopLevelASDesc.TopLevelAS );
     if ( !metalTopLevelAS )
     {
@@ -393,6 +405,8 @@ void MetalCommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevel
 
 void MetalCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc )
 {
+    SwitchEncoder( MetalEncoderType::AccelerationStructure );
+
     MetalBottomLevelAS *metalBottomLevelAS = static_cast<MetalBottomLevelAS *>( buildBottomLevelASDesc.BottomLevelAS );
     if ( !metalBottomLevelAS )
     {
@@ -408,6 +422,9 @@ void MetalCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBo
 
 void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
+    SwitchEncoder( MetalEncoderType::Compute );
+    BindTopLevelArgumentBuffer( );
+
     MetalShaderBindingTable *shaderBindingTable = static_cast<MetalShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
 
     if ( shaderBindingTable == nullptr )
@@ -441,7 +458,7 @@ void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
     MTLSize    threadGroupSize  = ( MTLSize ){ threadGroupSizeX, 1, 1 };
 
     MTLSize gridSize = MTLSize( dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth );
-    [m_computeEncoder dispatchThreadgroups:threadGroupSize threadsPerThreadgroup:gridSize];
+    [m_computeEncoder dispatchThreadgroups:gridSize threadsPerThreadgroup:threadGroupSize];
 }
 
 void MetalCommandList::BindTopLevelArgumentBuffer( )
@@ -450,7 +467,7 @@ void MetalCommandList::BindTopLevelArgumentBuffer( )
     uint64_t      offset = m_currentBufferOffset;
     if ( m_currentBufferOffset == 0 )
     {
-        if ( m_desc.QueueType == QueueType::Compute )
+        if ( m_desc.QueueType == QueueType::Compute || m_desc.QueueType == QueueType::RayTracing )
         {
             [m_computeEncoder setBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
         }
@@ -462,7 +479,7 @@ void MetalCommandList::BindTopLevelArgumentBuffer( )
     }
     else
     {
-        if ( m_desc.QueueType == QueueType::Compute )
+        if ( m_desc.QueueType == QueueType::Compute || m_desc.QueueType == QueueType::RayTracing )
         {
             [m_computeEncoder setBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
         }
@@ -531,14 +548,18 @@ void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType )
         {
         case MetalEncoderType::Blit:
             [m_blitEncoder endEncoding];
+            m_blitEncoder = nil;
             break;
         case MetalEncoderType::Compute:
             [m_computeEncoder endEncoding];
+            m_computeEncoder = nil;
             break;
         case MetalEncoderType::AccelerationStructure:
             [m_accelerationStructureEncoder endEncoding];
+            m_computeEncoder = nil;
         case MetalEncoderType::Render:
             [m_renderEncoder endEncoding];
+            m_renderEncoder = nil;
             break;
         case MetalEncoderType::None:
             break;

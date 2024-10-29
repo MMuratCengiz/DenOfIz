@@ -55,7 +55,6 @@ namespace DenOfIz
         // Ray tracing specific
         std::unordered_map<std::string, ShaderFunction> m_visibleFunctions;
         IntersectionExport                              m_intersectionExport;
-        std::unordered_map<std::string, id<MTLLibrary>> m_libraries;
         std::vector<std::string>                        m_hitGroupShaders;
         id<MTLVisibleFunctionTable>                     m_visibleFunctionTable;
         id<MTLIntersectionFunctionTable>                m_intersectionFunctionTable;

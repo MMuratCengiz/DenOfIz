@@ -29,7 +29,7 @@ MetalSwapChain::MetalSwapChain( MetalContext *context, const SwapChainDesc &desc
     auto layer                 = (CAMetalLayer *)m_view.layer;
     layer.device               = m_context->Device;
     layer.pixelFormat          = MetalEnumConverter::ConvertFormat( m_desc.BackBufferFormat );
-    layer.framebufferOnly      = YES;
+    layer.framebufferOnly      = NO;
     layer.contentsScale        = [m_view.window backingScaleFactor];
     layer.displaySyncEnabled   = NO;
     layer.maximumDrawableCount = m_desc.NumBuffers;

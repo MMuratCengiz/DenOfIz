@@ -99,7 +99,7 @@ namespace DenOfIz
         template <typename T>
         void UseResource( const T &resource, MTLResourceUsage usage = MTLResourceUsageRead, MTLRenderStages stages = MTLRenderStageVertex | MTLRenderStageFragment )
         {
-            if ( m_desc.QueueType == QueueType::Compute )
+			if ( m_desc.QueueType == QueueType::Compute || m_desc.QueueType == QueueType::RayTracing )
             {
                 [m_computeEncoder useResource:resource usage:usage];
             }

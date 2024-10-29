@@ -65,6 +65,7 @@ namespace DenOfIz
         std::vector<std::pair<ResourceBindingSlot, ITextureResource *>> m_boundTextures;
         std::vector<std::pair<ResourceBindingSlot, ISampler *>>         m_boundSamplers;
 
+        std::vector<id<MTLResource>>                           m_indirectResources;
         std::vector<MetalUpdateDescItem<MetalBufferResource>>  m_buffers;
         std::vector<MetalUpdateDescItem<MetalTextureResource>> m_textures;
         std::vector<MetalUpdateDescItem<MetalSampler>>         m_samplers;
@@ -94,6 +95,7 @@ namespace DenOfIz
         [[nodiscard]] const MetalDescriptorTableBinding *CbvSrvUavTable( ) const;
         [[nodiscard]] const MetalDescriptorTableBinding *SamplerTable( ) const;
 
+        const std::vector<id<MTLResource>>                           &IndirectResources( ) const;
         const std::vector<MetalUpdateDescItem<MetalBufferResource>>  &Buffers( ) const;
         const std::vector<MetalUpdateDescItem<MetalTextureResource>> &Textures( ) const;
         const std::vector<MetalUpdateDescItem<MetalSampler>>         &Samplers( ) const;

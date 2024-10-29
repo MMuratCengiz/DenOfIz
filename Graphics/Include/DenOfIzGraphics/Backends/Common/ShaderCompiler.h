@@ -26,9 +26,6 @@ namespace DenOfIz
 #ifdef BUILD_METAL
     struct CompileMslDesc
     {
-        uint64_t         ClosestHitMask = 0;
-        uint64_t         AnyHitMask     = 0;
-        uint64_t         MissMask       = 0;
         IRRootSignature *RootSignature;
     };
 #endif

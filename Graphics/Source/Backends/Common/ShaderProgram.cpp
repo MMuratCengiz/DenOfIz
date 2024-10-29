@@ -175,6 +175,67 @@ IRDescriptorRangeType ShaderTypeToIRDescriptorType( const D3D_SHADER_INPUT_TYPE 
     return descriptorRangeType;
 }
 
+// Todo perhaps share this with main reflection code
+void ShaderProgram::IterateBoundResources( CompiledShader *shader, ReflectionState &state, ReflectionCallback &callback ) const
+{
+    ID3D12ShaderReflection  *shaderReflection  = nullptr;
+    ID3D12LibraryReflection *libraryReflection = nullptr;
+
+    IDxcBlob       *reflectionBlob = shader->Reflection;
+    const DxcBuffer reflectionBuffer{
+        .Ptr      = reflectionBlob->GetBufferPointer( ),
+        .Size     = reflectionBlob->GetBufferSize( ),
+        .Encoding = 0,
+    };
+
+    switch ( shader->Stage )
+    {
+    case ShaderStage::AnyHit:
+    case ShaderStage::ClosestHit:
+    case ShaderStage::Raygen:
+    case ShaderStage::Miss:
+        {
+            DXC_CHECK_RESULT( ShaderCompilerInstance( ).DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &libraryReflection ) ) );
+            state.LibraryReflection = libraryReflection;
+            D3D12_LIBRARY_DESC libraryDesc{ };
+            DXC_CHECK_RESULT( libraryReflection->GetDesc( &libraryDesc ) );
+
+            for ( const uint32_t i : std::views::iota( 0u, libraryDesc.FunctionCount ) )
+            {
+                ID3D12FunctionReflection *functionReflection = libraryReflection->GetFunctionByIndex( i );
+                D3D12_FUNCTION_DESC       functionDesc{ };
+                DXC_CHECK_RESULT( functionReflection->GetDesc( &functionDesc ) );
+                state.FunctionReflection = functionReflection;
+                for ( const uint32_t j : std::views::iota( 0u, functionDesc.BoundResources ) )
+                {
+                    D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
+                    DXC_CHECK_RESULT( functionReflection->GetResourceBindingDesc( j, &shaderInputBindDesc ) );
+
+                    callback( shaderInputBindDesc, j );
+                }
+            }
+        }
+        break;
+    default:
+        {
+            DXC_CHECK_RESULT( ShaderCompilerInstance( ).DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) ) );
+            state.ShaderReflection = shaderReflection;
+
+            D3D12_SHADER_DESC shaderDesc{ };
+            DXC_CHECK_RESULT( shaderReflection->GetDesc( &shaderDesc ) );
+
+            for ( const uint32_t i : std::views::iota( 0u, shaderDesc.BoundResources ) )
+            {
+                D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
+                DXC_CHECK_RESULT( shaderReflection->GetResourceBindingDesc( i, &shaderInputBindDesc ) );
+
+                callback( shaderInputBindDesc, i );
+            }
+        }
+        break;
+    }
+}
+
 // For metal, we need to produce a root signature to compile a correct metallib
 // We also keep track of how the root parameter layout looks like so
 void ShaderProgram::ProduceMSL( )
@@ -209,19 +270,8 @@ void ShaderProgram::ProduceMSL( )
         compileDesc.TargetIL    = TargetIL::DXIL;
         auto compiledShader     = compiler.CompileHLSL( compileDesc );
 
-        ID3D12ShaderReflection *shaderReflection = ShaderReflection( compiledShader.get( ) );
-        dxilShaders.push_back( std::move( compiledShader ) );
-
-        D3D12_SHADER_DESC shaderDesc{ };
-        shaderReflection->GetDesc( &shaderDesc );
-
-        state.ShaderReflection = shaderReflection;
-
-        for ( const uint32_t i : std::views::iota( 0u, shaderDesc.BoundResources ) )
+        auto processResources = [ & ]( D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int i )
         {
-            D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
-            shaderReflection->GetResourceBindingDesc( i, &shaderInputBindDesc );
-
             bool alreadyProcessed = false;
             for ( auto &processedInput : processedInputs )
             {
@@ -234,7 +284,7 @@ void ShaderProgram::ProduceMSL( )
             }
             if ( alreadyProcessed )
             {
-                continue;
+                return;
             }
             processedInputs.push_back( shaderInputBindDesc );
 
@@ -292,7 +342,9 @@ void ShaderProgram::ProduceMSL( )
                     break;
                 }
             }
-        }
+        };
+        IterateBoundResources( compiledShader.get( ), state, processResources );
+        dxilShaders.push_back( std::move( compiledShader ) );
     }
 
     m_metalDescriptorOffsets.resize( registerSpaceRanges.size( ) );
@@ -367,7 +419,6 @@ void ShaderProgram::ProduceMSL( )
 
     CompileMslDesc compileMslDesc{ };
     compileMslDesc.RootSignature = rootSignature;
-    GatherMetalIntrinsics( dxilShaders, compileMslDesc.ClosestHitMask, compileMslDesc.AnyHitMask, compileMslDesc.MissMask );
 
     for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements( ); ++shaderIndex )
     {
@@ -989,28 +1040,3 @@ ShaderProgram::~ShaderProgram( )
         }
     }
 }
-
-#ifdef BUILD_METAL
-void ShaderProgram::GatherMetalIntrinsics( const std::vector<std::unique_ptr<CompiledShader>> &shaders, uint64_t &outClosestHitMask, uint64_t &outMissMask,
-                                           uint64_t &outAnyHitMask ) const
-{
-    for ( const auto &shader : shaders )
-    {
-        MetalDxcBlob_Impl *blob = static_cast<MetalDxcBlob_Impl *>( shader->Blob );
-        switch ( shader->Stage )
-        {
-        case ShaderStage::ClosestHit:
-            outClosestHitMask |= IRObjectGatherRaytracingIntrinsics( blob->IrObject, shader->EntryPoint.Get( ) );
-            break;
-        case ShaderStage::Miss:
-            outMissMask |= IRObjectGatherRaytracingIntrinsics( blob->IrObject, shader->EntryPoint.Get( ) );
-            break;
-        case ShaderStage::AnyHit:
-            outAnyHitMask |= IRObjectGatherRaytracingIntrinsics( blob->IrObject, shader->EntryPoint.Get( ) );
-            break;
-        default:
-            break;
-        }
-    }
-}
-#endif

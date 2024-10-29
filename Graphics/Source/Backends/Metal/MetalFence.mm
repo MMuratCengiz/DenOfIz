@@ -53,5 +53,7 @@ void MetalFence::Notify( )
 
 void MetalFence::NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer> &commandBuffer )
 {
-    [commandBuffer addCompletedHandler:^( id<MTLCommandBuffer> _unused ) { this->Notify(); }];
+    [commandBuffer addCompletedHandler:^( id<MTLCommandBuffer> _unused ) {
+      this->Notify( );
+    }];
 }
