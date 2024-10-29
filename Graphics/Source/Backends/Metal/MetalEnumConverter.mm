@@ -292,6 +292,101 @@ MTLVertexFormat MetalEnumConverter::ConvertFormatToVertexFormat( Format format )
     return MTLVertexFormatInvalid;
 }
 
+MTLAttributeFormat MetalEnumConverter::ConvertFormatToAttributeFormat( Format format )
+{
+    switch ( format )
+    {
+    case Format::R32G32B32A32Float:
+        return MTLAttributeFormatFloat4;
+    case Format::R32G32B32A32Sint:
+        return MTLAttributeFormatInt4;
+    case Format::R32G32B32A32Uint:
+        return MTLAttributeFormatUInt4;
+    case Format::R32G32B32Float:
+        return MTLAttributeFormatFloat3;
+    case Format::R32G32B32Sint:
+        return MTLAttributeFormatInt3;
+    case Format::R32G32B32Uint:
+        return MTLAttributeFormatUInt3;
+    case Format::R16G16B16A16Float:
+        return MTLAttributeFormatHalf4;
+    case Format::R16G16B16A16Snorm:
+        return MTLAttributeFormatShort4Normalized;
+    case Format::R16G16B16A16Sint:
+        return MTLAttributeFormatShort4;
+    case Format::R16G16B16A16Unorm:
+        return MTLAttributeFormatUShort4Normalized;
+    case Format::R16G16B16A16Uint:
+        return MTLAttributeFormatUShort4;
+    case Format::R32G32Float:
+        return MTLAttributeFormatFloat2;
+    case Format::R32G32Sint:
+        return MTLAttributeFormatInt2;
+    case Format::R32G32Uint:
+        return MTLAttributeFormatUInt2;
+    case Format::R10G10B10A2Uint:
+        return MTLAttributeFormatUInt1010102Normalized;
+    case Format::R10G10B10A2Unorm:
+        return MTLAttributeFormatUInt1010102Normalized;
+    case Format::R8G8B8A8Uint:
+        return MTLAttributeFormatUChar4;
+    case Format::R8G8B8A8Sint:
+        return MTLAttributeFormatChar4;
+    case Format::R8G8B8A8Snorm:
+        return MTLAttributeFormatChar4Normalized;
+    case Format::R8G8B8A8Unorm:
+    case Format::R8G8B8A8UnormSrgb:
+        return MTLAttributeFormatUChar4Normalized;
+    case Format::R16G16Float:
+        return MTLAttributeFormatHalf2;
+    case Format::R16G16Sint:
+        return MTLAttributeFormatShort2;
+    case Format::R16G16Snorm:
+        return MTLAttributeFormatShort2Normalized;
+    case Format::R16G16Unorm:
+        return MTLAttributeFormatUShort2Normalized;
+    case Format::R16G16Uint:
+        return MTLAttributeFormatUShort2;
+    case Format::R32Float:
+        return MTLAttributeFormatFloat;
+    case Format::R32Sint:
+        return MTLAttributeFormatInt;
+    case Format::R32Uint:
+        return MTLAttributeFormatUInt;
+    case Format::R8G8Snorm:
+        return MTLAttributeFormatChar2Normalized;
+    case Format::R8G8Unorm:
+        return MTLAttributeFormatUChar2Normalized;
+    case Format::R8G8Sint:
+        return MTLAttributeFormatChar2;
+    case Format::R8G8Uint:
+        return MTLAttributeFormatUChar2;
+    case Format::R16Float:
+        return MTLAttributeFormatHalf;
+    case Format::R16Sint:
+        return MTLAttributeFormatShort;
+    case Format::R16Snorm:
+        return MTLAttributeFormatShortNormalized;
+    case Format::R16Unorm:
+        return MTLAttributeFormatUShortNormalized;
+    case Format::R16Uint:
+        return MTLAttributeFormatUShort;
+    case Format::R8Sint:
+        return MTLAttributeFormatChar;
+    case Format::R8Snorm:
+        return MTLAttributeFormatCharNormalized;
+    case Format::R8Unorm:
+        return MTLAttributeFormatUCharNormalized;
+    case Format::R8Uint:
+        return MTLAttributeFormatUChar;
+    default:
+        break;
+    }
+
+    LOG( WARNING ) << "Warning: Unknown format: " << static_cast<int>( format );
+    return MTLAttributeFormatInvalid;
+}
+
 MTLDataType MetalEnumConverter::ConvertFormatToDataType( Format format )
 {
     switch ( format )

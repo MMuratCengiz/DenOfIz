@@ -19,8 +19,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/RayTracing/ITopLevelAS.h>
+#include <DenOfIzGraphics/Backends/Metal/MetalContext.h>
 
 namespace DenOfIz
 {
+    class MetalTopLevelAS : public ITopLevelAS
+    {
+    private:
+        MetalContext                               *m_context;
+        TopLevelASDesc                              m_desc;
+        id<MTLAccelerationStructure>                m_accelerationStructure;
+        MTLInstanceAccelerationStructureDescriptor *m_descriptor;
+        std::unique_ptr<MetalBufferResource>        m_headerBuffer;
+        std::unique_ptr<MetalBufferResource>        m_buffer;
+        std::unique_ptr<MetalBufferResource>        m_instanceBuffer;
+        std::unique_ptr<MetalBufferResource>        m_scratch;
+        MTLAccelerationStructureInstanceDescriptor *m_instanceDescriptors;
+        std::vector<uint32_t>                       m_contributionsToHitGroupIndices;
 
-}
+    public:
+        MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &desc );
+        void Update( const TopLevelASDesc &desc ) override;
+        ~MetalTopLevelAS( ) override = default;
+
+        [[nodiscard]] id<MTLAccelerationStructure>                AccelerationStructure( ) const;
+        [[nodiscard]] IBufferResource                            *Buffer( ) const override;
+        [[nodiscard]] MetalBufferResource                        *MetalBuffer( ) const;
+        [[nodiscard]] MetalBufferResource                        *HeaderBuffer( ) const;
+        size_t                                                    NumInstances( ) const;
+        [[nodiscard]] const MetalBufferResource                  *InstanceBuffer( ) const;
+        [[nodiscard]] MetalBufferResource                        *Scratch( ) const;
+        [[nodiscard]] MTLAccelerationStructureDescriptor         *Descriptor( );
+        [[nodiscard]] MTLAccelerationStructureInstanceDescriptor *InstanceDescriptors( );
+
+    private:
+        id<MTLBuffer> createInstanceBuffer( );
+    };
+} // namespace DenOfIz

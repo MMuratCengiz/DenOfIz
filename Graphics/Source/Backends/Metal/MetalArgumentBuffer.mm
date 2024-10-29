@@ -55,6 +55,12 @@ void DescriptorTable::EncodeSampler( id<MTLSamplerState> sampler, float lodBias,
     IRDescriptorTableSetSampler( &m_contents[ index ], sampler, lodBias );
 }
 
+void DescriptorTable::EncodeAccelerationStructure( id<MTLBuffer> asHeader, uint32_t index )
+{
+    DZ_ASSERTM( index < m_numEntries, "DescriptorTable::EncodeBuffer: index out of bounds" );
+    IRDescriptorTableSetAccelerationStructure( &m_contents[ index ], asHeader.gpuAddress );
+}
+
 MetalArgumentBuffer::MetalArgumentBuffer( MetalContext *context, size_t capacity ) : m_context( context ), m_capacity( capacity )
 {
     m_nextOffset = 0;

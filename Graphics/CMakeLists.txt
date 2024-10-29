@@ -118,9 +118,9 @@ set(DEN_OF_IZ_GRAPHICS_METAL_SOURCES
         Source/Backends/Metal/MetalSwapChain.mm
         Source/Backends/Metal/MetalTextureResource.mm
         # RayTracing
-        Source/Backends/Metal/RayTracing/MetalBottomLevelAS.cpp
-        Source/Backends/Metal/RayTracing/MetalShaderBindingTable.cpp
-        Source/Backends/Metal/RayTracing/MetalTopLevelAS.cpp
+        Source/Backends/Metal/RayTracing/MetalBottomLevelAS.mm
+        Source/Backends/Metal/RayTracing/MetalShaderBindingTable.mm
+        Source/Backends/Metal/RayTracing/MetalTopLevelAS.mm
 )
 
 if (WIN32)
@@ -145,7 +145,7 @@ endif ()
 copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 
 add_library(DenOfIzGraphics ${DEN_OF_IZ_GRAPHICS_SOURCES})
-install_target(DenOfIzGraphics)
+#install_target(DenOfIzGraphics)
 target_include_default_directories(DenOfIzGraphics)
 
 target_include_directories(DenOfIzGraphics

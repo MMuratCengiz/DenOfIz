@@ -19,6 +19,7 @@ namespace DenOfIz
         void                        EncodeBuffer( id<MTLBuffer> buffer, uint32_t index );
         void                        EncodeTexture( id<MTLTexture> texture, float minLodClamp, uint32_t index );
         void                        EncodeSampler( id<MTLSamplerState> sampler, float lodBias, uint32_t index );
+        void                        EncodeAccelerationStructure( id<MTLBuffer> asHeader, uint32_t index );
         [[nodiscard]] id<MTLBuffer> Buffer( ) const
         {
             return m_buffer;

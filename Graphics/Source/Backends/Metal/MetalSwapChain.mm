@@ -81,7 +81,7 @@ void MetalSwapChain::Resize( uint32_t width, uint32_t height )
         m_drawableDesc.Width        = width;
         m_drawableDesc.Height       = height;
         m_drawableDesc.Format       = m_desc.BackBufferFormat;
-        m_drawableDesc.InitialState = ResourceState::RenderTarget;
+        m_drawableDesc.InitialUsage = ResourceUsage::RenderTarget;
         m_drawableDesc.HeapType     = HeapType::GPU;
         m_drawableDesc.DebugName    = "SwapChain";
 

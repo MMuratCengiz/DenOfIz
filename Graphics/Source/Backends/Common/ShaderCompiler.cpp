@@ -248,12 +248,20 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
 }
 
 #ifdef BUILD_METAL
-IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob *code, IRRootSignature *rootSignature ) const
+IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob *code, const CompileMslDesc &compileMslDesc ) const
 {
+    IRRootSignature *rootSignature = compileMslDesc.RootSignature;
+
     IRCompiler *irCompiler = IRCompilerCreate( );
     IRCompilerSetEntryPointName( irCompiler, compileOptions.EntryPoint.Get( ) );
     IRCompilerSetMinimumDeploymentTarget( irCompiler, IROperatingSystem_macOS, "14.0" );
     IRCompilerSetGlobalRootSignature( irCompiler, rootSignature );
+
+    // TODO some of these values are hardcoded because metal is odd. The only possible way I can think of is to move the compilation to pipeline creation.
+    // But will try this way for now.
+    IRCompilerSetRayTracingPipelineArguments( irCompiler, 1024, IRRaytracingPipelineFlagNone, compileMslDesc.ClosestHitMask, compileMslDesc.MissMask, compileMslDesc.AnyHitMask, ~0,
+                                              IRRayTracingUnlimitedRecursionDepth );
+    IRCompilerSetHitgroupType( irCompiler, IRHitGroupTypeTriangles );
 
     IRObject *irDxil = IRObjectCreateFromDXIL( (const uint8_t *)code->GetBufferPointer( ), code->GetBufferSize( ), IRBytecodeOwnershipNone );
 
@@ -275,7 +283,7 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob
     MetalDxcBlob_Impl *mslBlob = new MetalDxcBlob_Impl( metalLibByteCode, metalLibSize );
     mslBlob->IrObject          = outIr;
 
-    CacheCompiledShader( compileOptions.Path.Get( ), compileOptions.TargetIL, mslBlob );
+    CacheCompiledShader( compileOptions.Path.Get( ), compileOptions.TargetIL, mslBlob, nullptr );
 
     IRMetalLibBinaryDestroy( metalLib );
     IRObjectDestroy( irDxil );
@@ -295,11 +303,14 @@ void ShaderCompiler::CacheCompiledShader( const std::string &filename, const Tar
         compiledFile.close( );
     }
 
-    const std::string reflectionPath = Utilities::AppPath( CachedReflectionFile( filename ) );
-    if ( std::ofstream reflectionFile( reflectionPath, std::ios::binary ); reflectionFile.is_open( ) )
+    if ( reflection )
     {
-        reflectionFile.write( static_cast<const char *>( reflection->GetBufferPointer( ) ), reflection->GetBufferSize( ) );
-        reflectionFile.close( );
+        const std::string reflectionPath = Utilities::AppPath( CachedReflectionFile( filename ) );
+        if ( std::ofstream reflectionFile( reflectionPath, std::ios::binary ); reflectionFile.is_open( ) )
+        {
+            reflectionFile.write( static_cast<const char *>( reflection->GetBufferPointer( ) ), reflection->GetBufferSize( ) );
+            reflectionFile.close( );
+        }
     }
 }
 

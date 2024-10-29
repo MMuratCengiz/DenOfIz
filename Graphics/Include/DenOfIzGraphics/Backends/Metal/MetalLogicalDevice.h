@@ -18,11 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "MetalContext.h"
 #include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
 #include <DenOfIzGraphics/Utilities/Common.h>
 #include "MetalBufferResource.h"
 #include "MetalCommandListPool.h"
+#include "MetalContext.h"
 #include "MetalFence.h"
 #include "MetalResourceBindGroup.h"
 #include "MetalTextureResource.h"
@@ -44,17 +44,20 @@ namespace DenOfIz
         void                         LoadPhysicalDevice( const PhysicalDevice &device ) override;
         bool                         IsDeviceLost( ) override;
 
-        ICommandListPool   *CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
-        IPipeline          *CreatePipeline( const PipelineDesc &pipelineDesc ) override;
-        ISwapChain         *CreateSwapChain( const SwapChainDesc &swapChainDesc ) override;
-        IRootSignature     *CreateRootSignature( const RootSignatureDesc &rootSignatureDesc ) override;
-        IInputLayout       *CreateInputLayout( const InputLayoutDesc &inputLayoutDesc ) override;
-        IResourceBindGroup *CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc ) override;
-        IFence             *CreateFence( ) override;
-        ISemaphore         *CreateSemaphore( ) override;
-        IBufferResource    *CreateBufferResource( const BufferDesc &bufferDesc ) override;
-        ITextureResource   *CreateTextureResource( const TextureDesc &textureDesc ) override;
-        ISampler           *CreateSampler( const SamplerDesc &samplerDesc ) override;
+        ICommandListPool    *CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
+        IPipeline           *CreatePipeline( const PipelineDesc &pipelineDesc ) override;
+        ISwapChain          *CreateSwapChain( const SwapChainDesc &swapChainDesc ) override;
+        IRootSignature      *CreateRootSignature( const RootSignatureDesc &rootSignatureDesc ) override;
+        IInputLayout        *CreateInputLayout( const InputLayoutDesc &inputLayoutDesc ) override;
+        IResourceBindGroup  *CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc ) override;
+        IFence              *CreateFence( ) override;
+        ISemaphore          *CreateSemaphore( ) override;
+        IBufferResource     *CreateBufferResource( const BufferDesc &bufferDesc ) override;
+        ITextureResource    *CreateTextureResource( const TextureDesc &textureDesc ) override;
+        ISampler            *CreateSampler( const SamplerDesc &samplerDesc ) override;
+        IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &desc ) override;
+        ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &desc ) override;
+        IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &desc ) override;
 
         void WaitIdle( ) override;
         // --

@@ -19,8 +19,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/RayTracing/IBottomLevelAS.h>
+#include <DenOfIzGraphics/Backends/Metal/MetalBufferResource.h>
 
 namespace DenOfIz
 {
+    class MetalBottomLevelAS : public IBottomLevelAS
+    {
+    private:
+        MetalContext                                          *m_context;
+        BottomLevelASDesc                                      m_desc;
+        std::unique_ptr<MetalBufferResource>                   m_scratch;
+        std::unique_ptr<MetalBufferResource>                   m_buffer;
+        id<MTLAccelerationStructure>                           m_accelerationStructure;
+        MTLPrimitiveAccelerationStructureDescriptor           *m_descriptor;
+        NSArray<MTLAccelerationStructureGeometryDescriptor *> *m_geometryDescriptors;
+        MTLAccelerationStructureInstanceOptions                m_options;
 
-}
+    public:
+        MetalBottomLevelAS( MetalContext *context, const BottomLevelASDesc &desc );
+        ~MetalBottomLevelAS( ) override = default;
+
+        [[nodiscard]] id<MTLAccelerationStructure>            AccelerationStructure( ) const;
+        [[nodiscard]] MetalBufferResource                    *MetalBuffer( ) const;
+        [[nodiscard]] IBufferResource                        *Buffer( ) const override;
+        [[nodiscard]] MetalBufferResource                    *Scratch( ) const;
+        [[nodiscard]] MTLAccelerationStructureDescriptor     *Descriptor( );
+        [[nodiscard]] MTLAccelerationStructureInstanceOptions Options( ) const;
+
+    private:
+        MTLAccelerationStructureTriangleGeometryDescriptor    *InitializeTriangles( const ASGeometryTriangleDesc &triangle );
+        MTLAccelerationStructureBoundingBoxGeometryDescriptor *InitializeAABBs( const ASGeometryAABBDesc &aabb );
+    };
+} // namespace DenOfIz

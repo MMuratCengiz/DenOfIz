@@ -33,6 +33,7 @@ namespace DenOfIz
         static MTLBindingAccess          ConvertDescriptorToBindingAccess( const BitSet<ResourceDescriptor> &descriptor );
         static MTLPixelFormat            ConvertFormat( Format format );
         static MTLVertexFormat           ConvertFormatToVertexFormat( Format format );
+        static MTLAttributeFormat        ConvertFormatToAttributeFormat( Format format );
         static MTLDataType               ConvertFormatToDataType( Format format );
         static MTLLoadAction             ConvertLoadAction( LoadOp op );
         static MTLStoreAction            ConvertStoreAction( StoreOp op );

@@ -17,6 +17,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #import <DenOfIzGraphics/Backends/Metal/MetalCommandList.h>
+#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalBottomLevelAS.h>
+#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderBindingTable.h>
+#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalTopLevelAS.h>
 
 using namespace DenOfIz;
 
@@ -39,6 +42,7 @@ void MetalCommandList::Begin( )
             m_activeEncoderType = MetalEncoderType::Blit;
             m_blitEncoder       = [m_commandBuffer blitCommandEncoder];
             break;
+        case QueueType::RayTracing: // Validate
         case QueueType::Compute:
             m_activeEncoderType = MetalEncoderType::Compute;
             m_computeEncoder    = [m_commandBuffer computeCommandEncoder];
@@ -139,7 +143,7 @@ void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
     }
 }
 
-void MetalCommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> & waitOnLocks )
+void MetalCommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> &waitOnLocks )
 {
     MetalSwapChain *metalSwapChain = static_cast<MetalSwapChain *>( swapChain );
     metalSwapChain->Present( waitOnLocks );
@@ -147,7 +151,7 @@ void MetalCommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, cons
 
 void MetalCommandList::BindPipeline( IPipeline *pipeline )
 {
-    MetalPipeline *metalPipeline = static_cast<MetalPipeline *>( pipeline );
+    m_pipeline = static_cast<MetalPipeline *>( pipeline );
     @autoreleasepool
     {
         switch ( m_desc.QueueType )
@@ -155,12 +159,13 @@ void MetalCommandList::BindPipeline( IPipeline *pipeline )
         case QueueType::Copy:
             break;
         case QueueType::Compute:
-            [m_computeEncoder setComputePipelineState:metalPipeline->ComputePipelineState( )];
+        case QueueType::RayTracing:
+            [m_computeEncoder setComputePipelineState:m_pipeline->ComputePipelineState( )];
             break;
         case QueueType::Graphics:
-            [m_renderEncoder setRenderPipelineState:metalPipeline->GraphicsPipelineState( )];
-            [m_renderEncoder setDepthStencilState:metalPipeline->DepthStencilState( )];
-            [m_renderEncoder setCullMode:metalPipeline->CullMode( )];
+            [m_renderEncoder setRenderPipelineState:m_pipeline->GraphicsPipelineState( )];
+            [m_renderEncoder setDepthStencilState:m_pipeline->DepthStencilState( )];
+            [m_renderEncoder setCullMode:m_pipeline->CullMode( )];
             [m_renderEncoder setFrontFacingWinding:MTLWindingClockwise];
             break;
         }
@@ -175,6 +180,7 @@ void MetalCommandList::BindVertexBuffer( IBufferResource *buffer )
     {
     case QueueType::Copy:
     case QueueType::Compute:
+    case QueueType::RayTracing:
         LOG( WARNING ) << "BindVertexBuffer is not supported for Copy and Compute queues";
         break;
     case QueueType::Graphics:
@@ -226,7 +232,7 @@ void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 
     if ( m_rootSignature == nullptr && m_rootSignature != metalBindGroup->RootSignature( ) )
     {
-        m_rootSignature = metalBindGroup->RootSignature( );
+        m_rootSignature       = metalBindGroup->RootSignature( );
         m_currentBufferOffset = m_argumentBuffer->Reserve( m_rootSignature->NumTLABAddresses( ), m_rootSignature->NumRootConstantBytes( ) ).second;
     }
 
@@ -370,6 +376,74 @@ void MetalCommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyT
           destinationBytesPerImage:copyTextureToBuffer.RowPitch * copyTextureToBuffer.NumRows];
 }
 
+void MetalCommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )
+{
+    MetalTopLevelAS *metalTopLevelAS = static_cast<MetalTopLevelAS *>( buildTopLevelASDesc.TopLevelAS );
+    if ( !metalTopLevelAS )
+    {
+        LOG( ERROR ) << "Invalid top level acceleration structure.";
+        return;
+    }
+
+    [m_accelerationStructureEncoder buildAccelerationStructure:metalTopLevelAS->AccelerationStructure( )
+                                                    descriptor:metalTopLevelAS->Descriptor( )
+                                                 scratchBuffer:metalTopLevelAS->Scratch( )->Instance( )
+                                           scratchBufferOffset:0];
+}
+
+void MetalCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc )
+{
+    MetalBottomLevelAS *metalBottomLevelAS = static_cast<MetalBottomLevelAS *>( buildBottomLevelASDesc.BottomLevelAS );
+    if ( !metalBottomLevelAS )
+    {
+        LOG( ERROR ) << "Invalid bottom level acceleration structure.";
+        return;
+    }
+
+    [m_accelerationStructureEncoder buildAccelerationStructure:metalBottomLevelAS->AccelerationStructure( )
+                                                    descriptor:metalBottomLevelAS->Descriptor( )
+                                                 scratchBuffer:metalBottomLevelAS->Scratch( )->Instance( )
+                                           scratchBufferOffset:0];
+}
+
+void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
+{
+    MetalShaderBindingTable *shaderBindingTable = static_cast<MetalShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
+
+    if ( shaderBindingTable == nullptr )
+    {
+        LOG( ERROR ) << "DispatchRaysDesc.ShaderBindingTable == null";
+        return;
+    }
+
+    UseResource( shaderBindingTable->MetalBuffer( ) );
+
+    IRDispatchRaysDescriptor irDispatchRaysDesc;
+    irDispatchRaysDesc.RayGenerationShaderRecord = shaderBindingTable->RayGenerationShaderRange( );
+    irDispatchRaysDesc.HitGroupTable             = shaderBindingTable->HitGroupShaderRange( );
+    irDispatchRaysDesc.MissShaderTable           = shaderBindingTable->MissShaderRange( );
+    irDispatchRaysDesc.CallableShaderTable       = { .StartAddress = 0, .SizeInBytes = 0, .StrideInBytes = 0 };
+    irDispatchRaysDesc.Width                     = dispatchRaysDesc.Width;
+    irDispatchRaysDesc.Height                    = dispatchRaysDesc.Height;
+    irDispatchRaysDesc.Depth                     = dispatchRaysDesc.Depth;
+
+    IRDispatchRaysArgument dispatchRaysArgs;
+    dispatchRaysArgs.DispatchRaysDesc          = irDispatchRaysDesc;
+    dispatchRaysArgs.GRS                       = shaderBindingTable->MetalBuffer( ).gpuAddress;
+    dispatchRaysArgs.ResDescHeap               = 0;
+    dispatchRaysArgs.SmpDescHeap               = 0;
+    dispatchRaysArgs.VisibleFunctionTable      = m_pipeline->VisibleFunctionTable( ).gpuResourceID;
+    dispatchRaysArgs.IntersectionFunctionTable = m_pipeline->IntersectionFunctionTable( ).gpuResourceID;
+
+    [m_computeEncoder setBytes:&dispatchRaysArgs length:sizeof( IRDispatchRaysArgument ) atIndex:kIRRayDispatchArgumentsBindPoint];
+
+    NSUInteger threadGroupSizeX = [m_pipeline->ComputePipelineState( ) maxTotalThreadsPerThreadgroup];
+    MTLSize    threadGroupSize  = ( MTLSize ){ threadGroupSizeX, 1, 1 };
+
+    MTLSize gridSize = MTLSize( dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth );
+    [m_computeEncoder dispatchThreadgroups:threadGroupSize threadsPerThreadgroup:gridSize];
+}
+
 void MetalCommandList::BindTopLevelArgumentBuffer( )
 {
     id<MTLBuffer> buffer = m_argumentBuffer->Buffer( );
@@ -433,6 +507,12 @@ void MetalCommandList::EnsureEncoder( MetalEncoderType encoderType, std::string 
             LOG( ERROR ) << errorMessage;
         }
         break;
+    case MetalEncoderType::AccelerationStructure:
+        if ( m_accelerationStructureEncoder == nil )
+        {
+            LOG( ERROR ) << errorMessage;
+        }
+        break;
     case MetalEncoderType::None:
         break;
     }
@@ -455,6 +535,8 @@ void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType )
         case MetalEncoderType::Compute:
             [m_computeEncoder endEncoding];
             break;
+        case MetalEncoderType::AccelerationStructure:
+            [m_accelerationStructureEncoder endEncoding];
         case MetalEncoderType::Render:
             [m_renderEncoder endEncoding];
             break;
@@ -471,6 +553,10 @@ void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType )
         case MetalEncoderType::Compute:
             m_activeEncoderType = MetalEncoderType::Compute;
             m_computeEncoder    = [m_commandBuffer computeCommandEncoder];
+            break;
+        case MetalEncoderType::AccelerationStructure:
+            m_activeEncoderType            = MetalEncoderType::AccelerationStructure;
+            m_accelerationStructureEncoder = [m_commandBuffer accelerationStructureCommandEncoder];
             break;
         case MetalEncoderType::Render:
             LOG( ERROR ) << "Using metal, render encoder should be initialized in BeginRendering. This error means the order of your commands ";

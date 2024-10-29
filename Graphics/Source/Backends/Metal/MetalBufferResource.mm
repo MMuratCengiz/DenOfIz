@@ -41,8 +41,8 @@ MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDes
     NSString *nsName = [NSString stringWithUTF8String:desc.DebugName.Get( )];
     m_buffer.label   = nsName;
 
-    if ( m_desc.Descriptor.Any( { ResourceDescriptor::RWBuffer, ResourceDescriptor::AccelerationStructure } ) ||
-         m_desc.InitialState.Any( { ResourceState::UnorderedAccess, ResourceState::DepthWrite, ResourceState::AccelerationStructureWrite, ResourceState::CopyDst } ) )
+    if ( m_desc.Descriptor.Any( { ResourceDescriptor::RWBuffer, ResourceDescriptor::AccelerationStructure } ) || m_desc.InitialUsage == ResourceUsage::UnorderedAccess ||
+         m_desc.InitialUsage == ResourceUsage::DepthWrite || m_desc.InitialUsage == ResourceUsage::AccelerationStructureWrite || m_desc.InitialUsage == ResourceUsage::CopyDst )
     {
         m_usage = MTLResourceUsageRead | MTLResourceUsageWrite;
     }
@@ -121,10 +121,10 @@ void MetalBufferResource::SetData( const InteropArray<Byte> &data, bool keepMapp
     return m_mappedMemory;
 }
 
-[[nodiscard]] DenOfIz::BitSet<ResourceState> MetalBufferResource::InitialState( ) const
+[[nodiscard]] DenOfIz::BitSet<ResourceUsage> MetalBufferResource::InitialState( ) const
 {
     // Doesn't matter much for Metal
-    return m_desc.InitialState;
+    return m_desc.InitialUsage;
 }
 
 const id<MTLBuffer> &MetalBufferResource::Instance( ) const

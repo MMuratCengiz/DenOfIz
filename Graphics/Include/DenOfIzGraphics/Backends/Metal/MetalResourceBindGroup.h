@@ -60,6 +60,7 @@ namespace DenOfIz
         ResourceBindGroupDesc                                           m_desc;
         MetalContext                                                   *m_context;
         MetalRootSignature                                             *m_rootSignature;
+        std::vector<std::pair<ResourceBindingSlot, ITopLevelAS *>>      m_boundAccelerationStructures;
         std::vector<std::pair<ResourceBindingSlot, IBufferResource *>>  m_boundBuffers;
         std::vector<std::pair<ResourceBindingSlot, ITextureResource *>> m_boundTextures;
         std::vector<std::pair<ResourceBindingSlot, ISampler *>>         m_boundSamplers;
@@ -100,6 +101,7 @@ namespace DenOfIz
         [[nodiscard]] MetalRootSignature *RootSignature( ) const;
 
     private:
+        void BindAccelerationStructure( const ResourceBindingSlot &slot, ITopLevelAS *accelerationStructure );
         void BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource );
         void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource );
         void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler );

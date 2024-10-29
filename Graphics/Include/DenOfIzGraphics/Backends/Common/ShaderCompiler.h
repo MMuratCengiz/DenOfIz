@@ -23,6 +23,16 @@ namespace DenOfIz
         bool                        EnableCaching = false;
     };
 
+#ifdef BUILD_METAL
+    struct CompileMslDesc
+    {
+        uint64_t         ClosestHitMask = 0;
+        uint64_t         AnyHitMask     = 0;
+        uint64_t         MissMask       = 0;
+        IRRootSignature *RootSignature;
+    };
+#endif
+
     class DZ_API ShaderCompiler final
     {
         IDxcLibrary        *m_dxcLibrary        = nullptr;
@@ -45,7 +55,7 @@ namespace DenOfIz
         ~ShaderCompiler( );
         [[nodiscard]] std::unique_ptr<CompiledShader> CompileHLSL( const CompileDesc &compileDesc ) const;
 #ifdef BUILD_METAL
-        [[nodiscard]] IDxcBlob            *DxilToMsl( const CompileDesc &compileOptions, IDxcBlob *code, IRRootSignature *rootSignature ) const;
+        [[nodiscard]] IDxcBlob            *DxilToMsl( const CompileDesc &compileOptions, IDxcBlob *code, const CompileMslDesc& compileMslDesc ) const;
         [[nodiscard]] static IRShaderStage ConvertIrShaderStage( const ShaderStage &stage );
 #endif
 

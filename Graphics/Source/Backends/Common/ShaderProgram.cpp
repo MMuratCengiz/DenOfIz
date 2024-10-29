@@ -123,6 +123,58 @@ IRRootParameterType BindingTypeToIRRootParameterType( const DescriptorBufferBind
 
     return IRRootParameterTypeCBV;
 }
+
+IRRootParameterType IRDescriptorRangeTypeToIRRootParameterType( const IRDescriptorRangeType &type )
+{
+    switch ( type )
+    {
+    case IRDescriptorRangeTypeCBV:
+        return IRRootParameterTypeCBV;
+    case IRDescriptorRangeTypeSRV:
+        return IRRootParameterTypeSRV;
+    case IRDescriptorRangeTypeUAV:
+        return IRRootParameterTypeUAV;
+    default:
+        break;
+    }
+
+    return IRRootParameterTypeCBV;
+}
+
+IRDescriptorRangeType ShaderTypeToIRDescriptorType( const D3D_SHADER_INPUT_TYPE &type )
+{
+    IRDescriptorRangeType descriptorRangeType = IRDescriptorRangeTypeCBV;
+    switch ( type )
+    {
+    case D3D_SIT_CBUFFER:
+    case D3D_SIT_TBUFFER:
+        descriptorRangeType = IRDescriptorRangeTypeCBV;
+        break;
+    case D3D_SIT_TEXTURE:
+    case D3D_SIT_STRUCTURED:
+    case D3D_SIT_BYTEADDRESS:
+    case D3D_SIT_RTACCELERATIONSTRUCTURE:
+        descriptorRangeType = IRDescriptorRangeTypeSRV;
+        break;
+    case D3D_SIT_SAMPLER:
+        descriptorRangeType = IRDescriptorRangeTypeSampler;
+        break;
+    case D3D_SIT_UAV_APPEND_STRUCTURED:
+    case D3D_SIT_UAV_CONSUME_STRUCTURED:
+    case D3D_SIT_UAV_RWSTRUCTURED:
+    case D3D_SIT_UAV_RWTYPED:
+    case D3D_SIT_UAV_RWBYTEADDRESS:
+    case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
+    case D3D_SIT_UAV_FEEDBACKTEXTURE:
+        descriptorRangeType = IRDescriptorRangeTypeUAV;
+        break;
+    default:
+        LOG( ERROR ) << "Unknown resource type";
+        break;
+    }
+    return descriptorRangeType;
+}
+
 // For metal, we need to produce a root signature to compile a correct metallib
 // We also keep track of how the root parameter layout looks like so
 void ShaderProgram::ProduceMSL( )
@@ -144,6 +196,8 @@ void ShaderProgram::ProduceMSL( )
     std::vector<std::unique_ptr<CompiledShader>> dxilShaders;
     std::vector<D3D12_SHADER_INPUT_BIND_DESC>    processedInputs; // Handle duplicate inputs
 
+    ReflectionState state{ };
+
     for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements( ); ++shaderIndex )
     {
         auto       &shader      = m_desc.Shaders.GetElement( shaderIndex );
@@ -160,6 +214,8 @@ void ShaderProgram::ProduceMSL( )
 
         D3D12_SHADER_DESC shaderDesc{ };
         shaderReflection->GetDesc( &shaderDesc );
+
+        state.ShaderReflection = shaderReflection;
 
         for ( const uint32_t i : std::views::iota( 0u, shaderDesc.BoundResources ) )
         {
@@ -196,36 +252,7 @@ void ShaderProgram::ProduceMSL( )
                 registerSpaceRange.ShaderVisibility = shaderVisibility;
             }
 
-            IRDescriptorRangeType descriptorRangeType = IRDescriptorRangeTypeCBV;
-            switch ( shaderInputBindDesc.Type )
-            {
-            case D3D_SIT_CBUFFER:
-            case D3D_SIT_TBUFFER:
-                descriptorRangeType = IRDescriptorRangeTypeCBV;
-                break;
-            case D3D_SIT_TEXTURE:
-            case D3D_SIT_STRUCTURED:
-            case D3D_SIT_BYTEADDRESS:
-            case D3D_SIT_RTACCELERATIONSTRUCTURE:
-                descriptorRangeType = IRDescriptorRangeTypeSRV;
-                break;
-            case D3D_SIT_SAMPLER:
-                descriptorRangeType = IRDescriptorRangeTypeSampler;
-                break;
-            case D3D_SIT_UAV_APPEND_STRUCTURED:
-            case D3D_SIT_UAV_CONSUME_STRUCTURED:
-            case D3D_SIT_UAV_RWSTRUCTURED:
-            case D3D_SIT_UAV_RWTYPED:
-            case D3D_SIT_UAV_RWBYTEADDRESS:
-            case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
-            case D3D_SIT_UAV_FEEDBACKTEXTURE:
-                descriptorRangeType = IRDescriptorRangeTypeUAV;
-                break;
-            default:
-                LOG( ERROR ) << "Unknown resource type";
-                break;
-            }
-
+            IRDescriptorRangeType descriptorRangeType = ShaderTypeToIRDescriptorType( shaderInputBindDesc.Type );
             if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootConstantRegisterSpace && shaderInputBindDesc.Type == D3D_SIT_CBUFFER )
             {
                 IRRootConstants &rootConstants = registerSpaceRange.RootConstants.emplace_back( );
@@ -233,7 +260,7 @@ void ShaderProgram::ProduceMSL( )
                 rootConstants.ShaderRegister   = shaderInputBindDesc.BindPoint;
 
                 ReflectionDesc rootConstantReflection;
-                FillReflectionData( shaderReflection, rootConstantReflection, i );
+                FillReflectionData( state, rootConstantReflection, i );
                 rootConstants.Num32BitValues = rootConstantReflection.NumBytes / 4;
             }
             else if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
@@ -242,21 +269,7 @@ void ShaderProgram::ProduceMSL( )
                 rootDescriptor.RegisterSpace     = shaderInputBindDesc.Space;
                 rootDescriptor.ShaderRegister    = shaderInputBindDesc.BindPoint;
 
-                switch ( descriptorRangeType )
-                {
-                case IRDescriptorRangeTypeCBV:
-                    registerSpaceRange.RootArgumentTypes.push_back( IRRootParameterTypeCBV );
-                    break;
-                case IRDescriptorRangeTypeSRV:
-                    registerSpaceRange.RootArgumentTypes.push_back( IRRootParameterTypeSRV );
-                    break;
-                case IRDescriptorRangeTypeUAV:
-                    registerSpaceRange.RootArgumentTypes.push_back( IRRootParameterTypeUAV );
-                    break;
-                case IRDescriptorRangeTypeSampler:
-                    LOG( ERROR ) << "Sampler cannot be a root argument. RegisterSpace [" << shaderInputBindDesc.Space << "] is reserved for root level buffers.";
-                    break;
-                }
+                registerSpaceRange.RootArgumentTypes.push_back( IRDescriptorRangeTypeToIRRootParameterType( descriptorRangeType ) );
             }
             else
             {
@@ -352,6 +365,10 @@ void ShaderProgram::ProduceMSL( )
         IRErrorDestroy( error );
     }
 
+    CompileMslDesc compileMslDesc{ };
+    compileMslDesc.RootSignature = rootSignature;
+    GatherMetalIntrinsics( dxilShaders, compileMslDesc.ClosestHitMask, compileMslDesc.AnyHitMask, compileMslDesc.MissMask );
+
     for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements( ); ++shaderIndex )
     {
         auto       &shader      = m_desc.Shaders.GetElement( shaderIndex );
@@ -363,7 +380,7 @@ void ShaderProgram::ProduceMSL( )
         compileDesc.TargetIL    = TargetIL::MSL;
 
         auto     &compiledShader = dxilShaders[ shaderIndex ];
-        IDxcBlob *mslBlob        = compiler.DxilToMsl( compileDesc, compiledShader->Blob, rootSignature );
+        IDxcBlob *mslBlob        = compiler.DxilToMsl( compileDesc, compiledShader->Blob, compileMslDesc );
         compiledShader->Blob->Release( );
         compiledShader->Blob = mslBlob;
 
@@ -529,7 +546,7 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
         }
 
 #ifdef BUILD_METAL
-        IRShaderReflectionDestroy( irReflection );
+        IRShaderReflectionDestroy( reflectionState.IRReflection );
 #endif
         if ( shaderReflection )
         {
@@ -546,8 +563,7 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
 
 void ShaderProgram::ReflectShader( ReflectionState &state ) const
 {
-    std::vector<uint32_t>  &descriptorTableLocations = *state.DescriptorTableLocations;
-    ID3D12ShaderReflection *shaderReflection         = state.ShaderReflection;
+    ID3D12ShaderReflection *shaderReflection = state.ShaderReflection;
 
     D3D12_SHADER_DESC shaderDesc{ };
     DXC_CHECK_RESULT( shaderReflection->GetDesc( &shaderDesc ) );
@@ -559,12 +575,13 @@ void ShaderProgram::ReflectShader( ReflectionState &state ) const
 
     DXC_CHECK_RESULT( shaderReflection->GetDesc( &shaderDesc ) );
 #ifdef BUILD_METAL
-    IRObject           *ir           = dynamic_cast<MetalDxcBlob_Impl *>( shader->Blob )->IrObject;
+    IRObject           *ir           = dynamic_cast<MetalDxcBlob_Impl *>( state.CompiledShader->Blob )->IrObject;
     IRShaderReflection *irReflection = IRShaderReflectionCreate( );
-    IRObjectGetReflection( ir, ShaderCompiler::ConvertIrShaderStage( shader->Stage ), irReflection );
+    IRObjectGetReflection( ir, ShaderCompiler::ConvertIrShaderStage( state.CompiledShader->Stage ), irReflection );
 
     std::vector<IRResourceLocation> resources( IRShaderReflectionGetResourceCount( irReflection ) );
     IRShaderReflectionGetResourceLocations( irReflection, resources.data( ) );
+    state.IRReflection = irReflection;
 #endif
 
     for ( const uint32_t i : std::views::iota( 0u, shaderDesc.BoundResources ) )
@@ -584,9 +601,7 @@ void ShaderProgram::ReflectLibrary( ReflectionState &state ) const
         return;
     }
     state.ProcessedFiles.insert( state.CompiledShader->Path );
-
-    std::vector<uint32_t>   &descriptorTableLocations = *state.DescriptorTableLocations;
-    ID3D12LibraryReflection *libraryReflection        = state.LibraryReflection;
+    ID3D12LibraryReflection *libraryReflection = state.LibraryReflection;
 
     D3D12_LIBRARY_DESC libraryDesc{ };
     DXC_CHECK_RESULT( libraryReflection->GetDesc( &libraryDesc ) );
@@ -650,7 +665,7 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
     {
         uint32_t hash = Utilities::HashInts( BindingTypeToIRRootParameterType( resourceBindingDesc.BindingType ), shaderInputBindDesc.Space, shaderInputBindDesc.BindPoint );
         resourceBindingDesc.Reflection.TLABOffset = m_metalDescriptorOffsets[ shaderInputBindDesc.Space ].UniqueTLABIndex.at( hash );
-        continue;
+        return;
     }
     // Hint metal resource bind group where descriptor table lies in the top level argument buffer
     switch ( resourceBindingDesc.Reflection.Type )
@@ -974,3 +989,28 @@ ShaderProgram::~ShaderProgram( )
         }
     }
 }
+
+#ifdef BUILD_METAL
+void ShaderProgram::GatherMetalIntrinsics( const std::vector<std::unique_ptr<CompiledShader>> &shaders, uint64_t &outClosestHitMask, uint64_t &outMissMask,
+                                           uint64_t &outAnyHitMask ) const
+{
+    for ( const auto &shader : shaders )
+    {
+        MetalDxcBlob_Impl *blob = static_cast<MetalDxcBlob_Impl *>( shader->Blob );
+        switch ( shader->Stage )
+        {
+        case ShaderStage::ClosestHit:
+            outClosestHitMask |= IRObjectGatherRaytracingIntrinsics( blob->IrObject, shader->EntryPoint.Get( ) );
+            break;
+        case ShaderStage::Miss:
+            outMissMask |= IRObjectGatherRaytracingIntrinsics( blob->IrObject, shader->EntryPoint.Get( ) );
+            break;
+        case ShaderStage::AnyHit:
+            outAnyHitMask |= IRObjectGatherRaytracingIntrinsics( blob->IrObject, shader->EntryPoint.Get( ) );
+            break;
+        default:
+            break;
+        }
+    }
+}
+#endif

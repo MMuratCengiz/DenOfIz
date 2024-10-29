@@ -26,7 +26,7 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
     m_height       = desc.Height;
     m_depth        = desc.Depth;
     m_format       = desc.Format;
-    m_initialState = desc.InitialState;
+    m_initialState = desc.InitialUsage;
 
     ValidateTextureDesc( m_desc );
     SetTextureType( );
@@ -172,7 +172,7 @@ const MTLTextureUsage &MetalTextureResource::Usage( ) const
     return m_textureUsage;
 }
 
-DenOfIz::BitSet<ResourceState> MetalTextureResource::InitialState( ) const
+DenOfIz::BitSet<ResourceUsage> MetalTextureResource::InitialState( ) const
 {
     return m_initialState;
 }

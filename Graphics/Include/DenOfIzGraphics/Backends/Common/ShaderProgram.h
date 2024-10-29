@@ -76,6 +76,10 @@ namespace DenOfIz
         std::unordered_set<std::string> ProcessedFiles;
         // For metal:
         std::vector<uint32_t> *DescriptorTableLocations;
+#ifdef BUILD_METAL
+        IRShaderReflection             *IRReflection;
+        std::vector<IRResourceLocation> MetalResourceLocations;
+#endif
     };
 
     class ShaderProgram
@@ -106,6 +110,7 @@ namespace DenOfIz
         bool UpdateBoundResourceStage( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
 #ifdef BUILD_METAL
         void ProduceMSL( );
+        void GatherMetalIntrinsics( const std::vector<std::unique_ptr<CompiledShader>> &shaders, uint64_t &outClosestHitMask, uint64_t &outMissMask, uint64_t &anyHitMask ) const;
 #endif
     };
 

@@ -19,13 +19,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "../IBufferResource.h"
+#include "IBottomLevelAS.h"
 #include "RayTracingData.h"
 
 namespace DenOfIz
 {
     struct DZ_API ASInstanceDesc
     {
-        IBufferResource    *BLASBuffer;
+        IBottomLevelAS     *BLAS;
         InteropArray<float> Transform; // TODO: InteropArray so it can be used in other languages interop, find a way to force size
         uint32_t            ContributionToHitGroupIndex;
         uint32_t            ID;
@@ -39,8 +40,7 @@ namespace DenOfIz
         ASBuildFlags                 BuildFlags;
     };
 
-    struct DZ_API TopLevelASUpdateDesc
-    {
+    struct DZ_API TopLevelASUpdateDesc{
 
     };
 

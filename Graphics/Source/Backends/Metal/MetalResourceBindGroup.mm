@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Metal/MetalResourceBindGroup.h>
+#include <DenOfIzGraphics/Backends/Metal/RayTracing/MetalTopLevelAS.h>
 
 using namespace DenOfIz;
 
@@ -88,6 +89,12 @@ IResourceBindGroup *MetalResourceBindGroup::Srv( const uint32_t binding, ITextur
     return this;
 }
 
+IResourceBindGroup *MetalResourceBindGroup::Srv( const uint32_t binding, ITopLevelAS *accelerationStructure )
+{
+    m_boundAccelerationStructures.emplace_back( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), accelerationStructure );
+    return this;
+}
+
 IResourceBindGroup *MetalResourceBindGroup::Uav( const uint32_t binding, IBufferResource *resource )
 {
     m_boundBuffers.emplace_back( GetSlot( binding, DescriptorBufferBindingType::UnorderedAccess ), resource );
@@ -108,7 +115,7 @@ IResourceBindGroup *MetalResourceBindGroup::Sampler( const uint32_t binding, ISa
 
 void MetalResourceBindGroup::EndUpdate( )
 {
-    size_t cbvSrvUavTableSize = m_boundBuffers.size( ) + m_boundTextures.size( );
+    size_t cbvSrvUavTableSize = m_boundAccelerationStructures.size( ) + m_boundBuffers.size( ) + m_boundTextures.size( );
     if ( m_desc.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
     {
         // Buffers will be bound separately
@@ -130,6 +137,10 @@ void MetalResourceBindGroup::EndUpdate( )
     {
         BindBuffer( item.first, item.second );
     }
+    for ( auto item : m_boundAccelerationStructures )
+    {
+        BindAccelerationStructure( item.first, item.second );
+    }
     for ( auto item : m_boundTextures )
     {
         BindTexture( item.first, item.second );
@@ -138,6 +149,25 @@ void MetalResourceBindGroup::EndUpdate( )
     {
         BindSampler( item.first, item.second );
     }
+}
+
+void MetalResourceBindGroup::BindAccelerationStructure( const ResourceBindingSlot &slot, ITopLevelAS *accelerationStructure )
+{
+    MetalTopLevelAS     *metalAS      = static_cast<MetalTopLevelAS *>( accelerationStructure );
+    MetalBufferResource *headerBuffer = metalAS->HeaderBuffer( );
+
+    m_buffers.emplace_back( headerBuffer, MTLRenderStageObject, MTLResourceUsageRead );
+    m_buffers.emplace_back( metalAS->MetalBuffer( ), MTLRenderStageObject, MTLResourceUsageRead );
+
+    const MetalBindingDesc &metalBinding = m_rootSignature->FindMetalBinding( slot );
+    if ( slot.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
+    {
+        m_rootParameterBindings.emplace_back( metalBinding.Parent.Reflection.TLABOffset, headerBuffer->Instance( ) );
+        return;
+    }
+
+    m_cbvSrvUavTable->Table.EncodeAccelerationStructure( headerBuffer->Instance( ), metalBinding.Parent.Reflection.DescriptorTableIndex );
+    UpdateDescriptorTable( metalBinding, m_cbvSrvUavTable.get( ) );
 }
 
 void MetalResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )

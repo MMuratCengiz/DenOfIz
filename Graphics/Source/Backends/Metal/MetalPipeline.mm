@@ -49,15 +49,16 @@ void MetalPipeline::CreateGraphicsPipeline( )
     const auto &shaders = m_desc.ShaderProgram->GetCompiledShaders( );
     for ( int i = 0; i < shaders.NumElements( ); ++i )
     {
-        const auto &shader     = shaders.GetElement( i );
-        std::string entryPoint = shader->EntryPoint.Get( );
+        const auto    &shader     = shaders.GetElement( i );
+        std::string    entryPoint = shader->EntryPoint.Get( );
+        id<MTLLibrary> library    = LoadLibrary( shader->Blob, shader->Path );
         switch ( shader->Stage )
         {
         case ShaderStage::Vertex:
-            vertexFunction = CreateShaderFunction( shader->Blob, shader->EntryPoint.Get( ) );
+            vertexFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
             break;
         case ShaderStage::Pixel:
-                fragmentFunction = CreateShaderFunction( shader->Blob, shader->EntryPoint.Get( ) );
+            fragmentFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
             break;
         default:
             LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage );
@@ -82,9 +83,9 @@ void MetalPipeline::CreateGraphicsPipeline( )
     pipelineStateDescriptor.vertexDescriptor = mtkInputLayout->GetVertexDescriptor( );
 
     int attachmentIdx = 0;
-    for ( int i = 0; i < m_desc.Rendering.RenderTargets.NumElements( ); ++i )
+    for ( int i = 0; i < m_desc.Graphics.RenderTargets.NumElements( ); ++i )
     {
-        const auto                                 &attachment           = m_desc.Rendering.RenderTargets.GetElement( i );
+        const auto                                 &attachment           = m_desc.Graphics.RenderTargets.GetElement( i );
         MTLRenderPipelineColorAttachmentDescriptor *metalColorAttachment = pipelineStateDescriptor.colorAttachments[ attachmentIdx ];
         metalColorAttachment.pixelFormat                                 = MetalEnumConverter::ConvertFormat( attachment.Format );
 
@@ -103,10 +104,10 @@ void MetalPipeline::CreateGraphicsPipeline( )
         metalColorAttachment.writeMask = blendDesc.RenderTargetWriteMask;
     }
 
-    pipelineStateDescriptor.depthAttachmentPixelFormat   = MetalEnumConverter::ConvertFormat( m_desc.Rendering.DepthStencilAttachmentFormat );
-    pipelineStateDescriptor.stencilAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Rendering.DepthStencilAttachmentFormat );
-    pipelineStateDescriptor.alphaToCoverageEnabled       = m_desc.Rendering.AlphaToCoverageEnable;
-    pipelineStateDescriptor.alphaToOneEnabled            = m_desc.Rendering.IndependentBlendEnable;
+    pipelineStateDescriptor.depthAttachmentPixelFormat   = MetalEnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
+    pipelineStateDescriptor.stencilAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
+    pipelineStateDescriptor.alphaToCoverageEnabled       = m_desc.Graphics.AlphaToCoverageEnable;
+    pipelineStateDescriptor.alphaToOneEnabled            = m_desc.Graphics.IndependentBlendEnable;
 
     NSError *error          = nullptr;
     m_graphicsPipelineState = [m_context->Device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
@@ -146,11 +147,12 @@ void MetalPipeline::CreateComputePipeline( )
     const auto &shaders = m_desc.ShaderProgram->GetCompiledShaders( );
     for ( int i = 0; i < shaders.NumElements( ); ++i )
     {
-        const auto &shader = shaders.GetElement( i );
+        const auto &shader  = shaders.GetElement( i );
+        auto        library = LoadLibrary( shader->Blob, shader->Path );
         switch ( shader->Stage )
         {
         case ShaderStage::Compute:
-            computeFunction = CreateShaderFunction( shader->Blob, shader->EntryPoint.Get( ) );
+            computeFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
             break;
         default:
             LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage );
@@ -188,11 +190,90 @@ void MetalPipeline::CreateComputePipeline( )
 
 void MetalPipeline::CreateRayTracingPipeline( )
 {
-    // TODO
+    MetalRootSignature *rootSignature   = static_cast<MetalRootSignature *>( m_desc.RootSignature );
+    auto                compiledShaders = m_desc.ShaderProgram->GetCompiledShaders( );
+
+    MTLComputePipelineDescriptor    *pipelineStateDescriptor        = [[MTLComputePipelineDescriptor alloc] init];
+    NSMutableArray<id<MTLFunction>> *functionHandles                = [NSMutableArray array];
+    uint32_t                         numVisibleFunctions            = 0;
+    uint32_t                         numCustomIntersectionFunctions = 0;
+    for ( uint32_t i = 0; i < compiledShaders.NumElements( ); ++i )
+    {
+        const auto     &shader      = compiledShaders.GetElement( i );
+        id<MTLLibrary>  library     = LoadLibrary( shader->Blob, shader->Path );
+        id<MTLFunction> mtlFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
+
+        switch ( shader->Stage )
+        {
+        case ShaderStage::ClosestHit:
+            m_intersectionExport.ClosestHit = ShaderFunction{ .Index = i, .Function = mtlFunction };
+        case ShaderStage::Raygen:
+        case ShaderStage::Miss:
+            ++numVisibleFunctions;
+            m_visibleFunctions[ shader->EntryPoint.Get( ) ] = ShaderFunction{ .Index = i, .Function = mtlFunction };
+            [functionHandles addObject:mtlFunction];
+            break;
+        case ShaderStage::AnyHit:
+            m_intersectionExport.HasAnyHit = true;
+            m_intersectionExport.AnyHit    = ShaderFunction{ .Index = 0, .Function = mtlFunction };
+            break;
+        case ShaderStage::Intersection:
+            m_intersectionExport.HasIntersection = true;
+            m_intersectionExport.Intersection    = ShaderFunction{ .Index = 0, .Function = mtlFunction };
+            break;
+        default:
+            LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage );
+            break;
+        }
+    }
+
+    MTLLinkedFunctions *linkedFunctions = [[MTLLinkedFunctions alloc] init];
+    [linkedFunctions setFunctions:functionHandles];
+    [pipelineStateDescriptor setLinkedFunctions:linkedFunctions];
+
+    id<MTLLibrary>  dispatchLibrary  = NewIndirectDispatchLibrary( );
+    id<MTLFunction> dispatchFunction = [dispatchLibrary newFunctionWithName:[NSString stringWithUTF8String:kIRRayDispatchIndirectionKernelName]];
+
+    [pipelineStateDescriptor setComputeFunction:dispatchFunction];
+
+    NSError *error         = nil;
+    m_computePipelineState = [m_context->Device newComputePipelineStateWithDescriptor:pipelineStateDescriptor options:MTLPipelineOptionNone reflection:nil error:&error];
+    if ( !m_computePipelineState )
+    {
+        DZ_LOG_NS_ERROR( "Failed to create pipeline state", error );
+    }
+
+    MTLVisibleFunctionTableDescriptor *vftDesc = [[MTLVisibleFunctionTableDescriptor alloc] init];
+    vftDesc.functionCount                      = compiledShaders.NumElements( );
+    m_visibleFunctionTable                     = [m_computePipelineState newVisibleFunctionTableWithDescriptor:vftDesc];
+
+    int shaderIndex = 0;
+    for ( auto &functions : m_visibleFunctions )
+    {
+        ShaderFunction &shaderFunction = functions.second;
+        shaderFunction.Handle          = [m_computePipelineState functionHandleWithFunction:shaderFunction.Function];
+        [m_visibleFunctionTable setFunction:shaderFunction.Handle atIndex:shaderIndex];
+    }
+    shaderIndex                            = 0;
+    m_intersectionExport.ClosestHit.Handle = [m_computePipelineState functionHandleWithFunction:m_intersectionExport.ClosestHit.Function];
+    if ( m_intersectionExport.HasAnyHit )
+    {
+        m_intersectionExport.AnyHit.Handle = [m_computePipelineState functionHandleWithFunction:m_intersectionExport.AnyHit.Function];
+    }
+    if ( m_intersectionExport.HasIntersection )
+    {
+        m_intersectionExport.Intersection.Handle = [m_computePipelineState functionHandleWithFunction:m_intersectionExport.Intersection.Function];
+    }
 }
 
-id<MTLFunction> MetalPipeline::CreateShaderFunction( IDxcBlob *&blob, const std::string &entryPoint )
+id<MTLLibrary> MetalPipeline::LoadLibrary( IDxcBlob *&blob, const std::string &shaderPath )
 {
+    auto existingLibrary = m_libraries.find( shaderPath );
+    if ( existingLibrary != m_libraries.end( ) )
+    {
+        return existingLibrary->second;
+    }
+
     NSError        *error      = nullptr;
     dispatch_data_t shaderData = dispatch_data_create( blob->GetBufferPointer( ), blob->GetBufferSize( ), NULL, DISPATCH_DATA_DESTRUCTOR_DEFAULT );
     id<MTLLibrary>  library    = [m_context->Device newLibraryWithData:shaderData error:&error];
@@ -201,8 +282,12 @@ id<MTLFunction> MetalPipeline::CreateShaderFunction( IDxcBlob *&blob, const std:
         DZ_LOG_NS_ERROR( "Error creating library", error );
         return nil;
     }
+    m_libraries[ shaderPath ] = library;
+    return library;
+}
 
-    // Create a function from the library
+id<MTLFunction> MetalPipeline::CreateShaderFunction( id<MTLLibrary> library, const std::string &entryPoint )
+{
     NSString       *entryPointName = [NSString stringWithUTF8String:entryPoint.c_str( )];
     id<MTLFunction> function       = [library newFunctionWithName:entryPointName];
     if ( function == nil )
@@ -210,6 +295,23 @@ id<MTLFunction> MetalPipeline::CreateShaderFunction( IDxcBlob *&blob, const std:
         LOG( ERROR ) << "Error creating function for entry point: " << entryPointName;
     }
     return function;
+}
+
+id<MTLLibrary> MetalPipeline::NewIndirectDispatchLibrary( )
+{
+    IRCompiler *pCompiler = IRCompilerCreate( );
+    IRCompilerSetMinimumDeploymentTarget( pCompiler, IROperatingSystem_macOS, "14.0.0" );
+    IRMetalLibBinary *metalLib = IRMetalLibBinaryCreate( );
+    IRMetalLibSynthesizeIndirectRayDispatchFunction( pCompiler, metalLib );
+
+    NSError       *pError = nullptr;
+    id<MTLLibrary> lib    = [m_context->Device newLibraryWithData:IRMetalLibGetBytecodeData( metalLib ) error:&pError];
+    assert( lib );
+
+    IRMetalLibBinaryDestroy( metalLib );
+    IRCompilerDestroy( pCompiler );
+
+    return lib;
 }
 
 void MetalPipeline::InitStencilFace( MTLStencilDescriptor *stencilDesc, const StencilFace &stencilFace )
@@ -240,4 +342,30 @@ const id<MTLRenderPipelineState> &MetalPipeline::GraphicsPipelineState( ) const
 const id<MTLComputePipelineState> &MetalPipeline::ComputePipelineState( ) const
 {
     return m_computePipelineState;
+}
+
+[[nodiscard]] const IntersectionExport &MetalPipeline::IntersectionExport( ) const
+{
+    return m_intersectionExport;
+}
+
+const ShaderFunction &MetalPipeline::FindVisibleShaderFunctionByName( const std::string &name ) const
+{
+    auto shaderFunction = m_visibleFunctions.find( name );
+    if ( shaderFunction == m_visibleFunctions.end( ) )
+    {
+        LOG( ERROR ) << "Shader function not found: " << name;
+        return { };
+    }
+    return shaderFunction->second;
+}
+
+id<MTLVisibleFunctionTable> MetalPipeline::VisibleFunctionTable( ) const
+{
+    return m_visibleFunctionTable;
+}
+
+id<MTLIntersectionFunctionTable> MetalPipeline::IntersectionFunctionTable( ) const
+{
+    return m_intersectionFunctionTable;
 }

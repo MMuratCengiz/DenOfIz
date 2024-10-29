@@ -18,9 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #import "Metal/Metal.h"
 #define IR_PRIVATE_IMPLEMENTATION
+#include <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
+#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalBottomLevelAS.h>
+#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderBindingTable.h>
+#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalTopLevelAS.h>
 #import <metal_irconverter/metal_irconverter.h>
 #import <metal_irconverter_runtime/metal_irconverter_runtime.h>
-#include <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
 
 using namespace DenOfIz;
 
@@ -148,6 +151,21 @@ ITextureResource *MetalLogicalDevice::CreateTextureResource( const TextureDesc &
 ISampler *MetalLogicalDevice::CreateSampler( const SamplerDesc &samplerDesc )
 {
     return new MetalSampler( m_context.get( ), samplerDesc );
+}
+
+IBottomLevelAS *MetalLogicalDevice::CreateBottomLevelAS( const BottomLevelASDesc &desc )
+{
+    return new MetalBottomLevelAS( m_context.get( ), desc );
+}
+
+ITopLevelAS *MetalLogicalDevice::CreateTopLevelAS( const TopLevelASDesc &desc )
+{
+    return new MetalTopLevelAS( m_context.get( ), desc );
+}
+
+IShaderBindingTable *MetalLogicalDevice::CreateShaderBindingTable( const ShaderBindingTableDesc &desc )
+{
+    return new MetalShaderBindingTable( m_context.get( ), desc );
 }
 
 void MetalLogicalDevice::WaitIdle( )

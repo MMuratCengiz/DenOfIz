@@ -18,8 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Cast.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
+#include <DenOfIzGraphics/Utilities/Cast.h>
+#include "MetalArgumentBuffer.h"
 #include "MetalBufferResource.h"
 #include "MetalContext.h"
 #include "MetalFence.h"
@@ -28,7 +29,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "MetalSemaphore.h"
 #include "MetalSwapChain.h"
 #include "MetalTextureResource.h"
-#include "MetalArgumentBuffer.h"
 
 namespace DenOfIz
 {
@@ -38,18 +38,20 @@ namespace DenOfIz
         Render,
         Compute,
         Blit,
+        AccelerationStructure,
         None
     };
 
     class MetalCommandList final : public ICommandList
     {
-        CommandListDesc              m_desc;
-        MetalContext                *m_context;
-        id<MTLCommandBuffer>         m_commandBuffer;
-        id<MTLRenderCommandEncoder>  m_renderEncoder;
-        id<MTLComputeCommandEncoder> m_computeEncoder;
-        id<MTLBlitCommandEncoder>    m_blitEncoder;
-        MetalEncoderType             m_activeEncoderType = MetalEncoderType::None;
+        CommandListDesc                            m_desc;
+        MetalContext                              *m_context;
+        id<MTLCommandBuffer>                       m_commandBuffer;
+        id<MTLRenderCommandEncoder>                m_renderEncoder;
+        id<MTLComputeCommandEncoder>               m_computeEncoder;
+        id<MTLBlitCommandEncoder>                  m_blitEncoder;
+        id<MTLAccelerationStructureCommandEncoder> m_accelerationStructureEncoder;
+        MetalEncoderType                           m_activeEncoderType = MetalEncoderType::None;
 
         // States:
         id<MTLBuffer>                        m_indexBuffer;
@@ -57,6 +59,7 @@ namespace DenOfIz
         uint64_t                             m_currentBufferOffset = 0;
         std::unique_ptr<MetalArgumentBuffer> m_argumentBuffer;
         MetalRootSignature                  *m_rootSignature;
+        MetalPipeline                       *m_pipeline;
         // --
 
     public:
@@ -67,7 +70,7 @@ namespace DenOfIz
         void BeginRendering( const RenderingDesc &renderingDesc ) override;
         void EndRendering( ) override;
         void Execute( const ExecuteDesc &executeDesc ) override;
-        void Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> & waitOnLocks ) override;
+        void Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> &waitOnLocks ) override;
         void BindPipeline( IPipeline *pipeline ) override;
         void BindVertexBuffer( IBufferResource *buffer ) override;
         void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType ) override;
@@ -82,6 +85,9 @@ namespace DenOfIz
         void CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionInfo ) override;
         void CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTexture ) override;
         void CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBuffer ) override;
+        void BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc ) override;
+        void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc ) override;
+        void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
 
     private:
         void BindTopLevelArgumentBuffer( );
