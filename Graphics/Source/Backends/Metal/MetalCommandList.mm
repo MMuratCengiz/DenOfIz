@@ -423,7 +423,6 @@ void MetalCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBo
 void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
     SwitchEncoder( MetalEncoderType::Compute );
-    BindTopLevelArgumentBuffer( );
 
     MetalShaderBindingTable *shaderBindingTable = static_cast<MetalShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
 
@@ -436,6 +435,7 @@ void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
     UseResource( shaderBindingTable->MetalBuffer( ) );
     UseResource( m_pipeline->VisibleFunctionTable( ) );
     UseResource( m_pipeline->IntersectionFunctionTable( ) );
+    UseResource( m_argumentBuffer->Buffer( ) );
 
     IRDispatchRaysDescriptor irDispatchRaysDesc;
     irDispatchRaysDesc.RayGenerationShaderRecord = shaderBindingTable->RayGenerationShaderRange( );
@@ -461,6 +461,7 @@ void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 
     MTLSize gridSize = MTLSize( dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth );
     [m_computeEncoder dispatchThreadgroups:gridSize threadsPerThreadgroup:threadGroupSize];
+    TopLevelArgumentBufferNextOffset( );
 }
 
 void MetalCommandList::BindTopLevelArgumentBuffer( )

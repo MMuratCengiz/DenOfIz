@@ -28,7 +28,7 @@ namespace DenOfIz
 
     struct ShaderFunction
     {
-        uint32_t              Index;
+        uint64_t              Index;
         id<MTLFunction>       Function;
         id<MTLFunctionHandle> Handle;
     };

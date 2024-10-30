@@ -76,7 +76,6 @@ namespace DenOfIz
     class DZ_API IBottomLevelAS
     {
     public:
-        virtual ~IBottomLevelAS( )                                       = default;
-        virtual IBufferResource *Buffer( ) const                         = 0;
+        virtual ~IBottomLevelAS( ) = default;
     };
 } // namespace DenOfIz

@@ -195,22 +195,24 @@ void MetalPipeline::CreateRayTracingPipeline( )
 
     MTLComputePipelineDescriptor    *pipelineStateDescriptor        = [[MTLComputePipelineDescriptor alloc] init];
     NSMutableArray<id<MTLFunction>> *functionHandles                = [NSMutableArray array];
-    uint32_t                         numVisibleFunctions            = 0;
+    uint32_t                         numVisibleFunctions            = 1; // Null function
     uint32_t                         numCustomIntersectionFunctions = 0;
+    m_visibleFunctions[ "Null" ]                                    = ShaderFunction{ .Index = 0, .Function = nullptr };
     for ( uint32_t i = 0; i < compiledShaders.NumElements( ); ++i )
     {
         const auto     &shader      = compiledShaders.GetElement( i );
         id<MTLLibrary>  library     = LoadLibrary( shader->Blob, shader->Path );
         id<MTLFunction> mtlFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
 
+        uint64_t shaderIndex = i + 1; // Null function is at index 0
         switch ( shader->Stage )
         {
         case ShaderStage::ClosestHit:
-            m_intersectionExport.ClosestHit = ShaderFunction{ .Index = i, .Function = mtlFunction };
+            m_intersectionExport.ClosestHit = ShaderFunction{ .Index = shaderIndex, .Function = mtlFunction };
         case ShaderStage::Raygen:
         case ShaderStage::Miss:
             ++numVisibleFunctions;
-            m_visibleFunctions[ shader->EntryPoint.Get( ) ] = ShaderFunction{ .Index = i, .Function = mtlFunction };
+            m_visibleFunctions[ shader->EntryPoint.Get( ) ] = ShaderFunction{ .Index = shaderIndex, .Function = mtlFunction };
             [functionHandles addObject:mtlFunction];
             break;
         case ShaderStage::AnyHit:
@@ -234,7 +236,15 @@ void MetalPipeline::CreateRayTracingPipeline( )
     id<MTLLibrary>  dispatchLibrary  = NewIndirectDispatchLibrary( );
     id<MTLFunction> dispatchFunction = [dispatchLibrary newFunctionWithName:[NSString stringWithUTF8String:kIRRayDispatchIndirectionKernelName]];
 
-    [pipelineStateDescriptor setComputeFunction:dispatchFunction];
+    pipelineStateDescriptor.label           = @"RayTracing Pipeline#";
+    pipelineStateDescriptor.computeFunction = dispatchFunction;
+
+    MTLNewComputePipelineStateCompletionHandler completionHandler = ^( id<MTLComputePipelineState> pipelineState, NSError *err ) {
+      if ( err != nil )
+      {
+          DZ_LOG_NS_ERROR( "Error creating pipeline state", err );
+      }
+    };
 
     NSError *error         = nil;
     m_computePipelineState = [m_context->Device newComputePipelineStateWithDescriptor:pipelineStateDescriptor options:MTLPipelineOptionNone reflection:nil error:&error];
@@ -250,8 +260,15 @@ void MetalPipeline::CreateRayTracingPipeline( )
     for ( auto &functions : m_visibleFunctions )
     {
         ShaderFunction &shaderFunction = functions.second;
-        shaderFunction.Handle          = [m_computePipelineState functionHandleWithFunction:shaderFunction.Function];
-        [m_visibleFunctionTable setFunction:shaderFunction.Handle atIndex:shaderFunction.Index];
+        if ( shaderFunction.Function == nullptr )
+        {
+            [m_visibleFunctionTable setFunction:nil atIndex:shaderFunction.Index];
+        }
+        else
+        {
+            shaderFunction.Handle = [m_computePipelineState functionHandleWithFunction:shaderFunction.Function];
+            [m_visibleFunctionTable setFunction:shaderFunction.Handle atIndex:shaderFunction.Index];
+        }
     }
 
     MTLIntersectionFunctionTableDescriptor *iftDesc = [[MTLIntersectionFunctionTableDescriptor alloc] init];

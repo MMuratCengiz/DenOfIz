@@ -300,13 +300,14 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
     commandList->Begin( );
     commandList->BuildBottomLevelAS( BuildBottomLevelASDesc{ m_bottomLevelAS.get( ) } );
     commandList->PipelineBarrier( PipelineBarrierDesc{ }.MemoryBarrier( MemoryBarrierDesc{
-        .BufferResource = m_bottomLevelAS->Buffer( ), .OldState = ResourceUsage::AccelerationStructureWrite, .NewState = ResourceUsage::AccelerationStructureRead } ) );
+        .BottomLevelAS = m_bottomLevelAS.get( ), .OldState = ResourceUsage::AccelerationStructureWrite, .NewState = ResourceUsage::AccelerationStructureRead } ) );
     commandList->BuildTopLevelAS( BuildTopLevelASDesc{ m_topLevelAS.get( ) } );
     ExecuteDesc executeDesc{ };
     executeDesc.Notify = syncFence.get( );
     commandList->Execute( executeDesc );
 
     syncFence->Wait( );
+    sleep( 1 );
 }
 
 void RayTracedTriangleExample::CreateShaderBindingTable( )

@@ -25,7 +25,7 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
 {
     NSMutableArray *geometryDescriptors = [NSMutableArray arrayWithCapacity:desc.Geometries.NumElements( )];
 
-    MTLAccelerationStructureInstanceOptions options = MTLAccelerationStructureInstanceOptionNone;
+    m_options = MTLAccelerationStructureInstanceOptionNone;
     for ( size_t i = 0; i < desc.Geometries.NumElements( ); ++i )
     {
         const ASGeometryDesc &geometry = desc.Geometries.GetElement( i );
@@ -45,7 +45,7 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
 
         if ( geometry.Flags.IsSet( GeometryFlags::Opaque ) )
         {
-            options |= MTLAccelerationStructureInstanceOptionOpaque;
+            m_options |= MTLAccelerationStructureInstanceOptionOpaque;
         }
     }
 
@@ -62,18 +62,10 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
     m_geometryDescriptors = [geometryDescriptors copy];
 
     m_descriptor                     = [MTLPrimitiveAccelerationStructureDescriptor descriptor];
-    m_descriptor.usage               = MTLAccelerationStructureUsagePreferFastBuild;
+    m_descriptor.usage               = usage;
     m_descriptor.geometryDescriptors = m_geometryDescriptors;
 
     MTLAccelerationStructureSizes asSize = [m_context->Device accelerationStructureSizesWithDescriptor:m_descriptor];
-
-    BufferDesc bufferDesc   = { };
-    bufferDesc.Descriptor   = BitSet( ResourceDescriptor::RWBuffer ) | ResourceDescriptor::AccelerationStructure;
-    bufferDesc.HeapType     = HeapType::GPU;
-    bufferDesc.NumBytes     = asSize.accelerationStructureSize;
-    bufferDesc.InitialUsage = ResourceUsage::AccelerationStructureWrite;
-    bufferDesc.DebugName    = "Bottom Level Acceleration Structure";
-    m_buffer                = std::make_unique<MetalBufferResource>( m_context, bufferDesc );
 
     BufferDesc scratchBufferDesc   = { };
     scratchBufferDesc.HeapType     = HeapType::GPU;
@@ -82,8 +74,7 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
     scratchBufferDesc.InitialUsage = ResourceUsage::UnorderedAccess;
     scratchBufferDesc.DebugName    = "Bottom Level Acceleration Structure Scratch";
     m_scratch                      = std::make_unique<MetalBufferResource>( m_context, scratchBufferDesc );
-
-    m_accelerationStructure = [context->Device newAccelerationStructureWithSize:asSize.accelerationStructureSize];
+    m_accelerationStructure        = [context->Device newAccelerationStructureWithSize:asSize.accelerationStructureSize];
 }
 
 MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &triangle )
@@ -140,16 +131,6 @@ MTLAccelerationStructureBoundingBoxGeometryDescriptor *MetalBottomLevelAS::Initi
 id<MTLAccelerationStructure> MetalBottomLevelAS::AccelerationStructure( ) const
 {
     return m_accelerationStructure;
-}
-
-MetalBufferResource *MetalBottomLevelAS::MetalBuffer( ) const
-{
-    return m_buffer.get( );
-}
-
-IBufferResource *MetalBottomLevelAS::Buffer( ) const
-{
-    return m_buffer.get( );
 }
 
 MetalBufferResource *MetalBottomLevelAS::Scratch( ) const

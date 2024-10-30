@@ -32,17 +32,18 @@ void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
     uint32_t numHitGroups     = desc.NumInstances * desc.NumGeometries * desc.NumRayTypes;
     auto     hitGroupNumBytes = numHitGroups * sizeof( IRShaderIdentifier );
     m_numBufferBytes =
-        desc.NumRayGenerationShaders * sizeof( IRShaderIdentifier ) + desc.NumGeometries * sizeof( IRShaderIdentifier ) + desc.NumMissShaders * sizeof( IRShaderIdentifier );
+        desc.NumRayGenerationShaders * sizeof( IRShaderIdentifier ) + numHitGroups * sizeof( IRShaderIdentifier ) + desc.NumMissShaders * sizeof( IRShaderIdentifier );
 
     m_buffer = [m_context->Device newBufferWithLength:m_numBufferBytes options:MTLResourceStorageModeShared];
     [m_buffer setLabel:@"Shader Binding Table"];
 
     m_mappedMemory = static_cast<IRShaderIdentifier *>( [m_buffer contents] );
 
-    m_rayGenerationShaderRange.StartAddress = m_buffer.gpuAddress;
+    int nullShaderOffset = sizeof( IRShaderIdentifier );
+    m_rayGenerationShaderRange.StartAddress = m_buffer.gpuAddress + nullShaderOffset;
     m_rayGenerationShaderRange.SizeInBytes  = desc.NumRayGenerationShaders * sizeof( IRShaderIdentifier );
 
-    m_hitGroupOffset                    = m_rayGenerationShaderRange.SizeInBytes;
+    m_hitGroupOffset                    = m_rayGenerationShaderRange.SizeInBytes + nullShaderOffset;
     m_hitGroupShaderRange.StartAddress  = m_buffer.gpuAddress + m_hitGroupOffset;
     m_hitGroupShaderRange.SizeInBytes   = hitGroupNumBytes;
     m_hitGroupShaderRange.StrideInBytes = sizeof( IRShaderIdentifier );
@@ -56,7 +57,7 @@ void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
 void MetalShaderBindingTable::BindRayGenerationShader( const RayGenerationBindingDesc &desc )
 {
     const ShaderFunction &function = m_pipeline->FindVisibleShaderFunctionByName( desc.ShaderName.Get( ) );
-    IRShaderIdentifierInit( &m_mappedMemory[ 0 ], function.Index );
+    IRShaderIdentifierInit( &m_mappedMemory[ 1 ], function.Index );
 }
 
 void MetalShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )

@@ -29,7 +29,6 @@ namespace DenOfIz
         MetalContext                                          *m_context;
         BottomLevelASDesc                                      m_desc;
         std::unique_ptr<MetalBufferResource>                   m_scratch;
-        std::unique_ptr<MetalBufferResource>                   m_buffer;
         id<MTLAccelerationStructure>                           m_accelerationStructure;
         MTLPrimitiveAccelerationStructureDescriptor           *m_descriptor;
         NSArray<MTLAccelerationStructureGeometryDescriptor *> *m_geometryDescriptors;
@@ -40,8 +39,6 @@ namespace DenOfIz
         ~MetalBottomLevelAS( ) override = default;
 
         [[nodiscard]] id<MTLAccelerationStructure>            AccelerationStructure( ) const;
-        [[nodiscard]] MetalBufferResource                    *MetalBuffer( ) const;
-        [[nodiscard]] IBufferResource                        *Buffer( ) const override;
         [[nodiscard]] MetalBufferResource                    *Scratch( ) const;
         [[nodiscard]] MTLAccelerationStructureDescriptor     *Descriptor( );
         [[nodiscard]] MTLAccelerationStructureInstanceOptions Options( ) const;

@@ -45,8 +45,6 @@ namespace DenOfIz
         ~MetalTopLevelAS( ) override = default;
 
         [[nodiscard]] id<MTLAccelerationStructure>                AccelerationStructure( ) const;
-        [[nodiscard]] IBufferResource                            *Buffer( ) const override;
-        [[nodiscard]] MetalBufferResource                        *MetalBuffer( ) const;
         [[nodiscard]] MetalBufferResource                        *HeaderBuffer( ) const;
         size_t                                                    NumInstances( ) const;
         [[nodiscard]] const MetalBufferResource                  *InstanceBuffer( ) const;
