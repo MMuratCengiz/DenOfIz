@@ -60,8 +60,6 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
         m_indirectResources.push_back( blas->AccelerationStructure( ) );
         m_indirectResources.push_back( blas->MetalBuffer( )->Instance( ) );
 
-        //        memcpy( &instance->transformationMatrix.columns[0], transformData, 12 * sizeof( float ) );
-
         m_contributionsToHitGroupIndices.emplace_back( instanceDesc.ContributionToHitGroupIndex );
     }
 
@@ -77,11 +75,11 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
     IRRaytracingSetAccelerationStructure( headerBufferContents, m_accelerationStructure.gpuResourceID, headerBufferContents + sizeof( IRRaytracingAccelerationStructureGPUHeader ),
                                           m_contributionsToHitGroupIndices.data( ), m_contributionsToHitGroupIndices.size( ) );
     // Acceleration Structure Configuration
-    m_descriptor                                 = [MTLInstanceAccelerationStructureDescriptor descriptor];
-    m_descriptor.instancedAccelerationStructures = m_blasList;
-    m_descriptor.instanceDescriptorBuffer        = instanceBuffer;
-    m_descriptor.instanceCount                   = desc.Instances.NumElements( );
-    m_descriptor.usage                           = MTLAccelerationStructureUsagePreferFastBuild;
+    m_descriptor                                    = [MTLInstanceAccelerationStructureDescriptor descriptor];
+    m_descriptor.instancedAccelerationStructures    = m_blasList;
+    m_descriptor.instanceDescriptorBuffer           = instanceBuffer;
+    m_descriptor.instanceCount                      = desc.Instances.NumElements( );
+    m_descriptor.usage                              = MTLAccelerationStructureUsagePreferFastBuild;
 
     MTLAccelerationStructureSizes asSize = [m_context->Device accelerationStructureSizesWithDescriptor:m_descriptor];
 

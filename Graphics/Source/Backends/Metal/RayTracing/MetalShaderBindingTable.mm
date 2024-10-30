@@ -39,19 +39,16 @@ void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
 
     m_mappedMemory = static_cast<IRShaderIdentifier *>( [m_buffer contents] );
 
-    MTLIntersectionFunctionTableDescriptor *iftDesc = [[MTLIntersectionFunctionTableDescriptor alloc] init];
-    iftDesc.functionCount                           = numHitGroups;
-    m_intersectionFunctionTable                     = [m_pipeline->ComputePipelineState( ) newIntersectionFunctionTableWithDescriptor:iftDesc];
-
     m_rayGenerationShaderRange.StartAddress = m_buffer.gpuAddress;
     m_rayGenerationShaderRange.SizeInBytes  = desc.NumRayGenerationShaders * sizeof( IRShaderIdentifier );
 
-    uint64_t hitGroupOffset             = m_rayGenerationShaderRange.SizeInBytes;
-    m_hitGroupShaderRange.StartAddress  = m_buffer.gpuAddress + hitGroupOffset;
+    m_hitGroupOffset                    = m_rayGenerationShaderRange.SizeInBytes;
+    m_hitGroupShaderRange.StartAddress  = m_buffer.gpuAddress + m_hitGroupOffset;
     m_hitGroupShaderRange.SizeInBytes   = hitGroupNumBytes;
     m_hitGroupShaderRange.StrideInBytes = sizeof( IRShaderIdentifier );
 
-    m_missShaderRange.StartAddress  = m_buffer.gpuAddress + hitGroupOffset + hitGroupNumBytes;
+    m_missGroupOffset               = m_hitGroupOffset + hitGroupNumBytes;
+    m_missShaderRange.StartAddress  = m_buffer.gpuAddress + m_missGroupOffset;
     m_missShaderRange.SizeInBytes   = desc.NumMissShaders * sizeof( IRShaderIdentifier );
     m_missShaderRange.StrideInBytes = sizeof( IRShaderIdentifier );
 }
@@ -59,9 +56,7 @@ void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
 void MetalShaderBindingTable::BindRayGenerationShader( const RayGenerationBindingDesc &desc )
 {
     const ShaderFunction &function = m_pipeline->FindVisibleShaderFunctionByName( desc.ShaderName.Get( ) );
-    [m_visibleFunctionTable setFunction:function.Handle atIndex:function.Index];
-
-    IRShaderIdentifierInit( &m_mappedMemory[ function.Index ], function.Index );
+    IRShaderIdentifierInit( &m_mappedMemory[ 0 ], function.Index );
 }
 
 void MetalShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
@@ -74,20 +69,21 @@ void MetalShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     const uint32_t instanceOffset = desc.InstanceIndex * m_desc.SizeDesc.NumGeometries * m_desc.SizeDesc.NumRayTypes;
     const uint32_t geometryOffset = desc.GeometryIndex * m_desc.SizeDesc.NumRayTypes;
     const uint32_t rayTypeOffset  = desc.RayTypeIndex;
-    const uint32_t totalOffset    = instanceOffset + geometryOffset + rayTypeOffset;
+    const uint32_t offset         = m_hitGroupOffset + ( instanceOffset + geometryOffset + rayTypeOffset ) * sizeof( IRShaderIdentifier );
 
     const IntersectionExport &intersectionExport = m_pipeline->IntersectionExport( );
 
-    IRShaderIdentifierInit( &m_mappedMemory[ totalOffset ], intersectionExport.ClosestHit.Index );
+    uint32_t indexedOffset = offset / sizeof( IRShaderIdentifier );
+    IRShaderIdentifierInit( &m_mappedMemory[ indexedOffset ], intersectionExport.ClosestHit.Index );
     uint32_t index = 1;
     if ( intersectionExport.HasAnyHit )
     {
-        IRShaderIdentifierInitWithCustomIntersection( &m_mappedMemory[ totalOffset + index ], intersectionExport.ClosestHit.Index, intersectionExport.AnyHit.Index );
+        IRShaderIdentifierInitWithCustomIntersection( &m_mappedMemory[ offset + index ], intersectionExport.ClosestHit.Index, intersectionExport.AnyHit.Index );
         index++;
     }
     if ( intersectionExport.HasIntersection )
     {
-        IRShaderIdentifierInitWithCustomIntersection( &m_mappedMemory[ totalOffset + index ], intersectionExport.ClosestHit.Index, intersectionExport.Intersection.Index );
+        IRShaderIdentifierInitWithCustomIntersection( &m_mappedMemory[ offset + index ], intersectionExport.ClosestHit.Index, intersectionExport.Intersection.Index );
     }
 }
 
@@ -143,8 +139,11 @@ bool MetalShaderBindingTable::BindHitGroupRecursive( const HitGroupBindingDesc &
 
 void MetalShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 {
+    uint32_t offset = m_missGroupOffset + desc.RayTypeIndex * sizeof( IRShaderIdentifier );
+    uint32_t indexedOffset = offset / sizeof( IRShaderIdentifier );
+
     const ShaderFunction &function = m_pipeline->FindVisibleShaderFunctionByName( desc.ShaderName.Get( ) );
-    IRShaderIdentifierInit( &m_mappedMemory[ function.Index ], function.Index );
+    IRShaderIdentifierInit( &m_mappedMemory[ indexedOffset ], function.Index );
 }
 
 void MetalShaderBindingTable::Build( )
@@ -166,13 +165,13 @@ const IRVirtualAddressRangeAndStride &MetalShaderBindingTable::MissShaderRange( 
     return m_missShaderRange;
 }
 
+const id<MTLBuffer> MetalShaderBindingTable::MetalBuffer( ) const
+{
+    return m_buffer;
+}
+
 IBufferResource *MetalShaderBindingTable::Buffer( ) const
 {
     //
     return nil;
-}
-
-const id<MTLBuffer> MetalShaderBindingTable::MetalBuffer( ) const
-{
-    return m_buffer;
 }

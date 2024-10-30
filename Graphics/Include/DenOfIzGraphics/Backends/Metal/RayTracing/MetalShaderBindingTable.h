@@ -27,18 +27,19 @@ namespace DenOfIz
     class MetalShaderBindingTable : public IShaderBindingTable
     {
     private:
-        MetalContext                    *m_context;
-        MetalPipeline                   *m_pipeline;
-        id<MTLIntersectionFunctionTable> m_intersectionFunctionTable;
-        id<MTLVisibleFunctionTable>      m_visibleFunctionTable;
-        ShaderBindingTableDesc           m_desc;
-        size_t                           m_numBufferBytes;
-        id<MTLBuffer>                    m_buffer;
-        IRShaderIdentifier              *m_mappedMemory;
+        MetalContext          *m_context;
+        MetalPipeline         *m_pipeline;
+        ShaderBindingTableDesc m_desc;
+        size_t                 m_numBufferBytes;
+        id<MTLBuffer>          m_buffer;
+        IRShaderIdentifier    *m_mappedMemory;
 
         IRVirtualAddressRange          m_rayGenerationShaderRange;
         IRVirtualAddressRangeAndStride m_hitGroupShaderRange;
         IRVirtualAddressRangeAndStride m_missShaderRange;
+
+        uint32_t m_missGroupOffset = 0;
+        uint32_t m_hitGroupOffset  = 0;
 
     public:
         MetalShaderBindingTable( MetalContext *context, const ShaderBindingTableDesc &desc );

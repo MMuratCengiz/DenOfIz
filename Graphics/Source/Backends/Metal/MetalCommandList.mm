@@ -434,6 +434,8 @@ void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
     }
 
     UseResource( shaderBindingTable->MetalBuffer( ) );
+    UseResource( m_pipeline->VisibleFunctionTable( ) );
+    UseResource( m_pipeline->IntersectionFunctionTable( ) );
 
     IRDispatchRaysDescriptor irDispatchRaysDesc;
     irDispatchRaysDesc.RayGenerationShaderRecord = shaderBindingTable->RayGenerationShaderRange( );
@@ -446,7 +448,7 @@ void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 
     IRDispatchRaysArgument dispatchRaysArgs;
     dispatchRaysArgs.DispatchRaysDesc          = irDispatchRaysDesc;
-    dispatchRaysArgs.GRS                       = shaderBindingTable->MetalBuffer( ).gpuAddress;
+    dispatchRaysArgs.GRS                       = m_argumentBuffer->Buffer( ).gpuAddress + m_currentBufferOffset;
     dispatchRaysArgs.ResDescHeap               = 0;
     dispatchRaysArgs.SmpDescHeap               = 0;
     dispatchRaysArgs.VisibleFunctionTable      = m_pipeline->VisibleFunctionTable( ).gpuResourceID;
