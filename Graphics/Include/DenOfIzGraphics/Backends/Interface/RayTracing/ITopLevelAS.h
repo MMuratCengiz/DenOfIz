@@ -30,7 +30,7 @@ namespace DenOfIz
         InteropArray<float> Transform; // TODO: InteropArray so it can be used in other languages interop, find a way to force size
         uint32_t            ContributionToHitGroupIndex;
         uint32_t            ID;
-        uint32_t            Mask = 1;
+        uint32_t            Mask = 0xFF;
     };
     template class DZ_API InteropArray<ASInstanceDesc>;
 

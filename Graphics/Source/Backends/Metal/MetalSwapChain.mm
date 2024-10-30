@@ -49,8 +49,6 @@ uint32_t MetalSwapChain::AcquireNextImage( ISemaphore *imageAvailableSemaphore )
         auto            layer     = (CAMetalLayer *)m_view.layer;
         MetalSemaphore *semaphore = static_cast<MetalSemaphore *>( imageAvailableSemaphore );
         m_currentDrawable         = [layer nextDrawable];
-        m_currentFrame            = ( m_currentFrame + 1 ) % m_desc.NumBuffers;
-
         m_renderTargets[ m_currentFrame ]->UpdateTexture( m_drawableDesc, m_currentDrawable.texture );
     }
     return m_currentFrame;
@@ -107,7 +105,7 @@ id<MTLDrawable> MetalSwapChain::Drawable( )
     return m_currentDrawable;
 }
 
-void MetalSwapChain::Present( const InteropArray<ISemaphore *> & waitOnSemaphores )
+void MetalSwapChain::Present( const InteropArray<ISemaphore *> &waitOnSemaphores )
 {
     @autoreleasepool
     {
@@ -116,5 +114,6 @@ void MetalSwapChain::Present( const InteropArray<ISemaphore *> & waitOnSemaphore
         [m_presentCommandBuffer commit];
         m_presentCommandBuffer = nil;
         m_currentDrawable      = nil;
+        m_currentFrame         = ( m_currentFrame + 1 ) % m_desc.NumBuffers;
     }
 }

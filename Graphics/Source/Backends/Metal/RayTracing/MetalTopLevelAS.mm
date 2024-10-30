@@ -43,12 +43,12 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
 
         [m_blasList addObject:blas->AccelerationStructure( )];
 
-        MTLAccelerationStructureInstanceDescriptor *instance = &m_instanceDescriptors[ i ];
-        instance->intersectionFunctionTableOffset            = i;
-        instance->accelerationStructureIndex                 = i;
-        instance->options                                    = blas->Options( );
-        instance->mask                                       = instanceDesc.Mask;
-
+        MTLAccelerationStructureInstanceDescriptor *instance              = &m_instanceDescriptors[ i ];
+        instance->intersectionFunctionTableOffset                         = i;
+        instance->accelerationStructureIndex                              = i;
+        instance->options                                                 = blas->Options( );
+        instance->mask                                                    = instanceDesc.Mask;
+        
         const float *transformData = instanceDesc.Transform.Data( );
         for ( int row = 0; row < 3; ++row )
         {
@@ -57,8 +57,9 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
                 instance->transformationMatrix.columns[ col ][ row ] = transformData[ row * 4 + col ];
             }
         }
-        m_indirectResources.push_back( blas->AccelerationStructure( ) );
-        m_indirectResources.push_back( blas->Scratch( )->Instance( ) );
+
+        const std::vector<id<MTLResource>> &blasResources = blas->Resources( );
+        m_indirectResources.insert( m_indirectResources.end( ), blasResources.begin( ), blasResources.end( ) );
 
         m_contributionsToHitGroupIndices.emplace_back( instanceDesc.ContributionToHitGroupIndex );
     }
@@ -93,6 +94,7 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
     m_indirectResources.push_back( m_scratch->Instance( ) );
 
     m_accelerationStructure = [context->Device newAccelerationStructureWithDescriptor:m_descriptor];
+    [m_accelerationStructure setLabel:@"Top Level Acceleration Structure"];
     m_indirectResources.push_back( m_accelerationStructure );
 }
 

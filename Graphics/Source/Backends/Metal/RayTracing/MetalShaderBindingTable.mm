@@ -32,6 +32,7 @@ void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
     uint32_t numHitGroups     = desc.NumInstances * desc.NumGeometries * desc.NumRayTypes;
     auto     hitGroupNumBytes = numHitGroups * sizeof( IRShaderIdentifier );
     m_numBufferBytes =
+        sizeof( IRShaderIdentifier ) /* Null Function*/+
         desc.NumRayGenerationShaders * sizeof( IRShaderIdentifier ) + numHitGroups * sizeof( IRShaderIdentifier ) + desc.NumMissShaders * sizeof( IRShaderIdentifier );
 
     m_buffer = [m_context->Device newBufferWithLength:m_numBufferBytes options:MTLResourceStorageModeShared];

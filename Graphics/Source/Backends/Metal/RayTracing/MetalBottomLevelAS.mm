@@ -33,10 +33,10 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
         switch ( geometry.Type )
         {
         case ASGeometryType::Triangles:
-            [geometryDescriptors addObject:InitializeTriangles( geometry.Triangles )];
+            [geometryDescriptors addObject:InitializeTriangles( geometry )];
             break;
         case ASGeometryType::AABBs:
-            [geometryDescriptors addObject:InitializeAABBs( geometry.AABBs )];
+            [geometryDescriptors addObject:InitializeAABBs( geometry )];
             break;
         default:
             LOG( ERROR ) << "Invalid geometry type: " << static_cast<int>( geometry.Type );
@@ -74,11 +74,16 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
     scratchBufferDesc.InitialUsage = ResourceUsage::UnorderedAccess;
     scratchBufferDesc.DebugName    = "Bottom Level Acceleration Structure Scratch";
     m_scratch                      = std::make_unique<MetalBufferResource>( m_context, scratchBufferDesc );
-    m_accelerationStructure        = [context->Device newAccelerationStructureWithSize:asSize.accelerationStructureSize];
+    m_resources.push_back( m_scratch->Instance( ) );
+    m_accelerationStructure = [context->Device newAccelerationStructureWithDescriptor:m_descriptor];
+    [m_accelerationStructure setLabel:@"Bottom Level Acceleration Structure"];
+    m_resources.push_back( m_accelerationStructure );
 }
 
-MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &triangle )
+MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::InitializeTriangles( const ASGeometryDesc &geometry )
 {
+    const ASGeometryTriangleDesc &triangle = geometry.Triangles;
+
     MTLAccelerationStructureTriangleGeometryDescriptor *triangleDesc = [MTLAccelerationStructureTriangleGeometryDescriptor descriptor];
 
     MetalBufferResource *vertexBuffer = (MetalBufferResource *)triangle.VertexBuffer;
@@ -88,6 +93,7 @@ MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::Initiali
         return nil;
     }
 
+    m_resources.push_back( vertexBuffer->Instance( ) );
     triangleDesc.vertexBuffer = vertexBuffer->Instance( );
     triangleDesc.vertexStride = triangle.VertexStride;
     triangleDesc.vertexFormat = MetalEnumConverter::ConvertFormatToAttributeFormat( triangle.VertexFormat );
@@ -106,13 +112,20 @@ MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::Initiali
         triangleDesc.indexBuffer   = indexBuffer->Instance( );
         triangleDesc.indexType     = triangle.IndexType == IndexType::Uint16 ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32;
         triangleDesc.triangleCount = triangle.NumIndices / 3;
+        m_resources.push_back( indexBuffer->Instance( ) );
+    }
+
+    if ( geometry.Flags.IsSet( GeometryFlags::Opaque ) )
+    {
+        triangleDesc.opaque = YES;
     }
 
     return triangleDesc;
 }
 
-MTLAccelerationStructureBoundingBoxGeometryDescriptor *MetalBottomLevelAS::InitializeAABBs( const ASGeometryAABBDesc &aabb )
+MTLAccelerationStructureBoundingBoxGeometryDescriptor *MetalBottomLevelAS::InitializeAABBs( const ASGeometryDesc &geometry )
 {
+    const ASGeometryAABBDesc &aabb = geometry.AABBs;
     MTLAccelerationStructureBoundingBoxGeometryDescriptor *aabbDesc = [MTLAccelerationStructureBoundingBoxGeometryDescriptor descriptor];
 
     MetalBufferResource *aabbBuffer = (MetalBufferResource *)aabb.Buffer;
@@ -122,9 +135,16 @@ MTLAccelerationStructureBoundingBoxGeometryDescriptor *MetalBottomLevelAS::Initi
         return nil;
     }
 
+    m_resources.push_back( aabbBuffer->Instance( ) );
     aabbDesc.boundingBoxBuffer = aabbBuffer->Instance( );
     aabbDesc.boundingBoxStride = aabb.Stride;
     aabbDesc.boundingBoxCount  = aabb.NumAABBs;
+
+    if ( geometry.Flags.IsSet( GeometryFlags::Opaque ) )
+    {
+        aabbDesc.opaque = YES;
+    }
+
     return aabbDesc;
 }
 
@@ -146,4 +166,9 @@ MTLAccelerationStructureDescriptor *MetalBottomLevelAS::Descriptor( )
 MTLAccelerationStructureInstanceOptions MetalBottomLevelAS::Options( ) const
 {
     return m_options;
+}
+
+[[nodiscard]] const std::vector<id<MTLResource>> &MetalBottomLevelAS::Resources( ) const
+{
+    return m_resources;
 }
