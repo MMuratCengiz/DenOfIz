@@ -247,33 +247,28 @@ void MetalPipeline::CreateRayTracingPipeline( )
     vftDesc.functionCount                      = numVisibleFunctions;
     m_visibleFunctionTable                     = [m_computePipelineState newVisibleFunctionTableWithDescriptor:vftDesc];
 
-    int shaderIndex = 0;
     for ( auto &functions : m_visibleFunctions )
     {
         ShaderFunction &shaderFunction = functions.second;
         shaderFunction.Handle          = [m_computePipelineState functionHandleWithFunction:shaderFunction.Function];
-        [m_visibleFunctionTable setFunction:shaderFunction.Handle atIndex:shaderIndex];
-        ++shaderIndex;
+        [m_visibleFunctionTable setFunction:shaderFunction.Handle atIndex:shaderFunction.Index];
     }
 
     MTLIntersectionFunctionTableDescriptor *iftDesc = [[MTLIntersectionFunctionTableDescriptor alloc] init];
-    iftDesc.functionCount = numCustomIntersectionFunctions;
-    m_intersectionFunctionTable = [m_computePipelineState newIntersectionFunctionTableWithDescriptor:iftDesc];
+    iftDesc.functionCount                           = numCustomIntersectionFunctions;
+    m_intersectionFunctionTable                     = [m_computePipelineState newIntersectionFunctionTableWithDescriptor:iftDesc];
 
     m_intersectionExport.ClosestHit.Handle = [m_computePipelineState functionHandleWithFunction:m_intersectionExport.ClosestHit.Function];
-    shaderIndex = 0;
     if ( m_intersectionExport.HasAnyHit )
     {
         m_intersectionExport.AnyHit.Handle = [m_computePipelineState functionHandleWithFunction:m_intersectionExport.AnyHit.Function];
-        [m_intersectionFunctionTable setFunction:m_intersectionExport.AnyHit.Handle atIndex:shaderIndex];
-        ++shaderIndex;
+        [m_intersectionFunctionTable setFunction:m_intersectionExport.AnyHit.Handle atIndex:m_intersectionExport.AnyHit.Index];
     }
     if ( m_intersectionExport.HasIntersection )
     {
         m_intersectionExport.Intersection.Handle = [m_computePipelineState functionHandleWithFunction:m_intersectionExport.Intersection.Function];
-        [m_intersectionFunctionTable setFunction:m_intersectionExport.Intersection.Handle atIndex:shaderIndex];
+        [m_intersectionFunctionTable setFunction:m_intersectionExport.Intersection.Handle atIndex:m_intersectionExport.Intersection.Index];
     }
-
 }
 
 id<MTLLibrary> MetalPipeline::LoadLibrary( IDxcBlob *&blob, const std::string &shaderPath )
