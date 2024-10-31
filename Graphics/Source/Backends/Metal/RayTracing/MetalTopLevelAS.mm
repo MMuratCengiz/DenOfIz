@@ -45,7 +45,7 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
 
         MTLAccelerationStructureInstanceDescriptor *instance = &m_instanceDescriptors[ i ];
         instance->intersectionFunctionTableOffset            = blas->GeometryType( ) == ASGeometryType::Triangles ? 0 : 1;
-        instance->accelerationStructureIndex                 = i;
+        instance->accelerationStructureIndex                 = 0;
         instance->options                                    = blas->Options( );
         instance->mask                                       = instanceDesc.Mask;
 

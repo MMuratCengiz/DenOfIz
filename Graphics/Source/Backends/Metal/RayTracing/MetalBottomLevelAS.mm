@@ -26,12 +26,11 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
     NSMutableArray *geometryDescriptors = [NSMutableArray arrayWithCapacity:desc.Geometries.NumElements( )];
 
     m_options = MTLAccelerationStructureInstanceOptionNone;
-    m_options = MTLAccelerationStructureInstanceOptionDisableTriangleCulling;
     for ( size_t i = 0; i < desc.Geometries.NumElements( ); ++i )
     {
         const ASGeometryDesc &geometry = desc.Geometries.GetElement( i );
-        m_geometryType = geometry.Type;
-        if (i > 0 && geometry.Type != m_geometryType)
+        m_geometryType                 = geometry.Type;
+        if ( i > 0 && geometry.Type != m_geometryType )
         {
             LOG( ERROR ) << "All geometries in a BLAS must have the same type in Metal.";
             return;
@@ -101,9 +100,9 @@ MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::Initiali
     }
 
     m_resources.push_back( vertexBuffer->Instance( ) );
-    triangleDesc.vertexBuffer = vertexBuffer->Instance( );
-    triangleDesc.vertexStride = triangle.VertexStride;
-    triangleDesc.vertexFormat = MetalEnumConverter::ConvertFormatToAttributeFormat( triangle.VertexFormat );
+    triangleDesc.intersectionFunctionTableOffset = 0;
+    triangleDesc.vertexBuffer                    = vertexBuffer->Instance( );
+    triangleDesc.vertexStride                    = triangle.VertexStride;
 
     // Overwrite below if the geometry has indices
     triangleDesc.triangleCount = triangle.NumVertices / 3;
@@ -127,12 +126,17 @@ MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::Initiali
         triangleDesc.opaque = YES;
     }
 
+    if ( geometry.Flags.IsSet( GeometryFlags::NoDuplicateAnyHitInvocation ) )
+    {
+        triangleDesc.allowDuplicateIntersectionFunctionInvocation = NO;
+    }
+
     return triangleDesc;
 }
 
 MTLAccelerationStructureBoundingBoxGeometryDescriptor *MetalBottomLevelAS::InitializeAABBs( const ASGeometryDesc &geometry )
 {
-    const ASGeometryAABBDesc &aabb = geometry.AABBs;
+    const ASGeometryAABBDesc                              &aabb     = geometry.AABBs;
     MTLAccelerationStructureBoundingBoxGeometryDescriptor *aabbDesc = [MTLAccelerationStructureBoundingBoxGeometryDescriptor descriptor];
 
     MetalBufferResource *aabbBuffer = (MetalBufferResource *)aabb.Buffer;
@@ -143,13 +147,19 @@ MTLAccelerationStructureBoundingBoxGeometryDescriptor *MetalBottomLevelAS::Initi
     }
 
     m_resources.push_back( aabbBuffer->Instance( ) );
-    aabbDesc.boundingBoxBuffer = aabbBuffer->Instance( );
-    aabbDesc.boundingBoxStride = aabb.Stride;
-    aabbDesc.boundingBoxCount  = aabb.NumAABBs;
+    aabbDesc.intersectionFunctionTableOffset = 1;
+    aabbDesc.boundingBoxBuffer               = aabbBuffer->Instance( );
+    aabbDesc.boundingBoxStride               = aabb.Stride;
+    aabbDesc.boundingBoxCount                = aabb.NumAABBs;
 
     if ( geometry.Flags.IsSet( GeometryFlags::Opaque ) )
     {
         aabbDesc.opaque = YES;
+    }
+
+    if ( geometry.Flags.IsSet( GeometryFlags::NoDuplicateAnyHitInvocation ) )
+    {
+        aabbDesc.allowDuplicateIntersectionFunctionInvocation = NO;
     }
 
     return aabbDesc;
