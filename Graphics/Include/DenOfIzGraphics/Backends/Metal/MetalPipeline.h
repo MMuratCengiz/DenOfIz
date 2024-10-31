@@ -36,10 +36,8 @@ namespace DenOfIz
     struct IntersectionExport
     {
         ShaderFunction ClosestHit;
-        bool           HasAnyHit = false;
-        ShaderFunction AnyHit;
-        bool           HasIntersection = false;
-        ShaderFunction Intersection;
+        ShaderFunction TriangleIntersection;
+        ShaderFunction ProceduralIntersection;
     };
     class MetalPipeline final : public IPipeline
     {
@@ -82,6 +80,7 @@ namespace DenOfIz
         id<MTLLibrary>  LoadLibrary( IDxcBlob *&blob, const std::string &shaderPath );
         id<MTLFunction> CreateShaderFunction( id<MTLLibrary> library, const std::string &entryPoint );
         id<MTLLibrary>  NewIndirectDispatchLibrary( );
+        id<MTLLibrary>  NewSynthesizedIntersectionLibrary( const IRHitGroupType &hitGroupType );
     };
 
 } // namespace DenOfIz

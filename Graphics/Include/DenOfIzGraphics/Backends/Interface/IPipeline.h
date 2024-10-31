@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IRootSignature.h"
 #include "IShader.h"
 #include "ITextureResource.h"
+#include "RayTracing/IBottomLevelAS.h"
 
 namespace DenOfIz
 {
@@ -167,10 +168,11 @@ namespace DenOfIz
 
     struct DZ_API RayTracingPipelineDesc
     {
-        uint32_t      MaxRecursionDepth    = 1;
-        uint32_t      MaxNumPayloadBytes   = 0;
-        uint32_t      MaxNumAttributeBytes = 0;
-        InteropString HitGroupExportName   = "HitGroup";
+        ASGeometryType GeometryType         = ASGeometryType::Triangles;
+        uint32_t       MaxRecursionDepth    = 1;
+        uint32_t       MaxNumPayloadBytes   = 0;
+        uint32_t       MaxNumAttributeBytes = 0;
+        InteropString  HitGroupExportName   = "HitGroup";
     };
 
     struct DZ_API ComputePipelineDesc{ };

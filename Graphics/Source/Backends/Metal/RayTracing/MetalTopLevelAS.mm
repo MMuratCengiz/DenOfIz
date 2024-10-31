@@ -26,7 +26,7 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
 {
     createInstanceBuffer( );
     id<MTLBuffer> instanceBuffer = m_instanceBuffer->Instance( );
-    m_instanceDescriptors        = (MTLAccelerationStructureInstanceDescriptor *)instanceBuffer.contents;
+    m_instanceDescriptors = (MTLAccelerationStructureInstanceDescriptor *)instanceBuffer.contents;
     m_indirectResources.push_back( instanceBuffer );
 
     m_blasList = [NSMutableArray arrayWithCapacity:desc.Instances.NumElements( )];
@@ -43,12 +43,12 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
 
         [m_blasList addObject:blas->AccelerationStructure( )];
 
-        MTLAccelerationStructureInstanceDescriptor *instance              = &m_instanceDescriptors[ i ];
-        instance->intersectionFunctionTableOffset                         = i;
-        instance->accelerationStructureIndex                              = i;
-        instance->options                                                 = blas->Options( );
-        instance->mask                                                    = instanceDesc.Mask;
-        
+        MTLAccelerationStructureInstanceDescriptor *instance = &m_instanceDescriptors[ i ];
+        instance->intersectionFunctionTableOffset            = blas->GeometryType( ) == ASGeometryType::Triangles ? 0 : 1;
+        instance->accelerationStructureIndex                 = i;
+        instance->options                                    = blas->Options( );
+        instance->mask                                       = instanceDesc.Mask;
+
         const float *transformData = instanceDesc.Transform.Data( );
         for ( int row = 0; row < 3; ++row )
         {

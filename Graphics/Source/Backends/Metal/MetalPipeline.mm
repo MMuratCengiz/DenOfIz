@@ -193,18 +193,17 @@ void MetalPipeline::CreateRayTracingPipeline( )
     MetalRootSignature *rootSignature   = static_cast<MetalRootSignature *>( m_desc.RootSignature );
     auto                compiledShaders = m_desc.ShaderProgram->GetCompiledShaders( );
 
-    MTLComputePipelineDescriptor    *pipelineStateDescriptor        = [[MTLComputePipelineDescriptor alloc] init];
-    NSMutableArray<id<MTLFunction>> *functionHandles                = [NSMutableArray array];
-    uint32_t                         numVisibleFunctions            = 1; // Null function
-    uint32_t                         numCustomIntersectionFunctions = 0;
-    m_visibleFunctions[ "Null" ]                                    = ShaderFunction{ .Index = 0, .Function = nullptr };
+    MTLComputePipelineDescriptor    *pipelineStateDescriptor = [[MTLComputePipelineDescriptor alloc] init];
+    NSMutableArray<id<MTLFunction>> *functionHandles         = [NSMutableArray array];
+    uint32_t                         numVisibleFunctions     = 1; // Null function
+    m_visibleFunctions[ "Null" ]                             = ShaderFunction{ .Index = 0, .Function = nullptr };
+    uint64_t shaderIndex                                     = 1; // Null function is at index 0
     for ( uint32_t i = 0; i < compiledShaders.NumElements( ); ++i )
     {
         const auto     &shader      = compiledShaders.GetElement( i );
         id<MTLLibrary>  library     = LoadLibrary( shader->Blob, shader->Path );
         id<MTLFunction> mtlFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
 
-        uint64_t shaderIndex = i + 1; // Null function is at index 0
         switch ( shader->Stage )
         {
         case ShaderStage::ClosestHit:
@@ -216,18 +215,26 @@ void MetalPipeline::CreateRayTracingPipeline( )
             [functionHandles addObject:mtlFunction];
             break;
         case ShaderStage::AnyHit:
-            m_intersectionExport.HasAnyHit = true;
-            m_intersectionExport.AnyHit    = ShaderFunction{ .Index = 0, .Function = mtlFunction };
-            break;
         case ShaderStage::Intersection:
-            m_intersectionExport.HasIntersection = true;
-            m_intersectionExport.Intersection    = ShaderFunction{ .Index = 0, .Function = mtlFunction };
+            // TODO
             break;
         default:
             LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage );
             break;
         }
+        ++shaderIndex;
     }
+
+    id<MTLLibrary> triangleIntersectionSynthesizedLibrary = NewSynthesizedIntersectionLibrary( IRHitGroupTypeTriangles );
+    m_intersectionExport.TriangleIntersection.Function =
+        [triangleIntersectionSynthesizedLibrary newFunctionWithName:[NSString stringWithUTF8String:kIRIndirectTriangleIntersectionFunctionName]];
+    m_intersectionExport.TriangleIntersection.Index         = 0;
+    id<MTLLibrary> proceduralIntersectionSynthesizedLibrary = NewSynthesizedIntersectionLibrary( IRHitGroupTypeProceduralPrimitive );
+    m_intersectionExport.ProceduralIntersection.Function =
+        [proceduralIntersectionSynthesizedLibrary newFunctionWithName:[NSString stringWithUTF8String:kIRIndirectProceduralIntersectionFunctionName]];
+    m_intersectionExport.ProceduralIntersection.Index = 1;
+    [functionHandles addObject:m_intersectionExport.TriangleIntersection.Function];
+    [functionHandles addObject:m_intersectionExport.ProceduralIntersection.Function];
 
     MTLLinkedFunctions *linkedFunctions = [[MTLLinkedFunctions alloc] init];
     [linkedFunctions setFunctions:functionHandles];
@@ -272,20 +279,15 @@ void MetalPipeline::CreateRayTracingPipeline( )
     }
 
     MTLIntersectionFunctionTableDescriptor *iftDesc = [[MTLIntersectionFunctionTableDescriptor alloc] init];
-    iftDesc.functionCount                           = numCustomIntersectionFunctions;
+    iftDesc.functionCount                           = 2;
     m_intersectionFunctionTable                     = [m_computePipelineState newIntersectionFunctionTableWithDescriptor:iftDesc];
 
     m_intersectionExport.ClosestHit.Handle = [m_computePipelineState functionHandleWithFunction:m_intersectionExport.ClosestHit.Function];
-    if ( m_intersectionExport.HasAnyHit )
-    {
-        m_intersectionExport.AnyHit.Handle = [m_computePipelineState functionHandleWithFunction:m_intersectionExport.AnyHit.Function];
-        [m_intersectionFunctionTable setFunction:m_intersectionExport.AnyHit.Handle atIndex:m_intersectionExport.AnyHit.Index];
-    }
-    if ( m_intersectionExport.HasIntersection )
-    {
-        m_intersectionExport.Intersection.Handle = [m_computePipelineState functionHandleWithFunction:m_intersectionExport.Intersection.Function];
-        [m_intersectionFunctionTable setFunction:m_intersectionExport.Intersection.Handle atIndex:m_intersectionExport.Intersection.Index];
-    }
+
+    m_intersectionExport.TriangleIntersection.Handle = [m_computePipelineState functionHandleWithFunction:m_intersectionExport.TriangleIntersection.Function];
+    [m_intersectionFunctionTable setFunction:m_intersectionExport.TriangleIntersection.Handle atIndex:m_intersectionExport.TriangleIntersection.Index];
+    m_intersectionExport.ProceduralIntersection.Handle = [m_computePipelineState functionHandleWithFunction:m_intersectionExport.ProceduralIntersection.Function];
+    [m_intersectionFunctionTable setFunction:m_intersectionExport.ProceduralIntersection.Handle atIndex:m_intersectionExport.ProceduralIntersection.Index];
 }
 
 id<MTLLibrary> MetalPipeline::LoadLibrary( IDxcBlob *&blob, const std::string &shaderPath )
@@ -310,6 +312,26 @@ id<MTLFunction> MetalPipeline::CreateShaderFunction( id<MTLLibrary> library, con
         LOG( ERROR ) << "Error creating function for entry point: " << entryPointName;
     }
     return function;
+}
+
+id<MTLLibrary> MetalPipeline::NewSynthesizedIntersectionLibrary( const IRHitGroupType &hitGroupType )
+{
+    IRCompiler *pCompiler = IRCompilerCreate( );
+    IRCompilerSetMinimumDeploymentTarget( pCompiler, IROperatingSystem_macOS, "14.0.0" );
+    IRCompilerSetHitgroupType( pCompiler, hitGroupType );
+
+    IRMetalLibBinary *metalLib = IRMetalLibBinaryCreate( );
+    IRMetalLibSynthesizeIndirectIntersectionFunction( pCompiler, metalLib );
+
+    NSError       *pError = nullptr;
+    id<MTLLibrary> lib    = [m_context->Device newLibraryWithData:IRMetalLibGetBytecodeData( metalLib ) error:&pError];
+    assert( lib );
+
+    // Clean up compiler resources
+    IRMetalLibBinaryDestroy( metalLib );
+    IRCompilerDestroy( pCompiler );
+
+    return lib;
 }
 
 id<MTLLibrary> MetalPipeline::NewIndirectDispatchLibrary( )

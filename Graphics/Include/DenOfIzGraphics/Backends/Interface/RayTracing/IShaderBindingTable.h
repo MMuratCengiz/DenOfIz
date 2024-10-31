@@ -26,10 +26,11 @@ namespace DenOfIz
 {
     struct DZ_API HitGroupBindingDesc
     {
-        int           InstanceIndex      = -1; // -1 means all instances
-        int           GeometryIndex      = -1; // -1 means all geometries
-        int           RayTypeIndex       = -1; // -1 means all ray types
-        InteropString HitGroupExportName = "HitGroup"; // Same as provided in the pipeline creation
+        ASGeometryType GeometryType       = ASGeometryType::Triangles;
+        int            InstanceIndex      = -1;         // -1 means all instances
+        int            GeometryIndex      = -1;         // -1 means all geometries
+        int            RayTypeIndex       = -1;         // -1 means all ray types
+        InteropString  HitGroupExportName = "HitGroup"; // Same as provided in the pipeline creation
     };
 
     struct DZ_API MissBindingDesc

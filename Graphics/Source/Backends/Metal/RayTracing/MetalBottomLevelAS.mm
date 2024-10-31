@@ -26,9 +26,16 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
     NSMutableArray *geometryDescriptors = [NSMutableArray arrayWithCapacity:desc.Geometries.NumElements( )];
 
     m_options = MTLAccelerationStructureInstanceOptionNone;
+    m_options = MTLAccelerationStructureInstanceOptionDisableTriangleCulling;
     for ( size_t i = 0; i < desc.Geometries.NumElements( ); ++i )
     {
         const ASGeometryDesc &geometry = desc.Geometries.GetElement( i );
+        m_geometryType = geometry.Type;
+        if (i > 0 && geometry.Type != m_geometryType)
+        {
+            LOG( ERROR ) << "All geometries in a BLAS must have the same type in Metal.";
+            return;
+        }
 
         switch ( geometry.Type )
         {
@@ -166,6 +173,11 @@ MTLAccelerationStructureDescriptor *MetalBottomLevelAS::Descriptor( )
 MTLAccelerationStructureInstanceOptions MetalBottomLevelAS::Options( ) const
 {
     return m_options;
+}
+
+const ASGeometryType &MetalBottomLevelAS::GeometryType( ) const
+{
+    return m_geometryType;
 }
 
 [[nodiscard]] const std::vector<id<MTLResource>> &MetalBottomLevelAS::Resources( ) const

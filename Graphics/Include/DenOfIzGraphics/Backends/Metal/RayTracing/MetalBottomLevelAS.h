@@ -34,6 +34,7 @@ namespace DenOfIz
         NSArray<MTLAccelerationStructureGeometryDescriptor *> *m_geometryDescriptors;
         MTLAccelerationStructureInstanceOptions                m_options;
         std::vector<id<MTLResource>>                           m_resources;
+        ASGeometryType                                         m_geometryType;
 
     public:
         MetalBottomLevelAS( MetalContext *context, const BottomLevelASDesc &desc );
@@ -43,6 +44,7 @@ namespace DenOfIz
         [[nodiscard]] MetalBufferResource                    *Scratch( ) const;
         [[nodiscard]] MTLAccelerationStructureDescriptor     *Descriptor( );
         [[nodiscard]] MTLAccelerationStructureInstanceOptions Options( ) const;
+        [[nodiscard]] const ASGeometryType                   &GeometryType( ) const;
         [[nodiscard]] const std::vector<id<MTLResource>>     &Resources( ) const;
 
     private:
