@@ -283,7 +283,7 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
 
     ASInstanceDesc instanceDesc{ };
     instanceDesc.BLAS = m_bottomLevelAS.get( );
-    instanceDesc.Mask = 1;
+    instanceDesc.Mask = 0xFF;
 
     constexpr float transform[ 3 ][ 4 ] = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } };
     instanceDesc.Transform.MemCpy( transform, sizeof( transform ) );
