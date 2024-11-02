@@ -398,13 +398,13 @@ void MetalCommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevel
     }
 
     [m_accelerationStructureEncoder useResource:metalTopLevelAS->AccelerationStructure( ) usage:MTLResourceUsageRead];
-    [m_accelerationStructureEncoder useResource:metalTopLevelAS->Scratch( )->Instance( ) usage:MTLResourceUsageWrite];
-    [m_accelerationStructureEncoder useResource:metalTopLevelAS->HeaderBuffer( )->Instance( ) usage:MTLResourceUsageWrite];
-    [m_accelerationStructureEncoder useResource:metalTopLevelAS->InstanceBuffer( )->Instance( ) usage:MTLResourceUsageRead];
+    [m_accelerationStructureEncoder useResource:metalTopLevelAS->Scratch( ) usage:MTLResourceUsageWrite];
+    [m_accelerationStructureEncoder useResource:metalTopLevelAS->HeaderBuffer( ) usage:MTLResourceUsageWrite];
+    [m_accelerationStructureEncoder useResource:metalTopLevelAS->InstanceBuffer( ) usage:MTLResourceUsageRead];
 
     [m_accelerationStructureEncoder buildAccelerationStructure:metalTopLevelAS->AccelerationStructure( )
                                                     descriptor:metalTopLevelAS->Descriptor( )
-                                                 scratchBuffer:metalTopLevelAS->Scratch( )->Instance( )
+                                                 scratchBuffer:metalTopLevelAS->Scratch( )
                                            scratchBufferOffset:0];
 }
 
@@ -420,11 +420,11 @@ void MetalCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBo
     }
 
     [m_accelerationStructureEncoder useResource:metalBottomLevelAS->AccelerationStructure( ) usage:MTLResourceUsageRead];
-    [m_accelerationStructureEncoder useResource:metalBottomLevelAS->Scratch( )->Instance( ) usage:MTLResourceUsageWrite];
+    [m_accelerationStructureEncoder useResource:metalBottomLevelAS->Scratch( ) usage:MTLResourceUsageWrite];
 
     [m_accelerationStructureEncoder buildAccelerationStructure:metalBottomLevelAS->AccelerationStructure( )
                                                     descriptor:metalBottomLevelAS->Descriptor( )
-                                                 scratchBuffer:metalBottomLevelAS->Scratch( )->Instance( )
+                                                 scratchBuffer:metalBottomLevelAS->Scratch( )
                                            scratchBufferOffset:0];
 }
 

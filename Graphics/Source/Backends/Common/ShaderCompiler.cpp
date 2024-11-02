@@ -261,7 +261,6 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob
     // But will try this way for now.
     IRCompilerSetRayTracingPipelineArguments( irCompiler, 4 * sizeof(float), IRRaytracingPipelineFlagNone, IRIntrinsicMaskClosestHitAll, IRIntrinsicMaskMissShaderAll,
 											 IRIntrinsicMaskAnyHitShaderAll, 255, IRRayTracingUnlimitedRecursionDepth, IRRayGenerationCompilationVisibleFunction );
-    IRCompilerSetHitgroupType( irCompiler, IRHitGroupTypeTriangles );
 
     IRObject *irDxil = IRObjectCreateFromDXIL( (const uint8_t *)code->GetBufferPointer( ), code->GetBufferSize( ), IRBytecodeOwnershipNone );
 

@@ -156,8 +156,6 @@ void MetalResourceBindGroup::EndUpdate( )
 void MetalResourceBindGroup::BindAccelerationStructure( const ResourceBindingSlot &slot, ITopLevelAS *accelerationStructure )
 {
     MetalTopLevelAS     *metalAS      = static_cast<MetalTopLevelAS *>( accelerationStructure );
-    MetalBufferResource *headerBuffer = metalAS->HeaderBuffer( );
-
     for ( const auto &item : metalAS->IndirectResources( ) )
     {
         m_indirectResources.emplace_back( item );
@@ -166,11 +164,11 @@ void MetalResourceBindGroup::BindAccelerationStructure( const ResourceBindingSlo
     const MetalBindingDesc &metalBinding = m_rootSignature->FindMetalBinding( slot );
     if ( slot.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
     {
-        m_rootParameterBindings.emplace_back( metalBinding.Parent.Reflection.TLABOffset, headerBuffer->Instance( ) );
+        m_rootParameterBindings.emplace_back( metalBinding.Parent.Reflection.TLABOffset, metalAS->HeaderBuffer( ) );
         return;
     }
 
-    m_cbvSrvUavTable->Table.EncodeAccelerationStructure( headerBuffer->Instance( ), metalBinding.Parent.Reflection.DescriptorTableIndex );
+    m_cbvSrvUavTable->Table.EncodeAccelerationStructure( metalAS->HeaderBuffer( ), metalBinding.Parent.Reflection.DescriptorTableIndex );
     UpdateDescriptorTable( metalBinding, m_cbvSrvUavTable.get( ) );
 }
 

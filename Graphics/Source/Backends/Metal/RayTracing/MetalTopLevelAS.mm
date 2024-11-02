@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#import <DenOfIzGraphics/Backends/Metal/MetalBufferResource.h>
 #import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalBottomLevelAS.h>
 #import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalTopLevelAS.h>
 
@@ -24,10 +23,12 @@ using namespace DenOfIz;
 
 MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    createInstanceBuffer( );
-    id<MTLBuffer> instanceBuffer = m_instanceBuffer->Instance( );
-    m_instanceDescriptors        = (MTLAccelerationStructureUserIDInstanceDescriptor *)instanceBuffer.contents;
-    m_indirectResources.push_back( instanceBuffer );
+    m_instanceBuffer = [m_context->Device newBufferWithLength:sizeof( MTLAccelerationStructureUserIDInstanceDescriptor ) * m_desc.Instances.NumElements( )
+                                                      options:MTLResourceStorageModeShared];
+    [m_instanceBuffer setLabel:@"Instance Descriptor Buffer"];
+
+    m_instanceDescriptors = (MTLAccelerationStructureUserIDInstanceDescriptor *)m_instanceBuffer.contents;
+    m_indirectResources.push_back( m_instanceBuffer );
 
     m_blasList = [NSMutableArray arrayWithCapacity:desc.Instances.NumElements( )];
     for ( size_t i = 0; i < desc.Instances.NumElements( ); ++i )
@@ -59,61 +60,40 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
             }
         }
 
-        const std::vector<id<MTLResource>> &blasResources = blas->Resources( );
+        const std::vector<id<MTLResource>> &blasResources = blas->IndirectResources( );
         m_indirectResources.insert( m_indirectResources.end( ), blasResources.begin( ), blasResources.end( ) );
 
         m_contributionsToHitGroupIndices.emplace_back( instanceDesc.ContributionToHitGroupIndex );
     }
 
-    BufferDesc headerBufferDesc     = { };
-    headerBufferDesc.HeapType       = HeapType::CPU_GPU;
-    headerBufferDesc.NumBytes       = sizeof( IRRaytracingAccelerationStructureGPUHeader ) + sizeof( uint32_t ) * m_contributionsToHitGroupIndices.size( );
-    headerBufferDesc.Descriptor     = BitSet( ResourceDescriptor::Buffer );
-    headerBufferDesc.DebugName      = "Top Level Acceleration Structure Header Buffer";
-    m_headerBuffer                  = std::make_unique<MetalBufferResource>( m_context, headerBufferDesc );
-    id<MTLBuffer> metalHeaderBuffer = m_headerBuffer->Instance( );
-    m_indirectResources.push_back( metalHeaderBuffer );
+    m_headerBuffer = [m_context->Device newBufferWithLength:sizeof( IRRaytracingAccelerationStructureGPUHeader ) + sizeof( uint32_t ) * m_contributionsToHitGroupIndices.size( )
+                                                    options:MTLResourceStorageModeShared];
+    [m_headerBuffer setLabel:@"Top Level Acceleration Structure Header Buffer"];
+    m_indirectResources.push_back( m_headerBuffer );
 
-    uint8_t *headerBufferContents = (uint8_t *)metalHeaderBuffer.contents;
+    uint8_t *headerBufferContents = (uint8_t *)m_headerBuffer.contents;
     IRRaytracingSetAccelerationStructure( headerBufferContents, m_accelerationStructure.gpuResourceID, headerBufferContents + sizeof( IRRaytracingAccelerationStructureGPUHeader ),
                                           m_contributionsToHitGroupIndices.data( ), m_contributionsToHitGroupIndices.size( ) );
-    auto pHdr                            = (IRRaytracingAccelerationStructureGPUHeader *)( metalHeaderBuffer.contents );
-    pHdr->addressOfInstanceContributions = metalHeaderBuffer.gpuAddress + sizeof( IRRaytracingAccelerationStructureGPUHeader );
+    auto pHdr                            = (IRRaytracingAccelerationStructureGPUHeader *)( m_headerBuffer.contents );
+    pHdr->addressOfInstanceContributions = m_headerBuffer.gpuAddress + sizeof( IRRaytracingAccelerationStructureGPUHeader );
 
     // Acceleration Structure Configuration
     m_descriptor                                 = [MTLInstanceAccelerationStructureDescriptor descriptor];
     m_descriptor.instancedAccelerationStructures = m_blasList;
-    m_descriptor.instanceDescriptorBuffer        = instanceBuffer;
+    m_descriptor.instanceDescriptorBuffer        = m_instanceBuffer;
     m_descriptor.instanceCount                   = desc.Instances.NumElements( );
     m_descriptor.instanceDescriptorType          = MTLAccelerationStructureInstanceDescriptorTypeUserID;
-    m_descriptor.usage                           = MTLAccelerationStructureUsagePreferFastBuild;
+    //m_descriptor.usage                           = MTLAccelerationStructureUsagePreferFastBuild;
 
     MTLAccelerationStructureSizes asSize = [m_context->Device accelerationStructureSizesWithDescriptor:m_descriptor];
 
-    BufferDesc scratchBufferDesc   = { };
-    scratchBufferDesc.HeapType     = HeapType::GPU;
-    scratchBufferDesc.NumBytes     = asSize.buildScratchBufferSize;
-    scratchBufferDesc.Descriptor   = BitSet( ResourceDescriptor::RWBuffer );
-    scratchBufferDesc.InitialUsage = ResourceUsage::UnorderedAccess;
-    scratchBufferDesc.DebugName    = "Top Level Acceleration Structure Scratch";
-    m_scratch                      = std::make_unique<MetalBufferResource>( m_context, scratchBufferDesc );
-    m_indirectResources.push_back( m_scratch->Instance( ) );
+    m_scratch = [m_context->Device newBufferWithLength:asSize.buildScratchBufferSize options:MTLResourceStorageModePrivate];
+    [m_scratch setLabel:@"Top Level Acceleration Structure Scratch"];
+    m_indirectResources.push_back( m_scratch );
 
     m_accelerationStructure = [context->Device newAccelerationStructureWithSize:asSize.accelerationStructureSize];
     [m_accelerationStructure setLabel:@"Top Level Acceleration Structure"];
     m_indirectResources.push_back( m_accelerationStructure );
-}
-
-void MetalTopLevelAS::createInstanceBuffer( )
-{
-    BufferDesc instanceDescBuffer   = { };
-    instanceDescBuffer.HeapType     = HeapType::CPU_GPU;
-    instanceDescBuffer.NumBytes     = sizeof( MTLAccelerationStructureUserIDInstanceDescriptor ) * m_desc.Instances.NumElements( );
-    instanceDescBuffer.Descriptor   = BitSet( ResourceDescriptor::RWBuffer );
-    instanceDescBuffer.InitialUsage = ResourceUsage::AccelerationStructureWrite;
-    instanceDescBuffer.DebugName    = "Instance Descriptor Buffer";
-
-    m_instanceBuffer = std::make_unique<MetalBufferResource>( m_context, instanceDescBuffer );
 }
 
 id<MTLAccelerationStructure> MetalTopLevelAS::AccelerationStructure( ) const
@@ -121,14 +101,14 @@ id<MTLAccelerationStructure> MetalTopLevelAS::AccelerationStructure( ) const
     return m_accelerationStructure;
 }
 
-MetalBufferResource *MetalTopLevelAS::HeaderBuffer( ) const
+id<MTLBuffer> MetalTopLevelAS::HeaderBuffer( ) const
 {
-    return m_headerBuffer.get( );
+    return m_headerBuffer;
 }
 
-MetalBufferResource *MetalTopLevelAS::Scratch( ) const
+id<MTLBuffer> MetalTopLevelAS::Scratch( ) const
 {
-    return m_scratch.get( );
+    return m_scratch;
 }
 
 size_t MetalTopLevelAS::NumInstances( ) const
@@ -136,9 +116,9 @@ size_t MetalTopLevelAS::NumInstances( ) const
     return m_desc.Instances.NumElements( );
 }
 
-const MetalBufferResource *MetalTopLevelAS::InstanceBuffer( ) const
+id<MTLBuffer> MetalTopLevelAS::InstanceBuffer( ) const
 {
-    return m_instanceBuffer.get( );
+    return m_instanceBuffer;
 }
 
 MTLAccelerationStructureUserIDInstanceDescriptor *MetalTopLevelAS::InstanceDescriptors( )

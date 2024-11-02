@@ -66,22 +66,18 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
     }
 
     m_descriptor                     = [MTLPrimitiveAccelerationStructureDescriptor descriptor];
-    m_descriptor.usage               = usage;
+    //m_descriptor.usage               = usage;
     m_descriptor.geometryDescriptors = m_geometryDescriptors;
 
     MTLAccelerationStructureSizes asSize = [m_context->Device accelerationStructureSizesWithDescriptor:m_descriptor];
 
-    BufferDesc scratchBufferDesc   = { };
-    scratchBufferDesc.HeapType     = HeapType::GPU;
-    scratchBufferDesc.NumBytes     = asSize.buildScratchBufferSize;
-    scratchBufferDesc.Descriptor   = BitSet( ResourceDescriptor::RWBuffer );
-    scratchBufferDesc.InitialUsage = ResourceUsage::UnorderedAccess;
-    scratchBufferDesc.DebugName    = "Bottom Level Acceleration Structure Scratch";
-    m_scratch                      = std::make_unique<MetalBufferResource>( m_context, scratchBufferDesc );
-    m_resources.push_back( m_scratch->Instance( ) );
+    m_scratch = [m_context->Device newBufferWithLength:asSize.buildScratchBufferSize options:MTLResourceStorageModePrivate];
+    [m_scratch setLabel:@"Bottom Level Acceleration Structure Scratch"];
+    m_indirectResources.push_back( m_scratch );
+
     m_accelerationStructure = [context->Device newAccelerationStructureWithSize:asSize.accelerationStructureSize];
     [m_accelerationStructure setLabel:@"Bottom Level Acceleration Structure"];
-    m_resources.push_back( m_accelerationStructure );
+    m_indirectResources.push_back( m_accelerationStructure );
 }
 
 MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::InitializeTriangles( const ASGeometryDesc &geometry )
@@ -97,10 +93,12 @@ MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::Initiali
         return nil;
     }
 
-    m_resources.push_back( vertexBuffer->Instance( ) );
+    m_indirectResources.push_back( vertexBuffer->Instance( ) );
     triangleDesc.intersectionFunctionTableOffset = 0;
+    triangleDesc.vertexBufferOffset              = triangle.VertexOffset;
     triangleDesc.vertexBuffer                    = vertexBuffer->Instance( );
     triangleDesc.vertexStride                    = triangle.VertexStride;
+    triangleDesc.vertexFormat                    = MetalEnumConverter::ConvertFormatToAttributeFormat( triangle.VertexFormat );
 
     // Overwrite below if the geometry has indices
     triangleDesc.triangleCount = triangle.NumVertices / 3;
@@ -113,25 +111,14 @@ MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::Initiali
             return nil;
         }
 
-        triangleDesc.indexBuffer   = indexBuffer->Instance( );
-        triangleDesc.indexType     = triangle.IndexType == IndexType::Uint16 ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32;
-        triangleDesc.triangleCount = triangle.NumIndices / 3;
-        m_resources.push_back( indexBuffer->Instance( ) );
+        triangleDesc.indexBufferOffset = triangle.IndexOffset;
+        triangleDesc.indexBuffer       = indexBuffer->Instance( );
+        triangleDesc.indexType         = triangle.IndexType == IndexType::Uint16 ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32;
+        triangleDesc.triangleCount     = triangle.NumIndices / 3;
+        m_indirectResources.push_back( indexBuffer->Instance( ) );
     }
 
-    if ( geometry.Flags.IsSet( GeometryFlags::Opaque ) )
-    {
-        triangleDesc.opaque = YES;
-    }
-
-    if ( geometry.Flags.IsSet( GeometryFlags::NoDuplicateAnyHitInvocation ) )
-    {
-        triangleDesc.allowDuplicateIntersectionFunctionInvocation = NO;
-    }
-    else
-    {
-        triangleDesc.allowDuplicateIntersectionFunctionInvocation = YES;
-    }
+    triangleDesc.allowDuplicateIntersectionFunctionInvocation = !geometry.Flags.IsSet( GeometryFlags::NoDuplicateAnyHitInvocation );
 
     return triangleDesc;
 }
@@ -148,7 +135,7 @@ MTLAccelerationStructureBoundingBoxGeometryDescriptor *MetalBottomLevelAS::Initi
         return nil;
     }
 
-    m_resources.push_back( aabbBuffer->Instance( ) );
+    m_indirectResources.push_back( aabbBuffer->Instance( ) );
     aabbDesc.intersectionFunctionTableOffset = 1;
     aabbDesc.boundingBoxBuffer               = aabbBuffer->Instance( );
     aabbDesc.boundingBoxStride               = aabb.Stride;
@@ -172,9 +159,9 @@ id<MTLAccelerationStructure> MetalBottomLevelAS::AccelerationStructure( ) const
     return m_accelerationStructure;
 }
 
-MetalBufferResource *MetalBottomLevelAS::Scratch( ) const
+id<MTLBuffer> MetalBottomLevelAS::Scratch( ) const
 {
-    return m_scratch.get( );
+    return m_scratch;
 }
 
 MTLAccelerationStructureDescriptor *MetalBottomLevelAS::Descriptor( )
@@ -192,7 +179,7 @@ const ASGeometryType &MetalBottomLevelAS::GeometryType( ) const
     return m_geometryType;
 }
 
-[[nodiscard]] const std::vector<id<MTLResource>> &MetalBottomLevelAS::Resources( ) const
+[[nodiscard]] const std::vector<id<MTLResource>> &MetalBottomLevelAS::IndirectResources( ) const
 {
-    return m_resources;
+    return m_indirectResources;
 }

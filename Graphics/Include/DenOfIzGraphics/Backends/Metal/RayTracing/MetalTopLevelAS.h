@@ -30,10 +30,10 @@ namespace DenOfIz
         TopLevelASDesc                                    m_desc;
         id<MTLAccelerationStructure>                      m_accelerationStructure;
         MTLInstanceAccelerationStructureDescriptor       *m_descriptor;
-        std::unique_ptr<MetalBufferResource>              m_headerBuffer;
-        std::unique_ptr<MetalBufferResource>              m_buffer;
-        std::unique_ptr<MetalBufferResource>              m_instanceBuffer;
-        std::unique_ptr<MetalBufferResource>              m_scratch;
+        id<MTLBuffer>                                     m_headerBuffer;
+        id<MTLBuffer>                                     m_buffer;
+        id<MTLBuffer>                                     m_instanceBuffer;
+        id<MTLBuffer>                                     m_scratch;
         MTLAccelerationStructureUserIDInstanceDescriptor *m_instanceDescriptors;
         std::vector<uint32_t>                             m_contributionsToHitGroupIndices;
         std::vector<id<MTLResource>>                      m_indirectResources;
@@ -45,15 +45,12 @@ namespace DenOfIz
         ~MetalTopLevelAS( ) override = default;
 
         [[nodiscard]] id<MTLAccelerationStructure>                      AccelerationStructure( ) const;
-        [[nodiscard]] MetalBufferResource                              *HeaderBuffer( ) const;
+        [[nodiscard]] id<MTLBuffer>                                     HeaderBuffer( ) const;
         size_t                                                          NumInstances( ) const;
-        [[nodiscard]] const MetalBufferResource                        *InstanceBuffer( ) const;
-        [[nodiscard]] MetalBufferResource                              *Scratch( ) const;
+        [[nodiscard]] id<MTLBuffer>                                     InstanceBuffer( ) const;
+        [[nodiscard]] id<MTLBuffer>                                     Scratch( ) const;
         [[nodiscard]] MTLAccelerationStructureDescriptor               *Descriptor( );
         const std::vector<id<MTLResource>>                             &IndirectResources( ) const;
         [[nodiscard]] MTLAccelerationStructureUserIDInstanceDescriptor *InstanceDescriptors( );
-
-    private:
-        void createInstanceBuffer( );
     };
 } // namespace DenOfIz
