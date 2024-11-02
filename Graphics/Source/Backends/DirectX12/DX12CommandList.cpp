@@ -427,16 +427,15 @@ void DX12CommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBot
     const auto dx12BottomLevelAS = dynamic_cast<DX12BottomLevelAS *>( buildBottomLevelASDesc.BottomLevelAS );
     DZ_NOT_NULL( dx12BottomLevelAS );
 
-    const auto                                        *dx12blasBuffer = dynamic_cast<DX12BufferResource *>( dx12BottomLevelAS->Buffer( ) );
-    const std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> &geometryDescs  = dx12BottomLevelAS->GeometryDescs( );
-    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc      = { };
-    buildDesc.Inputs.DescsLayout                                      = D3D12_ELEMENTS_LAYOUT_ARRAY;
-    buildDesc.Inputs.Type                                             = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-    buildDesc.Inputs.Flags                                            = dx12BottomLevelAS->Flags( );
-    buildDesc.Inputs.NumDescs                                         = geometryDescs.size( );
-    buildDesc.Inputs.pGeometryDescs                                   = geometryDescs.data( );
-    buildDesc.DestAccelerationStructureData                           = dx12blasBuffer->Resource( )->GetGPUVirtualAddress( );
-    buildDesc.ScratchAccelerationStructureData                        = dx12BottomLevelAS->Scratch( )->Resource( )->GetGPUVirtualAddress( );
+    const std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> &geometryDescs = dx12BottomLevelAS->GeometryDescs( );
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc     = { };
+    buildDesc.Inputs.DescsLayout                                     = D3D12_ELEMENTS_LAYOUT_ARRAY;
+    buildDesc.Inputs.Type                                            = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+    buildDesc.Inputs.Flags                                           = dx12BottomLevelAS->Flags( );
+    buildDesc.Inputs.NumDescs                                        = geometryDescs.size( );
+    buildDesc.Inputs.pGeometryDescs                                  = geometryDescs.data( );
+    buildDesc.DestAccelerationStructureData                          = dx12BottomLevelAS->Buffer( )->Resource( )->GetGPUVirtualAddress( );
+    buildDesc.ScratchAccelerationStructureData                       = dx12BottomLevelAS->Scratch( )->Resource( )->GetGPUVirtualAddress( );
 
     m_commandList->BuildRaytracingAccelerationStructure( &buildDesc, 0, nullptr );
 }

@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.h>
 #include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h>
 
@@ -30,10 +31,10 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
     for ( uint32_t i = 0; i < desc.Instances.NumElements( ); ++i )
     {
         const ASInstanceDesc &instanceDesc = desc.Instances.GetElement( i );
-        auto                 *vkBLASBuffer = dynamic_cast<VulkanBufferResource *>( instanceDesc.BLASBuffer );
-        if ( vkBLASBuffer == nullptr )
+        auto                 *vkBLAS       = dynamic_cast<VulkanBottomLevelAS *>( instanceDesc.BLAS );
+        if ( vkBLAS == nullptr )
         {
-            LOG( WARNING ) << "BLAS buffer is null.";
+            LOG( WARNING ) << "BLAS is null.";
             continue;
         }
 
@@ -42,7 +43,7 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
         vkInstance.instanceCustomIndex                    = instanceDesc.ID;
         vkInstance.mask                                   = instanceDesc.Mask;
         vkInstance.instanceShaderBindingTableRecordOffset = instanceDesc.ContributionToHitGroupIndex;
-        vkInstance.accelerationStructureReference         = vkBLASBuffer->DeviceAddress( );
+        vkInstance.accelerationStructureReference         = vkBLAS->DeviceAddress( );
         vkInstance.flags                                  = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
     }
 
@@ -149,11 +150,6 @@ const VulkanBufferResource *VulkanTopLevelAS::InstanceBuffer( ) const
 }
 
 VulkanBufferResource *VulkanTopLevelAS::VulkanBuffer( ) const
-{
-    return m_buffer.get( );
-}
-
-IBufferResource *VulkanTopLevelAS::Buffer( ) const
 {
     return m_buffer.get( );
 }

@@ -40,12 +40,12 @@ namespace DenOfIz
         VulkanBottomLevelAS( VulkanContext *context, const BottomLevelASDesc &desc );
         ~VulkanBottomLevelAS( ) override;
 
-        [[nodiscard]] IBufferResource                                       *Buffer( ) const override;
         [[nodiscard]] const VkAccelerationStructureKHR                      &Instance( ) const;
         [[nodiscard]] const std::vector<VkAccelerationStructureGeometryKHR> &GeometryDescs( ) const;
         [[nodiscard]] const VkAccelerationStructureBuildRangeInfoKHR *const *BuildRangeInfos( ) const;
         [[nodiscard]] const VkBuildAccelerationStructureFlagsKHR            &Flags( ) const;
         [[nodiscard]] const VulkanBufferResource                            *ScratchBuffer( ) const;
+        uint64_t                                                             DeviceAddress( ) const;
 
     private:
         void InitializeTriangles( const ASGeometryTriangleDesc &triangle, VkAccelerationStructureGeometryKHR &vkGeometry );

@@ -32,14 +32,15 @@ namespace DenOfIz
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS m_flags;
 
     public:
-                                                                          DX12BottomLevelAS( DX12Context *context, const BottomLevelASDesc &desc );
-        ~                                                                 DX12BottomLevelAS( ) override = default;
+        DX12BottomLevelAS( DX12Context *context, const BottomLevelASDesc &desc );
+        ~DX12BottomLevelAS( ) override = default;
         [[nodiscard]] D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Flags( ) const;
         [[nodiscard]] const std::vector<D3D12_RAYTRACING_GEOMETRY_DESC>  &GeometryDescs( ) const;
-        [[nodiscard]] IBufferResource                                    *Buffer( ) const override;
+        [[nodiscard]] DX12BufferResource                                 *Buffer( ) const;
         [[nodiscard]] const DX12BufferResource                           *Scratch( ) const;
+
     private:
-        void InitializeTriangles( const ASGeometryTriangleDesc &triangle, D3D12_RAYTRACING_GEOMETRY_DESC& dx12Geometry ) const;
-        void InitializeAABBs( const ASGeometryAABBDesc &aabb, D3D12_RAYTRACING_GEOMETRY_DESC& dx12Geometry ) const;
+        void InitializeTriangles( const ASGeometryTriangleDesc &triangle, D3D12_RAYTRACING_GEOMETRY_DESC &dx12Geometry ) const;
+        void InitializeAABBs( const ASGeometryAABBDesc &aabb, D3D12_RAYTRACING_GEOMETRY_DESC &dx12Geometry ) const;
     };
 } // namespace DenOfIz

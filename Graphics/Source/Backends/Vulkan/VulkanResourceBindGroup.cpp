@@ -93,7 +93,7 @@ IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, ITopLe
 {
     VulkanTopLevelAS *vkAccelerationStructure = dynamic_cast<VulkanTopLevelAS *>( accelerationStructure );
 
-    auto& writeDescriptorSet = BindBuffer( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), vkAccelerationStructure->Buffer( ) );
+    auto& writeDescriptorSet = BindBuffer( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), vkAccelerationStructure->VulkanBuffer( ) );
 
     if ( writeDescriptorSet.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR )
     {

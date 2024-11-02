@@ -48,7 +48,6 @@ namespace DenOfIz
         [[nodiscard]] const VkAccelerationStructureBuildRangeInfoKHR *const *BuildRangeInfo( ) const;
         [[nodiscard]] const VulkanBufferResource                            *InstanceBuffer( ) const;
         [[nodiscard]] VulkanBufferResource                                  *VulkanBuffer( ) const;
-        [[nodiscard]] IBufferResource                                       *Buffer( ) const override;
         [[nodiscard]] const VulkanBufferResource                            *Scratch( ) const;
         ~VulkanTopLevelAS( ) override;
     };

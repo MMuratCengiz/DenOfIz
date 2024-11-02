@@ -29,7 +29,7 @@ namespace DenOfIz
         std::unique_ptr<DX12BufferResource>                 m_instanceBuffer;
         std::unique_ptr<DX12BufferResource>                 m_buffer;
         std::unique_ptr<DX12BufferResource>                 m_scratch;
-        D3D12_CPU_DESCRIPTOR_HANDLE                         m_asSrvHandle{};
+        D3D12_CPU_DESCRIPTOR_HANDLE                         m_asSrvHandle{ };
         std::vector<D3D12_RAYTRACING_INSTANCE_DESC>         m_instanceDescs;
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS m_flags;
 
@@ -40,7 +40,7 @@ namespace DenOfIz
         [[nodiscard]] size_t                                              NumInstances( ) const;
         [[nodiscard]] const DX12BufferResource                           *InstanceBuffer( ) const;
         [[nodiscard]] const DX12BufferResource                           *DX12Buffer( ) const;
-        [[nodiscard]] IBufferResource                                    *Buffer( ) const override;
+        [[nodiscard]] DX12BufferResource                                 *Buffer( ) const;
         [[nodiscard]] const DX12BufferResource                           *Scratch( ) const;
         void                                                              Update( const TopLevelASDesc &desc ) override;
     };

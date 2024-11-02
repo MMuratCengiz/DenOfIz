@@ -157,11 +157,6 @@ void VulkanBottomLevelAS::InitializeAABBs( const ASGeometryAABBDesc &aabb, VkAcc
     aabbs.stride                                            = aabb.Stride;
 }
 
-IBufferResource *VulkanBottomLevelAS::Buffer( ) const
-{
-    return m_asBuffer.get( );
-}
-
 const VkAccelerationStructureKHR &VulkanBottomLevelAS::Instance( ) const
 {
     return m_accelerationStructure;
@@ -185,4 +180,9 @@ const VkBuildAccelerationStructureFlagsKHR &VulkanBottomLevelAS::Flags( ) const
 const VulkanBufferResource *VulkanBottomLevelAS::ScratchBuffer( ) const
 {
     return m_scratchBuffer.get( );
+}
+
+uint64_t VulkanBottomLevelAS::DeviceAddress( ) const
+{
+    return m_asBuffer->DeviceAddress( );
 }

@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLevelAS.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLevelAS.h>
 
 using namespace DenOfIz;
@@ -26,15 +27,15 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
     m_instanceDescs.resize( desc.Instances.NumElements( ) );
     for ( uint32_t i = 0; i < desc.Instances.NumElements( ); ++i )
     {
-        const ASInstanceDesc     &instanceDesc       = desc.Instances.GetElement( i );
-        const DX12BufferResource *dx12InstanceBuffer = dynamic_cast<DX12BufferResource *>( instanceDesc.BLASBuffer );
-        if ( dx12InstanceBuffer == nullptr )
+        const ASInstanceDesc    &instanceDesc = desc.Instances.GetElement( i );
+        const DX12BottomLevelAS *dx12Blas     = dynamic_cast<DX12BottomLevelAS *>( instanceDesc.BLAS );
+        if ( dx12Blas == nullptr )
         {
-            LOG( WARNING ) << "Instance buffer is null.";
+            LOG( WARNING ) << "Blas is null.";
             continue;
         }
 
-        m_instanceDescs[ i ].AccelerationStructure               = dx12InstanceBuffer->Resource( )->GetGPUVirtualAddress( );
+        m_instanceDescs[ i ].AccelerationStructure               = dx12Blas->Buffer( )->Resource( )->GetGPUVirtualAddress( );
         m_instanceDescs[ i ].Flags                               = D3D12_RAYTRACING_INSTANCE_FLAG_NONE; // todo
         m_instanceDescs[ i ].InstanceContributionToHitGroupIndex = instanceDesc.ContributionToHitGroupIndex;
         m_instanceDescs[ i ].InstanceID                          = instanceDesc.ID;
@@ -100,7 +101,7 @@ const DX12BufferResource *DX12TopLevelAS::DX12Buffer( ) const
     return m_buffer.get( );
 }
 
-IBufferResource *DX12TopLevelAS::Buffer( ) const
+DX12BufferResource *DX12TopLevelAS::Buffer( ) const
 {
     return m_buffer.get( );
 }
@@ -109,6 +110,7 @@ const DX12BufferResource *DX12TopLevelAS::Scratch( ) const
 {
     return m_scratch.get( );
 }
+
 void DX12TopLevelAS::Update( const TopLevelASDesc &desc )
 {
 }
