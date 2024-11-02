@@ -26,15 +26,15 @@ namespace DenOfIz
     class MetalBottomLevelAS : public IBottomLevelAS
     {
     private:
-        MetalContext                                          *m_context;
-        BottomLevelASDesc                                      m_desc;
-        std::unique_ptr<MetalBufferResource>                   m_scratch;
-        id<MTLAccelerationStructure>                           m_accelerationStructure;
-        MTLPrimitiveAccelerationStructureDescriptor           *m_descriptor;
-        NSArray<MTLAccelerationStructureGeometryDescriptor *> *m_geometryDescriptors;
-        MTLAccelerationStructureInstanceOptions                m_options;
-        std::vector<id<MTLResource>>                           m_resources;
-        ASGeometryType                                         m_geometryType;
+        MetalContext                                                 *m_context;
+        BottomLevelASDesc                                             m_desc;
+        std::unique_ptr<MetalBufferResource>                          m_scratch;
+        id<MTLAccelerationStructure>                                  m_accelerationStructure;
+        MTLPrimitiveAccelerationStructureDescriptor                  *m_descriptor;
+        NSMutableArray<MTLAccelerationStructureGeometryDescriptor *> *m_geometryDescriptors;
+        MTLAccelerationStructureInstanceOptions                       m_options;
+        std::vector<id<MTLResource>>                                  m_resources;
+        ASGeometryType                                                m_geometryType;
 
     public:
         MetalBottomLevelAS( MetalContext *context, const BottomLevelASDesc &desc );

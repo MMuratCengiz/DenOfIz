@@ -38,8 +38,9 @@ namespace DenOfIz
         IRVirtualAddressRangeAndStride m_hitGroupShaderRange;
         IRVirtualAddressRangeAndStride m_missShaderRange;
 
-        uint32_t m_missGroupOffset = 0;
-        uint32_t m_hitGroupOffset  = 0;
+        uint32_t m_missGroupOffset       = 0;
+        uint32_t m_hitGroupOffset        = 0;
+        uint32_t m_hitGroupEntryNumBytes = 0;
 
     public:
         MetalShaderBindingTable( MetalContext *context, const ShaderBindingTableDesc &desc );

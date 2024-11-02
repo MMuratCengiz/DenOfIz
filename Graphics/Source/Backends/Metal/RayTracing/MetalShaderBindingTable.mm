@@ -24,15 +24,15 @@ using namespace DenOfIz;
 MetalShaderBindingTable::MetalShaderBindingTable( MetalContext *context, const ShaderBindingTableDesc &desc ) : m_context( context )
 {
     m_pipeline = dynamic_cast<MetalPipeline *>( desc.Pipeline );
+    m_hitGroupEntryNumBytes = sizeof( IRShaderIdentifier );
     Resize( desc.SizeDesc );
 }
 
 void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
     uint32_t numHitGroups     = desc.NumInstances * desc.NumGeometries * desc.NumRayTypes;
-    auto     hitGroupNumBytes = numHitGroups * sizeof( IRShaderIdentifier );
-    m_numBufferBytes = desc.NumRayGenerationShaders * sizeof( IRShaderIdentifier ) + numHitGroups * sizeof( IRShaderIdentifier ) +
-                       desc.NumMissShaders * sizeof( IRShaderIdentifier );
+    size_t   hitGroupNumBytes = numHitGroups * m_hitGroupEntryNumBytes;
+    m_numBufferBytes          = desc.NumRayGenerationShaders * sizeof( IRShaderIdentifier ) + hitGroupNumBytes + desc.NumMissShaders * sizeof( IRShaderIdentifier );
 
     m_buffer = [m_context->Device newBufferWithLength:m_numBufferBytes options:MTLResourceStorageModeShared];
     [m_buffer setLabel:@"Shader Binding Table"];
@@ -45,7 +45,7 @@ void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
     m_hitGroupOffset                    = m_rayGenerationShaderRange.SizeInBytes;
     m_hitGroupShaderRange.StartAddress  = m_buffer.gpuAddress + m_hitGroupOffset;
     m_hitGroupShaderRange.SizeInBytes   = hitGroupNumBytes;
-    m_hitGroupShaderRange.StrideInBytes = sizeof( IRShaderIdentifier );
+    m_hitGroupShaderRange.StrideInBytes = m_hitGroupEntryNumBytes;
 
     m_missGroupOffset               = m_hitGroupOffset + hitGroupNumBytes;
     m_missShaderRange.StartAddress  = m_buffer.gpuAddress + m_missGroupOffset;
@@ -138,6 +138,31 @@ void MetalShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 
 void MetalShaderBindingTable::Build( )
 {
+#ifndef NDEBUG
+    // Pretty print the SBT.
+    LOG( INFO ) << "Shader Binding Table:";
+    for ( uint32_t i = 0; i < m_desc.SizeDesc.NumRayGenerationShaders; ++i )
+    {
+        LOG( INFO ) << "Ray Generation Shader: " << m_mappedMemory[ i ].shaderHandle << " Offset: " << i;
+    }
+    for ( uint32_t i = 0; i < m_desc.SizeDesc.NumInstances; ++i )
+    {
+        for ( uint32_t j = 0; j < m_desc.SizeDesc.NumGeometries; ++j )
+        {
+            for ( uint32_t k = 0; k < m_desc.SizeDesc.NumRayTypes; ++k )
+            {
+                uint32_t offset =
+                    m_hitGroupOffset + ( i * m_desc.SizeDesc.NumGeometries * m_desc.SizeDesc.NumRayTypes + j * m_desc.SizeDesc.NumRayTypes + k ) * sizeof( IRShaderIdentifier );
+                LOG( INFO ) << "Hit Group Shader: " << m_mappedMemory[ offset / sizeof( IRShaderIdentifier ) ].shaderHandle << " Offset: " << offset;
+            }
+        }
+    }
+    for ( uint32_t i = 0; i < m_desc.SizeDesc.NumMissShaders; ++i )
+    {
+        uint32_t offset = m_missGroupOffset + i * sizeof( IRShaderIdentifier );
+        LOG( INFO ) << "Miss Shader: " << m_mappedMemory[ offset / sizeof( IRShaderIdentifier ) ].shaderHandle << " Offset: " << offset;
+    }
+#endif
 }
 
 const IRVirtualAddressRange &MetalShaderBindingTable::RayGenerationShaderRange( ) const

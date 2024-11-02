@@ -23,9 +23,9 @@ using namespace DenOfIz;
 
 MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevelASDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    NSMutableArray *geometryDescriptors = [NSMutableArray arrayWithCapacity:desc.Geometries.NumElements( )];
+    m_geometryDescriptors = [NSMutableArray arrayWithCapacity:desc.Geometries.NumElements( )];
 
-    m_options = MTLAccelerationStructureInstanceOptionNone;
+    m_options = MTLAccelerationStructureInstanceOptionDisableTriangleCulling;
     for ( size_t i = 0; i < desc.Geometries.NumElements( ); ++i )
     {
         const ASGeometryDesc &geometry = desc.Geometries.GetElement( i );
@@ -39,10 +39,10 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
         switch ( geometry.Type )
         {
         case ASGeometryType::Triangles:
-            [geometryDescriptors addObject:InitializeTriangles( geometry )];
+            [m_geometryDescriptors addObject:InitializeTriangles( geometry )];
             break;
         case ASGeometryType::AABBs:
-            [geometryDescriptors addObject:InitializeAABBs( geometry )];
+            [m_geometryDescriptors addObject:InitializeAABBs( geometry )];
             break;
         default:
             LOG( ERROR ) << "Invalid geometry type: " << static_cast<int>( geometry.Type );
@@ -65,8 +65,6 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
         usage = MTLAccelerationStructureUsageRefit;
     }
 
-    m_geometryDescriptors = [geometryDescriptors copy];
-
     m_descriptor                     = [MTLPrimitiveAccelerationStructureDescriptor descriptor];
     m_descriptor.usage               = usage;
     m_descriptor.geometryDescriptors = m_geometryDescriptors;
@@ -81,7 +79,7 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
     scratchBufferDesc.DebugName    = "Bottom Level Acceleration Structure Scratch";
     m_scratch                      = std::make_unique<MetalBufferResource>( m_context, scratchBufferDesc );
     m_resources.push_back( m_scratch->Instance( ) );
-    m_accelerationStructure = [context->Device newAccelerationStructureWithDescriptor:m_descriptor];
+    m_accelerationStructure = [context->Device newAccelerationStructureWithSize:asSize.accelerationStructureSize];
     [m_accelerationStructure setLabel:@"Bottom Level Acceleration Structure"];
     m_resources.push_back( m_accelerationStructure );
 }
@@ -129,6 +127,10 @@ MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::Initiali
     if ( geometry.Flags.IsSet( GeometryFlags::NoDuplicateAnyHitInvocation ) )
     {
         triangleDesc.allowDuplicateIntersectionFunctionInvocation = NO;
+    }
+    else
+    {
+        triangleDesc.allowDuplicateIntersectionFunctionInvocation = YES;
     }
 
     return triangleDesc;

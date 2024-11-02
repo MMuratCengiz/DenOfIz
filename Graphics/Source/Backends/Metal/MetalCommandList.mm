@@ -397,6 +397,11 @@ void MetalCommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevel
         return;
     }
 
+    [m_accelerationStructureEncoder useResource:metalTopLevelAS->AccelerationStructure( ) usage:MTLResourceUsageRead];
+    [m_accelerationStructureEncoder useResource:metalTopLevelAS->Scratch( )->Instance( ) usage:MTLResourceUsageWrite];
+    [m_accelerationStructureEncoder useResource:metalTopLevelAS->HeaderBuffer( )->Instance( ) usage:MTLResourceUsageWrite];
+    [m_accelerationStructureEncoder useResource:metalTopLevelAS->InstanceBuffer( )->Instance( ) usage:MTLResourceUsageRead];
+
     [m_accelerationStructureEncoder buildAccelerationStructure:metalTopLevelAS->AccelerationStructure( )
                                                     descriptor:metalTopLevelAS->Descriptor( )
                                                  scratchBuffer:metalTopLevelAS->Scratch( )->Instance( )
@@ -413,6 +418,9 @@ void MetalCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBo
         LOG( ERROR ) << "Invalid bottom level acceleration structure.";
         return;
     }
+
+    [m_accelerationStructureEncoder useResource:metalBottomLevelAS->AccelerationStructure( ) usage:MTLResourceUsageRead];
+    [m_accelerationStructureEncoder useResource:metalBottomLevelAS->Scratch( )->Instance( ) usage:MTLResourceUsageWrite];
 
     [m_accelerationStructureEncoder buildAccelerationStructure:metalBottomLevelAS->AccelerationStructure( )
                                                     descriptor:metalBottomLevelAS->Descriptor( )

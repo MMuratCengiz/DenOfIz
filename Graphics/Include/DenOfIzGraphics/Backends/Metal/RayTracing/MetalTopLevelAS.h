@@ -26,32 +26,32 @@ namespace DenOfIz
     class MetalTopLevelAS : public ITopLevelAS
     {
     private:
-        MetalContext                               *m_context;
-        TopLevelASDesc                              m_desc;
-        id<MTLAccelerationStructure>                m_accelerationStructure;
-        MTLInstanceAccelerationStructureDescriptor *m_descriptor;
-        std::unique_ptr<MetalBufferResource>        m_headerBuffer;
-        std::unique_ptr<MetalBufferResource>        m_buffer;
-        std::unique_ptr<MetalBufferResource>        m_instanceBuffer;
-        std::unique_ptr<MetalBufferResource>        m_scratch;
-        MTLAccelerationStructureInstanceDescriptor *m_instanceDescriptors;
-        std::vector<uint32_t>                       m_contributionsToHitGroupIndices;
-        std::vector<id<MTLResource>>                m_indirectResources;
-        NSMutableArray                             *m_blasList;
+        MetalContext                                     *m_context;
+        TopLevelASDesc                                    m_desc;
+        id<MTLAccelerationStructure>                      m_accelerationStructure;
+        MTLInstanceAccelerationStructureDescriptor       *m_descriptor;
+        std::unique_ptr<MetalBufferResource>              m_headerBuffer;
+        std::unique_ptr<MetalBufferResource>              m_buffer;
+        std::unique_ptr<MetalBufferResource>              m_instanceBuffer;
+        std::unique_ptr<MetalBufferResource>              m_scratch;
+        MTLAccelerationStructureUserIDInstanceDescriptor *m_instanceDescriptors;
+        std::vector<uint32_t>                             m_contributionsToHitGroupIndices;
+        std::vector<id<MTLResource>>                      m_indirectResources;
+        NSMutableArray                                   *m_blasList;
 
     public:
         MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &desc );
         void Update( const TopLevelASDesc &desc ) override;
         ~MetalTopLevelAS( ) override = default;
 
-        [[nodiscard]] id<MTLAccelerationStructure>                AccelerationStructure( ) const;
-        [[nodiscard]] MetalBufferResource                        *HeaderBuffer( ) const;
-        size_t                                                    NumInstances( ) const;
-        [[nodiscard]] const MetalBufferResource                  *InstanceBuffer( ) const;
-        [[nodiscard]] MetalBufferResource                        *Scratch( ) const;
-        [[nodiscard]] MTLAccelerationStructureDescriptor         *Descriptor( );
-        const std::vector<id<MTLResource>>                       &IndirectResources( ) const;
-        [[nodiscard]] MTLAccelerationStructureInstanceDescriptor *InstanceDescriptors( );
+        [[nodiscard]] id<MTLAccelerationStructure>                      AccelerationStructure( ) const;
+        [[nodiscard]] MetalBufferResource                              *HeaderBuffer( ) const;
+        size_t                                                          NumInstances( ) const;
+        [[nodiscard]] const MetalBufferResource                        *InstanceBuffer( ) const;
+        [[nodiscard]] MetalBufferResource                              *Scratch( ) const;
+        [[nodiscard]] MTLAccelerationStructureDescriptor               *Descriptor( );
+        const std::vector<id<MTLResource>>                             &IndirectResources( ) const;
+        [[nodiscard]] MTLAccelerationStructureUserIDInstanceDescriptor *InstanceDescriptors( );
 
     private:
         void createInstanceBuffer( );
