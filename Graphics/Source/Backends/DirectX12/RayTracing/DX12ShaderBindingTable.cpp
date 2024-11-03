@@ -204,11 +204,6 @@ void DX12ShaderBindingTable::Build( )
     DX_CHECK_RESULT( m_context->GraphicsCommandQueue->Wait( barrierFence.get( ), 1 ) );
 }
 
-IBufferResource *DX12ShaderBindingTable::Buffer( ) const
-{
-    return m_buffer.get( );
-}
-
 D3D12_GPU_VIRTUAL_ADDRESS_RANGE DX12ShaderBindingTable::RayGenerationShaderRecord( ) const
 {
     return m_rayGenerationShaderRange;

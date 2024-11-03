@@ -226,11 +226,6 @@ VulkanBufferResource *VulkanShaderBindingTable::VulkanBuffer( ) const
     return m_buffer.get( );
 }
 
-IBufferResource *VulkanShaderBindingTable::Buffer( ) const
-{
-    return m_buffer.get( );
-}
-
 const VkStridedDeviceAddressRegionKHR *VulkanShaderBindingTable::RayGenerationShaderRange( ) const
 {
     return &m_rayGenerationShaderRange;

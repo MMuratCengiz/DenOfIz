@@ -33,12 +33,6 @@ namespace DenOfIz
         id<MTLFunctionHandle> Handle;
     };
 
-    struct IntersectionExport
-    {
-        ShaderFunction ClosestHit;
-        ShaderFunction TriangleIntersection;
-        ShaderFunction ProceduralIntersection;
-    };
     class MetalPipeline final : public IPipeline
     {
     private:
@@ -51,11 +45,10 @@ namespace DenOfIz
         MTLCullMode              m_cullMode;
         id<MTLDepthStencilState> m_depthStencilState;
         // Ray tracing specific
-        std::unordered_map<std::string, ShaderFunction> m_visibleFunctions;
-        IntersectionExport                              m_intersectionExport;
-        std::vector<std::string>                        m_hitGroupShaders;
-        id<MTLVisibleFunctionTable>                     m_visibleFunctionTable;
-        id<MTLIntersectionFunctionTable>                m_intersectionFunctionTable;
+        std::unordered_map<std::string, uint64_t> m_visibleFunctions;
+        std::vector<std::string>                  m_hitGroupShaders;
+        id<MTLVisibleFunctionTable>               m_visibleFunctionTable;
+        id<MTLIntersectionFunctionTable>          m_intersectionFunctionTable;
 
     public:
         MetalPipeline( MetalContext *context, const PipelineDesc &desc );
@@ -66,10 +59,9 @@ namespace DenOfIz
         const id<MTLRenderPipelineState>  &GraphicsPipelineState( ) const;
         const id<MTLComputePipelineState> &ComputePipelineState( ) const;
         // Ray tracing specific:
-        const ShaderFunction                          &FindVisibleShaderFunctionByName( const std::string &name ) const;
+        const uint64_t                                &FindVisibleShaderIndexByName( const std::string &name ) const;
         [[nodiscard]] id<MTLVisibleFunctionTable>      VisibleFunctionTable( ) const;
         [[nodiscard]] id<MTLIntersectionFunctionTable> IntersectionFunctionTable( ) const;
-        [[nodiscard]] const IntersectionExport        &IntersectionExport( ) const;
 
     private:
         void CreateGraphicsPipeline( );

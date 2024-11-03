@@ -68,7 +68,6 @@ namespace DenOfIz
         virtual void                           BindHitGroup( const HitGroupBindingDesc &desc )                 = 0;
         virtual void                           BindMissShader( const MissBindingDesc &desc )                   = 0;
         virtual void                           Build( )                                                        = 0;
-        [[nodiscard]] virtual IBufferResource *Buffer( ) const                                                 = 0;
         //.. omw
         virtual ~IShaderBindingTable( ) = default;
     };

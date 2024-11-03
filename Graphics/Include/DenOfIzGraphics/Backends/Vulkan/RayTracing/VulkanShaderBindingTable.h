@@ -52,7 +52,6 @@ namespace DenOfIz
         void                                BindMissShader( const MissBindingDesc &desc ) override;
         void                                Build( ) override;
         [[nodiscard]] VulkanBufferResource *VulkanBuffer( ) const;
-        [[nodiscard]] IBufferResource      *Buffer( ) const override;
 
         [[nodiscard]] const VkStridedDeviceAddressRegionKHR *RayGenerationShaderRange( ) const;
         [[nodiscard]] const VkStridedDeviceAddressRegionKHR *MissShaderRange( ) const;

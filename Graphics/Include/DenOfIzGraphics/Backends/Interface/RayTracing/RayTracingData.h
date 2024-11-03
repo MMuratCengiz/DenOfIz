@@ -42,4 +42,7 @@ namespace DenOfIz
     {
         bool IsOpaque;
     };
+
+    constexpr uint32_t TriangleIntersectionShader   = 0;
+    constexpr uint32_t ProceduralIntersectionShader = 1;
 } // namespace DenOfIz

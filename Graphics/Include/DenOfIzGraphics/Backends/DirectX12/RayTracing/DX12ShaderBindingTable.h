@@ -51,7 +51,6 @@ namespace DenOfIz
         void                           BindHitGroup( const HitGroupBindingDesc &desc ) override;
         void                           BindMissShader( const MissBindingDesc &desc ) override;
         void                           Build( ) override;
-        [[nodiscard]] IBufferResource *Buffer( ) const override;
 
         [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS_RANGE            RayGenerationShaderRecord( ) const;
         [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE HitGroupShaderRange( ) const;

@@ -32,7 +32,7 @@ namespace DenOfIz
         ShaderBindingTableDesc m_desc;
         size_t                 m_numBufferBytes;
         id<MTLBuffer>          m_buffer;
-        IRShaderIdentifier    *m_mappedMemory;
+        Byte                  *m_mappedMemory;
 
         IRVirtualAddressRange          m_rayGenerationShaderRange;
         IRVirtualAddressRangeAndStride m_hitGroupShaderRange;
@@ -49,7 +49,6 @@ namespace DenOfIz
         void                                   BindHitGroup( const HitGroupBindingDesc &desc ) override;
         void                                   BindMissShader( const MissBindingDesc &desc ) override;
         void                                   Build( ) override;
-        [[nodiscard]] virtual IBufferResource *Buffer( ) const override;
         ~MetalShaderBindingTable( ) override = default;
 
         const id<MTLBuffer>                   MetalBuffer( ) const;
@@ -59,5 +58,6 @@ namespace DenOfIz
 
     private:
         bool BindHitGroupRecursive( const HitGroupBindingDesc &desc );
+        void EncodeShaderIndex( uint32_t offset, uint32_t shaderIndex, int customIntersectionIndex = -1 );
     };
 } // namespace DenOfIz

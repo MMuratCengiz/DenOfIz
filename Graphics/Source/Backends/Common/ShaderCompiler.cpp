@@ -256,10 +256,9 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob
     IRCompilerSetEntryPointName( irCompiler, compileOptions.EntryPoint.Get( ) );
     IRCompilerSetMinimumDeploymentTarget( irCompiler, IROperatingSystem_macOS, "15.1" );
     IRCompilerSetGlobalRootSignature( irCompiler, rootSignature );
-
     // TODO some of these values are hardcoded because metal is odd. The only possible way I can think of is to move the compilation to pipeline creation.
     // But will try this way for now.
-    IRCompilerSetRayTracingPipelineArguments( irCompiler, 4 * sizeof(float), IRRaytracingPipelineFlagNone, IRIntrinsicMaskClosestHitAll, IRIntrinsicMaskMissShaderAll,
+    IRCompilerSetRayTracingPipelineArguments( irCompiler, 2 * sizeof(float), IRRaytracingPipelineFlagNone, IRIntrinsicMaskClosestHitAll, IRIntrinsicMaskMissShaderAll,
 											 IRIntrinsicMaskAnyHitShaderAll, 255, IRRayTracingUnlimitedRecursionDepth, IRRayGenerationCompilationVisibleFunction );
 
     IRObject *irDxil = IRObjectCreateFromDXIL( (const uint8_t *)code->GetBufferPointer( ), code->GetBufferSize( ), IRBytecodeOwnershipNone );
