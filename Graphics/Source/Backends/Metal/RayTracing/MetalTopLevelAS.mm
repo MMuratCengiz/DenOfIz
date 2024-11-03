@@ -66,24 +66,13 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
         m_contributionsToHitGroupIndices.emplace_back( instanceDesc.ContributionToHitGroupIndex );
     }
 
-    m_headerBuffer = [m_context->Device newBufferWithLength:sizeof( IRRaytracingAccelerationStructureGPUHeader ) + sizeof( uint32_t ) * m_contributionsToHitGroupIndices.size( )
-                                                    options:MTLResourceStorageModeShared];
-    [m_headerBuffer setLabel:@"Top Level Acceleration Structure Header Buffer"];
-    m_indirectResources.push_back( m_headerBuffer );
-
-    uint8_t *headerBufferContents = (uint8_t *)m_headerBuffer.contents;
-    IRRaytracingSetAccelerationStructure( headerBufferContents, m_accelerationStructure.gpuResourceID, headerBufferContents + sizeof( IRRaytracingAccelerationStructureGPUHeader ),
-                                          m_contributionsToHitGroupIndices.data( ), m_contributionsToHitGroupIndices.size( ) );
-    auto pHdr                            = (IRRaytracingAccelerationStructureGPUHeader *)( m_headerBuffer.contents );
-    pHdr->addressOfInstanceContributions = m_headerBuffer.gpuAddress + sizeof( IRRaytracingAccelerationStructureGPUHeader );
-
     // Acceleration Structure Configuration
     m_descriptor                                 = [MTLInstanceAccelerationStructureDescriptor descriptor];
     m_descriptor.instancedAccelerationStructures = m_blasList;
     m_descriptor.instanceDescriptorBuffer        = m_instanceBuffer;
     m_descriptor.instanceCount                   = desc.Instances.NumElements( );
     m_descriptor.instanceDescriptorType          = MTLAccelerationStructureInstanceDescriptorTypeUserID;
-    //m_descriptor.usage                           = MTLAccelerationStructureUsagePreferFastBuild;
+    // m_descriptor.usage                           = MTLAccelerationStructureUsagePreferFastBuild;
 
     MTLAccelerationStructureSizes asSize = [m_context->Device accelerationStructureSizesWithDescriptor:m_descriptor];
 
@@ -94,6 +83,17 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
     m_accelerationStructure = [context->Device newAccelerationStructureWithSize:asSize.accelerationStructureSize];
     [m_accelerationStructure setLabel:@"Top Level Acceleration Structure"];
     m_indirectResources.push_back( m_accelerationStructure );
+
+    m_headerBuffer = [m_context->Device newBufferWithLength:sizeof( IRRaytracingAccelerationStructureGPUHeader ) + sizeof( uint32_t ) * m_contributionsToHitGroupIndices.size( )
+                                                    options:MTLResourceStorageModeShared];
+    [m_headerBuffer setLabel:@"Top Level Acceleration Structure Header Buffer"];
+
+    IRRaytracingSetAccelerationStructure( (uint8_t *)m_headerBuffer.contents, m_accelerationStructure.gpuResourceID,
+                                          (uint8_t *)m_headerBuffer.contents + sizeof( IRRaytracingAccelerationStructureGPUHeader ), m_contributionsToHitGroupIndices.data( ),
+                                          m_contributionsToHitGroupIndices.size( ) );
+    auto pHdr                            = (IRRaytracingAccelerationStructureGPUHeader *)( m_headerBuffer.contents );
+    pHdr->addressOfInstanceContributions = m_headerBuffer.gpuAddress + sizeof( IRRaytracingAccelerationStructureGPUHeader );
+    m_indirectResources.push_back( m_headerBuffer );
 }
 
 id<MTLAccelerationStructure> MetalTopLevelAS::AccelerationStructure( ) const

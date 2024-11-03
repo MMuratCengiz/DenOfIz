@@ -599,3 +599,23 @@ void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType )
         }
     }
 }
+
+void MetalCommandList::UseResource( const id<MTLResource> &resource, MTLResourceUsage usage, MTLRenderStages stages )
+{
+    switch ( m_activeEncoderType )
+    {
+    case MetalEncoderType::Render:
+        [m_renderEncoder useResource:resource usage:usage stages:stages];
+        break;
+    case MetalEncoderType::Compute:
+        [m_computeEncoder useResource:resource usage:usage];
+        break;
+    case MetalEncoderType::Blit:
+        break;
+    case MetalEncoderType::AccelerationStructure:
+        [m_accelerationStructureEncoder useResource:resource usage:usage];
+        break;
+    case MetalEncoderType::None:
+        break;
+    }
+}

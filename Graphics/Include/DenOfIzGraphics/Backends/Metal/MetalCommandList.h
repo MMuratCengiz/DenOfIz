@@ -95,19 +95,7 @@ namespace DenOfIz
         void EnsureEncoder( MetalEncoderType encoderType, std::string errorMessage );
         // This is used because Vulkan+DX12 both support more operations in their graphics command list, so seamless transition is provided here
         void SwitchEncoder( MetalEncoderType encoderType );
-
-        template <typename T>
-        void UseResource( const T &resource, MTLResourceUsage usage = MTLResourceUsageRead, MTLRenderStages stages = MTLRenderStageVertex | MTLRenderStageFragment )
-        {
-			if ( m_desc.QueueType == QueueType::Compute || m_desc.QueueType == QueueType::RayTracing )
-            {
-                [m_computeEncoder useResource:resource usage:usage];
-            }
-            else
-            {
-                [m_renderEncoder useResource:resource usage:usage stages:stages];
-            }
-        }
+        void UseResource( const id<MTLResource>& resource,  MTLResourceUsage usage = MTLResourceUsageRead, MTLRenderStages stages = MTLRenderStageVertex | MTLRenderStageFragment );
     };
 
 } // namespace DenOfIz
