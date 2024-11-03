@@ -169,7 +169,7 @@ void MetalShaderBindingTable::EncodeShaderIndex( uint32_t offset, uint32_t shade
     }
 
 #ifndef NDEBUG
-    LOG( INFO ) << "Shader Index: " << shaderIndex << " Offset: " << offset << " IRShaderIdentifier: {.intersectionShaderHandle=" << shaderIdentifier.intersectionShaderHandle
+    LOG( INFO ) << " Offset: " << offset << " IRShaderIdentifier: {.intersectionShaderHandle=" << shaderIdentifier.intersectionShaderHandle
                 << ", .shaderHandle=" << shaderIdentifier.shaderHandle << " }";
 #endif
     Byte *shaderEntry = static_cast<Byte *>( m_mappedMemory ) + offset;

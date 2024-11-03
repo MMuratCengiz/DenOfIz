@@ -201,7 +201,6 @@ void MetalPipeline::CreateRayTracingPipeline( )
     m_visibleFunctions[ "Null" ]          = 0;
 
     uint32_t numVisibleFunctions = nullFunctionOffset + compiledShaders.NumElements( );
-    uint64_t shaderIndex         = nullFunctionOffset;
     for ( uint32_t i = 0; i < compiledShaders.NumElements( ); ++i )
     {
         const auto     &shader      = compiledShaders.GetElement( i );
@@ -212,13 +211,12 @@ void MetalPipeline::CreateRayTracingPipeline( )
 
         if ( shader->Stage == ShaderStage::ClosestHit )
         {
-            m_visibleFunctions[ m_desc.RayTracing.HitGroupExportName.Get( ) ] = shaderIndex;
+            m_visibleFunctions[ m_desc.RayTracing.HitGroupExportName.Get( ) ] = i + nullFunctionOffset;
         }
         else
         {
-            m_visibleFunctions[ shader->EntryPoint.Get( ) ] = shaderIndex;
+            m_visibleFunctions[ shader->EntryPoint.Get( ) ] = i + nullFunctionOffset;
         }
-        ++shaderIndex;
     }
 
     id<MTLLibrary>  triangleIntersectionSynthesizedLibrary = NewSynthesizedIntersectionLibrary( IRHitGroupTypeTriangles );

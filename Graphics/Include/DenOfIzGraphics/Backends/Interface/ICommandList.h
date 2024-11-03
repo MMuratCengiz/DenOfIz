@@ -137,9 +137,9 @@ namespace DenOfIz
 
     struct DZ_API DispatchRaysDesc
     {
-        uint32_t             Width              = 0;
-        uint32_t             Height             = 0;
-        uint32_t             Depth              = 0;
+        uint32_t             Width              = 1;
+        uint32_t             Height             = 1;
+        uint32_t             Depth              = 1;
         IShaderBindingTable *ShaderBindingTable = nullptr;
     };
 
