@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-MetalShaderBindingTable::MetalShaderBindingTable( MetalContext *context, const ShaderBindingTableDesc &desc ) : m_context( context )
+MetalShaderBindingTable::MetalShaderBindingTable( MetalContext *context, const ShaderBindingTableDesc &desc ) : m_context( context ), m_desc( desc )
 {
     m_pipeline              = dynamic_cast<MetalPipeline *>( desc.Pipeline );
     m_hitGroupEntryNumBytes = sizeof( IRShaderIdentifier );
@@ -56,7 +56,7 @@ void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
 void MetalShaderBindingTable::BindRayGenerationShader( const RayGenerationBindingDesc &desc )
 {
     const uint32_t &functionIndex = m_pipeline->FindVisibleShaderIndexByName( desc.ShaderName.Get( ) );
-    EncodeShaderIndex( 0, functionIndex );
+    EncodeShaderIndex( 0, functionIndex + 2 );
 }
 
 void MetalShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
@@ -172,6 +172,6 @@ void MetalShaderBindingTable::EncodeShaderIndex( uint32_t offset, uint32_t shade
     LOG( INFO ) << "Shader Index: " << shaderIndex << " Offset: " << offset << " IRShaderIdentifier: {.intersectionShaderHandle=" << shaderIdentifier.intersectionShaderHandle
                 << ", .shaderHandle=" << shaderIdentifier.shaderHandle << " }";
 #endif
-
-    memcpy( &m_mappedMemory[ offset ], &shaderIdentifier, sizeof( IRShaderIdentifier ) );
+    Byte *shaderEntry = static_cast<Byte *>( m_mappedMemory ) + offset;
+    memcpy( shaderEntry, &shaderIdentifier, sizeof( IRShaderIdentifier ) );
 }
