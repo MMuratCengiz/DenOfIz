@@ -35,9 +35,6 @@ void MyRaygenShader()
 {
     float2 lerpValues = (float2)DispatchRaysIndex() / (float2)DispatchRaysDimensions();
 
-    // Orthographic projection since we're raytracing in screen space.
-    uint2 rayIndex = DispatchRaysIndex().xy;
-
     float3 rayDir = float3(0, 0, 1);
     float3 origin = float3(
         lerp(g_rayGenCB.viewport.left, g_rayGenCB.viewport.right, lerpValues.x),
@@ -72,7 +69,6 @@ void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
 {
     float3 barycentrics = float3(1 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
     payload.color = float4(barycentrics, 1);
-    payload.color.r = 1;
 }
 
 [shader("miss")]
