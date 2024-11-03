@@ -56,7 +56,7 @@ void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
 void MetalShaderBindingTable::BindRayGenerationShader( const RayGenerationBindingDesc &desc )
 {
     const uint32_t &functionIndex = m_pipeline->FindVisibleShaderIndexByName( desc.ShaderName.Get( ) );
-    EncodeShaderIndex( 0, functionIndex + 2 );
+    EncodeShaderIndex( 0, functionIndex );
 }
 
 void MetalShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
