@@ -73,6 +73,8 @@ namespace DenOfIz
         ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &desc ) override;
         IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &desc ) override;
         IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &desc ) override;
+        IShaderRecordLayout *CreateShaderRecordLayout( const ShaderRecordLayoutDesc &createDesc ) override;
+        IShaderRecordData   *CreateShaderRecordData( const ShaderRecordDataDesc &createDesc ) override;
 
         ~VulkanLogicalDevice( ) override;
 

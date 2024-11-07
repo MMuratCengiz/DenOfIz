@@ -58,7 +58,7 @@ void RayTracedTriangleExample::Init( )
     copyToRenderTargetNode.Dependencies.AddElement( "RayTracing" );
 
     m_copyToPresentCallback = std::make_unique<NodeExecutionCallbackHolder>(
-        [ this ]( uint32_t frameIndex, ICommandList *commandList )
+        [ this ]( const uint32_t frameIndex, ICommandList *commandList )
         {
             CopyTextureRegionDesc copyTextureRegionDesc{ };
             copyTextureRegionDesc.SrcTexture = m_raytracingOutput[ frameIndex ].get( );
@@ -87,7 +87,7 @@ void RayTracedTriangleExample::Init( )
 }
 
 // Node execution
-void RayTracedTriangleExample::Execute( uint32_t frameIndex, ICommandList *commandList )
+void RayTracedTriangleExample::Execute( const uint32_t frameIndex, ICommandList *commandList )
 {
     const Viewport &viewport = m_swapChain->GetViewport( );
 
@@ -329,6 +329,7 @@ void RayTracedTriangleExample::CreateShaderBindingTable( )
 
     HitGroupBindingDesc hitGroupDesc{ };
     hitGroupDesc.HitGroupExportName = "HitGroup";
+
 
     hitGroupDesc.Data = InteropArray<Byte>( sizeof( float ) * 4 );
     XMFLOAT4 red = { 1.0f, 0.0f, 0.0f, 1.0f };

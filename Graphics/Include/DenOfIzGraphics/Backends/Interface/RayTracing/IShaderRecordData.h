@@ -39,16 +39,15 @@ namespace DenOfIz
     class DZ_API IShaderRecordData
     {
     public:
-        virtual void Begin( )                                                       = 0;
-        virtual void Cbv( uint32_t index, const IBufferResource *bufferResource )   = 0;
-        virtual void Cbv( uint32_t index, const InteropArray<Byte> &data )          = 0;
-        virtual void Srv( uint32_t index, const IBufferResource *textureResource )  = 0;
-        virtual void Srv( uint32_t index, const ITextureResource *textureResource ) = 0;
-        virtual void Srv( uint32_t index, const InteropArray<Byte> &data )          = 0;
-        virtual void Uav( uint32_t index, const IBufferResource *textureResource )  = 0;
-        virtual void Uav( uint32_t index, const ITextureResource *textureResource ) = 0;
-        virtual void Sampler( uint32_t index, const ISampler *sampler )             = 0;
-        virtual void End( )                                                         = 0;
-        virtual ~IShaderRecordData( )                                               = default;
+        virtual void Begin( )                                                         = 0;
+        virtual void Cbv( uint32_t binding, const IBufferResource *bufferResource )   = 0;
+        virtual void Cbv( uint32_t binding, const InteropArray<Byte> &data )          = 0;
+        virtual void Srv( uint32_t binding, const IBufferResource *textureResource )  = 0;
+        virtual void Srv( uint32_t binding, const ITextureResource *textureResource ) = 0;
+        virtual void Uav( uint32_t binding, const IBufferResource *textureResource )  = 0;
+        virtual void Uav( uint32_t binding, const ITextureResource *textureResource ) = 0;
+        virtual void Sampler( uint32_t binding, const ISampler *sampler )             = 0;
+        virtual void End( )                                                           = 0;
+        virtual ~    IShaderRecordData( )                                             = default;
     };
 } // namespace DenOfIz

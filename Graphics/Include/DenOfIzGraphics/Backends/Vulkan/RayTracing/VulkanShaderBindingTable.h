@@ -29,15 +29,15 @@ namespace DenOfIz
         VulkanContext                        *m_context;
         VulkanPipeline                       *m_pipeline;
         ShaderBindingTableDesc                m_desc;
-        size_t                                m_numBufferBytes;
-        void                                 *m_mappedMemory;
+        size_t                                m_numBufferBytes{};
+        void                                 *m_mappedMemory{};
         std::unique_ptr<VulkanBufferResource> m_stagingBuffer;
         std::unique_ptr<VulkanBufferResource> m_buffer;
 
-        VkStridedDeviceAddressRegionKHR m_rayGenerationShaderRange;
-        VkStridedDeviceAddressRegionKHR m_missShaderRange;
-        VkStridedDeviceAddressRegionKHR m_hitGroupShaderRange;
-        VkStridedDeviceAddressRegionKHR m_callableShaderRange;
+        VkStridedDeviceAddressRegionKHR m_rayGenerationShaderRange{};
+        VkStridedDeviceAddressRegionKHR m_missShaderRange{};
+        VkStridedDeviceAddressRegionKHR m_hitGroupShaderRange{};
+        VkStridedDeviceAddressRegionKHR m_callableShaderRange{};
 
         uint32_t m_missGroupOffset = 0;
         uint32_t m_hitGroupOffset  = 0;

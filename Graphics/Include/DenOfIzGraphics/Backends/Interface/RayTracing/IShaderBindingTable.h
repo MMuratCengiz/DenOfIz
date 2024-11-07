@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include "IBottomLevelAS.h"
 #include "ITopLevelAS.h"
+#include "IShaderRecordData.h"
 
 namespace DenOfIz
 {
@@ -31,7 +32,7 @@ namespace DenOfIz
         int                GeometryIndex      = -1;         // -1 means all geometries
         int                RayTypeIndex       = -1;         // -1 means all ray types
         InteropString      HitGroupExportName = "HitGroup"; // Same as provided in the pipeline creation
-        InteropArray<Byte> Data;
+        IShaderRecordData *Data               = nullptr;
     };
 
     struct DZ_API MissBindingDesc

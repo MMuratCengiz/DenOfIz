@@ -24,25 +24,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class DX12ShaderRecordData : public IShaderRecordData
+    class DX12ShaderRecordData final : public IShaderRecordData
     {
-    private:
         DX12Context            *m_context;
         ShaderRecordDataDesc    m_desc;
         DX12ShaderRecordLayout *m_layout;
         std::vector<Byte>       m_data;
 
     public:
-        DX12ShaderRecordData( DX12Context *context, const ShaderRecordDataDesc &desc );
+             DX12ShaderRecordData( DX12Context *context, const ShaderRecordDataDesc &desc );
         void Begin( ) override;
-        void Cbv( uint32_t index, const IBufferResource *bufferResource ) override;
-        void Cbv( uint32_t index, const InteropArray<Byte> &data ) override;
-        void Srv( uint32_t index, const IBufferResource *textureResource ) override;
-        void Srv( uint32_t index, const ITextureResource *textureResource ) override;
-        void Srv( uint32_t index, const InteropArray<Byte> &data ) override;
-        void Uav( uint32_t index, const IBufferResource *textureResource ) override;
-        void Uav( uint32_t index, const ITextureResource *textureResource ) override;
-        void Sampler( uint32_t index, const ISampler *sampler ) override;
+        void Cbv( uint32_t binding, const IBufferResource *bufferResource ) override;
+        void Cbv( uint32_t binding, const InteropArray<Byte> &data ) override;
+        void Srv( uint32_t binding, const IBufferResource *bufferResource ) override;
+        void Srv( uint32_t binding, const ITextureResource *textureResource ) override;
+        void Uav( uint32_t binding, const IBufferResource *bufferResource ) override;
+        void Uav( uint32_t binding, const ITextureResource *textureResource ) override;
+        void Sampler( uint32_t binding, const ISampler *sampler ) override;
         void End( ) override;
+
+        [[nodiscard]] uint32_t    DataNumBytes( ) const;
+        [[nodiscard]] const Byte *Data( ) const;
+
+    private:
+        void EncodeTexture( uint32_t index, const ITextureResource *texture );
+        void EncodeBuffer( uint32_t index, const IBufferResource *buffer );
+        void EncodeVA( uint32_t index, ID3D12Resource *resource );
     };
 } // namespace DenOfIz

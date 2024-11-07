@@ -48,7 +48,7 @@ namespace DenOfIz
 
         [[nodiscard]] const TextureDesc               &GetDesc( ) const;
         [[nodiscard]] const D3D12_RESOURCE_DESC       &GetResourceDesc( ) const;
-        [[nodiscard]] ID3D12Resource                  *GetResource( ) const;
+        [[nodiscard]] ID3D12Resource                  *Resource( ) const;
 
         [[nodiscard]] BitSet<ResourceUsage> InitialState( ) const override;
         [[nodiscard]] uint32_t              GetWidth( ) const;

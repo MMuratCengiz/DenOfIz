@@ -325,7 +325,7 @@ const D3D12_RESOURCE_DESC &DX12TextureResource::GetResourceDesc( ) const
     return m_resourceDesc;
 }
 
-ID3D12Resource *DX12TextureResource::GetResource( ) const
+ID3D12Resource *DX12TextureResource::Resource( ) const
 {
     return m_resource;
 }

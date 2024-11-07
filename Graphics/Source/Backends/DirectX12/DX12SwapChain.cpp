@@ -76,7 +76,7 @@ void DX12SwapChain::CreateSwapChain( )
 
         m_renderTargetCpuHandles[ i ] = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_RTV ]->GetNextHandle( 1 ).Cpu;
         m_renderTargets[ i ]          = std::make_unique<DX12TextureResource>( buffer.get( ), m_renderTargetCpuHandles[ i ] );
-        m_context->D3DDevice->CreateRenderTargetView( m_renderTargets[ i ]->GetResource( ), &rtvDesc, m_renderTargetCpuHandles[ i ] );
+        m_context->D3DDevice->CreateRenderTargetView( m_renderTargets[ i ]->Resource( ), &rtvDesc, m_renderTargetCpuHandles[ i ] );
     }
 
     SetColorSpace( );

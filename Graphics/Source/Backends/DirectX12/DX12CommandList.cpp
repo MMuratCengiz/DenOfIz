@@ -340,12 +340,12 @@ void DX12CommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyTextur
     const DX12TextureResource *srcTexture = dynamic_cast<DX12TextureResource *>( copyTextureRegionInfo.SrcTexture );
 
     D3D12_TEXTURE_COPY_LOCATION src = { };
-    src.pResource                   = srcTexture->GetResource( );
+    src.pResource                   = srcTexture->Resource( );
     src.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     src.SubresourceIndex            = copyTextureRegionInfo.SrcMipLevel;
 
     D3D12_TEXTURE_COPY_LOCATION dst = { };
-    dst.pResource                   = dstTexture->GetResource( );
+    dst.pResource                   = dstTexture->Resource( );
     dst.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     dst.SubresourceIndex            = copyTextureRegionInfo.DstMipLevel;
 
@@ -377,7 +377,7 @@ void DX12CommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copyBu
     src.PlacedFootprint.Offset = copyBufferToTexture.SrcOffset;
 
     D3D12_TEXTURE_COPY_LOCATION dst = { };
-    dst.pResource                   = dstTexture->GetResource( );
+    dst.pResource                   = dstTexture->Resource( );
     dst.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     dst.SubresourceIndex            = copyBufferToTexture.MipLevel;
     m_commandList->CopyTextureRegion( &dst, 0, 0, 0, &src, nullptr );
@@ -392,7 +392,7 @@ void DX12CommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTe
     const auto *srcTexture = dynamic_cast<DX12TextureResource *>( copyTextureToBuffer.SrcTexture );
 
     D3D12_TEXTURE_COPY_LOCATION src = { };
-    src.pResource                   = srcTexture->GetResource( );
+    src.pResource                   = srcTexture->Resource( );
     src.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     src.SubresourceIndex            = copyTextureToBuffer.MipLevel;
 
@@ -464,7 +464,7 @@ void DX12CommandList::CompatibilityPipelineBarrier( const PipelineBarrierDesc &b
     for ( int i = 0; i < textureBarriers.NumElements( ); i++ )
     {
         const TextureBarrierDesc   &textureBarrier  = textureBarriers.GetElement( i );
-        ID3D12Resource             *pResource       = dynamic_cast<DX12TextureResource *>( textureBarrier.Resource )->GetResource( );
+        ID3D12Resource             *pResource       = dynamic_cast<DX12TextureResource *>( textureBarrier.Resource )->Resource( );
         const D3D12_RESOURCE_STATES before          = DX12EnumConverter::ConvertResourceUsage( textureBarrier.OldState );
         const D3D12_RESOURCE_STATES after           = DX12EnumConverter::ConvertResourceUsage( textureBarrier.NewState );
         D3D12_RESOURCE_BARRIER      resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition( pResource, before, after );
@@ -505,7 +505,7 @@ void DX12CommandList::CompatibilityPipelineBarrier( const PipelineBarrierDesc &b
         if ( memoryBarrier.TextureResource != nullptr )
         {
             const auto *textureResource = dynamic_cast<DX12TextureResource *>( memoryBarrier.TextureResource );
-            dx12Resource                = textureResource->GetResource( );
+            dx12Resource                = textureResource->Resource( );
         }
         if ( isUavBarrier )
         {
@@ -542,7 +542,7 @@ void DX12CommandList::EnhancedPipelineBarrier( const PipelineBarrierDesc &barrie
     for ( int i = 0; i < textureBarriers.NumElements( ); i++ )
     {
         const TextureBarrierDesc &textureBarrier = textureBarriers.GetElement( i );
-        ID3D12Resource           *pResource      = dynamic_cast<DX12TextureResource *>( textureBarrier.Resource )->GetResource( );
+        ID3D12Resource           *pResource      = dynamic_cast<DX12TextureResource *>( textureBarrier.Resource )->Resource( );
 
         D3D12_TEXTURE_BARRIER dxTextureBarrier = dxTextureBarriers.emplace_back( D3D12_TEXTURE_BARRIER{ } );
         dxTextureBarrier.pResource             = pResource;
@@ -561,7 +561,7 @@ void DX12CommandList::EnhancedPipelineBarrier( const PipelineBarrierDesc &barrie
     for ( int i = 0; i < bufferBarriers.NumElements( ); i++ )
     {
         const BufferBarrierDesc &bufferBarrier = bufferBarriers.GetElement( i );
-        ID3D12Resource          *pResource     = dynamic_cast<DX12TextureResource *>( bufferBarrier.Resource )->GetResource( );
+        ID3D12Resource          *pResource     = dynamic_cast<DX12TextureResource *>( bufferBarrier.Resource )->Resource( );
 
         D3D12_BUFFER_BARRIER dxBufferBarrier = dxBufferBarriers.emplace_back( D3D12_BUFFER_BARRIER{ } );
         dxBufferBarrier.pResource            = pResource;

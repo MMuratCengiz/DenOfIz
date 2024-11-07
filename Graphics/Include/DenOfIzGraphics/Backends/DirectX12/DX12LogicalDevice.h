@@ -40,7 +40,7 @@ namespace DenOfIz
         wil::com_ptr<ID3D12Fence>    m_waitIdleFence;
 
     public:
-        DX12LogicalDevice( );
+         DX12LogicalDevice( );
         ~DX12LogicalDevice( ) override;
 
         // Override methods
@@ -64,6 +64,8 @@ namespace DenOfIz
         ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &createDesc ) override;
         IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &createDesc ) override;
         IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &createDesc ) override;
+        IShaderRecordLayout *CreateShaderRecordLayout( const ShaderRecordLayoutDesc &createDesc ) override;
+        IShaderRecordData   *CreateShaderRecordData( const ShaderRecordDataDesc &createDesc ) override;
 
         void WaitIdle( ) override;
         // --

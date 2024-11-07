@@ -28,8 +28,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ISwapChain.h"
 #include "ITextureResource.h"
 #include "RayTracing/IShaderBindingTable.h"
-#include "RayTracing/IShaderRecordLayout.h"
 #include "RayTracing/IShaderRecordData.h"
+#include "RayTracing/IShaderRecordLayout.h"
 
 namespace DenOfIz
 {
@@ -59,15 +59,17 @@ namespace DenOfIz
         virtual IRootSignature     *CreateRootSignature( const RootSignatureDesc &desc )         = 0;
         virtual IInputLayout       *CreateInputLayout( const InputLayoutDesc &desc )             = 0;
         virtual IResourceBindGroup *CreateResourceBindGroup( const ResourceBindGroupDesc &desc ) = 0;
-        virtual IFence             *CreateFence( )                                                     = 0;
-        virtual ISemaphore         *CreateSemaphore( )                                                 = 0;
+        virtual IFence             *CreateFence( )                                               = 0;
+        virtual ISemaphore         *CreateSemaphore( )                                           = 0;
         virtual IBufferResource    *CreateBufferResource( const BufferDesc &desc )               = 0;
         virtual ITextureResource   *CreateTextureResource( const TextureDesc &desc )             = 0;
         virtual ISampler           *CreateSampler( const SamplerDesc &desc )                     = 0;
         // RayTracing:
-        virtual ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &desc )       = 0;
-        virtual IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &desc ) = 0;
-        virtual IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &desc )     = 0;
+        virtual ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &desc )                 = 0;
+        virtual IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &desc )           = 0;
+        virtual IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &desc ) = 0;
+        virtual IShaderRecordLayout *CreateShaderRecordLayout( const ShaderRecordLayoutDesc &desc ) = 0;
+        virtual IShaderRecordData   *CreateShaderRecordData( const ShaderRecordDataDesc &desc )     = 0;
     };
 
 } // namespace DenOfIz

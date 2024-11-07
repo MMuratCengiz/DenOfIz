@@ -48,7 +48,8 @@ namespace DenOfIz
         std::unique_ptr<IResourceBindGroup>              m_rootConstantBindGroup;
         std::unique_ptr<NodeExecutionCallbackHolder>     m_copyToPresentCallback;
         // Raytracing:
-        RayGenConstantBuffer                               m_rayGenCB;
+        std::unique_ptr<IShaderRecordData>                 m_hgData;
+        RayGenConstantBuffer                               m_rayGenCB = { };
         std::unique_ptr<IBufferResource>                   m_rayGenCBResource;
         std::unique_ptr<ShaderProgram>                     m_rayTracingProgram;
         std::unique_ptr<IPipeline>                         m_rayTracingPipeline;
@@ -62,11 +63,10 @@ namespace DenOfIz
         std::unique_ptr<IBufferResource> m_vertexBuffer;
         std::unique_ptr<IBufferResource> m_indexBuffer;
         //
-
         std::unique_ptr<RenderGraph> m_renderGraph;
 
     public:
-        ~RayTracedTriangleExample( ) override = default;
+        ~                 RayTracedTriangleExample( ) override = default;
         void              Init( ) override;
         void              ModifyApiPreferences( APIPreference &defaultApiPreference ) override;
         void              HandleEvent( SDL_Event &event ) override;
