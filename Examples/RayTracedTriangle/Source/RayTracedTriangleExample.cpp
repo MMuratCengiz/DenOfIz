@@ -108,7 +108,7 @@ void RayTracedTriangleExample::Execute( uint32_t frameIndex, ICommandList *comma
 
 void RayTracedTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    defaultApiPreference.Windows = APIPreferenceWindows::DirectX12;
 }
 
 void RayTracedTriangleExample::Update( )
@@ -307,7 +307,6 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
     commandList->Execute( executeDesc );
 
     syncFence->Wait( );
-    sleep( 1 );
 }
 
 void RayTracedTriangleExample::CreateShaderBindingTable( )
@@ -316,6 +315,7 @@ void RayTracedTriangleExample::CreateShaderBindingTable( )
     bindingTableDesc.Pipeline              = m_rayTracingPipeline.get( );
     bindingTableDesc.SizeDesc.NumInstances = 1;
     bindingTableDesc.SizeDesc.NumRayTypes  = 1;
+    bindingTableDesc.HitGroupDataNumBytes  = sizeof( float ) * 4;
 
     m_shaderBindingTable = std::unique_ptr<IShaderBindingTable>( m_logicalDevice->CreateShaderBindingTable( bindingTableDesc ) );
 
@@ -329,6 +329,11 @@ void RayTracedTriangleExample::CreateShaderBindingTable( )
 
     HitGroupBindingDesc hitGroupDesc{ };
     hitGroupDesc.HitGroupExportName = "HitGroup";
+
+    hitGroupDesc.Data = InteropArray<Byte>( sizeof( float ) * 4 );
+    XMFLOAT4 red = { 1.0f, 0.0f, 0.0f, 1.0f };
+    hitGroupDesc.Data.MemCpy( &red, sizeof( float ) * 4 );
+
     m_shaderBindingTable->BindHitGroup( hitGroupDesc );
     m_shaderBindingTable->Build( );
 }

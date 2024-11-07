@@ -14,9 +14,15 @@
 
 #include "RaytracingHlslCompat.h"
 
-RaytracingAccelerationStructure Scene : register(t0, space0);
+struct LocalConstants
+{
+    float4 color;
+};
+
+RaytracingAccelerationStructure Scene : register(t0);
 RWTexture2D<float4> RenderTarget : register(u0);
 ConstantBuffer<RayGenConstantBuffer> g_rayGenCB : register(b0);
+ConstantBuffer<LocalConstants> localCB : register(b0, space31);
 
 typedef BuiltInTriangleIntersectionAttributes MyAttributes;
 struct RayPayload
@@ -69,6 +75,10 @@ void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
 {
     float3 barycentrics = float3(1 - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x, attr.barycentrics.y);
     payload.color = float4(barycentrics, 1);
+    if (localCB.color.a > 0)
+    {
+        payload.color = localCB.color;
+    }
 }
 
 [shader("miss")]

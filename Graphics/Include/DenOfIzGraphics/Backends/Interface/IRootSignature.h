@@ -84,7 +84,6 @@ namespace DenOfIz
 
     struct DZ_API RootSignatureDesc
     {
-        RootSignatureType Type = RootSignatureType::Graphics;
         // The order of the bindings must match the order of the shader inputs!!! TODO might need to be fixed but this is normal for DX12
         InteropArray<ResourceBindingDesc>             ResourceBindings;
         InteropArray<StaticSamplerDesc>               StaticSamplers; // Not supported yet due to lack of support in Metal

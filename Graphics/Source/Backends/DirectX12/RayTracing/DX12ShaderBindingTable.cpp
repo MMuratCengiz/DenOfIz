@@ -20,16 +20,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12ShaderBindingTable::DX12ShaderBindingTable( DX12Context *context, const ShaderBindingTableDesc &desc ) : m_context( context )
+DX12ShaderBindingTable::DX12ShaderBindingTable( DX12Context *context, const ShaderBindingTableDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_pipeline = dynamic_cast<DX12Pipeline *>( desc.Pipeline );
+    m_pipeline         = dynamic_cast<DX12Pipeline *>( desc.Pipeline );
+    m_hitGroupNumBytes = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + m_desc.HitGroupDataNumBytes, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
     Resize( desc.SizeDesc );
 }
 
 void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
     const uint32_t rayGenerationShaderNumBytes = AlignRecord( desc.NumRayGenerationShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
-    const uint32_t hitGroupNumBytes            = AlignRecord( desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+    const uint32_t hitGroupNumBytes            = AlignRecord( desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * m_hitGroupNumBytes );
     const uint32_t missShaderNumBytes          = AlignRecord( desc.NumMissShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
     m_numBufferBytes                           = rayGenerationShaderNumBytes + hitGroupNumBytes + missShaderNumBytes;
 
@@ -58,8 +59,8 @@ void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
     m_hitGroupOffset                        = m_rayGenerationShaderRange.SizeInBytes;
 
     m_hitGroupShaderRange.StartAddress  = m_buffer->Resource( )->GetGPUVirtualAddress( ) + m_hitGroupOffset;
-    m_hitGroupShaderRange.SizeInBytes   = desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-    m_hitGroupShaderRange.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    m_hitGroupShaderRange.SizeInBytes   = desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * m_hitGroupNumBytes;
+    m_hitGroupShaderRange.StrideInBytes = m_hitGroupNumBytes;
 
     m_missGroupOffset               = m_hitGroupOffset + hitGroupNumBytes;
     m_missShaderRange.StartAddress  = AlignRecord( m_buffer->Resource( )->GetGPUVirtualAddress( ) + m_missGroupOffset );
@@ -95,6 +96,11 @@ void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     }
 
     memcpy( hitGroupEntry, hitGroupIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+    if ( desc.Data.NumElements( ) > 0 )
+    {
+        void *hitGroupData = static_cast<Byte *>( hitGroupEntry ) + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+        memcpy( hitGroupData, desc.Data.Data( ), m_desc.HitGroupDataNumBytes );
+    }
 }
 
 bool DX12ShaderBindingTable::BindHitGroupRecursive( const HitGroupBindingDesc &desc )

@@ -28,6 +28,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ISwapChain.h"
 #include "ITextureResource.h"
 #include "RayTracing/IShaderBindingTable.h"
+#include "RayTracing/IShaderRecordLayout.h"
+#include "RayTracing/IShaderRecordData.h"
 
 namespace DenOfIz
 {

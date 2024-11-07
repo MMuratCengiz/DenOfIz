@@ -40,17 +40,18 @@ namespace DenOfIz
         D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE m_hitGroupShaderRange{ };
         D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE m_missShaderRange{ };
 
-        uint32_t m_missGroupOffset = 0;
-        uint32_t m_hitGroupOffset  = 0;
+        uint32_t m_missGroupOffset  = 0;
+        uint32_t m_hitGroupOffset   = 0;
+        uint32_t m_hitGroupNumBytes = 0;
 
     public:
         DX12ShaderBindingTable( DX12Context *context, const ShaderBindingTableDesc &desc );
         ~DX12ShaderBindingTable( ) override = default;
-        void                           Resize( const SBTSizeDesc &desc ) override;
-        void                           BindRayGenerationShader( const RayGenerationBindingDesc &desc ) override;
-        void                           BindHitGroup( const HitGroupBindingDesc &desc ) override;
-        void                           BindMissShader( const MissBindingDesc &desc ) override;
-        void                           Build( ) override;
+        void Resize( const SBTSizeDesc &desc ) override;
+        void BindRayGenerationShader( const RayGenerationBindingDesc &desc ) override;
+        void BindHitGroup( const HitGroupBindingDesc &desc ) override;
+        void BindMissShader( const MissBindingDesc &desc ) override;
+        void Build( ) override;
 
         [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS_RANGE            RayGenerationShaderRecord( ) const;
         [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE HitGroupShaderRange( ) const;

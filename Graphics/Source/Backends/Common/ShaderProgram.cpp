@@ -555,13 +555,16 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
 {
     ShaderReflectDesc result{ };
 
-    InputLayoutDesc      &inputLayout   = result.InputLayout;
-    RootSignatureDesc    &rootSignature = result.RootSignature;
+    InputLayoutDesc        &inputLayout        = result.InputLayout;
+    RootSignatureDesc      &rootSignature      = result.RootSignature;
+    ShaderRecordLayoutDesc &shaderRecordLayout = result.ShaderRecordLayout;
+
     std::vector<uint32_t> descriptorTableLocations;
 
     ReflectionState reflectionState          = { };
     reflectionState.RootSignatureDesc        = &rootSignature;
     reflectionState.InputLayoutDesc          = &inputLayout;
+    reflectionState.ShaderRecordLayoutDesc   = &shaderRecordLayout;
     reflectionState.DescriptorTableLocations = &descriptorTableLocations;
 
     for ( auto &shader : m_compiledShaders )
@@ -696,6 +699,23 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
         rootConstantBinding.Stages.AddElement( state.CompiledShader->Stage );
         rootConstantBinding.NumBytes   = rootConstantReflection.NumBytes;
         rootConstantBinding.Reflection = rootConstantReflection;
+        return;
+    }
+
+    if ( shaderInputBindDesc.Space == DZConfiguration( ).Instance( ).HitGroupDataRegisterSpace )
+    {
+        ReflectionDesc rayTracingShaderRecordReflection;
+        FillReflectionData( state, rayTracingShaderRecordReflection, resourceIndex );
+        if ( rayTracingShaderRecordReflection.Type != ReflectionBindingType::Pointer && rayTracingShaderRecordReflection.Type != ReflectionBindingType::Struct )
+        {
+            LOG( FATAL ) << "Ray tracing shader record reflection type mismatch. RegisterSpace [" << shaderInputBindDesc.Space
+                         << "] is reserved for ray tracing shader records. Which cannot be samplers or textures.";
+        }
+        ShaderRecordBindingDesc &shaderRecordBinding = state.ShaderRecordLayoutDesc->Bindings.EmplaceElement( );
+        shaderRecordBinding.Name                     = shaderInputBindDesc.Name;
+        shaderRecordBinding.Binding                  = shaderInputBindDesc.BindPoint;
+        shaderRecordBinding.NumBytes                 = rayTracingShaderRecordReflection.NumBytes;
+        shaderRecordBinding.Type                     = bindingType;
         return;
     }
 

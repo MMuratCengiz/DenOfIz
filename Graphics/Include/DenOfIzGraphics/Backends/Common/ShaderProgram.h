@@ -18,9 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Backends/Interface/IInputLayout.h"
-#include "DenOfIzGraphics/Backends/Interface/IRootSignature.h"
-#include "DenOfIzGraphics/Backends/Interface/IShader.h"
+#include <DenOfIzGraphics/Backends/Interface/IInputLayout.h>
+#include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
+#include <DenOfIzGraphics/Backends/Interface/IShader.h>
+#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderRecordLayout.h>
 #include "ShaderCompiler.h"
 
 #ifndef _WIN32
@@ -50,8 +51,9 @@ namespace DenOfIz
 
     struct DZ_API ShaderReflectDesc
     {
-        InputLayoutDesc   InputLayout;
-        RootSignatureDesc RootSignature;
+        InputLayoutDesc                  InputLayout;
+        RootSignatureDesc                RootSignature;
+        ShaderRecordLayoutDesc           ShaderRecordLayout; // RegisterSpace = 29,
     };
 
 #ifdef BUILD_METAL
@@ -69,6 +71,7 @@ namespace DenOfIz
     {
         RootSignatureDesc              *RootSignatureDesc;
         InputLayoutDesc                *InputLayoutDesc;
+        ShaderRecordLayoutDesc         *ShaderRecordLayoutDesc;
         CompiledShader                 *CompiledShader;
         ID3D12ShaderReflection         *ShaderReflection;
         ID3D12LibraryReflection        *LibraryReflection;
@@ -110,7 +113,7 @@ namespace DenOfIz
         // Returns true if the bound resource is found(and an update is performed), false otherwise
         // Adds additional stages if existing stages are found
         bool UpdateBoundResourceStage( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
-        void IterateBoundResources( CompiledShader* shader, ReflectionState &state, ReflectionCallback &callback ) const;
+        void IterateBoundResources( CompiledShader *shader, ReflectionState &state, ReflectionCallback &callback ) const;
 #ifdef BUILD_METAL
         void ProduceMSL( );
 #endif

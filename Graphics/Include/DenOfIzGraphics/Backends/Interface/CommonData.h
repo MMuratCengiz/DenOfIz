@@ -213,20 +213,20 @@ namespace DenOfIz
 
     enum class ResourceDescriptor
     {
-        Buffer                        = 1 << 1,
-        RWBuffer                      = 1 << 2,
-        Texture                       = 1 << 3,
-        RWTexture                     = 1 << 4,
-        RenderTarget                  = 1 << 5,
-        DepthStencil                  = 1 << 6,
-        Sampler                       = 1 << 7,
-        UniformBuffer                 = 1 << 8,
-        RootConstant                  = 1 << 9,
-        IndexBuffer                   = 1 << 10,
-        VertexBuffer                  = 1 << 11,
-        IndirectBuffer                = 1 << 12,
-        TextureCube                   = 1 << 13,
-        AccelerationStructure         = 1 << 14
+        Buffer                = 1 << 1,
+        RWBuffer              = 1 << 2,
+        Texture               = 1 << 3,
+        RWTexture             = 1 << 4,
+        RenderTarget          = 1 << 5,
+        DepthStencil          = 1 << 6,
+        Sampler               = 1 << 7,
+        UniformBuffer         = 1 << 8,
+        RootConstant          = 1 << 9,
+        IndexBuffer           = 1 << 10,
+        VertexBuffer          = 1 << 11,
+        IndirectBuffer        = 1 << 12,
+        TextureCube           = 1 << 13,
+        AccelerationStructure = 1 << 14
     };
 
     enum class ResourceUsage
@@ -319,10 +319,30 @@ namespace DenOfIz
     };
     template class DZ_API InteropArray<PhysicalDevice>;
 
+    /**
+     * Modifiable configuration to configure backend specific settings.
+     * This class is not thread safe and should be configured before any backend is initialized to avoid any undefined behavior.
+     */
     struct DZ_API DZConfiguration
     {
         /**
-         *  NOTE: Maximum register space for Vulkan is 32(number of sets). Therefore the register spaces take the last two up.
+         *  NOTE: Maximum register space for Vulkan is 32(number of sets). For DirectX12/Metal this is the maximum number of root level buffers.
+         *  There fore constants should be set to 32 or lower.
+         */
+
+        /**
+         * Register for the local root signature required for data for individual raygen shader in ray tracing.
+         */
+        uint32_t RaygenDataRegisterSpace = 27;
+        /**
+         * Register for the local root signature required for data for individual miss shader in ray tracing.
+         */
+        uint32_t MissDataRegisterSpace = 28;
+        /**
+         * Register for the local root signature required for data for individual hit groups in ray tracing.
+         */
+        uint32_t HitGroupDataRegisterSpace = 29;
+        /**
          *
          *  Specify the register space where all bindings are stored as root level buffer.
          *  for best performance results only include buffers and not textures. As Textures and Samplers usually are bound on a descriptor table.

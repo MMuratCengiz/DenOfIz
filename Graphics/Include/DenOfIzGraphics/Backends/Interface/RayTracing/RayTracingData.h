@@ -38,11 +38,8 @@ namespace DenOfIz
     };
     template class DZ_API BitSet<ASBuildFlags>;
 
-    struct DZ_API GeometryOptions
-    {
-        bool IsOpaque;
-    };
-
+#ifdef BUILD_METAL
     constexpr uint32_t TriangleIntersectionShader   = 0;
     constexpr uint32_t ProceduralIntersectionShader = 1;
+#endif
 } // namespace DenOfIz
