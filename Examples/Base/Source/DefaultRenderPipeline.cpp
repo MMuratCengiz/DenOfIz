@@ -30,7 +30,8 @@ DefaultRenderPipeline::DefaultRenderPipeline( const GraphicsApi *graphicsApi, IL
     pixelShaderDesc.Path                      = "Assets/Shaders/DefaultRenderPipeline.ps.hlsl";
     pixelShaderDesc.Stage                     = ShaderStage::Pixel;
 
-    m_program              = std::unique_ptr<ShaderProgram>( graphicsApi->CreateShaderProgram( shaders ) );
+    ProgramDesc programDesc{ .Shaders = shaders };
+    m_program              = std::unique_ptr<ShaderProgram>( graphicsApi->CreateShaderProgram( programDesc ) );
     auto programReflection = m_program->Reflect( );
 
     m_rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( programReflection.RootSignature ) );

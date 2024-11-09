@@ -167,9 +167,28 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     missShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
     missShaderDesc.EntryPoint = "MyMissShader";
     shaderDescs.AddElement( missShaderDesc );
-    m_rayTracingProgram       = std::unique_ptr<ShaderProgram>( m_graphicsApi->CreateShaderProgram( shaderDescs, false ) );
+
+    ProgramDesc programDesc{ };
+    programDesc.Shaders       = shaderDescs;
+    programDesc.EnableCaching = false;
+
+    ShaderRecordBindingDesc &shaderRecordBindingDesc = programDesc.ShaderRecordLayout.EmplaceElement( );
+    shaderRecordBindingDesc.EntryName                = "MyClosestHitShader";
+    shaderRecordBindingDesc.RegisterSpace            = 29;
+    shaderRecordBindingDesc.Stage                    = ShaderStage::ClosestHit;
+
+    m_rayTracingProgram       = std::unique_ptr<ShaderProgram>( m_graphicsApi->CreateShaderProgram( programDesc ) );
     auto reflection           = m_rayTracingProgram->Reflect( );
     m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
+    m_hgShaderLayout          = std::unique_ptr<IShaderRecordLayout>( m_logicalDevice->CreateShaderRecordLayout( reflection.ShaderRecordLayout ) );
+
+    m_hgData = std::unique_ptr<IShaderRecordData>( m_logicalDevice->CreateShaderRecordData( { m_hgShaderLayout.get( ) } ) );
+
+    auto     redData = InteropArray<Byte>( sizeof( float ) * 4 );
+    XMFLOAT4 red     = { 1.0f, 0.0f, 0.0f, 1.0f };
+    redData.MemCpy( &red, sizeof( float ) * 4 );
+
+    m_hgData->Cbv( 0, redData );
 
     ResourceBindGroupDesc bindGroupDesc{ };
     bindGroupDesc.RootSignature = m_rayTracingRootSignature.get( );
@@ -190,7 +209,8 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     pipelineDesc.ShaderProgram                   = m_rayTracingProgram.get( );
     pipelineDesc.RayTracing.MaxNumPayloadBytes   = 4 * sizeof( float );
     pipelineDesc.RayTracing.MaxNumAttributeBytes = 2 * sizeof( float );
-    m_rayTracingPipeline                         = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
+    pipelineDesc.RayTracing.ShaderRecordLayouts.AddElement( m_hgShaderLayout.get( ) );
+    m_rayTracingPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 }
 
 void RayTracedTriangleExample::CreateResources( )
@@ -259,7 +279,6 @@ void RayTracedTriangleExample::CreateResources( )
     rayGenCBCopy.DstBuffer = m_rayGenCBResource.get( );
     rayGenCBCopy.Data      = rayGenCBArray;
     batchResourceCopy.CopyToGPUBuffer( rayGenCBCopy );
-
     batchResourceCopy.Submit( );
 }
 
@@ -329,11 +348,7 @@ void RayTracedTriangleExample::CreateShaderBindingTable( )
 
     HitGroupBindingDesc hitGroupDesc{ };
     hitGroupDesc.HitGroupExportName = "HitGroup";
-
-
-    hitGroupDesc.Data = InteropArray<Byte>( sizeof( float ) * 4 );
-    XMFLOAT4 red = { 1.0f, 0.0f, 0.0f, 1.0f };
-    hitGroupDesc.Data.MemCpy( &red, sizeof( float ) * 4 );
+    hitGroupDesc.Data               = m_hgData.get( );
 
     m_shaderBindingTable->BindHitGroup( hitGroupDesc );
     m_shaderBindingTable->Build( );

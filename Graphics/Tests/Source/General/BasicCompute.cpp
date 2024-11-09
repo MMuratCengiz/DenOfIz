@@ -30,7 +30,8 @@ void BasicCompute( const GraphicsApi &gApi )
     InteropArray<ShaderDesc> shaderDescs{ };
     shaderDescs.AddElement( shaderDesc );
 
-    std::unique_ptr<ShaderProgram> program = std::unique_ptr<ShaderProgram>( gApi.CreateShaderProgram( shaderDescs ) );
+    ProgramDesc                    programDesc{ .Shaders = shaderDescs };
+    std::unique_ptr<ShaderProgram> program = std::unique_ptr<ShaderProgram>( gApi.CreateShaderProgram( programDesc ) );
 
     InteropArray<ResourceBindingDesc> resourceBindings{ };
     ResourceBindingDesc              &resourceBindingDesc = resourceBindings.EmplaceElement( );

@@ -24,43 +24,25 @@ using namespace DenOfIz;
 
 DX12ShaderRecordLayout::DX12ShaderRecordLayout( DX12Context *context, const ShaderRecordLayoutDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    std::vector<D3D12_ROOT_PARAMETER1> rootParameters( desc.Bindings.NumElements( ) );
-
-    uint32_t registerSpace = 0;
-    switch ( desc.Stage )
-    {
-    case ShaderStage::Raygen:
-        registerSpace = DZConfiguration::Instance( ).RaygenDataRegisterSpace;
-        break;
-    case ShaderStage::Miss:
-        registerSpace = DZConfiguration::Instance( ).MissDataRegisterSpace;
-        break;
-    case ShaderStage::AnyHit:
-    case ShaderStage::ClosestHit:
-    case ShaderStage::Intersection:
-        registerSpace = DZConfiguration::Instance( ).HitGroupDataRegisterSpace;
-    default:
-        LOG( ERROR ) << "Invalid shader stage, IShaderRecordLayout can only be created for ray tracing shaders";
-        break;
-    }
+    std::vector<D3D12_ROOT_PARAMETER1> rootParameters( desc.ResourceBindings.NumElements( ) );
 
     std::vector<D3D12_DESCRIPTOR_RANGE1> samplerRanges;
-    for ( uint32_t i = 0; i < desc.Bindings.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < desc.ResourceBindings.NumElements( ); ++i )
     {
-        const auto &binding = desc.Bindings.GetElement( i );
+        const auto &binding = desc.ResourceBindings.GetElement( i );
 
         D3D12_ROOT_PARAMETER1 &rootParameter = rootParameters[ i ];
         bool                   isDescriptor  = false;
-        switch ( binding.Type )
+        switch ( binding.BindingType )
         {
         case DescriptorBufferBindingType::ConstantBuffer:
             rootParameter.ParameterType            = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-            rootParameter.Constants.RegisterSpace  = registerSpace;
+            rootParameter.Constants.RegisterSpace  = binding.RegisterSpace;
             rootParameter.Constants.ShaderRegister = binding.Binding;
-            rootParameter.Constants.Num32BitValues = binding.NumBytes / 4;
-            m_shaderRecordNumBytes += binding.NumBytes;
+            rootParameter.Constants.Num32BitValues = binding.Reflection.NumBytes / 4;
+            m_shaderRecordNumBytes += binding.Reflection.NumBytes;
             ContainerUtilities::SafeSet( m_bindingIndices[ CBV_INDEX ], binding.Binding, i );
-            ContainerUtilities::SafeSet( m_cbvNumBytes, binding.Binding, binding.NumBytes );
+            ContainerUtilities::SafeSet( m_cbvNumBytes, binding.Binding, binding.Reflection.NumBytes );
             break;
         case DescriptorBufferBindingType::ShaderResource:
             rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
@@ -77,19 +59,18 @@ DX12ShaderRecordLayout::DX12ShaderRecordLayout( DX12Context *context, const Shad
             samplerRanges.push_back( { .RangeType                         = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER,
                                        .NumDescriptors                    = 1,
                                        .BaseShaderRegister                = binding.Binding,
-                                       .RegisterSpace                     = registerSpace,
+                                       .RegisterSpace                     = binding.RegisterSpace,
                                        .OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND } );
             break;
         }
 
         if ( isDescriptor )
         {
-            rootParameter.Descriptor.RegisterSpace  = registerSpace;
+            rootParameter.Descriptor.RegisterSpace  = binding.RegisterSpace;
             rootParameter.Descriptor.ShaderRegister = binding.Binding;
             m_shaderRecordNumBytes += sizeof( D3D12_GPU_DESCRIPTOR_HANDLE );
         }
-
-        rootParameter.ShaderVisibility = DX12EnumConverter::ConvertShaderStageToShaderVisibility( desc.Stage );
+        rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     }
 
     D3D12_VERSIONED_ROOT_SIGNATURE_DESC localSigDesc = { };
@@ -102,8 +83,7 @@ DX12ShaderRecordLayout::DX12ShaderRecordLayout( DX12Context *context, const Shad
     ComPtr<ID3DBlob> errorBlob;
     D3D12SerializeVersionedRootSignature( &localSigDesc, &serializedRootSig, &errorBlob );
 
-    ComPtr<ID3D12RootSignature> hitGroupRootSignature;
-    m_context->D3DDevice->CreateRootSignature( 0, serializedRootSig->GetBufferPointer( ), serializedRootSig->GetBufferSize( ), IID_PPV_ARGS( &hitGroupRootSignature ) );
+    m_context->D3DDevice->CreateRootSignature( 0, serializedRootSig->GetBufferPointer( ), serializedRootSig->GetBufferSize( ), IID_PPV_ARGS( &m_rootSignature ) );
 }
 
 uint32_t DX12ShaderRecordLayout::CbvIndex( uint32_t bindingIndex ) const
@@ -142,7 +122,17 @@ uint32_t DX12ShaderRecordLayout::UavIndex( uint32_t bindingIndex ) const
     return m_bindingIndices[ UAV_INDEX ][ bindingIndex ];
 }
 
+ID3D12RootSignature *DX12ShaderRecordLayout::RootSignature( ) const
+{
+    return m_rootSignature.get( );
+}
+
 uint32_t DX12ShaderRecordLayout::SamplerIndex( ) const
 {
     return m_samplerTableIndex;
+}
+
+const uint32_t DX12ShaderRecordLayout::ShaderRecordNumBytes( ) const
+{
+    return m_shaderRecordNumBytes;
 }

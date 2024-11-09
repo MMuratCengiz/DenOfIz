@@ -40,16 +40,17 @@ namespace DenOfIz
         static constexpr uint32_t SAMPLER_INDEX        = 3;
 
         std::array<std::vector<uint32_t>, NUM_DESCRIPTOR_TYPES> m_bindingIndices;
-        std::vector<uint32_t>                                   m_cbvNumBytes;
+        std::vector<size_t>                                     m_cbvNumBytes;
 
     public:
         DX12ShaderRecordLayout( DX12Context *context, const ShaderRecordLayoutDesc &desc );
-        uint32_t                      CbvIndex( uint32_t bindingIndex ) const;
-        size_t                        CbvNumBytes( uint32_t bindingIndex ) const;
-        uint32_t                      SrvIndex( uint32_t bindingIndex ) const;
-        uint32_t                      UavIndex( uint32_t bindingIndex ) const;
-        uint32_t                      SamplerIndex( ) const;
-        [[nodiscard]] const uint32_t &ShaderRecordNumBytes( ) const;
+        [[nodiscard]] ID3D12RootSignature *RootSignature( ) const;
+        uint32_t                           CbvIndex( uint32_t bindingIndex ) const;
+        size_t                             CbvNumBytes( uint32_t bindingIndex ) const;
+        uint32_t                           SrvIndex( uint32_t bindingIndex ) const;
+        uint32_t                           UavIndex( uint32_t bindingIndex ) const;
+        uint32_t                           SamplerIndex( ) const;
+        [[nodiscard]] const uint32_t       ShaderRecordNumBytes( ) const;
         ~DX12ShaderRecordLayout( ) override = default;
     };
 } // namespace DenOfIz

@@ -32,7 +32,7 @@ namespace DenOfIz
         std::vector<Byte>       m_data;
 
     public:
-             DX12ShaderRecordData( DX12Context *context, const ShaderRecordDataDesc &desc );
+        DX12ShaderRecordData( DX12Context *context, const ShaderRecordDataDesc &desc );
         void Begin( ) override;
         void Cbv( uint32_t binding, const IBufferResource *bufferResource ) override;
         void Cbv( uint32_t binding, const InteropArray<Byte> &data ) override;

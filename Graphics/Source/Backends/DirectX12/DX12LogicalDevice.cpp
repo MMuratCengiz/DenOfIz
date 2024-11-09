@@ -20,6 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLevelAS.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderRecordLayout.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderRecordData.h>
 
 #include "SDL2/SDL_syswm.h"
 
@@ -38,7 +40,7 @@ DX12LogicalDevice::~DX12LogicalDevice( )
 void DX12LogicalDevice::CreateDevice( )
 {
     DWORD dxgiFactoryFlags = 0;
-#if not defined(NDEBUG) && not defined (NSIGHT_ENABLE)
+#if not defined( NDEBUG ) && not defined( NSIGHT_ENABLE )
     {
         wil::com_ptr<ID3D12Debug> debugController;
         if ( SUCCEEDED( D3D12GetDebugInterface( IID_PPV_ARGS( debugController.put( ) ) ) ) )
@@ -155,7 +157,7 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
         throw std::exception( "Requires Shader Model 6.3 or better support" );
     }
 
-#if not defined(NDEBUG) && not defined (NSIGHT_ENABLE)
+#if not defined( NDEBUG ) && not defined( NSIGHT_ENABLE )
     // Configure debug device (if active).
     if ( wil::com_ptr<ID3D12InfoQueue1> d3dInfoQueue = m_context->D3DDevice.query<ID3D12InfoQueue1>( ) )
     {
@@ -340,6 +342,16 @@ IBottomLevelAS *DX12LogicalDevice::CreateBottomLevelAS( const BottomLevelASDesc 
 IShaderBindingTable *DX12LogicalDevice::CreateShaderBindingTable( const ShaderBindingTableDesc &sbtDesc )
 {
     return new DX12ShaderBindingTable( m_context.get( ), sbtDesc );
+}
+
+IShaderRecordLayout *DX12LogicalDevice::CreateShaderRecordLayout( const ShaderRecordLayoutDesc &createDesc )
+{
+    return new DX12ShaderRecordLayout( m_context.get( ), createDesc );
+}
+
+IShaderRecordData *DX12LogicalDevice::CreateShaderRecordData( const ShaderRecordDataDesc &createDesc )
+{
+    return new DX12ShaderRecordData( m_context.get( ), createDesc );
 }
 
 bool DX12LogicalDevice::IsDeviceLost( )

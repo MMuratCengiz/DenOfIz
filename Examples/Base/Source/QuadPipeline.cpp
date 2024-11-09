@@ -30,16 +30,17 @@ QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logi
     pixelShaderDesc.Path                      = pixelShader;
     pixelShaderDesc.Stage                     = ShaderStage::Pixel;
 
-    auto program           = std::unique_ptr<ShaderProgram>( graphicsApi->CreateShaderProgram( shaders ) );
-    auto programReflection = program->Reflect( );
+    ProgramDesc programDesc{ .Shaders = shaders };
+    auto        program           = std::unique_ptr<ShaderProgram>( graphicsApi->CreateShaderProgram( programDesc ) );
+    auto        programReflection = program->Reflect( );
 
     m_rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( programReflection.RootSignature ) );
     m_inputLayout   = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( programReflection.InputLayout ) );
 
     PipelineDesc pipelineDesc{ };
-    pipelineDesc.InputLayout       = m_inputLayout.get( );
-    pipelineDesc.RootSignature     = m_rootSignature.get( );
-    pipelineDesc.ShaderProgram     = program.get( );
+    pipelineDesc.InputLayout   = m_inputLayout.get( );
+    pipelineDesc.RootSignature = m_rootSignature.get( );
+    pipelineDesc.ShaderProgram = program.get( );
     pipelineDesc.Graphics.RenderTargets.AddElement( { .Format = Format::B8G8R8A8Unorm } );
     pipelineDesc.Graphics.CullMode = CullMode::BackFace;
 

@@ -41,19 +41,33 @@ namespace DenOfIz
         InteropString               EntryPoint = "main";
     };
 
+    /// <summary>
+    /// This is used to bind data to raytracing shaders. With this structure you specify a register space, a stage and an entry name which will be then created as a root structure
+    /// Any data you bind to this register space will be considered input for the specific ShaderStage.
+    /// Note there is no difference between the hit shaders as normally they are all exported together.
+    /// </summary>
+    struct DZ_API ShaderRecordBindingDesc
+    {
+        uint32_t      RegisterSpace;
+        ShaderStage   Stage;
+        InteropString EntryName;
+    };
+    template class DZ_API InteropArray<ShaderRecordBindingDesc>;
+
     struct DZ_API ShaderProgramDesc
     {
-        TargetIL                 TargetIL;
-        InteropArray<ShaderDesc> Shaders;
-        bool                     EnableCaching = true;
+        TargetIL                              TargetIL;
+        InteropArray<ShaderDesc>              Shaders;
+        bool                                  EnableCaching = true;
+        InteropArray<ShaderRecordBindingDesc> ShaderRecordBindings;
     };
     template class DZ_API InteropArray<ShaderDesc>;
 
     struct DZ_API ShaderReflectDesc
     {
-        InputLayoutDesc                  InputLayout;
-        RootSignatureDesc                RootSignature;
-        ShaderRecordLayoutDesc           ShaderRecordLayout; // RegisterSpace = 29,
+        InputLayoutDesc        InputLayout;
+        RootSignatureDesc      RootSignature;
+        ShaderRecordLayoutDesc ShaderRecordLayout;
     };
 
 #ifdef BUILD_METAL
@@ -71,7 +85,7 @@ namespace DenOfIz
     {
         RootSignatureDesc              *RootSignatureDesc;
         InputLayoutDesc                *InputLayoutDesc;
-        ShaderRecordLayoutDesc         *ShaderRecordLayoutDesc;
+        ShaderRecordLayoutDesc         *ShaderRecordLayout;
         CompiledShader                 *CompiledShader;
         ID3D12ShaderReflection         *ShaderReflection;
         ID3D12LibraryReflection        *LibraryReflection;
@@ -113,8 +127,8 @@ namespace DenOfIz
         // Returns true if the bound resource is found(and an update is performed), false otherwise
         // Adds additional stages if existing stages are found
         bool UpdateBoundResourceStage( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
-        void IterateBoundResources( CompiledShader *shader, ReflectionState &state, ReflectionCallback &callback ) const;
 #ifdef BUILD_METAL
+        void IterateBoundResources( CompiledShader *shader, ReflectionState &state, ReflectionCallback &callback ) const;
         void ProduceMSL( );
 #endif
     };

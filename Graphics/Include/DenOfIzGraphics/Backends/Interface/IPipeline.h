@@ -168,11 +168,12 @@ namespace DenOfIz
 
     struct DZ_API RayTracingPipelineDesc
     {
-        ASGeometryType GeometryType         = ASGeometryType::Triangles;
-        uint32_t       MaxRecursionDepth    = 1;
-        uint32_t       MaxNumPayloadBytes   = 0;
-        uint32_t       MaxNumAttributeBytes = 0;
-        InteropString  HitGroupExportName   = "HitGroup";
+        ASGeometryType                      GeometryType         = ASGeometryType::Triangles;
+        uint32_t                            MaxRecursionDepth    = 1;
+        uint32_t                            MaxNumPayloadBytes   = 0;
+        uint32_t                            MaxNumAttributeBytes = 0;
+        InteropString                       HitGroupExportName   = "HitGroup";
+        InteropArray<IShaderRecordLayout *> ShaderRecordLayouts;
     };
 
     struct DZ_API ComputePipelineDesc{ };

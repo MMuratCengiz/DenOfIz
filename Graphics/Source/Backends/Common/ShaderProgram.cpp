@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
-#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <directx/d3d12shader.h>
 #include <ranges>
 #include <unordered_set>
@@ -555,16 +554,16 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
 {
     ShaderReflectDesc result{ };
 
-    InputLayoutDesc        &inputLayout        = result.InputLayout;
-    RootSignatureDesc      &rootSignature      = result.RootSignature;
-    ShaderRecordLayoutDesc &shaderRecordLayout = result.ShaderRecordLayout;
+    InputLayoutDesc        &inputLayout   = result.InputLayout;
+    RootSignatureDesc      &rootSignature = result.RootSignature;
+    ShaderRecordLayoutDesc &recordLayout  = result.ShaderRecordLayout;
 
     std::vector<uint32_t> descriptorTableLocations;
 
     ReflectionState reflectionState          = { };
     reflectionState.RootSignatureDesc        = &rootSignature;
     reflectionState.InputLayoutDesc          = &inputLayout;
-    reflectionState.ShaderRecordLayoutDesc   = &shaderRecordLayout;
+    reflectionState.ShaderRecordLayout       = &recordLayout;
     reflectionState.DescriptorTableLocations = &descriptorTableLocations;
 
     for ( auto &shader : m_compiledShaders )
@@ -702,24 +701,18 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
         return;
     }
 
-    if ( shaderInputBindDesc.Space == DZConfiguration( ).Instance( ).HitGroupDataRegisterSpace )
+    // If this register space is configured to be a LocalRootSignature, then populate the corresponding Bindings.
+    InteropArray<ResourceBindingDesc> *resourceBindings = &state.RootSignatureDesc->ResourceBindings;
+    for ( int i = 0; i < m_desc.ShaderRecordBindings.NumElements( ); ++i )
     {
-        ReflectionDesc rayTracingShaderRecordReflection;
-        FillReflectionData( state, rayTracingShaderRecordReflection, resourceIndex );
-        if ( rayTracingShaderRecordReflection.Type != ReflectionBindingType::Pointer && rayTracingShaderRecordReflection.Type != ReflectionBindingType::Struct )
+        auto &recordBinding = m_desc.ShaderRecordBindings.GetElement( i );
+        if ( recordBinding.RegisterSpace == shaderInputBindDesc.Space )
         {
-            LOG( FATAL ) << "Ray tracing shader record reflection type mismatch. RegisterSpace [" << shaderInputBindDesc.Space
-                         << "] is reserved for ray tracing shader records. Which cannot be samplers or textures.";
+            resourceBindings = &state.ShaderRecordLayout->ResourceBindings;
         }
-        ShaderRecordBindingDesc &shaderRecordBinding = state.ShaderRecordLayoutDesc->Bindings.EmplaceElement( );
-        shaderRecordBinding.Name                     = shaderInputBindDesc.Name;
-        shaderRecordBinding.Binding                  = shaderInputBindDesc.BindPoint;
-        shaderRecordBinding.NumBytes                 = rayTracingShaderRecordReflection.NumBytes;
-        shaderRecordBinding.Type                     = bindingType;
-        return;
     }
 
-    ResourceBindingDesc &resourceBindingDesc = state.RootSignatureDesc->ResourceBindings.EmplaceElement( );
+    ResourceBindingDesc &resourceBindingDesc = resourceBindings->EmplaceElement( );
     resourceBindingDesc.Name                 = shaderInputBindDesc.Name;
     resourceBindingDesc.Binding              = shaderInputBindDesc.BindPoint;
     resourceBindingDesc.RegisterSpace        = shaderInputBindDesc.Space;

@@ -90,9 +90,11 @@ ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
     return logicalDevice;
 }
 
-ShaderProgram *GraphicsApi::CreateShaderProgram( const InteropArray<ShaderDesc> &shaders, bool enableCaching ) const
+ShaderProgram *GraphicsApi::CreateShaderProgram( ProgramDesc &desc ) const
 {
     ShaderProgramDesc programDesc{ };
+    auto             &shaders = desc.Shaders;
+
     programDesc.Shaders = shaders;
     if ( IsDX12Preferred( ) )
     {
@@ -111,7 +113,8 @@ ShaderProgram *GraphicsApi::CreateShaderProgram( const InteropArray<ShaderDesc> 
     {
         LOG( ERROR ) << "No supported API found for this system.";
     }
-    programDesc.EnableCaching = enableCaching;
+    programDesc.EnableCaching      = desc.EnableCaching;
+    programDesc.ShaderRecordBindings = desc.ShaderRecordLayout;
     return new ShaderProgram( programDesc );
 }
 

@@ -327,21 +327,8 @@ namespace DenOfIz
     {
         /**
          *  NOTE: Maximum register space for Vulkan is 32(number of sets). For DirectX12/Metal this is the maximum number of root level buffers.
-         *  There fore constants should be set to 32 or lower.
+         *  Therefore constants should be set to 32 or lower.
          */
-
-        /**
-         * Register for the local root signature required for data for individual raygen shader in ray tracing.
-         */
-        uint32_t RaygenDataRegisterSpace = 27;
-        /**
-         * Register for the local root signature required for data for individual miss shader in ray tracing.
-         */
-        uint32_t MissDataRegisterSpace = 28;
-        /**
-         * Register for the local root signature required for data for individual hit groups in ray tracing.
-         */
-        uint32_t HitGroupDataRegisterSpace = 29;
         /**
          *
          *  Specify the register space where all bindings are stored as root level buffer.

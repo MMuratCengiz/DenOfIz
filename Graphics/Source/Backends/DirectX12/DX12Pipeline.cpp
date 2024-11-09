@@ -17,6 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12Pipeline.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderRecordLayout.h>
+#include <DenOfIzGraphics/Utilities/Storage.h>
 #include <utility>
 
 using namespace DenOfIz;
@@ -167,10 +169,23 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     subObjects.push_back( { D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP, &hitGroupDesc } );
 
     D3D12_GLOBAL_ROOT_SIGNATURE globalRootSignature    = { rootSignature->Instance( ) };
-    D3D12_STATE_SUBOBJECT       rootSignatureSubObject = { };
+    D3D12_STATE_SUBOBJECT      &rootSignatureSubObject = subObjects.emplace_back( );
     rootSignatureSubObject.Type                        = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
     rootSignatureSubObject.pDesc                       = &globalRootSignature;
-    subObjects.push_back( rootSignatureSubObject );
+
+    Storage storage;
+    for ( int i = 0; i < m_desc.RayTracing.ShaderRecordLayouts.NumElements( ); ++i )
+    {
+        IShaderRecordLayout    *shaderRecordLayoutDesc = m_desc.RayTracing.ShaderRecordLayouts.GetElement( i );
+        DX12ShaderRecordLayout *shaderRecordLayout     = dynamic_cast<DX12ShaderRecordLayout *>( shaderRecordLayoutDesc );
+
+        D3D12_LOCAL_ROOT_SIGNATURE &localRootSignature = storage.Store<D3D12_LOCAL_ROOT_SIGNATURE>( );
+        localRootSignature.pLocalRootSignature         = shaderRecordLayout->RootSignature( );
+
+        D3D12_STATE_SUBOBJECT &localRootSignatureSubObject = subObjects.emplace_back( );
+        localRootSignatureSubObject.Type                   = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+        localRootSignatureSubObject.pDesc                  = &localRootSignature;
+    }
 
     D3D12_RAYTRACING_SHADER_CONFIG shaderConfig = { };
     shaderConfig.MaxAttributeSizeInBytes        = m_desc.RayTracing.MaxNumAttributeBytes;

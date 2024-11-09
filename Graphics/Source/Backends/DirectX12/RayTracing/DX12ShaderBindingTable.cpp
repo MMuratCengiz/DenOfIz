@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderRecordData.h>
 
 using namespace DenOfIz;
 
@@ -96,10 +97,11 @@ void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     }
 
     memcpy( hitGroupEntry, hitGroupIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
-    if ( desc.Data.NumElements( ) > 0 )
+    if ( desc.Data )
     {
         void *hitGroupData = static_cast<Byte *>( hitGroupEntry ) + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-        memcpy( hitGroupData, desc.Data.Data( ), m_desc.HitGroupDataNumBytes );
+        DX12ShaderRecordData *data = dynamic_cast<DX12ShaderRecordData *>( desc.Data );
+        memcpy( hitGroupData, data->Data( ), m_desc.HitGroupDataNumBytes );
     }
 }
 
