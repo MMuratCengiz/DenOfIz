@@ -39,3 +39,36 @@ void LocalSignatureDesc::AddSampler( uint32_t binding, uint32_t registerSpace )
 {
     Bindings.AddElement( { .Type = ResourceBindingType::Sampler, .Binding = binding, .RegisterSpace = registerSpace } );
 }
+
+uint32_t ResourceBindingSlot::Key( ) const
+{
+    return static_cast<uint32_t>( Type ) * 1000 + RegisterSpace * 100 + Binding;
+}
+
+InteropString ResourceBindingSlot::ToString( ) const
+{
+    std::string typeString;
+    switch ( Type )
+    {
+    case ResourceBindingType::ConstantBuffer:
+        typeString = "b";
+        break;
+    case ResourceBindingType::ShaderResource:
+        typeString = "t";
+        break;
+    case ResourceBindingType::UnorderedAccess:
+        typeString = "u";
+        break;
+    case ResourceBindingType::Sampler:
+        typeString = "s";
+        break;
+    }
+
+    return InteropString( )
+        .Append( "(" )
+        .Append( typeString.c_str( ) )
+        .Append( std::to_string( Binding ).c_str( ) )
+        .Append( ", space" )
+        .Append( std::to_string( RegisterSpace ).c_str( ) )
+        .Append( ")" );
+}

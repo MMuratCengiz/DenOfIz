@@ -262,12 +262,17 @@ namespace DenOfIz
     };
     DZ_API ResourceBindingType ResourceDescriptorBindingType( const BitSet<ResourceDescriptor> &descriptor );
 
-    struct DZ_API BindingDesc
+    struct DZ_API ResourceBindingSlot
     {
-        ResourceBindingType Type;
-        uint32_t            Binding;
-        uint32_t            RegisterSpace;
+        ResourceBindingType         Type          = ResourceBindingType::ConstantBuffer;
+        uint32_t                    Binding       = 0;
+        uint32_t                    RegisterSpace = 0;
+
+        // To simplify having a really odd looking vector of ResourceBindingSlots
+        [[nodiscard]] uint32_t      Key( ) const;
+        [[nodiscard]] InteropString ToString( ) const;
     };
+    template class DZ_API InteropArray<ResourceBindingSlot>;
 
     enum class LoadOp
     {

@@ -243,7 +243,8 @@ uint32_t DX12ResourceBindGroup::RegisterSpace( ) const
 {
     return m_desc.RegisterSpace;
 }
+
 ResourceBindingSlot DX12ResourceBindGroup::GetSlot( uint32_t binding, const ResourceBindingType & type ) const
 {
-    return ResourceBindingSlot{ binding, m_desc.RegisterSpace, type };
+    return ResourceBindingSlot{ type, binding, m_desc.RegisterSpace };
 }

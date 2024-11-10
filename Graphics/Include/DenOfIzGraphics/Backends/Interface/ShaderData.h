@@ -71,7 +71,7 @@ namespace DenOfIz
 
     struct DZ_API LocalSignatureDesc
     {
-        InteropArray<BindingDesc> Bindings;
+        InteropArray<ResourceBindingSlot> Bindings;
 
         void AddCbv( uint32_t binding, uint32_t registerSpace );
         void AddSrv( uint32_t binding, uint32_t registerSpace );

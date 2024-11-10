@@ -209,5 +209,5 @@ uint32_t VulkanResourceBindGroup::RegisterSpace( ) const
 
 ResourceBindingSlot VulkanResourceBindGroup::GetSlot( uint32_t binding, const ResourceBindingType &type ) const
 {
-    return ResourceBindingSlot{ .Binding = binding, .RegisterSpace = m_desc.RegisterSpace, .Type = type };
+    return ResourceBindingSlot{ .Type = type, .Binding = binding, .RegisterSpace = m_desc.RegisterSpace };
 }

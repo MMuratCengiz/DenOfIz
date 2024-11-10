@@ -178,9 +178,9 @@ void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
 {
     RegisterSpaceOrder       &spaceOrder = ContainerUtilities::SafeAt( m_registerSpaceOrder, binding.RegisterSpace );
     const ResourceBindingSlot slot{
+        .Type          = binding.BindingType,
         .Binding       = binding.Binding,
         .RegisterSpace = binding.RegisterSpace,
-        .Type          = binding.BindingType,
     };
 
     CD3DX12_DESCRIPTOR_RANGE descriptorRange = { };

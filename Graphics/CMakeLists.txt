@@ -50,7 +50,6 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         # Interface utilities
         Source/Backends/Interface/CommonData.cpp
         Source/Backends/Interface/IInputLayout.cpp
-        Source/Backends/Interface/IRootSignature.cpp
         Source/Backends/Interface/ITextureResource.cpp
         Source/Backends/Interface/ShaderData.cpp
 )

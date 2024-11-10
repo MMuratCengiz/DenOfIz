@@ -98,9 +98,9 @@ void VulkanRootSignature::AddStaticSampler( const StaticSamplerDesc &sampler )
 void VulkanRootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
 {
     const ResourceBindingSlot slot{
+        .Type          = binding.BindingType,
         .Binding       = binding.Binding,
         .RegisterSpace = binding.RegisterSpace,
-        .Type          = binding.BindingType,
     };
 
     m_resourceBindingMap[ slot.Key( ) ] = binding;
@@ -143,9 +143,9 @@ VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBindi
     m_layoutBindings[ binding.RegisterSpace ].push_back( layoutBinding );
     // Update binding to include the offset
     const ResourceBindingSlot slot{
+        .Type          = binding.BindingType,
         .Binding       = binding.Binding,
         .RegisterSpace = binding.RegisterSpace,
-        .Type          = binding.BindingType,
     };
     m_resourceBindingMap[ slot.Key( ) ].Binding = layoutBinding.binding;
     return layoutBinding;

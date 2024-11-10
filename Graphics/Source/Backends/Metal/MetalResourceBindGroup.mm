@@ -257,5 +257,5 @@ void MetalResourceBindGroup::UpdateDescriptorTable( const MetalBindingDesc &bind
 
 ResourceBindingSlot MetalResourceBindGroup::GetSlot( uint32_t binding, const DescriptorBufferBindingType &type ) const
 {
-    return ResourceBindingSlot{ .Binding = binding, .RegisterSpace = m_desc.RegisterSpace, .Type = type };
+    return ResourceBindingSlot{ .Type = type, .Binding = binding, .RegisterSpace = m_desc.RegisterSpace };
 }

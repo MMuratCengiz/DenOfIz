@@ -36,18 +36,6 @@ namespace DenOfIz
         Compute
     };
 
-    struct DZ_API ResourceBindingSlot
-    {
-        uint32_t                    Binding       = 0;
-        uint32_t                    RegisterSpace = 0;
-        ResourceBindingType         Type          = ResourceBindingType::ConstantBuffer;
-
-        // To simplify having a really odd looking vector of ResourceBindingSlots
-        [[nodiscard]] uint32_t      Key( ) const;
-        [[nodiscard]] InteropString ToString( ) const;
-    };
-
-    template class DZ_API InteropArray<ResourceBindingSlot>;
     template class DZ_API InteropArray<ShaderStage>;
 
     struct DZ_API ResourceBindingDesc
