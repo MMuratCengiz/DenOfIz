@@ -81,12 +81,12 @@ DX12ShaderLocalDataLayout::DX12ShaderLocalDataLayout( DX12Context *context, cons
 
     ComPtr<ID3DBlob> serializedRootSig;
     ComPtr<ID3DBlob> errorBlob;
-    D3D12SerializeVersionedRootSignature( &localSigDesc, &serializedRootSig, &errorBlob );
-
-    m_context->D3DDevice->CreateRootSignature( 0, serializedRootSig->GetBufferPointer( ), serializedRootSig->GetBufferSize( ), IID_PPV_ARGS( &m_rootSignature ) );
+    DX_CHECK_RESULT( D3D12SerializeVersionedRootSignature( &localSigDesc, &serializedRootSig, &errorBlob ) );
+    DX_CHECK_RESULT(
+        m_context->D3DDevice->CreateRootSignature( 0, serializedRootSig->GetBufferPointer( ), serializedRootSig->GetBufferSize( ), IID_PPV_ARGS( &m_rootSignature ) ) );
 }
 
-uint32_t DX12ShaderLocalDataLayout::CbvIndex( uint32_t bindingIndex ) const
+uint32_t DX12ShaderLocalDataLayout::CbvIndex( const uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_bindingIndices[ CBV_INDEX ].size( ) )
     {
@@ -95,7 +95,7 @@ uint32_t DX12ShaderLocalDataLayout::CbvIndex( uint32_t bindingIndex ) const
     return m_bindingIndices[ CBV_INDEX ][ bindingIndex ];
 }
 
-size_t DX12ShaderLocalDataLayout::CbvNumBytes( uint32_t bindingIndex ) const
+size_t DX12ShaderLocalDataLayout::CbvNumBytes( const uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_cbvNumBytes.size( ) )
     {
@@ -104,7 +104,7 @@ size_t DX12ShaderLocalDataLayout::CbvNumBytes( uint32_t bindingIndex ) const
     return m_cbvNumBytes[ bindingIndex ];
 }
 
-uint32_t DX12ShaderLocalDataLayout::SrvIndex( uint32_t bindingIndex ) const
+uint32_t DX12ShaderLocalDataLayout::SrvIndex( const uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_bindingIndices[ SRV_INDEX ].size( ) )
     {
@@ -113,7 +113,7 @@ uint32_t DX12ShaderLocalDataLayout::SrvIndex( uint32_t bindingIndex ) const
     return m_bindingIndices[ SRV_INDEX ][ bindingIndex ];
 }
 
-uint32_t DX12ShaderLocalDataLayout::UavIndex( uint32_t bindingIndex ) const
+uint32_t DX12ShaderLocalDataLayout::UavIndex( const uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_bindingIndices[ UAV_INDEX ].size( ) )
     {
@@ -132,7 +132,7 @@ uint32_t DX12ShaderLocalDataLayout::SamplerIndex( ) const
     return m_samplerTableIndex;
 }
 
-const uint32_t DX12ShaderLocalDataLayout::ShaderRecordNumBytes( ) const
+uint32_t DX12ShaderLocalDataLayout::ShaderRecordNumBytes( ) const
 {
     return m_shaderRecordNumBytes;
 }

@@ -23,10 +23,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class DX12ShaderLocalDataLayout : public IShaderLocalDataLayout
+    class DX12ShaderLocalDataLayout final : public IShaderLocalDataLayout
     {
-    private:
-        DX12Context           *m_context;
+        DX12Context              *m_context;
         ShaderLocalDataLayoutDesc m_desc;
 
         wil::com_ptr<ID3D12RootSignature> m_rootSignature;
@@ -43,14 +42,14 @@ namespace DenOfIz
         std::vector<size_t>                                     m_cbvNumBytes;
 
     public:
-        DX12ShaderLocalDataLayout( DX12Context *context, const ShaderLocalDataLayoutDesc &desc );
+                                           DX12ShaderLocalDataLayout( DX12Context *context, const ShaderLocalDataLayoutDesc &desc );
         [[nodiscard]] ID3D12RootSignature *RootSignature( ) const;
-        uint32_t                           CbvIndex( uint32_t bindingIndex ) const;
-        size_t                             CbvNumBytes( uint32_t bindingIndex ) const;
-        uint32_t                           SrvIndex( uint32_t bindingIndex ) const;
-        uint32_t                           UavIndex( uint32_t bindingIndex ) const;
-        uint32_t                           SamplerIndex( ) const;
-        [[nodiscard]] const uint32_t       ShaderRecordNumBytes( ) const;
-        ~DX12ShaderLocalDataLayout( ) override = default;
+        [[nodiscard]] uint32_t             CbvIndex( uint32_t bindingIndex ) const;
+        [[nodiscard]] size_t               CbvNumBytes( uint32_t bindingIndex ) const;
+        [[nodiscard]] uint32_t             SrvIndex( uint32_t bindingIndex ) const;
+        [[nodiscard]] uint32_t             UavIndex( uint32_t bindingIndex ) const;
+        [[nodiscard]] uint32_t             SamplerIndex( ) const;
+        [[nodiscard]] uint32_t             ShaderRecordNumBytes( ) const;
+        ~                                  DX12ShaderLocalDataLayout( ) override = default;
     };
 } // namespace DenOfIz

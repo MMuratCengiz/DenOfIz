@@ -27,13 +27,13 @@ namespace DenOfIz
 {
     struct DZ_API ShaderLocalDataLayoutDesc
     {
-        RayTracingStage                   Stage;
-        InteropArray<ResourceBindingDesc> ResourceBindings;
+        RayTracingStage                   Stage{};
+        InteropArray<ResourceBindingDesc> ResourceBindings{};
     };
     template DZ_API class InteropArray<ShaderLocalDataLayoutDesc>;
 
     ///
-    /// \brief Layout specification for shader records. This equates to LocalRootSignature in DXR. No interface since it is quite API specific.
+    /// @brief Layout specification for shader records. This equates to LocalRootSignature in DXR. No interface since it is quite API specific.
     class DZ_API IShaderLocalDataLayout
     {
     public:

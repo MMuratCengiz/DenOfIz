@@ -114,7 +114,7 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     {
         LOG( WARNING ) << "Input layout is provided to a ray tracing pipeline, this has no effect.";
     }
-    DX12RootSignature *rootSignature = dynamic_cast<DX12RootSignature *>( m_desc.RootSignature );
+    auto *rootSignature = dynamic_cast<DX12RootSignature *>( m_desc.RootSignature );
     if ( rootSignature->Instance( ) == nullptr )
     {
         LOG( ERROR ) << "Root signature is not initialized";
@@ -177,14 +177,19 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     for ( int i = 0; i < m_desc.RayTracing.ShaderRecordLayouts.NumElements( ); ++i )
     {
         IShaderLocalDataLayout *shaderRecordLayoutDesc = m_desc.RayTracing.ShaderRecordLayouts.GetElement( i );
-        DX12ShaderLocalDataLayout *shaderRecordLayout     = dynamic_cast<DX12ShaderLocalDataLayout *>( shaderRecordLayoutDesc );
+        auto                   *shaderRecordLayout     = dynamic_cast<DX12ShaderLocalDataLayout *>( shaderRecordLayoutDesc );
 
-        D3D12_LOCAL_ROOT_SIGNATURE &localRootSignature = storage.Store<D3D12_LOCAL_ROOT_SIGNATURE>( );
-        localRootSignature.pLocalRootSignature         = shaderRecordLayout->RootSignature( );
+        auto &localRootSignature               = storage.Store<D3D12_LOCAL_ROOT_SIGNATURE>( );
+        localRootSignature.pLocalRootSignature = shaderRecordLayout->RootSignature( );
 
         D3D12_STATE_SUBOBJECT &localRootSignatureSubObject = subObjects.emplace_back( );
         localRootSignatureSubObject.Type                   = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
         localRootSignatureSubObject.pDesc                  = &localRootSignature;
+
+        D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION localSignatureAssociation = { };
+        localSignatureAssociation.NumExports                             = 1;
+        localSignatureAssociation.pExports                               = &wsHitGroupExportName.c_str();
+        localSignatureAssociation.pSubobjectToAssociate                  = &localRootSignatureSubObject;
     }
 
     D3D12_RAYTRACING_SHADER_CONFIG shaderConfig = { };
