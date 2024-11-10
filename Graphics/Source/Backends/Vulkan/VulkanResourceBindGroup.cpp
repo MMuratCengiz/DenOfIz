@@ -73,19 +73,19 @@ IResourceBindGroup *VulkanResourceBindGroup::BeginUpdate( )
 
 IResourceBindGroup *VulkanResourceBindGroup::Cbv( const uint32_t binding, IBufferResource *resource )
 {
-    BindBuffer( GetSlot( binding, DescriptorBufferBindingType::ConstantBuffer ), resource );
+    BindBuffer( GetSlot( binding, ResourceBindingType::ConstantBuffer ), resource );
     return this;
 }
 
 IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, IBufferResource *resource )
 {
-    BindBuffer( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), resource );
+    BindBuffer( GetSlot( binding, ResourceBindingType::ShaderResource ), resource );
     return this;
 }
 
 IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, ITextureResource *resource )
 {
-    BindTexture( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), resource );
+    BindTexture( GetSlot( binding, ResourceBindingType::ShaderResource ), resource );
     return this;
 }
 
@@ -93,7 +93,7 @@ IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, ITopLe
 {
     VulkanTopLevelAS *vkAccelerationStructure = dynamic_cast<VulkanTopLevelAS *>( accelerationStructure );
 
-    auto& writeDescriptorSet = BindBuffer( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), vkAccelerationStructure->VulkanBuffer( ) );
+    auto& writeDescriptorSet = BindBuffer( GetSlot( binding, ResourceBindingType::ShaderResource ), vkAccelerationStructure->VulkanBuffer( ) );
 
     if ( writeDescriptorSet.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR )
     {
@@ -110,19 +110,19 @@ IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, ITopLe
 
 IResourceBindGroup *VulkanResourceBindGroup::Uav( const uint32_t binding, IBufferResource *resource )
 {
-    BindBuffer( GetSlot( binding, DescriptorBufferBindingType::UnorderedAccess ), resource );
+    BindBuffer( GetSlot( binding, ResourceBindingType::UnorderedAccess ), resource );
     return this;
 }
 
 IResourceBindGroup *VulkanResourceBindGroup::Uav( const uint32_t binding, ITextureResource *resource )
 {
-    BindTexture( GetSlot( binding, DescriptorBufferBindingType::UnorderedAccess ), resource );
+    BindTexture( GetSlot( binding, ResourceBindingType::UnorderedAccess ), resource );
     return this;
 }
 
 IResourceBindGroup *VulkanResourceBindGroup::Sampler( const uint32_t binding, ISampler *sampler )
 {
-    BindSampler( GetSlot( binding, DescriptorBufferBindingType::Sampler ), sampler );
+    BindSampler( GetSlot( binding, ResourceBindingType::Sampler ), sampler );
     return this;
 }
 
@@ -207,7 +207,7 @@ uint32_t VulkanResourceBindGroup::RegisterSpace( ) const
     return m_desc.RegisterSpace;
 }
 
-ResourceBindingSlot VulkanResourceBindGroup::GetSlot( uint32_t binding, const DescriptorBufferBindingType &type ) const
+ResourceBindingSlot VulkanResourceBindGroup::GetSlot( uint32_t binding, const ResourceBindingType &type ) const
 {
     return ResourceBindingSlot{ .Binding = binding, .RegisterSpace = m_desc.RegisterSpace, .Type = type };
 }

@@ -253,15 +253,21 @@ namespace DenOfIz
         ShaderBindingTable            = 1 << 20,
     };
 
-    enum class DescriptorBufferBindingType
+    enum class ResourceBindingType
     {
         ConstantBuffer,
         ShaderResource,
         UnorderedAccess,
         Sampler
     };
+    DZ_API ResourceBindingType ResourceDescriptorBindingType( const BitSet<ResourceDescriptor> &descriptor );
 
-    DZ_API DescriptorBufferBindingType ResourceDescriptorBindingType( const BitSet<ResourceDescriptor> &descriptor );
+    struct DZ_API BindingDesc
+    {
+        ResourceBindingType Type;
+        uint32_t            Binding;
+        uint32_t            RegisterSpace;
+    };
 
     enum class LoadOp
     {

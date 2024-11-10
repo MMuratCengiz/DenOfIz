@@ -19,9 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/DirectX12/DX12LogicalDevice.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLevelAS.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderRecordLayout.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderLocalDataLayout.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderRecordData.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLevelAS.h>
 
 #include "SDL2/SDL_syswm.h"
 
@@ -344,14 +344,14 @@ IShaderBindingTable *DX12LogicalDevice::CreateShaderBindingTable( const ShaderBi
     return new DX12ShaderBindingTable( m_context.get( ), sbtDesc );
 }
 
-IShaderRecordLayout *DX12LogicalDevice::CreateShaderRecordLayout( const ShaderRecordLayoutDesc &createDesc )
+IShaderLocalDataLayout *DX12LogicalDevice::CreateShaderRecordLayout( const ShaderLocalDataLayoutDesc &createDesc )
 {
-    return new DX12ShaderRecordLayout( m_context.get( ), createDesc );
+    return new DX12ShaderLocalDataLayout( m_context.get( ), createDesc );
 }
 
-IShaderRecordData *DX12LogicalDevice::CreateShaderRecordData( const ShaderRecordDataDesc &createDesc )
+IShaderLocalData *DX12LogicalDevice::CreateShaderRecordData( const ShaderLocalDataDesc &createDesc )
 {
-    return new DX12ShaderRecordData( m_context.get( ), createDesc );
+    return new DX12ShaderLocalData( m_context.get( ), createDesc );
 }
 
 bool DX12LogicalDevice::IsDeviceLost( )

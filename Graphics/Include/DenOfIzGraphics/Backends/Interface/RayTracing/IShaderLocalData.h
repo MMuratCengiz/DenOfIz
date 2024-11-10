@@ -19,24 +19,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
-#include <DenOfIzGraphics/Backends/Interface/IShader.h>
 #include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
+#include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
 #include <DenOfIzGraphics/Utilities/Interop.h>
-#include "IShaderRecordLayout.h"
+#include "IShaderLocalDataLayout.h"
 
 namespace DenOfIz
 {
-    struct DZ_API ShaderRecordBinding
+    struct DZ_API ShaderLocalDataDesc
     {
-        uint32_t Index;
+        IShaderLocalDataLayout *Layout;
     };
 
-    struct DZ_API ShaderRecordDataDesc
-    {
-        IShaderRecordLayout *Layout;
-    };
-
-    class DZ_API IShaderRecordData
+    class DZ_API IShaderLocalData
     {
     public:
         virtual void Begin( )                                                         = 0;
@@ -48,6 +43,6 @@ namespace DenOfIz
         virtual void Uav( uint32_t binding, const ITextureResource *textureResource ) = 0;
         virtual void Sampler( uint32_t binding, const ISampler *sampler )             = 0;
         virtual void End( )                                                           = 0;
-        virtual ~    IShaderRecordData( )                                             = default;
+        virtual ~IShaderLocalData( )                                             = default;
     };
 } // namespace DenOfIz

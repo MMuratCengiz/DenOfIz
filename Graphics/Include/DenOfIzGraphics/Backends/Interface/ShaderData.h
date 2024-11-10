@@ -61,10 +61,40 @@ namespace DenOfIz
         SPIRV
     };
 
+    enum class RayTracingStage
+    {
+        Raygen,
+        HitGroup,
+        Miss,
+        Callable
+    };
+
+    struct DZ_API LocalSignatureDesc
+    {
+        InteropArray<BindingDesc> Bindings;
+
+        void AddCbv( uint32_t binding, uint32_t registerSpace );
+        void AddSrv( uint32_t binding, uint32_t registerSpace );
+        void AddUav( uint32_t binding, uint32_t registerSpace );
+        void AddSampler( uint32_t binding, uint32_t registerSpace );
+    };
+
+    struct DZ_API RayTracingShaderDesc
+    {
+        // For ClosestHit, AnyHit, Miss, Intersection Shaders
+        InteropString      HitGroupExport;
+        LocalSignatureDesc LocalSignature;
+    };
+
+    struct DZ_API RayTracingConfiguration
+    {
+        InteropArray<LocalSignatureDesc> LocalSignatures;
+    };
+
     // Needs to be used as a pointer as Blob/Reflection might be deleted multiple times otherwise
     struct DZ_API CompiledShader : private NonCopyable
     {
-        std::string   Path;
+        InteropString Path;
         ShaderStage   Stage;
         IDxcBlob     *Blob;
         IDxcBlob     *Reflection;

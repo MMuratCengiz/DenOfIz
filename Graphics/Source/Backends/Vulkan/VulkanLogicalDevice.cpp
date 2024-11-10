@@ -688,13 +688,13 @@ IShaderBindingTable *VulkanLogicalDevice::CreateShaderBindingTable( const Shader
     return new VulkanShaderBindingTable( m_context.get( ), desc );
 }
 
-IShaderRecordLayout *VulkanLogicalDevice::CreateShaderRecordLayout( const ShaderRecordLayoutDesc &createDesc )
+IShaderLocalDataLayout *VulkanLogicalDevice::CreateShaderRecordLayout( const ShaderLocalDataLayoutDesc &createDesc )
 {
     // TODO
     return nullptr;
 }
 
-IShaderRecordData *VulkanLogicalDevice::CreateShaderRecordData( const ShaderRecordDataDesc &createDesc )
+IShaderLocalData *VulkanLogicalDevice::CreateShaderRecordData( const ShaderLocalDataDesc &createDesc )
 {
     // TODO
     return nullptr;

@@ -7,7 +7,7 @@
 #include "MetalKit/MetalKit.h"
 #endif
 
-#include <DenOfIzGraphics/Backends/Interface/IShader.h>
+#include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
 #include <DenOfIzGraphics/Utilities/Common.h>
 
 namespace DenOfIz
@@ -20,7 +20,8 @@ namespace DenOfIz
         ShaderStage                 Stage;
         TargetIL                    TargetIL;
         InteropArray<InteropString> Defines;
-        bool                        EnableCaching = false;
+        bool                        EnableCaching = true;
+        RayTracingShaderDesc        RayTracingDesc;
     };
 
 #ifdef BUILD_METAL
@@ -52,7 +53,7 @@ namespace DenOfIz
         ~ShaderCompiler( );
         [[nodiscard]] std::unique_ptr<CompiledShader> CompileHLSL( const CompileDesc &compileDesc ) const;
 #ifdef BUILD_METAL
-        [[nodiscard]] IDxcBlob            *DxilToMsl( const CompileDesc &compileOptions, IDxcBlob *code, const CompileMslDesc& compileMslDesc ) const;
+        [[nodiscard]] IDxcBlob            *DxilToMsl( const CompileDesc &compileOptions, IDxcBlob *code, const CompileMslDesc &compileMslDesc ) const;
         [[nodiscard]] static IRShaderStage ConvertIrShaderStage( const ShaderStage &stage );
 #endif
 

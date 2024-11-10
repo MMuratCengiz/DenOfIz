@@ -20,9 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Utilities/Common.h>
 #include "IBufferResource.h"
-#include "IShader.h"
 #include "ITextureResource.h"
 #include "ReflectionData.h"
+#include "ShaderData.h"
 
 #include <ranges>
 #include <unordered_set>
@@ -40,7 +40,7 @@ namespace DenOfIz
     {
         uint32_t                    Binding       = 0;
         uint32_t                    RegisterSpace = 0;
-        DescriptorBufferBindingType Type          = DescriptorBufferBindingType::ConstantBuffer;
+        ResourceBindingType         Type          = ResourceBindingType::ConstantBuffer;
 
         // To simplify having a really odd looking vector of ResourceBindingSlots
         [[nodiscard]] uint32_t      Key( ) const;
@@ -53,7 +53,7 @@ namespace DenOfIz
     struct DZ_API ResourceBindingDesc
     {
         InteropString               Name;
-        DescriptorBufferBindingType BindingType = DescriptorBufferBindingType::ConstantBuffer;
+        ResourceBindingType         BindingType = ResourceBindingType::ConstantBuffer;
         uint32_t                    Binding{ };
         uint32_t                    RegisterSpace = 0;
         BitSet<ResourceDescriptor>  Descriptor;

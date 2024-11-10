@@ -142,17 +142,17 @@ void VulkanPipeline::CreateRayTracingPipeline( )
             continue;
         }
 
-        if ( visitedShaders.find( compiledShader->Path ) == visitedShaders.end( ) )
+        if ( visitedShaders.find( compiledShader->Path.Get( ) ) == visitedShaders.end( ) )
         {
             VkShaderModule shaderModule = this->CreateShaderModule( compiledShader->Blob );
             m_shaderModules.push_back( shaderModule );
-            visitedShaders[ compiledShader->Path ] = shaderModule;
+            visitedShaders[ compiledShader->Path.Get( ) ] = shaderModule;
         }
 
         VkPipelineShaderStageCreateInfo &shaderStage = shaderStages.emplace_back( );
         shaderStage.sType                            = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         shaderStage.stage                            = stage;
-        shaderStage.module                           = visitedShaders[ compiledShader->Path ];
+        shaderStage.module                           = visitedShaders[ compiledShader->Path.Get( ) ];
         shaderStage.pName                            = compiledShader->EntryPoint.Get( );
 
         VkRayTracingShaderGroupCreateInfoKHR &shaderGroup = shaderGroups.emplace_back( );

@@ -113,8 +113,7 @@ ShaderProgram *GraphicsApi::CreateShaderProgram( ProgramDesc &desc ) const
     {
         LOG( ERROR ) << "No supported API found for this system.";
     }
-    programDesc.EnableCaching      = desc.EnableCaching;
-    programDesc.ShaderRecordBindings = desc.ShaderRecordLayout;
+    programDesc.EnableCaching = desc.EnableCaching;
     return new ShaderProgram( programDesc );
 }
 

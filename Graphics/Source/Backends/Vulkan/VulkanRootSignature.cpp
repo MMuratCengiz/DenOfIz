@@ -116,16 +116,16 @@ VkDescriptorSetLayoutBinding VulkanRootSignature::CreateDescriptorSetLayoutBindi
     uint32_t bindingTypeOffset = 0;
     switch ( ResourceDescriptorBindingType( binding.Descriptor ) )
     {
-    case DescriptorBufferBindingType::ConstantBuffer:
+    case ResourceBindingType::ConstantBuffer:
         bindingTypeOffset = ShaderCompiler::VkShiftCbv;
         break;
-    case DescriptorBufferBindingType::ShaderResource:
+    case ResourceBindingType::ShaderResource:
         bindingTypeOffset = ShaderCompiler::VkShiftSrv;
         break;
-    case DescriptorBufferBindingType::UnorderedAccess:
+    case ResourceBindingType::UnorderedAccess:
         bindingTypeOffset = ShaderCompiler::VkShiftUav;
         break;
-    case DescriptorBufferBindingType::Sampler:
+    case ResourceBindingType::Sampler:
         bindingTypeOffset = ShaderCompiler::VkShiftSampler;
         break;
     }

@@ -19,20 +19,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12Context.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderRecordLayout.h>
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderRecordData.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalData.h>
 
 namespace DenOfIz
 {
-    class DX12ShaderRecordData final : public IShaderRecordData
+    class DX12ShaderLocalData final : public IShaderLocalData
     {
         DX12Context            *m_context;
-        ShaderRecordDataDesc    m_desc;
-        DX12ShaderRecordLayout *m_layout;
+        ShaderLocalDataDesc        m_desc;
+        DX12ShaderLocalDataLayout *m_layout;
         std::vector<Byte>       m_data;
 
     public:
-        DX12ShaderRecordData( DX12Context *context, const ShaderRecordDataDesc &desc );
+        DX12ShaderLocalData( DX12Context *context, const ShaderLocalDataDesc &desc );
         void Begin( ) override;
         void Cbv( uint32_t binding, const IBufferResource *bufferResource ) override;
         void Cbv( uint32_t binding, const InteropArray<Byte> &data ) override;

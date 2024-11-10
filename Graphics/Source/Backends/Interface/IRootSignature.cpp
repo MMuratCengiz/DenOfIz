@@ -31,16 +31,16 @@ InteropString ResourceBindingSlot::ToString( ) const
     std::string typeString;
     switch ( Type )
     {
-    case DescriptorBufferBindingType::ConstantBuffer:
+    case ResourceBindingType::ConstantBuffer:
         typeString = "b";
         break;
-    case DescriptorBufferBindingType::ShaderResource:
+    case ResourceBindingType::ShaderResource:
         typeString = "t";
         break;
-    case DescriptorBufferBindingType::UnorderedAccess:
+    case ResourceBindingType::UnorderedAccess:
         typeString = "u";
         break;
-    case DescriptorBufferBindingType::Sampler:
+    case ResourceBindingType::Sampler:
         typeString = "s";
         break;
     }

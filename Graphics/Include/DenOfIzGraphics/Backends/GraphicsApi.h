@@ -16,7 +16,7 @@
 #include "Interface/ILogicalDevice.h"
 #include "Interface/IPipeline.h"
 #include "Interface/ISemaphore.h"
-#include "Interface/IShader.h"
+#include "Interface/ShaderData.h"
 
 namespace DenOfIz
 {
@@ -49,9 +49,8 @@ namespace DenOfIz
     /// </summary>
     struct DZ_API ProgramDesc
     {
-        InteropArray<ShaderDesc>              Shaders;
-        InteropArray<ShaderRecordBindingDesc> ShaderRecordLayout;
-        bool                                  EnableCaching = true;
+        InteropArray<ShaderDesc> Shaders;
+        bool                     EnableCaching = true;
     };
     /// <summary>
     /// A class that provides a factory for creating API agnostic structures
@@ -67,7 +66,7 @@ namespace DenOfIz
 
         ILogicalDevice *CreateLogicalDevice( ) const;
         ILogicalDevice *CreateAndLoadOptimalLogicalDevice( ) const;
-        ShaderProgram  *CreateShaderProgram( ProgramDesc&desc ) const;
+        ShaderProgram  *CreateShaderProgram( ProgramDesc &desc ) const;
 
         static void ReportLiveObjects( );
 

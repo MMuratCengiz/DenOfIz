@@ -48,13 +48,13 @@ namespace DenOfIz
         std::unique_ptr<IResourceBindGroup>              m_rootConstantBindGroup;
         std::unique_ptr<NodeExecutionCallbackHolder>     m_copyToPresentCallback;
         // Raytracing:
-        std::unique_ptr<IShaderRecordData>                 m_hgData;
+        std::unique_ptr<IShaderLocalData>                 m_hgData;
         RayGenConstantBuffer                               m_rayGenCB = { };
         std::unique_ptr<IBufferResource>                   m_rayGenCBResource;
         std::unique_ptr<ShaderProgram>                     m_rayTracingProgram;
         std::unique_ptr<IPipeline>                         m_rayTracingPipeline;
         std::unique_ptr<IRootSignature>                    m_rayTracingRootSignature;
-        std::unique_ptr<IShaderRecordLayout>               m_hgShaderLayout;
+        std::unique_ptr<IShaderLocalDataLayout>               m_hgShaderLayout;
         std::array<std::unique_ptr<IResourceBindGroup>, 3> m_rayTracingBindGroups;
         std::unique_ptr<IShaderBindingTable>               m_shaderBindingTable;
         std::unique_ptr<IBottomLevelAS>                    m_bottomLevelAS;

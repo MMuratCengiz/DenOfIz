@@ -157,10 +157,13 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     rayGenShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
     rayGenShaderDesc.EntryPoint = "MyRaygenShader";
     shaderDescs.AddElement( rayGenShaderDesc );
+
     ShaderDesc closestHitShaderDesc{ };
     closestHitShaderDesc.Stage      = ShaderStage::ClosestHit;
     closestHitShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
     closestHitShaderDesc.EntryPoint = "MyClosestHitShader";
+    closestHitShaderDesc.RayTracing.LocalSignature.AddCbv( 0, 29 );
+
     shaderDescs.AddElement( closestHitShaderDesc );
     ShaderDesc missShaderDesc{ };
     missShaderDesc.Stage      = ShaderStage::Miss;
@@ -172,17 +175,12 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     programDesc.Shaders       = shaderDescs;
     programDesc.EnableCaching = false;
 
-    ShaderRecordBindingDesc &shaderRecordBindingDesc = programDesc.ShaderRecordLayout.EmplaceElement( );
-    shaderRecordBindingDesc.EntryName                = "MyClosestHitShader";
-    shaderRecordBindingDesc.RegisterSpace            = 29;
-    shaderRecordBindingDesc.Stage                    = ShaderStage::ClosestHit;
-
     m_rayTracingProgram       = std::unique_ptr<ShaderProgram>( m_graphicsApi->CreateShaderProgram( programDesc ) );
     auto reflection           = m_rayTracingProgram->Reflect( );
     m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
-    m_hgShaderLayout          = std::unique_ptr<IShaderRecordLayout>( m_logicalDevice->CreateShaderRecordLayout( reflection.ShaderRecordLayout ) );
+    m_hgShaderLayout          = std::unique_ptr<IShaderLocalDataLayout>( m_logicalDevice->CreateShaderRecordLayout( reflection.ShaderLocalDataLayouts.GetElement( 1 ) ) );
 
-    m_hgData = std::unique_ptr<IShaderRecordData>( m_logicalDevice->CreateShaderRecordData( { m_hgShaderLayout.get( ) } ) );
+    m_hgData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderRecordData( { m_hgShaderLayout.get( ) } ) );
 
     auto     redData = InteropArray<Byte>( sizeof( float ) * 4 );
     XMFLOAT4 red     = { 1.0f, 0.0f, 0.0f, 1.0f };

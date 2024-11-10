@@ -64,8 +64,8 @@ namespace DenOfIz
         ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &createDesc ) override;
         IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &createDesc ) override;
         IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &createDesc ) override;
-        IShaderRecordLayout *CreateShaderRecordLayout( const ShaderRecordLayoutDesc &createDesc ) override;
-        IShaderRecordData   *CreateShaderRecordData( const ShaderRecordDataDesc &createDesc ) override;
+        IShaderLocalDataLayout *CreateShaderRecordLayout( const ShaderLocalDataLayoutDesc &createDesc ) override;
+        IShaderLocalData       *CreateShaderRecordData( const ShaderLocalDataDesc &createDesc ) override;
 
         void WaitIdle( ) override;
         // --

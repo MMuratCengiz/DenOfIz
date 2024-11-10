@@ -28,8 +28,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ISwapChain.h"
 #include "ITextureResource.h"
 #include "RayTracing/IShaderBindingTable.h"
-#include "RayTracing/IShaderRecordData.h"
-#include "RayTracing/IShaderRecordLayout.h"
+#include "RayTracing/IShaderLocalData.h"
+#include "RayTracing/IShaderLocalDataLayout.h"
 
 namespace DenOfIz
 {
@@ -68,8 +68,8 @@ namespace DenOfIz
         virtual ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &desc )                 = 0;
         virtual IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &desc )           = 0;
         virtual IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &desc ) = 0;
-        virtual IShaderRecordLayout *CreateShaderRecordLayout( const ShaderRecordLayoutDesc &desc ) = 0;
-        virtual IShaderRecordData   *CreateShaderRecordData( const ShaderRecordDataDesc &desc )     = 0;
+        virtual IShaderLocalDataLayout *CreateShaderRecordLayout( const ShaderLocalDataLayoutDesc &desc ) = 0;
+        virtual IShaderLocalData       *CreateShaderRecordData( const ShaderLocalDataDesc &desc )     = 0;
     };
 
 } // namespace DenOfIz

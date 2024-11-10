@@ -74,7 +74,7 @@ namespace DenOfIz
         VkWriteDescriptorSet& BindBuffer( const ResourceBindingSlot &name, IBufferResource *resource );
         void BindSampler( const ResourceBindingSlot &name, ISampler *sampler );
         VkWriteDescriptorSet &CreateWriteDescriptor( const ResourceBindingSlot &slot );
-        ResourceBindingSlot   GetSlot( uint32_t binding, const DescriptorBufferBindingType &type ) const;
+        ResourceBindingSlot   GetSlot( uint32_t binding, const ResourceBindingType &type ) const;
     };
 
 } // namespace DenOfIz

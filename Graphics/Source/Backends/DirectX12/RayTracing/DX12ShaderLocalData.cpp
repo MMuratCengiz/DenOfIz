@@ -22,22 +22,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12ShaderRecordData::DX12ShaderRecordData( DX12Context *context, const ShaderRecordDataDesc &desc ) : m_context( context ), m_desc( desc )
+DX12ShaderLocalData::DX12ShaderLocalData( DX12Context *context, const ShaderLocalDataDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_layout = dynamic_cast<DX12ShaderRecordLayout *>( m_desc.Layout );
+    m_layout = dynamic_cast<DX12ShaderLocalDataLayout *>( m_desc.Layout );
     m_data.resize( m_layout->ShaderRecordNumBytes( ) );
 }
 
-void DX12ShaderRecordData::Begin( )
+void DX12ShaderLocalData::Begin( )
 {
 }
 
-void DX12ShaderRecordData::Cbv( const uint32_t binding, const IBufferResource *bufferResource )
+void DX12ShaderLocalData::Cbv( const uint32_t binding, const IBufferResource *bufferResource )
 {
     EncodeBuffer( m_layout->CbvIndex( binding ), bufferResource );
 }
 
-void DX12ShaderRecordData::Cbv( const uint32_t binding, const InteropArray<Byte> &data )
+void DX12ShaderLocalData::Cbv( const uint32_t binding, const InteropArray<Byte> &data )
 {
     const uint32_t numBytes = m_layout->CbvNumBytes( binding );
     if ( numBytes != data.NumElements( ) )
@@ -47,57 +47,57 @@ void DX12ShaderRecordData::Cbv( const uint32_t binding, const InteropArray<Byte>
     memcpy( m_data.data( ) + m_layout->CbvIndex( binding ), data.Data( ), numBytes );
 }
 
-void DX12ShaderRecordData::Srv( const uint32_t binding, const IBufferResource *bufferResource )
+void DX12ShaderLocalData::Srv( const uint32_t binding, const IBufferResource *bufferResource )
 {
     EncodeBuffer( m_layout->SrvIndex( binding ), bufferResource );
 }
 
-void DX12ShaderRecordData::Srv( const uint32_t binding, const ITextureResource *textureResource )
+void DX12ShaderLocalData::Srv( const uint32_t binding, const ITextureResource *textureResource )
 {
     EncodeTexture( m_layout->SrvIndex( binding ), textureResource );
 }
 
-void DX12ShaderRecordData::Uav( const uint32_t binding, const IBufferResource *bufferResource )
+void DX12ShaderLocalData::Uav( const uint32_t binding, const IBufferResource *bufferResource )
 {
     EncodeBuffer( m_layout->UavIndex( binding ), bufferResource );
 }
 
-void DX12ShaderRecordData::Uav( const uint32_t binding, const ITextureResource *textureResource )
+void DX12ShaderLocalData::Uav( const uint32_t binding, const ITextureResource *textureResource )
 {
     EncodeTexture( m_layout->UavIndex( binding ), textureResource );
 }
 
-void DX12ShaderRecordData::Sampler( uint32_t binding, const ISampler *sampler )
+void DX12ShaderLocalData::Sampler( uint32_t binding, const ISampler *sampler )
 {
 }
 
-void DX12ShaderRecordData::End( )
+void DX12ShaderLocalData::End( )
 {
 }
 
-uint32_t DX12ShaderRecordData::DataNumBytes( ) const
+uint32_t DX12ShaderLocalData::DataNumBytes( ) const
 {
     return m_data.size( );
 }
 
-const Byte *DX12ShaderRecordData::Data( ) const
+const Byte *DX12ShaderLocalData::Data( ) const
 {
     return m_data.data( );
 }
 
-void DX12ShaderRecordData::EncodeTexture( const uint32_t index, const ITextureResource *texture )
+void DX12ShaderLocalData::EncodeTexture( const uint32_t index, const ITextureResource *texture )
 {
     const auto *dx12TextureResource = dynamic_cast<const DX12TextureResource *>( texture );
     EncodeVA( index, dx12TextureResource->Resource( ) );
 }
 
-void DX12ShaderRecordData::EncodeBuffer( const uint32_t index, const IBufferResource *buffer )
+void DX12ShaderLocalData::EncodeBuffer( const uint32_t index, const IBufferResource *buffer )
 {
     const auto *dx12BufferResource = dynamic_cast<const DX12BufferResource *>( buffer );
     EncodeVA( index, dx12BufferResource->Resource( ) );
 }
 
-void DX12ShaderRecordData::EncodeVA( const uint32_t index, ID3D12Resource *resource )
+void DX12ShaderLocalData::EncodeVA( const uint32_t index, ID3D12Resource *resource )
 {
     const D3D12_GPU_VIRTUAL_ADDRESS &va = resource->GetGPUVirtualAddress( );
     memcpy( m_data.data( ) + index, &va, sizeof( D3D12_GPU_VIRTUAL_ADDRESS ) );

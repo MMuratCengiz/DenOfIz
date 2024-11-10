@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12Pipeline.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderRecordLayout.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderLocalDataLayout.h>
 #include <DenOfIzGraphics/Utilities/Storage.h>
 #include <utility>
 
@@ -157,13 +157,13 @@ void DX12Pipeline::CreateRayTracingPipeline( )
             break;
         }
 
-        if ( visitedShaders.find( compiledShader->Path ) == visitedShaders.end( ) )
+        if ( visitedShaders.find( compiledShader->Path.Get( ) ) == visitedShaders.end( ) )
         {
             dxilLibs.push_back( {
                 .DXILLibrary = { .pShaderBytecode = compiledShader->Blob->GetBufferPointer( ), .BytecodeLength = compiledShader->Blob->GetBufferSize( ) },
             } );
             subObjects.push_back( { D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &dxilLibs.back( ) } );
-            visitedShaders.insert( compiledShader->Path );
+            visitedShaders.insert( compiledShader->Path.Get( ) );
         }
     }
     subObjects.push_back( { D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP, &hitGroupDesc } );
@@ -176,8 +176,8 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     Storage storage;
     for ( int i = 0; i < m_desc.RayTracing.ShaderRecordLayouts.NumElements( ); ++i )
     {
-        IShaderRecordLayout    *shaderRecordLayoutDesc = m_desc.RayTracing.ShaderRecordLayouts.GetElement( i );
-        DX12ShaderRecordLayout *shaderRecordLayout     = dynamic_cast<DX12ShaderRecordLayout *>( shaderRecordLayoutDesc );
+        IShaderLocalDataLayout *shaderRecordLayoutDesc = m_desc.RayTracing.ShaderRecordLayouts.GetElement( i );
+        DX12ShaderLocalDataLayout *shaderRecordLayout     = dynamic_cast<DX12ShaderLocalDataLayout *>( shaderRecordLayoutDesc );
 
         D3D12_LOCAL_ROOT_SIGNATURE &localRootSignature = storage.Store<D3D12_LOCAL_ROOT_SIGNATURE>( );
         localRootSignature.pLocalRootSignature         = shaderRecordLayout->RootSignature( );

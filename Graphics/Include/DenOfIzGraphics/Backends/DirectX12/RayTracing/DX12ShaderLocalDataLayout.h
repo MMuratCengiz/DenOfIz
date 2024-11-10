@@ -19,15 +19,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12Context.h>
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderRecordLayout.h>
+#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalDataLayout.h>
 
 namespace DenOfIz
 {
-    class DX12ShaderRecordLayout : public IShaderRecordLayout
+    class DX12ShaderLocalDataLayout : public IShaderLocalDataLayout
     {
     private:
         DX12Context           *m_context;
-        ShaderRecordLayoutDesc m_desc;
+        ShaderLocalDataLayoutDesc m_desc;
 
         wil::com_ptr<ID3D12RootSignature> m_rootSignature;
         size_t                            m_shaderRecordNumBytes = 0;
@@ -43,7 +43,7 @@ namespace DenOfIz
         std::vector<size_t>                                     m_cbvNumBytes;
 
     public:
-        DX12ShaderRecordLayout( DX12Context *context, const ShaderRecordLayoutDesc &desc );
+        DX12ShaderLocalDataLayout( DX12Context *context, const ShaderLocalDataLayoutDesc &desc );
         [[nodiscard]] ID3D12RootSignature *RootSignature( ) const;
         uint32_t                           CbvIndex( uint32_t bindingIndex ) const;
         size_t                             CbvNumBytes( uint32_t bindingIndex ) const;
@@ -51,6 +51,6 @@ namespace DenOfIz
         uint32_t                           UavIndex( uint32_t bindingIndex ) const;
         uint32_t                           SamplerIndex( ) const;
         [[nodiscard]] const uint32_t       ShaderRecordNumBytes( ) const;
-        ~DX12ShaderRecordLayout( ) override = default;
+        ~DX12ShaderLocalDataLayout( ) override = default;
     };
 } // namespace DenOfIz

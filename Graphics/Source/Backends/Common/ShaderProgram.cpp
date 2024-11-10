@@ -56,16 +56,16 @@ void ShaderProgram::Compile( )
 
     for ( int i = 0; i < m_desc.Shaders.NumElements( ); ++i )
     {
-        const auto &shader        = m_desc.Shaders.GetElement( i );
-        CompileDesc compileDesc   = { };
-        compileDesc.Path          = shader.Path;
-        compileDesc.Defines       = shader.Defines;
-        compileDesc.EntryPoint    = shader.EntryPoint;
-        compileDesc.Stage         = shader.Stage;
-        compileDesc.TargetIL      = m_desc.TargetIL;
-        compileDesc.EnableCaching = m_desc.EnableCaching;
+        const auto &shader      = m_desc.Shaders.GetElement( i );
+        CompileDesc compileDesc = { };
+        compileDesc.Path        = shader.Path;
+        compileDesc.Defines     = shader.Defines;
+        compileDesc.EntryPoint  = shader.EntryPoint;
+        compileDesc.Stage       = shader.Stage;
+        compileDesc.TargetIL    = m_desc.TargetIL;
 
         m_compiledShaders.push_back( compiler.CompileHLSL( compileDesc ) );
+        m_shaderDescs.push_back( shader );
     }
 }
 
@@ -521,54 +521,77 @@ ResourceDescriptor ReflectTypeToRootSignatureType( const D3D_SHADER_INPUT_TYPE t
     return ResourceDescriptor::Texture;
 }
 
-DescriptorBufferBindingType ReflectTypeToBufferBindingType( const D3D_SHADER_INPUT_TYPE type )
+ResourceBindingType ReflectTypeToBufferBindingType( const D3D_SHADER_INPUT_TYPE type )
 {
     switch ( type )
     {
     case D3D_SIT_CBUFFER:
-        return DescriptorBufferBindingType::ConstantBuffer;
+        return ResourceBindingType::ConstantBuffer;
     case D3D_SIT_TEXTURE:
-        return DescriptorBufferBindingType::ShaderResource;
+        return ResourceBindingType::ShaderResource;
     case D3D_SIT_SAMPLER:
-        return DescriptorBufferBindingType::Sampler;
+        return ResourceBindingType::Sampler;
     case D3D_SIT_TBUFFER:
     case D3D_SIT_BYTEADDRESS:
     case D3D_SIT_STRUCTURED:
     case D3D_SIT_RTACCELERATIONSTRUCTURE:
-        return DescriptorBufferBindingType::ShaderResource;
+        return ResourceBindingType::ShaderResource;
     case D3D_SIT_UAV_APPEND_STRUCTURED:
     case D3D_SIT_UAV_CONSUME_STRUCTURED:
     case D3D_SIT_UAV_RWSTRUCTURED:
     case D3D_SIT_UAV_RWTYPED:
     case D3D_SIT_UAV_RWBYTEADDRESS:
     case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
-        return DescriptorBufferBindingType::UnorderedAccess;
+        return ResourceBindingType::UnorderedAccess;
     case D3D_SIT_UAV_FEEDBACKTEXTURE:
         break;
     }
     LOG( ERROR ) << "Unknown resource type";
-    return DescriptorBufferBindingType::ConstantBuffer;
+    return ResourceBindingType::ConstantBuffer;
 }
 
 ShaderReflectDesc ShaderProgram::Reflect( ) const
 {
     ShaderReflectDesc result{ };
 
-    InputLayoutDesc        &inputLayout   = result.InputLayout;
-    RootSignatureDesc      &rootSignature = result.RootSignature;
-    ShaderRecordLayoutDesc &recordLayout  = result.ShaderRecordLayout;
+    result.ShaderLocalDataLayouts.Resize( m_compiledShaders.size( ) );
+
+    InputLayoutDesc   &inputLayout   = result.InputLayout;
+    RootSignatureDesc &rootSignature = result.RootSignature;
 
     std::vector<uint32_t> descriptorTableLocations;
 
     ReflectionState reflectionState          = { };
     reflectionState.RootSignatureDesc        = &rootSignature;
     reflectionState.InputLayoutDesc          = &inputLayout;
-    reflectionState.ShaderRecordLayout       = &recordLayout;
     reflectionState.DescriptorTableLocations = &descriptorTableLocations;
 
-    for ( auto &shader : m_compiledShaders )
+    for ( int shaderIndex = 0; shaderIndex < m_compiledShaders.size( ); ++shaderIndex )
     {
-        reflectionState.CompiledShader = shader.get( );
+        auto &shader                            = m_compiledShaders[ shaderIndex ];
+        reflectionState.CompiledShader          = shader.get( );
+        reflectionState.ShaderDesc              = &( m_shaderDescs[ shaderIndex ] );
+        ShaderLocalDataLayoutDesc &recordLayout = result.ShaderLocalDataLayouts.GetElement( shaderIndex );
+        switch ( shader->Stage )
+        {
+        case ShaderStage::Callable:
+            recordLayout.Stage = RayTracingStage::Callable;
+            break;
+        case ShaderStage::Raygen:
+            recordLayout.Stage = RayTracingStage::Raygen;
+            break;
+        case ShaderStage::ClosestHit:
+        case ShaderStage::AnyHit:
+        case ShaderStage::All:
+            recordLayout.Stage = RayTracingStage::HitGroup;
+            break;
+        case ShaderStage::Miss:
+            recordLayout.Stage = RayTracingStage::Miss;
+            break;
+        default:
+            break;
+        }
+        reflectionState.ShaderLocalDataLayout = &recordLayout;
 
         IDxcBlob       *reflectionBlob = shader->Reflection;
         const DxcBuffer reflectionBuffer{
@@ -621,7 +644,7 @@ void ShaderProgram::ReflectShader( ReflectionState &state ) const
     D3D12_SHADER_DESC shaderDesc{ };
     DXC_CHECK_RESULT( shaderReflection->GetDesc( &shaderDesc ) );
 
-    if ( state.CompiledShader->Stage == ShaderStage::Vertex )
+    if ( state.ShaderDesc->Stage == ShaderStage::Vertex )
     {
         InitInputLayout( shaderReflection, *state.InputLayoutDesc, shaderDesc );
     }
@@ -649,11 +672,6 @@ void ShaderProgram::ReflectLibrary( ReflectionState &state ) const
 {
     // It is common to include the same shader in multiple libraries in raytracing shaders.
     // TODO Check if this is a good way to go about it
-    if ( state.ProcessedFiles.find( state.CompiledShader->Path ) != state.ProcessedFiles.end( ) )
-    {
-        return;
-    }
-    state.ProcessedFiles.insert( state.CompiledShader->Path );
     ID3D12LibraryReflection *libraryReflection = state.LibraryReflection;
 
     D3D12_LIBRARY_DESC libraryDesc{ };
@@ -676,12 +694,17 @@ void ShaderProgram::ReflectLibrary( ReflectionState &state ) const
 
 void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex ) const
 {
+    if ( !ShouldProcessBinding( state, shaderInputBindDesc ) )
+    {
+        return;
+    }
+
     if ( UpdateBoundResourceStage( state, shaderInputBindDesc ) )
     {
         return;
     }
 
-    DescriptorBufferBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
+    ResourceBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
     // Root constants are reserved for a specific register space
     if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootConstantRegisterSpace )
     {
@@ -695,7 +718,7 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
         RootConstantResourceBindingDesc &rootConstantBinding = state.RootSignatureDesc->RootConstants.EmplaceElement( );
         rootConstantBinding.Name                             = shaderInputBindDesc.Name;
         rootConstantBinding.Binding                          = shaderInputBindDesc.BindPoint;
-        rootConstantBinding.Stages.AddElement( state.CompiledShader->Stage );
+        rootConstantBinding.Stages.AddElement( state.ShaderDesc->Stage );
         rootConstantBinding.NumBytes   = rootConstantReflection.NumBytes;
         rootConstantBinding.Reflection = rootConstantReflection;
         return;
@@ -703,12 +726,13 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
 
     // If this register space is configured to be a LocalRootSignature, then populate the corresponding Bindings.
     InteropArray<ResourceBindingDesc> *resourceBindings = &state.RootSignatureDesc->ResourceBindings;
-    for ( int i = 0; i < m_desc.ShaderRecordBindings.NumElements( ); ++i )
+    const auto                        &rtBindings       = state.ShaderDesc->RayTracing.LocalSignature.Bindings;
+    for ( int i = 0; i < rtBindings.NumElements( ); ++i )
     {
-        auto &recordBinding = m_desc.ShaderRecordBindings.GetElement( i );
-        if ( recordBinding.RegisterSpace == shaderInputBindDesc.Space )
+        auto &rtBinding = rtBindings.GetElement( i );
+        if ( rtBinding.Binding == shaderInputBindDesc.BindPoint && rtBinding.RegisterSpace == shaderInputBindDesc.Space && rtBinding.Type == bindingType )
         {
-            resourceBindings = &state.ShaderRecordLayout->ResourceBindings;
+            resourceBindings = &state.ShaderLocalDataLayout->ResourceBindings;
         }
     }
 
@@ -719,7 +743,7 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
     resourceBindingDesc.ArraySize            = shaderInputBindDesc.BindCount;
     resourceBindingDesc.BindingType          = bindingType;
     resourceBindingDesc.Descriptor           = ReflectTypeToRootSignatureType( shaderInputBindDesc.Type, shaderInputBindDesc.Dimension );
-    resourceBindingDesc.Stages.AddElement( state.CompiledShader->Stage );
+    resourceBindingDesc.Stages.AddElement( state.ShaderDesc->Stage );
     FillReflectionData( state, resourceBindingDesc.Reflection, resourceIndex );
 #ifdef BUILD_METAL
     /*
@@ -749,11 +773,65 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
 #endif
 }
 
+bool ShaderProgram::IsBindingLocalTo( const ShaderDesc &shaderDesc, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
+{
+    const auto& bindings = shaderDesc.RayTracing.LocalSignature.Bindings;
+    for ( int i = 0; i < bindings.NumElements(); ++i )
+    {
+        auto& element = bindings.GetElement( i );
+        if ( element.Binding == shaderInputBindDesc.BindPoint && element.RegisterSpace == shaderInputBindDesc.Space &&
+             element.Type == ReflectTypeToBufferBindingType( shaderInputBindDesc.Type ) )
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ShaderProgram::ShouldProcessBinding( ReflectionState& state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
+{
+    // Check 1: If the binding is in our local signature, we should process it
+    if ( IsBindingLocalTo( *state.ShaderDesc, shaderInputBindDesc ) )
+    {
+        return true;
+    }
+
+    // Check 2: If the binding is not in our local signature, but it is local to another shader, we should not process it
+    for ( int i = 0; i < m_shaderDescs.size( ); ++i )
+    {
+        auto &shader = m_shaderDescs[ i ];
+        if ( IsBindingLocalTo( shader, shaderInputBindDesc ) )
+        {
+            return false;
+        }
+    }
+
+    // This means this is a global binding, and we should process it
+    return true;
+}
+
 bool ShaderProgram::UpdateBoundResourceStage( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
 {
-    DescriptorBufferBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
+    ResourceBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
     // Check if Resource is already bound, if so add the stage to the existing binding and continue
     bool found = false;
+
+    // Check if it is a root constant:
+    if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootConstantRegisterSpace )
+    {
+        for ( int bindingIndex = 0; bindingIndex < state.RootSignatureDesc->RootConstants.NumElements( ); ++bindingIndex )
+        {
+            auto &boundBinding = state.RootSignatureDesc->RootConstants.GetElement( bindingIndex );
+            if ( boundBinding.Binding == shaderInputBindDesc.BindPoint )
+            {
+                found = true;
+                boundBinding.Stages.AddElement( state.ShaderDesc->Stage );
+                break;
+            }
+        }
+        return found;
+    }
+
     for ( int bindingIndex = 0; bindingIndex < state.RootSignatureDesc->ResourceBindings.NumElements( ); ++bindingIndex )
     {
         auto &boundBinding  = state.RootSignatureDesc->ResourceBindings.GetElement( bindingIndex );
@@ -763,8 +841,20 @@ bool ShaderProgram::UpdateBoundResourceStage( ReflectionState &state, D3D12_SHAD
         isSameBinding       = isSameBinding && strcmp( boundBinding.Name.Get( ), shaderInputBindDesc.Name ) == 0;
         if ( isSameBinding )
         {
-            found = true;
-            boundBinding.Stages.AddElement( state.CompiledShader->Stage );
+            found            = true;
+            bool stageExists = false;
+            for ( int stageIndex = 0; stageIndex < boundBinding.Stages.NumElements( ); ++stageIndex )
+            {
+                if ( boundBinding.Stages.GetElement( stageIndex ) == state.ShaderDesc->Stage )
+                {
+                    stageExists = true;
+                    break;
+                }
+            }
+            if ( !stageExists )
+            {
+                boundBinding.Stages.AddElement( state.ShaderDesc->Stage );
+            }
         }
     }
     return found;

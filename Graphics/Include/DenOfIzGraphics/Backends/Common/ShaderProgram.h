@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/IInputLayout.h>
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
-#include <DenOfIzGraphics/Backends/Interface/IShader.h>
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderRecordLayout.h>
+#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
 #include "ShaderCompiler.h"
 
 #ifndef _WIN32
@@ -39,6 +39,10 @@ namespace DenOfIz
         InteropString               Path;
         InteropArray<InteropString> Defines;
         InteropString               EntryPoint = "main";
+        /// <summary>
+        /// Only available for Raygen, Miss and Hit shaders
+        /// </summary>
+        RayTracingShaderDesc RayTracing;
     };
 
     /// <summary>
@@ -56,18 +60,18 @@ namespace DenOfIz
 
     struct DZ_API ShaderProgramDesc
     {
-        TargetIL                              TargetIL;
-        InteropArray<ShaderDesc>              Shaders;
-        bool                                  EnableCaching = true;
-        InteropArray<ShaderRecordBindingDesc> ShaderRecordBindings;
+        TargetIL                 TargetIL;
+        InteropArray<ShaderDesc> Shaders;
+        bool                     EnableCaching = true;
     };
     template class DZ_API InteropArray<ShaderDesc>;
 
     struct DZ_API ShaderReflectDesc
     {
-        InputLayoutDesc        InputLayout;
-        RootSignatureDesc      RootSignature;
-        ShaderRecordLayoutDesc ShaderRecordLayout;
+        InputLayoutDesc   InputLayout;
+        RootSignatureDesc RootSignature;
+        /// Local data layouts for each shader, index matched with the ShaderDescs provided in the ShaderProgramDesc.
+        InteropArray<ShaderLocalDataLayoutDesc> ShaderLocalDataLayouts;
     };
 
 #ifdef BUILD_METAL
@@ -85,7 +89,8 @@ namespace DenOfIz
     {
         RootSignatureDesc              *RootSignatureDesc;
         InputLayoutDesc                *InputLayoutDesc;
-        ShaderRecordLayoutDesc         *ShaderRecordLayout;
+        ShaderLocalDataLayoutDesc      *ShaderLocalDataLayout;
+        ShaderDesc const               *ShaderDesc;
         CompiledShader                 *CompiledShader;
         ID3D12ShaderReflection         *ShaderReflection;
         ID3D12LibraryReflection        *LibraryReflection;
@@ -105,6 +110,7 @@ namespace DenOfIz
         typedef const std::function<void( D3D12_SHADER_INPUT_BIND_DESC &, int )> ReflectionCallback;
 
         std::vector<std::unique_ptr<CompiledShader>> m_compiledShaders;
+        std::vector<ShaderDesc>                      m_shaderDescs; // Index matched with m_compiledShaders
         ShaderProgramDesc                            m_desc;
 #ifdef BUILD_METAL
         std::vector<MetalDescriptorOffsets> m_metalDescriptorOffsets;
@@ -126,6 +132,8 @@ namespace DenOfIz
         void                    ProcessBoundResource( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex ) const;
         // Returns true if the bound resource is found(and an update is performed), false otherwise
         // Adds additional stages if existing stages are found
+        bool IsBindingLocalTo( const ShaderDesc &shaderDesc, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
+        bool ShouldProcessBinding( ReflectionState& state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
         bool UpdateBoundResourceStage( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
 #ifdef BUILD_METAL
         void IterateBoundResources( CompiledShader *shader, ReflectionState &state, ReflectionCallback &callback ) const;

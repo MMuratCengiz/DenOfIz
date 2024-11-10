@@ -86,7 +86,7 @@ namespace DenOfIz
         bool                                      UpdateRootDescriptor( const ResourceBindingSlot &slot, const D3D12_GPU_VIRTUAL_ADDRESS &gpuAddress );
         [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleCbvSrvUav( uint32_t binding ) const;
         [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleSampler( uint32_t binding ) const;
-        ResourceBindingSlot                       GetSlot( uint32_t binding, const DescriptorBufferBindingType &type ) const;
+        ResourceBindingSlot                       GetSlot( uint32_t binding, const ResourceBindingType &type ) const;
     };
 
 } // namespace DenOfIz

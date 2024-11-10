@@ -22,9 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IBufferResource.h"
 #include "IInputLayout.h"
 #include "IRootSignature.h"
-#include "IShader.h"
 #include "ITextureResource.h"
 #include "RayTracing/IBottomLevelAS.h"
+#include "ShaderData.h"
 
 namespace DenOfIz
 {
@@ -173,7 +173,7 @@ namespace DenOfIz
         uint32_t                            MaxNumPayloadBytes   = 0;
         uint32_t                            MaxNumAttributeBytes = 0;
         InteropString                       HitGroupExportName   = "HitGroup";
-        InteropArray<IShaderRecordLayout *> ShaderRecordLayouts;
+        InteropArray<IShaderLocalDataLayout *> ShaderRecordLayouts;
     };
 
     struct DZ_API ComputePipelineDesc{ };

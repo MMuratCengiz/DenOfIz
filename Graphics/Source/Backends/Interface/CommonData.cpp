@@ -308,20 +308,20 @@ int DenOfIz::MSAASampleCountToNumSamples( const MSAASampleCount &sampleCount )
     }
 }
 
-DescriptorBufferBindingType DenOfIz::ResourceDescriptorBindingType( const BitSet<ResourceDescriptor> &descriptor )
+ResourceBindingType DenOfIz::ResourceDescriptorBindingType( const BitSet<ResourceDescriptor> &descriptor )
 {
     if ( descriptor.Any( { ResourceDescriptor::RWTexture, ResourceDescriptor::RWBuffer } ) )
     {
-        return DescriptorBufferBindingType::UnorderedAccess;
+        return ResourceBindingType::UnorderedAccess;
     }
     if ( descriptor.IsSet( ResourceDescriptor::Sampler ) )
     {
-        return DescriptorBufferBindingType::Sampler;
+        return ResourceBindingType::Sampler;
     }
     if ( descriptor.IsSet( ResourceDescriptor::UniformBuffer ) )
     {
-        return DescriptorBufferBindingType::ConstantBuffer;
+        return ResourceBindingType::ConstantBuffer;
     }
 
-    return DescriptorBufferBindingType::ShaderResource;
+    return ResourceBindingType::ShaderResource;
 }

@@ -17,12 +17,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12EnumConverter.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderRecordLayout.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderLocalDataLayout.h>
 #include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
 
 using namespace DenOfIz;
 
-DX12ShaderRecordLayout::DX12ShaderRecordLayout( DX12Context *context, const ShaderRecordLayoutDesc &desc ) : m_context( context ), m_desc( desc )
+DX12ShaderLocalDataLayout::DX12ShaderLocalDataLayout( DX12Context *context, const ShaderLocalDataLayoutDesc &desc ) : m_context( context ), m_desc( desc )
 {
     std::vector<D3D12_ROOT_PARAMETER1> rootParameters( desc.ResourceBindings.NumElements( ) );
 
@@ -35,7 +35,7 @@ DX12ShaderRecordLayout::DX12ShaderRecordLayout( DX12Context *context, const Shad
         bool                   isDescriptor  = false;
         switch ( binding.BindingType )
         {
-        case DescriptorBufferBindingType::ConstantBuffer:
+        case ResourceBindingType::ConstantBuffer:
             rootParameter.ParameterType            = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
             rootParameter.Constants.RegisterSpace  = binding.RegisterSpace;
             rootParameter.Constants.ShaderRegister = binding.Binding;
@@ -44,17 +44,17 @@ DX12ShaderRecordLayout::DX12ShaderRecordLayout( DX12Context *context, const Shad
             ContainerUtilities::SafeSet( m_bindingIndices[ CBV_INDEX ], binding.Binding, i );
             ContainerUtilities::SafeSet( m_cbvNumBytes, binding.Binding, binding.Reflection.NumBytes );
             break;
-        case DescriptorBufferBindingType::ShaderResource:
+        case ResourceBindingType::ShaderResource:
             rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
             isDescriptor                = true;
             ContainerUtilities::SafeSet( m_bindingIndices[ SRV_INDEX ], binding.Binding, i );
             break;
-        case DescriptorBufferBindingType::UnorderedAccess:
+        case ResourceBindingType::UnorderedAccess:
             rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
             isDescriptor                = true;
             ContainerUtilities::SafeSet( m_bindingIndices[ UAV_INDEX ], binding.Binding, i );
             break;
-        case DescriptorBufferBindingType::Sampler:
+        case ResourceBindingType::Sampler:
             m_samplerTableIndex = i;
             samplerRanges.push_back( { .RangeType                         = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER,
                                        .NumDescriptors                    = 1,
@@ -86,7 +86,7 @@ DX12ShaderRecordLayout::DX12ShaderRecordLayout( DX12Context *context, const Shad
     m_context->D3DDevice->CreateRootSignature( 0, serializedRootSig->GetBufferPointer( ), serializedRootSig->GetBufferSize( ), IID_PPV_ARGS( &m_rootSignature ) );
 }
 
-uint32_t DX12ShaderRecordLayout::CbvIndex( uint32_t bindingIndex ) const
+uint32_t DX12ShaderLocalDataLayout::CbvIndex( uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_bindingIndices[ CBV_INDEX ].size( ) )
     {
@@ -95,7 +95,7 @@ uint32_t DX12ShaderRecordLayout::CbvIndex( uint32_t bindingIndex ) const
     return m_bindingIndices[ CBV_INDEX ][ bindingIndex ];
 }
 
-size_t DX12ShaderRecordLayout::CbvNumBytes( uint32_t bindingIndex ) const
+size_t DX12ShaderLocalDataLayout::CbvNumBytes( uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_cbvNumBytes.size( ) )
     {
@@ -104,7 +104,7 @@ size_t DX12ShaderRecordLayout::CbvNumBytes( uint32_t bindingIndex ) const
     return m_cbvNumBytes[ bindingIndex ];
 }
 
-uint32_t DX12ShaderRecordLayout::SrvIndex( uint32_t bindingIndex ) const
+uint32_t DX12ShaderLocalDataLayout::SrvIndex( uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_bindingIndices[ SRV_INDEX ].size( ) )
     {
@@ -113,7 +113,7 @@ uint32_t DX12ShaderRecordLayout::SrvIndex( uint32_t bindingIndex ) const
     return m_bindingIndices[ SRV_INDEX ][ bindingIndex ];
 }
 
-uint32_t DX12ShaderRecordLayout::UavIndex( uint32_t bindingIndex ) const
+uint32_t DX12ShaderLocalDataLayout::UavIndex( uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_bindingIndices[ UAV_INDEX ].size( ) )
     {
@@ -122,17 +122,17 @@ uint32_t DX12ShaderRecordLayout::UavIndex( uint32_t bindingIndex ) const
     return m_bindingIndices[ UAV_INDEX ][ bindingIndex ];
 }
 
-ID3D12RootSignature *DX12ShaderRecordLayout::RootSignature( ) const
+ID3D12RootSignature *DX12ShaderLocalDataLayout::RootSignature( ) const
 {
     return m_rootSignature.get( );
 }
 
-uint32_t DX12ShaderRecordLayout::SamplerIndex( ) const
+uint32_t DX12ShaderLocalDataLayout::SamplerIndex( ) const
 {
     return m_samplerTableIndex;
 }
 
-const uint32_t DX12ShaderRecordLayout::ShaderRecordNumBytes( ) const
+const uint32_t DX12ShaderLocalDataLayout::ShaderRecordNumBytes( ) const
 {
     return m_shaderRecordNumBytes;
 }

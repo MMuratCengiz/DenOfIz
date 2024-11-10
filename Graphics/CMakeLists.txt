@@ -52,6 +52,7 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Backends/Interface/IInputLayout.cpp
         Source/Backends/Interface/IRootSignature.cpp
         Source/Backends/Interface/ITextureResource.cpp
+        Source/Backends/Interface/ShaderData.cpp
 )
 
 SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
@@ -93,8 +94,8 @@ set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
         # RayTracing
         Source/Backends/DirectX12/RayTracing/DX12BottomLevelAS.cpp
         Source/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.cpp
-        Source/Backends/DirectX12/RayTracing/DX12ShaderRecordLayout.cpp
-        Source/Backends/DirectX12/RayTracing/DX12ShaderRecordData.cpp
+        Source/Backends/DirectX12/RayTracing/DX12ShaderLocalDataLayout.cpp
+        Source/Backends/DirectX12/RayTracing/DX12ShaderLocalData.cpp
         Source/Backends/DirectX12/RayTracing/DX12TopLevelAS.cpp
 
         #DirectX12 Resources

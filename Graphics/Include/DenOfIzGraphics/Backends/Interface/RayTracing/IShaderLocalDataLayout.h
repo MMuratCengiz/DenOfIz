@@ -20,34 +20,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/CommonData.h>
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
-#include <DenOfIzGraphics/Backends/Interface/IShader.h>
 #include <DenOfIzGraphics/Backends/Interface/RayTracing/RayTracingData.h>
+#include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
 
 namespace DenOfIz
 {
-    enum class ShaderRecordStage
+    struct DZ_API ShaderLocalDataLayoutDesc
     {
-        Raygen,
-        HitGroup,
-        Miss,
-        Callable
-    };
-
-    static ShaderRecordStage ShaderRecordTypeFromRegisterSpace( uint32_t registerSpace );
-
-    struct DZ_API ShaderRecordLayoutDesc
-    {
-        ShaderRecordStage                 Stage;
+        RayTracingStage                   Stage;
         InteropArray<ResourceBindingDesc> ResourceBindings;
     };
-    template DZ_API class InteropArray<ShaderRecordLayoutDesc>;
+    template DZ_API class InteropArray<ShaderLocalDataLayoutDesc>;
 
     ///
     /// \brief Layout specification for shader records. This equates to LocalRootSignature in DXR. No interface since it is quite API specific.
-    class DZ_API IShaderRecordLayout
+    class DZ_API IShaderLocalDataLayout
     {
     public:
-        virtual ~IShaderRecordLayout( ) = default;
+        virtual ~IShaderLocalDataLayout( ) = default;
     };
-    template DZ_API class InteropArray<IShaderRecordLayout *>;
+    template DZ_API class InteropArray<IShaderLocalDataLayout *>;
 } // namespace DenOfIz

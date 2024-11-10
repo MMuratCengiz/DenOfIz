@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
-#include <DenOfIzGraphics/Backends/Interface/IShader.h>
+#include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
 #include "VulkanContext.h"
 #include "VulkanTextureResource.h"
 

@@ -108,19 +108,19 @@ IResourceBindGroup* DX12ResourceBindGroup::BeginUpdate( )
 
 IResourceBindGroup* DX12ResourceBindGroup::Cbv( const uint32_t binding, IBufferResource *resource )
 {
-    BindBuffer( GetSlot( binding, DescriptorBufferBindingType::ConstantBuffer ), resource );
+    BindBuffer( GetSlot( binding, ResourceBindingType::ConstantBuffer ), resource );
     return this;
 }
 
 IResourceBindGroup* DX12ResourceBindGroup::Srv( const uint32_t binding, IBufferResource *resource )
 {
-    BindBuffer( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), resource );
+    BindBuffer( GetSlot( binding, ResourceBindingType::ShaderResource ), resource );
     return this;
 }
 
 IResourceBindGroup* DX12ResourceBindGroup::Srv( const uint32_t binding, ITextureResource *resource )
 {
-    BindTexture( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), resource );
+    BindTexture( GetSlot( binding, ResourceBindingType::ShaderResource ), resource );
     return this;
 }
 
@@ -131,19 +131,19 @@ IResourceBindGroup *DX12ResourceBindGroup::Srv( const uint32_t binding, ITopLeve
 
 IResourceBindGroup* DX12ResourceBindGroup::Uav( const uint32_t binding, IBufferResource *resource )
 {
-    BindBuffer( GetSlot( binding, DescriptorBufferBindingType::UnorderedAccess ), resource );
+    BindBuffer( GetSlot( binding, ResourceBindingType::UnorderedAccess ), resource );
     return this;
 }
 
 IResourceBindGroup* DX12ResourceBindGroup::Uav( const uint32_t binding, ITextureResource *resource )
 {
-    BindTexture( GetSlot( binding, DescriptorBufferBindingType::UnorderedAccess ), resource );
+    BindTexture( GetSlot( binding, ResourceBindingType::UnorderedAccess ), resource );
     return this;
 }
 
 IResourceBindGroup* DX12ResourceBindGroup::Sampler( const uint32_t binding, ISampler *sampler )
 {
-    BindSampler( GetSlot( binding, DescriptorBufferBindingType::Sampler ), sampler );
+    BindSampler( GetSlot( binding, ResourceBindingType::Sampler ), sampler );
     return this;
 }
 
@@ -243,7 +243,7 @@ uint32_t DX12ResourceBindGroup::RegisterSpace( ) const
 {
     return m_desc.RegisterSpace;
 }
-ResourceBindingSlot DX12ResourceBindGroup::GetSlot( uint32_t binding, const DescriptorBufferBindingType& type ) const
+ResourceBindingSlot DX12ResourceBindGroup::GetSlot( uint32_t binding, const ResourceBindingType & type ) const
 {
     return ResourceBindingSlot{ binding, m_desc.RegisterSpace, type };
 }

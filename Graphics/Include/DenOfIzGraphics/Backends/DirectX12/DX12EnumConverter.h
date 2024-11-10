@@ -19,9 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
-#include <DenOfIzGraphics/Backends/Interface/IShader.h>
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/RayTracingData.h>
 #include <DenOfIzGraphics/Backends/Interface/RayTracing/IBottomLevelAS.h>
+#include <DenOfIzGraphics/Backends/Interface/RayTracing/RayTracingData.h>
+#include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
 #include "DX12Context.h"
 
 namespace DenOfIz
