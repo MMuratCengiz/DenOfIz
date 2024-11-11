@@ -159,10 +159,11 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     shaderDescs.AddElement( rayGenShaderDesc );
 
     ShaderDesc closestHitShaderDesc{ };
-    closestHitShaderDesc.Stage      = ShaderStage::ClosestHit;
-    closestHitShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
-    closestHitShaderDesc.EntryPoint = "MyClosestHitShader";
-    closestHitShaderDesc.RayTracing.LocalSignature.AddCbv( 0, 29 );
+    closestHitShaderDesc.Stage                     = ShaderStage::ClosestHit;
+    closestHitShaderDesc.Path                      = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
+    closestHitShaderDesc.EntryPoint                = "MyClosestHitShader";
+    closestHitShaderDesc.RayTracing.HitGroupExport = "MyHitGroup";
+    closestHitShaderDesc.RayTracing.MarkCbvAsLocal( 0, 29 );
 
     shaderDescs.AddElement( closestHitShaderDesc );
     ShaderDesc missShaderDesc{ };
@@ -207,7 +208,9 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     pipelineDesc.ShaderProgram                   = m_rayTracingProgram.get( );
     pipelineDesc.RayTracing.MaxNumPayloadBytes   = 4 * sizeof( float );
     pipelineDesc.RayTracing.MaxNumAttributeBytes = 2 * sizeof( float );
-    pipelineDesc.RayTracing.ShaderRecordLayouts.AddElement( m_hgShaderLayout.get( ) );
+    pipelineDesc.RayTracing.ShaderLocalDataLayouts.Resize( pipelineDesc.ShaderProgram->CompiledShaders( ).NumElements( ) );
+    pipelineDesc.RayTracing.ShaderLocalDataLayouts.SetElement( 1, m_hgShaderLayout.get( ) );
+
     m_rayTracingPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 }
 
@@ -332,7 +335,7 @@ void RayTracedTriangleExample::CreateShaderBindingTable( )
     bindingTableDesc.Pipeline              = m_rayTracingPipeline.get( );
     bindingTableDesc.SizeDesc.NumInstances = 1;
     bindingTableDesc.SizeDesc.NumRayTypes  = 1;
-    bindingTableDesc.HitGroupDataNumBytes  = sizeof( float ) * 4;
+    bindingTableDesc.MaxHitGroupDataBytes  = sizeof( float ) * 4;
 
     m_shaderBindingTable = std::unique_ptr<IShaderBindingTable>( m_logicalDevice->CreateShaderBindingTable( bindingTableDesc ) );
 
@@ -345,7 +348,7 @@ void RayTracedTriangleExample::CreateShaderBindingTable( )
     m_shaderBindingTable->BindMissShader( missDesc );
 
     HitGroupBindingDesc hitGroupDesc{ };
-    hitGroupDesc.HitGroupExportName = "HitGroup";
+    hitGroupDesc.HitGroupExportName = "MyHitGroup";
     hitGroupDesc.Data               = m_hgData.get( );
 
     m_shaderBindingTable->BindHitGroup( hitGroupDesc );

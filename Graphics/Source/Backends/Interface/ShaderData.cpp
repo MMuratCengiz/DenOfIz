@@ -20,24 +20,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-void LocalSignatureDesc::AddCbv( uint32_t binding, uint32_t registerSpace )
+void RayTracingShaderDesc::MarkCbvAsLocal( uint32_t binding, uint32_t registerSpace )
 {
-    Bindings.AddElement( { .Type = ResourceBindingType::ConstantBuffer, .Binding = binding, .RegisterSpace = registerSpace } );
+    LocalBindings.AddElement( { .Type = ResourceBindingType::ConstantBuffer, .Binding = binding, .RegisterSpace = registerSpace } );
 }
 
-void LocalSignatureDesc::AddSrv( uint32_t binding, uint32_t registerSpace )
+void RayTracingShaderDesc::MarkSrvAsLocal( uint32_t binding, uint32_t registerSpace )
 {
-    Bindings.AddElement( { .Type = ResourceBindingType::ShaderResource, .Binding = binding, .RegisterSpace = registerSpace } );
+    LocalBindings.AddElement( { .Type = ResourceBindingType::ShaderResource, .Binding = binding, .RegisterSpace = registerSpace } );
 }
 
-void LocalSignatureDesc::AddUav( uint32_t binding, uint32_t registerSpace )
+void RayTracingShaderDesc::MarkUavAsLocal( uint32_t binding, uint32_t registerSpace )
 {
-    Bindings.AddElement( { .Type = ResourceBindingType::UnorderedAccess, .Binding = binding, .RegisterSpace = registerSpace } );
+    LocalBindings.AddElement( { .Type = ResourceBindingType::UnorderedAccess, .Binding = binding, .RegisterSpace = registerSpace } );
 }
 
-void LocalSignatureDesc::AddSampler( uint32_t binding, uint32_t registerSpace )
+void RayTracingShaderDesc::MarkSamplerAsLocal( uint32_t binding, uint32_t registerSpace )
 {
-    Bindings.AddElement( { .Type = ResourceBindingType::Sampler, .Binding = binding, .RegisterSpace = registerSpace } );
+    LocalBindings.AddElement( { .Type = ResourceBindingType::Sampler, .Binding = binding, .RegisterSpace = registerSpace } );
 }
 
 uint32_t ResourceBindingSlot::Key( ) const

@@ -21,7 +21,7 @@ namespace DenOfIz
         TargetIL                    TargetIL;
         InteropArray<InteropString> Defines;
         bool                        EnableCaching = true;
-        RayTracingShaderDesc        RayTracingDesc;
+        RayTracingShaderDesc        RayTracing;
     };
 
 #ifdef BUILD_METAL

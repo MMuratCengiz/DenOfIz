@@ -113,7 +113,7 @@ void VulkanPipeline::CreateRayTracingPipeline( )
     std::unordered_map<std::string, VkShaderModule>   visitedShaders;
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups;
 
-    const InteropArray<CompiledShader *> &compiledShaders = m_desc.ShaderProgram->GetCompiledShaders( );
+    const InteropArray<CompiledShader *> &compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
     for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
     {
         const auto                    &compiledShader = compiledShaders.GetElement( i );
@@ -241,7 +241,7 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
 {
     std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos;
 
-    const auto &compiledShaders = m_desc.ShaderProgram->GetCompiledShaders( );
+    const auto &compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
     for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
     {
         const auto                      &compiledShader        = compiledShaders.GetElement( i );

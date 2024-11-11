@@ -292,6 +292,10 @@ namespace DenOfIz
         void SetElement( const size_t index, const T &element )
         {
             CheckBounds( index );
+            if ( m_numElements <= index )
+            {
+                m_numElements = index + 1;
+            }
             m_array[ index ] = element;
         }
 

@@ -69,36 +69,32 @@ namespace DenOfIz
         Callable
     };
 
-    struct DZ_API LocalSignatureDesc
-    {
-        InteropArray<ResourceBindingSlot> Bindings;
-
-        void AddCbv( uint32_t binding, uint32_t registerSpace );
-        void AddSrv( uint32_t binding, uint32_t registerSpace );
-        void AddUav( uint32_t binding, uint32_t registerSpace );
-        void AddSampler( uint32_t binding, uint32_t registerSpace );
-    };
-
     struct DZ_API RayTracingShaderDesc
     {
         // For ClosestHit, AnyHit, Miss, Intersection Shaders
-        InteropString      HitGroupExport;
-        LocalSignatureDesc LocalSignature;
-    };
+        // This field is required because graphics Apis usually export these shaders grouped up into one
+        InteropString                     HitGroupExport;
+        InteropArray<ResourceBindingSlot> LocalBindings;
 
-    struct DZ_API RayTracingConfiguration
-    {
-        InteropArray<LocalSignatureDesc> LocalSignatures;
+        // Local bindings are used to mark resources as local, so they are not included in the global resource list
+        // The binding will be added to the corresponding ShaderDataLayoutDesc in the corresponding index of ShaderLocalDataLayoutDesc at
+        // ShaderReflectDesc.ShaderLocalDataLayouts[shaderIndex], where shaderIndex is the index of the shader in the order of shaders provided to CompileDesc.
+        void MarkCbvAsLocal( uint32_t binding, uint32_t registerSpace );
+        void MarkSrvAsLocal( uint32_t binding, uint32_t registerSpace );
+        void MarkUavAsLocal( uint32_t binding, uint32_t registerSpace );
+        void MarkSamplerAsLocal( uint32_t binding, uint32_t registerSpace );
     };
 
     // Needs to be used as a pointer as Blob/Reflection might be deleted multiple times otherwise
     struct DZ_API CompiledShader : private NonCopyable
     {
-        InteropString Path;
-        ShaderStage   Stage;
-        IDxcBlob     *Blob;
-        IDxcBlob     *Reflection;
-        InteropString EntryPoint;
+        InteropString        Path;
+        ShaderStage          Stage;
+        IDxcBlob            *Blob;
+        IDxcBlob            *Reflection;
+        InteropString        EntryPoint;
+        InteropString        HitGroupExport; // For ClosestHit, AnyHit, Miss and Intersection Shaders
+        RayTracingShaderDesc RayTracing;
     };
     template class DZ_API InteropArray<CompiledShader *>;
 } // namespace DenOfIz

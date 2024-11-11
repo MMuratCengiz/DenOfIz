@@ -27,23 +27,25 @@ namespace DenOfIz
 {
     struct DZ_API HitGroupBindingDesc
     {
-        ASGeometryType     GeometryType       = ASGeometryType::Triangles;
-        int                InstanceIndex      = -1;         // -1 means all instances
-        int                GeometryIndex      = -1;         // -1 means all geometries
-        int                RayTypeIndex       = -1;         // -1 means all ray types
-        InteropString      HitGroupExportName = "HitGroup"; // Same as provided in the pipeline creation
-        IShaderLocalData  *Data               = nullptr;
+        ASGeometryType    GeometryType       = ASGeometryType::Triangles;
+        int               InstanceIndex      = -1;         // -1 means all instances
+        int               GeometryIndex      = -1;         // -1 means all geometries
+        int               RayTypeIndex       = -1;         // -1 means all ray types
+        InteropString     HitGroupExportName = "HitGroup"; // Must match `HitGroupExportName` provided in the ShaderDesc structure.
+        IShaderLocalData *Data               = nullptr;
     };
 
     struct DZ_API MissBindingDesc
     {
-        int           RayTypeIndex = 0;
-        InteropString ShaderName;
+        int               RayTypeIndex = 0;
+        InteropString     ShaderName;
+        IShaderLocalData *Data = nullptr;
     };
 
     struct DZ_API RayGenerationBindingDesc
     {
-        InteropString ShaderName;
+        InteropString     ShaderName;
+        IShaderLocalData *Data = nullptr;
     };
 
     struct DZ_API SBTSizeDesc
@@ -59,18 +61,20 @@ namespace DenOfIz
     {
         IPipeline  *Pipeline = nullptr;
         SBTSizeDesc SizeDesc;
-        uint32_t    HitGroupDataNumBytes = 0;
+        uint32_t    MaxHitGroupDataBytes = 0;
+        uint32_t    MaxMissDataBytes     = 0;
+        uint32_t    MaxRayGenDataBytes   = 0;
     };
 
     class IShaderBindingTable
     {
     public:
         // TODO TBD if we want to keep this
-        virtual void                           Resize( const SBTSizeDesc                           &)                                   = 0;
-        virtual void                           BindRayGenerationShader( const RayGenerationBindingDesc &desc ) = 0;
-        virtual void                           BindHitGroup( const HitGroupBindingDesc &desc )                 = 0;
-        virtual void                           BindMissShader( const MissBindingDesc &desc )                   = 0;
-        virtual void                           Build( )                                                        = 0;
+        virtual void Resize( const SBTSizeDesc & )                                   = 0;
+        virtual void BindRayGenerationShader( const RayGenerationBindingDesc &desc ) = 0;
+        virtual void BindHitGroup( const HitGroupBindingDesc &desc )                 = 0;
+        virtual void BindMissShader( const MissBindingDesc &desc )                   = 0;
+        virtual void Build( )                                                        = 0;
         //.. omw
         virtual ~IShaderBindingTable( ) = default;
     };

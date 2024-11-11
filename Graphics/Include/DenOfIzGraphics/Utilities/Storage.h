@@ -44,5 +44,10 @@ namespace DenOfIz
             }
             m_container.clear( );
         }
+
+        ~Storage()
+        {
+            Clear();
+        }
     };
 } // namespace DenOfIz

@@ -117,7 +117,7 @@ namespace DenOfIz
 #endif
     public:
         DZ_API explicit ShaderProgram( ShaderProgramDesc desc );
-        [[nodiscard]] DZ_API InteropArray<CompiledShader *> GetCompiledShaders( ) const;
+        [[nodiscard]] DZ_API InteropArray<CompiledShader *> CompiledShaders( ) const;
         [[nodiscard]] DZ_API ShaderReflectDesc              Reflect( ) const;
         DZ_API ~ShaderProgram( );
 

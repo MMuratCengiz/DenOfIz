@@ -28,14 +28,16 @@ namespace DenOfIz
 
     class DX12Pipeline final : public IPipeline
     {
-        DX12Context                              *m_context       = nullptr;
-        wil::com_ptr<ID3D12PipelineState>         m_pipeline      = nullptr;
-        wil::com_ptr<ID3D12StateObject>           m_rayTracingSO  = nullptr;
-        wil::com_ptr<ID3D12StateObjectProperties> m_soProperties  = nullptr;
-        std::unordered_map<std::string, void *>   m_shaderIdentifiers;
-        DX12RootSignature                        *m_rootSignature = nullptr;
-        PipelineDesc                              m_desc{ };
-        D3D12_PRIMITIVE_TOPOLOGY                  m_topology{ };
+        DX12Context                                          *m_context      = nullptr;
+        wil::com_ptr<ID3D12PipelineState>                     m_pipeline     = nullptr;
+        wil::com_ptr<ID3D12StateObject>                       m_rayTracingSO = nullptr;
+        wil::com_ptr<ID3D12StateObjectProperties>             m_soProperties = nullptr;
+        std::unordered_map<std::string, void *>               m_shaderIdentifiers;
+        DX12RootSignature                                    *m_rootSignature = nullptr;
+        PipelineDesc                                          m_desc{ };
+        D3D12_PRIMITIVE_TOPOLOGY                              m_topology{ };
+        std::vector<std::wstring>                             m_exportNames; // Only for lifetime management
+        std::unordered_map<std::string, D3D12_HIT_GROUP_DESC> m_hitGroups;
 
     public:
         DX12Pipeline( DX12Context *context, PipelineDesc desc );

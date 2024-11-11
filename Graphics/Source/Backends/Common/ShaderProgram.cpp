@@ -56,13 +56,40 @@ void ShaderProgram::Compile( )
 
     for ( int i = 0; i < m_desc.Shaders.NumElements( ); ++i )
     {
-        const auto &shader      = m_desc.Shaders.GetElement( i );
+        const auto &shader = m_desc.Shaders.GetElement( i );
+
+        // Validate Shader
+        if ( shader.Path.IsEmpty( ) )
+        {
+            LOG( ERROR ) << "Shader path is empty";
+            continue;
+        }
+
+        if ( !shader.RayTracing.HitGroupExport.IsEmpty( ) )
+        {
+            if ( shader.Stage != ShaderStage::ClosestHit && shader.Stage != ShaderStage::AnyHit && shader.Stage != ShaderStage::Miss )
+            {
+                LOG( ERROR ) << "Hit group export is only valid for closest hit, any hit and miss shaders";
+                continue;
+            }
+        }
+
+        if ( shader.RayTracing.LocalBindings.NumElements() > 0 )
+        {
+            if ( shader.Stage != ShaderStage::ClosestHit && shader.Stage != ShaderStage::AnyHit && shader.Stage != ShaderStage::Miss )
+            {
+                LOG( ERROR ) << "Local bindings are only valid for closest hit, any hit and miss shaders";
+                continue;
+            }
+        }
+
         CompileDesc compileDesc = { };
         compileDesc.Path        = shader.Path;
         compileDesc.Defines     = shader.Defines;
         compileDesc.EntryPoint  = shader.EntryPoint;
         compileDesc.Stage       = shader.Stage;
         compileDesc.TargetIL    = m_desc.TargetIL;
+        compileDesc.RayTracing  = shader.RayTracing;
 
         m_compiledShaders.push_back( compiler.CompileHLSL( compileDesc ) );
         m_shaderDescs.push_back( shader );
@@ -447,7 +474,7 @@ const ShaderCompiler &ShaderProgram::ShaderCompilerInstance( ) const
     return compiler;
 }
 
-InteropArray<CompiledShader *> ShaderProgram::GetCompiledShaders( ) const
+InteropArray<CompiledShader *> ShaderProgram::CompiledShaders( ) const
 {
     InteropArray<CompiledShader *> compiledShaders;
     for ( auto &shader : m_compiledShaders )
@@ -726,7 +753,7 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
 
     // If this register space is configured to be a LocalRootSignature, then populate the corresponding Bindings.
     InteropArray<ResourceBindingDesc> *resourceBindings = &state.RootSignatureDesc->ResourceBindings;
-    const auto                        &rtBindings       = state.ShaderDesc->RayTracing.LocalSignature.Bindings;
+    const auto                        &rtBindings       = state.ShaderDesc->RayTracing.LocalBindings;
     for ( int i = 0; i < rtBindings.NumElements( ); ++i )
     {
         auto &rtBinding = rtBindings.GetElement( i );
@@ -775,10 +802,10 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
 
 bool ShaderProgram::IsBindingLocalTo( const ShaderDesc &shaderDesc, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
 {
-    const auto& bindings = shaderDesc.RayTracing.LocalSignature.Bindings;
-    for ( int i = 0; i < bindings.NumElements(); ++i )
+    const auto &bindings = shaderDesc.RayTracing.LocalBindings;
+    for ( int i = 0; i < bindings.NumElements( ); ++i )
     {
-        auto& element = bindings.GetElement( i );
+        auto &element = bindings.GetElement( i );
         if ( element.Binding == shaderInputBindDesc.BindPoint && element.RegisterSpace == shaderInputBindDesc.Space &&
              element.Type == ReflectTypeToBufferBindingType( shaderInputBindDesc.Type ) )
         {
@@ -788,7 +815,7 @@ bool ShaderProgram::IsBindingLocalTo( const ShaderDesc &shaderDesc, D3D12_SHADER
     return false;
 }
 
-bool ShaderProgram::ShouldProcessBinding( ReflectionState& state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
+bool ShaderProgram::ShouldProcessBinding( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
 {
     // Check 1: If the binding is in our local signature, we should process it
     if ( IsBindingLocalTo( *state.ShaderDesc, shaderInputBindDesc ) )

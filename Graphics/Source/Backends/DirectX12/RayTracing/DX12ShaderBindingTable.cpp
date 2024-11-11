@@ -23,16 +23,18 @@ using namespace DenOfIz;
 
 DX12ShaderBindingTable::DX12ShaderBindingTable( DX12Context *context, const ShaderBindingTableDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_pipeline         = dynamic_cast<DX12Pipeline *>( desc.Pipeline );
-    m_hitGroupNumBytes = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + m_desc.HitGroupDataNumBytes, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
+    m_pipeline          = dynamic_cast<DX12Pipeline *>( desc.Pipeline );
+    m_rayGenNumBytes    = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + m_desc.MaxRayGenDataBytes, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
+    m_hitGroupNumBytes  = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + m_desc.MaxHitGroupDataBytes, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
+    m_missGroupNumBytes = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + m_desc.MaxMissDataBytes, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
     Resize( desc.SizeDesc );
 }
 
 void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
-    const uint32_t rayGenerationShaderNumBytes = AlignRecord( desc.NumRayGenerationShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+    const uint32_t rayGenerationShaderNumBytes = AlignRecord( desc.NumRayGenerationShaders * m_rayGenNumBytes );
     const uint32_t hitGroupNumBytes            = AlignRecord( desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * m_hitGroupNumBytes );
-    const uint32_t missShaderNumBytes          = AlignRecord( desc.NumMissShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+    const uint32_t missShaderNumBytes          = AlignRecord( desc.NumMissShaders * m_missGroupNumBytes );
     m_numBufferBytes                           = rayGenerationShaderNumBytes + hitGroupNumBytes + missShaderNumBytes;
 
     BufferDesc bufferDesc   = { };
@@ -65,8 +67,8 @@ void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
 
     m_missGroupOffset               = m_hitGroupOffset + hitGroupNumBytes;
     m_missShaderRange.StartAddress  = AlignRecord( m_buffer->Resource( )->GetGPUVirtualAddress( ) + m_missGroupOffset );
-    m_missShaderRange.SizeInBytes   = desc.NumMissShaders * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-    m_missShaderRange.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    m_missShaderRange.SizeInBytes   = missShaderNumBytes;
+    m_missShaderRange.StrideInBytes = missShaderNumBytes;
 }
 
 void DX12ShaderBindingTable::BindRayGenerationShader( const RayGenerationBindingDesc &desc )
@@ -86,22 +88,27 @@ void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     const uint32_t geometryOffset = desc.GeometryIndex * m_desc.SizeDesc.NumRayTypes;
     const uint32_t rayTypeOffset  = desc.RayTypeIndex;
 
-    const uint32_t offset        = m_hitGroupOffset + ( instanceOffset + geometryOffset + rayTypeOffset ) * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    const uint32_t offset        = m_hitGroupOffset + ( instanceOffset + geometryOffset + rayTypeOffset ) * m_hitGroupNumBytes;
     void          *hitGroupEntry = static_cast<Byte *>( m_mappedMemory ) + offset;
 
-    const void *hitGroupIdentifier = m_pipeline->GetShaderIdentifier( desc.HitGroupExportName.Get( ) );
     if ( desc.HitGroupExportName.IsEmpty( ) )
     {
         LOG( ERROR ) << "Hit group name cannot be empty.";
         return;
     }
 
+    const void *hitGroupIdentifier = m_pipeline->GetShaderIdentifier( desc.HitGroupExportName.Get( ) );
+    if ( !hitGroupIdentifier )
+    {
+        LOG( ERROR ) << "Hit group export not found in pipeline.";
+        return;
+    }
     memcpy( hitGroupEntry, hitGroupIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
     if ( desc.Data )
     {
-        void *hitGroupData = static_cast<Byte *>( hitGroupEntry ) + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-        DX12ShaderLocalData *data = dynamic_cast<DX12ShaderLocalData *>( desc.Data );
-        memcpy( hitGroupData, data->Data( ), m_desc.HitGroupDataNumBytes );
+        void                *hitGroupData = static_cast<Byte *>( hitGroupEntry ) + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+        DX12ShaderLocalData *data         = dynamic_cast<DX12ShaderLocalData *>( desc.Data );
+        memcpy( hitGroupData, data->Data( ), m_desc.MaxHitGroupDataBytes );
     }
 }
 

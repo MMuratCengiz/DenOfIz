@@ -71,6 +71,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
                 compiledShader->Blob       = std::move( cachedBlob );
                 compiledShader->Reflection = std::move( cachedReflection );
                 compiledShader->EntryPoint = compileDesc.EntryPoint.Get( );
+                compiledShader->RayTracing = compileDesc.RayTracing;
                 return std::unique_ptr<CompiledShader>( compiledShader );
             }
         }
