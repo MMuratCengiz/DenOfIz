@@ -19,8 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/DirectX12/DX12LogicalDevice.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderLocalData.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderLocalDataLayout.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderRecordData.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLevelAS.h>
 
 #include "SDL2/SDL_syswm.h"

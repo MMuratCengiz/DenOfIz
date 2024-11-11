@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.h>
 #include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.h>
+#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderLocalData.h>
 #include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
@@ -690,12 +691,10 @@ IShaderBindingTable *VulkanLogicalDevice::CreateShaderBindingTable( const Shader
 
 IShaderLocalDataLayout *VulkanLogicalDevice::CreateShaderRecordLayout( const ShaderLocalDataLayoutDesc &createDesc )
 {
-    // TODO
-    return nullptr;
+    return new VulkanShaderLocalDataLayout( m_context.get( ), createDesc );
 }
 
 IShaderLocalData *VulkanLogicalDevice::CreateShaderRecordData( const ShaderLocalDataDesc &createDesc )
 {
-    // TODO
-    return nullptr;
+    return new VulkanShaderLocalData( m_context.get( ), createDesc );
 }

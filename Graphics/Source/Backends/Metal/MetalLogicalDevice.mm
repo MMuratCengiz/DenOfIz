@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
 #import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalBottomLevelAS.h>
 #import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderBindingTable.h>
+#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderLocalData.h>
 #import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalTopLevelAS.h>
 #import <metal_irconverter/metal_irconverter.h>
 #import <metal_irconverter_runtime/metal_irconverter_runtime.h>
@@ -167,6 +168,17 @@ IShaderBindingTable *MetalLogicalDevice::CreateShaderBindingTable( const ShaderB
 {
     return new MetalShaderBindingTable( m_context.get( ), desc );
 }
+
+IShaderLocalDataLayout *MetalLogicalDevice::CreateShaderRecordLayout( const ShaderLocalDataLayoutDesc &createDesc )
+{
+    return new MetalShaderLocalDataLayout( m_context.get( ), createDesc );
+}
+
+IShaderLocalData *MetalLogicalDevice::CreateShaderRecordData( const ShaderLocalDataDesc &createDesc )
+{
+    return new MetalShaderLocalData( m_context.get( ), createDesc );
+}
+
 
 void MetalLogicalDevice::WaitIdle( )
 {

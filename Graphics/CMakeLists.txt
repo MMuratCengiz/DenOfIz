@@ -67,6 +67,8 @@ SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         # RayTracing
         Source/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.cpp
         Source/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.cpp
+        Source/Backends/Vulkan/RayTracing/VulkanShaderLocalDataLayout.cpp
+        Source/Backends/Vulkan/RayTracing/VulkanShaderLocalData.cpp
         Source/Backends/Vulkan/RayTracing/VulkanTopLevelAS.cpp
         # Vulkan Resources
         Source/Backends/Vulkan/VulkanFence.cpp
@@ -122,6 +124,8 @@ set(DEN_OF_IZ_GRAPHICS_METAL_SOURCES
         # RayTracing
         Source/Backends/Metal/RayTracing/MetalBottomLevelAS.mm
         Source/Backends/Metal/RayTracing/MetalShaderBindingTable.mm
+        Source/Backends/Metal/RayTracing/MetalShaderLocalDataLayout.mm
+        Source/Backends/Metal/RayTracing/MetalShaderLocalData.mm
         Source/Backends/Metal/RayTracing/MetalTopLevelAS.mm
 )
 
