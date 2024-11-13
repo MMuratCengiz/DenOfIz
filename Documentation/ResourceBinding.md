@@ -51,7 +51,7 @@ Root constants are also bound to the resource bind group. They use the special r
 Make sure to also add the `[[vk::push_constant]]` attribute to the shader constant buffer.
 
 You can then simply set the root constants in the bind group. The size is inferred from the reflection data. And the
-register space is hardcoded to 99. So you just need to pass the data.
+register space is hardcoded to 31. So you just need to pass the data.
 
 ```cpp
 resourceBindGroup->SetRootConstants( 0, data );

@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.h>
+#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderLocalData.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanFence.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanPipelineBarrierHelper.h>
@@ -24,18 +25,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanShaderBindingTable::VulkanShaderBindingTable( VulkanContext *context, const ShaderBindingTableDesc &desc ) : m_context( context )
+VulkanShaderBindingTable::VulkanShaderBindingTable( VulkanContext *context, const ShaderBindingTableDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_pipeline              = dynamic_cast<VulkanPipeline *>( desc.Pipeline );
+    m_pipeline = dynamic_cast<VulkanPipeline *>( desc.Pipeline );
+
     m_shaderGroupHandleSize = Utilities::Align( m_context->RayTracingProperties.shaderGroupHandleSize, m_context->RayTracingProperties.shaderGroupHandleAlignment );
+    m_rayGenNumBytes        = Utilities::Align( m_shaderGroupHandleSize + m_desc.MaxRayGenDataBytes, m_context->RayTracingProperties.shaderGroupHandleAlignment );
+    m_hitGroupNumBytes      = Utilities::Align( m_shaderGroupHandleSize + m_desc.MaxHitGroupDataBytes, m_context->RayTracingProperties.shaderGroupHandleAlignment );
+    m_missGroupNumBytes     = Utilities::Align( m_shaderGroupHandleSize + m_desc.MaxMissDataBytes, m_context->RayTracingProperties.shaderGroupHandleAlignment );
+
     Resize( desc.SizeDesc );
 }
 
 void VulkanShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
-    const uint32_t rayGenerationShaderNumBytes = AlignRecord( desc.NumRayGenerationShaders * m_shaderGroupHandleSize );
-    const uint32_t hitGroupNumBytes            = AlignRecord( desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * m_shaderGroupHandleSize );
-    const uint32_t missShaderNumBytes          = AlignRecord( desc.NumMissShaders * m_shaderGroupHandleSize );
+    const uint32_t rayGenerationShaderNumBytes = AlignRecord( desc.NumRayGenerationShaders * m_rayGenNumBytes );
+    const uint32_t hitGroupNumBytes            = AlignRecord( desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * m_hitGroupNumBytes );
+    const uint32_t missShaderNumBytes          = AlignRecord( desc.NumMissShaders * m_missGroupNumBytes );
     m_numBufferBytes                           = rayGenerationShaderNumBytes + hitGroupNumBytes + missShaderNumBytes;
 
     BufferDesc bufferDesc{ };
@@ -61,7 +67,7 @@ void VulkanShaderBindingTable::Resize( const SBTSizeDesc &desc )
     m_buffer                = std::make_unique<VulkanBufferResource>( m_context, bufferDesc );
 
     const VkDeviceAddress &bufferAddress = m_buffer->DeviceAddress( );
-    // Set ranges for each shader type
+
     m_rayGenerationShaderRange               = { };
     m_rayGenerationShaderRange.deviceAddress = bufferAddress;
     m_rayGenerationShaderRange.size          = rayGenerationShaderNumBytes;
@@ -72,14 +78,14 @@ void VulkanShaderBindingTable::Resize( const SBTSizeDesc &desc )
     m_hitGroupShaderRange               = { };
     m_hitGroupShaderRange.deviceAddress = bufferAddress + m_hitGroupOffset;
     m_hitGroupShaderRange.size          = hitGroupNumBytes;
-    m_hitGroupShaderRange.stride        = Utilities::Align( m_shaderGroupHandleSize, m_context->RayTracingProperties.shaderGroupHandleAlignment );
+    m_hitGroupShaderRange.stride        = m_hitGroupNumBytes;
 
     m_missGroupOffset = m_hitGroupOffset + hitGroupNumBytes;
 
     m_missShaderRange               = { };
     m_missShaderRange.deviceAddress = bufferAddress + m_missGroupOffset;
     m_missShaderRange.size          = missShaderNumBytes;
-    m_missShaderRange.stride        = Utilities::Align( m_shaderGroupHandleSize, m_context->RayTracingProperties.shaderGroupHandleAlignment );
+    m_missShaderRange.stride        = m_missGroupNumBytes;
 
     m_callableShaderRange = { };
 }
@@ -87,7 +93,10 @@ void VulkanShaderBindingTable::Resize( const SBTSizeDesc &desc )
 void VulkanShaderBindingTable::BindRayGenerationShader( const RayGenerationBindingDesc &desc )
 {
     const void *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
-    memcpy( m_mappedMemory, shaderIdentifier, m_shaderGroupHandleSize );
+    void       *entry            = m_mappedMemory;
+
+    memcpy( entry, shaderIdentifier, m_rayGenNumBytes );
+    EncodeData( entry, desc.Data );
 }
 
 void VulkanShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
@@ -99,41 +108,26 @@ void VulkanShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     const uint32_t geometryOffset = desc.GeometryIndex * m_desc.SizeDesc.NumRayTypes;
     const uint32_t rayTypeOffset  = desc.RayTypeIndex;
 
-    uint32_t offset = m_hitGroupOffset + ( instanceOffset + geometryOffset + rayTypeOffset ) * m_shaderGroupHandleSize;
+    uint32_t offset = m_hitGroupOffset + ( instanceOffset + geometryOffset + rayTypeOffset ) * m_hitGroupNumBytes;
     if ( desc.HitGroupExportName.IsEmpty( ) )
     {
         throw std::runtime_error( "Hit group name cannot be empty." );
     }
 
-    auto shaderIdentifiers = m_pipeline->HitGroupIdentifiers( );
-
-    // Bind each shader type to the correct slot in the SBT, using null if missing
-    for ( const auto &[ shaderType, identifierOffset ] : shaderIdentifiers )
+    void       *hitGroupEntry      = static_cast<uint8_t *>( m_mappedMemory ) + offset;
+    const void *hitGroupIdentifier = m_pipeline->GetShaderIdentifier( desc.HitGroupExportName.Get( ) );
+    if ( !hitGroupIdentifier )
     {
-        switch ( shaderType )
-        {
-        case ShaderStage::ClosestHit:
-            break;
-        case ShaderStage::AnyHit:
-            offset += m_shaderGroupHandleSize;
-            break;
-        case ShaderStage::Intersection:
-            offset += 2 * m_shaderGroupHandleSize;
-            break;
-        default:
-            LOG( ERROR ) << "Unknown shader type in hit group.";
-            break;
-        }
-
-        // Perform the actual binding
-        void *hitGroupEntry = static_cast<uint8_t *>( m_mappedMemory ) + offset;
-        memcpy( hitGroupEntry, m_pipeline->GetShaderIdentifier( identifierOffset ), m_shaderGroupHandleSize );
+        LOG( ERROR ) << "Hit group export not found in pipeline.";
+        return;
     }
+
+    memcpy( hitGroupEntry, hitGroupIdentifier, m_shaderGroupHandleSize );
+    EncodeData( hitGroupEntry, desc.Data );
 }
 
 bool VulkanShaderBindingTable::BindHitGroupRecursive( const HitGroupBindingDesc &desc )
 {
-    // The recursive binding logic adapted for Vulkan
     if ( desc.InstanceIndex == -1 )
     {
         for ( uint32_t i = 0; i < m_desc.SizeDesc.NumInstances; ++i )
@@ -172,11 +166,12 @@ bool VulkanShaderBindingTable::BindHitGroupRecursive( const HitGroupBindingDesc 
 
 void VulkanShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 {
-    uint32_t    offset           = m_missGroupOffset + desc.RayTypeIndex * m_shaderGroupHandleSize;
+    uint32_t    offset           = m_missGroupOffset + desc.RayTypeIndex * m_missGroupNumBytes;
     void       *missShaderEntry  = static_cast<uint8_t *>( m_mappedMemory ) + offset;
     const void *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
 
     memcpy( missShaderEntry, shaderIdentifier, m_shaderGroupHandleSize );
+    EncodeData( missShaderEntry, desc.Data );
 }
 
 void VulkanShaderBindingTable::Build( )
@@ -249,4 +244,23 @@ const VkStridedDeviceAddressRegionKHR *VulkanShaderBindingTable::CallableShaderR
 uint32_t VulkanShaderBindingTable::AlignRecord( const uint32_t size ) const
 {
     return Utilities::Align( size, m_context->RayTracingProperties.shaderGroupBaseAlignment );
+}
+
+void VulkanShaderBindingTable::EncodeData( void *entry, IShaderLocalData *iData ) const
+{
+    if ( iData )
+    {
+        void                  *localData = static_cast<uint8_t *>( entry ) + m_shaderGroupHandleSize;
+        VulkanShaderLocalData *data      = dynamic_cast<VulkanShaderLocalData *>( iData );
+
+        if ( data->DataNumBytes( ) > 0 )
+        {
+            memcpy( localData, data->Data( ), data->DataNumBytes( ) );
+        }
+
+        if ( data->DescriptorSet( ) != VK_NULL_HANDLE )
+        {
+            memcpy( static_cast<uint8_t *>( localData ) + data->DataNumBytes( ), data->DescriptorSet( ), sizeof( VkDescriptorSet ) );
+        }
+    }
 }

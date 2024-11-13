@@ -36,21 +36,23 @@ namespace DenOfIz
         // Stores the layout bindings for each set
         std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> m_layoutBindings;
         // Weirdly enough, seems to make the most sense here
-        VkPipelineLayout m_pipelineLayout{ };
+        VkPipelineLayout      m_pipelineLayout{ };
         VkDescriptorSetLayout m_emptyLayout{ };
 
     public:
-         VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc );
+        VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc );
         ~VulkanRootSignature( ) override;
 
-        [[nodiscard]] ResourceBindingDesc GetVkShiftedBinding( const ResourceBindingSlot &slot ) const;
-        [[nodiscard]] uint32_t NumRootConstants( ) const;
-        [[nodiscard]] VkPushConstantRange PushConstantRange( const uint32_t binding ) const;
+        [[nodiscard]] ResourceBindingDesc              GetVkShiftedBinding( const ResourceBindingSlot &slot ) const;
+        [[nodiscard]] uint32_t                         NumRootConstants( ) const;
+        [[nodiscard]] std::vector<VkPushConstantRange> PushConstantRanges( ) const;
+        [[nodiscard]] VkPushConstantRange              PushConstantRange( const uint32_t binding ) const;
         //! @return VK_NULL_HANDLE if register space is between 0 and max register space. </returns>
         //! @throw std::runtime_error if register space is larger than the max set. </throws>
-        [[nodiscard]] const VkDescriptorSetLayout &DescriptorSetLayout( const uint32_t registerSpace ) const;
-        [[nodiscard]] VkPipelineLayout PipelineLayout( ) const;
-
+        [[nodiscard]] std::vector<VkDescriptorSetLayout> DescriptorSetLayouts( ) const;
+        [[nodiscard]] const VkDescriptorSetLayout       &DescriptorSetLayout( const uint32_t registerSpace ) const;
+        [[nodiscard]] VkPipelineLayout                   PipelineLayout( ) const;
+        [[nodiscard]] VkDescriptorSetLayout              EmptyLayout( ) const;
     private:
         void                                       AddResourceBinding( const ResourceBindingDesc &binding );
         void                                       AddRootConstant( const RootConstantResourceBindingDesc &rootConstantBinding );

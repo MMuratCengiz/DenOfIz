@@ -26,15 +26,15 @@ namespace DenOfIz
 {
     class DX12ShaderLocalData final : public IShaderLocalData
     {
-        DX12Context            *m_context;
+        DX12Context               *m_context;
         ShaderLocalDataDesc        m_desc;
         DX12ShaderLocalDataLayout *m_layout;
-        std::vector<Byte>       m_data;
+        std::vector<Byte>          m_data;
 
     public:
         DX12ShaderLocalData( DX12Context *context, const ShaderLocalDataDesc &desc );
         void Begin( ) override;
-        void Cbv( uint32_t binding, const IBufferResource *bufferResource ) override;
+        void Cbv( uint32_t binding, IBufferResource *bufferResource ) override;
         void Cbv( uint32_t binding, const InteropArray<Byte> &data ) override;
         void Srv( uint32_t binding, const IBufferResource *bufferResource ) override;
         void Srv( uint32_t binding, const ITextureResource *textureResource ) override;

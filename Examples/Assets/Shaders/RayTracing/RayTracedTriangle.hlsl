@@ -22,7 +22,7 @@ struct LocalConstants
 RaytracingAccelerationStructure Scene : register(t0);
 RWTexture2D<float4> RenderTarget : register(u0);
 ConstantBuffer<RayGenConstantBuffer> g_rayGenCB : register(b0);
-ConstantBuffer<LocalConstants> localCB : register(b0, space29);
+[[vk::shader_record_ext]] ConstantBuffer<LocalConstants> localCB : register(b0, space29);
 
 typedef BuiltInTriangleIntersectionAttributes MyAttributes;
 struct RayPayload

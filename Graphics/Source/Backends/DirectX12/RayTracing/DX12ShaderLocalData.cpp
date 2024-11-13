@@ -25,14 +25,14 @@ using namespace DenOfIz;
 DX12ShaderLocalData::DX12ShaderLocalData( DX12Context *context, const ShaderLocalDataDesc &desc ) : m_context( context ), m_desc( desc )
 {
     m_layout = dynamic_cast<DX12ShaderLocalDataLayout *>( m_desc.Layout );
-    m_data.resize( m_layout->ShaderRecordNumBytes( ) );
+    m_data.resize( m_layout->LocalDataNumBytes( ) );
 }
 
 void DX12ShaderLocalData::Begin( )
 {
 }
 
-void DX12ShaderLocalData::Cbv( const uint32_t binding, const IBufferResource *bufferResource )
+void DX12ShaderLocalData::Cbv( const uint32_t binding, IBufferResource *bufferResource )
 {
     EncodeBuffer( m_layout->CbvIndex( binding ), bufferResource );
 }

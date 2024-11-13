@@ -108,7 +108,7 @@ void RayTracedTriangleExample::Execute( uint32_t frameIndex, ICommandList *comma
 
 void RayTracedTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::DirectX12;
+    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void RayTracedTriangleExample::Update( )

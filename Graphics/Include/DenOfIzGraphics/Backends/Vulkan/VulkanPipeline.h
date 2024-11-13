@@ -43,6 +43,7 @@ namespace DenOfIz
         VkPipeline          m_instance{ };
         VkPipelineBindPoint m_bindPoint{ };
         VkPipelineLayout    m_layout{ };
+        VkPipelineLayout    m_rtLayout{ };
 
         std::unordered_map<std::string, uint32_t>     m_shaderIdentifierOffsets;
         std::vector<uint8_t>                          m_shaderIdentifiers;

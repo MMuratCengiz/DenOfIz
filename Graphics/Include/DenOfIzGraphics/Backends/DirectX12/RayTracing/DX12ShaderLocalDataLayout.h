@@ -49,7 +49,7 @@ namespace DenOfIz
         [[nodiscard]] uint32_t             SrvIndex( uint32_t bindingIndex ) const;
         [[nodiscard]] uint32_t             UavIndex( uint32_t bindingIndex ) const;
         [[nodiscard]] uint32_t             SamplerIndex( ) const;
-        [[nodiscard]] uint32_t             ShaderRecordNumBytes( ) const;
+        [[nodiscard]] uint32_t             LocalDataNumBytes( ) const;
         ~                                  DX12ShaderLocalDataLayout( ) override = default;
     };
 } // namespace DenOfIz

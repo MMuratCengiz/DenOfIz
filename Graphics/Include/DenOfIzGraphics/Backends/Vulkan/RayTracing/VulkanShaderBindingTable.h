@@ -29,20 +29,23 @@ namespace DenOfIz
         VulkanContext                        *m_context;
         VulkanPipeline                       *m_pipeline;
         ShaderBindingTableDesc                m_desc;
-        size_t                                m_numBufferBytes{};
-        void                                 *m_mappedMemory{};
+        size_t                                m_numBufferBytes{ };
+        void                                 *m_mappedMemory{ };
         std::unique_ptr<VulkanBufferResource> m_stagingBuffer;
         std::unique_ptr<VulkanBufferResource> m_buffer;
 
-        VkStridedDeviceAddressRegionKHR m_rayGenerationShaderRange{};
-        VkStridedDeviceAddressRegionKHR m_missShaderRange{};
-        VkStridedDeviceAddressRegionKHR m_hitGroupShaderRange{};
-        VkStridedDeviceAddressRegionKHR m_callableShaderRange{};
+        VkStridedDeviceAddressRegionKHR m_rayGenerationShaderRange{ };
+        VkStridedDeviceAddressRegionKHR m_missShaderRange{ };
+        VkStridedDeviceAddressRegionKHR m_hitGroupShaderRange{ };
+        VkStridedDeviceAddressRegionKHR m_callableShaderRange{ };
 
         uint32_t m_missGroupOffset = 0;
         uint32_t m_hitGroupOffset  = 0;
 
         uint32_t m_shaderGroupHandleSize;
+        uint32_t m_rayGenNumBytes    = 0;
+        uint32_t m_hitGroupNumBytes  = 0;
+        uint32_t m_missGroupNumBytes = 0;
 
     public:
         VulkanShaderBindingTable( VulkanContext *context, const ShaderBindingTableDesc &desc );
@@ -61,5 +64,6 @@ namespace DenOfIz
     private:
         [[nodiscard]] uint32_t AlignRecord( uint32_t size ) const;
         bool                   BindHitGroupRecursive( const HitGroupBindingDesc &desc );
+        void                   EncodeData( void *entry, IShaderLocalData *iData ) const;
     };
 } // namespace DenOfIz

@@ -132,7 +132,7 @@ uint32_t DX12ShaderLocalDataLayout::SamplerIndex( ) const
     return m_samplerTableIndex;
 }
 
-uint32_t DX12ShaderLocalDataLayout::ShaderRecordNumBytes( ) const
+uint32_t DX12ShaderLocalDataLayout::LocalDataNumBytes( ) const
 {
     return m_shaderRecordNumBytes;
 }

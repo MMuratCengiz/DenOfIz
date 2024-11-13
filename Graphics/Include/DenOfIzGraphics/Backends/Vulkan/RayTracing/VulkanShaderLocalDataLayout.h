@@ -23,12 +23,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct VkLayoutWithSet
+    {
+        VkDescriptorSetLayout Layout;
+        uint32_t              Set;
+    };
     class VulkanShaderLocalDataLayout final : public IShaderLocalDataLayout
     {
         VulkanContext            *m_context;
         ShaderLocalDataLayoutDesc m_desc;
+        VkDescriptorSetLayout     m_descriptorSetLayout = VK_NULL_HANDLE;
+
+        uint32_t m_totalInlineDataBytes = 0;
+
+        std::vector<VkLayoutWithSet>                                            m_layouts;
+        std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> m_layoutBindings;
+
+        std::vector<uint32_t> m_inlineDataOffsets;
+        std::vector<uint32_t> m_inlineDataNumBytes;
 
     public:
         VulkanShaderLocalDataLayout( VulkanContext *context, const ShaderLocalDataLayoutDesc &desc );
+        ~VulkanShaderLocalDataLayout( );
+
+        [[nodiscard]] std::vector<VkLayoutWithSet> DescriptorSetLayouts( );
+        [[nodiscard]] VkDescriptorSetLayout       *DescriptorSetLayout( );
+        [[nodiscard]] uint32_t                     LocalDataNumBytes( ) const;
+        [[nodiscard]] uint32_t                     InlineDataNumBytes( ) const;
+        [[nodiscard]] uint32_t                     CbvOffset( uint32_t cbvIndex ) const;
+        [[nodiscard]] uint32_t                     CbvNumBytes( uint32_t cbvIndex ) const;
     };
 } // namespace DenOfIz

@@ -201,6 +201,11 @@ uint32_t VulkanRootSignature::NumRootConstants( ) const
     return m_pushConstants.size( );
 }
 
+[[nodiscard]] std::vector<VkPushConstantRange> VulkanRootSignature::PushConstantRanges( ) const
+{
+    return m_pushConstants;
+}
+
 VkPushConstantRange VulkanRootSignature::PushConstantRange( const uint32_t binding ) const
 {
     if ( binding >= m_pushConstants.size( ) )
@@ -208,6 +213,11 @@ VkPushConstantRange VulkanRootSignature::PushConstantRange( const uint32_t bindi
         LOG( ERROR ) << "Root constant not found for binding " << binding;
     }
     return m_pushConstants[ binding ];
+}
+
+[[nodiscard]] std::vector<VkDescriptorSetLayout> VulkanRootSignature::DescriptorSetLayouts( ) const
+{
+    return m_layouts;
 }
 
 const VkDescriptorSetLayout &VulkanRootSignature::DescriptorSetLayout( const uint32_t registerSpace ) const
@@ -222,4 +232,9 @@ const VkDescriptorSetLayout &VulkanRootSignature::DescriptorSetLayout( const uin
 VkPipelineLayout VulkanRootSignature::PipelineLayout( ) const
 {
     return m_pipelineLayout;
+}
+
+VkDescriptorSetLayout VulkanRootSignature::EmptyLayout( ) const
+{
+    return m_emptyLayout;
 }
