@@ -258,7 +258,7 @@ void VulkanShaderBindingTable::EncodeData( void *entry, IShaderLocalData *iData 
             memcpy( localData, data->Data( ), data->DataNumBytes( ) );
         }
 
-        if ( data->DescriptorSet( ) != VK_NULL_HANDLE )
+        if ( *data->DescriptorSet( ) != VK_NULL_HANDLE )
         {
             memcpy( static_cast<uint8_t *>( localData ) + data->DataNumBytes( ), data->DescriptorSet( ), sizeof( VkDescriptorSet ) );
         }

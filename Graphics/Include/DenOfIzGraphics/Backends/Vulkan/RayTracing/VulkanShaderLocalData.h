@@ -34,7 +34,7 @@ namespace DenOfIz
         Storage                           m_storage;
         std::vector<VkWriteDescriptorSet> m_writeDescriptorSets;
         std::vector<uint8_t>              m_inlineData;
-        VkDescriptorSet                   m_descriptorSet = nullptr;
+        VkDescriptorSet                   m_descriptorSet = VK_NULL_HANDLE;
 
     public:
         VulkanShaderLocalData( VulkanContext *context, const ShaderLocalDataDesc &desc );
