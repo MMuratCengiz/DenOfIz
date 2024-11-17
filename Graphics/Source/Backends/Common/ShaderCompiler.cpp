@@ -252,11 +252,13 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
 IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob *code, const CompileMslDesc &compileMslDesc ) const
 {
     IRRootSignature *rootSignature = compileMslDesc.RootSignature;
+    IRRootSignature *localSignature = compileMslDesc.LocalRootSignature;
 
     IRCompiler *irCompiler = IRCompilerCreate( );
     IRCompilerSetEntryPointName( irCompiler, compileOptions.EntryPoint.Get( ) );
     IRCompilerSetMinimumDeploymentTarget( irCompiler, IROperatingSystem_macOS, "15.1" );
     IRCompilerSetGlobalRootSignature( irCompiler, rootSignature );
+    IRCompilerSetLocalRootSignature( irCompiler, compileMslDesc.LocalRootSignature );
     // TODO some of these values are hardcoded because metal is odd. The only possible way I can think of is to move the compilation to pipeline creation.
     // But will try this way for now.
     IRCompilerSetRayTracingPipelineArguments( irCompiler, 2 * sizeof(float), IRRaytracingPipelineFlagNone, IRIntrinsicMaskClosestHitAll, IRIntrinsicMaskMissShaderAll,

@@ -179,9 +179,9 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     m_rayTracingProgram       = std::unique_ptr<ShaderProgram>( m_graphicsApi->CreateShaderProgram( programDesc ) );
     auto reflection           = m_rayTracingProgram->Reflect( );
     m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
-    m_hgShaderLayout          = std::unique_ptr<IShaderLocalDataLayout>( m_logicalDevice->CreateShaderRecordLayout( reflection.ShaderLocalDataLayouts.GetElement( 1 ) ) );
+    m_hgShaderLayout          = std::unique_ptr<IShaderLocalDataLayout>( m_logicalDevice->CreateShaderLocalDataLayout( reflection.ShaderLocalDataLayouts.GetElement( 1 ) ) );
 
-    m_hgData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderRecordData( { m_hgShaderLayout.get( ) } ) );
+    m_hgData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderLocalData( { m_hgShaderLayout.get( ) } ) );
 
     auto     redData = InteropArray<Byte>( sizeof( float ) * 4 );
     XMFLOAT4 red     = { 1.0f, 0.0f, 0.0f, 1.0f };

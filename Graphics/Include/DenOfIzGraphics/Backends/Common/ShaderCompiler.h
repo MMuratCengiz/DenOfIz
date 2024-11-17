@@ -28,6 +28,7 @@ namespace DenOfIz
     struct CompileMslDesc
     {
         IRRootSignature *RootSignature;
+        IRRootSignature *LocalRootSignature;
     };
 #endif
 

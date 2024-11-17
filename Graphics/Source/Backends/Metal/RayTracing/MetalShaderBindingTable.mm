@@ -18,21 +18,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #import <DenOfIzGraphics/Backends/Metal/MetalBufferResource.h>
 #import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderBindingTable.h>
+#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderLocalData.h>
 
 using namespace DenOfIz;
 
 MetalShaderBindingTable::MetalShaderBindingTable( MetalContext *context, const ShaderBindingTableDesc &desc ) : m_context( context ), m_desc( desc )
 {
     m_pipeline              = dynamic_cast<MetalPipeline *>( desc.Pipeline );
-    m_hitGroupEntryNumBytes = sizeof( IRShaderIdentifier );
+    m_rayGenEntryNumBytes   = sizeof( IRShaderIdentifier ) + m_desc.MaxRayGenDataBytes;
+    m_hitGroupEntryNumBytes = sizeof( IRShaderIdentifier ) + m_desc.MaxHitGroupDataBytes;
+    m_missEntryNumBytes     = sizeof( IRShaderIdentifier ) + m_desc.MaxMissDataBytes;
     Resize( desc.SizeDesc );
 }
 
 void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
     uint32_t numHitGroups     = desc.NumInstances * desc.NumGeometries * desc.NumRayTypes;
+    size_t   rayGenNumBytes   = desc.NumRayGenerationShaders * m_rayGenEntryNumBytes;
     size_t   hitGroupNumBytes = numHitGroups * m_hitGroupEntryNumBytes;
-    m_numBufferBytes          = desc.NumRayGenerationShaders * sizeof( IRShaderIdentifier ) + hitGroupNumBytes + desc.NumMissShaders * sizeof( IRShaderIdentifier );
+    size_t   missNumBytes     = desc.NumMissShaders * m_missEntryNumBytes;
+    m_numBufferBytes          = rayGenNumBytes + hitGroupNumBytes + missNumBytes;
 
     m_buffer = [m_context->Device newBufferWithLength:m_numBufferBytes options:MTLResourceStorageModeShared];
     [m_buffer setLabel:@"Shader Binding Table"];
@@ -40,23 +45,27 @@ void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
     m_mappedMemory = static_cast<Byte *>( [m_buffer contents] );
 
     m_rayGenerationShaderRange.StartAddress = m_buffer.gpuAddress;
-    m_rayGenerationShaderRange.SizeInBytes  = desc.NumRayGenerationShaders * sizeof( IRShaderIdentifier );
+    m_rayGenerationShaderRange.SizeInBytes  = rayGenNumBytes;
 
-    m_hitGroupOffset                    = m_rayGenerationShaderRange.SizeInBytes;
+    m_hitGroupOffset                    = m_rayGenEntryNumBytes;
     m_hitGroupShaderRange.StartAddress  = m_buffer.gpuAddress + m_hitGroupOffset;
     m_hitGroupShaderRange.SizeInBytes   = hitGroupNumBytes;
     m_hitGroupShaderRange.StrideInBytes = m_hitGroupEntryNumBytes;
 
     m_missGroupOffset               = m_hitGroupOffset + hitGroupNumBytes;
     m_missShaderRange.StartAddress  = m_buffer.gpuAddress + m_missGroupOffset;
-    m_missShaderRange.SizeInBytes   = desc.NumMissShaders * sizeof( IRShaderIdentifier );
-    m_missShaderRange.StrideInBytes = sizeof( IRShaderIdentifier );
+    m_missShaderRange.SizeInBytes   = missNumBytes;
+    m_missShaderRange.StrideInBytes = m_missEntryNumBytes;
 }
 
 void MetalShaderBindingTable::BindRayGenerationShader( const RayGenerationBindingDesc &desc )
 {
     const uint32_t &functionIndex = m_pipeline->FindVisibleShaderIndexByName( desc.ShaderName.Get( ) );
     EncodeShaderIndex( 0, functionIndex );
+    if ( desc.Data )
+    {
+        EncodeData( sizeof( IRShaderIdentifier ), desc.Data );
+    }
 }
 
 void MetalShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
@@ -71,8 +80,25 @@ void MetalShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     const uint32_t rayTypeOffset  = desc.RayTypeIndex;
     const uint32_t offset         = m_hitGroupOffset + ( instanceOffset + geometryOffset + rayTypeOffset ) * sizeof( IRShaderIdentifier );
 
-    const uint32_t &functionIndex = m_pipeline->FindVisibleShaderIndexByName( desc.HitGroupExportName.Get( ) );
-    EncodeShaderIndex( offset, functionIndex ); // Todo: Custom intersection index
+    const HitGroupExport &hitGroupExport = m_pipeline->FindHitGroupExport( desc.HitGroupExportName.Get( ) );
+
+    if ( hitGroupExport.AnyHit != 0 )
+    {
+        EncodeShaderIndex( offset, hitGroupExport.ClosestHit, hitGroupExport.AnyHit );
+    }
+    else if ( hitGroupExport.Intersection != 0 )
+    {
+        EncodeShaderIndex( offset, hitGroupExport.ClosestHit, hitGroupExport.Intersection );
+    }
+    else
+    {
+        EncodeShaderIndex( offset, hitGroupExport.ClosestHit );
+    }
+
+    if ( desc.Data )
+    {
+        EncodeData( offset + sizeof( IRShaderIdentifier ), desc.Data );
+    }
 }
 
 bool MetalShaderBindingTable::BindHitGroupRecursive( const HitGroupBindingDesc &desc )
@@ -130,6 +156,10 @@ void MetalShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
     uint32_t        offset        = m_missGroupOffset + desc.RayTypeIndex * sizeof( IRShaderIdentifier );
     const uint32_t &functionIndex = m_pipeline->FindVisibleShaderIndexByName( desc.ShaderName.Get( ) );
     EncodeShaderIndex( offset, functionIndex );
+    if ( desc.Data )
+    {
+        EncodeData( offset + sizeof( IRShaderIdentifier ), desc.Data );
+    }
 }
 
 void MetalShaderBindingTable::Build( )
@@ -174,4 +204,24 @@ void MetalShaderBindingTable::EncodeShaderIndex( uint32_t offset, uint32_t shade
 #endif
     Byte *shaderEntry = static_cast<Byte *>( m_mappedMemory ) + offset;
     memcpy( shaderEntry, &shaderIdentifier, sizeof( IRShaderIdentifier ) );
+}
+
+void MetalShaderBindingTable::EncodeData( uint32_t offset, const IShaderLocalData *iData )
+{
+    MetalShaderLocalData *localData = static_cast<MetalShaderLocalData *>( const_cast<IShaderLocalData *>( iData ) );
+    Byte                 *dest      = static_cast<Byte *>( m_mappedMemory ) + offset;
+
+    const Byte    *data     = localData->Data( );
+    const uint32_t numBytes = localData->DataNumBytes( );
+    memcpy( dest, data, numBytes );
+
+    uint32_t      srvUavOffset        = numBytes;
+    id<MTLBuffer> srvUavBuffer        = localData->SrvUavTable( )->Buffer( );
+    uint64_t      srvUavBufferAddress = srvUavBuffer.gpuAddress;
+    memcpy( dest + numBytes, &srvUavBufferAddress, sizeof( uint64_t ) );
+
+    uint32_t      samplerOffset  = numBytes + sizeof( uint64_t );
+    id<MTLBuffer> samplerBuffer  = localData->SamplerTable( )->Buffer( );
+    uint64_t      samplerAddress = samplerBuffer.gpuAddress;
+    memcpy( dest + srvUavOffset, &samplerOffset, sizeof( uint64_t ) );
 }

@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "MetalFence.h"
 #include "MetalResourceBindGroup.h"
 #include "MetalTextureResource.h"
+#include "RayTracing/MetalShaderLocalData.h"
 
 namespace DenOfIz
 {
@@ -44,22 +45,22 @@ namespace DenOfIz
         void                         LoadPhysicalDevice( const PhysicalDevice &device ) override;
         bool                         IsDeviceLost( ) override;
 
-        ICommandListPool    *CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
-        IPipeline           *CreatePipeline( const PipelineDesc &pipelineDesc ) override;
-        ISwapChain          *CreateSwapChain( const SwapChainDesc &swapChainDesc ) override;
-        IRootSignature      *CreateRootSignature( const RootSignatureDesc &rootSignatureDesc ) override;
-        IInputLayout        *CreateInputLayout( const InputLayoutDesc &inputLayoutDesc ) override;
-        IResourceBindGroup  *CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc ) override;
-        IFence              *CreateFence( ) override;
-        ISemaphore          *CreateSemaphore( ) override;
-        IBufferResource     *CreateBufferResource( const BufferDesc &bufferDesc ) override;
-        ITextureResource    *CreateTextureResource( const TextureDesc &textureDesc ) override;
-        ISampler            *CreateSampler( const SamplerDesc &samplerDesc ) override;
-        IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &desc ) override;
-        ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &desc ) override;
-        IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &desc ) override;
-        IShaderRecordLayout *CreateShaderRecordLayout( const ShaderRecordLayoutDesc &createDesc ) override;
-        IShaderRecordData   *CreateShaderRecordData( const ShaderRecordDataDesc &createDesc ) override;
+        ICommandListPool       *CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
+        IPipeline              *CreatePipeline( const PipelineDesc &pipelineDesc ) override;
+        ISwapChain             *CreateSwapChain( const SwapChainDesc &swapChainDesc ) override;
+        IRootSignature         *CreateRootSignature( const RootSignatureDesc &rootSignatureDesc ) override;
+        IInputLayout           *CreateInputLayout( const InputLayoutDesc &inputLayoutDesc ) override;
+        IResourceBindGroup     *CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc ) override;
+        IFence                 *CreateFence( ) override;
+        ISemaphore             *CreateSemaphore( ) override;
+        IBufferResource        *CreateBufferResource( const BufferDesc &bufferDesc ) override;
+        ITextureResource       *CreateTextureResource( const TextureDesc &textureDesc ) override;
+        ISampler               *CreateSampler( const SamplerDesc &samplerDesc ) override;
+        IBottomLevelAS         *CreateBottomLevelAS( const BottomLevelASDesc &desc ) override;
+        ITopLevelAS            *CreateTopLevelAS( const TopLevelASDesc &desc ) override;
+        IShaderBindingTable    *CreateShaderBindingTable( const ShaderBindingTableDesc &desc ) override;
+        IShaderLocalDataLayout *CreateShaderLocalDataLayout( const ShaderLocalDataLayoutDesc &createDesc ) override;
+        IShaderLocalData       *CreateShaderLocalData( const ShaderLocalDataDesc &createDesc ) override;
 
         void WaitIdle( ) override;
         // --

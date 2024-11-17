@@ -40,15 +40,17 @@ namespace DenOfIz
 
         uint32_t m_missGroupOffset       = 0;
         uint32_t m_hitGroupOffset        = 0;
+        uint32_t m_rayGenEntryNumBytes   = 0;
         uint32_t m_hitGroupEntryNumBytes = 0;
+        uint32_t m_missEntryNumBytes     = 0;
 
     public:
         MetalShaderBindingTable( MetalContext *context, const ShaderBindingTableDesc &desc );
-        void                                   Resize( const SBTSizeDesc                                   &) override;
-        void                                   BindRayGenerationShader( const RayGenerationBindingDesc &desc ) override;
-        void                                   BindHitGroup( const HitGroupBindingDesc &desc ) override;
-        void                                   BindMissShader( const MissBindingDesc &desc ) override;
-        void                                   Build( ) override;
+        void Resize( const SBTSizeDesc & ) override;
+        void BindRayGenerationShader( const RayGenerationBindingDesc &desc ) override;
+        void BindHitGroup( const HitGroupBindingDesc &desc ) override;
+        void BindMissShader( const MissBindingDesc &desc ) override;
+        void Build( ) override;
         ~MetalShaderBindingTable( ) override = default;
 
         const id<MTLBuffer>                   MetalBuffer( ) const;
@@ -59,5 +61,6 @@ namespace DenOfIz
     private:
         bool BindHitGroupRecursive( const HitGroupBindingDesc &desc );
         void EncodeShaderIndex( uint32_t offset, uint32_t shaderIndex, int customIntersectionIndex = -1 );
+        void EncodeData( uint32_t offset, const IShaderLocalData *data );
     };
 } // namespace DenOfIz

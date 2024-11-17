@@ -26,11 +26,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    struct ShaderFunction
+    struct HitGroupExport
     {
-        uint64_t              Index;
-        id<MTLFunction>       Function;
-        id<MTLFunctionHandle> Handle;
+        uint64_t ClosestHit;
+        uint64_t AnyHit;
+        uint64_t Intersection;
     };
 
     class MetalPipeline final : public IPipeline
@@ -45,10 +45,11 @@ namespace DenOfIz
         MTLCullMode              m_cullMode;
         id<MTLDepthStencilState> m_depthStencilState;
         // Ray tracing specific
-        std::unordered_map<std::string, uint64_t> m_visibleFunctions;
-        std::vector<std::string>                  m_hitGroupShaders;
-        id<MTLVisibleFunctionTable>               m_visibleFunctionTable;
-        id<MTLIntersectionFunctionTable>          m_intersectionFunctionTable;
+        std::unordered_map<std::string, uint64_t>       m_visibleFunctions;
+        std::unordered_map<std::string, HitGroupExport> m_hitGroupExports;
+        std::vector<std::string>                        m_hitGroupShaders;
+        id<MTLVisibleFunctionTable>                     m_visibleFunctionTable;
+        id<MTLIntersectionFunctionTable>                m_intersectionFunctionTable;
 
     public:
         MetalPipeline( MetalContext *context, const PipelineDesc &desc );
@@ -60,6 +61,7 @@ namespace DenOfIz
         const id<MTLComputePipelineState> &ComputePipelineState( ) const;
         // Ray tracing specific:
         const uint64_t                                &FindVisibleShaderIndexByName( const std::string &name ) const;
+        const HitGroupExport                          &FindHitGroupExport( const std::string &name ) const;
         [[nodiscard]] id<MTLVisibleFunctionTable>      VisibleFunctionTable( ) const;
         [[nodiscard]] id<MTLIntersectionFunctionTable> IntersectionFunctionTable( ) const;
 

@@ -23,12 +23,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct MetalLocalBindingDesc
+    {
+        uint32_t            TLABOffset;
+        size_t              NumBytes;
+        ResourceBindingType Type;
+    };
+
     class MetalShaderLocalDataLayout final : public IShaderLocalDataLayout
     {
         MetalContext             *m_context;
         ShaderLocalDataLayoutDesc m_desc;
 
+        std::vector<MetalLocalBindingDesc> m_bindings;
+        uint32_t                           m_totalInlineDataBytes = 0;
+        uint32_t                           m_numSrvUavs           = 0;
+        uint32_t                           m_numSamplers          = 0;
+
     public:
         MetalShaderLocalDataLayout( MetalContext *context, const ShaderLocalDataLayoutDesc &desc );
+        uint32_t NumInlineBytes( ) const;
+        uint32_t NumSrvUavs( ) const;
+        uint32_t NumSamplers( ) const;
+
+        const MetalLocalBindingDesc &GetBinding( uint32_t binding ) const;
     };
 } // namespace DenOfIz

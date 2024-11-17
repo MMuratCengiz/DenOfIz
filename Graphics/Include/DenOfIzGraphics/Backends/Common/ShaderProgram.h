@@ -78,9 +78,22 @@ namespace DenOfIz
     struct MetalDescriptorOffsets
     {
         // -1 is used for debugging purposes to show that no descriptor table exists in this root signature of that type
-        int                                    CbvSrvUavOffset = -1;
-        int                                    SamplerOffset   = -1;
+        int                                    CbvSrvUavOffset      = -1;
+        int                                    SamplerOffset        = -1;
+        int                                    LocalCbvSrvUavOffset = -1;
+        int                                    LocalSamplerOffset   = -1;
         std::unordered_map<uint32_t, uint32_t> UniqueTLABIndex{ };
+    };
+    // This is used to order the root parameters in the root signature as metal top level argument buffer expects them in the same order
+    // Binding goes from 0 till max register space.
+    struct RegisterSpaceRange
+    {
+        std::vector<IRRootConstants>     RootConstants;
+        std::vector<IRRootDescriptor>    RootArguments;
+        std::vector<IRRootParameterType> RootArgumentTypes;
+        std::vector<IRDescriptorRange1>  CbvSrvUavRanges;
+        std::vector<IRDescriptorRange1>  SamplerRanges;
+        IRShaderVisibility               ShaderVisibility;
     };
 #endif
 
@@ -97,10 +110,10 @@ namespace DenOfIz
         ID3D12FunctionReflection       *FunctionReflection;
         std::unordered_set<std::string> ProcessedFiles;
         // For metal:
-        std::vector<uint32_t> *DescriptorTableLocations;
+        std::vector<uint32_t>                                  *DescriptorTableLocations;
+        std::unordered_map<ShaderStage, std::vector<uint32_t>> *LocalDescriptorTableLocations;
 #ifdef BUILD_METAL
-        IRShaderReflection             *IRReflection;
-        std::vector<IRResourceLocation> MetalResourceLocations;
+        IRShaderReflection *IRReflection;
 #endif
     };
 
@@ -113,7 +126,8 @@ namespace DenOfIz
         std::vector<ShaderDesc>                      m_shaderDescs; // Index matched with m_compiledShaders
         ShaderProgramDesc                            m_desc;
 #ifdef BUILD_METAL
-        std::vector<MetalDescriptorOffsets> m_metalDescriptorOffsets;
+        std::vector<MetalDescriptorOffsets>                                  m_metalDescriptorOffsets;
+        std::unordered_map<ShaderStage, std::vector<MetalDescriptorOffsets>> m_localMetalDescriptorOffsets;
 #endif
     public:
         DZ_API explicit ShaderProgram( ShaderProgramDesc desc );
@@ -132,12 +146,14 @@ namespace DenOfIz
         void                    ProcessBoundResource( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex ) const;
         // Returns true if the bound resource is found(and an update is performed), false otherwise
         // Adds additional stages if existing stages are found
-        bool IsBindingLocalTo( const ShaderDesc &shaderDesc, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
-        bool ShouldProcessBinding( ReflectionState& state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
-        bool UpdateBoundResourceStage( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
+        bool                IsBindingLocalTo( const ShaderDesc &shaderDesc, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
+        bool                ShouldProcessBinding( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
+        bool                UpdateBoundResourceStage( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
+        ResourceBindingType ReflectTypeToBufferBindingType( const D3D_SHADER_INPUT_TYPE type ) const;
 #ifdef BUILD_METAL
-        void IterateBoundResources( CompiledShader *shader, ReflectionState &state, ReflectionCallback &callback ) const;
-        void ProduceMSL( );
+        IRRootSignature *CreateRootSignature( std::vector<RegisterSpaceRange> &registerSpaceRanges, std::vector<MetalDescriptorOffsets> &metalDescriptorOffsets ) const;
+        void             IterateBoundResources( CompiledShader *shader, ReflectionState &state, ReflectionCallback &callback ) const;
+        void             ProduceMSL( );
 #endif
     };
 

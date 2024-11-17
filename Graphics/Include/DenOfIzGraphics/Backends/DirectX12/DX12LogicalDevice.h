@@ -40,7 +40,7 @@ namespace DenOfIz
         wil::com_ptr<ID3D12Fence>    m_waitIdleFence;
 
     public:
-         DX12LogicalDevice( );
+        DX12LogicalDevice( );
         ~DX12LogicalDevice( ) override;
 
         // Override methods
@@ -61,11 +61,11 @@ namespace DenOfIz
         ITextureResource   *CreateTextureResource( const TextureDesc &textureDesc ) override;
         ISampler           *CreateSampler( const SamplerDesc &samplerDesc ) override;
         // RayTracing:
-        ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &createDesc ) override;
-        IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &createDesc ) override;
-        IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &createDesc ) override;
-        IShaderLocalDataLayout *CreateShaderRecordLayout( const ShaderLocalDataLayoutDesc &createDesc ) override;
-        IShaderLocalData       *CreateShaderRecordData( const ShaderLocalDataDesc &createDesc ) override;
+        ITopLevelAS            *CreateTopLevelAS( const TopLevelASDesc &createDesc ) override;
+        IBottomLevelAS         *CreateBottomLevelAS( const BottomLevelASDesc &createDesc ) override;
+        IShaderBindingTable    *CreateShaderBindingTable( const ShaderBindingTableDesc &createDesc ) override;
+        IShaderLocalDataLayout *CreateShaderLocalDataLayout( const ShaderLocalDataLayoutDesc &createDesc ) override;
+        IShaderLocalData       *CreateShaderLocalData( const ShaderLocalDataDesc &createDesc ) override;
 
         void WaitIdle( ) override;
         // --
