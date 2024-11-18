@@ -293,7 +293,8 @@ IRRootSignature *ShaderProgram::CreateRootSignature( std::vector<RegisterSpaceRa
     int                           numEntries    = 0;
     for ( auto &registerSpaceRange : registerSpaceRanges )
     {
-        int rootConstantIndex = 0;
+        int                     rootConstantIndex = 0;
+        MetalDescriptorOffsets &offsets           = metalDescriptorOffsets[ registerSpace ];
         for ( auto &rootConstant : registerSpaceRange.RootConstants )
         {
             IRRootParameter1 &rootParameter        = rootParameters.emplace_back( );
@@ -302,6 +303,8 @@ IRRootSignature *ShaderProgram::CreateRootSignature( std::vector<RegisterSpaceRa
             rootParameter.Constants.Num32BitValues = rootConstant.Num32BitValues;
             rootParameter.Constants.RegisterSpace  = rootConstant.RegisterSpace;
             rootParameter.Constants.ShaderRegister = rootConstant.ShaderRegister;
+            uint32_t hash                          = Utilities::HashInts( rootParameter.ParameterType, rootConstant.RegisterSpace, rootConstant.ShaderRegister );
+            offsets.UniqueTLABIndex[ hash ]        = numEntries++;
             ++rootConstantIndex;
         }
     }
@@ -318,8 +321,8 @@ IRRootSignature *ShaderProgram::CreateRootSignature( std::vector<RegisterSpaceRa
         if ( !registerSpaceRange.SamplerRanges.empty( ) )
         {
             offsets.SamplerOffset = numEntries++;
+            PutRootParameterDescriptorTable( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.SamplerRanges );
         }
-        PutRootParameterDescriptorTable( rootParameters, registerSpaceRange.ShaderVisibility, registerSpaceRange.SamplerRanges );
 
         int rootArgumentIndex = 0;
         for ( auto &rootArgument : registerSpaceRange.RootArguments )
@@ -360,17 +363,17 @@ IRRootSignature *ShaderProgram::CreateRootSignature( std::vector<RegisterSpaceRa
     return rootSignature;
 }
 
-// For metal, we need to produce a root signature to compile a correct metallib
+// For metal, we need to produce a root signature to compile a correct metal lib
 // We also keep track of how the root parameter layout looks like so
 void ShaderProgram::ProduceMSL( )
 {
     const ShaderCompiler &compiler = ShaderCompilerInstance( );
 
     // We use this vector to make sure register spaces are ordered correctly, the order of the root parameters is also how the Top Level Argument Buffer expects them
-    std::unordered_map<ShaderStage, std::vector<RegisterSpaceRange>> localRegisterSpaceRanges;
-    std::vector<RegisterSpaceRange>                                  registerSpaceRanges;
-    std::vector<std::unique_ptr<CompiledShader>>                     dxilShaders;
-    std::vector<D3D12_SHADER_INPUT_BIND_DESC>                        processedInputs; // Handle duplicate inputs
+    std::vector<RegisterSpaceRange>              localRegisterSpaceRanges;
+    std::vector<RegisterSpaceRange>              registerSpaceRanges;
+    std::vector<std::unique_ptr<CompiledShader>> dxilShaders;
+    std::vector<D3D12_SHADER_INPUT_BIND_DESC>    processedInputs; // Handle duplicate inputs
 
     ReflectionState state{ };
 
@@ -384,6 +387,8 @@ void ShaderProgram::ProduceMSL( )
         compileDesc.Stage       = shader.Stage;
         compileDesc.TargetIL    = TargetIL::DXIL;
         auto compiledShader     = compiler.CompileHLSL( compileDesc );
+        state.ShaderDesc        = &shader;
+        state.CompiledShader    = compiledShader.get( );
 
         auto processResources = [ & ]( D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int i )
         {
@@ -399,15 +404,15 @@ void ShaderProgram::ProduceMSL( )
             bool isLocal = IsBindingLocalTo( shader, shaderInputBindDesc );
             if ( isLocal )
             {
-                ContainerUtilities::EnsureSize( localRegisterSpaceRanges[ shader.Stage ], shaderInputBindDesc.Space );
+                ContainerUtilities::EnsureSize( localRegisterSpaceRanges, shaderInputBindDesc.Space );
             }
             else
             {
                 ContainerUtilities::EnsureSize( registerSpaceRanges, shaderInputBindDesc.Space );
             }
 
-            auto &registerSpaceRange = isLocal ? localRegisterSpaceRanges[ shader.Stage ][ shaderInputBindDesc.Space ] : registerSpaceRanges[ shaderInputBindDesc.Space ];
-            IRShaderVisibility shaderVisibility = ShaderStageToShaderVisibility( shader.Stage );
+            auto              &registerSpaceRange = isLocal ? localRegisterSpaceRanges[ shaderInputBindDesc.Space ] : registerSpaceRanges[ shaderInputBindDesc.Space ];
+            IRShaderVisibility shaderVisibility   = ShaderStageToShaderVisibility( shader.Stage );
 
             if ( registerSpaceRange.ShaderVisibility != 0 && registerSpaceRange.ShaderVisibility != shaderVisibility )
             {
@@ -463,14 +468,15 @@ void ShaderProgram::ProduceMSL( )
     }
 
     m_metalDescriptorOffsets.resize( registerSpaceRanges.size( ) );
+    m_localMetalDescriptorOffsets.resize( localRegisterSpaceRanges.size( ) );
 
     CompileMslDesc compileMslDesc{ };
-    compileMslDesc.RootSignature = CreateRootSignature( registerSpaceRanges, m_metalDescriptorOffsets );
+    compileMslDesc.RootSignature      = CreateRootSignature( registerSpaceRanges, m_metalDescriptorOffsets );
+    compileMslDesc.LocalRootSignature = CreateRootSignature( localRegisterSpaceRanges, m_localMetalDescriptorOffsets );
 
     for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements( ); ++shaderIndex )
     {
-        auto &shader                      = m_desc.Shaders.GetElement( shaderIndex );
-        compileMslDesc.LocalRootSignature = CreateRootSignature( localRegisterSpaceRanges[ shader.Stage ], m_localMetalDescriptorOffsets[ shader.Stage ] );
+        auto &shader = m_desc.Shaders.GetElement( shaderIndex );
 
         CompileDesc compileDesc = { };
         compileDesc.Path        = shader.Path;
@@ -482,12 +488,13 @@ void ShaderProgram::ProduceMSL( )
         auto     &compiledShader = dxilShaders[ shaderIndex ];
         IDxcBlob *mslBlob        = compiler.DxilToMsl( compileDesc, compiledShader->Blob, compileMslDesc );
         compiledShader->Blob->Release( );
-        compiledShader->Blob = mslBlob;
+        compiledShader->Blob       = mslBlob;
+        compiledShader->RayTracing = shader.RayTracing;
 
         m_compiledShaders.push_back( std::move( compiledShader ) );
-        IRRootSignatureDestroy( compileMslDesc.LocalRootSignature );
     }
 
+    IRRootSignatureDestroy( compileMslDesc.LocalRootSignature );
     IRRootSignatureDestroy( compileMslDesc.RootSignature );
 }
 #endif
@@ -611,8 +618,8 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
     RootSignatureDesc &rootSignature = result.RootSignature;
 
     // TODO These don't really need to be stored this way
-    std::vector<uint32_t>                                  descriptorTableLocations;
-    std::unordered_map<ShaderStage, std::vector<uint32_t>> localDescriptorTableLocations;
+    std::vector<uint32_t> descriptorTableLocations;
+    std::vector<uint32_t> localDescriptorTableLocations;
 
     ReflectionState reflectionState               = { };
     reflectionState.RootSignatureDesc             = &rootSignature;
@@ -624,7 +631,7 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
     {
         auto &shader                            = m_compiledShaders[ shaderIndex ];
         reflectionState.CompiledShader          = shader.get( );
-        reflectionState.ShaderDesc              = &( m_shaderDescs[ shaderIndex ] );
+        reflectionState.ShaderDesc              = &( m_desc.Shaders.GetElement( shaderIndex ) );
         ShaderLocalDataLayoutDesc &recordLayout = result.ShaderLocalDataLayouts.GetElement( shaderIndex );
         switch ( shader->Stage )
         {
@@ -760,7 +767,8 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
     bool                isLocal     = IsBindingLocalTo( *state.ShaderDesc, shaderInputBindDesc );
     ResourceBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
     // Root constants are reserved for a specific register space
-    if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootConstantRegisterSpace )
+    // PS: Constant buffers in local root signatures are already handled as root constants
+    if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootConstantRegisterSpace && !isLocal )
     {
         ReflectionDesc rootConstantReflection;
         FillReflectionData( state, rootConstantReflection, resourceIndex );
@@ -780,7 +788,6 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
 
     // If this register space is configured to be a LocalRootSignature, then populate the corresponding Bindings.
     InteropArray<ResourceBindingDesc> *resourceBindings = &state.RootSignatureDesc->ResourceBindings;
-    const auto                        &rtBindings       = state.ShaderDesc->RayTracing.LocalBindings;
     if ( isLocal )
     {
         resourceBindings = &state.ShaderLocalDataLayout->ResourceBindings;
@@ -799,8 +806,14 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
     /*
      * This reflection information is unfortunately required to hint the MetalResourceBindGroup where a binding(i.e. b0, space0) lies in the top level argument buffer.
      */
-    auto &metalDescriptorOffsets = isLocal ? m_localMetalDescriptorOffsets.at( state.ShaderDesc->Stage ) : m_metalDescriptorOffsets;
+    auto &metalDescriptorOffsets = isLocal ? m_localMetalDescriptorOffsets : m_metalDescriptorOffsets;
 
+    if ( isLocal && resourceBindingDesc.BindingType == ResourceBindingType::ConstantBuffer )
+    {
+        resourceBindingDesc.Reflection.LocalCbvOffset = state.LocalCbvOffset;
+        state.LocalCbvOffset += resourceBindingDesc.Reflection.NumBytes;
+        return;
+    }
     if ( resourceBindingDesc.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
     {
         uint32_t hash = Utilities::HashInts( BindingTypeToIRRootParameterType( resourceBindingDesc.BindingType ), shaderInputBindDesc.Space, shaderInputBindDesc.BindPoint );
@@ -820,7 +833,7 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
         break;
     }
 
-    std::vector<uint32_t> *tableIndexes = isLocal ? &( ( *state.LocalDescriptorTableLocations )[ state.ShaderDesc->Stage ] ) : state.DescriptorTableLocations;
+    std::vector<uint32_t> *tableIndexes = isLocal ? state.LocalDescriptorTableLocations : state.DescriptorTableLocations;
     ContainerUtilities::EnsureSize( ( *tableIndexes ), resourceBindingDesc.Reflection.TLABOffset );
     uint32_t &locationHint                              = ( *tableIndexes )[ resourceBindingDesc.Reflection.TLABOffset ];
     resourceBindingDesc.Reflection.DescriptorTableIndex = locationHint++;
@@ -842,6 +855,19 @@ bool ShaderProgram::IsBindingLocalTo( const ShaderDesc &shaderDesc, D3D12_SHADER
     return false;
 }
 
+bool ShaderProgram::IsBindingLocal( D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
+{
+    for ( int i = 0; i < m_desc.Shaders.NumElements( ); ++i )
+    {
+        auto &shader = m_desc.Shaders.GetElement( i );
+        if ( IsBindingLocalTo( shader, shaderInputBindDesc ) )
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool ShaderProgram::ShouldProcessBinding( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
 {
     // Check 1: If the binding is in our local signature, we should process it
@@ -851,13 +877,9 @@ bool ShaderProgram::ShouldProcessBinding( ReflectionState &state, D3D12_SHADER_I
     }
 
     // Check 2: If the binding is not in our local signature, but it is local to another shader, we should not process it
-    for ( int i = 0; i < m_shaderDescs.size( ); ++i )
+    if ( IsBindingLocal( shaderInputBindDesc ) )
     {
-        auto &shader = m_shaderDescs[ i ];
-        if ( IsBindingLocalTo( shader, shaderInputBindDesc ) )
-        {
-            return false;
-        }
+        return false;
     }
 
     // This means this is a global binding, and we should process it
@@ -1123,20 +1145,6 @@ void ShaderProgram::FillReflectionData( ReflectionState &state, ReflectionDesc &
         subField.NumColumns               = typeDesc.Columns;
         subField.NumRows                  = typeDesc.Rows;
     }
-}
-
-ID3D12ShaderReflection *ShaderProgram::ShaderReflection( const CompiledShader *compiledShader ) const
-{
-    IDxcBlob       *reflectionBlob = compiledShader->Reflection;
-    const DxcBuffer reflectionBuffer{
-        .Ptr      = reflectionBlob->GetBufferPointer( ),
-        .Size     = reflectionBlob->GetBufferSize( ),
-        .Encoding = 0,
-    };
-
-    ID3D12ShaderReflection *shaderReflection{ };
-    DXC_CHECK_RESULT( ShaderCompilerInstance( ).DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) ) );
-    return shaderReflection;
 }
 
 void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const

@@ -27,12 +27,13 @@ namespace DenOfIz
     class MetalShaderBindingTable : public IShaderBindingTable
     {
     private:
-        MetalContext          *m_context;
-        MetalPipeline         *m_pipeline;
-        ShaderBindingTableDesc m_desc;
-        size_t                 m_numBufferBytes;
-        id<MTLBuffer>          m_buffer;
-        Byte                  *m_mappedMemory;
+        MetalContext                *m_context;
+        MetalPipeline               *m_pipeline;
+        ShaderBindingTableDesc       m_desc;
+        size_t                       m_numBufferBytes;
+        id<MTLBuffer>                m_buffer;
+        std::vector<id<MTLResource>> m_usedResources;
+        Byte                        *m_mappedMemory;
 
         IRVirtualAddressRange          m_rayGenerationShaderRange;
         IRVirtualAddressRangeAndStride m_hitGroupShaderRange;
@@ -53,6 +54,7 @@ namespace DenOfIz
         void Build( ) override;
         ~MetalShaderBindingTable( ) override = default;
 
+        const std::vector<id<MTLResource>>   &UsedResources( ) const;
         const id<MTLBuffer>                   MetalBuffer( ) const;
         const IRVirtualAddressRange          &RayGenerationShaderRange( ) const;
         const IRVirtualAddressRangeAndStride &HitGroupShaderRange( ) const;

@@ -52,5 +52,8 @@ namespace DenOfIz
         [[nodiscard]] const std::vector<id<MTLResource>> &UsedResources( ) const;
         [[nodiscard]] uint32_t    DataNumBytes( ) const;
         [[nodiscard]] const Byte *Data( ) const;
+    private:
+        void EnsureSrvUavTable( );
+        void EnsureSamplerTable( );
     };
 } // namespace DenOfIz

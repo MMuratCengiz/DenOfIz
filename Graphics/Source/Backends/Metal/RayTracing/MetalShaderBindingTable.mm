@@ -24,10 +24,13 @@ using namespace DenOfIz;
 
 MetalShaderBindingTable::MetalShaderBindingTable( MetalContext *context, const ShaderBindingTableDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_pipeline              = dynamic_cast<MetalPipeline *>( desc.Pipeline );
-    m_rayGenEntryNumBytes   = sizeof( IRShaderIdentifier ) + m_desc.MaxRayGenDataBytes;
-    m_hitGroupEntryNumBytes = sizeof( IRShaderIdentifier ) + m_desc.MaxHitGroupDataBytes;
-    m_missEntryNumBytes     = sizeof( IRShaderIdentifier ) + m_desc.MaxMissDataBytes;
+    m_pipeline = dynamic_cast<MetalPipeline *>( desc.Pipeline );
+    // In Metal, the concept of a local root signature does not apply to shader stages independently. In case a source of the shader is shared between multiple stages,
+    // we need to account for the maximum size of the data for all stages.
+    size_t maxBytes         = std::max( { m_desc.MaxRayGenDataBytes, m_desc.MaxHitGroupDataBytes, m_desc.MaxMissDataBytes } );
+    m_rayGenEntryNumBytes   = sizeof( IRShaderIdentifier ) + maxBytes;
+    m_hitGroupEntryNumBytes = sizeof( IRShaderIdentifier ) + maxBytes;
+    m_missEntryNumBytes     = sizeof( IRShaderIdentifier ) + maxBytes;
     Resize( desc.SizeDesc );
 }
 
@@ -41,6 +44,7 @@ void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
 
     m_buffer = [m_context->Device newBufferWithLength:m_numBufferBytes options:MTLResourceStorageModeShared];
     [m_buffer setLabel:@"Shader Binding Table"];
+    m_usedResources.push_back( m_buffer );
 
     m_mappedMemory = static_cast<Byte *>( [m_buffer contents] );
 
@@ -78,7 +82,7 @@ void MetalShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     const uint32_t instanceOffset = desc.InstanceIndex * m_desc.SizeDesc.NumGeometries * m_desc.SizeDesc.NumRayTypes;
     const uint32_t geometryOffset = desc.GeometryIndex * m_desc.SizeDesc.NumRayTypes;
     const uint32_t rayTypeOffset  = desc.RayTypeIndex;
-    const uint32_t offset         = m_hitGroupOffset + ( instanceOffset + geometryOffset + rayTypeOffset ) * sizeof( IRShaderIdentifier );
+    const uint32_t offset         = m_hitGroupOffset + ( instanceOffset + geometryOffset + rayTypeOffset ) * m_hitGroupEntryNumBytes;
 
     const HitGroupExport &hitGroupExport = m_pipeline->FindHitGroupExport( desc.HitGroupExportName.Get( ) );
 
@@ -153,7 +157,7 @@ bool MetalShaderBindingTable::BindHitGroupRecursive( const HitGroupBindingDesc &
 
 void MetalShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 {
-    uint32_t        offset        = m_missGroupOffset + desc.RayTypeIndex * sizeof( IRShaderIdentifier );
+    uint32_t        offset        = m_missGroupOffset + desc.RayTypeIndex * m_missEntryNumBytes;
     const uint32_t &functionIndex = m_pipeline->FindVisibleShaderIndexByName( desc.ShaderName.Get( ) );
     EncodeShaderIndex( offset, functionIndex );
     if ( desc.Data )
@@ -179,6 +183,11 @@ const IRVirtualAddressRangeAndStride &MetalShaderBindingTable::HitGroupShaderRan
 const IRVirtualAddressRangeAndStride &MetalShaderBindingTable::MissShaderRange( ) const
 {
     return m_missShaderRange;
+}
+
+const std::vector<id<MTLResource>> &MetalShaderBindingTable::UsedResources( ) const
+{
+    return m_usedResources;
 }
 
 const id<MTLBuffer> MetalShaderBindingTable::MetalBuffer( ) const
@@ -215,13 +224,29 @@ void MetalShaderBindingTable::EncodeData( uint32_t offset, const IShaderLocalDat
     const uint32_t numBytes = localData->DataNumBytes( );
     memcpy( dest, data, numBytes );
 
-    uint32_t      srvUavOffset        = numBytes;
-    id<MTLBuffer> srvUavBuffer        = localData->SrvUavTable( )->Buffer( );
-    uint64_t      srvUavBufferAddress = srvUavBuffer.gpuAddress;
-    memcpy( dest + numBytes, &srvUavBufferAddress, sizeof( uint64_t ) );
+    const DescriptorTable *srvUavTable = localData->SrvUavTable( );
+    if ( srvUavTable )
+    {
+        uint32_t      srvUavOffset        = numBytes;
+        id<MTLBuffer> srvUavBuffer        = srvUavTable->Buffer( );
+        uint64_t      srvUavBufferAddress = srvUavBuffer.gpuAddress;
+        memcpy( dest + numBytes, &srvUavBufferAddress, sizeof( uint64_t ) );
+    }
+    const DescriptorTable *samplerTable = localData->SamplerTable( );
+    if ( samplerTable )
+    {
+        uint32_t      samplerOffset  = numBytes + sizeof( uint64_t );
+        id<MTLBuffer> samplerBuffer  = localData->SamplerTable( )->Buffer( );
+        uint64_t      samplerAddress = samplerBuffer.gpuAddress;
+        memcpy( dest + samplerOffset, &samplerAddress, sizeof( uint64_t ) );
+    }
 
-    uint32_t      samplerOffset  = numBytes + sizeof( uint64_t );
-    id<MTLBuffer> samplerBuffer  = localData->SamplerTable( )->Buffer( );
-    uint64_t      samplerAddress = samplerBuffer.gpuAddress;
-    memcpy( dest + srvUavOffset, &samplerOffset, sizeof( uint64_t ) );
+    // Todo optimize this
+    for ( const id<MTLResource> &resource : localData->UsedResources( ) )
+    {
+        if ( std::find( m_usedResources.begin( ), m_usedResources.end( ), resource ) == m_usedResources.end( ) )
+        {
+            m_usedResources.push_back( resource );
+        }
+    }
 }

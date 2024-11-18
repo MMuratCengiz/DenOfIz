@@ -327,6 +327,9 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
     commandList->Execute( executeDesc );
 
     syncFence->Wait( );
+#ifdef BUILD_METAL
+    sleep( 1 );
+#endif
 }
 
 void RayTracedTriangleExample::CreateShaderBindingTable( )

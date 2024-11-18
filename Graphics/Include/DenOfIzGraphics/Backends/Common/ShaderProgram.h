@@ -110,8 +110,9 @@ namespace DenOfIz
         ID3D12FunctionReflection       *FunctionReflection;
         std::unordered_set<std::string> ProcessedFiles;
         // For metal:
-        std::vector<uint32_t>                                  *DescriptorTableLocations;
-        std::unordered_map<ShaderStage, std::vector<uint32_t>> *LocalDescriptorTableLocations;
+        std::vector<uint32_t> *DescriptorTableLocations;
+        std::vector<uint32_t> *LocalDescriptorTableLocations;
+        uint32_t               LocalCbvOffset;
 #ifdef BUILD_METAL
         IRShaderReflection *IRReflection;
 #endif
@@ -126,8 +127,8 @@ namespace DenOfIz
         std::vector<ShaderDesc>                      m_shaderDescs; // Index matched with m_compiledShaders
         ShaderProgramDesc                            m_desc;
 #ifdef BUILD_METAL
-        std::vector<MetalDescriptorOffsets>                                  m_metalDescriptorOffsets;
-        std::unordered_map<ShaderStage, std::vector<MetalDescriptorOffsets>> m_localMetalDescriptorOffsets;
+        std::vector<MetalDescriptorOffsets> m_metalDescriptorOffsets;
+        std::vector<MetalDescriptorOffsets> m_localMetalDescriptorOffsets;
 #endif
     public:
         DZ_API explicit ShaderProgram( ShaderProgramDesc desc );
@@ -139,14 +140,14 @@ namespace DenOfIz
         [[nodiscard]] const ShaderCompiler &ShaderCompilerInstance( ) const;
         void                                Compile( );
         void                                FillReflectionData( ReflectionState &state, ReflectionDesc &reflectionDesc, int resourceIndex ) const;
-        void                    InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
-        ID3D12ShaderReflection *ShaderReflection( const CompiledShader *compiledShader ) const;
-        void                    ReflectShader( ReflectionState &state ) const;
-        void                    ReflectLibrary( ReflectionState &state ) const;
-        void                    ProcessBoundResource( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex ) const;
+        void InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
+        void ReflectShader( ReflectionState &state ) const;
+        void ReflectLibrary( ReflectionState &state ) const;
+        void ProcessBoundResource( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex ) const;
         // Returns true if the bound resource is found(and an update is performed), false otherwise
         // Adds additional stages if existing stages are found
         bool                IsBindingLocalTo( const ShaderDesc &shaderDesc, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
+        bool                IsBindingLocal( D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
         bool                ShouldProcessBinding( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
         bool                UpdateBoundResourceStage( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
         ResourceBindingType ReflectTypeToBufferBindingType( const D3D_SHADER_INPUT_TYPE type ) const;

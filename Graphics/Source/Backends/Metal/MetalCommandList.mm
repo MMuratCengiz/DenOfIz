@@ -440,7 +440,10 @@ void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
         return;
     }
 
-    UseResource( shaderBindingTable->MetalBuffer( ) );
+    for ( const auto &missShader : shaderBindingTable->UsedResources( ) )
+    {
+        UseResource( missShader );
+    }
     UseResource( m_pipeline->VisibleFunctionTable( ) );
     UseResource( m_pipeline->IntersectionFunctionTable( ) );
     UseResource( m_argumentBuffer->Buffer( ) );
