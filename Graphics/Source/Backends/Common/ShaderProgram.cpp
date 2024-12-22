@@ -738,7 +738,7 @@ void ShaderProgram::ReflectLibrary( ReflectionState &state ) const
     }
 }
 
-void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex ) const
+void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, const int resourceIndex ) const
 {
     if ( !ShouldProcessBinding( state, shaderInputBindDesc ) )
     {
@@ -839,7 +839,19 @@ bool ShaderProgram::IsBindingLocalTo( const ShaderDesc &shaderDesc, const D3D12_
     return false;
 }
 
-bool ShaderProgram::ShouldProcessBinding( const ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
+bool ShaderProgram::IsBindingLocal( const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
+{
+    for ( int i = 0; i < m_desc.Shaders.NumElements( ); ++i )
+    {
+        if ( auto &shader = m_desc.Shaders.GetElement( i ); IsBindingLocalTo( shader, shaderInputBindDesc ) )
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ShaderProgram::ShouldProcessBinding( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
 {
     // Check 1: If the binding is in our local signature, we should process it
     if ( IsBindingLocalTo( *state.ShaderDesc, shaderInputBindDesc ) )
@@ -868,7 +880,7 @@ bool ShaderProgram::ShouldProcessBinding( const ReflectionState &state, D3D12_SH
 
 bool ShaderProgram::UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
 {
-    ResourceBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
+    const ResourceBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
     // Check if Resource is already bound, if so add the stage to the existing binding and continue
     bool found = false;
 
@@ -877,8 +889,7 @@ bool ShaderProgram::UpdateBoundResourceStage( const ReflectionState &state, cons
     {
         for ( int bindingIndex = 0; bindingIndex < state.RootSignatureDesc->RootConstants.NumElements( ); ++bindingIndex )
         {
-            auto &boundBinding = state.RootSignatureDesc->RootConstants.GetElement( bindingIndex );
-            if ( boundBinding.Binding == shaderInputBindDesc.BindPoint )
+            if ( auto &boundBinding = state.RootSignatureDesc->RootConstants.GetElement( bindingIndex ); boundBinding.Binding == shaderInputBindDesc.BindPoint )
             {
                 found = true;
                 boundBinding.Stages.AddElement( state.ShaderDesc->Stage );
@@ -1049,7 +1060,7 @@ ReflectionFieldType DXCVariableTypeToReflectionType( const D3D_SHADER_VARIABLE_T
     }
 }
 
-void ShaderProgram::FillReflectionData( ReflectionState &state, ReflectionDesc &reflectionDesc, const int resourceIndex ) const
+void ShaderProgram::FillReflectionData( const ReflectionState &state, ReflectionDesc &reflectionDesc, const int resourceIndex ) const
 {
     D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
     if ( state.ShaderReflection )
@@ -1173,7 +1184,7 @@ void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, I
 
 ShaderProgram::~ShaderProgram( )
 {
-    for ( auto &shader : m_compiledShaders )
+    for ( const auto &shader : m_compiledShaders )
     {
         if ( shader->Blob )
         {

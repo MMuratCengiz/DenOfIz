@@ -557,7 +557,7 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
     for ( uint32_t i = 0; i < reflection.ShaderLocalDataLayouts.NumElements( ); i++ )
     {
         auto &layout                  = reflection.ShaderLocalDataLayouts.GetElement( i );
-        m_shaderLocalDataLayouts[ i ] = std::unique_ptr<IShaderLocalDataLayout>( m_logicalDevice->CreateShaderRecordLayout( layout ) );
+        m_shaderLocalDataLayouts[ i ] = std::unique_ptr<IShaderLocalDataLayout>( m_logicalDevice->CreateShaderLocalDataLayout( layout ) );
     }
 
     // Create pipeline state object
@@ -727,7 +727,7 @@ void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
     }
 
     {
-        const auto triangleHitGroupData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderRecordData( { m_shaderLocalDataLayouts[ 3 ].get( ) } ) );
+        const auto triangleHitGroupData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderLocalData( { m_shaderLocalDataLayouts[ 3 ].get( ) } ) );
 
         InteropArray<Byte> materialData( sizeof( PrimitiveConstantBuffer ) );
         materialData.MemCpy( &m_planeMaterialCB, sizeof( PrimitiveConstantBuffer ) );
@@ -747,7 +747,7 @@ void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
             const uint32_t numPrimitives = PerPrimitiveTypeCount( static_cast<IntersectionShaderType::Enum>( shaderType ) );
             for ( uint32_t primitiveIndex = 0; primitiveIndex < numPrimitives; primitiveIndex++ )
             {
-                auto hitGroupData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderRecordData( { m_shaderLocalDataLayouts[ m_closestHitAABBIndex ].get( ) } ) );
+                auto hitGroupData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderLocalData( { m_shaderLocalDataLayouts[ m_closestHitAABBIndex ].get( ) } ) );
 
                 InteropArray<Byte> materialData( sizeof( PrimitiveConstantBuffer ) );
                 materialData.MemCpy( &m_aabbMaterials[ instanceIndex ], sizeof( PrimitiveConstantBuffer ) );
