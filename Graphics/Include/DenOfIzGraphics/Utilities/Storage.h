@@ -24,10 +24,14 @@ namespace DenOfIz
 {
     class Storage
     {
-    private:
         std::vector<void *> m_container;
 
     public:
+        void Reserve( const uint32_t size )
+        {
+            m_container.reserve( size );
+        }
+
         template <typename T>
         T &Store( )
         {
@@ -45,9 +49,9 @@ namespace DenOfIz
             m_container.clear( );
         }
 
-        ~Storage()
+        ~Storage( )
         {
-            Clear();
+            Clear( );
         }
     };
 } // namespace DenOfIz

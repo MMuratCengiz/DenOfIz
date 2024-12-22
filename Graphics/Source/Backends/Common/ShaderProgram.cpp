@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
 #include <directx/d3d12shader.h>
 #include <ranges>
-#include <unordered_set>
+#include <set>
 #include <utility>
 
 using namespace DenOfIz;
@@ -63,24 +63,6 @@ void ShaderProgram::Compile( )
         {
             LOG( ERROR ) << "Shader path is empty";
             continue;
-        }
-
-        if ( !shader.RayTracing.HitGroupExport.IsEmpty( ) )
-        {
-            if ( shader.Stage != ShaderStage::ClosestHit && shader.Stage != ShaderStage::AnyHit && shader.Stage != ShaderStage::Miss )
-            {
-                LOG( ERROR ) << "Hit group export is only valid for closest hit, any hit and miss shaders";
-                continue;
-            }
-        }
-
-        if ( shader.RayTracing.LocalBindings.NumElements() > 0 )
-        {
-            if ( shader.Stage != ShaderStage::ClosestHit && shader.Stage != ShaderStage::AnyHit && shader.Stage != ShaderStage::Miss )
-            {
-                LOG( ERROR ) << "Local bindings are only valid for closest hit, any hit and miss shaders";
-                continue;
-            }
         }
 
         CompileDesc compileDesc = { };
@@ -634,6 +616,8 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
         {
         case ShaderStage::AnyHit:
         case ShaderStage::ClosestHit:
+        case ShaderStage::Callable:
+        case ShaderStage::Intersection:
         case ShaderStage::Raygen:
         case ShaderStage::Miss:
             DXC_CHECK_RESULT( ShaderCompilerInstance( ).DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &libraryReflection ) ) );
@@ -709,6 +693,7 @@ void ShaderProgram::ReflectLibrary( ReflectionState &state ) const
         ID3D12FunctionReflection *functionReflection = libraryReflection->GetFunctionByIndex( i );
         D3D12_FUNCTION_DESC       functionDesc{ };
         DXC_CHECK_RESULT( functionReflection->GetDesc( &functionDesc ) );
+        // Todo perhaps process only the matching function to the entry point
         state.FunctionReflection = functionReflection;
         for ( const uint32_t j : std::views::iota( 0u, functionDesc.BoundResources ) )
         {
@@ -800,14 +785,13 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
 #endif
 }
 
-bool ShaderProgram::IsBindingLocalTo( const ShaderDesc &shaderDesc, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
+bool ShaderProgram::IsBindingLocalTo( const ShaderDesc &shaderDesc, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
 {
     const auto &bindings = shaderDesc.RayTracing.LocalBindings;
     for ( int i = 0; i < bindings.NumElements( ); ++i )
     {
-        auto &element = bindings.GetElement( i );
-        if ( element.Binding == shaderInputBindDesc.BindPoint && element.RegisterSpace == shaderInputBindDesc.Space &&
-             element.Type == ReflectTypeToBufferBindingType( shaderInputBindDesc.Type ) )
+        if ( auto &element = bindings.GetElement( i ); element.Binding == shaderInputBindDesc.BindPoint && element.RegisterSpace == shaderInputBindDesc.Space &&
+                                                       element.Type == ReflectTypeToBufferBindingType( shaderInputBindDesc.Type ) )
         {
             return true;
         }
@@ -815,11 +799,20 @@ bool ShaderProgram::IsBindingLocalTo( const ShaderDesc &shaderDesc, D3D12_SHADER
     return false;
 }
 
-bool ShaderProgram::ShouldProcessBinding( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
+bool ShaderProgram::ShouldProcessBinding( const ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
 {
     // Check 1: If the binding is in our local signature, we should process it
     if ( IsBindingLocalTo( *state.ShaderDesc, shaderInputBindDesc ) )
     {
+        for ( int i = 0; i < state.ShaderLocalDataLayout->ResourceBindings.NumElements( ); ++i )
+        {
+            if ( const auto boundResource = state.ShaderLocalDataLayout->ResourceBindings.GetElement( i );
+                 boundResource.Binding == shaderInputBindDesc.BindPoint && boundResource.RegisterSpace == shaderInputBindDesc.Space &&
+                 boundResource.BindingType == ReflectTypeToBufferBindingType( shaderInputBindDesc.Type ) )
+            {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -837,7 +830,7 @@ bool ShaderProgram::ShouldProcessBinding( ReflectionState &state, D3D12_SHADER_I
     return true;
 }
 
-bool ShaderProgram::UpdateBoundResourceStage( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
+bool ShaderProgram::UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
 {
     ResourceBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
     // Check if Resource is already bound, if so add the stage to the existing binding and continue

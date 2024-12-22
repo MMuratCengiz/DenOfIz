@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 typedef size_t i;
 using namespace DenOfIz;
 
-DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) : m_context( context ), m_desc( std::move( desc ) ), m_cpuHandle( )
+DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) : m_context( context ), m_desc( std::move( desc ) ), m_cpuHandle( { } ), m_cpuHandles( { } )
 {
     m_stride                   = FormatNumBytes( m_desc.Format );
     m_numBytes                 = Utilities::Align( m_desc.NumBytes, std::max<uint32_t>( m_desc.Alignment, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT ) );
@@ -37,7 +37,7 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
     }
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::AccelerationStructure ) )
     {
-//        flags |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
+        //        flags |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
     }
 
     const CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer( DX12DescriptorHeap::RoundUp( m_numBytes ), flags );
@@ -58,6 +58,8 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
 void DX12BufferResource::CreateDefaultView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle )
 {
     DZ_RETURN_IF( m_cpuHandle.ptr != 0 && m_cpuHandle.ptr == cpuHandle.ptr );
+    DZ_RETURN_IF( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) );
+
     if ( m_desc.Descriptor.None( ) )
     {
         LOG( WARNING ) << "Unable to create buffer view for buffer without a descriptor.";
@@ -90,6 +92,8 @@ void DX12BufferResource::CreateDefaultView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandl
 
 void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type )
 {
+    DZ_RETURN_IF( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) );
+
     uint64_t stride = m_desc.BufferView.Stride;
 
     switch ( type )

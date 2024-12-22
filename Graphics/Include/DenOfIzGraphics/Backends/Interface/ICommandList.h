@@ -161,6 +161,12 @@ namespace DenOfIz
         ITopLevelAS *TopLevelAS = nullptr;
     };
 
+    struct DZ_API UpdateTopLevelASDesc
+    {
+        ITopLevelAS                      *TopLevelAS = nullptr;
+        InteropArray<InteropArray<float>> Transforms;
+    };
+
     struct DZ_API BuildBottomLevelASDesc
     {
         IBottomLevelAS *BottomLevelAS = nullptr;
@@ -191,6 +197,7 @@ namespace DenOfIz
         virtual void CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTexture ) = 0;
         virtual void CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBuffer ) = 0;
         // --
+        virtual void UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc )                   = 0;
         virtual void BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )            = 0;
         virtual void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc )   = 0;
         virtual void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )                     = 0;

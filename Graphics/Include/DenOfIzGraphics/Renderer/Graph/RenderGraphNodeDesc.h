@@ -59,16 +59,15 @@ namespace DenOfIz
     };
 
     // Intentionally not DZ_API as this does not translate well interop
-    class NodeExecutionCallbackHolder : public NodeExecutionCallback
+    class NodeExecutionCallbackHolder final : public NodeExecutionCallback
     {
-    private:
         std::function<void( uint32_t, ICommandList * )> m_callback;
 
     public:
-        NodeExecutionCallbackHolder( std::function<void( uint32_t, ICommandList * )> callback ) : m_callback( callback )
+        explicit NodeExecutionCallbackHolder( const std::function<void( uint32_t, ICommandList * )> &callback ) : m_callback( callback )
         {
         }
-        void Execute( uint32_t frameIndex, ICommandList *commandList ) override
+        void Execute( const uint32_t frameIndex, ICommandList *commandList ) override
         {
             m_callback( frameIndex, commandList );
         }

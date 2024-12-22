@@ -746,13 +746,13 @@ D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS DX12EnumConverter::ConvertAc
     return result;
 }
 
-D3D12_RAYTRACING_GEOMETRY_TYPE DX12EnumConverter::ConvertGeometryType( const ASGeometryType& type )
+D3D12_RAYTRACING_GEOMETRY_TYPE DX12EnumConverter::ConvertGeometryType( const HitGroupType& type )
 {
     switch ( type )
     {
-    case ASGeometryType::Triangles:
+    case HitGroupType::Triangles:
         return D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-    case ASGeometryType::AABBs:
+    case HitGroupType::AABBs:
         return D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS;
     }
     return D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;

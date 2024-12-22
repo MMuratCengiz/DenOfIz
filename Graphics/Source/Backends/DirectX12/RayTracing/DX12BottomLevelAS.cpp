@@ -38,10 +38,10 @@ DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASD
         }
         switch ( geometry.Type )
         {
-        case ASGeometryType::Triangles:
+        case HitGroupType::Triangles:
             InitializeTriangles( geometry.Triangles, dx12Geometry );
             break;
-        case ASGeometryType::AABBs:
+        case HitGroupType::AABBs:
             InitializeAABBs( geometry.AABBs, dx12Geometry );
             break;
         }

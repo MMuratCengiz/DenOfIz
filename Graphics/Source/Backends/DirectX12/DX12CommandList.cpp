@@ -440,6 +440,29 @@ void DX12CommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBot
     m_commandList->BuildRaytracingAccelerationStructure( &buildDesc, 0, nullptr );
 }
 
+void DX12CommandList::UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc )
+{
+    const auto dx12TopLevelAS = dynamic_cast<DX12TopLevelAS *>( updateDesc.TopLevelAS );
+    DZ_NOT_NULL( dx12TopLevelAS );
+
+    UpdateTransformsDesc updateTransformsDesc = { };
+    updateTransformsDesc.Transforms           = updateDesc.Transforms;
+
+    dx12TopLevelAS->UpdateInstanceTransforms( updateTransformsDesc );
+
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc = { };
+    buildDesc.Inputs.DescsLayout                                 = D3D12_ELEMENTS_LAYOUT_ARRAY;
+    buildDesc.Inputs.Type                                        = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+    buildDesc.Inputs.Flags                                       = dx12TopLevelAS->Flags( ) | D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+    buildDesc.Inputs.NumDescs                                    = dx12TopLevelAS->NumInstances( );
+    buildDesc.Inputs.InstanceDescs                               = dx12TopLevelAS->InstanceBuffer( )->Resource( )->GetGPUVirtualAddress( );
+    buildDesc.SourceAccelerationStructureData                    = dx12TopLevelAS->DX12Buffer( )->Resource( )->GetGPUVirtualAddress( );
+    buildDesc.DestAccelerationStructureData                      = dx12TopLevelAS->DX12Buffer( )->Resource( )->GetGPUVirtualAddress( );
+    buildDesc.ScratchAccelerationStructureData                   = dx12TopLevelAS->Scratch( )->Resource( )->GetGPUVirtualAddress( );
+
+    m_commandList->BuildRaytracingAccelerationStructure( &buildDesc, 0, nullptr );
+}
+
 void DX12CommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
     const DX12ShaderBindingTable *sbt  = dynamic_cast<DX12ShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
@@ -532,24 +555,26 @@ void DX12CommandList::EnhancedPipelineBarrier( const PipelineBarrierDesc &barrie
 {
     std::vector<D3D12_BARRIER_GROUP> resourceBarriers;
 
-    std::vector<D3D12_GLOBAL_BARRIER>  dxGlobalBarriers  = { };
-    std::vector<D3D12_BUFFER_BARRIER>  dxBufferBarriers  = { };
-    std::vector<D3D12_TEXTURE_BARRIER> dxTextureBarriers = { };
+    std::vector<D3D12_GLOBAL_BARRIER>   dxGlobalBarriers  = { };
+    std::vector<D3D12_BUFFER_BARRIER>   dxBufferBarriers  = { };
+    std::vector<D3D12_TEXTURE_BARRIER>  dxTextureBarriers = { };
+    std::vector<D3D12_RESOURCE_BARRIER> dxMemoryBarriers  = { };
 
     const InteropArray<TextureBarrierDesc> &textureBarriers = barrier.GetTextureBarriers( );
     const InteropArray<BufferBarrierDesc>  &bufferBarriers  = barrier.GetBufferBarriers( );
+    const InteropArray<MemoryBarrierDesc>  &memoryBarriers  = barrier.GetMemoryBarriers( );
 
     for ( int i = 0; i < textureBarriers.NumElements( ); i++ )
     {
         const TextureBarrierDesc &textureBarrier = textureBarriers.GetElement( i );
         ID3D12Resource           *pResource      = dynamic_cast<DX12TextureResource *>( textureBarrier.Resource )->Resource( );
 
-        D3D12_TEXTURE_BARRIER dxTextureBarrier = dxTextureBarriers.emplace_back( D3D12_TEXTURE_BARRIER{ } );
-        dxTextureBarrier.pResource             = pResource;
-        dxTextureBarrier.LayoutBefore          = DX12EnumConverter::ConvertResourceStateToBarrierLayout( textureBarrier.OldState, m_desc.QueueType );
-        dxTextureBarrier.LayoutAfter           = DX12EnumConverter::ConvertResourceStateToBarrierLayout( textureBarrier.NewState, m_desc.QueueType );
-        dxTextureBarrier.AccessBefore          = DX12EnumConverter::ConvertResourceStateToBarrierAccess( textureBarrier.OldState );
-        dxTextureBarrier.AccessAfter           = DX12EnumConverter::ConvertResourceStateToBarrierAccess( textureBarrier.NewState );
+        auto dxTextureBarrier         = D3D12_TEXTURE_BARRIER{ };
+        dxTextureBarrier.pResource    = pResource;
+        dxTextureBarrier.LayoutBefore = DX12EnumConverter::ConvertResourceStateToBarrierLayout( textureBarrier.OldState, m_desc.QueueType );
+        dxTextureBarrier.LayoutAfter  = DX12EnumConverter::ConvertResourceStateToBarrierLayout( textureBarrier.NewState, m_desc.QueueType );
+        dxTextureBarrier.AccessBefore = DX12EnumConverter::ConvertResourceStateToBarrierAccess( textureBarrier.OldState );
+        dxTextureBarrier.AccessAfter  = DX12EnumConverter::ConvertResourceStateToBarrierAccess( textureBarrier.NewState );
         // Todo dxTextureBarrier.Subresource, dxTextureBarrier.SyncBefore and dxTextureBarrier.SyncAfter
 
         if ( dxTextureBarrier.LayoutAfter != dxTextureBarrier.LayoutBefore || dxTextureBarrier.AccessAfter != dxTextureBarrier.AccessBefore )
@@ -563,16 +588,50 @@ void DX12CommandList::EnhancedPipelineBarrier( const PipelineBarrierDesc &barrie
         const BufferBarrierDesc &bufferBarrier = bufferBarriers.GetElement( i );
         ID3D12Resource          *pResource     = dynamic_cast<DX12TextureResource *>( bufferBarrier.Resource )->Resource( );
 
-        D3D12_BUFFER_BARRIER dxBufferBarrier = dxBufferBarriers.emplace_back( D3D12_BUFFER_BARRIER{ } );
-        dxBufferBarrier.pResource            = pResource;
-        dxBufferBarrier.AccessBefore         = DX12EnumConverter::ConvertResourceStateToBarrierAccess( bufferBarrier.OldState );
-        dxBufferBarrier.AccessAfter          = DX12EnumConverter::ConvertResourceStateToBarrierAccess( bufferBarrier.NewState );
-        dxBufferBarrier.Offset               = 0;
-        dxBufferBarrier.Size                 = pResource->GetDesc( ).Width;
+        auto dxBufferBarrier         = D3D12_BUFFER_BARRIER{ };
+        dxBufferBarrier.pResource    = pResource;
+        dxBufferBarrier.AccessBefore = DX12EnumConverter::ConvertResourceStateToBarrierAccess( bufferBarrier.OldState );
+        dxBufferBarrier.AccessAfter  = DX12EnumConverter::ConvertResourceStateToBarrierAccess( bufferBarrier.NewState );
+        dxBufferBarrier.Offset       = 0;
+        dxBufferBarrier.Size         = pResource->GetDesc( ).Width;
 
         if ( dxBufferBarrier.AccessAfter != dxBufferBarrier.AccessBefore )
         {
             dxBufferBarriers.push_back( dxBufferBarrier );
+        }
+    }
+
+    for ( int i = 0; i < memoryBarriers.NumElements( ); i++ )
+    {
+        const MemoryBarrierDesc &memoryBarrier = memoryBarriers.GetElement( i );
+
+        D3D12_RESOURCE_BARRIER dxMemoryBarrier = dxMemoryBarriers.emplace_back( D3D12_RESOURCE_BARRIER{ } );
+
+        bool isUavBarrier = memoryBarrier.OldState.IsSet( ResourceUsage::AccelerationStructureWrite ) && memoryBarrier.NewState.IsSet( ResourceUsage::AccelerationStructureRead );
+        isUavBarrier |= memoryBarrier.OldState.IsSet( ResourceUsage::DepthWrite ) && memoryBarrier.NewState.IsSet( ResourceUsage::DepthRead );
+
+        ID3D12Resource *dx12Resource = nullptr;
+        if ( memoryBarrier.BufferResource != nullptr )
+        {
+            const auto *bufferResource = dynamic_cast<DX12BufferResource *>( memoryBarrier.BufferResource );
+            dx12Resource               = bufferResource->Resource( );
+        }
+        if ( memoryBarrier.TextureResource != nullptr )
+        {
+            const auto *textureResource = dynamic_cast<DX12TextureResource *>( memoryBarrier.TextureResource );
+            dx12Resource                = textureResource->Resource( );
+        }
+        if ( isUavBarrier )
+        {
+            dxMemoryBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+            dxMemoryBarrier.UAV  = { dx12Resource };
+        }
+        else
+        {
+            dxMemoryBarrier.Transition.StateBefore = DX12EnumConverter::ConvertResourceUsage( memoryBarrier.OldState );
+            dxMemoryBarrier.Transition.StateAfter  = DX12EnumConverter::ConvertResourceUsage( memoryBarrier.NewState );
+            dxMemoryBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            dxMemoryBarrier.Transition.pResource   = dx12Resource;
         }
     }
 

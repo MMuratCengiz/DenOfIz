@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanInputLayout.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanPipeline.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h>
 #include <ranges>
@@ -25,8 +26,8 @@ using namespace DenOfIz;
 VulkanPipeline::VulkanPipeline( VulkanContext *context, const PipelineDesc &desc ) :
     m_context( context ), m_desc( desc ), m_bindPoint( VulkanEnumConverter::ConvertPipelineBindPoint( desc.BindPoint ) )
 {
-    auto rootSignature = dynamic_cast<VulkanRootSignature *>( desc.RootSignature );
-    m_layout           = rootSignature->PipelineLayout( );
+    const auto rootSignature = dynamic_cast<VulkanRootSignature *>( desc.RootSignature );
+    m_layout                 = rootSignature->PipelineLayout( );
 
     switch ( desc.BindPoint )
     {
@@ -148,20 +149,17 @@ void VulkanPipeline::CreateRayTracingPipeline( )
         }
 
         // Create shader module if not already created
-        if ( visitedShaders.find( compiledShader->Path.Get( ) ) == visitedShaders.end( ) )
+        if ( !visitedShaders.contains( compiledShader->Path.Get( ) ) )
         {
             VkShaderModule shaderModule = CreateShaderModule( compiledShader->Blob );
             m_shaderModules.push_back( shaderModule );
             visitedShaders[ compiledShader->Path.Get( ) ] = shaderModule;
         }
 
-        VkDescriptorSetLayout *localSetLayout = nullptr;
         if ( compiledShader->RayTracing.LocalBindings.NumElements( ) > 0 )
         {
             IShaderLocalDataLayout *layoutDesc = m_desc.RayTracing.ShaderLocalDataLayouts.GetElement( i );
-            auto                   *layout     = dynamic_cast<VulkanShaderLocalDataLayout *>( layoutDesc );
-
-            if ( layout )
+            if ( auto *layout = dynamic_cast<VulkanShaderLocalDataLayout *>( layoutDesc ) )
             {
                 for ( auto &layoutWithSet : layout->DescriptorSetLayouts( ) )
                 {
@@ -223,7 +221,7 @@ void VulkanPipeline::CreateRayTracingPipeline( )
         m_shaderIdentifierOffsets[ compiledShader->EntryPoint.Get( ) ] = shaderIndex * m_context->RayTracingProperties.shaderGroupHandleSize;
     }
 
-    for ( auto &[ hitGroupName, hitGroup ] : hitGroups )
+    for ( auto &hitGroup : hitGroups | std::views::values )
     {
         VkRayTracingShaderGroupCreateInfoKHR *group = hitGroup.createInfo;
         group->sType                                = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;

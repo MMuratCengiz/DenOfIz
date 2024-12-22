@@ -111,6 +111,12 @@ const DX12BufferResource *DX12TopLevelAS::Scratch( ) const
     return m_scratch.get( );
 }
 
-void DX12TopLevelAS::Update( const TopLevelASDesc &desc )
+void DX12TopLevelAS::UpdateInstanceTransforms( const UpdateTransformsDesc &desc )
 {
+    const auto instanceBufferMemory = static_cast<D3D12_RAYTRACING_INSTANCE_DESC *>( m_instanceBuffer->MapMemory( ) );
+    for ( int i = 0; i < desc.Transforms.NumElements( ); i++ )
+    {
+        memcpy( &instanceBufferMemory[ i ].Transform, desc.Transforms.GetElement( i ).Data( ), 12 * sizeof( float ) );
+    }
+    m_instanceBuffer->UnmapMemory( );
 }

@@ -82,6 +82,11 @@ DX12ShaderLocalDataLayout::DX12ShaderLocalDataLayout( DX12Context *context, cons
     ComPtr<ID3DBlob> serializedRootSig;
     ComPtr<ID3DBlob> errorBlob;
     DX_CHECK_RESULT( D3D12SerializeVersionedRootSignature( &localSigDesc, &serializedRootSig, &errorBlob ) );
+    if ( errorBlob )
+    {
+        LOG( ERROR ) << "Failed to serialize local root signature: " << errorBlob->GetBufferPointer( );
+        return;
+    }
     DX_CHECK_RESULT(
         m_context->D3DDevice->CreateRootSignature( 0, serializedRootSig->GetBufferPointer( ), serializedRootSig->GetBufferSize( ), IID_PPV_ARGS( &m_rootSignature ) ) );
 }
@@ -120,6 +125,18 @@ uint32_t DX12ShaderLocalDataLayout::UavIndex( const uint32_t bindingIndex ) cons
         LOG( ERROR ) << "Invalid binding index for UAV(" << bindingIndex << ")";
     }
     return m_bindingIndices[ UAV_INDEX ][ bindingIndex ];
+}
+
+bool DX12ShaderLocalDataLayout::HasBinding( ResourceBindingType type, uint32_t bindingIndex ) const
+{
+    for ( int i = 0; i < m_desc.ResourceBindings.NumElements( ); ++i )
+    {
+        if ( const auto &binding = m_desc.ResourceBindings.GetElement( i ); binding.BindingType == type && binding.Binding == bindingIndex )
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 ID3D12RootSignature *DX12ShaderLocalDataLayout::RootSignature( ) const

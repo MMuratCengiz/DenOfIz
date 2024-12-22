@@ -412,6 +412,38 @@ void VulkanCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildB
     vkCmdBuildAccelerationStructuresKHR( m_commandBuffer, 1, &buildInfo, vkBottomLevelAS->BuildRangeInfos( ) );
 }
 
+void VulkanCommandList::UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc )
+{
+    auto *vkTopLevelAS = dynamic_cast<VulkanTopLevelAS *>( updateDesc.TopLevelAS );
+    DZ_NOT_NULL( vkTopLevelAS );
+
+    UpdateTransformsDesc updateTransformDesc{};
+    updateTransformDesc.Transforms = updateDesc.Transforms;
+
+    vkTopLevelAS->UpdateInstanceTransforms( updateTransformDesc );
+
+    VkAccelerationStructureBuildGeometryInfoKHR buildInfo = { };
+    buildInfo.sType                                       = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+    buildInfo.type                                        = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    buildInfo.flags                                       = vkTopLevelAS->Flags( ) | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+    buildInfo.mode                                        = VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+    buildInfo.srcAccelerationStructure                    = vkTopLevelAS->Instance( );
+    buildInfo.dstAccelerationStructure                    = vkTopLevelAS->Instance( );
+    buildInfo.geometryCount                               = 1;
+    buildInfo.pGeometries                                 = vkTopLevelAS->GeometryDesc( );
+    buildInfo.scratchData.deviceAddress                   = vkTopLevelAS->Scratch( )->DeviceAddress( );
+
+    vkCmdBuildAccelerationStructuresKHR( m_commandBuffer, 1, &buildInfo, vkTopLevelAS->BuildRangeInfo( ) );
+
+    VkMemoryBarrier barrier = { };
+    barrier.sType           = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    barrier.srcAccessMask   = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+    barrier.dstAccessMask   = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+
+    vkCmdPipelineBarrier( m_commandBuffer, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, 0, 1, &barrier, 0, nullptr, 0,
+                          nullptr );
+}
+
 void VulkanCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
     VulkanShaderBindingTable *bindingTable = dynamic_cast<VulkanShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );

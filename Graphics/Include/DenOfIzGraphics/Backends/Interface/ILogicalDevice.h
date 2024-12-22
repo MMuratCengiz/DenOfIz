@@ -65,11 +65,11 @@ namespace DenOfIz
         virtual ITextureResource   *CreateTextureResource( const TextureDesc &desc )             = 0;
         virtual ISampler           *CreateSampler( const SamplerDesc &desc )                     = 0;
         // RayTracing:
-        virtual ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &desc )                 = 0;
-        virtual IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &desc )           = 0;
-        virtual IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &desc ) = 0;
+        virtual ITopLevelAS            *CreateTopLevelAS( const TopLevelASDesc &desc )                    = 0;
+        virtual IBottomLevelAS         *CreateBottomLevelAS( const BottomLevelASDesc &desc )              = 0;
+        virtual IShaderBindingTable    *CreateShaderBindingTable( const ShaderBindingTableDesc &desc )    = 0;
         virtual IShaderLocalDataLayout *CreateShaderRecordLayout( const ShaderLocalDataLayoutDesc &desc ) = 0;
-        virtual IShaderLocalData       *CreateShaderRecordData( const ShaderLocalDataDesc &desc )     = 0;
+        virtual IShaderLocalData       *CreateShaderRecordData( const ShaderLocalDataDesc &desc )         = 0;
     };
 
 } // namespace DenOfIz

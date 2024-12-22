@@ -42,6 +42,6 @@ namespace DenOfIz
         [[nodiscard]] const DX12BufferResource                           *DX12Buffer( ) const;
         [[nodiscard]] DX12BufferResource                                 *Buffer( ) const;
         [[nodiscard]] const DX12BufferResource                           *Scratch( ) const;
-        void                                                              Update( const TopLevelASDesc &desc ) override;
+        void                                                              UpdateInstanceTransforms( const UpdateTransformsDesc &desc ) override;
     };
 } // namespace DenOfIz

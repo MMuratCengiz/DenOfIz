@@ -37,17 +37,19 @@ namespace DenOfIz
     struct DZ_API TopLevelASDesc
     {
         InteropArray<ASInstanceDesc> Instances;
-        ASBuildFlags                 BuildFlags;
+        BitSet<ASBuildFlags>         BuildFlags;
     };
 
-    struct DZ_API TopLevelASUpdateDesc{
-
+    struct DZ_API UpdateTransformsDesc
+    {
+        // Each element in the outer array is a new instance
+        InteropArray<InteropArray<float>> Transforms;
     };
 
     class DZ_API ITopLevelAS
     {
     public:
-        virtual ~ITopLevelAS( )                           = default;
-        virtual void Update( const TopLevelASDesc &desc ) = 0;
+        virtual ~ITopLevelAS( )                                                   = default;
+        virtual void UpdateInstanceTransforms( const UpdateTransformsDesc &desc ) = 0;
     };
 } // namespace DenOfIz

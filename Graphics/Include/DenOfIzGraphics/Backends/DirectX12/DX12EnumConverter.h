@@ -51,7 +51,7 @@ namespace DenOfIz
         static D3D12_BARRIER_ACCESS                                ConvertResourceStateToBarrierAccess( const BitSet<ResourceUsage> &state );
         static D3D12_TEXTURE_ADDRESS_MODE                          ConvertSamplerAddressMode( const SamplerAddressMode &mode );
         static D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS ConvertAccelerationStructureBuildFlags( const BitSet<ASBuildFlags> &flags );
-        static D3D12_RAYTRACING_GEOMETRY_TYPE                      ConvertGeometryType( const ASGeometryType& type );
+        static D3D12_RAYTRACING_GEOMETRY_TYPE                      ConvertGeometryType( const HitGroupType& type );
     };
 
 } // namespace DenOfIz

@@ -27,7 +27,7 @@ namespace DenOfIz
 {
     struct DZ_API HitGroupBindingDesc
     {
-        ASGeometryType    GeometryType       = ASGeometryType::Triangles;
+        HitGroupType      GeometryType       = HitGroupType::Triangles;
         int               InstanceIndex      = -1;         // -1 means all instances
         int               GeometryIndex      = -1;         // -1 means all geometries
         int               RayTypeIndex       = -1;         // -1 means all ray types

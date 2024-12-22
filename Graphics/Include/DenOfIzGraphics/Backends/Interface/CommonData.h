@@ -226,7 +226,8 @@ namespace DenOfIz
         VertexBuffer          = 1 << 11,
         IndirectBuffer        = 1 << 12,
         TextureCube           = 1 << 13,
-        AccelerationStructure = 1 << 14
+        AccelerationStructure = 1 << 14,
+        StructuredBuffer      = 1 << 15,
     };
 
     enum class ResourceUsage

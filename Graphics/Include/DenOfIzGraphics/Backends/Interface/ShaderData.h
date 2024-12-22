@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "WinAdapter.h"
 #endif
 
+#include "RayTracing/RayTracingData.h"
 #include "dxcapi.h"
 
 namespace DenOfIz

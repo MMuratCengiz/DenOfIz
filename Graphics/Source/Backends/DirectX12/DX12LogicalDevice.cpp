@@ -42,8 +42,7 @@ void DX12LogicalDevice::CreateDevice( )
     DWORD dxgiFactoryFlags = 0;
 #if not defined( NDEBUG ) && not defined( NSIGHT_ENABLE )
     {
-        wil::com_ptr<ID3D12Debug> debugController;
-        if ( SUCCEEDED( D3D12GetDebugInterface( IID_PPV_ARGS( debugController.put( ) ) ) ) )
+        if ( wil::com_ptr<ID3D12Debug> debugController; SUCCEEDED( D3D12GetDebugInterface( IID_PPV_ARGS( debugController.put( ) ) ) ) )
         {
             debugController->EnableDebugLayer( );
         }
@@ -52,13 +51,12 @@ void DX12LogicalDevice::CreateDevice( )
             LOG( WARNING ) << "Direct3D Debug Device is not available";
         }
 
-        wil::com_ptr<IDXGIInfoQueue> dxgiInfoQueue;
-        if ( SUCCEEDED( DXGIGetDebugInterface1( 0, IID_PPV_ARGS( dxgiInfoQueue.put( ) ) ) ) )
+        if ( wil::com_ptr<IDXGIInfoQueue> dxgiInfoQueue; SUCCEEDED( DXGIGetDebugInterface1( 0, IID_PPV_ARGS( dxgiInfoQueue.put( ) ) ) ) )
         {
             dxgiFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
 
-            dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true );
-            dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true );
+            DX_CHECK_RESULT( dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true ) );
+            DX_CHECK_RESULT( dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true ) );
 
             DXGI_INFO_QUEUE_MESSAGE_ID hide[] = {
                 80 /* IDXGISwapChain::GetContainingOutput: The swapchain's adapter does not control the output on which the swapchain's window resides. */,
@@ -66,7 +64,7 @@ void DX12LogicalDevice::CreateDevice( )
             DXGI_INFO_QUEUE_FILTER filter = { };
             filter.DenyList.NumIDs        = _countof( hide );
             filter.DenyList.pIDList       = hide;
-            dxgiInfoQueue->AddStorageFilterEntries( DXGI_DEBUG_DXGI, &filter );
+            DX_CHECK_RESULT( dxgiInfoQueue->AddStorageFilterEntries( DXGI_DEBUG_DXGI, &filter ) );
         }
     }
 #endif
@@ -114,14 +112,14 @@ void DX12LogicalDevice::CreateDeviceInfo( IDXGIAdapter1 &adapter, PhysicalDevice
     }
 
     BOOL allowTearing = false;
-    m_context->DXGIFactory->CheckFeatureSupport( DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof( allowTearing ) );
+    DX_CHECK_RESULT( m_context->DXGIFactory->CheckFeatureSupport( DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof( allowTearing ) ) );
     physicalDevice.Capabilities.Tearing = allowTearing;
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = { };
-    HRESULT                            hr        = device->CheckFeatureSupport( D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof( options12 ) );
-    if ( SUCCEEDED( hr ) )
+    if ( const HRESULT hr = device->CheckFeatureSupport( D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof( options12 ) ); SUCCEEDED( hr ) )
     {
         m_context->DX12Capabilities.EnhancedBarriers = options12.EnhancedBarriersSupported;
+        m_context->DX12Capabilities.EnhancedBarriers = false; // Temporarily disable
     }
 }
 
@@ -159,7 +157,7 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
 
 #if not defined( NDEBUG ) && not defined( NSIGHT_ENABLE )
     // Configure debug device (if active).
-    if ( wil::com_ptr<ID3D12InfoQueue1> d3dInfoQueue = m_context->D3DDevice.query<ID3D12InfoQueue1>( ) )
+    if ( const wil::com_ptr<ID3D12InfoQueue1> d3dInfoQueue = m_context->D3DDevice.query<ID3D12InfoQueue1>( ) )
     {
         DX_CHECK_RESULT( d3dInfoQueue->SetBreakOnSeverity( D3D12_MESSAGE_SEVERITY_CORRUPTION, true ) );
         DX_CHECK_RESULT( d3dInfoQueue->SetBreakOnSeverity( D3D12_MESSAGE_SEVERITY_ERROR, true ) );
@@ -177,7 +175,7 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
 
         DWORD         callbackCookie;
         const HRESULT hr = d3dInfoQueue->RegisterMessageCallback(
-            []( D3D12_MESSAGE_CATEGORY category, D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID iD, LPCSTR description, void *context )
+            []( D3D12_MESSAGE_CATEGORY _, D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID iD, LPCSTR description, void *context )
             {
                 switch ( severity )
                 {
@@ -217,15 +215,15 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     queueDesc.Flags                    = D3D12_COMMAND_QUEUE_FLAG_NONE;
     queueDesc.Type                     = D3D12_COMMAND_LIST_TYPE_DIRECT;
     DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandQueue( &queueDesc, IID_PPV_ARGS( m_context->GraphicsCommandQueue.put( ) ) ) );
-    m_context->GraphicsCommandQueue->SetName( L"Graphics Command Queue" );
+    DX_CHECK_RESULT( m_context->GraphicsCommandQueue->SetName( L"Graphics Command Queue" ) );
 
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
     DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandQueue( &queueDesc, IID_PPV_ARGS( m_context->ComputeCommandQueue.put( ) ) ) );
-    m_context->ComputeCommandQueue->SetName( L"Compute Command Queue" );
+    DX_CHECK_RESULT( m_context->ComputeCommandQueue->SetName( L"Compute Command Queue" ) );
 
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
     DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandQueue( &queueDesc, IID_PPV_ARGS( m_context->CopyCommandQueue.put( ) ) ) );
-    m_context->CopyCommandQueue->SetName( L"Copy Command Queue" );
+    DX_CHECK_RESULT( m_context->CopyCommandQueue->SetName( L"Copy Command Queue" ) );
 
     for ( int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; i++ )
     {
@@ -329,19 +327,19 @@ ISampler *DX12LogicalDevice::CreateSampler( const SamplerDesc &samplerDesc )
     return new DX12Sampler( m_context.get( ), samplerDesc );
 }
 
-ITopLevelAS *DX12LogicalDevice::CreateTopLevelAS( const TopLevelASDesc &topLevelAsDesc )
+ITopLevelAS *DX12LogicalDevice::CreateTopLevelAS( const TopLevelASDesc &createDesc )
 {
-    return new DX12TopLevelAS( m_context.get( ), topLevelAsDesc );
+    return new DX12TopLevelAS( m_context.get( ), createDesc );
 }
 
-IBottomLevelAS *DX12LogicalDevice::CreateBottomLevelAS( const BottomLevelASDesc &bottomLevelAsDesc )
+IBottomLevelAS *DX12LogicalDevice::CreateBottomLevelAS( const BottomLevelASDesc &createDesc )
 {
-    return new DX12BottomLevelAS( m_context.get( ), bottomLevelAsDesc );
+    return new DX12BottomLevelAS( m_context.get( ), createDesc );
 }
 
-IShaderBindingTable *DX12LogicalDevice::CreateShaderBindingTable( const ShaderBindingTableDesc &sbtDesc )
+IShaderBindingTable *DX12LogicalDevice::CreateShaderBindingTable( const ShaderBindingTableDesc &createDesc )
 {
-    return new DX12ShaderBindingTable( m_context.get( ), sbtDesc );
+    return new DX12ShaderBindingTable( m_context.get( ), createDesc );
 }
 
 IShaderLocalDataLayout *DX12LogicalDevice::CreateShaderRecordLayout( const ShaderLocalDataLayoutDesc &createDesc )

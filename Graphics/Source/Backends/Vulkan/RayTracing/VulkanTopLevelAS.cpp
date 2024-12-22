@@ -115,8 +115,20 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
     m_buildGeometryInfo.geometry.instances.data.deviceAddress = m_instanceBuffer->DeviceAddress( );
 }
 
-void VulkanTopLevelAS::Update( const TopLevelASDesc &desc )
+void VulkanTopLevelAS::UpdateInstanceTransforms( const UpdateTransformsDesc &desc )
 {
+    for ( int i = 0; i < desc.Transforms.NumElements( ); i++ )
+    {
+        InteropArray<float>                 transform  = desc.Transforms.GetElement( i );
+        VkAccelerationStructureInstanceKHR &vkInstance = m_instances[ i ];
+        memcpy( vkInstance.transform.matrix, transform.Data( ), 12 * sizeof( float ) );
+    }
+
+    void *instanceBufferMemory = m_instanceBuffer->MapMemory( );
+    memcpy( instanceBufferMemory, m_instances.data( ), m_instances.size( ) * sizeof( VkAccelerationStructureInstanceKHR ) );
+    m_instanceBuffer->UnmapMemory( );
+
+    // Refit happens at the CommandList level
 }
 
 VkBuildAccelerationStructureFlagsKHR VulkanTopLevelAS::Flags( ) const

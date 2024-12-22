@@ -23,6 +23,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    enum class HitGroupType
+    {
+        Triangles,
+        AABBs
+    };
+
     enum class ASBuildFlags
     {
         None            = 1 << 1,

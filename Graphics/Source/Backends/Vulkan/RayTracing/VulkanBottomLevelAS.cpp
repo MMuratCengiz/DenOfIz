@@ -45,7 +45,7 @@ VulkanBottomLevelAS::VulkanBottomLevelAS( VulkanContext *context, const BottomLe
         size_t numPrimitives = 0;
         switch ( geometry.Type )
         {
-        case ASGeometryType::Triangles:
+        case HitGroupType::Triangles:
             InitializeTriangles( geometry.Triangles, vkGeometry );
             numPrimitives = geometry.Triangles.NumVertices / 3;
             if ( geometry.Triangles.NumIndices > 0 )
@@ -53,7 +53,7 @@ VulkanBottomLevelAS::VulkanBottomLevelAS( VulkanContext *context, const BottomLe
                 numPrimitives = geometry.Triangles.NumIndices / 3;
             }
             break;
-        case ASGeometryType::AABBs:
+        case HitGroupType::AABBs:
             InitializeAABBs( geometry.AABBs, vkGeometry );
             numPrimitives = geometry.AABBs.NumAABBs;
             break;

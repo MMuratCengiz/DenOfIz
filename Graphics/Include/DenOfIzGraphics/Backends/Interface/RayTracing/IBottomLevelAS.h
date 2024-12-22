@@ -30,12 +30,6 @@ namespace DenOfIz
     };
     template class DZ_API BitSet<GeometryFlags>;
 
-    enum class ASGeometryType
-    {
-        Triangles,
-        AABBs
-    };
-
     struct DZ_API ASGeometryTriangleDesc
     {
         IBufferResource *VertexBuffer;
@@ -59,7 +53,7 @@ namespace DenOfIz
 
     struct DZ_API ASGeometryDesc
     {
-        ASGeometryType         Type;
+        HitGroupType         Type;
         ASGeometryTriangleDesc Triangles;
         ASGeometryAABBDesc     AABBs;
         BitSet<GeometryFlags>  Flags;

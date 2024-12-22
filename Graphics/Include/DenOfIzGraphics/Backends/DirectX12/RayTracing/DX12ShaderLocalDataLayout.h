@@ -42,14 +42,15 @@ namespace DenOfIz
         std::vector<size_t>                                     m_cbvNumBytes;
 
     public:
-                                           DX12ShaderLocalDataLayout( DX12Context *context, const ShaderLocalDataLayoutDesc &desc );
+        DX12ShaderLocalDataLayout( DX12Context *context, const ShaderLocalDataLayoutDesc &desc );
         [[nodiscard]] ID3D12RootSignature *RootSignature( ) const;
         [[nodiscard]] uint32_t             CbvIndex( uint32_t bindingIndex ) const;
         [[nodiscard]] size_t               CbvNumBytes( uint32_t bindingIndex ) const;
         [[nodiscard]] uint32_t             SrvIndex( uint32_t bindingIndex ) const;
         [[nodiscard]] uint32_t             UavIndex( uint32_t bindingIndex ) const;
+        [[nodiscard]] bool                 HasBinding( ResourceBindingType type, uint32_t bindingIndex ) const;
         [[nodiscard]] uint32_t             SamplerIndex( ) const;
         [[nodiscard]] uint32_t             LocalDataNumBytes( ) const;
-        ~                                  DX12ShaderLocalDataLayout( ) override = default;
+        ~DX12ShaderLocalDataLayout( ) override = default;
     };
 } // namespace DenOfIz

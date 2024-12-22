@@ -75,6 +75,7 @@ namespace DenOfIz
         // Ray tracing commands
         void BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc ) override;
         void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc ) override;
+        void UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc ) override;
         void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
 
     private:

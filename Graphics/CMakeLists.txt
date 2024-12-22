@@ -4,7 +4,7 @@ include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
 if (WIN32)
     find_package(directx-headers CONFIG REQUIRED)
     find_package(directxtk12 CONFIG REQUIRED)
-    find_package(directx12-agility CONFIG)
+    find_package(directx12-agility CONFIG REQUIRED)
 else ()
     # MacOS still needs to build from source
     include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_dxcompiler.cmake")
@@ -261,7 +261,7 @@ if (WIN32 OR LINUX)
 endif ()
 
 set_target_default_properties(DenOfIzGraphics)
-target_compile_definitions(DenOfIzGraphics PUBLIC NSIGHT_ENABLE)
+#target_compile_definitions(DenOfIzGraphics PUBLIC NSIGHT_ENABLE)
 
 if (BUILD_TESTS)
     add_subdirectory(Tests)

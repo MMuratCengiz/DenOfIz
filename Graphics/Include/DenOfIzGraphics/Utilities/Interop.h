@@ -166,18 +166,16 @@ namespace DenOfIz
         T     *m_array       = nullptr;
         size_t m_numElements = 0;
         size_t m_capacity    = 8;
-        size_t m_size        = 0;
 
     public:
         // ReSharper disable once CppNonExplicitConvertingConstructor
-        InteropArray( const size_t size = 0 ) // NOLINT(*-explicit-constructor)
+        InteropArray( const size_t numElements = 0 ) // NOLINT(*-explicit-constructor)
         {
-            if ( size > m_capacity )
+            if ( numElements > m_capacity )
             {
-                m_capacity = size + 1;
+                m_capacity = numElements + 1;
             }
-            m_size        = size;
-            m_numElements = size;
+            m_numElements = numElements;
             m_array       = new T[ m_capacity ];
         }
 
@@ -226,12 +224,10 @@ namespace DenOfIz
         void MoveFrom( InteropArray &other )
         {
             m_array       = other.m_array;
-            m_size        = other.m_size;
             m_capacity    = other.m_capacity;
             m_numElements = other.m_numElements;
 
             other.m_array       = nullptr;
-            other.m_size        = 0;
             other.m_capacity    = 0;
             other.m_numElements = 0;
         }
@@ -239,7 +235,6 @@ namespace DenOfIz
         void CopyFrom( const InteropArray &other )
         {
             Clear( );
-            m_size        = other.m_size;
             m_capacity    = other.m_capacity;
             m_numElements = other.m_numElements;
             m_array       = new T[ m_capacity ];
@@ -252,7 +247,6 @@ namespace DenOfIz
             m_array       = nullptr;
             m_numElements = 0;
             m_capacity    = 0;
-            m_size        = 0;
         }
 
         T &EmplaceElement( )
@@ -306,11 +300,10 @@ namespace DenOfIz
 
         void MemCpy( const void *src, const size_t numBytes )
         {
-            size_t numElements = numBytes / sizeof( T );
+            const size_t numElements = numBytes / sizeof( T );
             Resize( numElements );
             std::memcpy( m_array, src, numBytes );
             m_numElements = numElements;
-            m_size        = numElements;
             m_capacity    = numElements;
         }
 
@@ -344,7 +337,7 @@ namespace DenOfIz
                 delete[] m_array;
                 m_array = newArray;
             }
-            m_size = size;
+            m_numElements = size;
         }
 
     private:
@@ -362,15 +355,14 @@ namespace DenOfIz
         {
             const size_t index = m_numElements;
             Resize( index + 1 );
-            m_numElements++;
             return index;
         }
 
         void CheckBounds( const size_t index ) const
         {
-            if ( index >= m_size )
+            if ( index >= m_numElements )
             {
-                LOG( FATAL ) << "Index out of bounds." << index << " >= " << m_size;
+                LOG( FATAL ) << "Index out of bounds." << index << " >= " << m_numElements;
             }
         }
     };

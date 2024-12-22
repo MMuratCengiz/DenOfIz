@@ -140,11 +140,9 @@ void RayTracedTriangleExample::CreateRenderTargets( )
     textureDesc.Descriptor   = BitSet( ResourceDescriptor::RWTexture );
     textureDesc.InitialUsage = ResourceUsage::UnorderedAccess;
     textureDesc.Usages       = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::UnorderedAccess;
-    textureDesc.DebugName    = "RayTracing Output";
     for ( uint32_t i = 0; i < 3; ++i )
     {
-        textureDesc.DebugName = InteropString( );
-        textureDesc.DebugName.Append( "RayTracing Output " ).Append( std::to_string( i ).c_str( ) );
+        textureDesc.DebugName = InteropString( "RayTracing Output " ).Append( std::to_string( i ).c_str( ) );
         m_raytracingOutput[ i ] = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
     }
 }
@@ -286,7 +284,7 @@ void RayTracedTriangleExample::CreateResources( )
 void RayTracedTriangleExample::CreateAccelerationStructures( )
 {
     ASGeometryDesc geometryDesc{ };
-    geometryDesc.Type                   = ASGeometryType::Triangles;
+    geometryDesc.Type                   = HitGroupType::Triangles;
     geometryDesc.Triangles.IndexBuffer  = m_indexBuffer.get( );
     geometryDesc.Triangles.NumIndices   = 3;
     geometryDesc.Triangles.IndexType    = IndexType::Uint16;

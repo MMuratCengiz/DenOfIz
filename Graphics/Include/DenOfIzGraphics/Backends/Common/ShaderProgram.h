@@ -132,9 +132,9 @@ namespace DenOfIz
         void                    ProcessBoundResource( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex ) const;
         // Returns true if the bound resource is found(and an update is performed), false otherwise
         // Adds additional stages if existing stages are found
-        bool IsBindingLocalTo( const ShaderDesc &shaderDesc, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
-        bool ShouldProcessBinding( ReflectionState& state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
-        bool UpdateBoundResourceStage( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
+        bool IsBindingLocalTo( const ShaderDesc &shaderDesc, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
+        bool ShouldProcessBinding( const ReflectionState & state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
+        bool UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
 #ifdef BUILD_METAL
         void IterateBoundResources( CompiledShader *shader, ReflectionState &state, ReflectionCallback &callback ) const;
         void ProduceMSL( );

@@ -166,13 +166,23 @@ namespace DenOfIz
         MSAASampleCount   MSAASampleCount = MSAASampleCount::_0; // 0 Disables MSAA
     };
 
+    struct DZ_API HitGroupDesc
+    {
+        InteropString Name;
+
+        int32_t IntersectionShaderIndex = -1; // -1 = use built-in triangle intersection
+        int32_t AnyHitShaderIndex       = -1; // -1 = no any hit shader
+        int32_t ClosestHitShaderIndex   = -1; // -1 = no closest hit shader
+
+        HitGroupType Type = HitGroupType::Triangles;
+    };
+
     struct DZ_API RayTracingPipelineDesc
     {
-        ASGeometryType                         GeometryType         = ASGeometryType::Triangles;
         uint32_t                               MaxRecursionDepth    = 1;
         uint32_t                               MaxNumPayloadBytes   = 0;
         uint32_t                               MaxNumAttributeBytes = 0;
-        InteropString                          HitGroupExportName   = "HitGroup";
+        InteropArray<HitGroupDesc>             HitGroups;
         InteropArray<IShaderLocalDataLayout *> ShaderLocalDataLayouts;
     };
 

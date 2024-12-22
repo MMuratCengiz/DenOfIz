@@ -32,14 +32,14 @@ DX12ShaderBindingTable::DX12ShaderBindingTable( DX12Context *context, const Shad
 
 void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
-    const uint32_t rayGenerationShaderNumBytes = AlignRecord( desc.NumRayGenerationShaders * m_rayGenNumBytes );
-    const uint32_t hitGroupNumBytes            = AlignRecord( desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * m_hitGroupNumBytes );
-    const uint32_t missShaderNumBytes          = AlignRecord( desc.NumMissShaders * m_missGroupNumBytes );
-    m_numBufferBytes                           = rayGenerationShaderNumBytes + hitGroupNumBytes + missShaderNumBytes;
+    const uint32_t rayGenerationShaderNumBytes = desc.NumRayGenerationShaders * m_rayGenNumBytes;
+    const uint32_t hitGroupNumBytes            = desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * m_hitGroupNumBytes;
+    const uint32_t missShaderNumBytes          = desc.NumMissShaders * m_missGroupNumBytes;
+    m_numBufferBytes                           = AlignRecord( rayGenerationShaderNumBytes ) + AlignRecord( hitGroupNumBytes ) + missShaderNumBytes;
 
     BufferDesc bufferDesc   = { };
     bufferDesc.NumBytes     = m_numBufferBytes;
-    bufferDesc.HeapType     = HeapType::GPU_CPU;
+    bufferDesc.HeapType     = HeapType::CPU_GPU;
     bufferDesc.InitialUsage = ResourceUsage::CopySrc;
     bufferDesc.Descriptor   = ResourceDescriptor::Buffer;
     bufferDesc.DebugName    = "Shader Binding Table Staging Buffer";
@@ -59,13 +59,13 @@ void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
 
     m_rayGenerationShaderRange.StartAddress = m_buffer->Resource( )->GetGPUVirtualAddress( );
     m_rayGenerationShaderRange.SizeInBytes  = rayGenerationShaderNumBytes;
-    m_hitGroupOffset                        = m_rayGenerationShaderRange.SizeInBytes;
+    m_hitGroupOffset                        = AlignRecord( m_rayGenerationShaderRange.SizeInBytes );
 
     m_hitGroupShaderRange.StartAddress  = m_buffer->Resource( )->GetGPUVirtualAddress( ) + m_hitGroupOffset;
     m_hitGroupShaderRange.SizeInBytes   = desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * m_hitGroupNumBytes;
     m_hitGroupShaderRange.StrideInBytes = m_hitGroupNumBytes;
 
-    m_missGroupOffset               = m_hitGroupOffset + hitGroupNumBytes;
+    m_missGroupOffset               = AlignRecord( m_hitGroupOffset + hitGroupNumBytes );
     m_missShaderRange.StartAddress  = AlignRecord( m_buffer->Resource( )->GetGPUVirtualAddress( ) + m_missGroupOffset );
     m_missShaderRange.SizeInBytes   = missShaderNumBytes;
     m_missShaderRange.StrideInBytes = missShaderNumBytes;
@@ -106,8 +106,8 @@ void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     memcpy( hitGroupEntry, hitGroupIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
     if ( desc.Data )
     {
-        void                *hitGroupData = static_cast<Byte *>( hitGroupEntry ) + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-        DX12ShaderLocalData *data         = dynamic_cast<DX12ShaderLocalData *>( desc.Data );
+        void                      *hitGroupData = static_cast<Byte *>( hitGroupEntry ) + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+        const DX12ShaderLocalData *data         = dynamic_cast<DX12ShaderLocalData *>( desc.Data );
         memcpy( hitGroupData, data->Data( ), m_desc.MaxHitGroupDataBytes );
     }
 }
@@ -170,10 +170,9 @@ bool DX12ShaderBindingTable::BindHitGroupRecursive( const HitGroupBindingDesc &d
 
 void DX12ShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 {
-    uint32_t    offset           = m_missGroupOffset + desc.RayTypeIndex * D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-    void       *missShaderEntry  = static_cast<Byte *>( m_mappedMemory ) + offset;
-    const void *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
-
+    const uint32_t offset           = m_missGroupOffset + desc.RayTypeIndex * m_missGroupNumBytes;
+    void          *missShaderEntry  = static_cast<Byte *>( m_mappedMemory ) + offset;
+    const void    *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
     memcpy( missShaderEntry, shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
 }
 

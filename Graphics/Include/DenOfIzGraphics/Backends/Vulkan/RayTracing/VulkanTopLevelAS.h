@@ -25,7 +25,6 @@ namespace DenOfIz
 {
     class VulkanTopLevelAS : public ITopLevelAS
     {
-    private:
         VulkanContext                                                  *m_context;
         VkAccelerationStructureKHR                                      m_accelerationStructure{ };
         VkDeviceMemory                                                  m_memory{ };
@@ -40,7 +39,7 @@ namespace DenOfIz
 
     public:
         VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc &desc );
-        void                                                                 Update( const TopLevelASDesc &desc ) override;
+        void                                                                 UpdateInstanceTransforms( const UpdateTransformsDesc &desc ) override;
         [[nodiscard]] VkBuildAccelerationStructureFlagsKHR                   Flags( ) const;
         [[nodiscard]] size_t                                                 NumInstances( ) const;
         [[nodiscard]] const VkAccelerationStructureKHR                      &Instance( ) const;
