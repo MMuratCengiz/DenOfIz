@@ -169,16 +169,15 @@ IShaderBindingTable *MetalLogicalDevice::CreateShaderBindingTable( const ShaderB
     return new MetalShaderBindingTable( m_context.get( ), desc );
 }
 
-IShaderLocalDataLayout *MetalLogicalDevice::CreateShaderRecordLayout( const ShaderLocalDataLayoutDesc &createDesc )
+IShaderLocalDataLayout *MetalLogicalDevice::CreateShaderLocalDataLayout( const DenOfIz::ShaderLocalDataLayoutDesc &createDesc )
 {
     return new MetalShaderLocalDataLayout( m_context.get( ), createDesc );
 }
 
-IShaderLocalData *MetalLogicalDevice::CreateShaderRecordData( const ShaderLocalDataDesc &createDesc )
+IShaderLocalData *MetalLogicalDevice::CreateShaderLocalData( const ShaderLocalDataDesc &createDesc )
 {
     return new MetalShaderLocalData( m_context.get( ), createDesc );
 }
-
 
 void MetalLogicalDevice::WaitIdle( )
 {

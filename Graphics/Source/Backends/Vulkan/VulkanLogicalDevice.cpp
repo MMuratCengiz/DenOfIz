@@ -689,12 +689,12 @@ IShaderBindingTable *VulkanLogicalDevice::CreateShaderBindingTable( const Shader
     return new VulkanShaderBindingTable( m_context.get( ), desc );
 }
 
-IShaderLocalDataLayout *VulkanLogicalDevice::CreateShaderRecordLayout( const ShaderLocalDataLayoutDesc &createDesc )
+IShaderLocalDataLayout *VulkanLogicalDevice::CreateShaderLocalDataLayout( const ShaderLocalDataLayoutDesc &createDesc )
 {
     return new VulkanShaderLocalDataLayout( m_context.get( ), createDesc );
 }
 
-IShaderLocalData *VulkanLogicalDevice::CreateShaderRecordData( const ShaderLocalDataDesc &createDesc )
+IShaderLocalData *VulkanLogicalDevice::CreateShaderLocalData( const ShaderLocalDataDesc &createDesc )
 {
     return new VulkanShaderLocalData( m_context.get( ), createDesc );
 }

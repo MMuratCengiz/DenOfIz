@@ -106,11 +106,13 @@ namespace DenOfIz
          * Metal specific information to simulate register spaces. We use a top level argument buffers:
          * TLABOffset: The index of the descriptor table in the argument buffer.
          * DescriptorTableIndex: The offset of the descriptor within the descriptor table.
+         * LocalCbvOffset: The offset of the constant buffer in the local root signature. These behave as root constants.
          *
          * Valid when RootParameterType is DescriptorTable.
          */
         uint32_t DescriptorTableIndex = 0;
         uint32_t TLABOffset           = 0;
+        uint32_t LocalCbvOffset       = 0;
 #endif
     };
 } // namespace DenOfIz

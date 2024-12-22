@@ -68,8 +68,8 @@ namespace DenOfIz
         virtual ITopLevelAS            *CreateTopLevelAS( const TopLevelASDesc &desc )                    = 0;
         virtual IBottomLevelAS         *CreateBottomLevelAS( const BottomLevelASDesc &desc )              = 0;
         virtual IShaderBindingTable    *CreateShaderBindingTable( const ShaderBindingTableDesc &desc )    = 0;
-        virtual IShaderLocalDataLayout *CreateShaderRecordLayout( const ShaderLocalDataLayoutDesc &desc ) = 0;
-        virtual IShaderLocalData       *CreateShaderRecordData( const ShaderLocalDataDesc &desc )         = 0;
+        virtual IShaderLocalDataLayout *CreateShaderLocalDataLayout( const ShaderLocalDataLayoutDesc &desc ) = 0;
+        virtual IShaderLocalData       *CreateShaderLocalData( const ShaderLocalDataDesc &desc )         = 0;
     };
 
 } // namespace DenOfIz

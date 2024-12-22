@@ -46,7 +46,7 @@ void MetalPipeline::CreateGraphicsPipeline( )
     id<MTLFunction> vertexFunction   = nullptr;
     id<MTLFunction> fragmentFunction = nullptr;
 
-    const auto &shaders = m_desc.ShaderProgram->GetCompiledShaders( );
+    const auto &shaders = m_desc.ShaderProgram->CompiledShaders( );
     for ( int i = 0; i < shaders.NumElements( ); ++i )
     {
         const auto    &shader     = shaders.GetElement( i );
@@ -144,7 +144,7 @@ void MetalPipeline::CreateComputePipeline( )
 {
     id<MTLFunction> computeFunction = nullptr;
 
-    const auto &shaders = m_desc.ShaderProgram->GetCompiledShaders( );
+    const auto &shaders = m_desc.ShaderProgram->CompiledShaders( );
     for ( int i = 0; i < shaders.NumElements( ); ++i )
     {
         const auto &shader  = shaders.GetElement( i );
@@ -191,7 +191,7 @@ void MetalPipeline::CreateComputePipeline( )
 void MetalPipeline::CreateRayTracingPipeline( )
 {
     MetalRootSignature *rootSignature   = static_cast<MetalRootSignature *>( m_desc.RootSignature );
-    auto                compiledShaders = m_desc.ShaderProgram->GetCompiledShaders( );
+    auto                compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
 
     MTLComputePipelineDescriptor    *pipelineStateDescriptor = [[MTLComputePipelineDescriptor alloc] init];
     NSMutableArray<id<MTLFunction>> *functionHandles = [NSMutableArray arrayWithCapacity:compiledShaders.NumElements( ) + 2]; // +2 for triangle and procedural intersection shaders
@@ -209,22 +209,37 @@ void MetalPipeline::CreateRayTracingPipeline( )
 
         [functionHandles addObject:mtlFunction];
 
-        if ( shader->Stage == ShaderStage::ClosestHit )
+        uint32_t shaderIndex = i + nullFunctionOffset;
+        if ( !shader->RayTracing.HitGroupExport.IsEmpty( ) )
         {
-            m_visibleFunctions[ m_desc.RayTracing.HitGroupExportName.Get( ) ] = i + nullFunctionOffset;
+            HitGroupExport &hitGroupExport = m_hitGroupExports[ shader->RayTracing.HitGroupExport.Get( ) ];
+
+            switch ( shader->Stage )
+            {
+            case ShaderStage::ClosestHit:
+                hitGroupExport.ClosestHit = shaderIndex;
+                break;
+            case ShaderStage::AnyHit:
+                hitGroupExport.AnyHit = shaderIndex;
+                break;
+            case ShaderStage::Intersection:
+                hitGroupExport.Intersection = shaderIndex;
+                break;
+            default:
+                LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage ) << " for hit group export.";
+                break;
+            }
         }
-        else
-        {
-            m_visibleFunctions[ shader->EntryPoint.Get( ) ] = i + nullFunctionOffset;
-        }
+
+        m_visibleFunctions[ shader->EntryPoint.Get( ) ] = shaderIndex;
     }
 
-    id<MTLLibrary>  triangleIntersectionSynthesizedLibrary = NewSynthesizedIntersectionLibrary( IRHitGroupTypeTriangles );
-    id<MTLFunction> triangleFn = [triangleIntersectionSynthesizedLibrary newFunctionWithName:[NSString stringWithUTF8String:kIRIndirectTriangleIntersectionFunctionName]];
+    id<MTLLibrary>  triangleIntersectionLibrary = NewSynthesizedIntersectionLibrary( IRHitGroupTypeTriangles );
+    id<MTLFunction> triangleFn                  = [triangleIntersectionLibrary newFunctionWithName:[NSString stringWithUTF8String:kIRIndirectTriangleIntersectionFunctionName]];
     [functionHandles addObject:triangleFn];
 
-    id<MTLLibrary>  proceduralIntersectionSynthesizedLibrary = NewSynthesizedIntersectionLibrary( IRHitGroupTypeProceduralPrimitive );
-    id<MTLFunction> proceduralFn = [proceduralIntersectionSynthesizedLibrary newFunctionWithName:[NSString stringWithUTF8String:kIRIndirectProceduralIntersectionFunctionName]];
+    id<MTLLibrary>  proceduralIntersectionLibrary = NewSynthesizedIntersectionLibrary( IRHitGroupTypeProceduralPrimitive );
+    id<MTLFunction> proceduralFn = [proceduralIntersectionLibrary newFunctionWithName:[NSString stringWithUTF8String:kIRIndirectProceduralIntersectionFunctionName]];
     [functionHandles addObject:proceduralFn];
 
     MTLLinkedFunctions *linkedFunctions = [[MTLLinkedFunctions alloc] init];
@@ -236,13 +251,6 @@ void MetalPipeline::CreateRayTracingPipeline( )
 
     [pipelineStateDescriptor setLabel:@"RayTracing Pipeline"];
     [pipelineStateDescriptor setComputeFunction:dispatchFunction];
-
-    MTLNewComputePipelineStateCompletionHandler completionHandler = ^( id<MTLComputePipelineState> pipelineState, NSError *err ) {
-      if ( err != nil )
-      {
-          DZ_LOG_NS_ERROR( "Error creating pipeline state", err );
-      }
-    };
 
     NSError *error         = nil;
     m_computePipelineState = [m_context->Device newComputePipelineStateWithDescriptor:pipelineStateDescriptor options:MTLPipelineOptionNone reflection:nil error:&error];
@@ -376,6 +384,11 @@ const uint64_t &MetalPipeline::FindVisibleShaderIndexByName( const std::string &
         return { };
     }
     return shaderFunction->second;
+}
+
+const HitGroupExport &MetalPipeline::FindHitGroupExport( const std::string &name ) const
+{
+    return m_hitGroupExports.at( name );
 }
 
 id<MTLVisibleFunctionTable> MetalPipeline::VisibleFunctionTable( ) const

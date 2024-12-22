@@ -27,12 +27,13 @@ namespace DenOfIz
     class MetalShaderBindingTable : public IShaderBindingTable
     {
     private:
-        MetalContext          *m_context;
-        MetalPipeline         *m_pipeline;
-        ShaderBindingTableDesc m_desc;
-        size_t                 m_numBufferBytes;
-        id<MTLBuffer>          m_buffer;
-        Byte                  *m_mappedMemory;
+        MetalContext                *m_context;
+        MetalPipeline               *m_pipeline;
+        ShaderBindingTableDesc       m_desc;
+        size_t                       m_numBufferBytes;
+        id<MTLBuffer>                m_buffer;
+        std::vector<id<MTLResource>> m_usedResources;
+        Byte                        *m_mappedMemory;
 
         IRVirtualAddressRange          m_rayGenerationShaderRange;
         IRVirtualAddressRangeAndStride m_hitGroupShaderRange;
@@ -40,17 +41,20 @@ namespace DenOfIz
 
         uint32_t m_missGroupOffset       = 0;
         uint32_t m_hitGroupOffset        = 0;
+        uint32_t m_rayGenEntryNumBytes   = 0;
         uint32_t m_hitGroupEntryNumBytes = 0;
+        uint32_t m_missEntryNumBytes     = 0;
 
     public:
         MetalShaderBindingTable( MetalContext *context, const ShaderBindingTableDesc &desc );
-        void                                   Resize( const SBTSizeDesc                                   &) override;
-        void                                   BindRayGenerationShader( const RayGenerationBindingDesc &desc ) override;
-        void                                   BindHitGroup( const HitGroupBindingDesc &desc ) override;
-        void                                   BindMissShader( const MissBindingDesc &desc ) override;
-        void                                   Build( ) override;
+        void Resize( const SBTSizeDesc & ) override;
+        void BindRayGenerationShader( const RayGenerationBindingDesc &desc ) override;
+        void BindHitGroup( const HitGroupBindingDesc &desc ) override;
+        void BindMissShader( const MissBindingDesc &desc ) override;
+        void Build( ) override;
         ~MetalShaderBindingTable( ) override = default;
 
+        const std::vector<id<MTLResource>>   &UsedResources( ) const;
         const id<MTLBuffer>                   MetalBuffer( ) const;
         const IRVirtualAddressRange          &RayGenerationShaderRange( ) const;
         const IRVirtualAddressRangeAndStride &HitGroupShaderRange( ) const;
@@ -59,5 +63,6 @@ namespace DenOfIz
     private:
         bool BindHitGroupRecursive( const HitGroupBindingDesc &desc );
         void EncodeShaderIndex( uint32_t offset, uint32_t shaderIndex, int customIntersectionIndex = -1 );
+        void EncodeData( uint32_t offset, const IShaderLocalData *data );
     };
 } // namespace DenOfIz

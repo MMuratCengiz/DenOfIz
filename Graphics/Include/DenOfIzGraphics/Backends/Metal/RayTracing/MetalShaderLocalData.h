@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalData.h>
+#include <DenOfIzGraphics/Backends/Metal/MetalArgumentBuffer.h>
 #include <DenOfIzGraphics/Backends/Metal/MetalContext.h>
 #include <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderLocalDataLayout.h>
 
@@ -26,15 +27,18 @@ namespace DenOfIz
 {
     class MetalShaderLocalData final : public IShaderLocalData
     {
-        MetalContext               *m_context;
-        ShaderLocalDataDesc         m_desc;
-        MetalShaderLocalDataLayout *m_layout;
-        std::vector<Byte>           m_data;
+        MetalContext                        *m_context;
+        ShaderLocalDataDesc                  m_desc;
+        MetalShaderLocalDataLayout          *m_layout;
+        std::unique_ptr<DescriptorTable>     m_srvUavTable;
+        std::unique_ptr<DescriptorTable>     m_samplerTable;
+        std::vector<id<MTLResource>>         m_usedResources;
+        std::vector<Byte>                    m_data;
 
     public:
         MetalShaderLocalData( MetalContext *context, const ShaderLocalDataDesc &desc );
         void Begin( ) override;
-        void Cbv( uint32_t binding, const IBufferResource *bufferResource ) override;
+        void Cbv( uint32_t binding, IBufferResource *bufferResource ) override;
         void Cbv( uint32_t binding, const InteropArray<Byte> &data ) override;
         void Srv( uint32_t binding, const IBufferResource *bufferResource ) override;
         void Srv( uint32_t binding, const ITextureResource *textureResource ) override;
@@ -43,7 +47,13 @@ namespace DenOfIz
         void Sampler( uint32_t binding, const ISampler *sampler ) override;
         void End( ) override;
 
+        [[nodiscard]] const DescriptorTable *SrvUavTable( ) const;
+        [[nodiscard]] const DescriptorTable *SamplerTable( ) const;
+        [[nodiscard]] const std::vector<id<MTLResource>> &UsedResources( ) const;
         [[nodiscard]] uint32_t    DataNumBytes( ) const;
         [[nodiscard]] const Byte *Data( ) const;
+    private:
+        void EnsureSrvUavTable( );
+        void EnsureSamplerTable( );
     };
 } // namespace DenOfIz

@@ -342,12 +342,12 @@ IShaderBindingTable *DX12LogicalDevice::CreateShaderBindingTable( const ShaderBi
     return new DX12ShaderBindingTable( m_context.get( ), createDesc );
 }
 
-IShaderLocalDataLayout *DX12LogicalDevice::CreateShaderRecordLayout( const ShaderLocalDataLayoutDesc &createDesc )
+IShaderLocalDataLayout *DX12LogicalDevice::CreateShaderLocalDataLayout( const ShaderLocalDataLayoutDesc &createDesc )
 {
     return new DX12ShaderLocalDataLayout( m_context.get( ), createDesc );
 }
 
-IShaderLocalData *DX12LogicalDevice::CreateShaderRecordData( const ShaderLocalDataDesc &createDesc )
+IShaderLocalData *DX12LogicalDevice::CreateShaderLocalData( const ShaderLocalDataDesc &createDesc )
 {
     return new DX12ShaderLocalData( m_context.get( ), createDesc );
 }

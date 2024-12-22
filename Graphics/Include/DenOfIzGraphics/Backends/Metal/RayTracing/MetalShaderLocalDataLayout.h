@@ -23,12 +23,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct MetalLocalBindingDesc
+    {
+        uint32_t            TLABOffset;
+        size_t              NumBytes;
+        ResourceBindingType Type;
+    };
+
     class MetalShaderLocalDataLayout final : public IShaderLocalDataLayout
     {
+        constexpr static MetalLocalBindingDesc empty = { };
+
         MetalContext             *m_context;
         ShaderLocalDataLayoutDesc m_desc;
 
+        std::vector<MetalLocalBindingDesc> m_uavBindings;
+        std::vector<MetalLocalBindingDesc> m_srvBindings;
+        std::vector<MetalLocalBindingDesc> m_samplerBindings;
+        std::vector<uint32_t>              m_inlineDataOffsets;
+        std::vector<uint32_t>              m_inlineDataNumBytes;
+        uint32_t                           m_totalInlineDataBytes = 0;
+
     public:
         MetalShaderLocalDataLayout( MetalContext *context, const ShaderLocalDataLayoutDesc &desc );
+        uint32_t NumInlineBytes( ) const;
+        uint32_t NumSrvUavs( ) const;
+        uint32_t NumSamplers( ) const;
+
+        const uint32_t               InlineDataOffset( uint32_t binding ) const;
+        const uint32_t               InlineNumBytes( uint32_t binding ) const;
+        const MetalLocalBindingDesc &SrvBinding( uint32_t binding ) const;
+        const MetalLocalBindingDesc &UavBinding( uint32_t binding ) const;
+        const MetalLocalBindingDesc &SamplerBinding( uint32_t binding ) const;
+
+    private:
+        bool EnsureSize( uint32_t binding, const std::vector<MetalLocalBindingDesc> &bindings ) const;
     };
 } // namespace DenOfIz

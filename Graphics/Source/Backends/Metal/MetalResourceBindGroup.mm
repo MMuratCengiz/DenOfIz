@@ -75,43 +75,43 @@ IResourceBindGroup *MetalResourceBindGroup::BeginUpdate( )
 
 IResourceBindGroup *MetalResourceBindGroup::Cbv( const uint32_t binding, IBufferResource *resource )
 {
-    m_boundBuffers.emplace_back( GetSlot( binding, DescriptorBufferBindingType::ConstantBuffer ), resource );
+    m_boundBuffers.emplace_back( GetSlot( binding, ResourceBindingType::ConstantBuffer ), resource );
     return this;
 }
 
 IResourceBindGroup *MetalResourceBindGroup::Srv( const uint32_t binding, IBufferResource *resource )
 {
-    m_boundBuffers.emplace_back( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), resource );
+    m_boundBuffers.emplace_back( GetSlot( binding, ResourceBindingType::ShaderResource ), resource );
     return this;
 }
 
 IResourceBindGroup *MetalResourceBindGroup::Srv( const uint32_t binding, ITextureResource *resource )
 {
-    m_boundTextures.emplace_back( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), resource );
+    m_boundTextures.emplace_back( GetSlot( binding, ResourceBindingType::ShaderResource ), resource );
     return this;
 }
 
 IResourceBindGroup *MetalResourceBindGroup::Srv( const uint32_t binding, ITopLevelAS *accelerationStructure )
 {
-    m_boundAccelerationStructures.emplace_back( GetSlot( binding, DescriptorBufferBindingType::ShaderResource ), accelerationStructure );
+    m_boundAccelerationStructures.emplace_back( GetSlot( binding, ResourceBindingType::ShaderResource ), accelerationStructure );
     return this;
 }
 
 IResourceBindGroup *MetalResourceBindGroup::Uav( const uint32_t binding, IBufferResource *resource )
 {
-    m_boundBuffers.emplace_back( GetSlot( binding, DescriptorBufferBindingType::UnorderedAccess ), resource );
+    m_boundBuffers.emplace_back( GetSlot( binding, ResourceBindingType::UnorderedAccess ), resource );
     return this;
 }
 
 IResourceBindGroup *MetalResourceBindGroup::Uav( const uint32_t binding, ITextureResource *resource )
 {
-    m_boundTextures.emplace_back( GetSlot( binding, DescriptorBufferBindingType::UnorderedAccess ), resource );
+    m_boundTextures.emplace_back( GetSlot( binding, ResourceBindingType::UnorderedAccess ), resource );
     return this;
 }
 
 IResourceBindGroup *MetalResourceBindGroup::Sampler( const uint32_t binding, ISampler *sampler )
 {
-    m_boundSamplers.emplace_back( GetSlot( binding, DescriptorBufferBindingType::Sampler ), sampler );
+    m_boundSamplers.emplace_back( GetSlot( binding, ResourceBindingType::Sampler ), sampler );
     return this;
 }
 
@@ -255,7 +255,7 @@ void MetalResourceBindGroup::UpdateDescriptorTable( const MetalBindingDesc &bind
     table->NumEntries++;
 }
 
-ResourceBindingSlot MetalResourceBindGroup::GetSlot( uint32_t binding, const DescriptorBufferBindingType &type ) const
+ResourceBindingSlot MetalResourceBindGroup::GetSlot( uint32_t binding, const ResourceBindingType &type ) const
 {
     return ResourceBindingSlot{ .Type = type, .Binding = binding, .RegisterSpace = m_desc.RegisterSpace };
 }

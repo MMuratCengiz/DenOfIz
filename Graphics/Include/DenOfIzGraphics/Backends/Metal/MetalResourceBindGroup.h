@@ -109,7 +109,7 @@ namespace DenOfIz
         void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler );
 
         void                UpdateDescriptorTable( const MetalBindingDesc &binding, MetalDescriptorTableBinding *table );
-        ResourceBindingSlot GetSlot( uint32_t binding, const DescriptorBufferBindingType &type ) const;
+        ResourceBindingSlot GetSlot( uint32_t binding, const ResourceBindingType &type ) const;
     };
 
 } // namespace DenOfIz
