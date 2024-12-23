@@ -334,8 +334,6 @@ void RayTracedTriangleExample::CreateShaderBindingTable( )
 {
     ShaderBindingTableDesc bindingTableDesc{ };
     bindingTableDesc.Pipeline              = m_rayTracingPipeline.get( );
-    bindingTableDesc.SizeDesc.NumInstances = 1;
-    bindingTableDesc.SizeDesc.NumRayTypes  = 1;
     bindingTableDesc.MaxHitGroupDataBytes  = sizeof( float ) * 4;
 
     m_shaderBindingTable = std::unique_ptr<IShaderBindingTable>( m_logicalDevice->CreateShaderBindingTable( bindingTableDesc ) );

@@ -29,7 +29,7 @@ namespace DenOfIz
         ShaderLocalDataLayoutDesc m_desc;
 
         wil::com_ptr<ID3D12RootSignature> m_rootSignature;
-        size_t                            m_shaderRecordNumBytes = 0;
+        size_t                            m_shaderRecordDataNumBytes = 0;
         int                               m_samplerTableIndex    = -1;
 
         static constexpr uint32_t NUM_DESCRIPTOR_TYPES = 4;

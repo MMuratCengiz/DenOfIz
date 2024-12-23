@@ -52,6 +52,7 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Backends/Interface/IInputLayout.cpp
         Source/Backends/Interface/ITextureResource.cpp
         Source/Backends/Interface/ShaderData.cpp
+        Source/Backends/Interface/RayTracing/IShaderBindingTable.cpp
 )
 
 SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES

@@ -40,7 +40,7 @@ VulkanShaderBindingTable::VulkanShaderBindingTable( VulkanContext *context, cons
 void VulkanShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
     const uint32_t rayGenerationShaderNumBytes = AlignRecord( desc.NumRayGenerationShaders * m_rayGenNumBytes );
-    const uint32_t hitGroupNumBytes            = AlignRecord( desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * m_hitGroupNumBytes );
+    const uint32_t hitGroupNumBytes            = AlignRecord( desc.NumHitGroups * m_hitGroupNumBytes );
     const uint32_t missShaderNumBytes          = AlignRecord( desc.NumMissShaders * m_missGroupNumBytes );
     m_numBufferBytes                           = rayGenerationShaderNumBytes + hitGroupNumBytes + missShaderNumBytes;
 
@@ -101,14 +101,7 @@ void VulkanShaderBindingTable::BindRayGenerationShader( const RayGenerationBindi
 
 void VulkanShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
 {
-    if ( BindHitGroupRecursive( desc ) )
-        return;
-
-    const uint32_t instanceOffset = desc.InstanceIndex * m_desc.SizeDesc.NumGeometries * m_desc.SizeDesc.NumRayTypes;
-    const uint32_t geometryOffset = desc.GeometryIndex * m_desc.SizeDesc.NumRayTypes;
-    const uint32_t rayTypeOffset  = desc.RayTypeIndex;
-
-    uint32_t offset = m_hitGroupOffset + ( instanceOffset + geometryOffset + rayTypeOffset ) * m_hitGroupNumBytes;
+    const uint32_t offset = m_hitGroupOffset + desc.Offset * m_hitGroupNumBytes;
     if ( desc.HitGroupExportName.IsEmpty( ) )
     {
         throw std::runtime_error( "Hit group name cannot be empty." );
@@ -126,49 +119,11 @@ void VulkanShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     EncodeData( hitGroupEntry, desc.Data );
 }
 
-bool VulkanShaderBindingTable::BindHitGroupRecursive( const HitGroupBindingDesc &desc )
-{
-    if ( desc.InstanceIndex == -1 )
-    {
-        for ( uint32_t i = 0; i < m_desc.SizeDesc.NumInstances; ++i )
-        {
-            HitGroupBindingDesc hitGroupDesc = desc;
-            hitGroupDesc.InstanceIndex       = i;
-            hitGroupDesc.GeometryIndex       = -1;
-            hitGroupDesc.RayTypeIndex        = -1;
-            BindHitGroupRecursive( hitGroupDesc );
-        }
-        return true;
-    }
-    if ( desc.GeometryIndex == -1 )
-    {
-        for ( uint32_t i = 0; i < m_desc.SizeDesc.NumGeometries; ++i )
-        {
-            HitGroupBindingDesc hitGroupDesc = desc;
-            hitGroupDesc.GeometryIndex       = i;
-            hitGroupDesc.RayTypeIndex        = -1;
-            BindHitGroupRecursive( hitGroupDesc );
-        }
-        return true;
-    }
-    if ( desc.RayTypeIndex == -1 )
-    {
-        for ( uint32_t i = 0; i < m_desc.SizeDesc.NumRayTypes; ++i )
-        {
-            HitGroupBindingDesc hitGroupDesc = desc;
-            hitGroupDesc.RayTypeIndex        = i;
-            BindHitGroup( hitGroupDesc );
-        }
-        return true;
-    }
-    return false;
-}
-
 void VulkanShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 {
-    uint32_t    offset           = m_missGroupOffset + desc.RayTypeIndex * m_missGroupNumBytes;
-    void       *missShaderEntry  = static_cast<uint8_t *>( m_mappedMemory ) + offset;
-    const void *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
+    const uint32_t offset           = m_missGroupOffset + desc.RayTypeIndex * m_missGroupNumBytes;
+    void          *missShaderEntry  = static_cast<uint8_t *>( m_mappedMemory ) + offset;
+    const void    *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
 
     memcpy( missShaderEntry, shaderIdentifier, m_shaderGroupHandleSize );
     EncodeData( missShaderEntry, desc.Data );
@@ -210,7 +165,7 @@ void VulkanShaderBindingTable::Build( )
     vkSubmitInfo.commandBufferCount = 1;
     vkSubmitInfo.pCommandBuffers    = &commandBuffer;
 
-    std::unique_ptr<VulkanFence> vkNotifyFence = std::make_unique<VulkanFence>( m_context );
+    const auto vkNotifyFence = std::make_unique<VulkanFence>( m_context );
     vkNotifyFence->Reset( );
     VK_CHECK_RESULT( vkQueueSubmit( m_context->Queues[ VulkanQueueType::Compute ], 1, &vkSubmitInfo, vkNotifyFence->GetFence( ) ) );
     vkNotifyFence->Wait( );
@@ -250,15 +205,15 @@ void VulkanShaderBindingTable::EncodeData( void *entry, IShaderLocalData *iData 
 {
     if ( iData )
     {
-        void                  *localData = static_cast<uint8_t *>( entry ) + m_shaderGroupHandleSize;
-        VulkanShaderLocalData *data      = dynamic_cast<VulkanShaderLocalData *>( iData );
+        void                        *localData = static_cast<uint8_t *>( entry ) + m_shaderGroupHandleSize;
+        const VulkanShaderLocalData *data      = dynamic_cast<VulkanShaderLocalData *>( iData );
 
         if ( data->DataNumBytes( ) > 0 )
         {
             memcpy( localData, data->Data( ), data->DataNumBytes( ) );
         }
 
-        if ( *data->DescriptorSet( ) != VK_NULL_HANDLE )
+        if ( *data->DescriptorSet( ) != nullptr )
         {
             memcpy( static_cast<uint8_t *>( localData ) + data->DataNumBytes( ), data->DescriptorSet( ), sizeof( VkDescriptorSet ) );
         }

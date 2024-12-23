@@ -55,6 +55,7 @@ namespace DenOfIz
         void                  CreateGraphicsPipeline( );
         void                  CreateComputePipeline( );
         void                  CreateRayTracingPipeline( );
+        void                  PrintRayTracingPipelineDesc( const D3D12_STATE_OBJECT_DESC *desc ) const;
         void                  InitStencilFace( D3D12_DEPTH_STENCILOP_DESC &stencilFace, const StencilFace &face ) const;
         void                  InitDepthStencil( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const;
     };

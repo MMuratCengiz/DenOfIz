@@ -40,7 +40,7 @@ DX12ShaderLocalDataLayout::DX12ShaderLocalDataLayout( DX12Context *context, cons
             rootParameter.Constants.RegisterSpace  = binding.RegisterSpace;
             rootParameter.Constants.ShaderRegister = binding.Binding;
             rootParameter.Constants.Num32BitValues = binding.Reflection.NumBytes / 4;
-            m_shaderRecordNumBytes += binding.Reflection.NumBytes;
+            m_shaderRecordDataNumBytes += binding.Reflection.NumBytes;
             ContainerUtilities::SafeSet( m_bindingIndices[ CBV_INDEX ], binding.Binding, i );
             ContainerUtilities::SafeSet( m_cbvNumBytes, binding.Binding, binding.Reflection.NumBytes );
             break;
@@ -68,7 +68,7 @@ DX12ShaderLocalDataLayout::DX12ShaderLocalDataLayout( DX12Context *context, cons
         {
             rootParameter.Descriptor.RegisterSpace  = binding.RegisterSpace;
             rootParameter.Descriptor.ShaderRegister = binding.Binding;
-            m_shaderRecordNumBytes += sizeof( D3D12_GPU_DESCRIPTOR_HANDLE );
+            m_shaderRecordDataNumBytes += sizeof( D3D12_GPU_DESCRIPTOR_HANDLE );
         }
         rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     }
@@ -151,5 +151,5 @@ uint32_t DX12ShaderLocalDataLayout::SamplerIndex( ) const
 
 uint32_t DX12ShaderLocalDataLayout::LocalDataNumBytes( ) const
 {
-    return m_shaderRecordNumBytes;
+    return m_shaderRecordDataNumBytes;
 }

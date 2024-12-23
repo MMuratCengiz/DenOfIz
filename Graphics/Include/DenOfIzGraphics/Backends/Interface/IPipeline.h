@@ -173,6 +173,7 @@ namespace DenOfIz
         int32_t IntersectionShaderIndex = -1; // -1 = use built-in triangle intersection
         int32_t AnyHitShaderIndex       = -1; // -1 = no any hit shader
         int32_t ClosestHitShaderIndex   = -1; // -1 = no closest hit shader
+        int32_t NoHitRootSigShaderIndex = -1; // -1 = this maps to ClosestHitShaderIndex for the purpose of sharing the root signature. No effect when both are provided
 
         HitGroupType Type = HitGroupType::Triangles;
     };

@@ -23,18 +23,21 @@ using namespace DenOfIz;
 
 DX12ShaderBindingTable::DX12ShaderBindingTable( DX12Context *context, const ShaderBindingTableDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_pipeline          = dynamic_cast<DX12Pipeline *>( desc.Pipeline );
-    m_rayGenNumBytes    = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + m_desc.MaxRayGenDataBytes, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
-    m_hitGroupNumBytes  = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + m_desc.MaxHitGroupDataBytes, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
-    m_missGroupNumBytes = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + m_desc.MaxMissDataBytes, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
+    m_pipeline                   = dynamic_cast<DX12Pipeline *>( desc.Pipeline );
+    m_rayGenNumBytes             = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + m_desc.MaxRayGenDataBytes, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
+    m_hitGroupNumBytes           = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + m_desc.MaxHitGroupDataBytes, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
+    m_missNumBytes               = Utilities::Align( D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + m_desc.MaxMissDataBytes, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT );
+    m_debugData.RayGenNumBytes   = m_rayGenNumBytes;
+    m_debugData.MissNumBytes     = m_missNumBytes;
+    m_debugData.HitGroupNumBytes = m_hitGroupNumBytes;
     Resize( desc.SizeDesc );
 }
 
 void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
     const uint32_t rayGenerationShaderNumBytes = desc.NumRayGenerationShaders * m_rayGenNumBytes;
-    const uint32_t hitGroupNumBytes            = desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * m_hitGroupNumBytes;
-    const uint32_t missShaderNumBytes          = desc.NumMissShaders * m_missGroupNumBytes;
+    const uint32_t hitGroupNumBytes            = desc.NumHitGroups * m_hitGroupNumBytes;
+    const uint32_t missShaderNumBytes          = desc.NumMissShaders * m_missNumBytes;
     m_numBufferBytes                           = AlignRecord( rayGenerationShaderNumBytes ) + AlignRecord( hitGroupNumBytes ) + missShaderNumBytes;
 
     BufferDesc bufferDesc   = { };
@@ -62,33 +65,28 @@ void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
     m_hitGroupOffset                        = AlignRecord( m_rayGenerationShaderRange.SizeInBytes );
 
     m_hitGroupShaderRange.StartAddress  = m_buffer->Resource( )->GetGPUVirtualAddress( ) + m_hitGroupOffset;
-    m_hitGroupShaderRange.SizeInBytes   = desc.NumInstances * desc.NumGeometries * desc.NumRayTypes * m_hitGroupNumBytes;
+    m_hitGroupShaderRange.SizeInBytes   = desc.NumHitGroups * m_hitGroupNumBytes;
     m_hitGroupShaderRange.StrideInBytes = m_hitGroupNumBytes;
 
     m_missGroupOffset               = AlignRecord( m_hitGroupOffset + hitGroupNumBytes );
     m_missShaderRange.StartAddress  = AlignRecord( m_buffer->Resource( )->GetGPUVirtualAddress( ) + m_missGroupOffset );
     m_missShaderRange.SizeInBytes   = missShaderNumBytes;
-    m_missShaderRange.StrideInBytes = missShaderNumBytes;
+    m_missShaderRange.StrideInBytes = m_missNumBytes;
 }
 
 void DX12ShaderBindingTable::BindRayGenerationShader( const RayGenerationBindingDesc &desc )
 {
     const void *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
     memcpy( m_mappedMemory, shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+
+#ifndef NDEBUG
+    m_debugData.RayGenerationShaders.AddElement( { shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, 0, desc.ShaderName.Get( ) } );
+#endif
 }
 
 void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
 {
-    if ( BindHitGroupRecursive( desc ) )
-    {
-        return;
-    }
-
-    const uint32_t instanceOffset = desc.InstanceIndex * m_desc.SizeDesc.NumGeometries * m_desc.SizeDesc.NumRayTypes;
-    const uint32_t geometryOffset = desc.GeometryIndex * m_desc.SizeDesc.NumRayTypes;
-    const uint32_t rayTypeOffset  = desc.RayTypeIndex;
-
-    const uint32_t offset        = m_hitGroupOffset + ( instanceOffset + geometryOffset + rayTypeOffset ) * m_hitGroupNumBytes;
+    const uint32_t offset        = m_hitGroupOffset + desc.Offset * m_hitGroupNumBytes;
     void          *hitGroupEntry = static_cast<Byte *>( m_mappedMemory ) + offset;
 
     if ( desc.HitGroupExportName.IsEmpty( ) )
@@ -104,76 +102,30 @@ void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
         return;
     }
     memcpy( hitGroupEntry, hitGroupIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+    uint32_t hitGroupDataSize = 0;
     if ( desc.Data )
     {
         void                      *hitGroupData = static_cast<Byte *>( hitGroupEntry ) + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
         const DX12ShaderLocalData *data         = dynamic_cast<DX12ShaderLocalData *>( desc.Data );
+        hitGroupDataSize                        = data->DataNumBytes( );
         memcpy( hitGroupData, data->Data( ), m_desc.MaxHitGroupDataBytes );
     }
-}
 
-bool DX12ShaderBindingTable::BindHitGroupRecursive( const HitGroupBindingDesc &desc )
-{
-    if ( desc.InstanceIndex == -1 )
-    {
-        if ( desc.GeometryIndex != -1 || desc.RayTypeIndex != -1 )
-        {
-            LOG( ERROR )
-                << "InstanceIndex/GeometryIndex/RayTypeIndex work in a parent child relationship. If InstanceIndex == -1, then GeometryIndex/RayTypeIndex must also be -1.";
-            return true;
-        }
-
-        for ( uint32_t i = 0; i < m_desc.SizeDesc.NumInstances; ++i )
-        {
-            HitGroupBindingDesc hitGroupDesc = desc;
-            hitGroupDesc.InstanceIndex       = i;
-            hitGroupDesc.GeometryIndex       = -1;
-            hitGroupDesc.RayTypeIndex        = -1;
-            BindHitGroupRecursive( hitGroupDesc );
-        }
-
-        return true;
-    }
-
-    if ( desc.GeometryIndex == -1 )
-    {
-        if ( desc.RayTypeIndex != -1 )
-        {
-            LOG( ERROR ) << "InstanceIndex/GeometryIndex/RayTypeIndex work in a parent child relationship. If GeometryIndex == -1, then RayTypeIndex must also be -1.";
-            return true;
-        }
-
-        for ( uint32_t i = 0; i < m_desc.SizeDesc.NumGeometries; ++i )
-        {
-            HitGroupBindingDesc hitGroupDesc = desc;
-            hitGroupDesc.GeometryIndex       = i;
-            hitGroupDesc.RayTypeIndex        = -1;
-            BindHitGroupRecursive( hitGroupDesc );
-        }
-
-        return true;
-    }
-
-    if ( desc.RayTypeIndex == -1 )
-    {
-        for ( uint32_t i = 0; i < m_desc.SizeDesc.NumRayTypes; ++i )
-        {
-            HitGroupBindingDesc hitGroupDesc = desc;
-            hitGroupDesc.RayTypeIndex        = i;
-            BindHitGroup( hitGroupDesc );
-        }
-        return true;
-    }
-
-    return false;
+#ifndef NDEBUG
+    m_debugData.HitGroups.AddElement( { hitGroupIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, hitGroupDataSize, desc.HitGroupExportName.Get( ) } );
+#endif
 }
 
 void DX12ShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 {
-    const uint32_t offset           = m_missGroupOffset + desc.RayTypeIndex * m_missGroupNumBytes;
+    const uint32_t offset           = m_missGroupOffset + desc.RayTypeIndex * m_missNumBytes;
     void          *missShaderEntry  = static_cast<Byte *>( m_mappedMemory ) + offset;
     const void    *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
     memcpy( missShaderEntry, shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );
+
+#ifndef NDEBUG
+    m_debugData.MissShaders.AddElement( { shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES, 0, desc.ShaderName.Get( ) } );
+#endif
 }
 
 uint32_t DX12ShaderBindingTable::AlignRecord( const uint32_t size ) const
@@ -183,6 +135,8 @@ uint32_t DX12ShaderBindingTable::AlignRecord( const uint32_t size ) const
 
 void DX12ShaderBindingTable::Build( )
 {
+    PrintShaderBindingTableDebugData( m_debugData );
+
     m_stagingBuffer->UnmapMemory( );
 
     // Todo move this to some utility function:

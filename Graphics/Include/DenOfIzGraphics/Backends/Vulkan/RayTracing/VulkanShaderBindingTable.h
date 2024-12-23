@@ -63,7 +63,6 @@ namespace DenOfIz
 
     private:
         [[nodiscard]] uint32_t AlignRecord( uint32_t size ) const;
-        bool                   BindHitGroupRecursive( const HitGroupBindingDesc &desc );
         void                   EncodeData( void *entry, IShaderLocalData *iData ) const;
     };
 } // namespace DenOfIz

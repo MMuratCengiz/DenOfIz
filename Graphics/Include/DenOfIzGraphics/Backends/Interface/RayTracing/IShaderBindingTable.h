@@ -28,9 +28,7 @@ namespace DenOfIz
     struct DZ_API HitGroupBindingDesc
     {
         HitGroupType      GeometryType       = HitGroupType::Triangles;
-        int               InstanceIndex      = -1;         // -1 means all instances
-        int               GeometryIndex      = -1;         // -1 means all geometries
-        int               RayTypeIndex       = -1;         // -1 means all ray types
+        int               Offset             = 0;          // Where to place this hit group in the hit group range
         InteropString     HitGroupExportName = "HitGroup"; // Must match `HitGroupExportName` provided in the ShaderDesc structure.
         IShaderLocalData *Data               = nullptr;
     };
@@ -52,9 +50,7 @@ namespace DenOfIz
     {
         uint32_t NumRayGenerationShaders = 1;
         uint32_t NumMissShaders          = 1;
-        uint32_t NumInstances            = 1;
-        uint32_t NumGeometries           = 1;
-        uint32_t NumRayTypes             = 1;
+        uint32_t NumHitGroups            = 1;
     };
 
     struct DZ_API ShaderBindingTableDesc
@@ -64,6 +60,24 @@ namespace DenOfIz
         uint32_t    MaxHitGroupDataBytes = 0;
         uint32_t    MaxMissDataBytes     = 0;
         uint32_t    MaxRayGenDataBytes   = 0;
+    };
+
+    struct DZ_API ShaderRecordDebugData
+    {
+        const void   *Identifier;
+        uint32_t      IdentifierSize;
+        uint32_t      LocalRootArgsSize;
+        InteropString Name;
+    };
+
+    struct DZ_API ShaderBindingTableDebugData
+    {
+        size_t                              HitGroupNumBytes;
+        size_t                              MissNumBytes;
+        size_t                              RayGenNumBytes;
+        InteropArray<ShaderRecordDebugData> RayGenerationShaders;
+        InteropArray<ShaderRecordDebugData> MissShaders;
+        InteropArray<ShaderRecordDebugData> HitGroups;
     };
 
     class IShaderBindingTable
@@ -77,5 +91,7 @@ namespace DenOfIz
         virtual void Build( )                                                        = 0;
         //.. omw
         virtual ~IShaderBindingTable( ) = default;
+
+        static void PrintShaderBindingTableDebugData( const ShaderBindingTableDebugData &table );
     };
 } // namespace DenOfIz

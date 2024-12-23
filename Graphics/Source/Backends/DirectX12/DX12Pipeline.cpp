@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/DirectX12/DX12Pipeline.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderLocalDataLayout.h>
 #include <DenOfIzGraphics/Utilities/Storage.h>
+#include <codecvt>
 #include <utility>
 
 using namespace DenOfIz;
@@ -142,9 +143,9 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     std::unordered_set<std::string> visitedShaders;
     // Lifetime Management:
     std::vector<std::wstring> entryPoints;
-    entryPoints.reserve( compiledShaders.NumElements( ) );
+    entryPoints.reserve( compiledShaders.NumElements( ) * 2 );
     std::vector<LPCWSTR> exportNames_cStr;
-    exportNames_cStr.reserve( compiledShaders.NumElements( ) );
+    exportNames_cStr.reserve( compiledShaders.NumElements( ) * 2 );
     // --
     for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
     {
@@ -158,7 +159,7 @@ void DX12Pipeline::CreateRayTracingPipeline( )
         }
     }
 
-    std::unordered_map<int32_t, std::wstring> hitGroupExports;
+    std::unordered_map<int32_t, std::vector<std::wstring>> hitGroupExports;
     for ( int i = 0; i < m_desc.RayTracing.HitGroups.NumElements( ); ++i )
     {
         const auto &hitGroup = m_desc.RayTracing.HitGroups.GetElement( i );
@@ -168,15 +169,20 @@ void DX12Pipeline::CreateRayTracingPipeline( )
 
         D3D12_HIT_GROUP_DESC &hitGroupDesc = m_hitGroups[ hitGroup.Name.Get( ) ];
         hitGroupDesc.HitGroupExport        = m_exportNames.back( ).c_str( );
-        hitGroupDesc.Type                  = ( hitGroup.Type == HitGroupType::Triangles ) ? D3D12_HIT_GROUP_TYPE_TRIANGLES : D3D12_HIT_GROUP_TYPE_PROCEDURAL_PRIMITIVE;
+        hitGroupDesc.Type                  = hitGroup.Type == HitGroupType::Triangles ? D3D12_HIT_GROUP_TYPE_TRIANGLES : D3D12_HIT_GROUP_TYPE_PROCEDURAL_PRIMITIVE;
 
         if ( hitGroup.ClosestHitShaderIndex >= 0 )
         {
             const auto &shader = compiledShaders.GetElement( hitGroup.ClosestHitShaderIndex );
             DZ_WS_STRING( wEntryPoint, shader->EntryPoint.Get( ) );
             entryPoints.push_back( wEntryPoint );
-            hitGroupDesc.ClosestHitShaderImport               = entryPoints.back( ).c_str( );
-            hitGroupExports[ hitGroup.ClosestHitShaderIndex ] = hgExport;
+            hitGroupDesc.ClosestHitShaderImport = entryPoints.back( ).c_str( );
+            hitGroupExports[ hitGroup.ClosestHitShaderIndex ].push_back( hgExport );
+        }
+        else if ( hitGroup.NoHitRootSigShaderIndex >= 0 )
+        {
+            // Used to export root signature
+            hitGroupExports[ hitGroup.NoHitRootSigShaderIndex ].push_back( hgExport );
         }
 
         if ( hitGroup.AnyHitShaderIndex >= 0 )
@@ -184,8 +190,8 @@ void DX12Pipeline::CreateRayTracingPipeline( )
             const auto &shader = compiledShaders.GetElement( hitGroup.AnyHitShaderIndex );
             DZ_WS_STRING( wEntryPoint, shader->EntryPoint.Get( ) );
             entryPoints.push_back( wEntryPoint );
-            hitGroupDesc.AnyHitShaderImport               = entryPoints.back( ).c_str( );
-            hitGroupExports[ hitGroup.AnyHitShaderIndex ] = hgExport;
+            hitGroupDesc.AnyHitShaderImport = entryPoints.back( ).c_str( );
+            hitGroupExports[ hitGroup.AnyHitShaderIndex ].push_back( hgExport );
         }
 
         if ( hitGroup.IntersectionShaderIndex >= 0 )
@@ -193,61 +199,62 @@ void DX12Pipeline::CreateRayTracingPipeline( )
             const auto &shader = compiledShaders.GetElement( hitGroup.IntersectionShaderIndex );
             DZ_WS_STRING( wEntryPoint, shader->EntryPoint.Get( ) );
             entryPoints.push_back( wEntryPoint );
-            hitGroupDesc.IntersectionShaderImport               = entryPoints.back( ).c_str( );
-            hitGroupExports[ hitGroup.IntersectionShaderIndex ] = hgExport;
+            hitGroupDesc.IntersectionShaderImport = entryPoints.back( ).c_str( );
+            hitGroupExports[ hitGroup.IntersectionShaderIndex ].push_back( hgExport );
         }
     }
 
+    std::unordered_map<ID3D12RootSignature *, std::vector<LPCWSTR>> rootSigToExports;
+    std::unordered_set<std::wstring>                                processedExports;
+
     for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
     {
-        const auto &compiledShader = compiledShaders.GetElement( i );
-
-        if ( compiledShader->RayTracing.LocalBindings.NumElements( ) == 0 )
+        if ( const auto &compiledShader = compiledShaders.GetElement( i ); compiledShader->RayTracing.LocalBindings.NumElements( ) == 0 )
         {
             continue;
         }
 
-        std::string   entryPoint   = compiledShader->EntryPoint.Get( );
-        std::wstring &wsEntryPoint = entryPoints.emplace_back( entryPoint.begin( ), entryPoint.end( ) );
-        std::wstring *exportName   = nullptr;
-        if ( hitGroupExports.contains( i ) )
+        auto *layout = dynamic_cast<DX12ShaderLocalDataLayout *>( m_desc.RayTracing.ShaderLocalDataLayouts.GetElement( i ) );
+        if ( !layout )
         {
-            exportName = &hitGroupExports.at( i );
-        }
-
-        if ( exportName == nullptr )
-        {
-            exportName = &m_exportNames.emplace_back( wsEntryPoint );
-        }
-
-        // Create a local signature for the shader
-        IShaderLocalDataLayout *layoutDesc = m_desc.RayTracing.ShaderLocalDataLayouts.GetElement( i );
-        auto                   *layout     = dynamic_cast<DX12ShaderLocalDataLayout *>( layoutDesc );
-
-        if ( layout == nullptr )
-        {
-            LOG( ERROR ) << "Local data layout is not initialized";
             continue;
         }
 
+        auto  rootSig = layout->RootSignature( );
+        auto &exports = rootSigToExports[ rootSig ];
+
+        if ( !hitGroupExports.contains( i ) )
+        {
+            continue;
+        }
+
+        for ( const auto &exportName : hitGroupExports[ i ] )
+        {
+            if ( !processedExports.contains( exportName ) )
+            {
+                exports.push_back( exportName.c_str( ) );
+                processedExports.insert( exportName );
+            }
+        }
+    }
+
+    for ( auto &[ rootSig, exports ] : rootSigToExports )
+    {
         auto &localRootSignature               = storage.Store<D3D12_LOCAL_ROOT_SIGNATURE>( );
-        localRootSignature.pLocalRootSignature = layout->RootSignature( );
+        localRootSignature.pLocalRootSignature = rootSig;
 
-        size_t                 lrsSubObjectRef             = subObjects.size( );
-        D3D12_STATE_SUBOBJECT &localRootSignatureSubObject = subObjects.emplace_back( );
-        localRootSignatureSubObject.Type                   = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
-        localRootSignatureSubObject.pDesc                  = &localRootSignature;
+        auto &localRootSigSubObject = subObjects.emplace_back( );
+        localRootSigSubObject.Type  = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+        localRootSigSubObject.pDesc = &localRootSignature;
 
-        auto &newExportName = exportNames_cStr.emplace_back( exportName->c_str( ) );
+        auto &association                 = storage.Store<D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION>( );
+        association.NumExports            = static_cast<UINT>( exports.size( ) );
+        association.pExports              = exports.data( );
+        association.pSubobjectToAssociate = &localRootSigSubObject;
 
-        D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION &localSignatureAssociation = storage.Store<D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION>( );
-        localSignatureAssociation.NumExports                              = 1;
-        localSignatureAssociation.pExports                                = &newExportName;
-        localSignatureAssociation.pSubobjectToAssociate                   = &subObjects[ lrsSubObjectRef ];
-
-        D3D12_STATE_SUBOBJECT &localSignatureAssociationSubObject = subObjects.emplace_back( );
-        localSignatureAssociationSubObject.Type                   = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
-        localSignatureAssociationSubObject.pDesc                  = &localSignatureAssociation;
+        auto &associationSubObject = subObjects.emplace_back( );
+        associationSubObject.Type  = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
+        associationSubObject.pDesc = &association;
     }
 
     for ( auto &hitGroup : m_hitGroups | std::views::values )
@@ -264,8 +271,98 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     pipelineStateDesc.NumSubobjects           = static_cast<UINT>( subObjects.size( ) );
     pipelineStateDesc.pSubobjects             = subObjects.data( );
 
+    PrintRayTracingPipelineDesc( &pipelineStateDesc );
     DX_CHECK_RESULT( m_context->D3DDevice->CreateStateObject( &pipelineStateDesc, IID_PPV_ARGS( m_rayTracingSO.put( ) ) ) );
     DX_CHECK_RESULT( m_rayTracingSO->QueryInterface( IID_PPV_ARGS( m_soProperties.put( ) ) ) );
+}
+
+std::string WideToUtf8( const std::wstring &wide )
+{
+    std::string narrow;
+    narrow.assign( wide.begin( ), wide.end( ) );
+    return narrow;
+}
+
+void DX12Pipeline::PrintRayTracingPipelineDesc( const D3D12_STATE_OBJECT_DESC *desc ) const
+{
+    std::stringstream ss;
+    ss << "\n";
+    ss << "--------------------------------------------------------------------\n";
+    ss << "| D3D12 State Object 0x" << std::hex << desc << ": Raytracing Pipeline\n";
+
+    for ( UINT i = 0; i < desc->NumSubobjects; i++ )
+    {
+        const auto &subObject = desc->pSubobjects[ i ];
+        ss << "| [" << std::dec << i << "]: ";
+
+        switch ( subObject.Type )
+        {
+        case D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY:
+            {
+                const auto lib = static_cast<const D3D12_DXIL_LIBRARY_DESC *>( subObject.pDesc );
+                ss << "DXIL Library 0x" << std::hex << lib->DXILLibrary.pShaderBytecode << ", " << std::dec << lib->DXILLibrary.BytecodeLength << " bytes\n";
+                break;
+            }
+
+        case D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP:
+            {
+                const auto hitGroup = static_cast<const D3D12_HIT_GROUP_DESC *>( subObject.pDesc );
+                ss << "Hit Group (" << ( hitGroup->HitGroupExport ? WideToUtf8( hitGroup->HitGroupExport ) : "[none]" ) << ")\n";
+                ss << "|  [0]: Any Hit Import: " << ( hitGroup->AnyHitShaderImport ? WideToUtf8( hitGroup->AnyHitShaderImport ) : "[none]" ) << "\n";
+                ss << "|  [1]: Closest Hit Import: " << ( hitGroup->ClosestHitShaderImport ? WideToUtf8( hitGroup->ClosestHitShaderImport ) : "[none]" ) << "\n";
+                ss << "|  [2]: Intersection Import: " << ( hitGroup->IntersectionShaderImport ? WideToUtf8( hitGroup->IntersectionShaderImport ) : "[none]" ) << "\n";
+                break;
+            }
+
+        case D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG:
+            {
+                const auto config = static_cast<const D3D12_RAYTRACING_SHADER_CONFIG *>( subObject.pDesc );
+                ss << "Raytracing Shader Config\n";
+                ss << "|  [0]: Max Payload Size: " << config->MaxPayloadSizeInBytes << " bytes\n";
+                ss << "|  [1]: Max Attribute Size: " << config->MaxAttributeSizeInBytes << " bytes\n";
+                break;
+            }
+
+        case D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE:
+            {
+                const auto rootSig = static_cast<const D3D12_LOCAL_ROOT_SIGNATURE *>( subObject.pDesc );
+                ss << "Local Root Signature 0x" << std::hex << rootSig->pLocalRootSignature << "\n";
+                break;
+            }
+
+        case D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE:
+            {
+                const auto rootSig = static_cast<const D3D12_GLOBAL_ROOT_SIGNATURE *>( subObject.pDesc );
+                ss << "Global Root Signature 0x" << std::hex << rootSig->pGlobalRootSignature << "\n";
+                break;
+            }
+
+        case D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION:
+            {
+                const auto association = static_cast<const D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION *>( subObject.pDesc );
+                const UINT index       = static_cast<UINT>( association->pSubobjectToAssociate - desc->pSubobjects );
+                ss << "Subobject to Exports Association (Subobject [" << index << "])\n";
+                for ( UINT j = 0; j < association->NumExports; j++ )
+                {
+                    ss << "|  [" << j << "]: " << WideToUtf8( association->pExports[ j ] ) << "\n";
+                }
+                break;
+            }
+
+        case D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG:
+            {
+                const auto config = static_cast<const D3D12_RAYTRACING_PIPELINE_CONFIG *>( subObject.pDesc );
+                ss << "Raytracing Pipeline Config\n";
+                ss << "|  [0]: Max Recursion Depth: " << config->MaxTraceRecursionDepth << "\n";
+                break;
+            }
+        default:
+            break;
+        }
+        ss << "--------------------------------------------------------------------\n";
+    }
+
+    LOG( INFO ) << "\n" << ss.str( );
 }
 
 void DX12Pipeline::InitDepthStencil( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const
