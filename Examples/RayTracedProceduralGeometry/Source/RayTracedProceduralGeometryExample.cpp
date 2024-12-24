@@ -46,6 +46,7 @@ void RayTracedProceduralGeometryExample::Init( )
 
     NodeDesc copyToRenderTargetNode{ };
     copyToRenderTargetNode.Name = "CopyToRenderTarget";
+    copyToRenderTargetNode.QueueType = QueueType::Graphics;
     copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_raytracingOutput[ 0 ].get( ), ResourceUsage::CopySrc ) );
     copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_raytracingOutput[ 1 ].get( ), ResourceUsage::CopySrc ) );
     copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceUsage::CopySrc ) );

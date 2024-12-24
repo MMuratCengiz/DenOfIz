@@ -38,48 +38,14 @@ void RayTracedTriangleExample::Init( )
     NodeDesc raytracingNode{ };
     raytracingNode.Name      = "RayTracing";
     raytracingNode.QueueType = QueueType::RayTracing;
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_raytracingOutput[ 0 ].get( ), ResourceUsage::UnorderedAccess ) );
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_raytracingOutput[ 1 ].get( ), ResourceUsage::UnorderedAccess ) );
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceUsage::UnorderedAccess ) );
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::BufferState( 0, m_rayGenCBResource.get( ), ResourceUsage::VertexAndConstantBuffer ) );
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::BufferState( 1, m_rayGenCBResource.get( ), ResourceUsage::VertexAndConstantBuffer ) );
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::BufferState( 2, m_rayGenCBResource.get( ), ResourceUsage::VertexAndConstantBuffer ) );
-    raytracingNode.Execute = this;
-
-    // !!! Note to be able to do this in Vulkan you need to set the line: `swapChainDesc.ImageUsages  = ResourceUsage::CopyDst;` from IExample.h
-    NodeDesc copyToRenderTargetNode{ };
-    copyToRenderTargetNode.Name = "CopyToRenderTarget";
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_raytracingOutput[ 0 ].get( ), ResourceUsage::CopySrc ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_raytracingOutput[ 1 ].get( ), ResourceUsage::CopySrc ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceUsage::CopySrc ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_swapChain->GetRenderTarget( 0 ), ResourceUsage::CopyDst ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_swapChain->GetRenderTarget( 1 ), ResourceUsage::CopyDst ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_swapChain->GetRenderTarget( 2 ), ResourceUsage::CopyDst ) );
-    copyToRenderTargetNode.Dependencies.AddElement( "RayTracing" );
-
-    m_copyToPresentCallback = std::make_unique<NodeExecutionCallbackHolder>(
-        [ this ]( const uint32_t frameIndex, ICommandList *commandList )
-        {
-            CopyTextureRegionDesc copyTextureRegionDesc{ };
-            copyTextureRegionDesc.SrcTexture = m_raytracingOutput[ frameIndex ].get( );
-            copyTextureRegionDesc.DstTexture = m_swapChain->GetRenderTarget( frameIndex );
-            copyTextureRegionDesc.Width      = m_windowDesc.Width;
-            copyTextureRegionDesc.Height     = m_windowDesc.Height;
-            copyTextureRegionDesc.Depth      = 1;
-            commandList->CopyTextureRegion( copyTextureRegionDesc );
-        } );
-    copyToRenderTargetNode.Execute = m_copyToPresentCallback.get( );
+    raytracingNode.Execute   = this;
 
     PresentNodeDesc presentNode{ };
     presentNode.SwapChain = m_swapChain.get( );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_swapChain->GetRenderTarget( 0 ), ResourceUsage::Present ) );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_swapChain->GetRenderTarget( 1 ), ResourceUsage::Present ) );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_swapChain->GetRenderTarget( 2 ), ResourceUsage::Present ) );
-    presentNode.Dependencies.AddElement( "CopyToRenderTarget" );
+    presentNode.Dependencies.AddElement( "RayTracing" );
     presentNode.Execute = this;
 
     m_renderGraph->AddNode( raytracingNode );
-    m_renderGraph->AddNode( copyToRenderTargetNode );
     m_renderGraph->SetPresentNode( presentNode );
     m_renderGraph->BuildGraph( );
 
@@ -89,6 +55,9 @@ void RayTracedTriangleExample::Init( )
 // Node execution
 void RayTracedTriangleExample::Execute( const uint32_t frameIndex, ICommandList *commandList )
 {
+    m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::UnorderedAccess ),
+                                                 NodeResourceUsageDesc::BufferState( 0, m_rayGenCBResource.get( ), ResourceUsage::VertexAndConstantBuffer ) } );
+
     const Viewport &viewport = m_swapChain->GetViewport( );
 
     commandList->BindPipeline( m_rayTracingPipeline.get( ) );
@@ -102,13 +71,23 @@ void RayTracedTriangleExample::Execute( const uint32_t frameIndex, ICommandList 
     commandList->DispatchRays( dispatchRaysDesc );
 }
 
-void RayTracedTriangleExample::Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget )
+void RayTracedTriangleExample::Execute( const uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget )
 {
+    // !!! Note to be able to do this in Vulkan you need to set the line: `swapChainDesc.ImageUsages  = ResourceUsage::CopyDst;` from IExample.h
+    m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::CopySrc ),
+                                                 NodeResourceUsageDesc::TextureState( frameIndex, m_swapChain->GetRenderTarget( frameIndex ), ResourceUsage::CopyDst ) } );
+
+    CopyTextureRegionDesc copyTextureRegionDesc{ };
+    copyTextureRegionDesc.SrcTexture = m_raytracingOutput[ frameIndex ].get( );
+    copyTextureRegionDesc.DstTexture = m_swapChain->GetRenderTarget( frameIndex );
+    copyTextureRegionDesc.Width      = m_windowDesc.Width;
+    copyTextureRegionDesc.Height     = m_windowDesc.Height;
+    copyTextureRegionDesc.Depth      = 1;
+    commandList->CopyTextureRegion( copyTextureRegionDesc );
 }
 
 void RayTracedTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void RayTracedTriangleExample::Update( )
@@ -142,7 +121,7 @@ void RayTracedTriangleExample::CreateRenderTargets( )
     textureDesc.Usages       = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::UnorderedAccess;
     for ( uint32_t i = 0; i < 3; ++i )
     {
-        textureDesc.DebugName = InteropString( "RayTracing Output " ).Append( std::to_string( i ).c_str( ) );
+        textureDesc.DebugName   = InteropString( "RayTracing Output " ).Append( std::to_string( i ).c_str( ) );
         m_raytracingOutput[ i ] = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
     }
 }
@@ -208,6 +187,7 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     pipelineDesc.RayTracing.MaxNumAttributeBytes = 2 * sizeof( float );
     pipelineDesc.RayTracing.ShaderLocalDataLayouts.Resize( pipelineDesc.ShaderProgram->CompiledShaders( ).NumElements( ) );
     pipelineDesc.RayTracing.ShaderLocalDataLayouts.SetElement( 1, m_hgShaderLayout.get( ) );
+    pipelineDesc.RayTracing.HitGroups.AddElement( HitGroupDesc{ .Name = "MyHitGroup", .ClosestHitShaderIndex = 1, .Type = HitGroupType::Triangles } );
 
     m_rayTracingPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 }
@@ -333,8 +313,8 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
 void RayTracedTriangleExample::CreateShaderBindingTable( )
 {
     ShaderBindingTableDesc bindingTableDesc{ };
-    bindingTableDesc.Pipeline              = m_rayTracingPipeline.get( );
-    bindingTableDesc.MaxHitGroupDataBytes  = sizeof( float ) * 4;
+    bindingTableDesc.Pipeline             = m_rayTracingPipeline.get( );
+    bindingTableDesc.MaxHitGroupDataBytes = sizeof( float ) * 4;
 
     m_shaderBindingTable = std::unique_ptr<IShaderBindingTable>( m_logicalDevice->CreateShaderBindingTable( bindingTableDesc ) );
 

@@ -119,7 +119,7 @@ void DX12LogicalDevice::CreateDeviceInfo( IDXGIAdapter1 &adapter, PhysicalDevice
     if ( const HRESULT hr = device->CheckFeatureSupport( D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof( options12 ) ); SUCCEEDED( hr ) )
     {
         m_context->DX12Capabilities.EnhancedBarriers = options12.EnhancedBarriersSupported;
-        m_context->DX12Capabilities.EnhancedBarriers = false; // Temporarily disable
+        // m_context->DX12Capabilities.EnhancedBarriers = false; // Temporarily disable
     }
 }
 
@@ -242,7 +242,7 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     D3D12MA::ALLOCATOR_DESC allocatorDesc = { };
     allocatorDesc.pDevice                 = m_context->D3DDevice.get( );
     allocatorDesc.pAdapter                = m_context->Adapter.get( );
-    allocatorDesc.Flags = static_cast<D3D12MA::ALLOCATOR_FLAGS>( D3D12MA::ALLOCATOR_FLAG_MSAA_TEXTURES_ALWAYS_COMMITTED | D3D12MA::ALLOCATOR_FLAG_DEFAULT_POOLS_NOT_ZEROED );
+    allocatorDesc.Flags                   = D3D12MA::ALLOCATOR_FLAG_MSAA_TEXTURES_ALWAYS_COMMITTED | D3D12MA::ALLOCATOR_FLAG_DEFAULT_POOLS_NOT_ZEROED;
 
     DX_CHECK_RESULT( D3D12MA::CreateAllocator( &allocatorDesc, m_context->DX12MemoryAllocator.put( ) ) );
     DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( 0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( m_waitIdleFence.put( ) ) ) );

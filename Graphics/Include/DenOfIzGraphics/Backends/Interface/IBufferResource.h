@@ -36,7 +36,7 @@ namespace DenOfIz
         BufferView                 BufferView{ }; // For Structured Buffers
         Format                     Format = Format::Undefined;
         BitSet<ResourceDescriptor> Descriptor;
-        ResourceUsage              InitialUsage;
+        ResourceUsage              InitialUsage = ResourceUsage::Common; // Todo remove
         BitSet<ResourceUsage>      Usages;
         HeapType                   HeapType;
         InteropString              DebugName;

@@ -575,10 +575,15 @@ D3D12_RESOURCE_STATES DX12EnumConverter::ConvertResourceUsage( const BitSet<Reso
     return result;
 }
 
-D3D12_BARRIER_LAYOUT DX12EnumConverter::ConvertResourceStateToBarrierLayout( const BitSet<ResourceUsage> &state, const QueueType &queueType )
+D3D12_BARRIER_LAYOUT DX12EnumConverter::ConvertResourceStateToBarrierLayout( const BitSet<ResourceUsage> &state, const QueueType &queueType, bool enhancedBarriers )
 {
     auto queueSpecificResult = [ = ]( const D3D12_BARRIER_LAYOUT direct, const D3D12_BARRIER_LAYOUT compute, const D3D12_BARRIER_LAYOUT other )
     {
+        if ( enhancedBarriers )
+        {
+            return other;
+        }
+
         switch ( queueType )
         {
         case QueueType::Graphics:
@@ -632,7 +637,7 @@ D3D12_BARRIER_LAYOUT DX12EnumConverter::ConvertResourceStateToBarrierLayout( con
     return queueSpecificResult( D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMMON );
 }
 
-D3D12_BARRIER_ACCESS DX12EnumConverter::ConvertResourceStateToBarrierAccess( const BitSet<ResourceUsage> &state )
+D3D12_BARRIER_ACCESS DX12EnumConverter::ConvertResourceStateToBarrierAccess( const BitSet<ResourceUsage> &state, const QueueType &queueType )
 {
     D3D12_BARRIER_ACCESS result = D3D12_BARRIER_ACCESS_COMMON;
     if ( state.IsSet( ResourceUsage::GenericRead ) )
@@ -646,7 +651,11 @@ D3D12_BARRIER_ACCESS DX12EnumConverter::ConvertResourceStateToBarrierAccess( con
 
     if ( state.IsSet( ResourceUsage::VertexAndConstantBuffer ) )
     {
-        result |= D3D12_BARRIER_ACCESS_VERTEX_BUFFER | D3D12_BARRIER_ACCESS_CONSTANT_BUFFER;
+        result |= D3D12_BARRIER_ACCESS_CONSTANT_BUFFER;
+        if ( queueType == QueueType::Graphics )
+        {
+            result |= D3D12_BARRIER_ACCESS_VERTEX_BUFFER;
+        }
     }
     if ( state.IsSet( ResourceUsage::IndexBuffer ) )
     {
@@ -746,7 +755,7 @@ D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS DX12EnumConverter::ConvertAc
     return result;
 }
 
-D3D12_RAYTRACING_GEOMETRY_TYPE DX12EnumConverter::ConvertGeometryType( const HitGroupType& type )
+D3D12_RAYTRACING_GEOMETRY_TYPE DX12EnumConverter::ConvertGeometryType( const HitGroupType &type )
 {
     switch ( type )
     {

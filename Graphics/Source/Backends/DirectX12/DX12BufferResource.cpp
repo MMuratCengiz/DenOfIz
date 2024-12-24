@@ -37,7 +37,7 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
     }
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::AccelerationStructure ) )
     {
-        //        flags |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
+        flags |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
     }
 
     const CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer( DX12DescriptorHeap::RoundUp( m_numBytes ), flags );
@@ -45,12 +45,16 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
     D3D12MA::ALLOCATION_DESC allocationDesc = { };
     allocationDesc.HeapType                 = DX12EnumConverter::ConvertHeapType( m_desc.HeapType );
 
-    const D3D12_RESOURCE_STATES startState = DX12EnumConverter::ConvertResourceUsage( m_desc.InitialUsage );
+    D3D12_RESOURCE_STATES startState = DX12EnumConverter::ConvertResourceUsage( m_desc.InitialUsage );
+    if ( m_context->DX12Capabilities.EnhancedBarriers )
+    {
+        startState = D3D12_RESOURCE_STATE_COMMON;
+    }
 
     const HRESULT hr = m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, startState, nullptr, &m_allocation, IID_PPV_ARGS( &m_resource ) );
     DX_CHECK_RESULT( hr );
-    std::string        debugName = m_desc.DebugName.Get( );
-    const std::wstring name      = std::wstring( debugName.begin( ), debugName.end( ) );
+    std::string debugName = m_desc.DebugName.Get( );
+    const auto  name      = std::wstring( debugName.begin( ), debugName.end( ) );
     DX_CHECK_RESULT( m_resource->SetName( name.c_str( ) ) );
     m_allocation->SetName( name.c_str( ) );
 }

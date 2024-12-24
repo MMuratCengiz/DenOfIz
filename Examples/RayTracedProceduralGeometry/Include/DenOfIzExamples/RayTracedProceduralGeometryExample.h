@@ -103,7 +103,7 @@ namespace DenOfIz
         XMFLOAT3 normal;
     };
 
-    class RayTracedProceduralGeometryExample final : public IExample, public NodeExecutionCallback, PresentExecutionCallback
+    class RayTracedProceduralGeometryExample final : public IExample, public NodeExecutionCallback, public PresentExecutionCallback
     {
         std::unique_ptr<RenderGraph>                 m_renderGraph;
         std::unique_ptr<ICommandListPool>            m_commandListPool;

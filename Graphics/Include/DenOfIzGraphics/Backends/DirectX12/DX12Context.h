@@ -69,8 +69,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     while ( false )
 
 #define DZ_WS_STRING( var, c_str )                                                                                                                                                 \
-    std::string var ##_str = c_str;                                                                                                                                                  \
-    std::wstring var( var ##_str.begin( ), var ##_str.end( ) )
+    std::string  var##_str = c_str;                                                                                                                                                \
+    std::wstring var( var##_str.begin( ), var##_str.end( ) )
 
 namespace DenOfIz
 {
@@ -94,6 +94,8 @@ namespace DenOfIz
 
         wil::com_ptr<ID3D12CommandAllocator>     CopyCommandListAllocator;
         wil::com_ptr<ID3D12GraphicsCommandList4> CopyCommandList;
+        wil::com_ptr<ID3D12CommandAllocator>     BarrierCommandListAllocator;
+        wil::com_ptr<ID3D12GraphicsCommandList7> BarrierCommandList;
 
         std::array<std::unique_ptr<DX12DescriptorHeap>, D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES> CpuDescriptorHeaps;
         std::unique_ptr<DX12DescriptorHeap>                                                   RtvDescriptorHeap;

@@ -36,6 +36,7 @@ NodeResourceUsageDesc NodeResourceUsageDesc::BufferState( const uint32_t frameIn
     desc.State      = state;
     return desc;
 }
+
 NodeResourceUsageDesc NodeResourceUsageDesc::TextureState( const uint32_t frameIndex, ITextureResource *textureResource, const ResourceUsage state )
 {
     NodeResourceUsageDesc desc( textureResource );
@@ -175,10 +176,10 @@ void RenderGraph::InitAllNodes( )
 {
     for ( auto &node : m_nodeDescriptions )
     {
-        uint32_t &remaining         = m_remainingCommandLists[ node.QueueType ];
-        uint32_t &commandListIndex  = m_commandListIndexAtQueue[ node.QueueType ];
+        uint32_t &remaining        = m_remainingCommandLists[ node.QueueType ];
+        uint32_t &commandListIndex = m_commandListIndexAtQueue[ node.QueueType ];
 
-        auto graphNode = std::make_unique<GraphNode>( );
+        auto graphNode              = std::make_unique<GraphNode>( );
         graphNode->CommandListIndex = commandListIndex;
 
         if ( remaining <= 0 )
@@ -338,9 +339,9 @@ void RenderGraph::BuildTaskflow( )
                 IssueBarriers( presentCommandList, presentContext.ResourceUsagesPerFrame );
                 ITextureResource *swapChainRenderTarget = m_presentNode.SwapChain->GetRenderTarget( image );
 
-                presentCommandList->PipelineBarrier( PipelineBarrierDesc::UndefinedToRenderTarget( swapChainRenderTarget ) );
+                IssueBarrier( presentCommandList, NodeResourceUsageDesc::TextureState( frame, swapChainRenderTarget, ResourceUsage::RenderTarget ) );
                 m_presentNode.Execute->Execute( frame, presentCommandList, swapChainRenderTarget );
-                presentCommandList->PipelineBarrier( PipelineBarrierDesc::RenderTargetToPresent( swapChainRenderTarget ) );
+                IssueBarrier( presentCommandList, NodeResourceUsageDesc::TextureState( frame, swapChainRenderTarget, ResourceUsage::Present ) );
 
                 ExecuteDesc presentExecuteDesc{ };
                 presentExecuteDesc.Notify = m_frameFences[ frame ].get( );
@@ -415,36 +416,52 @@ void RenderGraph::ValidateDependencies( const std::unordered_set<std::string> &a
     }
 }
 
+void RenderGraph::IssueBarrier( ICommandList *commandList, const NodeResourceUsageDesc &resourceUsage )
+{
+    IssueBarriers( commandList, { resourceUsage } );
+}
+
 void RenderGraph::IssueBarriers( ICommandList *commandList, const std::vector<NodeResourceUsageDesc> &resourceUsages )
 {
     PipelineBarrierDesc       barrierDesc{ };
     std::vector<std::mutex *> m_unlocks;
 
-    for ( auto &resourceState : resourceUsages )
+    for ( auto &resourceUsage : resourceUsages )
     {
-        if ( resourceState.Type == NodeResourceUsageType::Texture )
+        if ( resourceUsage.Type == NodeResourceUsageType::Texture )
         {
-            auto  texture     = resourceState.TextureResource;
-            auto &lockedState = m_resourceLocking.TextureStates[ texture ];
-            if ( lockedState.State != resourceState.State )
+            auto texture = resourceUsage.TextureResource;
+            auto state   = m_resourceLocking.TextureStates.find( texture );
+            if ( state == m_resourceLocking.TextureStates.end( ) )
+            {
+                m_resourceLocking.TextureStates.emplace( texture, texture->InitialState( ) );
+                state = m_resourceLocking.TextureStates.find( texture );
+            }
+            auto &lockedState = state->second;
+            if ( lockedState.State != resourceUsage.State )
             {
                 lockedState.Mutex.lock( );
                 m_unlocks.push_back( &lockedState.Mutex );
-                barrierDesc.TextureBarrier( TextureBarrierDesc{ texture, lockedState.State, resourceState.State } );
-//                LOG( INFO ) << "Texture barrier issued for " << texture << " from " << std::to_string( (int)lockedState.State ) << " to " << std::to_string( (int)resourceState.State );
-                lockedState.State = resourceState.State;
+                barrierDesc.TextureBarrier( TextureBarrierDesc{ texture, lockedState.State, resourceUsage.State } );
+                lockedState.State = resourceUsage.State;
             }
         }
         else
         {
-            auto  buffer      = resourceState.BufferResource;
-            auto &lockedState = m_resourceLocking.BufferStates[ buffer ];
-            if ( lockedState.State != resourceState.State )
+            auto  buffer      = resourceUsage.BufferResource;
+            auto  state       = m_resourceLocking.BufferStates.find( buffer );
+            if ( state == m_resourceLocking.BufferStates.end( ) )
+            {
+                m_resourceLocking.BufferStates.emplace( buffer, buffer->InitialState( ) );
+                state = m_resourceLocking.BufferStates.find( buffer );
+            }
+            auto &lockedState = state->second;
+            if ( lockedState.State != resourceUsage.State )
             {
                 lockedState.Mutex.lock( );
                 m_unlocks.push_back( &lockedState.Mutex );
-                barrierDesc.BufferBarrier( BufferBarrierDesc{ buffer, lockedState.State, resourceState.State } );
-                lockedState.State = resourceState.State;
+                barrierDesc.BufferBarrier( BufferBarrierDesc{ buffer, lockedState.State, resourceUsage.State } );
+                lockedState.State = resourceUsage.State;
             }
         }
     }

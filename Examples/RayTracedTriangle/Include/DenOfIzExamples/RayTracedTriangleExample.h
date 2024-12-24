@@ -46,7 +46,6 @@ namespace DenOfIz
         Time                                             m_time;
         std::array<std::unique_ptr<ITextureResource>, 3> m_raytracingOutput;
         std::unique_ptr<IResourceBindGroup>              m_rootConstantBindGroup;
-        std::unique_ptr<NodeExecutionCallbackHolder>     m_copyToPresentCallback;
         // Raytracing:
         std::unique_ptr<IShaderLocalData>                  m_hgData;
         RayGenConstantBuffer                               m_rayGenCB = { };

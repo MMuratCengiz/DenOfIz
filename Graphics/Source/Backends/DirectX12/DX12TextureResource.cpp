@@ -27,7 +27,11 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
     m_height       = desc.Height;
     m_depth        = desc.Depth;
     m_format       = desc.Format;
-    m_initialState = desc.InitialUsage;
+    m_currentUsage = desc.InitialUsage;
+    if ( m_context->DX12Capabilities.EnhancedBarriers )
+    {
+        m_currentUsage = ResourceUsage::Common;
+    }
 
     ValidateTextureDesc( m_desc );
 
@@ -65,7 +69,8 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
 
-    D3D12_RESOURCE_STATES initialState = DX12EnumConverter::ConvertResourceUsage( m_desc.InitialUsage );
+    D3D12_RESOURCE_STATES initialState = DX12EnumConverter::ConvertResourceUsage( m_currentUsage );
+
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RenderTarget ) )
     {
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
@@ -105,7 +110,7 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
     }
 
     const std::string debugName = m_desc.DebugName.Get( );
-    const std::wstring name = std::wstring( debugName.begin(), debugName.end() );
+    const auto        name      = std::wstring( debugName.begin( ), debugName.end( ) );
     DX_CHECK_RESULT( m_resource->SetName( name.c_str( ) ) );
     m_allocation->SetName( name.c_str( ) );
 }
@@ -332,7 +337,7 @@ ID3D12Resource *DX12TextureResource::Resource( ) const
 
 BitSet<ResourceUsage> DX12TextureResource::InitialState( ) const
 {
-    return m_initialState;
+    return m_currentUsage;
 }
 
 uint32_t DX12TextureResource::GetWidth( ) const

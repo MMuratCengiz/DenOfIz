@@ -30,7 +30,7 @@ namespace DenOfIz
         uint32_t      m_width        = 1;
         uint32_t      m_height       = 1;
         uint32_t      m_depth        = 1;
-        ResourceUsage m_initialState = ResourceUsage::Undefined;
+        ResourceUsage m_currentUsage = ResourceUsage::Undefined;
 
         TextureDesc                 m_desc{ };
         DX12Context                *m_context    = nullptr;

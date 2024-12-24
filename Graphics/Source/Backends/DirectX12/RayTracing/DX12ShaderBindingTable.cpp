@@ -108,7 +108,7 @@ void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
         void                      *hitGroupData = static_cast<Byte *>( hitGroupEntry ) + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
         const DX12ShaderLocalData *data         = dynamic_cast<DX12ShaderLocalData *>( desc.Data );
         hitGroupDataSize                        = data->DataNumBytes( );
-        memcpy( hitGroupData, data->Data( ), m_desc.MaxHitGroupDataBytes );
+        memcpy( hitGroupData, data->Data( ), hitGroupDataSize );
     }
 
 #ifndef NDEBUG

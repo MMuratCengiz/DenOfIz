@@ -72,6 +72,8 @@ namespace DenOfIz
         DZ_API void BuildTaskflow( );
         DZ_API void Update( );
         DZ_API void WaitIdle( ) const;
+        DZ_API void IssueBarrier( ICommandList *commandList, const NodeResourceUsageDesc &resourceUsage );
+        DZ_API void IssueBarriers( ICommandList *commandList, const std::vector<NodeResourceUsageDesc> &resourceUsages );
 
     private:
         ISemaphore *GetOrCreateSemaphore( uint32_t &index );
@@ -79,6 +81,5 @@ namespace DenOfIz
         void        ConfigureGraph( );
         void        ValidateDependencies( const std::unordered_set<std::string> &allNodes, const InteropArray<InteropString> &dependencies ) const;
         void        ValidateNodes( ) const;
-        void        IssueBarriers( ICommandList *commandList, const std::vector<NodeResourceUsageDesc> &resourceUsages );
     };
 } // namespace DenOfIz
