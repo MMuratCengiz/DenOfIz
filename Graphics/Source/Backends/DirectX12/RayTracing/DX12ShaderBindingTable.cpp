@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Backends/DirectX12/DX12BarrierHelper.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderLocalData.h>
 
@@ -38,14 +39,14 @@ void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
     const uint32_t rayGenerationShaderNumBytes = desc.NumRayGenerationShaders * m_rayGenNumBytes;
     const uint32_t hitGroupNumBytes            = desc.NumHitGroups * m_hitGroupNumBytes;
     const uint32_t missShaderNumBytes          = desc.NumMissShaders * m_missNumBytes;
-    m_numBufferBytes                           = AlignRecord( rayGenerationShaderNumBytes ) + AlignRecord( hitGroupNumBytes ) + missShaderNumBytes;
+    m_numBufferBytes                           = AlignRecord( rayGenerationShaderNumBytes ) + AlignRecord( hitGroupNumBytes ) + AlignRecord( missShaderNumBytes );
 
-    BufferDesc bufferDesc   = { };
-    bufferDesc.NumBytes     = m_numBufferBytes;
-    bufferDesc.HeapType     = HeapType::CPU_GPU;
-    bufferDesc.InitialUsage = ResourceUsage::CopySrc;
-    bufferDesc.Descriptor   = ResourceDescriptor::Buffer;
-    bufferDesc.DebugName    = "Shader Binding Table Staging Buffer";
+    BufferDesc bufferDesc = { };
+    bufferDesc.NumBytes   = m_numBufferBytes;
+    bufferDesc.HeapType   = HeapType::CPU_GPU;
+    bufferDesc.Usages     = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::ShaderBindingTable;
+    bufferDesc.Descriptor = ResourceDescriptor::Buffer;
+    bufferDesc.DebugName  = "Shader Binding Table Staging Buffer";
 
     m_stagingBuffer = std::make_unique<DX12BufferResource>( m_context, bufferDesc );
     m_mappedMemory  = m_stagingBuffer->MapMemory( );
@@ -55,21 +56,22 @@ void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
         LOG( ERROR ) << "Failed to map memory for shader binding table.";
     }
 
-    bufferDesc.HeapType     = HeapType::GPU;
-    bufferDesc.InitialUsage = ResourceUsage::CopyDst;
-    bufferDesc.DebugName    = "Shader Binding Table Buffer";
-    m_buffer                = std::make_unique<DX12BufferResource>( m_context, bufferDesc );
+    bufferDesc.Usages    = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::ShaderBindingTable;
+    bufferDesc.HeapType  = HeapType::GPU;
+    bufferDesc.DebugName = "Shader Binding Table Buffer";
+    m_buffer             = std::make_unique<DX12BufferResource>( m_context, bufferDesc );
 
-    m_rayGenerationShaderRange.StartAddress = m_buffer->Resource( )->GetGPUVirtualAddress( );
+    const UINT64 gpuVA                      = m_buffer->Resource( )->GetGPUVirtualAddress( );
+    m_rayGenerationShaderRange.StartAddress = gpuVA;
     m_rayGenerationShaderRange.SizeInBytes  = rayGenerationShaderNumBytes;
     m_hitGroupOffset                        = AlignRecord( m_rayGenerationShaderRange.SizeInBytes );
 
-    m_hitGroupShaderRange.StartAddress  = m_buffer->Resource( )->GetGPUVirtualAddress( ) + m_hitGroupOffset;
+    m_hitGroupShaderRange.StartAddress  = gpuVA + m_hitGroupOffset;
     m_hitGroupShaderRange.SizeInBytes   = desc.NumHitGroups * m_hitGroupNumBytes;
     m_hitGroupShaderRange.StrideInBytes = m_hitGroupNumBytes;
 
     m_missGroupOffset               = AlignRecord( m_hitGroupOffset + hitGroupNumBytes );
-    m_missShaderRange.StartAddress  = AlignRecord( m_buffer->Resource( )->GetGPUVirtualAddress( ) + m_missGroupOffset );
+    m_missShaderRange.StartAddress  = gpuVA + m_missGroupOffset;
     m_missShaderRange.SizeInBytes   = missShaderNumBytes;
     m_missShaderRange.StrideInBytes = m_missNumBytes;
 }
@@ -136,40 +138,41 @@ uint32_t DX12ShaderBindingTable::AlignRecord( const uint32_t size ) const
 void DX12ShaderBindingTable::Build( )
 {
     PrintShaderBindingTableDebugData( m_debugData );
-
     m_stagingBuffer->UnmapMemory( );
 
-    // Todo move this to some utility function:
-    // Create a fence:
-    wil::com_ptr<ID3D12Fence> copyFence;
-    wil::com_ptr<ID3D12Fence> barrierFence;
-    DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( 0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( copyFence.put( ) ) ) );
-    DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( 0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( barrierFence.put( ) ) ) );
-
-    const auto commandList = m_context->CopyCommandList;
-    DX_CHECK_RESULT( commandList->Reset( m_context->CopyCommandListAllocator.get( ), nullptr ) );
-    commandList->CopyBufferRegion( m_buffer->Resource( ), 0, m_stagingBuffer->Resource( ), 0, m_numBufferBytes );
-    DX_CHECK_RESULT( commandList->Close( ) );
-    m_context->CopyCommandQueue->ExecuteCommandLists( 1, CommandListCast( commandList.addressof( ) ) );
-    DX_CHECK_RESULT( m_context->CopyCommandQueue->Signal( copyFence.get( ), 1 ) );
-
-    // Create a direct command list to barrier the resource to shader resource state:
-    wil::com_ptr<ID3D12CommandAllocator>    commandAllocator;
-    wil::com_ptr<ID3D12GraphicsCommandList> directCommandList;
+    wil::com_ptr<ID3D12CommandAllocator>     commandAllocator;
+    wil::com_ptr<ID3D12GraphicsCommandList7> commandList;
 
     DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandAllocator( D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS( commandAllocator.put( ) ) ) );
-    DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandList( 0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.get( ), nullptr, IID_PPV_ARGS( directCommandList.put( ) ) ) );
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandList( 0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.get( ), nullptr, IID_PPV_ARGS( commandList.put( ) ) ) );
 
-    DX_CHECK_RESULT( directCommandList->Close( ) );
+    wil::com_ptr<ID3D12Fence> fence;
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( 0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( fence.put( ) ) ) );
+
+    DX_CHECK_RESULT( commandList->Close( ) );
     DX_CHECK_RESULT( commandAllocator->Reset( ) );
-    DX_CHECK_RESULT( directCommandList->Reset( commandAllocator.get( ), nullptr ) );
-    const auto &barrier = CD3DX12_RESOURCE_BARRIER::Transition( m_buffer->Resource( ), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE );
-    directCommandList->ResourceBarrier( 1, &barrier );
-    DX_CHECK_RESULT( directCommandList->Close( ) );
-    DX_CHECK_RESULT( m_context->GraphicsCommandQueue->Wait( copyFence.get( ), 1 ) );
-    m_context->GraphicsCommandQueue->ExecuteCommandLists( 1, CommandListCast( directCommandList.addressof( ) ) );
-    DX_CHECK_RESULT( m_context->GraphicsCommandQueue->Signal( barrierFence.get( ), 1 ) );
-    DX_CHECK_RESULT( m_context->GraphicsCommandQueue->Wait( barrierFence.get( ), 1 ) );
+    DX_CHECK_RESULT( commandList->Reset( commandAllocator.get( ), nullptr ) );
+
+    const auto stagingBarrier = PipelineBarrierDesc{ }
+                                    .BufferBarrier( BufferBarrierDesc{ m_stagingBuffer.get( ), ResourceUsage::Common, ResourceUsage::CopySrc } )
+                                    .BufferBarrier( BufferBarrierDesc{ m_buffer.get( ), ResourceUsage::Common, ResourceUsage::CopyDst } );
+    DX12BarrierHelper::ExecuteResourceBarrier( m_context, commandList.get( ), QueueType::Graphics, stagingBarrier );
+
+    commandList->CopyBufferRegion( m_buffer->Resource( ), 0, m_stagingBuffer->Resource( ), 0, m_numBufferBytes );
+
+    const auto bufferBarrier = PipelineBarrierDesc{ }.BufferBarrier( BufferBarrierDesc{ m_buffer.get( ), ResourceUsage::CopyDst, ResourceUsage::ShaderResource } );
+    DX12BarrierHelper::ExecuteResourceBarrier( m_context, commandList.get( ), QueueType::Graphics, bufferBarrier );
+
+    DX_CHECK_RESULT( commandList->Close( ) );
+    m_context->GraphicsCommandQueue->ExecuteCommandLists( 1, CommandListCast( commandList.addressof( ) ) );
+    DX_CHECK_RESULT( m_context->GraphicsCommandQueue->Signal( fence.get( ), 1 ) );
+    if ( fence->GetCompletedValue( ) < 1 )
+    {
+        const HANDLE eventHandle = CreateEventEx( nullptr, nullptr, 0, EVENT_ALL_ACCESS );
+        DX_CHECK_RESULT( fence->SetEventOnCompletion( 1, eventHandle ) );
+        WaitForSingleObject( eventHandle, INFINITE );
+        CloseHandle( eventHandle );
+    }
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS_RANGE DX12ShaderBindingTable::RayGenerationShaderRecord( ) const

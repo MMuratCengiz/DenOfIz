@@ -488,3 +488,8 @@ void VulkanCommandList::Present( ISwapChain *swapChain, const uint32_t imageInde
 
     VK_CHECK_RESULT( presentResult );
 }
+
+const QueueType VulkanCommandList::GetQueueType( )
+{
+    return m_desc.QueueType;
+}

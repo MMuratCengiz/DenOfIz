@@ -127,7 +127,7 @@ uint32_t DX12ShaderLocalDataLayout::UavIndex( const uint32_t bindingIndex ) cons
     return m_bindingIndices[ UAV_INDEX ][ bindingIndex ];
 }
 
-bool DX12ShaderLocalDataLayout::HasBinding( ResourceBindingType type, uint32_t bindingIndex ) const
+bool DX12ShaderLocalDataLayout::HasBinding( const ResourceBindingType type, const uint32_t bindingIndex ) const
 {
     for ( int i = 0; i < m_desc.ResourceBindings.NumElements( ); ++i )
     {

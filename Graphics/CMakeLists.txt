@@ -93,6 +93,7 @@ set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
         Source/Backends/DirectX12/DX12CommandList.cpp
         Source/Backends/DirectX12/DX12DescriptorHeap.cpp
         Source/Backends/DirectX12/DX12CommandListPool.cpp
+        Source/Backends/DirectX12/DX12BarrierHelper.cpp
         # RayTracing
         Source/Backends/DirectX12/RayTracing/DX12BottomLevelAS.cpp
         Source/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.cpp

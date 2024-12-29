@@ -202,6 +202,8 @@ namespace DenOfIz
         virtual void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc )   = 0;
         virtual void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )                     = 0;
         virtual void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) = 0;
+
+        virtual const QueueType GetQueueType( ) = 0;
     };
     template class DZ_API InteropArray<ICommandList *>;
 } // namespace DenOfIz

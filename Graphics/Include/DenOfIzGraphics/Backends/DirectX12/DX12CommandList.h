@@ -78,6 +78,7 @@ namespace DenOfIz
         void UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc ) override;
         void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
 
+        const QueueType GetQueueType( ) override;
     private:
         void CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
         void EnhancedPipelineBarrier( const PipelineBarrierDesc &barrier ) const;

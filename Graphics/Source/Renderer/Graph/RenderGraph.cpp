@@ -140,7 +140,8 @@ void RenderGraph::AddNode( const NodeDesc &desc )
             {
                 LOG( FATAL ) << "Texture resource must be valid.";
             }
-            m_resourceLocking.TextureStates.emplace( resourceState.TextureResource, resourceState.TextureResource->InitialState( ) );
+            m_resourceLocking.TextureStates.emplace( resourceState.TextureResource, desc.QueueType );
+            m_resourceLocking.TextureStates[ resourceState.TextureResource ].State = resourceState.TextureResource->InitialState( );
         }
         else
         {
@@ -148,7 +149,8 @@ void RenderGraph::AddNode( const NodeDesc &desc )
             {
                 LOG( FATAL ) << "Buffer resource must be valid.";
             }
-            m_resourceLocking.BufferStates.emplace( resourceState.BufferResource, resourceState.BufferResource->InitialState( ) );
+            m_resourceLocking.BufferStates.emplace( resourceState.BufferResource, desc.QueueType );
+            m_resourceLocking.BufferStates[ resourceState.BufferResource ].State = resourceState.BufferResource->InitialState( );
         }
     }
 }
@@ -184,7 +186,7 @@ void RenderGraph::InitAllNodes( )
 
         if ( remaining <= 0 )
         {
-            LOG( FATAL ) << "Not enough command lists for the queue type " << (uint32_t)node.QueueType << ", add more via `RenderGraphDesc`.";
+            LOG( FATAL ) << "Not enough command lists for the queue type " << static_cast<uint32_t>( node.QueueType ) << ", add more via `RenderGraphDesc`.";
         }
         remaining--;
 
@@ -434,26 +436,36 @@ void RenderGraph::IssueBarriers( ICommandList *commandList, const std::vector<No
             auto state   = m_resourceLocking.TextureStates.find( texture );
             if ( state == m_resourceLocking.TextureStates.end( ) )
             {
-                m_resourceLocking.TextureStates.emplace( texture, texture->InitialState( ) );
-                state = m_resourceLocking.TextureStates.find( texture );
+                m_resourceLocking.TextureStates.emplace( texture, commandList->GetQueueType( ) );
+                state               = m_resourceLocking.TextureStates.find( texture );
+                state->second.State = texture->InitialState( );
             }
             auto &lockedState = state->second;
             if ( lockedState.State != resourceUsage.State )
             {
                 lockedState.Mutex.lock( );
                 m_unlocks.push_back( &lockedState.Mutex );
-                barrierDesc.TextureBarrier( TextureBarrierDesc{ texture, lockedState.State, resourceUsage.State } );
+                TextureBarrierDesc textureBarrierDesc{ texture, lockedState.State, resourceUsage.State };
+                if ( lockedState.Queue != commandList->GetQueueType( ) )
+                {
+                    textureBarrierDesc.EnableQueueBarrier = true;
+                    textureBarrierDesc.SourceQueue        = lockedState.Queue;
+                    textureBarrierDesc.DestinationQueue   = commandList->GetQueueType( );
+                }
+                barrierDesc.TextureBarrier( textureBarrierDesc );
                 lockedState.State = resourceUsage.State;
+                lockedState.Queue = commandList->GetQueueType( );
             }
         }
         else
         {
-            auto  buffer      = resourceUsage.BufferResource;
-            auto  state       = m_resourceLocking.BufferStates.find( buffer );
+            auto buffer = resourceUsage.BufferResource;
+            auto state  = m_resourceLocking.BufferStates.find( buffer );
             if ( state == m_resourceLocking.BufferStates.end( ) )
             {
-                m_resourceLocking.BufferStates.emplace( buffer, buffer->InitialState( ) );
-                state = m_resourceLocking.BufferStates.find( buffer );
+                m_resourceLocking.BufferStates.emplace( buffer, commandList->GetQueueType( ) );
+                state               = m_resourceLocking.BufferStates.find( buffer );
+                state->second.State = buffer->InitialState( );
             }
             auto &lockedState = state->second;
             if ( lockedState.State != resourceUsage.State )

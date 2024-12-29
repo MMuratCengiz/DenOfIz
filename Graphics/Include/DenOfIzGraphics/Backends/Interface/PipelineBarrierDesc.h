@@ -32,9 +32,9 @@ namespace DenOfIz
         BitSet<ResourceUsage> OldState{ };
         BitSet<ResourceUsage> NewState{ };
 
-        bool     EnableQueueBarrier = false;
-        uint32_t SourceQueue;
-        uint32_t DestinationQueue;
+        bool      EnableQueueBarrier = false;
+        QueueType SourceQueue;
+        QueueType DestinationQueue;
 
         bool     EnableSubresourceBarrier = false;
         uint32_t MipLevel                 = 0;

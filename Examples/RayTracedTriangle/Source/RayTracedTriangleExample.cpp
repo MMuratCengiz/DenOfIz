@@ -56,7 +56,7 @@ void RayTracedTriangleExample::Init( )
 void RayTracedTriangleExample::Execute( const uint32_t frameIndex, ICommandList *commandList )
 {
     m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::UnorderedAccess ),
-                                                 NodeResourceUsageDesc::BufferState( 0, m_rayGenCBResource.get( ), ResourceUsage::VertexAndConstantBuffer ) } );
+                                                 NodeResourceUsageDesc::BufferState( frameIndex, m_rayGenCBResource.get( ), ResourceUsage::VertexAndConstantBuffer ) } );
 
     const Viewport &viewport = m_swapChain->GetViewport( );
 
@@ -117,7 +117,6 @@ void RayTracedTriangleExample::CreateRenderTargets( )
     textureDesc.Height       = m_windowDesc.Height;
     textureDesc.Format       = Format::B8G8R8A8Unorm;
     textureDesc.Descriptor   = BitSet( ResourceDescriptor::RWTexture );
-    textureDesc.InitialUsage = ResourceUsage::UnorderedAccess;
     textureDesc.Usages       = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::UnorderedAccess;
     for ( uint32_t i = 0; i < 3; ++i )
     {

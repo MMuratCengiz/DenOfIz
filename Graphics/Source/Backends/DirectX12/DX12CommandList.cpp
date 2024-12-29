@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Backends/DirectX12/DX12BarrierHelper.h>
 #include <DenOfIzGraphics/Backends/DirectX12/DX12CommandList.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h>
@@ -294,14 +295,7 @@ void DX12CommandList::SetRootConstants( const DX12RootConstant &rootConstant ) c
 
 void DX12CommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )
 {
-    if ( m_context->DX12Capabilities.EnhancedBarriers )
-    {
-        EnhancedPipelineBarrier( barrier );
-    }
-    else
-    {
-        CompatibilityPipelineBarrier( barrier );
-    }
+    DX12BarrierHelper::ExecuteResourceBarrier( m_context, m_commandList.get( ), m_desc.QueueType, barrier );
 }
 
 void DX12CommandList::DrawIndexed( const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance )
@@ -477,222 +471,6 @@ void DX12CommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
     m_commandList->DispatchRays( &desc );
 }
 
-void DX12CommandList::CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const
-{
-    std::vector<D3D12_RESOURCE_BARRIER> resourceBarriers;
-
-    const InteropArray<TextureBarrierDesc> &textureBarriers = barrier.GetTextureBarriers( );
-    const InteropArray<BufferBarrierDesc>  &bufferBarriers  = barrier.GetBufferBarriers( );
-
-    for ( int i = 0; i < textureBarriers.NumElements( ); i++ )
-    {
-        const TextureBarrierDesc   &textureBarrier  = textureBarriers.GetElement( i );
-        ID3D12Resource             *pResource       = dynamic_cast<DX12TextureResource *>( textureBarrier.Resource )->Resource( );
-        const D3D12_RESOURCE_STATES before          = DX12EnumConverter::ConvertResourceUsage( textureBarrier.OldState );
-        const D3D12_RESOURCE_STATES after           = DX12EnumConverter::ConvertResourceUsage( textureBarrier.NewState );
-        D3D12_RESOURCE_BARRIER      resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition( pResource, before, after );
-
-        if ( before != after )
-        {
-            resourceBarriers.push_back( resourceBarrier );
-        }
-    }
-
-    for ( int i = 0; i < bufferBarriers.NumElements( ); i++ )
-    {
-        const BufferBarrierDesc    &bufferBarrier   = bufferBarriers.GetElement( i );
-        ID3D12Resource             *pResource       = dynamic_cast<DX12BufferResource *>( bufferBarrier.Resource )->Resource( );
-        const D3D12_RESOURCE_STATES before          = DX12EnumConverter::ConvertResourceUsage( bufferBarrier.OldState );
-        const D3D12_RESOURCE_STATES after           = DX12EnumConverter::ConvertResourceUsage( bufferBarrier.NewState );
-        D3D12_RESOURCE_BARRIER      resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition( pResource, before, after );
-        if ( before != after )
-        {
-            resourceBarriers.push_back( resourceBarrier );
-        }
-    }
-
-    for ( int i = 0; i < barrier.GetMemoryBarriers( ).NumElements( ); i++ )
-    {
-        const MemoryBarrierDesc &memoryBarrier = barrier.GetMemoryBarriers( ).GetElement( i );
-
-        // Special Cases, Uav Barrier:
-        bool isUavBarrier = memoryBarrier.OldState.IsSet( ResourceUsage::AccelerationStructureWrite ) && memoryBarrier.NewState.IsSet( ResourceUsage::AccelerationStructureRead );
-        isUavBarrier |= memoryBarrier.OldState.IsSet( ResourceUsage::DepthWrite ) && memoryBarrier.NewState.IsSet( ResourceUsage::DepthRead );
-
-        ID3D12Resource *dx12Resource = nullptr;
-        if ( memoryBarrier.BufferResource != nullptr )
-        {
-            const auto *bufferResource = dynamic_cast<DX12BufferResource *>( memoryBarrier.BufferResource );
-            dx12Resource               = bufferResource->Resource( );
-        }
-        if ( memoryBarrier.TextureResource != nullptr )
-        {
-            const auto *textureResource = dynamic_cast<DX12TextureResource *>( memoryBarrier.TextureResource );
-            dx12Resource                = textureResource->Resource( );
-        }
-        if ( isUavBarrier )
-        {
-            D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::UAV( dx12Resource );
-            resourceBarriers.push_back( resourceBarrier );
-        }
-        else
-        {
-            const D3D12_RESOURCE_STATES before = DX12EnumConverter::ConvertResourceUsage( memoryBarrier.OldState );
-            const D3D12_RESOURCE_STATES after  = DX12EnumConverter::ConvertResourceUsage( memoryBarrier.NewState );
-
-            D3D12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition( dx12Resource, before, after );
-            resourceBarriers.push_back( resourceBarrier );
-        }
-    }
-
-    if ( !resourceBarriers.empty( ) )
-    {
-        m_commandList->ResourceBarrier( resourceBarriers.size( ), resourceBarriers.data( ) );
-    }
-}
-
-bool IsUAVState( const ResourceUsage state )
-{
-    return state == ResourceUsage::UnorderedAccess || state == ResourceUsage::AccelerationStructureWrite || state == ResourceUsage::AccelerationStructureRead;
-}
-
-void DX12CommandList::EnhancedPipelineBarrier( const PipelineBarrierDesc &barrier ) const
-{
-    std::vector<D3D12_BARRIER_GROUP> barrierGroups;
-
-    std::vector<D3D12_GLOBAL_BARRIER>  globalBarriers;
-    std::vector<D3D12_BUFFER_BARRIER>  bufferBarriers;
-    std::vector<D3D12_TEXTURE_BARRIER> textureBarriers;
-
-    bool needsGlobalSync = false;
-    for ( int i = 0; i < barrier.GetTextureBarriers( ).NumElements( ); i++ )
-    {
-        if ( const auto &textureBarrier = barrier.GetTextureBarriers( ).GetElement( i ); IsUAVState( textureBarrier.OldState ) || IsUAVState( textureBarrier.NewState ) )
-        {
-            needsGlobalSync = true;
-            break;
-        }
-    }
-
-    if ( needsGlobalSync )
-    {
-        D3D12_GLOBAL_BARRIER globalBarrier = { };
-        globalBarrier.SyncBefore           = D3D12_BARRIER_SYNC_ALL;
-        globalBarrier.SyncAfter            = D3D12_BARRIER_SYNC_ALL;
-        globalBarrier.AccessBefore         = D3D12_BARRIER_ACCESS_UNORDERED_ACCESS;
-        globalBarrier.AccessAfter          = D3D12_BARRIER_ACCESS_UNORDERED_ACCESS;
-        globalBarriers.push_back( globalBarrier );
-    }
-
-    for ( int i = 0; i < barrier.GetBufferBarriers( ).NumElements( ); i++ )
-    {
-        const auto     &bufferBarrier = barrier.GetBufferBarriers( ).GetElement( i );
-        ID3D12Resource *pResource     = dynamic_cast<DX12BufferResource *>( bufferBarrier.Resource )->Resource( );
-
-        D3D12_BUFFER_BARRIER dxBufferBarrier = { };
-        dxBufferBarrier.pResource            = pResource;
-        dxBufferBarrier.Offset               = 0;
-        dxBufferBarrier.Size                 = pResource->GetDesc( ).Width;
-        dxBufferBarrier.AccessBefore         = DX12EnumConverter::ConvertResourceStateToBarrierAccess( bufferBarrier.OldState, m_desc.QueueType );
-        dxBufferBarrier.AccessAfter          = DX12EnumConverter::ConvertResourceStateToBarrierAccess( bufferBarrier.NewState, m_desc.QueueType );
-        dxBufferBarrier.SyncBefore           = D3D12_BARRIER_SYNC_ALL;
-        dxBufferBarrier.SyncAfter            = D3D12_BARRIER_SYNC_ALL;
-
-        bufferBarriers.push_back( dxBufferBarrier );
-    }
-
-    for ( int i = 0; i < barrier.GetTextureBarriers( ).NumElements( ); i++ )
-    {
-        const auto     &textureBarrier = barrier.GetTextureBarriers( ).GetElement( i );
-        ID3D12Resource *pResource      = dynamic_cast<DX12TextureResource *>( textureBarrier.Resource )->Resource( );
-
-        D3D12_TEXTURE_BARRIER dxTextureBarrier             = { };
-        dxTextureBarrier.pResource                         = pResource;
-        dxTextureBarrier.Subresources.IndexOrFirstMipLevel = 0;
-        dxTextureBarrier.Subresources.NumMipLevels         = pResource->GetDesc( ).MipLevels;
-        dxTextureBarrier.Subresources.FirstArraySlice      = 0;
-        dxTextureBarrier.Subresources.NumArraySlices       = pResource->GetDesc( ).DepthOrArraySize;
-        dxTextureBarrier.Subresources.FirstPlane           = 0;
-        dxTextureBarrier.Subresources.NumPlanes            = 1;
-        dxTextureBarrier.LayoutBefore                      = DX12EnumConverter::ConvertResourceStateToBarrierLayout( textureBarrier.OldState, m_desc.QueueType, true );
-        dxTextureBarrier.LayoutAfter                       = DX12EnumConverter::ConvertResourceStateToBarrierLayout( textureBarrier.NewState, m_desc.QueueType, true );
-        dxTextureBarrier.AccessBefore                      = DX12EnumConverter::ConvertResourceStateToBarrierAccess( textureBarrier.OldState, m_desc.QueueType );
-        dxTextureBarrier.AccessAfter                       = DX12EnumConverter::ConvertResourceStateToBarrierAccess( textureBarrier.NewState, m_desc.QueueType );
-        dxTextureBarrier.SyncBefore                        = D3D12_BARRIER_SYNC_ALL;
-        dxTextureBarrier.SyncAfter                         = D3D12_BARRIER_SYNC_ALL;
-
-        textureBarriers.push_back( dxTextureBarrier );
-    }
-
-    for ( int i = 0; i < barrier.GetMemoryBarriers( ).NumElements( ); i++ )
-    {
-        const auto &memoryBarrier = barrier.GetMemoryBarriers( ).GetElement( i );
-        if ( memoryBarrier.BufferResource != nullptr )
-        {
-            ID3D12Resource      *pResource       = dynamic_cast<DX12BufferResource *>( memoryBarrier.BufferResource )->Resource( );
-            D3D12_BUFFER_BARRIER dxBufferBarrier = { };
-            dxBufferBarrier.pResource            = pResource;
-            dxBufferBarrier.Offset               = 0;
-            dxBufferBarrier.Size                 = pResource->GetDesc( ).Width;
-            dxBufferBarrier.AccessBefore         = DX12EnumConverter::ConvertResourceStateToBarrierAccess( memoryBarrier.OldState, m_desc.QueueType );
-            dxBufferBarrier.AccessAfter          = DX12EnumConverter::ConvertResourceStateToBarrierAccess( memoryBarrier.NewState, m_desc.QueueType );
-            dxBufferBarrier.SyncBefore           = D3D12_BARRIER_SYNC_ALL;
-            dxBufferBarrier.SyncAfter            = D3D12_BARRIER_SYNC_ALL;
-            bufferBarriers.push_back( dxBufferBarrier );
-        }
-
-        if ( memoryBarrier.TextureResource != nullptr )
-        {
-            ID3D12Resource       *pResource                    = dynamic_cast<DX12TextureResource *>( memoryBarrier.TextureResource )->Resource( );
-            D3D12_TEXTURE_BARRIER dxTextureBarrier             = { };
-            dxTextureBarrier.pResource                         = pResource;
-            dxTextureBarrier.Subresources.IndexOrFirstMipLevel = 0;
-            dxTextureBarrier.Subresources.NumMipLevels         = pResource->GetDesc( ).MipLevels;
-            dxTextureBarrier.Subresources.FirstArraySlice      = 0;
-            dxTextureBarrier.Subresources.NumArraySlices       = pResource->GetDesc( ).DepthOrArraySize;
-            dxTextureBarrier.Subresources.FirstPlane           = 0;
-            dxTextureBarrier.Subresources.NumPlanes            = 1;
-            dxTextureBarrier.LayoutBefore                      = DX12EnumConverter::ConvertResourceStateToBarrierLayout( memoryBarrier.OldState, m_desc.QueueType, true );
-            dxTextureBarrier.LayoutAfter                       = DX12EnumConverter::ConvertResourceStateToBarrierLayout( memoryBarrier.NewState, m_desc.QueueType, true );
-            dxTextureBarrier.AccessBefore                      = DX12EnumConverter::ConvertResourceStateToBarrierAccess( memoryBarrier.OldState, m_desc.QueueType );
-            dxTextureBarrier.AccessAfter                       = DX12EnumConverter::ConvertResourceStateToBarrierAccess( memoryBarrier.NewState, m_desc.QueueType );
-            dxTextureBarrier.SyncBefore                        = D3D12_BARRIER_SYNC_ALL;
-            dxTextureBarrier.SyncAfter                         = D3D12_BARRIER_SYNC_ALL;
-            textureBarriers.push_back( dxTextureBarrier );
-        }
-    }
-
-    if ( !globalBarriers.empty( ) )
-    {
-        D3D12_BARRIER_GROUP &group = barrierGroups.emplace_back( );
-        group.Type                 = D3D12_BARRIER_TYPE_GLOBAL;
-        group.NumBarriers          = globalBarriers.size( );
-        group.pGlobalBarriers      = globalBarriers.data( );
-        barrierGroups.push_back( group );
-    }
-
-    if ( !textureBarriers.empty( ) )
-    {
-        D3D12_BARRIER_GROUP &group = barrierGroups.emplace_back( );
-        group.Type                 = D3D12_BARRIER_TYPE_TEXTURE;
-        group.NumBarriers          = textureBarriers.size( );
-        group.pTextureBarriers     = textureBarriers.data( );
-    }
-
-    if ( !bufferBarriers.empty( ) )
-    {
-        D3D12_BARRIER_GROUP &group = barrierGroups.emplace_back( );
-        group.Type                 = D3D12_BARRIER_TYPE_BUFFER;
-        group.NumBarriers          = bufferBarriers.size( );
-        group.pBufferBarriers      = bufferBarriers.data( );
-    }
-
-    if ( !barrierGroups.empty( ) )
-    {
-        m_commandList->Barrier( barrierGroups.size( ), barrierGroups.data( ) );
-    }
-}
-
 void DX12CommandList::SetRootSignature( ID3D12RootSignature *rootSignature )
 {
     DZ_RETURN_IF( rootSignature == nullptr );
@@ -717,4 +495,9 @@ void DX12CommandList::SetRootSignature( ID3D12RootSignature *rootSignature )
         LOG( ERROR ) << "SetRootSignature is an invalid function for queue type";
         break;
     }
+}
+
+const QueueType DX12CommandList::GetQueueType( )
+{
+    return m_desc.QueueType;
 }

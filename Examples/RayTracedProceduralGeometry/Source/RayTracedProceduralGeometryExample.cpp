@@ -383,7 +383,6 @@ void RayTracedProceduralGeometryExample::CreateResources( )
         BufferDesc attributesDesc{ };
         attributesDesc.HeapType              = HeapType::CPU_GPU;
         attributesDesc.Descriptor            = BitSet( ResourceDescriptor::Buffer ) | ResourceDescriptor::StructuredBuffer;
-        attributesDesc.InitialUsage          = ResourceUsage::CopyDst;
         attributesDesc.Usages                = BitSet( ResourceUsage::CopyDst );
         attributesDesc.NumBytes              = sizeof( PrimitiveInstancePerFrameBuffer ) * IntersectionShaderType::TotalPrimitiveCount;
         attributesDesc.DebugName             = "AABB_Attributes_Buffer";

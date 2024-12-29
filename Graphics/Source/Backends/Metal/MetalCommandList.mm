@@ -622,3 +622,8 @@ void MetalCommandList::UseResource( const id<MTLResource> &resource, MTLResource
         break;
     }
 }
+
+const QueueType MetalCommandList::GetQueueType( )
+{
+    return m_desc.QueueType;
+}

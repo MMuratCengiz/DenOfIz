@@ -59,7 +59,7 @@ void VulkanPipelineBarrierHelper::ExecutePipelineBarrier( const VulkanContext *c
     for ( int i = 0; i < textureBarriers.NumElements( ); i++ )
     {
         const TextureBarrierDesc &imageBarrier       = textureBarriers.GetElement( i );
-        VkImageMemoryBarrier      imageMemoryBarrier = CreateImageBarrier( imageBarrier, srcAccessFlags, dstAccessFlags, commandQueueType );
+        VkImageMemoryBarrier      imageMemoryBarrier = CreateImageBarrier( context, imageBarrier, srcAccessFlags, dstAccessFlags, commandQueueType );
         vkImageBarriers.push_back( imageMemoryBarrier );
     }
 
@@ -91,8 +91,8 @@ void VulkanPipelineBarrierHelper::ExecutePipelineBarrier( const VulkanContext *c
                           vkBufferBarriers.data( ), vkImageBarriers.size( ), vkImageBarriers.data( ) );
 }
 
-VkImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier( const TextureBarrierDesc &barrier, VkAccessFlags &srcAccessFlags, VkAccessFlags &dstAccessFlags,
-                                                                      const QueueType queueType )
+VkImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier( const VulkanContext *context, const TextureBarrierDesc &barrier, VkAccessFlags &srcAccessFlags,
+                                                                      VkAccessFlags &dstAccessFlags, const QueueType queueType )
 {
     const VulkanTextureResource *imageResource = dynamic_cast<VulkanTextureResource *>( barrier.Resource );
     VkImageMemoryBarrier         imageMemoryBarrier{ };
@@ -121,11 +121,11 @@ VkImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier( const Text
     imageMemoryBarrier.subresourceRange.baseArrayLayer = barrier.EnableSubresourceBarrier ? barrier.ArrayLayer : 0;
     imageMemoryBarrier.subresourceRange.layerCount     = barrier.EnableSubresourceBarrier ? 1 : VK_REMAINING_ARRAY_LAYERS;
 
-    imageMemoryBarrier.srcQueueFamilyIndex = barrier.SourceQueue;
+    imageMemoryBarrier.srcQueueFamilyIndex = GetQueueFamilyIndex( context, barrier.SourceQueue );
     if ( barrier.EnableQueueBarrier && !barrier.OldState.IsSet( ResourceUsage::Undefined ) )
     {
-        imageMemoryBarrier.srcQueueFamilyIndex = barrier.SourceQueue;
-        imageMemoryBarrier.dstQueueFamilyIndex = barrier.DestinationQueue;
+        imageMemoryBarrier.srcQueueFamilyIndex = GetQueueFamilyIndex( context, barrier.SourceQueue );
+        imageMemoryBarrier.dstQueueFamilyIndex = GetQueueFamilyIndex( context, barrier.DestinationQueue );
     }
     else
     {
@@ -387,4 +387,21 @@ VkPipelineStageFlags VulkanPipelineBarrierHelper::GetPipelineStageFlags( const V
     }
 
     return flags;
+}
+
+uint32_t VulkanPipelineBarrierHelper::GetQueueFamilyIndex( const VulkanContext *context, QueueType queueType )
+{
+    switch ( queueType )
+    {
+    case QueueType::Graphics:
+        return context->QueueFamilies.at( VulkanQueueType::Graphics ).Index;
+    case QueueType::Copy:
+        return context->QueueFamilies.at( VulkanQueueType::Copy ).Index;
+    case QueueType::Compute:
+    case QueueType::RayTracing:
+        return context->QueueFamilies.at( VulkanQueueType::Compute ).Index;
+    }
+
+    LOG( WARNING ) << "Unknown queue type: " << static_cast<int>( queueType );
+    return VK_QUEUE_FAMILY_IGNORED;
 }

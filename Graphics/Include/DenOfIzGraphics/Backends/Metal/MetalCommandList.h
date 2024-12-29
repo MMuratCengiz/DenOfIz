@@ -89,6 +89,7 @@ namespace DenOfIz
         void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc ) override;
         void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
 
+        const QueueType GetQueueType( ) override;
     private:
         void BindTopLevelArgumentBuffer( );
         void TopLevelArgumentBufferNextOffset( );

@@ -59,6 +59,7 @@ namespace DenOfIz::RenderGraphInternal
 
     struct ResourceLockedState
     {
+        QueueType     Queue = QueueType::Graphics;
         ResourceUsage State = ResourceUsage::Undefined;
         std::mutex    Mutex;
     };
