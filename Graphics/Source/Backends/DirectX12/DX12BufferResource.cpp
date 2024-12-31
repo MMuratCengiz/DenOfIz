@@ -25,10 +25,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 typedef size_t i;
 using namespace DenOfIz;
 
-DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) : m_context( context ), m_desc( std::move( desc ) ), m_cpuHandle( { } ), m_cpuHandles( { } )
+DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) : m_context( context ), m_desc( std::move( desc ) ), m_cpuHandles( { } )
 {
-    m_stride                   = FormatNumBytes( m_desc.Format );
-    m_numBytes                 = Utilities::Align( m_desc.NumBytes, std::max<uint32_t>( m_desc.Alignment, D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT ) );
+    m_stride           = FormatNumBytes( m_desc.Format );
+    uint32_t alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+    if ( m_desc.Descriptor.Any( { ResourceDescriptor::UniformBuffer, ResourceDescriptor::Buffer, ResourceDescriptor::RWBuffer, ResourceDescriptor::StructuredBuffer } ) )
+    {
+        alignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
+    }
+    m_numBytes                 = Utilities::Align( m_desc.NumBytes, std::max<uint32_t>( m_desc.Alignment, alignment ) );
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
 
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWBuffer ) )
@@ -59,46 +64,36 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
     m_allocation->SetName( name.c_str( ) );
 }
 
-void DX12BufferResource::CreateDefaultView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle )
+void DX12BufferResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, const ResourceBindingType type )
 {
-    DZ_RETURN_IF( m_cpuHandle.ptr != 0 && m_cpuHandle.ptr == cpuHandle.ptr );
-    DZ_RETURN_IF( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) );
-
-    if ( m_desc.Descriptor.None( ) )
+    switch ( type )
     {
-        LOG( WARNING ) << "Unable to create buffer view for buffer without a descriptor.";
-        return;
-    }
-
-    // The views here are set explicitly in CommandList::BindVertexBuffer and CommandList::BindIndexBuffer
-    DZ_RETURN_IF( m_desc.Descriptor.Any( { ResourceDescriptor::VertexBuffer, ResourceDescriptor::IndexBuffer } ) );
-    m_cpuHandle = cpuHandle;
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::UniformBuffer ) )
-    {
-        CreateView( cpuHandle, DX12BufferViewType::ConstantBuffer );
-    }
-    else if ( m_desc.Descriptor.IsSet( ResourceDescriptor::AccelerationStructure ) )
-    {
-        CreateView( cpuHandle, DX12BufferViewType::AccelerationStructure );
-    }
-    else
-    {
-        if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWBuffer ) )
+    case ResourceBindingType::UnorderedAccess:
+        CreateView( cpuHandle, DX12BufferViewType::UnorderedAccess );
+        break;
+    case ResourceBindingType::ShaderResource:
+        // This shouldn't be necessary
+        if ( m_desc.Descriptor.IsSet( ResourceDescriptor::AccelerationStructure ) )
         {
-            CreateView( cpuHandle, DX12BufferViewType::UnorderedAccess );
+            CreateView( cpuHandle, DX12BufferViewType::AccelerationStructure );
         }
         else
         {
             CreateView( cpuHandle, DX12BufferViewType::ShaderResource );
         }
+        break;
+    case ResourceBindingType::ConstantBuffer:
+        CreateView( cpuHandle, DX12BufferViewType::ConstantBuffer );
+        break;
+    case ResourceBindingType::Sampler:
+        break;
     }
 }
 
 void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type )
 {
-    DZ_RETURN_IF( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) );
-
-    uint64_t stride = m_desc.BufferView.Stride;
+    // DZ_RETURN_IF( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) );
+    uint64_t stride = m_desc.StructureDesc.Stride;
 
     switch ( type )
     {
@@ -109,13 +104,21 @@ void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12
             desc.Format                          = DX12EnumConverter::ConvertFormat( m_desc.Format );
             desc.ViewDimension                   = D3D12_SRV_DIMENSION_BUFFER;
             desc.Shader4ComponentMapping         = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            desc.Buffer.FirstElement             = m_desc.BufferView.Offset;
-            if ( stride != 0 )
+            desc.Buffer.Flags                    = D3D12_BUFFER_SRV_FLAG_NONE;
+            desc.Buffer.FirstElement             = m_desc.StructureDesc.Offset;
+            if ( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) )
             {
-                desc.Buffer.NumElements         = m_numBytes / stride;
+                desc.Format                     = DXGI_FORMAT_UNKNOWN;
+                desc.Buffer.NumElements         = m_desc.StructureDesc.NumElements;
                 desc.Buffer.StructureByteStride = stride;
             }
-            desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+            else if ( m_desc.Format == Format::Undefined )
+            {
+                desc.Format                     = DXGI_FORMAT_R32_TYPELESS;
+                desc.Buffer.Flags               = D3D12_BUFFER_SRV_FLAG_RAW;
+                desc.Buffer.NumElements         = 1;
+                desc.Buffer.StructureByteStride = 0;
+            }
             m_context->D3DDevice->CreateShaderResourceView( m_resource.get( ), &desc, cpuHandle );
         }
         break;
@@ -124,7 +127,7 @@ void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12
             D3D12_UNORDERED_ACCESS_VIEW_DESC desc = { };
             desc.Format                           = DX12EnumConverter::ConvertFormat( m_desc.Format );
             desc.ViewDimension                    = D3D12_UAV_DIMENSION_BUFFER;
-            desc.Buffer.FirstElement              = m_desc.BufferView.Offset;
+            desc.Buffer.FirstElement              = m_desc.StructureDesc.Offset;
             if ( stride != 0 )
             {
                 desc.Buffer.NumElements         = m_numBytes / stride;
@@ -149,13 +152,12 @@ void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12
             desc.ViewDimension                            = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
             desc.Shader4ComponentMapping                  = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             desc.RaytracingAccelerationStructure.Location = m_allocation->GetResource( )->GetGPUVirtualAddress( );
-            m_context->D3DDevice->CreateShaderResourceView( nullptr, &desc, m_cpuHandle );
+            m_context->D3DDevice->CreateShaderResourceView( nullptr, &desc, cpuHandle );
         }
         break;
     }
     m_cpuHandles[ static_cast<int>( type ) ] = cpuHandle;
 }
-
 void *DX12BufferResource::MapMemory( )
 {
     DZ_ASSERTM( m_mappedMemory == nullptr, std::format( "Memory already mapped {}", m_desc.DebugName.Get( ) ) );

@@ -6,6 +6,7 @@
 // ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
 // IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
 // PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
+
 //
 //*********************************************************
 
@@ -86,7 +87,7 @@ float4 CalculatePhongLighting(in float4 albedo, in float3 normal, in bool isInSh
     float4 ambientColorMax = g_sceneCB.lightAmbientColor;
     float a = 1 - saturate(dot(normal, float3(0, -1, 0)));
     ambientColor = albedo * lerp(ambientColorMin, ambientColorMax, a);
-    
+
     return ambientColor + diffuseColor + specularColor;
 }
 
@@ -140,7 +141,7 @@ bool TraceShadowRayAndReportIfHit(in Ray ray, in UINT currentRayRecursionDepth)
     rayDesc.TMax = 10000;
 
     // Initialize shadow ray payload.
-    // Set the initial value to true since closest and any hit shaders are skipped. 
+    // Set the initial value to true since closest and any hit shaders are skipped.
     // Shadow miss shader, if called, will set it to false.
     ShadowRayPayload shadowPayload = { true };
     TraceRay(g_scene,
@@ -166,7 +167,7 @@ void MyRaygenShader()
 {
     // Generate a ray for a camera pixel corresponding to an index from the dispatched 2D grid.
     Ray ray = GenerateCameraRay(DispatchRaysIndex().xy, g_sceneCB.cameraPosition.xyz, g_sceneCB.projectionToWorld);
- 
+
     // Cast a ray into the scene and retrieve a shaded color.
     UINT currentRecursionDepth = 0;
     float4 color = TraceRadianceRay(ray, currentRecursionDepth);
@@ -194,7 +195,7 @@ void MyClosestHitShader_Triangle(inout RayPayload rayPayload, in BuiltInTriangle
     // Retrieve corresponding vertex normals for the triangle vertices.
     float3 triangleNormal = g_vertices[indices[0]].normal;
 
-    // PERFORMANCE TIP: it is recommended to avoid values carry over across TraceRay() calls. 
+    // PERFORMANCE TIP: it is recommended to avoid values carry over across TraceRay() calls.
     // Therefore, in cases like retrieving HitWorldPosition(), it is recomputed every time.
 
     // Shadow component.
@@ -231,7 +232,7 @@ void MyClosestHitShader_Triangle(inout RayPayload rayPayload, in BuiltInTriangle
 [shader("closesthit")]
 void MyClosestHitShader_AABB(inout RayPayload rayPayload, in ProceduralPrimitiveAttributes attr)
 {
-    // PERFORMANCE TIP: it is recommended to minimize values carry over across TraceRay() calls. 
+    // PERFORMANCE TIP: it is recommended to minimize values carry over across TraceRay() calls.
     // Therefore, in cases like retrieving HitWorldPosition(), it is recomputed every time.
 
     // Shadow component.
@@ -289,7 +290,7 @@ Ray GetRayInAABBPrimitiveLocalSpace()
 {
     PrimitiveInstancePerFrameBuffer attr = g_AABBPrimitiveAttributes[l_aabbCB.instanceIndex];
 
-    // Retrieve a ray origin position and direction in bottom level AS space 
+    // Retrieve a ray origin position and direction in bottom level AS space
     // and transform them into the AABB primitive's local space.
     Ray ray;
     ray.origin = mul(float4(ObjectRayOrigin(), 1), attr.bottomLevelASToLocalSpace).xyz;
@@ -320,7 +321,7 @@ void MyIntersectionShader_VolumetricPrimitive()
 {
     Ray localRay = GetRayInAABBPrimitiveLocalSpace();
     VolumetricPrimitive::Enum primitiveType = (VolumetricPrimitive::Enum) l_aabbCB.primitiveType;
-    
+
     float thit;
     ProceduralPrimitiveAttributes attr = (ProceduralPrimitiveAttributes)0;
     if (RayVolumetricGeometryIntersectionTest(localRay, primitiveType, thit, attr, g_sceneCB.elapsedTime))
@@ -346,7 +347,7 @@ void MyIntersectionShader_SignedDistancePrimitive()
         PrimitiveInstancePerFrameBuffer aabbAttribute = g_AABBPrimitiveAttributes[l_aabbCB.instanceIndex];
         attr.normal = mul(attr.normal, (float3x3) aabbAttribute.localSpaceToBottomLevelAS);
         attr.normal = normalize(mul((float3x3) ObjectToWorld3x4(), attr.normal));
-        
+
         ReportHit(thit, /*hitKind*/ 0, attr);
     }
 }

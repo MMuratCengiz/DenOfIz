@@ -23,9 +23,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct DZ_API BufferView
+    struct DZ_API StructuredBufferDesc
     {
         uint64_t Offset;
+        uint64_t NumElements;
         uint64_t Stride;
     };
 
@@ -33,7 +34,7 @@ namespace DenOfIz
     {
         uint32_t                   Alignment = 0; // None or Constants.BufferAlignment(Api Dependant)
         size_t                     NumBytes{ };
-        BufferView                 BufferView{ }; // For Structured Buffers
+        StructuredBufferDesc       StructureDesc{ }; // For Structured Buffers, set `ResourceDescriptor::StructuredBuffer`
         Format                     Format = Format::Undefined;
         BitSet<ResourceDescriptor> Descriptor;
         ResourceUsage              InitialUsage = ResourceUsage::Common; // Todo remove

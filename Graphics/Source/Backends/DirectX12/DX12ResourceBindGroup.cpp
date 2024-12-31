@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const ResourceBindGroupDesc &desc ) : m_desc( desc ), m_context( context )
+DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const ResourceBindGroupDesc &desc ) : m_context( context ), m_desc( desc )
 {
     const auto rootSignature = dynamic_cast<DX12RootSignature *>( desc.RootSignature );
     DZ_NOT_NULL( rootSignature );
@@ -166,7 +166,7 @@ void DX12ResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBuffer
     DZ_RETURN_IF( UpdateRootDescriptor( slot, dynamic_cast<DX12BufferResource *>( resource )->Resource( )->GetGPUVirtualAddress( ) ) );
 
     const uint32_t offset = m_dx12RootSignature->GetResourceOffset( slot );
-    reinterpret_cast<DX12BufferResource *>( resource )->CreateDefaultView( CpuHandleCbvSrvUav( offset ) );
+    reinterpret_cast<DX12BufferResource *>( resource )->CreateView( CpuHandleCbvSrvUav( offset ), slot.Type );
     m_cbvSrvUavCount++;
 }
 

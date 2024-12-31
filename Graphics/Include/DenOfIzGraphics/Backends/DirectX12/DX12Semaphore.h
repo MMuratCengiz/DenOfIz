@@ -26,17 +26,15 @@ namespace DenOfIz
 
     class DX12Semaphore final : public ISemaphore
     {
-        constexpr static UINT64   MAX_FENCE_VALUE = 1000000;
         DX12Context              *m_context;
         wil::com_ptr<ID3D12Fence> m_fence;
-        Wrappers::Event           m_fenceEvent;
-        UINT64                    m_fenceValue;
+        uint64_t                  m_fenceValue;
 
     public:
         explicit DX12Semaphore( DX12Context *context );
         [[nodiscard]] ID3D12Fence *GetFence( ) const;
+        [[nodiscard]] uint64_t     GetCurrentValue( ) const;
         ~DX12Semaphore( ) override;
-        void Wait( ) override;
         void Notify( ) override;
         void NotifyCommandQueue( ID3D12CommandQueue *commandQueue );
     };

@@ -27,8 +27,8 @@ namespace DenOfIz
     struct WindowDesc
     {
         const char *Title     = "DenOfIzExample";
-        uint32_t    Width     = 800;
-        uint32_t    Height    = 600;
+        uint32_t    Width     = 1280;
+        uint32_t    Height    = 720;
         bool        Resizable = false;
     };
     class IExample

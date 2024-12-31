@@ -35,7 +35,7 @@ namespace DenOfIz
 
     struct DZ_API MissBindingDesc
     {
-        int               RayTypeIndex = 0;
+        int               Offset = 0;
         InteropString     ShaderName;
         IShaderLocalData *Data = nullptr;
     };

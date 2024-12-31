@@ -22,89 +22,236 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DirectX;
 
 Camera::Camera( const float aspectRatio, const float fovY, const float nearZ, const float farZ ) :
-    m_position( XMVectorSet( 0.0f, 0.0f, -5.0f, 1.0f ) ), m_moveSpeed( 5.0f ), m_rotateSpeed( 2.5f ), m_yaw( -90.0f ), m_pitch( 0.0f )
+    m_position( XMVectorSet( 0.0f, 0.0f, -5.0f, 1.0f ) ), m_rotationQuaternion( XMQuaternionIdentity( ) ), m_targetPosition( XMVectorSet( 0.0f, 0.0f, -5.0f, 1.0f ) ),
+    m_targetRotationQuaternion( XMQuaternionIdentity( ) ), m_worldUp( XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f ) ), m_moveSpeed( DEFAULT_MOVE_SPEED ),
+    m_rotateSpeed( DEFAULT_ROTATE_SPEED ), m_sensitivity( DEFAULT_SENSITIVITY ), m_smoothFactor( DEFAULT_SMOOTH_FACTOR ), m_yaw( -90.0f ), m_pitch( 0.0f ), m_targetYaw( -90.0f ),
+    m_targetPitch( 0.0f ), m_firstMouse( true ), m_lastMouseX( 0 ), m_lastMouseY( 0 ), m_isOrbiting( false ), m_isDragging( false )
 {
-    m_worldUp          = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f );
-    m_front            = XMVectorSet( 0.0f, 0.0f, 1.0f, 0.0f );
-    m_right            = XMVector3Cross( m_worldUp, m_front );
-    m_up               = XMVector3Cross( m_right, m_front );
+    m_front = XMVectorSet( 0.0f, 0.0f, 1.0f, 0.0f );
+    m_right = XMVector3Normalize( XMVector3Cross( m_worldUp, m_front ) );
+    m_up    = XMVector3Cross( m_front, m_right );
+
     m_projectionMatrix = XMMatrixPerspectiveFovLH( fovY, aspectRatio, nearZ, farZ );
-    m_viewMatrix       = XMMatrixIdentity( );
     UpdateViewMatrix( );
 }
 
 void Camera::Update( const float deltaTime )
 {
-    const Uint8 *keyState    = SDL_GetKeyboardState( nullptr );
-    float        sensitivity = deltaTime * m_moveSpeed;
+    const Uint8 *keyState = SDL_GetKeyboardState( nullptr );
+    float        velocity = m_moveSpeed;
+
+    if ( keyState[ SDL_SCANCODE_LSHIFT ] )
+    {
+        velocity *= DEFAULT_SPRINT_MULTIPLIER;
+    }
+    velocity *= deltaTime;
+
+    XMVECTOR moveDirection = XMVectorZero( );
 
     if ( keyState[ SDL_SCANCODE_W ] )
     {
-        m_position = XMVectorAdd( m_position, XMVectorScale( m_front, sensitivity ) );
+        moveDirection = XMVectorAdd( moveDirection, m_front );
     }
     if ( keyState[ SDL_SCANCODE_S ] )
     {
-        m_position = XMVectorSubtract( m_position, XMVectorScale( m_front, sensitivity ) );
+        moveDirection = XMVectorSubtract( moveDirection, m_front );
     }
     if ( keyState[ SDL_SCANCODE_A ] )
     {
-        m_position = XMVectorSubtract( m_position, XMVectorScale( m_right, sensitivity ) );
+        moveDirection = XMVectorSubtract( moveDirection, m_right );
     }
     if ( keyState[ SDL_SCANCODE_D ] )
     {
-        m_position = XMVectorAdd( m_position, XMVectorScale( m_right, sensitivity ) );
+        moveDirection = XMVectorAdd( moveDirection, m_right );
     }
-    if ( keyState[ SDL_SCANCODE_R ] )
+    if ( keyState[ SDL_SCANCODE_E ] || keyState[ SDL_SCANCODE_SPACE ] )
     {
-        m_position = XMVectorAdd( m_position, XMVectorScale( m_up, sensitivity ) );
+        moveDirection = XMVectorAdd( moveDirection, m_worldUp );
     }
-    if ( keyState[ SDL_SCANCODE_F ] )
+    if ( keyState[ SDL_SCANCODE_Q ] || keyState[ SDL_SCANCODE_LCTRL ] )
     {
-        m_position = XMVectorSubtract( m_position, XMVectorScale( m_up, sensitivity ) );
+        moveDirection = XMVectorSubtract( moveDirection, m_worldUp );
     }
+
+    if ( !XMVector3Equal( moveDirection, XMVectorZero( ) ) )
+    {
+        moveDirection    = XMVector3Normalize( moveDirection );
+        m_targetPosition = XMVectorAdd( m_targetPosition, XMVectorScale( moveDirection, velocity ) );
+    }
+
+    m_position = XMVectorLerp( m_position, m_targetPosition, m_smoothFactor );
+
+    m_yaw   = m_yaw + ( m_targetYaw - m_yaw ) * m_smoothFactor;
+    m_pitch = m_pitch + ( m_targetPitch - m_pitch ) * m_smoothFactor;
+
+    const XMVECTOR newFront = XMVectorSet( cos( XMConvertToRadians( m_yaw ) ) * cos( XMConvertToRadians( m_pitch ) ), sin( XMConvertToRadians( m_pitch ) ),
+                                           sin( XMConvertToRadians( m_yaw ) ) * cos( XMConvertToRadians( m_pitch ) ), 0.0f );
+
+    m_front = XMVector3Normalize( newFront );
     UpdateViewMatrix( );
 }
 
 void Camera::HandleEvent( const SDL_Event &event )
 {
-    return;
-    if ( event.type == SDL_MOUSEMOTION )
+    switch ( event.type )
     {
-        int mouseX = event.motion.xrel;
-        int mouseY = event.motion.yrel;
-        DZ_RETURN_IF( mouseX == 0 && mouseY == 0 );
-        // mouseX = std::clamp( mouseX, -1, 1 );
-        // mouseY = std::clamp( mouseY, -1, 1 );
-        mouseX *= -1;
-        mouseY *= -1;
+    case SDL_MOUSEMOTION:
+        {
+            const int mouseX = event.motion.x;
+            const int mouseY = event.motion.y;
 
-        auto xOffset = static_cast<float>( mouseX );
-        auto yOffset = static_cast<float>( mouseY );
+            if ( m_firstMouse )
+            {
+                m_lastMouseX  = mouseX;
+                m_lastMouseY  = mouseY;
+                m_firstMouse  = false;
+                m_targetYaw   = m_yaw;
+                m_targetPitch = m_pitch;
+                return;
+            }
 
-        xOffset *= m_rotateSpeed;
-        yOffset *= m_rotateSpeed;
+            if ( SDL_GetMouseState( nullptr, nullptr ) & SDL_BUTTON( SDL_BUTTON_RIGHT ) || m_isOrbiting )
+            {
+                float xOffset = static_cast<float>( mouseX - m_lastMouseX );
+                float yOffset = static_cast<float>( m_lastMouseY - mouseY );
 
-        m_yaw += xOffset;
-        m_pitch += yOffset;
+                if ( abs( xOffset ) < 0.1f && abs( yOffset ) < 0.1f )
+                {
+                    m_lastMouseX = mouseX;
+                    m_lastMouseY = mouseY;
+                    return;
+                }
 
-        m_pitch                 = std::clamp( m_pitch, -89.0f, 89.0f );
-        const XMVECTOR newFront = XMVectorSet( cos( XMConvertToRadians( m_yaw ) ) * cos( XMConvertToRadians( m_pitch ) ), sin( XMConvertToRadians( m_pitch ) ),
-                                               sin( XMConvertToRadians( m_yaw ) ) * cos( XMConvertToRadians( m_pitch ) ), 0.0f );
+                xOffset *= m_sensitivity;
+                yOffset *= m_sensitivity;
 
-        m_front = XMVector3Normalize( newFront );
-        UpdateViewMatrix( );
+                xOffset = -xOffset;
+
+                m_targetYaw += xOffset * m_rotateSpeed;
+                m_targetPitch += yOffset * m_rotateSpeed;
+
+                m_targetPitch = std::clamp( m_targetPitch, MIN_PITCH, MAX_PITCH );
+            }
+
+            if ( SDL_GetMouseState( nullptr, nullptr ) & SDL_BUTTON( SDL_BUTTON_MIDDLE ) )
+            {
+                const float panX = static_cast<float>( mouseX - m_lastMouseX ) * m_sensitivity * 0.05f;
+                const float panY = static_cast<float>( mouseY - m_lastMouseY ) * m_sensitivity * 0.05f;
+
+                m_targetPosition = XMVectorAdd( m_targetPosition, XMVectorScale( m_right, -panX ) );
+                m_targetPosition = XMVectorAdd( m_targetPosition, XMVectorScale( m_up, panY ) );
+            }
+
+            m_lastMouseX = mouseX;
+            m_lastMouseY = mouseY;
+            break;
+        }
+
+    case SDL_MOUSEWHEEL:
+        {
+            const float zoomAmount = event.wheel.y * SCROLL_SENSITIVITY;
+            m_targetPosition       = XMVectorAdd( m_targetPosition, XMVectorScale( m_front, zoomAmount * m_moveSpeed ) );
+            break;
+        }
+
+    case SDL_MOUSEBUTTONDOWN:
+        {
+            if ( event.button.button == SDL_BUTTON_RIGHT )
+            {
+                SDL_SetRelativeMouseMode( SDL_TRUE );
+                m_lastMouseX = event.button.x;
+                m_lastMouseY = event.button.y;
+                m_firstMouse = true;
+            }
+            break;
+        }
+
+    case SDL_MOUSEBUTTONUP:
+        {
+            if ( event.button.button == SDL_BUTTON_RIGHT )
+            {
+                SDL_SetRelativeMouseMode( SDL_FALSE );
+                m_yaw   = m_targetYaw;
+                m_pitch = m_targetPitch;
+            }
+            break;
+        }
+
+    case SDL_KEYDOWN:
+        {
+            switch ( event.key.keysym.sym )
+            {
+            case SDLK_f:
+                if ( event.key.keysym.mod & KMOD_CTRL )
+                {
+                    ResetCamera( );
+                }
+                break;
+            case SDLK_SPACE:
+                if ( event.key.keysym.mod & KMOD_ALT )
+                {
+                    m_isOrbiting = !m_isOrbiting;
+                }
+                break;
+            default:
+                break;
+            }
+            break;
+        }
+    default:
+        break;
     }
+}
+
+void Camera::SetPosition( const XMVECTOR &position )
+{
+    m_position        = position;
+    m_targetPosition  = position;
+    m_defaultPosition = position;
+    UpdateViewMatrix( );
+}
+
+void Camera::SetFront( const XMVECTOR &front )
+{
+    m_front = XMVector3Normalize( front );
+
+    XMFLOAT3 frontFloat;
+    XMStoreFloat3( &frontFloat, m_front );
+
+    m_yaw   = XMConvertToDegrees( atan2f( frontFloat.z, frontFloat.x ) );
+    m_pitch = XMConvertToDegrees( asinf( frontFloat.y ) );
+
+    m_targetYaw   = m_yaw;
+    m_targetPitch = m_pitch;
+
+    m_defaultYaw   = m_yaw;
+    m_defaultPitch = m_pitch;
+
+    UpdateViewMatrix( );
 }
 
 void Camera::UpdateViewMatrix( )
 {
-    m_right      = XMVector3Normalize( XMVector3Cross( m_worldUp, m_front ) );
-    m_up         = XMVector3Cross( m_front, m_right );
-    m_viewMatrix = XMMatrixLookAtLH( m_position, XMVectorAdd( m_position, m_front ), m_up );
+    m_right = XMVector3Normalize( XMVector3Cross( m_worldUp, m_front ) );
+    m_up    = XMVector3Cross( m_front, m_right );
+
+    const XMVECTOR target = XMVectorAdd( m_position, m_front );
+    m_viewMatrix          = XMMatrixLookAtLH( m_position, target, m_up );
+}
+
+void Camera::ResetCamera( )
+{
+    m_targetPosition = m_defaultPosition;
+    m_targetYaw      = m_defaultYaw;
+    m_targetPitch    = m_defaultPitch;
+}
+
+XMVECTOR Camera::Position( ) const
+{
+    return m_position;
 }
 
 XMMATRIX Camera::ViewProjectionMatrix( ) const
 {
-    return XMMatrixMultiplyTranspose( m_viewMatrix, m_projectionMatrix );
-    //            return XMMatrixMultiplyTranspose( m_projectionMatrix, m_viewMatrix );
+    return XMMatrixMultiply( m_viewMatrix, m_projectionMatrix );
 }

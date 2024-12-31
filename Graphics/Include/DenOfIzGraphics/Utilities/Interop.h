@@ -177,12 +177,17 @@ namespace DenOfIz
             }
             m_numElements = numElements;
             m_array       = new T[ m_capacity ];
+            InitializeElements( m_array, 0, m_capacity );
         }
 
         ~InteropArray( )
         {
-            delete[] m_array;
-            m_array = nullptr;
+            if ( m_array != nullptr )
+            {
+                DestroyElements( m_array, m_numElements );
+                delete[] m_array;
+                m_array = nullptr;
+            }
         }
 
         InteropArray( const InteropArray &other )
@@ -243,8 +248,12 @@ namespace DenOfIz
 
         void Clear( )
         {
-            delete[] m_array;
-            m_array       = nullptr;
+            if ( m_array )
+            {
+                DestroyElements( m_array, m_numElements );
+                delete[] m_array;
+                m_array = nullptr;
+            }
             m_numElements = 0;
             m_capacity    = 0;
         }
@@ -333,14 +342,57 @@ namespace DenOfIz
                     m_capacity = ( m_capacity + 7 ) & ( ~7 );
                 }
                 T *newArray = new T[ m_capacity ];
-                MoveArray( m_array, newArray, m_numElements );
-                delete[] m_array;
+                if ( m_array )
+                {
+                    MoveArray( m_array, newArray, m_numElements );
+                    DestroyElements( m_array, m_numElements );
+                    delete[] m_array;
+                }
+
+                if ( size > m_numElements )
+                {
+                    InitializeElements( newArray, m_numElements, size );
+                }
                 m_array = newArray;
+            }
+            else if ( size > m_numElements )
+            {
+                InitializeElements( m_array, m_numElements, size );
+            }
+            else if ( size < m_numElements )
+            {
+                DestroyElements( m_array + size, m_numElements - size );
             }
             m_numElements = size;
         }
 
     private:
+        void InitializeElements( T *array, size_t start, const size_t end )
+        {
+            if constexpr ( std::is_trivially_default_constructible_v<T> )
+            {
+                std::memset( array + start, 0, ( end - start ) * sizeof( T ) );
+            }
+            else
+            {
+                for ( size_t i = start; i < end; ++i )
+                {
+                    new ( array + i ) T( );
+                }
+            }
+        }
+
+        void DestroyElements( T *array, const size_t count )
+        {
+            if constexpr ( !std::is_trivially_destructible_v<T> )
+            {
+                for ( size_t i = 0; i < count; ++i )
+                {
+                    array[ i ].~T( );
+                }
+            }
+        }
+
         void CopyArray( const T *src, T *dst, const size_t numElements )
         {
             std::copy( src, src + numElements, dst );
@@ -367,5 +419,12 @@ namespace DenOfIz
         }
     };
 
-    template class DZ_API InteropArray<InteropString>;
+    template <>
+    inline void InteropArray<InteropString>::InitializeElements( InteropString *array, size_t start, size_t end )
+    {
+        for ( size_t i = start; i < end; ++i )
+        {
+            new ( array + i ) InteropString( );
+        }
+    }
 } // namespace DenOfIz

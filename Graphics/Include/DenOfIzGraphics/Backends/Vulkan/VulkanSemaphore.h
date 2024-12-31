@@ -33,7 +33,7 @@ namespace DenOfIz
     public:
         explicit VulkanSemaphore( VulkanContext *context );
         ~VulkanSemaphore( ) override;
-        void Wait( ) override;
+        void Wait( ) /*todo remove*/;
         void Notify( ) override;
 
         [[nodiscard]] VkSemaphore GetSemaphore( ) const;

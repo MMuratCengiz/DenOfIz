@@ -85,8 +85,10 @@ void DX12CommandList::Execute( const ExecuteDesc &executeDesc )
 
     for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements( ); i++ )
     {
-        DX_CHECK_RESULT( m_commandQueue->Wait( dynamic_cast<DX12Semaphore *>( executeDesc.WaitOnSemaphores.GetElement( i ) )->GetFence( ), 1 ) );
+        const auto *dx12Semaphore = dynamic_cast<DX12Semaphore *>( executeDesc.WaitOnSemaphores.GetElement( i ) );
+        DX_CHECK_RESULT( m_commandQueue->Wait( dx12Semaphore->GetFence( ), dx12Semaphore->GetCurrentValue( ) ) );
     }
+
     m_commandQueue->ExecuteCommandLists( 1, CommandListCast( m_commandList.addressof( ) ) );
 
     for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements( ); i++ )

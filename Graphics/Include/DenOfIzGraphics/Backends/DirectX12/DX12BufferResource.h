@@ -40,7 +40,6 @@ namespace DenOfIz
         BufferDesc                                 m_desc;
         wil::com_ptr<ID3D12Resource2>              m_resource;
         wil::com_ptr<D3D12MA::Allocation>          m_allocation;
-        D3D12_CPU_DESCRIPTOR_HANDLE                m_cpuHandle;
         uint32_t                                   m_numBytes     = 0;
         const void                                *m_data         = nullptr;
         void                                      *m_mappedMemory = nullptr;
@@ -52,7 +51,7 @@ namespace DenOfIz
 
     public:
         DX12BufferResource( DX12Context *context, BufferDesc desc );
-        void CreateDefaultView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle );
+        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ResourceBindingType type );
         void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type );
 
         [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CPUHandle( DX12BufferViewType type ) const;

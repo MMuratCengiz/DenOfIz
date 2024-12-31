@@ -100,6 +100,16 @@ uint32_t DX12ShaderLocalDataLayout::CbvIndex( const uint32_t bindingIndex ) cons
     return m_bindingIndices[ CBV_INDEX ][ bindingIndex ];
 }
 
+uint32_t DX12ShaderLocalDataLayout::CbvOffset( uint32_t bindingIndex ) const
+{
+    uint32_t offset = 0;
+    for ( uint32_t i = 0; i < bindingIndex; i++ )
+    {
+        offset += m_cbvNumBytes[ i ];
+    }
+    return offset;
+}
+
 size_t DX12ShaderLocalDataLayout::CbvNumBytes( const uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_cbvNumBytes.size( ) )

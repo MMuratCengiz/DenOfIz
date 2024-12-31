@@ -45,7 +45,7 @@ void DX12ShaderLocalData::Cbv( const uint32_t binding, const InteropArray<Byte> 
         LOG( ERROR ) << "Bound data is not the same size as the expected data size: CBV(" << binding << "), expected aligned bytes: " << numBytes
                      << ", got aligned bytes: " << alignedNumBytes;
     }
-    memcpy( m_data.data( ) + m_layout->CbvIndex( binding ), data.Data( ), numBytes );
+    memcpy( m_data.data( ) + m_layout->CbvOffset( binding ), data.Data( ), numBytes );
 }
 
 void DX12ShaderLocalData::Srv( const uint32_t binding, const IBufferResource *bufferResource )

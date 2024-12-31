@@ -45,6 +45,7 @@ namespace DenOfIz
         DX12ShaderLocalDataLayout( DX12Context *context, const ShaderLocalDataLayoutDesc &desc );
         [[nodiscard]] ID3D12RootSignature *RootSignature( ) const;
         [[nodiscard]] uint32_t             CbvIndex( uint32_t bindingIndex ) const;
+        [[nodiscard]] uint32_t             CbvOffset( uint32_t bindingIndex ) const;
         [[nodiscard]] size_t               CbvNumBytes( uint32_t bindingIndex ) const;
         [[nodiscard]] uint32_t             SrvIndex( uint32_t bindingIndex ) const;
         [[nodiscard]] uint32_t             UavIndex( uint32_t bindingIndex ) const;

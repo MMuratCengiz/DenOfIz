@@ -39,45 +39,14 @@ void RayTracedProceduralGeometryExample::Init( )
     NodeDesc raytracingNode{ };
     raytracingNode.Name      = "RayTracing";
     raytracingNode.QueueType = QueueType::RayTracing;
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_raytracingOutput[ 0 ].get( ), ResourceUsage::UnorderedAccess ) );
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_raytracingOutput[ 1 ].get( ), ResourceUsage::UnorderedAccess ) );
-    raytracingNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceUsage::UnorderedAccess ) );
-    raytracingNode.Execute = this;
-
-    NodeDesc copyToRenderTargetNode{ };
-    copyToRenderTargetNode.Name = "CopyToRenderTarget";
-    copyToRenderTargetNode.QueueType = QueueType::Graphics;
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_raytracingOutput[ 0 ].get( ), ResourceUsage::CopySrc ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_raytracingOutput[ 1 ].get( ), ResourceUsage::CopySrc ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_raytracingOutput[ 2 ].get( ), ResourceUsage::CopySrc ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_swapChain->GetRenderTarget( 0 ), ResourceUsage::CopyDst ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_swapChain->GetRenderTarget( 1 ), ResourceUsage::CopyDst ) );
-    copyToRenderTargetNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_swapChain->GetRenderTarget( 2 ), ResourceUsage::CopyDst ) );
-    copyToRenderTargetNode.Dependencies.AddElement( "RayTracing" );
-
-    m_copyToPresentCallback = std::make_unique<NodeExecutionCallbackHolder>(
-        [ this ]( const uint32_t frameIndex, ICommandList *commandList )
-        {
-            CopyTextureRegionDesc copyTextureRegionDesc{ };
-            copyTextureRegionDesc.SrcTexture = m_raytracingOutput[ frameIndex ].get( );
-            copyTextureRegionDesc.DstTexture = m_swapChain->GetRenderTarget( frameIndex );
-            copyTextureRegionDesc.Width      = m_windowDesc.Width;
-            copyTextureRegionDesc.Height     = m_windowDesc.Height;
-            copyTextureRegionDesc.Depth      = 1;
-            commandList->CopyTextureRegion( copyTextureRegionDesc );
-        } );
-    copyToRenderTargetNode.Execute = m_copyToPresentCallback.get( );
+    raytracingNode.Execute   = this;
 
     PresentNodeDesc presentNode{ };
     presentNode.SwapChain = m_swapChain.get( );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_swapChain->GetRenderTarget( 0 ), ResourceUsage::Present ) );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_swapChain->GetRenderTarget( 1 ), ResourceUsage::Present ) );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_swapChain->GetRenderTarget( 2 ), ResourceUsage::Present ) );
-    presentNode.Dependencies.AddElement( "CopyToRenderTarget" );
+    presentNode.Dependencies.AddElement( "RayTracing" );
     presentNode.Execute = this;
 
     m_renderGraph->AddNode( raytracingNode );
-    m_renderGraph->AddNode( copyToRenderTargetNode );
     m_renderGraph->SetPresentNode( presentNode );
     m_renderGraph->BuildGraph( );
 
@@ -157,86 +126,102 @@ void RayTracedProceduralGeometryExample::HandleEvent( SDL_Event &event )
     default:;
     }
 
+    m_worldData.Camera->HandleEvent( event );
     IExample::HandleEvent( event );
 }
 
-void RayTracedProceduralGeometryExample::UpdateAABBPrimitiveAttributes( const float animationTime ) const
+void RayTracedProceduralGeometryExample::UpdateAABBPrimitiveAttributes( )
 {
     const XMMATRIX mIdentity = XMMatrixIdentity( );
     const XMMATRIX mScale15y = XMMatrixScaling( 1, 1.5f, 1 );
     const XMMATRIX mScale15  = XMMatrixScaling( 1.5f, 1.5f, 1.5f );
     const XMMATRIX mScale3   = XMMatrixScaling( 3, 3, 3 );
-    const XMMATRIX mRotation = XMMatrixRotationY( -2 * animationTime );
+    const XMMATRIX mRotation = XMMatrixRotationY( -2 * m_animateGeometryTime );
 
-    std::vector<PrimitiveInstancePerFrameBuffer> attributeData( IntersectionShaderType::TotalPrimitiveCount );
-    // Helper to convert matrix to transform array
-    auto AddTransform = [ &attributeData ]( const uint32_t index, const XMMATRIX &transform )
+    auto SetTransformForAABB = [ & ]( const UINT primitiveIndex, const XMMATRIX &mScale, const XMMATRIX &mRotation )
     {
-        PrimitiveInstancePerFrameBuffer &attr = attributeData[ index ];
-        XMStoreFloat4x4( reinterpret_cast<XMFLOAT4X4 *>( &attr.localSpaceToBottomLevelAS ), transform );
-        XMStoreFloat4x4( reinterpret_cast<XMFLOAT4X4 *>( &attr.bottomLevelASToLocalSpace ), XMMatrixInverse( nullptr, transform ) );
+        const XMVECTOR vTranslation = 0.5f * ( XMLoadFloat3( reinterpret_cast<XMFLOAT3 *>( &m_aabbs[ primitiveIndex ].MinX ) ) +
+                                               XMLoadFloat3( reinterpret_cast<XMFLOAT3 *>( &m_aabbs[ primitiveIndex ].MaxX ) ) );
+        const XMMATRIX mTranslation = XMMatrixTranslationFromVector( vTranslation );
+
+        const XMMATRIX mTransform                                                        = mScale * mRotation * mTranslation;
+        m_aabbPrimitiveAttributeBufferMemory[ primitiveIndex ].localSpaceToBottomLevelAS = mTransform;
+        m_aabbPrimitiveAttributeBufferMemory[ primitiveIndex ].bottomLevelASToLocalSpace = XMMatrixInverse( nullptr, mTransform );
     };
 
     UINT offset = 0;
-
     // Analytic primitives
     {
-        XMMATRIX transform = mScale15y * mIdentity;
-        AddTransform( offset + AnalyticPrimitive::AABB, transform );
-
-        transform = mScale15 * mRotation;
-        AddTransform( offset + AnalyticPrimitive::Spheres, transform );
+        SetTransformForAABB( offset + AnalyticPrimitive::AABB, mScale15y, mIdentity );
+        SetTransformForAABB( offset + AnalyticPrimitive::Spheres, mScale15, mRotation );
         offset += AnalyticPrimitive::Count;
     }
 
     // Volumetric primitives
     {
-        const XMMATRIX transform = mScale15 * mRotation;
-        AddTransform( offset + VolumetricPrimitive::MetaBalls, transform );
+        SetTransformForAABB( offset + VolumetricPrimitive::MetaBalls, mScale15, mRotation );
         offset += VolumetricPrimitive::Count;
     }
 
     // Signed distance primitives
     {
-        AddTransform( offset + SignedDistancePrimitive::MiniSpheres, mIdentity );
-        AddTransform( offset + SignedDistancePrimitive::IntersectedRoundCube, mIdentity );
-        AddTransform( offset + SignedDistancePrimitive::SquareTorus, mScale15 );
-        AddTransform( offset + SignedDistancePrimitive::TwistedTorus, mRotation );
-        AddTransform( offset + SignedDistancePrimitive::Cog, mRotation );
-        AddTransform( offset + SignedDistancePrimitive::Cylinder, mScale15y );
-        AddTransform( offset + SignedDistancePrimitive::FractalPyramid, mScale3 );
+        SetTransformForAABB( offset + SignedDistancePrimitive::MiniSpheres, mIdentity, mIdentity );
+        SetTransformForAABB( offset + SignedDistancePrimitive::IntersectedRoundCube, mIdentity, mIdentity );
+        SetTransformForAABB( offset + SignedDistancePrimitive::SquareTorus, mScale15, mIdentity );
+        SetTransformForAABB( offset + SignedDistancePrimitive::TwistedTorus, mIdentity, mRotation );
+        SetTransformForAABB( offset + SignedDistancePrimitive::Cog, mIdentity, mRotation );
+        SetTransformForAABB( offset + SignedDistancePrimitive::Cylinder, mScale15y, mIdentity );
+        SetTransformForAABB( offset + SignedDistancePrimitive::FractalPyramid, mScale3, mIdentity );
     }
-
-    memcpy( m_aabbPrimitiveAttributeBufferMemory, attributeData.data( ), sizeof( PrimitiveInstancePerFrameBuffer ) * IntersectionShaderType::TotalPrimitiveCount );
 }
 
 void RayTracedProceduralGeometryExample::Update( )
 {
     m_time.Tick( );
+    m_camera->Update( m_time.GetDeltaTime( ) );
+
     if ( m_animateGeometry )
     {
         m_animateGeometryTime += m_time.GetDeltaTime( );
-        UpdateAABBPrimitiveAttributes( m_animateGeometryTime );
+        UpdateAABBPrimitiveAttributes( );
     }
+
+    m_sceneConstants->cameraPosition    = m_camera->Position( );
+    m_sceneConstants->projectionToWorld = XMMatrixInverse( nullptr, m_camera->ViewProjectionMatrix( ) );
+    m_sceneConstants->elapsedTime       = 1.0f;
+
     m_renderGraph->Update( );
 }
 
 void RayTracedProceduralGeometryExample::Execute( const uint32_t frameIndex, ICommandList *commandList )
 {
+    m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::UnorderedAccess ) } );
+
+    const Viewport &viewport = m_swapChain->GetViewport( );
+
     commandList->BindPipeline( m_rayTracingPipeline.get( ) );
     commandList->BindResourceGroup( m_rayTracingBindGroups[ frameIndex ].get( ) );
 
     DispatchRaysDesc dispatchRaysDesc{ };
-    dispatchRaysDesc.Width              = m_windowDesc.Width;
-    dispatchRaysDesc.Height             = m_windowDesc.Height;
+    dispatchRaysDesc.Width              = viewport.Width;
+    dispatchRaysDesc.Height             = viewport.Height;
     dispatchRaysDesc.Depth              = 1;
     dispatchRaysDesc.ShaderBindingTable = m_shaderBindingTable.get( );
     commandList->DispatchRays( dispatchRaysDesc );
 }
 
-void RayTracedProceduralGeometryExample::Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget )
+void RayTracedProceduralGeometryExample::Execute( const uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget )
 {
-    // Not used
+    m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::CopySrc ),
+                                                 NodeResourceUsageDesc::TextureState( frameIndex, m_swapChain->GetRenderTarget( frameIndex ), ResourceUsage::CopyDst ) } );
+
+    CopyTextureRegionDesc copyTextureRegionDesc{ };
+    copyTextureRegionDesc.SrcTexture = m_raytracingOutput[ frameIndex ].get( );
+    copyTextureRegionDesc.DstTexture = m_swapChain->GetRenderTarget( frameIndex );
+    copyTextureRegionDesc.Width      = m_windowDesc.Width;
+    copyTextureRegionDesc.Height     = m_windowDesc.Height;
+    copyTextureRegionDesc.Depth      = 1;
+    commandList->CopyTextureRegion( copyTextureRegionDesc );
 }
 
 void RayTracedProceduralGeometryExample::CreateRenderTargets( )
@@ -259,16 +244,22 @@ void RayTracedProceduralGeometryExample::CreateRenderTargets( )
 void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
 {
     {
-        ASGeometryDesc aabbGeometryDesc{ };
-        aabbGeometryDesc.Type           = HitGroupType::AABBs;
-        aabbGeometryDesc.AABBs.Buffer   = m_aabbBuffer.get( );
-        aabbGeometryDesc.AABBs.Stride   = sizeof( D3D12_RAYTRACING_AABB );
-        aabbGeometryDesc.AABBs.NumAABBs = IntersectionShaderType::TotalPrimitiveCount;
-        aabbGeometryDesc.Flags          = GeometryFlags::Opaque;
-
         BottomLevelASDesc bottomLevelDesc{ };
         bottomLevelDesc.BuildFlags = ASBuildFlags::PreferFastTrace;
-        bottomLevelDesc.Geometries.AddElement( aabbGeometryDesc );
+
+        for ( UINT i = 0; i < IntersectionShaderType::TotalPrimitiveCount; i++ )
+        {
+            ASGeometryDesc aabbGeometryDesc{ };
+            aabbGeometryDesc.Type           = HitGroupType::AABBs;
+            aabbGeometryDesc.AABBs.Buffer   = m_aabbBuffer.get( );
+            aabbGeometryDesc.AABBs.Stride   = sizeof( D3D12_RAYTRACING_AABB );
+            aabbGeometryDesc.AABBs.NumAABBs = 1;
+            aabbGeometryDesc.AABBs.Offset   = i * sizeof( D3D12_RAYTRACING_AABB );
+            aabbGeometryDesc.Flags          = GeometryFlags::Opaque;
+
+            bottomLevelDesc.Geometries.AddElement( aabbGeometryDesc );
+        }
+
         m_aabbAS = std::unique_ptr<IBottomLevelAS>( m_logicalDevice->CreateBottomLevelAS( bottomLevelDesc ) );
     }
 
@@ -276,12 +267,12 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
         ASGeometryDesc triangleGeometryDesc{ };
         triangleGeometryDesc.Type                   = HitGroupType::Triangles;
         triangleGeometryDesc.Triangles.IndexBuffer  = m_indexBuffer.get( );
-        triangleGeometryDesc.Triangles.NumIndices   = 6; // Two triangles for plane
+        triangleGeometryDesc.Triangles.NumIndices   = 6;
         triangleGeometryDesc.Triangles.IndexType    = IndexType::Uint16;
         triangleGeometryDesc.Triangles.VertexFormat = Format::R32G32B32Float;
         triangleGeometryDesc.Triangles.VertexBuffer = m_vertexBuffer.get( );
-        triangleGeometryDesc.Triangles.VertexStride = sizeof( float ) * 3;
-        triangleGeometryDesc.Triangles.NumVertices  = 4; // Four vertices for plane
+        triangleGeometryDesc.Triangles.VertexStride = sizeof( Vertex );
+        triangleGeometryDesc.Triangles.NumVertices  = 4;
         triangleGeometryDesc.Flags                  = GeometryFlags::Opaque;
 
         BottomLevelASDesc bottomLevelDesc{ };
@@ -292,32 +283,44 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
 
     {
         ASInstanceDesc aabbInstanceDesc{ };
+        aabbInstanceDesc.Mask                        = 0x01;
         aabbInstanceDesc.BLAS                        = m_aabbAS.get( );
-        aabbInstanceDesc.ContributionToHitGroupIndex = 1;
+        aabbInstanceDesc.ContributionToHitGroupIndex = 2;
         aabbInstanceDesc.ID                          = 1;
         aabbInstanceDesc.Transform.Resize( 12 );
 
         aabbInstanceDesc.Transform.SetElement( 0, 1.0f );
         aabbInstanceDesc.Transform.SetElement( 5, 1.0f );
         aabbInstanceDesc.Transform.SetElement( 10, 1.0f );
+        // Move float:
+        aabbInstanceDesc.Transform.SetElement( 7, 1.0f );
 
         ASInstanceDesc triangleInstanceDesc{ };
+        triangleInstanceDesc.Mask                        = 0x01;
         triangleInstanceDesc.BLAS                        = m_triangleAS.get( );
         triangleInstanceDesc.ContributionToHitGroupIndex = 0;
         triangleInstanceDesc.ID                          = 0;
         triangleInstanceDesc.Transform.Resize( 12 );
 
-        float scale = 10.0f;
-        triangleInstanceDesc.Transform.SetElement( 0, scale );
-        triangleInstanceDesc.Transform.SetElement( 5, 1.0f );
-        triangleInstanceDesc.Transform.SetElement( 10, scale );
+        constexpr XMUINT3 NUM_AABB( 700, 1, 700 );
+        constexpr auto    fWidth = XMFLOAT3( NUM_AABB.x * c_aabbWidth + ( NUM_AABB.x - 1 ) * c_aabbDistance, NUM_AABB.y * c_aabbWidth + ( NUM_AABB.y - 1 ) * c_aabbDistance,
+                                             NUM_AABB.z * c_aabbWidth + ( NUM_AABB.z - 1 ) * c_aabbDistance );
 
-        triangleInstanceDesc.Transform.SetElement( 3, -scale / 2.0f );
-        triangleInstanceDesc.Transform.SetElement( 7, -1.0f );
-        triangleInstanceDesc.Transform.SetElement( 11, -scale / 2.0f );
+        XMFLOAT3       basePosition( fWidth.x * -0.35f, 0.0f, fWidth.z * -0.35f );
+        const XMVECTOR vBasePosition = XMLoadFloat3( &basePosition );
+        XMMATRIX       mScale        = XMMatrixScaling( fWidth.x, fWidth.y, fWidth.z );
+        XMMATRIX       mTranslation  = XMMatrixTranslationFromVector( vBasePosition );
+        XMMATRIX       mTransform    = mScale * mTranslation;
+
+        float transform[ 12 ];
+        XMStoreFloat3x4( reinterpret_cast<XMFLOAT3X4 *>( transform ), mTransform );
+        for ( int i = 0; i < 12; i++ )
+        {
+            triangleInstanceDesc.Transform.SetElement( i, transform[ i ] );
+        }
 
         TopLevelASDesc topLevelDesc{ };
-        topLevelDesc.BuildFlags = BitSet( ASBuildFlags::PreferFastTrace ) | ASBuildFlags::AllowUpdate;
+        topLevelDesc.BuildFlags = BitSet( ASBuildFlags::PreferFastTrace );
         topLevelDesc.Instances.AddElement( triangleInstanceDesc );
         topLevelDesc.Instances.AddElement( aabbInstanceDesc );
         m_topLevelAS = std::unique_ptr<ITopLevelAS>( m_logicalDevice->CreateTopLevelAS( topLevelDesc ) );
@@ -347,76 +350,72 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
 
 void RayTracedProceduralGeometryExample::CreateResources( )
 {
+    constexpr uint16_t indices[] = { 0, 1, 2, 0, 3, 1 };
+
+    constexpr Vertex vertices[] = { { { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
+                                    { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+                                    { { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+                                    { { 1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } } };
+
+    BufferDesc vbDesc{ };
+    vbDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer ); // These are not real vertex buffers
+    vbDesc.InitialUsage = ResourceUsage::CopyDst;
+    vbDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::AccelerationStructureGeometry;
+    vbDesc.NumBytes     = sizeof( vertices );
+    vbDesc.DebugName    = "Plane_VertexBuffer";
+    m_vertexBuffer      = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vbDesc ) );
+
+    BufferDesc ibDesc{ };
+    ibDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer ); // Not real index buffer
+    ibDesc.InitialUsage = ResourceUsage::CopyDst;
+    ibDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::AccelerationStructureGeometry;
+    ibDesc.NumBytes     = sizeof( indices );
+    ibDesc.DebugName    = "Plane_IndexBuffer";
+    m_indexBuffer       = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( ibDesc ) );
+
+    BufferDesc aabbDesc{ };
+    aabbDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer );
+    aabbDesc.InitialUsage = ResourceUsage::CopyDst;
+    aabbDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::AccelerationStructureGeometry;
+    aabbDesc.NumBytes     = sizeof( D3D12_RAYTRACING_AABB ) * IntersectionShaderType::TotalPrimitiveCount;
+    aabbDesc.DebugName    = "AABB_Buffer";
+    m_aabbBuffer          = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( aabbDesc ) );
+
+    BufferDesc attributesDesc{ };
+    attributesDesc.HeapType                  = HeapType::CPU_GPU;
+    attributesDesc.Descriptor                = BitSet( ResourceDescriptor::Buffer ) | ResourceDescriptor::StructuredBuffer;
+    attributesDesc.Usages                    = BitSet( ResourceUsage::CopyDst );
+    attributesDesc.NumBytes                  = sizeof( PrimitiveInstancePerFrameBuffer ) * IntersectionShaderType::TotalPrimitiveCount;
+    attributesDesc.StructureDesc.NumElements = IntersectionShaderType::TotalPrimitiveCount;
+    attributesDesc.StructureDesc.Stride      = sizeof( PrimitiveInstancePerFrameBuffer );
+    attributesDesc.DebugName                 = "AABB_Attributes_Buffer";
+    m_aabbPrimitiveAttributeBuffer           = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( attributesDesc ) );
+    m_aabbPrimitiveAttributeBufferMemory     = static_cast<PrimitiveInstancePerFrameBuffer *>( m_aabbPrimitiveAttributeBuffer->MapMemory( ) );
+
+    BatchResourceCopy batchResourceCopy( m_logicalDevice );
+    batchResourceCopy.Begin( );
+
+    for ( int i = 0; i < IntersectionShaderType::TotalPrimitiveCount; ++i )
     {
-        constexpr uint16_t indices[] = { 0, 1, 2, 2, 1, 3 };
-
-        struct Vertex
-        {
-            float x, y, z;
-        };
-        constexpr Vertex vertices[] = { { -1.0f, 0.0f, -1.0f }, { -1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, -1.0f }, { 1.0f, 0.0f, 1.0f } };
-
-        BufferDesc vbDesc{ };
-        vbDesc.Descriptor   = BitSet( ResourceDescriptor::VertexBuffer );
-        vbDesc.InitialUsage = ResourceUsage::CopyDst;
-        vbDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::VertexAndConstantBuffer | ResourceUsage::AccelerationStructureGeometry;
-        vbDesc.NumBytes     = sizeof( vertices );
-        vbDesc.DebugName    = "Plane_VertexBuffer";
-        m_vertexBuffer      = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vbDesc ) );
-
-        BufferDesc ibDesc{ };
-        ibDesc.Descriptor   = BitSet( ResourceDescriptor::IndexBuffer );
-        ibDesc.InitialUsage = ResourceUsage::CopyDst;
-        ibDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::IndexBuffer | ResourceUsage::AccelerationStructureGeometry;
-        ibDesc.NumBytes     = sizeof( indices );
-        ibDesc.DebugName    = "Plane_IndexBuffer";
-        m_indexBuffer       = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( ibDesc ) );
-
-        BufferDesc aabbDesc{ };
-        aabbDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer );
-        aabbDesc.InitialUsage = ResourceUsage::CopyDst;
-        aabbDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::AccelerationStructureGeometry;
-        aabbDesc.NumBytes     = sizeof( D3D12_RAYTRACING_AABB ) * IntersectionShaderType::TotalPrimitiveCount;
-        aabbDesc.DebugName    = "AABB_Buffer";
-        m_aabbBuffer          = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( aabbDesc ) );
-
-        BufferDesc attributesDesc{ };
-        attributesDesc.HeapType              = HeapType::CPU_GPU;
-        attributesDesc.Descriptor            = BitSet( ResourceDescriptor::Buffer ) | ResourceDescriptor::StructuredBuffer;
-        attributesDesc.Usages                = BitSet( ResourceUsage::CopyDst );
-        attributesDesc.NumBytes              = sizeof( PrimitiveInstancePerFrameBuffer ) * IntersectionShaderType::TotalPrimitiveCount;
-        attributesDesc.DebugName             = "AABB_Attributes_Buffer";
-        m_aabbPrimitiveAttributeBuffer       = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( attributesDesc ) );
-        m_aabbPrimitiveAttributeBufferMemory = m_aabbPrimitiveAttributeBuffer->MapMemory( );
-
-        BatchResourceCopy batchResourceCopy( m_logicalDevice );
-        batchResourceCopy.Begin( );
-
-        std::vector<PrimitiveInstancePerFrameBuffer> initialAttributes( IntersectionShaderType::TotalPrimitiveCount );
-        for ( auto &attr : initialAttributes )
-        {
-            XMStoreFloat4x4( reinterpret_cast<XMFLOAT4X4 *>( &attr.localSpaceToBottomLevelAS ), XMMatrixIdentity( ) );
-            XMStoreFloat4x4( reinterpret_cast<XMFLOAT4X4 *>( &attr.bottomLevelASToLocalSpace ), XMMatrixIdentity( ) );
-        }
-
-        memcpy( m_aabbPrimitiveAttributeBufferMemory, initialAttributes.data( ), sizeof( PrimitiveInstancePerFrameBuffer ) * IntersectionShaderType::TotalPrimitiveCount );
-
-        InteropArray<Byte> vertexArray( sizeof( vertices ) );
-        vertexArray.MemCpy( vertices, sizeof( vertices ) );
-        batchResourceCopy.CopyToGPUBuffer( { m_vertexBuffer.get( ), vertexArray } );
-
-        InteropArray<Byte> indexArray( sizeof( indices ) );
-        indexArray.MemCpy( indices, sizeof( indices ) );
-        batchResourceCopy.CopyToGPUBuffer( { m_indexBuffer.get( ), indexArray } );
-
-        InteropArray<Byte> aabbArray( sizeof( D3D12_RAYTRACING_AABB ) * m_aabbs.size( ) );
-        aabbArray.MemCpy( m_aabbs.data( ), sizeof( D3D12_RAYTRACING_AABB ) * m_aabbs.size( ) );
-        batchResourceCopy.CopyToGPUBuffer( { m_aabbBuffer.get( ), aabbArray } );
-
-        InitializeScene( batchResourceCopy );
-
-        batchResourceCopy.Submit( );
+        m_aabbPrimitiveAttributeBufferMemory[ i ].localSpaceToBottomLevelAS = XMMatrixIdentity( );
+        m_aabbPrimitiveAttributeBufferMemory[ i ].bottomLevelASToLocalSpace = XMMatrixIdentity( );
     }
+
+    InteropArray<Byte> vertexArray( sizeof( vertices ) );
+    vertexArray.MemCpy( vertices, sizeof( vertices ) );
+    batchResourceCopy.CopyToGPUBuffer( { m_vertexBuffer.get( ), vertexArray } );
+
+    InteropArray<Byte> indexArray( sizeof( indices ) );
+    indexArray.MemCpy( indices, sizeof( indices ) );
+    batchResourceCopy.CopyToGPUBuffer( { m_indexBuffer.get( ), indexArray } );
+
+    InteropArray<Byte> aabbArray( sizeof( D3D12_RAYTRACING_AABB ) * m_aabbs.size( ) );
+    aabbArray.MemCpy( m_aabbs.data( ), sizeof( D3D12_RAYTRACING_AABB ) * m_aabbs.size( ) );
+    batchResourceCopy.CopyToGPUBuffer( { m_aabbBuffer.get( ), aabbArray } );
+    batchResourceCopy.Submit( );
+
+    InitializeScene( );
+    UpdateAABBPrimitiveAttributes( );
 }
 
 void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
@@ -529,7 +528,7 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
     pipelineDesc.RayTracing.MaxNumPayloadBytes   = sizeof( RayPayload );
     pipelineDesc.RayTracing.MaxNumAttributeBytes = sizeof( ProceduralPrimitiveAttributes );
     pipelineDesc.RayTracing.HitGroups            = std::move( hitGroupDescs );
-    pipelineDesc.RayTracing.MaxRecursionDepth    = 3;
+    pipelineDesc.RayTracing.MaxRecursionDepth    = MAX_RAY_RECURSION_DEPTH;
     for ( uint32_t i = 0; i < m_shaderLocalDataLayouts.size( ); i++ )
     {
         pipelineDesc.RayTracing.ShaderLocalDataLayouts.AddElement( m_shaderLocalDataLayouts[ i ].get( ) );
@@ -559,7 +558,7 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
     }
 }
 
-void RayTracedProceduralGeometryExample::InitializeScene( BatchResourceCopy &batchResourceCopy )
+void RayTracedProceduralGeometryExample::InitializeScene( )
 {
     m_aabbTransformsPerFrame.resize( 3 );
     for ( int i = 0; i < 3; ++i )
@@ -588,6 +587,7 @@ void RayTracedProceduralGeometryExample::InitializeScene( BatchResourceCopy &bat
         mat.specularCoef             = specularCoefficient;
         mat.specularPower            = specularPower;
         mat.stepScale                = stepScale;
+        mat.padding                  = XMFLOAT3( 0.0f, 0.0f, 0.0f );
     };
 
     UINT offset = 0;
@@ -615,55 +615,50 @@ void RayTracedProceduralGeometryExample::InitializeScene( BatchResourceCopy &bat
         SetAttributes( offset + SignedDistancePrimitive::FractalPyramid, green, 0, 1, 0.1f, 4, 0.8f );
     }
 
-    // Setup scene constants
-    m_sceneConstants = SceneConstantBuffer{ .lightPosition     = XMVECTOR( { 0.0f, 18.0f, -20.0f, 0.0f } ),
-                                            .lightAmbientColor = XMVECTOR( { 0.25f, 0.25f, 0.25f, 1.0f } ),
-                                            .lightDiffuseColor = XMVECTOR( { 0.6f, 0.6f, 0.6f, 1.0f } ) };
-    // Setup Camera
-    m_eye                = XMVectorSet( 0.0f, 5.3f, -17.0f, 1.0f );
-    m_at                 = XMVectorSet( 0.0f, 0.0f, 0.0f, 1.0f );
-    const XMVECTOR right = XMVectorSet( 1.0f, 0.0f, 0.0f, 0.0f );
-
-    const XMVECTOR direction = XMVector4Normalize( m_at - m_eye );
-    m_up                     = XMVector3Normalize( XMVector3Cross( direction, right ) );
-
-    // Rotate camera around Y axis
-    const XMMATRIX rotate = XMMatrixRotationY( XMConvertToRadians( 45.0f ) );
-    m_eye                 = XMVector3Transform( m_eye, rotate );
-    m_up                  = XMVector3Transform( m_up, rotate );
-
-    UpdateCameraMatrices( );
     // Create scene constant buffer
     BufferDesc sceneBufferDesc{ };
+    sceneBufferDesc.HeapType     = HeapType::CPU_GPU;
     sceneBufferDesc.Descriptor   = ResourceDescriptor::UniformBuffer;
     sceneBufferDesc.NumBytes     = sizeof( SceneConstantBuffer );
     sceneBufferDesc.InitialUsage = ResourceUsage::CopyDst;
     sceneBufferDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::VertexAndConstantBuffer;
     sceneBufferDesc.DebugName    = "SceneConstantBuffer";
     m_sceneConstantBuffer        = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( sceneBufferDesc ) );
+    m_sceneConstants             = static_cast<SceneConstantBuffer *>( m_sceneConstantBuffer->MapMemory( ) );
 
-    // Copy scene constants
-    InteropArray<Byte> sceneData( sizeof( SceneConstantBuffer ) );
-    sceneData.MemCpy( &m_sceneConstants, sizeof( SceneConstantBuffer ) );
-    batchResourceCopy.CopyToGPUBuffer( { m_sceneConstantBuffer.get( ), sceneData } );
+    XMFLOAT4 lightPosition;
+    XMFLOAT4 lightAmbientColor;
+    XMFLOAT4 lightDiffuseColor;
+
+    lightPosition                   = XMFLOAT4( 0.0f, 18.0f, -20.0f, 0.0f );
+    m_sceneConstants->lightPosition = XMLoadFloat4( &lightPosition );
+
+    lightAmbientColor                   = XMFLOAT4( 0.25f, 0.25f, 0.25f, 1.0f );
+    m_sceneConstants->lightAmbientColor = XMLoadFloat4( &lightAmbientColor );
+
+    constexpr float diffuse             = 0.6f;
+    lightDiffuseColor                   = XMFLOAT4( diffuse, diffuse, diffuse, 1.0f );
+    m_sceneConstants->lightDiffuseColor = XMLoadFloat4( &lightDiffuseColor );
+
+    InitCamera( );
 }
 
-void RayTracedProceduralGeometryExample::UpdateCameraMatrices( )
+void RayTracedProceduralGeometryExample::InitCamera( ) const
 {
-    // Update camera matrices in scene constant buffer
-    m_sceneConstants.cameraPosition = m_eye;
+    auto           eye    = XMVectorSet( 0.0f, 5.3f, -17.0f, 1.0f );
+    const XMMATRIX rotate = XMMatrixRotationY( XMConvertToRadians( 45.0f ) );
+    eye                   = XMVector3Transform( eye, rotate );
 
-    constexpr float fovAngleY = 45.0f;
-    const XMMATRIX  view      = XMMatrixLookAtLH( m_eye, m_at, m_up );
-    const XMMATRIX  proj =
-        XMMatrixPerspectiveFovLH( XMConvertToRadians( fovAngleY ), static_cast<float>( m_windowDesc.Width ) / static_cast<float>( m_windowDesc.Height ), 0.01f, 125.0f );
-    const XMMATRIX viewProj            = view * proj;
-    m_sceneConstants.projectionToWorld = XMMatrixInverse( nullptr, viewProj );
+    m_camera->SetPosition( eye );
+    m_camera->SetFront( { 0.67f, -0.29f, 0.67f, 0.0f } );
+
+    m_sceneConstants->cameraPosition    = m_camera->Position( );
+    m_sceneConstants->projectionToWorld = XMMatrixInverse( nullptr, m_camera->ViewProjectionMatrix( ) );
 }
 
 void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
 {
-    uint32_t numHitGroups = RayType::Count; // Num Triangles HitGroups
+    uint32_t numHitGroups = RayType::Count;
 
     for ( uint32_t shaderType = 0; shaderType < IntersectionShaderType::Count; shaderType++ )
     {
@@ -691,6 +686,7 @@ void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
 
         MissBindingDesc shadowMissDesc{ };
         shadowMissDesc.ShaderName = "MyMissShader_ShadowRay";
+        shadowMissDesc.Offset     = 1;
         m_shaderBindingTable->BindMissShader( shadowMissDesc );
     }
 
@@ -759,4 +755,6 @@ RayTracedProceduralGeometryExample::~RayTracedProceduralGeometryExample( )
 {
     m_aabbPrimitiveAttributeBuffer->UnmapMemory( );
     m_aabbPrimitiveAttributeBufferMemory = nullptr;
+    m_sceneConstantBuffer->UnmapMemory( );
+    m_sceneConstants = nullptr;
 }

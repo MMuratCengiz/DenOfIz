@@ -134,6 +134,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     arguments.push_back( L"-T" );
     std::wstring wsTargetProfile( targetProfile.begin( ), targetProfile.end( ) );
     arguments.push_back( wsTargetProfile.c_str( ) );
+    arguments.push_back(L"-Zpr");  // Row-major packing
     if ( compileDesc.TargetIL == TargetIL::SPIRV )
     {
         arguments.push_back( L"-spirv" );
@@ -169,6 +170,8 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
             arguments.push_back( VkShiftSamplerWs.c_str( ) );
             arguments.push_back( L"all" );
         }
+
+        arguments.push_back(L"-fvk-use-dx-position-w");
     }
     for ( int i = 0; i < compileDesc.Defines.NumElements( ); ++i )
     {

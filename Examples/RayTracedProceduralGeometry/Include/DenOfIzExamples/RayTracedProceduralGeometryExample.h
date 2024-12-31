@@ -74,60 +74,28 @@ namespace DenOfIz
     static constexpr float c_aabbWidth    = 1.0f;
     static constexpr float c_aabbDistance = 1.0f;
 
-    struct RayGenConstantBuffer
-    {
-        XMFLOAT4 viewport;
-        XMFLOAT4 stencil;
-    };
-
-    struct PrimitiveInstanceConstantBuffer
-    {
-        uint32_t instanceIndex;
-        uint32_t primitiveType;
-    };
-
-    struct PrimitiveConstantBuffer
-    {
-        XMFLOAT4 albedo;
-        float    reflectanceCoef;
-        float    diffuseCoef;
-        float    specularCoef;
-        float    specularPower;
-        float    stepScale;
-
-        XMFLOAT3 padding;
-    };
-
-    struct ProceduralPrimitiveAttributes
-    {
-        XMFLOAT3 normal;
-    };
-
     class RayTracedProceduralGeometryExample final : public IExample, public NodeExecutionCallback, public PresentExecutionCallback
     {
-        std::unique_ptr<RenderGraph>                 m_renderGraph;
-        std::unique_ptr<ICommandListPool>            m_commandListPool;
-        std::unique_ptr<NodeExecutionCallbackHolder> m_copyToPresentCallback;
+        static constexpr UINT  NUM_BLAS       = 2;
+        static constexpr float c_aabbWidth    = 2.0f;
+        static constexpr float c_aabbDistance = 2.0f;
+
+        std::unique_ptr<RenderGraph>      m_renderGraph;
+        std::unique_ptr<ICommandListPool> m_commandListPool;
 
         // Ray tracing resources
         std::unique_ptr<ITextureResource> m_raytracingOutput[ 3 ];
         std::unique_ptr<IBufferResource>  m_vertexBuffer;
         std::unique_ptr<IBufferResource>  m_indexBuffer;
         std::unique_ptr<IBufferResource>  m_aabbBuffer;
-        std::unique_ptr<IBufferResource>  m_rayGenCBResource;
         std::unique_ptr<IBufferResource>  m_aabbPrimitiveAttributeBuffer;
-        void                             *m_aabbPrimitiveAttributeBufferMemory = nullptr;
+        PrimitiveInstancePerFrameBuffer  *m_aabbPrimitiveAttributeBufferMemory = nullptr;
         // Scene
         PrimitiveConstantBuffer                        m_planeMaterialCB{ };
-        PrimitiveConstantBuffer                        m_aabbMaterialCB[ IntersectionShaderType::TotalPrimitiveCount ] = { };
         std::vector<PrimitiveConstantBuffer>           m_aabbMaterials;
-        SceneConstantBuffer                            m_sceneConstants{ };
         std::unique_ptr<IBufferResource>               m_sceneConstantBuffer;
+        SceneConstantBuffer                           *m_sceneConstants = nullptr;
         std::vector<InteropArray<InteropArray<float>>> m_aabbTransformsPerFrame;
-        // Camera:
-        XMVECTOR m_eye{ };
-        XMVECTOR m_at{ };
-        XMVECTOR m_up{ };
 
         // Acceleration Structures
         std::unique_ptr<IBottomLevelAS> m_triangleAS;
@@ -148,18 +116,17 @@ namespace DenOfIz
         std::unique_ptr<IShaderLocalData>                    m_hitGroupData;
 
         // Constants and state
-        RayGenConstantBuffer               m_rayGenCB{ };
         std::vector<D3D12_RAYTRACING_AABB> m_aabbs;
         Time                               m_time;
-        float                              m_animateGeometryTime = 0.0f;
+        double                             m_animateGeometryTime = 1.0f;
         bool                               m_animateGeometry     = true;
 
         void CreateRenderTargets( );
         void CreateResources( );
         void CreateAccelerationStructures( );
         void CreateRayTracingPipeline( );
-        void InitializeScene( BatchResourceCopy &batchResourceCopy );
-        void UpdateCameraMatrices( );
+        void InitializeScene( );
+        void InitCamera( ) const;
         void CreateShaderBindingTable( );
         void BuildProceduralGeometryAABBs( );
 
@@ -170,7 +137,7 @@ namespace DenOfIz
         void Execute( uint32_t frameIndex, ICommandList *commandList ) override;
         void Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget ) override;
         void HandleEvent( SDL_Event &event ) override;
-        void UpdateAABBPrimitiveAttributes( float animationTime ) const;
+        void UpdateAABBPrimitiveAttributes( );
         ~RayTracedProceduralGeometryExample( ) override;
     };
 } // namespace DenOfIz

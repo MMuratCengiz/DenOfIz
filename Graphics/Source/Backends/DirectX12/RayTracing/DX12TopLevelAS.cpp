@@ -68,9 +68,9 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
     bufferDesc.InitialUsage = ResourceUsage::AccelerationStructureWrite;
     bufferDesc.DebugName    = "Top Level Acceleration Structure Buffer";
 
-    m_buffer      = std::make_unique<DX12BufferResource>( m_context, bufferDesc );
+    m_buffer = std::make_unique<DX12BufferResource>( m_context, bufferDesc );
     m_asSrvHandle = m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetNextHandle( ).Cpu;
-    m_buffer->CreateDefaultView( m_asSrvHandle );
+    m_buffer->CreateView( m_asSrvHandle, DX12BufferViewType::AccelerationStructure );
 
     BufferDesc scratchBufferDesc   = { };
     scratchBufferDesc.HeapType     = HeapType::GPU;

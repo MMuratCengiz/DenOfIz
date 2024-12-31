@@ -120,7 +120,7 @@ void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
 
 void DX12ShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 {
-    const uint32_t offset           = m_missGroupOffset + desc.RayTypeIndex * m_missNumBytes;
+    const uint32_t offset           = m_missGroupOffset + desc.Offset * m_missNumBytes;
     void          *missShaderEntry  = static_cast<Byte *>( m_mappedMemory ) + offset;
     const void    *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
     memcpy( missShaderEntry, shaderIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );

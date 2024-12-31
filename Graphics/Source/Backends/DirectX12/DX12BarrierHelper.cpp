@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/DirectX12/DX12BufferResource.h>
 #include <DenOfIzGraphics/Backends/DirectX12/DX12EnumConverter.h>
 #include <DenOfIzGraphics/Backends/DirectX12/DX12TextureResource.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
 
 using namespace DenOfIz;
 
@@ -263,7 +264,7 @@ void DX12BarrierHelper::ExecuteEnhancedResourceBarrier( ID3D12GraphicsCommandLis
         if ( memoryBarrier.BottomLevelAS != nullptr )
         {
             D3D12_BUFFER_BARRIER dxBufferBarrier = { };
-            dxBufferBarrier.pResource            = dynamic_cast<DX12BufferResource *>( memoryBarrier.BottomLevelAS )->Resource( );
+            dxBufferBarrier.pResource            = dynamic_cast<DX12BottomLevelAS *>( memoryBarrier.BottomLevelAS )->Buffer( )->Resource( );
             dxBufferBarrier.Offset               = 0;
             dxBufferBarrier.Size                 = dxBufferBarrier.pResource->GetDesc( ).Width;
 
@@ -271,8 +272,8 @@ void DX12BarrierHelper::ExecuteEnhancedResourceBarrier( ID3D12GraphicsCommandLis
             {
                 dxBufferBarrier.AccessBefore = D3D12_BARRIER_ACCESS_RAYTRACING_ACCELERATION_STRUCTURE_WRITE;
                 dxBufferBarrier.AccessAfter  = D3D12_BARRIER_ACCESS_RAYTRACING_ACCELERATION_STRUCTURE_READ;
-                dxBufferBarrier.SyncBefore   = D3D12_BARRIER_SYNC_RAYTRACING;
-                dxBufferBarrier.SyncAfter    = D3D12_BARRIER_SYNC_RAYTRACING;
+                dxBufferBarrier.SyncBefore   = D3D12_BARRIER_SYNC_BUILD_RAYTRACING_ACCELERATION_STRUCTURE;
+                dxBufferBarrier.SyncAfter    = D3D12_BARRIER_SYNC_BUILD_RAYTRACING_ACCELERATION_STRUCTURE;
             }
             else
             {

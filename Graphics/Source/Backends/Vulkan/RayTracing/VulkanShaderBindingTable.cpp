@@ -121,7 +121,7 @@ void VulkanShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
 
 void VulkanShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 {
-    const uint32_t offset           = m_missGroupOffset + desc.RayTypeIndex * m_missGroupNumBytes;
+    const uint32_t offset           = m_missGroupOffset + desc.Offset * m_missGroupNumBytes;
     void          *missShaderEntry  = static_cast<uint8_t *>( m_mappedMemory ) + offset;
     const void    *shaderIdentifier = m_pipeline->GetShaderIdentifier( desc.ShaderName.Get( ) );
 

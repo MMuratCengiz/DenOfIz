@@ -48,7 +48,7 @@ void BasicCompute( const GraphicsApi &gApi )
     BufferDesc bufferDesc{ };
     bufferDesc.Descriptor                   = ResourceDescriptor::RWBuffer;
     bufferDesc.NumBytes                     = 1024 * sizeof( float );
-    bufferDesc.BufferView.Stride            = sizeof( float );
+    bufferDesc.StructureDesc.Stride            = sizeof( float );
     bufferDesc.HeapType                     = HeapType::GPU;
     bufferDesc.InitialUsage                 = ResourceUsage::UnorderedAccess;
     std::unique_ptr<IBufferResource> buffer = std::unique_ptr<IBufferResource>( logicalDevice->CreateBufferResource( bufferDesc ) );

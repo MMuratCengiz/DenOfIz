@@ -305,7 +305,6 @@ void RenderGraph::BuildTaskflow( )
                                             ICommandList                               *&commandList = context->CommandList;
 
                                             commandList->Begin( );
-                                            IssueBarriers( commandList, context->ResourceUsagesPerFrame );
                                             context->Execute->Execute( frame, commandList );
 
                                             ExecuteDesc executeDesc{ };
@@ -338,7 +337,7 @@ void RenderGraph::BuildTaskflow( )
                 const uint32_t  image              = m_presentNode.SwapChain->AcquireNextImage( presentContext.ImageReadySemaphore.get( ) );
                 ICommandList  *&presentCommandList = presentContext.PresentCommandList;
                 presentCommandList->Begin( );
-                IssueBarriers( presentCommandList, presentContext.ResourceUsagesPerFrame );
+
                 ITextureResource *swapChainRenderTarget = m_presentNode.SwapChain->GetRenderTarget( image );
 
                 IssueBarrier( presentCommandList, NodeResourceUsageDesc::TextureState( frame, swapChainRenderTarget, ResourceUsage::RenderTarget ) );
