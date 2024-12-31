@@ -113,23 +113,13 @@ void VulkanPipeline::CreateRayTracingPipeline( )
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups;
     shaderGroups.reserve( m_desc.ShaderProgram->CompiledShaders( ).NumElements( ) );
 
-    struct HitGroupInfo
-    {
-        uint32_t                              shaderIndex;
-        uint32_t                              closestHitShader   = VK_SHADER_UNUSED_KHR;
-        uint32_t                              anyHitShader       = VK_SHADER_UNUSED_KHR;
-        uint32_t                              intersectionShader = VK_SHADER_UNUSED_KHR;
-        VkRayTracingShaderGroupTypeKHR        type               = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
-        VkRayTracingShaderGroupCreateInfoKHR *createInfo;
-    };
-    std::unordered_map<std::string, HitGroupInfo> hitGroups;
-
     std::vector<VkDescriptorSetLayout> allLayouts;
     auto                               rootSig        = dynamic_cast<VulkanRootSignature *>( m_desc.RootSignature );
     auto                               rootSigLayouts = rootSig->DescriptorSetLayouts( );
     allLayouts.insert( allLayouts.end( ), rootSigLayouts.begin( ), rootSigLayouts.end( ) );
 
     const InteropArray<CompiledShader *> &compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
+    std::unordered_map<int32_t, uint32_t> shaderIndexMap;
     for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
     {
         const auto           &compiledShader = compiledShaders.GetElement( i );
@@ -180,56 +170,39 @@ void VulkanPipeline::CreateRayTracingPipeline( )
         shaderStage.pName                            = compiledShader->EntryPoint.Get( );
 
         const uint32_t shaderIndex = shaderStages.size( ) - 1;
+        shaderIndexMap[ i ]        = shaderIndex;
 
-        if ( !compiledShader->RayTracing.HitGroupExport.IsEmpty( ) )
-        {
-            std::string hitGroupName = compiledShader->RayTracing.HitGroupExport.Get( );
-            auto       &hitGroup     = hitGroups[ hitGroupName ];
-
-            switch ( compiledShader->Stage )
-            {
-            case ShaderStage::ClosestHit:
-                hitGroup.closestHitShader = shaderIndex;
-                hitGroup.createInfo       = &shaderGroups.emplace_back( );
-                m_hitGroupIdentifiers.push_back( std::make_pair( compiledShader->Stage, shaderIndex ) );
-                m_shaderIdentifierOffsets[ hitGroupName ] = shaderIndex * m_context->RayTracingProperties.shaderGroupHandleSize;
-                break;
-            case ShaderStage::AnyHit:
-                hitGroup.anyHitShader = shaderIndex;
-                m_hitGroupIdentifiers.push_back( std::make_pair( compiledShader->Stage, shaderIndex ) );
-                break;
-            case ShaderStage::Intersection:
-                hitGroup.intersectionShader = shaderIndex;
-                hitGroup.type               = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
-                m_hitGroupIdentifiers.push_back( std::make_pair( compiledShader->Stage, shaderIndex ) );
-                break;
-            default:
-                break;
-            }
-        }
-        else
+        if ( compiledShader->Stage == ShaderStage::Raygen || compiledShader->Stage == ShaderStage::Miss )
         {
             VkRayTracingShaderGroupCreateInfoKHR &group = shaderGroups.emplace_back( );
             group.sType                                 = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
             group.type                                  = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-            group.generalShader                         = shaderIndex;
+            group.generalShader                         = shaderStages.size( ) - 1;
             group.closestHitShader                      = VK_SHADER_UNUSED_KHR;
             group.anyHitShader                          = VK_SHADER_UNUSED_KHR;
             group.intersectionShader                    = VK_SHADER_UNUSED_KHR;
+
+            m_shaderIdentifierOffsets[ compiledShader->EntryPoint.Get( ) ] = shaderGroups.size( ) - 1;
         }
 
         m_shaderIdentifierOffsets[ compiledShader->EntryPoint.Get( ) ] = shaderIndex * m_context->RayTracingProperties.shaderGroupHandleSize;
     }
 
-    for ( auto &hitGroup : hitGroups | std::views::values )
+    for ( int i = 0; i < m_desc.RayTracing.HitGroups.NumElements( ); ++i )
     {
-        VkRayTracingShaderGroupCreateInfoKHR *group = hitGroup.createInfo;
-        group->sType                                = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-        group->type                                 = hitGroup.type;
-        group->generalShader                        = VK_SHADER_UNUSED_KHR;
-        group->closestHitShader                     = hitGroup.closestHitShader;
-        group->anyHitShader                         = hitGroup.anyHitShader;
-        group->intersectionShader                   = hitGroup.intersectionShader;
+        const auto &hitGroup = m_desc.RayTracing.HitGroups.GetElement( i );
+
+        VkRayTracingShaderGroupCreateInfoKHR &group = shaderGroups.emplace_back( );
+        group.sType                                 = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        group.type =
+            hitGroup.Type == HitGroupType::Triangles ? VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR : VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
+
+        group.generalShader      = VK_SHADER_UNUSED_KHR;
+        group.closestHitShader   = hitGroup.ClosestHitShaderIndex >= 0 ? shaderIndexMap[ hitGroup.ClosestHitShaderIndex ] : VK_SHADER_UNUSED_KHR;
+        group.anyHitShader       = hitGroup.AnyHitShaderIndex >= 0 ? shaderIndexMap[ hitGroup.AnyHitShaderIndex ] : VK_SHADER_UNUSED_KHR;
+        group.intersectionShader = hitGroup.IntersectionShaderIndex >= 0 ? shaderIndexMap[ hitGroup.IntersectionShaderIndex ] : VK_SHADER_UNUSED_KHR;
+
+        m_shaderIdentifierOffsets[ hitGroup.Name.Get( ) ] = shaderGroups.size( ) - 1;
     }
 
     std::vector<VkPushConstantRange> pushConstants = rootSig->PushConstantRanges( );

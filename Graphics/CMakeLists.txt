@@ -263,7 +263,7 @@ if (WIN32 OR LINUX)
 endif ()
 
 set_target_default_properties(DenOfIzGraphics)
-target_compile_definitions(DenOfIzGraphics PUBLIC NSIGHT_ENABLE)
+# target_compile_definitions(DenOfIzGraphics PUBLIC NSIGHT_ENABLE)
 
 if (BUILD_TESTS)
     add_subdirectory(Tests)

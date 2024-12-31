@@ -27,6 +27,7 @@ VulkanBottomLevelAS::VulkanBottomLevelAS( VulkanContext *context, const BottomLe
     size_t numGeometries = desc.Geometries.NumElements( );
     m_geometryDescs.resize( numGeometries );
     m_buildRangeInfos.resize( numGeometries );
+    std::vector<uint32_t> maxPrimitives( numGeometries );
 
     for ( uint32_t i = 0; i < numGeometries; ++i )
     {
@@ -60,6 +61,7 @@ VulkanBottomLevelAS::VulkanBottomLevelAS( VulkanContext *context, const BottomLe
         }
 
         m_geometryDescs[ i ] = vkGeometry;
+        maxPrimitives[ i ]   = numPrimitives;
 
         VkAccelerationStructureBuildRangeInfoKHR &rangeInfo = m_buildRangeInfos[ i ];
         rangeInfo.primitiveCount                            = numPrimitives;
@@ -79,7 +81,7 @@ VulkanBottomLevelAS::VulkanBottomLevelAS( VulkanContext *context, const BottomLe
 
     VkAccelerationStructureBuildSizesInfoKHR sizeInfo = { };
     sizeInfo.sType                                    = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-    vkGetAccelerationStructureBuildSizesKHR( m_context->LogicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildInfo, &buildInfo.geometryCount, &sizeInfo );
+    vkGetAccelerationStructureBuildSizesKHR( m_context->LogicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildInfo, maxPrimitives.data( ), &sizeInfo );
 
     BufferDesc asBufferDesc   = { };
     asBufferDesc.Descriptor   = ResourceDescriptor::AccelerationStructure;

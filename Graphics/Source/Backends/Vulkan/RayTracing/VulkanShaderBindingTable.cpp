@@ -39,16 +39,15 @@ VulkanShaderBindingTable::VulkanShaderBindingTable( VulkanContext *context, cons
 
 void VulkanShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
-    const uint32_t rayGenerationShaderNumBytes = AlignRecord( desc.NumRayGenerationShaders * m_rayGenNumBytes );
-    const uint32_t hitGroupNumBytes            = AlignRecord( desc.NumHitGroups * m_hitGroupNumBytes );
-    const uint32_t missShaderNumBytes          = AlignRecord( desc.NumMissShaders * m_missGroupNumBytes );
-    m_numBufferBytes                           = rayGenerationShaderNumBytes + hitGroupNumBytes + missShaderNumBytes;
+    const uint32_t rayGenerationShaderNumBytes = desc.NumRayGenerationShaders * m_rayGenNumBytes;
+    const uint32_t hitGroupNumBytes            = desc.NumHitGroups * m_hitGroupNumBytes;
+    const uint32_t missShaderNumBytes          = desc.NumMissShaders * m_missGroupNumBytes;
+    m_numBufferBytes                           = AlignRecord( rayGenerationShaderNumBytes ) + AlignRecord( hitGroupNumBytes ) + AlignRecord( missShaderNumBytes );
 
     BufferDesc bufferDesc{ };
     bufferDesc.NumBytes     = m_numBufferBytes;
     bufferDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer );
     bufferDesc.Usages       = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::ShaderBindingTable;
-    bufferDesc.InitialUsage = ResourceUsage::CopySrc;
     bufferDesc.HeapType     = HeapType::CPU_GPU;
     bufferDesc.DebugName    = "Shader Binding Table Staging Buffer";
 
@@ -73,15 +72,13 @@ void VulkanShaderBindingTable::Resize( const SBTSizeDesc &desc )
     m_rayGenerationShaderRange.size          = rayGenerationShaderNumBytes;
     m_rayGenerationShaderRange.stride        = rayGenerationShaderNumBytes;
 
-    m_hitGroupOffset = m_rayGenerationShaderRange.size;
-
+    m_hitGroupOffset                    = AlignRecord( m_rayGenerationShaderRange.size );
     m_hitGroupShaderRange               = { };
     m_hitGroupShaderRange.deviceAddress = bufferAddress + m_hitGroupOffset;
     m_hitGroupShaderRange.size          = hitGroupNumBytes;
     m_hitGroupShaderRange.stride        = m_hitGroupNumBytes;
 
-    m_missGroupOffset = m_hitGroupOffset + hitGroupNumBytes;
-
+    m_missGroupOffset               = AlignRecord( m_hitGroupOffset + hitGroupNumBytes );
     m_missShaderRange               = { };
     m_missShaderRange.deviceAddress = bufferAddress + m_missGroupOffset;
     m_missShaderRange.size          = missShaderNumBytes;
