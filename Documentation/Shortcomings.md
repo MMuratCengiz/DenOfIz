@@ -4,7 +4,7 @@
 # Local Root Signature
 
 In  general local root signatures are not really supported. They are only intended to be used with the RayTracing API.
-The concept of a LocalRootSignature from DirectX12 is exposed via IShaderLocalDataLayout.
+The concept of a LocalRootSignature from DirectX12 is exposed via ILocalRootSignature.
 
 # Metal 
 

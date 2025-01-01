@@ -19,18 +19,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12Context.h>
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/Interface/RayTracing/ILocalRootSignature.h>
 
 namespace DenOfIz
 {
-    class DX12ShaderLocalDataLayout final : public IShaderLocalDataLayout
+    class DX12LocalRootSignature final : public ILocalRootSignature
     {
-        DX12Context              *m_context;
-        ShaderLocalDataLayoutDesc m_desc;
+        DX12Context           *m_context;
+        LocalRootSignatureDesc m_desc;
 
         wil::com_ptr<ID3D12RootSignature> m_rootSignature;
         size_t                            m_shaderRecordDataNumBytes = 0;
-        int                               m_samplerTableIndex    = -1;
+        int                               m_samplerTableIndex        = -1;
 
         static constexpr uint32_t NUM_DESCRIPTOR_TYPES = 4;
         static constexpr uint32_t CBV_INDEX            = 0;
@@ -42,7 +42,7 @@ namespace DenOfIz
         std::vector<size_t>                                     m_cbvNumBytes;
 
     public:
-        DX12ShaderLocalDataLayout( DX12Context *context, const ShaderLocalDataLayoutDesc &desc );
+        DX12LocalRootSignature( DX12Context *context, const LocalRootSignatureDesc &desc );
         [[nodiscard]] ID3D12RootSignature *RootSignature( ) const;
         [[nodiscard]] uint32_t             CbvIndex( uint32_t bindingIndex ) const;
         [[nodiscard]] uint32_t             CbvOffset( uint32_t bindingIndex ) const;
@@ -52,6 +52,6 @@ namespace DenOfIz
         [[nodiscard]] bool                 HasBinding( ResourceBindingType type, uint32_t bindingIndex ) const;
         [[nodiscard]] uint32_t             SamplerIndex( ) const;
         [[nodiscard]] uint32_t             LocalDataNumBytes( ) const;
-        ~DX12ShaderLocalDataLayout( ) override = default;
+        ~DX12LocalRootSignature( ) override = default;
     };
 } // namespace DenOfIz

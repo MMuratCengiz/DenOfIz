@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderLocalData.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLevelAS.h>
 
 #include "SDL2/SDL_syswm.h"
@@ -342,9 +342,9 @@ IShaderBindingTable *DX12LogicalDevice::CreateShaderBindingTable( const ShaderBi
     return new DX12ShaderBindingTable( m_context.get( ), createDesc );
 }
 
-IShaderLocalDataLayout *DX12LogicalDevice::CreateShaderLocalDataLayout( const ShaderLocalDataLayoutDesc &createDesc )
+ILocalRootSignature *DX12LogicalDevice::CreateLocalRootSignature( const LocalRootSignatureDesc &createDesc )
 {
-    return new DX12ShaderLocalDataLayout( m_context.get( ), createDesc );
+    return new DX12LocalRootSignature( m_context.get( ), createDesc );
 }
 
 IShaderLocalData *DX12LogicalDevice::CreateShaderLocalData( const ShaderLocalDataDesc &createDesc )

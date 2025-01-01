@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalData.h>
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanLocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
 #include <DenOfIzGraphics/Utilities/Storage.h>
 
@@ -29,7 +29,7 @@ namespace DenOfIz
     {
         VulkanContext                    *m_context;
         ShaderLocalDataDesc               m_desc;
-        VulkanShaderLocalDataLayout      *m_layout;
+        VulkanLocalRootSignature      *m_layout;
         std::vector<Byte>                 m_data;
         Storage                           m_storage;
         std::vector<VkWriteDescriptorSet> m_writeDescriptorSets;

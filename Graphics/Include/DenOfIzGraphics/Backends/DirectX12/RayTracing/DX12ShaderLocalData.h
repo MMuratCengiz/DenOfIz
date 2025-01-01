@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12Context.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalData.h>
 
 namespace DenOfIz
@@ -28,7 +28,7 @@ namespace DenOfIz
     {
         DX12Context               *m_context;
         ShaderLocalDataDesc        m_desc;
-        DX12ShaderLocalDataLayout *m_layout;
+        DX12LocalRootSignature *m_layout;
         std::vector<Byte>          m_data;
 
     public:

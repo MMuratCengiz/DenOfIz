@@ -17,12 +17,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12EnumConverter.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h>
 #include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
 
 using namespace DenOfIz;
 
-DX12ShaderLocalDataLayout::DX12ShaderLocalDataLayout( DX12Context *context, const ShaderLocalDataLayoutDesc &desc ) : m_context( context ), m_desc( desc )
+DX12LocalRootSignature::DX12LocalRootSignature( DX12Context *context, const LocalRootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
 {
     std::vector<D3D12_ROOT_PARAMETER1> rootParameters( desc.ResourceBindings.NumElements( ) );
 
@@ -91,7 +91,7 @@ DX12ShaderLocalDataLayout::DX12ShaderLocalDataLayout( DX12Context *context, cons
         m_context->D3DDevice->CreateRootSignature( 0, serializedRootSig->GetBufferPointer( ), serializedRootSig->GetBufferSize( ), IID_PPV_ARGS( &m_rootSignature ) ) );
 }
 
-uint32_t DX12ShaderLocalDataLayout::CbvIndex( const uint32_t bindingIndex ) const
+uint32_t DX12LocalRootSignature::CbvIndex( const uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_bindingIndices[ CBV_INDEX ].size( ) )
     {
@@ -100,7 +100,7 @@ uint32_t DX12ShaderLocalDataLayout::CbvIndex( const uint32_t bindingIndex ) cons
     return m_bindingIndices[ CBV_INDEX ][ bindingIndex ];
 }
 
-uint32_t DX12ShaderLocalDataLayout::CbvOffset( uint32_t bindingIndex ) const
+uint32_t DX12LocalRootSignature::CbvOffset( uint32_t bindingIndex ) const
 {
     uint32_t offset = 0;
     for ( uint32_t i = 0; i < bindingIndex; i++ )
@@ -110,7 +110,7 @@ uint32_t DX12ShaderLocalDataLayout::CbvOffset( uint32_t bindingIndex ) const
     return offset;
 }
 
-size_t DX12ShaderLocalDataLayout::CbvNumBytes( const uint32_t bindingIndex ) const
+size_t DX12LocalRootSignature::CbvNumBytes( const uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_cbvNumBytes.size( ) )
     {
@@ -119,7 +119,7 @@ size_t DX12ShaderLocalDataLayout::CbvNumBytes( const uint32_t bindingIndex ) con
     return m_cbvNumBytes[ bindingIndex ];
 }
 
-uint32_t DX12ShaderLocalDataLayout::SrvIndex( const uint32_t bindingIndex ) const
+uint32_t DX12LocalRootSignature::SrvIndex( const uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_bindingIndices[ SRV_INDEX ].size( ) )
     {
@@ -128,7 +128,7 @@ uint32_t DX12ShaderLocalDataLayout::SrvIndex( const uint32_t bindingIndex ) cons
     return m_bindingIndices[ SRV_INDEX ][ bindingIndex ];
 }
 
-uint32_t DX12ShaderLocalDataLayout::UavIndex( const uint32_t bindingIndex ) const
+uint32_t DX12LocalRootSignature::UavIndex( const uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_bindingIndices[ UAV_INDEX ].size( ) )
     {
@@ -137,7 +137,7 @@ uint32_t DX12ShaderLocalDataLayout::UavIndex( const uint32_t bindingIndex ) cons
     return m_bindingIndices[ UAV_INDEX ][ bindingIndex ];
 }
 
-bool DX12ShaderLocalDataLayout::HasBinding( const ResourceBindingType type, const uint32_t bindingIndex ) const
+bool DX12LocalRootSignature::HasBinding( const ResourceBindingType type, const uint32_t bindingIndex ) const
 {
     for ( int i = 0; i < m_desc.ResourceBindings.NumElements( ); ++i )
     {
@@ -149,17 +149,17 @@ bool DX12ShaderLocalDataLayout::HasBinding( const ResourceBindingType type, cons
     return false;
 }
 
-ID3D12RootSignature *DX12ShaderLocalDataLayout::RootSignature( ) const
+ID3D12RootSignature *DX12LocalRootSignature::RootSignature( ) const
 {
     return m_rootSignature.get( );
 }
 
-uint32_t DX12ShaderLocalDataLayout::SamplerIndex( ) const
+uint32_t DX12LocalRootSignature::SamplerIndex( ) const
 {
     return m_samplerTableIndex;
 }
 
-uint32_t DX12ShaderLocalDataLayout::LocalDataNumBytes( ) const
+uint32_t DX12LocalRootSignature::LocalDataNumBytes( ) const
 {
     return m_shaderRecordDataNumBytes;
 }

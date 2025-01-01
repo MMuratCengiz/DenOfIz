@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/Interface/RayTracing/ILocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
 
 namespace DenOfIz
@@ -28,11 +28,11 @@ namespace DenOfIz
         VkDescriptorSetLayout Layout;
         uint32_t              Set;
     };
-    class VulkanShaderLocalDataLayout final : public IShaderLocalDataLayout
+    class VulkanLocalRootSignature final : public ILocalRootSignature
     {
-        VulkanContext            *m_context;
-        ShaderLocalDataLayoutDesc m_desc;
-        VkDescriptorSetLayout     m_descriptorSetLayout = VK_NULL_HANDLE;
+        VulkanContext         *m_context;
+        LocalRootSignatureDesc m_desc;
+        VkDescriptorSetLayout  m_descriptorSetLayout = nullptr;
 
         uint32_t m_totalInlineDataBytes = 0;
 
@@ -43,8 +43,8 @@ namespace DenOfIz
         std::vector<uint32_t> m_inlineDataNumBytes;
 
     public:
-        VulkanShaderLocalDataLayout( VulkanContext *context, const ShaderLocalDataLayoutDesc &desc );
-        ~VulkanShaderLocalDataLayout( );
+        VulkanLocalRootSignature( VulkanContext *context, const LocalRootSignatureDesc &desc );
+        ~VulkanLocalRootSignature( ) override;
 
         [[nodiscard]] std::vector<VkLayoutWithSet> DescriptorSetLayouts( );
         [[nodiscard]] VkDescriptorSetLayout       *DescriptorSetLayout( );

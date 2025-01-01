@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/Interface/RayTracing/ILocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/Metal/MetalContext.h>
 
 namespace DenOfIz
@@ -30,12 +30,12 @@ namespace DenOfIz
         ResourceBindingType Type;
     };
 
-    class MetalShaderLocalDataLayout final : public IShaderLocalDataLayout
+    class MetalShaderLocalDataLayout final : public ILocalRootSignature
     {
         constexpr static MetalLocalBindingDesc empty = { };
 
-        MetalContext             *m_context;
-        ShaderLocalDataLayoutDesc m_desc;
+        MetalContext          *m_context;
+        LocalRootSignatureDesc m_desc;
 
         std::vector<MetalLocalBindingDesc> m_uavBindings;
         std::vector<MetalLocalBindingDesc> m_srvBindings;
@@ -45,7 +45,7 @@ namespace DenOfIz
         uint32_t                           m_totalInlineDataBytes = 0;
 
     public:
-        MetalShaderLocalDataLayout( MetalContext *context, const ShaderLocalDataLayoutDesc &desc );
+        MetalShaderLocalDataLayout( MetalContext *context, const LocalRootSignatureDesc &desc );
         uint32_t NumInlineBytes( ) const;
         uint32_t NumSrvUavs( ) const;
         uint32_t NumSamplers( ) const;

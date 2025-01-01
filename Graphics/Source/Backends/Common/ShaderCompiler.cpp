@@ -59,11 +59,9 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
 
     if ( compileDesc.EnableCaching )
     {
-        auto cachedBlob = LoadCachedShader( CachedShaderFile( compileDesc.Path.Get( ), compileDesc.TargetIL ) );
-        if ( cachedBlob )
+        if ( auto cachedBlob = LoadCachedShader( CachedShaderFile( compileDesc.Path.Get( ), compileDesc.EntryPoint.Get( ), compileDesc.TargetIL ) ) )
         {
-            auto cachedReflection = LoadCachedReflection( CachedReflectionFile( compileDesc.Path.Get( ) ) );
-            if ( cachedReflection )
+            if ( auto cachedReflection = LoadCachedReflection( compileDesc.Path.Get( ), compileDesc.EntryPoint.Get( ) ) )
             { // We are heavily dependent on reflection data, so we need to ensure it is always available.
                 auto *compiledShader       = new CompiledShader( );
                 compiledShader->Path       = compileDesc.Path.Get( );
@@ -96,6 +94,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     case ShaderStage::Raygen:
     case ShaderStage::AnyHit:
     case ShaderStage::ClosestHit:
+    case ShaderStage::Intersection:
     case ShaderStage::Miss:
         targetProfile = "lib";
         break;
@@ -134,11 +133,20 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     arguments.push_back( L"-T" );
     std::wstring wsTargetProfile( targetProfile.begin( ), targetProfile.end( ) );
     arguments.push_back( wsTargetProfile.c_str( ) );
-    arguments.push_back(L"-Zpr");  // Row-major packing
+    arguments.push_back( L"-Zpr" ); // Row-major packing
     if ( compileDesc.TargetIL == TargetIL::SPIRV )
     {
         arguments.push_back( L"-spirv" );
         arguments.push_back( L"-fspv-target-env=vulkan1.3" );
+        arguments.push_back( L"-Wno-parameter-usage" );
+
+        if ( compileDesc.Stage == ShaderStage::Raygen || compileDesc.Stage == ShaderStage::Miss || compileDesc.Stage == ShaderStage::ClosestHit ||
+             compileDesc.Stage == ShaderStage::Intersection )
+        {
+            arguments.push_back( L"-fspv-extension=SPV_KHR_ray_tracing" );
+            arguments.push_back( L"-fspv-extension=SPV_KHR_ray_query" );
+        }
+
         // Vulkan requires unique binding for each descriptor, hlsl has a binding per buffer view.
         // Docs suggest shifting the binding to avoid conflicts.
         static const std::wstring VkShiftCbvWs     = std::to_wstring( VkShiftCbv );
@@ -171,7 +179,8 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
             arguments.push_back( L"all" );
         }
 
-        arguments.push_back(L"-fvk-use-dx-position-w");
+        arguments.push_back( L"-fvk-use-dx-position-w" );
+        arguments.push_back( L"-fvk-use-dx-layout" );
     }
     for ( int i = 0; i < compileDesc.Defines.NumElements( ); ++i )
     {
@@ -240,7 +249,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     dxcResult->Release( );
     sourceBlob->Release( );
 
-    CacheCompiledShader( compileDesc.Path.Get( ), compileDesc.TargetIL, code, reflection );
+    CacheCompiledShader( compileDesc.Path.Get( ), compileDesc.EntryPoint.Get( ), compileDesc.TargetIL, code, reflection );
 
     auto *compiledShader       = new CompiledShader( );
     compiledShader->Path       = compileDesc.Path.Get( );
@@ -248,13 +257,14 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
     compiledShader->Blob       = code;
     compiledShader->Reflection = reflection;
     compiledShader->EntryPoint = compileDesc.EntryPoint.Get( );
+    compiledShader->RayTracing = compileDesc.RayTracing;
     return std::unique_ptr<CompiledShader>( compiledShader );
 }
 
 #ifdef BUILD_METAL
 IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob *code, const CompileMslDesc &compileMslDesc ) const
 {
-    IRRootSignature *rootSignature = compileMslDesc.RootSignature;
+    IRRootSignature *rootSignature  = compileMslDesc.RootSignature;
     IRRootSignature *localSignature = compileMslDesc.LocalRootSignature;
 
     IRCompiler *irCompiler = IRCompilerCreate( );
@@ -264,8 +274,8 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob
     IRCompilerSetLocalRootSignature( irCompiler, localSignature );
     // TODO some of these values are hardcoded because metal is odd. The only possible way I can think of is to move the compilation to pipeline creation.
     // But will try this way for now.
-    IRCompilerSetRayTracingPipelineArguments( irCompiler, 2 * sizeof(float), IRRaytracingPipelineFlagNone, IRIntrinsicMaskClosestHitAll, IRIntrinsicMaskMissShaderAll,
-											 IRIntrinsicMaskAnyHitShaderAll, 255, IRRayTracingUnlimitedRecursionDepth, IRRayGenerationCompilationVisibleFunction );
+    IRCompilerSetRayTracingPipelineArguments( irCompiler, 2 * sizeof( float ), IRRaytracingPipelineFlagNone, IRIntrinsicMaskClosestHitAll, IRIntrinsicMaskMissShaderAll,
+                                              IRIntrinsicMaskAnyHitShaderAll, 255, IRRayTracingUnlimitedRecursionDepth, IRRayGenerationCompilationVisibleFunction );
 
     IRObject *irDxil = IRObjectCreateFromDXIL( (const uint8_t *)code->GetBufferPointer( ), code->GetBufferSize( ), IRBytecodeOwnershipNone );
 
@@ -279,7 +289,7 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob
     }
 
     IRMetalLibBinary *metalLib = IRMetalLibBinaryCreate( );
-	IRShaderStage stage = IRObjectGetMetalIRShaderStage( outIr );
+    IRShaderStage     stage    = IRObjectGetMetalIRShaderStage( outIr );
     IRObjectGetMetalLibBinary( outIr, stage, metalLib );
     size_t   metalLibSize     = IRMetalLibGetBytecodeSize( metalLib );
     uint8_t *metalLibByteCode = new uint8_t[ metalLibSize ];
@@ -297,11 +307,11 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob
 }
 #endif
 
-void ShaderCompiler::CacheCompiledShader( const std::string &filename, const TargetIL &targetIL, IDxcBlob *code, IDxcBlob *reflection ) const
+void ShaderCompiler::CacheCompiledShader( const std::string &filename, const std::string &entryPoint, const TargetIL &targetIL, IDxcBlob *code, IDxcBlob *reflection ) const
 {
     // Cache the compiled shader into the matching binary format, it is dxil for hlsl and msl for metal,
     // Simply replace the extension with the corresponding value:
-    const std::string appPath = Utilities::AppPath( CachedShaderFile( filename, targetIL ) );
+    const std::string appPath = Utilities::AppPath( CachedShaderFile( filename, entryPoint, targetIL ) );
     if ( std::ofstream compiledFile( appPath, std::ios::binary ); compiledFile.is_open( ) )
     {
         compiledFile.write( static_cast<const char *>( code->GetBufferPointer( ) ), code->GetBufferSize( ) );
@@ -310,7 +320,7 @@ void ShaderCompiler::CacheCompiledShader( const std::string &filename, const Tar
 
     if ( reflection )
     {
-        const std::string reflectionPath = Utilities::AppPath( CachedReflectionFile( filename ) );
+        const std::string reflectionPath = Utilities::AppPath( CachedReflectionFile( filename, entryPoint ) );
         if ( std::ofstream reflectionFile( reflectionPath, std::ios::binary ); reflectionFile.is_open( ) )
         {
             reflectionFile.write( static_cast<const char *>( reflection->GetBufferPointer( ) ), reflection->GetBufferSize( ) );
@@ -319,32 +329,28 @@ void ShaderCompiler::CacheCompiledShader( const std::string &filename, const Tar
     }
 }
 
-std::string ShaderCompiler::CachedShaderFile( const std::string &filename, const TargetIL &targetIL ) const
+std::string ShaderCompiler::CachedShaderFile( const std::string &filename, const std::string &entryPoint, const TargetIL &targetIL ) const
 {
-    std::string  compiledFilename = filename;
-    const size_t extensionLength  = filename.size( ) - filename.find_last_of( '.' );
-
+    std::string  compiledFilename = filename.substr( 0, filename.find_last_of( '.' ) ) + "-" + entryPoint;
     if ( targetIL == TargetIL::SPIRV )
     {
-        compiledFilename.replace( compiledFilename.find_last_of( '.' ), extensionLength, ".spv" );
+        compiledFilename += ".spv";
     }
     else if ( targetIL == TargetIL::DXIL )
     {
-        compiledFilename.replace( compiledFilename.find_last_of( '.' ), extensionLength, ".dxil" );
+        compiledFilename += ".dxil";
     }
     else if ( targetIL == TargetIL::MSL )
     {
-        compiledFilename.replace( compiledFilename.find_last_of( '.' ), extensionLength, ".metallib" );
+        compiledFilename += ".metallib";
     }
     return Utilities::AppPath( compiledFilename );
 }
 
-std::string ShaderCompiler::CachedReflectionFile( const std::string &filename ) const
+std::string ShaderCompiler::CachedReflectionFile( const std::string &filename, const std::string &entryPoint ) const
 {
-    std::string  reflectionFilename = filename;
-    const size_t extensionLength    = filename.size( ) - filename.find_last_of( '.' );
-    reflectionFilename.replace( reflectionFilename.find_last_of( '.' ), extensionLength, ".reflection" );
-    return reflectionFilename;
+    const std::string baseFilename = filename.substr( 0, filename.find_last_of( '.' ) );
+    return baseFilename + "-" + entryPoint + ".reflection";
 }
 
 [[nodiscard]] IDxcBlob *ShaderCompiler::LoadCachedShader( const std::string &filename ) const
@@ -369,9 +375,9 @@ std::string ShaderCompiler::CachedReflectionFile( const std::string &filename ) 
     return nullptr;
 }
 
-[[nodiscard]] IDxcBlob *ShaderCompiler::LoadCachedReflection( const std::string &filename ) const
+[[nodiscard]] IDxcBlob *ShaderCompiler::LoadCachedReflection( const std::string &filename, const std::string &entryPoint ) const
 {
-    return LoadCachedShader( CachedReflectionFile( filename ) );
+    return LoadCachedShader( CachedReflectionFile( filename, entryPoint ) );
 }
 
 #ifdef BUILD_METAL

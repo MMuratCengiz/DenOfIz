@@ -24,7 +24,7 @@ using namespace DenOfIz;
 
 DX12ShaderLocalData::DX12ShaderLocalData( DX12Context *context, const ShaderLocalDataDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_layout = dynamic_cast<DX12ShaderLocalDataLayout *>( m_desc.Layout );
+    m_layout = dynamic_cast<DX12LocalRootSignature *>( m_desc.Layout );
     m_data.resize( m_layout->LocalDataNumBytes( ) );
 }
 

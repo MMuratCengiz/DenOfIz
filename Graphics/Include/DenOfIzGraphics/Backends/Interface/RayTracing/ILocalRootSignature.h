@@ -25,19 +25,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct DZ_API ShaderLocalDataLayoutDesc
+    struct DZ_API LocalRootSignatureDesc
     {
-        RayTracingStage                   Stage{};
-        InteropArray<ResourceBindingDesc> ResourceBindings{};
+        InteropArray<ResourceBindingDesc> ResourceBindings{ };
+        LocalRootSignatureDesc           &Merge( const LocalRootSignatureDesc &other );
     };
-    template DZ_API class InteropArray<ShaderLocalDataLayoutDesc>;
+    template DZ_API class InteropArray<LocalRootSignatureDesc>;
 
     ///
     /// @brief Layout specification for shader records. This equates to LocalRootSignature in DXR. No interface since it is quite API specific.
-    class DZ_API IShaderLocalDataLayout
+    class DZ_API ILocalRootSignature
     {
     public:
-        virtual ~IShaderLocalDataLayout( ) = default;
+        virtual ~ILocalRootSignature( ) = default;
     };
-    template DZ_API class InteropArray<IShaderLocalDataLayout *>;
+    template DZ_API class InteropArray<ILocalRootSignature *>;
 } // namespace DenOfIz

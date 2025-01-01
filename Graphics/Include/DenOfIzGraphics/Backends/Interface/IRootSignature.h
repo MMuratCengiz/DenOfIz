@@ -38,6 +38,9 @@ namespace DenOfIz
 
     template class DZ_API InteropArray<ShaderStage>;
 
+    /// \brief Not recommended create this structure manually, instead rely on ShaderProgram to provide you an instance after compiling a shader instead.
+    /// Due to differences in layouts between DX12, Vulkan and Metal, the Reflection field is very important for the functionality of rest of the API, while you can fill the data
+    /// in as well, some of it might feel cryptic to the end user.
     struct DZ_API ResourceBindingDesc
     {
         InteropString               Name;

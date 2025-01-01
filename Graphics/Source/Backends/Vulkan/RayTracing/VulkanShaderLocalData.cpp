@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 
 VulkanShaderLocalData::VulkanShaderLocalData( VulkanContext *context, const ShaderLocalDataDesc &desc ) :
-    m_context( context ), m_desc( desc ), m_layout( dynamic_cast<VulkanShaderLocalDataLayout *>( desc.Layout ) )
+    m_context( context ), m_desc( desc ), m_layout( dynamic_cast<VulkanLocalRootSignature *>( desc.Layout ) )
 {
     m_inlineData.resize( m_layout->InlineDataNumBytes( ) );
     // It is possible that the layout only contains push constants

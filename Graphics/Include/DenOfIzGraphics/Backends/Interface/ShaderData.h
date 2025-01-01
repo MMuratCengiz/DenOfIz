@@ -78,8 +78,8 @@ namespace DenOfIz
         InteropArray<ResourceBindingSlot> LocalBindings;
 
         // Local bindings are used to mark resources as local, so they are not included in the global resource list
-        // The binding will be added to the corresponding ShaderDataLayoutDesc in the corresponding index of ShaderLocalDataLayoutDesc at
-        // ShaderReflectDesc.ShaderLocalDataLayouts[shaderIndex], where shaderIndex is the index of the shader in the order of shaders provided to CompileDesc.
+        // The binding will be added to the corresponding ShaderDataLayoutDesc in the corresponding index of LocalRootSignatureDesc at
+        // ShaderReflectDesc.LocalRootSignatures[shaderIndex], where shaderIndex is the index of the shader in the order of shaders provided to CompileDesc.
         void MarkCbvAsLocal( uint32_t binding, uint32_t registerSpace );
         void MarkSrvAsLocal( uint32_t binding, uint32_t registerSpace );
         void MarkUavAsLocal( uint32_t binding, uint32_t registerSpace );

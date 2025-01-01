@@ -22,13 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
 #include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
 #include <DenOfIzGraphics/Utilities/Interop.h>
-#include "IShaderLocalDataLayout.h"
+#include "ILocalRootSignature.h"
 
 namespace DenOfIz
 {
     struct DZ_API ShaderLocalDataDesc
     {
-        IShaderLocalDataLayout *Layout;
+        ILocalRootSignature *Layout;
     };
 
     class DZ_API IShaderLocalData

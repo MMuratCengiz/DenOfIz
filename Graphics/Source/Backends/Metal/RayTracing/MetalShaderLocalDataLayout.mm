@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-MetalShaderLocalDataLayout::MetalShaderLocalDataLayout( MetalContext *context, const ShaderLocalDataLayoutDesc &desc ) : m_context( context ), m_desc( desc )
+MetalShaderLocalDataLayout::MetalShaderLocalDataLayout( MetalContext *context, const LocalRootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
 {
     for ( uint32_t i = 0; i < desc.ResourceBindings.NumElements( ); ++i )
     {

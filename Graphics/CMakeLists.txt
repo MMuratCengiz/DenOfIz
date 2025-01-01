@@ -53,6 +53,7 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Backends/Interface/ITextureResource.cpp
         Source/Backends/Interface/ShaderData.cpp
         Source/Backends/Interface/RayTracing/IShaderBindingTable.cpp
+        Source/Backends/Interface/RayTracing/ILocalRootSignature.cpp
 )
 
 SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
@@ -68,7 +69,7 @@ SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         # RayTracing
         Source/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.cpp
         Source/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.cpp
-        Source/Backends/Vulkan/RayTracing/VulkanShaderLocalDataLayout.cpp
+        Source/Backends/Vulkan/RayTracing/VulkanLocalRootSignature.cpp
         Source/Backends/Vulkan/RayTracing/VulkanShaderLocalData.cpp
         Source/Backends/Vulkan/RayTracing/VulkanTopLevelAS.cpp
         # Vulkan Resources
@@ -97,7 +98,7 @@ set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
         # RayTracing
         Source/Backends/DirectX12/RayTracing/DX12BottomLevelAS.cpp
         Source/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.cpp
-        Source/Backends/DirectX12/RayTracing/DX12ShaderLocalDataLayout.cpp
+        Source/Backends/DirectX12/RayTracing/DX12LocalRootSignature.cpp
         Source/Backends/DirectX12/RayTracing/DX12ShaderLocalData.cpp
         Source/Backends/DirectX12/RayTracing/DX12TopLevelAS.cpp
 

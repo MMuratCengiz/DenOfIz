@@ -27,9 +27,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ISemaphore.h"
 #include "ISwapChain.h"
 #include "ITextureResource.h"
+#include "RayTracing/ILocalRootSignature.h"
 #include "RayTracing/IShaderBindingTable.h"
 #include "RayTracing/IShaderLocalData.h"
-#include "RayTracing/IShaderLocalDataLayout.h"
 
 namespace DenOfIz
 {
@@ -65,11 +65,11 @@ namespace DenOfIz
         virtual ITextureResource   *CreateTextureResource( const TextureDesc &desc )             = 0;
         virtual ISampler           *CreateSampler( const SamplerDesc &desc )                     = 0;
         // RayTracing:
-        virtual ITopLevelAS            *CreateTopLevelAS( const TopLevelASDesc &desc )                    = 0;
-        virtual IBottomLevelAS         *CreateBottomLevelAS( const BottomLevelASDesc &desc )              = 0;
-        virtual IShaderBindingTable    *CreateShaderBindingTable( const ShaderBindingTableDesc &desc )    = 0;
-        virtual IShaderLocalDataLayout *CreateShaderLocalDataLayout( const ShaderLocalDataLayoutDesc &desc ) = 0;
-        virtual IShaderLocalData       *CreateShaderLocalData( const ShaderLocalDataDesc &desc )         = 0;
+        virtual ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &desc )                 = 0;
+        virtual IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &desc )           = 0;
+        virtual IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &desc ) = 0;
+        virtual ILocalRootSignature *CreateLocalRootSignature( const LocalRootSignatureDesc &desc ) = 0;
+        virtual IShaderLocalData    *CreateShaderLocalData( const ShaderLocalDataDesc &desc )       = 0;
     };
 
 } // namespace DenOfIz

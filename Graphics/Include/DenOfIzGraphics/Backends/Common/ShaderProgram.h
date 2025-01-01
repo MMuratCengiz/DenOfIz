@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/IInputLayout.h>
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/Interface/RayTracing/ILocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
 #include "ShaderCompiler.h"
 
@@ -71,7 +71,7 @@ namespace DenOfIz
         InputLayoutDesc   InputLayout;
         RootSignatureDesc RootSignature;
         /// Local data layouts for each shader, index matched with the ShaderDescs provided in the ShaderProgramDesc.
-        InteropArray<ShaderLocalDataLayoutDesc> ShaderLocalDataLayouts;
+        InteropArray<LocalRootSignatureDesc> LocalRootSignatures;
     };
 
 #ifdef BUILD_METAL
@@ -102,7 +102,7 @@ namespace DenOfIz
     {
         RootSignatureDesc              *RootSignatureDesc;
         InputLayoutDesc                *InputLayoutDesc;
-        ShaderLocalDataLayoutDesc      *ShaderLocalDataLayout;
+        LocalRootSignatureDesc         *LocalRootSignature;
         ShaderDesc const               *ShaderDesc;
         CompiledShader                 *CompiledShader;
         ID3D12ShaderReflection         *ShaderReflection;

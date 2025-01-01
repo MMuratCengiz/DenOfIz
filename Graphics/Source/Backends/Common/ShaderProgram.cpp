@@ -66,13 +66,14 @@ void ShaderProgram::Compile( )
             continue;
         }
 
-        CompileDesc compileDesc = { };
-        compileDesc.Path        = shader.Path;
-        compileDesc.Defines     = shader.Defines;
-        compileDesc.EntryPoint  = shader.EntryPoint;
-        compileDesc.Stage       = shader.Stage;
-        compileDesc.TargetIL    = m_desc.TargetIL;
-        compileDesc.RayTracing  = shader.RayTracing;
+        CompileDesc compileDesc   = { };
+        compileDesc.Path          = shader.Path;
+        compileDesc.Defines       = shader.Defines;
+        compileDesc.EntryPoint    = shader.EntryPoint;
+        compileDesc.Stage         = shader.Stage;
+        compileDesc.TargetIL      = m_desc.TargetIL;
+        compileDesc.RayTracing    = shader.RayTracing;
+        compileDesc.EnableCaching = m_desc.EnableCaching;
 
         m_compiledShaders.push_back( compiler.CompileHLSL( compileDesc ) );
         m_shaderDescs.push_back( shader );
@@ -594,7 +595,7 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
 {
     ShaderReflectDesc result{ };
 
-    result.ShaderLocalDataLayouts.Resize( m_compiledShaders.size( ) );
+    result.LocalRootSignatures.Resize( m_compiledShaders.size( ) );
 
     InputLayoutDesc   &inputLayout   = result.InputLayout;
     RootSignatureDesc &rootSignature = result.RootSignature;
@@ -613,28 +614,9 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
     {
         auto &shader                            = m_compiledShaders[ shaderIndex ];
         reflectionState.CompiledShader          = shader.get( );
-        reflectionState.ShaderDesc              = &( m_desc.Shaders.GetElement( shaderIndex ) );
-        ShaderLocalDataLayoutDesc &recordLayout = result.ShaderLocalDataLayouts.GetElement( shaderIndex );
-        switch ( shader->Stage )
-        {
-        case ShaderStage::Callable:
-            recordLayout.Stage = RayTracingStage::Callable;
-            break;
-        case ShaderStage::Raygen:
-            recordLayout.Stage = RayTracingStage::Raygen;
-            break;
-        case ShaderStage::ClosestHit:
-        case ShaderStage::AnyHit:
-        case ShaderStage::All:
-            recordLayout.Stage = RayTracingStage::HitGroup;
-            break;
-        case ShaderStage::Miss:
-            recordLayout.Stage = RayTracingStage::Miss;
-            break;
-        default:
-            break;
-        }
-        reflectionState.ShaderLocalDataLayout = &recordLayout;
+        reflectionState.ShaderDesc              = &m_desc.Shaders.GetElement( shaderIndex );
+        LocalRootSignatureDesc &recordLayout = result.LocalRootSignatures.GetElement( shaderIndex );
+        reflectionState.LocalRootSignature = &recordLayout;
 
         IDxcBlob       *reflectionBlob = shader->Reflection;
         const DxcBuffer reflectionBuffer{
@@ -727,7 +709,23 @@ void ShaderProgram::ReflectLibrary( ReflectionState &state ) const
         ID3D12FunctionReflection *functionReflection = libraryReflection->GetFunctionByIndex( i );
         D3D12_FUNCTION_DESC       functionDesc{ };
         DXC_CHECK_RESULT( functionReflection->GetDesc( &functionDesc ) );
-        // Todo perhaps process only the matching function to the entry point
+
+        { // Only process the matching function
+            // Check if the name is not mangled to start with
+            std::string_view mangledName( functionDesc.Name );
+            const bool isMangled =  mangledName.starts_with( "\01?" ) || mangledName.starts_with( "\x1?" );
+            if ( !isMangled && functionDesc.Name != state.CompiledShader->EntryPoint.Get( ) )
+            {
+                continue;
+            }
+            if ( const size_t nameEnd = mangledName.find( '@' ); nameEnd != std::string_view::npos && isMangled )
+            {
+                if ( const std::string_view demangledName = mangledName.substr( 2, nameEnd - 2 ); demangledName != state.CompiledShader->EntryPoint.Get( ) )
+                {
+                    continue;
+                }
+            }
+        }
         state.FunctionReflection = functionReflection;
         for ( const uint32_t j : std::views::iota( 0u, functionDesc.BoundResources ) )
         {
@@ -775,7 +773,7 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
     InteropArray<ResourceBindingDesc> *resourceBindings = &state.RootSignatureDesc->ResourceBindings;
     if ( isLocal )
     {
-        resourceBindings = &state.ShaderLocalDataLayout->ResourceBindings;
+        resourceBindings = &state.LocalRootSignature->ResourceBindings;
     }
 
     ResourceBindingDesc &resourceBindingDesc = resourceBindings->EmplaceElement( );
@@ -856,9 +854,9 @@ bool ShaderProgram::ShouldProcessBinding( const ReflectionState &state, const D3
     // Check 1: If the binding is in our local signature, we should process it
     if ( IsBindingLocalTo( *state.ShaderDesc, shaderInputBindDesc ) )
     {
-        for ( int i = 0; i < state.ShaderLocalDataLayout->ResourceBindings.NumElements( ); ++i )
+        for ( int i = 0; i < state.LocalRootSignature->ResourceBindings.NumElements( ); ++i )
         {
-            if ( const auto boundResource = state.ShaderLocalDataLayout->ResourceBindings.GetElement( i );
+            if ( const auto boundResource = state.LocalRootSignature->ResourceBindings.GetElement( i );
                  boundResource.Binding == shaderInputBindDesc.BindPoint && boundResource.RegisterSpace == shaderInputBindDesc.Space &&
                  boundResource.BindingType == ReflectTypeToBufferBindingType( shaderInputBindDesc.Type ) )
             {

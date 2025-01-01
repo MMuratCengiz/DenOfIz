@@ -155,7 +155,7 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     m_rayTracingProgram       = std::unique_ptr<ShaderProgram>( m_graphicsApi->CreateShaderProgram( programDesc ) );
     auto reflection           = m_rayTracingProgram->Reflect( );
     m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
-    m_hgShaderLayout          = std::unique_ptr<IShaderLocalDataLayout>( m_logicalDevice->CreateShaderLocalDataLayout( reflection.ShaderLocalDataLayouts.GetElement( 1 ) ) );
+    m_hgShaderLayout          = std::unique_ptr<ILocalRootSignature>( m_logicalDevice->CreateLocalRootSignature( reflection.LocalRootSignatures.GetElement( 1 ) ) );
 
     m_hgData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderLocalData( { m_hgShaderLayout.get( ) } ) );
 
@@ -184,8 +184,8 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     pipelineDesc.ShaderProgram                   = m_rayTracingProgram.get( );
     pipelineDesc.RayTracing.MaxNumPayloadBytes   = 4 * sizeof( float );
     pipelineDesc.RayTracing.MaxNumAttributeBytes = 2 * sizeof( float );
-    pipelineDesc.RayTracing.ShaderLocalDataLayouts.Resize( pipelineDesc.ShaderProgram->CompiledShaders( ).NumElements( ) );
-    pipelineDesc.RayTracing.ShaderLocalDataLayouts.SetElement( 1, m_hgShaderLayout.get( ) );
+    pipelineDesc.RayTracing.LocalRootSignatures.Resize( pipelineDesc.ShaderProgram->CompiledShaders( ).NumElements( ) );
+    pipelineDesc.RayTracing.LocalRootSignatures.SetElement( 1, m_hgShaderLayout.get( ) );
     pipelineDesc.RayTracing.HitGroups.AddElement( HitGroupDesc{ .Name = "MyHitGroup", .ClosestHitShaderIndex = 1, .Type = HitGroupType::Triangles } );
 
     m_rayTracingPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );

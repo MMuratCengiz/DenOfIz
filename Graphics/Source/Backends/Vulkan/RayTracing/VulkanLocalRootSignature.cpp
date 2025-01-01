@@ -16,14 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanLocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h>
 #include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
 #include <DenOfIzGraphics/Utilities/Utilities.h>
 
 using namespace DenOfIz;
 
-VulkanShaderLocalDataLayout::VulkanShaderLocalDataLayout( VulkanContext *context, const ShaderLocalDataLayoutDesc &desc ) : m_context( context ), m_desc( desc )
+VulkanLocalRootSignature::VulkanLocalRootSignature( VulkanContext *context, const LocalRootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
 {
     std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
 
@@ -96,7 +96,7 @@ VulkanShaderLocalDataLayout::VulkanShaderLocalDataLayout( VulkanContext *context
     }
 }
 
-VulkanShaderLocalDataLayout::~VulkanShaderLocalDataLayout( )
+VulkanLocalRootSignature::~VulkanLocalRootSignature( )
 {
     for ( auto layout : m_layouts )
     {
@@ -104,12 +104,12 @@ VulkanShaderLocalDataLayout::~VulkanShaderLocalDataLayout( )
     }
 }
 
-[[nodiscard]] std::vector<VkLayoutWithSet> VulkanShaderLocalDataLayout::DescriptorSetLayouts( )
+[[nodiscard]] std::vector<VkLayoutWithSet> VulkanLocalRootSignature::DescriptorSetLayouts( )
 {
     return m_layouts;
 }
 
-VkDescriptorSetLayout *VulkanShaderLocalDataLayout::DescriptorSetLayout( )
+VkDescriptorSetLayout *VulkanLocalRootSignature::DescriptorSetLayout( )
 {
     if ( m_descriptorSetLayout == VK_NULL_HANDLE )
     {
@@ -118,17 +118,17 @@ VkDescriptorSetLayout *VulkanShaderLocalDataLayout::DescriptorSetLayout( )
     return &m_descriptorSetLayout;
 }
 
-uint32_t VulkanShaderLocalDataLayout::LocalDataNumBytes( ) const
+uint32_t VulkanLocalRootSignature::LocalDataNumBytes( ) const
 {
     return m_totalInlineDataBytes + ( m_descriptorSetLayout != VK_NULL_HANDLE ? sizeof( VkDescriptorSet ) : 0 );
 }
 
-uint32_t VulkanShaderLocalDataLayout::InlineDataNumBytes( ) const
+uint32_t VulkanLocalRootSignature::InlineDataNumBytes( ) const
 {
     return m_totalInlineDataBytes;
 }
 
-uint32_t VulkanShaderLocalDataLayout::CbvOffset( uint32_t cbvIndex ) const
+uint32_t VulkanLocalRootSignature::CbvOffset( uint32_t cbvIndex ) const
 {
     if ( cbvIndex >= m_inlineDataOffsets.size( ) )
     {
@@ -138,7 +138,7 @@ uint32_t VulkanShaderLocalDataLayout::CbvOffset( uint32_t cbvIndex ) const
     return m_inlineDataOffsets[ cbvIndex ];
 }
 
-uint32_t VulkanShaderLocalDataLayout::CbvNumBytes( uint32_t cbvIndex ) const
+uint32_t VulkanLocalRootSignature::CbvNumBytes( uint32_t cbvIndex ) const
 {
     if ( cbvIndex >= m_inlineDataNumBytes.size( ) )
     {

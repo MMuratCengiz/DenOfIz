@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanLocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanInputLayout.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanPipeline.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h>
@@ -148,8 +148,8 @@ void VulkanPipeline::CreateRayTracingPipeline( )
 
         if ( compiledShader->RayTracing.LocalBindings.NumElements( ) > 0 )
         {
-            IShaderLocalDataLayout *layoutDesc = m_desc.RayTracing.ShaderLocalDataLayouts.GetElement( i );
-            if ( auto *layout = dynamic_cast<VulkanShaderLocalDataLayout *>( layoutDesc ) )
+            ILocalRootSignature *layoutDesc = m_desc.RayTracing.LocalRootSignatures.GetElement( i );
+            if ( auto *layout = dynamic_cast<VulkanLocalRootSignature *>( layoutDesc ) )
             {
                 for ( auto &layoutWithSet : layout->DescriptorSetLayouts( ) )
                 {

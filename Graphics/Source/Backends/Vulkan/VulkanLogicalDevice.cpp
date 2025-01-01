@@ -689,9 +689,9 @@ IShaderBindingTable *VulkanLogicalDevice::CreateShaderBindingTable( const Shader
     return new VulkanShaderBindingTable( m_context.get( ), desc );
 }
 
-IShaderLocalDataLayout *VulkanLogicalDevice::CreateShaderLocalDataLayout( const ShaderLocalDataLayoutDesc &createDesc )
+ILocalRootSignature *VulkanLogicalDevice::CreateLocalRootSignature( const LocalRootSignatureDesc &createDesc )
 {
-    return new VulkanShaderLocalDataLayout( m_context.get( ), createDesc );
+    return new VulkanLocalRootSignature( m_context.get( ), createDesc );
 }
 
 IShaderLocalData *VulkanLogicalDevice::CreateShaderLocalData( const ShaderLocalDataDesc &createDesc )
