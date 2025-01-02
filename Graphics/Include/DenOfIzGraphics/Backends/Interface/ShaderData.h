@@ -94,7 +94,6 @@ namespace DenOfIz
         IDxcBlob            *Blob;
         IDxcBlob            *Reflection;
         InteropString        EntryPoint;
-        InteropString        HitGroupExport; // For ClosestHit, AnyHit, Miss and Intersection Shaders
         RayTracingShaderDesc RayTracing;
     };
     template class DZ_API InteropArray<CompiledShader *>;

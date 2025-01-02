@@ -24,11 +24,6 @@ MetalSemaphore::MetalSemaphore( MetalContext *context ) : m_context( context )
 {
     m_fence      = [m_context->Device newEvent];
     m_fenceValue = 0;
-    m_signaled   = false;
-}
-
-void MetalSemaphore::Wait( )
-{
 }
 
 void MetalSemaphore::Notify( )

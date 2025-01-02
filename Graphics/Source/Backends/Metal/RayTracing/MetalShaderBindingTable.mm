@@ -27,20 +27,24 @@ MetalShaderBindingTable::MetalShaderBindingTable( MetalContext *context, const S
     m_pipeline = dynamic_cast<MetalPipeline *>( desc.Pipeline );
     // In Metal, the concept of a local root signature does not apply to shader stages independently. In case a source of the shader is shared between multiple stages,
     // we need to account for the maximum size of the data for all stages.
-    size_t maxBytes         = std::max( { m_desc.MaxRayGenDataBytes, m_desc.MaxHitGroupDataBytes, m_desc.MaxMissDataBytes } );
-    m_rayGenEntryNumBytes   = sizeof( IRShaderIdentifier ) + maxBytes;
-    m_hitGroupEntryNumBytes = sizeof( IRShaderIdentifier ) + maxBytes;
-    m_missEntryNumBytes     = sizeof( IRShaderIdentifier ) + maxBytes;
+    size_t maxBytes    = std::max( { m_desc.MaxRayGenDataBytes, m_desc.MaxHitGroupDataBytes, m_desc.MaxMissDataBytes } );
+    m_rayGenNumBytes   = sizeof( IRShaderIdentifier ) + maxBytes;
+    m_hitGroupNumBytes = sizeof( IRShaderIdentifier ) + maxBytes;
+    m_missNumBytes     = sizeof( IRShaderIdentifier ) + maxBytes;
+
+    m_debugData.RayGenNumBytes   = m_rayGenNumBytes;
+    m_debugData.MissNumBytes     = m_missNumBytes;
+    m_debugData.HitGroupNumBytes = m_hitGroupNumBytes;
+
     Resize( desc.SizeDesc );
 }
 
 void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
 {
-    uint32_t numHitGroups     = desc.NumInstances * desc.NumGeometries * desc.NumRayTypes;
-    size_t   rayGenNumBytes   = desc.NumRayGenerationShaders * m_rayGenEntryNumBytes;
-    size_t   hitGroupNumBytes = numHitGroups * m_hitGroupEntryNumBytes;
-    size_t   missNumBytes     = desc.NumMissShaders * m_missEntryNumBytes;
-    m_numBufferBytes          = rayGenNumBytes + hitGroupNumBytes + missNumBytes;
+    size_t rayGenNumBytes   = desc.NumRayGenerationShaders * m_rayGenNumBytes;
+    size_t hitGroupNumBytes = desc.NumHitGroups * m_hitGroupNumBytes;
+    size_t missNumBytes     = desc.NumMissShaders * m_missNumBytes;
+    m_numBufferBytes        = rayGenNumBytes + hitGroupNumBytes + missNumBytes;
 
     m_buffer = [m_context->Device newBufferWithLength:m_numBufferBytes options:MTLResourceStorageModeShared];
     [m_buffer setLabel:@"Shader Binding Table"];
@@ -51,15 +55,15 @@ void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
     m_rayGenerationShaderRange.StartAddress = m_buffer.gpuAddress;
     m_rayGenerationShaderRange.SizeInBytes  = rayGenNumBytes;
 
-    m_hitGroupOffset                    = m_rayGenEntryNumBytes;
+    m_hitGroupOffset                    = m_rayGenNumBytes;
     m_hitGroupShaderRange.StartAddress  = m_buffer.gpuAddress + m_hitGroupOffset;
     m_hitGroupShaderRange.SizeInBytes   = hitGroupNumBytes;
-    m_hitGroupShaderRange.StrideInBytes = m_hitGroupEntryNumBytes;
+    m_hitGroupShaderRange.StrideInBytes = m_hitGroupNumBytes;
 
     m_missGroupOffset               = m_hitGroupOffset + hitGroupNumBytes;
     m_missShaderRange.StartAddress  = m_buffer.gpuAddress + m_missGroupOffset;
     m_missShaderRange.SizeInBytes   = missNumBytes;
-    m_missShaderRange.StrideInBytes = m_missEntryNumBytes;
+    m_missShaderRange.StrideInBytes = m_missNumBytes;
 }
 
 void MetalShaderBindingTable::BindRayGenerationShader( const RayGenerationBindingDesc &desc )
@@ -74,15 +78,7 @@ void MetalShaderBindingTable::BindRayGenerationShader( const RayGenerationBindin
 
 void MetalShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
 {
-    if ( BindHitGroupRecursive( desc ) )
-    {
-        return;
-    }
-
-    const uint32_t instanceOffset = desc.InstanceIndex * m_desc.SizeDesc.NumGeometries * m_desc.SizeDesc.NumRayTypes;
-    const uint32_t geometryOffset = desc.GeometryIndex * m_desc.SizeDesc.NumRayTypes;
-    const uint32_t rayTypeOffset  = desc.RayTypeIndex;
-    const uint32_t offset         = m_hitGroupOffset + ( instanceOffset + geometryOffset + rayTypeOffset ) * m_hitGroupEntryNumBytes;
+    const uint32_t offset = m_hitGroupOffset + desc.Offset * m_hitGroupNumBytes;
 
     const HitGroupExport &hitGroupExport = m_pipeline->FindHitGroupExport( desc.HitGroupExportName.Get( ) );
 
@@ -105,59 +101,9 @@ void MetalShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     }
 }
 
-bool MetalShaderBindingTable::BindHitGroupRecursive( const HitGroupBindingDesc &desc )
-{
-    if ( desc.InstanceIndex == -1 )
-    {
-        if ( desc.GeometryIndex != -1 || desc.RayTypeIndex != -1 )
-        {
-            LOG( ERROR ) << "Invalid hierarchy for InstanceIndex/GeometryIndex/RayTypeIndex.";
-            return true;
-        }
-
-        for ( uint32_t i = 0; i < m_desc.SizeDesc.NumInstances; ++i )
-        {
-            HitGroupBindingDesc hitGroupDesc = desc;
-            hitGroupDesc.InstanceIndex       = i;
-            BindHitGroupRecursive( hitGroupDesc );
-        }
-        return true;
-    }
-
-    if ( desc.GeometryIndex == -1 )
-    {
-        if ( desc.RayTypeIndex != -1 )
-        {
-            LOG( ERROR ) << "Invalid hierarchy for GeometryIndex/RayTypeIndex.";
-            return true;
-        }
-
-        for ( uint32_t i = 0; i < m_desc.SizeDesc.NumGeometries; ++i )
-        {
-            HitGroupBindingDesc hitGroupDesc = desc;
-            hitGroupDesc.GeometryIndex       = i;
-            BindHitGroupRecursive( hitGroupDesc );
-        }
-        return true;
-    }
-
-    if ( desc.RayTypeIndex == -1 )
-    {
-        for ( uint32_t i = 0; i < m_desc.SizeDesc.NumRayTypes; ++i )
-        {
-            HitGroupBindingDesc hitGroupDesc = desc;
-            hitGroupDesc.RayTypeIndex        = i;
-            BindHitGroup( hitGroupDesc );
-        }
-        return true;
-    }
-
-    return false;
-}
-
 void MetalShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 {
-    uint32_t        offset        = m_missGroupOffset + desc.RayTypeIndex * m_missEntryNumBytes;
+    uint32_t        offset        = m_missGroupOffset + desc.Offset * m_missNumBytes;
     const uint32_t &functionIndex = m_pipeline->FindVisibleShaderIndexByName( desc.ShaderName.Get( ) );
     EncodeShaderIndex( offset, functionIndex );
     if ( desc.Data )
@@ -168,6 +114,9 @@ void MetalShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 
 void MetalShaderBindingTable::Build( )
 {
+#ifndef NDEBUG
+    PrintShaderBindingTableDebugData( m_debugData );
+#endif
 }
 
 const IRVirtualAddressRange &MetalShaderBindingTable::RayGenerationShaderRange( ) const

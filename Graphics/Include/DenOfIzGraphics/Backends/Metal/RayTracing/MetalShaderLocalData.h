@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalData.h>
 #include <DenOfIzGraphics/Backends/Metal/MetalArgumentBuffer.h>
 #include <DenOfIzGraphics/Backends/Metal/MetalContext.h>
-#include <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/Metal/RayTracing/MetalLocalRootSignature.h>
 
 namespace DenOfIz
 {
@@ -29,7 +29,7 @@ namespace DenOfIz
     {
         MetalContext                        *m_context;
         ShaderLocalDataDesc                  m_desc;
-        MetalShaderLocalDataLayout          *m_layout;
+        MetalLocalRootSignature             *m_layout;
         std::unique_ptr<DescriptorTable>     m_srvUavTable;
         std::unique_ptr<DescriptorTable>     m_samplerTable;
         std::vector<id<MTLResource>>         m_usedResources;

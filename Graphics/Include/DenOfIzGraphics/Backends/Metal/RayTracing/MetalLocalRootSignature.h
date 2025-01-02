@@ -30,7 +30,7 @@ namespace DenOfIz
         ResourceBindingType Type;
     };
 
-    class MetalShaderLocalDataLayout final : public ILocalRootSignature
+    class MetalLocalRootSignature final : public ILocalRootSignature
     {
         constexpr static MetalLocalBindingDesc empty = { };
 
@@ -45,7 +45,7 @@ namespace DenOfIz
         uint32_t                           m_totalInlineDataBytes = 0;
 
     public:
-        MetalShaderLocalDataLayout( MetalContext *context, const LocalRootSignatureDesc &desc );
+        MetalLocalRootSignature( MetalContext *context, const LocalRootSignatureDesc &desc );
         uint32_t NumInlineBytes( ) const;
         uint32_t NumSrvUavs( ) const;
         uint32_t NumSamplers( ) const;

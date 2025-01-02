@@ -41,7 +41,7 @@ namespace DenOfIz
 
     public:
         MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &desc );
-        void Update( const TopLevelASDesc &desc ) override;
+        void UpdateInstanceTransforms( const UpdateTransformsDesc &desc ) override;
         ~MetalTopLevelAS( ) override = default;
 
         [[nodiscard]] id<MTLAccelerationStructure>                      AccelerationStructure( ) const;

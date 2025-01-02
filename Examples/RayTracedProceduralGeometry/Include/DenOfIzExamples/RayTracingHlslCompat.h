@@ -20,6 +20,13 @@
 //
 //**********************************************************************************************
 
+#ifdef __APPLE__
+#include <cstdint>
+#include <DirectXMath.h>
+typedef uint16_t UINT16;
+typedef uint32_t UINT;
+#endif
+
 #ifdef HLSL
 #include "HlslCompat.h"
 #else
@@ -27,6 +34,16 @@ using namespace DirectX;
 
 // Shader will use byte encoding to access vertex indices.
 typedef UINT16 Index;
+
+struct RayTracingAABB
+{
+    float MinX;
+    float MinY;
+    float MinZ;
+    float MaxX;
+    float MaxY;
+    float MaxZ;
+};
 #endif
 
 // Number of metaballs to use within an AABB.

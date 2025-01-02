@@ -24,7 +24,7 @@ using namespace DenOfIz;
 
 MetalShaderLocalData::MetalShaderLocalData( MetalContext *context, const ShaderLocalDataDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_layout = dynamic_cast<MetalShaderLocalDataLayout *>( desc.Layout );
+    m_layout = dynamic_cast<MetalLocalRootSignature *>( desc.Layout );
     if ( m_layout->NumSrvUavs( ) > 0 )
     {
         m_srvUavTable = std::make_unique<DescriptorTable>( context, m_layout->NumSrvUavs( ) );

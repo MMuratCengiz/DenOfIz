@@ -41,9 +41,11 @@ namespace DenOfIz
 
         uint32_t m_missGroupOffset       = 0;
         uint32_t m_hitGroupOffset        = 0;
-        uint32_t m_rayGenEntryNumBytes   = 0;
-        uint32_t m_hitGroupEntryNumBytes = 0;
-        uint32_t m_missEntryNumBytes     = 0;
+        uint32_t m_rayGenNumBytes        = 0;
+        uint32_t m_hitGroupNumBytes      = 0;
+        uint32_t m_missNumBytes          = 0;
+
+        ShaderBindingTableDebugData m_debugData;
 
     public:
         MetalShaderBindingTable( MetalContext *context, const ShaderBindingTableDesc &desc );
@@ -61,7 +63,6 @@ namespace DenOfIz
         const IRVirtualAddressRangeAndStride &MissShaderRange( ) const;
 
     private:
-        bool BindHitGroupRecursive( const HitGroupBindingDesc &desc );
         void EncodeShaderIndex( uint32_t offset, uint32_t shaderIndex, int customIntersectionIndex = -1 );
         void EncodeData( uint32_t offset, const IShaderLocalData *data );
     };

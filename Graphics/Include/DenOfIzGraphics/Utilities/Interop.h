@@ -40,6 +40,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SafeCopyString( dst, dstSize, src ) strncpy( dst, src, dstSize )
 #endif
 
+#include <type_traits>
+
 namespace DenOfIz
 {
     class DZ_API InteropString

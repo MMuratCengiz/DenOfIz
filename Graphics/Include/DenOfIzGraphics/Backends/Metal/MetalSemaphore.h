@@ -32,12 +32,10 @@ namespace DenOfIz
         MetalContext *m_context;
         id<MTLEvent>  m_fence;
         uint64_t      m_fenceValue = 0;
-        bool          m_signaled : 1;
 
     public:
         MetalSemaphore( MetalContext *context );
         ~MetalSemaphore( ) override = default;
-        void Wait( ) override;
         void Notify( ) override;
         void NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer> &commandBuffer );
 

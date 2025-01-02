@@ -45,7 +45,7 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
         [m_blasList addObject:blas->AccelerationStructure( )];
 
         MTLAccelerationStructureUserIDInstanceDescriptor *instance = &m_instanceDescriptors[ i ];
-        instance->intersectionFunctionTableOffset                  = blas->GeometryType( ) == ASGeometryType::Triangles ? 0 : 1;
+        instance->intersectionFunctionTableOffset                  = blas->GeometryType( ) == HitGroupType::Triangles ? 0 : 1;
         instance->accelerationStructureIndex                       = i;
         instance->userID                                           = instanceDesc.ID;
         instance->options                                          = blas->Options( );
@@ -136,7 +136,19 @@ const std::vector<id<MTLResource>> &MetalTopLevelAS::IndirectResources( ) const
     return m_indirectResources;
 }
 
-void MetalTopLevelAS::Update( const TopLevelASDesc &desc )
+void MetalTopLevelAS::UpdateInstanceTransforms( const UpdateTransformsDesc &desc )
 {
-    // Re-build or update the instances in the structure based on `desc`
+    for ( size_t i = 0; i < desc.Transforms.NumElements( ); ++i )
+    {
+        const float                                      *transformData = desc.Transforms.GetElement( i ).Data( );
+        MTLAccelerationStructureUserIDInstanceDescriptor *instance      = &m_instanceDescriptors[ i ];
+
+        for ( int row = 0; row < 3; ++row )
+        {
+            for ( int col = 0; col < 4; ++col )
+            {
+                instance->transformationMatrix.columns[ col ][ row ] = transformData[ row * 4 + col ];
+            }
+        }
+    }
 }

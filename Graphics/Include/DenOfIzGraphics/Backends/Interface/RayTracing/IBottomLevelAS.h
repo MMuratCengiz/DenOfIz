@@ -53,7 +53,7 @@ namespace DenOfIz
 
     struct DZ_API ASGeometryDesc
     {
-        HitGroupType         Type;
+        HitGroupType           Type;
         ASGeometryTriangleDesc Triangles;
         ASGeometryAABBDesc     AABBs;
         BitSet<GeometryFlags>  Flags;

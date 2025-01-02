@@ -169,9 +169,9 @@ IShaderBindingTable *MetalLogicalDevice::CreateShaderBindingTable( const ShaderB
     return new MetalShaderBindingTable( m_context.get( ), desc );
 }
 
-IShaderLocalDataLayout *MetalLogicalDevice::CreateShaderLocalDataLayout( const DenOfIz::ShaderLocalDataLayoutDesc &createDesc )
+ILocalRootSignature *MetalLogicalDevice::CreateLocalRootSignature( const LocalRootSignatureDesc &desc )
 {
-    return new MetalShaderLocalDataLayout( m_context.get( ), createDesc );
+    return new MetalLocalRootSignature( m_context.get( ), desc );
 }
 
 IShaderLocalData *MetalLogicalDevice::CreateShaderLocalData( const ShaderLocalDataDesc &createDesc )

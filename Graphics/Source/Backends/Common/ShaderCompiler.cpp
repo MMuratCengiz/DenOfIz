@@ -305,7 +305,7 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob
     MetalDxcBlob_Impl *mslBlob = new MetalDxcBlob_Impl( metalLibByteCode, metalLibSize );
     mslBlob->IrObject          = outIr;
 
-    CacheCompiledShader( compileOptions.Path.Get( ), compileOptions.TargetIL, mslBlob, nullptr );
+    CacheCompiledShader( compileOptions.Path.Get( ), compileOptions.EntryPoint.Get( ), compileOptions.TargetIL, mslBlob, nullptr );
 
     IRMetalLibBinaryDestroy( metalLib );
     IRObjectDestroy( irDxil );

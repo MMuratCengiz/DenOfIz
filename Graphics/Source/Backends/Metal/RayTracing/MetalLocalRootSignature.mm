@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderLocalDataLayout.h>
+#include <DenOfIzGraphics/Backends/Metal/RayTracing/MetalLocalRootSignature.h>
 #include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
 
 using namespace DenOfIz;
 
-MetalShaderLocalDataLayout::MetalShaderLocalDataLayout( MetalContext *context, const LocalRootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
+MetalLocalRootSignature::MetalLocalRootSignature( MetalContext *context, const LocalRootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
 {
     for ( uint32_t i = 0; i < desc.ResourceBindings.NumElements( ); ++i )
     {
@@ -53,22 +53,22 @@ MetalShaderLocalDataLayout::MetalShaderLocalDataLayout( MetalContext *context, c
     }
 }
 
-uint32_t MetalShaderLocalDataLayout::NumInlineBytes( ) const
+uint32_t MetalLocalRootSignature::NumInlineBytes( ) const
 {
     return m_totalInlineDataBytes;
 }
 
-uint32_t MetalShaderLocalDataLayout::NumSrvUavs( ) const
+uint32_t MetalLocalRootSignature::NumSrvUavs( ) const
 {
     return m_srvBindings.size( ) + m_uavBindings.size( );
 }
 
-uint32_t MetalShaderLocalDataLayout::NumSamplers( ) const
+uint32_t MetalLocalRootSignature::NumSamplers( ) const
 {
     return m_samplerBindings.size( );
 }
 
-const uint32_t MetalShaderLocalDataLayout::InlineDataOffset( uint32_t binding ) const
+const uint32_t MetalLocalRootSignature::InlineDataOffset( uint32_t binding ) const
 {
     if ( binding >= m_inlineDataOffsets.size( ) )
     {
@@ -78,7 +78,7 @@ const uint32_t MetalShaderLocalDataLayout::InlineDataOffset( uint32_t binding ) 
     return m_inlineDataOffsets[ binding ];
 }
 
-const uint32_t MetalShaderLocalDataLayout::InlineNumBytes( uint32_t binding ) const
+const uint32_t MetalLocalRootSignature::InlineNumBytes( uint32_t binding ) const
 {
     if ( binding >= m_inlineDataNumBytes.size( ) )
     {
@@ -88,7 +88,7 @@ const uint32_t MetalShaderLocalDataLayout::InlineNumBytes( uint32_t binding ) co
     return m_inlineDataNumBytes[ binding ];
 }
 
-const MetalLocalBindingDesc &MetalShaderLocalDataLayout::UavBinding( uint32_t binding ) const
+const MetalLocalBindingDesc &MetalLocalRootSignature::UavBinding( uint32_t binding ) const
 {
     if ( !EnsureSize( binding, m_uavBindings ) )
     {
@@ -97,7 +97,7 @@ const MetalLocalBindingDesc &MetalShaderLocalDataLayout::UavBinding( uint32_t bi
     return m_uavBindings[ binding ];
 }
 
-const MetalLocalBindingDesc &MetalShaderLocalDataLayout::SrvBinding( uint32_t binding ) const
+const MetalLocalBindingDesc &MetalLocalRootSignature::SrvBinding( uint32_t binding ) const
 {
     if ( !EnsureSize( binding, m_srvBindings ) )
     {
@@ -106,7 +106,7 @@ const MetalLocalBindingDesc &MetalShaderLocalDataLayout::SrvBinding( uint32_t bi
     return m_srvBindings[ binding ];
 }
 
-const MetalLocalBindingDesc &MetalShaderLocalDataLayout::SamplerBinding( uint32_t binding ) const
+const MetalLocalBindingDesc &MetalLocalRootSignature::SamplerBinding( uint32_t binding ) const
 {
     if ( !EnsureSize( binding, m_samplerBindings ) )
     {
@@ -115,7 +115,7 @@ const MetalLocalBindingDesc &MetalShaderLocalDataLayout::SamplerBinding( uint32_
     return m_samplerBindings[ binding ];
 }
 
-bool MetalShaderLocalDataLayout::EnsureSize( uint32_t binding, const std::vector<MetalLocalBindingDesc> &bindings ) const
+bool MetalLocalRootSignature::EnsureSize( uint32_t binding, const std::vector<MetalLocalBindingDesc> &bindings ) const
 {
     if ( binding >= bindings.size( ) )
     {

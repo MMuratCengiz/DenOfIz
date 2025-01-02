@@ -34,7 +34,7 @@ namespace DenOfIz
         NSMutableArray<MTLAccelerationStructureGeometryDescriptor *> *m_geometryDescriptors;
         MTLAccelerationStructureInstanceOptions                       m_options;
         std::vector<id<MTLResource>>                                  m_indirectResources;
-        ASGeometryType                                                m_geometryType;
+        HitGroupType                                                  m_hitGroupType;
 
     public:
         MetalBottomLevelAS( MetalContext *context, const BottomLevelASDesc &desc );
@@ -44,7 +44,7 @@ namespace DenOfIz
         [[nodiscard]] id<MTLBuffer>                           Scratch( ) const;
         [[nodiscard]] MTLAccelerationStructureDescriptor     *Descriptor( );
         [[nodiscard]] MTLAccelerationStructureInstanceOptions Options( ) const;
-        [[nodiscard]] const ASGeometryType                   &GeometryType( ) const;
+        [[nodiscard]] const HitGroupType                     &GeometryType( ) const;
         [[nodiscard]] const std::vector<id<MTLResource>>     &IndirectResources( ) const;
 
     private:

@@ -85,18 +85,20 @@ namespace DenOfIz
         void CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionInfo ) override;
         void CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTexture ) override;
         void CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBuffer ) override;
+        void UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc ) override;
         void BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc ) override;
         void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc ) override;
         void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
 
         const QueueType GetQueueType( ) override;
+
     private:
         void BindTopLevelArgumentBuffer( );
         void TopLevelArgumentBufferNextOffset( );
         void EnsureEncoder( MetalEncoderType encoderType, std::string errorMessage );
         // This is used because Vulkan+DX12 both support more operations in their graphics command list, so seamless transition is provided here
         void SwitchEncoder( MetalEncoderType encoderType );
-        void UseResource( const id<MTLResource>& resource,  MTLResourceUsage usage = MTLResourceUsageRead, MTLRenderStages stages = MTLRenderStageVertex | MTLRenderStageFragment );
+        void UseResource( const id<MTLResource> &resource, MTLResourceUsage usage = MTLResourceUsageRead, MTLRenderStages stages = MTLRenderStageVertex | MTLRenderStageFragment );
     };
 
 } // namespace DenOfIz

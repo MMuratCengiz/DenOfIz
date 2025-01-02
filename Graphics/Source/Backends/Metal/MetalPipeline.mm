@@ -208,30 +208,26 @@ void MetalPipeline::CreateRayTracingPipeline( )
         id<MTLFunction> mtlFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
 
         [functionHandles addObject:mtlFunction];
+        m_visibleFunctions[ shader->EntryPoint.Get( ) ] = i + nullFunctionOffset;
+    }
 
-        uint32_t shaderIndex = i + nullFunctionOffset;
-        if ( !shader->RayTracing.HitGroupExport.IsEmpty( ) )
+    for ( int i = 0; i < m_desc.RayTracing.HitGroups.NumElements( ); ++i )
+    {
+        const auto     &hitGroup       = m_desc.RayTracing.HitGroups.GetElement( i );
+        HitGroupExport &hitGroupExport = m_hitGroupExports.emplace( hitGroup.Name.Get( ), HitGroupExport( ) ).first->second;
+
+        if ( hitGroup.ClosestHitShaderIndex != -1 )
         {
-            HitGroupExport &hitGroupExport = m_hitGroupExports[ shader->RayTracing.HitGroupExport.Get( ) ];
-
-            switch ( shader->Stage )
-            {
-            case ShaderStage::ClosestHit:
-                hitGroupExport.ClosestHit = shaderIndex;
-                break;
-            case ShaderStage::AnyHit:
-                hitGroupExport.AnyHit = shaderIndex;
-                break;
-            case ShaderStage::Intersection:
-                hitGroupExport.Intersection = shaderIndex;
-                break;
-            default:
-                LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage ) << " for hit group export.";
-                break;
-            }
+            hitGroupExport.ClosestHit = hitGroup.ClosestHitShaderIndex + nullFunctionOffset;
         }
-
-        m_visibleFunctions[ shader->EntryPoint.Get( ) ] = shaderIndex;
+        if ( hitGroup.AnyHitShaderIndex != -1 )
+        {
+            hitGroupExport.AnyHit       = hitGroup.AnyHitShaderIndex + nullFunctionOffset;
+        }
+        if ( hitGroup.IntersectionShaderIndex != -1 )
+        {
+            hitGroupExport.Intersection = hitGroup.IntersectionShaderIndex + nullFunctionOffset;
+        }
     }
 
     id<MTLLibrary>  triangleIntersectionLibrary = NewSynthesizedIntersectionLibrary( IRHitGroupTypeTriangles );

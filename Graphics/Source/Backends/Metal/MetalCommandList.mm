@@ -386,6 +386,32 @@ void MetalCommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyT
           destinationBytesPerImage:copyTextureToBuffer.RowPitch * copyTextureToBuffer.NumRows];
 }
 
+void MetalCommandList::UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc )
+{
+    SwitchEncoder( MetalEncoderType::AccelerationStructure );
+
+    MetalTopLevelAS *metalTopLevelAS = static_cast<MetalTopLevelAS *>( updateDesc.TopLevelAS );
+    if ( !metalTopLevelAS )
+    {
+        LOG( ERROR ) << "Invalid top level acceleration structure.";
+        return;
+    }
+
+    UpdateTransformsDesc updateTransformDesc{ };
+    updateTransformDesc.Transforms = updateDesc.Transforms;
+    metalTopLevelAS->UpdateInstanceTransforms( updateTransformDesc );
+
+    [m_accelerationStructureEncoder useResource:metalTopLevelAS->AccelerationStructure( ) usage:MTLResourceUsageRead];
+    [m_accelerationStructureEncoder useResource:metalTopLevelAS->Scratch( ) usage:MTLResourceUsageWrite];
+    [m_accelerationStructureEncoder useResource:metalTopLevelAS->HeaderBuffer( ) usage:MTLResourceUsageWrite];
+    [m_accelerationStructureEncoder useResource:metalTopLevelAS->InstanceBuffer( ) usage:MTLResourceUsageRead];
+
+    [m_accelerationStructureEncoder buildAccelerationStructure:metalTopLevelAS->AccelerationStructure( )
+                                                    descriptor:metalTopLevelAS->Descriptor( )
+                                                 scratchBuffer:metalTopLevelAS->Scratch( )
+                                           scratchBufferOffset:0];
+}
+
 void MetalCommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )
 {
     SwitchEncoder( MetalEncoderType::AccelerationStructure );
@@ -468,7 +494,7 @@ void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
     [m_computeEncoder setBytes:&dispatchRaysArgs length:sizeof( IRDispatchRaysArgument ) atIndex:kIRRayDispatchArgumentsBindPoint];
 
     NSUInteger threadGroupSizeX = [m_pipeline->ComputePipelineState( ) maxTotalThreadsPerThreadgroup];
-    MTLSize    threadGroupSize  = ( MTLSize ){ threadGroupSizeX, 1, 1 };
+    MTLSize    threadGroupSize  = (MTLSize){ threadGroupSizeX, 1, 1 };
 
     MTLSize gridSize = MTLSize( dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth );
     [m_computeEncoder dispatchThreadgroups:gridSize threadsPerThreadgroup:threadGroupSize];

@@ -117,10 +117,10 @@ namespace DenOfIz
         std::unique_ptr<IShaderLocalData>    m_hitGroupData;
 
         // Constants and state
-        std::vector<D3D12_RAYTRACING_AABB> m_aabbs;
-        Time                               m_time;
-        double                             m_animateGeometryTime = 1.0f;
-        bool                               m_animateGeometry     = true;
+        std::vector<RayTracingAABB> m_aabbs;
+        Time                        m_time;
+        double                      m_animateGeometryTime = 1.0f;
+        bool                        m_animateGeometry     = true;
 
         void CreateRenderTargets( );
         void CreateResources( );

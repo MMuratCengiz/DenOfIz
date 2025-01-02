@@ -127,7 +127,7 @@ set(DEN_OF_IZ_GRAPHICS_METAL_SOURCES
         # RayTracing
         Source/Backends/Metal/RayTracing/MetalBottomLevelAS.mm
         Source/Backends/Metal/RayTracing/MetalShaderBindingTable.mm
-        Source/Backends/Metal/RayTracing/MetalShaderLocalDataLayout.mm
+        Source/Backends/Metal/RayTracing/MetalLocalRootSignature.mm
         Source/Backends/Metal/RayTracing/MetalShaderLocalData.mm
         Source/Backends/Metal/RayTracing/MetalTopLevelAS.mm
 )

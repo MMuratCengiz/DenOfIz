@@ -45,22 +45,22 @@ namespace DenOfIz
         void                         LoadPhysicalDevice( const PhysicalDevice &device ) override;
         bool                         IsDeviceLost( ) override;
 
-        ICommandListPool       *CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
-        IPipeline              *CreatePipeline( const PipelineDesc &pipelineDesc ) override;
-        ISwapChain             *CreateSwapChain( const SwapChainDesc &swapChainDesc ) override;
-        IRootSignature         *CreateRootSignature( const RootSignatureDesc &rootSignatureDesc ) override;
-        IInputLayout           *CreateInputLayout( const InputLayoutDesc &inputLayoutDesc ) override;
-        IResourceBindGroup     *CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc ) override;
-        IFence                 *CreateFence( ) override;
-        ISemaphore             *CreateSemaphore( ) override;
-        IBufferResource        *CreateBufferResource( const BufferDesc &bufferDesc ) override;
-        ITextureResource       *CreateTextureResource( const TextureDesc &textureDesc ) override;
-        ISampler               *CreateSampler( const SamplerDesc &samplerDesc ) override;
-        IBottomLevelAS         *CreateBottomLevelAS( const BottomLevelASDesc &desc ) override;
-        ITopLevelAS            *CreateTopLevelAS( const TopLevelASDesc &desc ) override;
-        IShaderBindingTable    *CreateShaderBindingTable( const ShaderBindingTableDesc &desc ) override;
-        IShaderLocalDataLayout *CreateShaderLocalDataLayout( const ShaderLocalDataLayoutDesc &createDesc ) override;
-        IShaderLocalData       *CreateShaderLocalData( const ShaderLocalDataDesc &createDesc ) override;
+        ICommandListPool    *CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
+        IPipeline           *CreatePipeline( const PipelineDesc &pipelineDesc ) override;
+        ISwapChain          *CreateSwapChain( const SwapChainDesc &swapChainDesc ) override;
+        IRootSignature      *CreateRootSignature( const RootSignatureDesc &rootSignatureDesc ) override;
+        IInputLayout        *CreateInputLayout( const InputLayoutDesc &inputLayoutDesc ) override;
+        IResourceBindGroup  *CreateResourceBindGroup( const ResourceBindGroupDesc &descriptorTableDesc ) override;
+        IFence              *CreateFence( ) override;
+        ISemaphore          *CreateSemaphore( ) override;
+        IBufferResource     *CreateBufferResource( const BufferDesc &bufferDesc ) override;
+        ITextureResource    *CreateTextureResource( const TextureDesc &textureDesc ) override;
+        ISampler            *CreateSampler( const SamplerDesc &samplerDesc ) override;
+        IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &desc ) override;
+        ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &desc ) override;
+        IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &desc ) override;
+        ILocalRootSignature *CreateLocalRootSignature( const LocalRootSignatureDesc &desc ) override;
+        IShaderLocalData    *CreateShaderLocalData( const ShaderLocalDataDesc &createDesc ) override;
 
         void WaitIdle( ) override;
         // --

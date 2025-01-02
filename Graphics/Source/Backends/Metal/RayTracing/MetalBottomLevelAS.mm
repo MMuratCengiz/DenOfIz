@@ -29,8 +29,8 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
     for ( size_t i = 0; i < desc.Geometries.NumElements( ); ++i )
     {
         const ASGeometryDesc &geometry = desc.Geometries.GetElement( i );
-        m_geometryType                 = geometry.Type;
-        if ( i > 0 && geometry.Type != m_geometryType )
+        m_hitGroupType                 = geometry.Type;
+        if ( i > 0 && geometry.Type != m_hitGroupType )
         {
             LOG( ERROR ) << "All geometries in a BLAS must have the same type in Metal.";
             return;
@@ -38,10 +38,10 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
 
         switch ( geometry.Type )
         {
-        case ASGeometryType::Triangles:
+        case HitGroupType::Triangles:
             [m_geometryDescriptors addObject:InitializeTriangles( geometry )];
             break;
-        case ASGeometryType::AABBs:
+        case HitGroupType::AABBs:
             [m_geometryDescriptors addObject:InitializeAABBs( geometry )];
             break;
         default:
@@ -167,9 +167,9 @@ MTLAccelerationStructureInstanceOptions MetalBottomLevelAS::Options( ) const
     return m_options;
 }
 
-const ASGeometryType &MetalBottomLevelAS::GeometryType( ) const
+const HitGroupType &MetalBottomLevelAS::GeometryType( ) const
 {
-    return m_geometryType;
+    return m_hitGroupType;
 }
 
 [[nodiscard]] const std::vector<id<MTLResource>> &MetalBottomLevelAS::IndirectResources( ) const
