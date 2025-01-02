@@ -113,11 +113,11 @@ void RayTracedTriangleExample::Quit( )
 void RayTracedTriangleExample::CreateRenderTargets( )
 {
     TextureDesc textureDesc{ };
-    textureDesc.Width        = m_windowDesc.Width;
-    textureDesc.Height       = m_windowDesc.Height;
-    textureDesc.Format       = Format::B8G8R8A8Unorm;
-    textureDesc.Descriptor   = BitSet( ResourceDescriptor::RWTexture );
-    textureDesc.Usages       = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::UnorderedAccess;
+    textureDesc.Width      = m_windowDesc.Width;
+    textureDesc.Height     = m_windowDesc.Height;
+    textureDesc.Format     = Format::B8G8R8A8Unorm;
+    textureDesc.Descriptor = BitSet( ResourceDescriptor::RWTexture );
+    textureDesc.Usages     = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::UnorderedAccess;
     for ( uint32_t i = 0; i < 3; ++i )
     {
         textureDesc.DebugName   = InteropString( "RayTracing Output " ).Append( std::to_string( i ).c_str( ) );
@@ -184,9 +184,8 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     pipelineDesc.ShaderProgram                   = m_rayTracingProgram.get( );
     pipelineDesc.RayTracing.MaxNumPayloadBytes   = 4 * sizeof( float );
     pipelineDesc.RayTracing.MaxNumAttributeBytes = 2 * sizeof( float );
-    pipelineDesc.RayTracing.LocalRootSignatures.Resize( pipelineDesc.ShaderProgram->CompiledShaders( ).NumElements( ) );
-    pipelineDesc.RayTracing.LocalRootSignatures.SetElement( 1, m_hgShaderLayout.get( ) );
-    pipelineDesc.RayTracing.HitGroups.AddElement( HitGroupDesc{ .Name = "MyHitGroup", .ClosestHitShaderIndex = 1, .Type = HitGroupType::Triangles } );
+    pipelineDesc.RayTracing.HitGroups.AddElement(
+        HitGroupDesc{ .Name = "MyHitGroup", .ClosestHitShaderIndex = 1, .Type = HitGroupType::Triangles, .LocalRootSignature = m_hgShaderLayout.get( ) } );
 
     m_rayTracingPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 }

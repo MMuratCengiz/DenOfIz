@@ -16,7 +16,7 @@
 //
 // RaytracingHLSLCompat.h
 //
-// A header with shared definitions for C++ and HLSL source files. 
+// A header with shared definitions for C++ and HLSL source files.
 //
 //**********************************************************************************************
 
@@ -30,27 +30,26 @@ typedef UINT16 Index;
 #endif
 
 // Number of metaballs to use within an AABB.
-#define N_METABALLS 3    // = {3, 5}
+#define N_METABALLS 3 // = {3, 5}
 
 // Limitting calculations only to metaballs a ray intersects can speed up raytracing
-// dramatically particularly when there is a higher number of metaballs used. 
+// dramatically particularly when there is a higher number of metaballs used.
 // Use of dynamic loops can have detrimental effects to performance for low iteration counts
 // and outweighing any potential gains from avoiding redundant calculations.
 // Requires: USE_DYNAMIC_LOOPS set to 1 to take effect.
 #if N_METABALLS >= 5
 #define USE_DYNAMIC_LOOPS 1
 #define LIMIT_TO_ACTIVE_METABALLS 1
-#else 
+#else
 #define USE_DYNAMIC_LOOPS 0
 #define LIMIT_TO_ACTIVE_METABALLS 0
 #endif
 
-#define N_FRACTAL_ITERATIONS 4      // = <1,...>
+#define N_FRACTAL_ITERATIONS 4 // = <1,...>
 
 // PERFORMANCE TIP: Set max recursion depth as low as needed
 // as drivers may apply optimization strategies for low recursion depths.
-#define MAX_RAY_RECURSION_DEPTH 3    // ~ primary rays + reflections + shadow rays from reflected geometry.
-
+#define MAX_RAY_RECURSION_DEPTH 3 // ~ primary rays + reflections + shadow rays from reflected geometry.
 
 struct ProceduralPrimitiveAttributes
 {
@@ -60,7 +59,7 @@ struct ProceduralPrimitiveAttributes
 struct RayPayload
 {
     XMFLOAT4 color;
-    UINT   recursionDepth;
+    UINT     recursionDepth;
 };
 
 struct ShadowRayPayload
@@ -76,96 +75,108 @@ struct SceneConstantBuffer
     XMVECTOR lightAmbientColor;
     XMVECTOR lightDiffuseColor;
     float    reflectance;
-    float    elapsedTime;                 // Elapsed application time.
+    float    elapsedTime; // Elapsed application time.
 };
 
 // Attributes per primitive type.
 struct PrimitiveConstantBuffer
 {
     XMFLOAT4 albedo;
-    float reflectanceCoef;
-    float diffuseCoef;
-    float specularCoef;
-    float specularPower;
-    float stepScale;                      // Step scale for ray marching of signed distance primitives. 
-                                          // - Some object transformations don't preserve the distances and 
-                                          //   thus require shorter steps.
+    float    reflectanceCoef;
+    float    diffuseCoef;
+    float    specularCoef;
+    float    specularPower;
+    float    stepScale;
+
     XMFLOAT3 padding;
 };
 
 // Attributes per primitive instance.
 struct PrimitiveInstanceConstantBuffer
 {
-    UINT instanceIndex;  
+    UINT instanceIndex;
     UINT primitiveType; // Procedural primitive type
+};
+
+struct LocalData
+{
+    PrimitiveConstantBuffer         materialCB;
+    PrimitiveInstanceConstantBuffer aabbCB;
 };
 
 // Dynamic attributes per primitive instance.
 struct PrimitiveInstancePerFrameBuffer
 {
-    XMMATRIX localSpaceToBottomLevelAS;   // Matrix from local primitive space to bottom-level object space.
-    XMMATRIX bottomLevelASToLocalSpace;   // Matrix from bottom-level object space to local primitive space.
+    XMMATRIX localSpaceToBottomLevelAS; // Matrix from local primitive space to bottom-level object space.
+    XMMATRIX bottomLevelASToLocalSpace; // Matrix from bottom-level object space to local primitive space.
 };
 
 struct Vertex
 {
-    XMFLOAT3 position;
-    XMFLOAT3 normal;
+    XMFLOAT4 position;
+    XMFLOAT4 normal;
 };
 
-
 // Ray types traced in this sample.
-namespace RayType {
-    enum Enum {
-        Radiance = 0,   // ~ Primary, reflected camera/view rays calculating color for each hit.
-        Shadow,         // ~ Shadow/visibility rays, only testing for occlusion
+namespace RayType
+{
+    enum Enum
+    {
+        Radiance = 0, // ~ Primary, reflected camera/view rays calculating color for each hit.
+        Shadow,       // ~ Shadow/visibility rays, only testing for occlusion
         Count
     };
-}
+} // namespace RayType
 
 namespace TraceRayParameters
 {
-    static const UINT InstanceMask = ~0;   // Everything is visible.
-    namespace HitGroup {
-        static const UINT Offset[RayType::Count] =
-        {
+    static const UINT InstanceMask = ~0; // Everything is visible.
+    namespace HitGroup
+    {
+        static const UINT Offset[ RayType::Count ] = {
             0, // Radiance ray
             1  // Shadow ray
         };
         static const UINT GeometryStride = RayType::Count;
-    }
-    namespace MissShader {
-        static const UINT Offset[RayType::Count] =
-        {
+    } // namespace HitGroup
+    namespace MissShader
+    {
+        static const UINT Offset[ RayType::Count ] = {
             0, // Radiance ray
             1  // Shadow ray
         };
     }
-}
+} // namespace TraceRayParameters
 
 // From: http://blog.selfshadow.com/publications/s2015-shading-course/hoffman/s2015_pbs_physics_math_slides.pdf
-static const XMFLOAT4 ChromiumReflectance = XMFLOAT4(0.549f, 0.556f, 0.554f, 1.0f);
+static const XMFLOAT4 ChromiumReflectance = XMFLOAT4( 0.549f, 0.556f, 0.554f, 1.0f );
 
-static const XMFLOAT4 BackgroundColor = XMFLOAT4(0.8f, 0.9f, 1.0f, 1.0f);
-static const float InShadowRadiance = 0.35f;
+static const XMFLOAT4 BackgroundColor  = XMFLOAT4( 0.8f, 0.9f, 1.0f, 1.0f );
+static const float    InShadowRadiance = 0.35f;
 
-namespace AnalyticPrimitive {
-    enum Enum {
+namespace AnalyticPrimitive
+{
+    enum Enum
+    {
         AABB = 0,
         Spheres,
         Count
     };
-}
+} // namespace AnalyticPrimitive
 
-namespace VolumetricPrimitive {
-    enum Enum {
+namespace VolumetricPrimitive
+{
+    enum Enum
+    {
         Metaballs = 0,
         Count
     };
-}
+} // namespace VolumetricPrimitive
 
-namespace SignedDistancePrimitive {
-    enum Enum {
+namespace SignedDistancePrimitive
+{
+    enum Enum
+    {
         MiniSpheres = 0,
         IntersectedRoundCube,
         SquareTorus,
@@ -175,6 +186,6 @@ namespace SignedDistancePrimitive {
         FractalPyramid,
         Count
     };
-}
+} // namespace SignedDistancePrimitive
 
 #endif // RAYTRACINGHLSLCOMPAT_H

@@ -29,16 +29,16 @@ namespace DenOfIz
     {
         VulkanContext                    *m_context;
         ShaderLocalDataDesc               m_desc;
-        VulkanLocalRootSignature      *m_layout;
+        VulkanLocalRootSignature         *m_layout;
         std::vector<Byte>                 m_data;
         Storage                           m_storage;
         std::vector<VkWriteDescriptorSet> m_writeDescriptorSets;
         std::vector<uint8_t>              m_inlineData;
-        VkDescriptorSet                   m_descriptorSet = VK_NULL_HANDLE;
+        VkDescriptorSet                   m_descriptorSet = nullptr;
 
     public:
         VulkanShaderLocalData( VulkanContext *context, const ShaderLocalDataDesc &desc );
-        ~VulkanShaderLocalData( );
+        ~VulkanShaderLocalData( ) override;
 
         void Begin( ) override;
         void Cbv( const uint32_t binding, IBufferResource *bufferResource ) override;

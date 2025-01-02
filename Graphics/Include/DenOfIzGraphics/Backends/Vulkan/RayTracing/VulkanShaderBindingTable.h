@@ -47,6 +47,7 @@ namespace DenOfIz
         uint32_t m_hitGroupNumBytes  = 0;
         uint32_t m_missGroupNumBytes = 0;
 
+        ShaderBindingTableDebugData m_debugData;
     public:
         VulkanShaderBindingTable( VulkanContext *context, const ShaderBindingTableDesc &desc );
         void                                Resize( const SBTSizeDesc                                &) override;

@@ -109,13 +109,12 @@ namespace DenOfIz
         std::unique_ptr<IResourceBindGroup> m_rayTracingBindGroups[ 3 ];
 
         // Shader binding table and layouts
-        int32_t                                           m_closestHitTriangleIndex      = 0;
-        int32_t                                           m_closestHitAABBIndex          = 0;
-        int32_t                                           m_firstIntersectionShaderIndex = 0;
-        std::unique_ptr<IShaderBindingTable>              m_shaderBindingTable;
-        std::unique_ptr<ILocalRootSignature>              m_triangleHgLocalRootSignature;
-        std::unique_ptr<ILocalRootSignature>              m_aabbHgLocalRootSignature;
-        std::unique_ptr<IShaderLocalData>                 m_hitGroupData;
+        int32_t                              m_closestHitTriangleIndex      = 0;
+        int32_t                              m_closestHitAABBIndex          = 0;
+        int32_t                              m_firstIntersectionShaderIndex = 0;
+        std::unique_ptr<IShaderBindingTable> m_shaderBindingTable;
+        std::unique_ptr<ILocalRootSignature> m_hgLocalRootSignature;
+        std::unique_ptr<IShaderLocalData>    m_hitGroupData;
 
         // Constants and state
         std::vector<D3D12_RAYTRACING_AABB> m_aabbs;
@@ -140,6 +139,7 @@ namespace DenOfIz
         void Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget ) override;
         void HandleEvent( SDL_Event &event ) override;
         void UpdateAABBPrimitiveAttributes( );
-        ~RayTracedProceduralGeometryExample( ) override;
+        void Quit( ) override;
+        ~RayTracedProceduralGeometryExample( ) override = default;
     };
 } // namespace DenOfIz

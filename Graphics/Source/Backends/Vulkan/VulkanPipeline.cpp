@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanLocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanInputLayout.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanPipeline.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h>
@@ -120,6 +119,17 @@ void VulkanPipeline::CreateRayTracingPipeline( )
 
     const InteropArray<CompiledShader *> &compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
     std::unordered_map<int32_t, uint32_t> shaderIndexMap;
+
+    // Create a local root signature
+    rayTracingLocalRootSignature = std::make_unique<VulkanLocalRootSignature>( m_context, LocalRootSignatureDesc{ }, false );
+    auto mergeLocalRootSignature = [ & ]( ILocalRootSignature *localRootSignature )
+    {
+        if ( const auto *layout = dynamic_cast<VulkanLocalRootSignature *>( localRootSignature ) )
+        {
+            rayTracingLocalRootSignature->Merge( *layout );
+        }
+    };
+
     for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
     {
         const auto           &compiledShader = compiledShaders.GetElement( i );
@@ -146,23 +156,10 @@ void VulkanPipeline::CreateRayTracingPipeline( )
             visitedShaders[ compiledShader->Path.Get( ) ] = shaderModule;
         }
 
-        if ( compiledShader->RayTracing.LocalBindings.NumElements( ) > 0 )
+        if ( m_desc.RayTracing.LocalRootSignatures.NumElements( ) > i )
         {
-            ILocalRootSignature *layoutDesc = m_desc.RayTracing.LocalRootSignatures.GetElement( i );
-            if ( auto *layout = dynamic_cast<VulkanLocalRootSignature *>( layoutDesc ) )
-            {
-                for ( auto &layoutWithSet : layout->DescriptorSetLayouts( ) )
-                {
-                    for ( uint32_t lastLayout = allLayouts.size( ); lastLayout <= layoutWithSet.Set; ++lastLayout )
-                    {
-                        allLayouts.push_back( rootSig->EmptyLayout( ) );
-                    }
-
-                    allLayouts[ layoutWithSet.Set ] = layoutWithSet.Layout;
-                }
-            }
+            mergeLocalRootSignature( m_desc.RayTracing.LocalRootSignatures.GetElement( i ) );
         }
-
         VkPipelineShaderStageCreateInfo &shaderStage = shaderStages.emplace_back( );
         shaderStage.sType                            = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         shaderStage.stage                            = stage;
@@ -184,8 +181,6 @@ void VulkanPipeline::CreateRayTracingPipeline( )
 
             m_shaderIdentifierOffsets[ compiledShader->EntryPoint.Get( ) ] = shaderGroups.size( ) - 1;
         }
-
-        m_shaderIdentifierOffsets[ compiledShader->EntryPoint.Get( ) ] = shaderIndex * m_context->RayTracingProperties.shaderGroupHandleSize;
     }
 
     for ( int i = 0; i < m_desc.RayTracing.HitGroups.NumElements( ); ++i )
@@ -203,11 +198,22 @@ void VulkanPipeline::CreateRayTracingPipeline( )
         group.intersectionShader = hitGroup.IntersectionShaderIndex >= 0 ? shaderIndexMap[ hitGroup.IntersectionShaderIndex ] : VK_SHADER_UNUSED_KHR;
 
         m_shaderIdentifierOffsets[ hitGroup.Name.Get( ) ] = shaderGroups.size( ) - 1;
+
+        mergeLocalRootSignature( hitGroup.LocalRootSignature );
     }
 
+    // Add the merged local layouts
+    rayTracingLocalRootSignature->Create( );
+    for ( const auto &layout : rayTracingLocalRootSignature->DescriptorSetLayouts( ) )
+    {
+        for ( uint32_t lastLayout = allLayouts.size( ); lastLayout <= layout.Set; ++lastLayout )
+        {
+            allLayouts.push_back( rootSig->EmptyLayout( ) );
+        }
+        allLayouts[ layout.Set ] = layout.Layout;
+    }
     std::vector<VkPushConstantRange> pushConstants = rootSig->PushConstantRanges( );
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{ };
+    VkPipelineLayoutCreateInfo       pipelineLayoutInfo{ };
     pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount         = allLayouts.size( );
     pipelineLayoutInfo.pSetLayouts            = allLayouts.data( );
@@ -240,7 +246,15 @@ void VulkanPipeline::CreateRayTracingPipeline( )
 
 void *VulkanPipeline::GetShaderIdentifier( const std::string &exportName )
 {
-    return m_shaderIdentifiers.data( ) + m_shaderIdentifierOffsets[ exportName ];
+    const auto it = m_shaderIdentifierOffsets.find( exportName );
+    if ( it == m_shaderIdentifierOffsets.end( ) )
+    {
+        LOG( ERROR ) << "Could not find shader identifier for export " << exportName;
+        return nullptr;
+    }
+
+    const uint32_t groupIndex = it->second;
+    return m_shaderIdentifiers.data( ) + groupIndex * m_context->RayTracingProperties.shaderGroupHandleSize;
 }
 
 void *VulkanPipeline::GetShaderIdentifier( const uint32_t offset )

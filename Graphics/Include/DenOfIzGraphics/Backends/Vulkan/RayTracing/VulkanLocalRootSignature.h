@@ -28,6 +28,10 @@ namespace DenOfIz
         VkDescriptorSetLayout Layout;
         uint32_t              Set;
     };
+
+    /// !Important, Vulkan local root signature is expected to merge into a single local root signature during ray tracing pipeline creation. To keep consistency with
+    /// all DenOfIz structures, it can still initialize on constructor. However there is no real benefit of providing create = true, as the used local root signature is the one
+    /// created within VulkanPipeline::CreateRayTracingPipeline( )
     class VulkanLocalRootSignature final : public ILocalRootSignature
     {
         VulkanContext         *m_context;
@@ -43,7 +47,9 @@ namespace DenOfIz
         std::vector<uint32_t> m_inlineDataNumBytes;
 
     public:
-        VulkanLocalRootSignature( VulkanContext *context, const LocalRootSignatureDesc &desc );
+        VulkanLocalRootSignature( VulkanContext *context, const LocalRootSignatureDesc &desc, bool create = true );
+        void Merge( const VulkanLocalRootSignature& other );
+        void Create( );
         ~VulkanLocalRootSignature( ) override;
 
         [[nodiscard]] std::vector<VkLayoutWithSet> DescriptorSetLayouts( );

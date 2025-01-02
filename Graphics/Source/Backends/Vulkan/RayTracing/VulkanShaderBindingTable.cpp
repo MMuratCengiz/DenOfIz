@@ -34,6 +34,10 @@ VulkanShaderBindingTable::VulkanShaderBindingTable( VulkanContext *context, cons
     m_hitGroupNumBytes      = Utilities::Align( m_shaderGroupHandleSize + m_desc.MaxHitGroupDataBytes, m_context->RayTracingProperties.shaderGroupHandleAlignment );
     m_missGroupNumBytes     = Utilities::Align( m_shaderGroupHandleSize + m_desc.MaxMissDataBytes, m_context->RayTracingProperties.shaderGroupHandleAlignment );
 
+    m_debugData.RayGenNumBytes = m_rayGenNumBytes;
+    m_debugData.MissNumBytes = m_missGroupNumBytes;
+    m_debugData.HitGroupNumBytes = m_hitGroupNumBytes;
+
     Resize( desc.SizeDesc );
 }
 
@@ -45,11 +49,11 @@ void VulkanShaderBindingTable::Resize( const SBTSizeDesc &desc )
     m_numBufferBytes                           = AlignRecord( rayGenerationShaderNumBytes ) + AlignRecord( hitGroupNumBytes ) + AlignRecord( missShaderNumBytes );
 
     BufferDesc bufferDesc{ };
-    bufferDesc.NumBytes     = m_numBufferBytes;
-    bufferDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer );
-    bufferDesc.Usages       = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::ShaderBindingTable;
-    bufferDesc.HeapType     = HeapType::CPU_GPU;
-    bufferDesc.DebugName    = "Shader Binding Table Staging Buffer";
+    bufferDesc.NumBytes   = m_numBufferBytes;
+    bufferDesc.Descriptor = BitSet( ResourceDescriptor::Buffer );
+    bufferDesc.Usages     = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::ShaderBindingTable;
+    bufferDesc.HeapType   = HeapType::CPU_GPU;
+    bufferDesc.DebugName  = "Shader Binding Table Staging Buffer";
 
     m_stagingBuffer = std::make_unique<VulkanBufferResource>( m_context, bufferDesc );
     m_mappedMemory  = m_stagingBuffer->MapMemory( );
@@ -94,6 +98,11 @@ void VulkanShaderBindingTable::BindRayGenerationShader( const RayGenerationBindi
 
     memcpy( entry, shaderIdentifier, m_rayGenNumBytes );
     EncodeData( entry, desc.Data );
+
+#ifndef NDEBUG
+    m_debugData.RayGenerationShaders.AddElement(
+        { shaderIdentifier, m_shaderGroupHandleSize, desc.Data ? dynamic_cast<VulkanShaderLocalData *>( desc.Data )->DataNumBytes( ) : 0, desc.ShaderName.Get( ) } );
+#endif
 }
 
 void VulkanShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
@@ -113,7 +122,18 @@ void VulkanShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     }
 
     memcpy( hitGroupEntry, hitGroupIdentifier, m_shaderGroupHandleSize );
-    EncodeData( hitGroupEntry, desc.Data );
+    if ( desc.Data )
+    {
+        const VulkanShaderLocalData *data = dynamic_cast<VulkanShaderLocalData *>( desc.Data );
+        EncodeData( hitGroupEntry, desc.Data );
+#ifndef NDEBUG
+        m_debugData.HitGroups.AddElement( { hitGroupIdentifier, m_shaderGroupHandleSize,  data->DataNumBytes( ), desc.HitGroupExportName.Get( ) } );
+    }
+    else
+    {
+        m_debugData.HitGroups.AddElement( { hitGroupIdentifier, m_shaderGroupHandleSize, 0, desc.HitGroupExportName.Get( ) } );
+#endif
+    }
 }
 
 void VulkanShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
@@ -124,10 +144,18 @@ void VulkanShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 
     memcpy( missShaderEntry, shaderIdentifier, m_shaderGroupHandleSize );
     EncodeData( missShaderEntry, desc.Data );
+
+#ifndef NDEBUG
+    m_debugData.MissShaders.AddElement(
+        { shaderIdentifier, m_shaderGroupHandleSize, desc.Data ? dynamic_cast<VulkanShaderLocalData *>( desc.Data )->DataNumBytes( ) : 0, desc.ShaderName.Get( ) } );
+#endif
 }
 
 void VulkanShaderBindingTable::Build( )
 {
+#ifndef NDEBUG
+    PrintShaderBindingTableDebugData( m_debugData );
+#endif
     m_stagingBuffer->UnmapMemory( );
 
     VkCommandBufferAllocateInfo bufferAllocateInfo{ };

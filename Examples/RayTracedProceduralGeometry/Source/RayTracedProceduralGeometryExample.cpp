@@ -55,7 +55,7 @@ void RayTracedProceduralGeometryExample::Init( )
 
 void RayTracedProceduralGeometryExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void RayTracedProceduralGeometryExample::BuildProceduralGeometryAABBs( )
@@ -352,10 +352,10 @@ void RayTracedProceduralGeometryExample::CreateResources( )
 {
     constexpr uint16_t indices[] = { 0, 1, 2, 0, 3, 1 };
 
-    constexpr Vertex vertices[] = { { { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
-                                    { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-                                    { { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-                                    { { 1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } } };
+    constexpr Vertex vertices[] = { { { 0.0f, 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+                                    { { 1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+                                    { { 0.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+                                    { { 1.0f, 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } } };
 
     BufferDesc vbDesc{ };
     vbDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer ); // These are not real vertex buffers
@@ -426,33 +426,32 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
 
         ShaderDesc &rayGenShaderDesc = shaderDescs.GetElement( shaderIndex++ );
         rayGenShaderDesc.Stage       = ShaderStage::Raygen;
-        rayGenShaderDesc.Path        = "Assets/Shaders/RTProceduralGeometry/RayTracing.hlsl";
+        rayGenShaderDesc.Path        = "Assets/Shaders/RTProceduralGeometry/RayGen.hlsl";
         rayGenShaderDesc.EntryPoint  = "MyRaygenShader";
 
         ShaderDesc &missShaderDesc = shaderDescs.GetElement( shaderIndex++ );
         missShaderDesc.Stage       = ShaderStage::Miss;
-        missShaderDesc.Path        = "Assets/Shaders/RTProceduralGeometry/RayTracing.hlsl";
+        missShaderDesc.Path        = "Assets/Shaders/RTProceduralGeometry/Miss.hlsl";
         missShaderDesc.EntryPoint  = "MyMissShader";
 
         ShaderDesc &shadowMissShaderDesc = shaderDescs.GetElement( shaderIndex++ );
         shadowMissShaderDesc.Stage       = ShaderStage::Miss;
-        shadowMissShaderDesc.Path        = "Assets/Shaders/RTProceduralGeometry/RayTracing.hlsl";
+        shadowMissShaderDesc.Path        = "Assets/Shaders/RTProceduralGeometry/Miss.hlsl";
         shadowMissShaderDesc.EntryPoint  = "MyMissShader_ShadowRay";
 
         m_closestHitTriangleIndex         = shaderIndex++;
         ShaderDesc &triangleHitShaderDesc = shaderDescs.GetElement( m_closestHitTriangleIndex );
         triangleHitShaderDesc.Stage       = ShaderStage::ClosestHit;
-        triangleHitShaderDesc.Path        = "Assets/Shaders/RTProceduralGeometry/RayTracing.hlsl";
+        triangleHitShaderDesc.Path        = "Assets/Shaders/RTProceduralGeometry/ClosestHit.hlsl";
         triangleHitShaderDesc.EntryPoint  = "MyClosestHitShader_Triangle";
-        triangleHitShaderDesc.RayTracing.MarkCbvAsLocal( 1, 0 );
+        triangleHitShaderDesc.RayTracing.MarkCbvAsLocal( 1, 3 );
 
         m_closestHitAABBIndex         = shaderIndex++;
         ShaderDesc &aabbHitShaderDesc = shaderDescs.GetElement( m_closestHitAABBIndex );
         aabbHitShaderDesc.Stage       = ShaderStage::ClosestHit;
-        aabbHitShaderDesc.Path        = "Assets/Shaders/RTProceduralGeometry/RayTracing.hlsl";
+        aabbHitShaderDesc.Path        = "Assets/Shaders/RTProceduralGeometry/ClosestHit.hlsl";
         aabbHitShaderDesc.EntryPoint  = "MyClosestHitShader_AABB";
-        aabbHitShaderDesc.RayTracing.MarkCbvAsLocal( 1, 0 );
-        aabbHitShaderDesc.RayTracing.MarkCbvAsLocal( 2, 0 );
+        aabbHitShaderDesc.RayTracing.MarkCbvAsLocal( 1, 3 );
         m_firstIntersectionShaderIndex = shaderIndex;
 
         const char *aabbHitGroupTypes[] = { "AnalyticPrimitive", "VolumetricPrimitive", "SignedDistancePrimitive" };
@@ -460,10 +459,9 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
         {
             ShaderDesc &intersectionShaderDesc = shaderDescs.GetElement( shaderIndex++ );
             intersectionShaderDesc.Stage       = ShaderStage::Intersection;
-            intersectionShaderDesc.Path        = "Assets/Shaders/RTProceduralGeometry/RayTracing.hlsl";
+            intersectionShaderDesc.Path        = InteropString( "Assets/Shaders/RTProceduralGeometry/Intersection_" ).Append( aabbHitGroupTypes[ i ] ).Append( ".hlsl" );
             intersectionShaderDesc.EntryPoint  = InteropString( "MyIntersectionShader_" ).Append( aabbHitGroupTypes[ i ] );
-            intersectionShaderDesc.RayTracing.MarkCbvAsLocal( 1, 0 );
-            intersectionShaderDesc.RayTracing.MarkCbvAsLocal( 2, 0 );
+            intersectionShaderDesc.RayTracing.MarkCbvAsLocal( 1, 3 );
         }
     }
 
@@ -476,13 +474,8 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
     auto reflection           = m_rayTracingProgram->Reflect( );
     m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
 
-    m_triangleHgLocalRootSignature =
+    m_hgLocalRootSignature =
         std::unique_ptr<ILocalRootSignature>( m_logicalDevice->CreateLocalRootSignature( reflection.LocalRootSignatures.GetElement( m_closestHitTriangleIndex ) ) );
-
-    LocalRootSignatureDesc aabbHgRootSignatureDesc{ };
-    aabbHgRootSignatureDesc.Merge( reflection.LocalRootSignatures.GetElement( m_closestHitAABBIndex ) );
-    aabbHgRootSignatureDesc.Merge( reflection.LocalRootSignatures.GetElement( m_firstIntersectionShaderIndex ) );
-    m_aabbHgLocalRootSignature = std::unique_ptr<ILocalRootSignature>( m_logicalDevice->CreateLocalRootSignature( aabbHgRootSignatureDesc ) );
 
     InteropArray<HitGroupDesc> hitGroupDescs;
     { // Create hit groups
@@ -490,7 +483,7 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
         hitGroupDesc1.Type                  = HitGroupType::Triangles;
         hitGroupDesc1.Name                  = "MyHitGroup_Triangle";
         hitGroupDesc1.ClosestHitShaderIndex = m_closestHitTriangleIndex;
-        hitGroupDesc1.LocalRootSignature    = m_triangleHgLocalRootSignature.get( );
+        hitGroupDesc1.LocalRootSignature    = m_hgLocalRootSignature.get( );
 
         HitGroupDesc &hitGroupDesc2 = hitGroupDescs.EmplaceElement( );
         hitGroupDesc2.Type          = HitGroupType::Triangles;
@@ -515,7 +508,7 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
                 {
                     hitGroupDesc.ClosestHitShaderIndex = -1;
                 }
-                hitGroupDesc.LocalRootSignature = m_aabbHgLocalRootSignature.get( );
+                hitGroupDesc.LocalRootSignature = m_hgLocalRootSignature.get( );
             }
         }
     }
@@ -666,7 +659,7 @@ void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
     bindingTableDesc.Pipeline                = m_rayTracingPipeline.get( );
     bindingTableDesc.SizeDesc.NumHitGroups   = numHitGroups;
     bindingTableDesc.SizeDesc.NumMissShaders = 2;
-    bindingTableDesc.MaxHitGroupDataBytes    = sizeof( PrimitiveInstanceConstantBuffer ) + sizeof( PrimitiveConstantBuffer );
+    bindingTableDesc.MaxHitGroupDataBytes    = sizeof( LocalData );
 
     m_shaderBindingTable = std::unique_ptr<IShaderBindingTable>( m_logicalDevice->CreateShaderBindingTable( bindingTableDesc ) );
 
@@ -687,13 +680,18 @@ void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
         m_shaderBindingTable->BindMissShader( shadowMissDesc );
     }
 
+    LocalData          localData{ };
+    InteropArray<Byte> localDataBuffer( sizeof( LocalData ) );
+
     uint32_t hitGroupOffset = 0;
     {
-        const auto triangleHitGroupData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderLocalData( { m_triangleHgLocalRootSignature.get( ) } ) );
+        const auto triangleHitGroupData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderLocalData( { m_hgLocalRootSignature.get( ) } ) );
 
-        InteropArray<Byte> materialData( sizeof( PrimitiveConstantBuffer ) );
-        materialData.MemCpy( &m_planeMaterialCB, sizeof( PrimitiveConstantBuffer ) );
-        triangleHitGroupData->Cbv( 1, materialData );
+        localData.materialCB = m_planeMaterialCB;
+        localData.aabbCB     = { 0, 0 };
+        localDataBuffer.MemCpy( &localData, sizeof( localData ) );
+
+        triangleHitGroupData->Cbv( 1, localDataBuffer );
 
         // Create separate entries for each ray type
         for ( uint32_t rayType = 0; rayType < 2; rayType++ )
@@ -716,16 +714,13 @@ void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
             // Primitives for each intersection shader.
             for ( uint32_t primitiveIndex = 0; primitiveIndex < numPrimitiveTypes; primitiveIndex++, instanceIndex++ )
             {
-                auto hitGroupData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderLocalData( { m_aabbHgLocalRootSignature.get( ) } ) );
+                auto hitGroupData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderLocalData( { m_hgLocalRootSignature.get( ) } ) );
 
-                InteropArray<Byte> materialData( sizeof( PrimitiveConstantBuffer ) );
-                materialData.MemCpy( &m_aabbMaterials[ instanceIndex ], sizeof( PrimitiveConstantBuffer ) );
-                hitGroupData->Cbv( 1, materialData );
+                localData.materialCB = m_aabbMaterials[ instanceIndex ];
+                localData.aabbCB     = { .instanceIndex = instanceIndex, .primitiveType = primitiveIndex };
+                localDataBuffer.MemCpy( &localData, sizeof( LocalData ) );
 
-                PrimitiveInstanceConstantBuffer instanceData{ .instanceIndex = instanceIndex, .primitiveType = primitiveIndex };
-                InteropArray<Byte>              instanceDataArray( sizeof( PrimitiveInstanceConstantBuffer ) );
-                instanceDataArray.MemCpy( &instanceData, sizeof( PrimitiveInstanceConstantBuffer ) );
-                hitGroupData->Cbv( 2, instanceDataArray );
+                hitGroupData->Cbv( 1, localDataBuffer );
 
                 // Ray types.
                 for ( uint32_t rayType = 0; rayType < RayType::Count; rayType++ )
@@ -748,10 +743,11 @@ void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
     m_shaderBindingTable->Build( );
 }
 
-RayTracedProceduralGeometryExample::~RayTracedProceduralGeometryExample( )
+void RayTracedProceduralGeometryExample::Quit( )
 {
     m_aabbPrimitiveAttributeBuffer->UnmapMemory( );
     m_aabbPrimitiveAttributeBufferMemory = nullptr;
     m_sceneConstantBuffer->UnmapMemory( );
     m_sceneConstants = nullptr;
+    IExample::Quit( );
 }

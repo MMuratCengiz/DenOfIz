@@ -447,9 +447,9 @@ void RenderGraph::IssueBarriers( ICommandList *commandList, const std::vector<No
                 TextureBarrierDesc textureBarrierDesc{ texture, lockedState.State, resourceUsage.State };
                 if ( lockedState.Queue != commandList->GetQueueType( ) )
                 {
-                    textureBarrierDesc.EnableQueueBarrier = true;
-                    textureBarrierDesc.SourceQueue        = lockedState.Queue;
-                    textureBarrierDesc.DestinationQueue   = commandList->GetQueueType( );
+                    // textureBarrierDesc.EnableQueueBarrier = true;
+                    // textureBarrierDesc.SourceQueue        = lockedState.Queue;
+                    // textureBarrierDesc.DestinationQueue   = commandList->GetQueueType( );
                 }
                 barrierDesc.TextureBarrier( textureBarrierDesc );
                 lockedState.State = resourceUsage.State;

@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
+#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanLocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h>
 #include <DenOfIzGraphics/Utilities/Utilities.h>
 
@@ -47,6 +48,8 @@ namespace DenOfIz
         std::unordered_map<std::string, uint32_t>     m_shaderIdentifierOffsets;
         std::vector<uint8_t>                          m_shaderIdentifiers;
         std::vector<std::pair<ShaderStage, uint32_t>> m_hitGroupIdentifiers;
+
+        std::unique_ptr<VulkanLocalRootSignature> rayTracingLocalRootSignature{ nullptr };
 
     public:
         [[nodiscard]] VkPipeline                                           Instance( ) const;

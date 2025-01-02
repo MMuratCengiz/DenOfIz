@@ -150,7 +150,7 @@ VkWriteDescriptorSet &VulkanResourceBindGroup::BindBuffer( const ResourceBinding
     auto                 &bufferInfo         = m_storage.Store<VkDescriptorBufferInfo>( );
     bufferInfo.buffer                        = vulkanResource->Instance( );
     bufferInfo.offset                        = vulkanResource->Offset( );
-    bufferInfo.range                         = vulkanResource->NumBytes( );
+    bufferInfo.range                         = VK_WHOLE_SIZE;
     writeDescriptorSet.pBufferInfo           = &bufferInfo;
 
     return writeDescriptorSet;

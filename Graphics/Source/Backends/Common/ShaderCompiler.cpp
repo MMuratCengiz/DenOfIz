@@ -124,11 +124,6 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
 
     std::vector<LPCWSTR> arguments;
     arguments.push_back( wsShaderPath.c_str( ) );
-    // Set the entry point
-    arguments.push_back( L"-E" );
-    std::string  entryPoint = compileDesc.EntryPoint.Get( );
-    std::wstring wsEntryPoint( entryPoint.begin( ), entryPoint.end( ) );
-    arguments.push_back( wsEntryPoint.c_str( ) );
     // Set shader stage
     arguments.push_back( L"-T" );
     std::wstring wsTargetProfile( targetProfile.begin( ), targetProfile.end( ) );
@@ -181,6 +176,7 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
 
         arguments.push_back( L"-fvk-use-dx-position-w" );
         arguments.push_back( L"-fvk-use-dx-layout" );
+        arguments.push_back( L"-fspv-debug=line" );
     }
     for ( int i = 0; i < compileDesc.Defines.NumElements( ); ++i )
     {
@@ -193,6 +189,17 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
 #ifndef NDEBUG
     arguments.push_back( L"-Zi" );
 #endif
+
+    // Set the entry point, and export only the specific entry point, helps with Vulkan and Metal compatibility
+    arguments.push_back( L"-E" );
+    std::string  entryPoint = compileDesc.EntryPoint.Get( );
+    std::wstring wsEntryPoint( entryPoint.begin( ), entryPoint.end( ) );
+    arguments.push_back( wsEntryPoint.c_str( ) );
+    arguments.push_back( L"-default-linkage" );
+    arguments.push_back( L"external" );
+    arguments.push_back( L"-export-shaders-only" );
+    arguments.push_back( L"-exports" );
+    arguments.push_back( wsEntryPoint.c_str( ) );
 
     DxcBuffer buffer{ };
     buffer.Encoding = DXC_CP_ACP; // or? DXC_CP_UTF8;
@@ -331,7 +338,7 @@ void ShaderCompiler::CacheCompiledShader( const std::string &filename, const std
 
 std::string ShaderCompiler::CachedShaderFile( const std::string &filename, const std::string &entryPoint, const TargetIL &targetIL ) const
 {
-    std::string  compiledFilename = filename.substr( 0, filename.find_last_of( '.' ) ) + "-" + entryPoint;
+    std::string compiledFilename = filename.substr( 0, filename.find_last_of( '.' ) ) + "-" + entryPoint;
     if ( targetIL == TargetIL::SPIRV )
     {
         compiledFilename += ".spv";

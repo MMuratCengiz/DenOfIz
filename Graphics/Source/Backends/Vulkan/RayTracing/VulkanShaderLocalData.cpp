@@ -66,15 +66,7 @@ void VulkanShaderLocalData::Cbv( const uint32_t binding, IBufferResource *buffer
 void VulkanShaderLocalData::Cbv( const uint32_t binding, const InteropArray<Byte> &data )
 {
     const uint32_t offset = m_layout->CbvOffset( binding );
-    const uint32_t size   = m_layout->CbvNumBytes( binding );
-
-    if ( size != data.NumElements( ) )
-    {
-        LOG( ERROR ) << "Data size mismatch for CBV binding " << binding;
-        return;
-    }
-
-    memcpy( m_inlineData.data( ) + offset, data.Data( ), size );
+    memcpy( m_inlineData.data( ) + offset, data.Data( ), data.NumElements( ) );
 }
 
 void VulkanShaderLocalData::Srv( const uint32_t binding, const IBufferResource *bufferResource )

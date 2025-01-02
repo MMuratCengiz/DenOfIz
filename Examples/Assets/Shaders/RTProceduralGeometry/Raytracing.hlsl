@@ -34,8 +34,8 @@ StructuredBuffer<Vertex> g_vertices : register(t2, space0);
 
 // Procedural geometry resources
 StructuredBuffer<PrimitiveInstancePerFrameBuffer> g_AABBPrimitiveAttributes : register(t3, space0);
-ConstantBuffer<PrimitiveConstantBuffer> l_materialCB : register(b1);
-ConstantBuffer<PrimitiveInstanceConstantBuffer> l_aabbCB: register(b2);
+[[vk::shader_record_ext]] ConstantBuffer<PrimitiveConstantBuffer> l_materialCB : register(b1);
+[[vk::shader_record_ext]] ConstantBuffer<PrimitiveInstanceConstantBuffer> l_aabbCB: register(b2);
 
 
 //***************************************************************************

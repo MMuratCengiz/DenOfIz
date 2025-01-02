@@ -139,11 +139,8 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     rootSignatureSubObject.pDesc                       = &globalRootSignature;
 
     // std::vector<D3D12_DXIL_LIBRARY_DESC> dxilLibs;
-    std::unordered_map<std::string, D3D12_DXIL_LIBRARY_DESC>        dxilLibs;
-    std::unordered_map<std::string, std::vector<D3D12_EXPORT_DESC>> dxilLibExports;
-    std::vector<D3D12_EXPORT_DESC>                                  dxilExports;
+    std::vector<D3D12_DXIL_LIBRARY_DESC> dxilLibs;
     dxilLibs.reserve( compiledShaders.NumElements( ) );
-    dxilExports.reserve( compiledShaders.NumElements( ) );
     // Lifetime Management:
     std::vector<std::wstring> entryPoints;
     entryPoints.reserve( compiledShaders.NumElements( ) * 2 );
@@ -152,25 +149,13 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     {
         if ( const auto &compiledShader = compiledShaders.GetElement( i ) )
         {
-            if ( !dxilLibs.contains( compiledShader->Path.Get( ) ) )
-            {
-                dxilLibs[ compiledShader->Path.Get( ) ] = {
-                    .DXILLibrary = { .pShaderBytecode = compiledShader->Blob->GetBufferPointer( ), .BytecodeLength = compiledShader->Blob->GetBufferSize( ) }, .NumExports = 0
-                };
-            }
-
             DZ_WS_STRING( wEntryPoint, compiledShader->EntryPoint.Get( ) );
             entryPoints.push_back( wEntryPoint );
-            dxilLibExports[ compiledShader->Path.Get( ) ].push_back( { .Name = entryPoints.back( ).c_str( ) } );
-        }
-    }
 
-    for ( auto &[ libName, libDesc ] : dxilLibs )
-    {
-        auto &libExports   = dxilLibExports[ libName ];
-        libDesc.NumExports = static_cast<UINT>( libExports.size( ) );
-        libDesc.pExports   = libExports.data( );
-        subObjects.emplace_back( D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &libDesc );
+            D3D12_DXIL_LIBRARY_DESC &libraryDesc = dxilLibs.emplace_back( );
+            libraryDesc.DXILLibrary              = { .pShaderBytecode = compiledShader->Blob->GetBufferPointer( ), .BytecodeLength = compiledShader->Blob->GetBufferSize( ) };
+            subObjects.emplace_back( D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &libraryDesc );
+        }
     }
 
     std::unordered_map<ID3D12RootSignature *, std::vector<LPCWSTR>> rootSignatureExports;

@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanLocalRootSignature::VulkanLocalRootSignature( VulkanContext *context, const LocalRootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
+VulkanLocalRootSignature::VulkanLocalRootSignature( VulkanContext *context, const LocalRootSignatureDesc &desc, bool create ) : m_context( context ), m_desc( desc )
 {
     std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
 
@@ -54,6 +54,7 @@ VulkanLocalRootSignature::VulkanLocalRootSignature( VulkanContext *context, cons
 
                 currentOffset += alignedSize;
                 m_totalInlineDataBytes += alignedSize;
+                continue;
             }
             break;
         case ResourceBindingType::ShaderResource:
@@ -82,6 +83,56 @@ VulkanLocalRootSignature::VulkanLocalRootSignature( VulkanContext *context, cons
         m_layoutBindings[ binding.RegisterSpace ].push_back( layoutBinding );
     }
 
+    if ( create )
+    {
+        Create( );
+    }
+}
+
+void VulkanLocalRootSignature::Merge( const VulkanLocalRootSignature &other )
+{
+    m_inlineDataOffsets.resize( other.m_inlineDataOffsets.size( ) );
+    m_inlineDataNumBytes.resize( other.m_inlineDataNumBytes.size( ) );
+
+    for ( int i = 0; i < other.m_inlineDataOffsets.size( ); ++i )
+    {
+        if ( m_inlineDataOffsets[ i ] == 0 )
+        {
+            m_inlineDataOffsets[ i ] = other.m_inlineDataOffsets[ i ];
+            m_inlineDataNumBytes[ i ] = other.m_inlineDataNumBytes[ i ];
+        }
+    }
+
+    m_totalInlineDataBytes = 0;
+    for ( const auto &numBytes : m_inlineDataNumBytes )
+    {
+        m_totalInlineDataBytes += numBytes;
+    }
+
+    for ( auto &[ space, bindings ] : other.m_layoutBindings )
+    {
+        for ( auto &otherBinding : bindings )
+        {
+            bool exists = false;
+            for ( auto &ourBinding : m_layoutBindings[ space ] )
+            {
+                if ( ourBinding.binding == otherBinding.binding )
+                {
+                    exists = true;
+                    ourBinding.stageFlags |= otherBinding.stageFlags;
+                    break;
+                }
+            }
+            if ( !exists )
+            {
+                m_layoutBindings[ space ].push_back( otherBinding );
+            }
+        }
+    }
+}
+
+void VulkanLocalRootSignature::Create( )
+{
     for ( auto &[ space, bindings ] : m_layoutBindings )
     {
         VkDescriptorSetLayoutCreateInfo layoutInfo{ };
@@ -90,7 +141,7 @@ VulkanLocalRootSignature::VulkanLocalRootSignature( VulkanContext *context, cons
         layoutInfo.pBindings    = bindings.data( );
 
         VkDescriptorSetLayout layout;
-        VK_CHECK_RESULT( vkCreateDescriptorSetLayout( context->LogicalDevice, &layoutInfo, nullptr, &layout ) );
+        VK_CHECK_RESULT( vkCreateDescriptorSetLayout( m_context->LogicalDevice, &layoutInfo, nullptr, &layout ) );
 
         m_layouts.push_back( { layout, space } );
     }
