@@ -51,6 +51,7 @@ namespace DenOfIz
     {
         InteropArray<ShaderDesc> Shaders;
         bool                     EnableCaching = true;
+        ProgramRayTracingDesc    RayTracing;
     };
     /// <summary>
     /// A class that provides a factory for creating API agnostic structures

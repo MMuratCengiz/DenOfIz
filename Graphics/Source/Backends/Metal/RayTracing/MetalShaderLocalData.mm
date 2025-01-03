@@ -55,14 +55,14 @@ void MetalShaderLocalData::Cbv( uint32_t binding, const InteropArray<Byte> &data
 {
     auto offset   = m_layout->InlineDataOffset( binding );
     auto numBytes = m_layout->InlineNumBytes( binding );
-
-    if ( data.NumElements( ) != numBytes )
+    if ( data.NumElements( ) > numBytes )
     {
-        LOG( ERROR ) << "Data size mismatch for binding " << binding;
+        LOG( ERROR ) << "Data larger than expected: [" << data.NumElements( ) << " vs " << numBytes << "] for binding: " << binding
+                     << " This could lead to data corruption. Binding skipped.";
         return;
     }
 
-    memcpy( m_data.data( ) + offset, data.Data( ), numBytes );
+    memcpy( m_data.data( ) + offset, data.Data( ), data.NumElements( ) );
 }
 
 void MetalShaderLocalData::Srv( uint32_t binding, const IBufferResource *resource )

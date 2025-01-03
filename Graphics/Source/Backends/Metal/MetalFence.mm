@@ -35,6 +35,7 @@ void MetalFence::Wait( )
     if ( m_submitted )
     {
         dispatch_semaphore_wait( m_fence, DISPATCH_TIME_FOREVER );
+        m_submitted = false;
     }
 }
 
@@ -53,7 +54,11 @@ void MetalFence::Notify( )
 
 void MetalFence::NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer> &commandBuffer )
 {
+    dispatch_semaphore_t fence = m_fence;
     [commandBuffer addCompletedHandler:^( id<MTLCommandBuffer> _unused ) {
-      this->Notify( );
+      if ( fence )
+      {
+          dispatch_semaphore_signal( fence );
+      }
     }];
 }

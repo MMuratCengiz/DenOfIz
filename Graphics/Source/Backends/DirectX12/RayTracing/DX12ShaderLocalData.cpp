@@ -40,10 +40,11 @@ void DX12ShaderLocalData::Cbv( const uint32_t binding, IBufferResource *bufferRe
 void DX12ShaderLocalData::Cbv( const uint32_t binding, const InteropArray<Byte> &data )
 {
     const uint32_t numBytes = m_layout->CbvNumBytes( binding );
-    if ( const uint32_t alignedNumBytes = Utilities::Align( data.NumElements( ), 16 ); numBytes != alignedNumBytes )
+    if ( data.NumElements( ) > numBytes )
     {
-        LOG( ERROR ) << "Bound data is not the same size as the expected data size: CBV(" << binding << "), expected aligned bytes: " << numBytes
-                     << ", got aligned bytes: " << alignedNumBytes;
+        LOG( ERROR ) << "Data larger than expected: [" << data.NumElements( ) << " vs " << numBytes << "] for binding: " << binding
+                     << " This could lead to data corruption. Binding skipped.";
+        return;
     }
     memcpy( m_data.data( ) + m_layout->CbvOffset( binding ), data.Data( ), numBytes );
 }

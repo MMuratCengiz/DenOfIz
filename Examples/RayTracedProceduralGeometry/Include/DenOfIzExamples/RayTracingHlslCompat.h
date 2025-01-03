@@ -21,10 +21,7 @@
 //**********************************************************************************************
 
 #ifdef __APPLE__
-#include <cstdint>
-#include <DirectXMath.h>
 typedef uint16_t UINT16;
-typedef uint32_t UINT;
 #endif
 
 #ifdef HLSL

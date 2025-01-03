@@ -281,8 +281,9 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob
     IRCompilerSetLocalRootSignature( irCompiler, localSignature );
     // TODO some of these values are hardcoded because metal is odd. The only possible way I can think of is to move the compilation to pipeline creation.
     // But will try this way for now.
-    IRCompilerSetRayTracingPipelineArguments( irCompiler, 2 * sizeof( float ), IRRaytracingPipelineFlagNone, IRIntrinsicMaskClosestHitAll, IRIntrinsicMaskMissShaderAll,
-                                              IRIntrinsicMaskAnyHitShaderAll, 255, IRRayTracingUnlimitedRecursionDepth, IRRayGenerationCompilationVisibleFunction );
+    IRCompilerSetRayTracingPipelineArguments( irCompiler, compileMslDesc.RayTracing.MaxNumAttributeBytes, IRRaytracingPipelineFlagNone, IRIntrinsicMaskClosestHitAll,
+                                              IRIntrinsicMaskMissShaderAll, IRIntrinsicMaskAnyHitShaderAll, 255, compileMslDesc.RayTracing.MaxRecursionDepth,
+                                              IRRayGenerationCompilationVisibleFunction );
 
     IRObject *irDxil = IRObjectCreateFromDXIL( (const uint8_t *)code->GetBufferPointer( ), code->GetBufferSize( ), IRBytecodeOwnershipNone );
 

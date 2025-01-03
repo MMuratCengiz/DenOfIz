@@ -27,8 +27,9 @@ namespace DenOfIz
 #ifdef BUILD_METAL
     struct CompileMslDesc
     {
-        IRRootSignature *RootSignature;
-        IRRootSignature *LocalRootSignature;
+        IRRootSignature      *RootSignature;
+        IRRootSignature      *LocalRootSignature;
+        ProgramRayTracingDesc RayTracing;
     };
 #endif
 
@@ -58,9 +59,9 @@ namespace DenOfIz
         [[nodiscard]] static IRShaderStage ConvertIrShaderStage( const ShaderStage &stage );
 #endif
 
-        void                    CacheCompiledShader( const std::string &filename, const std::string &entryPoint, const TargetIL &targetIL, IDxcBlob *code, IDxcBlob *reflection ) const;
-        std::string             CachedShaderFile( const std::string &filename, const std::string &entryPoint, const TargetIL &targetIL ) const;
-        std::string             CachedReflectionFile( const std::string &filename, const std::string &entryPoint ) const;
+        void        CacheCompiledShader( const std::string &filename, const std::string &entryPoint, const TargetIL &targetIL, IDxcBlob *code, IDxcBlob *reflection ) const;
+        std::string CachedShaderFile( const std::string &filename, const std::string &entryPoint, const TargetIL &targetIL ) const;
+        std::string CachedReflectionFile( const std::string &filename, const std::string &entryPoint ) const;
         [[nodiscard]] IDxcBlob *LoadCachedShader( const std::string &filename ) const;
         [[nodiscard]] IDxcBlob *LoadCachedReflection( const std::string &filename, const std::string &entryPoint ) const;
     };

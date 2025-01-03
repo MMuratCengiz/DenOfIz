@@ -39,11 +39,11 @@ namespace DenOfIz
         IRVirtualAddressRangeAndStride m_hitGroupShaderRange;
         IRVirtualAddressRangeAndStride m_missShaderRange;
 
-        uint32_t m_missGroupOffset       = 0;
-        uint32_t m_hitGroupOffset        = 0;
-        uint32_t m_rayGenNumBytes        = 0;
-        uint32_t m_hitGroupNumBytes      = 0;
-        uint32_t m_missNumBytes          = 0;
+        uint32_t m_missGroupOffset  = 0;
+        uint32_t m_hitGroupOffset   = 0;
+        uint32_t m_rayGenNumBytes   = 0;
+        uint32_t m_hitGroupNumBytes = 0;
+        uint32_t m_missNumBytes     = 0;
 
         ShaderBindingTableDebugData m_debugData;
 
@@ -63,7 +63,8 @@ namespace DenOfIz
         const IRVirtualAddressRangeAndStride &MissShaderRange( ) const;
 
     private:
-        void EncodeShaderIndex( uint32_t offset, uint32_t shaderIndex, int customIntersectionIndex = -1 );
-        void EncodeData( uint32_t offset, const IShaderLocalData *data );
+        IRShaderIdentifier EncodeShaderIndex( uint32_t offset, uint32_t shaderIndex, int customIntersectionIndex = -1 );
+        uint32_t           EncodeData( uint32_t offset, const IShaderLocalData *data );
+        uint32_t AlignRecord( const uint32_t& size );
     };
 } // namespace DenOfIz

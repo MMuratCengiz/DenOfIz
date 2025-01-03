@@ -114,6 +114,7 @@ ShaderProgram *GraphicsApi::CreateShaderProgram( ProgramDesc &desc ) const
         LOG( ERROR ) << "No supported API found for this system.";
     }
     programDesc.EnableCaching = desc.EnableCaching;
+    programDesc.RayTracing    = desc.RayTracing;
     return new ShaderProgram( programDesc );
 }
 

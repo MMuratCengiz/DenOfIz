@@ -222,7 +222,7 @@ void MetalPipeline::CreateRayTracingPipeline( )
         }
         if ( hitGroup.AnyHitShaderIndex != -1 )
         {
-            hitGroupExport.AnyHit       = hitGroup.AnyHitShaderIndex + nullFunctionOffset;
+            hitGroupExport.AnyHit = hitGroup.AnyHitShaderIndex + nullFunctionOffset;
         }
         if ( hitGroup.IntersectionShaderIndex != -1 )
         {

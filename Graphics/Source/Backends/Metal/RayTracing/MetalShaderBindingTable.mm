@@ -27,7 +27,7 @@ MetalShaderBindingTable::MetalShaderBindingTable( MetalContext *context, const S
     m_pipeline = dynamic_cast<MetalPipeline *>( desc.Pipeline );
     // In Metal, the concept of a local root signature does not apply to shader stages independently. In case a source of the shader is shared between multiple stages,
     // we need to account for the maximum size of the data for all stages.
-    size_t maxBytes    = std::max( { m_desc.MaxRayGenDataBytes, m_desc.MaxHitGroupDataBytes, m_desc.MaxMissDataBytes } );
+    size_t maxBytes    = Utilities::Align( std::max( { m_desc.MaxRayGenDataBytes, m_desc.MaxHitGroupDataBytes, m_desc.MaxMissDataBytes } ), 16 );
     m_rayGenNumBytes   = sizeof( IRShaderIdentifier ) + maxBytes;
     m_hitGroupNumBytes = sizeof( IRShaderIdentifier ) + maxBytes;
     m_missNumBytes     = sizeof( IRShaderIdentifier ) + maxBytes;
@@ -44,7 +44,7 @@ void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
     size_t rayGenNumBytes   = desc.NumRayGenerationShaders * m_rayGenNumBytes;
     size_t hitGroupNumBytes = desc.NumHitGroups * m_hitGroupNumBytes;
     size_t missNumBytes     = desc.NumMissShaders * m_missNumBytes;
-    m_numBufferBytes        = rayGenNumBytes + hitGroupNumBytes + missNumBytes;
+    m_numBufferBytes        = AlignRecord( rayGenNumBytes ) + AlignRecord( hitGroupNumBytes ) + AlignRecord( missNumBytes );
 
     m_buffer = [m_context->Device newBufferWithLength:m_numBufferBytes options:MTLResourceStorageModeShared];
     [m_buffer setLabel:@"Shader Binding Table"];
@@ -55,12 +55,12 @@ void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
     m_rayGenerationShaderRange.StartAddress = m_buffer.gpuAddress;
     m_rayGenerationShaderRange.SizeInBytes  = rayGenNumBytes;
 
-    m_hitGroupOffset                    = m_rayGenNumBytes;
+    m_hitGroupOffset                    = AlignRecord( m_rayGenNumBytes );
     m_hitGroupShaderRange.StartAddress  = m_buffer.gpuAddress + m_hitGroupOffset;
     m_hitGroupShaderRange.SizeInBytes   = hitGroupNumBytes;
     m_hitGroupShaderRange.StrideInBytes = m_hitGroupNumBytes;
 
-    m_missGroupOffset               = m_hitGroupOffset + hitGroupNumBytes;
+    m_missGroupOffset               = AlignRecord( m_hitGroupOffset + hitGroupNumBytes );
     m_missShaderRange.StartAddress  = m_buffer.gpuAddress + m_missGroupOffset;
     m_missShaderRange.SizeInBytes   = missNumBytes;
     m_missShaderRange.StrideInBytes = m_missNumBytes;
@@ -68,12 +68,16 @@ void MetalShaderBindingTable::Resize( const SBTSizeDesc &desc )
 
 void MetalShaderBindingTable::BindRayGenerationShader( const RayGenerationBindingDesc &desc )
 {
-    const uint32_t &functionIndex = m_pipeline->FindVisibleShaderIndexByName( desc.ShaderName.Get( ) );
-    EncodeShaderIndex( 0, functionIndex );
+    const uint32_t    &functionIndex    = m_pipeline->FindVisibleShaderIndexByName( desc.ShaderName.Get( ) );
+    IRShaderIdentifier shaderIdentifier = EncodeShaderIndex( 0, functionIndex );
+    uint32_t           numBytes         = 0;
     if ( desc.Data )
     {
-        EncodeData( sizeof( IRShaderIdentifier ), desc.Data );
+        numBytes = EncodeData( sizeof( IRShaderIdentifier ), desc.Data );
     }
+#ifndef NDEBUG
+    m_debugData.RayGenerationShaders.AddElement( { &shaderIdentifier, sizeof( IRShaderIdentifier ), numBytes, desc.ShaderName.Get( ) } );
+#endif
 }
 
 void MetalShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
@@ -82,34 +86,45 @@ void MetalShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
 
     const HitGroupExport &hitGroupExport = m_pipeline->FindHitGroupExport( desc.HitGroupExportName.Get( ) );
 
+    IRShaderIdentifier shaderIdentifier;
     if ( hitGroupExport.AnyHit != 0 )
     {
-        EncodeShaderIndex( offset, hitGroupExport.ClosestHit, hitGroupExport.AnyHit );
+        shaderIdentifier = EncodeShaderIndex( offset, hitGroupExport.ClosestHit, hitGroupExport.AnyHit );
     }
     else if ( hitGroupExport.Intersection != 0 )
     {
-        EncodeShaderIndex( offset, hitGroupExport.ClosestHit, hitGroupExport.Intersection );
+        shaderIdentifier = EncodeShaderIndex( offset, hitGroupExport.ClosestHit, hitGroupExport.Intersection );
     }
     else
     {
-        EncodeShaderIndex( offset, hitGroupExport.ClosestHit );
+        shaderIdentifier = EncodeShaderIndex( offset, hitGroupExport.ClosestHit );
     }
 
+    uint32_t numBytes = 0;
     if ( desc.Data )
     {
-        EncodeData( offset + sizeof( IRShaderIdentifier ), desc.Data );
+        numBytes = EncodeData( offset + sizeof( IRShaderIdentifier ), desc.Data );
     }
+
+#ifndef NDEBUG
+    m_debugData.HitGroups.AddElement( { &shaderIdentifier, sizeof( IRShaderIdentifier ), numBytes, desc.HitGroupExportName.Get( ) } );
+#endif
 }
 
 void MetalShaderBindingTable::BindMissShader( const MissBindingDesc &desc )
 {
-    uint32_t        offset        = m_missGroupOffset + desc.Offset * m_missNumBytes;
-    const uint32_t &functionIndex = m_pipeline->FindVisibleShaderIndexByName( desc.ShaderName.Get( ) );
-    EncodeShaderIndex( offset, functionIndex );
+    uint32_t           offset           = m_missGroupOffset + desc.Offset * m_missNumBytes;
+    const uint32_t    &functionIndex    = m_pipeline->FindVisibleShaderIndexByName( desc.ShaderName.Get( ) );
+    IRShaderIdentifier shaderIdentifier = EncodeShaderIndex( offset, functionIndex );
+    uint32_t           numBytes         = 0;
     if ( desc.Data )
     {
-        EncodeData( offset + sizeof( IRShaderIdentifier ), desc.Data );
+        numBytes = EncodeData( offset + sizeof( IRShaderIdentifier ), desc.Data );
     }
+
+#ifndef NDEBUG
+    m_debugData.MissShaders.AddElement( { &shaderIdentifier, sizeof( IRShaderIdentifier ), numBytes, desc.ShaderName.Get( ) } );
+#endif
 }
 
 void MetalShaderBindingTable::Build( )
@@ -144,7 +159,7 @@ const id<MTLBuffer> MetalShaderBindingTable::MetalBuffer( ) const
     return m_buffer;
 }
 
-void MetalShaderBindingTable::EncodeShaderIndex( uint32_t offset, uint32_t shaderIndex, int customIntersectionIndex )
+IRShaderIdentifier MetalShaderBindingTable::EncodeShaderIndex( uint32_t offset, uint32_t shaderIndex, int customIntersectionIndex )
 {
     IRShaderIdentifier shaderIdentifier;
     if ( customIntersectionIndex != -1 )
@@ -162,9 +177,11 @@ void MetalShaderBindingTable::EncodeShaderIndex( uint32_t offset, uint32_t shade
 #endif
     Byte *shaderEntry = static_cast<Byte *>( m_mappedMemory ) + offset;
     memcpy( shaderEntry, &shaderIdentifier, sizeof( IRShaderIdentifier ) );
+
+    return shaderIdentifier;
 }
 
-void MetalShaderBindingTable::EncodeData( uint32_t offset, const IShaderLocalData *iData )
+uint32_t MetalShaderBindingTable::EncodeData( uint32_t offset, const IShaderLocalData *iData )
 {
     MetalShaderLocalData *localData = static_cast<MetalShaderLocalData *>( const_cast<IShaderLocalData *>( iData ) );
     Byte                 *dest      = static_cast<Byte *>( m_mappedMemory ) + offset;
@@ -198,4 +215,11 @@ void MetalShaderBindingTable::EncodeData( uint32_t offset, const IShaderLocalDat
             m_usedResources.push_back( resource );
         }
     }
+
+    return numBytes;
+}
+
+uint32_t MetalShaderBindingTable::AlignRecord( const uint32_t& size )
+{
+    return Utilities::Align( size, 256 );
 }

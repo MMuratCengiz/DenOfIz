@@ -145,8 +145,8 @@ void RayTracedProceduralGeometryExample::UpdateAABBPrimitiveAttributes( )
         const XMMATRIX mTranslation = XMMatrixTranslationFromVector( vTranslation );
 
         const XMMATRIX mTransform                                                        = mScale * mRotation * mTranslation;
-        m_aabbPrimitiveAttributeBufferMemory[ primitiveIndex ].localSpaceToBottomLevelAS = mTransform;
-        m_aabbPrimitiveAttributeBufferMemory[ primitiveIndex ].bottomLevelASToLocalSpace = XMMatrixInverse( nullptr, mTransform );
+        m_aabbPrimitiveAttributeBufferMemory[ primitiveIndex ].localSpaceToBottomLevelAS = XMMatrixTranspose(mTransform);
+        m_aabbPrimitiveAttributeBufferMemory[ primitiveIndex ].bottomLevelASToLocalSpace = XMMatrixTranspose(XMMatrixInverse( nullptr, mTransform ));
     };
 
     UINT offset = 0;
@@ -466,9 +466,12 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
     }
 
     ProgramDesc programDesc{ };
-    programDesc.Shaders       = shaderDescs;
-    programDesc.EnableCaching = false;
-    m_rayTracingProgram       = std::unique_ptr<ShaderProgram>( m_graphicsApi->CreateShaderProgram( programDesc ) );
+    programDesc.Shaders                         = shaderDescs;
+    programDesc.EnableCaching                   = false;
+    programDesc.RayTracing.MaxRecursionDepth    = MAX_RAY_RECURSION_DEPTH;
+    programDesc.RayTracing.MaxNumPayloadBytes   = sizeof( RayPayload );
+    programDesc.RayTracing.MaxNumAttributeBytes = sizeof( ProceduralPrimitiveAttributes );
+    m_rayTracingProgram                         = std::unique_ptr<ShaderProgram>( m_graphicsApi->CreateShaderProgram( programDesc ) );
 
     // Create root signature and pipeline
     auto reflection           = m_rayTracingProgram->Reflect( );

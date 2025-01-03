@@ -70,13 +70,19 @@ namespace DenOfIz
         Callable
     };
 
+    /// <summary>
+    /// Raytracing description for the ShaderProgram
+    /// </summary>
+    struct DZ_API ProgramRayTracingDesc
+    {
+        uint32_t MaxNumPayloadBytes   = 0;
+        uint32_t MaxNumAttributeBytes = 0;
+        uint32_t MaxRecursionDepth    = 1;
+    };
+
     struct DZ_API RayTracingShaderDesc
     {
-        // For ClosestHit, AnyHit, Miss, Intersection Shaders
-        // This field is required because graphics Apis usually export these shaders grouped up into one
-        InteropString                     HitGroupExport;
         InteropArray<ResourceBindingSlot> LocalBindings;
-
         // Local bindings are used to mark resources as local, so they are not included in the global resource list
         // The binding will be added to the corresponding ShaderDataLayoutDesc in the corresponding index of LocalRootSignatureDesc at
         // ShaderReflectDesc.LocalRootSignatures[shaderIndex], where shaderIndex is the index of the shader in the order of shaders provided to CompileDesc.

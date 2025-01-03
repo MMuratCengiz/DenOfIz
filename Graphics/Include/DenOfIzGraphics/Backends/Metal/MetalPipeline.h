@@ -28,9 +28,9 @@ namespace DenOfIz
 
     struct HitGroupExport
     {
-        uint64_t ClosestHit;
-        uint64_t AnyHit;
-        uint64_t Intersection;
+        uint64_t ClosestHit = 0;
+        uint64_t AnyHit = 0;
+        uint64_t Intersection = 0;
     };
 
     class MetalPipeline final : public IPipeline

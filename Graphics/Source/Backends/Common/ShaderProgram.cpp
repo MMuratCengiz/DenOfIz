@@ -201,6 +201,7 @@ void ShaderProgram::IterateBoundResources( CompiledShader *shader, ReflectionSta
     switch ( shader->Stage )
     {
     case ShaderStage::AnyHit:
+    case ShaderStage::Intersection:
     case ShaderStage::ClosestHit:
     case ShaderStage::Raygen:
     case ShaderStage::Miss:
@@ -362,16 +363,17 @@ void ShaderProgram::ProduceMSL( )
 
     for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements( ); ++shaderIndex )
     {
-        auto       &shader      = m_desc.Shaders.GetElement( shaderIndex );
-        CompileDesc compileDesc = { };
-        compileDesc.Path        = shader.Path;
-        compileDesc.Defines     = shader.Defines;
-        compileDesc.EntryPoint  = shader.EntryPoint;
-        compileDesc.Stage       = shader.Stage;
-        compileDesc.TargetIL    = TargetIL::DXIL;
-        auto compiledShader     = compiler.CompileHLSL( compileDesc );
-        state.ShaderDesc        = &shader;
-        state.CompiledShader    = compiledShader.get( );
+        auto       &shader        = m_desc.Shaders.GetElement( shaderIndex );
+        CompileDesc compileDesc   = { };
+        compileDesc.Path          = shader.Path;
+        compileDesc.Defines       = shader.Defines;
+        compileDesc.EntryPoint    = shader.EntryPoint;
+        compileDesc.Stage         = shader.Stage;
+        compileDesc.EnableCaching = compileDesc.EnableCaching;
+        compileDesc.TargetIL      = TargetIL::DXIL;
+        auto compiledShader       = compiler.CompileHLSL( compileDesc );
+        state.ShaderDesc          = &shader;
+        state.CompiledShader      = compiledShader.get( );
 
         auto processResources = [ & ]( D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int i )
         {
@@ -456,6 +458,7 @@ void ShaderProgram::ProduceMSL( )
     CompileMslDesc compileMslDesc{ };
     compileMslDesc.RootSignature      = CreateRootSignature( registerSpaceRanges, m_metalDescriptorOffsets );
     compileMslDesc.LocalRootSignature = CreateRootSignature( localRegisterSpaceRanges, m_localMetalDescriptorOffsets );
+    compileMslDesc.RayTracing         = m_desc.RayTracing;
 
     for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements( ); ++shaderIndex )
     {
@@ -612,11 +615,11 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
 
     for ( int shaderIndex = 0; shaderIndex < m_compiledShaders.size( ); ++shaderIndex )
     {
-        auto &shader                            = m_compiledShaders[ shaderIndex ];
-        reflectionState.CompiledShader          = shader.get( );
-        reflectionState.ShaderDesc              = &m_desc.Shaders.GetElement( shaderIndex );
+        auto &shader                         = m_compiledShaders[ shaderIndex ];
+        reflectionState.CompiledShader       = shader.get( );
+        reflectionState.ShaderDesc           = &m_desc.Shaders.GetElement( shaderIndex );
         LocalRootSignatureDesc &recordLayout = result.LocalRootSignatures.GetElement( shaderIndex );
-        reflectionState.LocalRootSignature = &recordLayout;
+        reflectionState.LocalRootSignature   = &recordLayout;
 
         IDxcBlob       *reflectionBlob = shader->Reflection;
         const DxcBuffer reflectionBuffer{
@@ -662,6 +665,11 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
     }
 
     return result;
+}
+
+ShaderProgramDesc ShaderProgram::Desc( ) const
+{
+    return m_desc;
 }
 
 void ShaderProgram::ReflectShader( ReflectionState &state ) const
@@ -713,7 +721,7 @@ void ShaderProgram::ReflectLibrary( ReflectionState &state ) const
         { // Only process the matching function
             // Check if the name is not mangled to start with
             std::string_view mangledName( functionDesc.Name );
-            const bool isMangled =  mangledName.starts_with( "\01?" ) || mangledName.starts_with( "\x1?" );
+            const bool       isMangled = mangledName.starts_with( "\01?" ) || mangledName.starts_with( "\x1?" );
             if ( !isMangled && functionDesc.Name != state.CompiledShader->EntryPoint.Get( ) )
             {
                 continue;
@@ -852,7 +860,7 @@ bool ShaderProgram::IsBindingLocal( const D3D12_SHADER_INPUT_BIND_DESC &shaderIn
 bool ShaderProgram::ShouldProcessBinding( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
 {
     // Check 1: If the binding is in our local signature, we should process it
-    if ( IsBindingLocalTo( *state.ShaderDesc, shaderInputBindDesc ) )
+    if ( IsBindingLocalTo( *state.ShaderDesc, shaderInputBindDesc ) && state.LocalRootSignature != nullptr )
     {
         for ( int i = 0; i < state.LocalRootSignature->ResourceBindings.NumElements( ); ++i )
         {
@@ -869,7 +877,7 @@ bool ShaderProgram::ShouldProcessBinding( const ReflectionState &state, const D3
     // Check 2: If the binding is not in our local signature, but it is local to another shader, we should not process it
     if ( IsBindingLocal( shaderInputBindDesc ) )
     {
-        return false;
+        //return false;
     }
 
     // This means this is a global binding, and we should process it

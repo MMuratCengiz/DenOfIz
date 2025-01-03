@@ -29,7 +29,7 @@ namespace DenOfIz
     private:
         MetalContext        *m_context;
         dispatch_semaphore_t m_fence;
-        bool                 m_submitted = false;
+        std::atomic<bool>    m_submitted = false;
 
     public:
         MetalFence( MetalContext *context );

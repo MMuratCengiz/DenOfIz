@@ -118,6 +118,7 @@ MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::Initiali
         m_indirectResources.push_back( indexBuffer->Instance( ) );
     }
 
+    triangleDesc.opaque                                       = geometry.Flags.IsSet( GeometryFlags::Opaque );
     triangleDesc.allowDuplicateIntersectionFunctionInvocation = !geometry.Flags.IsSet( GeometryFlags::NoDuplicateAnyHitInvocation );
 
     return triangleDesc;
@@ -138,6 +139,7 @@ MTLAccelerationStructureBoundingBoxGeometryDescriptor *MetalBottomLevelAS::Initi
     m_indirectResources.push_back( aabbBuffer->Instance( ) );
     aabbDesc.intersectionFunctionTableOffset = ProceduralIntersectionShader;
     aabbDesc.boundingBoxBuffer               = aabbBuffer->Instance( );
+    aabbDesc.boundingBoxBufferOffset         = aabb.Offset;
     aabbDesc.boundingBoxStride               = aabb.Stride;
     aabbDesc.boundingBoxCount                = aabb.NumAABBs;
 

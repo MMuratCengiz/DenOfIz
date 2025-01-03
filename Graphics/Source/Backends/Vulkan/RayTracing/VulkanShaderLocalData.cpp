@@ -65,7 +65,14 @@ void VulkanShaderLocalData::Cbv( const uint32_t binding, IBufferResource *buffer
 
 void VulkanShaderLocalData::Cbv( const uint32_t binding, const InteropArray<Byte> &data )
 {
-    const uint32_t offset = m_layout->CbvOffset( binding );
+    const uint32_t offset   = m_layout->CbvOffset( binding );
+    auto           numBytes = m_layout->CbvNumBytes( binding );
+    if ( data.NumElements( ) > numBytes )
+    {
+        LOG( ERROR ) << "Data larger than expected: [" << data.NumElements( ) << " vs " << numBytes << "] for binding: " << binding
+                     << " This could lead to data corruption. Binding skipped.";
+        return;
+    }
     memcpy( m_inlineData.data( ) + offset, data.Data( ), data.NumElements( ) );
 }
 
@@ -138,7 +145,7 @@ void VulkanShaderLocalData::End( )
     }
 }
 
-const VkDescriptorSet* VulkanShaderLocalData::DescriptorSet( ) const
+const VkDescriptorSet *VulkanShaderLocalData::DescriptorSet( ) const
 {
     return &m_descriptorSet;
 }

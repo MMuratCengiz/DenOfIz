@@ -39,9 +39,7 @@ namespace DenOfIz
         InteropString               Path;
         InteropArray<InteropString> Defines;
         InteropString               EntryPoint = "main";
-        /// <summary>
-        /// Only available for Raygen, Miss and Hit shaders
-        /// </summary>
+        /// \brief Only available for Raygen, Miss and Hit shaders
         RayTracingShaderDesc RayTracing;
     };
 
@@ -63,6 +61,7 @@ namespace DenOfIz
         TargetIL                 TargetIL;
         InteropArray<ShaderDesc> Shaders;
         bool                     EnableCaching = true;
+        ProgramRayTracingDesc    RayTracing;
     };
     template class DZ_API InteropArray<ShaderDesc>;
 
@@ -134,6 +133,7 @@ namespace DenOfIz
         DZ_API explicit ShaderProgram( ShaderProgramDesc desc );
         [[nodiscard]] DZ_API InteropArray<CompiledShader *> CompiledShaders( ) const;
         [[nodiscard]] DZ_API ShaderReflectDesc              Reflect( ) const;
+        [[nodiscard]] DZ_API ShaderProgramDesc              Desc( ) const;
         DZ_API ~ShaderProgram( );
 
     private:
