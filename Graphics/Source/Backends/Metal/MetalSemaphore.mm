@@ -24,14 +24,25 @@ MetalSemaphore::MetalSemaphore( MetalContext *context ) : m_context( context )
 {
     m_fence      = [m_context->Device newEvent];
     m_fenceValue = 0;
+    m_signaled   = false;
 }
 
 void MetalSemaphore::Notify( )
 {
 }
 
+void MetalSemaphore::WaitFor( id<MTLCommandBuffer> commandBuffer )
+{
+    if ( m_signaled )
+    {
+        [commandBuffer encodeWaitForEvent:m_fence value:m_fenceValue];
+        m_signaled = false;
+    }
+}
+
 void MetalSemaphore::NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer> &commandBuffer )
 {
-    m_fenceValue = m_fenceValue + 1 % MAX_FENCE_VALUE;
+    m_fenceValue = ( m_fenceValue + 1 ) % MAX_FENCE_VALUE;
     [commandBuffer encodeSignalEvent:m_fence value:m_fenceValue];
+    m_signaled = true;
 }

@@ -112,6 +112,7 @@ void MetalSwapChain::Present( const InteropArray<ISemaphore *> &waitOnSemaphores
         m_presentCommandBuffer = [m_context->CommandQueue commandBuffer];
         [m_presentCommandBuffer presentDrawable:m_currentDrawable];
         [m_presentCommandBuffer commit];
+
         m_presentCommandBuffer = nil;
         m_currentDrawable      = nil;
         m_currentFrame         = ( m_currentFrame + 1 ) % m_desc.NumBuffers;

@@ -138,12 +138,31 @@ void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
             metalFence->NotifyOnCommandBufferCompletion( m_commandBuffer );
         }
 
+        bool waitRequired = false;
+        for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements( ); ++i )
+        {
+            MetalSemaphore *semaphore = static_cast<MetalSemaphore *>( executeDesc.WaitOnSemaphores.GetElement( i ) );
+            if ( semaphore->IsSignaled( ) )
+            {
+                waitRequired = true;
+                break;
+            }
+        }
+
+        if ( waitRequired )
+        {
+            for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements( ); ++i )
+            {
+                MetalSemaphore *semaphore = static_cast<MetalSemaphore *>( executeDesc.WaitOnSemaphores.GetElement( i ) );
+                semaphore->WaitFor( m_commandBuffer );
+            }
+        }
+
         for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements( ); ++i )
         {
             MetalSemaphore *metalSemaphore = static_cast<MetalSemaphore *>( executeDesc.NotifySemaphores.GetElement( i ) );
             metalSemaphore->NotifyOnCommandBufferCompletion( m_commandBuffer );
         }
-
         [m_commandBuffer commit];
     }
 }

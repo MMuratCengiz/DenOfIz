@@ -613,7 +613,6 @@ void RayTracedProceduralGeometryExample::InitializeScene( )
     sceneBufferDesc.HeapType     = HeapType::CPU_GPU;
     sceneBufferDesc.Descriptor   = ResourceDescriptor::UniformBuffer;
     sceneBufferDesc.NumBytes     = sizeof( SceneConstantBuffer );
-    sceneBufferDesc.InitialUsage = ResourceUsage::CopyDst;
     sceneBufferDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::VertexAndConstantBuffer;
     sceneBufferDesc.DebugName    = "SceneConstantBuffer";
     m_sceneConstantBuffer        = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( sceneBufferDesc ) );

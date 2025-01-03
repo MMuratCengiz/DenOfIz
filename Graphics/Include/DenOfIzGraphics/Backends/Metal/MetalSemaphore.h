@@ -29,16 +29,22 @@ namespace DenOfIz
     private:
         constexpr static uint64_t MAX_FENCE_VALUE = 1000000;
 
-        MetalContext *m_context;
-        id<MTLEvent>  m_fence;
-        uint64_t      m_fenceValue = 0;
+        MetalContext     *m_context;
+        id<MTLEvent>      m_fence;
+        uint64_t          m_fenceValue = 0;
+        std::atomic<bool> m_signaled   = false;
 
     public:
         MetalSemaphore( MetalContext *context );
         ~MetalSemaphore( ) override = default;
         void Notify( ) override;
+        void WaitFor( id<MTLCommandBuffer> commandBuffer );
         void NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer> &commandBuffer );
 
+        [[nodiscard]] bool IsSignaled( ) const
+        {
+            return m_signaled;
+        }
         [[nodiscard]] const id<MTLEvent> &GetFence( ) const
         {
             return m_fence;
