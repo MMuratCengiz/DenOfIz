@@ -1,11 +1,11 @@
 #pragma once
 
 #include <DenOfIzExamples/IExample.h>
-#include <DenOfIzExamples/RayTracingHlslCompat.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
 #include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
 #include <DenOfIzGraphics/Utilities/Time.h>
+#include <RayTracingHlslCompat.h>
 
 namespace DenOfIz
 {
@@ -117,10 +117,11 @@ namespace DenOfIz
         std::unique_ptr<IShaderLocalData>    m_hitGroupData;
 
         // Constants and state
-        std::vector<RayTracingAABB> m_aabbs;
-        Time                        m_time;
-        double                      m_animateGeometryTime = 1.0f;
-        bool                        m_animateGeometry     = true;
+        std::vector<AABBBoundingBox>               m_aabbs;
+        std::vector<InteropArray<AABBBoundingBox>> m_aabbPerGeometry;
+        Time                                       m_time;
+        double                                     m_animateGeometryTime = 1.0f;
+        bool                                       m_animateGeometry     = true;
 
         void CreateRenderTargets( );
         void CreateResources( );

@@ -45,7 +45,7 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
         [m_blasList addObject:blas->AccelerationStructure( )];
 
         MTLAccelerationStructureUserIDInstanceDescriptor *instance = &m_instanceDescriptors[ i ];
-        instance->intersectionFunctionTableOffset                  = blas->GeometryType( ) == HitGroupType::Triangles ? 0 : 1;
+        instance->intersectionFunctionTableOffset                  = blas->GeometryType( ) == HitGroupType::Triangles ? TriangleIntersectionShader : ProceduralIntersectionShader;
         instance->accelerationStructureIndex                       = i;
         instance->userID                                           = instanceDesc.ID;
         instance->options                                          = blas->Options( );

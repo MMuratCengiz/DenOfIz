@@ -55,7 +55,7 @@ namespace DenOfIz
         ~ShaderCompiler( );
         [[nodiscard]] std::unique_ptr<CompiledShader> CompileHLSL( const CompileDesc &compileDesc ) const;
 #ifdef BUILD_METAL
-        [[nodiscard]] IDxcBlob            *DxilToMsl( const CompileDesc &compileOptions, IDxcBlob *code, const CompileMslDesc &compileMslDesc ) const;
+        [[nodiscard]] IDxcBlob            *DxilToMsl( const CompileDesc &compileDesc, IDxcBlob *code, const CompileMslDesc &compileMslDesc ) const;
         [[nodiscard]] static IRShaderStage ConvertIrShaderStage( const ShaderStage &stage );
 #endif
 

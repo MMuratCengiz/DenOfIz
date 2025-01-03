@@ -24,9 +24,8 @@
 #include "HlslCompat.h"
 #else
 using namespace DirectX;
-
 // Shader will use byte encoding to access vertex indices.
-typedef UINT16 Index;
+typedef uint16_t Index;
 #endif
 
 // Number of metaballs to use within an AABB.

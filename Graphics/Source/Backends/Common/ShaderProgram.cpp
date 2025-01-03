@@ -371,16 +371,13 @@ void ShaderProgram::ProduceMSL( )
         compileDesc.Stage         = shader.Stage;
         compileDesc.EnableCaching = compileDesc.EnableCaching;
         compileDesc.TargetIL      = TargetIL::DXIL;
+        compileDesc.RayTracing    = shader.RayTracing;
         auto compiledShader       = compiler.CompileHLSL( compileDesc );
         state.ShaderDesc          = &shader;
         state.CompiledShader      = compiledShader.get( );
 
         auto processResources = [ & ]( D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int i )
         {
-            if ( !ShouldProcessBinding( state, shaderInputBindDesc ) )
-            {
-                return;
-            }
             if ( IsResourceAlreadyProcessed( processedInputs, shaderInputBindDesc ) )
             {
                 return;
@@ -470,6 +467,7 @@ void ShaderProgram::ProduceMSL( )
         compileDesc.EntryPoint  = shader.EntryPoint;
         compileDesc.Stage       = shader.Stage;
         compileDesc.TargetIL    = TargetIL::MSL;
+        compileDesc.RayTracing  = shader.RayTracing;
 
         auto     &compiledShader = dxilShaders[ shaderIndex ];
         IDxcBlob *mslBlob        = compiler.DxilToMsl( compileDesc, compiledShader->Blob, compileMslDesc );
@@ -746,11 +744,6 @@ void ShaderProgram::ReflectLibrary( ReflectionState &state ) const
 
 void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, const int resourceIndex ) const
 {
-    if ( !ShouldProcessBinding( state, shaderInputBindDesc ) )
-    {
-        return;
-    }
-
     if ( UpdateBoundResourceStage( state, shaderInputBindDesc ) )
     {
         return;
@@ -843,45 +836,6 @@ bool ShaderProgram::IsBindingLocalTo( const ShaderDesc &shaderDesc, const D3D12_
         }
     }
     return false;
-}
-
-bool ShaderProgram::IsBindingLocal( const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
-{
-    for ( int i = 0; i < m_desc.Shaders.NumElements( ); ++i )
-    {
-        if ( auto &shader = m_desc.Shaders.GetElement( i ); IsBindingLocalTo( shader, shaderInputBindDesc ) )
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool ShaderProgram::ShouldProcessBinding( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
-{
-    // Check 1: If the binding is in our local signature, we should process it
-    if ( IsBindingLocalTo( *state.ShaderDesc, shaderInputBindDesc ) && state.LocalRootSignature != nullptr )
-    {
-        for ( int i = 0; i < state.LocalRootSignature->ResourceBindings.NumElements( ); ++i )
-        {
-            if ( const auto boundResource = state.LocalRootSignature->ResourceBindings.GetElement( i );
-                 boundResource.Binding == shaderInputBindDesc.BindPoint && boundResource.RegisterSpace == shaderInputBindDesc.Space &&
-                 boundResource.BindingType == ReflectTypeToBufferBindingType( shaderInputBindDesc.Type ) )
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    // Check 2: If the binding is not in our local signature, but it is local to another shader, we should not process it
-    if ( IsBindingLocal( shaderInputBindDesc ) )
-    {
-        //return false;
-    }
-
-    // This means this is a global binding, and we should process it
-    return true;
 }
 
 bool ShaderProgram::UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const

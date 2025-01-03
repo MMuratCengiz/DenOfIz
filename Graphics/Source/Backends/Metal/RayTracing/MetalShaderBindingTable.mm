@@ -171,10 +171,6 @@ IRShaderIdentifier MetalShaderBindingTable::EncodeShaderIndex( uint32_t offset, 
         IRShaderIdentifierInit( &shaderIdentifier, shaderIndex );
     }
 
-#ifndef NDEBUG
-    LOG( INFO ) << " Offset: " << offset << " IRShaderIdentifier: {.intersectionShaderHandle=" << shaderIdentifier.intersectionShaderHandle
-                << ", .shaderHandle=" << shaderIdentifier.shaderHandle << " }";
-#endif
     Byte *shaderEntry = static_cast<Byte *>( m_mappedMemory ) + offset;
     memcpy( shaderEntry, &shaderIdentifier, sizeof( IRShaderIdentifier ) );
 

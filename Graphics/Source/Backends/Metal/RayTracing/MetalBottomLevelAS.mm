@@ -24,8 +24,8 @@ using namespace DenOfIz;
 MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevelASDesc &desc ) : m_context( context ), m_desc( desc )
 {
     m_geometryDescriptors = [NSMutableArray arrayWithCapacity:desc.Geometries.NumElements( )];
+    m_options             = MTLAccelerationStructureInstanceOptionDisableTriangleCulling;
 
-    m_options = MTLAccelerationStructureInstanceOptionDisableTriangleCulling;
     for ( size_t i = 0; i < desc.Geometries.NumElements( ); ++i )
     {
         const ASGeometryDesc &geometry = desc.Geometries.GetElement( i );
@@ -65,8 +65,8 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
         usage = MTLAccelerationStructureUsageRefit;
     }
 
-    m_descriptor = [MTLPrimitiveAccelerationStructureDescriptor descriptor];
-    // m_descriptor.usage               = usage;
+    m_descriptor                     = [MTLPrimitiveAccelerationStructureDescriptor descriptor];
+    m_descriptor.usage               = usage;
     m_descriptor.geometryDescriptors = m_geometryDescriptors;
 
     MTLAccelerationStructureSizes asSize = [m_context->Device accelerationStructureSizesWithDescriptor:m_descriptor];
@@ -137,10 +137,10 @@ MTLAccelerationStructureBoundingBoxGeometryDescriptor *MetalBottomLevelAS::Initi
     }
 
     m_indirectResources.push_back( aabbBuffer->Instance( ) );
-    aabbDesc.intersectionFunctionTableOffset = ProceduralIntersectionShader;
+    aabbDesc.intersectionFunctionTableOffset = 0;
     aabbDesc.boundingBoxBuffer               = aabbBuffer->Instance( );
     aabbDesc.boundingBoxBufferOffset         = aabb.Offset;
-    aabbDesc.boundingBoxStride               = aabb.Stride;
+    aabbDesc.boundingBoxStride               = sizeof( MTLAxisAlignedBoundingBox );
     aabbDesc.boundingBoxCount                = aabb.NumAABBs;
 
     aabbDesc.opaque                                       = geometry.Flags.IsSet( GeometryFlags::Opaque );

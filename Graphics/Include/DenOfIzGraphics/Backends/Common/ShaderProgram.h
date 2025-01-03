@@ -147,8 +147,6 @@ namespace DenOfIz
         // Returns true if the bound resource is found(and an update is performed), false otherwise
         // Adds additional stages if existing stages are found
         bool                IsBindingLocalTo( const ShaderDesc &shaderDesc, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
-        bool                IsBindingLocal( const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
-        bool                ShouldProcessBinding( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
         bool                UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
         ResourceBindingType ReflectTypeToBufferBindingType( const D3D_SHADER_INPUT_TYPE type ) const;
 #ifdef BUILD_METAL

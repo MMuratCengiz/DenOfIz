@@ -43,6 +43,17 @@ namespace DenOfIz
         IndexType        IndexType;
     };
 
+    /// \brief this struct is not used anywhere, but is here to help create data for the bounding box buffer.
+    struct DZ_API AABBBoundingBox
+    {
+        float MinX;
+        float MinY;
+        float MinZ;
+        float MaxX;
+        float MaxY;
+        float MaxZ;
+    };
+
     struct DZ_API ASGeometryAABBDesc
     {
         IBufferResource *Buffer;

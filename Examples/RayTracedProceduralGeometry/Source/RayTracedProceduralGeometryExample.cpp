@@ -70,7 +70,7 @@ void RayTracedProceduralGeometryExample::BuildProceduralGeometryAABBs( )
     constexpr XMFLOAT3 stride         = { c_aabbWidth + c_aabbDistance, c_aabbWidth + c_aabbDistance, c_aabbWidth + c_aabbDistance };
     auto               InitializeAABB = [ & ]( const XMFLOAT3 &offsetIndex, const XMFLOAT3 &size )
     {
-        RayTracingAABB aabb;
+        AABBBoundingBox aabb;
         aabb.MinX = basePosition.x + offsetIndex.x * stride.x;
         aabb.MinY = basePosition.y + offsetIndex.y * stride.y;
         aabb.MinZ = basePosition.z + offsetIndex.z * stride.z;
@@ -145,8 +145,8 @@ void RayTracedProceduralGeometryExample::UpdateAABBPrimitiveAttributes( )
         const XMMATRIX mTranslation = XMMatrixTranslationFromVector( vTranslation );
 
         const XMMATRIX mTransform                                                        = mScale * mRotation * mTranslation;
-        m_aabbPrimitiveAttributeBufferMemory[ primitiveIndex ].localSpaceToBottomLevelAS = XMMatrixTranspose(mTransform);
-        m_aabbPrimitiveAttributeBufferMemory[ primitiveIndex ].bottomLevelASToLocalSpace = XMMatrixTranspose(XMMatrixInverse( nullptr, mTransform ));
+        m_aabbPrimitiveAttributeBufferMemory[ primitiveIndex ].localSpaceToBottomLevelAS = mTransform;
+        m_aabbPrimitiveAttributeBufferMemory[ primitiveIndex ].bottomLevelASToLocalSpace = XMMatrixInverse( nullptr, mTransform );
     };
 
     UINT offset = 0;
@@ -252,9 +252,9 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
             ASGeometryDesc aabbGeometryDesc{ };
             aabbGeometryDesc.Type           = HitGroupType::AABBs;
             aabbGeometryDesc.AABBs.Buffer   = m_aabbBuffer.get( );
-            aabbGeometryDesc.AABBs.Stride   = sizeof( RayTracingAABB );
+            aabbGeometryDesc.AABBs.Stride   = sizeof( AABBBoundingBox );
             aabbGeometryDesc.AABBs.NumAABBs = 1;
-            aabbGeometryDesc.AABBs.Offset   = i * sizeof( RayTracingAABB );
+            aabbGeometryDesc.AABBs.Offset   = i * sizeof( AABBBoundingBox );
             aabbGeometryDesc.Flags          = GeometryFlags::Opaque;
 
             bottomLevelDesc.Geometries.AddElement( aabbGeometryDesc );
@@ -377,7 +377,7 @@ void RayTracedProceduralGeometryExample::CreateResources( )
     aabbDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer );
     aabbDesc.InitialUsage = ResourceUsage::CopyDst;
     aabbDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::AccelerationStructureGeometry;
-    aabbDesc.NumBytes     = sizeof( RayTracingAABB ) * IntersectionShaderType::TotalPrimitiveCount;
+    aabbDesc.NumBytes     = sizeof( AABBBoundingBox ) * IntersectionShaderType::TotalPrimitiveCount;
     aabbDesc.DebugName    = "AABB_Buffer";
     m_aabbBuffer          = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( aabbDesc ) );
 
@@ -409,8 +409,8 @@ void RayTracedProceduralGeometryExample::CreateResources( )
     indexArray.MemCpy( indices, sizeof( indices ) );
     batchResourceCopy.CopyToGPUBuffer( { m_indexBuffer.get( ), indexArray } );
 
-    InteropArray<Byte> aabbArray( sizeof( RayTracingAABB ) * m_aabbs.size( ) );
-    aabbArray.MemCpy( m_aabbs.data( ), sizeof( RayTracingAABB ) * m_aabbs.size( ) );
+    InteropArray<Byte> aabbArray( sizeof( AABBBoundingBox ) * m_aabbs.size( ) );
+    aabbArray.MemCpy( m_aabbs.data( ), sizeof( AABBBoundingBox ) * m_aabbs.size( ) );
     batchResourceCopy.CopyToGPUBuffer( { m_aabbBuffer.get( ), aabbArray } );
     batchResourceCopy.Submit( );
 

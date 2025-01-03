@@ -8,6 +8,7 @@ SET(DEN_OF_IZ_EXAMPLES_RAY_TRACING_SOURCES
 add_executable(DenOfIzExamples-RayTracedProceduralGeometry MACOSX_BUNDLE ${DEN_OF_IZ_EXAMPLES_RAY_TRACING_SOURCES})
 copy_to_binary_target("${CMAKE_CURRENT_SOURCE_DIR}/.." "Assets" * DenOfIzExamples-RayTracedProceduralGeometry)
 target_include_default_directories(DenOfIzExamples-RayTracedProceduralGeometry)
+target_include_directories(DenOfIzExamples-RayTracedProceduralGeometry PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Assets/Shaders/RTProceduralGeometry)
 target_link_libraries(DenOfIzExamples-RayTracedProceduralGeometry
         PUBLIC
         DenOfIzExamples-Base

@@ -269,26 +269,24 @@ std::unique_ptr<CompiledShader> ShaderCompiler::CompileHLSL( const CompileDesc &
 }
 
 #ifdef BUILD_METAL
-IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob *code, const CompileMslDesc &compileMslDesc ) const
+IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileDesc, IDxcBlob *code, const CompileMslDesc &compileMslDesc ) const
 {
     IRRootSignature *rootSignature  = compileMslDesc.RootSignature;
     IRRootSignature *localSignature = compileMslDesc.LocalRootSignature;
 
     IRCompiler *irCompiler = IRCompilerCreate( );
-    IRCompilerSetEntryPointName( irCompiler, compileOptions.EntryPoint.Get( ) );
+    IRCompilerSetEntryPointName( irCompiler, compileDesc.EntryPoint.Get( ) );
     IRCompilerSetMinimumDeploymentTarget( irCompiler, IROperatingSystem_macOS, "15.1" );
     IRCompilerSetGlobalRootSignature( irCompiler, rootSignature );
     IRCompilerSetLocalRootSignature( irCompiler, localSignature );
-    // TODO some of these values are hardcoded because metal is odd. The only possible way I can think of is to move the compilation to pipeline creation.
-    // But will try this way for now.
     IRCompilerSetRayTracingPipelineArguments( irCompiler, compileMslDesc.RayTracing.MaxNumAttributeBytes, IRRaytracingPipelineFlagNone, IRIntrinsicMaskClosestHitAll,
-                                              IRIntrinsicMaskMissShaderAll, IRIntrinsicMaskAnyHitShaderAll, 255, compileMslDesc.RayTracing.MaxRecursionDepth,
-                                              IRRayGenerationCompilationVisibleFunction );
+                                              IRIntrinsicMaskMissShaderAll, IRIntrinsicMaskAnyHitShaderAll, IRIntrinsicMaskCallableShaderAll,
+                                              compileMslDesc.RayTracing.MaxRecursionDepth, IRRayGenerationCompilationVisibleFunction );
 
     IRObject *irDxil = IRObjectCreateFromDXIL( (const uint8_t *)code->GetBufferPointer( ), code->GetBufferSize( ), IRBytecodeOwnershipNone );
 
     IRError  *irError = nullptr;
-    IRObject *outIr   = IRCompilerAllocCompileAndLink( irCompiler, compileOptions.EntryPoint.Get( ), irDxil, &irError );
+    IRObject *outIr   = IRCompilerAllocCompileAndLink( irCompiler, compileDesc.EntryPoint.Get( ), irDxil, &irError );
 
     if ( !outIr )
     {
@@ -306,7 +304,7 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileOptions, IDxcBlob
     MetalDxcBlob_Impl *mslBlob = new MetalDxcBlob_Impl( metalLibByteCode, metalLibSize );
     mslBlob->IrObject          = outIr;
 
-    CacheCompiledShader( compileOptions.Path.Get( ), compileOptions.EntryPoint.Get( ), compileOptions.TargetIL, mslBlob, nullptr );
+    CacheCompiledShader( compileDesc.Path.Get( ), compileDesc.EntryPoint.Get( ), compileDesc.TargetIL, mslBlob, nullptr );
 
     IRMetalLibBinaryDestroy( metalLib );
     IRObjectDestroy( irDxil );
