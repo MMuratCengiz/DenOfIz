@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
+#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <directx/d3d12shader.h>
 #include <ranges>
 #include <set>
@@ -358,7 +359,7 @@ IRRootSignature *ShaderProgram::CreateRootSignature( std::vector<RegisterSpaceRa
     return rootSignature;
 }
 
-void ShaderProgram::DumpIRRootParameters( const std::vector<IRRootParameter1> &rootParameters, const char *prefix = "" ) const
+void ShaderProgram::DumpIRRootParameters( const std::vector<IRRootParameter1> &rootParameters, const char *prefix ) const
 {
     LOG( INFO ) << "\n=== " << prefix << " IR Root Parameters ===";
     LOG( INFO ) << "Total Parameters: " << rootParameters.size( );

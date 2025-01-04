@@ -24,14 +24,17 @@ using namespace DenOfIz;
 MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDesc &desc ) : m_context( context ), m_desc( desc )
 {
     NSUInteger alignment = 0;
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::UniformBuffer ) ) {
-        alignment = 256;
-    } else if ( m_desc.Descriptor.IsSet(ResourceDescriptor::StructuredBuffer ) ) {
-        alignment = m_desc.StructureDesc.Stride;
-        alignment = std::max( alignment, static_cast<NSUInteger>( 16 ) );
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::UniformBuffer ) )
+    {
+        alignment = (NSUInteger)m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment;
     }
+    else if ( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) )
+    {
+        alignment = m_desc.StructureDesc.Stride;
+    }
+    alignment = std::max( alignment, (NSUInteger)16 );
 
-    m_numBytes = Utilities::Align(m_desc.NumBytes, alignment);
+    m_numBytes                 = Utilities::Align( m_desc.NumBytes, alignment );
     MTLResourceOptions options = MTLResourceStorageModeShared;
 
     if ( m_desc.HeapType == HeapType::GPU )
@@ -39,7 +42,7 @@ MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDes
         options = MTLResourceStorageModePrivate;
     }
 
-    m_buffer = [m_context->Device newBufferWithLength:numBytes options:options];
+    m_buffer = [m_context->Device newBufferWithLength:m_numBytes options:options];
     if ( !m_buffer )
     {
         LOG( ERROR ) << "Failed to create Metal buffer";

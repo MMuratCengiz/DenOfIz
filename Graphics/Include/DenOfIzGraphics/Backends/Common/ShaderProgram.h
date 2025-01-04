@@ -152,7 +152,7 @@ namespace DenOfIz
 #ifdef BUILD_METAL
         IRRootSignature *CreateRootSignature( std::vector<RegisterSpaceRange> &registerSpaceRanges, std::vector<MetalDescriptorOffsets> &metalDescriptorOffsets,
                                               bool isLocal ) const;
-        void             DumpIRRootParameters( const std::vector<IRRootParameter1> &rootParameters, const char *prefix = "" );
+        void             DumpIRRootParameters( const std::vector<IRRootParameter1> &rootParameters, const char *prefix = "" ) const;
         void             IterateBoundResources( CompiledShader *shader, ReflectionState &state, ReflectionCallback &callback ) const;
         void             ProduceMSL( );
 #endif
