@@ -24,7 +24,7 @@ using namespace DenOfIz;
 MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevelASDesc &desc ) : m_context( context ), m_desc( desc )
 {
     m_geometryDescriptors = [NSMutableArray arrayWithCapacity:desc.Geometries.NumElements( )];
-    m_options             = MTLAccelerationStructureInstanceOptionDisableTriangleCulling;
+    m_options             = MTLAccelerationStructureInstanceOptionNone;
 
     for ( size_t i = 0; i < desc.Geometries.NumElements( ); ++i )
     {
