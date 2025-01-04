@@ -361,14 +361,15 @@ IRRootSignature *ShaderProgram::CreateRootSignature( std::vector<RegisterSpaceRa
 
 void ShaderProgram::DumpIRRootParameters( const std::vector<IRRootParameter1> &rootParameters, const char *prefix ) const
 {
-    LOG( INFO ) << "\n=== " << prefix << " IR Root Parameters ===";
-    LOG( INFO ) << "Total Parameters: " << rootParameters.size( );
+    std::stringstream output;
+    output << "\n=== " << prefix << " IR Root Parameters ===\n";
+    output << "Total Parameters: " << rootParameters.size( ) << "\n";
 
     for ( size_t i = 0; i < rootParameters.size( ); ++i )
     {
         const auto &param = rootParameters[ i ];
-        LOG( INFO ) << "\nParameter[" << i << "]:";
-        LOG( INFO ) << "  Type: " << [ & ]( )
+        output << "\nParameter[" << i << "]:\n";
+        output << "  Type: " << [ & ]( )
         {
             switch ( param.ParameterType )
             {
@@ -385,9 +386,9 @@ void ShaderProgram::DumpIRRootParameters( const std::vector<IRRootParameter1> &r
             default:
                 return "Unknown";
             }
-        }( );
+        }( ) << "\n";
 
-        LOG( INFO ) << "  Shader Visibility: " << [ & ]( )
+        output << "  Shader Visibility: " << [ & ]( )
         {
             switch ( param.ShaderVisibility )
             {
@@ -406,21 +407,21 @@ void ShaderProgram::DumpIRRootParameters( const std::vector<IRRootParameter1> &r
             default:
                 return "Unknown";
             }
-        }( );
+        }( ) << "\n";
 
         // Log specific data based on parameter type
         switch ( param.ParameterType )
         {
         case IRRootParameterTypeDescriptorTable:
             {
-                LOG( INFO ) << "  Descriptor Table:";
-                LOG( INFO ) << "    NumDescriptorRanges: " << param.DescriptorTable.NumDescriptorRanges;
+                output << "  Descriptor Table:\n";
+                output << "    NumDescriptorRanges: " << param.DescriptorTable.NumDescriptorRanges << "\n";
 
                 for ( uint32_t j = 0; j < param.DescriptorTable.NumDescriptorRanges; j++ )
                 {
                     const auto &range = param.DescriptorTable.pDescriptorRanges[ j ];
-                    LOG( INFO ) << "    Range[" << j << "]:";
-                    LOG( INFO ) << "      RangeType: " << [ & ]( )
+                    output << "    Range[" << j << "]: \n";
+                    output << "      RangeType: " << [ & ]( )
                     {
                         switch ( range.RangeType )
                         {
@@ -435,33 +436,35 @@ void ShaderProgram::DumpIRRootParameters( const std::vector<IRRootParameter1> &r
                         default:
                             return "Unknown";
                         }
-                    }( );
-                    LOG( INFO ) << "      NumDescriptors: " << range.NumDescriptors;
-                    LOG( INFO ) << "      BaseShaderRegister: " << range.BaseShaderRegister;
-                    LOG( INFO ) << "      RegisterSpace: " << range.RegisterSpace;
-                    LOG( INFO ) << "      Offset: " << range.OffsetInDescriptorsFromTableStart;
+                    }( ) << "\n";
+                    output << "      NumDescriptors: " << range.NumDescriptors << "\n";
+                    output << "      BaseShaderRegister: " << range.BaseShaderRegister << "\n";
+                    output << "      RegisterSpace: " << range.RegisterSpace << "\n";
+                    output << "      Offset: " << range.OffsetInDescriptorsFromTableStart << "\n";
                 }
                 break;
             }
         case IRRootParameterType32BitConstants:
             {
-                LOG( INFO ) << "  32-Bit Constants:";
-                LOG( INFO ) << "    ShaderRegister: " << param.Constants.ShaderRegister;
-                LOG( INFO ) << "    RegisterSpace: " << param.Constants.RegisterSpace;
-                LOG( INFO ) << "    Num32BitValues: " << param.Constants.Num32BitValues;
+                output << "  32-Bit Constants: \n";
+                output << "    ShaderRegister: " << param.Constants.ShaderRegister << "\n";
+                output << "    RegisterSpace: " << param.Constants.RegisterSpace << "\n";
+                output << "    Num32BitValues: " << param.Constants.Num32BitValues << "\n";
                 break;
             }
         case IRRootParameterTypeCBV:
         case IRRootParameterTypeSRV:
         case IRRootParameterTypeUAV:
             {
-                LOG( INFO ) << "  Descriptor:";
-                LOG( INFO ) << "    ShaderRegister: " << param.Descriptor.ShaderRegister;
-                LOG( INFO ) << "    RegisterSpace: " << param.Descriptor.RegisterSpace;
+                output << "  Descriptor:\n";
+                output << "    ShaderRegister: " << param.Descriptor.ShaderRegister << "\n";
+                output << "    RegisterSpace: " << param.Descriptor.RegisterSpace << "\n";
                 break;
             }
         }
     }
+
+    LOG(INFO) << output.str( );
 }
 
 // For metal, we need to produce a root signature to compile a correct metal lib
