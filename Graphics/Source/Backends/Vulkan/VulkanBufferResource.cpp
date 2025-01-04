@@ -25,8 +25,12 @@ using namespace DenOfIz;
 
 VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc desc ) : m_desc( std::move( desc ) ), m_context( context )
 {
-    m_numBytes = Utilities::Align( m_desc.NumBytes, m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment );
-
+    uint32_t alignment = m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment;
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) )
+    {
+        alignment = std::max( alignment, m_context->SelectedDeviceInfo.Constants.StorageBufferAlignment );
+    }
+    m_numBytes                  = Utilities::Align( m_desc.NumBytes, alignment );
     BitSet<ResourceUsage> usage = m_desc.Usages;
     usage |= m_desc.InitialUsage;
 
@@ -39,7 +43,7 @@ VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc d
 
     VmaAllocationCreateInfo allocationCreateInfo{ };
 
-    allocationCreateInfo.usage = VulkanEnumConverter::ConvertHeapType( m_desc.HeapType ) ;
+    allocationCreateInfo.usage = VulkanEnumConverter::ConvertHeapType( m_desc.HeapType );
 
     // Todo more flexibility, or a clearer interface here:
     if ( m_desc.HeapType == HeapType::CPU || m_desc.HeapType == HeapType::CPU_GPU )
@@ -58,7 +62,6 @@ VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc d
     {
         allocationCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     }
-
     VmaAllocationInfo allocationInfo;
     vmaCreateBuffer( m_context->Vma, &bufferCreateInfo, &allocationCreateInfo, &m_instance, &m_allocation, &allocationInfo );
 

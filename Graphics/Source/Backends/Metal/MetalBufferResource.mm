@@ -23,8 +23,15 @@ using namespace DenOfIz;
 
 MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    NSUInteger numBytes        = m_desc.NumBytes;
-    m_numBytes                 = numBytes;
+    NSUInteger alignment = 0;
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::UniformBuffer ) ) {
+        alignment = 256;
+    } else if ( m_desc.Descriptor.IsSet(ResourceDescriptor::StructuredBuffer ) ) {
+        alignment = m_desc.StructureDesc.Stride;
+        alignment = std::max( alignment, static_cast<NSUInteger>( 16 ) );
+    }
+
+    m_numBytes = Utilities::Align(m_desc.NumBytes, alignment);
     MTLResourceOptions options = MTLResourceStorageModeShared;
 
     if ( m_desc.HeapType == HeapType::GPU )

@@ -299,6 +299,7 @@ namespace DenOfIz
 
     struct DZ_API DeviceConstants
     {
+        uint32_t StorageBufferAlignment;
         uint32_t ConstantBufferAlignment;
         uint32_t BufferTextureAlignment;
         uint32_t BufferTextureRowAlignment;

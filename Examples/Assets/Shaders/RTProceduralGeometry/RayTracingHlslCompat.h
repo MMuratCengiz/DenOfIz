@@ -22,10 +22,15 @@
 
 #ifdef HLSL
 #include "HlslCompat.h"
+#define ALIGN16_FIELD
+#define ALIGN16_STRUCT
 #else
 using namespace DirectX;
 // Shader will use byte encoding to access vertex indices.
 typedef uint16_t Index;
+
+#define ALIGN16_FIELD alignas( 16 )
+#define ALIGN16_STRUCT __declspec( align( 16 ) )
 #endif
 
 // Number of metaballs to use within an AABB.
@@ -66,24 +71,24 @@ struct ShadowRayPayload
     bool hit;
 };
 
-struct SceneConstantBuffer
+ALIGN16_STRUCT struct SceneConstantBuffer
 {
-    XMMATRIX projectionToWorld;
-    XMVECTOR cameraPosition;
-    XMVECTOR lightPosition;
-    XMVECTOR lightAmbientColor;
-    XMVECTOR lightDiffuseColor;
+    ALIGN16_FIELD XMMATRIX projectionToWorld;
+    XMVECTOR               cameraPosition;
+    XMVECTOR               lightPosition;
+    XMVECTOR               lightAmbientColor;
+    XMVECTOR               lightDiffuseColor;
 };
 
 // Attributes per primitive type.
-struct PrimitiveConstantBuffer
+ALIGN16_STRUCT struct PrimitiveConstantBuffer
 {
-    XMFLOAT4 albedo;
-    float    reflectanceCoef;
-    float    diffuseCoef;
-    float    specularCoef;
-    float    specularPower;
-    float    stepScale;
+    ALIGN16_FIELD XMFLOAT4 albedo;
+    float                  reflectanceCoef;
+    float                  diffuseCoef;
+    float                  specularCoef;
+    float                  specularPower;
+    float                  stepScale;
 
     float _pad0;
     float _pad1;
@@ -91,19 +96,18 @@ struct PrimitiveConstantBuffer
 };
 
 // Attributes per primitive instance.
-struct PrimitiveInstanceConstantBuffer
+ALIGN16_STRUCT struct PrimitiveInstanceConstantBuffer
 {
-    UINT instanceIndex;
-    UINT primitiveType; // Procedural primitive type
-
-    UINT _pad0;
-    UINT _pad1;
+    ALIGN16_FIELD UINT instanceIndex;
+    UINT               primitiveType; // Procedural primitive type
+    UINT               _pad0;
+    UINT               _pad1;
 };
 
-struct LocalData
+ALIGN16_STRUCT struct LocalData
 {
-    PrimitiveConstantBuffer         materialCB;
-    PrimitiveInstanceConstantBuffer aabbCB;
+    ALIGN16_FIELD PrimitiveConstantBuffer         materialCB;
+    ALIGN16_FIELD PrimitiveInstanceConstantBuffer aabbCB;
 };
 
 // Dynamic attributes per primitive instance.

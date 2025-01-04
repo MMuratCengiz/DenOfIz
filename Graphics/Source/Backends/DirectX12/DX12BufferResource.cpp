@@ -29,7 +29,11 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
 {
     m_stride           = FormatNumBytes( m_desc.Format );
     uint32_t alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-    if ( m_desc.Descriptor.Any( { ResourceDescriptor::UniformBuffer, ResourceDescriptor::Buffer, ResourceDescriptor::RWBuffer, ResourceDescriptor::StructuredBuffer } ) )
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) )
+    {
+        alignment = std::max( alignment, static_cast<uint32_t>( m_desc.StructureDesc.Stride ) );
+    }
+    else if ( m_desc.Descriptor.Any( { ResourceDescriptor::UniformBuffer, ResourceDescriptor::Buffer, ResourceDescriptor::RWBuffer } ) )
     {
         alignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
     }

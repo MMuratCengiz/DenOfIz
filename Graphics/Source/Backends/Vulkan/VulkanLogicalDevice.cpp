@@ -324,6 +324,7 @@ void VulkanLogicalDevice::CreateDeviceInfo( const VkPhysicalDevice &physicalDevi
     deviceInfo.Capabilities.HDR             = m_enabledInstanceExtensions.contains( VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME );
     deviceInfo.Capabilities.Tearing         = true;
 
+    deviceInfo.Constants.StorageBufferAlignment    = deviceProperties.limits.minStorageBufferOffsetAlignment;
     deviceInfo.Constants.ConstantBufferAlignment   = deviceProperties.limits.minUniformBufferOffsetAlignment;
     deviceInfo.Constants.BufferTextureAlignment    = deviceProperties.limits.optimalBufferCopyOffsetAlignment;
     deviceInfo.Constants.BufferTextureRowAlignment = deviceProperties.limits.optimalBufferCopyRowPitchAlignment;
