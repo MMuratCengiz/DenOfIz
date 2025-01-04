@@ -28,6 +28,7 @@ MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDes
     {
         alignment = (NSUInteger)m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment;
     }
+    alignment  = std::max( alignment, (NSUInteger)m_desc.Alignment );
     m_numBytes = Utilities::Align( m_desc.NumBytes, alignment );
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) )
     {

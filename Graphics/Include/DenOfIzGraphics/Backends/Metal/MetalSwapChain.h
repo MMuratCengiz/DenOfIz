@@ -33,7 +33,7 @@ namespace DenOfIz
         id<CAMetalDrawable>                                m_currentDrawable;
         id<MTLCommandBuffer>                               m_presentCommandBuffer;
         MTKView                                           *m_view;
-        uint32_t                                           m_currentFrame = 0;
+        std::atomic<uint32_t>                              m_currentFrame = 0;
         std::vector<std::unique_ptr<MetalTextureResource>> m_renderTargets;
 
     public:

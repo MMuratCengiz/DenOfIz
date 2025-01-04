@@ -183,7 +183,7 @@ void RayTracedProceduralGeometryExample::Update( )
     if ( m_animateGeometry )
     {
         m_animateGeometryTime += m_time.GetDeltaTime( );
-//        UpdateAABBPrimitiveAttributes( );
+        UpdateAABBPrimitiveAttributes( );
     }
 
     m_sceneConstants->cameraPosition    = m_camera->Position( );
@@ -518,10 +518,10 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
     LocalRootSignatureDesc hgLocalRootSignatureDesc;
     // Create pipeline state object
     PipelineDesc pipelineDesc{ };
-    pipelineDesc.BindPoint                       = BindPoint::RayTracing;
-    pipelineDesc.RootSignature                   = m_rayTracingRootSignature.get( );
-    pipelineDesc.ShaderProgram                   = m_rayTracingProgram.get( );
-    pipelineDesc.RayTracing.HitGroups            = std::move( hitGroupDescs );
+    pipelineDesc.BindPoint            = BindPoint::RayTracing;
+    pipelineDesc.RootSignature        = m_rayTracingRootSignature.get( );
+    pipelineDesc.ShaderProgram        = m_rayTracingProgram.get( );
+    pipelineDesc.RayTracing.HitGroups = std::move( hitGroupDescs );
 
     m_rayTracingPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 
