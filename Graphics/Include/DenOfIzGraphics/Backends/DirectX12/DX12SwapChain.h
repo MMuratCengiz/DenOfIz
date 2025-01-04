@@ -48,7 +48,7 @@ namespace DenOfIz
 
         uint32_t          AcquireNextImage( ISemaphore *imageAvailableSemaphore ) override;
         Format            GetPreferredFormat( ) override;
-        ITextureResource *GetRenderTarget( uint32_t frame ) override;
+        ITextureResource *GetRenderTarget( uint32_t image ) override;
         Viewport          GetViewport( ) override;
         void              Resize( uint32_t width, uint32_t height ) override;
         void              CreateSwapChain( );

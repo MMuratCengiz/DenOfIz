@@ -334,10 +334,10 @@ void RenderGraph::BuildTaskflow( )
             [ this, frame ]
             {
                 PresentContext &presentContext     = m_presentContexts[ frame ];
-                const uint32_t  image              = m_presentNode.SwapChain->AcquireNextImage( presentContext.ImageReadySemaphore.get( ) );
                 ICommandList  *&presentCommandList = presentContext.PresentCommandList;
                 presentCommandList->Begin( );
 
+                const uint32_t    image                 = m_presentNode.SwapChain->AcquireNextImage( presentContext.ImageReadySemaphore.get( ) );
                 ITextureResource *swapChainRenderTarget = m_presentNode.SwapChain->GetRenderTarget( image );
 
                 IssueBarrier( presentCommandList, NodeResourceUsageDesc::TextureState( frame, swapChainRenderTarget, ResourceUsage::RenderTarget ) );

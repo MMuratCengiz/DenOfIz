@@ -47,7 +47,8 @@ uint32_t MetalSwapChain::AcquireNextImage( ISemaphore *imageAvailableSemaphore )
     @autoreleasepool
     {
         auto layer        = (CAMetalLayer *)m_view.layer;
-        m_currentFrame    = ( m_currentFrame++ ) % m_desc.NumBuffers;
+        m_currentFrame    = ( m_currentFrame + 1 ) % m_desc.NumBuffers;
+
         m_currentDrawable = [layer nextDrawable];
         m_renderTargets[ m_currentFrame ]->UpdateTexture( m_drawableDesc, m_currentDrawable.texture );
     }
@@ -59,9 +60,9 @@ Format MetalSwapChain::GetPreferredFormat( )
     return m_desc.BackBufferFormat;
 }
 
-ITextureResource *MetalSwapChain::GetRenderTarget( uint32_t frame )
+ITextureResource *MetalSwapChain::GetRenderTarget( uint32_t image )
 {
-    return m_renderTargets[ frame ].get( );
+    return m_renderTargets[ image ].get( );
 }
 
 Viewport MetalSwapChain::GetViewport( )
@@ -84,18 +85,9 @@ void MetalSwapChain::Resize( uint32_t width, uint32_t height )
         m_drawableDesc.DebugName    = "SwapChain";
 
         m_renderTargets.resize( m_desc.NumBuffers );
-
         for ( uint32_t i = 0; i < m_desc.NumBuffers; ++i )
         {
-            id<CAMetalDrawable> drawable = [layer nextDrawable];
-            if ( m_renderTargets[ i ] )
-            {
-                m_renderTargets[ i ]->UpdateTexture( m_drawableDesc, drawable.texture );
-            }
-            else
-            {
-                m_renderTargets[ i ] = std::make_unique<MetalTextureResource>( m_context, m_drawableDesc, drawable.texture );
-            }
+            m_renderTargets[ i ] = std::make_unique<MetalTextureResource>( m_context, m_drawableDesc, nil );
         }
     }
 }
@@ -109,13 +101,13 @@ void MetalSwapChain::Present( const InteropArray<ISemaphore *> &waitOnSemaphores
 {
     @autoreleasepool
     {
-        m_presentCommandBuffer       = [m_context->CommandQueue commandBuffer];
-        m_presentCommandBuffer.label = @"PRESENT";
+        m_presentCommandBuffer = [m_context->CommandQueue commandBuffer];
 
+        m_presentCommandBuffer.label = @"PRESENT";
         [m_presentCommandBuffer presentDrawable:m_currentDrawable];
 
-//        m_renderTargets[ m_currentFrame ]->UpdateTexture( m_drawableDesc, nil );
-//        m_currentDrawable = nil;
+        m_renderTargets[ m_currentFrame ]->UpdateTexture( m_drawableDesc, nil );
+        m_currentDrawable = nil;
 
         [m_presentCommandBuffer commit];
         m_presentCommandBuffer = nil;

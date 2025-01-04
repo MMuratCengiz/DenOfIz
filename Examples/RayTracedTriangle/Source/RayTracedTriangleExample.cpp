@@ -75,11 +75,11 @@ void RayTracedTriangleExample::Execute( const uint32_t frameIndex, ICommandList 
 {
     // !!! Note to be able to do this in Vulkan you need to set the line: `swapChainDesc.ImageUsages  = ResourceUsage::CopyDst;` from IExample.h
     m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::CopySrc ),
-                                                 NodeResourceUsageDesc::TextureState( frameIndex, m_swapChain->GetRenderTarget( frameIndex ), ResourceUsage::CopyDst ) } );
+                                                 NodeResourceUsageDesc::TextureState( frameIndex, renderTarget, ResourceUsage::CopyDst ) } );
 
     CopyTextureRegionDesc copyTextureRegionDesc{ };
     copyTextureRegionDesc.SrcTexture = m_raytracingOutput[ frameIndex ].get( );
-    copyTextureRegionDesc.DstTexture = m_swapChain->GetRenderTarget( frameIndex );
+    copyTextureRegionDesc.DstTexture = renderTarget;
     copyTextureRegionDesc.Width      = m_windowDesc.Width;
     copyTextureRegionDesc.Height     = m_windowDesc.Height;
     copyTextureRegionDesc.Depth      = 1;

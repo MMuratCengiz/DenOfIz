@@ -189,9 +189,9 @@ Viewport DX12SwapChain::GetViewport( )
     };
 }
 
-ITextureResource *DX12SwapChain::GetRenderTarget( const uint32_t frame )
+ITextureResource *DX12SwapChain::GetRenderTarget( const uint32_t image )
 {
-    return m_renderTargets[ frame ].get( );
+    return m_renderTargets[ image ].get( );
 }
 
 Format DX12SwapChain::GetPreferredFormat( )

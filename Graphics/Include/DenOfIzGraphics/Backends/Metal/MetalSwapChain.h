@@ -33,7 +33,7 @@ namespace DenOfIz
         id<CAMetalDrawable>                                m_currentDrawable;
         id<MTLCommandBuffer>                               m_presentCommandBuffer;
         MTKView                                           *m_view;
-        std::atomic<uint32_t>                              m_currentFrame = 0;
+        uint32_t                                           m_currentFrame;
         std::vector<std::unique_ptr<MetalTextureResource>> m_renderTargets;
 
     public:
@@ -42,7 +42,7 @@ namespace DenOfIz
 
         uint32_t          AcquireNextImage( ISemaphore *imageAvailableSemaphore ) override;
         Format            GetPreferredFormat( ) override;
-        ITextureResource *GetRenderTarget( uint32_t frame ) override;
+        ITextureResource *GetRenderTarget( uint32_t image ) override;
         Viewport          GetViewport( ) override;
         id<MTLDrawable>   Drawable( );
         void              Resize( uint32_t width, uint32_t height ) override;

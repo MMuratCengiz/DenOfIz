@@ -53,7 +53,7 @@ namespace DenOfIz
         Format   GetPreferredFormat( ) override;
 
         [[nodiscard]] QueueFamily GetPresentationQueueFamily( ) const;
-        ITextureResource         *GetRenderTarget( const uint32_t frame ) override;
+        ITextureResource         *GetRenderTarget( const uint32_t image ) override;
         VkSwapchainKHR           *GetSwapChain( );
         Viewport                  GetViewport( ) override;
 

@@ -45,7 +45,8 @@ namespace DenOfIz
         float Height = 0.0f;
     };
 
-    //! @brief To render to screen by 1. imageIndex = AcquireNextImage( ) and 2. GetRenderTarget( imageIndex ). The render target can then be used in {@ref ICommandList::BeginRendering( )}.
+    //! @brief To render to screen by 1. imageIndex = AcquireNextImage( ) and 2. GetRenderTarget( imageIndex ). The render target can then be used in {@ref
+    //! ICommandList::BeginRendering( )}.
     //! @see
     //! @code
     //! auto imageIndex = swapChain->AcquireNextImage( imageReadySemaphore );
@@ -62,7 +63,7 @@ namespace DenOfIz
         virtual uint32_t AcquireNextImage( ISemaphore *imageReadySemaphore ) = 0;
         virtual void     Resize( uint32_t width, uint32_t height )           = 0;
 
-        virtual ITextureResource *GetRenderTarget( uint32_t frame ) = 0;
+        virtual ITextureResource *GetRenderTarget( uint32_t image ) = 0;
         virtual Viewport          GetViewport( )                    = 0;
     };
 

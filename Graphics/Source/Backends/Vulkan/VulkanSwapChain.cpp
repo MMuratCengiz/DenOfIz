@@ -267,9 +267,9 @@ QueueFamily VulkanSwapChain::GetPresentationQueueFamily( ) const
     return m_presentationQueueFamily;
 }
 
-ITextureResource *VulkanSwapChain::GetRenderTarget( const uint32_t frame )
+ITextureResource *VulkanSwapChain::GetRenderTarget( const uint32_t image )
 {
-    return m_renderTargets.at( frame ).get( );
+    return m_renderTargets.at( image ).get( );
 }
 
 VkSwapchainKHR *VulkanSwapChain::GetSwapChain( )
