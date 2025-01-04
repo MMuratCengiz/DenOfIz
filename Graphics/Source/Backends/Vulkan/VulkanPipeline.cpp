@@ -224,16 +224,16 @@ void VulkanPipeline::CreateRayTracingPipeline( )
 
     VkRayTracingPipelineInterfaceCreateInfoKHR pipelineInterface{ };
     pipelineInterface.sType                          = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_INTERFACE_CREATE_INFO_KHR;
-    pipelineInterface.maxPipelineRayPayloadSize      = m_desc.RayTracing.MaxNumPayloadBytes;
-    pipelineInterface.maxPipelineRayHitAttributeSize = m_desc.RayTracing.MaxNumAttributeBytes;
+    pipelineInterface.maxPipelineRayPayloadSize      = m_desc.ShaderProgram->Desc( ).RayTracing.MaxNumAttributeBytes;
+    pipelineInterface.maxPipelineRayHitAttributeSize = m_desc.ShaderProgram->Desc( ).RayTracing.MaxNumPayloadBytes;
 
-    VkRayTracingPipelineCreateInfoKHR pipelineInfo{ };
+        VkRayTracingPipelineCreateInfoKHR pipelineInfo{ };
     pipelineInfo.sType                        = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
     pipelineInfo.stageCount                   = static_cast<uint32_t>( shaderStages.size( ) );
     pipelineInfo.pStages                      = shaderStages.data( );
     pipelineInfo.groupCount                   = static_cast<uint32_t>( shaderGroups.size( ) );
     pipelineInfo.pGroups                      = shaderGroups.data( );
-    pipelineInfo.maxPipelineRayRecursionDepth = m_desc.RayTracing.MaxRecursionDepth;
+    pipelineInfo.maxPipelineRayRecursionDepth = m_desc.ShaderProgram->Desc( ).RayTracing.MaxRecursionDepth;
     pipelineInfo.layout                       = m_rtLayout;
     pipelineInfo.pLibraryInterface            = &pipelineInterface;
 

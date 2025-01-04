@@ -148,11 +148,11 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     shaderDescs.AddElement( missShaderDesc );
 
     ProgramDesc programDesc{ };
-    programDesc.Shaders                            = shaderDescs;
-    programDesc.EnableCaching                      = false;
-    programDesc.RayTracing.MaxNumPayloadBytes      = 4 * sizeof( float );
-    programDesc.RayTracing.MaxNumAttributeBytes    = 2 * sizeof( float );
-    programDesc.RayTracing.MaxRecursionDepth       = 1;
+    programDesc.Shaders                         = shaderDescs;
+    programDesc.EnableCaching                   = false;
+    programDesc.RayTracing.MaxNumPayloadBytes   = 4 * sizeof( float );
+    programDesc.RayTracing.MaxNumAttributeBytes = 2 * sizeof( float );
+    programDesc.RayTracing.MaxRecursionDepth    = 1;
 
     m_rayTracingProgram       = std::unique_ptr<ShaderProgram>( m_graphicsApi->CreateShaderProgram( programDesc ) );
     auto reflection           = m_rayTracingProgram->Reflect( );
@@ -181,11 +181,9 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     }
 
     PipelineDesc pipelineDesc{ };
-    pipelineDesc.BindPoint                       = BindPoint::RayTracing;
-    pipelineDesc.RootSignature                   = m_rayTracingRootSignature.get( );
-    pipelineDesc.ShaderProgram                   = m_rayTracingProgram.get( );
-    pipelineDesc.RayTracing.MaxNumPayloadBytes   = 4 * sizeof( float );
-    pipelineDesc.RayTracing.MaxNumAttributeBytes = 2 * sizeof( float );
+    pipelineDesc.BindPoint     = BindPoint::RayTracing;
+    pipelineDesc.RootSignature = m_rayTracingRootSignature.get( );
+    pipelineDesc.ShaderProgram = m_rayTracingProgram.get( );
     pipelineDesc.RayTracing.HitGroups.AddElement(
         HitGroupDesc{ .Name = "MyHitGroup", .ClosestHitShaderIndex = 1, .Type = HitGroupType::Triangles, .LocalRootSignature = m_hgShaderLayout.get( ) } );
 

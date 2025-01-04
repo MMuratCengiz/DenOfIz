@@ -180,9 +180,6 @@ namespace DenOfIz
 
     struct DZ_API RayTracingPipelineDesc
     {
-        uint32_t                   MaxRecursionDepth    = 1;
-        uint32_t                   MaxNumPayloadBytes   = 0;
-        uint32_t                   MaxNumAttributeBytes = 0;
         InteropArray<HitGroupDesc> HitGroups;
         // Index must match with the index of the shader provided to ShaderProgram
         InteropArray<ILocalRootSignature *> LocalRootSignatures;

@@ -188,7 +188,6 @@ void RayTracedProceduralGeometryExample::Update( )
 
     m_sceneConstants->cameraPosition    = m_camera->Position( );
     m_sceneConstants->projectionToWorld = XMMatrixInverse( nullptr, m_camera->ViewProjectionMatrix( ) );
-    m_sceneConstants->elapsedTime       = 1.0f;
 
     m_renderGraph->Update( );
 }
@@ -469,8 +468,8 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
     programDesc.Shaders                         = shaderDescs;
     programDesc.EnableCaching                   = false;
     programDesc.RayTracing.MaxRecursionDepth    = MAX_RAY_RECURSION_DEPTH;
-    programDesc.RayTracing.MaxNumPayloadBytes   = sizeof( RayPayload );
-    programDesc.RayTracing.MaxNumAttributeBytes = sizeof( ProceduralPrimitiveAttributes );
+    programDesc.RayTracing.MaxNumPayloadBytes   = Utilities::Align( sizeof( RayPayload ), 16 );
+    programDesc.RayTracing.MaxNumAttributeBytes = Utilities::Align( sizeof( ProceduralPrimitiveAttributes ), 16 );
     m_rayTracingProgram                         = std::unique_ptr<ShaderProgram>( m_graphicsApi->CreateShaderProgram( programDesc ) );
 
     // Create root signature and pipeline
@@ -522,10 +521,7 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
     pipelineDesc.BindPoint                       = BindPoint::RayTracing;
     pipelineDesc.RootSignature                   = m_rayTracingRootSignature.get( );
     pipelineDesc.ShaderProgram                   = m_rayTracingProgram.get( );
-    pipelineDesc.RayTracing.MaxNumPayloadBytes   = sizeof( RayPayload );
-    pipelineDesc.RayTracing.MaxNumAttributeBytes = sizeof( ProceduralPrimitiveAttributes );
     pipelineDesc.RayTracing.HitGroups            = std::move( hitGroupDescs );
-    pipelineDesc.RayTracing.MaxRecursionDepth    = MAX_RAY_RECURSION_DEPTH;
 
     m_rayTracingPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 
@@ -580,7 +576,7 @@ void RayTracedProceduralGeometryExample::InitializeScene( )
         mat.specularCoef             = specularCoefficient;
         mat.specularPower            = specularPower;
         mat.stepScale                = stepScale;
-        mat.padding                  = XMFLOAT3( 0.0f, 0.0f, 0.0f );
+        // mat.padding                  = XMFLOAT3( 0.0f, 0.0f, 0.0f );
     };
 
     UINT offset = 0;
@@ -610,13 +606,13 @@ void RayTracedProceduralGeometryExample::InitializeScene( )
 
     // Create scene constant buffer
     BufferDesc sceneBufferDesc{ };
-    sceneBufferDesc.HeapType     = HeapType::CPU_GPU;
-    sceneBufferDesc.Descriptor   = ResourceDescriptor::UniformBuffer;
-    sceneBufferDesc.NumBytes     = sizeof( SceneConstantBuffer );
-    sceneBufferDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::VertexAndConstantBuffer;
-    sceneBufferDesc.DebugName    = "SceneConstantBuffer";
-    m_sceneConstantBuffer        = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( sceneBufferDesc ) );
-    m_sceneConstants             = static_cast<SceneConstantBuffer *>( m_sceneConstantBuffer->MapMemory( ) );
+    sceneBufferDesc.HeapType   = HeapType::CPU_GPU;
+    sceneBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
+    sceneBufferDesc.NumBytes   = sizeof( SceneConstantBuffer );
+    sceneBufferDesc.Usages     = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::VertexAndConstantBuffer;
+    sceneBufferDesc.DebugName  = "SceneConstantBuffer";
+    m_sceneConstantBuffer      = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( sceneBufferDesc ) );
+    m_sceneConstants           = static_cast<SceneConstantBuffer *>( m_sceneConstantBuffer->MapMemory( ) );
 
     XMFLOAT4 lightPosition;
     XMFLOAT4 lightAmbientColor;
@@ -691,7 +687,7 @@ void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
 
         localData.materialCB = m_planeMaterialCB;
         localData.aabbCB     = { 0, 0 };
-        localDataBuffer.MemCpy( &localData, sizeof( localData ) );
+        localDataBuffer.MemCpy( &localData, sizeof( LocalData ) );
 
         triangleHitGroupData->Cbv( 1, localDataBuffer );
 
@@ -747,6 +743,7 @@ void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
 
 void RayTracedProceduralGeometryExample::Quit( )
 {
+    m_renderGraph->WaitIdle( );
     m_aabbPrimitiveAttributeBuffer->UnmapMemory( );
     m_aabbPrimitiveAttributeBufferMemory = nullptr;
     m_sceneConstantBuffer->UnmapMemory( );

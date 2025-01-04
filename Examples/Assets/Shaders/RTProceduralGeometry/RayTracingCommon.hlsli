@@ -38,8 +38,8 @@ StructuredBuffer<PrimitiveInstancePerFrameBuffer> g_AABBPrimitiveAttributes : re
 [[vk::shader_record_ext]] ConstantBuffer<LocalData> localData : register(b1, space3);
 
 // From old implementation
-// ConstantBuffer<PrimitiveConstantBuffer> l_materialCB : register(b1, space3);
-// ConstantBuffer<PrimitiveInstanceConstantBuffer> l_aabbCB: register(b2, space3);
+// [[vk::shader_record_ext]] ConstantBuffer<PrimitiveConstantBuffer> l_materialCB : register(b1, space3);
+// [[vk::shader_record_ext]] ConstantBuffer<PrimitiveInstanceConstantBuffer> l_aabbCB: register(b2, space3);
 // New workaround for singular localData
 #define l_materialCB localData.materialCB
 #define l_aabbCB localData.aabbCB

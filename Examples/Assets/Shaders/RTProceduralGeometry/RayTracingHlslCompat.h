@@ -73,8 +73,6 @@ struct SceneConstantBuffer
     XMVECTOR lightPosition;
     XMVECTOR lightAmbientColor;
     XMVECTOR lightDiffuseColor;
-    float    reflectance;
-    float    elapsedTime; // Elapsed application time.
 };
 
 // Attributes per primitive type.
@@ -87,14 +85,19 @@ struct PrimitiveConstantBuffer
     float    specularPower;
     float    stepScale;
 
-    XMFLOAT3 padding;
+    float _pad0;
+    float _pad1;
+    float _pad2;
 };
 
 // Attributes per primitive instance.
 struct PrimitiveInstanceConstantBuffer
 {
-    UINT     instanceIndex;
-    UINT     primitiveType; // Procedural primitive type
+    UINT instanceIndex;
+    UINT primitiveType; // Procedural primitive type
+
+    UINT _pad0;
+    UINT _pad1;
 };
 
 struct LocalData

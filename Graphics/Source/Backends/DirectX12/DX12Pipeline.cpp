@@ -129,8 +129,8 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     subObjects.reserve( 256 );
     m_hitGroups.reserve( m_desc.RayTracing.HitGroups.NumElements( ) );
     D3D12_RAYTRACING_SHADER_CONFIG shaderConfig = { };
-    shaderConfig.MaxAttributeSizeInBytes        = m_desc.RayTracing.MaxNumAttributeBytes;
-    shaderConfig.MaxPayloadSizeInBytes          = m_desc.RayTracing.MaxNumPayloadBytes;
+    shaderConfig.MaxAttributeSizeInBytes        = m_desc.ShaderProgram->Desc( ).RayTracing.MaxNumAttributeBytes;
+    shaderConfig.MaxPayloadSizeInBytes          = m_desc.ShaderProgram->Desc( ).RayTracing.MaxNumPayloadBytes;
     subObjects.emplace_back( D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG, &shaderConfig );
 
     D3D12_GLOBAL_ROOT_SIGNATURE globalRootSignature    = { rootSignature->Instance( ) };
@@ -229,7 +229,7 @@ void DX12Pipeline::CreateRayTracingPipeline( )
     }
 
     D3D12_RAYTRACING_PIPELINE_CONFIG pipelineConfig = { };
-    pipelineConfig.MaxTraceRecursionDepth           = m_desc.RayTracing.MaxRecursionDepth;
+    pipelineConfig.MaxTraceRecursionDepth           = m_desc.ShaderProgram->Desc( ).RayTracing.MaxRecursionDepth;
     subObjects.emplace_back( D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG, &pipelineConfig );
 
     D3D12_STATE_OBJECT_DESC pipelineStateDesc = { };
@@ -417,7 +417,6 @@ D3D12_SHADER_BYTECODE DX12Pipeline::GetShaderByteCode( const CompiledShader *con
 
 DX12Pipeline::~DX12Pipeline( )
 {
-    m_pipeline.reset( );
 }
 
 ID3D12PipelineState *DX12Pipeline::GetPipeline( ) const
