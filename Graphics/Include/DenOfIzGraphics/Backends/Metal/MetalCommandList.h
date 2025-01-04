@@ -51,6 +51,8 @@ namespace DenOfIz
         id<MTLComputeCommandEncoder>               m_computeEncoder;
         id<MTLBlitCommandEncoder>                  m_blitEncoder;
         id<MTLAccelerationStructureCommandEncoder> m_accelerationStructureEncoder;
+        bool                                       m_waitForQueueFence = false;
+        id<MTLFence>                               m_queueFence;
         MetalEncoderType                           m_activeEncoderType = MetalEncoderType::None;
 
         // States:
@@ -96,9 +98,9 @@ namespace DenOfIz
         void BindTopLevelArgumentBuffer( );
         void TopLevelArgumentBufferNextOffset( );
         void EnsureEncoder( MetalEncoderType encoderType, std::string errorMessage );
-        // This is used because Vulkan+DX12 both support more operations in their graphics command list, so seamless transition is provided here
-        void SwitchEncoder( MetalEncoderType encoderType );
         void UseResource( const id<MTLResource> &resource, MTLResourceUsage usage = MTLResourceUsageRead, MTLRenderStages stages = MTLRenderStageVertex | MTLRenderStageFragment );
+        // This is used because Vulkan+DX12 both support more operations in their graphics command list, so seamless transition is provided here
+        void SwitchEncoder( MetalEncoderType encoderType, bool crossQueueBarrier = false );
     };
 
 } // namespace DenOfIz

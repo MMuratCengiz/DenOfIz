@@ -27,6 +27,7 @@ MetalCommandList::MetalCommandList( MetalContext *context, CommandListDesc desc 
 {
     m_commandBuffer  = [m_context->CommandQueue commandBuffer];
     m_argumentBuffer = std::make_unique<MetalArgumentBuffer>( m_context, 256 * 1024 );
+    m_queueFence     = [m_context->Device newFence];
 }
 
 MetalCommandList::~MetalCommandList( ) = default;
@@ -60,10 +61,7 @@ void MetalCommandList::Begin( )
 
 void MetalCommandList::BeginRendering( const RenderingDesc &renderingDesc )
 {
-    if ( m_blitEncoder || m_computeEncoder )
-    {
-        LOG( ERROR ) << "Expected null blit or compute encoder, make sure the CommandList order is correct.";
-    }
+    SwitchEncoder( MetalEncoderType::None, true );
 
     m_activeEncoderType = MetalEncoderType::Render;
     // Begin rendering with the provided rendering information
@@ -100,6 +98,11 @@ void MetalCommandList::BeginRendering( const RenderingDesc &renderingDesc )
         }
 
         m_renderEncoder = [m_commandBuffer renderCommandEncoderWithDescriptor:passDesc];
+        if ( m_waitForQueueFence )
+        {
+            [m_renderEncoder waitForFence:m_queueFence beforeStages:MTLRenderStageVertex];
+            m_waitForQueueFence = false;
+        }
     }
 }
 
@@ -111,34 +114,6 @@ void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
 {
     @autoreleasepool
     {
-        if ( m_blitEncoder )
-        {
-            [m_blitEncoder endEncoding];
-            m_blitEncoder = nil;
-        }
-        else if ( m_computeEncoder )
-        {
-            [m_computeEncoder endEncoding];
-            m_computeEncoder = nil;
-        }
-        else if ( m_renderEncoder )
-        {
-            [m_renderEncoder endEncoding];
-            m_renderEncoder = nil;
-        }
-        else if ( m_accelerationStructureEncoder )
-        {
-            [m_accelerationStructureEncoder endEncoding];
-            m_accelerationStructureEncoder = nil;
-        }
-
-        if ( executeDesc.Notify )
-        {
-            MetalFence *metalFence = static_cast<MetalFence *>( executeDesc.Notify );
-            metalFence->NotifyOnCommandBufferCompletion( m_commandBuffer );
-        }
-
-        // Create a separate wait command buffer if we have wait semaphores
         bool waitRequired = false;
         for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements( ); ++i )
         {
@@ -152,7 +127,7 @@ void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
 
         if ( waitRequired )
         {
-            id<MTLCommandBuffer> waitCommandBuffer = [m_context->CommandQueue commandBuffer];
+            id<MTLCommandBuffer> waitCommandBuffer = [m_context->CommandQueue commandBufferWithUnretainedReferences];
 
             for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements( ); ++i )
             {
@@ -168,15 +143,13 @@ void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
             waitCommandBuffer = nil;
         }
 
-        auto         completionCounter = std::make_shared<uint32_t>( 0 );
-        __block auto blockCounter      = completionCounter;
-        [m_commandBuffer addCompletedHandler:^( id<MTLCommandBuffer> buffer ) {
-          ( *blockCounter )++;
-          if ( buffer.error != nil )
-          {
-              LOG( ERROR ) << "Command buffer execution failed: " << [buffer.error.localizedDescription UTF8String];
-          }
-        }];
+        SwitchEncoder( MetalEncoderType::None, true );
+
+        if ( executeDesc.Notify )
+        {
+            MetalFence *metalFence = static_cast<MetalFence *>( executeDesc.Notify );
+            metalFence->NotifyOnCommandBufferCompletion( m_commandBuffer );
+        }
 
         for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements( ); ++i )
         {
@@ -185,6 +158,7 @@ void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
         }
 
         [m_commandBuffer commit];
+        m_commandBuffer = nil;
     }
 }
 
@@ -497,7 +471,7 @@ void MetalCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBo
 
 void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
-    SwitchEncoder( MetalEncoderType::Compute );
+    EnsureEncoder( MetalEncoderType::Compute, "DispatchRays called without a compute encoder. Make sure to call Begin with QueueType::Compute" );
 
     MetalShaderBindingTable *shaderBindingTable = static_cast<MetalShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
 
@@ -616,7 +590,7 @@ void MetalCommandList::EnsureEncoder( MetalEncoderType encoderType, std::string 
     }
 }
 
-void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType )
+void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType, bool crossQueueBarrier )
 {
     @autoreleasepool
     {
@@ -625,40 +599,80 @@ void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType )
             return;
         }
 
-        switch ( m_activeEncoderType )
+        if ( m_blitEncoder )
         {
-        case MetalEncoderType::Blit:
+            if ( crossQueueBarrier && encoderType != MetalEncoderType::Blit )
+            {
+                [m_blitEncoder updateFence:m_queueFence];
+                m_waitForQueueFence = true;
+            }
             [m_blitEncoder endEncoding];
             m_blitEncoder = nil;
-            break;
-        case MetalEncoderType::Compute:
-            [m_computeEncoder endEncoding];
-            m_computeEncoder = nil;
-            break;
-        case MetalEncoderType::AccelerationStructure:
-            [m_accelerationStructureEncoder endEncoding];
-            m_computeEncoder = nil;
-        case MetalEncoderType::Render:
-            [m_renderEncoder endEncoding];
-            m_renderEncoder = nil;
-            break;
-        case MetalEncoderType::None:
-            break;
         }
 
+        if ( m_computeEncoder )
+        {
+            if ( crossQueueBarrier && encoderType != MetalEncoderType::Compute )
+            {
+                [m_computeEncoder updateFence:m_queueFence];
+                m_waitForQueueFence = true;
+            }
+            [m_computeEncoder endEncoding];
+            m_computeEncoder = nil;
+        }
+        if ( m_renderEncoder )
+        {
+            if ( crossQueueBarrier && encoderType != MetalEncoderType::Render )
+            {
+                [m_renderEncoder updateFence:m_queueFence afterStages:MTLRenderStageFragment];
+                m_waitForQueueFence = true;
+            }
+            [m_renderEncoder endEncoding];
+            m_renderEncoder = nil;
+        }
+        if ( m_accelerationStructureEncoder )
+        {
+            if ( crossQueueBarrier && encoderType != MetalEncoderType::AccelerationStructure )
+            {
+                [m_accelerationStructureEncoder updateFence:m_queueFence];
+                m_waitForQueueFence = true;
+            }
+            [m_accelerationStructureEncoder endEncoding];
+            m_accelerationStructureEncoder = nil;
+        }
+
+        m_activeEncoderType = encoderType;
         switch ( encoderType )
         {
         case MetalEncoderType::Blit:
-            m_activeEncoderType = MetalEncoderType::Blit;
-            m_blitEncoder       = [m_commandBuffer blitCommandEncoder];
+            if ( m_blitEncoder == nil )
+            {
+                m_blitEncoder = [m_commandBuffer blitCommandEncoder];
+            }
+            if ( m_waitForQueueFence )
+            {
+                [m_blitEncoder updateFence:m_queueFence];
+            }
             break;
         case MetalEncoderType::Compute:
-            m_activeEncoderType = MetalEncoderType::Compute;
-            m_computeEncoder    = [m_commandBuffer computeCommandEncoder];
+            if ( m_computeEncoder == nil )
+            {
+                m_computeEncoder = [m_commandBuffer computeCommandEncoder];
+            }
+            if ( m_waitForQueueFence )
+            {
+                [m_computeEncoder updateFence:m_queueFence];
+            }
             break;
         case MetalEncoderType::AccelerationStructure:
-            m_activeEncoderType            = MetalEncoderType::AccelerationStructure;
-            m_accelerationStructureEncoder = [m_commandBuffer accelerationStructureCommandEncoder];
+            if ( m_accelerationStructureEncoder == nil )
+            {
+                m_accelerationStructureEncoder = [m_commandBuffer accelerationStructureCommandEncoder];
+            }
+            if ( m_waitForQueueFence )
+            {
+                [m_accelerationStructureEncoder updateFence:m_queueFence];
+            }
             break;
         case MetalEncoderType::Render:
             LOG( ERROR ) << "Using metal, render encoder should be initialized in BeginRendering. This error means the order of your commands ";
@@ -667,6 +681,7 @@ void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType )
             // Simply end current encoder
             break;
         }
+        m_waitForQueueFence = false;
     }
 }
 
