@@ -190,8 +190,9 @@ void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
 
 void MetalCommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> &waitOnLocks )
 {
+    SwitchEncoder( MetalEncoderType::None );
     MetalSwapChain *metalSwapChain = static_cast<MetalSwapChain *>( swapChain );
-    metalSwapChain->Present( waitOnLocks );
+    metalSwapChain->Present( imageIndex, waitOnLocks );
 }
 
 void MetalCommandList::BindPipeline( IPipeline *pipeline )
@@ -663,7 +664,7 @@ void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType )
             LOG( ERROR ) << "Using metal, render encoder should be initialized in BeginRendering. This error means the order of your commands ";
             break;
         case MetalEncoderType::None:
-            LOG( ERROR ) << "Invalid new encoder type, None should only be used after ending another encoder.";
+            // Simply end current encoder
             break;
         }
     }

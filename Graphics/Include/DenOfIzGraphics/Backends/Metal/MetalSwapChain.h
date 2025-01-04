@@ -30,9 +30,10 @@ namespace DenOfIz
         MetalContext                                      *m_context;
         SwapChainDesc                                      m_desc;
         TextureDesc                                        m_drawableDesc{ };
-        id<CAMetalDrawable>                                m_currentDrawable;
+        id<CAMetalDrawable>                                m_drawable;
         id<MTLCommandBuffer>                               m_presentCommandBuffer;
         MTKView                                           *m_view;
+        CAMetalLayer                                      *m_metalLayer;
         uint32_t                                           m_currentFrame;
         std::vector<std::unique_ptr<MetalTextureResource>> m_renderTargets;
 
@@ -44,9 +45,8 @@ namespace DenOfIz
         Format            GetPreferredFormat( ) override;
         ITextureResource *GetRenderTarget( uint32_t image ) override;
         Viewport          GetViewport( ) override;
-        id<MTLDrawable>   Drawable( );
         void              Resize( uint32_t width, uint32_t height ) override;
-        void              Present( const InteropArray<ISemaphore *> &waitOnSemaphores );
+        void              Present( const uint32_t &imageIndex, const InteropArray<ISemaphore *> &waitOnSemaphores );
     };
 
 } // namespace DenOfIz

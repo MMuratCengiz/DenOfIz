@@ -23,19 +23,20 @@ using namespace DenOfIz;
 
 MetalSwapChain::MetalSwapChain( MetalContext *context, const SwapChainDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_view                     = m_desc.WindowHandle->GetNativeHandle( ).contentView;
-    m_view.autoresizesSubviews = YES;
-    m_view.layer               = [CAMetalLayer layer];
-    auto layer                 = (CAMetalLayer *)m_view.layer;
-    layer.device               = m_context->Device;
-    layer.pixelFormat          = MetalEnumConverter::ConvertFormat( m_desc.BackBufferFormat );
-    layer.framebufferOnly      = NO;
-    layer.contentsScale        = [m_view.window backingScaleFactor];
-    layer.displaySyncEnabled   = NO;
-    layer.maximumDrawableCount = m_desc.NumBuffers;
+    m_view                            = m_desc.WindowHandle->GetNativeHandle( ).contentView;
+    m_view.autoresizesSubviews        = YES;
+    m_view.layer                      = [CAMetalLayer layer];
+    m_metalLayer                      = (CAMetalLayer *)m_view.layer;
+    m_metalLayer.device               = m_context->Device;
+    m_metalLayer.pixelFormat          = MetalEnumConverter::ConvertFormat( m_desc.BackBufferFormat );
+    m_metalLayer.framebufferOnly      = NO;
+    m_metalLayer.contentsScale        = [m_view.window backingScaleFactor];
+    m_metalLayer.displaySyncEnabled   = NO;
+    m_metalLayer.maximumDrawableCount = m_desc.NumBuffers;
     Resize( m_desc.Width, m_desc.Height );
 
-    m_presentCommandBuffer = [m_context->CommandQueue commandBuffer];
+    m_drawable = nil;
+    m_presentCommandBuffer = nil;
 }
 
 MetalSwapChain::~MetalSwapChain( )
@@ -46,11 +47,9 @@ uint32_t MetalSwapChain::AcquireNextImage( ISemaphore *imageAvailableSemaphore )
 {
     @autoreleasepool
     {
-        auto layer        = (CAMetalLayer *)m_view.layer;
-        m_currentFrame    = ( m_currentFrame + 1 ) % m_desc.NumBuffers;
-
-        m_currentDrawable = [layer nextDrawable];
-        m_renderTargets[ m_currentFrame ]->UpdateTexture( m_drawableDesc, m_currentDrawable.texture );
+        m_drawable     = [m_metalLayer nextDrawable];
+        m_currentFrame = ( m_currentFrame + 1 ) % m_desc.NumBuffers;
+        m_renderTargets[ m_currentFrame ]->UpdateTexture( m_drawableDesc, m_drawable.texture );
     }
     return m_currentFrame;
 }
@@ -74,8 +73,7 @@ void MetalSwapChain::Resize( uint32_t width, uint32_t height )
 {
     @autoreleasepool
     {
-        auto layer = (CAMetalLayer *)m_view.layer;
-        [layer setDrawableSize:CGSizeMake( width, height )];
+        [m_metalLayer setDrawableSize:CGSizeMake( width, height )];
 
         m_drawableDesc.Width        = width;
         m_drawableDesc.Height       = height;
@@ -92,22 +90,17 @@ void MetalSwapChain::Resize( uint32_t width, uint32_t height )
     }
 }
 
-id<MTLDrawable> MetalSwapChain::Drawable( )
-{
-    return m_currentDrawable;
-}
-
-void MetalSwapChain::Present( const InteropArray<ISemaphore *> &waitOnSemaphores )
+void MetalSwapChain::Present( const uint32_t &imageIndex, const InteropArray<ISemaphore *> &waitOnSemaphores )
 {
     @autoreleasepool
     {
         m_presentCommandBuffer = [m_context->CommandQueue commandBuffer];
 
         m_presentCommandBuffer.label = @"PRESENT";
-        [m_presentCommandBuffer presentDrawable:m_currentDrawable];
+        [m_presentCommandBuffer presentDrawable:m_drawable];
 
-        m_renderTargets[ m_currentFrame ]->UpdateTexture( m_drawableDesc, nil );
-        m_currentDrawable = nil;
+        m_renderTargets[ imageIndex ]->UpdateTexture( m_drawableDesc, nil );
+        m_drawable = nil;
 
         [m_presentCommandBuffer commit];
         m_presentCommandBuffer = nil;
