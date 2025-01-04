@@ -83,8 +83,12 @@ namespace DenOfIz
     {
         InteropString       Name;
         ReflectionFieldType Type;
-        uint32_t            NumColumns = 1;
-        uint32_t            NumRows    = 0;
+        uint32_t            NumColumns  = 1;
+        uint32_t            NumRows     = 0;
+        uint32_t            Elements    = 0;
+        uint32_t            Offset      = 0;
+        uint32_t            Level       = 0; // Nesting level in hierarchy
+        uint32_t            ParentIndex = UINT32_MAX; // UINT32_MAX is root
     };
     template class DZ_API InteropArray<ReflectionResourceField>;
 

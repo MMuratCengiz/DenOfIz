@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
-#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <directx/d3d12shader.h>
 #include <ranges>
 #include <set>
@@ -270,7 +269,8 @@ IRDescriptorRange1 CreateDescriptorRange( D3D12_SHADER_INPUT_BIND_DESC &shaderIn
     return descriptorRange;
 }
 
-IRRootSignature *ShaderProgram::CreateRootSignature( std::vector<RegisterSpaceRange> &registerSpaceRanges, std::vector<MetalDescriptorOffsets> &metalDescriptorOffsets ) const
+IRRootSignature *ShaderProgram::CreateRootSignature( std::vector<RegisterSpaceRange> &registerSpaceRanges, std::vector<MetalDescriptorOffsets> &metalDescriptorOffsets,
+                                                     bool isLocal ) const
 {
     std::vector<IRRootParameter1> rootParameters;
     int                           registerSpace = 0;
@@ -325,6 +325,17 @@ IRRootSignature *ShaderProgram::CreateRootSignature( std::vector<RegisterSpaceRa
         ++registerSpace;
     }
 
+#ifndef NDEBUG
+    if ( isLocal )
+    {
+        DumpIRRootParameters( rootParameters, "Metal Local Root Signature" );
+    }
+    else
+    {
+        DumpIRRootParameters( rootParameters, "Metal Global Root Signature" );
+    }
+#endif
+
     IRVersionedRootSignatureDescriptor desc;
     desc.version        = IRRootSignatureVersion_1_1;
     desc.desc_1_1.Flags = IRRootSignatureFlags( IRRootSignatureFlagCBVSRVUAVHeapDirectlyIndexed | IRRootSignatureFlagSamplerHeapDirectlyIndexed );
@@ -345,6 +356,111 @@ IRRootSignature *ShaderProgram::CreateRootSignature( std::vector<RegisterSpaceRa
     }
 
     return rootSignature;
+}
+
+void ShaderProgram::DumpIRRootParameters( const std::vector<IRRootParameter1> &rootParameters, const char *prefix = "" ) const
+{
+    LOG( INFO ) << "\n=== " << prefix << " IR Root Parameters ===";
+    LOG( INFO ) << "Total Parameters: " << rootParameters.size( );
+
+    for ( size_t i = 0; i < rootParameters.size( ); ++i )
+    {
+        const auto &param = rootParameters[ i ];
+        LOG( INFO ) << "\nParameter[" << i << "]:";
+        LOG( INFO ) << "  Type: " << [ & ]( )
+        {
+            switch ( param.ParameterType )
+            {
+            case IRRootParameterTypeDescriptorTable:
+                return "Descriptor Table";
+            case IRRootParameterType32BitConstants:
+                return "32 Bit Constants";
+            case IRRootParameterTypeCBV:
+                return "CBV";
+            case IRRootParameterTypeSRV:
+                return "SRV";
+            case IRRootParameterTypeUAV:
+                return "UAV";
+            default:
+                return "Unknown";
+            }
+        }( );
+
+        LOG( INFO ) << "  Shader Visibility: " << [ & ]( )
+        {
+            switch ( param.ShaderVisibility )
+            {
+            case IRShaderVisibilityAll:
+                return "All";
+            case IRShaderVisibilityVertex:
+                return "Vertex";
+            case IRShaderVisibilityPixel:
+                return "Pixel";
+            case IRShaderVisibilityGeometry:
+                return "Geometry";
+            case IRShaderVisibilityHull:
+                return "Hull";
+            case IRShaderVisibilityDomain:
+                return "Domain";
+            default:
+                return "Unknown";
+            }
+        }( );
+
+        // Log specific data based on parameter type
+        switch ( param.ParameterType )
+        {
+        case IRRootParameterTypeDescriptorTable:
+            {
+                LOG( INFO ) << "  Descriptor Table:";
+                LOG( INFO ) << "    NumDescriptorRanges: " << param.DescriptorTable.NumDescriptorRanges;
+
+                for ( uint32_t j = 0; j < param.DescriptorTable.NumDescriptorRanges; j++ )
+                {
+                    const auto &range = param.DescriptorTable.pDescriptorRanges[ j ];
+                    LOG( INFO ) << "    Range[" << j << "]:";
+                    LOG( INFO ) << "      RangeType: " << [ & ]( )
+                    {
+                        switch ( range.RangeType )
+                        {
+                        case IRDescriptorRangeTypeSRV:
+                            return "SRV";
+                        case IRDescriptorRangeTypeUAV:
+                            return "UAV";
+                        case IRDescriptorRangeTypeCBV:
+                            return "CBV";
+                        case IRDescriptorRangeTypeSampler:
+                            return "Sampler";
+                        default:
+                            return "Unknown";
+                        }
+                    }( );
+                    LOG( INFO ) << "      NumDescriptors: " << range.NumDescriptors;
+                    LOG( INFO ) << "      BaseShaderRegister: " << range.BaseShaderRegister;
+                    LOG( INFO ) << "      RegisterSpace: " << range.RegisterSpace;
+                    LOG( INFO ) << "      Offset: " << range.OffsetInDescriptorsFromTableStart;
+                }
+                break;
+            }
+        case IRRootParameterType32BitConstants:
+            {
+                LOG( INFO ) << "  32-Bit Constants:";
+                LOG( INFO ) << "    ShaderRegister: " << param.Constants.ShaderRegister;
+                LOG( INFO ) << "    RegisterSpace: " << param.Constants.RegisterSpace;
+                LOG( INFO ) << "    Num32BitValues: " << param.Constants.Num32BitValues;
+                break;
+            }
+        case IRRootParameterTypeCBV:
+        case IRRootParameterTypeSRV:
+        case IRRootParameterTypeUAV:
+            {
+                LOG( INFO ) << "  Descriptor:";
+                LOG( INFO ) << "    ShaderRegister: " << param.Descriptor.ShaderRegister;
+                LOG( INFO ) << "    RegisterSpace: " << param.Descriptor.RegisterSpace;
+                break;
+            }
+        }
+    }
 }
 
 // For metal, we need to produce a root signature to compile a correct metal lib
@@ -453,8 +569,8 @@ void ShaderProgram::ProduceMSL( )
     m_localMetalDescriptorOffsets.resize( localRegisterSpaceRanges.size( ) );
 
     CompileMslDesc compileMslDesc{ };
-    compileMslDesc.RootSignature      = CreateRootSignature( registerSpaceRanges, m_metalDescriptorOffsets );
-    compileMslDesc.LocalRootSignature = CreateRootSignature( localRegisterSpaceRanges, m_localMetalDescriptorOffsets );
+    compileMslDesc.RootSignature      = CreateRootSignature( registerSpaceRanges, m_metalDescriptorOffsets, false );
+    compileMslDesc.LocalRootSignature = CreateRootSignature( localRegisterSpaceRanges, m_localMetalDescriptorOffsets, true );
     compileMslDesc.RayTracing         = m_desc.RayTracing;
 
     for ( int shaderIndex = 0; shaderIndex < m_desc.Shaders.NumElements( ); ++shaderIndex )
@@ -662,6 +778,9 @@ ShaderReflectDesc ShaderProgram::Reflect( ) const
         }
     }
 
+#ifndef NDEBUG
+    DumpReflectionInfo( result );
+#endif
     return result;
 }
 
@@ -748,8 +867,8 @@ void ShaderProgram::ProcessBoundResource( ReflectionState &state, D3D12_SHADER_I
     {
         return;
     }
-    bool                isLocal     = IsBindingLocalTo( *state.ShaderDesc, shaderInputBindDesc );
-    ResourceBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
+    bool                      isLocal     = IsBindingLocalTo( *state.ShaderDesc, shaderInputBindDesc );
+    const ResourceBindingType bindingType = ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
     // Root constants are reserved for a specific register space
     // PS: Constant buffers in local root signatures are already handled as root constants
     if ( shaderInputBindDesc.Space == DZConfiguration::Instance( ).RootConstantRegisterSpace && !isLocal )
@@ -1020,6 +1139,38 @@ ReflectionFieldType DXCVariableTypeToReflectionType( const D3D_SHADER_VARIABLE_T
     }
 }
 
+void ShaderProgram::FillTypeInfo( ID3D12ShaderReflectionType *reflType, InteropArray<ReflectionResourceField> &fields, const uint32_t parentIndex, const uint32_t level ) const
+{
+    D3D12_SHADER_TYPE_DESC typeDesc;
+    DXC_CHECK_RESULT( reflType->GetDesc( &typeDesc ) );
+
+    if ( typeDesc.Members > 0 )
+    {
+        for ( UINT i = 0; i < typeDesc.Members; i++ )
+        {
+            ID3D12ShaderReflectionType *memberType = reflType->GetMemberTypeByIndex( i );
+            D3D12_SHADER_TYPE_DESC      memberTypeDesc;
+            DXC_CHECK_RESULT( memberType->GetDesc( &memberTypeDesc ) );
+
+            const uint32_t           currentIndex = fields.NumElements( );
+            ReflectionResourceField &memberField  = fields.EmplaceElement( );
+            memberField.Name                      = reflType->GetMemberTypeName( i );
+            memberField.Type                      = DXCVariableTypeToReflectionType( memberTypeDesc.Type );
+            memberField.NumColumns                = memberTypeDesc.Columns;
+            memberField.NumRows                   = memberTypeDesc.Rows;
+            memberField.Elements                  = memberTypeDesc.Elements;
+            memberField.Offset                    = memberTypeDesc.Offset;
+            memberField.Level                     = level;
+            memberField.ParentIndex               = parentIndex;
+
+            if ( memberTypeDesc.Members > 0 )
+            {
+                FillTypeInfo( memberType, fields, currentIndex, level + 1 );
+            }
+        }
+    }
+}
+
 void ShaderProgram::FillReflectionData( const ReflectionState &state, ReflectionDesc &reflectionDesc, const int resourceIndex ) const
 {
     D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
@@ -1090,11 +1241,21 @@ void ShaderProgram::FillReflectionData( const ReflectionState &state, Reflection
         D3D12_SHADER_TYPE_DESC      typeDesc;
         DXC_CHECK_RESULT( reflectionType->GetDesc( &typeDesc ) );
 
-        ReflectionResourceField &subField = reflectionDesc.Fields.EmplaceElement( );
-        subField.Name                     = variableDesc.Name;
-        subField.Type                     = DXCVariableTypeToReflectionType( typeDesc.Type );
-        subField.NumColumns               = typeDesc.Columns;
-        subField.NumRows                  = typeDesc.Rows;
+        const uint32_t           currentIndex = reflectionDesc.Fields.NumElements( );
+        ReflectionResourceField &field        = reflectionDesc.Fields.EmplaceElement( );
+        field.Name                            = variableDesc.Name;
+        field.Type                            = DXCVariableTypeToReflectionType( typeDesc.Type );
+        field.NumColumns                      = typeDesc.Columns;
+        field.NumRows                         = typeDesc.Rows;
+        field.Elements                        = typeDesc.Elements;
+        field.Offset                          = variableDesc.StartOffset;
+        field.Level                           = 0;
+        field.ParentIndex                     = UINT32_MAX;
+
+        if ( typeDesc.Members > 0 )
+        {
+            FillTypeInfo( reflectionType, reflectionDesc.Fields, currentIndex, 1 );
+        }
     }
 }
 
@@ -1156,3 +1317,309 @@ ShaderProgram::~ShaderProgram( )
         }
     }
 }
+
+// Debug Code:
+void ShaderProgram::DumpReflectionInfo( const ShaderReflectDesc &reflection ) const
+{
+    std::stringstream output;
+
+    output << "\n\n=== Global Root Signature ===\n";
+    DumpRootSignature( output, reflection.RootSignature );
+
+    output << "\n=== Local Root Signatures ===\n";
+    for ( int i = 0; i < reflection.LocalRootSignatures.NumElements( ); ++i )
+    {
+        if ( auto localRootSignatureDesc = reflection.LocalRootSignatures.GetElement( i ); localRootSignatureDesc.ResourceBindings.NumElements( ) > 0 )
+        {
+            output << "\nLocal Root Signature " << i << "\n";
+            DumpResourceBindings( output, localRootSignatureDesc.ResourceBindings );
+        }
+    }
+
+    output << "\n\n";
+    LOG( INFO ) << output.str( );
+}
+
+void ShaderProgram::DumpResourceBindings( std::stringstream &output, const InteropArray<ResourceBindingDesc> &resourceBindings ) const
+{
+    if ( resourceBindings.NumElements( ) == 0 )
+    {
+        return;
+    }
+
+    output << "\n=== Resource Bindings ===\n";
+    output << std::string( 100, '=' ) << '\n';
+    output << std::setw( 40 ) << std::left << "Name" << std::setw( 15 ) << "Type" << std::setw( 10 ) << "Space" << std::setw( 10 ) << "Binding" << std::setw( 10 ) << "Size"
+           << "Stages\n";
+    output << std::string( 100, '-' ) << '\n';
+
+    for ( int i = 0; i < resourceBindings.NumElements( ); ++i )
+    {
+        const auto &binding = resourceBindings.GetElement( i );
+
+        output << std::setw( 40 ) << std::left << binding.Name.Get( ) << std::setw( 15 ) << GetBindingTypeString( binding.BindingType ) << std::setw( 10 ) << binding.RegisterSpace
+               << std::setw( 10 ) << binding.Binding << std::setw( 10 ) << binding.Reflection.NumBytes << GetStagesString( binding.Stages ) << '\n';
+
+        if ( binding.Reflection.Fields.NumElements( ) > 0 )
+        {
+            output << std::string( 100, '-' ) << '\n';
+            output << "  Fields for " << binding.Name.Get( ) << ":\n";
+            output << "  " << std::string( 90, '-' ) << '\n';
+            output << "  " << std::setw( 38 ) << std::left << "Field Name" << std::setw( 15 ) << "Type" << std::setw( 12 ) << "Columns"
+                   << "Rows\n";
+            output << "  " << std::string( 90, '-' ) << '\n';
+            DumpStructFields( output, binding.Reflection.Fields );
+            output << std::string( 100, '=' ) << '\n';
+        }
+    }
+}
+
+void ShaderProgram::DumpRootSignature( std::stringstream &output, const RootSignatureDesc &sig ) const
+{
+    DumpResourceBindings( output, sig.ResourceBindings );
+
+    output << "\n--- Root Constants --- \n";
+    for ( int i = 0; i < sig.RootConstants.NumElements( ); ++i )
+    {
+        const auto &constant = sig.RootConstants.GetElement( i );
+        output << std::setw( 40 ) << constant.Name.Get( ) << std::setw( 10 ) << constant.Binding << std::setw( 10 ) << constant.NumBytes << " "
+               << GetStagesString( constant.Stages ) << "\n";
+    }
+}
+
+void ShaderProgram::DumpStructFields( std::stringstream &output, const InteropArray<ReflectionResourceField> &fields ) const
+{
+    for ( int i = 0; i < fields.NumElements( ); ++i )
+    {
+        const auto &field = fields.GetElement( i );
+
+        std::string indent( 2 * field.Level, ' ' );
+        output << indent << std::setw( 38 - indent.length( ) ) << std::left << field.Name.Get( ) << std::setw( 15 ) << GetFieldTypeString( field.Type ) << std::setw( 12 )
+               << field.NumColumns << std::setw( 10 ) << field.NumRows << "offset:" << std::setw( 6 ) << field.Offset;
+
+        if ( field.Elements > 0 )
+        {
+            output << " [" << field.Elements << "]";
+        }
+        if ( field.ParentIndex != UINT32_MAX )
+        {
+            output << " (parent: " << field.ParentIndex << ")";
+        }
+        output << '\n';
+    }
+}
+
+std::string ShaderProgram::GetFieldTypeString( const ReflectionFieldType type ) const
+{
+    switch ( type )
+    {
+    case ReflectionFieldType::Undefined:
+        return "Undefined";
+    case ReflectionFieldType::Void:
+        return "Void";
+    case ReflectionFieldType::Bool:
+        return "Bool";
+    case ReflectionFieldType::Int:
+        return "Int";
+    case ReflectionFieldType::Float:
+        return "Float";
+    case ReflectionFieldType::String:
+        return "String";
+    case ReflectionFieldType::Texture:
+        return "Texture";
+    case ReflectionFieldType::Texture1D:
+        return "Texture1D";
+    case ReflectionFieldType::Texture2D:
+        return "Texture2D";
+    case ReflectionFieldType::Texture3D:
+        return "Texture3D";
+    case ReflectionFieldType::TextureCube:
+        return "TextureCube";
+    case ReflectionFieldType::Sampler:
+        return "Sampler";
+    case ReflectionFieldType::Sampler1d:
+        return "Sampler1d";
+    case ReflectionFieldType::Sampler2d:
+        return "Sampler2d";
+    case ReflectionFieldType::Sampler3d:
+        return "Sampler3d";
+    case ReflectionFieldType::SamplerCube:
+        return "SamplerCube";
+    case ReflectionFieldType::PixelFragment:
+        return "PixelFragment";
+    case ReflectionFieldType::VertexFragment:
+        return "VertexFragment";
+    case ReflectionFieldType::Uint:
+        return "Uint";
+    case ReflectionFieldType::Uint8:
+        return "Uint8";
+    case ReflectionFieldType::DepthStencil:
+        return "DepthStencil";
+    case ReflectionFieldType::Blend:
+        return "Blend";
+    case ReflectionFieldType::Buffer:
+        return "Buffer";
+    case ReflectionFieldType::CBuffer:
+        return "CBuffer";
+    case ReflectionFieldType::TBuffer:
+        return "TBuffer";
+    case ReflectionFieldType::Texture1DArray:
+        return "Texture1DArray";
+    case ReflectionFieldType::Texture2DArray:
+        return "Texture2DArray";
+    case ReflectionFieldType::RenderTargetView:
+        return "RenderTargetView";
+    case ReflectionFieldType::DepthStencilView:
+        return "DepthStencilView";
+    case ReflectionFieldType::Texture2Dms:
+        return "Texture2Dms";
+    case ReflectionFieldType::Texture2DmsArray:
+        return "Texture2DmsArray";
+    case ReflectionFieldType::TextureCubeArray:
+        return "TextureCubeArray";
+    case ReflectionFieldType::InterfacePointer:
+        return "InterfacePointer";
+    case ReflectionFieldType::Double:
+        return "Double";
+    case ReflectionFieldType::RWTexture1D:
+        return "RWTexture1D";
+    case ReflectionFieldType::RWTexture1DArray:
+        return "RWTexture1DArray";
+    case ReflectionFieldType::RWTexture2D:
+        return "RWTexture2D";
+    case ReflectionFieldType::RWTexture2DArray:
+        return "RWTexture2DArray";
+    case ReflectionFieldType::RWTexture3D:
+        return "RWTexture3D";
+    case ReflectionFieldType::RWBuffer:
+        return "RWBuffer";
+    case ReflectionFieldType::ByteAddressBuffer:
+        return "ByteAddressBuffer";
+    case ReflectionFieldType::RWByteAddressBuffer:
+        return "RWByteAddressBuffer";
+    case ReflectionFieldType::StructuredBuffer:
+        return "StructuredBuffer";
+    case ReflectionFieldType::RWStructuredBuffer:
+        return "RWStructuredBuffer";
+    case ReflectionFieldType::AppendStructuredBuffer:
+        return "AppendStructuredBuffer";
+    case ReflectionFieldType::ConsumeStructuredBuffer:
+        return "ConsumeStructuredBuffer";
+    case ReflectionFieldType::Min8Float:
+        return "Min8Float";
+    case ReflectionFieldType::Min10Float:
+        return "Min10Float";
+    case ReflectionFieldType::Min16Float:
+        return "Min16Float";
+    case ReflectionFieldType::Min12Int:
+        return "Min12Int";
+    case ReflectionFieldType::Min16Int:
+        return "Min16Int";
+    case ReflectionFieldType::Min16UInt:
+        return "Min16UInt";
+    case ReflectionFieldType::Int16:
+        return "Int16";
+    case ReflectionFieldType::UInt16:
+        return "UInt16";
+    case ReflectionFieldType::Float16:
+        return "Float16";
+    case ReflectionFieldType::Int64:
+        return "Int64";
+    case ReflectionFieldType::UInt64:
+        return "UInt64";
+    case ReflectionFieldType::PixelShader:
+        return "PixelShader";
+    case ReflectionFieldType::VertexShader:
+        return "VertexShader";
+    case ReflectionFieldType::GeometryShader:
+        return "GeometryShader";
+    case ReflectionFieldType::HullShader:
+        return "HullShader";
+    case ReflectionFieldType::DomainShader:
+        return "DomainShader";
+    case ReflectionFieldType::ComputeShader:
+        return "ComputeShader";
+    }
+
+    return "";
+}
+
+std::string ShaderProgram::GetBindingTypeString( const ResourceBindingType type ) const
+{
+    switch ( type )
+    {
+    case ResourceBindingType::ConstantBuffer:
+        return "CBV";
+    case ResourceBindingType::ShaderResource:
+        return "SRV";
+    case ResourceBindingType::UnorderedAccess:
+        return "UAV";
+    case ResourceBindingType::Sampler:
+        return "Sampler";
+    default:
+        return "Unknown";
+    }
+}
+
+std::string ShaderProgram::GetStagesString( const InteropArray<ShaderStage> &stages ) const
+{
+    std::string result;
+    for ( int i = 0; i < stages.NumElements( ); ++i )
+    {
+        if ( i > 0 )
+            result += "|";
+        switch ( stages.GetElement( i ) )
+        {
+        case ShaderStage::Vertex:
+            result += "Vertex";
+            break;
+        case ShaderStage::Pixel:
+            result += "Pixel";
+            break;
+        case ShaderStage::Compute:
+            result += "Compute";
+            break;
+        case ShaderStage::Raygen:
+            result += "Raygen";
+            break;
+        case ShaderStage::ClosestHit:
+            result += "ClosestHit";
+            break;
+        case ShaderStage::Geometry:
+            result += "Geometry";
+            break;
+        case ShaderStage::Hull:
+            result += "Hull";
+            break;
+        case ShaderStage::Domain:
+            result += "Domain";
+            break;
+        case ShaderStage::AllGraphics:
+            result += "AllGraphics";
+            break;
+        case ShaderStage::All:
+            result += "All";
+            break;
+        case ShaderStage::AnyHit:
+            result += "AnyHit";
+            break;
+        case ShaderStage::Miss:
+            result += "Miss";
+            break;
+        case ShaderStage::Intersection:
+            result += "Intersection";
+            break;
+        case ShaderStage::Callable:
+            result += "Callable";
+            break;
+        case ShaderStage::Task:
+            result += "Task";
+            break;
+        case ShaderStage::Mesh:
+            result += "Mesh";
+            break;
+        }
+    }
+    return result;
+}
+//

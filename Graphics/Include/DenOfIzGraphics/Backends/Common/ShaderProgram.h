@@ -119,7 +119,6 @@ namespace DenOfIz
 
     class ShaderProgram
     {
-    private:
         typedef const std::function<void( D3D12_SHADER_INPUT_BIND_DESC &, int )> ReflectionCallback;
 
         std::vector<std::unique_ptr<CompiledShader>> m_compiledShaders;
@@ -139,7 +138,8 @@ namespace DenOfIz
     private:
         [[nodiscard]] const ShaderCompiler &ShaderCompilerInstance( ) const;
         void                                Compile( );
-        void                                FillReflectionData( const ReflectionState &state, ReflectionDesc &reflectionDesc, int resourceIndex ) const;
+        void FillTypeInfo( ID3D12ShaderReflectionType *reflType, InteropArray<ReflectionResourceField> &fields, uint32_t parentIndex, uint32_t level ) const;
+        void FillReflectionData( const ReflectionState &state, ReflectionDesc &reflectionDesc, int resourceIndex ) const;
         void InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
         void ReflectShader( ReflectionState &state ) const;
         void ReflectLibrary( ReflectionState &state ) const;
@@ -150,10 +150,19 @@ namespace DenOfIz
         bool                UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
         ResourceBindingType ReflectTypeToBufferBindingType( const D3D_SHADER_INPUT_TYPE type ) const;
 #ifdef BUILD_METAL
-        IRRootSignature *CreateRootSignature( std::vector<RegisterSpaceRange> &registerSpaceRanges, std::vector<MetalDescriptorOffsets> &metalDescriptorOffsets ) const;
+        IRRootSignature *CreateRootSignature( std::vector<RegisterSpaceRange> &registerSpaceRanges, std::vector<MetalDescriptorOffsets> &metalDescriptorOffsets,
+                                              bool isLocal ) const;
+        void             DumpIRRootParameters( const std::vector<IRRootParameter1> &rootParameters, const char *prefix = "" );
         void             IterateBoundResources( CompiledShader *shader, ReflectionState &state, ReflectionCallback &callback ) const;
         void             ProduceMSL( );
 #endif
+        void        DumpReflectionInfo( const ShaderReflectDesc &reflection ) const;
+        void        DumpResourceBindings( std::stringstream &output, const InteropArray<ResourceBindingDesc> &resourceBindings ) const;
+        void        DumpRootSignature( std::stringstream &output, const RootSignatureDesc &sig ) const;
+        void        DumpStructFields( std::stringstream &output, const InteropArray<ReflectionResourceField> &fields ) const;
+        std::string GetFieldTypeString( ReflectionFieldType type ) const;
+        std::string GetBindingTypeString( ResourceBindingType type ) const;
+        std::string GetStagesString( const InteropArray<ShaderStage> &stages ) const;
     };
 
 } // namespace DenOfIz
