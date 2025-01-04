@@ -37,17 +37,10 @@ namespace DenOfIz
     public:
         MetalSemaphore( MetalContext *context );
         ~MetalSemaphore( ) override = default;
-        void Notify( ) override;
-        void WaitFor( id<MTLCommandBuffer> commandBuffer );
-        void NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer> &commandBuffer );
-
-        [[nodiscard]] bool IsSignaled( ) const
-        {
-            return m_signaled;
-        }
-        [[nodiscard]] const id<MTLEvent> &GetFence( ) const
-        {
-            return m_fence;
-        }
+        void               Notify( ) override;
+        [[nodiscard]] bool IsSignaled( ) const;
+        void               ResetSignaled( );
+        void               WaitFor( id<MTLCommandBuffer> commandBuffer );
+        void               NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer> &commandBuffer );
     };
 } // namespace DenOfIz

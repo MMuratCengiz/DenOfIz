@@ -24,25 +24,33 @@ MetalSemaphore::MetalSemaphore( MetalContext *context ) : m_context( context )
 {
     m_fence      = [m_context->Device newEvent];
     m_fenceValue = 0;
-    m_signaled   = false;
+    m_signaled.store( false, std::memory_order_release );
 }
 
 void MetalSemaphore::Notify( )
 {
 }
 
-void MetalSemaphore::WaitFor( id<MTLCommandBuffer> commandBuffer )
+bool MetalSemaphore::IsSignaled( ) const
 {
-    if ( m_signaled )
-    {
-        [commandBuffer encodeWaitForEvent:m_fence value:m_fenceValue];
-        m_signaled = false;
-    }
+    return m_signaled.load( std::memory_order_acquire );
 }
 
+void MetalSemaphore::ResetSignaled( )
+{
+    m_signaled.store( false, std::memory_order_release );
+}
+
+void MetalSemaphore::WaitFor( id<MTLCommandBuffer> commandBuffer )
+{
+    if ( IsSignaled( ) )
+    {
+        [commandBuffer encodeWaitForEvent:m_fence value:m_fenceValue];
+    }
+}
 void MetalSemaphore::NotifyOnCommandBufferCompletion( const id<MTLCommandBuffer> &commandBuffer )
 {
     m_fenceValue = ( m_fenceValue + 1 ) % MAX_FENCE_VALUE;
     [commandBuffer encodeSignalEvent:m_fence value:m_fenceValue];
-    m_signaled = true;
+    m_signaled.store( true, std::memory_order_release );
 }

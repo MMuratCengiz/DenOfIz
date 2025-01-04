@@ -138,6 +138,7 @@ void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
             metalFence->NotifyOnCommandBufferCompletion( m_commandBuffer );
         }
 
+        // Create a separate wait command buffer if we have wait semaphores
         bool waitRequired = false;
         for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements( ); ++i )
         {
@@ -151,18 +152,38 @@ void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
 
         if ( waitRequired )
         {
+            id<MTLCommandBuffer> waitCommandBuffer = [m_context->CommandQueue commandBuffer];
+
             for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements( ); ++i )
             {
                 MetalSemaphore *semaphore = static_cast<MetalSemaphore *>( executeDesc.WaitOnSemaphores.GetElement( i ) );
-                semaphore->WaitFor( m_commandBuffer );
+                if ( semaphore->IsSignaled( ) )
+                {
+                    semaphore->WaitFor( waitCommandBuffer );
+                    semaphore->ResetSignaled( );
+                }
             }
+
+            [waitCommandBuffer commit];
+            waitCommandBuffer = nil;
         }
+
+        auto         completionCounter = std::make_shared<uint32_t>( 0 );
+        __block auto blockCounter      = completionCounter;
+        [m_commandBuffer addCompletedHandler:^( id<MTLCommandBuffer> buffer ) {
+          ( *blockCounter )++;
+          if ( buffer.error != nil )
+          {
+              LOG( ERROR ) << "Command buffer execution failed: " << [buffer.error.localizedDescription UTF8String];
+          }
+        }];
 
         for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements( ); ++i )
         {
             MetalSemaphore *metalSemaphore = static_cast<MetalSemaphore *>( executeDesc.NotifySemaphores.GetElement( i ) );
             metalSemaphore->NotifyOnCommandBufferCompletion( m_commandBuffer );
         }
+
         [m_commandBuffer commit];
     }
 }

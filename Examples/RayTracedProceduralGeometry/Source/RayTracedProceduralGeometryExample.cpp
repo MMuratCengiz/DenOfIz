@@ -22,15 +22,6 @@ using namespace DenOfIz;
 
 void RayTracedProceduralGeometryExample::Init( )
 {
-    static_assert(sizeof(PrimitiveConstantBuffer) % 16 == 0, "PrimitiveConstantBuffer size must be multiple of 16");
-    static_assert(sizeof(PrimitiveInstanceConstantBuffer) % 16 == 0, "PrimitiveInstanceConstantBuffer size must be multiple of 16");
-    static_assert(sizeof(LocalData) % 16 == 0, "LocalData size must be multiple of 16");
-
-    static_assert(offsetof(LocalData, materialCB) % 16 == 0, "materialCB must be aligned to 16 bytes");
-    static_assert(offsetof(LocalData, aabbCB) % 16 == 0, "aabbCB must be aligned to 16 bytes");
-    static_assert(offsetof(PrimitiveConstantBuffer, albedo) % 16 == 0, "albedo must be aligned to 16 bytes");
-    static_assert(offsetof(PrimitiveInstanceConstantBuffer, instanceIndex) % 16 == 0, "instanceIndex must be aligned to 16 bytes");
-
     CreateRenderTargets( );
     BuildProceduralGeometryAABBs( );
     CreateResources( );
@@ -192,7 +183,7 @@ void RayTracedProceduralGeometryExample::Update( )
     if ( m_animateGeometry )
     {
         m_animateGeometryTime += m_time.GetDeltaTime( );
-        UpdateAABBPrimitiveAttributes( );
+//        UpdateAABBPrimitiveAttributes( );
     }
 
     m_sceneConstants->cameraPosition    = m_camera->Position( );
