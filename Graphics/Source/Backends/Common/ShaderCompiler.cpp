@@ -279,6 +279,17 @@ IDxcBlob *ShaderCompiler::DxilToMsl( const CompileDesc &compileDesc, IDxcBlob *c
     IRCompilerSetMinimumDeploymentTarget( irCompiler, IROperatingSystem_macOS, "15.1" );
     IRCompilerSetGlobalRootSignature( irCompiler, rootSignature );
     IRCompilerSetLocalRootSignature( irCompiler, localSignature );
+
+    switch ( compileDesc.RayTracing.HitGroupType )
+    {
+    case HitGroupType::AABBs:
+        IRCompilerSetHitgroupType( irCompiler, IRHitGroupTypeProceduralPrimitive );
+        break;
+    default:
+        IRCompilerSetHitgroupType( irCompiler, IRHitGroupTypeTriangles );
+        break;
+    }
+
     IRCompilerSetRayTracingPipelineArguments( irCompiler, compileMslDesc.RayTracing.MaxNumAttributeBytes, IRRaytracingPipelineFlagNone, IRIntrinsicMaskClosestHitAll,
                                               IRIntrinsicMaskMissShaderAll, IRIntrinsicMaskAnyHitShaderAll, IRIntrinsicMaskCallableShaderAll,
                                               compileMslDesc.RayTracing.MaxRecursionDepth, IRRayGenerationCompilationVisibleFunction );

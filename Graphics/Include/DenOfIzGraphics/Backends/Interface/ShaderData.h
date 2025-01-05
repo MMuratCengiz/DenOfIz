@@ -82,6 +82,8 @@ namespace DenOfIz
 
     struct DZ_API RayTracingShaderDesc
     {
+        // For metal, it needs to know before compiling what the hit group is otherwise intersection shaders do not work
+        HitGroupType                      HitGroupType = HitGroupType::Triangles;
         InteropArray<ResourceBindingSlot> LocalBindings;
         // Local bindings are used to mark resources as local, so they are not included in the global resource list
         // The binding will be added to the corresponding ShaderDataLayoutDesc in the corresponding index of LocalRootSignatureDesc at

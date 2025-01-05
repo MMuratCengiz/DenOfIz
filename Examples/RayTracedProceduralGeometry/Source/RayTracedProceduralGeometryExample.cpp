@@ -445,11 +445,12 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
         triangleHitShaderDesc.EntryPoint  = "MyClosestHitShader_Triangle";
         triangleHitShaderDesc.RayTracing.MarkCbvAsLocal( 1, 3 );
 
-        m_closestHitAABBIndex         = shaderIndex++;
-        ShaderDesc &aabbHitShaderDesc = shaderDescs.GetElement( m_closestHitAABBIndex );
-        aabbHitShaderDesc.Stage       = ShaderStage::ClosestHit;
-        aabbHitShaderDesc.Path        = "Assets/Shaders/RTProceduralGeometry/ClosestHit.hlsl";
-        aabbHitShaderDesc.EntryPoint  = "MyClosestHitShader_AABB";
+        m_closestHitAABBIndex                     = shaderIndex++;
+        ShaderDesc &aabbHitShaderDesc             = shaderDescs.GetElement( m_closestHitAABBIndex );
+        aabbHitShaderDesc.Stage                   = ShaderStage::ClosestHit;
+        aabbHitShaderDesc.Path                    = "Assets/Shaders/RTProceduralGeometry/ClosestHit.hlsl";
+        aabbHitShaderDesc.EntryPoint              = "MyClosestHitShader_AABB";
+        aabbHitShaderDesc.RayTracing.HitGroupType = HitGroupType::AABBs;
         aabbHitShaderDesc.RayTracing.MarkCbvAsLocal( 1, 3 );
         m_firstIntersectionShaderIndex = shaderIndex;
 
@@ -460,6 +461,7 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
             intersectionShaderDesc.Stage       = ShaderStage::Intersection;
             intersectionShaderDesc.Path        = InteropString( "Assets/Shaders/RTProceduralGeometry/Intersection_" ).Append( aabbHitGroupTypes[ i ] ).Append( ".hlsl" );
             intersectionShaderDesc.EntryPoint  = InteropString( "MyIntersectionShader_" ).Append( aabbHitGroupTypes[ i ] );
+            intersectionShaderDesc.RayTracing.HitGroupType = HitGroupType::AABBs;
             intersectionShaderDesc.RayTracing.MarkCbvAsLocal( 1, 3 );
         }
     }
