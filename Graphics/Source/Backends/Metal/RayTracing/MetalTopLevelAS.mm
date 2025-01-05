@@ -72,7 +72,14 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
     m_descriptor.instanceDescriptorBuffer        = m_instanceBuffer;
     m_descriptor.instanceCount                   = desc.Instances.NumElements( );
     m_descriptor.instanceDescriptorType          = MTLAccelerationStructureInstanceDescriptorTypeUserID;
-    // m_descriptor.usage                           = MTLAccelerationStructureUsagePreferFastBuild;
+    if ( m_desc.BuildFlags.IsSet( ASBuildFlags::AllowUpdate ) )
+    {
+        m_descriptor.usage |= MTLAccelerationStructureUsageRefit;
+    }
+    if ( m_desc.BuildFlags.IsSet( ASBuildFlags::FastBuild ) )
+    {
+        m_descriptor.usage = MTLAccelerationStructureUsagePreferFastBuild;
+    }
 
     MTLAccelerationStructureSizes asSize = [m_context->Device accelerationStructureSizesWithDescriptor:m_descriptor];
 
