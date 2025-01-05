@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class VulkanTopLevelAS : public ITopLevelAS
+    class VulkanTopLevelAS final : public ITopLevelAS
     {
         VulkanContext                                                  *m_context;
         VkAccelerationStructureKHR                                      m_accelerationStructure{ };

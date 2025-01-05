@@ -25,7 +25,6 @@ namespace DenOfIz
 {
     class VulkanBottomLevelAS : public IBottomLevelAS
     {
-    private:
         VulkanContext                                                *m_context;
         VkAccelerationStructureKHR                                    m_accelerationStructure;
         BottomLevelASDesc                                             m_desc;

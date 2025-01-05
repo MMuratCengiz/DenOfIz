@@ -44,7 +44,7 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
         vkInstance.mask                                   = instanceDesc.Mask;
         vkInstance.instanceShaderBindingTableRecordOffset = instanceDesc.ContributionToHitGroupIndex;
         vkInstance.accelerationStructureReference         = vkBLAS->DeviceAddress( );
-        vkInstance.flags                                  = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+        vkInstance.flags                                  = m_flags;
     }
 
     m_buildRangeInfo.primitiveCount  = desc.Instances.NumElements( );
