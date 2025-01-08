@@ -18,46 +18,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Metal/MetalEnumConverter.h>
 #include <DenOfIzGraphics/Backends/Metal/MetalRootSignature.h>
-#include <algorithm>
+#include <DenOfIzGraphics/Utilities/Utilities.h>
+#include <map>
 
 using namespace DenOfIz;
 
 MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    std::vector<uint32_t> registerSpaceSize;
 
-    int numTables = 0;
-    for ( int i = 0; i < m_desc.ResourceBindings.NumElements( ); ++i )
+    std::map<uint32_t, std::vector<ResourceBindingDesc>> bindingsBySpace;
+    auto                                                 sortedBindings = SortResourceBindings( m_desc.ResourceBindings );
+    for ( int i = 0; i < sortedBindings.NumElements( ); i++ )
     {
         const auto &binding = m_desc.ResourceBindings.GetElement( i );
-
-        ResourceBindingSlot slot = {
-            .Binding       = binding.Binding,
-            .RegisterSpace = binding.RegisterSpace,
-            .Type          = binding.BindingType,
-        };
-
-        MTLRenderStages stages = 0;
-        for ( int stageIndex = 0; stageIndex < binding.Stages.NumElements( ); ++stageIndex )
-        {
-            const auto &stage = binding.Stages.GetElement( stageIndex );
-            if ( stage == ShaderStage::Vertex )
-            {
-                stages |= MTLRenderStageVertex;
-            }
-            if ( stage == ShaderStage::Pixel )
-            {
-                stages |= MTLRenderStageFragment;
-            }
-        }
-
-        uint32_t previousStageOffset = 0;
-        if ( binding.Reflection.TLABOffset >= m_numTLABAddresses )
-        {
-            m_numTLABAddresses = binding.Reflection.TLABOffset + 1;
-        }
-
-        m_metalBindings[ slot.Key( ) ] = { .Parent = binding, .Stages = stages };
+        bindingsBySpace[ binding.RegisterSpace ].push_back( binding );
     }
 
     m_rootConstants.resize( m_desc.RootConstants.NumElements( ) );
@@ -72,16 +46,90 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
         m_rootConstants[ trueIndex ] = { .Offset = m_numRootConstantBytes, .NumBytes = rootConstant.NumBytes };
         m_numRootConstantBytes += rootConstant.NumBytes;
     }
-}
 
-const MetalBindingDesc &MetalRootSignature::FindMetalBinding( const ResourceBindingSlot &slot ) const
-{
-    auto it = m_metalBindings.find( slot.Key( ) );
-    if ( it == m_metalBindings.end( ) )
+    m_descriptorOffsets.resize( bindingsBySpace.rbegin( )->first + 1 );
+    int currentTLABOffset = m_numRootConstantBytes / sizeof( uint64_t );
+    for ( const auto &[ space, bindings ] : bindingsBySpace )
     {
-        LOG( ERROR ) << "Unable to find slot with type[" << static_cast<int>( slot.Type ) << "],binding[" << slot.Binding << "],register[" << slot.RegisterSpace << "].";
-    }
-    return it->second;
+        auto &offsets = m_descriptorOffsets[ space ];
+
+        bool     hasCbvSrvUav   = false;
+        bool     hasSamplers    = false;
+        uint32_t cbvSrvUavIndex = 0;
+        uint32_t samplerIndex   = 0;
+
+        for ( const auto &binding : bindings )
+        {
+            if ( binding.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
+            {
+                uint32_t hash                   = Utilities::HashInts( GetRootParameterType( binding.BindingType ), binding.RegisterSpace, binding.Binding );
+                offsets.UniqueTLABIndex[ hash ] = currentTLABOffset++;
+                m_numTLABAddresses++;
+                continue;
+            }
+
+            if ( binding.BindingType == ResourceBindingType::Sampler )
+            {
+                hasSamplers = true;
+            }
+            else
+            {
+                hasCbvSrvUav = true;
+            }
+        }
+
+        if ( hasCbvSrvUav )
+        {
+            m_numTLABAddresses++;
+            offsets.CbvSrvUavTableOffset = currentTLABOffset++;
+
+            for ( const auto &binding : bindings )
+            {
+                if ( binding.BindingType == ResourceBindingType::Sampler )
+                {
+                    continue;
+                }
+
+                ContainerUtilities::EnsureSize( offsets.CbvSrvUavResourceIndices, binding.Binding + 1 );
+                auto &bindingIndices = offsets.CbvSrvUavResourceIndices[ binding.Binding ];
+                switch ( binding.BindingType )
+                {
+                case ResourceBindingType::ConstantBuffer:
+                    bindingIndices.Cbv       = cbvSrvUavIndex;
+                    bindingIndices.CbvStages = MetalEnumConverter::ConvertRenderStages( binding.Stages );
+                    break;
+                case ResourceBindingType::ShaderResource:
+                    bindingIndices.Srv       = cbvSrvUavIndex;
+                    bindingIndices.SrvStages = MetalEnumConverter::ConvertRenderStages( binding.Stages );
+                    break;
+                case ResourceBindingType::UnorderedAccess:
+                    bindingIndices.Uav       = cbvSrvUavIndex;
+                    bindingIndices.UavStages = MetalEnumConverter::ConvertRenderStages( binding.Stages );
+                    break;
+                case ResourceBindingType::Sampler:
+                    break;
+                }
+                cbvSrvUavIndex++;
+            }
+        }
+
+        if ( hasSamplers )
+        {
+            m_numTLABAddresses++;
+            offsets.SamplerTableOffset = currentTLABOffset++;
+            for ( const auto &binding : bindings )
+            {
+                if ( binding.BindingType == ResourceBindingType::Sampler )
+                {
+                    ContainerUtilities::EnsureSize( offsets.SamplerResourceIndices, binding.Binding + 1 );
+                    ContainerUtilities::EnsureSize( offsets.SamplerResourceStages, binding.Binding + 1 );
+                    offsets.SamplerResourceIndices[ binding.Binding ] = samplerIndex;
+                    offsets.SamplerResourceStages[ binding.Binding ]  = MetalEnumConverter::ConvertRenderStages( binding.Stages );
+                    samplerIndex++;
+                }
+            }
+        }
+    };
 }
 
 const uint32_t MetalRootSignature::NumTLABAddresses( ) const
@@ -97,6 +145,125 @@ const uint32_t MetalRootSignature::NumTLABAddresses( ) const
 const std::vector<MetalRootConstant> &MetalRootSignature::RootConstants( ) const
 {
     return m_rootConstants;
+}
+
+IRRootParameterType MetalRootSignature::GetRootParameterType( ResourceBindingType type )
+{
+    switch ( type )
+    {
+    case ResourceBindingType::ConstantBuffer:
+        return IRRootParameterTypeCBV;
+    case ResourceBindingType::ShaderResource:
+        return IRRootParameterTypeSRV;
+    case ResourceBindingType::UnorderedAccess:
+        return IRRootParameterTypeUAV;
+    default:
+        return IRRootParameterTypeCBV;
+    }
+}
+
+const uint32_t MetalRootSignature::TLABOffset( const ResourceBindingSlot &slot ) const
+{
+    uint32_t hash = Utilities::HashInts( MetalRootSignature::GetRootParameterType( slot.Type ), slot.RegisterSpace, slot.Binding );
+    return m_descriptorOffsets[ slot.RegisterSpace ].UniqueTLABIndex.at( hash );
+}
+
+const uint32_t MetalRootSignature::CbvSrvUavTableOffset( uint32_t registerSpace ) const
+{
+    if ( registerSpace >= m_descriptorOffsets.size( ) )
+    {
+        LOG( ERROR ) << "Invalid register space";
+        return 0;
+    }
+    return m_descriptorOffsets[ registerSpace ].CbvSrvUavTableOffset;
+}
+
+const uint32_t MetalRootSignature::CbvSrvUavResourceIndex( const ResourceBindingSlot &slot ) const
+{
+    if ( slot.RegisterSpace >= m_descriptorOffsets.size( ) )
+    {
+        LOG( ERROR ) << "Invalid register space";
+        return 0;
+    }
+
+    auto &bindingIndices = m_descriptorOffsets[ slot.RegisterSpace ].CbvSrvUavResourceIndices[ slot.Binding ];
+    int   resourceIndex  = -1;
+    switch ( slot.Type )
+    {
+    case ResourceBindingType::ConstantBuffer:
+        resourceIndex = bindingIndices.Cbv;
+        break;
+    case ResourceBindingType::ShaderResource:
+        resourceIndex = bindingIndices.Srv;
+        break;
+    case ResourceBindingType::UnorderedAccess:
+        resourceIndex = bindingIndices.Uav;
+        break;
+    case ResourceBindingType::Sampler:
+        break;
+    }
+    if ( resourceIndex == -1 )
+    {
+        LOG( ERROR ) << "Resource binding with type[" << static_cast<int>( slot.Type ) << "],binding[" << slot.Binding << "],register[" << slot.RegisterSpace << "] not found.";
+        return 0;
+    }
+    return resourceIndex;
+}
+
+const MTLRenderStages MetalRootSignature::CbvSrvUavResourceShaderStages( const ResourceBindingSlot &slot ) const
+{
+    if ( slot.RegisterSpace >= m_descriptorOffsets.size( ) )
+    {
+        LOG( ERROR ) << "Invalid register space";
+        return 0;
+    }
+
+    auto &bindingIndices = m_descriptorOffsets[ slot.RegisterSpace ].CbvSrvUavResourceIndices[ slot.Binding ];
+    switch ( slot.Type )
+    {
+    case ResourceBindingType::ConstantBuffer:
+        return bindingIndices.CbvStages;
+    case ResourceBindingType::ShaderResource:
+        return bindingIndices.SrvStages;
+    case ResourceBindingType::UnorderedAccess:
+        return bindingIndices.UavStages;
+    case ResourceBindingType::Sampler:
+        break;
+    }
+    return MTLRenderStageVertex;
+}
+
+const MTLRenderStages MetalRootSignature::SamplerResourceShaderStages( const DenOfIz::ResourceBindingSlot &slot ) const
+{
+    if ( slot.RegisterSpace >= m_descriptorOffsets.size( ) )
+    {
+        LOG( ERROR ) << "Invalid register space";
+        return 0;
+    }
+
+    return m_descriptorOffsets[ slot.RegisterSpace ].SamplerResourceStages[ slot.Binding ];
+}
+
+const uint32_t MetalRootSignature::SamplerTableOffset( uint32_t registerSpace ) const
+{
+    if ( registerSpace >= m_descriptorOffsets.size( ) )
+    {
+        LOG( ERROR ) << "Invalid register space";
+        return 0;
+    }
+
+    return m_descriptorOffsets[ registerSpace ].SamplerTableOffset;
+}
+
+const uint32_t MetalRootSignature::SamplerResourceIndex( const ResourceBindingSlot &slot ) const
+{
+    if ( slot.RegisterSpace >= m_descriptorOffsets.size( ) )
+    {
+        LOG( ERROR ) << "Invalid register space";
+        return 0;
+    }
+
+    return m_descriptorOffsets[ slot.RegisterSpace ].SamplerResourceIndices[ slot.Binding ];
 }
 
 MetalRootSignature::~MetalRootSignature( )

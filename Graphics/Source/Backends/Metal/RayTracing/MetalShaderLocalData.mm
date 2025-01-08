@@ -72,7 +72,7 @@ void MetalShaderLocalData::Srv( uint32_t binding, const IBufferResource *resourc
     auto       *metalBuffer = static_cast<const MetalBufferResource *>( resource );
     const auto &bindingInfo = m_layout->SrvBinding( binding );
 
-    m_srvUavTable->EncodeBuffer( metalBuffer->Instance( ), bindingInfo.TLABOffset );
+    m_srvUavTable->EncodeBuffer( metalBuffer->Instance( ), bindingInfo.DescriptorTableIndex );
 }
 
 void MetalShaderLocalData::Srv( uint32_t binding, const ITextureResource *resource )
@@ -82,7 +82,7 @@ void MetalShaderLocalData::Srv( uint32_t binding, const ITextureResource *resour
     auto       *metalTexture = static_cast<const MetalTextureResource *>( resource );
     const auto &bindingInfo  = m_layout->SrvBinding( binding );
 
-    m_srvUavTable->EncodeTexture( metalTexture->Instance( ), 0.0f, bindingInfo.TLABOffset );
+    m_srvUavTable->EncodeTexture( metalTexture->Instance( ), 0.0f, bindingInfo.DescriptorTableIndex );
 }
 
 void MetalShaderLocalData::Uav( uint32_t binding, const IBufferResource *resource )
@@ -103,7 +103,7 @@ void MetalShaderLocalData::Sampler( uint32_t binding, const ISampler *sampler )
     auto       *metalSampler = static_cast<const MetalSampler *>( sampler );
     const auto &bindingInfo  = m_layout->UavBinding( binding );
 
-    m_samplerTable->EncodeSampler( metalSampler->Instance( ), 0.0f, bindingInfo.TLABOffset );
+    m_samplerTable->EncodeSampler( metalSampler->Instance( ), 0.0f, bindingInfo.DescriptorTableIndex );
 }
 
 void MetalShaderLocalData::End( )

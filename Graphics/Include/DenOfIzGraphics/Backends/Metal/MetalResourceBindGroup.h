@@ -103,12 +103,10 @@ namespace DenOfIz
         [[nodiscard]] MetalRootSignature *RootSignature( ) const;
 
     private:
-        void BindAccelerationStructure( const ResourceBindingSlot &slot, ITopLevelAS *accelerationStructure );
-        void BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource );
-        void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource );
-        void BindSampler( const ResourceBindingSlot &slot, ISampler *sampler );
-
-        void                UpdateDescriptorTable( const MetalBindingDesc &binding, MetalDescriptorTableBinding *table );
+        void                BindAccelerationStructure( const ResourceBindingSlot &slot, ITopLevelAS *accelerationStructure );
+        void                BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource );
+        void                BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource );
+        void                BindSampler( const ResourceBindingSlot &slot, ISampler *sampler );
         ResourceBindingSlot GetSlot( uint32_t binding, const ResourceBindingType &type ) const;
     };
 

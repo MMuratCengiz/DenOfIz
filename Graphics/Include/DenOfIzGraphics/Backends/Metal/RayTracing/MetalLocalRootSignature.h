@@ -25,7 +25,7 @@ namespace DenOfIz
 {
     struct MetalLocalBindingDesc
     {
-        uint32_t            TLABOffset;
+        uint32_t            DescriptorTableIndex;
         size_t              NumBytes;
         ResourceBindingType Type;
     };

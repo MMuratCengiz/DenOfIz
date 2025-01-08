@@ -825,3 +825,42 @@ MTLCompareFunction MetalEnumConverter::ConvertCompareOp( CompareOp op )
     }
     return MTLCompareFunctionGreaterEqual;
 }
+MTLRenderStages MetalEnumConverter::ConvertRenderStage( const ShaderStage &stage )
+{
+    switch ( stage )
+    {
+    case ShaderStage::Geometry:
+    case ShaderStage::Hull:
+    case ShaderStage::Domain:
+        break;
+    case ShaderStage::Vertex:
+        return MTLRenderStageVertex;
+    case ShaderStage::Pixel:
+        return MTLRenderStageFragment;
+    case ShaderStage::Compute:
+    case ShaderStage::AllGraphics:
+    case ShaderStage::All:
+    case ShaderStage::Raygen:
+    case ShaderStage::AnyHit:
+    case ShaderStage::ClosestHit:
+    case ShaderStage::Miss:
+    case ShaderStage::Intersection:
+    case ShaderStage::Callable:
+    case ShaderStage::Task:
+        break;
+    case ShaderStage::Mesh:
+        return MTLRenderStageMesh;
+    }
+    return MTLRenderStageVertex;
+}
+
+MTLRenderStages MetalEnumConverter::ConvertRenderStages( const InteropArray<ShaderStage> &stages )
+{
+    MTLRenderStages mtlStages = 0;
+    for ( int stageIndex = 0; stageIndex < stages.NumElements( ); ++stageIndex )
+    {
+        const auto &stage = stages.GetElement( stageIndex );
+        mtlStages |= ConvertRenderStage( stage );
+    }
+    return mtlStages;
+}

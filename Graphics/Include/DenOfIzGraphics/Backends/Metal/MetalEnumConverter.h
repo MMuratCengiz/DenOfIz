@@ -46,5 +46,7 @@ namespace DenOfIz
         static MTLSamplerMipFilter       ConvertMipMapFilter( MipmapMode mode );
         static MTLSamplerAddressMode     ConvertSamplerAddressMode( SamplerAddressMode mode );
         static MTLCompareFunction        ConvertCompareFunction( CompareOp op );
+        static MTLRenderStages           ConvertRenderStage( const ShaderStage &stage );
+        static MTLRenderStages           ConvertRenderStages( const InteropArray<ShaderStage> &stages );
     };
 } // namespace DenOfIz

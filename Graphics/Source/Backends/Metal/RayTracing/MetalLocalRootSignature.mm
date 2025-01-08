@@ -18,37 +18,44 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Metal/RayTracing/MetalLocalRootSignature.h>
 #include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
+#include <algorithm>
 
 using namespace DenOfIz;
 
 MetalLocalRootSignature::MetalLocalRootSignature( MetalContext *context, const LocalRootSignatureDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    for ( uint32_t i = 0; i < desc.ResourceBindings.NumElements( ); ++i )
+    auto sortedBindings = SortResourceBindings( desc.ResourceBindings );
+
+    uint32_t cbvOffsetBytes = 0;
+    uint32_t srvUavOffset   = 0;
+    uint32_t samplerOffset  = 0;
+    for ( uint32_t i = 0; i < sortedBindings.NumElements( ); ++i )
     {
-        const auto &binding = desc.ResourceBindings.GetElement( i );
+        const auto &binding = sortedBindings.GetElement( i );
 
         if ( binding.BindingType == ResourceBindingType::ConstantBuffer )
         {
             m_totalInlineDataBytes += binding.Reflection.NumBytes;
             ContainerUtilities::EnsureSize( m_inlineDataOffsets, binding.Binding );
             ContainerUtilities::EnsureSize( m_inlineDataNumBytes, binding.Binding );
-            m_inlineDataOffsets[ binding.Binding ]  = binding.Reflection.LocalCbvOffset;
+            m_inlineDataOffsets[ binding.Binding ]  = cbvOffsetBytes;
             m_inlineDataNumBytes[ binding.Binding ] = binding.Reflection.NumBytes;
+            cbvOffsetBytes += binding.Reflection.NumBytes;
         }
         else if ( binding.BindingType == ResourceBindingType::Sampler )
         {
             ContainerUtilities::EnsureSize( m_samplerBindings, binding.Binding );
-            m_samplerBindings[ binding.Binding ] = { .TLABOffset = binding.Reflection.TLABOffset, .NumBytes = binding.Reflection.NumBytes, .Type = binding.BindingType };
+            m_samplerBindings[ binding.Binding ] = { .DescriptorTableIndex = samplerOffset++, .NumBytes = binding.Reflection.NumBytes, .Type = binding.BindingType };
         }
         else if ( binding.BindingType == ResourceBindingType::ShaderResource )
         {
             ContainerUtilities::EnsureSize( m_srvBindings, binding.Binding );
-            m_srvBindings[ binding.Binding ] = { .TLABOffset = binding.Reflection.TLABOffset, .NumBytes = binding.Reflection.NumBytes, .Type = binding.BindingType };
+            m_srvBindings[ binding.Binding ] = { .DescriptorTableIndex = srvUavOffset++, .NumBytes = binding.Reflection.NumBytes, .Type = binding.BindingType };
         }
         else if ( binding.BindingType == ResourceBindingType::UnorderedAccess )
         {
             ContainerUtilities::EnsureSize( m_uavBindings, binding.Binding );
-            m_uavBindings[ binding.Binding ] = { .TLABOffset = binding.Reflection.TLABOffset, .NumBytes = binding.Reflection.NumBytes, .Type = binding.BindingType };
+            m_uavBindings[ binding.Binding ] = { .DescriptorTableIndex = srvUavOffset++, .NumBytes = binding.Reflection.NumBytes, .Type = binding.BindingType };
         }
     }
 }

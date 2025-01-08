@@ -52,6 +52,7 @@ namespace DenOfIz
         int                         ArraySize = 1; // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
         ReflectionDesc              Reflection{ };
     };
+    DZ_API InteropArray<ResourceBindingDesc> SortResourceBindings( const InteropArray<ResourceBindingDesc> &bindings );
 
     struct DZ_API StaticSamplerDesc
     {

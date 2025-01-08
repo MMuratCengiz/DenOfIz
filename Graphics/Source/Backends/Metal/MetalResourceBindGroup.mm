@@ -66,7 +66,7 @@ IResourceBindGroup *MetalResourceBindGroup::BeginUpdate( )
     m_boundTextures.clear( );
     m_boundSamplers.clear( );
     m_rootParameterBindings.clear( );
-    m_indirectResources.clear();
+    m_indirectResources.clear( );
     m_buffers.clear( );
     m_textures.clear( );
     m_samplers.clear( );
@@ -128,11 +128,13 @@ void MetalResourceBindGroup::EndUpdate( )
     {
         m_cbvSrvUavTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, cbvSrvUavTableSize ) );
         m_cbvSrvUavTable->Table.SetDebugName( "CbvSrvUav Table[Space: " + std::to_string( m_desc.RegisterSpace ) + "]" );
+        m_cbvSrvUavTable->TLABOffset = m_rootSignature->CbvSrvUavTableOffset( m_desc.RegisterSpace );
     }
     if ( !m_boundSamplers.empty( ) )
     {
         m_samplerTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, m_boundSamplers.size( ) ) );
         m_samplerTable->Table.SetDebugName( "Sampler Table[Space: " + std::to_string( m_desc.RegisterSpace ) + "]" );
+        m_samplerTable->TLABOffset = m_rootSignature->SamplerTableOffset( m_desc.RegisterSpace );
     }
 
     for ( auto item : m_boundBuffers )
@@ -155,53 +157,52 @@ void MetalResourceBindGroup::EndUpdate( )
 
 void MetalResourceBindGroup::BindAccelerationStructure( const ResourceBindingSlot &slot, ITopLevelAS *accelerationStructure )
 {
-    MetalTopLevelAS     *metalAS      = static_cast<MetalTopLevelAS *>( accelerationStructure );
+    MetalTopLevelAS *metalAS = static_cast<MetalTopLevelAS *>( accelerationStructure );
     for ( const auto &item : metalAS->IndirectResources( ) )
     {
         m_indirectResources.emplace_back( item );
     }
 
-    const MetalBindingDesc &metalBinding = m_rootSignature->FindMetalBinding( slot );
     if ( slot.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
     {
-        m_rootParameterBindings.emplace_back( metalBinding.Parent.Reflection.TLABOffset, metalAS->HeaderBuffer( ) );
+        m_rootParameterBindings.emplace_back( m_rootSignature->TLABOffset( slot ), metalAS->HeaderBuffer( ) );
         return;
     }
 
-    m_cbvSrvUavTable->Table.EncodeAccelerationStructure( metalAS->HeaderBuffer( ), metalBinding.Parent.Reflection.DescriptorTableIndex );
-    UpdateDescriptorTable( metalBinding, m_cbvSrvUavTable.get( ) );
+    m_cbvSrvUavTable->Table.EncodeAccelerationStructure( metalAS->HeaderBuffer( ), m_rootSignature->CbvSrvUavResourceIndex( slot ) );
+    m_cbvSrvUavTable->NumEntries++;
 }
 
 void MetalResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource )
 {
     MetalBufferResource    *metalBuffer = static_cast<MetalBufferResource *>( resource );
-    const MetalBindingDesc &binding     = m_rootSignature->FindMetalBinding( slot );
     if ( slot.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
     {
-        m_rootParameterBindings.emplace_back( binding.Parent.Reflection.TLABOffset, metalBuffer->Instance( ) );
+        m_rootParameterBindings.emplace_back( m_rootSignature->TLABOffset( slot ), metalBuffer->Instance( ) );
         return;
     }
-    m_cbvSrvUavTable->Table.EncodeBuffer( metalBuffer->Instance( ), binding.Parent.Reflection.DescriptorTableIndex );
-    UpdateDescriptorTable( binding, m_cbvSrvUavTable.get( ) );
-    m_buffers.emplace_back( metalBuffer, binding.Stages, metalBuffer->Usage( ) );
+
+    m_cbvSrvUavTable->Table.EncodeBuffer( metalBuffer->Instance( ), m_rootSignature->CbvSrvUavResourceIndex( slot ) );
+    m_cbvSrvUavTable->NumEntries++;
+    m_buffers.emplace_back( metalBuffer, m_rootSignature->CbvSrvUavResourceShaderStages( slot ), metalBuffer->Usage( ) );
 }
 
 void MetalResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource )
 {
     MetalTextureResource   *metalTexture = static_cast<MetalTextureResource *>( resource );
-    const MetalBindingDesc &binding      = m_rootSignature->FindMetalBinding( slot );
-    m_cbvSrvUavTable->Table.EncodeTexture( metalTexture->Instance( ), metalTexture->MinLODClamp( ), binding.Parent.Reflection.DescriptorTableIndex );
-    UpdateDescriptorTable( binding, m_cbvSrvUavTable.get( ) );
-    m_textures.emplace_back( metalTexture, binding.Stages, metalTexture->Usage( ) );
+
+    m_cbvSrvUavTable->Table.EncodeTexture( metalTexture->Instance( ), metalTexture->MinLODClamp( ), m_rootSignature->CbvSrvUavResourceIndex( slot ) );
+    m_cbvSrvUavTable->NumEntries++;
+    m_textures.emplace_back( metalTexture, m_rootSignature->CbvSrvUavResourceShaderStages( slot ), metalTexture->Usage( ) );
 }
 
 void MetalResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )
 {
     MetalSampler           *metalSampler = static_cast<MetalSampler *>( sampler );
-    const MetalBindingDesc &binding      = m_rootSignature->FindMetalBinding( slot );
-    m_samplerTable->Table.EncodeSampler( metalSampler->Instance( ), metalSampler->LODBias( ), binding.Parent.Reflection.DescriptorTableIndex );
-    UpdateDescriptorTable( binding, m_samplerTable.get( ) );
-    m_samplers.emplace_back( metalSampler, binding.Stages, MTLResourceUsageRead );
+
+    m_samplerTable->Table.EncodeSampler( metalSampler->Instance( ), metalSampler->LODBias( ), m_rootSignature->SamplerResourceIndex( slot ) );
+    m_samplerTable->NumEntries++;
+    m_samplers.emplace_back( metalSampler, m_rootSignature->SamplerResourceShaderStages( slot ), MTLResourceUsageRead );
 }
 
 const std::vector<Byte> &MetalResourceBindGroup::RootConstant( ) const
@@ -247,12 +248,6 @@ const std::vector<MetalUpdateDescItem<MetalTextureResource>> &MetalResourceBindG
 const std::vector<MetalUpdateDescItem<MetalSampler>> &MetalResourceBindGroup::Samplers( ) const
 {
     return m_samplers;
-}
-
-void MetalResourceBindGroup::UpdateDescriptorTable( const MetalBindingDesc &binding, MetalDescriptorTableBinding *table )
-{
-    table->TLABOffset = binding.Parent.Reflection.TLABOffset;
-    table->NumEntries++;
 }
 
 ResourceBindingSlot MetalResourceBindGroup::GetSlot( uint32_t binding, const ResourceBindingType &type ) const
