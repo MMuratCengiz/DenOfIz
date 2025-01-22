@@ -17,21 +17,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzExamples/DefaultRenderPipeline.h>
+#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
 
 using namespace DenOfIz;
 
 DefaultRenderPipeline::DefaultRenderPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice )
 {
-    InteropArray<ShaderDesc> shaders{ };
-    ShaderDesc              &vertexShaderDesc = shaders.EmplaceElement( );
-    vertexShaderDesc.Path                     = "Assets/Shaders/DefaultRenderPipeline.vs.hlsl";
-    vertexShaderDesc.Stage                    = ShaderStage::Vertex;
-    ShaderDesc &pixelShaderDesc               = shaders.EmplaceElement( );
-    pixelShaderDesc.Path                      = "Assets/Shaders/DefaultRenderPipeline.ps.hlsl";
-    pixelShaderDesc.Stage                     = ShaderStage::Pixel;
+    InteropArray<ShaderStageDesc> shaderStages{ };
+    ShaderStageDesc              &vertexShaderDesc = shaderStages.EmplaceElement( );
+    vertexShaderDesc.Path                          = "Assets/Shaders/DefaultRenderPipeline.vs.hlsl";
+    vertexShaderDesc.Stage                         = ShaderStage::Vertex;
+    ShaderStageDesc &pixelShaderDesc               = shaderStages.EmplaceElement( );
+    pixelShaderDesc.Path                           = "Assets/Shaders/DefaultRenderPipeline.ps.hlsl";
+    pixelShaderDesc.Stage                          = ShaderStage::Pixel;
 
-    ProgramDesc programDesc{ .Shaders = shaders };
-    m_program              = std::unique_ptr<ShaderProgram>( graphicsApi->CreateShaderProgram( programDesc ) );
+    m_program              = std::make_unique<ShaderProgram>( ShaderProgramDesc{ .ShaderStages = shaderStages } );
     auto programReflection = m_program->Reflect( );
 
     m_rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( programReflection.RootSignature ) );

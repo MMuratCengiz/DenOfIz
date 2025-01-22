@@ -45,15 +45,6 @@ namespace DenOfIz
     };
 
     /// <summary>
-    /// Practically a ShaderProgramDesc, however the API specific details are managed by the GraphicsApi class.
-    /// </summary>
-    struct DZ_API ProgramDesc
-    {
-        InteropArray<ShaderDesc> Shaders;
-        bool                     EnableCaching = true;
-        ProgramRayTracingDesc    RayTracing;
-    };
-    /// <summary>
     /// A class that provides a factory for creating API agnostic structures
     /// Currently creates a logical device and a shader program
     /// </summary>
@@ -67,7 +58,6 @@ namespace DenOfIz
 
         ILogicalDevice *CreateLogicalDevice( ) const;
         ILogicalDevice *CreateAndLoadOptimalLogicalDevice( ) const;
-        ShaderProgram  *CreateShaderProgram( ProgramDesc &desc ) const;
 
         static void ReportLiveObjects( );
 

@@ -363,16 +363,6 @@ namespace DenOfIz
         }
     };
 
-    typedef unsigned char Byte;
-
-    // Export instantiation of BitSet templates with ResourceDescriptor and ResourceState enums.
-    template class DZ_API InteropArray<InteropString>;
-    template <>
-    inline void InteropArray<Byte>::InitializeElements( Byte *array, const size_t start, const size_t end )
-    {
-        std::memset( array + start, 0, end - start );
-    }
-    template class DZ_API InteropArray<Byte>;
     template class DZ_API BitSet<ResourceDescriptor>;
     template class DZ_API BitSet<ResourceUsage>;
 } // namespace DenOfIz

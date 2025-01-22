@@ -34,8 +34,8 @@ VulkanShaderBindingTable::VulkanShaderBindingTable( VulkanContext *context, cons
     m_hitGroupNumBytes      = Utilities::Align( m_shaderGroupHandleSize + m_desc.MaxHitGroupDataBytes, m_context->RayTracingProperties.shaderGroupHandleAlignment );
     m_missGroupNumBytes     = Utilities::Align( m_shaderGroupHandleSize + m_desc.MaxMissDataBytes, m_context->RayTracingProperties.shaderGroupHandleAlignment );
 
-    m_debugData.RayGenNumBytes = m_rayGenNumBytes;
-    m_debugData.MissNumBytes = m_missGroupNumBytes;
+    m_debugData.RayGenNumBytes   = m_rayGenNumBytes;
+    m_debugData.MissNumBytes     = m_missGroupNumBytes;
     m_debugData.HitGroupNumBytes = m_hitGroupNumBytes;
 
     Resize( desc.SizeDesc );
@@ -127,7 +127,7 @@ void VulkanShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
         const VulkanShaderLocalData *data = dynamic_cast<VulkanShaderLocalData *>( desc.Data );
         EncodeData( hitGroupEntry, desc.Data );
 #ifndef NDEBUG
-        m_debugData.HitGroups.AddElement( { hitGroupIdentifier, m_shaderGroupHandleSize,  data->DataNumBytes( ), desc.HitGroupExportName.Get( ) } );
+        m_debugData.HitGroups.AddElement( { hitGroupIdentifier, m_shaderGroupHandleSize, data->DataNumBytes( ), desc.HitGroupExportName.Get( ) } );
     }
     else
     {

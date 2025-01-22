@@ -429,4 +429,13 @@ namespace DenOfIz
             new ( array + i ) InteropString( );
         }
     }
+    template class DZ_API InteropArray<InteropString>;
+
+    typedef unsigned char Byte;
+    template <>
+    inline void InteropArray<Byte>::InitializeElements( Byte *array, const size_t start, const size_t end )
+    {
+        std::memset( array + start, 0, end - start );
+    }
+    template class DZ_API InteropArray<Byte>;
 } // namespace DenOfIz

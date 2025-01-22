@@ -2,7 +2,10 @@
   "name": "den-of-iz",
   "version": "0.0.1",
   "dependencies": [
+    "rocksdb",
+    "assimp",
     "wil",
+    "miniz",
     "glog",
     "volk",
     "vulkan",

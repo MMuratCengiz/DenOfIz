@@ -69,7 +69,7 @@ namespace DenOfIz
         [[nodiscard]] VkPipelineTessellationStateCreateInfo        ConfigureTessellation( ) const;
         [[nodiscard]] VkPipelineInputAssemblyStateCreateInfo       ConfigureInputAssembly( ) const;
         [[nodiscard]] VkPipelineVertexInputStateCreateInfo         ConfigureVertexInputState( ) const;
-        [[nodiscard]] VkPipelineShaderStageCreateInfo              ConfigureShaderStage( const ShaderDesc &shaderDesc ) const;
+        [[nodiscard]] VkPipelineShaderStageCreateInfo              ConfigureShaderStage( const ShaderStageDesc &shaderDesc ) const;
         [[nodiscard]] VkPipelineLayoutCreateInfo                   ConfigurePipelineLayout( ) const;
         [[nodiscard]] VkPipelineColorBlendStateCreateInfo          ConfigureColorBlend( std::vector<VkPipelineColorBlendAttachmentState> &colorBlendAttachments ) const;
         [[nodiscard]] VkPipelineRasterizationStateCreateInfo       ConfigureRasterization( ) const;

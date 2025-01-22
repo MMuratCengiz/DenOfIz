@@ -330,7 +330,7 @@ VkBufferUsageFlags VulkanEnumConverter::ConvertBufferUsage( BitSet<ResourceDescr
     {
         flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     }
-    if ( descriptor.Any( { ResourceDescriptor::Buffer, ResourceDescriptor::RWBuffer } ) )
+    if ( descriptor.Any( { ResourceDescriptor::Buffer, ResourceDescriptor::RWBuffer, ResourceDescriptor::StructuredBuffer } ) )
     {
         flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     }

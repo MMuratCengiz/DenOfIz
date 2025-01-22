@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class VulkanBottomLevelAS : public IBottomLevelAS
+    class VulkanBottomLevelAS final : public IBottomLevelAS
     {
         VulkanContext                                                *m_context;
         VkAccelerationStructureKHR                                    m_accelerationStructure;
@@ -47,7 +47,7 @@ namespace DenOfIz
         uint64_t                                                             DeviceAddress( ) const;
 
     private:
-        void InitializeTriangles( const ASGeometryTriangleDesc &triangle, VkAccelerationStructureGeometryKHR &vkGeometry );
-        void InitializeAABBs( const ASGeometryAABBDesc &aabb, VkAccelerationStructureGeometryKHR &vkGeometry );
+        void InitializeTriangles( const ASGeometryTriangleDesc &triangle, VkAccelerationStructureGeometryKHR &vkGeometry ) const;
+        void InitializeAABBs( const ASGeometryAABBDesc &aabb, VkAccelerationStructureGeometryKHR &vkGeometry ) const;
     };
 } // namespace DenOfIz

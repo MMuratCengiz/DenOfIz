@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
+
 #include "DenOfIzGraphics/Backends/GraphicsApi.h"
 #include "gtest/gtest.h"
 
@@ -23,15 +25,15 @@ using namespace DenOfIz;
 
 void BasicCompute( const GraphicsApi &gApi )
 {
-    std::unique_ptr<ILogicalDevice> logicalDevice = std::unique_ptr<ILogicalDevice>( gApi.CreateAndLoadOptimalLogicalDevice( ) );
-    ShaderDesc                      shaderDesc{ };
+    auto            logicalDevice = std::unique_ptr<ILogicalDevice>( gApi.CreateAndLoadOptimalLogicalDevice( ) );
+    ShaderStageDesc shaderDesc{ };
     shaderDesc.Stage = ShaderStage::Compute;
     shaderDesc.Path  = "Assets/Shaders/Tests/GeneralTests/BasicCompute.hlsl";
-    InteropArray<ShaderDesc> shaderDescs{ };
-    shaderDescs.AddElement( shaderDesc );
+    InteropArray<ShaderStageDesc> shaderStages{ };
+    shaderStages.AddElement( shaderDesc );
 
-    ProgramDesc                    programDesc{ .Shaders = shaderDescs };
-    std::unique_ptr<ShaderProgram> program = std::unique_ptr<ShaderProgram>( gApi.CreateShaderProgram( programDesc ) );
+    ShaderProgramDesc programDesc{ .ShaderStages = shaderStages };
+    auto              program = std::make_unique<ShaderProgram>( programDesc );
 
     InteropArray<ResourceBindingDesc> resourceBindings{ };
     ResourceBindingDesc              &resourceBindingDesc = resourceBindings.EmplaceElement( );
@@ -43,33 +45,31 @@ void BasicCompute( const GraphicsApi &gApi )
     RootSignatureDesc rootSignatureDesc{ };
     rootSignatureDesc.ResourceBindings = resourceBindings;
 
-    std::unique_ptr<IRootSignature> rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( rootSignatureDesc ) );
+    auto rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( rootSignatureDesc ) );
 
     BufferDesc bufferDesc{ };
-    bufferDesc.Descriptor                   = ResourceDescriptor::RWBuffer;
-    bufferDesc.NumBytes                     = 1024 * sizeof( float );
-    bufferDesc.StructureDesc.Stride            = sizeof( float );
-    bufferDesc.HeapType                     = HeapType::GPU;
-    bufferDesc.InitialUsage                 = ResourceUsage::UnorderedAccess;
-    std::unique_ptr<IBufferResource> buffer = std::unique_ptr<IBufferResource>( logicalDevice->CreateBufferResource( bufferDesc ) );
+    bufferDesc.Descriptor           = ResourceDescriptor::RWBuffer;
+    bufferDesc.NumBytes             = 1024 * sizeof( float );
+    bufferDesc.StructureDesc.Stride = sizeof( float );
+    bufferDesc.HeapType             = HeapType::GPU;
+    bufferDesc.InitialUsage         = ResourceUsage::UnorderedAccess;
+    auto buffer                     = std::unique_ptr<IBufferResource>( logicalDevice->CreateBufferResource( bufferDesc ) );
 
-    std::unique_ptr<IResourceBindGroup> resourceBindGroup =
-        std::unique_ptr<IResourceBindGroup>( logicalDevice->CreateResourceBindGroup( ResourceBindGroupDesc{ .RootSignature = rootSignature.get( ) } ) );
+    auto resourceBindGroup = std::unique_ptr<IResourceBindGroup>( logicalDevice->CreateResourceBindGroup( ResourceBindGroupDesc{ .RootSignature = rootSignature.get( ) } ) );
     resourceBindGroup->BeginUpdate( )->Uav( 0, buffer.get( ) )->EndUpdate( );
 
-    std::unique_ptr<IInputLayout> inputLayout = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( { } ) );
+    auto inputLayout = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( { } ) );
 
     PipelineDesc pipelineDesc{ .ShaderProgram = program.get( ) };
     pipelineDesc.RootSignature = rootSignature.get( );
     pipelineDesc.InputLayout   = inputLayout.get( );
     pipelineDesc.BindPoint     = BindPoint::Compute;
 
-    std::unique_ptr<IPipeline> pipeline = std::unique_ptr<IPipeline>( logicalDevice->CreatePipeline( pipelineDesc ) );
-    std::unique_ptr<IFence>    fence    = std::unique_ptr<IFence>( logicalDevice->CreateFence( ) );
+    auto pipeline = std::unique_ptr<IPipeline>( logicalDevice->CreatePipeline( pipelineDesc ) );
+    auto fence    = std::unique_ptr<IFence>( logicalDevice->CreateFence( ) );
 
-    std::unique_ptr<ICommandListPool> commandListPool =
-        std::unique_ptr<ICommandListPool>( logicalDevice->CreateCommandListPool( CommandListPoolDesc{ .QueueType = QueueType::Compute } ) );
-    auto commandList = commandListPool->GetCommandLists( ).Array[ 0 ];
+    auto commandListPool = std::unique_ptr<ICommandListPool>( logicalDevice->CreateCommandListPool( CommandListPoolDesc{ .QueueType = QueueType::Compute } ) );
+    auto commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
 
     bufferDesc.Descriptor   = BitSet<ResourceDescriptor>( );
     bufferDesc.HeapType     = HeapType::GPU_CPU;

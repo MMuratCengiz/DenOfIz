@@ -153,7 +153,7 @@ void DX12Pipeline::CreateRayTracingPipeline( )
             entryPoints.push_back( wEntryPoint );
 
             D3D12_DXIL_LIBRARY_DESC &libraryDesc = dxilLibs.emplace_back( );
-            libraryDesc.DXILLibrary              = { .pShaderBytecode = compiledShader->Blob->GetBufferPointer( ), .BytecodeLength = compiledShader->Blob->GetBufferSize( ) };
+            libraryDesc.DXILLibrary              = { .pShaderBytecode = compiledShader->DXIL->GetBufferPointer( ), .BytecodeLength = compiledShader->DXIL->GetBufferSize( ) };
             subObjects.emplace_back( D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &libraryDesc );
         }
     }
@@ -410,9 +410,9 @@ void DX12Pipeline::SetGraphicsShaders( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDe
     }
 }
 
-D3D12_SHADER_BYTECODE DX12Pipeline::GetShaderByteCode( const CompiledShader *const &compiledShader ) const
+D3D12_SHADER_BYTECODE DX12Pipeline::GetShaderByteCode( const CompiledShaderStage *const &compiledShader ) const
 {
-    return D3D12_SHADER_BYTECODE( compiledShader->Blob->GetBufferPointer( ), compiledShader->Blob->GetBufferSize( ) );
+    return D3D12_SHADER_BYTECODE( compiledShader->DXIL->GetBufferPointer( ), compiledShader->DXIL->GetBufferSize( ) );
 }
 
 DX12Pipeline::~DX12Pipeline( )

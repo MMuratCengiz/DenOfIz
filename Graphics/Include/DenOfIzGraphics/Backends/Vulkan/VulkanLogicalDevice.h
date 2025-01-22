@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Common/ShaderCompiler.h>
+#include <DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h>
 #include <unordered_set>
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 #include "VulkanCommandPool.h"

@@ -21,7 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 #include <unordered_map>
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
-#include "DenOfIzGraphics/Backends/Common/ShaderCompiler.h"
 #include "VulkanDescriptorPoolManager.h"
 #include "VulkanInclude.h"
 

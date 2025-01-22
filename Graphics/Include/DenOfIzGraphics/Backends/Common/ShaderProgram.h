@@ -18,11 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h>
+#include <DenOfIzGraphics/Assets/Shaders/ShaderReflectionHelper.h>
 #include <DenOfIzGraphics/Backends/Interface/IInputLayout.h>
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
 #include <DenOfIzGraphics/Backends/Interface/RayTracing/ILocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
-#include "ShaderCompiler.h"
 
 #ifndef _WIN32
 #define interface struct
@@ -32,16 +33,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-
-    struct DZ_API ShaderDesc
-    {
-        ShaderStage                 Stage;
-        InteropString               Path;
-        InteropArray<InteropString> Defines;
-        InteropString               EntryPoint = "main";
-        /// \brief Only available for Raygen, Miss and Hit shaders
-        RayTracingShaderDesc RayTracing;
-    };
 
     /// <summary>
     /// This is used to bind data to raytracing shaders. With this structure you specify a register space, a stage and an entry name which will be then created as a root structure
@@ -58,111 +49,51 @@ namespace DenOfIz
 
     struct DZ_API ShaderProgramDesc
     {
-        TargetIL                 TargetIL;
-        InteropArray<ShaderDesc> Shaders;
-        bool                     EnableCaching = true;
-        ProgramRayTracingDesc    RayTracing;
+        InteropArray<ShaderStageDesc> ShaderStages;
+        ShaderRayTracingDesc          RayTracing;
     };
-    template class DZ_API InteropArray<ShaderDesc>;
-
-    struct DZ_API ShaderReflectDesc
-    {
-        InputLayoutDesc   InputLayout;
-        RootSignatureDesc RootSignature;
-        /// Local data layouts for each shader, index matched with the ShaderDescs provided in the ShaderProgramDesc.
-        InteropArray<LocalRootSignatureDesc> LocalRootSignatures;
-    };
-
-#ifdef BUILD_METAL
-    struct MetalDescriptorOffsets
-    {
-        // -1 is used for debugging purposes to show that no descriptor table exists in this root signature of that type
-        int                                    CbvSrvUavOffset      = -1;
-        int                                    SamplerOffset        = -1;
-        int                                    LocalCbvSrvUavOffset = -1;
-        int                                    LocalSamplerOffset   = -1;
-        std::unordered_map<uint32_t, uint32_t> UniqueTLABIndex{ };
-    };
-    // This is used to order the root parameters in the root signature as metal top level argument buffer expects them in the same order
-    // Binding goes from 0 till max register space.
-    struct RegisterSpaceRange
-    {
-        std::vector<IRRootConstants>     RootConstants;
-        std::vector<IRRootDescriptor>    RootArguments;
-        std::vector<IRRootParameterType> RootArgumentTypes;
-        std::vector<IRDescriptorRange1>  CbvSrvUavRanges;
-        std::vector<IRDescriptorRange1>  SamplerRanges;
-        IRShaderVisibility               ShaderVisibility;
-    };
-#endif
 
     // State data for reflection processing during `ShaderProgram::Reflect( );`
     struct ReflectionState
     {
-        RootSignatureDesc              *RootSignatureDesc;
-        InputLayoutDesc                *InputLayoutDesc;
-        LocalRootSignatureDesc         *LocalRootSignature;
-        ShaderDesc const               *ShaderDesc;
-        CompiledShader                 *CompiledShader;
-        ID3D12ShaderReflection         *ShaderReflection;
-        ID3D12LibraryReflection        *LibraryReflection;
-        ID3D12FunctionReflection       *FunctionReflection;
-        std::unordered_set<std::string> ProcessedFiles;
-        // For metal:
-        std::vector<uint32_t> *DescriptorTableLocations;
-        std::vector<uint32_t> *LocalDescriptorTableLocations;
-        uint32_t               LocalCbvOffset;
-#ifdef BUILD_METAL
-        IRShaderReflection *IRReflection;
-#endif
+        RootSignatureDesc        *RootSignatureDesc;
+        InputLayoutDesc          *InputLayoutDesc;
+        LocalRootSignatureDesc   *LocalRootSignature;
+        ShaderStageDesc const    *ShaderDesc;
+        CompiledShaderStage      *CompiledShader;
+        ID3D12ShaderReflection   *ShaderReflection;
+        ID3D12LibraryReflection  *LibraryReflection;
+        ID3D12FunctionReflection *FunctionReflection;
+    };
+
+    struct DZ_API CompiledShader
+    {
+        InteropArray<CompiledShaderStage *> Stages;
+        ShaderReflectDesc                   ReflectDesc;
+        ShaderRayTracingDesc                RayTracing;
     };
 
     class ShaderProgram
     {
-        typedef const std::function<void( D3D12_SHADER_INPUT_BIND_DESC &, int )> ReflectionCallback;
+        ShaderCompiler                                    m_compiler;
+        std::vector<std::unique_ptr<CompiledShaderStage>> m_compiledShaders;
+        std::vector<ShaderStageDesc>                      m_shaderDescs; // Index matched with m_compiledShaders
+        ShaderProgramDesc                                 m_desc;
 
-        std::vector<std::unique_ptr<CompiledShader>> m_compiledShaders;
-        std::vector<ShaderDesc>                      m_shaderDescs; // Index matched with m_compiledShaders
-        ShaderProgramDesc                            m_desc;
-#ifdef BUILD_METAL
-        std::vector<MetalDescriptorOffsets> m_metalDescriptorOffsets;
-        std::vector<MetalDescriptorOffsets> m_localMetalDescriptorOffsets;
-#endif
     public:
         DZ_API explicit ShaderProgram( ShaderProgramDesc desc );
-        [[nodiscard]] DZ_API InteropArray<CompiledShader *> CompiledShaders( ) const;
-        [[nodiscard]] DZ_API ShaderReflectDesc              Reflect( ) const;
-        [[nodiscard]] DZ_API ShaderProgramDesc              Desc( ) const;
+        [[nodiscard]] DZ_API InteropArray<CompiledShaderStage *> CompiledShaders( ) const;
+        [[nodiscard]] DZ_API ShaderReflectDesc                   Reflect( ) const;
+        [[nodiscard]] DZ_API ShaderProgramDesc                   Desc( ) const;
         DZ_API ~ShaderProgram( );
 
     private:
-        [[nodiscard]] const ShaderCompiler &ShaderCompilerInstance( ) const;
-        void                                Compile( );
-        void FillTypeInfo( ID3D12ShaderReflectionType *reflType, InteropArray<ReflectionResourceField> &fields, uint32_t parentIndex, uint32_t level ) const;
-        void FillReflectionData( const ReflectionState &state, ReflectionDesc &reflectionDesc, int resourceIndex ) const;
+        void Compile( );
         void InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
-        void ReflectShader( ReflectionState &state ) const;
+        void ReflectShader( const ReflectionState &state ) const;
         void ReflectLibrary( ReflectionState &state ) const;
-        void ProcessBoundResource( ReflectionState &state, D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex ) const;
-        // Returns true if the bound resource is found(and an update is performed), false otherwise
-        // Adds additional stages if existing stages are found
-        bool                IsBindingLocalTo( const ShaderDesc &shaderDesc, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
-        bool                UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
-        ResourceBindingType ReflectTypeToBufferBindingType( const D3D_SHADER_INPUT_TYPE type ) const;
-#ifdef BUILD_METAL
-        IRRootSignature *CreateRootSignature( std::vector<RegisterSpaceRange> &registerSpaceRanges, std::vector<MetalDescriptorOffsets> &metalDescriptorOffsets,
-                                              bool isLocal ) const;
-        void             DumpIRRootParameters( const std::vector<IRRootParameter1> &rootParameters, const char *prefix = "" ) const;
-        void             IterateBoundResources( CompiledShader *shader, ReflectionState &state, ReflectionCallback &callback ) const;
-        void             ProduceMSL( );
-#endif
-        void        DumpReflectionInfo( const ShaderReflectDesc &reflection ) const;
-        void        DumpResourceBindings( std::stringstream &output, const InteropArray<ResourceBindingDesc> &resourceBindings ) const;
-        void        DumpRootSignature( std::stringstream &output, const RootSignatureDesc &sig ) const;
-        void        DumpStructFields( std::stringstream &output, const InteropArray<ReflectionResourceField> &fields ) const;
-        std::string GetFieldTypeString( ReflectionFieldType type ) const;
-        std::string GetBindingTypeString( ResourceBindingType type ) const;
-        std::string GetStagesString( const InteropArray<ShaderStage> &stages ) const;
+        void ProcessInputBindingDesc( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex ) const;
+        bool UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
     };
 
 } // namespace DenOfIz

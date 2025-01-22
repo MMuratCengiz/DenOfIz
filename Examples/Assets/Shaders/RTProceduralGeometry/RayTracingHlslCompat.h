@@ -23,14 +23,18 @@
 #ifdef HLSL
 #include "HlslCompat.h"
 #define ALIGN16_FIELD
+#define ALIGN64_FIELD
 #define ALIGN16_STRUCT
+#define ALIGN64_STRUCT
 #else
 using namespace DirectX;
 // Shader will use byte encoding to access vertex indices.
 typedef uint16_t Index;
 
 #define ALIGN16_FIELD alignas( 16 )
+#define ALIGN64_FIELD alignas( 64 )
 #define ALIGN16_STRUCT __declspec( align( 16 ) )
+#define ALIGN64_STRUCT __declspec( align( 64 ) )
 #endif
 
 // Number of metaballs to use within an AABB.
@@ -71,24 +75,24 @@ struct ShadowRayPayload
     bool hit;
 };
 
-ALIGN16_STRUCT struct SceneConstantBuffer
+struct SceneConstantBuffer
 {
-    ALIGN16_FIELD XMMATRIX projectionToWorld;
-    XMVECTOR               cameraPosition;
-    XMVECTOR               lightPosition;
-    XMVECTOR               lightAmbientColor;
-    XMVECTOR               lightDiffuseColor;
+    XMMATRIX projectionToWorld;
+    XMVECTOR cameraPosition;
+    XMVECTOR lightPosition;
+    XMVECTOR lightAmbientColor;
+    XMVECTOR lightDiffuseColor;
 };
 
 // Attributes per primitive type.
-ALIGN16_STRUCT struct PrimitiveConstantBuffer
+struct PrimitiveConstantBuffer
 {
-    ALIGN16_FIELD XMFLOAT4 albedo;
-    float                  reflectanceCoef;
-    float                  diffuseCoef;
-    float                  specularCoef;
-    float                  specularPower;
-    float                  stepScale;
+    XMFLOAT4 albedo;
+    float    reflectanceCoef;
+    float    diffuseCoef;
+    float    specularCoef;
+    float    specularPower;
+    float    stepScale;
 
     float _pad0;
     float _pad1;
@@ -96,18 +100,16 @@ ALIGN16_STRUCT struct PrimitiveConstantBuffer
 };
 
 // Attributes per primitive instance.
-ALIGN16_STRUCT struct PrimitiveInstanceConstantBuffer
+struct PrimitiveInstanceConstantBuffer
 {
     ALIGN16_FIELD UINT instanceIndex;
-    UINT               primitiveType; // Procedural primitive type
-    UINT               _pad0;
-    UINT               _pad1;
+    UINT primitiveType; // Procedural primitive type
 };
 
-ALIGN16_STRUCT struct LocalData
+struct LocalData
 {
-    ALIGN16_FIELD PrimitiveConstantBuffer         materialCB;
-    ALIGN16_FIELD PrimitiveInstanceConstantBuffer aabbCB;
+    PrimitiveConstantBuffer         materialCB;
+    PrimitiveInstanceConstantBuffer aabbCB;
 };
 
 // Dynamic attributes per primitive instance.

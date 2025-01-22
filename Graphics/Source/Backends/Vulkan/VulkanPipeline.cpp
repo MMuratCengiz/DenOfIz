@@ -106,19 +106,18 @@ void VulkanPipeline::CreateComputePipeline( )
 
 void VulkanPipeline::CreateRayTracingPipeline( )
 {
-    std::unordered_map<std::string, VkShaderModule> visitedShaders;
+    const InteropArray<CompiledShaderStage *> &compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
 
-    std::vector<VkPipelineShaderStageCreateInfo>      shaderStages;
+    m_shaderModules.reserve( compiledShaders.NumElements( ) );
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    shaderStages.reserve( compiledShaders.NumElements( ) );
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups;
-    shaderGroups.reserve( m_desc.ShaderProgram->CompiledShaders( ).NumElements( ) );
+    shaderGroups.reserve( compiledShaders.NumElements( ) + m_desc.RayTracing.HitGroups.NumElements( ) );
 
     std::vector<VkDescriptorSetLayout> allLayouts;
-    auto                               rootSig        = dynamic_cast<VulkanRootSignature *>( m_desc.RootSignature );
+    const auto                         rootSig        = dynamic_cast<VulkanRootSignature *>( m_desc.RootSignature );
     auto                               rootSigLayouts = rootSig->DescriptorSetLayouts( );
     allLayouts.insert( allLayouts.end( ), rootSigLayouts.begin( ), rootSigLayouts.end( ) );
-
-    const InteropArray<CompiledShader *> &compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
-    std::unordered_map<int32_t, uint32_t> shaderIndexMap;
 
     // Create a local root signature
     rayTracingLocalRootSignature = std::make_unique<VulkanLocalRootSignature>( m_context, LocalRootSignatureDesc{ }, false );
@@ -132,8 +131,8 @@ void VulkanPipeline::CreateRayTracingPipeline( )
 
     for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
     {
-        const auto           &compiledShader = compiledShaders.GetElement( i );
-        VkShaderStageFlagBits stage          = VulkanEnumConverter::ConvertShaderStage( compiledShader->Stage );
+        const auto                 &compiledShader = compiledShaders.GetElement( i );
+        const VkShaderStageFlagBits stage          = VulkanEnumConverter::ConvertShaderStage( compiledShader->Stage );
 
         switch ( compiledShader->Stage )
         {
@@ -148,33 +147,24 @@ void VulkanPipeline::CreateRayTracingPipeline( )
             continue;
         }
 
-        // Create shader module if not already created
-        if ( !visitedShaders.contains( compiledShader->Path.Get( ) ) )
-        {
-            VkShaderModule shaderModule = CreateShaderModule( compiledShader->Blob );
-            m_shaderModules.push_back( shaderModule );
-            visitedShaders[ compiledShader->Path.Get( ) ] = shaderModule;
-        }
-
         if ( m_desc.RayTracing.LocalRootSignatures.NumElements( ) > i )
         {
             mergeLocalRootSignature( m_desc.RayTracing.LocalRootSignatures.GetElement( i ) );
         }
-        VkPipelineShaderStageCreateInfo &shaderStage = shaderStages.emplace_back( );
-        shaderStage.sType                            = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        shaderStage.stage                            = stage;
-        shaderStage.module                           = visitedShaders[ compiledShader->Path.Get( ) ];
-        shaderStage.pName                            = compiledShader->EntryPoint.Get( );
 
-        const uint32_t shaderIndex = shaderStages.size( ) - 1;
-        shaderIndexMap[ i ]        = shaderIndex;
+        const VkShaderModule            &shaderModule = m_shaderModules.emplace_back( this->CreateShaderModule( compiledShader->SPIRV ) );
+        VkPipelineShaderStageCreateInfo &shaderStage  = shaderStages.emplace_back( );
+        shaderStage.sType                             = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStage.stage                             = stage;
+        shaderStage.module                            = shaderModule;
+        shaderStage.pName                             = compiledShader->EntryPoint.Get( );
 
         if ( compiledShader->Stage == ShaderStage::Raygen || compiledShader->Stage == ShaderStage::Miss )
         {
             VkRayTracingShaderGroupCreateInfoKHR &group = shaderGroups.emplace_back( );
             group.sType                                 = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
             group.type                                  = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-            group.generalShader                         = shaderStages.size( ) - 1;
+            group.generalShader                         = i;
             group.closestHitShader                      = VK_SHADER_UNUSED_KHR;
             group.anyHitShader                          = VK_SHADER_UNUSED_KHR;
             group.intersectionShader                    = VK_SHADER_UNUSED_KHR;
@@ -193,9 +183,9 @@ void VulkanPipeline::CreateRayTracingPipeline( )
             hitGroup.Type == HitGroupType::Triangles ? VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR : VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
 
         group.generalShader      = VK_SHADER_UNUSED_KHR;
-        group.closestHitShader   = hitGroup.ClosestHitShaderIndex >= 0 ? shaderIndexMap[ hitGroup.ClosestHitShaderIndex ] : VK_SHADER_UNUSED_KHR;
-        group.anyHitShader       = hitGroup.AnyHitShaderIndex >= 0 ? shaderIndexMap[ hitGroup.AnyHitShaderIndex ] : VK_SHADER_UNUSED_KHR;
-        group.intersectionShader = hitGroup.IntersectionShaderIndex >= 0 ? shaderIndexMap[ hitGroup.IntersectionShaderIndex ] : VK_SHADER_UNUSED_KHR;
+        group.closestHitShader   = hitGroup.ClosestHitShaderIndex >= 0 ? hitGroup.ClosestHitShaderIndex : VK_SHADER_UNUSED_KHR;
+        group.anyHitShader       = hitGroup.AnyHitShaderIndex >= 0 ? hitGroup.AnyHitShaderIndex : VK_SHADER_UNUSED_KHR;
+        group.intersectionShader = hitGroup.IntersectionShaderIndex >= 0 ? hitGroup.IntersectionShaderIndex : VK_SHADER_UNUSED_KHR;
 
         m_shaderIdentifierOffsets[ hitGroup.Name.Get( ) ] = shaderGroups.size( ) - 1;
 
@@ -212,22 +202,22 @@ void VulkanPipeline::CreateRayTracingPipeline( )
         }
         allLayouts[ layout.Set ] = layout.Layout;
     }
-    std::vector<VkPushConstantRange> pushConstants = rootSig->PushConstantRanges( );
-    VkPipelineLayoutCreateInfo       pipelineLayoutInfo{ };
-    pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount         = allLayouts.size( );
-    pipelineLayoutInfo.pSetLayouts            = allLayouts.data( );
-    pipelineLayoutInfo.pushConstantRangeCount = pushConstants.size( );
-    pipelineLayoutInfo.pPushConstantRanges    = pushConstants.data( );
+    const std::vector<VkPushConstantRange> pushConstants      = rootSig->PushConstantRanges( );
+    VkPipelineLayoutCreateInfo             pipelineLayoutInfo = { };
+    pipelineLayoutInfo.sType                                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount                         = allLayouts.size( );
+    pipelineLayoutInfo.pSetLayouts                            = allLayouts.data( );
+    pipelineLayoutInfo.pushConstantRangeCount                 = pushConstants.size( );
+    pipelineLayoutInfo.pPushConstantRanges                    = pushConstants.data( );
 
     VK_CHECK_RESULT( vkCreatePipelineLayout( m_context->LogicalDevice, &pipelineLayoutInfo, nullptr, &m_rtLayout ) );
 
     VkRayTracingPipelineInterfaceCreateInfoKHR pipelineInterface{ };
     pipelineInterface.sType                          = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_INTERFACE_CREATE_INFO_KHR;
-    pipelineInterface.maxPipelineRayPayloadSize      = m_desc.ShaderProgram->Desc( ).RayTracing.MaxNumAttributeBytes;
-    pipelineInterface.maxPipelineRayHitAttributeSize = m_desc.ShaderProgram->Desc( ).RayTracing.MaxNumPayloadBytes;
+    pipelineInterface.maxPipelineRayPayloadSize      = m_desc.ShaderProgram->Desc( ).RayTracing.MaxNumPayloadBytes;
+    pipelineInterface.maxPipelineRayHitAttributeSize = m_desc.ShaderProgram->Desc( ).RayTracing.MaxNumAttributeBytes;
 
-        VkRayTracingPipelineCreateInfoKHR pipelineInfo{ };
+    VkRayTracingPipelineCreateInfoKHR pipelineInfo{ };
     pipelineInfo.sType                        = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
     pipelineInfo.stageCount                   = static_cast<uint32_t>( shaderStages.size( ) );
     pipelineInfo.pStages                      = shaderStages.data( );
@@ -289,7 +279,7 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
         shaderStageCreateInfo.sType                            = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 
         const VkShaderStageFlagBits stage        = VulkanEnumConverter::ConvertShaderStage( compiledShader->Stage );
-        const VkShaderModule       &shaderModule = m_shaderModules.emplace_back( this->CreateShaderModule( compiledShader->Blob ) );
+        const VkShaderModule       &shaderModule = m_shaderModules.emplace_back( this->CreateShaderModule( compiledShader->SPIRV ) );
 
         shaderStageCreateInfo.stage  = stage;
         shaderStageCreateInfo.module = shaderModule;

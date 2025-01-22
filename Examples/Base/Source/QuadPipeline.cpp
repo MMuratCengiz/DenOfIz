@@ -17,22 +17,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzExamples/QuadPipeline.h>
+#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
 
 using namespace DenOfIz;
 
 QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice, const char *pixelShader )
 {
-    InteropArray<ShaderDesc> shaders;
-    ShaderDesc              &vertexShaderDesc = shaders.EmplaceElement( );
-    vertexShaderDesc.Path                     = "Assets/Shaders/FullscreenQuad.vs.hlsl";
-    vertexShaderDesc.Stage                    = ShaderStage::Vertex;
-    ShaderDesc &pixelShaderDesc               = shaders.EmplaceElement( );
-    pixelShaderDesc.Path                      = pixelShader;
-    pixelShaderDesc.Stage                     = ShaderStage::Pixel;
+    InteropArray<ShaderStageDesc> shaderStages;
+    ShaderStageDesc              &vertexShaderDesc = shaderStages.EmplaceElement( );
+    vertexShaderDesc.Path                          = "Assets/Shaders/FullscreenQuad.vs.hlsl";
+    vertexShaderDesc.Stage                         = ShaderStage::Vertex;
+    ShaderStageDesc &pixelShaderDesc               = shaderStages.EmplaceElement( );
+    pixelShaderDesc.Path                           = pixelShader;
+    pixelShaderDesc.Stage                          = ShaderStage::Pixel;
 
-    ProgramDesc programDesc{ .Shaders = shaders };
-    auto        program           = std::unique_ptr<ShaderProgram>( graphicsApi->CreateShaderProgram( programDesc ) );
-    auto        programReflection = program->Reflect( );
+    auto program           = std::make_unique<ShaderProgram>( ShaderProgramDesc{ .ShaderStages = shaderStages } );
+    auto programReflection = program->Reflect( );
 
     m_rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( programReflection.RootSignature ) );
     m_inputLayout   = std::unique_ptr<IInputLayout>( logicalDevice->CreateInputLayout( programReflection.InputLayout ) );

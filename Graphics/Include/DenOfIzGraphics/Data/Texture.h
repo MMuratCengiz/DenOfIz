@@ -68,7 +68,6 @@ namespace DenOfIz
     typedef std::function<void( MipData mipData )> MipStreamCallback;
     class Texture
     {
-    private:
         std::string          m_path;
         std::vector<MipData> m_mipData;
         dds::Header          m_ddsHeader{ };

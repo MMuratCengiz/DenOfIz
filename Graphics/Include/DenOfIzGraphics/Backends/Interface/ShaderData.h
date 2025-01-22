@@ -73,7 +73,7 @@ namespace DenOfIz
     /// <summary>
     /// Raytracing description for the ShaderProgram
     /// </summary>
-    struct DZ_API ProgramRayTracingDesc
+    struct DZ_API ShaderRayTracingDesc
     {
         uint32_t MaxNumPayloadBytes   = 0;
         uint32_t MaxNumAttributeBytes = 0;
@@ -94,15 +94,27 @@ namespace DenOfIz
         void MarkSamplerAsLocal( uint32_t binding, uint32_t registerSpace );
     };
 
-    // Needs to be used as a pointer as Blob/Reflection might be deleted multiple times otherwise
-    struct DZ_API CompiledShader : private NonCopyable
+    struct DZ_API ShaderStageDesc
     {
-        InteropString        Path;
+        ShaderStage                 Stage;
+        InteropString               Path;
+        InteropArray<InteropString> Defines;
+        InteropString               EntryPoint = "main";
+        /// \brief Only available for Raygen, Miss and Hit shaders(Intersection, ClosestHit, AnyHit)
+        RayTracingShaderDesc RayTracing;
+    };
+    template class DZ_API InteropArray<ShaderStageDesc>;
+
+    // Needs to be used as a pointer as Blob/Reflection might be deleted multiple times otherwise
+    struct DZ_API CompiledShaderStage : private NonCopyable
+    {
         ShaderStage          Stage;
-        IDxcBlob            *Blob;
+        IDxcBlob            *DXIL;
+        IDxcBlob            *MSL;
+        IDxcBlob            *SPIRV;
         IDxcBlob            *Reflection;
         InteropString        EntryPoint;
         RayTracingShaderDesc RayTracing;
     };
-    template class DZ_API InteropArray<CompiledShader *>;
+    template class DZ_API InteropArray<CompiledShaderStage *>;
 } // namespace DenOfIz

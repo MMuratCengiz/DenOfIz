@@ -25,7 +25,6 @@ using namespace DenOfIz;
 VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc &desc ) : m_context( context )
 {
     m_flags = VulkanEnumConverter::ConvertAccelerationStructureBuildFlags( desc.BuildFlags );
-
     // Prepare instance descriptions
     m_instances.resize( desc.Instances.NumElements( ) );
     for ( uint32_t i = 0; i < desc.Instances.NumElements( ); ++i )
@@ -44,7 +43,7 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
         vkInstance.mask                                   = instanceDesc.Mask;
         vkInstance.instanceShaderBindingTableRecordOffset = instanceDesc.ContributionToHitGroupIndex;
         vkInstance.accelerationStructureReference         = vkBLAS->DeviceAddress( );
-        vkInstance.flags                                  = m_flags;
+        vkInstance.flags                                  = VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR;
     }
 
     m_buildRangeInfo.primitiveCount  = desc.Instances.NumElements( );
@@ -59,6 +58,10 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
     instanceBufferDesc.Usages     = ResourceUsage::AccelerationStructureGeometry;
     instanceBufferDesc.HeapType   = HeapType::CPU_GPU;
     m_instanceBuffer              = std::make_unique<VulkanBufferResource>( m_context, instanceBufferDesc );
+
+    void *instanceBufferMemory = m_instanceBuffer->MapMemory( );
+    memcpy( instanceBufferMemory, m_instances.data( ), instanceBufferDesc.NumBytes );
+    m_instanceBuffer->UnmapMemory( );
 
     VkAccelerationStructureGeometryKHR geometry    = { };
     geometry.sType                                 = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
@@ -79,10 +82,6 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
     sizeInfo.sType                                    = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
     uint32_t numElements                              = desc.Instances.NumElements( );
     vkGetAccelerationStructureBuildSizesKHR( m_context->LogicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildInfo, &numElements, &sizeInfo );
-
-    void *instanceBufferMemory = m_instanceBuffer->MapMemory( );
-    memcpy( instanceBufferMemory, m_instances.data( ), instanceBufferDesc.NumBytes );
-    m_instanceBuffer->UnmapMemory( );
 
     // Create acceleration structure buffer
     BufferDesc bufferDesc = { };

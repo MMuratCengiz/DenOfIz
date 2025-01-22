@@ -376,7 +376,10 @@ void RenderGraph::Update( )
 
 void RenderGraph::WaitIdle( ) const
 {
-    m_frameFences[ m_frameIndex ]->Wait( );
+    for ( int i = 0; i < m_desc.NumFrames; ++i )
+    {
+        m_frameFences[ i ]->Wait( );
+    }
 }
 
 ISemaphore *RenderGraph::GetOrCreateSemaphore( uint32_t &index )

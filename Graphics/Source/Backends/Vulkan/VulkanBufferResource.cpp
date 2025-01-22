@@ -28,7 +28,7 @@ VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc d
     uint32_t alignment = m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment;
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) )
     {
-        alignment = std::max( alignment, m_context->SelectedDeviceInfo.Constants.StorageBufferAlignment );
+        alignment = m_context->SelectedDeviceInfo.Constants.StorageBufferAlignment;
     }
     m_numBytes                  = Utilities::Align( m_desc.NumBytes, alignment );
     BitSet<ResourceUsage> usage = m_desc.Usages;
@@ -107,7 +107,7 @@ InteropArray<Byte> VulkanBufferResource::GetData( ) const
     return std::move( data );
 }
 
-void VulkanBufferResource::SetData( const InteropArray<Byte> &data, bool keepMapped )
+void VulkanBufferResource::SetData( const InteropArray<Byte> &data, const bool keepMapped )
 {
     if ( m_mappedMemory == nullptr )
     {

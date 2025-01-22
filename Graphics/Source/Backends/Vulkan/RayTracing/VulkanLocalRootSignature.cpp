@@ -43,7 +43,6 @@ VulkanLocalRootSignature::VulkanLocalRootSignature( VulkanContext *context, cons
         {
         case ResourceBindingType::ConstantBuffer:
             {
-                bindingTypeOffset          = ShaderCompiler::VkShiftCbv;
                 const uint32_t alignedSize = Utilities::Align( binding.Reflection.NumBytes, minAlignment );
 
                 m_inlineDataOffsets.resize( std::max<size_t>( m_inlineDataOffsets.size( ), binding.Binding + 1 ) );
@@ -98,7 +97,7 @@ void VulkanLocalRootSignature::Merge( const VulkanLocalRootSignature &other )
     {
         if ( m_inlineDataOffsets[ i ] == 0 )
         {
-            m_inlineDataOffsets[ i ] = other.m_inlineDataOffsets[ i ];
+            m_inlineDataOffsets[ i ]  = other.m_inlineDataOffsets[ i ];
             m_inlineDataNumBytes[ i ] = other.m_inlineDataNumBytes[ i ];
         }
     }

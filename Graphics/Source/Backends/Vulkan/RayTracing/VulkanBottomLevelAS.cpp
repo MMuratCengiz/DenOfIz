@@ -108,7 +108,7 @@ VulkanBottomLevelAS::~VulkanBottomLevelAS( )
     vkDestroyAccelerationStructureKHR( m_context->LogicalDevice, m_accelerationStructure, nullptr );
 }
 
-void VulkanBottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &triangle, VkAccelerationStructureGeometryKHR &vkGeometry )
+void VulkanBottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &triangle, VkAccelerationStructureGeometryKHR &vkGeometry ) const
 {
     vkGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
 
@@ -140,15 +140,15 @@ void VulkanBottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &tri
     }
 
     // Validation
-    const static std::unordered_set<Format> allowedFormats = { Format::R32G32Float,       Format::R32G32B32Float, Format::R16G16Float,
-                                                               Format::R16G16B16A16Float, Format::R16G16Snorm,    Format::R16G16B16A16Snorm };
+    const static std::unordered_set allowedFormats = { Format::R32G32Float,       Format::R32G32B32Float, Format::R16G16Float,
+                                                       Format::R16G16B16A16Float, Format::R16G16Snorm,    Format::R16G16B16A16Snorm };
     if ( !allowedFormats.contains( triangle.VertexFormat ) )
     {
         LOG( WARNING ) << "Invalid vertex format for acceleration structure geometry.";
     }
 }
 
-void VulkanBottomLevelAS::InitializeAABBs( const ASGeometryAABBDesc &aabb, VkAccelerationStructureGeometryKHR &vkGeometry )
+void VulkanBottomLevelAS::InitializeAABBs( const ASGeometryAABBDesc &aabb, VkAccelerationStructureGeometryKHR &vkGeometry ) const
 {
     vkGeometry.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
 

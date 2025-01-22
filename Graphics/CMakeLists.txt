@@ -22,16 +22,28 @@ find_package(wil CONFIG REQUIRED)
 find_package(directxmath CONFIG REQUIRED)
 find_package(Taskflow CONFIG REQUIRED)
 find_package(glog CONFIG REQUIRED)
+find_package(assimp CONFIG REQUIRED)
+find_package(rocksdb CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h")
 
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 
-SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
+set(DEN_OF_IZ_ASSETS_SOURCES
+        Source/Assets/FileSystem/PathResolver.cpp
+        Source/Assets/FileSystem/FileIO.cpp
+        Source/Assets/Mesh/MeshImporter.cpp
+        Source/Assets/Shaders/DxcEnumConverter.cpp
+        Source/Assets/Shaders/DxilToMsl.cpp
+        Source/Assets/Shaders/ReflectionDebugOutput.cpp
+        Source/Assets/Shaders/ShaderCompiler.cpp
+        Source/Assets/Shaders/ShaderReflectionHelper.cpp
+        Source/Assets/Shaders/ShaderProgram.cpp
+)
+
+set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Backends/GraphicsApi.cpp
         #Shader Compiler
         Source/Backends/Common/GraphicsWindowHandle.cpp
-        Source/Backends/Common/ShaderCompiler.cpp
-        Source/Backends/Common/ShaderProgram.cpp
 
         #Data
         Source/Data/BatchResourceCopy.cpp
@@ -57,7 +69,7 @@ SET(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Backends/Interface/RayTracing/ILocalRootSignature.cpp
 )
 
-SET(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
+set(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanLogicalDevice.cpp
         Source/Backends/Vulkan/VulkanCommandList.cpp
         Source/Backends/Vulkan/VulkanCommandPool.cpp
@@ -154,16 +166,20 @@ endif ()
 
 copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 
-add_library(DenOfIzGraphics ${DEN_OF_IZ_GRAPHICS_SOURCES})
+add_library(DenOfIzGraphics ${DEN_OF_IZ_ASSETS_SOURCES} ${DEN_OF_IZ_GRAPHICS_SOURCES})
 #install_target(DenOfIzGraphics)
-target_include_default_directories(DenOfIzGraphics)
 
+target_include_default_directories(DenOfIzGraphics)
 target_include_directories(DenOfIzGraphics
         ${TINYGLTF_INCLUDE_DIRS}
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/Tiny> $<INSTALL_INTERFACE:_ThirdParty/Tiny>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/include> $<INSTALL_INTERFACE:_ThirdParty/MetalShaderConverter/include>
         ${STB_INCLUDE_DIRS}
 )
+
+add_library(metalirconverter STATIC IMPORTED)
+set_target_properties(metalirconverter PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/metalirconverter.lib")
 
 target_link_libraries(DenOfIzGraphics
         PUBLIC
@@ -172,6 +188,8 @@ target_link_libraries(DenOfIzGraphics
         SDL2::SDL2
         SDL2::SDL2main
         Taskflow::Taskflow
+        assimp::assimp
+        metalirconverter
 )
 
 if (BUILD_SHARED_LIBS)
@@ -194,8 +212,9 @@ if (WIN32)
             _ThirdParty/dxc/lib/${CPU_ARCHITECTURE}
     )
 
-    configure_file(_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/dxcompiler.dll COPYONLY)
-    configure_file(_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/dxil.dll COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/dxcompiler.dll COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/dxil.dll COPYONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/metalirconverter.dll COPYONLY)
 
     target_link_libraries(DenOfIzGraphics
             PUBLIC

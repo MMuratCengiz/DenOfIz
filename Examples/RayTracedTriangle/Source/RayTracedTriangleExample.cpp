@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzExamples/RayTracedTriangleExample.h>
+#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
 #include <DenOfIzGraphics/Utilities/Time.h>
 
 using namespace DenOfIz;
@@ -88,6 +89,7 @@ void RayTracedTriangleExample::Execute( const uint32_t frameIndex, ICommandList 
 
 void RayTracedTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
+    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void RayTracedTriangleExample::Update( )
@@ -127,34 +129,33 @@ void RayTracedTriangleExample::CreateRenderTargets( )
 
 void RayTracedTriangleExample::CreateRayTracingPipeline( )
 {
-    InteropArray<ShaderDesc> shaderDescs;
-    ShaderDesc               rayGenShaderDesc{ };
+    InteropArray<ShaderStageDesc> shaderStages;
+    ShaderStageDesc               rayGenShaderDesc{ };
     rayGenShaderDesc.Stage      = ShaderStage::Raygen;
     rayGenShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
     rayGenShaderDesc.EntryPoint = "MyRaygenShader";
-    shaderDescs.AddElement( rayGenShaderDesc );
+    shaderStages.AddElement( rayGenShaderDesc );
 
-    ShaderDesc closestHitShaderDesc{ };
+    ShaderStageDesc closestHitShaderDesc{ };
     closestHitShaderDesc.Stage      = ShaderStage::ClosestHit;
     closestHitShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
     closestHitShaderDesc.EntryPoint = "MyClosestHitShader";
     closestHitShaderDesc.RayTracing.MarkCbvAsLocal( 0, 29 );
 
-    shaderDescs.AddElement( closestHitShaderDesc );
-    ShaderDesc missShaderDesc{ };
+    shaderStages.AddElement( closestHitShaderDesc );
+    ShaderStageDesc missShaderDesc{ };
     missShaderDesc.Stage      = ShaderStage::Miss;
     missShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
     missShaderDesc.EntryPoint = "MyMissShader";
-    shaderDescs.AddElement( missShaderDesc );
+    shaderStages.AddElement( missShaderDesc );
 
-    ProgramDesc programDesc{ };
-    programDesc.Shaders                         = shaderDescs;
-    programDesc.EnableCaching                   = false;
+    ShaderProgramDesc programDesc{ };
+    programDesc.ShaderStages                    = shaderStages;
     programDesc.RayTracing.MaxNumPayloadBytes   = 4 * sizeof( float );
     programDesc.RayTracing.MaxNumAttributeBytes = 2 * sizeof( float );
     programDesc.RayTracing.MaxRecursionDepth    = 1;
 
-    m_rayTracingProgram       = std::unique_ptr<ShaderProgram>( m_graphicsApi->CreateShaderProgram( programDesc ) );
+    m_rayTracingProgram       = std::make_unique<ShaderProgram>( programDesc );
     auto reflection           = m_rayTracingProgram->Reflect( );
     m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
     m_hgShaderLayout          = std::unique_ptr<ILocalRootSignature>( m_logicalDevice->CreateLocalRootSignature( reflection.LocalRootSignatures.GetElement( 1 ) ) );
@@ -185,7 +186,7 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     pipelineDesc.RootSignature = m_rayTracingRootSignature.get( );
     pipelineDesc.ShaderProgram = m_rayTracingProgram.get( );
     pipelineDesc.RayTracing.HitGroups.AddElement(
-        HitGroupDesc{ .Name = "MyHitGroup", .ClosestHitShaderIndex = 1, .Type = HitGroupType::Triangles, .LocalRootSignature = m_hgShaderLayout.get( ) } );
+        HitGroupDesc{ .Name = "MyHitGroup", .ClosestHitShaderIndex = 1, .LocalRootSignature = m_hgShaderLayout.get( ), .Type = HitGroupType::Triangles  } );
 
     m_rayTracingPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 }

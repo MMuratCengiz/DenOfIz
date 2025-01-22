@@ -51,7 +51,7 @@ namespace DenOfIz
     private:
         void                  SetMSAASampleCount( const PipelineDesc &desc, D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const;
         void                  SetGraphicsShaders( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const;
-        D3D12_SHADER_BYTECODE GetShaderByteCode( const CompiledShader *const &compiledShader ) const;
+        D3D12_SHADER_BYTECODE GetShaderByteCode( const CompiledShaderStage *const &compiledShader ) const;
         void                  CreateGraphicsPipeline( );
         void                  CreateComputePipeline( );
         void                  CreateRayTracingPipeline( );

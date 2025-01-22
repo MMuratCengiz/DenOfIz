@@ -87,7 +87,7 @@ namespace DenOfIz
         uint32_t            NumRows     = 0;
         uint32_t            Elements    = 0;
         uint32_t            Offset      = 0;
-        uint32_t            Level       = 0; // Nesting level in hierarchy
+        uint32_t            Level       = 0;          // Nesting level in hierarchy
         uint32_t            ParentIndex = UINT32_MAX; // UINT32_MAX is root
     };
     template class DZ_API InteropArray<ReflectionResourceField>;
@@ -105,18 +105,5 @@ namespace DenOfIz
         ReflectionBindingType                 Type;
         InteropArray<ReflectionResourceField> Fields;
         size_t                                NumBytes = 0;
-#ifdef BUILD_METAL
-        /**
-         * Metal specific information to simulate register spaces. We use a top level argument buffers:
-         * TLABOffset: The index of the descriptor table in the argument buffer.
-         * DescriptorTableIndex: The offset of the descriptor within the descriptor table.
-         * LocalCbvOffset: The offset of the constant buffer in the local root signature. These behave as root constants.
-         *
-         * Valid when RootParameterType is DescriptorTable.
-         */
-        uint32_t DescriptorTableIndex = 0;
-        uint32_t TLABOffset           = 0;
-        uint32_t LocalCbvOffset       = 0;
-#endif
     };
 } // namespace DenOfIz

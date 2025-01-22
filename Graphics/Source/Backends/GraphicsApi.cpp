@@ -67,8 +67,7 @@ ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
     const InteropArray<PhysicalDevice> &devices = logicalDevice->ListPhysicalDevices( );
     for ( int i = 0; i < devices.NumElements( ); ++i )
     {
-        const PhysicalDevice &device = devices.GetElement( i );
-        if ( device.Properties.IsDedicated )
+        if ( const PhysicalDevice &device = devices.GetElement( i ); device.Properties.IsDedicated )
         {
             logicalDevice->LoadPhysicalDevice( device );
             return logicalDevice;
@@ -88,34 +87,6 @@ ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
     LOG( INFO ) << "Tearing: " << ( gpuDesc.Capabilities.Tearing ? "Yes" : "No" );
 
     return logicalDevice;
-}
-
-ShaderProgram *GraphicsApi::CreateShaderProgram( ProgramDesc &desc ) const
-{
-    ShaderProgramDesc programDesc{ };
-    auto             &shaders = desc.Shaders;
-
-    programDesc.Shaders = shaders;
-    if ( IsDX12Preferred( ) )
-    {
-        programDesc.TargetIL = TargetIL::DXIL;
-    }
-    else if ( IsVulkanPreferred( ) )
-    {
-        programDesc.TargetIL = TargetIL::SPIRV;
-    }
-    // ReSharper disable once CppDFAConstantConditions
-    else if ( IsMetalPreferred( ) )
-    {
-        programDesc.TargetIL = TargetIL::MSL;
-    }
-    else
-    {
-        LOG( ERROR ) << "No supported API found for this system.";
-    }
-    programDesc.EnableCaching = desc.EnableCaching;
-    programDesc.RayTracing    = desc.RayTracing;
-    return new ShaderProgram( programDesc );
 }
 
 void GraphicsApi::ReportLiveObjects( )

@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Data/Texture.h>
 
-#if not defined(STB_IMAGE_IMPLEMENTATION) and defined(DZ_USE_STB_IMAGE)
+#if not defined( STB_IMAGE_IMPLEMENTATION ) and defined( DZ_USE_STB_IMAGE )
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image.h"

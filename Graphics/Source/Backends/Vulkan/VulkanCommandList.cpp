@@ -154,7 +154,7 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeDesc )
     std::vector<VkSemaphore>          waitOnSemaphores;
     for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements( ); i++ )
     {
-        auto *waitOn = dynamic_cast<VulkanSemaphore *>( executeDesc.WaitOnSemaphores.GetElement( i ) );
+        const auto *waitOn = dynamic_cast<VulkanSemaphore *>( executeDesc.WaitOnSemaphores.GetElement( i ) );
         waitOnSemaphores.push_back( waitOn->GetSemaphore( ) );
         waitStages.push_back( VK_PIPELINE_STAGE_ALL_COMMANDS_BIT );
     }
@@ -162,7 +162,7 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeDesc )
     std::vector<VkSemaphore> signalSemaphores;
     for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements( ); i++ )
     {
-        auto *signal = dynamic_cast<VulkanSemaphore *>( executeDesc.NotifySemaphores.GetElement( i ) );
+        const auto *signal = dynamic_cast<VulkanSemaphore *>( executeDesc.NotifySemaphores.GetElement( i ) );
         signalSemaphores.push_back( signal->GetSemaphore( ) );
     }
 
@@ -182,7 +182,7 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeDesc )
         vkNotifyFence = notify->GetFence( );
     }
 
-    VulkanQueueType queueType = VulkanQueueType::Graphics;
+    auto queueType = VulkanQueueType::Graphics;
     switch ( m_desc.QueueType )
     {
     case QueueType::Graphics:
@@ -229,7 +229,7 @@ void VulkanCommandList::BindIndexBuffer( IBufferResource *buffer, const IndexTyp
     }
 }
 
-void VulkanCommandList::BindViewport( const float offsetX, float offsetY, const float width, const float height )
+void VulkanCommandList::BindViewport( const float offsetX, const float offsetY, const float width, const float height )
 {
     DZ_RETURN_IF( width == 0 || height == 0 );
     m_viewport.x = offsetX;
@@ -394,7 +394,7 @@ void VulkanCommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLeve
 
 void VulkanCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc )
 {
-    auto *vkBottomLevelAS = dynamic_cast<VulkanBottomLevelAS *>( buildBottomLevelASDesc.BottomLevelAS );
+    const auto *vkBottomLevelAS = dynamic_cast<VulkanBottomLevelAS *>( buildBottomLevelASDesc.BottomLevelAS );
     DZ_NOT_NULL( vkBottomLevelAS );
 
     const auto &geometryDescs = vkBottomLevelAS->GeometryDescs( );
@@ -446,7 +446,7 @@ void VulkanCommandList::UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc
 
 void VulkanCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
-    VulkanShaderBindingTable *bindingTable = dynamic_cast<VulkanShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
+    const VulkanShaderBindingTable *bindingTable = dynamic_cast<VulkanShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
     DZ_NOT_NULL( bindingTable );
 
     vkCmdTraceRaysKHR( m_commandBuffer, bindingTable->RayGenerationShaderRange( ), bindingTable->MissShaderRange( ), bindingTable->HitGroupShaderRange( ),
