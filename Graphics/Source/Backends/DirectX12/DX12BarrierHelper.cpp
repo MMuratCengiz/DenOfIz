@@ -44,7 +44,7 @@ bool IsUAVState( const ResourceUsage state )
 
 UINT CalcSubresourceIndex( const uint32_t mipLevel, const uint32_t layer, const uint32_t depth, const uint32_t mipLevels, const uint32_t depthOrArraySize )
 {
-    return mipLevel * layer * depth * mipLevels * depthOrArraySize;
+    return mipLevel + layer * mipLevels + depth * mipLevels * depthOrArraySize;
 }
 
 D3D12_BARRIER_SYNC GetSyncFlagsForState( const BitSet<ResourceUsage> &state )
@@ -79,6 +79,18 @@ D3D12_BARRIER_SYNC GetSyncFlagsForState( const BitSet<ResourceUsage> &state )
     return syncFlags != D3D12_BARRIER_SYNC_NONE ? syncFlags : D3D12_BARRIER_SYNC_ALL;
 }
 
+bool DX12BarrierHelper::NeedsGlobalUavSync( const PipelineBarrierDesc &barrier )
+{
+    for ( int i = 0; i < barrier.GetTextureBarriers( ).NumElements( ); i++ )
+    {
+        if ( const auto &textureBarrier = barrier.GetTextureBarriers( ).GetElement( i ); IsUAVState( textureBarrier.OldState ) || IsUAVState( textureBarrier.NewState ) )
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void DX12BarrierHelper::ExecuteEnhancedResourceBarrier( ID3D12GraphicsCommandList7 *commandList, const QueueType &queueType, const PipelineBarrierDesc &barrier )
 {
     std::vector<D3D12_BARRIER_GROUP> barrierGroups;
@@ -87,16 +99,7 @@ void DX12BarrierHelper::ExecuteEnhancedResourceBarrier( ID3D12GraphicsCommandLis
     std::vector<D3D12_BUFFER_BARRIER>  bufferBarriers;
     std::vector<D3D12_TEXTURE_BARRIER> textureBarriers;
 
-    bool needsGlobalSync = false;
-    for ( int i = 0; i < barrier.GetTextureBarriers( ).NumElements( ); i++ )
-    {
-        if ( const auto &textureBarrier = barrier.GetTextureBarriers( ).GetElement( i ); IsUAVState( textureBarrier.OldState ) || IsUAVState( textureBarrier.NewState ) )
-        {
-            needsGlobalSync = true;
-            break;
-        }
-    }
-    if ( needsGlobalSync )
+    if ( NeedsGlobalUavSync( barrier ) )
     {
         D3D12_GLOBAL_BARRIER globalBarrier = { };
         globalBarrier.SyncBefore           = D3D12_BARRIER_SYNC_ALL;
@@ -319,6 +322,12 @@ void DX12BarrierHelper::ExecuteEnhancedResourceBarrier( ID3D12GraphicsCommandLis
 void DX12BarrierHelper::ExecuteLegacyResourceBarrier( ID3D12GraphicsCommandList7 *commandList, const PipelineBarrierDesc &barrier )
 {
     std::vector<D3D12_RESOURCE_BARRIER> resourceBarriers;
+
+    if ( NeedsGlobalUavSync( barrier ) )
+    {
+        resourceBarriers.push_back( CD3DX12_RESOURCE_BARRIER::UAV( nullptr ) );
+    }
+
     for ( int i = 0; i < barrier.GetTextureBarriers( ).NumElements( ); i++ )
     {
         const auto     &textureBarrier = barrier.GetTextureBarriers( ).GetElement( i );
@@ -427,13 +436,21 @@ void DX12BarrierHelper::ExecuteLegacyResourceBarrier( ID3D12GraphicsCommandList7
 
         if ( memoryBarrier.BottomLevelAS != nullptr )
         {
-            if ( memoryBarrier.OldState.IsSet( ResourceUsage::AccelerationStructureWrite ) )
+            auto pResource = dynamic_cast<DX12BottomLevelAS *>( memoryBarrier.BottomLevelAS )->Buffer( )->Resource( );
+
+            if ( isUavBarrier )
+            {
+                D3D12_RESOURCE_BARRIER uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV( pResource );
+                resourceBarriers.push_back( uavBarrier );
+            }
+            else
             {
                 D3D12_RESOURCE_BARRIER transition = { };
                 transition.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-                transition.Transition.pResource   = dynamic_cast<DX12BottomLevelAS *>( memoryBarrier.BottomLevelAS )->Buffer( )->Resource( );;
-                transition.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-                transition.Transition.StateAfter  = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+                transition.Transition.pResource   = pResource;
+                transition.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+                transition.Transition.StateBefore = DX12EnumConverter::ConvertResourceUsage( memoryBarrier.OldState );
+                transition.Transition.StateAfter  = DX12EnumConverter::ConvertResourceUsage( memoryBarrier.NewState );
                 resourceBarriers.push_back( transition );
             }
         }

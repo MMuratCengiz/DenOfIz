@@ -71,12 +71,13 @@ void GraphicsApi::LogDeviceCapabilities( const PhysicalDevice gpuDesc ) const
     LOG( INFO ) << "Ray Tracing: " << ( gpuDesc.Capabilities.RayTracing ? "Yes" : "No" );
     LOG( INFO ) << "Tearing: " << ( gpuDesc.Capabilities.Tearing ? "Yes" : "No" );
 }
+
 ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
 {
     ILogicalDevice *logicalDevice = CreateLogicalDevice( );
 
     const InteropArray<PhysicalDevice> &devices = logicalDevice->ListPhysicalDevices( );
-    for ( int i = 0; i < devices.NumElements( ); ++i )
+    for ( int i = 1; i < devices.NumElements( ); ++i )
     {
         if ( const PhysicalDevice &device = devices.GetElement( i ); device.Properties.IsDedicated )
         {
@@ -86,7 +87,7 @@ ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
         }
     }
 
-    const auto gpuDesc = devices.GetElement( 1 );
+    const auto gpuDesc = devices.GetElement( 0 );
     logicalDevice->LoadPhysicalDevice( gpuDesc );
     LogDeviceCapabilities( gpuDesc );
 

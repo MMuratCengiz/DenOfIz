@@ -32,5 +32,6 @@ namespace DenOfIz
     private:
         static void ExecuteEnhancedResourceBarrier( ID3D12GraphicsCommandList7 *commandList, const QueueType &queueType, const PipelineBarrierDesc &barrier );
         static void ExecuteLegacyResourceBarrier( ID3D12GraphicsCommandList7 *commandList, const PipelineBarrierDesc &barrier );
+        static bool NeedsGlobalUavSync( const PipelineBarrierDesc &barrier );
     };
 } // namespace DenOfIz
