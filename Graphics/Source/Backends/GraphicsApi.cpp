@@ -60,23 +60,8 @@ ILogicalDevice *GraphicsApi::CreateLogicalDevice( ) const
     return logicalDevice;
 }
 
-ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
+void GraphicsApi::LogDeviceCapabilities( const PhysicalDevice gpuDesc ) const
 {
-    ILogicalDevice *logicalDevice = CreateLogicalDevice( );
-
-    const InteropArray<PhysicalDevice> &devices = logicalDevice->ListPhysicalDevices( );
-    // for ( int i = 0; i < devices.NumElements( ); ++i )
-    // {
-    //     if ( const PhysicalDevice &device = devices.GetElement( i ); device.Properties.IsDedicated )
-    //     {
-    //         logicalDevice->LoadPhysicalDevice( device );
-    //         return logicalDevice;
-    //     }
-    // }
-
-    const auto gpuDesc = devices.GetElement( 1 );
-    logicalDevice->LoadPhysicalDevice( gpuDesc );
-
     LOG( INFO ) << "Loaded device: " << gpuDesc.Name.Get( );
     LOG( INFO ) << "Device Capabilities:";
     LOG( INFO ) << "Dedicated GPU " << ( gpuDesc.Properties.IsDedicated ? "Yes" : "No" );
@@ -85,6 +70,25 @@ ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
     LOG( INFO ) << "Compute Shaders: " << ( gpuDesc.Capabilities.ComputeShaders ? "Yes" : "No" );
     LOG( INFO ) << "Ray Tracing: " << ( gpuDesc.Capabilities.RayTracing ? "Yes" : "No" );
     LOG( INFO ) << "Tearing: " << ( gpuDesc.Capabilities.Tearing ? "Yes" : "No" );
+}
+ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
+{
+    ILogicalDevice *logicalDevice = CreateLogicalDevice( );
+
+    const InteropArray<PhysicalDevice> &devices = logicalDevice->ListPhysicalDevices( );
+    for ( int i = 0; i < devices.NumElements( ); ++i )
+    {
+        if ( const PhysicalDevice &device = devices.GetElement( i ); device.Properties.IsDedicated )
+        {
+            logicalDevice->LoadPhysicalDevice( device );
+            LogDeviceCapabilities( device );
+            return logicalDevice;
+        }
+    }
+
+    const auto gpuDesc = devices.GetElement( 1 );
+    logicalDevice->LoadPhysicalDevice( gpuDesc );
+    LogDeviceCapabilities( gpuDesc );
 
     return logicalDevice;
 }

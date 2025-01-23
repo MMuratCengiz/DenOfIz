@@ -24,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-
 void DX12BarrierHelper::ExecuteResourceBarrier( const DX12Context *context, ID3D12GraphicsCommandList7 *commandList, const QueueType &queueType,
                                                 const PipelineBarrierDesc &barrier )
 {
@@ -329,7 +328,6 @@ void DX12BarrierHelper::ExecuteLegacyResourceBarrier( ID3D12GraphicsCommandList7
         {
             D3D12_RESOURCE_BARRIER uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV( pResource );
             resourceBarriers.push_back( uavBarrier );
-            continue;
         }
         UINT subresource = textureBarrier.EnableSubresourceBarrier ? CalcSubresourceIndex( textureBarrier.MipLevel, textureBarrier.ArrayLayer, 0, pResource->GetDesc( ).MipLevels,
                                                                                            pResource->GetDesc( ).DepthOrArraySize )
@@ -423,6 +421,19 @@ void DX12BarrierHelper::ExecuteLegacyResourceBarrier( ID3D12GraphicsCommandList7
             {
                 D3D12_RESOURCE_BARRIER transition = CD3DX12_RESOURCE_BARRIER::Transition( pResource, DX12EnumConverter::ConvertResourceUsage( memoryBarrier.OldState ),
                                                                                           DX12EnumConverter::ConvertResourceUsage( memoryBarrier.NewState ) );
+                resourceBarriers.push_back( transition );
+            }
+        }
+
+        if ( memoryBarrier.BottomLevelAS != nullptr )
+        {
+            if ( memoryBarrier.OldState.IsSet( ResourceUsage::AccelerationStructureWrite ) )
+            {
+                D3D12_RESOURCE_BARRIER transition = { };
+                transition.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                transition.Transition.pResource   = dynamic_cast<DX12BottomLevelAS *>( memoryBarrier.BottomLevelAS )->Buffer( )->Resource( );;
+                transition.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+                transition.Transition.StateAfter  = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
                 resourceBarriers.push_back( transition );
             }
         }

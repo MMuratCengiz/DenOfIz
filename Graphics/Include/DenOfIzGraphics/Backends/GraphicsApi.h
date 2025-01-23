@@ -57,6 +57,7 @@ namespace DenOfIz
         ~GraphicsApi( );
 
         ILogicalDevice *CreateLogicalDevice( ) const;
+        void            LogDeviceCapabilities( PhysicalDevice gpuDesc ) const;
         ILogicalDevice *CreateAndLoadOptimalLogicalDevice( ) const;
 
         static void ReportLiveObjects( );
