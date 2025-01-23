@@ -39,7 +39,8 @@ void DX12BarrierHelper::ExecuteResourceBarrier( const DX12Context *context, ID3D
 
 bool IsUAVState( const ResourceUsage state )
 {
-    return state == ResourceUsage::UnorderedAccess || state == ResourceUsage::AccelerationStructureWrite || state == ResourceUsage::AccelerationStructureRead;
+    return state == ResourceUsage::UnorderedAccess || state == ResourceUsage::AccelerationStructureWrite || state == ResourceUsage::AccelerationStructureRead ||
+           state == ResourceUsage::DepthWrite;
 }
 
 UINT CalcSubresourceIndex( const uint32_t mipLevel, const uint32_t layer, const uint32_t depth, const uint32_t mipLevels, const uint32_t depthOrArraySize )
@@ -397,8 +398,7 @@ void DX12BarrierHelper::ExecuteLegacyResourceBarrier( ID3D12GraphicsCommandList7
     for ( int i = 0; i < barrier.GetMemoryBarriers( ).NumElements( ); i++ )
     {
         const auto &memoryBarrier = barrier.GetMemoryBarriers( ).GetElement( i );
-        bool isUavBarrier = memoryBarrier.OldState.IsSet( ResourceUsage::AccelerationStructureWrite ) && memoryBarrier.NewState.IsSet( ResourceUsage::AccelerationStructureRead );
-        isUavBarrier |= memoryBarrier.OldState.IsSet( ResourceUsage::DepthWrite ) && memoryBarrier.NewState.IsSet( ResourceUsage::DepthRead );
+        bool        isUavBarrier  = IsUAVState( memoryBarrier.OldState ) || IsUAVState( memoryBarrier.NewState );
 
         if ( memoryBarrier.BufferResource != nullptr )
         {

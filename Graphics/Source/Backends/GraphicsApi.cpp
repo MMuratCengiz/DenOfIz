@@ -77,7 +77,7 @@ ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
     ILogicalDevice *logicalDevice = CreateLogicalDevice( );
 
     const InteropArray<PhysicalDevice> &devices = logicalDevice->ListPhysicalDevices( );
-    for ( int i = 1; i < devices.NumElements( ); ++i )
+    for ( int i = 0; i < devices.NumElements( ); ++i )
     {
         if ( const PhysicalDevice &device = devices.GetElement( i ); device.Properties.IsDedicated )
         {
