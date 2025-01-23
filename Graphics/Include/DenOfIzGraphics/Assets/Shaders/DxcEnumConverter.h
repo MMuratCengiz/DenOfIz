@@ -21,7 +21,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/ReflectionData.h>
 #include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
 #include <metal_irconverter/metal_irconverter.h>
-#include "directx/d3d12shader.h"
+#ifndef _WIN32
+#define interface struct
+#endif
+#include <directx/d3d12shader.h>
+#ifndef _WIN32
+#undef interface
+#endif
 
 namespace DenOfIz
 {

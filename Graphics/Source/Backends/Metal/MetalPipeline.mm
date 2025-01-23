@@ -51,7 +51,7 @@ void MetalPipeline::CreateGraphicsPipeline( )
     {
         const auto    &shader     = shaders.GetElement( i );
         std::string    entryPoint = shader->EntryPoint.Get( );
-        id<MTLLibrary> library    = LoadLibrary( shader->Blob, shader->Path.Get( ) );
+        id<MTLLibrary> library    = LoadLibrary( shader->MSL );
         switch ( shader->Stage )
         {
         case ShaderStage::Vertex:
@@ -148,7 +148,7 @@ void MetalPipeline::CreateComputePipeline( )
     for ( int i = 0; i < shaders.NumElements( ); ++i )
     {
         const auto &shader  = shaders.GetElement( i );
-        auto        library = LoadLibrary( shader->Blob, shader->Path.Get( ) );
+        auto        library = LoadLibrary( shader->MSL );
         switch ( shader->Stage )
         {
         case ShaderStage::Compute:
@@ -204,7 +204,7 @@ void MetalPipeline::CreateRayTracingPipeline( )
     for ( uint32_t i = 0; i < compiledShaders.NumElements( ); ++i )
     {
         const auto     &shader      = compiledShaders.GetElement( i );
-        id<MTLLibrary>  library     = LoadLibrary( shader->Blob, shader->Path.Get( ) );
+        id<MTLLibrary>  library     = LoadLibrary( shader->MSL );
         id<MTLFunction> mtlFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
 
         [functionHandles addObject:mtlFunction];
@@ -280,7 +280,7 @@ void MetalPipeline::CreateRayTracingPipeline( )
     [m_intersectionFunctionTable setFunction:proceduralFnHandle atIndex:ProceduralIntersectionShader];
 }
 
-id<MTLLibrary> MetalPipeline::LoadLibrary( IDxcBlob *&blob, const std::string &shaderPath )
+id<MTLLibrary> MetalPipeline::LoadLibrary( IDxcBlob *&blob )
 {
     NSError        *error      = nullptr;
     dispatch_data_t shaderData = dispatch_data_create( blob->GetBufferPointer( ), blob->GetBufferSize( ), NULL, DISPATCH_DATA_DESTRUCTOR_DEFAULT );

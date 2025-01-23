@@ -25,12 +25,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/RayTracing/ILocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
 
-#ifndef _WIN32
-#define interface struct
-#endif
-
-#include "directx/d3d12shader.h"
-
 namespace DenOfIz
 {
 

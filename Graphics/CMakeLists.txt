@@ -178,9 +178,6 @@ target_include_directories(DenOfIzGraphics
         ${STB_INCLUDE_DIRS}
 )
 
-add_library(metalirconverter STATIC IMPORTED)
-set_target_properties(metalirconverter PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/metalirconverter.lib")
-
 target_link_libraries(DenOfIzGraphics
         PUBLIC
         glog::glog
@@ -189,7 +186,6 @@ target_link_libraries(DenOfIzGraphics
         SDL2::SDL2main
         Taskflow::Taskflow
         assimp::assimp
-        metalirconverter
 )
 
 if (BUILD_SHARED_LIBS)
@@ -216,6 +212,9 @@ if (WIN32)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/dxil.dll COPYONLY)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/metalirconverter.dll COPYONLY)
 
+    add_library(metalirconverter STATIC IMPORTED)
+    set_target_properties(metalirconverter PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/metalirconverter.lib")
+
     target_link_libraries(DenOfIzGraphics
             PUBLIC
             WIL::WIL
@@ -226,6 +225,7 @@ if (WIN32)
             Microsoft::DirectXTK12
             Microsoft::DirectX-Guids
             D3D12MemoryAllocator
+            metalirconverter
     )
 
     if (TARGET Microsoft::DirectX12-Agility)
@@ -243,19 +243,17 @@ if (WIN32)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_DX12)
 endif ()
 if (APPLE)
+    find_library(
+            metal_irconverter_LIBRARIES
+            NAMES metalirconverter
+            PATHS "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/"
+    )
+
     target_include_directories(DenOfIzGraphics
             PUBLIC
             _ThirdParty/DirectXShaderCompiler/include/dxc
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include/wsl/stubs
-    )
-
-    include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_metalirconverter.cmake)
-
-    target_include_directories(DenOfIzGraphics
-            PUBLIC
-            ${metal_irconverter_INCLUDE_DIRS}
-            ${metal_irconverter_runtime_INCLUDE_DIRS}
     )
 
     target_link_libraries(DenOfIzGraphics

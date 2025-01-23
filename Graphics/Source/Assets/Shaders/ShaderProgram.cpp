@@ -21,7 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Shaders/ReflectionDebugOutput.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
-#include <directx/d3d12shader.h>
 #include <ranges>
 #include <set>
 #include <utility>
