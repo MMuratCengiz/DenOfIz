@@ -43,14 +43,15 @@ void DX12SwapChain::CreateSwapChain( )
     swapChainDesc.Width                 = m_desc.Width;
     swapChainDesc.Height                = m_desc.Height;
     swapChainDesc.Format                = DX12EnumConverter::ConvertFormat( m_desc.BackBufferFormat );
-    swapChainDesc.BufferUsage           = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.BufferUsage           = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_BACK_BUFFER;
     swapChainDesc.BufferCount           = m_desc.NumBuffers;
     swapChainDesc.SampleDesc.Count      = 1;
     swapChainDesc.SampleDesc.Quality    = 0;
     swapChainDesc.Scaling               = DXGI_SCALING_STRETCH;
-    swapChainDesc.SwapEffect            = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+    swapChainDesc.SwapEffect            = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
     swapChainDesc.AlphaMode             = DXGI_ALPHA_MODE_IGNORE;
     swapChainDesc.Flags                 = ( m_context->SelectedDeviceInfo.Capabilities.Tearing ) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u;
+    swapChainDesc.Flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
     DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsSwapChainDesc = { };
     fsSwapChainDesc.Windowed                        = TRUE;

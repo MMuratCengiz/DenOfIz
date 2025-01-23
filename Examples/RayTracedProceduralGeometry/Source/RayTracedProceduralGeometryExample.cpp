@@ -56,7 +56,7 @@ void RayTracedProceduralGeometryExample::Init( )
 
 void RayTracedProceduralGeometryExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void RayTracedProceduralGeometryExample::BuildProceduralGeometryAABBs( )

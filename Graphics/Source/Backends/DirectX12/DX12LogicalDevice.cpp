@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12LogicalDevice.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderLocalData.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLevelAS.h>
 
 #include "SDL2/SDL_syswm.h"
@@ -119,7 +119,6 @@ void DX12LogicalDevice::CreateDeviceInfo( IDXGIAdapter1 &adapter, PhysicalDevice
     if ( const HRESULT hr = device->CheckFeatureSupport( D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof( options12 ) ); SUCCEEDED( hr ) )
     {
         m_context->DX12Capabilities.EnhancedBarriers = options12.EnhancedBarriersSupported;
-        // m_context->DX12Capabilities.EnhancedBarriers = false; // Temporarily disable
     }
 }
 
@@ -129,15 +128,13 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     m_context->SelectedDeviceInfo = m_selectedDeviceInfo;
 
     wil::com_ptr<IDXGIAdapter1> adapter;
-
-    for ( UINT adapterIndex = 0;
-          SUCCEEDED( m_context->DXGIFactory->EnumAdapterByGpuPreference( adapterIndex, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS( adapter.put( ) ) ) ); adapterIndex++ )
+    for ( UINT adapterIndex = 0; SUCCEEDED( m_context->DXGIFactory->EnumAdapters1( adapterIndex, adapter.put( ) ) ); adapterIndex++ )
     {
-        DXGI_ADAPTER_DESC adapterDesc;
-        DX_CHECK_RESULT( adapter->GetDesc( &adapterDesc ) );
+        DXGI_ADAPTER_DESC1 adapterDesc;
+        DX_CHECK_RESULT( adapter->GetDesc1( &adapterDesc ) );
         if ( device.Id == adapterDesc.DeviceId )
         {
-            DX_CHECK_RESULT( adapter->QueryInterface( IID_PPV_ARGS( m_context->Adapter.put( ) ) ) );
+            m_context->Adapter = adapter;
             break;
         }
     }
