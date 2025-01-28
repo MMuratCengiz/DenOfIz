@@ -18,9 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "MeshTypes.h"
-#include <assimp/mesh.h>
 #include <assimp/Importer.hpp>
+#include <assimp/mesh.h>
+#include "MeshData.h"
+
+#include <unordered_map>
 
 namespace DenOfIz
 {
@@ -32,7 +34,10 @@ namespace DenOfIz
                                               uint32_t streamSize = DefaultStreamSize );
 
     private:
-        static void            ProcessAssimpMesh( const aiMesh *aiMesh, const aiScene *scene, MeshStreamCallback *callback, uint32_t streamSize );
+        static void ProcessAssimpMesh( const aiMesh *aiMesh, const aiScene *scene, MeshStreamCallback *callback, uint32_t streamSize );
+        static void ProcessAnimations( const aiScene *scene, MeshStreamCallback *callback );
+        static void ProcessJoints( const aiMesh *aiMesh, const aiScene *scene, MeshStreamCallback *callback );
+        static void ProcessNodeHierarchy( const aiNode *node, InteropArray<JointNode> &hierarchy, const std::unordered_map<std::string, uint32_t> &boneMap, int32_t parentIndex );
         static MeshBufferSizes CalculateBufferSizes( const aiScene *scene );
     };
 
