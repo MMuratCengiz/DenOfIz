@@ -55,7 +55,7 @@ namespace DenOfIz
         [[nodiscard]] ID3D12DescriptorHeap *GetHeap( ) const;
         [[nodiscard]] DescriptorHandle GetStartHandle( ) const;
 
-        static uint32_t RoundUp( const uint32_t size, const uint32_t alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT );
+        static uint32_t RoundUp( const uint32_t size, const uint32_t alignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT );
         ~DX12DescriptorHeap( ) = default;
     };
 

@@ -26,7 +26,7 @@ namespace DenOfIz
 
     class DX12Fence final : public IFence
     {
-        constexpr static UINT64   MAX_FENCE_VALUE = 1000000;
+        constexpr static UINT64   INITIAL_FENCE_VALUE = 0;
         DX12Context              *m_context;
         wil::com_ptr<ID3D12Fence> m_fence;
         UINT32                    m_fenceValue = 1;
@@ -34,10 +34,9 @@ namespace DenOfIz
         bool                      m_submitted = false;
 
     public:
-
-        explicit                   DX12Fence( DX12Context *context );
+        explicit DX12Fence( DX12Context *context );
         [[nodiscard]] ID3D12Fence *GetFence( ) const;
-        ~    DX12Fence( ) override;
+        ~DX12Fence( ) override;
         void Wait( ) override;
         void Reset( ) override;
         void NotifyCommandQueue( ID3D12CommandQueue *commandQueue );

@@ -89,6 +89,20 @@ bool DX12BarrierHelper::NeedsGlobalUavSync( const PipelineBarrierDesc &barrier )
             return true;
         }
     }
+    for ( int i = 0; i < barrier.GetBufferBarriers( ).NumElements( ); i++ )
+    {
+        if ( const auto &bufferBarrier = barrier.GetBufferBarriers( ).GetElement( i ); IsUAVState( bufferBarrier.OldState ) || IsUAVState( bufferBarrier.NewState ) )
+        {
+            return true;
+        }
+    }
+    for ( int i = 0; i < barrier.GetMemoryBarriers( ).NumElements( ); i++ )
+    {
+        if ( const auto &memoryBarrier = barrier.GetMemoryBarriers( ).GetElement( i ); IsUAVState( memoryBarrier.OldState ) || IsUAVState( memoryBarrier.NewState ) )
+        {
+            return true;
+        }
+    }
     return false;
 }
 
@@ -271,12 +285,16 @@ void DX12BarrierHelper::ExecuteEnhancedResourceBarrier( ID3D12GraphicsCommandLis
             dxBufferBarrier.Offset               = 0;
             dxBufferBarrier.Size                 = dxBufferBarrier.pResource->GetDesc( ).Width;
 
-            if ( memoryBarrier.OldState.IsSet( ResourceUsage::AccelerationStructureWrite ) && memoryBarrier.NewState.IsSet( ResourceUsage::AccelerationStructureRead ) )
+            if ( memoryBarrier.OldState.IsSet( ResourceUsage::AccelerationStructureWrite ) )
             {
                 dxBufferBarrier.AccessBefore = D3D12_BARRIER_ACCESS_RAYTRACING_ACCELERATION_STRUCTURE_WRITE;
-                dxBufferBarrier.AccessAfter  = D3D12_BARRIER_ACCESS_RAYTRACING_ACCELERATION_STRUCTURE_READ;
                 dxBufferBarrier.SyncBefore   = D3D12_BARRIER_SYNC_BUILD_RAYTRACING_ACCELERATION_STRUCTURE;
-                dxBufferBarrier.SyncAfter    = D3D12_BARRIER_SYNC_BUILD_RAYTRACING_ACCELERATION_STRUCTURE;
+
+                if ( memoryBarrier.NewState.IsSet( ResourceUsage::AccelerationStructureRead ) )
+                {
+                    dxBufferBarrier.AccessAfter = D3D12_BARRIER_ACCESS_RAYTRACING_ACCELERATION_STRUCTURE_READ;
+                    dxBufferBarrier.SyncAfter   = D3D12_BARRIER_SYNC_RAYTRACING;
+                }
             }
             else
             {

@@ -53,7 +53,7 @@ void VulkanPipelineBarrierHelper::ExecutePipelineBarrier( const VulkanContext *c
 {
     VkAccessFlags srcAccessFlags = { };
     VkAccessFlags dstAccessFlags = { };
-
+    
     std::vector<VkImageMemoryBarrier>       vkImageBarriers;
     const InteropArray<TextureBarrierDesc> &textureBarriers = barrier.GetTextureBarriers( );
     for ( int i = 0; i < textureBarriers.NumElements( ); i++ )

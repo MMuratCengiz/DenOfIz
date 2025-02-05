@@ -100,7 +100,7 @@ void ShaderReflectionHelper::FillReflectionData( ID3D12ShaderReflection *shaderR
 
     D3D12_SHADER_BUFFER_DESC bufferDesc;
     DxcCheckResult( constantBuffer->GetDesc( &bufferDesc ) );
-    reflectionDesc.NumBytes = bufferDesc.Size;
+    reflectionDesc.NumBytes = ( bufferDesc.Size + 15 ) & ~( 16 - 1 ); // Align 16
 
     for ( const uint32_t i : std::views::iota( 0u, bufferDesc.Variables ) )
     {

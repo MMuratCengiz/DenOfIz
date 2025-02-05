@@ -276,7 +276,7 @@ InteropArray<PhysicalDevice> VulkanLogicalDevice::ListPhysicalDevices( )
     {
         PhysicalDevice deviceInfo{ };
         CreateDeviceInfo( device, deviceInfo );
-        result.SetElement( index, deviceInfo );
+        result.SetElement( index++, deviceInfo );
     }
 
     return result;

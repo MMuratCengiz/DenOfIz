@@ -119,7 +119,6 @@ void DX12LogicalDevice::CreateDeviceInfo( IDXGIAdapter1 &adapter, PhysicalDevice
     if ( const HRESULT hr = device->CheckFeatureSupport( D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof( options12 ) ); SUCCEEDED( hr ) )
     {
         m_context->DX12Capabilities.EnhancedBarriers = options12.EnhancedBarriersSupported;
-        m_context->DX12Capabilities.EnhancedBarriers = false;
     }
 }
 

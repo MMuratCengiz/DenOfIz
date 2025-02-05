@@ -63,16 +63,10 @@ void RenderTargetExample::Init( )
 
     NodeDesc deferredNode{ };
     deferredNode.Name = "Deferred";
-    deferredNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceUsage::RenderTarget ) );
-    deferredNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceUsage::RenderTarget ) );
-    deferredNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceUsage::RenderTarget ) );
     deferredNode.Execute = this;
 
     PresentNodeDesc presentNode{ };
     presentNode.SwapChain = m_swapChain.get( );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 0, m_deferredRenderTargets[ 0 ].get( ), ResourceUsage::ShaderResource ) );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 1, m_deferredRenderTargets[ 1 ].get( ), ResourceUsage::ShaderResource ) );
-    presentNode.RequiredStates.AddElement( NodeResourceUsageDesc::TextureState( 2, m_deferredRenderTargets[ 2 ].get( ), ResourceUsage::ShaderResource ) );
     presentNode.Dependencies.AddElement( "Deferred" );
     presentNode.Execute = this;
 
@@ -86,6 +80,8 @@ void RenderTargetExample::Init( )
 // Node execution
 void RenderTargetExample::Execute( uint32_t frameIndex, ICommandList *commandList )
 {
+    m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_deferredRenderTargets[ frameIndex ].get( ), ResourceUsage::RenderTarget ) } );
+
     RenderingAttachmentDesc renderingAttachmentDesc{ };
     renderingAttachmentDesc.Resource = m_deferredRenderTargets[ frameIndex ].get( );
 
@@ -105,6 +101,8 @@ void RenderTargetExample::Execute( uint32_t frameIndex, ICommandList *commandLis
 
 void RenderTargetExample::Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget )
 {
+    m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_deferredRenderTargets[ frameIndex ].get( ), ResourceUsage::ShaderResource ) } );
+    
     RenderingAttachmentDesc quadAttachmentDesc{ };
     quadAttachmentDesc.Resource = renderTarget;
 

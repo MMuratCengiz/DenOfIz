@@ -25,7 +25,6 @@ namespace DenOfIz
 {
     class DZ_API DX12BarrierHelper
     {
-    private:
     public:
         static void ExecuteResourceBarrier( const DX12Context *context, ID3D12GraphicsCommandList7 *commandList, const QueueType &queueType, const PipelineBarrierDesc &barrier );
 

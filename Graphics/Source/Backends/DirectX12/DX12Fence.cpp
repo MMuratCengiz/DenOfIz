@@ -23,7 +23,7 @@ using namespace DenOfIz;
 
 DX12Fence::DX12Fence( DX12Context *context ) : m_context( context ), m_fenceValue( 0 )
 {
-    DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( m_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( m_fence.put( ) ) ) );
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( INITIAL_FENCE_VALUE, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( m_fence.put( ) ) ) );
     m_fenceEvent.Attach( CreateEventEx( nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE ) );
 }
 
@@ -31,7 +31,8 @@ DX12Fence::~DX12Fence( ) = default;
 
 void DX12Fence::Wait( )
 {
-    if ( m_fence->GetCompletedValue( ) != m_fenceValue )
+    const uint64_t completedValue = m_fence->GetCompletedValue( );
+    if ( completedValue < m_fenceValue )
     {
         DX_CHECK_RESULT( m_fence->SetEventOnCompletion( m_fenceValue, m_fenceEvent.Get( ) ) );
         WaitForSingleObjectEx( m_fenceEvent.Get( ), INFINITE, FALSE );
@@ -40,7 +41,7 @@ void DX12Fence::Wait( )
 
 void DX12Fence::Reset( )
 {
-    m_fenceValue = m_fenceValue + 1 % MAX_FENCE_VALUE;
+    ++m_fenceValue;
 }
 
 void DX12Fence::NotifyCommandQueue( ID3D12CommandQueue *commandQueue )

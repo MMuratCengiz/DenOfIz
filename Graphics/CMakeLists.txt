@@ -23,7 +23,6 @@ find_package(directxmath CONFIG REQUIRED)
 find_package(Taskflow CONFIG REQUIRED)
 find_package(glog CONFIG REQUIRED)
 find_package(assimp CONFIG REQUIRED)
-find_package(rocksdb CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h")
 
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
@@ -31,6 +30,7 @@ find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/FileSystem/PathResolver.cpp
         Source/Assets/FileSystem/FileIO.cpp
+        Source/Assets/GpuResource/GpuResourceLoader.cpp
         Source/Assets/Mesh/MeshImporter.cpp
         Source/Assets/Shaders/DxcEnumConverter.cpp
         Source/Assets/Shaders/DxilToMsl.cpp

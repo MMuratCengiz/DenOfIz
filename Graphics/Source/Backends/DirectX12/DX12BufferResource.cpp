@@ -28,19 +28,20 @@ using namespace DenOfIz;
 DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) : m_context( context ), m_desc( std::move( desc ) ), m_cpuHandles( { } )
 {
     m_stride           = FormatNumBytes( m_desc.Format );
-    uint32_t alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+    uint32_t alignment = std::max( static_cast<uint32_t>( D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT ), m_desc.Alignment );
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) )
     {
         alignment = std::max( alignment, static_cast<uint32_t>( m_desc.StructureDesc.Stride ) );
     }
-    else if ( m_desc.Descriptor.Any( { ResourceDescriptor::UniformBuffer, ResourceDescriptor::Buffer, ResourceDescriptor::RWBuffer } ) )
+    else if ( m_desc.Descriptor.Any( { ResourceDescriptor::UniformBuffer, ResourceDescriptor::AccelerationStructure } ) ||
+              m_desc.Usages.IsSet( ResourceUsage::AccelerationStructureGeometry ) )
     {
-        alignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
+        alignment = std::max( alignment, static_cast<uint32_t>( D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT ) );
     }
-    m_numBytes                 = Utilities::Align( m_desc.NumBytes, std::max<uint32_t>( m_desc.Alignment, alignment ) );
+    m_numBytes                 = Utilities::Align( m_desc.NumBytes, alignment );
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
 
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWBuffer ) )
+    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWBuffer ) || m_desc.Usages.IsSet( ResourceUsage::UnorderedAccess ) )
     {
         flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
@@ -49,18 +50,19 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
         flags |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
     }
 
-    const CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer( DX12DescriptorHeap::RoundUp( m_numBytes ), flags );
+    CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer( DX12DescriptorHeap::RoundUp( m_numBytes ), flags );
+    resourceDesc.Alignment             = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+    resourceDesc.Layout                = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
+    UINT64 padded_size = 0;
+    context->D3DDevice->GetCopyableFootprints( &resourceDesc, 0, 1, 0, NULL, NULL, NULL, &padded_size );
+    m_numBytes = (uint64_t)padded_size;
+    
     D3D12MA::ALLOCATION_DESC allocationDesc = { };
     allocationDesc.HeapType                 = DX12EnumConverter::ConvertHeapType( m_desc.HeapType );
 
-    D3D12_RESOURCE_STATES startState = DX12EnumConverter::ConvertResourceUsage( m_desc.InitialUsage );
-    if ( m_context->DX12Capabilities.EnhancedBarriers )
-    {
-        startState = D3D12_RESOURCE_STATE_COMMON;
-    }
-
-    const HRESULT hr = m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, startState, nullptr, &m_allocation, IID_PPV_ARGS( &m_resource ) );
+    const HRESULT hr =
+        m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, &m_allocation, IID_PPV_ARGS( &m_resource ) );
     DX_CHECK_RESULT( hr );
     std::string debugName = m_desc.DebugName.Get( );
     const auto  name      = std::wstring( debugName.begin( ), debugName.end( ) );
@@ -162,6 +164,7 @@ void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12
     }
     m_cpuHandles[ static_cast<int>( type ) ] = cpuHandle;
 }
+
 void *DX12BufferResource::MapMemory( )
 {
     DZ_ASSERTM( m_mappedMemory == nullptr, std::format( "Memory already mapped {}", m_desc.DebugName.Get( ) ) );

@@ -52,11 +52,18 @@ namespace DenOfIz
 
     struct DZ_API MemoryBarrierDesc
     {
-        IBottomLevelAS       *BottomLevelAS   = nullptr;
-        IBufferResource      *BufferResource  = nullptr;
-        ITextureResource     *TextureResource = nullptr;
-        BitSet<ResourceUsage> OldState;
-        BitSet<ResourceUsage> NewState;
+        IBottomLevelAS          *BottomLevelAS   = nullptr;
+        IBufferResource         *BufferResource  = nullptr;
+        ITextureResource        *TextureResource = nullptr;
+        BitSet<ResourceUsage>    OldState;
+        BitSet<ResourceUsage>    NewState;
+        static MemoryBarrierDesc Uav( )
+        {
+            MemoryBarrierDesc barrier{ };
+            barrier.OldState.Set( ResourceUsage::UnorderedAccess );
+            barrier.NewState.Set( ResourceUsage::UnorderedAccess );
+            return barrier;
+        }
     };
     template class DZ_API InteropArray<MemoryBarrierDesc>;
 
@@ -98,6 +105,13 @@ namespace DenOfIz
         [[nodiscard]] const InteropArray<MemoryBarrierDesc> &GetMemoryBarriers( ) const
         {
             return m_memoryBarriers;
+        }
+
+        static PipelineBarrierDesc Uav( )
+        {
+            PipelineBarrierDesc barrier;
+            barrier.MemoryBarrier( MemoryBarrierDesc::Uav( ) );
+            return barrier;
         }
 
         static PipelineBarrierDesc UndefinedToRenderTarget( ITextureResource *resource )

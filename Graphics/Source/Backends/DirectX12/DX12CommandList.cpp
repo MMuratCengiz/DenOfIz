@@ -91,15 +91,16 @@ void DX12CommandList::Execute( const ExecuteDesc &executeDesc )
 
     m_commandQueue->ExecuteCommandLists( 1, CommandListCast( m_commandList.addressof( ) ) );
 
-    for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements( ); i++ )
-    {
-        const auto dx12Semaphore = dynamic_cast<DX12Semaphore *>( executeDesc.NotifySemaphores.GetElement( i ) );
-        dx12Semaphore->NotifyCommandQueue( m_commandQueue );
-    }
     if ( executeDesc.Notify != nullptr )
     {
         const auto dx12Fence = dynamic_cast<DX12Fence *>( executeDesc.Notify );
         dx12Fence->NotifyCommandQueue( m_commandQueue );
+    }
+
+    for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements( ); i++ )
+    {
+        const auto dx12Semaphore = dynamic_cast<DX12Semaphore *>( executeDesc.NotifySemaphores.GetElement( i ) );
+        dx12Semaphore->NotifyCommandQueue( m_commandQueue );
     }
 }
 
