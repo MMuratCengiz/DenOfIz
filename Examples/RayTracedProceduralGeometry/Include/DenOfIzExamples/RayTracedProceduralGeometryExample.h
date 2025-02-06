@@ -4,6 +4,7 @@
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
 #include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
+#include <DenOfIzGraphics/Utilities/StepTimer.h>
 #include <DenOfIzGraphics/Utilities/Time.h>
 #include <RayTracingHlslCompat.h>
 
@@ -120,6 +121,7 @@ namespace DenOfIz
         std::vector<AABBBoundingBox>               m_aabbs;
         std::vector<InteropArray<AABBBoundingBox>> m_aabbPerGeometry;
         Time                                       m_time;
+        StepTimer                                  m_stepTimer;
         double                                     m_animateGeometryTime = 1.0f;
         bool                                       m_animateGeometry     = true;
 

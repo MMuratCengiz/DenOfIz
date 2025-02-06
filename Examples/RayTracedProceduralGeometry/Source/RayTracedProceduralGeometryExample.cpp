@@ -178,6 +178,7 @@ void RayTracedProceduralGeometryExample::UpdateAABBPrimitiveAttributes( )
 
 void RayTracedProceduralGeometryExample::Update( )
 {
+    m_stepTimer.Tick( );
     m_time.Tick( );
     m_camera->Update( m_time.GetDeltaTime( ) );
 
@@ -189,6 +190,7 @@ void RayTracedProceduralGeometryExample::Update( )
 
     m_sceneConstants->cameraPosition    = m_camera->Position( );
     m_sceneConstants->projectionToWorld = XMMatrixInverse( nullptr, m_camera->ViewProjectionMatrix( ) );
+    m_sceneConstants->elapsedTime       = m_stepTimer.GetElapsedSeconds( );
 
     m_renderGraph->Update( );
 }
@@ -283,7 +285,7 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
 
     {
         ASInstanceDesc aabbInstanceDesc{ };
-        aabbInstanceDesc.Mask                        = 0x01;
+        aabbInstanceDesc.Mask                        = 1;
         aabbInstanceDesc.BLAS                        = m_aabbAS.get( );
         aabbInstanceDesc.ContributionToHitGroupIndex = 2;
         aabbInstanceDesc.ID                          = 1;
@@ -296,7 +298,7 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
         aabbInstanceDesc.Transform.SetElement( 7, 1.0f );
 
         ASInstanceDesc triangleInstanceDesc{ };
-        triangleInstanceDesc.Mask                        = 0x01;
+        triangleInstanceDesc.Mask                        = 1;
         triangleInstanceDesc.BLAS                        = m_triangleAS.get( );
         triangleInstanceDesc.ContributionToHitGroupIndex = 0;
         triangleInstanceDesc.ID                          = 0;

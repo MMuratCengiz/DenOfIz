@@ -56,6 +56,7 @@ set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Renderer/Common/CommandListRing.cpp
         Source/Renderer/Graph/RenderGraph.cpp
 
+        Source/Utilities/StepTimer.cpp
         Source/Utilities/Time.cpp
         Source/Utilities/Utilities.cpp
 

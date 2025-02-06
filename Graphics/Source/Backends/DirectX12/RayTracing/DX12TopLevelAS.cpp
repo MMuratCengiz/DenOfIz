@@ -36,7 +36,7 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
         }
 
         m_instanceDescs[ i ].AccelerationStructure               = dx12Blas->Buffer( )->Resource( )->GetGPUVirtualAddress( );
-        m_instanceDescs[ i ].Flags                               = D3D12_RAYTRACING_INSTANCE_FLAG_NONE; // todo
+        m_instanceDescs[ i ].Flags                               = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE; // todo
         m_instanceDescs[ i ].InstanceContributionToHitGroupIndex = instanceDesc.ContributionToHitGroupIndex;
         m_instanceDescs[ i ].InstanceID                          = instanceDesc.ID;
         m_instanceDescs[ i ].InstanceMask                        = instanceDesc.Mask;
