@@ -56,7 +56,7 @@ void RayTracedProceduralGeometryExample::Init( )
 
 void RayTracedProceduralGeometryExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void RayTracedProceduralGeometryExample::BuildProceduralGeometryAABBs( )
@@ -337,15 +337,23 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
 
     commandList->Begin( );
 
+    PipelineBarrierDesc barrier{ };
+    barrier.MemoryBarrier( { .BottomLevelAS = m_triangleAS.get( ), .OldState = ResourceUsage::Common, .NewState = ResourceUsage::AccelerationStructureWrite } );
+    barrier.MemoryBarrier( { .BottomLevelAS = m_aabbAS.get( ), .OldState = ResourceUsage::Common, .NewState = ResourceUsage::AccelerationStructureWrite } );
+    commandList->PipelineBarrier( barrier );
+
     commandList->BuildBottomLevelAS( { m_triangleAS.get( ) } );
     commandList->BuildBottomLevelAS( { m_aabbAS.get( ) } );
 
-    PipelineBarrierDesc barrier{ };
     barrier.MemoryBarrier( { .BottomLevelAS = m_triangleAS.get( ), .OldState = ResourceUsage::AccelerationStructureWrite, .NewState = ResourceUsage::AccelerationStructureRead } );
     barrier.MemoryBarrier( { .BottomLevelAS = m_aabbAS.get( ), .OldState = ResourceUsage::AccelerationStructureWrite, .NewState = ResourceUsage::AccelerationStructureRead } );
-
+    barrier.MemoryBarrier( { .TopLevelAS = m_topLevelAS.get( ), .OldState = ResourceUsage::Common, .NewState = ResourceUsage::AccelerationStructureWrite } );
     commandList->PipelineBarrier( barrier );
+
     commandList->BuildTopLevelAS( { m_topLevelAS.get( ) } );
+
+    barrier.MemoryBarrier( { .TopLevelAS = m_topLevelAS.get( ), .OldState = ResourceUsage::AccelerationStructureWrite, .NewState = ResourceUsage::AccelerationStructureRead } );
+    commandList->PipelineBarrier( barrier );
 
     ExecuteDesc executeDesc{ };
     executeDesc.Notify = syncFence.get( );

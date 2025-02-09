@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/DirectX12/DX12EnumConverter.h>
 #include <DenOfIzGraphics/Backends/DirectX12/DX12TextureResource.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
+#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLevelAS.h>
 
 using namespace DenOfIz;
 
@@ -233,6 +234,16 @@ void DX12BarrierHelper::ExecuteEnhancedResourceBarrier( ID3D12GraphicsCommandLis
 
             bufferBarriers.push_back( dxBufferBarrier );
         }
+
+        if ( memoryBarrier.TopLevelAS != nullptr )
+        {
+            D3D12_BUFFER_BARRIER dxBufferBarrier = { };
+            dxBufferBarrier.pResource            = dynamic_cast<DX12TopLevelAS *>( memoryBarrier.TopLevelAS )->Buffer( )->Resource( );
+            dxBufferBarrier.Offset               = 0;
+            dxBufferBarrier.Size                 = dxBufferBarrier.pResource->GetDesc( ).Width;
+            dxBufferBarrier.AccessBefore         = DX12EnumConverter::ConvertResourceStateToBarrierAccess( memoryBarrier.OldState, queueType );
+            dxBufferBarrier.AccessAfter          = DX12EnumConverter::ConvertResourceStateToBarrierAccess( memoryBarrier.NewState, queueType );
+        }
     }
 
     if ( !globalBarriers.empty( ) )
@@ -368,6 +379,27 @@ void DX12BarrierHelper::ExecuteLegacyResourceBarrier( ID3D12GraphicsCommandList7
         if ( memoryBarrier.BottomLevelAS != nullptr )
         {
             auto pResource = dynamic_cast<DX12BottomLevelAS *>( memoryBarrier.BottomLevelAS )->Buffer( )->Resource( );
+
+            if ( isUavBarrier )
+            {
+                D3D12_RESOURCE_BARRIER uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV( pResource );
+                resourceBarriers.push_back( uavBarrier );
+            }
+            else
+            {
+                D3D12_RESOURCE_BARRIER transition = { };
+                transition.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                transition.Transition.pResource   = pResource;
+                transition.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+                transition.Transition.StateBefore = DX12EnumConverter::ConvertResourceUsage( memoryBarrier.OldState );
+                transition.Transition.StateAfter  = DX12EnumConverter::ConvertResourceUsage( memoryBarrier.NewState );
+                resourceBarriers.push_back( transition );
+            }
+        }
+
+        if ( memoryBarrier.TopLevelAS != nullptr )
+        {
+            auto pResource = dynamic_cast<DX12TopLevelAS *>( memoryBarrier.TopLevelAS )->Buffer( )->Resource( );
 
             if ( isUavBarrier )
             {
