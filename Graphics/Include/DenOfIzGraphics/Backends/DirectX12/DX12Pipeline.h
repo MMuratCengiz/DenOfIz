@@ -46,6 +46,7 @@ namespace DenOfIz
         [[nodiscard]] void                    *GetShaderIdentifier( const std::string &exportName );
         [[nodiscard]] ID3D12RootSignature     *GetRootSignature( ) const;
         [[nodiscard]] D3D12_PRIMITIVE_TOPOLOGY GetTopology( ) const;
+        [[nodiscard]] BindPoint                GetBindPoint( ) const;
         ~DX12Pipeline( ) override;
 
     private:

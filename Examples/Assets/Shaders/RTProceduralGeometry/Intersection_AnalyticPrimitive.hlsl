@@ -22,7 +22,9 @@ void MyIntersectionShader_AnalyticPrimitive()
     if (RayAnalyticGeometryIntersectionTest(localRay, primitiveType, thit, attr))
     {
         PrimitiveInstancePerFrameBuffer aabbAttribute = g_AABBPrimitiveAttributes[l_aabbCB.instanceIndex];
-        attr.normal = normalize(mul((float3x3)ObjectToWorld3x4(), attr.normal));
-        ReportHit(thit, 0, attr);
+        attr.normal = mul(attr.normal, (float3x3) aabbAttribute.localSpaceToBottomLevelAS);
+        attr.normal = normalize(mul((float3x3) ObjectToWorld3x4(), attr.normal));
+
+        ReportHit(thit, /*hitKind*/ 0, attr);
     }
 }

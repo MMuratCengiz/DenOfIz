@@ -64,18 +64,17 @@ void DX12SwapChain::CreateSwapChain( )
 
     m_renderTargets.resize( m_desc.NumBuffers );
     m_renderTargetCpuHandles.resize( m_desc.NumBuffers );
-
+    m_buffers.resize( m_desc.NumBuffers );
     for ( uint32_t i = 0; i < m_desc.NumBuffers; i++ )
     {
-        wil::com_ptr<ID3D12Resource2> buffer;
-        DX_CHECK_RESULT( m_swapChain->GetBuffer( i, IID_PPV_ARGS( &buffer ) ) );
+        DX_CHECK_RESULT( m_swapChain->GetBuffer( i, IID_PPV_ARGS( &m_buffers.at( i ) ) ) );
 
         D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = { };
         rtvDesc.Format                        = swapChainDesc.Format;
         rtvDesc.ViewDimension                 = D3D12_RTV_DIMENSION_TEXTURE2D;
 
         m_renderTargetCpuHandles[ i ] = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_RTV ]->GetNextHandle( 1 ).Cpu;
-        m_renderTargets[ i ]          = std::make_unique<DX12TextureResource>( buffer.get( ), m_renderTargetCpuHandles[ i ] );
+        m_renderTargets[ i ]          = std::make_unique<DX12TextureResource>( m_buffers.at( i ).get( ), m_renderTargetCpuHandles[ i ] );
         m_context->D3DDevice->CreateRenderTargetView( m_renderTargets[ i ]->Resource( ), &rtvDesc, m_renderTargetCpuHandles[ i ] );
     }
 

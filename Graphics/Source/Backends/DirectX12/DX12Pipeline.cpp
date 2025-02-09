@@ -439,6 +439,11 @@ D3D12_PRIMITIVE_TOPOLOGY DX12Pipeline::GetTopology( ) const
     return m_topology;
 }
 
+BindPoint DX12Pipeline::GetBindPoint( ) const
+{
+    return m_desc.BindPoint;
+}
+
 void *DX12Pipeline::GetShaderIdentifier( const std::string &exportName )
 {
     if ( m_soProperties )

@@ -34,6 +34,7 @@ namespace DenOfIz
 
         std::vector<std::unique_ptr<DX12TextureResource>> m_renderTargets{ };
         std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>          m_renderTargetCpuHandles{ };
+        std::vector<wil::com_ptr<ID3D12Resource2>>        m_buffers;
         wil::com_ptr<ID3D12Resource>                      m_depthStencil = nullptr;
         D3D12_CPU_DESCRIPTOR_HANDLE                       m_depthStencilCpuHandle{ };
 

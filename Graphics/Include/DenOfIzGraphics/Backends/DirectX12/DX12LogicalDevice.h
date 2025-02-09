@@ -38,6 +38,7 @@ namespace DenOfIz
         D3D_FEATURE_LEVEL            m_minFeatureLevel = D3D_FEATURE_LEVEL_12_0;
         std::unique_ptr<DX12Context> m_context;
         wil::com_ptr<ID3D12Fence>    m_waitIdleFence;
+        uint64_t                     m_fenceValue = 0;
 
     public:
         DX12LogicalDevice( );

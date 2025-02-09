@@ -340,7 +340,6 @@ void RenderGraph::BuildTaskflow( )
                 const uint32_t    image                 = m_presentNode.SwapChain->AcquireNextImage( presentContext.ImageReadySemaphore.get( ) );
                 ITextureResource *swapChainRenderTarget = m_presentNode.SwapChain->GetRenderTarget( image );
 
-                IssueBarrier( presentCommandList, NodeResourceUsageDesc::TextureState( frame, swapChainRenderTarget, ResourceUsage::RenderTarget ) );
                 m_presentNode.Execute->Execute( frame, presentCommandList, swapChainRenderTarget );
                 IssueBarrier( presentCommandList, NodeResourceUsageDesc::TextureState( frame, swapChainRenderTarget, ResourceUsage::Present ) );
 

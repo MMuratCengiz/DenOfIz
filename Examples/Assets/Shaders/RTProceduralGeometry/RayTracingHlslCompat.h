@@ -104,8 +104,10 @@ struct PrimitiveConstantBuffer
 // Attributes per primitive instance.
 struct PrimitiveInstanceConstantBuffer
 {
-    ALIGN16_FIELD UINT instanceIndex;
+    UINT instanceIndex;
     UINT primitiveType; // Procedural primitive type
+    UINT _pad0;
+    UINT _pad1;
 };
 
 struct LocalData

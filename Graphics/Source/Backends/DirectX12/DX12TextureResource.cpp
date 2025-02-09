@@ -118,6 +118,7 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
 DX12TextureResource::DX12TextureResource( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle ) : m_resource( resource ), m_rtvHandle( cpuHandle )
 {
     isExternalResource = true;
+    m_currentUsage = ResourceUsage::Common;
 }
 
 DX12TextureResource::~DX12TextureResource( )

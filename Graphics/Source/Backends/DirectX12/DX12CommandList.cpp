@@ -121,26 +121,16 @@ void DX12CommandList::BindPipeline( IPipeline *pipeline )
 {
     DZ_NOT_NULL( pipeline );
 
-    const DX12Pipeline *dx12Pipeline = dynamic_cast<DX12Pipeline *>( pipeline );
-    m_currentRootSignature           = dx12Pipeline->GetRootSignature( );
+    m_currentPipeline      = dynamic_cast<DX12Pipeline *>( pipeline );
+    SetRootSignature( m_currentPipeline->GetRootSignature( ) );
 
-    switch ( m_desc.QueueType )
+    if ( m_currentPipeline->GetBindPoint( ) == BindPoint::RayTracing )
     {
-    case QueueType::Graphics:
-        m_commandList->SetGraphicsRootSignature( dx12Pipeline->GetRootSignature( ) );
-        m_commandList->IASetPrimitiveTopology( dx12Pipeline->GetTopology( ) );
-        m_commandList->SetPipelineState( dx12Pipeline->GetPipeline( ) );
-        break;
-    case QueueType::RayTracing:
-        m_commandList->SetComputeRootSignature( dx12Pipeline->GetRootSignature( ) );
-        m_commandList->SetPipelineState1( dx12Pipeline->GetRayTracingSO( ) );
-        break;
-    case QueueType::Compute:
-        m_commandList->SetComputeRootSignature( dx12Pipeline->GetRootSignature( ) );
-        m_commandList->SetPipelineState( dx12Pipeline->GetPipeline( ) );
-    case QueueType::Copy:
-        LOG( ERROR ) << "Copy queue type is not supported for `BindPipeline`";
-        break;
+        m_commandList->SetPipelineState1( m_currentPipeline->GetRayTracingSO( ) );
+    }
+    else
+    {
+        m_commandList->SetPipelineState( m_currentPipeline->GetPipeline( ) );
     }
 }
 
@@ -220,15 +210,15 @@ void DX12CommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 
 void DX12CommandList::BindResourceGroup( const uint32_t index, const D3D12_GPU_DESCRIPTOR_HANDLE &gpuHandle ) const
 {
-    switch ( this->m_desc.QueueType )
+    switch ( m_currentPipeline->GetBindPoint( ) )
     {
-    case QueueType::Graphics:
+    case BindPoint::Graphics:
         {
             this->m_commandList->SetGraphicsRootDescriptorTable( index, gpuHandle );
         }
         break;
-    case QueueType::RayTracing:
-    case QueueType::Compute:
+    case BindPoint::RayTracing:
+    case BindPoint::Compute:
         {
             this->m_commandList->SetComputeRootDescriptorTable( index, gpuHandle );
         }
@@ -485,13 +475,13 @@ void DX12CommandList::SetRootSignature( ID3D12RootSignature *rootSignature )
     }
 
     m_currentRootSignature = rootSignature;
-    switch ( m_desc.QueueType )
+    switch ( m_currentPipeline->GetBindPoint( ) )
     {
-    case QueueType::Graphics:
+    case BindPoint::Graphics:
         m_commandList->SetGraphicsRootSignature( rootSignature );
         break;
-    case QueueType::Compute:
-    case QueueType::RayTracing:
+    case BindPoint::Compute:
+    case BindPoint::RayTracing:
         m_commandList->SetComputeRootSignature( rootSignature );
         break;
     default:

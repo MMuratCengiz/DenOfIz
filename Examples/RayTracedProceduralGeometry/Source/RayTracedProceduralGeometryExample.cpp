@@ -71,7 +71,7 @@ void RayTracedProceduralGeometryExample::BuildProceduralGeometryAABBs( )
     constexpr XMFLOAT3 stride         = { c_aabbWidth + c_aabbDistance, c_aabbWidth + c_aabbDistance, c_aabbWidth + c_aabbDistance };
     auto               InitializeAABB = [ & ]( const XMFLOAT3 &offsetIndex, const XMFLOAT3 &size )
     {
-        AABBBoundingBox aabb;
+        AABBBoundingBox aabb{ };
         aabb.MinX = basePosition.x + offsetIndex.x * stride.x;
         aabb.MinY = basePosition.y + offsetIndex.y * stride.y;
         aabb.MinZ = basePosition.z + offsetIndex.z * stride.z;
@@ -181,16 +181,17 @@ void RayTracedProceduralGeometryExample::Update( )
     m_stepTimer.Tick( );
     m_time.Tick( );
     m_camera->Update( m_time.GetDeltaTime( ) );
+    const float elapsedTime = static_cast<float>( m_stepTimer.GetElapsedSeconds( ) );
 
     if ( m_animateGeometry )
     {
-        m_animateGeometryTime += m_time.GetDeltaTime( );
+        m_animateGeometryTime += elapsedTime;
         UpdateAABBPrimitiveAttributes( );
     }
 
     m_sceneConstants->cameraPosition    = m_camera->Position( );
     m_sceneConstants->projectionToWorld = XMMatrixInverse( nullptr, m_camera->ViewProjectionMatrix( ) );
-    m_sceneConstants->elapsedTime       = m_stepTimer.GetElapsedSeconds( );
+    m_sceneConstants->elapsedTime       = elapsedTime;
 
     m_renderGraph->Update( );
 }
@@ -214,8 +215,10 @@ void RayTracedProceduralGeometryExample::Execute( const uint32_t frameIndex, ICo
 
 void RayTracedProceduralGeometryExample::Execute( const uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget )
 {
-    m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::CopySrc ),
-                                                 NodeResourceUsageDesc::TextureState( frameIndex, renderTarget, ResourceUsage::CopyDst ) } );
+    std::vector<NodeResourceUsageDesc> resourceUsages( 2 );
+    resourceUsages[ 0 ] = NodeResourceUsageDesc::TextureState( frameIndex, renderTarget, ResourceUsage::CopyDst );
+    resourceUsages[ 1 ] = NodeResourceUsageDesc::TextureState( frameIndex, m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::CopySrc );
+    m_renderGraph->IssueBarriers( commandList, resourceUsages );
 
     CopyTextureRegionDesc copyTextureRegionDesc{ };
     copyTextureRegionDesc.SrcTexture = m_raytracingOutput[ frameIndex ].get( );
@@ -472,8 +475,8 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
     ShaderProgramDesc programDesc{ };
     programDesc.ShaderStages                    = shaderStages;
     programDesc.RayTracing.MaxRecursionDepth    = MAX_RAY_RECURSION_DEPTH;
-    programDesc.RayTracing.MaxNumPayloadBytes   = Utilities::Align( sizeof( RayPayload ), 16 );
-    programDesc.RayTracing.MaxNumAttributeBytes = Utilities::Align( sizeof( ProceduralPrimitiveAttributes ), 16 );
+    programDesc.RayTracing.MaxNumPayloadBytes   = sizeof( RayPayload );
+    programDesc.RayTracing.MaxNumAttributeBytes = sizeof( ProceduralPrimitiveAttributes );
     m_rayTracingProgram                         = std::make_unique<ShaderProgram>( programDesc );
 
     // Create root signature and pipeline
@@ -491,9 +494,10 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
         hitGroupDesc1.ClosestHitShaderIndex = m_closestHitTriangleIndex;
         hitGroupDesc1.LocalRootSignature    = m_hgLocalRootSignature.get( );
 
-        HitGroupDesc &hitGroupDesc2 = hitGroupDescs.EmplaceElement( );
-        hitGroupDesc2.Type          = HitGroupType::Triangles;
-        hitGroupDesc2.Name          = "MyHitGroup_Triangle_ShadowRay";
+        HitGroupDesc &hitGroupDesc2      = hitGroupDescs.EmplaceElement( );
+        hitGroupDesc2.Type               = HitGroupType::Triangles;
+        hitGroupDesc2.Name               = "MyHitGroup_Triangle_ShadowRay";
+        hitGroupDesc2.LocalRootSignature = m_hgLocalRootSignature.get( );
 
         const char *aabbHitGroupTypes[] = { "AnalyticPrimitive", "VolumetricPrimitive", "SignedDistancePrimitive" };
         for ( int i = 0; i < IntersectionShaderType::Count; i++ )
@@ -579,7 +583,6 @@ void RayTracedProceduralGeometryExample::InitializeScene( )
         mat.specularCoef             = specularCoefficient;
         mat.specularPower            = specularPower;
         mat.stepScale                = stepScale;
-        // mat.padding                  = XMFLOAT3( 0.0f, 0.0f, 0.0f );
     };
 
     UINT offset = 0;
@@ -689,7 +692,7 @@ void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
         const auto triangleHitGroupData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderLocalData( { m_hgLocalRootSignature.get( ) } ) );
 
         localData.materialCB = m_planeMaterialCB;
-        localData.aabbCB     = { 0, 0 };
+        localData.aabbCB     = { 0, 0, 0, 0 };
         localDataBuffer.MemCpy( &localData, sizeof( LocalData ) );
 
         triangleHitGroupData->Cbv( 1, localDataBuffer );

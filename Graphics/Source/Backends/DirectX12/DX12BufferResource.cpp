@@ -28,19 +28,15 @@ using namespace DenOfIz;
 DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) : m_context( context ), m_desc( std::move( desc ) ), m_cpuHandles( { } )
 {
     m_stride           = FormatNumBytes( m_desc.Format );
-    uint32_t alignment = std::max( static_cast<uint32_t>( D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT ), m_desc.Alignment );
+    uint32_t alignment = std::max( static_cast<uint32_t>( D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT ), m_desc.Alignment );
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) )
     {
         alignment = std::max( alignment, static_cast<uint32_t>( m_desc.StructureDesc.Stride ) );
     }
-    else if ( m_desc.Descriptor.Any( { ResourceDescriptor::UniformBuffer, ResourceDescriptor::AccelerationStructure } ) ||
-              m_desc.Usages.IsSet( ResourceUsage::AccelerationStructureGeometry ) )
-    {
-        alignment = std::max( alignment, static_cast<uint32_t>( D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT ) );
-    }
     m_numBytes                 = Utilities::Align( m_desc.NumBytes, alignment );
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
 
+    D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWBuffer ) || m_desc.Usages.IsSet( ResourceUsage::UnorderedAccess ) )
     {
         flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
@@ -48,21 +44,21 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::AccelerationStructure ) )
     {
         flags |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
+        initialState = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
     }
 
     CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer( DX12DescriptorHeap::RoundUp( m_numBytes ), flags );
-    resourceDesc.Alignment             = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+    resourceDesc.Alignment             = 0;
     resourceDesc.Layout                = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
     UINT64 padded_size = 0;
     context->D3DDevice->GetCopyableFootprints( &resourceDesc, 0, 1, 0, NULL, NULL, NULL, &padded_size );
-    m_numBytes = (uint64_t)padded_size;
-    
+    m_numBytes = padded_size;
+
     D3D12MA::ALLOCATION_DESC allocationDesc = { };
     allocationDesc.HeapType                 = DX12EnumConverter::ConvertHeapType( m_desc.HeapType );
 
-    const HRESULT hr =
-        m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, &m_allocation, IID_PPV_ARGS( &m_resource ) );
+    const HRESULT hr = m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, initialState, nullptr, &m_allocation, IID_PPV_ARGS( &m_resource ) );
     DX_CHECK_RESULT( hr );
     std::string debugName = m_desc.DebugName.Get( );
     const auto  name      = std::wstring( debugName.begin( ), debugName.end( ) );
@@ -99,7 +95,7 @@ void DX12BufferResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle
 void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type )
 {
     // DZ_RETURN_IF( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) );
-    uint64_t stride = m_desc.StructureDesc.Stride;
+    uint64_t stride = std::max<uint64_t>(m_desc.StructureDesc.Stride, 1);
 
     switch ( type )
     {
@@ -116,6 +112,12 @@ void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12
             {
                 desc.Format                     = DXGI_FORMAT_UNKNOWN;
                 desc.Buffer.NumElements         = m_desc.StructureDesc.NumElements;
+                desc.Buffer.StructureByteStride = stride;
+            }
+            else if ( m_desc.Descriptor.Any( { ResourceDescriptor::Buffer, ResourceDescriptor::RWBuffer } ) )
+            {
+                desc.Format                     = DXGI_FORMAT_UNKNOWN;
+                desc.Buffer.NumElements         = m_numBytes / stride;
                 desc.Buffer.StructureByteStride = stride;
             }
             else if ( m_desc.Format == Format::Undefined )

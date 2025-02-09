@@ -41,6 +41,7 @@ namespace DenOfIz
         wil::com_ptr<ID3D12GraphicsCommandList7> m_commandList;
         wil::com_ptr<ID3D12DebugCommandList>     m_debugCommandList;
         ID3D12RootSignature                     *m_currentRootSignature = nullptr;
+        DX12Pipeline                            *m_currentPipeline      = nullptr;
 
         CD3DX12_RECT                        m_scissor{ };
         D3D12_VIEWPORT                      m_viewport{ };
@@ -48,8 +49,8 @@ namespace DenOfIz
         std::vector<ID3D12DescriptorHeap *> m_heaps = { m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetHeap( ), m_context->ShaderVisibleSamplerDescriptorHeap->GetHeap( ) };
 
     public:
-         DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> commandAllocator, const wil::com_ptr<ID3D12GraphicsCommandList> &m_commandList,
-                          CommandListDesc desc );
+        DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12CommandAllocator> commandAllocator, const wil::com_ptr<ID3D12GraphicsCommandList> &m_commandList,
+                         CommandListDesc desc );
         ~DX12CommandList( ) override = default;
 
         void Begin( ) override;
@@ -79,6 +80,7 @@ namespace DenOfIz
         void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
 
         const QueueType GetQueueType( ) override;
+
     private:
         void CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
         void EnhancedPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
