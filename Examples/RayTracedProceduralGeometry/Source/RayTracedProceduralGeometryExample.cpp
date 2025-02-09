@@ -56,7 +56,7 @@ void RayTracedProceduralGeometryExample::Init( )
 
 void RayTracedProceduralGeometryExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void RayTracedProceduralGeometryExample::BuildProceduralGeometryAABBs( )
@@ -336,22 +336,19 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
     const auto    syncFence       = std::unique_ptr<IFence>( m_logicalDevice->CreateFence( ) );
 
     commandList->Begin( );
-
-    PipelineBarrierDesc barrier{ };
-    barrier.MemoryBarrier( { .BottomLevelAS = m_triangleAS.get( ), .OldState = ResourceUsage::Common, .NewState = ResourceUsage::AccelerationStructureWrite } );
-    barrier.MemoryBarrier( { .BottomLevelAS = m_aabbAS.get( ), .OldState = ResourceUsage::Common, .NewState = ResourceUsage::AccelerationStructureWrite } );
-    commandList->PipelineBarrier( barrier );
-
     commandList->BuildBottomLevelAS( { m_triangleAS.get( ) } );
     commandList->BuildBottomLevelAS( { m_aabbAS.get( ) } );
 
-    barrier.MemoryBarrier( { .BottomLevelAS = m_triangleAS.get( ), .OldState = ResourceUsage::AccelerationStructureWrite, .NewState = ResourceUsage::AccelerationStructureRead } );
+    PipelineBarrierDesc barrier{ };
+    // Issue UAV barriers for BLAS, their initial state is always: AccelerationStructureWrite
     barrier.MemoryBarrier( { .BottomLevelAS = m_aabbAS.get( ), .OldState = ResourceUsage::AccelerationStructureWrite, .NewState = ResourceUsage::AccelerationStructureRead } );
-    barrier.MemoryBarrier( { .TopLevelAS = m_topLevelAS.get( ), .OldState = ResourceUsage::Common, .NewState = ResourceUsage::AccelerationStructureWrite } );
+    barrier.MemoryBarrier( { .BottomLevelAS = m_triangleAS.get( ), .OldState = ResourceUsage::AccelerationStructureWrite, .NewState = ResourceUsage::AccelerationStructureRead } );
     commandList->PipelineBarrier( barrier );
 
     commandList->BuildTopLevelAS( { m_topLevelAS.get( ) } );
 
+    barrier = { };
+    // Issue UAV barriers for TLAS, their initial state is always: AccelerationStructureWrite
     barrier.MemoryBarrier( { .TopLevelAS = m_topLevelAS.get( ), .OldState = ResourceUsage::AccelerationStructureWrite, .NewState = ResourceUsage::AccelerationStructureRead } );
     commandList->PipelineBarrier( barrier );
 
