@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12BarrierHelper.h>
 #include <DenOfIzGraphics/Backends/DirectX12/DX12CommandList.h>
+#include <DenOfIzGraphics/Backends/DirectX12/DX12Fence.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLevelAS.h>
@@ -53,6 +54,7 @@ void DX12CommandList::Begin( )
 {
     DX_CHECK_RESULT( m_commandAllocator->Reset( ) );
     DX_CHECK_RESULT( m_commandList->Reset( m_commandAllocator.get( ), nullptr ) );
+    m_queuedBindGroups.clear( );
 
     m_currentRootSignature = nullptr;
     if ( m_desc.QueueType != QueueType::Copy )
@@ -110,18 +112,27 @@ void DX12CommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, const
 
     const DX12SwapChain *dx12SwapChain = dynamic_cast<DX12SwapChain *>( swapChain );
     uint32_t             flags         = 0;
+    uint32_t             syncInterval  = 1;
     if ( m_context->SelectedDeviceInfo.Capabilities.Tearing )
     {
+        syncInterval = 0;
         flags |= DXGI_PRESENT_ALLOW_TEARING;
     }
-    DX_CHECK_RESULT( dx12SwapChain->GetSwapChain( )->Present( 0, flags ) );
+    //
+    // for ( int i = 0; i < waitOnLocks.NumElements( ); i++ )
+    // {
+    //     const auto *dx12Semaphore = dynamic_cast<DX12Semaphore *>( waitOnLocks.GetElement( i ) );
+    //     dx12Semaphore->Wait( ); // We need CPU synchronization here
+    // }
+
+    DX_CHECK_RESULT( dx12SwapChain->GetSwapChain( )->Present( syncInterval, flags ) );
 }
 
 void DX12CommandList::BindPipeline( IPipeline *pipeline )
 {
     DZ_NOT_NULL( pipeline );
 
-    m_currentPipeline      = dynamic_cast<DX12Pipeline *>( pipeline );
+    m_currentPipeline = dynamic_cast<DX12Pipeline *>( pipeline );
     SetRootSignature( m_currentPipeline->GetRootSignature( ) );
 
     if ( m_currentPipeline->GetBindPoint( ) == BindPoint::RayTracing )
@@ -184,27 +195,35 @@ void DX12CommandList::BindScissorRect( const float x, const float y, const float
 void DX12CommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 {
     const DX12ResourceBindGroup *dx12BindGroup = dynamic_cast<DX12ResourceBindGroup *>( bindGroup );
-    SetRootSignature( dx12BindGroup->RootSignature( )->Instance( ) );
+    m_queuedBindGroups.push_back( dx12BindGroup );
+}
 
-    uint32_t index = 0;
-    if ( dx12BindGroup->CbvSrvUavCount( ) > 0 )
+void DX12CommandList::ProcessBindGroups( )
+{
+    for ( const auto &dx12BindGroup : m_queuedBindGroups )
     {
-        BindResourceGroup( dx12BindGroup->RootSignature( )->RegisterSpaceOffset( dx12BindGroup->RegisterSpace( ) ) + index++, dx12BindGroup->CbvSrvUavHandle( ).Gpu );
-    }
+        SetRootSignature( dx12BindGroup->RootSignature( )->Instance( ) );
 
-    if ( dx12BindGroup->SamplerCount( ) > 0 )
-    {
-        BindResourceGroup( dx12BindGroup->RootSignature( )->RegisterSpaceOffset( dx12BindGroup->RegisterSpace( ) ) + index, dx12BindGroup->SamplerHandle( ).Gpu );
-    }
+        uint32_t index = 0;
+        if ( dx12BindGroup->CbvSrvUavCount( ) > 0 )
+        {
+            BindResourceGroup( dx12BindGroup->RootSignature( )->RegisterSpaceOffset( dx12BindGroup->RegisterSpace( ) ) + index++, dx12BindGroup->CbvSrvUavHandle( ).Gpu );
+        }
 
-    for ( const auto &rootConstant : dx12BindGroup->RootConstants( ) )
-    {
-        SetRootConstants( rootConstant );
-    }
+        if ( dx12BindGroup->SamplerCount( ) > 0 )
+        {
+            BindResourceGroup( dx12BindGroup->RootSignature( )->RegisterSpaceOffset( dx12BindGroup->RegisterSpace( ) ) + index, dx12BindGroup->SamplerHandle( ).Gpu );
+        }
 
-    for ( const auto &rootDescriptor : dx12BindGroup->RootDescriptors( ) )
-    {
-        BindRootDescriptors( rootDescriptor );
+        for ( const auto &rootConstant : dx12BindGroup->RootConstants( ) )
+        {
+            SetRootConstants( rootConstant );
+        }
+
+        for ( const auto &rootDescriptor : dx12BindGroup->RootDescriptors( ) )
+        {
+            BindRootDescriptors( rootDescriptor );
+        }
     }
 }
 
@@ -293,16 +312,19 @@ void DX12CommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )
 
 void DX12CommandList::DrawIndexed( const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance )
 {
+    ProcessBindGroups( );
     m_commandList->DrawIndexedInstanced( indexCount, instanceCount, firstIndex, vertexOffset, firstInstance );
 }
 
 void DX12CommandList::Draw( const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance )
 {
+    ProcessBindGroups( );
     m_commandList->DrawInstanced( vertexCount, instanceCount, firstVertex, firstInstance );
 }
 
 void DX12CommandList::Dispatch( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
 {
+    ProcessBindGroups( );
     m_commandList->Dispatch( groupCountX, groupCountY, groupCountZ );
 }
 
@@ -452,6 +474,7 @@ void DX12CommandList::UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc )
 
 void DX12CommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
+    ProcessBindGroups( );
     const DX12ShaderBindingTable *sbt  = dynamic_cast<DX12ShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
     D3D12_DISPATCH_RAYS_DESC      desc = { };
     desc.RayGenerationShaderRecord     = sbt->RayGenerationShaderRecord( );

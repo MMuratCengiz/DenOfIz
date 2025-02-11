@@ -19,16 +19,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
-#include <DenOfIzGraphics/Utilities/Cast.h>
 #include "DX12BufferResource.h"
 #include "DX12Context.h"
-#include "DX12EnumConverter.h"
-#include "DX12Fence.h"
 #include "DX12Pipeline.h"
 #include "DX12ResourceBindGroup.h"
 #include "DX12Semaphore.h"
 #include "DX12SwapChain.h"
-#include "DX12TextureResource.h"
 
 namespace DenOfIz
 {
@@ -37,11 +33,12 @@ namespace DenOfIz
         CommandListDesc m_desc;
         DX12Context    *m_context;
 
-        wil::com_ptr<ID3D12CommandAllocator>     m_commandAllocator;
-        wil::com_ptr<ID3D12GraphicsCommandList7> m_commandList;
-        wil::com_ptr<ID3D12DebugCommandList>     m_debugCommandList;
-        ID3D12RootSignature                     *m_currentRootSignature = nullptr;
-        DX12Pipeline                            *m_currentPipeline      = nullptr;
+        wil::com_ptr<ID3D12CommandAllocator>       m_commandAllocator;
+        wil::com_ptr<ID3D12GraphicsCommandList7>   m_commandList;
+        wil::com_ptr<ID3D12DebugCommandList>       m_debugCommandList;
+        ID3D12RootSignature                       *m_currentRootSignature = nullptr;
+        DX12Pipeline                              *m_currentPipeline      = nullptr;
+        std::vector<const DX12ResourceBindGroup *> m_queuedBindGroups;
 
         CD3DX12_RECT                        m_scissor{ };
         D3D12_VIEWPORT                      m_viewport{ };
@@ -85,8 +82,10 @@ namespace DenOfIz
         void CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
         void EnhancedPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
         void SetRootSignature( ID3D12RootSignature *rootSignature );
+        void ProcessBindGroups( );
         void BindRootDescriptors( const DX12RootDescriptor &rootDescriptor ) const;
         void SetRootConstants( const DX12RootConstant &rootConstant ) const;
         void BindResourceGroup( uint32_t index, const D3D12_GPU_DESCRIPTOR_HANDLE &gpuDescriptorHandle ) const;
     };
+
 } // namespace DenOfIz

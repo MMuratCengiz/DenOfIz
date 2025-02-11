@@ -353,7 +353,7 @@ void RenderGraph::BuildTaskflow( )
                 presentExecuteDesc.NotifySemaphores.AddElement( presentContext.ImageRenderedSemaphore.get( ) );
                 presentCommandList->Execute( presentExecuteDesc );
 
-                InteropArray<ISemaphore *> presentSemaphores;
+                InteropArray<ISemaphore *>  presentSemaphores;
                 presentSemaphores.AddElement( presentContext.ImageRenderedSemaphore.get( ) );
                 presentCommandList->Present( m_presentNode.SwapChain, image, presentSemaphores );
             } );

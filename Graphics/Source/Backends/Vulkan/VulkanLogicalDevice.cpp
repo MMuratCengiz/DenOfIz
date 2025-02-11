@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderLocalData.h>
 #include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanFence.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h>
@@ -32,6 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "volk.h"
 
 #define VMA_IMPLEMENTATION
+
 #include "vma/vk_mem_alloc.h"
 
 using namespace DenOfIz;

@@ -54,17 +54,6 @@ void DX12LogicalDevice::CreateDevice( )
         if ( wil::com_ptr<IDXGIInfoQueue> dxgiInfoQueue; SUCCEEDED( DXGIGetDebugInterface1( 0, IID_PPV_ARGS( dxgiInfoQueue.put( ) ) ) ) )
         {
             dxgiFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
-
-            DX_CHECK_RESULT( dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true ) );
-            DX_CHECK_RESULT( dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true ) );
-
-            DXGI_INFO_QUEUE_MESSAGE_ID hide[] = {
-                80 /* IDXGISwapChain::GetContainingOutput: The swapchain's adapter does not control the output on which the swapchain's window resides. */,
-            };
-            DXGI_INFO_QUEUE_FILTER filter = { };
-            filter.DenyList.NumIDs        = _countof( hide );
-            filter.DenyList.pIDList       = hide;
-            DX_CHECK_RESULT( dxgiInfoQueue->AddStorageFilterEntries( DXGI_DEBUG_DXGI, &filter ) );
         }
     }
 #endif
@@ -158,6 +147,10 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     {
         DX_CHECK_RESULT( d3dInfoQueue->SetBreakOnSeverity( D3D12_MESSAGE_SEVERITY_CORRUPTION, true ) );
         DX_CHECK_RESULT( d3dInfoQueue->SetBreakOnSeverity( D3D12_MESSAGE_SEVERITY_ERROR, true ) );
+        DX_CHECK_RESULT( d3dInfoQueue->SetBreakOnSeverity( D3D12_MESSAGE_SEVERITY_WARNING, false ) );
+        DX_CHECK_RESULT( d3dInfoQueue->SetBreakOnSeverity( D3D12_MESSAGE_SEVERITY_INFO, false ) );
+        DX_CHECK_RESULT( d3dInfoQueue->SetBreakOnSeverity( D3D12_MESSAGE_SEVERITY_MESSAGE, false ) );
+
         D3D12_MESSAGE_ID hide[] = {
             D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
             D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE,
@@ -213,14 +206,20 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     queueDesc.Type                     = D3D12_COMMAND_LIST_TYPE_DIRECT;
     DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandQueue( &queueDesc, IID_PPV_ARGS( m_context->GraphicsCommandQueue.put( ) ) ) );
     DX_CHECK_RESULT( m_context->GraphicsCommandQueue->SetName( L"Graphics Command Queue" ) );
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( 0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( m_context->GraphicsCommandQueueFence.put( ) ) ) );
+    DX_CHECK_RESULT( m_context->GraphicsCommandQueueFence->SetName( L"Graphics Command Queue Fence" ) );
 
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
     DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandQueue( &queueDesc, IID_PPV_ARGS( m_context->ComputeCommandQueue.put( ) ) ) );
     DX_CHECK_RESULT( m_context->ComputeCommandQueue->SetName( L"Compute Command Queue" ) );
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( 0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( m_context->ComputeCommandQueueFence.put( ) ) ) );
+    DX_CHECK_RESULT( m_context->ComputeCommandQueueFence->SetName( L"Compute Command Queue Fence" ) );
 
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
     DX_CHECK_RESULT( m_context->D3DDevice->CreateCommandQueue( &queueDesc, IID_PPV_ARGS( m_context->CopyCommandQueue.put( ) ) ) );
     DX_CHECK_RESULT( m_context->CopyCommandQueue->SetName( L"Copy Command Queue" ) );
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( 0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( m_context->CopyCommandQueueFence.put( ) ) ) );
+    DX_CHECK_RESULT( m_context->CopyCommandQueueFence->SetName( L"Copy Command Queue Fence" ) );
 
     for ( int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; i++ )
     {
@@ -242,7 +241,6 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     allocatorDesc.Flags                   = D3D12MA::ALLOCATOR_FLAG_MSAA_TEXTURES_ALWAYS_COMMITTED | D3D12MA::ALLOCATOR_FLAG_DEFAULT_POOLS_NOT_ZEROED;
 
     DX_CHECK_RESULT( D3D12MA::CreateAllocator( &allocatorDesc, m_context->DX12MemoryAllocator.put( ) ) );
-    DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( 0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( m_waitIdleFence.put( ) ) ) );
 
     m_selectedDeviceInfo.Constants.ConstantBufferAlignment   = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
     m_selectedDeviceInfo.Constants.BufferTextureAlignment    = D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT;
@@ -251,22 +249,21 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
 
 void DX12LogicalDevice::WaitIdle( )
 {
-    uint16_t fenceValue = 0;
-    for ( auto &queue : { m_context->GraphicsCommandQueue, m_context->ComputeCommandQueue, m_context->CopyCommandQueue } )
-    {
-        if ( queue )
-        {
-            DX_CHECK_RESULT( queue->Signal( m_waitIdleFence.get( ), ++fenceValue ) );
-        }
-    }
+    DX_CHECK_RESULT( m_context->GraphicsCommandQueue->Signal( m_context->GraphicsCommandQueueFence.get( ), 1 ) );
+    DX_CHECK_RESULT( m_context->ComputeCommandQueue->Signal( m_context->ComputeCommandQueueFence.get( ), 1 ) );
+    DX_CHECK_RESULT( m_context->CopyCommandQueue->Signal( m_context->CopyCommandQueueFence.get( ), 1 ) );
 
-    if ( m_waitIdleFence )
+    auto waitForFence = []( ID3D12Fence *fence )
     {
         Wrappers::Event eventHandle;
         eventHandle.Attach( CreateEventEx( nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE ) );
-        DX_CHECK_RESULT( m_waitIdleFence->SetEventOnCompletion( fenceValue, eventHandle.Get( ) ) );
+        DX_CHECK_RESULT( fence->SetEventOnCompletion( 1, eventHandle.Get( ) ) );
         WaitForSingleObjectEx( eventHandle.Get( ), INFINITE, FALSE );
-    }
+    };
+
+    waitForFence( m_context->GraphicsCommandQueueFence.get( ) );
+    waitForFence( m_context->ComputeCommandQueueFence.get( ) );
+    waitForFence( m_context->CopyCommandQueueFence.get( ) );
 }
 
 ICommandListPool *DX12LogicalDevice::CreateCommandListPool( const CommandListPoolDesc &poolDesc )

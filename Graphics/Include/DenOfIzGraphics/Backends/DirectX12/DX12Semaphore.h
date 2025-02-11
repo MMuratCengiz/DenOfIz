@@ -37,5 +37,7 @@ namespace DenOfIz
         ~DX12Semaphore( ) override;
         void Notify( ) override;
         void NotifyCommandQueue( ID3D12CommandQueue *commandQueue );
+    private:
+        void NextFenceValue( );
     };
 } // namespace DenOfIz

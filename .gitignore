@@ -1,14 +1,18 @@
+# Ide
 .idea/
 !.idea/codeStyles
-cmake-build-debug/
-cmake-build-release/
-out/
 .vs/
 .vscode/
+
+# Build
+CMakeFiles/
+cmake-build-debug/
+cmake-build-release/
+CMakeCache.txt
+build/DenOfIz
+
+vcpkg_installed
+
+out/
 .cache
 .DS_Store
-build/DenOfIz
-CMakeFiles/
-CMakeCache.txt
-/Shaders/SPIRV/
-/_External/The-Forge/Art/*

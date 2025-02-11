@@ -20,6 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.h>
 #include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanFence.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanPipelineBarrierHelper.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h>
 
@@ -54,6 +56,7 @@ VulkanCommandList::VulkanCommandList( VulkanContext *context, const CommandListD
 void VulkanCommandList::Begin( )
 {
     VK_CHECK_RESULT( vkResetCommandBuffer( m_commandBuffer, 0 ) );
+    m_queuedBindGroups.clear( );
 
     VkCommandBufferBeginInfo beginInfo{ };
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -202,8 +205,8 @@ void VulkanCommandList::Execute( const ExecuteDesc &executeDesc )
 
 void VulkanCommandList::BindPipeline( IPipeline *pipeline )
 {
-    const auto vkPipeline = dynamic_cast<VulkanPipeline *>( pipeline );
-    vkCmdBindPipeline( m_commandBuffer, vkPipeline->BindPoint( ), vkPipeline->Instance( ) );
+    m_currentPipeline = dynamic_cast<VulkanPipeline *>( pipeline );
+    vkCmdBindPipeline( m_commandBuffer, m_currentPipeline->BindPoint( ), m_currentPipeline->Instance( ) );
 }
 
 void VulkanCommandList::BindVertexBuffer( IBufferResource *buffer )
@@ -257,44 +260,12 @@ void VulkanCommandList::BindScissorRect( const float offsetX, const float offset
 void VulkanCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 {
     const auto *vkBindGroup = dynamic_cast<VulkanResourceBindGroup *>( bindGroup );
-
-    // Remember more bind points will be added in the future.
-    VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
-    switch ( m_desc.QueueType )
-    {
-    case QueueType::Graphics:
-        bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        break;
-    case QueueType::Compute:
-        bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
-        break;
-    case QueueType::RayTracing:
-        bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
-        break;
-    default:
-        break;
-    }
-
-    if ( vkBindGroup->HasDescriptorSet( ) )
-    {
-        vkCmdBindDescriptorSets( m_commandBuffer, bindPoint, vkBindGroup->RootSignature( )->PipelineLayout( ), vkBindGroup->RegisterSpace( ), 1, &vkBindGroup->GetDescriptorSet( ),
-                                 0, nullptr );
-    }
-
-    for ( const auto &rootConstant : vkBindGroup->RootConstants( ) )
-    {
-        vkCmdPushConstants( m_commandBuffer, rootConstant.PipelineLayout, rootConstant.ShaderStage, rootConstant.Offset, rootConstant.Size, rootConstant.Data );
-    }
+    m_queuedBindGroups.push_back( vkBindGroup );
 }
 
 void VulkanCommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )
 {
     VulkanPipelineBarrierHelper::ExecutePipelineBarrier( m_context, m_commandBuffer, m_desc.QueueType, barrier );
-}
-
-void VulkanCommandList::DrawIndexed( const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance )
-{
-    vkCmdDrawIndexed( m_commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance );
 }
 
 void VulkanCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionDesc )
@@ -369,11 +340,6 @@ void VulkanCommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copy
     vkCmdCopyImageToBuffer( m_commandBuffer, srcTex->Image( ), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstBuffer->Instance( ), 1, &copyRegion );
 }
 
-void VulkanCommandList::Draw( const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance )
-{
-    vkCmdDraw( m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance );
-}
-
 void VulkanCommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )
 {
     const VulkanTopLevelAS *topLevelAS = dynamic_cast<VulkanTopLevelAS *>( buildTopLevelASDesc.TopLevelAS );
@@ -417,7 +383,7 @@ void VulkanCommandList::UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc
     auto *vkTopLevelAS = dynamic_cast<VulkanTopLevelAS *>( updateDesc.TopLevelAS );
     DZ_NOT_NULL( vkTopLevelAS );
 
-    UpdateTransformsDesc updateTransformDesc{};
+    UpdateTransformsDesc updateTransformDesc{ };
     updateTransformDesc.Transforms = updateDesc.Transforms;
 
     vkTopLevelAS->UpdateInstanceTransforms( updateTransformDesc );
@@ -444,8 +410,21 @@ void VulkanCommandList::UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc
                           nullptr );
 }
 
+void VulkanCommandList::DrawIndexed( const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance )
+{
+    ProcessBindGroups( );
+    vkCmdDrawIndexed( m_commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance );
+}
+
+void VulkanCommandList::Draw( const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance )
+{
+    ProcessBindGroups( );
+    vkCmdDraw( m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance );
+}
+
 void VulkanCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
+    ProcessBindGroups( );
     const VulkanShaderBindingTable *bindingTable = dynamic_cast<VulkanShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
     DZ_NOT_NULL( bindingTable );
 
@@ -456,6 +435,7 @@ void VulkanCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 void VulkanCommandList::Dispatch( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
 {
     DZ_ASSERTM( m_desc.QueueType == QueueType::Compute, "Dispatch can only be called on compute queues." );
+    ProcessBindGroups( );
     vkCmdDispatch( m_commandBuffer, groupCountX, groupCountY, groupCountZ );
 }
 
@@ -492,4 +472,21 @@ void VulkanCommandList::Present( ISwapChain *swapChain, const uint32_t imageInde
 const QueueType VulkanCommandList::GetQueueType( )
 {
     return m_desc.QueueType;
+}
+
+void VulkanCommandList::ProcessBindGroups( ) const
+{
+    for ( auto &vkBindGroup : m_queuedBindGroups )
+    {
+        if ( vkBindGroup->HasDescriptorSet( ) )
+        {
+            vkCmdBindDescriptorSets( m_commandBuffer, m_currentPipeline->BindPoint( ), vkBindGroup->RootSignature( )->PipelineLayout( ), vkBindGroup->RegisterSpace( ), 1,
+                                     &vkBindGroup->GetDescriptorSet( ), 0, nullptr );
+        }
+
+        for ( const auto &rootConstant : vkBindGroup->RootConstants( ) )
+        {
+            vkCmdPushConstants( m_commandBuffer, rootConstant.PipelineLayout, rootConstant.ShaderStage, rootConstant.Offset, rootConstant.Size, rootConstant.Data );
+        }
+    }
 }

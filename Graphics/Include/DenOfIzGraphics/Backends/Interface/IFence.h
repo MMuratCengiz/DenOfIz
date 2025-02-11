@@ -27,10 +27,9 @@ namespace DenOfIz
     class DZ_API IFence
     {
     public:
-        virtual void Wait()  = 0;
-        virtual void Reset() = 0;
-
-        virtual ~IFence(){};
+        virtual void Wait( )  = 0;
+        virtual void Reset( ) = 0;
+        virtual ~IFence( )    = default;
     };
 
 } // namespace DenOfIz

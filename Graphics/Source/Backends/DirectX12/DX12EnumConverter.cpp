@@ -595,7 +595,7 @@ D3D12_BARRIER_LAYOUT DX12EnumConverter::ConvertResourceStateToBarrierLayout( con
         }
     };
 
-    if ( state.IsSet( ResourceUsage::Common ) || state.IsSet( ResourceUsage::Present ) )
+    if ( state.IsSet( ResourceUsage::Common ) )
     {
         return queueSpecificResult( D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_COMMON, D3D12_BARRIER_LAYOUT_COMMON );
     }
@@ -624,7 +624,6 @@ D3D12_BARRIER_LAYOUT DX12EnumConverter::ConvertResourceStateToBarrierLayout( con
     {
         return queueSpecificResult( D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_COMPUTE_QUEUE_SHADER_RESOURCE, D3D12_BARRIER_LAYOUT_SHADER_RESOURCE );
     }
-
     if ( state.IsSet( ResourceUsage::RenderTarget ) )
     {
         return D3D12_BARRIER_LAYOUT_RENDER_TARGET;

@@ -70,9 +70,9 @@ namespace DenOfIz
         [[nodiscard]] uint32_t                                      RegisterSpace( ) const;
 
     private:
-        void BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource );
-        VkWriteDescriptorSet& BindBuffer( const ResourceBindingSlot &name, IBufferResource *resource );
-        void BindSampler( const ResourceBindingSlot &name, ISampler *sampler );
+        void                  BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource );
+        VkWriteDescriptorSet &BindBuffer( const ResourceBindingSlot &name, IBufferResource *resource );
+        void                  BindSampler( const ResourceBindingSlot &name, ISampler *sampler );
         VkWriteDescriptorSet &CreateWriteDescriptor( const ResourceBindingSlot &slot );
         ResourceBindingSlot   GetSlot( uint32_t binding, const ResourceBindingType &type ) const;
     };

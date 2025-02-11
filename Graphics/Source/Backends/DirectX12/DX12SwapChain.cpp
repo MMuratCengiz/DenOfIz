@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Backends/DirectX12/DX12Semaphore.h>
 #include <DenOfIzGraphics/Backends/DirectX12/DX12SwapChain.h>
 
 using namespace DenOfIz;
@@ -150,12 +151,7 @@ void DX12SwapChain::SetColorSpace( )
 
 uint32_t DX12SwapChain::AcquireNextImage( ISemaphore *imageAvailableSemaphore )
 {
-    const uint32_t index = m_swapChain->GetCurrentBackBufferIndex( );
-    if ( imageAvailableSemaphore )
-    {
-        imageAvailableSemaphore->Notify( );
-    }
-    return index;
+    return m_swapChain->GetCurrentBackBufferIndex( );;
 }
 
 void DX12SwapChain::Resize( const uint32_t width, const uint32_t height )
@@ -169,7 +165,7 @@ void DX12SwapChain::Resize( const uint32_t width, const uint32_t height )
     if ( hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET )
     {
         DLOG( INFO ) << std::format( "Device Lost on ResizeBuffers: Reason code 0x{}",
-                                     ( ( hr == DXGI_ERROR_DEVICE_REMOVED ) ? m_context->D3DDevice->GetDeviceRemovedReason( ) : hr ) );
+                                     hr == DXGI_ERROR_DEVICE_REMOVED ? m_context->D3DDevice->GetDeviceRemovedReason( ) : hr );
 
         m_context->IsDeviceLost = true;
         return;

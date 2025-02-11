@@ -73,6 +73,7 @@ set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
 set(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
         Source/Backends/Vulkan/VulkanLogicalDevice.cpp
         Source/Backends/Vulkan/VulkanCommandList.cpp
+        Source/Backends/Vulkan/VulkanCommandQueue.cpp
         Source/Backends/Vulkan/VulkanCommandPool.cpp
         Source/Backends/Vulkan/VulkanEnumConverter.cpp
         Source/Backends/Vulkan/VulkanResourceBindGroup.cpp
@@ -106,6 +107,7 @@ set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
         Source/Backends/DirectX12/DX12InputLayout.cpp
         Source/Backends/DirectX12/DX12ResourceBindGroup.cpp
         Source/Backends/DirectX12/DX12CommandList.cpp
+        Source/Backends/DirectX12/DX12CommandQueue.cpp
         Source/Backends/DirectX12/DX12DescriptorHeap.cpp
         Source/Backends/DirectX12/DX12CommandListPool.cpp
         Source/Backends/DirectX12/DX12BarrierHelper.cpp
@@ -127,6 +129,7 @@ set(DEN_OF_IZ_GRAPHICS_METAL_SOURCES
         Source/Backends/Metal/MetalArgumentBuffer.mm
         Source/Backends/Metal/MetalBufferResource.mm
         Source/Backends/Metal/MetalCommandList.mm
+        Source/Backends/Metal/MetalCommandQueue.mm
         Source/Backends/Metal/MetalCommandListPool.mm
         Source/Backends/Metal/MetalEnumConverter.mm
         Source/Backends/Metal/MetalFence.mm
@@ -162,6 +165,12 @@ else ()
             ${DEN_OF_IZ_GRAPHICS_COMMON_SOURCES}
             ${DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES}
             Source/Renderer/Common/CommandListRing.cpp
+            Include/DenOfIzGraphics/Backends/Interface/ICommandQueue.h
+            Source/Backends/DirectX12/DX12CommandQueue.cpp
+            Include/DenOfIzGraphics/Backends/DirectX12/DX12CommandQueue.h
+            Include/DenOfIzGraphics/Backends/Vulkan/VulkanCommandQueue.h
+            Source/Backends/Vulkan/VulkanCommandQueue.cpp
+            Include/DenOfIzGraphics/Backends/Metal/MetalCommandQueue.h
     )
 endif ()
 

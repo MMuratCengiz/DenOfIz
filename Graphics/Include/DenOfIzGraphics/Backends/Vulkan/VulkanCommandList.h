@@ -19,13 +19,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "../Interface/ICommandList.h"
-#include "VulkanBufferResource.h"
 #include "VulkanContext.h"
-#include "VulkanFence.h"
 #include "VulkanPipeline.h"
-#include "VulkanPipelineBarrierHelper.h"
+#include "VulkanResourceBindGroup.h"
 #include "VulkanSemaphore.h"
-#include "VulkanTextureResource.h"
 
 namespace DenOfIz
 {
@@ -35,9 +32,11 @@ namespace DenOfIz
         CommandListDesc m_desc;
         VulkanContext  *m_context = nullptr;
 
-        VkCommandBuffer m_commandBuffer{ };
-        VkViewport      m_viewport{ };
-        VkRect2D        m_scissorRect{ };
+        VulkanPipeline                              *m_currentPipeline = nullptr;
+        VkCommandBuffer                              m_commandBuffer{ };
+        VkViewport                                   m_viewport{ };
+        VkRect2D                                     m_scissorRect{ };
+        std::vector<const VulkanResourceBindGroup *> m_queuedBindGroups;
 
     public:
         VulkanCommandList( VulkanContext *context, CommandListDesc desc );
@@ -53,8 +52,6 @@ namespace DenOfIz
         void BindScissorRect( float offsetX, float offsetY, float width, float height ) override;
         void BindResourceGroup( IResourceBindGroup *bindGroup ) override;
         void PipelineBarrier( const PipelineBarrierDesc &barrier ) override;
-        void DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance ) override;
-        void Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance ) override;
         void CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionDesc ) override;
         void CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionDesc ) override;
         void CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTextureDesc ) override;
@@ -62,11 +59,16 @@ namespace DenOfIz
         void BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc ) override;
         void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc ) override;
         void UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc ) override;
+        void DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance ) override;
+        void Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance ) override;
         void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
         void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
         void Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> &waitOnLocks ) override;
 
         const QueueType GetQueueType( ) override;
+
+    private:
+        void ProcessBindGroups( ) const;
     };
 
 } // namespace DenOfIz

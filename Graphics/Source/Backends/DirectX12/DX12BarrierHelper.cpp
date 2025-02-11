@@ -168,6 +168,7 @@ void DX12BarrierHelper::ExecuteEnhancedResourceBarrier( ID3D12GraphicsCommandLis
             dxTextureBarrier.AccessAfter  = DX12EnumConverter::ConvertResourceStateToBarrierAccess( textureBarrier.NewState, textureBarrier.DestinationQueue );
             dxTextureBarrier.SyncBefore   = GetSyncFlagsForState( textureBarrier.OldState );
             dxTextureBarrier.SyncAfter    = GetSyncFlagsForState( textureBarrier.NewState );
+
         }
         else
         {

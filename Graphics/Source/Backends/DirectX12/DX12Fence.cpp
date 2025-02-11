@@ -24,15 +24,14 @@ using namespace DenOfIz;
 DX12Fence::DX12Fence( DX12Context *context ) : m_context( context ), m_fenceValue( 0 )
 {
     DX_CHECK_RESULT( m_context->D3DDevice->CreateFence( INITIAL_FENCE_VALUE, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( m_fence.put( ) ) ) );
-    m_fenceEvent.Attach( CreateEventEx( nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE ) );
+    m_fenceEvent.Attach( CreateEvent( nullptr, FALSE, FALSE, nullptr )  );
 }
 
 DX12Fence::~DX12Fence( ) = default;
 
 void DX12Fence::Wait( )
 {
-    const uint64_t completedValue = m_fence->GetCompletedValue( );
-    if ( completedValue < m_fenceValue )
+    if ( const uint64_t completedValue = m_fence->GetCompletedValue( ); completedValue < m_fenceValue )
     {
         DX_CHECK_RESULT( m_fence->SetEventOnCompletion( m_fenceValue, m_fenceEvent.Get( ) ) );
         WaitForSingleObjectEx( m_fenceEvent.Get( ), INFINITE, FALSE );
@@ -44,10 +43,9 @@ void DX12Fence::Reset( )
     ++m_fenceValue;
 }
 
-void DX12Fence::NotifyCommandQueue( ID3D12CommandQueue *commandQueue )
+void DX12Fence:: NotifyCommandQueue( ID3D12CommandQueue *commandQueue )
 {
-    Reset( );
-    DX_CHECK_RESULT( commandQueue->Signal( m_fence.get( ), m_fenceValue ) );
+    DX_CHECK_RESULT( commandQueue->Signal( m_fence.get( ), ++m_fenceValue ) );
 }
 
 ID3D12Fence *DX12Fence::GetFence( ) const

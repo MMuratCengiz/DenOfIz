@@ -32,14 +32,12 @@ DX12Semaphore::~DX12Semaphore( )
 
 void DX12Semaphore::Notify( )
 {
-    ++m_fenceValue;
-    DX_CHECK_RESULT( m_fence->Signal( m_fenceValue ) );
+    DX_CHECK_RESULT( m_fence->Signal( ++m_fenceValue ) );
 }
 
 void DX12Semaphore::NotifyCommandQueue( ID3D12CommandQueue *commandQueue )
 {
-    ++m_fenceValue;
-    DX_CHECK_RESULT( commandQueue->Signal( m_fence.get( ), m_fenceValue ) );
+    DX_CHECK_RESULT( commandQueue->Signal( m_fence.get( ), ++m_fenceValue ) );
 }
 
 ID3D12Fence *DX12Semaphore::GetFence( ) const
