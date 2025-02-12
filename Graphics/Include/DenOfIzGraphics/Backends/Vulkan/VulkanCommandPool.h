@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/ICommandListPool.h>
 #include "VulkanCommandList.h"
+#include "VulkanCommandQueue.h"
 
 namespace DenOfIz
 {
@@ -27,11 +28,14 @@ namespace DenOfIz
     {
         VulkanContext                                  *m_context;
         std::vector<std::unique_ptr<VulkanCommandList>> m_commandLists;
-        CommandListPoolDesc                             m_createInfo;
+        CommandListPoolDesc                             m_desc;
+        VkCommandPool                                   m_commandPool{ };
+        VulkanCommandQueue                             *m_commandQueue;
 
     public:
         VulkanCommandPool( VulkanContext *context, const CommandListPoolDesc &desc );
         InteropArray<ICommandList *> GetCommandLists( ) override;
+        [[nodiscard]] QueueType      GetQueueType( ) const;
         ~VulkanCommandPool( ) override = default;
     };
 } // namespace DenOfIz

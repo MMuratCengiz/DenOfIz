@@ -181,7 +181,7 @@ void VulkanShaderBindingTable::Build( )
 
     PipelineBarrierDesc barrier{ };
     barrier.BufferBarrier( BufferBarrierDesc{ .Resource = m_buffer.get( ), .OldState = ResourceUsage::CopyDst, .NewState = ResourceUsage::ShaderResource } );
-    VulkanPipelineBarrierHelper::ExecutePipelineBarrier( m_context, commandBuffer, QueueType::RayTracing, barrier );
+    VulkanPipelineBarrierHelper::ExecutePipelineBarrier( m_context, commandBuffer, QueueType::Compute, barrier );
 
     VK_CHECK_RESULT( vkEndCommandBuffer( commandBuffer ) );
 

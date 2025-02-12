@@ -27,6 +27,7 @@ namespace DenOfIz
 
     class VulkanSwapChain final : public ISwapChain
     {
+        VkQueue                  m_queue;
         SwapChainDesc            m_desc;
         VulkanContext           *m_context;
         VkSurfaceKHR             m_surface{ };
@@ -36,7 +37,6 @@ namespace DenOfIz
 
         VkColorSpaceKHR  m_colorSpace{ };
         VkPresentModeKHR m_presentMode{ };
-        QueueFamily      m_presentationQueueFamily{ };
 
         std::vector<std::unique_ptr<VulkanTextureResource>> m_renderTargets;
 
@@ -47,13 +47,13 @@ namespace DenOfIz
         VulkanSwapChain( VulkanContext *context, const SwapChainDesc &desc );
         ~VulkanSwapChain( ) override;
 
-        uint32_t AcquireNextImage( ISemaphore *imageReadySemaphore ) override;
-        void     CreateSurface( );
-        void     Resize( uint32_t width, uint32_t height ) override;
-        Format   GetPreferredFormat( ) override;
+        uint32_t      AcquireNextImage( ISemaphore *imageReadySemaphore ) override;
+        PresentResult Present( const PresentDesc &presentDesc ) override;
+        void          CreateSurface( );
+        void          Resize( uint32_t width, uint32_t height ) override;
+        Format        GetPreferredFormat( ) override;
 
-        [[nodiscard]] QueueFamily GetPresentationQueueFamily( ) const;
-        ITextureResource         *GetRenderTarget( const uint32_t image ) override;
+        ITextureResource         *GetRenderTarget( uint32_t image ) override;
         VkSwapchainKHR           *GetSwapChain( );
         Viewport                  GetViewport( ) override;
 

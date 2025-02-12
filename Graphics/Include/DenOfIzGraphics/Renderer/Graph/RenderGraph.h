@@ -20,6 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <taskflow/taskflow.hpp>
 #include "RenderGraphInternal.h"
 
+#include <DenOfIzGraphics/Renderer/Sync/ResourceTracking.h>
+
 /// <summary>
 /// RenderGraph.h manages command list executions and resource transitions. Resources should not be transitioned outside the graph.
 /// Every node is executed in parallel, fences and semaphores are used to synchronize the nodes automatically according to their dependencies.
@@ -33,11 +35,10 @@ namespace DenOfIz
         GraphicsApi    *GraphicsApi;
         ILogicalDevice *LogicalDevice;
         ISwapChain     *SwapChain;
-        uint8_t         NumFrames                 = 3;
-        uint32_t        NumGraphicsCommandLists   = 8;
-        uint32_t        NumComputeCommandLists    = 2;
-        uint32_t        NumRayTracingCommandLists = 1;
-        uint32_t        NumCopyCommandLists       = 1;
+        uint8_t         NumFrames               = 3;
+        uint32_t        NumGraphicsCommandLists = 8;
+        uint32_t        NumComputeCommandLists  = 2;
+        uint32_t        NumCopyCommandLists     = 1;
     };
 
     class RenderGraph
@@ -58,22 +59,26 @@ namespace DenOfIz
         std::vector<std::unique_ptr<IFence>>     m_frameFences;
         std::vector<PresentContext>              m_presentContexts;
 
+        std::unique_ptr<ICommandQueue> m_graphicsCommandQueue;
+        std::unique_ptr<ICommandQueue> m_computeCommandQueue;
+        std::unique_ptr<ICommandQueue> m_copyCommandQueue;
+
         std::vector<tf::Taskflow> m_frameTaskflows;
         tf::Executor              m_executor;
 
-        ResourceLocking m_resourceLocking;
+        ResourceLocking  m_resourceLocking;
+        ResourceTracking m_resourceTracking;
 
     public:
         DZ_API explicit RenderGraph( const RenderGraphDesc &desc );
-        DZ_API void Reset( );
-        DZ_API void AddNode( const NodeDesc &desc );
-        DZ_API void SetPresentNode( const PresentNodeDesc &desc );
-        DZ_API void BuildGraph( );
-        DZ_API void BuildTaskflow( );
-        DZ_API void Update( );
-        DZ_API void WaitIdle( ) const;
-        DZ_API void IssueBarrier( ICommandList *commandList, const NodeResourceUsageDesc &resourceUsage );
-        DZ_API void IssueBarriers( ICommandList *commandList, const std::vector<NodeResourceUsageDesc> &resourceUsages );
+        DZ_API void              Reset( );
+        DZ_API void              AddNode( const NodeDesc &desc );
+        DZ_API void              SetPresentNode( const PresentNodeDesc &desc );
+        DZ_API void              BuildGraph( );
+        DZ_API void              BuildTaskflow( );
+        DZ_API void              Update( );
+        DZ_API void              WaitIdle( ) const;
+        DZ_API ResourceTracking &GetResourceTracking( );
 
     private:
         ISemaphore *GetOrCreateSemaphore( uint32_t &index );

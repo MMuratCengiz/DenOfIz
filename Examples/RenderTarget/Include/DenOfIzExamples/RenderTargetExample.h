@@ -21,7 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzExamples/IExample.h>
 #include <DenOfIzExamples/QuadPipeline.h>
 #include <DenOfIzExamples/SphereAsset.h>
-#include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
 #include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
 #include <DenOfIzGraphics/Utilities/Time.h>
 

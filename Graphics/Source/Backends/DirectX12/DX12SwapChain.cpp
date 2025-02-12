@@ -32,6 +32,8 @@ DX12SwapChain::DX12SwapChain( DX12Context *context, const SwapChainDesc &desc ) 
 void DX12SwapChain::CreateSwapChain( )
 {
     DZ_NOT_NULL( m_desc.WindowHandle );
+    DZ_NOT_NULL( m_desc.CommandQueue );
+    m_commandQueue = static_cast<DX12CommandQueue *>( m_desc.CommandQueue );
 
     if ( GraphicsWindowSurface surface = m_desc.WindowHandle->GetSurface( ); m_desc.Width != surface.Width || m_desc.Height != surface.Height )
     {
@@ -59,7 +61,7 @@ void DX12SwapChain::CreateSwapChain( )
     // Create a swap chain for the window.
     wil::com_ptr<IDXGISwapChain1> swapChain;
 
-    DX_CHECK_RESULT( m_context->DXGIFactory->CreateSwapChainForHwnd( m_context->GraphicsCommandQueue.get( ), hwnd, &swapChainDesc, &fsSwapChainDesc, nullptr, swapChain.put( ) ) );
+    DX_CHECK_RESULT( m_context->DXGIFactory->CreateSwapChainForHwnd( m_commandQueue->GetCommandQueue( ), hwnd, &swapChainDesc, &fsSwapChainDesc, nullptr, swapChain.put( ) ) );
     DX_CHECK_RESULT( swapChain->QueryInterface( IID_PPV_ARGS( m_swapChain.put( ) ) ) );
     DX_CHECK_RESULT( m_context->DXGIFactory->MakeWindowAssociation( hwnd, DXGI_MWA_VALID ) );
 
@@ -75,7 +77,9 @@ void DX12SwapChain::CreateSwapChain( )
         rtvDesc.ViewDimension                 = D3D12_RTV_DIMENSION_TEXTURE2D;
 
         m_renderTargetCpuHandles[ i ] = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_RTV ]->GetNextHandle( 1 ).Cpu;
-        m_renderTargets[ i ]          = std::make_unique<DX12TextureResource>( m_buffers.at( i ).get( ), m_renderTargetCpuHandles[ i ] );
+        auto buffer                   = m_buffers.at( i ).get( );
+        buffer->SetName( L"SwapChain Buffer" );
+        m_renderTargets[ i ] = std::make_unique<DX12TextureResource>( buffer, m_renderTargetCpuHandles[ i ] );
         m_context->D3DDevice->CreateRenderTargetView( m_renderTargets[ i ]->Resource( ), &rtvDesc, m_renderTargetCpuHandles[ i ] );
     }
 
@@ -151,7 +155,26 @@ void DX12SwapChain::SetColorSpace( )
 
 uint32_t DX12SwapChain::AcquireNextImage( ISemaphore *imageAvailableSemaphore )
 {
-    return m_swapChain->GetCurrentBackBufferIndex( );;
+    return m_swapChain->GetCurrentBackBufferIndex( );
+}
+
+PresentResult DX12SwapChain::Present( const PresentDesc &desc )
+{
+    uint32_t flags        = 0;
+    uint32_t syncInterval = 1;
+
+    if ( m_context->SelectedDeviceInfo.Capabilities.Tearing )
+    {
+        syncInterval = 0;
+        flags |= DXGI_PRESENT_ALLOW_TEARING;
+    }
+
+    if ( const HRESULT hr = m_swapChain->Present( syncInterval, flags ); SUCCEEDED( hr ) )
+    {
+        return PresentResult::Success;
+    }
+
+    return PresentResult::DeviceLost;
 }
 
 void DX12SwapChain::Resize( const uint32_t width, const uint32_t height )
@@ -164,8 +187,7 @@ void DX12SwapChain::Resize( const uint32_t width, const uint32_t height )
 
     if ( hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET )
     {
-        DLOG( INFO ) << std::format( "Device Lost on ResizeBuffers: Reason code 0x{}",
-                                     hr == DXGI_ERROR_DEVICE_REMOVED ? m_context->D3DDevice->GetDeviceRemovedReason( ) : hr );
+        DLOG( INFO ) << std::format( "Device Lost on ResizeBuffers: Reason code 0x{}", hr == DXGI_ERROR_DEVICE_REMOVED ? m_context->D3DDevice->GetDeviceRemovedReason( ) : hr );
 
         m_context->IsDeviceLost = true;
         return;

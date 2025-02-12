@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 #include "IBufferResource.h"
 #include "ICommandListPool.h"
+#include "ICommandQueue.h"
 #include "IPipeline.h"
 #include "IResourceBindGroup.h"
 #include "IRootSignature.h"
@@ -53,6 +54,7 @@ namespace DenOfIz
         };
 
         // Factory methods
+        virtual ICommandQueue      *CreateCommandQueue( const CommandQueueDesc &desc )           = 0;
         virtual ICommandListPool   *CreateCommandListPool( const CommandListPoolDesc &desc )     = 0;
         virtual IPipeline          *CreatePipeline( const PipelineDesc &desc )                   = 0;
         virtual ISwapChain         *CreateSwapChain( const SwapChainDesc &desc )                 = 0;

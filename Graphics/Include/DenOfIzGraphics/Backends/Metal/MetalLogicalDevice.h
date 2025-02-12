@@ -45,6 +45,7 @@ namespace DenOfIz
         void                         LoadPhysicalDevice( const PhysicalDevice &device ) override;
         bool                         IsDeviceLost( ) override;
 
+        ICommandQueue       *CreateCommandQueue( const CommandQueueDesc &desc ) override;
         ICommandListPool    *CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
         IPipeline           *CreatePipeline( const PipelineDesc &pipelineDesc ) override;
         ISwapChain          *CreateSwapChain( const SwapChainDesc &swapChainDesc ) override;

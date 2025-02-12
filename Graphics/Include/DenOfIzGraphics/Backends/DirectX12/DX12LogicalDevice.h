@@ -48,6 +48,7 @@ namespace DenOfIz
         void                         LoadPhysicalDevice( const PhysicalDevice &device ) override;
         bool                         IsDeviceLost( ) override;
 
+        ICommandQueue      *CreateCommandQueue( const CommandQueueDesc &desc ) override;
         ICommandListPool   *CreateCommandListPool( const CommandListPoolDesc &poolDesc ) override;
         IPipeline          *CreatePipeline( const PipelineDesc &pipelineDesc ) override;
         ISwapChain         *CreateSwapChain( const SwapChainDesc &swapChainDesc ) override;
@@ -60,11 +61,11 @@ namespace DenOfIz
         ITextureResource   *CreateTextureResource( const TextureDesc &textureDesc ) override;
         ISampler           *CreateSampler( const SamplerDesc &samplerDesc ) override;
         // RayTracing:
-        ITopLevelAS            *CreateTopLevelAS( const TopLevelASDesc &createDesc ) override;
-        IBottomLevelAS         *CreateBottomLevelAS( const BottomLevelASDesc &createDesc ) override;
-        IShaderBindingTable    *CreateShaderBindingTable( const ShaderBindingTableDesc &createDesc ) override;
+        ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &createDesc ) override;
+        IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &createDesc ) override;
+        IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &createDesc ) override;
         ILocalRootSignature *CreateLocalRootSignature( const LocalRootSignatureDesc &createDesc ) override;
-        IShaderLocalData       *CreateShaderLocalData( const ShaderLocalDataDesc &createDesc ) override;
+        IShaderLocalData    *CreateShaderLocalData( const ShaderLocalDataDesc &createDesc ) override;
 
         void WaitIdle( ) override;
         // --

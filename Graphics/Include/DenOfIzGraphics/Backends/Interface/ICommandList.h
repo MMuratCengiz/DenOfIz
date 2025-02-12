@@ -23,8 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IFence.h"
 #include "IPipeline.h"
 #include "IResourceBindGroup.h"
-#include "ISemaphore.h"
-#include "ISwapChain.h"
 #include "ITextureResource.h"
 #include "PipelineBarrierDesc.h"
 #include "RayTracing/IBottomLevelAS.h"
@@ -143,14 +141,6 @@ namespace DenOfIz
         IShaderBindingTable *ShaderBindingTable = nullptr;
     };
 
-    struct DZ_API ExecuteDesc
-    {
-        // Objects specified below must live until the command list is executed
-        IFence                    *Notify = nullptr;
-        InteropArray<ISemaphore *> WaitOnSemaphores;
-        InteropArray<ISemaphore *> NotifySemaphores;
-    };
-
     struct DZ_API CommandListDesc
     {
         QueueType QueueType = QueueType::Graphics;
@@ -180,8 +170,7 @@ namespace DenOfIz
         virtual void Begin( )                                                                                                                                   = 0;
         virtual void BeginRendering( const RenderingDesc &renderingDesc )                                                                                       = 0;
         virtual void EndRendering( )                                                                                                                            = 0;
-        virtual void Execute( const ExecuteDesc &executeDesc )                                                                                                  = 0;
-        virtual void Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> &waitOnLocks )                                       = 0;
+        virtual void End( )                                                                                                                                     = 0;
         virtual void BindPipeline( IPipeline *pipeline )                                                                                                        = 0;
         virtual void BindVertexBuffer( IBufferResource *buffer )                                                                                                = 0;
         virtual void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType )                                                                     = 0;

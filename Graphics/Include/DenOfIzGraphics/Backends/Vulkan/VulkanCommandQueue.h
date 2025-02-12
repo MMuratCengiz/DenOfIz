@@ -19,5 +19,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/ICommandQueue.h>
-#include "VulkanContext.h"
 #include "VulkanCommandList.h"
+#include "VulkanContext.h"
+
+namespace DenOfIz
+{
+    class DZ_API VulkanCommandQueue final : public ICommandQueue
+    {
+        VulkanContext   *m_context;
+        CommandQueueDesc m_desc;
+        VkQueue          m_queue;
+        uint32_t         m_queueFamilyIndex;
+        uint32_t         m_queueIndex;
+
+    public:
+        VulkanCommandQueue( VulkanContext *context, const CommandQueueDesc &desc );
+        ~VulkanCommandQueue( ) override;
+
+        void          WaitIdle( ) override;
+        void          ExecuteCommandLists( const ExecuteCommandListsDesc &executeCommandListsDesc ) override;
+
+        [[nodiscard]] uint32_t  GetQueueFamilyIndex( ) const;
+        [[nodiscard]] VkQueue   GetQueue( ) const;
+        [[nodiscard]] QueueType GetQueueType( ) const;
+
+    private:
+        void FindQueueFamilyIndex( VkQueueFlags requiredFlags );
+    };
+} // namespace DenOfIz

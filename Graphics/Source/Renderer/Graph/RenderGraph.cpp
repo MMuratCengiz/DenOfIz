@@ -59,9 +59,20 @@ RenderGraph::RenderGraph( const RenderGraphDesc &desc ) : m_presentNode( { } ), 
     }
 
     m_queueCommandListPools.emplace( QueueType::Graphics, 3 );
-    m_queueCommandListPools.emplace( QueueType::RayTracing, 3 );
     m_queueCommandListPools.emplace( QueueType::Compute, 3 );
     m_queueCommandListPools.emplace( QueueType::Copy, 3 );
+
+    CommandQueueDesc graphicsQueueDesc{ };
+    graphicsQueueDesc.QueueType = QueueType::Graphics;
+    m_graphicsCommandQueue      = std::unique_ptr<ICommandQueue>( m_desc.LogicalDevice->CreateCommandQueue( graphicsQueueDesc ) );
+
+    CommandQueueDesc computeQueueDesc{ };
+    computeQueueDesc.QueueType = QueueType::Compute;
+    m_computeCommandQueue      = std::unique_ptr<ICommandQueue>( m_desc.LogicalDevice->CreateCommandQueue( computeQueueDesc ) );
+
+    CommandQueueDesc copyQueueDesc{ };
+    copyQueueDesc.QueueType = QueueType::Copy;
+    m_copyCommandQueue      = std::unique_ptr<ICommandQueue>( m_desc.LogicalDevice->CreateCommandQueue( copyQueueDesc ) );
 
     CommandListPoolDesc poolDesc{ };
     for ( auto &pool : m_queueCommandListPools )
@@ -69,19 +80,15 @@ RenderGraph::RenderGraph( const RenderGraphDesc &desc ) : m_presentNode( { } ), 
         switch ( pool.first )
         {
         case QueueType::Graphics:
-            poolDesc.QueueType       = QueueType::Graphics;
+            poolDesc.CommandQueue    = m_graphicsCommandQueue.get( );
             poolDesc.NumCommandLists = m_desc.NumGraphicsCommandLists;
             break;
-        case QueueType::RayTracing:
-            poolDesc.QueueType       = QueueType::RayTracing;
-            poolDesc.NumCommandLists = m_desc.NumRayTracingCommandLists;
-            break;
         case QueueType::Compute:
-            poolDesc.QueueType       = QueueType::Compute;
+            poolDesc.CommandQueue    = m_computeCommandQueue.get( );
             poolDesc.NumCommandLists = m_desc.NumComputeCommandLists;
             break;
         case QueueType::Copy:
-            poolDesc.QueueType       = QueueType::Copy;
+            poolDesc.CommandQueue    = m_copyCommandQueue.get( );
             poolDesc.NumCommandLists = m_desc.NumCopyCommandLists;
             break;
         }
@@ -111,15 +118,13 @@ void RenderGraph::Reset( )
     m_nodeDescriptions.clear( );
     m_hasPresentNode = false;
 
-    m_remainingCommandLists[ QueueType::Graphics ]   = m_desc.NumGraphicsCommandLists;
-    m_remainingCommandLists[ QueueType::RayTracing ] = m_desc.NumRayTracingCommandLists;
-    m_remainingCommandLists[ QueueType::Compute ]    = m_desc.NumComputeCommandLists;
-    m_remainingCommandLists[ QueueType::Copy ]       = m_desc.NumCopyCommandLists;
+    m_remainingCommandLists[ QueueType::Graphics ] = m_desc.NumGraphicsCommandLists;
+    m_remainingCommandLists[ QueueType::Compute ]  = m_desc.NumComputeCommandLists;
+    m_remainingCommandLists[ QueueType::Copy ]     = m_desc.NumCopyCommandLists;
 
-    m_commandListIndexAtQueue[ QueueType::Graphics ]   = 0;
-    m_commandListIndexAtQueue[ QueueType::RayTracing ] = 0;
-    m_commandListIndexAtQueue[ QueueType::Compute ]    = 0;
-    m_commandListIndexAtQueue[ QueueType::Copy ]       = 0;
+    m_commandListIndexAtQueue[ QueueType::Graphics ] = 0;
+    m_commandListIndexAtQueue[ QueueType::Compute ]  = 0;
+    m_commandListIndexAtQueue[ QueueType::Copy ]     = 0;
 }
 
 void RenderGraph::AddNode( const NodeDesc &desc )
@@ -130,29 +135,6 @@ void RenderGraph::AddNode( const NodeDesc &desc )
     }
 
     m_nodeDescriptions.push_back( desc );
-
-    for ( int stateIndex = 0; stateIndex < desc.RequiredStates.NumElements( ); stateIndex++ )
-    {
-        auto &resourceState = desc.RequiredStates.GetElement( stateIndex );
-        if ( resourceState.Type == NodeResourceUsageType::Texture )
-        {
-            if ( resourceState.TextureResource == nullptr )
-            {
-                LOG( FATAL ) << "Texture resource must be valid.";
-            }
-            m_resourceLocking.TextureStates.emplace( resourceState.TextureResource, desc.QueueType );
-            m_resourceLocking.TextureStates[ resourceState.TextureResource ].State = resourceState.TextureResource->InitialState( );
-        }
-        else
-        {
-            if ( resourceState.BufferResource == nullptr )
-            {
-                LOG( FATAL ) << "Buffer resource must be valid.";
-            }
-            m_resourceLocking.BufferStates.emplace( resourceState.BufferResource, desc.QueueType );
-            m_resourceLocking.BufferStates[ resourceState.BufferResource ].State = resourceState.BufferResource->InitialState( );
-        }
-    }
 }
 
 void RenderGraph::SetPresentNode( const PresentNodeDesc &desc )
@@ -160,6 +142,10 @@ void RenderGraph::SetPresentNode( const PresentNodeDesc &desc )
     if ( desc.SwapChain == nullptr )
     {
         LOG( FATAL ) << "Present node must have a valid swap chain.";
+    }
+    for ( int i = 0; i < m_desc.NumFrames; ++i )
+    {
+        m_resourceTracking.TrackTexture( desc.SwapChain->GetRenderTarget( i ), ResourceUsage::Common );
     }
 
     m_hasPresentNode = true;
@@ -192,21 +178,24 @@ void RenderGraph::InitAllNodes( )
 
         CommandListPoolList &poolList = m_queueCommandListPools[ node.QueueType ];
         // First command list is reserved for present node
-        uint32_t presentPadding = node.QueueType == QueueType::Graphics && m_hasPresentNode ? 1 : 0;
-
+        const uint32_t presentPadding = node.QueueType == QueueType::Graphics && m_hasPresentNode ? 1 : 0;
         for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
         {
-            auto newContext         = std::make_unique<NodeExecutionContext>( );
+            auto newContext = std::make_unique<NodeExecutionContext>( );
+            switch ( node.QueueType )
+            {
+            case QueueType::Graphics:
+                newContext->CommandQueue = m_graphicsCommandQueue.get( );
+                break;
+            case QueueType::Compute:
+                newContext->CommandQueue = m_computeCommandQueue.get( );
+                break;
+            case QueueType::Copy:
+                newContext->CommandQueue = m_copyCommandQueue.get( );
+                break;
+            }
             newContext->CommandList = poolList[ i ]->GetCommandLists( ).GetElement( commandListIndex + presentPadding );
             newContext->Execute     = node.Execute;
-            for ( int stateIndex = 0; stateIndex < node.RequiredStates.NumElements( ); stateIndex++ )
-            {
-                auto &resourceState = node.RequiredStates.GetElement( stateIndex );
-                if ( resourceState.FrameIndex == i )
-                {
-                    newContext->ResourceUsagesPerFrame.push_back( resourceState );
-                }
-            }
             graphNode->Contexts.push_back( std::move( newContext ) );
         }
         m_nodes.push_back( std::move( graphNode ) );
@@ -267,18 +256,6 @@ void RenderGraph::ConfigureGraph( )
             semaphores.AddElement( semaphore );
         }
     }
-
-    for ( uint8_t i = 0; i < m_desc.NumFrames; i++ )
-    {
-        for ( int stateIndex = 0; stateIndex < m_presentNode.RequiredStates.NumElements( ); stateIndex++ )
-        {
-            auto &resourceState = m_presentNode.RequiredStates.GetElement( stateIndex );
-            if ( resourceState.FrameIndex == i )
-            {
-                m_presentContexts[ i ].ResourceUsagesPerFrame.push_back( resourceState );
-            }
-        }
-    }
 }
 
 void RenderGraph::BuildTaskflow( )
@@ -306,15 +283,18 @@ void RenderGraph::BuildTaskflow( )
 
                                             commandList->Begin( );
                                             context->Execute->Execute( frame, commandList );
+                                            commandList->End( );
 
-                                            ExecuteDesc executeDesc{ };
+                                            ExecuteCommandListsDesc executeDesc{ };
                                             if ( nodeIndex == m_nodes.size( ) - 1 && !m_hasPresentNode )
                                             {
-                                                executeDesc.Notify = m_frameFences[ frame ].get( );
+                                                executeDesc.Signal = m_frameFences[ frame ].get( );
                                             }
-                                            executeDesc.WaitOnSemaphores = context->WaitOnSemaphores;
-                                            executeDesc.NotifySemaphores = context->NotifySemaphores;
-                                            commandList->Execute( executeDesc );
+                                            executeDesc.WaitSemaphores   = context->WaitOnSemaphores;
+                                            executeDesc.SignalSemaphores = context->NotifySemaphores;
+                                            executeDesc.CommandLists.AddElement( commandList );
+
+                                            context->CommandQueue->ExecuteCommandLists( executeDesc );
                                         } )
                                     .name( nodeName );
 
@@ -341,21 +321,33 @@ void RenderGraph::BuildTaskflow( )
                 ITextureResource *swapChainRenderTarget = m_presentNode.SwapChain->GetRenderTarget( image );
 
                 m_presentNode.Execute->Execute( frame, presentCommandList, swapChainRenderTarget );
-                IssueBarrier( presentCommandList, NodeResourceUsageDesc::TextureState( frame, swapChainRenderTarget, ResourceUsage::Present ) );
 
-                ExecuteDesc presentExecuteDesc{ };
-                presentExecuteDesc.Notify = m_frameFences[ frame ].get( );
-                presentExecuteDesc.WaitOnSemaphores.AddElement( presentContext.ImageReadySemaphore.get( ) );
+                TransitionTextureDesc transitionDesc{ };
+                transitionDesc.Texture     = swapChainRenderTarget;
+                transitionDesc.NewUsage    = ResourceUsage::Present;
+                transitionDesc.CommandList = presentCommandList;
+                m_resourceTracking.TransitionTexture( transitionDesc );
+
+                presentCommandList->End( );
+
+                ExecuteCommandListsDesc presentExecuteDesc{ };
+                presentExecuteDesc.Signal = m_frameFences[ frame ].get( );
+                presentExecuteDesc.WaitSemaphores.AddElement( presentContext.ImageReadySemaphore.get( ) );
                 for ( auto &dependency : presentContext.PresentDependencySemaphores )
                 {
-                    presentExecuteDesc.WaitOnSemaphores.AddElement( dependency );
+                    presentExecuteDesc.WaitSemaphores.AddElement( dependency );
                 }
-                presentExecuteDesc.NotifySemaphores.AddElement( presentContext.ImageRenderedSemaphore.get( ) );
-                presentCommandList->Execute( presentExecuteDesc );
+                presentExecuteDesc.SignalSemaphores.AddElement( presentContext.ImageRenderedSemaphore.get( ) );
+                presentExecuteDesc.CommandLists.AddElement( presentCommandList );
+                m_graphicsCommandQueue->ExecuteCommandLists( presentExecuteDesc );
 
-                InteropArray<ISemaphore *>  presentSemaphores;
+                InteropArray<ISemaphore *> presentSemaphores;
                 presentSemaphores.AddElement( presentContext.ImageRenderedSemaphore.get( ) );
-                presentCommandList->Present( m_presentNode.SwapChain, image, presentSemaphores );
+
+                PresentDesc presentDesc{ };
+                presentDesc.Image          = image;
+                presentDesc.WaitSemaphores = presentSemaphores;
+                m_presentNode.SwapChain->Present( presentDesc );
             } );
 
         for ( int i = 0; i < m_presentNode.Dependencies.NumElements( ); ++i )
@@ -419,72 +411,7 @@ void RenderGraph::ValidateDependencies( const std::unordered_set<std::string> &a
     }
 }
 
-void RenderGraph::IssueBarrier( ICommandList *commandList, const NodeResourceUsageDesc &resourceUsage )
+ResourceTracking &RenderGraph::GetResourceTracking( )
 {
-    IssueBarriers( commandList, { resourceUsage } );
-}
-
-void RenderGraph::IssueBarriers( ICommandList *commandList, const std::vector<NodeResourceUsageDesc> &resourceUsages )
-{
-    PipelineBarrierDesc       barrierDesc{ };
-    std::vector<std::mutex *> m_unlocks;
-
-    for ( auto &resourceUsage : resourceUsages )
-    {
-        if ( resourceUsage.Type == NodeResourceUsageType::Texture )
-        {
-            auto texture = resourceUsage.TextureResource;
-            auto state   = m_resourceLocking.TextureStates.find( texture );
-            if ( state == m_resourceLocking.TextureStates.end( ) )
-            {
-                m_resourceLocking.TextureStates.emplace( texture, commandList->GetQueueType( ) );
-                state               = m_resourceLocking.TextureStates.find( texture );
-                state->second.State = texture->InitialState( );
-            }
-            auto &lockedState = state->second;
-            if ( lockedState.State != resourceUsage.State )
-            {
-                lockedState.Mutex.lock( );
-                m_unlocks.push_back( &lockedState.Mutex );
-                TextureBarrierDesc textureBarrierDesc{ texture, lockedState.State, resourceUsage.State };
-                if ( lockedState.Queue != commandList->GetQueueType( ) )
-                {
-                    textureBarrierDesc.EnableQueueBarrier = true;
-                    textureBarrierDesc.SourceQueue        = lockedState.Queue;
-                    textureBarrierDesc.DestinationQueue   = commandList->GetQueueType( );
-                }
-                barrierDesc.TextureBarrier( textureBarrierDesc );
-                lockedState.State = resourceUsage.State;
-                lockedState.Queue = commandList->GetQueueType( );
-            }
-        }
-        else
-        {
-            auto buffer = resourceUsage.BufferResource;
-            auto state  = m_resourceLocking.BufferStates.find( buffer );
-            if ( state == m_resourceLocking.BufferStates.end( ) )
-            {
-                m_resourceLocking.BufferStates.emplace( buffer, commandList->GetQueueType( ) );
-                state               = m_resourceLocking.BufferStates.find( buffer );
-                state->second.State = buffer->InitialState( );
-            }
-            auto &lockedState = state->second;
-            if ( lockedState.State != resourceUsage.State )
-            {
-                lockedState.Mutex.lock( );
-                m_unlocks.push_back( &lockedState.Mutex );
-                barrierDesc.BufferBarrier( BufferBarrierDesc{ buffer, lockedState.State, resourceUsage.State } );
-                lockedState.State = resourceUsage.State;
-            }
-        }
-    }
-
-    if ( barrierDesc.GetTextureBarriers( ).NumElements( ) != 0 || barrierDesc.GetBufferBarriers( ).NumElements( ) != 0 )
-    {
-        commandList->PipelineBarrier( barrierDesc );
-        for ( const auto &mutex : m_unlocks )
-        {
-            mutex->unlock( );
-        }
-    }
+    return m_resourceTracking;
 }

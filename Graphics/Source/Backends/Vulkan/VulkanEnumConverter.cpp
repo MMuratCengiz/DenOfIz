@@ -20,6 +20,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
+VkQueueFlags VulkanEnumConverter::ConvertQueueFlags( const QueueType &queueType )
+{
+    switch ( queueType )
+    {
+    case QueueType::Graphics:
+        return VK_QUEUE_GRAPHICS_BIT;
+    case QueueType::Compute:
+        return VK_QUEUE_COMPUTE_BIT;
+    case QueueType::Copy:
+        return VK_QUEUE_TRANSFER_BIT;
+    }
+    return VK_QUEUE_GRAPHICS_BIT;
+}
+
 VkShaderStageFlagBits VulkanEnumConverter::ConvertShaderStage( const ShaderStage &shaderStage )
 {
     switch ( shaderStage )

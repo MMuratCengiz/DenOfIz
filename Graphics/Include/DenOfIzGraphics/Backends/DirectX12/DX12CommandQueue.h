@@ -19,5 +19,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Interface/ICommandQueue.h>
-#include "DX12Context.h"
 #include "DX12CommandList.h"
+#include "DX12Context.h"
+
+namespace DenOfIz
+{
+    class DZ_API DX12CommandQueue final : public ICommandQueue
+    {
+        DX12Context                     *m_context;
+        CommandQueueDesc                 m_desc;
+        wil::com_ptr<ID3D12CommandQueue> m_commandQueue;
+        wil::com_ptr<ID3D12Fence1>       m_fence;
+
+    public:
+        DX12CommandQueue( DX12Context *context, const CommandQueueDesc &desc );
+        ~DX12CommandQueue( ) override;
+
+        void          WaitIdle( ) override;
+        void          ExecuteCommandLists( const ExecuteCommandListsDesc &executeCommandListsDesc ) override;
+
+        ID3D12CommandQueue *GetCommandQueue( ) const;
+        QueueType           GetQueueType( ) const;
+    };
+} // namespace DenOfIz

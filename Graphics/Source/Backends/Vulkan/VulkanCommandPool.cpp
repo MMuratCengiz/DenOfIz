@@ -17,17 +17,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandPool.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandQueue.h>
 
 using namespace DenOfIz;
 
-VulkanCommandPool::VulkanCommandPool( VulkanContext *context, const CommandListPoolDesc &desc ) : m_context( nullptr ), m_createInfo( desc )
+VulkanCommandPool::VulkanCommandPool( VulkanContext *context, const CommandListPoolDesc &desc ) : m_context( context ), m_desc( desc )
 {
+    m_commandQueue = dynamic_cast<VulkanCommandQueue *>( desc.CommandQueue );
+
+    VkCommandPoolCreateInfo commandPoolCreateInfo{ };
+    commandPoolCreateInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    commandPoolCreateInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    commandPoolCreateInfo.queueFamilyIndex = m_commandQueue->GetQueueFamilyIndex( );
+
+    vkCreateCommandPool( m_context->LogicalDevice, &commandPoolCreateInfo, nullptr, &m_commandPool );
+
     for ( uint32_t i = 0; i < desc.NumCommandLists; i++ )
     {
         CommandListDesc commandListDesc{ };
-        commandListDesc.QueueType = desc.QueueType;
+        commandListDesc.QueueType = GetQueueType( );
 
-        m_commandLists.emplace_back( std::make_unique<VulkanCommandList>( context, commandListDesc ) );
+        m_commandLists.emplace_back( std::make_unique<VulkanCommandList>( context, commandListDesc, m_commandPool ) );
     }
 }
 
@@ -39,4 +49,9 @@ InteropArray<ICommandList *> VulkanCommandPool::GetCommandLists( )
         commandLists.SetElement( i, m_commandLists[ i ].get( ) );
     }
     return commandLists;
+}
+
+QueueType VulkanCommandPool::GetQueueType( ) const
+{
+    return m_commandQueue->GetQueueType( );
 }

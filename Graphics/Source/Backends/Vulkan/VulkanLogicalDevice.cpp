@@ -34,6 +34,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #define VMA_IMPLEMENTATION
 
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandQueue.h>
+
 #include "vma/vk_mem_alloc.h"
 
 using namespace DenOfIz;
@@ -622,44 +624,49 @@ bool VulkanLogicalDevice::IsDeviceLost( )
     return m_context->IsDeviceLost;
 }
 
-ICommandListPool *VulkanLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &createInfo )
+ICommandQueue* VulkanLogicalDevice::CreateCommandQueue( const CommandQueueDesc &desc )
 {
-    return new VulkanCommandPool( m_context.get( ), createInfo );
+    return new VulkanCommandQueue( m_context.get( ), desc );
 }
 
-IPipeline *VulkanLogicalDevice::CreatePipeline( const PipelineDesc &createInfo )
+ICommandListPool *VulkanLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &desc )
 {
-    return new VulkanPipeline( m_context.get( ), createInfo );
+    return new VulkanCommandPool( m_context.get( ), desc );
 }
 
-ISwapChain *VulkanLogicalDevice::CreateSwapChain( const SwapChainDesc &createInfo )
+IPipeline *VulkanLogicalDevice::CreatePipeline( const PipelineDesc &desc )
 {
-    return new VulkanSwapChain( m_context.get( ), createInfo );
+    return new VulkanPipeline( m_context.get( ), desc );
 }
 
-IRootSignature *VulkanLogicalDevice::CreateRootSignature( const RootSignatureDesc &createInfo )
+ISwapChain *VulkanLogicalDevice::CreateSwapChain( const SwapChainDesc &desc )
 {
-    return new VulkanRootSignature( m_context.get( ), createInfo );
+    return new VulkanSwapChain( m_context.get( ), desc );
 }
 
-IInputLayout *VulkanLogicalDevice::CreateInputLayout( const InputLayoutDesc &createInfo )
+IRootSignature *VulkanLogicalDevice::CreateRootSignature( const RootSignatureDesc &desc )
 {
-    return new VulkanInputLayout( createInfo );
+    return new VulkanRootSignature( m_context.get( ), desc );
 }
 
-IResourceBindGroup *VulkanLogicalDevice::CreateResourceBindGroup( const ResourceBindGroupDesc &createInfo )
+IInputLayout *VulkanLogicalDevice::CreateInputLayout( const InputLayoutDesc &desc )
 {
-    return new VulkanResourceBindGroup( m_context.get( ), createInfo );
+    return new VulkanInputLayout( desc );
 }
 
-IBufferResource *VulkanLogicalDevice::CreateBufferResource( const BufferDesc &createInfo )
+IResourceBindGroup *VulkanLogicalDevice::CreateResourceBindGroup( const ResourceBindGroupDesc &desc )
 {
-    return new VulkanBufferResource( m_context.get( ), createInfo );
+    return new VulkanResourceBindGroup( m_context.get( ), desc );
 }
 
-ITextureResource *VulkanLogicalDevice::CreateTextureResource( const TextureDesc &createInfo )
+IBufferResource *VulkanLogicalDevice::CreateBufferResource( const BufferDesc &desc )
 {
-    return new VulkanTextureResource( m_context.get( ), createInfo );
+    return new VulkanBufferResource( m_context.get( ), desc );
+}
+
+ITextureResource *VulkanLogicalDevice::CreateTextureResource( const TextureDesc &desc )
+{
+    return new VulkanTextureResource( m_context.get( ), desc );
 }
 
 IFence *VulkanLogicalDevice::CreateFence( )
@@ -672,9 +679,9 @@ ISemaphore *VulkanLogicalDevice::CreateSemaphore( )
     return new VulkanSemaphore( m_context.get( ) );
 }
 
-ISampler *VulkanLogicalDevice::CreateSampler( const SamplerDesc &createInfo )
+ISampler *VulkanLogicalDevice::CreateSampler( const SamplerDesc &desc )
 {
-    return new VulkanSampler( m_context.get( ), createInfo );
+    return new VulkanSampler( m_context.get( ), desc );
 }
 
 ITopLevelAS *VulkanLogicalDevice::CreateTopLevelAS( const TopLevelASDesc &desc )

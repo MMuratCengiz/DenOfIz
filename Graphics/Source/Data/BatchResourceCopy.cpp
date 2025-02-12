@@ -31,7 +31,9 @@ using namespace DenOfIz;
 
 BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device, const bool issueBarriers ) : m_device( device ), m_issueBarriers( issueBarriers )
 {
-    m_commandListPool = std::unique_ptr<ICommandListPool>( m_device->CreateCommandListPool( { QueueType::Copy } ) );
+    m_copyQueue = std::unique_ptr<ICommandQueue>( m_device->CreateCommandQueue( CommandQueueDesc{ QueueType::Copy } ) );
+
+    m_commandListPool = std::unique_ptr<ICommandListPool>( m_device->CreateCommandListPool( { m_copyQueue.get( ) } ) );
     auto commandLists = m_commandListPool->GetCommandLists( );
     DZ_ASSERTM( commandLists.NumElements( ) != 0, "Command list pool did not produce any command lists." );
 
@@ -40,8 +42,10 @@ BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device, const bool issueBa
 
     if ( m_issueBarriers )
     {
+        m_syncQueue = std::unique_ptr<ICommandQueue>( m_device->CreateCommandQueue( CommandQueueDesc{ QueueType::Graphics } ) );
+
         CommandListPoolDesc poolDesc{ };
-        poolDesc.QueueType       = QueueType::Graphics;
+        poolDesc.CommandQueue    = m_syncQueue.get( );
         poolDesc.NumCommandLists = 1;
         m_syncCommandPool        = std::unique_ptr<ICommandListPool>( m_device->CreateCommandListPool( poolDesc ) );
 
@@ -248,26 +252,29 @@ void BatchResourceCopy::LoadTexture( const LoadTextureDesc &loadDesc )
 
 void BatchResourceCopy::Submit( ISemaphore *notify )
 {
-    ExecuteDesc desc{ };
+    m_copyCommandList->End( );
 
+    ExecuteCommandListsDesc desc{ };
     m_executeFence->Reset( );
-    desc.Notify = m_executeFence.get( );
-    desc.NotifySemaphores.AddElement( m_batchCopyWait.get( ) );
+    desc.Signal = m_executeFence.get( );
+    desc.SignalSemaphores.AddElement( m_batchCopyWait.get( ) );
     if ( notify )
     {
-        desc.NotifySemaphores.AddElement( notify );
+        desc.SignalSemaphores.AddElement( notify );
     }
-
-    m_copyCommandList->Execute( desc );
+    desc.CommandLists.AddElement( m_copyCommandList );
+    m_copyQueue->ExecuteCommandLists( desc );
     m_cleanResourcesFuture = std::async( std::launch::async, [ this ] { CleanResources( ); } );
 
     if ( m_issueBarriers )
     {
         m_syncWait->Reset( );
-        ExecuteDesc executeDesc{ };
-        executeDesc.WaitOnSemaphores.AddElement( m_batchCopyWait.get( ) );
-        executeDesc.Notify = m_syncWait.get( );
-        m_syncCommandList->Execute( executeDesc );
+        ExecuteCommandListsDesc syncDesc{ };
+        syncDesc.Signal = m_syncWait.get( );
+        syncDesc.WaitSemaphores.AddElement( m_batchCopyWait.get( ) );
+        syncDesc.CommandLists.AddElement( m_syncCommandList );
+        m_syncCommandList->End( );
+        m_syncQueue->ExecuteCommandLists( syncDesc );
         m_syncWait->Wait( );
     }
 }

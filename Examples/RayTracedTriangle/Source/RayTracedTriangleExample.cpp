@@ -38,7 +38,7 @@ void RayTracedTriangleExample::Init( )
 
     NodeDesc raytracingNode{ };
     raytracingNode.Name      = "RayTracing";
-    raytracingNode.QueueType = QueueType::RayTracing;
+    raytracingNode.QueueType = QueueType::Compute;
     raytracingNode.Execute   = this;
 
     PresentNodeDesc presentNode{ };
@@ -290,7 +290,7 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
     topLevelASDesc.Instances.AddElement( instanceDesc );
     m_topLevelAS = std::unique_ptr<ITopLevelAS>( m_logicalDevice->CreateTopLevelAS( topLevelASDesc ) );
 
-    const auto    commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( { QueueType::RayTracing, 1 } ) );
+    const auto    commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( { QueueType::Compute, 1 } ) );
     ICommandList *commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
     const auto    syncFence       = std::unique_ptr<IFence>( m_logicalDevice->CreateFence( ) );
 

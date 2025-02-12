@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12CommandListPool.h>
+#include <DenOfIzGraphics/Backends/DirectX12/DX12CommandQueue.h>
 
 using namespace DenOfIz;
 
@@ -25,10 +26,12 @@ DX12CommandListPool::DX12CommandListPool( DX12Context *context, CommandListPoolD
     DZ_NOT_NULL( context );
     DZ_ASSERTM( desc.NumCommandLists > 0, "CommandListCount must be greater than 0" );
 
-    m_context = context;
+    m_context                            = context;
+    const DX12CommandQueue *commandQueue = dynamic_cast<DX12CommandQueue *>( desc.CommandQueue );
+
     for ( uint32_t i = 0; i < desc.NumCommandLists; i++ )
     {
-        D3D12_COMMAND_LIST_TYPE commandListType = DX12EnumConverter::ConvertQueueType( desc.QueueType );
+        const D3D12_COMMAND_LIST_TYPE commandListType = DX12EnumConverter::ConvertQueueType( commandQueue->GetQueueType( ) );
 
         wil::com_ptr<ID3D12CommandAllocator> commandAllocator;
         DX_CHECK_RESULT( context->D3DDevice->CreateCommandAllocator( commandListType, IID_PPV_ARGS( commandAllocator.put( ) ) ) );
@@ -42,7 +45,7 @@ DX12CommandListPool::DX12CommandListPool( DX12Context *context, CommandListPoolD
     }
 
     CommandListDesc commandListCreateInfo{ };
-    commandListCreateInfo.QueueType = m_desc.QueueType;
+    commandListCreateInfo.QueueType = commandQueue->GetQueueType( );
 
     for ( uint32_t i = 0; i < desc.NumCommandLists; i++ )
     {

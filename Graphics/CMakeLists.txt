@@ -53,7 +53,8 @@ set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         #Renderers
         Source/Renderer/Assets/AssetData.cpp
         Source/Renderer/Assets/MaterialData.cpp
-        Source/Renderer/Common/CommandListRing.cpp
+        Source/Renderer/Sync/FrameSync.cpp
+        Source/Renderer/Sync/ResourceTracking.cpp
         Source/Renderer/Graph/RenderGraph.cpp
 
         Source/Utilities/StepTimer.cpp
@@ -164,13 +165,6 @@ else ()
     set(DEN_OF_IZ_GRAPHICS_SOURCES
             ${DEN_OF_IZ_GRAPHICS_COMMON_SOURCES}
             ${DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES}
-            Source/Renderer/Common/CommandListRing.cpp
-            Include/DenOfIzGraphics/Backends/Interface/ICommandQueue.h
-            Source/Backends/DirectX12/DX12CommandQueue.cpp
-            Include/DenOfIzGraphics/Backends/DirectX12/DX12CommandQueue.h
-            Include/DenOfIzGraphics/Backends/Vulkan/VulkanCommandQueue.h
-            Source/Backends/Vulkan/VulkanCommandQueue.cpp
-            Include/DenOfIzGraphics/Backends/Metal/MetalCommandQueue.h
     )
 endif ()
 

@@ -33,13 +33,12 @@ namespace DenOfIz::RenderGraphInternal
     // Odd placement due to dependency on NodeResourceUsageDesc
     struct NodeExecutionContext
     {
-        ICommandList                      *CommandList;
-        InteropArray<ISemaphore *>         WaitOnSemaphores;
-        InteropArray<ISemaphore *>         NotifySemaphores;
-        std::vector<ResourceBarrier>       ResourceBarriers;
-        std::vector<NodeResourceUsageDesc> ResourceUsagesPerFrame;
-        std::mutex                         SelfMutex; // Ensure the same node is not executed concurrently in really fast graphs
-        NodeExecutionCallback             *Execute;
+        ICommandQueue             *CommandQueue;
+        ICommandList              *CommandList;
+        InteropArray<ISemaphore *> WaitOnSemaphores;
+        InteropArray<ISemaphore *> NotifySemaphores;
+        std::mutex                 SelfMutex; // Ensure the same node is not executed concurrently in really fast graphs
+        NodeExecutionCallback     *Execute;
     };
 
     struct GraphNode

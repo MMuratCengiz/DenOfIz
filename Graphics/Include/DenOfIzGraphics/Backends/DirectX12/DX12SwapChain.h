@@ -18,9 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "DX12CommandQueue.h"
+
 #include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
 #include "DX12Context.h"
-#include "DX12EnumConverter.h"
 #include "DenOfIzGraphics/Backends/DirectX12/DX12TextureResource.h"
 
 namespace DenOfIz
@@ -29,6 +30,7 @@ namespace DenOfIz
     class DX12SwapChain final : public ISwapChain
     {
         DX12Context                  *m_context = nullptr;
+        DX12CommandQueue             *m_commandQueue = nullptr;
         SwapChainDesc                 m_desc{ };
         wil::com_ptr<IDXGISwapChain4> m_swapChain = nullptr;
 
@@ -41,6 +43,7 @@ namespace DenOfIz
         DXGI_COLOR_SPACE_TYPE m_colorSpace{ };
         Viewport              m_viewport{ };
 
+
     public:
         DX12SwapChain( DX12Context *context, const SwapChainDesc &desc );
         ~DX12SwapChain( ) override;
@@ -48,6 +51,7 @@ namespace DenOfIz
         [[nodiscard]] IDXGISwapChain4 *GetSwapChain( ) const;
 
         uint32_t          AcquireNextImage( ISemaphore *imageAvailableSemaphore ) override;
+        PresentResult     Present( const PresentDesc &desc ) override;
         Format            GetPreferredFormat( ) override;
         ITextureResource *GetRenderTarget( uint32_t image ) override;
         Viewport          GetViewport( ) override;

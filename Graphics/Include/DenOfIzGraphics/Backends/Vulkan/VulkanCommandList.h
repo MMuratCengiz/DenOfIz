@@ -37,14 +37,16 @@ namespace DenOfIz
         VkViewport                                   m_viewport{ };
         VkRect2D                                     m_scissorRect{ };
         std::vector<const VulkanResourceBindGroup *> m_queuedBindGroups;
+        const VkCommandPool                          m_commandPool;
+        QueueType                                    m_queueType;
 
     public:
-        VulkanCommandList( VulkanContext *context, CommandListDesc desc );
+        VulkanCommandList( VulkanContext *context, CommandListDesc desc, VkCommandPool commandPool );
 
         void Begin( ) override;
         void BeginRendering( const RenderingDesc &renderingDesc ) override;
         void EndRendering( ) override; // TODO remove
-        void Execute( const ExecuteDesc &executeDesc ) override;
+        void End( ) override;
         void BindPipeline( IPipeline *pipeline ) override;
         void BindVertexBuffer( IBufferResource *buffer ) override;
         void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType ) override;
@@ -63,9 +65,9 @@ namespace DenOfIz
         void Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance ) override;
         void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
         void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
-        void Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> &waitOnLocks ) override;
 
-        const QueueType GetQueueType( ) override;
+        const QueueType  GetQueueType( ) override;
+        VkCommandBuffer &GetCommandBuffer( );
 
     private:
         void ProcessBindGroups( ) const;

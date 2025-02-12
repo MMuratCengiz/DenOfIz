@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandQueue.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h>
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h>
 
@@ -24,6 +25,8 @@ using namespace DenOfIz;
 VulkanSwapChain::VulkanSwapChain( VulkanContext *context, const SwapChainDesc &desc ) : m_desc( desc ), m_context( context )
 {
     DZ_NOT_NULL( m_desc.WindowHandle );
+    m_queue = dynamic_cast<VulkanCommandQueue *>( desc.CommandQueue )->GetQueue( );
+
     CreateSurface( );
     CreateSwapChain( );
 }
@@ -64,29 +67,6 @@ void VulkanSwapChain::CreateSurface( )
 
     m_colorSpace  = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     m_presentMode = presentMode;
-
-    std::vector<VkQueueFamilyProperties> properties;
-    vkGetPhysicalDeviceQueueFamilyProperties( m_context->PhysicalDevice, &count, nullptr );
-    properties.resize( count );
-    vkGetPhysicalDeviceQueueFamilyProperties( m_context->PhysicalDevice, &count, properties.data( ) );
-
-    uint32_t index = 0;
-    VkBool32 presentationSupport;
-    for ( const VkQueueFamilyProperties &property : properties )
-    {
-        vkGetPhysicalDeviceSurfaceSupportKHR( m_context->PhysicalDevice, index++, m_surface, &presentationSupport );
-
-        if ( presentationSupport )
-        {
-            m_presentationQueueFamily = QueueFamily{ index, property };
-            break;
-        }
-    }
-
-    if ( !presentationSupport )
-    {
-        m_presentationQueueFamily = m_context->QueueFamilies.at( VulkanQueueType::Graphics );
-    }
 }
 
 void VulkanSwapChain::CreateSwapChain( )
@@ -226,6 +206,42 @@ uint32_t VulkanSwapChain::AcquireNextImage( ISemaphore *imageReadySemaphore )
     return nextImage;
 }
 
+PresentResult VulkanSwapChain::Present( const PresentDesc &presentDesc )
+{
+    std::vector<VkSemaphore> waitSemaphores;
+    waitSemaphores.reserve( presentDesc.WaitSemaphores.NumElements( ) );
+
+    for ( int i = 0; i < presentDesc.WaitSemaphores.NumElements( ); i++ )
+    {
+        const auto *vulkanSemaphore = dynamic_cast<VulkanSemaphore *>( presentDesc.WaitSemaphores.GetElement( i ) );
+        waitSemaphores.push_back( vulkanSemaphore->GetSemaphore( ) );
+    }
+
+    VkPresentInfoKHR presentInfo{ };
+    presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = waitSemaphores.size( );
+    presentInfo.pWaitSemaphores    = waitSemaphores.data( );
+    presentInfo.swapchainCount     = 1;
+    presentInfo.pSwapchains        = &m_swapChain;
+    presentInfo.pImageIndices      = &presentDesc.Image;
+    presentInfo.pResults           = nullptr;
+
+    switch ( const VkResult result = vkQueuePresentKHR( m_queue, &presentInfo ) )
+    {
+    case VK_SUCCESS:
+        return PresentResult::Success;
+    case VK_SUBOPTIMAL_KHR:
+        return PresentResult::Suboptimal;
+    case VK_ERROR_OUT_OF_DATE_KHR:
+        return PresentResult::DeviceLost;
+    case VK_ERROR_DEVICE_LOST:
+        return PresentResult::DeviceLost;
+    default:
+        LOG( ERROR ) << "Present failed with VkResult: " << result;
+        return PresentResult::DeviceLost;
+    }
+}
+
 VulkanSwapChain::~VulkanSwapChain( )
 {
     Dispose( );
@@ -260,11 +276,6 @@ void VulkanSwapChain::Resize( const uint32_t width, const uint32_t height )
     Dispose( );
     CreateSurface( );
     CreateSwapChain( );
-}
-
-QueueFamily VulkanSwapChain::GetPresentationQueueFamily( ) const
-{
-    return m_presentationQueueFamily;
 }
 
 ITextureResource *VulkanSwapChain::GetRenderTarget( const uint32_t image )

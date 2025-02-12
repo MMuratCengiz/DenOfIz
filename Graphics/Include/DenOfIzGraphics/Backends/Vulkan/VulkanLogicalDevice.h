@@ -59,22 +59,23 @@ namespace DenOfIz
         [[nodiscard]] VulkanContext *GetContext( ) const;
 
         // Factory methods
-        ICommandListPool       *CreateCommandListPool( const CommandListPoolDesc &desc ) override;
-        IPipeline              *CreatePipeline( const PipelineDesc &desc ) override;
-        ISwapChain             *CreateSwapChain( const SwapChainDesc &desc ) override;
-        IRootSignature         *CreateRootSignature( const RootSignatureDesc &desc ) override;
-        IInputLayout           *CreateInputLayout( const InputLayoutDesc &desc ) override;
-        IResourceBindGroup     *CreateResourceBindGroup( const ResourceBindGroupDesc &desc ) override;
-        IFence                 *CreateFence( ) override;
-        ISemaphore             *CreateSemaphore( ) override;
-        IBufferResource        *CreateBufferResource( const BufferDesc &desc ) override;
-        ITextureResource       *CreateTextureResource( const TextureDesc &desc ) override;
-        ISampler               *CreateSampler( const SamplerDesc &desc ) override;
-        ITopLevelAS            *CreateTopLevelAS( const TopLevelASDesc &desc ) override;
-        IBottomLevelAS         *CreateBottomLevelAS( const BottomLevelASDesc &desc ) override;
-        IShaderBindingTable    *CreateShaderBindingTable( const ShaderBindingTableDesc &desc ) override;
+        ICommandQueue       *CreateCommandQueue( const CommandQueueDesc &desc ) override;
+        ICommandListPool    *CreateCommandListPool( const CommandListPoolDesc &desc ) override;
+        IPipeline           *CreatePipeline( const PipelineDesc &desc ) override;
+        ISwapChain          *CreateSwapChain( const SwapChainDesc &desc ) override;
+        IRootSignature      *CreateRootSignature( const RootSignatureDesc &desc ) override;
+        IInputLayout        *CreateInputLayout( const InputLayoutDesc &desc ) override;
+        IResourceBindGroup  *CreateResourceBindGroup( const ResourceBindGroupDesc &desc ) override;
+        IFence              *CreateFence( ) override;
+        ISemaphore          *CreateSemaphore( ) override;
+        IBufferResource     *CreateBufferResource( const BufferDesc &desc ) override;
+        ITextureResource    *CreateTextureResource( const TextureDesc &desc ) override;
+        ISampler            *CreateSampler( const SamplerDesc &desc ) override;
+        ITopLevelAS         *CreateTopLevelAS( const TopLevelASDesc &desc ) override;
+        IBottomLevelAS      *CreateBottomLevelAS( const BottomLevelASDesc &desc ) override;
+        IShaderBindingTable *CreateShaderBindingTable( const ShaderBindingTableDesc &desc ) override;
         ILocalRootSignature *CreateLocalRootSignature( const LocalRootSignatureDesc &createDesc ) override;
-        IShaderLocalData       *CreateShaderLocalData( const ShaderLocalDataDesc &createDesc ) override;
+        IShaderLocalData    *CreateShaderLocalData( const ShaderLocalDataDesc &createDesc ) override;
 
         ~VulkanLogicalDevice( ) override;
 

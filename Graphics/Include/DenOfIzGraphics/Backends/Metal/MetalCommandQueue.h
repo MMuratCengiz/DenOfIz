@@ -21,3 +21,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/ICommandQueue.h>
 #include "MetalCommandList.h"
 #include "MetalContext.h"
+
+namespace DenOfIz
+{
+    class DZ_API MetalCommandQueue final : public ICommandQueue
+    {
+    public:
+        MetalCommandQueue( const MetalContext *context );
+        ~MetalCommandQueue( ) override = default;
+
+        void          WaitIdle( ) override;
+        void          ExecuteCommandLists( const ExecuteCommandListsDesc &executeCommandListsDesc ) override;
+        PresentResult Present( const PresentDesc &presentDesc ) override;
+    };
+} // namespace DenOfIz

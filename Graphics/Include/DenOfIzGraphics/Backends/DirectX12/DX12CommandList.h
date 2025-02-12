@@ -23,8 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DX12Context.h"
 #include "DX12Pipeline.h"
 #include "DX12ResourceBindGroup.h"
-#include "DX12Semaphore.h"
-#include "DX12SwapChain.h"
 
 namespace DenOfIz
 {
@@ -42,7 +40,6 @@ namespace DenOfIz
 
         CD3DX12_RECT                        m_scissor{ };
         D3D12_VIEWPORT                      m_viewport{ };
-        ID3D12CommandQueue                 *m_commandQueue;
         std::vector<ID3D12DescriptorHeap *> m_heaps = { m_context->ShaderVisibleCbvSrvUavDescriptorHeap->GetHeap( ), m_context->ShaderVisibleSamplerDescriptorHeap->GetHeap( ) };
 
     public:
@@ -53,8 +50,7 @@ namespace DenOfIz
         void Begin( ) override;
         void BeginRendering( const RenderingDesc &renderingDesc ) override;
         void EndRendering( ) override;
-        void Execute( const ExecuteDesc &executeDesc ) override;
-        void Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> &waitOnLocks ) override;
+        void End( ) override;
         void BindPipeline( IPipeline *pipeline ) override;
         void BindVertexBuffer( IBufferResource *buffer ) override;
         void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType ) override;
@@ -76,7 +72,8 @@ namespace DenOfIz
         void UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc ) override;
         void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
 
-        const QueueType GetQueueType( ) override;
+        const QueueType             GetQueueType( ) override;
+        ID3D12GraphicsCommandList7 *GetCommandList( ) const;
 
     private:
         void CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const;

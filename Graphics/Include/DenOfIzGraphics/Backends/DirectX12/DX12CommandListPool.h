@@ -25,7 +25,6 @@ namespace DenOfIz
 {
     class DX12CommandListPool : public ICommandListPool
     {
-    private:
         DX12Context                                         *m_context;
         std::vector<wil::com_ptr<ID3D12CommandAllocator>>    m_commandAllocators;
         std::vector<wil::com_ptr<ID3D12GraphicsCommandList>> m_dx12CommandLists;

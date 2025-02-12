@@ -19,20 +19,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "ICommandList.h"
+#include "ICommandQueue.h"
 
 namespace DenOfIz
 {
     struct DZ_API CommandListPoolDesc
     {
-        QueueType QueueType;
-        // Rename to NumCommandLists
-        uint32_t NumCommandLists = 1;
+        ICommandQueue *CommandQueue    = nullptr;
+        uint32_t       NumCommandLists = 1;
     };
 
     class DZ_API ICommandListPool
     {
     public:
         virtual InteropArray<ICommandList *> GetCommandLists( ) = 0;
-        virtual ~ICommandListPool( )                                   = default;
+        virtual ~ICommandListPool( )                            = default;
     };
 } // namespace DenOfIz

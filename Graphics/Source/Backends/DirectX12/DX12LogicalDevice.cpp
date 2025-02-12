@@ -16,7 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Backends/DirectX12/DX12CommandQueue.h>
 #include <DenOfIzGraphics/Backends/DirectX12/DX12LogicalDevice.h>
+#include <DenOfIzGraphics/Backends/DirectX12/DX12Semaphore.h>
+#include <DenOfIzGraphics/Backends/DirectX12/DX12SwapChain.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h>
@@ -264,6 +267,11 @@ void DX12LogicalDevice::WaitIdle( )
     waitForFence( m_context->GraphicsCommandQueueFence.get( ) );
     waitForFence( m_context->ComputeCommandQueueFence.get( ) );
     waitForFence( m_context->CopyCommandQueueFence.get( ) );
+}
+
+ICommandQueue *DX12LogicalDevice::CreateCommandQueue( const CommandQueueDesc &desc )
+{
+    return new DX12CommandQueue( m_context.get( ), desc );
 }
 
 ICommandListPool *DX12LogicalDevice::CreateCommandListPool( const CommandListPoolDesc &poolDesc )

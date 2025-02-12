@@ -293,8 +293,7 @@ namespace DenOfIz
     {
         Graphics,
         Compute,
-        Copy,
-        RayTracing
+        Copy
     };
 
     struct DZ_API DeviceConstants

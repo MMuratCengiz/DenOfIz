@@ -1,9 +1,8 @@
 #pragma once
 
 #include <DenOfIzExamples/IExample.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
 #include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
+#include <DenOfIzGraphics/Renderer/Sync/ResourceTracking.h>
 #include <DenOfIzGraphics/Utilities/StepTimer.h>
 #include <DenOfIzGraphics/Utilities/Time.h>
 #include <RayTracingHlslCompat.h>
@@ -75,14 +74,13 @@ namespace DenOfIz
     static constexpr float c_aabbWidth    = 1.0f;
     static constexpr float c_aabbDistance = 1.0f;
 
-    class RayTracedProceduralGeometryExample final : public IExample, public NodeExecutionCallback, public PresentExecutionCallback
+    class RayTracedProceduralGeometryExample final : public IExample
     {
         static constexpr UINT  NUM_BLAS       = 2;
         static constexpr float c_aabbWidth    = 2.0f;
         static constexpr float c_aabbDistance = 2.0f;
 
-        std::unique_ptr<RenderGraph>      m_renderGraph;
-        std::unique_ptr<ICommandListPool> m_commandListPool;
+        std::vector<std::unique_ptr<ICommandList>> m_commandLists;
 
         // Ray tracing resources
         std::unique_ptr<ITextureResource> m_raytracingOutput[ 3 ];
@@ -138,8 +136,7 @@ namespace DenOfIz
         void Init( ) override;
         void ModifyApiPreferences( APIPreference &defaultApiPreference ) override;
         void Update( ) override;
-        void Execute( uint32_t frameIndex, ICommandList *commandList ) override;
-        void Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget ) override;
+        void Render( uint32_t frameIndex, ICommandList *commandList );
         void HandleEvent( SDL_Event &event ) override;
         void UpdateAABBPrimitiveAttributes( );
         void Quit( ) override;

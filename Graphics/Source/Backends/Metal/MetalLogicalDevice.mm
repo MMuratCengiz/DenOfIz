@@ -18,7 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #import "Metal/Metal.h"
 #define IR_PRIVATE_IMPLEMENTATION
-#include <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
+#import <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
+#import <DenOfIzGraphics/Backends/Metal/MetalCommandQueue.h>
 #import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalBottomLevelAS.h>
 #import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderBindingTable.h>
 #import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderLocalData.h>
@@ -98,6 +99,11 @@ void MetalLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     heapDesc.hazardTrackingMode = MTLHazardTrackingModeTracked;
     heapDesc.type               = MTLHeapTypeAutomatic;
     m_context->ReadOnlyHeap     = [m_context->Device newHeapWithDescriptor:heapDesc];
+}
+
+ICommandQueue *MetalLogicalDevice::CreateCommandListPool( const CommandQueueDesc &desc )
+{
+    return new MetalCommandQueue( m_context.get( ), desc );
 }
 
 ICommandListPool *MetalLogicalDevice::CreateCommandListPool( const CommandListPoolDesc &poolDesc )

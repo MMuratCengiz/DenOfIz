@@ -330,10 +330,6 @@ VkPipelineStageFlags VulkanPipelineBarrierHelper::GetPipelineStageFlags( const V
                 flags |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
             }
 
-            break;
-        }
-    case QueueType::RayTracing:
-        {
             if ( accessFlags & VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR )
             {
                 flags |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR | VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
@@ -375,13 +371,10 @@ VkPipelineStageFlags VulkanPipelineBarrierHelper::GetPipelineStageFlags( const V
             flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             break;
         case QueueType::Compute:
-            flags = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            flags = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
             break;
         case QueueType::Copy:
             flags = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            break;
-        case QueueType::RayTracing:
-            flags = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
             break;
         }
     }
@@ -398,7 +391,6 @@ uint32_t VulkanPipelineBarrierHelper::GetQueueFamilyIndex( const VulkanContext *
     case QueueType::Copy:
         return context->QueueFamilies.at( VulkanQueueType::Copy ).Index;
     case QueueType::Compute:
-    case QueueType::RayTracing:
         return context->QueueFamilies.at( VulkanQueueType::Compute ).Index;
     }
 

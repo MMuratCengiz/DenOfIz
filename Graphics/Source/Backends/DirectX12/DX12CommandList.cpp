@@ -31,20 +31,6 @@ DX12CommandList::DX12CommandList( DX12Context *context, wil::com_ptr<ID3D12Comma
 {
     DX_CHECK_RESULT( commandList->QueryInterface( IID_PPV_ARGS( m_commandList.put( ) ) ) );
 
-    switch ( desc.QueueType )
-    {
-    case QueueType::Graphics:
-        m_commandQueue = m_context->GraphicsCommandQueue.get( );
-        break;
-    case QueueType::RayTracing:
-    case QueueType::Compute:
-        m_commandQueue = m_context->ComputeCommandQueue.get( );
-        break;
-    case QueueType::Copy:
-        m_commandQueue = m_context->CopyCommandQueue.get( );
-        break;
-    }
-
 #if not defined( NDEBUG ) && not defined( NSIGHT_ENABLE )
     DX_CHECK_RESULT( m_commandList->QueryInterface( IID_PPV_ARGS( m_debugCommandList.put( ) ) ) );
 #endif
@@ -57,10 +43,6 @@ void DX12CommandList::Begin( )
     m_queuedBindGroups.clear( );
 
     m_currentRootSignature = nullptr;
-    if ( m_desc.QueueType != QueueType::Copy )
-    {
-        m_commandList->SetDescriptorHeaps( m_heaps.size( ), m_heaps.data( ) );
-    }
 }
 
 void DX12CommandList::BeginRendering( const RenderingDesc &renderingDesc )
@@ -81,51 +63,9 @@ void DX12CommandList::EndRendering( )
 {
 }
 
-void DX12CommandList::Execute( const ExecuteDesc &executeDesc )
+void DX12CommandList::End( )
 {
     DX_CHECK_RESULT( m_commandList->Close( ) );
-
-    for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements( ); i++ )
-    {
-        const auto *dx12Semaphore = dynamic_cast<DX12Semaphore *>( executeDesc.WaitOnSemaphores.GetElement( i ) );
-        DX_CHECK_RESULT( m_commandQueue->Wait( dx12Semaphore->GetFence( ), dx12Semaphore->GetCurrentValue( ) ) );
-    }
-
-    m_commandQueue->ExecuteCommandLists( 1, CommandListCast( m_commandList.addressof( ) ) );
-
-    if ( executeDesc.Notify != nullptr )
-    {
-        const auto dx12Fence = dynamic_cast<DX12Fence *>( executeDesc.Notify );
-        dx12Fence->NotifyCommandQueue( m_commandQueue );
-    }
-
-    for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements( ); i++ )
-    {
-        const auto dx12Semaphore = dynamic_cast<DX12Semaphore *>( executeDesc.NotifySemaphores.GetElement( i ) );
-        dx12Semaphore->NotifyCommandQueue( m_commandQueue );
-    }
-}
-
-void DX12CommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> &waitOnLocks )
-{
-    DZ_NOT_NULL( swapChain );
-
-    const DX12SwapChain *dx12SwapChain = dynamic_cast<DX12SwapChain *>( swapChain );
-    uint32_t             flags         = 0;
-    uint32_t             syncInterval  = 1;
-    if ( m_context->SelectedDeviceInfo.Capabilities.Tearing )
-    {
-        syncInterval = 0;
-        flags |= DXGI_PRESENT_ALLOW_TEARING;
-    }
-    //
-    // for ( int i = 0; i < waitOnLocks.NumElements( ); i++ )
-    // {
-    //     const auto *dx12Semaphore = dynamic_cast<DX12Semaphore *>( waitOnLocks.GetElement( i ) );
-    //     dx12Semaphore->Wait( ); // We need CPU synchronization here
-    // }
-
-    DX_CHECK_RESULT( dx12SwapChain->GetSwapChain( )->Present( syncInterval, flags ) );
 }
 
 void DX12CommandList::BindPipeline( IPipeline *pipeline )
@@ -200,6 +140,8 @@ void DX12CommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 
 void DX12CommandList::ProcessBindGroups( )
 {
+    m_commandList->SetDescriptorHeaps( m_heaps.size( ), m_heaps.data( ) );
+
     for ( const auto &dx12BindGroup : m_queuedBindGroups )
     {
         SetRootSignature( dx12BindGroup->RootSignature( )->Instance( ) );
@@ -256,7 +198,7 @@ void DX12CommandList::BindRootDescriptors( const DX12RootDescriptor &rootDescrip
     case D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS:
         break;
     case D3D12_ROOT_PARAMETER_TYPE_CBV:
-        if ( m_desc.QueueType == QueueType::Graphics )
+        if ( m_currentPipeline->GetBindPoint( ) == BindPoint::Graphics )
         {
             m_commandList->SetGraphicsRootConstantBufferView( rootDescriptor.RootParameterIndex, rootDescriptor.GpuAddress );
         }
@@ -266,7 +208,7 @@ void DX12CommandList::BindRootDescriptors( const DX12RootDescriptor &rootDescrip
         }
         break;
     case D3D12_ROOT_PARAMETER_TYPE_SRV:
-        if ( m_desc.QueueType == QueueType::Graphics )
+        if ( m_currentPipeline->GetBindPoint( ) == BindPoint::Graphics )
         {
             m_commandList->SetGraphicsRootShaderResourceView( rootDescriptor.RootParameterIndex, rootDescriptor.GpuAddress );
         }
@@ -276,7 +218,7 @@ void DX12CommandList::BindRootDescriptors( const DX12RootDescriptor &rootDescrip
         }
         break;
     case D3D12_ROOT_PARAMETER_TYPE_UAV:
-        if ( m_desc.QueueType == QueueType::Graphics )
+        if ( m_currentPipeline->GetBindPoint( ) == BindPoint::Graphics )
         {
             m_commandList->SetGraphicsRootUnorderedAccessView( rootDescriptor.RootParameterIndex, rootDescriptor.GpuAddress );
         }
@@ -290,13 +232,12 @@ void DX12CommandList::BindRootDescriptors( const DX12RootDescriptor &rootDescrip
 
 void DX12CommandList::SetRootConstants( const DX12RootConstant &rootConstant ) const
 {
-    switch ( m_desc.QueueType )
+    switch ( m_currentPipeline->GetBindPoint( ) )
     {
-    case QueueType::Graphics:
+    case BindPoint::Graphics:
         m_commandList->SetGraphicsRoot32BitConstants( rootConstant.Binding, rootConstant.NumBytes / 4, rootConstant.Data, 0 );
         break;
-    case QueueType::RayTracing:
-    case QueueType::Compute:
+    case BindPoint::Compute:
         m_commandList->SetComputeRoot32BitConstants( rootConstant.Binding, rootConstant.NumBytes / 4, rootConstant.Data, 0 );
         break;
     default:
@@ -516,4 +457,9 @@ void DX12CommandList::SetRootSignature( ID3D12RootSignature *rootSignature )
 const QueueType DX12CommandList::GetQueueType( )
 {
     return m_desc.QueueType;
+}
+
+ID3D12GraphicsCommandList7 *DX12CommandList::GetCommandList( ) const
+{
+    return m_commandList.get( );
 }

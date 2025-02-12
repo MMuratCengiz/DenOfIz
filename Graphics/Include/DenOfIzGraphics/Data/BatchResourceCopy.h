@@ -75,6 +75,9 @@ namespace DenOfIz
         std::unique_ptr<IFence>           m_syncWait;
         bool                              m_issueBarriers;
 
+        std::unique_ptr<ICommandQueue> m_copyQueue;
+        std::unique_ptr<ICommandQueue> m_syncQueue;
+
     public:
         DZ_API explicit BatchResourceCopy( ILogicalDevice *device, bool issueBarriers = true );
         DZ_API ~BatchResourceCopy( );

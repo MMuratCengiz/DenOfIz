@@ -27,26 +27,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-VulkanCommandList::VulkanCommandList( VulkanContext *context, const CommandListDesc desc ) : m_desc( desc ), m_context( context )
+VulkanCommandList::VulkanCommandList( VulkanContext *context, const CommandListDesc desc, const VkCommandPool commandPool ) :
+    m_desc( desc ), m_context( context ), m_commandPool( commandPool )
 {
-    auto commandPool = m_context->GraphicsQueueCommandPool;
-    switch ( m_desc.QueueType )
-    {
-    case QueueType::Graphics:
-        commandPool = m_context->GraphicsQueueCommandPool;
-        break;
-    case QueueType::Compute:
-    case QueueType::RayTracing:
-        commandPool = m_context->ComputeQueueCommandPool;
-        break;
-    case QueueType::Copy:
-        commandPool = m_context->TransferQueueCommandPool;
-        break;
-    }
+    m_queueType = desc.QueueType;
 
     VkCommandBufferAllocateInfo allocInfo{ };
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool        = commandPool;
+    allocInfo.commandPool        = m_commandPool;
     allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY; // Todo
     allocInfo.commandBufferCount = 1;
 
@@ -146,61 +134,9 @@ void VulkanCommandList::EndRendering( )
     vkCmdEndRendering( m_commandBuffer );
 }
 
-void VulkanCommandList::Execute( const ExecuteDesc &executeDesc )
+void VulkanCommandList::End( )
 {
     VK_CHECK_RESULT( vkEndCommandBuffer( m_commandBuffer ) );
-
-    VkSubmitInfo vkSubmitInfo{ };
-    vkSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    std::vector<VkPipelineStageFlags> waitStages;
-    std::vector<VkSemaphore>          waitOnSemaphores;
-    for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements( ); i++ )
-    {
-        const auto *waitOn = dynamic_cast<VulkanSemaphore *>( executeDesc.WaitOnSemaphores.GetElement( i ) );
-        waitOnSemaphores.push_back( waitOn->GetSemaphore( ) );
-        waitStages.push_back( VK_PIPELINE_STAGE_ALL_COMMANDS_BIT );
-    }
-
-    std::vector<VkSemaphore> signalSemaphores;
-    for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements( ); i++ )
-    {
-        const auto *signal = dynamic_cast<VulkanSemaphore *>( executeDesc.NotifySemaphores.GetElement( i ) );
-        signalSemaphores.push_back( signal->GetSemaphore( ) );
-    }
-
-    vkSubmitInfo.waitSemaphoreCount   = waitOnSemaphores.size( );
-    vkSubmitInfo.pWaitSemaphores      = waitOnSemaphores.data( );
-    vkSubmitInfo.pWaitDstStageMask    = waitStages.data( );
-    vkSubmitInfo.commandBufferCount   = 1;
-    vkSubmitInfo.pCommandBuffers      = &m_commandBuffer;
-    vkSubmitInfo.signalSemaphoreCount = signalSemaphores.size( );
-    vkSubmitInfo.pSignalSemaphores    = signalSemaphores.data( );
-
-    VkFence vkNotifyFence = nullptr;
-    if ( executeDesc.Notify != nullptr )
-    {
-        auto *notify = dynamic_cast<VulkanFence *>( executeDesc.Notify );
-        notify->Reset( );
-        vkNotifyFence = notify->GetFence( );
-    }
-
-    auto queueType = VulkanQueueType::Graphics;
-    switch ( m_desc.QueueType )
-    {
-    case QueueType::Graphics:
-        queueType = VulkanQueueType::Graphics;
-        break;
-    case QueueType::Compute:
-    case QueueType::RayTracing:
-        queueType = VulkanQueueType::Compute;
-        break;
-    case QueueType::Copy:
-        queueType = VulkanQueueType::Copy;
-        break;
-    }
-
-    VK_CHECK_RESULT( vkQueueSubmit( m_context->Queues[ queueType ], 1, &vkSubmitInfo, vkNotifyFence ) );
 }
 
 void VulkanCommandList::BindPipeline( IPipeline *pipeline )
@@ -265,7 +201,7 @@ void VulkanCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 
 void VulkanCommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )
 {
-    VulkanPipelineBarrierHelper::ExecutePipelineBarrier( m_context, m_commandBuffer, m_desc.QueueType, barrier );
+    VulkanPipelineBarrierHelper::ExecutePipelineBarrier( m_context, m_commandBuffer, m_queueType, barrier );
 }
 
 void VulkanCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionDesc )
@@ -434,44 +370,18 @@ void VulkanCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 
 void VulkanCommandList::Dispatch( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
 {
-    DZ_ASSERTM( m_desc.QueueType == QueueType::Compute, "Dispatch can only be called on compute queues." );
     ProcessBindGroups( );
     vkCmdDispatch( m_commandBuffer, groupCountX, groupCountY, groupCountZ );
 }
 
-void VulkanCommandList::Present( ISwapChain *swapChain, const uint32_t imageIndex, const InteropArray<ISemaphore *> &waitOnLocks )
-{
-    DZ_ASSERTM( m_desc.QueueType == QueueType::Graphics, "Present can only be called on graphics queue." );
-
-    VkPresentInfoKHR presentInfo{ };
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-    std::vector<VkSemaphore> vkWaitOnSemaphores( waitOnLocks.NumElements( ) );
-    for ( int i = 0; i < waitOnLocks.NumElements( ); i++ )
-    {
-        vkWaitOnSemaphores[ i ] = dynamic_cast<VulkanSemaphore *>( waitOnLocks.GetElement( i ) )->GetSemaphore( );
-    }
-
-    presentInfo.waitSemaphoreCount = vkWaitOnSemaphores.size( );
-    presentInfo.pWaitSemaphores    = vkWaitOnSemaphores.data( );
-    presentInfo.swapchainCount     = 1;
-    presentInfo.pSwapchains        = dynamic_cast<VulkanSwapChain *>( swapChain )->GetSwapChain( );
-    presentInfo.pImageIndices      = &imageIndex;
-    presentInfo.pResults           = nullptr;
-
-    const VkResult presentResult = vkQueuePresentKHR( m_context->Queues[ VulkanQueueType::Presentation ], &presentInfo );
-
-    if ( presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR )
-    {
-        // TODO
-    }
-
-    VK_CHECK_RESULT( presentResult );
-}
-
 const QueueType VulkanCommandList::GetQueueType( )
 {
-    return m_desc.QueueType;
+    return m_queueType;
+}
+
+VkCommandBuffer &VulkanCommandList::GetCommandBuffer( )
+{
+    return m_commandBuffer;
 }
 
 void VulkanCommandList::ProcessBindGroups( ) const

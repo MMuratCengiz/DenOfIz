@@ -54,8 +54,8 @@ namespace DenOfIz
     class DZ_API NodeExecutionCallback
     {
     public:
-        virtual ~NodeExecutionCallback( ) {};
-        virtual void Execute( uint32_t frameIndex, ICommandList *commandList ) {};
+        virtual ~NodeExecutionCallback( ) {}
+        virtual void Execute( uint32_t frameIndex, ICommandList *commandList ) {}
     };
 
     // Intentionally not DZ_API as this does not translate well interop
@@ -78,15 +78,14 @@ namespace DenOfIz
         InteropString                       Name;
         QueueType                           QueueType;
         InteropArray<InteropString>         Dependencies;
-        InteropArray<NodeResourceUsageDesc> RequiredStates;
         NodeExecutionCallback              *Execute;
     };
 
     class DZ_API PresentExecutionCallback
     {
     public:
-        virtual ~PresentExecutionCallback( ) {};
-        virtual void Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *texture ) {};
+        virtual ~PresentExecutionCallback( ) {}
+        virtual void Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *texture ) {}
     };
 
     struct DZ_API PresentNodeDesc

@@ -19,11 +19,42 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "ICommandList.h"
+#include "ISemaphore.h"
 
 namespace DenOfIz
 {
+    struct DZ_API CommandQueueFlags
+    {
+        bool RequirePresentationSupport = false;
+    };
+
+    enum class QueuePriority
+    {
+        Low,
+        Normal,
+        High,
+    };
+
+    struct DZ_API CommandQueueDesc
+    {
+        QueueType         QueueType;
+        QueuePriority     Priority = QueuePriority::Normal;
+        CommandQueueFlags Flags;
+    };
+
+    struct DZ_API ExecuteCommandListsDesc
+    {
+        IFence                      *Signal;
+        InteropArray<ICommandList *> CommandLists;
+        InteropArray<ISemaphore *>   WaitSemaphores;
+        InteropArray<ISemaphore *>   SignalSemaphores;
+    };
+
     class DZ_API ICommandQueue
     {
-           public:
+    public:
+        virtual ~ICommandQueue( )                                                                  = default;
+        virtual void WaitIdle( )                                                                   = 0;
+        virtual void ExecuteCommandLists( const ExecuteCommandListsDesc &executeCommandListsDesc ) = 0;
     };
-}
+} // namespace DenOfIz

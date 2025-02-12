@@ -30,33 +30,12 @@ void RayTracedProceduralGeometryExample::Init( )
     CreateRayTracingPipeline( );
     CreateShaderBindingTable( );
 
-    RenderGraphDesc renderGraphDesc{ };
-    renderGraphDesc.GraphicsApi   = m_graphicsApi;
-    renderGraphDesc.LogicalDevice = m_logicalDevice;
-    renderGraphDesc.SwapChain     = m_swapChain.get( );
-
-    m_renderGraph = std::make_unique<RenderGraph>( renderGraphDesc );
-
-    NodeDesc raytracingNode{ };
-    raytracingNode.Name      = "RayTracing";
-    raytracingNode.QueueType = QueueType::RayTracing;
-    raytracingNode.Execute   = this;
-
-    PresentNodeDesc presentNode{ };
-    presentNode.SwapChain = m_swapChain.get( );
-    presentNode.Dependencies.AddElement( "RayTracing" );
-    presentNode.Execute = this;
-
-    m_renderGraph->AddNode( raytracingNode );
-    m_renderGraph->SetPresentNode( presentNode );
-    m_renderGraph->BuildGraph( );
-
     m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
 }
 
 void RayTracedProceduralGeometryExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void RayTracedProceduralGeometryExample::BuildProceduralGeometryAABBs( )
@@ -193,12 +172,21 @@ void RayTracedProceduralGeometryExample::Update( )
     m_sceneConstants->projectionToWorld = XMMatrixInverse( nullptr, m_camera->ViewProjectionMatrix( ) );
     m_sceneConstants->elapsedTime       = elapsedTime;
 
-    m_renderGraph->Update( );
+    const uint64_t frameIndex = m_frameSync->NextFrame( );
+    Render( frameIndex, m_frameSync->GetCommandList( frameIndex ) );
+    m_frameSync->ExecuteCommandList( frameIndex );
+    Present( frameIndex ); // Delegate to parent to handle resize events
 }
 
-void RayTracedProceduralGeometryExample::Execute( const uint32_t frameIndex, ICommandList *commandList )
+void RayTracedProceduralGeometryExample::Render( const uint32_t frameIndex, ICommandList *commandList )
 {
-    m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::UnorderedAccess ) } );
+    commandList->Begin( );
+
+    TransitionTextureDesc rtOutTransition{ };
+    rtOutTransition.Texture     = m_raytracingOutput[ frameIndex ].get( );
+    rtOutTransition.NewUsage    = ResourceUsage::UnorderedAccess;
+    rtOutTransition.CommandList = commandList;
+    m_resourceTracking.TransitionTexture( rtOutTransition );
 
     const Viewport &viewport = m_swapChain->GetViewport( );
 
@@ -211,14 +199,23 @@ void RayTracedProceduralGeometryExample::Execute( const uint32_t frameIndex, ICo
     dispatchRaysDesc.Depth              = 1;
     dispatchRaysDesc.ShaderBindingTable = m_shaderBindingTable.get( );
     commandList->DispatchRays( dispatchRaysDesc );
-}
 
-void RayTracedProceduralGeometryExample::Execute( const uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget )
-{
-    std::vector<NodeResourceUsageDesc> resourceUsages( 2 );
-    resourceUsages[ 0 ] = NodeResourceUsageDesc::TextureState( frameIndex, renderTarget, ResourceUsage::CopyDst );
-    resourceUsages[ 1 ] = NodeResourceUsageDesc::TextureState( frameIndex, m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::CopySrc );
-    m_renderGraph->IssueBarriers( commandList, resourceUsages );
+    ITextureResource *renderTarget = m_swapChain->GetRenderTarget( m_frameSync->AcquireNextImage( frameIndex ) );
+
+    BatchTransitionDesc batchTransition{ };
+    batchTransition.CommandList = commandList;
+
+    TransitionTextureDesc &renderTargetTransition = batchTransition.TextureTransitions.EmplaceElement( );
+    renderTargetTransition.Texture                = renderTarget;
+    renderTargetTransition.NewUsage               = ResourceUsage::CopyDst;
+    renderTargetTransition.CommandList            = commandList;
+
+    TransitionTextureDesc &raytracingOutputTransition = batchTransition.TextureTransitions.EmplaceElement( );
+    raytracingOutputTransition.Texture                = m_raytracingOutput[ frameIndex ].get( );
+    raytracingOutputTransition.NewUsage               = ResourceUsage::CopySrc;
+    raytracingOutputTransition.CommandList            = commandList;
+
+    m_resourceTracking.BatchTransition( batchTransition );
 
     CopyTextureRegionDesc copyTextureRegionDesc{ };
     copyTextureRegionDesc.SrcTexture = m_raytracingOutput[ frameIndex ].get( );
@@ -227,6 +224,14 @@ void RayTracedProceduralGeometryExample::Execute( const uint32_t frameIndex, ICo
     copyTextureRegionDesc.Height     = m_windowDesc.Height;
     copyTextureRegionDesc.Depth      = 1;
     commandList->CopyTextureRegion( copyTextureRegionDesc );
+
+    TransitionTextureDesc presentTransition { };
+    presentTransition.Texture     = renderTarget;
+    presentTransition.NewUsage    = ResourceUsage::Present;
+    presentTransition.CommandList = commandList;
+    m_resourceTracking.TransitionTexture( presentTransition );
+
+    commandList->End( );
 }
 
 void RayTracedProceduralGeometryExample::CreateRenderTargets( )
@@ -243,6 +248,7 @@ void RayTracedProceduralGeometryExample::CreateRenderTargets( )
     {
         textureDesc.DebugName   = InteropString( "RayTracing Output " ).Append( std::to_string( i ).c_str( ) );
         m_raytracingOutput[ i ] = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
+        m_resourceTracking.TrackTexture( m_raytracingOutput[ i ].get( ), ResourceUsage::Common );
     }
 }
 
@@ -331,7 +337,11 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
         m_topLevelAS = std::unique_ptr<ITopLevelAS>( m_logicalDevice->CreateTopLevelAS( topLevelDesc ) );
     }
 
-    const auto    commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( { QueueType::RayTracing, 1 } ) );
+    CommandQueueDesc commandQueueDesc{ };
+    commandQueueDesc.QueueType = QueueType::Compute;
+    auto commandQueue = std::unique_ptr<ICommandQueue>( m_logicalDevice->CreateCommandQueue( commandQueueDesc  ) );
+
+    const auto    commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( { commandQueue.get( ) } ) );
     ICommandList *commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
     const auto    syncFence       = std::unique_ptr<IFence>( m_logicalDevice->CreateFence( ) );
 
@@ -351,11 +361,15 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
     // Issue UAV barriers for TLAS, their initial state is always: AccelerationStructureWrite
     barrier.MemoryBarrier( { .TopLevelAS = m_topLevelAS.get( ), .OldState = ResourceUsage::AccelerationStructureWrite, .NewState = ResourceUsage::AccelerationStructureRead } );
     commandList->PipelineBarrier( barrier );
+    commandList->End( );
 
-    ExecuteDesc executeDesc{ };
-    executeDesc.Notify = syncFence.get( );
-    commandList->Execute( executeDesc );
+    ExecuteCommandListsDesc executeDesc{ };
+    executeDesc.CommandLists.AddElement( commandList );
+    executeDesc.Signal = syncFence.get( );
+    commandQueue->ExecuteCommandLists( executeDesc );
+
     syncFence->Wait( );
+    m_graphicsQueue->WaitIdle( );
 }
 
 void RayTracedProceduralGeometryExample::CreateResources( )
@@ -754,7 +768,7 @@ void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
 
 void RayTracedProceduralGeometryExample::Quit( )
 {
-    m_renderGraph->WaitIdle( );
+    m_frameSync->WaitIdle( );
     m_aabbPrimitiveAttributeBuffer->UnmapMemory( );
     m_aabbPrimitiveAttributeBufferMemory = nullptr;
     m_sceneConstantBuffer->UnmapMemory( );
