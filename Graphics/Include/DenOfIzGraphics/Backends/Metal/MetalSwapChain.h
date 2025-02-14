@@ -46,7 +46,7 @@ namespace DenOfIz
         ITextureResource *GetRenderTarget( uint32_t image ) override;
         Viewport          GetViewport( ) override;
         void              Resize( uint32_t width, uint32_t height ) override;
-        void              Present( const uint32_t &imageIndex, const InteropArray<ISemaphore *> &waitOnSemaphores );
+        PresentResult     Present( const PresentDesc &presentDesc ) override;
     };
 
 } // namespace DenOfIz

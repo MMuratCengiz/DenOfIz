@@ -59,6 +59,7 @@ namespace DenOfIz
         const id<MTLDepthStencilState>    &DepthStencilState( ) const;
         const id<MTLRenderPipelineState>  &GraphicsPipelineState( ) const;
         const id<MTLComputePipelineState> &ComputePipelineState( ) const;
+        const BindPoint                   &BindPoint( ) const;
         // Ray tracing specific:
         const uint64_t                                &FindVisibleShaderIndexByName( const std::string &name ) const;
         const HitGroupExport                          &FindHitGroupExport( const std::string &name ) const;

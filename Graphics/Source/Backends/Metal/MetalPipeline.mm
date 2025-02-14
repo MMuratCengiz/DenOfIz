@@ -371,6 +371,11 @@ const id<MTLComputePipelineState> &MetalPipeline::ComputePipelineState( ) const
     return m_computePipelineState;
 }
 
+const BindPoint &MetalPipeline::BindPoint( ) const
+{
+    return m_desc.BindPoint;
+}
+
 const uint64_t &MetalPipeline::FindVisibleShaderIndexByName( const std::string &name ) const
 {
     auto shaderFunction = m_visibleFunctions.find( name );

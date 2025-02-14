@@ -101,7 +101,7 @@ void MetalLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     m_context->ReadOnlyHeap     = [m_context->Device newHeapWithDescriptor:heapDesc];
 }
 
-ICommandQueue *MetalLogicalDevice::CreateCommandListPool( const CommandQueueDesc &desc )
+ICommandQueue *MetalLogicalDevice::CreateCommandQueue( const CommandQueueDesc &desc )
 {
     return new MetalCommandQueue( m_context.get( ), desc );
 }

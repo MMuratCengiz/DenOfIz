@@ -90,7 +90,7 @@ void MetalSwapChain::Resize( uint32_t width, uint32_t height )
     }
 }
 
-void MetalSwapChain::Present( const uint32_t &imageIndex, const InteropArray<ISemaphore *> &waitOnSemaphores )
+PresentResult MetalSwapChain::Present( const PresentDesc& presentDesc )
 {
     @autoreleasepool
     {
@@ -99,10 +99,12 @@ void MetalSwapChain::Present( const uint32_t &imageIndex, const InteropArray<ISe
         m_presentCommandBuffer.label = @"PRESENT";
         [m_presentCommandBuffer presentDrawable:m_drawable];
 
-        m_renderTargets[ imageIndex ]->UpdateTexture( m_drawableDesc, nil );
+        m_renderTargets[ presentDesc.Image ]->UpdateTexture( m_drawableDesc, nil );
         m_drawable = nil;
 
         [m_presentCommandBuffer commit];
         m_presentCommandBuffer = nil;
+
+        return PresentResult::Success;
     }
 }
