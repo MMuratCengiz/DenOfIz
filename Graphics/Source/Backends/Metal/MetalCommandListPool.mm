@@ -17,13 +17,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #import <DenOfIzGraphics/Backends/Metal/MetalCommandListPool.h>
+#import <DenOfIzGraphics/Backends/Metal/MetalCommandQueue.h>
 
 using namespace DenOfIz;
 
 MetalCommandListPool::MetalCommandListPool( MetalContext *context, CommandListPoolDesc desc ) : m_context( context ), m_desc( desc )
 {
+    MetalCommandQueue *commandQueue = dynamic_cast<MetalCommandQueue *>( desc.CommandQueue );
+
     CommandListDesc commandListDesc;
-    commandListDesc.QueueType = desc.QueueType;
+    commandListDesc.QueueType = commandQueue->GetQueueType( );
 
     for ( uint32_t i = 0; i < m_desc.NumCommandLists; i++ )
     {

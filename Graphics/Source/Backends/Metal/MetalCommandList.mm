@@ -43,7 +43,6 @@ void MetalCommandList::Begin( )
             m_activeEncoderType = MetalEncoderType::Blit;
             m_blitEncoder       = [m_commandBuffer blitCommandEncoder];
             break;
-        case QueueType::RayTracing: // Validate
         case QueueType::Compute:
             m_activeEncoderType = MetalEncoderType::Compute;
             m_computeEncoder    = [m_commandBuffer computeCommandEncoder];
@@ -56,6 +55,7 @@ void MetalCommandList::Begin( )
 
     m_currentBufferOffset = 0;
     m_argumentBuffer->Reset( );
+    m_queuedBindGroups.clear( );
     m_rootSignature = nullptr;
 }
 
@@ -110,63 +110,9 @@ void MetalCommandList::EndRendering( )
 {
 }
 
-void MetalCommandList::Execute( const ExecuteDesc &executeDesc )
+void MetalCommandList::End( )
 {
-    @autoreleasepool
-    {
-        bool waitRequired = false;
-        for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements( ); ++i )
-        {
-            MetalSemaphore *semaphore = static_cast<MetalSemaphore *>( executeDesc.WaitOnSemaphores.GetElement( i ) );
-            if ( semaphore->IsSignaled( ) )
-            {
-                waitRequired = true;
-                break;
-            }
-        }
-
-        if ( waitRequired )
-        {
-            id<MTLCommandBuffer> waitCommandBuffer = [m_context->CommandQueue commandBufferWithUnretainedReferences];
-
-            for ( int i = 0; i < executeDesc.WaitOnSemaphores.NumElements( ); ++i )
-            {
-                MetalSemaphore *semaphore = static_cast<MetalSemaphore *>( executeDesc.WaitOnSemaphores.GetElement( i ) );
-                if ( semaphore->IsSignaled( ) )
-                {
-                    semaphore->WaitFor( waitCommandBuffer );
-                    semaphore->ResetSignaled( );
-                }
-            }
-
-            [waitCommandBuffer commit];
-            waitCommandBuffer = nil;
-        }
-
-        SwitchEncoder( MetalEncoderType::None, true );
-
-        if ( executeDesc.Notify )
-        {
-            MetalFence *metalFence = static_cast<MetalFence *>( executeDesc.Notify );
-            metalFence->NotifyOnCommandBufferCompletion( m_commandBuffer );
-        }
-
-        for ( int i = 0; i < executeDesc.NotifySemaphores.NumElements( ); ++i )
-        {
-            MetalSemaphore *metalSemaphore = static_cast<MetalSemaphore *>( executeDesc.NotifySemaphores.GetElement( i ) );
-            metalSemaphore->NotifyOnCommandBufferCompletion( m_commandBuffer );
-        }
-
-        [m_commandBuffer commit];
-        m_commandBuffer = nil;
-    }
-}
-
-void MetalCommandList::Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> &waitOnLocks )
-{
-    SwitchEncoder( MetalEncoderType::None );
-    MetalSwapChain *metalSwapChain = static_cast<MetalSwapChain *>( swapChain );
-    metalSwapChain->Present( imageIndex, waitOnLocks );
+    SwitchEncoder( MetalEncoderType::None, true );
 }
 
 void MetalCommandList::BindPipeline( IPipeline *pipeline )
@@ -174,15 +120,15 @@ void MetalCommandList::BindPipeline( IPipeline *pipeline )
     m_pipeline = static_cast<MetalPipeline *>( pipeline );
     @autoreleasepool
     {
-        switch ( m_desc.QueueType )
+        switch ( m_pipeline->BindPoint( ) )
         {
-        case QueueType::Copy:
-            break;
-        case QueueType::Compute:
-        case QueueType::RayTracing:
+        case BindPoint::RayTracing:
+        case BindPoint::Compute:
+            SwitchEncoder( MetalEncoderType::Compute );
             [m_computeEncoder setComputePipelineState:m_pipeline->ComputePipelineState( )];
             break;
-        case QueueType::Graphics:
+        case BindPoint::Graphics:
+            SwitchEncoder( MetalEncoderType::Render );
             [m_renderEncoder setRenderPipelineState:m_pipeline->GraphicsPipelineState( )];
             [m_renderEncoder setDepthStencilState:m_pipeline->DepthStencilState( )];
             [m_renderEncoder setCullMode:m_pipeline->CullMode( )];
@@ -200,7 +146,6 @@ void MetalCommandList::BindVertexBuffer( IBufferResource *buffer )
     {
     case QueueType::Copy:
     case QueueType::Compute:
-    case QueueType::RayTracing:
         LOG( WARNING ) << "BindVertexBuffer is not supported for Copy and Compute queues";
         break;
     case QueueType::Graphics:
@@ -228,14 +173,14 @@ void MetalCommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType
 
 void MetalCommandList::BindViewport( float x, float y, float width, float height )
 {
-    EnsureEncoder( MetalEncoderType::Render, "BindViewport called without a render encoder. Make sure to call BeginRendering" );
+    SwitchEncoder( MetalEncoderType::Render );
     MTLViewport viewport = { x, y, width, height, 0.0, 1.0 };
     [m_renderEncoder setViewport:viewport];
 }
 
 void MetalCommandList::BindScissorRect( float x, float y, float width, float height )
 {
-    EnsureEncoder( MetalEncoderType::Render, "BindScissorRect called without a render encoder. Make sure to call BeginRendering" );
+    SwitchEncoder( MetalEncoderType::Render );
     MTLScissorRect scissorRect = { static_cast<NSUInteger>( x ), static_cast<NSUInteger>( y ), static_cast<NSUInteger>( width ), static_cast<NSUInteger>( height ) };
     [m_renderEncoder setScissorRect:scissorRect];
 }
@@ -243,10 +188,22 @@ void MetalCommandList::BindScissorRect( float x, float y, float width, float hei
 void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 {
     MetalResourceBindGroup *metalBindGroup = static_cast<MetalResourceBindGroup *>( bindGroup );
+    m_queuedBindGroups.push_back( metalBindGroup );
+}
 
-    if ( m_desc.QueueType == QueueType::Copy )
+void MetalCommandList::BindCommandResources( )
+{
+    for ( auto &bindGroup : m_queuedBindGroups )
     {
-        LOG( WARNING ) << "BindResourceGroup is not supported for Copy queue";
+        ProcessBindGroup( bindGroup );
+    }
+    BindTopLevelArgumentBuffer( );
+}
+
+void MetalCommandList::ProcessBindGroup( const MetalResourceBindGroup *metalBindGroup )
+{
+    if ( m_activeEncoderType == MetalEncoderType::Blit)
+    {
         return;
     }
 
@@ -304,24 +261,24 @@ void MetalCommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )
 
 void MetalCommandList::DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance )
 {
-    EnsureEncoder( MetalEncoderType::Render, "DrawIndexed called without a render encoder. Make sure to call BeginRendering" );
-    BindTopLevelArgumentBuffer( );
+    SwitchEncoder( MetalEncoderType::Render );
+    BindCommandResources( );
     IRRuntimeDrawIndexedPrimitives( m_renderEncoder, MTLPrimitiveTypeTriangle, indexCount, m_indexType, m_indexBuffer, firstIndex, instanceCount, vertexOffset, firstInstance );
     TopLevelArgumentBufferNextOffset( );
 }
 
 void MetalCommandList::Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance )
 {
-    EnsureEncoder( MetalEncoderType::Render, "Draw called without a render encoder. Make sure to call BeginRendering" );
-    BindTopLevelArgumentBuffer( );
+    SwitchEncoder( MetalEncoderType::Render );
+    BindCommandResources( );
     IRRuntimeDrawPrimitives( m_renderEncoder, MTLPrimitiveTypeTriangle, firstVertex, vertexCount, instanceCount );
     TopLevelArgumentBufferNextOffset( );
 }
 
 void MetalCommandList::Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ )
 {
-    EnsureEncoder( MetalEncoderType::Compute, "Dispatch called without a compute encoder. Make sure to call Begin with QueueType::Compute" );
-    BindTopLevelArgumentBuffer( );
+    SwitchEncoder( MetalEncoderType::Compute );
+    BindCommandResources( );
     MTLSize threadGroupsPerGrid = MTLSizeMake( groupCountX, groupCountY, groupCountZ );
     [m_computeEncoder dispatchThreadgroups:threadGroupsPerGrid threadsPerThreadgroup:MTLSizeMake( 1, 1, 1 )];
     TopLevelArgumentBufferNextOffset( );
@@ -471,7 +428,8 @@ void MetalCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBo
 
 void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
-    EnsureEncoder( MetalEncoderType::Compute, "DispatchRays called without a compute encoder. Make sure to call Begin with QueueType::Compute" );
+    SwitchEncoder( MetalEncoderType::Compute );
+    BindCommandResources( );
 
     MetalShaderBindingTable *shaderBindingTable = static_cast<MetalShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
 
@@ -522,7 +480,7 @@ void MetalCommandList::BindTopLevelArgumentBuffer( )
     uint64_t      offset = m_currentBufferOffset;
     if ( m_currentBufferOffset == 0 )
     {
-        if ( m_desc.QueueType == QueueType::Compute || m_desc.QueueType == QueueType::RayTracing )
+        if ( m_desc.QueueType == QueueType::Compute )
         {
             [m_computeEncoder setBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
         }
@@ -534,7 +492,7 @@ void MetalCommandList::BindTopLevelArgumentBuffer( )
     }
     else
     {
-        if ( m_desc.QueueType == QueueType::Compute || m_desc.QueueType == QueueType::RayTracing )
+        if ( m_desc.QueueType == QueueType::Compute )
         {
             [m_computeEncoder setBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
         }
@@ -549,45 +507,6 @@ void MetalCommandList::BindTopLevelArgumentBuffer( )
 void MetalCommandList::TopLevelArgumentBufferNextOffset( )
 {
     m_currentBufferOffset = m_argumentBuffer->Duplicate( m_rootSignature->NumTLABAddresses( ), m_rootSignature->NumRootConstantBytes( ) ).second;
-}
-
-void MetalCommandList::EnsureEncoder( MetalEncoderType encoderType, std::string errorMessage )
-{
-    if ( m_activeEncoderType != encoderType )
-    {
-        LOG( ERROR ) << errorMessage;
-        return;
-    }
-
-    switch ( encoderType )
-    {
-    case MetalEncoderType::Blit:
-        if ( m_blitEncoder == nil )
-        {
-            LOG( ERROR ) << errorMessage;
-        }
-        break;
-    case MetalEncoderType::Compute:
-        if ( m_computeEncoder == nil )
-        {
-            LOG( ERROR ) << errorMessage;
-        }
-        break;
-    case MetalEncoderType::Render:
-        if ( m_renderEncoder == nil )
-        {
-            LOG( ERROR ) << errorMessage;
-        }
-        break;
-    case MetalEncoderType::AccelerationStructure:
-        if ( m_accelerationStructureEncoder == nil )
-        {
-            LOG( ERROR ) << errorMessage;
-        }
-        break;
-    case MetalEncoderType::None:
-        break;
-    }
 }
 
 void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType, bool crossQueueBarrier )
@@ -708,4 +627,9 @@ void MetalCommandList::UseResource( const id<MTLResource> &resource, MTLResource
 const QueueType MetalCommandList::GetQueueType( )
 {
     return m_desc.QueueType;
+}
+
+const id<MTLCommandBuffer> MetalCommandList::GetCommandBuffer( ) const
+{
+    return m_commandBuffer;
 }

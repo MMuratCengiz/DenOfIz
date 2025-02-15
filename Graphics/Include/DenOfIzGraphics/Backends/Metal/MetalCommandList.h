@@ -54,6 +54,7 @@ namespace DenOfIz
         bool                                       m_waitForQueueFence = false;
         id<MTLFence>                               m_queueFence;
         MetalEncoderType                           m_activeEncoderType = MetalEncoderType::None;
+        std::vector<const MetalResourceBindGroup *> m_queuedBindGroups;
 
         // States:
         id<MTLBuffer>                        m_indexBuffer;
@@ -71,8 +72,7 @@ namespace DenOfIz
         void Begin( ) override;
         void BeginRendering( const RenderingDesc &renderingDesc ) override;
         void EndRendering( ) override;
-        void Execute( const ExecuteDesc &executeDesc ) override;
-        void Present( ISwapChain *swapChain, uint32_t imageIndex, const InteropArray<ISemaphore *> &waitOnLocks ) override;
+        void End( ) override;
         void BindPipeline( IPipeline *pipeline ) override;
         void BindVertexBuffer( IBufferResource *buffer ) override;
         void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType ) override;
@@ -93,11 +93,13 @@ namespace DenOfIz
         void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
 
         const QueueType GetQueueType( ) override;
+        const id<MTLCommandBuffer> GetCommandBuffer( ) const;
 
     private:
+        void BindCommandResources( );
+        void ProcessBindGroup( const MetalResourceBindGroup *metalBindGroup );
         void BindTopLevelArgumentBuffer( );
         void TopLevelArgumentBufferNextOffset( );
-        void EnsureEncoder( MetalEncoderType encoderType, std::string errorMessage );
         void UseResource( const id<MTLResource> &resource, MTLResourceUsage usage = MTLResourceUsageRead, MTLRenderStages stages = MTLRenderStageVertex | MTLRenderStageFragment );
         // This is used because Vulkan+DX12 both support more operations in their graphics command list, so seamless transition is provided here
         void SwitchEncoder( MetalEncoderType encoderType, bool crossQueueBarrier = false );

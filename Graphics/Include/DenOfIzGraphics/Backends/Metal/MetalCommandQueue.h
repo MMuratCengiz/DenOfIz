@@ -24,14 +24,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class DZ_API MetalCommandQueue final : public ICommandQueue
+    class DZ_API MetalCommandQueue : public ICommandQueue
     {
-    public:
-        MetalCommandQueue( const MetalContext *context );
-        ~MetalCommandQueue( ) override = default;
+    private:
+        MetalContext* m_context;
+        CommandQueueDesc m_desc;
+        id<MTLCommandQueue> m_queue;
 
-        void          WaitIdle( ) override;
-        void          ExecuteCommandLists( const ExecuteCommandListsDesc &executeCommandListsDesc ) override;
-        PresentResult Present( const PresentDesc &presentDesc ) override;
+    public:
+        MetalCommandQueue(MetalContext* context, const CommandQueueDesc& desc);
+        ~MetalCommandQueue() override;
+
+        void WaitIdle() override;
+        void ExecuteCommandLists(const ExecuteCommandListsDesc& executeCommandListsDesc) override;
+
+        id<MTLCommandQueue> GetQueue() const { return m_queue; }
+        QueueType GetQueueType() const { return m_desc.QueueType; }
     };
 } // namespace DenOfIz
