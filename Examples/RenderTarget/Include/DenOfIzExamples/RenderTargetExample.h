@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class RenderTargetExample final : public IExample, public NodeExecutionCallback, public PresentExecutionCallback
+    class RenderTargetExample final : public IExample
     {
         Time                                   m_time;
         std::unique_ptr<QuadPipeline>          m_quadPipeline;
@@ -37,17 +37,19 @@ namespace DenOfIz
         std::unique_ptr<ISampler>                      m_defaultSampler;
         std::unique_ptr<IResourceBindGroup>            m_rootConstantBindGroup;
 
-        std::unique_ptr<RenderGraph> m_renderGraph;
+        std::unique_ptr<ICommandListPool>          m_deferredCommandListPool;
+        std::array<ICommandList *, 3>              m_deferredCommandLists = { };
+        std::array<std::unique_ptr<ISemaphore>, 3> m_deferredSemaphores   = { };
 
     public:
         ~RenderTargetExample( ) override = default;
         void              Init( ) override;
+        void              RenderDeferredImage( uint32_t frameIndex );
         void              ModifyApiPreferences( APIPreference &defaultApiPreference ) override;
         void              HandleEvent( SDL_Event &event ) override;
         void              Update( ) override;
+        void              Render( uint32_t frameIndex, ICommandList *commandList ) override;
         void              Quit( ) override;
-        void              Execute( uint32_t frameIndex, ICommandList *commandList ) override;
-        void              Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget ) override;
         struct WindowDesc WindowDesc( ) override
         {
             auto windowDesc  = DenOfIz::WindowDesc( );

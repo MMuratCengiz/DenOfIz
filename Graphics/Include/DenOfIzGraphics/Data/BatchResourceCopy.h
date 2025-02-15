@@ -95,10 +95,10 @@ namespace DenOfIz
         DZ_API void                           Submit( ISemaphore *notify = nullptr );
 
     private:
-        void                   CleanResources( );
-        void                   LoadTextureInternal( const Texture &texture, ITextureResource *dstTexture );
-        void                   CopyTextureToMemoryAligned( const Texture &texture, const MipData &mipData, Byte *dst ) const;
-        [[nodiscard]] uint32_t GetSubresourceAlignment( uint32_t bitSize ) const;
-        static const char     *NextId( const char *prefix );
+        void                     CleanResources( );
+        void                     LoadTextureInternal( const Texture &texture, ITextureResource *dstTexture );
+        void                     CopyTextureToMemoryAligned( const Texture &texture, const MipData &mipData, Byte *dst ) const;
+        [[nodiscard]] uint32_t   GetSubresourceAlignment( uint32_t bitSize ) const;
+        static std::string       NextId( const std::string &prefix );
     };
 } // namespace DenOfIz

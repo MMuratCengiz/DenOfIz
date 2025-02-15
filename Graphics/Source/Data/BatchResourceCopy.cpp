@@ -154,7 +154,7 @@ ITextureResource *BatchResourceCopy::CreateAndLoadTexture( const InteropString &
     if ( m_issueBarriers )
     {
         const PipelineBarrierDesc barrierDesc =
-            PipelineBarrierDesc{ }.TextureBarrier( { .Resource = outTex, .OldState = ResourceUsage::CopyDst, .NewState = ResourceUsage::ShaderResource } );
+            PipelineBarrierDesc{ }.TextureBarrier( { .Resource = outTex, .OldState = ResourceUsage::Common, .NewState = ResourceUsage::ShaderResource } );
         m_syncCommandList->PipelineBarrier( barrierDesc );
     }
     return outTex;
@@ -167,7 +167,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
     bufferDesc.Descriptor   = ResourceDescriptor::UniformBuffer;
     bufferDesc.InitialUsage = ResourceUsage::CopyDst;
     bufferDesc.NumBytes     = numBytes;
-    bufferDesc.DebugName    = NextId( "Uniform" );
+    bufferDesc.DebugName.Append( NextId( "Uniform" ).c_str( ) );
 
     const auto buffer = m_device->CreateBufferResource( bufferDesc );
 
@@ -195,7 +195,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
     vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
     vBufferDesc.InitialUsage = ResourceUsage::CopyDst;
     vBufferDesc.NumBytes     = numBytes;
-    vBufferDesc.DebugName    = NextId( "Vertex" );
+    vBufferDesc.DebugName.Append( NextId( "Vertex" ).c_str( ) );
 
     const auto vertexBuffer = m_device->CreateBufferResource( vBufferDesc );
 
@@ -224,8 +224,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
     iBufferDesc.Descriptor      = ResourceDescriptor::IndexBuffer;
     iBufferDesc.InitialUsage    = ResourceUsage::CopyDst;
     iBufferDesc.NumBytes        = numBytes;
-    const char *indexBufferName = "IndexBuffer";
-    iBufferDesc.DebugName       = NextId( indexBufferName );
+    iBufferDesc.DebugName.Append( NextId( "IndexBuffer" ).c_str( ) );
 
     const auto indexBuffer = m_device->CreateBufferResource( iBufferDesc );
 
@@ -355,12 +354,12 @@ uint32_t BatchResourceCopy::GetSubresourceAlignment( const uint32_t bitSize ) co
     return Utilities::Align( alignment, m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
 }
 
-const char *BatchResourceCopy::NextId( const char *prefix )
+std::string BatchResourceCopy::NextId( const std::string &prefix )
 {
 #ifndef NDEBUG
     static std::atomic<unsigned int> idCounter( 0 );
     const int                        next = idCounter.fetch_add( 1, std::memory_order_relaxed );
-    return ( std::string( prefix ) + "_BatchResourceCopyResource#" + std::to_string( next ) ).c_str( );
+    return ( std::string( prefix ) + "_BatchResourceCopyResource#" + std::to_string( next ) );
 #else
     return "BatchResourceCopyResource";
 #endif

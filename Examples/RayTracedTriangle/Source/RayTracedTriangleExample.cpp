@@ -34,7 +34,7 @@ void RayTracedTriangleExample::Init( )
 
 void RayTracedTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void RayTracedTriangleExample::Update( )

@@ -33,16 +33,17 @@ void RenderTargetExample::Init( )
     m_renderPipeline = std::make_unique<DefaultRenderPipeline>( m_graphicsApi, m_logicalDevice );
 
     TextureDesc textureDesc{ };
-    textureDesc.Width        = m_windowDesc.Width;
-    textureDesc.Height       = m_windowDesc.Height;
-    textureDesc.Format       = Format::B8G8R8A8Unorm;
-    textureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture ) | ResourceDescriptor::RenderTarget;
-    textureDesc.InitialUsage = ResourceUsage::ShaderResource;
-    textureDesc.DebugName    = "Deferred Render Target";
+    textureDesc.Width      = m_windowDesc.Width;
+    textureDesc.Height     = m_windowDesc.Height;
+    textureDesc.Format     = Format::B8G8R8A8Unorm;
+    textureDesc.Descriptor = BitSet( ResourceDescriptor::Texture ) | ResourceDescriptor::RenderTarget;
+    // textureDesc.InitialUsage = ResourceUsage::ShaderResource;
+    textureDesc.DebugName = "Deferred Render Target";
     for ( uint32_t i = 0; i < 3; ++i )
     {
         textureDesc.DebugName.Append( "Deferred Render Target " ).Append( std::to_string( i ).c_str( ) );
         m_deferredRenderTargets.push_back( std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) ) );
+        m_resourceTracking.TrackTexture( m_deferredRenderTargets[ i ].get( ), ResourceUsage::Common );
     }
     m_defaultSampler = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( SamplerDesc{ } ) );
     m_quadPipeline->BindGroup( 0 )->BeginUpdate( )->Srv( 0, m_deferredRenderTargets[ 0 ].get( ) )->Sampler( 0, m_defaultSampler.get( ) )->EndUpdate( );
@@ -54,33 +55,36 @@ void RenderTargetExample::Init( )
     sphereRenderItem.Data  = m_sphere->Data( );
     sphereRenderItem.Model = m_sphere->ModelMatrix( );
 
-    RenderGraphDesc renderGraphDesc{ };
-    renderGraphDesc.GraphicsApi   = m_graphicsApi;
-    renderGraphDesc.LogicalDevice = m_logicalDevice;
-    renderGraphDesc.SwapChain     = m_swapChain.get( );
-
-    m_renderGraph = std::make_unique<RenderGraph>( renderGraphDesc );
-
-    NodeDesc deferredNode{ };
-    deferredNode.Name = "Deferred";
-    deferredNode.Execute = this;
-
-    PresentNodeDesc presentNode{ };
-    presentNode.SwapChain = m_swapChain.get( );
-    presentNode.Dependencies.AddElement( "Deferred" );
-    presentNode.Execute = this;
-
-    m_renderGraph->AddNode( deferredNode );
-    m_renderGraph->SetPresentNode( presentNode );
-    m_renderGraph->BuildGraph( );
-
     m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
+
+    CommandListPoolDesc commandListPoolDesc{ };
+    commandListPoolDesc.CommandQueue    = m_graphicsQueue.get( );
+    commandListPoolDesc.NumCommandLists = m_deferredCommandLists.size( );
+    m_deferredCommandListPool           = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( commandListPoolDesc ) );
+
+    auto commandLists = m_deferredCommandListPool->GetCommandLists( );
+    for ( int i = 0; i < commandLists.NumElements( ); ++i )
+    {
+        m_deferredCommandLists[ i ] = commandLists.GetElement( i );
+        m_deferredSemaphores[ i ]   = std::unique_ptr<ISemaphore>( m_logicalDevice->CreateSemaphore( ) );
+    }
+
+    auto           eye    = XMVectorSet( 0.0f, 0.9f, -3.0f, 1.0f );
+    const XMMATRIX rotate = XMMatrixRotationY( XMConvertToRadians( 45.0f ) );
+    eye                   = XMVector3Transform( eye, rotate );
+
+    m_camera->SetPosition( eye );
+    m_camera->SetFront( { 0.67f, -0.29f, 0.67f, 0.0f } );
 }
 
-// Node execution
-void RenderTargetExample::Execute( uint32_t frameIndex, ICommandList *commandList )
+void RenderTargetExample::RenderDeferredImage( const uint32_t frameIndex )
 {
-    m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_deferredRenderTargets[ frameIndex ].get( ), ResourceUsage::RenderTarget ) } );
+    const auto &m_deferredCommandList = m_deferredCommandLists[ frameIndex ];
+    m_deferredCommandList->Begin( );
+
+    BatchTransitionDesc batchTransitionDesc{ m_deferredCommandList };
+    batchTransitionDesc.TransitionTexture( m_deferredRenderTargets[ frameIndex ].get( ), ResourceUsage::RenderTarget );
+    m_resourceTracking.BatchTransition( batchTransitionDesc );
 
     RenderingAttachmentDesc renderingAttachmentDesc{ };
     renderingAttachmentDesc.Resource = m_deferredRenderTargets[ frameIndex ].get( );
@@ -88,21 +92,33 @@ void RenderTargetExample::Execute( uint32_t frameIndex, ICommandList *commandLis
     RenderingDesc renderingDesc{ };
     renderingDesc.RTAttachments.AddElement( renderingAttachmentDesc );
 
-    commandList->BeginRendering( renderingDesc );
+    m_deferredCommandList->BeginRendering( renderingDesc );
 
-    const Viewport &viewport = m_swapChain->GetViewport( );
-    commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-    commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+    const auto viewport = m_swapChain->GetViewport( );
+    m_deferredCommandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
+    m_deferredCommandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
 
-    m_renderPipeline->Render( commandList, m_worldData );
+    m_renderPipeline->Render( m_deferredCommandList, m_worldData );
+    m_deferredCommandList->EndRendering( );
+    m_deferredCommandList->End( );
 
-    commandList->EndRendering( );
+    ExecuteCommandListsDesc executeCommandListsDesc{ };
+    executeCommandListsDesc.CommandLists.AddElement( m_deferredCommandList );
+    executeCommandListsDesc.SignalSemaphores.AddElement( m_deferredSemaphores[ frameIndex ].get( ) );
+    m_graphicsQueue->ExecuteCommandLists( executeCommandListsDesc );
 }
 
-void RenderTargetExample::Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget )
+void RenderTargetExample::Render( const uint32_t frameIndex, ICommandList *commandList )
 {
-    m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_deferredRenderTargets[ frameIndex ].get( ), ResourceUsage::ShaderResource ) } );
-    
+
+    commandList->Begin( );
+    ITextureResource *renderTarget = m_swapChain->GetRenderTarget( m_frameSync->AcquireNextImage( frameIndex ) );
+
+    BatchTransitionDesc batchTransitionDesc{ commandList };
+    batchTransitionDesc.TransitionTexture( m_deferredRenderTargets[ frameIndex ].get( ), ResourceUsage::ShaderResource );
+    batchTransitionDesc.TransitionTexture( renderTarget, ResourceUsage::RenderTarget );
+    m_resourceTracking.BatchTransition( batchTransitionDesc );
+
     RenderingAttachmentDesc quadAttachmentDesc{ };
     quadAttachmentDesc.Resource = renderTarget;
 
@@ -111,16 +127,23 @@ void RenderTargetExample::Execute( uint32_t frameIndex, ICommandList *commandLis
 
     commandList->BeginRendering( quadRenderingDesc );
 
-    const Viewport &viewport = m_swapChain->GetViewport( );
+    const auto viewport = m_swapChain->GetViewport( );
     commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
     commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
     m_quadPipeline->Render( commandList, frameIndex );
+
     commandList->EndRendering( );
+
+    batchTransitionDesc = BatchTransitionDesc{ commandList };
+    batchTransitionDesc.TransitionTexture( renderTarget, ResourceUsage::Present );
+    m_resourceTracking.BatchTransition( batchTransitionDesc );
+
+    commandList->End( );
 }
 
 void RenderTargetExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::DirectX12;
+    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void RenderTargetExample::Update( )
@@ -128,7 +151,15 @@ void RenderTargetExample::Update( )
     m_time.Tick( );
     m_worldData.DeltaTime = m_time.GetDeltaTime( );
     m_worldData.Camera->Update( m_worldData.DeltaTime );
-    m_renderGraph->Update( );
+
+    // Custom RenderAndPresentFrame for additional semaphores
+    const uint64_t frameIndex = m_frameSync->NextFrame( );
+    RenderDeferredImage( frameIndex );
+    Render( frameIndex, m_frameSync->GetCommandList( frameIndex ) );
+    InteropArray<ISemaphore *> additionalSemaphores{ };
+    additionalSemaphores.AddElement( m_deferredSemaphores[ frameIndex ].get( ) );
+    m_frameSync->ExecuteCommandList( frameIndex, additionalSemaphores );
+    Present( frameIndex );
 }
 
 void RenderTargetExample::HandleEvent( SDL_Event &event )
@@ -139,6 +170,6 @@ void RenderTargetExample::HandleEvent( SDL_Event &event )
 
 void RenderTargetExample::Quit( )
 {
-    m_renderGraph->WaitIdle( );
+    m_frameSync->WaitIdle( );
     IExample::Quit( );
 }

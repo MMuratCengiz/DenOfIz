@@ -54,7 +54,7 @@ namespace DenOfIz
         IFence       *GetFrameFence( uint64_t frame ) const;
         ISemaphore   *GetPresentSignalSemaphore( uint64_t frame ) const;
         ICommandList *GetCommandList( uint64_t frame ) const;
-        void          ExecuteCommandList( uint64_t frame ) const;
+        void          ExecuteCommandList( uint64_t frame, const InteropArray<ISemaphore*>& additionalSemaphores = {} ) const;
         uint32_t      AcquireNextImage( uint64_t frame ) const;
         PresentResult Present( uint32_t imageIndex ) const;
         void          WaitIdle( ) const;

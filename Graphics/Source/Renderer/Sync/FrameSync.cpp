@@ -68,11 +68,15 @@ ICommandList *FrameSync::GetCommandList( const uint64_t frame ) const
     return m_commandLists[ frame ];
 }
 
-void FrameSync::ExecuteCommandList( const uint64_t frame ) const
+void FrameSync::ExecuteCommandList( const uint64_t frame, const InteropArray<ISemaphore*>& additionalSemaphores ) const
 {
     ExecuteCommandListsDesc desc{ };
     desc.Signal = m_frameFences[ frame ].get( );
     desc.WaitSemaphores.AddElement( m_imageAvailableSemaphores[ frame ].get( ) );
+    for ( int i = 0; i < additionalSemaphores.NumElements( ); ++i )
+    {
+        desc.WaitSemaphores.AddElement( additionalSemaphores.GetElement( i ) );
+    }
     desc.SignalSemaphores.AddElement( m_renderFinishedSemaphores[ frame ].get( ) );
     desc.CommandLists.AddElement( GetCommandList( frame ) );
     m_commandQueue->ExecuteCommandLists( desc );

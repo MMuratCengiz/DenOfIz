@@ -82,6 +82,7 @@ void DX12CommandList::BindPipeline( IPipeline *pipeline )
     else
     {
         m_commandList->SetPipelineState( m_currentPipeline->GetPipeline( ) );
+        m_commandList->IASetPrimitiveTopology( m_currentPipeline->GetTopology( ) );
     }
 }
 

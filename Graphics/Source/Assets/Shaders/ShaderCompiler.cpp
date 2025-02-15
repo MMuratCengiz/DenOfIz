@@ -170,11 +170,15 @@ CompileResult ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) cons
     std::string  entryPoint = compileDesc.EntryPoint.Get( );
     std::wstring wsEntryPoint( entryPoint.begin( ), entryPoint.end( ) );
     arguments.push_back( wsEntryPoint.c_str( ) );
-    arguments.push_back( L"-default-linkage" );
-    arguments.push_back( L"external" );
-    arguments.push_back( L"-export-shaders-only" );
-    arguments.push_back( L"-exports" );
-    arguments.push_back( wsEntryPoint.c_str( ) );
+
+    if ( targetProfile.starts_with( "lib" ) )
+    {
+        arguments.push_back( L"-default-linkage" );
+        arguments.push_back( L"external" );
+        arguments.push_back( L"-export-shaders-only" );
+        arguments.push_back( L"-exports" );
+        arguments.push_back( wsEntryPoint.c_str( ) );
+    }
 
     DxcBuffer buffer{ };
     buffer.Encoding = DXC_CP_ACP; // or? DXC_CP_UTF8;
