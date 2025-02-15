@@ -95,7 +95,14 @@ namespace DenOfIz
                 m_resourceTracking.TrackTexture( m_swapChain->GetRenderTarget( i ), ResourceUsage::Common );
             }
         }
-
+        void RenderAndPresentFrame( )
+        {
+            const uint64_t frameIndex = m_frameSync->NextFrame( );
+            Render( frameIndex, m_frameSync->GetCommandList( frameIndex ) );
+            m_frameSync->ExecuteCommandList( frameIndex );
+            Present( frameIndex );
+        }
+        virtual void Render( uint32_t frameIndex, ICommandList *commandList ) { }
         void Present( const uint64_t frameIndex )
         {
             switch ( m_frameSync->Present( frameIndex ) )

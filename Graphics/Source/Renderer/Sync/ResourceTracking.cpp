@@ -20,6 +20,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
+BatchTransitionDesc& BatchTransitionDesc::TransitionBuffer( IBufferResource *resource, const ResourceUsage newUsage, const QueueType queueType)
+{
+    TransitionBufferDesc& desc = BufferTransitions.EmplaceElement( );
+    desc.Buffer    = resource;
+    desc.NewUsage  = newUsage;
+    desc.QueueType = queueType;
+
+    return *this;
+}
+
+BatchTransitionDesc& BatchTransitionDesc::TransitionTexture( ITextureResource *resource, const ResourceUsage newUsage, const QueueType queueType )
+{
+    TransitionTextureDesc& desc = TextureTransitions.EmplaceElement( );
+    desc.Texture    = resource;
+    desc.NewUsage  = newUsage;
+    desc.QueueType = queueType;
+
+    return *this;
+}
+
 ResourceTracking::~ResourceTracking( )
 {
 }
@@ -122,20 +142,4 @@ void ResourceTracking::BatchTransition( const BatchTransitionDesc &desc )
     ProcessTextureTransitions( desc.TextureTransitions, barrier );
 
     desc.CommandList->PipelineBarrier( barrier );
-}
-
-void ResourceTracking::TransitionBuffer( const TransitionBufferDesc &desc )
-{
-    BatchTransitionDesc batchDesc;
-    batchDesc.CommandList = desc.CommandList;
-    batchDesc.BufferTransitions.AddElement( desc );
-    BatchTransition( batchDesc );
-}
-
-void ResourceTracking::TransitionTexture( const TransitionTextureDesc &desc )
-{
-    BatchTransitionDesc batchDesc;
-    batchDesc.CommandList = desc.CommandList;
-    batchDesc.TextureTransitions.AddElement( desc );
-    BatchTransition( batchDesc );
 }

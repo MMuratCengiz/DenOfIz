@@ -53,6 +53,10 @@ namespace DenOfIz
         ICommandList                       *CommandList;
         InteropArray<TransitionBufferDesc>  BufferTransitions;
         InteropArray<TransitionTextureDesc> TextureTransitions;
+
+        explicit BatchTransitionDesc( ICommandList *commandList ) : CommandList( commandList ) { }
+        BatchTransitionDesc& TransitionBuffer( IBufferResource* resource, ResourceUsage newUsage, QueueType queueType = QueueType::Graphics );
+        BatchTransitionDesc& TransitionTexture( ITextureResource* resource, ResourceUsage newUsage, QueueType queueType = QueueType::Graphics );
     };
 
     class DZ_API ResourceTracking
@@ -70,8 +74,6 @@ namespace DenOfIz
         void UntrackBuffer( IBufferResource *buffer );
         void UntrackTexture( ITextureResource *texture );
 
-        void TransitionBuffer( const TransitionBufferDesc &desc );
-        void TransitionTexture( const TransitionTextureDesc &desc );
         void BatchTransition( const BatchTransitionDesc &desc );
 
     private:

@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzExamples/IExample.h>
 #include <DenOfIzExamples/QuadPipeline.h>
-#include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
 #include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
 #include <DenOfIzGraphics/Utilities/Time.h>
 
@@ -39,7 +38,7 @@ namespace DenOfIz
         NormalizedViewport Stencil;
     };
 
-    class RayTracedTriangleExample final : public IExample, public NodeExecutionCallback, public PresentExecutionCallback
+    class RayTracedTriangleExample final : public IExample
     {
         Time                                             m_time;
         std::array<std::unique_ptr<ITextureResource>, 3> m_raytracingOutput;
@@ -51,7 +50,7 @@ namespace DenOfIz
         std::unique_ptr<ShaderProgram>                     m_rayTracingProgram;
         std::unique_ptr<IPipeline>                         m_rayTracingPipeline;
         std::unique_ptr<IRootSignature>                    m_rayTracingRootSignature;
-        std::unique_ptr<ILocalRootSignature>            m_hgShaderLayout;
+        std::unique_ptr<ILocalRootSignature>               m_hgShaderLayout;
         std::array<std::unique_ptr<IResourceBindGroup>, 3> m_rayTracingBindGroups;
         std::unique_ptr<IShaderBindingTable>               m_shaderBindingTable;
         std::unique_ptr<IBottomLevelAS>                    m_bottomLevelAS;
@@ -61,17 +60,15 @@ namespace DenOfIz
         std::unique_ptr<IBufferResource> m_vertexBuffer;
         std::unique_ptr<IBufferResource> m_indexBuffer;
         //
-        std::unique_ptr<RenderGraph> m_renderGraph;
 
     public:
-        ~                 RayTracedTriangleExample( ) override = default;
+        ~RayTracedTriangleExample( ) override = default;
         void              Init( ) override;
         void              ModifyApiPreferences( APIPreference &defaultApiPreference ) override;
         void              HandleEvent( SDL_Event &event ) override;
         void              Update( ) override;
+        void              Render( uint32_t frameIndex, ICommandList *commandList ) override;
         void              Quit( ) override;
-        void              Execute( uint32_t frameIndex, ICommandList *commandList ) override;
-        void              Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget ) override;
         struct WindowDesc WindowDesc( ) override
         {
             auto windowDesc   = DenOfIz::WindowDesc( );

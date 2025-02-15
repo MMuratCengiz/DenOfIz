@@ -172,21 +172,16 @@ void RayTracedProceduralGeometryExample::Update( )
     m_sceneConstants->projectionToWorld = XMMatrixInverse( nullptr, m_camera->ViewProjectionMatrix( ) );
     m_sceneConstants->elapsedTime       = elapsedTime;
 
-    const uint64_t frameIndex = m_frameSync->NextFrame( );
-    Render( frameIndex, m_frameSync->GetCommandList( frameIndex ) );
-    m_frameSync->ExecuteCommandList( frameIndex );
-    Present( frameIndex ); // Delegate to parent to handle resize events
+    RenderAndPresentFrame( );
 }
 
 void RayTracedProceduralGeometryExample::Render( const uint32_t frameIndex, ICommandList *commandList )
 {
     commandList->Begin( );
 
-    TransitionTextureDesc rtOutTransition{ };
-    rtOutTransition.Texture     = m_raytracingOutput[ frameIndex ].get( );
-    rtOutTransition.NewUsage    = ResourceUsage::UnorderedAccess;
-    rtOutTransition.CommandList = commandList;
-    m_resourceTracking.TransitionTexture( rtOutTransition );
+    BatchTransitionDesc batchTransitionDesc{ commandList };
+    batchTransitionDesc.TransitionTexture( m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::UnorderedAccess );
+    m_resourceTracking.BatchTransition( batchTransitionDesc );
 
     const Viewport &viewport = m_swapChain->GetViewport( );
 
@@ -202,20 +197,10 @@ void RayTracedProceduralGeometryExample::Render( const uint32_t frameIndex, ICom
 
     ITextureResource *renderTarget = m_swapChain->GetRenderTarget( m_frameSync->AcquireNextImage( frameIndex ) );
 
-    BatchTransitionDesc batchTransition{ };
-    batchTransition.CommandList = commandList;
-
-    TransitionTextureDesc &renderTargetTransition = batchTransition.TextureTransitions.EmplaceElement( );
-    renderTargetTransition.Texture                = renderTarget;
-    renderTargetTransition.NewUsage               = ResourceUsage::CopyDst;
-    renderTargetTransition.CommandList            = commandList;
-
-    TransitionTextureDesc &raytracingOutputTransition = batchTransition.TextureTransitions.EmplaceElement( );
-    raytracingOutputTransition.Texture                = m_raytracingOutput[ frameIndex ].get( );
-    raytracingOutputTransition.NewUsage               = ResourceUsage::CopySrc;
-    raytracingOutputTransition.CommandList            = commandList;
-
-    m_resourceTracking.BatchTransition( batchTransition );
+    batchTransitionDesc = BatchTransitionDesc{ commandList };
+    batchTransitionDesc.TransitionTexture( m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::CopySrc );
+    batchTransitionDesc.TransitionTexture( renderTarget, ResourceUsage::CopyDst );
+    m_resourceTracking.BatchTransition( batchTransitionDesc );
 
     CopyTextureRegionDesc copyTextureRegionDesc{ };
     copyTextureRegionDesc.SrcTexture = m_raytracingOutput[ frameIndex ].get( );
@@ -225,11 +210,9 @@ void RayTracedProceduralGeometryExample::Render( const uint32_t frameIndex, ICom
     copyTextureRegionDesc.Depth      = 1;
     commandList->CopyTextureRegion( copyTextureRegionDesc );
 
-    TransitionTextureDesc presentTransition { };
-    presentTransition.Texture     = renderTarget;
-    presentTransition.NewUsage    = ResourceUsage::Present;
-    presentTransition.CommandList = commandList;
-    m_resourceTracking.TransitionTexture( presentTransition );
+    batchTransitionDesc = BatchTransitionDesc{ commandList };
+    batchTransitionDesc.TransitionTexture( renderTarget, ResourceUsage::Present );
+    m_resourceTracking.BatchTransition( batchTransitionDesc );
 
     commandList->End( );
 }
@@ -339,7 +322,7 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
 
     CommandQueueDesc commandQueueDesc{ };
     commandQueueDesc.QueueType = QueueType::Compute;
-    auto commandQueue = std::unique_ptr<ICommandQueue>( m_logicalDevice->CreateCommandQueue( commandQueueDesc  ) );
+    auto commandQueue          = std::unique_ptr<ICommandQueue>( m_logicalDevice->CreateCommandQueue( commandQueueDesc ) );
 
     const auto    commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( { commandQueue.get( ) } ) );
     ICommandList *commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );

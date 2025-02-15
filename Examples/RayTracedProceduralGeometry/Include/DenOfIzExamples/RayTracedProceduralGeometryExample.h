@@ -136,7 +136,7 @@ namespace DenOfIz
         void Init( ) override;
         void ModifyApiPreferences( APIPreference &defaultApiPreference ) override;
         void Update( ) override;
-        void Render( uint32_t frameIndex, ICommandList *commandList );
+        void Render( uint32_t frameIndex, ICommandList *commandList ) override;
         void HandleEvent( SDL_Event &event ) override;
         void UpdateAABBPrimitiveAttributes( );
         void Quit( ) override;

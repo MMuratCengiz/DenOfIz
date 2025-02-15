@@ -29,35 +29,33 @@ void RayTracedTriangleExample::Init( )
     CreateRayTracingPipeline( );
     CreateShaderBindingTable( );
 
-    RenderGraphDesc renderGraphDesc{ };
-    renderGraphDesc.GraphicsApi   = m_graphicsApi;
-    renderGraphDesc.LogicalDevice = m_logicalDevice;
-    renderGraphDesc.SwapChain     = m_swapChain.get( );
-
-    m_renderGraph = std::make_unique<RenderGraph>( renderGraphDesc );
-
-    NodeDesc raytracingNode{ };
-    raytracingNode.Name      = "RayTracing";
-    raytracingNode.QueueType = QueueType::Compute;
-    raytracingNode.Execute   = this;
-
-    PresentNodeDesc presentNode{ };
-    presentNode.SwapChain = m_swapChain.get( );
-    presentNode.Dependencies.AddElement( "RayTracing" );
-    presentNode.Execute = this;
-
-    m_renderGraph->AddNode( raytracingNode );
-    m_renderGraph->SetPresentNode( presentNode );
-    m_renderGraph->BuildGraph( );
-
     m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
 }
 
-// Node execution
-void RayTracedTriangleExample::Execute( const uint32_t frameIndex, ICommandList *commandList )
+void RayTracedTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::UnorderedAccess ),
-                                                 NodeResourceUsageDesc::BufferState( frameIndex, m_rayGenCBResource.get( ), ResourceUsage::VertexAndConstantBuffer ) } );
+    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+}
+
+void RayTracedTriangleExample::Update( )
+{
+    m_time.Tick( );
+    m_worldData.DeltaTime = m_time.GetDeltaTime( );
+    m_worldData.Camera->Update( m_worldData.DeltaTime );
+
+    RenderAndPresentFrame( );
+}
+
+void RayTracedTriangleExample::Render( const uint32_t frameIndex, ICommandList *commandList )
+{
+    commandList->Begin( );
+
+    ITextureResource *renderTarget = m_swapChain->GetRenderTarget( m_frameSync->AcquireNextImage( frameIndex ) );
+
+    BatchTransitionDesc batchTransitionDesc{ commandList };
+    batchTransitionDesc.TransitionTexture( m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::UnorderedAccess );
+    batchTransitionDesc.TransitionBuffer( m_rayGenCBResource.get( ), ResourceUsage::VertexAndConstantBuffer );
+    m_resourceTracking.BatchTransition( batchTransitionDesc );
 
     const Viewport &viewport = m_swapChain->GetViewport( );
 
@@ -70,13 +68,11 @@ void RayTracedTriangleExample::Execute( const uint32_t frameIndex, ICommandList 
     dispatchRaysDesc.Depth              = 1;
     dispatchRaysDesc.ShaderBindingTable = m_shaderBindingTable.get( );
     commandList->DispatchRays( dispatchRaysDesc );
-}
 
-void RayTracedTriangleExample::Execute( const uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget )
-{
-    // !!! Note to be able to do this in Vulkan you need to set the line: `swapChainDesc.ImageUsages  = ResourceUsage::CopyDst;` from IExample.h
-    m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::CopySrc ),
-                                                 NodeResourceUsageDesc::TextureState( frameIndex, renderTarget, ResourceUsage::CopyDst ) } );
+    batchTransitionDesc = BatchTransitionDesc{ commandList };
+    batchTransitionDesc.TransitionTexture( m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::UnorderedAccess );
+    batchTransitionDesc.TransitionTexture( renderTarget, ResourceUsage::CopyDst );
+    m_resourceTracking.BatchTransition( batchTransitionDesc );
 
     CopyTextureRegionDesc copyTextureRegionDesc{ };
     copyTextureRegionDesc.SrcTexture = m_raytracingOutput[ frameIndex ].get( );
@@ -85,19 +81,12 @@ void RayTracedTriangleExample::Execute( const uint32_t frameIndex, ICommandList 
     copyTextureRegionDesc.Height     = m_windowDesc.Height;
     copyTextureRegionDesc.Depth      = 1;
     commandList->CopyTextureRegion( copyTextureRegionDesc );
-}
 
-void RayTracedTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
-{
-    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
-}
+    batchTransitionDesc = BatchTransitionDesc{ commandList };
+    batchTransitionDesc.TransitionTexture( renderTarget, ResourceUsage::Present );
+    m_resourceTracking.BatchTransition( batchTransitionDesc );
 
-void RayTracedTriangleExample::Update( )
-{
-    m_time.Tick( );
-    m_worldData.DeltaTime = m_time.GetDeltaTime( );
-    m_worldData.Camera->Update( m_worldData.DeltaTime );
-    m_renderGraph->Update( );
+    commandList->End( );
 }
 
 void RayTracedTriangleExample::HandleEvent( SDL_Event &event )
@@ -108,7 +97,7 @@ void RayTracedTriangleExample::HandleEvent( SDL_Event &event )
 
 void RayTracedTriangleExample::Quit( )
 {
-    m_renderGraph->WaitIdle( );
+    m_frameSync->WaitIdle( );
     IExample::Quit( );
 }
 
@@ -186,7 +175,7 @@ void RayTracedTriangleExample::CreateRayTracingPipeline( )
     pipelineDesc.RootSignature = m_rayTracingRootSignature.get( );
     pipelineDesc.ShaderProgram = m_rayTracingProgram.get( );
     pipelineDesc.RayTracing.HitGroups.AddElement(
-        HitGroupDesc{ .Name = "MyHitGroup", .ClosestHitShaderIndex = 1, .LocalRootSignature = m_hgShaderLayout.get( ), .Type = HitGroupType::Triangles  } );
+        HitGroupDesc{ .Name = "MyHitGroup", .ClosestHitShaderIndex = 1, .LocalRootSignature = m_hgShaderLayout.get( ), .Type = HitGroupType::Triangles } );
 
     m_rayTracingPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 }
@@ -262,6 +251,10 @@ void RayTracedTriangleExample::CreateResources( )
 
 void RayTracedTriangleExample::CreateAccelerationStructures( )
 {
+    CommandQueueDesc commandQueueDesc{ };
+    commandQueueDesc.QueueType = QueueType::Compute;
+    const auto commandQueue    = std::unique_ptr<ICommandQueue>( m_logicalDevice->CreateCommandQueue( commandQueueDesc ) );
+
     ASGeometryDesc geometryDesc{ };
     geometryDesc.Type                   = HitGroupType::Triangles;
     geometryDesc.Triangles.IndexBuffer  = m_indexBuffer.get( );
@@ -290,7 +283,7 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
     topLevelASDesc.Instances.AddElement( instanceDesc );
     m_topLevelAS = std::unique_ptr<ITopLevelAS>( m_logicalDevice->CreateTopLevelAS( topLevelASDesc ) );
 
-    const auto    commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( { QueueType::Compute, 1 } ) );
+    const auto    commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( { commandQueue.get( ), 1 } ) );
     ICommandList *commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
     const auto    syncFence       = std::unique_ptr<IFence>( m_logicalDevice->CreateFence( ) );
 
@@ -299,14 +292,15 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
     commandList->PipelineBarrier( PipelineBarrierDesc{ }.MemoryBarrier( MemoryBarrierDesc{
         .BottomLevelAS = m_bottomLevelAS.get( ), .OldState = ResourceUsage::AccelerationStructureWrite, .NewState = ResourceUsage::AccelerationStructureRead } ) );
     commandList->BuildTopLevelAS( BuildTopLevelASDesc{ m_topLevelAS.get( ) } );
-    ExecuteDesc executeDesc{ };
-    executeDesc.Notify = syncFence.get( );
-    commandList->Execute( executeDesc );
+    commandList->End( );
+
+    ExecuteCommandListsDesc executeDesc{ };
+    executeDesc.CommandLists.AddElement( commandList );
+    executeDesc.Signal = syncFence.get( );
+    commandQueue->ExecuteCommandLists( executeDesc );
 
     syncFence->Wait( );
-#ifdef BUILD_METAL
-    sleep( 1 );
-#endif
+    commandQueue->WaitIdle( );
 }
 
 void RayTracedTriangleExample::CreateShaderBindingTable( )

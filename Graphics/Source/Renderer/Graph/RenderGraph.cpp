@@ -322,11 +322,9 @@ void RenderGraph::BuildTaskflow( )
 
                 m_presentNode.Execute->Execute( frame, presentCommandList, swapChainRenderTarget );
 
-                TransitionTextureDesc transitionDesc{ };
-                transitionDesc.Texture     = swapChainRenderTarget;
-                transitionDesc.NewUsage    = ResourceUsage::Present;
-                transitionDesc.CommandList = presentCommandList;
-                m_resourceTracking.TransitionTexture( transitionDesc );
+                BatchTransitionDesc batchTransitionDesc{ presentCommandList };
+                batchTransitionDesc.TransitionTexture( swapChainRenderTarget, ResourceUsage::Present );
+                m_resourceTracking.BatchTransition( batchTransitionDesc );
 
                 presentCommandList->End( );
 
