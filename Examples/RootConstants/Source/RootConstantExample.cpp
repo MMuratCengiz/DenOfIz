@@ -24,28 +24,21 @@ void RootConstantExample::Init( )
 {
     m_quadPipeline      = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice, "Assets/Shaders/PushConstantColor.ps.hlsl" );
     m_resourceBindGroup = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( RootConstantBindGroupDesc( m_quadPipeline->RootSignature( ) ) ) );
-
-    RenderGraphDesc renderGraphDesc{ };
-    renderGraphDesc.GraphicsApi   = m_graphicsApi;
-    renderGraphDesc.LogicalDevice = m_logicalDevice;
-    renderGraphDesc.SwapChain     = m_swapChain.get( );
-
-    m_renderGraph = std::make_unique<RenderGraph>( renderGraphDesc );
-
-    PresentNodeDesc presentNode{ };
-    presentNode.SwapChain = m_swapChain.get( );
-    presentNode.Execute   = this;
-
-    m_renderGraph->SetPresentNode( presentNode );
-    m_renderGraph->BuildGraph( );
-
     m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
 }
 
-void RootConstantExample::Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *texture )
+void RootConstantExample::Render( const uint32_t frameIndex, ICommandList *commandList )
 {
+    commandList->Begin( );
+
+    ITextureResource *renderTarget = m_swapChain->GetRenderTarget( m_frameSync->AcquireNextImage( frameIndex ) );
+
+    BatchTransitionDesc batchTransitionDesc{ commandList };
+    batchTransitionDesc.TransitionTexture( renderTarget, ResourceUsage::RenderTarget );
+    m_resourceTracking.BatchTransition( batchTransitionDesc );
+
     RenderingAttachmentDesc quadAttachmentDesc{ };
-    quadAttachmentDesc.Resource = texture;
+    quadAttachmentDesc.Resource = renderTarget;
 
     RenderingDesc quadRenderingDesc{ };
     quadRenderingDesc.RTAttachments.AddElement( quadAttachmentDesc );
@@ -58,11 +51,17 @@ void RootConstantExample::Execute( uint32_t frameIndex, ICommandList *commandLis
     commandList->BindResourceGroup( m_resourceBindGroup.get( ) );
     commandList->Draw( 3, 1, 0, 0 );
     commandList->EndRendering( );
+
+    batchTransitionDesc = BatchTransitionDesc{ commandList };
+    batchTransitionDesc.TransitionTexture( renderTarget, ResourceUsage::Present );
+    m_resourceTracking.BatchTransition( batchTransitionDesc );
+
+    commandList->End( );
 }
 
 void RootConstantExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::DirectX12;
+    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void RootConstantExample::Update( )
@@ -77,7 +76,7 @@ void RootConstantExample::Update( )
     m_resourceBindGroup->SetRootConstants( 0, m_color.data( ) );
     m_worldData.DeltaTime = m_time.GetDeltaTime( );
     m_worldData.Camera->Update( m_worldData.DeltaTime );
-    m_renderGraph->Update( );
+    RenderAndPresentFrame( );
 }
 
 void RootConstantExample::HandleEvent( SDL_Event &event )
@@ -88,6 +87,6 @@ void RootConstantExample::HandleEvent( SDL_Event &event )
 
 void RootConstantExample::Quit( )
 {
-    m_renderGraph->WaitIdle( );
+    m_frameSync->WaitIdle( );
     IExample::Quit( );
 }

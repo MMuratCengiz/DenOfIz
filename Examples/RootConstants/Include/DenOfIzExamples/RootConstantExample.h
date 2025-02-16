@@ -25,12 +25,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class RootConstantExample final : public IExample, public PresentExecutionCallback
+    class RootConstantExample final : public IExample
     {
         std::array<float, 4>                m_color = { 0.3f, 0.1f, 0.7f, 1.0f };
         Time                                m_time;
         std::unique_ptr<QuadPipeline>       m_quadPipeline;
-        std::unique_ptr<RenderGraph>        m_renderGraph;
         std::unique_ptr<IResourceBindGroup> m_resourceBindGroup;
         uint32_t                            m_rgbIterator = 0;
 
@@ -41,7 +40,7 @@ namespace DenOfIz
         void              HandleEvent( SDL_Event &event ) override;
         void              Update( ) override;
         void              Quit( ) override;
-        void              Execute( uint32_t frameIndex, ICommandList *commandList, ITextureResource *texture ) override;
+        void              Render( uint32_t frameIndex, ICommandList *commandList ) override;
         struct WindowDesc WindowDesc( ) override
         {
             auto windowDesc  = DenOfIz::WindowDesc( );
