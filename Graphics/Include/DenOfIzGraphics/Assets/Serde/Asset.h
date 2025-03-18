@@ -33,12 +33,7 @@ namespace DenOfIz
 
     struct DZ_API AssetDataStream
     {
-        uint64_t      Offset   = 0;
-        uint64_t      NumBytes = 0;
-        InteropString StreamName;
-        uint32_t      ElementNumBytes = 0;
-        uint32_t      NumElements     = 0;
-        Format        ElementFormat   = Format::Undefined;
+        uint64_t NumBytes = 0;
     };
 
     struct DZ_API UserProperty
@@ -60,13 +55,13 @@ namespace DenOfIz
         Type          PropertyType;
 
         InteropString StringValue;
-        int32_t       IntValue{};
-        float         FloatValue{};
-        bool          BoolValue{};
-        Float2        Vector2Value{};
-        Float3        Vector3Value{};
-        Float4        Vector4Value{};
-        Float4        ColorValue{};
+        int32_t       IntValue{ };
+        float         FloatValue{ };
+        bool          BoolValue{ };
+        Float2        Vector2Value{ };
+        Float3        Vector3Value{ };
+        Float4        Vector4Value{ };
+        Float4        ColorValue{ };
         Float4x4      TransformValue;
     };
 } // namespace DenOfIz

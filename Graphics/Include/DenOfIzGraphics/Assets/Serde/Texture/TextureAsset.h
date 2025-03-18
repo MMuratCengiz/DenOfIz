@@ -20,18 +20,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Utilities/Interop.h>
 #include <DenOfIzGraphics/Utilities/InteropMath.h>
-#include <DenOfIzGraphics/Assets/Asset.h>
+#include <DenOfIzGraphics/Assets/Serde/Asset.h>
 
 namespace DenOfIz
 {
-    struct DZ_API TextureAsset : AssetDataHeader
+    struct DZ_API TextureAsset : AssetHeader
     {
         static constexpr uint32_t Latest = 1;
-        static constexpr uint64_t Magic  = 0x445A544558; // 'DZTEX'
 
         InteropString       Name;
         // TODO
-        TextureAsset( ) : AssetDataHeader( Magic, Latest, 0 )
+        TextureAsset( ) : AssetHeader( 0x445A544558 /* 'DZTEX' */, Latest, 0 )
         {
         }
     };

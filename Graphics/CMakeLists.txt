@@ -29,15 +29,21 @@ find_path(STB_INCLUDE_DIRS "stb_image.h")
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 
 set(DEN_OF_IZ_ASSETS_SOURCES
-        Source/Assets/Serde/Animation/AnimationAssetReader.cpp
-        Source/Assets/Serde/Animation/AnimationAssetWriter.cpp
         Source/Assets/FileSystem/PathResolver.cpp
         Source/Assets/FileSystem/FileIO.cpp
         Source/Assets/GpuResource/GpuResourceLoader.cpp
+        Source/Assets/Serde/Animation/AnimationAssetReader.cpp
+        Source/Assets/Serde/Animation/AnimationAssetWriter.cpp
+        Source/Assets/Serde/Material/MaterialAssetReader.cpp
+        Source/Assets/Serde/Material/MaterialAssetWriter.cpp
         Source/Assets/Serde/Mesh/MeshAssetReader.cpp
         Source/Assets/Serde/Mesh/MeshAssetWriter.cpp
         Source/Assets/Serde/Physics/PhysicsAssetReader.cpp
         Source/Assets/Serde/Physics/PhysicsAssetWriter.cpp
+        Source/Assets/Serde/Skeleton/SkeletonAssetReader.cpp
+        Source/Assets/Serde/Skeleton/SkeletonAssetWriter.cpp
+        Source/Assets/Serde/Texture/TextureAssetReader.cpp
+        Source/Assets/Serde/Texture/TextureAssetWriter.cpp
         Source/Assets/Shaders/DxcEnumConverter.cpp
         Source/Assets/Shaders/DxilToMsl.cpp
         Source/Assets/Shaders/ReflectionDebugOutput.cpp

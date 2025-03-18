@@ -19,22 +19,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Assets/Stream/BinaryWriter.h>
-#include "PhysicsAsset.h"
+#include "TextureAsset.h"
 
 namespace DenOfIz
 {
-    struct DZ_API PhysicsAssetWriterDesc
+    struct DZ_API TextureAssetWriterDesc
     {
         BinaryWriter *Writer;
     };
 
-    class DZ_API PhysicsAssetWriter
+    class DZ_API TextureAssetWriter
     {
         BinaryWriter         *m_writer;
     public:
-        explicit PhysicsAssetWriter( const PhysicsAssetWriterDesc &desc );
-        ~PhysicsAssetWriter( );
+        explicit TextureAssetWriter( const TextureAssetWriterDesc &desc );
+        ~TextureAssetWriter( );
 
-        void WritePhysicsAsset( const PhysicsAsset &physicsAsset );
+        void WriteTextureAsset( const TextureAsset &TextureAsset );
     };
 } // namespace DenOfIz

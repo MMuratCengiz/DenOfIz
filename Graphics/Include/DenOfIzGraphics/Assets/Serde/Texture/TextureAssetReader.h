@@ -19,23 +19,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
-#include "SkeletonAsset.h"
+#include "TextureAsset.h"
 
 namespace DenOfIz
 {
-    struct DZ_API SkeletonAssetReaderDesc
+    struct DZ_API TextureAssetReaderDesc
     {
         BinaryReader *Reader;
     };
 
-    class DZ_API SkeletonAssetReader
+    class DZ_API TextureAssetReader
     {
         BinaryReader *m_reader;
-        SkeletonAsset m_SkeletonAsset;
+        TextureAsset m_SkeletonAsset;
     public:
-        explicit SkeletonAssetReader( const SkeletonAssetReaderDesc &desc );
-        ~SkeletonAssetReader( );
+        explicit TextureAssetReader( const TextureAssetReaderDesc &desc );
+        ~TextureAssetReader( );
 
-        SkeletonAsset ReadSkeletonAsset( );
+        TextureAsset ReadSkeletonAsset( );
     };
 } // namespace DenOfIz
