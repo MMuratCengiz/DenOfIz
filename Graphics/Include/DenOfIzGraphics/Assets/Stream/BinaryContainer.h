@@ -17,3 +17,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
+
+#include <DenOfIzGraphics/Utilities/Interop.h>
+#include <sstream>
+
+namespace DenOfIz
+{
+    class BinaryContainer
+    {
+        std::stringstream m_stream;
+
+        friend class BinaryWriter;
+        friend class BinaryReader;
+    public:
+        DZ_API explicit BinaryContainer( );
+        DZ_API ~BinaryContainer( );
+        DZ_API InteropArray<Byte> GetData( );
+    };
+} // namespace DenOfIz

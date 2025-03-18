@@ -23,21 +23,30 @@ find_package(directxmath CONFIG REQUIRED)
 find_package(Taskflow CONFIG REQUIRED)
 find_package(glog CONFIG REQUIRED)
 find_package(assimp CONFIG REQUIRED)
+find_package(draco CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h")
 
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 
 set(DEN_OF_IZ_ASSETS_SOURCES
+        Source/Assets/Serde/Animation/AnimationAssetReader.cpp
+        Source/Assets/Serde/Animation/AnimationAssetWriter.cpp
         Source/Assets/FileSystem/PathResolver.cpp
         Source/Assets/FileSystem/FileIO.cpp
         Source/Assets/GpuResource/GpuResourceLoader.cpp
-        Source/Assets/Mesh/MeshImporter.cpp
+        Source/Assets/Serde/Mesh/MeshAssetReader.cpp
+        Source/Assets/Serde/Mesh/MeshAssetWriter.cpp
+        Source/Assets/Serde/Physics/PhysicsAssetReader.cpp
+        Source/Assets/Serde/Physics/PhysicsAssetWriter.cpp
         Source/Assets/Shaders/DxcEnumConverter.cpp
         Source/Assets/Shaders/DxilToMsl.cpp
         Source/Assets/Shaders/ReflectionDebugOutput.cpp
         Source/Assets/Shaders/ShaderCompiler.cpp
         Source/Assets/Shaders/ShaderReflectionHelper.cpp
         Source/Assets/Shaders/ShaderProgram.cpp
+        Source/Assets/Stream/BinaryContainer.cpp
+        Source/Assets/Stream/BinaryReader.cpp
+        Source/Assets/Stream/BinaryWriter.cpp
 )
 
 set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
@@ -182,6 +191,13 @@ target_include_directories(DenOfIzGraphics
         ${STB_INCLUDE_DIRS}
 )
 
+if(CRT_LINKAGE_STATIC EQUAL 1)
+    set(ozz_build_msvc_rt_dll OFF CACHE BOOL "Select msvc DLL runtime library" FORCE)
+else()
+    set(ozz_build_msvc_rt_dll ON CACHE BOOL "Select msvc DLL runtime library" FORCE)
+endif()
+
+add_subdirectory(_ThirdParty/ozz-animation)
 target_link_libraries(DenOfIzGraphics
         PUBLIC
         glog::glog
@@ -190,6 +206,8 @@ target_link_libraries(DenOfIzGraphics
         SDL2::SDL2main
         Taskflow::Taskflow
         assimp::assimp
+        ozz_animation
+        draco::draco
 )
 
 if (BUILD_SHARED_LIBS)

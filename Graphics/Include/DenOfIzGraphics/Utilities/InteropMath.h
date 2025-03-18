@@ -64,39 +64,44 @@ namespace DenOfIz
         int W;
     };
 
+    struct DZ_API UInt2
+    {
+        uint32_t X;
+        uint32_t Y;
+    };
+
+    struct DZ_API UInt3
+    {
+        uint32_t X;
+        uint32_t Y;
+        uint32_t Z;
+    };
+
+    struct DZ_API UInt4
+    {
+        uint32_t X;
+        uint32_t Y;
+        uint32_t Z;
+        uint32_t W;
+    };
+
     struct DZ_API Matrix4
     {
         Float4 Cols[ 4 ];
     };
 
-} // namespace DenOfIz
-
-struct DZ_API Vec4Int
-{
-    uint32_t X{ 0 };
-    uint32_t Y{ 0 };
-    uint32_t Z{ 0 };
-    uint32_t W{ 0 };
-};
-
-struct DZ_API Vec4Float
-{
-    float X{ 0 };
-    float Y{ 0 };
-    float Z{ 0 };
-    float W{ 0 };
-};
-
-struct DZ_API Matrix4x4
-{
-    float M[ 16 ];
-
-    Matrix4x4( )
+    struct DZ_API Float4x4
     {
-        for ( int i = 0; i < 16; i++ )
+        float M[ 16 ];
+
+        Float4x4( )
         {
-            M[ i ] = 0.0f;
+            for ( int i = 0; i < 16; i++ )
+            {
+                M[ i ] = 0.0f;
+            }
+            M[ 0 ] = M[ 5 ] = M[ 10 ] = M[ 15 ] = 1.0f;
         }
-        M[ 0 ] = M[ 5 ] = M[ 10 ] = M[ 15 ] = 1.0f;
-    }
-};
+    };
+
+} // namespace DenOfIz

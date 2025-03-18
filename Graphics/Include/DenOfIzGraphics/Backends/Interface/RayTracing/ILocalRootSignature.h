@@ -30,7 +30,7 @@ namespace DenOfIz
         InteropArray<ResourceBindingDesc> ResourceBindings{ };
         LocalRootSignatureDesc           &Merge( const LocalRootSignatureDesc &other );
     };
-    template DZ_API class InteropArray<LocalRootSignatureDesc>;
+    template class DZ_API InteropArray<LocalRootSignatureDesc>;
 
     ///
     /// @brief Layout specification for shader records. This equates to LocalRootSignature in DXR. No interface since it is quite API specific.
@@ -39,5 +39,5 @@ namespace DenOfIz
     public:
         virtual ~ILocalRootSignature( ) = default;
     };
-    template DZ_API class InteropArray<ILocalRootSignature *>;
+    template class DZ_API InteropArray<ILocalRootSignature *>;
 } // namespace DenOfIz

@@ -10,3 +10,7 @@
 [submodule "Engine/Graphics/_ThirdParty/D3D12MemoryAllocator"]
 	path = Graphics/_ThirdParty/D3D12MemoryAllocator
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator.git
+[submodule "Graphics/_ThirdParty/ozz-animation"]
+	path = Graphics/_ThirdParty/ozz-animation
+	url = git@github.com:guillaumeblanc/ozz-animation.git
+	branch = 0.16.0

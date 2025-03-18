@@ -148,12 +148,12 @@ InteropString FileIO::GetAbsolutePath( const InteropString &path )
         throw std::runtime_error( "Failed to get absolute path: " + resolvedPath + " - " + ec.message( ) );
     }
 
-    return InteropString( absolutePath.string( ).c_str( ) );
+    return { absolutePath.string( ).c_str( ) };
 }
 
 InteropString FileIO::GetResourcePath( const InteropString &path )
 {
-    return InteropString( PlatformResourcePath( path.Get( ) ).c_str( ) );
+    return { PlatformResourcePath( path.Get( ) ).c_str( ) };
 }
 
 std::string FileIO::PlatformResourcePath( const std::string &resourcePath )

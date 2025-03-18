@@ -5,6 +5,10 @@
     <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/D3D12MemoryAllocator" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/DirectX-Headers" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/DirectXShaderCompiler" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/DirectXShaderCompiler/external/DirectX-Headers" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/DirectXShaderCompiler/external/SPIRV-Headers" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/DirectXShaderCompiler/external/SPIRV-Tools" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/ozz-animation" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/vcpkg" vcs="Git" />
   </component>
 </project>
