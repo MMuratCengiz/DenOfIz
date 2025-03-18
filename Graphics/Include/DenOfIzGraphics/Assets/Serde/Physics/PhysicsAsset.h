@@ -71,7 +71,7 @@ namespace DenOfIz
         // --
     };
 
-    struct DZ_API PhysicsAsset : AssetDataHeader
+    struct DZ_API PhysicsAsset : AssetHeader
     {
         static constexpr uint32_t Latest = 1;
 
@@ -79,7 +79,7 @@ namespace DenOfIz
         InteropArray<PhysicsCollider> Colliders;
         InteropArray<UserProperty>    UserProperties;
 
-        PhysicsAsset( ) : AssetDataHeader( 0x445A50585953 /*DZPHYS*/, Latest, 0 )
+        PhysicsAsset( ) : AssetHeader( 0x445A50585953 /*DZPHYS*/, Latest, 0 )
         {
         }
     };

@@ -35,7 +35,7 @@ namespace DenOfIz
         InteropArray<uint32_t> ChildIndices;
     };
 
-    struct DZ_API SkeletonAsset : AssetDataHeader
+    struct DZ_API SkeletonAsset : AssetHeader
     {
         static constexpr uint32_t Latest = 1;
         static constexpr uint64_t Magic  = 0x445A534B454C; // "DZSKEL"
@@ -44,7 +44,7 @@ namespace DenOfIz
         InteropArray<Joint> Joints;
 
         // Reference pose can be computed from joint local transforms
-        SkeletonAsset( ) : AssetDataHeader( Magic, Latest, 0 )
+        SkeletonAsset( ) : AssetHeader( Magic, Latest, 0 )
         {
         }
     };

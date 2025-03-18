@@ -182,7 +182,7 @@ namespace DenOfIz
         InteropArray<uint32_t> ChildIndices;
     };
 
-    struct DZ_API MeshData : AssetDataHeader
+    struct DZ_API MeshData : AssetHeader
     {
         static constexpr uint32_t Latest = 1;
 
@@ -195,7 +195,7 @@ namespace DenOfIz
         InteropArray<BoundingVolume> BoundingVolumes;
         InteropArray<UserProperty>   UserProperties;
 
-        MeshData( ) : AssetDataHeader( 0x445A4D455348 /*DZMESH*/, Latest, 0 )
+        MeshData( ) : AssetHeader( 0x445A4D455348 /*DZMESH*/, Latest, 0 )
         {
         }
     };

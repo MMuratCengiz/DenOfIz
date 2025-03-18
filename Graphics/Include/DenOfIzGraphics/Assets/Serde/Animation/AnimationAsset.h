@@ -51,7 +51,7 @@ namespace DenOfIz
         InteropArray<JointAnimTrack> Tracks;
     };
 
-    struct DZ_API AnimationAsset : AssetDataHeader
+    struct DZ_API AnimationAsset : AssetHeader
     {
         static constexpr uint32_t Latest = 1;
         static constexpr uint64_t Magic  = 0x445A414E494D; // 'DZANIM'
@@ -60,7 +60,7 @@ namespace DenOfIz
         InteropString               SkeletonRef;
         InteropArray<AnimationClip> Animations;
 
-        AnimationAsset( ) : AssetDataHeader( Magic, Latest, 0 )
+        AnimationAsset( ) : AssetHeader( Magic, Latest, 0 )
         {
         }
     };

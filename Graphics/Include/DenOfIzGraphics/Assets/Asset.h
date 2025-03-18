@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct DZ_API AssetDataHeader
+    struct DZ_API AssetHeader
     {
         uint64_t Magic;
         uint32_t Version;
