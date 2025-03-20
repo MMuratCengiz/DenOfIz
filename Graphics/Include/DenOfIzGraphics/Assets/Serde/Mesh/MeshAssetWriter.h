@@ -27,9 +27,6 @@ namespace DenOfIz
     {
         Vertices,
         Indices,
-        MorphPositionDeltas,
-        MorphNormalDeltas,
-        MorphTangentDeltas
     };
     struct DZ_API MeshAssetWriterDesc
     {
@@ -49,8 +46,5 @@ namespace DenOfIz
         void SetActiveMeshStream( ActiveMeshStream stream );
         void AddVertex( const MeshVertex &vertex );
         void AddIndex( uint32_t index );
-        void AddMorphPositionDelta( const Float3 &vertexDeltas );
-        void AddMorphNormalDelta( const Float3 &normalDeltas );
-        void AddMorphTangentDelta( const Float3 &tangentDeltas );
     };
 } // namespace DenOfIz

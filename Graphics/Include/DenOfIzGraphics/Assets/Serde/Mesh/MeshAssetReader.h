@@ -35,15 +35,6 @@ namespace DenOfIz
         virtual void OnIndex( uint32_t index )
         {
         }
-        virtual void OnMorphPositionDeltas( const Float3 &positionDeltas )
-        {
-        }
-        virtual void OnMorphNormalDeltas( const Float3 &normalDeltas )
-        {
-        }
-        virtual void OnMorphTangentDeltas( const Float3 &tangentDeltas )
-        {
-        }
     };
 
     struct DZ_API MeshAssetReaderDesc
