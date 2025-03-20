@@ -31,18 +31,18 @@ namespace DenOfIz
         MorphNormalDeltas,
         MorphTangentDeltas
     };
-    struct DZ_API MeshWriterDesc
+    struct DZ_API MeshAssetWriterDesc
     {
         BinaryWriter *Writer;
     };
 
-    class DZ_API MeshWriter
+    class DZ_API MeshAssetWriter
     {
         BinaryWriter *m_writer;
 
     public:
-        explicit MeshWriter( const MeshWriterDesc &desc );
-        ~MeshWriter( );
+        explicit MeshAssetWriter( const MeshAssetWriterDesc &desc );
+        ~MeshAssetWriter( );
 
         void WriteMeshData( const MeshData &meshData );
         // A stream can only be activated once

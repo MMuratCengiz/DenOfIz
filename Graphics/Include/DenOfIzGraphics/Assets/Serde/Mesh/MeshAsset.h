@@ -82,30 +82,6 @@ namespace DenOfIz
         uint32_t                  MaxBoneInfluences = 4;
     };
 
-    struct DZ_API MorphTarget
-    {
-        InteropString   Name;
-        AssetDataStream PositionDeltas;
-        AssetDataStream NormalDeltas;
-        AssetDataStream TangentDeltas;
-        float           Weight = 0.0f;
-    };
-
-    // Organized morph target collection
-    struct DZ_API MorphTargetSet
-    {
-        InteropString             Name;
-        InteropArray<MorphTarget> Targets;
-        InteropArray<float>       DefaultWeights;
-    };
-
-    struct DZ_API SubMeshInstance
-    {
-        Float4x4 Transform;
-        uint32_t CustomDataOffset{ };
-        uint32_t CustomDataSize{ };
-    };
-
     struct DZ_API BoxBoundingVolume
     {
         Float3 Min;
@@ -151,22 +127,18 @@ namespace DenOfIz
 
     struct DZ_API SubMeshData
     {
-        InteropString           Name;
-        PrimitiveTopology       Topology = PrimitiveTopology::Triangle;
-        VertexEnabledAttributes EnabledAttributes{ };
-        VertexAttributeConfig   AttributeConfig{ };
-        AssetDataStream         VertexStream{ };
-        IndexType               IndexType = IndexType::Uint32;
-        AssetDataStream         IndexStream{ };
-        Float3                  MinBounds{ 0.0f, 0.0f, 0.0f };
-        Float3                  MaxBounds{ 0.0f, 0.0f, 0.0f };
-        InteropString           MaterialRef{ };
-
-        // Enhanced features
-        uint32_t                      LODLevel = 0;    // Level of detail (0 = highest)
-        InteropArray<SubMeshInstance> Instances;       // Instancing data
-        InteropArray<MorphTargetSet>  MorphTargetSets; // Organized morph targets
-        InteropArray<BoundingVolume>  BoundingVolumes;
+        InteropString                Name;
+        PrimitiveTopology            Topology = PrimitiveTopology::Triangle;
+        VertexEnabledAttributes      EnabledAttributes{ };
+        VertexAttributeConfig        AttributeConfig{ };
+        AssetDataStream              VertexStream{ };
+        IndexType                    IndexType = IndexType::Uint32;
+        AssetDataStream              IndexStream{ };
+        Float3                       MinBounds{ 0.0f, 0.0f, 0.0f };
+        Float3                       MaxBounds{ 0.0f, 0.0f, 0.0f };
+        InteropString                MaterialRef{ };
+        uint32_t                     LODLevel = 0;
+        InteropArray<BoundingVolume> BoundingVolumes;
     };
     template class DZ_API InteropArray<SubMeshData>;
 
@@ -187,7 +159,8 @@ namespace DenOfIz
         InteropString              Name;
         uint32_t                   NumLODs = 1;
         InteropArray<SubMeshData>  SubMeshes;
-        InteropArray<JointData>    Joints;
+        InteropString              AnimationRef{ };
+        InteropString              SkeletonRef{ };
         InteropArray<UserProperty> UserProperties;
 
         MeshData( ) : AssetHeader( 0x445A4D455348 /*DZMESH*/, Latest, 0 )
