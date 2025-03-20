@@ -30,7 +30,8 @@ namespace DenOfIz
 
     class DZ_API SkeletonAssetWriter
     {
-        BinaryWriter         *m_writer;
+        BinaryWriter *m_writer;
+
     public:
         explicit SkeletonAssetWriter( const SkeletonAssetWriterDesc &desc );
         ~SkeletonAssetWriter( );

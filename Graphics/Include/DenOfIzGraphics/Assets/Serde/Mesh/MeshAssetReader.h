@@ -23,9 +23,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    class DZ_API MeshReaderCallback
+    {
+    public:
+        virtual ~MeshReaderCallback( ) = default;
+
+    private:
+        virtual void OnVertex( const MeshVertex &meshVertex )
+        {
+        }
+        virtual void OnIndex( uint32_t index )
+        {
+        }
+    };
+
     struct DZ_API MeshReaderDesc
     {
-        BinaryReader *Reader;
+        BinaryReader       *Reader;
+        MeshReaderCallback *Callback;
     };
 
     class DZ_API MeshReader

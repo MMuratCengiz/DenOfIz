@@ -30,7 +30,8 @@ namespace DenOfIz
 
     class DZ_API TextureAssetWriter
     {
-        BinaryWriter         *m_writer;
+        BinaryWriter *m_writer;
+
     public:
         explicit TextureAssetWriter( const TextureAssetWriterDesc &desc );
         ~TextureAssetWriter( );

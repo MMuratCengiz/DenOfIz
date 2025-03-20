@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzGraphics/Assets/Serde/Asset.h>
 #include <DenOfIzGraphics/Utilities/Interop.h>
 #include <DenOfIzGraphics/Utilities/InteropMath.h>
-#include <DenOfIzGraphics/Assets/Serde/Asset.h>
 
 namespace DenOfIz
 {

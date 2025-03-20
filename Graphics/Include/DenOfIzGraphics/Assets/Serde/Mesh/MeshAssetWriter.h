@@ -23,6 +23,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    enum class ActiveMeshStream
+    {
+        Vertices,
+        Indices,
+        MorphPositionDeltas,
+        MorphNormalDeltas,
+        MorphTangentDeltas
+    };
     struct DZ_API MeshWriterDesc
     {
         BinaryWriter *Writer;
@@ -30,11 +38,19 @@ namespace DenOfIz
 
     class DZ_API MeshWriter
     {
-        BinaryWriter         *m_writer;
+        BinaryWriter *m_writer;
+
     public:
         explicit MeshWriter( const MeshWriterDesc &desc );
         ~MeshWriter( );
 
         void WriteMeshData( const MeshData &meshData );
+        // A stream can only be activated once
+        void SetActiveMeshStream( ActiveMeshStream stream );
+        void AddVertex( const MeshVertex &vertex );
+        void AddIndex( uint32_t index );
+        void AddMorphPositionDelta( const Float3 &vertexDeltas );
+        void AddMorphNormalDelta( const Float3 &normalDeltas );
+        void AddMorphTangentDelta( const Float3 &tangentDeltas );
     };
 } // namespace DenOfIz

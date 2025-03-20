@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzGraphics/Assets/Serde/Asset.h>
 #include <DenOfIzGraphics/Utilities/Interop.h>
 #include <DenOfIzGraphics/Utilities/InteropMath.h>
-#include <DenOfIzGraphics/Assets/Serde/Asset.h>
 
 namespace DenOfIz
 {
@@ -30,7 +30,7 @@ namespace DenOfIz
         Float4x4               InverseBindMatrix;
         Float4x4               LocalTransform;
         Float4x4               GlobalTransform;
-        uint32_t               Index = 0;
+        uint32_t               Index       = 0;
         int32_t                ParentIndex = 0;
         InteropArray<uint32_t> ChildIndices;
     };

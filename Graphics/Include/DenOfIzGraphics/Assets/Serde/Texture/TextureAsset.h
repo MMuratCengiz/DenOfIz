@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzGraphics/Assets/Serde/Asset.h>
 #include <DenOfIzGraphics/Utilities/Interop.h>
 #include <DenOfIzGraphics/Utilities/InteropMath.h>
-#include <DenOfIzGraphics/Assets/Serde/Asset.h>
 
 namespace DenOfIz
 {
@@ -28,7 +28,7 @@ namespace DenOfIz
     {
         static constexpr uint32_t Latest = 1;
 
-        InteropString       Name;
+        InteropString Name;
         // TODO
         TextureAsset( ) : AssetHeader( 0x445A544558 /* 'DZTEX' */, Latest, 0 )
         {

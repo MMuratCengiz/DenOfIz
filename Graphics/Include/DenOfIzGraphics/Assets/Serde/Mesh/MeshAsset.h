@@ -165,9 +165,8 @@ namespace DenOfIz
         // Enhanced features
         uint32_t                      LODLevel = 0;    // Level of detail (0 = highest)
         InteropArray<SubMeshInstance> Instances;       // Instancing data
-        InteropArray<MorphTarget>     MorphTargets;    // Backward compatibility
         InteropArray<MorphTargetSet>  MorphTargetSets; // Organized morph targets
-        InteropArray<BoundingVolume>  BoundingVolumes; // Additional bounding volumes
+        InteropArray<BoundingVolume>  BoundingVolumes;
     };
     template class DZ_API InteropArray<SubMeshData>;
 
@@ -185,14 +184,11 @@ namespace DenOfIz
     {
         static constexpr uint32_t Latest = 1;
 
-        InteropString             Name;
-        uint32_t                  NumLODs = 1;
-        InteropArray<SubMeshData> SubMeshes;
-        InteropArray<JointData>   Joints;
-        uint64_t                  StreamDataNumBytes = 0; // Aggregation of various data that is too large and should instead be streamed
-
-        InteropArray<BoundingVolume> BoundingVolumes;
-        InteropArray<UserProperty>   UserProperties;
+        InteropString              Name;
+        uint32_t                   NumLODs = 1;
+        InteropArray<SubMeshData>  SubMeshes;
+        InteropArray<JointData>    Joints;
+        InteropArray<UserProperty> UserProperties;
 
         MeshData( ) : AssetHeader( 0x445A4D455348 /*DZMESH*/, Latest, 0 )
         {
