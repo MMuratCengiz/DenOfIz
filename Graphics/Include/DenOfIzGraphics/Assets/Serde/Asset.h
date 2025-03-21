@@ -24,6 +24,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct DZ_API AssetPath
+    {
+        InteropString Protocol;
+        InteropString Bundle; // Empty for default bundle
+        InteropString Path;
+
+        static AssetPath Parse(const InteropString& uri);
+        static AssetPath Create(const InteropString& path, const InteropString& bundle = "");
+        InteropString ToString() const;
+    };
+
     struct DZ_API AssetHeader
     {
         uint64_t Magic;

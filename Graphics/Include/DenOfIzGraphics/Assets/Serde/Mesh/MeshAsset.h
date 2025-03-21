@@ -125,6 +125,13 @@ namespace DenOfIz
         ConvexHullBoundingVolume ConvexHull;
     };
 
+    struct DZ_API MorphTarget
+    {
+        InteropString   Name;
+        AssetDataStream VertexDeltaStream;
+        float           DefaultWeight = 0.0f;
+    };
+
     struct DZ_API SubMeshData
     {
         InteropString                Name;
@@ -159,8 +166,8 @@ namespace DenOfIz
         InteropString              Name;
         uint32_t                   NumLODs = 1;
         InteropArray<SubMeshData>  SubMeshes;
-        InteropString              AnimationRef{ };
-        InteropString              SkeletonRef{ };
+        InteropString              AnimationUri{ };
+        InteropString              SkeletonUri{ };
         InteropArray<UserProperty> UserProperties;
 
         MeshData( ) : AssetHeader( 0x445A4D455348 /*DZMESH*/, Latest, 0 )

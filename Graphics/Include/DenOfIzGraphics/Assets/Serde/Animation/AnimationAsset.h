@@ -24,6 +24,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct DZ_API MorphKeyframe
+    {
+        float Timestamp;
+        float Weight;
+    };
+
+    struct DZ_API MorphAnimTrack
+    {
+        InteropString               Name;
+        InteropArray<MorphKeyframe> Keyframes;
+    };
+
     struct DZ_API JointPose
     {
         Float4 Position;
@@ -49,6 +61,7 @@ namespace DenOfIz
         float                        Duration       = 0;
         double                       TicksPerSecond = 0;
         InteropArray<JointAnimTrack> Tracks;
+        InteropArray<MorphAnimTrack> MorphTracks;
     };
 
     struct DZ_API AnimationAsset : AssetHeader
@@ -57,7 +70,7 @@ namespace DenOfIz
         static constexpr uint64_t Magic  = 0x445A414E494D; // 'DZANIM'
 
         InteropString               Name;
-        InteropString               SkeletonRef;
+        InteropString               SkeletonUri;
         InteropArray<AnimationClip> Animations;
 
         AnimationAsset( ) : AssetHeader( Magic, Latest, 0 )
