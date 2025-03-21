@@ -43,6 +43,24 @@ namespace DenOfIz
         InteropString Path;
     };
 
+    struct DZ_API BundleHeader : AssetHeader
+    {
+        static constexpr uint32_t Latest = 1;
+
+        uint32_t NumAssets;
+        uint64_t TOCOffset;
+
+        BundleHeader() : AssetHeader(0x445A42554E444C /* "DZBUNDL" */, Latest, 0) {}
+    };
+
+    struct DZ_API BundleTOCEntry
+    {
+        uint32_t AssetTypeId;
+        uint64_t Offset;
+        uint64_t NumBytes;  // Renamed from Size
+        uint32_t PathLength;
+    };
+
     struct DZ_API BundleDesc
     {
         InteropString Path;
