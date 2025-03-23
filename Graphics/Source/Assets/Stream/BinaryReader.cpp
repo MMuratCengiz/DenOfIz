@@ -22,20 +22,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-BinaryReader::BinaryReader( std::istream *stream ) : m_stream( stream )
+BinaryReader::BinaryReader( std::istream *stream, const BinaryReaderDesc &desc ) :
+    m_offset( desc.Offset ), m_allowedNumBytes( desc.NumBytes ), m_forceRange( desc.ForceRange ), m_stream( stream )
 {
     m_isStreamOwned = false;
     m_isStreamValid = true;
 }
 
-BinaryReader::BinaryReader( BinaryContainer &container )
+BinaryReader::BinaryReader( BinaryContainer &container, const BinaryReaderDesc &desc ) : m_offset( desc.Offset ), m_allowedNumBytes( desc.NumBytes ), m_forceRange( desc.ForceRange )
 {
     m_stream        = &container.m_stream;
     m_isStreamOwned = false;
     m_isStreamValid = true;
 }
 
-BinaryReader::BinaryReader( const InteropString &filePath )
+BinaryReader::BinaryReader( const InteropString &filePath, const BinaryReaderDesc &desc ) : m_offset( desc.Offset ), m_allowedNumBytes( desc.NumBytes ), m_forceRange( desc.ForceRange )
 {
     m_isStreamOwned = true;
     auto *stream    = new std::ifstream;
@@ -62,18 +63,18 @@ BinaryReader::~BinaryReader( )
     }
 }
 
-int BinaryReader::ReadByte( ) const
+int BinaryReader::ReadByte( )
 {
-    if ( !m_isStreamValid || m_stream->eof( ) )
+    if ( !IsStreamValid( ) || !TrackReadBytes( 1 ) )
     {
         return -1;
     }
     return m_stream->get( );
 }
 
-int BinaryReader::Read( InteropArray<Byte> &buffer, const uint32_t offset, const uint32_t count ) const
+int BinaryReader::Read( InteropArray<Byte> &buffer, const uint32_t offset, const uint32_t count )
 {
-    if ( !m_isStreamValid || m_stream->eof( ) )
+    if ( !IsStreamValid( ) || !TrackReadBytes( count ) )
     {
         return -1;
     }
@@ -91,8 +92,13 @@ int BinaryReader::Read( InteropArray<Byte> &buffer, const uint32_t offset, const
     return bytesRead;
 }
 
-InteropArray<Byte> BinaryReader::ReadBytes( const uint32_t count ) const
+InteropArray<Byte> BinaryReader::ReadBytes( const uint32_t count )
 {
+    if ( !IsStreamValid( ) || !TrackReadBytes( count ) )
+    {
+        return 0.0f;
+    }
+
     InteropArray<Byte> result( count );
     if ( const int bytesRead = Read( result, 0, count ); bytesRead >= 0 && static_cast<uint32_t>( bytesRead ) < count )
     {
@@ -107,11 +113,10 @@ InteropArray<Byte> BinaryReader::ReadBytes( const uint32_t count ) const
     return result;
 }
 
-uint32_t BinaryReader::ReadUInt32( ) const
+uint32_t BinaryReader::ReadUInt32( )
 {
-    if ( !m_isStreamValid || m_stream->eof( ) )
+    if ( !IsStreamValid( ) || !TrackReadBytes( 1 ) )
     {
-        LOG( ERROR ) << "Attempted to read beyond end of file";
         return 0;
     }
 
@@ -133,25 +138,29 @@ uint32_t BinaryReader::ReadUInt32( ) const
     return value;
 }
 
-int32_t BinaryReader::ReadInt32( ) const
+int32_t BinaryReader::ReadInt32( )
 {
     return static_cast<int32_t>( ReadUInt32( ) );
 }
 
-float BinaryReader::ReadFloat( ) const
+float BinaryReader::ReadFloat( )
 {
+    if ( !IsStreamValid( ) || !TrackReadBytes( 1 ) )
+    {
+        return 0.0f;
+    }
+
     const uint32_t intValue = ReadUInt32( );
     float          result;
     std::memcpy( &result, &intValue, sizeof( float ) );
     return result;
 }
 
-InteropString BinaryReader::ReadString( ) const
+InteropString BinaryReader::ReadString( )
 {
     const uint32_t length = ReadUInt32( );
-    if ( !m_isStreamValid || m_stream->eof( ) )
+    if ( !IsStreamValid( ) || !TrackReadBytes( length ) )
     {
-        LOG( ERROR ) << "Attempted to read string beyond end of file";
         return { };
     }
 
@@ -192,4 +201,35 @@ void BinaryReader::Skip( const uint64_t count ) const
     }
     const uint64_t newPosition = Position( ) + count;
     Seek( newPosition );
+}
+
+bool BinaryReader::IsStreamValid( ) const
+{
+    if ( !m_isStreamValid || m_stream->eof( ) )
+    {
+        LOG( ERROR ) << "Attempted to read string beyond end of file";
+        return false;
+    }
+
+    return true;
+}
+
+bool BinaryReader::TrackReadBytes( const uint32_t requested )
+{
+    if ( m_forceRange && m_allowedNumBytes > 0)
+    {
+        if ( m_readNumBytes + requested <= m_allowedNumBytes )
+        {
+            m_readNumBytes += requested;
+            return true;
+        }
+        LOG( ERROR ) << "Attempted to read beyond end of the allowed range";
+        return false;
+    }
+    return true;
+}
+
+void BinaryReader::InitStream( ) const
+{
+    Seek( m_offset );
 }

@@ -26,13 +26,12 @@ namespace DenOfIz
 {
     struct DZ_API AssetPath
     {
-        InteropString Protocol;
-        InteropString Bundle; // Empty for default bundle
-        InteropString Path;
+        static constexpr InteropString Protocol{ "asset" };
+        InteropString                  Path;
 
-        static AssetPath Parse(const InteropString& uri);
-        static AssetPath Create(const InteropString& path, const InteropString& bundle = "");
-        InteropString ToString() const;
+        static AssetPath            Parse( const InteropString &uri );
+        static AssetPath            Create( const InteropString &path );
+        [[nodiscard]] InteropString ToString( ) const;
     };
 
     struct DZ_API AssetHeader

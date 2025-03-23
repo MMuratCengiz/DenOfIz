@@ -18,8 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Interop.h>
 #include <DenOfIzGraphics/Assets/Serde/Asset.h>
+#include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
+#include <DenOfIzGraphics/Assets/Stream/BinaryWriter.h>
+#include <DenOfIzGraphics/Utilities/Interop.h>
+#include <fstream>
+#include <unordered_map>
 
 namespace DenOfIz
 {
@@ -36,9 +40,9 @@ namespace DenOfIz
 
     struct DZ_API AssetEntry
     {
-        AssetType Type;
-        uint64_t Offset;
-        uint64_t NumBytes;
+        AssetType     Type;
+        uint64_t      Offset;
+        uint64_t      NumBytes;
         InteropString Name;
         InteropString Path;
     };
@@ -50,21 +54,41 @@ namespace DenOfIz
         uint32_t NumAssets;
         uint64_t TOCOffset;
 
-        BundleHeader() : AssetHeader(0x445A42554E444C /* "DZBUNDL" */, Latest, 0) {}
+        BundleHeader( ) : AssetHeader( 0x445A42554E444C /* "DZBUNDL" */, Latest, 0 )
+        {
+        }
     };
 
     struct DZ_API BundleTOCEntry
     {
         uint32_t AssetTypeId;
         uint64_t Offset;
-        uint64_t NumBytes;  // Renamed from Size
+        uint64_t NumBytes;
         uint32_t PathLength;
     };
 
     struct DZ_API BundleDesc
     {
         InteropString Path;
-        bool CreateIfNotExists = false;
+        bool          CreateIfNotExists = false;
     };
 
-}
+    class DZ_API Bundle
+    {
+    private:
+        BundleDesc                                  m_desc;
+        std::unordered_map<std::string, AssetEntry> m_assetEntries;
+        std::fstream                               *m_bundleFile;
+        bool                                        m_isDirty;
+
+    public:
+        DZ_API Bundle( const BundleDesc &desc );
+        DZ_API ~Bundle( );
+
+        BinaryReader *OpenReader( const AssetPath &path );
+        BinaryWriter *OpenWriter( const AssetPath &path, AssetType type );
+        void          AddAsset( const AssetPath &path, AssetType type, const InteropArray<Byte> &data );
+        bool          Save( );
+        bool          Exists( const AssetPath &path );
+    };
+} // namespace DenOfIz
