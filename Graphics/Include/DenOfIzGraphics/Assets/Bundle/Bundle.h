@@ -49,12 +49,13 @@ namespace DenOfIz
 
     struct DZ_API BundleHeader : AssetHeader
     {
-        static constexpr uint32_t Latest = 1;
+        static constexpr uint64_t BundleHeaderMagic = 0x445A42554E444C; // "DZBUNDL"
+        static constexpr uint32_t Latest            = 1;
 
-        uint32_t NumAssets;
-        uint64_t TOCOffset;
+        uint32_t NumAssets = 0;
+        uint64_t TOCOffset = 0;
 
-        BundleHeader( ) : AssetHeader( 0x445A42554E444C /* "DZBUNDL" */, Latest, 0 )
+        BundleHeader( ) : AssetHeader( BundleHeaderMagic, Latest, 0 )
         {
         }
     };
@@ -75,20 +76,22 @@ namespace DenOfIz
 
     class DZ_API Bundle
     {
-    private:
         BundleDesc                                  m_desc;
         std::unordered_map<std::string, AssetEntry> m_assetEntries;
         std::fstream                               *m_bundleFile;
         bool                                        m_isDirty;
 
+        void LoadTableOfContents( );
+        void WriteEmptyHeader( ) const;
+
     public:
         DZ_API Bundle( const BundleDesc &desc );
         DZ_API ~Bundle( );
 
-        BinaryReader *OpenReader( const AssetPath &path );
-        BinaryWriter *OpenWriter( const AssetPath &path, AssetType type );
-        void          AddAsset( const AssetPath &path, AssetType type, const InteropArray<Byte> &data );
-        bool          Save( );
-        bool          Exists( const AssetPath &path );
+        BinaryReader      *OpenReader( const AssetUri &assetUri );
+        BinaryWriter      *OpenWriter( const AssetUri &assetUri );
+        void               AddAsset( const AssetUri &assetUri, AssetType type, const InteropArray<Byte> &data );
+        bool               Save( );
+        [[nodiscard]] bool Exists( const AssetUri &assetUri ) const;
     };
 } // namespace DenOfIz

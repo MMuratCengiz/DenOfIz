@@ -20,14 +20,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-AssetPath AssetPath::Parse( const InteropString &uri )
+AssetUri AssetUri::Parse( const InteropString &uri )
 {
-    AssetPath result;
+    AssetUri result;
 
     const std::string str      = uri.Get( );
-    const std::string protocol = Protocol.Get( );
+    const std::string protocol = Scheme.Get( );
 
-    if ( const std::string protocolPrefix = std::string( Protocol.Get( ) ) + "://"; str.find( protocolPrefix ) == 0 )
+    if ( const std::string protocolPrefix = std::string( Scheme.Get( ) ) + "://"; str.find( protocolPrefix ) == 0 )
     {
         result.Path = str.substr( protocolPrefix.length( ) ).c_str( );
     }
@@ -39,17 +39,17 @@ AssetPath AssetPath::Parse( const InteropString &uri )
     return result;
 }
 
-InteropString AssetPath::ToString( ) const
+InteropString AssetUri::ToString( ) const
 {
-    std::string result = Protocol.Get( );
+    std::string result = Scheme.Get( );
     result += "://";
     result += Path.Get( );
     return { result.c_str( ) };
 }
 
-AssetPath AssetPath::Create( const InteropString &path )
+AssetUri AssetUri::Create( const InteropString &path )
 {
-    AssetPath result;
+    AssetUri result;
     result.Path = path;
     return result;
 }

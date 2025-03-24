@@ -18,21 +18,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-// BundleManager.h
-#pragma once
-#include <DenOfIzGraphics/Assets/Bundle.h>
+#include <DenOfIzGraphics/Assets/Bundle/Bundle.h>
 #include <vector>
 
 namespace DenOfIz
 {
     struct DZ_API BundleManagerDesc
     {
-        InteropString DefaultSearchPath;  // Default path to look for assets
+        InteropString DefaultSearchPath;
     };
 
     class DZ_API BundleManager
     {
-    private:
         std::vector<Bundle*> m_mountedBundles;
         InteropString m_defaultSearchPath;
         std::unordered_map<std::string, Bundle*> m_assetLocationCache;
@@ -41,20 +38,16 @@ namespace DenOfIz
         DZ_API explicit BundleManager(const BundleManagerDesc& desc);
         DZ_API ~BundleManager();
 
-        // Mount/unmount bundles
         DZ_API void MountBundle(Bundle* bundle, int priority = 0);
         DZ_API void UnmountBundle(Bundle* bundle);
 
-        // Asset access
-        DZ_API BinaryReader* OpenReader(const AssetPath& path);
-        DZ_API BinaryWriter* OpenWriter(const AssetPath& path, AssetType type);
-        DZ_API bool Exists(const AssetPath& path);
+        DZ_API BinaryReader* OpenReader(const AssetUri& path);
+        DZ_API BinaryWriter* OpenWriter(const AssetUri& path, AssetType type);
+        DZ_API bool Exists(const AssetUri& path);
 
-        // Asset management
-        DZ_API AssetType GetAssetType(const AssetPath& path);
-        DZ_API void InvalidateCache();  // Call when bundles change
+        DZ_API AssetType GetAssetType(const AssetUri& path);
+        DZ_API void InvalidateCache();
 
-        // Helper to convert asset paths to filesystem paths
-        DZ_API InteropString ResolveToFilesystemPath(const AssetPath& path);
+        DZ_API InteropString ResolveToFilesystemPath(const AssetUri& path);
     };
 }

@@ -46,17 +46,13 @@ namespace DenOfIz
 {
     struct DZ_API BinaryReaderDesc
     {
-        uint64_t Offset     = 0;
-        uint64_t NumBytes   = 0; // 0 means All
-        bool     ForceRange = true;
+        uint64_t NumBytes = 0; // 0, reading more than this amount of bytes won't be allowed
     };
 
     class DZ_API BinaryReader
     {
-        uint64_t      m_offset;
         uint64_t      m_allowedNumBytes;
-        uint64_t      m_readNumBytes = 0;
-        bool          m_forceRange;
+        uint64_t      m_readNumBytes  = 0;
         bool          m_isStreamOwned = false;
         bool          m_isStreamValid;
         std::istream *m_stream;
@@ -79,8 +75,7 @@ namespace DenOfIz
         void                             Skip( uint64_t count ) const;
 
     private:
-        bool IsStreamValid( ) const;
-        bool TrackReadBytes( uint32_t requested );
-        void InitStream( ) const;
+        [[nodiscard]] bool IsStreamValid( ) const;
+        bool               TrackReadBytes( uint32_t requested );
     };
 } // namespace DenOfIz

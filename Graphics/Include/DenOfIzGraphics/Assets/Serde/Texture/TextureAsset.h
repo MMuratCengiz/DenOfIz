@@ -24,12 +24,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct DZ_API TextureMip
+    {
+        uint32_t Width;
+        uint32_t Height;
+        uint32_t MipIndex;
+        uint32_t ArrayIndex;
+        uint32_t RowPitch;
+        uint32_t NumRows;
+        uint32_t SlicePitch;
+        uint32_t DataOffset;
+    };
+
     struct DZ_API TextureAsset : AssetHeader
     {
         static constexpr uint32_t Latest = 1;
 
-        InteropString Name;
-        // TODO
+        InteropString            Name;
+        InteropArray<TextureMip> Mips;
+        AssetDataStream          Data;
+
         TextureAsset( ) : AssetHeader( 0x445A544558 /* 'DZTEX' */, Latest, 0 )
         {
         }

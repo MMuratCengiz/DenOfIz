@@ -166,8 +166,8 @@ namespace DenOfIz
         InteropString              Name;
         uint32_t                   NumLODs = 1;
         InteropArray<SubMeshData>  SubMeshes;
-        InteropString              AnimationUri{ };
-        InteropString              SkeletonUri{ };
+        AssetUri                  AnimationRef{ };
+        AssetUri                  SkeletonRef{ };
         InteropArray<UserProperty> UserProperties;
 
         MeshData( ) : AssetHeader( 0x445A4D455348 /*DZMESH*/, Latest, 0 )

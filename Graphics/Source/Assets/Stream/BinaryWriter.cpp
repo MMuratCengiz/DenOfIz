@@ -23,20 +23,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-BinaryWriter::BinaryWriter( std::ostream *stream ) : m_stream( stream )
+BinaryWriter::BinaryWriter( std::ostream *stream, const BinaryWriterDesc &desc ) : m_desc( desc ), m_stream( stream )
 {
     m_isStreamOwned = false;
     m_isStreamValid = true;
 }
 
-BinaryWriter::BinaryWriter( BinaryContainer &container )
+BinaryWriter::BinaryWriter( BinaryContainer &container, const BinaryWriterDesc &desc ) : m_desc( desc )
 {
     m_stream        = &container.m_stream;
     m_isStreamOwned = false;
     m_isStreamValid = true;
 }
 
-BinaryWriter::BinaryWriter( const InteropString &filePath )
+BinaryWriter::BinaryWriter( const InteropString &filePath, const BinaryWriterDesc &desc ) : m_desc( desc )
 {
     m_isStreamOwned = true;
     auto *stream    = new std::ofstream;

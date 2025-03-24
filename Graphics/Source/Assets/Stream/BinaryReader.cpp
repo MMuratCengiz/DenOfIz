@@ -22,21 +22,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-BinaryReader::BinaryReader( std::istream *stream, const BinaryReaderDesc &desc ) :
-    m_offset( desc.Offset ), m_allowedNumBytes( desc.NumBytes ), m_forceRange( desc.ForceRange ), m_stream( stream )
+BinaryReader::BinaryReader( std::istream *stream, const BinaryReaderDesc &desc ) : m_allowedNumBytes( desc.NumBytes ), m_stream( stream )
 {
     m_isStreamOwned = false;
     m_isStreamValid = true;
 }
 
-BinaryReader::BinaryReader( BinaryContainer &container, const BinaryReaderDesc &desc ) : m_offset( desc.Offset ), m_allowedNumBytes( desc.NumBytes ), m_forceRange( desc.ForceRange )
+BinaryReader::BinaryReader( BinaryContainer &container, const BinaryReaderDesc &desc ) : m_allowedNumBytes( desc.NumBytes )
 {
     m_stream        = &container.m_stream;
     m_isStreamOwned = false;
     m_isStreamValid = true;
 }
 
-BinaryReader::BinaryReader( const InteropString &filePath, const BinaryReaderDesc &desc ) : m_offset( desc.Offset ), m_allowedNumBytes( desc.NumBytes ), m_forceRange( desc.ForceRange )
+BinaryReader::BinaryReader( const InteropString &filePath, const BinaryReaderDesc &desc ) : m_allowedNumBytes( desc.NumBytes )
 {
     m_isStreamOwned = true;
     auto *stream    = new std::ifstream;
@@ -216,7 +215,8 @@ bool BinaryReader::IsStreamValid( ) const
 
 bool BinaryReader::TrackReadBytes( const uint32_t requested )
 {
-    if ( m_forceRange && m_allowedNumBytes > 0)
+    // 0 is all
+    if ( m_allowedNumBytes > 0 )
     {
         if ( m_readNumBytes + requested <= m_allowedNumBytes )
         {
@@ -227,9 +227,4 @@ bool BinaryReader::TrackReadBytes( const uint32_t requested )
         return false;
     }
     return true;
-}
-
-void BinaryReader::InitStream( ) const
-{
-    Seek( m_offset );
 }

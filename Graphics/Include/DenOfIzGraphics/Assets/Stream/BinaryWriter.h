@@ -25,17 +25,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct DZ_API BinaryWriterDesc
+    {
+        // None for now
+    };
+
     class BinaryWriter
     {
-        bool          m_isStreamOwned = false;
-        bool          m_isStreamValid;
-        std::ostream *m_stream;
+        BinaryWriterDesc m_desc;
+        bool             m_isStreamOwned = false;
+        bool             m_isStreamValid;
+        std::ostream    *m_stream;
 
     public:
         // Non public api since std::ostream cannot be mapped
-        explicit BinaryWriter( std::ostream *stream );
-        DZ_API explicit BinaryWriter( BinaryContainer &container );
-        DZ_API explicit BinaryWriter( const InteropString &filePath );
+        explicit BinaryWriter( std::ostream *stream, const BinaryWriterDesc &desc = { } );
+        DZ_API explicit BinaryWriter( BinaryContainer &container, const BinaryWriterDesc &desc = { } );
+        DZ_API explicit BinaryWriter( const InteropString &filePath, const BinaryWriterDesc &desc = { } );
         DZ_API ~BinaryWriter( );
 
         DZ_API void                   WriteByte( Byte value ) const;

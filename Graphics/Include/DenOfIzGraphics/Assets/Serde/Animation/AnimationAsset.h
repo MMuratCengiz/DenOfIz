@@ -70,7 +70,7 @@ namespace DenOfIz
         static constexpr uint64_t Magic  = 0x445A414E494D; // 'DZANIM'
 
         InteropString               Name;
-        InteropString               SkeletonUri;
+        AssetUri                   SkeletonRef;
         InteropArray<AnimationClip> Animations;
 
         AnimationAsset( ) : AssetHeader( Magic, Latest, 0 )
