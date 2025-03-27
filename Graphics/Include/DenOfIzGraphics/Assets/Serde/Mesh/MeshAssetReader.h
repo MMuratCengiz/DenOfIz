@@ -35,6 +35,9 @@ namespace DenOfIz
         virtual void OnIndex( uint32_t index )
         {
         }
+        virtual void OnMorphTargetDelta( const InteropString &targetName, const MeshVertex &vertexDelta )
+        {
+        }
     };
 
     struct DZ_API MeshAssetReaderDesc
@@ -45,12 +48,13 @@ namespace DenOfIz
 
     class DZ_API MeshAssetReader
     {
-        BinaryReader *m_reader;
-        MeshData      m_meshData;
+        BinaryReader       *m_reader;
+        MeshAssetReaderDesc m_desc;
+        MeshAsset           m_meshData;
 
     public:
         explicit MeshAssetReader( const MeshAssetReaderDesc &desc );
         ~MeshAssetReader( );
-        MeshData ReadMeshData( );
+        MeshAsset ReadMeshData( );
     };
 } // namespace DenOfIz

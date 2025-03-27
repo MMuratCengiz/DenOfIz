@@ -136,8 +136,6 @@ namespace DenOfIz
     {
         InteropString                Name;
         PrimitiveTopology            Topology = PrimitiveTopology::Triangle;
-        VertexEnabledAttributes      EnabledAttributes{ };
-        VertexAttributeConfig        AttributeConfig{ };
         AssetDataStream              VertexStream{ };
         IndexType                    IndexType = IndexType::Uint32;
         AssetDataStream              IndexStream{ };
@@ -159,18 +157,20 @@ namespace DenOfIz
         InteropArray<uint32_t> ChildIndices;
     };
 
-    struct DZ_API MeshData : AssetHeader
+    struct DZ_API MeshAsset : AssetHeader
     {
         static constexpr uint32_t Latest = 1;
 
         InteropString              Name;
         uint32_t                   NumLODs = 1;
+        VertexEnabledAttributes    EnabledAttributes{ };
+        VertexAttributeConfig      AttributeConfig{ };
         InteropArray<SubMeshData>  SubMeshes;
-        AssetUri                  AnimationRef{ };
-        AssetUri                  SkeletonRef{ };
+        AssetUri                   AnimationRef{ };
+        AssetUri                   SkeletonRef{ };
         InteropArray<UserProperty> UserProperties;
 
-        MeshData( ) : AssetHeader( 0x445A4D455348 /*DZMESH*/, Latest, 0 )
+        MeshAsset( ) : AssetHeader( 0x445A4D455348 /*DZMESH*/, Latest, 0 )
         {
         }
     };

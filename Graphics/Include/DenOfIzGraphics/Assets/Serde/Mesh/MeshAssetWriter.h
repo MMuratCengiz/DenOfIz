@@ -25,6 +25,7 @@ namespace DenOfIz
 {
     enum class ActiveMeshStream
     {
+        None,
         Vertices,
         Indices,
     };
@@ -35,16 +36,18 @@ namespace DenOfIz
 
     class DZ_API MeshAssetWriter
     {
-        BinaryWriter *m_writer;
+        BinaryWriter       *m_writer;
+        ActiveMeshStream    m_activeStream;
+        MeshAssetWriterDesc m_desc;
 
     public:
         explicit MeshAssetWriter( const MeshAssetWriterDesc &desc );
         ~MeshAssetWriter( );
 
-        void WriteMeshData( const MeshData &meshData );
+        void WriteMeshData( const MeshAsset &meshData );
         // A stream can only be activated once
         void SetActiveMeshStream( ActiveMeshStream stream );
-        void AddVertex( const MeshVertex &vertex );
-        void AddIndex( uint32_t index );
+        void AddVertex( const MeshVertex &vertex ) const;
+        void AddIndex( uint32_t index ) const;
     };
 } // namespace DenOfIz
