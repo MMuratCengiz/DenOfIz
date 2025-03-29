@@ -44,6 +44,7 @@ namespace DenOfIz
 
     struct DZ_API AssetDataStream
     {
+        uint64_t Offset   = 0;
         uint64_t NumBytes = 0;
     };
 

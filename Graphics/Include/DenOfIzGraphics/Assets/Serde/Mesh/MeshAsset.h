@@ -135,13 +135,15 @@ namespace DenOfIz
     struct DZ_API SubMeshData
     {
         InteropString                Name;
-        PrimitiveTopology            Topology = PrimitiveTopology::Triangle;
+        PrimitiveTopology            Topology    = PrimitiveTopology::Triangle;
+        uint64_t                     NumVertices = 0;
         AssetDataStream              VertexStream{ };
-        IndexType                    IndexType = IndexType::Uint32;
+        uint64_t                     NumIndices = 0;
+        IndexType                    IndexType  = IndexType::Uint32;
         AssetDataStream              IndexStream{ };
         Float3                       MinBounds{ 0.0f, 0.0f, 0.0f };
         Float3                       MaxBounds{ 0.0f, 0.0f, 0.0f };
-        InteropString                MaterialRef{ };
+        AssetUri                     MaterialRef{ };
         uint32_t                     LODLevel = 0;
         InteropArray<BoundingVolume> BoundingVolumes;
     };
@@ -166,6 +168,7 @@ namespace DenOfIz
         VertexEnabledAttributes    EnabledAttributes{ };
         VertexAttributeConfig      AttributeConfig{ };
         InteropArray<SubMeshData>  SubMeshes;
+        InteropArray<MorphTarget>  MorphTargets;
         AssetUri                   AnimationRef{ };
         AssetUri                   SkeletonRef{ };
         InteropArray<UserProperty> UserProperties;
