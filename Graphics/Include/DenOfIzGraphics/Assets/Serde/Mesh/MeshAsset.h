@@ -66,11 +66,27 @@ namespace DenOfIz
         UInt4                BoneIndices;
         Float4               BoneWeights;
     };
+    template class DZ_API InteropArray<MeshVertex>;
+
+    struct DZ_API MorphTargetDeltaAttributes
+    {
+        bool Position : 1 = true;
+        bool Normal : 1   = true;
+        bool Tangent : 1  = true;
+    };
+
+    struct DZ_API MorphTargetDelta
+    {
+        Float4 Position;
+        Float4 Normal;
+        Float4 Tangent;
+    };
+    template class DZ_API InteropArray<MorphTargetDelta>;
 
     struct DZ_API UVChannel
     {
-        InteropString SemanticName; // e.g. "DIFFUSE", "LIGHTMAP", "DETAIL"
-        uint32_t      Index{ };     // UV index for this channel
+        InteropString SemanticName;  // e.g. "DIFFUSE", "LIGHTMAP", "DETAIL"
+        uint32_t      Index{ };
     };
 
     struct DZ_API VertexAttributeConfig
@@ -168,6 +184,7 @@ namespace DenOfIz
         VertexEnabledAttributes    EnabledAttributes{ };
         VertexAttributeConfig      AttributeConfig{ };
         InteropArray<SubMeshData>  SubMeshes;
+        MorphTargetDeltaAttributes MorphTargetDeltaAttributes{ };
         InteropArray<MorphTarget>  MorphTargets;
         AssetUri                   AnimationRef{ };
         AssetUri                   SkeletonRef{ };

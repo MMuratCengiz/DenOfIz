@@ -21,29 +21,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
 #include "MeshAsset.h"
 
+#include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
+
 namespace DenOfIz
 {
-    class DZ_API MeshAssetReaderCallback
+    struct DZ_API LoadToBufferDesc
     {
-    public:
-        virtual ~MeshAssetReaderCallback( ) = default;
+        AssetDataStream  Stream{ };
+        IBufferResource *Buffer{ };
+        uint32_t         Offset{ };
+    };
 
-    private:
-        virtual void OnVertex( const MeshVertex &meshVertex )
-        {
-        }
-        virtual void OnIndex( uint32_t index )
-        {
-        }
-        virtual void OnMorphTargetDelta( const InteropString &targetName, const MeshVertex &vertexDelta )
-        {
-        }
+    struct DZ_API LoadToMemoryDesc
+    {
+        AssetDataStream     Stream{ };
+        InteropArray<Byte> *Memory{ };
+        uint32_t            Offset{ };
     };
 
     struct DZ_API MeshAssetReaderDesc
     {
-        BinaryReader            *Reader;
-        MeshAssetReaderCallback *Callback;
+        BinaryReader *Reader;
     };
 
     class DZ_API MeshAssetReader
@@ -55,6 +53,13 @@ namespace DenOfIz
     public:
         explicit MeshAssetReader( const MeshAssetReaderDesc &desc );
         ~MeshAssetReader( );
-        MeshAsset ReadMeshData( );
+        MeshAsset ReadMetadata( );
+
+        void LoadStreamToBuffer( const LoadToBufferDesc &desc );
+        void LoadStreamToMemory( const LoadToMemoryDesc &desc );
+
+        InteropArray<MeshVertex>       ReadVertices( const AssetDataStream &stream );
+        InteropArray<uint32_t>         ReadIndices( const AssetDataStream &stream );
+        InteropArray<MorphTargetDelta> ReadMorphTargets( const AssetDataStream &stream );
     };
 } // namespace DenOfIz

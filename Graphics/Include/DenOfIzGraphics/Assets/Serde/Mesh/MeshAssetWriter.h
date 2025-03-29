@@ -44,10 +44,14 @@ namespace DenOfIz
         explicit MeshAssetWriter( const MeshAssetWriterDesc &desc );
         ~MeshAssetWriter( );
 
-        void WriteMeshData( const MeshAsset &meshData );
-        // A stream can only be activated once
-        void SetActiveMeshStream( ActiveMeshStream stream );
-        void AddVertex( const MeshVertex &vertex ) const;
-        void AddIndex( uint32_t index ) const;
+        /// Write general metadata for the MeshAsset, must be written first
+        void WriteMetadata( const MeshAsset &meshData );
+
+        void AddVertex( uint32_t subMeshIndex, const MeshVertex &vertex );
+        void AddIndex16( uint32_t subMeshIndex, uint16_t index );
+        void AddIndex32( uint32_t subMeshIndex, uint32_t index );
+        void AddMorphTargetDelta( uint32_t morphTargetIndex, const MorphTargetDelta &vertexDelta );
+
+        void Finalize( );
     };
 } // namespace DenOfIz
