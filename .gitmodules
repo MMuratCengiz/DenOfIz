@@ -1,7 +1,7 @@
 [submodule "vcpkg"]
 	path = vcpkg
 	url = https://github.com/microsoft/vcpkg.git
-	branch = main
+	branch = master
 [submodule "Engine/Graphics/_ThirdParty/DirectXShaderCompiler"]
 	path = Graphics/_ThirdParty/DirectXShaderCompiler
 	url = https://github.com/microsoft/DirectXShaderCompiler.git
