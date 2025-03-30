@@ -5,9 +5,11 @@
 [submodule "Engine/Graphics/_ThirdParty/DirectXShaderCompiler"]
 	path = Graphics/_ThirdParty/DirectXShaderCompiler
 	url = https://github.com/microsoft/DirectXShaderCompiler.git
+	branch = main
 [submodule "Engine/Graphics/_ThirdParty/DirectX-Headers"]
 	path = Graphics/_ThirdParty/DirectX-Headers
 	url = https://github.com/microsoft/DirectX-Headers.git
+	branch = main
 [submodule "Engine/Graphics/_ThirdParty/D3D12MemoryAllocator"]
 	path = Graphics/_ThirdParty/D3D12MemoryAllocator
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator.git
