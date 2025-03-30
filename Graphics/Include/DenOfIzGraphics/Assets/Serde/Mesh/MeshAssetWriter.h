@@ -23,12 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    enum class ActiveMeshStream
-    {
-        None,
-        Vertices,
-        Indices,
-    };
     struct DZ_API MeshAssetWriterDesc
     {
         BinaryWriter *Writer;
@@ -37,7 +31,6 @@ namespace DenOfIz
     class DZ_API MeshAssetWriter
     {
         BinaryWriter       *m_writer;
-        ActiveMeshStream    m_activeStream;
         MeshAssetWriterDesc m_desc;
 
     public:

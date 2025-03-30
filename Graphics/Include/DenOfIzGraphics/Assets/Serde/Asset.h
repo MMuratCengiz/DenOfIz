@@ -26,8 +26,8 @@ namespace DenOfIz
 {
     struct DZ_API AssetUri
     {
-        static constexpr InteropString Scheme{ "asset" };
-        InteropString                  Path{ };
+        InteropString Scheme{ "asset" };
+        InteropString Path{ };
 
         static AssetUri             Parse( const InteropString &uri );
         static AssetUri             Create( const InteropString &path );

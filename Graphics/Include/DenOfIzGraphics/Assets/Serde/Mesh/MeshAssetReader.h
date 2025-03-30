@@ -55,9 +55,11 @@ namespace DenOfIz
         ~MeshAssetReader( );
         MeshAsset ReadMetadata( );
 
+        // Load Raw Bytes
         void LoadStreamToBuffer( const LoadToBufferDesc &desc );
         void LoadStreamToMemory( const LoadToMemoryDesc &desc );
 
+        // Read parsed
         InteropArray<MeshVertex>       ReadVertices( const AssetDataStream &stream );
         InteropArray<uint32_t>         ReadIndices( const AssetDataStream &stream );
         InteropArray<MorphTargetDelta> ReadMorphTargets( const AssetDataStream &stream );

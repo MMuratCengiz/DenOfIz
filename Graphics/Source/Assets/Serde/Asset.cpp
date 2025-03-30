@@ -22,12 +22,12 @@ using namespace DenOfIz;
 
 AssetUri AssetUri::Parse( const InteropString &uri )
 {
-    AssetUri result;
+    AssetUri result{};
 
     const std::string str      = uri.Get( );
-    const std::string protocol = Scheme.Get( );
+    const std::string protocol = result.Scheme.Get( );
 
-    if ( const std::string protocolPrefix = std::string( Scheme.Get( ) ) + "://"; str.find( protocolPrefix ) == 0 )
+    if ( const std::string protocolPrefix = std::string( result.Scheme.Get( ) ) + "://"; str.find( protocolPrefix ) == 0 )
     {
         result.Path = str.substr( protocolPrefix.length( ) ).c_str( );
     }
