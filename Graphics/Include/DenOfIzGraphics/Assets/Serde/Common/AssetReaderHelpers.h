@@ -19,24 +19,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Assets/Serde/Asset.h>
-#include <DenOfIzGraphics/Utilities/Interop.h>
-#include <DenOfIzGraphics/Utilities/InteropMath.h>
+#include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
 
 namespace DenOfIz
 {
-    struct DZ_API MaterialAsset : AssetHeader
+    class DZ_API AssetReaderHelpers
     {
-        InteropString Name;
-
-        InteropString AlbedoMap;
-        InteropString NormalMap;
-        InteropString MetallicRoughnessMap;
-        InteropString EmissiveMap;
-
-        Float_4 BaseColorFactor;
-        float  MetallicFactor;
-        float  RoughnessFactor;
-        bool   AlphaBlend;
-        Float_3 EmissiveFactor;
+    public:
+        static AssetDataStream ReadAssetDataStream( BinaryReader *reader );
     };
 } // namespace DenOfIz

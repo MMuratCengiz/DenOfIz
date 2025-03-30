@@ -20,6 +20,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-BinaryContainer::BinaryContainer( )
+BinaryContainer::BinaryContainer( )  = default;
+BinaryContainer::~BinaryContainer( ) = default;
+
+InteropArray<Byte> BinaryContainer::GetData( ) const
 {
+    const size_t       len = m_stream.str( ).size( );
+    InteropArray<Byte> data( len );
+    data.MemCpy( m_stream.str( ).c_str( ), len );
+    return data;
 }

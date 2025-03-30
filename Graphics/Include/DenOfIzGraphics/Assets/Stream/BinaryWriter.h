@@ -21,12 +21,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "BinaryContainer.h"
 
 #include <DenOfIzGraphics/Utilities/Interop.h>
+#include <DenOfIzGraphics/Utilities/InteropMath.h>
 #include <ostream>
 
 namespace DenOfIz
 {
-    struct DZ_API BinaryWriterDesc
-    {
+    struct DZ_API BinaryWriterDesc{
         // None for now
     };
 
@@ -47,10 +47,30 @@ namespace DenOfIz
         DZ_API void                   WriteByte( Byte value ) const;
         DZ_API void                   Write( const InteropArray<Byte> &buffer, uint32_t offset, uint32_t count ) const;
         DZ_API void                   WriteBytes( const InteropArray<Byte> &buffer ) const;
+        DZ_API void                   WriteUInt16( uint16_t value ) const;
         DZ_API void                   WriteUInt32( uint32_t value ) const;
+        DZ_API void                   WriteUInt64( uint32_t value ) const;
+        DZ_API void                   WriteInt16( int16_t value ) const;
         DZ_API void                   WriteInt32( int32_t value ) const;
+        DZ_API void                   WriteInt64( int32_t value ) const;
         DZ_API void                   WriteFloat( float value ) const;
         DZ_API void                   WriteString( const InteropString &value ) const;
+        DZ_API void                   WriteUInt16_2( const UInt16_2 &value ) const;
+        DZ_API void                   WriteUInt16_3( const UInt16_3 &value ) const;
+        DZ_API void                   WriteUInt16_4( const UInt16_4 &value ) const;
+        DZ_API void                   WriteInt16_2( const Int16_2 &value ) const;
+        DZ_API void                   WriteInt16_3( const Int16_3 &value ) const;
+        DZ_API void                   WriteInt16_4( const Int16_4 &value ) const;
+        DZ_API void                   WriteUInt32_2( const UInt32_2 &value ) const;
+        DZ_API void                   WriteUInt32_3( const UInt32_3 &value ) const;
+        DZ_API void                   WriteUInt32_4( const UInt32_4 &value ) const;
+        DZ_API void                   WriteInt32_2( const Int32_2 &value ) const;
+        DZ_API void                   WriteInt32_3( const Int32_3 &value ) const;
+        DZ_API void                   WriteInt32_4( const Int32_4 &value ) const;
+        DZ_API void                   WriteFloat_2( const Float_2 &value ) const;
+        DZ_API void                   WriteFloat_3( const Float_3 &value ) const;
+        DZ_API void                   WriteFloat_4( const Float_4 &value ) const;
+        DZ_API void                   WriteFloat_4x4( const Float_4x4 &value ) const;
         DZ_API [[nodiscard]] uint64_t Position( ) const;
         DZ_API void                   Seek( uint64_t position ) const;
         DZ_API void                   Flush( ) const;

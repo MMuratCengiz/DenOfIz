@@ -38,9 +38,9 @@ namespace DenOfIz
 
     struct DZ_API JointPose
     {
-        Float4 Position;
-        Float4 Rotation;
-        Float4 Scale;
+        Float_4 Position;
+        Float_4 Rotation;
+        Float_4 Scale;
     };
 
     struct DZ_API JointKeyframe

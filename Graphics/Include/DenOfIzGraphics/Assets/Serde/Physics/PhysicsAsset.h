@@ -25,7 +25,7 @@ namespace DenOfIz
 
     struct DZ_API BoxCollider
     {
-        Float3 HalfExtents;
+        Float_3 HalfExtents;
     };
 
     struct DZ_API SphereCollider
@@ -58,7 +58,7 @@ namespace DenOfIz
     {
         PhysicsColliderType Type = PhysicsColliderType::Box;
         InteropString       Name;
-        Float4x4            Transform;
+        Float_4x4            Transform;
         float               Friction    = 0.5f;
         float               Restitution = 0.0f;
         bool                IsTrigger   = false; // Is it just a trigger volume?

@@ -20,22 +20,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Interop.h"
 
+/*
+ * NOTE:
+ *  This class is mostly used to specify types, it is not intended to provide full math functions, please convert them to relevant types of the Math library you use.
+ */
+
 namespace DenOfIz
 {
-    struct DZ_API Float2
+    struct DZ_API Float_2
     {
         float X;
         float Y;
     };
 
-    struct DZ_API Float3
+    struct DZ_API Float_3
     {
         float X;
         float Y;
         float Z;
     };
 
-    struct DZ_API Float4
+    struct DZ_API Float_4
     {
         float X;
         float Y;
@@ -43,20 +48,41 @@ namespace DenOfIz
         float W;
     };
 
-    struct DZ_API Int2
+    struct DZ_API Int16_2
+    {
+        int16_t X;
+        int16_t Y;
+    };
+
+    struct DZ_API Int16_3
+    {
+        int16_t X;
+        int16_t Y;
+        int16_t Z;
+    };
+
+    struct DZ_API Int16_4
+    {
+        int16_t X;
+        int16_t Y;
+        int16_t Z;
+        int16_t W;
+    };
+
+    struct DZ_API Int32_2
     {
         int X;
         int Y;
     };
 
-    struct DZ_API Int3
+    struct DZ_API Int32_3
     {
         int X;
         int Y;
         int Z;
     };
 
-    struct DZ_API Int4
+    struct DZ_API Int32_4
     {
         int X;
         int Y;
@@ -64,20 +90,41 @@ namespace DenOfIz
         int W;
     };
 
-    struct DZ_API UInt2
+    struct DZ_API UInt16_2
+    {
+        uint16_t X;
+        uint16_t Y;
+    };
+
+    struct DZ_API UInt16_3
+    {
+        uint16_t X;
+        uint16_t Y;
+        uint16_t Z;
+    };
+
+    struct DZ_API UInt16_4
+    {
+        uint16_t X;
+        uint16_t Y;
+        uint16_t Z;
+        uint16_t W;
+    };
+
+    struct DZ_API UInt32_2
     {
         uint32_t X;
         uint32_t Y;
     };
 
-    struct DZ_API UInt3
+    struct DZ_API UInt32_3
     {
         uint32_t X;
         uint32_t Y;
         uint32_t Z;
     };
 
-    struct DZ_API UInt4
+    struct DZ_API UInt32_4
     {
         uint32_t X;
         uint32_t Y;
@@ -85,20 +132,15 @@ namespace DenOfIz
         uint32_t W;
     };
 
-    struct DZ_API Matrix4
+    struct DZ_API Float_4x4
     {
-        Float4 Cols[ 4 ];
-    };
+        float M[ 16 ]{ };
 
-    struct DZ_API Float4x4
-    {
-        float M[ 16 ];
-
-        Float4x4( )
+        Float_4x4( )
         {
-            for ( int i = 0; i < 16; i++ )
+            for ( float &i : M )
             {
-                M[ i ] = 0.0f;
+                i = 0.0f;
             }
             M[ 0 ] = M[ 5 ] = M[ 10 ] = M[ 15 ] = 1.0f;
         }

@@ -17,9 +17,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-#include "MeshAsset.h"
 
 #include <DenOfIzGraphics/Assets/Stream/BinaryWriter.h>
+#include <map>
+#include "MeshAsset.h"
 
 namespace DenOfIz
 {
@@ -32,19 +33,66 @@ namespace DenOfIz
     {
         BinaryWriter       *m_writer;
         MeshAssetWriterDesc m_desc;
+        MeshAsset           m_meshData;
+
+        enum class State
+        {
+            Idle,
+            ReadyToWriteData,
+            WritingVertices,
+            WritingIndices,
+            WritingHulls,
+            WritingDeltas,
+            DataWritten,
+            Finalized,
+            SubMeshEnded,
+            ExpectingMorphTarget,
+            ExpectingIndices,
+            ExpectingHulls
+        };
+        State m_state = State::Idle;
+
+        uint32_t m_expectedSubMeshCount     = 0;
+        uint32_t m_expectedMorphTargetCount = 0;
+        uint32_t m_writtenSubMeshCount{ };
+        uint32_t m_writtenMorphTargetCount{ };
+        uint64_t m_assetHeaderOffset{ };
+
+        uint32_t m_currentSubMeshIndex     = 0;
+        uint32_t m_currentMorphTargetIndex = 0;
+        uint32_t m_currentBVIndex          = 0;
+
+        uint64_t m_vertexCount = 0;
+        uint64_t m_indexCount  = 0;
+        uint64_t m_deltaCount  = 0;
+
+        uint32_t m_vertexStride       = 0;
+        uint32_t m_morphDeltaStride   = 0;
+        uint64_t m_dataBlockEndOffset = 0;
+
+        void CalculateStrides( );
+        void WriteHeader( uint64_t finalTotalSize ) const;
+        void WriteMetadataArrays( );
+        void WriteSubMeshData( const SubMeshData &data ) const;
+        void WriteMorphTargetData( const MorphTarget &data ) const;
+        void WriteBoundingVolume( const BoundingVolume &bv ) const;
+        void WriteUserPropertyContent( const UserProperty &prop ) const;
+        void WriteUserProperty( const UserProperty &prop ) const;
+        void WriteVertexInternal( const MeshVertex &vertex ) const;
+        void WriteMorphTargetDeltaInternal( const MorphTargetDelta &delta ) const;
 
     public:
         explicit MeshAssetWriter( const MeshAssetWriterDesc &desc );
         ~MeshAssetWriter( );
 
-        /// Write general metadata for the MeshAsset, must be written first
-        void WriteMetadata( const MeshAsset &meshData );
+        void WriteMetadata( const MeshAsset &meshAssetData );
 
-        void AddVertex( uint32_t subMeshIndex, const MeshVertex &vertex );
-        void AddIndex16( uint32_t subMeshIndex, uint16_t index );
-        void AddIndex32( uint32_t subMeshIndex, uint32_t index );
-        void AddMorphTargetDelta( uint32_t morphTargetIndex, const MorphTargetDelta &vertexDelta );
+        void AddVertex( const MeshVertex &vertex );
+        void AddIndex16( uint16_t index );
+        void AddIndex32( uint32_t index );
+        void AddConvexHullData( uint32_t boundingVolumeIndex, const InteropArray<Byte> &vertexData );
+        void AddMorphTargetDelta( const MorphTargetDelta &delta );
 
-        void Finalize( );
+        void FinalizeAsset( );
     };
 } // namespace DenOfIz

@@ -89,6 +89,7 @@ void BatchResourceCopy::CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc )
     CopyBufferRegionDesc copyBufferRegionDesc{ };
     copyBufferRegionDesc.DstBuffer = copyDesc.DstBuffer;
     copyBufferRegionDesc.SrcBuffer = stagingBuffer;
+    copyBufferRegionDesc.DstOffset = copyDesc.DstBufferOffset;
     copyBufferRegionDesc.NumBytes  = copyDesc.Data.NumElements( );
 
     CopyBufferRegion( copyBufferRegionDesc );

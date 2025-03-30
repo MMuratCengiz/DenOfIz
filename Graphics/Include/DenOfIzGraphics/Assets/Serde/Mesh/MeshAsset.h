@@ -57,14 +57,14 @@ namespace DenOfIz
     // Not all the fields here have values, it is configured VertexEnabledAttributes
     struct DZ_API MeshVertex
     {
-        Float4               Position;
-        Float4               Normal;
-        InteropArray<Float2> UVs;
-        Float4               Tangent;
-        Float4               Bitangent;
-        InteropArray<Float4> Colors;
-        UInt4                BoneIndices;
-        Float4               BoneWeights;
+        Float_4               Position{ };
+        Float_4               Normal{ };
+        InteropArray<Float_2> UVs;
+        Float_4               Tangent{ };
+        Float_4               Bitangent{ };
+        InteropArray<Float_4> Colors;
+        UInt32_4              BoneIndices{ };
+        Float_4               BoneWeights{ };
     };
     template class DZ_API InteropArray<MeshVertex>;
 
@@ -77,15 +77,15 @@ namespace DenOfIz
 
     struct DZ_API MorphTargetDelta
     {
-        Float4 Position;
-        Float4 Normal;
-        Float4 Tangent;
+        Float_4 Position;
+        Float_4 Normal;
+        Float_4 Tangent;
     };
     template class DZ_API InteropArray<MorphTargetDelta>;
 
     struct DZ_API UVChannel
     {
-        InteropString SemanticName;  // e.g. "DIFFUSE", "LIGHTMAP", "DETAIL"
+        InteropString SemanticName; // e.g. "DIFFUSE", "LIGHTMAP", "DETAIL"
         uint32_t      Index{ };
     };
 
@@ -100,21 +100,21 @@ namespace DenOfIz
 
     struct DZ_API BoxBoundingVolume
     {
-        Float3 Min;
-        Float3 Max;
+        Float_3 Min;
+        Float_3 Max;
     };
 
     struct DZ_API SphereBoundingVolume
     {
-        Float3 Center;
-        float  Radius;
+        Float_3 Center;
+        float   Radius;
     };
 
     struct DZ_API CapsuleBoundingVolume
     {
-        Float3 Start;
-        Float3 End;
-        float  Radius;
+        Float_3 Start;
+        Float_3 End;
+        float   Radius;
     };
 
     struct DZ_API ConvexHullBoundingVolume
@@ -157,8 +157,8 @@ namespace DenOfIz
         uint64_t                     NumIndices = 0;
         IndexType                    IndexType  = IndexType::Uint32;
         AssetDataStream              IndexStream{ };
-        Float3                       MinBounds{ 0.0f, 0.0f, 0.0f };
-        Float3                       MaxBounds{ 0.0f, 0.0f, 0.0f };
+        Float_3                      MinBounds{ 0.0f, 0.0f, 0.0f };
+        Float_3                      MaxBounds{ 0.0f, 0.0f, 0.0f };
         AssetUri                     MaterialRef{ };
         uint32_t                     LODLevel = 0;
         InteropArray<BoundingVolume> BoundingVolumes;
@@ -168,9 +168,9 @@ namespace DenOfIz
     struct DZ_API JointData
     {
         InteropString          Name;
-        Float4x4               InverseBindMatrix;
-        Float4x4               LocalTransform;
-        Float4x4               GlobalTransform;
+        Float_4x4              InverseBindMatrix;
+        Float_4x4              LocalTransform;
+        Float_4x4              GlobalTransform;
         int32_t                ParentIndex = -1;
         InteropArray<uint32_t> ChildIndices;
     };

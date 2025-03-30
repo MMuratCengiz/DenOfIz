@@ -39,6 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Utilities/Interop.h>
+#include <DenOfIzGraphics/Utilities/InteropMath.h>
 #include <istream>
 #include "BinaryContainer.h"
 
@@ -63,16 +64,36 @@ namespace DenOfIz
         DZ_API explicit BinaryReader( const InteropString &filePath, const BinaryReaderDesc &desc = { } );
         DZ_API ~BinaryReader( );
 
-        [[nodiscard]] int                ReadByte( );
-        int                              Read( InteropArray<Byte> &buffer, uint32_t offset, uint32_t count );
-        [[nodiscard]] InteropArray<Byte> ReadBytes( uint32_t count );
-        [[nodiscard]] uint32_t           ReadUInt32( );
-        [[nodiscard]] int32_t            ReadInt32( );
-        [[nodiscard]] float              ReadFloat( );
-        [[nodiscard]] InteropString      ReadString( );
-        [[nodiscard]] uint64_t           Position( ) const;
-        void                             Seek( uint64_t position ) const;
-        void                             Skip( uint64_t count ) const;
+        [[nodiscard]] DZ_API int ReadByte( );
+        [[nodiscard]] DZ_API int Read( InteropArray<Byte> &buffer, uint32_t offset, uint32_t count );
+        [[nodiscard]] DZ_API InteropArray<Byte> ReadBytes( uint32_t count );
+        [[nodiscard]] DZ_API uint16_t           ReadUInt16( );
+        [[nodiscard]] DZ_API uint32_t           ReadUInt32( );
+        [[nodiscard]] DZ_API uint64_t           ReadUInt64( );
+        [[nodiscard]] DZ_API int16_t            ReadInt16( );
+        [[nodiscard]] DZ_API int32_t            ReadInt32( );
+        [[nodiscard]] DZ_API int64_t            ReadInt64( );
+        [[nodiscard]] DZ_API float              ReadFloat( );
+        [[nodiscard]] DZ_API InteropString      ReadString( );
+        [[nodiscard]] DZ_API UInt16_2           ReadUInt16_2( );
+        [[nodiscard]] DZ_API UInt16_3           ReadUInt16_3( );
+        [[nodiscard]] DZ_API UInt16_4           ReadUInt16_4( );
+        [[nodiscard]] DZ_API Int16_2            ReadInt16_2( );
+        [[nodiscard]] DZ_API Int16_3            ReadInt16_3( );
+        [[nodiscard]] DZ_API Int16_4            ReadInt16_4( );
+        [[nodiscard]] DZ_API UInt32_2           ReadUInt32_2( );
+        [[nodiscard]] DZ_API UInt32_3           ReadUInt32_3( );
+        [[nodiscard]] DZ_API UInt32_4           ReadUInt32_4( );
+        [[nodiscard]] DZ_API Int32_2            ReadInt32_2( );
+        [[nodiscard]] DZ_API Int32_3            ReadInt32_3( );
+        [[nodiscard]] DZ_API Int32_4            ReadInt32_4( );
+        [[nodiscard]] DZ_API Float_2            ReadFloat_2( );
+        [[nodiscard]] DZ_API Float_3            ReadFloat_3( );
+        [[nodiscard]] DZ_API Float_4            ReadFloat_4( );
+        [[nodiscard]] DZ_API Float_4x4          ReadFloat_4x4( );
+        [[nodiscard]] DZ_API uint64_t           Position( ) const;
+        DZ_API void                             Seek( uint64_t position ) const;
+        DZ_API void                             Skip( uint64_t count ) const;
 
     private:
         [[nodiscard]] bool IsStreamValid( ) const;

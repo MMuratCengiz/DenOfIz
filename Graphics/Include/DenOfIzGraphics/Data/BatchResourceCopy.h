@@ -29,6 +29,7 @@ namespace DenOfIz
     struct DZ_API CopyToGpuBufferDesc
     {
         IBufferResource   *DstBuffer;
+        uint64_t           DstBufferOffset;
         InteropArray<Byte> Data;
     };
 

@@ -37,6 +37,8 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Serde/Asset.cpp
         Source/Assets/Serde/Animation/AnimationAssetReader.cpp
         Source/Assets/Serde/Animation/AnimationAssetWriter.cpp
+        Source/Assets/Serde/Common/AssetReaderHelpers.cpp
+        Source/Assets/Serde/Common/AssetWriterHelpers.cpp
         Source/Assets/Serde/Material/MaterialAssetReader.cpp
         Source/Assets/Serde/Material/MaterialAssetWriter.cpp
         Source/Assets/Serde/Mesh/MeshAssetReader.cpp

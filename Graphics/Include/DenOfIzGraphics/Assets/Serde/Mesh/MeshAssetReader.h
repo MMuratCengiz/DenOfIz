@@ -19,24 +19,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
+#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include "MeshAsset.h"
-
-#include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
 
 namespace DenOfIz
 {
     struct DZ_API LoadToBufferDesc
     {
-        AssetDataStream  Stream{ };
-        IBufferResource *Buffer{ };
-        uint32_t         Offset{ };
+        AssetDataStream    Stream{ };
+        BatchResourceCopy *BatchCopy = nullptr;
+        IBufferResource   *Buffer{ };
+        uint32_t           DstBufferOffset{ };
     };
 
     struct DZ_API LoadToMemoryDesc
     {
         AssetDataStream     Stream{ };
         InteropArray<Byte> *Memory{ };
-        uint32_t            Offset{ };
+        uint32_t            DstMemoryOffset{ };
     };
 
     struct DZ_API MeshAssetReaderDesc
@@ -49,19 +49,34 @@ namespace DenOfIz
         BinaryReader       *m_reader;
         MeshAssetReaderDesc m_desc;
         MeshAsset           m_meshData;
+        bool                m_metadataRead         = false;
+        uint64_t            m_dataBlockStartOffset = 0;
+
+        SubMeshData                    ReadCompleteSubMeshData( ) const;
+        MorphTarget                    ReadCompleteMorphTargetData( ) const;
+        UserProperty                   ReadCompleteUserPropertyData( ) const;
+        BoundingVolume                 ReadBoundingVolume( ) const;
+        void                           ReadUserPropertyContent( UserProperty &prop ) const;
+        [[nodiscard]] MeshVertex       ReadSingleVertex( ) const;
+        [[nodiscard]] MorphTargetDelta ReadSingleMorphTargetDelta( ) const;
+        [[nodiscard]] uint32_t         CalculateVertexSize( ) const;
+        [[nodiscard]] uint32_t         CalculateMorphDeltaSize( ) const;
 
     public:
         explicit MeshAssetReader( const MeshAssetReaderDesc &desc );
         ~MeshAssetReader( );
-        MeshAsset ReadMetadata( );
+        MeshAsset                      ReadMetadata( );
+        [[nodiscard]] const MeshAsset &GetMetadata( ) const;
 
         // Load Raw Bytes
-        void LoadStreamToBuffer( const LoadToBufferDesc &desc );
-        void LoadStreamToMemory( const LoadToMemoryDesc &desc );
+        void LoadStreamToBuffer( const LoadToBufferDesc &desc ) const;
+        void LoadStreamToMemory( const LoadToMemoryDesc &desc ) const;
 
         // Read parsed
-        InteropArray<MeshVertex>       ReadVertices( const AssetDataStream &stream );
-        InteropArray<uint32_t>         ReadIndices( const AssetDataStream &stream );
-        InteropArray<MorphTargetDelta> ReadMorphTargets( const AssetDataStream &stream );
+        [[nodiscard]] InteropArray<MeshVertex>       ReadVertices( const AssetDataStream &stream ) const;
+        [[nodiscard]] InteropArray<uint16_t>         ReadIndices16( const AssetDataStream &stream ) const;
+        [[nodiscard]] InteropArray<uint32_t>         ReadIndices32( const AssetDataStream &stream ) const;
+        [[nodiscard]] InteropArray<MorphTargetDelta> ReadMorphTargetDeltas( const AssetDataStream &stream ) const;
+        InteropArray<Byte>                           ReadConvexHullData( const AssetDataStream &stream ) const; // Todo maybe use proper types
     };
 } // namespace DenOfIz

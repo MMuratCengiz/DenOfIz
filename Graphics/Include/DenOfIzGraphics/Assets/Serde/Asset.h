@@ -56,11 +56,11 @@ namespace DenOfIz
             Int,
             Float,
             Bool,
-            Vector2,
-            Vector3,
-            Vector4,
+            Float2,
+            Float3,
+            Float4,
             Color,
-            Transform
+            Float4x4
         };
 
         InteropString Name;
@@ -70,10 +70,10 @@ namespace DenOfIz
         int32_t       IntValue{ };
         float         FloatValue{ };
         bool          BoolValue{ };
-        Float2        Vector2Value{ };
-        Float3        Vector3Value{ };
-        Float4        Vector4Value{ };
-        Float4        ColorValue{ };
-        Float4x4      TransformValue;
+        Float_2        Vector2Value{ };
+        Float_3        Vector3Value{ };
+        Float_4        Vector4Value{ };
+        Float_4        ColorValue{ };
+        Float_4x4      TransformValue;
     };
 } // namespace DenOfIz

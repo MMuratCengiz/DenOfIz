@@ -18,25 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Serde/Asset.h>
-#include <DenOfIzGraphics/Utilities/Interop.h>
-#include <DenOfIzGraphics/Utilities/InteropMath.h>
+#include <DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h>
 
-namespace DenOfIz
+using namespace DenOfIz;
+
+void AssetWriterHelpers::WriteAssetDataStream( const BinaryWriter *writer, const AssetDataStream &stream )
 {
-    struct DZ_API MaterialAsset : AssetHeader
-    {
-        InteropString Name;
-
-        InteropString AlbedoMap;
-        InteropString NormalMap;
-        InteropString MetallicRoughnessMap;
-        InteropString EmissiveMap;
-
-        Float_4 BaseColorFactor;
-        float  MetallicFactor;
-        float  RoughnessFactor;
-        bool   AlphaBlend;
-        Float_3 EmissiveFactor;
-    };
-} // namespace DenOfIz
+    writer->WriteUInt64( stream.Offset );
+    writer->WriteUInt64( stream.Offset );
+}

@@ -29,9 +29,11 @@ namespace DenOfIz
 
         friend class BinaryWriter;
         friend class BinaryReader;
+
     public:
         DZ_API explicit BinaryContainer( );
         DZ_API ~BinaryContainer( );
-        DZ_API InteropArray<Byte> GetData( );
+        // Note this executes a copy operation
+        DZ_API [[nodiscard]] InteropArray<Byte> GetData( ) const;
     };
 } // namespace DenOfIz

@@ -91,6 +91,19 @@ void BinaryWriter::WriteBytes( const InteropArray<Byte> &buffer ) const
     Write( buffer, 0, buffer.NumElements( ) );
 }
 
+void BinaryWriter::WriteUInt16( const uint16_t value ) const
+{
+    if ( !m_isStreamValid )
+    {
+        return;
+    }
+
+    Byte bytes[ 2 ];
+    bytes[ 0 ] = static_cast<Byte>( value & 0xFF );
+    bytes[ 1 ] = static_cast<Byte>( value >> 8 & 0xFF );
+    m_stream->write( reinterpret_cast<const char *>( bytes ), 2 );
+}
+
 void BinaryWriter::WriteUInt32( const uint32_t value ) const
 {
     if ( !m_isStreamValid )
@@ -107,9 +120,30 @@ void BinaryWriter::WriteUInt32( const uint32_t value ) const
     m_stream->write( reinterpret_cast<const char *>( bytes ), 4 );
 }
 
+void BinaryWriter::WriteUInt64( const uint32_t value ) const
+{
+    if ( !m_isStreamValid )
+    {
+        return;
+    }
+
+    WriteUInt32( value >> 32 );
+    WriteUInt32( value & 0xFFFFFFFF );
+}
+
+void BinaryWriter::WriteInt16( const int16_t value ) const
+{
+    WriteUInt16( static_cast<uint16_t>( value ) );
+}
+
 void BinaryWriter::WriteInt32( const int32_t value ) const
 {
     WriteUInt32( static_cast<uint32_t>( value ) );
+}
+
+void BinaryWriter::WriteInt64( const int32_t value ) const
+{
+    WriteUInt64( static_cast<uint32_t>( value ) );
 }
 
 void BinaryWriter::WriteFloat( const float value ) const
@@ -131,6 +165,119 @@ void BinaryWriter::WriteString( const InteropString &value ) const
     }
 
     m_stream->write( str, length );
+}
+
+void BinaryWriter::WriteUInt16_2( const UInt16_2 &value ) const
+{
+    WriteUInt16( value.X );
+    WriteUInt16( value.Y );
+}
+
+void BinaryWriter::WriteUInt16_3( const UInt16_3 &value ) const
+{
+    WriteUInt16( value.X );
+    WriteUInt16( value.Y );
+    WriteUInt16( value.Z );
+}
+
+void BinaryWriter::WriteUInt16_4( const UInt16_4 &value ) const
+{
+    WriteUInt16( value.X );
+    WriteUInt16( value.Y );
+    WriteUInt16( value.Z );
+    WriteUInt16( value.W );
+}
+
+void BinaryWriter::WriteInt16_2( const Int16_2 &value ) const
+{
+    WriteInt16( value.X );
+    WriteInt16( value.Y );
+}
+
+void BinaryWriter::WriteInt16_3( const Int16_3 &value ) const
+{
+    WriteInt16( value.X );
+    WriteInt16( value.Y );
+    WriteInt16( value.Z );
+}
+
+void BinaryWriter::WriteInt16_4( const Int16_4 &value ) const
+{
+    WriteInt16( value.X );
+    WriteInt16( value.Y );
+    WriteInt16( value.Z );
+    WriteInt16( value.W );
+}
+
+void BinaryWriter::WriteUInt32_2( const UInt32_2 &value ) const
+{
+    WriteUInt32( value.X );
+    WriteUInt32( value.Y );
+}
+
+void BinaryWriter::WriteUInt32_3( const UInt32_3 &value ) const
+{
+    WriteUInt32( value.X );
+    WriteUInt32( value.Y );
+    WriteUInt32( value.Z );
+}
+
+void BinaryWriter::WriteUInt32_4( const UInt32_4 &value ) const
+{
+    WriteUInt32( value.X );
+    WriteUInt32( value.Y );
+    WriteUInt32( value.Z );
+    WriteUInt32( value.W );
+}
+
+void BinaryWriter::WriteInt32_2( const Int32_2 &value ) const
+{
+    WriteInt32( value.X );
+    WriteInt32( value.Y );
+}
+
+void BinaryWriter::WriteInt32_3( const Int32_3 &value ) const
+{
+    WriteInt32( value.X );
+    WriteInt32( value.Y );
+    WriteInt32( value.Z );
+}
+
+void BinaryWriter::WriteInt32_4( const Int32_4 &value ) const
+{
+    WriteInt32( value.X );
+    WriteInt32( value.Y );
+    WriteInt32( value.Z );
+    WriteInt32( value.W );
+}
+
+void BinaryWriter::WriteFloat_2( const Float_2 &value ) const
+{
+    WriteFloat( value.X );
+    WriteFloat( value.Y );
+}
+
+void BinaryWriter::WriteFloat_3( const Float_3 &value ) const
+{
+    WriteFloat( value.X );
+    WriteFloat( value.Y );
+    WriteFloat( value.Z );
+}
+
+void BinaryWriter::WriteFloat_4( const Float_4 &value ) const
+{
+    WriteFloat( value.X );
+    WriteFloat( value.Y );
+    WriteFloat( value.Z );
+    WriteFloat( value.W );
+}
+
+void BinaryWriter::WriteFloat_4x4( const Float_4x4 &value ) const
+{
+    for ( const float i : value.M )
+    {
+        WriteFloat( i );
+    }
 }
 
 uint64_t BinaryWriter::Position( ) const

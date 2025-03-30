@@ -112,6 +112,27 @@ InteropArray<Byte> BinaryReader::ReadBytes( const uint32_t count )
     return result;
 }
 
+uint16_t BinaryReader::ReadUInt16( )
+{
+    if ( !IsStreamValid( ) || !TrackReadBytes( 1 ) )
+    {
+        return 0;
+    }
+    uint16_t value = 0;
+    Byte     bytes[ 2 ];
+    m_stream->read( reinterpret_cast<char *>( bytes ), 2 );
+    if ( m_stream->gcount( ) != 2 )
+    {
+        LOG( ERROR ) << "Failed to read 2 bytes for uint16";
+        return 0;
+    }
+
+    value |= static_cast<uint16_t>( bytes[ 0 ] );
+    value |= static_cast<uint16_t>( bytes[ 1 ] ) << 8;
+
+    return value;
+}
+
 uint32_t BinaryReader::ReadUInt32( )
 {
     if ( !IsStreamValid( ) || !TrackReadBytes( 1 ) )
@@ -137,9 +158,32 @@ uint32_t BinaryReader::ReadUInt32( )
     return value;
 }
 
+uint64_t BinaryReader::ReadUInt64( )
+{
+    if ( !IsStreamValid( ) || !TrackReadBytes( 1 ) )
+    {
+        return 0;
+    }
+
+    const uint32_t high = ReadUInt32( );
+    const uint32_t low  = ReadUInt32( );
+
+    return static_cast<uint64_t>( high ) << 32 | low;
+}
+
+int16_t BinaryReader::ReadInt16( )
+{
+    return static_cast<int16_t>( ReadUInt16( ) );
+}
+
 int32_t BinaryReader::ReadInt32( )
 {
     return static_cast<int32_t>( ReadUInt32( ) );
+}
+
+int64_t BinaryReader::ReadInt64( )
+{
+    return static_cast<int64_t>( ReadUInt64( ) );
 }
 
 float BinaryReader::ReadFloat( )
@@ -172,6 +216,91 @@ InteropString BinaryReader::ReadString( )
     }
 
     return { buffer.data( ) };
+}
+
+UInt16_2 BinaryReader::ReadUInt16_2( )
+{
+    return { ReadUInt16( ), ReadUInt16( ) };
+}
+
+UInt16_3 BinaryReader::ReadUInt16_3( )
+{
+    return { ReadUInt16( ), ReadUInt16( ), ReadUInt16( ) };
+}
+
+UInt16_4 BinaryReader::ReadUInt16_4( )
+{
+    return { ReadUInt16( ), ReadUInt16( ), ReadUInt16( ), ReadUInt16( ) };
+}
+
+Int16_2 BinaryReader::ReadInt16_2( )
+{
+    return { ReadInt16( ), ReadInt16( ) };
+}
+
+Int16_3 BinaryReader::ReadInt16_3( )
+{
+    return { ReadInt16( ), ReadInt16( ), ReadInt16( ) };
+}
+
+Int16_4 BinaryReader::ReadInt16_4( )
+{
+    return { ReadInt16( ), ReadInt16( ), ReadInt16( ), ReadInt16( ) };
+}
+
+UInt32_2 BinaryReader::ReadUInt32_2( )
+{
+    return { ReadUInt32( ), ReadUInt32( ) };
+}
+
+UInt32_3 BinaryReader::ReadUInt32_3( )
+{
+    return { ReadUInt32( ), ReadUInt32( ), ReadUInt32( ) };
+}
+
+UInt32_4 BinaryReader::ReadUInt32_4( )
+{
+    return { ReadUInt32( ), ReadUInt32( ), ReadUInt32( ), ReadUInt32( ) };
+}
+
+Int32_2 BinaryReader::ReadInt32_2( )
+{
+    return { ReadInt32( ), ReadInt32( ) };
+}
+
+Int32_3 BinaryReader::ReadInt32_3( )
+{
+    return { ReadInt32( ), ReadInt32( ), ReadInt32( ) };
+}
+
+Int32_4 BinaryReader::ReadInt32_4( )
+{
+    return { ReadInt32( ), ReadInt32( ), ReadInt32( ), ReadInt32( ) };
+}
+
+Float_2 BinaryReader::ReadFloat_2( )
+{
+    return { ReadFloat( ), ReadFloat( ) };
+}
+
+Float_3 BinaryReader::ReadFloat_3( )
+{
+    return { ReadFloat( ), ReadFloat( ), ReadFloat( ) };
+}
+
+Float_4 BinaryReader::ReadFloat_4( )
+{
+    return { ReadFloat( ), ReadFloat( ), ReadFloat( ), ReadFloat( ) };
+}
+
+Float_4x4 BinaryReader::ReadFloat_4x4( )
+{
+    Float_4x4 result{ };
+    for ( float &i : result.M )
+    {
+        i = ReadFloat( );
+    }
+    return result;
 }
 
 uint64_t BinaryReader::Position( ) const
