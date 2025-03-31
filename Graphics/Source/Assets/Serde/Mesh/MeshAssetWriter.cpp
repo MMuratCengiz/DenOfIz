@@ -113,45 +113,6 @@ void MeshAssetWriter::WriteBoundingVolume( const BoundingVolume &bv ) const
     }
 }
 
-void MeshAssetWriter::WriteUserPropertyContent( const UserProperty &prop ) const
-{
-    switch ( prop.PropertyType )
-    {
-    case UserProperty::Type::String:
-        m_writer->WriteString( prop.StringValue );
-        break;
-    case UserProperty::Type::Int:
-        m_writer->WriteInt32( prop.IntValue );
-        break;
-    case UserProperty::Type::Float:
-        m_writer->WriteFloat( prop.FloatValue );
-        break;
-    case UserProperty::Type::Bool:
-        m_writer->WriteByte( prop.BoolValue ? 1 : 0 );
-        break;
-    case UserProperty::Type::Float2:
-        m_writer->WriteFloat_2( prop.Vector2Value );
-        break;
-    case UserProperty::Type::Float3:
-        m_writer->WriteFloat_3( prop.Vector3Value );
-        break;
-    case UserProperty::Type::Float4:
-    case UserProperty::Type::Color:
-        m_writer->WriteFloat_4( prop.ColorValue );
-        break;
-    case UserProperty::Type::Float4x4:
-        m_writer->WriteFloat_4x4( prop.TransformValue );
-        break;
-    }
-}
-
-void MeshAssetWriter::WriteUserProperty( const UserProperty &prop ) const
-{
-    m_writer->WriteUInt32( static_cast<uint32_t>( prop.PropertyType ) );
-    m_writer->WriteString( prop.Name );
-    WriteUserPropertyContent( prop );
-}
-
 void MeshAssetWriter::WriteSubMeshData( const SubMeshData &data ) const
 {
     m_writer->WriteString( data.Name );
@@ -280,11 +241,7 @@ void MeshAssetWriter::WriteMetadataArrays( )
         WriteMorphTargetData( m_meshData.MorphTargets.GetElement( i ) );
     }
 
-    m_writer->WriteUInt32( m_meshData.UserProperties.NumElements( ) );
-    for ( size_t i = 0; i < m_meshData.UserProperties.NumElements( ); ++i )
-    {
-        WriteUserProperty( m_meshData.UserProperties.GetElement( i ) );
-    }
+    AssetWriterHelpers::WriteProperties( m_writer, m_meshData.UserProperties );
 }
 
 void MeshAssetWriter::WriteVertexInternal( const MeshVertex &vertex ) const
@@ -395,7 +352,7 @@ void MeshAssetWriter::WriteMetadata( const MeshAsset &meshAssetData )
     m_writtenMorphTargetCount = 0;
     m_numVertices             = 0;
     m_numIndices              = 0;
-    m_numDeltas              = 0;
+    m_numDeltas               = 0;
 
     WriteHeader( 0 ); // Do not write num bytes just yet since we don't know data required for the streams
 }
@@ -616,7 +573,7 @@ void MeshAssetWriter::AddMorphTargetDelta( const MorphTargetDelta &delta )
     {
         currentMorph.VertexDeltaStream.NumBytes = m_numDeltas * m_morphDeltaStride;
         m_writtenMorphTargetCount++;
-        m_numDeltas              = 0;
+        m_numDeltas               = 0;
         m_currentMorphTargetIndex = m_writtenMorphTargetCount;
         m_state                   = m_writtenMorphTargetCount < m_expectedMorphTargetCount ? State::ExpectingMorphTarget : State::DataWritten;
     }

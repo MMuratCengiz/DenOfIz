@@ -54,9 +54,7 @@ namespace DenOfIz
 
         SubMeshData                    ReadCompleteSubMeshData( ) const;
         MorphTarget                    ReadCompleteMorphTargetData( ) const;
-        UserProperty                   ReadCompleteUserPropertyData( ) const;
         BoundingVolume                 ReadBoundingVolume( ) const;
-        void                           ReadUserPropertyContent( UserProperty &prop ) const;
         [[nodiscard]] MeshVertex       ReadSingleVertex( ) const;
         [[nodiscard]] MorphTargetDelta ReadSingleMorphTargetDelta( ) const;
 

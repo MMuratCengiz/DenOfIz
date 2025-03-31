@@ -9,6 +9,7 @@ set(GeneralSources
         Source/General/BasicCompute.cpp
         Source/Assets/Stream/BinaryReaderWriterTests.cpp
         Source/Assets/Serde/AnimationAssetReaderWriterTests.cpp
+        Source/Assets/Serde/MaterialAssetReaderWriterTests.cpp
         Source/Assets/Serde/MeshAssetReaderWriterTests.cpp
         Source/Assets/Serde/SkeletonAssetReaderWriterTests.cpp
         Source/Assets/Serde/PhysicsAssetReaderWriterTests.cpp

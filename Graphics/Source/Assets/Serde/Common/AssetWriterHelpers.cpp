@@ -27,3 +27,47 @@ void AssetWriterHelpers::WriteAssetDataStream( const BinaryWriter *writer, const
     writer->WriteUInt64( stream.Offset );
     writer->WriteUInt64( stream.NumBytes );
 }
+
+void AssetWriterHelpers::WriteProperties( const BinaryWriter *writer, const InteropArray<UserProperty> &properties )
+{
+    writer->WriteUInt32( properties.NumElements( ) );
+    for ( size_t i = 0; i < properties.NumElements( ); ++i )
+    {
+        const UserProperty &prop = properties.GetElement( i );
+        WriteUserProperty( writer, prop );
+    }
+}
+
+void AssetWriterHelpers::WriteUserProperty( const BinaryWriter *writer, const UserProperty &property )
+{
+    writer->WriteUInt32( static_cast<uint32_t>( property.PropertyType ) );
+    writer->WriteString( property.Name );
+    switch ( property.PropertyType )
+    {
+    case UserProperty::Type::String:
+        writer->WriteString( property.StringValue );
+        break;
+    case UserProperty::Type::Int:
+        writer->WriteInt32( property.IntValue );
+        break;
+    case UserProperty::Type::Float:
+        writer->WriteFloat( property.FloatValue );
+        break;
+    case UserProperty::Type::Bool:
+        writer->WriteByte( property.BoolValue ? 1 : 0 );
+        break;
+    case UserProperty::Type::Float2:
+        writer->WriteFloat_2( property.Vector2Value );
+        break;
+    case UserProperty::Type::Float3:
+        writer->WriteFloat_3( property.Vector3Value );
+        break;
+    case UserProperty::Type::Float4:
+    case UserProperty::Type::Color:
+        writer->WriteFloat_4( property.ColorValue );
+        break;
+    case UserProperty::Type::Float4x4:
+        writer->WriteFloat_4x4( property.TransformValue );
+        break;
+    }
+}

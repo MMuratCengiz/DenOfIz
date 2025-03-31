@@ -16,7 +16,45 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h>
 #include <DenOfIzGraphics/Assets/Serde/Material/MaterialAssetWriter.h>
-#include <unordered_map>
 
 using namespace DenOfIz;
+
+MaterialAssetWriter::MaterialAssetWriter( const MaterialAssetWriterDesc &desc ) : m_writer( desc.Writer )
+{
+    if ( !m_writer )
+    {
+        LOG( FATAL ) << "BinaryWriter cannot be null for MaterialAssetWriter";
+    }
+}
+
+MaterialAssetWriter::~MaterialAssetWriter( ) = default;
+
+void MaterialAssetWriter::WriteMaterialAsset( const MaterialAsset &materialAsset ) const
+{
+    m_writer->WriteUInt64( materialAsset.Magic );
+    m_writer->WriteUInt32( materialAsset.Version );
+    m_writer->WriteUInt64( materialAsset.NumBytes );
+    m_writer->WriteString( materialAsset.Uri.ToString( ) );
+
+    m_writer->WriteString( materialAsset.Name );
+    m_writer->WriteString( materialAsset.ShaderRef );
+
+    m_writer->WriteString( materialAsset.AlbedoMapRef.ToString( ) );
+    m_writer->WriteString( materialAsset.NormalMapRef.ToString( ) );
+    m_writer->WriteString( materialAsset.MetallicRoughnessMapRef.ToString( ) );
+    m_writer->WriteString( materialAsset.EmissiveMapRef.ToString( ) );
+    m_writer->WriteString( materialAsset.OcclusionMapRef.ToString( ) );
+
+    m_writer->WriteFloat_4( materialAsset.BaseColorFactor );
+    m_writer->WriteFloat( materialAsset.MetallicFactor );
+    m_writer->WriteFloat( materialAsset.RoughnessFactor );
+    m_writer->WriteFloat_3( materialAsset.EmissiveFactor );
+
+    m_writer->WriteByte( materialAsset.AlphaBlend ? 1 : 0 );
+    m_writer->WriteByte( materialAsset.DoubleSided ? 1 : 0 );
+
+    AssetWriterHelpers::WriteProperties( m_writer, materialAsset.Properties );
+    m_writer->Flush( );
+}

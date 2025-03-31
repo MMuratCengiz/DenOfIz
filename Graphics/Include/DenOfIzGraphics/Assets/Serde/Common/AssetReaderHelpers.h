@@ -26,6 +26,8 @@ namespace DenOfIz
     class DZ_API AssetReaderHelpers
     {
     public:
-        static AssetDataStream ReadAssetDataStream( BinaryReader *reader );
+        static AssetDataStream            ReadAssetDataStream( BinaryReader *reader );
+        static InteropArray<UserProperty> ReadUserProperties( BinaryReader *reader );
+        static UserProperty               ReadUserProperty( BinaryReader *reader );
     };
 } // namespace DenOfIz

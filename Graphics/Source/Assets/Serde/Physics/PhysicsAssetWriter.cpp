@@ -74,46 +74,6 @@ void PhysicsAssetWriter::WritePhysicsAsset( const PhysicsAsset &physicsAsset ) c
         }
     }
 
-    m_writer->WriteUInt32( physicsAsset.UserProperties.NumElements( ) );
-
-    for ( size_t i = 0; i < physicsAsset.UserProperties.NumElements( ); ++i )
-    {
-        const UserProperty &prop = physicsAsset.UserProperties.GetElement( i );
-        m_writer->WriteUInt32( static_cast<uint32_t>( prop.PropertyType ) );
-        m_writer->WriteString( prop.Name );
-
-        // Write property value based on type
-        switch ( prop.PropertyType )
-        {
-        case UserProperty::Type::String:
-            m_writer->WriteString( prop.StringValue );
-            break;
-        case UserProperty::Type::Int:
-            m_writer->WriteInt32( prop.IntValue );
-            break;
-        case UserProperty::Type::Float:
-            m_writer->WriteFloat( prop.FloatValue );
-            break;
-        case UserProperty::Type::Bool:
-            m_writer->WriteByte( prop.BoolValue ? 1 : 0 );
-            break;
-        case UserProperty::Type::Float2:
-            m_writer->WriteFloat_2( prop.Vector2Value );
-            break;
-        case UserProperty::Type::Float3:
-            m_writer->WriteFloat_3( prop.Vector3Value );
-            break;
-        case UserProperty::Type::Float4:
-            m_writer->WriteFloat_4( prop.Vector4Value );
-            break;
-        case UserProperty::Type::Color:
-            m_writer->WriteFloat_4( prop.ColorValue );
-            break;
-        case UserProperty::Type::Float4x4:
-            m_writer->WriteFloat_4x4( prop.TransformValue );
-            break;
-        }
-    }
-
+    AssetWriterHelpers::WriteProperties( m_writer, physicsAsset.UserProperties );
     m_writer->Flush( );
 }

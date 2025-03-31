@@ -14,49 +14,6 @@ MeshAssetReader::MeshAssetReader( const MeshAssetReaderDesc &desc ) : m_reader( 
 
 MeshAssetReader::~MeshAssetReader( ) = default;
 
-void MeshAssetReader::ReadUserPropertyContent( UserProperty &prop ) const
-{
-    switch ( prop.PropertyType )
-    {
-    case UserProperty::Type::String:
-        prop.StringValue = m_reader->ReadString( );
-        break;
-    case UserProperty::Type::Int:
-        prop.IntValue = m_reader->ReadInt32( );
-        break;
-    case UserProperty::Type::Float:
-        prop.FloatValue = m_reader->ReadFloat( );
-        break;
-    case UserProperty::Type::Bool:
-        prop.BoolValue = m_reader->ReadByte( ) != 0;
-        break;
-    case UserProperty::Type::Float2:
-        prop.Vector2Value = m_reader->ReadFloat_2( );
-        break;
-    case UserProperty::Type::Float3:
-        prop.Vector3Value = m_reader->ReadFloat_3( );
-        break;
-    case UserProperty::Type::Float4:
-        prop.Vector4Value = m_reader->ReadFloat_4( );
-        break;
-    case UserProperty::Type::Color:
-        prop.ColorValue = m_reader->ReadFloat_4( );
-        break;
-    case UserProperty::Type::Float4x4:
-        prop.TransformValue = m_reader->ReadFloat_4x4( );
-        break;
-    }
-}
-
-UserProperty MeshAssetReader::ReadCompleteUserPropertyData( ) const
-{
-    UserProperty prop;
-    prop.PropertyType = static_cast<UserProperty::Type>( m_reader->ReadUInt32( ) );
-    prop.Name         = m_reader->ReadString( );
-    ReadUserPropertyContent( prop );
-    return prop;
-}
-
 BoundingVolume MeshAssetReader::ReadBoundingVolume( ) const
 {
     BoundingVolume bv;
@@ -267,15 +224,15 @@ MorphTargetDelta MeshAssetReader::ReadSingleMorphTargetDelta( ) const
     const auto      &attributes = m_meshData.MorphTargetDeltaAttributes;
     if ( attributes.Position )
     {
-        delta.Position  = m_reader->ReadFloat_4( );
+        delta.Position = m_reader->ReadFloat_4( );
     }
     if ( attributes.Normal )
     {
-        delta.Normal  = m_reader->ReadFloat_4( );
+        delta.Normal = m_reader->ReadFloat_4( );
     }
     if ( attributes.Tangent )
     {
-        delta.Tangent  = m_reader->ReadFloat_4( );
+        delta.Tangent = m_reader->ReadFloat_4( );
     }
     return delta;
 }
@@ -354,15 +311,9 @@ MeshAsset MeshAssetReader::ReadMetadata( )
         m_meshData.MorphTargets.SetElement( i, ReadCompleteMorphTargetData( ) );
     }
 
-    const uint32_t numUserProps = m_reader->ReadUInt32( );
-    m_meshData.UserProperties.Resize( numUserProps );
-    for ( uint32_t i = 0; i < numUserProps; ++i )
-    {
-        m_meshData.UserProperties.SetElement( i, ReadCompleteUserPropertyData( ) );
-    }
-
-    m_dataBlockStartOffset = m_reader->Position( );
-    m_metadataRead         = true;
+    m_meshData.UserProperties = AssetReaderHelpers::ReadUserProperties( m_reader );
+    m_dataBlockStartOffset    = m_reader->Position( );
+    m_metadataRead            = true;
     m_reader->Seek( m_dataBlockStartOffset );
 
     return m_meshData;

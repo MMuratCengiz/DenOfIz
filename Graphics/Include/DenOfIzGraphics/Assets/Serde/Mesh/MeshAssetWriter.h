@@ -76,8 +76,6 @@ namespace DenOfIz
         void WriteSubMeshData( const SubMeshData &data ) const;
         void WriteMorphTargetData( const MorphTarget &data ) const;
         void WriteBoundingVolume( const BoundingVolume &bv ) const;
-        void WriteUserPropertyContent( const UserProperty &prop ) const;
-        void WriteUserProperty( const UserProperty &prop ) const;
         void WriteVertexInternal( const MeshVertex &vertex ) const;
         void WriteMorphTargetDeltaInternal( const MorphTargetDelta &delta ) const;
 

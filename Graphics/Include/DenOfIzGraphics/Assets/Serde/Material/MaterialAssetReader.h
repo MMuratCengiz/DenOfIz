@@ -31,7 +31,7 @@ namespace DenOfIz
     class DZ_API MaterialAssetReader
     {
         BinaryReader *m_reader;
-        MaterialAsset m_MaterialAsset;
+        MaterialAsset m_materialAsset;
     public:
         explicit MaterialAssetReader( const MaterialAssetReaderDesc &desc );
         ~MaterialAssetReader( );

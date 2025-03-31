@@ -27,5 +27,7 @@ namespace DenOfIz
     {
     public:
         static void WriteAssetDataStream( const BinaryWriter *writer, const AssetDataStream &stream );
+        static void WriteProperties( const BinaryWriter *writer, const InteropArray<UserProperty> &properties );
+        static void WriteUserProperty( const BinaryWriter *writer, const UserProperty &property );
     };
 } // namespace DenOfIz
