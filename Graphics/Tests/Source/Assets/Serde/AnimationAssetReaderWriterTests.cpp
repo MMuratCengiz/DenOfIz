@@ -21,28 +21,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h>
 #include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetReader.h>
 #include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetWriter.h>
+#include "../../TestComparators.h"
 
 using namespace DenOfIz;
-
-template <typename T>
-void AssertInteropArrayEq( const InteropArray<T> &arr1, const InteropArray<T> &arr2 )
-{
-    ASSERT_EQ( arr1.NumElements( ), arr2.NumElements( ) );
-    for ( size_t i = 0; i < arr1.NumElements( ); ++i )
-    {
-        ASSERT_EQ( arr1.GetElement( i ), arr2.GetElement( i ) );
-    }
-}
-
-bool FloatEquals( const float a, const float b, const float epsilon = 0.00001f )
-{
-    return std::abs( a - b ) < epsilon;
-}
-
-bool Float4Equals( const Float_4 &a, const Float_4 &b, const float epsilon = 0.00001f )
-{
-    return FloatEquals( a.X, b.X, epsilon ) && FloatEquals( a.Y, b.Y, epsilon ) && FloatEquals( a.Z, b.Z, epsilon ) && FloatEquals( a.W, b.W, epsilon );
-}
 
 class AnimationAssetSerdeTest : public testing::Test
 {

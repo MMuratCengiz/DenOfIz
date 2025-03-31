@@ -11,7 +11,9 @@ set(GeneralSources
         Source/Assets/Serde/AnimationAssetReaderWriterTests.cpp
         Source/Assets/Serde/MeshAssetReaderWriterTests.cpp
         Source/Assets/Serde/SkeletonAssetReaderWriterTests.cpp
+        Source/Assets/Serde/PhysicsAssetReaderWriterTests.cpp
         Source/BitSetTest.cpp
+        Source/TestComparators.h
 
 )
 set(SOURCE

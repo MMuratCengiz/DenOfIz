@@ -35,6 +35,6 @@ namespace DenOfIz
         explicit PhysicsAssetWriter( const PhysicsAssetWriterDesc &desc );
         ~PhysicsAssetWriter( );
 
-        void WritePhysicsAsset( const PhysicsAsset &physicsAsset );
+        void WritePhysicsAsset( const PhysicsAsset &physicsAsset ) const;
     };
 } // namespace DenOfIz

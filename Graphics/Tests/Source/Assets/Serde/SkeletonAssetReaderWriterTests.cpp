@@ -5,33 +5,9 @@
 #include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h>
 #include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h>
 #include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetWriter.h>
+#include "../../TestComparators.h"
 
 using namespace DenOfIz;
-
-template <typename T>
-void AssertInteropArrayEq( const InteropArray<T> &arr1, const InteropArray<T> &arr2 )
-{
-    ASSERT_EQ( arr1.NumElements( ), arr2.NumElements( ) );
-    for ( size_t i = 0; i < arr1.NumElements( ); ++i )
-    {
-        ASSERT_EQ( arr1.GetElement( i ), arr2.GetElement( i ) );
-    }
-}
-
-bool MatricesEqual( const Float_4x4 &a, const Float_4x4 &b, const float epsilon = 0.00001f )
-{
-    for ( int i = 0; i < 4; ++i )
-    {
-        for ( int j = 0; j < 4; ++j )
-        {
-            if ( std::abs( a.GetElement( i, j ) - b.GetElement( i, j ) ) > epsilon )
-            {
-                return false;
-            }
-        }
-    }
-    return true;
-}
 
 class SkeletonAssetSerdeTest : public testing::Test
 {

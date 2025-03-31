@@ -21,18 +21,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAsset.h>
 #include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h>
 #include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetWriter.h>
+#include "../../TestComparators.h"
 
 using namespace DenOfIz;
-
-template <typename T>
-void AssertInteropArrayEq( const InteropArray<T> &arr1, const InteropArray<T> &arr2 )
-{
-    ASSERT_EQ( arr1.NumElements( ), arr2.NumElements( ) );
-    for ( size_t i = 0; i < arr1.NumElements( ); ++i )
-    {
-        ASSERT_EQ( arr1.GetElement( i ), arr2.GetElement( i ) );
-    }
-}
 
 class MeshAssetSerdeTest : public testing::Test
 {
