@@ -7,6 +7,8 @@ find_package(GTest CONFIG REQUIRED)
 
 set(GeneralSources
         Source/General/BasicCompute.cpp
+        Source/Assets/Stream/BinaryReaderWriterTests.cpp
+        Source/Assets/Serde/MeshAssetReaderWriterTests.cpp
         Source/BitSetTest.cpp
 
 )

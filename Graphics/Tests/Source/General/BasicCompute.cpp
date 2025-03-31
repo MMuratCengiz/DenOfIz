@@ -68,7 +68,8 @@ void BasicCompute( const GraphicsApi &gApi )
     auto pipeline = std::unique_ptr<IPipeline>( logicalDevice->CreatePipeline( pipelineDesc ) );
     auto fence    = std::unique_ptr<IFence>( logicalDevice->CreateFence( ) );
 
-    auto commandListPool = std::unique_ptr<ICommandListPool>( logicalDevice->CreateCommandListPool( CommandListPoolDesc{ .QueueType = QueueType::Compute } ) );
+    auto commandQueue    = std::unique_ptr<ICommandQueue>( logicalDevice->CreateCommandQueue( CommandQueueDesc{ .QueueType = QueueType::Compute } ) );
+    auto commandListPool = std::unique_ptr<ICommandListPool>( logicalDevice->CreateCommandListPool( CommandListPoolDesc{ commandQueue.get( ) } ) );
     auto commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
 
     bufferDesc.Descriptor   = BitSet<ResourceDescriptor>( );
@@ -95,9 +96,10 @@ void BasicCompute( const GraphicsApi &gApi )
     barrier.BufferBarrier( BufferBarrierDesc{ .Resource = buffer.get( ), .OldState = ResourceUsage::CopySrc, .NewState = ResourceUsage::UnorderedAccess } );
     commandList->PipelineBarrier( barrier );
 
-    ExecuteDesc executeDesc{ };
-    executeDesc.Notify = fence.get( );
-    commandList->Execute( executeDesc );
+    ExecuteCommandListsDesc executeCommandListsDesc{ };
+    executeCommandListsDesc.Signal = fence.get( );
+    executeCommandListsDesc.CommandLists.AddElement( commandList );
+    commandQueue->ExecuteCommandLists( executeCommandListsDesc );
 
     fence->Wait( );
 

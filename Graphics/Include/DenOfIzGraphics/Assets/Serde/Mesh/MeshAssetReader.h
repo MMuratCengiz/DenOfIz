@@ -59,8 +59,6 @@ namespace DenOfIz
         void                           ReadUserPropertyContent( UserProperty &prop ) const;
         [[nodiscard]] MeshVertex       ReadSingleVertex( ) const;
         [[nodiscard]] MorphTargetDelta ReadSingleMorphTargetDelta( ) const;
-        [[nodiscard]] uint32_t         CalculateVertexSize( ) const;
-        [[nodiscard]] uint32_t         CalculateMorphDeltaSize( ) const;
 
     public:
         explicit MeshAssetReader( const MeshAssetReaderDesc &desc );
@@ -77,6 +75,10 @@ namespace DenOfIz
         [[nodiscard]] InteropArray<uint16_t>         ReadIndices16( const AssetDataStream &stream ) const;
         [[nodiscard]] InteropArray<uint32_t>         ReadIndices32( const AssetDataStream &stream ) const;
         [[nodiscard]] InteropArray<MorphTargetDelta> ReadMorphTargetDeltas( const AssetDataStream &stream ) const;
-        InteropArray<Byte>                           ReadConvexHullData( const AssetDataStream &stream ) const; // Todo maybe use proper types
+        [[nodiscard]] InteropArray<Byte>             ReadConvexHullData( const AssetDataStream &stream ) const; // Todo maybe use proper types
+
+        // Number of bytes of a single Vertex/MorphDelta
+        [[nodiscard]] uint32_t         VertexEntryNumBytes( ) const;
+        [[nodiscard]] uint32_t         MorphDeltaEntryNumBytes( ) const;
     };
 } // namespace DenOfIz

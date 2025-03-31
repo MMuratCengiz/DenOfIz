@@ -117,7 +117,7 @@ MorphTarget MeshAssetReader::ReadCompleteMorphTargetData( ) const
     return data;
 }
 
-uint32_t MeshAssetReader::CalculateVertexSize( ) const
+uint32_t MeshAssetReader::VertexEntryNumBytes( ) const
 {
     uint32_t    size       = 0;
     const auto &attributes = m_meshData.EnabledAttributes;
@@ -128,7 +128,7 @@ uint32_t MeshAssetReader::CalculateVertexSize( ) const
     }
     if ( attributes.Normal )
     {
-        size += 3 * sizeof( float );
+        size += config.NumPositionComponents * sizeof( float );
     }
     if ( attributes.UV )
     {
@@ -174,21 +174,21 @@ uint32_t MeshAssetReader::CalculateVertexSize( ) const
     return size;
 }
 
-uint32_t MeshAssetReader::CalculateMorphDeltaSize( ) const
+uint32_t MeshAssetReader::MorphDeltaEntryNumBytes( ) const
 {
     uint32_t    size       = 0;
     const auto &attributes = m_meshData.MorphTargetDeltaAttributes;
     if ( attributes.Position )
     {
-        size += 3 * sizeof( float );
+        size += sizeof( Float_4 );
     }
     if ( attributes.Normal )
     {
-        size += 3 * sizeof( float );
+        size += sizeof( Float_4 );
     }
     if ( attributes.Tangent )
     {
-        size += 3 * sizeof( float );
+        size += sizeof( Float_4 );
     }
     return size;
 }
@@ -267,18 +267,15 @@ MorphTargetDelta MeshAssetReader::ReadSingleMorphTargetDelta( ) const
     const auto      &attributes = m_meshData.MorphTargetDeltaAttributes;
     if ( attributes.Position )
     {
-        const Float_3 p = m_reader->ReadFloat_3( );
-        delta.Position  = { p.X, p.Y, p.Z, 0.0f };
+        delta.Position  = m_reader->ReadFloat_4( );
     }
     if ( attributes.Normal )
     {
-        const Float_3 n = m_reader->ReadFloat_3( );
-        delta.Normal    = { n.X, n.Y, n.Z, 0.0f };
+        delta.Normal  = m_reader->ReadFloat_4( );
     }
     if ( attributes.Tangent )
     {
-        const Float_3 t = m_reader->ReadFloat_3( );
-        delta.Tangent   = { t.X, t.Y, t.Z, 0.0f };
+        delta.Tangent  = m_reader->ReadFloat_4( );
     }
     return delta;
 }
@@ -466,7 +463,7 @@ InteropArray<MeshVertex> MeshAssetReader::ReadVertices( const AssetDataStream &s
     {
         LOG( FATAL ) << "ReadMetadata must be called first.";
     }
-    const uint32_t vertexSize = CalculateVertexSize( );
+    const uint32_t vertexSize = VertexEntryNumBytes( );
     if ( vertexSize == 0 || stream.NumBytes == 0 )
     {
         return { };
@@ -519,7 +516,7 @@ InteropArray<uint32_t> MeshAssetReader::ReadIndices32( const AssetDataStream &st
         LOG( FATAL ) << "ReadMetadata must be called first.";
     }
 
-    constexpr uint32_t indexSize = sizeof( uint16_t );
+    constexpr uint32_t indexSize = sizeof( uint32_t );
     if ( stream.NumBytes == 0 )
     {
         return { };
@@ -545,7 +542,7 @@ InteropArray<MorphTargetDelta> MeshAssetReader::ReadMorphTargetDeltas( const Ass
         LOG( FATAL ) << "ReadMetadata must be called first.";
     }
 
-    const uint32_t deltaSize = CalculateMorphDeltaSize( );
+    const uint32_t deltaSize = MorphDeltaEntryNumBytes( );
     if ( deltaSize == 0 || stream.NumBytes == 0 )
     {
         return { };

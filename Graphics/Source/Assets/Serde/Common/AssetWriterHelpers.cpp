@@ -25,5 +25,5 @@ using namespace DenOfIz;
 void AssetWriterHelpers::WriteAssetDataStream( const BinaryWriter *writer, const AssetDataStream &stream )
 {
     writer->WriteUInt64( stream.Offset );
-    writer->WriteUInt64( stream.Offset );
+    writer->WriteUInt64( stream.NumBytes );
 }

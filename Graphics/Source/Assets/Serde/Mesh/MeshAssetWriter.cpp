@@ -76,15 +76,15 @@ void MeshAssetWriter::CalculateStrides( )
     const auto &deltaAttribs = m_meshData.MorphTargetDeltaAttributes;
     if ( deltaAttribs.Position )
     {
-        m_morphDeltaStride += 3 * sizeof( float );
+        m_morphDeltaStride += sizeof( Float_4 );
     }
     if ( deltaAttribs.Normal )
     {
-        m_morphDeltaStride += 3 * sizeof( float );
+        m_morphDeltaStride += sizeof( Float_4 );
     }
     if ( deltaAttribs.Tangent )
     {
-        m_morphDeltaStride += 3 * sizeof( float );
+        m_morphDeltaStride += sizeof( Float_4 );
     }
 }
 
@@ -179,24 +179,24 @@ void MeshAssetWriter::WriteMorphTargetData( const MorphTarget &data ) const
     m_writer->WriteFloat( data.DefaultWeight );
 }
 
-void MeshAssetWriter::WriteHeader( const uint64_t finalTotalSize ) const
+void MeshAssetWriter::WriteHeader( const uint64_t totalNumBytes )
 {
-    const uint64_t currentPos = m_writer->Position( );
-    m_writer->Seek( m_assetHeaderOffset );
+    m_streamStartLocation = m_writer->Position( );
 
     m_writer->WriteUInt64( m_meshData.Magic );
     m_writer->WriteUInt32( m_meshData.Version );
-    m_writer->WriteUInt64( finalTotalSize );
+    m_writer->WriteUInt64( totalNumBytes ); // NumBytes, Will be written later at finalize!!
     m_writer->WriteString( m_meshData.Uri.ToString( ) );
 
-    m_writer->Seek( currentPos );
+    WriteTopLevelMetadata( );
+    WriteMetadataArrays( );
 }
 
-void MeshAssetWriter::WriteMetadataArrays( )
+void MeshAssetWriter::WriteTopLevelMetadata( )
 {
-
     m_writer->WriteString( m_meshData.Name );
     m_writer->WriteUInt32( m_meshData.NumLODs );
+
     uint32_t enabledFlags = 0;
     if ( m_meshData.EnabledAttributes.Position )
     {
@@ -231,7 +231,6 @@ void MeshAssetWriter::WriteMetadataArrays( )
         enabledFlags |= 1 << 7;
     }
     m_writer->WriteUInt32( enabledFlags );
-
     m_writer->WriteUInt32( m_meshData.AttributeConfig.NumPositionComponents );
     m_writer->WriteUInt32( m_meshData.AttributeConfig.NumUVAttributes );
     m_writer->WriteUInt32( m_meshData.AttributeConfig.UVChannels.NumElements( ) );
@@ -265,8 +264,10 @@ void MeshAssetWriter::WriteMetadataArrays( )
 
     m_writer->WriteString( m_meshData.AnimationRef.ToString( ) );
     m_writer->WriteString( m_meshData.SkeletonRef.ToString( ) );
+}
 
-
+void MeshAssetWriter::WriteMetadataArrays( )
+{
     m_writer->WriteUInt32( m_meshData.SubMeshes.NumElements( ) );
     for ( size_t i = 0; i < m_meshData.SubMeshes.NumElements( ); ++i )
     {
@@ -288,34 +289,16 @@ void MeshAssetWriter::WriteMetadataArrays( )
 
 void MeshAssetWriter::WriteVertexInternal( const MeshVertex &vertex ) const
 {
-
     const auto &attributes = m_meshData.EnabledAttributes;
     const auto &config     = m_meshData.AttributeConfig;
 
     if ( attributes.Position )
     {
-        if ( config.NumPositionComponents >= 1 )
-        {
-            m_writer->WriteFloat( vertex.Position.X );
-        }
-        if ( config.NumPositionComponents >= 2 )
-        {
-            m_writer->WriteFloat( vertex.Position.Y );
-        }
-        if ( config.NumPositionComponents >= 3 )
-        {
-            m_writer->WriteFloat( vertex.Position.Z );
-        }
-        if ( config.NumPositionComponents >= 4 )
-        {
-            m_writer->WriteFloat( vertex.Position.W );
-        }
+        m_writer->WriteFloat_4( vertex.Position );
     }
     if ( attributes.Normal )
     {
-        m_writer->WriteFloat( vertex.Normal.X );
-        m_writer->WriteFloat( vertex.Normal.Y );
-        m_writer->WriteFloat( vertex.Normal.Z );
+        m_writer->WriteFloat_4( vertex.Normal );
     }
     if ( attributes.UV )
     {
@@ -381,19 +364,17 @@ void MeshAssetWriter::WriteMorphTargetDeltaInternal( const MorphTargetDelta &del
     const auto &attributes = m_meshData.MorphTargetDeltaAttributes;
     if ( attributes.Position )
     {
-        m_writer->WriteFloat_3( { delta.Position.X, delta.Position.Y, delta.Position.Z } );
+        m_writer->WriteFloat_4( delta.Position );
     }
     if ( attributes.Normal )
     {
-        m_writer->WriteFloat_3( { delta.Normal.X, delta.Normal.Y, delta.Normal.Z } );
+        m_writer->WriteFloat_4( delta.Normal );
     }
     if ( attributes.Tangent )
     {
-        m_writer->WriteFloat_3( { delta.Tangent.X, delta.Tangent.Y, delta.Tangent.Z } );
+        m_writer->WriteFloat_4( delta.Tangent );
     }
 }
-
-
 
 void MeshAssetWriter::WriteMetadata( const MeshAsset &meshAssetData )
 {
@@ -412,10 +393,11 @@ void MeshAssetWriter::WriteMetadata( const MeshAsset &meshAssetData )
     m_currentMorphTargetIndex = 0;
     m_writtenSubMeshCount     = 0;
     m_writtenMorphTargetCount = 0;
-    m_vertexCount             = 0;
-    m_indexCount              = 0;
-    m_deltaCount              = 0;
-    m_dataBlockEndOffset      = 0;
+    m_numVertices             = 0;
+    m_numIndices              = 0;
+    m_numDeltas              = 0;
+
+    WriteHeader( 0 ); // Do not write num bytes just yet since we don't know data required for the streams
 }
 
 void MeshAssetWriter::AddVertex( const MeshVertex &vertex )
@@ -430,21 +412,20 @@ void MeshAssetWriter::AddVertex( const MeshVertex &vertex )
     }
 
     SubMeshData &currentSubMesh = m_meshData.SubMeshes.GetElement( m_currentSubMeshIndex );
-    if ( m_vertexCount == 0 )
+    if ( m_numVertices == 0 )
     {
         m_state                            = State::WritingVertices;
         currentSubMesh.VertexStream.Offset = m_writer->Position( );
     }
 
     WriteVertexInternal( vertex );
-    m_vertexCount++;
+    m_numVertices++;
 
-
-    if ( m_vertexCount == currentSubMesh.NumVertices )
+    if ( m_numVertices == currentSubMesh.NumVertices )
     {
-        currentSubMesh.VertexStream.NumBytes = m_vertexCount * m_vertexStride;
+        currentSubMesh.VertexStream.NumBytes = m_numVertices * m_vertexStride;
         m_state                              = State::ExpectingIndices;
-        m_indexCount                         = 0;
+        m_numIndices                         = 0;
         if ( currentSubMesh.NumIndices == 0 )
         {
             m_state          = State::ExpectingHulls;
@@ -464,8 +445,8 @@ void MeshAssetWriter::AddVertex( const MeshVertex &vertex )
                 m_writtenSubMeshCount++;
                 m_state               = m_writtenSubMeshCount < m_expectedSubMeshCount ? State::ReadyToWriteData : State::ExpectingMorphTarget;
                 m_currentSubMeshIndex = m_writtenSubMeshCount;
-                m_vertexCount         = 0;
-                m_indexCount          = 0;
+                m_numVertices         = 0;
+                m_numIndices          = 0;
             }
         }
     }
@@ -490,11 +471,11 @@ void MeshAssetWriter::AddIndex16( const uint16_t index )
     }
 
     m_writer->WriteUInt16( index );
-    m_indexCount++;
+    m_numIndices++;
 
-    if ( m_indexCount == currentSubMesh.NumIndices )
+    if ( m_numIndices == currentSubMesh.NumIndices )
     {
-        currentSubMesh.IndexStream.NumBytes = m_indexCount * sizeof( uint16_t );
+        currentSubMesh.IndexStream.NumBytes = m_numIndices * sizeof( uint16_t );
         m_state                             = State::ExpectingHulls;
         m_currentBVIndex                    = 0;
 
@@ -512,8 +493,8 @@ void MeshAssetWriter::AddIndex16( const uint16_t index )
             m_writtenSubMeshCount++;
             m_state               = m_writtenSubMeshCount < m_expectedSubMeshCount ? State::ReadyToWriteData : State::ExpectingMorphTarget;
             m_currentSubMeshIndex = m_writtenSubMeshCount;
-            m_vertexCount         = 0;
-            m_indexCount          = 0;
+            m_numVertices         = 0;
+            m_numIndices          = 0;
         }
     }
 }
@@ -537,11 +518,11 @@ void MeshAssetWriter::AddIndex32( const uint32_t index )
     }
 
     m_writer->WriteUInt32( index );
-    m_indexCount++;
+    m_numIndices++;
 
-    if ( m_indexCount == currentSubMesh.NumIndices )
+    if ( m_numIndices == currentSubMesh.NumIndices )
     {
-        currentSubMesh.IndexStream.NumBytes = m_indexCount * sizeof( uint32_t );
+        currentSubMesh.IndexStream.NumBytes = m_numIndices * sizeof( uint32_t );
         m_state                             = State::ExpectingHulls;
         m_currentBVIndex                    = 0;
 
@@ -559,8 +540,8 @@ void MeshAssetWriter::AddIndex32( const uint32_t index )
             m_writtenSubMeshCount++;
             m_state               = m_writtenSubMeshCount < m_expectedSubMeshCount ? State::ReadyToWriteData : State::ExpectingMorphTarget;
             m_currentSubMeshIndex = m_writtenSubMeshCount;
-            m_vertexCount         = 0;
-            m_indexCount          = 0;
+            m_numVertices         = 0;
+            m_numIndices          = 0;
         }
     }
 }
@@ -583,14 +564,12 @@ void MeshAssetWriter::AddConvexHullData( const uint32_t boundingVolumeIndex, con
         m_state = State::WritingHulls;
     }
 
-
     BoundingVolume &bv                = currentSubMesh.BoundingVolumes.GetElement( boundingVolumeIndex );
     bv.ConvexHull.VertexStream.Offset = m_writer->Position( );
     m_writer->WriteBytes( vertexData );
     bv.ConvexHull.VertexStream.NumBytes = vertexData.NumElements( );
 
     m_currentBVIndex++;
-
 
     uint32_t expectedHullCount = 0;
     for ( size_t i = 0; i < currentSubMesh.BoundingVolumes.NumElements( ); ++i )
@@ -606,8 +585,8 @@ void MeshAssetWriter::AddConvexHullData( const uint32_t boundingVolumeIndex, con
         m_writtenSubMeshCount++;
         m_state               = m_writtenSubMeshCount < m_expectedSubMeshCount ? State::ReadyToWriteData : State::ExpectingMorphTarget;
         m_currentSubMeshIndex = m_writtenSubMeshCount;
-        m_vertexCount         = 0;
-        m_indexCount          = 0;
+        m_numVertices         = 0;
+        m_numIndices          = 0;
     }
 }
 
@@ -624,20 +603,20 @@ void MeshAssetWriter::AddMorphTargetDelta( const MorphTargetDelta &delta )
 
     MorphTarget &currentMorph = m_meshData.MorphTargets.GetElement( m_currentMorphTargetIndex );
 
-    if ( m_deltaCount == 0 )
+    if ( m_numDeltas == 0 )
     {
         m_state                               = State::WritingDeltas;
         currentMorph.VertexDeltaStream.Offset = m_writer->Position( );
     }
 
     WriteMorphTargetDeltaInternal( delta );
-    m_deltaCount++;
+    m_numDeltas++;
 
-    if ( m_deltaCount == m_meshData.SubMeshes.GetElement( 0 ).NumVertices )
+    if ( m_numDeltas == m_meshData.SubMeshes.GetElement( 0 ).NumVertices )
     {
-        currentMorph.VertexDeltaStream.NumBytes = m_deltaCount * m_morphDeltaStride;
+        currentMorph.VertexDeltaStream.NumBytes = m_numDeltas * m_morphDeltaStride;
         m_writtenMorphTargetCount++;
-        m_deltaCount              = 0;
+        m_numDeltas              = 0;
         m_currentMorphTargetIndex = m_writtenMorphTargetCount;
         m_state                   = m_writtenMorphTargetCount < m_expectedMorphTargetCount ? State::ExpectingMorphTarget : State::DataWritten;
     }
@@ -647,7 +626,6 @@ void MeshAssetWriter::FinalizeAsset( )
 {
     if ( m_state != State::DataWritten && m_state != State::ExpectingMorphTarget && m_state != State::SubMeshEnded )
     {
-
         if ( !( m_state == State::ReadyToWriteData && m_expectedSubMeshCount == 0 && m_expectedMorphTargetCount == 0 ) )
         {
             LOG( FATAL ) << "FinalizeAsset called in invalid state " << static_cast<int>( m_state ) << ". Ensure all expected data was added.";
@@ -662,51 +640,10 @@ void MeshAssetWriter::FinalizeAsset( )
         LOG( FATAL ) << "FinalizeAsset called but not all MorphTargets were written/ended.";
     }
 
-    m_dataBlockEndOffset = m_writer->Position( );
-
-
-    BinaryContainer metaContainer;
-    BinaryWriter    metaWriter( metaContainer );
-
-    metaWriter.WriteUInt64( m_meshData.Magic );
-    metaWriter.WriteUInt32( m_meshData.Version );
-    metaWriter.WriteUInt64( 0 );
-    metaWriter.WriteString( m_meshData.Uri.ToString( ) );
-
-    metaWriter.WriteString( m_meshData.Name );
-    metaWriter.WriteUInt32( m_meshData.NumLODs );
-
-    metaWriter.WriteString( m_meshData.SkeletonRef.ToString( ) );
-
-    metaWriter.WriteUInt32( m_meshData.SubMeshes.NumElements( ) );
-    for ( size_t i = 0; i < m_meshData.SubMeshes.NumElements( ); ++i )
-    {
-
-        MeshAssetWriter tempWriter( MeshAssetWriterDesc{ &metaWriter } );
-        tempWriter.WriteSubMeshData( m_meshData.SubMeshes.GetElement( i ) );
-    }
-    metaWriter.WriteUInt32( m_meshData.MorphTargets.NumElements( ) );
-    for ( size_t i = 0; i < m_meshData.MorphTargets.NumElements( ); ++i )
-    {
-        MeshAssetWriter tempWriter( MeshAssetWriterDesc{ &metaWriter } );
-        tempWriter.WriteMorphTargetData( m_meshData.MorphTargets.GetElement( i ) );
-    }
-    metaWriter.WriteUInt32( m_meshData.UserProperties.NumElements( ) );
-    for ( size_t i = 0; i < m_meshData.UserProperties.NumElements( ); ++i )
-    {
-        MeshAssetWriter tempWriter( MeshAssetWriterDesc{ &metaWriter } );
-        tempWriter.WriteUserProperty( m_meshData.UserProperties.GetElement( i ) );
-    }
-    metaWriter.Flush( );
-    const uint64_t metadataBlockSize = metaWriter.Position( );
-
-    const uint64_t dataBlockSize  = m_dataBlockEndOffset - ( m_assetHeaderOffset + metadataBlockSize );
-    const uint64_t finalTotalSize = metadataBlockSize + dataBlockSize;
-
-
-    m_writer->Seek( m_assetHeaderOffset );
-    WriteHeader( finalTotalSize );
-    WriteMetadataArrays( );
+    const uint64_t currentPos = m_writer->Position( );
+    m_writer->Seek( m_streamStartLocation );
+    WriteHeader( currentPos ); // Rewrite headers again with populated NumBytes for the MeshAsset and all the AssetDataSteams within
+    m_writer->Seek( currentPos );
 
     m_writer->Flush( );
     m_state = State::Finalized;

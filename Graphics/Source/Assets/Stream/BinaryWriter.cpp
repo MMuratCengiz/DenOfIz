@@ -120,15 +120,15 @@ void BinaryWriter::WriteUInt32( const uint32_t value ) const
     m_stream->write( reinterpret_cast<const char *>( bytes ), 4 );
 }
 
-void BinaryWriter::WriteUInt64( const uint32_t value ) const
+void BinaryWriter::WriteUInt64( const uint64_t value ) const
 {
     if ( !m_isStreamValid )
     {
         return;
     }
 
-    WriteUInt32( value >> 32 );
-    WriteUInt32( value & 0xFFFFFFFF );
+    WriteUInt32( static_cast<uint32_t>( value >> 32 ) );
+    WriteUInt32( static_cast<uint32_t>( value & 0xFFFFFFFF ) );
 }
 
 void BinaryWriter::WriteInt16( const int16_t value ) const
@@ -141,7 +141,7 @@ void BinaryWriter::WriteInt32( const int32_t value ) const
     WriteUInt32( static_cast<uint32_t>( value ) );
 }
 
-void BinaryWriter::WriteInt64( const int32_t value ) const
+void BinaryWriter::WriteInt64( const int64_t value ) const
 {
     WriteUInt64( static_cast<uint32_t>( value ) );
 }

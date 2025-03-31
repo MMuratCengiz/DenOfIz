@@ -52,26 +52,26 @@ namespace DenOfIz
         };
         State m_state = State::Idle;
 
+        uint64_t m_streamStartLocation      = 0;
         uint32_t m_expectedSubMeshCount     = 0;
         uint32_t m_expectedMorphTargetCount = 0;
         uint32_t m_writtenSubMeshCount{ };
         uint32_t m_writtenMorphTargetCount{ };
-        uint64_t m_assetHeaderOffset{ };
 
         uint32_t m_currentSubMeshIndex     = 0;
         uint32_t m_currentMorphTargetIndex = 0;
         uint32_t m_currentBVIndex          = 0;
 
-        uint64_t m_vertexCount = 0;
-        uint64_t m_indexCount  = 0;
-        uint64_t m_deltaCount  = 0;
+        uint64_t m_numVertices = 0;
+        uint64_t m_numIndices  = 0;
+        uint64_t m_numDeltas  = 0;
 
         uint32_t m_vertexStride       = 0;
         uint32_t m_morphDeltaStride   = 0;
-        uint64_t m_dataBlockEndOffset = 0;
 
         void CalculateStrides( );
-        void WriteHeader( uint64_t finalTotalSize ) const;
+        void WriteHeader( uint64_t totalNumBytes );
+        void WriteTopLevelMetadata( );
         void WriteMetadataArrays( );
         void WriteSubMeshData( const SubMeshData &data ) const;
         void WriteMorphTargetData( const MorphTarget &data ) const;
