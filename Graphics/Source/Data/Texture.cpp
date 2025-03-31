@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "stb_image.h"
 #endif
 
+#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <filesystem>
 #include <fstream>
 
@@ -37,8 +38,7 @@ Texture::Texture( const std::string &path ) : m_path( Utilities::AppPath( path )
         return;
     }
 
-    const std::filesystem::path &extension = std::filesystem::path( m_path ).extension( );
-    if ( extension == ".dds" )
+    if ( const std::filesystem::path &extension = std::filesystem::path( m_path ).extension( ); extension == ".dds" )
     {
         Extension = TextureExtension::DDS;
     }
@@ -405,7 +405,7 @@ void Texture::StreamMipDataDDS( const MipStreamCallback &callback ) const
             // this.Data already skips the data_offset() but mip_offset() includes it
             const auto externalOffset = m_ddsHeader.mip_offset( mip, array ) - m_ddsHeader.data_offset( );
 
-            MipData mipData{ };
+            TextureMip mipData{ };
             mipData.Width      = m_ddsHeader.width( ) >> mip;
             mipData.Height     = m_ddsHeader.height( ) >> mip;
             mipData.MipIndex   = mip;
@@ -422,7 +422,7 @@ void Texture::StreamMipDataDDS( const MipStreamCallback &callback ) const
 
 void Texture::StreamMipDataSTB( const MipStreamCallback &callback ) const
 {
-    MipData mipData{ };
+    TextureMip mipData{ };
     mipData.Width      = Width;
     mipData.Height     = Height;
     mipData.MipIndex   = 0;

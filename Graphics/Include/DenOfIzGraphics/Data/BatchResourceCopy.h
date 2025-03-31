@@ -98,7 +98,7 @@ namespace DenOfIz
     private:
         void                     CleanResources( );
         void                     LoadTextureInternal( const Texture &texture, ITextureResource *dstTexture );
-        void                     CopyTextureToMemoryAligned( const Texture &texture, const MipData &mipData, Byte *dst ) const;
+        void                     CopyTextureToMemoryAligned( const Texture &texture, const TextureMip &mipData, Byte *dst ) const;
         [[nodiscard]] uint32_t   GetSubresourceAlignment( uint32_t bitSize ) const;
         static std::string       NextId( const std::string &prefix );
     };

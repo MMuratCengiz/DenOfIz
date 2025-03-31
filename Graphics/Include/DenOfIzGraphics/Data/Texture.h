@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Common.h>
-#include <DenOfIzGraphics/Utilities/Utilities.h>
+#include <DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h>
 #include <DenOfIzGraphics/Backends/Interface/CommonData.h>
+#include <DenOfIzGraphics/Utilities/Common.h>
 #include <functional>
 
 #define DZ_USE_DDS
@@ -32,14 +32,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    enum class TextureDimension
-    {
-        Undefined,
-        Texture1D,
-        Texture2D,
-        Texture3D,
-        TextureCube,
-    };
 
     enum class TextureExtension
     {
@@ -53,23 +45,11 @@ namespace DenOfIz
         PIC,
     };
 
-    struct MipData
-    {
-        uint32_t Width;
-        uint32_t Height;
-        uint32_t MipIndex;
-        uint32_t ArrayIndex;
-        uint32_t RowPitch;
-        uint32_t NumRows;
-        uint32_t SlicePitch;
-        uint32_t DataOffset;
-    };
-
-    typedef std::function<void( MipData mipData )> MipStreamCallback;
+    typedef std::function<void( TextureMip mipData )> MipStreamCallback;
     class Texture
     {
         std::string          m_path;
-        std::vector<MipData> m_mipData;
+        std::vector<TextureMip> m_mipData;
         dds::Header          m_ddsHeader{ };
         Byte                *m_contentData{ };
 

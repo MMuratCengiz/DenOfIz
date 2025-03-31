@@ -24,6 +24,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    enum class TextureDimension
+    {
+        Undefined,
+        Texture1D,
+        Texture2D,
+        Texture3D,
+        TextureCube,
+    };
+
     struct DZ_API TextureMip
     {
         uint32_t Width;
@@ -40,9 +49,30 @@ namespace DenOfIz
     {
         static constexpr uint32_t Latest = 1;
 
-        InteropString            Name;
+        InteropString Name;
+        InteropString SourcePath;
+
+        uint32_t         Width     = 0;
+        uint32_t         Height    = 0;
+        uint32_t         Depth     = 1;
+        Format           Format    = Format::Undefined;
+        TextureDimension Dimension = TextureDimension::Texture2D;
+
+        uint32_t MipLevels = 1;
+        uint32_t ArraySize = 1;
+
+        uint32_t BitsPerPixel = 0;
+        uint32_t BlockSize    = 1;
+
+        uint32_t RowPitch   = 0;
+        uint32_t NumRows    = 0;
+        uint32_t SlicePitch = 0;
+
         InteropArray<TextureMip> Mips;
         AssetDataStream          Data;
+
+        bool IsSRGB       = false;
+        bool IsCompressed = false;
 
         TextureAsset( ) : AssetHeader( 0x445A544558 /* 'DZTEX' */, Latest, 0 )
         {

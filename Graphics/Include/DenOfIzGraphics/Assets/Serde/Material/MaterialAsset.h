@@ -26,17 +26,28 @@ namespace DenOfIz
 {
     struct DZ_API MaterialAsset : AssetHeader
     {
+        static constexpr uint32_t Latest = 1;
+
         InteropString Name;
+        InteropString ShaderRef;
 
-        InteropString AlbedoMap;
-        InteropString NormalMap;
-        InteropString MetallicRoughnessMap;
-        InteropString EmissiveMap;
+        AssetUri AlbedoMapRef;
+        AssetUri NormalMapRef;
+        AssetUri MetallicRoughnessMapRef;
+        AssetUri EmissiveMapRef;
+        AssetUri OcclusionMapRef;
 
-        Float_4 BaseColorFactor;
-        float  MetallicFactor;
-        float  RoughnessFactor;
-        bool   AlphaBlend;
-        Float_3 EmissiveFactor;
+        Float_4 BaseColorFactor = { 1.0f, 1.0f, 1.0f, 1.0f };
+        float   MetallicFactor  = 1.0f;
+        float   RoughnessFactor = 1.0f;
+        Float_3 EmissiveFactor  = { 0.0f, 0.0f, 0.0f };
+
+        bool AlphaBlend  = false;
+        bool DoubleSided = false;
+
+        InteropArray<UserProperty> Properties;
+        MaterialAsset( ) : AssetHeader( 0x445A4D4154 /*DZMAT*/, Latest, 0 )
+        {
+        }
     };
 } // namespace DenOfIz

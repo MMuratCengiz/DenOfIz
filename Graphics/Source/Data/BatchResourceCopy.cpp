@@ -189,7 +189,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
 
 [[nodiscard]] IBufferResource *BatchResourceCopy::CreateGeometryVertexBuffer( const GeometryData &geometryData )
 {
-    size_t numBytes = geometryData.Vertices.NumElements( ) * sizeof( GeometryVertexData );
+    const size_t numBytes = geometryData.Vertices.NumElements( ) * sizeof( GeometryVertexData );
 
     BufferDesc vBufferDesc{ };
     vBufferDesc.HeapType     = HeapType::GPU;
@@ -218,13 +218,13 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
 
 [[nodiscard]] IBufferResource *BatchResourceCopy::CreateGeometryIndexBuffer( const GeometryData &geometryData )
 {
-    size_t numBytes = geometryData.Indices.NumElements( ) * sizeof( uint32_t );
+    const size_t numBytes = geometryData.Indices.NumElements( ) * sizeof( uint32_t );
 
     BufferDesc iBufferDesc{ };
-    iBufferDesc.HeapType        = HeapType::GPU;
-    iBufferDesc.Descriptor      = ResourceDescriptor::IndexBuffer;
-    iBufferDesc.InitialUsage    = ResourceUsage::CopyDst;
-    iBufferDesc.NumBytes        = numBytes;
+    iBufferDesc.HeapType     = HeapType::GPU;
+    iBufferDesc.Descriptor   = ResourceDescriptor::IndexBuffer;
+    iBufferDesc.InitialUsage = ResourceUsage::CopyDst;
+    iBufferDesc.NumBytes     = numBytes;
     iBufferDesc.DebugName.Append( NextId( "IndexBuffer" ).c_str( ) );
 
     const auto indexBuffer = m_device->CreateBufferResource( iBufferDesc );
@@ -307,10 +307,10 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
     }
 
     const auto stagingBuffer       = m_device->CreateBufferResource( stagingBufferDesc );
-    Byte      *stagingMappedMemory = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
+    const auto stagingMappedMemory = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
 
     texture.StreamMipData(
-        [ & ]( const MipData &mipData )
+        [ & ]( const TextureMip &mipData )
         {
             CopyTextureToMemoryAligned( texture, mipData, stagingMappedMemory + mipData.DataOffset );
 
@@ -331,7 +331,7 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
     m_resourcesToClean.push_back( std::unique_ptr<IBufferResource>( stagingBuffer ) );
 }
 
-void BatchResourceCopy::CopyTextureToMemoryAligned( const Texture &texture, const MipData &mipData, Byte *dst ) const
+void BatchResourceCopy::CopyTextureToMemoryAligned( const Texture &texture, const TextureMip &mipData, Byte *dst ) const
 {
     const uint32_t alignedRowPitch   = Utilities::Align( mipData.RowPitch, m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
     const uint32_t alignedSlicePitch = Utilities::Align( alignedRowPitch * mipData.NumRows, GetSubresourceAlignment( texture.BitsPerPixel ) );
