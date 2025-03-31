@@ -31,7 +31,7 @@ MaterialAssetReader::MaterialAssetReader( const MaterialAssetReaderDesc &desc ) 
 
 MaterialAssetReader::~MaterialAssetReader( ) = default;
 
-MaterialAsset MaterialAssetReader::ReadMaterialAsset( )
+MaterialAsset MaterialAssetReader::Read( )
 {
     m_materialAsset       = MaterialAsset( );
     m_materialAsset.Magic = m_reader->ReadUInt64( );

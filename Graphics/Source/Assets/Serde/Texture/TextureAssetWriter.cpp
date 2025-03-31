@@ -16,7 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h>
 #include <DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h>
-#include <unordered_map>
 
 using namespace DenOfIz;
+
+TextureAssetWriter::TextureAssetWriter( const TextureAssetWriterDesc &desc ) : m_writer( desc.Writer )
+{
+    if ( !m_writer )
+    {
+        LOG( FATAL ) << "BinaryWriter cannot be null for TextureAssetWriter";
+    }
+}
+
+TextureAssetWriter::~TextureAssetWriter( ) = default;

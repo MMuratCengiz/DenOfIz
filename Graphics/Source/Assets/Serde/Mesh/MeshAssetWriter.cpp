@@ -1,4 +1,20 @@
-/**/
+/*
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 
 #include <DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h>
 #include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetWriter.h>
@@ -20,8 +36,8 @@ MeshAssetWriter::~MeshAssetWriter( ) = default;
 void MeshAssetWriter::CalculateStrides( )
 {
     m_vertexStride         = 0;
-    const auto &attributes = m_meshData.EnabledAttributes;
-    const auto &config     = m_meshData.AttributeConfig;
+    const auto &attributes = m_meshAsset.EnabledAttributes;
+    const auto &config     = m_meshAsset.AttributeConfig;
     if ( attributes.Position )
     {
         m_vertexStride += config.NumPositionComponents * sizeof( float );
@@ -73,7 +89,7 @@ void MeshAssetWriter::CalculateStrides( )
     }
 
     m_morphDeltaStride       = 0;
-    const auto &deltaAttribs = m_meshData.MorphTargetDeltaAttributes;
+    const auto &deltaAttribs = m_meshAsset.MorphTargetDeltaAttributes;
     if ( deltaAttribs.Position )
     {
         m_morphDeltaStride += sizeof( Float_4 );
@@ -144,10 +160,10 @@ void MeshAssetWriter::WriteHeader( const uint64_t totalNumBytes )
 {
     m_streamStartLocation = m_writer->Position( );
 
-    m_writer->WriteUInt64( m_meshData.Magic );
-    m_writer->WriteUInt32( m_meshData.Version );
+    m_writer->WriteUInt64( m_meshAsset.Magic );
+    m_writer->WriteUInt32( m_meshAsset.Version );
     m_writer->WriteUInt64( totalNumBytes ); // NumBytes, Will be written later at finalize!!
-    m_writer->WriteString( m_meshData.Uri.ToString( ) );
+    m_writer->WriteString( m_meshAsset.Uri.ToString( ) );
 
     WriteTopLevelMetadata( );
     WriteMetadataArrays( );
@@ -155,99 +171,99 @@ void MeshAssetWriter::WriteHeader( const uint64_t totalNumBytes )
 
 void MeshAssetWriter::WriteTopLevelMetadata( )
 {
-    m_writer->WriteString( m_meshData.Name );
-    m_writer->WriteUInt32( m_meshData.NumLODs );
+    m_writer->WriteString( m_meshAsset.Name );
+    m_writer->WriteUInt32( m_meshAsset.NumLODs );
 
     uint32_t enabledFlags = 0;
-    if ( m_meshData.EnabledAttributes.Position )
+    if ( m_meshAsset.EnabledAttributes.Position )
     {
         enabledFlags |= 1 << 0;
     }
-    if ( m_meshData.EnabledAttributes.Normal )
+    if ( m_meshAsset.EnabledAttributes.Normal )
     {
         enabledFlags |= 1 << 1;
     }
-    if ( m_meshData.EnabledAttributes.UV )
+    if ( m_meshAsset.EnabledAttributes.UV )
     {
         enabledFlags |= 1 << 2;
     }
-    if ( m_meshData.EnabledAttributes.Color )
+    if ( m_meshAsset.EnabledAttributes.Color )
     {
         enabledFlags |= 1 << 3;
     }
-    if ( m_meshData.EnabledAttributes.Tangent )
+    if ( m_meshAsset.EnabledAttributes.Tangent )
     {
         enabledFlags |= 1 << 4;
     }
-    if ( m_meshData.EnabledAttributes.Bitangent )
+    if ( m_meshAsset.EnabledAttributes.Bitangent )
     {
         enabledFlags |= 1 << 5;
     }
-    if ( m_meshData.EnabledAttributes.BlendIndices )
+    if ( m_meshAsset.EnabledAttributes.BlendIndices )
     {
         enabledFlags |= 1 << 6;
     }
-    if ( m_meshData.EnabledAttributes.BlendWeights )
+    if ( m_meshAsset.EnabledAttributes.BlendWeights )
     {
         enabledFlags |= 1 << 7;
     }
     m_writer->WriteUInt32( enabledFlags );
-    m_writer->WriteUInt32( m_meshData.AttributeConfig.NumPositionComponents );
-    m_writer->WriteUInt32( m_meshData.AttributeConfig.NumUVAttributes );
-    m_writer->WriteUInt32( m_meshData.AttributeConfig.UVChannels.NumElements( ) );
-    for ( size_t i = 0; i < m_meshData.AttributeConfig.UVChannels.NumElements( ); ++i )
+    m_writer->WriteUInt32( m_meshAsset.AttributeConfig.NumPositionComponents );
+    m_writer->WriteUInt32( m_meshAsset.AttributeConfig.NumUVAttributes );
+    m_writer->WriteUInt32( m_meshAsset.AttributeConfig.UVChannels.NumElements( ) );
+    for ( size_t i = 0; i < m_meshAsset.AttributeConfig.UVChannels.NumElements( ); ++i )
     {
-        const auto &channel = m_meshData.AttributeConfig.UVChannels.GetElement( i );
+        const auto &channel = m_meshAsset.AttributeConfig.UVChannels.GetElement( i );
         m_writer->WriteString( channel.SemanticName );
         m_writer->WriteUInt32( channel.Index );
     }
-    m_writer->WriteUInt32( m_meshData.AttributeConfig.ColorFormats.NumElements( ) );
-    for ( size_t i = 0; i < m_meshData.AttributeConfig.ColorFormats.NumElements( ); ++i )
+    m_writer->WriteUInt32( m_meshAsset.AttributeConfig.ColorFormats.NumElements( ) );
+    for ( size_t i = 0; i < m_meshAsset.AttributeConfig.ColorFormats.NumElements( ); ++i )
     {
-        m_writer->WriteUInt32( static_cast<uint32_t>( m_meshData.AttributeConfig.ColorFormats.GetElement( i ) ) );
+        m_writer->WriteUInt32( static_cast<uint32_t>( m_meshAsset.AttributeConfig.ColorFormats.GetElement( i ) ) );
     }
-    m_writer->WriteUInt32( m_meshData.AttributeConfig.MaxBoneInfluences );
+    m_writer->WriteUInt32( m_meshAsset.AttributeConfig.MaxBoneInfluences );
 
     uint32_t morphFlags = 0;
-    if ( m_meshData.MorphTargetDeltaAttributes.Position )
+    if ( m_meshAsset.MorphTargetDeltaAttributes.Position )
     {
         morphFlags |= 1 << 0;
     }
-    if ( m_meshData.MorphTargetDeltaAttributes.Normal )
+    if ( m_meshAsset.MorphTargetDeltaAttributes.Normal )
     {
         morphFlags |= 1 << 1;
     }
-    if ( m_meshData.MorphTargetDeltaAttributes.Tangent )
+    if ( m_meshAsset.MorphTargetDeltaAttributes.Tangent )
     {
         morphFlags |= 1 << 2;
     }
     m_writer->WriteUInt32( morphFlags );
 
-    m_writer->WriteString( m_meshData.AnimationRef.ToString( ) );
-    m_writer->WriteString( m_meshData.SkeletonRef.ToString( ) );
+    m_writer->WriteString( m_meshAsset.AnimationRef.ToString( ) );
+    m_writer->WriteString( m_meshAsset.SkeletonRef.ToString( ) );
 }
 
 void MeshAssetWriter::WriteMetadataArrays( )
 {
-    m_writer->WriteUInt32( m_meshData.SubMeshes.NumElements( ) );
-    for ( size_t i = 0; i < m_meshData.SubMeshes.NumElements( ); ++i )
+    m_writer->WriteUInt32( m_meshAsset.SubMeshes.NumElements( ) );
+    for ( size_t i = 0; i < m_meshAsset.SubMeshes.NumElements( ); ++i )
     {
-        WriteSubMeshData( m_meshData.SubMeshes.GetElement( i ) );
+        WriteSubMeshData( m_meshAsset.SubMeshes.GetElement( i ) );
     }
 
-    m_writer->WriteUInt32( m_meshData.MorphTargets.NumElements( ) );
-    for ( size_t i = 0; i < m_meshData.MorphTargets.NumElements( ); ++i )
+    m_writer->WriteUInt32( m_meshAsset.MorphTargets.NumElements( ) );
+    for ( size_t i = 0; i < m_meshAsset.MorphTargets.NumElements( ); ++i )
     {
-        WriteMorphTargetData( m_meshData.MorphTargets.GetElement( i ) );
+        WriteMorphTargetData( m_meshAsset.MorphTargets.GetElement( i ) );
     }
 
-    AssetWriterHelpers::WriteProperties( m_writer, m_meshData.UserProperties );
+    AssetWriterHelpers::WriteProperties( m_writer, m_meshAsset.UserProperties );
 }
 
 void MeshAssetWriter::WriteVertexInternal( const MeshVertex &vertex ) const
 {
-    const auto &attributes = m_meshData.EnabledAttributes;
-    const auto &config     = m_meshData.AttributeConfig;
+    const auto &attributes = m_meshAsset.EnabledAttributes;
+    const auto &config     = m_meshAsset.AttributeConfig;
 
     if ( attributes.Position )
     {
@@ -318,7 +334,7 @@ void MeshAssetWriter::WriteVertexInternal( const MeshVertex &vertex ) const
 
 void MeshAssetWriter::WriteMorphTargetDeltaInternal( const MorphTargetDelta &delta ) const
 {
-    const auto &attributes = m_meshData.MorphTargetDeltaAttributes;
+    const auto &attributes = m_meshAsset.MorphTargetDeltaAttributes;
     if ( attributes.Position )
     {
         m_writer->WriteFloat_4( delta.Position );
@@ -333,16 +349,16 @@ void MeshAssetWriter::WriteMorphTargetDeltaInternal( const MorphTargetDelta &del
     }
 }
 
-void MeshAssetWriter::WriteMetadata( const MeshAsset &meshAssetData )
+void MeshAssetWriter::Write( const MeshAsset &meshAssetData )
 {
     if ( m_state != State::Idle )
     {
         LOG( FATAL ) << "WriteMetadata can only be called once at the beginning.";
     }
 
-    m_meshData                 = meshAssetData;
-    m_expectedSubMeshCount     = m_meshData.SubMeshes.NumElements( );
-    m_expectedMorphTargetCount = m_meshData.MorphTargets.NumElements( );
+    m_meshAsset                = meshAssetData;
+    m_expectedSubMeshCount     = m_meshAsset.SubMeshes.NumElements( );
+    m_expectedMorphTargetCount = m_meshAsset.MorphTargets.NumElements( );
     CalculateStrides( );
 
     m_state                   = State::ReadyToWriteData;
@@ -368,7 +384,7 @@ void MeshAssetWriter::AddVertex( const MeshVertex &vertex )
         LOG( FATAL ) << "AddVertex called after all SubMeshes should have been written.";
     }
 
-    SubMeshData &currentSubMesh = m_meshData.SubMeshes.GetElement( m_currentSubMeshIndex );
+    SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.GetElement( m_currentSubMeshIndex );
     if ( m_numVertices == 0 )
     {
         m_state                            = State::WritingVertices;
@@ -415,7 +431,7 @@ void MeshAssetWriter::AddIndex16( const uint16_t index )
     {
         LOG( FATAL ) << "AddIndex16 called at invalid state " << static_cast<int>( m_state );
     }
-    SubMeshData &currentSubMesh = m_meshData.SubMeshes.GetElement( m_currentSubMeshIndex );
+    SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.GetElement( m_currentSubMeshIndex );
     if ( currentSubMesh.IndexType != IndexType::Uint16 )
     {
         LOG( WARNING ) << "Adding uint16 index to SubMesh " << m_currentSubMeshIndex << " expecting Uint32.";
@@ -462,7 +478,7 @@ void MeshAssetWriter::AddIndex32( const uint32_t index )
     {
         LOG( FATAL ) << "AddIndex32 called at invalid state " << static_cast<int>( m_state );
     }
-    SubMeshData &currentSubMesh = m_meshData.SubMeshes.GetElement( m_currentSubMeshIndex );
+    SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.GetElement( m_currentSubMeshIndex );
     if ( currentSubMesh.IndexType != IndexType::Uint32 )
     {
         LOG( WARNING ) << "Adding uint32 index to SubMesh " << m_currentSubMeshIndex << " expecting Uint16.";
@@ -509,7 +525,7 @@ void MeshAssetWriter::AddConvexHullData( const uint32_t boundingVolumeIndex, con
     {
         LOG( FATAL ) << "AddConvexHullData called at invalid state " << static_cast<int>( m_state );
     }
-    SubMeshData &currentSubMesh = m_meshData.SubMeshes.GetElement( m_currentSubMeshIndex );
+    SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.GetElement( m_currentSubMeshIndex );
     if ( boundingVolumeIndex >= currentSubMesh.BoundingVolumes.NumElements( ) ||
          currentSubMesh.BoundingVolumes.GetElement( boundingVolumeIndex ).Type != BoundingVolumeType::ConvexHull )
     {
@@ -558,7 +574,7 @@ void MeshAssetWriter::AddMorphTargetDelta( const MorphTargetDelta &delta )
         LOG( FATAL ) << "AddMorphTargetDelta called after all MorphTargets should have been written.";
     }
 
-    MorphTarget &currentMorph = m_meshData.MorphTargets.GetElement( m_currentMorphTargetIndex );
+    MorphTarget &currentMorph = m_meshAsset.MorphTargets.GetElement( m_currentMorphTargetIndex );
 
     if ( m_numDeltas == 0 )
     {
@@ -569,7 +585,7 @@ void MeshAssetWriter::AddMorphTargetDelta( const MorphTargetDelta &delta )
     WriteMorphTargetDeltaInternal( delta );
     m_numDeltas++;
 
-    if ( m_numDeltas == m_meshData.SubMeshes.GetElement( 0 ).NumVertices )
+    if ( m_numDeltas == m_meshAsset.SubMeshes.GetElement( 0 ).NumVertices )
     {
         currentMorph.VertexDeltaStream.NumBytes = m_numDeltas * m_morphDeltaStride;
         m_writtenMorphTargetCount++;

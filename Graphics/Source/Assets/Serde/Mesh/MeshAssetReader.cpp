@@ -1,4 +1,20 @@
-/**/
+/*
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 
 #include <DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h>
 #include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h>
@@ -77,8 +93,8 @@ MorphTarget MeshAssetReader::ReadCompleteMorphTargetData( ) const
 uint32_t MeshAssetReader::VertexEntryNumBytes( ) const
 {
     uint32_t    size       = 0;
-    const auto &attributes = m_meshData.EnabledAttributes;
-    const auto &config     = m_meshData.AttributeConfig;
+    const auto &attributes = m_meshAsset.EnabledAttributes;
+    const auto &config     = m_meshAsset.AttributeConfig;
     if ( attributes.Position )
     {
         size += config.NumPositionComponents * sizeof( float );
@@ -134,7 +150,7 @@ uint32_t MeshAssetReader::VertexEntryNumBytes( ) const
 uint32_t MeshAssetReader::MorphDeltaEntryNumBytes( ) const
 {
     uint32_t    size       = 0;
-    const auto &attributes = m_meshData.MorphTargetDeltaAttributes;
+    const auto &attributes = m_meshAsset.MorphTargetDeltaAttributes;
     if ( attributes.Position )
     {
         size += sizeof( Float_4 );
@@ -153,8 +169,8 @@ uint32_t MeshAssetReader::MorphDeltaEntryNumBytes( ) const
 MeshVertex MeshAssetReader::ReadSingleVertex( ) const
 {
     MeshVertex  vertex;
-    const auto &attributes = m_meshData.EnabledAttributes;
-    const auto &config     = m_meshData.AttributeConfig;
+    const auto &attributes = m_meshAsset.EnabledAttributes;
+    const auto &config     = m_meshAsset.AttributeConfig;
 
     if ( attributes.Position )
     {
@@ -221,7 +237,7 @@ MeshVertex MeshAssetReader::ReadSingleVertex( ) const
 MorphTargetDelta MeshAssetReader::ReadSingleMorphTargetDelta( ) const
 {
     MorphTargetDelta delta{ };
-    const auto      &attributes = m_meshData.MorphTargetDeltaAttributes;
+    const auto      &attributes = m_meshAsset.MorphTargetDeltaAttributes;
     if ( attributes.Position )
     {
         delta.Position = m_reader->ReadFloat_4( );
@@ -237,86 +253,86 @@ MorphTargetDelta MeshAssetReader::ReadSingleMorphTargetDelta( ) const
     return delta;
 }
 
-MeshAsset MeshAssetReader::ReadMetadata( )
+MeshAsset MeshAssetReader::Read( )
 {
     if ( m_metadataRead )
     {
         LOG( WARNING ) << "ReadMetadata called more than once.";
         m_reader->Seek( m_dataBlockStartOffset );
-        return m_meshData;
+        return m_meshAsset;
     }
-    m_meshData       = MeshAsset( );
-    m_meshData.Magic = m_reader->ReadUInt64( );
-    if ( m_meshData.Magic != MeshAsset{ }.Magic )
+    m_meshAsset       = MeshAsset( );
+    m_meshAsset.Magic = m_reader->ReadUInt64( );
+    if ( m_meshAsset.Magic != MeshAsset{ }.Magic )
     {
         LOG( FATAL ) << "Invalid MeshAsset magic number.";
     }
-    m_meshData.Version = m_reader->ReadUInt32( );
-    if ( m_meshData.Version > MeshAsset::Latest )
+    m_meshAsset.Version = m_reader->ReadUInt32( );
+    if ( m_meshAsset.Version > MeshAsset::Latest )
     {
         LOG( WARNING ) << "MeshAsset version mismatch.";
     }
-    m_meshData.NumBytes = m_reader->ReadUInt64( );
-    m_meshData.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_meshAsset.NumBytes = m_reader->ReadUInt64( );
+    m_meshAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
 
-    m_meshData.Name                           = m_reader->ReadString( );
-    m_meshData.NumLODs                        = m_reader->ReadUInt32( );
+    m_meshAsset.Name                           = m_reader->ReadString( );
+    m_meshAsset.NumLODs                        = m_reader->ReadUInt32( );
     const uint32_t enabledFlags               = m_reader->ReadUInt32( );
-    m_meshData.EnabledAttributes.Position     = enabledFlags & 1 << 0;
-    m_meshData.EnabledAttributes.Normal       = enabledFlags & 1 << 1;
-    m_meshData.EnabledAttributes.UV           = enabledFlags & 1 << 2;
-    m_meshData.EnabledAttributes.Color        = enabledFlags & 1 << 3;
-    m_meshData.EnabledAttributes.Tangent      = enabledFlags & 1 << 4;
-    m_meshData.EnabledAttributes.Bitangent    = enabledFlags & 1 << 5;
-    m_meshData.EnabledAttributes.BlendIndices = enabledFlags & 1 << 6;
-    m_meshData.EnabledAttributes.BlendWeights = enabledFlags & 1 << 7;
+    m_meshAsset.EnabledAttributes.Position     = enabledFlags & 1 << 0;
+    m_meshAsset.EnabledAttributes.Normal       = enabledFlags & 1 << 1;
+    m_meshAsset.EnabledAttributes.UV           = enabledFlags & 1 << 2;
+    m_meshAsset.EnabledAttributes.Color        = enabledFlags & 1 << 3;
+    m_meshAsset.EnabledAttributes.Tangent      = enabledFlags & 1 << 4;
+    m_meshAsset.EnabledAttributes.Bitangent    = enabledFlags & 1 << 5;
+    m_meshAsset.EnabledAttributes.BlendIndices = enabledFlags & 1 << 6;
+    m_meshAsset.EnabledAttributes.BlendWeights = enabledFlags & 1 << 7;
 
-    m_meshData.AttributeConfig.NumPositionComponents = m_reader->ReadUInt32( );
-    m_meshData.AttributeConfig.NumUVAttributes       = m_reader->ReadUInt32( );
+    m_meshAsset.AttributeConfig.NumPositionComponents = m_reader->ReadUInt32( );
+    m_meshAsset.AttributeConfig.NumUVAttributes       = m_reader->ReadUInt32( );
     const uint32_t uvChanCount                       = m_reader->ReadUInt32( );
-    m_meshData.AttributeConfig.UVChannels.Resize( uvChanCount );
+    m_meshAsset.AttributeConfig.UVChannels.Resize( uvChanCount );
     for ( size_t i = 0; i < uvChanCount; ++i )
     {
-        auto &channel        = m_meshData.AttributeConfig.UVChannels.GetElement( i );
+        auto &channel        = m_meshAsset.AttributeConfig.UVChannels.GetElement( i );
         channel.SemanticName = m_reader->ReadString( );
         channel.Index        = m_reader->ReadUInt32( );
     }
     const uint32_t colorFmtCount = m_reader->ReadUInt32( );
-    m_meshData.AttributeConfig.ColorFormats.Resize( colorFmtCount );
+    m_meshAsset.AttributeConfig.ColorFormats.Resize( colorFmtCount );
     for ( size_t i = 0; i < colorFmtCount; ++i )
     {
-        m_meshData.AttributeConfig.ColorFormats.SetElement( i, static_cast<ColorFormat>( m_reader->ReadUInt32( ) ) );
+        m_meshAsset.AttributeConfig.ColorFormats.SetElement( i, static_cast<ColorFormat>( m_reader->ReadUInt32( ) ) );
     }
-    m_meshData.AttributeConfig.MaxBoneInfluences = m_reader->ReadUInt32( );
+    m_meshAsset.AttributeConfig.MaxBoneInfluences = m_reader->ReadUInt32( );
 
     const uint32_t morphFlags                      = m_reader->ReadUInt32( );
-    m_meshData.MorphTargetDeltaAttributes.Position = morphFlags & 1 << 0;
-    m_meshData.MorphTargetDeltaAttributes.Normal   = morphFlags & 1 << 1;
-    m_meshData.MorphTargetDeltaAttributes.Tangent  = morphFlags & 1 << 2;
+    m_meshAsset.MorphTargetDeltaAttributes.Position = morphFlags & 1 << 0;
+    m_meshAsset.MorphTargetDeltaAttributes.Normal   = morphFlags & 1 << 1;
+    m_meshAsset.MorphTargetDeltaAttributes.Tangent  = morphFlags & 1 << 2;
 
-    m_meshData.AnimationRef = AssetUri::Parse( m_reader->ReadString( ) );
-    m_meshData.SkeletonRef  = AssetUri::Parse( m_reader->ReadString( ) );
+    m_meshAsset.AnimationRef = AssetUri::Parse( m_reader->ReadString( ) );
+    m_meshAsset.SkeletonRef  = AssetUri::Parse( m_reader->ReadString( ) );
 
     const uint32_t numSubMeshes = m_reader->ReadUInt32( );
-    m_meshData.SubMeshes.Resize( numSubMeshes );
+    m_meshAsset.SubMeshes.Resize( numSubMeshes );
     for ( uint32_t i = 0; i < numSubMeshes; ++i )
     {
-        m_meshData.SubMeshes.SetElement( i, ReadCompleteSubMeshData( ) );
+        m_meshAsset.SubMeshes.SetElement( i, ReadCompleteSubMeshData( ) );
     }
 
     const uint32_t numMorphTargets = m_reader->ReadUInt32( );
-    m_meshData.MorphTargets.Resize( numMorphTargets );
+    m_meshAsset.MorphTargets.Resize( numMorphTargets );
     for ( uint32_t i = 0; i < numMorphTargets; ++i )
     {
-        m_meshData.MorphTargets.SetElement( i, ReadCompleteMorphTargetData( ) );
+        m_meshAsset.MorphTargets.SetElement( i, ReadCompleteMorphTargetData( ) );
     }
 
-    m_meshData.UserProperties = AssetReaderHelpers::ReadUserProperties( m_reader );
+    m_meshAsset.UserProperties = AssetReaderHelpers::ReadUserProperties( m_reader );
     m_dataBlockStartOffset    = m_reader->Position( );
     m_metadataRead            = true;
     m_reader->Seek( m_dataBlockStartOffset );
 
-    return m_meshData;
+    return m_meshAsset;
 }
 
 const MeshAsset &MeshAssetReader::GetMetadata( ) const
@@ -326,7 +342,7 @@ const MeshAsset &MeshAssetReader::GetMetadata( ) const
 
         LOG( FATAL ) << "GetMetadata called before ReadMetadata successfully completed.";
     }
-    return m_meshData;
+    return m_meshAsset;
 }
 
 void MeshAssetReader::LoadStreamToBuffer( const LoadToBufferDesc &desc ) const

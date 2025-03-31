@@ -36,6 +36,6 @@ namespace DenOfIz
         explicit MaterialAssetReader( const MaterialAssetReaderDesc &desc );
         ~MaterialAssetReader( );
 
-        MaterialAsset ReadMaterialAsset( );
+        MaterialAsset Read( );
     };
 } // namespace DenOfIz

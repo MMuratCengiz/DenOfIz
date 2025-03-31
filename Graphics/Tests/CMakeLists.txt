@@ -13,6 +13,7 @@ set(GeneralSources
         Source/Assets/Serde/MeshAssetReaderWriterTests.cpp
         Source/Assets/Serde/SkeletonAssetReaderWriterTests.cpp
         Source/Assets/Serde/PhysicsAssetReaderWriterTests.cpp
+        Source/Assets/Serde/TextureAssetReaderWriterTests.cpp
         Source/BitSetTest.cpp
         Source/TestComparators.h
 

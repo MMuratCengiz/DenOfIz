@@ -35,6 +35,6 @@ namespace DenOfIz
         explicit MaterialAssetWriter( const MaterialAssetWriterDesc &desc );
         ~MaterialAssetWriter( );
 
-        void WriteMaterialAsset( const MaterialAsset &MaterialAsset ) const;
+        void Write( const MaterialAsset &materialAsset ) const;
     };
 } // namespace DenOfIz

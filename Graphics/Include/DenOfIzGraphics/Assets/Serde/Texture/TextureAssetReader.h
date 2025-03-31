@@ -31,12 +31,13 @@ namespace DenOfIz
     class DZ_API TextureAssetReader
     {
         BinaryReader *m_reader;
-        TextureAsset  m_SkeletonAsset;
+        TextureAsset  m_textureAsset;
 
     public:
         explicit TextureAssetReader( const TextureAssetReaderDesc &desc );
         ~TextureAssetReader( );
 
-        TextureAsset ReadSkeletonAsset( );
+        TextureAsset Read( );
+        InteropArray<Byte> ReadRaw( const TextureMip& mip );
     };
 } // namespace DenOfIz

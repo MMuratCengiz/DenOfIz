@@ -76,13 +76,13 @@ TEST_F( MaterialAssetSerdeTest, WriteAndReadBack )
 
     {
         MaterialAssetWriter writer( MaterialAssetWriterDesc{ &binaryWriter } );
-        writer.WriteMaterialAsset( sampleAsset );
+        writer.Write( sampleAsset );
     }
 
     BinaryReader        reader( container );
     MaterialAssetReader materialReader( MaterialAssetReaderDesc{ &reader } );
 
-    MaterialAsset readAsset = materialReader.ReadMaterialAsset( );
+    MaterialAsset readAsset = materialReader.Read( );
 
     ASSERT_EQ( readAsset.Magic, MaterialAsset{ }.Magic );
     ASSERT_EQ( readAsset.Version, MaterialAsset::Latest );

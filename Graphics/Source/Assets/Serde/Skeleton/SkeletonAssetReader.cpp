@@ -21,33 +21,33 @@ SkeletonAssetReader::SkeletonAssetReader( const SkeletonAssetReaderDesc &desc ) 
 
 SkeletonAssetReader::~SkeletonAssetReader( ) = default;
 
-SkeletonAsset SkeletonAssetReader::ReadSkeletonAsset( )
+SkeletonAsset SkeletonAssetReader::Read( )
 {
-    m_SkeletonAsset = SkeletonAsset( );
+    m_skeletonAsset = SkeletonAsset( );
 
-    m_SkeletonAsset.Magic = m_reader->ReadUInt64( );
-    if ( m_SkeletonAsset.Magic != SkeletonAsset{ }.Magic )
+    m_skeletonAsset.Magic = m_reader->ReadUInt64( );
+    if ( m_skeletonAsset.Magic != SkeletonAsset{ }.Magic )
     {
         LOG( FATAL ) << "Invalid SkeletonAsset magic number.";
     }
 
-    m_SkeletonAsset.Version = m_reader->ReadUInt32( );
-    if ( m_SkeletonAsset.Version > SkeletonAsset::Latest )
+    m_skeletonAsset.Version = m_reader->ReadUInt32( );
+    if ( m_skeletonAsset.Version > SkeletonAsset::Latest )
     {
         LOG( WARNING ) << "SkeletonAsset version mismatch.";
     }
 
-    m_SkeletonAsset.NumBytes = m_reader->ReadUInt64( );
-    m_SkeletonAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_skeletonAsset.NumBytes = m_reader->ReadUInt64( );
+    m_skeletonAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
 
-    m_SkeletonAsset.Name = m_reader->ReadString( );
+    m_skeletonAsset.Name = m_reader->ReadString( );
 
     const uint32_t numJoints = m_reader->ReadUInt32( );
-    m_SkeletonAsset.Joints.Resize( numJoints );
+    m_skeletonAsset.Joints.Resize( numJoints );
 
     for ( uint32_t i = 0; i < numJoints; ++i )
     {
-        Joint &joint = m_SkeletonAsset.Joints.GetElement( i );
+        Joint &joint = m_skeletonAsset.Joints.GetElement( i );
 
         joint.Name              = m_reader->ReadString( );
         joint.InverseBindMatrix = m_reader->ReadFloat_4x4( );
@@ -65,5 +65,5 @@ SkeletonAsset SkeletonAssetReader::ReadSkeletonAsset( )
         }
     }
 
-    return m_SkeletonAsset;
+    return m_skeletonAsset;
 }

@@ -54,7 +54,7 @@ SkeletonAssetWriter::SkeletonAssetWriter(const SkeletonAssetWriterDesc& desc) : 
 
 SkeletonAssetWriter::~SkeletonAssetWriter() = default;
 
-void SkeletonAssetWriter::WriteSkeletonAsset(const SkeletonAsset& skeletonAsset ) const
+void SkeletonAssetWriter::Write(const SkeletonAsset& skeletonAsset ) const
 {
     m_writer->WriteUInt64(skeletonAsset.Magic);
     m_writer->WriteUInt32(skeletonAsset.Version);

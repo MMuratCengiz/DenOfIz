@@ -68,13 +68,13 @@ TEST_F( SkeletonAssetSerdeTest, WriteAndReadBack )
 
     {
         SkeletonAssetWriter writer( SkeletonAssetWriterDesc{ &binaryWriter } );
-        writer.WriteSkeletonAsset( sampleAsset );
+        writer.Write( sampleAsset );
     }
 
     BinaryReader        reader( container );
     SkeletonAssetReader skelReader( SkeletonAssetReaderDesc{ &reader } );
 
-    SkeletonAsset readAsset = skelReader.ReadSkeletonAsset( );
+    SkeletonAsset readAsset = skelReader.Read( );
 
     ASSERT_EQ( readAsset.Magic, SkeletonAsset{ }.Magic );
     ASSERT_EQ( readAsset.Version, SkeletonAsset::Latest );

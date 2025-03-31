@@ -31,7 +31,7 @@ PhysicsAssetWriter::PhysicsAssetWriter( const PhysicsAssetWriterDesc &desc ) : m
 
 PhysicsAssetWriter::~PhysicsAssetWriter( ) = default;
 
-void PhysicsAssetWriter::WritePhysicsAsset( const PhysicsAsset &physicsAsset ) const
+void PhysicsAssetWriter::Write( const PhysicsAsset &physicsAsset ) const
 {
     m_writer->WriteUInt64( physicsAsset.Magic );
     m_writer->WriteUInt32( physicsAsset.Version );

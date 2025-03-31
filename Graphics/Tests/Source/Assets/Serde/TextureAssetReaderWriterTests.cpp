@@ -16,17 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h>
+#include "gtest/gtest.h"
+
+#include <DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h>
 #include <DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h>
+#include <DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h>
+#include "../../TestComparators.h"
 
 using namespace DenOfIz;
-
-TextureAssetReader::TextureAssetReader( const TextureAssetReaderDesc &desc ) : m_reader( desc.Reader )
-{
-    if ( !m_reader )
-    {
-        LOG( FATAL ) << "BinaryReader cannot be null for TextureAssetReader";
-    }
-}
-
-TextureAssetReader::~TextureAssetReader( ) = default;

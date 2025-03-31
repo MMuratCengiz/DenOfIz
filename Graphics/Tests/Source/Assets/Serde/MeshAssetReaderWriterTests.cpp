@@ -153,7 +153,7 @@ TEST_F( MeshAssetSerdeTest, WriteAndReadBack )
     {
         MeshAssetWriter writer( MeshAssetWriterDesc{ &binaryWriter } );
 
-        writer.WriteMetadata( sampleAsset );
+        writer.Write( sampleAsset );
         for ( const auto &v : quadVertices )
         {
             writer.AddVertex( v );
@@ -184,7 +184,7 @@ TEST_F( MeshAssetSerdeTest, WriteAndReadBack )
     BinaryReader    reader( container );
     MeshAssetReader meshReader( MeshAssetReaderDesc{ &reader } );
 
-    MeshAsset readAsset = meshReader.ReadMetadata( );
+    MeshAsset readAsset = meshReader.Read( );
 
     ASSERT_EQ( readAsset.Magic, MeshAsset{ }.Magic );
     ASSERT_EQ( readAsset.Version, MeshAsset::Latest );

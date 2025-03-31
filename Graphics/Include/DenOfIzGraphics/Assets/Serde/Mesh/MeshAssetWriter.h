@@ -33,7 +33,7 @@ namespace DenOfIz
     {
         BinaryWriter       *m_writer;
         MeshAssetWriterDesc m_desc;
-        MeshAsset           m_meshData;
+        MeshAsset           m_meshAsset;
 
         enum class State
         {
@@ -83,7 +83,7 @@ namespace DenOfIz
         explicit MeshAssetWriter( const MeshAssetWriterDesc &desc );
         ~MeshAssetWriter( );
 
-        void WriteMetadata( const MeshAsset &meshAssetData );
+        void Write( const MeshAsset &meshAssetData );
 
         void AddVertex( const MeshVertex &vertex );
         void AddIndex16( uint16_t index );

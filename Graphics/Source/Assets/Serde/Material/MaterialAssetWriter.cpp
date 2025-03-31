@@ -31,7 +31,7 @@ MaterialAssetWriter::MaterialAssetWriter( const MaterialAssetWriterDesc &desc ) 
 
 MaterialAssetWriter::~MaterialAssetWriter( ) = default;
 
-void MaterialAssetWriter::WriteMaterialAsset( const MaterialAsset &materialAsset ) const
+void MaterialAssetWriter::Write( const MaterialAsset &materialAsset ) const
 {
     m_writer->WriteUInt64( materialAsset.Magic );
     m_writer->WriteUInt32( materialAsset.Version );

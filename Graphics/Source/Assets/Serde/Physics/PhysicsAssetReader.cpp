@@ -31,7 +31,7 @@ PhysicsAssetReader::PhysicsAssetReader( const PhysicsAssetReaderDesc &desc ) : m
 
 PhysicsAssetReader::~PhysicsAssetReader( ) = default;
 
-PhysicsAsset PhysicsAssetReader::ReadPhysicsAsset( )
+PhysicsAsset PhysicsAssetReader::Read( )
 {
     m_physicsAsset       = PhysicsAsset( );
     m_physicsAsset.Magic = m_reader->ReadUInt64( );

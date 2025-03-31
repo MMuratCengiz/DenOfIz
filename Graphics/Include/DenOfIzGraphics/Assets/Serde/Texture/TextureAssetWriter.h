@@ -31,11 +31,16 @@ namespace DenOfIz
     class DZ_API TextureAssetWriter
     {
         BinaryWriter *m_writer;
+        uint64_t      m_dataFieldOffset = 0;
+        uint64_t      m_streamOffset    = 0;
+        uint64_t      m_dataNumBytes    = 0;
 
     public:
         explicit TextureAssetWriter( const TextureAssetWriterDesc &desc );
         ~TextureAssetWriter( );
 
-        void WriteTextureAsset( const TextureAsset &TextureAsset );
+        void Write( const TextureAsset &textureAsset );
+        void AddDataBytes( const InteropArray<Byte> &bytes );
+        void Finalize( ) const;
     };
 } // namespace DenOfIz

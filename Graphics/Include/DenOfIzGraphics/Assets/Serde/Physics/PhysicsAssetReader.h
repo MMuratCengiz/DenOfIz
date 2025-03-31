@@ -36,6 +36,6 @@ namespace DenOfIz
         explicit PhysicsAssetReader( const PhysicsAssetReaderDesc &desc );
         ~PhysicsAssetReader( );
 
-        PhysicsAsset ReadPhysicsAsset( );
+        PhysicsAsset Read( );
     };
 } // namespace DenOfIz

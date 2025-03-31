@@ -96,13 +96,13 @@ TEST_F( PhysicsAssetSerdeTest, WriteAndReadBack )
 
     {
         PhysicsAssetWriter writer( PhysicsAssetWriterDesc{ &binaryWriter } );
-        writer.WritePhysicsAsset( sampleAsset );
+        writer.Write( sampleAsset );
     }
 
     BinaryReader       reader( container );
     PhysicsAssetReader physReader( PhysicsAssetReaderDesc{ &reader } );
 
-    PhysicsAsset readAsset = physReader.ReadPhysicsAsset( );
+    PhysicsAsset readAsset = physReader.Read( );
 
     ASSERT_EQ( readAsset.Magic, PhysicsAsset{ }.Magic );
     ASSERT_EQ( readAsset.Version, PhysicsAsset::Latest );

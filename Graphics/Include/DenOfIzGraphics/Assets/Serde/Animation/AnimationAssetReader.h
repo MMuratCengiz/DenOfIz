@@ -28,17 +28,16 @@ namespace DenOfIz
         BinaryReader *Reader;
     };
 
-    class DZ_API AnimationAssetReader
+    class AnimationAssetReader
     {
         BinaryReader *m_reader;
         AnimationAsset m_animationAsset;
 
-        void ReadAnimationData( AnimationClip &animationClip ) const;
+        void Read( AnimationClip &animationClip ) const;
 
     public:
-        explicit AnimationAssetReader( const AnimationAssetReaderDesc &desc );
-        ~AnimationAssetReader( );
-
-        AnimationAsset Read( );
+        DZ_API explicit AnimationAssetReader( const AnimationAssetReaderDesc &desc );
+        DZ_API ~AnimationAssetReader( );
+        DZ_API AnimationAsset Read( );
     };
 } // namespace DenOfIz
