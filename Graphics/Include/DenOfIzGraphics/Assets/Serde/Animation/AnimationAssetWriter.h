@@ -35,6 +35,6 @@ namespace DenOfIz
         explicit AnimationAssetWriter( const AnimationAssetWriterDesc &desc );
         ~AnimationAssetWriter( );
 
-        void WriteAnimationAsset( const AnimationAsset &animationAsset );
+        void Write( const AnimationAsset &animationAsset ) const;
     };
 } // namespace DenOfIz

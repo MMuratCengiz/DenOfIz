@@ -67,13 +67,12 @@ namespace DenOfIz
     struct DZ_API AnimationAsset : AssetHeader
     {
         static constexpr uint32_t Latest = 1;
-        static constexpr uint64_t Magic  = 0x445A414E494D; // 'DZANIM'
 
         InteropString               Name;
-        AssetUri                   SkeletonRef;
+        AssetUri                    SkeletonRef;
         InteropArray<AnimationClip> Animations;
 
-        AnimationAsset( ) : AssetHeader( Magic, Latest, 0 )
+        AnimationAsset( ) : AssetHeader( 0x445A414E494D /*DZANIM*/, Latest, 0 )
         {
         }
     };

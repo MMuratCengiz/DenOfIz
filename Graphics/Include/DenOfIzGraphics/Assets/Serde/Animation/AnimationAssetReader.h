@@ -39,6 +39,6 @@ namespace DenOfIz
         explicit AnimationAssetReader( const AnimationAssetReaderDesc &desc );
         ~AnimationAssetReader( );
 
-        AnimationAsset ReadMeshData( );
+        AnimationAsset Read( );
     };
 } // namespace DenOfIz

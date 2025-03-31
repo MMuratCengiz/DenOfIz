@@ -17,5 +17,75 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetWriter.h>
+#include <DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h>
 
 using namespace DenOfIz;
+
+AnimationAssetWriter::AnimationAssetWriter( const AnimationAssetWriterDesc &desc ) : m_writer( desc.Writer )
+{
+    if ( !m_writer )
+    {
+        LOG( FATAL ) << "BinaryWriter cannot be null for AnimationAssetWriter";
+    }
+}
+
+AnimationAssetWriter::~AnimationAssetWriter( ) = default;
+
+void AnimationAssetWriter::Write( const AnimationAsset &animationAsset ) const
+{
+    m_writer->WriteUInt64( animationAsset.Magic );
+    m_writer->WriteUInt32( animationAsset.Version );
+    m_writer->WriteUInt64( animationAsset.NumBytes );
+    m_writer->WriteString( animationAsset.Uri.ToString( ) );
+
+    m_writer->WriteString( animationAsset.Name );
+    m_writer->WriteString( animationAsset.SkeletonRef.ToString( ) );
+
+    m_writer->WriteUInt32( animationAsset.Animations.NumElements( ) );
+
+    for ( size_t i = 0; i < animationAsset.Animations.NumElements( ); ++i )
+    {
+        const AnimationClip &clip = animationAsset.Animations.GetElement( i );
+
+        m_writer->WriteString( clip.Name );
+        m_writer->WriteFloat( clip.Duration );
+        m_writer->WriteFloat( static_cast<float>( clip.TicksPerSecond ) );
+
+        m_writer->WriteUInt32( clip.Tracks.NumElements( ) );
+
+        for ( size_t j = 0; j < clip.Tracks.NumElements( ); ++j )
+        {
+            const JointAnimTrack &track = clip.Tracks.GetElement( j );
+            m_writer->WriteString( track.JointName );
+            m_writer->WriteUInt32( track.Keyframes.NumElements( ) );
+
+            for ( size_t k = 0; k < track.Keyframes.NumElements( ); ++k )
+            {
+                const JointKeyframe &keyframe = track.Keyframes.GetElement( k );
+                m_writer->WriteFloat( keyframe.Timestamp );
+                m_writer->WriteFloat_4( keyframe.Pose.Position );
+                m_writer->WriteFloat_4( keyframe.Pose.Rotation );
+                m_writer->WriteFloat_4( keyframe.Pose.Scale );
+            }
+        }
+
+        m_writer->WriteUInt32( clip.MorphTracks.NumElements( ) );
+
+        for ( size_t j = 0; j < clip.MorphTracks.NumElements( ); ++j )
+        {
+            const MorphAnimTrack &track = clip.MorphTracks.GetElement( j );
+            m_writer->WriteString( track.Name );
+
+            m_writer->WriteUInt32( track.Keyframes.NumElements( ) );
+
+            for ( size_t k = 0; k < track.Keyframes.NumElements( ); ++k )
+            {
+                const MorphKeyframe &keyframe = track.Keyframes.GetElement( k );
+                m_writer->WriteFloat( keyframe.Timestamp );
+                m_writer->WriteFloat( keyframe.Weight );
+            }
+        }
+    }
+
+    m_writer->Flush( );
+}
