@@ -274,10 +274,25 @@ void BinaryWriter::WriteFloat_4( const Float_4 &value ) const
 
 void BinaryWriter::WriteFloat_4x4( const Float_4x4 &value ) const
 {
-    for ( const float i : value.M )
-    {
-        WriteFloat( i );
-    }
+    WriteFloat( value._11 );
+    WriteFloat( value._12 );
+    WriteFloat( value._13 );
+    WriteFloat( value._14 );
+
+    WriteFloat( value._21 );
+    WriteFloat( value._22 );
+    WriteFloat( value._23 );
+    WriteFloat( value._24 );
+
+    WriteFloat( value._31 );
+    WriteFloat( value._32 );
+    WriteFloat( value._33 );
+    WriteFloat( value._34 );
+
+    WriteFloat( value._41 );
+    WriteFloat( value._42 );
+    WriteFloat( value._43 );
+    WriteFloat( value._44 );
 }
 
 uint64_t BinaryWriter::Position( ) const

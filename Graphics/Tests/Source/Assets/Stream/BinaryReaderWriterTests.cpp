@@ -79,8 +79,13 @@ TEST( BinarySerdeTest, MathTypes )
     Float_4         vec4 = { 6.0f, 7.0f, 8.0f, 9.0f };
     Float_4x4       mat4;
 
-    for ( int i = 0; i < 16; ++i )
-        mat4.M[ i ] = ( i % 5 == 0 ) ? 1.0f : 0.0f;
+    for ( int i = 0; i < 4; ++i )
+    {
+        for ( int j = 0; j < 4; ++j )
+        {
+            mat4.SetElement( i, j, ( i + 1 ) * ( j + 1 ) );
+        }
+    }
 
     {
         BinaryWriter writer( container );
@@ -105,9 +110,12 @@ TEST( BinarySerdeTest, MathTypes )
     ASSERT_FLOAT_EQ( r_vec4.Y, vec4.Y );
     ASSERT_FLOAT_EQ( r_vec4.Z, vec4.Z );
     ASSERT_FLOAT_EQ( r_vec4.W, vec4.W );
-    for ( int i = 0; i < 16; ++i )
+    for ( int i = 0; i < 4; ++i )
     {
-        ASSERT_FLOAT_EQ( r_mat4.M[ i ], mat4.M[ i ] );
+        for ( int j = 0; j < 4; ++j )
+        {
+            ASSERT_FLOAT_EQ( r_mat4.GetElement( i, j ), mat4.GetElement( i, j ) );
+        }
     }
 }
 

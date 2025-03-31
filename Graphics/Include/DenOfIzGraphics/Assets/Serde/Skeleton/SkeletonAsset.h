@@ -27,9 +27,9 @@ namespace DenOfIz
     struct DZ_API Joint
     {
         InteropString          Name;
-        Float_4x4               InverseBindMatrix;
-        Float_4x4               LocalTransform;
-        Float_4x4               GlobalTransform;
+        Float_4x4              InverseBindMatrix;
+        Float_4x4              LocalTransform;
+        Float_4x4              GlobalTransform;
         uint32_t               Index       = 0;
         int32_t                ParentIndex = 0;
         InteropArray<uint32_t> ChildIndices;
@@ -38,13 +38,12 @@ namespace DenOfIz
     struct DZ_API SkeletonAsset : AssetHeader
     {
         static constexpr uint32_t Latest = 1;
-        static constexpr uint64_t Magic  = 0x445A534B454C; // "DZSKEL"
 
         InteropString       Name;
         InteropArray<Joint> Joints;
 
         // Reference pose can be computed from joint local transforms
-        SkeletonAsset( ) : AssetHeader( Magic, Latest, 0 )
+        SkeletonAsset( ) : AssetHeader( 0x445A534B454C /* DZSKEL */, Latest, 0 )
         {
         }
     };

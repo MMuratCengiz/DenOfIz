@@ -296,10 +296,27 @@ Float_4 BinaryReader::ReadFloat_4( )
 Float_4x4 BinaryReader::ReadFloat_4x4( )
 {
     Float_4x4 result{ };
-    for ( float &i : result.M )
-    {
-        i = ReadFloat( );
-    }
+
+    result._11 = ReadFloat( );
+    result._12 = ReadFloat( );
+    result._13 = ReadFloat( );
+    result._14 = ReadFloat( );
+
+    result._21 = ReadFloat( );
+    result._22 = ReadFloat( );
+    result._23 = ReadFloat( );
+    result._24 = ReadFloat( );
+
+    result._31 = ReadFloat( );
+    result._32 = ReadFloat( );
+    result._33 = ReadFloat( );
+    result._34 = ReadFloat( );
+
+    result._41 = ReadFloat( );
+    result._42 = ReadFloat( );
+    result._43 = ReadFloat( );
+    result._44 = ReadFloat( );
+
     return result;
 }
 

@@ -10,6 +10,7 @@ set(GeneralSources
         Source/Assets/Stream/BinaryReaderWriterTests.cpp
         Source/Assets/Serde/AnimationAssetReaderWriterTests.cpp
         Source/Assets/Serde/MeshAssetReaderWriterTests.cpp
+        Source/Assets/Serde/SkeletonAssetReaderWriterTests.cpp
         Source/BitSetTest.cpp
 
 )

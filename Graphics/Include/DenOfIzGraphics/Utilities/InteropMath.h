@@ -149,15 +149,31 @@ namespace DenOfIz
 
     struct DZ_API Float_4x4
     {
-        float M[ 16 ]{ };
+        float _11 = 1, _12 = 0, _13 = 0, _14 = 0;
+        float _21 = 0, _22 = 1, _23 = 0, _24 = 0;
+        float _31 = 0, _32 = 0, _33 = 1, _34 = 0;
+        float _41 = 0, _42 = 0, _43 = 0, _44 = 1;
 
-        Float_4x4( )
+        float GetElement( const uint32_t major, const uint32_t minor ) const
         {
-            for ( float &i : M )
+            if ( major >= 4 || minor >= 4 )
             {
-                i = 0.0f;
+                return 0.0f;
             }
-            M[ 0 ] = M[ 5 ] = M[ 10 ] = M[ 15 ] = 1.0f;
+
+            const float *base = &_11;
+            return base[ major * 4 + minor ];
+        }
+
+        void SetElement( const uint32_t major, const uint32_t minor, const float value )
+        {
+            if ( major >= 4 || minor >= 4 )
+            {
+                return;
+            }
+
+            float *base               = &_11;
+            base[ major * 4 + minor ] = value;
         }
     };
 

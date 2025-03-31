@@ -36,6 +36,6 @@ namespace DenOfIz
         explicit SkeletonAssetWriter( const SkeletonAssetWriterDesc &desc );
         ~SkeletonAssetWriter( );
 
-        void WriteSkeletonAsset( const SkeletonAsset &SkeletonAsset );
+        void WriteSkeletonAsset( const SkeletonAsset &skeletonAsset ) const;
     };
 } // namespace DenOfIz
