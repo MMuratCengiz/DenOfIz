@@ -42,7 +42,7 @@ namespace DenOfIz
         uint32_t RowPitch;
         uint32_t NumRows;
         uint32_t SlicePitch;
-        uint32_t DataOffset;
+        uint32_t DataOffset; // Offset starting for the beginning of the stream
     };
 
     struct DZ_API TextureAsset : AssetHeader
@@ -70,9 +70,6 @@ namespace DenOfIz
 
         InteropArray<TextureMip> Mips;
         AssetDataStream          Data;
-
-        bool IsSRGB       = false;
-        bool IsCompressed = false;
 
         TextureAsset( ) : AssetHeader( 0x445A544558 /* 'DZTEX' */, Latest, 0 )
         {

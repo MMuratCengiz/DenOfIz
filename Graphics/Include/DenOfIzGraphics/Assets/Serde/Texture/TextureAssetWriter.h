@@ -28,19 +28,30 @@ namespace DenOfIz
         BinaryWriter *Writer;
     };
 
-    class DZ_API TextureAssetWriter
+    class TextureAssetWriter
     {
-        BinaryWriter *m_writer;
-        uint64_t      m_dataFieldOffset = 0;
-        uint64_t      m_streamOffset    = 0;
-        uint64_t      m_dataNumBytes    = 0;
+        BinaryWriter          *m_writer;
+        TextureAssetWriterDesc m_desc;
+        TextureAsset           m_textureAsset;
+        uint64_t               m_assetDataStreamPosition = 0;
+        std::vector<uint64_t>  m_textureMipPositions;
+
+        uint64_t m_streamStartLocation = 0;
+        uint32_t m_lastMipIndex        = 0;
+        uint32_t m_lastArrayIndex      = 0;
+        bool     m_isFirstMip          = true;
+
+        void WriteHeader( uint64_t totalNumBytes ) const;
+        void WriteMipInfo( const TextureMip &mip ) const;
+        void ValidateMipRange( uint32_t mipIndex, uint32_t arrayLayer );
 
     public:
-        explicit TextureAssetWriter( const TextureAssetWriterDesc &desc );
-        ~TextureAssetWriter( );
+        DZ_API explicit TextureAssetWriter( const TextureAssetWriterDesc &desc );
+        DZ_API ~TextureAssetWriter( );
 
-        void Write( const TextureAsset &textureAsset );
-        void AddDataBytes( const InteropArray<Byte> &bytes );
-        void Finalize( ) const;
+        DZ_API void Write( const TextureAsset &textureAsset );
+        // Stream write bytes to a specific mip & array level, could be called multiple times for the same mip & array level
+        DZ_API void AddPixelData( const InteropArray<Byte> &bytes, uint32_t mipIndex = 0, uint32_t arrayLayer = 0 );
+        DZ_API void Finalize( ) const;
     };
 } // namespace DenOfIz

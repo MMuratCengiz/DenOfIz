@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-StagingBuffer::StagingBuffer( ILogicalDevice *device, uint64_t numBytes )
+StagingBuffer::StagingBuffer( ILogicalDevice *device, const uint64_t numBytes )
 {
     BufferDesc desc{ };
     desc.Usages.Set( ResourceUsage::CopySrc );
@@ -29,20 +29,20 @@ StagingBuffer::StagingBuffer( ILogicalDevice *device, uint64_t numBytes )
     m_buffer        = std::unique_ptr<IBufferResource>( device->CreateBufferResource( desc ) );
     m_currentOffset = 0;
     m_totalNumBytes = numBytes;
-    m_lastHandle    = 0;
+    m_lastHandle    = { };
 }
 
-bool StagingBuffer::CanFit( uint64_t size ) const
+bool StagingBuffer::CanFit( const uint64_t size ) const
 {
-    return ( m_currentOffset + size ) <= m_totalNumBytes;
+    return m_currentOffset + size <= m_totalNumBytes;
 }
 
-void *StagingBuffer::Map( )
+void *StagingBuffer::Map( ) const
 {
     return m_buffer->MapMemory( );
 }
 
-void StagingBuffer::Unmap( )
+void StagingBuffer::Unmap( ) const
 {
     m_buffer->UnmapMemory( );
 }
@@ -50,7 +50,7 @@ void StagingBuffer::Unmap( )
 void StagingBuffer::Reset( )
 {
     m_currentOffset = 0;
-    m_lastHandle    = 0;
+    m_lastHandle    = { };
 }
 
 IBufferResource *StagingBuffer::GetBuffer( ) const
@@ -68,7 +68,7 @@ UpdateHandle StagingBuffer::GetLastHandle( ) const
     return m_lastHandle;
 }
 
-void StagingBuffer::Advance( uint64_t size, UpdateHandle handle )
+void StagingBuffer::Advance( const uint64_t size, const UpdateHandle handle )
 {
     m_currentOffset += size;
     m_lastHandle = handle;

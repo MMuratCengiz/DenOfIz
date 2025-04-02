@@ -21,6 +21,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
 #include "TextureAsset.h"
 
+#include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
+#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
+
 namespace DenOfIz
 {
     struct DZ_API TextureAssetReaderDesc
@@ -28,16 +31,26 @@ namespace DenOfIz
         BinaryReader *Reader;
     };
 
-    class DZ_API TextureAssetReader
+    struct DZ_API LoadIntoGpuTextureDesc
+    {
+        ICommandList     *CommandList;
+        IBufferResource  *StagingBuffer; // Should be large enough to hold all mip layers
+        ITextureResource *Texture;
+    };
+
+    class TextureAssetReader
     {
         BinaryReader *m_reader;
         TextureAsset  m_textureAsset;
 
-    public:
-        explicit TextureAssetReader( const TextureAssetReaderDesc &desc );
-        ~TextureAssetReader( );
+        TextureMip FindMip( const uint32_t mipLevel, const uint32_t arrayLayer );
 
-        TextureAsset Read( );
-        InteropArray<Byte> ReadRaw( const TextureMip& mip );
+    public:
+        DZ_API explicit TextureAssetReader( const TextureAssetReaderDesc &desc );
+        DZ_API ~TextureAssetReader( );
+
+        DZ_API TextureAsset Read( );
+        DZ_API void         LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc );
+        DZ_API InteropArray<Byte> ReadRaw( const uint32_t mipLevel = 0, const uint32_t arrayLayer = 0 );
     };
 } // namespace DenOfIz

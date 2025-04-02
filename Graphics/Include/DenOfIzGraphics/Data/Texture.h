@@ -48,10 +48,10 @@ namespace DenOfIz
     typedef std::function<void( TextureMip mipData )> MipStreamCallback;
     class Texture
     {
-        std::string          m_path;
+        std::string             m_path;
         std::vector<TextureMip> m_mipData;
-        dds::Header          m_ddsHeader{ };
-        Byte                *m_contentData{ };
+        dds::Header             m_ddsHeader{ };
+        Byte                   *m_contentData{ };
 
     public:
         uint32_t          Width{ };
@@ -68,7 +68,7 @@ namespace DenOfIz
         TextureDimension  Dimension = TextureDimension::Undefined;
         TextureExtension  Extension = TextureExtension::DDS;
         std::vector<Byte> Data{ };
-        explicit          Texture( const std::string &path );
+        explicit Texture( const std::string &path );
 
         void StreamMipData( const MipStreamCallback &callback ) const;
 

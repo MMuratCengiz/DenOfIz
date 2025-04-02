@@ -26,7 +26,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    using UpdateHandle = uint64_t;
+    struct DZ_API UpdateHandle
+    {
+        uint64_t Value;
+    };
 
     struct DZ_API UpdateSourceDataDesc
     {
@@ -104,8 +107,8 @@ namespace DenOfIz
         StagingBuffer( ILogicalDevice *device, uint64_t numBytes );
         ~StagingBuffer( ) = default;
         bool             CanFit( uint64_t size ) const;
-        void            *Map( );
-        void             Unmap( );
+        void            *Map( ) const;
+        void             Unmap( ) const;
         void             Reset( );
         IBufferResource *GetBuffer( ) const;
         uint64_t         GetOffset( ) const;
@@ -132,27 +135,26 @@ namespace DenOfIz
         std::mutex                  m_operationMutex;
 
     public:
-        explicit GpuResourceLoader( const GpuResourceLoaderDesc &desc );
-        virtual ~GpuResourceLoader( ) = default;
+        DZ_API explicit GpuResourceLoader( const GpuResourceLoaderDesc &desc );
+        DZ_API ~GpuResourceLoader( ) = default;
 
-        virtual IBufferResource  *LoadResource( const BufferLoadDesc *BufferDesc, UpdateHandle *Handle = nullptr );
-        virtual ITextureResource *LoadResource( const TextureLoadDesc *TextureDesc, UpdateHandle *Handle = nullptr );
+        DZ_API IBufferResource  *LoadResource( const BufferLoadDesc *BufferDesc, UpdateHandle *Handle = nullptr );
+        DZ_API ITextureResource *LoadResource( const TextureLoadDesc *TextureDesc, UpdateHandle *Handle = nullptr );
 
-        virtual void               QueueResourceUpdate( const BufferUpdateDesc *UpdateDesc, UpdateHandle *Handle = nullptr );
-        virtual void               QueueResourceUpdate( const TextureUpdateDesc *UpdateDesc, UpdateHandle *Handle = nullptr );
-        virtual FlushUpdatesResult FlushResourceUpdates( const FlushUpdatesDesc *Desc );
+        DZ_API void               QueueResourceUpdate( const BufferUpdateDesc *UpdateDesc, UpdateHandle *Handle = nullptr );
+        DZ_API void               QueueResourceUpdate( const TextureUpdateDesc *UpdateDesc, UpdateHandle *Handle = nullptr );
+        DZ_API FlushUpdatesResult FlushResourceUpdates( const FlushUpdatesDesc *Desc );
 
-        virtual bool IsUpdateComplete( const UpdateHandle *Handle );
-        virtual void WaitForUpdate( const UpdateHandle *Handle );
-        virtual int  PendingUpdates( ) const;
-        virtual void WaitForAllUpdates( );
+        DZ_API bool IsUpdateComplete( const UpdateHandle *Handle );
+        DZ_API void WaitForUpdate( const UpdateHandle *Handle );
+        DZ_API int  PendingUpdates( ) const;
+        DZ_API void WaitForAllUpdates( );
+        DZ_API void WaitForCopyQueue( );
 
-        virtual void WaitForCopyQueue( );
-
-        virtual UpdateHandle GetLastCompletedHandle( ) const;
-        virtual UpdateHandle GetLastSubmittedHandle( ) const;
-        virtual bool         IsHandleSubmitted( const UpdateHandle *Handle ) const;
-        virtual void         WaitForHandleSubmission( const UpdateHandle *Handle );
-        virtual ISemaphore  *GetLastSubmittedSemaphore( uint32_t NodeIndex ) const;
+        DZ_API UpdateHandle GetLastCompletedHandle( ) const;
+        DZ_API UpdateHandle GetLastSubmittedHandle( ) const;
+        DZ_API bool         IsHandleSubmitted( const UpdateHandle *Handle ) const;
+        DZ_API void         WaitForHandleSubmission( const UpdateHandle *Handle );
+        DZ_API ISemaphore  *GetLastSubmittedSemaphore( uint32_t NodeIndex ) const;
     };
 } // namespace DenOfIz
