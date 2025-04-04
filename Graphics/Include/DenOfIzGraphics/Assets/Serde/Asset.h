@@ -35,6 +35,7 @@ namespace DenOfIz
         static AssetUri             Parse( const InteropString &uri );
         static AssetUri             Create( const InteropString &path );
         [[nodiscard]] InteropString ToString( ) const;
+        [[nodiscard]] bool          Equals( const AssetUri &other ) const;
     };
 
     struct DZ_API AssetHeader

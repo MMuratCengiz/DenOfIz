@@ -85,7 +85,7 @@ namespace DenOfIz
         void WriteEmptyHeader( ) const;
 
     public:
-        DZ_API Bundle( const BundleDesc &desc );
+        DZ_API explicit Bundle( const BundleDesc &desc );
         DZ_API ~Bundle( );
 
         BinaryReader      *OpenReader( const AssetUri &assetUri );

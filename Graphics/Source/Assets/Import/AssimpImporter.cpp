@@ -29,16 +29,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <limits>
 #include <ranges>
 
-#ifndef ASSIMP_USE_HUNTER
-#ifdef _WIN32
-#ifdef _DEBUG
-#pragma comment( lib, "assimp-vc143-mtd.lib" )
-#else
-#pragma comment( lib, "assimp-vc143-mt.lib" )
-#endif
-#endif
-#endif
-
 using namespace DenOfIz;
 
 AssimpImporter::AssimpImporter( AssimpImporterDesc desc ) : m_desc( std::move( desc ) )
@@ -125,13 +115,17 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
         return context.Result;
     }
 
-    if ( !FileIO::CreateDirectories( context.TargetDirectory ) )
+    if ( !FileIO::FileExists( context.TargetDirectory ) )
     {
-        context.Result.ResultCode   = ImporterResultCode::WriteFailed;
-        context.Result.ErrorMessage = "Failed to create target directory: ";
-        context.Result.ErrorMessage.Append( context.TargetDirectory.Get( ) );
-        LOG( ERROR ) << context.Result.ErrorMessage.Get( );
-        return context.Result;
+        LOG( INFO ) << "Target directory does not exist, attempting to create: " << context.TargetDirectory.Get( );
+        if ( !FileIO::CreateDirectories( context.TargetDirectory ) )
+        {
+            context.Result.ResultCode   = ImporterResultCode::WriteFailed;
+            context.Result.ErrorMessage = "Failed to create target directory: ";
+            context.Result.ErrorMessage.Append( context.TargetDirectory.Get( ) );
+            LOG( ERROR ) << context.Result.ErrorMessage.Get( );
+            return context.Result;
+        }
     }
 
     Assimp::Importer importer;
@@ -510,7 +504,9 @@ ImporterResultCode AssimpImporter::ProcessMesh( ImportContext &context, const ai
                 {
                     vertex.UVs.GetElement( uvChan ) = ConvertVector2( mesh->mTextureCoords[ uvChan ][ i ] );
                     if ( context.Options.FlipUVs )
+                    {
                         vertex.UVs.GetElement( uvChan ).Y = 1.0f - vertex.UVs.GetElement( uvChan ).Y;
+                    }
                 }
             }
         }
@@ -876,23 +872,38 @@ void AssimpImporter::GenerateMeshLODs( const ImportContext &context, MeshAssetWr
 
 void AssimpImporter::ConfigureAssimpImportFlags( const AssimpImportOptions &options, unsigned int &flags, Assimp::Importer &importer )
 {
-    flags = aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
+    flags = 0;
     if ( options.TriangulateMeshes )
     {
         flags |= aiProcess_Triangulate;
-    }
-    else
-    {
-        flags &= ~aiProcess_Triangulate;
     }
     if ( options.JoinIdenticalVertices )
     {
         flags |= aiProcess_JoinIdenticalVertices;
     }
-    else
+    if ( options.CalculateTangentSpace )
     {
-        flags &= ~aiProcess_JoinIdenticalVertices;
+        flags |= aiProcess_CalcTangentSpace;
     }
+    if ( options.LimitBoneWeights )
+    {
+        flags |= aiProcess_LimitBoneWeights;
+        importer.SetPropertyInteger( AI_CONFIG_PP_LBW_MAX_WEIGHTS, options.MaxBoneWeightsPerVertex );
+    }
+    if ( options.ConvertToRightHanded )
+    {
+        flags |= aiProcess_MakeLeftHanded | aiProcess_FlipWindingOrder | aiProcess_FlipUVs;
+    }
+    else if ( options.FlipUVs )
+    {
+        flags |= aiProcess_FlipUVs;
+    }
+    if ( options.RemoveRedundantMaterials )
+    {
+        flags |= aiProcess_RemoveRedundantMaterials;
+    }
+    flags |= aiProcess_ImproveCacheLocality;
+    flags |= aiProcess_SortByPType;
     if ( options.GenerateNormals )
     {
         if ( options.SmoothNormals )
@@ -905,65 +916,39 @@ void AssimpImporter::ConfigureAssimpImportFlags( const AssimpImportOptions &opti
             flags |= aiProcess_GenNormals;
         }
     }
-    else
-    {
-        flags &= ~( aiProcess_GenNormals | aiProcess_GenSmoothNormals );
-    }
-    if ( options.CalculateTangentSpace )
-    {
-        flags |= aiProcess_CalcTangentSpace;
-    }
-    else
-    {
-        flags &= ~aiProcess_CalcTangentSpace;
-    }
-    if ( options.LimitBoneWeights )
-    {
-        flags |= aiProcess_LimitBoneWeights;
-        importer.SetPropertyInteger( AI_CONFIG_PP_LBW_MAX_WEIGHTS, options.MaxBoneWeightsPerVertex );
-    }
-    else
-    {
-        flags &= ~aiProcess_LimitBoneWeights;
-    }
-    if ( options.ConvertToRightHanded )
-    {
-        flags |= aiProcess_MakeLeftHanded | aiProcess_FlipWindingOrder | aiProcess_FlipUVs;
-    }
     if ( options.PreTransformVertices )
     {
         flags |= aiProcess_PreTransformVertices;
     }
     else
     {
-        flags &= ~aiProcess_PreTransformVertices;
+        if ( options.OptimizeGraph )
+        {
+            flags |= aiProcess_OptimizeGraph;
+        }
     }
-    if ( options.RemoveRedundantMaterials )
+    if ( options.OptimizeMeshes )
     {
-        flags |= aiProcess_RemoveRedundantMaterials;
-    }
-    else
-    {
-        flags &= ~aiProcess_RemoveRedundantMaterials;
-    }
-    if ( !options.OptimizeGraph || options.PreTransformVertices )
-    {
-        flags &= ~aiProcess_OptimizeGraph;
-    }
-    if ( !options.OptimizeMeshes )
-    {
-        flags &= ~aiProcess_OptimizeMeshes;
+        flags |= aiProcess_OptimizeMeshes;
     }
     if ( options.MergeMeshes )
     {
-        flags |= aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType;
+        flags |= aiProcess_OptimizeMeshes | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType;
+        if ( flags & aiProcess_PreTransformVertices )
+        {
+            LOG( WARNING ) << "MergeMeshes and PreTransformVertices may conflict. Disabling PreTransformVertices.";
+            flags &= ~aiProcess_PreTransformVertices;
+        }
+        if ( !( flags & aiProcess_PreTransformVertices ) )
+        {
+            flags |= aiProcess_OptimizeGraph;
+        }
     }
     if ( options.DropNormals )
     {
         flags |= aiProcess_DropNormals;
+        flags &= ~( aiProcess_GenNormals | aiProcess_GenSmoothNormals );
     }
-    flags |= aiProcess_ImproveCacheLocality;
-    flags |= aiProcess_SortByPType;
 }
 
 ImporterResultCode AssimpImporter::WriteMaterialAsset( ImportContext &context, const MaterialAsset &materialAsset, AssetUri &outAssetUri )

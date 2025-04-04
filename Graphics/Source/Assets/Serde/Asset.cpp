@@ -22,7 +22,7 @@ using namespace DenOfIz;
 
 AssetUri AssetUri::Parse( const InteropString &uri )
 {
-    AssetUri result{};
+    AssetUri result{ };
 
     const std::string str      = uri.Get( );
     const std::string protocol = result.Scheme.Get( );
@@ -45,6 +45,11 @@ InteropString AssetUri::ToString( ) const
     result += "://";
     result += Path.Get( );
     return { result.c_str( ) };
+}
+
+bool AssetUri::Equals( const AssetUri &other ) const
+{
+    return ToString( ).Equals( other.ToString( ) );
 }
 
 AssetUri AssetUri::Create( const InteropString &path )

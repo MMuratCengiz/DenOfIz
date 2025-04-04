@@ -115,11 +115,6 @@ namespace DenOfIz
         ImporterResultCode WriteMaterialAsset( ImportContext &context, const MaterialAsset &materialAsset, AssetUri &outAssetUri );
         static void CalculateMeshBounds( const aiMesh *mesh, float scaleFactor, Float_3 &outMin, Float_3 &outMax );
 
-        ImporterResultCode WriteMaterialAsset( ImportContext &context, const MaterialAsset &materialAsset, AssetUri &outAssetUri ) const;
-        ImporterResultCode WriteTextureAsset( ImportContext &context, const aiTexture *texture, const InteropString &semanticName, AssetUri &outAssetUri ) const;
-        ImporterResultCode WriteSkeletonAsset( ImportContext &context, const SkeletonAsset &skeletonAsset ) const;
-        ImporterResultCode WriteAnimationAsset( ImportContext &context, const AnimationAsset &animationAsset, AssetUri &outAssetUri ) const;
-
         ImporterResultCode WriteTextureAsset( ImportContext &context, const aiTexture *texture, const InteropString &semanticName, AssetUri &outAssetUri );
         ImporterResultCode WriteSkeletonAsset( ImportContext &context, const SkeletonAsset &skeletonAsset );
         ImporterResultCode WriteAnimationAsset( ImportContext &context, const AnimationAsset &animationAsset, AssetUri &outAssetUri );
