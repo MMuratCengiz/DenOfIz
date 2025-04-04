@@ -24,45 +24,58 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct DZ_API PositionKey
+    {
+        float   Timestamp; // Time in seconds
+        Float_3 Value;
+    };
+    template class DZ_API InteropArray<PositionKey>;
+
+    struct DZ_API RotationKey
+    {
+        float   Timestamp; // Time in seconds
+        Float_4 Value;     // Quaternion
+    };
+    template class DZ_API InteropArray<RotationKey>;
+
+    struct DZ_API ScaleKey
+    {
+        float   Timestamp;
+        Float_3 Value;
+    };
+    template class DZ_API InteropArray<ScaleKey>;
+
     struct DZ_API MorphKeyframe
     {
         float Timestamp;
         float Weight;
     };
+    template class DZ_API InteropArray<MorphKeyframe>;
 
     struct DZ_API MorphAnimTrack
     {
         InteropString               Name;
         InteropArray<MorphKeyframe> Keyframes;
     };
-
-    struct DZ_API JointPose
-    {
-        Float_4 Position;
-        Float_4 Rotation;
-        Float_4 Scale;
-    };
-
-    struct DZ_API JointKeyframe
-    {
-        float     Timestamp;
-        JointPose Pose;
-    };
+    template class DZ_API InteropArray<MorphAnimTrack>;
 
     struct DZ_API JointAnimTrack
     {
-        InteropString               JointName;
-        InteropArray<JointKeyframe> Keyframes;
+        InteropString             JointName;
+        InteropArray<PositionKey> PositionKeys;
+        InteropArray<RotationKey> RotationKeys;
+        InteropArray<ScaleKey>    ScaleKeys;
     };
+    template class DZ_API InteropArray<JointAnimTrack>;
 
     struct DZ_API AnimationClip
     {
         InteropString                Name;
-        float                        Duration       = 0;
-        double                       TicksPerSecond = 0;
+        float                        Duration{ };
         InteropArray<JointAnimTrack> Tracks;
         InteropArray<MorphAnimTrack> MorphTracks;
     };
+    template class DZ_API InteropArray<AnimationClip>;
 
     struct DZ_API AnimationAsset : AssetHeader
     {
@@ -76,5 +89,4 @@ namespace DenOfIz
         {
         }
     };
-
 } // namespace DenOfIz

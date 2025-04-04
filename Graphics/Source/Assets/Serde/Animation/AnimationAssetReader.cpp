@@ -21,91 +21,99 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-AnimationAssetReader::AnimationAssetReader( const AnimationAssetReaderDesc &desc ) : m_reader( desc.Reader )
+AnimationAssetReader::AnimationAssetReader(const AnimationAssetReaderDesc& desc) : m_reader(desc.Reader)
 {
-    if ( !m_reader )
+    if (!m_reader)
     {
-        LOG( FATAL ) << "BinaryReader cannot be null for AnimationAssetReader";
+        LOG(FATAL) << "BinaryReader cannot be null for AnimationAssetReader";
     }
 }
 
-AnimationAssetReader::~AnimationAssetReader( ) = default;
+AnimationAssetReader::~AnimationAssetReader() = default;
 
-void AnimationAssetReader::Read( AnimationClip &animationClip ) const
+void AnimationAssetReader::ReadAnimationClip(AnimationClip& animationClip) const
 {
-    animationClip.Name           = m_reader->ReadString( );
-    animationClip.Duration       = m_reader->ReadFloat( );
-    animationClip.TicksPerSecond = static_cast<double>( m_reader->ReadFloat( ) );
+    animationClip.Name = m_reader->ReadString();
+    animationClip.Duration = m_reader->ReadFloat();
 
-    const uint32_t numJointTracks = m_reader->ReadUInt32( );
-    animationClip.Tracks.Resize( numJointTracks );
-
-    for ( uint32_t i = 0; i < numJointTracks; ++i )
+    const uint32_t numJointTracks = m_reader->ReadUInt32();
+    animationClip.Tracks.Resize(numJointTracks);
+    for (uint32_t i = 0; i < numJointTracks; ++i)
     {
-        JointAnimTrack &track = animationClip.Tracks.GetElement( i );
-        track.JointName       = m_reader->ReadString( );
+        JointAnimTrack& track = animationClip.Tracks.GetElement(i);
+        track.JointName = m_reader->ReadString();
 
-        const uint32_t numKeyframes = m_reader->ReadUInt32( );
-        track.Keyframes.Resize( numKeyframes );
-
-        for ( uint32_t j = 0; j < numKeyframes; ++j )
+        const uint32_t numPosKeys = m_reader->ReadUInt32();
+        track.PositionKeys.Resize(numPosKeys);
+        for (uint32_t j = 0; j < numPosKeys; ++j)
         {
-            JointKeyframe &keyframe = track.Keyframes.GetElement( j );
-            keyframe.Timestamp      = m_reader->ReadFloat( );
-            keyframe.Pose.Position  = m_reader->ReadFloat_4( );
-            keyframe.Pose.Rotation  = m_reader->ReadFloat_4( );
-            keyframe.Pose.Scale     = m_reader->ReadFloat_4( );
+            PositionKey& key = track.PositionKeys.GetElement(j);
+            key.Timestamp = m_reader->ReadFloat(); // Already in seconds
+            key.Value = m_reader->ReadFloat_3();
+        }
+
+        const uint32_t numRotKeys = m_reader->ReadUInt32();
+        track.RotationKeys.Resize(numRotKeys);
+        for (uint32_t j = 0; j < numRotKeys; ++j)
+        {
+            RotationKey& key = track.RotationKeys.GetElement(j);
+            key.Timestamp = m_reader->ReadFloat(); // Already in seconds
+            key.Value = m_reader->ReadFloat_4(); // Quaternion
+        }
+
+        const uint32_t numScaleKeys = m_reader->ReadUInt32();
+        track.ScaleKeys.Resize(numScaleKeys);
+        for (uint32_t j = 0; j < numScaleKeys; ++j)
+        {
+            ScaleKey& key = track.ScaleKeys.GetElement(j);
+            key.Timestamp = m_reader->ReadFloat(); // Already in seconds
+            key.Value = m_reader->ReadFloat_3();
         }
     }
 
-    const uint32_t numMorphTracks = m_reader->ReadUInt32( );
-    animationClip.MorphTracks.Resize( numMorphTracks );
-
-    for ( uint32_t i = 0; i < numMorphTracks; ++i )
+    const uint32_t numMorphTracks = m_reader->ReadUInt32();
+    animationClip.MorphTracks.Resize(numMorphTracks);
+    for (uint32_t i = 0; i < numMorphTracks; ++i)
     {
-        MorphAnimTrack &track = animationClip.MorphTracks.GetElement( i );
-        track.Name            = m_reader->ReadString( );
+        MorphAnimTrack& track = animationClip.MorphTracks.GetElement(i);
+        track.Name = m_reader->ReadString();
 
-        const uint32_t numKeyframes = m_reader->ReadUInt32( );
-        track.Keyframes.Resize( numKeyframes );
-
-        for ( uint32_t j = 0; j < numKeyframes; ++j )
+        const uint32_t numKeyframes = m_reader->ReadUInt32();
+        track.Keyframes.Resize(numKeyframes);
+        for (uint32_t j = 0; j < numKeyframes; ++j)
         {
-            MorphKeyframe &keyframe = track.Keyframes.GetElement( j );
-            keyframe.Timestamp      = m_reader->ReadFloat( );
-            keyframe.Weight         = m_reader->ReadFloat( );
+            MorphKeyframe& keyframe = track.Keyframes.GetElement(j);
+            keyframe.Timestamp = m_reader->ReadFloat(); // Already in seconds
+            keyframe.Weight = m_reader->ReadFloat();
         }
     }
 }
 
-AnimationAsset AnimationAssetReader::Read( )
+AnimationAsset AnimationAssetReader::Read()
 {
-    m_animationAsset       = { };
-    m_animationAsset.Magic = m_reader->ReadUInt64( );
-    if ( m_animationAsset.Magic != AnimationAsset{ }.Magic )
+    m_animationAsset = {};
+    m_animationAsset.Magic = m_reader->ReadUInt64();
+    if (m_animationAsset.Magic != AnimationAsset{}.Magic)
     {
-        LOG( FATAL ) << "Invalid AnimationAsset magic number.";
+        LOG(FATAL) << "Invalid AnimationAsset magic number.";
     }
 
-    m_animationAsset.Version = m_reader->ReadUInt32( );
-    if ( m_animationAsset.Version > AnimationAsset::Latest )
+    m_animationAsset.Version = m_reader->ReadUInt32();
+    if (m_animationAsset.Version > AnimationAsset::Latest)
     {
-        LOG( WARNING ) << "AnimationAsset version mismatch.";
+        LOG(WARNING) << "AnimationAsset version mismatch (File: " << m_animationAsset.Version << ", Expected: " << AnimationAsset::Latest << "). Attempting to read...";
     }
 
-    m_animationAsset.NumBytes = m_reader->ReadUInt64( );
-    m_animationAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
+    m_animationAsset.NumBytes = m_reader->ReadUInt64();
+    m_animationAsset.Uri = AssetUri::Parse(m_reader->ReadString());
+    m_animationAsset.Name = m_reader->ReadString();
+    m_animationAsset.SkeletonRef = AssetUri::Parse(m_reader->ReadString());
 
-    m_animationAsset.Name        = m_reader->ReadString( );
-    m_animationAsset.SkeletonRef = AssetUri::Parse( m_reader->ReadString( ) );
-
-    const uint32_t numAnimations = m_reader->ReadUInt32( );
-    m_animationAsset.Animations.Resize( numAnimations );
-
-    for ( uint32_t i = 0; i < numAnimations; ++i )
+    const uint32_t numAnimations = m_reader->ReadUInt32();
+    m_animationAsset.Animations.Resize(numAnimations);
+    for (uint32_t i = 0; i < numAnimations; ++i)
     {
-        AnimationClip &clip = m_animationAsset.Animations.GetElement( i );
-        Read( clip );
+        ReadAnimationClip(m_animationAsset.Animations.GetElement(i));
     }
 
     return m_animationAsset;

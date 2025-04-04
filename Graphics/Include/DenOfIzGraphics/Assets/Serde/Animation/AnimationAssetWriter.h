@@ -30,11 +30,13 @@ namespace DenOfIz
 
     class DZ_API AnimationAssetWriter
     {
-        BinaryWriter         *m_writer;
+        BinaryWriter *m_writer;
+        uint64_t      m_streamStartOffset;
+
     public:
         explicit AnimationAssetWriter( const AnimationAssetWriterDesc &desc );
         ~AnimationAssetWriter( );
 
-        void Write( const AnimationAsset &animationAsset ) const;
+        void Write( const AnimationAsset &animationAsset );
     };
 } // namespace DenOfIz

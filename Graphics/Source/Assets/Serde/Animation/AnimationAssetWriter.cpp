@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-AnimationAssetWriter::AnimationAssetWriter( const AnimationAssetWriterDesc &desc ) : m_writer( desc.Writer )
+AnimationAssetWriter::AnimationAssetWriter( const AnimationAssetWriterDesc &desc ) : m_writer( desc.Writer ), m_streamStartOffset( 0 )
 {
     if ( !m_writer )
     {
@@ -31,8 +31,9 @@ AnimationAssetWriter::AnimationAssetWriter( const AnimationAssetWriterDesc &desc
 
 AnimationAssetWriter::~AnimationAssetWriter( ) = default;
 
-void AnimationAssetWriter::Write( const AnimationAsset &animationAsset ) const
+void AnimationAssetWriter::Write( const AnimationAsset &animationAsset )
 {
+    m_streamStartOffset = m_writer->Position( );
     m_writer->WriteUInt64( animationAsset.Magic );
     m_writer->WriteUInt32( animationAsset.Version );
     m_writer->WriteUInt64( animationAsset.NumBytes );
@@ -42,42 +43,51 @@ void AnimationAssetWriter::Write( const AnimationAsset &animationAsset ) const
     m_writer->WriteString( animationAsset.SkeletonRef.ToString( ) );
 
     m_writer->WriteUInt32( animationAsset.Animations.NumElements( ) );
-
     for ( size_t i = 0; i < animationAsset.Animations.NumElements( ); ++i )
     {
         const AnimationClip &clip = animationAsset.Animations.GetElement( i );
 
         m_writer->WriteString( clip.Name );
         m_writer->WriteFloat( clip.Duration );
-        m_writer->WriteFloat( static_cast<float>( clip.TicksPerSecond ) );
 
         m_writer->WriteUInt32( clip.Tracks.NumElements( ) );
-
         for ( size_t j = 0; j < clip.Tracks.NumElements( ); ++j )
         {
             const JointAnimTrack &track = clip.Tracks.GetElement( j );
             m_writer->WriteString( track.JointName );
-            m_writer->WriteUInt32( track.Keyframes.NumElements( ) );
 
-            for ( size_t k = 0; k < track.Keyframes.NumElements( ); ++k )
+            m_writer->WriteUInt32( track.PositionKeys.NumElements( ) );
+            for ( size_t k = 0; k < track.PositionKeys.NumElements( ); ++k )
             {
-                const JointKeyframe &keyframe = track.Keyframes.GetElement( k );
-                m_writer->WriteFloat( keyframe.Timestamp );
-                m_writer->WriteFloat_4( keyframe.Pose.Position );
-                m_writer->WriteFloat_4( keyframe.Pose.Rotation );
-                m_writer->WriteFloat_4( keyframe.Pose.Scale );
+                const PositionKey &key = track.PositionKeys.GetElement( k );
+                m_writer->WriteFloat( key.Timestamp );
+                m_writer->WriteFloat_3( key.Value );
+            }
+
+            m_writer->WriteUInt32( track.RotationKeys.NumElements( ) );
+            for ( size_t k = 0; k < track.RotationKeys.NumElements( ); ++k )
+            {
+                const RotationKey &key = track.RotationKeys.GetElement( k );
+                m_writer->WriteFloat( key.Timestamp );
+                m_writer->WriteFloat_4( key.Value );
+            }
+
+            m_writer->WriteUInt32( track.ScaleKeys.NumElements( ) );
+            for ( size_t k = 0; k < track.ScaleKeys.NumElements( ); ++k )
+            {
+                const ScaleKey &key = track.ScaleKeys.GetElement( k );
+                m_writer->WriteFloat( key.Timestamp );
+                m_writer->WriteFloat_3( key.Value );
             }
         }
 
         m_writer->WriteUInt32( clip.MorphTracks.NumElements( ) );
-
         for ( size_t j = 0; j < clip.MorphTracks.NumElements( ); ++j )
         {
             const MorphAnimTrack &track = clip.MorphTracks.GetElement( j );
             m_writer->WriteString( track.Name );
 
             m_writer->WriteUInt32( track.Keyframes.NumElements( ) );
-
             for ( size_t k = 0; k < track.Keyframes.NumElements( ); ++k )
             {
                 const MorphKeyframe &keyframe = track.Keyframes.GetElement( k );
@@ -86,6 +96,11 @@ void AnimationAssetWriter::Write( const AnimationAsset &animationAsset ) const
             }
         }
     }
+
+    const auto currentPos = m_writer->Position( );
+    m_writer->Seek( m_streamStartOffset + sizeof( uint64_t ) + sizeof( uint32_t ) );
+    m_writer->WriteUInt64( currentPos - m_streamStartOffset );
+    m_writer->Seek( currentPos );
 
     m_writer->Flush( );
 }

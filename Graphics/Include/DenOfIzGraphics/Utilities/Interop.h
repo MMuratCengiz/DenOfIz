@@ -106,6 +106,54 @@ namespace DenOfIz
             other.m_data = nullptr;
         }
 
+        [[nodiscard]] bool Equals( const InteropString &other ) const
+        {
+            if ( this == &other )
+            {
+                return true;
+            }
+
+            if ( m_data == nullptr && other.m_data == nullptr )
+            {
+                return true;
+            }
+
+            if ( m_data == nullptr || other.m_data == nullptr )
+            {
+                return false;
+            }
+
+            return strcmp( m_data, other.m_data ) == 0;
+        }
+
+        [[nodiscard]] InteropString ToLower( ) const
+        {
+            if ( m_data == nullptr )
+            {
+                return { };
+            }
+            InteropString result( m_data );
+            for ( size_t i = 0; i < strlen( result.m_data ); ++i )
+            {
+                result.m_data[ i ] = static_cast<char>( tolower( result.m_data[ i ] ) );
+            }
+            return std::move( result );
+        }
+
+        [[nodiscard]] InteropString ToUpper( ) const
+        {
+            if ( m_data == nullptr )
+            {
+                return { };
+            }
+            InteropString result( m_data );
+            for ( size_t i = 0; i < strlen( result.m_data ); ++i )
+            {
+                result.m_data[ i ] = static_cast<char>( toupper( result.m_data[ i ] ) );
+            }
+            return std::move( result );
+        }
+
         InteropString &operator=( InteropString &&other ) noexcept
         {
             if ( this != &other )

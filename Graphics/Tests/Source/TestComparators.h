@@ -39,6 +39,11 @@ inline bool FloatEquals( const float a, const float b, const float epsilon = 0.0
     return std::abs( a - b ) < epsilon;
 }
 
+inline bool Float3Equals( const Float_3 &a, const Float_3 &b, const float tolerance = 1e-5f )
+{
+    return std::abs( a.X - b.X ) < tolerance && std::abs( a.Y - b.Y ) < tolerance && std::abs( a.Z - b.Z ) < tolerance;
+}
+
 inline bool Float4Equals( const Float_4 &a, const Float_4 &b, const float epsilon = 0.00001f )
 {
     return FloatEquals( a.X, b.X, epsilon ) && FloatEquals( a.Y, b.Y, epsilon ) && FloatEquals( a.Z, b.Z, epsilon ) && FloatEquals( a.W, b.W, epsilon );

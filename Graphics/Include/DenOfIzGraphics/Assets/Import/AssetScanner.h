@@ -17,27 +17,3 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #pragma once
-
-#include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
-#include "AnimationAsset.h"
-
-namespace DenOfIz
-{
-    struct DZ_API AnimationAssetReaderDesc
-    {
-        BinaryReader *Reader;
-    };
-
-    class AnimationAssetReader
-    {
-        BinaryReader  *m_reader;
-        AnimationAsset m_animationAsset;
-
-        void ReadAnimationClip( AnimationClip &animationClip ) const;
-
-    public:
-        DZ_API explicit AnimationAssetReader( const AnimationAssetReaderDesc &desc );
-        DZ_API ~AnimationAssetReader( );
-        DZ_API AnimationAsset Read( );
-    };
-} // namespace DenOfIz
