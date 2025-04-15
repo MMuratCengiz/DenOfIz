@@ -277,7 +277,7 @@ MeshAsset MeshAssetReader::Read( )
 
     m_meshAsset.Name                           = m_reader->ReadString( );
     m_meshAsset.NumLODs                        = m_reader->ReadUInt32( );
-    const uint32_t enabledFlags               = m_reader->ReadUInt32( );
+    const uint32_t enabledFlags                = m_reader->ReadUInt32( );
     m_meshAsset.EnabledAttributes.Position     = enabledFlags & 1 << 0;
     m_meshAsset.EnabledAttributes.Normal       = enabledFlags & 1 << 1;
     m_meshAsset.EnabledAttributes.UV           = enabledFlags & 1 << 2;
@@ -289,7 +289,7 @@ MeshAsset MeshAssetReader::Read( )
 
     m_meshAsset.AttributeConfig.NumPositionComponents = m_reader->ReadUInt32( );
     m_meshAsset.AttributeConfig.NumUVAttributes       = m_reader->ReadUInt32( );
-    const uint32_t uvChanCount                       = m_reader->ReadUInt32( );
+    const uint32_t uvChanCount                        = m_reader->ReadUInt32( );
     m_meshAsset.AttributeConfig.UVChannels.Resize( uvChanCount );
     for ( size_t i = 0; i < uvChanCount; ++i )
     {
@@ -305,13 +305,18 @@ MeshAsset MeshAssetReader::Read( )
     }
     m_meshAsset.AttributeConfig.MaxBoneInfluences = m_reader->ReadUInt32( );
 
-    const uint32_t morphFlags                      = m_reader->ReadUInt32( );
+    const uint32_t morphFlags                       = m_reader->ReadUInt32( );
     m_meshAsset.MorphTargetDeltaAttributes.Position = morphFlags & 1 << 0;
     m_meshAsset.MorphTargetDeltaAttributes.Normal   = morphFlags & 1 << 1;
     m_meshAsset.MorphTargetDeltaAttributes.Tangent  = morphFlags & 1 << 2;
 
-    m_meshAsset.AnimationRef = AssetUri::Parse( m_reader->ReadString( ) );
-    m_meshAsset.SkeletonRef  = AssetUri::Parse( m_reader->ReadString( ) );
+    const uint32_t numAnimationRefs = m_reader->ReadUInt32( );
+    m_meshAsset.AnimationRefs.Resize( numAnimationRefs );
+    for ( uint32_t i = 0; i < numAnimationRefs; ++i )
+    {
+        m_meshAsset.AnimationRefs.SetElement( i, AssetUri::Parse( m_reader->ReadString( ) ) );
+    }
+    m_meshAsset.SkeletonRef = AssetUri::Parse( m_reader->ReadString( ) );
 
     const uint32_t numSubMeshes = m_reader->ReadUInt32( );
     m_meshAsset.SubMeshes.Resize( numSubMeshes );
@@ -328,8 +333,8 @@ MeshAsset MeshAssetReader::Read( )
     }
 
     m_meshAsset.UserProperties = AssetReaderHelpers::ReadUserProperties( m_reader );
-    m_dataBlockStartOffset    = m_reader->Position( );
-    m_metadataRead            = true;
+    m_dataBlockStartOffset     = m_reader->Position( );
+    m_metadataRead             = true;
     m_reader->Seek( m_dataBlockStartOffset );
 
     return m_meshAsset;

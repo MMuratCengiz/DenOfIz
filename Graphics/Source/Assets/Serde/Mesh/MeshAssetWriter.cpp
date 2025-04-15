@@ -238,8 +238,11 @@ void MeshAssetWriter::WriteTopLevelMetadata( )
         morphFlags |= 1 << 2;
     }
     m_writer->WriteUInt32( morphFlags );
-
-    m_writer->WriteString( m_meshAsset.AnimationRef.ToString( ) );
+    m_writer->WriteUInt32( m_meshAsset.AnimationRefs.NumElements( ) );
+    for ( size_t i = 0; i < m_meshAsset.AnimationRefs.NumElements( ); ++i )
+    {
+        m_writer->WriteString( m_meshAsset.AnimationRefs.GetElement( i ).ToString( ) );
+    }
     m_writer->WriteString( m_meshAsset.SkeletonRef.ToString( ) );
 }
 

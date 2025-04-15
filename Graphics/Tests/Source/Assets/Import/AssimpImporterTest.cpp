@@ -16,24 +16,23 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Assets/Bundle/BundleManager.h> // If testing bundling
+#include <DenOfIzGraphics/Assets/Bundle/BundleManager.h>
 #include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
 #include <DenOfIzGraphics/Assets/Import/AssimpImporter.h>
-#include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetReader.h> // For later tests
-#include <DenOfIzGraphics/Assets/Serde/Material/MaterialAssetReader.h>   // For later tests
-#include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h>           // For later tests
-#include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h>   // For later tests
+#include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetReader.h>
+#include <DenOfIzGraphics/Assets/Serde/Material/MaterialAssetReader.h>
+#include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h>
+#include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h>
 #include <DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h>
-#include <DenOfIzGraphics/Assets/Stream/BinaryReader.h> // For later tests
-#include <filesystem>                                   // Requires C++17
-#include <fstream>                                      // For creating dummy files
+#include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
+#include <filesystem>
+#include <fstream>
 #include "gtest/gtest.h"
 
 using namespace DenOfIz;
 
-const std::string TEST_OUTPUT_DIR = DZ_TEST_DATA_DEST_DIR;
-// Define where test resource files (like Fox.gltf) are located relative to executable
-const std::string TEST_RESOURCE_DIR = DZ_TEST_DATA_SRC_DIR; // Adjust as needed
+const std::string TEST_OUTPUT_DIR   = DZ_TEST_DATA_DEST_DIR;
+const std::string TEST_RESOURCE_DIR = DZ_TEST_DATA_SRC_DIR;
 
 class AssimpImporterTest : public testing::Test
 {
@@ -78,7 +77,6 @@ protected:
         throw std::runtime_error( "Failed to create dummy file: " + fullPath );
     }
 
-    // Helper to find asset URI by type suffix (e.g., "_Mesh.dzmesh")
     static AssetUri FindAssetUriByType( const ImporterResult &result, const std::string &typeSuffix )
     {
         for ( size_t i = 0; i < result.CreatedAssets.NumElements( ); ++i )
@@ -88,11 +86,9 @@ protected:
                 return uri;
             }
         }
-        return AssetUri{ }; // Return empty/invalid URI if not found
+        return AssetUri{ };
     }
 };
-
-// --- Basic Initialization and Info Tests ---
 
 TEST_F( AssimpImporterTest, GetImporterInfoReturnsCorrectName )
 {
@@ -106,7 +102,6 @@ TEST_F( AssimpImporterTest, GetImporterInfoReturnsSupportedExtensions )
     ASSERT_NE( importer, nullptr );
     const ImporterDesc info = importer->GetImporterInfo( );
     ASSERT_GT( info.SupportedExtensions.NumElements( ), 0 );
-    // Check for a few common extensions
     bool foundFbx  = false;
     bool foundGltf = false;
     bool foundObj  = false;
@@ -114,11 +109,17 @@ TEST_F( AssimpImporterTest, GetImporterInfoReturnsSupportedExtensions )
     {
         const InteropString &ext = info.SupportedExtensions.GetElement( i );
         if ( ext.Equals( ".fbx" ) )
+        {
             foundFbx = true;
+        }
         if ( ext.Equals( ".gltf" ) )
+        {
             foundGltf = true;
+        }
         if ( ext.Equals( ".obj" ) )
+        {
             foundObj = true;
+        }
     }
     ASSERT_TRUE( foundFbx );
     ASSERT_TRUE( foundGltf );
@@ -129,7 +130,7 @@ TEST_F( AssimpImporterTest, CanProcessSupportedExtension )
 {
     ASSERT_NE( importer, nullptr );
     ASSERT_TRUE( importer->CanProcessFileExtension( ".fbx" ) );
-    ASSERT_TRUE( importer->CanProcessFileExtension( ".GLTF" ) ); // Case-insensitive check
+    ASSERT_TRUE( importer->CanProcessFileExtension( ".GLTF" ) );
     ASSERT_TRUE( importer->CanProcessFileExtension( ".obj" ) );
 }
 
@@ -138,7 +139,7 @@ TEST_F( AssimpImporterTest, CannotProcessUnsupportedExtension )
     ASSERT_NE( importer, nullptr );
     ASSERT_FALSE( importer->CanProcessFileExtension( ".txt" ) );
     ASSERT_FALSE( importer->CanProcessFileExtension( ".png" ) );
-    ASSERT_FALSE( importer->CanProcessFileExtension( ".dzmesh" ) ); // Shouldn't process its own output
+    ASSERT_FALSE( importer->CanProcessFileExtension( ".dzmesh" ) );
 }
 
 TEST_F( AssimpImporterTest, ValidateFileSupportedExtension )
@@ -161,8 +162,6 @@ TEST_F( AssimpImporterTest, ValidateFileNotFound )
     ASSERT_FALSE( importer->ValidateFile( "non_existent_file.fbx" ) );
 }
 
-// --- Error Handling Tests ---
-
 TEST_F( AssimpImporterTest, ImportFileNotFound )
 {
     ASSERT_NE( importer, nullptr );
@@ -170,7 +169,6 @@ TEST_F( AssimpImporterTest, ImportFileNotFound )
     desc.SourceFilePath  = "path/to/non/existent/file.fbx";
     desc.TargetDirectory = TEST_OUTPUT_DIR.c_str( );
     desc.AssetNamePrefix = "test";
-    // desc.Options can be default
 
     const ImporterResult result = importer->Import( desc );
 
@@ -191,18 +189,14 @@ TEST_F( AssimpImporterTest, ImportUnsupportedExtension )
 
     const ImporterResult result = importer->Import( desc );
 
-    // Assimp's ReadFile might return fail, or IsExtensionSupported might catch it earlier.
-    // The importer might not explicitly check CanProcessFileExtension inside Import.
-    // We expect Assimp itself to fail.
     ASSERT_EQ( result.ResultCode, ImporterResultCode::ImportFailed );
-    ASSERT_FALSE( result.ErrorMessage.IsEmpty( ) ); // Assimp should provide an error
+    ASSERT_FALSE( result.ErrorMessage.IsEmpty( ) );
     ASSERT_EQ( result.CreatedAssets.NumElements( ), 0 );
 }
 
 TEST_F( AssimpImporterTest, ImportInvalidFileContent )
 {
     ASSERT_NE( importer, nullptr );
-    // Create a text file but give it a supported extension
     const std::string invalidFbxPath = CreateDummyFile( "invalid_model.fbx", "This is not a valid FBX file." );
 
     ImportJobDesc desc;
@@ -212,7 +206,6 @@ TEST_F( AssimpImporterTest, ImportInvalidFileContent )
 
     const ImporterResult result = importer->Import( desc );
 
-    // Assimp should fail to parse this file
     ASSERT_EQ( result.ResultCode, ImporterResultCode::ImportFailed );
     ASSERT_FALSE( result.ErrorMessage.IsEmpty( ) ); // Assimp should provide an error
     ASSERT_EQ( result.CreatedAssets.NumElements( ), 0 );
@@ -221,22 +214,16 @@ TEST_F( AssimpImporterTest, ImportInvalidFileContent )
 TEST_F( AssimpImporterTest, ImportTargetDirectoryNotCreatable )
 {
     ASSERT_NE( importer, nullptr );
-    // On some systems, creating a directory with an invalid name might fail.
-    // Or, simulate lack of permissions (harder to do reliably in tests).
-    // For simplicity, we'll test the check that happens *before* Assimp runs.
     const std::string dummyFbxPath = CreateDummyFile( "dummy_for_dir_test.fbx" );
 
     ImportJobDesc desc;
     desc.SourceFilePath = dummyFbxPath.c_str( );
-// Use an invalid path component (may vary by OS)
 #ifdef _WIN32
-    desc.TargetDirectory = "CON/InvalidDir"; // CON is reserved on Windows
+    desc.TargetDirectory = "CON/InvalidDir";
 #else
-    desc.TargetDirectory = "/proc/InvalidDir"; // /proc is often read-only
+    desc.TargetDirectory = "/proc/InvalidDir";
 #endif
-    desc.AssetNamePrefix = "test_dirfail";
-
-    // We expect the CreateDirectories call within Import to fail early.
+    desc.AssetNamePrefix        = "test_dirfail";
     const ImporterResult result = importer->Import( desc );
 
     ASSERT_EQ( result.ResultCode, ImporterResultCode::WriteFailed );
@@ -260,136 +247,134 @@ TEST_F( AssimpImporterTest, ImportFoxGltf )
     desc.TargetDirectory = TEST_OUTPUT_DIR.c_str( );
     desc.AssetNamePrefix = "Fox"; // Use "Fox" as prefix
 
-    // Use default import options initially, can customize if needed
-    // AssimpImportOptions options = AssimpImportOptions::FromBase(desc.Options);
-    // options.ImportMaterials = true; // etc.
-    // desc.Options = options;
-
-    // --- Import ---
     const ImporterResult result = importer->Import( desc );
 
-    // --- Basic Assertions ---
     ASSERT_EQ( result.ResultCode, ImporterResultCode::Success ) << "Import failed: " << result.ErrorMessage.Get( );
-    // Expected assets: 1 Mesh, 1 Material, 1 Texture (referenced), 1 Skeleton, 1 Animation (with 3 clips)
-    ASSERT_EQ( result.CreatedAssets.NumElements( ), 5 ) << "Expected 5 assets to be created";
+    ASSERT_EQ( result.CreatedAssets.NumElements( ), 7 ) << "Expected 7 assets to be created";
 
-    // --- Find Asset URIs ---
-    AssetUri meshUri      = FindAssetUriByType( result, "_Mesh.dzmesh" );
-    AssetUri materialUri  = FindAssetUriByType( result, "_Material.dzmat" );
-    AssetUri textureUri   = FindAssetUriByType( result, "_Texture.dztex" );
-    AssetUri skeletonUri  = FindAssetUriByType( result, "_Skeleton.dzskel" );
-    AssetUri animationUri = FindAssetUriByType( result, "_Animation.dzanim" );
+    AssetUri meshUri     = FindAssetUriByType( result, "_Mesh.dzmesh" );
+    AssetUri materialUri = FindAssetUriByType( result, "_Material.dzmat" );
+    AssetUri textureUri  = FindAssetUriByType( result, "_Texture.dztex" );
+    AssetUri skeletonUri = FindAssetUriByType( result, "_Skeleton.dzskel" );
+
+    AssetUri surveyAnimUri = FindAssetUriByType( result, "Survey_Animation.dzanim" );
+    AssetUri walkAnimUri   = FindAssetUriByType( result, "Walk_Animation.dzanim" );
+    AssetUri runAnimUri    = FindAssetUriByType( result, "Run_Animation.dzanim" );
 
     ASSERT_FALSE( meshUri.Path.IsEmpty( ) ) << "Mesh asset URI not found in results";
     ASSERT_FALSE( materialUri.Path.IsEmpty( ) ) << "Material asset URI not found in results";
     ASSERT_FALSE( textureUri.Path.IsEmpty( ) ) << "Texture asset URI not found in results";
     ASSERT_FALSE( skeletonUri.Path.IsEmpty( ) ) << "Skeleton asset URI not found in results";
-    ASSERT_FALSE( animationUri.Path.IsEmpty( ) ) << "Animation asset URI not found in results";
+    ASSERT_FALSE( surveyAnimUri.Path.IsEmpty( ) ) << "Survey animation asset URI not found in results";
+    ASSERT_FALSE( walkAnimUri.Path.IsEmpty( ) ) << "Walk animation asset URI not found in results";
+    ASSERT_FALSE( runAnimUri.Path.IsEmpty( ) ) << "Run animation asset URI not found in results";
 
-    // --- Validate Created Files Exist ---
-    const std::string meshPath      = TEST_OUTPUT_DIR + "/" + meshUri.Path.Get( );
-    const std::string materialPath  = TEST_OUTPUT_DIR + "/" + materialUri.Path.Get( );
-    const std::string texturePath   = TEST_OUTPUT_DIR + "/" + textureUri.Path.Get( );
-    const std::string skeletonPath  = TEST_OUTPUT_DIR + "/" + skeletonUri.Path.Get( );
-    const std::string animationPath = TEST_OUTPUT_DIR + "/" + animationUri.Path.Get( );
+    const std::string meshPath       = TEST_OUTPUT_DIR + "/" + meshUri.Path.Get( );
+    const std::string materialPath   = TEST_OUTPUT_DIR + "/" + materialUri.Path.Get( );
+    const std::string texturePath    = TEST_OUTPUT_DIR + "/" + textureUri.Path.Get( );
+    const std::string skeletonPath   = TEST_OUTPUT_DIR + "/" + skeletonUri.Path.Get( );
+    const std::string surveyAnimPath = TEST_OUTPUT_DIR + "/" + surveyAnimUri.Path.Get( );
+    const std::string walkAnimPath   = TEST_OUTPUT_DIR + "/" + walkAnimUri.Path.Get( );
+    const std::string runAnimPath    = TEST_OUTPUT_DIR + "/" + runAnimUri.Path.Get( );
 
     ASSERT_TRUE( FileIO::FileExists( meshPath.c_str( ) ) ) << "Mesh file not created: " << meshPath;
     ASSERT_TRUE( FileIO::FileExists( materialPath.c_str( ) ) ) << "Material file not created: " << materialPath;
     ASSERT_TRUE( FileIO::FileExists( texturePath.c_str( ) ) ) << "Texture file not created: " << texturePath;
     ASSERT_TRUE( FileIO::FileExists( skeletonPath.c_str( ) ) ) << "Skeleton file not created: " << skeletonPath;
-    ASSERT_TRUE( FileIO::FileExists( animationPath.c_str( ) ) ) << "Animation file not created: " << animationPath;
+    ASSERT_TRUE( FileIO::FileExists( surveyAnimPath.c_str( ) ) ) << "Survey animation file not created: " << surveyAnimPath;
+    ASSERT_TRUE( FileIO::FileExists( walkAnimPath.c_str( ) ) ) << "Walk animation file not created: " << walkAnimPath;
+    ASSERT_TRUE( FileIO::FileExists( runAnimPath.c_str( ) ) ) << "Run animation file not created: " << runAnimPath;
 
-    // --- Validate Asset Contents (Using Readers) ---
-    try
+    BinaryReader    meshFileReader( meshPath.c_str( ) );
+    MeshAssetReader meshReader( { &meshFileReader } );
+    MeshAsset       readMesh = meshReader.Read( );
+    ASSERT_STREQ( readMesh.Name.Get( ), "Fox" ); // Check sanitized name
+    ASSERT_EQ( readMesh.SubMeshes.NumElements( ), 1 );
+    ASSERT_TRUE( readMesh.SubMeshes.GetElement( 0 ).MaterialRef.Equals( materialUri ) );
+    ASSERT_TRUE( readMesh.SkeletonRef.Equals( skeletonUri ) );
+    ASSERT_EQ( readMesh.AnimationRefs.NumElements( ), 3 ) << "Expected 3 animation references";
+    ASSERT_TRUE( readMesh.AnimationRefs.GetElement( 0 ).Equals( surveyAnimUri ) );
+    ASSERT_TRUE( readMesh.AnimationRefs.GetElement( 1 ).Equals( walkAnimUri ) );
+    ASSERT_TRUE( readMesh.AnimationRefs.GetElement( 2 ).Equals( runAnimUri ) );
+
+    ASSERT_GT( readMesh.SubMeshes.GetElement( 0 ).NumVertices, 100 ); // Fox has many vertices
+    ASSERT_GT( readMesh.SubMeshes.GetElement( 0 ).NumIndices, 100 );
+    ASSERT_TRUE( readMesh.EnabledAttributes.Position );
+    ASSERT_TRUE( readMesh.EnabledAttributes.Normal );
+    ASSERT_TRUE( readMesh.EnabledAttributes.UV );
+    ASSERT_TRUE( readMesh.EnabledAttributes.BlendIndices );
+    ASSERT_TRUE( readMesh.EnabledAttributes.BlendWeights );
+
+    BinaryReader        matFileReader( materialPath.c_str( ) );
+    MaterialAssetReader matReader( { &matFileReader } );
+    MaterialAsset       readMat = matReader.Read( );
+    ASSERT_STREQ( readMat.Name.Get( ), "fox_material" );
+    ASSERT_TRUE( readMat.AlbedoMapRef.Equals( textureUri ) );
+    ASSERT_FLOAT_EQ( readMat.MetallicFactor, 0.0f );
+    ASSERT_NEAR( readMat.RoughnessFactor, 0.0f, 0.0f );
+
+    BinaryReader       texFileReader( texturePath.c_str( ) );
+    TextureAssetReader texReader( { &texFileReader } );
+    TextureAsset       readTex = texReader.Read( );
+    ASSERT_STREQ( readTex.Name.Get( ), "Texture" );
+    ASSERT_TRUE( std::string( readTex.SourcePath.Get( ) ).ends_with( "Texture.png" ) );
+
+    BinaryReader        skelFileReader( skeletonPath.c_str( ) );
+    SkeletonAssetReader skelReader( { &skelFileReader } );
+    SkeletonAsset       readSkel = skelReader.Read( );
+    ASSERT_STREQ( readSkel.Name.Get( ), "Fox" );
+    ASSERT_EQ( readSkel.Joints.NumElements( ), 24 );
+    bool rootFound = false;
+    for ( size_t j = 0; j < readSkel.Joints.NumElements( ); ++j )
     {
-        // Validate Mesh
-        BinaryReader    meshFileReader( meshPath.c_str( ) );
-        MeshAssetReader meshReader( { &meshFileReader } );
-        MeshAsset       readMesh = meshReader.Read( );
-        ASSERT_STREQ( readMesh.Name.Get( ), "Fox" ); // Check sanitized name
-        ASSERT_EQ( readMesh.SubMeshes.NumElements( ), 1 );
-        ASSERT_TRUE( readMesh.SubMeshes.GetElement( 0 ).MaterialRef.Equals( materialUri ) );
-        ASSERT_TRUE( readMesh.SkeletonRef.Equals( skeletonUri ) );
-        ASSERT_TRUE( readMesh.AnimationRef.Equals( animationUri ) );      // Check if linked
-        ASSERT_GT( readMesh.SubMeshes.GetElement( 0 ).NumVertices, 100 ); // Fox has many vertices
-        ASSERT_GT( readMesh.SubMeshes.GetElement( 0 ).NumIndices, 100 );
-        ASSERT_TRUE( readMesh.EnabledAttributes.Position );
-        ASSERT_TRUE( readMesh.EnabledAttributes.Normal );
-        ASSERT_TRUE( readMesh.EnabledAttributes.UV );
-        ASSERT_TRUE( readMesh.EnabledAttributes.BlendIndices );
-        ASSERT_TRUE( readMesh.EnabledAttributes.BlendWeights );
-
-        // Validate Material
-        BinaryReader        matFileReader( materialPath.c_str( ) );
-        MaterialAssetReader matReader( { &matFileReader } );
-        MaterialAsset       readMat = matReader.Read( );
-        ASSERT_STREQ( readMat.Name.Get( ), "Fox" );
-        ASSERT_TRUE( readMat.AlbedoMapRef.Equals( textureUri ) );
-        ASSERT_FLOAT_EQ( readMat.MetallicFactor, 0.0f );    // Fox is non-metallic
-        ASSERT_NEAR( readMat.RoughnessFactor, 1.0f, 0.1f ); // Fox is rough
-
-        // Validate Texture (Metadata only for external)
-        BinaryReader       texFileReader( texturePath.c_str( ) );
-        TextureAssetReader texReader( { &texFileReader } );
-        TextureAsset       readTex = texReader.Read( );
-        ASSERT_STREQ( readTex.Name.Get( ), "Texture_0" ); // Default name from glTF
-        ASSERT_FALSE( readTex.SourcePath.IsEmpty( ) );    // Should point to original PNG
-        ASSERT_TRUE( std::string( readTex.SourcePath.Get( ) ).ends_with( "Texture_0.png" ) );
-
-        // Validate Skeleton
-        BinaryReader        skelFileReader( skeletonPath.c_str( ) );
-        SkeletonAssetReader skelReader( { &skelFileReader } );
-        SkeletonAsset       readSkel = skelReader.Read( );
-        ASSERT_STREQ( readSkel.Name.Get( ), "Fox" );
-        ASSERT_GT( readSkel.Joints.NumElements( ), 40 ); // Fox has ~50-60 joints
-        // Check root joint
-        bool rootFound = false;
-        for ( size_t j = 0; j < readSkel.Joints.NumElements( ); ++j )
+        if ( readSkel.Joints.GetElement( j ).ParentIndex == -1 )
         {
-            if ( readSkel.Joints.GetElement( j ).ParentIndex == -1 )
-            {
-                ASSERT_STREQ( readSkel.Joints.GetElement( j ).Name.Get( ), "Root" );
-                rootFound = true;
-                break;
-            }
+            ASSERT_STREQ( readSkel.Joints.GetElement( j ).Name.Get( ), "_rootJoint" );
+            rootFound = true;
+            break;
         }
-        ASSERT_TRUE( rootFound ) << "Root joint not found";
-
-        // Validate Animation
-        BinaryReader         animFileReader( animationPath.c_str( ) );
-        AnimationAssetReader animReader( { &animFileReader } );
-        AnimationAsset       readAnim = animReader.Read( );
-        ASSERT_STREQ( readAnim.Name.Get( ), "Fox" );
-        ASSERT_TRUE( readAnim.SkeletonRef.Equals( skeletonUri ) );
-        ASSERT_EQ( readAnim.Animations.NumElements( ), 3 ); // Survey, Walk, Run
-
-        // Check first clip ("Survey")
-        const AnimationClip &clip0 = readAnim.Animations.GetElement( 0 );
-        ASSERT_STREQ( clip0.Name.Get( ), "Survey" );
-        ASSERT_GT( clip0.Duration, 0.0f );
-        ASSERT_GT( clip0.Tracks.NumElements( ), 10 ); // Expect tracks for multiple joints
-
-        // Check one track in the first clip
-        bool spineTrackFound = false;
-        for ( size_t t = 0; t < clip0.Tracks.NumElements( ); ++t )
-        {
-            const JointAnimTrack &track = clip0.Tracks.GetElement( t );
-            if ( track.JointName.Equals( "Spine" ) )
-            {
-                ASSERT_GT( track.PositionKeys.NumElements( ), 0 );
-                ASSERT_GT( track.RotationKeys.NumElements( ), 0 );
-                ASSERT_GT( track.ScaleKeys.NumElements( ), 0 );
-                // Check first position key time/value roughly
-                ASSERT_NEAR( track.PositionKeys.GetElement( 0 ).Timestamp, 0.0f, 0.01f );
-                // ASSERT_NEAR(track.PositionKeys.GetElement(0).Value.X, ...); // Check against known value if needed
-                spineTrackFound = true;
-                break;
-            }
-        }
-        ASSERT_TRUE( spineTrackFound ) << "Spine track not found in 'Survey' animation";
     }
-    catch ( const std::exception &e )
+    ASSERT_TRUE( rootFound ) << "Root joint not found";
+
+    BinaryReader         surveyAnimReader( surveyAnimPath.c_str( ) );
+    AnimationAssetReader surveyReader( { &surveyAnimReader } );
+    AnimationAsset       surveyAnim = surveyReader.Read( );
+    ASSERT_STREQ( surveyAnim.Name.Get( ), "Survey" );
+    ASSERT_TRUE( surveyAnim.SkeletonRef.Equals( skeletonUri ) );
+    ASSERT_EQ( surveyAnim.Animations.NumElements( ), 1 ); // One clip per animation
+
+    const AnimationClip &surveyClip = surveyAnim.Animations.GetElement( 0 );
+    ASSERT_STREQ( surveyClip.Name.Get( ), "Survey" );
+    ASSERT_GT( surveyClip.Duration, 0.0f );
+    ASSERT_GT( surveyClip.Tracks.NumElements( ), 10 ); // Expect tracks for multiple joints
+
+    BinaryReader         walkAnimReader( walkAnimPath.c_str( ) );
+    AnimationAssetReader walkReader( { &walkAnimReader } );
+    AnimationAsset       walkAnim = walkReader.Read( );
+    ASSERT_STREQ( walkAnim.Name.Get( ), "Walk" );
+    ASSERT_TRUE( walkAnim.SkeletonRef.Equals( skeletonUri ) );
+    ASSERT_EQ( walkAnim.Animations.NumElements( ), 1 );
+
+    BinaryReader         runAnimReader( runAnimPath.c_str( ) );
+    AnimationAssetReader runReader( { &runAnimReader } );
+    AnimationAsset       runAnim = runReader.Read( );
+    ASSERT_STREQ( runAnim.Name.Get( ), "Run" );
+    ASSERT_TRUE( runAnim.SkeletonRef.Equals( skeletonUri ) );
+    ASSERT_EQ( runAnim.Animations.NumElements( ), 1 );
+
+    bool spineTrackFound = false;
+    for ( size_t t = 0; t < surveyClip.Tracks.NumElements( ); ++t )
     {
-        FAIL( ) << "Exception during asset validation: " << e.what( );
+        const JointAnimTrack &track = surveyClip.Tracks.GetElement( t );
+        if ( track.JointName.Equals( "b_Spine02_03" ) )
+        {
+            ASSERT_GT( track.PositionKeys.NumElements( ), 0 );
+            ASSERT_GT( track.RotationKeys.NumElements( ), 0 );
+            ASSERT_GT( track.ScaleKeys.NumElements( ), 0 );
+            ASSERT_NEAR( track.PositionKeys.GetElement( 0 ).Timestamp, 0.0f, 0.01f );
+            spineTrackFound = true;
+            break;
+        }
     }
+    ASSERT_TRUE( spineTrackFound ) << "Spine track not found in Survey animation";
 }
