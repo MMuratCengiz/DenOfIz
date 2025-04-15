@@ -91,8 +91,15 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
 
     ImportContext context;
     context.SourceFilePath  = desc.SourceFilePath;
-    context.TargetDirectory = desc.TargetDirectory;
     context.AssetNamePrefix = desc.AssetNamePrefix;
+    if ( const std::string targetDirectory = desc.TargetDirectory.Get( ); targetDirectory.ends_with( "/" ) )
+    {
+        context.TargetDirectory = desc.TargetDirectory;
+    }
+    else
+    {
+        context.TargetDirectory = ( targetDirectory + "/" ).c_str( );
+    }
 
     try
     {
@@ -138,8 +145,7 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
     if ( !context.Scene || context.Scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !context.Scene->mRootNode )
     {
         context.Result.ResultCode   = ImporterResultCode::ImportFailed;
-        context.Result.ErrorMessage = "Assimp importer failed: ";
-        context.Result.ErrorMessage.Append( importer.GetErrorString( ) );
+        context.Result.ErrorMessage = InteropString( "Assimp importer failed: " ).Append( importer.GetErrorString( ) );
         LOG( ERROR ) << context.Result.ErrorMessage.Get( );
         return context.Result;
     }
@@ -236,8 +242,7 @@ ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
     catch ( const std::exception &e )
     {
         LOG( ERROR ) << "Failed during Mesh asset writing process " << meshTargetPath.Get( ) << ": " << e.what( );
-        context.ErrorMessage = "Failed writing mesh asset: ";
-        context.ErrorMessage.Append( e.what( ) );
+        context.ErrorMessage = InteropString( "Failed writing mesh asset: " ).Append( e.what( ) );
         return ImporterResultCode::WriteFailed;
     }
 
@@ -969,8 +974,7 @@ ImporterResultCode AssimpImporter::WriteMaterialAsset( ImportContext &context, c
     catch ( const std::exception &e )
     {
         LOG( ERROR ) << "Failed to write Material asset " << targetAssetPath.Get( ) << ": " << e.what( );
-        context.ErrorMessage = "Failed to write material asset: ";
-        context.ErrorMessage.Append( e.what( ) );
+        context.ErrorMessage = InteropString( "Failed to write Material asset " ).Append( targetAssetPath.Get( ) ).Append( ": " ).Append( e.what( ) );
         return ImporterResultCode::WriteFailed;
     }
     return ImporterResultCode::Success;
@@ -1022,8 +1026,7 @@ ImporterResultCode AssimpImporter::WriteTextureAsset( ImportContext &context, co
     catch ( const std::exception &e )
     {
         LOG( ERROR ) << "Failed to write embedded Texture asset " << targetAssetPath.Get( ) << ": " << e.what( );
-        context.ErrorMessage = "Failed to write embedded texture asset: ";
-        context.ErrorMessage.Append( e.what( ) );
+        context.ErrorMessage = InteropString( "Failed to write embedded Texture asset " ).Append( targetAssetPath.Get( ) ).Append( ": " ).Append( e.what( ) );
         return ImporterResultCode::WriteFailed;
     }
     return ImporterResultCode::Success;
@@ -1072,8 +1075,7 @@ ImporterResultCode AssimpImporter::WriteAnimationAsset( ImportContext &context, 
     catch ( const std::exception &e )
     {
         LOG( ERROR ) << "Failed to write Animation asset " << targetAssetPath.Get( ) << ": " << e.what( );
-        context.ErrorMessage = "Failed to write animation asset: ";
-        context.ErrorMessage.Append( e.what( ) );
+        context.ErrorMessage = InteropString( "Failed to write Animation asset " ).Append( targetAssetPath.Get( ) ).Append( ": " ).Append( e.what( ) );
         return ImporterResultCode::WriteFailed;
     }
     return ImporterResultCode::Success;
@@ -1119,17 +1121,17 @@ Float_4 AssimpImporter::ConvertColor( const aiColor4D &color )
 
 InteropString AssimpImporter::CreateAssetFileName( const InteropString &prefix, const InteropString &name, const InteropString &assetType, const InteropString &extension )
 {
-    InteropString fn = prefix;
+    auto fn = InteropString( prefix );
     if ( !prefix.IsEmpty( ) && !name.IsEmpty( ) )
     {
-        fn.Append( "_" );
+        fn = fn.Append( "_" );
     }
-    fn.Append( SanitizeAssetName( name ).Get( ) );
+    fn = fn.Append( SanitizeAssetName( name ).Get( ) );
     if ( !assetType.IsEmpty( ) )
     {
-        fn.Append( "_" ).Append( assetType.Get( ) );
+        fn = fn.Append( "_" ).Append( assetType.Get( ) );
     }
-    fn.Append( "." ).Append( extension.Get( ) );
+    fn = fn.Append( "." ).Append( extension.Get( ) );
     return fn;
 }
 

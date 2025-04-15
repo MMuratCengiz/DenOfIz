@@ -409,15 +409,15 @@ void RayTracedProceduralGeometryExample::CreateResources( )
 
     InteropArray<Byte> vertexArray( sizeof( vertices ) );
     vertexArray.MemCpy( vertices, sizeof( vertices ) );
-    batchResourceCopy.CopyToGPUBuffer( { m_vertexBuffer.get( ), vertexArray } );
+    batchResourceCopy.CopyToGPUBuffer( { m_vertexBuffer.get( ), 0, vertexArray } );
 
     InteropArray<Byte> indexArray( sizeof( indices ) );
     indexArray.MemCpy( indices, sizeof( indices ) );
-    batchResourceCopy.CopyToGPUBuffer( { m_indexBuffer.get( ), indexArray } );
+    batchResourceCopy.CopyToGPUBuffer( { m_indexBuffer.get( ), 0, indexArray } );
 
     InteropArray<Byte> aabbArray( sizeof( AABBBoundingBox ) * m_aabbs.size( ) );
     aabbArray.MemCpy( m_aabbs.data( ), sizeof( AABBBoundingBox ) * m_aabbs.size( ) );
-    batchResourceCopy.CopyToGPUBuffer( { m_aabbBuffer.get( ), aabbArray } );
+    batchResourceCopy.CopyToGPUBuffer( { m_aabbBuffer.get( ), 0, aabbArray } );
     batchResourceCopy.Submit( );
 
     InitializeScene( );

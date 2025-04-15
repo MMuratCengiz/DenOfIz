@@ -147,7 +147,7 @@ ITextureResource *BatchResourceCopy::CreateAndLoadTexture( const InteropString &
     textureDesc.Depth        = texture.Depth;
     textureDesc.ArraySize    = texture.ArraySize;
     textureDesc.MipLevels    = texture.MipLevels;
-    textureDesc.DebugName.Append( "CreateAndLoadTexture(" ).Append( file.Get( ) ).Append( ")" );
+    textureDesc.DebugName    = InteropString( "CreateAndLoadTexture(" ).Append( file.Get( ) ).Append( ")" );
 
     auto outTex = m_device->CreateTextureResource( textureDesc );
     LoadTextureInternal( texture, outTex );
@@ -168,7 +168,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
     bufferDesc.Descriptor   = ResourceDescriptor::UniformBuffer;
     bufferDesc.InitialUsage = ResourceUsage::CopyDst;
     bufferDesc.NumBytes     = numBytes;
-    bufferDesc.DebugName.Append( NextId( "Uniform" ).c_str( ) );
+    bufferDesc.DebugName    = NextId( "Uniform" ).c_str( );
 
     const auto buffer = m_device->CreateBufferResource( bufferDesc );
 
@@ -196,7 +196,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
     vBufferDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
     vBufferDesc.InitialUsage = ResourceUsage::CopyDst;
     vBufferDesc.NumBytes     = numBytes;
-    vBufferDesc.DebugName.Append( NextId( "Vertex" ).c_str( ) );
+    vBufferDesc.DebugName    = NextId( "Vertex" ).c_str( );
 
     const auto vertexBuffer = m_device->CreateBufferResource( vBufferDesc );
 
@@ -225,7 +225,7 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
     iBufferDesc.Descriptor   = ResourceDescriptor::IndexBuffer;
     iBufferDesc.InitialUsage = ResourceUsage::CopyDst;
     iBufferDesc.NumBytes     = numBytes;
-    iBufferDesc.DebugName.Append( NextId( "IndexBuffer" ).c_str( ) );
+    iBufferDesc.DebugName    = NextId( "IndexBuffer" ).c_str( );
 
     const auto indexBuffer = m_device->CreateBufferResource( iBufferDesc );
 

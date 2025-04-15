@@ -165,24 +165,24 @@ namespace DenOfIz
             return *this;
         }
 
-        InteropString &Append( const char *str )
+        InteropString Append( const char *str )
         {
             if ( str == nullptr )
             {
                 return *this;
             }
-            const size_t len     = strlen( str );
-            const size_t oldLen  = NumChars( );
-            char        *newData = new char[ oldLen + len + 1 ];
+            const size_t  len    = strlen( str );
+            const size_t  oldLen = NumChars( );
+            InteropString result;
+            const auto    newData = new char[ oldLen + len + s_nullTerminatorLen ];
             if ( m_data != nullptr )
             {
                 SafeCopyString( newData, oldLen + s_nullTerminatorLen, m_data );
-                delete[] m_data;
-                m_data = nullptr;
             }
-            SafeCopyString( newData + oldLen, len + s_nullTerminatorLen, str );
-            m_data = newData;
-            return *this;
+            SafeCopyString(newData + oldLen, len + s_nullTerminatorLen, str);
+            delete[] result.m_data;
+            result.m_data = newData;
+            return std::move( result );
         }
 
         [[nodiscard]] size_t NumChars( ) const
