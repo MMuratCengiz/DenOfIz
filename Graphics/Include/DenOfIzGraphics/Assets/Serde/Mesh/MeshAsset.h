@@ -186,7 +186,7 @@ namespace DenOfIz
         InteropArray<SubMeshData>  SubMeshes;
         MorphTargetDeltaAttributes MorphTargetDeltaAttributes{ };
         InteropArray<MorphTarget>  MorphTargets;
-        AssetUri                   AnimationRef{ };
+        InteropArray<AssetUri>     AnimationRefs;   // Array of all available animations for this mesh
         AssetUri                   SkeletonRef{ };
         InteropArray<UserProperty> UserProperties;
 

@@ -25,8 +25,16 @@ find_package(glog CONFIG REQUIRED)
 find_package(assimp CONFIG REQUIRED)
 find_package(draco CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h")
-
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
+
+# Find ozz-animation in our third party directory
+set(OZZ_ANIMATION_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/ozz-animation")
+if(EXISTS "${OZZ_ANIMATION_DIR}")
+    set(OZZ_ANIMATION_INCLUDE_DIR "${OZZ_ANIMATION_DIR}/include")
+    set(OZZ_ANIMATION_FOUND TRUE)
+else()
+    message(FATAL_ERROR "ozz-animation not found in _ThirdParty directory")
+endif()
 
 set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Bundle/Bundle.cpp
@@ -59,6 +67,12 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Stream/BinaryContainer.cpp
         Source/Assets/Stream/BinaryReader.cpp
         Source/Assets/Stream/BinaryWriter.cpp
+)
+
+set(DEN_OF_IZ_ANIMATION_SOURCES
+        Source/Animation/OzzSkeletonAdapter.cpp
+        Source/Animation/OzzAnimationAdapter.cpp
+        Source/Animation/OzzAnimationManager.cpp
 )
 
 set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
@@ -200,6 +214,7 @@ target_include_directories(DenOfIzGraphics
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/Tiny> $<INSTALL_INTERFACE:_ThirdParty/Tiny>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/include> $<INSTALL_INTERFACE:_ThirdParty/MetalShaderConverter/include>
+        $<BUILD_INTERFACE:${OZZ_ANIMATION_INCLUDE_DIR}> $<INSTALL_INTERFACE:_ThirdParty/ozz-animation/include>
         ${STB_INCLUDE_DIRS}
 )
 
