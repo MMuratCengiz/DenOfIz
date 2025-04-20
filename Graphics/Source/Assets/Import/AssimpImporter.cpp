@@ -13,6 +13,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+// ReSharper disable CppMemberFunctionMayBeStatic
 #include <DenOfIzGraphics/Assets/Import/AssimpImporter.h>
 #include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetWriter.h>
 #include <DenOfIzGraphics/Assets/Serde/Material/MaterialAssetWriter.h>
@@ -26,7 +27,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
-#include <cmath>
 #include <filesystem>
 #include <limits>
 #include <ranges>
@@ -247,8 +247,7 @@ ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
                 continue;
             }
 
-            const aiMesh *mesh = context.Scene->mMeshes[ meshIndex ];
-            if ( mesh && mesh->HasFaces( ) && mesh->HasPositions( ) )
+            if ( const aiMesh *mesh = context.Scene->mMeshes[ meshIndex ]; mesh && mesh->HasFaces( ) && mesh->HasPositions( ) )
             {
                 uniqueMeshes.push_back( mesh );
                 processedMeshIndices.insert( meshIndex );
@@ -272,10 +271,8 @@ ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
                 subMesh.LODLevel  = 0;
                 if ( context.Options.ImportMaterials && mesh->mMaterialIndex < context.Scene->mNumMaterials )
                 {
-                    const aiMaterial *material   = context.Scene->mMaterials[ mesh->mMaterialIndex ];
-                    const std::string matNameStr = material->GetName( ).C_Str( );
-
-                    if ( context.MaterialNameToAssetUriMap.contains( matNameStr ) )
+                    const aiMaterial *material = context.Scene->mMaterials[ mesh->mMaterialIndex ];
+                    if ( const std::string matNameStr = material->GetName( ).C_Str( ); context.MaterialNameToAssetUriMap.contains( matNameStr ) )
                     {
                         subMesh.MaterialRef = context.MaterialNameToAssetUriMap[ matNameStr ];
                     }
@@ -364,33 +361,23 @@ ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
         const AssetUri meshUri = AssetUri::Create( meshAssetFilename );
         meshAsset.Uri          = meshUri;
 
-        try
-        {
-            BinaryWriter    binaryWriter( meshTargetPath );
-            MeshAssetWriter meshWriter( { &binaryWriter } );
-            meshWriter.Write( meshAsset );
-            context.CurrentSubMeshIndex = 0;
+        BinaryWriter    binaryWriter( meshTargetPath );
+        MeshAssetWriter meshWriter( { &binaryWriter } );
+        meshWriter.Write( meshAsset );
+        context.CurrentSubMeshIndex = 0;
 
-            for ( const aiMesh *mesh : uniqueMeshes )
+        for ( const aiMesh *mesh : uniqueMeshes )
+        {
+            if ( const ImporterResultCode result = ProcessMesh( context, mesh, meshWriter ); result != ImporterResultCode::Success )
             {
-                if ( const ImporterResultCode result = ProcessMesh( context, mesh, meshWriter ); result != ImporterResultCode::Success )
-                {
-                    throw std::runtime_error( "Failed to process mesh data for " + std::string( mesh->mName.C_Str( ) ) );
-                }
+                LOG( ERROR ) << "Failed to process mesh #" << mesh->mName.C_Str( ) << ": " << context.ErrorMessage.Get( );
+                return result;
             }
-
-            meshWriter.FinalizeAsset( );
-            RegisterCreatedAsset( context, meshUri, AssetType::Mesh );
-            LOG( INFO ) << "Successfully wrote Mesh asset: " << meshUri.ToString( ).Get( );
-        }
-        catch ( const std::exception &e )
-        {
-            LOG( ERROR ) << "Failed during Mesh asset writing process " << meshTargetPath.Get( ) << ": " << e.what( );
-            context.ErrorMessage = "Failed writing mesh asset: ";
-            context.ErrorMessage.Append( e.what( ) );
-            return ImporterResultCode::WriteFailed;
         }
 
+        meshWriter.FinalizeAsset( );
+        RegisterCreatedAsset( context, meshUri );
+        LOG( INFO ) << "Successfully wrote Mesh asset: " << meshUri.ToString( ).Get( );
         if ( context.Options.ImportAnimations && context.Scene->HasAnimations( ) )
         {
             LOG( WARNING ) << "No processable meshes found in the scene";
@@ -445,7 +432,7 @@ ImporterResultCode AssimpImporter::ProcessNode( ImportContext &context, const ai
             if ( context.BoneNameToInverseBindMatrixMap.contains( nodeNameStr ) )
             {
                 aiMatrix4x4 scaledMatrix = context.BoneNameToInverseBindMatrixMap[ nodeNameStr ];
-                joint.InverseBindMatrix = ConvertMatrix( scaledMatrix );
+                joint.InverseBindMatrix  = ConvertMatrix( scaledMatrix );
                 joint.InverseBindMatrix._41 *= context.Options.ScaleFactor;
                 joint.InverseBindMatrix._42 *= context.Options.ScaleFactor;
                 joint.InverseBindMatrix._43 *= context.Options.ScaleFactor;
@@ -581,8 +568,7 @@ ImporterResultCode AssimpImporter::ProcessMesh( ImportContext &context, const ai
 
             for ( unsigned int w = 0; w < bone->mNumWeights; ++w )
             {
-                const aiVertexWeight &weight = bone->mWeights[ w ];
-                if ( weight.mVertexId < mesh->mNumVertices )
+                if ( const aiVertexWeight &weight = bone->mWeights[ w ]; weight.mVertexId < mesh->mNumVertices )
                 {
                     boneInfluences[ weight.mVertexId ].emplace_back( boneIndex, weight.mWeight );
                 }
@@ -591,7 +577,7 @@ ImporterResultCode AssimpImporter::ProcessMesh( ImportContext &context, const ai
 
         for ( auto &influences : boneInfluences )
         {
-            std::sort( influences.begin( ), influences.end( ), []( const auto &a, const auto &b ) { return a.second > b.second; } );
+            std::ranges::sort( influences, []( const auto &a, const auto &b ) { return a.second > b.second; } );
             if ( influences.size( ) > attributeConfig.MaxBoneInfluences )
             {
                 influences.resize( attributeConfig.MaxBoneInfluences );
@@ -720,7 +706,7 @@ ImporterResultCode AssimpImporter::ProcessMesh( ImportContext &context, const ai
     return ImporterResultCode::Success;
 }
 
-ImporterResultCode AssimpImporter::ProcessMaterial( ImportContext &context, const aiMaterial *material, AssetUri &outAssetUri ) const
+ImporterResultCode AssimpImporter::ProcessMaterial( ImportContext &context, const aiMaterial *material, AssetUri &outAssetUri )
 {
     const std::string matNameStr = material->GetName( ).C_Str( );
     InteropString     matName    = SanitizeAssetName( matNameStr.c_str( ) );
@@ -797,8 +783,8 @@ ImporterResultCode AssimpImporter::ProcessMaterial( ImportContext &context, cons
     return ImporterResultCode::Success;
 }
 
-ImporterResultCode AssimpImporter::ProcessTexture( ImportContext &context, const aiMaterial *material, aiTextureType textureType, const InteropString &semanticName,
-                                                   AssetUri &outAssetUri ) const
+ImporterResultCode AssimpImporter::ProcessTexture( ImportContext &context, const aiMaterial *material, const aiTextureType textureType, const InteropString &semanticName,
+                                                   AssetUri &outAssetUri )
 {
     aiString aiPath;
     if ( material->GetTexture( textureType, 0, &aiPath ) != AI_SUCCESS )
@@ -813,7 +799,7 @@ ImporterResultCode AssimpImporter::ProcessTexture( ImportContext &context, const
     if ( texPathStr[ 0 ] == '*' )
     {
         LOG( INFO ) << "Processing embedded texture for material '" << material->GetName( ).C_Str( ) << "', semantic: " << semanticName.Get( );
-        if ( int textureIndex = std::stoi( texPathStr.substr( 1 ) ); textureIndex >= 0 && textureIndex < static_cast<int>( context.Scene->mNumTextures ) )
+        if ( const int textureIndex = std::stoi( texPathStr.substr( 1 ) ); textureIndex >= 0 && textureIndex < static_cast<int>( context.Scene->mNumTextures ) )
         {
             return WriteTextureAsset( context, context.Scene->mTextures[ textureIndex ], "", semanticName, outAssetUri );
         }
@@ -876,7 +862,7 @@ ImporterResultCode AssimpImporter::ProcessSkeleton( SkeletonAsset &skeletonAsset
     return ImporterResultCode::Success;
 }
 
-ImporterResultCode AssimpImporter::ProcessAnimation( ImportContext &context, const aiAnimation *animation, AssetUri &outAssetUri ) const
+ImporterResultCode AssimpImporter::ProcessAnimation( ImportContext &context, const aiAnimation *animation, AssetUri &outAssetUri )
 {
     const std::string animNameStr = animation->mName.C_Str( );
     InteropString     animName    = SanitizeAssetName( animNameStr.c_str( ) );
@@ -966,7 +952,7 @@ ImporterResultCode AssimpImporter::ProcessAnimation( ImportContext &context, con
     return ImporterResultCode::Success;
 }
 
-void AssimpImporter::CalculateMeshBounds( const aiMesh *mesh, float scaleFactor, Float_3 &outMin, Float_3 &outMax )
+void AssimpImporter::CalculateMeshBounds( const aiMesh *mesh, const float scaleFactor, Float_3 &outMin, Float_3 &outMax )
 {
     if ( !mesh || !mesh->HasPositions( ) || mesh->mNumVertices == 0 )
     {
@@ -1078,7 +1064,7 @@ void AssimpImporter::ConfigureAssimpImportFlags( const AssimpImportOptions &opti
     }
 }
 
-ImporterResultCode AssimpImporter::WriteMaterialAsset( ImportContext &context, const MaterialAsset &materialAsset, AssetUri &outAssetUri ) const
+ImporterResultCode AssimpImporter::WriteMaterialAsset( ImportContext &context, const MaterialAsset &materialAsset, AssetUri &outAssetUri )
 {
     const InteropString assetFilename   = CreateAssetFileName( context.AssetNamePrefix, materialAsset.Name, "Material", "dzmat" );
     const InteropString targetAssetPath = FileIO::GetAbsolutePath( InteropString( context.TargetDirectory ).Append( "/" ).Append( assetFilename.Get( ) ) );
@@ -1086,19 +1072,10 @@ ImporterResultCode AssimpImporter::WriteMaterialAsset( ImportContext &context, c
     MaterialAsset mutableAsset          = materialAsset;
     mutableAsset.Uri                    = outAssetUri;
     LOG( INFO ) << "Writing Material asset to: " << targetAssetPath.Get( );
-    try
-    {
-        BinaryWriter              writer( targetAssetPath );
-        const MaterialAssetWriter assetWriter( { &writer } );
-        assetWriter.Write( mutableAsset );
-        RegisterCreatedAsset( context, outAssetUri, AssetType::Material );
-    }
-    catch ( const std::exception &e )
-    {
-        LOG( ERROR ) << "Failed to write Material asset " << targetAssetPath.Get( ) << ": " << e.what( );
-        context.ErrorMessage = InteropString( "Failed to write Material asset " ).Append( targetAssetPath.Get( ) ).Append( ": " ).Append( e.what( ) );
-        return ImporterResultCode::WriteFailed;
-    }
+    BinaryWriter              writer( targetAssetPath );
+    const MaterialAssetWriter assetWriter( { &writer } );
+    assetWriter.Write( mutableAsset );
+    RegisterCreatedAsset( context, outAssetUri );
     return ImporterResultCode::Success;
 }
 
@@ -1144,7 +1121,7 @@ TextureExtension GetTextureExtension( const aiTexture *texture, const InteropArr
     return texExtension;
 }
 
-ImporterResultCode AssimpImporter::WriteTextureAsset( ImportContext &context, const aiTexture *texture, const std::string path, const InteropString &semanticName,
+ImporterResultCode AssimpImporter::WriteTextureAsset( ImportContext &context, const aiTexture *texture, const std::string &path, const InteropString &semanticName,
                                                       AssetUri &outAssetUri )
 {
     InteropString texName;
@@ -1220,12 +1197,12 @@ ImporterResultCode AssimpImporter::WriteTextureAsset( ImportContext &context, co
         } );
 
     assetWriter.Finalize( );
-    RegisterCreatedAsset( context, outAssetUri, AssetType::Texture );
+    RegisterCreatedAsset( context, outAssetUri );
     context.TexturePathToAssetUriMap[ targetAssetPath.Get( ) ] = outAssetUri;
     return ImporterResultCode::Success;
 }
 
-ImporterResultCode AssimpImporter::WriteSkeletonAsset( ImportContext &context, const SkeletonAsset &skeletonAsset ) const
+ImporterResultCode AssimpImporter::WriteSkeletonAsset( ImportContext &context, const SkeletonAsset &skeletonAsset )
 {
     const InteropString assetFilename   = CreateAssetFileName( context.AssetNamePrefix, skeletonAsset.Name, "Skeleton", "dzskel" );
     const InteropString targetAssetPath = FileIO::GetAbsolutePath( InteropString( context.TargetDirectory ).Append( "/" ).Append( assetFilename.Get( ) ) );
@@ -1233,24 +1210,14 @@ ImporterResultCode AssimpImporter::WriteSkeletonAsset( ImportContext &context, c
     SkeletonAsset mutableAsset          = skeletonAsset;
     mutableAsset.Uri                    = context.SkeletonAssetUri;
     LOG( INFO ) << "Writing Skeleton asset to: " << targetAssetPath.Get( );
-    try
-    {
-        BinaryWriter              writer( targetAssetPath );
-        const SkeletonAssetWriter assetWriter( { &writer } );
-        assetWriter.Write( mutableAsset );
-        RegisterCreatedAsset( context, context.SkeletonAssetUri, AssetType::Skeleton );
-    }
-    catch ( const std::exception &e )
-    {
-        LOG( ERROR ) << "Failed to write Skeleton asset " << targetAssetPath.Get( ) << ": " << e.what( );
-        context.ErrorMessage = "Failed to write skeleton asset: ";
-        context.ErrorMessage.Append( e.what( ) );
-        return ImporterResultCode::WriteFailed;
-    }
+    BinaryWriter              writer( targetAssetPath );
+    const SkeletonAssetWriter assetWriter( { &writer } );
+    assetWriter.Write( mutableAsset );
+    RegisterCreatedAsset( context, context.SkeletonAssetUri );
     return ImporterResultCode::Success;
 }
 
-ImporterResultCode AssimpImporter::WriteAnimationAsset( ImportContext &context, const AnimationAsset &animationAsset, AssetUri &outAssetUri ) const
+ImporterResultCode AssimpImporter::WriteAnimationAsset( ImportContext &context, const AnimationAsset &animationAsset, AssetUri &outAssetUri )
 {
     const InteropString assetFilename   = CreateAssetFileName( context.AssetNamePrefix, animationAsset.Name, "Animation", "dzanim" );
     const InteropString targetAssetPath = FileIO::GetAbsolutePath( InteropString( context.TargetDirectory ).Append( "/" ).Append( assetFilename.Get( ) ) );
@@ -1258,19 +1225,10 @@ ImporterResultCode AssimpImporter::WriteAnimationAsset( ImportContext &context, 
     AnimationAsset mutableAsset         = animationAsset;
     mutableAsset.Uri                    = outAssetUri;
     LOG( INFO ) << "Writing Animation asset to: " << targetAssetPath.Get( );
-    try
-    {
-        BinaryWriter         writer( targetAssetPath );
-        AnimationAssetWriter assetWriter( { &writer } );
-        assetWriter.Write( mutableAsset );
-        RegisterCreatedAsset( context, outAssetUri, AssetType::Animation );
-    }
-    catch ( const std::exception &e )
-    {
-        LOG( ERROR ) << "Failed to write Animation asset " << targetAssetPath.Get( ) << ": " << e.what( );
-        context.ErrorMessage = InteropString( "Failed to write Animation asset " ).Append( targetAssetPath.Get( ) ).Append( ": " ).Append( e.what( ) );
-        return ImporterResultCode::WriteFailed;
-    }
+    BinaryWriter         writer( targetAssetPath );
+    AnimationAssetWriter assetWriter( { &writer } );
+    assetWriter.Write( mutableAsset );
+    RegisterCreatedAsset( context, outAssetUri );
     return ImporterResultCode::Success;
 }
 
@@ -1362,7 +1320,7 @@ InteropString AssimpImporter::GetAssetNameFromFilePath( const InteropString &fil
 InteropString AssimpImporter::SanitizeAssetName( const InteropString &name )
 {
     std::string s = name.Get( );
-    std::ranges::replace_if( s, []( char c ) { return !std::isalnum( c ) && c != '-' && c != '.'; }, '_' );
+    std::ranges::replace_if( s, []( const char c ) { return !std::isalnum( c ) && c != '-' && c != '.'; }, '_' );
     s.erase( 0, std::min( s.find_first_not_of( "_-." ), s.size( ) - 1 ) );
     s.erase( s.find_last_not_of( "_-." ) + 1 );
     if ( s.empty( ) )
@@ -1372,7 +1330,7 @@ InteropString AssimpImporter::SanitizeAssetName( const InteropString &name )
     return { s.c_str( ) };
 }
 
-InteropString AssimpImporter::GetFileExtension( const InteropString &filePath )
+InteropString AssimpImporter::GetFileExtension( const InteropString &filePath ) const
 {
     const std::filesystem::path p = filePath.Get( );
     return InteropString( p.extension( ).string( ).c_str( ) ).ToLower( );
@@ -1384,7 +1342,7 @@ InteropString AssimpImporter::GetFileNameWithoutExtension( const InteropString &
     return { p.stem( ).string( ).c_str( ) };
 }
 
-void AssimpImporter::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri, AssetType assetType )
+void AssimpImporter::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri )
 {
     context.Result.CreatedAssets.AddElement( assetUri );
 }
