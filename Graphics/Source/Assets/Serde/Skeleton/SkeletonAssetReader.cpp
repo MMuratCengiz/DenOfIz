@@ -51,7 +51,9 @@ SkeletonAsset SkeletonAssetReader::Read( )
 
         joint.Name              = m_reader->ReadString( );
         joint.InverseBindMatrix = m_reader->ReadFloat_4x4( );
-        joint.LocalTransform    = m_reader->ReadFloat_4x4( );
+        joint.LocalTranslation  = m_reader->ReadFloat_3( );
+        joint.LocalRotationQuat = m_reader->ReadFloat_4( );
+        joint.LocalScale        = m_reader->ReadFloat_3( );
         joint.GlobalTransform   = m_reader->ReadFloat_4x4( );
         joint.Index             = m_reader->ReadUInt32( );
         joint.ParentIndex       = m_reader->ReadInt32( );

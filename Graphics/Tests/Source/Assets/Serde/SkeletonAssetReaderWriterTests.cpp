@@ -25,7 +25,9 @@ protected:
         rootJoint.ParentIndex = -1;
 
         rootJoint.InverseBindMatrix = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f };
-        rootJoint.LocalTransform    = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+        rootJoint.LocalTranslation  = { 0.0f, 0.0f, 0.0f };
+        rootJoint.LocalRotationQuat = { 0.0f, 0.0f, 0.0f, 1.0f };
+        rootJoint.LocalScale        = { 1.0f, 1.0f, 1.0f };
         rootJoint.GlobalTransform   = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f };
 
         rootJoint.ChildIndices.AddElement( 1 );
@@ -36,7 +38,9 @@ protected:
         spineJoint.ParentIndex = 0;
 
         spineJoint.InverseBindMatrix = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f };
-        spineJoint.LocalTransform    = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f };
+        spineJoint.LocalTranslation  = { 0.0f, 1.0f, 0.0f };
+        spineJoint.LocalRotationQuat = { 0.0f, 0.0f, 0.0f, 1.0f };
+        spineJoint.LocalScale        = { 1.0f, 1.0f, 1.0f };
         spineJoint.GlobalTransform   = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f };
 
         spineJoint.ChildIndices.AddElement( 2 );
@@ -47,7 +51,9 @@ protected:
         headJoint.ParentIndex = 1;
 
         headJoint.InverseBindMatrix = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, -2.0f, 0.0f, 1.0f };
-        headJoint.LocalTransform    = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f };
+        headJoint.LocalTranslation  = { 0.0f, 1.0f, 0.0f };
+        headJoint.LocalRotationQuat = { 0.0f, 0.0f, 0.0f, 1.0f };
+        headJoint.LocalScale        = { 1.0f, 1.0f, 1.0f };
         headJoint.GlobalTransform   = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f, 0.0f, 1.0f };
 
         asset.Joints.AddElement( rootJoint );
@@ -93,7 +99,9 @@ TEST_F( SkeletonAssetSerdeTest, WriteAndReadBack )
         ASSERT_EQ( readJoint.ParentIndex, sampleJoint.ParentIndex );
 
         ASSERT_TRUE( MatricesEqual( readJoint.InverseBindMatrix, sampleJoint.InverseBindMatrix ) );
-        ASSERT_TRUE( MatricesEqual( readJoint.LocalTransform, sampleJoint.LocalTransform ) );
+        ASSERT_TRUE( Float3Equals( readJoint.LocalTranslation, sampleJoint.LocalTranslation ));
+        ASSERT_TRUE( Float4Equals( readJoint.LocalRotationQuat, sampleJoint.LocalRotationQuat ));
+        ASSERT_TRUE( Float3Equals( readJoint.LocalScale, sampleJoint.LocalScale ));
         ASSERT_TRUE( MatricesEqual( readJoint.GlobalTransform, sampleJoint.GlobalTransform ) );
 
         ASSERT_EQ( readJoint.ChildIndices.NumElements( ), sampleJoint.ChildIndices.NumElements( ) );

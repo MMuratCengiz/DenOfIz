@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Backends/DirectX12/DX12InputLayout.h>
 #include <DenOfIzGraphics/Backends/DirectX12/DX12Pipeline.h>
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h>
 #include <DenOfIzGraphics/Utilities/Storage.h>
@@ -55,6 +56,7 @@ void DX12Pipeline::CreateGraphicsPipeline( )
 {
     m_topology             = DX12EnumConverter::ConvertPrimitiveTopology( m_desc.Graphics.PrimitiveTopology );
     const auto inputLayout = dynamic_cast<DX12InputLayout *>( m_desc.InputLayout );
+    m_iaStride             = inputLayout->Stride( );
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = { };
     psoDesc.InputLayout                        = inputLayout->GetInputLayout( );
@@ -442,6 +444,11 @@ D3D12_PRIMITIVE_TOPOLOGY DX12Pipeline::GetTopology( ) const
 BindPoint DX12Pipeline::GetBindPoint( ) const
 {
     return m_desc.BindPoint;
+}
+
+uint32_t DX12Pipeline::GetIAStride( ) const
+{
+    return m_iaStride;
 }
 
 void *DX12Pipeline::GetShaderIdentifier( const std::string &exportName )

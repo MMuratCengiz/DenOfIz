@@ -60,10 +60,10 @@ namespace DenOfIz
         Float_4               Position{ };
         Float_4               Normal{ };
         InteropArray<Float_2> UVs;
+        InteropArray<Float_4> Colors;
         Float_4               Tangent{ };
         Float_4               Bitangent{ };
-        InteropArray<Float_4> Colors;
-        UInt32_4              BoneIndices{ };
+        UInt32_4              BlendIndices{ };
         Float_4               BoneWeights{ };
     };
     template class DZ_API InteropArray<MeshVertex>;
@@ -91,7 +91,7 @@ namespace DenOfIz
 
     struct DZ_API VertexAttributeConfig
     {
-        uint32_t                  NumPositionComponents = 3;
+        uint32_t                  NumPositionComponents = 4; // TODO not yet implemented
         uint32_t                  NumUVAttributes       = 2;
         InteropArray<UVChannel>   UVChannels;
         InteropArray<ColorFormat> ColorFormats;

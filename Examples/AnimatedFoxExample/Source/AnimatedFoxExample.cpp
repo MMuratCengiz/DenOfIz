@@ -15,101 +15,366 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzExamples/RayTracedProceduralGeometryExample.h>
+
+#include <DenOfIzExamples/AnimatedFoxExample.h>
+#include <DenOfIzGraphics/Animation/AnimationStateManager.h>
 #include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
+#include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetReader.h>
+#include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h>
+#include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h>
+#include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
+#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 
 using namespace DirectX;
 using namespace DenOfIz;
 
-void RayTracedProceduralGeometryExample::Init( )
+void AnimatedFoxExample::Init( )
 {
-    CreateRenderTargets( );
-    BuildProceduralGeometryAABBs( );
-    CreateResources( );
-    CreateAccelerationStructures( );
-    CreateRayTracingPipeline( );
-    CreateShaderBindingTable( );
+    LoadFoxAssets( );
+    SetupAnimation( );
+    CreateBuffers( );
+    CreateShaders( );
 
-    RenderGraphDesc renderGraphDesc{ };
-    renderGraphDesc.GraphicsApi   = m_graphicsApi;
-    renderGraphDesc.LogicalDevice = m_logicalDevice;
-    renderGraphDesc.SwapChain     = m_swapChain.get( );
+    m_camera->SetPosition( { 0.0f, 1.0f, -10.0f, 1.0f } );
+    m_camera->SetFront( { 0.0f, 0.0f, 1.0f, 0.0f } );
 
-    m_renderGraph = std::make_unique<RenderGraph>( renderGraphDesc );
-
-    NodeDesc raytracingNode{ };
-    raytracingNode.Name      = "RayTracing";
-    raytracingNode.QueueType = QueueType::RayTracing;
-    raytracingNode.Execute   = this;
-
-    PresentNodeDesc presentNode{ };
-    presentNode.SwapChain = m_swapChain.get( );
-    presentNode.Dependencies.AddElement( "RayTracing" );
-    presentNode.Execute = this;
-
-    m_renderGraph->AddNode( raytracingNode );
-    m_renderGraph->SetPresentNode( presentNode );
-    m_renderGraph->BuildGraph( );
-
-    m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
+    m_timer.OnEachSecond = []( const uint32_t fps ) { LOG( WARNING ) << "FPS: " << fps; };
 }
 
-void RayTracedProceduralGeometryExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
+void AnimatedFoxExample::ModifyApiPreferences( APIPreference &apiPreference )
 {
-    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    apiPreference.Windows = APIPreferenceWindows::DirectX12;
 }
 
-void RayTracedProceduralGeometryExample::BuildProceduralGeometryAABBs( )
+void AnimatedFoxExample::LoadFoxAssets( )
 {
-    constexpr auto     aabbGrid     = XMINT3( 4, 1, 4 );
-    constexpr XMFLOAT3 basePosition = {
-        -( aabbGrid.x * c_aabbWidth + ( aabbGrid.x - 1 ) * c_aabbDistance ) / 2.0f,
-        -( aabbGrid.y * c_aabbWidth + ( aabbGrid.y - 1 ) * c_aabbDistance ) / 2.0f,
-        -( aabbGrid.z * c_aabbWidth + ( aabbGrid.z - 1 ) * c_aabbDistance ) / 2.0f,
-    };
+    InteropString meshPath     = "Assets/Models/Fox_Fox_Mesh.dzmesh";
+    InteropString texturePath  = "Assets/Models/Fox_Texture_Texture.dztex";
+    InteropString skeletonPath = "Assets/Models/Fox_Fox_Skeleton.dzskel";
+    InteropString walkAnimPath = "Assets/Models/Fox_Walk_Animation.dzanim";
+    InteropString runAnimPath  = "Assets/Models/Fox_Run_Animation.dzanim";
 
-    constexpr XMFLOAT3 stride         = { c_aabbWidth + c_aabbDistance, c_aabbWidth + c_aabbDistance, c_aabbWidth + c_aabbDistance };
-    auto               InitializeAABB = [ & ]( const XMFLOAT3 &offsetIndex, const XMFLOAT3 &size )
+    if ( bool assetsExist = FileIO::FileExists( meshPath ) && FileIO::FileExists( skeletonPath ) && FileIO::FileExists( walkAnimPath ) && FileIO::FileExists( runAnimPath );
+         !assetsExist )
     {
-        AABBBoundingBox aabb;
-        aabb.MinX = basePosition.x + offsetIndex.x * stride.x;
-        aabb.MinY = basePosition.y + offsetIndex.y * stride.y;
-        aabb.MinZ = basePosition.z + offsetIndex.z * stride.z;
-        aabb.MaxX = aabb.MinX + size.x;
-        aabb.MaxY = aabb.MinY + size.y;
-        aabb.MaxZ = aabb.MinZ + size.z;
-        return aabb;
-    };
+        LOG( WARNING ) << "One or more fox assets are missing. Attempting to import the model...";
+        if ( InteropString sourceGltfPath = "Assets/Models/Fox.gltf"; !ImportFoxModel( sourceGltfPath ) )
+        {
+            LOG( FATAL ) << "Failed to import fox model!";
+            return;
+        }
 
-    m_aabbs.resize( IntersectionShaderType::TotalPrimitiveCount );
-    UINT offset = 0;
+        assetsExist = FileIO::FileExists( meshPath ) && FileIO::FileExists( skeletonPath ) && FileIO::FileExists( walkAnimPath ) && FileIO::FileExists( runAnimPath );
+        if ( !assetsExist )
+        {
+            LOG( FATAL ) << "Import completed but some assets are still missing. Using fallback quad mesh.";
+            return;
+        }
 
-    // Analytic primitives
-    {
-        m_aabbs[ offset + AnalyticPrimitive::AABB ]    = InitializeAABB( XMFLOAT3( 3, 0, 0 ), XMFLOAT3( 2, 3, 2 ) );
-        m_aabbs[ offset + AnalyticPrimitive::Spheres ] = InitializeAABB( XMFLOAT3( 2.25f, 0, 0.75f ), XMFLOAT3( 3, 3, 3 ) );
-        offset += AnalyticPrimitive::Count;
+        LOG( INFO ) << "Successfully imported fox model.";
     }
 
-    // Volumetric primitives
+    LOG( INFO ) << "Loading mesh from: " << meshPath.Get( );
+    BinaryReader        meshReader( meshPath );
+    MeshAssetReaderDesc meshReaderDesc{ };
+    meshReaderDesc.Reader = &meshReader;
+    MeshAssetReader meshAssetReader( meshReaderDesc );
+    m_foxMesh = meshAssetReader.Read( );
+
+    LOG( INFO ) << "Loading texture from: " << texturePath.Get( );
+    m_textureAssetBinaryReader = std::make_unique<BinaryReader>( texturePath );
+    TextureAssetReaderDesc textureReaderDesc{ };
+    textureReaderDesc.Reader = m_textureAssetBinaryReader.get( );
+    m_textureAssetReader     = std::make_unique<TextureAssetReader>( textureReaderDesc );
+
+    LOG( INFO ) << "Loading skeleton from: " << skeletonPath.Get( );
+    BinaryReader            skeletonReader( skeletonPath );
+    SkeletonAssetReaderDesc skeletonReaderDesc{ };
+    skeletonReaderDesc.Reader = &skeletonReader;
+    SkeletonAssetReader skeletonAssetReader( skeletonReaderDesc );
+    m_foxSkeleton = skeletonAssetReader.Read( );
+
+    LOG( INFO ) << "Loading animations from: " << walkAnimPath.Get( ) << " and " << runAnimPath.Get( );
+    BinaryReader             walkAnimReader( walkAnimPath );
+    AnimationAssetReaderDesc walkAnimReaderDesc{ };
+    walkAnimReaderDesc.Reader = &walkAnimReader;
+    AnimationAssetReader walkAnimAssetReader( walkAnimReaderDesc );
+    m_walkAnimation = walkAnimAssetReader.Read( );
+
+    BinaryReader             runAnimReader( runAnimPath );
+    AnimationAssetReaderDesc runAnimReaderDesc{ };
+    runAnimReaderDesc.Reader = &runAnimReader;
+    AnimationAssetReader runAnimAssetReader( runAnimReaderDesc );
+    m_runAnimation = runAnimAssetReader.Read( );
+
+    const auto &subMeshes = m_foxMesh.SubMeshes;
+    if ( subMeshes.NumElements( ) == 0 )
     {
-        m_aabbs[ offset + VolumetricPrimitive::MetaBalls ] = InitializeAABB( XMFLOAT3( 0, 0, 0 ), XMFLOAT3( 3, 3, 3 ) );
-        offset += VolumetricPrimitive::Count;
+        LOG( FATAL ) << "Fox mesh has no sub-meshes.";
+        return;
     }
 
-    // Signed distance primitives
+    const auto &subMesh = subMeshes.GetElement( 0 );
+
+    m_vertices.clear( );
+    m_indices.Clear( );
+
+    LOG( INFO ) << "Reading vertex data from mesh asset...";
+
+    InteropArray<MeshVertex> meshVertices = meshAssetReader.ReadVertices( subMesh.VertexStream );
+    LOG( INFO ) << "Read " << meshVertices.NumElements( ) << " vertices from mesh asset";
+
+    m_vertices.resize( meshVertices.NumElements( ) );
+    for ( size_t i = 0; i < meshVertices.NumElements( ); ++i )
     {
-        m_aabbs[ offset + SignedDistancePrimitive::MiniSpheres ]          = InitializeAABB( XMFLOAT3( 2, 0, 0 ), XMFLOAT3( 2, 2, 2 ) );
-        m_aabbs[ offset + SignedDistancePrimitive::TwistedTorus ]         = InitializeAABB( XMFLOAT3( 0, 0, 1 ), XMFLOAT3( 2, 2, 2 ) );
-        m_aabbs[ offset + SignedDistancePrimitive::IntersectedRoundCube ] = InitializeAABB( XMFLOAT3( 0, 0, 2 ), XMFLOAT3( 2, 2, 2 ) );
-        m_aabbs[ offset + SignedDistancePrimitive::SquareTorus ]          = InitializeAABB( XMFLOAT3( 0.75f, -0.1f, 2.25f ), XMFLOAT3( 3, 3, 3 ) );
-        m_aabbs[ offset + SignedDistancePrimitive::Cog ]                  = InitializeAABB( XMFLOAT3( 1, 0, 0 ), XMFLOAT3( 2, 2, 2 ) );
-        m_aabbs[ offset + SignedDistancePrimitive::Cylinder ]             = InitializeAABB( XMFLOAT3( 0, 0, 3 ), XMFLOAT3( 2, 3, 2 ) );
-        m_aabbs[ offset + SignedDistancePrimitive::FractalPyramid ]       = InitializeAABB( XMFLOAT3( 2, 0, 2 ), XMFLOAT3( 6, 6, 6 ) );
+        const MeshVertex &mv            = meshVertices.GetElement( i );
+        SkinnedVertex    &skinnedVertex = m_vertices[ i ];
+
+        skinnedVertex.Position.X = mv.Position.X;
+        skinnedVertex.Position.Y = mv.Position.Y;
+        skinnedVertex.Position.Z = mv.Position.Z;
+        skinnedVertex.Normal.X   = mv.Normal.X;
+        skinnedVertex.Normal.Y   = mv.Normal.Y;
+        skinnedVertex.Normal.Z   = mv.Normal.Z;
+        if ( mv.UVs.NumElements( ) > 0 )
+        {
+            const Float_2 &uv      = mv.UVs.GetElement( 0 );
+            skinnedVertex.TexCoord = { uv.X, uv.Y };
+        }
+        else
+        {
+            skinnedVertex.TexCoord = { 0.0f, 0.0f };
+        }
+
+        skinnedVertex.Tangent      = { mv.Tangent.X, mv.Tangent.Y, mv.Tangent.Z, mv.Tangent.W };
+        skinnedVertex.BlendIndices = { mv.BlendIndices.X, mv.BlendIndices.Y, mv.BlendIndices.Z, mv.BlendIndices.W };
+        skinnedVertex.BoneWeights  = { mv.BoneWeights.X, mv.BoneWeights.Y, mv.BoneWeights.Z, mv.BoneWeights.W };
+    }
+
+    LOG( INFO ) << "Reading index data from mesh asset...";
+    m_indices = meshAssetReader.ReadIndices32( subMesh.IndexStream );
+    LOG( INFO ) << "Read " << m_indices.NumElements( ) << " 32-bit indices from mesh asset";
+}
+
+void AnimatedFoxExample::SetupAnimation( )
+{
+    AnimationStateManagerDesc animManagerDesc;
+    animManagerDesc.Skeleton = &m_foxSkeleton;
+    m_animationManager       = std::make_unique<AnimationStateManager>( animManagerDesc );
+    m_animationManager->AddAnimation( m_walkAnimation );
+    m_animationManager->AddAnimation( m_runAnimation );
+    m_animationManager->Play( "Walk", true );
+}
+
+void AnimatedFoxExample::CreateBuffers( )
+{
+    BufferDesc vbDesc;
+    vbDesc.Descriptor = ResourceDescriptor::VertexBuffer;
+    vbDesc.NumBytes   = m_vertices.size( ) * sizeof( SkinnedVertex );
+    vbDesc.DebugName  = "FoxMesh_VertexBuffer";
+    m_vertexBuffer    = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vbDesc ) );
+
+    BufferDesc ibDesc;
+    ibDesc.Descriptor = ResourceDescriptor::IndexBuffer;
+    ibDesc.NumBytes   = m_indices.NumElements( ) * sizeof( uint32_t );
+    ibDesc.DebugName  = "FoxMesh_IndexBuffer";
+    m_indexBuffer     = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( ibDesc ) );
+
+    BufferDesc boneBufferDesc;
+    boneBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
+    boneBufferDesc.HeapType   = HeapType::CPU_GPU;
+    boneBufferDesc.NumBytes   = sizeof( SkinnedModelConstantBuffer );
+    boneBufferDesc.DebugName  = "FoxMesh_BoneTransformsBuffer";
+    m_boneTransformsBuffer    = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( boneBufferDesc ) );
+    m_boneTransformsData      = static_cast<SkinnedModelConstantBuffer *>( m_boneTransformsBuffer->MapMemory( ) );
+
+    BufferDesc perFrameBufferDesc;
+    perFrameBufferDesc.Descriptor  = ResourceDescriptor::UniformBuffer;
+    perFrameBufferDesc.HeapType    = HeapType::CPU_GPU;
+    perFrameBufferDesc.NumBytes    = sizeof( PerFrameConstantBuffer );
+    perFrameBufferDesc.DebugName   = "FoxMesh_PerFrameBuffer";
+    m_perFrameBuffer               = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( perFrameBufferDesc ) );
+    m_perFrameData                 = static_cast<PerFrameConstantBuffer *>( m_perFrameBuffer->MapMemory( ) );
+    m_perFrameData->ViewProjection = XMMatrixIdentity( );
+
+    BatchResourceCopy batchCopy( m_logicalDevice );
+    batchCopy.Begin( );
+
+    size_t             vertexDataSize = m_vertices.size( ) * sizeof( SkinnedVertex );
+    InteropArray<Byte> vertexData( vertexDataSize );
+    memcpy( vertexData.Data( ), m_vertices.data( ), vertexDataSize );
+
+    size_t             indexDataSize = m_indices.NumElements( ) * sizeof( uint32_t );
+    InteropArray<Byte> indexData( indexDataSize );
+    memcpy( indexData.Data( ), m_indices.Data( ), indexDataSize );
+
+    CopyToGpuBufferDesc vertexCopyDesc;
+    vertexCopyDesc.DstBuffer       = m_vertexBuffer.get( );
+    vertexCopyDesc.DstBufferOffset = 0;
+    vertexCopyDesc.Data            = vertexData;
+    batchCopy.CopyToGPUBuffer( vertexCopyDesc );
+
+    CopyToGpuBufferDesc indexCopyDesc;
+    indexCopyDesc.DstBuffer       = m_indexBuffer.get( );
+    indexCopyDesc.DstBufferOffset = 0;
+    indexCopyDesc.Data            = indexData;
+    batchCopy.CopyToGPUBuffer( indexCopyDesc );
+
+    batchCopy.Submit( );
+}
+
+void AnimatedFoxExample::CreateShaders( )
+{
+    InteropArray<ShaderStageDesc> shaderStages( 2 );
+
+    ShaderStageDesc &vsDesc = shaderStages.GetElement( 0 );
+    vsDesc.Stage            = ShaderStage::Vertex;
+    vsDesc.Path             = "Assets/Shaders/SkinnedMesh.vs.hlsl";
+    vsDesc.EntryPoint       = "main";
+
+    ShaderStageDesc &psDesc = shaderStages.GetElement( 1 );
+    psDesc.Stage            = ShaderStage::Pixel;
+    psDesc.Path             = "Assets/Shaders/SkinnedMesh.ps.hlsl";
+    psDesc.EntryPoint       = "main";
+
+    ShaderProgramDesc programDesc{ };
+    programDesc.ShaderStages = shaderStages;
+    auto skinnedMeshProgram  = std::make_unique<ShaderProgram>( programDesc );
+
+    auto reflection            = skinnedMeshProgram->Reflect( );
+    m_skinnedMeshRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
+
+    auto inputLayout = std::unique_ptr<IInputLayout>( m_logicalDevice->CreateInputLayout( reflection.InputLayout ) );
+
+    PipelineDesc pipelineDesc{ };
+    pipelineDesc.InputLayout       = inputLayout.get( );
+    pipelineDesc.RootSignature     = m_skinnedMeshRootSignature.get( );
+    pipelineDesc.ShaderProgram     = skinnedMeshProgram.get( );
+    pipelineDesc.Graphics.CullMode = CullMode::BackFace;
+    pipelineDesc.Graphics.RenderTargets.AddElement( { .Format = Format::B8G8R8A8Unorm } );
+
+    m_skinnedMeshPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
+
+    ResourceBindGroupDesc bindGroupDesc{ };
+    bindGroupDesc.RootSignature = m_skinnedMeshRootSignature.get( );
+    m_resourceBindGroup         = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
+
+    m_resourceBindGroup->BeginUpdate( );
+    m_resourceBindGroup->Cbv( 0, m_boneTransformsBuffer.get( ) );
+    m_resourceBindGroup->Cbv( 1, m_perFrameBuffer.get( ) );
+
+    BufferDesc materialBufferDesc;
+    materialBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
+    materialBufferDesc.HeapType   = HeapType::CPU_GPU;
+    materialBufferDesc.NumBytes   = sizeof( MaterialConstantBuffer );
+    materialBufferDesc.DebugName  = "FoxMesh_MaterialBuffer";
+    m_materialBuffer              = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( materialBufferDesc ) );
+    m_materialData                = static_cast<MaterialConstantBuffer *>( m_materialBuffer->MapMemory( ) );
+
+    m_materialData->DiffuseColor      = { 0.8f, 0.8f, 0.8f, 1.0f };
+    m_materialData->AmbientColor      = { 0.2f, 0.2f, 0.2f, 1.0f };
+    m_materialData->SpecularPower     = 32.0f;
+    m_materialData->SpecularIntensity = 0.5f;
+
+    m_resourceBindGroup->Cbv( 2, m_materialBuffer.get( ) );
+
+    m_texture        = CreateTexture( );
+    m_defaultSampler = CreateDefaultSampler( );
+
+    m_resourceBindGroup->Srv( 0, m_texture.get( ) );
+    m_resourceBindGroup->Sampler( 0, m_defaultSampler.get( ) );
+
+    m_resourceBindGroup->EndUpdate( );
+}
+
+void AnimatedFoxExample::Update( )
+{
+    m_timer.Tick( );
+    m_time.Tick( );
+    const auto deltaTime = static_cast<float>( m_time.GetDeltaTime( ) );
+    m_camera->Update( deltaTime );
+    if ( m_perFrameData != nullptr )
+    {
+        m_perFrameData->ViewProjection = m_camera->ViewProjectionMatrix( );
+        m_perFrameData->CameraPosition = m_camera->Position( );
+        m_perFrameData->Time           = XMVectorSet( static_cast<float>( m_timer.GetElapsedSeconds( ) ), static_cast<float>( m_time.GetDeltaTime( ) ), 0.0f, 0.0f );
+    }
+    if ( m_animPlaying )
+    {
+        m_animationManager->Update( deltaTime );
+        UpdateBoneTransforms( );
+    }
+
+    RenderAndPresentFrame( );
+}
+
+void AnimatedFoxExample::UpdateBoneTransforms( )
+{
+    InteropArray<Float_4x4> boneTransforms;
+    m_animationManager->GetModelSpaceTransforms( boneTransforms );
+
+    const size_t numBones = m_animationManager->GetNumJoints( );
+    const size_t maxBones = std::min( numBones, static_cast<size_t>( 128 ) );
+
+    for ( size_t i = 0; i < maxBones && i < boneTransforms.NumElements( ); ++i )
+    {
+        const Float_4x4 &modelMatrix = boneTransforms.GetElement( i );
+        if ( i < m_foxSkeleton.Joints.NumElements( ) )
+        {
+            const Joint &joint = m_foxSkeleton.Joints.GetElement( i );
+
+            auto           xmModelMatrix = Float_4x4ToXMFLOAT4X4( modelMatrix );
+            const XMMATRIX modelMat      = XMLoadFloat4x4( &xmModelMatrix );
+            auto           xmInvBindMat  = Float_4x4ToXMFLOAT4X4( joint.InverseBindMatrix );
+            const XMMATRIX invBindMat    = XMLoadFloat4x4( &xmInvBindMat );
+            const XMMATRIX finalMat      = XMMatrixMultiply( invBindMat, modelMat );
+            XMFLOAT4X4     f4x4FinalMat{ };
+            XMStoreFloat4x4( &f4x4FinalMat, finalMat );
+            m_boneTransformsData->BoneTransforms[ i ] = Float_4x4FromXMFLOAT4X4( f4x4FinalMat );
+        }
+        else
+        {
+            m_boneTransformsData->BoneTransforms[ i ] = modelMatrix;
+        }
     }
 }
 
-void RayTracedProceduralGeometryExample::HandleEvent( SDL_Event &event )
+void AnimatedFoxExample::Render( const uint32_t frameIndex, ICommandList *commandList )
+{
+    commandList->Begin( );
+
+    ITextureResource *renderTarget = m_swapChain->GetRenderTarget( frameIndex );
+
+    BatchTransitionDesc batchTransition( commandList );
+    batchTransition.TransitionTexture( renderTarget, ResourceUsage::RenderTarget );
+    m_resourceTracking.BatchTransition( batchTransition );
+
+    const Viewport &viewport = m_swapChain->GetViewport( );
+    commandList->BindViewport( 0.0f, 0.0f, viewport.Width, viewport.Height );
+    commandList->BindScissorRect( 0.0f, 0.0f, viewport.Width, viewport.Height );
+
+    RenderingDesc           renderingDesc;
+    RenderingAttachmentDesc attachmentDesc{ };
+    attachmentDesc.Resource = renderTarget;
+    attachmentDesc.SetClearColor( 0.1f, 0.1f, 0.2f, 1.0f );
+    renderingDesc.RTAttachments.AddElement( attachmentDesc );
+
+    commandList->BeginRendering( renderingDesc );
+    commandList->BindPipeline( m_skinnedMeshPipeline.get( ) );
+    commandList->BindResourceGroup( m_resourceBindGroup.get( ) );
+    commandList->BindVertexBuffer( m_vertexBuffer.get( ) );
+    commandList->BindIndexBuffer( m_indexBuffer.get( ), IndexType::Uint32 );
+    commandList->DrawIndexed( static_cast<uint32_t>( m_indices.NumElements( ) ), 1, 0, 0, 0 );
+    commandList->EndRendering( );
+
+    batchTransition = BatchTransitionDesc( commandList );
+    batchTransition.TransitionTexture( renderTarget, ResourceUsage::Present );
+    m_resourceTracking.BatchTransition( batchTransition );
+
+    commandList->End( );
+}
+
+void AnimatedFoxExample::HandleEvent( SDL_Event &event )
 {
     switch ( event.type )
     {
@@ -117,8 +382,42 @@ void RayTracedProceduralGeometryExample::HandleEvent( SDL_Event &event )
         {
             switch ( event.key.keysym.sym )
             {
-            case SDLK_g:
-                m_animateGeometry = !m_animateGeometry;
+            case SDLK_w: // Switch to walk animation
+                m_animationManager->Play( "Walk", true );
+                m_currentAnim = "Walk";
+                break;
+            case SDLK_r: // Switch to run animation
+                m_animationManager->Play( "Run", true );
+                m_currentAnim = "Run";
+                break;
+            case SDLK_b: // Blend between animations
+                if ( m_animationManager->GetCurrentAnimationName( ) == "Walk" )
+                {
+                    m_animationManager->BlendTo( "Run", 0.5f );
+                    m_currentAnim = "Blending to Run";
+                }
+                else
+                {
+                    m_animationManager->BlendTo( "Walk", 0.5f );
+                    m_currentAnim = "Blending to Walk";
+                }
+                break;
+            case SDLK_SPACE: // Pause/Resume animation
+                m_animPlaying = !m_animPlaying;
+                if ( m_animPlaying )
+                {
+                    m_animationManager->Resume( );
+                }
+                else
+                {
+                    m_animationManager->Pause( );
+                }
+                break;
+            case SDLK_UP: // Increase animation speed
+                m_animSpeed += 0.1f;
+                break;
+            case SDLK_DOWN: // Decrease animation speed
+                m_animSpeed = std::max( 0.1f, m_animSpeed - 0.1f );
                 break;
             default:;
             }
@@ -131,623 +430,74 @@ void RayTracedProceduralGeometryExample::HandleEvent( SDL_Event &event )
     IExample::HandleEvent( event );
 }
 
-void RayTracedProceduralGeometryExample::UpdateAABBPrimitiveAttributes( )
+bool AnimatedFoxExample::ImportFoxModel( const InteropString &gltfPath )
 {
-    const XMMATRIX mIdentity = XMMatrixIdentity( );
-    const XMMATRIX mScale15y = XMMatrixScaling( 1, 1.5f, 1 );
-    const XMMATRIX mScale15  = XMMatrixScaling( 1.5f, 1.5f, 1.5f );
-    const XMMATRIX mScale3   = XMMatrixScaling( 3, 3, 3 );
-    const XMMATRIX mRotation = XMMatrixRotationY( -2 * m_animateGeometryTime );
-
-    auto SetTransformForAABB = [ & ]( const UINT primitiveIndex, const XMMATRIX &mScale, const XMMATRIX &mRotation )
+    if ( !FileIO::FileExists( gltfPath ) )
     {
-        const XMVECTOR vTranslation = 0.5f * ( XMLoadFloat3( reinterpret_cast<XMFLOAT3 *>( &m_aabbs[ primitiveIndex ].MinX ) ) +
-                                               XMLoadFloat3( reinterpret_cast<XMFLOAT3 *>( &m_aabbs[ primitiveIndex ].MaxX ) ) );
-        const XMMATRIX mTranslation = XMMatrixTranslationFromVector( vTranslation );
-
-        const XMMATRIX mTransform                                                        = mScale * mRotation * mTranslation;
-        m_aabbPrimitiveAttributeBufferMemory[ primitiveIndex ].localSpaceToBottomLevelAS = mTransform;
-        m_aabbPrimitiveAttributeBufferMemory[ primitiveIndex ].bottomLevelASToLocalSpace = XMMatrixInverse( nullptr, mTransform );
-    };
-
-    UINT offset = 0;
-    // Analytic primitives
-    {
-        SetTransformForAABB( offset + AnalyticPrimitive::AABB, mScale15y, mIdentity );
-        SetTransformForAABB( offset + AnalyticPrimitive::Spheres, mScale15, mRotation );
-        offset += AnalyticPrimitive::Count;
+        LOG( FATAL ) << "Source GLTF file not found at: " << gltfPath.Get( );
+        return false;
     }
 
-    // Volumetric primitives
+    // Create AssimpImporter
+    AssimpImporterDesc importerDesc;
+    importerDesc.BundleOutputPath = "";      // Not implemented yet
+    importerDesc.BundleManager    = nullptr; // Not implemented yet
+
+    AssimpImporter importer( importerDesc );
+
+    if ( !importer.ValidateFile( gltfPath ) )
     {
-        SetTransformForAABB( offset + VolumetricPrimitive::MetaBalls, mScale15, mRotation );
-        offset += VolumetricPrimitive::Count;
+        LOG( ERROR ) << "AssimpImporter cannot process the file: " << gltfPath.Get( );
+        return false;
     }
 
-    // Signed distance primitives
+    ImportJobDesc importJobDesc;
+    importJobDesc.SourceFilePath  = gltfPath;
+    importJobDesc.TargetDirectory = "Assets/Models/";
+    importJobDesc.AssetNamePrefix = "Fox";
+
+    AssimpImportOptions options;
+    options.ImportMaterials         = true;
+    options.ImportTextures          = true;
+    options.ImportSkeletons         = true;
+    options.ImportAnimations        = true;
+    options.LimitBoneWeights        = true;
+    options.MaxBoneWeightsPerVertex = 4;
+    options.ScaleFactor             = 0.01f;
+
+    importJobDesc.Options = static_cast<ImportOptions>( options );
+
+    ImporterResult result = importer.Import( importJobDesc );
+    if ( result.ResultCode != ImporterResultCode::Success )
     {
-        SetTransformForAABB( offset + SignedDistancePrimitive::MiniSpheres, mIdentity, mIdentity );
-        SetTransformForAABB( offset + SignedDistancePrimitive::IntersectedRoundCube, mIdentity, mIdentity );
-        SetTransformForAABB( offset + SignedDistancePrimitive::SquareTorus, mScale15, mIdentity );
-        SetTransformForAABB( offset + SignedDistancePrimitive::TwistedTorus, mIdentity, mRotation );
-        SetTransformForAABB( offset + SignedDistancePrimitive::Cog, mIdentity, mRotation );
-        SetTransformForAABB( offset + SignedDistancePrimitive::Cylinder, mScale15y, mIdentity );
-        SetTransformForAABB( offset + SignedDistancePrimitive::FractalPyramid, mScale3, mIdentity );
+        LOG( ERROR ) << "Import failed: " << result.ErrorMessage.Get( );
+        return false;
     }
+
+    for ( size_t i = 0; i < result.CreatedAssets.NumElements( ); ++i )
+    {
+        AssetUri uri = result.CreatedAssets.GetElement( i );
+        LOG( INFO ) << "Created asset: " << uri.Path.Get( );
+    }
+
+    return true;
 }
 
-void RayTracedProceduralGeometryExample::Update( )
+std::unique_ptr<ITextureResource> AnimatedFoxExample::CreateTexture( ) const
 {
-    m_time.Tick( );
-    m_camera->Update( m_time.GetDeltaTime( ) );
+    BatchResourceCopy batchCopy( m_logicalDevice );
+    batchCopy.Begin( );
 
-    if ( m_animateGeometry )
-    {
-        m_animateGeometryTime += m_time.GetDeltaTime( );
-        UpdateAABBPrimitiveAttributes( );
-    }
+    CreateAssetTextureDesc createDesc{ };
+    createDesc.Reader    = m_textureAssetReader.get( );
+    createDesc.DebugName = "FoxMesh_Texture";
+    auto texture         = std::unique_ptr<ITextureResource>( batchCopy.CreateAndLoadAssetTexture( createDesc ) );
+    batchCopy.Submit( );
 
-    m_sceneConstants->cameraPosition    = m_camera->Position( );
-    m_sceneConstants->projectionToWorld = XMMatrixInverse( nullptr, m_camera->ViewProjectionMatrix( ) );
-
-    m_renderGraph->Update( );
+    return texture;
 }
 
-void RayTracedProceduralGeometryExample::Execute( const uint32_t frameIndex, ICommandList *commandList )
+std::unique_ptr<ISampler> AnimatedFoxExample::CreateDefaultSampler( ) const
 {
-    m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::UnorderedAccess ) } );
-
-    const Viewport &viewport = m_swapChain->GetViewport( );
-
-    commandList->BindPipeline( m_rayTracingPipeline.get( ) );
-    commandList->BindResourceGroup( m_rayTracingBindGroups[ frameIndex ].get( ) );
-
-    DispatchRaysDesc dispatchRaysDesc{ };
-    dispatchRaysDesc.Width              = viewport.Width;
-    dispatchRaysDesc.Height             = viewport.Height;
-    dispatchRaysDesc.Depth              = 1;
-    dispatchRaysDesc.ShaderBindingTable = m_shaderBindingTable.get( );
-    commandList->DispatchRays( dispatchRaysDesc );
-}
-
-void RayTracedProceduralGeometryExample::Execute( const uint32_t frameIndex, ICommandList *commandList, ITextureResource *renderTarget )
-{
-    m_renderGraph->IssueBarriers( commandList, { NodeResourceUsageDesc::TextureState( frameIndex, m_raytracingOutput[ frameIndex ].get( ), ResourceUsage::CopySrc ),
-                                                 NodeResourceUsageDesc::TextureState( frameIndex, renderTarget, ResourceUsage::CopyDst ) } );
-
-    CopyTextureRegionDesc copyTextureRegionDesc{ };
-    copyTextureRegionDesc.SrcTexture = m_raytracingOutput[ frameIndex ].get( );
-    copyTextureRegionDesc.DstTexture = renderTarget;
-    copyTextureRegionDesc.Width      = m_windowDesc.Width;
-    copyTextureRegionDesc.Height     = m_windowDesc.Height;
-    copyTextureRegionDesc.Depth      = 1;
-    commandList->CopyTextureRegion( copyTextureRegionDesc );
-}
-
-void RayTracedProceduralGeometryExample::CreateRenderTargets( )
-{
-    TextureDesc textureDesc{ };
-    textureDesc.Width        = m_windowDesc.Width;
-    textureDesc.Height       = m_windowDesc.Height;
-    textureDesc.Format       = Format::B8G8R8A8Unorm;
-    textureDesc.Descriptor   = BitSet( ResourceDescriptor::RWTexture );
-    textureDesc.InitialUsage = ResourceUsage::UnorderedAccess;
-    textureDesc.Usages       = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::UnorderedAccess;
-
-    for ( uint32_t i = 0; i < 3; ++i )
-    {
-        textureDesc.DebugName   = InteropString( "RayTracing Output " ).Append( std::to_string( i ).c_str( ) );
-        m_raytracingOutput[ i ] = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
-    }
-}
-
-void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
-{
-    {
-        BottomLevelASDesc bottomLevelDesc{ };
-        bottomLevelDesc.BuildFlags = ASBuildFlags::PreferFastTrace;
-
-        for ( UINT i = 0; i < IntersectionShaderType::TotalPrimitiveCount; i++ )
-        {
-            ASGeometryDesc aabbGeometryDesc{ };
-            aabbGeometryDesc.Type           = HitGroupType::AABBs;
-            aabbGeometryDesc.AABBs.Buffer   = m_aabbBuffer.get( );
-            aabbGeometryDesc.AABBs.Stride   = sizeof( AABBBoundingBox );
-            aabbGeometryDesc.AABBs.NumAABBs = 1;
-            aabbGeometryDesc.AABBs.Offset   = i * sizeof( AABBBoundingBox );
-            aabbGeometryDesc.Flags          = GeometryFlags::Opaque;
-
-            bottomLevelDesc.Geometries.AddElement( aabbGeometryDesc );
-        }
-
-        m_aabbAS = std::unique_ptr<IBottomLevelAS>( m_logicalDevice->CreateBottomLevelAS( bottomLevelDesc ) );
-    }
-
-    {
-        ASGeometryDesc triangleGeometryDesc{ };
-        triangleGeometryDesc.Type                   = HitGroupType::Triangles;
-        triangleGeometryDesc.Triangles.IndexBuffer  = m_indexBuffer.get( );
-        triangleGeometryDesc.Triangles.NumIndices   = 6;
-        triangleGeometryDesc.Triangles.IndexType    = IndexType::Uint16;
-        triangleGeometryDesc.Triangles.VertexFormat = Format::R32G32B32Float;
-        triangleGeometryDesc.Triangles.VertexBuffer = m_vertexBuffer.get( );
-        triangleGeometryDesc.Triangles.VertexStride = sizeof( Vertex );
-        triangleGeometryDesc.Triangles.NumVertices  = 4;
-        triangleGeometryDesc.Flags                  = GeometryFlags::Opaque;
-
-        BottomLevelASDesc bottomLevelDesc{ };
-        bottomLevelDesc.BuildFlags = ASBuildFlags::PreferFastTrace;
-        bottomLevelDesc.Geometries.AddElement( triangleGeometryDesc );
-        m_triangleAS = std::unique_ptr<IBottomLevelAS>( m_logicalDevice->CreateBottomLevelAS( bottomLevelDesc ) );
-    }
-
-    {
-        ASInstanceDesc aabbInstanceDesc{ };
-        aabbInstanceDesc.Mask                        = 0x01;
-        aabbInstanceDesc.BLAS                        = m_aabbAS.get( );
-        aabbInstanceDesc.ContributionToHitGroupIndex = 2;
-        aabbInstanceDesc.ID                          = 1;
-        aabbInstanceDesc.Transform.Resize( 12 );
-
-        aabbInstanceDesc.Transform.SetElement( 0, 1.0f );
-        aabbInstanceDesc.Transform.SetElement( 5, 1.0f );
-        aabbInstanceDesc.Transform.SetElement( 10, 1.0f );
-        // Move float:
-        aabbInstanceDesc.Transform.SetElement( 7, 1.0f );
-
-        ASInstanceDesc triangleInstanceDesc{ };
-        triangleInstanceDesc.Mask                        = 0x01;
-        triangleInstanceDesc.BLAS                        = m_triangleAS.get( );
-        triangleInstanceDesc.ContributionToHitGroupIndex = 0;
-        triangleInstanceDesc.ID                          = 0;
-        triangleInstanceDesc.Transform.Resize( 12 );
-
-        constexpr XMUINT3 NUM_AABB( 700, 1, 700 );
-        constexpr auto    fWidth = XMFLOAT3( NUM_AABB.x * c_aabbWidth + ( NUM_AABB.x - 1 ) * c_aabbDistance, NUM_AABB.y * c_aabbWidth + ( NUM_AABB.y - 1 ) * c_aabbDistance,
-                                             NUM_AABB.z * c_aabbWidth + ( NUM_AABB.z - 1 ) * c_aabbDistance );
-
-        XMFLOAT3       basePosition( fWidth.x * -0.35f, 0.0f, fWidth.z * -0.35f );
-        const XMVECTOR vBasePosition = XMLoadFloat3( &basePosition );
-        XMMATRIX       mScale        = XMMatrixScaling( fWidth.x, fWidth.y, fWidth.z );
-        XMMATRIX       mTranslation  = XMMatrixTranslationFromVector( vBasePosition );
-        XMMATRIX       mTransform    = mScale * mTranslation;
-
-        float transform[ 12 ];
-        XMStoreFloat3x4( reinterpret_cast<XMFLOAT3X4 *>( transform ), mTransform );
-        for ( int i = 0; i < 12; i++ )
-        {
-            triangleInstanceDesc.Transform.SetElement( i, transform[ i ] );
-        }
-
-        TopLevelASDesc topLevelDesc{ };
-        topLevelDesc.BuildFlags = BitSet( ASBuildFlags::PreferFastTrace );
-        topLevelDesc.Instances.AddElement( triangleInstanceDesc );
-        topLevelDesc.Instances.AddElement( aabbInstanceDesc );
-        m_topLevelAS = std::unique_ptr<ITopLevelAS>( m_logicalDevice->CreateTopLevelAS( topLevelDesc ) );
-    }
-
-    const auto    commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( { QueueType::RayTracing, 1 } ) );
-    ICommandList *commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
-    const auto    syncFence       = std::unique_ptr<IFence>( m_logicalDevice->CreateFence( ) );
-
-    commandList->Begin( );
-
-    commandList->BuildBottomLevelAS( { m_triangleAS.get( ) } );
-    commandList->BuildBottomLevelAS( { m_aabbAS.get( ) } );
-
-    PipelineBarrierDesc barrier{ };
-    barrier.MemoryBarrier( { .BottomLevelAS = m_triangleAS.get( ), .OldState = ResourceUsage::AccelerationStructureWrite, .NewState = ResourceUsage::AccelerationStructureRead } );
-    barrier.MemoryBarrier( { .BottomLevelAS = m_aabbAS.get( ), .OldState = ResourceUsage::AccelerationStructureWrite, .NewState = ResourceUsage::AccelerationStructureRead } );
-
-    commandList->PipelineBarrier( barrier );
-    commandList->BuildTopLevelAS( { m_topLevelAS.get( ) } );
-
-    ExecuteDesc executeDesc{ };
-    executeDesc.Notify = syncFence.get( );
-    commandList->Execute( executeDesc );
-    syncFence->Wait( );
-}
-
-void RayTracedProceduralGeometryExample::CreateResources( )
-{
-    constexpr uint16_t indices[] = { 0, 1, 2, 0, 3, 1 };
-
-    constexpr Vertex vertices[] = { { { 0.0f, 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
-                                    { { 1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
-                                    { { 0.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
-                                    { { 1.0f, 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } } };
-
-    BufferDesc vbDesc{ };
-    vbDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer ); // These are not real vertex buffers
-    vbDesc.InitialUsage = ResourceUsage::CopyDst;
-    vbDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::AccelerationStructureGeometry;
-    vbDesc.NumBytes     = sizeof( vertices );
-    vbDesc.DebugName    = "Plane_VertexBuffer";
-    m_vertexBuffer      = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vbDesc ) );
-
-    BufferDesc ibDesc{ };
-    ibDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer ); // Not real index buffer
-    ibDesc.InitialUsage = ResourceUsage::CopyDst;
-    ibDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::AccelerationStructureGeometry;
-    ibDesc.NumBytes     = sizeof( indices );
-    ibDesc.DebugName    = "Plane_IndexBuffer";
-    m_indexBuffer       = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( ibDesc ) );
-
-    BufferDesc aabbDesc{ };
-    aabbDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer );
-    aabbDesc.InitialUsage = ResourceUsage::CopyDst;
-    aabbDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::AccelerationStructureGeometry;
-    aabbDesc.NumBytes     = sizeof( AABBBoundingBox ) * IntersectionShaderType::TotalPrimitiveCount;
-    aabbDesc.DebugName    = "AABB_Buffer";
-    m_aabbBuffer          = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( aabbDesc ) );
-
-    BufferDesc attributesDesc{ };
-    attributesDesc.HeapType                  = HeapType::CPU_GPU;
-    attributesDesc.Descriptor                = BitSet( ResourceDescriptor::Buffer ) | ResourceDescriptor::StructuredBuffer;
-    attributesDesc.NumBytes                  = sizeof( PrimitiveInstancePerFrameBuffer ) * IntersectionShaderType::TotalPrimitiveCount;
-    attributesDesc.StructureDesc.NumElements = IntersectionShaderType::TotalPrimitiveCount;
-    attributesDesc.StructureDesc.Stride      = sizeof( PrimitiveInstancePerFrameBuffer );
-    attributesDesc.DebugName                 = "AABB_Attributes_Buffer";
-    m_aabbPrimitiveAttributeBuffer           = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( attributesDesc ) );
-    m_aabbPrimitiveAttributeBufferMemory     = static_cast<PrimitiveInstancePerFrameBuffer *>( m_aabbPrimitiveAttributeBuffer->MapMemory( ) );
-
-    BatchResourceCopy batchResourceCopy( m_logicalDevice );
-    batchResourceCopy.Begin( );
-
-    for ( int i = 0; i < IntersectionShaderType::TotalPrimitiveCount; ++i )
-    {
-        m_aabbPrimitiveAttributeBufferMemory[ i ].localSpaceToBottomLevelAS = XMMatrixIdentity( );
-        m_aabbPrimitiveAttributeBufferMemory[ i ].bottomLevelASToLocalSpace = XMMatrixIdentity( );
-    }
-
-    InteropArray<Byte> vertexArray( sizeof( vertices ) );
-    vertexArray.MemCpy( vertices, sizeof( vertices ) );
-    batchResourceCopy.CopyToGPUBuffer( { m_vertexBuffer.get( ), vertexArray } );
-
-    InteropArray<Byte> indexArray( sizeof( indices ) );
-    indexArray.MemCpy( indices, sizeof( indices ) );
-    batchResourceCopy.CopyToGPUBuffer( { m_indexBuffer.get( ), indexArray } );
-
-    InteropArray<Byte> aabbArray( sizeof( AABBBoundingBox ) * m_aabbs.size( ) );
-    aabbArray.MemCpy( m_aabbs.data( ), sizeof( AABBBoundingBox ) * m_aabbs.size( ) );
-    batchResourceCopy.CopyToGPUBuffer( { m_aabbBuffer.get( ), aabbArray } );
-    batchResourceCopy.Submit( );
-
-    InitializeScene( );
-    UpdateAABBPrimitiveAttributes( );
-}
-
-void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
-{
-    InteropArray<ShaderStageDesc> shaderStages( 8 );
-    { // Create shaders
-        int32_t shaderIndex = 0;
-
-        ShaderStageDesc &rayGenShaderDesc = shaderStages.GetElement( shaderIndex++ );
-        rayGenShaderDesc.Stage            = ShaderStage::Raygen;
-        rayGenShaderDesc.Path             = "Assets/Shaders/RTProceduralGeometry/RayGen.hlsl";
-        rayGenShaderDesc.EntryPoint       = "MyRaygenShader";
-
-        ShaderStageDesc &missShaderDesc = shaderStages.GetElement( shaderIndex++ );
-        missShaderDesc.Stage            = ShaderStage::Miss;
-        missShaderDesc.Path             = "Assets/Shaders/RTProceduralGeometry/Miss.hlsl";
-        missShaderDesc.EntryPoint       = "MyMissShader";
-
-        ShaderStageDesc &shadowMissShaderDesc = shaderStages.GetElement( shaderIndex++ );
-        shadowMissShaderDesc.Stage            = ShaderStage::Miss;
-        shadowMissShaderDesc.Path             = "Assets/Shaders/RTProceduralGeometry/Miss.hlsl";
-        shadowMissShaderDesc.EntryPoint       = "MyMissShader_ShadowRay";
-
-        m_closestHitTriangleIndex              = shaderIndex++;
-        ShaderStageDesc &triangleHitShaderDesc = shaderStages.GetElement( m_closestHitTriangleIndex );
-        triangleHitShaderDesc.Stage            = ShaderStage::ClosestHit;
-        triangleHitShaderDesc.Path             = "Assets/Shaders/RTProceduralGeometry/ClosestHit.hlsl";
-        triangleHitShaderDesc.EntryPoint       = "MyClosestHitShader_Triangle";
-        triangleHitShaderDesc.RayTracing.MarkCbvAsLocal( 1, 3 );
-
-        m_closestHitAABBIndex                     = shaderIndex++;
-        ShaderStageDesc &aabbHitShaderDesc        = shaderStages.GetElement( m_closestHitAABBIndex );
-        aabbHitShaderDesc.Stage                   = ShaderStage::ClosestHit;
-        aabbHitShaderDesc.Path                    = "Assets/Shaders/RTProceduralGeometry/ClosestHit.hlsl";
-        aabbHitShaderDesc.EntryPoint              = "MyClosestHitShader_AABB";
-        aabbHitShaderDesc.RayTracing.HitGroupType = HitGroupType::AABBs;
-        aabbHitShaderDesc.RayTracing.MarkCbvAsLocal( 1, 3 );
-        m_firstIntersectionShaderIndex = shaderIndex;
-
-        const char *aabbHitGroupTypes[] = { "AnalyticPrimitive", "VolumetricPrimitive", "SignedDistancePrimitive" };
-        for ( int i = 0; i < IntersectionShaderType::Count; i++ )
-        {
-            ShaderStageDesc &intersectionShaderDesc = shaderStages.GetElement( shaderIndex++ );
-            intersectionShaderDesc.Stage            = ShaderStage::Intersection;
-            auto aabbShaderPath                     = InteropString( "Assets/Shaders/RTProceduralGeometry/Intersection_" ).Append( aabbHitGroupTypes[ i ] ).Append( ".hlsl" );
-            intersectionShaderDesc.Path             = aabbShaderPath;
-            intersectionShaderDesc.EntryPoint       = InteropString( "MyIntersectionShader_" ).Append( aabbHitGroupTypes[ i ] );
-            intersectionShaderDesc.RayTracing.HitGroupType = HitGroupType::AABBs;
-            intersectionShaderDesc.RayTracing.MarkCbvAsLocal( 1, 3 );
-        }
-    }
-
-    ShaderProgramDesc programDesc{ };
-    programDesc.ShaderStages                    = shaderStages;
-    programDesc.RayTracing.MaxRecursionDepth    = MAX_RAY_RECURSION_DEPTH;
-    programDesc.RayTracing.MaxNumPayloadBytes   = Utilities::Align( sizeof( RayPayload ), 16 );
-    programDesc.RayTracing.MaxNumAttributeBytes = Utilities::Align( sizeof( ProceduralPrimitiveAttributes ), 16 );
-    m_rayTracingProgram                         = std::make_unique<ShaderProgram>( programDesc );
-
-    // Create root signature and pipeline
-    auto reflection           = m_rayTracingProgram->Reflect( );
-    m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
-
-    m_hgLocalRootSignature =
-        std::unique_ptr<ILocalRootSignature>( m_logicalDevice->CreateLocalRootSignature( reflection.LocalRootSignatures.GetElement( m_closestHitTriangleIndex ) ) );
-
-    InteropArray<HitGroupDesc> hitGroupDescs;
-    { // Create hit groups
-        HitGroupDesc &hitGroupDesc1         = hitGroupDescs.EmplaceElement( );
-        hitGroupDesc1.Type                  = HitGroupType::Triangles;
-        hitGroupDesc1.Name                  = "MyHitGroup_Triangle";
-        hitGroupDesc1.ClosestHitShaderIndex = m_closestHitTriangleIndex;
-        hitGroupDesc1.LocalRootSignature    = m_hgLocalRootSignature.get( );
-
-        HitGroupDesc &hitGroupDesc2 = hitGroupDescs.EmplaceElement( );
-        hitGroupDesc2.Type          = HitGroupType::Triangles;
-        hitGroupDesc2.Name          = "MyHitGroup_Triangle_ShadowRay";
-
-        const char *aabbHitGroupTypes[] = { "AnalyticPrimitive", "VolumetricPrimitive", "SignedDistancePrimitive" };
-        for ( int i = 0; i < IntersectionShaderType::Count; i++ )
-        {
-            for ( int rayType = 0; rayType < RayType::Count; rayType++ )
-            {
-                std::string hitGroupName = "MyHitGroup_AABB_" + std::string( aabbHitGroupTypes[ i ] );
-                if ( rayType == 1 )
-                {
-                    hitGroupName += "_ShadowRay";
-                }
-                HitGroupDesc &hitGroupDesc           = hitGroupDescs.EmplaceElement( );
-                hitGroupDesc.Type                    = HitGroupType::AABBs;
-                hitGroupDesc.Name                    = hitGroupName.c_str( );
-                hitGroupDesc.ClosestHitShaderIndex   = m_closestHitAABBIndex;
-                hitGroupDesc.IntersectionShaderIndex = m_firstIntersectionShaderIndex + i;
-                if ( rayType == 1 )
-                {
-                    hitGroupDesc.ClosestHitShaderIndex = -1;
-                }
-                hitGroupDesc.LocalRootSignature = m_hgLocalRootSignature.get( );
-            }
-        }
-    }
-
-    // Create pipeline state object
-    PipelineDesc pipelineDesc{ };
-    pipelineDesc.BindPoint            = BindPoint::RayTracing;
-    pipelineDesc.RootSignature        = m_rayTracingRootSignature.get( );
-    pipelineDesc.ShaderProgram        = m_rayTracingProgram.get( );
-    pipelineDesc.RayTracing.HitGroups = std::move( hitGroupDescs );
-
-    m_rayTracingPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
-
-    // Create resource bind groups
-    ResourceBindGroupDesc bindGroupDesc{ };
-    bindGroupDesc.RootSignature = m_rayTracingRootSignature.get( );
-    bindGroupDesc.RegisterSpace = 0;
-
-    for ( int i = 0; i < 3; ++i )
-    {
-        m_rayTracingBindGroups[ i ] = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
-        m_rayTracingBindGroups[ i ]->BeginUpdate( );
-
-        m_rayTracingBindGroups[ i ]->Srv( 0, m_topLevelAS.get( ) );            // g_scene
-        m_rayTracingBindGroups[ i ]->Uav( 0, m_raytracingOutput[ i ].get( ) ); // g_renderTarget
-        m_rayTracingBindGroups[ i ]->Cbv( 0, m_sceneConstantBuffer.get( ) );   // g_sceneCB
-
-        m_rayTracingBindGroups[ i ]->Srv( 1, m_indexBuffer.get( ) );                  // g_indices
-        m_rayTracingBindGroups[ i ]->Srv( 2, m_vertexBuffer.get( ) );                 // g_vertices
-        m_rayTracingBindGroups[ i ]->Srv( 3, m_aabbPrimitiveAttributeBuffer.get( ) ); // g_AABBPrimitiveAttributes
-
-        m_rayTracingBindGroups[ i ]->EndUpdate( );
-    }
-}
-
-void RayTracedProceduralGeometryExample::InitializeScene( )
-{
-    m_aabbTransformsPerFrame.resize( 3 );
-    for ( int i = 0; i < 3; ++i )
-    {
-        m_aabbTransformsPerFrame[ i ].Resize( IntersectionShaderType::TotalPrimitiveCount );
-    }
-
-    // Setup materials
-    m_planeMaterialCB = {
-        .albedo = XMFLOAT4( 0.9f, 0.9f, 0.9f, 1.0f ), .reflectanceCoef = 0.25f, .diffuseCoef = 1.0f, .specularCoef = 0.4f, .specularPower = 50.0f, .stepScale = 1.0f
-    };
-
-    // Albedos
-    constexpr auto green  = XMFLOAT4( 0.1f, 1.0f, 0.5f, 1.0f );
-    constexpr auto red    = XMFLOAT4( 1.0f, 0.5f, 0.5f, 1.0f );
-    constexpr auto yellow = XMFLOAT4( 1.0f, 1.0f, 0.5f, 1.0f );
-
-    m_aabbMaterials.resize( IntersectionShaderType::TotalPrimitiveCount );
-    auto SetAttributes = [ & ]( const UINT primitiveIndex, const XMFLOAT4 &albedo, const float reflectanceCoefficient = 0.0f, const float diffuseCoefficient = 0.9f,
-                                const float specularCoefficient = 0.7f, const float specularPower = 50.0f, const float stepScale = 1.0f )
-    {
-        PrimitiveConstantBuffer &mat = m_aabbMaterials[ primitiveIndex ];
-        mat.albedo                   = albedo;
-        mat.reflectanceCoef          = reflectanceCoefficient;
-        mat.diffuseCoef              = diffuseCoefficient;
-        mat.specularCoef             = specularCoefficient;
-        mat.specularPower            = specularPower;
-        mat.stepScale                = stepScale;
-        // mat.padding                  = XMFLOAT3( 0.0f, 0.0f, 0.0f );
-    };
-
-    UINT offset = 0;
-    // Analytic primitives
-    {
-        SetAttributes( offset + AnalyticPrimitive::AABB, red );
-        SetAttributes( offset + AnalyticPrimitive::Spheres, ChromiumReflectance, 1 );
-        offset += AnalyticPrimitive::Count;
-    }
-
-    // Volumetric primitives
-    {
-        SetAttributes( offset + VolumetricPrimitive::MetaBalls, ChromiumReflectance, 1 );
-        offset += VolumetricPrimitive::Count;
-    }
-
-    // Signed distance primitives
-    {
-        SetAttributes( offset + SignedDistancePrimitive::MiniSpheres, green );
-        SetAttributes( offset + SignedDistancePrimitive::IntersectedRoundCube, green );
-        SetAttributes( offset + SignedDistancePrimitive::SquareTorus, ChromiumReflectance, 1 );
-        SetAttributes( offset + SignedDistancePrimitive::TwistedTorus, yellow, 0, 1.0f, 0.7f, 50, 0.5f );
-        SetAttributes( offset + SignedDistancePrimitive::Cog, yellow, 0, 1.0f, 0.1f, 2 );
-        SetAttributes( offset + SignedDistancePrimitive::Cylinder, red );
-        SetAttributes( offset + SignedDistancePrimitive::FractalPyramid, green, 0, 1, 0.1f, 4, 0.8f );
-    }
-
-    // Create scene constant buffer
-    BufferDesc sceneBufferDesc{ };
-    sceneBufferDesc.HeapType   = HeapType::CPU_GPU;
-    sceneBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
-    sceneBufferDesc.NumBytes   = sizeof( SceneConstantBuffer );
-    sceneBufferDesc.Usages     = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::VertexAndConstantBuffer;
-    sceneBufferDesc.DebugName  = "SceneConstantBuffer";
-    m_sceneConstantBuffer      = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( sceneBufferDesc ) );
-    m_sceneConstants           = static_cast<SceneConstantBuffer *>( m_sceneConstantBuffer->MapMemory( ) );
-
-    XMFLOAT4 lightPosition;
-    XMFLOAT4 lightAmbientColor;
-    XMFLOAT4 lightDiffuseColor;
-
-    lightPosition                   = XMFLOAT4( 0.0f, 18.0f, -20.0f, 0.0f );
-    m_sceneConstants->lightPosition = XMLoadFloat4( &lightPosition );
-
-    lightAmbientColor                   = XMFLOAT4( 0.25f, 0.25f, 0.25f, 1.0f );
-    m_sceneConstants->lightAmbientColor = XMLoadFloat4( &lightAmbientColor );
-
-    constexpr float diffuse             = 0.6f;
-    lightDiffuseColor                   = XMFLOAT4( diffuse, diffuse, diffuse, 1.0f );
-    m_sceneConstants->lightDiffuseColor = XMLoadFloat4( &lightDiffuseColor );
-
-    InitCamera( );
-}
-
-void RayTracedProceduralGeometryExample::InitCamera( ) const
-{
-    auto           eye    = XMVectorSet( 0.0f, 5.3f, -17.0f, 1.0f );
-    const XMMATRIX rotate = XMMatrixRotationY( XMConvertToRadians( 45.0f ) );
-    eye                   = XMVector3Transform( eye, rotate );
-
-    m_camera->SetPosition( eye );
-    m_camera->SetFront( { 0.67f, -0.29f, 0.67f, 0.0f } );
-
-    m_sceneConstants->cameraPosition    = m_camera->Position( );
-    m_sceneConstants->projectionToWorld = XMMatrixInverse( nullptr, m_camera->ViewProjectionMatrix( ) );
-}
-
-void RayTracedProceduralGeometryExample::CreateShaderBindingTable( )
-{
-    uint32_t numHitGroups = RayType::Count;
-
-    for ( uint32_t shaderType = 0; shaderType < IntersectionShaderType::Count; shaderType++ )
-    {
-        numHitGroups += PerPrimitiveTypeCount( static_cast<IntersectionShaderType::Enum>( shaderType ) ) * RayType::Count;
-    }
-    // Create shader binding table
-    ShaderBindingTableDesc bindingTableDesc{ };
-    bindingTableDesc.Pipeline                = m_rayTracingPipeline.get( );
-    bindingTableDesc.SizeDesc.NumHitGroups   = numHitGroups;
-    bindingTableDesc.SizeDesc.NumMissShaders = 2;
-    bindingTableDesc.MaxHitGroupDataBytes    = sizeof( LocalData );
-
-    m_shaderBindingTable = std::unique_ptr<IShaderBindingTable>( m_logicalDevice->CreateShaderBindingTable( bindingTableDesc ) );
-
-    // Bind ray generation shader
-    RayGenerationBindingDesc rayGenDesc{ };
-    rayGenDesc.ShaderName = "MyRaygenShader";
-    m_shaderBindingTable->BindRayGenerationShader( rayGenDesc );
-
-    // Bind miss shaders
-    {
-        MissBindingDesc missDesc{ };
-        missDesc.ShaderName = "MyMissShader";
-        m_shaderBindingTable->BindMissShader( missDesc );
-
-        MissBindingDesc shadowMissDesc{ };
-        shadowMissDesc.ShaderName = "MyMissShader_ShadowRay";
-        shadowMissDesc.Offset     = 1;
-        m_shaderBindingTable->BindMissShader( shadowMissDesc );
-    }
-
-    LocalData          localData{ };
-    InteropArray<Byte> localDataBuffer( sizeof( LocalData ) );
-
-    uint32_t hitGroupOffset = 0;
-    {
-        const auto triangleHitGroupData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderLocalData( { m_hgLocalRootSignature.get( ) } ) );
-
-        localData.materialCB = m_planeMaterialCB;
-        localData.aabbCB     = { 0, 0 };
-        localDataBuffer.MemCpy( &localData, sizeof( LocalData ) );
-
-        triangleHitGroupData->Cbv( 1, localDataBuffer );
-
-        // Create separate entries for each ray type
-        for ( uint32_t rayType = 0; rayType < 2; rayType++ )
-        {
-            HitGroupBindingDesc triangleHitGroupDesc{ };
-            triangleHitGroupDesc.HitGroupExportName = rayType == 0 ? "MyHitGroup_Triangle" : "MyHitGroup_Triangle_ShadowRay";
-            triangleHitGroupDesc.Data               = triangleHitGroupData.get( );
-            triangleHitGroupDesc.Offset             = hitGroupOffset++;
-            m_shaderBindingTable->BindHitGroup( triangleHitGroupDesc );
-        }
-    }
-
-    // AABB geometry
-    {
-        for ( uint32_t shaderType = 0, instanceIndex = 0; shaderType < IntersectionShaderType::Count; shaderType++ )
-        {
-            const char *shaderTypeName = shaderType == 0 ? "AnalyticPrimitive" : shaderType == 1 ? "VolumetricPrimitive" : "SignedDistancePrimitive";
-
-            const uint32_t numPrimitiveTypes = PerPrimitiveTypeCount( static_cast<IntersectionShaderType::Enum>( shaderType ) );
-            // Primitives for each intersection shader.
-            for ( uint32_t primitiveIndex = 0; primitiveIndex < numPrimitiveTypes; primitiveIndex++, instanceIndex++ )
-            {
-                auto hitGroupData = std::unique_ptr<IShaderLocalData>( m_logicalDevice->CreateShaderLocalData( { m_hgLocalRootSignature.get( ) } ) );
-
-                localData.materialCB = m_aabbMaterials[ instanceIndex ];
-                localData.aabbCB     = { .instanceIndex = instanceIndex, .primitiveType = primitiveIndex };
-                localDataBuffer.MemCpy( &localData, sizeof( LocalData ) );
-
-                hitGroupData->Cbv( 1, localDataBuffer );
-
-                // Ray types.
-                for ( uint32_t rayType = 0; rayType < RayType::Count; rayType++ )
-                {
-
-                    HitGroupBindingDesc hitGroupDesc{ };
-                    hitGroupDesc.HitGroupExportName = InteropString( "MyHitGroup_AABB_" ).Append( shaderTypeName );
-                    if ( rayType == 1 )
-                    {
-                        hitGroupDesc.HitGroupExportName.Append( "_ShadowRay" );
-                    }
-                    hitGroupDesc.Data   = hitGroupData.get( );
-                    hitGroupDesc.Offset = hitGroupOffset++;
-                    m_shaderBindingTable->BindHitGroup( hitGroupDesc );
-                }
-            }
-        }
-    }
-
-    m_shaderBindingTable->Build( );
-}
-
-void RayTracedProceduralGeometryExample::Quit( )
-{
-    m_renderGraph->WaitIdle( );
-    m_aabbPrimitiveAttributeBuffer->UnmapMemory( );
-    m_aabbPrimitiveAttributeBufferMemory = nullptr;
-    m_sceneConstantBuffer->UnmapMemory( );
-    m_sceneConstants = nullptr;
-    IExample::Quit( );
+    return std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( { } ) );
 }

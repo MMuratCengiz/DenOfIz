@@ -25,16 +25,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-    class DX12InputLayout : public IInputLayout
+    class DX12InputLayout final : public IInputLayout
     {
-    private:
+        uint32_t                              m_stride;
         std::vector<D3D12_INPUT_ELEMENT_DESC> m_inputElements;
         D3D12_INPUT_LAYOUT_DESC               m_inputLayout;
 
     public:
-        DX12InputLayout( const InputLayoutDesc &desc );
+        explicit DX12InputLayout( const InputLayoutDesc &desc );
         const D3D12_INPUT_LAYOUT_DESC &GetInputLayout( ) const;
         ~DX12InputLayout( ) override;
+        [[nodiscard]] uint32_t Stride( ) const;
     };
 
 } // namespace DenOfIz

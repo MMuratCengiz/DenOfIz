@@ -40,11 +40,11 @@ void MeshAssetWriter::CalculateStrides( )
     const auto &config     = m_meshAsset.AttributeConfig;
     if ( attributes.Position )
     {
-        m_vertexStride += config.NumPositionComponents * sizeof( float );
+        m_vertexStride += 4 * sizeof( float );
     }
     if ( attributes.Normal )
     {
-        m_vertexStride += 3 * sizeof( float );
+        m_vertexStride += 4 * sizeof( float );
     }
     if ( attributes.UV )
     {
@@ -327,7 +327,7 @@ void MeshAssetWriter::WriteVertexInternal( const MeshVertex &vertex ) const
     }
     if ( attributes.BlendIndices )
     {
-        m_writer->WriteUInt32_4( vertex.BoneIndices );
+        m_writer->WriteUInt32_4( vertex.BlendIndices );
     }
     if ( attributes.BlendWeights )
     {

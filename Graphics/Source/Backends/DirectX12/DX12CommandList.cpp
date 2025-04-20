@@ -43,6 +43,8 @@ void DX12CommandList::Begin( )
     m_queuedBindGroups.clear( );
 
     m_currentRootSignature = nullptr;
+    m_currentPipeline      = nullptr;
+    m_currentVertexBuffer  = nullptr;
 }
 
 void DX12CommandList::BeginRendering( const RenderingDesc &renderingDesc )
@@ -75,6 +77,12 @@ void DX12CommandList::BindPipeline( IPipeline *pipeline )
     m_currentPipeline = dynamic_cast<DX12Pipeline *>( pipeline );
     SetRootSignature( m_currentPipeline->GetRootSignature( ) );
 
+    if ( m_currentVertexBuffer )
+    {
+        BindVertexBuffer( m_currentVertexBuffer );
+        m_currentVertexBuffer = nullptr;
+    }
+
     if ( m_currentPipeline->GetBindPoint( ) == BindPoint::RayTracing )
     {
         m_commandList->SetPipelineState1( m_currentPipeline->GetRayTracingSO( ) );
@@ -90,11 +98,17 @@ void DX12CommandList::BindVertexBuffer( IBufferResource *buffer )
 {
     DZ_NOT_NULL( buffer );
 
-    const DX12BufferResource *pBuffer = dynamic_cast<DX12BufferResource *>( buffer );
+    const auto pBuffer = dynamic_cast<DX12BufferResource *>( buffer );
+    // We need the stride from the InputLayout, if we do not have it, wait until we have a pipeline then set the vertex buffers
+    if ( !m_currentPipeline )
+    {
+        m_currentVertexBuffer = pBuffer;
+        return;
+    }
 
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView = { };
     vertexBufferView.BufferLocation           = pBuffer->Resource( )->GetGPUVirtualAddress( );
-    vertexBufferView.StrideInBytes            = 8 * sizeof( float ); // pBuffer->GetStride();
+    vertexBufferView.StrideInBytes            = m_currentPipeline->GetIAStride( );
     vertexBufferView.SizeInBytes              = pBuffer->NumBytes( );
 
     m_commandList->IASetVertexBuffers( 0, 1, &vertexBufferView );

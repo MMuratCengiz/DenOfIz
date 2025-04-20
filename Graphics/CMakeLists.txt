@@ -67,6 +67,7 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Stream/BinaryContainer.cpp
         Source/Assets/Stream/BinaryReader.cpp
         Source/Assets/Stream/BinaryWriter.cpp
+        Source/Animation/AnimationStateManager.cpp
 )
 
 set(DEN_OF_IZ_ANIMATION_SOURCES
@@ -98,7 +99,6 @@ set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
 
         # Interface utilities
         Source/Backends/Interface/CommonData.cpp
-        Source/Backends/Interface/IInputLayout.cpp
         Source/Backends/Interface/IRootSignature.cpp
         Source/Backends/Interface/ITextureResource.cpp
         Source/Backends/Interface/ShaderData.cpp
@@ -331,7 +331,7 @@ if (WIN32 OR LINUX)
 endif ()
 
 set_target_default_properties(DenOfIzGraphics)
-# target_compile_definitions(DenOfIzGraphics PUBLIC NSIGHT_ENABLE)
+target_compile_definitions(DenOfIzGraphics PUBLIC NSIGHT_ENABLE)
 
 if (BUILD_TESTS)
     add_subdirectory(Tests)

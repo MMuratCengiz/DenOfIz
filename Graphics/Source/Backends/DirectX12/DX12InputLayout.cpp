@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DX12InputLayout::DX12InputLayout( const InputLayoutDesc &desc )
+DX12InputLayout::DX12InputLayout( const InputLayoutDesc &desc ) : m_stride( 0 )
 {
     for ( int bindingIndex = 0; bindingIndex < desc.InputGroups.NumElements( ); bindingIndex++ )
     {
@@ -38,48 +38,18 @@ DX12InputLayout::DX12InputLayout( const InputLayoutDesc &desc )
         for ( int layoutElementIndex = 0; layoutElementIndex < inputGroup.Elements.NumElements( ); layoutElementIndex++ )
         {
             const InputLayoutElementDesc &inputElement = inputGroup.Elements.GetElement( layoutElementIndex );
-            D3D12_INPUT_ELEMENT_DESC &element = m_inputElements.emplace_back( D3D12_INPUT_ELEMENT_DESC{ } );
-
-            switch ( inputElement.Semantic )
-            {
-            case Semantic::Position:
-                element.SemanticName = "POSITION";
-                break;
-            case Semantic::Normal:
-                element.SemanticName = "NORMAL";
-                break;
-            case Semantic::Color:
-                element.SemanticName = "COLOR";
-                break;
-            case Semantic::Tangent:
-                element.SemanticName = "TANGENT";
-                break;
-            case Semantic::Binormal:
-                element.SemanticName = "BINORMAL";
-                break;
-            case Semantic::Bitangent:
-                element.SemanticName = "BITANGENT";
-                break;
-            case Semantic::BlendJoints:
-                element.SemanticName = "BLENDJOINTS";
-                break;
-            case Semantic::BlendWeights:
-                element.SemanticName = "BLENDWEIGHTS";
-                break;
-            case Semantic::TextureCoordinate:
-                element.SemanticName = &"TEXCOORD"[ inputElement.SemanticIndex ];
-                break;
-            }
-
-            element.SemanticIndex        = inputElement.SemanticIndex;
-            element.Format               = DX12EnumConverter::ConvertFormat( inputElement.Format );
-            element.InputSlot            = bindingIndex;
-            element.InputSlotClass       = inputSlotClass;
-            element.AlignedByteOffset    = offset;
-            element.InstanceDataStepRate = instanceDataStepRate;
+            D3D12_INPUT_ELEMENT_DESC     &element      = m_inputElements.emplace_back( D3D12_INPUT_ELEMENT_DESC{ } );
+            element.SemanticName                       = inputElement.Semantic.Get( );
+            element.SemanticIndex                      = inputElement.SemanticIndex;
+            element.Format                             = DX12EnumConverter::ConvertFormat( inputElement.Format );
+            element.InputSlot                          = bindingIndex;
+            element.InputSlotClass                     = inputSlotClass;
+            element.AlignedByteOffset                  = offset;
+            element.InstanceDataStepRate               = instanceDataStepRate;
 
             offset += FormatNumBytes( inputElement.Format );
         }
+        m_stride += offset;
     }
 
     m_inputLayout                    = { };
@@ -89,6 +59,11 @@ DX12InputLayout::DX12InputLayout( const InputLayoutDesc &desc )
 
 DX12InputLayout::~DX12InputLayout( )
 {
+}
+
+uint32_t DX12InputLayout::Stride( ) const
+{
+    return m_stride;
 }
 
 const D3D12_INPUT_LAYOUT_DESC &DX12InputLayout::GetInputLayout( ) const

@@ -115,18 +115,88 @@ InteropArray<CompiledShaderStage *> ShaderProgram::CompiledShaders( ) const
     return std::move( compiledShaders );
 }
 
-Format MaskToFormat( const uint32_t mask )
+Format MaskToFormat( const D3D_REGISTER_COMPONENT_TYPE componentType, const uint32_t mask )
 {
-    switch ( mask )
+    switch ( componentType )
     {
-    case 1:
-        return Format::R32Float;
-    case 3:
-        return Format::R32G32Float;
-    case 7:
-        return Format::R32G32B32Float;
-    case 15:
-        return Format::R32G32B32A32Float;
+    case D3D_REGISTER_COMPONENT_UINT32:
+        switch ( mask )
+        {
+        case 1:
+            return Format::R32Uint;
+        case 3:
+            return Format::R32G32Uint;
+        case 7:
+            return Format::R32G32B32Uint;
+        case 15:
+            return Format::R32G32B32A32Uint;
+        default:
+            return Format::Undefined;
+        }
+    case D3D_REGISTER_COMPONENT_SINT32:
+        switch ( mask )
+        {
+        case 1:
+            return Format::R32Sint;
+        case 3:
+            return Format::R32G32Sint;
+        case 7:
+            return Format::R32G32B32Sint;
+        case 15:
+            return Format::R32G32B32A32Sint;
+        default:
+            return Format::Undefined;
+        }
+    case D3D_REGISTER_COMPONENT_FLOAT32:
+        switch ( mask )
+        {
+        case 1:
+            return Format::R32Float;
+        case 3:
+            return Format::R32G32Float;
+        case 7:
+            return Format::R32G32B32Float;
+        case 15:
+            return Format::R32G32B32A32Float;
+        default:
+            return Format::Undefined;
+        }
+    case D3D_REGISTER_COMPONENT_UINT16:
+        switch ( mask )
+        {
+        case 1:
+            return Format::R16Uint;
+        case 3:
+            return Format::R16G16Uint;
+        case 15:
+            return Format::R16G16B16A16Uint;
+        default:
+            return Format::Undefined;
+        }
+    case D3D_REGISTER_COMPONENT_SINT16:
+        switch ( mask )
+        {
+        case 1:
+            return Format::R16Sint;
+        case 3:
+            return Format::R16G16Sint;
+        case 15:
+            return Format::R16G16B16A16Sint;
+        default:
+            return Format::Undefined;
+        }
+    case D3D_REGISTER_COMPONENT_FLOAT16:
+        switch ( mask )
+        {
+        case 1:
+            return Format::R16Float;
+        case 3:
+            return Format::R16G16Float;
+        case 15:
+            return Format::R16G16B16A16Float;
+        default:
+            return Format::Undefined;
+        }
     default:
         return Format::Undefined;
     }
@@ -392,9 +462,9 @@ void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, I
         }
 
         InputLayoutElementDesc &inputElementDesc = inputElements.emplace_back( );
-        inputElementDesc.Semantic                = SemanticFromString( signatureParameterDesc.SemanticName );
+        inputElementDesc.Semantic                = signatureParameterDesc.SemanticName;
         inputElementDesc.SemanticIndex           = signatureParameterDesc.SemanticIndex;
-        inputElementDesc.Format                  = MaskToFormat( signatureParameterDesc.Mask );
+        inputElementDesc.Format                  = MaskToFormat( signatureParameterDesc.ComponentType, signatureParameterDesc.Mask );
     }
 
     if ( !inputElements.empty( ) )

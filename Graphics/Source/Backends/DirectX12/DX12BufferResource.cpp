@@ -27,7 +27,6 @@ using namespace DenOfIz;
 
 DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) : m_context( context ), m_desc( std::move( desc ) ), m_cpuHandles( { } )
 {
-    m_stride           = FormatNumBytes( m_desc.Format );
     uint32_t alignment = std::max( static_cast<uint32_t>( D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT ), m_desc.Alignment );
     if ( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) )
     {
@@ -95,7 +94,7 @@ void DX12BufferResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle
 void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type )
 {
     // DZ_RETURN_IF( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) );
-    uint64_t stride = std::max<uint64_t>(m_desc.StructureDesc.Stride, 1);
+    uint64_t stride = std::max<uint64_t>( m_desc.StructureDesc.Stride, 1 );
 
     switch ( type )
     {
@@ -229,7 +228,7 @@ BitSet<ResourceUsage> DX12BufferResource::InitialState( ) const
     return m_state;
 }
 
-i DX12BufferResource::NumBytes( ) const
+size_t DX12BufferResource::NumBytes( ) const
 {
     return m_numBytes;
 }

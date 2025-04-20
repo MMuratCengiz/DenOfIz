@@ -24,6 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <future>
 #include "Texture.h"
 
+#include <DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h>
+
 namespace DenOfIz
 {
     struct DZ_API CopyToGpuBufferDesc
@@ -47,6 +49,20 @@ namespace DenOfIz
     {
         InteropString     File;
         ITextureResource *DstTexture;
+    };
+
+    struct DZ_API LoadAssetTextureDesc
+    {
+        TextureAssetReader *Reader;
+        ITextureResource   *DstTexture;
+    };
+
+    struct DZ_API CreateAssetTextureDesc
+    {
+        TextureAssetReader        *Reader;
+        BitSet<ResourceDescriptor> AdditionalDescriptors;
+        BitSet<ResourceUsage>      AdditionalUsages;
+        InteropString              DebugName;
     };
 
     /// <code>
@@ -89,17 +105,19 @@ namespace DenOfIz
         DZ_API void                           CopyTextureRegion( const CopyTextureRegionDesc &copyDesc ) const;
         DZ_API void                           CopyDataToTexture( const CopyDataToTextureDesc &copyDesc );
         DZ_API ITextureResource              *CreateAndLoadTexture( const InteropString &file );
+        DZ_API ITextureResource              *CreateAndLoadAssetTexture( const CreateAssetTextureDesc &loadDesc );
         DZ_API void                           LoadTexture( const LoadTextureDesc &loadDesc );
+        DZ_API void                           LoadAssetTexture( const LoadAssetTextureDesc &loadDesc );
         [[nodiscard]] DZ_API IBufferResource *CreateUniformBuffer( const InteropArray<Byte> &, uint32_t numBytes );
         [[nodiscard]] DZ_API IBufferResource *CreateGeometryVertexBuffer( const GeometryData &geometryData );
         [[nodiscard]] DZ_API IBufferResource *CreateGeometryIndexBuffer( const GeometryData &geometryData );
         DZ_API void                           Submit( ISemaphore *notify = nullptr );
 
     private:
-        void                     CleanResources( );
-        void                     LoadTextureInternal( const Texture &texture, ITextureResource *dstTexture );
-        void                     CopyTextureToMemoryAligned( const Texture &texture, const TextureMip &mipData, Byte *dst ) const;
-        [[nodiscard]] uint32_t   GetSubresourceAlignment( uint32_t bitSize ) const;
-        static std::string       NextId( const std::string &prefix );
+        void                   CleanResources( );
+        void                   LoadTextureInternal( const Texture &texture, ITextureResource *dstTexture );
+        void                   CopyTextureToMemoryAligned( const Texture &texture, const TextureMip &mipData, Byte *dst ) const;
+        [[nodiscard]] uint32_t GetSubresourceAlignment( uint32_t bitSize ) const;
+        static std::string     NextId( const std::string &prefix );
     };
 } // namespace DenOfIz

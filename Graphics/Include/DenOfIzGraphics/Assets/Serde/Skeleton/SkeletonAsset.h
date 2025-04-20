@@ -28,7 +28,9 @@ namespace DenOfIz
     {
         InteropString          Name;
         Float_4x4              InverseBindMatrix;
-        Float_4x4              LocalTransform;
+        Float_3                LocalTranslation;
+        Float_4                LocalRotationQuat;
+        Float_3                LocalScale;
         Float_4x4              GlobalTransform;
         uint32_t               Index       = 0;
         int32_t                ParentIndex = 0;

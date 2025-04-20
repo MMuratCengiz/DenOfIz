@@ -82,6 +82,38 @@ Texture::Texture( const std::string &path ) : m_path( Utilities::AppPath( path )
     }
 }
 
+Texture::Texture( const InteropArray<Byte> &data, const TextureExtension extension )
+{
+    Extension = extension;
+    LoadTextureFromMemory( data.Data( ), data.NumElements( ) );
+}
+
+TextureExtension Texture::IdentifyTextureFormat( const InteropArray<Byte> &data )
+{
+    const size_t dataNumBytes = data.NumElements( );
+    if ( dataNumBytes == 0 )
+    {
+        LOG( ERROR ) << "Data array is empty";
+        return TextureExtension::DDS;
+    }
+
+    const auto *bytes = data.Data( );
+    if ( dataNumBytes >= 4 && bytes[ 0 ] == 'D' && bytes[ 1 ] == 'D' && bytes[ 2 ] == 'S' && bytes[ 3 ] == ' ' )
+    {
+        return TextureExtension::DDS;
+    }
+    if ( dataNumBytes >= 8 && bytes[ 0 ] == 0x89 && bytes[ 1 ] == 'P' && bytes[ 2 ] == 'N' && bytes[ 3 ] == 'G' && bytes[ 4 ] == 0x0D && bytes[ 5 ] == 0x0A && bytes[ 6 ] == 0x1A &&
+         bytes[ 7 ] == 0x0A )
+    {
+        return TextureExtension::PNG;
+    }
+    if ( dataNumBytes >= 3 && bytes[ 0 ] == 0xFF && bytes[ 1 ] == 0xD8 && bytes[ 2 ] == 0xFF )
+    {
+        return TextureExtension::JPG;
+    }
+    return TextureExtension::DDS;
+}
+
 void Texture::LoadTextureSTB( )
 {
     int width, height, channels;
@@ -433,4 +465,103 @@ void Texture::StreamMipDataSTB( const MipStreamCallback &callback ) const
     mipData.DataOffset = 0;
 
     callback( mipData );
+}
+
+void Texture::LoadTextureFromMemory( const Byte *data, const size_t dataNumBytes )
+{
+    switch ( Extension )
+    {
+    case TextureExtension::DDS:
+        LoadTextureDDSFromMemory( data, dataNumBytes );
+        break;
+    default:
+        LoadTextureSTBFromMemory( data, dataNumBytes );
+        break;
+    }
+}
+
+void Texture::LoadTextureDDSFromMemory( const Byte *data, const size_t dataNumBytes )
+{
+    if ( data == nullptr || dataNumBytes < sizeof( dds::Header ) )
+    {
+        LOG( WARNING ) << "Invalid DDS data provided";
+        return;
+    }
+
+    m_ddsHeader = dds::read_header( data, dataNumBytes );
+    if ( !m_ddsHeader.is_valid( ) )
+    {
+        LOG( WARNING ) << "Error loading texture from memory: Invalid DDS header";
+        return;
+    }
+
+    ArraySize    = 1;
+    Width        = m_ddsHeader.width( );
+    Height       = m_ddsHeader.height( );
+    Depth        = m_ddsHeader.depth( );
+    MipLevels    = m_ddsHeader.mip_levels( );
+    ArraySize    = m_ddsHeader.array_size( );
+    Format       = GetFormatFromDDS( m_ddsHeader.format( ) );
+    BitsPerPixel = m_ddsHeader.bits_per_element( );
+    BlockSize    = m_ddsHeader.block_size( );
+    RowPitch     = std::max( 1U, ( Width + ( BlockSize - 1 ) ) / BlockSize ) * BitsPerPixel >> 3;
+    NumRows      = std::max( 1U, ( Height + ( BlockSize - 1 ) ) / BlockSize );
+    SlicePitch   = RowPitch * NumRows;
+
+    Data.resize( m_ddsHeader.data_size( ) );
+    const uint8_t *srcData = static_cast<const uint8_t *>( data ) + m_ddsHeader.data_offset( );
+    Data.assign( srcData, srcData + m_ddsHeader.data_size( ) );
+
+    if ( m_ddsHeader.is_1d( ) )
+    {
+        Dimension = TextureDimension::Texture1D;
+    }
+    else if ( m_ddsHeader.is_3d( ) )
+    {
+        Dimension = TextureDimension::Texture3D;
+    }
+    else
+    {
+        Dimension = TextureDimension::Texture2D;
+    }
+    if ( m_ddsHeader.is_cubemap( ) )
+    {
+        Dimension = TextureDimension::TextureCube;
+    }
+
+    if ( IsFormatBC( Format ) )
+    {
+        Width  = Utilities::Align( Width, FormatBlockSize( Format ) );
+        Height = Utilities::Align( Height, FormatBlockSize( Format ) );
+    }
+}
+
+void Texture::LoadTextureSTBFromMemory( const Byte *data, const size_t dataNumBytes )
+{
+    int width, height, channels;
+
+    stbi_uc *contents = stbi_load_from_memory( static_cast<const stbi_uc *>( data ), static_cast<int>( dataNumBytes ), &width, &height, &channels, STBI_rgb_alpha );
+
+    if ( contents == nullptr )
+    {
+        LOG( WARNING ) << "Error loading texture from memory with STB, reason:" << stbi_failure_reason( );
+        return;
+    }
+
+    Width        = static_cast<uint32_t>( std::max<int>( 1, width ) );
+    Height       = static_cast<uint32_t>( std::max<int>( 1, height ) );
+    Depth        = 1;
+    Format       = Format::R8G8B8A8Unorm;
+    Dimension    = TextureDimension::Texture2D;
+    ArraySize    = 1;
+    MipLevels    = 1;
+    BitsPerPixel = 32;
+    BlockSize    = 1;
+    RowPitch     = Width * 4;
+    NumRows      = Height;
+    SlicePitch   = RowPitch * NumRows;
+    Data.resize( SlicePitch );
+    Data.assign( contents, contents + SlicePitch );
+
+    stbi_image_free( contents );
 }

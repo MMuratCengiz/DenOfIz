@@ -47,7 +47,6 @@ namespace DenOfIz
         bool GenerateLODs = true;
         uint32_t MaxLODCount = 3;
         float LODScreenPercentages[3] = { 1.0f, 0.5f, 0.25f };
-        bool FlipUVs = false;
         bool OptimizeMeshes = true;
         float ScaleFactor = 1.0f;
         bool ImportMaterials = true;
@@ -55,7 +54,7 @@ namespace DenOfIz
         bool ImportAnimations = true;
         bool ImportSkeletons = true;
         bool CalculateTangentSpace = true;
-        bool ConvertToRightHanded = true;
+        bool ConvertToLeftHanded = true; // DenOfIz uses a left handed coordinate system, DirectX12 settings
 
         InteropArray<InteropString> AdditionalOptions;
     };

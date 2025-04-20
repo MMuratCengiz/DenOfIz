@@ -34,6 +34,7 @@ namespace DenOfIz
         wil::com_ptr<ID3D12CommandAllocator>       m_commandAllocator;
         wil::com_ptr<ID3D12GraphicsCommandList7>   m_commandList;
         wil::com_ptr<ID3D12DebugCommandList>       m_debugCommandList;
+        DX12BufferResource                        *m_currentVertexBuffer  = nullptr;
         ID3D12RootSignature                       *m_currentRootSignature = nullptr;
         DX12Pipeline                              *m_currentPipeline      = nullptr;
         std::vector<const DX12ResourceBindGroup *> m_queuedBindGroups;

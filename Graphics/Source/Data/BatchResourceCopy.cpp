@@ -161,6 +161,61 @@ ITextureResource *BatchResourceCopy::CreateAndLoadTexture( const InteropString &
     return outTex;
 }
 
+ITextureResource *BatchResourceCopy::CreateAndLoadAssetTexture( const CreateAssetTextureDesc &loadDesc )
+{
+    const TextureAsset &textureAsset = loadDesc.Reader->Read( );
+
+    TextureDesc textureDesc{ };
+    textureDesc.HeapType     = HeapType::GPU;
+    textureDesc.Descriptor   = ResourceDescriptor::Texture;
+    textureDesc.InitialUsage = ResourceUsage::CopyDst;
+    textureDesc.Width        = textureAsset.Width;
+    textureDesc.Height       = textureAsset.Height;
+    textureDesc.Depth        = textureAsset.Depth;
+    textureDesc.Format       = textureAsset.Format;
+    textureDesc.ArraySize    = textureAsset.ArraySize;
+    textureDesc.MipLevels    = textureAsset.MipLevels;
+
+    BitSet descriptors = ResourceDescriptor::Texture;
+    if ( textureAsset.Dimension == TextureDimension::TextureCube )
+    {
+        descriptors |= ResourceDescriptor::TextureCube;
+    }
+
+    descriptors |= loadDesc.AdditionalDescriptors;
+    textureDesc.Descriptor = descriptors;
+
+    BitSet<ResourceUsage> usages = BitSet( ResourceUsage::ShaderResource ) | ResourceUsage::CopyDst;
+    usages |= loadDesc.AdditionalUsages;
+    textureDesc.Usages = usages;
+
+    if ( !loadDesc.DebugName.IsEmpty( ) )
+    {
+        textureDesc.DebugName = loadDesc.DebugName;
+    }
+    else
+    {
+        textureDesc.DebugName = "TextureFromAsset:";
+        if ( !textureAsset.Name.IsEmpty( ) )
+        {
+            textureDesc.DebugName.Append( textureAsset.Name.Get( ) );
+        }
+        else if ( !textureAsset.SourcePath.IsEmpty( ) )
+        {
+            textureDesc.DebugName.Append( textureAsset.SourcePath.Get( ) );
+        }
+    }
+
+    ITextureResource *texture = m_device->CreateTextureResource( textureDesc );
+
+    LoadAssetTextureDesc loadAssetTextureDesc{ };
+    loadAssetTextureDesc.Reader     = loadDesc.Reader;
+    loadAssetTextureDesc.DstTexture = texture;
+    LoadAssetTexture( loadAssetTextureDesc );
+
+    return texture;
+}
+
 IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte> &data, const uint32_t numBytes )
 {
     BufferDesc bufferDesc{ };
@@ -248,6 +303,39 @@ void BatchResourceCopy::LoadTexture( const LoadTextureDesc &loadDesc )
 {
     const Texture texture( loadDesc.File.Get( ) );
     LoadTextureInternal( texture, loadDesc.DstTexture );
+}
+
+void BatchResourceCopy::LoadAssetTexture( const LoadAssetTextureDesc &loadDesc )
+{
+    if ( !loadDesc.Reader || !loadDesc.DstTexture )
+    {
+        LOG( ERROR ) << "TextureAssetReader and DstTexture cannot be null";
+        return;
+    }
+
+    BufferDesc stagingBufferDesc   = { };
+    stagingBufferDesc.HeapType     = HeapType::CPU_GPU;
+    stagingBufferDesc.InitialUsage = ResourceUsage::CopySrc;
+    stagingBufferDesc.DebugName    = "LoadAssetTexture_StagingBuffer";
+    stagingBufferDesc.NumBytes     = loadDesc.Reader->AlignedTotalNumBytes( m_device->DeviceInfo( ).Constants );
+
+    const auto             stagingBuffer = m_device->CreateBufferResource( stagingBufferDesc );
+    LoadIntoGpuTextureDesc readerLoadDesc{ };
+    readerLoadDesc.Texture       = loadDesc.DstTexture;
+    readerLoadDesc.CommandList   = m_copyCommandList;
+    readerLoadDesc.StagingBuffer = stagingBuffer;
+
+    loadDesc.Reader->LoadIntoGpuTexture( readerLoadDesc );
+
+    std::lock_guard lock( m_resourceCleanLock );
+    m_resourcesToClean.push_back( std::unique_ptr<IBufferResource>( stagingBuffer ) );
+
+    if ( m_issueBarriers )
+    {
+        const PipelineBarrierDesc barrierDesc =
+            PipelineBarrierDesc{ }.TextureBarrier( { .Resource = loadDesc.DstTexture, .OldState = ResourceUsage::Common, .NewState = ResourceUsage::ShaderResource } );
+        m_syncCommandList->PipelineBarrier( barrierDesc );
+    }
 }
 
 void BatchResourceCopy::Submit( ISemaphore *notify )
@@ -360,7 +448,7 @@ std::string BatchResourceCopy::NextId( const std::string &prefix )
 #ifndef NDEBUG
     static std::atomic<unsigned int> idCounter( 0 );
     const int                        next = idCounter.fetch_add( 1, std::memory_order_relaxed );
-    return ( std::string( prefix ) + "_BatchResourceCopyResource#" + std::to_string( next ) );
+    return std::string( prefix ) + "_BatchResourceCopyResource#" + std::to_string( next );
 #else
     return "BatchResourceCopyResource";
 #endif

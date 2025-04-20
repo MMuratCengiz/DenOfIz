@@ -17,6 +17,11 @@
 
 using namespace DenOfIz;
 
+Time::Time( )
+{
+    Tick( );
+}
+
 void Time::Tick( )
 {
     if ( firstTickTime == 0 )

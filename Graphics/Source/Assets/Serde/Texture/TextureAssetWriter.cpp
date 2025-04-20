@@ -85,8 +85,115 @@ void TextureAssetWriter::Write( const TextureAsset &textureAsset )
     WriteHeader( 0 );
     m_writer->WriteString( m_textureAsset.Name );
     m_writer->WriteString( m_textureAsset.SourcePath );
-    m_writer->WriteUInt32( m_textureAsset.Width );
-    m_writer->WriteUInt32( m_textureAsset.Height );
+    if ( m_textureAsset.Width == 0 || m_textureAsset.Height == 0 )
+    {
+        LOG( WARNING ) << "TextureAssetWriter: Texture dimensions are zero, which may indicate uninitialized data";
+    }
+    if ( m_textureAsset.Format == Format::Undefined )
+    {
+        LOG( WARNING ) << "TextureAssetWriter: Texture format is undefined, defaulting to R8G8B8A8Unorm";
+        m_textureAsset.Format = Format::R8G8B8A8Unorm;
+    }
+    if ( m_textureAsset.BitsPerPixel == 0 )
+    {
+        LOG( WARNING ) << "TextureAssetWriter: BitsPerPixel is 0, attempting to set based on format";
+        switch ( m_textureAsset.Format )
+        {
+        case Format::R8G8B8A8Unorm:
+        case Format::R8G8B8A8UnormSrgb:
+        case Format::R8G8B8A8Uint:
+        case Format::R8G8B8A8Snorm:
+        case Format::R8G8B8A8Sint:
+        case Format::B8G8R8A8Unorm:
+            m_textureAsset.BitsPerPixel = 32;
+            break;
+        case Format::BC1Unorm:
+        case Format::BC1UnormSrgb:
+            m_textureAsset.BitsPerPixel = 4;
+            break;
+        case Format::BC2Unorm:
+        case Format::BC2UnormSrgb:
+        case Format::BC3Unorm:
+        case Format::BC3UnormSrgb:
+            m_textureAsset.BitsPerPixel = 8;
+            break;
+        case Format::BC4Unorm:
+        case Format::BC4Snorm:
+            m_textureAsset.BitsPerPixel = 4;
+            break;
+        case Format::BC5Unorm:
+        case Format::BC5Snorm:
+        case Format::BC7Unorm:
+            m_textureAsset.BitsPerPixel = 8;
+            break;
+        default:
+            m_textureAsset.BitsPerPixel = 32;
+            break;
+        }
+    }
+
+    if ( m_textureAsset.BlockSize == 0 )
+    {
+        if ( IsFormatBC( m_textureAsset.Format ) )
+        {
+            m_textureAsset.BlockSize = 4;
+        }
+        else
+        {
+            m_textureAsset.BlockSize = 1;
+        }
+    }
+
+    if ( m_textureAsset.RowPitch == 0 )
+    {
+        if ( m_textureAsset.Format >= Format::BC1Unorm && m_textureAsset.Format <= Format::BC7Unorm )
+        {
+            const uint32_t blockWidth = ( m_textureAsset.Width + m_textureAsset.BlockSize - 1 ) / m_textureAsset.BlockSize;
+            m_textureAsset.RowPitch   = blockWidth * ( m_textureAsset.BitsPerPixel / 8 );
+        }
+        else
+        {
+            m_textureAsset.RowPitch = m_textureAsset.Width * ( m_textureAsset.BitsPerPixel / 8 );
+        }
+    }
+
+    if ( m_textureAsset.NumRows == 0 )
+    {
+        LOG( WARNING ) << "TextureAssetWriter: NumRows is 0, calculating based on height and format";
+        if ( m_textureAsset.Format >= Format::BC1Unorm && m_textureAsset.Format <= Format::BC7Unorm )
+        {
+            m_textureAsset.NumRows = ( m_textureAsset.Height + m_textureAsset.BlockSize - 1 ) / m_textureAsset.BlockSize;
+        }
+        else
+        {
+            m_textureAsset.NumRows = m_textureAsset.Height;
+        }
+    }
+
+    if ( m_textureAsset.SlicePitch == 0 )
+    {
+        m_textureAsset.SlicePitch = m_textureAsset.RowPitch * m_textureAsset.NumRows;
+    }
+
+    if ( m_textureAsset.Mips.NumElements( ) == 0 )
+    {
+        LOG( WARNING ) << "TextureAssetWriter: No mip levels found, creating default mip level";
+        TextureMip mip{ };
+        mip.Width      = std::max( 1u, m_textureAsset.Width );
+        mip.Height     = std::max( 1u, m_textureAsset.Height );
+        mip.MipIndex   = 0;
+        mip.ArrayIndex = 0;
+        mip.RowPitch   = m_textureAsset.RowPitch;
+        mip.NumRows    = m_textureAsset.NumRows;
+        mip.SlicePitch = m_textureAsset.SlicePitch;
+        mip.DataOffset = 0;
+
+        m_textureAsset.Mips.Resize( 1 );
+        m_textureAsset.Mips.SetElement( 0, mip );
+    }
+
+    m_writer->WriteUInt32( std::max( 1u, m_textureAsset.Width ) );
+    m_writer->WriteUInt32( std::max( 1u, m_textureAsset.Height ) );
     m_writer->WriteUInt32( m_textureAsset.Depth );
     m_writer->WriteUInt32( static_cast<uint32_t>( m_textureAsset.Format ) );
     m_writer->WriteUInt32( static_cast<uint32_t>( m_textureAsset.Dimension ) );
@@ -114,6 +221,8 @@ void TextureAssetWriter::AddPixelData( const InteropArray<Byte> &bytes, const ui
     ValidateMipRange( mipIndex, arrayLayer );
 
     const uint32_t currentDataOffset = m_writer->Position( ) - m_assetDataStreamPosition;
+    bool           mipFound          = false;
+
     for ( size_t i = 0; i < m_textureAsset.Mips.NumElements( ); ++i )
     {
         if ( TextureMip &mip = m_textureAsset.Mips.GetElement( i ); mip.MipIndex == mipIndex && mip.ArrayIndex == arrayLayer )
@@ -127,8 +236,47 @@ void TextureAssetWriter::AddPixelData( const InteropArray<Byte> &bytes, const ui
                 m_writer->WriteUInt32( currentDataOffset );
                 m_writer->Seek( currentPos );
             }
+            mipFound = true;
             break;
         }
+    }
+
+    // If mip was not found, add a new mip entry (unless we're already at max mips)
+    if ( !mipFound && ( mipIndex < m_textureAsset.MipLevels ) && ( arrayLayer < m_textureAsset.ArraySize ) )
+    {
+        LOG( WARNING ) << "TextureAssetWriter: Adding missing mip entry for level " << mipIndex << ", array layer " << arrayLayer;
+        const uint32_t mipWidth  = std::max( 1u, m_textureAsset.Width >> mipIndex );
+        const uint32_t mipHeight = std::max( 1u, m_textureAsset.Height >> mipIndex );
+
+        uint32_t mipRowPitch, mipNumRows, mipSlicePitch;
+        if ( IsFormatBC( m_textureAsset.Format ) )
+        {
+            const uint32_t blockWidth  = ( mipWidth + m_textureAsset.BlockSize - 1 ) / m_textureAsset.BlockSize;
+            const uint32_t blockHeight = ( mipHeight + m_textureAsset.BlockSize - 1 ) / m_textureAsset.BlockSize;
+
+            mipRowPitch   = blockWidth * ( m_textureAsset.BitsPerPixel / 8 );
+            mipNumRows    = blockHeight;
+            mipSlicePitch = mipRowPitch * mipNumRows;
+        }
+        else
+        {
+            mipRowPitch   = mipWidth * ( m_textureAsset.BitsPerPixel / 8 );
+            mipNumRows    = mipHeight;
+            mipSlicePitch = mipRowPitch * mipNumRows;
+        }
+
+        TextureMip newMip{ };
+        newMip.Width      = mipWidth;
+        newMip.Height     = mipHeight;
+        newMip.MipIndex   = mipIndex;
+        newMip.ArrayIndex = arrayLayer;
+        newMip.RowPitch   = mipRowPitch;
+        newMip.NumRows    = mipNumRows;
+        newMip.SlicePitch = mipSlicePitch;
+        newMip.DataOffset = currentDataOffset;
+        m_textureAsset.Mips.AddElement( newMip );
+        m_textureMipPositions.push_back( m_writer->Position( ) );
+        WriteMipInfo( newMip );
     }
 
     m_lastMipIndex   = mipIndex;

@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzExamples/Main.h>
-#include <DenOfIzExamples/RayTracedProceduralGeometryExample.h>
+#include <DenOfIzExamples/AnimatedFoxExample.h>
 
-DZ_EXAMPLE_MAIN(DenOfIz::RayTracedProceduralGeometryExample)
+// Use the example macro to set up the main function with the AnimatedFoxExample
+DZ_EXAMPLE_MAIN(DenOfIz::AnimatedFoxExample)

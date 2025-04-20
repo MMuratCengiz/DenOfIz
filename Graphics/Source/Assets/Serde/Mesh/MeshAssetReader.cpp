@@ -97,11 +97,11 @@ uint32_t MeshAssetReader::VertexEntryNumBytes( ) const
     const auto &config     = m_meshAsset.AttributeConfig;
     if ( attributes.Position )
     {
-        size += config.NumPositionComponents * sizeof( float );
+        size += 4 * sizeof( float );
     }
     if ( attributes.Normal )
     {
-        size += config.NumPositionComponents * sizeof( float );
+        size += 4 * sizeof( float );
     }
     if ( attributes.UV )
     {
@@ -225,7 +225,7 @@ MeshVertex MeshAssetReader::ReadSingleVertex( ) const
     }
     if ( attributes.BlendIndices )
     {
-        vertex.BoneIndices = m_reader->ReadUInt32_4( );
+        vertex.BlendIndices = m_reader->ReadUInt32_4( );
     }
     if ( attributes.BlendWeights )
     {

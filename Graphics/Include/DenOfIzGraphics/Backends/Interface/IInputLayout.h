@@ -36,18 +36,16 @@ namespace DenOfIz
         Tangent,
         Binormal,
         Bitangent,
-        BlendJoints,
-        BlendWeights,
+        BlendIndices,
+        BlendWeight,
         TextureCoordinate,
     };
 
-    DZ_API Semantic SemanticFromString( const std::string &semantic );
-
     struct DZ_API InputLayoutElementDesc
     {
-        Semantic Semantic;
-        uint32_t SemanticIndex;
-        Format   Format;
+        InteropString Semantic;
+        uint32_t      SemanticIndex;
+        Format        Format;
     };
     template class DZ_API InteropArray<InputLayoutElementDesc>;
 

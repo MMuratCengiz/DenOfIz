@@ -35,6 +35,7 @@ namespace DenOfIz
     public:
         std::function<void( double )> OnEachSecond;
 
+        DZ_API Time( );
         DZ_API void                       Tick( );
         [[nodiscard]] DZ_API const double GetDeltaTime( ) const;
         [[nodiscard]] DZ_API const double GetFirstTickTime( ) const;

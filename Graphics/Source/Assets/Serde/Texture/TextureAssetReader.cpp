@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h>
 #include <DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h>
+#include <DenOfIzGraphics/Utilities/Utilities.h>
 
 using namespace DenOfIz;
 
@@ -45,6 +46,11 @@ TextureMip TextureAssetReader::FindMip( const uint32_t mipLevel, const uint32_t 
 
 TextureAsset TextureAssetReader::Read( )
 {
+    if ( m_textureRead )
+    {
+        return m_textureAsset;
+    }
+    m_textureRead        = true;
     m_textureAsset       = TextureAsset( );
     m_textureAsset.Magic = m_reader->ReadUInt64( );
     if ( m_textureAsset.Magic != TextureAsset{ }.Magic )
@@ -57,8 +63,8 @@ TextureAsset TextureAssetReader::Read( )
     {
         LOG( WARNING ) << "TextureAsset version mismatch.";
     }
-    m_textureAsset.NumBytes     = m_reader->ReadUInt64( );
-    m_textureAsset.Uri          = AssetUri::Parse( m_reader->ReadString( ) );
+    m_textureAsset.NumBytes = m_reader->ReadUInt64( );
+    m_textureAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
 
     m_textureAsset.Name         = m_reader->ReadString( );
     m_textureAsset.SourcePath   = m_reader->ReadString( );
@@ -130,7 +136,7 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
 
     const auto stagingBuffer  = desc.StagingBuffer;
     uint64_t   remainingBytes = m_textureAsset.Data.NumBytes;
-    Byte      *mappedMemory   = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
+    auto       mappedMemory   = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
 
     m_reader->Seek( m_textureAsset.Data.Offset );
     while ( remainingBytes > 0 )
@@ -171,4 +177,17 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
 
         desc.CommandList->CopyBufferToTexture( copyDesc );
     }
+}
+
+uint64_t TextureAssetReader::AlignedTotalNumBytes( const DeviceConstants &constants )
+{
+    uint64_t totalNumBytes = 0;
+    for ( uint32_t i = 0; i < m_textureAsset.Mips.NumElements( ); ++i )
+    {
+        const TextureMip &mip               = m_textureAsset.Mips.GetElement( i );
+        const uint32_t    alignedRowPitch   = Utilities::Align( mip.RowPitch, constants.BufferTextureRowAlignment );
+        const uint32_t    alignedSlicePitch = Utilities::Align( alignedRowPitch * mip.NumRows, constants.BufferTextureAlignment );
+        totalNumBytes += alignedSlicePitch;
+    }
+    return totalNumBytes;
 }

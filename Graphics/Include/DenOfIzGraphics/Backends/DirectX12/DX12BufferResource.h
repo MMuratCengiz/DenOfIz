@@ -45,9 +45,7 @@ namespace DenOfIz
         void                                      *m_mappedMemory = nullptr;
         BitSet<ResourceUsage>                      m_state;
         std::array<D3D12_CPU_DESCRIPTOR_HANDLE, 4> m_cpuHandles;
-
-        bool     allocated = false;
-        uint32_t m_stride  = 0;
+        bool                                       allocated = false;
 
     public:
         DX12BufferResource( DX12Context *context, BufferDesc desc );

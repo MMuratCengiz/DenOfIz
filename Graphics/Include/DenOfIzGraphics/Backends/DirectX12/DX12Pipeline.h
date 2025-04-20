@@ -20,7 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include "DX12Context.h"
-#include "DX12InputLayout.h"
 #include "DX12RootSignature.h"
 
 namespace DenOfIz
@@ -28,6 +27,7 @@ namespace DenOfIz
 
     class DX12Pipeline final : public IPipeline
     {
+        uint32_t                                              m_iaStride     = 0;
         DX12Context                                          *m_context      = nullptr;
         wil::com_ptr<ID3D12PipelineState>                     m_pipeline     = nullptr;
         wil::com_ptr<ID3D12StateObject>                       m_rayTracingSO = nullptr;
@@ -47,6 +47,7 @@ namespace DenOfIz
         [[nodiscard]] ID3D12RootSignature     *GetRootSignature( ) const;
         [[nodiscard]] D3D12_PRIMITIVE_TOPOLOGY GetTopology( ) const;
         [[nodiscard]] BindPoint                GetBindPoint( ) const;
+        [[nodiscard]] uint32_t                 GetIAStride( ) const;
         ~DX12Pipeline( ) override;
 
     private:

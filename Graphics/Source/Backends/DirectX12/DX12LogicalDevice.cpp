@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Backends/DirectX12/DX12CommandQueue.h>
+#include <DenOfIzGraphics/Backends/DirectX12/DX12InputLayout.h>
 #include <DenOfIzGraphics/Backends/DirectX12/DX12LogicalDevice.h>
 #include <DenOfIzGraphics/Backends/DirectX12/DX12Semaphore.h>
 #include <DenOfIzGraphics/Backends/DirectX12/DX12SwapChain.h>
