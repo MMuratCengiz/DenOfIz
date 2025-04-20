@@ -72,7 +72,6 @@ void SkeletonAssetWriter::Write(const SkeletonAsset& skeletonAsset ) const
         m_writer->WriteFloat_3( joint.LocalTranslation );
         m_writer->WriteFloat_4( joint.LocalRotationQuat );
         m_writer->WriteFloat_3( joint.LocalScale );
-        m_writer->WriteFloat_4x4(joint.GlobalTransform);
         m_writer->WriteUInt32(joint.Index);
         m_writer->WriteInt32(joint.ParentIndex);
         m_writer->WriteUInt32(joint.ChildIndices.NumElements());

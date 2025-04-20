@@ -88,8 +88,8 @@ namespace DenOfIz
             std::map<int32_t, const aiNode *>            IndexToAssimpNodeMap;
             std::map<const aiNode *, aiMatrix4x4>        WorldTransformCache;
             AssetUri                                     SkeletonAssetUri;
-            uint32_t                                     CurrentSubMeshIndex      = 0;
-            MeshAsset                                   *CurrentMeshAssetMetadata = nullptr; // Pointer to the MeshAsset being built
+            uint32_t                                     CurrentSubMeshIndex = 0;
+            MeshAsset                                    MeshAsset{ }; // MeshAsset being built
         };
 
     public:
@@ -105,26 +105,24 @@ namespace DenOfIz
         ImporterResultCode ImportSceneInternal( ImportContext &context );
         ImporterResultCode ProcessNode( ImportContext &context, const aiNode *node, MeshAssetWriter *meshWriter, SkeletonAsset &skeletonAsset, int32_t parentJointIndex = -1 );
         ImporterResultCode ProcessMesh( ImportContext &context, const aiMesh *mesh, MeshAssetWriter &assetWriter ); // Changed MeshAsset& to MeshAssetWriter&
-        ImporterResultCode ProcessMaterial( ImportContext &context, const aiMaterial *material, AssetUri &outAssetUri );
-        ImporterResultCode ProcessTexture( ImportContext &context, const aiMaterial *material, aiTextureType textureType, const InteropString &semanticName,
-                                           AssetUri &outAssetUri );
-        ImporterResultCode ProcessSkeleton( SkeletonAsset &skeletonAsset );
-        ImporterResultCode ProcessAnimation( ImportContext &context, const aiAnimation *animation, AssetUri &outAssetUri );
+        void               ProcessMaterial( ImportContext &context, const aiMaterial *material );
+        bool ProcessTexture( ImportContext &context, const aiMaterial *material, aiTextureType textureType, const InteropString &semanticName, AssetUri &outAssetUri );
+        void ProcessAnimation( ImportContext &context, const aiAnimation *animation, AssetUri &outAssetUri );
 
-        void               ConfigureAssimpImportFlags( const AssimpImportOptions &options, unsigned int &flags, Assimp::Importer &importer );
-        ImporterResultCode WriteMaterialAsset( ImportContext &context, const MaterialAsset &materialAsset, AssetUri &outAssetUri );
-        void               CalculateMeshBounds( const aiMesh *mesh, float scaleFactor, Float_3 &outMin, Float_3 &outMax );
+        void ConfigureAssimpImportFlags( const AssimpImportOptions &options, unsigned int &flags, Assimp::Importer &importer );
+        void CalculateMeshBounds( const aiMesh *mesh, float scaleFactor, Float_3 &outMin, Float_3 &outMax );
 
+        void WriteMaterialAsset( ImportContext &context, const MaterialAsset &materialAsset, AssetUri &outAssetUri );
         // Either texture(for embedded textures) or path for reference textures
-        ImporterResultCode WriteTextureAsset( ImportContext &context, const aiTexture *texture, const std::string &path, const InteropString &semanticName, AssetUri &outAssetUri );
-        ImporterResultCode WriteSkeletonAsset( ImportContext &context, const SkeletonAsset &skeletonAsset );
-        ImporterResultCode WriteAnimationAsset( ImportContext &context, const AnimationAsset &animationAsset, AssetUri &outAssetUri );
-        Float_4x4          ConvertMatrix( const aiMatrix4x4 &matrix );
-        Float_4            ConvertQuaternion( const aiQuaternion &quat );
-        Float_3            ConvertVector3( const aiVector3D &vec );
-        Float_2            ConvertVector2( const aiVector3D &vec );
-        Float_4            ConvertColor( const aiColor4D &color );
-        aiMatrix4x4        GetWorldTransform( const aiNode *node, ImportContext &context );
+        void WriteTextureAsset( ImportContext &context, const aiTexture *texture, const std::string &path, const InteropString &semanticName, AssetUri &outAssetUri );
+        void WriteSkeletonAsset( ImportContext &context, const SkeletonAsset &skeletonAsset );
+        void WriteAnimationAsset( ImportContext &context, const AnimationAsset &animationAsset, AssetUri &outAssetUri );
+
+        Float_4x4 ConvertMatrix( const aiMatrix4x4 &matrix );
+        Float_4   ConvertQuaternion( const aiQuaternion &quat );
+        Float_3   ConvertVector3( const aiVector3D &vec );
+        Float_2   ConvertVector2( const aiVector3D &vec );
+        Float_4   ConvertColor( const aiColor4D &color );
 
         InteropString CreateAssetFileName( const InteropString &prefix, const InteropString &name, const InteropString &assetType, const InteropString &extension );
         InteropString GetAssetNameFromFilePath( const InteropString &filePath );

@@ -28,7 +28,6 @@ protected:
         rootJoint.LocalTranslation  = { 0.0f, 0.0f, 0.0f };
         rootJoint.LocalRotationQuat = { 0.0f, 0.0f, 0.0f, 1.0f };
         rootJoint.LocalScale        = { 1.0f, 1.0f, 1.0f };
-        rootJoint.GlobalTransform   = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f };
 
         rootJoint.ChildIndices.AddElement( 1 );
 
@@ -41,7 +40,6 @@ protected:
         spineJoint.LocalTranslation  = { 0.0f, 1.0f, 0.0f };
         spineJoint.LocalRotationQuat = { 0.0f, 0.0f, 0.0f, 1.0f };
         spineJoint.LocalScale        = { 1.0f, 1.0f, 1.0f };
-        spineJoint.GlobalTransform   = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f };
 
         spineJoint.ChildIndices.AddElement( 2 );
 
@@ -54,7 +52,6 @@ protected:
         headJoint.LocalTranslation  = { 0.0f, 1.0f, 0.0f };
         headJoint.LocalRotationQuat = { 0.0f, 0.0f, 0.0f, 1.0f };
         headJoint.LocalScale        = { 1.0f, 1.0f, 1.0f };
-        headJoint.GlobalTransform   = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f, 0.0f, 1.0f };
 
         asset.Joints.AddElement( rootJoint );
         asset.Joints.AddElement( spineJoint );
@@ -102,7 +99,6 @@ TEST_F( SkeletonAssetSerdeTest, WriteAndReadBack )
         ASSERT_TRUE( Float3Equals( readJoint.LocalTranslation, sampleJoint.LocalTranslation ));
         ASSERT_TRUE( Float4Equals( readJoint.LocalRotationQuat, sampleJoint.LocalRotationQuat ));
         ASSERT_TRUE( Float3Equals( readJoint.LocalScale, sampleJoint.LocalScale ));
-        ASSERT_TRUE( MatricesEqual( readJoint.GlobalTransform, sampleJoint.GlobalTransform ) );
 
         ASSERT_EQ( readJoint.ChildIndices.NumElements( ), sampleJoint.ChildIndices.NumElements( ) );
 
