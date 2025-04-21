@@ -28,8 +28,8 @@ namespace DenOfIz
 
     struct HitGroupExport
     {
-        uint64_t ClosestHit = 0;
-        uint64_t AnyHit = 0;
+        uint64_t ClosestHit   = 0;
+        uint64_t AnyHit       = 0;
         uint64_t Intersection = 0;
     };
 
@@ -43,6 +43,7 @@ namespace DenOfIz
         id<MTLComputePipelineState> m_computePipelineState;
         // Graphics specific
         MTLCullMode              m_cullMode;
+        MTLTriangleFillMode      m_fillMode;
         id<MTLDepthStencilState> m_depthStencilState;
         // Ray tracing specific
         std::unordered_map<std::string, uint64_t>       m_visibleFunctions;
@@ -56,6 +57,7 @@ namespace DenOfIz
         ~MetalPipeline( ) override;
 
         const MTLCullMode                 &CullMode( ) const;
+        const MTLTriangleFillMode         &FillMode( ) const;
         const id<MTLDepthStencilState>    &DepthStencilState( ) const;
         const id<MTLRenderPipelineState>  &GraphicsPipelineState( ) const;
         const id<MTLComputePipelineState> &ComputePipelineState( ) const;

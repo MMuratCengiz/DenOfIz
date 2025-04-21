@@ -40,6 +40,7 @@ namespace DenOfIz
         static D3D12_PRIMITIVE_TOPOLOGY                ConvertPrimitiveTopology( const PrimitiveTopology &topology );
         static D3D12_STENCIL_OP                        ConvertStencilOp( const StencilOp &op );
         static D3D12_CULL_MODE                         ConvertCullMode( CullMode mode );
+        static D3D12_FILL_MODE                         ConvertFillMode( const FillMode &mode );
         static D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE ConvertLoadOp( const LoadOp &op );
         static D3D12_RENDER_PASS_ENDING_ACCESS_TYPE    ConvertStoreOp( const StoreOp &op );
         static D3D12_BLEND_OP                          ConvertBlendOp( const BlendOp &op );

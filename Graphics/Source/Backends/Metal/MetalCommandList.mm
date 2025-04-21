@@ -132,6 +132,7 @@ void MetalCommandList::BindPipeline( IPipeline *pipeline )
             [m_renderEncoder setRenderPipelineState:m_pipeline->GraphicsPipelineState( )];
             [m_renderEncoder setDepthStencilState:m_pipeline->DepthStencilState( )];
             [m_renderEncoder setCullMode:m_pipeline->CullMode( )];
+            [m_renderEncoder setTriangleFillMode:m_pipeline->FillMode( )];
             [m_renderEncoder setFrontFacingWinding:MTLWindingClockwise];
             break;
         }

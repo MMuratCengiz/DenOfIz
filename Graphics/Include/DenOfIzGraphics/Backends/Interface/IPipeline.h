@@ -48,6 +48,12 @@ namespace DenOfIz
         None
     };
 
+    enum class FillMode
+    {
+        Solid,
+        Wireframe
+    };
+
     namespace ViewMask
     {
         constexpr int R = 0x00000001;
@@ -161,6 +167,7 @@ namespace DenOfIz
 
         PrimitiveTopology PrimitiveTopology = PrimitiveTopology::Triangle;
         CullMode          CullMode          = CullMode::None;
+        FillMode          FillMode          = FillMode::Solid;
         DepthTest         DepthTest;
         StencilTest       StencilTest;
         MSAASampleCount   MSAASampleCount = MSAASampleCount::_0; // 0 Disables MSAA

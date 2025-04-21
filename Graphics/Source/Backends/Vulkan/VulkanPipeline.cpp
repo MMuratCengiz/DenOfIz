@@ -407,6 +407,15 @@ VkPipelineRasterizationStateCreateInfo VulkanPipeline::ConfigureRasterization( )
         rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_NONE;
         break;
     }
+    switch ( m_desc.Graphics.FillMode )
+    {
+    case FillMode::Solid:
+        rasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
+        break;
+    case FillMode::Wireframe:
+        rasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_LINE;
+        break;
+    }
 
     rasterizationStateCreateInfo.frontFace               = VK_FRONT_FACE_CLOCKWISE;
     rasterizationStateCreateInfo.depthBiasEnable         = false; // Todo, test if works with dynamic state

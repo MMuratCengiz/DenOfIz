@@ -65,6 +65,7 @@ void DX12Pipeline::CreateGraphicsPipeline( )
 
     psoDesc.RasterizerState          = CD3DX12_RASTERIZER_DESC( D3D12_DEFAULT );
     psoDesc.RasterizerState.CullMode = DX12EnumConverter::ConvertCullMode( m_desc.Graphics.CullMode );
+    psoDesc.RasterizerState.FillMode = DX12EnumConverter::ConvertFillMode( m_desc.Graphics.FillMode );
 
     InitDepthStencil( psoDesc );
 

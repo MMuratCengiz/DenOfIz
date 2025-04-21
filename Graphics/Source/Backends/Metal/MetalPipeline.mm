@@ -138,6 +138,16 @@ void MetalPipeline::CreateGraphicsPipeline( )
         m_cullMode = MTLCullModeBack;
         break;
     }
+
+    switch ( m_desc.Graphics.FillMode )
+    {
+    case FillMode::Solid:
+        m_fillMode = MTLTriangleFillModeFill;
+        break;
+    case FillMode::Wireframe:
+        m_fillMode = MTLTriangleFillModeLines;
+        break;
+    }
 }
 
 void MetalPipeline::CreateComputePipeline( )
@@ -354,6 +364,11 @@ void MetalPipeline::InitStencilFace( MTLStencilDescriptor *stencilDesc, const St
 const MTLCullMode &MetalPipeline::CullMode( ) const
 {
     return m_cullMode;
+}
+
+const MTLTriangleFillMode &MetalPipeline::FillMode( ) const
+{
+    return m_fillMode;
 }
 
 const id<MTLDepthStencilState> &MetalPipeline::DepthStencilState( ) const
