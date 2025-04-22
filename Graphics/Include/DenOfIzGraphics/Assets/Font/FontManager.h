@@ -22,32 +22,84 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Serde/Font/FontAsset.h>
 #include <DenOfIzGraphics/Utilities/Common.h>
 
-// Forward declare FreeType structures to avoid exposing them in the header
 typedef struct FT_LibraryRec_ *FT_Library;
 typedef struct FT_FaceRec_    *FT_Face;
+
+typedef struct hb_font_t   hb_font_t;
+typedef struct hb_buffer_t hb_buffer_t;
+typedef struct hb_face_t   hb_face_t;
 
 using namespace DirectX;
 
 namespace DenOfIz
 {
+    struct ShapedGlyph
+    {
+        uint32_t GlyphId;
+        uint32_t ClusterIndex;
+        float    XOffset;
+        float    YOffset;
+        float    XAdvance;
+        float    YAdvance;
+        uint32_t CodePoint;
+    };
+    template class DZ_API InteropArray<ShapedGlyph>;
+
+    enum class TextDirection
+    {
+        LeftToRight,
+        RightToLeft,
+        Auto
+    };
+
+    enum class TextScript
+    {
+    };
+
+    struct TextLayout
+    {
+        InteropArray<ShapedGlyph> ShapedGlyphs;
+        float                     TotalWidth  = 0.0f;
+        float                     TotalHeight = 0.0f;
+    };
+
+    struct ShapeTextDesc
+    {
+    };
+
+    struct GenerateTextVerticesDesc
+    {
+        FontCache    *FontCache;
+        TextLayout    Layout;
+        InteropString Text;
+        float         X;
+        float         Y;
+        Float_4       Color;
+        float         Scale;
+    };
+
     class FontManager
     {
         FT_Library                                                  m_ftLibrary{ };
         std::unordered_map<std::string, std::shared_ptr<FontCache>> m_fontCache;
+        std::unordered_map<std::string, hb_font_t *>                m_hbFonts;
 
     public:
         FontManager( );
         ~FontManager( );
 
-        std::shared_ptr<FontCache> LoadFont( const std::string &fontPath, uint32_t pixelSize = 24, bool antiAliasing = true );
-        std::shared_ptr<FontCache> GetFont( const std::string &fontPath, uint32_t pixelSize = 24 );
-        bool                       EnsureGlyphsLoaded( const std::shared_ptr<FontCache> &fontCache, const std::u32string &text );
-        void GenerateTextVertices( const std::shared_ptr<FontCache> &fontCache, const std::u32string &text, std::vector<float> &vertices, std::vector<uint32_t> &indices, float x,
-                                   float y, const XMFLOAT4 &color = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f ), float scale = 1.0f );
-        static std::u32string Utf8ToUtf32( const std::string &utf8Text );
+        FontCache *LoadFont( const InteropString &fontPath, uint32_t pixelSize = 24, bool antiAliasing = true );
+        FontCache *GetFont( const InteropString &fontPath, uint32_t pixelSize = 24 );
+        TextLayout ShapeText( FontCache *fontCache, const InteropString &interopText, TextDirection direction = TextDirection::Auto );
+        void       GenerateTextVertices( const GenerateTextVerticesDesc &desc, InteropArray<float> &outVertices, InteropArray<uint32_t> &outIndices );
 
     private:
-        bool LoadGlyph( const std::shared_ptr<FontCache> &fontCache, uint32_t codePoint, FT_Face face );
+        std::string    Utf32ToUtf8( const std::u32string &utf32Text );
+        std::u32string Utf8ToUtf32( const std::string &utf8Text );
+        bool           EnsureGlyphsLoaded( FontCache *fontCache, const InteropString &interopText );
+        bool           LoadGlyph( FontCache *fontCache, uint32_t codePoint, FT_Face face );
+        hb_font_t     *GetHarfBuzzFont( const std::string &fontPath, uint32_t numPixels, FT_Face face );
+        void           DestroyHarfBuzzFont( const std::string &fontCacheKey );
     };
 
 } // namespace DenOfIz

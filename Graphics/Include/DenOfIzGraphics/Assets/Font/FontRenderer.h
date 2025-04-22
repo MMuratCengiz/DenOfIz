@@ -35,15 +35,17 @@ namespace DenOfIz
 {
     struct TextRenderDesc
     {
-        std::string Text;             // UTF-8 encoded text
-        float       X;                // X position in screen space
-        float       Y;                // Y position in screen space
-        XMFLOAT4    Color;            // Text color
-        float       Scale;            // Text scaling factor
-        bool        HorizontalCenter; // Center text horizontally
-        bool        VerticalCenter;   // Center text vertically
+        InteropString Text;
+        float         X;
+        float         Y;
+        Float_4       Color;
+        float         Scale;
+        bool          HorizontalCenter;
+        bool          VerticalCenter;
+        TextDirection Direction;
 
-        TextRenderDesc( ) : X( 0.0f ), Y( 0.0f ), Color( 1.0f, 1.0f, 1.0f, 1.0f ), Scale( 1.0f ), HorizontalCenter( false ), VerticalCenter( false )
+        TextRenderDesc( ) :
+            X( 0.0f ), Y( 0.0f ), Color( 1.0f, 1.0f, 1.0f, 1.0f ), Scale( 1.0f ), HorizontalCenter( false ), VerticalCenter( false ), Direction( TextDirection::Auto )
         {
         }
     };
@@ -61,7 +63,7 @@ namespace DenOfIz
         FontManager      m_fontManager;
         ResourceTracking m_resourceTracking;
 
-        std::unordered_map<std::string, std::shared_ptr<FontCache>> m_loadedFonts;
+        std::unordered_map<std::string, FontCache *> m_loadedFonts;
 
         std::unique_ptr<ShaderProgram>      m_fontShaderProgram;
         std::unique_ptr<IPipeline>          m_fontPipeline;
@@ -77,27 +79,27 @@ namespace DenOfIz
         std::unique_ptr<IResourceBindGroup> m_resourceBindGroup = nullptr;
         std::unique_ptr<IInputLayout>       m_inputLayout       = nullptr;
 
-        std::shared_ptr<FontCache> m_currentFont;
-        XMFLOAT4X4                 m_projectionMatrix{ };
-        bool                       m_atlasNeedsUpdate   = false;
-        uint32_t                   m_maxVertices        = 1024;
-        uint32_t                   m_maxIndices         = 1536;
-        uint32_t                   m_currentVertexCount = 0;
-        uint32_t                   m_currentIndexCount  = 0;
-        std::vector<float>         m_vertexData;
-        std::vector<uint32_t>      m_indexData;
+        FontCache             *m_currentFont;
+        XMFLOAT4X4             m_projectionMatrix{ };
+        bool                   m_atlasNeedsUpdate   = false;
+        uint32_t               m_maxVertices        = 1024;
+        uint32_t               m_maxIndices         = 1536;
+        uint32_t               m_currentVertexCount = 0;
+        uint32_t               m_currentIndexCount  = 0;
+        InteropArray<float>    m_vertexData;
+        InteropArray<uint32_t> m_indexData;
 
     public:
         FontRenderer( GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice );
         ~FontRenderer( );
 
-        void                       Initialize( );
-        std::shared_ptr<FontCache> LoadFont( const std::string &fontPath, uint32_t pixelSize = 24 );
-        void                       SetFont( const std::string &fontPath, uint32_t pixelSize = 24 );
-        void                       SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix );
-        void                       BeginBatch( );
-        void                       AddText( const TextRenderDesc &params );
-        void                       EndBatch( ICommandList *commandList );
+        void       Initialize( );
+        FontCache *LoadFont( const InteropString &fontPath, uint32_t pixelSize = 24 );
+        void       SetFont( const InteropString &fontPath, uint32_t pixelSize = 24 );
+        void       SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix );
+        void       BeginBatch( );
+        void       AddText( const TextRenderDesc &params );
+        void       EndBatch( ICommandList *commandList );
 
     private:
         void UpdateAtlasTexture( ICommandList *commandList );

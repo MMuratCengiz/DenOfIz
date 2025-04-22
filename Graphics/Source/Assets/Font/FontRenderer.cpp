@@ -126,20 +126,18 @@ void FontRenderer::Initialize( )
 
     m_resourceBindGroup = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
     m_resourceBindGroup->BeginUpdate( )->Cbv( 0, m_uniformBuffer.get( ) )->Srv( 0, m_fontAtlasTexture.get( ) )->Sampler( 0, m_fontSampler.get( ) )->EndUpdate( );
-    m_vertexData.reserve( m_maxVertices * 8 ); // 8 floats per vertex
-
-    m_indexData.reserve( m_maxIndices );
 }
 
-std::shared_ptr<FontCache> FontRenderer::LoadFont( const std::string &fontPath, const uint32_t pixelSize )
+FontCache *FontRenderer::LoadFont( const InteropString &fontPath, const uint32_t pixelSize )
 {
-    const std::string cacheKey = fontPath + "_" + std::to_string( pixelSize );
+    const std::string path     = fontPath.Get( );
+    const std::string cacheKey = path + "_" + std::to_string( pixelSize );
     if ( const auto it = m_loadedFonts.find( cacheKey ); it != m_loadedFonts.end( ) )
     {
         return it->second;
     }
 
-    auto fontCache = m_fontManager.LoadFont( fontPath, pixelSize );
+    const auto fontCache = m_fontManager.LoadFont( fontPath, pixelSize );
     if ( fontCache )
     {
         m_loadedFonts[ cacheKey ] = fontCache;
@@ -149,7 +147,7 @@ std::shared_ptr<FontCache> FontRenderer::LoadFont( const std::string &fontPath, 
     return fontCache;
 }
 
-void FontRenderer::SetFont( const std::string &fontPath, const uint32_t pixelSize )
+void FontRenderer::SetFont( const InteropString &fontPath, const uint32_t pixelSize )
 {
     m_currentFont = LoadFont( fontPath, pixelSize );
     if ( m_currentFont )
@@ -165,29 +163,46 @@ void FontRenderer::SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix )
 
 void FontRenderer::BeginBatch( )
 {
-    m_vertexData.clear( );
-    m_indexData.clear( );
+    m_vertexData.Clear( );
+    m_indexData.Clear( );
     m_currentVertexCount = 0;
     m_currentIndexCount  = 0;
 }
 
 void FontRenderer::AddText( const TextRenderDesc &params )
 {
-    if ( !m_currentFont || params.Text.empty( ) )
+    if ( !m_currentFont || params.Text.NumChars( ) == 0 )
     {
         return;
     }
 
-    const std::u32string utf32Text      = FontManager::Utf8ToUtf32( params.Text );
-    TextRenderDesc       modifiedParams = params;
+    TextRenderDesc           modifiedParams = params;
+    GenerateTextVerticesDesc generateTextDesc{ };
+    generateTextDesc.Layout = m_fontManager.ShapeText( m_currentFont, params.Text, params.Direction );
     if ( params.HorizontalCenter || params.VerticalCenter )
     {
-        CalculateCenteredPosition( utf32Text, modifiedParams );
+        if ( params.HorizontalCenter )
+        {
+            modifiedParams.X -= generateTextDesc.Layout.TotalWidth * params.Scale / 2.0f;
+        }
+
+        if ( params.VerticalCenter )
+        {
+            modifiedParams.Y -= generateTextDesc.Layout.TotalHeight * params.Scale / 2.0f;
+        }
     }
 
-    m_fontManager.GenerateTextVertices( m_currentFont, utf32Text, m_vertexData, m_indexData, modifiedParams.X, modifiedParams.Y, modifiedParams.Color, modifiedParams.Scale );
-    m_currentVertexCount = m_vertexData.size( ) / 8;
-    m_currentIndexCount  = m_indexData.size( );
+    generateTextDesc.FontCache = m_currentFont;
+    generateTextDesc.Text      = params.Text;
+    generateTextDesc.X         = modifiedParams.X;
+    generateTextDesc.Y         = modifiedParams.Y;
+    generateTextDesc.Color     = modifiedParams.Color;
+    generateTextDesc.Scale     = modifiedParams.Scale;
+
+    m_fontManager.GenerateTextVertices( generateTextDesc, m_vertexData, m_indexData );
+
+    m_currentVertexCount = m_vertexData.NumElements( ) / 8;
+    m_currentIndexCount  = m_indexData.NumElements( );
 
     if ( m_currentVertexCount > m_maxVertices || m_currentIndexCount > m_maxIndices )
     {
@@ -230,11 +245,6 @@ void FontRenderer::EndBatch( ICommandList *commandList )
 
 void FontRenderer::UpdateAtlasTexture( ICommandList *commandList )
 {
-    if ( !m_currentFont )
-    {
-        return;
-    }
-
     const auto &fontAsset   = m_currentFont->GetFontAsset( );
     const auto &atlasBitmap = m_currentFont->GetAtlasBitmap( );
 
@@ -290,7 +300,7 @@ void FontRenderer::UpdateAtlasTexture( ICommandList *commandList )
 void FontRenderer::UpdateBuffers( )
 {
     // Check if we need to resize vertex buffer
-    if ( m_vertexBufferDesc.NumBytes < m_vertexData.size( ) * sizeof( float ) )
+    if ( m_vertexBufferDesc.NumBytes < m_vertexData.NumElements( ) * sizeof( float ) )
     {
         BufferDesc newDesc = m_vertexBufferDesc;
         newDesc.NumBytes   = m_maxVertices * 8 * sizeof( float );
@@ -301,7 +311,7 @@ void FontRenderer::UpdateBuffers( )
     }
 
     // Check if we need to resize index buffer
-    if ( m_indexBufferDesc.NumBytes < m_indexData.size( ) * sizeof( uint32_t ) )
+    if ( m_indexBufferDesc.NumBytes < m_indexData.NumElements( ) * sizeof( uint32_t ) )
     {
         BufferDesc newDesc = m_indexBufferDesc;
         newDesc.NumBytes   = m_maxIndices * sizeof( uint32_t );
@@ -312,11 +322,11 @@ void FontRenderer::UpdateBuffers( )
     }
 
     void *vertexData = m_vertexBuffer->MapMemory( );
-    memcpy( vertexData, m_vertexData.data( ), m_vertexData.size( ) * sizeof( float ) );
+    memcpy( vertexData, m_vertexData.Data( ), m_vertexData.NumElements( ) * sizeof( float ) );
     m_vertexBuffer->UnmapMemory( );
 
     void *indexData = m_indexBuffer->MapMemory( );
-    memcpy( indexData, m_indexData.data( ), m_indexData.size( ) * sizeof( uint32_t ) );
+    memcpy( indexData, m_indexData.Data( ), m_indexData.NumElements( ) * sizeof( uint32_t ) );
     m_indexBuffer->UnmapMemory( );
 }
 
@@ -332,10 +342,11 @@ void FontRenderer::CalculateCenteredPosition( const std::u32string &text, TextRe
     float       textWidth  = 0.0f;
     const float textHeight = static_cast<float>( fontAsset.Metrics.LineHeight ) * params.Scale;
 
+    // This is the legacy positioning method, still used as a fallback
+    // The HarfBuzz-based positioning handles this more accurately now
     for ( const char32_t c : text )
     {
-        const GlyphMetrics *metrics = m_currentFont->GetGlyphMetrics( c );
-        if ( metrics )
+        if ( const GlyphMetrics *metrics = m_currentFont->GetGlyphMetrics( c ) )
         {
             textWidth += static_cast<float>( metrics->Advance ) * params.Scale;
         }

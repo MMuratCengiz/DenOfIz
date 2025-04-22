@@ -18,10 +18,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // ReSharper disable CppMemberFunctionMayBeStatic
 #include <DenOfIzGraphics/Assets/Font/FontManager.h>
 #include <DenOfIzGraphics/Utilities/Common_Asserts.h>
+#include <codecvt>
 #include <ft2build.h>
+#include <locale>
+#include <ranges>
 #include <unordered_set>
 
 #include FT_FREETYPE_H
+#include <harfbuzz/hb-ft.h>
+#include <harfbuzz/hb.h>
 
 using namespace DenOfIz;
 
@@ -35,32 +40,42 @@ FontManager::FontManager( )
 
 FontManager::~FontManager( )
 {
+    for ( const auto &hbFont : m_hbFonts | std::views::values )
+    {
+        if ( hbFont )
+        {
+            hb_font_destroy( hbFont );
+        }
+    }
+    m_hbFonts.clear( );
+
     FT_Done_FreeType( m_ftLibrary );
 }
 
-std::shared_ptr<FontCache> FontManager::LoadFont( const std::string &fontPath, const uint32_t pixelSize, const bool antiAliasing )
+FontCache *FontManager::LoadFont( const InteropString &fontPath, const uint32_t pixelSize, const bool antiAliasing )
 {
-    const std::string cacheKey = fontPath + "_" + std::to_string( pixelSize );
+    const std::string &path     = fontPath.Get( );
+    const std::string  cacheKey = path + "_" + std::to_string( pixelSize );
     if ( const auto it = m_fontCache.find( cacheKey ); it != m_fontCache.end( ) )
     {
-        return it->second;
+        return it->second.get( );
     }
 
     const auto fontAsset    = std::make_shared<FontAsset>( );
-    fontAsset->FontPath     = fontPath.c_str( );
+    fontAsset->FontPath     = path.c_str( );
     fontAsset->PixelSize    = pixelSize;
     fontAsset->AntiAliasing = antiAliasing;
 
-    auto fontCache = std::make_shared<FontCache>( *fontAsset );
+    const auto fontCache = std::make_shared<FontCache>( *fontAsset );
     fontCache->InitializeAtlasBitmap( );
 
     FT_Face           face;
-    const std::string resolvedPath = PathResolver::ResolvePath( fontPath );
+    const std::string resolvedPath = PathResolver::ResolvePath( path );
     FT_Error          error        = FT_New_Face( m_ftLibrary, resolvedPath.c_str( ), 0, &face );
 
     if ( error )
     {
-        LOG( ERROR ) << "Failed to load font: " << fontPath;
+        LOG( ERROR ) << "Failed to load font: " << path;
         return nullptr;
     }
 
@@ -92,34 +107,30 @@ std::shared_ptr<FontCache> FontManager::LoadFont( const std::string &fontPath, c
     // Load ASCII glyphs
     for ( uint32_t c = 32; c < 127; c++ )
     {
-        LoadGlyph( fontCache, c, face );
+        LoadGlyph( fontCache.get( ), c, face );
     }
 
     FT_Done_Face( face );
     m_fontCache[ cacheKey ] = fontCache;
 
-    return fontCache;
+    return fontCache.get( );
 }
 
-std::shared_ptr<FontCache> FontManager::GetFont( const std::string &fontPath, const uint32_t pixelSize )
+FontCache *FontManager::GetFont( const InteropString &fontPath, const uint32_t pixelSize )
 {
-    const std::string cacheKey = fontPath + "_" + std::to_string( pixelSize );
+    const std::string &path     = fontPath.Get( );
+    const std::string  cacheKey = path + "_" + std::to_string( pixelSize );
 
     if ( const auto it = m_fontCache.find( cacheKey ); it != m_fontCache.end( ) )
     {
-        return it->second;
+        return it->second.get( );
     }
 
     return nullptr;
 }
 
-bool FontManager::EnsureGlyphsLoaded( const std::shared_ptr<FontCache> &fontCache, const std::u32string &text )
+bool FontManager::EnsureGlyphsLoaded( FontCache *fontCache, const InteropString &interopText )
 {
-    if ( !fontCache )
-    {
-        return false;
-    }
-
     bool allLoaded         = true;
     bool anyNewGlyphLoaded = false;
 
@@ -141,7 +152,7 @@ bool FontManager::EnsureGlyphsLoaded( const std::shared_ptr<FontCache> &fontCach
         return false;
     }
 
-    for ( const char32_t c : text )
+    for ( const std::u32string text = Utf8ToUtf32( interopText.Get( ) ); const char32_t c : text )
     {
         if ( !fontCache->HasGlyph( c ) )
         {
@@ -160,7 +171,7 @@ bool FontManager::EnsureGlyphsLoaded( const std::shared_ptr<FontCache> &fontCach
     return allLoaded && anyNewGlyphLoaded;
 }
 
-bool FontManager::LoadGlyph( const std::shared_ptr<FontCache> &fontCache, const uint32_t codePoint, const FT_Face face ) // NOLINT
+bool FontManager::LoadGlyph( FontCache *fontCache, const uint32_t codePoint, const FT_Face face ) // NOLINT
 {
     static const std::unordered_set<uint32_t> ignoredGlyphs = { '\n' };
     if ( ignoredGlyphs.contains( codePoint ) )
@@ -217,111 +228,6 @@ bool FontManager::LoadGlyph( const std::shared_ptr<FontCache> &fontCache, const 
     return true;
 }
 
-void FontManager::GenerateTextVertices( const std::shared_ptr<FontCache> &fontCache, const std::u32string &text, std::vector<float> &vertices, std::vector<uint32_t> &indices,
-                                        const float x, const float y, const XMFLOAT4 &color, const float scale )
-{
-    if ( !fontCache || text.empty( ) )
-    {
-        return;
-    }
-
-    EnsureGlyphsLoaded( fontCache, text );
-
-    float penX = x;
-    float penY = y;
-
-    const FontAsset &fontAsset = fontCache->GetFontAsset( );
-
-    uint32_t    baseVertex = vertices.size( ) / 8; // 8 floats per vertex (pos.xy, uv.xy, color.rgba)
-    const float lineHeight = static_cast<float>( fontAsset.Metrics.LineHeight ) * scale;
-
-    for ( const char32_t c : text )
-    {
-        if ( c == '\n' )
-        {
-            penX = x;
-            penY += lineHeight;
-            continue;
-        }
-
-        const GlyphMetrics *metrics = fontCache->GetGlyphMetrics( c );
-        if ( !metrics )
-        {
-            // Skip characters we couldn't load
-            continue;
-        }
-
-        // Skip invisible glyphs
-        if ( metrics->Width == 0 || metrics->Height == 0 )
-        {
-            penX += static_cast<float>( metrics->Advance ) * scale;
-            continue;
-        }
-
-        // Calculate vertex positions and UVs
-        float x0 = penX + static_cast<float>( metrics->BearingX ) * scale;
-        float y0 = penY - static_cast<float>( metrics->BearingY ) * scale;
-        float x1 = x0 + static_cast<float>( metrics->Width ) * scale;
-        float y1 = y0 + static_cast<float>( metrics->Height ) * scale;
-
-        // Calculate UVs
-        float u0 = static_cast<float>( metrics->AtlasX ) / static_cast<float>( fontAsset.AtlasWidth );
-        float v0 = static_cast<float>( metrics->AtlasY ) / static_cast<float>( fontAsset.AtlasHeight );
-        float u1 = static_cast<float>( metrics->AtlasX + metrics->Width ) / static_cast<float>( fontAsset.AtlasWidth );
-        float v1 = static_cast<float>( metrics->AtlasY + metrics->Height ) / static_cast<float>( fontAsset.AtlasHeight );
-
-        // Top-left
-        vertices.push_back( x0 );
-        vertices.push_back( y0 );
-        vertices.push_back( u0 );
-        vertices.push_back( v0 );
-        vertices.push_back( color.x );
-        vertices.push_back( color.y );
-        vertices.push_back( color.z );
-        vertices.push_back( color.w );
-
-        // Top-right
-        vertices.push_back( x1 );
-        vertices.push_back( y0 );
-        vertices.push_back( u1 );
-        vertices.push_back( v0 );
-        vertices.push_back( color.x );
-        vertices.push_back( color.y );
-        vertices.push_back( color.z );
-        vertices.push_back( color.w );
-
-        // Bottom-left
-        vertices.push_back( x0 );
-        vertices.push_back( y1 );
-        vertices.push_back( u0 );
-        vertices.push_back( v1 );
-        vertices.push_back( color.x );
-        vertices.push_back( color.y );
-        vertices.push_back( color.z );
-        vertices.push_back( color.w );
-
-        // Bottom-right
-        vertices.push_back( x1 );
-        vertices.push_back( y1 );
-        vertices.push_back( u1 );
-        vertices.push_back( v1 );
-        vertices.push_back( color.x );
-        vertices.push_back( color.y );
-        vertices.push_back( color.z );
-        vertices.push_back( color.w );
-
-        indices.push_back( baseVertex + 0 );
-        indices.push_back( baseVertex + 1 );
-        indices.push_back( baseVertex + 2 );
-        indices.push_back( baseVertex + 1 );
-        indices.push_back( baseVertex + 3 );
-        indices.push_back( baseVertex + 2 );
-
-        penX += static_cast<float>( metrics->Advance ) * scale;
-        baseVertex += 4;
-    }
-}
-
 std::u32string FontManager::Utf8ToUtf32( const std::string &utf8Text )
 {
     std::u32string result;
@@ -374,8 +280,6 @@ std::u32string FontManager::Utf8ToUtf32( const std::string &utf8Text )
 
             codePoint = codePoint << 6 | continuationByte & 0x3F;
         }
-
-        // Add the code point to the result if valid
         if ( codePoint != 0 )
         {
             result.push_back( codePoint );
@@ -383,4 +287,349 @@ std::u32string FontManager::Utf8ToUtf32( const std::string &utf8Text )
     }
 
     return result;
+}
+
+std::string FontManager::Utf32ToUtf8( const std::u32string &utf32Text )
+{
+    std::string result;
+    result.reserve( utf32Text.size( ) * 4 );
+
+    for ( const char32_t codePoint : utf32Text )
+    {
+        if ( codePoint < 0x80 )
+        {
+            result.push_back( static_cast<char>( codePoint ) );
+        }
+        else if ( codePoint < 0x800 )
+        {
+            result.push_back( static_cast<char>( 0xC0 | codePoint >> 6 ) );
+            result.push_back( static_cast<char>( 0x80 | codePoint & 0x3F ) );
+        }
+        else if ( codePoint < 0x10000 )
+        {
+            result.push_back( static_cast<char>( 0xE0 | codePoint >> 12 ) );
+            result.push_back( static_cast<char>( 0x80 | codePoint >> 6 & 0x3F ) );
+            result.push_back( static_cast<char>( 0x80 | codePoint & 0x3F ) );
+        }
+        else if ( codePoint < 0x110000 )
+        {
+            result.push_back( static_cast<char>( 0xF0 | codePoint >> 18 ) );
+            result.push_back( static_cast<char>( 0x80 | codePoint >> 12 & 0x3F ) );
+            result.push_back( static_cast<char>( 0x80 | codePoint >> 6 & 0x3F ) );
+            result.push_back( static_cast<char>( 0x80 | codePoint & 0x3F ) );
+        }
+    }
+
+    return result;
+}
+
+hb_font_t *FontManager::GetHarfBuzzFont( const std::string &fontPath, const uint32_t numPixels, FT_Face face )
+{
+    const std::string cacheKey = fontPath + "_" + std::to_string( numPixels );
+    if ( const auto it = m_hbFonts.find( cacheKey ); it != m_hbFonts.end( ) )
+    {
+        return it->second;
+    }
+
+    hb_font_t *hbFont = hb_ft_font_create_referenced( face );
+    if ( !hbFont )
+    {
+        LOG( ERROR ) << "Failed to create HarfBuzz font for: " << fontPath;
+        return nullptr;
+    }
+
+    hb_font_set_scale( hbFont, numPixels * 64, numPixels * 64 );
+    m_hbFonts[ cacheKey ] = hbFont;
+    return hbFont;
+}
+
+void FontManager::DestroyHarfBuzzFont( const std::string &fontCacheKey )
+{
+    if ( const auto it = m_hbFonts.find( fontCacheKey ); it != m_hbFonts.end( ) )
+    {
+        hb_font_destroy( it->second );
+        m_hbFonts.erase( it );
+    }
+}
+
+TextLayout FontManager::ShapeText( FontCache *fontCache, const InteropString &interopText, const TextDirection direction )
+{
+    TextLayout layout;
+    if ( !fontCache || interopText.NumChars( ) == 0 )
+    {
+        return layout;
+    }
+
+    EnsureGlyphsLoaded( fontCache, interopText );
+    const std::string    utf8Text  = interopText.Get( );
+    const std::u32string utf32Text = Utf8ToUtf32( interopText.Get( ) );
+
+    FT_Face           face;
+    const std::string resolvedPath = PathResolver::ResolvePath( fontCache->GetFontAsset( ).FontPath.Get( ) );
+    FT_Error          error        = FT_New_Face( m_ftLibrary, resolvedPath.c_str( ), 0, &face );
+
+    if ( error )
+    {
+        LOG( ERROR ) << "Failed to load font face for text shaping";
+        return layout;
+    }
+
+    error = FT_Set_Pixel_Sizes( face, 0, fontCache->GetFontAsset( ).PixelSize );
+    if ( error )
+    {
+        FT_Done_Face( face );
+        LOG( ERROR ) << "Failed to set font size for text shaping";
+        return layout;
+    }
+
+    hb_font_t *hbFont = hb_ft_font_create( face, nullptr );
+    if ( !hbFont )
+    {
+        FT_Done_Face( face );
+        LOG( ERROR ) << "Failed to create HarfBuzz font";
+        return layout;
+    }
+
+    hb_buffer_t *buffer = hb_buffer_create( );
+    if ( !hb_buffer_allocation_successful( buffer ) )
+    {
+        hb_font_destroy( hbFont );
+        FT_Done_Face( face );
+        LOG( ERROR ) << "Failed to allocate HarfBuzz buffer";
+        return layout;
+    }
+
+    hb_buffer_reset( buffer );
+
+    hb_direction_t hbDirection;
+    switch ( direction )
+    {
+    case TextDirection::LeftToRight:
+        hbDirection = HB_DIRECTION_LTR;
+        break;
+    case TextDirection::RightToLeft:
+        hbDirection = HB_DIRECTION_RTL;
+        break;
+    case TextDirection::Auto:
+    default:
+        hbDirection = HB_DIRECTION_LTR; // Default to LTR instead of INVALID
+        break;
+    }
+    hb_buffer_set_direction( buffer, hbDirection );
+    hb_buffer_set_script( buffer, HB_SCRIPT_LATIN );
+    hb_buffer_set_language( buffer, hb_language_from_string( "en", -1 ) );
+
+    // Add text to buffer
+    const char *text_ptr = utf8Text.c_str( );
+    const int   text_len = utf8Text.length( );
+    hb_buffer_add_utf8( buffer, text_ptr, text_len, 0, text_len );
+
+    // Define shaping features (kerning and ligatures)
+    constexpr hb_feature_t features[] = {
+        { HB_TAG( 'k', 'e', 'r', 'n' ), 1, 0, UINT_MAX }, // Enable kerning
+        { HB_TAG( 'l', 'i', 'g', 'a' ), 1, 0, UINT_MAX }  // Enable standard ligatures
+    };
+
+    hb_shape( hbFont, buffer, features, std::size( features ) );
+
+    unsigned int               glyphCount = 0;
+    const hb_glyph_info_t     *glyphInfo  = hb_buffer_get_glyph_infos( buffer, &glyphCount );
+    const hb_glyph_position_t *glyphPos   = hb_buffer_get_glyph_positions( buffer, &glyphCount );
+
+    if ( !glyphPos || glyphCount == 0 )
+    {
+        LOG( ERROR ) << "No glyph positions returned from HarfBuzz shaping";
+        hb_buffer_destroy( buffer );
+        hb_font_destroy( hbFont );
+        FT_Done_Face( face );
+        return layout;
+    }
+
+    constexpr float posScale = 1.0f / 64.0f; // HarfBuzz units to pixels, HarfBuzz uses 26.6 fixed-point format
+
+    layout.ShapedGlyphs.Resize( glyphCount );
+    float totalAdvance = 0.0f;
+
+    std::unordered_map<uint32_t, uint32_t> glyphIndexToCodePoint;
+    for ( const char32_t codePoint : utf32Text )
+    {
+        if ( FT_UInt glyphIndex = FT_Get_Char_Index( face, codePoint ) )
+        {
+            glyphIndexToCodePoint[ glyphIndex ] = codePoint;
+        }
+    }
+
+    for ( unsigned int i = 0; i < glyphCount; ++i )
+    {
+        ShapedGlyph &shapedGlyph = layout.ShapedGlyphs.GetElement( i );
+
+        shapedGlyph.GlyphId      = glyphInfo[ i ].codepoint;
+        shapedGlyph.ClusterIndex = glyphInfo[ i ].cluster;
+
+        shapedGlyph.XOffset  = glyphPos[ i ].x_offset * posScale;
+        shapedGlyph.YOffset  = glyphPos[ i ].y_offset * posScale;
+        shapedGlyph.XAdvance = glyphPos[ i ].x_advance * posScale;
+        shapedGlyph.YAdvance = glyphPos[ i ].y_advance * posScale;
+
+        if ( glyphIndexToCodePoint.contains( shapedGlyph.GlyphId ) )
+        {
+            shapedGlyph.CodePoint = glyphIndexToCodePoint[ shapedGlyph.GlyphId ];
+        }
+        else
+        {
+            // Try to get code point from the cluster index
+            if ( const unsigned int clusterIndex = shapedGlyph.ClusterIndex; clusterIndex < utf8Text.length( ) )
+            {
+                unsigned int charIndex = 0;
+                for ( size_t j = 0; j < utf32Text.size( ) && charIndex <= clusterIndex; ++j )
+                {
+                    size_t charBytes = 0;
+                    if ( const char32_t cp = utf32Text[ j ]; cp < 0x80 )
+                    {
+                        charBytes = 1;
+                    }
+                    else if ( cp < 0x800 )
+                    {
+                        charBytes = 2;
+                    }
+                    else if ( cp < 0x10000 )
+                    {
+                        charBytes = 3;
+                    }
+                    else
+                    {
+                        charBytes = 4;
+                    }
+
+                    if ( charIndex + charBytes > clusterIndex )
+                    {
+                        shapedGlyph.CodePoint = utf32Text[ j ];
+                        break;
+                    }
+
+                    charIndex += charBytes;
+                }
+            }
+            // Default to space(Most white space characters do not have a CodePoint)
+            if ( shapedGlyph.CodePoint == 0 )
+            {
+                shapedGlyph.CodePoint = ' ';
+                LOG( WARNING ) << "Could not determine code point for glyph ID: " << shapedGlyph.GlyphId;
+            }
+        }
+
+        totalAdvance += shapedGlyph.XAdvance;
+    }
+
+    layout.TotalWidth  = totalAdvance;
+    layout.TotalHeight = static_cast<float>( fontCache->GetFontAsset( ).Metrics.LineHeight );
+    hb_buffer_destroy( buffer );
+    FT_Done_Face( face );
+    return layout;
+}
+
+void FontManager::GenerateTextVertices( const GenerateTextVerticesDesc &desc, InteropArray<float> &outVertices, InteropArray<uint32_t> &outIndices )
+{
+    const FontCache  *fontCache = desc.FontCache;
+    const TextLayout &layout    = desc.Layout;
+    const float       x         = desc.X;
+    const float       y         = desc.Y;
+    const Float_4    &color     = desc.Color;
+    const float       scale     = desc.Scale;
+    if ( !fontCache || layout.ShapedGlyphs.NumElements( ) == 0 )
+    {
+        return;
+    }
+
+    const FontAsset &fontAsset  = fontCache->GetFontAsset( );
+    uint32_t         baseVertex = outVertices.NumElements( ) / 8; // 8 floats per vertex (pos.xy, uv.xy, color.rgba)
+
+    std::vector<float> absXPositions( layout.ShapedGlyphs.NumElements( ) );
+    float              currentX = x;
+    for ( size_t i = 0; i < layout.ShapedGlyphs.NumElements( ); i++ )
+    {
+        absXPositions[ i ] = currentX;
+        currentX += layout.ShapedGlyphs.GetElement( i ).XAdvance * scale;
+    }
+
+    for ( size_t i = 0; i < layout.ShapedGlyphs.NumElements( ); i++ )
+    {
+        const auto &shapedGlyph = layout.ShapedGlyphs.GetElement( i );
+
+        const GlyphMetrics *metrics = fontCache->GetGlyphMetrics( shapedGlyph.CodePoint );
+        if ( !metrics )
+        {
+            continue;
+        }
+
+        if ( metrics->Width == 0 || metrics->Height == 0 )
+        {
+            continue;
+        }
+
+        const float glyph_x = absXPositions[ i ];
+
+        const float xPos = glyph_x + shapedGlyph.XOffset * scale;
+        const float yPos = y + shapedGlyph.YOffset * scale;
+
+        float x0 = xPos + static_cast<float>( metrics->BearingX ) * scale;
+        float y0 = yPos - static_cast<float>( metrics->BearingY ) * scale;
+        float x1 = x0 + static_cast<float>( metrics->Width ) * scale;
+        float y1 = y0 + static_cast<float>( metrics->Height ) * scale;
+
+        const float u0 = static_cast<float>( metrics->AtlasX ) / static_cast<float>( fontAsset.AtlasWidth );
+        const float v0 = static_cast<float>( metrics->AtlasY ) / static_cast<float>( fontAsset.AtlasHeight );
+        const float u1 = static_cast<float>( metrics->AtlasX + metrics->Width ) / static_cast<float>( fontAsset.AtlasWidth );
+        const float v1 = static_cast<float>( metrics->AtlasY + metrics->Height ) / static_cast<float>( fontAsset.AtlasHeight );
+
+        // Top-left
+        outVertices.AddElement( x0 );
+        outVertices.AddElement( y0 );
+        outVertices.AddElement( u0 );
+        outVertices.AddElement( v0 );
+        outVertices.AddElement( color.X );
+        outVertices.AddElement( color.Y );
+        outVertices.AddElement( color.Z );
+        outVertices.AddElement( color.W );
+
+        // Top-right
+        outVertices.AddElement( x1 );
+        outVertices.AddElement( y0 );
+        outVertices.AddElement( u1 );
+        outVertices.AddElement( v0 );
+        outVertices.AddElement( color.X );
+        outVertices.AddElement( color.Y );
+        outVertices.AddElement( color.Z );
+        outVertices.AddElement( color.W );
+
+        // Bottom-left
+        outVertices.AddElement( x0 );
+        outVertices.AddElement( y1 );
+        outVertices.AddElement( u0 );
+        outVertices.AddElement( v1 );
+        outVertices.AddElement( color.X );
+        outVertices.AddElement( color.Y );
+        outVertices.AddElement( color.Z );
+        outVertices.AddElement( color.W );
+
+        // Bottom-right
+        outVertices.AddElement( x1 );
+        outVertices.AddElement( y1 );
+        outVertices.AddElement( u1 );
+        outVertices.AddElement( v1 );
+        outVertices.AddElement( color.X );
+        outVertices.AddElement( color.Y );
+        outVertices.AddElement( color.Z );
+        outVertices.AddElement( color.W );
+
+        // Add indices for the quad (making a triangle strip)
+        outIndices.AddElement( baseVertex + 0 );
+        outIndices.AddElement( baseVertex + 1 );
+        outIndices.AddElement( baseVertex + 2 );
+        outIndices.AddElement( baseVertex + 1 );
+        outIndices.AddElement( baseVertex + 3 );
+        outIndices.AddElement( baseVertex + 2 );
+
+        baseVertex += 4;
+    }
 }

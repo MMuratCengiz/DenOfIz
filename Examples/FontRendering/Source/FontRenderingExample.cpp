@@ -83,41 +83,35 @@ void FontRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     m_fontRenderer->BeginBatch( );
 
     TextRenderDesc staticTextParams;
-    staticTextParams.Text  = "DenOfIz Font Rendering System";
+    staticTextParams.Text  = "Deniz is cute <3";
     staticTextParams.X     = 50.0f;
     staticTextParams.Y     = 100.0f;
-    staticTextParams.Color = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
+    staticTextParams.Color = { 1.0f, 1.0f, 1.0f, 1.0f };
     staticTextParams.Scale = 1.0f;
     m_fontRenderer->AddText( staticTextParams );
 
     TextRenderDesc animatedTextParams;
-    animatedTextParams.Text = "Animated text with color";
+    animatedTextParams.Text = "YUPPP!!";
     animatedTextParams.X    = static_cast<float>( m_windowDesc.Width ) / 2.0f;
     animatedTextParams.Y    = static_cast<float>( m_windowDesc.Height ) / 2.0f;
 
     float r                             = ( sin( m_animTime * 2.0f ) + 1.0f ) / 2.0f;
     float g                             = ( sin( m_animTime * 1.5f + 2.0f ) + 1.0f ) / 2.0f;
     float b                             = ( sin( m_animTime * 1.0f + 4.0f ) + 1.0f ) / 2.0f;
-    animatedTextParams.Color            = XMFLOAT4( r, g, b, 1.0f );
+    animatedTextParams.Color            = { r, g, b, 1.0f };
     animatedTextParams.Scale            = 1.0f + 0.2f * sin( m_animTime * 3.0f );
     animatedTextParams.HorizontalCenter = true;
     animatedTextParams.VerticalCenter   = true;
 
     m_fontRenderer->AddText( animatedTextParams );
 
-    TextRenderDesc multiLineParams;
-    multiLineParams.Text  = "This font rendering system supports:\n"
-                            "- Basic text layout\n"
-                            "- UTF-8 encoding\n"
-                            "- Glyph caching\n"
-                            "- Texture atlases\n"
-                            "- Future: SDF rendering\n"
-                            "- Future: HarfBuzz integration";
-    multiLineParams.X     = 50.0f;
-    multiLineParams.Y     = 200.0f;
-    multiLineParams.Color = XMFLOAT4( 0.8f, 0.9f, 1.0f, 1.0f );
-    multiLineParams.Scale = 0.75f;
-    m_fontRenderer->AddText( multiLineParams );
+    TextRenderDesc batch2Desc;
+    batch2Desc.Text  = "Yep";
+    batch2Desc.X     = 50.0f;
+    batch2Desc.Y     = 200.0f;
+    batch2Desc.Color = { 0.8f, 0.9f, 1.0f, 1.0f };
+    batch2Desc.Scale = 0.75f;
+    m_fontRenderer->AddText( batch2Desc );
     m_fontRenderer->EndBatch( commandList );
 
     commandList->EndRendering( );

@@ -16,6 +16,7 @@
     "taskflow",
     "directxmath",
     "freetype",
+    "harfbuzz",
     {
       "name": "sdl2",
       "features": ["vulkan"],

@@ -25,6 +25,7 @@ find_package(glog CONFIG REQUIRED)
 find_package(assimp CONFIG REQUIRED)
 find_package(draco CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
+find_package(harfbuzz CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h")
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 
@@ -243,6 +244,7 @@ target_link_libraries(DenOfIzGraphics
         ozz_animation
         draco::draco
         Freetype::Freetype
+        harfbuzz::harfbuzz
 )
 
 if (BUILD_SHARED_LIBS)
