@@ -131,7 +131,7 @@ void FontRenderer::Initialize( )
     m_indexData.reserve( m_maxIndices );
 }
 
-std::shared_ptr<FontAsset> FontRenderer::LoadFont( const std::string &fontPath, const uint32_t pixelSize )
+std::shared_ptr<FontCache> FontRenderer::LoadFont( const std::string &fontPath, const uint32_t pixelSize )
 {
     const std::string cacheKey = fontPath + "_" + std::to_string( pixelSize );
     if ( const auto it = m_loadedFonts.find( cacheKey ); it != m_loadedFonts.end( ) )
@@ -139,14 +139,14 @@ std::shared_ptr<FontAsset> FontRenderer::LoadFont( const std::string &fontPath, 
         return it->second;
     }
 
-    auto font = m_fontManager.LoadFont( fontPath, pixelSize );
-    if ( font )
+    auto fontCache = m_fontManager.LoadFont( fontPath, pixelSize );
+    if ( fontCache )
     {
-        m_loadedFonts[ cacheKey ] = font;
+        m_loadedFonts[ cacheKey ] = fontCache;
         m_atlasNeedsUpdate        = true;
     }
 
-    return font;
+    return fontCache;
 }
 
 void FontRenderer::SetFont( const std::string &fontPath, const uint32_t pixelSize )
@@ -204,10 +204,11 @@ void FontRenderer::EndBatch( ICommandList *commandList )
         return; // Nothing to render
     }
 
-    if ( m_atlasNeedsUpdate )
+    if ( m_atlasNeedsUpdate || m_currentFont->AtlasNeedsUpdate( ) )
     {
         UpdateAtlasTexture( commandList );
         m_atlasNeedsUpdate = false;
+        m_currentFont->MarkAtlasUpdated( );
     }
 
     UpdateBuffers( );
@@ -229,17 +230,25 @@ void FontRenderer::EndBatch( ICommandList *commandList )
 
 void FontRenderer::UpdateAtlasTexture( ICommandList *commandList )
 {
-    if ( !m_currentFont || m_currentFont->AtlasBitmap.empty( ) )
+    if ( !m_currentFont )
+    {
+        return;
+    }
+
+    const auto &fontAsset   = m_currentFont->GetFontAsset( );
+    const auto &atlasBitmap = m_currentFont->GetAtlasBitmap( );
+
+    if ( atlasBitmap.empty( ) )
     {
         return;
     }
 
     // Check if texture needs resizing
-    if ( m_fontAtlasTextureDesc.Width != m_currentFont->AtlasWidth || m_fontAtlasTextureDesc.Height != m_currentFont->AtlasHeight )
+    if ( m_fontAtlasTextureDesc.Width != fontAsset.AtlasWidth || m_fontAtlasTextureDesc.Height != fontAsset.AtlasHeight )
     {
         TextureDesc newDesc = m_fontAtlasTextureDesc;
-        newDesc.Width       = m_currentFont->AtlasWidth;
-        newDesc.Height      = m_currentFont->AtlasHeight;
+        newDesc.Width       = fontAsset.AtlasWidth;
+        newDesc.Height      = fontAsset.AtlasHeight;
 
         auto newTexture = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( newDesc ) );
         m_resourceTracking.TrackTexture( newTexture.get( ), ResourceUsage::ShaderResource );
@@ -248,7 +257,7 @@ void FontRenderer::UpdateAtlasTexture( ICommandList *commandList )
     }
 
     BufferDesc stagingDesc;
-    stagingDesc.NumBytes     = m_currentFont->AtlasBitmap.size( );
+    stagingDesc.NumBytes     = atlasBitmap.size( );
     stagingDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer );
     stagingDesc.InitialUsage = ResourceUsage::CopySrc;
     stagingDesc.DebugName    = "Font Atlas Staging Buffer";
@@ -258,7 +267,7 @@ void FontRenderer::UpdateAtlasTexture( ICommandList *commandList )
     m_resourceTracking.TrackBuffer( stagingBuffer.get( ), ResourceUsage::CopySrc );
 
     void *mappedData = stagingBuffer->MapMemory( );
-    memcpy( mappedData, m_currentFont->AtlasBitmap.data( ), m_currentFont->AtlasBitmap.size( ) );
+    memcpy( mappedData, atlasBitmap.data( ), atlasBitmap.size( ) );
     stagingBuffer->UnmapMemory( );
 
     BatchTransitionDesc batchTransitionDesc{ commandList };
@@ -268,7 +277,7 @@ void FontRenderer::UpdateAtlasTexture( ICommandList *commandList )
     CopyBufferToTextureDesc copyDesc;
     copyDesc.SrcBuffer  = stagingBuffer.get( );
     copyDesc.DstTexture = m_fontAtlasTexture.get( );
-    copyDesc.RowPitch   = m_currentFont->AtlasWidth;
+    copyDesc.RowPitch   = fontAsset.AtlasWidth;
     copyDesc.Format     = m_fontAtlasTexture->GetFormat( );
 
     commandList->CopyBufferToTexture( copyDesc );
@@ -317,13 +326,18 @@ void FontRenderer::CalculateCenteredPosition( const std::u32string &text, TextRe
     {
         return;
     }
+
+    const FontAsset &fontAsset = m_currentFont->GetFontAsset( );
+
     float       textWidth  = 0.0f;
-    const float textHeight = static_cast<float>( m_currentFont->PixelSize ) * params.Scale;
+    const float textHeight = static_cast<float>( fontAsset.Metrics.LineHeight ) * params.Scale;
+
     for ( const char32_t c : text )
     {
-        if ( auto it = m_currentFont->GlyphCache.find( c ); it != m_currentFont->GlyphCache.end( ) )
+        const GlyphMetrics *metrics = m_currentFont->GetGlyphMetrics( c );
+        if ( metrics )
         {
-            textWidth += static_cast<float>( it->second.Advance ) * params.Scale;
+            textWidth += static_cast<float>( metrics->Advance ) * params.Scale;
         }
     }
 

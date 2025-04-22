@@ -15,13 +15,27 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-
 #pragma once
 
-// Include all graphics headers:
-#include <DenOfIzGraphics/Backends/GraphicsApi.h>
-#include <DenOfIzGraphics/Data/Geometry.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
-#include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
-#include <DenOfIzGraphics/Assets/Font/FontRenderer.h>
+#include <DenOfIzGraphics/Assets/Serde/Font/FontAsset.h>
+#include <DenOfIzGraphics/Assets/Stream/BinaryWriter.h>
+
+namespace DenOfIz
+{
+    struct DZ_API FontAssetWriterDesc
+    {
+        BinaryWriter *Writer;
+    };
+
+    class DZ_API FontAssetWriter
+    {
+        BinaryWriter *m_writer;
+        uint64_t      m_dataOffset = 0;
+
+    public:
+        explicit FontAssetWriter( const FontAssetWriterDesc &desc );
+        ~FontAssetWriter( );
+
+        void Write( const FontAsset &fontAsset, const InteropArray<Byte> &atlasBitmap );
+    };
+} // namespace DenOfIz

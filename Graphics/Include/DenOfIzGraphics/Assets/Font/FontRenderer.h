@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
+#include <DenOfIzGraphics/Assets/Font/FontCache.h>
 #include <DenOfIzGraphics/Assets/Font/FontManager.h>
 #include <DenOfIzGraphics/Backends/GraphicsApi.h>
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
@@ -60,7 +61,7 @@ namespace DenOfIz
         FontManager      m_fontManager;
         ResourceTracking m_resourceTracking;
 
-        std::unordered_map<std::string, std::shared_ptr<FontAsset>> m_loadedFonts;
+        std::unordered_map<std::string, std::shared_ptr<FontCache>> m_loadedFonts;
 
         std::unique_ptr<ShaderProgram>      m_fontShaderProgram;
         std::unique_ptr<IPipeline>          m_fontPipeline;
@@ -76,7 +77,7 @@ namespace DenOfIz
         std::unique_ptr<IResourceBindGroup> m_resourceBindGroup = nullptr;
         std::unique_ptr<IInputLayout>       m_inputLayout       = nullptr;
 
-        std::shared_ptr<FontAsset> m_currentFont;
+        std::shared_ptr<FontCache> m_currentFont;
         XMFLOAT4X4                 m_projectionMatrix{ };
         bool                       m_atlasNeedsUpdate   = false;
         uint32_t                   m_maxVertices        = 1024;
@@ -91,7 +92,7 @@ namespace DenOfIz
         ~FontRenderer( );
 
         void                       Initialize( );
-        std::shared_ptr<FontAsset> LoadFont( const std::string &fontPath, uint32_t pixelSize = 24 );
+        std::shared_ptr<FontCache> LoadFont( const std::string &fontPath, uint32_t pixelSize = 24 );
         void                       SetFont( const std::string &fontPath, uint32_t pixelSize = 24 );
         void                       SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix );
         void                       BeginBatch( );
