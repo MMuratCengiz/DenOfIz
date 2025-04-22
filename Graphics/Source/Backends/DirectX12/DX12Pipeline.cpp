@@ -56,6 +56,7 @@ void DX12Pipeline::CreateGraphicsPipeline( )
 {
     m_topology             = DX12EnumConverter::ConvertPrimitiveTopology( m_desc.Graphics.PrimitiveTopology );
     const auto inputLayout = dynamic_cast<DX12InputLayout *>( m_desc.InputLayout );
+    DZ_NOT_NULL( inputLayout );
     m_iaStride             = inputLayout->Stride( );
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = { };

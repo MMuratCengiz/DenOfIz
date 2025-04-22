@@ -252,7 +252,7 @@ void VulkanCommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copy
     copyRegion.bufferRowLength    = alignedRowPitch / formatSize * blockSize;
     copyRegion.bufferImageHeight  = numRows * blockSize;
     copyRegion.imageSubresource   = VkImageSubresourceLayers( dstTex->Aspect( ), copyBufferToTextureDesc.MipLevel, copyBufferToTextureDesc.ArrayLayer, 1 );
-    copyRegion.imageOffset        = VkOffset3D( 0, 0, 0 );
+    copyRegion.imageOffset        = VkOffset3D( copyBufferToTextureDesc.DstX, copyBufferToTextureDesc.DstY, copyBufferToTextureDesc.DstZ );
     copyRegion.imageExtent.width  = width;
     copyRegion.imageExtent.height = height;
     copyRegion.imageExtent.depth  = depth;

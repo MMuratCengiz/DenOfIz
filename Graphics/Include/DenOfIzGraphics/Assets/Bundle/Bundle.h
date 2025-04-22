@@ -35,7 +35,8 @@ namespace DenOfIz
         Texture,
         Animation,
         Skeleton,
-        Physics
+        Physics,
+        Font
     };
 
     struct DZ_API AssetEntry

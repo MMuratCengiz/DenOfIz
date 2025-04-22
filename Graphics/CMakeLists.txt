@@ -24,6 +24,7 @@ find_package(Taskflow CONFIG REQUIRED)
 find_package(glog CONFIG REQUIRED)
 find_package(assimp CONFIG REQUIRED)
 find_package(draco CONFIG REQUIRED)
+find_package(Freetype REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h")
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 
@@ -41,6 +42,8 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Bundle/BundleManager.cpp
         Source/Assets/FileSystem/PathResolver.cpp
         Source/Assets/FileSystem/FileIO.cpp
+        Source/Assets/Font/FontManager.cpp
+        Source/Assets/Font/FontRenderer.cpp
         Source/Assets/GpuResource/GpuResourceLoader.cpp
         Source/Assets/Import/AssimpImporter.cpp
         Source/Assets/Serde/Asset.cpp
@@ -235,6 +238,7 @@ target_link_libraries(DenOfIzGraphics
         assimp::assimp
         ozz_animation
         draco::draco
+        Freetype::Freetype
 )
 
 if (BUILD_SHARED_LIBS)

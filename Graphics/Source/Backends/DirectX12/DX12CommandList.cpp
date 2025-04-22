@@ -345,7 +345,7 @@ void DX12CommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copyBu
     dst.pResource                   = dstTexture->Resource( );
     dst.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     dst.SubresourceIndex            = copyBufferToTexture.MipLevel;
-    m_commandList->CopyTextureRegion( &dst, 0, 0, 0, &src, nullptr );
+    m_commandList->CopyTextureRegion( &dst, copyBufferToTexture.DstX, copyBufferToTexture.DstY, copyBufferToTexture.DstZ, &src, nullptr );
 }
 
 void DX12CommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBuffer )

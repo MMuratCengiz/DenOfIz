@@ -15,15 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#include <DenOfIzExamples/Main.h>
+#include <DenOfIzExamples/FontRenderingExample.h>
 
-#pragma once
-
-// Include all graphics headers:
-#include <DenOfIzGraphics/Backends/GraphicsApi.h>
-#include <DenOfIzGraphics/Data/Geometry.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
-#include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
-#include <DenOfIzGraphics/Assets/Font/FontAsset.h>
-#include <DenOfIzGraphics/Assets/Font/FontManager.h>
-#include <DenOfIzGraphics/Assets/Font/FontRenderer.h>
+DZ_EXAMPLE_MAIN(DenOfIz::FontRenderingExample)

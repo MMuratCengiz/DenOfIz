@@ -15,6 +15,7 @@
     "gtest",
     "taskflow",
     "directxmath",
+    "freetype",
     {
       "name": "sdl2",
       "features": ["vulkan"],

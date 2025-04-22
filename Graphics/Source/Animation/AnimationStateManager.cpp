@@ -16,19 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Animation/AnimationStateManager.h>
-#include <functional>
-#include <glog/logging.h>
 #include <ozz/base/maths/soa_quaternion.h>
 #include <ozz/base/maths/soa_transform.h>
 #include <ozz/base/maths/vec_float.h>
 #include <ozz/base/span.h>
+#include <ozz/animation/offline/animation_builder.h>
+#include <ozz/animation/offline/raw_animation.h>
+#include <ozz/animation/offline/raw_skeleton.h>
+#include <ozz/animation/offline/skeleton_builder.h>
+#include <ozz/animation/runtime/local_to_model_job.h>
 
-#include "ozz/animation/offline/animation_builder.h"
-#include "ozz/animation/offline/raw_animation.h"
-#include "ozz/animation/offline/raw_skeleton.h"
-#include "ozz/animation/offline/skeleton_builder.h"
-#include "ozz/animation/runtime/local_to_model_job.h"
+#include <DenOfIzGraphics/Animation/AnimationStateManager.h>
+#include <functional>
+#include <glog/logging.h>
 
 using ozz::make_span;
 using ozz::span;

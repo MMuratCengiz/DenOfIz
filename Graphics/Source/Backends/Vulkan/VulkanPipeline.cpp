@@ -367,7 +367,7 @@ VkPipelineMultisampleStateCreateInfo VulkanPipeline::ConfigureMultisampling( ) c
 
     multisampleStateCreateInfo.minSampleShading      = 1.0f;
     multisampleStateCreateInfo.pSampleMask           = nullptr;
-    multisampleStateCreateInfo.alphaToCoverageEnable = VK_FALSE;
+    multisampleStateCreateInfo.alphaToCoverageEnable = m_desc.Graphics.AlphaToCoverageEnable ? VK_TRUE : VK_FALSE;
     multisampleStateCreateInfo.alphaToOneEnable      = VK_FALSE;
     multisampleStateCreateInfo.sampleShadingEnable   = VK_TRUE;
     multisampleStateCreateInfo.minSampleShading      = .2f;
@@ -432,9 +432,7 @@ VkPipelineColorBlendStateCreateInfo VulkanPipeline::ConfigureColorBlend( std::ve
 
     for ( uint32_t i = 0; i < attachmentCount; ++i )
     {
-        auto &attachment                          = m_desc.Graphics.RenderTargets.GetElement( i );
-        colorBlendAttachments[ i ].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-
+        auto &attachment                               = m_desc.Graphics.RenderTargets.GetElement( i );
         colorBlendAttachments[ i ].blendEnable         = attachment.Blend.Enable;
         colorBlendAttachments[ i ].srcColorBlendFactor = VulkanEnumConverter::ConvertBlend( attachment.Blend.SrcBlend );
         colorBlendAttachments[ i ].dstColorBlendFactor = VulkanEnumConverter::ConvertBlend( attachment.Blend.DstBlend );
@@ -442,6 +440,28 @@ VkPipelineColorBlendStateCreateInfo VulkanPipeline::ConfigureColorBlend( std::ve
         colorBlendAttachments[ i ].dstAlphaBlendFactor = VulkanEnumConverter::ConvertBlend( attachment.Blend.DstBlendAlpha );
         colorBlendAttachments[ i ].colorBlendOp        = VulkanEnumConverter::ConvertBlendOp( attachment.Blend.BlendOp );
         colorBlendAttachments[ i ].alphaBlendOp        = VulkanEnumConverter::ConvertBlendOp( attachment.Blend.BlendOpAlpha );
+
+        colorBlendAttachments[ i ].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        if ( attachment.Blend.RenderTargetWriteMask != 0x0F )
+        {
+            colorBlendAttachments[ i ].colorWriteMask = 0;
+            if ( attachment.Blend.RenderTargetWriteMask & 0x01 )
+            {
+                colorBlendAttachments[ i ].colorWriteMask |= VK_COLOR_COMPONENT_R_BIT;
+            }
+            if ( attachment.Blend.RenderTargetWriteMask & 0x02 )
+            {
+                colorBlendAttachments[ i ].colorWriteMask |= VK_COLOR_COMPONENT_G_BIT;
+            }
+            if ( attachment.Blend.RenderTargetWriteMask & 0x04 )
+            {
+                colorBlendAttachments[ i ].colorWriteMask |= VK_COLOR_COMPONENT_B_BIT;
+            }
+            if ( attachment.Blend.RenderTargetWriteMask & 0x08 )
+            {
+                colorBlendAttachments[ i ].colorWriteMask |= VK_COLOR_COMPONENT_A_BIT;
+            }
+        }
     }
 
     // This overwrites the above

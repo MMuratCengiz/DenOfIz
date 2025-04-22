@@ -16,7 +16,6 @@ target_include_directories(DenOfIzExamples-AnimatedFox PUBLIC
     ${OZZ_ROOT}/src
 )
 
-# Link against ozz-animation libraries
 target_link_libraries(DenOfIzExamples-AnimatedFox
     PUBLIC
     DenOfIzExamples-Base
