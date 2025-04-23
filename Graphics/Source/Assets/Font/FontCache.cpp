@@ -23,7 +23,8 @@ using namespace DenOfIz;
 
 FontCache::FontCache( const FontAsset &fontAsset ) : m_fontAsset( fontAsset )
 {
-    m_atlasBitmap.resize( fontAsset.AtlasWidth * fontAsset.AtlasHeight, 0 );
+    // For MSDF, we store RGB (3 channels) instead of just grayscale
+    m_atlasBitmap.resize( fontAsset.AtlasWidth * fontAsset.AtlasHeight * 3, 0 );
 }
 
 void FontCache::InitializeAtlasBitmap( const InteropArray<Byte> &initialBitmap )
@@ -77,7 +78,7 @@ void FontCache::AddGlyph( const AddGlyphDesc &desc )
     }
 
     const Rect rect = AllocateSpace( desc.Width, desc.Height );
-    CopyGlyphDataToAtlas( rect, desc.BitmapData, desc.BitmapPitch, desc.IsMonochrome );
+    CopyMsdfDataToAtlas( rect, desc.MsdfData, desc.MsdfPitch );
 
     GlyphMetrics metrics{ };
     metrics.CodePoint = desc.CodePoint;
@@ -133,7 +134,7 @@ void FontCache::ResizeAtlas( const uint32_t newWidth, const uint32_t newHeight )
         return;
     }
 
-    std::vector<uint8_t> newBitmap( newWidth * newHeight, 0 );
+    std::vector<uint8_t> newBitmap( newWidth * newHeight * 3 /*rgb*/, 0 );
     m_fontAsset.AtlasWidth  = newWidth;
     m_fontAsset.AtlasHeight = newHeight;
     m_fontAsset.GlyphData.Resize( 0 );
@@ -183,29 +184,23 @@ FontCache::Rect FontCache::AllocateSpace( const uint32_t width, const uint32_t h
     return rect;
 }
 
-void FontCache::CopyGlyphDataToAtlas( const Rect &rect, const InteropArray<Byte> &bitmapData, const uint32_t bitmapPitch, const bool isMonochrome )
+void FontCache::CopyMsdfDataToAtlas( const Rect &rect, const InteropArray<Byte> &msdfData, const uint32_t msdfPitch )
 {
     for ( uint32_t y = 0; y < rect.Height; y++ )
     {
         for ( uint32_t x = 0; x < rect.Width; x++ )
         {
-            const uint32_t atlasOffset = ( rect.Y + y ) * m_fontAsset.AtlasWidth + ( rect.X + x );
-            if ( atlasOffset >= m_atlasBitmap.size( ) )
+            const uint32_t atlasOffset = ( ( rect.Y + y ) * m_fontAsset.AtlasWidth + ( rect.X + x ) ) * 3;
+            if ( atlasOffset + 2 >= m_atlasBitmap.size( ) )
             {
                 LOG( ERROR ) << "Atlas offset out of bounds: " << atlasOffset << " >= " << m_atlasBitmap.size( );
                 continue;
             }
 
-            if ( !isMonochrome )
-            {
-                m_atlasBitmap[ atlasOffset ] = bitmapData.GetElement( y * bitmapPitch + x );
-            }
-            else
-            {
-                const uint8_t byte           = bitmapData.GetElement( y * bitmapPitch + x / 8 );
-                const uint8_t bit            = byte >> ( 7 - x % 8 ) & 1;
-                m_atlasBitmap[ atlasOffset ] = bit ? 255 : 0;
-            }
+            const uint32_t srcOffset         = y * msdfPitch + x * 3;
+            m_atlasBitmap[ atlasOffset ]     = msdfData.GetElement( srcOffset );     // R
+            m_atlasBitmap[ atlasOffset + 1 ] = msdfData.GetElement( srcOffset + 1 ); // G
+            m_atlasBitmap[ atlasOffset + 2 ] = msdfData.GetElement( srcOffset + 2 ); // B
         }
     }
 }

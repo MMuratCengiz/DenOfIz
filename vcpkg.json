@@ -18,6 +18,14 @@
     "freetype",
     "harfbuzz",
     {
+      "name": "msdfgen",
+      "features": [
+        "extensions",
+        "geometry-preprocessing",
+        "openmp"
+      ]
+    },
+    {
       "name": "sdl2",
       "features": ["vulkan"],
       "platform": "windows|linux"

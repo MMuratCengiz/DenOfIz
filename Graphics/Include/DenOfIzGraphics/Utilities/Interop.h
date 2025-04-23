@@ -351,6 +351,28 @@ namespace DenOfIz
             }
             m_array[ index ] = element;
         }
+        
+        void RemoveElement( const size_t index )
+        {
+            if (index >= m_numElements)
+            {
+                return;
+            }
+            if constexpr (!std::is_trivially_destructible_v<T>)
+            {
+                m_array[index].~T();
+            }
+            if (index < m_numElements - 1)
+            {
+                std::memmove(
+                    m_array + index,
+                    m_array + index + 1,
+                    (m_numElements - index - 1) * sizeof(T)
+                );
+            }
+            
+            m_numElements--;
+        }
 
         void CopyBytes( unsigned char *inputBytes, int nbytes )
         {

@@ -30,9 +30,9 @@ namespace DenOfIz
         uint32_t           BearingX;
         uint32_t           BearingY;
         uint32_t           Advance;
-        InteropArray<Byte> BitmapData;
-        uint32_t           BitmapPitch;
-        bool               IsMonochrome;
+        // MSDF data - stored as RGB
+        InteropArray<Byte> MsdfData;
+        uint32_t           MsdfPitch;
     };
 
     class DZ_API FontCache
@@ -74,6 +74,6 @@ namespace DenOfIz
 
     private:
         Rect AllocateSpace( uint32_t width, uint32_t height );
-        void CopyGlyphDataToAtlas( const Rect &rect, const InteropArray<Byte> &bitmapData, uint32_t bitmapPitch, bool isMonochrome );
+        void CopyMsdfDataToAtlas( const Rect &rect, const InteropArray<Byte> &msdfData, uint32_t msdfPitch );
     };
 } // namespace DenOfIz

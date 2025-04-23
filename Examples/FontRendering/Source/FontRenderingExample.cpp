@@ -15,6 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+
+/**
+ * This example demonstrates text rendering using Multi-channel Signed Distance Fields (MSDF).
+ * 
+ * MSDF rendering provides high-quality text at any scale without pixelation or blurring.
+ * It works by generating distance fields that represent the shape of each glyph and
+ * using a special shader to render them with sharp edges.
+ */
 #include <DenOfIzExamples/FontRenderingExample.h>
 
 using namespace DenOfIz;

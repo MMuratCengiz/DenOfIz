@@ -28,6 +28,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <harfbuzz/hb-ft.h>
 #include <harfbuzz/hb.h>
 
+// MSDF generation includes
+#include <msdfgen-ext.h>
+#include <msdfgen.h>
+
 using namespace DenOfIz;
 
 FontManager::FontManager( )
@@ -35,6 +39,12 @@ FontManager::FontManager( )
     if ( const FT_Error error = FT_Init_FreeType( &m_ftLibrary ); error != 0 )
     {
         LOG( FATAL ) << "Failed to initialize FreeType library: " << FT_Error_String( error );
+    }
+
+    m_msdfFtHandle = msdfgen::initializeFreetype( );
+    if ( !m_msdfFtHandle )
+    {
+        LOG( FATAL ) << "Failed to initialize MSDF Freetype library";
     }
 }
 
@@ -48,6 +58,13 @@ FontManager::~FontManager( )
         }
     }
     m_hbFonts.clear( );
+
+    // Cleanup msdfgen freetype
+    if ( m_msdfFtHandle )
+    {
+        msdfgen::deinitializeFreetype( m_msdfFtHandle );
+        m_msdfFtHandle = nullptr;
+    }
 
     FT_Done_FreeType( m_ftLibrary );
 }
@@ -104,12 +121,22 @@ FontCache *FontManager::LoadFont( const InteropString &fontPath, const uint32_t 
         asset.Metrics.UnderlineThickness = asset.Metrics.Ascent / 20;
     }
 
-    // Load ASCII glyphs
-    for ( uint32_t c = 32; c < 127; c++ )
+    msdfgen::FontHandle *msdfFont = msdfgen::loadFont( m_msdfFtHandle, resolvedPath.c_str( ) );
+    if ( !msdfFont )
+    {
+        LOG( ERROR ) << "Failed to load MSDF font: " << path;
+        FT_Done_Face( face );
+        return nullptr;
+    }
+
+    // Preloading common glyphs
+    LoadGlyph( fontCache.get( ), ' ', face );
+    for ( uint32_t c = 33; c < 127; c++ )
     {
         LoadGlyph( fontCache.get( ), c, face );
     }
 
+    msdfgen::destroyFont( msdfFont );
     FT_Done_Face( face );
     m_fontCache[ cacheKey ] = fontCache;
 
@@ -191,40 +218,119 @@ bool FontManager::LoadGlyph( FontCache *fontCache, const uint32_t codePoint, con
         return false;
     }
 
-    FT_Int32 loadFlags = FT_LOAD_DEFAULT;
-    if ( fontCache->GetFontAsset( ).AntiAliasing )
-    {
-        loadFlags |= FT_LOAD_RENDER;
-    }
-    else
-    {
-        loadFlags |= FT_LOAD_RENDER | FT_LOAD_MONOCHROME;
-    }
-
-    if ( const FT_Error error = FT_Load_Glyph( face, glyphIndex, loadFlags ) )
+    if ( const FT_Error error = FT_Load_Glyph( face, glyphIndex, FT_LOAD_DEFAULT ) )
     {
         LOG( ERROR ) << "Failed to load glyph: " << FT_Error_String( error );
         return false;
     }
 
-    const FT_GlyphSlot slot   = face->glyph; // NOLINT
-    const FT_Bitmap    bitmap = slot->bitmap;
-
-    InteropArray<Byte> data( bitmap.pitch * bitmap.rows );
-    data.MemCpy( bitmap.buffer, bitmap.pitch * bitmap.rows );
+    const FT_GlyphSlot slot = face->glyph; // NOLINT
 
     AddGlyphDesc addGlyphDesc{ };
-    addGlyphDesc.CodePoint    = codePoint;
-    addGlyphDesc.Width        = bitmap.width;
-    addGlyphDesc.Height       = bitmap.rows;
-    addGlyphDesc.BearingX     = slot->bitmap_left;
-    addGlyphDesc.BearingY     = slot->bitmap_top;
-    addGlyphDesc.Advance      = slot->advance.x >> 6; // Convert from 26.6 fixed-point format
-    addGlyphDesc.BitmapData   = data;
-    addGlyphDesc.BitmapPitch  = bitmap.pitch;
-    addGlyphDesc.IsMonochrome = bitmap.pixel_mode == FT_PIXEL_MODE_MONO;
+    addGlyphDesc.CodePoint = codePoint;
+    addGlyphDesc.BearingX  = slot->metrics.horiBearingX >> 6;
+    addGlyphDesc.BearingY  = slot->metrics.horiBearingY >> 6;
+    addGlyphDesc.Advance   = slot->advance.x >> 6; // Convert from 26.6 fixed-point format
+
+    const std::string    resolvedPath = PathResolver::ResolvePath( fontCache->GetFontAsset( ).FontPath.Get( ) );
+    msdfgen::FontHandle *msdfFont     = msdfgen::loadFont( m_msdfFtHandle, resolvedPath.c_str( ) );
+    if ( !msdfFont )
+    {
+        LOG( ERROR ) << "Failed to load MSDF font for glyph generation";
+        return false;
+    }
+
+    const bool success = GenerateMsdfForGlyph( addGlyphDesc, msdfFont, codePoint, fontCache->GetFontAsset( ).PixelSize );
+    msdfgen::destroyFont( msdfFont );
+
+    if ( !success )
+    {
+        LOG( ERROR ) << "Failed to generate MSDF for glyph: " << codePoint;
+        return false;
+    }
 
     fontCache->AddGlyph( addGlyphDesc );
+    return true;
+}
+
+bool FontManager::GenerateMsdfForGlyph( AddGlyphDesc &glyphDesc, msdfgen::FontHandle *msdfFont, const uint32_t codePoint, const uint32_t pixelSize ) const
+{
+    msdfgen::Shape shape;
+    double         advance = 0.0;
+
+    if ( !msdfgen::loadGlyph( shape, msdfFont, codePoint, msdfgen::FONT_SCALING_EM_NORMALIZED, &advance ) )
+    {
+        LOG( ERROR ) << "Failed to load glyph shape for MSDF generation: " << codePoint;
+        return false;
+    }
+
+    // Skip empty shapes (space, etc.)
+    if ( shape.contours.empty( ) )
+    {
+        glyphDesc.Width   = 0;
+        glyphDesc.Height  = 0;
+        glyphDesc.Advance = static_cast<uint32_t>( advance * pixelSize ); // keep advancing
+        return true;
+    }
+
+    shape.normalize( );
+    msdfgen::edgeColoringSimple( shape, 3.0, 0 );
+
+    double l = 0, b = 0, r = 0, t = 0;
+    shape.bound( l, b, r, t );
+
+    // Add consistent padding with a bit of extra space for higher quality
+    const double pad = ( m_msdfPixelRange + 1.0 ) / pixelSize;
+    l -= pad;
+    b -= pad;
+    r += pad;
+    t += pad;
+
+    // Compute scale and translation to fit the shape in the bitmap
+    // Apply a small scale factor (0.95) to ensure we have a small margin within the texture
+    const double scale = std::min( 0.95 / ( r - l ), 0.95 / ( t - b ) );
+    const double tx    = -l * scale;
+    const double ty    = -b * scale;
+
+    msdfgen::Bitmap<float, 3> msdf( pixelSize, pixelSize );
+
+    // Setup projection and range
+    const msdfgen::Projection        projection( scale * pixelSize, msdfgen::Vector2( tx, ty ) );
+    const msdfgen::Range             range( m_msdfPixelRange / pixelSize );
+    const msdfgen::SDFTransformation transform( projection, range );
+
+    msdfgen::MSDFGeneratorConfig config;
+    config.errorCorrection.mode = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
+    msdfgen::generateMSDF( msdf, shape, transform, config );
+
+    // Simulate 8-bit per channel output
+    msdfgen::simulate8bit( msdf );
+
+    const uint32_t width  = msdf.width( );
+    const uint32_t height = msdf.height( );
+    glyphDesc.Width       = width;
+    glyphDesc.Height      = height;
+
+    InteropArray<Byte> msdfData( width * height * 3 );
+    const uint32_t     pitch = width * 3; // 3 bytes per pixel (RGB)
+
+    for ( uint32_t y = 0; y < height; y++ )
+    {
+        for ( uint32_t x = 0; x < width; x++ )
+        {
+            const uint32_t pixelOffset = y * pitch + x * 3;
+            // Flip Y since msdf is right handed
+            const uint32_t flippedY  = height - 1 - y;
+            const float   *msdfPixel = msdf( x, flippedY );
+
+            msdfData.SetElement( pixelOffset, static_cast<uint8_t>( msdfPixel[ 0 ] * 255.f ) );     // R
+            msdfData.SetElement( pixelOffset + 1, static_cast<uint8_t>( msdfPixel[ 1 ] * 255.f ) ); // G
+            msdfData.SetElement( pixelOffset + 2, static_cast<uint8_t>( msdfPixel[ 2 ] * 255.f ) ); // B
+        }
+    }
+
+    glyphDesc.MsdfData  = msdfData;
+    glyphDesc.MsdfPitch = pitch;
     return true;
 }
 
@@ -567,9 +673,9 @@ void FontManager::GenerateTextVertices( const GenerateTextVerticesDesc &desc, In
             continue;
         }
 
-        const float glyph_x = absXPositions[ i ];
+        const float glyphX = absXPositions[ i ];
 
-        const float xPos = glyph_x + shapedGlyph.XOffset * scale;
+        const float xPos = glyphX + shapedGlyph.XOffset * scale;
         const float yPos = y + shapedGlyph.YOffset * scale;
 
         float x0 = xPos + static_cast<float>( metrics->BearingX ) * scale;

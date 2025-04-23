@@ -26,17 +26,18 @@ find_package(assimp CONFIG REQUIRED)
 find_package(draco CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(harfbuzz CONFIG REQUIRED)
+find_package(msdfgen CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h")
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 
 # Find ozz-animation in our third party directory
 set(OZZ_ANIMATION_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/ozz-animation")
-if(EXISTS "${OZZ_ANIMATION_DIR}")
+if (EXISTS "${OZZ_ANIMATION_DIR}")
     set(OZZ_ANIMATION_INCLUDE_DIR "${OZZ_ANIMATION_DIR}/include")
     set(OZZ_ANIMATION_FOUND TRUE)
-else()
+else ()
     message(FATAL_ERROR "ozz-animation not found in _ThirdParty directory")
-endif()
+endif ()
 
 set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Bundle/Bundle.cpp
@@ -226,11 +227,11 @@ target_include_directories(DenOfIzGraphics
         ${STB_INCLUDE_DIRS}
 )
 
-if(CRT_LINKAGE_STATIC EQUAL 1)
+if (CRT_LINKAGE_STATIC EQUAL 1)
     set(ozz_build_msvc_rt_dll OFF CACHE BOOL "Select msvc DLL runtime library" FORCE)
-else()
+else ()
     set(ozz_build_msvc_rt_dll ON CACHE BOOL "Select msvc DLL runtime library" FORCE)
-endif()
+endif ()
 
 add_subdirectory(_ThirdParty/ozz-animation)
 target_link_libraries(DenOfIzGraphics
@@ -245,6 +246,10 @@ target_link_libraries(DenOfIzGraphics
         draco::draco
         Freetype::Freetype
         harfbuzz::harfbuzz
+        msdfgen::msdfgen
+        msdfgen::msdfgen-ext
+        msdfgen::msdfgen-core
+        msdfgen::msdfgen-full
 )
 
 if (BUILD_SHARED_LIBS)

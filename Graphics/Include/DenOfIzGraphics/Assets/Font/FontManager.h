@@ -29,6 +29,13 @@ typedef struct hb_font_t   hb_font_t;
 typedef struct hb_buffer_t hb_buffer_t;
 typedef struct hb_face_t   hb_face_t;
 
+namespace msdfgen
+{
+    class FreetypeHandle;
+    class FontHandle;
+    class Shape;
+} // namespace msdfgen
+
 using namespace DirectX;
 
 namespace DenOfIz
@@ -81,8 +88,12 @@ namespace DenOfIz
     class FontManager
     {
         FT_Library                                                  m_ftLibrary{ };
+        msdfgen::FreetypeHandle                                    *m_msdfFtHandle{ };
         std::unordered_map<std::string, std::shared_ptr<FontCache>> m_fontCache;
         std::unordered_map<std::string, hb_font_t *>                m_hbFonts;
+        static constexpr float                                      MSDF_PIXEL_RANGE             = 4.0f;
+        float                                                       m_msdfPixelRange             = MSDF_PIXEL_RANGE;
+        float                                                       m_edgeColoringAngleThreshold = 3.0f;
 
     public:
         FontManager( );
@@ -98,6 +109,7 @@ namespace DenOfIz
         std::u32string Utf8ToUtf32( const std::string &utf8Text );
         bool           EnsureGlyphsLoaded( FontCache *fontCache, const InteropString &interopText );
         bool           LoadGlyph( FontCache *fontCache, uint32_t codePoint, FT_Face face );
+        bool           GenerateMsdfForGlyph( AddGlyphDesc &glyphDesc, msdfgen::FontHandle *msdfFont, uint32_t codePoint, uint32_t pixelSize ) const;
         hb_font_t     *GetHarfBuzzFont( const std::string &fontPath, uint32_t numPixels, FT_Face face );
         void           DestroyHarfBuzzFont( const std::string &fontCacheKey );
     };

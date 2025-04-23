@@ -21,7 +21,6 @@ cbuffer FontUniforms : register(b0)
 VSOutput main(VSInput input)
 {
     VSOutput output;
-    output.Position = mul(Projection, float4(input.Position, 0.0, 1.0));
     output.Position = mul(float4(input.Position, 0.0, 1.0), Projection);
     output.TexCoord = input.TexCoord;
     output.Color = input.Color * TextColor;

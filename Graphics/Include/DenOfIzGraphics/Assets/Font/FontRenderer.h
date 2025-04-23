@@ -54,6 +54,7 @@ namespace DenOfIz
     {
         XMFLOAT4X4 Projection;
         XMFLOAT4   TextColor;
+        XMFLOAT4   TextureSizeParams;  // xy: texture dimensions, z: pixel range, w: unused
     };
 
     class FontRenderer

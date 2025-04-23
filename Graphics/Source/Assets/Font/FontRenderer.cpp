@@ -63,10 +63,10 @@ void FontRenderer::Initialize( )
     m_fontAtlasTextureDesc              = { };
     m_fontAtlasTextureDesc.Width        = 512;
     m_fontAtlasTextureDesc.Height       = 512;
-    m_fontAtlasTextureDesc.Format       = Format::R8Unorm;
+    m_fontAtlasTextureDesc.Format       = Format::R8G8B8A8Unorm; // MSDF requires RGB channels
     m_fontAtlasTextureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture );
     m_fontAtlasTextureDesc.InitialUsage = ResourceUsage::ShaderResource;
-    m_fontAtlasTextureDesc.DebugName    = "Font Atlas Texture";
+    m_fontAtlasTextureDesc.DebugName    = "Font MSDF Atlas Texture";
     m_fontAtlasTexture                  = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( m_fontAtlasTextureDesc ) );
     m_resourceTracking.TrackTexture( m_fontAtlasTexture.get( ), ResourceUsage::ShaderResource );
 
@@ -232,6 +232,13 @@ void FontRenderer::EndBatch( ICommandList *commandList )
     uniforms.Projection = m_projectionMatrix;
     uniforms.TextColor  = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
 
+    // Pass texture dimensions and pixel range to shader
+    const auto &fontAsset      = m_currentFont->GetFontAsset( );
+    uniforms.TextureSizeParams = XMFLOAT4( static_cast<float>( fontAsset.AtlasWidth ), static_cast<float>( fontAsset.AtlasHeight ),
+                                           4.0f, // Using the same constant as in FontManager
+                                           0.0f  // Unused
+    );
+
     void *mappedData = m_uniformBuffer->MapMemory( );
     memcpy( mappedData, &uniforms, sizeof( FontShaderUniforms ) );
     m_uniformBuffer->UnmapMemory( );
@@ -266,18 +273,33 @@ void FontRenderer::UpdateAtlasTexture( ICommandList *commandList )
         m_resourceBindGroup->BeginUpdate( )->Srv( 0, m_fontAtlasTexture.get( ) )->EndUpdate( );
     }
 
+    std::vector<uint8_t> rgbaData( fontAsset.AtlasWidth * fontAsset.AtlasHeight * 4, 255 );
+    for ( size_t i = 0; i < fontAsset.AtlasWidth * fontAsset.AtlasHeight; i++ )
+    {
+        const size_t srcRgbIndex = i * 3;
+        const size_t dstRgbIndex = i * 4;
+
+        if ( srcRgbIndex + 2 < atlasBitmap.size( ) )
+        {
+            rgbaData[ dstRgbIndex ]     = atlasBitmap[ srcRgbIndex ];     // R
+            rgbaData[ dstRgbIndex + 1 ] = atlasBitmap[ srcRgbIndex + 1 ]; // G
+            rgbaData[ dstRgbIndex + 2 ] = atlasBitmap[ srcRgbIndex + 2 ]; // B
+            rgbaData[ dstRgbIndex + 3 ] = 255;                            // A (fully opaque)
+        }
+    }
+
     BufferDesc stagingDesc;
-    stagingDesc.NumBytes     = atlasBitmap.size( );
+    stagingDesc.NumBytes     = rgbaData.size( );
     stagingDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer );
     stagingDesc.InitialUsage = ResourceUsage::CopySrc;
-    stagingDesc.DebugName    = "Font Atlas Staging Buffer";
+    stagingDesc.DebugName    = "Font MSDF Atlas Staging Buffer";
     stagingDesc.HeapType     = HeapType::CPU;
 
     const auto stagingBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( stagingDesc ) );
     m_resourceTracking.TrackBuffer( stagingBuffer.get( ), ResourceUsage::CopySrc );
 
     void *mappedData = stagingBuffer->MapMemory( );
-    memcpy( mappedData, atlasBitmap.data( ), atlasBitmap.size( ) );
+    memcpy( mappedData, rgbaData.data( ), rgbaData.size( ) );
     stagingBuffer->UnmapMemory( );
 
     BatchTransitionDesc batchTransitionDesc{ commandList };
@@ -287,7 +309,7 @@ void FontRenderer::UpdateAtlasTexture( ICommandList *commandList )
     CopyBufferToTextureDesc copyDesc;
     copyDesc.SrcBuffer  = stagingBuffer.get( );
     copyDesc.DstTexture = m_fontAtlasTexture.get( );
-    copyDesc.RowPitch   = fontAsset.AtlasWidth;
+    copyDesc.RowPitch   = fontAsset.AtlasWidth * 4; // 4 bytes per pixel (RGBA)
     copyDesc.Format     = m_fontAtlasTexture->GetFormat( );
 
     commandList->CopyBufferToTexture( copyDesc );
