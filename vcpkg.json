@@ -3,7 +3,6 @@
   "version": "0.0.1",
   "dependencies": [
     "assimp",
-    "draco",
     "wil",
     "miniz",
     "glog",
@@ -21,7 +20,6 @@
       "name": "msdfgen",
       "features": [
         "extensions",
-        "geometry-preprocessing",
         "openmp"
       ]
     },

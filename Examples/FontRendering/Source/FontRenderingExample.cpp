@@ -91,7 +91,7 @@ void FontRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     m_fontRenderer->BeginBatch( );
 
     TextRenderDesc staticTextParams;
-    staticTextParams.Text  = "Deniz is cute <3";
+    staticTextParams.Text  = "Deniz is cutie pie PIE gtest <3";
     staticTextParams.X     = 50.0f;
     staticTextParams.Y     = 100.0f;
     staticTextParams.Color = { 1.0f, 1.0f, 1.0f, 1.0f };

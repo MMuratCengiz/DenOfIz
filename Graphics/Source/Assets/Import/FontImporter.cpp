@@ -235,17 +235,18 @@ bool FontImporter::LoadGlyph( ImportContext &context, const FT_Face face, const 
     const Rect rect = AllocateSpace( context, bitmap.width, bitmap.rows );
     CopyGlyphToAtlas( context, face, rect );
 
-    GlyphMetrics metrics;
-    metrics.CodePoint = codePoint;
-    metrics.Width     = bitmap.width;
-    metrics.Height    = bitmap.rows;
-    metrics.BearingX  = slot->bitmap_left;
-    metrics.BearingY  = slot->bitmap_top;
-    metrics.Advance   = slot->advance.x >> 6; // Convert from 26.6 fixed-point format
-    metrics.AtlasX    = rect.X;
-    metrics.AtlasY    = rect.Y;
 
-    context.FontAsset.GlyphData.AddElement( metrics );
+    GlyphMetrics glyphMetrics;
+    glyphMetrics.CodePoint = codePoint;
+    glyphMetrics.Width     = slot->metrics.width;
+    glyphMetrics.Height    = slot->metrics.height;
+    glyphMetrics.BearingX  = slot->bitmap_left;
+    glyphMetrics.BearingY  = slot->bitmap_top;
+    glyphMetrics.Advance   = slot->advance.x >> 6; // Convert from 26.6 fixed-point format
+    glyphMetrics.AtlasX    = rect.X;
+    glyphMetrics.AtlasY    = rect.Y;
+
+    context.FontAsset.GlyphData.AddElement( glyphMetrics );
     return true;
 }
 

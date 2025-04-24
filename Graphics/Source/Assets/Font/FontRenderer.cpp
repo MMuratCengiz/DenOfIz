@@ -351,36 +351,3 @@ void FontRenderer::UpdateBuffers( )
     memcpy( indexData, m_indexData.Data( ), m_indexData.NumElements( ) * sizeof( uint32_t ) );
     m_indexBuffer->UnmapMemory( );
 }
-
-void FontRenderer::CalculateCenteredPosition( const std::u32string &text, TextRenderDesc &params ) const
-{
-    if ( !m_currentFont || text.empty( ) )
-    {
-        return;
-    }
-
-    const FontAsset &fontAsset = m_currentFont->GetFontAsset( );
-
-    float       textWidth  = 0.0f;
-    const float textHeight = static_cast<float>( fontAsset.Metrics.LineHeight ) * params.Scale;
-
-    // This is the legacy positioning method, still used as a fallback
-    // The HarfBuzz-based positioning handles this more accurately now
-    for ( const char32_t c : text )
-    {
-        if ( const GlyphMetrics *metrics = m_currentFont->GetGlyphMetrics( c ) )
-        {
-            textWidth += static_cast<float>( metrics->Advance ) * params.Scale;
-        }
-    }
-
-    if ( params.HorizontalCenter )
-    {
-        params.X -= textWidth / 2.0f;
-    }
-
-    if ( params.VerticalCenter )
-    {
-        params.Y -= textHeight / 2.0f;
-    }
-}

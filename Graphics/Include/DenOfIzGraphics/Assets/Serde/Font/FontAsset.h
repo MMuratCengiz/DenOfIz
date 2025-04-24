@@ -29,7 +29,7 @@ namespace DenOfIz
         uint32_t Height;
         uint32_t BearingX;
         uint32_t BearingY;
-        uint32_t Advance;
+        uint32_t Advance; // Delete
         uint32_t AtlasX;
         uint32_t AtlasY;
     };

@@ -105,7 +105,6 @@ namespace DenOfIz
     private:
         void UpdateAtlasTexture( ICommandList *commandList );
         void UpdateBuffers( );
-        void CalculateCenteredPosition( const std::u32string &text, TextRenderDesc &params ) const;
     };
 
 } // namespace DenOfIz

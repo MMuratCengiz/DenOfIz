@@ -66,7 +66,6 @@ void FontCache::AddGlyph( const AddGlyphDesc &desc )
         metrics.Height    = 0;
         metrics.BearingX  = desc.BearingX;
         metrics.BearingY  = desc.BearingY;
-        metrics.Advance   = desc.Advance;
         metrics.AtlasX    = 0;
         metrics.AtlasY    = 0;
 
@@ -86,7 +85,6 @@ void FontCache::AddGlyph( const AddGlyphDesc &desc )
     metrics.Height    = desc.Height;
     metrics.BearingX  = desc.BearingX;
     metrics.BearingY  = desc.BearingY;
-    metrics.Advance   = desc.Advance;
     metrics.AtlasX    = rect.X;
     metrics.AtlasY    = rect.Y;
 

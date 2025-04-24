@@ -225,11 +225,10 @@ bool FontManager::LoadGlyph( FontCache *fontCache, const uint32_t codePoint, con
     }
 
     const FT_GlyphSlot slot = face->glyph; // NOLINT
-
-    AddGlyphDesc addGlyphDesc{ };
+    AddGlyphDesc       addGlyphDesc{ };
     addGlyphDesc.CodePoint = codePoint;
-    addGlyphDesc.BearingX  = slot->metrics.horiBearingX >> 6;
-    addGlyphDesc.BearingY  = slot->metrics.horiBearingY >> 6;
+    addGlyphDesc.BearingX  = slot->bitmap_left;
+    addGlyphDesc.BearingY  = slot->bitmap_top;
     addGlyphDesc.Advance   = slot->advance.x >> 6; // Convert from 26.6 fixed-point format
 
     const std::string    resolvedPath = PathResolver::ResolvePath( fontCache->GetFontAsset( ).FontPath.Get( ) );
@@ -264,6 +263,10 @@ bool FontManager::GenerateMsdfForGlyph( AddGlyphDesc &glyphDesc, msdfgen::FontHa
         return false;
     }
 
+    shape.inverseYAxis = true;
+    shape.normalize( );
+    shape.orientContours( );
+
     // Skip empty shapes (space, etc.)
     if ( shape.contours.empty( ) )
     {
@@ -273,29 +276,15 @@ bool FontManager::GenerateMsdfForGlyph( AddGlyphDesc &glyphDesc, msdfgen::FontHa
         return true;
     }
 
-    shape.normalize( );
     msdfgen::edgeColoringSimple( shape, 3.0, 0 );
-
-    double l = 0, b = 0, r = 0, t = 0;
-    shape.bound( l, b, r, t );
-
-    // Add consistent padding with a bit of extra space for higher quality
-    const double pad = ( m_msdfPixelRange + 1.0 ) / pixelSize;
-    l -= pad;
-    b -= pad;
-    r += pad;
-    t += pad;
-
-    // Compute scale and translation to fit the shape in the bitmap
-    // Apply a small scale factor (0.95) to ensure we have a small margin within the texture
-    const double scale = std::min( 0.95 / ( r - l ), 0.95 / ( t - b ) );
-    const double tx    = -l * scale;
-    const double ty    = -b * scale;
 
     msdfgen::Bitmap<float, 3> msdf( pixelSize, pixelSize );
 
-    // Setup projection and range
-    const msdfgen::Projection        projection( scale * pixelSize, msdfgen::Vector2( tx, ty ) );
+    msdfgen::FontMetrics metrics;
+    msdfgen::getFontMetrics( metrics, msdfFont );
+
+    const auto                       bounds = shape.getBounds( );
+    const msdfgen::Projection        projection( pixelSize, msdfgen::Vector2( -bounds.l, -bounds.b ) );
     const msdfgen::Range             range( m_msdfPixelRange / pixelSize );
     const msdfgen::SDFTransformation transform( projection, range );
 
@@ -319,9 +308,7 @@ bool FontManager::GenerateMsdfForGlyph( AddGlyphDesc &glyphDesc, msdfgen::FontHa
         for ( uint32_t x = 0; x < width; x++ )
         {
             const uint32_t pixelOffset = y * pitch + x * 3;
-            // Flip Y since msdf is right handed
-            const uint32_t flippedY  = height - 1 - y;
-            const float   *msdfPixel = msdf( x, flippedY );
+            const float   *msdfPixel   = msdf( x, y );
 
             msdfData.SetElement( pixelOffset, static_cast<uint8_t>( msdfPixel[ 0 ] * 255.f ) );     // R
             msdfData.SetElement( pixelOffset + 1, static_cast<uint8_t>( msdfPixel[ 1 ] * 255.f ) ); // G
@@ -581,49 +568,11 @@ TextLayout FontManager::ShapeText( FontCache *fontCache, const InteropString &in
         {
             shapedGlyph.CodePoint = glyphIndexToCodePoint[ shapedGlyph.GlyphId ];
         }
-        else
+        if ( shapedGlyph.CodePoint == 0 )
         {
-            // Try to get code point from the cluster index
-            if ( const unsigned int clusterIndex = shapedGlyph.ClusterIndex; clusterIndex < utf8Text.length( ) )
-            {
-                unsigned int charIndex = 0;
-                for ( size_t j = 0; j < utf32Text.size( ) && charIndex <= clusterIndex; ++j )
-                {
-                    size_t charBytes = 0;
-                    if ( const char32_t cp = utf32Text[ j ]; cp < 0x80 )
-                    {
-                        charBytes = 1;
-                    }
-                    else if ( cp < 0x800 )
-                    {
-                        charBytes = 2;
-                    }
-                    else if ( cp < 0x10000 )
-                    {
-                        charBytes = 3;
-                    }
-                    else
-                    {
-                        charBytes = 4;
-                    }
-
-                    if ( charIndex + charBytes > clusterIndex )
-                    {
-                        shapedGlyph.CodePoint = utf32Text[ j ];
-                        break;
-                    }
-
-                    charIndex += charBytes;
-                }
-            }
-            // Default to space(Most white space characters do not have a CodePoint)
-            if ( shapedGlyph.CodePoint == 0 )
-            {
-                shapedGlyph.CodePoint = ' ';
-                LOG( WARNING ) << "Could not determine code point for glyph ID: " << shapedGlyph.GlyphId;
-            }
+            shapedGlyph.CodePoint = ' ';
+            LOG( WARNING ) << "Could not determine code point for glyph ID: " << shapedGlyph.GlyphId;
         }
-
         totalAdvance += shapedGlyph.XAdvance;
     }
 
@@ -638,10 +587,9 @@ void FontManager::GenerateTextVertices( const GenerateTextVerticesDesc &desc, In
 {
     const FontCache  *fontCache = desc.FontCache;
     const TextLayout &layout    = desc.Layout;
-    const float       x         = desc.X;
-    const float       y         = desc.Y;
+    float             x         = desc.X;
+    float             y         = desc.Y;
     const Float_4    &color     = desc.Color;
-    const float       scale     = desc.Scale;
     if ( !fontCache || layout.ShapedGlyphs.NumElements( ) == 0 )
     {
         return;
@@ -649,39 +597,24 @@ void FontManager::GenerateTextVertices( const GenerateTextVerticesDesc &desc, In
 
     const FontAsset &fontAsset  = fontCache->GetFontAsset( );
     uint32_t         baseVertex = outVertices.NumElements( ) / 8; // 8 floats per vertex (pos.xy, uv.xy, color.rgba)
-
-    std::vector<float> absXPositions( layout.ShapedGlyphs.NumElements( ) );
-    float              currentX = x;
-    for ( size_t i = 0; i < layout.ShapedGlyphs.NumElements( ); i++ )
-    {
-        absXPositions[ i ] = currentX;
-        currentX += layout.ShapedGlyphs.GetElement( i ).XAdvance * scale;
-    }
-
     for ( size_t i = 0; i < layout.ShapedGlyphs.NumElements( ); i++ )
     {
         const auto &shapedGlyph = layout.ShapedGlyphs.GetElement( i );
 
         const GlyphMetrics *metrics = fontCache->GetGlyphMetrics( shapedGlyph.CodePoint );
-        if ( !metrics )
+        if ( !metrics || metrics->Width == 0 || metrics->Height == 0 )
         {
+            x += shapedGlyph.XAdvance;
             continue;
         }
 
-        if ( metrics->Width == 0 || metrics->Height == 0 )
-        {
-            continue;
-        }
+        float x0 = x + shapedGlyph.XOffset + metrics->BearingX;
+        float x1 = x0 + metrics->Width;
+        float y0 = floor( y - shapedGlyph.YOffset - metrics->BearingY - 22 );
+        float y1 = floor( y0 + metrics->Height );
 
-        const float glyphX = absXPositions[ i ];
-
-        const float xPos = glyphX + shapedGlyph.XOffset * scale;
-        const float yPos = y + shapedGlyph.YOffset * scale;
-
-        float x0 = xPos + static_cast<float>( metrics->BearingX ) * scale;
-        float y0 = yPos - static_cast<float>( metrics->BearingY ) * scale;
-        float x1 = x0 + static_cast<float>( metrics->Width ) * scale;
-        float y1 = y0 + static_cast<float>( metrics->Height ) * scale;
+        x += shapedGlyph.XAdvance;
+        y += shapedGlyph.YAdvance;
 
         const float u0 = static_cast<float>( metrics->AtlasX ) / static_cast<float>( fontAsset.AtlasWidth );
         const float v0 = static_cast<float>( metrics->AtlasY ) / static_cast<float>( fontAsset.AtlasHeight );
