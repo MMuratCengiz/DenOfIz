@@ -40,15 +40,24 @@ using namespace DirectX;
 
 namespace DenOfIz
 {
+    struct DZ_API ShapedGlyphBounds
+    {
+        float XMin;
+        float YMin;
+        float XMax;
+        float YMax;
+    };
+
     struct ShapedGlyph
     {
-        uint32_t GlyphId;
-        uint32_t ClusterIndex;
-        float    XOffset;
-        float    YOffset;
-        float    XAdvance;
-        float    YAdvance;
-        uint32_t CodePoint;
+        uint32_t          GlyphId;
+        uint32_t          ClusterIndex;
+        float             XOffset;
+        float             YOffset;
+        float             XAdvance;
+        float             YAdvance;
+        ShapedGlyphBounds Bounds;
+        uint32_t          CodePoint;
     };
     template class DZ_API InteropArray<ShapedGlyph>;
 
@@ -105,7 +114,6 @@ namespace DenOfIz
         void       GenerateTextVertices( const GenerateTextVerticesDesc &desc, InteropArray<float> &outVertices, InteropArray<uint32_t> &outIndices );
 
     private:
-        std::string    Utf32ToUtf8( const std::u32string &utf32Text );
         std::u32string Utf8ToUtf32( const std::string &utf8Text );
         bool           EnsureGlyphsLoaded( FontCache *fontCache, const InteropString &interopText );
         bool           LoadGlyph( FontCache *fontCache, uint32_t codePoint, FT_Face face );

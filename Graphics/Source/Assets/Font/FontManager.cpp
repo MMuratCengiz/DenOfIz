@@ -382,40 +382,6 @@ std::u32string FontManager::Utf8ToUtf32( const std::string &utf8Text )
     return result;
 }
 
-std::string FontManager::Utf32ToUtf8( const std::u32string &utf32Text )
-{
-    std::string result;
-    result.reserve( utf32Text.size( ) * 4 );
-
-    for ( const char32_t codePoint : utf32Text )
-    {
-        if ( codePoint < 0x80 )
-        {
-            result.push_back( static_cast<char>( codePoint ) );
-        }
-        else if ( codePoint < 0x800 )
-        {
-            result.push_back( static_cast<char>( 0xC0 | codePoint >> 6 ) );
-            result.push_back( static_cast<char>( 0x80 | codePoint & 0x3F ) );
-        }
-        else if ( codePoint < 0x10000 )
-        {
-            result.push_back( static_cast<char>( 0xE0 | codePoint >> 12 ) );
-            result.push_back( static_cast<char>( 0x80 | codePoint >> 6 & 0x3F ) );
-            result.push_back( static_cast<char>( 0x80 | codePoint & 0x3F ) );
-        }
-        else if ( codePoint < 0x110000 )
-        {
-            result.push_back( static_cast<char>( 0xF0 | codePoint >> 18 ) );
-            result.push_back( static_cast<char>( 0x80 | codePoint >> 12 & 0x3F ) );
-            result.push_back( static_cast<char>( 0x80 | codePoint >> 6 & 0x3F ) );
-            result.push_back( static_cast<char>( 0x80 | codePoint & 0x3F ) );
-        }
-    }
-
-    return result;
-}
-
 hb_font_t *FontManager::GetHarfBuzzFont( const std::string &fontPath, const uint32_t numPixels, FT_Face face )
 {
     const std::string cacheKey = fontPath + "_" + std::to_string( numPixels );
