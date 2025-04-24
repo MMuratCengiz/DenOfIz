@@ -22,41 +22,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Serde/Font/FontAsset.h>
 #include <DenOfIzGraphics/Assets/Serde/Font/FontAssetWriter.h>
 
-// Forward declare FreeType structures
-typedef struct FT_LibraryRec_ *FT_Library;
-typedef struct FT_FaceRec_    *FT_Face;
+#include <freetype/freetype.h>
+#include <msdfgen-ext.h>
+#include <msdfgen.h>
 
 namespace DenOfIz
 {
-    struct DZ_API FontImportOptions : ImportOptions
+    struct DZ_API FontImportDesc : ImportDesc
     {
-        uint32_t               PixelSize    = 24;
-        bool                   AntiAliasing = true;
-        uint32_t               AtlasWidth   = 512;
-        uint32_t               AtlasHeight  = 512;
-        InteropArray<uint32_t> PreloadCharacterSet{ }; // Optional characters to preload (e.g., ASCII range)
+        uint32_t PixelSize    = 24;
+        bool     AntiAliasing = true;
+        uint32_t AtlasWidth   = 512;
+        uint32_t AtlasHeight  = 512;
 
-        FontImportOptions( ) = default;
-        explicit FontImportOptions( const ImportOptions &base ) : ImportOptions( base )
+        FontImportDesc( ) = default;
+        explicit FontImportDesc( const ImportDesc &base ) : ImportDesc( base )
         {
         }
-        static FontImportOptions CreateFromBase( const ImportOptions &base )
+        static FontImportDesc CreateFromBase( const ImportDesc &base )
         {
-            return FontImportOptions( base );
+            return FontImportDesc( base );
         }
     };
 
-    struct DZ_API FontImporterDesc
-    {
-        InteropString  BundleOutputPath;
-        BundleManager *BundleManager = nullptr;
-    };
+    struct DZ_API FontImporterDesc{ };
 
     class DZ_API FontImporter final : public IAssetImporter
     {
-        ImporterDesc           m_importerDesc;
-        const FontImporterDesc m_desc;
-        FT_Library             m_ftLibrary;
+        const InteropString m_fileExtension = "dzfont";
+
+        ImporterDesc             m_importerDesc;
+        const FontImporterDesc   m_desc;
+        FT_Library               m_ftLibrary;
+        msdfgen::FreetypeHandle *m_msdfFtHandle   = nullptr;
+        float                    m_msdfPixelRange = 4.0f;
 
         struct Rect
         {
@@ -68,12 +67,12 @@ namespace DenOfIz
 
         struct ImportContext
         {
-            InteropString     SourceFilePath;
-            InteropString     TargetDirectory;
-            InteropString     AssetNamePrefix;
-            FontImportOptions Options;
-            ImporterResult    Result;
-            InteropString     ErrorMessage;
+            InteropString  SourceFilePath;
+            InteropString  TargetDirectory;
+            InteropString  AssetNamePrefix;
+            FontImportDesc Options;
+            ImporterResult Result;
+            InteropString  ErrorMessage;
 
             FontAsset          FontAsset;
             InteropArray<Byte> AtlasBitmap;
@@ -93,15 +92,15 @@ namespace DenOfIz
         [[nodiscard]] bool         ValidateFile( const InteropString &filePath ) const override;
 
     private:
-        ImporterResultCode ImportFontInternal( ImportContext &context );
-        void               PreloadCharacterSet( ImportContext &context, FT_Face face );
-        bool               LoadGlyph( ImportContext &context, FT_Face face, uint32_t codePoint );
-        Rect               AllocateSpace( ImportContext &context, uint32_t width, uint32_t height );
-        void               CopyGlyphToAtlas( ImportContext &context, FT_Face face, const Rect &rect );
-        void               WriteFontAsset( const ImportContext &context, AssetUri &outAssetUri );
-        void               ExtractFontMetrics( ImportContext &context, FT_Face face );
-
-        static InteropString CreateAssetFileName( const InteropString &prefix, const InteropString &name, const InteropString &extension );
+        ImporterResultCode   ImportFontInternal( ImportContext &context );
+        void                 PreloadCharacterSet( ImportContext &context, FT_Face face );
+        bool                 LoadGlyph( ImportContext &context, FT_Face face, uint32_t codePoint );
+        bool                 GenerateMsdfForGlyph( FontGlyph &glyphDesc, msdfgen::FontHandle *msdfFont, uint32_t codePoint, uint32_t pixelSize ) const;
+        Rect                 AllocateSpace( ImportContext &context, uint32_t width, uint32_t height );
+        void                 CopyMsdfDataToAtlas( ImportContext &context, const FontGlyph &glyphDesc, const Rect &rect );
+        void                 WriteFontAsset( const ImportContext &context, AssetUri &outAssetUri );
+        void                 ExtractFontMetrics( ImportContext &context, FT_Face face );
+        InteropString        CreateAssetFileName( const InteropString &prefix, const InteropString &name );
         static InteropString GetAssetNameFromFilePath( const InteropString &filePath );
         static InteropString SanitizeAssetName( const InteropString &name );
     };

@@ -96,7 +96,7 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
     context.SourceFilePath  = desc.SourceFilePath;
     context.TargetDirectory = desc.TargetDirectory;
     context.AssetNamePrefix = desc.AssetNamePrefix;
-    context.Options         = AssimpImportOptions::CreateFromBase( desc.Options );
+    context.Options         = AssimpImportDesc::CreateFromBase( desc.Options );
 
     if ( !FileIO::FileExists( context.SourceFilePath ) )
     {
@@ -138,10 +138,6 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
     if ( context.Result.ResultCode == ImporterResultCode::Success )
     {
         LOG( INFO ) << "Assimp import successful for: " << context.SourceFilePath.Get( );
-        if ( m_desc.BundleManager != nullptr && !m_desc.BundleOutputPath.IsEmpty( ) )
-        {
-            LOG( INFO ) << "Bundling not yet implemented in importer.";
-        }
     }
     else
     {
@@ -876,7 +872,7 @@ void AssimpImporter::GenerateMeshLODs( const ImportContext &/*context*/, MeshAss
     LOG( WARNING ) << "Not yet implemented";
 }
 
-void AssimpImporter::ConfigureAssimpImportFlags( const AssimpImportOptions &options, unsigned int &flags, Assimp::Importer &importer )
+void AssimpImporter::ConfigureAssimpImportFlags( const AssimpImportDesc &options, unsigned int &flags, Assimp::Importer &importer )
 {
     flags |= aiProcess_ImproveCacheLocality;
     flags |= aiProcess_SortByPType;

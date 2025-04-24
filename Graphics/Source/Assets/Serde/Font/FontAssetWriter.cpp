@@ -28,24 +28,30 @@ FontAssetWriter::FontAssetWriter( const FontAssetWriterDesc &desc ) : m_writer( 
 
 FontAssetWriter::~FontAssetWriter( ) = default;
 
-void FontAssetWriter::Write( const FontAsset &fontAsset, const InteropArray<Byte> &atlasBitmap )
+void FontAssetWriter::Write( const FontAsset &fontAsset )
 {
     m_fontAsset           = fontAsset;
     m_streamStartLocation = m_writer->Position( );
 
     WriteHeader( 0 );
     WriteMetadata( fontAsset );
-    WriteGlyphData( fontAsset );
+    WriteGlyph( fontAsset );
 
     AssetWriterHelpers::WriteProperties( m_writer, fontAsset.UserProperties );
+}
 
+void FontAssetWriter::WriteAtlasBitmap( const InteropArray<Byte> &atlasBitmap ) const
+{
     if ( atlasBitmap.NumElements( ) > 0 )
     {
         const uint32_t streamOffset = m_writer->Position( ) - m_streamStartLocation + sizeof( AssetDataStream );
         AssetWriterHelpers::WriteAssetDataStream( m_writer, { streamOffset, atlasBitmap.NumElements( ) } );
         m_writer->WriteBytes( atlasBitmap );
     }
+}
 
+void FontAssetWriter::Finalize( ) const
+{
     const auto totalNumBytes   = m_writer->Position( ) - m_streamStartLocation;
     const auto currentPosition = m_writer->Position( );
     m_writer->Seek( m_streamStartLocation );
@@ -78,20 +84,27 @@ void FontAssetWriter::WriteMetadata( const FontAsset &fontAsset ) const
     m_writer->WriteUInt32( fontAsset.Metrics.UnderlineThickness );
 }
 
-void FontAssetWriter::WriteGlyphData( const FontAsset &fontAsset ) const
+void FontAssetWriter::WriteGlyph( const FontAsset &fontAsset ) const
 {
-    const uint32_t numGlyphs = fontAsset.GlyphData.NumElements( );
+    const uint32_t numGlyphs = fontAsset.Glyphs.NumElements( );
     m_writer->WriteUInt32( numGlyphs );
     for ( uint32_t i = 0; i < numGlyphs; ++i )
     {
-        const GlyphMetrics &metrics = fontAsset.GlyphData.GetElement( i );
-        m_writer->WriteUInt32( metrics.CodePoint );
-        m_writer->WriteUInt32( metrics.Width );
-        m_writer->WriteUInt32( metrics.Height );
-        m_writer->WriteUInt32( metrics.BearingX );
-        m_writer->WriteUInt32( metrics.BearingY );
-        m_writer->WriteUInt32( metrics.Advance );
-        m_writer->WriteUInt32( metrics.AtlasX );
-        m_writer->WriteUInt32( metrics.AtlasY );
+        const FontGlyph &glyph = fontAsset.Glyphs.GetElement( i );
+        m_writer->WriteUInt32( glyph.CodePoint );
+        m_writer->WriteUInt32( glyph.Bounds.XMin );
+        m_writer->WriteUInt32( glyph.Bounds.YMin );
+        m_writer->WriteUInt32( glyph.Bounds.XMax );
+        m_writer->WriteUInt32( glyph.Bounds.YMax );
+        m_writer->WriteUInt32( glyph.Width );
+        m_writer->WriteUInt32( glyph.Height );
+        m_writer->WriteUInt32( glyph.BearingX );
+        m_writer->WriteUInt32( glyph.BearingY );
+        m_writer->WriteUInt32( glyph.AdvanceX );
+        m_writer->WriteUInt32( glyph.AdvanceY );
+        m_writer->WriteUInt32( glyph.AtlasX );
+        m_writer->WriteUInt32( glyph.AtlasY );
+        m_writer->WriteUInt32( glyph.Pitch );
+        m_writer->WriteBytes( glyph.Data );
     }
 }

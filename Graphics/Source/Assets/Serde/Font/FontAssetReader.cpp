@@ -49,8 +49,9 @@ FontAsset FontAssetReader::Read( )
     m_fontAsset.FontPath     = m_reader->ReadString( );
     m_fontAsset.PixelSize    = m_reader->ReadUInt32( );
     m_fontAsset.AntiAliasing = m_reader->ReadByte( ) == 1;
-    m_fontAsset.AtlasWidth   = m_reader->ReadUInt32( );
-    m_fontAsset.AtlasHeight  = m_reader->ReadUInt32( );
+
+    m_fontAsset.AtlasWidth  = m_reader->ReadUInt32( );
+    m_fontAsset.AtlasHeight = m_reader->ReadUInt32( );
 
     m_fontAsset.Metrics.Ascent             = m_reader->ReadUInt32( );
     m_fontAsset.Metrics.Descent            = m_reader->ReadUInt32( );
@@ -60,41 +61,96 @@ FontAsset FontAssetReader::Read( )
     m_fontAsset.Metrics.UnderlineThickness = m_reader->ReadUInt32( );
 
     const uint32_t numGlyphs = m_reader->ReadUInt32( );
-    m_fontAsset.GlyphData.Resize( numGlyphs );
+    m_fontAsset.Glyphs.Resize( numGlyphs );
 
     for ( uint32_t i = 0; i < numGlyphs; ++i )
     {
-        GlyphMetrics &metrics = m_fontAsset.GlyphData.GetElement( i );
-        metrics.CodePoint     = m_reader->ReadUInt32( );
-        metrics.Width         = m_reader->ReadUInt32( );
-        metrics.Height        = m_reader->ReadUInt32( );
-        metrics.BearingX      = m_reader->ReadUInt32( );
-        metrics.BearingY      = m_reader->ReadUInt32( );
-        metrics.Advance       = m_reader->ReadUInt32( );
-        metrics.AtlasX        = m_reader->ReadUInt32( );
-        metrics.AtlasY        = m_reader->ReadUInt32( );
+        FontGlyph &glyph  = m_fontAsset.Glyphs.GetElement( i );
+        glyph.CodePoint   = m_reader->ReadUInt32( );
+        glyph.Bounds.XMin = m_reader->ReadUInt32( );
+        glyph.Bounds.YMin = m_reader->ReadUInt32( );
+        glyph.Bounds.XMax = m_reader->ReadUInt32( );
+        glyph.Bounds.YMax = m_reader->ReadUInt32( );
+        glyph.Width       = m_reader->ReadUInt32( );
+        glyph.Height      = m_reader->ReadUInt32( );
+        glyph.BearingX    = m_reader->ReadUInt32( );
+        glyph.BearingY    = m_reader->ReadUInt32( );
+        glyph.AdvanceX    = m_reader->ReadUInt32( );
+        glyph.AdvanceY    = m_reader->ReadUInt32( );
+        glyph.AtlasX      = m_reader->ReadUInt32( );
+        glyph.AtlasY      = m_reader->ReadUInt32( );
+        glyph.Pitch       = m_reader->ReadUInt32( );
+        glyph.Data        = m_reader->ReadBytes( glyph.Pitch * glyph.Height );
     }
 
     m_fontAsset.UserProperties = AssetReaderHelpers::ReadUserProperties( m_reader );
+    m_fontAsset.AtlasData      = AssetReaderHelpers::ReadAssetDataStream( m_reader );
 
     m_assetRead = true;
     return m_fontAsset;
 }
 
-InteropArray<Byte> FontAssetReader::ReadAtlasBitmap( )
+void FontAssetReader::LoadAtlasIntoGpuTexture( const LoadAtlasIntoGpuTextureDesc &desc ) const
+{
+    if ( !desc.CommandList || !desc.Texture )
+    {
+        LOG( FATAL ) << "CommandList and Texture are required for LoadIntoGpuTexture";
+        return;
+    }
+
+    constexpr uint32_t batchSize = 1024;
+    InteropArray<Byte> buffer( batchSize );
+
+    const auto stagingBuffer  = desc.StagingBuffer;
+    uint64_t   remainingBytes = m_fontAsset.AtlasData.NumBytes;
+    auto       mappedMemory   = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
+
+    m_reader->Seek( m_fontAsset.AtlasData.Offset );
+    while ( remainingBytes > 0 )
+    {
+        const uint32_t bytesToRead = static_cast<uint32_t>( std::min( static_cast<uint64_t>( batchSize ), remainingBytes ) );
+        const uint32_t bytesRead   = m_reader->Read( buffer, 0, bytesToRead );
+
+        if ( bytesRead != bytesToRead )
+        {
+            LOG( ERROR ) << "Failed to read expected number of bytes. Expected: " << bytesToRead << ", Read: " << bytesRead;
+            break;
+        }
+
+        memcpy( mappedMemory, buffer.Data( ), bytesRead );
+
+        mappedMemory += bytesRead;
+        remainingBytes -= bytesRead;
+    }
+
+    stagingBuffer->UnmapMemory( );
+
+    CopyBufferToTextureDesc copyDesc{ };
+    copyDesc.DstTexture = desc.Texture;
+    copyDesc.SrcBuffer  = stagingBuffer;
+    copyDesc.Format     = desc.Texture->GetFormat( );
+    copyDesc.MipLevel   = 0;
+    copyDesc.ArrayLayer = 0;
+    copyDesc.RowPitch   = m_fontAsset.AtlasWidth;
+    copyDesc.NumRows    = m_fontAsset.AtlasHeight;
+
+    desc.CommandList->CopyBufferToTexture( copyDesc );
+}
+
+InteropArray<Byte> FontAssetReader::ReadAtlasData( )
 {
     if ( !m_assetRead )
     {
         Read( );
     }
 
-    m_reader->Seek( m_streamStartOffset + m_fontAsset.AtlasBitmap.Offset );
+    m_reader->Seek( m_streamStartOffset + m_fontAsset.AtlasData.Offset );
     InteropArray<Byte> atlasBitmap;
-    atlasBitmap.Resize( m_fontAsset.AtlasBitmap.NumBytes );
+    atlasBitmap.Resize( m_fontAsset.AtlasData.NumBytes );
 
-    if ( m_fontAsset.AtlasBitmap.NumBytes > 0 )
+    if ( m_fontAsset.AtlasData.NumBytes > 0 )
     {
-        return m_reader->ReadBytes( m_fontAsset.AtlasBitmap.NumBytes );
+        return m_reader->ReadBytes( m_fontAsset.AtlasData.NumBytes );
     }
 
     return { };
@@ -102,5 +158,5 @@ InteropArray<Byte> FontAssetReader::ReadAtlasBitmap( )
 
 uint64_t FontAssetReader::AtlasBitmapNumBytes( ) const
 {
-    return m_fontAsset.AtlasBitmap.NumBytes;
+    return m_fontAsset.AtlasData.NumBytes;
 }

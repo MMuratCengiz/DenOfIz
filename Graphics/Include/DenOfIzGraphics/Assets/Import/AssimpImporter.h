@@ -35,7 +35,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct DZ_API AssimpImportOptions : ImportOptions
+    struct DZ_API AssimpImportDesc : ImportDesc
     {
         bool     JoinIdenticalVertices    = true;
         bool     PreTransformVertices     = false;
@@ -50,20 +50,18 @@ namespace DenOfIz
         bool     TriangulateMeshes        = true;
         bool     PreservePivots           = true;
         bool     DropNormals              = false;
-        AssimpImportOptions( )            = default;
-        explicit AssimpImportOptions( const ImportOptions &base ) : ImportOptions( base )
+        AssimpImportDesc( )            = default;
+        explicit AssimpImportDesc( const ImportDesc &base ) : ImportDesc( base )
         {
         }
-        static AssimpImportOptions CreateFromBase( const ImportOptions &base )
+        static AssimpImportDesc CreateFromBase( const ImportDesc &base )
         {
-            return AssimpImportOptions( base );
+            return AssimpImportDesc( base );
         }
     };
 
     struct DZ_API AssimpImporterDesc
     {
-        InteropString  BundleOutputPath;
-        BundleManager *BundleManager = nullptr;
     };
 
     class AssimpImporter final : public IAssetImporter
@@ -77,7 +75,7 @@ namespace DenOfIz
             InteropString       SourceFilePath;
             InteropString       TargetDirectory;
             InteropString       AssetNamePrefix;
-            AssimpImportOptions Options;
+            AssimpImportDesc Options;
             ImporterResult      Result;
             InteropString       ErrorMessage;
 
@@ -109,7 +107,7 @@ namespace DenOfIz
         bool ProcessTexture( ImportContext &context, const aiMaterial *material, aiTextureType textureType, const InteropString &semanticName, AssetUri &outAssetUri );
         void ProcessAnimation( ImportContext &context, const aiAnimation *animation, AssetUri &outAssetUri );
 
-        void ConfigureAssimpImportFlags( const AssimpImportOptions &options, unsigned int &flags, Assimp::Importer &importer );
+        void ConfigureAssimpImportFlags( const AssimpImportDesc &options, unsigned int &flags, Assimp::Importer &importer );
         void CalculateMeshBounds( const aiMesh *mesh, float scaleFactor, Float_3 &outMin, Float_3 &outMax );
 
         void WriteMaterialAsset( ImportContext &context, const MaterialAsset &materialAsset, AssetUri &outAssetUri );

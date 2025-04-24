@@ -438,12 +438,7 @@ bool AnimatedFoxExample::ImportFoxModel( const InteropString &gltfPath )
         return false;
     }
 
-    // Create AssimpImporter
-    AssimpImporterDesc importerDesc;
-    importerDesc.BundleOutputPath = "";      // Not implemented yet
-    importerDesc.BundleManager    = nullptr; // Not implemented yet
-
-    AssimpImporter importer( importerDesc );
+    AssimpImporter importer( { } );
 
     if ( !importer.ValidateFile( gltfPath ) )
     {
@@ -456,7 +451,7 @@ bool AnimatedFoxExample::ImportFoxModel( const InteropString &gltfPath )
     importJobDesc.TargetDirectory = "Assets/Models/";
     importJobDesc.AssetNamePrefix = "Fox";
 
-    AssimpImportOptions options;
+    AssimpImportDesc options;
     options.ImportMaterials         = true;
     options.ImportTextures          = true;
     options.ImportSkeletons         = true;
@@ -465,7 +460,7 @@ bool AnimatedFoxExample::ImportFoxModel( const InteropString &gltfPath )
     options.MaxBoneWeightsPerVertex = 4;
     options.ScaleFactor             = 0.01f;
 
-    importJobDesc.Options = static_cast<ImportOptions>( options );
+    importJobDesc.Options = static_cast<ImportDesc>( options );
 
     ImporterResult result = importer.Import( importJobDesc );
     if ( result.ResultCode != ImporterResultCode::Success )

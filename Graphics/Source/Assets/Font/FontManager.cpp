@@ -567,7 +567,7 @@ void FontManager::GenerateTextVertices( const GenerateTextVerticesDesc &desc, In
     {
         const auto &shapedGlyph = layout.ShapedGlyphs.GetElement( i );
 
-        const GlyphMetrics *metrics = fontCache->GetGlyphMetrics( shapedGlyph.CodePoint );
+        const FontGlyph *metrics = fontCache->GetGlyphMetrics( shapedGlyph.CodePoint );
         if ( !metrics || metrics->Width == 0 || metrics->Height == 0 )
         {
             x += shapedGlyph.XAdvance;

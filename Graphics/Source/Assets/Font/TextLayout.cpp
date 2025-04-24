@@ -15,27 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#pragma once
 
-#include <DenOfIzGraphics/Assets/Serde/Font/FontAsset.h>
-#include <DenOfIzGraphics/Assets/Stream/BinaryWriter.h>
 
-namespace DenOfIz
-{
-    struct DZ_API FontAssetWriterDesc
-    {
-        BinaryWriter *Writer;
-    };
+#include <DenOfIzGraphics/Assets/Font/TextLayout.h>
 
-    class DZ_API FontAssetWriter
-    {
-        BinaryWriter *m_writer;
-        uint64_t      m_dataOffset = 0;
+using namespace DenOfIz;
 
-    public:
-        explicit FontAssetWriter( const FontAssetWriterDesc &desc );
-        ~FontAssetWriter( );
-
-        void Write( const FontAsset &fontAsset, const InteropArray<Byte> &atlasBitmap );
-    };
-} // namespace DenOfIz

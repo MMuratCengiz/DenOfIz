@@ -44,9 +44,12 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Bundle/BundleManager.cpp
         Source/Assets/FileSystem/PathResolver.cpp
         Source/Assets/FileSystem/FileIO.cpp
+        Source/Assets/Font/Font.cpp
         Source/Assets/Font/FontCache.cpp
+        Source/Assets/Font/FontLibrary.cpp
         Source/Assets/Font/FontManager.cpp
         Source/Assets/Font/FontRenderer.cpp
+        Source/Assets/Font/TextLayout.cpp
         Source/Assets/GpuResource/GpuResourceLoader.cpp
         Source/Assets/Import/AssimpImporter.cpp
         Source/Assets/Import/FontImporter.cpp

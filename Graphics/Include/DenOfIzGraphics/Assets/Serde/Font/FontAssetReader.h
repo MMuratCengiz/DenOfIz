@@ -30,7 +30,7 @@ namespace DenOfIz
         BinaryReader *Reader;
     };
 
-    struct DZ_API LoadFontIntoGpuTextureDesc
+    struct DZ_API LoadAtlasIntoGpuTextureDesc
     {
         ICommandList     *CommandList;
         IBufferResource  *StagingBuffer;
@@ -49,7 +49,8 @@ namespace DenOfIz
         ~FontAssetReader( );
 
         FontAsset              Read( );
-        InteropArray<Byte>     ReadAtlasBitmap( );
+        void                   LoadAtlasIntoGpuTexture( const LoadAtlasIntoGpuTextureDesc &desc ) const;
+        InteropArray<Byte>     ReadAtlasData( );
         [[nodiscard]] uint64_t AtlasBitmapNumBytes( ) const;
     };
 } // namespace DenOfIz

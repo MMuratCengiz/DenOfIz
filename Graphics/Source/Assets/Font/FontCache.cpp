@@ -60,7 +60,7 @@ void FontCache::AddGlyph( const AddGlyphDesc &desc )
 
     if ( desc.Width == 0 || desc.Height == 0 )
     {
-        GlyphMetrics metrics{ };
+        FontGlyph metrics{ };
         metrics.CodePoint = desc.CodePoint;
         metrics.Width     = 0;
         metrics.Height    = 0;
@@ -69,9 +69,9 @@ void FontCache::AddGlyph( const AddGlyphDesc &desc )
         metrics.AtlasX    = 0;
         metrics.AtlasY    = 0;
 
-        const uint32_t currentSize = m_fontAsset.GlyphData.NumElements( );
-        m_fontAsset.GlyphData.Resize( currentSize + 1 );
-        m_fontAsset.GlyphData.SetElement( currentSize, metrics );
+        const uint32_t currentSize = m_fontAsset.Glyphs.NumElements( );
+        m_fontAsset.Glyphs.Resize( currentSize + 1 );
+        m_fontAsset.Glyphs.SetElement( currentSize, metrics );
 
         return;
     }
@@ -79,7 +79,7 @@ void FontCache::AddGlyph( const AddGlyphDesc &desc )
     const Rect rect = AllocateSpace( desc.Width, desc.Height );
     CopyMsdfDataToAtlas( rect, desc.MsdfData, desc.MsdfPitch );
 
-    GlyphMetrics metrics{ };
+    FontGlyph metrics{ };
     metrics.CodePoint = desc.CodePoint;
     metrics.Width     = desc.Width;
     metrics.Height    = desc.Height;
@@ -88,18 +88,18 @@ void FontCache::AddGlyph( const AddGlyphDesc &desc )
     metrics.AtlasX    = rect.X;
     metrics.AtlasY    = rect.Y;
 
-    const uint32_t currentSize = m_fontAsset.GlyphData.NumElements( );
-    m_fontAsset.GlyphData.Resize( currentSize + 1 );
-    m_fontAsset.GlyphData.SetElement( currentSize, metrics );
+    const uint32_t currentSize = m_fontAsset.Glyphs.NumElements( );
+    m_fontAsset.Glyphs.Resize( currentSize + 1 );
+    m_fontAsset.Glyphs.SetElement( currentSize, metrics );
 
     m_atlasNeedsUpdate = true;
 }
 
 bool FontCache::HasGlyph( const uint32_t codePoint ) const
 {
-    for ( uint32_t i = 0; i < m_fontAsset.GlyphData.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < m_fontAsset.Glyphs.NumElements( ); ++i )
     {
-        if ( m_fontAsset.GlyphData.GetElement( i ).CodePoint == codePoint )
+        if ( m_fontAsset.Glyphs.GetElement( i ).CodePoint == codePoint )
         {
             return true;
         }
@@ -107,13 +107,13 @@ bool FontCache::HasGlyph( const uint32_t codePoint ) const
     return false;
 }
 
-const GlyphMetrics *FontCache::GetGlyphMetrics( const uint32_t codePoint ) const
+const FontGlyph *FontCache::GetGlyphMetrics( const uint32_t codePoint ) const
 {
-    for ( uint32_t i = 0; i < m_fontAsset.GlyphData.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < m_fontAsset.Glyphs.NumElements( ); ++i )
     {
-        if ( m_fontAsset.GlyphData.GetElement( i ).CodePoint == codePoint )
+        if ( m_fontAsset.Glyphs.GetElement( i ).CodePoint == codePoint )
         {
-            return &m_fontAsset.GlyphData.GetElement( i );
+            return &m_fontAsset.Glyphs.GetElement( i );
         }
     }
     return nullptr;
@@ -135,7 +135,7 @@ void FontCache::ResizeAtlas( const uint32_t newWidth, const uint32_t newHeight )
     std::vector<uint8_t> newBitmap( newWidth * newHeight * 3 /*rgb*/, 0 );
     m_fontAsset.AtlasWidth  = newWidth;
     m_fontAsset.AtlasHeight = newHeight;
-    m_fontAsset.GlyphData.Resize( 0 );
+    m_fontAsset.Glyphs.Resize( 0 );
     m_atlasBitmap   = std::move( newBitmap );
     m_currentAtlasX = 0;
     m_currentAtlasY = 0;

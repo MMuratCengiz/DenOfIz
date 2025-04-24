@@ -22,18 +22,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct DZ_API GlyphMetrics
+    struct DZ_API GlyphBounds
     {
-        uint32_t CodePoint;
-        uint32_t Width;
-        uint32_t Height;
-        uint32_t BearingX;
-        uint32_t BearingY;
-        uint32_t Advance; // Delete
-        uint32_t AtlasX;
-        uint32_t AtlasY;
+        uint32_t XMin = 0;
+        uint32_t YMin = 0;
+        uint32_t XMax = 0;
+        uint32_t YMax = 0;
     };
-    template class DZ_API InteropArray<GlyphMetrics>;
+    struct DZ_API FontGlyph
+    {
+        uint32_t           CodePoint = 0;
+        GlyphBounds        Bounds    = { };
+        uint32_t           Width     = 0;
+        uint32_t           Height    = 0;
+        uint32_t           BearingX  = 0;
+        uint32_t           BearingY  = 0;
+        uint32_t           AdvanceX  = 0;
+        uint32_t           AdvanceY  = 0;
+        uint32_t           AtlasX    = 0;
+        uint32_t           AtlasY    = 0;
+        uint32_t           Pitch     = 0;
+        InteropArray<Byte> Data;
+    };
+    template class DZ_API InteropArray<FontGlyph>;
 
     struct DZ_API FontMetrics
     {
@@ -54,19 +65,17 @@ namespace DenOfIz
         bool                       AntiAliasing;
         uint32_t                   AtlasWidth;
         uint32_t                   AtlasHeight;
-        uint32_t                   AtlasBitmapNumBytes;
         FontMetrics                Metrics;
-        InteropArray<GlyphMetrics> GlyphData;
+        InteropArray<FontGlyph>    Glyphs;
         InteropArray<UserProperty> UserProperties;
-        AssetDataStream            AtlasBitmap;
+        AssetDataStream            AtlasData;
 
         FontAsset( ) : AssetHeader( 0x544E4F465A44 /*DZFONT*/, Latest, 0 )
         {
-            PixelSize       = 24;
-            AntiAliasing    = true;
-            AtlasWidth      = 512;
-            AtlasHeight     = 512;
-            AtlasBitmapNumBytes = 0;
+            PixelSize    = 24;
+            AntiAliasing = true;
+            AtlasWidth   = 512;
+            AtlasHeight  = 512;
 
             // Initialize metrics with default values
             Metrics.Ascent             = 0;

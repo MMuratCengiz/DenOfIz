@@ -41,7 +41,7 @@ namespace DenOfIz
         InteropArray<AssetUri> CreatedAssets;
     };
 
-    struct DZ_API ImportOptions
+    struct DZ_API ImportDesc
     {
         bool     OverwriteExisting         = true;
         bool     GenerateLODs              = true;
@@ -70,7 +70,7 @@ namespace DenOfIz
         InteropString SourceFilePath;
         InteropString TargetDirectory;
         InteropString AssetNamePrefix;
-        ImportOptions Options;
+        ImportDesc Options;
     };
 
     class DZ_API IAssetImporter

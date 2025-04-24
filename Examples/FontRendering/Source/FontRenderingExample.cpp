@@ -25,10 +25,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <DenOfIzExamples/FontRenderingExample.h>
 
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphics/Assets/Import/FontImporter.h"
+#include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
+
 using namespace DenOfIz;
 
 void FontRenderingExample::Init( )
 {
+    ImportFont( );
+
     m_fontRenderer = std::make_unique<FontRenderer>( m_graphicsApi, m_logicalDevice );
     m_fontRenderer->Initialize( );
 
@@ -142,3 +148,36 @@ void FontRenderingExample::Quit( )
     m_frameSync->WaitIdle( );
     IExample::Quit( );
 }
+
+void FontRenderingExample::ImportFont( ) const
+{
+    if ( !FileIO::FileExists( m_fontAssetPath ) )
+    {
+        LOG( WARNING ) << "Font is missing, running import.";
+        ImportJobDesc importJobDesc;
+        importJobDesc.SourceFilePath  = "Assets/Fonts/Inconsolata-Regular.ttf";
+        importJobDesc.TargetDirectory = "Assets/Fonts/";
+
+        FontImportDesc desc{ }; // Defaults are fine
+        importJobDesc.Options = static_cast<ImportDesc>( FontImportDesc{ } );
+
+        FontImporter   importer( { } );
+        ImporterResult result = importer.Import( importJobDesc );
+        if ( result.ResultCode != ImporterResultCode::Success )
+        {
+            LOG( ERROR ) << "Import failed: " << result.ErrorMessage.Get( );
+        }
+
+        for ( size_t i = 0; i < result.CreatedAssets.NumElements( ); ++i )
+        {
+            AssetUri uri = result.CreatedAssets.GetElement( i );
+            LOG( INFO ) << "Created asset: " << uri.Path.Get( );
+        }
+
+        if ( !FileIO::FileExists( m_fontAssetPath ) )
+        {
+            LOG( FATAL ) << "Import completed but some font is still missing.";
+        }
+    }
+}
+

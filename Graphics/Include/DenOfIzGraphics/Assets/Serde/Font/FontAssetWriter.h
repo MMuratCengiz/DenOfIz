@@ -38,11 +38,13 @@ namespace DenOfIz
         explicit FontAssetWriter( const FontAssetWriterDesc &desc );
         ~FontAssetWriter( );
 
-        void Write( const FontAsset &fontAsset, const InteropArray<Byte> &atlasBitmap );
+        void Write( const FontAsset &fontAsset );
+        void WriteAtlasBitmap( const InteropArray<Byte> &atlasBitmap ) const;
+        void Finalize( ) const;
 
     private:
         void WriteHeader( uint64_t totalNumBytes ) const;
         void WriteMetadata( const FontAsset &fontAsset ) const;
-        void WriteGlyphData( const FontAsset &fontAsset ) const;
+        void WriteGlyph( const FontAsset &fontAsset ) const;
     };
 } // namespace DenOfIz

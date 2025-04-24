@@ -22,12 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Serde/Font/FontAsset.h>
 #include <DenOfIzGraphics/Utilities/Common.h>
 
-typedef struct FT_LibraryRec_ *FT_Library;
-typedef struct FT_FaceRec_    *FT_Face;
-
-typedef struct hb_font_t   hb_font_t;
-typedef struct hb_buffer_t hb_buffer_t;
-typedef struct hb_face_t   hb_face_t;
+#include <freetype/freetype.h>
+#include <hb.h>
 
 namespace msdfgen
 {

@@ -25,6 +25,7 @@ namespace DenOfIz
 {
     class FontRenderingExample final : public IExample
     {
+        const InteropString m_fontAssetPath = "Assets/Fonts/Inconsolata-Regular.dzfont";
         Time                          m_time;
         std::unique_ptr<FontRenderer> m_fontRenderer;
         XMFLOAT4X4                    m_orthoProjection{ };
@@ -45,5 +46,7 @@ namespace DenOfIz
             windowDesc.Title = "Font Rendering Example";
             return windowDesc;
         }
+    private:
+        void ImportFont( ) const;
     };
 } // namespace DenOfIz

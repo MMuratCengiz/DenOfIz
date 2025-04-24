@@ -65,7 +65,7 @@ namespace DenOfIz
         void AddGlyph( const AddGlyphDesc &desc );
 
         [[nodiscard]] bool                HasGlyph( uint32_t codePoint ) const;
-        [[nodiscard]] const GlyphMetrics *GetGlyphMetrics( uint32_t codePoint ) const;
+        [[nodiscard]] const FontGlyph *GetGlyphMetrics( uint32_t codePoint ) const;
 
         void               ClearAtlasBitmap( );
         void               ResizeAtlas( uint32_t newWidth, uint32_t newHeight );

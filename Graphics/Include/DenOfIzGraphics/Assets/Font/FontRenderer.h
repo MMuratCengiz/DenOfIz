@@ -33,7 +33,7 @@ using namespace DirectX;
 
 namespace DenOfIz
 {
-    struct TextRenderDesc
+    struct DZ_API TextRenderDesc
     {
         InteropString Text;
         float         X;
@@ -54,11 +54,12 @@ namespace DenOfIz
     {
         XMFLOAT4X4 Projection;
         XMFLOAT4   TextColor;
-        XMFLOAT4   TextureSizeParams;  // xy: texture dimensions, z: pixel range, w: unused
+        XMFLOAT4   TextureSizeParams; // xy: texture dimensions, z: pixel range, w: unused
     };
 
     class FontRenderer
     {
+
         GraphicsApi     *m_graphicsApi;
         ILogicalDevice  *m_logicalDevice;
         FontManager      m_fontManager;
