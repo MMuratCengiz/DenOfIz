@@ -17,10 +17,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <taskflow/taskflow.hpp>
 #include "RenderGraphInternal.h"
 
 #include <DenOfIzGraphics/Renderer/Sync/ResourceTracking.h>
+#include <taskflow/taskflow.hpp>
 
 /// <summary>
 /// RenderGraph.h manages command list executions and resource transitions. Resources should not be transitioned outside the graph.

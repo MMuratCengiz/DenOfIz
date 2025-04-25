@@ -74,6 +74,7 @@ namespace DenOfIz
         [[nodiscard]] DZ_API int32_t            ReadInt32( );
         [[nodiscard]] DZ_API int64_t            ReadInt64( );
         [[nodiscard]] DZ_API float              ReadFloat( );
+        [[nodiscard]] DZ_API double             ReadDouble( );
         [[nodiscard]] DZ_API InteropString      ReadString( );
         [[nodiscard]] DZ_API UInt16_2           ReadUInt16_2( );
         [[nodiscard]] DZ_API UInt16_3           ReadUInt16_3( );

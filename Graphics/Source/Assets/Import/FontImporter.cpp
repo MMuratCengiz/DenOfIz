@@ -91,7 +91,6 @@ ImporterResult FontImporter::Import( const ImportJobDesc &desc )
     context.FontAsset.AtlasWidth         = context.Options.AtlasWidth;
     context.FontAsset.AtlasHeight        = context.Options.AtlasHeight;
     context.FontAsset.AtlasData.NumBytes = context.Options.AtlasWidth * context.Options.AtlasHeight * 3;
-    context.FontAsset.FontPath           = context.SourceFilePath.Get( );
 
     if ( const ImporterResultCode result = ImportFontInternal( context ); result != ImporterResultCode::Success )
     {
@@ -124,7 +123,11 @@ ImporterResultCode FontImporter::ImportFontInternal( ImportContext &context )
 {
     FT_Face           face;
     const std::string resolvedPath = PathResolver::ResolvePath( context.SourceFilePath.Get( ) );
-    FT_Error          error        = FT_New_Face( m_ftLibrary, resolvedPath.c_str( ), 0, &face );
+
+    context.FontAsset.Data         = FileIO::ReadFile( InteropString( resolvedPath.c_str( ) ) );
+    context.FontAsset.DataNumBytes = context.FontAsset.Data.NumElements( );
+
+    FT_Error error = FT_New_Face( m_ftLibrary, resolvedPath.c_str( ), 0, &face );
 
     if ( error )
     {
@@ -220,8 +223,9 @@ bool FontImporter::LoadGlyph( ImportContext &context, const FT_Face face, const 
         return true;
     }
 
-    const std::string    resolvedPath = PathResolver::ResolvePath( context.FontAsset.FontPath.Get( ) );
-    msdfgen::FontHandle *msdfFont     = msdfgen::loadFont( m_msdfFtHandle, resolvedPath.c_str( ) );
+    const Byte          *data         = context.FontAsset.Data.Data( );
+    const uint64_t       dataNumBytes = context.FontAsset.DataNumBytes;
+    msdfgen::FontHandle *msdfFont     = msdfgen::loadFontData( m_msdfFtHandle, data, dataNumBytes );
     if ( !msdfFont )
     {
         LOG( ERROR ) << "Failed to load MSDF font for glyph generation";
@@ -288,7 +292,7 @@ bool FontImporter::GenerateMsdfForGlyph( FontGlyph &glyphDesc, msdfgen::FontHand
 
     msdfgen::Bitmap<float, 3> msdf( pixelSize, pixelSize );
 
-    msdfgen::FontMetrics metrics;
+    msdfgen::FontMetrics metrics{ };
     msdfgen::getFontMetrics( metrics, msdfFont );
 
     const auto                       bounds = shape.getBounds( );

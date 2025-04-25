@@ -153,6 +153,13 @@ void BinaryWriter::WriteFloat( const float value ) const
     WriteUInt32( intValue );
 }
 
+void BinaryWriter::WriteDouble( const double value ) const
+{
+    uint64_t intValue;
+    std::memcpy( &intValue, &value, sizeof( double ) );
+    WriteUInt64( intValue );
+}
+
 void BinaryWriter::WriteString( const InteropString &value ) const
 {
     const char *str    = value.Get( );

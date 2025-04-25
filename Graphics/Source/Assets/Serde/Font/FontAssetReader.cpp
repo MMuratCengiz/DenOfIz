@@ -46,7 +46,8 @@ FontAsset FontAssetReader::Read( )
     m_fontAsset.NumBytes = m_reader->ReadUInt64( );
     m_fontAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
 
-    m_fontAsset.FontPath     = m_reader->ReadString( );
+    m_fontAsset.DataNumBytes = m_reader->ReadUInt64( );
+    m_fontAsset.Data         = m_reader->ReadBytes( m_fontAsset.DataNumBytes );
     m_fontAsset.PixelSize    = m_reader->ReadUInt32( );
     m_fontAsset.AntiAliasing = m_reader->ReadByte( ) == 1;
 
@@ -67,10 +68,10 @@ FontAsset FontAssetReader::Read( )
     {
         FontGlyph &glyph  = m_fontAsset.Glyphs.GetElement( i );
         glyph.CodePoint   = m_reader->ReadUInt32( );
-        glyph.Bounds.XMin = m_reader->ReadUInt32( );
-        glyph.Bounds.YMin = m_reader->ReadUInt32( );
-        glyph.Bounds.XMax = m_reader->ReadUInt32( );
-        glyph.Bounds.YMax = m_reader->ReadUInt32( );
+        glyph.Bounds.XMin = m_reader->ReadDouble( );
+        glyph.Bounds.YMin = m_reader->ReadDouble( );
+        glyph.Bounds.XMax = m_reader->ReadDouble( );
+        glyph.Bounds.YMax = m_reader->ReadDouble( );
         glyph.Width       = m_reader->ReadUInt32( );
         glyph.Height      = m_reader->ReadUInt32( );
         glyph.BearingX    = m_reader->ReadUInt32( );

@@ -24,10 +24,10 @@ namespace DenOfIz
 {
     struct DZ_API GlyphBounds
     {
-        uint32_t XMin = 0;
-        uint32_t YMin = 0;
-        uint32_t XMax = 0;
-        uint32_t YMax = 0;
+        double XMin = 0;
+        double YMin = 0;
+        double XMax = 0;
+        double YMax = 0;
     };
     struct DZ_API FontGlyph
     {
@@ -60,7 +60,8 @@ namespace DenOfIz
     {
         static constexpr uint32_t Latest = 1;
 
-        InteropString              FontPath;
+        uint64_t                   DataNumBytes = 0;
+        InteropArray<Byte>         Data;
         uint32_t                   PixelSize;
         bool                       AntiAliasing;
         uint32_t                   AtlasWidth;

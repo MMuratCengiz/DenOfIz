@@ -20,6 +20,45 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-Font::Font( FT_Library library, const FontDesc &desc )
+Font::Font( const FT_Library library, const FontDesc &desc ) : m_ftLibrary( library ), m_desc( desc )
 {
+    const Byte    *data         = desc.FontAsset->Data.Data( );
+    const uint64_t dataNumBytes = desc.FontAsset->DataNumBytes;
+    if ( FT_New_Memory_Face( m_ftLibrary, data, dataNumBytes, 0, &m_face ) )
+    {
+        LOG( ERROR ) << "Failed to load font: " << desc.FontAsset->Uri.Path.Get( );
+    }
+
+    for ( int i = 0; i < m_desc.FontAsset->Glyphs.NumElements( ); i++ )
+    {
+        const FontGlyph &glyph      = m_desc.FontAsset->Glyphs.GetElement( i );
+        m_glyphs[ glyph.CodePoint ] = glyph;
+    }
+}
+
+FT_Face Font::FTFace( ) const
+{
+    return m_face;
+}
+
+FontAsset *Font::Asset( ) const
+{
+    return m_desc.FontAsset;
+}
+
+Font::~Font( )
+{
+    if ( m_face )
+    {
+        FT_Done_Face( m_face );
+    }
+}
+
+FontGlyph *Font::GetGlyph( const uint32_t codePoint )
+{
+    if ( !m_glyphs.contains( codePoint ) )
+    {
+        return nullptr;
+    }
+    return &m_glyphs[ codePoint ];
 }

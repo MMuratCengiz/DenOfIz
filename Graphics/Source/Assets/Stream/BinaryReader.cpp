@@ -199,6 +199,19 @@ float BinaryReader::ReadFloat( )
     return result;
 }
 
+double BinaryReader::ReadDouble( )
+{
+    if ( !IsStreamValid( ) || !TrackReadBytes( 1 ) )
+    {
+        return 0.0f;
+    }
+
+    const uint64_t intValue = ReadUInt64( );
+    double         result;
+    std::memcpy( &result, &intValue, sizeof( double ) );
+    return result;
+}
+
 InteropString BinaryReader::ReadString( )
 {
     const uint32_t length = ReadUInt32( );

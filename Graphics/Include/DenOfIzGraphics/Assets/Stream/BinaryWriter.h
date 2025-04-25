@@ -54,6 +54,7 @@ namespace DenOfIz
         DZ_API void                   WriteInt32( int32_t value ) const;
         DZ_API void                   WriteInt64( int64_t value ) const;
         DZ_API void                   WriteFloat( float value ) const;
+        DZ_API void                   WriteDouble( double value ) const;
         DZ_API void                   WriteString( const InteropString &value ) const;
         DZ_API void                   WriteUInt16_2( const UInt16_2 &value ) const;
         DZ_API void                   WriteUInt16_3( const UInt16_3 &value ) const;

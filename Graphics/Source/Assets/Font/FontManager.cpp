@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Font/FontManager.h>
 #include <DenOfIzGraphics/Utilities/Common_Asserts.h>
 #include <codecvt>
-#include <ft2build.h>
 #include <locale>
 #include <ranges>
 #include <unordered_set>
@@ -31,6 +30,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // MSDF generation includes
 #include <msdfgen-ext.h>
 #include <msdfgen.h>
+
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 
 using namespace DenOfIz;
 
@@ -79,7 +80,8 @@ FontCache *FontManager::LoadFont( const InteropString &fontPath, const uint32_t 
     }
 
     const auto fontAsset    = std::make_shared<FontAsset>( );
-    fontAsset->FontPath     = path.c_str( );
+    fontAsset->Data         = FileIO::ReadFile( path.c_str( ) );
+    fontAsset->DataNumBytes = fontAsset->Data.NumElements( );
     fontAsset->PixelSize    = pixelSize;
     fontAsset->AntiAliasing = antiAliasing;
 
@@ -161,9 +163,10 @@ bool FontManager::EnsureGlyphsLoaded( FontCache *fontCache, const InteropString 
     bool allLoaded         = true;
     bool anyNewGlyphLoaded = false;
 
-    FT_Face           face;
-    const std::string resolvedPath = PathResolver::ResolvePath( fontCache->GetFontAsset( ).FontPath.Get( ) );
-    FT_Error          error        = FT_New_Face( m_ftLibrary, resolvedPath.c_str( ), 0, &face );
+    FT_Face        face;
+    const Byte    *data         = fontCache->GetFontAsset( ).Data.Data( );
+    const uint64_t dataNumBytes = fontCache->GetFontAsset( ).DataNumBytes;
+    FT_Error       error        = FT_New_Memory_Face( m_ftLibrary, data, dataNumBytes, 0, &face );
 
     if ( error )
     {
@@ -231,8 +234,9 @@ bool FontManager::LoadGlyph( FontCache *fontCache, const uint32_t codePoint, con
     addGlyphDesc.BearingY  = slot->bitmap_top;
     addGlyphDesc.Advance   = slot->advance.x >> 6; // Convert from 26.6 fixed-point format
 
-    const std::string    resolvedPath = PathResolver::ResolvePath( fontCache->GetFontAsset( ).FontPath.Get( ) );
-    msdfgen::FontHandle *msdfFont     = msdfgen::loadFont( m_msdfFtHandle, resolvedPath.c_str( ) );
+    const Byte          *data         = fontCache->GetFontAsset( ).Data.Data( );
+    const uint64_t       dataNumBytes = fontCache->GetFontAsset( ).DataNumBytes;
+    msdfgen::FontHandle *msdfFont     = msdfgen::loadFontData( m_msdfFtHandle, data, dataNumBytes );
     if ( !msdfFont )
     {
         LOG( ERROR ) << "Failed to load MSDF font for glyph generation";
@@ -423,9 +427,11 @@ TextLayout FontManager::ShapeText( FontCache *fontCache, const InteropString &in
     const std::string    utf8Text  = interopText.Get( );
     const std::u32string utf32Text = Utf8ToUtf32( interopText.Get( ) );
 
-    FT_Face           face;
-    const std::string resolvedPath = PathResolver::ResolvePath( fontCache->GetFontAsset( ).FontPath.Get( ) );
-    FT_Error          error        = FT_New_Face( m_ftLibrary, resolvedPath.c_str( ), 0, &face );
+    FT_Face face;
+
+    const Byte    *data         = fontCache->GetFontAsset( ).Data.Data( );
+    const uint64_t dataNumBytes = fontCache->GetFontAsset( ).DataNumBytes;
+    FT_Error       error        = FT_New_Memory_Face( m_ftLibrary, data, dataNumBytes, 0, &face );
 
     if ( error )
     {

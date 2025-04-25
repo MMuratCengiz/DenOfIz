@@ -69,7 +69,8 @@ void FontAssetWriter::WriteHeader( const uint64_t totalNumBytes ) const
 
 void FontAssetWriter::WriteMetadata( const FontAsset &fontAsset ) const
 {
-    m_writer->WriteString( fontAsset.FontPath );
+    m_writer->WriteUInt64( fontAsset.DataNumBytes );
+    m_writer->WriteBytes( fontAsset.Data );
 
     m_writer->WriteUInt32( fontAsset.PixelSize );
     m_writer->WriteByte( fontAsset.AntiAliasing ? 1 : 0 );
@@ -92,10 +93,10 @@ void FontAssetWriter::WriteGlyph( const FontAsset &fontAsset ) const
     {
         const FontGlyph &glyph = fontAsset.Glyphs.GetElement( i );
         m_writer->WriteUInt32( glyph.CodePoint );
-        m_writer->WriteUInt32( glyph.Bounds.XMin );
-        m_writer->WriteUInt32( glyph.Bounds.YMin );
-        m_writer->WriteUInt32( glyph.Bounds.XMax );
-        m_writer->WriteUInt32( glyph.Bounds.YMax );
+        m_writer->WriteDouble( glyph.Bounds.XMin );
+        m_writer->WriteDouble( glyph.Bounds.YMin );
+        m_writer->WriteDouble( glyph.Bounds.XMax );
+        m_writer->WriteDouble( glyph.Bounds.YMax );
         m_writer->WriteUInt32( glyph.Width );
         m_writer->WriteUInt32( glyph.Height );
         m_writer->WriteUInt32( glyph.BearingX );

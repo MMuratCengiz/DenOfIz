@@ -20,6 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Utilities/Interop.h>
 #include <freetype/freetype.h>
+#include <unordered_map>
+
+#include "DenOfIzGraphics/Assets/Serde/Font/FontAsset.h"
 
 namespace DenOfIz
 {
@@ -27,18 +30,26 @@ namespace DenOfIz
     struct FontDesc
     {
         // Specify either FontPath or FontData
-        InteropString      FontPath;
-        InteropArray<Byte> FontData;
+        FontAsset *FontAsset;
     };
 
+    // This class is generally not DZ_API friendly due to heavily relying on 3rd party libraries
     class Font
     {
         FT_Library m_ftLibrary{ };
+        FT_Face    m_face{ };
+        FontDesc   m_desc;
+        std::unordered_map<uint32_t, FontGlyph> m_glyphs;
 
         friend class FontLibrary;
         friend class TextLayout;
 
         Font( FT_Library library, const FontDesc &desc );
+        [[nodiscard]] FT_Face FTFace( ) const;
+
     public:
+        [[nodiscard]] FontAsset *Asset( ) const;
+        ~Font( );
+        FontGlyph *GetGlyph( uint32_t codePoint );
     };
 } // namespace DenOfIz
