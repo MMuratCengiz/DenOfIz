@@ -36,8 +36,8 @@ FontAsset FontAssetReader::Read( )
         return m_fontAsset;
     }
     m_streamStartOffset = m_reader->Position( );
-    m_fontAsset.Magic   = m_reader->ReadUInt32( );
-    if ( m_fontAsset.Magic != 0x544E4F465A44 ) // DZFONT
+    m_fontAsset.Magic   = m_reader->ReadUInt64( );
+    if ( m_fontAsset.Magic != FontAsset{ }.Magic ) // DZFONT
     {
         LOG( ERROR ) << "Invalid font asset magic word";
         return m_fontAsset;
@@ -48,7 +48,7 @@ FontAsset FontAssetReader::Read( )
 
     m_fontAsset.DataNumBytes = m_reader->ReadUInt64( );
     m_fontAsset.Data         = m_reader->ReadBytes( m_fontAsset.DataNumBytes );
-    m_fontAsset.PixelSize    = m_reader->ReadUInt32( );
+    m_fontAsset.InitialFontSize    = m_reader->ReadUInt32( );
     m_fontAsset.AntiAliasing = m_reader->ReadByte( ) == 1;
 
     m_fontAsset.AtlasWidth  = m_reader->ReadUInt32( );
@@ -76,22 +76,23 @@ FontAsset FontAssetReader::Read( )
         glyph.Height      = m_reader->ReadUInt32( );
         glyph.BearingX    = m_reader->ReadUInt32( );
         glyph.BearingY    = m_reader->ReadUInt32( );
-        glyph.AdvanceX    = m_reader->ReadUInt32( );
-        glyph.AdvanceY    = m_reader->ReadUInt32( );
+        glyph.XAdvance    = m_reader->ReadUInt32( );
+        glyph.YAdvance    = m_reader->ReadUInt32( );
         glyph.AtlasX      = m_reader->ReadUInt32( );
         glyph.AtlasY      = m_reader->ReadUInt32( );
         glyph.Pitch       = m_reader->ReadUInt32( );
         glyph.Data        = m_reader->ReadBytes( glyph.Pitch * glyph.Height );
     }
 
-    m_fontAsset.UserProperties = AssetReaderHelpers::ReadUserProperties( m_reader );
-    m_fontAsset.AtlasData      = AssetReaderHelpers::ReadAssetDataStream( m_reader );
+    m_fontAsset.UserProperties    = AssetReaderHelpers::ReadUserProperties( m_reader );
+    m_fontAsset.NumAtlasDataBytes = m_reader->ReadUInt64( );
+    m_fontAsset.AtlasData         = m_reader->ReadBytes( m_fontAsset.NumAtlasDataBytes );
 
     m_assetRead = true;
     return m_fontAsset;
 }
 
-void FontAssetReader::LoadAtlasIntoGpuTexture( const LoadAtlasIntoGpuTextureDesc &desc ) const
+void FontAssetReader::LoadAtlasIntoGpuTexture( const FontAsset& fontAsset, const LoadAtlasIntoGpuTextureDesc &desc )
 {
     if ( !desc.CommandList || !desc.Texture )
     {
@@ -99,31 +100,23 @@ void FontAssetReader::LoadAtlasIntoGpuTexture( const LoadAtlasIntoGpuTextureDesc
         return;
     }
 
-    constexpr uint32_t batchSize = 1024;
-    InteropArray<Byte> buffer( batchSize );
-
-    const auto stagingBuffer  = desc.StagingBuffer;
-    uint64_t   remainingBytes = m_fontAsset.AtlasData.NumBytes;
-    auto       mappedMemory   = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
-
-    m_reader->Seek( m_fontAsset.AtlasData.Offset );
-    while ( remainingBytes > 0 )
+    std::vector<uint8_t> rgbaData( fontAsset.AtlasWidth * fontAsset.AtlasHeight * 4, 255 );
+    for ( size_t i = 0; i < fontAsset.AtlasWidth * fontAsset.AtlasHeight; i++ )
     {
-        const uint32_t bytesToRead = static_cast<uint32_t>( std::min( static_cast<uint64_t>( batchSize ), remainingBytes ) );
-        const uint32_t bytesRead   = m_reader->Read( buffer, 0, bytesToRead );
-
-        if ( bytesRead != bytesToRead )
+        const size_t srcRgbIndex = i * 3;
+        const size_t dstRgbIndex = i * 4;
+        if ( srcRgbIndex + 2 < fontAsset.AtlasData.NumElements( ) )
         {
-            LOG( ERROR ) << "Failed to read expected number of bytes. Expected: " << bytesToRead << ", Read: " << bytesRead;
-            break;
+            rgbaData[ dstRgbIndex ]     = fontAsset.AtlasData.GetElement(  srcRgbIndex );     // R
+            rgbaData[ dstRgbIndex + 1 ] = fontAsset.AtlasData.GetElement(  srcRgbIndex + 1 ); // G
+            rgbaData[ dstRgbIndex + 2 ] = fontAsset.AtlasData.GetElement(  srcRgbIndex + 2 ); // B
+            rgbaData[ dstRgbIndex + 3 ] = 255;                            // A (fully opaque)
         }
-
-        memcpy( mappedMemory, buffer.Data( ), bytesRead );
-
-        mappedMemory += bytesRead;
-        remainingBytes -= bytesRead;
     }
 
+    const auto stagingBuffer = desc.StagingBuffer;
+    const auto mappedMemory  = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
+    memcpy( mappedMemory, rgbaData.data( ), rgbaData.size( ) );
     stagingBuffer->UnmapMemory( );
 
     CopyBufferToTextureDesc copyDesc{ };
@@ -132,32 +125,8 @@ void FontAssetReader::LoadAtlasIntoGpuTexture( const LoadAtlasIntoGpuTextureDesc
     copyDesc.Format     = desc.Texture->GetFormat( );
     copyDesc.MipLevel   = 0;
     copyDesc.ArrayLayer = 0;
-    copyDesc.RowPitch   = m_fontAsset.AtlasWidth;
-    copyDesc.NumRows    = m_fontAsset.AtlasHeight;
+    copyDesc.RowPitch   = fontAsset.AtlasWidth;
+    copyDesc.NumRows    = fontAsset.AtlasHeight;
 
     desc.CommandList->CopyBufferToTexture( copyDesc );
-}
-
-InteropArray<Byte> FontAssetReader::ReadAtlasData( )
-{
-    if ( !m_assetRead )
-    {
-        Read( );
-    }
-
-    m_reader->Seek( m_streamStartOffset + m_fontAsset.AtlasData.Offset );
-    InteropArray<Byte> atlasBitmap;
-    atlasBitmap.Resize( m_fontAsset.AtlasData.NumBytes );
-
-    if ( m_fontAsset.AtlasData.NumBytes > 0 )
-    {
-        return m_reader->ReadBytes( m_fontAsset.AtlasData.NumBytes );
-    }
-
-    return { };
-}
-
-uint64_t FontAssetReader::AtlasBitmapNumBytes( ) const
-{
-    return m_fontAsset.AtlasData.NumBytes;
 }

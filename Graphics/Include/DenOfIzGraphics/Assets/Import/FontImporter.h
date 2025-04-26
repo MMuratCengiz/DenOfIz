@@ -30,10 +30,10 @@ namespace DenOfIz
 {
     struct DZ_API FontImportDesc : ImportDesc
     {
-        uint32_t PixelSize    = 24;
-        bool     AntiAliasing = true;
-        uint32_t AtlasWidth   = 512;
-        uint32_t AtlasHeight  = 512;
+        uint32_t InitialFontSize = 36;
+        bool     AntiAliasing    = true;
+        uint32_t AtlasWidth      = 512;
+        uint32_t AtlasHeight     = 512;
 
         FontImportDesc( ) = default;
         explicit FontImportDesc( const ImportDesc &base ) : ImportDesc( base )
@@ -55,7 +55,6 @@ namespace DenOfIz
         const FontImporterDesc   m_desc;
         FT_Library               m_ftLibrary;
         msdfgen::FreetypeHandle *m_msdfFtHandle   = nullptr;
-        float                    m_msdfPixelRange = 4.0f;
 
         struct Rect
         {
@@ -74,8 +73,7 @@ namespace DenOfIz
             ImporterResult Result;
             InteropString  ErrorMessage;
 
-            FontAsset          FontAsset;
-            InteropArray<Byte> AtlasBitmap;
+            FontAsset FontAsset;
 
             uint32_t CurrentAtlasX = 0;
             uint32_t CurrentAtlasY = 0;
@@ -83,6 +81,7 @@ namespace DenOfIz
         };
 
     public:
+
         explicit FontImporter( FontImporterDesc desc );
         ~FontImporter( ) override;
 
@@ -98,9 +97,9 @@ namespace DenOfIz
         bool                 GenerateMsdfForGlyph( FontGlyph &glyphDesc, msdfgen::FontHandle *msdfFont, uint32_t codePoint, uint32_t pixelSize ) const;
         Rect                 AllocateSpace( ImportContext &context, uint32_t width, uint32_t height );
         void                 CopyMsdfDataToAtlas( ImportContext &context, const FontGlyph &glyphDesc, const Rect &rect );
-        void                 WriteFontAsset( const ImportContext &context, AssetUri &outAssetUri );
+        void                 WriteFontAsset( const ImportContext &context, AssetUri &outAssetUri ) const;
         void                 ExtractFontMetrics( ImportContext &context, FT_Face face );
-        InteropString        CreateAssetFileName( const InteropString &prefix, const InteropString &name );
+        InteropString        CreateAssetFileName( const InteropString &prefix, const InteropString &name ) const;
         static InteropString GetAssetNameFromFilePath( const InteropString &filePath );
         static InteropString SanitizeAssetName( const InteropString &name );
     };

@@ -23,6 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <unordered_set>
 
+#include "DenOfIzGraphics/Assets/Font/Font.h"
+
 using namespace DenOfIz;
 
 FontImporter::FontImporter( FontImporterDesc desc ) : m_desc( std::move( desc ) )
@@ -83,14 +85,15 @@ ImporterResult FontImporter::Import( const ImportJobDesc &desc )
     context.Result.ResultCode = ImporterResultCode::Success;
 
     // For MSDF, we need RGB data (3 bytes per pixel) instead of grayscale
-    context.AtlasBitmap.Resize( context.Options.AtlasWidth * context.Options.AtlasHeight * 3 );
-    memset( context.AtlasBitmap.Data( ), 0, context.AtlasBitmap.NumElements( ) );
+    context.FontAsset.AtlasData.Resize( context.Options.AtlasWidth * context.Options.AtlasHeight * 3 );
+    memset( context.FontAsset.AtlasData.Data( ), 0, context.FontAsset.AtlasData.NumElements( ) );
 
-    context.FontAsset.PixelSize          = context.Options.PixelSize;
-    context.FontAsset.AntiAliasing       = context.Options.AntiAliasing;
-    context.FontAsset.AtlasWidth         = context.Options.AtlasWidth;
-    context.FontAsset.AtlasHeight        = context.Options.AtlasHeight;
-    context.FontAsset.AtlasData.NumBytes = context.Options.AtlasWidth * context.Options.AtlasHeight * 3;
+    context.FontAsset.InitialFontSize   = context.Options.InitialFontSize;
+    context.FontAsset.AntiAliasing      = context.Options.AntiAliasing;
+    context.FontAsset.AtlasWidth        = context.Options.AtlasWidth;
+    context.FontAsset.AtlasHeight       = context.Options.AtlasHeight;
+    context.FontAsset.NumAtlasDataBytes = context.Options.AtlasWidth * context.Options.AtlasHeight * 3;
+    context.FontAsset.AtlasData.Resize( context.FontAsset.NumAtlasDataBytes );
 
     if ( const ImporterResultCode result = ImportFontInternal( context ); result != ImporterResultCode::Success )
     {
@@ -135,7 +138,7 @@ ImporterResultCode FontImporter::ImportFontInternal( ImportContext &context )
         return ImporterResultCode::InvalidParameters;
     }
 
-    error = FT_Set_Pixel_Sizes( face, 0, context.Options.PixelSize );
+    error = FT_Set_Char_Size( face, context.Options.InitialFontSize * 64, context.Options.InitialFontSize * 64, 0, 0 );
     if ( error )
     {
         FT_Done_Face( face );
@@ -208,18 +211,18 @@ bool FontImporter::LoadGlyph( ImportContext &context, const FT_Face face, const 
     // For empty glyphs like spaces
     if ( slot->metrics.width == 0 || slot->metrics.height == 0 )
     {
-        FontGlyph glyph;
-        glyph.CodePoint = codePoint;
-        glyph.Width     = 0;
-        glyph.Height    = 0;
-        glyph.BearingX  = slot->bitmap_left;
-        glyph.BearingY  = slot->bitmap_top;
-        glyph.AdvanceX  = slot->advance.x >> 6;
-        glyph.AdvanceY  = slot->advance.y >> 6;
-        glyph.AtlasX    = 0;
-        glyph.AtlasY    = 0;
+        FontGlyph glyphDesc;
+        glyphDesc.CodePoint = codePoint;
+        glyphDesc.Width     = 0;
+        glyphDesc.Height    = 0;
+        glyphDesc.BearingX  = slot->metrics.horiBearingX >> 6;
+        glyphDesc.BearingY  = slot->metrics.horiBearingY >> 6;
+        glyphDesc.XAdvance  = slot->advance.x >> 6;
+        glyphDesc.YAdvance  = slot->advance.y >> 6;
+        glyphDesc.AtlasX    = 0;
+        glyphDesc.AtlasY    = 0;
 
-        context.FontAsset.Glyphs.AddElement( glyph );
+        context.FontAsset.Glyphs.AddElement( glyphDesc );
         return true;
     }
 
@@ -234,12 +237,14 @@ bool FontImporter::LoadGlyph( ImportContext &context, const FT_Face face, const 
 
     FontGlyph glyphDesc;
     glyphDesc.CodePoint = codePoint;
-    glyphDesc.BearingX  = slot->bitmap_left;
-    glyphDesc.BearingY  = slot->bitmap_top;
-    glyphDesc.AdvanceX  = slot->advance.x >> 6;
-    glyphDesc.AdvanceY  = slot->advance.y >> 6;
+    glyphDesc.BearingX  = slot->metrics.horiBearingX >> 6;
+    glyphDesc.BearingY  = slot->metrics.horiBearingY >> 6;
+    glyphDesc.XAdvance  = slot->advance.x >> 6;
+    glyphDesc.YAdvance  = slot->advance.y >> 6;
+    glyphDesc.Width     = slot->metrics.width >> 6;
+    glyphDesc.Height    = slot->metrics.height >> 6;
 
-    const bool success = GenerateMsdfForGlyph( glyphDesc, msdfFont, codePoint, context.Options.PixelSize );
+    const bool success = GenerateMsdfForGlyph( glyphDesc, msdfFont, codePoint, context.Options.InitialFontSize );
     msdfgen::destroyFont( msdfFont );
 
     if ( !success )
@@ -269,7 +274,6 @@ bool FontImporter::GenerateMsdfForGlyph( FontGlyph &glyphDesc, msdfgen::FontHand
 {
     msdfgen::Shape shape;
     double         advance = 0.0;
-
     if ( !msdfgen::loadGlyph( shape, msdfFont, codePoint, msdfgen::FONT_SCALING_EM_NORMALIZED, &advance ) )
     {
         LOG( ERROR ) << "Failed to load glyph shape for MSDF generation: " << codePoint;
@@ -297,7 +301,7 @@ bool FontImporter::GenerateMsdfForGlyph( FontGlyph &glyphDesc, msdfgen::FontHand
 
     const auto                       bounds = shape.getBounds( );
     const msdfgen::Projection        projection( pixelSize, msdfgen::Vector2( -bounds.l, -bounds.b ) );
-    const msdfgen::Range             range( m_msdfPixelRange / pixelSize );
+    const msdfgen::Range             range( Font::MsdfPixelRange / pixelSize );
     const msdfgen::SDFTransformation transform( projection, range );
 
     msdfgen::MSDFGeneratorConfig config;
@@ -312,8 +316,8 @@ bool FontImporter::GenerateMsdfForGlyph( FontGlyph &glyphDesc, msdfgen::FontHand
     glyphDesc.Width       = width;
     glyphDesc.Height      = height;
     glyphDesc.Bounds.XMin = bounds.l;
-    glyphDesc.Bounds.YMin = bounds.b;
     glyphDesc.Bounds.XMax = bounds.r;
+    glyphDesc.Bounds.YMin = bounds.b;
     glyphDesc.Bounds.YMax = bounds.t;
 
     InteropArray<Byte> msdfData( width * height * 3 );
@@ -351,8 +355,8 @@ FontImporter::Rect FontImporter::AllocateSpace( ImportContext &context, const ui
     if ( context.CurrentAtlasY + height > context.FontAsset.AtlasHeight )
     {
         context.FontAsset.AtlasHeight *= 2;
-        context.AtlasBitmap.Resize( context.FontAsset.AtlasWidth * context.FontAsset.AtlasHeight * 3 ); // 3 bytes per pixel for RGB
-        memset( context.AtlasBitmap.Data( ), 0, context.AtlasBitmap.NumElements( ) );
+        context.FontAsset.AtlasData.Resize( context.FontAsset.AtlasWidth * context.FontAsset.AtlasHeight * 3 ); // 3 bytes per pixel for RGB
+        memset( context.FontAsset.AtlasData.Data( ), 0, context.FontAsset.AtlasData.NumElements( ) );
         context.FontAsset.Glyphs.Resize( 0 );
         context.CurrentAtlasX = 0;
         context.CurrentAtlasY = 0;
@@ -380,14 +384,15 @@ void FontImporter::CopyMsdfDataToAtlas( ImportContext &context, const FontGlyph 
         return;
     }
 
+    auto &atlasData = context.FontAsset.AtlasData;
     for ( uint32_t y = 0; y < rect.Height; y++ )
     {
         for ( uint32_t x = 0; x < rect.Width; x++ )
         {
             const uint32_t atlasOffset = ( ( rect.Y + y ) * context.FontAsset.AtlasWidth + ( rect.X + x ) ) * 3;
-            if ( atlasOffset + 2 >= context.AtlasBitmap.NumElements( ) )
+            if ( atlasOffset + 2 >= atlasData.NumElements( ) )
             {
-                LOG( ERROR ) << "Atlas offset out of bounds: " << atlasOffset << " >= " << context.AtlasBitmap.NumElements( );
+                LOG( ERROR ) << "Atlas offset out of bounds: " << atlasOffset << " >= " << atlasData.NumElements( );
                 continue;
             }
 
@@ -398,14 +403,14 @@ void FontImporter::CopyMsdfDataToAtlas( ImportContext &context, const FontGlyph 
                 continue;
             }
 
-            context.AtlasBitmap.SetElement( atlasOffset, glyphDesc.Data.GetElement( srcOffset ) );         // R
-            context.AtlasBitmap.SetElement( atlasOffset + 1, glyphDesc.Data.GetElement( srcOffset + 1 ) ); // G
-            context.AtlasBitmap.SetElement( atlasOffset + 2, glyphDesc.Data.GetElement( srcOffset + 2 ) ); // B
+            atlasData.SetElement( atlasOffset, glyphDesc.Data.GetElement( srcOffset ) );         // R
+            atlasData.SetElement( atlasOffset + 1, glyphDesc.Data.GetElement( srcOffset + 1 ) ); // G
+            atlasData.SetElement( atlasOffset + 2, glyphDesc.Data.GetElement( srcOffset + 2 ) ); // B
         }
     }
 }
 
-void FontImporter::WriteFontAsset( const ImportContext &context, AssetUri &outAssetUri )
+void FontImporter::WriteFontAsset( const ImportContext &context, AssetUri &outAssetUri ) const
 {
     const InteropString assetName         = GetAssetNameFromFilePath( context.SourceFilePath );
     const InteropString sanitizedName     = SanitizeAssetName( assetName );
@@ -427,7 +432,6 @@ void FontImporter::WriteFontAsset( const ImportContext &context, AssetUri &outAs
 
     FontAsset msdfFontAsset = context.FontAsset;
     fontWriter.Write( msdfFontAsset );
-    fontWriter.WriteAtlasBitmap( context.AtlasBitmap );
     fontWriter.Finalize( );
 
     FileIO::WriteFile( outputPath.c_str( ), container.GetData( ) );
@@ -435,7 +439,7 @@ void FontImporter::WriteFontAsset( const ImportContext &context, AssetUri &outAs
     outAssetUri.Path = outputPath.c_str( );
 }
 
-InteropString FontImporter::CreateAssetFileName( const InteropString &prefix, const InteropString &name )
+InteropString FontImporter::CreateAssetFileName( const InteropString &prefix, const InteropString &name ) const
 {
     std::string result;
 

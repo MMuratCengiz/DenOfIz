@@ -128,31 +128,26 @@ void FontRenderer::Initialize( )
     m_resourceBindGroup->BeginUpdate( )->Cbv( 0, m_uniformBuffer.get( ) )->Srv( 0, m_fontAtlasTexture.get( ) )->Sampler( 0, m_fontSampler.get( ) )->EndUpdate( );
 }
 
-FontCache *FontRenderer::LoadFont( const InteropString &fontPath, const uint32_t pixelSize )
+void FontRenderer::SetFont( Font *font )
 {
-    const std::string path     = fontPath.Get( );
-    const std::string cacheKey = path + "_" + std::to_string( pixelSize );
-    if ( const auto it = m_loadedFonts.find( cacheKey ); it != m_loadedFonts.end( ) )
-    {
-        return it->second;
-    }
+    m_currentFont = font;
 
-    const auto fontCache = m_fontManager.LoadFont( fontPath, pixelSize );
-    if ( fontCache )
-    {
-        m_loadedFonts[ cacheKey ] = fontCache;
-        m_atlasNeedsUpdate        = true;
-    }
-
-    return fontCache;
-}
-
-void FontRenderer::SetFont( const InteropString &fontPath, const uint32_t pixelSize )
-{
-    m_currentFont = LoadFont( fontPath, pixelSize );
     if ( m_currentFont )
     {
         m_atlasNeedsUpdate = true;
+
+        if ( !m_textLayout )
+        {
+            TextLayoutDesc textLayoutDesc{ };
+            textLayoutDesc.Font = m_currentFont;
+            m_textLayout        = std::make_unique<TextLayout>( textLayoutDesc );
+        }
+        else
+        {
+            TextLayoutDesc textLayoutDesc{ };
+            textLayoutDesc.Font = m_currentFont;
+            m_textLayout        = std::make_unique<TextLayout>( textLayoutDesc );
+        }
     }
 }
 
@@ -163,7 +158,7 @@ void FontRenderer::SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix )
 
 void FontRenderer::BeginBatch( )
 {
-    m_vertexData.Clear( );
+    m_glyphVertices.Clear( );
     m_indexData.Clear( );
     m_currentVertexCount = 0;
     m_currentIndexCount  = 0;
@@ -171,39 +166,43 @@ void FontRenderer::BeginBatch( )
 
 void FontRenderer::AddText( const TextRenderDesc &params )
 {
-    if ( !m_currentFont || params.Text.NumChars( ) == 0 )
+    if ( !m_currentFont || !m_textLayout || params.Text.NumChars( ) == 0 )
     {
         return;
     }
 
-    TextRenderDesc           modifiedParams = params;
-    GenerateTextVerticesDesc generateTextDesc{ };
-    generateTextDesc.Layout = m_fontManager.ShapeText( m_currentFont, params.Text, params.Direction );
+    TextRenderDesc modifiedParams = params;
+
+    ShapeTextDesc shapeDesc{ };
+    shapeDesc.Text      = params.Text;
+    shapeDesc.Direction = params.Direction;
+    m_textLayout->ShapeText( shapeDesc );
+
     if ( params.HorizontalCenter || params.VerticalCenter )
     {
         if ( params.HorizontalCenter )
         {
-            modifiedParams.X -= generateTextDesc.Layout.TotalWidth * params.Scale / 2.0f;
+            modifiedParams.X -= m_currentFont->Asset( )->Metrics.LineHeight * params.Scale / 2.0f;
         }
 
         if ( params.VerticalCenter )
         {
-            modifiedParams.Y -= generateTextDesc.Layout.TotalHeight * params.Scale / 2.0f;
+            modifiedParams.Y -= m_currentFont->Asset( )->Metrics.LineHeight * params.Scale / 2.0f;
         }
     }
 
-    generateTextDesc.FontCache = m_currentFont;
-    generateTextDesc.Text      = params.Text;
-    generateTextDesc.X         = modifiedParams.X;
-    generateTextDesc.Y         = modifiedParams.Y;
-    generateTextDesc.Color     = modifiedParams.Color;
-    generateTextDesc.Scale     = modifiedParams.Scale;
+    GenerateTextVerticesDesc generateDesc{ };
+    generateDesc.StartPosition = { modifiedParams.X, modifiedParams.Y };
+    generateDesc.Color         = modifiedParams.Color;
+    generateDesc.OutVertices   = &m_glyphVertices;
+    generateDesc.OutIndices    = &m_indexData;
 
-    m_fontManager.GenerateTextVertices( generateTextDesc, m_vertexData, m_indexData );
+    m_textLayout->GenerateTextVertices( generateDesc );
 
-    m_currentVertexCount = m_vertexData.NumElements( ) / 8;
+    m_currentVertexCount = m_glyphVertices.NumElements( );
     m_currentIndexCount  = m_indexData.NumElements( );
 
+    // Resize buffers if needed
     if ( m_currentVertexCount > m_maxVertices || m_currentIndexCount > m_maxIndices )
     {
         m_maxVertices = std::max( m_maxVertices * 2, m_currentVertexCount );
@@ -219,11 +218,10 @@ void FontRenderer::EndBatch( ICommandList *commandList )
         return; // Nothing to render
     }
 
-    if ( m_atlasNeedsUpdate || m_currentFont->AtlasNeedsUpdate( ) )
+    if ( m_atlasNeedsUpdate )
     {
         UpdateAtlasTexture( commandList );
         m_atlasNeedsUpdate = false;
-        m_currentFont->MarkAtlasUpdated( );
     }
 
     UpdateBuffers( );
@@ -233,10 +231,9 @@ void FontRenderer::EndBatch( ICommandList *commandList )
     uniforms.TextColor  = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
 
     // Pass texture dimensions and pixel range to shader
-    const auto &fontAsset      = m_currentFont->GetFontAsset( );
-    uniforms.TextureSizeParams = XMFLOAT4( static_cast<float>( fontAsset.AtlasWidth ), static_cast<float>( fontAsset.AtlasHeight ),
-                                           4.0f, // Using the same constant as in FontManager
-                                           0.0f  // Unused
+    const auto *fontAsset      = m_currentFont->Asset( );
+    uniforms.TextureSizeParams = XMFLOAT4( static_cast<float>( fontAsset->AtlasWidth ), static_cast<float>( fontAsset->AtlasHeight ), Font::MsdfPixelRange,
+                                           0.0f // Unused
     );
 
     void *mappedData = m_uniformBuffer->MapMemory( );
@@ -252,20 +249,23 @@ void FontRenderer::EndBatch( ICommandList *commandList )
 
 void FontRenderer::UpdateAtlasTexture( ICommandList *commandList )
 {
-    const auto &fontAsset   = m_currentFont->GetFontAsset( );
-    const auto &atlasBitmap = m_currentFont->GetAtlasBitmap( );
+    const auto *fontAsset = m_currentFont->Asset( );
 
-    if ( atlasBitmap.empty( ) )
-    {
-        return;
-    }
+    // Create a staging buffer for the atlas data
+    BufferDesc stagingDesc;
+    stagingDesc.NumBytes     = fontAsset->AtlasData.NumElements( );
+    stagingDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer );
+    stagingDesc.InitialUsage = ResourceUsage::CopySrc;
+    stagingDesc.DebugName    = "Font MSDF Atlas Staging Buffer";
+    stagingDesc.HeapType     = HeapType::CPU;
 
     // Check if texture needs resizing
-    if ( m_fontAtlasTextureDesc.Width != fontAsset.AtlasWidth || m_fontAtlasTextureDesc.Height != fontAsset.AtlasHeight )
+    if ( m_fontAtlasTextureDesc.Width != fontAsset->AtlasWidth || m_fontAtlasTextureDesc.Height != fontAsset->AtlasHeight )
     {
         TextureDesc newDesc = m_fontAtlasTextureDesc;
-        newDesc.Width       = fontAsset.AtlasWidth;
-        newDesc.Height      = fontAsset.AtlasHeight;
+        newDesc.Width       = fontAsset->AtlasWidth;
+        newDesc.Height      = fontAsset->AtlasHeight;
+        newDesc.Format      = Format::R8G8B8A8Unorm; // MSDF requires RGB channels
 
         auto newTexture = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( newDesc ) );
         m_resourceTracking.TrackTexture( newTexture.get( ), ResourceUsage::ShaderResource );
@@ -273,43 +273,26 @@ void FontRenderer::UpdateAtlasTexture( ICommandList *commandList )
         m_resourceBindGroup->BeginUpdate( )->Srv( 0, m_fontAtlasTexture.get( ) )->EndUpdate( );
     }
 
-    std::vector<uint8_t> rgbaData( fontAsset.AtlasWidth * fontAsset.AtlasHeight * 4, 255 );
-    for ( size_t i = 0; i < fontAsset.AtlasWidth * fontAsset.AtlasHeight; i++ )
-    {
-        const size_t srcRgbIndex = i * 3;
-        const size_t dstRgbIndex = i * 4;
-
-        if ( srcRgbIndex + 2 < atlasBitmap.size( ) )
-        {
-            rgbaData[ dstRgbIndex ]     = atlasBitmap[ srcRgbIndex ];     // R
-            rgbaData[ dstRgbIndex + 1 ] = atlasBitmap[ srcRgbIndex + 1 ]; // G
-            rgbaData[ dstRgbIndex + 2 ] = atlasBitmap[ srcRgbIndex + 2 ]; // B
-            rgbaData[ dstRgbIndex + 3 ] = 255;                            // A (fully opaque)
-        }
-    }
-
-    BufferDesc stagingDesc;
-    stagingDesc.NumBytes     = rgbaData.size( );
-    stagingDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer );
-    stagingDesc.InitialUsage = ResourceUsage::CopySrc;
-    stagingDesc.DebugName    = "Font MSDF Atlas Staging Buffer";
-    stagingDesc.HeapType     = HeapType::CPU;
-
+    // Create and load the staging buffer
     const auto stagingBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( stagingDesc ) );
     m_resourceTracking.TrackBuffer( stagingBuffer.get( ), ResourceUsage::CopySrc );
 
-    void *mappedData = stagingBuffer->MapMemory( );
-    memcpy( mappedData, rgbaData.data( ), rgbaData.size( ) );
-    stagingBuffer->UnmapMemory( );
+    LoadAtlasIntoGpuTextureDesc loadDesc{ };
+    loadDesc.StagingBuffer = stagingBuffer.get( );
+    loadDesc.CommandList   = commandList;
+    loadDesc.Texture       = m_fontAtlasTexture.get( );
+    FontAssetReader::LoadAtlasIntoGpuTexture( *fontAsset, loadDesc );
 
+    // Transition the texture to copy destination state
     BatchTransitionDesc batchTransitionDesc{ commandList };
     batchTransitionDesc.TransitionTexture( m_fontAtlasTexture.get( ), ResourceUsage::CopyDst );
     m_resourceTracking.BatchTransition( batchTransitionDesc );
 
-    CopyBufferToTextureDesc copyDesc;
+    // Copy from the staging buffer to the texture
+    CopyBufferToTextureDesc copyDesc{ };
     copyDesc.SrcBuffer  = stagingBuffer.get( );
     copyDesc.DstTexture = m_fontAtlasTexture.get( );
-    copyDesc.RowPitch   = fontAsset.AtlasWidth * 4; // 4 bytes per pixel (RGBA)
+    copyDesc.RowPitch   = fontAsset->AtlasWidth * 4; // 4 bytes per pixel (RGBA)
     copyDesc.Format     = m_fontAtlasTexture->GetFormat( );
 
     commandList->CopyBufferToTexture( copyDesc );
@@ -322,10 +305,10 @@ void FontRenderer::UpdateAtlasTexture( ICommandList *commandList )
 void FontRenderer::UpdateBuffers( )
 {
     // Check if we need to resize vertex buffer
-    if ( m_vertexBufferDesc.NumBytes < m_vertexData.NumElements( ) * sizeof( float ) )
+    if ( m_vertexBufferDesc.NumBytes < m_glyphVertices.NumElements( ) )
     {
         BufferDesc newDesc = m_vertexBufferDesc;
-        newDesc.NumBytes   = m_maxVertices * 8 * sizeof( float );
+        newDesc.NumBytes   = m_maxVertices * sizeof( GlyphVertex );
 
         auto newBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( newDesc ) );
         m_resourceTracking.TrackBuffer( newBuffer.get( ), ResourceUsage::VertexAndConstantBuffer );
@@ -344,7 +327,7 @@ void FontRenderer::UpdateBuffers( )
     }
 
     void *vertexData = m_vertexBuffer->MapMemory( );
-    memcpy( vertexData, m_vertexData.Data( ), m_vertexData.NumElements( ) * sizeof( float ) );
+    memcpy( vertexData, m_glyphVertices.Data( ), m_glyphVertices.NumElements( ) * sizeof( GlyphVertex ) );
     m_vertexBuffer->UnmapMemory( );
 
     void *indexData = m_indexBuffer->MapMemory( );

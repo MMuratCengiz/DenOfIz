@@ -49,8 +49,6 @@ namespace DenOfIz
         ~FontAssetReader( );
 
         FontAsset              Read( );
-        void                   LoadAtlasIntoGpuTexture( const LoadAtlasIntoGpuTextureDesc &desc ) const;
-        InteropArray<Byte>     ReadAtlasData( );
-        [[nodiscard]] uint64_t AtlasBitmapNumBytes( ) const;
+        static void            LoadAtlasIntoGpuTexture( const FontAsset& fontAsset, const LoadAtlasIntoGpuTextureDesc &desc );
     };
 } // namespace DenOfIz

@@ -55,7 +55,7 @@ namespace DenOfIz
         InteropString Text;                              // UTF-8 encoded string
         UInt32_4      HbScriptTag{ 'L', 'a', 't', 'n' }; // Language identifier, refer to hb_script_t
         TextDirection Direction;
-        uint32_t      FontSize;
+        uint32_t      FontSize = 36;
     };
 
     struct DZ_API GenerateTextVerticesDesc
@@ -65,6 +65,7 @@ namespace DenOfIz
 
         InteropArray<GlyphVertex> *OutVertices;
         InteropArray<uint32_t>    *OutIndices;
+        float                      Scale = 1.5f;
     };
     class DZ_API TextLayout
     {

@@ -34,6 +34,12 @@ Font::Font( const FT_Library library, const FontDesc &desc ) : m_ftLibrary( libr
         const FontGlyph &glyph      = m_desc.FontAsset->Glyphs.GetElement( i );
         m_glyphs[ glyph.CodePoint ] = glyph;
     }
+
+    const uint32_t initialFontSize = m_desc.FontAsset->InitialFontSize * 64;
+    if ( const FT_Error error = FT_Set_Char_Size( m_face, initialFontSize, initialFontSize, 0, 0 ) )
+    {
+        LOG( ERROR ) << "Failed to set font size: " << FT_Error_String( error );
+    }
 }
 
 FT_Face Font::FTFace( ) const

@@ -39,7 +39,6 @@ namespace DenOfIz
         ~FontAssetWriter( );
 
         void Write( const FontAsset &fontAsset );
-        void WriteAtlasBitmap( const InteropArray<Byte> &atlasBitmap ) const;
         void Finalize( ) const;
 
     private:

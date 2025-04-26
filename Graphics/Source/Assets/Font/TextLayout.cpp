@@ -34,7 +34,12 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
     const std::u32string utf32Text = Utf8ToUtf32( utf8Text );
     const FT_Face        face      = m_font->FTFace( );
 
-    hb_font_t *hbFont = hb_ft_font_create( face, nullptr );
+    if ( const FT_Error error = FT_Set_Char_Size( face, shapeDesc.FontSize * 64, shapeDesc.FontSize * 64, 0, 0 ) )
+    {
+        LOG( ERROR ) << "Failed to set font size: " << FT_Error_String( error );
+        return;
+    }
+    hb_font_t *hbFont = hb_ft_font_create_referenced( face );
     if ( !hbFont )
     {
         LOG( ERROR ) << "Failed to create HarfBuzz font";
@@ -64,7 +69,7 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
         break;
     }
 
-    UInt32_4 scriptTag = shapeDesc.HbScriptTag;
+    const UInt32_4 scriptTag = shapeDesc.HbScriptTag;
     hb_buffer_set_direction( buffer, hbDirection );
     hb_buffer_set_script( buffer, static_cast<hb_script_t>( HB_TAG( scriptTag.X, scriptTag.Y, scriptTag.Z, scriptTag.W ) ) );
     hb_buffer_set_language( buffer, hb_language_from_string( "en", -1 ) );
@@ -130,22 +135,22 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
     m_totalWidth  = totalAdvance;
     m_totalHeight = static_cast<float>( m_font->m_desc.FontAsset->Metrics.LineHeight );
     hb_buffer_destroy( buffer );
-    FT_Done_Face( face );
 }
 
 void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateDesc ) const
 {
-    float          x     = generateDesc.StartPosition.X;
-    float          y     = generateDesc.StartPosition.Y;
-    const Float_4 &color = generateDesc.Color;
     if ( m_shapedGlyphs.empty( ) )
     {
         LOG( ERROR ) << "No glyphs to generate vertices for, call ShapeText first.";
         return;
     }
 
-    InteropArray<GlyphVertex> *outVertices = generateDesc.OutVertices;
-    InteropArray<uint32_t>    *outIndices  = generateDesc.OutIndices;
+    float                      x             = generateDesc.StartPosition.X;
+    float                      y             = generateDesc.StartPosition.Y;
+    const Float_4             &color         = generateDesc.Color;
+    InteropArray<GlyphVertex> *outVertices   = generateDesc.OutVertices;
+    InteropArray<uint32_t>    *outIndices    = generateDesc.OutIndices;
+    const float                fontNumPixels = generateDesc.Scale;
 
     const FontAsset *fontAsset  = m_font->Asset( );
     uint32_t         baseVertex = outVertices->NumElements( ) / 8; // 8 floats per vertex (pos.xy, uv.xy, color.rgba)
@@ -160,8 +165,8 @@ void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateD
 
         const float x0 = x + shapedGlyph.XOffset + metrics->BearingX;
         const float x1 = x0 + metrics->Width;
-        const float y0 = floor( y - shapedGlyph.YOffset - metrics->BearingY - 22 );
-        const float y1 = floor( y0 + metrics->Height );
+        const float y0 = y - metrics->BearingY + shapedGlyph.YOffset;
+        const float y1 = y0 + metrics->Height;
 
         x += shapedGlyph.XAdvance;
         y += shapedGlyph.YAdvance;

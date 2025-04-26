@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * This example demonstrates text rendering using Multi-channel Signed Distance Fields (MSDF).
- * 
+ *
  * MSDF rendering provides high-quality text at any scale without pixelation or blurring.
  * It works by generating distance fields that represent the shape of each glyph and
  * using a special shader to render them with sharp edges.
@@ -35,11 +35,22 @@ void FontRenderingExample::Init( )
 {
     ImportFont( );
 
+    m_fontLibrary  = std::make_unique<FontLibrary>( );
+    m_binaryReader = std::make_unique<BinaryReader>( m_fontAssetPath );
+
+    FontAssetReaderDesc fontAssetReaderDesc{ };
+    fontAssetReaderDesc.Reader = m_binaryReader.get( );
+    m_fontAssetReader          = std::make_unique<FontAssetReader>( fontAssetReaderDesc );
+
+    m_fontAsset = std::make_unique<FontAsset>( m_fontAssetReader->Read( ) );
+
+    FontDesc fontDesc{ };
+    fontDesc.FontAsset = m_fontAsset.get( );
+    m_font             = m_fontLibrary->LoadFont( fontDesc );
+
     m_fontRenderer = std::make_unique<FontRenderer>( m_graphicsApi, m_logicalDevice );
     m_fontRenderer->Initialize( );
-
-    m_fontRenderer->LoadFont( "Assets/Fonts/Inconsolata-Regular.ttf", 36 );
-    m_fontRenderer->SetFont( "Assets/Fonts/Inconsolata-Regular.ttf", 36 );
+    m_fontRenderer->SetFont( m_font );
 
     const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( m_windowDesc.Width ), static_cast<float>( m_windowDesc.Height ), 0.0f, 0.0f, 1.0f );
     XMStoreFloat4x4( &m_orthoProjection, projection );
@@ -180,4 +191,3 @@ void FontRenderingExample::ImportFont( ) const
         }
     }
 }
-

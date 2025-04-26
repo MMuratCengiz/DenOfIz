@@ -36,9 +36,9 @@ namespace DenOfIz
     // This class is generally not DZ_API friendly due to heavily relying on 3rd party libraries
     class Font
     {
-        FT_Library m_ftLibrary{ };
-        FT_Face    m_face{ };
-        FontDesc   m_desc;
+        FT_Library                              m_ftLibrary{ };
+        FT_Face                                 m_face{ };
+        FontDesc                                m_desc;
         std::unordered_map<uint32_t, FontGlyph> m_glyphs;
 
         friend class FontLibrary;
@@ -48,6 +48,8 @@ namespace DenOfIz
         [[nodiscard]] FT_Face FTFace( ) const;
 
     public:
+        static constexpr float MsdfPixelRange = 4.0f;
+
         [[nodiscard]] FontAsset *Asset( ) const;
         ~Font( );
         FontGlyph *GetGlyph( uint32_t codePoint );

@@ -17,8 +17,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Font/FontCache.h>
-#include <DenOfIzGraphics/Assets/Font/FontManager.h>
+#include <DenOfIzGraphics/Assets/Font/Font.h>
+#include <DenOfIzGraphics/Assets/Font/TextLayout.h>
+#include <DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h>
 #include <DenOfIzGraphics/Backends/GraphicsApi.h>
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
@@ -56,16 +57,13 @@ namespace DenOfIz
         XMFLOAT4   TextColor;
         XMFLOAT4   TextureSizeParams; // xy: texture dimensions, z: pixel range, w: unused
     };
-
     class FontRenderer
     {
-
         GraphicsApi     *m_graphicsApi;
         ILogicalDevice  *m_logicalDevice;
-        FontManager      m_fontManager;
         ResourceTracking m_resourceTracking;
 
-        std::unordered_map<std::string, FontCache *> m_loadedFonts;
+        std::unordered_map<std::string, Font *> m_loadedFonts;
 
         std::unique_ptr<ShaderProgram>      m_fontShaderProgram;
         std::unique_ptr<IPipeline>          m_fontPipeline;
@@ -81,27 +79,27 @@ namespace DenOfIz
         std::unique_ptr<IResourceBindGroup> m_resourceBindGroup = nullptr;
         std::unique_ptr<IInputLayout>       m_inputLayout       = nullptr;
 
-        FontCache             *m_currentFont;
-        XMFLOAT4X4             m_projectionMatrix{ };
-        bool                   m_atlasNeedsUpdate   = false;
-        uint32_t               m_maxVertices        = 1024;
-        uint32_t               m_maxIndices         = 1536;
-        uint32_t               m_currentVertexCount = 0;
-        uint32_t               m_currentIndexCount  = 0;
-        InteropArray<float>    m_vertexData;
-        InteropArray<uint32_t> m_indexData;
+        Font                       *m_currentFont = nullptr;
+        std::unique_ptr<TextLayout> m_textLayout;
+        XMFLOAT4X4                  m_projectionMatrix{ };
+        bool                        m_atlasNeedsUpdate   = false;
+        uint32_t                    m_maxVertices        = 1024;
+        uint32_t                    m_maxIndices         = 1536;
+        uint32_t                    m_currentVertexCount = 0;
+        uint32_t                    m_currentIndexCount  = 0;
+        InteropArray<GlyphVertex>   m_glyphVertices;
+        InteropArray<uint32_t>      m_indexData;
 
     public:
         FontRenderer( GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice );
         ~FontRenderer( );
 
-        void       Initialize( );
-        FontCache *LoadFont( const InteropString &fontPath, uint32_t pixelSize = 24 );
-        void       SetFont( const InteropString &fontPath, uint32_t pixelSize = 24 );
-        void       SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix );
-        void       BeginBatch( );
-        void       AddText( const TextRenderDesc &params );
-        void       EndBatch( ICommandList *commandList );
+        void Initialize( );
+        void SetFont( Font *font );
+        void SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix );
+        void BeginBatch( );
+        void AddText( const TextRenderDesc &params );
+        void EndBatch( ICommandList *commandList );
 
     private:
         void UpdateAtlasTexture( ICommandList *commandList );

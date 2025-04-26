@@ -37,8 +37,8 @@ namespace DenOfIz
         uint32_t           Height    = 0;
         uint32_t           BearingX  = 0;
         uint32_t           BearingY  = 0;
-        uint32_t           AdvanceX  = 0;
-        uint32_t           AdvanceY  = 0;
+        uint32_t           XAdvance  = 0;
+        uint32_t           YAdvance  = 0;
         uint32_t           AtlasX    = 0;
         uint32_t           AtlasY    = 0;
         uint32_t           Pitch     = 0;
@@ -62,21 +62,22 @@ namespace DenOfIz
 
         uint64_t                   DataNumBytes = 0;
         InteropArray<Byte>         Data;
-        uint32_t                   PixelSize;
+        uint32_t                   InitialFontSize;
         bool                       AntiAliasing;
         uint32_t                   AtlasWidth;
         uint32_t                   AtlasHeight;
         FontMetrics                Metrics;
         InteropArray<FontGlyph>    Glyphs;
         InteropArray<UserProperty> UserProperties;
-        AssetDataStream            AtlasData;
+        uint64_t                   NumAtlasDataBytes = 0;
+        InteropArray<Byte>         AtlasData;
 
         FontAsset( ) : AssetHeader( 0x544E4F465A44 /*DZFONT*/, Latest, 0 )
         {
-            PixelSize    = 24;
-            AntiAliasing = true;
-            AtlasWidth   = 512;
-            AtlasHeight  = 512;
+            InitialFontSize = 36;
+            AntiAliasing    = true;
+            AtlasWidth      = 512;
+            AtlasHeight     = 512;
 
             // Initialize metrics with default values
             Metrics.Ascent             = 0;
