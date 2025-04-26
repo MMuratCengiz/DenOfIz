@@ -290,7 +290,7 @@ bool FontImporter::GenerateMsdfForGlyph( FontGlyph &glyphDesc, msdfgen::FontHand
         return true;
     }
 
-    constexpr double             pixelRange = Font::MsdfPixelRange;
+    constexpr double             pixelRange = Font::MsdfPixelRange; // e.g., 4.0 pixels
     const msdfgen::Shape::Bounds bounds     = shape.getBounds( );
     const double scale = fontSize;
 
