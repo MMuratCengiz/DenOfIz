@@ -94,7 +94,7 @@ namespace DenOfIz
         ImporterResultCode   ImportFontInternal( ImportContext &context );
         void                 PreloadCharacterSet( ImportContext &context, FT_Face face );
         bool                 LoadGlyph( ImportContext &context, FT_Face face, uint32_t codePoint );
-        bool                 GenerateMsdfForGlyph( FontGlyph &glyphDesc, msdfgen::FontHandle *msdfFont, uint32_t codePoint, uint32_t pixelSize ) const;
+        bool                 GenerateMsdfForGlyph( FontGlyph &glyphDesc, msdfgen::FontHandle *msdfFont, uint32_t codePoint, uint32_t fontSize ) const;
         Rect                 AllocateSpace( ImportContext &context, uint32_t width, uint32_t height );
         void                 CopyMsdfDataToAtlas( ImportContext &context, const FontGlyph &glyphDesc, const Rect &rect );
         void                 WriteFontAsset( const ImportContext &context, AssetUri &outAssetUri ) const;

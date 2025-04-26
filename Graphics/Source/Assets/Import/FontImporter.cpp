@@ -270,11 +270,10 @@ bool FontImporter::LoadGlyph( ImportContext &context, const FT_Face face, const 
     return true;
 }
 
-bool FontImporter::GenerateMsdfForGlyph( FontGlyph &glyphDesc, msdfgen::FontHandle *msdfFont, const uint32_t codePoint, const uint32_t pixelSize ) const
+bool FontImporter::GenerateMsdfForGlyph( FontGlyph &glyphDesc, msdfgen::FontHandle *msdfFont, const uint32_t codePoint, const uint32_t fontSize ) const
 {
     msdfgen::Shape shape;
-    double         advance = 0.0;
-    if ( !msdfgen::loadGlyph( shape, msdfFont, codePoint, msdfgen::FONT_SCALING_EM_NORMALIZED, &advance ) )
+    if ( !msdfgen::loadGlyph( shape, msdfFont, codePoint, msdfgen::FONT_SCALING_EM_NORMALIZED ) ) // Removed advance here
     {
         LOG( ERROR ) << "Failed to load glyph shape for MSDF generation: " << codePoint;
         return false;
@@ -284,49 +283,44 @@ bool FontImporter::GenerateMsdfForGlyph( FontGlyph &glyphDesc, msdfgen::FontHand
     shape.normalize( );
     shape.orientContours( );
 
-    // Skip empty shapes (i.e., space)
-    if ( shape.contours.empty( ) )
+    if ( shape.contours.empty( ) ) // Skip empty shapes (i.e., space)
     {
         glyphDesc.Width  = 0;
         glyphDesc.Height = 0;
         return true;
     }
 
-    msdfgen::edgeColoringSimple( shape, 3.0, 0 );
+    constexpr double             pixelRange = Font::MsdfPixelRange; // e.g., 4.0 pixels
+    const msdfgen::Shape::Bounds bounds     = shape.getBounds( );
+    const double scale = fontSize;
 
-    msdfgen::Bitmap<float, 3> msdf( pixelSize, pixelSize );
+    const uint32_t bitmapWidth  = static_cast<uint32_t>( std::round( ( bounds.r - bounds.l ) * scale ) ) + 2 * static_cast<uint32_t>( std::ceil( pixelRange ) );
+    const uint32_t bitmapHeight = static_cast<uint32_t>( std::round( ( bounds.t - bounds.b ) * scale ) ) + 2 * static_cast<uint32_t>( std::ceil( pixelRange ) );
 
-    msdfgen::FontMetrics metrics{ };
-    msdfgen::getFontMetrics( metrics, msdfFont );
+    const msdfgen::Projection projection( scale, msdfgen::Vector2( -bounds.l, -bounds.b ) );
+    const msdfgen::Range      range( Font::MsdfPixelRange / scale );
 
-    const auto                       bounds = shape.getBounds( );
-    const msdfgen::Projection        projection( pixelSize, msdfgen::Vector2( -bounds.l, -bounds.b ) );
-    const msdfgen::Range             range( Font::MsdfPixelRange / pixelSize );
-    const msdfgen::SDFTransformation transform( projection, range );
-
+    msdfgen::Bitmap<float, 3>    msdf( bitmapWidth, bitmapHeight );
     msdfgen::MSDFGeneratorConfig config;
     config.errorCorrection.mode = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
+    const msdfgen::SDFTransformation transform( projection, range );
     msdfgen::generateMSDF( msdf, shape, transform, config );
-
-    // Simulate 8-bit per channel output
     msdfgen::simulate8bit( msdf );
 
-    const uint32_t width  = msdf.width( );
-    const uint32_t height = msdf.height( );
-    glyphDesc.Width       = width;
-    glyphDesc.Height      = height;
+    glyphDesc.Width       = msdf.width( );
+    glyphDesc.Height      = msdf.height( );
     glyphDesc.Bounds.XMin = bounds.l;
     glyphDesc.Bounds.XMax = bounds.r;
     glyphDesc.Bounds.YMin = bounds.b;
     glyphDesc.Bounds.YMax = bounds.t;
 
-    InteropArray<Byte> msdfData( width * height * 3 );
-    const uint32_t     pitch = width * 3; // 3 bytes per pixel (RGB)
+    InteropArray<Byte> msdfData( glyphDesc.Width * glyphDesc.Height * 3 );
+    const uint32_t     pitch = glyphDesc.Width * 3; // 3 bytes per pixel (RGB)
     glyphDesc.Pitch          = pitch;
 
-    for ( uint32_t y = 0; y < height; y++ )
+    for ( uint32_t y = 0; y < glyphDesc.Height; y++ )
     {
-        for ( uint32_t x = 0; x < width; x++ )
+        for ( uint32_t x = 0; x < glyphDesc.Width; x++ )
         {
             const uint32_t pixelOffset = y * pitch + x * 3;
             const float   *msdfPixel   = msdf( x, y );
