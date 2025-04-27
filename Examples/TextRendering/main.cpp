@@ -16,6 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzExamples/Main.h>
-#include <DenOfIzExamples/FontRenderingExample.h>
+#include <DenOfIzExamples/TextRenderingExample.h>
 
-DZ_EXAMPLE_MAIN(DenOfIz::FontRenderingExample)
+DZ_EXAMPLE_MAIN(DenOfIz::TextRenderingExample)

@@ -28,6 +28,11 @@ TextLayout::TextLayout( const TextLayoutDesc &desc ) : m_desc( desc )
     m_font = desc.Font;
 }
 
+void TextLayout::SetFont( Font *font )
+{
+    m_font = font;
+}
+
 void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
 {
     const std::string    utf8Text  = shapeDesc.Text.Get( );

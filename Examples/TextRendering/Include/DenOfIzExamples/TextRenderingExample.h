@@ -18,16 +18,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzExamples/IExample.h>
-#include <DenOfIzGraphics/Assets/Font/FontRenderer.h>
+#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
 #include <DenOfIzGraphics/Assets/Font/FontLibrary.h>
+#include <DenOfIzGraphics/Assets/Font/TextRenderer.h>
 #include <DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h>
 #include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
-#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
 #include <DenOfIzGraphics/Utilities/Time.h>
 
 namespace DenOfIz
 {
-    class FontRenderingExample final : public IExample
+    class TextRenderingExample final : public IExample
     {
         const InteropString m_fontAssetPath = "Assets/Fonts/Inconsolata-Regular.dzfont";
         Time                                m_time;
@@ -36,12 +36,12 @@ namespace DenOfIz
         std::unique_ptr<FontAssetReader>    m_fontAssetReader;
         std::unique_ptr<FontAsset>          m_fontAsset;
         Font*                               m_font = nullptr; // Owned by FontLibrary
-        std::unique_ptr<FontRenderer>       m_fontRenderer;
+        std::unique_ptr<TextRenderer>       m_fontRenderer;
         XMFLOAT4X4                          m_orthoProjection{ };
         float                               m_animTime = 0.0f;
 
     public:
-        ~FontRenderingExample( ) override = default;
+        ~TextRenderingExample( ) override = default;
         void Init( ) override;
         void ModifyApiPreferences( APIPreference &defaultApiPreference ) override;
         void HandleEvent( SDL_Event &event ) override;

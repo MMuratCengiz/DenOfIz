@@ -87,6 +87,7 @@ namespace DenOfIz
 
     public:
         explicit TextLayout( const TextLayoutDesc &desc );
+        void SetFont( Font *font );
         void ShapeText( const ShapeTextDesc &shapeDesc );
         void GenerateTextVertices( const GenerateTextVerticesDesc &generateDesc ) const;
 

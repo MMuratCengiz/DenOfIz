@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  * It works by generating distance fields that represent the shape of each glyph and
  * using a special shader to render them with sharp edges.
  */
-#include <DenOfIzExamples/FontRenderingExample.h>
+#include <DenOfIzExamples/TextRenderingExample.h>
 
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Import/FontImporter.h"
@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-void FontRenderingExample::Init( )
+void TextRenderingExample::Init( )
 {
     ImportFont( );
 
@@ -48,7 +48,7 @@ void FontRenderingExample::Init( )
     fontDesc.FontAsset = m_fontAsset.get( );
     m_font             = m_fontLibrary->LoadFont( fontDesc );
 
-    m_fontRenderer = std::make_unique<FontRenderer>( m_graphicsApi, m_logicalDevice );
+    m_fontRenderer = std::make_unique<TextRenderer>( m_graphicsApi, m_logicalDevice );
     m_fontRenderer->Initialize( );
     m_fontRenderer->SetFont( m_font );
 
@@ -61,12 +61,12 @@ void FontRenderingExample::Init( )
     m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
 }
 
-void FontRenderingExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
+void TextRenderingExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
     defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
-void FontRenderingExample::Update( )
+void TextRenderingExample::Update( )
 {
     m_time.Tick( );
     m_worldData.DeltaTime = m_time.GetDeltaTime( );
@@ -80,7 +80,7 @@ void FontRenderingExample::Update( )
     Present( frameIndex );
 }
 
-void FontRenderingExample::Render( const uint32_t frameIndex, ICommandList *commandList )
+void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *commandList )
 {
     commandList->Begin( );
     ITextureResource *renderTarget = m_swapChain->GetRenderTarget( m_frameSync->AcquireNextImage( frameIndex ) );
@@ -148,19 +148,19 @@ void FontRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     commandList->End( );
 }
 
-void FontRenderingExample::HandleEvent( SDL_Event &event )
+void TextRenderingExample::HandleEvent( SDL_Event &event )
 {
     m_worldData.Camera->HandleEvent( event );
     IExample::HandleEvent( event );
 }
 
-void FontRenderingExample::Quit( )
+void TextRenderingExample::Quit( )
 {
     m_frameSync->WaitIdle( );
     IExample::Quit( );
 }
 
-void FontRenderingExample::ImportFont( ) const
+void TextRenderingExample::ImportFont( ) const
 {
     if ( !FileIO::FileExists( m_fontAssetPath ) )
     {

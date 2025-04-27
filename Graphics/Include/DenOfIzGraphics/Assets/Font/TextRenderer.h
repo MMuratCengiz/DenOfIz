@@ -57,7 +57,7 @@ namespace DenOfIz
         XMFLOAT4   TextColor;
         XMFLOAT4   TextureSizeParams; // xy: texture dimensions, z: pixel range, w: unused
     };
-    class FontRenderer
+    class TextRenderer
     {
         GraphicsApi     *m_graphicsApi;
         ILogicalDevice  *m_logicalDevice;
@@ -79,20 +79,21 @@ namespace DenOfIz
         std::unique_ptr<IResourceBindGroup> m_resourceBindGroup = nullptr;
         std::unique_ptr<IInputLayout>       m_inputLayout       = nullptr;
 
-        Font                       *m_currentFont = nullptr;
-        std::unique_ptr<TextLayout> m_textLayout;
-        XMFLOAT4X4                  m_projectionMatrix{ };
-        bool                        m_atlasNeedsUpdate   = false;
-        uint32_t                    m_maxVertices        = 1024;
-        uint32_t                    m_maxIndices         = 1536;
-        uint32_t                    m_currentVertexCount = 0;
-        uint32_t                    m_currentIndexCount  = 0;
-        InteropArray<GlyphVertex>   m_glyphVertices;
-        InteropArray<uint32_t>      m_indexData;
+        Font                                    *m_currentFont = nullptr;
+        std::vector<std::unique_ptr<TextLayout>> m_textLayouts;
+        uint32_t                                 m_currentTextLayoutIndex = 0;
+        XMFLOAT4X4                               m_projectionMatrix{ };
+        bool                                     m_atlasNeedsUpdate   = false;
+        uint32_t                                 m_maxVertices        = 1024;
+        uint32_t                                 m_maxIndices         = 1536;
+        uint32_t                                 m_currentVertexCount = 0;
+        uint32_t                                 m_currentIndexCount  = 0;
+        InteropArray<GlyphVertex>                m_glyphVertices;
+        InteropArray<uint32_t>                   m_indexData;
 
     public:
-        FontRenderer( GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice );
-        ~FontRenderer( );
+        TextRenderer( GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice );
+        ~TextRenderer( );
 
         void Initialize( );
         void SetFont( Font *font );

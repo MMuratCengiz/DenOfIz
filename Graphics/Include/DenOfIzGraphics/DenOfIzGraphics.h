@@ -19,9 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 // Include all graphics headers:
+#include <DenOfIzGraphics/Assets/Font/TextRenderer.h>
 #include <DenOfIzGraphics/Backends/GraphicsApi.h>
-#include <DenOfIzGraphics/Data/Geometry.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
+#include <DenOfIzGraphics/Data/Geometry.h>
 #include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
-#include <DenOfIzGraphics/Assets/Font/FontRenderer.h>
+#include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
