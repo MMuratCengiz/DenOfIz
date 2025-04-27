@@ -158,7 +158,7 @@ void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateD
     const float                fontNumPixels = generateDesc.Scale;
 
     const FontAsset *fontAsset  = m_font->Asset( );
-    uint32_t         baseVertex = outVertices->NumElements( ) / 8; // 8 floats per vertex (pos.xy, uv.xy, color.rgba)
+    uint32_t         baseVertex = outVertices->NumElements( );
     for ( const auto &shapedGlyph : m_shapedGlyphs )
     {
         const FontGlyph *metrics = m_font->GetGlyph( shapedGlyph.CodePoint );
