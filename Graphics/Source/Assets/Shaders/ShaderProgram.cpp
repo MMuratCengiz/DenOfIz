@@ -52,14 +52,15 @@ void ShaderProgram::Compile( )
     {
         const auto &stage = m_desc.ShaderStages.GetElement( i );
         // Validate Shader
-        if ( stage.Path.IsEmpty( ) )
+        if ( stage.Path.IsEmpty( ) && stage.Data.NumElements( ) == 0 )
         {
-            LOG( ERROR ) << "Shader path cannot be empty";
+            LOG( ERROR ) << "Either stage.Path or stage.Data must be set for stage " << i << "";
             continue;
         }
 
         CompileDesc compileDesc = { };
         compileDesc.Path        = stage.Path;
+        compileDesc.Data        = stage.Data;
         compileDesc.Defines     = stage.Defines;
         compileDesc.EntryPoint  = stage.EntryPoint;
         compileDesc.Stage       = stage.Stage;

@@ -20,6 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Utilities/Common_Asserts.h>
 #include <directxmath.h>
 
+#include "DenOfIzGraphics/Assets/Font/EmbeddedTextRendererShaders.h"
+
 using namespace DenOfIz;
 using namespace DirectX;
 
@@ -44,13 +46,13 @@ void TextRenderer::Initialize( )
     ShaderStageDesc             &vsDesc = programDesc.ShaderStages.EmplaceElement( );
     vsDesc.Stage                        = ShaderStage::Vertex;
     vsDesc.EntryPoint                   = "main";
-    vsDesc.Path                         = "Assets/Shaders/FontShader.vs.hlsl";
+    vsDesc.Data                         = EmbeddedTextRendererShaders::GetFontVertexShaderBytes( );
     shaderStages.push_back( vsDesc );
 
     ShaderStageDesc &psDesc = programDesc.ShaderStages.EmplaceElement( );
     psDesc.Stage            = ShaderStage::Pixel;
     psDesc.EntryPoint       = "main";
-    psDesc.Path             = "Assets/Shaders/FontShader.ps.hlsl";
+    psDesc.Data             = EmbeddedTextRendererShaders::GetFontPixelShaderBytes( );
     shaderStages.push_back( psDesc );
 
     m_fontShaderProgram           = std::make_unique<ShaderProgram>( programDesc );

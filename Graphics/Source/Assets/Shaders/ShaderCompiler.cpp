@@ -52,14 +52,32 @@ CompileResult ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) cons
 
     // Attribute to reference: https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/hlsl.adoc
     // https://github.com/KhronosGroup/Vulkan-Guide
-    std::string       path     = Utilities::AppPath( compileDesc.Path.Get( ) );
-    uint32_t          codePage = DXC_CP_ACP;
-    IDxcBlobEncoding *sourceBlob;
-    std::wstring      wsShaderPath( path.begin( ), path.end( ) );
-    HRESULT           result = m_dxcUtils->LoadFile( wsShaderPath.c_str( ), &codePage, &sourceBlob );
-    if ( FAILED( result ) )
+    IDxcBlobEncoding *sourceBlob = nullptr;
+    HRESULT           result     = S_OK;
+
+    if ( compileDesc.Data.NumElements( ) > 0 )
     {
-        LOG( FATAL ) << "Could not load shader file: " << path << " error code: " << GetLastError( );
+        result = m_dxcLibrary->CreateBlobWithEncodingOnHeapCopy( compileDesc.Data.Data( ), compileDesc.Data.NumElements( ), DXC_CP_ACP, &sourceBlob );
+        if ( FAILED( result ) )
+        {
+            LOG( FATAL ) << "Could not create blob from memory data, error code: " << result;
+        }
+    }
+    else if ( !compileDesc.Path.IsEmpty( ) )
+    {
+        std::string  path     = Utilities::AppPath( compileDesc.Path.Get( ) );
+        uint32_t     codePage = DXC_CP_ACP;
+        std::wstring wsShaderPath( path.begin( ), path.end( ) );
+        result = m_dxcUtils->LoadFile( wsShaderPath.c_str( ), &codePage, &sourceBlob );
+
+        if ( FAILED( result ) )
+        {
+            LOG( FATAL ) << "Could not load shader file: " << path << " error code: " << GetLastError( );
+        }
+    }
+    else
+    {
+        LOG( FATAL ) << "Neither Path nor Data provided for shader compilation";
     }
 
     std::string hlslVersion = "6_6";
@@ -98,6 +116,16 @@ CompileResult ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) cons
     targetProfile += "_" + hlslVersion;
 
     std::vector<LPCWSTR> arguments;
+    std::wstring wsShaderPath;
+    if (!compileDesc.Path.IsEmpty())
+    {
+        std::string path = Utilities::AppPath(compileDesc.Path.Get());
+        wsShaderPath = std::wstring(path.begin(), path.end());
+    }
+    else
+    {
+        wsShaderPath = L"memory_shader";
+    }
     arguments.push_back( wsShaderPath.c_str( ) );
     // Set shader stage
     arguments.push_back( L"-T" );

@@ -94,10 +94,12 @@ namespace DenOfIz
         void MarkSamplerAsLocal( uint32_t binding, uint32_t registerSpace );
     };
 
+    /// Use either Path or Data, Data takes priority if both are provided
     struct DZ_API ShaderStageDesc
     {
         ShaderStage                 Stage;
         InteropString               Path;
+        InteropArray<Byte>          Data;
         InteropArray<InteropString> Defines;
         InteropString               EntryPoint = "main";
         /// \brief Only available for Raygen, Miss and Hit shaders(Intersection, ClosestHit, AnyHit)

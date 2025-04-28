@@ -288,6 +288,7 @@ InteropArray<IDxcBlob *> DxilToMsl::Convert( const DxilToMslDesc &desc )
 
         CompileDesc compileDesc = { };
         compileDesc.Path        = shader.Path;
+        compileDesc.Data        = shader.Data;
         compileDesc.Defines     = shader.Defines;
         compileDesc.EntryPoint  = shader.EntryPoint;
         compileDesc.Stage       = shader.Stage;
@@ -304,7 +305,7 @@ InteropArray<IDxcBlob *> DxilToMsl::Convert( const DxilToMslDesc &desc )
     return result;
 }
 
-IDxcBlob *DxilToMsl::Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, const CompileMslDesc &compileMslDesc, const RayTracingShaderDesc& rayTracingShaderDesc ) const
+IDxcBlob *DxilToMsl::Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, const CompileMslDesc &compileMslDesc, const RayTracingShaderDesc &rayTracingShaderDesc ) const
 {
     const IRRootSignature *rootSignature  = compileMslDesc.RootSignature;
     const IRRootSignature *localSignature = compileMslDesc.LocalRootSignature;

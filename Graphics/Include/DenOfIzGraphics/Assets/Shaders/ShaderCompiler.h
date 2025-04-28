@@ -9,6 +9,7 @@ namespace DenOfIz
     struct DZ_API CompileDesc
     {
         InteropString               Path;
+        InteropArray<Byte>          Data;
         InteropString               EntryPoint = "main";
         ShaderStage                 Stage;
         TargetIL                    TargetIL;
