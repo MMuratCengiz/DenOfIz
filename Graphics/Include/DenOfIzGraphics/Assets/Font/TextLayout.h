@@ -84,7 +84,7 @@ namespace DenOfIz
         std::vector<GlyphAdvance> m_shapedGlyphs;
         float                     m_totalWidth  = 0;
         float                     m_totalHeight = 0;
-        bool                      m_isShaped    = false;
+        InteropString             m_lastShapedText;
 
     public:
         explicit TextLayout( const TextLayoutDesc &desc );
