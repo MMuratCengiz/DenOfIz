@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
 #include <DenOfIzGraphics/Assets/Import/FontImporter.h>
 #include <DenOfIzGraphics/Utilities/Time.h>
+#include <DenOfIzGraphics/Utilities/FrameDebugRenderer.h>
 
 namespace DenOfIz
 {
@@ -38,11 +39,14 @@ namespace DenOfIz
         std::unique_ptr<FontAsset>          m_fontAsset;
         Font*                               m_font = nullptr; // Owned by FontLibrary
         std::unique_ptr<TextRenderer>       m_textRenderer;
+        std::unique_ptr<FrameDebugRenderer> m_debugRenderer;
         XMFLOAT4X4                          m_orthoProjection{ };
         float                               m_animTime = 0.0f;
         
         // Antialiasing mode cycling
         int m_currentAAModeIndex = 1; // Start with grayscale (index 1)
+        
+        bool m_debugInfoEnabled = true;
 
     public:
         ~TextRenderingExample( ) override = default;

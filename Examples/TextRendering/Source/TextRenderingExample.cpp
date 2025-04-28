@@ -53,13 +53,31 @@ void TextRenderingExample::Init( )
     textRendererDesc.LogicalDevice      = m_logicalDevice;
     textRendererDesc.InitialAtlasWidth  = m_fontAsset->AtlasWidth;
     textRendererDesc.InitialAtlasHeight = m_fontAsset->AtlasHeight;
-    m_textRenderer = std::make_unique<TextRenderer>( textRendererDesc );
+    m_textRenderer                      = std::make_unique<TextRenderer>( textRendererDesc );
     m_textRenderer->Initialize( );
     m_textRenderer->SetFont( m_font );
+    m_textRenderer->SetAntiAliasingMode( AntiAliasingMode::Grayscale );
 
     const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( m_windowDesc.Width ), static_cast<float>( m_windowDesc.Height ), 0.0f, 0.0f, 1.0f );
     XMStoreFloat4x4( &m_orthoProjection, projection );
     m_textRenderer->SetProjectionMatrix( m_orthoProjection );
+
+    // Initialize the debug renderer with the same font asset
+    FrameDebugRendererDesc debugRendererDesc{ };
+    debugRendererDesc.GraphicsApi   = m_graphicsApi;
+    debugRendererDesc.LogicalDevice = m_logicalDevice;
+    debugRendererDesc.ScreenWidth   = m_windowDesc.Width;
+    debugRendererDesc.ScreenHeight  = m_windowDesc.Height;
+    debugRendererDesc.FontAsset     = m_fontAsset.get( );         // Directly provide the FontAsset we already loaded
+    debugRendererDesc.TextColor     = { 0.8f, 1.0f, 0.8f, 1.0f }; // Light green
+    debugRendererDesc.Scale         = 0.6f;
+    debugRendererDesc.Enabled       = m_debugInfoEnabled;
+
+    m_debugRenderer = std::make_unique<FrameDebugRenderer>( debugRendererDesc );
+    m_debugRenderer->Initialize( );
+    m_debugRenderer->SetProjectionMatrix( m_orthoProjection );
+
+    m_debugRenderer->AddDebugLine( "Press F1 to toggle debug info", { 0.8f, 0.8f, 0.8f, 1.0f } );
 
     m_animTime = 0.0f;
 
@@ -78,6 +96,28 @@ void TextRenderingExample::Update( )
     m_worldData.Camera->Update( m_worldData.DeltaTime );
 
     m_animTime += m_worldData.DeltaTime;
+
+    if ( m_debugRenderer && m_debugInfoEnabled )
+    {
+        m_debugRenderer->UpdateStats( m_worldData.DeltaTime );
+
+        auto currentAAModeName = "Unknown";
+        switch ( m_currentAAModeIndex )
+        {
+        case 0:
+            currentAAModeName = "None";
+            break;
+        case 1:
+            currentAAModeName = "Grayscale";
+            break;
+        case 2:
+            currentAAModeName = "Subpixel";
+            break;
+        }
+
+        m_debugRenderer->ClearCustomDebugLines( );
+        m_debugRenderer->AddDebugLine( "Press F1 to toggle debug info", { 0.8f, 0.8f, 0.8f, 1.0f } );
+    }
 
     const uint64_t frameIndex = m_frameSync->NextFrame( );
     Render( frameIndex, m_frameSync->GetCommandList( frameIndex ) );
@@ -127,11 +167,11 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
         break;
     }
 
-    // Display current mode and instructions
+    float verticalOffset = 120.0f;
     TextRenderDesc titleParams;
     titleParams.Text  = "Font Rendering Example";
     titleParams.X     = 50.0f;
-    titleParams.Y     = 50.0f;
+    titleParams.Y     = 50.0f + verticalOffset;
     titleParams.Color = { 1.0f, 1.0f, 0.5f, 1.0f };
     titleParams.Scale = 1.2f;
     m_textRenderer->AddText( titleParams );
@@ -140,16 +180,16 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     TextRenderDesc currentModeParams;
     currentModeParams.Text  = InteropString( "Current Mode: " ).Append( currentAAModeName ).Append( " Antialiasing" );
     currentModeParams.X     = 50.0f;
-    currentModeParams.Y     = 100.0f;
+    currentModeParams.Y     = 100.0f + verticalOffset;
     currentModeParams.Color = { 0.5f, 1.0f, 1.0f, 1.0f };
     currentModeParams.Scale = 1.0f;
     m_textRenderer->AddText( currentModeParams );
 
     // Instructions
     TextRenderDesc instructionsParams;
-    instructionsParams.Text  = "Press SPACE to cycle through antialiasing modes";
+    instructionsParams.Text  = "Press SPACE to cycle through antialiasing modes | Press F1 to toggle debug info";
     instructionsParams.X     = 50.0f;
-    instructionsParams.Y     = 150.0f;
+    instructionsParams.Y     = 150.0f + verticalOffset;
     instructionsParams.Color = { 0.8f, 0.8f, 0.8f, 1.0f };
     instructionsParams.Scale = 0.8f;
     m_textRenderer->AddText( instructionsParams );
@@ -158,7 +198,7 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     TextRenderDesc sampleParams;
     sampleParams.Text  = "Sample Text - The quick brown fox jumps over the lazy dog";
     sampleParams.X     = 50.0f;
-    sampleParams.Y     = 200.0f;
+    sampleParams.Y     = 200.0f + verticalOffset;
     sampleParams.Color = { 1.0f, 1.0f, 1.0f, 1.0f };
     sampleParams.Scale = 1.0f;
     m_textRenderer->AddText( sampleParams );
@@ -167,7 +207,7 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     TextRenderDesc smallParams;
     smallParams.Text  = "Small Text - (0123456789) The quick brown fox jumps over the lazy dog";
     smallParams.X     = 50.0f;
-    smallParams.Y     = 250.0f;
+    smallParams.Y     = 250.0f + verticalOffset;
     smallParams.Color = { 1.0f, 1.0f, 1.0f, 1.0f };
     smallParams.Scale = 0.6f;
     m_textRenderer->AddText( smallParams );
@@ -175,7 +215,7 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     TextRenderDesc animatedTextParams;
     animatedTextParams.Text = "YUPPP!!";
     animatedTextParams.X    = static_cast<float>( m_windowDesc.Width ) / 2.0f;
-    animatedTextParams.Y    = static_cast<float>( m_windowDesc.Height ) / 2.0f;
+    animatedTextParams.Y    = static_cast<float>( m_windowDesc.Height ) / 2.0f + verticalOffset / 2.0f;
 
     float r                             = ( sin( m_animTime * 2.0f ) + 1.0f ) / 2.0f;
     float g                             = ( sin( m_animTime * 1.5f + 2.0f ) + 1.0f ) / 2.0f;
@@ -191,7 +231,7 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     TextRenderDesc animatedParams;
     animatedParams.Text = "Animated Text with Antialiasing";
     animatedParams.X    = static_cast<float>( m_windowDesc.Width ) / 2.0f;
-    animatedParams.Y    = 350.0f;
+    animatedParams.Y    = 350.0f + verticalOffset;
 
     // Use different animation parameters for second animated text
     float r2                        = ( sin( m_animTime * 1.0f ) + 1.0f ) / 2.0f;
@@ -202,6 +242,12 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     animatedParams.HorizontalCenter = true;
     m_textRenderer->AddText( animatedParams );
     m_textRenderer->EndBatch( commandList );
+
+    // Render debug info on top of everything else
+    if ( m_debugRenderer && m_debugInfoEnabled )
+    {
+        m_debugRenderer->Render( commandList );
+    }
 
     commandList->EndRendering( );
 
@@ -221,6 +267,15 @@ void TextRenderingExample::HandleEvent( SDL_Event &event )
 
         const char *modeNames[] = { "None", "Grayscale", "Subpixel" };
         LOG( INFO ) << "Switched to antialiasing mode: " << modeNames[ m_currentAAModeIndex ];
+    }
+    else if ( event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_F1 )
+    {
+        m_debugInfoEnabled = !m_debugInfoEnabled;
+        if ( m_debugRenderer )
+        {
+            m_debugRenderer->SetEnabled( m_debugInfoEnabled );
+        }
+        LOG( INFO ) << "Debug info " << ( m_debugInfoEnabled ? "enabled" : "disabled" );
     }
 
     m_worldData.Camera->HandleEvent( event );

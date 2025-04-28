@@ -1,0 +1,246 @@
+/*
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+#include <DenOfIzGraphics/Utilities/FrameDebugRenderer.h>
+
+using namespace DenOfIz;
+
+FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m_desc( desc ), m_lastCpuCheckTime( std::chrono::high_resolution_clock::now( ) )
+{
+    m_frameTimes.resize( m_maxFrameTimeSamples, 0.0 );
+
+    m_time.OnEachSecond = [ this ]( const double fps ) { m_fps = fps; };
+}
+
+void FrameDebugRenderer::Initialize( )
+{
+    LoadFont( );
+    GatherSystemInfo( );
+
+    const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( m_desc.ScreenWidth ), static_cast<float>( m_desc.ScreenHeight ), 0.0f, 0.0f, 1.0f );
+    XMStoreFloat4x4( &m_projectionMatrix, projection );
+
+    if ( m_textRenderer )
+    {
+        m_textRenderer->SetProjectionMatrix( m_projectionMatrix );
+        m_textRenderer->SetAntiAliasingMode( AntiAliasingMode::Grayscale );
+    }
+}
+
+void FrameDebugRenderer::LoadFont( )
+{
+    DZ_NOT_NULL( m_desc.FontAsset );
+
+    m_fontLibrary = std::make_unique<FontLibrary>( );
+
+    FontDesc fontDesc{ };
+    fontDesc.FontAsset = m_desc.FontAsset;
+    m_font             = m_fontLibrary->LoadFont( fontDesc );
+
+    TextRendererDesc textRendererDesc{ };
+    textRendererDesc.GraphicsApi        = m_desc.GraphicsApi;
+    textRendererDesc.LogicalDevice      = m_desc.LogicalDevice;
+    textRendererDesc.InitialAtlasWidth  = m_desc.FontAsset->AtlasWidth;
+    textRendererDesc.InitialAtlasHeight = m_desc.FontAsset->AtlasHeight;
+
+    m_textRenderer = std::make_unique<TextRenderer>( textRendererDesc );
+    m_textRenderer->Initialize( );
+    m_textRenderer->SetFont( m_font );
+}
+
+void FrameDebugRenderer::GatherSystemInfo( )
+{
+    m_backendName = m_desc.GraphicsApi->ActiveAPI( );
+    m_gpuName     = m_desc.LogicalDevice->DeviceInfo( ).Name;
+}
+
+void FrameDebugRenderer::UpdateStats( const float deltaTime )
+{
+    if ( !m_desc.Enabled || !m_textRenderer )
+    {
+        return;
+    }
+
+    m_time.Tick( );
+    UpdateFrameTimeStats( deltaTime );
+
+    m_statsRefreshTimer += deltaTime;
+    if ( m_statsRefreshTimer >= m_desc.RefreshRate )
+    {
+        UpdatePerformanceStats( );
+        m_statsRefreshTimer = 0.0f;
+    }
+}
+
+void FrameDebugRenderer::UpdateFrameTimeStats( float deltaTime )
+{
+    m_frameTimes.pop_front( );
+    m_frameTimes.push_back( deltaTime * 1000.0 );
+
+    double totalTime = 0.0;
+    for ( const double time : m_frameTimes )
+    {
+        totalTime += time;
+    }
+    m_frameTimeMs = totalTime / m_frameTimes.size( );
+}
+
+void FrameDebugRenderer::UpdatePerformanceStats( )
+{
+    m_cpuUsagePercent = 0; // TODO
+    m_gpuUsagePercent = 0; // TODO
+    m_gpuMemoryUsageMB = 0; // TODO
+}
+
+void FrameDebugRenderer::Render( ICommandList *commandList )
+{
+    if ( !m_desc.Enabled || !m_textRenderer || !commandList )
+    {
+        return;
+    }
+
+    m_textRenderer->BeginBatch( );
+
+    float averageCharWidth = 9.0f * m_desc.Scale;
+    float maxLineLength    = 255.0f;
+    float rightMargin      = static_cast<float>( m_desc.ScreenWidth ) - averageCharWidth * maxLineLength / 2.0f;
+    float yPos             = 20.0f;
+    float lineHeight       = 42.0f * m_desc.Scale;
+
+    TextRenderDesc headerParams;
+    headerParams.Text             = "DEBUG INFO";
+    headerParams.X                = rightMargin;
+    headerParams.Y                = yPos;
+    headerParams.Color            = { 1.0f, 0.9f, 0.2f, 1.0f };
+    headerParams.Scale            = m_desc.Scale;
+    headerParams.HorizontalCenter = true; // Center the text horizontally at X position
+    headerParams.Direction        = m_desc.Direction;
+    m_textRenderer->AddText( headerParams );
+    yPos += lineHeight;
+
+    char buffer[ 128 ];
+
+    snprintf( buffer, sizeof( buffer ), "Frame Time: %.2f ms (%.1f FPS)", m_frameTimeMs, m_fps );
+    TextRenderDesc fpsParams;
+    fpsParams.Text             = buffer;
+    fpsParams.X                = rightMargin;
+    fpsParams.Y                = yPos;
+    fpsParams.Color            = m_frameTimeMs > 16.7f ? Float_4( 1.0f, 0.4f, 0.4f, 1.0f ) : m_desc.TextColor;
+    fpsParams.Scale            = m_desc.Scale;
+    fpsParams.HorizontalCenter = true;
+    fpsParams.Direction        = m_desc.Direction;
+    m_textRenderer->AddText( fpsParams );
+    yPos += lineHeight;
+
+    snprintf( buffer, sizeof( buffer ), "CPU: %.1f%% | GPU: %.1f%%", m_cpuUsagePercent, m_gpuUsagePercent );
+    TextRenderDesc usageParams;
+    usageParams.Text             = buffer;
+    usageParams.X                = rightMargin;
+    usageParams.Y                = yPos;
+    usageParams.Color            = m_desc.TextColor;
+    usageParams.Scale            = m_desc.Scale;
+    usageParams.HorizontalCenter = true;
+    usageParams.Direction        = m_desc.Direction;
+    m_textRenderer->AddText( usageParams );
+    yPos += lineHeight;
+
+    snprintf( buffer, sizeof( buffer ), "GPU Mem: %llu MB", m_gpuMemoryUsageMB );
+    TextRenderDesc memParams;
+    memParams.Text             = buffer;
+    memParams.X                = rightMargin;
+    memParams.Y                = yPos;
+    memParams.Color            = m_desc.TextColor;
+    memParams.Scale            = m_desc.Scale;
+    memParams.HorizontalCenter = true;
+    memParams.Direction        = m_desc.Direction;
+    m_textRenderer->AddText( memParams );
+    yPos += lineHeight;
+
+    TextRenderDesc backendParams;
+    backendParams.Text             = InteropString( "API: " ).Append( m_backendName.Get( ) );
+    backendParams.X                = rightMargin;
+    backendParams.Y                = yPos;
+    backendParams.Color            = m_desc.TextColor;
+    backendParams.Scale            = m_desc.Scale;
+    backendParams.HorizontalCenter = true;
+    backendParams.Direction        = m_desc.Direction;
+    m_textRenderer->AddText( backendParams );
+    yPos += lineHeight;
+
+    if ( !m_gpuName.IsEmpty( ) )
+    {
+        TextRenderDesc gpuParams;
+        gpuParams.Text             = InteropString( "GPU: " ).Append( m_gpuName.Get( ) );
+        gpuParams.X                = rightMargin;
+        gpuParams.Y                = yPos;
+        gpuParams.Color            = m_desc.TextColor;
+        gpuParams.Scale            = m_desc.Scale;
+        gpuParams.HorizontalCenter = true;
+        gpuParams.Direction        = m_desc.Direction;
+        m_textRenderer->AddText( gpuParams );
+        yPos += lineHeight;
+    }
+
+    for ( const auto &line : m_customDebugLines )
+    {
+        TextRenderDesc customParams;
+        customParams.Text             = line.Text;
+        customParams.X                = rightMargin;
+        customParams.Y                = yPos;
+        customParams.Color            = line.Color;
+        customParams.Scale            = m_desc.Scale;
+        customParams.HorizontalCenter = true;
+        customParams.Direction        = m_desc.Direction;
+        m_textRenderer->AddText( customParams );
+        yPos += lineHeight;
+    }
+
+    m_textRenderer->EndBatch( commandList );
+}
+
+void FrameDebugRenderer::SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix )
+{
+    m_projectionMatrix = projectionMatrix;
+    if ( m_textRenderer )
+    {
+        m_textRenderer->SetProjectionMatrix( m_projectionMatrix );
+    }
+}
+
+void FrameDebugRenderer::SetScreenSize( const uint32_t width, const uint32_t height )
+{
+    m_desc.ScreenWidth  = width;
+    m_desc.ScreenHeight = height;
+
+    const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( width ), static_cast<float>( height ), 0.0f, 0.0f, 1.0f );
+    XMStoreFloat4x4( &m_projectionMatrix, projection );
+
+    if ( m_textRenderer )
+    {
+        m_textRenderer->SetProjectionMatrix( m_projectionMatrix );
+    }
+}
+
+void FrameDebugRenderer::AddDebugLine( const InteropString &text, const Float_4 &color )
+{
+    m_customDebugLines.push_back( { text, color } );
+}
+
+void FrameDebugRenderer::ClearCustomDebugLines( )
+{
+    m_customDebugLines.clear( );
+}

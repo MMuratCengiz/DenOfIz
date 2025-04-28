@@ -106,6 +106,7 @@ set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Utilities/StepTimer.cpp
         Source/Utilities/Time.cpp
         Source/Utilities/Utilities.cpp
+        Source/Utilities/FrameDebugRenderer.cpp
 
         # Interface utilities
         Source/Backends/Interface/CommonData.cpp

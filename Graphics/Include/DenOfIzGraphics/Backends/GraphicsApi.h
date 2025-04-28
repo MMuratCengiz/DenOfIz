@@ -12,11 +12,7 @@
 #include <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
 #endif
 
-#include "Interface/IFence.h"
 #include "Interface/ILogicalDevice.h"
-#include "Interface/IPipeline.h"
-#include "Interface/ISemaphore.h"
-#include "Interface/ShaderData.h"
 
 namespace DenOfIz
 {
@@ -56,9 +52,10 @@ namespace DenOfIz
         explicit GraphicsApi( const APIPreference &preference );
         ~GraphicsApi( );
 
-        ILogicalDevice *CreateLogicalDevice( ) const;
-        void            LogDeviceCapabilities( PhysicalDevice gpuDesc ) const;
-        ILogicalDevice *CreateAndLoadOptimalLogicalDevice( ) const;
+        [[nodiscard]] ILogicalDevice *CreateLogicalDevice( ) const;
+        void                          LogDeviceCapabilities( PhysicalDevice gpuDesc ) const;
+        [[nodiscard]] ILogicalDevice *CreateAndLoadOptimalLogicalDevice( ) const;
+        [[nodiscard]] InteropString   ActiveAPI( ) const;
 
         static void ReportLiveObjects( );
 

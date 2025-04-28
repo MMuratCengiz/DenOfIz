@@ -96,8 +96,8 @@ namespace DenOfIz
         uint32_t                                 m_currentTextLayoutIndex = 0;
         XMFLOAT4X4                               m_projectionMatrix{ };
         bool                                     m_atlasNeedsUpdate   = false;
-        uint32_t                                 m_maxVertices        = 1024;
-        uint32_t                                 m_maxIndices         = 1536;
+        uint32_t                                 m_maxVertices        = 4096;
+        uint32_t                                 m_maxIndices         = 4096;
         uint32_t                                 m_currentVertexCount = 0;
         uint32_t                                 m_currentIndexCount  = 0;
         InteropArray<GlyphVertex>                m_glyphVertices;

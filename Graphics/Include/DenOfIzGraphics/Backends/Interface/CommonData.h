@@ -265,9 +265,9 @@ namespace DenOfIz
 
     struct DZ_API ResourceBindingSlot
     {
-        ResourceBindingType         Type          = ResourceBindingType::ConstantBuffer;
-        uint32_t                    Binding       = 0;
-        uint32_t                    RegisterSpace = 0;
+        ResourceBindingType Type          = ResourceBindingType::ConstantBuffer;
+        uint32_t            Binding       = 0;
+        uint32_t            RegisterSpace = 0;
 
         // To simplify having a really odd looking vector of ResourceBindingSlots
         [[nodiscard]] uint32_t      Key( ) const;

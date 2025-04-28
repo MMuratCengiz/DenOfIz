@@ -94,6 +94,23 @@ ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const
     return logicalDevice;
 }
 
+InteropString GraphicsApi::ActiveAPI( ) const
+{
+    if ( IsVulkanPreferred( ) )
+    {
+        return "Vulkan";
+    }
+    if ( IsDX12Preferred( ) )
+    {
+        return "DirectX12";
+    }
+    if ( IsMetalPreferred( ) )
+    {
+        return "Metal";
+    }
+    return "Undefined";
+}
+
 void GraphicsApi::ReportLiveObjects( )
 {
 #ifndef NDEBUG
