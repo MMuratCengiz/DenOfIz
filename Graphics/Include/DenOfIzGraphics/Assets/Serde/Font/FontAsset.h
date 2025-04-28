@@ -48,7 +48,7 @@ namespace DenOfIz
         uint32_t           AtlasX    = 0;
         uint32_t           AtlasY    = 0;
         uint32_t           Pitch     = 0;
-        InteropArray<Byte> Data; // RGB
+        InteropArray<Byte> Data; // MTSDF, RGBA
     };
     template class DZ_API InteropArray<FontGlyph>;
 
@@ -77,7 +77,7 @@ namespace DenOfIz
         InteropArray<FontGlyph>    Glyphs;
         InteropArray<UserProperty> UserProperties;
         uint64_t                   NumAtlasDataBytes = 0;
-        InteropArray<Byte>         AtlasData; // RGBA
+        InteropArray<Byte>         AtlasData; // RGBA (MTSDF format)
 
         FontAsset( ) : AssetHeader( 0x544E4F465A44 /*DZFONT*/, Latest, 0 )
         {

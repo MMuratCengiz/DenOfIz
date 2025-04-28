@@ -212,7 +212,7 @@ void FontImporter::GenerateAtlas( ImportContext &context ) const
     msdf_atlas::GeneratorAttributes attributes;
     attributes.config.overlapSupport = true;
 
-    msdf_atlas::ImmediateAtlasGenerator<float, 3, msdf_atlas::msdfGenerator, msdf_atlas::BitmapAtlasStorage<msdf_atlas::byte, 3>> generator( width, height );
+    msdf_atlas::ImmediateAtlasGenerator<float, 4, msdf_atlas::mtsdfGenerator, msdf_atlas::BitmapAtlasStorage<msdf_atlas::byte, 4>> generator( width, height );
 
     generator.setAttributes( attributes );
     generator.setThreadCount( 4 );
@@ -232,7 +232,7 @@ void FontImporter::GenerateAtlas( ImportContext &context ) const
         context.FontAsset.AtlasData.Resize( context.FontAsset.NumAtlasDataBytes );
     }
 
-    const msdfgen::BitmapConstRef<msdfgen::byte, 3> &bitmap    = atlasStorage;
+    const msdfgen::BitmapConstRef<msdfgen::byte, 4> &bitmap    = atlasStorage;
     const msdfgen::byte                             *pixels    = bitmap.pixels;
     auto                                            &atlasData = context.FontAsset.AtlasData;
 
@@ -241,12 +241,12 @@ void FontImporter::GenerateAtlas( ImportContext &context ) const
         int invertedY = height - 1 - y;
         for ( int x = 0; x < width; x++ )
         {
-            const int      srcIdx = 3 * ( invertedY * width + x );
+            const int      srcIdx = 4 * ( invertedY * width + x );
             const uint32_t dstIdx = FontAsset::NumChannels * ( y * width + x );
             atlasData.SetElement( dstIdx, pixels[ srcIdx ] );
             atlasData.SetElement( dstIdx + 1, pixels[ srcIdx + 1 ] );
             atlasData.SetElement( dstIdx + 2, pixels[ srcIdx + 2 ] );
-            atlasData.SetElement( dstIdx + 3, 255 );
+            atlasData.SetElement( dstIdx + 3, pixels[ srcIdx + 3 ] );
         }
     }
 

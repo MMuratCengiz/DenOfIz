@@ -69,10 +69,10 @@ void TextRenderer::Initialize( )
     m_fontAtlasTextureDesc              = { };
     m_fontAtlasTextureDesc.Width        = m_desc.InitialAtlasWidth;
     m_fontAtlasTextureDesc.Height       = m_desc.InitialAtlasHeight;
-    m_fontAtlasTextureDesc.Format       = Format::R8G8B8A8Unorm; // MSDF requires RGB channels
+    m_fontAtlasTextureDesc.Format       = Format::R8G8B8A8Unorm;
     m_fontAtlasTextureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture );
     m_fontAtlasTextureDesc.InitialUsage = ResourceUsage::ShaderResource;
-    m_fontAtlasTextureDesc.DebugName    = "Font MSDF Atlas Texture";
+    m_fontAtlasTextureDesc.DebugName    = "Font MTSDF Atlas Texture";
     m_fontAtlasTexture                  = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( m_fontAtlasTextureDesc ) );
     m_resourceTracking.TrackTexture( m_fontAtlasTexture.get( ), ResourceUsage::ShaderResource );
 
@@ -277,7 +277,7 @@ void TextRenderer::UpdateAtlasTexture( ICommandList *commandList )
         TextureDesc newDesc = m_fontAtlasTextureDesc;
         newDesc.Width       = fontAsset->AtlasWidth;
         newDesc.Height      = fontAsset->AtlasHeight;
-        newDesc.Format      = Format::R8G8B8A8Unorm; // MSDF requires RGB channels
+        newDesc.Format      = Format::R8G8B8A8Unorm;
 
         auto newTexture = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( newDesc ) );
         m_resourceTracking.TrackTexture( newTexture.get( ), ResourceUsage::ShaderResource );

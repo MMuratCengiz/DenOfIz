@@ -31,22 +31,14 @@ float screenPxRange(float2 texCoord, float pxRange, float2 textureSize)
 
 float4 main(PSInput input) : SV_TARGET
 {
-    float3 msdf = FontAtlas.Sample(FontSampler, input.TexCoord).rgb;
+    float4 mtsdf = FontAtlas.Sample(FontSampler, input.TexCoord);
+    float3 msdf = mtsdf.rgb;
     float sd = median(msdf.r, msdf.g, msdf.b);
     float2 textureSize = TextureSizeParams.xy;
     float pxRange = TextureSizeParams.z;
     float screenPxRangeValue = screenPxRange(input.TexCoord, pxRange, textureSize);
     float screenPxDistance = screenPxRangeValue * (sd - 0.5);
     float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
+    opacity = opacity * mtsdf.a;
     return float4(input.Color.rgb, input.Color.a * opacity);
 }
-
-// float4 main(PSInput input) : SV_TARGET
-// {
-//     float3 msdf = FontAtlas.Sample(FontSampler, input.TexCoord).rgb;
-//     float sdf = median(msdf.r, msdf.g, msdf.b);
-//     float screenPxRange = TextureSizeParams.z;
-//     float screenDist = screenPxRange * (sdf - 0.5);
-//     float opacity = smoothstep(-0.5, 0.5, screenDist);
-//     return float4(input.Color.rgb, input.Color.a * opacity);
-// }
