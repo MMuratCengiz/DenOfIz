@@ -68,13 +68,11 @@ void TextRenderingExample::Init( )
     debugRendererDesc.LogicalDevice = m_logicalDevice;
     debugRendererDesc.ScreenWidth   = m_windowDesc.Width;
     debugRendererDesc.ScreenHeight  = m_windowDesc.Height;
-    debugRendererDesc.FontAsset     = m_fontAsset.get( );         // Directly provide the FontAsset we already loaded
-    debugRendererDesc.TextColor     = { 0.8f, 1.0f, 0.8f, 1.0f }; // Light green
-    debugRendererDesc.Scale         = 0.6f;
+    debugRendererDesc.FontAsset     = m_fontAsset.get( );
+    debugRendererDesc.TextColor     = { 0.8f, 1.0f, 0.8f, 1.0f };
     debugRendererDesc.Enabled       = m_debugInfoEnabled;
 
     m_debugRenderer = std::make_unique<FrameDebugRenderer>( debugRendererDesc );
-    m_debugRenderer->Initialize( );
     m_debugRenderer->SetProjectionMatrix( m_orthoProjection );
 
     m_debugRenderer->AddDebugLine( "Press F1 to toggle debug info", { 0.8f, 0.8f, 0.8f, 1.0f } );

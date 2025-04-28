@@ -218,6 +218,7 @@ void TextRenderer::AddText( const TextRenderDesc &params )
     generateDesc.Color         = modifiedParams.Color;
     generateDesc.OutVertices   = &m_glyphVertices;
     generateDesc.OutIndices    = &m_indexData;
+    generateDesc.Scale         = params.Scale;
 
     textLayout->GenerateTextVertices( generateDesc );
 

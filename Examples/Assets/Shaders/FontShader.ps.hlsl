@@ -36,12 +36,7 @@ float4 main(PSInput input) : SV_TARGET
     float2 textureSize = TextureSizeParams.xy;
     float pxRange = TextureSizeParams.z;
     uint aaMode = uint(TextureSizeParams.w);
-    
-    if (aaMode != 0 && aaMode != 2) // Default
-    {
-        aaMode = 1;
-    }
-    
+
     if (aaMode == 0) // None
     {
         float sd = median(msdf.r, msdf.g, msdf.b);

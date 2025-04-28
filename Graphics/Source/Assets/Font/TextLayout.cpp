@@ -150,6 +150,7 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
     m_totalWidth  = totalAdvance;
     m_totalHeight = static_cast<float>( m_font->m_desc.FontAsset->Metrics.LineHeight );
     hb_buffer_destroy( buffer );
+    hb_font_destroy(hbFont);
 }
 
 void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateDesc ) const
@@ -160,12 +161,12 @@ void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateD
         return;
     }
 
-    float                      x             = generateDesc.StartPosition.X;
-    float                      y             = generateDesc.StartPosition.Y;
-    const Float_4             &color         = generateDesc.Color;
-    InteropArray<GlyphVertex> *outVertices   = generateDesc.OutVertices;
-    InteropArray<uint32_t>    *outIndices    = generateDesc.OutIndices;
-    const float                fontNumPixels = generateDesc.Scale;
+    float                      x           = generateDesc.StartPosition.X;
+    float                      y           = generateDesc.StartPosition.Y;
+    const Float_4             &color       = generateDesc.Color;
+    InteropArray<GlyphVertex> *outVertices = generateDesc.OutVertices;
+    InteropArray<uint32_t>    *outIndices  = generateDesc.OutIndices;
+    const float                scale       = generateDesc.Scale;
 
     const FontAsset *fontAsset  = m_font->Asset( );
     uint32_t         baseVertex = outVertices->NumElements( );
@@ -174,17 +175,17 @@ void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateD
         const FontGlyph *metrics = m_font->GetGlyph( shapedGlyph.CodePoint );
         if ( !metrics || metrics->Width == 0 || metrics->Height == 0 )
         {
-            x += shapedGlyph.XAdvance;
+            x += shapedGlyph.XAdvance * scale;
             continue;
         }
 
-        const float x0 = x + shapedGlyph.XOffset + metrics->BearingX;
-        const float x1 = x0 + metrics->Width;
-        const float y0 = y - metrics->BearingY + shapedGlyph.YOffset;
-        const float y1 = y0 + metrics->Height;
+        const float x0 = x + (shapedGlyph.XOffset + metrics->BearingX) * scale;
+        const float x1 = x0 + metrics->Width * scale;
+        const float y0 = y - metrics->BearingY * scale + shapedGlyph.YOffset * scale;
+        const float y1 = y0 + metrics->Height * scale;
 
-        x += shapedGlyph.XAdvance;
-        y += shapedGlyph.YAdvance;
+        x += shapedGlyph.XAdvance * scale;
+        y += shapedGlyph.YAdvance * scale;
 
         const float u0 = static_cast<float>( metrics->AtlasX ) / static_cast<float>( fontAsset->AtlasWidth );
         const float v0 = static_cast<float>( metrics->AtlasY ) / static_cast<float>( fontAsset->AtlasHeight );

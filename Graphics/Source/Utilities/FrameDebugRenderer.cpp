@@ -19,30 +19,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m_desc( desc ), m_lastCpuCheckTime( std::chrono::high_resolution_clock::now( ) )
+FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m_desc( desc )
 {
     m_frameTimes.resize( m_maxFrameTimeSamples, 0.0 );
 
     m_time.OnEachSecond = [ this ]( const double fps ) { m_fps = fps; };
-}
 
-void FrameDebugRenderer::Initialize( )
-{
-    LoadFont( );
-    GatherSystemInfo( );
-
-    const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( m_desc.ScreenWidth ), static_cast<float>( m_desc.ScreenHeight ), 0.0f, 0.0f, 1.0f );
-    XMStoreFloat4x4( &m_projectionMatrix, projection );
-
-    if ( m_textRenderer )
-    {
-        m_textRenderer->SetProjectionMatrix( m_projectionMatrix );
-        m_textRenderer->SetAntiAliasingMode( AntiAliasingMode::Grayscale );
-    }
-}
-
-void FrameDebugRenderer::LoadFont( )
-{
     DZ_NOT_NULL( m_desc.FontAsset );
 
     m_fontLibrary = std::make_unique<FontLibrary>( );
@@ -50,6 +32,12 @@ void FrameDebugRenderer::LoadFont( )
     FontDesc fontDesc{ };
     fontDesc.FontAsset = m_desc.FontAsset;
     m_font             = m_fontLibrary->LoadFont( fontDesc );
+
+    m_backendName = m_desc.GraphicsApi->ActiveAPI( );
+    m_gpuName     = m_desc.LogicalDevice->DeviceInfo( ).Name;
+
+    const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( m_desc.ScreenWidth ), static_cast<float>( m_desc.ScreenHeight ), 0.0f, 0.0f, 1.0f );
+    XMStoreFloat4x4( &m_projectionMatrix, projection );
 
     TextRendererDesc textRendererDesc{ };
     textRendererDesc.GraphicsApi        = m_desc.GraphicsApi;
@@ -60,12 +48,7 @@ void FrameDebugRenderer::LoadFont( )
     m_textRenderer = std::make_unique<TextRenderer>( textRendererDesc );
     m_textRenderer->Initialize( );
     m_textRenderer->SetFont( m_font );
-}
-
-void FrameDebugRenderer::GatherSystemInfo( )
-{
-    m_backendName = m_desc.GraphicsApi->ActiveAPI( );
-    m_gpuName     = m_desc.LogicalDevice->DeviceInfo( ).Name;
+    m_textRenderer->SetAntiAliasingMode( AntiAliasingMode::Grayscale );
 }
 
 void FrameDebugRenderer::UpdateStats( const float deltaTime )
@@ -101,8 +84,8 @@ void FrameDebugRenderer::UpdateFrameTimeStats( float deltaTime )
 
 void FrameDebugRenderer::UpdatePerformanceStats( )
 {
-    m_cpuUsagePercent = 0; // TODO
-    m_gpuUsagePercent = 0; // TODO
+    m_cpuUsagePercent  = 0; // TODO
+    m_gpuUsagePercent  = 0; // TODO
     m_gpuMemoryUsageMB = 0; // TODO
 }
 
@@ -116,21 +99,10 @@ void FrameDebugRenderer::Render( ICommandList *commandList )
     m_textRenderer->BeginBatch( );
 
     float averageCharWidth = 9.0f * m_desc.Scale;
-    float maxLineLength    = 255.0f;
+    float maxLineLength    = 155.0f;
     float rightMargin      = static_cast<float>( m_desc.ScreenWidth ) - averageCharWidth * maxLineLength / 2.0f;
     float yPos             = 20.0f;
     float lineHeight       = 42.0f * m_desc.Scale;
-
-    TextRenderDesc headerParams;
-    headerParams.Text             = "DEBUG INFO";
-    headerParams.X                = rightMargin;
-    headerParams.Y                = yPos;
-    headerParams.Color            = { 1.0f, 0.9f, 0.2f, 1.0f };
-    headerParams.Scale            = m_desc.Scale;
-    headerParams.HorizontalCenter = true; // Center the text horizontally at X position
-    headerParams.Direction        = m_desc.Direction;
-    m_textRenderer->AddText( headerParams );
-    yPos += lineHeight;
 
     char buffer[ 128 ];
 
@@ -243,4 +215,16 @@ void FrameDebugRenderer::AddDebugLine( const InteropString &text, const Float_4 
 void FrameDebugRenderer::ClearCustomDebugLines( )
 {
     m_customDebugLines.clear( );
+}
+void FrameDebugRenderer::SetEnabled( const bool enabled )
+{
+    m_desc.Enabled = enabled;
+}
+bool FrameDebugRenderer::IsEnabled( ) const
+{
+    return m_desc.Enabled;
+}
+void FrameDebugRenderer::ToggleVisibility( )
+{
+    m_desc.Enabled = !m_desc.Enabled;
 }

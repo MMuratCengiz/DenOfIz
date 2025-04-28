@@ -65,7 +65,7 @@ namespace DenOfIz
 
         InteropArray<GlyphVertex> *OutVertices;
         InteropArray<uint32_t>    *OutIndices;
-        float                      Scale = 1.5f;
+        float                      Scale = 1.0f;
     };
     class DZ_API TextLayout
     {

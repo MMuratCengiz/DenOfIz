@@ -36,19 +36,17 @@ namespace DenOfIz
         uint32_t        ScreenWidth   = 0;
         uint32_t        ScreenHeight  = 0;
 
-        // Font options - either provide FontAsset or FontPath
         FontAsset *FontAsset = nullptr;
 
         Float_4       TextColor   = { 1.0f, 1.0f, 1.0f, 1.0f };
-        float         RefreshRate = 0.5f; // Update stats every half-second
-        float         Scale       = 0.6f;
+        float         RefreshRate = 0.5f;
+        float         Scale       = 0.5f;
         TextDirection Direction   = TextDirection::Auto;
         bool          Enabled     = true;
     };
 
     class FrameDebugRenderer
     {
-    private:
         FrameDebugRendererDesc           m_desc;
         std::unique_ptr<FontLibrary>     m_fontLibrary;
         std::unique_ptr<BinaryReader>    m_binaryReader;
@@ -83,10 +81,9 @@ namespace DenOfIz
         std::vector<DebugLine> m_customDebugLines;
 
     public:
-        FrameDebugRenderer( const FrameDebugRendererDesc &desc );
+        explicit FrameDebugRenderer( const FrameDebugRendererDesc &desc );
         ~FrameDebugRenderer( ) = default;
 
-        void Initialize( );
         void UpdateStats( float deltaTime );
         void Render( ICommandList *commandList );
         void SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix );
@@ -96,24 +93,11 @@ namespace DenOfIz
         void AddDebugLine( const InteropString &text, const Float_4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } );
         void ClearCustomDebugLines( );
 
-        void SetEnabled( bool enabled )
-        {
-            m_desc.Enabled = enabled;
-        }
-        bool IsEnabled( ) const
-        {
-            return m_desc.Enabled;
-        }
-
-        // Toggle with keyboard
-        void ToggleVisibility( )
-        {
-            m_desc.Enabled = !m_desc.Enabled;
-        }
+        void SetEnabled( const bool enabled );
+        bool IsEnabled( ) const;
+        void ToggleVisibility( );
 
     private:
-        void LoadFont( );
-        void GatherSystemInfo( );
         void UpdatePerformanceStats( );
         void UpdateFrameTimeStats( float deltaTime );
     };

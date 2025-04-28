@@ -52,7 +52,7 @@ namespace DenOfIz
         bool             HorizontalCenter;
         bool             VerticalCenter;
         TextDirection    Direction;
-        AntiAliasingMode AntiAliasingMode;
+        AntiAliasingMode AntiAliasingMode = AntiAliasingMode::Grayscale;
 
         TextRenderDesc( ) :
             X( 0.0f ), Y( 0.0f ), Color( 1.0f, 1.0f, 1.0f, 1.0f ), Scale( 1.0f ), HorizontalCenter( false ), VerticalCenter( false ), Direction( TextDirection::Auto )
@@ -72,7 +72,7 @@ namespace DenOfIz
         GraphicsApi     *m_graphicsApi   = nullptr;
         ILogicalDevice  *m_logicalDevice = nullptr;
         ResourceTracking m_resourceTracking;
-        AntiAliasingMode m_antiAliasingMode = AntiAliasingMode::None;
+        AntiAliasingMode m_antiAliasingMode = AntiAliasingMode::Grayscale;
 
         std::unordered_map<std::string, Font *> m_loadedFonts;
 
