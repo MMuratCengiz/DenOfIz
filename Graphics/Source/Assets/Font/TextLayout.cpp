@@ -80,7 +80,7 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
         break;
     case TextDirection::Auto:
     default:
-        hbDirection = HB_DIRECTION_LTR; // Default to LTR instead of INVALID
+        hbDirection = HB_DIRECTION_LTR;
         break;
     }
 
@@ -89,12 +89,10 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
     hb_buffer_set_script( buffer, static_cast<hb_script_t>( HB_TAG( scriptTag.X, scriptTag.Y, scriptTag.Z, scriptTag.W ) ) );
     hb_buffer_set_language( buffer, hb_language_from_string( "en", -1 ) );
 
-    // Add text to buffer
     const char *text_ptr = utf8Text.c_str( );
     const int   text_len = utf8Text.length( );
     hb_buffer_add_utf8( buffer, text_ptr, text_len, 0, text_len );
 
-    // Define shaping features (kerning and ligatures)
     constexpr hb_feature_t features[] = {
         { HB_TAG( 'k', 'e', 'r', 'n' ), 1, 0, UINT_MAX }, // Enable kerning
         { HB_TAG( 'l', 'i', 'g', 'a' ), 1, 0, UINT_MAX }  // Enable standard ligatures
