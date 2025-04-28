@@ -48,13 +48,18 @@ void TextRenderingExample::Init( )
     fontDesc.FontAsset = m_fontAsset.get( );
     m_font             = m_fontLibrary->LoadFont( fontDesc );
 
-    m_fontRenderer = std::make_unique<TextRenderer>( m_graphicsApi, m_logicalDevice );
-    m_fontRenderer->Initialize( );
-    m_fontRenderer->SetFont( m_font );
+    TextRendererDesc textRendererDesc{ };
+    textRendererDesc.GraphicsApi        = m_graphicsApi;
+    textRendererDesc.LogicalDevice      = m_logicalDevice;
+    textRendererDesc.InitialAtlasWidth  = m_fontAsset->AtlasWidth;
+    textRendererDesc.InitialAtlasHeight = m_fontAsset->AtlasHeight;
+    m_textRenderer = std::make_unique<TextRenderer>( textRendererDesc );
+    m_textRenderer->Initialize( );
+    m_textRenderer->SetFont( m_font );
 
     const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( m_windowDesc.Width ), static_cast<float>( m_windowDesc.Height ), 0.0f, 0.0f, 1.0f );
     XMStoreFloat4x4( &m_orthoProjection, projection );
-    m_fontRenderer->SetProjectionMatrix( m_orthoProjection );
+    m_textRenderer->SetProjectionMatrix( m_orthoProjection );
 
     m_animTime = 0.0f;
 
@@ -63,7 +68,7 @@ void TextRenderingExample::Init( )
 
 void TextRenderingExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void TextRenderingExample::Update( )
@@ -105,15 +110,67 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     const auto viewport = m_swapChain->GetViewport( );
     commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
     commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
-    m_fontRenderer->BeginBatch( );
+    m_textRenderer->BeginBatch( );
 
-    TextRenderDesc staticTextParams;
-    staticTextParams.Text  = "Deniz is cutie pie PIE gtest <3";
-    staticTextParams.X     = 50.0f;
-    staticTextParams.Y     = 100.0f;
-    staticTextParams.Color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    staticTextParams.Scale = 1.0f;
-    m_fontRenderer->AddText( staticTextParams );
+    // Determine current antialiasing mode name
+    const char *currentAAModeName = "Unknown";
+    switch ( m_currentAAModeIndex )
+    {
+    case 0:
+        currentAAModeName = "None";
+        break;
+    case 1:
+        currentAAModeName = "Grayscale";
+        break;
+    case 2:
+        currentAAModeName = "Subpixel";
+        break;
+    }
+
+    // Display current mode and instructions
+    TextRenderDesc titleParams;
+    titleParams.Text  = "Font Rendering Example";
+    titleParams.X     = 50.0f;
+    titleParams.Y     = 50.0f;
+    titleParams.Color = { 1.0f, 1.0f, 0.5f, 1.0f };
+    titleParams.Scale = 1.2f;
+    m_textRenderer->AddText( titleParams );
+
+    // Current AA mode display
+    TextRenderDesc currentModeParams;
+    currentModeParams.Text  = InteropString( "Current Mode: " ).Append( currentAAModeName ).Append( " Antialiasing" );
+    currentModeParams.X     = 50.0f;
+    currentModeParams.Y     = 100.0f;
+    currentModeParams.Color = { 0.5f, 1.0f, 1.0f, 1.0f };
+    currentModeParams.Scale = 1.0f;
+    m_textRenderer->AddText( currentModeParams );
+
+    // Instructions
+    TextRenderDesc instructionsParams;
+    instructionsParams.Text  = "Press SPACE to cycle through antialiasing modes";
+    instructionsParams.X     = 50.0f;
+    instructionsParams.Y     = 150.0f;
+    instructionsParams.Color = { 0.8f, 0.8f, 0.8f, 1.0f };
+    instructionsParams.Scale = 0.8f;
+    m_textRenderer->AddText( instructionsParams );
+
+    // Sample text at different sizes
+    TextRenderDesc sampleParams;
+    sampleParams.Text  = "Sample Text - The quick brown fox jumps over the lazy dog";
+    sampleParams.X     = 50.0f;
+    sampleParams.Y     = 200.0f;
+    sampleParams.Color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    sampleParams.Scale = 1.0f;
+    m_textRenderer->AddText( sampleParams );
+
+    // Smaller text
+    TextRenderDesc smallParams;
+    smallParams.Text  = "Small Text - (0123456789) The quick brown fox jumps over the lazy dog";
+    smallParams.X     = 50.0f;
+    smallParams.Y     = 250.0f;
+    smallParams.Color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    smallParams.Scale = 0.6f;
+    m_textRenderer->AddText( smallParams );
 
     TextRenderDesc animatedTextParams;
     animatedTextParams.Text = "YUPPP!!";
@@ -128,16 +185,23 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     animatedTextParams.HorizontalCenter = true;
     animatedTextParams.VerticalCenter   = true;
 
-    m_fontRenderer->AddText( animatedTextParams );
+    m_textRenderer->AddText( animatedTextParams );
 
-    TextRenderDesc batch2Desc;
-    batch2Desc.Text  = "Yep";
-    batch2Desc.X     = 50.0f;
-    batch2Desc.Y     = 200.0f;
-    batch2Desc.Color = { 0.8f, 0.9f, 1.0f, 1.0f };
-    batch2Desc.Scale = 0.75f;
-    m_fontRenderer->AddText( batch2Desc );
-    m_fontRenderer->EndBatch( commandList );
+    // Animated text with the current antialiasing mode
+    TextRenderDesc animatedParams;
+    animatedParams.Text = "Animated Text with Antialiasing";
+    animatedParams.X    = static_cast<float>( m_windowDesc.Width ) / 2.0f;
+    animatedParams.Y    = 350.0f;
+
+    // Use different animation parameters for second animated text
+    float r2                        = ( sin( m_animTime * 1.0f ) + 1.0f ) / 2.0f;
+    float g2                        = ( sin( m_animTime * 2.0f + 1.0f ) + 1.0f ) / 2.0f;
+    float b2                        = ( sin( m_animTime * 1.5f + 3.0f ) + 1.0f ) / 2.0f;
+    animatedParams.Color            = { r2, g2, b2, 1.0f };
+    animatedParams.Scale            = 1.0f + 0.15f * sin( m_animTime * 2.0f );
+    animatedParams.HorizontalCenter = true;
+    m_textRenderer->AddText( animatedParams );
+    m_textRenderer->EndBatch( commandList );
 
     commandList->EndRendering( );
 
@@ -150,6 +214,15 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
 
 void TextRenderingExample::HandleEvent( SDL_Event &event )
 {
+    if ( event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_SPACE )
+    {
+        m_currentAAModeIndex = ( m_currentAAModeIndex + 1 ) % 3;
+        m_textRenderer->SetAntiAliasingMode( static_cast<AntiAliasingMode>( m_currentAAModeIndex ) );
+
+        const char *modeNames[] = { "None", "Grayscale", "Subpixel" };
+        LOG( INFO ) << "Switched to antialiasing mode: " << modeNames[ m_currentAAModeIndex ];
+    }
+
     m_worldData.Camera->HandleEvent( event );
     IExample::HandleEvent( event );
 }

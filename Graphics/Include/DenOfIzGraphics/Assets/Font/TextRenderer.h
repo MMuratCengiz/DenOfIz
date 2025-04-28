@@ -34,16 +34,25 @@ using namespace DirectX;
 
 namespace DenOfIz
 {
+    struct DZ_API TextRendererDesc
+    {
+        GraphicsApi    *GraphicsApi;
+        ILogicalDevice *LogicalDevice;
+        uint32_t        InitialAtlasWidth  = 512;
+        uint32_t        InitialAtlasHeight = 512;
+    };
+
     struct DZ_API TextRenderDesc
     {
-        InteropString Text;
-        float         X;
-        float         Y;
-        Float_4       Color;
-        float         Scale;
-        bool          HorizontalCenter;
-        bool          VerticalCenter;
-        TextDirection Direction;
+        InteropString    Text;
+        float            X;
+        float            Y;
+        Float_4          Color;
+        float            Scale;
+        bool             HorizontalCenter;
+        bool             VerticalCenter;
+        TextDirection    Direction;
+        AntiAliasingMode AntiAliasingMode;
 
         TextRenderDesc( ) :
             X( 0.0f ), Y( 0.0f ), Color( 1.0f, 1.0f, 1.0f, 1.0f ), Scale( 1.0f ), HorizontalCenter( false ), VerticalCenter( false ), Direction( TextDirection::Auto )
@@ -59,17 +68,20 @@ namespace DenOfIz
     };
     class TextRenderer
     {
-        GraphicsApi     *m_graphicsApi;
-        ILogicalDevice  *m_logicalDevice;
+        TextRendererDesc m_desc;
+        GraphicsApi     *m_graphicsApi   = nullptr;
+        ILogicalDevice  *m_logicalDevice = nullptr;
         ResourceTracking m_resourceTracking;
+        AntiAliasingMode m_antiAliasingMode = AntiAliasingMode::None;
 
         std::unordered_map<std::string, Font *> m_loadedFonts;
 
         std::unique_ptr<ShaderProgram>      m_fontShaderProgram;
         std::unique_ptr<IPipeline>          m_fontPipeline;
         TextureDesc                         m_fontAtlasTextureDesc{ };
-        std::unique_ptr<ITextureResource>   m_fontAtlasTexture = nullptr;
-        std::unique_ptr<ISampler>           m_fontSampler      = nullptr;
+        std::unique_ptr<ITextureResource>   m_fontAtlasTexture       = nullptr;
+        std::unique_ptr<IBufferResource>    m_fontAtlasStagingBuffer = nullptr;
+        std::unique_ptr<ISampler>           m_fontSampler            = nullptr;
         BufferDesc                          m_vertexBufferDesc{ };
         std::unique_ptr<IBufferResource>    m_vertexBuffer = nullptr;
         BufferDesc                          m_indexBufferDesc{ };
@@ -92,11 +104,12 @@ namespace DenOfIz
         InteropArray<uint32_t>                   m_indexData;
 
     public:
-        TextRenderer( GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice );
+        explicit TextRenderer( const TextRendererDesc &desc );
         ~TextRenderer( );
 
         void Initialize( );
         void SetFont( Font *font );
+        void SetAntiAliasingMode( AntiAliasingMode antiAliasingMode );
         void SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix );
         void BeginBatch( );
         void AddText( const TextRenderDesc &params );

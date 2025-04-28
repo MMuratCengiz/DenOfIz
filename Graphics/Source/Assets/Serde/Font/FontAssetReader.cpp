@@ -46,10 +46,9 @@ FontAsset FontAssetReader::Read( )
     m_fontAsset.NumBytes = m_reader->ReadUInt64( );
     m_fontAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
 
-    m_fontAsset.DataNumBytes = m_reader->ReadUInt64( );
-    m_fontAsset.Data         = m_reader->ReadBytes( m_fontAsset.DataNumBytes );
-    m_fontAsset.InitialFontSize    = m_reader->ReadUInt32( );
-    m_fontAsset.AntiAliasing = m_reader->ReadByte( ) == 1;
+    m_fontAsset.DataNumBytes    = m_reader->ReadUInt64( );
+    m_fontAsset.Data            = m_reader->ReadBytes( m_fontAsset.DataNumBytes );
+    m_fontAsset.InitialFontSize = m_reader->ReadUInt32( );
 
     m_fontAsset.AtlasWidth  = m_reader->ReadUInt32( );
     m_fontAsset.AtlasHeight = m_reader->ReadUInt32( );
@@ -92,7 +91,7 @@ FontAsset FontAssetReader::Read( )
     return m_fontAsset;
 }
 
-void FontAssetReader::LoadAtlasIntoGpuTexture( const FontAsset& fontAsset, const LoadAtlasIntoGpuTextureDesc &desc )
+void FontAssetReader::LoadAtlasIntoGpuTexture( const FontAsset &fontAsset, const LoadAtlasIntoGpuTextureDesc &desc )
 {
     if ( !desc.CommandList || !desc.Texture )
     {
@@ -100,23 +99,17 @@ void FontAssetReader::LoadAtlasIntoGpuTexture( const FontAsset& fontAsset, const
         return;
     }
 
-    std::vector<uint8_t> rgbaData( fontAsset.AtlasWidth * fontAsset.AtlasHeight * 4, 255 );
-    for ( size_t i = 0; i < fontAsset.AtlasWidth * fontAsset.AtlasHeight; i++ )
-    {
-        const size_t srcRgbIndex = i * 3;
-        const size_t dstRgbIndex = i * 4;
-        if ( srcRgbIndex + 2 < fontAsset.AtlasData.NumElements( ) )
-        {
-            rgbaData[ dstRgbIndex ]     = fontAsset.AtlasData.GetElement(  srcRgbIndex );     // R
-            rgbaData[ dstRgbIndex + 1 ] = fontAsset.AtlasData.GetElement(  srcRgbIndex + 1 ); // G
-            rgbaData[ dstRgbIndex + 2 ] = fontAsset.AtlasData.GetElement(  srcRgbIndex + 2 ); // B
-            rgbaData[ dstRgbIndex + 3 ] = 255;                            // A (fully opaque)
-        }
-    }
-
     const auto stagingBuffer = desc.StagingBuffer;
     const auto mappedMemory  = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
-    memcpy( mappedMemory, rgbaData.data( ), rgbaData.size( ) );
+
+    const uint32_t rowPitch          = fontAsset.AtlasWidth * FontAsset::NumChannels;
+    const uint32_t alignedRowPitch   = Utilities::Align( fontAsset.AtlasWidth * FontAsset::NumChannels, desc.Device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
+
+    const Byte *pSrcData = fontAsset.AtlasData.Data( );
+    for ( uint32_t y = 0; y < fontAsset.AtlasHeight; ++y )
+    {
+        memcpy( mappedMemory + alignedRowPitch * y, pSrcData + rowPitch * y, rowPitch );
+    }
     stagingBuffer->UnmapMemory( );
 
     CopyBufferToTextureDesc copyDesc{ };
@@ -125,7 +118,7 @@ void FontAssetReader::LoadAtlasIntoGpuTexture( const FontAsset& fontAsset, const
     copyDesc.Format     = desc.Texture->GetFormat( );
     copyDesc.MipLevel   = 0;
     copyDesc.ArrayLayer = 0;
-    copyDesc.RowPitch   = fontAsset.AtlasWidth;
+    copyDesc.RowPitch   = fontAsset.AtlasWidth * FontAsset::NumChannels;
     copyDesc.NumRows    = fontAsset.AtlasHeight;
 
     desc.CommandList->CopyBufferToTexture( copyDesc );

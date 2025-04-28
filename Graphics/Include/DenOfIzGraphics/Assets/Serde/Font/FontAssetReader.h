@@ -23,6 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 
+#include "DenOfIzGraphics/Assets/Font/TextRenderer.h"
+
 namespace DenOfIz
 {
     struct DZ_API FontAssetReaderDesc
@@ -32,6 +34,7 @@ namespace DenOfIz
 
     struct DZ_API LoadAtlasIntoGpuTextureDesc
     {
+        ILogicalDevice   *Device;
         ICommandList     *CommandList;
         IBufferResource  *StagingBuffer;
         ITextureResource *Texture;
@@ -48,7 +51,7 @@ namespace DenOfIz
         explicit FontAssetReader( const FontAssetReaderDesc &desc );
         ~FontAssetReader( );
 
-        FontAsset              Read( );
-        static void            LoadAtlasIntoGpuTexture( const FontAsset& fontAsset, const LoadAtlasIntoGpuTextureDesc &desc );
+        FontAsset   Read( );
+        static void LoadAtlasIntoGpuTexture( const FontAsset &fontAsset, const LoadAtlasIntoGpuTextureDesc &desc );
     };
 } // namespace DenOfIz

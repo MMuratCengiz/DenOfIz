@@ -22,6 +22,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    enum class AntiAliasingMode
+    {
+        None,
+        Grayscale,
+        Subpixel
+    };
     struct DZ_API GlyphBounds
     {
         double XMin = 0;
@@ -42,7 +48,7 @@ namespace DenOfIz
         uint32_t           AtlasX    = 0;
         uint32_t           AtlasY    = 0;
         uint32_t           Pitch     = 0;
-        InteropArray<Byte> Data;
+        InteropArray<Byte> Data; // RGB
     };
     template class DZ_API InteropArray<FontGlyph>;
 
@@ -58,28 +64,27 @@ namespace DenOfIz
 
     struct DZ_API FontAsset : public AssetHeader
     {
-        static constexpr uint32_t Latest = 1;
+        static constexpr uint32_t Latest      = 1;
+        static constexpr uint32_t NumChannels = 4;
 
         uint64_t                   DataNumBytes = 0;
         InteropArray<Byte>         Data;
         uint32_t                   InitialFontSize;
-        bool                       AntiAliasing;
+        AntiAliasingMode           AntiAliasingMode;
         uint32_t                   AtlasWidth;
         uint32_t                   AtlasHeight;
         FontMetrics                Metrics;
         InteropArray<FontGlyph>    Glyphs;
         InteropArray<UserProperty> UserProperties;
         uint64_t                   NumAtlasDataBytes = 0;
-        InteropArray<Byte>         AtlasData;
+        InteropArray<Byte>         AtlasData; // RGBA
 
         FontAsset( ) : AssetHeader( 0x544E4F465A44 /*DZFONT*/, Latest, 0 )
         {
             InitialFontSize = 36;
-            AntiAliasing    = true;
             AtlasWidth      = 512;
             AtlasHeight     = 512;
 
-            // Initialize metrics with default values
             Metrics.Ascent             = 0;
             Metrics.Descent            = 0;
             Metrics.LineGap            = 0;

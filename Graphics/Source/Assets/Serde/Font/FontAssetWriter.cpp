@@ -65,7 +65,6 @@ void FontAssetWriter::WriteMetadata( const FontAsset &fontAsset ) const
     m_writer->WriteBytes( fontAsset.Data );
 
     m_writer->WriteUInt32( fontAsset.InitialFontSize );
-    m_writer->WriteByte( fontAsset.AntiAliasing ? 1 : 0 );
     m_writer->WriteUInt32( fontAsset.AtlasWidth );
     m_writer->WriteUInt32( fontAsset.AtlasHeight );
 

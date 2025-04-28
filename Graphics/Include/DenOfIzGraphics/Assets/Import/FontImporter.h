@@ -31,7 +31,6 @@ namespace DenOfIz
     struct DZ_API FontImportDesc : ImportDesc
     {
         uint32_t InitialFontSize = 36;
-        bool     AntiAliasing    = true;
         uint32_t AtlasWidth      = 512;
         uint32_t AtlasHeight     = 512;
 
@@ -54,7 +53,7 @@ namespace DenOfIz
         ImporterDesc             m_importerDesc;
         const FontImporterDesc   m_desc;
         FT_Library               m_ftLibrary;
-        msdfgen::FreetypeHandle *m_msdfFtHandle   = nullptr;
+        msdfgen::FreetypeHandle *m_msdfFtHandle = nullptr;
 
         struct Rect
         {
@@ -78,10 +77,11 @@ namespace DenOfIz
             uint32_t CurrentAtlasX = 0;
             uint32_t CurrentAtlasY = 0;
             uint32_t RowHeight     = 0;
+
+            msdfgen::FontHandle *MsdfFont = nullptr;
         };
 
     public:
-
         explicit FontImporter( FontImporterDesc desc );
         ~FontImporter( ) override;
 
@@ -97,10 +97,12 @@ namespace DenOfIz
         bool                 GenerateMsdfForGlyph( FontGlyph &glyphDesc, msdfgen::FontHandle *msdfFont, uint32_t codePoint, uint32_t fontSize ) const;
         Rect                 AllocateSpace( ImportContext &context, uint32_t width, uint32_t height );
         void                 CopyMsdfDataToAtlas( ImportContext &context, const FontGlyph &glyphDesc, const Rect &rect );
+        void                 GenerateAtlas( ImportContext &context ) const;
         void                 WriteFontAsset( const ImportContext &context, AssetUri &outAssetUri ) const;
         void                 ExtractFontMetrics( ImportContext &context, FT_Face face );
         InteropString        CreateAssetFileName( const InteropString &prefix, const InteropString &name ) const;
         static InteropString GetAssetNameFromFilePath( const InteropString &filePath );
         static InteropString SanitizeAssetName( const InteropString &name );
+        static Byte          FloatToByte( const float &f );
     };
 } // namespace DenOfIz

@@ -30,11 +30,21 @@ TextLayout::TextLayout( const TextLayoutDesc &desc ) : m_desc( desc )
 
 void TextLayout::SetFont( Font *font )
 {
-    m_font = font;
+    m_font     = font;
+    m_isShaped = false;
+    m_shapedGlyphs.clear( );
+    m_totalWidth  = 0.0f;
+    m_totalHeight = 0.0f;
 }
 
 void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
 {
+    if ( m_isShaped )
+    {
+        return;
+    }
+    m_isShaped = true;
+
     const std::string    utf8Text  = shapeDesc.Text.Get( );
     const std::u32string utf32Text = Utf8ToUtf32( utf8Text );
     const FT_Face        face      = m_font->FTFace( );

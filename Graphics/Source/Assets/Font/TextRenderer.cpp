@@ -23,8 +23,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 using namespace DirectX;
 
-TextRenderer::TextRenderer( GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice ) : m_graphicsApi( graphicsApi ), m_logicalDevice( logicalDevice )
+TextRenderer::TextRenderer( const TextRendererDesc &desc ) : m_desc( desc )
 {
+    DZ_NOT_NULL( desc.GraphicsApi );
+    DZ_NOT_NULL( desc.LogicalDevice );
+
+    m_graphicsApi   = desc.GraphicsApi;
+    m_logicalDevice = desc.LogicalDevice;
+
     XMStoreFloat4x4( &m_projectionMatrix, XMMatrixIdentity( ) );
 }
 
@@ -61,14 +67,25 @@ void TextRenderer::Initialize( )
     m_fontSampler             = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( samplerDesc ) );
 
     m_fontAtlasTextureDesc              = { };
-    m_fontAtlasTextureDesc.Width        = 512;
-    m_fontAtlasTextureDesc.Height       = 512;
+    m_fontAtlasTextureDesc.Width        = m_desc.InitialAtlasWidth;
+    m_fontAtlasTextureDesc.Height       = m_desc.InitialAtlasHeight;
     m_fontAtlasTextureDesc.Format       = Format::R8G8B8A8Unorm; // MSDF requires RGB channels
     m_fontAtlasTextureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture );
     m_fontAtlasTextureDesc.InitialUsage = ResourceUsage::ShaderResource;
     m_fontAtlasTextureDesc.DebugName    = "Font MSDF Atlas Texture";
     m_fontAtlasTexture                  = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( m_fontAtlasTextureDesc ) );
     m_resourceTracking.TrackTexture( m_fontAtlasTexture.get( ), ResourceUsage::ShaderResource );
+
+    auto alignedPitch = Utilities::Align( m_desc.InitialAtlasWidth * FontAsset::NumChannels, m_logicalDevice->DeviceInfo( ).Constants.BufferTextureRowAlignment );
+    auto alignedSlice = Utilities::Align( m_desc.InitialAtlasHeight, m_logicalDevice->DeviceInfo( ).Constants.BufferTextureAlignment );
+
+    BufferDesc stagingDesc;
+    stagingDesc.NumBytes     = alignedPitch * alignedSlice;
+    stagingDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer );
+    stagingDesc.InitialUsage = ResourceUsage::CopySrc;
+    stagingDesc.DebugName    = "Font MSDF Atlas Staging Buffer";
+    stagingDesc.HeapType     = HeapType::CPU;
+    m_fontAtlasStagingBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( stagingDesc ) );
 
     m_vertexBufferDesc            = { };
     m_vertexBufferDesc.NumBytes   = m_maxVertices * sizeof( GlyphVertex );
@@ -107,16 +124,16 @@ void TextRenderer::Initialize( )
     pipelineDesc.Graphics.CullMode = CullMode::None;
     pipelineDesc.Graphics.FillMode = FillMode::Solid;
 
-    RenderTargetDesc &renderTarget   = pipelineDesc.Graphics.RenderTargets.EmplaceElement( );
-    renderTarget.Blend.Enable        = true;
-    renderTarget.Blend.SrcBlend      = Blend::SrcAlpha;
-    renderTarget.Blend.DstBlend      = Blend::InvSrcAlpha;
-    renderTarget.Blend.BlendOp       = BlendOp::Add;
-    renderTarget.Blend.SrcBlendAlpha = Blend::One;
-    renderTarget.Blend.DstBlendAlpha = Blend::Zero;
-    renderTarget.Blend.BlendOpAlpha  = BlendOp::Add;
-    renderTarget.Format = renderTarget.Format = Format::R8G8B8A8Unorm;
-    pipelineDesc.Graphics.PrimitiveTopology   = PrimitiveTopology::Triangle;
+    RenderTargetDesc &renderTarget          = pipelineDesc.Graphics.RenderTargets.EmplaceElement( );
+    renderTarget.Blend.Enable               = true;
+    renderTarget.Blend.SrcBlend             = Blend::SrcAlpha;
+    renderTarget.Blend.DstBlend             = Blend::InvSrcAlpha;
+    renderTarget.Blend.BlendOp              = BlendOp::Add;
+    renderTarget.Blend.SrcBlendAlpha        = Blend::One;
+    renderTarget.Blend.DstBlendAlpha        = Blend::Zero;
+    renderTarget.Blend.BlendOpAlpha         = BlendOp::Add;
+    renderTarget.Format                     = Format::B8G8R8A8Unorm;
+    pipelineDesc.Graphics.PrimitiveTopology = PrimitiveTopology::Triangle;
 
     m_fontPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 
@@ -138,6 +155,11 @@ void TextRenderer::SetFont( Font *font )
     {
         textLayout->SetFont( m_currentFont );
     }
+}
+
+void TextRenderer::SetAntiAliasingMode( const AntiAliasingMode antiAliasingMode )
+{
+    m_antiAliasingMode = antiAliasingMode;
 }
 
 void TextRenderer::SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix )
@@ -231,7 +253,8 @@ void TextRenderer::EndBatch( ICommandList *commandList )
     uniforms.TextColor  = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
 
     const auto *fontAsset      = m_currentFont->Asset( );
-    uniforms.TextureSizeParams = XMFLOAT4( static_cast<float>( fontAsset->AtlasWidth ), static_cast<float>( fontAsset->AtlasHeight ), Font::MsdfPixelRange, 0.0f );
+    uniforms.TextureSizeParams = XMFLOAT4( static_cast<float>( fontAsset->AtlasWidth ), static_cast<float>( fontAsset->AtlasHeight ), Font::MsdfPixelRange,
+                                           static_cast<float>( static_cast<uint32_t>( m_antiAliasingMode ) ) );
 
     void *mappedData = m_uniformBuffer->MapMemory( );
     memcpy( mappedData, &uniforms, sizeof( FontShaderUniforms ) );
@@ -248,14 +271,6 @@ void TextRenderer::UpdateAtlasTexture( ICommandList *commandList )
 {
     const auto *fontAsset = m_currentFont->Asset( );
 
-    // Create a staging buffer for the atlas data
-    BufferDesc stagingDesc;
-    stagingDesc.NumBytes     = fontAsset->AtlasData.NumElements( );
-    stagingDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer );
-    stagingDesc.InitialUsage = ResourceUsage::CopySrc;
-    stagingDesc.DebugName    = "Font MSDF Atlas Staging Buffer";
-    stagingDesc.HeapType     = HeapType::CPU;
-
     // Check if texture needs resizing
     if ( m_fontAtlasTextureDesc.Width != fontAsset->AtlasWidth || m_fontAtlasTextureDesc.Height != fontAsset->AtlasHeight )
     {
@@ -270,12 +285,11 @@ void TextRenderer::UpdateAtlasTexture( ICommandList *commandList )
         m_resourceBindGroup->BeginUpdate( )->Srv( 0, m_fontAtlasTexture.get( ) )->EndUpdate( );
     }
 
-    // Create and load the staging buffer
-    const auto stagingBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( stagingDesc ) );
-    m_resourceTracking.TrackBuffer( stagingBuffer.get( ), ResourceUsage::CopySrc );
+    m_resourceTracking.TrackBuffer( m_fontAtlasStagingBuffer.get( ), ResourceUsage::CopySrc );
 
     LoadAtlasIntoGpuTextureDesc loadDesc{ };
-    loadDesc.StagingBuffer = stagingBuffer.get( );
+    loadDesc.Device        = m_logicalDevice;
+    loadDesc.StagingBuffer = m_fontAtlasStagingBuffer.get( );
     loadDesc.CommandList   = commandList;
     loadDesc.Texture       = m_fontAtlasTexture.get( );
     FontAssetReader::LoadAtlasIntoGpuTexture( *fontAsset, loadDesc );
@@ -287,7 +301,7 @@ void TextRenderer::UpdateAtlasTexture( ICommandList *commandList )
 
     // Copy from the staging buffer to the texture
     CopyBufferToTextureDesc copyDesc{ };
-    copyDesc.SrcBuffer  = stagingBuffer.get( );
+    copyDesc.SrcBuffer  = m_fontAtlasStagingBuffer.get( );
     copyDesc.DstTexture = m_fontAtlasTexture.get( );
     copyDesc.RowPitch   = fontAsset->AtlasWidth * 4; // 4 bytes per pixel (RGBA)
     copyDesc.Format     = m_fontAtlasTexture->GetFormat( );

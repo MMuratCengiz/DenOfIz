@@ -218,6 +218,16 @@ copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 add_library(DenOfIzGraphics ${DEN_OF_IZ_ASSETS_SOURCES} ${DEN_OF_IZ_GRAPHICS_SOURCES})
 #install_target(DenOfIzGraphics)
 
+if (CRT_LINKAGE_STATIC EQUAL 1)
+    set(ozz_build_msvc_rt_dll OFF CACHE BOOL "Select msvc DLL runtime library" FORCE)
+    set(MSDF_ATLAS_DYNAMIC_RUNTIME OFF CACHE BOOL "Link dynamic runtime library instead of static" FORCE)
+else ()
+    set(ozz_build_msvc_rt_dll ON CACHE BOOL "Select msvc DLL runtime library" FORCE)
+    set(MSDF_ATLAS_DYNAMIC_RUNTIME ON CACHE BOOL "Link dynamic runtime library instead of static" FORCE)
+endif ()
+add_subdirectory(_ThirdParty/ozz-animation)
+add_subdirectory(_ThirdParty/msdf-atlas-gen)
+
 target_include_default_directories(DenOfIzGraphics)
 target_include_directories(DenOfIzGraphics
         ${TINYGLTF_INCLUDE_DIRS}
@@ -225,16 +235,11 @@ target_include_directories(DenOfIzGraphics
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/Tiny> $<INSTALL_INTERFACE:_ThirdParty/Tiny>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/include> $<INSTALL_INTERFACE:_ThirdParty/MetalShaderConverter/include>
         $<BUILD_INTERFACE:${OZZ_ANIMATION_INCLUDE_DIR}> $<INSTALL_INTERFACE:_ThirdParty/ozz-animation/include>
+        $<BUILD_INTERFACE:${MSDF_ATLAS_GEN_INCLUDE_DIR}> $<INSTALL_INTERFACE:_ThirdParty/msdf-atlas-gen>
         ${STB_INCLUDE_DIRS}
 )
 
-if (CRT_LINKAGE_STATIC EQUAL 1)
-    set(ozz_build_msvc_rt_dll OFF CACHE BOOL "Select msvc DLL runtime library" FORCE)
-else ()
-    set(ozz_build_msvc_rt_dll ON CACHE BOOL "Select msvc DLL runtime library" FORCE)
-endif ()
 
-add_subdirectory(_ThirdParty/ozz-animation)
 target_link_libraries(DenOfIzGraphics
         PUBLIC
         glog::glog
@@ -251,6 +256,7 @@ target_link_libraries(DenOfIzGraphics
         msdfgen::msdfgen-ext
         msdfgen::msdfgen-core
         msdfgen::msdfgen-full
+        msdf-atlas-gen::msdf-atlas-gen
 )
 
 if (BUILD_SHARED_LIBS)
@@ -347,7 +353,7 @@ if (WIN32 OR LINUX)
 endif ()
 
 set_target_default_properties(DenOfIzGraphics)
-target_compile_definitions(DenOfIzGraphics PUBLIC NSIGHT_ENABLE)
+#target_compile_definitions(DenOfIzGraphics PUBLIC NSIGHT_ENABLE)
 
 if (BUILD_TESTS)
     add_subdirectory(Tests)

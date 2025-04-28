@@ -21,25 +21,32 @@ float median(float r, float g, float b)
     return max(min(r, g), min(max(r, g), b));
 }
 
+// Calculate the screen pixel range for proper antialiasing
+float screenPxRange(float2 texCoord, float pxRange, float2 textureSize)
+{
+    float2 unitRange = float2(pxRange, pxRange) / textureSize;
+    float2 screenTexSize = float2(1.0, 1.0) / fwidth(texCoord);
+    return max(0.5 * dot(unitRange, screenTexSize), 1.0);
+}
+
 float4 main(PSInput input) : SV_TARGET
 {
-    // Sample the MSDF texture
     float3 msdf = FontAtlas.Sample(FontSampler, input.TexCoord).rgb;
-    
-    // Calculate signed distance from the median of the three channels
-    float sdf = median(msdf.r, msdf.g, msdf.b);
-    
-    // Get pixel range from uniform
+    float sd = median(msdf.r, msdf.g, msdf.b);
+    float2 textureSize = TextureSizeParams.xy;
     float pxRange = TextureSizeParams.z;
-    
-    // Calculate proper screen-space scale factor for consistent rendering
-    // This helps ensure consistent thickness regardless of font size
-    float screenPxRange = pxRange;
-    
-    // Apply antialiasing with proper range
-    float screenDist = screenPxRange * (sdf - 0.5);
-    float opacity = smoothstep(-0.5, 0.5, screenDist);
-    
-    // Mix the color with the calculated opacity
+    float screenPxRangeValue = screenPxRange(input.TexCoord, pxRange, textureSize);
+    float screenPxDistance = screenPxRangeValue * (sd - 0.5);
+    float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
     return float4(input.Color.rgb, input.Color.a * opacity);
 }
+
+// float4 main(PSInput input) : SV_TARGET
+// {
+//     float3 msdf = FontAtlas.Sample(FontSampler, input.TexCoord).rgb;
+//     float sdf = median(msdf.r, msdf.g, msdf.b);
+//     float screenPxRange = TextureSizeParams.z;
+//     float screenDist = screenPxRange * (sdf - 0.5);
+//     float opacity = smoothstep(-0.5, 0.5, screenDist);
+//     return float4(input.Color.rgb, input.Color.a * opacity);
+// }

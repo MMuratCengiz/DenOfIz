@@ -8,7 +8,11 @@
     <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/DirectXShaderCompiler/external/DirectX-Headers" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/DirectXShaderCompiler/external/SPIRV-Headers" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/DirectXShaderCompiler/external/SPIRV-Tools" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/msdf-atlas-gen" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/msdf-atlas-gen/artery-font-format" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/msdf-atlas-gen/msdfgen" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Graphics/_ThirdParty/ozz-animation" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/vcpkg" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vcpkg/downloads/git-tmp" vcs="Git" />
   </component>
 </project>
