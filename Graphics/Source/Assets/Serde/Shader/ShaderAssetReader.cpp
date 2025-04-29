@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-ShaderAssetReader::ShaderAssetReader( const ShaderProgramAssetReaderDesc &desc ) : m_reader( desc.Reader )
+ShaderAssetReader::ShaderAssetReader( const ShaderAssetReaderDesc &desc ) : m_reader( desc.Reader )
 {
     DZ_NOT_NULL( m_reader );
 }
@@ -32,7 +32,6 @@ ShaderAsset ShaderAssetReader::Read( )
 {
     if ( m_assetRead )
     {
-        LOG( ERROR ) << "Cannot read more than once from a shader asset reader";
         return m_shaderAsset;
     }
 
@@ -276,7 +275,9 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
     for ( uint32_t i = 0; i < numStages; ++i )
     {
         const ShaderStageAsset &stageAsset    = shaderAsset.Stages.GetElement( i );
-        CompiledShaderStage    *compiledStage = compiledShader.Stages.GetElement( i );
+        // We expect the user to delete these pointers(ShaderProgram assigns them to a unique ptr).
+        auto compiledStage = new CompiledShaderStage( );
+        compiledShader.Stages.SetElement( i, compiledStage );
 
         compiledStage->Stage      = stageAsset.Stage;
         compiledStage->EntryPoint = stageAsset.EntryPoint;

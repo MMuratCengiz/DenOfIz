@@ -61,31 +61,20 @@ ImporterResult ShaderImporter::Import( const ImportJobDesc &desc )
     ImportContext context;
     context.JobDesc           = desc;
     context.Result.ResultCode = ImporterResultCode::Success;
-    context.Options           = ShaderImportDesc::CreateFromBase( desc.Options );
+    context.Desc              = *static_cast<ShaderImportDesc *>( desc.Desc );
 
-    const std::string fileExtension = GetFileExtension( desc.SourceFilePath.Get( ) );
-    ShaderStage       shaderStage   = context.Options.Stage;
-
-    if ( shaderStage == ShaderStage::Pixel ) // Default value, likely not set explicitly
+    if ( !desc.SourceFilePath.IsEmpty( ) )
     {
-        shaderStage = InferShaderStageFromExtension( fileExtension );
+        LOG( WARNING ) << "ShaderImporter needs all shader stages and all shader files, please use context.Options.ProgramDesc instead.";
+    }
+    if ( context.Desc.ProgramDesc.ShaderStages.NumElements( ) == 0 )
+    {
+        LOG( WARNING ) << "No Shader Stages provided.";
+        return ImporterResult{ ImporterResultCode::InvalidParameters, "No Shader Stages provided." };
     }
 
-    ShaderProgramDesc shaderProgramDesc;
-
-    ShaderStageDesc shaderStageDesc;
-    shaderStageDesc.Path       = desc.SourceFilePath;
-    shaderStageDesc.EntryPoint = context.Options.EntryPoint;
-    shaderStageDesc.Stage      = shaderStage;
-
-    for ( int i = 0; i < context.Options.Defines.NumElements( ); ++i )
-    {
-        shaderStageDesc.Defines.AddElement( context.Options.Defines.GetElement( i ) );
-    }
-
-    shaderProgramDesc.ShaderStages.AddElement( shaderStageDesc );
-
-    ShaderProgram shaderProgram( shaderProgramDesc );
+    const ShaderProgramDesc shaderProgramDesc = context.Desc.ProgramDesc;
+    const ShaderProgram     shaderProgram( shaderProgramDesc );
 
     CompiledShader compiledShader;
     compiledShader.RayTracing  = shaderProgramDesc.RayTracing;
@@ -102,6 +91,11 @@ ImporterResult ShaderImporter::Import( const ImportJobDesc &desc )
 
 bool ShaderImporter::ValidateFile( const InteropString &filePath ) const
 {
+    if ( filePath.IsEmpty( ) )
+    {
+        return true;
+    }
+
     const std::string resolvedPath = PathResolver::ResolvePath( filePath.Get( ) );
     if ( !FileIO::FileExists( filePath ) )
     {
@@ -114,11 +108,10 @@ bool ShaderImporter::ValidateFile( const InteropString &filePath ) const
 
 void ShaderImporter::WriteShaderAsset( const ImportContext &context, AssetUri &outAssetUri )
 {
-    const InteropString assetName           = GetAssetNameFromFilePath( context.JobDesc.SourceFilePath );
+    InteropString       assetName           = GetAssetName( context );
     const InteropString sanitizedName       = SanitizeAssetName( assetName );
     const InteropString shaderAssetFileName = CreateAssetFileName( context.JobDesc.AssetNamePrefix, sanitizedName );
-
-    std::string outputPath = context.JobDesc.TargetDirectory.Get( );
+    std::string         outputPath          = context.JobDesc.TargetDirectory.Get( );
     if ( !outputPath.empty( ) && outputPath.back( ) != '/' && outputPath.back( ) != '\\' )
     {
         outputPath += '/';
@@ -138,6 +131,31 @@ void ShaderImporter::WriteShaderAsset( const ImportContext &context, AssetUri &o
     FileIO::WriteFile( outputPath.c_str( ), container.GetData( ) );
 
     outAssetUri.Path = outputPath.c_str( );
+}
+
+InteropString ShaderImporter::GetAssetName( const ImportContext &context )
+{
+    if ( !context.Desc.OutputShaderName.IsEmpty( ) )
+    {
+        return context.Desc.OutputShaderName;
+    }
+    if ( context.Desc.ProgramDesc.ShaderStages.NumElements( ) > 0 )
+    {
+        const ShaderStageDesc &primaryStage = context.Desc.ProgramDesc.ShaderStages.GetElement( 0 );
+        if ( !primaryStage.Path.IsEmpty( ) )
+        {
+            return GetAssetNameFromFilePath( primaryStage.Path );
+        }
+
+        if ( !primaryStage.EntryPoint.IsEmpty( ) )
+        {
+            std::string name = "Shader_";
+            name += primaryStage.EntryPoint.Get( );
+            return name.c_str( );
+        }
+    }
+
+    return "ShaderProgram";
 }
 
 InteropString ShaderImporter::GetAssetNameFromFilePath( const InteropString &filePath )

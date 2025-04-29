@@ -25,6 +25,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/RayTracing/ILocalRootSignature.h>
 #include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
 
+#include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAsset.h"
+
 namespace DenOfIz
 {
 
@@ -62,6 +64,7 @@ namespace DenOfIz
 
     struct DZ_API CompiledShader
     {
+        // The user should clean up these!
         InteropArray<CompiledShaderStage *> Stages;
         ShaderReflectDesc                   ReflectDesc;
         ShaderRayTracingDesc                RayTracing;
@@ -72,10 +75,13 @@ namespace DenOfIz
         ShaderCompiler                                    m_compiler;
         std::vector<std::unique_ptr<CompiledShaderStage>> m_compiledShaders;
         std::vector<ShaderStageDesc>                      m_shaderDescs; // Index matched with m_compiledShaders
+        ShaderReflectDesc                                 m_reflectDesc;
         ShaderProgramDesc                                 m_desc;
 
     public:
         DZ_API explicit ShaderProgram( ShaderProgramDesc desc );
+        // Load shader program generated offline into a file
+        DZ_API explicit ShaderProgram( const ShaderAsset& asset );
         [[nodiscard]] DZ_API InteropArray<CompiledShaderStage *> CompiledShaders( ) const;
         [[nodiscard]] DZ_API ShaderReflectDesc                   Reflect( ) const;
         [[nodiscard]] DZ_API ShaderProgramDesc                   Desc( ) const;
@@ -83,6 +89,7 @@ namespace DenOfIz
 
     private:
         void Compile( );
+        void CreateReflectionData( );
         void InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
         void ReflectShader( const ReflectionState &state ) const;
         void ReflectLibrary( ReflectionState &state ) const;

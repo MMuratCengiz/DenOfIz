@@ -96,7 +96,7 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
     context.SourceFilePath  = desc.SourceFilePath;
     context.TargetDirectory = desc.TargetDirectory;
     context.AssetNamePrefix = desc.AssetNamePrefix;
-    context.Options         = AssimpImportDesc::CreateFromBase( desc.Options );
+    context.Desc            = *static_cast<AssimpImportDesc*>( desc.Desc );
 
     if ( !FileIO::FileExists( context.SourceFilePath ) )
     {
@@ -120,7 +120,7 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
 
     Assimp::Importer importer;
     unsigned int     flags = 0;
-    ConfigureAssimpImportFlags( context.Options, flags, importer );
+    ConfigureAssimpImportFlags( context.Desc, flags, importer );
 
     LOG( INFO ) << "Assimp reading file: " << context.SourceFilePath.Get( );
     context.Scene = importer.ReadFile( context.SourceFilePath.Get( ), flags );
@@ -180,7 +180,7 @@ ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
         }
     }
 
-    if ( context.Options.ImportMaterials && context.Scene->HasMaterials( ) )
+    if ( context.Desc.ImportMaterials && context.Scene->HasMaterials( ) )
     {
         LOG( INFO ) << "Phase 2: Processing " << context.Scene->mNumMaterials << " materials...";
         for ( unsigned int i = 0; i < context.Scene->mNumMaterials; ++i )
@@ -189,7 +189,7 @@ ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
         }
     }
 
-    if ( context.Options.ImportSkeletons && !context.BoneNameToIndexMap.empty( ) )
+    if ( context.Desc.ImportSkeletons && !context.BoneNameToIndexMap.empty( ) )
     {
         LOG( INFO ) << "Phase 3: Building skeleton hierarchy...";
         if ( const ImporterResultCode result = ProcessNode( context, context.Scene->mRootNode, nullptr, skeletonAsset ); result != ImporterResultCode::Success )
@@ -241,11 +241,11 @@ ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
                 subMesh.IndexType   = IndexType::Uint32;
 
                 Float_3 minBounds{ }, maxBounds{ };
-                CalculateMeshBounds( mesh, context.Options.ScaleFactor, minBounds, maxBounds );
+                CalculateMeshBounds( mesh, context.Desc.ScaleFactor, minBounds, maxBounds );
                 subMesh.MinBounds = minBounds;
                 subMesh.MaxBounds = maxBounds;
                 subMesh.LODLevel  = 0;
-                if ( context.Options.ImportMaterials && mesh->mMaterialIndex < context.Scene->mNumMaterials )
+                if ( context.Desc.ImportMaterials && mesh->mMaterialIndex < context.Scene->mNumMaterials )
                 {
                     const aiMaterial *material = context.Scene->mMaterials[ mesh->mMaterialIndex ];
                     if ( const std::string matNameStr = material->GetName( ).C_Str( ); context.MaterialNameToAssetUriMap.contains( matNameStr ) )
@@ -269,9 +269,9 @@ ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
         const aiMesh           *firstMesh = uniqueMeshes[ 0 ];
         VertexEnabledAttributes attributes{ };
         attributes.Position     = firstMesh->HasPositions( );
-        attributes.Normal       = context.Options.GenerateNormals || firstMesh->HasNormals( );
-        attributes.Tangent      = context.Options.CalculateTangentSpace || firstMesh->HasTangentsAndBitangents( );
-        attributes.Bitangent    = context.Options.CalculateTangentSpace || firstMesh->HasTangentsAndBitangents( );
+        attributes.Normal       = context.Desc.GenerateNormals || firstMesh->HasNormals( );
+        attributes.Tangent      = context.Desc.CalculateTangentSpace || firstMesh->HasTangentsAndBitangents( );
+        attributes.Bitangent    = context.Desc.CalculateTangentSpace || firstMesh->HasTangentsAndBitangents( );
         attributes.UV           = firstMesh->GetNumUVChannels( ) > 0;
         attributes.Color        = firstMesh->HasVertexColors( 0 );
         attributes.BlendIndices = firstMesh->HasBones( );
@@ -280,7 +280,7 @@ ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
         VertexAttributeConfig attributeConfig{ };
         attributeConfig.NumPositionComponents = 4;
         attributeConfig.NumUVAttributes       = firstMesh->GetNumUVChannels( );
-        attributeConfig.MaxBoneInfluences     = context.Options.MaxBoneWeightsPerVertex;
+        attributeConfig.MaxBoneInfluences     = context.Desc.MaxBoneWeightsPerVertex;
 
         attributeConfig.UVChannels.Resize( firstMesh->GetNumUVChannels( ) );
         for ( uint32_t i = 0; i < firstMesh->GetNumUVChannels( ); ++i )
@@ -303,7 +303,7 @@ ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
     }
 
     LOG( INFO ) << "Found " << uniqueMeshes.size( ) << " unique meshes";
-    if ( context.Options.ImportAnimations && context.Scene->HasAnimations( ) )
+    if ( context.Desc.ImportAnimations && context.Scene->HasAnimations( ) )
     {
         LOG( INFO ) << "Phase 5: Processing " << context.Scene->mNumAnimations << " animations...";
         for ( unsigned int i = 0; i < context.Scene->mNumAnimations; ++i )
@@ -341,7 +341,7 @@ ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
         meshWriter.FinalizeAsset( );
         RegisterCreatedAsset( context, meshUri );
         LOG( INFO ) << "Successfully wrote Mesh asset: " << meshUri.ToString( ).Get( );
-        if ( context.Options.ImportAnimations && context.Scene->HasAnimations( ) )
+        if ( context.Desc.ImportAnimations && context.Scene->HasAnimations( ) )
         {
             LOG( WARNING ) << "No processable meshes found in the scene";
         }
@@ -359,7 +359,7 @@ ImporterResultCode AssimpImporter::ProcessNode( ImportContext &context, const ai
     const std::string nodeNameStr       = node->mName.C_Str( );
     int32_t           currentJointIndex = parentJointIndex;
 
-    if ( const bool isKnownBone = context.BoneNameToIndexMap.contains( nodeNameStr ); meshWriter == nullptr && isKnownBone && context.Options.ImportSkeletons )
+    if ( const bool isKnownBone = context.BoneNameToIndexMap.contains( nodeNameStr ); meshWriter == nullptr && isKnownBone && context.Desc.ImportSkeletons )
     {
         bool alreadyAdded = false;
         for ( size_t j = 0; j < skeletonAsset.Joints.NumElements( ); ++j )
@@ -385,7 +385,7 @@ ImporterResultCode AssimpImporter::ProcessNode( ImportContext &context, const ai
             aiQuaternion rotation;
             localMatrix.Decompose( scale, rotation, translation );
 
-            const float scaleFactor = context.Options.ScaleFactor;
+            const float scaleFactor = context.Desc.ScaleFactor;
             joint.LocalTranslation  = { translation.x * scaleFactor, translation.y * scaleFactor, translation.z * scaleFactor };
             joint.LocalRotationQuat = { rotation.x, rotation.y, rotation.z, rotation.w };
             joint.LocalScale        = { scale.x, scale.y, scale.z };
@@ -394,9 +394,9 @@ ImporterResultCode AssimpImporter::ProcessNode( ImportContext &context, const ai
             {
                 aiMatrix4x4 scaledMatrix = context.BoneNameToInverseBindMatrixMap[ nodeNameStr ];
                 joint.InverseBindMatrix  = ConvertMatrix( scaledMatrix );
-                joint.InverseBindMatrix._41 *= context.Options.ScaleFactor;
-                joint.InverseBindMatrix._42 *= context.Options.ScaleFactor;
-                joint.InverseBindMatrix._43 *= context.Options.ScaleFactor;
+                joint.InverseBindMatrix._41 *= context.Desc.ScaleFactor;
+                joint.InverseBindMatrix._42 *= context.Desc.ScaleFactor;
+                joint.InverseBindMatrix._43 *= context.Desc.ScaleFactor;
             }
             else
             {
@@ -552,11 +552,11 @@ ImporterResultCode AssimpImporter::ProcessMesh( ImportContext &context, const ai
         if ( attributes.Position )
         {
             vertex.Position = { mesh->mVertices[ i ].x, mesh->mVertices[ i ].y, mesh->mVertices[ i ].z, 1.0f };
-            if ( context.Options.ScaleFactor != 1.0f )
+            if ( context.Desc.ScaleFactor != 1.0f )
             {
-                vertex.Position.X *= context.Options.ScaleFactor;
-                vertex.Position.Y *= context.Options.ScaleFactor;
-                vertex.Position.Z *= context.Options.ScaleFactor;
+                vertex.Position.X *= context.Desc.ScaleFactor;
+                vertex.Position.Y *= context.Desc.ScaleFactor;
+                vertex.Position.Z *= context.Desc.ScaleFactor;
             }
         }
         if ( attributes.Normal )
@@ -670,16 +670,16 @@ void AssimpImporter::ProcessMaterial( ImportContext &context, const aiMaterial *
     {
         matAsset.BaseColorFactor = ConvertColor( color );
     }
-    if ( AssetUri albedoUri; context.Options.ImportTextures && ProcessTexture( context, material, aiTextureType_DIFFUSE, "Albedo", albedoUri ) )
+    if ( AssetUri albedoUri; context.Desc.ImportTextures && ProcessTexture( context, material, aiTextureType_DIFFUSE, "Albedo", albedoUri ) )
     {
         matAsset.AlbedoMapRef = albedoUri;
     }
-    if ( AssetUri normalUri; context.Options.ImportTextures && ( ProcessTexture( context, material, aiTextureType_NORMALS, "Normal", normalUri ) ||
-                                                                 ProcessTexture( context, material, aiTextureType_HEIGHT, "Normal", normalUri ) ) )
+    if ( AssetUri normalUri; context.Desc.ImportTextures && ( ProcessTexture( context, material, aiTextureType_NORMALS, "Normal", normalUri ) ||
+                                                              ProcessTexture( context, material, aiTextureType_HEIGHT, "Normal", normalUri ) ) )
     {
         matAsset.NormalMapRef = normalUri;
     }
-    if ( AssetUri mrUri; context.Options.ImportTextures && ProcessTexture( context, material, aiTextureType_METALNESS, "MetallicRoughness", mrUri ) )
+    if ( AssetUri mrUri; context.Desc.ImportTextures && ProcessTexture( context, material, aiTextureType_METALNESS, "MetallicRoughness", mrUri ) )
     {
         float factor;
         matAsset.MetallicRoughnessMapRef = mrUri;
@@ -692,7 +692,7 @@ void AssimpImporter::ProcessMaterial( ImportContext &context, const aiMaterial *
             matAsset.RoughnessFactor = factor;
         }
     }
-    if ( AssetUri emUri; context.Options.ImportTextures && ProcessTexture( context, material, aiTextureType_EMISSIVE, "Emissive", emUri ) )
+    if ( AssetUri emUri; context.Desc.ImportTextures && ProcessTexture( context, material, aiTextureType_EMISSIVE, "Emissive", emUri ) )
     {
         matAsset.EmissiveMapRef = emUri;
     }
@@ -700,7 +700,7 @@ void AssimpImporter::ProcessMaterial( ImportContext &context, const aiMaterial *
     {
         matAsset.EmissiveFactor = { color.r, color.g, color.b };
     }
-    if ( AssetUri ocUri; context.Options.ImportTextures && ProcessTexture( context, material, aiTextureType_AMBIENT_OCCLUSION, "Occlusion", ocUri ) )
+    if ( AssetUri ocUri; context.Desc.ImportTextures && ProcessTexture( context, material, aiTextureType_AMBIENT_OCCLUSION, "Occlusion", ocUri ) )
     {
         matAsset.OcclusionMapRef = ocUri;
     }
@@ -792,9 +792,9 @@ void AssimpImporter::ProcessAnimation( ImportContext &context, const aiAnimation
             key.Timestamp    = static_cast<float>( nodeAnim->mPositionKeys[ k ].mTime / ticksPerSecond );
             key.Value        = ConvertVector3( nodeAnim->mPositionKeys[ k ].mValue );
 
-            key.Value.X *= context.Options.ScaleFactor;
-            key.Value.Y *= context.Options.ScaleFactor;
-            key.Value.Z *= context.Options.ScaleFactor;
+            key.Value.X *= context.Desc.ScaleFactor;
+            key.Value.Y *= context.Desc.ScaleFactor;
+            key.Value.Z *= context.Desc.ScaleFactor;
         }
 
         track.RotationKeys.Resize( nodeAnim->mNumRotationKeys );
@@ -866,7 +866,7 @@ void AssimpImporter::CalculateMeshBounds( const aiMesh *mesh, const float scaleF
     }
 }
 
-void AssimpImporter::GenerateMeshLODs( const ImportContext &/*context*/, MeshAssetWriter &/*meshWriter*/ )
+void AssimpImporter::GenerateMeshLODs( const ImportContext & /*context*/, MeshAssetWriter & /*meshWriter*/ )
 {
     // TODO Implement this with MeshOptimizer
     LOG( WARNING ) << "Not yet implemented";

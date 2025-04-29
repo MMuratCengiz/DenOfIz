@@ -50,19 +50,13 @@ namespace DenOfIz
         bool     TriangulateMeshes        = true;
         bool     PreservePivots           = true;
         bool     DropNormals              = false;
-        AssimpImportDesc( )            = default;
+        AssimpImportDesc( )               = default;
         explicit AssimpImportDesc( const ImportDesc &base ) : ImportDesc( base )
         {
         }
-        static AssimpImportDesc CreateFromBase( const ImportDesc &base )
-        {
-            return AssimpImportDesc( base );
-        }
     };
 
-    struct DZ_API AssimpImporterDesc
-    {
-    };
+    struct DZ_API AssimpImporterDesc{ };
 
     class AssimpImporter final : public IAssetImporter
     {
@@ -71,13 +65,13 @@ namespace DenOfIz
 
         struct ImportContext
         {
-            const aiScene      *Scene = nullptr;
-            InteropString       SourceFilePath;
-            InteropString       TargetDirectory;
-            InteropString       AssetNamePrefix;
-            AssimpImportDesc Options;
-            ImporterResult      Result;
-            InteropString       ErrorMessage;
+            const aiScene   *Scene = nullptr;
+            InteropString    SourceFilePath;
+            InteropString    TargetDirectory;
+            InteropString    AssetNamePrefix;
+            AssimpImportDesc Desc;
+            ImporterResult   Result;
+            InteropString    ErrorMessage;
 
             std::unordered_map<std::string, AssetUri>    MaterialNameToAssetUriMap;
             std::unordered_map<std::string, AssetUri>    TexturePathToAssetUriMap;

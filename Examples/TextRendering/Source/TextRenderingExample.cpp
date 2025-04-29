@@ -296,7 +296,7 @@ void TextRenderingExample::ImportFont( ) const
         importJobDesc.TargetDirectory = "Assets/Fonts/";
 
         FontImportDesc desc{ }; // Defaults are fine
-        importJobDesc.Options = static_cast<ImportDesc>( FontImportDesc{ } );
+        importJobDesc.Desc = &desc;
 
         FontImporter   importer( { } );
         ImporterResult result = importer.Import( importJobDesc );

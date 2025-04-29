@@ -87,17 +87,17 @@ ImporterResult FontImporter::Import( const ImportJobDesc &desc )
     context.SourceFilePath    = desc.SourceFilePath;
     context.TargetDirectory   = desc.TargetDirectory;
     context.AssetNamePrefix   = desc.AssetNamePrefix;
-    context.Options           = FontImportDesc::CreateFromBase( desc.Options );
+    context.Desc              = *static_cast<FontImportDesc*>( desc.Desc );
     context.Result.ResultCode = ImporterResultCode::Success;
 
     // For MSDF, we need RGB data (3 bytes per pixel) instead of grayscale
-    context.FontAsset.AtlasData.Resize( context.Options.AtlasWidth * context.Options.AtlasHeight * FontAsset::NumChannels );
+    context.FontAsset.AtlasData.Resize( context.Desc.AtlasWidth * context.Desc.AtlasHeight * FontAsset::NumChannels );
     memset( context.FontAsset.AtlasData.Data( ), 0, context.FontAsset.AtlasData.NumElements( ) );
 
-    context.FontAsset.InitialFontSize   = context.Options.InitialFontSize;
-    context.FontAsset.AtlasWidth        = context.Options.AtlasWidth;
-    context.FontAsset.AtlasHeight       = context.Options.AtlasHeight;
-    context.FontAsset.NumAtlasDataBytes = context.Options.AtlasWidth * context.Options.AtlasHeight * FontAsset::NumChannels;
+    context.FontAsset.InitialFontSize   = context.Desc.InitialFontSize;
+    context.FontAsset.AtlasWidth        = context.Desc.AtlasWidth;
+    context.FontAsset.AtlasHeight       = context.Desc.AtlasHeight;
+    context.FontAsset.NumAtlasDataBytes = context.Desc.AtlasWidth * context.Desc.AtlasHeight * FontAsset::NumChannels;
     context.FontAsset.AtlasData.Resize( context.FontAsset.NumAtlasDataBytes );
 
     if ( const ImporterResultCode result = ImportFontInternal( context ); result != ImporterResultCode::Success )
@@ -143,7 +143,7 @@ ImporterResultCode FontImporter::ImportFontInternal( ImportContext &context )
         return ImporterResultCode::InvalidParameters;
     }
 
-    error = FT_Set_Char_Size( face, context.Options.InitialFontSize * 64, context.Options.InitialFontSize * 64, 0, 0 );
+    error = FT_Set_Char_Size( face, context.Desc.InitialFontSize * 64, context.Desc.InitialFontSize * 64, 0, 0 );
     if ( error )
     {
         FT_Done_Face( face );
@@ -189,7 +189,7 @@ void FontImporter::GenerateAtlas( ImportContext &context ) const
     }
 
     std::vector<msdf_atlas::GlyphGeometry> glyphs;
-    msdf_atlas::FontGeometry fontGeometry( &glyphs );
+    msdf_atlas::FontGeometry               fontGeometry( &glyphs );
 
     fontGeometry.loadCharset( msdfFont, 1.0, msdf_atlas::Charset::ASCII );
 
@@ -201,7 +201,7 @@ void FontImporter::GenerateAtlas( ImportContext &context ) const
 
     msdf_atlas::TightAtlasPacker packer;
     packer.setDimensionsConstraint( msdf_atlas::DimensionsConstraint::SQUARE );
-    packer.setMinimumScale( context.Options.InitialFontSize );
+    packer.setMinimumScale( context.Desc.InitialFontSize );
     packer.setPixelRange( Font::MsdfPixelRange );
     packer.setMiterLimit( 1.0 );
     packer.pack( glyphs.data( ), glyphs.size( ) );
@@ -256,7 +256,7 @@ void FontImporter::GenerateAtlas( ImportContext &context ) const
     double ascender   = fontGeometry.getMetrics( ).ascenderY;
     double descender  = fontGeometry.getMetrics( ).descenderY;
     double lineHeight = fontGeometry.getMetrics( ).lineHeight;
-    double scale      = context.Options.InitialFontSize / emSize;
+    double scale      = context.Desc.InitialFontSize / emSize;
 
     context.FontAsset.Metrics.Ascent     = static_cast<uint32_t>( ascender * scale );
     context.FontAsset.Metrics.Descent    = static_cast<uint32_t>( std::abs( descender ) * scale );
@@ -279,21 +279,21 @@ void FontImporter::GenerateAtlas( ImportContext &context ) const
         glyphDesc.AtlasX     = box.rect.x;
         glyphDesc.AtlasY     = height - ( box.rect.y + box.rect.h );
 
-        const msdfgen::Shape  &shape    = glyph.getShape( );
-        msdfgen::Shape::Bounds bounds   = shape.getBounds( );
+        const msdfgen::Shape  &shape  = glyph.getShape( );
+        msdfgen::Shape::Bounds bounds = shape.getBounds( );
 
         constexpr double normFactor = 1000.0;
-        glyphDesc.Bounds.XMin   = bounds.l / normFactor;
-        glyphDesc.Bounds.XMax   = bounds.r / normFactor;
-        glyphDesc.Bounds.YMin   = bounds.b / normFactor;
-        glyphDesc.Bounds.YMax   = bounds.t / normFactor;
+        glyphDesc.Bounds.XMin       = bounds.l / normFactor;
+        glyphDesc.Bounds.XMax       = bounds.r / normFactor;
+        glyphDesc.Bounds.YMin       = bounds.b / normFactor;
+        glyphDesc.Bounds.YMax       = bounds.t / normFactor;
 
         // Convert font to msdf Size
-        const double emScale = context.Options.InitialFontSize / emSize;
+        const double emScale = context.Desc.InitialFontSize / emSize;
 
-        const double scaledBoundsL = bounds.l / normFactor * context.Options.InitialFontSize;
+        const double scaledBoundsL = bounds.l / normFactor * context.Desc.InitialFontSize;
         glyphDesc.BearingX         = static_cast<int32_t>( scaledBoundsL );
-        const double scaledBoundsT = bounds.t / normFactor * context.Options.InitialFontSize;
+        const double scaledBoundsT = bounds.t / normFactor * context.Desc.InitialFontSize;
         glyphDesc.BearingY         = static_cast<int32_t>( scaledBoundsT );
 
         glyphDesc.XAdvance = static_cast<uint32_t>( glyph.getAdvance( ) * emScale );
@@ -306,7 +306,7 @@ void FontImporter::GenerateAtlas( ImportContext &context ) const
     spaceGlyph.Height    = 0;
     spaceGlyph.BearingX  = 0;
     spaceGlyph.BearingY  = 0;
-    spaceGlyph.XAdvance  = context.Options.InitialFontSize / 3;
+    spaceGlyph.XAdvance  = context.Desc.InitialFontSize / 3;
     spaceGlyph.YAdvance  = 0;
     spaceGlyph.AtlasX    = 0;
     spaceGlyph.AtlasY    = 0;

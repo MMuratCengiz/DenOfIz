@@ -451,16 +451,16 @@ bool AnimatedFoxExample::ImportFoxModel( const InteropString &gltfPath )
     importJobDesc.TargetDirectory = "Assets/Models/";
     importJobDesc.AssetNamePrefix = "Fox";
 
-    AssimpImportDesc options;
-    options.ImportMaterials         = true;
-    options.ImportTextures          = true;
-    options.ImportSkeletons         = true;
-    options.ImportAnimations        = true;
-    options.LimitBoneWeights        = true;
-    options.MaxBoneWeightsPerVertex = 4;
-    options.ScaleFactor             = 0.01f;
+    AssimpImportDesc assimpDesc;
+    assimpDesc.ImportMaterials         = true;
+    assimpDesc.ImportTextures          = true;
+    assimpDesc.ImportSkeletons         = true;
+    assimpDesc.ImportAnimations        = true;
+    assimpDesc.LimitBoneWeights        = true;
+    assimpDesc.MaxBoneWeightsPerVertex = 4;
+    assimpDesc.ScaleFactor             = 0.01f;
 
-    importJobDesc.Options = static_cast<ImportDesc>( options );
+    importJobDesc.Desc = &assimpDesc;
 
     ImporterResult result = importer.Import( importJobDesc );
     if ( result.ResultCode != ImporterResultCode::Success )

@@ -25,6 +25,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <set>
 #include <utility>
 
+#include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
+
 using namespace DenOfIz;
 
 #define DXC_CHECK_RESULT( result )                                                                                                                                                 \
@@ -40,7 +42,22 @@ using namespace DenOfIz;
 ShaderProgram::ShaderProgram( ShaderProgramDesc desc ) : m_desc( std::move( desc ) )
 {
     Compile( );
+    CreateReflectionData( );
 }
+
+ShaderProgram::ShaderProgram( const ShaderAsset &asset )
+{
+    CompiledShader shader = ShaderAssetReader::ConvertToCompiledShader( asset );
+    for ( int i = 0; i < shader.Stages.NumElements( ); ++i )
+    {
+        CompiledShaderStage *shaderStage = shader.Stages.GetElement( i );
+        m_compiledShaders.emplace_back( std::unique_ptr<CompiledShaderStage>( shaderStage ) );
+    }
+    m_reflectDesc = shader.ReflectDesc;
+    m_desc = {};
+    m_desc.RayTracing = shader.RayTracing;
+}
+
 /**
  * \brief Compiles the shaders targeting MSL/DXIL/SPIR-V. MSL is double compiled, first time to DXIL and reflect and provide a root signature to the second compilation.
  */
@@ -104,6 +121,75 @@ void ShaderProgram::Compile( )
     {
         m_compiledShaders[ i ]->MSL = std::move( mslShaders.GetElement( i ) );
     }
+}
+
+void ShaderProgram::CreateReflectionData( )
+{
+    m_reflectDesc = { };
+    m_reflectDesc.LocalRootSignatures.Resize( m_compiledShaders.size( ) );
+
+    InputLayoutDesc   &inputLayout   = m_reflectDesc.InputLayout;
+    RootSignatureDesc &rootSignature = m_reflectDesc.RootSignature;
+
+    // TODO These don't really need to be stored this way
+    std::vector<uint32_t> descriptorTableLocations;
+    std::vector<uint32_t> localDescriptorTableLocations;
+
+    ReflectionState reflectionState   = { };
+    reflectionState.RootSignatureDesc = &rootSignature;
+    reflectionState.InputLayoutDesc   = &inputLayout;
+
+    for ( int stageIndex = 0; stageIndex < m_compiledShaders.size( ); ++stageIndex )
+    {
+        auto &shader                         = m_compiledShaders[ stageIndex ];
+        reflectionState.CompiledShader       = shader.get( );
+        reflectionState.ShaderDesc           = &m_desc.ShaderStages.GetElement( stageIndex );
+        LocalRootSignatureDesc &recordLayout = m_reflectDesc.LocalRootSignatures.GetElement( stageIndex );
+        reflectionState.LocalRootSignature   = &recordLayout;
+
+        IDxcBlob       *reflectionBlob = shader->Reflection;
+        const DxcBuffer reflectionBuffer{
+            .Ptr      = reflectionBlob->GetBufferPointer( ),
+            .Size     = reflectionBlob->GetBufferSize( ),
+            .Encoding = 0,
+        };
+
+        ID3D12ShaderReflection  *shaderReflection  = nullptr;
+        ID3D12LibraryReflection *libraryReflection = nullptr;
+
+        switch ( shader->Stage )
+        {
+        case ShaderStage::AnyHit:
+        case ShaderStage::ClosestHit:
+        case ShaderStage::Callable:
+        case ShaderStage::Intersection:
+        case ShaderStage::Raygen:
+        case ShaderStage::Miss:
+            DXC_CHECK_RESULT( m_compiler.DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &libraryReflection ) ) );
+            reflectionState.LibraryReflection = libraryReflection;
+            ReflectLibrary( reflectionState );
+            break;
+        case ShaderStage::Vertex:
+        default:
+            DXC_CHECK_RESULT( m_compiler.DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) ) );
+            reflectionState.ShaderReflection = shaderReflection;
+            ReflectShader( reflectionState );
+            break;
+        }
+
+        if ( shaderReflection )
+        {
+            shaderReflection->Release( );
+        }
+        if ( libraryReflection )
+        {
+            libraryReflection->Release( );
+        }
+    }
+
+#ifndef NDEBUG
+    ReflectionDebugOutput::DumpReflectionInfo( m_reflectDesc );
+#endif
 }
 
 InteropArray<CompiledShaderStage *> ShaderProgram::CompiledShaders( ) const
@@ -205,73 +291,7 @@ Format MaskToFormat( const D3D_REGISTER_COMPONENT_TYPE componentType, const uint
 
 ShaderReflectDesc ShaderProgram::Reflect( ) const
 {
-    ShaderReflectDesc result{ };
-
-    result.LocalRootSignatures.Resize( m_compiledShaders.size( ) );
-
-    InputLayoutDesc   &inputLayout   = result.InputLayout;
-    RootSignatureDesc &rootSignature = result.RootSignature;
-
-    // TODO These don't really need to be stored this way
-    std::vector<uint32_t> descriptorTableLocations;
-    std::vector<uint32_t> localDescriptorTableLocations;
-
-    ReflectionState reflectionState   = { };
-    reflectionState.RootSignatureDesc = &rootSignature;
-    reflectionState.InputLayoutDesc   = &inputLayout;
-
-    for ( int stageIndex = 0; stageIndex < m_compiledShaders.size( ); ++stageIndex )
-    {
-        auto &shader                         = m_compiledShaders[ stageIndex ];
-        reflectionState.CompiledShader       = shader.get( );
-        reflectionState.ShaderDesc           = &m_desc.ShaderStages.GetElement( stageIndex );
-        LocalRootSignatureDesc &recordLayout = result.LocalRootSignatures.GetElement( stageIndex );
-        reflectionState.LocalRootSignature   = &recordLayout;
-
-        IDxcBlob       *reflectionBlob = shader->Reflection;
-        const DxcBuffer reflectionBuffer{
-            .Ptr      = reflectionBlob->GetBufferPointer( ),
-            .Size     = reflectionBlob->GetBufferSize( ),
-            .Encoding = 0,
-        };
-
-        ID3D12ShaderReflection  *shaderReflection  = nullptr;
-        ID3D12LibraryReflection *libraryReflection = nullptr;
-
-        switch ( shader->Stage )
-        {
-        case ShaderStage::AnyHit:
-        case ShaderStage::ClosestHit:
-        case ShaderStage::Callable:
-        case ShaderStage::Intersection:
-        case ShaderStage::Raygen:
-        case ShaderStage::Miss:
-            DXC_CHECK_RESULT( m_compiler.DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &libraryReflection ) ) );
-            reflectionState.LibraryReflection = libraryReflection;
-            ReflectLibrary( reflectionState );
-            break;
-        case ShaderStage::Vertex:
-        default:
-            DXC_CHECK_RESULT( m_compiler.DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) ) );
-            reflectionState.ShaderReflection = shaderReflection;
-            ReflectShader( reflectionState );
-            break;
-        }
-
-        if ( shaderReflection )
-        {
-            shaderReflection->Release( );
-        }
-        if ( libraryReflection )
-        {
-            libraryReflection->Release( );
-        }
-    }
-
-#ifndef NDEBUG
-    ReflectionDebugOutput::DumpReflectionInfo( result );
-#endif
-    return result;
+    return m_reflectDesc;
 }
 
 ShaderProgramDesc ShaderProgram::Desc( ) const

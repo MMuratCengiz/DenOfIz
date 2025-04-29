@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct DZ_API ShaderProgramAssetReaderDesc
+    struct DZ_API ShaderAssetReaderDesc
     {
         BinaryReader *Reader;
     };
@@ -36,7 +36,7 @@ namespace DenOfIz
         uint64_t      m_streamStartOffset = 0;
 
     public:
-        explicit ShaderAssetReader( const ShaderProgramAssetReaderDesc &desc );
+        explicit ShaderAssetReader( const ShaderAssetReaderDesc &desc );
         ~ShaderAssetReader( );
 
         ShaderAsset Read( );

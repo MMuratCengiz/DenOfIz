@@ -173,7 +173,7 @@ TEST_F( ShaderAssetSerdeTest, WriteAndReadBack )
     shaderWriter.Finalize( );
 
     BinaryReader      reader( container );
-    ShaderAssetReader shaderReader( ShaderProgramAssetReaderDesc{ &reader } );
+    ShaderAssetReader shaderReader( ShaderAssetReaderDesc{ &reader } );
 
     ShaderAsset readAsset = shaderReader.Read( );
 

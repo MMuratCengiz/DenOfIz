@@ -19,18 +19,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Assets/Import/IAssetImporter.h>
 #include <DenOfIzGraphics/Assets/Serde/Shader/ShaderAsset.h>
+#include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 
 namespace DenOfIz
 {
     struct DZ_API ShaderImportDesc : ImportDesc
     {
-        InteropString               EntryPoint = "main";
-        ShaderStage                 Stage      = ShaderStage::Pixel;
-        InteropArray<InteropString> Defines;
+        ShaderProgramDesc ProgramDesc{ };
+        InteropString     OutputShaderName; // Note this is just the file name, ImportDesc.TargetDirectory is still used for the directory
 
-        static ShaderImportDesc CreateFromBase( const ImportDesc &base )
+        ShaderImportDesc( ) = default;
+        explicit ShaderImportDesc( const ImportDesc &base ) : ImportDesc( base )
         {
-            return ShaderImportDesc( base );
         }
     };
 
@@ -44,7 +44,7 @@ namespace DenOfIz
             ShaderAsset      ShaderAsset;
             InteropString    ErrorMessage;
             ImporterResult   Result;
-            ShaderImportDesc Options;
+            ShaderImportDesc Desc;
         };
 
     public:
@@ -58,6 +58,7 @@ namespace DenOfIz
 
     private:
         static void          WriteShaderAsset( const ImportContext &context, AssetUri &outAssetUri );
+        static InteropString GetAssetName( const ImportContext &context );
         static InteropString GetAssetNameFromFilePath( const InteropString &filePath );
         static InteropString SanitizeAssetName( const InteropString &name );
         static InteropString CreateAssetFileName( const InteropString &prefix, const InteropString &name );

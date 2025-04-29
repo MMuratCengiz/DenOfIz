@@ -38,10 +38,6 @@ namespace DenOfIz
         explicit FontImportDesc( const ImportDesc &base ) : ImportDesc( base )
         {
         }
-        static FontImportDesc CreateFromBase( const ImportDesc &base )
-        {
-            return FontImportDesc( base );
-        }
     };
 
     struct DZ_API FontImporterDesc{ };
@@ -68,7 +64,7 @@ namespace DenOfIz
             InteropString  SourceFilePath;
             InteropString  TargetDirectory;
             InteropString  AssetNamePrefix;
-            FontImportDesc Options;
+            FontImportDesc Desc;
             ImporterResult Result;
             InteropString  ErrorMessage;
 

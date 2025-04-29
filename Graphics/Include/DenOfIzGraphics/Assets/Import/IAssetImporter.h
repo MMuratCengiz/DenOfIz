@@ -70,7 +70,7 @@ namespace DenOfIz
         InteropString SourceFilePath;
         InteropString TargetDirectory;
         InteropString AssetNamePrefix;
-        ImportDesc Options;
+        ImportDesc   *Desc;
     };
 
     class DZ_API IAssetImporter
