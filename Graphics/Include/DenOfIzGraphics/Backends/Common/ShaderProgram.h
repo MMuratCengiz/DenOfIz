@@ -23,8 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/IInputLayout.h>
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
 #include <DenOfIzGraphics/Backends/Interface/RayTracing/ILocalRootSignature.h>
-#include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
-
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAsset.h"
 
 namespace DenOfIz
@@ -81,7 +79,7 @@ namespace DenOfIz
     public:
         DZ_API explicit ShaderProgram( ShaderProgramDesc desc );
         // Load shader program generated offline into a file
-        DZ_API explicit ShaderProgram( const ShaderAsset& asset );
+        DZ_API explicit ShaderProgram( const ShaderAsset &asset );
         [[nodiscard]] DZ_API InteropArray<CompiledShaderStage *> CompiledShaders( ) const;
         [[nodiscard]] DZ_API ShaderReflectDesc                   Reflect( ) const;
         [[nodiscard]] DZ_API ShaderProgramDesc                   Desc( ) const;

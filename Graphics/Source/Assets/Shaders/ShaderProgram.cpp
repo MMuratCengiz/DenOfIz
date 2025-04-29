@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h>
 #include <DenOfIzGraphics/Assets/Shaders/DxcEnumConverter.h>
 #include <DenOfIzGraphics/Assets/Shaders/DxilToMsl.h>
 #include <DenOfIzGraphics/Assets/Shaders/ReflectionDebugOutput.h>
@@ -24,8 +25,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <ranges>
 #include <set>
 #include <utility>
-
-#include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
 
 using namespace DenOfIz;
 
@@ -53,8 +52,8 @@ ShaderProgram::ShaderProgram( const ShaderAsset &asset )
         CompiledShaderStage *shaderStage = shader.Stages.GetElement( i );
         m_compiledShaders.emplace_back( std::unique_ptr<CompiledShaderStage>( shaderStage ) );
     }
-    m_reflectDesc = shader.ReflectDesc;
-    m_desc = {};
+    m_reflectDesc     = shader.ReflectDesc;
+    m_desc            = { };
     m_desc.RayTracing = shader.RayTracing;
 }
 

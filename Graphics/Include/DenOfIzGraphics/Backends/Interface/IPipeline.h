@@ -24,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IRootSignature.h"
 #include "ITextureResource.h"
 #include "RayTracing/IBottomLevelAS.h"
-#include "ShaderData.h"
 
 namespace DenOfIz
 {

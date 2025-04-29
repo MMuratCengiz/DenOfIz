@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Common.h>
+#include <DenOfIzGraphics/Utilities/Common_Macro.h>
 #include "IBufferResource.h"
 #include "ITextureResource.h"
 #include "ReflectionData.h"
@@ -43,14 +43,14 @@ namespace DenOfIz
     /// in as well, some of it might feel cryptic to the end user.
     struct DZ_API ResourceBindingDesc
     {
-        InteropString               Name;
-        ResourceBindingType         BindingType = ResourceBindingType::ConstantBuffer;
-        uint32_t                    Binding{ };
-        uint32_t                    RegisterSpace = 0;
-        BitSet<ResourceDescriptor>  Descriptor;
-        InteropArray<ShaderStage>   Stages;
-        int                         ArraySize = 1; // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
-        ReflectionDesc              Reflection{ };
+        InteropString              Name;
+        ResourceBindingType        BindingType = ResourceBindingType::ConstantBuffer;
+        uint32_t                   Binding{ };
+        uint32_t                   RegisterSpace = 0;
+        BitSet<ResourceDescriptor> Descriptor;
+        InteropArray<ShaderStage>  Stages;
+        int                        ArraySize = 1; // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
+        ReflectionDesc             Reflection{ };
     };
     DZ_API InteropArray<ResourceBindingDesc> SortResourceBindings( const InteropArray<ResourceBindingDesc> &bindings );
 
