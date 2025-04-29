@@ -36,6 +36,7 @@ void ShaderAssetWriter::Write( const ShaderAsset &shaderAsset )
         return;
     }
 
+    m_shaderAsset = shaderAsset;
     m_streamStartOffset = m_writer->Position( );
     WriteHeader( 0 );
 

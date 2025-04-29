@@ -102,7 +102,7 @@ void ShaderAssetReader::ReadHeader( )
     m_shaderAsset.Magic    = m_reader->ReadUInt64( );
     m_shaderAsset.Version  = m_reader->ReadUInt32( );
     m_shaderAsset.NumBytes = m_reader->ReadUInt64( );
-    m_shaderAsset.Uri      = AssetUri::Create( m_reader->ReadString( ) );
+    m_shaderAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
 }
 
 void ShaderAssetReader::ReadInputLayout( InputLayoutDesc &inputLayout ) const
