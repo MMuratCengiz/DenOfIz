@@ -179,7 +179,7 @@ namespace DenOfIz
             {
                 SafeCopyString( newData, oldLen + s_nullTerminatorLen, m_data );
             }
-            SafeCopyString(newData + oldLen, len + s_nullTerminatorLen, str);
+            SafeCopyString( newData + oldLen, len + s_nullTerminatorLen, str );
             delete[] result.m_data;
             result.m_data = newData;
             return std::move( result );
@@ -228,6 +228,19 @@ namespace DenOfIz
             m_numElements = numElements;
             m_array       = new T[ m_capacity ];
             InitializeElements( m_array, 0, m_capacity );
+        }
+
+        InteropArray( std::initializer_list<T> initList )
+        {
+            m_capacity    = initList.size( );
+            m_numElements = initList.size( );
+            m_array       = new T[ m_capacity ];
+
+            size_t index = 0;
+            for ( const auto &item : initList )
+            {
+                m_array[ index++ ] = item;
+            }
         }
 
         ~InteropArray( )
@@ -351,26 +364,22 @@ namespace DenOfIz
             }
             m_array[ index ] = element;
         }
-        
+
         void RemoveElement( const size_t index )
         {
-            if (index >= m_numElements)
+            if ( index >= m_numElements )
             {
                 return;
             }
-            if constexpr (!std::is_trivially_destructible_v<T>)
+            if constexpr ( !std::is_trivially_destructible_v<T> )
             {
-                m_array[index].~T();
+                m_array[ index ].~T( );
             }
-            if (index < m_numElements - 1)
+            if ( index < m_numElements - 1 )
             {
-                std::memmove(
-                    m_array + index,
-                    m_array + index + 1,
-                    (m_numElements - index - 1) * sizeof(T)
-                );
+                std::memmove( m_array + index, m_array + index + 1, ( m_numElements - index - 1 ) * sizeof( T ) );
             }
-            
+
             m_numElements--;
         }
 
