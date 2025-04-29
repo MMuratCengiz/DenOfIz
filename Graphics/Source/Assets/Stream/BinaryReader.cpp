@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cstring>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 
 using namespace DenOfIz;
@@ -420,9 +421,7 @@ void BinaryReader::LogAsCppArray( const InteropString &variableName ) const
     const auto currentPos = Position( );
     Seek( 0 );
 
-    std::stringstream ss;
-    ss << "InteropArray<Byte> " << variableName.Get( ) << " = {\n    ";
-
+    std::cout << "InteropArray<Byte> " << variableName.Get( ) << " = {\n    ";
     std::vector<Byte> buffer;
     char              byte;
     int               count        = 0;
@@ -435,19 +434,17 @@ void BinaryReader::LogAsCppArray( const InteropString &variableName ) const
 
     for ( size_t i = 0; i < buffer.size( ); ++i )
     {
-        ss << "0x" << std::setfill( '0' ) << std::setw( 2 ) << std::hex << static_cast<int>( buffer[ i ] );
+        std::cout << "0x" << std::setfill( '0' ) << std::setw( 2 ) << std::hex << static_cast<int>( buffer[ i ] );
         if ( i < buffer.size( ) - 1 )
         {
-            ss << ", ";
+            std::cout << ", ";
         }
         if ( ++count % bytesPerLine == 0 && i < buffer.size( ) - 1 )
         {
-            ss << "\n    ";
+            std::cout << "\n    ";
         }
     }
 
-    ss << "\n};";
-
-    LOG( INFO ) << "Binary data formatted as C++ array:\n" << ss.str( );
+    std::cout << "\n};";
     Seek( currentPos );
 }

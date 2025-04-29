@@ -44,6 +44,7 @@
 
 // Fix InteropString/InteropArray:
 %ignore DenOfIz::InteropString::InteropString(InteropString &&);
+%ignore DenOfIz::InteropArray::InteropArray(std::initializer_list<T>);
 %ignore DenOfIz::InteropString::operator DenOfIz::InteropString;
 %ignore DenOfIz::InteropString::operator=;
 %ignore DenOfIz::InteropArray::operator=;

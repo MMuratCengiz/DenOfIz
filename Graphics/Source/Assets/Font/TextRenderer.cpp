@@ -20,7 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Utilities/Common_Asserts.h>
 #include <directxmath.h>
 
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Font/EmbeddedTextRendererShaders.h"
+#include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
 
 using namespace DenOfIz;
 using namespace DirectX;
@@ -40,22 +42,9 @@ TextRenderer::~TextRenderer( ) = default;
 
 void TextRenderer::Initialize( )
 {
-    ShaderCompiler               shaderCompiler;
-    std::vector<ShaderStageDesc> shaderStages;
-    ShaderProgramDesc            programDesc;
-    ShaderStageDesc             &vsDesc = programDesc.ShaderStages.EmplaceElement( );
-    vsDesc.Stage                        = ShaderStage::Vertex;
-    vsDesc.EntryPoint                   = "main";
-    vsDesc.Data                         = EmbeddedTextRendererShaders::GetFontVertexShaderBytes( );
-    shaderStages.push_back( vsDesc );
-
-    ShaderStageDesc &psDesc = programDesc.ShaderStages.EmplaceElement( );
-    psDesc.Stage            = ShaderStage::Pixel;
-    psDesc.EntryPoint       = "main";
-    psDesc.Data             = EmbeddedTextRendererShaders::GetFontPixelShaderBytes( );
-    shaderStages.push_back( psDesc );
-
-    m_fontShaderProgram           = std::make_unique<ShaderProgram>( programDesc );
+    BinaryReader      binaryReader{ EmbeddedTextRendererShaders::ShaderAssetBytes };
+    ShaderAssetReader assetReader{ { &binaryReader } };
+    m_fontShaderProgram           = std::make_unique<ShaderProgram>( assetReader.Read( ) );
     ShaderReflectDesc reflectDesc = m_fontShaderProgram->Reflect( );
 
     SamplerDesc samplerDesc;
