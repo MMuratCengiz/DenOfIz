@@ -26,111 +26,115 @@ namespace DenOfIz
     template <typename Enum>
     class BitSet
     {
-    private:
         uint32_t m_bits;
 
-        explicit BitSet( uint32_t bits ) : m_bits( bits )
+        explicit BitSet( const uint32_t bits ) : m_bits( bits )
         {
         }
 
     public:
-        inline BitSet( ) : m_bits( 0 )
+        BitSet( ) : m_bits( 0 )
         {
         }
 
-        inline BitSet( const Enum &en ) : m_bits( (uint32_t)en )
+        explicit BitSet( const Enum &en ) : m_bits( static_cast<uint32_t>( en ) )
         {
         }
 
-        inline constexpr operator Enum( ) const
+        explicit BitSet( const uint32_t &bits ) : m_bits( bits )
         {
-            return (Enum)m_bits;
+
         }
 
-        inline constexpr BitSet<Enum> operator|( const Enum &other )
+        explicit constexpr operator Enum( ) const
         {
-            return BitSet<Enum>( m_bits | (uint32_t)other );
+            return static_cast<Enum>( m_bits );
         }
 
-        inline constexpr BitSet<Enum> operator|( const BitSet<Enum> &other )
+        constexpr BitSet operator|( const Enum &other )
         {
-            return BitSet<Enum>( m_bits | other.m_bits );
+            return BitSet( m_bits | static_cast<uint32_t>( other ) );
         }
 
-        inline BitSet<Enum> &operator|=( const Enum &other )
+        constexpr BitSet operator|( const BitSet &other )
         {
-            m_bits |= (uint32_t)other;
+            return BitSet( m_bits | other.m_bits );
+        }
+
+        BitSet &operator|=( const Enum &other )
+        {
+            m_bits |= static_cast<uint32_t>( other );
             return *this;
         }
 
-        inline constexpr BitSet<Enum> operator&( const Enum &other )
+        constexpr BitSet operator&( const Enum &other )
         {
-            return BitSet<Enum>( m_bits & (uint32_t)other );
+            return BitSet( m_bits & static_cast<uint32_t>( other ) );
         }
 
-        inline constexpr BitSet<Enum> operator&( const BitSet<Enum> &other )
+        constexpr BitSet operator&( const BitSet &other )
         {
-            return BitSet<Enum>( m_bits & other.m_bits );
+            return BitSet( m_bits & other.m_bits );
         }
 
-        inline BitSet<Enum> &operator&=( const Enum &other )
+        BitSet &operator&=( const Enum &other )
         {
-            m_bits &= (uint32_t)other;
+            m_bits &= static_cast<uint32_t>( other );
             return *this;
         }
 
-        inline constexpr BitSet<Enum> operator~( )
+        constexpr BitSet operator~( )
         {
-            return BitSet<Enum>( ~m_bits );
+            return BitSet( ~m_bits );
         }
 
-        inline BitSet<Enum> &operator=( const Enum &other )
+        BitSet &operator=( const Enum &other )
         {
-            m_bits = (uint32_t)other;
+            m_bits = static_cast<uint32_t>( other );
             return *this;
         }
 
-        inline constexpr bool operator==( const Enum &other )
+        constexpr bool operator==( const Enum &other )
         {
-            return m_bits == ( (uint32_t)other );
+            return m_bits == static_cast<uint32_t>( other );
         }
 
-        inline constexpr bool operator!=( const Enum &other )
+        constexpr bool operator!=( const Enum &other )
         {
-            return m_bits != ( (uint32_t)other );
+            return m_bits != static_cast<uint32_t>( other );
         }
 
         // Interop
-        inline bool None( )
+        bool None( ) const
         {
             return m_bits == 0;
         }
 
         // Interop
-        inline void Set( const Enum &other )
+        void Set( const Enum &other )
         {
-            m_bits |= (uint32_t)other;
+            m_bits |= static_cast<uint32_t>( other );
         }
 
-        inline void Unset( const Enum &other )
+        void Unset( const Enum &other )
         {
-            m_bits &= ~(uint32_t)other;
+            m_bits &= ~static_cast<uint32_t>( other );
         }
 
-        inline bool IsSet( const Enum &other ) const
+        bool IsSet( const Enum &other ) const
         {
-            return ( m_bits & ( (uint32_t)other ) ) == ( (uint32_t)other );
+            return ( m_bits & static_cast<uint32_t>( other ) ) == static_cast<uint32_t>( other );
         }
         // Interop
 
         template <typename T>
-        inline bool All( std::initializer_list<T> others ) const
+        bool All( std::initializer_list<T> others ) const
         {
             bool result = true;
 
             for ( auto &other : others )
             {
-                result &= ( m_bits & ( (uint32_t)other ) ) == ( (uint32_t)other );
+                result &= ( m_bits & static_cast<uint32_t>( other ) ) == static_cast<uint32_t>( other );
                 if ( !result )
                 {
                     return false;
@@ -140,18 +144,23 @@ namespace DenOfIz
         }
 
         template <typename T>
-        inline bool Any( std::initializer_list<T> others ) const
+        bool Any( std::initializer_list<T> others ) const
         {
             bool result = false;
             for ( auto &other : others )
             {
-                result |= ( m_bits & ( (uint32_t)other ) ) == ( (uint32_t)other );
+                result |= ( m_bits & static_cast<uint32_t>( other ) ) == static_cast<uint32_t>( other );
                 if ( result )
                 {
                     return true;
                 }
             }
             return false;
+        }
+
+        [[nodiscard]] uint32_t Value( ) const
+        {
+            return m_bits;
         }
     };
 } // namespace DenOfIz
