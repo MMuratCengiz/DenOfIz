@@ -51,6 +51,7 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/GpuResource/GpuResourceLoader.cpp
         Source/Assets/Import/AssimpImporter.cpp
         Source/Assets/Import/FontImporter.cpp
+        Source/Assets/Import/ShaderImporter.cpp
         Source/Assets/Serde/Asset.cpp
         Source/Assets/Serde/Animation/AnimationAssetReader.cpp
         Source/Assets/Serde/Animation/AnimationAssetWriter.cpp
@@ -64,6 +65,8 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Serde/Mesh/MeshAssetWriter.cpp
         Source/Assets/Serde/Physics/PhysicsAssetReader.cpp
         Source/Assets/Serde/Physics/PhysicsAssetWriter.cpp
+        Source/Assets/Serde/Shader/ShaderAssetReader.cpp
+        Source/Assets/Serde/Shader/ShaderAssetWriter.cpp
         Source/Assets/Serde/Skeleton/SkeletonAssetReader.cpp
         Source/Assets/Serde/Skeleton/SkeletonAssetWriter.cpp
         Source/Assets/Serde/Texture/TextureAssetReader.cpp
