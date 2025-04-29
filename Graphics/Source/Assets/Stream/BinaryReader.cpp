@@ -23,6 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <iostream>
 #include <sstream>
 
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+
 using namespace DenOfIz;
 
 BinaryReader::BinaryReader( std::istream *stream, const BinaryReaderDesc &desc ) : m_allowedNumBytes( desc.NumBytes ), m_stream( stream )
@@ -43,7 +45,7 @@ BinaryReader::BinaryReader( const InteropString &filePath, const BinaryReaderDes
     m_isStreamOwned = true;
     auto *stream    = new std::ifstream;
 
-    stream->open( filePath.Get( ), std::ios::binary );
+    stream->open( FileIO::GetResourcePath( filePath ).Get( ), std::ios::binary );
     if ( !stream->is_open( ) )
     {
         LOG( ERROR ) << "Failed to open file for reading: " << filePath.Get( );

@@ -21,6 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cstring>
 #include <fstream>
 
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+
 using namespace DenOfIz;
 
 BinaryWriter::BinaryWriter( std::ostream *stream, const BinaryWriterDesc &desc ) : m_desc( desc ), m_stream( stream )
@@ -41,7 +43,7 @@ BinaryWriter::BinaryWriter( const InteropString &filePath, const BinaryWriterDes
     m_isStreamOwned = true;
     auto *stream    = new std::ofstream;
 
-    stream->open( filePath.Get( ), std::ios::binary );
+    stream->open( FileIO::GetResourcePath( filePath ).Get( ), std::ios::binary );
     m_isStreamValid = true;
     if ( !stream->is_open( ) )
     {
