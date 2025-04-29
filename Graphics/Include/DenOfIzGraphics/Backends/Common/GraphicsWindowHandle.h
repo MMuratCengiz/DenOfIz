@@ -38,6 +38,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 #ifdef _WIN32
+#include <SDL2/SDL_syswm.h>
 typedef HWND TWindowHandle;
 #elif __APPLE__
 typedef NSWindow *TWindowHandle;
