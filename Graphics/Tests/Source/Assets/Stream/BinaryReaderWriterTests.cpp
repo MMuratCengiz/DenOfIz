@@ -147,3 +147,24 @@ TEST( BinarySerdeTest, SeekingAndPosition )
     ASSERT_EQ( reader.Position( ), 0 );
     ASSERT_EQ( reader.ReadUInt32( ), 111 );
 }
+
+TEST( BinarySerdeTest, InteropArrayByteSupport )
+{
+    BinaryContainer container;
+    {
+        const BinaryWriter writer( container );
+        writer.WriteUInt32( 12345 );
+        writer.WriteFloat( 3.14159f );
+        writer.WriteString( "TestString" );
+        writer.Flush( );
+    }
+
+    const InteropArray<Byte> byteData = container.GetData( );
+
+    BinaryReader reader( byteData );
+    ASSERT_EQ( reader.ReadUInt32( ), 12345 );
+    ASSERT_FLOAT_EQ( reader.ReadFloat( ), 3.14159f );
+    ASSERT_STREQ( reader.ReadString( ).Get( ), "TestString" );
+
+    reader.LogAsCppArray( "TestData" );
+}

@@ -19,6 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
 #include <cstring>
 #include <fstream>
+#include <iomanip>
+#include <sstream>
 
 using namespace DenOfIz;
 
@@ -52,11 +54,31 @@ BinaryReader::BinaryReader( const InteropString &filePath, const BinaryReaderDes
     m_isStreamValid = true;
 }
 
+BinaryReader::BinaryReader( const InteropArray<Byte> &data, const BinaryReaderDesc &desc ) : m_allowedNumBytes( desc.NumBytes )
+{
+    m_isStreamOwned = true;
+    auto *stream    = new std::stringstream( std::ios::in | std::ios::out | std::ios::binary );
+
+    if ( data.NumElements( ) > 0 )
+    {
+        stream->write( reinterpret_cast<const char *>( data.Data( ) ), data.NumElements( ) );
+        stream->flush( );
+        stream->seekg( 0, std::ios::beg );
+    }
+
+    m_stream         = stream;
+    m_isStreamValid  = true;
+    m_isStringStream = true;
+}
+
 BinaryReader::~BinaryReader( )
 {
-    if ( m_isStreamValid && m_isStreamOwned && dynamic_cast<std::ifstream *>( m_stream )->is_open( ) )
+    if ( m_isStreamValid && m_isStreamOwned )
     {
-        dynamic_cast<std::ifstream *>( m_stream )->close( );
+        if ( !m_isStringStream && dynamic_cast<std::ifstream *>( m_stream )->is_open( ) )
+        {
+            dynamic_cast<std::ifstream *>( m_stream )->close( );
+        }
         delete m_stream;
         m_stream = nullptr;
     }
@@ -386,4 +408,46 @@ bool BinaryReader::TrackReadBytes( const uint32_t requested )
         return false;
     }
     return true;
+}
+
+void BinaryReader::LogAsCppArray( const InteropString &variableName ) const
+{
+    if ( !m_isStreamValid )
+    {
+        return;
+    }
+
+    const auto currentPos = Position( );
+    Seek( 0 );
+
+    std::stringstream ss;
+    ss << "InteropArray<Byte> " << variableName.Get( ) << " = {\n    ";
+
+    std::vector<Byte> buffer;
+    char              byte;
+    int               count        = 0;
+    constexpr int     bytesPerLine = 16;
+
+    while ( m_stream->get( byte ) )
+    {
+        buffer.push_back( static_cast<Byte>( byte ) );
+    }
+
+    for ( size_t i = 0; i < buffer.size( ); ++i )
+    {
+        ss << "0x" << std::setfill( '0' ) << std::setw( 2 ) << std::hex << static_cast<int>( buffer[ i ] );
+        if ( i < buffer.size( ) - 1 )
+        {
+            ss << ", ";
+        }
+        if ( ++count % bytesPerLine == 0 && i < buffer.size( ) - 1 )
+        {
+            ss << "\n    ";
+        }
+    }
+
+    ss << "\n};";
+
+    LOG( INFO ) << "Binary data formatted as C++ array:\n" << ss.str( );
+    Seek( currentPos );
 }

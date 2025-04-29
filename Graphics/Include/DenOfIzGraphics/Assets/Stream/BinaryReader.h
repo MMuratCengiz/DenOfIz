@@ -56,12 +56,14 @@ namespace DenOfIz
         uint64_t      m_readNumBytes  = 0;
         bool          m_isStreamOwned = false;
         bool          m_isStreamValid;
+        bool          m_isStringStream = false;
         std::istream *m_stream;
 
     public:
         DZ_API explicit BinaryReader( std::istream *stream, const BinaryReaderDesc &desc = { } );
         DZ_API explicit BinaryReader( BinaryContainer &container, const BinaryReaderDesc &desc = { } );
         DZ_API explicit BinaryReader( const InteropString &filePath, const BinaryReaderDesc &desc = { } );
+        DZ_API explicit BinaryReader( const InteropArray<Byte> &data, const BinaryReaderDesc &desc = { } );
         DZ_API ~BinaryReader( );
 
         [[nodiscard]] DZ_API int ReadByte( );
@@ -95,6 +97,9 @@ namespace DenOfIz
         [[nodiscard]] DZ_API uint64_t           Position( ) const;
         DZ_API void                             Seek( uint64_t position ) const;
         DZ_API void                             Skip( uint64_t count ) const;
+
+        // Utility function to log data as a C++ array for embedding in code
+        DZ_API void LogAsCppArray( const InteropString &variableName = "Data" ) const;
 
     private:
         [[nodiscard]] bool IsStreamValid( ) const;
