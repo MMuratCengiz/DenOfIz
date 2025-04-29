@@ -18,11 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "BinaryContainer.h"
-
-#include <DenOfIzGraphics/Utilities/Interop.h>
 #include <DenOfIzGraphics/Utilities/InteropMath.h>
 #include <ostream>
+#include "BinaryContainer.h"
 
 namespace DenOfIz
 {

@@ -247,6 +247,8 @@ Format MaskToFormat( const D3D_REGISTER_COMPONENT_TYPE componentType, const uint
         default:
             return Format::Undefined;
         }
+#ifdef D3D_READY // Removed because they used to work with Directx Headers, however the dependency is now removed depending on DXC version which is a bit behind and doesn't have
+                 // these values
     case D3D_REGISTER_COMPONENT_UINT16:
         switch ( mask )
         {
@@ -283,6 +285,7 @@ Format MaskToFormat( const D3D_REGISTER_COMPONENT_TYPE componentType, const uint
         default:
             return Format::Undefined;
         }
+#endif
     default:
         return Format::Undefined;
     }

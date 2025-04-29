@@ -18,6 +18,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#ifndef __APPLE_CC__
-#include <malloc.h>
+#ifdef __APPLE_CC__
+#ifdef __cplusplus
+#define NULL nullptr // todo remove this
+#else
+#define NULL ( (void *)0 )
 #endif
+#import <CoreFoundation/CoreFoundation.h>
+
+#import <AppKit/NSView.h>
+#import <AppKit/NSWindow.h>
+#endif
+

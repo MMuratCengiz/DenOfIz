@@ -27,15 +27,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SDL_MAIN_HANDLED
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_syswm.h>
 #ifdef BUILD_VK
 #include "DenOfIzGraphics/Utilities/Interop.h"
 #include "SDL2/SDL_vulkan.h"
 #endif
-#endif
-#ifdef __APPLE__
-#import <AppKit/NSView.h>
-#import <AppKit/NSWindow.h>
 #endif
 
 #ifdef WINDOW_MANAGER_NATIVE

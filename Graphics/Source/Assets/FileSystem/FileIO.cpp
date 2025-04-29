@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
+#include <DenOfIzGraphics/Utilities/Common.h>
 #include <fstream>
 
 using namespace DenOfIz;

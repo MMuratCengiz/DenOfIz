@@ -17,7 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <glog/logging.h>
 #include <iterator>
 #include <mutex>
 #include <string>
@@ -495,7 +494,7 @@ namespace DenOfIz
         {
             if ( index >= m_numElements )
             {
-                LOG( FATAL ) << "Index out of bounds." << index << " >= " << m_numElements;
+                throw std::out_of_range( "Index out of bounds: " + std::to_string( index ) + " >= " + std::to_string( m_numElements ) );
             }
         }
     };

@@ -1,11 +1,4 @@
-/**/
-
 #include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h>
-
-using namespace DenOfIz;
-
-/**/
-
 #include <DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h>
 #include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h>
 

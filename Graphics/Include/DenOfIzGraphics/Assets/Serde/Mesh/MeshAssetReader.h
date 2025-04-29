@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include "MeshAsset.h"
+#include <cstdint>
 
 namespace DenOfIz
 {

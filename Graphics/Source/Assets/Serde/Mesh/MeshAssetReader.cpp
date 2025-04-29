@@ -197,19 +197,27 @@ MeshVertex MeshAssetReader::ReadSingleVertex( ) const
             switch ( config.ColorFormats.GetElement( i ) )
             {
             case ColorFormat::RGBA:
-                colorRead = m_reader->ReadFloat_4( );
+                {
+                    colorRead = m_reader->ReadFloat_4( );
+                }
                 break;
             case ColorFormat::RGB:
-                const Float_3 rgb = m_reader->ReadFloat_3( );
-                colorRead         = { rgb.X, rgb.Y, rgb.Z, 1.0f };
+                {
+                    const Float_3 rgb = m_reader->ReadFloat_3( );
+                    colorRead         = { rgb.X, rgb.Y, rgb.Z, 1.0f };
+                }
                 break;
             case ColorFormat::RG:
-                const Float_2 rg = m_reader->ReadFloat_2( );
-                colorRead        = { rg.X, rg.Y, 0.0f, 1.0f };
+                {
+                    const Float_2 rg = m_reader->ReadFloat_2( );
+                    colorRead        = { rg.X, rg.Y, 0.0f, 1.0f };
+                }
                 break;
             case ColorFormat::R:
-                const float r = m_reader->ReadFloat( );
-                colorRead     = { r, 0.0f, 0.0f, 1.0f };
+                {
+                    const float r = m_reader->ReadFloat( );
+                    colorRead     = { r, 0.0f, 0.0f, 1.0f };
+                }
                 break;
             }
             vertex.Colors.SetElement( i, colorRead );
@@ -376,7 +384,7 @@ void MeshAssetReader::LoadStreamToBuffer( const LoadToBufferDesc &desc ) const
     while ( memBytesCopied < desc.Stream.NumBytes )
     {
         constexpr size_t chunkSize            = 65536;
-        const uint64_t   bytesToReadMem       = std::min( chunkSize, desc.Stream.NumBytes - memBytesCopied );
+        const uint64_t   bytesToReadMem       = std::min<uint32_t>( chunkSize, desc.Stream.NumBytes - memBytesCopied );
         const int        bytesActuallyReadMem = m_reader->Read( fullData, static_cast<uint32_t>( memBytesCopied ), static_cast<uint32_t>( bytesToReadMem ) );
         if ( bytesActuallyReadMem != static_cast<int>( bytesToReadMem ) )
         {
@@ -419,7 +427,7 @@ void MeshAssetReader::LoadStreamToMemory( const LoadToMemoryDesc &desc ) const
     while ( bytesCopied < desc.Stream.NumBytes )
     {
         constexpr size_t chunkSize         = 65536;
-        const uint64_t   bytesToRead       = std::min( chunkSize, desc.Stream.NumBytes - bytesCopied );
+        const uint64_t   bytesToRead       = std::min<uint32_t>( chunkSize, desc.Stream.NumBytes - bytesCopied );
         const int        bytesActuallyRead = m_reader->Read( *desc.Memory, static_cast<uint32_t>( desc.DstMemoryOffset + bytesCopied ), static_cast<uint32_t>( bytesToRead ) );
         if ( bytesActuallyRead != static_cast<int>( bytesToRead ) )
         {
