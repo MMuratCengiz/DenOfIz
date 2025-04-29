@@ -253,7 +253,6 @@ target_link_libraries(DenOfIzGraphics
         Taskflow::Taskflow
         assimp::assimp
         ozz_animation
-        draco::draco
         Freetype::Freetype
         harfbuzz::harfbuzz
         msdfgen::msdfgen

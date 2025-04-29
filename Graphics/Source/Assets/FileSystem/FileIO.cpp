@@ -156,11 +156,11 @@ InteropString FileIO::GetResourcePath( const InteropString &path )
     return { PlatformResourcePath( path.Get( ) ).c_str( ) };
 }
 
-std::string FileIO::PlatformResourcePath( const std::string &path )
+std::string FileIO::PlatformResourcePath( const std::string &resourcePath )
 {
-    if ( const std::filesystem::path testRel( path ); testRel.is_absolute( ) )
+    if ( const std::filesystem::path fsPath( resourcePath ); fsPath.is_absolute( ) )
     {
-        return path;
+        return resourcePath;
     }
 
 #ifdef __APPLE__
@@ -176,8 +176,6 @@ std::string FileIO::PlatformResourcePath( const std::string &path )
 
     CFRelease( resourcesURL );
     LOG( WARNING ) << "Unable to resolve resource path: " << resourcePath;
-    return resourcePath;
-#else
-    return path;
 #endif
+    return resourcePath;
 }

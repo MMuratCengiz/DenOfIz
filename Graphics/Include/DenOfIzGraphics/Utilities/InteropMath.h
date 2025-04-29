@@ -75,7 +75,7 @@ namespace DenOfIz
         int16_t Z;
         int16_t W;
     };
-    template class DZ_API InteropArray<Int16_3>;
+    template class DZ_API InteropArray<Int16_4>;
 
     struct DZ_API Int32_2
     {
