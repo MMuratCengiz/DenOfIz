@@ -29,7 +29,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <wrl/client.h>
 #else
 #define __EMULATE_UUID
-#define NULL nullptr // TODO remove this
 #include "WinAdapter.h"
 #endif
 

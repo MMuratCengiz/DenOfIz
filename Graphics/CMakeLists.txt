@@ -110,6 +110,7 @@ set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Utilities/Time.cpp
         Source/Utilities/Utilities.cpp
         Source/Utilities/FrameDebugRenderer.cpp
+        Source/Utilities/InteropMathConverter.cpp
 
         # Interface utilities
         Source/Backends/Interface/CommonData.cpp

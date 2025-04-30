@@ -18,9 +18,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#ifdef __APPLE_CC__
-#import <CoreFoundation/CoreFoundation.h>
-#import <AppKit/NSView.h>
-#import <AppKit/NSWindow.h>
-#endif
+#include <DirectXMath.h>
+#include "InteropMath.h"
 
+namespace DenOfIz
+{
+    class DZ_API InteropMathConverter
+    {
+    public:
+        static DirectX::XMFLOAT4X4 Float_4x4ToXMFLOAT4X4(const Float_4x4& matrix);
+        static Float_4x4 Float_4x4FromXMFLOAT4X4(const DirectX::XMFLOAT4X4& matrix);
+        static Float_4x4 Float_4X4FromXMMATRIX(const DirectX::XMMATRIX& matrix);
+        static DirectX::XMMATRIX Float_4X4ToXMMATRIX(const Float_4x4& matrix);
+    };
+} // namespace DenOfIz

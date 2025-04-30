@@ -22,10 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Serde/Font/FontAsset.h>
 #include <DenOfIzGraphics/Assets/Serde/Font/FontAssetWriter.h>
 
-#define NULL nullptr // todo remove this
 #include <freetype/freetype.h>
-#include <msdfgen-ext.h>
-#include <msdfgen.h>
+
+namespace msdfgen
+{
+    class FreetypeHandle;
+    class FontHandle;
+}
 
 namespace DenOfIz
 {

@@ -30,6 +30,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <functional>
 #include <glog/logging.h>
 
+#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
+
 using ozz::make_span;
 using ozz::span;
 
@@ -337,7 +339,7 @@ void AnimationStateManager::GetModelSpaceTransforms( InteropArray<Float_4x4> &ou
             );
             // clang-format on
             xmOut = XMMatrixMultiply( xmOut, correctionMatrix );
-            out   = Float_4X4FromXMMATRIX( xmOut );
+            out   = InteropMathConverter::Float_4X4FromXMMATRIX( xmOut );
         }
     }
 }

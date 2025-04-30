@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "Common_Apple.h"
 
 #include <cassert>
 #include <cstddef>
@@ -25,7 +24,7 @@
 #include <glog/logging.h>
 #include <iostream>
 #include <memory>
-#include <string>
+#include "Common_Apple.h"
 #include "Common_Macro.h"
 #include "Common_Windows.h"
 #include "Interop.h"

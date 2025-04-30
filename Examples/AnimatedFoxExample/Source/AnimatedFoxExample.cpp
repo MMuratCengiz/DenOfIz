@@ -25,6 +25,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 
+#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
+
 using namespace DirectX;
 using namespace DenOfIz;
 
@@ -323,14 +325,14 @@ void AnimatedFoxExample::UpdateBoneTransforms( )
         {
             const Joint &joint = m_foxSkeleton.Joints.GetElement( i );
 
-            auto           xmModelMatrix = Float_4x4ToXMFLOAT4X4( modelMatrix );
+            auto           xmModelMatrix = InteropMathConverter::Float_4x4ToXMFLOAT4X4( modelMatrix );
             const XMMATRIX modelMat      = XMLoadFloat4x4( &xmModelMatrix );
-            auto           xmInvBindMat  = Float_4x4ToXMFLOAT4X4( joint.InverseBindMatrix );
+            auto           xmInvBindMat  = InteropMathConverter::Float_4x4ToXMFLOAT4X4( joint.InverseBindMatrix );
             const XMMATRIX invBindMat    = XMLoadFloat4x4( &xmInvBindMat );
             const XMMATRIX finalMat      = XMMatrixMultiply( invBindMat, modelMat );
             XMFLOAT4X4     f4x4FinalMat{ };
             XMStoreFloat4x4( &f4x4FinalMat, finalMat );
-            m_boneTransformsData->BoneTransforms[ i ] = Float_4x4FromXMFLOAT4X4( f4x4FinalMat );
+            m_boneTransformsData->BoneTransforms[ i ] = InteropMathConverter::Float_4x4FromXMFLOAT4X4( f4x4FinalMat );
         }
         else
         {

@@ -24,6 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <unordered_set>
 
 #include "DenOfIzGraphics/Assets/Font/Font.h"
+
+#include <msdfgen.h>
+#include <msdfgen-ext.h>
 #include "msdf-atlas-gen/AtlasGenerator.h"
 #include "msdf-atlas-gen/BitmapAtlasStorage.h"
 #include "msdf-atlas-gen/FontGeometry.h"

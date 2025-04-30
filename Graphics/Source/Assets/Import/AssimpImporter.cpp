@@ -32,6 +32,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <ranges>
 #include <set>
 
+#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
+
 using namespace DenOfIz;
 
 AssimpImporter::AssimpImporter( AssimpImporterDesc desc ) : m_desc( std::move( desc ) )
@@ -1109,7 +1111,7 @@ Float_4x4 AssimpImporter::ConvertMatrix( const aiMatrix4x4 &matrix )
     );
     // clang-format on
 
-    return Float_4X4FromXMMATRIX( matrixXM );
+    return InteropMathConverter::Float_4X4FromXMMATRIX( matrixXM );
 }
 
 Float_4 AssimpImporter::ConvertQuaternion( const aiQuaternion &quat )
