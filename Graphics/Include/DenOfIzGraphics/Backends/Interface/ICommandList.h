@@ -186,11 +186,12 @@ namespace DenOfIz
         virtual void CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTexture ) = 0;
         virtual void CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBuffer ) = 0;
         // --
-        virtual void UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc )                   = 0;
-        virtual void BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )            = 0;
-        virtual void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc )   = 0;
-        virtual void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )                     = 0;
-        virtual void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) = 0;
+        virtual void UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc )                       = 0;
+        virtual void BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc )                = 0;
+        virtual void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc )       = 0;
+        virtual void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )                         = 0;
+        virtual void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ )     = 0;
+        virtual void DispatchMesh( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) = 0;
 
         virtual const QueueType GetQueueType( ) = 0;
     };

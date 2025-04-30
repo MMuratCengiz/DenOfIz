@@ -65,6 +65,7 @@ namespace DenOfIz
         void Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance ) override;
         void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
         void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
+        void DispatchMesh( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
 
         const QueueType  GetQueueType( ) override;
         VkCommandBuffer &GetCommandBuffer( );

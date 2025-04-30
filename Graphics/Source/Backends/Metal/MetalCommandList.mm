@@ -285,6 +285,15 @@ void MetalCommandList::Dispatch( uint32_t groupCountX, uint32_t groupCountY, uin
     TopLevelArgumentBufferNextOffset( );
 }
 
+void MetalCommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
+{
+    SwitchEncoder( MetalEncoderType::Render );
+    BindCommandResources( );
+    MTLSize meshGroupsPerGrid = MTLSizeMake(groupCountX, groupCountY, groupCountZ);
+    [m_renderEncoder drawMeshThreadgroups:meshGroupsPerGrid threadsPerObjectThreadgroup:objectThreadsPerGroup threadsPerMeshThreadgroup:MTLSizeMake( 1, 1, 1 )];
+    TopLevelArgumentBufferNextOffset();
+}
+
 void MetalCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionInfo )
 {
     SwitchEncoder( MetalEncoderType::Blit );

@@ -62,6 +62,7 @@ namespace DenOfIz
         void DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance ) override;
         void Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance ) override;
         void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
+        void DispatchMesh( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
         // List of copy commands
         void CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionInfo ) override;
         void CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionInfo ) override;

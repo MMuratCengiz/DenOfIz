@@ -284,6 +284,12 @@ void DX12CommandList::Dispatch( const uint32_t groupCountX, const uint32_t group
     m_commandList->Dispatch( groupCountX, groupCountY, groupCountZ );
 }
 
+void DX12CommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
+{
+    ProcessBindGroups( );
+    m_commandList->DispatchMesh( groupCountX, groupCountY, groupCountZ );
+}
+
 void DX12CommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionInfo )
 {
     DZ_NOT_NULL( copyBufferRegionInfo.DstBuffer );

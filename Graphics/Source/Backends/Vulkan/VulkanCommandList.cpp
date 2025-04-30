@@ -374,6 +374,12 @@ void VulkanCommandList::Dispatch( const uint32_t groupCountX, const uint32_t gro
     vkCmdDispatch( m_commandBuffer, groupCountX, groupCountY, groupCountZ );
 }
 
+void VulkanCommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
+{
+    ProcessBindGroups( );
+    vkCmdDrawMeshTasksEXT( m_commandBuffer, groupCountX, groupCountY, groupCountZ );
+}
+
 const QueueType VulkanCommandList::GetQueueType( )
 {
     return m_queueType;

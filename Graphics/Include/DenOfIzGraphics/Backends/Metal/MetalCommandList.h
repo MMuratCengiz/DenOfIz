@@ -91,6 +91,7 @@ namespace DenOfIz
         void BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevelASDesc ) override;
         void BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBottomLevelASDesc ) override;
         void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
+        void DispatchMesh( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
 
         const QueueType GetQueueType( ) override;
         const id<MTLCommandBuffer> GetCommandBuffer( ) const;
