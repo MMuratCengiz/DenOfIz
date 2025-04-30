@@ -290,7 +290,8 @@ void MetalCommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t 
     SwitchEncoder( MetalEncoderType::Render );
     BindCommandResources( );
     MTLSize meshGroupsPerGrid = MTLSizeMake(groupCountX, groupCountY, groupCountZ);
-    [m_renderEncoder drawMeshThreadgroups:meshGroupsPerGrid threadsPerObjectThreadgroup:objectThreadsPerGroup threadsPerMeshThreadgroup:MTLSizeMake( 1, 1, 1 )];
+    // Todo MTLSizeMake(1, 1, 1) add something reasonable
+    [m_renderEncoder drawMeshThreadgroups:meshGroupsPerGrid threadsPerObjectThreadgroup:MTLSizeMake( 1, 1, 1) threadsPerMeshThreadgroup:MTLSizeMake( 1, 1, 1 )];
     TopLevelArgumentBufferNextOffset();
 }
 
