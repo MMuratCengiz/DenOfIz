@@ -34,6 +34,9 @@ MetalPipeline::MetalPipeline( MetalContext *context, const PipelineDesc &desc ) 
     case BindPoint::RayTracing:
         CreateRayTracingPipeline( );
         break;
+    case BindPoint::Mesh:
+        CreateMeshPipeline( );
+        break;
     }
 }
 
@@ -410,6 +413,124 @@ const HitGroupExport &MetalPipeline::FindHitGroupExport( const std::string &name
 id<MTLVisibleFunctionTable> MetalPipeline::VisibleFunctionTable( ) const
 {
     return m_visibleFunctionTable;
+}
+
+void MetalPipeline::CreateMeshPipeline( )
+{
+    id<MTLFunction> objectFunction = nullptr; // Task (Amplification) shader
+    id<MTLFunction> meshFunction = nullptr;   // Mesh shader
+    id<MTLFunction> fragmentFunction = nullptr;
+    
+    const auto &shaders = m_desc.ShaderProgram->CompiledShaders( );
+    for ( int i = 0; i < shaders.NumElements( ); ++i )
+    {
+        const auto &shader = shaders.GetElement( i );
+        id<MTLLibrary> library = LoadLibrary( shader->MSL );
+        
+        switch ( shader->Stage )
+        {
+            case ShaderStage::Task:
+                objectFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
+                break;
+            case ShaderStage::Mesh:
+                meshFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
+                break;
+            case ShaderStage::Pixel:
+                fragmentFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
+                break;
+            default:
+                LOG( ERROR ) << "Unsupported shader stage for mesh pipeline: " << static_cast<int>( shader->Stage );
+                break;
+        }
+    }
+    
+    if ( meshFunction == nullptr )
+    {
+        LOG( ERROR ) << "Failed to create mesh function";
+        return;
+    }
+
+    MTLMeshRenderPipelineDescriptor *pipelineStateDescriptor = [[MTLMeshRenderPipelineDescriptor alloc] init];
+    pipelineStateDescriptor.label = @"Mesh Pipeline";
+    pipelineStateDescriptor.objectFunction = objectFunction;
+    pipelineStateDescriptor.meshFunction = meshFunction;
+    pipelineStateDescriptor.fragmentFunction = fragmentFunction;
+    pipelineStateDescriptor.rasterSampleCount = MSAASampleCountToNumSamples( m_desc.Graphics.MSAASampleCount );
+
+    int attachmentIdx = 0;
+    for ( int i = 0; i < m_desc.Graphics.RenderTargets.NumElements( ); ++i )
+    {
+        const auto &attachment = m_desc.Graphics.RenderTargets.GetElement( i );
+        MTLRenderPipelineColorAttachmentDescriptor *metalColorAttachment = pipelineStateDescriptor.colorAttachments[ attachmentIdx ];
+        metalColorAttachment.pixelFormat = MetalEnumConverter::ConvertFormat( attachment.Format );
+        
+        const BlendDesc &blendDesc = attachment.Blend;
+        
+        metalColorAttachment.blendingEnabled = blendDesc.Enable;
+        
+        metalColorAttachment.sourceRGBBlendFactor = MetalEnumConverter::ConvertBlendFactor( blendDesc.SrcBlend );
+        metalColorAttachment.destinationRGBBlendFactor = MetalEnumConverter::ConvertBlendFactor( blendDesc.DstBlend );
+        metalColorAttachment.rgbBlendOperation = MetalEnumConverter::ConvertBlendOp( blendDesc.BlendOp );
+        
+        metalColorAttachment.sourceAlphaBlendFactor = MetalEnumConverter::ConvertBlendFactor( blendDesc.SrcBlendAlpha );
+        metalColorAttachment.destinationAlphaBlendFactor = MetalEnumConverter::ConvertBlendFactor( blendDesc.DstBlendAlpha );
+        metalColorAttachment.alphaBlendOperation = MetalEnumConverter::ConvertBlendOp( blendDesc.BlendOpAlpha );
+        
+        metalColorAttachment.writeMask = blendDesc.RenderTargetWriteMask;
+        
+        attachmentIdx++;
+    }
+    
+    // Configure depth and stencil formats
+    pipelineStateDescriptor.depthAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
+    pipelineStateDescriptor.stencilAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
+    pipelineStateDescriptor.alphaToCoverageEnabled = m_desc.Graphics.AlphaToCoverageEnable;
+    
+    // Todo check the following properties
+    // pipelineStateDescriptor.maxTotalThreadsPerObjectThreadgroup = 128;
+    // pipelineStateDescriptor.maxTotalThreadsPerMeshThreadgroup = 128;
+    // pipelineStateDescriptor.objectThreadgroupSizeIsMultipleOfThreadExecutionWidth = YES;
+    // pipelineStateDescriptor.meshThreadgroupSizeIsMultipleOfThreadExecutionWidth = YES;
+    // pipelineStateDescriptor.payloadMemoryLength = 0;
+    
+    NSError *error = nullptr;
+    m_graphicsPipelineState = [m_context->Device newRenderPipelineStateWithMeshDescriptor:pipelineStateDescriptor 
+                                                                                 options:MTLPipelineOptionNone 
+                                                                              reflection:nil 
+                                                                                   error:&error];
+    
+
+    MTLDepthStencilDescriptor *depthStencilDescriptor = [[MTLDepthStencilDescriptor alloc] init];
+    depthStencilDescriptor.depthCompareFunction = MetalEnumConverter::ConvertCompareOp( m_desc.Graphics.DepthTest.CompareOp );
+    depthStencilDescriptor.depthWriteEnabled = m_desc.Graphics.DepthTest.Write;
+    depthStencilDescriptor.frontFaceStencil = [[MTLStencilDescriptor alloc] init];
+    InitStencilFace( depthStencilDescriptor.frontFaceStencil, m_desc.Graphics.StencilTest.FrontFace );
+    depthStencilDescriptor.backFaceStencil = [[MTLStencilDescriptor alloc] init];
+    InitStencilFace( depthStencilDescriptor.backFaceStencil, m_desc.Graphics.StencilTest.BackFace );
+    m_depthStencilState = [m_context->Device newDepthStencilStateWithDescriptor:depthStencilDescriptor];
+    
+    switch ( m_desc.Graphics.CullMode )
+    {
+        case CullMode::None:
+            m_cullMode = MTLCullModeNone;
+            break;
+        case CullMode::FrontFace:
+            m_cullMode = MTLCullModeFront;
+            break;
+        case CullMode::BackFace:
+            m_cullMode = MTLCullModeBack;
+            break;
+    }
+    
+    switch ( m_desc.Graphics.FillMode )
+    {
+        case FillMode::Solid:
+            m_fillMode = MTLTriangleFillModeFill;
+            break;
+        case FillMode::Wireframe:
+            m_fillMode = MTLTriangleFillModeLines;
+            break;
+    }
 }
 
 id<MTLIntersectionFunctionTable> MetalPipeline::IntersectionFunctionTable( ) const

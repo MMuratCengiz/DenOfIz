@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h>
 #include <DenOfIzGraphics/Utilities/Storage.h>
 #include <codecvt>
+#include <directx/d3dx12.h>
 #include <utility>
 
 using namespace DenOfIz;
@@ -49,6 +50,9 @@ DX12Pipeline::DX12Pipeline( DX12Context *context, PipelineDesc desc ) : m_contex
     case BindPoint::RayTracing:
         CreateRayTracingPipeline( );
         break;
+    case BindPoint::Mesh:
+        CreateMeshPipeline( );
+        break;
     }
 }
 
@@ -57,7 +61,7 @@ void DX12Pipeline::CreateGraphicsPipeline( )
     m_topology             = DX12EnumConverter::ConvertPrimitiveTopology( m_desc.Graphics.PrimitiveTopology );
     const auto inputLayout = dynamic_cast<DX12InputLayout *>( m_desc.InputLayout );
     DZ_NOT_NULL( inputLayout );
-    m_iaStride             = inputLayout->Stride( );
+    m_iaStride = inputLayout->Stride( );
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = { };
     psoDesc.InputLayout                        = inputLayout->GetInputLayout( );
@@ -451,6 +455,144 @@ BindPoint DX12Pipeline::GetBindPoint( ) const
 uint32_t DX12Pipeline::GetIAStride( ) const
 {
     return m_iaStride;
+}
+
+void DX12Pipeline::CreateMeshPipeline( )
+{
+    D3D12_PIPELINE_STATE_STREAM_DESC pipelineDesc = { };
+    struct MeshPipelineStateStream
+    {
+        CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE        RootSignature;
+        CD3DX12_PIPELINE_STATE_STREAM_PS                    PS;
+        CD3DX12_PIPELINE_STATE_STREAM_AS                    AS; // Task Shader (Amplification Shader)
+        CD3DX12_PIPELINE_STATE_STREAM_MS                    MS; // Mesh Shader
+        CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC            BlendState;
+        CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_MASK           SampleMask;
+        CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER            RasterizerState;
+        CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL1        DepthStencilState;
+        CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS RTVFormats;
+        CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT  DSVFormat;
+        CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC           SampleDesc;
+        CD3DX12_PIPELINE_STATE_STREAM_PRIMITIVE_TOPOLOGY    PrimitiveTopologyType;
+    } meshPipelineStateStream;
+
+    meshPipelineStateStream.RootSignature = m_rootSignature->Instance( );
+    const auto &compiledShaders           = m_desc.ShaderProgram->CompiledShaders( );
+
+    meshPipelineStateStream.PS = D3D12_SHADER_BYTECODE{ };
+    meshPipelineStateStream.AS = D3D12_SHADER_BYTECODE{ };
+    meshPipelineStateStream.MS = D3D12_SHADER_BYTECODE{ };
+
+    for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
+    {
+        const auto &compiledShader = compiledShaders.GetElement( i );
+        switch ( compiledShader->Stage )
+        {
+        case ShaderStage::Task:
+            meshPipelineStateStream.AS = GetShaderByteCode( compiledShader );
+            break;
+        case ShaderStage::Mesh:
+            meshPipelineStateStream.MS = GetShaderByteCode( compiledShader );
+            break;
+        case ShaderStage::Pixel:
+            meshPipelineStateStream.PS = GetShaderByteCode( compiledShader );
+            break;
+        default:
+            LOG( WARNING ) << "Unsupported shader stage for mesh pipeline: " << static_cast<int>( compiledShader->Stage );
+            break;
+        }
+    }
+
+    CD3DX12_BLEND_DESC blendDesc     = { };
+    blendDesc.AlphaToCoverageEnable  = m_desc.Graphics.AlphaToCoverageEnable;
+    blendDesc.IndependentBlendEnable = m_desc.Graphics.IndependentBlendEnable;
+
+    for ( uint32_t i = 0; i < m_desc.Graphics.RenderTargets.NumElements( ); ++i )
+    {
+        BlendDesc &pipelineBlendDesc                      = m_desc.Graphics.RenderTargets.GetElement( i ).Blend;
+        blendDesc.RenderTarget[ i ].BlendEnable           = pipelineBlendDesc.Enable;
+        blendDesc.RenderTarget[ i ].LogicOpEnable         = m_desc.Graphics.BlendLogicOpEnable;
+        blendDesc.RenderTarget[ i ].SrcBlend              = DX12EnumConverter::ConvertBlend( pipelineBlendDesc.SrcBlend );
+        blendDesc.RenderTarget[ i ].DestBlend             = DX12EnumConverter::ConvertBlend( pipelineBlendDesc.DstBlend );
+        blendDesc.RenderTarget[ i ].BlendOp               = DX12EnumConverter::ConvertBlendOp( pipelineBlendDesc.BlendOp );
+        blendDesc.RenderTarget[ i ].SrcBlendAlpha         = DX12EnumConverter::ConvertBlend( pipelineBlendDesc.SrcBlendAlpha );
+        blendDesc.RenderTarget[ i ].DestBlendAlpha        = DX12EnumConverter::ConvertBlend( pipelineBlendDesc.DstBlendAlpha );
+        blendDesc.RenderTarget[ i ].BlendOpAlpha          = DX12EnumConverter::ConvertBlendOp( pipelineBlendDesc.BlendOpAlpha );
+        blendDesc.RenderTarget[ i ].LogicOp               = DX12EnumConverter::ConvertLogicOp( m_desc.Graphics.BlendLogicOp );
+        blendDesc.RenderTarget[ i ].RenderTargetWriteMask = pipelineBlendDesc.RenderTargetWriteMask;
+    }
+    meshPipelineStateStream.BlendState = blendDesc;
+    meshPipelineStateStream.SampleMask = UINT_MAX;
+
+    CD3DX12_RASTERIZER_DESC rasterizerDesc  = { };
+    rasterizerDesc.FillMode                 = DX12EnumConverter::ConvertFillMode( m_desc.Graphics.FillMode );
+    rasterizerDesc.CullMode                 = DX12EnumConverter::ConvertCullMode( m_desc.Graphics.CullMode );
+    rasterizerDesc.FrontCounterClockwise    = FALSE;
+    rasterizerDesc.DepthBias                = D3D12_DEFAULT_DEPTH_BIAS;
+    rasterizerDesc.DepthBiasClamp           = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
+    rasterizerDesc.SlopeScaledDepthBias     = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+    rasterizerDesc.DepthClipEnable          = TRUE;
+    rasterizerDesc.MultisampleEnable        = FALSE;
+    rasterizerDesc.AntialiasedLineEnable    = FALSE;
+    rasterizerDesc.ForcedSampleCount        = 0;
+    rasterizerDesc.ConservativeRaster       = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+    meshPipelineStateStream.RasterizerState = rasterizerDesc;
+
+    CD3DX12_DEPTH_STENCIL_DESC1 depthStencilDesc = { };
+    depthStencilDesc.DepthEnable                 = m_desc.Graphics.DepthTest.Enable;
+    depthStencilDesc.DepthWriteMask              = m_desc.Graphics.DepthTest.Write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+    depthStencilDesc.DepthFunc                   = DX12EnumConverter::ConvertCompareOp( m_desc.Graphics.DepthTest.CompareOp );
+    depthStencilDesc.StencilEnable               = m_desc.Graphics.StencilTest.Enable;
+    depthStencilDesc.StencilReadMask             = m_desc.Graphics.StencilTest.ReadMask;
+    depthStencilDesc.StencilWriteMask            = m_desc.Graphics.StencilTest.WriteMask;
+    InitStencilFace( depthStencilDesc.FrontFace, m_desc.Graphics.StencilTest.FrontFace );
+    InitStencilFace( depthStencilDesc.BackFace, m_desc.Graphics.StencilTest.BackFace );
+    meshPipelineStateStream.DepthStencilState = depthStencilDesc;
+
+    D3D12_RT_FORMAT_ARRAY rtvFormats = { };
+    rtvFormats.NumRenderTargets      = m_desc.Graphics.RenderTargets.NumElements( );
+    for ( uint32_t i = 0; i < m_desc.Graphics.RenderTargets.NumElements( ); ++i )
+    {
+        rtvFormats.RTFormats[ i ] = DX12EnumConverter::ConvertFormat( m_desc.Graphics.RenderTargets.GetElement( i ).Format );
+    }
+    meshPipelineStateStream.RTVFormats = rtvFormats;
+    meshPipelineStateStream.DSVFormat  = DX12EnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
+
+    DXGI_SAMPLE_DESC sampleDesc = { };
+    switch ( m_desc.Graphics.MSAASampleCount )
+    {
+    case MSAASampleCount::_0:
+    case MSAASampleCount::_1:
+        sampleDesc.Count = 1;
+        break;
+    case MSAASampleCount::_2:
+        sampleDesc.Count = 2;
+        break;
+    case MSAASampleCount::_4:
+        sampleDesc.Count = 4;
+        break;
+    case MSAASampleCount::_8:
+        sampleDesc.Count = 8;
+        break;
+    case MSAASampleCount::_16:
+        sampleDesc.Count = 16;
+        break;
+    case MSAASampleCount::_32:
+    case MSAASampleCount::_64:
+        sampleDesc.Count = 32;
+        break;
+    default:
+        sampleDesc.Count = 1;
+        break;
+    }
+    sampleDesc.Quality                            = 0;
+    meshPipelineStateStream.SampleDesc            = sampleDesc;
+    meshPipelineStateStream.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
+
+    pipelineDesc.pPipelineStateSubobjectStream = &meshPipelineStateStream;
+    pipelineDesc.SizeInBytes                   = sizeof( meshPipelineStateStream );
+
+    DX_CHECK_RESULT( m_context->D3DDevice->CreatePipelineState( &pipelineDesc, IID_PPV_ARGS( m_pipeline.put( ) ) ) );
 }
 
 void *DX12Pipeline::GetShaderIdentifier( const std::string &exportName )

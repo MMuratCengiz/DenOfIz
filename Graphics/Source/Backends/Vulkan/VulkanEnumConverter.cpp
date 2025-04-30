@@ -650,6 +650,8 @@ VkPipelineBindPoint VulkanEnumConverter::ConvertPipelineBindPoint( const BindPoi
         return VK_PIPELINE_BIND_POINT_COMPUTE;
     case BindPoint::RayTracing:
         return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+    case BindPoint::Mesh:
+        return VK_PIPELINE_BIND_POINT_GRAPHICS;
     }
 
     return VK_PIPELINE_BIND_POINT_GRAPHICS;

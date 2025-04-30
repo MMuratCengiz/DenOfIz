@@ -31,7 +31,8 @@ namespace DenOfIz
     {
         Graphics,
         Compute,
-        RayTracing
+        RayTracing,
+        Mesh // Must use GraphicsPipelineDesc
     };
 
     enum class BlendMode

@@ -72,6 +72,7 @@ namespace DenOfIz
         void CreateGraphicsPipeline( );
         void CreateComputePipeline( );
         void CreateRayTracingPipeline( );
+        void CreateMeshPipeline( );
         void InitStencilFace( MTLStencilDescriptor *stencilDesc, const StencilFace &stencilFace );
 
         id<MTLLibrary>  LoadLibrary( IDxcBlob *&blob );

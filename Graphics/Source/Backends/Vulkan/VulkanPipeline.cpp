@@ -39,6 +39,9 @@ VulkanPipeline::VulkanPipeline( VulkanContext *context, const PipelineDesc &desc
     case BindPoint::RayTracing:
         CreateRayTracingPipeline( );
         break;
+    case BindPoint::Mesh:
+        CreateMeshPipeline( );
+        break;
     }
 }
 
@@ -275,6 +278,85 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
     for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
     {
         const auto                      &compiledShader        = compiledShaders.GetElement( i );
+        VkPipelineShaderStageCreateInfo &shaderStageCreateInfo = pipelineStageCreateInfos.emplace_back( );
+        shaderStageCreateInfo.sType                            = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+
+        const VkShaderStageFlagBits stage        = VulkanEnumConverter::ConvertShaderStage( compiledShader->Stage );
+        const VkShaderModule       &shaderModule = m_shaderModules.emplace_back( this->CreateShaderModule( compiledShader->SPIRV ) );
+
+        shaderStageCreateInfo.stage  = stage;
+        shaderStageCreateInfo.module = shaderModule;
+        shaderStageCreateInfo.pName  = compiledShader->EntryPoint.Get( );
+        shaderStageCreateInfo.pNext  = nullptr;
+    }
+
+    return pipelineStageCreateInfos;
+}
+
+void VulkanPipeline::CreateMeshPipeline( )
+{
+    VkGraphicsPipelineCreateInfo pipelineCreateInfo{ };
+    pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+
+    std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos = ConfigureMeshPipelineStages( );
+
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments{ };
+    VkPipelineColorBlendStateCreateInfo              colorBlending = ConfigureColorBlend( colorBlendAttachments );
+
+    std::vector<VkFormat>         colorFormats{ };
+    VkPipelineRenderingCreateInfo renderingCreateInfo = ConfigureRenderingInfo( colorFormats );
+
+    VkPipelineRasterizationStateCreateInfo rasterizationStateCreateInfo = ConfigureRasterization( );
+    VkPipelineViewportStateCreateInfo      viewportStateCreateInfo      = ConfigureViewport( );
+    VkPipelineMultisampleStateCreateInfo   multisampleStateCreateInfo   = ConfigureMultisampling( );
+    VkPipelineDepthStencilStateCreateInfo  depthStencilStateCreateInfo  = CreateDepthAttachmentImages( );
+
+    VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{ };
+    dynamicStateCreateInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>( g_dynamicStates.size( ) );
+    dynamicStateCreateInfo.pDynamicStates    = g_dynamicStates.data( );
+    pipelineCreateInfo.pDynamicState         = &dynamicStateCreateInfo;
+
+    pipelineCreateInfo.pVertexInputState   = nullptr; // MUST be null for mesh pipelines
+    pipelineCreateInfo.pInputAssemblyState = nullptr; // MUST be null for mesh pipelines
+    pipelineCreateInfo.pTessellationState  = nullptr; // MUST be null for mesh pipelines
+
+    pipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
+    pipelineCreateInfo.pViewportState      = &viewportStateCreateInfo;
+    pipelineCreateInfo.pDepthStencilState  = &depthStencilStateCreateInfo;
+    pipelineCreateInfo.pMultisampleState   = &multisampleStateCreateInfo;
+    pipelineCreateInfo.pColorBlendState    = &colorBlending;
+
+    pipelineCreateInfo.stageCount = static_cast<uint32_t>( pipelineStageCreateInfos.size( ) );
+    pipelineCreateInfo.pStages    = pipelineStageCreateInfos.data( );
+    pipelineCreateInfo.layout     = m_layout;
+
+    pipelineCreateInfo.renderPass         = VK_NULL_HANDLE;
+    pipelineCreateInfo.subpass            = 0;
+    pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
+    pipelineCreateInfo.basePipelineIndex  = -1;
+
+    pipelineCreateInfo.pNext = &renderingCreateInfo;
+
+    VK_CHECK_RESULT( vkCreateGraphicsPipelines( m_context->LogicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &m_instance ) );
+}
+
+std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigureMeshPipelineStages( )
+{
+    std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos;
+
+    const auto &compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
+    for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
+    {
+        const auto &compiledShader = compiledShaders.GetElement( i );
+
+        // Only include task, mesh, and pixel/fragment shaders for mesh pipeline
+        if ( compiledShader->Stage != ShaderStage::Task && compiledShader->Stage != ShaderStage::Mesh && compiledShader->Stage != ShaderStage::Pixel )
+        {
+            LOG( WARNING ) << "Skipping non-mesh shader stage in mesh pipeline: " << static_cast<int>( compiledShader->Stage );
+            continue;
+        }
+
         VkPipelineShaderStageCreateInfo &shaderStageCreateInfo = pipelineStageCreateInfos.emplace_back( );
         shaderStageCreateInfo.sType                            = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 

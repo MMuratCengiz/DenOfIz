@@ -64,7 +64,9 @@ namespace DenOfIz
         void                                                       CreateGraphicsPipeline( );
         void                                                       CreateComputePipeline( );
         void                                                       CreateRayTracingPipeline( );
+        void                                                       CreateMeshPipeline( );
         [[nodiscard]] std::vector<VkPipelineShaderStageCreateInfo> ConfigurePipelineStages( );
+        [[nodiscard]] std::vector<VkPipelineShaderStageCreateInfo> ConfigureMeshPipelineStages( );
         [[nodiscard]] VkPipelineRenderingCreateInfo                ConfigureRenderingInfo( std::vector<VkFormat> &colorAttachmentsStore ) const;
         [[nodiscard]] VkPipelineTessellationStateCreateInfo        ConfigureTessellation( ) const;
         [[nodiscard]] VkPipelineInputAssemblyStateCreateInfo       ConfigureInputAssembly( ) const;
