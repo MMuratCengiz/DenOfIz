@@ -37,10 +37,10 @@ void DescriptorTable::SetDebugName( const std::string &name )
     [m_buffer setLabel:[NSString stringWithUTF8String:name.c_str( )]];
 }
 
-void DescriptorTable::EncodeBuffer( id<MTLBuffer> buffer, uint32_t index )
+void DescriptorTable::EncodeBuffer( id<MTLBuffer> buffer, uint32_t index, uint32_t offset )
 {
     DZ_ASSERTM( index < m_numEntries, "DescriptorTable::EncodeBuffer: index out of bounds" );
-    IRDescriptorTableSetBuffer( &m_contents[ index ], [buffer gpuAddress], 0 );
+    IRDescriptorTableSetBuffer( &m_contents[ index ], [buffer gpuAddress] + offset, 0 );
 }
 
 void DescriptorTable::EncodeTexture( id<MTLTexture> texture, float minLodClamp, uint32_t index )

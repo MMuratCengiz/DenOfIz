@@ -42,6 +42,13 @@ namespace DenOfIz
         id<MTLBuffer> Buffer;
     };
 
+    struct MetalBufferBindingWithOffset
+    {
+        ResourceBindingSlot Slot;
+        IBufferResource    *Resource;
+        uint32_t            Offset;
+    };
+
     struct MetalDescriptorTableBinding
     {
         // Top level argument buffer offset
@@ -62,6 +69,7 @@ namespace DenOfIz
         MetalRootSignature                                             *m_rootSignature;
         std::vector<std::pair<ResourceBindingSlot, ITopLevelAS *>>      m_boundAccelerationStructures;
         std::vector<std::pair<ResourceBindingSlot, IBufferResource *>>  m_boundBuffers;
+        std::vector<MetalBufferBindingWithOffset>                       m_boundBuffersWithOffsets;
         std::vector<std::pair<ResourceBindingSlot, ITextureResource *>> m_boundTextures;
         std::vector<std::pair<ResourceBindingSlot, ISampler *>>         m_boundSamplers;
 
@@ -81,10 +89,13 @@ namespace DenOfIz
         void                SetRootConstants( uint32_t binding, void *data ) override;
         IResourceBindGroup *BeginUpdate( ) override;
         IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Cbv( const BindBufferDesc &desc ) override;
         IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Srv( const BindBufferDesc &desc ) override;
         IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource ) override;
         IResourceBindGroup *Srv( const uint32_t binding, ITopLevelAS *accelerationStructure ) override;
         IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Uav( const BindBufferDesc &desc ) override;
         IResourceBindGroup *Uav( const uint32_t binding, ITextureResource *resource ) override;
         IResourceBindGroup *Sampler( const uint32_t binding, ISampler *sampler ) override;
         void                EndUpdate( ) override;
@@ -105,6 +116,7 @@ namespace DenOfIz
     private:
         void                BindAccelerationStructure( const ResourceBindingSlot &slot, ITopLevelAS *accelerationStructure );
         void                BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource );
+        void                BindBufferWithOffset( const ResourceBindingSlot &slot, IBufferResource *resource, uint32_t offset );
         void                BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource );
         void                BindSampler( const ResourceBindingSlot &slot, ISampler *sampler );
         ResourceBindingSlot GetSlot( uint32_t binding, const ResourceBindingType &type ) const;

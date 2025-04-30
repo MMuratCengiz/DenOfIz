@@ -78,9 +78,9 @@ DX12ResourceBindGroup::DX12ResourceBindGroup( DX12Context *context, const Resour
     }
 }
 
-void DX12ResourceBindGroup::SetRootConstantsData( uint32_t binding, const InteropArray<Byte> &data )
+void DX12ResourceBindGroup::SetRootConstantsData( const uint32_t binding, const InteropArray<Byte> &data )
 {
-    size_t numBytes = m_dx12RootSignature->RootConstants( )[ binding ].Constants.Num32BitValues * sizeof( uint32_t );
+    const size_t numBytes = m_dx12RootSignature->RootConstants( )[ binding ].Constants.Num32BitValues * sizeof( uint32_t );
     if ( data.NumElements( ) != numBytes )
     {
         LOG( ERROR ) << "Root constant size mismatch. Expected: " << numBytes << ", Got: " << data.NumElements( );
@@ -99,26 +99,63 @@ void DX12ResourceBindGroup::SetRootConstants( const uint32_t binding, void *data
     rootConstant.NumBytes          = m_dx12RootSignature->RootConstants( )[ binding ].Constants.Num32BitValues * sizeof( uint32_t );
 }
 
-IResourceBindGroup* DX12ResourceBindGroup::BeginUpdate( )
+IResourceBindGroup *DX12ResourceBindGroup::BeginUpdate( )
 {
     m_cbvSrvUavCount = 0;
     m_samplerCount   = 0;
     return this;
 }
 
-IResourceBindGroup* DX12ResourceBindGroup::Cbv( const uint32_t binding, IBufferResource *resource )
+IResourceBindGroup *DX12ResourceBindGroup::Cbv( const uint32_t binding, IBufferResource *resource )
 {
     BindBuffer( GetSlot( binding, ResourceBindingType::ConstantBuffer ), resource );
     return this;
 }
 
-IResourceBindGroup* DX12ResourceBindGroup::Srv( const uint32_t binding, IBufferResource *resource )
+IResourceBindGroup *DX12ResourceBindGroup::Cbv( const BindBufferDesc &desc )
+{
+    auto *dx12Buffer = dynamic_cast<DX12BufferResource *>( desc.Resource );
+    DZ_NOT_NULL( dx12Buffer );
+
+    const ResourceBindingSlot slot = GetSlot( desc.Binding, ResourceBindingType::ConstantBuffer );
+
+    if ( UpdateRootDescriptor( slot, dx12Buffer->Resource( )->GetGPUVirtualAddress( ) + desc.ResourceOffset ) )
+    {
+        return this;
+    }
+
+    const uint32_t offset = m_dx12RootSignature->GetResourceOffset( slot );
+    dx12Buffer->CreateView( CpuHandleCbvSrvUav( offset ), slot.Type, desc.ResourceOffset );
+    m_cbvSrvUavCount++;
+
+    return this;
+}
+
+IResourceBindGroup *DX12ResourceBindGroup::Srv( const uint32_t binding, IBufferResource *resource )
 {
     BindBuffer( GetSlot( binding, ResourceBindingType::ShaderResource ), resource );
     return this;
 }
 
-IResourceBindGroup* DX12ResourceBindGroup::Srv( const uint32_t binding, ITextureResource *resource )
+IResourceBindGroup *DX12ResourceBindGroup::Srv( const BindBufferDesc &desc )
+{
+    auto *dx12Buffer = dynamic_cast<DX12BufferResource *>( desc.Resource );
+    DZ_NOT_NULL( dx12Buffer );
+
+    const ResourceBindingSlot slot = GetSlot( desc.Binding, ResourceBindingType::ShaderResource );
+
+    if ( UpdateRootDescriptor( slot, dx12Buffer->Resource( )->GetGPUVirtualAddress( ) + desc.ResourceOffset ) )
+    {
+        return this;
+    }
+
+    const uint32_t offset = m_dx12RootSignature->GetResourceOffset( slot );
+    dx12Buffer->CreateView( CpuHandleCbvSrvUav( offset ), slot.Type, desc.ResourceOffset );
+    m_cbvSrvUavCount++;
+    return this;
+}
+
+IResourceBindGroup *DX12ResourceBindGroup::Srv( const uint32_t binding, ITextureResource *resource )
 {
     BindTexture( GetSlot( binding, ResourceBindingType::ShaderResource ), resource );
     return this;
@@ -129,19 +166,36 @@ IResourceBindGroup *DX12ResourceBindGroup::Srv( const uint32_t binding, ITopLeve
     return Srv( binding, dynamic_cast<DX12TopLevelAS *>( accelerationStructure )->Buffer( ) );
 }
 
-IResourceBindGroup* DX12ResourceBindGroup::Uav( const uint32_t binding, IBufferResource *resource )
+IResourceBindGroup *DX12ResourceBindGroup::Uav( const uint32_t binding, IBufferResource *resource )
 {
     BindBuffer( GetSlot( binding, ResourceBindingType::UnorderedAccess ), resource );
     return this;
 }
 
-IResourceBindGroup* DX12ResourceBindGroup::Uav( const uint32_t binding, ITextureResource *resource )
+IResourceBindGroup *DX12ResourceBindGroup::Uav( const BindBufferDesc &desc )
+{
+    auto *dx12Buffer = dynamic_cast<DX12BufferResource *>( desc.Resource );
+    DZ_NOT_NULL( dx12Buffer );
+
+    const ResourceBindingSlot slot = GetSlot( desc.Binding, ResourceBindingType::UnorderedAccess );
+    if ( UpdateRootDescriptor( slot, dx12Buffer->Resource( )->GetGPUVirtualAddress( ) + desc.ResourceOffset ) )
+    {
+        return this;
+    }
+
+    const uint32_t offset = m_dx12RootSignature->GetResourceOffset( slot );
+    dx12Buffer->CreateView( CpuHandleCbvSrvUav( offset ), slot.Type, desc.ResourceOffset );
+    m_cbvSrvUavCount++;
+    return this;
+}
+
+IResourceBindGroup *DX12ResourceBindGroup::Uav( const uint32_t binding, ITextureResource *resource )
 {
     BindTexture( GetSlot( binding, ResourceBindingType::UnorderedAccess ), resource );
     return this;
 }
 
-IResourceBindGroup* DX12ResourceBindGroup::Sampler( const uint32_t binding, ISampler *sampler )
+IResourceBindGroup *DX12ResourceBindGroup::Sampler( const uint32_t binding, ISampler *sampler )
 {
     BindSampler( GetSlot( binding, ResourceBindingType::Sampler ), sampler );
     return this;
@@ -244,7 +298,7 @@ uint32_t DX12ResourceBindGroup::RegisterSpace( ) const
     return m_desc.RegisterSpace;
 }
 
-ResourceBindingSlot DX12ResourceBindGroup::GetSlot( uint32_t binding, const ResourceBindingType & type ) const
+ResourceBindingSlot DX12ResourceBindGroup::GetSlot( uint32_t binding, const ResourceBindingType &type ) const
 {
     return ResourceBindingSlot{ type, binding, m_desc.RegisterSpace };
 }

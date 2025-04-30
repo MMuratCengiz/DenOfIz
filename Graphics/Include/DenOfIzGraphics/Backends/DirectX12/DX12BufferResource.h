@@ -49,8 +49,8 @@ namespace DenOfIz
 
     public:
         DX12BufferResource( DX12Context *context, BufferDesc desc );
-        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ResourceBindingType type );
-        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type );
+        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ResourceBindingType type, uint32_t offset = 0 );
+        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type, uint32_t offset = 0 );
 
         [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CPUHandle( DX12BufferViewType type ) const;
         [[nodiscard]] ID3D12Resource2            *Resource( ) const;
@@ -65,6 +65,8 @@ namespace DenOfIz
         // Interop API
         [[nodiscard]] InteropArray<Byte> GetData( ) const override;
         void                             SetData( const InteropArray<Byte> &data, bool keepMapped ) override;
+    private:
+        void CreateViewInternal( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type, uint32_t offset ) const;
     };
 
 } // namespace DenOfIz

@@ -63,6 +63,7 @@ IResourceBindGroup *MetalResourceBindGroup::BeginUpdate( )
 {
     m_boundAccelerationStructures.clear( );
     m_boundBuffers.clear( );
+    m_boundBuffersWithOffsets.clear( );
     m_boundTextures.clear( );
     m_boundSamplers.clear( );
     m_rootParameterBindings.clear( );
@@ -79,9 +80,30 @@ IResourceBindGroup *MetalResourceBindGroup::Cbv( const uint32_t binding, IBuffer
     return this;
 }
 
+IResourceBindGroup *MetalResourceBindGroup::Cbv( const BindBufferDesc& desc )
+{
+    m_boundBuffersWithOffsets.emplace_back( MetalBufferBindingWithOffset{
+        GetSlot( desc.Binding, ResourceBindingType::ConstantBuffer ),
+        desc.Resource,
+        desc.ResourceOffset
+    } );
+    return this;
+}
+
 IResourceBindGroup *MetalResourceBindGroup::Srv( const uint32_t binding, IBufferResource *resource )
 {
     m_boundBuffers.emplace_back( GetSlot( binding, ResourceBindingType::ShaderResource ), resource );
+    return this;
+}
+
+IResourceBindGroup *MetalResourceBindGroup::Srv( const BindBufferDesc& desc )
+{
+    // Use our custom binding with offset to handle buffer offsets in Metal
+    m_boundBuffersWithOffsets.emplace_back( MetalBufferBindingWithOffset{
+        GetSlot( desc.Binding, ResourceBindingType::ShaderResource ),
+        desc.Resource,
+        desc.ResourceOffset
+    } );
     return this;
 }
 
@@ -103,6 +125,17 @@ IResourceBindGroup *MetalResourceBindGroup::Uav( const uint32_t binding, IBuffer
     return this;
 }
 
+IResourceBindGroup *MetalResourceBindGroup::Uav( const BindBufferDesc& desc )
+{
+    // Use our custom binding with offset to handle buffer offsets in Metal
+    m_boundBuffersWithOffsets.emplace_back( MetalBufferBindingWithOffset{
+        GetSlot(desc.Binding, ResourceBindingType::UnorderedAccess),
+        desc.Resource,
+        desc.ResourceOffset
+    } );
+    return this;
+}
+
 IResourceBindGroup *MetalResourceBindGroup::Uav( const uint32_t binding, ITextureResource *resource )
 {
     m_boundTextures.emplace_back( GetSlot( binding, ResourceBindingType::UnorderedAccess ), resource );
@@ -117,7 +150,7 @@ IResourceBindGroup *MetalResourceBindGroup::Sampler( const uint32_t binding, ISa
 
 void MetalResourceBindGroup::EndUpdate( )
 {
-    size_t cbvSrvUavTableSize = m_boundAccelerationStructures.size( ) + m_boundBuffers.size( ) + m_boundTextures.size( );
+    size_t cbvSrvUavTableSize = m_boundAccelerationStructures.size( ) + m_boundBuffers.size( ) + m_boundBuffersWithOffsets.size( ) + m_boundTextures.size( );
     if ( m_desc.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
     {
         // Buffers will be bound separately
@@ -141,6 +174,12 @@ void MetalResourceBindGroup::EndUpdate( )
     {
         BindBuffer( item.first, item.second );
     }
+    
+    for ( auto item : m_boundBuffersWithOffsets )
+    {
+        BindBufferWithOffset( item.Slot, item.Resource, item.Offset );
+    }
+    
     for ( auto item : m_boundAccelerationStructures )
     {
         BindAccelerationStructure( item.first, item.second );
@@ -183,6 +222,22 @@ void MetalResourceBindGroup::BindBuffer( const ResourceBindingSlot &slot, IBuffe
     }
 
     m_cbvSrvUavTable->Table.EncodeBuffer( metalBuffer->Instance( ), m_rootSignature->CbvSrvUavResourceIndex( slot ) );
+    m_cbvSrvUavTable->NumEntries++;
+    m_buffers.emplace_back( metalBuffer, m_rootSignature->CbvSrvUavResourceShaderStages( slot ), metalBuffer->Usage( ) );
+}
+
+void MetalResourceBindGroup::BindBufferWithOffset( const ResourceBindingSlot &slot, IBufferResource *resource, uint32_t offset )
+{
+    MetalBufferResource    *metalBuffer = static_cast<MetalBufferResource *>( resource );
+    if ( slot.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
+    {
+        // For root parameters, we handle the offset in the argument buffer directly
+        // Metal uses gpuAddress + offset for binding with offsets
+        m_rootParameterBindings.emplace_back( m_rootSignature->TLABOffset( slot ), metalBuffer->Instance( ) );
+        return;
+    }
+
+    m_cbvSrvUavTable->Table.EncodeBuffer( metalBuffer->Instance( ), m_rootSignature->CbvSrvUavResourceIndex( slot ), offset );
     m_cbvSrvUavTable->NumEntries++;
     m_buffers.emplace_back( metalBuffer, m_rootSignature->CbvSrvUavResourceShaderStages( slot ), metalBuffer->Usage( ) );
 }

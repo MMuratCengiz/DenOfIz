@@ -16,10 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h>
 #include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h>
+#include <DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h>
 
 using namespace DenOfIz;
 
@@ -77,9 +77,37 @@ IResourceBindGroup *VulkanResourceBindGroup::Cbv( const uint32_t binding, IBuffe
     return this;
 }
 
+IResourceBindGroup *VulkanResourceBindGroup::Cbv( const BindBufferDesc &desc )
+{
+    const auto *vulkanResource = dynamic_cast<VulkanBufferResource *>( desc.Resource );
+
+    const ResourceBindingSlot slot               = GetSlot( desc.Binding, ResourceBindingType::ConstantBuffer );
+    VkWriteDescriptorSet     &writeDescriptorSet = CreateWriteDescriptor( slot );
+    auto                     &bufferInfo         = m_storage.Store<VkDescriptorBufferInfo>( );
+    bufferInfo.buffer                            = vulkanResource->Instance( );
+    bufferInfo.offset                            = vulkanResource->Offset( ) + desc.ResourceOffset;
+    bufferInfo.range                             = VK_WHOLE_SIZE - desc.ResourceOffset;
+    writeDescriptorSet.pBufferInfo               = &bufferInfo;
+    return this;
+}
+
 IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, IBufferResource *resource )
 {
     BindBuffer( GetSlot( binding, ResourceBindingType::ShaderResource ), resource );
+    return this;
+}
+
+IResourceBindGroup *VulkanResourceBindGroup::Srv( const BindBufferDesc &desc )
+{
+    const auto *vulkanResource = dynamic_cast<VulkanBufferResource *>( desc.Resource );
+
+    const ResourceBindingSlot slot               = GetSlot( desc.Binding, ResourceBindingType::ShaderResource );
+    VkWriteDescriptorSet     &writeDescriptorSet = CreateWriteDescriptor( slot );
+    auto                     &bufferInfo         = m_storage.Store<VkDescriptorBufferInfo>( );
+    bufferInfo.buffer                            = vulkanResource->Instance( );
+    bufferInfo.offset                            = vulkanResource->Offset( ) + desc.ResourceOffset;
+    bufferInfo.range                             = VK_WHOLE_SIZE - desc.ResourceOffset;
+    writeDescriptorSet.pBufferInfo               = &bufferInfo;
     return this;
 }
 
@@ -91,18 +119,17 @@ IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, ITextu
 
 IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, ITopLevelAS *accelerationStructure )
 {
-    VulkanTopLevelAS *vkAccelerationStructure = dynamic_cast<VulkanTopLevelAS *>( accelerationStructure );
-
-    auto& writeDescriptorSet = BindBuffer( GetSlot( binding, ResourceBindingType::ShaderResource ), vkAccelerationStructure->VulkanBuffer( ) );
+    const auto vkAccelerationStructure = dynamic_cast<VulkanTopLevelAS *>( accelerationStructure );
+    auto      &writeDescriptorSet      = BindBuffer( GetSlot( binding, ResourceBindingType::ShaderResource ), vkAccelerationStructure->VulkanBuffer( ) );
 
     if ( writeDescriptorSet.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR )
     {
-        VkWriteDescriptorSetAccelerationStructureKHR &accelerationStructureInfo = m_storage.Store<VkWriteDescriptorSetAccelerationStructureKHR>( );
-        accelerationStructureInfo.sType                                         = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-        accelerationStructureInfo.pNext                                         = nullptr;
-        accelerationStructureInfo.accelerationStructureCount                    = 1;
-        accelerationStructureInfo.pAccelerationStructures                       = &vkAccelerationStructure->Instance( );
-        writeDescriptorSet.pNext                                                = &accelerationStructureInfo;
+        auto &accelerationStructureInfo                      = m_storage.Store<VkWriteDescriptorSetAccelerationStructureKHR>( );
+        accelerationStructureInfo.sType                      = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+        accelerationStructureInfo.pNext                      = nullptr;
+        accelerationStructureInfo.accelerationStructureCount = 1;
+        accelerationStructureInfo.pAccelerationStructures    = &vkAccelerationStructure->Instance( );
+        writeDescriptorSet.pNext                             = &accelerationStructureInfo;
     }
 
     return this;
@@ -111,6 +138,20 @@ IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, ITopLe
 IResourceBindGroup *VulkanResourceBindGroup::Uav( const uint32_t binding, IBufferResource *resource )
 {
     BindBuffer( GetSlot( binding, ResourceBindingType::UnorderedAccess ), resource );
+    return this;
+}
+
+IResourceBindGroup *VulkanResourceBindGroup::Uav( const BindBufferDesc &desc )
+{
+    const auto *vulkanResource = dynamic_cast<VulkanBufferResource *>( desc.Resource );
+
+    const ResourceBindingSlot slot               = GetSlot( desc.Binding, ResourceBindingType::UnorderedAccess );
+    VkWriteDescriptorSet     &writeDescriptorSet = CreateWriteDescriptor( slot );
+    auto                     &bufferInfo         = m_storage.Store<VkDescriptorBufferInfo>( );
+    bufferInfo.buffer                            = vulkanResource->Instance( );
+    bufferInfo.offset                            = vulkanResource->Offset( ) + desc.ResourceOffset;
+    bufferInfo.range                             = VK_WHOLE_SIZE - desc.ResourceOffset;
+    writeDescriptorSet.pBufferInfo               = &bufferInfo;
     return this;
 }
 

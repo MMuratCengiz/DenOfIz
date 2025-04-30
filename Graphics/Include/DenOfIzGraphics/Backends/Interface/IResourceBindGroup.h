@@ -37,6 +37,14 @@ namespace DenOfIz
         return { rootSignature, DZConfiguration::Instance( ).RootConstantRegisterSpace };
     }
 
+    /// Separate bindings for more complex bindings, right now only ResourceOffset exist but gives better api compatibility in general
+    struct DZ_API BindBufferDesc
+    {
+        uint32_t         Binding;
+        IBufferResource *Resource;
+        uint32_t         ResourceOffset;
+    };
+
     class DZ_API IResourceBindGroup
     {
     public:
@@ -45,10 +53,13 @@ namespace DenOfIz
         virtual void                SetRootConstants( uint32_t binding, void *data )                         = 0;
         virtual IResourceBindGroup *BeginUpdate( )                                                           = 0;
         virtual IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource )                 = 0;
+        virtual IResourceBindGroup *Cbv( const BindBufferDesc &desc )                                        = 0;
         virtual IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource )                 = 0;
+        virtual IResourceBindGroup *Srv( const BindBufferDesc &desc )                                        = 0;
         virtual IResourceBindGroup *Srv( const uint32_t binding, ITopLevelAS *accelerationStructure )        = 0;
         virtual IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource )                = 0;
         virtual IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource )                 = 0;
+        virtual IResourceBindGroup *Uav( const BindBufferDesc &desc )                                        = 0;
         virtual IResourceBindGroup *Uav( const uint32_t binding, ITextureResource *resource )                = 0;
         virtual IResourceBindGroup *Sampler( const uint32_t binding, ISampler *sampler )                     = 0;
         virtual void                EndUpdate( )                                                             = 0;

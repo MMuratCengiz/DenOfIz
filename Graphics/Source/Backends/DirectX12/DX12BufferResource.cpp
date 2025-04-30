@@ -65,40 +65,38 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
     m_allocation->SetName( name.c_str( ) );
 }
 
-void DX12BufferResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, const ResourceBindingType type )
+void DX12BufferResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, const ResourceBindingType type, const uint32_t offset )
 {
     switch ( type )
     {
     case ResourceBindingType::UnorderedAccess:
-        CreateView( cpuHandle, DX12BufferViewType::UnorderedAccess );
+        CreateView( cpuHandle, DX12BufferViewType::UnorderedAccess, offset );
         break;
     case ResourceBindingType::ShaderResource:
         // This shouldn't be necessary
         if ( m_desc.Descriptor.IsSet( ResourceDescriptor::AccelerationStructure ) )
         {
-            CreateView( cpuHandle, DX12BufferViewType::AccelerationStructure );
+            CreateView( cpuHandle, DX12BufferViewType::AccelerationStructure, offset );
         }
         else
         {
-            CreateView( cpuHandle, DX12BufferViewType::ShaderResource );
+            CreateView( cpuHandle, DX12BufferViewType::ShaderResource, offset );
         }
         break;
     case ResourceBindingType::ConstantBuffer:
-        CreateView( cpuHandle, DX12BufferViewType::ConstantBuffer );
+        CreateView( cpuHandle, DX12BufferViewType::ConstantBuffer, offset );
         break;
     case ResourceBindingType::Sampler:
         break;
     }
 }
 
-void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type )
+void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12BufferViewType type, uint32_t offset )
 {
-    // DZ_RETURN_IF( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) );
     uint64_t stride = std::max<uint64_t>( m_desc.StructureDesc.Stride, 1 );
 
     switch ( type )
     {
-
     case DX12BufferViewType::ShaderResource:
         {
             D3D12_SHADER_RESOURCE_VIEW_DESC desc = { };
@@ -106,17 +104,18 @@ void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12
             desc.ViewDimension                   = D3D12_SRV_DIMENSION_BUFFER;
             desc.Shader4ComponentMapping         = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             desc.Buffer.Flags                    = D3D12_BUFFER_SRV_FLAG_NONE;
-            desc.Buffer.FirstElement             = m_desc.StructureDesc.Offset;
+            desc.Buffer.FirstElement             = m_desc.StructureDesc.Offset + offset / stride;
+
             if ( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) )
             {
                 desc.Format                     = DXGI_FORMAT_UNKNOWN;
-                desc.Buffer.NumElements         = m_desc.StructureDesc.NumElements;
+                desc.Buffer.NumElements         = offset > 0 ? m_desc.StructureDesc.NumElements - offset / stride : m_desc.StructureDesc.NumElements;
                 desc.Buffer.StructureByteStride = stride;
             }
             else if ( m_desc.Descriptor.Any( { ResourceDescriptor::Buffer, ResourceDescriptor::RWBuffer } ) )
             {
                 desc.Format                     = DXGI_FORMAT_UNKNOWN;
-                desc.Buffer.NumElements         = m_numBytes / stride;
+                desc.Buffer.NumElements         = offset > 0 ? ( m_numBytes - offset ) / stride : m_numBytes / stride;
                 desc.Buffer.StructureByteStride = stride;
             }
             else if ( m_desc.Format == Format::Undefined )
@@ -134,10 +133,11 @@ void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12
             D3D12_UNORDERED_ACCESS_VIEW_DESC desc = { };
             desc.Format                           = DX12EnumConverter::ConvertFormat( m_desc.Format );
             desc.ViewDimension                    = D3D12_UAV_DIMENSION_BUFFER;
-            desc.Buffer.FirstElement              = m_desc.StructureDesc.Offset;
+            desc.Buffer.FirstElement              = m_desc.StructureDesc.Offset + offset / stride;
+
             if ( stride != 0 )
             {
-                desc.Buffer.NumElements         = m_numBytes / stride;
+                desc.Buffer.NumElements         = offset > 0 ? ( m_numBytes - offset ) / stride : m_numBytes / stride;
                 desc.Buffer.StructureByteStride = stride;
             }
             desc.Buffer.CounterOffsetInBytes = 0;
@@ -148,8 +148,8 @@ void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12
     case DX12BufferViewType::ConstantBuffer:
         {
             D3D12_CONSTANT_BUFFER_VIEW_DESC desc = { };
-            desc.BufferLocation                  = m_allocation->GetResource( )->GetGPUVirtualAddress( );
-            desc.SizeInBytes                     = DX12DescriptorHeap::RoundUp( m_numBytes );
+            desc.BufferLocation                  = m_allocation->GetResource( )->GetGPUVirtualAddress( ) + offset;
+            desc.SizeInBytes                     = DX12DescriptorHeap::RoundUp( offset > 0 ? m_numBytes - offset : m_numBytes );
             m_context->D3DDevice->CreateConstantBufferView( &desc, cpuHandle );
         }
         break;

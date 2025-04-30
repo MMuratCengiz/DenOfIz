@@ -70,10 +70,13 @@ namespace DenOfIz
         void                SetRootConstants( uint32_t binding, void *data ) override;
         IResourceBindGroup *BeginUpdate( ) override;
         IResourceBindGroup *Cbv( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Cbv( const BindBufferDesc& desc ) override;
         IResourceBindGroup *Srv( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Srv( const BindBufferDesc& desc ) override;
         IResourceBindGroup *Srv( const uint32_t binding, ITextureResource *resource ) override;
         IResourceBindGroup *Srv( const uint32_t binding, ITopLevelAS *accelerationStructure ) override;
         IResourceBindGroup *Uav( const uint32_t binding, IBufferResource *resource ) override;
+        IResourceBindGroup *Uav( const BindBufferDesc& desc ) override;
         IResourceBindGroup *Uav( const uint32_t binding, ITextureResource *resource ) override;
         IResourceBindGroup *Sampler( const uint32_t binding, ISampler *sampler ) override;
         void                EndUpdate( ) override;
