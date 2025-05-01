@@ -37,7 +37,7 @@ void MeshShaderGrassExample::Init( )
 void MeshShaderGrassExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
     // Use DirectX12 for mesh shader support
-    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void MeshShaderGrassExample::Update( )
@@ -177,9 +177,13 @@ void MeshShaderGrassExample::CreateMeshShaderPipeline( )
     pipelineDesc.ShaderProgram = m_meshShaderProgram.get( );
 
     // Configure graphics pipeline details
-    pipelineDesc.Graphics.PrimitiveTopology = PrimitiveTopology::Triangle;
-    pipelineDesc.Graphics.CullMode          = CullMode::None; // No culling for grass as it's double-sided
-    pipelineDesc.Graphics.FillMode          = FillMode::Solid;
+    pipelineDesc.Graphics.PrimitiveTopology            = PrimitiveTopology::Triangle;
+    pipelineDesc.Graphics.CullMode                     = CullMode::None; // No culling for grass as it's double-sided
+    pipelineDesc.Graphics.FillMode                     = FillMode::Solid;
+    pipelineDesc.Graphics.DepthStencilAttachmentFormat = Format::D32Float;
+    pipelineDesc.Graphics.DepthTest.Enable             = true;
+    pipelineDesc.Graphics.DepthTest.Write              = true;
+    pipelineDesc.Graphics.DepthTest.CompareOp          = CompareOp::Less;
 
     // Alpha blending for grass
     RenderTargetDesc rtDesc{ };
@@ -204,6 +208,7 @@ void MeshShaderGrassExample::CreateMeshShaderPipeline( )
     m_meshBindGroup->BeginUpdate( );
     m_meshBindGroup->Cbv( 0, m_grassConstantsBuffer.get( ) ); // Grass constants
     m_meshBindGroup->Srv( 0, m_grassTexture.get( ) );         // Grass texture
+    m_meshBindGroup->Sampler( 0, m_grassSampler.get( ) );
     m_meshBindGroup->EndUpdate( );
 }
 
@@ -236,6 +241,16 @@ void MeshShaderGrassExample::CreateConstantsBuffer( )
 
 void MeshShaderGrassExample::LoadGrassTexture( )
 {
+    SamplerDesc samplerDesc{ };
+    samplerDesc.MinFilter    = Filter::Linear;
+    samplerDesc.MagFilter    = Filter::Linear;
+    samplerDesc.MipmapMode   = MipmapMode::Linear;
+    samplerDesc.AddressModeU = SamplerAddressMode::ClampToEdge; // Or Repeat, etc.
+    samplerDesc.AddressModeV = SamplerAddressMode::ClampToEdge;
+    samplerDesc.AddressModeW = SamplerAddressMode::ClampToEdge;
+    samplerDesc.DebugName    = "GrassSampler";
+    m_grassSampler           = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( samplerDesc ) );
+
     // Create a simple texture for grass (could be replaced with a loaded texture)
     TextureDesc textureDesc{ };
     textureDesc.Width        = 128;
@@ -299,7 +314,7 @@ void MeshShaderGrassExample::LoadGrassTexture( )
 
     BatchTransitionDesc batchTransitionDesc{ commandList };
     batchTransitionDesc.CommandList = commandList;
-    batchTransitionDesc.TransitionTexture( m_grassTexture.get(), ResourceUsage::ShaderResource, QueueType::Graphics );
+    batchTransitionDesc.TransitionTexture( m_grassTexture.get( ), ResourceUsage::ShaderResource, QueueType::Graphics );
     m_resourceTracking.BatchTransition( batchTransitionDesc );
 
     commandList->End( );

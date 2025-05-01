@@ -59,7 +59,9 @@ namespace DenOfIz
         std::unique_ptr<IResourceBindGroup> m_meshBindGroup;
         std::unique_ptr<ITextureResource>   m_grassTexture;
         std::unique_ptr<IBufferResource>    m_grassConstantsBuffer;
-        GrassConstants                     *m_grassConstants = nullptr;
+        std::unique_ptr<ISampler>           m_grassSampler;
+
+        GrassConstants *m_grassConstants = nullptr;
 
         StepTimer m_stepTimer;
         Time      m_time;
