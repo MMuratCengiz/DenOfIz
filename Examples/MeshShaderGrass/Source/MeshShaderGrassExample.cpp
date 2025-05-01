@@ -24,8 +24,8 @@ using namespace DenOfIz;
 
 void MeshShaderGrassExample::Init( )
 {
-    m_camera->SetPosition( { 0.0f, 5.0f, -10.0f, 1.0f } );
-    m_camera->SetFront( { 0.0f, -0.2f, 1.0f, 0.0f } );
+    m_camera->SetPosition( { 0.0f, 8.0f, -15.0f, 1.0f } ); // Higher and further back for better view
+    m_camera->SetFront( { 0.0f, -0.3f, 1.0f, 0.0f } ); // Slightly steeper angle
 
     CreateConstantsBuffer( );
     LoadGrassTexture( );
@@ -92,7 +92,7 @@ void MeshShaderGrassExample::Render( uint32_t frameIndex, ICommandList *commandL
     // Dispatch mesh shader with the desired patch count
     // Parameters are grid dimensions X, Y, Z
     // For a 20x20 grid of grass patches (400 patches total):
-    commandList->DispatchMesh( 20, 20, 1 );
+    commandList->DispatchMesh( 10, 10, 1 );
 
     commandList->EndRendering( );
 
@@ -224,15 +224,15 @@ void MeshShaderGrassExample::CreateConstantsBuffer( )
     m_grassConstantsBuffer   = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( constantsDesc ) );
     m_grassConstants         = static_cast<GrassConstants *>( m_grassConstantsBuffer->MapMemory( ) );
 
-    // Initialize default values
-    m_grassConstants->WindDirection       = { 1.0f, 0.0f, 0.0f, 0.8f };  // X-direction wind with 0.8 strength
-    m_grassConstants->GrassColor          = { 0.4f, 0.8f, 0.2f, 1.0f };  // Green
-    m_grassConstants->GrassColorVariation = { 0.1f, 0.1f, 0.05f, 0.0f }; // Slight color variation
+    // Initialize default values with improved parameters
+    m_grassConstants->WindDirection       = { 1.0f, 0.0f, 0.0f, 0.6f };  // X-direction wind with more gentle strength
+    m_grassConstants->GrassColor          = { 0.42f, 0.85f, 0.27f, 1.0f };  // More vibrant green
+    m_grassConstants->GrassColorVariation = { 0.15f, 0.12f, 0.08f, 0.0f }; // Increased color variation for natural look
     m_grassConstants->Time                = 0.0f;
-    m_grassConstants->DensityFactor       = 4.0f;  // Number of grass blades per unit area
-    m_grassConstants->HeightScale         = 0.8f;  // Height of grass blades
-    m_grassConstants->WidthScale          = 0.1f;  // Width of grass blades
-    m_grassConstants->MaxDistance         = 30.0f; // Maximum distance for LOD
+    m_grassConstants->DensityFactor       = 15.0f;  // Increased density for fuller grass
+    m_grassConstants->HeightScale         = 1.2f;  // Taller grass blades
+    m_grassConstants->WidthScale          = 0.08f; // Slightly thinner grass blades for more realism
+    m_grassConstants->MaxDistance         = 40.0f; // Increased LOD distance
 
     // Identity matrices initially
     m_grassConstants->Model          = XMMatrixIdentity( );
@@ -272,22 +272,39 @@ void MeshShaderGrassExample::LoadGrassTexture( )
         {
             uint32_t idx = ( y * textureDesc.Width + x ) * 4;
 
-            // Create a gradient that fades out at the top and edges
+            // Create a more detailed gradient with noise for blade texture
             float centerX = static_cast<float>( x ) / textureDesc.Width - 0.5f;
             float centerY = static_cast<float>( y ) / textureDesc.Height;
 
+            // Basic edge fade
             float distanceFromCenter = std::abs( centerX ) * 2.0f;
-            float alphaEdge          = 1.0f - std::min( 1.0f, distanceFromCenter * 1.5f );
-            float alphaHeight        = std::max( 0.0f, 1.0f - centerY * 1.2f );
-
-            // Make tip more transparent
-            float alpha = alphaEdge * alphaHeight;
-
-            // RGB values - mostly white to allow tinting in shader
-            textureData[ idx + 0 ] = 220;                                    // R
-            textureData[ idx + 1 ] = 220;                                    // G
-            textureData[ idx + 2 ] = 220;                                    // B
-            textureData[ idx + 3 ] = static_cast<uint8_t>( alpha * 255.0f ); // A
+            float alphaEdge = 1.0f - std::min( 1.0f, distanceFromCenter * 1.8f );
+            
+            // Height-based alpha with slower fade
+            float alphaHeight = std::pow(std::max( 0.0f, 1.0f - centerY), 0.7f);
+            
+            // Add subtle noise for texture variation
+            float noiseValue = std::sin(x * 0.2f + y * 0.3f) * 0.1f + 0.9f;
+            
+            // Tip detail - add some subtle fraying at the tip
+            if (centerY > 0.85f) {
+                // Add frayed edges at the tip
+                float tipDetail = std::sin(x * 0.8f) * 0.7f + 0.3f;
+                alphaEdge *= tipDetail;
+            }
+            
+            // Inner blade detail - add subtle veins
+            float veinPattern = std::abs(centerX) < 0.1f ? 1.1f : 1.0f;
+            
+            // Combine all factors for final alpha
+            float alpha = alphaEdge * alphaHeight * noiseValue;
+            
+            // Base color with subtle variation - slightly greenish instead of pure white
+            // to allow for better tinting in the shader
+            textureData[ idx + 0 ] = static_cast<uint8_t>( 220 * noiseValue );                 // R
+            textureData[ idx + 1 ] = static_cast<uint8_t>( 225 * noiseValue * veinPattern );   // G - slightly higher for subtle green tint
+            textureData[ idx + 2 ] = static_cast<uint8_t>( 215 * noiseValue );                 // B
+            textureData[ idx + 3 ] = static_cast<uint8_t>( alpha * 255.0f );                   // A
         }
     }
 
@@ -332,11 +349,32 @@ void MeshShaderGrassExample::UpdateConstants( )
     // Update time
     m_grassConstants->Time = m_elapsedTime;
 
-    // Update wind direction with circular motion
-    float windAngle                   = m_elapsedTime * 0.3f;
-    m_grassConstants->WindDirection.x = cos( windAngle );
-    m_grassConstants->WindDirection.z = sin( windAngle );
-
+    // Create more natural wind patterns with multiple frequencies
+    float primaryWindAngle = m_elapsedTime * 0.3f;
+    float secondaryWindAngle = m_elapsedTime * 0.17f; // Different frequency for variation
+    
+    // Primary wind direction - smooth circular motion
+    float windX = cos( primaryWindAngle );
+    float windZ = sin( primaryWindAngle );
+    
+    // Add secondary wind component for more natural movement
+    windX += cos( secondaryWindAngle + 0.5f ) * 0.2f; 
+    windZ += sin( secondaryWindAngle * 1.2f ) * 0.15f;
+    
+    // Normalize the direction
+    float windLength = sqrt(windX * windX + windZ * windZ);
+    windX /= windLength;
+    windZ /= windLength;
+    
+    // Apply a pulsing wind strength for gusts (subtle)
+    float gustStrength = 0.8f + sin(m_elapsedTime * 0.5f) * 0.15f + sin(m_elapsedTime * 1.3f) * 0.05f;
+    
+    // Set wind direction and strength
+    m_grassConstants->WindDirection.x = windX;
+    m_grassConstants->WindDirection.y = 0.1f * sin(m_elapsedTime * 0.4f); // Small vertical component
+    m_grassConstants->WindDirection.z = windZ;
+    m_grassConstants->WindDirection.w = m_animateWind ? gustStrength * 0.6f : 0.0f; // Base strength with gusts
+    
     // Update matrices
     m_grassConstants->ViewProjection = m_camera->ViewProjectionMatrix( );
 
