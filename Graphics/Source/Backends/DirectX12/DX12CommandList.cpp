@@ -491,7 +491,7 @@ void DX12CommandList::SetRootSignature( ID3D12RootSignature *rootSignature )
 {
     DZ_RETURN_IF( rootSignature == nullptr );
     DZ_RETURN_IF( rootSignature == m_currentRootSignature );
-a
+
     m_currentRootSignature = rootSignature;
     switch ( m_currentPipeline->GetBindPoint( ) )
     {
