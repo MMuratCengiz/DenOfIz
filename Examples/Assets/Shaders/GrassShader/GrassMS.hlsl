@@ -3,13 +3,14 @@ Den Of Iz - Game/Game Engine
 Mesh Shader for Grass Rendering
 */
 
-// Mesh Shader Attributes
-#define MAX_VERTICES 64
-#define MAX_PRIMITIVES 126
-#define NUM_THREADS 128
+// Mesh Shader Attributes - using max possible limits for mesh shader
+#define MAX_VERTICES 256  // Maximum vertices per thread group
+#define MAX_PRIMITIVES 256 // Maximum primitives per thread group
+#define NUM_THREADS 128   // Thread count per thread group
 
 // Constants for grass blade generation
-#define BLADE_SEGMENTS 4
+// Optimized to use fewer vertices per blade while still maintaining quality
+#define BLADE_SEGMENTS 3   // Reduced segments for efficiency
 #define BLADE_POINTS_PER_SEGMENT 2
 #define VERTICES_PER_BLADE ((BLADE_SEGMENTS * BLADE_POINTS_PER_SEGMENT) + 1) // +1 for the base point
 #define PRIMITIVES_PER_BLADE (BLADE_SEGMENTS * 2) // Triangles per blade
@@ -59,39 +60,92 @@ float2 GetRandomOffset(float2 position, float2 id)
     ) * 0.95; // Scale to fill most of the cell
 }
 
-// Generate a random height for the grass blade
-float GetRandomHeight(float2 position, float2 id)
+// Advanced random number generator with better distribution
+float RandomImproved(float2 seed, float offset)
 {
-    float seed = dot(position + id, float2(127.1, 311.7));
-    return lerp(0.7, 1.3, Random(float2(seed, seed * 0.5))) * HeightScale;
+    return frac(sin(dot(seed + offset, float2(12.9898, 78.233))) * 43758.5453);
 }
 
-// Generate a random width for the grass blade
+// Generate a random height for the grass blade with biased distribution
+float GetRandomHeight(float2 position, float2 id)
+{
+    // Create more variation in heights with clustering for natural look
+    float seed = dot(position + id, float2(127.1, 311.7));
+    
+    // Use different distributions based on position for natural clusters
+    float r = RandomImproved(float2(seed, seed * 0.5), 0.0);
+    
+    // Bias toward medium heights with some short and tall blades
+    // This creates a more natural distribution than uniform random
+    float height;
+    if (r < 0.7) {
+        // 70% are medium height (looks more natural with majority similar height)
+        height = lerp(0.75, 1.05, RandomImproved(id, 0.3));
+    } else if (r < 0.9) {
+        // 20% are taller
+        height = lerp(1.05, 1.35, RandomImproved(id, 0.6));
+    } else {
+        // 10% are shorter
+        height = lerp(0.5, 0.75, RandomImproved(id, 0.9));
+    }
+    
+    return height * HeightScale;
+}
+
+// Generate a random width for the grass blade with natural distribution
 float GetRandomWidth(float2 position, float2 id)
 {
     float seed = dot(position + id, float2(269.5, 183.3));
-    return lerp(0.6, 1.4, Random(float2(seed, seed * 0.75))) * WidthScale;
+    
+    // Bias toward thinner blades for more delicate appearance
+    float r = pow(RandomImproved(float2(seed, seed * 0.75), 0.42), 1.5);
+    return lerp(0.5, 1.2, r) * WidthScale;
 }
 
-// Generate a random bend direction and strength
+// Generate a random bend direction and strength with more natural clusters
 float2 GetRandomBend(float2 position, float2 id)
 {
-    float2 seed = position + id;
-    float angle = Random(seed) * 6.28; // 0 to 2π
-    float strength = lerp(0.1, 0.4, Random(seed.yx));
+    // Create gradual changes in bend direction by including position
+    float2 seed = position * 0.1 + id;
+    
+    // Create a natural flow pattern - grass tends to bend in similar directions in clusters
+    float noise1 = sin(position.x * 0.05 + position.y * 0.07) * 0.5;
+    float noise2 = cos(position.x * 0.06 - position.y * 0.04) * 0.5;
+    
+    float baseAngle = noise1 + noise2;
+    float angleVariation = RandomImproved(seed, 0.27) * 0.4; // Small variation from base angle
+    float angle = baseAngle + angleVariation;
+    
+    // Vary strength based on different factors
+    float strength = lerp(0.1, 0.45, RandomImproved(seed.yx, 0.75));
     return float2(cos(angle), sin(angle)) * strength;
 }
 
-// Generate random color variation
+// Generate random color variation with natural clustering
 float3 GetRandomColor(float2 position, float2 id)
 {
     float3 variation;
     float seed = dot(position + id, float2(127.1, 269.5));
-
-    variation.x = lerp(-GrassColorVariation.x, GrassColorVariation.x, Random(float2(seed, 0.0)));
-    variation.y = lerp(-GrassColorVariation.y, GrassColorVariation.y, Random(float2(seed, 1.0)));
-    variation.z = lerp(-GrassColorVariation.z, GrassColorVariation.z, Random(float2(seed, 2.0)));
-
+    
+    // Create subtle color gradients based on position
+    float gradientX = sin(position.x * 0.02) * 0.5 + 0.5;
+    float gradientZ = cos(position.y * 0.025) * 0.5 + 0.5;
+    
+    // Base variation on position for natural color clusters
+    variation.x = lerp(-GrassColorVariation.x, GrassColorVariation.x, 
+                 RandomImproved(float2(seed, 0.0), gradientX));
+    variation.y = lerp(-GrassColorVariation.y, GrassColorVariation.y, 
+                 RandomImproved(float2(seed, 1.0), gradientZ));
+    variation.z = lerp(-GrassColorVariation.z, GrassColorVariation.z, 
+                 RandomImproved(float2(seed, 2.0), gradientX * gradientZ));
+    
+    // Make some areas slightly yellower (dry patches)
+    if (gradientX * gradientZ > 0.7 && RandomImproved(id, 0.33) > 0.7) {
+        variation.x += 0.1;
+        variation.y += 0.05;
+        variation.z -= 0.05;
+    }
+    
     return GrassColor.xyz + variation;
 }
 
@@ -269,45 +323,88 @@ void CreateGrassBlade(
 [outputtopology("triangle")]
 void main(
     in uint3 DTid : SV_DispatchThreadID,
+    in uint3 Gid : SV_GroupID,
+    in uint3 GTid : SV_GroupThreadID,
+    in uint GIndex : SV_GroupIndex,
     out vertices VertexOutput verts[MAX_VERTICES],
     out indices uint3 tris[MAX_PRIMITIVES]
 )
 {
     // Calculate position in grid based on dispatch thread ID
     uint threadID = DTid.x;
-    uint gridSize = 10; // Matches the dispatch size in the C++ code
+    uint gridSize = 32; // Matches the increased dispatch size in the C++ code
     
     uint gridX = threadID % gridSize;
     uint gridY = threadID / gridSize;
 
     uint totalVertices = 0;
     uint totalTriangles = 0;
-    uint bladesPerPatch = 50;
-
+    
+    // Calculate optimal blades per patch:
+    // MAX_VERTICES / VERTICES_PER_BLADE = max possible blades
+    // But need to ensure we don't exceed MAX_PRIMITIVES
+    uint maxBladesByVertices = MAX_VERTICES / VERTICES_PER_BLADE;
+    uint maxBladesByPrimitives = MAX_PRIMITIVES / PRIMITIVES_PER_BLADE;
+    uint bladesPerPatch = min(maxBladesByVertices, maxBladesByPrimitives);
+    
+    // Additional safety check for edge cases
+    bladesPerPatch = min(bladesPerPatch, 36); // Safe upper limit that works well
+    
     if (gridX < gridSize && gridY < gridSize) {
         totalVertices = bladesPerPatch * VERTICES_PER_BLADE;
         totalTriangles = bladesPerPatch * PRIMITIVES_PER_BLADE;
     }
-    SetMeshOutputCounts(min(totalVertices, MAX_VERTICES), min(totalTriangles, MAX_PRIMITIVES));
+
+    SetMeshOutputCounts(totalVertices, totalTriangles);
+    GroupMemoryBarrierWithGroupSync();
 
     if (totalVertices > 0) {
         // Calculate world space position for this grid cell
-        float cellWorldSize = 1.0; // Size of each cell in world units
+        // Use smaller cell size for more precise positioning
+        float cellWorldSize = 0.85; // Reduced cell size for tighter packing
         float worldX = (float(gridX) - (gridSize * 0.5) + 0.5) * cellWorldSize;
         float worldZ = (float(gridY) - (gridSize * 0.5) + 0.5) * cellWorldSize;
         float3 gridCellCenter = float3(worldX, 0, worldZ);
-
-        // Generate multiple grass blades within this grid cell
+        
+        // Use density factor to control blade density
+        float density = DensityFactor * 0.1; // Scale factor for density
+        
+        // Generate multiple grass blades within this grid cell with improved positioning
         for (uint blade = 0; blade < bladesPerPatch; blade++)
         {
-            // Calculate a unique ID for this blade
-            float2 bladeID = float2(DTid.x * 16 + blade, DTid.y * 16 + blade);
-
-            // Random position within the cell
-            float2 offset = GetRandomOffset(gridCellCenter.xz, bladeID);
-            float3 bladePosition = float3(gridCellCenter.x + offset.x * cellWorldSize * 0.5,
-                                          0,
-                                          gridCellCenter.z + offset.y * cellWorldSize * 0.5);
+            // Calculate a unique ID for this blade with much more variation
+            // This prevents visible patterns in the grass
+            float2 bladeID = float2(
+                DTid.x * 73.926 + blade * 0.317 + sin(blade * 0.59) * 12.567,
+                DTid.y * 52.713 + blade * 0.727 + cos(blade * 0.83) * 17.391
+            );
+            
+            // Calculate a deterministic but complex offset to create a natural distribution
+            // Improved random distribution using blue noise-like patterns
+            float angle = frac(sin(dot(bladeID, float2(12.9898, 78.233))) * 43758.5453) * 6.28318;
+            float radius = sqrt(frac(sin(dot(bladeID, float2(53.7842, 28.7456))) * 87234.7531));
+            
+            // Jitter offset to break uniformity
+            float2 jitter = float2(
+                sin(bladeID.x * 0.1 + bladeID.y * 0.13) * 0.1,
+                cos(bladeID.y * 0.07 + bladeID.x * 0.19) * 0.1
+            );
+            
+            // Create offset with improved spiral-like distribution for natural look
+            float2 offset = float2(
+                cos(angle) * radius + jitter.x,
+                sin(angle) * radius + jitter.y
+            );
+            
+            // Extend range slightly to fill gaps between cells
+            offset *= 1.15;
+            
+            // Position the blade at the calculated position
+            float3 bladePosition = float3(
+                gridCellCenter.x + offset.x * cellWorldSize,
+                0, // Ground level
+                gridCellCenter.z + offset.y * cellWorldSize
+            );
 
             // Random properties for this blade
             float bladeHeight = GetRandomHeight(gridCellCenter.xz, bladeID);

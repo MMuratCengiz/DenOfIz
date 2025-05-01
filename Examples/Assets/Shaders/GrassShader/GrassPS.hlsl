@@ -85,26 +85,52 @@ float3 CalculateLighting(float3 normal, float3 color, float2 uv, float3 worldPos
     return lerp(finalColor, fogColor, fogFactor * 0.2);
 }
 
-// Improved grass texture function that varies based on blade parameters
+// Enhanced grass texture function with microtexture and edge details
 float4 SampleGrassTexture(float2 uv, float4 color)
 {
     // Sample the base texture
     float4 texColor = grassTexture.Sample(grassSampler, uv);
     
-    // Adjust alpha for more natural shape - more transparent at edges and tips
-    float edgeFade = 1.0 - abs(uv.x - 0.5) * 2.0; // Fade at edges (0 at edges, 1 in center)
-    float tipFade = 1.0 - pow(uv.y, 1.5); // More aggressive fade at tips
+    // Create more detailed edge shape
+    // Smooth cubic falloff from center to create more natural blade shapes
+    float edgeDistance = abs(uv.x - 0.5) * 2.0;
+    float edgeFade = 1.0 - pow(edgeDistance, 1.7); // Sharper towards edge, smooth in center
     
-    // Combine fades with texture alpha
-    float alpha = texColor.a * edgeFade * (1.0 - tipFade * 0.7);
+    // Top fade with ultra-fine tip
+    float tipHeight = pow(uv.y, 3.0); // Sharper power curve for finer tips
+    float tipFade = smoothstep(1.0, 0.4, tipHeight);
     
-    // Allow some transparency at the tip
-    alpha = lerp(alpha, alpha * 0.6, uv.y * uv.y);
+    // Create subtle veins along the blade
+    float veinPattern = 1.0;
+    float veinCenter = abs(uv.x - 0.5);
+    if (veinCenter < 0.1) {
+        // Central vein is slightly thicker
+        veinPattern = 1.1 - veinCenter * 3.0;
+    } else if (frac(veinCenter * 10.0) < 0.3) {
+        // Add smaller secondary veins
+        veinPattern = 1.05;
+    }
     
-    // Add some subtle detail variation
-    float detail = sin(uv.y * 20.0 + uv.x * 5.0) * 0.05 + 0.95;
+    // Subtle micro-detail across the blade surface
+    float microDetail = sin(uv.y * 40.0 + uv.x * 30.0) * 0.03 + 
+                        sin(uv.x * 50.0 - uv.y * 20.0) * 0.02 + 0.97;
     
-    return float4(texColor.rgb * detail, alpha);
+    // Combine all factors for alpha
+    float baseAlpha = texColor.a * edgeFade;
+    
+    // More transparent at the very tip
+    if (uv.y > 0.9) {
+        float tipTransparency = (uv.y - 0.9) * 10.0; // 0-1 across the last 10% of blade
+        baseAlpha *= 1.0 - tipTransparency * 0.6;
+    }
+    
+    // Create subtle irregular serrations at blade edges
+    if (edgeDistance > 0.9 && uv.y > 0.5) {
+        float serration = sin(uv.y * 30.0) * 0.5 + 0.5;
+        baseAlpha *= serration;
+    }
+    
+    return float4(texColor.rgb * veinPattern * microDetail, baseAlpha);
 }
 
 // Main pixel shader function

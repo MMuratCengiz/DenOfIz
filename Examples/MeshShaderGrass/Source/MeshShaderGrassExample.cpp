@@ -91,8 +91,8 @@ void MeshShaderGrassExample::Render( uint32_t frameIndex, ICommandList *commandL
 
     // Dispatch mesh shader with the desired patch count
     // Parameters are grid dimensions X, Y, Z
-    // For a 20x20 grid of grass patches (400 patches total):
-    commandList->DispatchMesh( 10, 10, 1 );
+    // Increased grid size for better coverage (32x32 = 1024 patches)
+    commandList->DispatchMesh( 32, 32, 1 );
 
     commandList->EndRendering( );
 
@@ -111,7 +111,7 @@ void MeshShaderGrassExample::HandleEvent( SDL_Event &event )
         {
             switch ( event.key.keysym.sym )
             {
-            case SDLK_w:
+            case SDLK_RETURN:
                 m_animateWind = !m_animateWind;
                 LOG( INFO ) << "Wind animation " << ( m_animateWind ? "enabled" : "disabled" );
                 break;
@@ -224,15 +224,15 @@ void MeshShaderGrassExample::CreateConstantsBuffer( )
     m_grassConstantsBuffer   = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( constantsDesc ) );
     m_grassConstants         = static_cast<GrassConstants *>( m_grassConstantsBuffer->MapMemory( ) );
 
-    // Initialize default values with improved parameters
-    m_grassConstants->WindDirection       = { 1.0f, 0.0f, 0.0f, 0.6f };  // X-direction wind with more gentle strength
-    m_grassConstants->GrassColor          = { 0.42f, 0.85f, 0.27f, 1.0f };  // More vibrant green
-    m_grassConstants->GrassColorVariation = { 0.15f, 0.12f, 0.08f, 0.0f }; // Increased color variation for natural look
+    // Initialize default values with improved parameters for denser grass
+    m_grassConstants->WindDirection       = { 1.0f, 0.0f, 0.0f, 0.5f };  // X-direction wind with gentle strength
+    m_grassConstants->GrassColor          = { 0.42f, 0.85f, 0.27f, 1.0f };  // Vibrant green
+    m_grassConstants->GrassColorVariation = { 0.18f, 0.15f, 0.1f, 0.0f }; // Increased color variation for natural look
     m_grassConstants->Time                = 0.0f;
-    m_grassConstants->DensityFactor       = 15.0f;  // Increased density for fuller grass
-    m_grassConstants->HeightScale         = 1.2f;  // Taller grass blades
-    m_grassConstants->WidthScale          = 0.08f; // Slightly thinner grass blades for more realism
-    m_grassConstants->MaxDistance         = 40.0f; // Increased LOD distance
+    m_grassConstants->DensityFactor       = 64.0f;  // Significantly increased density for fuller grass
+    m_grassConstants->HeightScale         = 1.0f;   // Slightly shorter to allow more blades
+    m_grassConstants->WidthScale          = 0.06f;  // Thinner grass blades for more blades per area
+    m_grassConstants->MaxDistance         = 50.0f;  // Extended LOD distance
 
     // Identity matrices initially
     m_grassConstants->Model          = XMMatrixIdentity( );
@@ -379,6 +379,6 @@ void MeshShaderGrassExample::UpdateConstants( )
     m_grassConstants->ViewProjection = m_camera->ViewProjectionMatrix( );
 
     // Create a model matrix that positions the grass field
-    // Center the grass field at the origin, scaling to 40x40 units
-    m_grassConstants->Model = XMMatrixScaling( 40.0f, 1.0f, 40.0f ) * XMMatrixTranslation( 0.0f, 0.0f, 0.0f );
+    // Center the grass field at the origin with expanded scale for denser coverage
+    m_grassConstants->Model = XMMatrixScaling( 45.0f, 1.0f, 45.0f ) * XMMatrixTranslation( 0.0f, 0.0f, 0.0f );
 }
