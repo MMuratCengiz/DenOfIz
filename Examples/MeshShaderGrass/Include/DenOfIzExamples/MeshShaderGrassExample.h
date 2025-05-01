@@ -48,7 +48,9 @@ namespace DenOfIz
 
         // Parameters for the LOD system
         float MaxDistance;
-        float Padding[ 3 ];
+        float TerrainScale;   // Scale of the terrain 
+        float TerrainHeight;  // Maximum height of the terrain
+        float TerrainRoughness; // Roughness of the terrain
     };
 
     class MeshShaderGrassExample : public IExample
@@ -60,14 +62,24 @@ namespace DenOfIz
         std::unique_ptr<ITextureResource>   m_grassTexture;
         std::unique_ptr<IBufferResource>    m_grassConstantsBuffer;
         std::unique_ptr<ISampler>           m_grassSampler;
+        std::unique_ptr<ITextureResource>   m_depthBuffer;
+
+        // Terrain rendering resources
+        std::unique_ptr<ShaderProgram>      m_terrainShaderProgram;
+        std::unique_ptr<IPipeline>          m_terrainPipeline;
+        std::unique_ptr<IRootSignature>     m_terrainRootSignature;
+        std::unique_ptr<IInputLayout>       m_terrainInputLayout;
+        std::unique_ptr<IResourceBindGroup> m_terrainBindGroup;
+        std::unique_ptr<IBufferResource>    m_terrainVertexBuffer;
+        std::unique_ptr<IBufferResource>    m_terrainIndexBuffer;
+        std::unique_ptr<ITextureResource>   m_terrainTexture;
+        std::unique_ptr<ISampler>           m_terrainSampler;
+        GeometryData                        m_terrainGeometry;
 
         GrassConstants *m_grassConstants = nullptr;
 
         StepTimer m_stepTimer;
         Time      m_time;
-
-        std::unique_ptr<IBufferResource> m_planeVertexBuffer;
-        std::unique_ptr<IBufferResource> m_planeIndexBuffer;
 
         float m_elapsedTime = 0.0f;
         bool  m_animateWind = true;
@@ -84,6 +96,9 @@ namespace DenOfIz
         void CreateMeshShaderPipeline( );
         void CreateConstantsBuffer( );
         void LoadGrassTexture( );
+        void CreateTerrainGeometry( );
+        void CreateTerrainPipeline( );
+        void LoadTerrainTexture( );
         void UpdateConstants( );
     };
 } // namespace DenOfIz

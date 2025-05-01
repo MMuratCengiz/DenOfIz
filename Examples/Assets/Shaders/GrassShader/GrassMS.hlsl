@@ -31,7 +31,9 @@ cbuffer GrassConstants : register(b0, space0)
     float WidthScale;
 
     float MaxDistance;
-    float3 Padding;
+    float TerrainScale;
+    float TerrainHeight;
+    float TerrainRoughness;
 };
 
 // Output vertex structure
@@ -180,6 +182,35 @@ float CalculateLodFactor(float3 position)
     // Approximation of distance to camera
     float distanceToCamera = length(position);
     return 1.0 - saturate(distanceToCamera / MaxDistance);
+}
+
+// Calculate terrain height based on position
+float SampleTerrainHeight(float2 position)
+{
+    // Create procedural terrain with different noise layers
+    float2 scaledPos = position * 0.05;
+    
+    // Base large hills
+    float height = sin(scaledPos.x * 1.5) * cos(scaledPos.y * 1.5) * 0.5;
+    
+    // Medium details
+    height += sin(scaledPos.x * 3.0 + 0.5) * sin(scaledPos.y * 4.0) * 0.25;
+    
+    // Small details (only if roughness is high enough)
+    if (TerrainRoughness > 0.4) {
+        height += sin(scaledPos.x * 8.0 + scaledPos.y * 7.0) * sin(scaledPos.y * 9.0 - scaledPos.x * 3.0) * 0.15 * ((TerrainRoughness - 0.4) / 0.6);
+    }
+    
+    // Add some small noise for very local variations
+    float localSeed = dot(position, float2(127.1, 311.7));
+    float localNoise = frac(sin(localSeed) * 43758.5453) * 0.1 - 0.05;
+    height += localNoise * TerrainRoughness;
+    
+    // Apply overall scaling
+    height *= TerrainHeight * TerrainScale;
+    
+    // Ensure minimum height is 0 to prevent grass below ground
+    return max(0.0, height);
 }
 
 // Creates a 3D blade of grass with natural curve
@@ -332,7 +363,7 @@ void main(
 {
     // Calculate position in grid based on dispatch thread ID
     uint threadID = DTid.x;
-    uint gridSize = 32; // Matches the increased dispatch size in the C++ code
+    uint gridSize = 64; // Matches the increased dispatch size in the C++ code (64x64)
     
     uint gridX = threadID % gridSize;
     uint gridY = threadID / gridSize;
@@ -347,8 +378,9 @@ void main(
     uint maxBladesByPrimitives = MAX_PRIMITIVES / PRIMITIVES_PER_BLADE;
     uint bladesPerPatch = min(maxBladesByVertices, maxBladesByPrimitives);
     
-    // Additional safety check for edge cases
-    bladesPerPatch = min(bladesPerPatch, 36); // Safe upper limit that works well
+    // Additional safety check for edge cases, but allow more blades
+    // With reduced segments, we can fit more blades per patch
+    bladesPerPatch = min(bladesPerPatch, 42); // Increased safe upper limit
     
     if (gridX < gridSize && gridY < gridSize) {
         totalVertices = bladesPerPatch * VERTICES_PER_BLADE;
@@ -360,8 +392,8 @@ void main(
 
     if (totalVertices > 0) {
         // Calculate world space position for this grid cell
-        // Use smaller cell size for more precise positioning
-        float cellWorldSize = 0.85; // Reduced cell size for tighter packing
+        // Use smaller cell size for more precise positioning and denser patches
+        float cellWorldSize = 0.65; // Significantly reduced cell size for tighter packing
         float worldX = (float(gridX) - (gridSize * 0.5) + 0.5) * cellWorldSize;
         float worldZ = (float(gridY) - (gridSize * 0.5) + 0.5) * cellWorldSize;
         float3 gridCellCenter = float3(worldX, 0, worldZ);
@@ -399,18 +431,44 @@ void main(
             // Extend range slightly to fill gaps between cells
             offset *= 1.15;
             
-            // Position the blade at the calculated position
-            float3 bladePosition = float3(
+            // Calculate world position for this blade
+            float2 worldPos2D = float2(
                 gridCellCenter.x + offset.x * cellWorldSize,
-                0, // Ground level
                 gridCellCenter.z + offset.y * cellWorldSize
             );
+            
+            // Sample terrain height at this position
+            float terrainHeight = SampleTerrainHeight(worldPos2D);
+            
+            // Position the blade at the calculated position with terrain height
+            float3 bladePosition = float3(
+                worldPos2D.x,
+                terrainHeight, // Use terrain height instead of 0
+                worldPos2D.y
+            );
 
-            // Random properties for this blade
-            float bladeHeight = GetRandomHeight(gridCellCenter.xz, bladeID);
+            // Random properties for this blade, adjusted for terrain height
+            // Taller grass in lower areas, shorter on peaks
+            float heightModifier = 1.0 - saturate(terrainHeight / (TerrainHeight * TerrainScale * 0.75));
+            heightModifier = lerp(0.8, 1.2, heightModifier); // Range from 0.8 (peaks) to 1.2 (valleys)
+            
+            float bladeHeight = GetRandomHeight(gridCellCenter.xz, bladeID) * heightModifier;
             float bladeWidth = GetRandomWidth(gridCellCenter.xz, bladeID);
-            float2 bladeBend = GetRandomBend(gridCellCenter.xz, bladeID);
+            
+            // More bend at higher positions due to "wind"
+            float bendModifier = saturate(terrainHeight / (TerrainHeight * TerrainScale * 0.5));
+            bendModifier = lerp(1.0, 1.3, bendModifier); // Range from 1.0 (valleys) to 1.3 (peaks)
+            float2 bladeBend = GetRandomBend(gridCellCenter.xz, bladeID) * bendModifier;
+            
+            // Color variation based on terrain - slightly yellower at peaks, greener in valleys
             float3 bladeColor = GetRandomColor(gridCellCenter.xz, bladeID);
+            if (terrainHeight > TerrainHeight * TerrainScale * 0.7) {
+                // Shift color toward yellow for higher areas
+                float heightFactor = (terrainHeight - TerrainHeight * TerrainScale * 0.7) / (TerrainHeight * TerrainScale * 0.3);
+                bladeColor.x += heightFactor * 0.15; // More red
+                bladeColor.y += heightFactor * 0.05; // More green
+                bladeColor.z -= heightFactor * 0.1;  // Less blue
+            }
 
             // Create the grass blade vertices and triangles
             uint vertexStart = blade * VERTICES_PER_BLADE;
