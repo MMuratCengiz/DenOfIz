@@ -52,13 +52,49 @@ void DX12CommandList::BeginRendering( const RenderingDesc &renderingDesc )
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> renderTargets( renderingDesc.RTAttachments.NumElements( ) );
     for ( int i = 0; i < renderingDesc.RTAttachments.NumElements( ); i++ )
     {
-        auto *pImageResource = dynamic_cast<DX12TextureResource *>( renderingDesc.RTAttachments.GetElement( i ).Resource );
-        renderTargets[ i ]   = pImageResource->GetOrCreateRtvHandle( );
-
-        m_commandList->ClearRenderTargetView( renderTargets[ i ], renderingDesc.RTAttachments.GetElement( i ).ClearColor, 0, nullptr );
+        const auto &rtAttachment   = renderingDesc.RTAttachments.GetElement( i );
+        auto       *pImageResource = dynamic_cast<DX12TextureResource *>( rtAttachment.Resource );
+        renderTargets[ i ]         = pImageResource->GetOrCreateRtvHandle( );
+        if ( rtAttachment.LoadOp == LoadOp::Clear )
+        {
+            m_commandList->ClearRenderTargetView( renderTargets[ i ], rtAttachment.ClearColor, 0, nullptr );
+        }
     }
 
-    m_commandList->OMSetRenderTargets( renderTargets.size( ), renderTargets.data( ), FALSE, nullptr );
+    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle       = { };
+    bool                        hasDepthStencil = false;
+    if ( renderingDesc.DepthAttachment.Resource != nullptr )
+    {
+        auto *pDepthResource = dynamic_cast<DX12TextureResource *>( renderingDesc.DepthAttachment.Resource );
+        dsvHandle            = pDepthResource->GetOrCreateDsvHandle( );
+        hasDepthStencil      = true;
+        if ( renderingDesc.DepthAttachment.LoadOp == LoadOp::Clear )
+        {
+            D3D12_CLEAR_FLAGS clearFlags = D3D12_CLEAR_FLAG_DEPTH;
+            if ( renderingDesc.StencilAttachment.Resource != nullptr || pDepthResource->GetFormat( ) == Format::D24UnormS8Uint )
+            {
+                clearFlags |= D3D12_CLEAR_FLAG_STENCIL;
+            }
+
+            m_commandList->ClearDepthStencilView( dsvHandle, clearFlags, renderingDesc.DepthAttachment.ClearDepthStencil[ 0 ],
+                                                  static_cast<UINT8>( renderingDesc.DepthAttachment.ClearDepthStencil[ 1 ] ), 0, nullptr );
+        }
+    }
+    else if ( renderingDesc.StencilAttachment.Resource != nullptr )
+    {
+        auto *pStencilResource = dynamic_cast<DX12TextureResource *>( renderingDesc.StencilAttachment.Resource );
+        dsvHandle              = pStencilResource->GetOrCreateDsvHandle( );
+        hasDepthStencil        = true;
+
+        if ( renderingDesc.StencilAttachment.LoadOp == LoadOp::Clear )
+        {
+            m_commandList->ClearDepthStencilView( dsvHandle, D3D12_CLEAR_FLAG_STENCIL, 1.0f, static_cast<UINT8>( renderingDesc.StencilAttachment.ClearDepthStencil[ 1 ] ), 0,
+                                                  nullptr );
+        }
+    }
+
+    m_commandList->OMSetRenderTargets( static_cast<UINT>( renderTargets.size( ) ), renderTargets.empty( ) ? nullptr : renderTargets.data( ), FALSE,
+                                       hasDepthStencil ? &dsvHandle : nullptr );
 }
 
 void DX12CommandList::EndRendering( )
@@ -455,12 +491,7 @@ void DX12CommandList::SetRootSignature( ID3D12RootSignature *rootSignature )
 {
     DZ_RETURN_IF( rootSignature == nullptr );
     DZ_RETURN_IF( rootSignature == m_currentRootSignature );
-
-    if ( m_currentRootSignature != nullptr )
-    {
-        LOG( WARNING ) << "Root signature is set to a different value, it is not expected to overwrite this value.";
-    }
-
+a
     m_currentRootSignature = rootSignature;
     switch ( m_currentPipeline->GetBindPoint( ) )
     {

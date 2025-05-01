@@ -78,8 +78,6 @@ namespace DenOfIz
         ID3D12GraphicsCommandList7 *GetCommandList( ) const;
 
     private:
-        void CompatibilityPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
-        void EnhancedPipelineBarrier( const PipelineBarrierDesc &barrier ) const;
         void SetRootSignature( ID3D12RootSignature *rootSignature );
         void ProcessBindGroups( );
         void BindRootDescriptors( const DX12RootDescriptor &rootDescriptor ) const;

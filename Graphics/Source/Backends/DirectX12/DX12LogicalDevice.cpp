@@ -231,6 +231,7 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     }
 
     m_context->RtvDescriptorHeap                    = std::make_unique<DX12DescriptorHeap>( m_context->D3DDevice.get( ), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, false );
+    m_context->DsvDescriptorHeap                    = std::make_unique<DX12DescriptorHeap>( m_context->D3DDevice.get( ), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, false );
     m_context->ShaderVisibleCbvSrvUavDescriptorHeap = std::make_unique<DX12DescriptorHeap>( m_context->D3DDevice.get( ), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true );
     m_context->ShaderVisibleSamplerDescriptorHeap   = std::make_unique<DX12DescriptorHeap>( m_context->D3DDevice.get( ), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, true );
 

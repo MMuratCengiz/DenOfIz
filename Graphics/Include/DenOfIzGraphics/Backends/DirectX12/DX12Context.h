@@ -102,6 +102,7 @@ namespace DenOfIz
 
         std::array<std::unique_ptr<DX12DescriptorHeap>, D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES> CpuDescriptorHeaps;
         std::unique_ptr<DX12DescriptorHeap>                                                   RtvDescriptorHeap;
+        std::unique_ptr<DX12DescriptorHeap>                                                   DsvDescriptorHeap;
         std::unique_ptr<DX12DescriptorHeap>                                                   ShaderVisibleCbvSrvUavDescriptorHeap;
         std::unique_ptr<DX12DescriptorHeap>                                                   ShaderVisibleSamplerDescriptorHeap;
 

@@ -32,13 +32,14 @@ namespace DenOfIz
         uint32_t      m_depth        = 1;
         ResourceUsage m_currentUsage = ResourceUsage::Undefined;
 
-        TextureDesc                 m_desc{ };
-        DX12Context                *m_context    = nullptr;
-        D3D12MA::Allocation        *m_allocation = nullptr;
-        ID3D12Resource2            *m_resource   = nullptr;
-        D3D12_CPU_DESCRIPTOR_HANDLE m_rtvHandle{ };
-        D3D12_RESOURCE_DESC         m_resourceDesc{ };
-        bool                        isExternalResource = false; // Used for swap chain render targets, might need a better way
+        TextureDesc                  m_desc{ };
+        DX12Context                 *m_context    = nullptr;
+        D3D12MA::Allocation         *m_allocation = nullptr;
+        ID3D12Resource2             *m_resource   = nullptr;
+        D3D12_CPU_DESCRIPTOR_HANDLE  m_rtvHandle{ };
+        D3D12_CPU_DESCRIPTOR_HANDLE  m_dsvHandle{ };
+        D3D12_RESOURCE_DESC          m_resourceDesc{ };
+        bool                         isExternalResource = false; // Used for swap chain render targets, might need a better way
 
     public:
         DX12TextureResource( DX12Context *context, const TextureDesc &desc );
@@ -46,9 +47,9 @@ namespace DenOfIz
         ~DX12TextureResource( ) override;
         void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle );
 
-        [[nodiscard]] const TextureDesc               &GetDesc( ) const;
-        [[nodiscard]] const D3D12_RESOURCE_DESC       &GetResourceDesc( ) const;
-        [[nodiscard]] ID3D12Resource                  *Resource( ) const;
+        [[nodiscard]] const TextureDesc         &GetDesc( ) const;
+        [[nodiscard]] const D3D12_RESOURCE_DESC &GetResourceDesc( ) const;
+        [[nodiscard]] ID3D12Resource            *Resource( ) const;
 
         [[nodiscard]] BitSet<ResourceUsage> InitialState( ) const override;
         [[nodiscard]] uint32_t              GetWidth( ) const;
@@ -57,6 +58,7 @@ namespace DenOfIz
         [[nodiscard]] Format                GetFormat( ) const override;
 
         [[nodiscard]] const D3D12_CPU_DESCRIPTOR_HANDLE &GetOrCreateRtvHandle( );
+        [[nodiscard]] const D3D12_CPU_DESCRIPTOR_HANDLE &GetOrCreateDsvHandle( );
 
     private:
         void CreateTextureSrv( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle ) const;

@@ -118,7 +118,7 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
 DX12TextureResource::DX12TextureResource( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle ) : m_resource( resource ), m_rtvHandle( cpuHandle )
 {
     isExternalResource = true;
-    m_currentUsage = ResourceUsage::Common;
+    m_currentUsage     = ResourceUsage::Common;
 }
 
 DX12TextureResource::~DX12TextureResource( )
@@ -191,6 +191,50 @@ const D3D12_CPU_DESCRIPTOR_HANDLE &DX12TextureResource::GetOrCreateRtvHandle( )
 
     m_context->D3DDevice->CreateRenderTargetView( m_resource, &rtvDesc, m_rtvHandle );
     return m_rtvHandle;
+}
+
+const D3D12_CPU_DESCRIPTOR_HANDLE &DX12TextureResource::GetOrCreateDsvHandle( )
+{
+    if ( m_dsvHandle.ptr != 0 )
+    {
+        return m_dsvHandle;
+    }
+
+    m_dsvHandle = m_context->DsvDescriptorHeap->GetNextHandle( 1 ).Cpu;
+    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = { };
+    dsvDesc.Format                        = DX12EnumConverter::ConvertFormat( m_desc.Format );
+
+    if ( m_desc.ArraySize > 1 )
+    {
+        if ( m_desc.MSAASampleCount > MSAASampleCount::_1 )
+        {
+            dsvDesc.ViewDimension                    = D3D12_DSV_DIMENSION_TEXTURE2DMSARRAY;
+            dsvDesc.Texture2DMSArray.FirstArraySlice = 0;
+            dsvDesc.Texture2DMSArray.ArraySize       = m_desc.ArraySize;
+        }
+        else
+        {
+            dsvDesc.ViewDimension                  = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
+            dsvDesc.Texture2DArray.MipSlice        = 0;
+            dsvDesc.Texture2DArray.FirstArraySlice = 0;
+            dsvDesc.Texture2DArray.ArraySize       = m_desc.ArraySize;
+        }
+    }
+    else
+    {
+        if ( m_desc.MSAASampleCount > MSAASampleCount::_1 )
+        {
+            dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
+        }
+        else
+        {
+            dsvDesc.ViewDimension      = D3D12_DSV_DIMENSION_TEXTURE2D;
+            dsvDesc.Texture2D.MipSlice = 0;
+        }
+    }
+
+    m_context->D3DDevice->CreateDepthStencilView( m_resource, &dsvDesc, m_dsvHandle );
+    return m_dsvHandle;
 }
 
 void DX12TextureResource::CreateTextureSrv( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle ) const
