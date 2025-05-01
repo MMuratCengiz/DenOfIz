@@ -189,6 +189,7 @@ void DX12CommandList::BindResourceGroup( const uint32_t index, const D3D12_GPU_D
     switch ( m_currentPipeline->GetBindPoint( ) )
     {
     case BindPoint::Graphics:
+    case BindPoint::Mesh:
         {
             this->m_commandList->SetGraphicsRootDescriptorTable( index, gpuHandle );
         }
@@ -207,13 +208,14 @@ void DX12CommandList::BindResourceGroup( const uint32_t index, const D3D12_GPU_D
 
 void DX12CommandList::BindRootDescriptors( const DX12RootDescriptor &rootDescriptor ) const
 {
+    bool isGraphicsBindPoint = m_currentPipeline->GetBindPoint( ) == BindPoint::Graphics || m_currentPipeline->GetBindPoint( ) == BindPoint::Mesh;
     switch ( rootDescriptor.ParameterType )
     {
     case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE:
     case D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS:
         break;
     case D3D12_ROOT_PARAMETER_TYPE_CBV:
-        if ( m_currentPipeline->GetBindPoint( ) == BindPoint::Graphics )
+        if ( isGraphicsBindPoint )
         {
             m_commandList->SetGraphicsRootConstantBufferView( rootDescriptor.RootParameterIndex, rootDescriptor.GpuAddress );
         }
@@ -223,7 +225,7 @@ void DX12CommandList::BindRootDescriptors( const DX12RootDescriptor &rootDescrip
         }
         break;
     case D3D12_ROOT_PARAMETER_TYPE_SRV:
-        if ( m_currentPipeline->GetBindPoint( ) == BindPoint::Graphics )
+        if ( isGraphicsBindPoint )
         {
             m_commandList->SetGraphicsRootShaderResourceView( rootDescriptor.RootParameterIndex, rootDescriptor.GpuAddress );
         }
@@ -233,7 +235,7 @@ void DX12CommandList::BindRootDescriptors( const DX12RootDescriptor &rootDescrip
         }
         break;
     case D3D12_ROOT_PARAMETER_TYPE_UAV:
-        if ( m_currentPipeline->GetBindPoint( ) == BindPoint::Graphics )
+        if ( isGraphicsBindPoint )
         {
             m_commandList->SetGraphicsRootUnorderedAccessView( rootDescriptor.RootParameterIndex, rootDescriptor.GpuAddress );
         }
@@ -463,6 +465,7 @@ void DX12CommandList::SetRootSignature( ID3D12RootSignature *rootSignature )
     switch ( m_currentPipeline->GetBindPoint( ) )
     {
     case BindPoint::Graphics:
+    case BindPoint::Mesh:
         m_commandList->SetGraphicsRootSignature( rootSignature );
         break;
     case BindPoint::Compute:

@@ -32,7 +32,7 @@ DX12Pipeline::DX12Pipeline( DX12Context *context, PipelineDesc desc ) : m_contex
 
     DZ_ASSERTM( m_desc.RootSignature != nullptr, "Root signature is not set for the pipeline" );
     DZ_ASSERTM( m_desc.ShaderProgram != nullptr, "Shader program is not set for the pipeline" );
-    if ( m_desc.BindPoint != BindPoint::RayTracing )
+    if ( m_desc.BindPoint != BindPoint::RayTracing && m_desc.InputLayout != nullptr )
     {
         DZ_ASSERTM( m_desc.InputLayout != nullptr, "Input layout is not set for the pipeline" );
     }
@@ -587,7 +587,7 @@ void DX12Pipeline::CreateMeshPipeline( )
     }
     sampleDesc.Quality                            = 0;
     meshPipelineStateStream.SampleDesc            = sampleDesc;
-    meshPipelineStateStream.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
+    meshPipelineStateStream.PrimitiveTopologyType = DX12EnumConverter::ConvertPrimitiveTopologyToType( m_desc.Graphics.PrimitiveTopology );
 
     pipelineDesc.pPipelineStateSubobjectStream = &meshPipelineStateStream;
     pipelineDesc.SizeInBytes                   = sizeof( meshPipelineStateStream );

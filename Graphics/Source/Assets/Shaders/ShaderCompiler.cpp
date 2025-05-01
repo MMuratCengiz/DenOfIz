@@ -89,6 +89,7 @@ CompileResult ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) cons
     case ShaderStage::ClosestHit:
     case ShaderStage::Intersection:
     case ShaderStage::Miss:
+    case ShaderStage::Callable:
         targetProfile = "lib";
         break;
     case ShaderStage::Vertex:
@@ -108,6 +109,12 @@ CompileResult ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) cons
         break;
     case ShaderStage::Compute:
         targetProfile = "cs";
+        break;
+    case ShaderStage::Mesh:
+        targetProfile = "ms";
+        break;
+    case ShaderStage::Task:
+        targetProfile = "as";
         break;
     default:
         LOG( WARNING ) << "Invalid shader stage";
