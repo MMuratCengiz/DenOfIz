@@ -281,7 +281,7 @@ void MetalCommandList::Dispatch( uint32_t groupCountX, uint32_t groupCountY, uin
     SwitchEncoder( MetalEncoderType::Compute );
     BindCommandResources( );
     MTLSize threadGroupsPerGrid = MTLSizeMake( groupCountX, groupCountY, groupCountZ );
-    [m_computeEncoder dispatchThreadgroups:threadGroupsPerGrid threadsPerThreadgroup:MTLSizeMake( 1, 1, 1 )];
+    [m_computeEncoder dispatchThreadgroups:threadGroupsPerGrid threadsPerThreadgroup:MTLSizeMake( 32, 1, 1 )];
     TopLevelArgumentBufferNextOffset( );
 }
 
@@ -289,10 +289,12 @@ void MetalCommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t 
 {
     SwitchEncoder( MetalEncoderType::Render );
     BindCommandResources( );
-    MTLSize meshGroupsPerGrid = MTLSizeMake(groupCountX, groupCountY, groupCountZ);
-    // Todo MTLSizeMake(1, 1, 1) add something reasonable
-    [m_renderEncoder drawMeshThreadgroups:meshGroupsPerGrid threadsPerObjectThreadgroup:MTLSizeMake( 1, 1, 1) threadsPerMeshThreadgroup:MTLSizeMake( 1, 1, 1 )];
-    TopLevelArgumentBufferNextOffset();
+    MTLSize meshGroupsPerGrid = MTLSizeMake( groupCountX, groupCountY, groupCountZ );
+    const uint32_t executionWidth = 32;
+    MTLSize objectThreads         = MTLSizeMake( executionWidth * 2, 1, 1 );
+    MTLSize meshThreads           = MTLSizeMake( executionWidth * 4, 1, 1 );
+    [m_renderEncoder drawMeshThreadgroups:meshGroupsPerGrid threadsPerObjectThreadgroup:objectThreads threadsPerMeshThreadgroup:meshThreads];
+    TopLevelArgumentBufferNextOffset( );
 }
 
 void MetalCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionInfo )

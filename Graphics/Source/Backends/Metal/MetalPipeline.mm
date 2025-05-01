@@ -481,18 +481,9 @@ void MetalPipeline::CreateMeshPipeline( )
         attachmentIdx++;
     }
     
-    // Configure depth and stencil formats
     pipelineStateDescriptor.depthAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
     pipelineStateDescriptor.stencilAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
     pipelineStateDescriptor.alphaToCoverageEnabled = m_desc.Graphics.AlphaToCoverageEnable;
-    
-    // Todo check the following properties
-    // pipelineStateDescriptor.maxTotalThreadsPerObjectThreadgroup = 128;
-    // pipelineStateDescriptor.maxTotalThreadsPerMeshThreadgroup = 128;
-    // pipelineStateDescriptor.objectThreadgroupSizeIsMultipleOfThreadExecutionWidth = YES;
-    // pipelineStateDescriptor.meshThreadgroupSizeIsMultipleOfThreadExecutionWidth = YES;
-    // pipelineStateDescriptor.payloadMemoryLength = 0;
-    
     NSError *error = nullptr;
     m_graphicsPipelineState = [m_context->Device newRenderPipelineStateWithMeshDescriptor:pipelineStateDescriptor 
                                                                                  options:MTLPipelineOptionNone 
