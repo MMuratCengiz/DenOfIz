@@ -57,6 +57,9 @@ void MetalCommandList::Begin( )
     m_argumentBuffer->Reset( );
     m_queuedBindGroups.clear( );
     m_rootSignature = nullptr;
+    m_computeTlasBound = false;
+    m_renderTlasBound = false;
+    m_meshTlasBound = false;
 }
 
 void MetalCommandList::BeginRendering( const RenderingDesc &renderingDesc )
@@ -492,28 +495,45 @@ void MetalCommandList::BindTopLevelArgumentBuffer( )
 {
     id<MTLBuffer> buffer = m_argumentBuffer->Buffer( );
     uint64_t      offset = m_currentBufferOffset;
-    if ( m_currentBufferOffset == 0 )
+    if ( m_desc.QueueType == QueueType::Compute )
     {
-        if ( m_desc.QueueType == QueueType::Compute )
+        if ( !m_computeTlasBound )
         {
             [m_computeEncoder setBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+            m_computeTlasBound = true;
         }
         else
         {
-            [m_renderEncoder setVertexBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
-            [m_renderEncoder setFragmentBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+            [m_computeEncoder setBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
         }
     }
     else
     {
-        if ( m_desc.QueueType == QueueType::Compute )
+        if ( m_pipeline && m_pipeline->BindPoint() == BindPoint::Mesh )
         {
-            [m_computeEncoder setBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
+            if ( !m_meshTlasBound )
+            {
+                [m_renderEncoder setMeshBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+                m_meshTlasBound = true;
+            }
+            else
+            {
+                [m_renderEncoder setMeshBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
+            }
         }
         else
         {
-            [m_renderEncoder setVertexBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
-            [m_renderEncoder setFragmentBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
+            if ( !m_renderTlasBound )
+            {
+                [m_renderEncoder setVertexBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+                [m_renderEncoder setFragmentBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+                m_renderTlasBound = true;
+            }
+            else
+            {
+                [m_renderEncoder setVertexBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
+                [m_renderEncoder setFragmentBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
+            }
         }
     }
 }

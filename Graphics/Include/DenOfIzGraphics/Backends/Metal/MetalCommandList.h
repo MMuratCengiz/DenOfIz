@@ -44,16 +44,16 @@ namespace DenOfIz
 
     class MetalCommandList final : public ICommandList
     {
-        CommandListDesc                            m_desc;
-        MetalContext                              *m_context;
-        id<MTLCommandBuffer>                       m_commandBuffer;
-        id<MTLRenderCommandEncoder>                m_renderEncoder;
-        id<MTLComputeCommandEncoder>               m_computeEncoder;
-        id<MTLBlitCommandEncoder>                  m_blitEncoder;
-        id<MTLAccelerationStructureCommandEncoder> m_accelerationStructureEncoder;
-        bool                                       m_waitForQueueFence = false;
-        id<MTLFence>                               m_queueFence;
-        MetalEncoderType                           m_activeEncoderType = MetalEncoderType::None;
+        CommandListDesc                             m_desc;
+        MetalContext                               *m_context;
+        id<MTLCommandBuffer>                        m_commandBuffer;
+        id<MTLRenderCommandEncoder>                 m_renderEncoder;
+        id<MTLComputeCommandEncoder>                m_computeEncoder;
+        id<MTLBlitCommandEncoder>                   m_blitEncoder;
+        id<MTLAccelerationStructureCommandEncoder>  m_accelerationStructureEncoder;
+        bool                                        m_waitForQueueFence = false;
+        id<MTLFence>                                m_queueFence;
+        MetalEncoderType                            m_activeEncoderType = MetalEncoderType::None;
         std::vector<const MetalResourceBindGroup *> m_queuedBindGroups;
 
         // States:
@@ -63,6 +63,9 @@ namespace DenOfIz
         std::unique_ptr<MetalArgumentBuffer> m_argumentBuffer;
         MetalRootSignature                  *m_rootSignature;
         MetalPipeline                       *m_pipeline;
+        bool                                 m_computeTlasBound = false;
+        bool                                 m_meshTlasBound    = false;
+        bool                                 m_renderTlasBound    = false;
         // --
 
     public:
@@ -93,7 +96,7 @@ namespace DenOfIz
         void DispatchRays( const DispatchRaysDesc &dispatchRaysDesc ) override;
         void DispatchMesh( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
 
-        const QueueType GetQueueType( ) override;
+        const QueueType            GetQueueType( ) override;
         const id<MTLCommandBuffer> GetCommandBuffer( ) const;
 
     private:
