@@ -27,6 +27,7 @@ uint32_t DenOfIz::FormatNumBytes( const Format &format )
     case Format::R32G32B32A32Float:
     case Format::R32G32B32A32Uint:
     case Format::R32G32B32A32Sint:
+    case Format::R32G32B32A32Typeless:
         return 16;
     case Format::R32G32B32Float:
     case Format::R32G32B32Uint:
@@ -37,43 +38,52 @@ uint32_t DenOfIz::FormatNumBytes( const Format &format )
     case Format::R16G16B16A16Uint:
     case Format::R16G16B16A16Snorm:
     case Format::R16G16B16A16Sint:
+    case Format::R16G16B16A16Typeless:
     case Format::R32G32Float:
     case Format::R32G32Uint:
     case Format::R32G32Sint:
+    case Format::R32G32Typeless:
         return 8;
     case Format::R10G10B10A2Unorm:
     case Format::R10G10B10A2Uint:
+    case Format::R10G10B10A2Typeless:
     case Format::R8G8B8A8Unorm:
     case Format::R8G8B8A8UnormSrgb:
     case Format::R8G8B8A8Uint:
     case Format::R8G8B8A8Snorm:
     case Format::R8G8B8A8Sint:
+    case Format::R8G8B8A8Typeless:
     case Format::R16G16Float:
     case Format::R16G16Unorm:
     case Format::R16G16Uint:
     case Format::R16G16Snorm:
     case Format::R16G16Sint:
+    case Format::R16G16Typeless:
     case Format::D32Float:
     case Format::R32Float:
     case Format::R32Uint:
     case Format::R32Sint:
+    case Format::R32Typeless:
     case Format::D24UnormS8Uint:
         return 4;
     case Format::R8G8Unorm:
     case Format::R8G8Uint:
     case Format::R8G8Snorm:
     case Format::R8G8Sint:
+    case Format::R8G8Typeless:
     case Format::R16Float:
     case Format::D16Unorm:
     case Format::R16Unorm:
     case Format::R16Uint:
-        return 2;
     case Format::R16Snorm:
     case Format::R16Sint:
+    case Format::R16Typeless:
+        return 2;
     case Format::R8Unorm:
     case Format::R8Uint:
     case Format::R8Snorm:
     case Format::R8Sint:
+    case Format::R8Typeless:
         return 1;
         // Recheck what the below are and what the expected sizes are.
     case Format::BC1Unorm:

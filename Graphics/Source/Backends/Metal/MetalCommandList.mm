@@ -128,6 +128,7 @@ void MetalCommandList::BindPipeline( IPipeline *pipeline )
             [m_computeEncoder setComputePipelineState:m_pipeline->ComputePipelineState( )];
             break;
         case BindPoint::Graphics:
+        case BindPoint::Mesh:
             SwitchEncoder( MetalEncoderType::Render );
             [m_renderEncoder setRenderPipelineState:m_pipeline->GraphicsPipelineState( )];
             [m_renderEncoder setDepthStencilState:m_pipeline->DepthStencilState( )];
@@ -208,7 +209,7 @@ void MetalCommandList::ProcessBindGroup( const MetalResourceBindGroup *metalBind
         return;
     }
 
-    if ( m_rootSignature == nullptr && m_rootSignature != metalBindGroup->RootSignature( ) )
+    if ( m_rootSignature == nullptr || m_rootSignature != metalBindGroup->RootSignature( ) )
     {
         m_rootSignature       = metalBindGroup->RootSignature( );
         m_currentBufferOffset = m_argumentBuffer->Reserve( m_rootSignature->NumTLABAddresses( ), m_rootSignature->NumRootConstantBytes( ) ).second;

@@ -161,7 +161,7 @@ float3 ApplyWind(float3 vertexPosition, float heightRatio, float2 id, float3 bas
     float windStrength = pow(heightRatio, 1.5) * WindDirection.w;
 
     // Add some variation to make it look more natural
-    float phaseOffset = Random(id) * 6.28; // Random phase offset (0 to 2π)
+    float phaseOffset = Random(id) * 6.28; // Random phase offset (0 to 2pi)
     float frequency = lerp(1.0, 2.0, Random(id.yx));
     float windEffect = sin(Time * frequency + phaseOffset + basePos.x * 0.2 + basePos.z * 0.3) * windStrength;
     

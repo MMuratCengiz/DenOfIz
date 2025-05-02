@@ -88,8 +88,8 @@ void MetalLogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
 
     m_selectedDeviceInfo.Constants.StorageBufferAlignment    = 16;
     m_selectedDeviceInfo.Constants.ConstantBufferAlignment   = 256;
-    m_selectedDeviceInfo.Constants.BufferTextureAlignment    = 16;
-    m_selectedDeviceInfo.Constants.BufferTextureRowAlignment = 1;
+    m_selectedDeviceInfo.Constants.BufferTextureAlignment    = 512;
+    m_selectedDeviceInfo.Constants.BufferTextureRowAlignment = 256;
 
     m_context->SelectedDeviceInfo = m_selectedDeviceInfo;
 

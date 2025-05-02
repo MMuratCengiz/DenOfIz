@@ -108,7 +108,9 @@ void MetalPipeline::CreateGraphicsPipeline( )
     }
 
     pipelineStateDescriptor.depthAttachmentPixelFormat   = MetalEnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
-    pipelineStateDescriptor.stencilAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
+    if ( m_desc.Graphics.DepthStencilAttachmentFormat == Format::D24UnormS8Uint) {
+        pipelineStateDescriptor.stencilAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
+    }
     pipelineStateDescriptor.alphaToCoverageEnabled       = m_desc.Graphics.AlphaToCoverageEnable;
     pipelineStateDescriptor.alphaToOneEnabled            = m_desc.Graphics.IndependentBlendEnable;
 
@@ -482,7 +484,9 @@ void MetalPipeline::CreateMeshPipeline( )
     }
     
     pipelineStateDescriptor.depthAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
-    pipelineStateDescriptor.stencilAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
+    if ( m_desc.Graphics.DepthStencilAttachmentFormat == Format::D24UnormS8Uint) {
+        pipelineStateDescriptor.stencilAttachmentPixelFormat = MetalEnumConverter::ConvertFormat( m_desc.Graphics.DepthStencilAttachmentFormat );
+    }
     pipelineStateDescriptor.alphaToCoverageEnabled = m_desc.Graphics.AlphaToCoverageEnable;
     NSError *error = nullptr;
     m_graphicsPipelineState = [m_context->Device newRenderPipelineStateWithMeshDescriptor:pipelineStateDescriptor 
