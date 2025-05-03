@@ -45,6 +45,10 @@ namespace DenOfIz
         MTLCullMode              m_cullMode;
         MTLTriangleFillMode      m_fillMode;
         id<MTLDepthStencilState> m_depthStencilState;
+        // Thread group sizes (pre-calculated from shader reflection)
+        MTLSize m_computeThreadsPerThreadgroup; // For compute shaders
+        MTLSize m_meshThreadsPerThreadgroup;    // For mesh shaders
+        MTLSize m_objectThreadsPerThreadgroup;  // For task/amplification shaders
         // Ray tracing specific
         std::unordered_map<std::string, uint64_t>       m_visibleFunctions;
         std::unordered_map<std::string, HitGroupExport> m_hitGroupExports;
@@ -62,6 +66,10 @@ namespace DenOfIz
         const id<MTLRenderPipelineState>  &GraphicsPipelineState( ) const;
         const id<MTLComputePipelineState> &ComputePipelineState( ) const;
         const BindPoint                   &BindPoint( ) const;
+        const PipelineDesc                &Desc( ) const;
+        const MTLSize                     &ComputeThreadsPerThreadgroup( ) const;
+        const MTLSize                     &MeshThreadsPerThreadgroup( ) const;
+        const MTLSize                     &ObjectThreadsPerThreadgroup( ) const;
         // Ray tracing specific:
         const uint64_t                                &FindVisibleShaderIndexByName( const std::string &name ) const;
         const HitGroupExport                          &FindHitGroupExport( const std::string &name ) const;

@@ -126,6 +126,7 @@ void ShaderProgram::CreateReflectionData( )
 {
     m_reflectDesc = { };
     m_reflectDesc.LocalRootSignatures.Resize( m_compiledShaders.size( ) );
+    m_reflectDesc.ThreadGroups.Resize( m_compiledShaders.size( ) );
 
     InputLayoutDesc   &inputLayout   = m_reflectDesc.InputLayout;
     RootSignatureDesc &rootSignature = m_reflectDesc.RootSignature;
@@ -173,6 +174,14 @@ void ShaderProgram::CreateReflectionData( )
             DXC_CHECK_RESULT( m_compiler.DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) ) );
             reflectionState.ShaderReflection = shaderReflection;
             ReflectShader( reflectionState );
+
+            // Extract thread group size for compute/mesh/task shaders
+            if ( shader->Stage == ShaderStage::Compute || shader->Stage == ShaderStage::Mesh || shader->Stage == ShaderStage::Task )
+            {
+                ThreadGroupInfo threadGroup = ShaderReflectionHelper::ExtractThreadGroupSize( shaderReflection, nullptr );
+                shader->ThreadGroup         = threadGroup;
+                m_reflectDesc.ThreadGroups.SetElement( stageIndex, threadGroup );
+            }
             break;
         }
 

@@ -56,6 +56,16 @@ namespace DenOfIz
         Task,
         Mesh
     };
+    
+    /// <summary>
+    /// Thread group information for compute, mesh, and task shaders
+    /// </summary>
+    struct DZ_API ThreadGroupInfo
+    {
+        uint32_t X = 0;
+        uint32_t Y = 0;
+        uint32_t Z = 0;
+    };
 
     enum class TargetIL
     {
@@ -121,6 +131,7 @@ namespace DenOfIz
         IDxcBlob            *Reflection;
         InteropString        EntryPoint;
         RayTracingShaderDesc RayTracing;
+        ThreadGroupInfo      ThreadGroup;  // Thread group size for compute, mesh, and task shaders
     };
     template class DZ_API InteropArray<CompiledShaderStage *>;
 } // namespace DenOfIz

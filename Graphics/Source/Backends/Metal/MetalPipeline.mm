@@ -21,7 +21,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-MetalPipeline::MetalPipeline( MetalContext *context, const PipelineDesc &desc ) : m_context( context ), m_desc( desc )
+MetalPipeline::MetalPipeline( MetalContext *context, const PipelineDesc &desc ) : 
+    m_context( context ), 
+    m_desc( desc ),
+    m_computeThreadsPerThreadgroup( MTLSizeMake(32, 1, 1) ),
+    m_meshThreadsPerThreadgroup( MTLSizeMake(128, 1, 1) ),
+    m_objectThreadsPerThreadgroup( MTLSizeMake(0, 0, 0) )
 {
     switch ( desc.BindPoint )
     {
@@ -158,6 +163,7 @@ void MetalPipeline::CreateGraphicsPipeline( )
 void MetalPipeline::CreateComputePipeline( )
 {
     id<MTLFunction> computeFunction = nullptr;
+    ThreadGroupInfo threadGroup = { 0, 0, 0 };
 
     const auto &shaders = m_desc.ShaderProgram->CompiledShaders( );
     for ( int i = 0; i < shaders.NumElements( ); ++i )
@@ -168,6 +174,7 @@ void MetalPipeline::CreateComputePipeline( )
         {
         case ShaderStage::Compute:
             computeFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
+            threadGroup = shader->ThreadGroup;
             break;
         default:
             LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage );
@@ -185,6 +192,24 @@ void MetalPipeline::CreateComputePipeline( )
     MTLComputePipelineDescriptor *pipelineStateDescriptor = [[MTLComputePipelineDescriptor alloc] init];
     pipelineStateDescriptor.label                         = @"Compute Pipeline#";
     pipelineStateDescriptor.computeFunction               = computeFunction;
+    
+    if ( threadGroup.X > 0 || threadGroup.Y > 0 || threadGroup.Z > 0 )
+    {
+        m_computeThreadsPerThreadgroup = MTLSizeMake(
+            threadGroup.X > 0 ? threadGroup.X : 1,
+            threadGroup.Y > 0 ? threadGroup.Y : 1,
+            threadGroup.Z > 0 ? threadGroup.Z : 1
+        );
+        pipelineStateDescriptor.threadGroupSizeIsMultipleOfThreadExecutionWidth = YES;
+        if ( [pipelineStateDescriptor respondsToSelector:@selector(setMaxTotalThreadsPerThreadgroup:)] )
+        {
+            uint32_t totalThreads = threadGroup.X * threadGroup.Y * threadGroup.Z;
+            if ( totalThreads > 0 )
+            {
+                [pipelineStateDescriptor setMaxTotalThreadsPerThreadgroup:totalThreads];
+            }
+        }
+    }
 
     MTLNewComputePipelineStateCompletionHandler completionHandler = ^( id<MTLComputePipelineState> pipelineState, NSError *err ) {
       if ( err != nil )
@@ -396,6 +421,26 @@ const BindPoint &MetalPipeline::BindPoint( ) const
     return m_desc.BindPoint;
 }
 
+const PipelineDesc &MetalPipeline::Desc( ) const
+{
+    return m_desc;
+}
+
+const MTLSize &MetalPipeline::ComputeThreadsPerThreadgroup( ) const
+{
+    return m_computeThreadsPerThreadgroup;
+}
+
+const MTLSize &MetalPipeline::MeshThreadsPerThreadgroup( ) const
+{
+    return m_meshThreadsPerThreadgroup;
+}
+
+const MTLSize &MetalPipeline::ObjectThreadsPerThreadgroup( ) const
+{
+    return m_objectThreadsPerThreadgroup;
+}
+
 const uint64_t &MetalPipeline::FindVisibleShaderIndexByName( const std::string &name ) const
 {
     auto shaderFunction = m_visibleFunctions.find( name );
@@ -423,6 +468,9 @@ void MetalPipeline::CreateMeshPipeline( )
     id<MTLFunction> meshFunction = nullptr;   // Mesh shader
     id<MTLFunction> fragmentFunction = nullptr;
     
+    ThreadGroupInfo objectThreadGroup = { 0, 0, 0 }; // Task shader thread group
+    ThreadGroupInfo meshThreadGroup = { 0, 0, 0 };   // Mesh shader thread group
+    
     const auto &shaders = m_desc.ShaderProgram->CompiledShaders( );
     for ( int i = 0; i < shaders.NumElements( ); ++i )
     {
@@ -433,9 +481,11 @@ void MetalPipeline::CreateMeshPipeline( )
         {
             case ShaderStage::Task:
                 objectFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
+                objectThreadGroup = shader->ThreadGroup;
                 break;
             case ShaderStage::Mesh:
                 meshFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
+                meshThreadGroup = shader->ThreadGroup;
                 break;
             case ShaderStage::Pixel:
                 fragmentFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
@@ -458,6 +508,43 @@ void MetalPipeline::CreateMeshPipeline( )
     pipelineStateDescriptor.meshFunction = meshFunction;
     pipelineStateDescriptor.fragmentFunction = fragmentFunction;
     pipelineStateDescriptor.rasterSampleCount = MSAASampleCountToNumSamples( m_desc.Graphics.MSAASampleCount );
+
+    // Compute thread group count from reflection
+    if (objectFunction && (objectThreadGroup.X > 0 || objectThreadGroup.Y > 0 || objectThreadGroup.Z > 0))
+    {
+        m_objectThreadsPerThreadgroup = MTLSizeMake(
+            objectThreadGroup.X > 0 ? objectThreadGroup.X : 1,
+            objectThreadGroup.Y > 0 ? objectThreadGroup.Y : 1,
+            objectThreadGroup.Z > 0 ? objectThreadGroup.Z : 1
+        );
+        if ([pipelineStateDescriptor respondsToSelector:@selector(setMaxTotalThreadsPerObjectThreadgroup:)])
+        {
+            uint32_t totalThreads = objectThreadGroup.X * objectThreadGroup.Y * objectThreadGroup.Z;
+            if (totalThreads > 0)
+            {
+                [pipelineStateDescriptor setMaxTotalThreadsPerObjectThreadgroup:totalThreads];
+            }
+        }
+        pipelineStateDescriptor.objectThreadgroupSizeIsMultipleOfThreadExecutionWidth = YES;
+    }
+    
+    if ( meshFunction && ( meshThreadGroup.X > 0 || meshThreadGroup.Y > 0 || meshThreadGroup.Z > 0 ) )
+    {
+        m_meshThreadsPerThreadgroup = MTLSizeMake(
+            meshThreadGroup.X > 0 ? meshThreadGroup.X : 1,
+            meshThreadGroup.Y > 0 ? meshThreadGroup.Y : 1,
+            meshThreadGroup.Z > 0 ? meshThreadGroup.Z : 1
+        );
+        if ( [pipelineStateDescriptor respondsToSelector:@selector(setMaxTotalThreadsPerMeshThreadgroup:)] )
+        {
+            uint32_t totalThreads = meshThreadGroup.X * meshThreadGroup.Y * meshThreadGroup.Z;
+            if ( totalThreads > 0 )
+            {
+                [pipelineStateDescriptor setMaxTotalThreadsPerMeshThreadgroup:totalThreads];
+            }
+        }
+        pipelineStateDescriptor.meshThreadgroupSizeIsMultipleOfThreadExecutionWidth = YES;
+    }
 
     int attachmentIdx = 0;
     for ( int i = 0; i < m_desc.Graphics.RenderTargets.NumElements( ); ++i )

@@ -137,3 +137,26 @@ void ShaderReflectionHelper::DxcCheckResult( const HRESULT hr )
         LOG( ERROR ) << "DXC Error: " << hr;
     }
 }
+
+ThreadGroupInfo ShaderReflectionHelper::ExtractThreadGroupSize( ID3D12ShaderReflection *shaderReflection, ID3D12FunctionReflection *functionReflection )
+{
+    ThreadGroupInfo threadGroup = { 0, 0, 0 };
+    if ( shaderReflection )
+    {
+        D3D12_SHADER_DESC shaderDesc;
+        if ( SUCCEEDED( shaderReflection->GetDesc( &shaderDesc ) ) )
+        {
+            shaderReflection->GetThreadGroupSize( &threadGroup.X, &threadGroup.Y, &threadGroup.Z );
+        }
+    }
+    else if ( functionReflection )
+    {
+        D3D12_FUNCTION_DESC functionDesc;
+        if ( SUCCEEDED( functionReflection->GetDesc( &functionDesc ) ) )
+        {
+            // Not common,
+        }
+    }
+    
+    return threadGroup;
+}

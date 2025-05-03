@@ -31,6 +31,8 @@ namespace DenOfIz
         RootSignatureDesc RootSignature;
         /// Local data layouts for each shader, index matched with the ShaderDescs provided in the ShaderProgramDesc.
         InteropArray<LocalRootSignatureDesc> LocalRootSignatures;
+        /// Thread group sizes for compute, mesh, and task shaders.
+        InteropArray<ThreadGroupInfo> ThreadGroups;
     };
 
     class DZ_API ShaderReflectionHelper
@@ -42,5 +44,6 @@ namespace DenOfIz
         static void FillTypeInfo( ID3D12ShaderReflectionType *reflType, InteropArray<ReflectionResourceField> &fields, uint32_t parentIndex, uint32_t level );
         static void FillReflectionData( ID3D12ShaderReflection *shaderReflection, ID3D12FunctionReflection *functionReflection, ReflectionDesc &reflectionDesc, int resourceIndex );
         static void DxcCheckResult( HRESULT hr );
+        static ThreadGroupInfo ExtractThreadGroupSize( ID3D12ShaderReflection *shaderReflection, ID3D12FunctionReflection *functionReflection );
     };
 } // namespace DenOfIz
