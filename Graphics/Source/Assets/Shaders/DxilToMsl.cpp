@@ -295,7 +295,7 @@ InteropArray<IDxcBlob *> DxilToMsl::Convert( const DxilToMslDesc &desc )
         compileDesc.TargetIL    = TargetIL::MSL;
 
         auto     &dxilShader = dxilShaders.GetElement( shaderIndex );
-        IDxcBlob *mslBlob    = Compile( compileDesc, dxilShader->DXIL, compileMslDesc, shader.RayTracing );
+        IDxcBlob *mslBlob    = Compile( compileDesc, dxilShader->DXIL, compileMslDesc, shader.RayTracing, shader.MeshTopology );
         result.SetElement( shaderIndex, mslBlob );
     }
 
@@ -305,7 +305,8 @@ InteropArray<IDxcBlob *> DxilToMsl::Convert( const DxilToMslDesc &desc )
     return result;
 }
 
-IDxcBlob *DxilToMsl::Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, const CompileMslDesc &compileMslDesc, const RayTracingShaderDesc &rayTracingShaderDesc ) const
+IDxcBlob *DxilToMsl::Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, const CompileMslDesc &compileMslDesc, const RayTracingShaderDesc &rayTracingShaderDesc,
+                              const PrimitiveTopology &meshTopology ) const
 {
     const IRRootSignature *rootSignature  = compileMslDesc.RootSignature;
     const IRRootSignature *localSignature = compileMslDesc.LocalRootSignature;
@@ -315,6 +316,22 @@ IDxcBlob *DxilToMsl::Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, co
     IRCompilerSetMinimumDeploymentTarget( irCompiler, IROperatingSystem_macOS, "15.1" );
     IRCompilerSetGlobalRootSignature( irCompiler, rootSignature );
     IRCompilerSetLocalRootSignature( irCompiler, localSignature );
+
+    switch ( meshTopology )
+    {
+    case PrimitiveTopology::Point:
+        IRCompilerSetInputTopology( irCompiler, IRInputTopologyPoint );
+        break;
+    case PrimitiveTopology::Line:
+        IRCompilerSetInputTopology( irCompiler, IRInputTopologyLine );
+        break;
+    case PrimitiveTopology::Triangle:
+        IRCompilerSetInputTopology( irCompiler, IRInputTopologyTriangle );
+        break;
+    case PrimitiveTopology::Patch:
+        IRCompilerSetInputTopology( irCompiler, IRInputTopologyPatch );
+        break;
+    }
 
     switch ( rayTracingShaderDesc.HitGroupType )
     {
@@ -330,8 +347,7 @@ IDxcBlob *DxilToMsl::Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, co
                                               IRIntrinsicMaskMissShaderAll, IRIntrinsicMaskAnyHitShaderAll, IRIntrinsicMaskCallableShaderAll,
                                               compileMslDesc.RayTracing.MaxRecursionDepth, IRRayGenerationCompilationVisibleFunction );
 
-    IRObject *irDxil = IRObjectCreateFromDXIL( static_cast<const uint8_t *>( dxil->GetBufferPointer( ) ), dxil->GetBufferSize( ), IRBytecodeOwnershipNone );
-
+    IRObject *irDxil  = IRObjectCreateFromDXIL( static_cast<const uint8_t *>( dxil->GetBufferPointer( ) ), dxil->GetBufferSize( ), IRBytecodeOwnershipNone );
     IRError  *irError = nullptr;
     IRObject *outIr   = IRCompilerAllocCompileAndLink( irCompiler, compileDesc.EntryPoint.Get( ), irDxil, &irError );
 

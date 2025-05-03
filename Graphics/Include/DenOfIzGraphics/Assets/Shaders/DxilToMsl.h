@@ -81,7 +81,8 @@ namespace DenOfIz
         InteropArray<IDxcBlob *> Convert( const DxilToMslDesc &desc );
 
     private:
-        IDxcBlob *Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, const CompileMslDesc &compileMslDesc, const RayTracingShaderDesc &rayTracingShaderDesc ) const;
+        IDxcBlob *Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, const CompileMslDesc &compileMslDesc, const RayTracingShaderDesc &rayTracingShaderDesc,
+                           const PrimitiveTopology &meshTopology ) const;
 
         IRRootSignature *CreateRootSignature( std::vector<RegisterSpaceRange> &registerSpaceRanges, bool isLocal ) const;
         void             IterateBoundResources( CompiledShaderStage *shader, ReflectionCallback &callback );
