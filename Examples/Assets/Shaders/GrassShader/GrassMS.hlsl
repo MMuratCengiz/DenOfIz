@@ -273,7 +273,7 @@ void CreateGrassBlade(
             basePosition));
         
         float3 bitangent = float3(1, 0, 0); // Points left/right
-        float3 normal = normalize(cross(tangent, bitangent));
+        float3 normal = normalize(cross(bitangent, tangent));
         
         normals[segment * 2 + 1] = normal;
         normals[segment * 2 + 2] = normal;
