@@ -44,6 +44,7 @@ namespace DenOfIz
         static void FillTypeInfo( ID3D12ShaderReflectionType *reflType, InteropArray<ReflectionResourceField> &fields, uint32_t parentIndex, uint32_t level );
         static void FillReflectionData( ID3D12ShaderReflection *shaderReflection, ID3D12FunctionReflection *functionReflection, ReflectionDesc &reflectionDesc, int resourceIndex );
         static void DxcCheckResult( HRESULT hr );
-        static ThreadGroupInfo ExtractThreadGroupSize( ID3D12ShaderReflection *shaderReflection, ID3D12FunctionReflection *functionReflection );
+        static ThreadGroupInfo   ExtractThreadGroupSize( ID3D12ShaderReflection *shaderReflection, ID3D12FunctionReflection *functionReflection );
+        static PrimitiveTopology ExtractMeshOutputTopology( ID3D12ShaderReflection *shaderReflection );
     };
 } // namespace DenOfIz

@@ -66,7 +66,8 @@ void ShaderReflectionHelper::FillTypeInfo( ID3D12ShaderReflectionType *reflType,
     }
 }
 
-void ShaderReflectionHelper::FillReflectionData( ID3D12ShaderReflection *shaderReflection, ID3D12FunctionReflection *functionReflection, ReflectionDesc &reflectionDesc, const int resourceIndex )
+void ShaderReflectionHelper::FillReflectionData( ID3D12ShaderReflection *shaderReflection, ID3D12FunctionReflection *functionReflection, ReflectionDesc &reflectionDesc,
+                                                 const int resourceIndex )
 {
     D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{ };
     if ( shaderReflection )
@@ -157,6 +158,34 @@ ThreadGroupInfo ShaderReflectionHelper::ExtractThreadGroupSize( ID3D12ShaderRefl
             // Not common,
         }
     }
-    
+
     return threadGroup;
+}
+
+PrimitiveTopology ShaderReflectionHelper::ExtractMeshOutputTopology( ID3D12ShaderReflection *shaderReflection )
+{
+    if ( !shaderReflection )
+    {
+        return PrimitiveTopology::Triangle;
+    }
+
+    D3D12_SHADER_DESC shaderDesc;
+    if ( SUCCEEDED( shaderReflection->GetDesc( &shaderDesc ) ) && D3D12_SHVER_GET_TYPE( shaderDesc.Version ) == D3D12_SHVER_MESH_SHADER )
+    {
+        switch ( shaderDesc.InputPrimitive )
+        {
+        case D3D_PRIMITIVE_TOPOLOGY_POINTLIST:
+            return PrimitiveTopology::Point;
+        case D3D_PRIMITIVE_TOPOLOGY_LINELIST:
+        case D3D_PRIMITIVE_TOPOLOGY_LINESTRIP:
+            return PrimitiveTopology::Line;
+        case D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST:
+        case D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP:
+            return PrimitiveTopology::Triangle;
+        default:
+            break;
+        }
+    }
+
+    return PrimitiveTopology::Triangle;
 }

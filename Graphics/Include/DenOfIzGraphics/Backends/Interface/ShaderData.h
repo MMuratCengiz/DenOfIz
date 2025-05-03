@@ -116,8 +116,6 @@ namespace DenOfIz
         InteropString               EntryPoint = "main";
         /// \brief Only available for Raygen, Miss and Hit shaders(Intersection, ClosestHit, AnyHit)
         RayTracingShaderDesc RayTracing;
-        // Only required for Mesh shaders(and mostly for metal)
-        PrimitiveTopology MeshTopology = PrimitiveTopology::Triangle;
     };
     template class DZ_API InteropArray<ShaderStageDesc>;
 

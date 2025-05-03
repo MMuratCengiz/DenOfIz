@@ -193,6 +193,21 @@ IRRootSignature *DxilToMsl::CreateRootSignature( std::vector<RegisterSpaceRange>
 }
 // For metal, we need to produce a root signature to compile a correct metal lib
 // We also keep track of how the root parameter layout looks like so
+DxilToMsl::~DxilToMsl( )
+{
+    if ( m_shaderReflection )
+    {
+        m_shaderReflection->Release( );
+        m_shaderReflection = nullptr;
+    }
+
+    if ( m_libraryReflection )
+    {
+        m_libraryReflection->Release( );
+        m_libraryReflection = nullptr;
+    }
+}
+
 InteropArray<IDxcBlob *> DxilToMsl::Convert( const DxilToMslDesc &desc )
 {
     const InteropArray<CompiledShaderStage *> &dxilShaders = desc.DXILShaders;
@@ -294,8 +309,23 @@ InteropArray<IDxcBlob *> DxilToMsl::Convert( const DxilToMslDesc &desc )
         compileDesc.Stage       = shader.Stage;
         compileDesc.TargetIL    = TargetIL::MSL;
 
-        auto     &dxilShader = dxilShaders.GetElement( shaderIndex );
-        IDxcBlob *mslBlob    = Compile( compileDesc, dxilShader->DXIL, compileMslDesc, shader.RayTracing, shader.MeshTopology );
+        auto &dxilShader = dxilShaders.GetElement( shaderIndex );
+        if ( dxilShader->Reflection )
+        {
+            const DxcBuffer reflectionBuffer{
+                .Ptr      = dxilShader->Reflection->GetBufferPointer( ),
+                .Size     = dxilShader->Reflection->GetBufferSize( ),
+                .Encoding = 0,
+            };
+            if ( m_shaderReflection )
+            {
+                m_shaderReflection->Release( );
+                m_shaderReflection = nullptr;
+            }
+            m_compiler.DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &m_shaderReflection ) );
+        }
+
+        IDxcBlob *mslBlob = Compile( compileDesc, dxilShader->DXIL, compileMslDesc, shader.RayTracing );
         result.SetElement( shaderIndex, mslBlob );
     }
 
@@ -305,8 +335,7 @@ InteropArray<IDxcBlob *> DxilToMsl::Convert( const DxilToMslDesc &desc )
     return result;
 }
 
-IDxcBlob *DxilToMsl::Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, const CompileMslDesc &compileMslDesc, const RayTracingShaderDesc &rayTracingShaderDesc,
-                              const PrimitiveTopology &meshTopology ) const
+IDxcBlob *DxilToMsl::Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, const CompileMslDesc &compileMslDesc, const RayTracingShaderDesc &rayTracingShaderDesc ) const
 {
     const IRRootSignature *rootSignature  = compileMslDesc.RootSignature;
     const IRRootSignature *localSignature = compileMslDesc.LocalRootSignature;
@@ -317,6 +346,11 @@ IDxcBlob *DxilToMsl::Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, co
     IRCompilerSetGlobalRootSignature( irCompiler, rootSignature );
     IRCompilerSetLocalRootSignature( irCompiler, localSignature );
 
+    PrimitiveTopology meshTopology = PrimitiveTopology::Triangle;
+    if ( compileDesc.Stage == ShaderStage::Mesh && m_shaderReflection )
+    {
+        meshTopology = ShaderReflectionHelper::ExtractMeshOutputTopology( m_shaderReflection );
+    }
     switch ( meshTopology )
     {
     case PrimitiveTopology::Point:
