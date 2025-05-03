@@ -297,9 +297,7 @@ void MetalCommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t 
     MTLSize meshGroupsPerGrid = MTLSizeMake( groupCountX, groupCountY, groupCountZ );
     MTLSize objectThreads = m_pipeline->ObjectThreadsPerThreadgroup();
     MTLSize meshThreads = m_pipeline->MeshThreadsPerThreadgroup();
-    [m_renderEncoder drawMeshThreadgroups:meshGroupsPerGrid 
-                threadsPerObjectThreadgroup:objectThreads 
-                  threadsPerMeshThreadgroup:meshThreads];
+    [m_renderEncoder drawMeshThreadgroups:meshGroupsPerGrid threadsPerObjectThreadgroup:objectThreads threadsPerMeshThreadgroup:meshThreads];
     TopLevelArgumentBufferNextOffset( );
 }
 
