@@ -18,6 +18,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+// Include first due to DirectXMath breaking NULL on external libraries
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <functional>
+#include <typeinfo>
+#include <unordered_map>
+
 #include <DenOfIzGraphics/Assets/Bundle/BundleManager.h>
 #include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
 #include <DenOfIzGraphics/Assets/Import/IAssetImporter.h>
@@ -27,11 +34,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetWriter.h>
 #include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h>
 #include <DenOfIzGraphics/Utilities/InteropMath.h>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <functional>
-#include <typeinfo>
-#include <unordered_map>
 
 namespace DenOfIz
 {

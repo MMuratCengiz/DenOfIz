@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzExamples/Main.h>
 #include <DenOfIzExamples/AnimatedFoxExample.h>
+#include <DenOfIzExamples/Main.h>
 
 // Use the example macro to set up the main function with the AnimatedFoxExample
-DZ_EXAMPLE_MAIN(DenOfIz::AnimatedFoxExample)
+DZ_EXAMPLE_MAIN( DenOfIz::AnimatedFoxExample )

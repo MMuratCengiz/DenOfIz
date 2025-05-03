@@ -18,10 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+// Include first because DirectXMath breaks NULL on third party libraries
+#include <DenOfIzGraphics/Assets/Import/AssimpImporter.h>
 #include <DenOfIzExamples/IExample.h>
 #include <DenOfIzGraphics/Animation/AnimationStateManager.h>
 #include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
-#include <DenOfIzGraphics/Assets/Import/AssimpImporter.h>
 #include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h>
 #include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAsset.h>
 #include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h>

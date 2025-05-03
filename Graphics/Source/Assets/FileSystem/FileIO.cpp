@@ -172,7 +172,9 @@ std::string FileIO::PlatformResourcePath( const std::string &resourcePath )
     if ( CFURLGetFileSystemRepresentation( resourcesURL, TRUE, (UInt8 *)path, PATH_MAX ) )
     {
         CFRelease( resourcesURL );
-        return std::string( path ) + "/" + resourcePath;
+        const std::filesystem::path basePath( path );
+        const std::filesystem::path resPath( resourcePath );
+        return ( basePath / resPath ).string( );
     }
 
     CFRelease( resourcesURL );

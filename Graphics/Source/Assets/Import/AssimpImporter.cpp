@@ -125,7 +125,7 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
     ConfigureAssimpImportFlags( context.Desc, flags, importer );
 
     LOG( INFO ) << "Assimp reading file: " << context.SourceFilePath.Get( );
-    context.Scene = importer.ReadFile( context.SourceFilePath.Get( ), flags );
+    context.Scene = importer.ReadFile( FileIO::GetResourcePath( context.SourceFilePath ).Get( ), flags );
 
     if ( !context.Scene || context.Scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !context.Scene->mRootNode )
     {
@@ -742,7 +742,7 @@ bool AssimpImporter::ProcessTexture( ImportContext &context, const aiMaterial *m
         outAssetUri = context.TexturePathToAssetUriMap[ texPathStr ];
         return false;
     }
-    const std::filesystem::path modelPath           = context.SourceFilePath.Get( );
+    const std::filesystem::path modelPath           = FileIO::GetResourcePath( context.SourceFilePath ).Get( );
     const std::filesystem::path texturePath         = texPathStr;
     const std::filesystem::path absoluteTexturePath = texturePath.is_absolute( ) ? texturePath : absolute( modelPath.parent_path( ) / texturePath );
     if ( !exists( absoluteTexturePath ) )

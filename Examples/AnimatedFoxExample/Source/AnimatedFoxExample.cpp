@@ -345,23 +345,24 @@ void AnimatedFoxExample::Render( const uint32_t frameIndex, ICommandList *comman
 {
     commandList->Begin( );
 
-    ITextureResource *renderTarget = m_swapChain->GetRenderTarget( frameIndex );
+    ITextureResource *renderTarget = m_swapChain->GetRenderTarget( m_frameSync->AcquireNextImage( frameIndex ) );
 
     BatchTransitionDesc batchTransition( commandList );
     batchTransition.TransitionTexture( renderTarget, ResourceUsage::RenderTarget );
     m_resourceTracking.BatchTransition( batchTransition );
 
-    const Viewport &viewport = m_swapChain->GetViewport( );
-    commandList->BindViewport( 0.0f, 0.0f, viewport.Width, viewport.Height );
-    commandList->BindScissorRect( 0.0f, 0.0f, viewport.Width, viewport.Height );
-
-    RenderingDesc           renderingDesc;
+    const Viewport         &viewport = m_swapChain->GetViewport( );
     RenderingAttachmentDesc attachmentDesc{ };
     attachmentDesc.Resource = renderTarget;
     attachmentDesc.SetClearColor( 0.1f, 0.1f, 0.2f, 1.0f );
+
+    RenderingDesc renderingDesc;
     renderingDesc.RTAttachments.AddElement( attachmentDesc );
 
     commandList->BeginRendering( renderingDesc );
+
+    commandList->BindViewport( 0.0f, 0.0f, viewport.Width, viewport.Height );
+    commandList->BindScissorRect( 0.0f, 0.0f, viewport.Width, viewport.Height );
     commandList->BindPipeline( m_skinnedMeshPipeline.get( ) );
     commandList->BindResourceGroup( m_resourceBindGroup.get( ) );
     commandList->BindVertexBuffer( m_vertexBuffer.get( ) );
