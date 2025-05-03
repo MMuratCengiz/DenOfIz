@@ -93,54 +93,106 @@ inline void InvertNormals( GeometryData &data )
 }
 
 //--------------------------------------------------------------------------------------
-// Quad
+// Quad, XY Plane
 //--------------------------------------------------------------------------------------
-GeometryData Geometry::BuildQuad( const QuadDesc &quadDesc )
+GeometryData Geometry::BuildQuadXY( const QuadDesc &quadDesc )
 {
-    const XMFLOAT2 size( quadDesc.Width, quadDesc.Height );
-    const bool     rightHanded   = quadDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
-    const bool     invertNormals = quadDesc.BuildDesc.IsSet( BuildDesc::InvertNormals );
-    GeometryData   result{ };
-    auto          &vertices = result.Vertices;
+    const bool   rightHanded   = quadDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
+    const bool   invertNormals = quadDesc.BuildDesc.IsSet( BuildDesc::InvertNormals );
+    GeometryData result{ };
+    auto        &vertices = result.Vertices;
+    auto        &indices  = result.Indices;
 
-    static constexpr XMVECTORF32 textureCoordinates[ 4 ] = {
-        { { { 1, 0, 0, 0 } } },
-        { { { 1, 1, 0, 0 } } },
-        { { { 0, 1, 0, 0 } } },
-        { { { 0, 0, 0, 0 } } },
+    const float halfWidth  = quadDesc.Width / 2.0f;
+    const float halfHeight = quadDesc.Height / 2.0f;
+
+    const XMVECTOR positions[ 4 ] = {
+        XMVectorSet( -halfWidth, halfHeight, 0.0f, 0.0f ),  // 0: Top-Left (TL)
+        XMVectorSet( -halfWidth, -halfHeight, 0.0f, 0.0f ), // 1: Bottom-Left (BL)
+        XMVectorSet( halfWidth, -halfHeight, 0.0f, 0.0f ),  // 2: Bottom-Right (BR)
+        XMVectorSet( halfWidth, halfHeight, 0.0f, 0.0f )    // 3: Top-Right (TR)
     };
 
-    XMVECTOR tsize = XMLoadFloat2( &size );
-    tsize          = XMVectorDivide( tsize, g_XMTwo );
+    const XMVECTOR texCoords[ 4 ] = {
+        XMVectorSet( 0.0f, 0.0f, 0.0f, 0.0f ), // 0: TL UV (0,0)
+        XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f ), // 1: BL UV (0,1)
+        XMVectorSet( 1.0f, 1.0f, 0.0f, 0.0f ), // 2: BR UV (1,1)
+        XMVectorSet( 1.0f, 0.0f, 0.0f, 0.0f )  // 3: TR UV (1,0)
+    };
 
-    // Define the normal for the quad
-    const XMVECTOR normal = g_XMIdentityR2; // Assuming the quad is on the XY plane
+    const XMVECTOR normal = rightHanded ? g_XMIdentityR2 : g_XMNegIdentityR2; // +Z for RH, -Z for LH
 
-    // Two vectors perpendicular to the face normal and to each other
-    const XMVECTOR side1 = g_XMIdentityR0;
-    const XMVECTOR side2 = g_XMIdentityR1;
+    VertexEmplace( vertices, positions[ 0 ], normal, texCoords[ 0 ] );
+    VertexEmplace( vertices, positions[ 1 ], normal, texCoords[ 1 ] );
+    VertexEmplace( vertices, positions[ 2 ], normal, texCoords[ 2 ] );
+    VertexEmplace( vertices, positions[ 3 ], normal, texCoords[ 3 ] );
 
-    // Four vertices per quad
-    // (normal - side1 - side2) * tsize // normal // t0
-    VertexEmplace( vertices, XMVectorMultiply( XMVectorSubtract( XMVectorSubtract( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 0 ] );
-    // (normal - side1 + side2) * tsize // normal // t1
-    VertexEmplace( vertices, XMVectorMultiply( XMVectorAdd( XMVectorSubtract( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 1 ] );
-    // (normal + side1 + side2) * tsize // normal // t2
-    VertexEmplace( vertices, XMVectorMultiply( XMVectorAdd( normal, XMVectorAdd( side1, side2 ) ), tsize ), normal, textureCoordinates[ 2 ] );
-    // (normal + side1 - side2) * tsize // normal // t3
-    VertexEmplace( vertices, XMVectorMultiply( XMVectorSubtract( XMVectorAdd( normal, side1 ), side2 ), tsize ), normal, textureCoordinates[ 3 ] );
+    indices.AddElement( 0 );
+    indices.AddElement( 1 );
+    indices.AddElement( 2 );
+    indices.AddElement( 0 );
+    indices.AddElement( 2 );
+    indices.AddElement( 3 );
 
-    // Six indices (two triangles) per quad
-    EmplaceIndex( result, 0 );
-    EmplaceIndex( result, 1 );
-    EmplaceIndex( result, 2 );
-    EmplaceIndex( result, 0 );
-    EmplaceIndex( result, 2 );
-    EmplaceIndex( result, 3 );
-
-    // Adjust for RH if necessary
     if ( !rightHanded )
     {
+        // This will change indices to: 0, 2, 1 and 0, 3, 2 (CW)
+        ReverseWinding( result );
+    }
+
+    if ( invertNormals )
+    {
+        InvertNormals( result );
+    }
+
+    return result;
+}
+
+//--------------------------------------------------------------------------------------
+// Quad on the XZ plane
+//--------------------------------------------------------------------------------------
+GeometryData Geometry::BuildQuadXZ( const QuadDesc &quadDesc )
+{
+    const bool   rightHanded   = quadDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
+    const bool   invertNormals = quadDesc.BuildDesc.IsSet( BuildDesc::InvertNormals );
+    GeometryData result{ };
+    auto        &vertices = result.Vertices;
+    auto        &indices  = result.Indices;
+
+    const float halfWidth = quadDesc.Width / 2.0f;
+    const float halfDepth = quadDesc.Height / 2.0f;
+
+    const XMVECTOR positions[ 4 ] = {
+        XMVectorSet( -halfWidth, 0.0f, halfDepth, 0.0f ),  // 0: Top-Left (in XZ view)
+        XMVectorSet( -halfWidth, 0.0f, -halfDepth, 0.0f ), // 1: Bottom-Left
+        XMVectorSet( halfWidth, 0.0f, -halfDepth, 0.0f ),  // 2: Bottom-Right
+        XMVectorSet( halfWidth, 0.0f, halfDepth, 0.0f )    // 3: Top-Right
+    };
+
+    const XMVECTOR texCoords[ 4 ] = {
+        XMVectorSet( 0.0f, 0.0f, 0.0f, 0.0f ), // 0: TL UV (0,0)
+        XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f ), // 1: BL UV (0,1)
+        XMVectorSet( 1.0f, 1.0f, 0.0f, 0.0f ), // 2: BR UV (1,1)
+        XMVectorSet( 1.0f, 0.0f, 0.0f, 0.0f )  // 3: TR UV (1,0)
+    };
+
+    const XMVECTOR normal = g_XMIdentityR1; // +Y Axis (0, 1, 0)
+
+    VertexEmplace( vertices, positions[ 0 ], normal, texCoords[ 0 ] );
+    VertexEmplace( vertices, positions[ 1 ], normal, texCoords[ 1 ] );
+    VertexEmplace( vertices, positions[ 2 ], normal, texCoords[ 2 ] );
+    VertexEmplace( vertices, positions[ 3 ], normal, texCoords[ 3 ] );
+
+    indices.AddElement( 0 );
+    indices.AddElement( 1 );
+    indices.AddElement( 2 );
+    indices.AddElement( 0 );
+    indices.AddElement( 2 );
+    indices.AddElement( 3 );
+
+    if ( !rightHanded )
+    {
+        // This will change indices to: 0, 2, 1 and 0, 3, 2 (CW relative to +Y normal)
         ReverseWinding( result );
     }
 
@@ -499,8 +551,8 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
     for ( size_t i = 0; i < preFixupVertexCount; ++i )
     {
         // This vertex is on the prime meridian if position.x and texture coordinates are both zero (allowing for small epsilon).
-        const bool isOnPrimeMeridian =
-            XMVector2NearEqual( XMVectorSet( vertices.GetElement( i ).Position.X, vertices.GetElement( i ).TextureCoordinate.U, 0.0f, 0.0f ), XMVectorZero( ), XMVectorSplatEpsilon( ) );
+        const bool isOnPrimeMeridian = XMVector2NearEqual( XMVectorSet( vertices.GetElement( i ).Position.X, vertices.GetElement( i ).TextureCoordinate.U, 0.0f, 0.0f ),
+                                                           XMVectorZero( ), XMVectorSplatEpsilon( ) );
 
         if ( isOnPrimeMeridian )
         {
@@ -608,7 +660,7 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
             if ( !overwrittenPoleVertex )
             {
                 vertices.GetElement( poleIndex ) = newPoleVertex;
-                overwrittenPoleVertex = true;
+                overwrittenPoleVertex            = true;
             }
             else
             {

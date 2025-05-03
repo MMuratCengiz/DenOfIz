@@ -168,7 +168,8 @@ namespace DenOfIz
         Geometry( )  = delete;
         ~Geometry( ) = delete;
 
-        static GeometryData BuildQuad( const QuadDesc &desc );
+        static GeometryData BuildQuadXY( const QuadDesc &quadDesc );
+        static GeometryData BuildQuadXZ( const QuadDesc &quadDesc );
         static GeometryData BuildBox( const BoxDesc &desc );
         static GeometryData BuildSphere( const SphereDesc &desc );
         static GeometryData BuildGeoSphere( const GeoSphereDesc &desc );

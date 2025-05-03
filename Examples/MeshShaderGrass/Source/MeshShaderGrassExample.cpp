@@ -387,11 +387,8 @@ void MeshShaderGrassExample::CreateTerrainGeometry( )
     QuadDesc quadDesc;
     quadDesc.Width     = 100.0f;
     quadDesc.Height    = 100.0f;
-    // Use RightHanded=false for left-handed coordinate system
-    quadDesc.BuildDesc = BitSet( BuildDesc::BuildNormal ) | BuildDesc::BuildTexCoord | BuildDesc::RightHanded;
-
-    // Create a simple quad using the Geometry utility
-    m_terrainGeometry = Geometry::BuildQuad( quadDesc );
+    quadDesc.BuildDesc = BitSet( BuildDesc::BuildNormal ) | BuildDesc::BuildTexCoord;
+    m_terrainGeometry  = Geometry::BuildQuadXZ( quadDesc );
 
     // Create vertex buffer for terrain
     BufferDesc vertexDesc{ };
