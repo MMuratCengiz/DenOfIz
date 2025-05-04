@@ -218,7 +218,7 @@ void MetalCommandList::ProcessBindGroup( const MetalResourceBindGroup *metalBind
         m_currentBufferOffset = m_argumentBuffer->Reserve( m_rootSignature->NumTLABAddresses( ), m_rootSignature->NumRootConstantBytes( ) ).second;
     }
 
-    const auto &rootConstant = metalBindGroup->RootConstant( );
+    const auto &	rootConstant = metalBindGroup->RootConstant( );
     if ( !rootConstant.empty( ) )
     {
         m_argumentBuffer->EncodeRootConstant( m_currentBufferOffset, m_rootSignature->NumRootConstantBytes( ), rootConstant.data( ) );
@@ -495,6 +495,7 @@ void MetalCommandList::BindTopLevelArgumentBuffer( )
 {
     id<MTLBuffer> buffer = m_argumentBuffer->Buffer( );
     uint64_t      offset = m_currentBufferOffset;
+
     if ( m_desc.QueueType == QueueType::Compute )
     {
         if ( !m_computeTlasBound )
@@ -511,14 +512,37 @@ void MetalCommandList::BindTopLevelArgumentBuffer( )
     {
         if ( m_pipeline && m_pipeline->BindPoint() == BindPoint::Mesh )
         {
+            const MeshShaderUsedStages& meshShaderUsedStages = m_pipeline->MeshShaderUsedStages( );
             if ( !m_meshTlasBound )
             {
-                [m_renderEncoder setMeshBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+                if ( meshShaderUsedStages.Task )
+                {
+                    [m_renderEncoder setObjectBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+                }
+                if ( meshShaderUsedStages.Mesh )
+                {
+                    [m_renderEncoder setMeshBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+                }
+                if ( meshShaderUsedStages.Pixel )
+                {
+                    [m_renderEncoder setFragmentBuffer:buffer offset:offset atIndex:kIRArgumentBufferBindPoint];
+                }
                 m_meshTlasBound = true;
             }
             else
             {
-                [m_renderEncoder setMeshBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
+                if ( meshShaderUsedStages.Task )
+                {
+                    [m_renderEncoder setObjectBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
+                }
+                if ( meshShaderUsedStages.Mesh )
+                {
+                    [m_renderEncoder setMeshBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
+                }
+                if ( meshShaderUsedStages.Pixel )
+                {
+                    [m_renderEncoder setFragmentBufferOffset:offset atIndex:kIRArgumentBufferBindPoint];
+                }
             }
         }
         else

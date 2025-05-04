@@ -33,6 +33,13 @@ namespace DenOfIz
         uint64_t Intersection = 0;
     };
 
+    struct MeshShaderUsedStages
+    {
+        bool Task  = false;
+        bool Mesh  = true;
+        bool Pixel = false;
+    };
+
     class MetalPipeline final : public IPipeline
     {
     private:
@@ -46,9 +53,10 @@ namespace DenOfIz
         MTLTriangleFillMode      m_fillMode;
         id<MTLDepthStencilState> m_depthStencilState;
         // Thread group sizes (pre-calculated from shader reflection)
-        MTLSize m_computeThreadsPerThreadgroup; // For compute shaders
-        MTLSize m_meshThreadsPerThreadgroup;    // For mesh shaders
-        MTLSize m_objectThreadsPerThreadgroup;  // For task/amplification shaders
+        MTLSize              m_computeThreadsPerThreadgroup; // For compute shaders
+        MTLSize              m_meshThreadsPerThreadgroup;    // For mesh shaders
+        MTLSize              m_objectThreadsPerThreadgroup;  // For task/amplification shaders
+        MeshShaderUsedStages m_usedMeshShaderStages;
         // Ray tracing specific
         std::unordered_map<std::string, uint64_t>       m_visibleFunctions;
         std::unordered_map<std::string, HitGroupExport> m_hitGroupExports;
@@ -70,6 +78,8 @@ namespace DenOfIz
         const MTLSize                     &ComputeThreadsPerThreadgroup( ) const;
         const MTLSize                     &MeshThreadsPerThreadgroup( ) const;
         const MTLSize                     &ObjectThreadsPerThreadgroup( ) const;
+        const MeshShaderUsedStages        &MeshShaderUsedStages( );
+
         // Ray tracing specific:
         const uint64_t                                &FindVisibleShaderIndexByName( const std::string &name ) const;
         const HitGroupExport                          &FindHitGroupExport( const std::string &name ) const;

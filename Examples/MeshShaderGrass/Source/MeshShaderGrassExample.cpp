@@ -95,17 +95,6 @@ void MeshShaderGrassExample::Render( uint32_t frameIndex, ICommandList *commandL
     commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
     commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
 
-    // First render the terrain
-    commandList->BindPipeline( m_terrainPipeline.get( ) );
-    commandList->BindResourceGroup( m_terrainBindGroup.get( ) );
-
-    // Bind vertex and index buffers for the terrain
-    commandList->BindVertexBuffer( m_terrainVertexBuffer.get( ) );
-    commandList->BindIndexBuffer( m_terrainIndexBuffer.get( ), IndexType::Uint32 );
-
-    // Draw the terrain
-    commandList->DrawIndexed( m_terrainGeometry.Indices.NumElements( ), 1, 0 );
-
     // Then render the grass on top using mesh shader
     commandList->BindPipeline( m_meshPipeline.get( ) );
     commandList->BindResourceGroup( m_meshBindGroup.get( ) );
@@ -114,6 +103,16 @@ void MeshShaderGrassExample::Render( uint32_t frameIndex, ICommandList *commandL
     // Parameters are grid dimensions X, Y, Z
     // Increased grid size for better coverage and overlapping patches
     commandList->DispatchMesh( 64, 64, 1 );
+    // First render the terrain
+    commandList->BindPipeline( m_terrainPipeline.get( ) );
+    commandList->BindResourceGroup( m_terrainBindGroup.get( ) );
+
+    // Bind vertex and index buffers for the terrain
+    commandList->BindVertexBuffer( m_terrainVertexBuffer.get( ) );
+    commandList->BindIndexBuffer( m_terrainIndexBuffer.get( ), IndexType::Uint32 );
+
+    commandList->DrawIndexed( m_terrainGeometry.Indices.NumElements( ), 1, 0 );
+    // Draw the terrain
 
     commandList->EndRendering( );
 

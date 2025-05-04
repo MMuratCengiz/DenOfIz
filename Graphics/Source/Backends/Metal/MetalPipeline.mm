@@ -441,6 +441,11 @@ const MTLSize &MetalPipeline::ObjectThreadsPerThreadgroup( ) const
     return m_objectThreadsPerThreadgroup;
 }
 
+const MeshShaderUsedStages &MetalPipeline::MeshShaderUsedStages( )
+{
+    return m_usedMeshShaderStages;
+}
+
 const uint64_t &MetalPipeline::FindVisibleShaderIndexByName( const std::string &name ) const
 {
     auto shaderFunction = m_visibleFunctions.find( name );
@@ -467,6 +472,7 @@ void MetalPipeline::CreateMeshPipeline( )
     id<MTLFunction> objectFunction = nullptr; // Task (Amplification) shader
     id<MTLFunction> meshFunction = nullptr;   // Mesh shader
     id<MTLFunction> fragmentFunction = nullptr;
+    m_usedMeshShaderStages = {};
     
     ThreadGroupInfo objectThreadGroup = { 0, 0, 0 }; // Task shader thread group
     ThreadGroupInfo meshThreadGroup = { 0, 0, 0 };   // Mesh shader thread group
@@ -480,15 +486,18 @@ void MetalPipeline::CreateMeshPipeline( )
         switch ( shader->Stage )
         {
             case ShaderStage::Task:
-                objectFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
-                objectThreadGroup = shader->ThreadGroup;
+                objectFunction              = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
+                objectThreadGroup           = shader->ThreadGroup;
+                m_usedMeshShaderStages.Task = true;
                 break;
             case ShaderStage::Mesh:
-                meshFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
-                meshThreadGroup = shader->ThreadGroup;
+                meshFunction                = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
+                meshThreadGroup             = shader->ThreadGroup;
+                m_usedMeshShaderStages.Mesh = true;
                 break;
             case ShaderStage::Pixel:
-                fragmentFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
+                fragmentFunction             = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
+                m_usedMeshShaderStages.Pixel = true;
                 break;
             default:
                 LOG( ERROR ) << "Unsupported shader stage for mesh pipeline: " << static_cast<int>( shader->Stage );
