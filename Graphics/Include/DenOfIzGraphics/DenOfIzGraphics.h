@@ -23,5 +23,3 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/GraphicsApi.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include <DenOfIzGraphics/Data/Geometry.h>
-#include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
-#include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>

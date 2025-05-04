@@ -379,7 +379,8 @@ IDxcBlob *DxilToMsl::Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, co
 
     IRCompilerSetRayTracingPipelineArguments( irCompiler, compileMslDesc.RayTracing.MaxNumAttributeBytes, IRRaytracingPipelineFlagNone, IRIntrinsicMaskClosestHitAll,
                                               IRIntrinsicMaskMissShaderAll, IRIntrinsicMaskAnyHitShaderAll, IRIntrinsicMaskCallableShaderAll,
-                                              compileMslDesc.RayTracing.MaxRecursionDepth, IRRayGenerationCompilationVisibleFunction );
+                                              compileMslDesc.RayTracing.MaxRecursionDepth, IRRayGenerationCompilationVisibleFunction,
+                                              IRIntersectionFunctionCompilationVisibleFunction );
 
     IRObject *irDxil  = IRObjectCreateFromDXIL( static_cast<const uint8_t *>( dxil->GetBufferPointer( ) ), dxil->GetBufferSize( ), IRBytecodeOwnershipNone );
     IRError  *irError = nullptr;
