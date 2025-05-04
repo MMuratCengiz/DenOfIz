@@ -94,9 +94,10 @@ void DX12LogicalDevice::CreateDeviceInfo( IDXGIAdapter1 &adapter, PhysicalDevice
     wil::com_ptr<ID3D12Device> device;
     DX_CHECK_RESULT( D3D12CreateDevice( &adapter, m_minFeatureLevel, IID_PPV_ARGS( device.put( ) ) ) );
 
-    // Todo actually read these from somewhere:
     physicalDevice.Capabilities.DedicatedCopyQueue = true;
     physicalDevice.Capabilities.ComputeShaders     = true;
+    physicalDevice.Capabilities.GeometryShaders    = true;
+    physicalDevice.Capabilities.Tessellation       = true;
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 opts5 = { };
     if ( SUCCEEDED( device->CheckFeatureSupport( D3D12_FEATURE_D3D12_OPTIONS5, &opts5, sizeof( opts5 ) ) ) )
@@ -104,15 +105,42 @@ void DX12LogicalDevice::CreateDeviceInfo( IDXGIAdapter1 &adapter, PhysicalDevice
         physicalDevice.Capabilities.RayTracing = opts5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
     }
 
+    D3D12_FEATURE_DATA_D3D12_OPTIONS7 opts7 = { };
+    if ( SUCCEEDED( device->CheckFeatureSupport( D3D12_FEATURE_D3D12_OPTIONS7, &opts7, sizeof( opts7 ) ) ) )
+    {
+        physicalDevice.Capabilities.MeshShaders     = opts7.MeshShaderTier != D3D12_MESH_SHADER_TIER_NOT_SUPPORTED;
+        physicalDevice.Capabilities.SamplerFeedback = opts7.SamplerFeedbackTier != D3D12_SAMPLER_FEEDBACK_TIER_NOT_SUPPORTED;
+    }
+
+    D3D12_FEATURE_DATA_D3D12_OPTIONS6 opts6 = { };
+    if ( SUCCEEDED( device->CheckFeatureSupport( D3D12_FEATURE_D3D12_OPTIONS6, &opts6, sizeof( opts6 ) ) ) )
+    {
+        physicalDevice.Capabilities.VariableRateShading = opts6.VariableShadingRateTier != D3D12_VARIABLE_SHADING_RATE_TIER_NOT_SUPPORTED;
+    }
+
+    D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_SHADER_MODEL_6_6 };
+    if ( SUCCEEDED( device->CheckFeatureSupport( D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof( shaderModel ) ) ) )
+    {
+        physicalDevice.Capabilities.ShaderInt16   = true;
+        physicalDevice.Capabilities.ShaderFloat16 = true;
+    }
+
     BOOL allowTearing = false;
     DX_CHECK_RESULT( m_context->DXGIFactory->CheckFeatureSupport( DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof( allowTearing ) ) );
     physicalDevice.Capabilities.Tearing = allowTearing;
 
     D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = { };
-    if ( const HRESULT hr = device->CheckFeatureSupport( D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof( options12 ) ); SUCCEEDED( hr ) )
+    if ( SUCCEEDED( device->CheckFeatureSupport( D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof( options12 ) ) ) )
     {
         m_context->DX12Capabilities.EnhancedBarriers = options12.EnhancedBarriersSupported;
     }
+
+    D3D12_FEATURE_DATA_D3D12_OPTIONS4 opts4 = { };
+    if ( SUCCEEDED( device->CheckFeatureSupport( D3D12_FEATURE_D3D12_OPTIONS4, &opts4, sizeof( opts4 ) ) ) )
+    {
+        physicalDevice.Capabilities.DrawIndirectCount = true;
+    }
+    physicalDevice.Capabilities.HDR = true;
 }
 
 void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )

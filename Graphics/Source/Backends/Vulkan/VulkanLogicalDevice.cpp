@@ -132,7 +132,7 @@ const std::vector<const char *> VulkanLogicalDevice::g_optionalDeviceExtensions 
     VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
     VK_KHR_RAY_QUERY_EXTENSION_NAME,
     VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-    VK_EXT_MESH_SHADER_EXTENSION_NAME
+    VK_EXT_MESH_SHADER_EXTENSION_NAME,
     VK_KHR_SPIRV_1_4_EXTENSION_NAME,
     VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
     VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
@@ -317,6 +317,27 @@ void VulkanLogicalDevice::CreateDeviceInfo( const VkPhysicalDevice &physicalDevi
         {
             deviceInfo.Capabilities.RayTracing = true;
         }
+        else if ( strcmp( extension.extensionName, VK_EXT_MESH_SHADER_EXTENSION_NAME ) == 0 )
+        {
+            deviceInfo.Capabilities.MeshShaders = true;
+        }
+        else if ( strcmp( extension.extensionName, VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME ) == 0 )
+        {
+            deviceInfo.Capabilities.ConservativeRasterization = true;
+        }
+        else if ( strcmp( extension.extensionName, VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME ) == 0 )
+        {
+            deviceInfo.Capabilities.VariableRateShading = true;
+        }
+        else if ( strcmp( extension.extensionName, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME ) == 0 )
+        {
+            deviceInfo.Capabilities.ShaderFloat16 = true;
+            deviceInfo.Capabilities.ShaderInt16   = true;
+        }
+        else if ( strcmp( extension.extensionName, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME ) == 0 )
+        {
+            deviceInfo.Capabilities.DrawIndirectCount = true;
+        }
     }
 
     VkPhysicalDeviceFeatures2 deviceFeatures2{ };
@@ -445,41 +466,60 @@ void VulkanLogicalDevice::CreateLogicalDevice( )
         features.geometryShader = true;
     }
 
-    VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{ };
-    rayQueryFeatures.sType    = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
-    rayQueryFeatures.rayQuery = VK_TRUE;
+    void *pNext = nullptr;
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures{ };
+    if ( m_context->SelectedDeviceInfo.Capabilities.MeshShaders )
+    {
+        meshShaderFeatures.sType      = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+        meshShaderFeatures.meshShader = VK_TRUE;
+        meshShaderFeatures.taskShader = VK_TRUE;
+        meshShaderFeatures.pNext      = pNext;
+        pNext                         = &meshShaderFeatures;
+    }
 
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingFeatures{ };
-    rayTracingFeatures.sType              = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
-    rayTracingFeatures.rayTracingPipeline = VK_TRUE;
-    rayTracingFeatures.pNext              = &rayQueryFeatures;
-
+    VkPhysicalDeviceRayQueryFeaturesKHR              rayQueryFeatures{ };
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR    rayTracingFeatures{ };
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeature{ };
-    accelerationStructureFeature.sType                 = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
-    accelerationStructureFeature.accelerationStructure = VK_TRUE;
-    accelerationStructureFeature.pNext                 = &rayTracingFeatures;
+
+    if ( m_context->SelectedDeviceInfo.Capabilities.RayTracing )
+    {
+        rayQueryFeatures.sType    = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+        rayQueryFeatures.rayQuery = VK_TRUE;
+        rayQueryFeatures.pNext    = pNext;
+        pNext                     = &rayQueryFeatures;
+
+        rayTracingFeatures.sType              = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+        rayTracingFeatures.rayTracingPipeline = VK_TRUE;
+        rayTracingFeatures.pNext              = pNext;
+        pNext                                 = &rayTracingFeatures;
+
+        accelerationStructureFeature.sType                 = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+        accelerationStructureFeature.accelerationStructure = VK_TRUE;
+        accelerationStructureFeature.pNext                 = pNext;
+        pNext                                              = &accelerationStructureFeature;
+    }
 
     VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeature{ };
     bufferDeviceAddressFeature.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
     bufferDeviceAddressFeature.bufferDeviceAddress = VK_TRUE;
-    if ( m_context->SelectedDeviceInfo.Capabilities.RayTracing )
-    {
-        bufferDeviceAddressFeature.pNext = &accelerationStructureFeature;
-    }
+    bufferDeviceAddressFeature.pNext               = pNext;
+    pNext                                          = &bufferDeviceAddressFeature;
 
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeature{ };
     extendedDynamicStateFeature.sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
     extendedDynamicStateFeature.extendedDynamicState = VK_TRUE;
-    extendedDynamicStateFeature.pNext                = &bufferDeviceAddressFeature;
+    extendedDynamicStateFeature.pNext                = pNext;
+    pNext                                            = &extendedDynamicStateFeature;
 
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature{ };
     dynamicRenderingFeature.sType            = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
     dynamicRenderingFeature.dynamicRendering = VK_TRUE;
-    dynamicRenderingFeature.pNext            = &extendedDynamicStateFeature;
+    dynamicRenderingFeature.pNext            = pNext;
+    pNext                                    = &dynamicRenderingFeature;
 
     InitDeviceExtensions( );
     std::vector<const char *> enabledExtensions( m_enabledDeviceExtensions.size( ) );
-    std::copy( m_enabledDeviceExtensions.begin( ), m_enabledDeviceExtensions.end( ), enabledExtensions.begin( ) );
+    std::ranges::copy( m_enabledDeviceExtensions, enabledExtensions.begin( ) );
 
     VkDeviceCreateInfo createInfo{ };
     createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -625,7 +665,7 @@ bool VulkanLogicalDevice::IsDeviceLost( )
     return m_context->IsDeviceLost;
 }
 
-ICommandQueue* VulkanLogicalDevice::CreateCommandQueue( const CommandQueueDesc &desc )
+ICommandQueue *VulkanLogicalDevice::CreateCommandQueue( const CommandQueueDesc &desc )
 {
     return new VulkanCommandQueue( m_context.get( ), desc );
 }

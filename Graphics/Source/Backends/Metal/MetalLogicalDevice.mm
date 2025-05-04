@@ -52,17 +52,24 @@ InteropArray<PhysicalDevice> MetalLogicalDevice::ListPhysicalDevices( )
     {
         auto          *device = [devices objectAtIndex:i];
         PhysicalDevice physicalDevice;
-        physicalDevice.Name                            = device.name.cString;
-        physicalDevice.Id                              = device.registryID;
-        physicalDevice.Capabilities.ComputeShaders     = true;
-        physicalDevice.Capabilities.GeometryShaders    = false;
-        physicalDevice.Capabilities.DedicatedCopyQueue = false;
-        physicalDevice.Capabilities.HDR                = true;
-        physicalDevice.Capabilities.Tearing            = true;
-        physicalDevice.Capabilities.Tessellation       = true;
-        physicalDevice.Capabilities.RayTracing         = [device supportsRaytracing];
-        physicalDevice.Properties.IsDedicated          = ![device isLowPower];
-        physicalDevice.Properties.MemoryAvailableInMb  = 0;
+        physicalDevice.Name                                   = device.name.cString;
+        physicalDevice.Id                                     = device.registryID;
+        physicalDevice.Capabilities.ComputeShaders            = true;
+        physicalDevice.Capabilities.GeometryShaders           = false;
+        physicalDevice.Capabilities.DedicatedCopyQueue        = false;
+        physicalDevice.Capabilities.HDR                       = true;
+        physicalDevice.Capabilities.Tearing                   = true;
+        physicalDevice.Capabilities.Tessellation              = true;
+        physicalDevice.Capabilities.RayTracing                = [device supportsRaytracing];
+        physicalDevice.Capabilities.MeshShaders               = [device supportsFamilyMacOS1] || [device supportsFamilyApple8];
+        physicalDevice.Capabilities.VariableRateShading       = [device supportsFamilyMacOS1] || [device supportsFamilyApple7];
+        physicalDevice.Capabilities.ShaderInt16               = true;
+        physicalDevice.Capabilities.ShaderFloat16             = true;
+        physicalDevice.Capabilities.TiledResources            = true;
+        physicalDevice.Capabilities.SamplerFeedback           = false;
+        physicalDevice.Capabilities.ConservativeRasterization = false;
+        physicalDevice.Properties.IsDedicated                 = ![device isLowPower];
+        physicalDevice.Properties.MemoryAvailableInMb         = 0;
         physicalDevices.SetElement( i, physicalDevice );
     }
 

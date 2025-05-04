@@ -313,6 +313,14 @@ namespace DenOfIz
         bool Tessellation;
         bool GeometryShaders;
         bool HDR;
+        bool MeshShaders;
+        bool VariableRateShading;
+        bool SamplerFeedback;
+        bool DrawIndirectCount;
+        bool ConservativeRasterization;
+        bool ShaderInt16;
+        bool ShaderFloat16;
+        bool TiledResources;
     };
 
     struct DZ_API PhysicalDeviceProperties
