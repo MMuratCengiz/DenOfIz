@@ -459,6 +459,8 @@ uint32_t DX12Pipeline::GetIAStride( ) const
 
 void DX12Pipeline::CreateMeshPipeline( )
 {
+    m_topology = DX12EnumConverter::ConvertPrimitiveTopology( m_desc.Graphics.PrimitiveTopology );
+
     D3D12_PIPELINE_STATE_STREAM_DESC pipelineDesc = { };
     struct MeshPipelineStateStream
     {
