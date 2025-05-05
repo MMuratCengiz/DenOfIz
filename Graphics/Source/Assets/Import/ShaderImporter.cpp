@@ -205,7 +205,8 @@ InteropString ShaderImporter::CreateAssetFileName( const InteropString &prefix, 
     }
 
     result += name.Get( );
-    result += ".dzshader"; // Custom extension for shader assets
+    result += ".";
+    result += ShaderAsset::Extension( ).Get( );
 
     return result.c_str( );
 }

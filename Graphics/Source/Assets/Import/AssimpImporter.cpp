@@ -319,7 +319,7 @@ ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
     if ( !uniqueMeshes.empty( ) )
     {
         LOG( INFO ) << "Phase 6: Writing mesh asset with " << meshAsset.SubMeshes.NumElements( ) << " submeshes...";
-        const InteropString meshAssetFilename = CreateAssetFileName( context.AssetNamePrefix, meshAsset.Name, "Mesh", "dzmesh" );
+        const InteropString meshAssetFilename = CreateAssetFileName( context.AssetNamePrefix, meshAsset.Name, "Mesh", MeshAsset::Extension( ) );
         InteropString       meshTargetPath    = context.TargetDirectory.Append( "/" ).Append( meshAssetFilename.Get( ) );
         meshTargetPath                        = FileIO::GetAbsolutePath( meshTargetPath );
 
@@ -952,7 +952,7 @@ void AssimpImporter::ConfigureAssimpImportFlags( const AssimpImportDesc &options
 
 void AssimpImporter::WriteMaterialAsset( ImportContext &context, const MaterialAsset &materialAsset, AssetUri &outAssetUri )
 {
-    const InteropString assetFilename   = CreateAssetFileName( context.AssetNamePrefix, materialAsset.Name, "Material", "dzmat" );
+    const InteropString assetFilename   = CreateAssetFileName( context.AssetNamePrefix, materialAsset.Name, "Material", MaterialAsset::Extension( ) );
     const InteropString targetAssetPath = FileIO::GetAbsolutePath( InteropString( context.TargetDirectory ).Append( "/" ).Append( assetFilename.Get( ) ) );
     outAssetUri                         = AssetUri::Create( assetFilename );
     MaterialAsset mutableAsset          = materialAsset;
@@ -1002,7 +1002,7 @@ void AssimpImporter::WriteTextureAsset( ImportContext &context, const aiTexture 
         const std::filesystem::path texPath = path;
         texName                             = SanitizeAssetName( texPath.filename( ).stem( ).string( ).c_str( ) );
     }
-    const InteropString assetFilename   = CreateAssetFileName( context.AssetNamePrefix, texName, "Texture", "dztex" );
+    const InteropString assetFilename   = CreateAssetFileName( context.AssetNamePrefix, texName, "Texture", TextureAsset::Extension( ) );
     const InteropString targetAssetPath = FileIO::GetAbsolutePath( InteropString( context.TargetDirectory ).Append( "/" ).Append( assetFilename.Get( ) ) );
 
     BinaryWriter       writer( targetAssetPath );
@@ -1067,7 +1067,7 @@ void AssimpImporter::WriteTextureAsset( ImportContext &context, const aiTexture 
 
 void AssimpImporter::WriteSkeletonAsset( ImportContext &context, const SkeletonAsset &skeletonAsset )
 {
-    const InteropString assetFilename   = CreateAssetFileName( context.AssetNamePrefix, skeletonAsset.Name, "Skeleton", "dzskel" );
+    const InteropString assetFilename   = CreateAssetFileName( context.AssetNamePrefix, skeletonAsset.Name, "Skeleton", SkeletonAsset::Extension( ) );
     const InteropString targetAssetPath = FileIO::GetAbsolutePath( InteropString( context.TargetDirectory ).Append( "/" ).Append( assetFilename.Get( ) ) );
     context.SkeletonAssetUri            = AssetUri::Create( assetFilename );
     SkeletonAsset mutableAsset          = skeletonAsset;
@@ -1081,7 +1081,7 @@ void AssimpImporter::WriteSkeletonAsset( ImportContext &context, const SkeletonA
 
 void AssimpImporter::WriteAnimationAsset( ImportContext &context, const AnimationAsset &animationAsset, AssetUri &outAssetUri )
 {
-    const InteropString assetFilename   = CreateAssetFileName( context.AssetNamePrefix, animationAsset.Name, "Animation", "dzanim" );
+    const InteropString assetFilename   = CreateAssetFileName( context.AssetNamePrefix, animationAsset.Name, "Animation", AnimationAsset::Extension( ) );
     const InteropString targetAssetPath = FileIO::GetAbsolutePath( InteropString( context.TargetDirectory ).Append( "/" ).Append( assetFilename.Get( ) ) );
     outAssetUri                         = AssetUri::Create( assetFilename );
     AnimationAsset mutableAsset         = animationAsset;

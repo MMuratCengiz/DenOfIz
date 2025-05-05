@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Assets/Bundle/BundleManager.h>
+#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
 #include <filesystem>
 
 using namespace DenOfIz;
@@ -39,6 +40,32 @@ void BundleManager::MountBundle( Bundle *bundle, const int priority )
     InvalidateCache( );
 }
 
+void BundleManager::UnmountBundle( Bundle *bundle )
+{
+    const auto it = std::ranges::find( m_mountedBundles, bundle );
+    if ( it != m_mountedBundles.end( ) )
+    {
+        m_mountedBundles.erase( it );
+        InvalidateCache( );
+    }
+}
+
+void BundleManager::MountDirectory( const InteropString &directoryPath, bool recursive, int priority )
+{
+    BundleDirectoryDesc directoryDesc;
+    directoryDesc.DirectoryPath = FileIO::GetResourcePath( directoryPath );
+    directoryDesc.Recursive     = recursive;
+
+    const std::string           dirStr = directoryDesc.DirectoryPath.Get( );
+    const std::filesystem::path dir( dirStr );
+
+    const std::filesystem::path bundlePath = dir / ( dir.filename( ).string( ) + ".dzbundle" );
+    directoryDesc.OutputBundlePath         = InteropString( bundlePath.string( ).c_str( ) );
+
+    Bundle *bundle = Bundle::CreateFromDirectory( directoryDesc );
+    MountBundle( bundle, priority );
+}
+
 BinaryReader *BundleManager::OpenReader( const AssetUri &path )
 {
     const std::string pathStr = path.Path.Get( );
@@ -57,16 +84,183 @@ BinaryReader *BundleManager::OpenReader( const AssetUri &path )
         }
     }
 
-    const std::string fsPath = m_defaultSearchPath.Get( ) + std::string( "/" ) + pathStr;
-    if ( std::filesystem::exists( fsPath ) )
+    // Dev mode, check file system
+    const std::filesystem::path searchPath( m_defaultSearchPath.Get( ) );
+    const std::filesystem::path assetPath( pathStr );
+    const std::filesystem::path fullPath = searchPath / assetPath;
+
+    const InteropString resolvedPath = FileIO::GetResourcePath( InteropString( fullPath.string( ).c_str( ) ) );
+    if ( FileIO::FileExists( resolvedPath ) )
     {
-        return new BinaryReader( InteropString( fsPath.c_str( ) ) );
+        return new BinaryReader( resolvedPath );
     }
 
     return nullptr;
 }
 
+BinaryWriter *BundleManager::OpenWriter( const AssetUri &path, AssetType type )
+{
+    const std::string pathStr = path.Path.Get( );
+
+    if ( const auto cacheIt = m_assetLocationCache.find( pathStr ); cacheIt != m_assetLocationCache.end( ) )
+    {
+        return cacheIt->second->OpenWriter( path );
+    }
+
+    for ( Bundle *bundle : m_mountedBundles )
+    {
+        if ( bundle->Exists( path ) )
+        {
+            m_assetLocationCache[ pathStr ] = bundle;
+            return bundle->OpenWriter( path );
+        }
+    }
+
+    if ( !m_mountedBundles.empty( ) )
+    {
+        return m_mountedBundles[ 0 ]->OpenWriter( path );
+    }
+
+    const std::filesystem::path searchPath( m_defaultSearchPath.Get( ) );
+    const std::filesystem::path assetPath( pathStr );
+    const std::filesystem::path fullPath = searchPath / assetPath;
+
+    const InteropString resolvedPath = FileIO::GetResourcePath( InteropString( fullPath.string( ).c_str( ) ) );
+    if ( FileIO::FileExists( resolvedPath ) )
+    {
+        return new BinaryWriter( resolvedPath );
+    }
+
+    return nullptr;
+}
+
+bool BundleManager::Exists( const AssetUri &path )
+{
+    const std::string pathStr = path.Path.Get( );
+    const std::string uriStr  = path.ToString( ).Get( );
+
+    if ( const auto cacheIt = m_assetLocationCache.find( pathStr ); cacheIt != m_assetLocationCache.end( ) )
+    {
+        return true;
+    }
+
+    std::string altPathStr = pathStr;
+    std::ranges::replace( altPathStr, '/', '\\' );
+    if ( const auto cacheIt = m_assetLocationCache.find( altPathStr ); cacheIt != m_assetLocationCache.end( ) )
+    {
+        return true;
+    }
+
+    altPathStr = pathStr;
+    std::ranges::replace( altPathStr, '\\', '/' );
+    if ( const auto cacheIt = m_assetLocationCache.find( altPathStr ); cacheIt != m_assetLocationCache.end( ) )
+    {
+        return true;
+    }
+
+    for ( Bundle *bundle : m_mountedBundles )
+    {
+        if ( bundle->Exists( path ) )
+        {
+            m_assetLocationCache[ pathStr ] = bundle;
+            return true;
+        }
+    }
+
+    const std::filesystem::path searchPath( m_defaultSearchPath.Get( ) );
+    const std::filesystem::path assetPath( pathStr );
+    const std::filesystem::path fullPath = searchPath / assetPath;
+
+    const InteropString resolvedPath = FileIO::GetResourcePath( InteropString( fullPath.string( ).c_str( ) ) );
+    if ( FileIO::FileExists( resolvedPath ) )
+    {
+        return true;
+    }
+
+    return false;
+}
+
 void BundleManager::InvalidateCache( )
 {
     m_assetLocationCache.clear( );
+}
+
+InteropString BundleManager::ResolveToFilesystemPath( const AssetUri &path )
+{
+    const std::string pathStr = path.Path.Get( );
+
+    if ( const auto cacheIt = m_assetLocationCache.find( pathStr ); cacheIt != m_assetLocationCache.end( ) )
+    {
+        return InteropString{ };
+    }
+
+    const std::filesystem::path searchPath( m_defaultSearchPath.Get( ) );
+    const std::filesystem::path assetPath( pathStr );
+    const std::filesystem::path fullPath = searchPath / assetPath;
+
+    InteropString resolvedPath = FileIO::GetResourcePath( InteropString( fullPath.string( ).c_str( ) ) );
+    if ( FileIO::FileExists( resolvedPath ) )
+    {
+        return resolvedPath;
+    }
+
+    return InteropString{ };
+}
+
+InteropArray<AssetUri> BundleManager::GetAllAssets( ) const
+{
+    size_t totalAssets = 0;
+    for ( const Bundle *bundle : m_mountedBundles )
+    {
+        InteropArray<AssetUri> bundleAssets = bundle->GetAllAssets( );
+        totalAssets += bundleAssets.NumElements( );
+    }
+
+    InteropArray<AssetUri> allAssets( totalAssets );
+    size_t                 index = 0;
+
+    for ( const Bundle *bundle : m_mountedBundles )
+    {
+        InteropArray<AssetUri> bundleAssets = bundle->GetAllAssets( );
+        for ( size_t i = 0; i < bundleAssets.NumElements( ); ++i )
+        {
+            allAssets.SetElement( index++, bundleAssets.GetElement( i ) );
+        }
+    }
+
+    return allAssets;
+}
+
+InteropArray<AssetUri> BundleManager::GetAssetsByType( const AssetType type ) const
+{
+    size_t totalAssets = 0;
+    for ( const Bundle *bundle : m_mountedBundles )
+    {
+        InteropArray<AssetUri> bundleAssets = bundle->GetAssetsByType( type );
+        totalAssets += bundleAssets.NumElements( );
+    }
+
+    InteropArray<AssetUri> typeAssets( totalAssets );
+    size_t                 index = 0;
+
+    for ( const Bundle *bundle : m_mountedBundles )
+    {
+        InteropArray<AssetUri> bundleAssets = bundle->GetAssetsByType( type );
+        for ( size_t i = 0; i < bundleAssets.NumElements( ); ++i )
+        {
+            typeAssets.SetElement( index++, bundleAssets.GetElement( i ) );
+        }
+    }
+
+    return typeAssets;
+}
+
+InteropArray<Bundle *> BundleManager::GetMountedBundles( ) const
+{
+    InteropArray<Bundle *> bundles( m_mountedBundles.size( ) );
+    for ( size_t i = 0; i < m_mountedBundles.size( ); ++i )
+    {
+        bundles.SetElement( i, m_mountedBundles[ i ] );
+    }
+    return bundles;
 }

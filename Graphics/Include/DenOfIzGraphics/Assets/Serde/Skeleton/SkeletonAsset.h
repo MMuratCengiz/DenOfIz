@@ -48,5 +48,10 @@ namespace DenOfIz
         SkeletonAsset( ) : AssetHeader( 0x445A534B454C /* DZSKEL */, Latest, 0 )
         {
         }
+
+        static InteropString Extension( )
+        {
+            return "dzskel";
+        }
     };
 } // namespace DenOfIz

@@ -88,5 +88,10 @@ namespace DenOfIz
         AnimationAsset( ) : AssetHeader( 0x445A414E494D /*DZANIM*/, Latest, 0 )
         {
         }
+
+        static InteropString Extension( )
+        {
+            return "dzanim";
+        }
     };
 } // namespace DenOfIz

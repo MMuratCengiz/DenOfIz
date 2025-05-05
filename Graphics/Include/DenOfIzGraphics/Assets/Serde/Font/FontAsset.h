@@ -91,5 +91,10 @@ namespace DenOfIz
             Metrics.UnderlinePos       = 0;
             Metrics.UnderlineThickness = 0;
         }
+        
+        static InteropString Extension( )
+        {
+            return "dzfont";
+        }
     };
 } // namespace DenOfIz

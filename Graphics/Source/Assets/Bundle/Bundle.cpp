@@ -17,42 +17,201 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Assets/Bundle/Bundle.h>
+#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
+#include <algorithm>
 #include <filesystem>
+#include <fstream>
+#include <miniz/miniz.h>
+#include <ranges>
+#include <string>
 
 using namespace DenOfIz;
 
-Bundle::Bundle( const BundleDesc &desc ) : m_desc( desc ), m_bundleFile( nullptr ), m_isDirty( false )
+Bundle::Bundle( const BundleDesc &desc ) : m_desc( desc ), m_bundleFile( nullptr ), m_isDirty( false ), m_isCompressed( desc.Compress )
 {
-
-    if ( std::filesystem::exists( desc.Path.Get( ) ) )
+    const InteropString resolvedPath = FileIO::GetResourcePath( desc.Path );
+    if ( FileIO::FileExists( resolvedPath ) )
     {
-        m_bundleFile = new std::fstream( desc.Path.Get( ), std::ios::binary | std::ios::in | std::ios::out );
+        m_bundleFile = new std::fstream( resolvedPath.Get( ), std::ios::binary | std::ios::in | std::ios::out );
         LoadTableOfContents( );
     }
     else if ( desc.CreateIfNotExists )
     {
-        m_bundleFile = new std::fstream( desc.Path.Get( ), std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc );
+        const std::filesystem::path parentPath = std::filesystem::path( resolvedPath.Get( ) ).parent_path( );
+        if ( !parentPath.empty( ) && !std::filesystem::exists( parentPath ) )
+        {
+            FileIO::CreateDirectories( InteropString( parentPath.string( ).c_str( ) ) );
+        }
+
+        m_bundleFile = new std::fstream( resolvedPath.Get( ), std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc );
         WriteEmptyHeader( );
     }
 }
 
-Bundle::~Bundle( ) = default;
+Bundle::Bundle( const BundleDirectoryDesc &directoryDesc ) : m_bundleFile( nullptr ), m_isDirty( false ), m_isCompressed( directoryDesc.Compress )
+{
+    BundleDesc desc;
+    desc.Path              = FileIO::GetResourcePath( directoryDesc.OutputBundlePath );
+    desc.CreateIfNotExists = true;
+    desc.Compress          = directoryDesc.Compress;
+    m_desc                 = desc;
+
+    const std::filesystem::path bundlePath( desc.Path.Get( ) );
+    const std::filesystem::path parentPath = bundlePath.parent_path( );
+    if ( !parentPath.empty( ) && !std::filesystem::exists( parentPath ) )
+    {
+        FileIO::CreateDirectories( InteropString( parentPath.string( ).c_str( ) ) );
+    }
+
+    m_bundleFile = new std::fstream( desc.Path.Get( ), std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc );
+    WriteEmptyHeader( );
+
+    const InteropString resolvedDirPath = FileIO::GetResourcePath( directoryDesc.DirectoryPath );
+    const std::string   dirPath         = resolvedDirPath.Get( );
+
+    if ( !FileIO::FileExists( resolvedDirPath ) || !std::filesystem::is_directory( dirPath ) )
+    {
+        LOG( ERROR ) << "Directory does not exist or is not a directory: " << dirPath;
+        return;
+    }
+
+    const std::filesystem::path basePath = dirPath;
+    auto                        visitor  = [ & ]( const std::filesystem::path &path )
+    {
+        if ( !std::filesystem::is_regular_file( path ) )
+        {
+            return;
+        }
+
+        const std::filesystem::path relativePath = std::filesystem::relative( path, basePath );
+        const std::string           relPathStr   = relativePath.string( );
+
+        std::string extension = path.extension( ).string( );
+        if ( !extension.empty( ) && extension[ 0 ] == '.' )
+        {
+            extension = extension.substr( 1 );
+        }
+        const AssetType assetType = DetermineAssetTypeFromExtension( InteropString( extension.c_str( ) ) );
+        if ( directoryDesc.AssetTypeFilter.NumElements( ) > 0 )
+        {
+            bool matchesFilter = false;
+            for ( size_t i = 0; i < directoryDesc.AssetTypeFilter.NumElements( ); ++i )
+            {
+                if ( directoryDesc.AssetTypeFilter.GetElement( i ) == assetType )
+                {
+                    matchesFilter = true;
+                    break;
+                }
+            }
+            if ( !matchesFilter )
+            {
+                return;
+            }
+        }
+
+        // Read file using FileIO for platform consistency
+        const InteropString filePath( path.string( ).c_str( ) );
+        InteropArray<Byte>  fileData;
+
+        try
+        {
+            fileData = FileIO::ReadFile( filePath );
+        }
+        catch ( const std::exception &e )
+        {
+            LOG( ERROR ) << "Failed to read file: " << path.string( ) << " - " << e.what( );
+            return;
+        }
+        const AssetUri assetUri = AssetUri::Create( InteropString( relPathStr.c_str( ) ) );
+        AddAsset( assetUri, assetType, fileData );
+    };
+
+    if ( directoryDesc.Recursive )
+    {
+        for ( const auto &entry : std::filesystem::recursive_directory_iterator( dirPath ) )
+        {
+            visitor( entry.path( ) );
+        }
+    }
+    else
+    {
+        for ( const auto &entry : std::filesystem::directory_iterator( dirPath ) )
+        {
+            visitor( entry.path( ) );
+        }
+    }
+
+    Save( );
+}
+
+Bundle::~Bundle( )
+{
+    delete m_bundleFile;
+}
+
+Bundle *Bundle::CreateFromDirectory( const BundleDirectoryDesc &directoryDesc )
+{
+    return new Bundle( directoryDesc );
+}
 
 BinaryReader *Bundle::OpenReader( const AssetUri &assetUri )
 {
     const std::string pathStr = assetUri.ToString( ).Get( );
+    auto              it      = m_assetEntries.find( pathStr );
 
-    if ( const auto it = m_assetEntries.find( pathStr ); it != m_assetEntries.end( ) )
+    if ( it == m_assetEntries.end( ) )
+    {
+        std::string alternatePath = pathStr;
+        std::ranges::replace( alternatePath, '/', '\\' );
+        it = m_assetEntries.find( alternatePath );
+
+        if ( it == m_assetEntries.end( ) )
+        {
+            alternatePath = pathStr;
+            std::ranges::replace( alternatePath, '\\', '/' );
+            it = m_assetEntries.find( alternatePath );
+        }
+    }
+
+    if ( it != m_assetEntries.end( ) )
     {
         BinaryReaderDesc desc{ };
         desc.NumBytes = it->second.NumBytes;
-        return new BinaryReader( m_bundleFile, desc );
+
+        if ( m_isCompressed )
+        {
+            m_bundleFile->seekg( it->second.Offset, std::ios::beg );
+
+            uint64_t compressedSize = 0;
+            m_bundleFile->read( reinterpret_cast<char *>( &compressedSize ), sizeof( uint64_t ) );
+
+            std::vector<Byte> compressedData( compressedSize );
+            m_bundleFile->read( reinterpret_cast<char *>( compressedData.data( ) ), compressedSize );
+
+            InteropArray<Byte> decompressedData( it->second.NumBytes );
+            mz_ulong           decompressedSize = static_cast<mz_ulong>( it->second.NumBytes );
+            const int          result           = mz_uncompress( decompressedData.Data( ), &decompressedSize, compressedData.data( ), static_cast<mz_ulong>( compressedSize ) );
+
+            if ( result != MZ_OK )
+            {
+                LOG( ERROR ) << "Failed to decompress asset: " << pathStr;
+                return nullptr;
+            }
+
+            return new BinaryReader( decompressedData );
+        }
+        m_bundleFile->seekg( it->second.Offset, std::ios::beg );
+
+        InteropArray<Byte> buffer( it->second.NumBytes );
+        m_bundleFile->read( reinterpret_cast<char *>( buffer.Data( ) ), it->second.NumBytes );
+
+        return new BinaryReader( buffer );
     }
 
-    const std::string fsPath = assetUri.Path.Get( );
-    if ( std::filesystem::exists( fsPath ) )
+    const InteropString fsPath = FileIO::GetResourcePath( assetUri.Path );
+    if ( FileIO::FileExists( fsPath ) )
     {
-        return new BinaryReader( InteropString( fsPath.c_str( ) ) );
+        return new BinaryReader( fsPath );
     }
 
     return nullptr;
@@ -68,10 +227,10 @@ BinaryWriter *Bundle::OpenWriter( const AssetUri &assetUri )
         return new BinaryWriter( m_bundleFile, desc );
     }
 
-    const std::string fsPath = assetUri.Path.Get( );
-    if ( std::filesystem::exists( fsPath ) )
+    const InteropString fsPath = FileIO::GetResourcePath( assetUri.Path );
+    if ( FileIO::FileExists( fsPath ) )
     {
-        return new BinaryWriter( InteropString( fsPath.c_str( ) ) );
+        return new BinaryWriter( fsPath );
     }
 
     return nullptr;
@@ -101,6 +260,7 @@ void Bundle::LoadTableOfContents( )
         return;
     }
 
+    m_isCompressed = header.IsCompressed;
     m_assetEntries.clear( );
     m_bundleFile->seekg( header.TOCOffset, std::ios::beg );
 
@@ -134,10 +294,11 @@ void Bundle::WriteEmptyHeader( ) const
     }
 
     BundleHeader header;
-    header.Magic     = BundleHeader::BundleHeaderMagic;
-    header.Version   = BundleHeader::Latest;
-    header.NumAssets = 0;
-    header.TOCOffset = sizeof( BundleHeader ); // TOC starts right after header
+    header.Magic        = BundleHeader::BundleHeaderMagic;
+    header.Version      = BundleHeader::Latest;
+    header.NumAssets    = 0;
+    header.TOCOffset    = sizeof( BundleHeader ); // TOC starts right after header
+    header.IsCompressed = m_isCompressed;
 
     m_bundleFile->seekp( 0, std::ios::beg );
     m_bundleFile->write( reinterpret_cast<const char *>( &header ), sizeof( BundleHeader ) );
@@ -156,17 +317,38 @@ void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const Int
         return;
     }
 
-    const std::string pathStr = assetUri.Path.Get( );
+    const std::string pathStr = assetUri.ToString( ).Get( );
     if ( const auto existingIt = m_assetEntries.find( pathStr ); existingIt != m_assetEntries.end( ) )
     {
         LOG( WARNING ) << "Asset already exists in bundle, replacing: " << pathStr;
-        // We'll just overwrite the existing entry below
     }
 
     m_bundleFile->seekp( 0, std::ios::end );
     const uint64_t assetOffset = m_bundleFile->tellp( );
     const uint64_t numBytes    = data.NumElements( );
-    m_bundleFile->write( reinterpret_cast<const char *>( data.Data( ) ), numBytes );
+
+    if ( m_isCompressed )
+    {
+        const mz_ulong    sourceSize = static_cast<mz_ulong>( numBytes );
+        const mz_ulong    destSize   = mz_compressBound( sourceSize );
+        std::vector<Byte> compressedData( destSize );
+
+        mz_ulong  compressedSize = destSize;
+        const int result         = mz_compress( compressedData.data( ), &compressedSize, data.Data( ), sourceSize );
+
+        if ( result != MZ_OK )
+        {
+            LOG( ERROR ) << "Failed to compress asset: " << pathStr;
+            return;
+        }
+
+        m_bundleFile->write( reinterpret_cast<const char *>( &compressedSize ), sizeof( uint64_t ) );
+        m_bundleFile->write( reinterpret_cast<const char *>( compressedData.data( ) ), compressedSize );
+    }
+    else
+    {
+        m_bundleFile->write( reinterpret_cast<const char *>( data.Data( ) ), numBytes );
+    }
 
     AssetEntry entry;
     entry.Type     = type;
@@ -182,8 +364,27 @@ void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const Int
 
 bool Bundle::Exists( const AssetUri &assetUri ) const
 {
-    const std::string pathStr = assetUri.Path.Get( );
-    return m_assetEntries.contains( pathStr );
+    const std::string pathStr = assetUri.ToString( ).Get( );
+    if ( m_assetEntries.contains( pathStr ) )
+    {
+        return true;
+    }
+
+    std::string alternatePath = pathStr;
+    std::ranges::replace( alternatePath, '/', '\\' );
+    if ( m_assetEntries.contains( alternatePath ) )
+    {
+        return true;
+    }
+
+    alternatePath = pathStr;
+    std::ranges::replace( alternatePath, '\\', '/' );
+    if ( m_assetEntries.contains( alternatePath ) )
+    {
+        return true;
+    }
+
+    return false;
 }
 
 bool Bundle::Save( )
@@ -213,10 +414,11 @@ bool Bundle::Save( )
     }
 
     BundleHeader header;
-    header.Magic     = BundleHeader::BundleHeaderMagic;
-    header.Version   = BundleHeader::Latest;
-    header.NumAssets = static_cast<uint32_t>( m_assetEntries.size( ) );
-    header.TOCOffset = newTocOffset;
+    header.Magic        = BundleHeader::BundleHeaderMagic;
+    header.Version      = BundleHeader::Latest;
+    header.NumAssets    = static_cast<uint32_t>( m_assetEntries.size( ) );
+    header.TOCOffset    = newTocOffset;
+    header.IsCompressed = m_isCompressed;
 
     m_bundleFile->seekp( 0, std::ios::beg );
     m_bundleFile->write( reinterpret_cast<const char *>( &header ), sizeof( BundleHeader ) );
@@ -226,4 +428,87 @@ bool Bundle::Save( )
 
     LOG( INFO ) << "Saved bundle with " << header.NumAssets << " assets";
     return true;
+}
+
+InteropArray<AssetUri> Bundle::GetAllAssets( ) const
+{
+    InteropArray<AssetUri> result( m_assetEntries.size( ) );
+    size_t                 index = 0;
+    for ( const auto &key : m_assetEntries | std::views::keys )
+    {
+        result.SetElement( index++, AssetUri::Parse( InteropString( key.c_str( ) ) ) );
+    }
+    return result;
+}
+
+InteropArray<AssetUri> Bundle::GetAssetsByType( const AssetType type ) const
+{
+    size_t count = 0;
+    for ( const auto &val : m_assetEntries | std::views::values )
+    {
+        if ( val.Type == type )
+        {
+            count++;
+        }
+    }
+
+    InteropArray<AssetUri> result( count );
+    size_t                 index = 0;
+
+    for ( const auto &entry : m_assetEntries )
+    {
+        if ( entry.second.Type == type )
+        {
+            result.SetElement( index++, AssetUri::Parse( InteropString( entry.first.c_str( ) ) ) );
+        }
+    }
+
+    return result;
+}
+
+bool Bundle::IsCompressed( ) const
+{
+    return m_isCompressed;
+}
+
+const InteropString &Bundle::GetPath( ) const
+{
+    return m_desc.Path;
+}
+
+AssetType Bundle::DetermineAssetTypeFromExtension( const InteropString &extension )
+{
+    std::string ext = extension.Get( );
+    std::ranges::transform( ext, ext.begin( ), tolower );
+
+    // Could also use Asset::Extension( ) but would add dependency
+    if ( ext == "dzmesh" )
+    {
+        return AssetType::Mesh;
+    }
+    if ( ext == "dzmat" )
+    {
+        return AssetType::Material;
+    }
+    if ( ext == "dztex" )
+    {
+        return AssetType::Texture;
+    }
+    if ( ext == "dzanim" )
+    {
+        return AssetType::Animation;
+    }
+    if ( ext == "dzskel" )
+    {
+        return AssetType::Skeleton;
+    }
+    if ( ext == "dzphys" )
+    {
+        return AssetType::Physics;
+    }
+    if ( ext == "dzfont" )
+    {
+        return AssetType::Font;
+    }
+    return AssetType::Unknown;
 }

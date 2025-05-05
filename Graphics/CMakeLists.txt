@@ -27,6 +27,7 @@ find_package(draco CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(harfbuzz CONFIG REQUIRED)
 find_package(msdfgen CONFIG REQUIRED)
+find_package(miniz CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h")
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 
@@ -261,6 +262,7 @@ target_link_libraries(DenOfIzGraphics
         msdfgen::msdfgen-core
         msdfgen::msdfgen-full
         msdf-atlas-gen::msdf-atlas-gen
+        miniz::miniz
 )
 
 if (BUILD_SHARED_LIBS)

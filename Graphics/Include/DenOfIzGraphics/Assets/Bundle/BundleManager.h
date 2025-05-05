@@ -30,24 +30,27 @@ namespace DenOfIz
 
     class DZ_API BundleManager
     {
-        std::vector<Bundle*> m_mountedBundles;
-        InteropString m_defaultSearchPath;
-        std::unordered_map<std::string, Bundle*> m_assetLocationCache;
+        std::vector<Bundle *>                     m_mountedBundles;
+        InteropString                             m_defaultSearchPath;
+        std::unordered_map<std::string, Bundle *> m_assetLocationCache;
 
     public:
-        DZ_API explicit BundleManager(const BundleManagerDesc& desc);
-        DZ_API ~BundleManager();
+        DZ_API explicit BundleManager( const BundleManagerDesc &desc );
+        DZ_API ~BundleManager( );
 
-        DZ_API void MountBundle(Bundle* bundle, int priority = 0);
-        DZ_API void UnmountBundle(Bundle* bundle);
+        DZ_API void MountBundle( Bundle *bundle, int priority = 0 );
+        DZ_API void UnmountBundle( Bundle *bundle );
+        DZ_API void MountDirectory( const InteropString &directoryPath, bool recursive = true, int priority = 0 );
 
-        DZ_API BinaryReader* OpenReader(const AssetUri& path);
-        DZ_API BinaryWriter* OpenWriter(const AssetUri& path, AssetType type);
-        DZ_API bool Exists(const AssetUri& path);
+        DZ_API BinaryReader *OpenReader( const AssetUri &path );
+        DZ_API BinaryWriter *OpenWriter( const AssetUri &path, AssetType type );
+        DZ_API bool          Exists( const AssetUri &path );
 
-        DZ_API AssetType GetAssetType(const AssetUri& path);
-        DZ_API void InvalidateCache();
+        DZ_API void      InvalidateCache( );
 
-        DZ_API InteropString ResolveToFilesystemPath(const AssetUri& path);
+        DZ_API InteropString ResolveToFilesystemPath( const AssetUri &path );
+        DZ_API InteropArray<AssetUri> GetAllAssets( ) const;
+        DZ_API InteropArray<AssetUri> GetAssetsByType( AssetType type ) const;
+        DZ_API InteropArray<Bundle *> GetMountedBundles( ) const;
     };
-}
+} // namespace DenOfIz

@@ -48,8 +48,6 @@ namespace DenOfIz
 
     class DZ_API FontImporter final : public IAssetImporter
     {
-        const InteropString m_fileExtension = "dzfont";
-
         ImporterDesc             m_importerDesc;
         const FontImporterDesc   m_desc;
         FT_Library               m_ftLibrary;

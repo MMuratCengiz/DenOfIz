@@ -49,5 +49,10 @@ namespace DenOfIz
         MaterialAsset( ) : AssetHeader( 0x445A4D4154 /*DZMAT*/, Latest, 0 )
         {
         }
+
+        static InteropString Extension( )
+        {
+            return "dzmat";
+        }
     };
 } // namespace DenOfIz

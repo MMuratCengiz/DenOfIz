@@ -16,6 +16,7 @@ set(GeneralSources
         Source/Assets/Serde/SkeletonAssetReaderWriterTests.cpp
         Source/Assets/Serde/PhysicsAssetReaderWriterTests.cpp
         Source/Assets/Serde/TextureAssetReaderWriterTests.cpp
+        Source/Assets/Bundle/BundleTests.cpp
         Source/BitSetTest.cpp
         Source/TestComparators.h
 

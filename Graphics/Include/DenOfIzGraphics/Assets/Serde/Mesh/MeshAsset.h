@@ -193,5 +193,10 @@ namespace DenOfIz
         MeshAsset( ) : AssetHeader( 0x445A4D455348 /*DZMESH*/, Latest, 0 )
         {
         }
+
+        static InteropString Extension( )
+        {
+            return "dzmesh";
+        }
     };
 } // namespace DenOfIz

@@ -36,6 +36,7 @@ namespace DenOfIz
         Animation,
         Skeleton,
         Physics,
+        Shader,
         Font
     };
 
@@ -53,8 +54,9 @@ namespace DenOfIz
         static constexpr uint64_t BundleHeaderMagic = 0x445A42554E444C; // "DZBUNDL"
         static constexpr uint32_t Latest            = 1;
 
-        uint32_t NumAssets = 0;
-        uint64_t TOCOffset = 0;
+        uint32_t NumAssets    = 0;
+        uint64_t TOCOffset    = 0;
+        bool     IsCompressed = false;
 
         BundleHeader( ) : AssetHeader( BundleHeaderMagic, Latest, 0 )
         {
@@ -73,6 +75,23 @@ namespace DenOfIz
     {
         InteropString Path;
         bool          CreateIfNotExists = false;
+        bool          Compress          = false;
+    };
+
+    struct DZ_API BundleDirectoryDesc
+    {
+        InteropString           DirectoryPath;
+        InteropString           OutputBundlePath;
+        bool                    Recursive = true;
+        bool                    Compress  = false;
+        InteropArray<AssetType> AssetTypeFilter; // Empty means include all types
+    };
+
+    struct DZ_API BundleAssetFilter
+    {
+        InteropArray<AssetType> Types;
+        InteropString           ExtensionFilter; // Empty means include all extensions
+        InteropString           PathFilter;      // Empty means include all paths
     };
 
     class DZ_API Bundle
@@ -81,18 +100,27 @@ namespace DenOfIz
         std::unordered_map<std::string, AssetEntry> m_assetEntries;
         std::fstream                               *m_bundleFile;
         bool                                        m_isDirty;
+        bool                                        m_isCompressed;
 
-        void LoadTableOfContents( );
-        void WriteEmptyHeader( ) const;
+        void             LoadTableOfContents( );
+        void             WriteEmptyHeader( ) const;
+        static AssetType DetermineAssetTypeFromExtension( const InteropString &extension );
 
     public:
         DZ_API explicit Bundle( const BundleDesc &desc );
+        DZ_API explicit Bundle( const BundleDirectoryDesc &directoryDesc );
         DZ_API ~Bundle( );
 
-        BinaryReader      *OpenReader( const AssetUri &assetUri );
-        BinaryWriter      *OpenWriter( const AssetUri &assetUri );
-        void               AddAsset( const AssetUri &assetUri, AssetType type, const InteropArray<Byte> &data );
-        bool               Save( );
-        [[nodiscard]] bool Exists( const AssetUri &assetUri ) const;
+        BinaryReader                        *OpenReader( const AssetUri &assetUri );
+        BinaryWriter                        *OpenWriter( const AssetUri &assetUri );
+        void                                 AddAsset( const AssetUri &assetUri, AssetType type, const InteropArray<Byte> &data );
+        bool                                 Save( );
+        [[nodiscard]] bool                   Exists( const AssetUri &assetUri ) const;
+        [[nodiscard]] InteropArray<AssetUri> GetAllAssets( ) const;
+        [[nodiscard]] InteropArray<AssetUri> GetAssetsByType( AssetType type ) const;
+        [[nodiscard]] bool                   IsCompressed( ) const;
+        [[nodiscard]] const InteropString   &GetPath( ) const;
+
+        static Bundle *CreateFromDirectory( const BundleDirectoryDesc &directoryDesc );
     };
 } // namespace DenOfIz

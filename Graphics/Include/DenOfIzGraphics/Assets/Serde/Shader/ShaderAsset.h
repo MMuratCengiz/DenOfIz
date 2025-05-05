@@ -47,5 +47,10 @@ namespace DenOfIz
         ShaderAsset( ) : AssetHeader( 0x44414853445A /*DZSHAD*/, Latest, 0 )
         {
         }
+
+        static InteropString Extension( )
+        {
+            return "dzshader";
+        }
     };
 } // namespace DenOfIz

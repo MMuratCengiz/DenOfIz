@@ -82,5 +82,10 @@ namespace DenOfIz
         PhysicsAsset( ) : AssetHeader( 0x445A50585953 /*DZPHYS*/, Latest, 0 )
         {
         }
+
+        static InteropString Extension( )
+        {
+            return "dzphys";
+        }
     };
 } // namespace DenOfIz

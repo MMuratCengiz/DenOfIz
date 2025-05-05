@@ -74,5 +74,10 @@ namespace DenOfIz
         TextureAsset( ) : AssetHeader( 0x445A544558 /* 'DZTEX' */, Latest, 0 )
         {
         }
+
+        static InteropString Extension( )
+        {
+            return "dztex";
+        }
     };
 } // namespace DenOfIz

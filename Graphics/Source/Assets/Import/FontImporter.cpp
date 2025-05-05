@@ -359,7 +359,7 @@ InteropString FontImporter::CreateAssetFileName( const InteropString &prefix, co
 
     result += name.Get( );
     result += ".";
-    result += m_fileExtension.Get( );
+    result += FontAsset::Extension( ).Get( );
 
     return result.c_str( );
 }
