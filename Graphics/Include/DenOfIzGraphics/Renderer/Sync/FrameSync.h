@@ -49,15 +49,15 @@ namespace DenOfIz
         std::vector<ICommandList *> m_commandLists;
 
     public:
-        explicit FrameSync( const FrameSyncDesc &desc );
-        uint64_t      NextFrame( );
-        IFence       *GetFrameFence( uint64_t frame ) const;
-        ISemaphore   *GetPresentSignalSemaphore( uint64_t frame ) const;
-        ICommandList *GetCommandList( uint64_t frame ) const;
-        void          ExecuteCommandList( uint64_t frame, const InteropArray<ISemaphore*>& additionalSemaphores = {} ) const;
-        uint32_t      AcquireNextImage( uint64_t frame ) const;
-        PresentResult Present( uint32_t imageIndex ) const;
-        void          WaitIdle( ) const;
-        ~FrameSync( ) = default;
+        DZ_API explicit FrameSync( const FrameSyncDesc &desc );
+        DZ_API uint64_t      NextFrame( );
+        DZ_API IFence       *GetFrameFence( uint64_t frame ) const;
+        DZ_API ISemaphore   *GetPresentSignalSemaphore( uint64_t frame ) const;
+        DZ_API ICommandList *GetCommandList( uint64_t frame ) const;
+        DZ_API void          ExecuteCommandList( uint64_t frame, const InteropArray<ISemaphore*>& additionalSemaphores = {} ) const;
+        DZ_API uint32_t      AcquireNextImage( uint64_t frame ) const;
+        DZ_API PresentResult Present( uint32_t imageIndex ) const;
+        DZ_API void          WaitIdle( ) const;
+        DZ_API ~FrameSync( ) = default;
     };
 } // namespace DenOfIz

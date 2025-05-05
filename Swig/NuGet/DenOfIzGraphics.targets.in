@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Copy native libraries to output directory -->
+  <ItemGroup>
+    <NativeLibs Include="$(MSBuildThisFileDirectory)..\runtimes\win-x64\native\**\*.dll" Condition="'$(RuntimeIdentifier)' == 'win-x64' Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Windows')) And '$(PlatformTarget)' == 'x64')" />
+    <NativeLibs Include="$(MSBuildThisFileDirectory)..\runtimes\win-x86\native\**\*.dll" Condition="'$(RuntimeIdentifier)' == 'win-x86' Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Windows')) And '$(PlatformTarget)' == 'x86')" />
+    <NativeLibs Include="$(MSBuildThisFileDirectory)..\runtimes\linux-x64\native\**\*.so" Condition="'$(RuntimeIdentifier)' == 'linux-x64' Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Linux')) And '$(PlatformTarget)' == 'x64')" />
+    <NativeLibs Include="$(MSBuildThisFileDirectory)..\runtimes\osx-x64\native\**\*.dylib" Condition="'$(RuntimeIdentifier)' == 'osx-x64' Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('OSX')) And '$(PlatformTarget)' == 'x64')" />
+    
+    <None Include="@(NativeLibs)">
+      <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Set platform-specific compilation constants -->
+  <PropertyGroup>
+    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(DefineConstants);WINDOWS</DefineConstants>
+    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('Linux'))">$(DefineConstants);LINUX</DefineConstants>
+    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('OSX'))">$(DefineConstants);OSX</DefineConstants>
+  </PropertyGroup>
+</Project>

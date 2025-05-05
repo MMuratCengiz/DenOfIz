@@ -44,14 +44,14 @@ namespace DenOfIz
     /// if BlendWeights is true => 4 x float
     struct DZ_API VertexEnabledAttributes
     {
-        bool Position : 1     = true;
-        bool Normal : 1       = true;
-        bool UV : 1           = true;
-        bool Color : 1        = false;
-        bool Tangent : 1      = true;
-        bool Bitangent : 1    = true;
-        bool BlendIndices : 1 = true;
-        bool BlendWeights : 1 = true;
+        bool Position     = true;
+        bool Normal       = true;
+        bool UV           = true;
+        bool Color        = false;
+        bool Tangent      = true;
+        bool Bitangent    = true;
+        bool BlendIndices = true;
+        bool BlendWeights = true;
     };
 
     // Not all the fields here have values, it is configured VertexEnabledAttributes
@@ -70,9 +70,9 @@ namespace DenOfIz
 
     struct DZ_API MorphTargetDeltaAttributes
     {
-        bool Position : 1 = true;
-        bool Normal : 1   = true;
-        bool Tangent : 1  = true;
+        bool Position = true;
+        bool Normal   = true;
+        bool Tangent  = true;
     };
 
     struct DZ_API MorphTargetDelta
@@ -186,7 +186,7 @@ namespace DenOfIz
         InteropArray<SubMeshData>  SubMeshes;
         MorphTargetDeltaAttributes MorphTargetDeltaAttributes{ };
         InteropArray<MorphTarget>  MorphTargets;
-        InteropArray<AssetUri>     AnimationRefs;   // Array of all available animations for this mesh
+        InteropArray<AssetUri>     AnimationRefs; // Array of all available animations for this mesh
         AssetUri                   SkeletonRef{ };
         InteropArray<UserProperty> UserProperties;
 

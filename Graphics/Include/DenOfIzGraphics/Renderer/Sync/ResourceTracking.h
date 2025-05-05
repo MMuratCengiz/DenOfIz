@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct DZ_API ResourceState
+    struct ResourceState
     {
         std::mutex    Mutex;
         ResourceUsage CurrentUsage = ResourceUsage::Undefined;

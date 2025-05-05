@@ -28,7 +28,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
 #include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
 #include <DenOfIzGraphics/Renderer/Sync/ResourceTracking.h>
-#include <DenOfIzGraphics/Utilities/Common.h>
 
 using namespace DirectX;
 

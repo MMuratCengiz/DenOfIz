@@ -18,12 +18,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-// Include all graphics headers:
-#include <DenOfIzGraphics/Assets/Font/TextRenderer.h>
-#include <DenOfIzGraphics/Backends/GraphicsApi.h>
-#include <DenOfIzGraphics/Renderer/Sync/FrameSync.h>
-#include <DenOfIzGraphics/Renderer/Sync/ResourceTracking.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/Data/Geometry.h>
-#include <DenOfIzGraphics/Assets/Import/AssimpImporter.h>
-#include <DenOfIzGraphics/Assets/Import/FontImporter.h>
+#include <DenOfIzGraphics/Backends/Interface/IInputLayout.h>
+#include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
+#include <DenOfIzGraphics/Backends/Interface/RayTracing/ILocalRootSignature.h>
+
+namespace DenOfIz
+{
+    struct DZ_API ShaderReflectDesc
+    {
+        InputLayoutDesc   InputLayout;
+        RootSignatureDesc RootSignature;
+        /// Local data layouts for each shader, index matched with the ShaderDescs provided in the ShaderProgramDesc.
+        InteropArray<LocalRootSignatureDesc> LocalRootSignatures;
+        /// Thread group sizes for compute, mesh, and task shaders.
+        InteropArray<ThreadGroupInfo> ThreadGroups;
+    };
+} // namespace DenOfIz

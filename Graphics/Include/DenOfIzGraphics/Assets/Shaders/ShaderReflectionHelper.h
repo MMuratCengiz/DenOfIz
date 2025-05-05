@@ -19,23 +19,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Assets/Shaders/DxcEnumConverter.h>
-#include <DenOfIzGraphics/Backends/Interface/IInputLayout.h>
-#include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/ILocalRootSignature.h>
+#include "ShaderReflectDesc.h"
 
 namespace DenOfIz
 {
-    struct DZ_API ShaderReflectDesc
-    {
-        InputLayoutDesc   InputLayout;
-        RootSignatureDesc RootSignature;
-        /// Local data layouts for each shader, index matched with the ShaderDescs provided in the ShaderProgramDesc.
-        InteropArray<LocalRootSignatureDesc> LocalRootSignatures;
-        /// Thread group sizes for compute, mesh, and task shaders.
-        InteropArray<ThreadGroupInfo> ThreadGroups;
-    };
-
-    class DZ_API ShaderReflectionHelper
+    class ShaderReflectionHelper
     {
     public:
         // Returns true if the bound resource is found(and an update is performed), false otherwise
