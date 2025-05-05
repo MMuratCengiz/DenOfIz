@@ -28,10 +28,10 @@ BundleManager::BundleManager( const BundleManagerDesc &desc ) : m_defaultSearchP
 
 BundleManager::~BundleManager( ) = default;
 
-void BundleManager::MountBundle( Bundle *bundle, const int priority )
+void BundleManager::MountBundle( Bundle *bundle )
 {
     auto it = m_mountedBundles.begin( );
-    while ( it != m_mountedBundles.end( ) && priority <= 0 )
+    while ( it != m_mountedBundles.end( ) )
     {
         ++it;
     }
@@ -63,14 +63,14 @@ void BundleManager::MountDirectory( const InteropString &directoryPath, bool rec
     directoryDesc.OutputBundlePath         = InteropString( bundlePath.string( ).c_str( ) );
 
     Bundle *bundle = Bundle::CreateFromDirectory( directoryDesc );
-    MountBundle( bundle, priority );
+    MountBundle( bundle );
 }
 
 BinaryReader *BundleManager::OpenReader( const AssetUri &path )
 {
-    const std::string pathStr = path.Path.Get( );
+    const std::string uriStr = path.ToString( ).Get( );
 
-    if ( const auto cacheIt = m_assetLocationCache.find( pathStr ); cacheIt != m_assetLocationCache.end( ) )
+    if ( const auto cacheIt = m_assetLocationCache.find( uriStr ); cacheIt != m_assetLocationCache.end( ) )
     {
         return cacheIt->second->OpenReader( path );
     }
@@ -79,17 +79,13 @@ BinaryReader *BundleManager::OpenReader( const AssetUri &path )
     {
         if ( bundle->Exists( path ) )
         {
-            m_assetLocationCache[ pathStr ] = bundle;
+            m_assetLocationCache[ uriStr ] = bundle;
             return bundle->OpenReader( path );
         }
     }
 
-    // Dev mode, check file system
-    const std::filesystem::path searchPath( m_defaultSearchPath.Get( ) );
-    const std::filesystem::path assetPath( pathStr );
-    const std::filesystem::path fullPath = searchPath / assetPath;
-
-    const InteropString resolvedPath = FileIO::GetResourcePath( InteropString( fullPath.string( ).c_str( ) ) );
+    // If it's not in any bundle, return from filesystem
+    const InteropString resolvedPath = FileIO::GetResourcePath( path.Path );
     if ( FileIO::FileExists( resolvedPath ) )
     {
         return new BinaryReader( resolvedPath );
@@ -98,11 +94,10 @@ BinaryReader *BundleManager::OpenReader( const AssetUri &path )
     return nullptr;
 }
 
-BinaryWriter *BundleManager::OpenWriter( const AssetUri &path, AssetType type )
+BinaryWriter *BundleManager::OpenWriter( const AssetUri &path )
 {
-    const std::string pathStr = path.Path.Get( );
-
-    if ( const auto cacheIt = m_assetLocationCache.find( pathStr ); cacheIt != m_assetLocationCache.end( ) )
+    const std::string uriStr = path.ToString( ).Get( );
+    if ( const auto cacheIt = m_assetLocationCache.find( uriStr ); cacheIt != m_assetLocationCache.end( ) )
     {
         return cacheIt->second->OpenWriter( path );
     }
@@ -111,21 +106,13 @@ BinaryWriter *BundleManager::OpenWriter( const AssetUri &path, AssetType type )
     {
         if ( bundle->Exists( path ) )
         {
-            m_assetLocationCache[ pathStr ] = bundle;
+            m_assetLocationCache[ uriStr ] = bundle;
             return bundle->OpenWriter( path );
         }
     }
 
-    if ( !m_mountedBundles.empty( ) )
-    {
-        return m_mountedBundles[ 0 ]->OpenWriter( path );
-    }
-
-    const std::filesystem::path searchPath( m_defaultSearchPath.Get( ) );
-    const std::filesystem::path assetPath( pathStr );
-    const std::filesystem::path fullPath = searchPath / assetPath;
-
-    const InteropString resolvedPath = FileIO::GetResourcePath( InteropString( fullPath.string( ).c_str( ) ) );
+    // If it's not in any bundle, return from filesystem
+    const InteropString resolvedPath = FileIO::GetResourcePath( path.Path );
     if ( FileIO::FileExists( resolvedPath ) )
     {
         return new BinaryWriter( resolvedPath );
@@ -134,26 +121,32 @@ BinaryWriter *BundleManager::OpenWriter( const AssetUri &path, AssetType type )
     return nullptr;
 }
 
+void BundleManager::AddAsset( Bundle *bundle, const AssetUri &path, AssetType type, const InteropArray<Byte> &data )
+{
+    if ( !bundle )
+    {
+        if ( m_mountedBundles.empty( ) )
+        {
+            LOG( ERROR ) << "Cannot add asset: no bundle provided and no mounted bundles available";
+            return;
+        }
+        bundle = m_mountedBundles[ 0 ];
+    }
+
+    if ( std::ranges::find( m_mountedBundles, bundle ) == m_mountedBundles.end( ) )
+    {
+        LOG( WARNING ) << "Adding asset to a bundle that is not mounted in this manager";
+    }
+
+    bundle->AddAsset( path, type, data );
+    const std::string uriStr       = path.ToString( ).Get( );
+    m_assetLocationCache[ uriStr ] = bundle;
+}
+
 bool BundleManager::Exists( const AssetUri &path )
 {
-    const std::string pathStr = path.Path.Get( );
-    const std::string uriStr  = path.ToString( ).Get( );
-
-    if ( const auto cacheIt = m_assetLocationCache.find( pathStr ); cacheIt != m_assetLocationCache.end( ) )
-    {
-        return true;
-    }
-
-    std::string altPathStr = pathStr;
-    std::ranges::replace( altPathStr, '/', '\\' );
-    if ( const auto cacheIt = m_assetLocationCache.find( altPathStr ); cacheIt != m_assetLocationCache.end( ) )
-    {
-        return true;
-    }
-
-    altPathStr = pathStr;
-    std::ranges::replace( altPathStr, '\\', '/' );
-    if ( const auto cacheIt = m_assetLocationCache.find( altPathStr ); cacheIt != m_assetLocationCache.end( ) )
+    const std::string uriStr = path.ToString( ).Get( );
+    if ( const auto cacheIt = m_assetLocationCache.find( uriStr ); cacheIt != m_assetLocationCache.end( ) )
     {
         return true;
     }
@@ -162,16 +155,12 @@ bool BundleManager::Exists( const AssetUri &path )
     {
         if ( bundle->Exists( path ) )
         {
-            m_assetLocationCache[ pathStr ] = bundle;
+            m_assetLocationCache[ uriStr ] = bundle;
             return true;
         }
     }
 
-    const std::filesystem::path searchPath( m_defaultSearchPath.Get( ) );
-    const std::filesystem::path assetPath( pathStr );
-    const std::filesystem::path fullPath = searchPath / assetPath;
-
-    const InteropString resolvedPath = FileIO::GetResourcePath( InteropString( fullPath.string( ).c_str( ) ) );
+    const InteropString resolvedPath = FileIO::GetResourcePath( path.Path );
     if ( FileIO::FileExists( resolvedPath ) )
     {
         return true;

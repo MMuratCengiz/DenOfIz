@@ -109,21 +109,17 @@ Bundle::Bundle( const BundleDirectoryDesc &directoryDesc ) : m_bundleFile( nullp
             }
         }
 
-        // Read file using FileIO for platform consistency
         const InteropString filePath( path.string( ).c_str( ) );
-        InteropArray<Byte>  fileData;
-
-        try
+        if ( FileIO::FileExists( filePath ) )
         {
-            fileData = FileIO::ReadFile( filePath );
+            const InteropArray<Byte> fileData = FileIO::ReadFile( filePath );
+            const AssetUri           assetUri = AssetUri::Create( InteropString( relPathStr.c_str( ) ) );
+            AddAsset( assetUri, assetType, fileData );
         }
-        catch ( const std::exception &e )
+        else
         {
-            LOG( ERROR ) << "Failed to read file: " << path.string( ) << " - " << e.what( );
-            return;
+            LOG( ERROR ) << "Failed to add asset: file does not exist: " << relPathStr;
         }
-        const AssetUri assetUri = AssetUri::Create( InteropString( relPathStr.c_str( ) ) );
-        AddAsset( assetUri, assetType, fileData );
     };
 
     if ( directoryDesc.Recursive )
@@ -156,23 +152,8 @@ Bundle *Bundle::CreateFromDirectory( const BundleDirectoryDesc &directoryDesc )
 
 BinaryReader *Bundle::OpenReader( const AssetUri &assetUri )
 {
-    const std::string pathStr = assetUri.ToString( ).Get( );
-    auto              it      = m_assetEntries.find( pathStr );
-
-    if ( it == m_assetEntries.end( ) )
-    {
-        std::string alternatePath = pathStr;
-        std::ranges::replace( alternatePath, '/', '\\' );
-        it = m_assetEntries.find( alternatePath );
-
-        if ( it == m_assetEntries.end( ) )
-        {
-            alternatePath = pathStr;
-            std::ranges::replace( alternatePath, '\\', '/' );
-            it = m_assetEntries.find( alternatePath );
-        }
-    }
-
+    const std::string uriStr = assetUri.ToString( ).Get( );
+    const auto        it     = m_assetEntries.find( uriStr );
     if ( it != m_assetEntries.end( ) )
     {
         BinaryReaderDesc desc{ };
@@ -181,33 +162,32 @@ BinaryReader *Bundle::OpenReader( const AssetUri &assetUri )
         if ( m_isCompressed )
         {
             m_bundleFile->seekg( it->second.Offset, std::ios::beg );
+            BinaryReader fileReader( m_bundleFile );
 
-            uint64_t compressedSize = 0;
-            m_bundleFile->read( reinterpret_cast<char *>( &compressedSize ), sizeof( uint64_t ) );
-
-            std::vector<Byte> compressedData( compressedSize );
-            m_bundleFile->read( reinterpret_cast<char *>( compressedData.data( ) ), compressedSize );
+            const uint64_t     compressedSize = fileReader.ReadUInt64( );
+            InteropArray<Byte> compressedData = fileReader.ReadBytes( static_cast<uint32_t>( compressedSize ) );
 
             InteropArray<Byte> decompressedData( it->second.NumBytes );
             mz_ulong           decompressedSize = static_cast<mz_ulong>( it->second.NumBytes );
-            const int          result           = mz_uncompress( decompressedData.Data( ), &decompressedSize, compressedData.data( ), static_cast<mz_ulong>( compressedSize ) );
+            const int          result           = mz_uncompress( decompressedData.Data( ), &decompressedSize, compressedData.Data( ), static_cast<mz_ulong>( compressedSize ) );
 
             if ( result != MZ_OK )
             {
-                LOG( ERROR ) << "Failed to decompress asset: " << pathStr;
+                LOG( ERROR ) << "Failed to decompress asset: " << uriStr;
                 return nullptr;
             }
 
             return new BinaryReader( decompressedData );
         }
+
+        // Uncompressed data
         m_bundleFile->seekg( it->second.Offset, std::ios::beg );
-
-        InteropArray<Byte> buffer( it->second.NumBytes );
-        m_bundleFile->read( reinterpret_cast<char *>( buffer.Data( ) ), it->second.NumBytes );
-
+        BinaryReader             fileReader( m_bundleFile );
+        const InteropArray<Byte> buffer = fileReader.ReadBytes( static_cast<uint32_t>( it->second.NumBytes ) );
         return new BinaryReader( buffer );
     }
 
+    // If it's not in the bundle, check if we can find it in the filesystem, useful for dev mode
     const InteropString fsPath = FileIO::GetResourcePath( assetUri.Path );
     if ( FileIO::FileExists( fsPath ) )
     {
@@ -219,14 +199,13 @@ BinaryReader *Bundle::OpenReader( const AssetUri &assetUri )
 
 BinaryWriter *Bundle::OpenWriter( const AssetUri &assetUri )
 {
-    const std::string pathStr = assetUri.ToString( ).Get( );
-
-    if ( const auto it = m_assetEntries.find( pathStr ); it != m_assetEntries.end( ) )
+    const std::string uriStr = assetUri.ToString( ).Get( );
+    if ( const auto it = m_assetEntries.find( uriStr ); it != m_assetEntries.end( ) )
     {
         constexpr BinaryWriterDesc desc{ };
         return new BinaryWriter( m_bundleFile, desc );
     }
-
+    // If it's not in the bundle, check if we can find it in the filesystem, useful for dev mode
     const InteropString fsPath = FileIO::GetResourcePath( assetUri.Path );
     if ( FileIO::FileExists( fsPath ) )
     {
@@ -244,9 +223,15 @@ void Bundle::LoadTableOfContents( )
         return;
     }
 
+    BinaryReader reader( m_bundleFile );
+
     BundleHeader header;
-    m_bundleFile->seekg( 0, std::ios::beg );
-    m_bundleFile->read( reinterpret_cast<char *>( &header ), sizeof( BundleHeader ) );
+    header.Magic        = reader.ReadUInt64( );
+    header.Version      = reader.ReadUInt32( );
+    header.NumBytes     = reader.ReadUInt32( );
+    header.NumAssets    = reader.ReadUInt32( );
+    header.TOCOffset    = reader.ReadUInt64( );
+    header.IsCompressed = reader.ReadByte( ) != 0;
 
     if ( header.Magic != BundleHeader::BundleHeaderMagic )
     {
@@ -262,23 +247,25 @@ void Bundle::LoadTableOfContents( )
 
     m_isCompressed = header.IsCompressed;
     m_assetEntries.clear( );
-    m_bundleFile->seekg( header.TOCOffset, std::ios::beg );
+    reader.Seek( header.TOCOffset );
 
     for ( uint32_t i = 0; i < header.NumAssets; i++ )
     {
-        BundleTOCEntry tocEntry{ };
-        m_bundleFile->read( reinterpret_cast<char *>( &tocEntry ), sizeof( BundleTOCEntry ) );
+        BundleTOCEntry tocEntry;
+        tocEntry.AssetTypeId = reader.ReadUInt32( );
+        tocEntry.Offset      = reader.ReadUInt64( );
+        tocEntry.NumBytes    = reader.ReadUInt64( );
+        tocEntry.PathLength  = reader.ReadUInt32( );
 
-        std::vector<char> pathBuffer( tocEntry.PathLength + 1, 0 );
-        m_bundleFile->read( pathBuffer.data( ), tocEntry.PathLength );
+        const InteropString path = reader.ReadString( );
 
         AssetEntry entry;
         entry.Type     = static_cast<AssetType>( tocEntry.AssetTypeId );
         entry.Offset   = tocEntry.Offset;
         entry.NumBytes = tocEntry.NumBytes;
-        entry.Path     = InteropString( pathBuffer.data( ) );
+        entry.Path     = path;
 
-        std::string pathStr       = pathBuffer.data( );
+        std::string pathStr       = path.Get( );
         m_assetEntries[ pathStr ] = entry;
     }
 
@@ -287,24 +274,29 @@ void Bundle::LoadTableOfContents( )
 
 void Bundle::WriteEmptyHeader( ) const
 {
-    if ( !m_bundleFile || !m_bundleFile->good( ) )
+    if ( !m_bundleFile->good( ) )
     {
         LOG( ERROR ) << "Failed to write bundle: invalid file stream";
         return;
     }
 
-    BundleHeader header;
+    const BinaryWriter writer( m_bundleFile );
+    BundleHeader       header;
     header.Magic        = BundleHeader::BundleHeaderMagic;
     header.Version      = BundleHeader::Latest;
     header.NumAssets    = 0;
-    header.TOCOffset    = sizeof( BundleHeader ); // TOC starts right after header
+    header.TOCOffset    = sizeof( BundleHeader );
     header.IsCompressed = m_isCompressed;
 
-    m_bundleFile->seekp( 0, std::ios::beg );
-    m_bundleFile->write( reinterpret_cast<const char *>( &header ), sizeof( BundleHeader ) );
+    writer.WriteUInt64( header.Magic );
+    writer.WriteUInt32( header.Version );
+    writer.WriteUInt32( header.NumBytes );
+    writer.WriteUInt32( header.NumAssets );
+    writer.WriteUInt64( header.TOCOffset );
+    writer.WriteByte( header.IsCompressed ? 1 : 0 );
 
-    m_bundleFile->seekp( header.TOCOffset, std::ios::beg );
-    m_bundleFile->flush( );
+    writer.Seek( header.TOCOffset );
+    writer.Flush( );
 
     LOG( INFO ) << "Created new empty bundle";
 }
@@ -317,16 +309,17 @@ void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const Int
         return;
     }
 
-    const std::string pathStr = assetUri.ToString( ).Get( );
-    if ( const auto existingIt = m_assetEntries.find( pathStr ); existingIt != m_assetEntries.end( ) )
+    const std::string uriStr = assetUri.ToString( ).Get( );
+    if ( const auto existingIt = m_assetEntries.find( uriStr ); existingIt != m_assetEntries.end( ) )
     {
-        LOG( WARNING ) << "Asset already exists in bundle, replacing: " << pathStr;
+        LOG( WARNING ) << "Asset already exists in bundle, replacing: " << uriStr;
     }
 
     m_bundleFile->seekp( 0, std::ios::end );
     const uint64_t assetOffset = m_bundleFile->tellp( );
     const uint64_t numBytes    = data.NumElements( );
 
+    const BinaryWriter writer( m_bundleFile );
     if ( m_isCompressed )
     {
         const mz_ulong    sourceSize = static_cast<mz_ulong>( numBytes );
@@ -338,16 +331,22 @@ void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const Int
 
         if ( result != MZ_OK )
         {
-            LOG( ERROR ) << "Failed to compress asset: " << pathStr;
+            LOG( ERROR ) << "Failed to compress asset: " << uriStr;
             return;
         }
 
-        m_bundleFile->write( reinterpret_cast<const char *>( &compressedSize ), sizeof( uint64_t ) );
-        m_bundleFile->write( reinterpret_cast<const char *>( compressedData.data( ) ), compressedSize );
+        InteropArray<Byte> compressedInteropData( compressedSize );
+        for ( size_t i = 0; i < compressedSize; ++i )
+        {
+            compressedInteropData.SetElement( i, compressedData[ i ] );
+        }
+
+        writer.WriteUInt64( compressedSize );
+        writer.WriteBytes( compressedInteropData );
     }
     else
     {
-        m_bundleFile->write( reinterpret_cast<const char *>( data.Data( ) ), numBytes );
+        writer.WriteBytes( data );
     }
 
     AssetEntry entry;
@@ -356,35 +355,15 @@ void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const Int
     entry.NumBytes = numBytes;
     entry.Path     = assetUri.Path;
 
-    m_assetEntries[ pathStr ] = entry;
-    m_isDirty                 = true;
+    m_assetEntries[ uriStr ] = entry;
+    m_isDirty                = true;
 
-    LOG( INFO ) << "Added asset to bundle: " << pathStr << " (" << numBytes << " bytes)";
+    LOG( INFO ) << "Added asset to bundle: " << uriStr << " (" << numBytes << " bytes)";
 }
 
 bool Bundle::Exists( const AssetUri &assetUri ) const
 {
-    const std::string pathStr = assetUri.ToString( ).Get( );
-    if ( m_assetEntries.contains( pathStr ) )
-    {
-        return true;
-    }
-
-    std::string alternatePath = pathStr;
-    std::ranges::replace( alternatePath, '/', '\\' );
-    if ( m_assetEntries.contains( alternatePath ) )
-    {
-        return true;
-    }
-
-    alternatePath = pathStr;
-    std::ranges::replace( alternatePath, '\\', '/' );
-    if ( m_assetEntries.contains( alternatePath ) )
-    {
-        return true;
-    }
-
-    return false;
+    return m_assetEntries.contains( assetUri.ToString( ).Get( ) );
 }
 
 bool Bundle::Save( )
@@ -399,18 +378,16 @@ bool Bundle::Save( )
     const uint64_t currentSize  = m_bundleFile->tellg( );
     const uint64_t newTocOffset = currentSize;
 
-    m_bundleFile->seekp( newTocOffset, std::ios::beg );
+    const BinaryWriter writer( m_bundleFile );
+    writer.Seek( newTocOffset );
 
     for ( const auto &entry : m_assetEntries )
     {
-        BundleTOCEntry tocEntry{ };
-        tocEntry.AssetTypeId = static_cast<uint32_t>( entry.second.Type );
-        tocEntry.Offset      = entry.second.Offset;
-        tocEntry.NumBytes    = entry.second.NumBytes;
-        tocEntry.PathLength  = static_cast<uint32_t>( entry.first.length( ) );
-
-        m_bundleFile->write( reinterpret_cast<const char *>( &tocEntry ), sizeof( BundleTOCEntry ) );
-        m_bundleFile->write( entry.first.c_str( ), tocEntry.PathLength );
+        writer.WriteUInt32( static_cast<uint32_t>( entry.second.Type ) );
+        writer.WriteUInt64( entry.second.Offset );
+        writer.WriteUInt64( entry.second.NumBytes );
+        writer.WriteUInt32( static_cast<uint32_t>( entry.first.length( ) ) );
+        writer.WriteString( InteropString( entry.first.c_str( ) ) );
     }
 
     BundleHeader header;
@@ -420,10 +397,15 @@ bool Bundle::Save( )
     header.TOCOffset    = newTocOffset;
     header.IsCompressed = m_isCompressed;
 
-    m_bundleFile->seekp( 0, std::ios::beg );
-    m_bundleFile->write( reinterpret_cast<const char *>( &header ), sizeof( BundleHeader ) );
+    writer.Seek( 0 );
+    writer.WriteUInt64( header.Magic );
+    writer.WriteUInt32( header.Version );
+    writer.WriteUInt32( header.NumBytes );
+    writer.WriteUInt32( header.NumAssets );
+    writer.WriteUInt64( header.TOCOffset );
+    writer.WriteByte( header.IsCompressed ? 1 : 0 );
 
-    m_bundleFile->flush( );
+    writer.Flush( );
     m_isDirty = false;
 
     LOG( INFO ) << "Saved bundle with " << header.NumAssets << " assets";
@@ -436,7 +418,8 @@ InteropArray<AssetUri> Bundle::GetAllAssets( ) const
     size_t                 index = 0;
     for ( const auto &key : m_assetEntries | std::views::keys )
     {
-        result.SetElement( index++, AssetUri::Parse( InteropString( key.c_str( ) ) ) );
+        const AssetUri uri = AssetUri::Parse( InteropString( key.c_str( ) ) );
+        result.SetElement( index++, uri );
     }
     return result;
 }
@@ -459,7 +442,8 @@ InteropArray<AssetUri> Bundle::GetAssetsByType( const AssetType type ) const
     {
         if ( entry.second.Type == type )
         {
-            result.SetElement( index++, AssetUri::Parse( InteropString( entry.first.c_str( ) ) ) );
+            const AssetUri uri = AssetUri::Parse( InteropString( entry.first.c_str( ) ) );
+            result.SetElement( index++, uri );
         }
     }
 

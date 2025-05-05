@@ -38,12 +38,13 @@ namespace DenOfIz
         DZ_API explicit BundleManager( const BundleManagerDesc &desc );
         DZ_API ~BundleManager( );
 
-        DZ_API void MountBundle( Bundle *bundle, int priority = 0 );
+        DZ_API void MountBundle( Bundle *bundle );
         DZ_API void UnmountBundle( Bundle *bundle );
         DZ_API void MountDirectory( const InteropString &directoryPath, bool recursive = true, int priority = 0 );
 
         DZ_API BinaryReader *OpenReader( const AssetUri &path );
-        DZ_API BinaryWriter *OpenWriter( const AssetUri &path, AssetType type );
+        DZ_API BinaryWriter *OpenWriter( const AssetUri &path );
+        DZ_API void          AddAsset( Bundle *bundle, const AssetUri &path, AssetType type, const InteropArray<Byte> &data );
         DZ_API bool          Exists( const AssetUri &path );
 
         DZ_API void      InvalidateCache( );
