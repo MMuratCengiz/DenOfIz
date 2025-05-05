@@ -338,6 +338,43 @@ void BatchResourceCopy::LoadAssetTexture( const LoadAssetTextureDesc &loadDesc )
     }
 }
 
+void BatchResourceCopy::LoadAssetStreamToBuffer( const LoadAssetStreamToBufferDesc &loadDesc )
+{
+    DZ_NOT_NULL( loadDesc.DstBuffer );
+    DZ_NOT_NULL( loadDesc.Reader );
+    if ( loadDesc.Stream.NumBytes == 0 )
+    {
+        LOG( WARNING ) << "LoadAssetStreamToBuffer: Stream has no data to load.";
+        return;
+    }
+
+    const auto reader   = loadDesc.Reader;
+    const auto position = reader->Position( ); // Todo is rollback necessary?
+    reader->Seek( loadDesc.Stream.Offset );
+    InteropArray<Byte> fullData( loadDesc.Stream.NumBytes );
+    uint64_t           memBytesCopied = 0;
+    while ( memBytesCopied < loadDesc.Stream.NumBytes )
+    {
+        constexpr size_t chunkSize            = 65536;
+        const uint64_t   bytesToReadMem       = std::min<uint32_t>( chunkSize, loadDesc.Stream.NumBytes - memBytesCopied );
+        const int        bytesActuallyReadMem = reader->Read( fullData, static_cast<uint32_t>( memBytesCopied ), static_cast<uint32_t>( bytesToReadMem ) );
+        if ( bytesActuallyReadMem != static_cast<int>( bytesToReadMem ) )
+        {
+            LOG( FATAL ) << "Failed to read expected chunk size from mesh asset stream into memory.";
+        }
+        memBytesCopied += bytesActuallyReadMem;
+    }
+    CopyToGpuBufferDesc copyDesc;
+    copyDesc.DstBuffer = loadDesc.DstBuffer;
+    copyDesc.Data      = std::move( fullData );
+    if ( loadDesc.DstBufferOffset != 0 )
+    {
+        LOG( WARNING ) << "LoadStreamToBuffer: DstBufferOffset ignored by CopyToGPUBuffer.";
+    }
+    CopyToGPUBuffer( copyDesc );
+    reader->Seek( position );
+}
+
 void BatchResourceCopy::Submit( ISemaphore *notify )
 {
     m_copyCommandList->End( );

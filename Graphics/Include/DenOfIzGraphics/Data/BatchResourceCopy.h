@@ -26,6 +26,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h>
 
+#include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
+
 namespace DenOfIz
 {
     struct DZ_API CopyToGpuBufferDesc
@@ -51,10 +53,18 @@ namespace DenOfIz
         ITextureResource *DstTexture;
     };
 
-    struct DZ_API LoadAssetTextureDesc
+    struct DZ_API LoadAssetTextureDesc // Rename to LoadTextureAssetDesc
     {
         TextureAssetReader *Reader;
         ITextureResource   *DstTexture;
+    };
+
+    struct DZ_API LoadAssetStreamToBufferDesc
+    {
+        AssetDataStream  Stream;
+        IBufferResource *DstBuffer{ };
+        uint64_t         DstBufferOffset{ };
+        BinaryReader    *Reader;
     };
 
     struct DZ_API CreateAssetTextureDesc
@@ -108,6 +118,7 @@ namespace DenOfIz
         DZ_API ITextureResource              *CreateAndLoadAssetTexture( const CreateAssetTextureDesc &loadDesc );
         DZ_API void                           LoadTexture( const LoadTextureDesc &loadDesc );
         DZ_API void                           LoadAssetTexture( const LoadAssetTextureDesc &loadDesc );
+        DZ_API void                           LoadAssetStreamToBuffer( const LoadAssetStreamToBufferDesc &loadDesc );
         [[nodiscard]] DZ_API IBufferResource *CreateUniformBuffer( const InteropArray<Byte> &, uint32_t numBytes );
         [[nodiscard]] DZ_API IBufferResource *CreateGeometryVertexBuffer( const GeometryData &geometryData );
         [[nodiscard]] DZ_API IBufferResource *CreateGeometryIndexBuffer( const GeometryData &geometryData );

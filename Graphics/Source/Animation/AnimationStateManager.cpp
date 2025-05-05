@@ -175,11 +175,11 @@ void AnimationStateManager::AddAnimation( const AnimationAsset &animationAsset )
     }
 }
 
-void AnimationStateManager::Play( const std::string &animationName, const bool loop )
+void AnimationStateManager::Play( const InteropString &animationName, const bool loop )
 {
     if ( !HasAnimation( animationName ) )
     {
-        LOG( ERROR ) << "Animation '" << animationName << "' not found";
+        LOG( ERROR ) << "Animation '" << animationName.Get( ) << "' not found";
         return;
     }
 
@@ -188,41 +188,41 @@ void AnimationStateManager::Play( const std::string &animationName, const bool l
     auto &prevAnim   = m_animations[ m_currentAnimation ];
     prevAnim.Playing = false;
 
-    m_currentAnimation = animationName;
+    m_currentAnimation = animationName.Get( );
     auto &newAnim      = m_animations[ m_currentAnimation ];
 
     newAnim.Loop        = loop;
     newAnim.Playing     = true;
     newAnim.CurrentTime = 0.0f;
 
-    LOG( INFO ) << "Playing animation '" << animationName << "'" << ( loop ? " (looping)" : "" );
+    LOG( INFO ) << "Playing animation '" << animationName.Get( ) << "'" << ( loop ? " (looping)" : "" );
 }
 
-void AnimationStateManager::BlendTo( const std::string &animationName, const float blendTime )
+void AnimationStateManager::BlendTo( const InteropString &animationName, const float blendTime )
 {
     if ( !HasAnimation( animationName ) )
     {
-        LOG( ERROR ) << "Animation '" << animationName << "' not found";
+        LOG( ERROR ) << "Animation '" << animationName.Get( ) << "' not found";
         return;
     }
 
-    if ( m_currentAnimation == animationName )
+    if ( m_currentAnimation == animationName.Get( ) )
     {
         return;
     }
 
     m_blendingState.SourceAnimation  = m_currentAnimation;
-    m_blendingState.TargetAnimation  = animationName;
+    m_blendingState.TargetAnimation  = animationName.Get( );
     m_blendingState.BlendTime        = blendTime;
     m_blendingState.CurrentBlendTime = 0.0f;
     m_blendingState.InProgress       = true;
 
-    auto &targetAnim       = m_animations[ animationName ];
+    auto &targetAnim       = m_animations[ animationName.Get( ) ];
     targetAnim.Weight      = 0.0f;
     targetAnim.Playing     = true;
     targetAnim.CurrentTime = 0.0f;
 
-    LOG( INFO ) << "Blending from '" << m_currentAnimation << "' to '" << animationName << "' over " << blendTime << "s";
+    LOG( INFO ) << "Blending from '" << m_currentAnimation << "' to '" << animationName.Get( ) << "' over " << blendTime << "s";
 }
 
 void AnimationStateManager::Stop( )
@@ -302,9 +302,9 @@ void AnimationStateManager::Update( const float deltaTime )
     }
 }
 
-bool AnimationStateManager::HasAnimation( const std::string &animationName ) const
+bool AnimationStateManager::HasAnimation( const InteropString &animationName ) const
 {
-    return m_animations.contains( animationName );
+    return m_animations.contains( animationName.Get( ) );
 }
 
 void AnimationStateManager::GetModelSpaceTransforms( InteropArray<Float_4x4> &outTransforms ) const
@@ -344,9 +344,9 @@ void AnimationStateManager::GetModelSpaceTransforms( InteropArray<Float_4x4> &ou
     }
 }
 
-const std::string &AnimationStateManager::GetCurrentAnimationName( ) const
+const InteropString &AnimationStateManager::GetCurrentAnimationName( ) const
 {
-    return m_currentAnimation;
+    return InteropString( m_currentAnimation.c_str( ) );
 }
 
 int AnimationStateManager::GetNumJoints( ) const

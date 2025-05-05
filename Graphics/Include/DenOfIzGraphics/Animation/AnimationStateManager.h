@@ -79,17 +79,17 @@ namespace DenOfIz
         DZ_API explicit AnimationStateManager( const AnimationStateManagerDesc &desc );
         DZ_API ~AnimationStateManager( );
 
-        DZ_API void  AddAnimation( const AnimationAsset &animationAsset );
-        DZ_API void  Play( const std::string &animationName, bool loop = true );
-        DZ_API void  BlendTo( const std::string &animationName, float blendTime = 0.5f );
-        DZ_API void  Stop( );
-        DZ_API void  Pause( );
-        DZ_API void  Resume( );
-        DZ_API void  Update( float deltaTime );
-        DZ_API bool  HasAnimation( const std::string &animationName ) const;
-        DZ_API void  GetModelSpaceTransforms( InteropArray<Float_4x4> &outTransforms ) const;
-        DZ_API const std::string &GetCurrentAnimationName( ) const;
-        DZ_API int                GetNumJoints( ) const;
+        DZ_API void                 AddAnimation( const AnimationAsset &animationAsset );
+        DZ_API void                 Play( const InteropString &animationName, bool loop = true );
+        DZ_API void                 BlendTo( const InteropString &animationName, float blendTime = 0.5f );
+        DZ_API void                 Stop( );
+        DZ_API void                 Pause( );
+        DZ_API void                 Resume( );
+        DZ_API void                 Update( float deltaTime );
+        DZ_API bool                 HasAnimation( const InteropString &animationName ) const;
+        DZ_API void                 GetModelSpaceTransforms( InteropArray<Float_4x4> &outTransforms ) const;
+        DZ_API const InteropString &GetCurrentAnimationName( ) const;
+        DZ_API int                  GetNumJoints( ) const;
 
     private:
         std::unique_ptr<ozz::animation::Animation, ozz::Deleter<ozz::animation::Animation>> ConvertToOzzAnimation( const AnimationClip &clip );

@@ -19,19 +19,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include "MeshAsset.h"
 #include <cstdint>
 
 namespace DenOfIz
 {
-    struct DZ_API LoadToBufferDesc
-    {
-        AssetDataStream    Stream{ };
-        BatchResourceCopy *BatchCopy = nullptr;
-        IBufferResource   *Buffer{ };
-        uint32_t           DstBufferOffset{ };
-    };
 
     struct DZ_API LoadToMemoryDesc
     {
@@ -66,7 +58,6 @@ namespace DenOfIz
         [[nodiscard]] DZ_API const MeshAsset &GetMetadata( ) const;
 
         // Load Raw Bytes
-        DZ_API void LoadStreamToBuffer( const LoadToBufferDesc &desc ) const;
         DZ_API void LoadStreamToMemory( const LoadToMemoryDesc &desc ) const;
 
         // Read parsed

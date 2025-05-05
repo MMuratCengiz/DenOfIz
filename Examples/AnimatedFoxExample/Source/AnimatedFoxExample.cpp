@@ -394,7 +394,8 @@ void AnimatedFoxExample::HandleEvent( SDL_Event &event )
                 m_currentAnim = "Run";
                 break;
             case SDLK_b: // Blend between animations
-                if ( m_animationManager->GetCurrentAnimationName( ) == "Walk" )
+                const std::string animationName = m_animationManager->GetCurrentAnimationName( ).Get( );
+                if ( animationName == "Walk" )
                 {
                     m_animationManager->BlendTo( "Run", 0.5f );
                     m_currentAnim = "Blending to Run";

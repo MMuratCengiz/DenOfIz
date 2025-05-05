@@ -358,50 +358,6 @@ const MeshAsset &MeshAssetReader::GetMetadata( ) const
     return m_meshAsset;
 }
 
-void MeshAssetReader::LoadStreamToBuffer( const LoadToBufferDesc &desc ) const
-{
-    if ( !m_metadataRead )
-    {
-        LOG( FATAL ) << "ReadMetadata must be called first.";
-    }
-    if ( !desc.Buffer )
-    {
-        LOG( FATAL ) << "Destination buffer cannot be null.";
-    }
-    if ( !desc.BatchCopy )
-    {
-        LOG( FATAL ) << "BatchResourceCopy instance cannot be null.";
-        return;
-    }
-    if ( desc.Stream.NumBytes == 0 )
-    {
-        return;
-    }
-
-    m_reader->Seek( desc.Stream.Offset );
-    InteropArray<Byte> fullData( desc.Stream.NumBytes );
-    uint64_t           memBytesCopied = 0;
-    while ( memBytesCopied < desc.Stream.NumBytes )
-    {
-        constexpr size_t chunkSize            = 65536;
-        const uint64_t   bytesToReadMem       = std::min<uint32_t>( chunkSize, desc.Stream.NumBytes - memBytesCopied );
-        const int        bytesActuallyReadMem = m_reader->Read( fullData, static_cast<uint32_t>( memBytesCopied ), static_cast<uint32_t>( bytesToReadMem ) );
-        if ( bytesActuallyReadMem != static_cast<int>( bytesToReadMem ) )
-        {
-            LOG( FATAL ) << "Failed to read expected chunk size from mesh asset stream into memory.";
-        }
-        memBytesCopied += bytesActuallyReadMem;
-    }
-    CopyToGpuBufferDesc copyDesc;
-    copyDesc.DstBuffer = desc.Buffer;
-    copyDesc.Data      = std::move( fullData );
-    if ( desc.DstBufferOffset != 0 )
-    {
-        LOG( WARNING ) << "LoadStreamToBuffer: DstBufferOffset ignored by CopyToGPUBuffer.";
-    }
-    desc.BatchCopy->CopyToGPUBuffer( copyDesc );
-}
-
 void MeshAssetReader::LoadStreamToMemory( const LoadToMemoryDesc &desc ) const
 {
     if ( !m_metadataRead )
