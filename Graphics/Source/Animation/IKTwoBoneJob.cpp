@@ -59,10 +59,7 @@ namespace DenOfIz
         }
     };
 
-    IKTwoBoneJob::IKTwoBoneJob( ) :
-        m_impl( new Impl( ) ), StartJointMatrix( nullptr ), MidJointMatrix( nullptr ), EndJointMatrix( nullptr ), Target{ 0.0f, 0.0f, 0.0f }, PoleVector{ 0.0f, 1.0f, 0.0f },
-        MidAxis{ 0.0f, 0.0f, 1.0f }, Weight( 1.0f ), TwistAngle( 0.0f ), Soften( 1.0f ), Reached( false ), StartJointCorrection{ 0.0f, 0.0f, 0.0f, 1.0f },
-        MidJointCorrection{ 0.0f, 0.0f, 0.0f, 1.0f }
+    IKTwoBoneJob::IKTwoBoneJob( const IKTwoBoneJobDesc &desc ) : m_desc( desc ), m_impl( new Impl( ) )
     {
     }
 
@@ -73,24 +70,18 @@ namespace DenOfIz
 
     bool IKTwoBoneJob::Run( )
     {
-        if ( !StartJointMatrix || !MidJointMatrix || !EndJointMatrix )
-        {
-            LOG( ERROR ) << "IKTwoBoneJob: Joint matrices must not be null";
-            return false;
-        }
-
-        const ozz::math::Float4x4 startMatrix = m_impl->ToOzzFloat4x4( *StartJointMatrix );
-        const ozz::math::Float4x4 midMatrix   = m_impl->ToOzzFloat4x4( *MidJointMatrix );
-        const ozz::math::Float4x4 endMatrix   = m_impl->ToOzzFloat4x4( *EndJointMatrix );
+        const ozz::math::Float4x4 startMatrix = m_impl->ToOzzFloat4x4( m_desc.StartJointMatrix );
+        const ozz::math::Float4x4 midMatrix   = m_impl->ToOzzFloat4x4( m_desc.MidJointMatrix );
+        const ozz::math::Float4x4 endMatrix   = m_impl->ToOzzFloat4x4( m_desc.EndJointMatrix );
 
         ozz::animation::IKTwoBoneJob ozzJob;
 
-        ozzJob.target      = m_impl->ToOzzSimdFloat4( Target );
-        ozzJob.pole_vector = m_impl->ToOzzSimdFloat4( PoleVector );
-        ozzJob.mid_axis    = m_impl->ToOzzSimdFloat4( MidAxis );
-        ozzJob.twist_angle = TwistAngle;
-        ozzJob.soften      = Soften;
-        ozzJob.weight      = Weight;
+        ozzJob.target      = m_impl->ToOzzSimdFloat4( m_desc.Target );
+        ozzJob.pole_vector = m_impl->ToOzzSimdFloat4( m_desc.PoleVector );
+        ozzJob.mid_axis    = m_impl->ToOzzSimdFloat4( m_desc.MidAxis );
+        ozzJob.twist_angle = m_desc.TwistAngle;
+        ozzJob.soften      = m_desc.Soften;
+        ozzJob.weight      = m_desc.Weight;
 
         ozzJob.start_joint = &startMatrix;
         ozzJob.mid_joint   = &midMatrix;
@@ -116,10 +107,25 @@ namespace DenOfIz
             return false;
         }
 
-        StartJointCorrection = m_impl->FromOzzSimdQuaternion( startCorrection );
-        MidJointCorrection   = m_impl->FromOzzSimdQuaternion( midCorrection );
-        Reached              = targetReached;
+        m_startJointCorrection = m_impl->FromOzzSimdQuaternion( startCorrection );
+        m_midJointCorrection   = m_impl->FromOzzSimdQuaternion( midCorrection );
+        m_reached              = targetReached;
 
         return true;
+    }
+
+    bool IKTwoBoneJob::GetReached( ) const
+    {
+        return m_reached;
+    }
+
+    Float_4 IKTwoBoneJob::GetStartJointCorrection( ) const
+    {
+        return m_startJointCorrection;
+    }
+
+    Float_4 IKTwoBoneJob::GetMidJointCorrection( ) const
+    {
+        return m_midJointCorrection;
     }
 } // namespace DenOfIz

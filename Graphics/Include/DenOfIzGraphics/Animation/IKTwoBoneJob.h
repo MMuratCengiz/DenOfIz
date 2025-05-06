@@ -30,27 +30,37 @@ namespace DenOfIz
      * the first two joints of the chain such that the third joint reaches
      * the provided target position (if possible).
      */
+    struct DZ_API IKTwoBoneJobDesc
+    {
+        Float_4x4 StartJointMatrix{ };
+        Float_4x4 MidJointMatrix{ };
+        Float_4x4 EndJointMatrix{ };
+        Float_3   Target{ 0, 0, 1 };
+        Float_3   PoleVector{ 0, 0, 1 };
+        Float_3   MidAxis{ 0, 0, 1 };
+        float     Weight     = 0;
+        float     TwistAngle = 0;
+        float     Soften     = 0;
+    };
+
     class DZ_API IKTwoBoneJob
     {
+        IKTwoBoneJobDesc m_desc;
+        bool             m_reached = false;
+        Float_4          m_startJointCorrection{ };
+        Float_4          m_midJointCorrection{ };
+
         class Impl;
         Impl *m_impl;
 
     public:
-        const Float_4x4 *StartJointMatrix;
-        const Float_4x4 *MidJointMatrix;
-        const Float_4x4 *EndJointMatrix;
-        Float_3          Target;
-        Float_3          PoleVector;
-        Float_3          MidAxis;
-        float            Weight;
-        float            TwistAngle;
-        float            Soften;
-        bool             Reached;
-        Float_4          StartJointCorrection;
-        Float_4          MidJointCorrection;
-        IKTwoBoneJob( );
+        explicit IKTwoBoneJob( const IKTwoBoneJobDesc &desc );
         ~IKTwoBoneJob( );
         bool Run( );
+
+        [[nodiscard]] bool    GetReached( ) const;
+        [[nodiscard]] Float_4 GetStartJointCorrection( ) const;
+        [[nodiscard]] Float_4 GetMidJointCorrection( ) const;
     };
 
 } // namespace DenOfIz
