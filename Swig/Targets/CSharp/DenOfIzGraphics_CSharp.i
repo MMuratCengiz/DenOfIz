@@ -1,4 +1,7 @@
-%module DenOfIz
+%module(directors="1") DenOfIzGraphics
+
+// Make sure to use the same module name as the main interface file
+// to avoid duplicate class definitions
 
 %include "arrays_csharp.i"
 %apply unsigned char INPUT[]  {unsigned char *inputBytes}

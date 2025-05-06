@@ -36,6 +36,7 @@ namespace DenOfIz
         int32_t                ParentIndex = 0;
         InteropArray<uint32_t> ChildIndices;
     };
+    template class DZ_API InteropArray<Joint>;
 
     struct DZ_API SkeletonAsset : AssetHeader
     {

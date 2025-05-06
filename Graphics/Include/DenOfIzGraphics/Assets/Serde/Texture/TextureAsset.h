@@ -44,6 +44,7 @@ namespace DenOfIz
         uint32_t SlicePitch;
         uint32_t DataOffset; // Offset starting for the beginning of the stream
     };
+    template class DZ_API InteropArray<TextureMip>;
 
     struct DZ_API TextureAsset : AssetHeader
     {

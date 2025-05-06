@@ -2,6 +2,8 @@
 #pragma SWIG nowarn=320
 #pragma SWIG nowarn=401
 #pragma SWIG nowarn=503
+#pragma SWIG nowarn=509 // overloaded method handling
+#pragma SWIG nowarn=314 // class/struct redefinition
 
 %{
 #include "DenOfIzGraphics/DenOfIzGraphics.h"

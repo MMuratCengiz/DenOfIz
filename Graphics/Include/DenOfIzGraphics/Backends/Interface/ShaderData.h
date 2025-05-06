@@ -66,6 +66,7 @@ namespace DenOfIz
         uint32_t Y = 0;
         uint32_t Z = 0;
     };
+    template class DZ_API InteropArray<ThreadGroupInfo>;
 
     enum class TargetIL
     {

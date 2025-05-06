@@ -36,6 +36,7 @@ namespace DenOfIz
         [[nodiscard]] InteropString ToString( ) const;
         [[nodiscard]] bool          Equals( const AssetUri &other ) const;
     };
+    template class DZ_API InteropArray<AssetUri>;
 
     struct DZ_API AssetHeader
     {
@@ -79,4 +80,5 @@ namespace DenOfIz
         Float_4       ColorValue{ };
         Float_4x4     TransformValue;
     };
+    template class DZ_API InteropArray<UserProperty>;
 } // namespace DenOfIz

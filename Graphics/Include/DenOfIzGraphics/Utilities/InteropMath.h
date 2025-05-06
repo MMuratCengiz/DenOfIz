@@ -176,4 +176,5 @@ namespace DenOfIz
             base[ major * 4 + minor ] = value;
         }
     };
+    template class DZ_API InteropArray<Float_4x4>;
 } // namespace DenOfIz

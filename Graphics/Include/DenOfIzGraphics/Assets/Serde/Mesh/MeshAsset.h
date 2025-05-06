@@ -33,6 +33,7 @@ namespace DenOfIz
         RG,
         R,
     };
+    template class DZ_API InteropArray<ColorFormat>;
     /// The data will be structured in the following way:
     /// if Position is true => VertexAttributeConfig.NumPositionComponents x float
     /// if Normal is true => 3 x floats
@@ -88,6 +89,7 @@ namespace DenOfIz
         InteropString SemanticName; // e.g. "DIFFUSE", "LIGHTMAP", "DETAIL"
         uint32_t      Index{ };
     };
+    template class DZ_API InteropArray<UVChannel>;
 
     struct DZ_API VertexAttributeConfig
     {
@@ -140,6 +142,7 @@ namespace DenOfIz
         CapsuleBoundingVolume    Capsule{ };
         ConvexHullBoundingVolume ConvexHull;
     };
+    template class DZ_API InteropArray<BoundingVolume>;
 
     struct DZ_API MorphTarget
     {
@@ -147,6 +150,7 @@ namespace DenOfIz
         AssetDataStream VertexDeltaStream;
         float           DefaultWeight = 0.0f;
     };
+    template class DZ_API InteropArray<MorphTarget>;
 
     struct DZ_API SubMeshData
     {

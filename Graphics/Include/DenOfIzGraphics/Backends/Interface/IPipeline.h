@@ -184,6 +184,7 @@ namespace DenOfIz
 
         HitGroupType Type = HitGroupType::Triangles;
     };
+    template class DZ_API InteropArray<HitGroupDesc>;
 
     struct DZ_API RayTracingPipelineDesc
     {

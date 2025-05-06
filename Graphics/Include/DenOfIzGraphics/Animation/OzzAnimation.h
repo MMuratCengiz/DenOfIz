@@ -50,6 +50,7 @@ namespace DenOfIz
         InteropArray<Float_4x4> *OutTransforms = nullptr;
         float                    Threshold     = 0.1f;
     };
+    template class DZ_API InteropArray<BlendingJobDesc::Layer>;
 
     struct DZ_API LocalToModelJobDesc
     {

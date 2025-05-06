@@ -70,6 +70,7 @@ namespace DenOfIz
         MeshCollider    Mesh; // Used for both ConvexHull and TriangleMesh
         // --
     };
+    template class DZ_API InteropArray<PhysicsCollider>;
 
     struct DZ_API PhysicsAsset : AssetHeader
     {

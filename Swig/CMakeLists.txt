@@ -9,6 +9,7 @@ if (SWIG_CSHARP OR SWIG_JAVA)
     set_source_files_properties(DenOfIzGraphics.i PROPERTIES CPLUSPLUS ON)
 endif ()
 
+# Define platform names and architectures consistently across the build
 if(WIN32)
     set(NATIVE_LIB_PREFIX "")
     set(NATIVE_LIB_SUFFIX ".dll")
@@ -21,6 +22,10 @@ elseif(UNIX)
     set(NATIVE_LIB_PREFIX "lib")
     set(NATIVE_LIB_SUFFIX ".so")
     set(PLATFORM_RID "linux")
+else()
+    set(NATIVE_LIB_PREFIX "lib")
+    set(NATIVE_LIB_SUFFIX ".so")
+    set(PLATFORM_RID "unknown")
 endif()
 
 # Detect architecture
@@ -28,6 +33,10 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(ARCH "x64")
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
     set(ARCH "x86")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+    set(ARCH "arm64")
+else()
+    set(ARCH "unknown")
 endif()
 
 if (SWIG_CSHARP)
@@ -97,8 +106,22 @@ if (SWIG_CSHARP)
         COMMENT "Building NuGet package"
     )
     
+    # Make sure NuGet output directories exist
+    file(MAKE_DIRECTORY ${NUGET_OUTPUT_DIR}/lib/netstandard2.0)
+    file(MAKE_DIRECTORY ${NUGET_OUTPUT_DIR}/runtimes/${PLATFORM_RID}-${ARCH}/native)
+    
+    add_custom_command(
+        TARGET InitCSharpDirs POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_OUTPUT_DIR}/lib/netstandard2.0
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_OUTPUT_DIR}/runtimes/${PLATFORM_RID}-${ARCH}/native
+    )
+    
+    # Copy managed code to NuGet package
+    # Only copy NativeLibraryLoader.cs, let SWIG manage its generated files
     add_custom_command(
         TARGET DenOfIzGraphicsCSharp POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_CSHARP_CODE_DIR} ${NUGET_OUTPUT_DIR}/lib/netstandard2.0
+        COMMAND ${CMAKE_COMMAND} -E copy 
+            ${SWIG_CSHARP_CODE_DIR}/NativeLibraryLoader.cs
+            ${NUGET_OUTPUT_DIR}/lib/netstandard2.0/
     )
 endif()

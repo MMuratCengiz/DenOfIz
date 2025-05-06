@@ -39,6 +39,7 @@ namespace DenOfIz
         Shader,
         Font
     };
+    template class DZ_API InteropArray<AssetType>;
 
     struct DZ_API AssetEntry
     {
@@ -123,4 +124,6 @@ namespace DenOfIz
 
         static Bundle *CreateFromDirectory( const BundleDirectoryDesc &directoryDesc );
     };
+
+    template class DZ_API InteropArray<Bundle>;
 } // namespace DenOfIz
