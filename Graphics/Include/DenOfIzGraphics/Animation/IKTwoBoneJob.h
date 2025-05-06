@@ -18,58 +18,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Animation/AnimationSetup.h>
+#include "DenOfIzGraphics/Utilities/InteropMath.h"
 
 namespace DenOfIz
 {
+    /**
+     * @brief Wrapper around ozz::animation::IKTwoBoneJob
+     *
+     * This class performs inverse kinematics on a three-joint chain (two bones).
+     * It computes the transformations (rotations) that need to be applied to
+     * the first two joints of the chain such that the third joint reaches
+     * the provided target position (if possible).
+     */
     class DZ_API IKTwoBoneJob
     {
-    private:
         class Impl;
         Impl *m_impl;
 
     public:
+        const Float_4x4 *StartJointMatrix;
+        const Float_4x4 *MidJointMatrix;
+        const Float_4x4 *EndJointMatrix;
+        Float_3          Target;
+        Float_3          PoleVector;
+        Float_3          MidAxis;
+        float            Weight;
+        float            TwistAngle;
+        float            Soften;
+        bool             Reached;
+        Float_4          StartJointCorrection;
+        Float_4          MidJointCorrection;
         IKTwoBoneJob( );
         ~IKTwoBoneJob( );
-
-        // The animation setup containing both the skeleton and the pose to modify
-        AnimationSetup *setup;
-
-        // The three joint chain used by the IK
-        int startJointIndex; // Shoulder
-        int midJointIndex;   // Elbow
-        int endJointIndex;   // Wrist
-
-        // Target to reach, expressed in model-space
-        Float_3 target;
-
-        // Target model-space rotation that the end joint should have
-        Float_4 targetRotation;
-
-        // Pole vector, expressed in model-space, used to control the joint chain plane rotation
-        Float_3 poleVector;
-
-        // The weight of the correction, between 0 (no correction) and 1 (full correction)
-        float weight;
-
-        // Optional twist offset angle to rotate around middle-end axis
-        float twistAngle;
-
-        // If true, softens the effect of the IK based on target distance
-        bool soften;
-
-        // Maximum length ratio (can't be more than 1)
-        float softenDistance;
-
-        // Whether to allow the start joint to rotate as part of the IK solution
-        bool allowStretching;
-
-        // Whether to use pole vector
-        bool usePoleVector;
-
-        // Whether to use target rotation
-        bool useTargetRotation;
-
         bool Run( );
     };
+
 } // namespace DenOfIz

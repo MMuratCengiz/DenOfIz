@@ -16,89 +16,53 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Animation/IKTwoBoneJob.h>
-#include <DenOfIzGraphics/Animation/Skeleton.h>
-#include <glog/logging.h>
-
 #include <ozz/animation/runtime/ik_two_bone_job.h>
 #include <ozz/animation/runtime/skeleton.h>
 #include <ozz/base/maths/quaternion.h>
-#include <ozz/base/maths/vec_float.h>
+#include <ozz/base/maths/simd_math.h>
+#include <ozz/base/maths/simd_quaternion.h>
+
+#include <DenOfIzGraphics/Animation/IKTwoBoneJob.h>
+#include <DenOfIzGraphics/Animation/Skeleton.h>
+#include <glog/logging.h>
 
 namespace DenOfIz
 {
     class IKTwoBoneJob::Impl
     {
     public:
-        static ozz::math::Float3 ToOzzFloat3( const Float_3 &v )
+        static ozz::math::SimdFloat4 ToOzzSimdFloat4( const Float_3 &v )
         {
-            return ozz::math::Float3( v.X, v.Y, v.Z );
+            return ozz::math::simd_float4::Load3PtrU( &v.X );
         }
 
-        static ozz::math::Quaternion ToOzzQuaternion( const Float_4 &q )
+        static Float_4 FromOzzSimdQuaternion( const ozz::math::SimdQuaternion &q )
         {
-            return ozz::math::Quaternion( q.X, q.Y, q.Z, q.W );
+            Float_4 result;
+            float   values[ 4 ];
+            ozz::math::StorePtrU( q.xyzw, values );
+            result.X = values[ 0 ];
+            result.Y = values[ 1 ];
+            result.Z = values[ 2 ];
+            result.W = values[ 3 ];
+            return result;
         }
 
-        static bool ValidateSetup( const IKTwoBoneJob &job )
+        static ozz::math::Float4x4 ToOzzFloat4x4( const Float_4x4 &m )
         {
-            if ( !job.setup )
-            {
-                LOG( ERROR ) << "IKTwoBoneJob: setup is null";
-                return false;
-            }
-
-            auto &setupImpl    = *job.setup->m_impl;
-            auto &skeletonImpl = *job.setup->GetSkeleton( )->m_impl;
-
-            const int numJoints = skeletonImpl.ozzSkeleton->num_joints( );
-
-            if ( job.startJointIndex < 0 || job.startJointIndex >= numJoints )
-            {
-                LOG( ERROR ) << "IKTwoBoneJob: start joint index out of range";
-                return false;
-            }
-
-            if ( job.midJointIndex < 0 || job.midJointIndex >= numJoints )
-            {
-                LOG( ERROR ) << "IKTwoBoneJob: mid joint index out of range";
-                return false;
-            }
-
-            if ( job.endJointIndex < 0 || job.endJointIndex >= numJoints )
-            {
-                LOG( ERROR ) << "IKTwoBoneJob: end joint index out of range";
-                return false;
-            }
-
-            const ozz::animation::Skeleton *ozzSkeleton = skeletonImpl.ozzSkeleton.get( );
-
-            if ( ozzSkeleton->joint_parent( job.midJointIndex ) != job.startJointIndex )
-            {
-                LOG( ERROR ) << "IKTwoBoneJob: mid joint is not a child of start joint";
-                return false;
-            }
-
-            if ( ozzSkeleton->joint_parent( job.endJointIndex ) != job.midJointIndex )
-            {
-                LOG( ERROR ) << "IKTwoBoneJob: end joint is not a child of mid joint";
-                return false;
-            }
-
-            if ( job.softenDistance > 1.0f )
-            {
-                LOG( ERROR ) << "IKTwoBoneJob: soften distance must be less than or equal to 1.0";
-                return false;
-            }
-
-            return true;
+            ozz::math::Float4x4 result;
+            result.cols[ 0 ] = ozz::math::simd_float4::LoadXPtrU( &m._11 );
+            result.cols[ 1 ] = ozz::math::simd_float4::LoadXPtrU( &m._21 );
+            result.cols[ 2 ] = ozz::math::simd_float4::LoadXPtrU( &m._31 );
+            result.cols[ 3 ] = ozz::math::simd_float4::LoadXPtrU( &m._41 );
+            return result;
         }
     };
 
     IKTwoBoneJob::IKTwoBoneJob( ) :
-        m_impl( new Impl( ) ), setup( nullptr ), startJointIndex( -1 ), midJointIndex( -1 ), endJointIndex( -1 ), target{ 0.0f, 0.0f, 0.0f },
-        targetRotation{ 0.0f, 0.0f, 0.0f, 1.0f }, poleVector{ 0.0f, 1.0f, 0.0f }, weight( 1.0f ), twistAngle( 0.0f ), soften( false ), softenDistance( 0.8f ),
-        allowStretching( false ), usePoleVector( false ), useTargetRotation( false )
+        m_impl( new Impl( ) ), StartJointMatrix( nullptr ), MidJointMatrix( nullptr ), EndJointMatrix( nullptr ), Target{ 0.0f, 0.0f, 0.0f }, PoleVector{ 0.0f, 1.0f, 0.0f },
+        MidAxis{ 0.0f, 0.0f, 1.0f }, Weight( 1.0f ), TwistAngle( 0.0f ), Soften( 1.0f ), Reached( false ), StartJointCorrection{ 0.0f, 0.0f, 0.0f, 1.0f },
+        MidJointCorrection{ 0.0f, 0.0f, 0.0f, 1.0f }
     {
     }
 
@@ -109,44 +73,52 @@ namespace DenOfIz
 
     bool IKTwoBoneJob::Run( )
     {
-        if ( !m_impl->ValidateSetup( *this ) )
+        if ( !StartJointMatrix || !MidJointMatrix || !EndJointMatrix )
         {
+            LOG( ERROR ) << "IKTwoBoneJob: Joint matrices must not be null";
             return false;
         }
 
-        auto &setupImpl    = *setup->m_impl;
-        auto &skeletonImpl = *setup->GetSkeleton( )->m_impl;
+        const ozz::math::Float4x4 startMatrix = m_impl->ToOzzFloat4x4( *StartJointMatrix );
+        const ozz::math::Float4x4 midMatrix   = m_impl->ToOzzFloat4x4( *MidJointMatrix );
+        const ozz::math::Float4x4 endMatrix   = m_impl->ToOzzFloat4x4( *EndJointMatrix );
 
         ozz::animation::IKTwoBoneJob ozzJob;
 
-        ozzJob.skeleton         = skeletonImpl.ozzSkeleton.get( );
-        ozzJob.local_transforms = make_span( setupImpl.localTransforms );
+        ozzJob.target      = m_impl->ToOzzSimdFloat4( Target );
+        ozzJob.pole_vector = m_impl->ToOzzSimdFloat4( PoleVector );
+        ozzJob.mid_axis    = m_impl->ToOzzSimdFloat4( MidAxis );
+        ozzJob.twist_angle = TwistAngle;
+        ozzJob.soften      = Soften;
+        ozzJob.weight      = Weight;
 
-        ozzJob.start_joint     = static_cast<ozz::animation::IKTwoBoneJob::JointId>( startJointIndex );
-        ozzJob.mid_joint       = static_cast<ozz::animation::IKTwoBoneJob::JointId>( midJointIndex );
-        ozzJob.end_joint       = static_cast<ozz::animation::IKTwoBoneJob::JointId>( endJointIndex );
-        ozzJob.target          = m_impl->ToOzzFloat3( target );
-        ozzJob.weight          = weight;
-        ozzJob.twist_angle     = twistAngle;
-        ozzJob.soften          = soften;
-        ozzJob.soften_distance = softenDistance;
-        ozzJob.stretching      = allowStretching;
+        ozzJob.start_joint = &startMatrix;
+        ozzJob.mid_joint   = &midMatrix;
+        ozzJob.end_joint   = &endMatrix;
 
-        if ( usePoleVector )
+        ozz::math::SimdQuaternion startCorrection;
+        ozz::math::SimdQuaternion midCorrection;
+        bool                      targetReached = false;
+
+        ozzJob.start_joint_correction = &startCorrection;
+        ozzJob.mid_joint_correction   = &midCorrection;
+        ozzJob.reached                = &targetReached;
+
+        if ( !ozzJob.Validate( ) )
         {
-            ozzJob.pole_vector = m_impl->ToOzzFloat3( poleVector );
-        }
-
-        if ( useTargetRotation )
-        {
-            ozzJob.target_rotation = m_impl->ToOzzQuaternion( targetRotation );
+            LOG( ERROR ) << "IKTwoBoneJob: Validation failed";
+            return false;
         }
 
         if ( !ozzJob.Run( ) )
         {
-            LOG( ERROR ) << "IK Two Bone job failed";
+            LOG( ERROR ) << "IKTwoBoneJob: Execution failed";
             return false;
         }
+
+        StartJointCorrection = m_impl->FromOzzSimdQuaternion( startCorrection );
+        MidJointCorrection   = m_impl->FromOzzSimdQuaternion( midCorrection );
+        Reached              = targetReached;
 
         return true;
     }
