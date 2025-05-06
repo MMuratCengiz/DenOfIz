@@ -18,88 +18,65 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "ozz/base/containers/vector.h"
-#include "ozz/base/memory/unique_ptr.h"
-
+#include <DenOfIzGraphics/Animation/OzzAnimation.h>
 #include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h>
 #include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h>
-#include <complex>
-#include <ozz/animation/runtime/animation.h>
-#include <ozz/animation/runtime/blending_job.h>
-#include <ozz/animation/runtime/sampling_job.h>
-#include <ozz/animation/runtime/skeleton.h>
 #include <string>
 #include <unordered_map>
 
 namespace DenOfIz
 {
-    namespace Internal
-    {
-        struct AnimationState
-        {
-            std::string                                                                         Name;
-            float                                                                               PlaybackSpeed = 1.0f;
-            float                                                                               CurrentTime   = 0.0f;
-            float                                                                               Weight        = 1.0f;
-            bool                                                                                Loop          = true;
-            bool                                                                                Playing       = false;
-            std::unique_ptr<ozz::animation::Animation, ozz::Deleter<ozz::animation::Animation>> OzzAnimation;
-            std::unique_ptr<ozz::animation::SamplingJob::Context>                               Context;
-        };
-
-        struct BlendingState
-        {
-            std::string SourceAnimation;
-            std::string TargetAnimation;
-            float       BlendTime        = 0.5f;
-            float       CurrentBlendTime = 0.0f;
-            bool        InProgress       = false;
-        };
-    } // namespace Internal
-    using namespace Internal;
-
-    // Configuration for the AnimationStateManager
     struct DZ_API AnimationStateManagerDesc
     {
         SkeletonAsset *Skeleton = nullptr;
     };
 
-    class AnimationStateManager
+    struct AnimationState
     {
-        ozz::unique_ptr<ozz::animation::Skeleton>       m_skeleton;
-        std::unordered_map<std::string, AnimationState> m_animations;
-        std::string                                     m_currentAnimation;
-        BlendingState                                   m_blendingState;
+        InteropString Name;
+        float         PlaybackSpeed = 1.0f;
+        float         CurrentTime   = 0.0f;
+        float         Weight        = 1.0f;
+        bool          Loop          = true;
+        bool          Playing       = false;
+        OzzContext   *Context       = nullptr;
+    };
 
-        ozz::vector<ozz::math::SoaTransform> m_localTransforms;
-        ozz::vector<ozz::math::Float4x4>     m_modelTransforms;
+    struct BlendingState
+    {
+        InteropString SourceAnimation;
+        InteropString TargetAnimation;
+        float         BlendTime        = 0.5f;
+        float         CurrentBlendTime = 0.0f;
+        bool          InProgress       = false;
+    };
+
+    class DZ_API AnimationStateManager
+    {
+    private:
+        OzzAnimation                      *m_ozzAnimation = nullptr;
+        std::unordered_map<std::string, AnimationState> m_animations;
+        InteropString                     m_currentAnimation;
+        BlendingState                     m_blendingState;
+        InteropArray<Float_4x4>           m_modelTransforms;
 
     public:
-        DZ_API explicit AnimationStateManager( const AnimationStateManagerDesc &desc );
-        DZ_API ~AnimationStateManager( );
+        explicit AnimationStateManager(const AnimationStateManagerDesc &desc);
+        ~AnimationStateManager();
 
-        DZ_API void                 AddAnimation( const AnimationAsset &animationAsset );
-        DZ_API void                 Play( const InteropString &animationName, bool loop = true );
-        DZ_API void                 BlendTo( const InteropString &animationName, float blendTime = 0.5f );
-        DZ_API void                 Stop( );
-        DZ_API void                 Pause( );
-        DZ_API void                 Resume( );
-        DZ_API void                 Update( float deltaTime );
-        DZ_API bool                 HasAnimation( const InteropString &animationName ) const;
-        DZ_API void                 GetModelSpaceTransforms( InteropArray<Float_4x4> &outTransforms ) const;
-        DZ_API const InteropString &GetCurrentAnimationName( ) const;
-        DZ_API int                  GetNumJoints( ) const;
+        void AddAnimation(const AnimationAsset &animationAsset);
+        void Play(const InteropString &animationName, bool loop = true);
+        void BlendTo(const InteropString &animationName, float blendTime = 0.5f);
+        void Stop();
+        void Pause();
+        void Resume();
+        void Update(float deltaTime);
+        bool HasAnimation(const InteropString &animationName) const;
+        void GetModelSpaceTransforms(InteropArray<Float_4x4> &outTransforms) const;
+        const InteropString &GetCurrentAnimationName() const;
+        int GetNumJoints() const;
 
     private:
-        [[nodiscard]] std::unique_ptr<ozz::animation::Animation, ozz::Deleter<ozz::animation::Animation>> ConvertToOzzAnimation( const AnimationClip &clip ) const;
-        void                         SampleAnimation( AnimationState &state, ozz::vector<ozz::math::SoaTransform> &output ) const;
-        void                         UpdateBlending( float deltaTime );
-        static ozz::math::Transform  GetJointLocalTransform( const Joint &joint );
-        static ozz::math::Float3     ToOzzTranslation( const Float_3 &translation );
-        static ozz::math::Quaternion ToOzzRotation( const Float_4 &rotation );
-        static ozz::math::Float3     ToOzzScale( const Float_3 &scale );
-        static Float_3               FromOzzTranslation( const ozz::math::Float3 &translation );
-        static Float_4               FromOzzRotation( const ozz::math::Quaternion &rotation );
-        static Float_3               FromOzzScale( const ozz::math::Float3 &scale );
+        void UpdateBlending(float deltaTime);
     };
 } // namespace DenOfIz

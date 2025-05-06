@@ -16,27 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <ozz/animation/offline/animation_builder.h>
-#include <ozz/animation/offline/raw_animation.h>
-#include <ozz/animation/offline/raw_skeleton.h>
-#include <ozz/animation/offline/skeleton_builder.h>
-#include <ozz/animation/runtime/local_to_model_job.h>
-#include <ozz/base/maths/soa_quaternion.h>
-#include <ozz/base/maths/soa_transform.h>
-#include <ozz/base/maths/vec_float.h>
-#include <ozz/base/span.h>
-
 #include <DenOfIzGraphics/Animation/AnimationStateManager.h>
-#include <functional>
+#include <DenOfIzGraphics/Utilities/InteropMathConverter.h>
 #include <glog/logging.h>
-
-#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
-
-using ozz::make_span;
-using ozz::span;
+#include <ranges>
 
 using namespace DenOfIz;
-using namespace Internal;
 
 AnimationStateManager::AnimationStateManager( const AnimationStateManagerDesc &desc )
 {
@@ -46,102 +31,21 @@ AnimationStateManager::AnimationStateManager( const AnimationStateManagerDesc &d
         return;
     }
 
-    m_skeleton = ozz::make_unique<ozz::animation::Skeleton>( );
-
-    const auto  &joints    = desc.Skeleton->Joints;
-    const size_t numJoints = joints.NumElements( );
-
-    ozz::vector<int16_t> parents( numJoints );
-
-    ozz::animation::offline::RawSkeleton rawSkeleton;
-    for ( size_t i = 0; i < numJoints; ++i )
-    {
-        const Joint &joint = joints.GetElement( i );
-        parents[ i ]       = joint.ParentIndex;
-        // if ( strcmp( joint.Name.Get( ), "b_Root_00") == 0 )
-        if ( joint.ParentIndex == -1 )
-        {
-            ozz::animation::offline::RawSkeleton::Joint rootJoint;
-            rootJoint.name      = joint.Name.Get( );
-            rootJoint.transform = GetJointLocalTransform( joint );
-
-            rawSkeleton.roots.push_back( rootJoint );
-        }
-    }
-
-    for ( size_t i = 0; i < numJoints; ++i )
-    {
-        if ( parents[ i ] < 0 )
-        {
-            continue;
-        }
-
-        std::function<ozz::animation::offline::RawSkeleton::Joint *( int32_t, ozz::vector<ozz::animation::offline::RawSkeleton::Joint> & )> FindJoint;
-        FindJoint = [ & ]( const int32_t targetIdx, ozz::vector<ozz::animation::offline::RawSkeleton::Joint> &children ) -> ozz::animation::offline::RawSkeleton::Joint *
-        {
-            for ( auto &child : children )
-            {
-                if ( child.name == joints.GetElement( targetIdx ).Name.Get( ) )
-                {
-                    return &child;
-                }
-
-                if ( ozz::animation::offline::RawSkeleton::Joint *foundInChildren = FindJoint( targetIdx, child.children ) )
-                {
-                    return foundInChildren;
-                }
-            }
-            return nullptr;
-        };
-
-        ozz::animation::offline::RawSkeleton::Joint *parentJoint = nullptr;
-        for ( auto &root : rawSkeleton.roots )
-        {
-            if ( root.name == joints.GetElement( parents[ i ] ).Name.Get( ) )
-            {
-                parentJoint = &root;
-                break;
-            }
-
-            parentJoint = FindJoint( parents[ i ], root.children );
-            if ( parentJoint )
-            {
-                break;
-            }
-        }
-
-        if ( parentJoint )
-        {
-            const Joint &joint = joints.GetElement( i );
-
-            ozz::animation::offline::RawSkeleton::Joint childJoint;
-            childJoint.name      = joint.Name.Get( );
-            childJoint.transform = GetJointLocalTransform( joint );
-
-            parentJoint->children.push_back( childJoint );
-        }
-    }
-    ozz::animation::offline::SkeletonBuilder builder;
-    if ( auto builtSkeleton = builder( rawSkeleton ) )
-    {
-        m_skeleton.reset( );
-        m_skeleton = std::move( builtSkeleton );
-
-        const size_t numSoaJoints = m_skeleton->num_soa_joints( );
-        m_localTransforms.resize( numSoaJoints );
-        m_modelTransforms.resize( m_skeleton->num_joints( ) );
-    }
-    else
-    {
-        LOG( ERROR ) << "Failed to build ozz skeleton";
-    }
+    m_ozzAnimation = new OzzAnimation( desc.Skeleton );
 }
 
 AnimationStateManager::~AnimationStateManager( )
 {
-    m_animations.clear( );
-    m_localTransforms.clear( );
-    m_modelTransforms.clear( );
+    for ( auto &state : m_animations | std::views::values )
+    {
+        if ( state.Context )
+        {
+            m_ozzAnimation->DestroyContext( state.Context );
+            state.Context = nullptr;
+        }
+    }
+
+    delete m_ozzAnimation;
 }
 
 void AnimationStateManager::AddAnimation( const AnimationAsset &animationAsset )
@@ -149,29 +53,31 @@ void AnimationStateManager::AddAnimation( const AnimationAsset &animationAsset )
     for ( size_t i = 0; i < animationAsset.Animations.NumElements( ); ++i )
     {
         const AnimationClip &clip     = animationAsset.Animations.GetElement( i );
-        std::string          animName = clip.Name.Get( );
+        InteropString        animName = clip.Name;
 
-        if ( animName.empty( ) )
+        if ( animName.NumChars( ) == 0 )
         {
-            animName = "Animation_" + std::to_string( i );
+            animName = InteropString( ( "Animation_" + std::to_string( i ) ).c_str( ) );
         }
 
-        auto ozzAnimation = ConvertToOzzAnimation( clip );
+        OzzContext *context = m_ozzAnimation->NewContext( );
+        m_ozzAnimation->LoadAnimation( &animationAsset, context );
 
         AnimationState state;
-        state.Name         = animName;
-        state.OzzAnimation = std::move( ozzAnimation );
-        state.Loop         = true;
-        state.Playing      = false;
+        state.Name    = animName;
+        state.Context = context;
+        state.Loop    = true;
+        state.Playing = false;
 
-        m_animations[ animName ] = std::move( state );
+        m_animations[ animName.Get( ) ] = std::move( state );
 
-        LOG( INFO ) << "Added animation '" << animName << "' with duration " << clip.Duration << "s";
+        LOG( INFO ) << "Added animation '" << animName.Get( ) << "' with duration " << clip.Duration << "s";
     }
-    if ( m_currentAnimation.empty( ) && !m_animations.empty( ) )
+
+    if ( m_currentAnimation.NumChars( ) > 0 && !m_animations.empty( ) )
     {
-        m_currentAnimation = m_animations.begin( )->first;
-        LOG( INFO ) << "Set default animation to '" << m_currentAnimation << "'";
+        m_currentAnimation = InteropString( m_animations.begin( )->first.c_str( ) );
+        LOG( INFO ) << "Set default animation to '" << m_currentAnimation.Get( ) << "'";
     }
 }
 
@@ -185,11 +91,11 @@ void AnimationStateManager::Play( const InteropString &animationName, const bool
 
     m_blendingState.InProgress = false;
 
-    auto &prevAnim   = m_animations[ m_currentAnimation ];
+    auto &prevAnim   = m_animations[ m_currentAnimation.Get( ) ];
     prevAnim.Playing = false;
 
-    m_currentAnimation = animationName.Get( );
-    auto &newAnim      = m_animations[ m_currentAnimation ];
+    m_currentAnimation = animationName;
+    auto &newAnim      = m_animations[ m_currentAnimation.Get( ) ];
 
     newAnim.Loop        = loop;
     newAnim.Playing     = true;
@@ -206,13 +112,13 @@ void AnimationStateManager::BlendTo( const InteropString &animationName, const f
         return;
     }
 
-    if ( m_currentAnimation == animationName.Get( ) )
+    if ( m_currentAnimation.Get( ) == animationName.Get( ) )
     {
         return;
     }
 
     m_blendingState.SourceAnimation  = m_currentAnimation;
-    m_blendingState.TargetAnimation  = animationName.Get( );
+    m_blendingState.TargetAnimation  = animationName;
     m_blendingState.BlendTime        = blendTime;
     m_blendingState.CurrentBlendTime = 0.0f;
     m_blendingState.InProgress       = true;
@@ -222,14 +128,14 @@ void AnimationStateManager::BlendTo( const InteropString &animationName, const f
     targetAnim.Playing     = true;
     targetAnim.CurrentTime = 0.0f;
 
-    LOG( INFO ) << "Blending from '" << m_currentAnimation << "' to '" << animationName.Get( ) << "' over " << blendTime << "s";
+    LOG( INFO ) << "Blending from '" << m_currentAnimation.Get( ) << "' to '" << animationName.Get( ) << "' over " << blendTime << "s";
 }
 
 void AnimationStateManager::Stop( )
 {
-    if ( !m_currentAnimation.empty( ) )
+    if ( m_currentAnimation.NumChars( ) > 0 )
     {
-        auto &anim       = m_animations[ m_currentAnimation ];
+        auto &anim       = m_animations[ m_currentAnimation.Get( ) ];
         anim.Playing     = false;
         anim.CurrentTime = 0.0f;
     }
@@ -239,40 +145,41 @@ void AnimationStateManager::Stop( )
 
 void AnimationStateManager::Pause( )
 {
-    if ( !m_currentAnimation.empty( ) )
+    if ( m_currentAnimation.NumChars( ) > 0 )
     {
-        auto &anim   = m_animations[ m_currentAnimation ];
+        auto &anim   = m_animations[ m_currentAnimation.Get( ) ];
         anim.Playing = false;
     }
 }
 
 void AnimationStateManager::Resume( )
 {
-    if ( !m_currentAnimation.empty( ) )
+    if ( m_currentAnimation.NumChars( ) > 0 )
     {
-        auto &anim   = m_animations[ m_currentAnimation ];
+        auto &anim   = m_animations[ m_currentAnimation.Get( ) ];
         anim.Playing = true;
     }
 }
 
 void AnimationStateManager::Update( const float deltaTime )
 {
-    if ( m_currentAnimation.empty( ) || !m_animations[ m_currentAnimation ].Playing )
+    if ( m_currentAnimation.NumChars( ) == 0 || !m_animations[ m_currentAnimation.Get( ) ].Playing )
     {
         return;
     }
 
     UpdateBlending( deltaTime );
-    if ( auto &anim = m_animations[ m_currentAnimation ]; anim.Playing )
+
+    if ( auto &anim = m_animations[ m_currentAnimation.Get( ) ]; anim.Playing )
     {
-        const ozz::animation::Animation *ozzAnim = anim.OzzAnimation.get( );
-        if ( !ozzAnim )
+        const float duration = OzzAnimation::GetAnimationDuration( anim.Context );
+        if ( duration <= 0.0f )
         {
             return;
         }
 
         anim.CurrentTime += deltaTime * anim.PlaybackSpeed;
-        if ( const float duration = ozzAnim->duration( ); anim.CurrentTime > duration )
+        if ( anim.CurrentTime > duration )
         {
             if ( anim.Loop )
             {
@@ -285,19 +192,14 @@ void AnimationStateManager::Update( const float deltaTime )
             }
         }
 
-        m_localTransforms.resize( m_skeleton->num_soa_joints( ) );
-        for ( auto &transform : m_localTransforms )
+        SamplingJobDesc samplingDesc;
+        samplingDesc.Context       = anim.Context;
+        samplingDesc.Ratio         = anim.CurrentTime / duration;
+        samplingDesc.OutTransforms = &m_modelTransforms;
+
+        if ( !m_ozzAnimation->RunSamplingJob( samplingDesc ) )
         {
-            transform = ozz::math::SoaTransform::identity( );
-        }
-        SampleAnimation( anim, m_localTransforms );
-        ozz::animation::LocalToModelJob ltmJob;
-        ltmJob.skeleton = m_skeleton.get( );
-        ltmJob.input    = make_span( m_localTransforms );
-        ltmJob.output   = make_span( m_modelTransforms );
-        if ( !ltmJob.Run( ) )
-        {
-            LOG( ERROR ) << "Failed to convert local to model space transforms";
+            LOG( ERROR ) << "Failed to sample animation '" << anim.Name.Get( ) << "'";
         }
     }
 }
@@ -309,165 +211,18 @@ bool AnimationStateManager::HasAnimation( const InteropString &animationName ) c
 
 void AnimationStateManager::GetModelSpaceTransforms( InteropArray<Float_4x4> &outTransforms ) const
 {
-    using namespace DirectX;
-
-    outTransforms.Clear( );
-    const size_t numTransforms = m_modelTransforms.size( );
-    outTransforms.Resize( numTransforms );
-
-    static const XMMATRIX correctionMatrix = XMMatrixRotationX( XM_PIDIV2 );
-    for ( size_t i = 0; i < numTransforms; ++i )
+    if ( m_modelTransforms.NumElements( ) == 0 )
     {
-        const ozz::math::Float4x4 &ozzMat = m_modelTransforms[ i ];
-        Float_4x4                 &out    = outTransforms.GetElement( i );
-        ozz::math::Float3          ozzTranslation;
-        ozz::math::Quaternion      ozzQuat;
-        ozz::math::Float3          ozzScale;
-        // Decomposing gives us a sure way of building a matrix due to differences in matrix layout
-        if ( ozz::math::ToAffine( ozzMat, &ozzTranslation, &ozzQuat, &ozzScale ) )
-        {
-            const Float_3 translation = FromOzzTranslation( ozzTranslation );
-            const Float_4 rotation    = FromOzzRotation( ozzQuat );
-            const Float_3 scale       = FromOzzScale( ozzScale );
-
-            // clang-format off
-            XMMATRIX xmOut = XMMatrixAffineTransformation(
-                XMVectorSet( scale.X, scale.Y, scale.Z, 1.0f ),
-                XMVectorZero(),
-                XMVectorSet( rotation.X, rotation.Y, rotation.Z, rotation.W ),
-                XMVectorSet( translation.X, translation.Y, translation.Z, 1.0f )
-            );
-            // clang-format on
-            xmOut = XMMatrixMultiply( xmOut, correctionMatrix );
-            out   = InteropMathConverter::Float_4X4FromXMMATRIX( xmOut );
-        }
-    }
-}
-
-const InteropString &AnimationStateManager::GetCurrentAnimationName( ) const
-{
-    return InteropString( m_currentAnimation.c_str( ) );
-}
-
-int AnimationStateManager::GetNumJoints( ) const
-{
-    return m_skeleton ? m_skeleton->num_joints( ) : 0;
-}
-
-std::unique_ptr<ozz::animation::Animation, ozz::Deleter<ozz::animation::Animation>> AnimationStateManager::ConvertToOzzAnimation( const AnimationClip &clip ) const
-{
-    auto ozzAnim = std::make_unique<ozz::animation::Animation>( );
-
-    const float  duration  = clip.Duration;
-    const size_t numJoints = m_skeleton->num_joints( );
-
-    std::unordered_map<std::string, int> jointNameToIndexMap;
-    for ( size_t i = 0; i < numJoints; ++i )
-    {
-        jointNameToIndexMap[ m_skeleton->joint_names( )[ i ] ] = i;
-    }
-    ozz::animation::offline::RawAnimation rawAnimation;
-    rawAnimation.duration = duration;
-    rawAnimation.tracks.resize( numJoints );
-
-    for ( size_t i = 0; i < clip.Tracks.NumElements( ); ++i )
-    {
-        const JointAnimTrack &track      = clip.Tracks.GetElement( i );
-        const std::string     jointName  = track.JointName.Get( );
-        int                   jointIndex = -1;
-        if ( auto it = jointNameToIndexMap.find( jointName ); it != jointNameToIndexMap.end( ) )
-        {
-            jointIndex = it->second;
-        }
-
-        if ( jointIndex < 0 || jointIndex >= static_cast<int>( numJoints ) )
-        {
-            LOG( WARNING ) << "Animation track for joint '" << jointName << "' has no corresponding joint in skeleton (or index " << jointIndex << " is out of range)";
-            continue;
-        }
-
-        ozz::animation::offline::RawAnimation::JointTrack &rawTrack = rawAnimation.tracks[ jointIndex ];
-
-        const size_t numPosKeys = track.PositionKeys.NumElements( );
-        for ( size_t j = 0; j < numPosKeys; ++j )
-        {
-            const PositionKey                                    &key = track.PositionKeys.GetElement( j );
-            ozz::animation::offline::RawAnimation::TranslationKey rawKey;
-            rawKey.time  = key.Timestamp;
-            rawKey.value = ToOzzTranslation( key.Value );
-            rawTrack.translations.push_back( rawKey );
-        }
-
-        const size_t numRotKeys = track.RotationKeys.NumElements( );
-        for ( size_t j = 0; j < numRotKeys; ++j )
-        {
-            const RotationKey                                 &key = track.RotationKeys.GetElement( j );
-            ozz::animation::offline::RawAnimation::RotationKey rawKey;
-            rawKey.time  = key.Timestamp;
-            rawKey.value = ToOzzRotation( key.Value );
-            rawTrack.rotations.push_back( rawKey );
-        }
-
-        const size_t numScaleKeys = track.ScaleKeys.NumElements( );
-        for ( size_t j = 0; j < numScaleKeys; ++j )
-        {
-            const ScaleKey                                 &key = track.ScaleKeys.GetElement( j );
-            ozz::animation::offline::RawAnimation::ScaleKey rawKey;
-            rawKey.time  = key.Timestamp;
-            rawKey.value = ToOzzScale( key.Value );
-            rawTrack.scales.push_back( rawKey );
-        }
-    }
-
-    constexpr ozz::animation::offline::AnimationBuilder builder;
-    auto                                                built = builder( rawAnimation );
-    if ( !built )
-    {
-        LOG( ERROR ) << "Failed to build ozz animation";
-        return nullptr;
-    }
-
-    return built;
-}
-
-void AnimationStateManager::SampleAnimation( AnimationState &state, ozz::vector<ozz::math::SoaTransform> &output ) const
-{
-    const ozz::animation::Animation *animation = state.OzzAnimation.get( );
-    if ( !animation )
-    {
+        outTransforms.Clear( );
         return;
     }
-    if ( output.size( ) != m_skeleton->num_soa_joints( ) )
-    {
-        output.resize( m_skeleton->num_soa_joints( ) );
-    }
-    for ( size_t i = 0; i < output.size( ); ++i )
-    {
-        output[ i ] = m_skeleton->joint_rest_poses( )[ i ];
-    }
 
-    float ratio = state.CurrentTime / animation->duration( );
-    ratio       = ozz::math::Clamp( 0.f, ratio, 1.f );
+    outTransforms.Clear( );
+    outTransforms.Resize( m_modelTransforms.NumElements( ) );
 
-    if ( !state.Context )
+    for ( size_t i = 0; i < m_modelTransforms.NumElements( ); ++i )
     {
-        state.Context = std::make_unique<ozz::animation::SamplingJob::Context>( );
-        state.Context->Resize( m_skeleton->num_joints( ) );
-    }
-
-    ozz::animation::SamplingJob samplingJob;
-    samplingJob.animation = animation;
-    samplingJob.ratio     = ratio;
-    samplingJob.output    = make_span( output );
-    samplingJob.context   = state.Context.get( );
-
-    if ( !samplingJob.Run( ) )
-    {
-        LOG( ERROR ) << "Animation sampling failed for animation '" << state.Name << "'";
-        for ( size_t i = 0; i < output.size( ); ++i )
-        {
-            output[ i ] = m_skeleton->joint_rest_poses( )[ i ];
-        }
+        outTransforms.GetElement( i ) = m_modelTransforms.GetElement( i );
     }
 }
 
@@ -488,92 +243,66 @@ void AnimationStateManager::UpdateBlending( const float deltaTime )
 
         for ( auto &[ name, anim ] : m_animations )
         {
-            anim.Weight  = name == m_currentAnimation ? 1.0f : 0.0f;
-            anim.Playing = name == m_currentAnimation;
+            anim.Weight  = name == m_currentAnimation.Get( ) ? 1.0f : 0.0f;
+            anim.Playing = name == m_currentAnimation.Get( );
         }
         return;
     }
 
-    auto &sourceAnim = m_animations[ m_blendingState.SourceAnimation ];
-    auto &targetAnim = m_animations[ m_blendingState.TargetAnimation ];
+    auto &sourceAnim = m_animations[ m_blendingState.SourceAnimation.Get( ) ];
+    auto &targetAnim = m_animations[ m_blendingState.TargetAnimation.Get( ) ];
 
     sourceAnim.Weight = 1.0f - blendFactor;
     targetAnim.Weight = blendFactor;
 
-    ozz::vector<ozz::math::SoaTransform> sourceTransforms;
-    ozz::vector<ozz::math::SoaTransform> targetTransforms;
+    InteropArray<Float_4x4> sourceTransforms;
+    InteropArray<Float_4x4> targetTransforms;
 
-    sourceTransforms.resize( m_skeleton->num_soa_joints( ) );
-    targetTransforms.resize( m_skeleton->num_soa_joints( ) );
-    m_localTransforms.resize( m_skeleton->num_soa_joints( ) );
+    SamplingJobDesc sourceSamplingDesc;
+    sourceSamplingDesc.Context       = sourceAnim.Context;
+    sourceSamplingDesc.Ratio         = sourceAnim.CurrentTime / OzzAnimation::GetAnimationDuration( sourceAnim.Context );
+    sourceSamplingDesc.OutTransforms = &sourceTransforms;
 
-    SampleAnimation( sourceAnim, sourceTransforms );
-    SampleAnimation( targetAnim, targetTransforms );
+    SamplingJobDesc targetSamplingDesc;
+    targetSamplingDesc.Context       = targetAnim.Context;
+    targetSamplingDesc.Ratio         = targetAnim.CurrentTime / OzzAnimation::GetAnimationDuration( targetAnim.Context );
+    targetSamplingDesc.OutTransforms = &targetTransforms;
 
-    ozz::animation::BlendingJob blendingJob;
-    blendingJob.threshold = 0.1f;
-
-    ozz::animation::BlendingJob::Layer layers[ 2 ];
-    layers[ 0 ].transform = make_span( sourceTransforms );
-    layers[ 0 ].weight    = sourceAnim.Weight;
-    layers[ 1 ].transform = make_span( targetTransforms );
-    layers[ 1 ].weight    = targetAnim.Weight;
-
-    blendingJob.layers    = layers;
-    blendingJob.rest_pose = m_skeleton->joint_rest_poses( );
-    blendingJob.output    = make_span( m_localTransforms );
-
-    if ( !blendingJob.Run( ) )
+    if ( !m_ozzAnimation->RunSamplingJob( sourceSamplingDesc ) || !m_ozzAnimation->RunSamplingJob( targetSamplingDesc ) )
     {
-        LOG( ERROR ) << "Animation blending failed";
+        LOG( ERROR ) << "Failed to sample animations for blending";
         return;
     }
 
-    ozz::animation::LocalToModelJob localToModelJob;
-    localToModelJob.skeleton = m_skeleton.get( );
-    localToModelJob.input    = make_span( m_localTransforms );
-    localToModelJob.output   = make_span( m_modelTransforms );
+    BlendingJobDesc blendingDesc;
+    blendingDesc.Context       = sourceAnim.Context; // Can use either context
+    blendingDesc.Threshold     = 0.1f;
+    blendingDesc.OutTransforms = &m_modelTransforms;
 
-    if ( !localToModelJob.Run( ) )
+    BlendingJobDesc::Layer sourceLayer;
+    sourceLayer.Transforms = &sourceTransforms;
+    sourceLayer.Weight     = sourceAnim.Weight;
+
+    BlendingJobDesc::Layer targetLayer;
+    targetLayer.Transforms = &targetTransforms;
+    targetLayer.Weight     = targetAnim.Weight;
+
+    blendingDesc.Layers.Resize( 2 );
+    blendingDesc.Layers.GetElement( 0 ) = sourceLayer;
+    blendingDesc.Layers.GetElement( 1 ) = targetLayer;
+
+    if ( !m_ozzAnimation->RunBlendingJob( blendingDesc ) )
     {
-        LOG( ERROR ) << "Failed to convert blended transforms to model space";
+        LOG( ERROR ) << "Failed to blend animations";
     }
 }
 
-ozz::math::Transform AnimationStateManager::GetJointLocalTransform( const Joint &joint )
+const InteropString &AnimationStateManager::GetCurrentAnimationName( ) const
 {
-    ozz::math::Transform transform;
-    transform.translation = ToOzzTranslation( joint.LocalTranslation );
-    transform.rotation    = ToOzzRotation( joint.LocalRotationQuat );
-    transform.scale       = ToOzzScale( joint.LocalScale );
-    return transform;
+    return m_currentAnimation;
 }
 
-ozz::math::Float3 AnimationStateManager::ToOzzTranslation( const Float_3 &translation )
+int AnimationStateManager::GetNumJoints( ) const
 {
-    return ozz::math::Float3( translation.X, translation.Y, -translation.Z );
-}
-
-ozz::math::Quaternion AnimationStateManager::ToOzzRotation( const Float_4 &rotation )
-{
-    return ozz::math::Quaternion( -rotation.X, -rotation.Y, rotation.Z, rotation.W );
-}
-
-ozz::math::Float3 AnimationStateManager::ToOzzScale( const Float_3 &scale )
-{
-    return ozz::math::Float3( scale.X, scale.Y, scale.Z );
-}
-
-Float_3 AnimationStateManager::FromOzzTranslation( const ozz::math::Float3 &translation )
-{
-    return Float_3{ translation.x, translation.y, -translation.z };
-}
-
-Float_4 AnimationStateManager::FromOzzRotation( const ozz::math::Quaternion &rotation )
-{
-    return Float_4{ -rotation.x, -rotation.y, rotation.z, rotation.w };
-}
-Float_3 AnimationStateManager::FromOzzScale( const ozz::math::Float3 &scale )
-{
-    return Float_3{ scale.x, scale.y, scale.z };
+    return m_ozzAnimation ? m_ozzAnimation->GetJointCount( ) : 0;
 }
