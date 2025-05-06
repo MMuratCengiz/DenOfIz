@@ -261,6 +261,7 @@ target_link_libraries(DenOfIzGraphics
         assimp::assimp
         ozz_animation
         ozz_geometry
+        ozz_animation_offline
         Freetype::Freetype
         harfbuzz::harfbuzz
         msdfgen::msdfgen

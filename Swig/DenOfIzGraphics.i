@@ -204,6 +204,7 @@ using namespace DirectX;
 %include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h>
 %include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetWriter.h>
 
+%include <DenOfIzGraphics/Animation/OzzAnimation.h>
 %include <DenOfIzGraphics/Animation/AnimationStateManager.h>
 
 %include <DenOfIzGraphics/Data/Geometry.h>
