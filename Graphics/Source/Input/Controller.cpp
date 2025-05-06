@@ -355,18 +355,6 @@ int Controller::GetPlayerIndex( ) const
 #endif
 }
 
-#ifdef WINDOW_MANAGER_SDL
-SDL_GameController *Controller::GetSDLGameController( ) const
-{
-    return m_gameController;
-}
-
-SDL_Joystick *Controller::GetSDLJoystick( ) const
-{
-    return m_joystick;
-}
-#endif
-
 InteropArray<int> Controller::GetConnectedControllerIndices( )
 {
     InitializeSDL( );

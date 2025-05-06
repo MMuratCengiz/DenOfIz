@@ -40,7 +40,7 @@ namespace DenOfIz
         std::istream *m_stream;
 
     public:
-        DZ_API explicit BinaryReader( std::istream *stream, const BinaryReaderDesc &desc = { } );
+        explicit BinaryReader( std::istream *stream, const BinaryReaderDesc &desc = { } );
         DZ_API explicit BinaryReader( BinaryContainer &container, const BinaryReaderDesc &desc = { } );
         DZ_API explicit BinaryReader( const InteropString &filePath, const BinaryReaderDesc &desc = { } );
         DZ_API explicit BinaryReader( const InteropArray<Byte> &data, const BinaryReaderDesc &desc = { } );

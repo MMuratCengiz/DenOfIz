@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Font/EmbeddedTextRendererShaders.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
+#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
 
 using namespace DenOfIz;
 using namespace DirectX;
@@ -153,9 +154,9 @@ void TextRenderer::SetAntiAliasingMode( const AntiAliasingMode antiAliasingMode 
     m_antiAliasingMode = antiAliasingMode;
 }
 
-void TextRenderer::SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix )
+void TextRenderer::SetProjectionMatrix( const Float_4x4 &projectionMatrix )
 {
-    m_projectionMatrix = projectionMatrix;
+    m_projectionMatrix = InteropMathConverter::Float_4x4ToXMFLOAT4X4( projectionMatrix );
 }
 
 void TextRenderer::BeginBatch( )

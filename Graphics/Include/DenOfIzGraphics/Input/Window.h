@@ -251,7 +251,6 @@ namespace DenOfIz
 #ifdef WINDOW_MANAGER_SDL
         [[nodiscard]] SDL_Window *GetSDLWindow( ) const;
 #endif
-
     private:
         static void InitializeSDL( );
         static bool s_sdlInitialized;

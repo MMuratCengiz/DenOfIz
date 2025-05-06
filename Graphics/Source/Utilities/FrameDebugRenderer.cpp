@@ -17,6 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Utilities/FrameDebugRenderer.h>
 
+#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
+
 using namespace DenOfIz;
 
 FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m_desc( desc )
@@ -184,12 +186,12 @@ void FrameDebugRenderer::Render( ICommandList *commandList )
     m_textRenderer->EndBatch( commandList );
 }
 
-void FrameDebugRenderer::SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix )
+void FrameDebugRenderer::SetProjectionMatrix( const Float_4x4 &projectionMatrix )
 {
-    m_projectionMatrix = projectionMatrix;
+    m_projectionMatrix = InteropMathConverter::Float_4x4ToXMFLOAT4X4( projectionMatrix );
     if ( m_textRenderer )
     {
-        m_textRenderer->SetProjectionMatrix( m_projectionMatrix );
+        m_textRenderer->SetProjectionMatrix( projectionMatrix );
     }
 }
 
@@ -203,7 +205,7 @@ void FrameDebugRenderer::SetScreenSize( const uint32_t width, const uint32_t hei
 
     if ( m_textRenderer )
     {
-        m_textRenderer->SetProjectionMatrix( m_projectionMatrix );
+        m_textRenderer->SetProjectionMatrix( InteropMathConverter::Float_4x4FromXMFLOAT4X4( m_projectionMatrix ) );
     }
 }
 

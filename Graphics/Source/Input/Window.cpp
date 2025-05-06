@@ -326,9 +326,7 @@ bool Window::IsInitialized( ) const
     return m_initialized;
 }
 
-#ifdef WINDOW_MANAGER_SDL
 SDL_Window *Window::GetSDLWindow( ) const
 {
     return m_sdlWindow;
 }
-#endif

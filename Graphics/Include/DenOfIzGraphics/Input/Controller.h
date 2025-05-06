@@ -33,71 +33,60 @@ namespace DenOfIz
 {
     struct DZ_API ControllerDeviceInfo
     {
-        uint32_t InstanceID;
+        uint32_t      InstanceID;
         InteropString Name;
-        bool IsConnected;
-        uint32_t VendorID;
-        uint32_t ProductID;
-        uint16_t Version;
-        uint32_t PlayerIndex;
+        bool          IsConnected;
+        uint32_t      VendorID;
+        uint32_t      ProductID;
+        uint16_t      Version;
+        uint32_t      PlayerIndex;
     };
 
-    class DZ_API Controller
+    class Controller
     {
-    private:
-        bool m_initialized;
-        int m_controllerIndex;
-        uint32_t m_instanceID;
+        bool        m_initialized;
+        int         m_controllerIndex;
+        uint32_t    m_instanceID;
         static bool s_sdlInitialized;
 
 #ifdef WINDOW_MANAGER_SDL
-        SDL_GameController* m_gameController;
-        SDL_Joystick* m_joystick;
+        SDL_GameController *m_gameController;
+        SDL_Joystick       *m_joystick;
 #endif
 
     public:
-        Controller();
-        explicit Controller(int controllerIndex);
-        ~Controller();
+        DZ_API Controller( );
+        DZ_API explicit Controller( int controllerIndex );
+        DZ_API ~Controller( );
 
-        bool Open(int controllerIndex);
-        void Close();
+        DZ_API bool Open( int controllerIndex );
+        DZ_API void Close( );
 
-        // Controller button/axis functions
-        [[nodiscard]] bool IsButtonPressed(ControllerButton button) const;
-        [[nodiscard]] int16_t GetAxisValue(ControllerAxis axis) const;
-        
-        // Rumble functionality
-        bool HasRumble() const;
-        bool SetRumble(uint16_t lowFrequencyRumble, uint16_t highFrequencyRumble, uint32_t durationMs ) const;
-        bool SetTriggerRumble(bool leftTrigger, bool rightTrigger, uint16_t strength, uint32_t durationMs ) const;
-        
-        // Mapping functions
-        [[nodiscard]] InteropString GetButtonName(ControllerButton button) const;
-        [[nodiscard]] InteropString GetAxisName(ControllerAxis axis) const;
-        [[nodiscard]] bool HasButton(ControllerButton button) const;
-        [[nodiscard]] bool HasAxis(ControllerAxis axis) const;
-        [[nodiscard]] InteropString GetMapping() const;
-        
-        // Controller identification/information
-        [[nodiscard]] bool IsConnected() const;
-        [[nodiscard]] InteropString GetName() const;
-        [[nodiscard]] uint32_t GetInstanceID() const;
-        [[nodiscard]] ControllerDeviceInfo GetDeviceInfo() const;
-        [[nodiscard]] bool SetPlayerIndex(int playerIndex ) const;
-        [[nodiscard]] int GetPlayerIndex() const;
+        DZ_API [[nodiscard]] bool    IsButtonPressed( ControllerButton button ) const;
+        DZ_API [[nodiscard]] int16_t GetAxisValue( ControllerAxis axis ) const;
 
-#ifdef WINDOW_MANAGER_SDL
-        [[nodiscard]] SDL_GameController* GetSDLGameController() const;
-        [[nodiscard]] SDL_Joystick* GetSDLJoystick() const;
-#endif
+        DZ_API bool HasRumble( ) const;
+        DZ_API bool SetRumble( uint16_t lowFrequencyRumble, uint16_t highFrequencyRumble, uint32_t durationMs ) const;
+        DZ_API bool SetTriggerRumble( bool leftTrigger, bool rightTrigger, uint16_t strength, uint32_t durationMs ) const;
 
-        // Static utility functions
-        static void InitializeSDL();
-        static InteropArray<int> GetConnectedControllerIndices();
-        static bool IsGameController(int joystickIndex);
-        static int GetControllerCount();
-        static InteropString GetControllerNameForIndex(int joystickIndex);
+        DZ_API [[nodiscard]] InteropString GetButtonName( ControllerButton button ) const;
+        DZ_API [[nodiscard]] InteropString GetAxisName( ControllerAxis axis ) const;
+        DZ_API [[nodiscard]] bool          HasButton( ControllerButton button ) const;
+        DZ_API [[nodiscard]] bool          HasAxis( ControllerAxis axis ) const;
+        DZ_API [[nodiscard]] InteropString GetMapping( ) const;
+
+        DZ_API [[nodiscard]] bool                 IsConnected( ) const;
+        DZ_API [[nodiscard]] InteropString        GetName( ) const;
+        DZ_API [[nodiscard]] uint32_t             GetInstanceID( ) const;
+        DZ_API [[nodiscard]] ControllerDeviceInfo GetDeviceInfo( ) const;
+        DZ_API [[nodiscard]] bool                 SetPlayerIndex( int playerIndex ) const;
+        DZ_API [[nodiscard]] int                  GetPlayerIndex( ) const;
+
+        DZ_API static void              InitializeSDL( );
+        DZ_API static InteropArray<int> GetConnectedControllerIndices( );
+        DZ_API static bool              IsGameController( int joystickIndex );
+        DZ_API static int               GetControllerCount( );
+        DZ_API static InteropString     GetControllerNameForIndex( int joystickIndex );
     };
 
 } // namespace DenOfIz

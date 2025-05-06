@@ -124,6 +124,5 @@ namespace DenOfIz
 
         static Bundle *CreateFromDirectory( const BundleDirectoryDesc &directoryDesc );
     };
-
-    template class DZ_API InteropArray<Bundle>;
+    template class DZ_API InteropArray<Bundle*>;
 } // namespace DenOfIz

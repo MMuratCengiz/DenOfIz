@@ -59,14 +59,15 @@ namespace DenOfIz
         }
     };
 
-    struct FontShaderUniforms
-    {
-        XMFLOAT4X4 Projection;
-        XMFLOAT4   TextColor;
-        XMFLOAT4   TextureSizeParams; // xy: texture dimensions, z: pixel range, w: unused
-    };
     class TextRenderer
     {
+        struct FontShaderUniforms
+        {
+            XMFLOAT4X4 Projection;
+            XMFLOAT4   TextColor;
+            XMFLOAT4   TextureSizeParams; // xy: texture dimensions, z: pixel range, w: unused
+        };
+
         TextRendererDesc m_desc;
         GraphicsApi     *m_graphicsApi   = nullptr;
         ILogicalDevice  *m_logicalDevice = nullptr;
@@ -109,7 +110,7 @@ namespace DenOfIz
         void Initialize( );
         void SetFont( Font *font );
         void SetAntiAliasingMode( AntiAliasingMode antiAliasingMode );
-        void SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix );
+        void SetProjectionMatrix( const Float_4x4 &projectionMatrix );
         void BeginBatch( );
         void AddText( const TextRenderDesc &params );
         void EndBatch( ICommandList *commandList );

@@ -39,10 +39,5 @@ namespace DenOfIz
         ShaderCompiler( );
         ~ShaderCompiler( );
         [[nodiscard]] CompileResult CompileHLSL( const CompileDesc &compileDesc ) const;
-        void        CacheCompiledShader( const std::string &filename, const std::string &entryPoint, const TargetIL &targetIL, IDxcBlob *code, IDxcBlob *reflection ) const;
-        std::string CachedShaderFile( const std::string &filename, const std::string &entryPoint, const TargetIL &targetIL ) const;
-        std::string CachedReflectionFile( const std::string &filename, const std::string &entryPoint ) const;
-        [[nodiscard]] IDxcBlob *LoadCachedShader( const std::string &filename ) const;
-        [[nodiscard]] IDxcBlob *LoadCachedReflection( const std::string &filename, const std::string &entryPoint ) const;
     };
 } // namespace DenOfIz

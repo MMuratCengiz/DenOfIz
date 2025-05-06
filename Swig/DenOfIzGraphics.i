@@ -82,6 +82,11 @@ using namespace DirectX;
 // Bundle ignores:
 %ignore DenOfIz::Bundle::m_bundleFile;
 
+%ignore DenOfIz::BinaryWriter::BinaryWriter(std::ostream *);
+%ignore DenOfIz::BinaryWriter::BinaryWriter(std::ostream *, const BinaryWriterDesc &);
+%ignore DenOfIz::BinaryReader::BinaryReader(std::istream *);
+%ignore DenOfIz::BinaryReader::BinaryReader(std::istream *, const BinaryReaderDesc &);
+
 // Fix InteropString/InteropArray:
 %ignore DenOfIz::InteropString::InteropString(InteropString &&);
 %ignore DenOfIz::InteropArray::InteropArray(std::initializer_list<T>);
@@ -112,6 +117,8 @@ using namespace DirectX;
 %ignore DenOfIz::BitSet::None;
 %ignore DenOfIz::BitSet::All;
 %ignore DenOfIz::BitSet::Any;
+
+%ignore DenOfIz::Window::GetSDLWindow;
 
 // First include the math and interop utilities
 %include <DenOfIzGraphics/Utilities/Interop.h>
@@ -260,6 +267,39 @@ typedef DenOfIz::InteropArray<DenOfIz::AssetEntry> AssetEntryArray;
 typedef DenOfIz::InteropArray<DenOfIz::ShaderRecordDebugData> ShaderRecordDebugDataArray;
 typedef DenOfIz::InteropArray<DenOfIz::ILocalRootSignature*> ILocalRootSignatureArray;
 typedef DenOfIz::InteropArray<DenOfIz::LocalRootSignatureDesc> LocalRootSignatureDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::AnimationClip> AnimationClipArray;
+typedef DenOfIz::InteropArray<DenOfIz::JointAnimTrack> JointAnimTrackArray;
+typedef DenOfIz::InteropArray<DenOfIz::Joint> JointArray;
+typedef DenOfIz::InteropArray<DenOfIz::MorphAnimTrack> MorphAnimTrackArray;
+typedef DenOfIz::InteropArray<DenOfIz::MorphKeyframe> MorphKeyframeArray;
+typedef DenOfIz::InteropArray<DenOfIz::MorphTarget> MorphTargetArray;
+typedef DenOfIz::InteropArray<DenOfIz::MorphTargetDelta> MorphTargetDeltaArray;
+typedef DenOfIz::InteropArray<DenOfIz::PositionKey> PositionKeyArray;
+typedef DenOfIz::InteropArray<DenOfIz::RotationKey> RotationKeyArray;
+typedef DenOfIz::InteropArray<DenOfIz::ScaleKey> ScaleKeyArray;
+typedef DenOfIz::InteropArray<DenOfIz::AssetType> AssetTypeArray;
+typedef DenOfIz::InteropArray<DenOfIz::AssetUri> AssetUriArray;
+typedef DenOfIz::InteropArray<DenOfIz::Bundle*> BundlePointerArray;
+typedef DenOfIz::InteropArray<DenOfIz::ColorFormat> ColorFormatArray;
+typedef DenOfIz::InteropArray<DenOfIz::CompiledShaderStage*> CompiledShaderStagePointerArray;
+typedef DenOfIz::BitSet<DenOfIz::GeometryFlags> GeometryFlagsBitSet;
+typedef DenOfIz::InteropArray<DenOfIz::BlendingJobDesc::Layer> BlendingJobDescLayerArray;
+typedef DenOfIz::InteropArray<DenOfIz::BoundingVolume> BoundingVolumeArray;
+typedef DenOfIz::InteropArray<DenOfIz::FontGlyph> FontGlyphArray;
+typedef DenOfIz::InteropArray<DenOfIz::HitGroupDesc> HitGroupDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::MeshVertex> MeshVertexArray;
+typedef DenOfIz::InteropArray<DenOfIz::PhysicsCollider> PhysicsColliderArray;
+typedef DenOfIz::InteropArray<DenOfIz::ResourceBindingSlot> ResourceBindingSlotArray;
+typedef DenOfIz::InteropArray<DenOfIz::ShaderStageAsset> ShaderStageAssetArray;
+typedef DenOfIz::InteropArray<DenOfIz::SubMeshData> SubMeshDataArray;
+typedef DenOfIz::InteropArray<DenOfIz::TextureMip> TextureMipArray;
+typedef DenOfIz::InteropArray<DenOfIz::ThreadGroupInfo> ThreadGroupInfoArray;
+typedef DenOfIz::InteropArray<DenOfIz::TransitionBufferDesc> TransitionBufferDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::TransitionTextureDesc> TransitionTextureDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::UserProperty> UserPropertyArray;
+typedef DenOfIz::InteropArray<DenOfIz::UVChannel> UVChannelArray;
+typedef DenOfIz::InteropArray<unsigned short> UnsignedShortArray;
+typedef DenOfIz::InteropArray<DenOfIz::InteropArray<float>> FloatArrayArray;
 // Instantiations:
 %template(ASGeometryDescArray) DenOfIz::InteropArray<DenOfIz::ASGeometryDesc>;
 %template(ASInstanceDescArray) DenOfIz::InteropArray<DenOfIz::ASInstanceDesc>;
@@ -292,3 +332,46 @@ typedef DenOfIz::InteropArray<DenOfIz::LocalRootSignatureDesc> LocalRootSignatur
 %template(ShaderRecordDebugDataArray) DenOfIz::InteropArray<DenOfIz::ShaderRecordDebugData>;
 %template(ILocalRootSignatureArray) DenOfIz::InteropArray<DenOfIz::ILocalRootSignature*>;
 %template(LocalRootSignatureDescArray) DenOfIz::InteropArray<DenOfIz::LocalRootSignatureDesc>;
+
+// Animation related types
+%template(AnimationClipArray) DenOfIz::InteropArray<DenOfIz::AnimationClip>;
+%template(JointAnimTrackArray) DenOfIz::InteropArray<DenOfIz::JointAnimTrack>;
+%template(JointArray) DenOfIz::InteropArray<DenOfIz::Joint>;
+%template(MorphAnimTrackArray) DenOfIz::InteropArray<DenOfIz::MorphAnimTrack>;
+%template(MorphKeyframeArray) DenOfIz::InteropArray<DenOfIz::MorphKeyframe>;
+%template(MorphTargetArray) DenOfIz::InteropArray<DenOfIz::MorphTarget>;
+%template(MorphTargetDeltaArray) DenOfIz::InteropArray<DenOfIz::MorphTargetDelta>;
+%template(PositionKeyArray) DenOfIz::InteropArray<DenOfIz::PositionKey>;
+%template(RotationKeyArray) DenOfIz::InteropArray<DenOfIz::RotationKey>;
+%template(ScaleKeyArray) DenOfIz::InteropArray<DenOfIz::ScaleKey>;
+
+// Asset related types
+%template(AssetTypeArray) DenOfIz::InteropArray<DenOfIz::AssetType>;
+%template(AssetUriArray) DenOfIz::InteropArray<DenOfIz::AssetUri>;
+%template(BundlePointerArray) DenOfIz::InteropArray<DenOfIz::Bundle*>;
+%template(ColorFormatArray) DenOfIz::InteropArray<DenOfIz::ColorFormat>;
+%template(CompiledShaderStagePointerArray) DenOfIz::InteropArray<DenOfIz::CompiledShaderStage*>;
+
+// BitSet template instantiations not already covered
+%template(GeometryFlagsBitSet) DenOfIz::BitSet<DenOfIz::GeometryFlags>;
+
+// Rendering and shader related types
+%template(BlendingJobDescLayerArray) DenOfIz::InteropArray<DenOfIz::BlendingJobDesc::Layer>;
+%template(BoundingVolumeArray) DenOfIz::InteropArray<DenOfIz::BoundingVolume>;
+%template(FontGlyphArray) DenOfIz::InteropArray<DenOfIz::FontGlyph>;
+%template(HitGroupDescArray) DenOfIz::InteropArray<DenOfIz::HitGroupDesc>;
+%template(MeshVertexArray) DenOfIz::InteropArray<DenOfIz::MeshVertex>;
+%template(PhysicsColliderArray) DenOfIz::InteropArray<DenOfIz::PhysicsCollider>;
+%template(ResourceBindingSlotArray) DenOfIz::InteropArray<DenOfIz::ResourceBindingSlot>;
+%template(ShaderStageAssetArray) DenOfIz::InteropArray<DenOfIz::ShaderStageAsset>;
+%template(SubMeshDataArray) DenOfIz::InteropArray<DenOfIz::SubMeshData>;
+%template(TextureMipArray) DenOfIz::InteropArray<DenOfIz::TextureMip>;
+%template(ThreadGroupInfoArray) DenOfIz::InteropArray<DenOfIz::ThreadGroupInfo>;
+%template(TransitionBufferDescArray) DenOfIz::InteropArray<DenOfIz::TransitionBufferDesc>;
+%template(TransitionTextureDescArray) DenOfIz::InteropArray<DenOfIz::TransitionTextureDesc>;
+%template(UserPropertyArray) DenOfIz::InteropArray<DenOfIz::UserProperty>;
+%template(UVChannelArray) DenOfIz::InteropArray<DenOfIz::UVChannel>;
+%template(UnsignedShortArray) DenOfIz::InteropArray<unsigned short>;
+
+// Nested array type (array of arrays)
+%template(FloatArrayArray) DenOfIz::InteropArray<DenOfIz::InteropArray<float>>;

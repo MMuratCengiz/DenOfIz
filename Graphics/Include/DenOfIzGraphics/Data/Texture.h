@@ -69,8 +69,8 @@ namespace DenOfIz
         TextureExtension  Extension = TextureExtension::DDS;
         std::vector<Byte> Data{ };
         explicit Texture( const std::string &path );
-        explicit Texture( const InteropArray<Byte>& data, TextureExtension extension = TextureExtension::DDS);
-        static TextureExtension IdentifyTextureFormat( const InteropArray<Byte>& data );
+        explicit Texture( const InteropArray<Byte> &data, TextureExtension extension = TextureExtension::DDS );
+        static TextureExtension IdentifyTextureFormat( const InteropArray<Byte> &data );
 
         void StreamMipData( const MipStreamCallback &callback ) const;
 
@@ -80,9 +80,9 @@ namespace DenOfIz
         void StreamMipDataDDS( const MipStreamCallback &callback ) const;
         void StreamMipDataSTB( const MipStreamCallback &callback ) const;
 
-        void LoadTextureFromMemory(const Byte* data, size_t dataNumBytes);
-        void LoadTextureDDSFromMemory(const Byte* data, size_t dataNumBytes);
-        void LoadTextureSTBFromMemory(const Byte* data, size_t dataNumBytes);
+        void LoadTextureFromMemory( const Byte *data, size_t dataNumBytes );
+        void LoadTextureDDSFromMemory( const Byte *data, size_t dataNumBytes );
+        void LoadTextureSTBFromMemory( const Byte *data, size_t dataNumBytes );
 #ifdef DZ_USE_DDS
         static enum Format GetFormatFromDDS( const dds::DXGI_FORMAT &format );
 #endif

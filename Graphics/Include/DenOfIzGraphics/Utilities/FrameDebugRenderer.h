@@ -86,7 +86,7 @@ namespace DenOfIz
 
         void UpdateStats( float deltaTime );
         void Render( ICommandList *commandList );
-        void SetProjectionMatrix( const XMFLOAT4X4 &projectionMatrix );
+        void SetProjectionMatrix( const Float_4x4 &projectionMatrix );
         void SetScreenSize( uint32_t width, uint32_t height );
 
         // Add custom debug information

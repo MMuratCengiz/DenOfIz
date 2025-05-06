@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Import/FontImporter.h"
 #include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
+#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
 
 using namespace DenOfIz;
 
@@ -60,7 +61,7 @@ void TextRenderingExample::Init( )
 
     const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( m_windowDesc.Width ), static_cast<float>( m_windowDesc.Height ), 0.0f, 0.0f, 1.0f );
     XMStoreFloat4x4( &m_orthoProjection, projection );
-    m_textRenderer->SetProjectionMatrix( m_orthoProjection );
+    m_textRenderer->SetProjectionMatrix( InteropMathConverter::Float_4x4FromXMFLOAT4X4( m_orthoProjection ) );
 
     // Initialize the debug renderer with the same font asset
     FrameDebugRendererDesc debugRendererDesc{ };
@@ -73,7 +74,7 @@ void TextRenderingExample::Init( )
     debugRendererDesc.Enabled       = m_debugInfoEnabled;
 
     m_debugRenderer = std::make_unique<FrameDebugRenderer>( debugRendererDesc );
-    m_debugRenderer->SetProjectionMatrix( m_orthoProjection );
+    m_debugRenderer->SetProjectionMatrix( InteropMathConverter::Float_4x4FromXMFLOAT4X4( m_orthoProjection ) );
 
     m_debugRenderer->AddDebugLine( "Press F1 to toggle debug info", { 0.8f, 0.8f, 0.8f, 1.0f } );
 
