@@ -16,10 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Animation/OzzAnimation.h>
-#include <glog/logging.h>
-// Ozz animation includes
-#include <DirectXMath.h>
 #include <ozz/animation/offline/animation_builder.h>
 #include <ozz/animation/offline/raw_animation.h>
 #include <ozz/animation/offline/raw_skeleton.h>
@@ -43,9 +39,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <ozz/base/memory/unique_ptr.h>
 #include <ozz/base/span.h>
 
-#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
+#include "ozz/animation/runtime/track_triggering_job.h"
 #include "ozz/base/maths/simd_quaternion.h"
 #include "ozz/geometry/runtime/skinning_job.h"
+
+#include <DenOfIzGraphics/Animation/OzzAnimation.h>
+#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
 
 namespace DenOfIz
 {
@@ -487,7 +486,7 @@ namespace DenOfIz
         for ( size_t i = 0; i < keys.NumElements( ); ++i )
         {
             auto &keyframe         = rawTrack.keyframes[ i ];
-            keyframe.time          = i * step;
+            keyframe.ratio         = i * step;
             keyframe.value         = keys.GetElement( i );
             keyframe.interpolation = ozz::animation::offline::RawTrackInterpolation::kLinear;
         }
@@ -516,7 +515,7 @@ namespace DenOfIz
         {
             const Float_2 &key      = keys.GetElement( i );
             auto          &keyframe = rawTrack.keyframes[ i ];
-            keyframe.time           = timestamps.GetElement( i );
+            keyframe.ratio          = timestamps.GetElement( i );
             keyframe.value          = ozz::math::Float2( key.X, key.Y );
             keyframe.interpolation  = ozz::animation::offline::RawTrackInterpolation::kLinear;
         }
@@ -545,7 +544,7 @@ namespace DenOfIz
         {
             const Float_3 &key      = keys.GetElement( i );
             auto          &keyframe = rawTrack.keyframes[ i ];
-            keyframe.time           = timestamps.GetElement( i );
+            keyframe.ratio          = timestamps.GetElement( i );
             keyframe.value          = OzzUtils::ToOzzTranslation( key );
             keyframe.interpolation  = ozz::animation::offline::RawTrackInterpolation::kLinear;
         }
@@ -574,7 +573,7 @@ namespace DenOfIz
         {
             const Float_4 &key      = keys.GetElement( i );
             auto          &keyframe = rawTrack.keyframes[ i ];
-            keyframe.time           = timestamps.GetElement( i );
+            keyframe.ratio          = timestamps.GetElement( i );
             keyframe.value          = ozz::math::Float4( key.X, key.Y, key.Z, key.W );
             keyframe.interpolation  = ozz::animation::offline::RawTrackInterpolation::kLinear;
         }
@@ -586,7 +585,7 @@ namespace DenOfIz
         }
     }
 
-    bool OzzAnimation::RunSamplingJob( const SamplingJobDesc &desc )
+    bool OzzAnimation::RunSamplingJob( const SamplingJobDesc &desc ) const
     {
         if ( !desc.Context || !desc.OutTransforms )
         {
@@ -780,13 +779,13 @@ namespace DenOfIz
         skinningJob.vertex_count     = desc.VertexCount;
         skinningJob.influences_count = desc.InfluenceCount;
         skinningJob.joint_matrices   = ozz::make_span( jointMatrices );
-        skinningJob.in_positions     = ozz::make_span( reinterpret_cast<const ozz::math::Float3 *>( desc.InVertices->Data( ) ), desc.VertexCount );
 
-        skinningJob.joint_weights = ozz::make_span( desc.InWeights->Data( ), desc.VertexCount * desc.InfluenceCount );
-        skinningJob.joint_indices = ozz::make_span( desc.InIndices->Data( ), desc.VertexCount * desc.InfluenceCount );
+        skinningJob.in_positions  = ozz::span( desc.InVertices->Data( ), desc.VertexCount * 3 );
+        skinningJob.joint_weights = ozz::span( desc.InWeights->Data( ), desc.VertexCount * desc.InfluenceCount );
+        skinningJob.joint_indices = ozz::span( desc.InIndices->Data( ), desc.VertexCount * desc.InfluenceCount );
 
         desc.OutVertices->Resize( desc.VertexCount * 3 );
-        skinningJob.out_positions = ozz::make_span( reinterpret_cast<ozz::math::Float3 *>( desc.OutVertices->Data( ) ), desc.VertexCount );
+        skinningJob.out_positions = ozz::span( desc.OutVertices->Data( ), desc.VertexCount * 3 );
 
         if ( !skinningJob.Run( ) )
         {
@@ -869,10 +868,8 @@ namespace DenOfIz
         ozzJob.target  = OzzUtils::ToOzzSimdFloat4( desc.Target );
         ozzJob.weight  = desc.Weight;
 
-        const ozz::math::SoaTransform &soaMatrix = m_impl->skeleton->joint_rest_poses( )[ desc.JointIndex ];
-
-        const ozz::math::Float4x4 &jointMatrix = m_impl->skeleton->joint_rest_poses( )[ desc.JointIndex ].translation;
-        ozzJob.joint                           = &jointMatrix;
+        const ozz::math::Float4x4 jointMatrix = ozz::math::Float4x4::identity( );
+        ozzJob.joint                          = &jointMatrix;
 
         ozz::math::SimdQuaternion jointCorrection{ };
         ozzJob.joint_correction = &jointCorrection;
@@ -1045,13 +1042,12 @@ namespace DenOfIz
             return false;
         }
 
-        ozz::animation::FloatTrackTriggeringJob job;
-        job.track          = internalContext->floatTracks[ desc.TrackIndex ].get( );
-        job.previous_ratio = desc.PreviousRatio;
-        job.ratio          = desc.Ratio;
-
-        ozz::vector<float> triggers;
-        job.triggers = ozz::make_span( triggers );
+        ozz::animation::TrackTriggeringJob job;
+        job.track     = internalContext->floatTracks[ desc.TrackIndex ].get( );
+        job.from      = desc.PreviousRatio;
+        job.to        = desc.Ratio;
+        job.threshold = 0.5f; // Todo configure?
+        job.iterator  = nullptr;
 
         if ( !job.Run( ) )
         {
@@ -1059,12 +1055,26 @@ namespace DenOfIz
             return false;
         }
 
-        desc.OutTriggered->Resize( triggers.size( ) );
-        for ( size_t i = 0; i < triggers.size( ); ++i )
+        size_t edgeCount = 0;
+        auto   it        = job.iterator;
+        while ( it && *it != job.end( ) )
         {
-            desc.OutTriggered->GetElement( i ) = triggers[ i ];
+            ++edgeCount;
+            ++it;
         }
 
+        desc.OutTriggered->Resize( edgeCount );
+        edgeCount = 0;
+        it        = job.iterator;
+        while ( it && *it != job.end( ) )
+        {
+            const auto &edge                           = *it;
+            desc.OutTriggered->GetElement( edgeCount ) = edge->ratio;
+            ++edgeCount;
+            ++it;
+        }
+
+        delete job.iterator;
         return true;
     }
 

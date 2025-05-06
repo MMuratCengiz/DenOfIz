@@ -144,14 +144,14 @@ namespace DenOfIz
         static void LoadTrack( const InteropArray<Float_3> &keys, const InteropArray<float> &timestamps, OzzContext *context );
         static void LoadTrack( const InteropArray<Float_4> &keys, const InteropArray<float> &timestamps, OzzContext *context );
 
-        bool               RunSamplingJob( const SamplingJobDesc &desc );
+        bool               RunSamplingJob( const SamplingJobDesc &desc ) const;
         [[nodiscard]] bool RunBlendingJob( const BlendingJobDesc &desc ) const;
         [[nodiscard]] bool RunLocalToModelJob( const LocalToModelJobDesc &desc ) const;
-        bool               RunSkinningJob( const SkinningJobDesc &desc );
+        static bool               RunSkinningJob( const SkinningJobDesc &desc );
         static bool        RunIkTwoBoneJob( const IkTwoBoneJobDesc &desc );
         [[nodiscard]] bool RunIkAimJob( const IkAimJobDesc &desc ) const;
         static bool        RunTrackSamplingJob( const TrackSamplingJobDesc &desc );
-        bool               RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc );
+        static bool               RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc );
 
         void              GetJointNames( InteropArray<InteropString> &outNames ) const;
         [[nodiscard]] int GetJointCount( ) const;
