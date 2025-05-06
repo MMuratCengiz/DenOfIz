@@ -81,7 +81,26 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Stream/BinaryContainer.cpp
         Source/Assets/Stream/BinaryReader.cpp
         Source/Assets/Stream/BinaryWriter.cpp
-        Source/Animation/AnimationStateManager.cpp
+)
+
+set(DEN_OF_IZ_ANIMATION_SOURCES
+    Source/Animation/Animation.cpp
+    Source/Animation/AnimationSetup.cpp
+    Source/Animation/AnimationStateManager.cpp
+    Source/Animation/AnimationStateManager2.cpp
+    Source/Animation/AnimationSystem.cpp
+    Source/Animation/AnimationTrack.cpp
+    Source/Animation/AnimationUtils.cpp
+    Source/Animation/BlendingJob.cpp
+    Source/Animation/IKAimJob.cpp
+    Source/Animation/IKTwoBoneJob.cpp
+    Source/Animation/LocalToModelJob.cpp
+    Source/Animation/MotionBlendingJob.cpp
+    Source/Animation/SamplingJob.cpp
+    Source/Animation/Skeleton.cpp
+    Source/Animation/SkinningJob.cpp
+    Source/Animation/TrackSamplingJob.cpp
+    Source/Animation/TrackTriggeringJob.cpp
 )
 
 set(DEN_OF_IZ_INPUT_SOURCES
@@ -89,12 +108,6 @@ set(DEN_OF_IZ_INPUT_SOURCES
         Source/Input/EventHandler.cpp
         Source/Input/InputSystem.cpp
         Source/Input/Window.cpp
-)
-
-set(DEN_OF_IZ_ANIMATION_SOURCES
-        Source/Animation/OzzSkeletonAdapter.cpp
-        Source/Animation/OzzAnimationAdapter.cpp
-        Source/Animation/OzzAnimationManager.cpp
 )
 
 set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
@@ -228,7 +241,7 @@ endif ()
 
 copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 
-add_library(DenOfIzGraphics ${DEN_OF_IZ_ASSETS_SOURCES} ${DEN_OF_IZ_GRAPHICS_SOURCES} ${DEN_OF_IZ_INPUT_SOURCES})
+add_library(DenOfIzGraphics ${DEN_OF_IZ_ASSETS_SOURCES} ${DEN_OF_IZ_GRAPHICS_SOURCES} ${DEN_OF_IZ_INPUT_SOURCES} ${DEN_OF_IZ_ANIMATION_SOURCES})
 #install_target(DenOfIzGraphics)
 
 if (CRT_LINKAGE_STATIC EQUAL 1)

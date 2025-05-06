@@ -377,62 +377,7 @@ void AnimatedFoxExample::Render( const uint32_t frameIndex, ICommandList *comman
     commandList->End( );
 }
 
-void AnimatedFoxExample::HandleEvent( SDL_Event &event )
-{
-    switch ( event.type )
-    {
-    case SDL_KEYDOWN:
-        {
-            switch ( event.key.keysym.sym )
-            {
-            case SDLK_w: // Switch to walk animation
-                m_animationManager->Play( "Walk", true );
-                m_currentAnim = "Walk";
-                break;
-            case SDLK_r: // Switch to run animation
-                m_animationManager->Play( "Run", true );
-                m_currentAnim = "Run";
-                break;
-            case SDLK_b: // Blend between animations
-                const std::string animationName = m_animationManager->GetCurrentAnimationName( ).Get( );
-                if ( animationName == "Walk" )
-                {
-                    m_animationManager->BlendTo( "Run", 0.5f );
-                    m_currentAnim = "Blending to Run";
-                }
-                else
-                {
-                    m_animationManager->BlendTo( "Walk", 0.5f );
-                    m_currentAnim = "Blending to Walk";
-                }
-                break;
-            case SDLK_SPACE: // Pause/Resume animation
-                m_animPlaying = !m_animPlaying;
-                if ( m_animPlaying )
-                {
-                    m_animationManager->Resume( );
-                }
-                else
-                {
-                    m_animationManager->Pause( );
-                }
-                break;
-            case SDLK_UP: // Increase animation speed
-                m_animSpeed += 0.1f;
-                break;
-            case SDLK_DOWN: // Decrease animation speed
-                m_animSpeed = std::max( 0.1f, m_animSpeed - 0.1f );
-                break;
-            default:;
-            }
-            break;
-        }
-    default:;
-    }
-
-    m_worldData.Camera->HandleEvent( event );
-    IExample::HandleEvent( event );
-}
+case SDLK_SPACE:
 
 bool AnimatedFoxExample::ImportFoxModel( const InteropString &gltfPath )
 {

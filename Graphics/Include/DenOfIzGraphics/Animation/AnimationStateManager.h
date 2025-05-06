@@ -23,8 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h>
 #include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h>
-#include <DenOfIzGraphics/DenOfIzGraphics.h>
-#include <complex.h>
+#include <complex>
 #include <ozz/animation/runtime/animation.h>
 #include <ozz/animation/runtime/blending_job.h>
 #include <ozz/animation/runtime/sampling_job.h>
@@ -92,7 +91,7 @@ namespace DenOfIz
         DZ_API int                  GetNumJoints( ) const;
 
     private:
-        std::unique_ptr<ozz::animation::Animation, ozz::Deleter<ozz::animation::Animation>> ConvertToOzzAnimation( const AnimationClip &clip );
+        [[nodiscard]] std::unique_ptr<ozz::animation::Animation, ozz::Deleter<ozz::animation::Animation>> ConvertToOzzAnimation( const AnimationClip &clip ) const;
         void                         SampleAnimation( AnimationState &state, ozz::vector<ozz::math::SoaTransform> &output ) const;
         void                         UpdateBlending( float deltaTime );
         static ozz::math::Transform  GetJointLocalTransform( const Joint &joint );
