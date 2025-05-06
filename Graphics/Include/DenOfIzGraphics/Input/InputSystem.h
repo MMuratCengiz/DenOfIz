@@ -153,41 +153,41 @@ namespace DenOfIz
         // Keyboard functions
         static KeyState       GetKeyState( KeyCode key );
         static const uint8_t *GetKeyboardState( );
-        static bool                  IsKeyPressed( KeyCode key );
+        static bool           IsKeyPressed( KeyCode key );
         static KeyModifiers   GetModState( );
         static void           SetModState( const KeyModifiers &modifiers );
-        KeyCode        GetKeyFromName( const InteropString &name );
-        InteropString  GetKeyName( KeyCode key );
-        InteropString  GetScancodeName( uint32_t scancode );
+        static KeyCode        GetKeyFromName( const InteropString &name );
+        static InteropString  GetKeyName( KeyCode key );
+        static InteropString  GetScancodeName( uint32_t scancode );
 
         // Mouse functions
-        uint32_t GetMouseState( int *x, int *y );
-        uint32_t GetGlobalMouseState( int *x, int *y );
-        uint32_t GetMouseButtons( );
-        uint32_t GetRelativeMouseState( int *x, int *y );
-        void     WarpMouseInWindow( const Window &window, int x, int y );
-        void     WarpMouseGlobal( int x, int y );
-        bool     GetRelativeMouseMode( );
-        void     SetRelativeMouseMode( bool enabled );
-        void     CaptureMouse( bool enabled );
-        bool     GetMouseFocus( uint32_t windowID );
+        static uint32_t GetMouseState( int *x, int *y );
+        static uint32_t GetGlobalMouseState( int *x, int *y );
+        static uint32_t GetMouseButtons( );
+        static uint32_t GetRelativeMouseState( int *x, int *y );
+        static void     WarpMouseInWindow( const Window &window, int x, int y );
+        static void     WarpMouseGlobal( int x, int y );
+        static bool     GetRelativeMouseMode( );
+        static void     SetRelativeMouseMode( bool enabled );
+        static void     CaptureMouse( bool enabled );
+        static bool     GetMouseFocus( uint32_t windowID );
 
         // Cursor functions
-        void ShowCursor( bool show );
-        bool IsCursorShown( );
+        static void ShowCursor( bool show );
+        static bool IsCursorShown( );
 
         // Controller functions
-        [[nodiscard]] InteropArray<int> GetConnectedControllerIndices( ) const;
-        [[nodiscard]] int               GetNumControllers( ) const;
-        bool                            OpenController( int playerIndex, int controllerIndex );
-        void                            CloseController( int playerIndex );
-        [[nodiscard]] bool              IsControllerConnected( int playerIndex ) const;
-        [[nodiscard]] Controller       *GetController( int playerIndex );
-        [[nodiscard]] const Controller *GetController( int playerIndex ) const;
-        [[nodiscard]] bool              IsControllerButtonPressed( int playerIndex, ControllerButton button ) const;
-        [[nodiscard]] int16_t           GetControllerAxisValue( int playerIndex, ControllerAxis axis ) const;
-        [[nodiscard]] InteropString     GetControllerName( int playerIndex ) const;
-        bool                            SetControllerRumble( int playerIndex, uint16_t lowFrequency, uint16_t highFrequency, uint32_t durationMs );
+        [[nodiscard]] static InteropArray<int> GetConnectedControllerIndices( );
+        [[nodiscard]] static int               GetNumControllers( );
+        bool                                   OpenController( int playerIndex, int controllerIndex );
+        void                                   CloseController( int playerIndex );
+        [[nodiscard]] bool                     IsControllerConnected( int playerIndex ) const;
+        [[nodiscard]] Controller              *GetController( int playerIndex );
+        [[nodiscard]] const Controller        *GetController( int playerIndex ) const;
+        [[nodiscard]] bool                     IsControllerButtonPressed( int playerIndex, ControllerButton button ) const;
+        [[nodiscard]] int16_t                  GetControllerAxisValue( int playerIndex, ControllerAxis axis ) const;
+        [[nodiscard]] InteropString            GetControllerName( int playerIndex ) const;
+        bool                                   SetControllerRumble( int playerIndex, uint16_t lowFrequency, uint16_t highFrequency, uint32_t durationMs ) const;
 
         [[nodiscard]] bool IsInitialized( ) const;
 

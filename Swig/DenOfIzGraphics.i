@@ -62,6 +62,8 @@ using namespace DirectX;
 %ignore DenOfIz::Internal::BlendingState;
 %ignore DenOfIz::AnimationStateManager::m_skeleton;
 %ignore DenOfIz::AnimationStateManager::m_animations;
+%ignore DenOfIz::AnimationStateManager::m_currentAnimation;
+%ignore DenOfIz::AnimationStateManager::m_blendingState;
 %ignore DenOfIz::AnimationStateManager::m_localTransforms;
 %ignore DenOfIz::AnimationStateManager::m_modelTransforms;
 %ignore DenOfIz::AnimationStateManager::ConvertToOzzAnimation;
