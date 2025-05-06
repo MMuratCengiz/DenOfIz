@@ -5,7 +5,6 @@
 
 %{
 #include "DenOfIzGraphics/DenOfIzGraphics.h"
-#include "DenOfIzGraphics/Utilities/InteropMath.h"
 %}
 #define DZ_API
 %warnfilter(516) InteropArray;
@@ -211,6 +210,8 @@ using namespace DirectX;
 // Bundle system
 %include <DenOfIzGraphics/Assets/Bundle/Bundle.h>
 %include <DenOfIzGraphics/Assets/Bundle/BundleManager.h>
+
+%include "DenOfIzGraphics_Input.i"
 
 // -- BitSet definitions
 // Convenience typedefs

@@ -65,7 +65,7 @@ namespace DenOfIz
         SkeletonAsset *Skeleton = nullptr;
     };
 
-    class DZ_API AnimationStateManager
+    class AnimationStateManager
     {
         ozz::unique_ptr<ozz::animation::Skeleton>       m_skeleton;
         std::unordered_map<std::string, AnimationState> m_animations;

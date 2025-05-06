@@ -24,3 +24,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Renderer/Sync/FrameSync.h>
 #include <DenOfIzGraphics/Renderer/Sync/ResourceTracking.h>
 #include <DenOfIzGraphics/Assets/Assets.h>
+
+// Input System
+#include <DenOfIzGraphics/Input/Controller.h>
+#include <DenOfIzGraphics/Input/Event.h>
+#include <DenOfIzGraphics/Input/EventCallbacks.h>
+#include <DenOfIzGraphics/Input/EventHandler.h>
+#include <DenOfIzGraphics/Input/InputData.h>
+#include <DenOfIzGraphics/Input/InputSystem.h>
+#include <DenOfIzGraphics/Input/Window.h>
