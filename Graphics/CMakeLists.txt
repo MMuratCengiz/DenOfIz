@@ -84,23 +84,8 @@ set(DEN_OF_IZ_ASSETS_SOURCES
 )
 
 set(DEN_OF_IZ_ANIMATION_SOURCES
-    Source/Animation/Animation.cpp
-    Source/Animation/AnimationSetup.cpp
-    Source/Animation/AnimationStateManager.cpp
-    Source/Animation/AnimationStateManager2.cpp
-    Source/Animation/AnimationSystem.cpp
-    Source/Animation/AnimationTrack.cpp
-    Source/Animation/AnimationUtils.cpp
-    Source/Animation/BlendingJob.cpp
-    Source/Animation/IKAimJob.cpp
-    Source/Animation/IKTwoBoneJob.cpp
-    Source/Animation/LocalToModelJob.cpp
-    Source/Animation/MotionBlendingJob.cpp
-    Source/Animation/SamplingJob.cpp
-    Source/Animation/Skeleton.cpp
-    Source/Animation/SkinningJob.cpp
-    Source/Animation/TrackSamplingJob.cpp
-    Source/Animation/TrackTriggeringJob.cpp
+        Source/Animation/AnimationStateManager.cpp
+        Source/Animation/OzzAnimation.cpp
 )
 
 set(DEN_OF_IZ_INPUT_SOURCES

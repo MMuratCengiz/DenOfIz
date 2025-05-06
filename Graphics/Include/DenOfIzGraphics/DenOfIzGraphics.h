@@ -33,3 +33,5 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Input/InputData.h>
 #include <DenOfIzGraphics/Input/InputSystem.h>
 #include <DenOfIzGraphics/Input/Window.h>
+
+#include <DenOfIzGraphics/Animation/OzzAnimation.h>
