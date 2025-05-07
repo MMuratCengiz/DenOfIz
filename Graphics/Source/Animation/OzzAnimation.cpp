@@ -731,7 +731,7 @@ namespace DenOfIz
     LocalToModelJobResult OzzAnimation::RunLocalToModelJob( const LocalToModelJobDesc &desc ) const
     {
         LocalToModelJobResult result{ };
-        if ( !desc.Context || !desc.Transforms )
+        if ( !desc.Context )
         {
             LOG( ERROR ) << "Invalid local to model job parameters";
             return result;
@@ -1034,20 +1034,20 @@ namespace DenOfIz
         return result;
     }
 
-    bool OzzAnimation::RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc )
+    TrackTriggeringResult OzzAnimation::RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc )
     {
-        if ( !desc.Context || !desc.OutTriggered || desc.TrackIndex < 0 )
+        TrackTriggeringResult result{ };
+        if ( !desc.Context || desc.TrackIndex < 0 )
         {
             LOG( ERROR ) << "Invalid track triggering job parameters";
-            return false;
+            return result;
         }
 
         const auto *internalContext = reinterpret_cast<InternalContext *>( desc.Context );
-
         if ( desc.TrackIndex >= static_cast<int>( internalContext->floatTracks.size( ) ) )
         {
             LOG( ERROR ) << "Track index out of range";
-            return false;
+            return result;
         }
 
         ozz::animation::TrackTriggeringJob job;
@@ -1060,7 +1060,7 @@ namespace DenOfIz
         if ( !job.Run( ) )
         {
             LOG( ERROR ) << "Track triggering failed";
-            return false;
+            return result;
         }
 
         size_t edgeCount = 0;
@@ -1071,19 +1071,20 @@ namespace DenOfIz
             ++it;
         }
 
-        desc.OutTriggered->Resize( edgeCount );
+        result.Triggered.Resize( edgeCount );
         edgeCount = 0;
         it        = job.iterator;
         while ( it && *it != job.end( ) )
         {
-            const auto &edge                           = *it;
-            desc.OutTriggered->GetElement( edgeCount ) = edge->ratio;
+            const auto &edge = *it;
+            result.Triggered.SetElement( edgeCount, edge->ratio );
             ++edgeCount;
             ++it;
         }
 
         delete job.iterator;
-        return true;
+        result.Success = true;
+        return result;
     }
 
     void OzzAnimation::GetJointNames( InteropArray<InteropString> &outNames ) const

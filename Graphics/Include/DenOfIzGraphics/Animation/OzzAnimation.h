@@ -70,8 +70,7 @@ namespace DenOfIz
 
     struct DZ_API LocalToModelJobDesc
     {
-        OzzContext              *Context       = nullptr;
-        InteropArray<Float_4x4> *Transforms  = nullptr;
+        OzzContext *Context = nullptr;
     };
 
     struct DZ_API SkinningJobResult
@@ -154,13 +153,18 @@ namespace DenOfIz
         float                   Ratio      = 0.0f;
     };
 
+    struct DZ_API TrackTriggeringResult
+    {
+        bool                Success{ false };
+        InteropArray<float> Triggered;
+    };
+
     struct DZ_API TrackTriggeringJobDesc
     {
-        OzzContext          *Context       = nullptr;
-        int                  TrackIndex    = -1;
-        float                PreviousRatio = 0.0f;
-        float                Ratio         = 0.0f;
-        InteropArray<float> *OutTriggered  = nullptr;
+        OzzContext *Context       = nullptr;
+        int         TrackIndex    = -1;
+        float       PreviousRatio = 0.0f;
+        float       Ratio         = 0.0f;
     };
 
     class DZ_API OzzAnimation
@@ -190,7 +194,7 @@ namespace DenOfIz
         static IkTwoBoneJobResult           RunIkTwoBoneJob( const IkTwoBoneJobDesc &desc );
         [[nodiscard]] IkAimJobResult        RunIkAimJob( const IkAimJobDesc &desc ) const;
         static TrackSamplingResult          RunTrackSamplingJob( const TrackSamplingJobDesc &desc );
-        static bool                         RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc );
+        static TrackTriggeringResult        RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc );
 
         void              GetJointNames( InteropArray<InteropString> &outNames ) const;
         [[nodiscard]] int GetJointCount( ) const;
