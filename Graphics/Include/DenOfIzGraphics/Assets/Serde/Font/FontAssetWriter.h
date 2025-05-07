@@ -39,7 +39,7 @@ namespace DenOfIz
         ~FontAssetWriter( );
 
         void Write( const FontAsset &fontAsset );
-        void Finalize( ) const;
+        void End( ) const;
 
     private:
         void WriteHeader( uint64_t totalNumBytes ) const;

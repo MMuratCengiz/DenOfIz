@@ -40,7 +40,7 @@ namespace DenOfIz
         ~ShaderAssetWriter( );
 
         void Write( const ShaderAsset &shaderAsset );
-        void Finalize( );
+        void End( );
 
         static ShaderAsset CreateFromCompiledShader( const CompiledShader &compiledShader );
 

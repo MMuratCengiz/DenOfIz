@@ -39,7 +39,7 @@ AssetUri AssetUri::Parse( const InteropString &uri )
     return result;
 }
 
-InteropString AssetUri::ToString( ) const
+InteropString AssetUri::ToInteropString( ) const
 {
     std::string result = Scheme.Get( );
     result += "://";
@@ -49,7 +49,7 @@ InteropString AssetUri::ToString( ) const
 
 bool AssetUri::Equals( const AssetUri &other ) const
 {
-    return ToString( ).Equals( other.ToString( ) );
+    return ToInteropString( ).Equals( other.ToInteropString( ) );
 }
 
 AssetUri AssetUri::Create( const InteropString &path )

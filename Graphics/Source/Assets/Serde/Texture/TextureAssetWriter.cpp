@@ -36,7 +36,7 @@ void TextureAssetWriter::WriteHeader( const uint64_t totalNumBytes ) const
     m_writer->WriteUInt64( m_textureAsset.Magic );
     m_writer->WriteUInt32( m_textureAsset.Version );
     m_writer->WriteUInt64( totalNumBytes );
-    m_writer->WriteString( m_textureAsset.Uri.ToString( ) );
+    m_writer->WriteString( m_textureAsset.Uri.ToInteropString( ) );
 }
 void TextureAssetWriter::WriteMipInfo( const TextureMip &mip ) const
 {
@@ -284,7 +284,7 @@ void TextureAssetWriter::AddPixelData( const InteropArray<Byte> &bytes, const ui
     m_writer->WriteBytes( bytes );
 }
 
-void TextureAssetWriter::Finalize( ) const
+void TextureAssetWriter::End( ) const
 {
     const uint64_t currentPos = m_writer->Position( );
 

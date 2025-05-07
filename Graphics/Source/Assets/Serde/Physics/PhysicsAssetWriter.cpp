@@ -36,7 +36,7 @@ void PhysicsAssetWriter::Write( const PhysicsAsset &physicsAsset ) const
     m_writer->WriteUInt64( physicsAsset.Magic );
     m_writer->WriteUInt32( physicsAsset.Version );
     m_writer->WriteUInt64( physicsAsset.NumBytes );
-    m_writer->WriteString( physicsAsset.Uri.ToString( ) );
+    m_writer->WriteString( physicsAsset.Uri.ToInteropString( ) );
     m_writer->WriteString( physicsAsset.Name );
     m_writer->WriteUInt32( physicsAsset.Colliders.NumElements( ) );
 

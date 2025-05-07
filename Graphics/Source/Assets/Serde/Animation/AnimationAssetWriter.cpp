@@ -37,10 +37,10 @@ void AnimationAssetWriter::Write( const AnimationAsset &animationAsset )
     m_writer->WriteUInt64( animationAsset.Magic );
     m_writer->WriteUInt32( animationAsset.Version );
     m_writer->WriteUInt64( animationAsset.NumBytes );
-    m_writer->WriteString( animationAsset.Uri.ToString( ) );
+    m_writer->WriteString( animationAsset.Uri.ToInteropString( ) );
 
     m_writer->WriteString( animationAsset.Name );
-    m_writer->WriteString( animationAsset.SkeletonRef.ToString( ) );
+    m_writer->WriteString( animationAsset.SkeletonRef.ToInteropString( ) );
 
     m_writer->WriteUInt32( animationAsset.Animations.NumElements( ) );
     for ( size_t i = 0; i < animationAsset.Animations.NumElements( ); ++i )

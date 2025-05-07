@@ -340,7 +340,7 @@ void FontImporter::WriteFontAsset( const ImportContext &context, AssetUri &outAs
 
     FontAsset msdfFontAsset = context.FontAsset;
     fontWriter.Write( msdfFontAsset );
-    fontWriter.Finalize( );
+    fontWriter.End( );
 
     FileIO::WriteFile( outputPath.c_str( ), container.GetData( ) );
 

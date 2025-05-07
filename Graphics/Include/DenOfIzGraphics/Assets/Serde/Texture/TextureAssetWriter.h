@@ -52,6 +52,6 @@ namespace DenOfIz
         DZ_API void Write( const TextureAsset &textureAsset );
         // Stream write bytes to a specific mip & array level, could be called multiple times for the same mip & array level
         DZ_API void AddPixelData( const InteropArray<Byte> &bytes, uint32_t mipIndex = 0, uint32_t arrayLayer = 0 );
-        DZ_API void Finalize( ) const;
+        DZ_API void End( ) const;
     };
 } // namespace DenOfIz

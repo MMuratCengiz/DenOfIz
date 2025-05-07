@@ -36,16 +36,16 @@ void MaterialAssetWriter::Write( const MaterialAsset &materialAsset ) const
     m_writer->WriteUInt64( materialAsset.Magic );
     m_writer->WriteUInt32( materialAsset.Version );
     m_writer->WriteUInt64( materialAsset.NumBytes );
-    m_writer->WriteString( materialAsset.Uri.ToString( ) );
+    m_writer->WriteString( materialAsset.Uri.ToInteropString( ) );
 
     m_writer->WriteString( materialAsset.Name );
     m_writer->WriteString( materialAsset.ShaderRef );
 
-    m_writer->WriteString( materialAsset.AlbedoMapRef.ToString( ) );
-    m_writer->WriteString( materialAsset.NormalMapRef.ToString( ) );
-    m_writer->WriteString( materialAsset.MetallicRoughnessMapRef.ToString( ) );
-    m_writer->WriteString( materialAsset.EmissiveMapRef.ToString( ) );
-    m_writer->WriteString( materialAsset.OcclusionMapRef.ToString( ) );
+    m_writer->WriteString( materialAsset.AlbedoMapRef.ToInteropString( ) );
+    m_writer->WriteString( materialAsset.NormalMapRef.ToInteropString( ) );
+    m_writer->WriteString( materialAsset.MetallicRoughnessMapRef.ToInteropString( ) );
+    m_writer->WriteString( materialAsset.EmissiveMapRef.ToInteropString( ) );
+    m_writer->WriteString( materialAsset.OcclusionMapRef.ToInteropString( ) );
 
     m_writer->WriteFloat_4( materialAsset.BaseColorFactor );
     m_writer->WriteFloat( materialAsset.MetallicFactor );

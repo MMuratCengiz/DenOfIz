@@ -99,7 +99,7 @@ void ShaderAssetWriter::WriteHeader( const uint32_t totalNumBytes ) const
     m_writer->WriteUInt64( m_shaderAsset.Magic );
     m_writer->WriteUInt32( m_shaderAsset.Version );
     m_writer->WriteUInt64( totalNumBytes );
-    m_writer->WriteString( m_shaderAsset.Uri.ToString( ) );
+    m_writer->WriteString( m_shaderAsset.Uri.ToInteropString( ) );
 }
 
 void ShaderAssetWriter::WriteInputLayout( const InputLayoutDesc &inputLayout ) const
@@ -246,7 +246,7 @@ void ShaderAssetWriter::WriteResourceReflection( const ReflectionDesc &reflectio
     m_writer->WriteUInt64( reflection.NumBytes );
 }
 
-void ShaderAssetWriter::Finalize( )
+void ShaderAssetWriter::End( )
 {
     if ( m_finalized )
     {

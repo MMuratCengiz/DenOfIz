@@ -35,7 +35,7 @@ void SkeletonAssetWriter::Write( const SkeletonAsset &skeletonAsset ) const
     m_writer->WriteUInt64( skeletonAsset.Magic );
     m_writer->WriteUInt32( skeletonAsset.Version );
     m_writer->WriteUInt64( skeletonAsset.NumBytes );
-    m_writer->WriteString( skeletonAsset.Uri.ToString( ) );
+    m_writer->WriteString( skeletonAsset.Uri.ToInteropString( ) );
     m_writer->WriteString( skeletonAsset.Name );
 
     m_writer->WriteUInt32( skeletonAsset.Joints.NumElements( ) );

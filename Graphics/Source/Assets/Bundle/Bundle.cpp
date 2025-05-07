@@ -152,7 +152,7 @@ Bundle *Bundle::CreateFromDirectory( const BundleDirectoryDesc &directoryDesc )
 
 BinaryReader *Bundle::OpenReader( const AssetUri &assetUri )
 {
-    const std::string uriStr = assetUri.ToString( ).Get( );
+    const std::string uriStr = assetUri.ToInteropString( ).Get( );
     const auto        it     = m_assetEntries.find( uriStr );
     if ( it != m_assetEntries.end( ) )
     {
@@ -199,7 +199,7 @@ BinaryReader *Bundle::OpenReader( const AssetUri &assetUri )
 
 BinaryWriter *Bundle::OpenWriter( const AssetUri &assetUri )
 {
-    const std::string uriStr = assetUri.ToString( ).Get( );
+    const std::string uriStr = assetUri.ToInteropString( ).Get( );
     if ( const auto it = m_assetEntries.find( uriStr ); it != m_assetEntries.end( ) )
     {
         constexpr BinaryWriterDesc desc{ };
@@ -309,7 +309,7 @@ void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const Int
         return;
     }
 
-    const std::string uriStr = assetUri.ToString( ).Get( );
+    const std::string uriStr = assetUri.ToInteropString( ).Get( );
     if ( const auto existingIt = m_assetEntries.find( uriStr ); existingIt != m_assetEntries.end( ) )
     {
         LOG( WARNING ) << "Asset already exists in bundle, replacing: " << uriStr;
@@ -363,7 +363,7 @@ void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const Int
 
 bool Bundle::Exists( const AssetUri &assetUri ) const
 {
-    return m_assetEntries.contains( assetUri.ToString( ).Get( ) );
+    return m_assetEntries.contains( assetUri.ToInteropString( ).Get( ) );
 }
 
 bool Bundle::Save( )

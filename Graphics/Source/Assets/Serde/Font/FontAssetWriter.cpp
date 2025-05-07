@@ -42,7 +42,7 @@ void FontAssetWriter::Write( const FontAsset &fontAsset )
     m_writer->WriteBytes( fontAsset.AtlasData );
 }
 
-void FontAssetWriter::Finalize( ) const
+void FontAssetWriter::End( ) const
 {
     const auto totalNumBytes   = m_writer->Position( ) - m_streamStartLocation;
     const auto currentPosition = m_writer->Position( );
@@ -56,7 +56,7 @@ void FontAssetWriter::WriteHeader( const uint64_t totalNumBytes ) const
     m_writer->WriteUInt64( m_fontAsset.Magic );
     m_writer->WriteUInt32( m_fontAsset.Version );
     m_writer->WriteUInt64( totalNumBytes );
-    m_writer->WriteString( m_fontAsset.Uri.ToString( ) );
+    m_writer->WriteString( m_fontAsset.Uri.ToInteropString( ) );
 }
 
 void FontAssetWriter::WriteMetadata( const FontAsset &fontAsset ) const

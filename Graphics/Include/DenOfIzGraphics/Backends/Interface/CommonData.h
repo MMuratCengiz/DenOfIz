@@ -271,7 +271,7 @@ namespace DenOfIz
 
         // To simplify having a really odd looking vector of ResourceBindingSlots
         [[nodiscard]] uint32_t      Key( ) const;
-        [[nodiscard]] InteropString ToString( ) const;
+        [[nodiscard]] InteropString ToInteropString( ) const;
     };
     template class DZ_API InteropArray<ResourceBindingSlot>;
 

@@ -112,7 +112,7 @@ namespace DenOfIz
         void WriteSkeletonAsset( ImportContext &context, const SkeletonAsset &skeletonAsset );
         void WriteAnimationAsset( ImportContext &context, const AnimationAsset &animationAsset, AssetUri &outAssetUri );
 
-        Float_4x4 ConvertMatrix( const aiMatrix4x4 &matrix );
+        Float_4x4 ConvertMatrix( const aiMatrix4x4 &matrix ) const;
         Float_4   ConvertQuaternion( const aiQuaternion &quat );
         Float_3   ConvertVector3( const aiVector3D &vec );
         Float_2   ConvertVector2( const aiVector3D &vec );

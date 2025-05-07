@@ -45,7 +45,7 @@ uint32_t ResourceBindingSlot::Key( ) const
     return static_cast<uint32_t>( Type ) * 1000 + RegisterSpace * 100 + Binding;
 }
 
-InteropString ResourceBindingSlot::ToString( ) const
+InteropString ResourceBindingSlot::ToInteropString( ) const
 {
     std::string typeString;
     switch ( Type )

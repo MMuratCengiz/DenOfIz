@@ -140,7 +140,7 @@ void MeshAssetWriter::WriteSubMeshData( const SubMeshData &data ) const
     AssetWriterHelpers::WriteAssetDataStream( m_writer, data.IndexStream );
     m_writer->WriteFloat_3( data.MinBounds );
     m_writer->WriteFloat_3( data.MaxBounds );
-    m_writer->WriteString( data.MaterialRef.ToString( ) );
+    m_writer->WriteString( data.MaterialRef.ToInteropString( ) );
     m_writer->WriteUInt32( data.LODLevel );
     m_writer->WriteUInt32( data.BoundingVolumes.NumElements( ) );
     for ( size_t j = 0; j < data.BoundingVolumes.NumElements( ); ++j )
@@ -163,7 +163,7 @@ void MeshAssetWriter::WriteHeader( const uint64_t totalNumBytes )
     m_writer->WriteUInt64( m_meshAsset.Magic );
     m_writer->WriteUInt32( m_meshAsset.Version );
     m_writer->WriteUInt64( totalNumBytes ); // NumBytes, Will be written later at finalize!!
-    m_writer->WriteString( m_meshAsset.Uri.ToString( ) );
+    m_writer->WriteString( m_meshAsset.Uri.ToInteropString( ) );
 
     WriteTopLevelMetadata( );
     WriteMetadataArrays( );
@@ -241,9 +241,9 @@ void MeshAssetWriter::WriteTopLevelMetadata( )
     m_writer->WriteUInt32( m_meshAsset.AnimationRefs.NumElements( ) );
     for ( size_t i = 0; i < m_meshAsset.AnimationRefs.NumElements( ); ++i )
     {
-        m_writer->WriteString( m_meshAsset.AnimationRefs.GetElement( i ).ToString( ) );
+        m_writer->WriteString( m_meshAsset.AnimationRefs.GetElement( i ).ToInteropString( ) );
     }
-    m_writer->WriteString( m_meshAsset.SkeletonRef.ToString( ) );
+    m_writer->WriteString( m_meshAsset.SkeletonRef.ToInteropString( ) );
 }
 
 void MeshAssetWriter::WriteMetadataArrays( )

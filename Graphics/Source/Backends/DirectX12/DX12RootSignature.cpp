@@ -83,7 +83,7 @@ uint32_t DX12RootSignature::GetResourceOffset( const ResourceBindingSlot &slot )
         LOG( ERROR ) << "Register space " << slot.RegisterSpace << " is not bound to any bind group.";
     }
     return ContainerUtilities::SafeGetMapValue( m_registerSpaceOrder[ slot.RegisterSpace ].ResourceOffsetMap, slot.Key( ),
-                                                "Binding slot does not exist in root signature: " + std::string( slot.ToString( ).Get( ) ) );
+                                                "Binding slot does not exist in root signature: " + std::string( slot.ToInteropString( ).Get( ) ) );
 }
 
 void DX12RootSignature::ProcessRegisterSpaceRange( const RegisterSpaceRangesDesc &range )

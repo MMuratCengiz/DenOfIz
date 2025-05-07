@@ -33,7 +33,7 @@ namespace DenOfIz
         AssetUri                   &operator=( const AssetUri &other ) = default;
         static AssetUri             Parse( const InteropString &uri );
         static AssetUri             Create( const InteropString &path );
-        [[nodiscard]] InteropString ToString( ) const;
+        [[nodiscard]] InteropString ToInteropString( ) const; // Not using ToString() intentionally to avoid conflict with bindings
         [[nodiscard]] bool          Equals( const AssetUri &other ) const;
     };
     template class DZ_API InteropArray<AssetUri>;

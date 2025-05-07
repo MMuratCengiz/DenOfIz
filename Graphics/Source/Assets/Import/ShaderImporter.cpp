@@ -126,7 +126,7 @@ void ShaderImporter::WriteShaderAsset( const ImportContext &context, AssetUri &o
     ShaderAssetWriter shaderWriter( writerDesc );
 
     shaderWriter.Write( context.ShaderAsset );
-    shaderWriter.Finalize( );
+    shaderWriter.End( );
 
     FileIO::WriteFile( outputPath.c_str( ), container.GetData( ) );
 

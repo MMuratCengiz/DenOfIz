@@ -342,7 +342,7 @@ ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
 
         meshWriter.FinalizeAsset( );
         RegisterCreatedAsset( context, meshUri );
-        LOG( INFO ) << "Successfully wrote Mesh asset: " << meshUri.ToString( ).Get( );
+        LOG( INFO ) << "Successfully wrote Mesh asset: " << meshUri.ToInteropString( ).Get( );
         if ( context.Desc.ImportAnimations && context.Scene->HasAnimations( ) )
         {
             LOG( WARNING ) << "No processable meshes found in the scene";
@@ -835,7 +835,7 @@ void AssimpImporter::ProcessAnimation( ImportContext &context, const aiAnimation
 
     animAsset.Animations.AddElement( clip );
     WriteAnimationAsset( context, animAsset, outAssetUri );
-    LOG( INFO ) << "Successfully wrote animation asset: " << outAssetUri.ToString( ).Get( );
+    LOG( INFO ) << "Successfully wrote animation asset: " << outAssetUri.ToInteropString( ).Get( );
 }
 
 void AssimpImporter::CalculateMeshBounds( const aiMesh *mesh, const float scaleFactor, Float_3 &outMin, Float_3 &outMax )
@@ -1060,7 +1060,7 @@ void AssimpImporter::WriteTextureAsset( ImportContext &context, const aiTexture 
             assetWriter.AddPixelData( mipDataBuffer, mipData.MipIndex, mipData.ArrayIndex );
         } );
 
-    assetWriter.Finalize( );
+    assetWriter.End( );
     RegisterCreatedAsset( context, outAssetUri );
     context.TexturePathToAssetUriMap[ targetAssetPath.Get( ) ] = outAssetUri;
 }
@@ -1093,7 +1093,7 @@ void AssimpImporter::WriteAnimationAsset( ImportContext &context, const Animatio
     RegisterCreatedAsset( context, outAssetUri );
 }
 
-Float_4x4 AssimpImporter::ConvertMatrix( const aiMatrix4x4 &matrix )
+Float_4x4 AssimpImporter::ConvertMatrix( const aiMatrix4x4 &matrix ) const
 {
     // Both of these are row major, but their layouts don't quite match, Float_4X4 is analogous to XMFLOAT4X4 and 1=1 layout mapping returns an invalid matrix
     // Decomposing and recomposing seem like the safest bet

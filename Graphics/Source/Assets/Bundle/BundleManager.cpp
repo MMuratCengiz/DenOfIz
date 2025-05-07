@@ -68,7 +68,7 @@ void BundleManager::MountDirectory( const InteropString &directoryPath, bool rec
 
 BinaryReader *BundleManager::OpenReader( const AssetUri &path )
 {
-    const std::string uriStr = path.ToString( ).Get( );
+    const std::string uriStr = path.ToInteropString( ).Get( );
 
     if ( const auto cacheIt = m_assetLocationCache.find( uriStr ); cacheIt != m_assetLocationCache.end( ) )
     {
@@ -96,7 +96,7 @@ BinaryReader *BundleManager::OpenReader( const AssetUri &path )
 
 BinaryWriter *BundleManager::OpenWriter( const AssetUri &path )
 {
-    const std::string uriStr = path.ToString( ).Get( );
+    const std::string uriStr = path.ToInteropString( ).Get( );
     if ( const auto cacheIt = m_assetLocationCache.find( uriStr ); cacheIt != m_assetLocationCache.end( ) )
     {
         return cacheIt->second->OpenWriter( path );
@@ -139,13 +139,13 @@ void BundleManager::AddAsset( Bundle *bundle, const AssetUri &path, AssetType ty
     }
 
     bundle->AddAsset( path, type, data );
-    const std::string uriStr       = path.ToString( ).Get( );
+    const std::string uriStr       = path.ToInteropString( ).Get( );
     m_assetLocationCache[ uriStr ] = bundle;
 }
 
 bool BundleManager::Exists( const AssetUri &path )
 {
-    const std::string uriStr = path.ToString( ).Get( );
+    const std::string uriStr = path.ToInteropString( ).Get( );
     if ( const auto cacheIt = m_assetLocationCache.find( uriStr ); cacheIt != m_assetLocationCache.end( ) )
     {
         return true;

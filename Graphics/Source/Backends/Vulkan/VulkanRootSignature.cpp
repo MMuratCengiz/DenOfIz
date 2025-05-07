@@ -193,7 +193,8 @@ VulkanRootSignature::~VulkanRootSignature( )
 
 ResourceBindingDesc VulkanRootSignature::GetVkShiftedBinding( const ResourceBindingSlot &slot ) const
 {
-    return ContainerUtilities::SafeGetMapValue( m_resourceBindingMap, slot.Key( ), "Binding slot does not exist in root signature: " + std::string( slot.ToString( ).Get( ) ) );
+    return ContainerUtilities::SafeGetMapValue( m_resourceBindingMap, slot.Key( ),
+                                                "Binding slot does not exist in root signature: " + std::string( slot.ToInteropString( ).Get( ) ) );
 }
 
 uint32_t VulkanRootSignature::NumRootConstants( ) const
