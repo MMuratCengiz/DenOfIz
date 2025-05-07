@@ -247,7 +247,7 @@ Write-Host "Creating project file..." -ForegroundColor Green
 @"
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net6.0;net8.0;net9.0</TargetFrameworks>
     <LangVersion>8.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -278,6 +278,19 @@ Write-Host "Creating project file..." -ForegroundColor Green
   <!-- Include source files -->
   <ItemGroup>
     <Compile Include="lib/netstandard2.0/*.cs" />
+  </ItemGroup>
+  
+  <!-- Create lib folders for all target frameworks -->
+  <ItemGroup>
+    <!-- Copy compiled code to all target framework folders -->
+    <Content Include="lib/netstandard2.0/*.cs">
+      <PackagePath>lib/net6.0</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="lib/netstandard2.0/*.cs">
+      <PackagePath>lib/net8.0</PackagePath>
+      <Pack>true</Pack>
+    </Content>
   </ItemGroup>
 
   <!-- Platform specific native libraries -->
