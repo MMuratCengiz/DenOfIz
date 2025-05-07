@@ -244,20 +244,19 @@ void Window::SetPosition( const int x, const int y )
     m_properties.Y = y;
 }
 
-void Window::GetPosition( int *x, int *y ) const
+WindowCoords Window::GetPosition( ) const
 {
+    WindowCoords result = { 0, 0 };
 #ifdef WINDOW_MANAGER_SDL
     if ( m_sdlWindow )
     {
-        SDL_GetWindowPosition( m_sdlWindow, x, y );
-        return;
+        SDL_GetWindowPosition( m_sdlWindow, &result.X, &result.Y );
+        return result;
     }
 #endif
 
-    if ( x )
-        *x = m_properties.X;
-    if ( y )
-        *y = m_properties.Y;
+    result = { m_properties.X, m_properties.Y };
+    return result;
 }
 
 void Window::SetResizable( const bool resizable )

@@ -191,15 +191,6 @@ KeyState InputSystem::GetKeyState( KeyCode key )
 #endif
 }
 
-const uint8_t *InputSystem::GetKeyboardState( )
-{
-#ifdef WINDOW_MANAGER_SDL
-    return SDL_GetKeyboardState( nullptr );
-#else
-    return nullptr;
-#endif
-}
-
 bool InputSystem::IsKeyPressed( const KeyCode key )
 {
     return GetKeyState( key ) == KeyState::Pressed;
@@ -358,33 +349,25 @@ void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outE
 }
 #endif
 
-uint32_t InputSystem::GetMouseState( int *x, int *y )
+MouseCoords InputSystem::GetMouseState( )
 {
+    MouseCoords result{ };
 #ifdef WINDOW_MANAGER_SDL
-    return SDL_GetMouseState( x, y );
+    SDL_GetMouseState( &result.X, &result.Y );
+    return result;
 #else
-    if ( x )
-    {
-        *x = 0;
-    }
-    if ( y )
-    {
-        *y = 0;
-    }
-    return 0;
+    return { 0, 0 };
 #endif
 }
 
-uint32_t InputSystem::GetGlobalMouseState( int *x, int *y )
+MouseCoords InputSystem::GetGlobalMouseState( )
 {
+    MouseCoords result{ };
 #ifdef WINDOW_MANAGER_SDL
-    return SDL_GetGlobalMouseState( x, y );
+    SDL_GetGlobalMouseState( &result.X, &result.Y );
+    return result;
 #else
-    if ( x )
-        *x = 0;
-    if ( y )
-        *y = 0;
-    return 0;
+    return { 0, 0 };
 #endif
 }
 
@@ -397,16 +380,14 @@ uint32_t InputSystem::GetMouseButtons( )
 #endif
 }
 
-uint32_t InputSystem::GetRelativeMouseState( int *x, int *y )
+MouseCoords InputSystem::GetRelativeMouseState( )
 {
+    MouseCoords result{ };
 #ifdef WINDOW_MANAGER_SDL
-    return SDL_GetRelativeMouseState( x, y );
+    SDL_GetRelativeMouseState( &result.X, &result.Y );
+    return result;
 #else
-    if ( x )
-        *x = 0;
-    if ( y )
-        *y = 0;
-    return 0;
+    return { 0, 0 };
 #endif
 }
 

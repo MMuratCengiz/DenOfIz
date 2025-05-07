@@ -9,6 +9,13 @@
 #include "DenOfIzGraphics/DenOfIzGraphics.h"
 %}
 #define DZ_API
+#if defined(SWIGJAVA)
+#define SWIG_JAVA_MODE
+#endif
+#if defined(SWIGCSHARP)
+#define SWIG_CSHARP_MODE
+#endif
+
 %warnfilter(516) InteropArray;
 
 // DirectX namespace is for internal use only
@@ -21,6 +28,7 @@ using namespace DirectX;
 %include "carrays.i"
 %include "cpointer.i"
 %include "arrays_csharp.i"
+%include "DenOfIzGraphics_Dxc.i"
 
 %apply void *VOID_INT_PTR { void * }
 %apply unsigned char INPUT[]  {unsigned char *inputBytes}
@@ -30,7 +38,7 @@ using namespace DirectX;
 %ignore DenOfIz::RenderGraphInternal::PresentContext;
 %ignore DenOfIz::RenderGraphInternal::ResourceLockedState;
 %ignore DenOfIz::RenderGraphInternal::ResourceLocking;
-%ignore DenOfIz::CompiledShader;
+
 %ignore DenOfIz::CompiledShaders;
 %ignore DenOfIz::ShaderProgram::GetCompiledShaders;
 %ignore DenOfIz::ReflectionState;
@@ -283,7 +291,7 @@ typedef DenOfIz::InteropArray<DenOfIz::Bundle*> BundlePointerArray;
 typedef DenOfIz::InteropArray<DenOfIz::ColorFormat> ColorFormatArray;
 typedef DenOfIz::InteropArray<DenOfIz::CompiledShaderStage*> CompiledShaderStagePointerArray;
 typedef DenOfIz::BitSet<DenOfIz::GeometryFlags> GeometryFlagsBitSet;
-typedef DenOfIz::InteropArray<DenOfIz::BlendingJobDesc::Layer> BlendingJobDescLayerArray;
+typedef DenOfIz::InteropArray<DenOfIz::BlendingJobLayerDesc> BlendingJobLayerDescArray;
 typedef DenOfIz::InteropArray<DenOfIz::BoundingVolume> BoundingVolumeArray;
 typedef DenOfIz::InteropArray<DenOfIz::FontGlyph> FontGlyphArray;
 typedef DenOfIz::InteropArray<DenOfIz::HitGroupDesc> HitGroupDescArray;
@@ -299,7 +307,11 @@ typedef DenOfIz::InteropArray<DenOfIz::TransitionTextureDesc> TransitionTextureD
 typedef DenOfIz::InteropArray<DenOfIz::UserProperty> UserPropertyArray;
 typedef DenOfIz::InteropArray<DenOfIz::UVChannel> UVChannelArray;
 typedef DenOfIz::InteropArray<unsigned short> UnsignedShortArray;
+typedef DenOfIz::InteropArray<float> FloatArray;
 typedef DenOfIz::InteropArray<DenOfIz::InteropArray<float>> FloatArrayArray;
+typedef DenOfIz::InteropArray<DenOfIz::CompiledShader> CompiledShaderArray;
+typedef DenOfIz::InteropArray<unsigned char> UnsignedCharArray;
+typedef DenOfIz::InteropArray<bool> BoolArray;
 // Instantiations:
 %template(ASGeometryDescArray) DenOfIz::InteropArray<DenOfIz::ASGeometryDesc>;
 %template(ASInstanceDescArray) DenOfIz::InteropArray<DenOfIz::ASInstanceDesc>;
@@ -356,7 +368,7 @@ typedef DenOfIz::InteropArray<DenOfIz::InteropArray<float>> FloatArrayArray;
 %template(GeometryFlagsBitSet) DenOfIz::BitSet<DenOfIz::GeometryFlags>;
 
 // Rendering and shader related types
-%template(BlendingJobDescLayerArray) DenOfIz::InteropArray<DenOfIz::BlendingJobDesc::Layer>;
+%template(BlendingJobDescLayerArray) DenOfIz::InteropArray<DenOfIz::BlendingJobLayerDesc>;
 %template(BoundingVolumeArray) DenOfIz::InteropArray<DenOfIz::BoundingVolume>;
 %template(FontGlyphArray) DenOfIz::InteropArray<DenOfIz::FontGlyph>;
 %template(HitGroupDescArray) DenOfIz::InteropArray<DenOfIz::HitGroupDesc>;
@@ -372,6 +384,8 @@ typedef DenOfIz::InteropArray<DenOfIz::InteropArray<float>> FloatArrayArray;
 %template(UserPropertyArray) DenOfIz::InteropArray<DenOfIz::UserProperty>;
 %template(UVChannelArray) DenOfIz::InteropArray<DenOfIz::UVChannel>;
 %template(UnsignedShortArray) DenOfIz::InteropArray<unsigned short>;
-
-// Nested array type (array of arrays)
+%template(FloatArray) DenOfIz::InteropArray<float>;
 %template(FloatArrayArray) DenOfIz::InteropArray<DenOfIz::InteropArray<float>>;
+%template(CompiledShaderArray) DenOfIz::InteropArray<DenOfIz::CompiledShader>;
+%template(UnsignedCharArray) DenOfIz::InteropArray<unsigned char>;
+%template(BoolArray) DenOfIz::InteropArray<bool>;

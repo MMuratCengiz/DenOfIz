@@ -194,6 +194,12 @@ namespace DenOfIz
         int Height;
     };
 
+    struct DZ_API WindowCoords
+    {
+        int X;
+        int Y;
+    };
+
     struct DZ_API WindowProperties
     {
         InteropString Title;
@@ -240,7 +246,7 @@ namespace DenOfIz
         [[nodiscard]] bool                 GetFullscreen( ) const;
         void                               SetFullscreen( bool fullscreen );
         void                               SetPosition( int x, int y );
-        void                               GetPosition( int *x, int *y ) const;
+        WindowCoords                       GetPosition( ) const;
         void                               SetResizable( bool resizable );
         void                               SetBordered( bool bordered );
         void                               SetMinimumSize( int minWidth, int minHeight ) const;

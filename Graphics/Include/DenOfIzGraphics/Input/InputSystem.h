@@ -33,6 +33,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct DZ_API MouseCoords
+    {
+        int X;
+        int Y;
+    };
     struct DZ_API KeyModifiers
     {
         bool None       = true;
@@ -151,26 +156,25 @@ namespace DenOfIz
         static void PushEvent( const Event &event );
 
         // Keyboard functions
-        static KeyState       GetKeyState( KeyCode key );
-        static const uint8_t *GetKeyboardState( );
-        static bool           IsKeyPressed( KeyCode key );
-        static KeyModifiers   GetModState( );
-        static void           SetModState( const KeyModifiers &modifiers );
-        static KeyCode        GetKeyFromName( const InteropString &name );
-        static InteropString  GetKeyName( KeyCode key );
-        static InteropString  GetScancodeName( uint32_t scancode );
+        static KeyState      GetKeyState( KeyCode key );
+        static bool          IsKeyPressed( KeyCode key );
+        static KeyModifiers  GetModState( );
+        static void          SetModState( const KeyModifiers &modifiers );
+        static KeyCode       GetKeyFromName( const InteropString &name );
+        static InteropString GetKeyName( KeyCode key );
+        static InteropString GetScancodeName( uint32_t scancode );
 
         // Mouse functions
-        static uint32_t GetMouseState( int *x, int *y );
-        static uint32_t GetGlobalMouseState( int *x, int *y );
-        static uint32_t GetMouseButtons( );
-        static uint32_t GetRelativeMouseState( int *x, int *y );
-        static void     WarpMouseInWindow( const Window &window, int x, int y );
-        static void     WarpMouseGlobal( int x, int y );
-        static bool     GetRelativeMouseMode( );
-        static void     SetRelativeMouseMode( bool enabled );
-        static void     CaptureMouse( bool enabled );
-        static bool     GetMouseFocus( uint32_t windowID );
+        static MouseCoords GetMouseState( );
+        static MouseCoords GetGlobalMouseState( );
+        static uint32_t    GetMouseButtons( );
+        static MouseCoords GetRelativeMouseState( );
+        static void        WarpMouseInWindow( const Window &window, int x, int y );
+        static void        WarpMouseGlobal( int x, int y );
+        static bool        GetRelativeMouseMode( );
+        static void        SetRelativeMouseMode( bool enabled );
+        static void        CaptureMouse( bool enabled );
+        static bool        GetMouseFocus( uint32_t windowID );
 
         // Cursor functions
         static void ShowCursor( bool show );

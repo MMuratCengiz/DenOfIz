@@ -69,7 +69,7 @@ swig_add_library(DenOfIzGraphicsCSharp
 add_dependencies(DenOfIzGraphicsCSharp InitPlatformDir)
 
 set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
-        SWIG_FLAGS "-E"
+        SWIG_FLAGS "-E;-DSWIGCSHARP"
 )
 
 set_target_properties(DenOfIzGraphicsCSharp PROPERTIES

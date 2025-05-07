@@ -7,37 +7,38 @@ if (SWIG_CSHARP OR SWIG_JAVA)
     find_package(SWIG REQUIRED)
     include(${SWIG_USE_FILE})
     set_source_files_properties(DenOfIzGraphics.i PROPERTIES CPLUSPLUS ON)
+    set_source_files_properties(DenOfIzGraphics_Dxc.i PROPERTIES CPLUSPLUS ON)
 endif ()
 
 # Define platform names and architectures consistently across the build
-if(WIN32)
+if (WIN32)
     set(NATIVE_LIB_PREFIX "")
     set(NATIVE_LIB_SUFFIX ".dll")
     set(PLATFORM_RID "win")
-elseif(APPLE)
+elseif (APPLE)
     set(NATIVE_LIB_PREFIX "lib")
     set(NATIVE_LIB_SUFFIX ".dylib")
     set(PLATFORM_RID "osx")
-elseif(UNIX)
+elseif (UNIX)
     set(NATIVE_LIB_PREFIX "lib")
     set(NATIVE_LIB_SUFFIX ".so")
     set(PLATFORM_RID "linux")
-else()
+else ()
     set(NATIVE_LIB_PREFIX "lib")
     set(NATIVE_LIB_SUFFIX ".so")
     set(PLATFORM_RID "unknown")
-endif()
+endif ()
 
 # Detect architecture
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(ARCH "x64")
-elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
     set(ARCH "x86")
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
     set(ARCH "arm64")
-else()
+else ()
     set(ARCH "unknown")
-endif()
+endif ()
 
 if (SWIG_CSHARP)
     include(Targets/CSharp/CSharp.cmake)
@@ -51,12 +52,12 @@ if (SWIG_CSHARP)
     set(NUGET_OUTPUT_DIR ${CMAKE_BINARY_DIR}/nuget)
     set(NUGET_SPEC_FILE ${NUGET_OUTPUT_DIR}/DenOfIzGraphics.nuspec)
     set(NUGET_TARGETS_FILE ${NUGET_OUTPUT_DIR}/DenOfIzGraphics.targets)
-    
+
     file(MAKE_DIRECTORY ${NUGET_OUTPUT_DIR})
     file(MAKE_DIRECTORY ${NUGET_OUTPUT_DIR}/build)
     file(MAKE_DIRECTORY ${NUGET_OUTPUT_DIR}/lib/netstandard2.0)
     file(MAKE_DIRECTORY ${NUGET_OUTPUT_DIR}/runtimes/${PLATFORM_RID}-${ARCH}/native)
-    
+
     file(WRITE ${NUGET_SPEC_FILE} "<?xml version=\"1.0\" encoding=\"utf-8\"?>
 <package xmlns=\"http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd\">
   <metadata>
@@ -98,30 +99,30 @@ if (SWIG_CSHARP)
 </Project>")
 
     add_custom_target(nuget_package
-        COMMAND ${CMAKE_COMMAND} -E copy ${NUGET_TARGETS_FILE} ${NUGET_OUTPUT_DIR}/build/DenOfIzGraphics.targets
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DenOfIzGraphics> ${NUGET_OUTPUT_DIR}/runtimes/${PLATFORM_RID}-${ARCH}/native/
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DenOfIzGraphicsCSharp> ${NUGET_OUTPUT_DIR}/runtimes/${PLATFORM_RID}-${ARCH}/native/
-        COMMAND nuget pack ${NUGET_SPEC_FILE} -OutputDirectory ${NUGET_OUTPUT_DIR}
-        DEPENDS DenOfIzGraphicsCSharp DenOfIzGraphics
-        COMMENT "Building NuGet package"
+            COMMAND ${CMAKE_COMMAND} -E copy ${NUGET_TARGETS_FILE} ${NUGET_OUTPUT_DIR}/build/DenOfIzGraphics.targets
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DenOfIzGraphics> ${NUGET_OUTPUT_DIR}/runtimes/${PLATFORM_RID}-${ARCH}/native/
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DenOfIzGraphicsCSharp> ${NUGET_OUTPUT_DIR}/runtimes/${PLATFORM_RID}-${ARCH}/native/
+            COMMAND nuget pack ${NUGET_SPEC_FILE} -OutputDirectory ${NUGET_OUTPUT_DIR}
+            DEPENDS DenOfIzGraphicsCSharp DenOfIzGraphics
+            COMMENT "Building NuGet package"
     )
-    
+
     # Make sure NuGet output directories exist
     file(MAKE_DIRECTORY ${NUGET_OUTPUT_DIR}/lib/netstandard2.0)
     file(MAKE_DIRECTORY ${NUGET_OUTPUT_DIR}/runtimes/${PLATFORM_RID}-${ARCH}/native)
-    
+
     add_custom_command(
-        TARGET InitCSharpDirs POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_OUTPUT_DIR}/lib/netstandard2.0
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_OUTPUT_DIR}/runtimes/${PLATFORM_RID}-${ARCH}/native
+            TARGET InitCSharpDirs POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_OUTPUT_DIR}/lib/netstandard2.0
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_OUTPUT_DIR}/runtimes/${PLATFORM_RID}-${ARCH}/native
     )
-    
+
     # Copy managed code to NuGet package
     # Only copy NativeLibraryLoader.cs, let SWIG manage its generated files
     add_custom_command(
-        TARGET DenOfIzGraphicsCSharp POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy 
+            TARGET DenOfIzGraphicsCSharp POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
             ${SWIG_CSHARP_CODE_DIR}/NativeLibraryLoader.cs
             ${NUGET_OUTPUT_DIR}/lib/netstandard2.0/
     )
-endif()
+endif ()

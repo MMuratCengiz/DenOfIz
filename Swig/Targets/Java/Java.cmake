@@ -12,6 +12,10 @@ swig_add_library(DenOfIzGraphicsJava
 )
 
 set_target_properties(DenOfIzGraphicsJava PROPERTIES
+        SWIG_FLAGS "-E;-DSWIGJAVA"
+)
+
+set_target_properties(DenOfIzGraphicsJava PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${SWIG_JAVA_LIB_DIR}
         SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
         CXX_STANDARD_REQUIRED TRUE
