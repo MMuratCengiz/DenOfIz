@@ -585,19 +585,20 @@ namespace DenOfIz
         }
     }
 
-    bool OzzAnimation::RunSamplingJob( const SamplingJobDesc &desc ) const
+    SamplingJobResult OzzAnimation::RunSamplingJob( const SamplingJobDesc &desc ) const
     {
-        if ( !desc.Context || !desc.OutTransforms )
+        SamplingJobResult result{ };
+        if ( !desc.Context )
         {
             LOG( ERROR ) << "Invalid sampling job parameters";
-            return false;
+            return result;
         }
 
         auto *internalContext = reinterpret_cast<InternalContext *>( desc.Context );
         if ( !internalContext->animation || !internalContext->samplingContext )
         {
             LOG( ERROR ) << "No animation loaded in context or sampling context not initialized";
-            return false;
+            return result;
         }
 
         const float ratio = ozz::math::Clamp( 0.f, desc.Ratio, 1.f );
@@ -615,7 +616,7 @@ namespace DenOfIz
         if ( !samplingJob.Run( ) )
         {
             LOG( ERROR ) << "Animation sampling failed";
-            return false;
+            return result;
         }
 
         ozz::animation::LocalToModelJob ltmJob;
@@ -626,17 +627,16 @@ namespace DenOfIz
         if ( !ltmJob.Run( ) )
         {
             LOG( ERROR ) << "Local to model transformation failed";
-            return false;
+            return result;
         }
 
         using namespace DirectX;
-        desc.OutTransforms->Resize( internalContext->modelTransforms.size( ) );
-
+        result.Transforms.Resize( internalContext->modelTransforms.size( ) );
         static const XMMATRIX correctionMatrix = XMMatrixRotationX( XM_PIDIV2 );
         for ( size_t i = 0; i < internalContext->modelTransforms.size( ); ++i )
         {
             const ozz::math::Float4x4 &ozzMat = internalContext->modelTransforms[ i ];
-            Float_4x4                 &out    = desc.OutTransforms->GetElement( i );
+            Float_4x4                 &out    = result.Transforms.GetElement( i );
             ozz::math::Float3          ozzTranslation;
             ozz::math::Quaternion      ozzQuat;
             ozz::math::Float3          ozzScale;
@@ -656,15 +656,17 @@ namespace DenOfIz
             }
         }
 
-        return true;
+        result.Success = true;
+        return result;
     }
 
-    bool OzzAnimation::RunBlendingJob( const BlendingJobDesc &desc ) const
+    BlendingJobResult OzzAnimation::RunBlendingJob( const BlendingJobDesc &desc ) const
     {
-        if ( !desc.Context || !desc.OutTransforms || desc.Layers.NumElements( ) == 0 )
+        BlendingJobResult result{ };
+        if ( !desc.Context || desc.Layers.NumElements( ) == 0 )
         {
             LOG( ERROR ) << "Invalid blending job parameters";
-            return false;
+            return result;
         }
 
         auto *internalContext = reinterpret_cast<InternalContext *>( desc.Context );
@@ -677,10 +679,10 @@ namespace DenOfIz
         for ( size_t i = 0; i < numLayers; ++i )
         {
             const auto &layer = desc.Layers.GetElement( i );
-            if ( !layer.Transforms || layer.Transforms->NumElements( ) == 0 )
+            if ( layer.Transforms.NumElements( ) == 0 )
             {
                 LOG( ERROR ) << "Invalid transforms in layer " << i;
-                return false;
+                return result;
             }
 
             layerTransforms[ i ].resize( numSoaJoints );
@@ -707,7 +709,7 @@ namespace DenOfIz
         if ( !blendingJob.Run( ) )
         {
             LOG( ERROR ) << "Blending job failed";
-            return false;
+            return result;
         }
 
         ozz::animation::LocalToModelJob ltmJob;
@@ -718,19 +720,21 @@ namespace DenOfIz
         if ( !ltmJob.Run( ) )
         {
             LOG( ERROR ) << "Local to model transformation failed after blending";
-            return false;
+            return result;
         }
 
-        OzzUtils::CopyOzzVectorToArray( internalContext->modelTransforms, *desc.OutTransforms );
-        return true;
+        result.Success = true;
+        OzzUtils::CopyOzzVectorToArray( internalContext->modelTransforms, result.Transforms );
+        return result;
     }
 
-    bool OzzAnimation::RunLocalToModelJob( const LocalToModelJobDesc &desc ) const
+    LocalToModelJobResult OzzAnimation::RunLocalToModelJob( const LocalToModelJobDesc &desc ) const
     {
-        if ( !desc.Context || !desc.InTransforms || !desc.OutTransforms )
+        LocalToModelJobResult result{ };
+        if ( !desc.Context || !desc.Transforms )
         {
             LOG( ERROR ) << "Invalid local to model job parameters";
-            return false;
+            return result;
         }
 
         auto *internalContext = reinterpret_cast<InternalContext *>( desc.Context );
@@ -748,61 +752,60 @@ namespace DenOfIz
         if ( !ltmJob.Run( ) )
         {
             LOG( ERROR ) << "Local to model transformation failed";
-            return false;
+            return result;
         }
 
         // Copy to output
-        OzzUtils::CopyOzzVectorToArray( internalContext->modelTransforms, *desc.OutTransforms );
-
-        return true;
+        result.Success = true;
+        OzzUtils::CopyOzzVectorToArray( internalContext->modelTransforms, result.Transforms );
+        return result;
     }
 
-    bool OzzAnimation::RunSkinningJob( const SkinningJobDesc &desc )
+    SkinningJobResult OzzAnimation::RunSkinningJob( const SkinningJobDesc &desc )
     {
-        if ( !desc.Context || !desc.InJointTransforms || !desc.InVertices || !desc.InWeights || !desc.InIndices || !desc.OutVertices || desc.VertexCount <= 0 ||
-             desc.InfluenceCount <= 0 )
+        SkinningJobResult result{ };
+        if ( !desc.Context || desc.JointTransforms.NumElements( ) == 0 || desc.Vertices.NumElements( ) == 0 || desc.Weights.NumElements( ) == 0 ||
+             !desc.Indices.NumElements( ) == 0 || desc.InfluenceCount <= 0 )
         {
             LOG( ERROR ) << "Invalid skinning job parameters";
-            return false;
+            return result;
         }
 
-        // Prepare joint matrices
-        const size_t                     numJoints = desc.InJointTransforms->NumElements( );
+        const size_t                     numJoints = desc.JointTransforms.NumElements( );
         ozz::vector<ozz::math::Float4x4> jointMatrices( numJoints );
 
         for ( size_t i = 0; i < numJoints; ++i )
         {
-            jointMatrices[ i ] = OzzUtils::ToOzzFloat4x4( desc.InJointTransforms->GetElement( i ) );
+            jointMatrices[ i ] = OzzUtils::ToOzzFloat4x4( desc.JointTransforms.GetElement( i ) );
         }
 
+        const uint32_t numVertices = desc.Vertices.NumElements( );
+
         ozz::geometry::SkinningJob skinningJob;
-        skinningJob.vertex_count     = desc.VertexCount;
+        skinningJob.vertex_count     = desc.Vertices.NumElements( );
         skinningJob.influences_count = desc.InfluenceCount;
         skinningJob.joint_matrices   = ozz::make_span( jointMatrices );
 
-        skinningJob.in_positions  = ozz::span( desc.InVertices->Data( ), desc.VertexCount * 3 );
-        skinningJob.joint_weights = ozz::span( desc.InWeights->Data( ), desc.VertexCount * desc.InfluenceCount );
-        skinningJob.joint_indices = ozz::span( desc.InIndices->Data( ), desc.VertexCount * desc.InfluenceCount );
+        skinningJob.in_positions  = ozz::span( desc.Vertices.Data( ), numVertices * 3 );
+        skinningJob.joint_weights = ozz::span( desc.Weights.Data( ), numVertices * desc.InfluenceCount );
+        skinningJob.joint_indices = ozz::span( desc.Indices.Data( ), numVertices * desc.InfluenceCount );
 
-        desc.OutVertices->Resize( desc.VertexCount * 3 );
-        skinningJob.out_positions = ozz::span( desc.OutVertices->Data( ), desc.VertexCount * 3 );
+        result.Vertices.Resize( numVertices * 3 );
+        skinningJob.out_positions = ozz::span( result.Vertices.Data( ), numVertices * 3 ); // Todo validate result
 
         if ( !skinningJob.Run( ) )
         {
             LOG( ERROR ) << "Skinning job failed";
-            return false;
+            return result;
         }
 
-        return true;
+        result.Success = true;
+        return result;
     }
 
-    bool OzzAnimation::RunIkTwoBoneJob( const IkTwoBoneJobDesc &desc )
+    IkTwoBoneJobResult OzzAnimation::RunIkTwoBoneJob( const IkTwoBoneJobDesc &desc )
     {
-        if ( !desc.OutStartJointCorrection || !desc.OutMidJointCorrection || !desc.OutReached )
-        {
-            LOG( ERROR ) << "Invalid IK two bone job parameters";
-            return false;
-        }
+        IkTwoBoneJobResult result{ };
 
         const ozz::math::Float4x4 startMatrix = OzzUtils::ToOzzFloat4x4( desc.StartJointMatrix );
         const ozz::math::Float4x4 midMatrix   = OzzUtils::ToOzzFloat4x4( desc.MidJointMatrix );
@@ -832,34 +835,36 @@ namespace DenOfIz
         if ( !ozzJob.Validate( ) )
         {
             LOG( ERROR ) << "IKTwoBoneJob: Validation failed";
-            return false;
+            return result;
         }
 
         if ( !ozzJob.Run( ) )
         {
             LOG( ERROR ) << "IKTwoBoneJob: Execution failed";
-            return false;
+            return result;
         }
 
-        *desc.OutStartJointCorrection = OzzUtils::FromOzzSimdQuaternion( startCorrection );
-        *desc.OutMidJointCorrection   = OzzUtils::FromOzzSimdQuaternion( midCorrection );
-        *desc.OutReached              = targetReached;
+        result.Success              = true;
+        result.StartJointCorrection = OzzUtils::FromOzzSimdQuaternion( startCorrection );
+        result.MidJointCorrection   = OzzUtils::FromOzzSimdQuaternion( midCorrection );
+        result.Reached              = targetReached;
 
-        return true;
+        return result;
     }
 
-    bool OzzAnimation::RunIkAimJob( const IkAimJobDesc &desc ) const
+    IkAimJobResult OzzAnimation::RunIkAimJob( const IkAimJobDesc &desc ) const
     {
-        if ( !desc.Context || !desc.OutJointCorrection || desc.JointIndex < 0 )
+        IkAimJobResult result{ };
+        if ( !desc.Context || desc.JointIndex < 0 )
         {
             LOG( ERROR ) << "Invalid IK aim job parameters";
-            return false;
+            return result;
         }
 
         if ( !m_impl->skeleton || desc.JointIndex >= m_impl->skeleton->num_joints( ) )
         {
             LOG( ERROR ) << "Invalid joint index or skeleton not initialized";
-            return false;
+            return result;
         }
 
         ozz::animation::IKAimJob ozzJob;
@@ -877,25 +882,28 @@ namespace DenOfIz
         if ( !ozzJob.Validate( ) )
         {
             LOG( ERROR ) << "IKAimJob: Validation failed";
-            return false;
+            return result;
         }
 
         if ( !ozzJob.Run( ) )
         {
             LOG( ERROR ) << "IKAimJob: Execution failed";
-            return false;
+            return result;
         }
 
-        *desc.OutJointCorrection = OzzUtils::FromOzzSimdQuaternion( jointCorrection );
-        return true;
+        result.Success         = true;
+        result.JointCorrection = OzzUtils::FromOzzSimdQuaternion( jointCorrection );
+        return result;
     }
 
-    bool OzzAnimation::RunTrackSamplingJob( const TrackSamplingJobDesc &desc )
+    TrackSamplingResult OzzAnimation::RunTrackSamplingJob( const TrackSamplingJobDesc &desc )
     {
-        if ( !desc.Context || !desc.OutResult || desc.TrackIndex < 0 )
+        TrackSamplingResult result{ };
+        result.Type = desc.Type; // Required?
+        if ( !desc.Context || desc.TrackIndex < 0 )
         {
             LOG( ERROR ) << "Invalid track sampling job parameters";
-            return false;
+            return result;
         }
 
         const auto *internalContext = reinterpret_cast<InternalContext *>( desc.Context );
@@ -904,126 +912,126 @@ namespace DenOfIz
 
         switch ( desc.Type )
         {
-        case TrackSamplingJobDesc::ValueType::Float:
+        case TrackSamplingResultType::Float:
             {
                 if ( desc.TrackIndex >= static_cast<int>( internalContext->floatTracks.size( ) ) )
                 {
                     LOG( ERROR ) << "Float track index out of range";
-                    return false;
+                    return result;
                 }
-
                 ozz::animation::FloatTrackSamplingJob job;
                 job.track  = internalContext->floatTracks[ desc.TrackIndex ].get( );
                 job.ratio  = ratio;
-                job.result = static_cast<float *>( desc.OutResult );
+                job.result = &result.FloatValue;
                 success    = job.Run( );
                 break;
             }
 
-        case TrackSamplingJobDesc::ValueType::Float2:
+        case TrackSamplingResultType::Float2:
             {
                 if ( desc.TrackIndex >= static_cast<int>( internalContext->float2Tracks.size( ) ) )
                 {
                     LOG( ERROR ) << "Float2 track index out of range";
-                    return false;
+                    return result;
                 }
 
                 ozz::animation::Float2TrackSamplingJob job;
                 job.track = internalContext->float2Tracks[ desc.TrackIndex ].get( );
                 job.ratio = ratio;
-                ozz::math::Float2 result;
-                job.result = &result;
+                ozz::math::Float2 float2Value;
+                job.result = &float2Value;
                 success    = job.Run( );
                 if ( success )
                 {
-                    const auto output = static_cast<Float_2 *>( desc.OutResult );
-                    output->X         = result.x;
-                    output->Y         = result.y;
+                    result.Float2Value.X = float2Value.x;
+                    result.Float2Value.Y = float2Value.y;
                 }
                 break;
             }
 
-        case TrackSamplingJobDesc::ValueType::Float3:
+        case TrackSamplingResultType::Float3:
             {
                 if ( desc.TrackIndex >= static_cast<int>( internalContext->float3Tracks.size( ) ) )
                 {
                     LOG( ERROR ) << "Float3 track index out of range";
-                    return false;
+                    return result;
                 }
 
                 ozz::animation::Float3TrackSamplingJob job;
                 job.track = internalContext->float3Tracks[ desc.TrackIndex ].get( );
                 job.ratio = ratio;
-                ozz::math::Float3 result;
-                job.result = &result;
+                ozz::math::Float3 float3Value;
+                job.result = &float3Value;
                 success    = job.Run( );
                 if ( success )
                 {
-                    const auto output = static_cast<Float_3 *>( desc.OutResult );
-                    *output           = OzzUtils::FromOzzTranslation( result );
+                    result.Float3Value.X = float3Value.x;
+                    result.Float3Value.Y = float3Value.y;
+                    result.Float3Value.Z = float3Value.z;
                 }
                 break;
             }
 
-        case TrackSamplingJobDesc::ValueType::Float4:
+        case TrackSamplingResultType::Float4:
             {
                 if ( desc.TrackIndex >= static_cast<int>( internalContext->float4Tracks.size( ) ) )
                 {
                     LOG( ERROR ) << "Float4 track index out of range";
-                    return false;
+                    return result;
                 }
 
                 ozz::animation::Float4TrackSamplingJob job;
                 job.track = internalContext->float4Tracks[ desc.TrackIndex ].get( );
                 job.ratio = ratio;
-                ozz::math::Float4 result;
-                job.result = &result;
+                ozz::math::Float4 float4Value;
+                job.result = &float4Value;
                 success    = job.Run( );
                 if ( success )
                 {
-                    const auto output = static_cast<Float_4 *>( desc.OutResult );
-                    output->X         = result.x;
-                    output->Y         = result.y;
-                    output->Z         = result.z;
-                    output->W         = result.w;
+                    result.Float4Value.X = float4Value.x;
+                    result.Float4Value.Y = float4Value.y;
+                    result.Float4Value.Z = float4Value.z;
+                    result.Float4Value.W = float4Value.w;
                 }
                 break;
             }
 
-        case TrackSamplingJobDesc::ValueType::Quaternion:
+        case TrackSamplingResultType::Quaternion:
             {
                 if ( desc.TrackIndex >= static_cast<int>( internalContext->quaternionTracks.size( ) ) )
                 {
                     LOG( ERROR ) << "Quaternion track index out of range";
-                    return false;
+                    return result;
                 }
 
                 ozz::animation::QuaternionTrackSamplingJob job;
                 job.track = internalContext->quaternionTracks[ desc.TrackIndex ].get( );
                 job.ratio = ratio;
-                ozz::math::Quaternion result;
-                job.result = &result;
+                ozz::math::Quaternion quaternionResult;
+                job.result = &quaternionResult;
                 success    = job.Run( );
                 if ( success )
                 {
-                    const auto output = static_cast<Float_4 *>( desc.OutResult );
-                    *output           = OzzUtils::FromOzzRotation( result );
+                    result.QuaternionValue.X = quaternionResult.x;
+                    result.QuaternionValue.Y = quaternionResult.y;
+                    result.QuaternionValue.Z = quaternionResult.z;
+                    result.QuaternionValue.W = quaternionResult.w;
                 }
                 break;
             }
-
         default:
             LOG( ERROR ) << "Unsupported track value type";
-            return false;
+            return result;
         }
 
         if ( !success )
         {
             LOG( ERROR ) << "Track sampling failed";
-            return false;
+            return result;
         }
 
-        return true;
+        result.Success = true;
+        return result;
     }
 
     bool OzzAnimation::RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc )

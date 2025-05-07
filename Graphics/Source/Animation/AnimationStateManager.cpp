@@ -193,14 +193,15 @@ void AnimationStateManager::Update( const float deltaTime )
         }
 
         SamplingJobDesc samplingDesc;
-        samplingDesc.Context       = anim.Context;
-        samplingDesc.Ratio         = anim.CurrentTime / duration;
-        samplingDesc.OutTransforms = &m_modelTransforms;
+        samplingDesc.Context = anim.Context;
+        samplingDesc.Ratio   = anim.CurrentTime / duration;
 
-        if ( !m_ozzAnimation->RunSamplingJob( samplingDesc ) )
+        const SamplingJobResult result = m_ozzAnimation->RunSamplingJob( samplingDesc );
+        if ( !result.Success )
         {
             LOG( ERROR ) << "Failed to sample animation '" << anim.Name.Get( ) << "'";
         }
+        m_modelTransforms = result.Transforms;
     }
 }
 
@@ -255,46 +256,47 @@ void AnimationStateManager::UpdateBlending( const float deltaTime )
     sourceAnim.Weight = 1.0f - blendFactor;
     targetAnim.Weight = blendFactor;
 
-    InteropArray<Float_4x4> sourceTransforms;
-    InteropArray<Float_4x4> targetTransforms;
-
     SamplingJobDesc sourceSamplingDesc;
-    sourceSamplingDesc.Context       = sourceAnim.Context;
-    sourceSamplingDesc.Ratio         = sourceAnim.CurrentTime / OzzAnimation::GetAnimationDuration( sourceAnim.Context );
-    sourceSamplingDesc.OutTransforms = &sourceTransforms;
+    sourceSamplingDesc.Context = sourceAnim.Context;
+    sourceSamplingDesc.Ratio   = sourceAnim.CurrentTime / OzzAnimation::GetAnimationDuration( sourceAnim.Context );
 
     SamplingJobDesc targetSamplingDesc;
-    targetSamplingDesc.Context       = targetAnim.Context;
-    targetSamplingDesc.Ratio         = targetAnim.CurrentTime / OzzAnimation::GetAnimationDuration( targetAnim.Context );
-    targetSamplingDesc.OutTransforms = &targetTransforms;
+    targetSamplingDesc.Context = targetAnim.Context;
+    targetSamplingDesc.Ratio   = targetAnim.CurrentTime / OzzAnimation::GetAnimationDuration( targetAnim.Context );
 
-    if ( !m_ozzAnimation->RunSamplingJob( sourceSamplingDesc ) || !m_ozzAnimation->RunSamplingJob( targetSamplingDesc ) )
+    const SamplingJobResult sourceResult = m_ozzAnimation->RunSamplingJob( sourceSamplingDesc );
+    const SamplingJobResult targetResult = m_ozzAnimation->RunSamplingJob( targetSamplingDesc );
+    if ( !sourceResult.Success || !targetResult.Success )
     {
         LOG( ERROR ) << "Failed to sample animations for blending";
         return;
     }
 
-    BlendingJobDesc blendingDesc;
-    blendingDesc.Context       = sourceAnim.Context; // Can use either context
-    blendingDesc.Threshold     = 0.1f;
-    blendingDesc.OutTransforms = &m_modelTransforms;
+    const InteropArray<Float_4x4> sourceTransforms = sourceResult.Transforms;
+    const InteropArray<Float_4x4> targetTransforms = targetResult.Transforms;
 
-    BlendingJobDesc::Layer sourceLayer;
-    sourceLayer.Transforms = &sourceTransforms;
+    BlendingJobDesc blendingDesc;
+    blendingDesc.Context   = sourceAnim.Context; // Can use either context
+    blendingDesc.Threshold = 0.1f;
+
+    BlendingJobLayerDesc sourceLayer;
+    sourceLayer.Transforms = sourceTransforms;
     sourceLayer.Weight     = sourceAnim.Weight;
 
-    BlendingJobDesc::Layer targetLayer;
-    targetLayer.Transforms = &targetTransforms;
+    BlendingJobLayerDesc targetLayer;
+    targetLayer.Transforms = targetTransforms;
     targetLayer.Weight     = targetAnim.Weight;
 
     blendingDesc.Layers.Resize( 2 );
     blendingDesc.Layers.GetElement( 0 ) = sourceLayer;
     blendingDesc.Layers.GetElement( 1 ) = targetLayer;
 
-    if ( !m_ozzAnimation->RunBlendingJob( blendingDesc ) )
+    const BlendingJobResult result = m_ozzAnimation->RunBlendingJob( blendingDesc );
+    if ( !result.Success )
     {
         LOG( ERROR ) << "Failed to blend animations";
     }
+    m_modelTransforms = result.Transforms;
 }
 
 const InteropString &AnimationStateManager::GetCurrentAnimationName( ) const

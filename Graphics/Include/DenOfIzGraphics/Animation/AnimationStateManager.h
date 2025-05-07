@@ -53,30 +53,28 @@ namespace DenOfIz
 
     class DZ_API AnimationStateManager
     {
-    private:
-        OzzAnimation                      *m_ozzAnimation = nullptr;
+        OzzAnimation                                   *m_ozzAnimation = nullptr;
         std::unordered_map<std::string, AnimationState> m_animations;
-        InteropString                     m_currentAnimation;
-        BlendingState                     m_blendingState;
-        InteropArray<Float_4x4>           m_modelTransforms;
+        InteropString                                   m_currentAnimation;
+        BlendingState                                   m_blendingState;
+        InteropArray<Float_4x4>                         m_modelTransforms;
 
     public:
-        explicit AnimationStateManager(const AnimationStateManagerDesc &desc);
-        ~AnimationStateManager();
-
-        void AddAnimation(const AnimationAsset &animationAsset);
-        void Play(const InteropString &animationName, bool loop = true);
-        void BlendTo(const InteropString &animationName, float blendTime = 0.5f);
-        void Stop();
-        void Pause();
-        void Resume();
-        void Update(float deltaTime);
-        bool HasAnimation(const InteropString &animationName) const;
-        void GetModelSpaceTransforms(InteropArray<Float_4x4> &outTransforms) const;
-        const InteropString &GetCurrentAnimationName() const;
-        int GetNumJoints() const;
+        explicit AnimationStateManager( const AnimationStateManagerDesc &desc );
+        ~AnimationStateManager( );
+        void                               AddAnimation( const AnimationAsset &animationAsset );
+        void                               Play( const InteropString &animationName, bool loop = true );
+        void                               BlendTo( const InteropString &animationName, float blendTime = 0.5f );
+        void                               Stop( );
+        void                               Pause( );
+        void                               Resume( );
+        void                               Update( float deltaTime );
+        [[nodiscard]] bool                 HasAnimation( const InteropString &animationName ) const;
+        void                               GetModelSpaceTransforms( InteropArray<Float_4x4> &outTransforms ) const;
+        [[nodiscard]] const InteropString &GetCurrentAnimationName( ) const;
+        [[nodiscard]] int                  GetNumJoints( ) const;
 
     private:
-        void UpdateBlending(float deltaTime);
+        void UpdateBlending( float deltaTime );
     };
 } // namespace DenOfIz

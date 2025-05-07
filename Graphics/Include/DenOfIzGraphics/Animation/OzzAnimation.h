@@ -30,45 +30,73 @@ namespace DenOfIz
         friend class OzzAnimation;
     };
 
+    struct DZ_API SamplingJobResult
+    {
+        bool                    Success{ false };
+        InteropArray<Float_4x4> Transforms{ };
+    };
+
     struct DZ_API SamplingJobDesc
     {
-        OzzContext              *Context       = nullptr;
-        float                    Ratio         = 0.0f;
-        InteropArray<Float_4x4> *OutTransforms = nullptr;
+        OzzContext *Context = nullptr;
+        float       Ratio   = 0.0f;
     };
+
+    struct DZ_API BlendingJobResult
+    {
+        bool                    Success{ false };
+        InteropArray<Float_4x4> Transforms{ };
+    };
+
+    struct BlendingJobLayerDesc
+    {
+        InteropArray<Float_4x4> Transforms{ }; // Todo this could potentially be expensive copying
+        float                   Weight = 0.0f;
+    };
+    template class DZ_API InteropArray<BlendingJobLayerDesc>;
 
     struct DZ_API BlendingJobDesc
     {
-        struct Layer
-        {
-            const InteropArray<Float_4x4> *Transforms = nullptr;
-            float                          Weight     = 0.0f;
-        };
-
-        OzzContext              *Context = nullptr;
-        InteropArray<Layer>      Layers;
-        InteropArray<Float_4x4> *OutTransforms = nullptr;
-        float                    Threshold     = 0.1f;
+        OzzContext                        *Context = nullptr;
+        InteropArray<BlendingJobLayerDesc> Layers;
+        float                              Threshold = 0.1f;
     };
-    template class DZ_API InteropArray<BlendingJobDesc::Layer>;
+
+    struct DZ_API LocalToModelJobResult
+    {
+        bool                    Success{ false };
+        InteropArray<Float_4x4> Transforms{ };
+    };
 
     struct DZ_API LocalToModelJobDesc
     {
         OzzContext              *Context       = nullptr;
-        InteropArray<Float_4x4> *InTransforms  = nullptr;
-        InteropArray<Float_4x4> *OutTransforms = nullptr;
+        InteropArray<Float_4x4> *Transforms  = nullptr;
     };
 
+    struct DZ_API SkinningJobResult
+    {
+        bool                   Success{ false };
+        InteropArray<float>    Vertices{ };
+        InteropArray<float>    Weights{ };
+        InteropArray<uint16_t> Indices{ };
+    };
     struct DZ_API SkinningJobDesc
     {
-        OzzContext                    *Context           = nullptr;
-        const InteropArray<Float_4x4> *InJointTransforms = nullptr;
-        const InteropArray<float>     *InVertices        = nullptr;
-        const InteropArray<float>     *InWeights         = nullptr;
-        const InteropArray<uint16_t>  *InIndices         = nullptr;
-        InteropArray<float>           *OutVertices       = nullptr;
-        int                            VertexCount       = 0;
-        int                            InfluenceCount    = 0;
+        OzzContext                   *Context = nullptr;
+        const InteropArray<Float_4x4> JointTransforms;
+        const InteropArray<float>     Vertices;
+        const InteropArray<float>     Weights;
+        const InteropArray<uint16_t>  Indices;
+        int                           InfluenceCount = 0;
+    };
+
+    struct DZ_API IkTwoBoneJobResult
+    {
+        bool    Success{ false };
+        Float_4 StartJointCorrection{ };
+        Float_4 MidJointCorrection{ };
+        bool    Reached{ };
     };
 
     struct DZ_API IkTwoBoneJobDesc
@@ -79,12 +107,15 @@ namespace DenOfIz
         Float_3   Target{ 0, 0, 1 };
         Float_3   PoleVector{ 0, 0, 1 };
         Float_3   MidAxis{ 0, 0, 1 };
-        float     Weight                  = 0;
-        float     TwistAngle              = 0;
-        float     Soften                  = 0;
-        Float_4  *OutStartJointCorrection = nullptr;
-        Float_4  *OutMidJointCorrection   = nullptr;
-        bool     *OutReached              = nullptr;
+        float     Weight     = 0;
+        float     TwistAngle = 0;
+        float     Soften     = 0;
+    };
+
+    struct DZ_API IkAimJobResult
+    {
+        bool    Success{ false };
+        Float_4 JointCorrection{ };
     };
 
     struct DZ_API IkAimJobDesc
@@ -94,26 +125,33 @@ namespace DenOfIz
         Float_3     Target{ 0, 0, 1 };
         Float_3     Forward{ 0, 0, 1 };
         Float_3     Up{ 0, 1, 0 };
-        float       Weight             = 1.0f;
-        Float_4    *OutJointCorrection = nullptr;
+        float       Weight = 1.0f;
     };
 
+    enum class TrackSamplingResultType
+    {
+        Float,
+        Float2,
+        Float3,
+        Float4,
+        Quaternion
+    };
+    struct DZ_API TrackSamplingResult
+    {
+        bool                    Success{ false };
+        float                   FloatValue{ 0.0f };
+        Float_2                 Float2Value{ };
+        Float_3                 Float3Value{ };
+        Float_4                 Float4Value{ };
+        Float_4                 QuaternionValue{ };
+        TrackSamplingResultType Type{ TrackSamplingResultType::Float };
+    };
     struct DZ_API TrackSamplingJobDesc
     {
-        enum class ValueType
-        {
-            Float,
-            Float2,
-            Float3,
-            Float4,
-            Quaternion
-        };
-
-        OzzContext *Context    = nullptr;
-        int         TrackIndex = -1;
-        ValueType   Type       = ValueType::Float;
-        float       Ratio      = 0.0f;
-        void       *OutResult  = nullptr;
+        OzzContext             *Context    = nullptr;
+        int                     TrackIndex = -1;
+        TrackSamplingResultType Type       = TrackSamplingResultType::Float;
+        float                   Ratio      = 0.0f;
     };
 
     struct DZ_API TrackTriggeringJobDesc
@@ -145,14 +183,14 @@ namespace DenOfIz
         static void LoadTrack( const InteropArray<Float_3> &keys, const InteropArray<float> &timestamps, OzzContext *context );
         static void LoadTrack( const InteropArray<Float_4> &keys, const InteropArray<float> &timestamps, OzzContext *context );
 
-        bool               RunSamplingJob( const SamplingJobDesc &desc ) const;
-        [[nodiscard]] bool RunBlendingJob( const BlendingJobDesc &desc ) const;
-        [[nodiscard]] bool RunLocalToModelJob( const LocalToModelJobDesc &desc ) const;
-        static bool               RunSkinningJob( const SkinningJobDesc &desc );
-        static bool        RunIkTwoBoneJob( const IkTwoBoneJobDesc &desc );
-        [[nodiscard]] bool RunIkAimJob( const IkAimJobDesc &desc ) const;
-        static bool        RunTrackSamplingJob( const TrackSamplingJobDesc &desc );
-        static bool               RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc );
+        [[nodiscard]] SamplingJobResult     RunSamplingJob( const SamplingJobDesc &desc ) const;
+        [[nodiscard]] BlendingJobResult     RunBlendingJob( const BlendingJobDesc &desc ) const;
+        [[nodiscard]] LocalToModelJobResult RunLocalToModelJob( const LocalToModelJobDesc &desc ) const;
+        static SkinningJobResult            RunSkinningJob( const SkinningJobDesc &desc );
+        static IkTwoBoneJobResult           RunIkTwoBoneJob( const IkTwoBoneJobDesc &desc );
+        [[nodiscard]] IkAimJobResult        RunIkAimJob( const IkAimJobDesc &desc ) const;
+        static TrackSamplingResult          RunTrackSamplingJob( const TrackSamplingJobDesc &desc );
+        static bool                         RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc );
 
         void              GetJointNames( InteropArray<InteropString> &outNames ) const;
         [[nodiscard]] int GetJointCount( ) const;
