@@ -1,0 +1,5 @@
+NuGet/Code
+NuGet/runtimes/**/native/*
+NuGet/lib/netstandard2.0/*
+src_gen/*
+NuGet_Out/*
