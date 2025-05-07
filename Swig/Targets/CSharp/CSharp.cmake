@@ -12,6 +12,7 @@ set(SWIG_CSHARP_LIB_DIR ${SWIG_CSHARP_PROJECT_DIR}/Lib)
 set(NUGET_BASE_DIR ${CURRENT_DIRECTORY}/NuGet)
 set(NUGET_OUT_DIR ${CURRENT_DIRECTORY}/NuGet_Out)
 set(NUGET_LIB_DIR ${NUGET_BASE_DIR}/lib/netstandard2.0)
+set(NUGET_SRC_GEN_DIR ${NUGET_BASE_DIR}/src_gen)
 set(NUGET_RUNTIMES_WIN_DIR ${NUGET_BASE_DIR}/runtimes/win-x64/native)
 set(NUGET_RUNTIMES_OSX_DIR ${NUGET_BASE_DIR}/runtimes/osx-x64/native)
 set(NUGET_RUNTIMES_LINUX_DIR ${NUGET_BASE_DIR}/runtimes/linux-x64/native)
@@ -65,45 +66,53 @@ add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
 
 add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
         COMMENT "Preparing NuGet package files..."
-        
+
         # Create NuGet package directories
         COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_LIB_DIR}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_SRC_GEN_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_RUNTIMES_WIN_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_RUNTIMES_OSX_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_RUNTIMES_LINUX_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_BUILD_DIR}
-        
-        # Copy managed assembly to lib/netstandard2.0
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-                $<TARGET_FILE:DenOfIzGraphicsCSharp> 
-                ${NUGET_LIB_DIR}/DenOfIzGraphics.dll
-        
+
+        # Copy generated code
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_CSHARP_CODE_DIR} ${NUGET_SRC_GEN_DIR}
+
         # Copy native libraries to appropriate runtime directories
         # Windows native libraries
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-                $<TARGET_FILE:DenOfIzGraphics> 
-                ${NUGET_RUNTIMES_WIN_DIR}/DenOfIzGraphics.dll
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-                ${CMAKE_BINARY_DIR}/dxcompiler.dll 
-                ${NUGET_RUNTIMES_WIN_DIR}/dxcompiler.dll
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-                ${CMAKE_BINARY_DIR}/dxil.dll 
-                ${NUGET_RUNTIMES_WIN_DIR}/dxil.dll
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-                ${CMAKE_BINARY_DIR}/metalirconverter.dll 
-                ${NUGET_RUNTIMES_WIN_DIR}/metalirconverter.dll
-        
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                ${CURRENT_DIRECTORY}/NuGet/build/DenOfIzGraphics.targets
-                ${NUGET_BUILD_DIR}/DenOfIzGraphics.targets
+        $<TARGET_FILE:DenOfIzGraphicsCSharp>
+        ${NUGET_RUNTIMES_WIN_DIR}/DenOfIzGraphicsCSharp.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:DenOfIzGraphics>
+        ${NUGET_RUNTIMES_WIN_DIR}/DenOfIzGraphics.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_BINARY_DIR}/dxcompiler.dll
+        ${NUGET_RUNTIMES_WIN_DIR}/dxcompiler.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_BINARY_DIR}/dxil.dll
+        ${NUGET_RUNTIMES_WIN_DIR}/dxil.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_BINARY_DIR}/metalirconverter.dll
+        ${NUGET_RUNTIMES_WIN_DIR}/metalirconverter.dll
+
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CURRENT_DIRECTORY}/NuGet/build/DenOfIzGraphics.targets
+        ${NUGET_BUILD_DIR}/DenOfIzGraphics.targets
         COMMAND ${CMAKE_COMMAND} -E echo "NuGet package files prepared successfully!"
+)
+
+add_custom_target(DenOfIzGraphicsCSharpManaged
+        COMMAND dotnet build ./DenOfIzGraphics.csproj -c Release --output lib/netstandard2.0
+        WORKING_DIRECTORY "${NUGET_BASE_DIR}"
+        DEPENDS DenOfIzGraphicsCSharp
 )
 
 include(${CURRENT_DIRECTORY}/Nuget_Exe.cmake)
 add_custom_target(DenOfIzNuget
         COMMAND ${CMAKE_COMMAND} -E echo "Building NuGet package..."
         COMMAND ${NUGET_EXE} pack ${NUGET_BASE_DIR}/DenOfIzGraphics.nuspec -Version 1.0.0 -OutputDirectory ${NUGET_OUT_DIR}
-        DEPENDS DenOfIzGraphicsCSharp
+        DEPENDS DenOfIzGraphicsCSharp DenOfIzGraphicsCSharpManaged
         WORKING_DIRECTORY ${NUGET_BASE_DIR}
 )
 
