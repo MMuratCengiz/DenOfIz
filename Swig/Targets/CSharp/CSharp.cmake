@@ -89,11 +89,52 @@ add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
         COMMAND_EXPAND_LISTS
 )
 
-# Copy platform-specific libraries 
+# Create platform-specific directories for NuGet packaging
+set(PLATFORM_OUTPUT_DIR_NUGET "${SWIG_CSHARP_LIB_DIR}/${PLATFORM_NAME}-${PLATFORM_ARCH}")
+file(MAKE_DIRECTORY ${PLATFORM_OUTPUT_DIR_NUGET})
+
+# Also create it during build time
+add_custom_target(
+    InitNuGetPlatformDir ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${PLATFORM_OUTPUT_DIR_NUGET}
+    COMMENT "Creating platform-specific directory for NuGet: ${PLATFORM_OUTPUT_DIR_NUGET}"
+)
+add_dependencies(InitNuGetPlatformDir InitCSharpDirs)
+
+# Copy platform-specific libraries to both directories
 add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DenOfIzGraphicsCSharp> ${PLATFORM_OUTPUT_DIR}
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DenOfIzGraphics> ${PLATFORM_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DenOfIzGraphicsCSharp> ${PLATFORM_OUTPUT_DIR_NUGET}
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DenOfIzGraphics> ${PLATFORM_OUTPUT_DIR_NUGET}
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:DenOfIzGraphicsCSharp> ${PLATFORM_OUTPUT_DIR_NUGET}
+    COMMAND_EXPAND_LISTS
 )
+
+# Copy D3D12 dependencies on Windows
+if(WIN32)
+    # Create a target to copy dependencies after they are available
+    add_custom_target(CopyD3D12Dependencies ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE_DIR:DenOfIzGraphicsCSharp>/d3d12SDKLayers.dll"
+            "${PLATFORM_OUTPUT_DIR_NUGET}"
+            || echo "d3d12SDKLayers.dll not found, skipping..."
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE_DIR:DenOfIzGraphicsCSharp>/D3D12Core.dll"
+            "${PLATFORM_OUTPUT_DIR_NUGET}"
+            || echo "D3D12Core.dll not found, skipping..."
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE_DIR:DenOfIzGraphicsCSharp>/dxil.dll"
+            "${PLATFORM_OUTPUT_DIR_NUGET}"
+            || echo "dxil.dll not found, skipping..."
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE_DIR:DenOfIzGraphicsCSharp>/dxcompiler.dll"
+            "${PLATFORM_OUTPUT_DIR_NUGET}"
+            || echo "dxcompiler.dll not found, skipping..."
+        COMMENT "Copying DirectX dependencies to NuGet platform directory"
+    )
+    add_dependencies(CopyD3D12Dependencies DenOfIzGraphicsCSharp)
+endif()
 
 # Skip the C# project generation unless explicitly requested
 option(BUILD_CSHARP_PROJECT "Build C# project" OFF)
