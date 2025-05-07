@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>DenOfIzGraphics</id>
+    <version>1.0.0</version>
+    <authors>Murat Cengiz</authors>
+    <owners>Murat Cengiz</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">GPL-3.0-or-later</license>
+    <projectUrl>https://github.com/MMuratCengiz/DenOfIz</projectUrl>
+    <description>Cross-platform graphics library for Windows, macOS, and Linux supporting DirectX12, Vulkan, and Metal</description>
+    <copyright>Copyright 2025</copyright>
+    <tags>graphics directx vulkan metal</tags>
+    <readme>docs\README.md</readme>
+    <dependencies>
+      <group targetFramework="netstandard2.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <!-- Managed assemblies -->
+    <file src="lib\netstandard2.0\DenOfIzGraphics.dll" target="lib\netstandard2.0" />
+    
+    <!-- Windows x64 runtime -->
+    <file src="runtimes\win-x64\native\**\*.dll" target="runtimes\win-x64\native" />
+    
+    <!-- Windows x86 runtime (if available) -->
+    <file src="runtimes\win-x86\native\**\*.dll" target="runtimes\win-x86\native" />
+    
+    <!-- Linux x64 runtime -->
+    <file src="runtimes\linux-x64\native\**\*.so" target="runtimes\linux-x64\native" />
+    
+    <!-- macOS x64 runtime -->
+    <file src="runtimes\osx-x64\native\**\*.dylib" target="runtimes\osx-x64\native" />
+    
+    <!-- Build targets for native library loading -->
+    <file src="build\DenOfIzGraphics.targets" target="build" />
+    
+    <!-- Documentation -->
+    <file src="docs\README.md" target="docs\" />
+  </files>
+</package>

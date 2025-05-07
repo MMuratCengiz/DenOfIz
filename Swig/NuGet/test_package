@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Cross-platform script to test the DenOfIzGraphics NuGet package
+# Detects the OS and runs the appropriate test script
+
+# Get the directory of this script
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+# Detect OS
+case "$(uname -s)" in
+    Linux*|Darwin*)
+        echo "Detected Unix-like OS, running shell test script..."
+        exec "$SCRIPT_DIR/test_package.sh" "$@"
+        ;;
+    CYGWIN*|MINGW*|MSYS*)
+        echo "Detected Windows environment, running PowerShell test script..."
+        pwsh -ExecutionPolicy Bypass -File "$SCRIPT_DIR/test_package.ps1" "$@"
+        ;;
+    *)
+        # Try to run PowerShell script as a fallback
+        if command -v pwsh &> /dev/null; then
+            echo "Running with PowerShell Core..."
+            pwsh -ExecutionPolicy Bypass -File "$SCRIPT_DIR/test_package.ps1" "$@"
+        elif command -v powershell &> /dev/null; then
+            echo "Running with Windows PowerShell..."
+            powershell -ExecutionPolicy Bypass -File "$SCRIPT_DIR/test_package.ps1" "$@"
+        else
+            echo "Unknown OS or required script runner not found."
+            echo "Please run the appropriate test script manually:"
+            echo "- Windows: test_package.ps1"
+            echo "- Linux/macOS: test_package.sh"
+            exit 1
+        fi
+        ;;
+esac

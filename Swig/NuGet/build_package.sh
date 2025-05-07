@@ -32,11 +32,6 @@ sed \
 
 cp "$(dirname "$0")/DenOfIzGraphics.targets.in" "$PACKAGE_DIR/build/DenOfIzGraphics.targets"
 
-# Copy the managed assembly and documentation to the lib folder
-# Assuming the build has already been performed
-# cp path/to/managed/assembly.dll "$PACKAGE_DIR/lib/netstandard2.0/"
-# cp path/to/managed/assembly.xml "$PACKAGE_DIR/lib/netstandard2.0/"
-
 # Function to copy native libraries for a specific platform
 copy_platform_libs() {
     local platform="$1"
@@ -49,26 +44,84 @@ copy_platform_libs() {
         # Copy all the native libraries for this platform
         case "$platform" in
             win-*)
-                find "$lib_dir" -name "*.dll" -exec cp {} "$dest_dir/" \;
+                # For Windows, don't copy the managed assembly as a native library
+                find "$lib_dir" -name "*.dll" -and -not -name "DenOfIzGraphicsCSharp.dll" -exec cp -v {} "$dest_dir/" \;
                 ;;
             linux-*)
-                find "$lib_dir" -name "*.so" -exec cp {} "$dest_dir/" \;
+                find "$lib_dir" -name "*.so" -exec cp -v {} "$dest_dir/" \;
                 ;;
             osx-*)
-                find "$lib_dir" -name "*.dylib" -exec cp {} "$dest_dir/" \;
+                find "$lib_dir" -name "*.dylib" -exec cp -v {} "$dest_dir/" \;
                 ;;
         esac
+        
+        # Copy managed assembly for netstandard2.0
+        if [ "$platform" = "win-x64" ]; then
+            local managed_dll="$lib_dir/DenOfIzGraphicsCSharp.dll"
+            if [ -f "$managed_dll" ]; then
+                cp -v "$managed_dll" "$PACKAGE_DIR/lib/netstandard2.0/DenOfIzGraphics.dll"
+                echo "Copied managed assembly to lib/netstandard2.0"
+                
+                # Check for XML documentation file
+                local xml_doc="${managed_dll%.dll}.xml"
+                if [ -f "$xml_doc" ]; then
+                    cp -v "$xml_doc" "$PACKAGE_DIR/lib/netstandard2.0/DenOfIzGraphics.xml"
+                    echo "Copied XML documentation to lib/netstandard2.0"
+                    
+                    # Add XML doc file to nuspec
+                    if ! grep -q "lib\\\\netstandard2.0\\\\DenOfIzGraphics.xml" "$PACKAGE_DIR/DenOfIzGraphics.nuspec"; then
+                        # Find the files section and append the XML doc entry
+                        sed -i '/<files>/a \    <file src="lib\\netstandard2.0\\DenOfIzGraphics.xml" target="lib\\netstandard2.0" />' "$PACKAGE_DIR/DenOfIzGraphics.nuspec"
+                        echo "Updated nuspec to include XML documentation file"
+                    fi
+                } else {
+                    echo "XML documentation not found, skipping"
+                }
+                fi
+            else
+                echo "Warning: Managed assembly not found at $managed_dll"
+            fi
+        fi
     else
         echo "Warning: Directory $lib_dir not found. Skipping $platform."
     fi
 }
 
-# Platform-specific builds
-# Example paths - you'll need to adjust these based on your actual build output locations
-copy_platform_libs "win-x64" "../../../build/CSharp/Project/Lib/Windows-x64"
-copy_platform_libs "win-x86" "../../../build/CSharp/Project/Lib/Windows-x86"
-copy_platform_libs "linux-x64" "../../../build/CSharp/Project/Lib/Linux-x64"
-copy_platform_libs "osx-x64" "../../../build/CSharp/Project/Lib/OSX-x64"
+# Determine repository root and build directories
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+BUILD_DIR="$REPO_ROOT/build"
+
+# Try to find Windows build locations (for cross-platform builds)
+WIN_X64_PATH=""
+for config in "Debug_MSVC" "Release_MSVC" "Debug" "Release"; do
+    test_path="$BUILD_DIR/$config/CSharp/Project/Lib/win-x64"
+    if [ -d "$test_path" ]; then
+        WIN_X64_PATH="$test_path"
+        break
+    fi
+done
+
+if [ -z "$WIN_X64_PATH" ]; then
+    echo "Warning: Could not find Windows x64 build path. Will try generic build folder."
+    WIN_X64_PATH="$BUILD_DIR/DenOfIz/Debug_MSVC/CSharp/Project/Lib/win-x64"
+    if [ ! -d "$WIN_X64_PATH" ]; then
+        WIN_X64_PATH="$BUILD_DIR/CSharp/Project/Lib/win-x64"
+    fi
+fi
+
+# Windows x86 path
+WIN_X86_PATH="${WIN_X64_PATH/win-x64/win-x86}"
+
+# Linux and macOS paths
+LINUX_PATH="$BUILD_DIR/CSharp/Project/Lib/linux-x64"
+OSX_PATH="$BUILD_DIR/CSharp/Project/Lib/osx-x64"
+
+# Copy libraries for each platform
+copy_platform_libs "win-x64" "$WIN_X64_PATH"
+copy_platform_libs "win-x86" "$WIN_X86_PATH"
+copy_platform_libs "linux-x64" "$LINUX_PATH"
+copy_platform_libs "osx-x64" "$OSX_PATH"
 
 # Build the NuGet package
 echo "Building NuGet package..."
