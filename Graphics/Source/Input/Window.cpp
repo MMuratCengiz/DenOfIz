@@ -280,7 +280,6 @@ void Window::SetBordered( const bool bordered )
     {
         SDL_SetWindowBordered( m_sdlWindow, bordered ? SDL_TRUE : SDL_FALSE );
 
-        // Update flags
         const uint32_t flags = SDL_GetWindowFlags( m_sdlWindow );
         m_properties.Flags.FromSDLWindowFlags( flags );
     }

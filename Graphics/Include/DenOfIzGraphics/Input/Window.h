@@ -144,10 +144,7 @@ namespace DenOfIz
                 flags |= SDL_WINDOW_POPUP_MENU;
             }
 #ifdef BUILD_VK
-            if ( Vulkan )
-            {
-                flags |= SDL_WINDOW_VULKAN;
-            }
+            flags |= SDL_WINDOW_VULKAN;
 #endif
             return flags;
         }
@@ -156,7 +153,6 @@ namespace DenOfIz
         {
             None              = flags == 0;
             Fullscreen        = ( flags & SDL_WINDOW_FULLSCREEN ) != 0;
-            OpenGL            = ( flags & SDL_WINDOW_OPENGL ) != 0;
             Shown             = ( flags & SDL_WINDOW_SHOWN ) != 0;
             Hidden            = ( flags & SDL_WINDOW_HIDDEN ) != 0;
             Borderless        = ( flags & SDL_WINDOW_BORDERLESS ) != 0;
@@ -175,9 +171,6 @@ namespace DenOfIz
             Utility           = ( flags & SDL_WINDOW_UTILITY ) != 0;
             Tooltip           = ( flags & SDL_WINDOW_TOOLTIP ) != 0;
             PopupMenu         = ( flags & SDL_WINDOW_POPUP_MENU ) != 0;
-#ifdef BUILD_VK
-            Vulkan = ( flags & SDL_WINDOW_VULKAN ) != 0;
-#endif
         }
 #endif
     };

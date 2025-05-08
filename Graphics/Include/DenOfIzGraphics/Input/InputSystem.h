@@ -138,7 +138,7 @@ namespace DenOfIz
         static bool s_sdlInitialized;
 
         Controller m_controllers[ 4 ];
-        bool       m_controllerInitialized[ 4 ];
+        bool       m_controllerInitialized[ 4 ]{};
 
     public:
         InputSystem( );

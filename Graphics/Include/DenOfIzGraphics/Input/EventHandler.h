@@ -33,12 +33,8 @@ namespace DenOfIz
         bool                  m_shouldQuit;
 
     public:
-        EventHandler( );
         explicit EventHandler( InputSystem *inputSystem );
         ~EventHandler( );
-
-        void Initialize( InputSystem *inputSystem );
-        void Shutdown( );
 
         bool ProcessEvent( const Event &event );
         void ProcessEvents( );

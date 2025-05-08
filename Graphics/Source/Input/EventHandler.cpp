@@ -17,29 +17,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Input/EventHandler.h>
+#include <DenOfIzGraphics/Utilities/Common_Macro.h>
 
 using namespace DenOfIz;
 
-EventHandler::EventHandler( ) : m_inputSystem( nullptr ), m_shouldQuit( false )
-{
-}
-
 EventHandler::EventHandler( InputSystem *inputSystem ) : m_inputSystem( inputSystem ), m_shouldQuit( false )
 {
+    DZ_NOT_NULL( inputSystem );
 }
 
 EventHandler::~EventHandler( )
-{
-    Shutdown( );
-}
-
-void EventHandler::Initialize( InputSystem *inputSystem )
-{
-    m_inputSystem = inputSystem;
-    m_shouldQuit  = false;
-}
-
-void EventHandler::Shutdown( )
 {
     // We don't delete the callbacks here as they are owned by the user
     m_callbacks = EventHandlerCallbacks( );

@@ -227,7 +227,7 @@ KeyCode InputSystem::GetKeyFromName( const InteropString &name )
 InteropString InputSystem::GetKeyName( const KeyCode key )
 {
 #ifdef WINDOW_MANAGER_SDL
-    return InteropString( SDL_GetKeyName( static_cast<SDL_Keycode>( key ) ) );
+    return { SDL_GetKeyName( static_cast<SDL_Keycode>( key ) ) };
 #else
     return InteropString( );
 #endif
@@ -236,7 +236,7 @@ InteropString InputSystem::GetKeyName( const KeyCode key )
 InteropString InputSystem::GetScancodeName( const uint32_t scancode )
 {
 #ifdef WINDOW_MANAGER_SDL
-    return InteropString( SDL_GetScancodeName( static_cast<SDL_Scancode>( scancode ) ) );
+    return { SDL_GetScancodeName( static_cast<SDL_Scancode>( scancode ) ) };
 #else
     return InteropString( );
 #endif
@@ -556,7 +556,7 @@ InteropString InputSystem::GetControllerName( const int playerIndex ) const
 {
     if ( playerIndex < 0 || playerIndex >= 4 || !m_controllerInitialized[ playerIndex ] )
     {
-        return InteropString( );
+        return { };
     }
 
     return m_controllers[ playerIndex ].GetName( );
