@@ -212,6 +212,7 @@ using namespace DirectX;
 %include <DenOfIzGraphics/Assets/Font/FontLibrary.h>
 %include <DenOfIzGraphics/Assets/Font/TextLayout.h>
 %include <DenOfIzGraphics/Assets/Font/TextRenderer.h>
+%include <DenOfIzGraphics/Utilities/FrameDebugRenderer.h>
 
 // Animation system
 %include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h>

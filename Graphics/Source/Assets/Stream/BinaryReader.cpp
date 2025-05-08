@@ -116,6 +116,24 @@ int BinaryReader::Read( InteropArray<Byte> &buffer, const uint32_t offset, const
     return bytesRead;
 }
 
+InteropArray<Byte> BinaryReader::ReadAllBytes( )
+{
+    if ( !IsStreamValid( ))
+    {
+        return 0.0f;
+    }
+
+    const std::streampos currentPos = m_stream->tellg( );
+
+    m_stream->seekg( 0, std::ios::end );
+    const std::streampos endPos = m_stream->tellg( );
+
+    const uint32_t numTotalBytes = static_cast<uint32_t>( endPos - currentPos );
+    m_stream->seekg( currentPos );
+
+    return ReadBytes( numTotalBytes );
+}
+
 InteropArray<Byte> BinaryReader::ReadBytes( const uint32_t count )
 {
     if ( !IsStreamValid( ) || !TrackReadBytes( count ) )
@@ -448,5 +466,55 @@ void BinaryReader::LogAsCppArray( const InteropString &variableName ) const
     }
 
     std::cout << "\n};";
+    Seek( currentPos );
+}
+
+void BinaryReader::WriteCppArrayToFile( const InteropString &targetFile ) const
+{
+    if ( !m_isStreamValid )
+    {
+        return;
+    }
+
+    const auto currentPos = Position( );
+    Seek( 0 );
+
+    const InteropString resourcePath = FileIO::GetResourcePath( targetFile );
+    std::ofstream       outputFile( resourcePath.Get( ) );
+    if ( !outputFile.is_open( ) )
+    {
+        LOG( ERROR ) << "Failed to open file for writing: " << resourcePath.Get( );
+        Seek( currentPos );
+        return;
+    }
+
+    outputFile << "InteropArray<Byte> data = {\n    ";
+    std::vector<Byte> buffer;
+    char              byte;
+    int               count        = 0;
+    constexpr int     bytesPerLine = 16;
+
+    while ( m_stream->get( byte ) )
+    {
+        buffer.push_back( static_cast<Byte>( byte ) );
+    }
+
+    for ( size_t i = 0; i < buffer.size( ); ++i )
+    {
+        outputFile << "0x" << std::setfill( '0' ) << std::setw( 2 ) << std::hex << static_cast<int>( buffer[ i ] );
+        if ( i < buffer.size( ) - 1 )
+        {
+            outputFile << ", ";
+        }
+        if ( ++count % bytesPerLine == 0 && i < buffer.size( ) - 1 )
+        {
+            outputFile << "\n    ";
+        }
+    }
+
+    outputFile << "\n};";
+    outputFile.flush( );
+    outputFile.close( );
+    m_stream->clear( );
     Seek( currentPos );
 }

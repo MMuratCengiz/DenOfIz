@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <directxmath.h>
 
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphics/Assets/Font/Embedded/EmbeddedFonts.h"
 #include "DenOfIzGraphics/Assets/Font/EmbeddedTextRendererShaders.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
 #include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
@@ -30,10 +31,7 @@ using namespace DirectX;
 
 TextRenderer::TextRenderer( const TextRendererDesc &desc ) : m_desc( desc )
 {
-    DZ_NOT_NULL( desc.GraphicsApi );
     DZ_NOT_NULL( desc.LogicalDevice );
-
-    m_graphicsApi   = desc.GraphicsApi;
     m_logicalDevice = desc.LogicalDevice;
 
     XMStoreFloat4x4( &m_projectionMatrix, XMMatrixIdentity( ) );

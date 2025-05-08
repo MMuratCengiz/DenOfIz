@@ -17,20 +17,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Utilities/FrameDebugRenderer.h>
 
+#include "DenOfIzGraphics/Assets/Font/Embedded/EmbeddedFonts.h"
 #include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
 
 using namespace DenOfIz;
 
 FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m_desc( desc )
 {
+    DZ_NOT_NULL( m_desc.GraphicsApi );
+    DZ_NOT_NULL( m_desc.LogicalDevice );
+
     m_frameTimes.resize( m_maxFrameTimeSamples, 0.0 );
 
     m_time.OnEachSecond = [ this ]( const double fps ) { m_fps = fps; };
 
-    DZ_NOT_NULL( m_desc.FontAsset );
+    if ( m_desc.FontAsset == nullptr )
+    {
+        m_desc.FontAsset = EmbeddedFonts::GetInconsolataRegular( );
+    }
 
     m_fontLibrary = std::make_unique<FontLibrary>( );
-
     FontDesc fontDesc{ };
     fontDesc.FontAsset = m_desc.FontAsset;
     m_font             = m_fontLibrary->LoadFont( fontDesc );
@@ -42,7 +48,6 @@ FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m
     XMStoreFloat4x4( &m_projectionMatrix, projection );
 
     TextRendererDesc textRendererDesc{ };
-    textRendererDesc.GraphicsApi        = m_desc.GraphicsApi;
     textRendererDesc.LogicalDevice      = m_desc.LogicalDevice;
     textRendererDesc.InitialAtlasWidth  = m_desc.FontAsset->AtlasWidth;
     textRendererDesc.InitialAtlasHeight = m_desc.FontAsset->AtlasHeight;

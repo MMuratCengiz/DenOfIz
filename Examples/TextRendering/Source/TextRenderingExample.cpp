@@ -50,7 +50,6 @@ void TextRenderingExample::Init( )
     m_font             = m_fontLibrary->LoadFont( fontDesc );
 
     TextRendererDesc textRendererDesc{ };
-    textRendererDesc.GraphicsApi        = m_graphicsApi;
     textRendererDesc.LogicalDevice      = m_logicalDevice;
     textRendererDesc.InitialAtlasWidth  = m_fontAsset->AtlasWidth;
     textRendererDesc.InitialAtlasHeight = m_fontAsset->AtlasHeight;

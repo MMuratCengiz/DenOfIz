@@ -48,6 +48,7 @@ namespace DenOfIz
 
         [[nodiscard]] DZ_API int ReadByte( );
         [[nodiscard]] DZ_API int Read( InteropArray<Byte> &buffer, uint32_t offset, uint32_t count );
+        [[nodiscard]] DZ_API InteropArray<Byte> ReadAllBytes( );
         [[nodiscard]] DZ_API InteropArray<Byte> ReadBytes( uint32_t count );
         [[nodiscard]] DZ_API uint16_t           ReadUInt16( );
         [[nodiscard]] DZ_API uint32_t           ReadUInt32( );
@@ -80,6 +81,7 @@ namespace DenOfIz
 
         // Utility function to log data as a C++ array for embedding in code
         DZ_API void LogAsCppArray( const InteropString &variableName = "Data" ) const;
+        DZ_API void WriteCppArrayToFile( const InteropString &targetFile = "Data.txt" ) const;
 
     private:
         [[nodiscard]] bool IsStreamValid( ) const;

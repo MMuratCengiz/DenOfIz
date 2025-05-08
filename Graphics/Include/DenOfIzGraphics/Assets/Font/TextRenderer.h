@@ -35,7 +35,6 @@ namespace DenOfIz
 {
     struct DZ_API TextRendererDesc
     {
-        GraphicsApi    *GraphicsApi;
         ILogicalDevice *LogicalDevice;
         uint32_t        InitialAtlasWidth  = 512;
         uint32_t        InitialAtlasHeight = 512;
@@ -69,7 +68,6 @@ namespace DenOfIz
         };
 
         TextRendererDesc m_desc;
-        GraphicsApi     *m_graphicsApi   = nullptr;
         ILogicalDevice  *m_logicalDevice = nullptr;
         ResourceTracking m_resourceTracking;
         AntiAliasingMode m_antiAliasingMode = AntiAliasingMode::Grayscale;

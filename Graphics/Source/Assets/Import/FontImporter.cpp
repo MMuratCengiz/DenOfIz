@@ -90,7 +90,7 @@ ImporterResult FontImporter::Import( const ImportJobDesc &desc )
     context.SourceFilePath    = desc.SourceFilePath;
     context.TargetDirectory   = desc.TargetDirectory;
     context.AssetNamePrefix   = desc.AssetNamePrefix;
-    context.Desc              = *static_cast<FontImportDesc*>( desc.Desc );
+    context.Desc              = *reinterpret_cast<FontImportDesc*>( desc.Desc );
     context.Result.ResultCode = ImporterResultCode::Success;
 
     // For MSDF, we need RGB data (3 bytes per pixel) instead of grayscale
