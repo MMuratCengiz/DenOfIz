@@ -48,7 +48,7 @@ namespace DenOfIz
         InteropArray<Float_4x4> Transforms{ };
     };
 
-    struct BlendingJobLayerDesc
+    struct DZ_API BlendingJobLayerDesc
     {
         InteropArray<Float_4x4> Transforms{ }; // Todo this could potentially be expensive copying
         float                   Weight = 0.0f;
@@ -167,37 +167,37 @@ namespace DenOfIz
         float       Ratio         = 0.0f;
     };
 
-    class DZ_API OzzAnimation
+    class OzzAnimation
     {
         class Impl;
         Impl *m_impl;
 
     public:
-        explicit OzzAnimation( const SkeletonAsset *skeleton );
-        ~OzzAnimation( );
+        DZ_API explicit OzzAnimation( const SkeletonAsset *skeleton );
+        DZ_API ~OzzAnimation( );
 
-        [[nodiscard]] OzzContext *NewContext( ) const;
-        void                      DestroyContext( OzzContext *context ) const;
+        DZ_API [[nodiscard]] OzzContext *NewContext( ) const;
+        DZ_API void                      DestroyContext( OzzContext *context ) const;
 
-        void        LoadAnimation( const AnimationAsset *animation, OzzContext *context ) const;
-        static void UnloadAnimation( OzzContext *context );
+        DZ_API void        LoadAnimation( const AnimationAsset *animation, OzzContext *context ) const;
+        DZ_API static void UnloadAnimation( OzzContext *context );
 
-        static void LoadTrack( const InteropArray<float> &keys, float duration, OzzContext *context );
-        static void LoadTrack( const InteropArray<Float_2> &keys, const InteropArray<float> &timestamps, OzzContext *context );
-        static void LoadTrack( const InteropArray<Float_3> &keys, const InteropArray<float> &timestamps, OzzContext *context );
-        static void LoadTrack( const InteropArray<Float_4> &keys, const InteropArray<float> &timestamps, OzzContext *context );
+        DZ_API static void LoadTrack( const InteropArray<float> &keys, float duration, OzzContext *context );
+        DZ_API static void LoadTrack( const InteropArray<Float_2> &keys, const InteropArray<float> &timestamps, OzzContext *context );
+        DZ_API static void LoadTrack( const InteropArray<Float_3> &keys, const InteropArray<float> &timestamps, OzzContext *context );
+        DZ_API static void LoadTrack( const InteropArray<Float_4> &keys, const InteropArray<float> &timestamps, OzzContext *context );
 
-        [[nodiscard]] SamplingJobResult     RunSamplingJob( const SamplingJobDesc &desc ) const;
-        [[nodiscard]] BlendingJobResult     RunBlendingJob( const BlendingJobDesc &desc ) const;
-        [[nodiscard]] LocalToModelJobResult RunLocalToModelJob( const LocalToModelJobDesc &desc ) const;
-        static SkinningJobResult            RunSkinningJob( const SkinningJobDesc &desc );
-        static IkTwoBoneJobResult           RunIkTwoBoneJob( const IkTwoBoneJobDesc &desc );
-        [[nodiscard]] IkAimJobResult        RunIkAimJob( const IkAimJobDesc &desc ) const;
-        static TrackSamplingResult          RunTrackSamplingJob( const TrackSamplingJobDesc &desc );
-        static TrackTriggeringResult        RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc );
+        DZ_API [[nodiscard]] SamplingJobResult     RunSamplingJob( const SamplingJobDesc &desc ) const;
+        DZ_API [[nodiscard]] BlendingJobResult     RunBlendingJob( const BlendingJobDesc &desc ) const;
+        DZ_API [[nodiscard]] LocalToModelJobResult RunLocalToModelJob( const LocalToModelJobDesc &desc ) const;
+        DZ_API static SkinningJobResult            RunSkinningJob( const SkinningJobDesc &desc );
+        DZ_API static IkTwoBoneJobResult           RunIkTwoBoneJob( const IkTwoBoneJobDesc &desc );
+        DZ_API [[nodiscard]] IkAimJobResult        RunIkAimJob( const IkAimJobDesc &desc ) const;
+        DZ_API static TrackSamplingResult          RunTrackSamplingJob( const TrackSamplingJobDesc &desc );
+        DZ_API static TrackTriggeringResult        RunTrackTriggeringJob( const TrackTriggeringJobDesc &desc );
 
-        void              GetJointNames( InteropArray<InteropString> &outNames ) const;
-        [[nodiscard]] int GetJointCount( ) const;
-        static float      GetAnimationDuration( OzzContext *context );
+        DZ_API void              GetJointNames( InteropArray<InteropString> &outNames ) const;
+        DZ_API [[nodiscard]] int GetJointCount( ) const;
+        DZ_API static float      GetAnimationDuration( OzzContext *context );
     };
 } // namespace DenOfIz

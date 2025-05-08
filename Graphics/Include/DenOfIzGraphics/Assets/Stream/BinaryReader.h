@@ -30,7 +30,7 @@ namespace DenOfIz
         uint64_t NumBytes = 0; // 0, reading more than this amount of bytes won't be allowed
     };
 
-    class DZ_API BinaryReader
+    class BinaryReader
     {
         uint64_t      m_allowedNumBytes;
         uint64_t      m_readNumBytes  = 0;

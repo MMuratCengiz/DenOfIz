@@ -33,9 +33,9 @@ namespace DenOfIz
         BinaryReader *m_reader;
         SkeletonAsset m_skeletonAsset;
     public:
-        explicit SkeletonAssetReader( const SkeletonAssetReaderDesc &desc );
-        ~SkeletonAssetReader( );
+        DZ_API explicit SkeletonAssetReader( const SkeletonAssetReaderDesc &desc );
+        DZ_API ~SkeletonAssetReader( );
 
-        SkeletonAsset Read( );
+        DZ_API SkeletonAsset Read( );
     };
 } // namespace DenOfIz

@@ -28,13 +28,13 @@ namespace DenOfIz
         BinaryWriter *Writer;
     };
 
-    class DZ_API MaterialAssetWriter
+    class MaterialAssetWriter
     {
         BinaryWriter         *m_writer;
     public:
-        explicit MaterialAssetWriter( const MaterialAssetWriterDesc &desc );
-        ~MaterialAssetWriter( );
+        DZ_API explicit MaterialAssetWriter( const MaterialAssetWriterDesc &desc );
+        DZ_API ~MaterialAssetWriter( );
 
-        void Write( const MaterialAsset &materialAsset ) const;
+        DZ_API void Write( const MaterialAsset &materialAsset ) const;
     };
 } // namespace DenOfIz

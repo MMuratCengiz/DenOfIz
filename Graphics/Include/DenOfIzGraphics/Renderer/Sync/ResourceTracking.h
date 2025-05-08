@@ -61,22 +61,22 @@ namespace DenOfIz
         BatchTransitionDesc& TransitionTexture( ITextureResource* resource, ResourceUsage newUsage, QueueType queueType = QueueType::Graphics );
     };
 
-    class DZ_API ResourceTracking
+    class ResourceTracking
     {
         std::unordered_map<IBufferResource *, ResourceState>  m_bufferStates;
         std::unordered_map<ITextureResource *, ResourceState> m_textureStates;
 
     public:
-        ResourceTracking( ) = default;
-        ~ResourceTracking( );
+        DZ_API ResourceTracking( ) = default;
+        DZ_API ~ResourceTracking( );
 
-        void TrackBuffer( IBufferResource *buffer, ResourceUsage currentUsage, QueueType queueType = QueueType::Graphics );
-        void TrackTexture( ITextureResource *texture, ResourceUsage currentUsage, QueueType queueType = QueueType::Graphics );
+        DZ_API void TrackBuffer( IBufferResource *buffer, ResourceUsage currentUsage, QueueType queueType = QueueType::Graphics );
+        DZ_API void TrackTexture( ITextureResource *texture, ResourceUsage currentUsage, QueueType queueType = QueueType::Graphics );
 
-        void UntrackBuffer( IBufferResource *buffer );
-        void UntrackTexture( ITextureResource *texture );
+        DZ_API void UntrackBuffer( IBufferResource *buffer );
+        DZ_API void UntrackTexture( ITextureResource *texture );
 
-        void BatchTransition( const BatchTransitionDesc &desc );
+        DZ_API void BatchTransition( const BatchTransitionDesc &desc );
 
     private:
         void ProcessBufferTransitions( const InteropArray<TransitionBufferDesc> &bufferTransitions, PipelineBarrierDesc &barrier );

@@ -28,14 +28,14 @@ namespace DenOfIz
         BinaryReader *Reader;
     };
 
-    class DZ_API PhysicsAssetReader
+    class PhysicsAssetReader
     {
         BinaryReader *m_reader;
         PhysicsAsset m_physicsAsset;
     public:
-        explicit PhysicsAssetReader( const PhysicsAssetReaderDesc &desc );
-        ~PhysicsAssetReader( );
+        DZ_API explicit PhysicsAssetReader( const PhysicsAssetReaderDesc &desc );
+        DZ_API ~PhysicsAssetReader( );
 
-        PhysicsAsset Read( );
+        DZ_API PhysicsAsset Read( );
     };
 } // namespace DenOfIz

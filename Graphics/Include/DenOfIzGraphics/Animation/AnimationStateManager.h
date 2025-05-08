@@ -31,7 +31,7 @@ namespace DenOfIz
         SkeletonAsset *Skeleton = nullptr;
     };
 
-    struct AnimationState
+    struct DZ_API AnimationState
     {
         InteropString Name;
         float         PlaybackSpeed = 1.0f;
@@ -42,7 +42,7 @@ namespace DenOfIz
         OzzContext   *Context       = nullptr;
     };
 
-    struct BlendingState
+    struct DZ_API BlendingState
     {
         InteropString SourceAnimation;
         InteropString TargetAnimation;
@@ -51,7 +51,7 @@ namespace DenOfIz
         bool          InProgress       = false;
     };
 
-    class DZ_API AnimationStateManager
+    class AnimationStateManager
     {
         OzzAnimation                                   *m_ozzAnimation = nullptr;
         std::unordered_map<std::string, AnimationState> m_animations;
@@ -60,19 +60,19 @@ namespace DenOfIz
         InteropArray<Float_4x4>                         m_modelTransforms;
 
     public:
-        explicit AnimationStateManager( const AnimationStateManagerDesc &desc );
-        ~AnimationStateManager( );
-        void                               AddAnimation( const AnimationAsset &animationAsset );
-        void                               Play( const InteropString &animationName, bool loop = true );
-        void                               BlendTo( const InteropString &animationName, float blendTime = 0.5f );
-        void                               Stop( );
-        void                               Pause( );
-        void                               Resume( );
-        void                               Update( float deltaTime );
-        [[nodiscard]] bool                 HasAnimation( const InteropString &animationName ) const;
-        void                               GetModelSpaceTransforms( InteropArray<Float_4x4> &outTransforms ) const;
-        [[nodiscard]] const InteropString &GetCurrentAnimationName( ) const;
-        [[nodiscard]] int                  GetNumJoints( ) const;
+        DZ_API explicit AnimationStateManager( const AnimationStateManagerDesc &desc );
+        DZ_API ~AnimationStateManager( );
+        DZ_API void                               AddAnimation( const AnimationAsset &animationAsset );
+        DZ_API void                               Play( const InteropString &animationName, bool loop = true );
+        DZ_API void                               BlendTo( const InteropString &animationName, float blendTime = 0.5f );
+        DZ_API void                               Stop( );
+        DZ_API void                               Pause( );
+        DZ_API void                               Resume( );
+        DZ_API void                               Update( float deltaTime );
+        DZ_API [[nodiscard]] bool                 HasAnimation( const InteropString &animationName ) const;
+        DZ_API void                               GetModelSpaceTransforms( InteropArray<Float_4x4> &outTransforms ) const;
+        DZ_API [[nodiscard]] const InteropString &GetCurrentAnimationName( ) const;
+        DZ_API [[nodiscard]] int                  GetNumJoints( ) const;
 
     private:
         void UpdateBlending( float deltaTime );

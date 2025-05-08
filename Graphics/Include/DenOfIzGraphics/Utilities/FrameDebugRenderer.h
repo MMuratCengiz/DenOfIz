@@ -79,22 +79,23 @@ namespace DenOfIz
             Float_4       Color;
         };
         std::vector<DebugLine> m_customDebugLines;
-    public:
-        explicit FrameDebugRenderer( const FrameDebugRendererDesc &desc );
-        ~FrameDebugRenderer( ) = default;
 
-        void UpdateStats( float deltaTime );
-        void Render( ICommandList *commandList );
-        void SetProjectionMatrix( const Float_4x4 &projectionMatrix );
-        void SetScreenSize( uint32_t width, uint32_t height );
+    public:
+        DZ_API explicit FrameDebugRenderer( const FrameDebugRendererDesc &desc );
+        DZ_API ~FrameDebugRenderer( ) = default;
+
+        DZ_API void UpdateStats( float deltaTime );
+        DZ_API void Render( ICommandList *commandList );
+        DZ_API void SetProjectionMatrix( const Float_4x4 &projectionMatrix );
+        DZ_API void SetScreenSize( uint32_t width, uint32_t height );
 
         // Add custom debug information
-        void AddDebugLine( const InteropString &text, const Float_4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } );
-        void ClearCustomDebugLines( );
+        DZ_API void AddDebugLine( const InteropString &text, const Float_4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } );
+        DZ_API void ClearCustomDebugLines( );
 
-        void SetEnabled( const bool enabled );
-        bool IsEnabled( ) const;
-        void ToggleVisibility( );
+        DZ_API void SetEnabled( bool enabled );
+        DZ_API bool IsEnabled( ) const;
+        DZ_API void ToggleVisibility( );
 
     private:
         void UpdatePerformanceStats( );

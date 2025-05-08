@@ -67,7 +67,7 @@ namespace DenOfIz
         InteropArray<uint32_t>    *OutIndices;
         float                      Scale = 1.0f;
     };
-    class DZ_API TextLayout
+    class TextLayout
     {
         Font          *m_font;
         TextLayoutDesc m_desc;
@@ -87,10 +87,10 @@ namespace DenOfIz
         InteropString             m_lastShapedText;
 
     public:
-        explicit TextLayout( const TextLayoutDesc &desc );
-        void SetFont( Font *font );
-        void ShapeText( const ShapeTextDesc &shapeDesc );
-        void GenerateTextVertices( const GenerateTextVerticesDesc &generateDesc ) const;
+        DZ_API explicit TextLayout( const TextLayoutDesc &desc );
+        DZ_API void SetFont( Font *font );
+        DZ_API void ShapeText( const ShapeTextDesc &shapeDesc );
+        DZ_API void GenerateTextVertices( const GenerateTextVerticesDesc &generateDesc ) const;
 
     private:
         static std::u32string Utf8ToUtf32( const std::string &utf8Text );

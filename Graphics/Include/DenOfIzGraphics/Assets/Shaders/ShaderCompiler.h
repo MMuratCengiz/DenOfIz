@@ -22,7 +22,7 @@ namespace DenOfIz
         InteropArray<Byte> Reflection;
     };
 
-    class DZ_API ShaderCompiler final
+    class ShaderCompiler final
     {
         IDxcLibrary        *m_dxcLibrary        = nullptr;
         IDxcCompiler3      *m_dxcCompiler       = nullptr;
@@ -30,14 +30,14 @@ namespace DenOfIz
         IDxcIncludeHandler *m_dxcIncludeHandler = nullptr;
 
     public:
-        static constexpr uint32_t VkShiftCbv     = 1000;
-        static constexpr uint32_t VkShiftSrv     = 2000;
-        static constexpr uint32_t VkShiftUav     = 3000;
-        static constexpr uint32_t VkShiftSampler = 4000;
-        [[nodiscard]] IDxcUtils  *DxcUtils( ) const;
+        DZ_API static constexpr uint32_t VkShiftCbv     = 1000;
+        DZ_API static constexpr uint32_t VkShiftSrv     = 2000;
+        DZ_API static constexpr uint32_t VkShiftUav     = 3000;
+        DZ_API static constexpr uint32_t VkShiftSampler = 4000;
+        DZ_API [[nodiscard]] IDxcUtils  *DxcUtils( ) const;
 
-        ShaderCompiler( );
-        ~ShaderCompiler( );
-        [[nodiscard]] CompileResult CompileHLSL( const CompileDesc &compileDesc ) const;
+        DZ_API ShaderCompiler( );
+        DZ_API ~ShaderCompiler( );
+        DZ_API [[nodiscard]] CompileResult CompileHLSL( const CompileDesc &compileDesc ) const;
     };
 } // namespace DenOfIz

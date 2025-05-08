@@ -33,9 +33,9 @@ namespace DenOfIz
         BinaryWriter *m_writer;
 
     public:
-        explicit SkeletonAssetWriter( const SkeletonAssetWriterDesc &desc );
-        ~SkeletonAssetWriter( );
+        DZ_API explicit SkeletonAssetWriter( const SkeletonAssetWriterDesc &desc );
+        DZ_API ~SkeletonAssetWriter( );
 
-        void Write( const SkeletonAsset &skeletonAsset ) const;
+        DZ_API void Write( const SkeletonAsset &skeletonAsset ) const;
     };
 } // namespace DenOfIz

@@ -66,7 +66,7 @@ namespace DenOfIz
         ShaderRayTracingDesc                RayTracing;
     };
 
-    DZ_API class DxilToMsl
+    class DxilToMsl
     {
         ShaderCompiler m_compiler;
 
@@ -77,8 +77,8 @@ namespace DenOfIz
         IRCompiler *m_irCompiler = nullptr;
 
     public:
-        ~DxilToMsl( );
-        InteropArray<InteropArray<Byte>> Convert( const DxilToMslDesc &desc );
+        DZ_API ~DxilToMsl( );
+        DZ_API InteropArray<InteropArray<Byte>> Convert( const DxilToMslDesc &desc );
 
     private:
         InteropArray<Byte> Compile( const CompileDesc &compileDesc, const InteropArray<Byte> &dxil, const CompileMslDesc &compileMslDesc,

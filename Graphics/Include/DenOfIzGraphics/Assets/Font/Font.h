@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
     // This is pretty much a FreeType container
-    struct FontDesc
+    struct DZ_API FontDesc
     {
         // Specify either FontPath or FontData
         FontAsset *FontAsset;
@@ -48,10 +48,10 @@ namespace DenOfIz
         [[nodiscard]] FT_Face FTFace( ) const;
 
     public:
-        static constexpr float MsdfPixelRange = 4.0f;
+        DZ_API static constexpr float MsdfPixelRange = 4.0f;
 
-        [[nodiscard]] FontAsset *Asset( ) const;
-        ~Font( );
-        FontGlyph *GetGlyph( uint32_t codePoint );
+        DZ_API [[nodiscard]] FontAsset *Asset( ) const;
+        DZ_API ~Font( );
+        DZ_API FontGlyph *GetGlyph( uint32_t codePoint );
     };
 } // namespace DenOfIz

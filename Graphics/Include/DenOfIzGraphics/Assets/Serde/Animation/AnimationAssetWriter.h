@@ -34,9 +34,9 @@ namespace DenOfIz
         uint64_t      m_streamStartOffset;
 
     public:
-        explicit AnimationAssetWriter( const AnimationAssetWriterDesc &desc );
-        ~AnimationAssetWriter( );
+        DZ_API explicit AnimationAssetWriter( const AnimationAssetWriterDesc &desc );
+        DZ_API ~AnimationAssetWriter( );
 
-        void Write( const AnimationAsset &animationAsset );
+        DZ_API void Write( const AnimationAsset &animationAsset );
     };
 } // namespace DenOfIz

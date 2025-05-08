@@ -95,7 +95,7 @@ namespace DenOfIz
         InteropString           PathFilter;      // Empty means include all paths
     };
 
-    class DZ_API Bundle
+    class Bundle
     {
         BundleDesc                                  m_desc;
         std::unordered_map<std::string, AssetEntry> m_assetEntries;
@@ -112,17 +112,17 @@ namespace DenOfIz
         DZ_API explicit Bundle( const BundleDirectoryDesc &directoryDesc );
         DZ_API ~Bundle( );
 
-        BinaryReader                        *OpenReader( const AssetUri &assetUri );
-        BinaryWriter                        *OpenWriter( const AssetUri &assetUri );
-        void                                 AddAsset( const AssetUri &assetUri, AssetType type, const InteropArray<Byte> &data );
-        bool                                 Save( );
-        [[nodiscard]] bool                   Exists( const AssetUri &assetUri ) const;
-        [[nodiscard]] InteropArray<AssetUri> GetAllAssets( ) const;
-        [[nodiscard]] InteropArray<AssetUri> GetAssetsByType( AssetType type ) const;
-        [[nodiscard]] bool                   IsCompressed( ) const;
-        [[nodiscard]] const InteropString   &GetPath( ) const;
+        DZ_API BinaryReader                        *OpenReader( const AssetUri &assetUri );
+        DZ_API BinaryWriter                        *OpenWriter( const AssetUri &assetUri );
+        DZ_API void                                 AddAsset( const AssetUri &assetUri, AssetType type, const InteropArray<Byte> &data );
+        DZ_API bool                                 Save( );
+        DZ_API [[nodiscard]] bool                   Exists( const AssetUri &assetUri ) const;
+        DZ_API [[nodiscard]] InteropArray<AssetUri> GetAllAssets( ) const;
+        DZ_API [[nodiscard]] InteropArray<AssetUri> GetAssetsByType( AssetType type ) const;
+        DZ_API [[nodiscard]] bool                   IsCompressed( ) const;
+        DZ_API [[nodiscard]] const InteropString   &GetPath( ) const;
 
-        static Bundle *CreateFromDirectory( const BundleDirectoryDesc &directoryDesc );
+        DZ_API static Bundle *CreateFromDirectory( const BundleDirectoryDesc &directoryDesc );
     };
     template class DZ_API InteropArray<Bundle*>;
 } // namespace DenOfIz

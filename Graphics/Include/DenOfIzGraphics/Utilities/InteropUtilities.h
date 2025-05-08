@@ -25,6 +25,6 @@ namespace DenOfIz
     class InteropUtilities
     {
     public:
-        static InteropArray<Byte> StringToBytes( const InteropString& str );
+        DZ_API static InteropArray<Byte> StringToBytes( const InteropString& str );
     };
 }

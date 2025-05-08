@@ -33,28 +33,28 @@ namespace DenOfIz
         bool                  m_shouldQuit;
 
     public:
-        explicit EventHandler( InputSystem *inputSystem );
-        ~EventHandler( );
+        DZ_API explicit EventHandler( InputSystem *inputSystem );
+        DZ_API ~EventHandler( );
 
-        bool ProcessEvent( const Event &event );
-        void ProcessEvents( );
-        bool ProcessEventsWithTimeout( int timeout );
+        DZ_API bool ProcessEvent( const Event &event );
+        DZ_API void ProcessEvents( );
+        DZ_API bool ProcessEventsWithTimeout( int timeout );
 
-        void SetOnKeyDown( KeyboardEventCallback *callback );
-        void SetOnKeyUp( KeyboardEventCallback *callback );
-        void SetOnMouseMotion( MouseMotionEventCallback *callback );
-        void SetOnMouseButtonDown( MouseButtonEventCallback *callback );
-        void SetOnMouseButtonUp( MouseButtonEventCallback *callback );
-        void SetOnMouseWheel( MouseWheelEventCallback *callback );
-        void SetOnWindowEvent( WindowEventCallback *callback );
-        void SetOnControllerAxisMotion( ControllerAxisEventCallback *callback );
-        void SetOnControllerButtonDown( ControllerButtonEventCallback *callback );
-        void SetOnControllerButtonUp( ControllerButtonEventCallback *callback );
-        void SetOnQuit( QuitEventCallback *callback );
-        void SetOnGenericEvent( EventCallback *callback );
+        DZ_API void SetOnKeyDown( KeyboardEventCallback *callback );
+        DZ_API void SetOnKeyUp( KeyboardEventCallback *callback );
+        DZ_API void SetOnMouseMotion( MouseMotionEventCallback *callback );
+        DZ_API void SetOnMouseButtonDown( MouseButtonEventCallback *callback );
+        DZ_API void SetOnMouseButtonUp( MouseButtonEventCallback *callback );
+        DZ_API void SetOnMouseWheel( MouseWheelEventCallback *callback );
+        DZ_API void SetOnWindowEvent( WindowEventCallback *callback );
+        DZ_API void SetOnControllerAxisMotion( ControllerAxisEventCallback *callback );
+        DZ_API void SetOnControllerButtonDown( ControllerButtonEventCallback *callback );
+        DZ_API void SetOnControllerButtonUp( ControllerButtonEventCallback *callback );
+        DZ_API void SetOnQuit( QuitEventCallback *callback );
+        DZ_API void SetOnGenericEvent( EventCallback *callback );
 
-        [[nodiscard]] bool ShouldQuit( ) const;
-        void               SetShouldQuit( bool quit );
+        DZ_API [[nodiscard]] bool ShouldQuit( ) const;
+        DZ_API void               SetShouldQuit( bool quit );
     };
 
 } // namespace DenOfIz

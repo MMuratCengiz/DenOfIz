@@ -40,7 +40,7 @@ namespace DenOfIz
         ITextureResource *Texture;
     };
 
-    class DZ_API FontAssetReader
+    class FontAssetReader
     {
         BinaryReader *m_reader;
         FontAsset     m_fontAsset;
@@ -48,10 +48,10 @@ namespace DenOfIz
         uint64_t      m_streamStartOffset = 0;
 
     public:
-        explicit FontAssetReader( const FontAssetReaderDesc &desc );
-        ~FontAssetReader( );
+        DZ_API explicit FontAssetReader( const FontAssetReaderDesc &desc );
+        DZ_API ~FontAssetReader( );
 
-        FontAsset   Read( );
-        static void LoadAtlasIntoGpuTexture( const FontAsset &fontAsset, const LoadAtlasIntoGpuTextureDesc &desc );
+        DZ_API FontAsset   Read( );
+        DZ_API static void LoadAtlasIntoGpuTexture( const FontAsset &fontAsset, const LoadAtlasIntoGpuTextureDesc &desc );
     };
 } // namespace DenOfIz

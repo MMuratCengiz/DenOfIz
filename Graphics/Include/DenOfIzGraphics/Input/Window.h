@@ -204,7 +204,7 @@ namespace DenOfIz
         WindowPosition Position = WindowPosition::Undefined; // WindowPosition::Centered overwrites X, Y
     };
 
-    class DZ_API Window
+    class Window
     {
         WindowProperties     m_properties{ };
         GraphicsWindowHandle m_windowHandle{ };
@@ -216,37 +216,37 @@ namespace DenOfIz
 #endif
 
     public:
-        Window( );
-        explicit Window( const WindowProperties &properties );
-        ~Window( );
+        DZ_API Window( );
+        DZ_API explicit Window( const WindowProperties &properties );
+        DZ_API ~Window( );
 
-        void Create( const WindowProperties &properties );
-        void Destroy( );
+        DZ_API void Create( const WindowProperties &properties );
+        DZ_API void Destroy( );
 
         // Window control functions
-        void Show( ) const;
-        void Hide( ) const;
-        void Minimize( ) const;
-        void Maximize( ) const;
-        void Raise( ) const;
-        void Restore( ) const;
+        DZ_API void Show( ) const;
+        DZ_API void Hide( ) const;
+        DZ_API void Minimize( ) const;
+        DZ_API void Maximize( ) const;
+        DZ_API void Raise( ) const;
+        DZ_API void Restore( ) const;
 
-        [[nodiscard]] GraphicsWindowHandle GetGraphicsWindowHandle( ) const;
-        [[nodiscard]] uint32_t             GetWindowID( ) const;
-        [[nodiscard]] WindowSize           GetSize( ) const;
-        void                               SetSize( int width, int height ) const;
-        [[nodiscard]] InteropString        GetTitle( ) const;
-        void                               SetTitle( const InteropString &title );
-        [[nodiscard]] bool                 GetFullscreen( ) const;
-        void                               SetFullscreen( bool fullscreen );
-        void                               SetPosition( int x, int y );
-        WindowCoords                       GetPosition( ) const;
-        void                               SetResizable( bool resizable );
-        void                               SetBordered( bool bordered );
-        void                               SetMinimumSize( int minWidth, int minHeight ) const;
-        void                               SetMaximumSize( int maxWidth, int maxHeight ) const;
-        [[nodiscard]] bool                 IsShown( ) const;
-        [[nodiscard]] bool                 IsInitialized( ) const;
+        DZ_API [[nodiscard]] GraphicsWindowHandle GetGraphicsWindowHandle( ) const;
+        DZ_API [[nodiscard]] uint32_t             GetWindowID( ) const;
+        DZ_API [[nodiscard]] WindowSize           GetSize( ) const;
+        DZ_API void                               SetSize( int width, int height ) const;
+        DZ_API [[nodiscard]] InteropString        GetTitle( ) const;
+        DZ_API void                               SetTitle( const InteropString &title );
+        DZ_API [[nodiscard]] bool                 GetFullscreen( ) const;
+        DZ_API void                               SetFullscreen( bool fullscreen );
+        DZ_API void                               SetPosition( int x, int y );
+        DZ_API WindowCoords                       GetPosition( ) const;
+        DZ_API void                               SetResizable( bool resizable );
+        DZ_API void                               SetBordered( bool bordered );
+        DZ_API void                               SetMinimumSize( int minWidth, int minHeight ) const;
+        DZ_API void                               SetMaximumSize( int maxWidth, int maxHeight ) const;
+        DZ_API [[nodiscard]] bool                 IsShown( ) const;
+        DZ_API [[nodiscard]] bool                 IsInitialized( ) const;
 
 #ifdef WINDOW_MANAGER_SDL
         [[nodiscard]] SDL_Window *GetSDLWindow( ) const;

@@ -35,11 +35,11 @@ namespace DenOfIz
         FontAsset     m_fontAsset;
 
     public:
-        explicit FontAssetWriter( const FontAssetWriterDesc &desc );
-        ~FontAssetWriter( );
+        DZ_API explicit FontAssetWriter( const FontAssetWriterDesc &desc );
+        DZ_API ~FontAssetWriter( );
 
-        void Write( const FontAsset &fontAsset );
-        void End( ) const;
+        DZ_API void Write( const FontAsset &fontAsset );
+        DZ_API void End( ) const;
 
     private:
         void WriteHeader( uint64_t totalNumBytes ) const;

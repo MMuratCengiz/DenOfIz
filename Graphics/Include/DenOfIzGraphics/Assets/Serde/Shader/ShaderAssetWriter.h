@@ -36,13 +36,13 @@ namespace DenOfIz
         bool          m_finalized         = false;
 
     public:
-        explicit ShaderAssetWriter( const ShaderAssetWriterDesc &desc );
-        ~ShaderAssetWriter( );
+        DZ_API explicit ShaderAssetWriter( const ShaderAssetWriterDesc &desc );
+        DZ_API ~ShaderAssetWriter( );
 
-        void Write( const ShaderAsset &shaderAsset );
-        void End( );
+        DZ_API void Write( const ShaderAsset &shaderAsset );
+        DZ_API void End( );
 
-        static ShaderAsset CreateFromCompiledShader( const CompiledShader &compiledShader );
+        DZ_API static ShaderAsset CreateFromCompiledShader( const CompiledShader &compiledShader );
 
     private:
         void WriteHeader( uint32_t totalNumBytes ) const;

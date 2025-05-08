@@ -29,7 +29,7 @@ namespace DenOfIz
         BinaryWriter *Writer;
     };
 
-    class DZ_API MeshAssetWriter
+    class MeshAssetWriter
     {
         BinaryWriter       *m_writer;
         MeshAssetWriterDesc m_desc;
@@ -80,17 +80,17 @@ namespace DenOfIz
         void WriteMorphTargetDeltaInternal( const MorphTargetDelta &delta ) const;
 
     public:
-        explicit MeshAssetWriter( const MeshAssetWriterDesc &desc );
-        ~MeshAssetWriter( );
+        DZ_API explicit MeshAssetWriter( const MeshAssetWriterDesc &desc );
+        DZ_API ~MeshAssetWriter( );
 
-        void Write( const MeshAsset &meshAssetData );
+        DZ_API void Write( const MeshAsset &meshAssetData );
 
-        void AddVertex( const MeshVertex &vertex );
-        void AddIndex16( uint16_t index );
-        void AddIndex32( uint32_t index );
-        void AddConvexHullData( uint32_t boundingVolumeIndex, const InteropArray<Byte> &vertexData );
-        void AddMorphTargetDelta( const MorphTargetDelta &delta );
+        DZ_API void AddVertex( const MeshVertex &vertex );
+        DZ_API void AddIndex16( uint16_t index );
+        DZ_API void AddIndex32( uint32_t index );
+        DZ_API void AddConvexHullData( uint32_t boundingVolumeIndex, const InteropArray<Byte> &vertexData );
+        DZ_API void AddMorphTargetDelta( const MorphTargetDelta &delta );
 
-        void FinalizeAsset( );
+        DZ_API void FinalizeAsset( );
     };
 } // namespace DenOfIz

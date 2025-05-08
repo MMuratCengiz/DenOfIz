@@ -32,9 +32,9 @@ namespace DenOfIz
     {
         BinaryWriter         *m_writer;
     public:
-        explicit PhysicsAssetWriter( const PhysicsAssetWriterDesc &desc );
-        ~PhysicsAssetWriter( );
+        DZ_API explicit PhysicsAssetWriter( const PhysicsAssetWriterDesc &desc );
+        DZ_API ~PhysicsAssetWriter( );
 
-        void Write( const PhysicsAsset &physicsAsset ) const;
+        DZ_API void Write( const PhysicsAsset &physicsAsset ) const;
     };
 } // namespace DenOfIz

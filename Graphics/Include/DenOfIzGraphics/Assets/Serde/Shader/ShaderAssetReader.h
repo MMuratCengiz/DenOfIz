@@ -36,12 +36,12 @@ namespace DenOfIz
         uint64_t      m_streamStartOffset = 0;
 
     public:
-        explicit ShaderAssetReader( const ShaderAssetReaderDesc &desc );
-        ~ShaderAssetReader( );
+        DZ_API explicit ShaderAssetReader( const ShaderAssetReaderDesc &desc );
+        DZ_API ~ShaderAssetReader( );
 
-        ShaderAsset Read( );
+        DZ_API ShaderAsset Read( );
 
-        static CompiledShader ConvertToCompiledShader( const ShaderAsset &shaderAsset );
+        DZ_API static CompiledShader ConvertToCompiledShader( const ShaderAsset &shaderAsset );
 
     private:
         void ReadHeader( );

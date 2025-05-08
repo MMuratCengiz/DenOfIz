@@ -28,7 +28,7 @@ namespace DenOfIz
         InteropString DefaultSearchPath;
     };
 
-    class DZ_API BundleManager
+    class BundleManager
     {
         std::vector<Bundle *>                     m_mountedBundles;
         InteropString                             m_defaultSearchPath;
