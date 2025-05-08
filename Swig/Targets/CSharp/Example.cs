@@ -2,206 +2,181 @@
 
 using DenOfIz;
 
-// Todo this is quite crude, to be fleshed out before including it in docs
 namespace DZDemo;
 
-class Program
+internal class Program
 {
-    private Window window;
-    private GraphicsWindowHandle windowHandle;
-    private GraphicsApi graphicsApi;
-    private ILogicalDevice device;
-    private ICommandQueue graphicsQueue;
-    private ISwapChain swapChain;
-    private FrameSync frameSync;
-    private ResourceTracking resourceTracking;
-    private IPipeline trianglePipeline;
-    private IBufferResource vertexBuffer;
-    private ShaderProgram shaderProgram;
-    private IInputLayout inputLayout;
-    private IRootSignature rootSignature;
-    private bool running = true;
+    private Window _window = null!;
+    private GraphicsWindowHandle _windowHandle = null!;
+    private GraphicsApi _graphicsApi = null!;
+    private ILogicalDevice _device = null!;
+    private ICommandQueue _graphicsQueue = null!;
+    private ISwapChain _swapChain = null!;
+    private FrameSync _frameSync = null!;
+    private ResourceTracking _resourceTracking = null!;
+    private IPipeline _trianglePipeline = null!;
+    private IBufferResource _vertexBuffer = null!;
+    private ShaderProgram _shaderProgram = null!;
+    private IInputLayout _inputLayout = null!;
+    private IRootSignature _rootSignature = null!;
+    private FrameDebugRenderer _frameDebugRenderer = null!;
+    private readonly Time _time = new();
+    private bool _running = true;
 
-    // Custom event handler for quit events
-    private class MyQuitCallback : QuitEventCallback
+    private class MyQuitCallback(Program program) : QuitEventCallback
     {
-        private Program program;
-
-        public MyQuitCallback(Program program)
-        {
-            this.program = program;
-        }
-
         public override void Execute(QuitEventData data)
         {
-            program.running = false;
+            program._running = false;
         }
     }
 
-    // Custom event handler for keyboard events
-    private class MyKeyboardCallback : KeyboardEventCallback
+    private class MyKeyboardCallback(Program program) : KeyboardEventCallback
     {
-        private Program program;
-
-        public MyKeyboardCallback(Program program)
-        {
-            this.program = program;
-        }
-
         public override void Execute(KeyboardEventData data)
         {
-            if (data.Keycode == KeyCode.Escape && data.State == (uint)KeyState.Pressed)
+            if (data is { Keycode: KeyCode.Escape, State: (uint)KeyState.Pressed })
             {
-                program.running = false;
+                program._running = false;
             }
         }
     }
 
-    static void Main(string[] args)
+    private static void Main()
     {
-        // Initialize DenOfIzGraphics native libraries
-        // DenOfIzGraphicsInitializer.Initialize();
+        // Very important to ensure necessary libraries are loaded(especially dxil and dxcompiler for windows)
+        DenOfIzGraphicsInitializer.Initialize();
 
-        Program program = new Program();
+        var program = new Program();
         program.Run();
     }
 
-    public void Run()
+    private void Run()
     {
         InitializeWindow();
         InitializeGraphics();
         CreateTrianglePipeline();
         CreateVertexBuffer();
 
-        // Event handling
-        EventHandler eventHandler = new EventHandler();
+        var frameDebugRendererDesc = new FrameDebugRendererDesc();
+        frameDebugRendererDesc.GraphicsApi = _graphicsApi;
+        frameDebugRendererDesc.LogicalDevice = _device;
+        frameDebugRendererDesc.Scale = 0.6f;
+        frameDebugRendererDesc.ScreenWidth = (uint)_window.GetSize().Width;
+        frameDebugRendererDesc.ScreenHeight = (uint)_window.GetSize().Height;
+
+        _frameDebugRenderer = new FrameDebugRenderer(frameDebugRendererDesc);
+        var inputSystem = new InputSystem();
+        inputSystem.Initialize();
+
+        var eventHandler = new EventHandler(inputSystem);
         eventHandler.SetOnQuit(new MyQuitCallback(this));
         eventHandler.SetOnKeyDown(new MyKeyboardCallback(this));
 
-        // Main loop
-        InputSystem inputSystem = new InputSystem();
-        inputSystem.Initialize();
-        Event evt = new Event();
+        var evt = new Event();
 
-        while (running)
+        while (_running)
         {
-            // Process events
             while (InputSystem.PollEvent(evt))
             {
                 eventHandler.ProcessEvent(evt);
             }
 
-            // Render frame
             RenderFrame();
         }
 
-        // Cleanup
-        graphicsQueue.WaitIdle();
-        device.WaitIdle();
+        // We always need to wait for ongoing operations to finish before exiting
+        _frameSync.WaitIdle();
+        _graphicsQueue.WaitIdle();
+        _device.WaitIdle();
     }
 
     private void InitializeWindow()
     {
-        WindowProperties windowProps = new WindowProperties();
+        var windowProps = new WindowProperties();
         windowProps.Title = new InteropString("Triangle Example");
-        windowProps.Width = 800;
-        windowProps.Height = 600;
+        windowProps.Width = 1920;
+        windowProps.Height = 1080;
         windowProps.Flags.Shown = true;
         windowProps.Flags.Resizable = true;
+        _window = new Window(windowProps);
+        _windowHandle = _window.GetGraphicsWindowHandle();
 
-        window = new Window(windowProps);
-        windowHandle = window.GetGraphicsWindowHandle();
     }
 
     private void InitializeGraphics()
     {
-        // Set API preferences
-        APIPreference apiPreference = new APIPreference();
+        var apiPreference = new APIPreference();
         apiPreference.Windows = APIPreferenceWindows.DirectX12;
         apiPreference.Linux = APIPreferenceLinux.Vulkan;
         apiPreference.OSX = APIPreferenceOSX.Metal;
 
-        // Create GraphicsApi and device
-        graphicsApi = new GraphicsApi(apiPreference);
-        device = graphicsApi.CreateAndLoadOptimalLogicalDevice();
+        _graphicsApi = new GraphicsApi(apiPreference);
+        _device = _graphicsApi.CreateAndLoadOptimalLogicalDevice();
 
-        // Create command queue
-        CommandQueueDesc queueDesc = new CommandQueueDesc();
+        var queueDesc = new CommandQueueDesc();
         queueDesc.QueueType = QueueType.Graphics;
         queueDesc.Flags.RequirePresentationSupport = true;
-        graphicsQueue = device.CreateCommandQueue(queueDesc);
+        _graphicsQueue = _device.CreateCommandQueue(queueDesc);
 
-        // Create swap chain
-        SwapChainDesc swapChainDesc = new SwapChainDesc();
-        swapChainDesc.Width = (uint)window.GetSize().Width;
-        swapChainDesc.Height = (uint)window.GetSize().Height;
-        swapChainDesc.WindowHandle = windowHandle;
-        swapChainDesc.CommandQueue = graphicsQueue;
+        var swapChainDesc = new SwapChainDesc();
+        swapChainDesc.Width = (uint)_window.GetSize().Width;
+        swapChainDesc.Height = (uint)_window.GetSize().Height;
+        swapChainDesc.WindowHandle = _windowHandle;
+        swapChainDesc.CommandQueue = _graphicsQueue;
         swapChainDesc.NumBuffers = 3;
-        swapChain = device.CreateSwapChain(swapChainDesc);
+        _swapChain = _device.CreateSwapChain(swapChainDesc);
 
-        // Create FrameSync
-        FrameSyncDesc frameSyncDesc = new FrameSyncDesc();
-        frameSyncDesc.SwapChain = swapChain;
-        frameSyncDesc.Device = device;
+        var frameSyncDesc = new FrameSyncDesc();
+        frameSyncDesc.SwapChain = _swapChain;
+        frameSyncDesc.Device = _device;
         frameSyncDesc.NumFrames = 3;
-        frameSyncDesc.CommandQueue = graphicsQueue;
-        frameSync = new FrameSync(frameSyncDesc);
+        frameSyncDesc.CommandQueue = _graphicsQueue;
+        _frameSync = new FrameSync(frameSyncDesc);
 
-        // Create ResourceTracking
-        resourceTracking = new ResourceTracking();
-
-        // Track swap chain resources
+        // Used to track the current usage for each resource, helps with setting up barriers
+        _resourceTracking = new ResourceTracking();
         for (uint i = 0; i < swapChainDesc.NumBuffers; i++)
         {
-            resourceTracking.TrackTexture(swapChain.GetRenderTarget(i), ResourceUsage.Common);
+            _resourceTracking.TrackTexture(_swapChain.GetRenderTarget(i), ResourceUsage.Common);
         }
     }
 
     private void CreateTrianglePipeline()
     {
-        // Create shader stages
-        ShaderStageDesc vertexShaderDesc = new ShaderStageDesc();
+        var vertexShaderDesc = new ShaderStageDesc();
         vertexShaderDesc.Stage = ShaderStage.Vertex;
         vertexShaderDesc.EntryPoint = new InteropString("VSMain");
+        vertexShaderDesc.Data = GetTriangleVertexShader();
 
-        var vertexShader = GetTriangleVertexShader();
-        var pixelShader = GetTrianglePixelShader();
-        vertexShaderDesc.Data.CopyBytes(vertexShader, vertexShader.Length);
-        ;
-
-        ShaderStageDesc pixelShaderDesc = new ShaderStageDesc();
+        var pixelShaderDesc = new ShaderStageDesc();
         pixelShaderDesc.Stage = ShaderStage.Pixel;
         pixelShaderDesc.EntryPoint = new InteropString("PSMain");
-        pixelShaderDesc.Data.CopyBytes(pixelShader, pixelShader.Length);
+        pixelShaderDesc.Data = GetTrianglePixelShader();
 
-        ShaderStageDescArray shaderStages = new ShaderStageDescArray();
-        shaderStages.AddElement(vertexShaderDesc);
-        shaderStages.AddElement(pixelShaderDesc);
+        var shaderProgramDesc = new ShaderProgramDesc();
+        shaderProgramDesc.ShaderStages.AddElement(vertexShaderDesc);
+        shaderProgramDesc.ShaderStages.AddElement(pixelShaderDesc);
 
-        ShaderProgramDesc shaderProgramDesc = new ShaderProgramDesc();
-        shaderProgramDesc.ShaderStages = shaderStages;
-
-        shaderProgram = new ShaderProgram(shaderProgramDesc);
-        var reflectDesc = shaderProgram.Reflect();
-        inputLayout = device.CreateInputLayout(reflectDesc.InputLayout);
-        rootSignature = device.CreateRootSignature(reflectDesc.RootSignature);
+        _shaderProgram = new ShaderProgram(shaderProgramDesc);
+        var reflectDesc = _shaderProgram.Reflect();
+        _inputLayout = _device.CreateInputLayout(reflectDesc.InputLayout);
+        _rootSignature = _device.CreateRootSignature(reflectDesc.RootSignature);
 
         // Create graphics pipeline
-        PipelineDesc pipelineDesc = new PipelineDesc();
-        pipelineDesc.InputLayout = inputLayout;
-        pipelineDesc.ShaderProgram = shaderProgram;
-        pipelineDesc.RootSignature = rootSignature;
-        pipelineDesc.Graphics.PrimitiveTopology = PrimitiveTopology.Triangle;
-        pipelineDesc.Graphics.RenderTargets.AddElement(new RenderTargetDesc { Format = Format.R8G8B8A8Unorm });
+        var pipelineDesc = new PipelineDesc();
+        pipelineDesc.InputLayout = _inputLayout;
+        pipelineDesc.ShaderProgram = _shaderProgram;
+        pipelineDesc.RootSignature = _rootSignature;
+        // pipelineDesc.Graphics.PrimitiveTopology = PrimitiveTopology.Triangle;
+        pipelineDesc.Graphics.RenderTargets.AddElement(new RenderTargetDesc { Format = Format.B8G8R8A8Unorm });
 
-        trianglePipeline = device.CreatePipeline(pipelineDesc);
+        _trianglePipeline = _device.CreatePipeline(pipelineDesc);
     }
 
     private void CreateVertexBuffer()
     {
-        // Define triangle vertices (position + color)
-        float[] vertices = new float[]
+        var vertices = new[]
         {
             // Position (XYZ)    // Color (RGBA)
             0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, // Top vertex (red)
@@ -209,119 +184,105 @@ class Program
             0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f // Bottom right (blue)
         };
 
-        // Create buffer
-        uint bufferSize = (uint)(vertices.Length * sizeof(float));
-        BufferDesc bufferDesc = new BufferDesc();
+        var bufferSize = (uint)(vertices.Length * sizeof(float));
+        var bufferDesc = new BufferDesc();
         bufferDesc.Descriptor.Set(ResourceDescriptor.VertexBuffer);
         bufferDesc.NumBytes = bufferSize;
         bufferDesc.DebugName = new InteropString("TriangleVertexBuffer");
 
-        vertexBuffer = device.CreateBufferResource(bufferDesc);
+        _vertexBuffer = _device.CreateBufferResource(bufferDesc);
 
-        // Copy vertex data
-        BatchResourceCopy batchCopy = new BatchResourceCopy(device);
+        var batchCopy = new BatchResourceCopy(_device);
         batchCopy.Begin();
 
-
-        // Convert vertices to byte array
-        byte[] vertexBytes = new byte[bufferSize];
+        var vertexBytes = new byte[bufferSize];
         Buffer.BlockCopy(vertices, 0, vertexBytes, 0, (int)bufferSize);
 
-        CopyToGpuBufferDesc copyDesc = new CopyToGpuBufferDesc();
-        copyDesc.DstBuffer = vertexBuffer;
+        var copyDesc = new CopyToGpuBufferDesc();
+        copyDesc.DstBuffer = _vertexBuffer;
         copyDesc.Data.CopyBytes(vertexBytes, vertexBytes.Length);
         batchCopy.CopyToGPUBuffer(copyDesc);
         batchCopy.Submit();
 
-        // Track resource
-        resourceTracking.TrackBuffer(vertexBuffer, ResourceUsage.VertexAndConstantBuffer);
+        _resourceTracking.TrackBuffer(_vertexBuffer, ResourceUsage.VertexAndConstantBuffer);
     }
 
     private void RenderFrame()
     {
-        // Get frame index and command list
-        ulong frameIndex = frameSync.NextFrame();
-        ICommandList commandList = frameSync.GetCommandList(frameIndex);
+        _time.Tick();
+        _frameDebugRenderer.UpdateStats((float)_time.GetDeltaTime());
 
-        // Begin command list
+        // Get frame index and command list
+        var frameIndex = _frameSync.NextFrame();
+        var commandList = _frameSync.GetCommandList(frameIndex);
+
         commandList.Begin();
 
-        // Get current render target
-        ITextureResource renderTarget = swapChain.GetRenderTarget(frameSync.AcquireNextImage(frameIndex));
+        var nextImage = _frameSync.AcquireNextImage(frameIndex);
+        var renderTarget = _swapChain.GetRenderTarget(nextImage);
 
-        // Transition render target to render target state
-        BatchTransitionDesc transitionDesc = new BatchTransitionDesc(commandList);
+        var transitionDesc = new BatchTransitionDesc(commandList);
         transitionDesc.TransitionTexture(renderTarget, ResourceUsage.RenderTarget);
-        resourceTracking.BatchTransition(transitionDesc);
+        _resourceTracking.BatchTransition(transitionDesc);
 
-        // Begin rendering
-        RenderingAttachmentDesc attachmentDesc = new RenderingAttachmentDesc();
+        var attachmentDesc = new RenderingAttachmentDesc();
         attachmentDesc.Resource = renderTarget;
 
-        RenderingDesc renderingDesc = new RenderingDesc();
+        var renderingDesc = new RenderingDesc();
         renderingDesc.RTAttachments.AddElement(attachmentDesc);
 
         commandList.BeginRendering(renderingDesc);
 
-        // Set viewport and scissor
-        Viewport viewport = swapChain.GetViewport();
+        var viewport = _swapChain.GetViewport();
         commandList.BindViewport(viewport.X, viewport.Y, viewport.Width, viewport.Height);
         commandList.BindScissorRect(viewport.X, viewport.Y, viewport.Width, viewport.Height);
-
-        // Bind pipeline
-        commandList.BindPipeline(trianglePipeline);
-        commandList.BindVertexBuffer(vertexBuffer);
-        // Draw triangle
+        commandList.BindPipeline(_trianglePipeline);
+        commandList.BindVertexBuffer(_vertexBuffer);
         commandList.Draw(3, 1, 0, 0);
-
-        // End rendering
+        _frameDebugRenderer.Render(commandList);
         commandList.EndRendering();
 
-        // Transition render target to present state
         transitionDesc = new BatchTransitionDesc(commandList);
         transitionDesc.TransitionTexture(renderTarget, ResourceUsage.Present);
-        resourceTracking.BatchTransition(transitionDesc);
+        _resourceTracking.BatchTransition(transitionDesc);
 
-        // End command list
         commandList.End();
 
-        // Execute command list and present
-        frameSync.ExecuteCommandList(frameIndex);
-        frameSync.Present((uint)frameIndex); // todo casting shouldn't be necessary
+        _frameSync.ExecuteCommandList(frameIndex);
+        _frameSync.Present(nextImage);
     }
 
-    // Helper method to get triangle vertex shader
-    private byte[] GetTriangleVertexShader()
+    private static UnsignedCharArray GetTriangleVertexShader()
     {
-        string shaderCode = @"
-        struct VSInput
-        {
-            float3 Position : POSITION;
-            float4 Color : COLOR;
-        };
+        const string shaderCode =
+            """
+            struct VSInput
+            {
+                float3 Position : POSITION;
+                float4 Color : COLOR;
+            };
 
-        struct PSInput
-        {
-            float4 Position : SV_POSITION;
-            float4 Color : COLOR;
-        };
+            struct PSInput
+            {
+                float4 Position : SV_POSITION;
+                float4 Color : COLOR;
+            };
 
-        PSInput VSMain(VSInput input)
-        {
-            PSInput output;
-            output.Position = float4(input.Position, 1.0);
-            output.Color = input.Color;
-            return output;
-        }";
-
-        return System.Text.Encoding.UTF8.GetBytes(shaderCode);
+            PSInput VSMain(VSInput input)
+            {
+                PSInput output;
+                output.Position = float4(input.Position, 1.0);
+                output.Color = input.Color;
+                return output;
+            }
+            """;
+        return InteropUtilities.StringToBytes(new InteropString(shaderCode));
     }
 
-    // Helper method to get triangle pixel shader
-    private byte[] GetTrianglePixelShader()
+    private static UnsignedCharArray GetTrianglePixelShader()
     {
-        // Simple pixel shader for triangle
-        string shaderCode = @"
+        const string shaderCode =
+            """
             struct PSInput
             {
                 float4 Position : SV_POSITION;
@@ -331,7 +292,8 @@ class Program
             float4 PSMain(PSInput input) : SV_TARGET
             {
                 return input.Color;
-            }";
-        return System.Text.Encoding.UTF8.GetBytes(shaderCode);
+            }
+            """;
+        return InteropUtilities.StringToBytes(new InteropString(shaderCode));
     }
 }
