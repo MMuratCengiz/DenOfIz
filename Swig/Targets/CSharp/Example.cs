@@ -20,6 +20,7 @@ internal class Program
     private IInputLayout _inputLayout = null!;
     private IRootSignature _rootSignature = null!;
     private FrameDebugRenderer _frameDebugRenderer = null!;
+    private WindowSize _windowSize = new();
     private readonly Time _time = new();
     private bool _running = true;
 
@@ -28,6 +29,27 @@ internal class Program
         public override void Execute(QuitEventData data)
         {
             program._running = false;
+        }
+    }
+
+    private class MyResizeCallback(Program program) : WindowEventCallback
+    {
+        public override void Execute(WindowEventData data)
+        {
+            var possibleNewSize = program._window.GetSize();
+            if (possibleNewSize.Width == program._windowSize.Width &&
+                possibleNewSize.Height == program._windowSize.Height)
+            {
+                return;
+            }
+
+            program._frameSync.WaitIdle();
+            program._swapChain.Resize((uint)possibleNewSize.Width, (uint)possibleNewSize.Height);
+            program._windowSize = possibleNewSize;
+            for (uint i = 0; i < 3; i++)
+            {
+                program._resourceTracking.TrackTexture(program._swapChain.GetRenderTarget(i), ResourceUsage.Common);
+            }
         }
     }
 
@@ -72,6 +94,7 @@ internal class Program
         var eventHandler = new EventHandler(inputSystem);
         eventHandler.SetOnQuit(new MyQuitCallback(this));
         eventHandler.SetOnKeyDown(new MyKeyboardCallback(this));
+        eventHandler.SetOnWindowEvent(new MyResizeCallback(this));
 
         var evt = new Event();
 
@@ -99,9 +122,13 @@ internal class Program
         windowProps.Height = 1080;
         windowProps.Flags.Shown = true;
         windowProps.Flags.Resizable = true;
+        windowProps.Position = WindowPosition.Centered;
+
         _window = new Window(windowProps);
         _windowHandle = _window.GetGraphicsWindowHandle();
-
+        _windowSize = new WindowSize();
+        _windowSize.Width = _window.GetSize().Width;
+        _windowSize.Height = _window.GetSize().Height;
     }
 
     private void InitializeGraphics()
@@ -119,13 +146,7 @@ internal class Program
         queueDesc.Flags.RequirePresentationSupport = true;
         _graphicsQueue = _device.CreateCommandQueue(queueDesc);
 
-        var swapChainDesc = new SwapChainDesc();
-        swapChainDesc.Width = (uint)_window.GetSize().Width;
-        swapChainDesc.Height = (uint)_window.GetSize().Height;
-        swapChainDesc.WindowHandle = _windowHandle;
-        swapChainDesc.CommandQueue = _graphicsQueue;
-        swapChainDesc.NumBuffers = 3;
-        _swapChain = _device.CreateSwapChain(swapChainDesc);
+        var swapChainDesc = CreateSwapChain();
 
         var frameSyncDesc = new FrameSyncDesc();
         frameSyncDesc.SwapChain = _swapChain;
@@ -140,6 +161,18 @@ internal class Program
         {
             _resourceTracking.TrackTexture(_swapChain.GetRenderTarget(i), ResourceUsage.Common);
         }
+    }
+
+    private SwapChainDesc CreateSwapChain()
+    {
+        var swapChainDesc = new SwapChainDesc();
+        swapChainDesc.Width = (uint)_window.GetSize().Width;
+        swapChainDesc.Height = (uint)_window.GetSize().Height;
+        swapChainDesc.WindowHandle = _windowHandle;
+        swapChainDesc.CommandQueue = _graphicsQueue;
+        swapChainDesc.NumBuffers = 3;
+        _swapChain = _device.CreateSwapChain(swapChainDesc);
+        return swapChainDesc;
     }
 
     private void CreateTrianglePipeline()
@@ -249,7 +282,18 @@ internal class Program
         commandList.End();
 
         _frameSync.ExecuteCommandList(frameIndex);
-        _frameSync.Present(nextImage);
+        switch (_frameSync.Present(nextImage))
+        {
+            case PresentResult.Timeout:
+            case PresentResult.DeviceLost:
+                _frameSync.WaitIdle();
+                _swapChain.Resize((uint)_window.GetSize().Width, (uint)_window.GetSize().Height);
+                break;
+            case PresentResult.Success:
+            case PresentResult.Suboptimal:
+            default:
+                break;
+        }
     }
 
     private static UnsignedCharArray GetTriangleVertexShader()

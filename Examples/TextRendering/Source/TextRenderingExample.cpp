@@ -84,7 +84,7 @@ void TextRenderingExample::Init( )
 
 void TextRenderingExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void TextRenderingExample::Update( )

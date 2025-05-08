@@ -57,11 +57,7 @@ void ResourceTracking::TrackBuffer( IBufferResource *buffer, const ResourceUsage
 
 void ResourceTracking::TrackTexture( ITextureResource *texture, const ResourceUsage currentUsage, const QueueType queueType )
 {
-    if ( m_textureStates.contains( texture ) )
-    {
-        LOG( WARNING ) << "Texture already tracked";
-    }
-
+    // Trust the user that this is an update.
     m_textureStates[ texture ].CurrentQueue = queueType;
     m_textureStates[ texture ].CurrentUsage = texture->InitialState( );
 }
