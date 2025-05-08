@@ -95,7 +95,7 @@ void ShaderProgram::Compile( )
         compiledShader->Reflection = reflection;
         compiledShader->DXIL       = std::move( dxil );
         compiledShader->SPIRV      = std::move( spirv );
-        compiledShader->MSL        = nullptr; // Set below
+        compiledShader->MSL        = { }; // Set below
 
         m_shaderDescs.push_back( stage );
     }
@@ -148,10 +148,10 @@ void ShaderProgram::CreateReflectionData( )
         LocalRootSignatureDesc &recordLayout = m_reflectDesc.LocalRootSignatures.GetElement( stageIndex );
         reflectionState.LocalRootSignature   = &recordLayout;
 
-        IDxcBlob       *reflectionBlob = shader->Reflection;
+        auto            reflectionBlob = shader->Reflection;
         const DxcBuffer reflectionBuffer{
-            .Ptr      = reflectionBlob->GetBufferPointer( ),
-            .Size     = reflectionBlob->GetBufferSize( ),
+            .Ptr      = reflectionBlob.Data( ),
+            .Size     = reflectionBlob.NumElements( ),
             .Encoding = 0,
         };
 
@@ -512,23 +512,4 @@ void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, I
 
 ShaderProgram::~ShaderProgram( )
 {
-    for ( const auto &shader : m_compiledShaders )
-    {
-        if ( shader->DXIL )
-        {
-            shader->DXIL->Release( );
-        }
-        if ( shader->SPIRV )
-        {
-            shader->SPIRV->Release( );
-        }
-        if ( shader->MSL )
-        {
-            shader->MSL->Release( );
-        }
-        if ( shader->Reflection )
-        {
-            shader->Reflection->Release( );
-        }
-    }
 }

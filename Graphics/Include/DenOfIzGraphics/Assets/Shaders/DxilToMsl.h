@@ -78,30 +78,14 @@ namespace DenOfIz
 
     public:
         ~DxilToMsl( );
-        InteropArray<IDxcBlob *> Convert( const DxilToMslDesc &desc );
+        InteropArray<InteropArray<Byte>> Convert( const DxilToMslDesc &desc );
 
     private:
-        IDxcBlob *Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, const CompileMslDesc &compileMslDesc, const RayTracingShaderDesc &rayTracingShaderDesc ) const;
+        InteropArray<Byte> Compile( const CompileDesc &compileDesc, const InteropArray<Byte> &dxil, const CompileMslDesc &compileMslDesc,
+                                    const RayTracingShaderDesc &rayTracingShaderDesc ) const;
 
         IRRootSignature *CreateRootSignature( std::vector<RegisterSpaceRange> &registerSpaceRanges, bool isLocal ) const;
         void             IterateBoundResources( CompiledShaderStage *shader, ReflectionCallback &callback );
         void             DxcCheckResult( HRESULT hr ) const;
     };
-
-    struct MetalDxcBlob_Impl final : IDxcBlob
-    {
-        uint16_t m_refCount = 0;
-        uint8_t *m_data;
-        size_t   m_size;
-        // This is not a very nice solution, might need to revisit this later
-        IRObject *IrObject = nullptr;
-
-        MetalDxcBlob_Impl( uint8_t *data, size_t size );
-        HRESULT STDMETHODCALLTYPE QueryInterface( REFIID riid, void **ppvObject ) override;
-        ULONG STDMETHODCALLTYPE   AddRef( ) override;
-        ULONG STDMETHODCALLTYPE   Release( ) override;
-        LPVOID STDMETHODCALLTYPE  GetBufferPointer( ) override;
-        SIZE_T STDMETHODCALLTYPE  GetBufferSize( ) override;
-    };
-
 } // namespace DenOfIz

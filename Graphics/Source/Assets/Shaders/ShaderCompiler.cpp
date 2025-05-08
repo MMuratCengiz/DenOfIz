@@ -275,5 +275,16 @@ CompileResult ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) cons
 
     dxcResult->Release( );
     sourceBlob->Release( );
-    return { .Code = code, .Reflection = reflection };
+
+    InteropArray<Byte> codeArray{ };
+    codeArray.MemCpy( code->GetBufferPointer( ), code->GetBufferSize( ) );
+    code->Release( );
+
+    InteropArray<Byte> reflectionArray{ };
+    if ( reflection )
+    {
+        reflectionArray.MemCpy( reflection->GetBufferPointer( ), reflection->GetBufferSize( ) );
+        reflection->Release( );
+    }
+    return { .Code = codeArray, .Reflection = reflectionArray };
 }

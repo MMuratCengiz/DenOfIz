@@ -36,7 +36,7 @@ void ShaderAssetWriter::Write( const ShaderAsset &shaderAsset )
         return;
     }
 
-    m_shaderAsset = shaderAsset;
+    m_shaderAsset       = shaderAsset;
     m_streamStartOffset = m_writer->Position( );
     WriteHeader( 0 );
 
@@ -285,34 +285,34 @@ ShaderAsset ShaderAssetWriter::CreateFromCompiledShader( const CompiledShader &c
         stageAsset.EntryPoint = compiledStage->EntryPoint;
         stageAsset.RayTracing = compiledStage->RayTracing;
 
-        if ( compiledStage->DXIL )
+        if ( compiledStage->DXIL.NumElements( ) > 0 )
         {
-            const void  *data = compiledStage->DXIL->GetBufferPointer( );
-            const size_t size = compiledStage->DXIL->GetBufferSize( );
+            const void  *data = compiledStage->DXIL.Data( );
+            const size_t size = compiledStage->DXIL.NumElements( );
             stageAsset.DXIL.Resize( size );
             memcpy( stageAsset.DXIL.Data( ), data, size );
         }
 
-        if ( compiledStage->MSL )
+        if ( compiledStage->MSL.NumElements( ) > 0 )
         {
-            const void  *data = compiledStage->MSL->GetBufferPointer( );
-            const size_t size = compiledStage->MSL->GetBufferSize( );
+            const void  *data = compiledStage->MSL.Data( );
+            const size_t size = compiledStage->MSL.NumElements( );
             stageAsset.MSL.Resize( size );
             memcpy( stageAsset.MSL.Data( ), data, size );
         }
 
-        if ( compiledStage->SPIRV )
+        if ( compiledStage->SPIRV.NumElements( ) > 0 )
         {
-            const void  *data = compiledStage->SPIRV->GetBufferPointer( );
-            const size_t size = compiledStage->SPIRV->GetBufferSize( );
+            const void  *data = compiledStage->SPIRV.Data( );
+            const size_t size = compiledStage->SPIRV.NumElements( );
             stageAsset.SPIRV.Resize( size );
             memcpy( stageAsset.SPIRV.Data( ), data, size );
         }
 
-        if ( compiledStage->Reflection )
+        if ( compiledStage->Reflection.NumElements( ) > 0 )
         {
-            const void  *data = compiledStage->Reflection->GetBufferPointer( );
-            const size_t size = compiledStage->Reflection->GetBufferSize( );
+            const void  *data = compiledStage->Reflection.Data( );
+            const size_t size = compiledStage->Reflection.NumElements( );
             stageAsset.Reflection.Resize( size );
             memcpy( stageAsset.Reflection.Data( ), data, size );
         }

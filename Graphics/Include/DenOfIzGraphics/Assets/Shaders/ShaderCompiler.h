@@ -18,8 +18,8 @@ namespace DenOfIz
 
     struct DZ_API CompileResult
     {
-        IDxcBlob *Code       = nullptr;
-        IDxcBlob *Reflection = nullptr; // Reflection is only present if the TargetIL = DXIL.
+        InteropArray<Byte> Code;
+        InteropArray<Byte> Reflection;
     };
 
     class DZ_API ShaderCompiler final

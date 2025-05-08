@@ -41,10 +41,10 @@ void PutRootParameterDescriptorTable( std::vector<IRRootParameter1> &rootParamet
 // Todo perhaps share this with main reflection code
 void DxilToMsl::IterateBoundResources( CompiledShaderStage *shader, ReflectionCallback &callback )
 {
-    IDxcBlob       *reflectionBlob = shader->Reflection;
+    auto            reflectionBlob = shader->Reflection;
     const DxcBuffer reflectionBuffer{
-        .Ptr      = reflectionBlob->GetBufferPointer( ),
-        .Size     = reflectionBlob->GetBufferSize( ),
+        .Ptr      = reflectionBlob.Data( ),
+        .Size     = reflectionBlob.NumElements( ),
         .Encoding = 0,
     };
 
@@ -208,7 +208,7 @@ DxilToMsl::~DxilToMsl( )
     }
 }
 
-InteropArray<IDxcBlob *> DxilToMsl::Convert( const DxilToMslDesc &desc )
+InteropArray<InteropArray<Byte>> DxilToMsl::Convert( const DxilToMslDesc &desc )
 {
     const InteropArray<CompiledShaderStage *> &dxilShaders = desc.DXILShaders;
     // We use this vector to make sure register spaces are ordered correctly, the order of the root parameters is also how the Top Level Argument Buffer expects them
@@ -290,7 +290,7 @@ InteropArray<IDxcBlob *> DxilToMsl::Convert( const DxilToMslDesc &desc )
         IterateBoundResources( dxilShader, processResources );
     }
 
-    auto result = InteropArray<IDxcBlob *>( desc.Shaders.NumElements( ) );
+    auto result = InteropArray<InteropArray<Byte>>( desc.Shaders.NumElements( ) );
 
     CompileMslDesc compileMslDesc{ };
     compileMslDesc.RootSignature      = CreateRootSignature( registerSpaceRanges, false );
@@ -310,11 +310,11 @@ InteropArray<IDxcBlob *> DxilToMsl::Convert( const DxilToMslDesc &desc )
         compileDesc.TargetIL    = TargetIL::MSL;
 
         auto &dxilShader = dxilShaders.GetElement( shaderIndex );
-        if ( dxilShader->Reflection )
+        if ( dxilShader->Reflection.NumElements( ) > 0 )
         {
             const DxcBuffer reflectionBuffer{
-                .Ptr      = dxilShader->Reflection->GetBufferPointer( ),
-                .Size     = dxilShader->Reflection->GetBufferSize( ),
+                .Ptr      = dxilShader->Reflection.Data( ),
+                .Size     = dxilShader->Reflection.NumElements( ),
                 .Encoding = 0,
             };
             if ( m_shaderReflection )
@@ -325,7 +325,7 @@ InteropArray<IDxcBlob *> DxilToMsl::Convert( const DxilToMslDesc &desc )
             m_compiler.DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &m_shaderReflection ) );
         }
 
-        IDxcBlob *mslBlob = Compile( compileDesc, dxilShader->DXIL, compileMslDesc, shader.RayTracing );
+        auto mslBlob = Compile( compileDesc, dxilShader->DXIL, compileMslDesc, shader.RayTracing );
         result.SetElement( shaderIndex, mslBlob );
     }
 
@@ -335,7 +335,8 @@ InteropArray<IDxcBlob *> DxilToMsl::Convert( const DxilToMslDesc &desc )
     return result;
 }
 
-IDxcBlob *DxilToMsl::Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, const CompileMslDesc &compileMslDesc, const RayTracingShaderDesc &rayTracingShaderDesc ) const
+InteropArray<Byte> DxilToMsl::Compile( const CompileDesc &compileDesc, const InteropArray<Byte> &dxil, const CompileMslDesc &compileMslDesc,
+                                       const RayTracingShaderDesc &rayTracingShaderDesc ) const
 {
     const IRRootSignature *rootSignature  = compileMslDesc.RootSignature;
     const IRRootSignature *localSignature = compileMslDesc.LocalRootSignature;
@@ -350,6 +351,7 @@ IDxcBlob *DxilToMsl::Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, co
     if ( compileDesc.Stage == ShaderStage::Mesh && m_shaderReflection )
     {
         meshTopology = ShaderReflectionHelper::ExtractMeshOutputTopology( m_shaderReflection );
+        IRCompilerSetCompatibilityFlags( irCompiler, IRCompatibilityFlagPositionInvariance );
     }
     switch ( meshTopology )
     {
@@ -382,7 +384,7 @@ IDxcBlob *DxilToMsl::Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, co
                                               compileMslDesc.RayTracing.MaxRecursionDepth, IRRayGenerationCompilationVisibleFunction,
                                               IRIntersectionFunctionCompilationVisibleFunction );
 
-    IRObject *irDxil  = IRObjectCreateFromDXIL( static_cast<const uint8_t *>( dxil->GetBufferPointer( ) ), dxil->GetBufferSize( ), IRBytecodeOwnershipNone );
+    IRObject *irDxil  = IRObjectCreateFromDXIL( static_cast<const uint8_t *>( dxil.Data( ) ), dxil.NumElements( ), IRBytecodeOwnershipNone );
     IRError  *irError = nullptr;
     IRObject *outIr   = IRCompilerAllocCompileAndLink( irCompiler, compileDesc.EntryPoint.Get( ), irDxil, &irError );
 
@@ -399,8 +401,8 @@ IDxcBlob *DxilToMsl::Compile( const CompileDesc &compileDesc, IDxcBlob *dxil, co
     const auto   metalLibByteCode = new uint8_t[ metalLibSize ];
     IRMetalLibGetBytecode( metalLib, metalLibByteCode );
 
-    const auto mslBlob = new MetalDxcBlob_Impl( metalLibByteCode, metalLibSize );
-    mslBlob->IrObject  = outIr;
+    InteropArray<Byte> mslBlob{ };
+    mslBlob.MemCpy( metalLibByteCode, metalLibSize );
 
     IRMetalLibBinaryDestroy( metalLib );
     IRObjectDestroy( irDxil );
@@ -414,43 +416,4 @@ void DxilToMsl::DxcCheckResult( const HRESULT hr ) const
     {
         LOG( ERROR ) << "DXC Error: " << hr;
     }
-}
-
-MetalDxcBlob_Impl::MetalDxcBlob_Impl( uint8_t *data, const size_t size ) : m_data( data ), m_size( size )
-{
-    m_refCount = 1;
-}
-
-HRESULT MetalDxcBlob_Impl::QueryInterface( const IID &riid, void **ppvObject )
-{
-    return E_NOINTERFACE;
-}
-
-ULONG MetalDxcBlob_Impl::AddRef( )
-{
-    return ++m_refCount;
-}
-
-ULONG MetalDxcBlob_Impl::Release( )
-{
-    if ( --m_refCount == 0 )
-    {
-        if ( IrObject )
-        {
-            IRObjectDestroy( IrObject );
-        }
-        delete[] m_data;
-        delete this;
-    }
-    return m_refCount;
-}
-
-LPVOID MetalDxcBlob_Impl::GetBufferPointer( )
-{
-    return m_data;
-}
-
-SIZE_T MetalDxcBlob_Impl::GetBufferSize( )
-{
-    return m_size;
 }

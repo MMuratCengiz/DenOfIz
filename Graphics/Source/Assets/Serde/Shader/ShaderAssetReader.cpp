@@ -274,7 +274,7 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
 
     for ( uint32_t i = 0; i < numStages; ++i )
     {
-        const ShaderStageAsset &stageAsset    = shaderAsset.Stages.GetElement( i );
+        const ShaderStageAsset &stageAsset = shaderAsset.Stages.GetElement( i );
         // We expect the user to delete these pointers(ShaderProgram assigns them to a unique ptr).
         auto compiledStage = new CompiledShaderStage( );
         compiledShader.Stages.SetElement( i, compiledStage );
@@ -288,7 +288,7 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
             IDxcBlobEncoding *blob = nullptr;
             if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.DXIL.Data( ), stageAsset.DXIL.NumElements( ), DXC_CP_ACP, &blob ) ) )
             {
-                compiledStage->DXIL = blob;
+                compiledStage->DXIL.MemCpy( blob->GetBufferPointer( ), blob->GetBufferSize( ) );
             }
         }
 
@@ -297,7 +297,7 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
             IDxcBlobEncoding *blob = nullptr;
             if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.MSL.Data( ), stageAsset.MSL.NumElements( ), DXC_CP_ACP, &blob ) ) )
             {
-                compiledStage->MSL = blob;
+                compiledStage->MSL.MemCpy( blob->GetBufferPointer( ), blob->GetBufferSize( ) );
             }
         }
 
@@ -306,7 +306,7 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
             IDxcBlobEncoding *blob = nullptr;
             if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.SPIRV.Data( ), stageAsset.SPIRV.NumElements( ), DXC_CP_ACP, &blob ) ) )
             {
-                compiledStage->SPIRV = blob;
+                compiledStage->SPIRV.MemCpy( blob->GetBufferPointer( ), blob->GetBufferSize( ) );
             }
         }
 
@@ -315,7 +315,7 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
             IDxcBlobEncoding *blob = nullptr;
             if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.Reflection.Data( ), stageAsset.Reflection.NumElements( ), DXC_CP_ACP, &blob ) ) )
             {
-                compiledStage->Reflection = blob;
+                compiledStage->Reflection.MemCpy( blob->GetBufferPointer( ), blob->GetBufferSize( ) );
             }
         }
     }

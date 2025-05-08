@@ -93,7 +93,7 @@ namespace DenOfIz
         void CreateMeshPipeline( );
         void InitStencilFace( MTLStencilDescriptor *stencilDesc, const StencilFace &stencilFace );
 
-        id<MTLLibrary>  LoadLibrary( IDxcBlob *&blob );
+        id<MTLLibrary>  LoadLibrary( InteropArray<Byte> &blob );
         id<MTLFunction> CreateShaderFunction( id<MTLLibrary> library, const std::string &entryPoint );
         id<MTLLibrary>  NewIndirectDispatchLibrary( );
         id<MTLLibrary>  NewSynthesizedIntersectionLibrary( const IRHitGroupType &hitGroupType );

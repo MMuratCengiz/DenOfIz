@@ -56,7 +56,7 @@ namespace DenOfIz
         Task,
         Mesh
     };
-    
+
     /// <summary>
     /// Thread group information for compute, mesh, and task shaders
     /// </summary>
@@ -133,10 +133,10 @@ namespace DenOfIz
     struct DZ_API CompiledShaderStage : private NonCopyable
     {
         ShaderStage          Stage;
-        IDxcBlob            *DXIL;
-        IDxcBlob            *MSL;
-        IDxcBlob            *SPIRV;
-        IDxcBlob            *Reflection;
+        InteropArray<Byte>   DXIL;
+        InteropArray<Byte>   MSL;
+        InteropArray<Byte>   SPIRV;
+        InteropArray<Byte>   Reflection;
         InteropString        EntryPoint;
         RayTracingShaderDesc RayTracing;
         ThreadGroupInfo      ThreadGroup; // Thread group size for compute, mesh, and task shaders

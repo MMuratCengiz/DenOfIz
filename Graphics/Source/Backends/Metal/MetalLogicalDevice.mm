@@ -61,8 +61,8 @@ InteropArray<PhysicalDevice> MetalLogicalDevice::ListPhysicalDevices( )
         physicalDevice.Capabilities.Tearing                   = true;
         physicalDevice.Capabilities.Tessellation              = true;
         physicalDevice.Capabilities.RayTracing                = [device supportsRaytracing];
-        physicalDevice.Capabilities.MeshShaders               = [device supportsFamilyMacOS1] || [device supportsFamilyApple8];
-        physicalDevice.Capabilities.VariableRateShading       = [device supportsFamilyMacOS1] || [device supportsFamilyApple7];
+        physicalDevice.Capabilities.MeshShaders               = true; //Todo
+        physicalDevice.Capabilities.VariableRateShading       = true; //Todo
         physicalDevice.Capabilities.ShaderInt16               = true;
         physicalDevice.Capabilities.ShaderFloat16             = true;
         physicalDevice.Capabilities.TiledResources            = true;

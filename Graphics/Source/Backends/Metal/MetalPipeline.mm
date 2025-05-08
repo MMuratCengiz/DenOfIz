@@ -320,10 +320,10 @@ void MetalPipeline::CreateRayTracingPipeline( )
     [m_intersectionFunctionTable setFunction:proceduralFnHandle atIndex:ProceduralIntersectionShader];
 }
 
-id<MTLLibrary> MetalPipeline::LoadLibrary( IDxcBlob *&blob )
+id<MTLLibrary> MetalPipeline::LoadLibrary( InteropArray<Byte> &blob )
 {
     NSError        *error      = nullptr;
-    dispatch_data_t shaderData = dispatch_data_create( blob->GetBufferPointer( ), blob->GetBufferSize( ), NULL, DISPATCH_DATA_DESTRUCTOR_DEFAULT );
+    dispatch_data_t shaderData = dispatch_data_create( blob.Data( ), blob.NumElements( ), NULL, DISPATCH_DATA_DESTRUCTOR_DEFAULT );
     id<MTLLibrary>  library    = [m_context->Device newLibraryWithData:shaderData error:&error];
     if ( error != nil )
     {
