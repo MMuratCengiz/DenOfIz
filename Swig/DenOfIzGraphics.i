@@ -7,7 +7,6 @@
 
 %{
 #include "DenOfIzGraphics/DenOfIzGraphics.h"
-
 %}
 #define DZ_API
 #if defined(SWIGJAVA)
