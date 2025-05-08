@@ -102,16 +102,16 @@ namespace DenOfIz
         InteropArray<uint32_t>                   m_indexData;
 
     public:
-        explicit TextRenderer( const TextRendererDesc &desc );
-        ~TextRenderer( );
+        DZ_API explicit TextRenderer( const TextRendererDesc &desc );
+        DZ_API ~TextRenderer( );
 
-        void Initialize( );
-        void SetFont( Font *font );
-        void SetAntiAliasingMode( AntiAliasingMode antiAliasingMode );
-        void SetProjectionMatrix( const Float_4x4 &projectionMatrix );
-        void BeginBatch( );
-        void AddText( const TextRenderDesc &params );
-        void EndBatch( ICommandList *commandList );
+        DZ_API void Initialize( );
+        DZ_API void SetFont( Font *font );
+        DZ_API void SetAntiAliasingMode( AntiAliasingMode antiAliasingMode );
+        DZ_API void SetProjectionMatrix( const Float_4x4 &projectionMatrix );
+        DZ_API void BeginBatch( );
+        DZ_API void AddText( const TextRenderDesc &params );
+        DZ_API void EndBatch( ICommandList *commandList );
 
     private:
         void UpdateAtlasTexture( ICommandList *commandList );

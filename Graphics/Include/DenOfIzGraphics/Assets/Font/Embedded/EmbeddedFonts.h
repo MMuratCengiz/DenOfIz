@@ -22,13 +22,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class DZ_API EmbeddedFonts
+    class EmbeddedFonts
     {
-        public:
-            static FontAsset *GetInconsolataRegular( )
-            {
-                static FontAsset inconsolataRegular;
-                return &inconsolataRegular;
-            }
+    public:
+        DZ_API static FontAsset *GetInconsolataRegular( )
+        {
+            static FontAsset inconsolataRegular = InconsolataRegular( );
+            return &inconsolataRegular;
+        }
+
+    private:
+        static FontAsset InconsolataRegular( )
+        {
+            BinaryReader    binaryReader( InconsolataRegular::Data );
+            FontAssetReader reader( { &binaryReader } );
+            return reader.Read( );
+        }
     };
 }

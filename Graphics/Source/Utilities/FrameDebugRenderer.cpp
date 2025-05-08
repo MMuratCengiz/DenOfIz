@@ -28,7 +28,6 @@ FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m
     DZ_NOT_NULL( m_desc.LogicalDevice );
 
     m_frameTimes.resize( m_maxFrameTimeSamples, 0.0 );
-
     m_time.OnEachSecond = [ this ]( const double fps ) { m_fps = fps; };
 
     if ( m_desc.FontAsset == nullptr )
