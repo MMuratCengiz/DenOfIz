@@ -78,7 +78,7 @@ namespace DenOfIz
         [[nodiscard]] VkPipelineViewportStateCreateInfo            ConfigureViewport( ) const;
         [[nodiscard]] VkPipelineMultisampleStateCreateInfo         ConfigureMultisampling( ) const;
         [[nodiscard]] VkPipelineDepthStencilStateCreateInfo        CreateDepthAttachmentImages( ) const;
-        VkShaderModule                                             CreateShaderModule( IDxcBlob *blob ) const;
+        VkShaderModule                                             CreateShaderModule( const InteropArray<Byte>& blob ) const;
     };
 
 } // namespace DenOfIz
