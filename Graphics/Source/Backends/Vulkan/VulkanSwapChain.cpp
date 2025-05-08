@@ -72,22 +72,31 @@ void VulkanSwapChain::CreateSurface( )
 void VulkanSwapChain::CreateSwapChain( )
 {
     VkSurfaceCapabilitiesKHR capabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR( m_context->PhysicalDevice, m_surface, &capabilities );
+    VK_CHECK_RESULT( vkGetPhysicalDeviceSurfaceCapabilitiesKHR( m_context->PhysicalDevice, m_surface, &capabilities ) );
 
     ChooseExtent2D( capabilities );
-    if ( const uint32_t imageCount = std::min( capabilities.maxImageCount, capabilities.minImageCount + 1 ); imageCount < m_desc.NumBuffers )
+
+    uint32_t desiredImageCount = m_desc.NumBuffers;
+    uint32_t imageCount        = capabilities.minImageCount + 1;
+
+    if ( capabilities.maxImageCount > 0 )
     {
-        LOG( WARNING ) << "Requested buffer count is not supported. Using the maximum supported buffer count: " << imageCount;
-        m_desc.NumBuffers = imageCount;
+        imageCount = std::min( imageCount, capabilities.maxImageCount );
+    }
+
+    if ( imageCount < desiredImageCount )
+    {
+        DLOG( WARNING ) << "Requested buffer count " << desiredImageCount << " is not supported. Using " << imageCount;
+        desiredImageCount = imageCount;
     }
 
     VkSwapchainCreateInfoKHR createInfo{ };
     createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     createInfo.surface          = m_surface;
-    createInfo.minImageCount    = m_desc.NumBuffers;
+    createInfo.minImageCount    = desiredImageCount;
     createInfo.imageFormat      = VulkanEnumConverter::ConvertImageFormat( m_desc.BackBufferFormat );
     createInfo.imageColorSpace  = m_colorSpace;
-    createInfo.imageExtent      = VkExtent2D( m_width, m_height );
+    createInfo.imageExtent      = VkExtent2D{ m_width, m_height };
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage       = VulkanEnumConverter::ConvertTextureUsage( ResourceDescriptor::RenderTarget, m_desc.ImageUsages );
 
@@ -110,9 +119,15 @@ void VulkanSwapChain::CreateSwapChain( )
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     createInfo.presentMode    = m_presentMode;
     createInfo.clipped        = VK_TRUE;
-    createInfo.oldSwapchain   = m_swapChain;
+    createInfo.oldSwapchain   = VK_NULL_HANDLE; // Initial creation has no old swap chain
 
-    VK_CHECK_RESULT( vkCreateSwapchainKHR( m_context->LogicalDevice, &createInfo, nullptr, &m_swapChain ) );
+    const VkResult result = vkCreateSwapchainKHR( m_context->LogicalDevice, &createInfo, nullptr, &m_swapChain );
+    if ( result != VK_SUCCESS )
+    {
+        LOG( ERROR ) << "Failed to create initial swap chain: " << result;
+        return;
+    }
+
     CreateSwapChainImages( VulkanEnumConverter::ConvertImageFormat( m_desc.BackBufferFormat ) );
 }
 
@@ -193,16 +208,16 @@ void VulkanSwapChain::Dispose( )
 uint32_t VulkanSwapChain::AcquireNextImage( ISemaphore *imageReadySemaphore )
 {
     const VulkanSemaphore *semaphore = dynamic_cast<VulkanSemaphore *>( imageReadySemaphore );
-    uint32_t               nextImage;
-    const VkResult         result = vkAcquireNextImageKHR( m_context->LogicalDevice, m_swapChain, UINT64_MAX, semaphore->GetSemaphore( ), nullptr, &nextImage );
-    if ( result == VK_ERROR_OUT_OF_DATE_KHR )
-    {
-        throw std::runtime_error( "failed to acquire swap chain image!" );
-    }
+    uint32_t               nextImage = 0;
+
+    constexpr int  timeout = 60 * 1000 * 1000 * 1000;
+    const VkResult result  = vkAcquireNextImageKHR( m_context->LogicalDevice, m_swapChain, timeout, semaphore->GetSemaphore( ), VK_NULL_HANDLE, &nextImage );
     if ( result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR )
     {
-        throw std::runtime_error( "failed to acquire swap chain image!" );
+        DLOG( ERROR ) << "VulkanSwapChain::AcquireNextImage - Failed to acquire next image: " << result;
+        return 0;
     }
+
     return nextImage;
 }
 
@@ -226,18 +241,17 @@ PresentResult VulkanSwapChain::Present( const PresentDesc &presentDesc )
     presentInfo.pImageIndices      = &presentDesc.Image;
     presentInfo.pResults           = nullptr;
 
-    switch ( const VkResult result = vkQueuePresentKHR( m_queue, &presentInfo ) )
+    switch ( vkQueuePresentKHR( m_queue, &presentInfo ) )
     {
     case VK_SUCCESS:
         return PresentResult::Success;
     case VK_SUBOPTIMAL_KHR:
         return PresentResult::Suboptimal;
     case VK_ERROR_OUT_OF_DATE_KHR:
-        return PresentResult::DeviceLost;
+        return PresentResult::Suboptimal;
     case VK_ERROR_DEVICE_LOST:
         return PresentResult::DeviceLost;
     default:
-        LOG( ERROR ) << "Present failed with VkResult: " << result;
         return PresentResult::DeviceLost;
     }
 }
@@ -271,11 +285,81 @@ Format VulkanSwapChain::GetPreferredFormat( )
 
 void VulkanSwapChain::Resize( const uint32_t width, const uint32_t height )
 {
+    if ( width == 0 || height == 0 )
+    {
+        return;
+    }
+
+    const VkSwapchainKHR oldSwapChain = m_swapChain;
+    m_swapChain                       = VK_NULL_HANDLE;
+
     m_width  = width;
     m_height = height;
+
     Dispose( );
-    CreateSurface( );
-    CreateSwapChain( );
+
+    VkSurfaceCapabilitiesKHR capabilities;
+    VK_CHECK_RESULT( vkGetPhysicalDeviceSurfaceCapabilitiesKHR( m_context->PhysicalDevice, m_surface, &capabilities ) );
+
+    uint32_t desiredImageCount = m_desc.NumBuffers;
+    uint32_t imageCount        = capabilities.minImageCount + 1;
+
+    if ( capabilities.maxImageCount > 0 )
+    {
+        imageCount = std::min( imageCount, capabilities.maxImageCount );
+    }
+
+    if ( imageCount < desiredImageCount )
+    {
+        DLOG( WARNING ) << "Requested buffer count " << desiredImageCount << " is not supported. Using " << imageCount;
+        desiredImageCount = imageCount;
+    }
+
+    VkSwapchainCreateInfoKHR createInfo{ };
+    createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface          = m_surface;
+    createInfo.minImageCount    = desiredImageCount;
+    createInfo.imageFormat      = VulkanEnumConverter::ConvertImageFormat( m_desc.BackBufferFormat );
+    createInfo.imageColorSpace  = m_colorSpace;
+    createInfo.imageExtent      = VkExtent2D{ m_width, m_height };
+    createInfo.imageArrayLayers = 1;
+    createInfo.imageUsage       = VulkanEnumConverter::ConvertTextureUsage( ResourceDescriptor::RenderTarget, m_desc.ImageUsages );
+
+    const uint32_t qfIndexes[ 2 ] = { m_context->QueueFamilies.at( VulkanQueueType::Graphics ).Index, m_context->QueueFamilies.at( VulkanQueueType::Presentation ).Index };
+
+    if ( qfIndexes[ 0 ] != qfIndexes[ 1 ] )
+    {
+        createInfo.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices   = qfIndexes;
+    }
+    else
+    {
+        createInfo.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
+        createInfo.queueFamilyIndexCount = 0;
+        createInfo.pQueueFamilyIndices   = nullptr;
+    }
+
+    createInfo.preTransform   = capabilities.currentTransform;
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.presentMode    = m_presentMode;
+    createInfo.clipped        = VK_TRUE;
+    createInfo.oldSwapchain   = oldSwapChain;
+
+    const VkResult result = vkCreateSwapchainKHR( m_context->LogicalDevice, &createInfo, nullptr, &m_swapChain );
+    if ( result != VK_SUCCESS )
+    {
+        // Create fresh swapChain
+        createInfo.oldSwapchain = VK_NULL_HANDLE;
+        VK_CHECK_RESULT( vkCreateSwapchainKHR( m_context->LogicalDevice, &createInfo, nullptr, &m_swapChain ) );
+    }
+
+    if ( oldSwapChain != VK_NULL_HANDLE )
+    {
+        vkDestroySwapchainKHR( m_context->LogicalDevice, oldSwapChain, nullptr );
+    }
+
+    CreateSwapChainImages( VulkanEnumConverter::ConvertImageFormat( m_desc.BackBufferFormat ) );
 }
 
 ITextureResource *VulkanSwapChain::GetRenderTarget( const uint32_t image )

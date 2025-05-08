@@ -25,7 +25,8 @@ Camera::Camera( const float aspectRatio, const float fovY, const float nearZ, co
     m_position( XMVectorSet( 0.0f, 0.0f, -5.0f, 1.0f ) ), m_rotationQuaternion( XMQuaternionIdentity( ) ), m_targetPosition( XMVectorSet( 0.0f, 0.0f, -5.0f, 1.0f ) ),
     m_targetRotationQuaternion( XMQuaternionIdentity( ) ), m_worldUp( XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f ) ), m_moveSpeed( DEFAULT_MOVE_SPEED ),
     m_rotateSpeed( DEFAULT_ROTATE_SPEED ), m_sensitivity( DEFAULT_SENSITIVITY ), m_smoothFactor( DEFAULT_SMOOTH_FACTOR ), m_yaw( -90.0f ), m_pitch( 0.0f ), m_targetYaw( -90.0f ),
-    m_targetPitch( 0.0f ), m_firstMouse( true ), m_lastMouseX( 0 ), m_lastMouseY( 0 ), m_isOrbiting( false ), m_isDragging( false )
+    m_targetPitch( 0.0f ), m_firstMouse( true ), m_lastMouseX( 0 ), m_lastMouseY( 0 ), m_isOrbiting( false ), m_isDragging( false ), m_fovY( fovY ), m_nearZ( nearZ ),
+    m_farZ( farZ )
 {
     m_front = XMVectorSet( 0.0f, 0.0f, 1.0f, 0.0f );
     m_right = XMVector3Normalize( XMVector3Cross( m_worldUp, m_front ) );
@@ -254,4 +255,9 @@ XMVECTOR Camera::Position( ) const
 XMMATRIX Camera::ViewProjectionMatrix( ) const
 {
     return XMMatrixMultiply( m_viewMatrix, m_projectionMatrix );
+}
+
+void Camera::SetAspectRatio( const float aspectRatio )
+{
+    m_projectionMatrix = XMMatrixPerspectiveFovLH( m_fovY, aspectRatio, m_nearZ, m_farZ );
 }

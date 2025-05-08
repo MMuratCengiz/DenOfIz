@@ -53,7 +53,7 @@ void DX12SwapChain::CreateSwapChain( )
     swapChainDesc.Scaling               = DXGI_SCALING_STRETCH;
     swapChainDesc.SwapEffect            = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapChainDesc.AlphaMode             = DXGI_ALPHA_MODE_IGNORE;
-    swapChainDesc.Flags                 = ( m_context->SelectedDeviceInfo.Capabilities.Tearing ) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u;
+    swapChainDesc.Flags                 = m_context->SelectedDeviceInfo.Capabilities.Tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u;
 
     DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsSwapChainDesc = { };
     fsSwapChainDesc.Windowed                        = TRUE;
@@ -147,7 +147,7 @@ void DX12SwapChain::SetColorSpace( )
     }
 
     UINT colorSpaceSupport = 0;
-    if ( SUCCEEDED( m_swapChain->CheckColorSpaceSupport( m_colorSpace, &colorSpaceSupport ) ) && ( colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT ) )
+    if ( SUCCEEDED( m_swapChain->CheckColorSpaceSupport( m_colorSpace, &colorSpaceSupport ) ) && colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT )
     {
         DX_CHECK_RESULT( m_swapChain->SetColorSpace1( m_colorSpace ) );
     }
@@ -179,21 +179,76 @@ PresentResult DX12SwapChain::Present( const PresentDesc &desc )
 
 void DX12SwapChain::Resize( const uint32_t width, const uint32_t height )
 {
-    m_desc.Width  = width;
-    m_desc.Height = height;
-
-    HRESULT hr = m_swapChain->ResizeBuffers( m_desc.NumBuffers, width, height, DX12EnumConverter::ConvertFormat( m_desc.BackBufferFormat ),
-                                             m_context->SelectedDeviceInfo.Capabilities.Tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u );
-
-    if ( hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET )
+    if ( width == 0 || height == 0 )
     {
-        DLOG( INFO ) << std::format( "Device Lost on ResizeBuffers: Reason code 0x{}", hr == DXGI_ERROR_DEVICE_REMOVED ? m_context->D3DDevice->GetDeviceRemovedReason( ) : hr );
-
-        m_context->IsDeviceLost = true;
+        DLOG( WARNING ) << "Cannot resize swap chain to zero dimensions";
         return;
     }
 
+    m_commandQueue->WaitIdle( );
+    m_desc.Width  = width;
+    m_desc.Height = height;
+    for ( auto &buffer : m_buffers )
+    {
+        buffer.reset( );
+    }
+    for ( auto &rt : m_renderTargets )
+    {
+        rt.reset( );
+    }
+
+    m_depthStencil.reset( );
+
+    HRESULT hr = m_swapChain->ResizeBuffers( m_desc.NumBuffers, width, height, DX12EnumConverter::ConvertFormat( m_desc.BackBufferFormat ),
+                                             m_context->SelectedDeviceInfo.Capabilities.Tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u );
+    if ( hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET )
+    {
+        DLOG( ERROR ) << std::format( "Device Lost on ResizeBuffers: Reason code 0x{:x}", hr == DXGI_ERROR_DEVICE_REMOVED ? m_context->D3DDevice->GetDeviceRemovedReason( ) : hr );
+        m_context->IsDeviceLost = true;
+        return;
+    }
     DX_CHECK_RESULT( hr );
+    m_renderTargets.resize( m_desc.NumBuffers );
+    m_renderTargetCpuHandles.resize( m_desc.NumBuffers );
+    m_buffers.resize( m_desc.NumBuffers );
+
+    for ( uint32_t i = 0; i < m_desc.NumBuffers; i++ )
+    {
+        DX_CHECK_RESULT( m_swapChain->GetBuffer( i, IID_PPV_ARGS( &m_buffers.at( i ) ) ) );
+        D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = { };
+        rtvDesc.Format                        = DX12EnumConverter::ConvertFormat( m_desc.BackBufferFormat );
+        rtvDesc.ViewDimension                 = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+        m_renderTargetCpuHandles[ i ] = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_RTV ]->GetNextHandle( 1 ).Cpu;
+        auto buffer                   = m_buffers.at( i ).get( );
+        buffer->SetName( L"SwapChain Buffer" );
+        m_renderTargets[ i ] = std::make_unique<DX12TextureResource>( buffer, m_renderTargetCpuHandles[ i ] );
+        m_context->D3DDevice->CreateRenderTargetView( m_renderTargets[ i ]->Resource( ), &rtvDesc, m_renderTargetCpuHandles[ i ] );
+    }
+
+    const CD3DX12_HEAP_PROPERTIES depthHeapProperties( D3D12_HEAP_TYPE_DEFAULT );
+
+    const DXGI_FORMAT   depthBufferFormat = DX12EnumConverter::ConvertFormat( m_desc.DepthBufferFormat );
+    D3D12_RESOURCE_DESC depthStencilDesc  = CD3DX12_RESOURCE_DESC::Tex2D( depthBufferFormat, width, height, 1, 1 );
+    depthStencilDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+    D3D12_CLEAR_VALUE depthOptimizedClearValue    = { };
+    depthOptimizedClearValue.Format               = depthBufferFormat;
+    depthOptimizedClearValue.DepthStencil.Depth   = 1.0f;
+    depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+    DX_CHECK_RESULT( m_context->D3DDevice->CreateCommittedResource( &depthHeapProperties, D3D12_HEAP_FLAG_NONE, &depthStencilDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE,
+                                                                    &depthOptimizedClearValue, IID_PPV_ARGS( m_depthStencil.put( ) ) ) );
+
+    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = { };
+    dsvDesc.Format                        = depthBufferFormat;
+    dsvDesc.ViewDimension                 = D3D12_DSV_DIMENSION_TEXTURE2D;
+
+    m_depthStencilCpuHandle = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_DSV ]->GetNextHandle( 1 ).Cpu;
+    m_context->D3DDevice->CreateDepthStencilView( m_depthStencil.get( ), &dsvDesc, m_depthStencilCpuHandle );
+
+    m_viewport.Width  = static_cast<float>( width );
+    m_viewport.Height = static_cast<float>( height );
 }
 
 Viewport DX12SwapChain::GetViewport( )

@@ -36,9 +36,9 @@ int DenOfIz::Main( IExample *example )
     }
 
     uint32_t windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_INPUT_FOCUS;
-    SDL_SetRelativeMouseMode( SDL_TRUE );
-    SDL_SetHint( SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1" );
-    SDL_SetHint( SDL_HINT_MOUSE_RELATIVE_MODE_CENTER, "1" );
+    // SDL_SetRelativeMouseMode( SDL_TRUE );
+    // SDL_SetHint( SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1" );
+    // SDL_SetHint( SDL_HINT_MOUSE_RELATIVE_MODE_CENTER, "1" );
 
 #ifdef BUILD_VK
     windowFlags |= SDL_WINDOW_VULKAN;

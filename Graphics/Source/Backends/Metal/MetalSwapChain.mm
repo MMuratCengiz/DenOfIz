@@ -71,21 +71,32 @@ Viewport MetalSwapChain::GetViewport( )
 
 void MetalSwapChain::Resize( uint32_t width, uint32_t height )
 {
+    if (width == 0 || height == 0) {
+        return;
+    }
+    
     @autoreleasepool
     {
-        [m_metalLayer setDrawableSize:CGSizeMake( width, height )];
-
+        m_drawable = nil;
+        m_presentCommandBuffer = nil;
+        
+        [m_metalLayer setDrawableSize:CGSizeMake(width, height)];
+        
         m_drawableDesc.Width        = width;
         m_drawableDesc.Height       = height;
         m_drawableDesc.Format       = m_desc.BackBufferFormat;
         m_drawableDesc.InitialUsage = ResourceUsage::RenderTarget;
         m_drawableDesc.HeapType     = HeapType::GPU;
         m_drawableDesc.DebugName    = "SwapChain";
-
-        m_renderTargets.resize( m_desc.NumBuffers );
-        for ( uint32_t i = 0; i < m_desc.NumBuffers; ++i )
+        
+        m_desc.Width = width;
+        m_desc.Height = height;
+        
+        m_renderTargets.clear();
+        m_renderTargets.resize(m_desc.NumBuffers);
+        for (uint32_t i = 0; i < m_desc.NumBuffers; ++i)
         {
-            m_renderTargets[ i ] = std::make_unique<MetalTextureResource>( m_context, m_drawableDesc, nil );
+            m_renderTargets[i] = std::make_unique<MetalTextureResource>(m_context, m_drawableDesc, nil);
         }
     }
 }

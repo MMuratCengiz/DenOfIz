@@ -42,6 +42,7 @@ public:
     DZ_EXAMPLES_API void HandleEvent( const SDL_Event &event );
     void                 SetPosition( const DirectX::XMVECTOR &position );
     void                 SetFront( const DirectX::XMVECTOR &front );
+    DZ_EXAMPLES_API void SetAspectRatio( float aspectRatio );
 
 private:
     void UpdateViewMatrix( );
@@ -79,4 +80,8 @@ private:
 
     bool m_isOrbiting;
     bool m_isDragging;
+
+    float m_fovY;
+    float m_nearZ;
+    float m_farZ;
 };

@@ -32,7 +32,7 @@ namespace DenOfIz
         const char *Title     = "DenOfIzExample";
         uint32_t    Width     = 1280;
         uint32_t    Height    = 720;
-        bool        Resizable = false;
+        bool        Resizable = true;
     };
     class IExample
     {
@@ -102,15 +102,36 @@ namespace DenOfIz
             m_frameSync->ExecuteCommandList( frameIndex );
             Present( frameIndex );
         }
-        virtual void Render( uint32_t frameIndex, ICommandList *commandList ) { }
+        virtual void Render( uint32_t frameIndex, ICommandList *commandList )
+        {
+        }
         void Present( const uint64_t frameIndex )
         {
             switch ( m_frameSync->Present( frameIndex ) )
             {
             case PresentResult::Success:
-            case PresentResult::Suboptimal:
                 break;
-            default:
+            case PresentResult::Suboptimal:
+                DLOG( INFO ) << "Swap chain is suboptimal, recreating...";
+                if ( m_windowHandle )
+                {
+                    const GraphicsWindowSurface surface = m_windowHandle->GetSurface( );
+                    m_windowDesc.Width                  = surface.Width;
+                    m_windowDesc.Height                 = surface.Height;
+                }
+                if ( m_windowDesc.Width > 0 && m_windowDesc.Height > 0 )
+                {
+                    HandleResize( m_windowDesc.Width, m_windowDesc.Height );
+                }
+                break;
+
+            case PresentResult::Timeout:
+                DLOG( WARNING ) << "Present timed out, continuing...";
+                break;
+
+            case PresentResult::DeviceLost:
+                DLOG( ERROR ) << "Device lost during presentation, recreating swap chain...";
+                m_logicalDevice->WaitIdle( );
                 CreateSwapChain( );
                 break;
             }
@@ -132,6 +153,41 @@ namespace DenOfIz
                     break;
                 }
             }
+            else if ( event.type == SDL_WINDOWEVENT )
+            {
+                if ( event.window.event == SDL_WINDOWEVENT_RESIZED || event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED )
+                {
+                    const uint32_t newWidth  = event.window.data1;
+                    const uint32_t newHeight = event.window.data2;
+                    if ( newWidth > 0 && newHeight > 0 )
+                    {
+                        DLOG( INFO ) << "Window resized to " << newWidth << "x" << newHeight;
+                        HandleResize( newWidth, newHeight );
+                    }
+                }
+            }
+        }
+
+        void HandleResize( const uint32_t width, const uint32_t height )
+        {
+            m_frameSync->WaitIdle( );
+            m_graphicsQueue->WaitIdle( );
+            m_windowDesc.Width  = width;
+            m_windowDesc.Height = height;
+            m_swapChain->Resize( width, height );
+            if ( m_camera )
+            {
+                m_camera->SetAspectRatio( static_cast<float>( width ) / height );
+            }
+            for ( uint32_t i = 0; i < NumSwapChainBuffers; i++ )
+            {
+                m_resourceTracking.TrackTexture( m_swapChain->GetRenderTarget( i ), ResourceUsage::Common );
+            }
+            OnResize( width, height );
+        }
+
+        virtual void OnResize( uint32_t width, uint32_t height )
+        {
         }
         virtual void Update( ) = 0;
         virtual void Quit( )
