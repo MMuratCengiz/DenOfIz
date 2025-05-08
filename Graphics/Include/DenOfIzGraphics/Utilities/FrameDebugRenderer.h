@@ -79,7 +79,6 @@ namespace DenOfIz
             Float_4       Color;
         };
         std::vector<DebugLine> m_customDebugLines;
-
     public:
         explicit FrameDebugRenderer( const FrameDebugRendererDesc &desc );
         ~FrameDebugRenderer( ) = default;

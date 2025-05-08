@@ -24,8 +24,11 @@ using namespace DenOfIz;
 
 FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m_desc( desc )
 {
-    DZ_NOT_NULL( m_desc.GraphicsApi );
     DZ_NOT_NULL( m_desc.LogicalDevice );
+    if ( m_desc.GraphicsApi == nullptr )
+    {
+        LOG( WARNING ) << "FrameDebugRendererDesc.GraphicsApi is null, debug info will not contain API information.";
+    }
 
     m_frameTimes.resize( m_maxFrameTimeSamples, 0.0 );
     m_time.OnEachSecond = [ this ]( const double fps ) { m_fps = fps; };
@@ -40,8 +43,11 @@ FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m
     fontDesc.FontAsset = m_desc.FontAsset;
     m_font             = m_fontLibrary->LoadFont( fontDesc );
 
-    m_backendName = m_desc.GraphicsApi->ActiveAPI( );
-    m_gpuName     = m_desc.LogicalDevice->DeviceInfo( ).Name;
+    if ( m_desc.GraphicsApi != nullptr )
+    {
+        m_backendName = m_desc.GraphicsApi->ActiveAPI( );
+    }
+    m_gpuName = m_desc.LogicalDevice->DeviceInfo( ).Name;
 
     const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( m_desc.ScreenWidth ), static_cast<float>( m_desc.ScreenHeight ), 0.0f, 0.0f, 1.0f );
     XMStoreFloat4x4( &m_projectionMatrix, projection );
@@ -55,6 +61,7 @@ FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m
     m_textRenderer->Initialize( );
     m_textRenderer->SetFont( m_font );
     m_textRenderer->SetAntiAliasingMode( AntiAliasingMode::Grayscale );
+    m_textRenderer->SetProjectionMatrix( InteropMathConverter::Float_4x4FromXMFLOAT4X4( m_projectionMatrix ) );
 }
 
 void FrameDebugRenderer::UpdateStats( const float deltaTime )
@@ -148,16 +155,19 @@ void FrameDebugRenderer::Render( ICommandList *commandList )
     m_textRenderer->AddText( memParams );
     yPos += lineHeight;
 
-    TextRenderDesc backendParams;
-    backendParams.Text             = InteropString( "API: " ).Append( m_backendName.Get( ) );
-    backendParams.X                = rightMargin;
-    backendParams.Y                = yPos;
-    backendParams.Color            = m_desc.TextColor;
-    backendParams.Scale            = m_desc.Scale;
-    backendParams.HorizontalCenter = true;
-    backendParams.Direction        = m_desc.Direction;
-    m_textRenderer->AddText( backendParams );
-    yPos += lineHeight;
+    if ( m_backendName.NumChars( ) > 0 )
+    {
+        TextRenderDesc backendParams;
+        backendParams.Text             = InteropString( "API: " ).Append( m_backendName.Get( ) );
+        backendParams.X                = rightMargin;
+        backendParams.Y                = yPos;
+        backendParams.Color            = m_desc.TextColor;
+        backendParams.Scale            = m_desc.Scale;
+        backendParams.HorizontalCenter = true;
+        backendParams.Direction        = m_desc.Direction;
+        m_textRenderer->AddText( backendParams );
+        yPos += lineHeight;
+    }
 
     if ( !m_gpuName.IsEmpty( ) )
     {
