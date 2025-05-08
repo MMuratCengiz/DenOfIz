@@ -1027,7 +1027,7 @@ void AssimpImporter::WriteTextureAsset( ImportContext &context, const aiTexture 
     }
     else
     {
-        sourceTexture = std::make_unique<Texture>( path );
+        sourceTexture = std::make_unique<Texture>( InteropString( path.c_str( ) ) );
     }
 
     texAsset.Width        = sourceTexture->Width;
@@ -1056,7 +1056,7 @@ void AssimpImporter::WriteTextureAsset( ImportContext &context, const aiTexture 
             const size_t mipOffset = mipData.DataOffset;
 
             InteropArray<Byte> mipDataBuffer;
-            mipDataBuffer.MemCpy( sourceTexture->Data.data( ) + mipOffset, mipSize );
+            mipDataBuffer.MemCpy( sourceTexture->Data.Data( ) + mipOffset, mipSize );
             assetWriter.AddPixelData( mipDataBuffer, mipData.MipIndex, mipData.ArrayIndex );
         } );
 

@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-Texture::Texture( const std::string &path ) : m_path( Utilities::AppPath( path ) )
+Texture::Texture( const InteropString &path ) : m_path( Utilities::AppPath( path.Get( ) ) )
 {
     if ( !std::filesystem::exists( m_path ) )
     {
@@ -137,8 +137,8 @@ void Texture::LoadTextureSTB( )
     RowPitch     = Width * 4;
     NumRows      = Height;
     SlicePitch   = RowPitch * NumRows;
-    Data.resize( SlicePitch );
-    Data.assign( contents, contents + SlicePitch );
+    Data.Resize( SlicePitch );
+    Data.MemCpy( contents, SlicePitch );
 }
 
 void Texture::LoadTextureDDS( )
@@ -184,8 +184,8 @@ void Texture::LoadTextureDDS( )
     NumRows      = std::max( 1U, ( Height + ( BlockSize - 1 ) ) / BlockSize );
     SlicePitch   = RowPitch * NumRows;
 
-    Data.resize( m_ddsHeader.data_size( ) );
-    Data.assign( fileData + m_ddsHeader.data_offset( ), fileData + m_ddsHeader.data_size( ) );
+    Data.Resize( m_ddsHeader.data_size( ) );
+    Data.MemCpy( fileData + m_ddsHeader.data_offset( ), m_ddsHeader.data_size( ) );
 
     if ( m_ddsHeader.is_1d( ) )
     {
@@ -428,6 +428,13 @@ void Texture::StreamMipData( const MipStreamCallback &callback ) const
     }
 }
 
+InteropArray<TextureMip> Texture::ReadMipData( ) const
+{
+    InteropArray<TextureMip> mipData;
+    StreamMipData( [ & ]( const TextureMip &mip ) { mipData.AddElement( mip ); } );
+    return mipData;
+}
+
 void Texture::StreamMipDataDDS( const MipStreamCallback &callback ) const
 {
     for ( uint32_t array = 0; array < ArraySize; ++array )
@@ -508,9 +515,9 @@ void Texture::LoadTextureDDSFromMemory( const Byte *data, const size_t dataNumBy
     NumRows      = std::max( 1U, ( Height + ( BlockSize - 1 ) ) / BlockSize );
     SlicePitch   = RowPitch * NumRows;
 
-    Data.resize( m_ddsHeader.data_size( ) );
-    const uint8_t *srcData = static_cast<const uint8_t *>( data ) + m_ddsHeader.data_offset( );
-    Data.assign( srcData, srcData + m_ddsHeader.data_size( ) );
+    Data.Resize( m_ddsHeader.data_size( ) );
+    const uint8_t *srcData = data + m_ddsHeader.data_offset( );
+    Data.MemCpy( srcData, m_ddsHeader.data_size( ) );
 
     if ( m_ddsHeader.is_1d( ) )
     {
@@ -560,8 +567,8 @@ void Texture::LoadTextureSTBFromMemory( const Byte *data, const size_t dataNumBy
     RowPitch     = Width * 4;
     NumRows      = Height;
     SlicePitch   = RowPitch * NumRows;
-    Data.resize( SlicePitch );
-    Data.assign( contents, contents + SlicePitch );
+    Data.Resize( SlicePitch );
+    Data.MemCpy( contents, SlicePitch );
 
     stbi_image_free( contents );
 }

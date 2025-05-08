@@ -43,18 +43,18 @@ namespace DenOfIz
 
     struct DZ_API ImportDesc
     {
-        bool     OverwriteExisting         = true;
-        bool     GenerateLODs              = true;
-        uint32_t MaxLODCount               = 3;
-        float    LODScreenPercentages[ 3 ] = { 1.0f, 0.5f, 0.25f };
-        bool     OptimizeMeshes            = true;
-        float    ScaleFactor               = 1.0f;
-        bool     ImportMaterials           = true;
-        bool     ImportTextures            = true;
-        bool     ImportAnimations          = true;
-        bool     ImportSkeletons           = true;
-        bool     CalculateTangentSpace     = true;
-        bool     ConvertToLeftHanded       = true; // DenOfIz uses a left handed coordinate system, DirectX12 settings
+        bool     OverwriteExisting     = true;
+        bool     GenerateLODs          = true;
+        uint32_t MaxLODCount           = 3;
+        Float_3  LODScreenPercentages  = { 1.0f, 0.5f, 0.25f };
+        bool     OptimizeMeshes        = true;
+        float    ScaleFactor           = 1.0f;
+        bool     ImportMaterials       = true;
+        bool     ImportTextures        = true;
+        bool     ImportAnimations      = true;
+        bool     ImportSkeletons       = true;
+        bool     CalculateTangentSpace = true;
+        bool     ConvertToLeftHanded   = true; // DenOfIz uses a left handed coordinate system, DirectX12 settings
 
         InteropArray<InteropString> AdditionalOptions;
     };

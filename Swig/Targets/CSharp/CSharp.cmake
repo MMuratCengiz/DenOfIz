@@ -68,6 +68,7 @@ add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
         COMMENT "Preparing NuGet package files..."
 
         # Create NuGet package directories
+        COMMAND ${CMAKE_COMMAND} -E remove_directory ${NUGET_SRC_GEN_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_LIB_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_SRC_GEN_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${NUGET_RUNTIMES_WIN_DIR}

@@ -461,7 +461,7 @@ void BatchResourceCopy::CopyTextureToMemoryAligned( const Texture &texture, cons
     const uint32_t alignedRowPitch   = Utilities::Align( mipData.RowPitch, m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
     const uint32_t alignedSlicePitch = Utilities::Align( alignedRowPitch * mipData.NumRows, GetSubresourceAlignment( texture.BitsPerPixel ) );
 
-    const Byte *pSrcData = texture.Data.data( ) + mipData.DataOffset;
+    const Byte *pSrcData = texture.Data.Data( ) + mipData.DataOffset;
     for ( uint32_t z = 0; z < texture.ArraySize; ++z )
     {
         const auto dstSlice = dst + alignedSlicePitch * z;

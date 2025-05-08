@@ -7,6 +7,7 @@
 
 %{
 #include "DenOfIzGraphics/DenOfIzGraphics.h"
+
 %}
 #define DZ_API
 #if defined(SWIGJAVA)
@@ -38,6 +39,10 @@ using namespace DirectX;
 %ignore DenOfIz::RenderGraphInternal::PresentContext;
 %ignore DenOfIz::RenderGraphInternal::ResourceLockedState;
 %ignore DenOfIz::RenderGraphInternal::ResourceLocking;
+
+%ignore DenOfIz::Texture::Texture( const std::string & );
+%ignore DenOfIz::Texture::StreamMipData;
+%ignore DenOfIz::MipStreamCallback;
 
 %ignore DenOfIz::CompiledShaders;
 %ignore DenOfIz::ShaderProgram::GetCompiledShaders;
