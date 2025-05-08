@@ -135,7 +135,9 @@ using namespace DirectX;
 %include <DenOfIzGraphics/Utilities/InteropMath.h>
 %include <DenOfIzGraphics/Utilities/InteropUtilities.h>
 %include <DenOfIzGraphics/Utilities/Common_Macro.h>
+%include <DenOfIzGraphics/Utilities/Engine.h>
 %include <DenOfIzGraphics/Assets/Serde/Asset.h>
+%include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
 %include <DenOfIzGraphics/Utilities/BitSet.h>
 
 // Then include the backend interfaces
@@ -230,6 +232,7 @@ using namespace DirectX;
 
 %include <DenOfIzGraphics/Data/Geometry.h>
 %include <DenOfIzGraphics/Data/BatchResourceCopy.h>
+%include <DenOfIzGraphics/Data/Texture.h>
 
 // Bundle system
 %include <DenOfIzGraphics/Assets/Bundle/Bundle.h>
@@ -238,6 +241,11 @@ using namespace DirectX;
 %include <DenOfIzGraphics/Utilities/Time.h>
 %include <DenOfIzGraphics/Utilities/StepTimer.h>
 
+%include <DenOfIzGraphics/Assets/Import/AssetScanner.h>
+%include <DenOfIzGraphics/Assets/Import/IAssetImporter.h>
+%include <DenOfIzGraphics/Assets/Import/AssimpImporter.h>
+%include <DenOfIzGraphics/Assets/Import/FontImporter.h>
+%include <DenOfIzGraphics/Assets/Import/ShaderImporter.h>
 
 %include "DenOfIzGraphics_Input.i"
 

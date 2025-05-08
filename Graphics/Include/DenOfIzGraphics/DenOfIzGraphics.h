@@ -39,3 +39,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Utilities/FrameDebugRenderer.h>
 #include <DenOfIzGraphics/Utilities/Time.h>
 #include <DenOfIzGraphics/Utilities/StepTimer.h>
+
+#include <DenOfIzGraphics/Assets/Import/AssetScanner.h>
+#include <DenOfIzGraphics/Assets/Import/AssimpImporter.h>
+#include <DenOfIzGraphics/Assets/Import/FontImporter.h>
+#include <DenOfIzGraphics/Assets/Import/ShaderImporter.h>

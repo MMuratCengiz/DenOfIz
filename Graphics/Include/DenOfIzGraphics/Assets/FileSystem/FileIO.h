@@ -38,7 +38,7 @@ namespace DenOfIz
          * @throws std::runtime_error if file cannot be read
          * @note For binary files. Does not add null termination.
          */
-        static InteropArray<Byte> ReadFile(const InteropString& path);
+        static InteropArray<Byte> ReadFile( const InteropString &path );
 
         /**
          * @brief Read entire text file into a byte array
@@ -48,7 +48,7 @@ namespace DenOfIz
          * @note Specifically for text files. Ensures null termination for compatibility
          *       with text processing functions and shader compilers.
          */
-        static InteropArray<Byte> ReadTextFile(const InteropString& path);
+        static InteropArray<Byte> ReadTextFile( const InteropString &path );
 
         /**
          * @brief Write byte array to file
@@ -56,14 +56,14 @@ namespace DenOfIz
          * @param data Byte array to write
          * @throws std::runtime_error if file cannot be written
          */
-        static void WriteFile(const InteropString& path, const InteropArray<Byte>& data);
+        static void WriteFile( const InteropString &path, const InteropArray<Byte> &data );
 
         /**
          * @brief Check if file exists
          * @param path Path to check
          * @return true if file exists
          */
-        static bool FileExists(const InteropString& path);
+        static bool FileExists( const InteropString &path );
 
         /**
          * @brief Get size of file in bytes
@@ -71,35 +71,35 @@ namespace DenOfIz
          * @return Size in bytes
          * @throws std::runtime_error if file cannot be accessed
          */
-        static size_t GetFileSize(const InteropString& path);
+        static size_t GetFileSize( const InteropString &path );
 
         /**
          * @brief Create directory and any needed parent directories
          * @param path Directory path to create
          * @return true if successful
          */
-        static bool CreateDirectories(const InteropString& path);
+        static bool CreateDirectories( const InteropString &path );
 
         /**
          * @brief Delete file or empty directory
          * @param path Path to remove
          * @return true if successful
          */
-        static bool Remove(const InteropString& path);
+        static bool Remove( const InteropString &path );
 
         /**
          * @brief Delete directory and all contents
          * @param path Directory to remove
          * @return true if successful
          */
-        static bool RemoveAll(const InteropString& path);
+        static bool RemoveAll( const InteropString &path );
 
         /**
          * @brief Get canonical absolute path, resolving any . or .. components
          * @param path Input path
          * @return Canonical absolute path
          */
-        static InteropString GetAbsolutePath(const InteropString& path);
+        static InteropString GetAbsolutePath( const InteropString &path );
 
         /**
          * @brief Convert path to resource path inside application bundle on macOS,
@@ -107,10 +107,10 @@ namespace DenOfIz
          * @param path Input path
          * @return Resource path
          */
-        static InteropString GetResourcePath(const InteropString& path);
+        static InteropString GetResourcePath( const InteropString &path );
 
     private:
-        static std::string PlatformResourcePath(const std::string& path);
+        static std::string PlatformResourcePath( const std::string &path );
     };
 
 } // namespace DenOfIz

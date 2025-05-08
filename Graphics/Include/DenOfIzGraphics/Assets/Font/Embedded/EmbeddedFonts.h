@@ -39,4 +39,4 @@ namespace DenOfIz
             return reader.Read( );
         }
     };
-}
+} // namespace DenOfIz

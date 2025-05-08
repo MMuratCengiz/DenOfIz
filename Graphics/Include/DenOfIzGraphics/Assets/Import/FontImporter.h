@@ -80,13 +80,13 @@ namespace DenOfIz
         };
 
     public:
-        explicit FontImporter( FontImporterDesc desc );
-        ~FontImporter( ) override;
+        DZ_API explicit FontImporter( FontImporterDesc desc );
+        DZ_API ~FontImporter( ) override;
 
-        [[nodiscard]] ImporterDesc GetImporterInfo( ) const override;
-        [[nodiscard]] bool         CanProcessFileExtension( const InteropString &extension ) const override;
-        ImporterResult             Import( const ImportJobDesc &desc ) override;
-        [[nodiscard]] bool         ValidateFile( const InteropString &filePath ) const override;
+        DZ_API [[nodiscard]] ImporterDesc GetImporterInfo( ) const override;
+        DZ_API [[nodiscard]] bool         CanProcessFileExtension( const InteropString &extension ) const override;
+        DZ_API ImporterResult             Import( const ImportJobDesc &desc ) override;
+        DZ_API [[nodiscard]] bool         ValidateFile( const InteropString &filePath ) const override;
 
     private:
         ImporterResultCode          ImportFontInternal( ImportContext &context );

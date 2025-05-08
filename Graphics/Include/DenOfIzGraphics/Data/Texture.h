@@ -54,25 +54,24 @@ namespace DenOfIz
         Byte                   *m_contentData{ };
 
     public:
-        uint32_t          Width{ };
-        uint32_t          Height{ };
-        uint32_t          Depth{ };
-        uint32_t          MipLevels = 1;
-        uint32_t          ArraySize = 1;
-        uint32_t          BitsPerPixel{ };
-        uint32_t          BlockSize{ };
-        uint32_t          RowPitch{ };
-        uint32_t          NumRows{ };
-        uint32_t          SlicePitch{ };
-        Format            Format    = Format::Undefined;
-        TextureDimension  Dimension = TextureDimension::Undefined;
-        TextureExtension  Extension = TextureExtension::DDS;
-        std::vector<Byte> Data{ };
-        explicit Texture( const std::string &path );
-        explicit Texture( const InteropArray<Byte> &data, TextureExtension extension = TextureExtension::DDS );
-        static TextureExtension IdentifyTextureFormat( const InteropArray<Byte> &data );
-
-        void StreamMipData( const MipStreamCallback &callback ) const;
+        DZ_API uint32_t          Width{ };
+        DZ_API uint32_t          Height{ };
+        DZ_API uint32_t          Depth{ };
+        DZ_API uint32_t          MipLevels = 1;
+        DZ_API uint32_t          ArraySize = 1;
+        DZ_API uint32_t          BitsPerPixel{ };
+        DZ_API uint32_t          BlockSize{ };
+        DZ_API uint32_t          RowPitch{ };
+        DZ_API uint32_t          NumRows{ };
+        DZ_API uint32_t          SlicePitch{ };
+        DZ_API Format            Format    = Format::Undefined;
+        DZ_API TextureDimension  Dimension = TextureDimension::Undefined;
+        DZ_API TextureExtension  Extension = TextureExtension::DDS;
+        DZ_API std::vector<Byte> Data{ };
+        DZ_API explicit Texture( const std::string &path );
+        DZ_API explicit Texture( const InteropArray<Byte> &data, TextureExtension extension = TextureExtension::DDS );
+        DZ_API static TextureExtension IdentifyTextureFormat( const InteropArray<Byte> &data );
+        DZ_API void StreamMipData( const MipStreamCallback &callback ) const;
 
     private:
         void LoadTextureSTB( );
