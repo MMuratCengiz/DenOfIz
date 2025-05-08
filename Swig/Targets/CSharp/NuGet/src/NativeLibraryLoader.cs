@@ -31,10 +31,18 @@ namespace DenOfIz
                     return;
                 }
 
-                LoadNativeLibrary("DenOfIzGraphicsCSharp");
+                string runtimePath = Path.Combine(
+                    Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), 
+                    "runtimes", 
+                    $"{GetPlatformRid()}-{GetArchitecture()}", 
+                    "native");
+    
+                SetDllDirectory(runtimePath);
+                
                 LoadNativeLibrary("dxcompiler");
                 LoadNativeLibrary("dxil");
                 LoadNativeLibrary("metalirconverter");
+                LoadNativeLibrary("DenOfIzGraphicsCSharp");
                 _initialized = true;
             }
         }
@@ -195,6 +203,10 @@ namespace DenOfIz
                 return LinuxLoadLibrary(path);
             }
         }
+        
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool SetDllDirectory(string lpPathName);
 
         [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern IntPtr LoadLibraryW(string lpFileName);
