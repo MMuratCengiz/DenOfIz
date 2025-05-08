@@ -58,7 +58,17 @@ void Window::Create( const WindowProperties &properties )
 
 #ifdef WINDOW_MANAGER_SDL
     const uint32_t flags = m_properties.Flags.ToSDLWindowFlags( );
-    m_sdlWindow          = SDL_CreateWindow( m_properties.Title.Get( ), m_properties.X, m_properties.Y, m_properties.Width, m_properties.Height, flags );
+
+    int x = m_properties.X;
+    int y = m_properties.Y;
+
+    if ( m_properties.Position == WindowPosition::Centered )
+    {
+        x = SDL_WINDOWPOS_CENTERED;
+        y = SDL_WINDOWPOS_CENTERED;
+    }
+
+    m_sdlWindow = SDL_CreateWindow( m_properties.Title.Get( ), x, y, m_properties.Width, m_properties.Height, flags );
 
     if ( m_sdlWindow )
     {

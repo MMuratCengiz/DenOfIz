@@ -195,12 +195,13 @@ namespace DenOfIz
 
     struct DZ_API WindowProperties
     {
-        InteropString Title;
-        int           X;
-        int           Y;
-        int           Width;
-        int           Height;
-        WindowFlags   Flags;
+        InteropString  Title;
+        int            X;
+        int            Y;
+        int            Width;
+        int            Height;
+        WindowFlags    Flags;
+        WindowPosition Position = WindowPosition::Undefined; // WindowPosition::Centered overwrites X, Y
     };
 
     class DZ_API Window

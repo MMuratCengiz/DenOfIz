@@ -127,6 +127,8 @@ using namespace DirectX;
 %ignore DenOfIz::BitSet::Any;
 
 %ignore DenOfIz::Window::GetSDLWindow;
+%ignore DenOfIz::Time::OnEachSecond;
+%ignore DenOfIz::StepTimer::OnEachSecond;
 
 // First include the math and interop utilities
 %include <DenOfIzGraphics/Utilities/Interop.h>
@@ -232,6 +234,10 @@ using namespace DirectX;
 // Bundle system
 %include <DenOfIzGraphics/Assets/Bundle/Bundle.h>
 %include <DenOfIzGraphics/Assets/Bundle/BundleManager.h>
+
+%include <DenOfIzGraphics/Utilities/Time.h>
+%include <DenOfIzGraphics/Utilities/StepTimer.h>
+
 
 %include "DenOfIzGraphics_Input.i"
 
