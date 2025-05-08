@@ -5,10 +5,10 @@
 
 namespace DenOfIz
 {
-
     struct DZ_API CompileDesc
     {
         InteropString               Path;
+        CodePage                    CodePage;
         InteropArray<Byte>          Data;
         InteropString               EntryPoint = "main";
         ShaderStage                 Stage;

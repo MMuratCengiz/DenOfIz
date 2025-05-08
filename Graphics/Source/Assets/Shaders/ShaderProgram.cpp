@@ -76,6 +76,7 @@ void ShaderProgram::Compile( )
 
         CompileDesc compileDesc = { };
         compileDesc.Path        = stage.Path;
+        compileDesc.CodePage    = stage.CodePage;
         compileDesc.Data        = stage.Data;
         compileDesc.Defines     = stage.Defines;
         compileDesc.EntryPoint  = stage.EntryPoint;

@@ -54,10 +54,26 @@ CompileResult ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) cons
     // https://github.com/KhronosGroup/Vulkan-Guide
     IDxcBlobEncoding *sourceBlob = nullptr;
     HRESULT           result     = S_OK;
+    uint32_t          codePage   = DXC_CP_ACP;
+    switch ( compileDesc.CodePage )
+    {
+    case CodePage::ACP:
+        codePage = DXC_CP_ACP;
+        break;
+    case CodePage::UTF8:
+        codePage = DXC_CP_UTF8;
+        break;
+    case CodePage::UTF16:
+        codePage = DXC_CP_UTF16;
+        break;
+    case CodePage::UTF32:
+        codePage = DXC_CP_UTF32;
+        break;
+    }
 
     if ( compileDesc.Data.NumElements( ) > 0 )
     {
-        result = m_dxcLibrary->CreateBlobWithEncodingOnHeapCopy( compileDesc.Data.Data( ), compileDesc.Data.NumElements( ), DXC_CP_ACP, &sourceBlob );
+        result = m_dxcLibrary->CreateBlobWithEncodingOnHeapCopy( compileDesc.Data.Data( ), compileDesc.Data.NumElements( ), codePage, &sourceBlob );
         if ( FAILED( result ) )
         {
             LOG( FATAL ) << "Could not create blob from memory data, error code: " << result;
@@ -65,8 +81,7 @@ CompileResult ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) cons
     }
     else if ( !compileDesc.Path.IsEmpty( ) )
     {
-        std::string  path     = Utilities::AppPath( compileDesc.Path.Get( ) );
-        uint32_t     codePage = DXC_CP_ACP;
+        std::string  path = Utilities::AppPath( compileDesc.Path.Get( ) );
         std::wstring wsShaderPath( path.begin( ), path.end( ) );
         result = m_dxcUtils->LoadFile( wsShaderPath.c_str( ), &codePage, &sourceBlob );
 
@@ -123,11 +138,11 @@ CompileResult ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) cons
     targetProfile += "_" + hlslVersion;
 
     std::vector<LPCWSTR> arguments;
-    std::wstring wsShaderPath;
-    if (!compileDesc.Path.IsEmpty())
+    std::wstring         wsShaderPath;
+    if ( !compileDesc.Path.IsEmpty( ) )
     {
-        std::string path = Utilities::AppPath(compileDesc.Path.Get());
-        wsShaderPath = std::wstring(path.begin(), path.end());
+        std::string path = Utilities::AppPath( compileDesc.Path.Get( ) );
+        wsShaderPath     = std::wstring( path.begin( ), path.end( ) );
     }
     else
     {

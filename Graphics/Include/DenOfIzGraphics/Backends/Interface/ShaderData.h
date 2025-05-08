@@ -107,10 +107,19 @@ namespace DenOfIz
         void MarkSamplerAsLocal( uint32_t binding, uint32_t registerSpace );
     };
 
+    enum class DZ_API CodePage
+    {
+        ACP, // ANSI, detects UTF8 with BOM
+        UTF8,
+        UTF16,
+        UTF32,
+    };
+
     /// Use either Path or Data, Data takes priority if both are provided
     struct DZ_API ShaderStageDesc
     {
         ShaderStage                 Stage;
+        CodePage                    CodePage;
         InteropString               Path;
         InteropArray<Byte>          Data;
         InteropArray<InteropString> Defines;
@@ -130,7 +139,7 @@ namespace DenOfIz
         IDxcBlob            *Reflection;
         InteropString        EntryPoint;
         RayTracingShaderDesc RayTracing;
-        ThreadGroupInfo      ThreadGroup;  // Thread group size for compute, mesh, and task shaders
+        ThreadGroupInfo      ThreadGroup; // Thread group size for compute, mesh, and task shaders
     };
     template class DZ_API InteropArray<CompiledShaderStage *>;
 } // namespace DenOfIz
