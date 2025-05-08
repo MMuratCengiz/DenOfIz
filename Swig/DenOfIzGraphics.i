@@ -131,6 +131,7 @@ using namespace DirectX;
 // First include the math and interop utilities
 %include <DenOfIzGraphics/Utilities/Interop.h>
 %include <DenOfIzGraphics/Utilities/InteropMath.h>
+%include <DenOfIzGraphics/Utilities/InteropUtilities.h>
 %include <DenOfIzGraphics/Utilities/Common_Macro.h>
 %include <DenOfIzGraphics/Assets/Serde/Asset.h>
 %include <DenOfIzGraphics/Utilities/BitSet.h>
@@ -311,6 +312,7 @@ typedef DenOfIz::InteropArray<float> FloatArray;
 typedef DenOfIz::InteropArray<DenOfIz::InteropArray<float>> FloatArrayArray;
 typedef DenOfIz::InteropArray<DenOfIz::CompiledShader> CompiledShaderArray;
 typedef DenOfIz::InteropArray<unsigned char> UnsignedCharArray;
+typedef DenOfIz::InteropArray<unsigned char> ByteArray;
 typedef DenOfIz::InteropArray<bool> BoolArray;
 // Instantiations:
 %template(ASGeometryDescArray) DenOfIz::InteropArray<DenOfIz::ASGeometryDesc>;
@@ -388,4 +390,5 @@ typedef DenOfIz::InteropArray<bool> BoolArray;
 %template(FloatArrayArray) DenOfIz::InteropArray<DenOfIz::InteropArray<float>>;
 %template(CompiledShaderArray) DenOfIz::InteropArray<DenOfIz::CompiledShader>;
 %template(UnsignedCharArray) DenOfIz::InteropArray<unsigned char>;
+%template(ByteArray) DenOfIz::InteropArray<unsigned char>;
 %template(BoolArray) DenOfIz::InteropArray<bool>;
