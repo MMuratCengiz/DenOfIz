@@ -111,11 +111,11 @@ add_custom_target(DenOfIzGraphicsCSharpManaged
 include(${CURRENT_DIRECTORY}/Nuget_Exe.cmake)
 add_custom_target(DenOfIzNuget
         COMMAND ${CMAKE_COMMAND} -E echo "Building NuGet package..."
-        COMMAND ${NUGET_EXE} pack ${NUGET_BASE_DIR}/DenOfIzGraphics.nuspec -Version 1.0.0 -OutputDirectory ${NUGET_OUT_DIR}
+        COMMAND ${NUGET_EXE} pack ${NUGET_BASE_DIR}/DenOfIzGraphics.nuspec -Version ${DENOFIZ_VERSION} -OutputDirectory ${NUGET_OUT_DIR}
         DEPENDS DenOfIzGraphicsCSharp DenOfIzGraphicsCSharpManaged
         WORKING_DIRECTORY ${NUGET_BASE_DIR}
 )
 
 add_custom_command(TARGET DenOfIzNuget POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo "NuGet package has been created successfully at ${NUGET_OUT_DIR}/DenOfIzGraphics.1.0.0.nupkg"
+        COMMAND ${CMAKE_COMMAND} -E echo "NuGet package has been created successfully at ${NUGET_OUT_DIR}/DenOfIzGraphics.${DENOFIZ_VERSION}.nupkg"
 )
