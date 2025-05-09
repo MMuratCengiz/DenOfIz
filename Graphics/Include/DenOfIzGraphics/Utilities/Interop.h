@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <iterator>
-#include <mutex>
 #include <string>
 #include <cstring>
 #include <cctype> 

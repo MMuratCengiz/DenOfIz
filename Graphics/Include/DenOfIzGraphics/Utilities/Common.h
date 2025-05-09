@@ -25,6 +25,7 @@
 #include <iostream>
 #include <memory>
 #include "Common_Apple.h"
+#include "Common_Linux.h"
 #include "Common_Macro.h"
 #include "Common_Windows.h"
 #include "Interop.h"

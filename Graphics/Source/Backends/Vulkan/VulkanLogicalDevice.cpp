@@ -36,7 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandQueue.h>
 
-#include "vma/vk_mem_alloc.h"
+#include <vk_mem_alloc.h>
 
 using namespace DenOfIz;
 

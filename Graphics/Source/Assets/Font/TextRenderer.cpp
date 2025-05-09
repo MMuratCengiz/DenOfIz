@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/FileSystem/PathResolver.h>
 #include <DenOfIzGraphics/Assets/Font/TextRenderer.h>
 #include <DenOfIzGraphics/Utilities/Common_Asserts.h>
-#include <directxmath.h>
+#include <DirectXMath.h>
 
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Font/Embedded/EmbeddedFonts.h"
@@ -111,7 +111,6 @@ void TextRenderer::Initialize( )
     pipelineDesc.ShaderProgram     = m_fontShaderProgram.get( );
     pipelineDesc.RootSignature     = m_rootSignature.get( );
     pipelineDesc.InputLayout       = m_inputLayout.get( );
-    pipelineDesc.Graphics.CullMode = CullMode::None;
     pipelineDesc.Graphics.FillMode = FillMode::Solid;
 
     RenderTargetDesc &renderTarget          = pipelineDesc.Graphics.RenderTargets.EmplaceElement( );
