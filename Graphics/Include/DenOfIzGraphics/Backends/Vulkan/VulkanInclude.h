@@ -33,6 +33,5 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define VK_USE_PLATFORM_VI_NN
 #endif
 #include <volk.h>
-#include "vma/vk_mem_alloc.h"
-
+#include <vk_mem_alloc.h>
 #define VK_CHECK_RESULT( R ) assert( ( R ) == VK_SUCCESS )

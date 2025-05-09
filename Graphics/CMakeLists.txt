@@ -1,8 +1,10 @@
 include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
 
 # On windows use dxc from vcpkg, on other platforms build it from source
-if (WIN32)
+if (WIN32 OR LINUX)
     find_package(directx-headers CONFIG REQUIRED)
+endif()
+if (WIN32)
     find_package(directxtk12 CONFIG REQUIRED)
     find_package(directx12-agility CONFIG REQUIRED)
 elseif(APPLE)
@@ -374,11 +376,15 @@ if (LINUX)
     target_link_libraries(DenOfIzGraphics
             PUBLIC
             dxcompiler
+            # Microsoft::DirectX-Headers # Can't use this because it conflicts with Dxc
     )
-    
+
     target_include_directories(DenOfIzGraphics
             PUBLIC
-            _ThirdParty/DirectXShaderCompiler/include/dxc
+            # Use DirectX-Headers from DirecXShaderCompiler even though we use prebuilt dxc, see note above on Dxc
+            _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include
+            _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include/wsl/stubs
+            _ThirdParty/linux_dxc/include/dxc
     )
 endif()
 

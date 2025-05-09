@@ -39,7 +39,7 @@ constexpr float SQRT6 = 2.44948974278317809820f;
 inline void CheckIndexOverflow( const size_t value )
 {
     // Use >=, not > comparison, because some D3D level 9_x hardware does not support 0xFFFF index values.
-    if ( value >= USHRT_MAX )
+    if ( value >= 65535u )
     {
         throw std::out_of_range( "Index value out of range: cannot tessellate primitive so finely" );
     }
