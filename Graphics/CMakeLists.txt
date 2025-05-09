@@ -377,7 +377,7 @@ if (LINUX)
     )
 
     target_link_libraries(DenOfIzGraphics
-            PUBLIC
+            PRIVATE
             dxcompiler
             # Microsoft::DirectX-Headers # Can't use this because it conflicts with Dxc
     )
