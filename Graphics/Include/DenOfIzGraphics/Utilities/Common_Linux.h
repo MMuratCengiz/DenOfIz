@@ -19,8 +19,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #ifdef __linux__
-#undef Success // For some reason X11 defines Success and None, I guess its funny
+// Cleanup X11 macro pollution
+#undef Bool
 #undef None
+#undef Success
 #undef Always
+#undef Font
+#undef CurrentTime
+#undef InputFocus
 #endif
 

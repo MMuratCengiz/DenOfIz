@@ -646,7 +646,7 @@ void RayTracedProceduralGeometryExample::InitCamera( ) const
     eye                   = XMVector3Transform( eye, rotate );
 
     m_camera->SetPosition( eye );
-    m_camera->SetFront( { 0.67f, -0.29f, 0.67f, 0.0f } );
+    m_camera->SetFront( XMVECTOR{ 0.67f, -0.29f, 0.67f, 0.0f } );
 
     m_sceneConstants->cameraPosition    = m_camera->Position( );
     m_sceneConstants->projectionToWorld = XMMatrixInverse( nullptr, m_camera->ViewProjectionMatrix( ) );

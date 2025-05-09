@@ -212,8 +212,8 @@ uint32_t VulkanSwapChain::AcquireNextImage( ISemaphore *imageReadySemaphore )
     const VulkanSemaphore *semaphore = dynamic_cast<VulkanSemaphore *>( imageReadySemaphore );
     uint32_t               nextImage = 0;
 
-    constexpr int  timeout = 60 * 1000 * 1000 * 1000;
-    const VkResult result  = vkAcquireNextImageKHR( m_context->LogicalDevice, m_swapChain, timeout, semaphore->GetSemaphore( ), VK_NULL_HANDLE, &nextImage );
+    constexpr uint64_t timeout = 60 * 1000 * 1000;
+    const VkResult     result  = vkAcquireNextImageKHR( m_context->LogicalDevice, m_swapChain, timeout, semaphore->GetSemaphore( ), VK_NULL_HANDLE, &nextImage );
     if ( result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR )
     {
         DLOG( ERROR ) << "VulkanSwapChain::AcquireNextImage - Failed to acquire next image: " << result;

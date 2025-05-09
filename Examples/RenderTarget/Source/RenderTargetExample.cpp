@@ -74,7 +74,9 @@ void RenderTargetExample::Init( )
     eye                   = XMVector3Transform( eye, rotate );
 
     m_camera->SetPosition( eye );
-    m_camera->SetFront( { 0.67f, -0.29f, 0.67f, 0.0f } );
+
+    // Lin
+    m_camera->SetFront( XMVECTOR{ 0.67f, -0.29f, 0.67f, 0.0f } );
 }
 
 void RenderTargetExample::RenderDeferredImage( const uint32_t frameIndex )

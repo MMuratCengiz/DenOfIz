@@ -243,6 +243,7 @@ else ()
     set(MSDF_ATLAS_DYNAMIC_RUNTIME ON CACHE BOOL "Link dynamic runtime library instead of static" FORCE)
 endif ()
 
+set(ozz_build_tests OFF CACHE BOOL "Don't build ozz samples" FORCE)
 set(ozz_build_samples OFF CACHE BOOL "Don't build ozz samples" FORCE)
 set(ozz_build_howtos OFF CACHE BOOL "Don't build ozz howtos" FORCE)
 

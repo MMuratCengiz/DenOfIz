@@ -35,3 +35,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <volk.h>
 #include <vk_mem_alloc.h>
 #define VK_CHECK_RESULT( R ) assert( ( R ) == VK_SUCCESS )
+
+#undef Bool
+#undef None
+#undef Success
+#undef Always
+#undef Font
+#undef CurrentTime
+#undef InputFocus

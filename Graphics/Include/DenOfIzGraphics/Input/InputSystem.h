@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Input/Window.h>
 #include <DenOfIzGraphics/Utilities/Engine.h>
 #include <DenOfIzGraphics/Utilities/Interop.h>
-#include <DenOfIzGraphics/Backends/Common/IncludeSDL.h>
+#include <DenOfIzGraphics/Backends/Common/SDLInclude.h>
 
 namespace DenOfIz
 {

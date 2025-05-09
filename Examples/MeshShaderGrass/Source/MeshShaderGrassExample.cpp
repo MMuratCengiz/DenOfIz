@@ -24,8 +24,8 @@ using namespace DenOfIz;
 
 void MeshShaderGrassExample::Init( )
 {
-    m_camera->SetPosition( { 0.0f, 10.0f, -20.0f, 1.0f } ); // Higher and further back for better view
-    m_camera->SetFront( { 0.0f, -0.3f, 1.0f, 0.0f } );      // Slightly steeper angle
+    m_camera->SetPosition( XMVECTOR{ 0.0f, 10.0f, -20.0f, 1.0f } ); // Higher and further back for better view
+    m_camera->SetFront( XMVECTOR{ 0.0f, -0.3f, 1.0f, 0.0f } );      // Slightly steeper angle
 
     CreateConstantsBuffer( );
     LoadGrassTexture( );

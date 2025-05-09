@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.17.2)
 
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 set(LANGUAGES C CXX)
 if (APPLE)
     set(LANGUAGES C CXX OBJCXX OBJC)

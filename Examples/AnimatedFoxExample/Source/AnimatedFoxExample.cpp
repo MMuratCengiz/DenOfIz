@@ -37,8 +37,8 @@ void AnimatedFoxExample::Init( )
     CreateBuffers( );
     CreateShaders( );
 
-    m_camera->SetPosition( { 0.0f, 1.0f, -10.0f, 1.0f } );
-    m_camera->SetFront( { 0.0f, 0.0f, 1.0f, 0.0f } );
+    m_camera->SetPosition( XMVECTOR{ 0.0f, 1.0f, -10.0f, 1.0f } );
+    m_camera->SetFront( XMVECTOR{ 0.0f, 0.0f, 1.0f, 0.0f } );
 
     m_timer.OnEachSecond = []( const uint32_t fps ) { LOG( WARNING ) << "FPS: " << fps; };
 }
@@ -273,8 +273,8 @@ void AnimatedFoxExample::CreateShaders( )
     m_materialBuffer              = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( materialBufferDesc ) );
     m_materialData                = static_cast<MaterialConstantBuffer *>( m_materialBuffer->MapMemory( ) );
 
-    m_materialData->DiffuseColor      = { 0.8f, 0.8f, 0.8f, 1.0f };
-    m_materialData->AmbientColor      = { 0.2f, 0.2f, 0.2f, 1.0f };
+    m_materialData->DiffuseColor      = XMVECTOR{ 0.8f, 0.8f, 0.8f, 1.0f };
+    m_materialData->AmbientColor      = XMVECTOR{ 0.2f, 0.2f, 0.2f, 1.0f };
     m_materialData->SpecularPower     = 32.0f;
     m_materialData->SpecularIntensity = 0.5f;
 

@@ -34,14 +34,17 @@ typedef HWND TWindowHandle;
 #elif __APPLE__
 typedef NSWindow *TWindowHandle;
 #elif __linux__
-#include <SDL2/SDL_syswm.h>
 // SDL Required on linux for now
 typedef SDL_Window* TWindowHandle;
 
+// Cleanup X11 macro pollution
+#undef Bool
 #undef None
 #undef Success
 #undef Always
 #undef Font
+#undef CurrentTime
+#undef InputFocus
 
 #endif
 

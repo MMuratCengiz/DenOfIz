@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #error "Not implemented yet"
 #endif
 
-#include <DenOfIzGraphics/Backends/Common/IncludeSDL.h>
+#include <DenOfIzGraphics/Backends/Common/SDLInclude.h>
 
 namespace DenOfIz
 {
