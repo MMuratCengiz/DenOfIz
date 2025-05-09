@@ -12,7 +12,7 @@
 	branch = master
 [submodule "Graphics/_ThirdParty/ozz-animation"]
 	path = Graphics/_ThirdParty/ozz-animation
-	url = git@github.com:guillaumeblanc/ozz-animation.git
+	url = https://github.com/guillaumeblanc/ozz-animation.git
 [submodule "Graphics/_ThirdParty/msdf-atlas-gen"]
 	path = Graphics/_ThirdParty/msdf-atlas-gen
 	url = https://github.com/Chlumsky/msdf-atlas-gen.git
