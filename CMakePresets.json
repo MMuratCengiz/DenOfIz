@@ -1,9 +1,9 @@
 {
+  "version": 3,
   "configurePresets": [
     {
       "name": "Base",
       "hidden": true,
-      "generator": "Visual Studio 17 2022",
       "installDir": "build/DenOfIz/${presetName}",
       "binaryDir": "build/DenOfIz/${presetName}",
       "cacheVariables": {
@@ -12,8 +12,14 @@
       }
     },
     {
-      "name": "Debug_MSVC",
+      "name": "Windows_Base",
+      "hidden": true,
       "inherits": "Base",
+      "generator": "Visual Studio 17 2022"
+    },
+    {
+      "name": "Debug_MSVC",
+      "inherits": "Windows_Base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CRT_LINKAGE_STATIC": "0",
@@ -26,7 +32,7 @@
     },
     {
       "name": "Debug_Shared_MSVC",
-      "inherits": "Base",
+      "inherits": "Windows_Base",
       "cacheVariables": {
         "BUILD_SHARED_LIBS": "ON",
         "CMAKE_BUILD_TYPE": "Debug",
@@ -40,7 +46,7 @@
     },
     {
       "name": "Release_MSVC",
-      "inherits": "Base",
+      "inherits": "Windows_Base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-windows-static",
@@ -50,7 +56,7 @@
     },
     {
       "name": "Release_Shared_MSVC",
-      "inherits": "Base",
+      "inherits": "Windows_Base",
       "cacheVariables": {
         "BUILD_SHARED_LIBS": "ON",
         "CMAKE_BUILD_TYPE": "Release",
@@ -60,10 +66,16 @@
         "SWIG_CSHARP": "ON"
       }
     },
+    
+    {
+      "name": "MacOS_Base",
+      "hidden": true,
+      "inherits": "Base",
+      "generator": "Xcode"
+    },
     {
       "name": "Debug_OSX",
-      "inherits": "Base",
-      "generator": "Xcode",
+      "inherits": "MacOS_Base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "VCPKG_TARGET_TRIPLET": "arm64-osx",
@@ -73,13 +85,60 @@
     },
     {
       "name": "Release_OSX",
-      "inherits": "Base",
-      "generator": "Xcode",
+      "inherits": "MacOS_Base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "arm64-osx"
       }
+    },
+    
+    {
+      "name": "Linux_Base",
+      "hidden": true,
+      "inherits": "Base",
+      "generator": "Ninja"
+    },
+    {
+      "name": "Debug_Linux",
+      "inherits": "Linux_Base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "x64-linux",
+        "CMAKE_CXX_FLAGS": "-D_DEBUG -g -Wall -Wextra -DNOMINMAX",
+        "BUILD_TESTS": "ON",
+        "BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "Debug_Shared_Linux",
+      "inherits": "Linux_Base",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "x64-linux",
+        "CMAKE_CXX_FLAGS": "-D_DEBUG -g -Wall -Wextra -DNOMINMAX",
+        "BUILD_TESTS": "ON",
+        "BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "Release_Linux",
+      "inherits": "Linux_Base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-linux",
+        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX"
+      }
+    },
+    {
+      "name": "Release_Shared_Linux",
+      "inherits": "Linux_Base",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON",
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-linux",
+        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX"
+      }
     }
-  ],
-  "version": 3
+  ]
 }
