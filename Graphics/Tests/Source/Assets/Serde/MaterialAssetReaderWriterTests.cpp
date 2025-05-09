@@ -87,14 +87,14 @@ TEST_F( MaterialAssetSerdeTest, WriteAndReadBack )
     ASSERT_EQ( readAsset.Magic, MaterialAsset{ }.Magic );
     ASSERT_EQ( readAsset.Version, MaterialAsset::Latest );
     ASSERT_STREQ( readAsset.Name.Get( ), sampleAsset.Name.Get( ) );
-    ASSERT_STREQ( readAsset.Uri.ToString( ).Get( ), sampleAsset.Uri.ToString( ).Get( ) );
+    ASSERT_STREQ( readAsset.Uri.ToInteropString( ).Get( ), sampleAsset.Uri.ToInteropString( ).Get( ) );
     ASSERT_STREQ( readAsset.ShaderRef.Get( ), sampleAsset.ShaderRef.Get( ) );
 
-    ASSERT_STREQ( readAsset.AlbedoMapRef.ToString( ).Get( ), sampleAsset.AlbedoMapRef.ToString( ).Get( ) );
-    ASSERT_STREQ( readAsset.NormalMapRef.ToString( ).Get( ), sampleAsset.NormalMapRef.ToString( ).Get( ) );
-    ASSERT_STREQ( readAsset.MetallicRoughnessMapRef.ToString( ).Get( ), sampleAsset.MetallicRoughnessMapRef.ToString( ).Get( ) );
-    ASSERT_STREQ( readAsset.EmissiveMapRef.ToString( ).Get( ), sampleAsset.EmissiveMapRef.ToString( ).Get( ) );
-    ASSERT_STREQ( readAsset.OcclusionMapRef.ToString( ).Get( ), sampleAsset.OcclusionMapRef.ToString( ).Get( ) );
+    ASSERT_STREQ( readAsset.AlbedoMapRef.ToInteropString( ).Get( ), sampleAsset.AlbedoMapRef.ToInteropString( ).Get( ) );
+    ASSERT_STREQ( readAsset.NormalMapRef.ToInteropString( ).Get( ), sampleAsset.NormalMapRef.ToInteropString( ).Get( ) );
+    ASSERT_STREQ( readAsset.MetallicRoughnessMapRef.ToInteropString( ).Get( ), sampleAsset.MetallicRoughnessMapRef.ToInteropString( ).Get( ) );
+    ASSERT_STREQ( readAsset.EmissiveMapRef.ToInteropString( ).Get( ), sampleAsset.EmissiveMapRef.ToInteropString( ).Get( ) );
+    ASSERT_STREQ( readAsset.OcclusionMapRef.ToInteropString( ).Get( ), sampleAsset.OcclusionMapRef.ToInteropString( ).Get( ) );
 
     ASSERT_TRUE( Float4Equals( readAsset.BaseColorFactor, sampleAsset.BaseColorFactor ) );
     ASSERT_FLOAT_EQ( readAsset.MetallicFactor, sampleAsset.MetallicFactor );

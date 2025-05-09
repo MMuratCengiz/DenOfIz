@@ -189,7 +189,7 @@ TEST_F( MeshAssetSerdeTest, WriteAndReadBack )
     ASSERT_EQ( readAsset.Magic, MeshAsset{ }.Magic );
     ASSERT_EQ( readAsset.Version, MeshAsset::Latest );
     ASSERT_STREQ( readAsset.Name.Get( ), sampleAsset.Name.Get( ) );
-    ASSERT_STREQ( readAsset.Uri.ToString( ).Get( ), sampleAsset.Uri.ToString( ).Get( ) );
+    ASSERT_STREQ( readAsset.Uri.ToInteropString( ).Get( ), sampleAsset.Uri.ToInteropString( ).Get( ) );
     ASSERT_EQ( readAsset.NumLODs, sampleAsset.NumLODs );
 
     ASSERT_EQ( readAsset.EnabledAttributes.Position, sampleAsset.EnabledAttributes.Position );
@@ -210,7 +210,7 @@ TEST_F( MeshAssetSerdeTest, WriteAndReadBack )
     ASSERT_EQ( readSM0.NumVertices, quadVertices.size( ) );
     ASSERT_EQ( readSM0.NumIndices, quadIndices.size( ) );
     ASSERT_FLOAT_EQ( readSM0.MinBounds.X, sampleSM0.MinBounds.X );
-    ASSERT_STREQ( readSM0.MaterialRef.ToString( ).Get( ), sampleSM0.MaterialRef.ToString( ).Get( ) );
+    ASSERT_STREQ( readSM0.MaterialRef.ToInteropString( ).Get( ), sampleSM0.MaterialRef.ToInteropString( ).Get( ) );
     ASSERT_EQ( readSM0.LODLevel, sampleSM0.LODLevel );
     ASSERT_EQ( readSM0.BoundingVolumes.NumElements( ), sampleSM0.BoundingVolumes.NumElements( ) );
     ASSERT_EQ( readSM0.BoundingVolumes.GetElement( 0 ).Type, BoundingVolumeType::Box );

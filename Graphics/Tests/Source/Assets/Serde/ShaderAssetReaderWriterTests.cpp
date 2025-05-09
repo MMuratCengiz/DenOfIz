@@ -170,7 +170,7 @@ TEST_F( ShaderAssetSerdeTest, WriteAndReadBack )
 
     ShaderAssetWriter shaderWriter( ShaderAssetWriterDesc{ &writer } );
     shaderWriter.Write( sampleAsset );
-    shaderWriter.Finalize( );
+    shaderWriter.End( );
 
     BinaryReader      reader( container );
     ShaderAssetReader shaderReader( ShaderAssetReaderDesc{ &reader } );
@@ -180,7 +180,7 @@ TEST_F( ShaderAssetSerdeTest, WriteAndReadBack )
     // Verify basic properties
     ASSERT_EQ( readAsset.Magic, ShaderAsset{ }.Magic );
     ASSERT_EQ( readAsset.Version, ShaderAsset::Latest );
-    ASSERT_STREQ( readAsset.Uri.ToString( ).Get( ), sampleAsset.Uri.ToString( ).Get( ) );
+    ASSERT_STREQ( readAsset.Uri.ToInteropString( ).Get( ), sampleAsset.Uri.ToInteropString( ).Get( ) );
 
     // Verify shader stages
     ASSERT_EQ( readAsset.Stages.NumElements( ), sampleAsset.Stages.NumElements( ) );
