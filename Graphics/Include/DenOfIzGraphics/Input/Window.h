@@ -21,16 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 #include <DenOfIzGraphics/Utilities/Engine.h>
 #include <DenOfIzGraphics/Utilities/Interop.h>
-
-#define WINDOW_MANAGER_SDL
-
-#ifdef WINDOW_MANAGER_SDL
-#define SDL_MAIN_HANDLED
-#include <SDL2/SDL.h>
-#ifdef BUILD_VK
-#include "SDL2/SDL_vulkan.h"
-#endif
-#endif
+#include <DenOfIzGraphics/Backends/Common/IncludeSDL.h>
 
 namespace DenOfIz
 {

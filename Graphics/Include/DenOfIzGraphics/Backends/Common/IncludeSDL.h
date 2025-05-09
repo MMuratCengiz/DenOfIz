@@ -18,9 +18,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#ifdef __linux__
-#undef Success // For some reason X11 defines Success and None, I guess its funny
-#undef None
-#undef Always
+#define WINDOW_MANAGER_SDL // SDL is the only window manager for now
+
+#ifdef WINDOW_MANAGER_SDL
+
+#define SDL_MAIN_HANDLED
+#include <SDL2/SDL.h>
+#ifdef BUILD_VK
+#include "SDL2/SDL_vulkan.h"
 #endif
 
+#ifdef _WIN32
+#include <SDL2/SDL_syswm.h>
+typedef HWND TWindowHandle;
+#elif __APPLE__
+typedef NSWindow *TWindowHandle;
+#elif __linux__
+#include <SDL2/SDL_syswm.h>
+// SDL Required on linux for now
+typedef SDL_Window* TWindowHandle;
+
+#undef None
+#undef Success
+#undef Always
+#undef Font
+
+#endif
+
+#endif // WINDOW_MANAGER_SDL

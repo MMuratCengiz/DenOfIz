@@ -21,31 +21,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Utilities/Engine.h>
 #include <DenOfIzGraphics/Utilities/Interop.h>
 
-#define WINDOW_MANAGER_SDL
-
-#ifdef WINDOW_MANAGER_SDL
-#define SDL_MAIN_HANDLED
-
-#include <SDL2/SDL.h>
-#ifdef BUILD_VK
-#include "DenOfIzGraphics/Utilities/Interop.h"
-#include "SDL2/SDL_vulkan.h"
-#endif
-#endif
-
 #ifdef WINDOW_MANAGER_NATIVE
 #error "Not implemented yet"
 #endif
 
-#ifdef _WIN32
-#include <SDL2/SDL_syswm.h>
-typedef HWND TWindowHandle;
-#elif __APPLE__
-typedef NSWindow *TWindowHandle;
-#elif __linux__
-// SDL Required on linux for now
-typedef SDL_Window* TWindowHandle;
-#endif
+#include <DenOfIzGraphics/Backends/Common/IncludeSDL.h>
 
 namespace DenOfIz
 {

@@ -23,13 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Input/Window.h>
 #include <DenOfIzGraphics/Utilities/Engine.h>
 #include <DenOfIzGraphics/Utilities/Interop.h>
-
-#define WINDOW_MANAGER_SDL
-
-#ifdef WINDOW_MANAGER_SDL
-#define SDL_MAIN_HANDLED
-#include <SDL2/SDL.h>
-#endif
+#include <DenOfIzGraphics/Backends/Common/IncludeSDL.h>
 
 namespace DenOfIz
 {
