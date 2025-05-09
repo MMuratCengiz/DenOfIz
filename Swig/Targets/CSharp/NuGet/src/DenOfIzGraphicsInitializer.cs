@@ -1,4 +1,6 @@
 using System;
+using System.Runtime.InteropServices;
+using DenOfIz;
 
 namespace DenOfIz
 {
@@ -19,16 +21,16 @@ namespace DenOfIz
                 {
                     return;
                 }
-                try
-                {
-                    NativeLibraryLoader.Initialize();
-                    _initialized = true;
-                }
-                catch (Exception ex)
-                {
-                    throw new InvalidOperationException($"Failed to initialize DenOfIzGraphics: {ex.Message}", ex);
-                }
+                NativeLibraryLoader.Initialize();
+                Engine.Init();
+                _initialized = true;
+                AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
             }
+        }
+
+        private static void OnProcessExit(object sender, EventArgs e)
+        {
+            GraphicsApi.ReportLiveObjects();
         }
     }
 }
