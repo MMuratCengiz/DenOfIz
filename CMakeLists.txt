@@ -7,6 +7,10 @@ endif ()
 set(X_VCPKG_APPLOCAL_DEPS_INSTALL ON)
 project(DenOfIz LANGUAGES ${LANGUAGES})
 
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 option(CRT_LINKAGE_STATIC "Link MSVC runtime statically" 1)
 option(BUILD_TESTS OFF)
 option(BUILD_EXAMPLES OFF)
@@ -32,7 +36,11 @@ if (APPLE)
     set(SOURCES main.cpp ${PROJECT_SOURCE_DIR}/OS/MacOS/MainMenu.xib)
 endif ()
 
-add_executable(DenOfIz MACOSX_BUNDLE ${SOURCES})
+if (APPLE)
+    add_executable(DenOfIz MACOSX_BUNDLE ${SOURCES})
+else()
+    add_executable(DenOfIz ${SOURCES})
+endif()
 
 if (APPLE)
     FILE(GLOB FONTS Game/Assets/Fonts/*)

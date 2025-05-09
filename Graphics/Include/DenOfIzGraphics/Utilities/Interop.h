@@ -20,6 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <iterator>
 #include <mutex>
 #include <string>
+#include <cstring>
+#include <cctype> 
 
 #ifdef _WIN32
 #ifdef DZ_GRAPHICS_EXPORTS
@@ -54,7 +56,7 @@ namespace DenOfIz
         {
             if ( str )
             {
-                const size_t len = strlen( str );
+                const size_t len = std::strlen( str );
                 m_data           = new char[ len + 1 ];
                 SafeCopyString( m_data, len + s_nullTerminatorLen, str );
             }

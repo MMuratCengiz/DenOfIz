@@ -2,6 +2,11 @@ if (WIN32)
     add_definitions(-D_WIN32=1)
 endif()
 
+if (UNIX AND NOT APPLE)
+    add_definitions(-D__linux__=1)
+    add_definitions(-DLINUX=1)
+endif()
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
     string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)

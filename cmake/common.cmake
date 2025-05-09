@@ -95,6 +95,12 @@ function(APPLE_LIB target)
     endif ()
 endfunction()
 
+function(LINUX_LIB target)
+    if (UNIX AND NOT APPLE)
+        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-std=c++23>)
+    endif ()
+endfunction()
+
 function(TARGET_INCLUDE_DEFAULT_DIRECTORIES target)
     target_include_directories(${target}
             PUBLIC

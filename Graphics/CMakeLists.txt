@@ -5,7 +5,7 @@ if (WIN32)
     find_package(directx-headers CONFIG REQUIRED)
     find_package(directxtk12 CONFIG REQUIRED)
     find_package(directx12-agility CONFIG REQUIRED)
-else ()
+elseif(APPLE)
     # MacOS still needs to build from source
     include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_dxcompiler.cmake")
     build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
@@ -73,7 +73,6 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Serde/Texture/TextureAssetReader.cpp
         Source/Assets/Serde/Texture/TextureAssetWriter.cpp
         Source/Assets/Shaders/DxcEnumConverter.cpp
-        Source/Assets/Shaders/DxilToMsl.cpp
         Source/Assets/Shaders/ReflectionDebugOutput.cpp
         Source/Assets/Shaders/ShaderCompiler.cpp
         Source/Assets/Shaders/ShaderReflectionHelper.cpp
@@ -82,6 +81,10 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Stream/BinaryReader.cpp
         Source/Assets/Stream/BinaryWriter.cpp
 )
+
+if (APPLE OR WIN32)
+    set(DEN_OF_IZ_ASSETS_SOURCES ${DEN_OF_IZ_ASSETS_SOURCES} Source/Assets/Shaders/DxilToMsl.cpp)
+endif()
 
 set(DEN_OF_IZ_ANIMATION_SOURCES
         Source/Animation/AnimationStateManager.cpp
@@ -237,6 +240,10 @@ else ()
     set(ozz_build_msvc_rt_dll ON CACHE BOOL "Select msvc DLL runtime library" FORCE)
     set(MSDF_ATLAS_DYNAMIC_RUNTIME ON CACHE BOOL "Link dynamic runtime library instead of static" FORCE)
 endif ()
+
+set(ozz_build_samples OFF CACHE BOOL "Don't build ozz samples" FORCE)
+set(ozz_build_howtos OFF CACHE BOOL "Don't build ozz howtos" FORCE)
+
 add_subdirectory(_ThirdParty/ozz-animation)
 add_subdirectory(_ThirdParty/msdf-atlas-gen)
 
@@ -357,6 +364,23 @@ if (APPLE)
             $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
     set_property(TARGET DenOfIzGraphics APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
 endif ()
+if (LINUX)
+    target_link_directories(
+            DenOfIzGraphics
+            PRIVATE
+            _ThirdParty/linux_dxc/lib/
+    )
+
+    target_link_libraries(DenOfIzGraphics
+            PUBLIC
+            dxcompiler
+    )
+    
+    target_include_directories(DenOfIzGraphics
+            PUBLIC
+            _ThirdParty/DirectXShaderCompiler/include/dxc
+    )
+endif()
 
 if (WIN32 OR LINUX)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_VK)
@@ -368,6 +392,13 @@ endif ()
 
 set_target_default_properties(DenOfIzGraphics)
 #target_compile_definitions(DenOfIzGraphics PUBLIC NSIGHT_ENABLE)
+
+# Apply platform-specific library settings
+if (APPLE)
+    APPLE_LIB(DenOfIzGraphics)
+elseif (UNIX AND NOT APPLE)
+    LINUX_LIB(DenOfIzGraphics)
+endif()
 
 if (BUILD_TESTS)
     add_subdirectory(Tests)
