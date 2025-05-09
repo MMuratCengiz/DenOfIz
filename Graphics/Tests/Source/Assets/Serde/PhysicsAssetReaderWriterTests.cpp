@@ -107,7 +107,7 @@ TEST_F( PhysicsAssetSerdeTest, WriteAndReadBack )
     ASSERT_EQ( readAsset.Magic, PhysicsAsset{ }.Magic );
     ASSERT_EQ( readAsset.Version, PhysicsAsset::Latest );
     ASSERT_STREQ( readAsset.Name.Get( ), sampleAsset.Name.Get( ) );
-    ASSERT_STREQ( readAsset.Uri.ToString( ).Get( ), sampleAsset.Uri.ToString( ).Get( ) );
+    ASSERT_STREQ( readAsset.Uri.ToInteropString( ).Get( ), sampleAsset.Uri.ToInteropString( ).Get( ) );
 
     ASSERT_EQ( readAsset.Colliders.NumElements( ), sampleAsset.Colliders.NumElements( ) );
 

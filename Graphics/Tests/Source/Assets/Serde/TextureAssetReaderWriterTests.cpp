@@ -104,7 +104,7 @@ TEST_F( TextureAssetSerdeTest, WriteAndReadBack )
         textureWriter.AddPixelData( pixelData, mip, 0 );
     }
 
-    textureWriter.Finalize( );
+    textureWriter.End( );
 
     BinaryReader       reader( container );
     TextureAssetReader textureReader( TextureAssetReaderDesc{ &reader } );
@@ -114,7 +114,7 @@ TEST_F( TextureAssetSerdeTest, WriteAndReadBack )
     ASSERT_EQ( readAsset.Magic, TextureAsset{ }.Magic );
     ASSERT_EQ( readAsset.Version, TextureAsset::Latest );
     ASSERT_STREQ( readAsset.Name.Get( ), sampleAsset.Name.Get( ) );
-    ASSERT_STREQ( readAsset.Uri.ToString( ).Get( ), sampleAsset.Uri.ToString( ).Get( ) );
+    ASSERT_STREQ( readAsset.Uri.ToInteropString( ).Get( ), sampleAsset.Uri.ToInteropString( ).Get( ) );
     ASSERT_STREQ( readAsset.SourcePath.Get( ), sampleAsset.SourcePath.Get( ) );
 
     ASSERT_EQ( readAsset.Width, sampleAsset.Width );

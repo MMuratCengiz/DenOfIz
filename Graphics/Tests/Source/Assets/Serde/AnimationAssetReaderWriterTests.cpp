@@ -114,8 +114,8 @@ TEST_F( AnimationAssetSerdeTest, WriteAndReadBack )
     ASSERT_EQ( readAsset.Magic, AnimationAsset{ }.Magic );
     ASSERT_EQ( readAsset.Version, AnimationAsset::Latest );
     ASSERT_STREQ( readAsset.Name.Get( ), sampleAsset.Name.Get( ) );
-    ASSERT_STREQ( readAsset.Uri.ToString( ).Get( ), sampleAsset.Uri.ToString( ).Get( ) );
-    ASSERT_STREQ( readAsset.SkeletonRef.ToString( ).Get( ), sampleAsset.SkeletonRef.ToString( ).Get( ) );
+    ASSERT_STREQ( readAsset.Uri.ToInteropString( ).Get( ), sampleAsset.Uri.ToInteropString( ).Get( ) );
+    ASSERT_STREQ( readAsset.SkeletonRef.ToInteropString( ).Get( ), sampleAsset.SkeletonRef.ToInteropString( ).Get( ) );
 
     ASSERT_EQ( readAsset.Animations.NumElements( ), sampleAsset.Animations.NumElements( ) );
 

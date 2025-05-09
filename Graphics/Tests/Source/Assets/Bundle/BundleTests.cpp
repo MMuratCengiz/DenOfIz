@@ -171,8 +171,8 @@ TEST_F( BundleTest, GetAssetsByType )
     ASSERT_EQ( meshAssets.NumElements( ), 2 );
 
     // Get the expected URI strings for comparison
-    const std::string meshUriStr1 = meshUri1.ToString( ).Get( );
-    const std::string meshUriStr2 = meshUri2.ToString( ).Get( );
+    const std::string meshUriStr1 = meshUri1.ToInteropString( ).Get( );
+    const std::string meshUriStr2 = meshUri2.ToInteropString( ).Get( );
 
     // Check that both mesh assets are included
     bool foundMesh1 = false;
@@ -181,7 +181,7 @@ TEST_F( BundleTest, GetAssetsByType )
     // Loop through results and check against expected URIs
     for ( size_t i = 0; i < meshAssets.NumElements( ); ++i )
     {
-        const std::string resultUri = meshAssets.GetElement( i ).ToString( ).Get( );
+        const std::string resultUri = meshAssets.GetElement( i ).ToInteropString( ).Get( );
         std::cout << "Found mesh asset: " << resultUri << std::endl;
 
         if ( resultUri == meshUriStr1 )
@@ -206,7 +206,7 @@ TEST_F( BundleTest, GetAssetsByType )
     // Test GetAssetsByType for texture assets
     InteropArray<AssetUri> texAssets = bundle->GetAssetsByType( AssetType::Texture );
     ASSERT_EQ( texAssets.NumElements( ), 1 );
-    ASSERT_STREQ( texAssets.GetElement( 0 ).ToString( ).Get( ), texUri.ToString( ).Get( ) );
+    ASSERT_STREQ( texAssets.GetElement( 0 ).ToInteropString( ).Get( ), texUri.ToInteropString( ).Get( ) );
 
     delete bundle;
 }
@@ -310,7 +310,7 @@ TEST_F( BundleTest, CreateFromDirectory )
     std::cout << "Bundle contains these assets:" << std::endl;
     for ( size_t i = 0; i < assets.NumElements( ); ++i )
     {
-        std::cout << " - " << assets.GetElement( i ).ToString( ).Get( ) << std::endl;
+        std::cout << " - " << assets.GetElement( i ).ToInteropString( ).Get( ) << std::endl;
     }
 
     // Print asset types for verification
