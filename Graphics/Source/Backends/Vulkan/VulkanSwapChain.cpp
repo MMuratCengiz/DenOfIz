@@ -43,6 +43,8 @@ void VulkanSwapChain::CreateSurface( )
     createInfo.flags     = 0;
     createInfo.pNext     = nullptr;
     VK_CHECK_RESULT( vkCreateWin32SurfaceKHR( m_context->Instance, &createInfo, nullptr, &m_surface ) );
+#elif __linux__
+    SDL_Vulkan_CreateSurface( m_desc.WindowHandle->GetNativeHandle( ), m_context->Instance, &m_surface );
 #else
 #error "Not implemented yet"
 #endif

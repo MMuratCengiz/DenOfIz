@@ -47,6 +47,8 @@ void GraphicsWindowHandle::CreateFromSDLWindow( SDL_Window *window )
         m_windowHandle = info.info.win.window;
 #elif __APPLE__
         m_windowHandle = info.info.cocoa.window;
+#elif __linux__
+        m_windowHandle = window;
 #endif
     }
 

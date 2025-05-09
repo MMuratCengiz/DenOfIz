@@ -43,8 +43,8 @@ typedef HWND TWindowHandle;
 #elif __APPLE__
 typedef NSWindow *TWindowHandle;
 #elif __linux__
-// Todo
-typedef void *TWindowHandle;
+// SDL Required on linux for now
+typedef SDL_Window* TWindowHandle;
 #endif
 
 namespace DenOfIz
@@ -58,7 +58,6 @@ namespace DenOfIz
 
     class DZ_API GraphicsWindowHandle
     {
-    private:
 #ifdef WINDOW_MANAGER_SDL
         SDL_Window *m_sdlWindow;
 #endif

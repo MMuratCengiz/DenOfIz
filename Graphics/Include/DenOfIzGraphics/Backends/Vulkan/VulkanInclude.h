@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 #elif defined( __linux__ ) && !defined( VK_USE_PLATFORM_GGP )
 #define VK_USE_PLATFORM_XLIB_KHR
+#define VK_USE_PLATFORM_XCB_KHR
 #define VK_USE_PLATFORM_WAYLAND_KHR
 #elif defined( NX64 )
 #define VK_USE_PLATFORM_VI_NN
