@@ -469,6 +469,7 @@ ReflectionFieldType DxcEnumConverter::VariableTypeToReflectionType( const D3D_SH
     }
 }
 
+#if defined(_WIN32) || defined(__APPLE__) // TODO metal shader converter on linux: not yet supported
 IRShaderVisibility DxcEnumConverter::ShaderStageToShaderVisibility( ShaderStage stage )
 {
     switch ( stage )
@@ -557,3 +558,4 @@ IRDescriptorRangeType DxcEnumConverter::ShaderTypeToIRDescriptorType( const D3D_
     }
     return descriptorRangeType;
 }
+#endif

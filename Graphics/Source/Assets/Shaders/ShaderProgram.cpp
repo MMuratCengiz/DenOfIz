@@ -100,6 +100,7 @@ void ShaderProgram::Compile( )
         m_shaderDescs.push_back( stage );
     }
 
+#if defined(_WIN32) || defined(__APPLE__) // TODO metal shader converter on linux: not yet supported
     DxilToMslDesc dxilToMslDesc{ };
     dxilToMslDesc.Shaders    = m_desc.ShaderStages;
     dxilToMslDesc.RayTracing = m_desc.RayTracing;
@@ -121,6 +122,9 @@ void ShaderProgram::Compile( )
     {
         m_compiledShaders[ i ]->MSL = std::move( mslShaders.GetElement( i ) );
     }
+#else
+    LOG( ERROR ) << "MSL compilation is not supported on this platform";
+#endif
 }
 
 void ShaderProgram::CreateReflectionData( )

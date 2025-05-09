@@ -3,11 +3,11 @@ include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
 # On windows use dxc from vcpkg, on other platforms build it from source
 if (WIN32 OR LINUX)
     find_package(directx-headers CONFIG REQUIRED)
-endif()
+endif ()
 if (WIN32)
     find_package(directxtk12 CONFIG REQUIRED)
     find_package(directx12-agility CONFIG REQUIRED)
-elseif(APPLE)
+elseif (APPLE)
     # MacOS still needs to build from source
     include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_dxcompiler.cmake")
     build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
@@ -33,7 +33,6 @@ find_package(miniz CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h")
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 
-# Find ozz-animation in our third party directory
 set(OZZ_ANIMATION_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/ozz-animation")
 if (EXISTS "${OZZ_ANIMATION_DIR}")
     set(OZZ_ANIMATION_INCLUDE_DIR "${OZZ_ANIMATION_DIR}/include")
@@ -86,7 +85,7 @@ set(DEN_OF_IZ_ASSETS_SOURCES
 
 if (APPLE OR WIN32)
     set(DEN_OF_IZ_ASSETS_SOURCES ${DEN_OF_IZ_ASSETS_SOURCES} Source/Assets/Shaders/DxilToMsl.cpp)
-endif()
+endif ()
 
 set(DEN_OF_IZ_ANIMATION_SOURCES
         Source/Animation/AnimationStateManager.cpp
@@ -368,9 +367,12 @@ if (APPLE)
     set_property(TARGET DenOfIzGraphics APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
 endif ()
 if (LINUX)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/linux_dxc/lib/libdxcompiler.so
+            ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+
     target_link_directories(
             DenOfIzGraphics
-            PRIVATE
+            PUBLIC
             _ThirdParty/linux_dxc/lib/
     )
 
@@ -387,7 +389,7 @@ if (LINUX)
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include/wsl/stubs
             _ThirdParty/linux_dxc/include/dxc
     )
-endif()
+endif ()
 
 if (WIN32 OR LINUX)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_VK)
@@ -405,7 +407,7 @@ if (APPLE)
     APPLE_LIB(DenOfIzGraphics)
 elseif (UNIX AND NOT APPLE)
     LINUX_LIB(DenOfIzGraphics)
-endif()
+endif ()
 
 if (BUILD_TESTS)
     add_subdirectory(Tests)

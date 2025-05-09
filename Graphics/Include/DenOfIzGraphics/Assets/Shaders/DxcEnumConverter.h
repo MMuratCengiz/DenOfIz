@@ -43,9 +43,11 @@ namespace DenOfIz
         static std::string           GetStagesString( const InteropArray<ShaderStage> &stages );
         static ReflectionFieldType   VariableTypeToReflectionType( const D3D_SHADER_VARIABLE_TYPE &type );
         // MSL specific
+#if defined(_WIN32) || defined(__APPLE__) // TODO metal shader converter on linux: not yet supported
         static IRShaderVisibility    ShaderStageToShaderVisibility( ShaderStage stage );
         static IRRootParameterType   BindingTypeToIRRootParameterType( const ResourceBindingType &type );
         static IRRootParameterType   IRDescriptorRangeTypeToIRRootParameterType( const IRDescriptorRangeType &type );
         static IRDescriptorRangeType ShaderTypeToIRDescriptorType( const D3D_SHADER_INPUT_TYPE &type );
+#endif
     };
 } // namespace DenOfIz
