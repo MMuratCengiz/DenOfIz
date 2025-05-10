@@ -345,6 +345,11 @@ if (APPLE)
             NAMES metalirconverter
             PATHS "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/"
     )
+    configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/libmetalirconverter.dylib"
+            "${CMAKE_BINARY_DIR}/libmetalirconverter.dylib"
+            COPYONLY
+    )
 
     target_include_directories(DenOfIzGraphics
             PUBLIC
