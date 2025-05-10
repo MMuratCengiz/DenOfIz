@@ -30,9 +30,13 @@ jobs:
       - name: Setup vcpkg
         shell: pwsh
         run: |
-          git clone https://github.com/microsoft/vcpkg.git
+          if (-Not (Test-Path -Path "vcpkg")) {
+            git clone https://github.com/microsoft/vcpkg.git
+          }
           cd vcpkg
-          .\bootstrap-vcpkg.bat
+          if (-Not (Test-Path -Path "vcpkg.exe")) {
+            .\bootstrap-vcpkg.bat
+          }
 
       - name: Cache vcpkg packages
         uses: actions/cache@v4
@@ -51,7 +55,8 @@ jobs:
       - name: Configure
         shell: pwsh
         run: |
-          cmake --preset=Debug_MSVC -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }}
+          # Use full path for CMakePresets.json
+          cmake --preset=Debug_MSVC -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }}
 
       - name: Build NuGet Package
         shell: pwsh
@@ -82,9 +87,13 @@ jobs:
 
       - name: Setup vcpkg
         run: |
-          git clone https://github.com/microsoft/vcpkg.git
+          if [ ! -d "vcpkg" ]; then
+            git clone https://github.com/microsoft/vcpkg.git
+          fi
           cd vcpkg
-          ./bootstrap-vcpkg.sh
+          if [ ! -f "./vcpkg" ]; then
+            ./bootstrap-vcpkg.sh
+          fi
 
       - name: Cache vcpkg packages
         uses: actions/cache@v4
@@ -96,7 +105,8 @@ jobs:
 
       - name: Configure
         run: |
-          cmake --preset=Debug_Linux -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }}
+          # Use full path for CMakePresets.json
+          cmake --preset=Debug_Linux -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }}
 
       - name: Build
         run: |
@@ -131,9 +141,13 @@ jobs:
 
       - name: Setup vcpkg
         run: |
-          git clone https://github.com/microsoft/vcpkg.git
+          if [ ! -d "vcpkg" ]; then
+            git clone https://github.com/microsoft/vcpkg.git
+          fi
           cd vcpkg
-          ./bootstrap-vcpkg.sh
+          if [ ! -f "./vcpkg" ]; then
+            ./bootstrap-vcpkg.sh
+          fi
 
       - name: Cache vcpkg packages
         uses: actions/cache@v4
@@ -145,7 +159,8 @@ jobs:
 
       - name: Configure
         run: |
-          cmake --preset=Debug_OSX -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }}
+          # Use full path for CMakePresets.json
+          cmake --preset=Debug_OSX -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }}
 
       - name: Build
         run: |
