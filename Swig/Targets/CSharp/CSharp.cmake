@@ -72,7 +72,6 @@ add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
 
 if (WIN32)
     add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:DenOfIzGraphicsCSharp> ${SWIG_CSHARP_NATIVE_DIR}
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/dxcompiler.dll ${SWIG_CSHARP_NATIVE_DIR}
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/dxil.dll ${SWIG_CSHARP_NATIVE_DIR}
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/metalirconverter.dll ${SWIG_CSHARP_NATIVE_DIR}
