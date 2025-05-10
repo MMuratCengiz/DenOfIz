@@ -31,6 +31,10 @@ set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
         CXX_STANDARD_REQUIRED ON
         CXX_EXTENSIONS OFF
 )
+set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/CSharp/Project/Lib"
+)
+file(MAKE_DIRECTORY ${SWIG_CSHARP_LIB_DIR})
 
 set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${SWIG_CSHARP_LIB_DIR}
@@ -41,8 +45,7 @@ set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
 
 swig_link_libraries(DenOfIzGraphicsCSharp DenOfIzGraphics)
 
-add_custom_command(
-        TARGET DenOfIzGraphicsCSharp PRE_BUILD
+add_custom_target(DenOfIzGraphicsCSharpCleanup
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${SWIG_CSHARP_CXX_DIR}
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${SWIG_CSHARP_LIB_DIR}
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${SWIG_CSHARP_NATIVE_DIR}
@@ -52,7 +55,6 @@ add_custom_command(
         TARGET DenOfIzGraphicsCSharp POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIG_CSHARP_LIB_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIG_CSHARP_NATIVE_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:DenOfIzGraphicsCSharp> ${SWIG_CSHARP_NATIVE_DIR}
         COMMAND_EXPAND_LISTS
 )
 
@@ -61,11 +63,27 @@ add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DenOfIzGraphics> ${SWIG_CSHARP_NATIVE_DIR}
 )
 
-add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/dxcompiler.dll ${SWIG_CSHARP_NATIVE_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/dxil.dll ${SWIG_CSHARP_NATIVE_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/metalirconverter.dll ${SWIG_CSHARP_NATIVE_DIR}
-)
+if (WIN32)
+    add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:DenOfIzGraphicsCSharp> ${SWIG_CSHARP_NATIVE_DIR}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/dxcompiler.dll ${SWIG_CSHARP_NATIVE_DIR}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/dxil.dll ${SWIG_CSHARP_NATIVE_DIR}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/metalirconverter.dll ${SWIG_CSHARP_NATIVE_DIR}
+    )
+endif ()
+if (APPLE)
+    # Todo find a way to implement: COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:DenOfIzGraphicsCSharp> ${SWIG_CSHARP_NATIVE_DIR}
+    add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libdxcompiler.dylib ${SWIG_CSHARP_NATIVE_DIR}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libmetalirconverter.dylib ${SWIG_CSHARP_NATIVE_DIR}
+    )
+endif ()
+if (LINUX)
+    # Todo find a way to implement: COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:DenOfIzGraphicsCSharp> ${SWIG_CSHARP_NATIVE_DIR}
+    add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libdxcompiler.so ${SWIG_CSHARP_NATIVE_DIR}
+    )
+endif ()
 
 add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
         COMMENT "Preparing NuGet package files..."
@@ -81,30 +99,33 @@ add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
 
         # Copy generated code
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_CSHARP_CODE_DIR} ${NUGET_SRC_GEN_DIR}
-
-        # Copy native libraries to appropriate runtime directories
-        # Windows native libraries
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:DenOfIzGraphicsCSharp>
-        ${NUGET_RUNTIMES_WIN_DIR}/DenOfIzGraphicsCSharp.dll
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:DenOfIzGraphics>
-        ${NUGET_RUNTIMES_WIN_DIR}/DenOfIzGraphics.dll
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_BINARY_DIR}/dxcompiler.dll
-        ${NUGET_RUNTIMES_WIN_DIR}/dxcompiler.dll
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_BINARY_DIR}/dxil.dll
-        ${NUGET_RUNTIMES_WIN_DIR}/dxil.dll
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_BINARY_DIR}/metalirconverter.dll
-        ${NUGET_RUNTIMES_WIN_DIR}/metalirconverter.dll
-
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CURRENT_DIRECTORY}/NuGet/build/DenOfIzGraphics.targets
-        ${NUGET_BUILD_DIR}/DenOfIzGraphics.targets
-        COMMAND ${CMAKE_COMMAND} -E echo "NuGet package files prepared successfully!"
 )
+
+if (WIN32)
+    add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphicsCSharp> ${NUGET_RUNTIMES_WIN_DIR}/DenOfIzGraphicsCSharp.dll
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphics> ${NUGET_RUNTIMES_WIN_DIR}/DenOfIzGraphics.dll
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/dxcompiler.dll ${NUGET_RUNTIMES_WIN_DIR}/dxcompiler.dll
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/dxil.dll ${NUGET_RUNTIMES_WIN_DIR}/dxil.dll
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/metalirconverter.dll ${NUGET_RUNTIMES_WIN_DIR}/metalirconverter.dll
+            COMMAND ${CMAKE_COMMAND} -E echo "Windows: NuGet package files prepared successfully!"
+    )
+elseif (APPLE)
+    add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphicsCSharp> ${NUGET_RUNTIMES_OSX_DIR}/libDenOfIzGraphicsCSharp.dylib
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphics> ${NUGET_RUNTIMES_OSX_DIR}/libDenOfIzGraphics.dylib
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libdxcompiler.dylib ${NUGET_RUNTIMES_OSX_DIR}/libdxcompiler.dylib
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libmetalirconverter.dylib ${NUGET_RUNTIMES_OSX_DIR}/libmetalirconverter.dylib
+            COMMAND ${CMAKE_COMMAND} -E echo "macOS: NuGet package files prepared successfully!"
+    )
+else () # Linux
+    add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphicsCSharp> ${NUGET_RUNTIMES_LINUX_DIR}/libDenOfIzGraphicsCSharp.so
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphics> ${NUGET_RUNTIMES_LINUX_DIR}/libDenOfIzGraphics.so
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libdxcompiler.so ${NUGET_RUNTIMES_LINUX_DIR}/libdxcompiler.so
+            COMMAND ${CMAKE_COMMAND} -E echo "Linux: NuGet package files prepared successfully!"
+    )
+endif ()
 
 add_custom_target(DenOfIzGraphicsCSharpManaged
         COMMAND dotnet build ./DenOfIzGraphics.csproj -c Release --output lib/netstandard2.0
@@ -115,7 +136,7 @@ add_custom_target(DenOfIzGraphicsCSharpManaged
 include(${CURRENT_DIRECTORY}/Nuget_Exe.cmake)
 add_custom_target(DenOfIzNuget
         COMMAND ${CMAKE_COMMAND} -E echo "Building NuGet package..."
-        COMMAND ${NUGET_EXE} pack ${NUGET_BASE_DIR}/DenOfIzGraphics.nuspec -Version ${DENOFIZ_VERSION} -OutputDirectory ${NUGET_OUT_DIR}
+        COMMAND ${NUGET_COMMAND} pack ${NUGET_BASE_DIR}/DenOfIzGraphics.nuspec -Version ${DENOFIZ_VERSION} -OutputDirectory ${NUGET_OUT_DIR}
         DEPENDS DenOfIzGraphicsCSharp DenOfIzGraphicsCSharpManaged
         WORKING_DIRECTORY ${NUGET_BASE_DIR}
 )

@@ -246,6 +246,9 @@ set(ozz_build_tests OFF CACHE BOOL "Don't build ozz samples" FORCE)
 set(ozz_build_samples OFF CACHE BOOL "Don't build ozz samples" FORCE)
 set(ozz_build_howtos OFF CACHE BOOL "Don't build ozz howtos" FORCE)
 
+if(LINUX)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
 add_subdirectory(_ThirdParty/ozz-animation)
 add_subdirectory(_ThirdParty/msdf-atlas-gen)
 
@@ -389,6 +392,9 @@ if (LINUX)
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include/wsl/stubs
             _ThirdParty/linux_dxc/include/dxc
     )
+
+    #/usr/bin/ld: relocation R_X86_64_PC32 against symbol `_ZNSt6ranges5views4keysE' can not be used when making a shared object; recompile with -fPIC
+    set_target_properties(DenOfIzGraphics PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif ()
 
 if (WIN32 OR LINUX)
