@@ -23,7 +23,7 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
 
@@ -35,7 +35,7 @@ jobs:
           .\bootstrap-vcpkg.bat
 
       - name: Cache vcpkg packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: vcpkg/installed
           key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
@@ -59,7 +59,7 @@ jobs:
           cmake --build build/DenOfIz/Debug_MSVC --target DenOfIzNuget
 
       - name: Upload NuGet package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: DenOfIzGraphics-Windows-${{ env.DENOFIZ_VERSION }}
           path: Swig/Targets/CSharp/NuGet_Out/DenOfIzGraphics.${{ env.DENOFIZ_VERSION }}.nupkg
@@ -68,7 +68,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
 
@@ -87,7 +87,7 @@ jobs:
           ./bootstrap-vcpkg.sh
 
       - name: Cache vcpkg packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: vcpkg/installed
           key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
@@ -110,7 +110,7 @@ jobs:
           cp build/DenOfIz/Debug_Linux/libdxcompiler.so artifacts/runtimes/linux-x64/native/
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-artifacts
           path: artifacts/
@@ -118,7 +118,7 @@ jobs:
   build-macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
 
@@ -136,7 +136,7 @@ jobs:
           ./bootstrap-vcpkg.sh
 
       - name: Cache vcpkg packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: vcpkg/installed
           key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
@@ -159,7 +159,7 @@ jobs:
           cp build/DenOfIz/Debug_OSX/libmetalirconverter.dylib artifacts/runtimes/osx-x64/native/
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: macos-artifacts
           path: artifacts/
@@ -169,10 +169,10 @@ jobs:
     runs-on: windows-latest
     needs: [build-windows, build-linux, build-macos]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '6.0.x'
 
@@ -182,19 +182,19 @@ jobs:
           choco install -y cmake swig
 
       - name: Download Windows NuGet Package
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: DenOfIzGraphics-Windows-${{ env.DENOFIZ_VERSION }}
           path: windows-package
 
       - name: Download Linux Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: linux-artifacts
           path: linux-artifacts
 
       - name: Download macOS Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: macos-artifacts
           path: macos-artifacts
@@ -238,7 +238,7 @@ jobs:
           nuget pack -Version ${{ env.DENOFIZ_VERSION }} -OutputDirectory ../
 
       - name: Upload Cross-Platform NuGet package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: DenOfIzGraphics-CrossPlatform-${{ env.DENOFIZ_VERSION }}
           path: DenOfIzGraphics.${{ env.DENOFIZ_VERSION }}.nupkg
@@ -263,13 +263,13 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Download NuGet Package
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: DenOfIzGraphics-CrossPlatform-${{ env.DENOFIZ_VERSION }}
           path: ./
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '6.0.x'
 
