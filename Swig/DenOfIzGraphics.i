@@ -33,6 +33,9 @@ using namespace DirectX;
 %apply void *VOID_INT_PTR { void * }
 %apply unsigned char INPUT[]  {unsigned char *inputBytes}
 
+%ignore std::chrono;
+%ignore __parse_int;
+
 %ignore DenOfIz::RenderGraphInternal::NodeExecutionContext;
 %ignore DenOfIz::RenderGraphInternal::GraphNode;
 %ignore DenOfIz::RenderGraphInternal::PresentContext;

@@ -27,6 +27,9 @@ swig_add_library(DenOfIzGraphicsCSharp
 )
 set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
         SWIG_FLAGS "-E;-DSWIGCSHARP"
+        CXX_STANDARD 23
+        CXX_STANDARD_REQUIRED ON
+        CXX_EXTENSIONS OFF
 )
 
 set_target_properties(DenOfIzGraphicsCSharp PROPERTIES

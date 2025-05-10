@@ -51,7 +51,8 @@
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-windows-static",
         "CRT_LINKAGE_STATIC": "1",
-        "CMAKE_CXX_FLAGS": "/MP -DNOMINMAX"
+        "CMAKE_CXX_FLAGS": "/MP -DNOMINMAX",
+        "SWIG_CSHARP": "ON"
       }
     },
     {
@@ -80,7 +81,8 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "VCPKG_TARGET_TRIPLET": "arm64-osx",
         "BUILD_TESTS": "ON",
-        "BUILD_EXAMPLES": "ON"
+        "BUILD_EXAMPLES": "ON",
+        "SWIG_CSHARP": "ON"
       }
     },
     {
@@ -88,7 +90,8 @@
       "inherits": "MacOS_Base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "VCPKG_TARGET_TRIPLET": "arm64-osx"
+        "VCPKG_TARGET_TRIPLET": "arm64-osx",
+        "SWIG_CSHARP": "ON"
       }
     },
     
@@ -106,7 +109,8 @@
         "VCPKG_TARGET_TRIPLET": "x64-linux",
         "CMAKE_CXX_FLAGS": "-D_DEBUG -g -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers",
         "BUILD_TESTS": "ON",
-        "BUILD_EXAMPLES": "ON"
+        "BUILD_EXAMPLES": "ON",
+        "SWIG_CSHARP": "ON"
       }
     },
     {
@@ -118,7 +122,8 @@
         "VCPKG_TARGET_TRIPLET": "x64-linux",
         "CMAKE_CXX_FLAGS": "-D_DEBUG -g -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers",
         "BUILD_TESTS": "ON",
-        "BUILD_EXAMPLES": "ON"
+        "BUILD_EXAMPLES": "ON",
+        "SWIG_CSHARP": "ON"
       }
     },
     {
@@ -127,7 +132,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
-        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers"
+        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers",
+        "SWIG_CSHARP": "ON"
       }
     },
     {
@@ -137,7 +143,8 @@
         "BUILD_SHARED_LIBS": "ON",
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
-        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers"
+        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers",
+        "SWIG_CSHARP": "ON"
       }
     }
   ]

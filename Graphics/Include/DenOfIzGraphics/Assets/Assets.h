@@ -65,8 +65,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "Shaders/ShaderReflectDesc.h"
 #include "Shaders/ShaderReflectionHelper.h"
 
-#include "Animation/AnimationStateManager.h" // Todo remove for full ozz wrapper
-
 #include "Font/EmbeddedTextRendererShaders.h"
 #include "Font/Font.h"
 #include "Font/FontLibrary.h"

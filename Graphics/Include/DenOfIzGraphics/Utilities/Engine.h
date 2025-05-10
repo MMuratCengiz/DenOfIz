@@ -18,6 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+// Resolve an odd Swig error
+#ifdef __linux__
+#undef __valid
+#include <chrono>
+#endif
+
 // Init OS specific common includes, to make sure they are loaded first
 #include "Common_Apple.h"
 #include "Common_Windows.h"
