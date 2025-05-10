@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Utilities/Interop.h>
 #include "Font.h"
+#include <mutex>
 
 namespace DenOfIz
 {

@@ -20,7 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <iterator>
 #include <string>
 #include <cstring>
-#include <cctype> 
+#include <cctype>
+#include <stdexcept>
 
 #ifdef _WIN32
 #ifdef DZ_GRAPHICS_EXPORTS
