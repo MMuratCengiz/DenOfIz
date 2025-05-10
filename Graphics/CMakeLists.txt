@@ -402,10 +402,7 @@ endif ()
 set_target_default_properties(DenOfIzGraphics)
 #target_compile_definitions(DenOfIzGraphics PUBLIC NSIGHT_ENABLE)
 
-# Apply platform-specific library settings
-if (APPLE)
-    APPLE_LIB(DenOfIzGraphics)
-elseif (UNIX AND NOT APPLE)
+if (LINUX)
     LINUX_LIB(DenOfIzGraphics)
 endif ()
 
