@@ -17,6 +17,8 @@ on:
 
 env:
   DENOFIZ_VERSION: ${{ github.event.inputs.version || '1.0.0' }}
+  # Set policy version for CMake to handle outdated libraries
+  CMAKE_POLICY_VERSION_MINIMUM: "3.5"
 
 jobs:
   # Build on Windows with static libraries - current working approach
@@ -55,8 +57,9 @@ jobs:
       - name: Configure
         shell: pwsh
         run: |
-          # Use full path for CMakePresets.json
-          cmake --preset=Debug_MSVC -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }}
+          # Use full path for CMakePresets.json and set policy minimum version
+          cmake --preset=Debug_MSVC -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} `
+            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }}
 
       - name: Build NuGet Package
         shell: pwsh
@@ -105,8 +108,9 @@ jobs:
 
       - name: Configure
         run: |
-          # Use full path for CMakePresets.json
-          cmake --preset=Debug_Linux -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }}
+          # Use full path for CMakePresets.json and set policy minimum version
+          cmake --preset=Debug_Linux -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} \
+            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }}
 
       - name: Build
         run: |
@@ -159,8 +163,9 @@ jobs:
 
       - name: Configure
         run: |
-          # Use full path for CMakePresets.json
-          cmake --preset=Debug_OSX -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }}
+          # Use full path for CMakePresets.json and set policy minimum version
+          cmake --preset=Debug_OSX -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} \
+            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }}
 
       - name: Build
         run: |

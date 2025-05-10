@@ -254,7 +254,6 @@ add_subdirectory(_ThirdParty/msdf-atlas-gen)
 
 target_include_default_directories(DenOfIzGraphics)
 target_include_directories(DenOfIzGraphics
-        ${TINYGLTF_INCLUDE_DIRS}
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/Tiny> $<INSTALL_INTERFACE:_ThirdParty/Tiny>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/include> $<INSTALL_INTERFACE:_ThirdParty/MetalShaderConverter/include>

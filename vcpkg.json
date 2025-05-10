@@ -10,7 +10,6 @@
     "vulkan",
     "vulkan-memory-allocator",
     "stb",
-    "tinygltf",
     "gtest",
     "taskflow",
     "directxmath",
