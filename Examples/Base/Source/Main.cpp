@@ -21,7 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 #include <DenOfIzGraphics/Backends/GraphicsApi.h>
 
-
 int DenOfIz::Main( IExample *example )
 {
     Engine::Init( );
@@ -30,9 +29,9 @@ int DenOfIz::Main( IExample *example )
     _CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
     _CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_DEBUG );
 #endif
-    if ( SDL_Init( SDL_INIT_EVERYTHING ) != 0 )
+    if ( SDL_Init( SDL_INIT_EVERYTHING ^ SDL_INIT_AUDIO ) != 0 )
     {
-        exit( 1 );
+        LOG( FATAL ) << "SDL_Init failed: " << SDL_GetError( );
     }
 
     uint32_t windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_INPUT_FOCUS;
@@ -91,7 +90,7 @@ int DenOfIz::Main( IExample *example )
 
     example->Quit( );
     delete example;
-    logicalDevice.reset(  );
+    logicalDevice.reset( );
     GraphicsApi::ReportLiveObjects( );
 
     SDL_DestroyWindow( window );

@@ -13,7 +13,7 @@
 #define RAYTRACING_COMMON_HLSL
 
 #define HLSL
-#include "RaytracingHlslCompat.h"
+#include "RayTracingHlslCompat.h"
 #include "ProceduralPrimitivesLibrary.hlsli"
 #include "RaytracingShaderHelper.hlsli"
 
