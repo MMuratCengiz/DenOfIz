@@ -34,6 +34,13 @@ set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
 set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/CSharp/Project/Lib"
 )
+if (APPLE)
+    target_compile_options(DenOfIzGraphicsCSharp PRIVATE
+            $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
+            $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
+    set_property(TARGET DenOfIzGraphicsCSharp APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
+endif()
+
 file(MAKE_DIRECTORY ${SWIG_CSHARP_LIB_DIR})
 
 set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
