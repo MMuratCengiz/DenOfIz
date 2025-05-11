@@ -17,11 +17,9 @@ on:
 
 env:
   DENOFIZ_VERSION: ${{ github.event.inputs.version || '1.0.0' }}
-  # Set policy version for CMake to handle outdated libraries
   CMAKE_POLICY_VERSION_MINIMUM: "3.5"
 
 jobs:
-  # Build on Windows with static libraries - current working approach
   build-windows:
     runs-on: windows-latest
     steps:
@@ -29,38 +27,24 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Setup vcpkg
-        shell: pwsh
-        run: |
-          if (-Not (Test-Path -Path "vcpkg")) {
-            git clone https://github.com/microsoft/vcpkg.git
-          }
-          cd vcpkg
-          if (-Not (Test-Path -Path "vcpkg.exe")) {
-            .\bootstrap-vcpkg.bat
-          }
-
-      - name: Cache vcpkg packages
-        uses: actions/cache@v4
-        with:
-          path: vcpkg/installed
-          key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
-          restore-keys: |
-            ${{ runner.os }}-vcpkg-
-
       - name: Install dependencies
         shell: pwsh
         run: |
-          choco install -y cmake ninja
-          choco install -y swig
-          choco install -y make
+          choco install -y swig make
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: 'vcpkg.json'
 
       - name: Configure
         shell: pwsh
         run: |
-          # Use full path for CMakePresets.json and set policy minimum version
           cmake --preset=Debug_MSVC -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} `
-            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }}
+            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }} `
+            -DBUILD_EXAMPLES=OFF
 
       - name: Build NuGet Package
         shell: pwsh
@@ -73,7 +57,6 @@ jobs:
           name: DenOfIzGraphics-Windows-${{ env.DENOFIZ_VERSION }}
           path: Swig/Targets/CSharp/NuGet_Out/DenOfIzGraphics.${{ env.DENOFIZ_VERSION }}.nupkg
 
-  # Cross-platform build approach
   build-linux:
     runs-on: ubuntu-latest
     steps:
@@ -84,35 +67,24 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build build-essential
+          sudo apt-get install -y ninja-build build-essential
           sudo apt-get install -y swig mono-complete
           sudo apt-get install -y libglu1-mesa-dev freeglut3-dev libvulkan-dev libsdl2-dev
           sudo apt-get install -y libfreetype-dev libharfbuzz-dev
           sudo apt-get install -y autoconf automake autoconf-archive
 
-      - name: Setup vcpkg
-        run: |
-          if [ ! -d "vcpkg" ]; then
-            git clone https://github.com/microsoft/vcpkg.git
-          fi
-          cd vcpkg
-          if [ ! -f "./vcpkg" ]; then
-            ./bootstrap-vcpkg.sh
-          fi
+      - uses: lukka/get-cmake@latest
 
-      - name: Cache vcpkg packages
-        uses: actions/cache@v4
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
         with:
-          path: vcpkg/installed
-          key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
-          restore-keys: |
-            ${{ runner.os }}-vcpkg-
+          vcpkgJsonGlob: 'vcpkg.json'
 
       - name: Configure
         run: |
-          # Use full path for CMakePresets.json and set policy minimum version
           cmake --preset=Debug_Linux -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} \
-            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }}
+            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }} \
+            -DBUILD_EXAMPLES=OFF
 
       - name: Build
         run: |
@@ -140,35 +112,24 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install cmake ninja
+          brew install ninja
           brew install swig mono
           brew install freetype harfbuzz
           brew install sdl2
           brew install autoconf automake autoconf-archive
 
-      - name: Setup vcpkg
-        run: |
-          if [ ! -d "vcpkg" ]; then
-            git clone https://github.com/microsoft/vcpkg.git
-          fi
-          cd vcpkg
-          if [ ! -f "./vcpkg" ]; then
-            ./bootstrap-vcpkg.sh
-          fi
+      - uses: lukka/get-cmake@latest
 
-      - name: Cache vcpkg packages
-        uses: actions/cache@v4
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
         with:
-          path: vcpkg/installed
-          key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
-          restore-keys: |
-            ${{ runner.os }}-vcpkg-
+          vcpkgJsonGlob: 'vcpkg.json'
 
       - name: Configure
         run: |
-          # Use full path for CMakePresets.json and set policy minimum version
           cmake --preset=Debug_OSX -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} \
-            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }}
+            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }} \
+            -DBUILD_EXAMPLES=OFF
 
       - name: Build
         run: |
@@ -187,7 +148,6 @@ jobs:
           name: macos-artifacts
           path: artifacts/
 
-  # Combine artifacts for cross-platform NuGet package
   build-cross-platform-nuget:
     runs-on: windows-latest
     needs: [build-windows, build-linux, build-macos]
@@ -199,10 +159,12 @@ jobs:
         with:
           dotnet-version: '6.0.x'
 
-      - name: Setup SWIG and CMake
+      - name: Install SWIG
         shell: pwsh
         run: |
-          choco install -y cmake swig
+          choco install -y swig
+
+      - uses: lukka/get-cmake@latest
 
       - name: Download Windows NuGet Package
         uses: actions/download-artifact@v4
@@ -227,7 +189,6 @@ jobs:
         run: |
           mkdir -p extracted
           cd extracted
-          # Rename nupkg to zip so we can extract it
           $packagePath = (Get-ChildItem -Path ../windows-package/*.nupkg).FullName
           Copy-Item $packagePath package.zip
           Expand-Archive package.zip -DestinationPath ./
@@ -235,20 +196,15 @@ jobs:
       - name: Merge Cross-Platform Artifacts
         shell: pwsh
         run: |
-          # Create directory structure for cross-platform NuGet package
           $packageDir = "cross-platform-package"
           mkdir -p $packageDir
           
-          # Copy extracted Windows NuGet package content as base
           Copy-Item extracted/* $packageDir -Recurse
           
-          # Merge Linux artifacts
           Copy-Item linux-artifacts/runtimes/linux-x64/native/* $packageDir/runtimes/linux-x64/native/ -Force
           
-          # Merge macOS artifacts
           Copy-Item macos-artifacts/runtimes/osx-x64/native/* $packageDir/runtimes/osx-x64/native/ -Force
           
-          # Update nuspec file if needed
           $nuspecFile = "$packageDir/DenOfIzGraphics.nuspec"
           if (Test-Path $nuspecFile) {
             $nuspec = [xml](Get-Content $nuspecFile)
@@ -256,7 +212,6 @@ jobs:
             $nuspec.Save($nuspecFile)
           }
           
-          # Create cross-platform NuGet package
           cd $packageDir
           nuget pack -Version ${{ env.DENOFIZ_VERSION }} -OutputDirectory ../
 

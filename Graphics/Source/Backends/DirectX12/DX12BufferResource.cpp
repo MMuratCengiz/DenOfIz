@@ -20,7 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <utility>
 #include "DenOfIzGraphics/Backends/DirectX12/DX12Fence.h"
-#include "directxtk12/BufferHelpers.h"
 
 typedef size_t i;
 using namespace DenOfIz;

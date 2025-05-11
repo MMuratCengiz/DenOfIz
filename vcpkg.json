@@ -31,7 +31,6 @@
       "platform": "osx"
     },
     { "name": "directx12-agility", "platform": "windows" },
-    { "name": "directxtk12", "platform": "windows" },
     { "name": "directx-headers", "platform": "windows|linux" }
   ]
 }

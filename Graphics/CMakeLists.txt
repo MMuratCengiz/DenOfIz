@@ -5,7 +5,6 @@ if (WIN32 OR LINUX)
     find_package(directx-headers CONFIG REQUIRED)
 endif ()
 if (WIN32)
-    find_package(directxtk12 CONFIG REQUIRED)
     find_package(directx12-agility CONFIG REQUIRED)
 elseif (APPLE)
     # MacOS still needs to build from source
@@ -318,7 +317,6 @@ if (WIN32)
             d3d12
             dxcompiler
             Microsoft::DirectX-Headers
-            Microsoft::DirectXTK12
             Microsoft::DirectX-Guids
             D3D12MemoryAllocator
             metalirconverter
