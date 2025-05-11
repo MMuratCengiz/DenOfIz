@@ -27,10 +27,16 @@ jobs:
           submodules: 'recursive'
 
       - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.3.1
+        uses: microsoft/setup-msbuild@v2
         with:
           vs-version: '[17.0,)'
           msbuild-architecture: x64
+
+      - name: Install Windows SDK
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://go.microsoft.com/fwlink/p/?LinkID=2196241 -OutFile winsdksetup.exe
+          Start-Process -FilePath .\winsdksetup.exe -ArgumentList "/features OptionId.WindowsDesktopDebuggers OptionId.DesktopCPPx64 OptionId.DirectX /quiet /norestart" -Wait
 
       - name: Install dependencies
         shell: pwsh
@@ -47,6 +53,7 @@ jobs:
       - name: Configure
         shell: pwsh
         run: |
+          $winsdkPath = "C:\Program Files (x86)\Windows Kits\10"
           cmake --preset=Debug_MSVC -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} `
             -DBUILD_EXAMPLES=OFF
 
@@ -76,6 +83,8 @@ jobs:
           sudo apt-get install -y libglu1-mesa-dev freeglut3-dev libvulkan-dev libsdl2-dev
           sudo apt-get install -y libfreetype-dev libharfbuzz-dev
           sudo apt-get install -y libltdl-dev libtool autoconf automake autoconf-archive
+          sudo apt-get install -y libwayland-dev libxkbcommon-dev libegl1-mesa-dev
+          sudo apt-get install -y libibus-1.0-dev
 
       - uses: lukka/get-cmake@latest
 

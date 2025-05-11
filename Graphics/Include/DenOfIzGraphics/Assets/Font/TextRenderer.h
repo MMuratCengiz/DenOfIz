@@ -43,19 +43,14 @@ namespace DenOfIz
     struct DZ_API TextRenderDesc
     {
         InteropString    Text;
-        float            X;
-        float            Y;
-        Float_4          Color;
-        float            Scale;
-        bool             HorizontalCenter;
-        bool             VerticalCenter;
-        TextDirection    Direction;
+        float            X                = 0.0f;
+        float            Y                = 0.0f;
+        Float_4          Color            = Float_4{ 1.0f, 1.0f, 1.0f, 1.0f };
+        float            Scale            = 1.0f;
+        bool             HorizontalCenter = false;
+        bool             VerticalCenter   = false;
+        TextDirection    Direction        = TextDirection::Auto;
         AntiAliasingMode AntiAliasingMode = AntiAliasingMode::Grayscale;
-
-        TextRenderDesc( ) :
-            X( 0.0f ), Y( 0.0f ), Color( 1.0f, 1.0f, 1.0f, 1.0f ), Scale( 1.0f ), HorizontalCenter( false ), VerticalCenter( false ), Direction( TextDirection::Auto )
-        {
-        }
     };
 
     class TextRenderer
