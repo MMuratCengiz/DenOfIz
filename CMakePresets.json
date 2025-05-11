@@ -147,5 +147,57 @@
         "SWIG_CSHARP": "ON"
       }
     }
+  ],
+  "buildPresets": [
+    {
+      "name": "Debug_MSVC",
+      "configurePreset": "Debug_MSVC",
+      "displayName": "Build Debug MSVC"
+    },
+    {
+      "name": "Debug_Shared_MSVC",
+      "configurePreset": "Debug_Shared_MSVC",
+      "displayName": "Build Debug Shared MSVC"
+    },
+    {
+      "name": "Release_MSVC",
+      "configurePreset": "Release_MSVC",
+      "displayName": "Build Release MSVC"
+    },
+    {
+      "name": "Release_Shared_MSVC",
+      "configurePreset": "Release_Shared_MSVC",
+      "displayName": "Build Release Shared MSVC"
+    },
+    {
+      "name": "Debug_OSX",
+      "configurePreset": "Debug_OSX",
+      "displayName": "Build Debug OSX"
+    },
+    {
+      "name": "Release_OSX",
+      "configurePreset": "Release_OSX",
+      "displayName": "Build Release OSX"
+    },
+    {
+      "name": "Debug_Linux",
+      "configurePreset": "Debug_Linux",
+      "displayName": "Build Debug Linux"
+    },
+    {
+      "name": "Debug_Shared_Linux",
+      "configurePreset": "Debug_Shared_Linux",
+      "displayName": "Build Debug Shared Linux"
+    },
+    {
+      "name": "Release_Linux",
+      "configurePreset": "Release_Linux",
+      "displayName": "Build Release Linux"
+    },
+    {
+      "name": "Release_Shared_Linux",
+      "configurePreset": "Release_Shared_Linux",
+      "displayName": "Build Release Shared Linux"
+    }
   ]
 }
