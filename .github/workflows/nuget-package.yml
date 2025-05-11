@@ -26,6 +26,12 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.3.1
+        with:
+          vs-version: '[17.0,)'
+          msbuild-architecture: x64
+
       - name: Install dependencies
         shell: pwsh
         run: |
@@ -69,7 +75,7 @@ jobs:
           sudo apt-get install -y swig mono-complete
           sudo apt-get install -y libglu1-mesa-dev freeglut3-dev libvulkan-dev libsdl2-dev
           sudo apt-get install -y libfreetype-dev libharfbuzz-dev
-          sudo apt-get install -y autoconf automake autoconf-archive libtool
+          sudo apt-get install -y libltdl-dev libtool autoconf automake autoconf-archive
 
       - uses: lukka/get-cmake@latest
 

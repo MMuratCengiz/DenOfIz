@@ -44,6 +44,9 @@ namespace DenOfIz
         uint32_t Version  = 0;
         uint64_t NumBytes = 0;
         AssetUri Uri{ };
+
+        AssetHeader( uint64_t magic, uint32_t version, uint64_t numBytes ) : Magic( magic ), Version( version ), NumBytes( numBytes ) { }
+        AssetHeader( ) = default;
     };
 
     struct DZ_API AssetDataStream
