@@ -269,13 +269,13 @@ jobs:
           $nugetDir = "Swig/Targets/CSharp/NuGet"
 
           # Create necessary directories
-          mkdir -p $nugetDir/lib/netstandard2.0
-          mkdir -p $nugetDir/src_gen
-          mkdir -p $nugetDir/build
-          mkdir -p $nugetDir/runtimes/win-x64/native
-          mkdir -p $nugetDir/runtimes/linux-x64/native
-          mkdir -p $nugetDir/runtimes/osx-x64/native
-
+          New-Item -Path "$nugetDir/lib/netstandard2.0" -ItemType Directory -Force
+          New-Item -Path "$nugetDir/src_gen" -ItemType Directory -Force
+          New-Item -Path "$nugetDir/build" -ItemType Directory -Force
+          New-Item -Path "$nugetDir/runtimes/win-x64/native" -ItemType Directory -Force
+          New-Item -Path "$nugetDir/runtimes/linux-x64/native" -ItemType Directory -Force
+          New-Item -Path "$nugetDir/runtimes/osx-x64/native" -ItemType Directory -Force
+          
           # Copy C# code files
           Write-Host "Copying C# source files"
           Copy-Item -Recurse windows-artifacts/code/* $nugetDir/src_gen/
