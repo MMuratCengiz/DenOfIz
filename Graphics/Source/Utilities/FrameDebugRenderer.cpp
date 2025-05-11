@@ -124,7 +124,7 @@ void FrameDebugRenderer::Render( ICommandList *commandList )
     fpsParams.Text             = buffer;
     fpsParams.X                = rightMargin;
     fpsParams.Y                = yPos;
-    fpsParams.Color            = m_frameTimeMs > 16.7f ? Float_4( 1.0f, 0.4f, 0.4f, 1.0f ) : m_desc.TextColor;
+    fpsParams.Color            = m_frameTimeMs > 16.7f ? Float_4{ 1.0f, 0.4f, 0.4f, 1.0f } : m_desc.TextColor;
     fpsParams.Scale            = m_desc.Scale;
     fpsParams.HorizontalCenter = true;
     fpsParams.Direction        = m_desc.Direction;
