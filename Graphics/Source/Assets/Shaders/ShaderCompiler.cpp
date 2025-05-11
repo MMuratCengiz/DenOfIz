@@ -67,6 +67,9 @@ CompileResult ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) cons
         codePage = DXC_CP_UTF16;
         break;
     case CodePage::UTF32:
+#ifndef DXC_CP_UTF32
+#define DXC_CP_UTF32 12000 // Undefined on CI for some reason
+#endif
         codePage = DXC_CP_UTF32;
         break;
     }

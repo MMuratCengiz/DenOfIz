@@ -47,8 +47,7 @@ MetalCommandQueue::MetalCommandQueue(MetalContext* context, const CommandQueueDe
 {
     @autoreleasepool
     {
-        MTLCommandQueueDescriptor* queueDesc = [[MTLCommandQueueDescriptor alloc] init];
-        m_queue = [m_context->Device newCommandQueueWithDescriptor:queueDesc];
+        m_queue = [m_context->Device newCommandQueue];
 
         if (!m_queue)
         {

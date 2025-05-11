@@ -386,8 +386,13 @@ if (APPLE)
 endif ()
 if (LINUX)
     configure_file(
-            "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/libdxcompiler.so"
+            "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/linux_dxc/lib/libdxcompiler.so"
             "${CMAKE_BINARY_DIR}/libdxcompiler.so"
+            COPYONLY
+    )
+    configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/linux_dxc/lib/libdxil.so"
+            "${CMAKE_BINARY_DIR}/libdxil.so"
             COPYONLY
     )
 
