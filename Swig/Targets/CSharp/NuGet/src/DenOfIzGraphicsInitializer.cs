@@ -21,16 +21,32 @@ namespace DenOfIz
                 {
                     return;
                 }
-                NativeLibraryLoader.Initialize();
-                Engine.Init();
-                _initialized = true;
-                AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+                
+                try
+                {
+                    NativeLibraryLoader.Initialize();
+                    Engine.Init();
+                    _initialized = true;
+                    AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to initialize DenOfIzGraphics: {ex.Message}");
+                    throw;
+                }
             }
         }
 
         private static void OnProcessExit(object sender, EventArgs e)
         {
-            GraphicsApi.ReportLiveObjects();
+            try
+            {
+                GraphicsApi.ReportLiveObjects();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error during process exit cleanup: {ex.Message}");
+            }
         }
     }
 }

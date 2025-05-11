@@ -31,19 +31,88 @@ namespace DenOfIz
                     return;
                 }
 
-                string runtimePath = Path.Combine(
-                    Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), 
-                    "runtimes", 
-                    $"{GetPlatformRid()}-{GetArchitecture()}", 
-                    "native");
-    
-                SetDllDirectory(runtimePath);
+                try
+                {
+                    string nativePath = GetNativeLibraryPath();
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        SetDllDirectoryWindows(nativePath);
+                    }
+                    LoadAllNativeLibraries(nativePath);
+                    _initialized = true;
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error initializing native libraries: {ex.Message}");
+                    throw;
+                }
+            }
+        }
+
+        private static string GetNativeLibraryPath()
+        {
+            string assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string platform = GetPlatformRid();
+            string architecture = GetArchitecture();
+            
+            string runtimePath = Path.Combine(assemblyDir, "runtimes", $"{platform}-{architecture}", "native");
+            if (Directory.Exists(runtimePath))
+            {
+                return runtimePath;
+            }
+
+            runtimePath = Path.Combine(AppContext.BaseDirectory, "runtimes", $"{platform}-{architecture}", "native");
+            if (Directory.Exists(runtimePath))
+            {
+                return runtimePath;
+            }
+            
+            return AppContext.BaseDirectory;
+        }
+
+        private static void LoadAllNativeLibraries(string directory)
+        {
+            if (!Directory.Exists(directory))
+            {
+                throw new DirectoryNotFoundException($"Native library directory not found: {directory}");
+            }
+            
+            string extension = GetPlatformLibraryExtension();
+            string[] libraryFiles = Directory.GetFiles(directory, $"*{extension}");
+            
+            string coreLibPrefix = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
+                "DenOfIzGraphicsCSharp" : "libDenOfIzGraphicsCSharp";
                 
-                LoadNativeLibrary("dxcompiler");
-                LoadNativeLibrary("dxil");
-                LoadNativeLibrary("metalirconverter");
-                LoadNativeLibrary("DenOfIzGraphicsCSharp");
-                _initialized = true;
+            foreach (string file in libraryFiles)
+            {
+                string filename = Path.GetFileName(file);
+                if (filename.StartsWith(coreLibPrefix))
+                {
+                    LoadLibrary(file);
+                    break;
+                }
+            }
+            
+            // Now load all remaining libraries
+            foreach (string file in libraryFiles)
+            {
+                string filename = Path.GetFileName(file);
+                if (!filename.StartsWith(coreLibPrefix))
+                {
+                    LoadLibrary(file);
+                }
+            }
+        }
+        
+        private static void SetDllDirectoryWindows(string pathName)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                if (!SetDllDirectory(pathName))
+                {
+                    int errorCode = Marshal.GetLastWin32Error();
+                    throw new InvalidOperationException($"Failed to set DLL directory. Error code: {errorCode}");
+                }
             }
         }
 
@@ -55,11 +124,11 @@ namespace DenOfIz
                 {
                     return handle;
                 }
-                string extension = GetPlatformLibraryExtension();
+                
                 string libraryName = GetPlatformLibraryFileName(name);
                 string architecture = GetArchitecture();
                 string platform = GetPlatformRid();
-                
+
                 string runtimesPath = Path.Combine(
                     GetAssemblyDirectory(),
                     "runtimes",
@@ -216,22 +285,32 @@ namespace DenOfIz
             return LoadLibraryW(path);
         }
 
-        [DllImport("libdl.so.2", SetLastError = true)]
-        private static extern IntPtr dlopen(string fileName, int flags);
+        [DllImport("libdl.so.2", EntryPoint = "dlopen", SetLastError = true)]
+        private static extern IntPtr LinuxDlopen(string fileName, int flags);
 
         private const int RTLD_NOW = 2;
 
         private static IntPtr LinuxLoadLibrary(string path)
         {
-            return dlopen(path, RTLD_NOW);
+            IntPtr handle = LinuxDlopen(path, RTLD_NOW);
+            if (handle == IntPtr.Zero)
+            {
+                Console.Error.WriteLine($"Failed to load Linux library: {path}");
+                // Try with libdl.so as a fallback
+                handle = DlopenFallback(path, RTLD_NOW);
+            }
+            return handle;
         }
 
-        [DllImport("libdl.dylib", SetLastError = true)]
-        private static extern IntPtr dlopen_macos(string fileName, int flags);
+        [DllImport("libdl.so", EntryPoint = "dlopen", SetLastError = true)]
+        private static extern IntPtr DlopenFallback(string fileName, int flags);
+
+        [DllImport("libSystem.dylib", EntryPoint = "dlopen", SetLastError = true)]
+        private static extern IntPtr MacOSDlopen(string fileName, int flags);
 
         private static IntPtr MacOSLoadLibrary(string path)
         {
-            return dlopen_macos(path, RTLD_NOW);
+            return MacOSDlopen(path, RTLD_NOW);
         }
     }
 }
