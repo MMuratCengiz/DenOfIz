@@ -28,7 +28,7 @@ namespace DenOfIz
         BinaryReader *Reader;
     };
 
-    class DZ_API SkeletonAssetReader
+    class SkeletonAssetReader
     {
         BinaryReader *m_reader;
         SkeletonAsset m_skeletonAsset;

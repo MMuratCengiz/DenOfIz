@@ -336,6 +336,7 @@ typedef DenOfIz::InteropArray<DenOfIz::CompiledShader> CompiledShaderArray;
 typedef DenOfIz::InteropArray<unsigned char> UnsignedCharArray;
 typedef DenOfIz::InteropArray<unsigned char> ByteArray;
 typedef DenOfIz::InteropArray<bool> BoolArray;
+typedef DenOfIz::InteropArray<int> IntArray;
 // Instantiations:
 %template(ASGeometryDescArray) DenOfIz::InteropArray<DenOfIz::ASGeometryDesc>;
 %template(ASInstanceDescArray) DenOfIz::InteropArray<DenOfIz::ASInstanceDesc>;
@@ -414,3 +415,4 @@ typedef DenOfIz::InteropArray<bool> BoolArray;
 %template(UnsignedCharArray) DenOfIz::InteropArray<unsigned char>;
 %template(ByteArray) DenOfIz::InteropArray<unsigned char>;
 %template(BoolArray) DenOfIz::InteropArray<bool>;
+%template(IntArray) DenOfIz::InteropArray<int>;

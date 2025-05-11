@@ -28,7 +28,7 @@ namespace DenOfIz
         BinaryWriter *Writer;
     };
 
-    class DZ_API SkeletonAssetWriter
+    class SkeletonAssetWriter
     {
         BinaryWriter *m_writer;
 

@@ -69,6 +69,7 @@ namespace DenOfIz
         uint32_t      LocalRootArgsSize;
         InteropString Name;
     };
+    template class DZ_API InteropArray<ShaderRecordDebugData>;
 
     struct DZ_API ShaderBindingTableDebugData
     {
@@ -80,7 +81,7 @@ namespace DenOfIz
         InteropArray<ShaderRecordDebugData> HitGroups;
     };
 
-    class IShaderBindingTable
+    class DZ_API IShaderBindingTable
     {
     public:
         // TODO TBD if we want to keep this

@@ -28,7 +28,7 @@ namespace DenOfIz
         BinaryReader *Reader;
     };
 
-    class DZ_API ShaderAssetReader
+    class ShaderAssetReader
     {
         BinaryReader *m_reader;
         ShaderAsset   m_shaderAsset;

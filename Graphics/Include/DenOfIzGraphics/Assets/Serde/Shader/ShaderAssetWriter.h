@@ -28,7 +28,7 @@ namespace DenOfIz
         BinaryWriter *Writer;
     };
 
-    class DZ_API ShaderAssetWriter
+    class ShaderAssetWriter
     {
         ShaderAsset   m_shaderAsset;
         BinaryWriter *m_writer;

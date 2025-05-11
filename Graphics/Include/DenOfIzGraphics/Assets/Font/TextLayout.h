@@ -42,6 +42,7 @@ namespace DenOfIz
 
         GlyphVertex( ) = default;
     };
+    template class DZ_API InteropArray<GlyphVertex>;
 
     enum class TextDirection
     {

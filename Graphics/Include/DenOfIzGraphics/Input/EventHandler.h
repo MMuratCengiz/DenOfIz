@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class DZ_API EventHandler
+    class EventHandler
     {
         InputSystem          *m_inputSystem;
         EventHandlerCallbacks m_callbacks;

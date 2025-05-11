@@ -286,6 +286,7 @@ target_link_libraries(DenOfIzGraphics
 if (BUILD_SHARED_LIBS)
     target_compile_definitions(DenOfIzGraphics PRIVATE DZ_GRAPHICS_EXPORTS)
     target_compile_definitions(DenOfIzGraphics INTERFACE DZ_GRAPHICS_IMPORTS)
+    target_compile_definitions(DenOfIzGraphics PRIVATE BUILD_SHARED_LIBS)
 else ()
     target_link_libraries(DenOfIzGraphics
             PUBLIC
@@ -303,9 +304,21 @@ if (WIN32)
             _ThirdParty/dxc/lib/${CPU_ARCHITECTURE}
     )
 
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/dxcompiler.dll COPYONLY)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/dxil.dll COPYONLY)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/metalirconverter.dll COPYONLY)
+    configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/dxcompiler.dll"
+            "${CMAKE_BINARY_DIR}/dxcompiler.dll"
+            COPYONLY
+    )
+    configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/dxil.dll"
+            "${CMAKE_BINARY_DIR}/dxil.dll"
+            COPYONLY
+    )
+    configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/metalirconverter.dll"
+            "${CMAKE_BINARY_DIR}/metalirconverter.dll"
+            COPYONLY
+    )
 
     add_library(metalirconverter STATIC IMPORTED)
     set_target_properties(metalirconverter PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/metalirconverter.lib")
@@ -372,8 +385,11 @@ if (APPLE)
     set_property(TARGET DenOfIzGraphics APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
 endif ()
 if (LINUX)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/linux_dxc/lib/libdxcompiler.so
-            ${CMAKE_BINARY_DIR} COPYONLY)
+    configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/dxc/bin/${CPU_ARCHITECTURE}/libdxcompiler.so"
+            "${CMAKE_BINARY_DIR}/libdxcompiler.so"
+            COPYONLY
+    )
 
     target_link_directories(
             DenOfIzGraphics

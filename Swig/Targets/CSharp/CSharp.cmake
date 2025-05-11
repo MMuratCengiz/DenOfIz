@@ -39,7 +39,7 @@ if (APPLE)
             $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
             $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
     set_property(TARGET DenOfIzGraphicsCSharp APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
-endif()
+endif ()
 
 file(MAKE_DIRECTORY ${SWIG_CSHARP_LIB_DIR})
 
@@ -67,8 +67,17 @@ add_custom_command(
 
 add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DenOfIzGraphicsCSharp> ${SWIG_CSHARP_LIB_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DenOfIzGraphics> ${SWIG_CSHARP_NATIVE_DIR}
 )
+
+if (BUILD_SHARED_LIBS)
+    add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:DenOfIzGraphics> ${SWIG_CSHARP_NATIVE_DIR}
+    )
+else ()
+    add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_LINKER_FILE:DenOfIzGraphics> ${SWIG_CSHARP_NATIVE_DIR}
+    )
+endif ()
 
 if (WIN32)
     add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
@@ -110,25 +119,61 @@ add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
 if (WIN32)
     add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphicsCSharp> ${NUGET_RUNTIMES_WIN_DIR}/DenOfIzGraphicsCSharp.dll
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphics> ${NUGET_RUNTIMES_WIN_DIR}/DenOfIzGraphics.dll
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/dxcompiler.dll ${NUGET_RUNTIMES_WIN_DIR}/dxcompiler.dll
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/dxil.dll ${NUGET_RUNTIMES_WIN_DIR}/dxil.dll
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/metalirconverter.dll ${NUGET_RUNTIMES_WIN_DIR}/metalirconverter.dll
+    )
+
+    if (BUILD_SHARED_LIBS)
+        add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphics> ${NUGET_RUNTIMES_WIN_DIR}/DenOfIzGraphics.dll
+        )
+    else ()
+        add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_LINKER_FILE:DenOfIzGraphics> ${NUGET_RUNTIMES_WIN_DIR}/DenOfIzGraphics.lib
+        )
+    endif ()
+
+    add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo "Windows: NuGet package files prepared successfully!"
     )
 elseif (APPLE)
     add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphicsCSharp> ${NUGET_RUNTIMES_OSX_DIR}/libDenOfIzGraphicsCSharp.dylib
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphics> ${NUGET_RUNTIMES_OSX_DIR}/libDenOfIzGraphics.dylib
             # COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libdxcompiler.dylib ${NUGET_RUNTIMES_OSX_DIR}/libdxcompiler.dylib # Statically built
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libmetalirconverter.dylib ${NUGET_RUNTIMES_OSX_DIR}/libmetalirconverter.dylib
+    )
+
+    if (BUILD_SHARED_LIBS)
+        add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphics> ${NUGET_RUNTIMES_OSX_DIR}/libDenOfIzGraphics.dylib
+        )
+    else ()
+        add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_LINKER_FILE:DenOfIzGraphics> ${NUGET_RUNTIMES_OSX_DIR}/libDenOfIzGraphics.a
+        )
+    endif ()
+
+    add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo "macOS: NuGet package files prepared successfully!"
     )
 else () # Linux
     add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphicsCSharp> ${NUGET_RUNTIMES_LINUX_DIR}/libDenOfIzGraphicsCSharp.so
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphics> ${NUGET_RUNTIMES_LINUX_DIR}/libDenOfIzGraphics.so
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libdxcompiler.so ${NUGET_RUNTIMES_LINUX_DIR}/libdxcompiler.so
+    )
+
+    if (BUILD_SHARED_LIBS)
+        add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphics> ${NUGET_RUNTIMES_LINUX_DIR}/libDenOfIzGraphics.so
+        )
+    else ()
+        add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_LINKER_FILE:DenOfIzGraphics> ${NUGET_RUNTIMES_LINUX_DIR}/libDenOfIzGraphics.a
+        )
+    endif ()
+
+    add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo "Linux: NuGet package files prepared successfully!"
     )
 endif ()

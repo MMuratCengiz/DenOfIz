@@ -49,6 +49,7 @@ namespace DenOfIz
         InteropString Name;
         InteropString Path;
     };
+    template class DZ_API InteropArray<AssetEntry>;
 
     struct DZ_API BundleHeader : AssetHeader
     {

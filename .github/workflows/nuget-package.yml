@@ -100,7 +100,19 @@ jobs:
         run: |
           mkdir -p artifacts/runtimes/linux-x64/native
           cp build/DenOfIz/Debug_Linux/CSharp/Project/Lib/libDenOfIzGraphicsCSharp.so artifacts/runtimes/linux-x64/native/
-          cp build/DenOfIz/Debug_Linux/CSharp/Project/Native/libDenOfIzGraphics.so artifacts/runtimes/linux-x64/native/
+
+          # Check for and copy the appropriate DenOfIzGraphics library (shared or static)
+          if [ -f build/DenOfIz/Debug_Linux/CSharp/Project/Native/libDenOfIzGraphics.so ]; then
+            cp build/DenOfIz/Debug_Linux/CSharp/Project/Native/libDenOfIzGraphics.so artifacts/runtimes/linux-x64/native/
+            echo "Copied shared library libDenOfIzGraphics.so"
+          elif [ -f build/DenOfIz/Debug_Linux/CSharp/Project/Native/libDenOfIzGraphics.a ]; then
+            cp build/DenOfIz/Debug_Linux/CSharp/Project/Native/libDenOfIzGraphics.a artifacts/runtimes/linux-x64/native/
+            echo "Copied static library libDenOfIzGraphics.a"
+          else
+            echo "ERROR: Neither libDenOfIzGraphics.so nor libDenOfIzGraphics.a was found!"
+            exit 1
+          fi
+
           cp build/DenOfIz/Debug_Linux/libdxcompiler.so artifacts/runtimes/linux-x64/native/
 
       - name: Upload Artifacts
@@ -143,7 +155,19 @@ jobs:
         run: |
           mkdir -p artifacts/runtimes/osx-x64/native
           cp build/DenOfIz/Debug_OSX/CSharp/Project/Lib/libDenOfIzGraphicsCSharp.dylib artifacts/runtimes/osx-x64/native/
-          cp build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.dylib artifacts/runtimes/osx-x64/native/
+
+          # Check for and copy the appropriate DenOfIzGraphics library (shared or static)
+          if [ -f build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.dylib ]; then
+            cp build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.dylib artifacts/runtimes/osx-x64/native/
+            echo "Copied shared library libDenOfIzGraphics.dylib"
+          elif [ -f build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.a ]; then
+            cp build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.a artifacts/runtimes/osx-x64/native/
+            echo "Copied static library libDenOfIzGraphics.a"
+          else
+            echo "ERROR: Neither libDenOfIzGraphics.dylib nor libDenOfIzGraphics.a was found!"
+            exit 1
+          fi
+
           cp build/DenOfIz/Debug_OSX/libmetalirconverter.dylib artifacts/runtimes/osx-x64/native/
 
       - name: Upload Artifacts

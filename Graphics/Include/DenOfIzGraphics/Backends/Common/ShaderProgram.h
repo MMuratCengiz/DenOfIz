@@ -67,6 +67,7 @@ namespace DenOfIz
         ShaderReflectDesc                   ReflectDesc;
         ShaderRayTracingDesc                RayTracing;
     };
+    template class DZ_API InteropArray<CompiledShader>;
 
     class ShaderProgram
     {

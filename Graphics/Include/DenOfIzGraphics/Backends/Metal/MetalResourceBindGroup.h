@@ -45,6 +45,11 @@ namespace DenOfIz
     {
         uint32_t      TLABOffset = 0;
         id<MTLBuffer> Buffer;
+
+        MetalRootParameterBinding() = default;
+        MetalRootParameterBinding( uint32_t offset, id<MTLBuffer> buffer ) : TLABOffset( offset ), Buffer( buffer )
+        {
+        }
     };
 
     struct MetalBufferBindingWithOffset

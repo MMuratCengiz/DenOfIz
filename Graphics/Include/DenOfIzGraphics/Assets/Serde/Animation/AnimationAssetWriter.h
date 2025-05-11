@@ -28,7 +28,7 @@ namespace DenOfIz
         BinaryWriter *Writer;
     };
 
-    class DZ_API AnimationAssetWriter
+    class AnimationAssetWriter
     {
         BinaryWriter *m_writer;
         uint64_t      m_streamStartOffset;

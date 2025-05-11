@@ -53,21 +53,36 @@ namespace DenOfIz
         dds::Header             m_ddsHeader{ };
         Byte                   *m_contentData{ };
 
+        uint32_t                m_width{ };
+        uint32_t                m_height{ };
+        uint32_t                m_depth{ };
+        uint32_t                m_mipLevels = 1;
+        uint32_t                m_arraySize = 1;
+        uint32_t                m_bitsPerPixel{ };
+        uint32_t                m_blockSize{ };
+        uint32_t                m_rowPitch{ };
+        uint32_t                m_numRows{ };
+        uint32_t                m_slicePitch{ };
+        Format                  m_format = Format::Undefined;
+        TextureDimension        m_dimension = TextureDimension::Undefined;
+        TextureExtension        m_extension = TextureExtension::DDS;
+        InteropArray<Byte>      m_data{ };
+
     public:
-        DZ_API uint32_t         Width{ };
-        DZ_API uint32_t         Height{ };
-        DZ_API uint32_t         Depth{ };
-        DZ_API uint32_t         MipLevels = 1;
-        DZ_API uint32_t         ArraySize = 1;
-        DZ_API uint32_t         BitsPerPixel{ };
-        DZ_API uint32_t         BlockSize{ };
-        DZ_API uint32_t         RowPitch{ };
-        DZ_API uint32_t         NumRows{ };
-        DZ_API uint32_t         SlicePitch{ };
-        DZ_API Format           Format    = Format::Undefined;
-        DZ_API TextureDimension Dimension = TextureDimension::Undefined;
-        DZ_API TextureExtension Extension = TextureExtension::DDS;
-        DZ_API InteropArray<Byte> Data{ };
+        DZ_API uint32_t         GetWidth() const { return m_width; }
+        DZ_API uint32_t         GetHeight() const { return m_height; }
+        DZ_API uint32_t         GetDepth() const { return m_depth; }
+        DZ_API uint32_t         GetMipLevels() const { return m_mipLevels; }
+        DZ_API uint32_t         GetArraySize() const { return m_arraySize; }
+        DZ_API uint32_t         GetBitsPerPixel() const { return m_bitsPerPixel; }
+        DZ_API uint32_t         GetBlockSize() const { return m_blockSize; }
+        DZ_API uint32_t         GetRowPitch() const { return m_rowPitch; }
+        DZ_API uint32_t         GetNumRows() const { return m_numRows; }
+        DZ_API uint32_t         GetSlicePitch() const { return m_slicePitch; }
+        DZ_API Format           GetFormat() const { return m_format; }
+        DZ_API TextureDimension GetDimension() const { return m_dimension; }
+        DZ_API TextureExtension GetExtension() const { return m_extension; }
+        DZ_API const InteropArray<Byte>& GetData() const { return m_data; }
         DZ_API explicit Texture( const InteropString &path );
         DZ_API explicit Texture( const InteropArray<Byte> &data, TextureExtension extension = TextureExtension::DDS );
         DZ_API static TextureExtension                IdentifyTextureFormat( const InteropArray<Byte> &data );

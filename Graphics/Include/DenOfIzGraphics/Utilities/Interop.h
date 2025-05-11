@@ -519,4 +519,9 @@ namespace DenOfIz
         std::memset( array + start, 0, end - start );
     }
     template class DZ_API InteropArray<Byte>;
+    template class DZ_API InteropArray<float>;
+    template class DZ_API InteropArray<InteropArray<float>>;
+    template class DZ_API InteropArray<bool>;
+    template class DZ_API InteropArray<int>;
+    template class DZ_API InteropArray<unsigned short>;
 } // namespace DenOfIz

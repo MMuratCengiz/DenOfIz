@@ -46,7 +46,7 @@ namespace DenOfIz
 
     struct DZ_API FontImporterDesc{ };
 
-    class DZ_API FontImporter final : public IAssetImporter
+    class FontImporter final : public IAssetImporter
     {
         ImporterDesc             m_importerDesc;
         const FontImporterDesc   m_desc;

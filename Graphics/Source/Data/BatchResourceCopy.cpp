@@ -133,12 +133,12 @@ ITextureResource *BatchResourceCopy::CreateAndLoadTexture( const InteropString &
     textureDesc.HeapType     = HeapType::GPU;
     textureDesc.Descriptor   = ResourceDescriptor::Texture;
     textureDesc.InitialUsage = ResourceUsage::CopyDst;
-    textureDesc.Width        = texture.Width;
-    textureDesc.Height       = texture.Height;
-    textureDesc.Format       = texture.Format;
-    textureDesc.Depth        = texture.Depth;
-    textureDesc.ArraySize    = texture.ArraySize;
-    textureDesc.MipLevels    = texture.MipLevels;
+    textureDesc.Width        = texture.GetWidth();
+    textureDesc.Height       = texture.GetHeight();
+    textureDesc.Format       = texture.GetFormat();
+    textureDesc.Depth        = texture.GetDepth();
+    textureDesc.ArraySize    = texture.GetArraySize();
+    textureDesc.MipLevels    = texture.GetMipLevels();
     textureDesc.DebugName    = InteropString( "CreateAndLoadTexture(" ).Append( file.Get( ) ).Append( ")" );
 
     auto outTex = m_device->CreateTextureResource( textureDesc );
@@ -415,11 +415,11 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
     stagingBufferDesc.InitialUsage = ResourceUsage::CopySrc;
     stagingBufferDesc.DebugName    = "LoadTexture_StagingBuffer";
 
-    for ( uint32_t i = 0; i < texture.MipLevels; ++i )
+    for ( uint32_t i = 0; i < texture.GetMipLevels( ); ++i )
     {
-        const uint32_t mipRowPitch   = Utilities::Align( std::max( 1u, texture.RowPitch >> i ), m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
-        const uint32_t mipNumRows    = std::max( 1u, texture.NumRows >> i );
-        const uint32_t mipSlicePitch = Utilities::Align( texture.Depth * mipRowPitch * mipNumRows, m_device->DeviceInfo( ).Constants.BufferTextureAlignment );
+        const uint32_t mipRowPitch   = Utilities::Align( std::max( 1u, texture.GetRowPitch( ) >> i ), m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
+        const uint32_t mipNumRows    = std::max( 1u, texture.GetNumRows( ) >> i );
+        const uint32_t mipSlicePitch = Utilities::Align( texture.GetDepth( ) * mipRowPitch * mipNumRows, m_device->DeviceInfo( ).Constants.BufferTextureAlignment );
         stagingBufferDesc.NumBytes += mipSlicePitch;
     }
 
@@ -451,10 +451,10 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
 void BatchResourceCopy::CopyTextureToMemoryAligned( const Texture &texture, const TextureMip &mipData, Byte *dst ) const
 {
     const uint32_t alignedRowPitch   = Utilities::Align( mipData.RowPitch, m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
-    const uint32_t alignedSlicePitch = Utilities::Align( alignedRowPitch * mipData.NumRows, GetSubresourceAlignment( texture.BitsPerPixel ) );
+    const uint32_t alignedSlicePitch = Utilities::Align( alignedRowPitch * mipData.NumRows, GetSubresourceAlignment( texture.GetBitsPerPixel() ) );
 
-    const Byte *pSrcData = texture.Data.Data( ) + mipData.DataOffset;
-    for ( uint32_t z = 0; z < texture.ArraySize; ++z )
+    const Byte *pSrcData = texture.GetData().Data( ) + mipData.DataOffset;
+    for ( uint32_t z = 0; z < texture.GetArraySize(); ++z )
     {
         const auto dstSlice = dst + alignedSlicePitch * z;
         const auto srcSlice = pSrcData + mipData.SlicePitch * z;

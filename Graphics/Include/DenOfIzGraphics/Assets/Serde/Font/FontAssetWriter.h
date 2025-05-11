@@ -27,7 +27,7 @@ namespace DenOfIz
         BinaryWriter *Writer;
     };
 
-    class DZ_API FontAssetWriter
+    class FontAssetWriter
     {
         BinaryWriter *m_writer;
         uint64_t      m_dataOffset          = 0;

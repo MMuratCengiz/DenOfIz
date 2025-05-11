@@ -1030,19 +1030,19 @@ void AssimpImporter::WriteTextureAsset( ImportContext &context, const aiTexture 
         sourceTexture = std::make_unique<Texture>( InteropString( path.c_str( ) ) );
     }
 
-    texAsset.Width        = sourceTexture->Width;
-    texAsset.Height       = sourceTexture->Height;
-    texAsset.Depth        = sourceTexture->Depth;
-    texAsset.Format       = sourceTexture->Format;
-    texAsset.Dimension    = sourceTexture->Dimension;
-    texAsset.MipLevels    = sourceTexture->MipLevels;
-    texAsset.ArraySize    = sourceTexture->ArraySize;
-    texAsset.BitsPerPixel = sourceTexture->BitsPerPixel;
-    texAsset.BlockSize    = sourceTexture->BlockSize;
-    texAsset.RowPitch     = sourceTexture->RowPitch;
-    texAsset.NumRows      = sourceTexture->NumRows;
-    texAsset.SlicePitch   = sourceTexture->SlicePitch;
-    texAsset.Mips.Resize( sourceTexture->MipLevels * sourceTexture->ArraySize );
+    texAsset.Width        = sourceTexture->GetWidth();
+    texAsset.Height       = sourceTexture->GetHeight();
+    texAsset.Depth        = sourceTexture->GetDepth();
+    texAsset.Format       = sourceTexture->GetFormat();
+    texAsset.Dimension    = sourceTexture->GetDimension();
+    texAsset.MipLevels    = sourceTexture->GetMipLevels();
+    texAsset.ArraySize    = sourceTexture->GetArraySize();
+    texAsset.BitsPerPixel = sourceTexture->GetBitsPerPixel();
+    texAsset.BlockSize    = sourceTexture->GetBlockSize();
+    texAsset.RowPitch     = sourceTexture->GetRowPitch();
+    texAsset.NumRows      = sourceTexture->GetNumRows();
+    texAsset.SlicePitch   = sourceTexture->GetSlicePitch();
+    texAsset.Mips.Resize( sourceTexture->GetMipLevels() * sourceTexture->GetArraySize() );
 
     size_t mipIndex = 0;
     // Have to double stream to write metadata correctly first
@@ -1056,7 +1056,7 @@ void AssimpImporter::WriteTextureAsset( ImportContext &context, const aiTexture 
             const size_t mipOffset = mipData.DataOffset;
 
             InteropArray<Byte> mipDataBuffer;
-            mipDataBuffer.MemCpy( sourceTexture->Data.Data( ) + mipOffset, mipSize );
+            mipDataBuffer.MemCpy( sourceTexture->GetData().Data( ) + mipOffset, mipSize );
             assetWriter.AddPixelData( mipDataBuffer, mipData.MipIndex, mipData.ArrayIndex );
         } );
 

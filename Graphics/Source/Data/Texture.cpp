@@ -18,9 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Data/Texture.h>
 
-#if not defined( STB_IMAGE_IMPLEMENTATION ) and defined( DZ_USE_STB_IMAGE )
-// #define STB_IMAGE_IMPLEMENTATION
-// #define STB_IMAGE_WRITE_IMPLEMENTATION
+#if not defined( STB_IMAGE_IMPLEMENTATION ) and defined( BUILD_SHARED_LIBS ) // Otherwise it's built by assimp
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#endif
+#if defined( DZ_USE_STB_IMAGE )
 #include "stb_image.h"
 #endif
 
@@ -40,38 +42,38 @@ Texture::Texture( const InteropString &path ) : m_path( Utilities::AppPath( path
 
     if ( const std::filesystem::path &extension = std::filesystem::path( m_path ).extension( ); extension == ".dds" )
     {
-        Extension = TextureExtension::DDS;
+        m_extension = TextureExtension::DDS;
     }
     else if ( extension == ".png" )
     {
-        Extension = TextureExtension::PNG;
+        m_extension = TextureExtension::PNG;
     }
     else if ( extension == ".jpg" )
     {
-        Extension = TextureExtension::JPG;
+        m_extension = TextureExtension::JPG;
     }
     else if ( extension == ".bmp" )
     {
-        Extension = TextureExtension::BMP;
+        m_extension = TextureExtension::BMP;
     }
     else if ( extension == ".tga" )
     {
-        Extension = TextureExtension::TGA;
+        m_extension = TextureExtension::TGA;
     }
     else if ( extension == ".hdr" )
     {
-        Extension = TextureExtension::HDR;
+        m_extension = TextureExtension::HDR;
     }
     else if ( extension == ".gif" )
     {
-        Extension = TextureExtension::GIF;
+        m_extension = TextureExtension::GIF;
     }
     else if ( extension == ".pic" )
     {
-        Extension = TextureExtension::PIC;
+        m_extension = TextureExtension::PIC;
     }
 
-    switch ( Extension )
+    switch ( m_extension )
     {
     case TextureExtension::DDS:
         LoadTextureDDS( );
@@ -84,7 +86,7 @@ Texture::Texture( const InteropString &path ) : m_path( Utilities::AppPath( path
 
 Texture::Texture( const InteropArray<Byte> &data, const TextureExtension extension )
 {
-    Extension = extension;
+    m_extension = extension;
     LoadTextureFromMemory( data.Data( ), data.NumElements( ) );
 }
 
@@ -125,20 +127,20 @@ void Texture::LoadTextureSTB( )
         LOG( WARNING ) << "Error loading texture: " << m_path << ", reason:" << stbi_failure_reason( );
         return;
     }
-    Width        = static_cast<uint32_t>( std::max<int>( 1, width ) );
-    Height       = static_cast<uint32_t>( std::max<int>( 1, height ) );
-    Depth        = 1;
-    Format       = Format::R8G8B8A8Unorm;
-    Dimension    = TextureDimension::Texture2D;
-    ArraySize    = 1;
-    MipLevels    = 1;
-    BitsPerPixel = 32;
-    BlockSize    = 1;
-    RowPitch     = Width * 4;
-    NumRows      = Height;
-    SlicePitch   = RowPitch * NumRows;
-    Data.Resize( SlicePitch );
-    Data.MemCpy( contents, SlicePitch );
+    m_width        = static_cast<uint32_t>( std::max<int>( 1, width ) );
+    m_height       = static_cast<uint32_t>( std::max<int>( 1, height ) );
+    m_depth        = 1;
+    m_format       = Format::R8G8B8A8Unorm;
+    m_dimension    = TextureDimension::Texture2D;
+    m_arraySize    = 1;
+    m_mipLevels    = 1;
+    m_bitsPerPixel = 32;
+    m_blockSize    = 1;
+    m_rowPitch     = m_width * 4;
+    m_numRows      = m_height;
+    m_slicePitch   = m_rowPitch * m_numRows;
+    m_data.Resize( m_slicePitch );
+    m_data.MemCpy( contents, m_slicePitch );
 }
 
 void Texture::LoadTextureDDS( )
@@ -171,43 +173,43 @@ void Texture::LoadTextureDDS( )
         return;
     }
 
-    ArraySize    = 1;
-    Width        = m_ddsHeader.width( );
-    Height       = m_ddsHeader.height( );
-    Depth        = m_ddsHeader.depth( );
-    MipLevels    = m_ddsHeader.mip_levels( );
-    ArraySize    = m_ddsHeader.array_size( );
-    Format       = GetFormatFromDDS( m_ddsHeader.format( ) );
-    BitsPerPixel = m_ddsHeader.bits_per_element( );
-    BlockSize    = m_ddsHeader.block_size( );
-    RowPitch     = std::max( 1U, ( Width + ( BlockSize - 1 ) ) / BlockSize ) * BitsPerPixel >> 3;
-    NumRows      = std::max( 1U, ( Height + ( BlockSize - 1 ) ) / BlockSize );
-    SlicePitch   = RowPitch * NumRows;
+    m_arraySize    = 1;
+    m_width        = m_ddsHeader.width( );
+    m_height       = m_ddsHeader.height( );
+    m_depth        = m_ddsHeader.depth( );
+    m_mipLevels    = m_ddsHeader.mip_levels( );
+    m_arraySize    = m_ddsHeader.array_size( );
+    m_format       = GetFormatFromDDS( m_ddsHeader.format( ) );
+    m_bitsPerPixel = m_ddsHeader.bits_per_element( );
+    m_blockSize    = m_ddsHeader.block_size( );
+    m_rowPitch     = std::max( 1U, ( m_width + ( m_blockSize - 1 ) ) / m_blockSize ) * m_bitsPerPixel >> 3;
+    m_numRows      = std::max( 1U, ( m_height + ( m_blockSize - 1 ) ) / m_blockSize );
+    m_slicePitch   = m_rowPitch * m_numRows;
 
-    Data.Resize( m_ddsHeader.data_size( ) );
-    Data.MemCpy( fileData + m_ddsHeader.data_offset( ), m_ddsHeader.data_size( ) );
+    m_data.Resize( m_ddsHeader.data_size( ) );
+    m_data.MemCpy( fileData + m_ddsHeader.data_offset( ), m_ddsHeader.data_size( ) );
 
     if ( m_ddsHeader.is_1d( ) )
     {
-        Dimension = TextureDimension::Texture1D;
+        m_dimension = TextureDimension::Texture1D;
     }
     else if ( m_ddsHeader.is_3d( ) )
     {
-        Dimension = TextureDimension::Texture3D;
+        m_dimension = TextureDimension::Texture3D;
     }
     else
     {
-        Dimension = TextureDimension::Texture2D;
+        m_dimension = TextureDimension::Texture2D;
     }
     if ( m_ddsHeader.is_cubemap( ) )
     {
-        Dimension = TextureDimension::TextureCube;
+        m_dimension = TextureDimension::TextureCube;
     }
 
-    if ( IsFormatBC( Format ) )
+    if ( IsFormatBC( m_format ) )
     {
-        Width  = Utilities::Align( Width, FormatBlockSize( Format ) );
-        Height = Utilities::Align( Height, FormatBlockSize( Format ) );
+        m_width  = Utilities::Align( m_width, FormatBlockSize( m_format ) );
+        m_height = Utilities::Align( m_height, FormatBlockSize( m_format ) );
     }
 }
 
@@ -417,7 +419,7 @@ Format Texture::GetFormatFromDDS( const dds::DXGI_FORMAT &format )
 
 void Texture::StreamMipData( const MipStreamCallback &callback ) const
 {
-    switch ( Extension )
+    switch ( m_extension )
     {
     case TextureExtension::DDS:
         StreamMipDataDDS( callback );
@@ -437,9 +439,9 @@ InteropArray<TextureMip> Texture::ReadMipData( ) const
 
 void Texture::StreamMipDataDDS( const MipStreamCallback &callback ) const
 {
-    for ( uint32_t array = 0; array < ArraySize; ++array )
+    for ( uint32_t array = 0; array < m_arraySize; ++array )
     {
-        for ( uint32_t mip = 0; mip < MipLevels; ++mip )
+        for ( uint32_t mip = 0; mip < m_mipLevels; ++mip )
         {
             // this.Data already skips the data_offset() but mip_offset() includes it
             const auto externalOffset = m_ddsHeader.mip_offset( mip, array ) - m_ddsHeader.data_offset( );
@@ -450,7 +452,7 @@ void Texture::StreamMipDataDDS( const MipStreamCallback &callback ) const
             mipData.MipIndex   = mip;
             mipData.ArrayIndex = array;
             mipData.RowPitch   = m_ddsHeader.row_pitch( mip );
-            mipData.NumRows    = NumRows >> mip;
+            mipData.NumRows    = m_numRows >> mip;
             mipData.SlicePitch = m_ddsHeader.slice_pitch( mip );
             mipData.DataOffset = externalOffset;
 
@@ -462,13 +464,13 @@ void Texture::StreamMipDataDDS( const MipStreamCallback &callback ) const
 void Texture::StreamMipDataSTB( const MipStreamCallback &callback ) const
 {
     TextureMip mipData{ };
-    mipData.Width      = Width;
-    mipData.Height     = Height;
+    mipData.Width      = m_width;
+    mipData.Height     = m_height;
     mipData.MipIndex   = 0;
     mipData.ArrayIndex = 0;
-    mipData.RowPitch   = RowPitch;
-    mipData.NumRows    = NumRows;
-    mipData.SlicePitch = SlicePitch;
+    mipData.RowPitch   = m_rowPitch;
+    mipData.NumRows    = m_numRows;
+    mipData.SlicePitch = m_slicePitch;
     mipData.DataOffset = 0;
 
     callback( mipData );
@@ -476,7 +478,7 @@ void Texture::StreamMipDataSTB( const MipStreamCallback &callback ) const
 
 void Texture::LoadTextureFromMemory( const Byte *data, const size_t dataNumBytes )
 {
-    switch ( Extension )
+    switch ( m_extension )
     {
     case TextureExtension::DDS:
         LoadTextureDDSFromMemory( data, dataNumBytes );
@@ -502,44 +504,44 @@ void Texture::LoadTextureDDSFromMemory( const Byte *data, const size_t dataNumBy
         return;
     }
 
-    ArraySize    = 1;
-    Width        = m_ddsHeader.width( );
-    Height       = m_ddsHeader.height( );
-    Depth        = m_ddsHeader.depth( );
-    MipLevels    = m_ddsHeader.mip_levels( );
-    ArraySize    = m_ddsHeader.array_size( );
-    Format       = GetFormatFromDDS( m_ddsHeader.format( ) );
-    BitsPerPixel = m_ddsHeader.bits_per_element( );
-    BlockSize    = m_ddsHeader.block_size( );
-    RowPitch     = std::max( 1U, ( Width + ( BlockSize - 1 ) ) / BlockSize ) * BitsPerPixel >> 3;
-    NumRows      = std::max( 1U, ( Height + ( BlockSize - 1 ) ) / BlockSize );
-    SlicePitch   = RowPitch * NumRows;
+    m_arraySize    = 1;
+    m_width        = m_ddsHeader.width( );
+    m_height       = m_ddsHeader.height( );
+    m_depth        = m_ddsHeader.depth( );
+    m_mipLevels    = m_ddsHeader.mip_levels( );
+    m_arraySize    = m_ddsHeader.array_size( );
+    m_format       = GetFormatFromDDS( m_ddsHeader.format( ) );
+    m_bitsPerPixel = m_ddsHeader.bits_per_element( );
+    m_blockSize    = m_ddsHeader.block_size( );
+    m_rowPitch     = std::max( 1U, ( m_width + ( m_blockSize - 1 ) ) / m_blockSize ) * m_bitsPerPixel >> 3;
+    m_numRows      = std::max( 1U, ( m_height + ( m_blockSize - 1 ) ) / m_blockSize );
+    m_slicePitch   = m_rowPitch * m_numRows;
 
-    Data.Resize( m_ddsHeader.data_size( ) );
+    m_data.Resize( m_ddsHeader.data_size( ) );
     const uint8_t *srcData = data + m_ddsHeader.data_offset( );
-    Data.MemCpy( srcData, m_ddsHeader.data_size( ) );
+    m_data.MemCpy( srcData, m_ddsHeader.data_size( ) );
 
     if ( m_ddsHeader.is_1d( ) )
     {
-        Dimension = TextureDimension::Texture1D;
+        m_dimension = TextureDimension::Texture1D;
     }
     else if ( m_ddsHeader.is_3d( ) )
     {
-        Dimension = TextureDimension::Texture3D;
+        m_dimension = TextureDimension::Texture3D;
     }
     else
     {
-        Dimension = TextureDimension::Texture2D;
+        m_dimension = TextureDimension::Texture2D;
     }
     if ( m_ddsHeader.is_cubemap( ) )
     {
-        Dimension = TextureDimension::TextureCube;
+        m_dimension = TextureDimension::TextureCube;
     }
 
-    if ( IsFormatBC( Format ) )
+    if ( IsFormatBC( m_format ) )
     {
-        Width  = Utilities::Align( Width, FormatBlockSize( Format ) );
-        Height = Utilities::Align( Height, FormatBlockSize( Format ) );
+        m_width  = Utilities::Align( m_width, FormatBlockSize( m_format ) );
+        m_height = Utilities::Align( m_height, FormatBlockSize( m_format ) );
     }
 }
 
@@ -555,20 +557,20 @@ void Texture::LoadTextureSTBFromMemory( const Byte *data, const size_t dataNumBy
         return;
     }
 
-    Width        = static_cast<uint32_t>( std::max<int>( 1, width ) );
-    Height       = static_cast<uint32_t>( std::max<int>( 1, height ) );
-    Depth        = 1;
-    Format       = Format::R8G8B8A8Unorm;
-    Dimension    = TextureDimension::Texture2D;
-    ArraySize    = 1;
-    MipLevels    = 1;
-    BitsPerPixel = 32;
-    BlockSize    = 1;
-    RowPitch     = Width * 4;
-    NumRows      = Height;
-    SlicePitch   = RowPitch * NumRows;
-    Data.Resize( SlicePitch );
-    Data.MemCpy( contents, SlicePitch );
+    m_width        = static_cast<uint32_t>( std::max<int>( 1, width ) );
+    m_height       = static_cast<uint32_t>( std::max<int>( 1, height ) );
+    m_depth        = 1;
+    m_format       = Format::R8G8B8A8Unorm;
+    m_dimension    = TextureDimension::Texture2D;
+    m_arraySize    = 1;
+    m_mipLevels    = 1;
+    m_bitsPerPixel = 32;
+    m_blockSize    = 1;
+    m_rowPitch     = m_width * 4;
+    m_numRows      = m_height;
+    m_slicePitch   = m_rowPitch * m_numRows;
+    m_data.Resize( m_slicePitch );
+    m_data.MemCpy( contents, m_slicePitch );
 
     stbi_image_free( contents );
 }

@@ -28,7 +28,7 @@ namespace DenOfIz
         BinaryWriter *Writer;
     };
 
-    class DZ_API PhysicsAssetWriter
+    class PhysicsAssetWriter
     {
         BinaryWriter         *m_writer;
     public:
