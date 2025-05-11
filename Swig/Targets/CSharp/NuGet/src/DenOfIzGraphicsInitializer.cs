@@ -9,18 +9,18 @@ namespace DenOfIz
         private static bool _initialized = false;
         private static readonly object _lock = new object();
 
+        static DenOfIzGraphicsInitializer()
+        {
+            NativeLibraryLoader.Initialize();
+        }
+
         public static void Initialize()
         {
-            if (_initialized)
-            {
-                return;
-            }
+            if (_initialized) return;
+            
             lock (_lock)
             {
-                if (_initialized)
-                {
-                    return;
-                }
+                if (_initialized) return;
                 
                 try
                 {
@@ -29,9 +29,8 @@ namespace DenOfIz
                     _initialized = true;
                     AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
                 }
-                catch (Exception ex)
+                catch
                 {
-                    Console.Error.WriteLine($"Failed to initialize DenOfIzGraphics: {ex.Message}");
                     throw;
                 }
             }
@@ -43,9 +42,9 @@ namespace DenOfIz
             {
                 GraphicsApi.ReportLiveObjects();
             }
-            catch (Exception ex)
+            catch
             {
-                Console.Error.WriteLine($"Error during process exit cleanup: {ex.Message}");
+                // Ignore errors during cleanup
             }
         }
     }

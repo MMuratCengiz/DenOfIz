@@ -8,13 +8,20 @@ set(SWIG_CSHARP_CODE_DIR ${SWIG_CSHARP_PROJECT_DIR}/Code)
 set(SWIG_CSHARP_NATIVE_DIR ${SWIG_CSHARP_PROJECT_DIR}/Native)
 set(SWIG_CSHARP_LIB_DIR ${SWIG_CSHARP_PROJECT_DIR}/Lib)
 
+# Determine architecture correctly
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+    set(ARCH_NAME "arm64")
+else()
+    set(ARCH_NAME "x64")
+endif()
+
 # NuGet package directories
 set(NUGET_BASE_DIR ${CURRENT_DIRECTORY}/NuGet)
 set(NUGET_OUT_DIR ${CURRENT_DIRECTORY}/NuGet_Out)
 set(NUGET_LIB_DIR ${NUGET_BASE_DIR}/lib/netstandard2.0)
 set(NUGET_SRC_GEN_DIR ${NUGET_BASE_DIR}/src_gen)
 set(NUGET_RUNTIMES_WIN_DIR ${NUGET_BASE_DIR}/runtimes/win-x64/native)
-set(NUGET_RUNTIMES_OSX_DIR ${NUGET_BASE_DIR}/runtimes/osx-x64/native)
+set(NUGET_RUNTIMES_OSX_DIR ${NUGET_BASE_DIR}/runtimes/osx-${ARCH_NAME}/native)
 set(NUGET_RUNTIMES_LINUX_DIR ${NUGET_BASE_DIR}/runtimes/linux-x64/native)
 set(NUGET_BUILD_DIR ${NUGET_BASE_DIR}/build)
 
@@ -39,6 +46,12 @@ if (APPLE)
             $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
             $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
     set_property(TARGET DenOfIzGraphicsCSharp APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
+    
+    # Add special flags to bypass code signing issues on macOS
+    if (CMAKE_OSX_DEPLOYMENT_TARGET)
+        set_property(TARGET DenOfIzGraphicsCSharp APPEND_STRING PROPERTY 
+            LINK_FLAGS " -Wl,-platform_version,macos,${CMAKE_OSX_DEPLOYMENT_TARGET},${CMAKE_OSX_DEPLOYMENT_TARGET}")
+    endif()
 endif ()
 
 file(MAKE_DIRECTORY ${SWIG_CSHARP_LIB_DIR})
