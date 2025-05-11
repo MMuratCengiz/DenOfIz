@@ -373,7 +373,7 @@ if (APPLE)
 endif ()
 if (LINUX)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/linux_dxc/lib/libdxcompiler.so
-            ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+            ${CMAKE_BINARY_DIR} COPYONLY)
 
     target_link_directories(
             DenOfIzGraphics

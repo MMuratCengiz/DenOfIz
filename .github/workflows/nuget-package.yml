@@ -32,11 +32,10 @@ jobs:
           vs-version: '[17.0,)'
           msbuild-architecture: x64
 
-      - name: Install Windows SDK
-        shell: pwsh
-        run: |
-          Invoke-WebRequest -Uri https://go.microsoft.com/fwlink/p/?LinkID=2196241 -OutFile winsdksetup.exe
-          Start-Process -FilePath .\winsdksetup.exe -ArgumentList "/features OptionId.WindowsDesktopDebuggers OptionId.DesktopCPPx64 OptionId.DirectX /quiet /norestart" -Wait
+      - name: Setup Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
 
       - name: Install dependencies
         shell: pwsh
@@ -50,17 +49,13 @@ jobs:
         with:
           vcpkgJsonGlob: 'vcpkg.json'
 
-      - name: Configure
-        shell: pwsh
-        run: |
-          $winsdkPath = "C:\Program Files (x86)\Windows Kits\10"
-          cmake --preset=Debug_MSVC -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} `
-            -DBUILD_EXAMPLES=OFF
-
-      - name: Build NuGet Package
-        shell: pwsh
-        run: |
-          cmake --build build/DenOfIz/Debug_MSVC --target DenOfIzNuget
+      - name: Configure & Build
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: 'Debug_MSVC'
+          buildPreset: 'Debug_MSVC'
+          configurePresetAdditionalArgs: "['-DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }}', '-DBUILD_EXAMPLES=OFF']"
+          buildPresetAdditionalArgs: "['--target', 'DenOfIzNuget']"
 
       - name: Upload NuGet package
         uses: actions/upload-artifact@v4
@@ -93,14 +88,13 @@ jobs:
         with:
           vcpkgJsonGlob: 'vcpkg.json'
 
-      - name: Configure
-        run: |
-          cmake --preset=Debug_Linux -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} \
-            -DBUILD_EXAMPLES=OFF
-
-      - name: Build
-        run: |
-          cmake --build build/DenOfIz/Debug_Linux --target DenOfIzGraphicsCSharp
+      - name: Configure & Build
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: 'Debug_Linux'
+          buildPreset: 'Debug_Linux'
+          configurePresetAdditionalArgs: "['-DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }}', '-DBUILD_EXAMPLES=OFF']"
+          buildPresetAdditionalArgs: "['--target', 'DenOfIzGraphicsCSharp']"
 
       - name: Package artifacts
         run: |
@@ -137,14 +131,13 @@ jobs:
         with:
           vcpkgJsonGlob: 'vcpkg.json'
 
-      - name: Configure
-        run: |
-          cmake --preset=Debug_OSX -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} \
-            -DBUILD_EXAMPLES=OFF
-
-      - name: Build
-        run: |
-          cmake --build build/DenOfIz/Debug_OSX --target DenOfIzGraphicsCSharp
+      - name: Configure & Build
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: 'Debug_OSX'
+          buildPreset: 'Debug_OSX'
+          configurePresetAdditionalArgs: "['-DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }}', '-DBUILD_EXAMPLES=OFF']"
+          buildPresetAdditionalArgs: "['--target', 'DenOfIzGraphicsCSharp']"
 
       - name: Package artifacts
         run: |
@@ -231,7 +224,7 @@ jobs:
         with:
           name: DenOfIzGraphics-CrossPlatform-${{ env.DENOFIZ_VERSION }}
           path: DenOfIzGraphics.${{ env.DENOFIZ_VERSION }}.nupkg
-          
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1

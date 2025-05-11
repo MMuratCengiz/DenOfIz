@@ -31,9 +31,14 @@ namespace DenOfIz
     template <typename T>
     struct MetalUpdateDescItem
     {
-        T               *Resource;
-        MTLRenderStages  ShaderStages;
-        MTLResourceUsage Usage;
+        T               *Resource     = nullptr;
+        MTLRenderStages  ShaderStages = 0;
+        MTLResourceUsage Usage        = MTLResourceUsageRead;
+
+        MetalUpdateDescItem() = default;
+        MetalUpdateDescItem( T* resource, MTLRenderStages shaderStages, MTLResourceUsage usage ) : Resource( resource ), ShaderStages( shaderStages ), Usage( usage )
+        {
+        }
     };
 
     struct MetalRootParameterBinding
