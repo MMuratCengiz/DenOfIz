@@ -249,6 +249,13 @@ if(LINUX)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 add_subdirectory(_ThirdParty/ozz-animation)
+
+set(MSDF_ATLAS_BUILD_STANDALONE OFF CACHE BOOL "Build the msdf-atlas-gen standalone executable")
+set(MSDF_ATLAS_USE_SKIA OFF CACHE BOOL "Build with the Skia library")
+set(MSDF_ATLAS_NO_ARTERY_FONT ON CACHE BOOL "Disable Artery Font export and do not require its submodule")
+set(MSDFGEN_USE_SKIA OFF CACHE BOOL "Build msdfgen with the Skia library")
+set(MSDFGEN_VCPKG_FEATURES_SET ON CACHE BOOL "Use vcpkg features")
+set(VCPKG_MANIFEST_NO_DEFAULT_FEATURES ON CACHE BOOL "Disable default features")
 add_subdirectory(_ThirdParty/msdf-atlas-gen)
 
 target_include_default_directories(DenOfIzGraphics)

@@ -19,7 +19,8 @@
       "name": "msdfgen",
       "features": [
         "extensions"
-      ]
+      ],
+      "default-features": false
     },
     {
       "name": "sdl2",
