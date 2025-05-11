@@ -1,30 +1,38 @@
 name: Build NuGet Package
 
 on:
-  push:
-    branches: [ master ]
-    tags:
-      - 'v*'
-  pull_request:
-    branches: [ master ]
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Package version (default: 1.0.0)'
+      publish:
+        description: 'Publish to NuGet.org'
         required: false
-        default: '1.0.0'
-        type: string
-
-env:
-  DENOFIZ_VERSION: ${{ github.event.inputs.version || '1.0.0' }}
+        default: 'false'
+        type: boolean
 
 jobs:
+  read-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Read version from version.txt
+        id: get_version
+        run: |
+          VERSION=$(cat version.txt | tr -d '[:space:]')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
   build-windows:
+    needs: read-version
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
+          
+      - name: Set version from previous job
+        run: echo "VERSION=${{ needs.read-version.outputs.version }}" >> $env:GITHUB_ENV
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -54,7 +62,7 @@ jobs:
         with:
           configurePreset: 'Debug_MSVC'
           buildPreset: 'Debug_MSVC'
-          configurePresetAdditionalArgs: "['-DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }}', '-DBUILD_EXAMPLES=OFF']"
+          configurePresetAdditionalArgs: "['-DBUILD_EXAMPLES=OFF']"
           buildPresetAdditionalArgs: "['--target', 'DenOfIzGraphicsCSharp']"
 
       - name: Package artifacts
@@ -92,25 +100,16 @@ jobs:
           name: windows-artifacts
           path: artifacts/
 
-      - name: Build NuGet Package
-        uses: lukka/run-cmake@v10
-        with:
-          configurePreset: 'Debug_MSVC'
-          buildPreset: 'Debug_MSVC'
-          buildPresetAdditionalArgs: "['--target', 'DenOfIzNuget']"
-
-      - name: Upload NuGet package
-        uses: actions/upload-artifact@v4
-        with:
-          name: DenOfIzGraphics-Windows-${{ env.DENOFIZ_VERSION }}
-          path: Swig/Targets/CSharp/NuGet_Out/DenOfIzGraphics.${{ env.DENOFIZ_VERSION }}.nupkg
-
   build-linux:
+    needs: read-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
+      
+      - name: Set version from previous job
+        run: echo "VERSION=${{ needs.read-version.outputs.version }}" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
@@ -135,7 +134,7 @@ jobs:
         with:
           configurePreset: 'Debug_Linux'
           buildPreset: 'Debug_Linux'
-          configurePresetAdditionalArgs: "['-DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }}', '-DBUILD_EXAMPLES=OFF']"
+          configurePresetAdditionalArgs: "['-DBUILD_EXAMPLES=OFF']"
           buildPresetAdditionalArgs: "['--target', 'DenOfIzGraphicsCSharp']"
 
       - name: Package artifacts
@@ -164,11 +163,15 @@ jobs:
           path: artifacts/
 
   build-macos:
+    needs: read-version
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
+      
+      - name: Set version from previous job
+        run: echo "VERSION=${{ needs.read-version.outputs.version }}" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
@@ -190,7 +193,7 @@ jobs:
         with:
           configurePreset: 'Debug_OSX'
           buildPreset: 'Debug_OSX'
-          configurePresetAdditionalArgs: "['-DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }}', '-DBUILD_EXAMPLES=OFF']"
+          configurePresetAdditionalArgs: "['-DBUILD_EXAMPLES=OFF']"
           buildPresetAdditionalArgs: "['--target', 'DenOfIzGraphicsCSharp']"
 
       - name: Package artifacts
@@ -219,12 +222,15 @@ jobs:
           path: artifacts/
 
   build-denofiz-nuget:
+    needs: [read-version, build-windows, build-linux, build-macos]
     runs-on: windows-latest
-    needs: [build-windows, build-linux, build-macos]
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
+      
+      - name: Set version from previous job
+        run: echo "VERSION=${{ needs.read-version.outputs.version }}" >> $env:GITHUB_ENV
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -304,27 +310,27 @@ jobs:
           $nuspecFile = "Swig/Targets/CSharp/NuGet/DenOfIzGraphics.nuspec"
           if (Test-Path $nuspecFile) {
             $nuspec = [xml](Get-Content $nuspecFile)
-            $nuspec.package.metadata.version = "${{ env.DENOFIZ_VERSION }}"
+            $nuspec.package.metadata.version = "${{ env.VERSION }}"
             $nuspec.Save($nuspecFile)
           }
 
           # Pack the NuGet package
-          nuget pack Swig/Targets/CSharp/NuGet/DenOfIzGraphics.nuspec -Version ${{ env.DENOFIZ_VERSION }} -OutputDirectory Swig/Targets/CSharp/NuGet_Out
+          nuget pack Swig/Targets/CSharp/NuGet/DenOfIzGraphics.nuspec -Version ${{ env.VERSION }} -OutputDirectory Swig/Targets/CSharp/NuGet_Out
 
       - name: Upload Cross-Platform NuGet package
         uses: actions/upload-artifact@v4
         with:
-          name: DenOfIzGraphics-CrossPlatform-${{ env.DENOFIZ_VERSION }}
-          path: Swig/Targets/CSharp/NuGet_Out/DenOfIzGraphics.${{ env.DENOFIZ_VERSION }}.nupkg
+          name: DenOfIzGraphics-CrossPlatform-${{ env.VERSION }}
+          path: Swig/Targets/CSharp/NuGet_Out/DenOfIzGraphics.${{ env.VERSION }}.nupkg
 
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: ${{ github.event.inputs.publish == 'true' }}
         uses: softprops/action-gh-release@v1
         with:
-          files: Swig/Targets/CSharp/NuGet_Out/DenOfIzGraphics.${{ env.DENOFIZ_VERSION }}.nupkg
-          name: DenOfIzGraphics ${{ env.DENOFIZ_VERSION }}
+          files: Swig/Targets/CSharp/NuGet_Out/DenOfIzGraphics.${{ env.VERSION }}.nupkg
+          name: DenOfIzGraphics ${{ env.VERSION }}
           body: |
-            DenOfIzGraphics NuGet package ${{ env.DENOFIZ_VERSION }}
+            DenOfIzGraphics NuGet package ${{ env.VERSION }}
 
             This package contains binaries for:
             - Windows (x64)
@@ -333,13 +339,16 @@ jobs:
 
   publish-nuget:
     runs-on: windows-latest
-    needs: [build-denofiz-nuget]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [read-version, build-denofiz-nuget]
+    if: ${{ github.event.inputs.publish == 'true' }}
     steps:
+      - name: Set version from previous job
+        run: echo "VERSION=${{ needs.read-version.outputs.version }}" >> $env:GITHUB_ENV
+        
       - name: Download NuGet Package
         uses: actions/download-artifact@v4
         with:
-          name: DenOfIzGraphics-CrossPlatform-${{ env.DENOFIZ_VERSION }}
+          name: DenOfIzGraphics-CrossPlatform-${{ env.VERSION }}
           path: ./
 
       - name: Setup .NET
@@ -349,4 +358,4 @@ jobs:
 
       - name: Publish to NuGet
         run: |
-          dotnet nuget push DenOfIzGraphics.${{ env.DENOFIZ_VERSION }}.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+          dotnet nuget push DenOfIzGraphics.${{ env.VERSION }}.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
