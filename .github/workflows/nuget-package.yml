@@ -42,7 +42,6 @@ jobs:
         shell: pwsh
         run: |
           cmake --preset=Debug_MSVC -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} `
-            "-DCMAKE_POLICY_VERSION_MINIMUM=3.5" `
             -DBUILD_EXAMPLES=OFF
 
       - name: Build NuGet Package
@@ -82,7 +81,6 @@ jobs:
       - name: Configure
         run: |
           cmake --preset=Debug_Linux -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} \
-            -DCMAKE_POLICY_VERSION_MINIMUM="3.5" \
             -DBUILD_EXAMPLES=OFF
 
       - name: Build
@@ -127,7 +125,6 @@ jobs:
       - name: Configure
         run: |
           cmake --preset=Debug_OSX -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} \
-            -DCMAKE_POLICY_VERSION_MINIMUM="3.5" \
             -DBUILD_EXAMPLES=OFF
 
       - name: Build
