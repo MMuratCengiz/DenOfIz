@@ -486,7 +486,7 @@ void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
     NSUInteger threadGroupSizeX = [m_pipeline->ComputePipelineState( ) maxTotalThreadsPerThreadgroup];
     MTLSize    threadGroupSize  = (MTLSize){ threadGroupSizeX, 1, 1 };
 
-    MTLSize gridSize = MTLSize( dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth );
+    MTLSize gridSize = MTLSizeMake( dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth );
     [m_computeEncoder dispatchThreadgroups:gridSize threadsPerThreadgroup:threadGroupSize];
     TopLevelArgumentBufferNextOffset( );
 }

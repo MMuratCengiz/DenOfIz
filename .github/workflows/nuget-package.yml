@@ -55,6 +55,48 @@ jobs:
           configurePreset: 'Debug_MSVC'
           buildPreset: 'Debug_MSVC'
           configurePresetAdditionalArgs: "['-DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }}', '-DBUILD_EXAMPLES=OFF']"
+          buildPresetAdditionalArgs: "['--target', 'DenOfIzGraphicsCSharp']"
+
+      - name: Package artifacts
+        shell: pwsh
+        run: |
+          mkdir -p artifacts/runtimes/win-x64/native
+
+          # Copy the C# wrapper DLL
+          Copy-Item build/DenOfIz/Debug_MSVC/CSharp/Project/Lib/DenOfIzGraphicsCSharp.dll artifacts/runtimes/win-x64/native/
+
+          # Copy the main library file
+          if (Test-Path build/DenOfIz/Debug_MSVC/CSharp/Project/Native/DenOfIzGraphics.dll) {
+              Copy-Item build/DenOfIz/Debug_MSVC/CSharp/Project/Native/DenOfIzGraphics.dll artifacts/runtimes/win-x64/native/
+              Write-Host "Copied shared library DenOfIzGraphics.dll"
+          } elseif (Test-Path build/DenOfIz/Debug_MSVC/CSharp/Project/Native/DenOfIzGraphics.lib) {
+              Copy-Item build/DenOfIz/Debug_MSVC/CSharp/Project/Native/DenOfIzGraphics.lib artifacts/runtimes/win-x64/native/
+              Write-Host "Copied static library DenOfIzGraphics.lib"
+          } else {
+              Write-Host "ERROR: Neither DenOfIzGraphics.dll nor DenOfIzGraphics.lib was found!"
+              exit 1
+          }
+
+          # Copy additional DLLs
+          Copy-Item build/DenOfIz/Debug_MSVC/dxcompiler.dll artifacts/runtimes/win-x64/native/
+          Copy-Item build/DenOfIz/Debug_MSVC/dxil.dll artifacts/runtimes/win-x64/native/
+          Copy-Item build/DenOfIz/Debug_MSVC/metalirconverter.dll artifacts/runtimes/win-x64/native/
+
+          # Copy C# code files
+          mkdir -p artifacts/code/
+          Copy-Item -Recurse build/DenOfIz/Debug_MSVC/CSharp/Project/Code/* artifacts/code/
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: artifacts/
+
+      - name: Build NuGet Package
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: 'Debug_MSVC'
+          buildPreset: 'Debug_MSVC'
           buildPresetAdditionalArgs: "['--target', 'DenOfIzNuget']"
 
       - name: Upload NuGet package
@@ -176,29 +218,31 @@ jobs:
           name: macos-artifacts
           path: artifacts/
 
-  build-cross-platform-nuget:
+  build-denofiz-nuget:
     runs-on: windows-latest
     needs: [build-windows, build-linux, build-macos]
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '6.0.x'
 
-      - name: Install SWIG
+      - name: Install dependencies
         shell: pwsh
         run: |
-          choco install -y swig
+          choco install -y swig nuget.commandline
 
       - uses: lukka/get-cmake@latest
 
-      - name: Download Windows NuGet Package
+      - name: Download Windows Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: DenOfIzGraphics-Windows-${{ env.DENOFIZ_VERSION }}
-          path: windows-package
+          name: windows-artifacts
+          path: windows-artifacts
 
       - name: Download Linux Artifacts
         uses: actions/download-artifact@v4
@@ -212,52 +256,76 @@ jobs:
           name: macos-artifacts
           path: macos-artifacts
 
-      - name: Extract Windows NuGet Package
+      - name: Prepare NuGet package structure
         shell: pwsh
         run: |
-          mkdir -p extracted
-          cd extracted
-          $packagePath = (Get-ChildItem -Path ../windows-package/*.nupkg).FullName
-          Copy-Item $packagePath package.zip
-          Expand-Archive package.zip -DestinationPath ./
+          # Prepare directory structure
+          $nugetDir = "Swig/Targets/CSharp/NuGet"
 
-      - name: Merge Cross-Platform Artifacts
+          # Create necessary directories
+          mkdir -p $nugetDir/lib/netstandard2.0
+          mkdir -p $nugetDir/src_gen
+          mkdir -p $nugetDir/build
+          mkdir -p $nugetDir/runtimes/win-x64/native
+          mkdir -p $nugetDir/runtimes/linux-x64/native
+          mkdir -p $nugetDir/runtimes/osx-x64/native
+
+          # Copy C# code files
+          Write-Host "Copying C# source files"
+          Copy-Item -Recurse windows-artifacts/code/* $nugetDir/src_gen/
+
+          # Copy runtimes
+          Write-Host "Copying Windows runtime files"
+          Copy-Item windows-artifacts/runtimes/win-x64/native/* $nugetDir/runtimes/win-x64/native/
+
+          Write-Host "Copying Linux runtime files"
+          Copy-Item linux-artifacts/runtimes/linux-x64/native/* $nugetDir/runtimes/linux-x64/native/
+
+          Write-Host "Copying macOS runtime files"
+          Copy-Item macos-artifacts/runtimes/osx-x64/native/* $nugetDir/runtimes/osx-x64/native/
+
+      - name: Build managed DLL
         shell: pwsh
         run: |
-          $packageDir = "cross-platform-package"
-          mkdir -p $packageDir
-          
-          Copy-Item extracted/* $packageDir -Recurse
-          
-          Copy-Item linux-artifacts/runtimes/linux-x64/native/* $packageDir/runtimes/linux-x64/native/ -Force
-          
-          Copy-Item macos-artifacts/runtimes/osx-x64/native/* $packageDir/runtimes/osx-x64/native/ -Force
-          
-          $nuspecFile = "$packageDir/DenOfIzGraphics.nuspec"
+          Push-Location Swig/Targets/CSharp/NuGet
+          dotnet build ./DenOfIzGraphics.csproj -c Release --output lib/netstandard2.0
+          if (!$?) {
+            Write-Error "Failed to build managed DLL"
+            exit 1
+          }
+          Pop-Location
+
+      - name: Create NuGet package
+        shell: pwsh
+        run: |
+          mkdir -p Swig/Targets/CSharp/NuGet_Out
+
+          # Update version in nuspec if needed
+          $nuspecFile = "Swig/Targets/CSharp/NuGet/DenOfIzGraphics.nuspec"
           if (Test-Path $nuspecFile) {
             $nuspec = [xml](Get-Content $nuspecFile)
             $nuspec.package.metadata.version = "${{ env.DENOFIZ_VERSION }}"
             $nuspec.Save($nuspecFile)
           }
-          
-          cd $packageDir
-          nuget pack -Version ${{ env.DENOFIZ_VERSION }} -OutputDirectory ../
+
+          # Pack the NuGet package
+          nuget pack Swig/Targets/CSharp/NuGet/DenOfIzGraphics.nuspec -Version ${{ env.DENOFIZ_VERSION }} -OutputDirectory Swig/Targets/CSharp/NuGet_Out
 
       - name: Upload Cross-Platform NuGet package
         uses: actions/upload-artifact@v4
         with:
           name: DenOfIzGraphics-CrossPlatform-${{ env.DENOFIZ_VERSION }}
-          path: DenOfIzGraphics.${{ env.DENOFIZ_VERSION }}.nupkg
+          path: Swig/Targets/CSharp/NuGet_Out/DenOfIzGraphics.${{ env.DENOFIZ_VERSION }}.nupkg
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          files: DenOfIzGraphics.${{ env.DENOFIZ_VERSION }}.nupkg
+          files: Swig/Targets/CSharp/NuGet_Out/DenOfIzGraphics.${{ env.DENOFIZ_VERSION }}.nupkg
           name: DenOfIzGraphics ${{ env.DENOFIZ_VERSION }}
           body: |
             DenOfIzGraphics NuGet package ${{ env.DENOFIZ_VERSION }}
-            
+
             This package contains binaries for:
             - Windows (x64)
             - macOS (x64)
@@ -265,7 +333,7 @@ jobs:
 
   publish-nuget:
     runs-on: windows-latest
-    needs: [build-cross-platform-nuget]
+    needs: [build-denofiz-nuget]
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Download NuGet Package
