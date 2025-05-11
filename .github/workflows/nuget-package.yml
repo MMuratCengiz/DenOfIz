@@ -17,7 +17,6 @@ on:
 
 env:
   DENOFIZ_VERSION: ${{ github.event.inputs.version || '1.0.0' }}
-  CMAKE_POLICY_VERSION_MINIMUM: "3.5"
 
 jobs:
   build-windows:
@@ -43,7 +42,7 @@ jobs:
         shell: pwsh
         run: |
           cmake --preset=Debug_MSVC -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} `
-            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }} `
+            "-DCMAKE_POLICY_VERSION_MINIMUM=3.5" `
             -DBUILD_EXAMPLES=OFF
 
       - name: Build NuGet Package
@@ -71,7 +70,7 @@ jobs:
           sudo apt-get install -y swig mono-complete
           sudo apt-get install -y libglu1-mesa-dev freeglut3-dev libvulkan-dev libsdl2-dev
           sudo apt-get install -y libfreetype-dev libharfbuzz-dev
-          sudo apt-get install -y autoconf automake autoconf-archive
+          sudo apt-get install -y autoconf automake autoconf-archive libtool
 
       - uses: lukka/get-cmake@latest
 
@@ -83,7 +82,7 @@ jobs:
       - name: Configure
         run: |
           cmake --preset=Debug_Linux -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} \
-            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }} \
+            -DCMAKE_POLICY_VERSION_MINIMUM="3.5" \
             -DBUILD_EXAMPLES=OFF
 
       - name: Build
@@ -128,7 +127,7 @@ jobs:
       - name: Configure
         run: |
           cmake --preset=Debug_OSX -DDENOFIZ_VERSION=${{ env.DENOFIZ_VERSION }} -S ${{ github.workspace }} \
-            -DCMAKE_POLICY_VERSION_MINIMUM=${{ env.CMAKE_POLICY_VERSION_MINIMUM }} \
+            -DCMAKE_POLICY_VERSION_MINIMUM="3.5" \
             -DBUILD_EXAMPLES=OFF
 
       - name: Build
