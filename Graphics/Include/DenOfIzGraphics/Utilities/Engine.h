@@ -27,27 +27,69 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Init OS specific common includes, to make sure they are loaded first
 #include "Common_Apple.h"
 #include "Common_Windows.h"
+#include "DenOfIzGraphics/Assets/FileSystem/FSConfig.h"
 
 #include "glog/logging.h"
 
 namespace DenOfIz
 {
-    class Engine
+    enum class LogLevel
+    {
+        Info,
+        Warning,
+        Error,
+        Fatal
+    };
+
+    struct DZ_API EngineDesc
+    {
+        LogLevel      LogLevel  = LogLevel::Info;
+        InteropString LogFile   = "DenOfIz.log";
+        FSDesc        FS = { };
+    };
+
+    class DZ_API Engine
     {
     public:
-        static void Init()
+        static void Init( const EngineDesc &desc = { } )
         {
+            if ( !desc.FS.AssetPath.IsEmpty( ) )
+            {
+                FSConfig::Init( desc.FS );
+            }
+            else
+            {
+                FSConfig::InitDefaults( );
+            }
+
+            switch ( desc.LogLevel )
+            {
+            case LogLevel::Info:
+                google::LogAtLevel( google::GLOG_INFO, "DenOfIz.log" );
+                break;
+            case LogLevel::Warning:
+                google::LogAtLevel( google::GLOG_WARNING, "DenOfIz.log" );
+                break;
+            case LogLevel::Error:
+                google::LogAtLevel( google::GLOG_ERROR, "DenOfIz.log" );
+                break;
+            case LogLevel::Fatal:
+                google::LogAtLevel( google::GLOG_FATAL, "DenOfIz.log" );
+                break;
+            }
+
             FLAGS_alsologtostderr  = true;
             FLAGS_colorlogtostdout = true;
-            google::LogAtLevel(google::GLOG_INFO, "DenOfIz.log");
-            google::InitGoogleLogging("DenOfIz");
-            google::SetLogDestination(google::GLOG_INFO, "DenOfIz.log");
-            google::SetLogDestination(google::GLOG_WARNING, "DenOfIz.log");
-            google::SetLogDestination(google::GLOG_ERROR, "DenOfIz.log");
-            google::SetLogDestination(google::GLOG_FATAL, "DenOfIz.log");
+
+            const auto logFile = desc.LogFile.Get( );
+            google::InitGoogleLogging( "DenOfIz" );
+            google::SetLogDestination( google::GLOG_INFO, logFile );
+            google::SetLogDestination( google::GLOG_WARNING, logFile );
+            google::SetLogDestination( google::GLOG_ERROR, logFile );
+            google::SetLogDestination( google::GLOG_FATAL, logFile );
         }
 
-        static void Shutdown()
+        static void Shutdown( )
         {
         }
     };

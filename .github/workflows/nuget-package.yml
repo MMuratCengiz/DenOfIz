@@ -199,7 +199,7 @@ jobs:
       - name: Package artifacts
         run: |
           mkdir -p artifacts/runtimes/osx-arm64/native
-          cp build/DenOfIz/Debug_OSX/CSharp/Project/Lib/libDenOfIzGraphicsCSharp.dylib artifacts/runtimes/osx-arm64/native/
+          cp build/DenOfIz/Debug_OSX/CSharp/Project/Lib/DenOfIzGraphicsCSharp.dylib artifacts/runtimes/osx-arm64/native/
 
           # Check for and copy the appropriate DenOfIzGraphics library (shared or static)
           if [ -f build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.dylib ]; then

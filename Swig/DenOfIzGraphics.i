@@ -142,6 +142,7 @@ using namespace DirectX;
 %include <DenOfIzGraphics/Utilities/InteropMath.h>
 %include <DenOfIzGraphics/Utilities/InteropUtilities.h>
 %include <DenOfIzGraphics/Utilities/Common_Macro.h>
+%include <DenOfIzGraphics/Assets/FileSystem/FSConfig.h>
 %include <DenOfIzGraphics/Utilities/Engine.h>
 %include <DenOfIzGraphics/Assets/Serde/Asset.h>
 %include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>

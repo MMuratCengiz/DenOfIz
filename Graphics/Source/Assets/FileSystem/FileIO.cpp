@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
 #include <DenOfIzGraphics/Utilities/Common.h>
 #include <fstream>
+#include "DenOfIzGraphics/Assets/FileSystem/FSConfig.h"
 
 using namespace DenOfIz;
 
@@ -159,26 +160,18 @@ InteropString FileIO::GetResourcePath( const InteropString &path )
 
 std::string FileIO::PlatformResourcePath( const std::string &resourcePath )
 {
+    auto assetPath = FSConfig::AssetPath( );
+    if ( assetPath.NumChars( ) == 0 )
+    {
+        return resourcePath;
+    }
+    const std::filesystem::path basePath( assetPath.Get( ) );
+    const std::filesystem::path resPath( resourcePath );
+
     if ( const std::filesystem::path fsPath( resourcePath ); fsPath.is_absolute( ) )
     {
         return resourcePath;
     }
 
-#ifdef __APPLE__
-    CFBundleRef mainBundle   = CFBundleGetMainBundle( );
-    CFURLRef    resourcesURL = CFBundleCopyResourcesDirectoryURL( mainBundle );
-    char        path[ PATH_MAX ];
-
-    if ( CFURLGetFileSystemRepresentation( resourcesURL, TRUE, (UInt8 *)path, PATH_MAX ) )
-    {
-        CFRelease( resourcesURL );
-        const std::filesystem::path basePath( path );
-        const std::filesystem::path resPath( resourcePath );
-        return ( basePath / resPath ).string( );
-    }
-
-    CFRelease( resourcesURL );
-    LOG( WARNING ) << "Unable to resolve resource path: " << resourcePath;
-#endif
-    return resourcePath;
+    return ( basePath / resPath ).string( );
 }

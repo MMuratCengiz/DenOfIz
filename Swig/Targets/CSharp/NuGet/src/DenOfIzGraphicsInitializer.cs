@@ -14,7 +14,8 @@ namespace DenOfIz
             NativeLibraryLoader.Initialize();
         }
 
-        public static void Initialize()
+
+        public static void Initialize(EngineDesc engineDesc)
         {
             if (_initialized)
             {
@@ -27,7 +28,7 @@ namespace DenOfIz
                     return;
                 }
                 NativeLibraryLoader.Initialize();
-                Engine.Init();
+                Engine.Init(engineDesc);
                 _initialized = true;
                 AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
             }

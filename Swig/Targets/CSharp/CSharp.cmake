@@ -152,7 +152,8 @@ if (WIN32)
     )
 elseif (APPLE)
     add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphicsCSharp> ${NUGET_RUNTIMES_OSX_DIR}/libDenOfIzGraphicsCSharp.dylib
+            # oddly seems like swig lib tries to load DenOfIzGraphicsCSharp.dylib instead of libDenOfIzGraphicsCSharp.dylib
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphicsCSharp> ${NUGET_RUNTIMES_OSX_DIR}/DenOfIzGraphicsCSharp.dylib
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libdxcompiler.dylib ${NUGET_RUNTIMES_OSX_DIR}/libdxcompiler.dylib
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libmetalirconverter.dylib ${NUGET_RUNTIMES_OSX_DIR}/libmetalirconverter.dylib
     )

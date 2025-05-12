@@ -41,6 +41,7 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Bundle/BundleManager.cpp
         Source/Assets/FileSystem/PathResolver.cpp
         Source/Assets/FileSystem/FileIO.cpp
+        Source/Assets/FileSystem/FSConfig.cpp
         Source/Assets/Font/Font.cpp
         Source/Assets/Font/FontLibrary.cpp
         Source/Assets/Font/TextRenderer.cpp

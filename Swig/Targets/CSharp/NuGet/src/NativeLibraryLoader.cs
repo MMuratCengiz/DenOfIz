@@ -44,24 +44,16 @@ namespace DenOfIz
             {
                 return runtimePath;
             }
-            
-            // For Apple Silicon, try x64 as fallback since that's what we build in CMake
-            if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64 && 
-                RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                string fallbackPath = Path.Combine(assemblyDir, "runtimes", $"{platform}-x64", "native");
-                if (Directory.Exists(fallbackPath))
-                {
-                    return fallbackPath;
-                }
-            }
-            
+
             return Path.Combine(AppContext.BaseDirectory, "runtimes", $"{platform}-{architecture}", "native");
         }
 
         private static void LoadAllNativeLibraries(string directory)
         {
-            if (!Directory.Exists(directory)) return;
+            if (!Directory.Exists(directory))
+            {
+                return;
+            }
             
             string extension = GetPlatformLibraryExtension();
             string[] libraryFiles = Directory.GetFiles(directory, $"*{extension}");
