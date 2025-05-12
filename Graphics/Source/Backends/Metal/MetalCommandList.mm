@@ -202,7 +202,14 @@ void MetalCommandList::BindCommandResources( )
     {
         ProcessBindGroup( bindGroup );
     }
-    BindTopLevelArgumentBuffer( );
+    if ( m_rootSignature == nullptr && m_pipeline != nullptr )
+    {
+        m_rootSignature = m_pipeline->RootSignature( );
+    }
+    if ( m_rootSignature != nullptr )
+    {
+        BindTopLevelArgumentBuffer( );
+    }
 }
 
 void MetalCommandList::ProcessBindGroup( const MetalResourceBindGroup *metalBindGroup )

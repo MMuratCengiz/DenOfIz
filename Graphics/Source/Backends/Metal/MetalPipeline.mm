@@ -26,7 +26,8 @@ MetalPipeline::MetalPipeline( MetalContext *context, const PipelineDesc &desc ) 
     m_desc( desc ),
     m_computeThreadsPerThreadgroup( MTLSizeMake(32, 1, 1) ),
     m_meshThreadsPerThreadgroup( MTLSizeMake(128, 1, 1) ),
-    m_objectThreadsPerThreadgroup( MTLSizeMake(0, 0, 0) )
+    m_objectThreadsPerThreadgroup( MTLSizeMake(0, 0, 0) ),
+    m_rootSignature( static_cast<MetalRootSignature *>( desc.RootSignature ) )
 {
     switch ( desc.BindPoint )
     {
@@ -230,8 +231,7 @@ void MetalPipeline::CreateComputePipeline( )
 
 void MetalPipeline::CreateRayTracingPipeline( )
 {
-    MetalRootSignature *rootSignature   = static_cast<MetalRootSignature *>( m_desc.RootSignature );
-    auto                compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
+    auto compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
 
     MTLComputePipelineDescriptor    *pipelineStateDescriptor = [[MTLComputePipelineDescriptor alloc] init];
     NSMutableArray<id<MTLFunction>> *functionHandles = [NSMutableArray arrayWithCapacity:compiledShaders.NumElements( ) + 2]; // +2 for triangle and procedural intersection shaders
@@ -389,6 +389,11 @@ void MetalPipeline::InitStencilFace( MTLStencilDescriptor *stencilDesc, const St
     stencilDesc.depthStencilPassOperation = MetalEnumConverter::ConvertStencilOp( stencilFace.PassOp );
     stencilDesc.readMask                  = m_desc.Graphics.StencilTest.ReadMask;
     stencilDesc.writeMask                 = m_desc.Graphics.StencilTest.WriteMask;
+}
+
+MetalRootSignature *MetalPipeline::RootSignature( ) const
+{
+    return m_rootSignature;
 }
 
 const MTLCullMode &MetalPipeline::CullMode( ) const

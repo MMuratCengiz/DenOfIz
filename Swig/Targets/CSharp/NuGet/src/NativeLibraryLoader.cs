@@ -23,18 +23,13 @@ namespace DenOfIz
 
             lock (LoadLock)
             {
-                if (_initialized) return;
-
-                try
+                if (_initialized)
                 {
-                    string nativePath = GetRuntimeFolder();
-                    LoadAllNativeLibraries(nativePath);
-                    _initialized = true;
+                    return;
                 }
-                catch (Exception)
-                {
-                    throw;
-                }
+                string nativePath = GetRuntimeFolder();
+                LoadAllNativeLibraries(nativePath);
+                _initialized = true;
             }
         }
 

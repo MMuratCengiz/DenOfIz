@@ -102,7 +102,7 @@ endif ()
 if (APPLE)
     # Todo find a way to implement: COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:DenOfIzGraphicsCSharp> ${SWIG_CSHARP_NATIVE_DIR}
     add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
-            # COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libdxcompiler.dylib ${SWIG_CSHARP_NATIVE_DIR} # dxcompiler is statically built on Osx
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libdxcompiler.dylib ${SWIG_CSHARP_NATIVE_DIR}
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libmetalirconverter.dylib ${SWIG_CSHARP_NATIVE_DIR}
     )
 endif ()
@@ -153,7 +153,7 @@ if (WIN32)
 elseif (APPLE)
     add_custom_command(TARGET DenOfIzGraphicsCSharp POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:DenOfIzGraphicsCSharp> ${NUGET_RUNTIMES_OSX_DIR}/libDenOfIzGraphicsCSharp.dylib
-            # COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libdxcompiler.dylib ${NUGET_RUNTIMES_OSX_DIR}/libdxcompiler.dylib # Statically built
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libdxcompiler.dylib ${NUGET_RUNTIMES_OSX_DIR}/libdxcompiler.dylib
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/libmetalirconverter.dylib ${NUGET_RUNTIMES_OSX_DIR}/libmetalirconverter.dylib
     )
 

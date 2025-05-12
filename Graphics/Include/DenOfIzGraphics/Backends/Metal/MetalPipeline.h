@@ -42,9 +42,9 @@ namespace DenOfIz
 
     class MetalPipeline final : public IPipeline
     {
-    private:
-        MetalContext *m_context;
-        PipelineDesc  m_desc;
+        MetalContext       *m_context;
+        MetalRootSignature *m_rootSignature;
+        PipelineDesc        m_desc;
 
         id<MTLRenderPipelineState>  m_graphicsPipelineState;
         id<MTLComputePipelineState> m_computePipelineState;
@@ -68,6 +68,7 @@ namespace DenOfIz
         MetalPipeline( MetalContext *context, const PipelineDesc &desc );
         ~MetalPipeline( ) override;
 
+        MetalRootSignature                *RootSignature( ) const;
         const MTLCullMode                 &CullMode( ) const;
         const MTLTriangleFillMode         &FillMode( ) const;
         const id<MTLDepthStencilState>    &DepthStencilState( ) const;

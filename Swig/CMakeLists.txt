@@ -14,6 +14,12 @@ endif ()
 
 if (SWIG_CSHARP)
     include(Targets/CSharp/CSharp.cmake)
+
+    if (APPLE)
+        set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
+            INSTALL_RPATH "@loader_path"
+            BUILD_WITH_INSTALL_RPATH TRUE)
+    endif()
 endif ()
 
 if (SWIG_JAVA)

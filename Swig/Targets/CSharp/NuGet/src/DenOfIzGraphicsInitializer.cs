@@ -16,36 +16,26 @@ namespace DenOfIz
 
         public static void Initialize()
         {
-            if (_initialized) return;
-            
+            if (_initialized)
+            {
+                return;
+            }
             lock (_lock)
             {
-                if (_initialized) return;
-                
-                try
+                if (_initialized)
                 {
-                    NativeLibraryLoader.Initialize();
-                    Engine.Init();
-                    _initialized = true;
-                    AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+                    return;
                 }
-                catch
-                {
-                    throw;
-                }
+                NativeLibraryLoader.Initialize();
+                Engine.Init();
+                _initialized = true;
+                AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
             }
         }
 
         private static void OnProcessExit(object sender, EventArgs e)
         {
-            try
-            {
-                GraphicsApi.ReportLiveObjects();
-            }
-            catch
-            {
-                // Ignore errors during cleanup
-            }
+            GraphicsApi.ReportLiveObjects();
         }
     }
 }

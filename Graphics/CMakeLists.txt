@@ -6,10 +6,6 @@ if (WIN32 OR LINUX)
 endif ()
 if (WIN32)
     find_package(directx12-agility CONFIG REQUIRED)
-elseif (APPLE)
-    # MacOS still needs to build from source
-    include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/include_dxcompiler.cmake")
-    build_dxcompiler(_ThirdParty/DirectXShaderCompiler)
 endif ()
 
 if (WIN32 OR LINUX)
@@ -367,12 +363,23 @@ if (APPLE)
             "${CMAKE_BINARY_DIR}/libmetalirconverter.dylib"
             COPYONLY
     )
+    configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/osx_dxc/lib/libdxcompiler.dylib"
+            "${CMAKE_BINARY_DIR}/libdxcompiler.dylib"
+            COPYONLY
+    )
+
+    target_link_directories(
+            DenOfIzGraphics
+            PUBLIC
+            _ThirdParty/osx_dxc/lib/
+    )
 
     target_include_directories(DenOfIzGraphics
             PUBLIC
-            _ThirdParty/DirectXShaderCompiler/include/dxc
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include/wsl/stubs
+            _ThirdParty/osx_dxc/include/dxc
     )
 
     target_link_libraries(DenOfIzGraphics
@@ -382,7 +389,6 @@ if (APPLE)
             PRIVATE "-framework Metal"
             PRIVATE "-framework MetalKit"
             PRIVATE dxcompiler
-            PUBLIC DirectX-Headers
     )
 
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_METAL)
