@@ -18,7 +18,7 @@
   <files>
     <file src="lib\netstandard2.0\DenOfIzGraphics.dll" target="lib\netstandard2.0" />
     <file src="runtimes\win-x64\native\*.dll" target="runtimes\win-x64\native" />
-    <file src="runtimes\osx-x64\native\*.dylib" target="runtimes\osx-x64\native" />
+    <file src="runtimes\osx-arm64\native\*.dylib" target="runtimes\osx-arm64\native" />
     <file src="runtimes\linux-x64\native\*.so" target="runtimes\linux-x64\native" />
     <file src="build\DenOfIzGraphics.targets" target="build\DenOfIzGraphics.targets" />
   </files>

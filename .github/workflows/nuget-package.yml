@@ -198,22 +198,22 @@ jobs:
 
       - name: Package artifacts
         run: |
-          mkdir -p artifacts/runtimes/osx-x64/native
-          cp build/DenOfIz/Debug_OSX/CSharp/Project/Lib/libDenOfIzGraphicsCSharp.dylib artifacts/runtimes/osx-x64/native/
+          mkdir -p artifacts/runtimes/osx-arm64/native
+          cp build/DenOfIz/Debug_OSX/CSharp/Project/Lib/libDenOfIzGraphicsCSharp.dylib artifacts/runtimes/osx-arm64/native/
 
           # Check for and copy the appropriate DenOfIzGraphics library (shared or static)
           if [ -f build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.dylib ]; then
-            cp build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.dylib artifacts/runtimes/osx-x64/native/
+            cp build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.dylib artifacts/runtimes/osx-arm64/native/
             echo "Copied shared library libDenOfIzGraphics.dylib"
           elif [ -f build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.a ]; then
-            cp build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.a artifacts/runtimes/osx-x64/native/
+            cp build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.a artifacts/runtimes/osx-arm64/native/
             echo "Copied static library libDenOfIzGraphics.a"
           else
             echo "ERROR: Neither libDenOfIzGraphics.dylib nor libDenOfIzGraphics.a was found!"
             exit 1
           fi
 
-          cp build/DenOfIz/Debug_OSX/libmetalirconverter.dylib artifacts/runtimes/osx-x64/native/
+          cp build/DenOfIz/Debug_OSX/libmetalirconverter.dylib artifacts/runtimes/osx-arm64/native/
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -274,7 +274,7 @@ jobs:
           New-Item -Path "$nugetDir/build" -ItemType Directory -Force
           New-Item -Path "$nugetDir/runtimes/win-x64/native" -ItemType Directory -Force
           New-Item -Path "$nugetDir/runtimes/linux-x64/native" -ItemType Directory -Force
-          New-Item -Path "$nugetDir/runtimes/osx-x64/native" -ItemType Directory -Force
+          New-Item -Path "$nugetDir/runtimes/osx-arm64/native" -ItemType Directory -Force
           
           # Copy C# code files
           Write-Host "Copying C# source files"
@@ -288,7 +288,7 @@ jobs:
           Copy-Item linux-artifacts/runtimes/linux-x64/native/* $nugetDir/runtimes/linux-x64/native/
 
           Write-Host "Copying macOS runtime files"
-          Copy-Item macos-artifacts/runtimes/osx-x64/native/* $nugetDir/runtimes/osx-x64/native/
+          Copy-Item macos-artifacts/runtimes/osx-arm64/native/* $nugetDir/runtimes/osx-arm64/native/
 
       - name: Build managed DLL
         shell: pwsh
