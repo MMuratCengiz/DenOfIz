@@ -67,7 +67,7 @@ internal class Program
     private static void Main()
     {
         // Very important to ensure necessary libraries are loaded(especially dxil and dxcompiler for windows)
-        DenOfIzGraphicsInitializer.Initialize(new EngineDesc());
+         .Initialize(new EngineDesc());
 
         var program = new Program();
         program.Run();

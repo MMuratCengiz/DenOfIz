@@ -122,6 +122,17 @@ void MetalBufferResource::SetData( const InteropArray<Byte> &data, bool keepMapp
     }
 }
 
+void MetalBufferResource::WriteData( const InteropArray<Byte> &data, uint32_t bufferOffset )
+{
+    if ( m_mappedMemory == nullptr )
+    {
+        MapMemory( );
+    }
+
+    std::memcpy( static_cast<Byte *>( m_mappedMemory ) + bufferOffset, data.Data( ), data.NumElements( ) );
+}
+
+
 [[nodiscard]] size_t MetalBufferResource::NumBytes( ) const
 {
     return m_numBytes;

@@ -101,6 +101,7 @@ set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Backends/Common/GraphicsWindowHandle.cpp
 
         #Data
+        Source/Data/AlignedDataWriter.cpp
         Source/Data/BatchResourceCopy.cpp
         Source/Data/Texture.cpp
         Source/Data/Geometry.cpp

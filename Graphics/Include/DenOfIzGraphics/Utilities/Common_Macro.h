@@ -33,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     {                                                                                                                                                                              \
         if ( !exp )                                                                                                                                                                \
         {                                                                                                                                                                          \
-            throw std::runtime_error( #exp " is null" );                                                                                                                           \
+            LOG( FATAL ) << #exp " is required but was null.";                                                                                                                     \
         }                                                                                                                                                                          \
     }                                                                                                                                                                              \
     while ( 0 )

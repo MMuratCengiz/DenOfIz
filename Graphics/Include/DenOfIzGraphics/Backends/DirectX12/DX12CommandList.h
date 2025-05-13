@@ -64,8 +64,8 @@ namespace DenOfIz
         void Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
         void DispatchMesh( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ) override;
         // List of copy commands
-        void CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionInfo ) override;
-        void CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionInfo ) override;
+        void CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionDesc ) override;
+        void CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionDesc ) override;
         void CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTexture ) override;
         void CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBuffer ) override;
         // Ray tracing commands
@@ -82,7 +82,7 @@ namespace DenOfIz
         void ProcessBindGroups( );
         void BindRootDescriptors( const DX12RootDescriptor &rootDescriptor ) const;
         void SetRootConstants( const DX12RootConstant &rootConstant ) const;
-        void BindResourceGroup( uint32_t index, const D3D12_GPU_DESCRIPTOR_HANDLE &gpuDescriptorHandle ) const;
+        void BindResourceGroup( uint32_t index, const D3D12_GPU_DESCRIPTOR_HANDLE &gpuHandle ) const;
     };
 
 } // namespace DenOfIz

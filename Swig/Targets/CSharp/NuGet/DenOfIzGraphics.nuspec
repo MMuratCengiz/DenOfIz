@@ -7,7 +7,7 @@
     <owners>Murat Cengiz</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">GPL-3.0-or-later</license>
-    <projectUrl>https://github.com/DenOfIz/DenOfIz</projectUrl>
+    <projectUrl>https://github.com/MMuratCengiz/DenOfIz</projectUrl>
     <description>
       [ALPHA SOFTWARE] DenOfIz is a modern, cross-platform graphics library providing a unified interface over DirectX12, Vulkan, and Metal.
 

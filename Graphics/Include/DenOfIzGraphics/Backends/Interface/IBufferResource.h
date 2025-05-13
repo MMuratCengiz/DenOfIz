@@ -59,6 +59,8 @@ namespace DenOfIz
         // Interop API
         [[nodiscard]] virtual InteropArray<Byte> GetData( ) const                                           = 0;
         virtual void                             SetData( const InteropArray<Byte> &data, bool keepMapped ) = 0;
+        /// Write data always maps memory, user should properly align bufferOffset if necessary
+        virtual void WriteData( const InteropArray<Byte> &data, uint32_t bufferOffset ) = 0;
     };
 
     struct BufferSlice

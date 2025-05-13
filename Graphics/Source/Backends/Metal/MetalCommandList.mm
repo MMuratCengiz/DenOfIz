@@ -73,8 +73,13 @@ void MetalCommandList::BeginRendering( const RenderingDesc &renderingDesc )
     {
         for ( auto i = 0; i < renderingDesc.RTAttachments.NumElements( ); i++ )
         {
-            const RenderingAttachmentDesc &attachment      = renderingDesc.RTAttachments.GetElement( i );
-            MetalTextureResource          *metalRtResource = static_cast<MetalTextureResource *>( attachment.Resource );
+            const RenderingAttachmentDesc &attachment = renderingDesc.RTAttachments.GetElement( i );
+            if ( attachment.Resource == nullptr )
+            {
+                LOG( ERROR ) << "BeginRendering called with null render target attachment at index " << i;
+                return;
+            }
+            MetalTextureResource *metalRtResource = static_cast<MetalTextureResource *>( attachment.Resource );
             passDesc.colorAttachments[ i ].texture         = metalRtResource->Instance( );
             passDesc.colorAttachments[ i ].loadAction      = MetalEnumConverter::ConvertLoadAction( attachment.LoadOp );
             passDesc.colorAttachments[ i ].storeAction     = MetalEnumConverter::ConvertStoreAction( attachment.StoreOp );
@@ -120,6 +125,7 @@ void MetalCommandList::End( )
 
 void MetalCommandList::BindPipeline( IPipeline *pipeline )
 {
+    DZ_NOT_NULL( pipeline );
     m_pipeline = static_cast<MetalPipeline *>( pipeline );
     @autoreleasepool
     {
@@ -145,6 +151,7 @@ void MetalCommandList::BindPipeline( IPipeline *pipeline )
 
 void MetalCommandList::BindVertexBuffer( IBufferResource *buffer )
 {
+    DZ_NOT_NULL( buffer );
     id<MTLBuffer> vertexBuffer = static_cast<MetalBufferResource *>( buffer )->Instance( );
 
     switch ( m_desc.QueueType )
@@ -163,6 +170,7 @@ void MetalCommandList::BindVertexBuffer( IBufferResource *buffer )
 
 void MetalCommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType )
 {
+    DZ_NOT_NULL( buffer );
     switch ( indexType )
     {
     case IndexType::Uint16:
@@ -178,6 +186,11 @@ void MetalCommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType
 
 void MetalCommandList::BindViewport( float x, float y, float width, float height )
 {
+    if ( width <= 0.0f || height <= 0.0f )
+    {
+        LOG( ERROR ) << "Invalid viewport dimensions: width=" << width << ", height=" << height;
+        return;
+    }
     SwitchEncoder( MetalEncoderType::Render );
     MTLViewport viewport = { x, y, width, height, 0.0, 1.0 };
     [m_renderEncoder setViewport:viewport];
@@ -185,6 +198,11 @@ void MetalCommandList::BindViewport( float x, float y, float width, float height
 
 void MetalCommandList::BindScissorRect( float x, float y, float width, float height )
 {
+    if ( width <= 0.0f || height <= 0.0f )
+    {
+        LOG( ERROR ) << "Invalid scissor rect dimensions: width=" << width << ", height=" << height;
+        return;
+    }
     SwitchEncoder( MetalEncoderType::Render );
     MTLScissorRect scissorRect = { static_cast<NSUInteger>( x ), static_cast<NSUInteger>( y ), static_cast<NSUInteger>( width ), static_cast<NSUInteger>( height ) };
     [m_renderEncoder setScissorRect:scissorRect];
@@ -192,6 +210,7 @@ void MetalCommandList::BindScissorRect( float x, float y, float width, float hei
 
 void MetalCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 {
+    DZ_NOT_NULL( bindGroup );
     MetalResourceBindGroup *metalBindGroup = static_cast<MetalResourceBindGroup *>( bindGroup );
     m_queuedBindGroups.push_back( metalBindGroup );
 }
@@ -273,6 +292,10 @@ void MetalCommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )
 
 void MetalCommandList::DrawIndexed( uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance )
 {
+    if ( indexCount == 0 || instanceCount == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, DrawIndexed called with zero count: indexCount=" << indexCount << ", instanceCount=" << instanceCount;
+    }
     SwitchEncoder( MetalEncoderType::Render );
     BindCommandResources( );
     IRRuntimeDrawIndexedPrimitives( m_renderEncoder, MTLPrimitiveTypeTriangle, indexCount, m_indexType, m_indexBuffer, firstIndex, instanceCount, vertexOffset, firstInstance );
@@ -281,6 +304,10 @@ void MetalCommandList::DrawIndexed( uint32_t indexCount, uint32_t instanceCount,
 
 void MetalCommandList::Draw( uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance )
 {
+    if ( vertexCount == 0 || instanceCount == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, Draw called with zero count: vertexCount=" << vertexCount << ", instanceCount=" << instanceCount;
+    }
     SwitchEncoder( MetalEncoderType::Render );
     BindCommandResources( );
     IRRuntimeDrawPrimitives( m_renderEncoder, MTLPrimitiveTypeTriangle, firstVertex, vertexCount, instanceCount );
@@ -289,6 +316,10 @@ void MetalCommandList::Draw( uint32_t vertexCount, uint32_t instanceCount, uint3
 
 void MetalCommandList::Dispatch( uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ )
 {
+    if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, Dispatch called with zero group count: x=" << groupCountX << ", y=" << groupCountY << ", z=" << groupCountZ;
+    }
     SwitchEncoder( MetalEncoderType::Compute );
     BindCommandResources( );
     MTLSize threadGroupsPerGrid = MTLSizeMake( groupCountX, groupCountY, groupCountZ );
@@ -299,6 +330,10 @@ void MetalCommandList::Dispatch( uint32_t groupCountX, uint32_t groupCountY, uin
 
 void MetalCommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
 {
+    if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, DispatchMesh called with zero group count: x=" << groupCountX << ", y=" << groupCountY << ", z=" << groupCountZ;
+    }
     SwitchEncoder( MetalEncoderType::Render );
     BindCommandResources( );
     MTLSize meshGroupsPerGrid = MTLSizeMake( groupCountX, groupCountY, groupCountZ );
@@ -310,9 +345,18 @@ void MetalCommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t 
 
 void MetalCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionInfo )
 {
+    DZ_NOT_NULL( copyBufferRegionInfo.SrcBuffer );
+    DZ_NOT_NULL( copyBufferRegionInfo.DstBuffer );
     SwitchEncoder( MetalEncoderType::Blit );
+    
+    if ( copyBufferRegionDesc.NumBytes == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, CopyBufferRegion called with zero NumBytes";
+    }
+    
     MetalBufferResource *srcBuffer = dynamic_cast<MetalBufferResource *>( copyBufferRegionInfo.SrcBuffer );
     MetalBufferResource *dstBuffer = dynamic_cast<MetalBufferResource *>( copyBufferRegionInfo.DstBuffer );
+
     [m_blitEncoder copyFromBuffer:srcBuffer->Instance( )
                      sourceOffset:copyBufferRegionInfo.SrcOffset
                          toBuffer:dstBuffer->Instance( )
@@ -322,9 +366,19 @@ void MetalCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferR
 
 void MetalCommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionInfo )
 {
+    DZ_NOT_NULL( copyTextureRegionInfo.SrcTexture );
+    DZ_NOT_NULL( copyTextureRegionInfo.DstTexture );
     SwitchEncoder( MetalEncoderType::Blit );
+
+    if ( copyTextureRegionDesc.Width == 0 || copyTextureRegionDesc.Height == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, CopyTextureRegion called with zero dimensions: Width=" << copyTextureRegionDesc.Width
+                       << ", Height=" << copyTextureRegionDesc.Height;
+    }
+    
     MetalTextureResource *srcTexture = dynamic_cast<MetalTextureResource *>( copyTextureRegionInfo.SrcTexture );
     MetalTextureResource *dstTexture = dynamic_cast<MetalTextureResource *>( copyTextureRegionInfo.DstTexture );
+
     [m_blitEncoder copyFromTexture:srcTexture->Instance( )
                        sourceSlice:copyTextureRegionInfo.SrcArrayLayer
                        sourceLevel:copyTextureRegionInfo.SrcMipLevel
@@ -338,6 +392,8 @@ void MetalCommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyTextu
 
 void MetalCommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTexture )
 {
+    DZ_NOT_NULL( copyBufferToTexture.SrcBuffer );
+    DZ_NOT_NULL( copyBufferToTexture.DstTexture );
     SwitchEncoder( MetalEncoderType::Blit );
 
     MetalBufferResource  *srcBuffer  = dynamic_cast<MetalBufferResource *>( copyBufferToTexture.SrcBuffer );
@@ -367,6 +423,12 @@ void MetalCommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copyB
 
 void MetalCommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBuffer )
 {
+    DZ_NOT_NULL( copyTextureToBuffer.SrcTexture );
+    DZ_NOT_NULL( copyTextureToBuffer.DstBuffer );
+    
+    MetalTextureResource *srcTexture = dynamic_cast<MetalTextureResource *>( copyTextureToBuffer.SrcTexture );
+    MetalBufferResource  *dstBuffer  = dynamic_cast<MetalBufferResource *>( copyTextureToBuffer.DstBuffer );
+
     SwitchEncoder( MetalEncoderType::Blit );
     // TODO Calculate RowPitch and NumRows automatically if possible
     MetalTextureResource *srcTexture = dynamic_cast<MetalTextureResource *>( copyTextureToBuffer.SrcTexture );
@@ -452,16 +514,16 @@ void MetalCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBo
 
 void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
+    DZ_NOT_NULL( dispatchRaysDesc.ShaderBindingTable );
+    if ( dispatchRaysDesc.Width == 0 || dispatchRaysDesc.Height == 0 || dispatchRaysDesc.Depth == 0 )
+    {
+        LOG( WARNING ) << "DispatchRays called with zero dimensions: width=" << dispatchRaysDesc.Width << ", height=" << dispatchRaysDesc.Height
+                       << ", depth=" << dispatchRaysDesc.Depth;
+    }
     SwitchEncoder( MetalEncoderType::Compute );
     BindCommandResources( );
 
     MetalShaderBindingTable *shaderBindingTable = static_cast<MetalShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
-
-    if ( shaderBindingTable == nullptr )
-    {
-        LOG( ERROR ) << "DispatchRaysDesc.ShaderBindingTable == null";
-        return;
-    }
 
     for ( const auto &missShader : shaderBindingTable->UsedResources( ) )
     {

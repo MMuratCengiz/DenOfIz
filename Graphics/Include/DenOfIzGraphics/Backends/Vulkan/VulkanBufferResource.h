@@ -55,6 +55,7 @@ namespace DenOfIz
         // Interop API
         [[nodiscard]] InteropArray<Byte> GetData( ) const override;
         void                             SetData( const InteropArray<Byte> &data, bool keepMapped ) override;
+        void                             WriteData( const InteropArray<Byte> &data, uint32_t bufferOffset ) override;
     };
 
 } // namespace DenOfIz

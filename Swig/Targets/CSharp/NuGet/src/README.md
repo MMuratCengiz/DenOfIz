@@ -39,7 +39,7 @@ To get started with DenOfIz in your .NET project:
 2. Make sure to initialize the library at the start of your application:
    ```csharp
    // Very important to ensure necessary libraries are loaded (especially dxil and dxcompiler for Windows)
-   DenOfIzGraphicsInitializer.Initialize(new EngineDesc());
+   DenOfIzGraphics.Initialize(new EngineDesc());
    ```
 
 3. Create a window and set up the graphics API:

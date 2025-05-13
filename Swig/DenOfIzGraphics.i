@@ -239,6 +239,7 @@ using namespace DirectX;
 %include <DenOfIzGraphics/Animation/AnimationStateManager.h>
 
 %include <DenOfIzGraphics/Data/Geometry.h>
+%include <DenOfIzGraphics/Data/AlignedDataWriter.h>
 %include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 %include <DenOfIzGraphics/Data/Texture.h>
 

@@ -67,8 +67,13 @@ void VulkanCommandList::BeginRendering( const RenderingDesc &renderingDesc )
 
     for ( int i = 0; i < renderingDesc.RTAttachments.NumElements( ); ++i )
     {
-        const auto &colorAttachment           = renderingDesc.RTAttachments.GetElement( i );
-        auto       *vkColorAttachmentResource = dynamic_cast<VulkanTextureResource *>( colorAttachment.Resource );
+        const auto &colorAttachment = renderingDesc.RTAttachments.GetElement( i );
+        if ( colorAttachment.Resource == nullptr )
+        {
+            LOG( ERROR ) << "BeginRendering called with null render target attachment at index " << i;
+            return;
+        }
+        auto *vkColorAttachmentResource = dynamic_cast<VulkanTextureResource *>( colorAttachment.Resource );
 
         VkRenderingAttachmentInfo colorAttachmentInfo{ };
         colorAttachmentInfo.sType                         = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
@@ -141,12 +146,14 @@ void VulkanCommandList::End( )
 
 void VulkanCommandList::BindPipeline( IPipeline *pipeline )
 {
+    DZ_NOT_NULL( pipeline );
     m_currentPipeline = dynamic_cast<VulkanPipeline *>( pipeline );
     vkCmdBindPipeline( m_commandBuffer, m_currentPipeline->BindPoint( ), m_currentPipeline->Instance( ) );
 }
 
 void VulkanCommandList::BindVertexBuffer( IBufferResource *buffer )
 {
+    DZ_NOT_NULL( buffer );
     const auto             bufferResource = dynamic_cast<VulkanBufferResource *>( buffer );
     constexpr VkDeviceSize offset         = 0;
     vkCmdBindVertexBuffers( m_commandBuffer, 0, 1, &bufferResource->Instance( ), &offset );
@@ -154,6 +161,7 @@ void VulkanCommandList::BindVertexBuffer( IBufferResource *buffer )
 
 void VulkanCommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType )
 {
+    DZ_NOT_NULL( buffer );
     const auto             bufferResource = dynamic_cast<VulkanBufferResource *>( buffer );
     constexpr VkDeviceSize offset         = 0;
 
@@ -170,7 +178,11 @@ void VulkanCommandList::BindIndexBuffer( IBufferResource *buffer, const IndexTyp
 
 void VulkanCommandList::BindViewport( const float offsetX, const float offsetY, const float width, const float height )
 {
-    DZ_RETURN_IF( width == 0 || height == 0 );
+    if ( width <= 0.0f || height <= 0.0f )
+    {
+        LOG( ERROR ) << "Invalid viewport dimensions: width=" << width << ", height=" << height;
+        return;
+    }
     m_viewport.x = offsetX;
     // Vulkan has inverted y-axis
     m_viewport.y      = offsetY + height;
@@ -185,6 +197,11 @@ void VulkanCommandList::BindViewport( const float offsetX, const float offsetY, 
 
 void VulkanCommandList::BindScissorRect( const float offsetX, const float offsetY, const float width, const float height )
 {
+    if ( width <= 0.0f || height <= 0.0f )
+    {
+        LOG( ERROR ) << "Invalid scissor rect dimensions: width=" << width << ", height=" << height;
+        return;
+    }
     m_scissorRect               = VkRect2D( );
     m_scissorRect.offset.x      = offsetX;
     m_scissorRect.offset.y      = offsetY;
@@ -195,6 +212,7 @@ void VulkanCommandList::BindScissorRect( const float offsetX, const float offset
 
 void VulkanCommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 {
+    DZ_NOT_NULL( bindGroup );
     const auto *vkBindGroup = dynamic_cast<VulkanResourceBindGroup *>( bindGroup );
     m_queuedBindGroups.push_back( vkBindGroup );
 }
@@ -206,8 +224,16 @@ void VulkanCommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )
 
 void VulkanCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionDesc )
 {
+    DZ_NOT_NULL( copyBufferRegionDesc.SrcBuffer );
+    DZ_NOT_NULL( copyBufferRegionDesc.DstBuffer );
+
     const auto *srcBuffer = dynamic_cast<VulkanBufferResource *>( copyBufferRegionDesc.SrcBuffer );
     const auto *dstBuffer = dynamic_cast<VulkanBufferResource *>( copyBufferRegionDesc.DstBuffer );
+
+    if ( copyBufferRegionDesc.NumBytes == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, CopyBufferRegion called with zero NumBytes";
+    }
 
     VkBufferCopy copyRegion{ };
     copyRegion.srcOffset = copyBufferRegionDesc.SrcOffset;
@@ -219,8 +245,17 @@ void VulkanCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBuffer
 
 void VulkanCommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionDesc )
 {
+    DZ_NOT_NULL( copyTextureRegionDesc.SrcTexture );
+    DZ_NOT_NULL( copyTextureRegionDesc.DstTexture );
+
     const auto *srcTex = dynamic_cast<VulkanTextureResource *>( copyTextureRegionDesc.SrcTexture );
     const auto *dstTex = dynamic_cast<VulkanTextureResource *>( copyTextureRegionDesc.DstTexture );
+
+    if ( copyTextureRegionDesc.Width == 0 || copyTextureRegionDesc.Height == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, CopyTextureRegion called with zero dimensions: Width=" << copyTextureRegionDesc.Width
+                       << ", Height=" << copyTextureRegionDesc.Height;
+    }
 
     VkImageCopy copyRegion{ };
     copyRegion.srcOffset      = VkOffset3D( copyTextureRegionDesc.SrcX, copyTextureRegionDesc.SrcY, copyTextureRegionDesc.SrcZ );
@@ -234,6 +269,9 @@ void VulkanCommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyText
 
 void VulkanCommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTextureDesc )
 {
+    DZ_NOT_NULL( copyBufferToTextureDesc.SrcBuffer );
+    DZ_NOT_NULL( copyBufferToTextureDesc.DstTexture );
+
     const auto *srcBuffer = dynamic_cast<VulkanBufferResource *>( copyBufferToTextureDesc.SrcBuffer );
     const auto *dstTex    = dynamic_cast<VulkanTextureResource *>( copyBufferToTextureDesc.DstTexture );
 
@@ -262,6 +300,9 @@ void VulkanCommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copy
 
 void VulkanCommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyTextureToBufferDesc )
 {
+    DZ_NOT_NULL( copyTextureToBufferDesc.DstBuffer );
+    DZ_NOT_NULL( copyTextureToBufferDesc.SrcTexture );
+
     const auto *dstBuffer = dynamic_cast<VulkanBufferResource *>( copyTextureToBufferDesc.DstBuffer );
     const auto *srcTex    = dynamic_cast<VulkanTextureResource *>( copyTextureToBufferDesc.SrcTexture );
 
@@ -348,18 +389,33 @@ void VulkanCommandList::UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc
 
 void VulkanCommandList::DrawIndexed( const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance )
 {
+    if ( indexCount == 0 || instanceCount == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, DrawIndexed called with zero count: indexCount=" << indexCount << ", instanceCount=" << instanceCount;
+    }
     ProcessBindGroups( );
     vkCmdDrawIndexed( m_commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance );
 }
 
 void VulkanCommandList::Draw( const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance )
 {
+    if ( vertexCount == 0 || instanceCount == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, Draw called with zero count: vertexCount=" << vertexCount << ", instanceCount=" << instanceCount;
+    }
     ProcessBindGroups( );
     vkCmdDraw( m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance );
 }
 
 void VulkanCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
+    DZ_NOT_NULL( dispatchRaysDesc.ShaderBindingTable );
+    if ( dispatchRaysDesc.Width == 0 || dispatchRaysDesc.Height == 0 || dispatchRaysDesc.Depth == 0 )
+    {
+        LOG( WARNING ) << "DispatchRays called with zero dimensions: width=" << dispatchRaysDesc.Width << ", height=" << dispatchRaysDesc.Height
+                       << ", depth=" << dispatchRaysDesc.Depth;
+    }
+
     ProcessBindGroups( );
     const VulkanShaderBindingTable *bindingTable = dynamic_cast<VulkanShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
     DZ_NOT_NULL( bindingTable );
@@ -370,12 +426,22 @@ void VulkanCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 
 void VulkanCommandList::Dispatch( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
 {
+    if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, Dispatch called with zero group count: x=" << groupCountX << ", y=" << groupCountY << ", z=" << groupCountZ;
+    }
+
     ProcessBindGroups( );
     vkCmdDispatch( m_commandBuffer, groupCountX, groupCountY, groupCountZ );
 }
 
 void VulkanCommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
 {
+    if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, DispatchMesh called with zero group count: x=" << groupCountX << ", y=" << groupCountY << ", z=" << groupCountZ;
+    }
+
     ProcessBindGroups( );
     vkCmdDrawMeshTasksEXT( m_commandBuffer, groupCountX, groupCountY, groupCountZ );
 }

@@ -52,9 +52,14 @@ void DX12CommandList::BeginRendering( const RenderingDesc &renderingDesc )
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> renderTargets( renderingDesc.RTAttachments.NumElements( ) );
     for ( int i = 0; i < renderingDesc.RTAttachments.NumElements( ); i++ )
     {
-        const auto &rtAttachment   = renderingDesc.RTAttachments.GetElement( i );
-        auto       *pImageResource = dynamic_cast<DX12TextureResource *>( rtAttachment.Resource );
-        renderTargets[ i ]         = pImageResource->GetOrCreateRtvHandle( );
+        const auto &rtAttachment = renderingDesc.RTAttachments.GetElement( i );
+        if ( rtAttachment.Resource == nullptr )
+        {
+            LOG( ERROR ) << "BeginRendering called with null render target attachment at index " << i;
+            return;
+        }
+        auto *pImageResource = dynamic_cast<DX12TextureResource *>( rtAttachment.Resource );
+        renderTargets[ i ]   = pImageResource->GetOrCreateRtvHandle( );
         if ( rtAttachment.LoadOp == LoadOp::Clear )
         {
             m_commandList->ClearRenderTargetView( renderTargets[ i ], rtAttachment.ClearColor, 0, nullptr );
@@ -173,18 +178,32 @@ void DX12CommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType 
 
 void DX12CommandList::BindViewport( const float x, const float y, const float width, const float height )
 {
+    if ( width <= 0.0f || height <= 0.0f )
+    {
+        LOG( ERROR ) << "Invalid viewport dimensions: width=" << width << ", height=" << height;
+        return;
+    }
+
     m_viewport = CD3DX12_VIEWPORT( x, y, width, height );
     m_commandList->RSSetViewports( 1, &m_viewport );
 }
 
 void DX12CommandList::BindScissorRect( const float x, const float y, const float width, const float height )
 {
+    if ( width <= 0.0f || height <= 0.0f )
+    {
+        LOG( ERROR ) << "Invalid scissor rect dimensions: width=" << width << ", height=" << height;
+        return;
+    }
+
     m_scissor = CD3DX12_RECT( x, y, x + width, y + height );
     m_commandList->RSSetScissorRects( 1, &m_scissor );
 }
 
 void DX12CommandList::BindResourceGroup( IResourceBindGroup *bindGroup )
 {
+    DZ_NOT_NULL( bindGroup );
+
     const DX12ResourceBindGroup *dx12BindGroup = dynamic_cast<DX12ResourceBindGroup *>( bindGroup );
     m_queuedBindGroups.push_back( dx12BindGroup );
 }
@@ -244,7 +263,7 @@ void DX12CommandList::BindResourceGroup( const uint32_t index, const D3D12_GPU_D
 
 void DX12CommandList::BindRootDescriptors( const DX12RootDescriptor &rootDescriptor ) const
 {
-    bool isGraphicsBindPoint = m_currentPipeline->GetBindPoint( ) == BindPoint::Graphics || m_currentPipeline->GetBindPoint( ) == BindPoint::Mesh;
+    const bool isGraphicsBindPoint = m_currentPipeline->GetBindPoint( ) == BindPoint::Graphics || m_currentPipeline->GetBindPoint( ) == BindPoint::Mesh;
     switch ( rootDescriptor.ParameterType )
     {
     case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE:
@@ -306,67 +325,98 @@ void DX12CommandList::PipelineBarrier( const PipelineBarrierDesc &barrier )
 
 void DX12CommandList::DrawIndexed( const uint32_t indexCount, const uint32_t instanceCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t firstInstance )
 {
+    if ( indexCount == 0 || instanceCount == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, DrawIndexed called with zero count: indexCount=" << indexCount << ", instanceCount=" << instanceCount;
+    }
+
     ProcessBindGroups( );
     m_commandList->DrawIndexedInstanced( indexCount, instanceCount, firstIndex, vertexOffset, firstInstance );
 }
 
 void DX12CommandList::Draw( const uint32_t vertexCount, const uint32_t instanceCount, const uint32_t firstVertex, const uint32_t firstInstance )
 {
+    if ( vertexCount == 0 || instanceCount == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, Draw called with zero count: vertexCount=" << vertexCount << ", instanceCount=" << instanceCount;
+    }
+
     ProcessBindGroups( );
     m_commandList->DrawInstanced( vertexCount, instanceCount, firstVertex, firstInstance );
 }
 
 void DX12CommandList::Dispatch( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
 {
+    if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, Dispatch called with zero group count: x=" << groupCountX << ", y=" << groupCountY << ", z=" << groupCountZ;
+    }
+
     ProcessBindGroups( );
     m_commandList->Dispatch( groupCountX, groupCountY, groupCountZ );
 }
 
 void DX12CommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t groupCountY, const uint32_t groupCountZ )
 {
+    if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, DispatchMesh called with zero group count: x=" << groupCountX << ", y=" << groupCountY << ", z=" << groupCountZ;
+    }
+
     ProcessBindGroups( );
     m_commandList->DispatchMesh( groupCountX, groupCountY, groupCountZ );
 }
 
-void DX12CommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionInfo )
+void DX12CommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionDesc )
 {
-    DZ_NOT_NULL( copyBufferRegionInfo.DstBuffer );
-    DZ_NOT_NULL( copyBufferRegionInfo.SrcBuffer );
+    DZ_NOT_NULL( copyBufferRegionDesc.DstBuffer );
+    DZ_NOT_NULL( copyBufferRegionDesc.SrcBuffer );
 
-    const DX12BufferResource *dstBuffer = dynamic_cast<DX12BufferResource *>( copyBufferRegionInfo.DstBuffer );
-    const DX12BufferResource *srcBuffer = dynamic_cast<DX12BufferResource *>( copyBufferRegionInfo.SrcBuffer );
+    const DX12BufferResource *dstBuffer = dynamic_cast<DX12BufferResource *>( copyBufferRegionDesc.DstBuffer );
+    const DX12BufferResource *srcBuffer = dynamic_cast<DX12BufferResource *>( copyBufferRegionDesc.SrcBuffer );
 
-    m_commandList->CopyBufferRegion( dstBuffer->Resource( ), copyBufferRegionInfo.DstOffset, srcBuffer->Resource( ), copyBufferRegionInfo.SrcOffset,
-                                     copyBufferRegionInfo.NumBytes );
+    if ( copyBufferRegionDesc.NumBytes == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, CopyBufferRegion called with zero NumBytes";
+    }
+
+    m_commandList->CopyBufferRegion( dstBuffer->Resource( ), copyBufferRegionDesc.DstOffset, srcBuffer->Resource( ), copyBufferRegionDesc.SrcOffset,
+                                     copyBufferRegionDesc.NumBytes );
 }
 
-void DX12CommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionInfo )
+void DX12CommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionDesc )
 {
-    DZ_NOT_NULL( copyTextureRegionInfo.DstTexture );
-    DZ_NOT_NULL( copyTextureRegionInfo.SrcTexture );
+    DZ_NOT_NULL( copyTextureRegionDesc.DstTexture );
+    DZ_NOT_NULL( copyTextureRegionDesc.SrcTexture );
 
-    const DX12TextureResource *dstTexture = dynamic_cast<DX12TextureResource *>( copyTextureRegionInfo.DstTexture );
-    const DX12TextureResource *srcTexture = dynamic_cast<DX12TextureResource *>( copyTextureRegionInfo.SrcTexture );
+    const DX12TextureResource *dstTexture = dynamic_cast<DX12TextureResource *>( copyTextureRegionDesc.DstTexture );
+    const DX12TextureResource *srcTexture = dynamic_cast<DX12TextureResource *>( copyTextureRegionDesc.SrcTexture );
+
+    if ( copyTextureRegionDesc.Width == 0 || copyTextureRegionDesc.Height == 0 )
+    {
+        LOG( WARNING ) << "Possible unintentional behavior, CopyTextureRegion called with zero dimensions: Width=" << copyTextureRegionDesc.Width
+                       << ", Height=" << copyTextureRegionDesc.Height;
+    }
 
     D3D12_TEXTURE_COPY_LOCATION src = { };
     src.pResource                   = srcTexture->Resource( );
     src.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-    src.SubresourceIndex            = copyTextureRegionInfo.SrcMipLevel;
+    src.SubresourceIndex            = copyTextureRegionDesc.SrcMipLevel;
 
     D3D12_TEXTURE_COPY_LOCATION dst = { };
     dst.pResource                   = dstTexture->Resource( );
     dst.Type                        = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-    dst.SubresourceIndex            = copyTextureRegionInfo.DstMipLevel;
+    dst.SubresourceIndex            = copyTextureRegionDesc.DstMipLevel;
 
     D3D12_BOX box = { };
-    box.left      = copyTextureRegionInfo.SrcX;
-    box.top       = copyTextureRegionInfo.SrcY;
-    box.front     = copyTextureRegionInfo.SrcZ;
-    box.right     = copyTextureRegionInfo.SrcX + copyTextureRegionInfo.Width;
-    box.bottom    = copyTextureRegionInfo.SrcY + copyTextureRegionInfo.Height;
-    box.back      = copyTextureRegionInfo.SrcZ + copyTextureRegionInfo.Depth;
+    box.left      = copyTextureRegionDesc.SrcX;
+    box.top       = copyTextureRegionDesc.SrcY;
+    box.front     = copyTextureRegionDesc.SrcZ;
+    box.right     = copyTextureRegionDesc.SrcX + copyTextureRegionDesc.Width;
+    box.bottom    = copyTextureRegionDesc.SrcY + copyTextureRegionDesc.Height;
+    box.back      = copyTextureRegionDesc.SrcZ + copyTextureRegionDesc.Depth;
 
-    m_commandList->CopyTextureRegion( &dst, copyTextureRegionInfo.DstX, copyTextureRegionInfo.DstY, copyTextureRegionInfo.DstZ, &src, &box );
+    m_commandList->CopyTextureRegion( &dst, copyTextureRegionDesc.DstX, copyTextureRegionDesc.DstY, copyTextureRegionDesc.DstZ, &src, &box );
 }
 
 void DX12CommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTexture )
@@ -474,6 +524,13 @@ void DX12CommandList::UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc )
 
 void DX12CommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
 {
+    DZ_NOT_NULL( dispatchRaysDesc.ShaderBindingTable );
+    if ( dispatchRaysDesc.Width == 0 || dispatchRaysDesc.Height == 0 || dispatchRaysDesc.Depth == 0 )
+    {
+        LOG( WARNING ) << "DispatchRays called with zero dimensions: width=" << dispatchRaysDesc.Width << ", height=" << dispatchRaysDesc.Height
+                       << ", depth=" << dispatchRaysDesc.Depth;
+    }
+
     ProcessBindGroups( );
     const DX12ShaderBindingTable *sbt  = dynamic_cast<DX12ShaderBindingTable *>( dispatchRaysDesc.ShaderBindingTable );
     D3D12_DISPATCH_RAYS_DESC      desc = { };

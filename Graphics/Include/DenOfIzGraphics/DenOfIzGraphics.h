@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 #include <DenOfIzGraphics/Data/Geometry.h>
+#include <DenOfIzGraphics/Data/AlignedDataWriter.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include <DenOfIzGraphics/Renderer/Sync/FrameSync.h>
 #include <DenOfIzGraphics/Renderer/Sync/ResourceTracking.h>

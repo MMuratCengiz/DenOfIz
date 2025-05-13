@@ -202,6 +202,16 @@ void DX12BufferResource::SetData( const InteropArray<Byte> &data, bool keepMappe
     }
 }
 
+void DX12BufferResource::WriteData( const InteropArray<Byte> &data, const uint32_t bufferOffset )
+{
+    if ( m_mappedMemory == nullptr )
+    {
+        MapMemory( );
+    }
+
+    std::memcpy( static_cast<Byte *>( m_mappedMemory ) + bufferOffset, data.Data( ), data.NumElements( ) );
+}
+
 DX12BufferResource::~DX12BufferResource( )
 {
     if ( m_mappedMemory != nullptr )
