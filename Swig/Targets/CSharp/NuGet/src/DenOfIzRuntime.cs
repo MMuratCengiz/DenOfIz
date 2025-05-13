@@ -4,12 +4,12 @@ using DenOfIz;
 
 namespace DenOfIz
 {
-    public static class DenOfIzGraphics
+    public static class DenOfIzRuntime
     {
         private static bool _initialized = false;
         private static readonly object _lock = new object();
 
-        static DenOfIzGraphics()
+        static DenOfIzRuntime()
         {
             NativeLibraryLoader.Initialize();
         }
