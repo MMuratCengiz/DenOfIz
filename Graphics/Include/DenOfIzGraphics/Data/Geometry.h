@@ -31,7 +31,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Utilities/BitSet.h>
 #include <DenOfIzGraphics/Utilities/Interop.h>
-#include <DirectXMath.h>
 #include <cmath>
 #include <cstdint>
 #include <map>

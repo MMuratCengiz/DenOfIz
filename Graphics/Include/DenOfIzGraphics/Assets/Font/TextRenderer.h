@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
 #include <DenOfIzGraphics/Renderer/Sync/ResourceTracking.h>
 
+#include <DirectXMath.h>
 using namespace DirectX;
 
 namespace DenOfIz

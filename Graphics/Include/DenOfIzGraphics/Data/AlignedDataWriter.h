@@ -34,13 +34,13 @@ namespace DenOfIz
         BinaryContainer m_container;
 
     public:
-        AlignedDataWriter( );
-        ~AlignedDataWriter( ) = default;
+        DZ_API AlignedDataWriter( );
+        DZ_API ~AlignedDataWriter( ) = default;
         /// Adds numBytes amount of (Byte) 0
-        void AddPadding( const uint32_t &numBytes ) const;
+        DZ_API void AddPadding( const uint32_t &numBytes ) const;
 
-        [[nodiscard]] InteropArray<Byte> Data( const uint32_t &totalAlignment = 256 ) const;
+        DZ_API [[nodiscard]] InteropArray<Byte> Data( const uint32_t &totalAlignment = 256 ) const;
         // IBufferResource* must be on CPU_GPU heap
-        void WriteToBuffer( IBufferResource *buffer, const uint32_t &bufferOffset = 0 ) const;
+        DZ_API void WriteToBuffer( IBufferResource *buffer, const uint32_t &bufferOffset = 0 ) const;
     };
 } // namespace DenOfIz

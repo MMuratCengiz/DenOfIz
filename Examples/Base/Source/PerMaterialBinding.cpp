@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzExamples/PerMaterialBinding.h>
 
 using namespace DenOfIz;
-using namespace DirectX;
 
 PerMaterialBinding::PerMaterialBinding( ILogicalDevice *device, IRootSignature *rootSignature )
 {

@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //--------------------------------------------------------------------------------------
 #include <DenOfIzGraphics/Data/Geometry.h>
 #include <stdexcept>
+#include <DirectXMath.h>
 
 using namespace DenOfIz;
 using namespace DirectX;
