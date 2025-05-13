@@ -363,20 +363,6 @@ jobs:
           name: DenOfIzGraphics-CrossPlatform-${{ env.VERSION }}
           path: Swig/Targets/CSharp/NuGet_Out/DenOfIzGraphics.${{ env.VERSION }}.nupkg
 
-      - name: Create GitHub Release
-        if: ${{ github.event.inputs.publish == 'true' }}
-        uses: softprops/action-gh-release@v1
-        with:
-          files: Swig/Targets/CSharp/NuGet_Out/DenOfIzGraphics.${{ env.VERSION }}.nupkg
-          tag_name: v${{ env.VERSION }}
-          name: DenOfIzGraphics ${{ env.VERSION }}
-          body: |
-            # DenOfIzGraphics NuGet Package ${{ env.VERSION }} [ALPHA]
-
-            ⚠️ **ALPHA SOFTWARE**: This library is currently in alpha stage. The API is subject to change, and the library may contain bugs or missing features.
-
-            A cross-platform graphics library providing a unified interface over DirectX12, Vulkan, and Metal.
-
   publish-nuget:
     runs-on: windows-latest
     needs: [read-version, build-denofiz-nuget]
