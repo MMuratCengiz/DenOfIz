@@ -116,15 +116,15 @@ internal class Program
 
     private void InitializeWindow()
     {
-        var windowProps = new WindowProperties();
-        windowProps.Title = new InteropString("Triangle Example");
-        windowProps.Width = 1920;
-        windowProps.Height = 1080;
-        windowProps.Flags.Shown = true;
-        windowProps.Flags.Resizable = true;
-        windowProps.Position = WindowPosition.Centered;
+        var windowDesc = new WindowDesc();
+        windowDesc.Title = new InteropString("Triangle Example");
+        windowDesc.Width = 1920;
+        windowDesc.Height = 1080;
+        windowDesc.Flags.Shown = true;
+        windowDesc.Flags.Resizable = true;
+        windowDesc.Position = WindowPosition.Centered;
 
-        _window = new Window(windowProps);
+        _window = new Window(windowDesc);
         _windowHandle = _window.GetGraphicsWindowHandle();
         _windowSize = new WindowSize();
         _windowSize.Width = _window.GetSize().Width;
@@ -229,7 +229,7 @@ internal class Program
         batchCopy.Begin();
 
         var vertexBytes = new byte[bufferSize];
-        Buffer.BlockCopy(vertices, 0, vertexBytes, 0, (int)bufferSize);
+        System.Buffer.BlockCopy(vertices, 0, vertexBytes, 0, (int)bufferSize);
 
         var copyDesc = new CopyToGpuBufferDesc();
         copyDesc.DstBuffer = _vertexBuffer;
