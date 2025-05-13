@@ -343,10 +343,10 @@ void MetalCommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t 
     TopLevelArgumentBufferNextOffset( );
 }
 
-void MetalCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionInfo )
+void MetalCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRegionDesc )
 {
-    DZ_NOT_NULL( copyBufferRegionInfo.SrcBuffer );
-    DZ_NOT_NULL( copyBufferRegionInfo.DstBuffer );
+    DZ_NOT_NULL( copyBufferRegionDesc.SrcBuffer );
+    DZ_NOT_NULL( copyBufferRegionDesc.DstBuffer );
     SwitchEncoder( MetalEncoderType::Blit );
     
     if ( copyBufferRegionDesc.NumBytes == 0 )
@@ -354,20 +354,20 @@ void MetalCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferR
         LOG( WARNING ) << "Possible unintentional behavior, CopyBufferRegion called with zero NumBytes";
     }
     
-    MetalBufferResource *srcBuffer = dynamic_cast<MetalBufferResource *>( copyBufferRegionInfo.SrcBuffer );
-    MetalBufferResource *dstBuffer = dynamic_cast<MetalBufferResource *>( copyBufferRegionInfo.DstBuffer );
+    MetalBufferResource *srcBuffer = dynamic_cast<MetalBufferResource *>( copyBufferRegionDesc.SrcBuffer );
+    MetalBufferResource *dstBuffer = dynamic_cast<MetalBufferResource *>( copyBufferRegionDesc.DstBuffer );
 
     [m_blitEncoder copyFromBuffer:srcBuffer->Instance( )
-                     sourceOffset:copyBufferRegionInfo.SrcOffset
+                     sourceOffset:copyBufferRegionDesc.SrcOffset
                          toBuffer:dstBuffer->Instance( )
-                destinationOffset:copyBufferRegionInfo.DstOffset
-                             size:copyBufferRegionInfo.NumBytes];
+                destinationOffset:copyBufferRegionDesc.DstOffset
+                             size:copyBufferRegionDesc.NumBytes];
 }
 
-void MetalCommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionInfo )
+void MetalCommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyTextureRegionDesc )
 {
-    DZ_NOT_NULL( copyTextureRegionInfo.SrcTexture );
-    DZ_NOT_NULL( copyTextureRegionInfo.DstTexture );
+    DZ_NOT_NULL( copyTextureRegionDesc.SrcTexture );
+    DZ_NOT_NULL( copyTextureRegionDesc.DstTexture );
     SwitchEncoder( MetalEncoderType::Blit );
 
     if ( copyTextureRegionDesc.Width == 0 || copyTextureRegionDesc.Height == 0 )
@@ -376,18 +376,18 @@ void MetalCommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyTextu
                        << ", Height=" << copyTextureRegionDesc.Height;
     }
     
-    MetalTextureResource *srcTexture = dynamic_cast<MetalTextureResource *>( copyTextureRegionInfo.SrcTexture );
-    MetalTextureResource *dstTexture = dynamic_cast<MetalTextureResource *>( copyTextureRegionInfo.DstTexture );
+    MetalTextureResource *srcTexture = dynamic_cast<MetalTextureResource *>( copyTextureRegionDesc.SrcTexture );
+    MetalTextureResource *dstTexture = dynamic_cast<MetalTextureResource *>( copyTextureRegionDesc.DstTexture );
 
     [m_blitEncoder copyFromTexture:srcTexture->Instance( )
-                       sourceSlice:copyTextureRegionInfo.SrcArrayLayer
-                       sourceLevel:copyTextureRegionInfo.SrcMipLevel
-                      sourceOrigin:MTLOriginMake( copyTextureRegionInfo.SrcX, copyTextureRegionInfo.SrcY, copyTextureRegionInfo.SrcZ )
-                        sourceSize:MTLSizeMake( copyTextureRegionInfo.Width, copyTextureRegionInfo.Height, copyTextureRegionInfo.Depth )
+                       sourceSlice:copyTextureRegionDesc.SrcArrayLayer
+                       sourceLevel:copyTextureRegionDesc.SrcMipLevel
+                      sourceOrigin:MTLOriginMake( copyTextureRegionDesc.SrcX, copyTextureRegionDesc.SrcY, copyTextureRegionDesc.SrcZ )
+                        sourceSize:MTLSizeMake( copyTextureRegionDesc.Width, copyTextureRegionDesc.Height, copyTextureRegionDesc.Depth )
                          toTexture:dstTexture->Instance( )
-                  destinationSlice:copyTextureRegionInfo.DstArrayLayer
-                  destinationLevel:copyTextureRegionInfo.DstMipLevel
-                 destinationOrigin:MTLOriginMake( copyTextureRegionInfo.DstX, copyTextureRegionInfo.DstY, copyTextureRegionInfo.DstZ )];
+                  destinationSlice:copyTextureRegionDesc.DstArrayLayer
+                  destinationLevel:copyTextureRegionDesc.DstMipLevel
+                 destinationOrigin:MTLOriginMake( copyTextureRegionDesc.DstX, copyTextureRegionDesc.DstY, copyTextureRegionDesc.DstZ )];
 }
 
 void MetalCommandList::CopyBufferToTexture( const CopyBufferToTextureDesc &copyBufferToTexture )
@@ -428,11 +428,9 @@ void MetalCommandList::CopyTextureToBuffer( const CopyTextureToBufferDesc &copyT
     
     MetalTextureResource *srcTexture = dynamic_cast<MetalTextureResource *>( copyTextureToBuffer.SrcTexture );
     MetalBufferResource  *dstBuffer  = dynamic_cast<MetalBufferResource *>( copyTextureToBuffer.DstBuffer );
-
-    SwitchEncoder( MetalEncoderType::Blit );
     // TODO Calculate RowPitch and NumRows automatically if possible
-    MetalTextureResource *srcTexture = dynamic_cast<MetalTextureResource *>( copyTextureToBuffer.SrcTexture );
-    MetalBufferResource  *dstBuffer  = dynamic_cast<MetalBufferResource *>( copyTextureToBuffer.DstBuffer );
+    SwitchEncoder( MetalEncoderType::Blit );
+
     [m_blitEncoder copyFromTexture:srcTexture->Instance( )
                        sourceSlice:copyTextureToBuffer.ArrayLayer
                        sourceLevel:copyTextureToBuffer.MipLevel

@@ -20,8 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Assets/Stream/BinaryWriter.h>
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
-#include <DenOfIzGraphics/Utilities/Common.h>
-#include <DenOfIzGraphics/Utilities/Interop.h>
+
 namespace DenOfIz
 {
     struct DZ_API AlignedDataWriterDesc
