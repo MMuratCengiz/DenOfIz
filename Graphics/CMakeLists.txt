@@ -47,9 +47,11 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Font/TextRenderer.cpp
         Source/Assets/Font/TextLayout.cpp
         Source/Assets/GpuResource/GpuResourceLoader.cpp
+        Source/Assets/Import/AssetScanner.cpp
         Source/Assets/Import/AssimpImporter.cpp
         Source/Assets/Import/FontImporter.cpp
         Source/Assets/Import/ShaderImporter.cpp
+        Source/Assets/Import/TextureImporter.cpp
         Source/Assets/Serde/Asset.cpp
         Source/Assets/Serde/Animation/AnimationAssetReader.cpp
         Source/Assets/Serde/Animation/AnimationAssetWriter.cpp

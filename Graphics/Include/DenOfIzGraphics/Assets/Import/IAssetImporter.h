@@ -43,18 +43,10 @@ namespace DenOfIz
 
     struct DZ_API ImportDesc
     {
-        bool     OverwriteExisting     = true;
-        bool     GenerateLODs          = true;
-        uint32_t MaxLODCount           = 3;
-        Float_3  LODScreenPercentages  = { 1.0f, 0.5f, 0.25f };
-        bool     OptimizeMeshes        = true;
-        float    ScaleFactor           = 1.0f;
         bool     ImportMaterials       = true;
         bool     ImportTextures        = true;
         bool     ImportAnimations      = true;
         bool     ImportSkeletons       = true;
-        bool     CalculateTangentSpace = true;
-        bool     ConvertToLeftHanded   = true; // DenOfIz uses a left handed coordinate system, DirectX12 settings
 
         InteropArray<InteropString> AdditionalOptions;
     };
@@ -82,14 +74,14 @@ namespace DenOfIz
          * @brief Get the name and supported extensions for this importer
          * @return ImporterDesc containing name and supported file extensions
          */
-        virtual ImporterDesc GetImporterInfo( ) const = 0;
+        [[nodiscard]] virtual ImporterDesc GetImporterInfo( ) const = 0;
 
         /**
          * @brief Check if this importer can process files with the given extension
          * @param extension File extension to check (without the dot)
          * @return true if supported, false otherwise
          */
-        virtual bool CanProcessFileExtension( const InteropString &extension ) const = 0;
+        [[nodiscard]] virtual bool CanProcessFileExtension( const InteropString &extension ) const = 0;
 
         /**
          * @brief Import a file and convert it to engine assets
@@ -103,7 +95,7 @@ namespace DenOfIz
          * @param filePath Path to the file to validate
          * @return true if file appears valid, false otherwise
          */
-        virtual bool ValidateFile( const InteropString &filePath ) const = 0;
+        [[nodiscard]] virtual bool ValidateFile( const InteropString &filePath ) const = 0;
     };
 
 } // namespace DenOfIz

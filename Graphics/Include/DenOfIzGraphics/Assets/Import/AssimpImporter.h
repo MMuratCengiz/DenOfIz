@@ -39,6 +39,12 @@ namespace DenOfIz
 {
     struct DZ_API AssimpImportDesc : ImportDesc
     {
+        bool     OverwriteExisting        = true;
+        bool     GenerateLODs             = true;
+        uint32_t MaxLODCount              = 3;
+        Float_3  LODScreenPercentages     = { 1.0f, 0.5f, 0.25f };
+        bool     OptimizeMeshes           = true;
+        float    ScaleFactor              = 1.0f;
         bool     JoinIdenticalVertices    = true;
         bool     PreTransformVertices     = false;
         bool     LimitBoneWeights         = true;
@@ -52,6 +58,8 @@ namespace DenOfIz
         bool     TriangulateMeshes        = true;
         bool     PreservePivots           = true;
         bool     DropNormals              = false;
+        bool     ConvertToLeftHanded      = true; // DenOfIz uses a left handed coordinate system, DirectX12 settings
+        bool     CalculateTangentSpace    = true;
         AssimpImportDesc( )               = default;
         explicit AssimpImportDesc( const ImportDesc &base ) : ImportDesc( base )
         {

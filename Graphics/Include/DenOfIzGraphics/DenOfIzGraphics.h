@@ -57,3 +57,4 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Import/AssimpImporter.h>
 #include <DenOfIzGraphics/Assets/Import/FontImporter.h>
 #include <DenOfIzGraphics/Assets/Import/ShaderImporter.h>
+#include <DenOfIzGraphics/Assets/Import/TextureImporter.h>

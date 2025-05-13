@@ -430,6 +430,76 @@ void Texture::StreamMipData( const MipStreamCallback &callback ) const
     }
 }
 
+uint32_t Texture::GetWidth( ) const
+{
+    return m_width;
+}
+
+uint32_t Texture::GetHeight( ) const
+{
+    return m_height;
+}
+
+uint32_t Texture::GetDepth( ) const
+{
+    return m_depth;
+}
+
+uint32_t Texture::GetMipLevels( ) const
+{
+    return m_mipLevels;
+}
+
+uint32_t Texture::GetArraySize( ) const
+{
+    return m_arraySize;
+}
+
+uint32_t Texture::GetBitsPerPixel( ) const
+{
+    return m_bitsPerPixel;
+}
+
+uint32_t Texture::GetBlockSize( ) const
+{
+    return m_blockSize;
+}
+
+uint32_t Texture::GetRowPitch( ) const
+{
+    return m_rowPitch;
+}
+
+uint32_t Texture::GetNumRows( ) const
+{
+    return m_numRows;
+}
+
+uint32_t Texture::GetSlicePitch( ) const
+{
+    return m_slicePitch;
+}
+
+Format Texture::GetFormat( ) const
+{
+    return m_format;
+}
+
+TextureDimension Texture::GetDimension( ) const
+{
+    return m_dimension;
+}
+
+TextureExtension Texture::GetExtension( ) const
+{
+    return m_extension;
+}
+
+const InteropArray<Byte> &Texture::GetData( ) const
+{
+    return m_data;
+}
+
 InteropArray<TextureMip> Texture::ReadMipData( ) const
 {
     InteropArray<TextureMip> mipData;

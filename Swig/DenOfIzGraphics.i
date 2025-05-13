@@ -250,11 +250,12 @@ using namespace DirectX;
 %include <DenOfIzGraphics/Utilities/Time.h>
 %include <DenOfIzGraphics/Utilities/StepTimer.h>
 
-%include <DenOfIzGraphics/Assets/Import/AssetScanner.h>
 %include <DenOfIzGraphics/Assets/Import/IAssetImporter.h>
+%include <DenOfIzGraphics/Assets/Import/AssetScanner.h>
 %include <DenOfIzGraphics/Assets/Import/AssimpImporter.h>
 %include <DenOfIzGraphics/Assets/Import/FontImporter.h>
 %include <DenOfIzGraphics/Assets/Import/ShaderImporter.h>
+%include <DenOfIzGraphics/Assets/Import/TextureImporter.h>
 
 %include "DenOfIzGraphics_Input.i"
 
