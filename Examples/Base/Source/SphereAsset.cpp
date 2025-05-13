@@ -46,6 +46,27 @@ SphereAsset::SphereAsset( ILogicalDevice *device, BatchResourceCopy *batchResour
     XMStoreFloat4x4( &m_modelMatrix, XMMatrixIdentity( ) );
 }
 
+void SphereAsset::Translate( XMFLOAT4 translation )
+{
+    XMMATRIX translationMatrix = XMMatrixTranslation( translation.x, translation.y, translation.z );
+    XMMATRIX currentMatrix     = XMLoadFloat4x4( &m_modelMatrix );
+    XMStoreFloat4x4( &m_modelMatrix, currentMatrix * translationMatrix );
+}
+
+void SphereAsset::Rotate( XMFLOAT4 rotation )
+{
+    XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw( rotation.x, rotation.y, rotation.z );
+    XMMATRIX currentMatrix  = XMLoadFloat4x4( &m_modelMatrix );
+    XMStoreFloat4x4( &m_modelMatrix, currentMatrix * rotationMatrix );
+}
+
+void SphereAsset::Scale( XMFLOAT4 scale )
+{
+    XMMATRIX scaleMatrix   = XMMatrixScaling( scale.x, scale.y, scale.z );
+    XMMATRIX currentMatrix = XMLoadFloat4x4( &m_modelMatrix );
+    XMStoreFloat4x4( &m_modelMatrix, currentMatrix * scaleMatrix );
+}
+
 AssetData *SphereAsset::Data( ) const
 {
     return m_assetData.get( );

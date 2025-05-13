@@ -93,6 +93,11 @@ void DX12ResourceBindGroup::SetRootConstants( const uint32_t binding, void *data
 {
     DZ_NOT_NULL( data );
     ContainerUtilities::EnsureSize( m_rootConstants, binding );
+    if (binding >= m_dx12RootSignature->RootConstants( ).size( ) )
+    {
+        LOG( ERROR ) << "Root constant binding [" << binding << "] is out of range.";
+        return;
+    }
 
     DX12RootConstant &rootConstant = m_rootConstants[ binding ];
     rootConstant.Data              = data;
@@ -116,7 +121,11 @@ IResourceBindGroup *DX12ResourceBindGroup::Cbv( const BindBufferDesc &desc )
 {
     auto *dx12Buffer = dynamic_cast<DX12BufferResource *>( desc.Resource );
     DZ_NOT_NULL( dx12Buffer );
-
+    if ( desc.ResourceOffset % m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment != 0 )
+    {
+        LOG( ERROR ) << "Constant buffer offset [" << desc.ResourceOffset << "] is not aligned to [" << m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment << "].";
+        return this;
+    }
     const ResourceBindingSlot slot = GetSlot( desc.Binding, ResourceBindingType::ConstantBuffer );
 
     if ( UpdateRootDescriptor( slot, dx12Buffer->Resource( )->GetGPUVirtualAddress( ) + desc.ResourceOffset ) )

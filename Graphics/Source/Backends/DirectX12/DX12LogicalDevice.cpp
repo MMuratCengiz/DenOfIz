@@ -145,8 +145,7 @@ void DX12LogicalDevice::CreateDeviceInfo( IDXGIAdapter1 &adapter, PhysicalDevice
 
 void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
 {
-    m_selectedDeviceInfo          = device;
-    m_context->SelectedDeviceInfo = m_selectedDeviceInfo;
+    m_selectedDeviceInfo = device;
 
     wil::com_ptr<IDXGIAdapter1> adapter;
     for ( UINT adapterIndex = 0; SUCCEEDED( m_context->DXGIFactory->EnumAdapters1( adapterIndex, adapter.put( ) ) ); adapterIndex++ )
@@ -278,6 +277,7 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     m_selectedDeviceInfo.Constants.ConstantBufferAlignment   = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
     m_selectedDeviceInfo.Constants.BufferTextureAlignment    = D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT;
     m_selectedDeviceInfo.Constants.BufferTextureRowAlignment = D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
+    m_context->SelectedDeviceInfo                            = m_selectedDeviceInfo;
 }
 
 void DX12LogicalDevice::WaitIdle( )
