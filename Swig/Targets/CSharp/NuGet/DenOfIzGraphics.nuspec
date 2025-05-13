@@ -8,9 +8,25 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">GPL-3.0-or-later</license>
     <projectUrl>https://github.com/DenOfIz/DenOfIz</projectUrl>
-    <description>Cross-platform graphics library with DirectX, Vulkan, and Metal backends</description>
+    <description>
+      [ALPHA SOFTWARE] DenOfIz is a modern, cross-platform graphics library providing a unified interface over DirectX12, Vulkan, and Metal.
+
+      ⚠️ Warning: This library is currently in alpha stage. The API is subject to change, and the library may contain bugs or missing features.
+
+      Key features:
+      • Supported Systems: Windows, macOS(arm64, m1>), Linux
+      • HLSL first, works on all backends
+      • Modern rendering based on DirectX12
+      • Supports RayTracing and Mesh Shaders
+      • OzzAnimation wrapper over [ozz-animation](https://github.com/guillaumeblanc/ozz-animation)
+      • MSDF Font rendering using FreeType, Harfbuzz and msdfgen
+      • Window and InputSystem wrappers over SDL2
+
+      See Example.cs for a complete rendering sample to get started.
+    </description>
     <copyright>Copyright 2025</copyright>
-    <tags>graphics directx vulkan metal</tags>
+    <tags>graphics directx vulkan metal raytracing msdf shader renderer game-engine cross-platform</tags>
+    <readme>docs\README.md</readme>
     <dependencies>
       <group targetFramework="netstandard2.0" />
     </dependencies>
@@ -21,5 +37,7 @@
     <file src="runtimes\osx-arm64\native\*.dylib" target="runtimes\osx-arm64\native" />
     <file src="runtimes\linux-x64\native\*.so" target="runtimes\linux-x64\native" />
     <file src="build\DenOfIzGraphics.targets" target="build\DenOfIzGraphics.targets" />
+    <file src="src\Example.cs" target="docs\Example.cs" />
+    <file src="src\README.md" target="docs\README.md" />
   </files>
 </package>

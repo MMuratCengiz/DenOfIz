@@ -1,5 +1,7 @@
 # DenOfIz Graphics Library
 
+> **⚠️ ALPHA SOFTWARE**: DenOfIz is currently in alpha stage. The API is subject to change, and the library may contain bugs or missing features. Use in production environments is not recommended at this time.
+
 DenOfIz is a modern, cross-platform graphics library that provides a unified interface over multiple graphics APIs including DirectX12, Vulkan, and Metal. It offers a high-level abstraction layer that makes it easier to develop graphics applications across different platforms while leveraging the performance benefits of modern low-level APIs.
 
 ## Features

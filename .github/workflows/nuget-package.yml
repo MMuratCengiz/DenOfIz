@@ -301,6 +301,7 @@ jobs:
           New-Item -Path "$nugetDir/lib/netstandard2.0" -ItemType Directory -Force
           New-Item -Path "$nugetDir/src_gen" -ItemType Directory -Force
           New-Item -Path "$nugetDir/build" -ItemType Directory -Force
+          New-Item -Path "$nugetDir/src" -ItemType Directory -Force
           New-Item -Path "$nugetDir/runtimes/win-x64/native" -ItemType Directory -Force
           New-Item -Path "$nugetDir/runtimes/linux-x64/native" -ItemType Directory -Force
           New-Item -Path "$nugetDir/runtimes/osx-arm64/native" -ItemType Directory -Force
@@ -322,6 +323,16 @@ jobs:
       - name: Build managed DLL
         shell: pwsh
         run: |
+          # Update the version in csproj file to match version.txt
+          $csprojFile = "Swig/Targets/CSharp/NuGet/DenOfIzGraphics.csproj"
+          [xml]$csproj = Get-Content $csprojFile
+          $versionNode = $csproj.SelectSingleNode("//PropertyGroup/Version")
+          $versionNode.InnerText = "${{ env.VERSION }}"
+          $csproj.Save($csprojFile)
+
+          Write-Host "Updated csproj version to ${{ env.VERSION }}"
+
+          # Build the managed DLL
           Push-Location Swig/Targets/CSharp/NuGet
           dotnet build ./DenOfIzGraphics.csproj -c Release --output lib/netstandard2.0
           if (!$?) {
@@ -359,12 +370,11 @@ jobs:
           files: Swig/Targets/CSharp/NuGet_Out/DenOfIzGraphics.${{ env.VERSION }}.nupkg
           name: DenOfIzGraphics ${{ env.VERSION }}
           body: |
-            DenOfIzGraphics NuGet package ${{ env.VERSION }}
+            # DenOfIzGraphics NuGet Package ${{ env.VERSION }} [ALPHA]
 
-            This package contains binaries for:
-            - Windows (x64)
-            - macOS (arm64)
-            - Linux (x64)
+            ⚠️ **ALPHA SOFTWARE**: This library is currently in alpha stage. The API is subject to change, and the library may contain bugs or missing features.
+
+            A cross-platform graphics library providing a unified interface over DirectX12, Vulkan, and Metal.
 
   publish-nuget:
     runs-on: windows-latest
