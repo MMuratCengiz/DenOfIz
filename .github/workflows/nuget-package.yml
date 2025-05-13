@@ -196,6 +196,24 @@ jobs:
           configurePresetAdditionalArgs: "['-DBUILD_EXAMPLES=OFF']"
           buildPresetAdditionalArgs: "['--target', 'DenOfIzGraphicsCSharp']"
 
+      - name: Import Code Signing Certificate
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: keychainpassword
+        run: |
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          
+          security set-keychain-settings build.keychain
+          
+          echo "$CERTIFICATE_BASE64" | base64 --decode > certificate.p12
+          security import certificate.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          
+          rm certificate.p12
+
       - name: Package artifacts
         run: |
           mkdir -p artifacts/runtimes/osx-arm64/native
@@ -215,6 +233,16 @@ jobs:
 
           cp build/DenOfIz/Debug_OSX/libdxcompiler.dylib artifacts/runtimes/osx-arm64/native/
           cp build/DenOfIz/Debug_OSX/libmetalirconverter.dylib artifacts/runtimes/osx-arm64/native/
+
+      - name: Sign macOS Libraries
+        env:
+          SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+        run: |
+          if [ -f artifacts/runtimes/osx-arm64/native/libDenOfIzGraphics.dylib ]; then
+            codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" artifacts/runtimes/osx-arm64/native/libDenOfIzGraphics.dylib
+          fi
+          codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" artifacts/runtimes/osx-arm64/native/DenOfIzGraphicsCSharp.dylib
+          codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" artifacts/runtimes/osx-arm64/native/libdxcompiler.dylib
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
