@@ -69,9 +69,9 @@ namespace DenOfIz
         void              Update( ) override;
         void              Render( uint32_t frameIndex, ICommandList *commandList ) override;
         void              Quit( ) override;
-        struct WindowDesc WindowDesc( ) override
+        struct ExampleWindowDesc WindowDesc( ) override
         {
-            auto windowDesc   = DenOfIz::WindowDesc( );
+            auto windowDesc   = DenOfIz::ExampleWindowDesc( );
             windowDesc.Title  = "RayTracedTriangleExample";
             windowDesc.Width  = 1280;
             windowDesc.Height = 720;

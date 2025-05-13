@@ -26,7 +26,7 @@ Window::Window( ) : m_initialized( false ), m_windowID( 0 ), m_sdlWindow( nullpt
 {
 }
 
-Window::Window( const WindowProperties &properties ) : m_initialized( false ), m_windowID( 0 ), m_sdlWindow( nullptr )
+Window::Window( const WindowDesc &properties ) : m_initialized( false ), m_windowID( 0 ), m_sdlWindow( nullptr )
 {
     Create( properties );
 }
@@ -46,7 +46,7 @@ void Window::InitializeSDL( )
     }
 }
 
-void Window::Create( const WindowProperties &properties )
+void Window::Create( const WindowDesc &properties )
 {
     if ( m_initialized )
     {

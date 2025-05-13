@@ -19,9 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
+#include <DenOfIzGraphics/Backends/Common/SDLInclude.h>
 #include <DenOfIzGraphics/Utilities/Engine.h>
 #include <DenOfIzGraphics/Utilities/Interop.h>
-#include <DenOfIzGraphics/Backends/Common/SDLInclude.h>
 
 namespace DenOfIz
 {
@@ -184,7 +184,7 @@ namespace DenOfIz
         int Y;
     };
 
-    struct DZ_API WindowProperties
+    struct DZ_API WindowDesc
     {
         InteropString  Title;
         int            X;
@@ -197,7 +197,7 @@ namespace DenOfIz
 
     class Window
     {
-        WindowProperties     m_properties{ };
+        WindowDesc           m_properties{ };
         GraphicsWindowHandle m_windowHandle{ };
         bool                 m_initialized;
         uint32_t             m_windowID;
@@ -208,10 +208,10 @@ namespace DenOfIz
 
     public:
         DZ_API Window( );
-        DZ_API explicit Window( const WindowProperties &properties );
+        DZ_API explicit Window( const WindowDesc &properties );
         DZ_API ~Window( );
 
-        DZ_API void Create( const WindowProperties &properties );
+        DZ_API void Create( const WindowDesc &properties );
         DZ_API void Destroy( );
 
         // Window control functions

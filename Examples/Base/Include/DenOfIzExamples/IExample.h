@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct WindowDesc
+    struct ExampleWindowDesc
     {
         const char *Title     = "DenOfIzExample";
         uint32_t    Width     = 1280;
@@ -44,7 +44,7 @@ namespace DenOfIz
         ILogicalDevice                *m_logicalDevice = nullptr;
         std::unique_ptr<ISwapChain>    m_swapChain     = nullptr;
         std::unique_ptr<ICommandQueue> m_graphicsQueue = nullptr;
-        WindowDesc                     m_windowDesc;
+        ExampleWindowDesc              m_windowDesc;
         std::unique_ptr<Camera>        m_camera;
         WorldData                      m_worldData{ };
         ResourceTracking               m_resourceTracking{ };
@@ -196,9 +196,9 @@ namespace DenOfIz
             m_logicalDevice->WaitIdle( );
             m_logicalDevice = nullptr;
         }
-        virtual WindowDesc WindowDesc( )
+        virtual ExampleWindowDesc WindowDesc( )
         {
-            constexpr struct WindowDesc windowDesc;
+            constexpr struct ExampleWindowDesc windowDesc;
             return windowDesc;
         }
         [[nodiscard]] bool IsRunning( ) const

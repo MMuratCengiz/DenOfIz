@@ -57,9 +57,9 @@ namespace DenOfIz
         void Render( uint32_t frameIndex, ICommandList *commandList ) override;
         void Quit( ) override;
 
-        struct WindowDesc WindowDesc( ) override
+        struct ExampleWindowDesc WindowDesc( ) override
         {
-            auto windowDesc  = DenOfIz::WindowDesc( );
+            auto windowDesc  = DenOfIz::ExampleWindowDesc( );
             windowDesc.Title = "Font Rendering Example";
             return windowDesc;
         }

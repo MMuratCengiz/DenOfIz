@@ -41,9 +41,9 @@ namespace DenOfIz
         void              Update( ) override;
         void              Quit( ) override;
         void              Render( uint32_t frameIndex, ICommandList *commandList ) override;
-        struct WindowDesc WindowDesc( ) override
+        struct ExampleWindowDesc WindowDesc( ) override
         {
-            auto windowDesc  = DenOfIz::WindowDesc( );
+            auto windowDesc  = DenOfIz::ExampleWindowDesc( );
             windowDesc.Title = "PushConstantExample";
             return windowDesc;
         }

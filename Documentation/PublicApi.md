@@ -8,4 +8,4 @@ To improve interoperability with other programming languages, the following c++ 
 
 These features are still used in implementation.
 
-Instead InteropString, and InteropArray are used.
+Instead, InteropString and InteropArray are used.
