@@ -2,12 +2,12 @@
 
 > **⚠️ ALPHA SOFTWARE**: DenOfIz is currently in alpha stage. The API is subject to change, and the library may contain bugs or missing features. Use in production environments is not recommended at this time.
 
-DenOfIz is a modern, cross-platform graphics library that provides a unified interface over multiple graphics APIs including DirectX12, Vulkan, and Metal. It offers a high-level abstraction layer that makes it easier to develop graphics applications across different platforms while leveraging the performance benefits of modern low-level APIs.
+DenOfIz is a modern, cross-platform graphics library that provides a unified interface over multiple graphics APIs including DirectX12, Vulkan, and Metal. It focuses on modern rendering features and binding methods. 
 
 ## Features
 
-- **Cross-Platform Support**: Works on Windows, macOS, and Linux
-- **Multiple Graphics API Support**:
+- **Cross-Platform Support**: Works on Windows, macOS(Requires metal support currently), and Linux
+- **Supported Backends**:
   - DirectX12 (Windows)
   - Vulkan (Windows, Linux)
   - Metal (macOS)
@@ -15,20 +15,22 @@ DenOfIz is a modern, cross-platform graphics library that provides a unified int
   - Native C++ API
   - C# bindings via SWIG
 - **Modern Rendering Features**:
-  - **Write HLSL shaders once, run on all backends** (DirectX12, Vulkan, Metal)
+  - HLSL on all backends (DirectX12, Vulkan, Metal)
+  - Modern resource binding
+  - Compute pipelines
   - Ray tracing support
   - Mesh shaders
-  - Resource binding model
 - **Asset Management**:
+  - Custom asset serialization/deserialization to optimize runtime loading
   - Model loading (via Assimp)
   - Texture loading
-  - Shader reflection and compilation
+  - Animation Support using [ozz-animation](https://github.com/guillaumeblanc/ozz-animation)
 - **Font Rendering**:
-  - Multi-channel signed distance field (MSDF) support
-  - Text layout and rendering
-- **Animation and Input**:
-  - OzzAnimation integration and wrapper
-  - SDL2 window and input system wrapper
+  - Freetype font rendering [freetype](https://github.com/freetype/freetype)
+  - HarfBuzz for text layout [harfbuzz](https://github.com/harfbuzz/harfbuzz)
+  - Multi-channel signed distance field (MSDF) support using [msdfgen](https://github.com/Chlumsky/msdfgen)
+- **Windowing & Input**:
+  - Wrapped SDL2 Input & window management
 
 ## Example Projects
 
