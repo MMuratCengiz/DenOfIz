@@ -52,10 +52,8 @@ jobs:
 
       - uses: lukka/get-cmake@latest
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgJsonGlob: 'vcpkg.json'
+      - name: Setup vcpkg with caching
+        uses: ./.github/actions/setup-vcpkg-cache
 
       - name: Configure & Build
         uses: lukka/run-cmake@v10
@@ -124,10 +122,8 @@ jobs:
 
       - uses: lukka/get-cmake@latest
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgJsonGlob: 'vcpkg.json'
+      - name: Setup vcpkg with caching
+        uses: ./.github/actions/setup-vcpkg-cache
 
       - name: Configure & Build
         uses: lukka/run-cmake@v10
@@ -183,10 +179,8 @@ jobs:
 
       - uses: lukka/get-cmake@latest
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgJsonGlob: 'vcpkg.json'
+      - name: Setup vcpkg with caching
+        uses: ./.github/actions/setup-vcpkg-cache
 
       - name: Configure & Build
         uses: lukka/run-cmake@v10
