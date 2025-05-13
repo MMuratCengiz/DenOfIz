@@ -45,15 +45,15 @@ DenOfIz includes several example projects demonstrating various aspects of the l
 - MeshShaderGrass: Using mesh shaders
 - RootConstants: Performance optimization techniques
 
-## Getting Started
-
-For instructions on getting started with DenOfIz, including prerequisites and building the library, see our [Getting Started](Documentation/GettingStarted.md) guide.
-
 ## Building the Library
 
-For detailed build instructions for all supported platforms, see our [How to Build](Documentation/HowToBuild.md) document.
+Build instructions for all supported platforms: [How to Build](Documentation/HowToBuild.md).
 
-## Documentation
+## Getting Started
+
+Quick introduction on how to get up and running: [Getting Started](Documentation/GettingStarted.md).
+
+## Documentation(WIP)
 
 - [Public API Documentation](Documentation/PublicApi.md)
 - [Resource Binding Guide](Documentation/ResourceBinding.md)
