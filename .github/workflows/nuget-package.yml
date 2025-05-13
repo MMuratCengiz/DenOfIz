@@ -197,7 +197,6 @@ jobs:
           buildPresetAdditionalArgs: "['--target', 'DenOfIzGraphicsCSharp']"
 
       - name: Import Code Signing Certificate
-        if: ${{ github.event.inputs.publish == 'true' }}
         env:
           CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
           CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
@@ -216,7 +215,6 @@ jobs:
           rm certificate.p12
 
       - name: Sign macOS Libraries
-        if: ${{ github.event.inputs.publish == 'true' }}
         env:
           SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
         run: |
