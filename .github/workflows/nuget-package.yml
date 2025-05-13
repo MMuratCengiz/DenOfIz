@@ -218,7 +218,9 @@ jobs:
         env:
           SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
         run: |
-          codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.dylib
+          if [ -f build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.dylib ]; then
+            codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" build/DenOfIz/Debug_OSX/CSharp/Project/Native/libDenOfIzGraphics.dylib
+          fi
           codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" build/DenOfIz/Debug_OSX/CSharp/Project/Lib/libDenOfIzGraphicsCSharp.dylib
           codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" build/DenOfIz/Debug_OSX/libdxcompiler.dylib
 
