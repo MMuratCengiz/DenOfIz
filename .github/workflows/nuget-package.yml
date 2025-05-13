@@ -368,6 +368,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: Swig/Targets/CSharp/NuGet_Out/DenOfIzGraphics.${{ env.VERSION }}.nupkg
+          tag_name: v${{ env.VERSION }}
           name: DenOfIzGraphics ${{ env.VERSION }}
           body: |
             # DenOfIzGraphics NuGet Package ${{ env.VERSION }} [ALPHA]
