@@ -6,7 +6,7 @@ on:
       publish:
         description: 'Publish to NuGet.org'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 jobs:
@@ -52,8 +52,10 @@ jobs:
 
       - uses: lukka/get-cmake@latest
 
-      - name: Setup vcpkg with caching
-        uses: ./.github/actions/setup-vcpkg-cache
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          doNotCache: false
 
       - name: Configure & Build
         uses: lukka/run-cmake@v10
@@ -122,8 +124,10 @@ jobs:
 
       - uses: lukka/get-cmake@latest
 
-      - name: Setup vcpkg with caching
-        uses: ./.github/actions/setup-vcpkg-cache
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          doNotCache: false
 
       - name: Configure & Build
         uses: lukka/run-cmake@v10
@@ -179,8 +183,10 @@ jobs:
 
       - uses: lukka/get-cmake@latest
 
-      - name: Setup vcpkg with caching
-        uses: ./.github/actions/setup-vcpkg-cache
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          doNotCache: false
 
       - name: Configure & Build
         uses: lukka/run-cmake@v10
@@ -375,7 +381,7 @@ jobs:
     needs: [read-version, build-denofiz-nuget]
     if: ${{ github.event.inputs.publish == 'true' }}
     steps:
-      - name: Set version from previous job
+      - name: Set version environment variable
         run: echo "VERSION=${{ needs.read-version.outputs.version }}" >> $env:GITHUB_ENV
         
       - name: Download NuGet Package
