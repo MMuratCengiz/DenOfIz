@@ -54,23 +54,27 @@ void AssetScanner::RegisterFilterAssetCallback( FilterAssetCallback *callback )
     m_filterAssetCallbacks.AddElement( callback );
 }
 
-void AssetScanner::Scan( const InteropString &rootPath )
+void AssetScanner::Scan( const InteropString &directoryToScan, const InteropString &targetDirectory )
 {
-    if ( !FileIO::FileExists( rootPath ) )
+    if ( !FileIO::FileExists( directoryToScan ) )
     {
-        LOG( ERROR ) << "Asset scanner root path does not exist: " << rootPath.Get( );
+        LOG( ERROR ) << "Asset scanner root path does not exist: " << directoryToScan.Get( );
+        return;
+    }
+    if ( !FileIO::FileExists( targetDirectory ) )
+    {
+        LOG( ERROR ) << "Asset scanner target directory does not exist: " << targetDirectory.Get( );
         return;
     }
 
-    const auto fsPath = std::filesystem::path( rootPath.Get( ) );
+    const auto fsPath = std::filesystem::path( directoryToScan.Get( ) );
     if ( !std::filesystem::is_directory( fsPath ) )
     {
-        LOG( ERROR ) << "Asset scanner root path is not a directory: " << rootPath.Get( );
+        LOG( ERROR ) << "Asset scanner root path is not a directory: " << directoryToScan.Get( );
         return;
     }
 
-    LOG( INFO ) << "Scanning for assets in: " << rootPath.Get( );
-
+    LOG( INFO ) << "Scanning for assets in: " << directoryToScan.Get( );
     for ( const auto &entry : std::filesystem::recursive_directory_iterator( fsPath ) )
     {
         if ( !entry.is_regular_file( ) )
@@ -113,7 +117,7 @@ void AssetScanner::Scan( const InteropString &rootPath )
 
                 ImportJobDesc jobDesc;
                 jobDesc.SourceFilePath  = modifiedPath;
-                jobDesc.TargetDirectory = rootPath;
+                jobDesc.TargetDirectory = targetDirectory;
                 jobDesc.AssetNamePrefix = InteropString( "" );
                 jobDesc.Desc            = m_importDescs.GetElement( i );
 

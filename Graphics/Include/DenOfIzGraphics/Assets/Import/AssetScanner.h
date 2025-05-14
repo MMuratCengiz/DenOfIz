@@ -68,6 +68,6 @@ namespace DenOfIz
         DZ_API void AddImporter( IAssetImporter *importer, ImportDesc *desc );
         DZ_API void RegisterModifyAssetCallback( ModifyAssetCallback *callback );
         DZ_API void RegisterFilterAssetCallback( FilterAssetCallback *callback );
-        DZ_API void Scan( const InteropString &rootPath );
+        DZ_API void Scan( const InteropString &directoryToScan, const InteropString &targetDirectory );
     };
 } // namespace DenOfIz
