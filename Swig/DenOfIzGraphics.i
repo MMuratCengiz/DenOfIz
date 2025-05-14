@@ -149,6 +149,7 @@ using namespace DirectX;
 %ignore DenOfIz::Window::GetSDLWindow;
 %ignore DenOfIz::Time::OnEachSecond;
 %ignore DenOfIz::StepTimer::OnEachSecond;
+%ignore DenOfIz::Font::MsdfPixelRange;
 
 // First include the math and interop utilities
 %include <DenOfIzGraphics/Utilities/Interop.h>

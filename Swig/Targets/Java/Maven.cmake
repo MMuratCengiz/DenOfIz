@@ -1,4 +1,4 @@
-configure_file(${MAVEN_BASE_DIR}/pom.xml.in ${MAVEN_BASE_DIR}/pom.xml @ONLY CONTENT "@DENOFIZ_VERSION@=${DENOFIZ_VERSION}")
+configure_file(${MAVEN_BASE_DIR}/pom.xml.in ${MAVEN_BASE_DIR}/pom.xml @ONLY)
 
 find_program(MAVEN_EXECUTABLE mvn HINTS $ENV{MAVEN_HOME}/bin)
 
