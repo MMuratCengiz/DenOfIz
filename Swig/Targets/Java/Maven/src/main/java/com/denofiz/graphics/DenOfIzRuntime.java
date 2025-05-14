@@ -21,20 +21,22 @@ public class DenOfIzRuntime {
     
     private DenOfIzRuntime() {}
 
-    public static void initialize(EngineDesc engineDesc) {
+    public static void initializeRuntime() {
         if (initialized.get()) {
             return;
         }
-        
+
         synchronized (lock) {
             if (initialized.get()) {
                 return;
             }
-            
+
             NativeLibraryLoader.initialize();
-            Engine.init(engineDesc);
             initialized.set(true);
         }
+    }
+    public static void initializeEngine(EngineDesc engineDesc) {
+        Engine.init(engineDesc);
     }
 
     public static boolean isInitialized() {

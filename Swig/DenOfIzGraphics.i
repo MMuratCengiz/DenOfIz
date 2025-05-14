@@ -11,7 +11,6 @@
 #endif
 #if defined(SWIGJAVA)
 #include "Targets/Java/DenOfIzGraphics_Java.i"
-%javaconst(1);
 %feature("autodoc", "1");
 %feature("accessors", "1");
 %rename("%(firstlowercase)s", %$isfunction) "";

@@ -60,8 +60,9 @@ public class Example {
     }
 
     public static void main(String[] args) {
-        // Very important to ensure necessary libraries are loaded
-        DenOfIzRuntime.initialize(new EngineDesc());
+        // Very important to ensure necessary libraries are loaded, java evaluates "new EngineDesc" first therefore we have to split this up like this
+        DenOfIzRuntime.initializeRuntime();
+        DenOfIzRuntime.initializeEngine(new EngineDesc());
         Example example = new Example();
         example.run();
     }

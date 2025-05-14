@@ -27,23 +27,26 @@ class NativeLibraryLoader {
                 return;
             }
             
-            String nativePath = getNativeLibraryPath();
-            loadAllNativeLibraries(nativePath);
-            initialized.set(true);
+            try {
+                loadAllNativeLibraries(getNativeLibraryPath());
+                initialized.set(true);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to initialize native libraries", e);
+            }
         }
     }
 
     private static String getNativeLibraryPath() {
         String os = getOperatingSystem();
         String arch = getArchitecture();
-        
+
         String resourcePath = "/native/" + os + "/" + arch + "/";
         File tempDir = createTempDirectory();
-        
+
         extractNativeLibraries(resourcePath, tempDir);
         return tempDir.getAbsolutePath();
     }
-    
+
     private static File createTempDirectory() {
         try {
             Path tempDir = Files.createTempDirectory("denofiz-native-libs");
@@ -62,66 +65,78 @@ class NativeLibraryLoader {
             if (resourceFiles == null || resourceFiles.length == 0) {
                 throw new RuntimeException("No native libraries found in resources at: " + resourcePath);
             }
-            
+
             for (String resourceFile : resourceFiles) {
                 String fullResourcePath = resourcePath + resourceFile;
-                
+
                 try (InputStream is = NativeLibraryLoader.class.getResourceAsStream(fullResourcePath)) {
                     if (is == null) {
                         System.err.println("Warning: Could not find native library: " + fullResourcePath);
                         continue;
                     }
-                    
+
                     File targetFile = new File(targetDir, resourceFile);
                     Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                     targetFile.deleteOnExit();
+
+                    // For non-Windows platforms, ensure executables have execute permissions
+                    if (!isWindows()) {
+                        targetFile.setExecutable(true, false);
+                    }
                 }
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to extract native libraries", e);
         }
     }
-    
+
     private static String[] getResourceFiles(String directory) {
         String os = getOperatingSystem();
         if ("windows".equals(os)) {
             return new String[] {
-                "DenOfIzGraphicsJava.dll",
-                "DenOfIzGraphics.dll",
                 "dxcompiler.dll",
                 "dxil.dll",
-                "metalirconverter.dll"
+                "metalirconverter.dll",
+                "DenOfIzGraphics.dll",
+                "DenOfIzGraphicsJava.dll"
             };
         } else if ("macos".equals(os)) {
             return new String[] {
-                "libDenOfIzGraphicsJava.jnilib",
-                "libDenOfIzGraphics.a",
                 "libdxcompiler.dylib",
-                "libmetalirconverter.dylib"
+                "libmetalirconverter.dylib",
+                "libDenOfIzGraphics.a",
+                "libDenOfIzGraphicsJava.jnilib"
             };
         } else { // Linux
             return new String[] {
-                "libDenOfIzGraphicsJava.so",
+                "libdxcompiler.so",
                 "libDenOfIzGraphics.a",
-                "libdxcompiler.so"
+                "libDenOfIzGraphicsJava.so"
             };
         }
     }
-    
+
     private static void loadAllNativeLibraries(String directory) {
         String os = getOperatingSystem();
         String libraryExtension = getLibraryExtension();
-        
+
         String coreLibPrefix = "windows".equals(os) ?
                 "DenOfIzGraphicsJava" : "libDenOfIzGraphicsJava";
-        
+
         File dir = new File(directory);
         File[] files = dir.listFiles();
         if (files == null) {
             throw new RuntimeException("Failed to list files in native library directory: " + directory);
         }
-        
-        // First load the core library
+
+        // First load all dependency libraries
+        for (File file : files) {
+            String filename = file.getName();
+            if (!filename.startsWith(coreLibPrefix) && filename.endsWith(libraryExtension)) {
+                loadLibrary(file.getAbsolutePath());
+            }
+        }
+
         for (File file : files) {
             String filename = file.getName();
             if (filename.startsWith(coreLibPrefix) && filename.endsWith(libraryExtension)) {
@@ -129,28 +144,19 @@ class NativeLibraryLoader {
                 break;
             }
         }
-        
-        // Then load dependencies
-        for (File file : files) {
-            String filename = file.getName();
-            if (!filename.startsWith(coreLibPrefix) && filename.endsWith(libraryExtension)) {
-                loadLibrary(file.getAbsolutePath());
-            }
-        }
     }
-    
+
     private static void loadLibrary(String path) {
         if (loadedLibraries.containsKey(path)) {
             return;
         }
-        
-        try {
-            System.load(path);
-            loadedLibraries.put(path, true);
-        } catch (UnsatisfiedLinkError e) {
-            System.err.println("Failed to load native library: " + path);
-            throw e;
-        }
+
+        System.load(path);
+        loadedLibraries.put(path, true);
+    }
+
+    private static boolean isWindows() {
+        return "windows".equals(getOperatingSystem());
     }
 
     private static String getOperatingSystem() {
