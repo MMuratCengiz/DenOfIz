@@ -25,6 +25,7 @@ set(NUGET_RUNTIMES_OSX_DIR ${NUGET_BASE_DIR}/runtimes/osx-${ARCH_NAME}/native)
 set(NUGET_RUNTIMES_LINUX_DIR ${NUGET_BASE_DIR}/runtimes/linux-x64/native)
 set(NUGET_BUILD_DIR ${NUGET_BASE_DIR}/build)
 
+set_property(SOURCE DenOfIzGraphics.i PROPERTY COMPILE_OPTIONS "-namespace" "DenOfIz")
 swig_add_library(DenOfIzGraphicsCSharp
         TYPE SHARED
         LANGUAGE CSharp

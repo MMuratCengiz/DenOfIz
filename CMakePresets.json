@@ -27,7 +27,8 @@
         "CMAKE_CXX_FLAGS": "-D_DEBUG -Od -Zi -W3 /c /EHsc /MP -DNOMINMAX  /wd\"4267\" /wd\"4244\"",
         "BUILD_TESTS": "ON",
         "BUILD_EXAMPLES": "ON",
-        "SWIG_CSHARP": "ON"
+        "SWIG_CSHARP": "ON",
+        "SWIG_JAVA": "ON"
       }
     },
     {
@@ -41,7 +42,8 @@
         "CMAKE_CXX_FLAGS": "-D_DEBUG -Od -Zi -W3 /c /EHsc /MP -DNOMINMAX  /wd\"4267\" /wd\"4244\"",
         "BUILD_TESTS": "ON",
         "BUILD_EXAMPLES": "ON",
-        "SWIG_CSHARP": "ON"
+        "SWIG_CSHARP": "ON",
+        "SWIG_JAVA": "ON"
       }
     },
     {
@@ -52,7 +54,8 @@
         "VCPKG_TARGET_TRIPLET": "x64-windows-static",
         "CRT_LINKAGE_STATIC": "1",
         "CMAKE_CXX_FLAGS": "/MP -DNOMINMAX",
-        "SWIG_CSHARP": "ON"
+        "SWIG_CSHARP": "ON",
+        "SWIG_JAVA": "ON"
       }
     },
     {
@@ -64,7 +67,8 @@
         "VCPKG_TARGET_TRIPLET": "x64-windows",
         "CRT_LINKAGE_STATIC": "0",
         "CMAKE_CXX_FLAGS": "-Od -Zi -W3 /c /EHsc /MP -DNOMINMAX  /wd\"4267\" /wd\"4244\"",
-        "SWIG_CSHARP": "ON"
+        "SWIG_CSHARP": "ON",
+        "SWIG_JAVA": "ON"
       }
     },
     
@@ -82,7 +86,8 @@
         "VCPKG_TARGET_TRIPLET": "arm64-osx",
         "BUILD_TESTS": "ON",
         "BUILD_EXAMPLES": "ON",
-        "SWIG_CSHARP": "ON"
+        "SWIG_CSHARP": "ON",
+        "SWIG_JAVA": "ON"
       }
     },
     {
@@ -91,7 +96,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "arm64-osx",
-        "SWIG_CSHARP": "ON"
+        "SWIG_CSHARP": "ON",
+        "SWIG_JAVA": "ON"
       }
     },
     
@@ -123,7 +129,8 @@
         "CMAKE_CXX_FLAGS": "-D_DEBUG -g -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -Wno-error=dangling-reference",
         "BUILD_TESTS": "ON",
         "BUILD_EXAMPLES": "ON",
-        "SWIG_CSHARP": "ON"
+        "SWIG_CSHARP": "ON",
+        "SWIG_JAVA": "ON"
       }
     },
     {
@@ -133,7 +140,8 @@
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
         "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -Wno-error=dangling-reference",
-        "SWIG_CSHARP": "ON"
+        "SWIG_CSHARP": "ON",
+        "SWIG_JAVA": "ON"
       }
     },
     {
@@ -144,7 +152,8 @@
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
         "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -Wno-error=dangling-reference",
-        "SWIG_CSHARP": "ON"
+        "SWIG_CSHARP": "ON",
+        "SWIG_JAVA": "ON"
       }
     }
   ],

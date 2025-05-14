@@ -5,16 +5,24 @@
 #pragma SWIG nowarn=509 // overloaded method handling
 #pragma SWIG nowarn=314 // class/struct redefinition
 
+// Todo the includes below don't seem to be doing anything
+#if defined(SWIGCSHARP)
+#include "Targets/CSharp/DenOfIzGraphics_CSharp.i"
+#endif
+#if defined(SWIGJAVA)
+#include "Targets/Java/DenOfIzGraphics_Java.i"
+%javaconst(1);
+%feature("autodoc", "1");
+%feature("accessors", "1");
+%rename("%(firstlowercase)s", %$isfunction) "";
+%rename("waitOnFence") "DenOfIz::IFence::Wait";
+%rename("notifySemaphore") "DenOfIz::ISemaphore::Notify";
+#endif
+
 %{
 #include "DenOfIzGraphics/DenOfIzGraphics.h"
 %}
 #define DZ_API
-#if defined(SWIGJAVA)
-#define SWIG_JAVA_MODE
-#endif
-#if defined(SWIGCSHARP)
-#define SWIG_CSHARP_MODE
-#endif
 
 %warnfilter(516) InteropArray;
 
@@ -27,8 +35,12 @@ using namespace DirectX;
 %include "std_vector.i"
 %include "carrays.i"
 %include "cpointer.i"
+#ifdef SWIGCSHARP
 %include "arrays_csharp.i"
-%include "DenOfIzGraphics_Dxc.i"
+#endif
+#ifdef SWIGJAVA
+%include "arrays_java.i"
+#endif
 
 %apply void *VOID_INT_PTR { void * }
 %apply unsigned char INPUT[]  {unsigned char *inputBytes}
@@ -73,6 +85,7 @@ using namespace DirectX;
 %ignore DenOfIz::Font::FTFace;
 %ignore DenOfIz::FontDesc::FontAsset;
 %ignore DenOfIz::TextRenderer::m_projectionMatrix;
+%ignore DenOfIz::BundleHeader::BundleHeaderMagic;
 
 // Animation ignores:
 %ignore DenOfIz::Internal::AnimationState;
