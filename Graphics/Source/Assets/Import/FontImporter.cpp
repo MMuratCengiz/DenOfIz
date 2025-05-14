@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // ReSharper disable CppMemberFunctionMayBeStatic
 #include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
 #include <DenOfIzGraphics/Assets/FileSystem/PathResolver.h>
+#include <DenOfIzGraphics/Assets/Import/AssetPathUtilities.h> // Used for asset path utilities (replaced local methods)
 #include <DenOfIzGraphics/Assets/Import/FontImporter.h>
 #include <DenOfIzGraphics/Utilities/Common_Asserts.h>
 #include <algorithm>
@@ -25,8 +26,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/Font/Font.h"
 
-#include <msdfgen.h>
 #include <msdfgen-ext.h>
+#include <msdfgen.h>
 #include "msdf-atlas-gen/AtlasGenerator.h"
 #include "msdf-atlas-gen/BitmapAtlasStorage.h"
 #include "msdf-atlas-gen/FontGeometry.h"
@@ -36,7 +37,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-FontImporter::FontImporter( FontImporterDesc desc ) : m_desc( std::move( desc ) )
+FontImporter::FontImporter( const FontImporterDesc desc ) : m_desc( desc )
 {
     if ( const FT_Error error = FT_Init_FreeType( &m_ftLibrary ); error != 0 )
     {
@@ -90,7 +91,7 @@ ImporterResult FontImporter::Import( const ImportJobDesc &desc )
     context.SourceFilePath    = desc.SourceFilePath;
     context.TargetDirectory   = desc.TargetDirectory;
     context.AssetNamePrefix   = desc.AssetNamePrefix;
-    context.Desc              = *reinterpret_cast<FontImportDesc*>( desc.Desc );
+    context.Desc              = *reinterpret_cast<FontImportDesc *>( desc.Desc );
     context.Result.ResultCode = ImporterResultCode::Success;
 
     // For MSDF, we need RGB data (3 bytes per pixel) instead of grayscale
@@ -320,9 +321,9 @@ void FontImporter::GenerateAtlas( ImportContext &context ) const
 
 void FontImporter::WriteFontAsset( const ImportContext &context, AssetUri &outAssetUri ) const
 {
-    const InteropString assetName         = GetAssetNameFromFilePath( context.SourceFilePath );
-    const InteropString sanitizedName     = SanitizeAssetName( assetName );
-    const InteropString fontAssetFileName = CreateAssetFileName( context.AssetNamePrefix, sanitizedName );
+    const InteropString assetName         = AssetPathUtilities::GetAssetNameFromFilePath( context.SourceFilePath );
+    const InteropString sanitizedName     = AssetPathUtilities::SanitizeAssetName( assetName );
+    const InteropString fontAssetFileName = AssetPathUtilities::CreateAssetFileName( context.AssetNamePrefix, sanitizedName, FontAsset::Extension( ) );
 
     std::string outputPath = context.TargetDirectory.Get( );
     if ( !outputPath.empty( ) && outputPath.back( ) != '/' && outputPath.back( ) != '\\' )
@@ -345,61 +346,6 @@ void FontImporter::WriteFontAsset( const ImportContext &context, AssetUri &outAs
     FileIO::WriteFile( outputPath.c_str( ), container.GetData( ) );
 
     outAssetUri.Path = outputPath.c_str( );
-}
-
-InteropString FontImporter::CreateAssetFileName( const InteropString &prefix, const InteropString &name ) const
-{
-    std::string result;
-
-    if ( prefix.NumChars( ) > 0 )
-    {
-        result += prefix.Get( );
-        result += "_";
-    }
-
-    result += name.Get( );
-    result += ".";
-    result += FontAsset::Extension( ).Get( );
-
-    return result.c_str( );
-}
-
-InteropString FontImporter::GetAssetNameFromFilePath( const InteropString &filePath )
-{
-    const std::string path      = filePath.Get( );
-    size_t            lastSlash = path.find_last_of( "/\\" );
-    if ( lastSlash == std::string::npos )
-    {
-        lastSlash = 0;
-    }
-    else
-    {
-        lastSlash += 1;
-    }
-
-    size_t lastDot = path.find_last_of( '.' );
-    if ( lastDot == std::string::npos || lastDot < lastSlash )
-    {
-        lastDot = path.length( );
-    }
-
-    return path.substr( lastSlash, lastDot - lastSlash ).c_str( );
-}
-
-InteropString FontImporter::SanitizeAssetName( const InteropString &name )
-{
-    std::string sanitized = name.Get( );
-
-    // Replace invalid characters with underscores
-    for ( char &c : sanitized )
-    {
-        if ( !std::isalnum( c ) && c != '_' && c != '-' )
-        {
-            c = '_';
-        }
-    }
-
-    return sanitized.c_str( );
 }
 
 Byte FontImporter::FloatToByte( const float &f )

@@ -93,9 +93,6 @@ namespace DenOfIz
         void                        GenerateAtlas( ImportContext &context ) const;
         void                        WriteFontAsset( const ImportContext &context, AssetUri &outAssetUri ) const;
         void                        ExtractFontMetrics( ImportContext &context, FT_Face face );
-        [[nodiscard]] InteropString CreateAssetFileName( const InteropString &prefix, const InteropString &name ) const;
-        static InteropString        GetAssetNameFromFilePath( const InteropString &filePath );
-        static InteropString        SanitizeAssetName( const InteropString &name );
         static Byte                 FloatToByte( const float &f );
     };
 } // namespace DenOfIz

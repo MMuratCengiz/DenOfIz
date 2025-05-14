@@ -73,12 +73,6 @@ namespace DenOfIz
         ImporterResultCode ImportTextureInternal( ImportContext &context );
         void               WriteTextureAsset( const ImportContext &context, const TextureAsset &textureAsset, AssetUri &outAssetUri ) const;
 
-        [[nodiscard]] static InteropString CreateAssetFileName( const InteropString &prefix, const InteropString &name, const InteropString &extension );
-        [[nodiscard]] static InteropString GetAssetNameFromFilePath( const InteropString &filePath );
-        [[nodiscard]] static InteropString SanitizeAssetName( const InteropString &name );
-        [[nodiscard]] static InteropString GetFileExtension( const InteropString &filePath );
-        [[nodiscard]] static InteropString GetFileNameWithoutExtension( const InteropString &filePath );
-
         static void RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri );
     };
 } // namespace DenOfIz

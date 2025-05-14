@@ -126,11 +126,7 @@ namespace DenOfIz
         Float_2   ConvertVector2( const aiVector3D &vec );
         Float_4   ConvertColor( const aiColor4D &color );
 
-        InteropString CreateAssetFileName( const InteropString &prefix, const InteropString &name, const InteropString &assetType, const InteropString &extension );
-        InteropString GetAssetNameFromFilePath( const InteropString &filePath );
-        InteropString SanitizeAssetName( const InteropString &name );
-        InteropString GetFileExtension( const InteropString &filePath ) const;
-        InteropString GetFileNameWithoutExtension( const InteropString &filePath );
+        // File path utilities moved to FilePathUtilities class
 
         void RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri );
         void GenerateMeshLODs( const ImportContext &context, MeshAssetWriter &meshWriter );

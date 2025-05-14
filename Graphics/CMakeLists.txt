@@ -48,6 +48,7 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Font/TextLayout.cpp
         Source/Assets/GpuResource/GpuResourceLoader.cpp
         Source/Assets/Import/AssetScanner.cpp
+        Source/Assets/Import/AssetPathUtilities.cpp
         Source/Assets/Import/AssimpImporter.cpp
         Source/Assets/Import/FontImporter.cpp
         Source/Assets/Import/ShaderImporter.cpp

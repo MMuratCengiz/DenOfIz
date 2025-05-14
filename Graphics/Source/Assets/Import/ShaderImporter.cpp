@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
 #include <DenOfIzGraphics/Assets/FileSystem/PathResolver.h>
+#include <DenOfIzGraphics/Assets/Import/AssetPathUtilities.h>
 #include <DenOfIzGraphics/Assets/Import/ShaderImporter.h>
 #include <DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetWriter.h>
 #include <DenOfIzGraphics/Assets/Stream/BinaryContainer.h>
@@ -61,7 +62,7 @@ ImporterResult ShaderImporter::Import( const ImportJobDesc &desc )
     ImportContext context;
     context.JobDesc           = desc;
     context.Result.ResultCode = ImporterResultCode::Success;
-    context.Desc              = *static_cast<ShaderImportDesc *>( desc.Desc );
+    context.Desc              = *reinterpret_cast<ShaderImportDesc *>( desc.Desc );
 
     if ( !desc.SourceFilePath.IsEmpty( ) )
     {
@@ -102,15 +103,15 @@ bool ShaderImporter::ValidateFile( const InteropString &filePath ) const
         return false;
     }
 
-    const std::string extension = GetFileExtension( filePath.Get( ) );
-    return CanProcessFileExtension( extension.c_str( ) );
+    const InteropString extension = AssetPathUtilities::GetFileExtension( filePath );
+    return CanProcessFileExtension( extension.Get( ) );
 }
 
 void ShaderImporter::WriteShaderAsset( const ImportContext &context, AssetUri &outAssetUri )
 {
     InteropString       assetName           = GetAssetName( context );
-    const InteropString sanitizedName       = SanitizeAssetName( assetName );
-    const InteropString shaderAssetFileName = CreateAssetFileName( context.JobDesc.AssetNamePrefix, sanitizedName );
+    const InteropString sanitizedName       = AssetPathUtilities::SanitizeAssetName( assetName );
+    const InteropString shaderAssetFileName = AssetPathUtilities::CreateAssetFileName( context.JobDesc.AssetNamePrefix, sanitizedName, ShaderAsset::Extension( ) );
     std::string         outputPath          = context.JobDesc.TargetDirectory.Get( );
     if ( !outputPath.empty( ) && outputPath.back( ) != '/' && outputPath.back( ) != '\\' )
     {
@@ -144,7 +145,7 @@ InteropString ShaderImporter::GetAssetName( const ImportContext &context )
         const ShaderStageDesc &primaryStage = context.Desc.ProgramDesc.ShaderStages.GetElement( 0 );
         if ( !primaryStage.Path.IsEmpty( ) )
         {
-            return GetAssetNameFromFilePath( primaryStage.Path );
+            return AssetPathUtilities::GetAssetNameFromFilePath( primaryStage.Path );
         }
 
         if ( !primaryStage.EntryPoint.IsEmpty( ) )
@@ -156,72 +157,6 @@ InteropString ShaderImporter::GetAssetName( const ImportContext &context )
     }
 
     return "ShaderProgram";
-}
-
-InteropString ShaderImporter::GetAssetNameFromFilePath( const InteropString &filePath )
-{
-    const std::string path      = filePath.Get( );
-    size_t            lastSlash = path.find_last_of( "/\\" );
-    if ( lastSlash == std::string::npos )
-    {
-        lastSlash = 0;
-    }
-    else
-    {
-        lastSlash += 1;
-    }
-
-    size_t lastDot = path.find_last_of( '.' );
-    if ( lastDot == std::string::npos || lastDot < lastSlash )
-    {
-        lastDot = path.length( );
-    }
-
-    return path.substr( lastSlash, lastDot - lastSlash ).c_str( );
-}
-
-InteropString ShaderImporter::SanitizeAssetName( const InteropString &name )
-{
-    std::string sanitized = name.Get( );
-    for ( char &c : sanitized )
-    {
-        if ( !std::isalnum( c ) && c != '_' && c != '-' )
-        {
-            c = '_';
-        }
-    }
-
-    return sanitized.c_str( );
-}
-
-InteropString ShaderImporter::CreateAssetFileName( const InteropString &prefix, const InteropString &name )
-{
-    std::string result;
-
-    if ( prefix.NumChars( ) > 0 )
-    {
-        result += prefix.Get( );
-        result += "_";
-    }
-
-    result += name.Get( );
-    result += ".";
-    result += ShaderAsset::Extension( ).Get( );
-
-    return result.c_str( );
-}
-
-std::string ShaderImporter::GetFileExtension( const char *filePath )
-{
-    const std::string path    = filePath;
-    const size_t      lastDot = path.find_last_of( '.' );
-
-    if ( lastDot == std::string::npos )
-    {
-        return "";
-    }
-
-    return path.substr( lastDot + 1 );
 }
 
 ShaderStage ShaderImporter::InferShaderStageFromExtension( const std::string &fileExtension )

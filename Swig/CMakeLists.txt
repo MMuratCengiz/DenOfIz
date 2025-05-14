@@ -4,6 +4,14 @@ file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../version.txt" VERSION_CONTENT)
 string(STRIP "${VERSION_CONTENT}" DENOFIZ_VERSION)
 string(TIMESTAMP CURRENT_YEAR "%Y")
 
+find_package(Java)
+find_package(JNI)
+
+if (NOT Java_FOUND OR NOT JNI_FOUND)
+    set(SWIG_JAVA OFF)
+    message(WARNING "Java or JNI not found. SWIG_JAVA will be disabled.")
+endif ()
+
 if (SWIG_CSHARP OR SWIG_JAVA)
     find_package(SWIG REQUIRED)
     include(${SWIG_USE_FILE})

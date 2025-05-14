@@ -59,10 +59,6 @@ namespace DenOfIz
     private:
         static void          WriteShaderAsset( const ImportContext &context, AssetUri &outAssetUri );
         static InteropString GetAssetName( const ImportContext &context );
-        static InteropString GetAssetNameFromFilePath( const InteropString &filePath );
-        static InteropString SanitizeAssetName( const InteropString &name );
-        static InteropString CreateAssetFileName( const InteropString &prefix, const InteropString &name );
-        static std::string   GetFileExtension( const char *filePath );
         static ShaderStage   InferShaderStageFromExtension( const std::string &fileExtension );
     };
 } // namespace DenOfIz

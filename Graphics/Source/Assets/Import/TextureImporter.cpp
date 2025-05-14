@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Assets/Import/TextureImporter.h>
 #include <DenOfIzGraphics/Assets/Stream/BinaryWriter.h>
+#include <DenOfIzGraphics/Assets/Import/AssetPathUtilities.h>
 #include <algorithm>
 #include <filesystem>
 
@@ -66,7 +67,7 @@ bool TextureImporter::ValidateFile( const InteropString &filePath ) const
         return false;
     }
 
-    const InteropString extension = GetFileExtension( filePath );
+    const InteropString extension = AssetPathUtilities::GetFileExtension( filePath );
     return CanProcessFileExtension( extension );
 }
 
@@ -126,10 +127,10 @@ ImporterResultCode TextureImporter::ImportTextureInternal( ImportContext &contex
 
 void TextureImporter::WriteTextureAsset( const ImportContext &context, const TextureAsset &textureAsset, AssetUri &outAssetUri ) const
 {
-    const InteropString         assetName       = GetAssetNameFromFilePath( context.SourceFilePath );
-    const InteropString         sanitizedName   = SanitizeAssetName( assetName );
+    const InteropString         assetName       = AssetPathUtilities::GetAssetNameFromFilePath( context.SourceFilePath );
+    const InteropString         sanitizedName   = AssetPathUtilities::SanitizeAssetName( assetName );
     const std::filesystem::path targetDirectory = context.TargetDirectory.Get( );
-    const std::filesystem::path fileName        = CreateAssetFileName( context.AssetNamePrefix, sanitizedName, "texture" ).Get( );
+    const std::filesystem::path fileName        = AssetPathUtilities::CreateAssetFileName( context.AssetNamePrefix, sanitizedName, "texture" ).Get( );
     const InteropString         filePath        = ( targetDirectory / fileName ).string( ).c_str( );
 
     BinaryWriter           writer( filePath );
@@ -154,87 +155,6 @@ void TextureImporter::WriteTextureAsset( const ImportContext &context, const Tex
     writer.Flush( );
 
     outAssetUri.Path = filePath;
-}
-
-InteropString TextureImporter::CreateAssetFileName( const InteropString &prefix, const InteropString &name, const InteropString &extension )
-{
-    InteropString fileName = prefix;
-
-    if ( fileName.NumChars( ) > 0 )
-    {
-        fileName = fileName.Append( "_" );
-    }
-
-    fileName = fileName.Append( name.Get( ) ).Append( "." ).Append( extension.Get( ) );
-    return fileName;
-}
-
-InteropString TextureImporter::GetAssetNameFromFilePath( const InteropString &filePath )
-{
-    std::string  path      = filePath.Get( );
-    const size_t lastSlash = path.find_last_of( "/\\" );
-
-    if ( lastSlash != std::string::npos )
-    {
-        path = path.substr( lastSlash + 1 );
-    }
-
-    const size_t lastDot = path.find_last_of( '.' );
-    if ( lastDot != std::string::npos )
-    {
-        path = path.substr( 0, lastDot );
-    }
-
-    return { path.c_str( ) };
-}
-
-InteropString TextureImporter::SanitizeAssetName( const InteropString &name )
-{
-    std::string sanitized = name.Get( );
-
-    std::ranges::replace_if( sanitized, []( const char c ) { return !std::isalnum( c ) && c != '_'; }, '_' );
-    if ( !sanitized.empty( ) && !std::isalpha( sanitized[ 0 ] ) && sanitized[ 0 ] != '_' )
-    {
-        sanitized = std::string( "_" ) + sanitized;
-    }
-
-    return { sanitized.c_str( ) };
-}
-
-InteropString TextureImporter::GetFileExtension( const InteropString &filePath )
-{
-    const std::string path    = filePath.Get( );
-    const size_t      lastDot = path.find_last_of( '.' );
-
-    if ( lastDot != std::string::npos )
-    {
-        return InteropString( path.substr( lastDot ).c_str( ) ).ToLower( );
-    }
-
-    return { "" };
-}
-
-InteropString TextureImporter::GetFileNameWithoutExtension( const InteropString &filePath )
-{
-    const std::string path      = filePath.Get( );
-    size_t            lastSlash = path.find_last_of( "/\\" );
-    const size_t      lastDot   = path.find_last_of( '.' );
-
-    if ( lastSlash == std::string::npos )
-    {
-        lastSlash = 0;
-    }
-    else
-    {
-        lastSlash++;
-    }
-
-    if ( lastDot == std::string::npos || lastDot < lastSlash )
-    {
-        return { path.substr( lastSlash ).c_str( ) };
-    }
-
-    return { path.substr( lastSlash, lastDot - lastSlash ).c_str( ) };
 }
 
 void TextureImporter::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri )
