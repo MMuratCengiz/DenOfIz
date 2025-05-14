@@ -151,27 +151,27 @@ void VulkanCommandList::BindPipeline( IPipeline *pipeline )
     vkCmdBindPipeline( m_commandBuffer, m_currentPipeline->BindPoint( ), m_currentPipeline->Instance( ) );
 }
 
-void VulkanCommandList::BindVertexBuffer( IBufferResource *buffer )
+void VulkanCommandList::BindVertexBuffer( IBufferResource *buffer, uint64_t offset )
 {
     DZ_NOT_NULL( buffer );
-    const auto             bufferResource = dynamic_cast<VulkanBufferResource *>( buffer );
-    constexpr VkDeviceSize offset         = 0;
-    vkCmdBindVertexBuffers( m_commandBuffer, 0, 1, &bufferResource->Instance( ), &offset );
+    const auto      bufferResource = dynamic_cast<VulkanBufferResource *>( buffer );
+    VkDeviceSize    vkOffset       = offset;
+    vkCmdBindVertexBuffers( m_commandBuffer, 0, 1, &bufferResource->Instance( ), &vkOffset );
 }
 
-void VulkanCommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType )
+void VulkanCommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType, uint64_t offset )
 {
     DZ_NOT_NULL( buffer );
-    const auto             bufferResource = dynamic_cast<VulkanBufferResource *>( buffer );
-    constexpr VkDeviceSize offset         = 0;
+    const auto   bufferResource = dynamic_cast<VulkanBufferResource *>( buffer );
+    VkDeviceSize vkOffset       = offset;
 
     switch ( indexType )
     {
     case IndexType::Uint16:
-        vkCmdBindIndexBuffer( m_commandBuffer, bufferResource->Instance( ), offset, VK_INDEX_TYPE_UINT16 );
+        vkCmdBindIndexBuffer( m_commandBuffer, bufferResource->Instance( ), vkOffset, VK_INDEX_TYPE_UINT16 );
         break;
     case IndexType::Uint32:
-        vkCmdBindIndexBuffer( m_commandBuffer, bufferResource->Instance( ), offset, VK_INDEX_TYPE_UINT32 );
+        vkCmdBindIndexBuffer( m_commandBuffer, bufferResource->Instance( ), vkOffset, VK_INDEX_TYPE_UINT32 );
         break;
     }
 }

@@ -149,7 +149,7 @@ void MetalCommandList::BindPipeline( IPipeline *pipeline )
     }
 }
 
-void MetalCommandList::BindVertexBuffer( IBufferResource *buffer )
+void MetalCommandList::BindVertexBuffer( IBufferResource *buffer, uint64_t offset )
 {
     DZ_NOT_NULL( buffer );
     id<MTLBuffer> vertexBuffer = static_cast<MetalBufferResource *>( buffer )->Instance( );
@@ -162,13 +162,13 @@ void MetalCommandList::BindVertexBuffer( IBufferResource *buffer )
         break;
     case QueueType::Graphics:
         {
-            [m_renderEncoder setVertexBuffer:vertexBuffer offset:0 atIndex:0];
+            [m_renderEncoder setVertexBuffer:vertexBuffer offset:offset atIndex:0];
         }
         break;
     }
 }
 
-void MetalCommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType )
+void MetalCommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType, uint64_t offset )
 {
     DZ_NOT_NULL( buffer );
     switch ( indexType )
@@ -182,6 +182,7 @@ void MetalCommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType
     }
 
     m_indexBuffer = static_cast<MetalBufferResource *>( buffer )->Instance( );
+    m_currentBufferOffset = offset;
 }
 
 void MetalCommandList::BindViewport( float x, float y, float width, float height )
@@ -298,7 +299,13 @@ void MetalCommandList::DrawIndexed( uint32_t indexCount, uint32_t instanceCount,
     }
     SwitchEncoder( MetalEncoderType::Render );
     BindCommandResources( );
-    IRRuntimeDrawIndexedPrimitives( m_renderEncoder, MTLPrimitiveTypeTriangle, indexCount, m_indexType, m_indexBuffer, firstIndex, instanceCount, vertexOffset, firstInstance );
+    // Add buffer offset to the firstIndex parameter (need to adjust based on index type)
+    uint32_t adjustedFirstIndex = firstIndex;
+    if (m_currentBufferOffset > 0)
+    {
+        adjustedFirstIndex += static_cast<uint32_t>(m_currentBufferOffset / (m_indexType == MTLIndexTypeUInt16 ? 2 : 4));
+    }
+    IRRuntimeDrawIndexedPrimitives( m_renderEncoder, MTLPrimitiveTypeTriangle, indexCount, m_indexType, m_indexBuffer, adjustedFirstIndex, instanceCount, vertexOffset, firstInstance );
     TopLevelArgumentBufferNextOffset( );
 }
 

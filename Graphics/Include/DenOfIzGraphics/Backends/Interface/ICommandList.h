@@ -172,8 +172,8 @@ namespace DenOfIz
         virtual void EndRendering( )                                                                                                                            = 0;
         virtual void End( )                                                                                                                                     = 0;
         virtual void BindPipeline( IPipeline *pipeline )                                                                                                        = 0;
-        virtual void BindVertexBuffer( IBufferResource *buffer )                                                                                                = 0;
-        virtual void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType )                                                                     = 0;
+        virtual void BindVertexBuffer( IBufferResource *buffer, uint64_t offset = 0 )                                                                           = 0;
+        virtual void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType, uint64_t offset = 0 )                                                = 0;
         virtual void BindViewport( float x, float y, float width, float height )                                                                                = 0;
         virtual void BindScissorRect( float x, float y, float width, float height )                                                                             = 0;
         virtual void BindResourceGroup( IResourceBindGroup *bindGroup )                                                                                         = 0;

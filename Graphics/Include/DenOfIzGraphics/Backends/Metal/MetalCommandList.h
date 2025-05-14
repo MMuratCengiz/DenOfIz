@@ -65,7 +65,7 @@ namespace DenOfIz
         MetalPipeline                       *m_pipeline;
         bool                                 m_computeTlasBound = false;
         bool                                 m_meshTlasBound    = false;
-        bool                                 m_renderTlasBound    = false;
+        bool                                 m_renderTlasBound  = false;
         // --
 
     public:
@@ -77,8 +77,8 @@ namespace DenOfIz
         void EndRendering( ) override;
         void End( ) override;
         void BindPipeline( IPipeline *pipeline ) override;
-        void BindVertexBuffer( IBufferResource *buffer ) override;
-        void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType ) override;
+        void BindVertexBuffer( IBufferResource *buffer, uint64_t offset = 0 ) override;
+        void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType, uint64_t offset = 0 ) override;
         void BindViewport( float x, float y, float width, float height ) override;
         void BindScissorRect( float x, float y, float width, float height ) override;
         void BindResourceGroup( IResourceBindGroup *bindGroup ) override;

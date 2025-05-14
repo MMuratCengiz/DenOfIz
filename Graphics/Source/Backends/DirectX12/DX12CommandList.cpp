@@ -135,7 +135,7 @@ void DX12CommandList::BindPipeline( IPipeline *pipeline )
     }
 }
 
-void DX12CommandList::BindVertexBuffer( IBufferResource *buffer )
+void DX12CommandList::BindVertexBuffer( IBufferResource *buffer, uint64_t offset )
 {
     DZ_NOT_NULL( buffer );
 
@@ -148,22 +148,22 @@ void DX12CommandList::BindVertexBuffer( IBufferResource *buffer )
     }
 
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView = { };
-    vertexBufferView.BufferLocation           = pBuffer->Resource( )->GetGPUVirtualAddress( );
+    vertexBufferView.BufferLocation           = pBuffer->Resource( )->GetGPUVirtualAddress( ) + offset;
     vertexBufferView.StrideInBytes            = m_currentPipeline->GetIAStride( );
-    vertexBufferView.SizeInBytes              = pBuffer->NumBytes( );
+    vertexBufferView.SizeInBytes              = pBuffer->NumBytes( ) - offset;
 
     m_commandList->IASetVertexBuffers( 0, 1, &vertexBufferView );
 }
 
-void DX12CommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType )
+void DX12CommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType, uint64_t offset )
 {
     DZ_NOT_NULL( buffer );
 
     const DX12BufferResource *pBuffer = dynamic_cast<DX12BufferResource *>( buffer );
 
     D3D12_INDEX_BUFFER_VIEW indexBufferView = { };
-    indexBufferView.BufferLocation          = pBuffer->Resource( )->GetGPUVirtualAddress( );
-    indexBufferView.SizeInBytes             = pBuffer->NumBytes( );
+    indexBufferView.BufferLocation          = pBuffer->Resource( )->GetGPUVirtualAddress( ) + offset;
+    indexBufferView.SizeInBytes             = pBuffer->NumBytes( ) - offset;
     switch ( indexType )
     {
     case IndexType::Uint16:

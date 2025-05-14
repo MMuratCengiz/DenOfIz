@@ -48,8 +48,8 @@ namespace DenOfIz
         void EndRendering( ) override; // TODO remove
         void End( ) override;
         void BindPipeline( IPipeline *pipeline ) override;
-        void BindVertexBuffer( IBufferResource *buffer ) override;
-        void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType ) override;
+        void BindVertexBuffer( IBufferResource *buffer, uint64_t offset = 0 ) override;
+        void BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType, uint64_t offset = 0 ) override;
         void BindViewport( float offsetX, float offsetY, float width, float height ) override;
         void BindScissorRect( float offsetX, float offsetY, float width, float height ) override;
         void BindResourceGroup( IResourceBindGroup *bindGroup ) override;
