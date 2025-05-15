@@ -82,8 +82,7 @@ public class Example {
         
         frameDebugRenderer = new FrameDebugRenderer(frameDebugRendererDesc);
         InputSystem inputSystem = new InputSystem();
-        inputSystem.initialize();
-        
+
         EventHandler eventHandler = new EventHandler(inputSystem);
         eventHandler.setOnQuit(new MyQuitCallback());
         eventHandler.setOnKeyDown(new MyKeyboardCallback());

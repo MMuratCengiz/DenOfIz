@@ -89,7 +89,6 @@ internal class Program
 
         _frameDebugRenderer = new FrameDebugRenderer(frameDebugRendererDesc);
         var inputSystem = new InputSystem();
-        inputSystem.Initialize();
 
         var eventHandler = new EventHandler(inputSystem);
         eventHandler.SetOnQuit(new MyQuitCallback(this));

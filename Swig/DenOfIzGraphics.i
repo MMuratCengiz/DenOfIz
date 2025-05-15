@@ -47,6 +47,7 @@ using namespace DirectX;
 %ignore std::chrono;
 %ignore __parse_int;
 
+%ignore IDxcBlob;
 %ignore DenOfIz::RenderGraphInternal::NodeExecutionContext;
 %ignore DenOfIz::RenderGraphInternal::GraphNode;
 %ignore DenOfIz::RenderGraphInternal::PresentContext;
