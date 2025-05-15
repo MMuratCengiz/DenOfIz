@@ -96,7 +96,7 @@ void Camera::HandleEvent( const DenOfIz::Event &event )
 {
     switch ( event.Type )
     {
-    case SDL_MOUSEMOTION:
+    case DenOfIz::EventType::MouseMotion:
         {
             const int mouseX = event.Motion.X;
             const int mouseY = event.Motion.Y;
@@ -148,16 +148,16 @@ void Camera::HandleEvent( const DenOfIz::Event &event )
             break;
         }
 
-    case SDL_MOUSEWHEEL:
+    case DenOfIz::EventType::MouseWheel:
         {
             const float zoomAmount = event.Wheel.Y * SCROLL_SENSITIVITY;
             m_targetPosition       = XMVectorAdd( m_targetPosition, XMVectorScale( m_front, zoomAmount * m_moveSpeed ) );
             break;
         }
 
-    case SDL_MOUSEBUTTONDOWN:
+    case DenOfIz::EventType::MouseButtonDown:
         {
-            if ( event.Button.Button == SDL_BUTTON_RIGHT )
+            if ( event.Button.Button == DenOfIz::MouseButton::Right )
             {
                 SDL_SetRelativeMouseMode( SDL_TRUE );
                 m_lastMouseX = event.Button.X;
@@ -167,9 +167,9 @@ void Camera::HandleEvent( const DenOfIz::Event &event )
             break;
         }
 
-    case SDL_MOUSEBUTTONUP:
+    case DenOfIz::EventType::MouseButtonUp:
         {
-            if ( event.Button.Button == SDL_BUTTON_RIGHT )
+            if ( event.Button.Button == DenOfIz::MouseButton::Right )
             {
                 SDL_SetRelativeMouseMode( SDL_FALSE );
                 m_yaw   = m_targetYaw;
@@ -178,18 +178,18 @@ void Camera::HandleEvent( const DenOfIz::Event &event )
             break;
         }
 
-    case SDL_KEYDOWN:
+    case DenOfIz::EventType::KeyDown:
         {
             switch ( event.Key.Keycode )
             {
             case DenOfIz::KeyCode::F:
-                if ( event.Key.Mod & KMOD_CTRL )
+                if ( event.Key.Mod.IsSet( DenOfIz::KeyMod::Ctrl ) )
                 {
                     ResetCamera( );
                 }
                 break;
             case DenOfIz::KeyCode::Space:
-                if ( event.Key.Mod & KMOD_ALT )
+                if ( event.Key.Mod.IsSet( DenOfIz::KeyMod::Alt ) )
                 {
                     m_isOrbiting = !m_isOrbiting;
                 }

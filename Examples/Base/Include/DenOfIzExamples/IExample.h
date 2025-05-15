@@ -144,7 +144,7 @@ namespace DenOfIz
         }
         virtual void HandleEvent( Event &event )
         {
-            if ( event.Type == SDL_KEYDOWN )
+            if ( event.Type == EventType::KeyDown )
             {
                 switch ( event.Key.Keycode )
                 {
@@ -155,9 +155,9 @@ namespace DenOfIz
                     break;
                 }
             }
-            else if ( event.Type == SDL_WINDOWEVENT )
+            else if ( event.Type == EventType::WindowEvent )
             {
-                if ( event.Window.Event == SDL_WINDOWEVENT_RESIZED || event.Window.Event == SDL_WINDOWEVENT_SIZE_CHANGED )
+                if ( event.Window.Event == WindowEventType::Resized || event.Window.Event == WindowEventType::SizeChanged )
                 {
                     const uint32_t newWidth  = event.Window.Data1;
                     const uint32_t newHeight = event.Window.Data2;

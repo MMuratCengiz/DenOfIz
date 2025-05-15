@@ -23,7 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class Window;
     struct DZ_API CommonEventData
     {
         uint32_t Timestamp;
@@ -33,10 +32,10 @@ namespace DenOfIz
     struct DZ_API KeyboardEventData
     {
         CommonEventData Common;
-        uint32_t        State;
+        KeyState        State;
         uint32_t        Repeat;
         KeyCode         Keycode;
-        uint16_t        Mod;
+        BitSet<KeyMod>  Mod;
         uint32_t        Scancode;
     };
 
@@ -54,23 +53,71 @@ namespace DenOfIz
         char            Text[ 32 ];
     };
 
+    struct DZ_API MouseButtonState
+    {
+        bool LeftButton   = false;
+        bool MiddleButton = false;
+        bool RightButton  = false;
+        bool X1Button     = false;
+        bool X2Button     = false;
+
+#ifdef WINDOW_MANAGER_SDL
+        static MouseButtonState FromSDLButtonState( const uint32_t state )
+        {
+            MouseButtonState result;
+            result.LeftButton   = ( state & SDL_BUTTON_LMASK ) != 0;
+            result.MiddleButton = ( state & SDL_BUTTON_MMASK ) != 0;
+            result.RightButton  = ( state & SDL_BUTTON_RMASK ) != 0;
+            result.X1Button     = ( state & SDL_BUTTON_X1MASK ) != 0;
+            result.X2Button     = ( state & SDL_BUTTON_X2MASK ) != 0;
+            return result;
+        }
+
+        uint32_t ToSDLButtonState( ) const
+        {
+            uint32_t state = 0;
+            if ( LeftButton )
+            {
+                state |= SDL_BUTTON_LMASK;
+            }
+            if ( MiddleButton )
+            {
+                state |= SDL_BUTTON_MMASK;
+            }
+            if ( RightButton )
+            {
+                state |= SDL_BUTTON_RMASK;
+            }
+            if ( X1Button )
+            {
+                state |= SDL_BUTTON_X1MASK;
+            }
+            if ( X2Button )
+            {
+                state |= SDL_BUTTON_X2MASK;
+            }
+            return state;
+        }
+#endif
+    };
+
     struct DZ_API MouseMotionEventData
     {
-        CommonEventData Common;
-        uint32_t        MouseID;
-        uint32_t        State;
-        int32_t         X;
-        int32_t         Y;
-        int32_t         RelX;
-        int32_t         RelY;
+        CommonEventData  Common;
+        uint32_t         MouseID;
+        MouseButtonState Buttons;
+        int32_t          X;
+        int32_t          Y;
+        int32_t          RelX;
+        int32_t          RelY;
     };
 
     struct DZ_API MouseButtonEventData
     {
         CommonEventData Common;
         uint32_t        MouseID;
-        uint32_t        Button;
-        uint32_t        State;
+        MouseButton     Button;
+        KeyState        State;
         uint32_t        Clicks;
         int32_t         X;
         int32_t         Y;
@@ -78,17 +125,17 @@ namespace DenOfIz
 
     struct DZ_API MouseWheelEventData
     {
-        CommonEventData Common;
-        uint32_t        MouseID;
-        int32_t         X;
-        int32_t         Y;
-        uint32_t        Direction;
+        CommonEventData     Common;
+        uint32_t            MouseID;
+        int32_t             X;
+        int32_t             Y;
+        MouseWheelDirection Direction;
     };
 
     struct DZ_API WindowEventData
     {
         CommonEventData Common;
-        uint32_t        Event;
+        WindowEventType Event;
         int32_t         Data1;
         int32_t         Data2;
     };
@@ -97,16 +144,16 @@ namespace DenOfIz
     {
         CommonEventData Common;
         uint32_t        JoystickID;
-        uint8_t         Axis;
+        ControllerAxis  Axis;
         int16_t         Value;
     };
 
     struct DZ_API ControllerButtonEventData
     {
-        CommonEventData Common;
-        uint32_t        JoystickID;
-        uint8_t         Button;
-        uint8_t         State;
+        CommonEventData  Common;
+        uint32_t         JoystickID;
+        ControllerButton Button;
+        KeyState         State;
     };
 
     struct DZ_API ControllerDeviceEventData
@@ -122,7 +169,7 @@ namespace DenOfIz
 
     struct DZ_API Event
     {
-        uint32_t Type;
+        EventType Type;
 
         union
         {
@@ -139,6 +186,11 @@ namespace DenOfIz
             ControllerDeviceEventData ControllerDevice;
             QuitEventData             Quit;
         };
+
+        Event( ) : Type( EventType::None )
+        {
+            memset( &Common, 0, sizeof( Common ) );
+        }
     };
 
 } // namespace DenOfIz

@@ -147,6 +147,7 @@ using namespace DirectX;
 %ignore DenOfIz::BitSet::Any;
 
 %ignore DenOfIz::Window::GetSDLWindow;
+%ignore DenOfIz::InputSystem::GetSDLInputSystem;
 %ignore DenOfIz::Time::OnEachSecond;
 %ignore DenOfIz::StepTimer::OnEachSecond;
 %ignore DenOfIz::Font::MsdfPixelRange;
@@ -279,11 +280,13 @@ typedef DenOfIz::BitSet<DenOfIz::ResourceUsage> ResourceUsageBitSet;
 typedef DenOfIz::BitSet<DenOfIz::BuildDesc> BuildDescBitSet;
 typedef DenOfIz::BitSet<DenOfIz::ResourceDescriptor> ResourceDescriptorBitSet;
 typedef DenOfIz::BitSet<DenOfIz::ASBuildFlags> ASBuildFlagsBitSet;
+typedef DenOfIz::BitSet<DenOfIz::KeyMod> KeyModBitSet;
 // Instantiations
 %template(ResourceUsageBitSet) DenOfIz::BitSet<DenOfIz::ResourceUsage>;
 %template(BuildDescBitSet) DenOfIz::BitSet<DenOfIz::BuildDesc>;
 %template(ResourceDescriptorBitSet) DenOfIz::BitSet<DenOfIz::ResourceDescriptor>;
 %template(ASBuildFlagsBitSet) DenOfIz::BitSet<DenOfIz::ASBuildFlags>;
+%template(KeyModBitSet) DenOfIz::BitSet<DenOfIz::KeyMod>;
 // --
 
 // -- Interop Array definitons

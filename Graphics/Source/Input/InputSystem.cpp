@@ -83,10 +83,10 @@ void InputSystem::PumpEvents( )
 #endif
 }
 
-void InputSystem::FlushEvents( const uint32_t minType, const uint32_t maxType )
+void InputSystem::FlushEvents( const EventType minType, const EventType maxType )
 {
 #ifdef WINDOW_MANAGER_SDL
-    SDL_FlushEvents( minType, maxType );
+    SDL_FlushEvents( static_cast<uint32_t>( minType ), static_cast<uint32_t>( maxType ) );
 #endif
 }
 
@@ -94,18 +94,18 @@ void InputSystem::PushEvent( const Event &event )
 {
 #ifdef WINDOW_MANAGER_SDL
     SDL_Event sdlEvent = { };
-    sdlEvent.type      = event.Type;
+    sdlEvent.type      = static_cast<uint32_t>( event.Type );
 
-    switch ( static_cast<EventType>( event.Type ) )
+    switch ( event.Type )
     {
     case EventType::KeyDown:
     case EventType::KeyUp:
         sdlEvent.key.timestamp       = event.Key.Common.Timestamp;
         sdlEvent.key.windowID        = event.Key.Common.WindowID;
-        sdlEvent.key.state           = event.Key.State;
+        sdlEvent.key.state           = event.Key.State == KeyState::Pressed ? 1 : 0;
         sdlEvent.key.repeat          = event.Key.Repeat;
         sdlEvent.key.keysym.sym      = static_cast<SDL_Keycode>( event.Key.Keycode );
-        sdlEvent.key.keysym.mod      = event.Key.Mod;
+        sdlEvent.key.keysym.mod      = event.Key.Mod.Value( );
         sdlEvent.key.keysym.scancode = static_cast<SDL_Scancode>( event.Key.Scancode );
         break;
 
@@ -113,7 +113,7 @@ void InputSystem::PushEvent( const Event &event )
         sdlEvent.motion.timestamp = event.Motion.Common.Timestamp;
         sdlEvent.motion.windowID  = event.Motion.Common.WindowID;
         sdlEvent.motion.which     = event.Motion.MouseID;
-        sdlEvent.motion.state     = event.Motion.State;
+        sdlEvent.motion.state     = event.Motion.Buttons.ToSDLButtonState( );
         sdlEvent.motion.x         = event.Motion.X;
         sdlEvent.motion.y         = event.Motion.Y;
         sdlEvent.motion.xrel      = event.Motion.RelX;
@@ -125,18 +125,49 @@ void InputSystem::PushEvent( const Event &event )
         sdlEvent.button.timestamp = event.Button.Common.Timestamp;
         sdlEvent.button.windowID  = event.Button.Common.WindowID;
         sdlEvent.button.which     = event.Button.MouseID;
-        sdlEvent.button.button    = event.Button.Button;
-        sdlEvent.button.state     = event.Button.State;
+        sdlEvent.button.button    = static_cast<uint8_t>( event.Button.Button );
+        sdlEvent.button.state     = event.Button.State == KeyState::Pressed ? 1 : 0;
         sdlEvent.button.clicks    = event.Button.Clicks;
         sdlEvent.button.x         = event.Button.X;
         sdlEvent.button.y         = event.Button.Y;
+        break;
+
+    case EventType::MouseWheel:
+        sdlEvent.wheel.timestamp = event.Wheel.Common.Timestamp;
+        sdlEvent.wheel.windowID  = event.Wheel.Common.WindowID;
+        sdlEvent.wheel.which     = event.Wheel.MouseID;
+        sdlEvent.wheel.x         = event.Wheel.X;
+        sdlEvent.wheel.y         = event.Wheel.Y;
+        sdlEvent.wheel.direction = static_cast<uint32_t>( event.Wheel.Direction );
+        break;
+
+    case EventType::WindowEvent:
+        sdlEvent.window.timestamp = event.Window.Common.Timestamp;
+        sdlEvent.window.windowID  = event.Window.Common.WindowID;
+        sdlEvent.window.event     = static_cast<uint8_t>( event.Window.Event );
+        sdlEvent.window.data1     = event.Window.Data1;
+        sdlEvent.window.data2     = event.Window.Data2;
+        break;
+
+    case EventType::ControllerAxisMotion:
+        sdlEvent.caxis.timestamp = event.ControllerAxis.Common.Timestamp;
+        sdlEvent.caxis.which     = event.ControllerAxis.JoystickID;
+        sdlEvent.caxis.axis      = static_cast<uint8_t>( event.ControllerAxis.Axis );
+        sdlEvent.caxis.value     = event.ControllerAxis.Value;
+        break;
+
+    case EventType::ControllerButtonDown:
+    case EventType::ControllerButtonUp:
+        sdlEvent.cbutton.timestamp = event.ControllerButton.Common.Timestamp;
+        sdlEvent.cbutton.which     = event.ControllerButton.JoystickID;
+        sdlEvent.cbutton.button    = static_cast<uint8_t>( event.ControllerButton.Button );
+        sdlEvent.cbutton.state     = event.ControllerButton.State == KeyState::Pressed ? 1 : 0;
         break;
 
     case EventType::Quit:
         sdlEvent.quit.timestamp = event.Quit.Common.Timestamp;
         break;
 
-    // Add more cases as needed
     default:
         // For types that haven't been implemented, don't push the event
         return;
@@ -163,21 +194,20 @@ bool InputSystem::IsKeyPressed( const KeyCode key )
     return GetKeyState( key ) == KeyState::Pressed;
 }
 
-KeyModifiers InputSystem::GetModState( )
+BitSet<KeyMod> InputSystem::GetModState( )
 {
-    KeyModifiers modifiers;
 #ifdef WINDOW_MANAGER_SDL
     const uint16_t sdlMods = SDL_GetModState( );
-    modifiers.FromSDLKeymod( sdlMods );
+    return ConvertKeyMod( static_cast<SDL_Keymod>( sdlMods ) );
+#else
+    return BitSet( );
 #endif
-    return modifiers;
 }
 
-void InputSystem::SetModState( const KeyModifiers &modifiers )
+void InputSystem::SetModState( const BitSet<KeyMod> &modifiers )
 {
 #ifdef WINDOW_MANAGER_SDL
-    uint16_t sdlMods = modifiers.ToSDLKeymod( );
-    SDL_SetModState( static_cast<SDL_Keymod>( sdlMods ) );
+    SDL_SetModState( ConvertToSdlKeyMod( modifiers ) );
 #endif
 }
 
@@ -212,7 +242,7 @@ InteropString InputSystem::GetScancodeName( const uint32_t scancode )
 #ifdef WINDOW_MANAGER_SDL
 void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outEvent )
 {
-    outEvent.Type = sdlEvent.type;
+    outEvent.Type = static_cast<EventType>( sdlEvent.type );
 
     switch ( sdlEvent.type )
     {
@@ -220,10 +250,10 @@ void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outE
     case SDL_KEYUP:
         outEvent.Key.Common.Timestamp = sdlEvent.key.timestamp;
         outEvent.Key.Common.WindowID  = sdlEvent.key.windowID;
-        outEvent.Key.State            = sdlEvent.key.state;
+        outEvent.Key.State            = sdlEvent.key.state ? KeyState::Pressed : KeyState::Released;
         outEvent.Key.Repeat           = sdlEvent.key.repeat;
         outEvent.Key.Keycode          = static_cast<KeyCode>( sdlEvent.key.keysym.sym );
-        outEvent.Key.Mod              = sdlEvent.key.keysym.mod;
+        outEvent.Key.Mod              = ConvertKeyMod( static_cast<SDL_Keymod>( sdlEvent.key.keysym.mod ) );
         outEvent.Key.Scancode         = sdlEvent.key.keysym.scancode;
         break;
 
@@ -245,7 +275,7 @@ void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outE
         outEvent.Motion.Common.Timestamp = sdlEvent.motion.timestamp;
         outEvent.Motion.Common.WindowID  = sdlEvent.motion.windowID;
         outEvent.Motion.MouseID          = sdlEvent.motion.which;
-        outEvent.Motion.State            = sdlEvent.motion.state;
+        outEvent.Motion.Buttons          = MouseButtonState::FromSDLButtonState( sdlEvent.motion.state );
         outEvent.Motion.X                = sdlEvent.motion.x;
         outEvent.Motion.Y                = sdlEvent.motion.y;
         outEvent.Motion.RelX             = sdlEvent.motion.xrel;
@@ -257,8 +287,8 @@ void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outE
         outEvent.Button.Common.Timestamp = sdlEvent.button.timestamp;
         outEvent.Button.Common.WindowID  = sdlEvent.button.windowID;
         outEvent.Button.MouseID          = sdlEvent.button.which;
-        outEvent.Button.Button           = sdlEvent.button.button;
-        outEvent.Button.State            = sdlEvent.button.state;
+        outEvent.Button.Button           = static_cast<MouseButton>( sdlEvent.button.button );
+        outEvent.Button.State            = sdlEvent.button.state ? KeyState::Pressed : KeyState::Released;
         outEvent.Button.Clicks           = sdlEvent.button.clicks;
         outEvent.Button.X                = sdlEvent.button.x;
         outEvent.Button.Y                = sdlEvent.button.y;
@@ -270,13 +300,13 @@ void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outE
         outEvent.Wheel.MouseID          = sdlEvent.wheel.which;
         outEvent.Wheel.X                = sdlEvent.wheel.x;
         outEvent.Wheel.Y                = sdlEvent.wheel.y;
-        outEvent.Wheel.Direction        = sdlEvent.wheel.direction;
+        outEvent.Wheel.Direction        = static_cast<MouseWheelDirection>( sdlEvent.wheel.direction );
         break;
 
     case SDL_WINDOWEVENT:
         outEvent.Window.Common.Timestamp = sdlEvent.window.timestamp;
         outEvent.Window.Common.WindowID  = sdlEvent.window.windowID;
-        outEvent.Window.Event            = sdlEvent.window.event;
+        outEvent.Window.Event            = static_cast<WindowEventType>( sdlEvent.window.event );
         outEvent.Window.Data1            = sdlEvent.window.data1;
         outEvent.Window.Data2            = sdlEvent.window.data2;
         break;
@@ -285,7 +315,7 @@ void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outE
         outEvent.ControllerAxis.Common.Timestamp = sdlEvent.caxis.timestamp;
         outEvent.ControllerAxis.Common.WindowID  = 0; // SDL doesn't provide window ID for controller events
         outEvent.ControllerAxis.JoystickID       = sdlEvent.caxis.which;
-        outEvent.ControllerAxis.Axis             = sdlEvent.caxis.axis;
+        outEvent.ControllerAxis.Axis             = static_cast<ControllerAxis>( sdlEvent.caxis.axis );
         outEvent.ControllerAxis.Value            = sdlEvent.caxis.value;
         break;
 
@@ -294,8 +324,8 @@ void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outE
         outEvent.ControllerButton.Common.Timestamp = sdlEvent.cbutton.timestamp;
         outEvent.ControllerButton.Common.WindowID  = 0; // SDL doesn't provide window ID for controller events
         outEvent.ControllerButton.JoystickID       = sdlEvent.cbutton.which;
-        outEvent.ControllerButton.Button           = sdlEvent.cbutton.button;
-        outEvent.ControllerButton.State            = sdlEvent.cbutton.state;
+        outEvent.ControllerButton.Button           = static_cast<ControllerButton>( sdlEvent.cbutton.button );
+        outEvent.ControllerButton.State            = sdlEvent.cbutton.state ? KeyState::Pressed : KeyState::Released;
         break;
 
     case SDL_CONTROLLERDEVICEADDED:
@@ -313,6 +343,140 @@ void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outE
     default:
         break;
     }
+}
+
+BitSet<KeyMod> InputSystem::ConvertKeyMod( const SDL_Keymod sdlMods )
+{
+    BitSet result = KeyMod::None;
+#ifdef WINDOW_MANAGER_SDL
+    if ( sdlMods & KMOD_LSHIFT )
+    {
+        result.Set( KeyMod::LShift );
+    }
+    if ( sdlMods & KMOD_RSHIFT )
+    {
+        result.Set( KeyMod::RShift );
+    }
+    if ( sdlMods & KMOD_LCTRL )
+    {
+        result.Set( KeyMod::LCtrl );
+    }
+    if ( sdlMods & KMOD_RCTRL )
+    {
+        result.Set( KeyMod::RCtrl );
+    }
+    if ( sdlMods & KMOD_LALT )
+    {
+        result.Set( KeyMod::LAlt );
+    }
+    if ( sdlMods & KMOD_RALT )
+    {
+        result.Set( KeyMod::RAlt );
+    }
+    if ( sdlMods & KMOD_LGUI )
+    {
+        result.Set( KeyMod::LGui );
+    }
+    if ( sdlMods & KMOD_RGUI )
+    {
+        result.Set( KeyMod::RGui );
+    }
+    if ( sdlMods & KMOD_NUM )
+    {
+        result.Set( KeyMod::NumLock );
+    }
+    if ( sdlMods & KMOD_CAPS )
+    {
+        result.Set( KeyMod::CapsLock );
+    }
+    if ( sdlMods & KMOD_MODE )
+    {
+        result.Set( KeyMod::AltGr );
+    }
+    if ( sdlMods & KMOD_SHIFT )
+    {
+        result.Set( KeyMod::Shift );
+    }
+    if ( sdlMods & KMOD_CTRL )
+    {
+        result.Set( KeyMod::Ctrl );
+    }
+    if ( sdlMods & KMOD_ALT )
+    {
+        result.Set( KeyMod::Alt );
+    }
+    if ( sdlMods & KMOD_GUI )
+    {
+        result.Set( KeyMod::Gui );
+    }
+#endif
+    return result;
+}
+
+SDL_Keymod InputSystem::ConvertToSdlKeyMod( const BitSet<KeyMod> &modifiers )
+{
+    uint16_t sdlMods = 0;
+    if ( modifiers.IsSet( KeyMod::LShift ) )
+    {
+        sdlMods |= KMOD_LSHIFT;
+    }
+    if ( modifiers.IsSet( KeyMod::RShift ) )
+    {
+        sdlMods |= KMOD_RSHIFT;
+    }
+    if ( modifiers.IsSet( KeyMod::LCtrl ) )
+    {
+        sdlMods |= KMOD_LCTRL;
+    }
+    if ( modifiers.IsSet( KeyMod::RCtrl ) )
+    {
+        sdlMods |= KMOD_RCTRL;
+    }
+    if ( modifiers.IsSet( KeyMod::LAlt ) )
+    {
+        sdlMods |= KMOD_LALT;
+    }
+    if ( modifiers.IsSet( KeyMod::RAlt ) )
+    {
+        sdlMods |= KMOD_RALT;
+    }
+    if ( modifiers.IsSet( KeyMod::LGui ) )
+    {
+        sdlMods |= KMOD_LGUI;
+    }
+    if ( modifiers.IsSet( KeyMod::RGui ) )
+    {
+        sdlMods |= KMOD_RGUI;
+    }
+    if ( modifiers.IsSet( KeyMod::NumLock ) )
+    {
+        sdlMods |= KMOD_NUM;
+    }
+    if ( modifiers.IsSet( KeyMod::CapsLock ) )
+    {
+        sdlMods |= KMOD_CAPS;
+    }
+    if ( modifiers.IsSet( KeyMod::AltGr ) )
+    {
+        sdlMods |= KMOD_MODE;
+    }
+    if ( modifiers.IsSet( KeyMod::Shift ) )
+    {
+        sdlMods |= KMOD_SHIFT;
+    }
+    if ( modifiers.IsSet( KeyMod::Ctrl ) )
+    {
+        sdlMods |= KMOD_CTRL;
+    }
+    if ( modifiers.IsSet( KeyMod::Alt ) )
+    {
+        sdlMods |= KMOD_ALT;
+    }
+    if ( modifiers.IsSet( KeyMod::Gui ) )
+    {
+        sdlMods |= KMOD_GUI;
+    }
+    return static_cast<SDL_Keymod>( sdlMods );
 }
 #endif
 

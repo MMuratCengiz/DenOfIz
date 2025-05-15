@@ -18,12 +18,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzGraphics/Utilities/BitSet.h>
 #include <DenOfIzGraphics/Utilities/Engine.h>
 #include <DenOfIzGraphics/Utilities/Interop.h>
 
-// A full map of SDL2, TODO this is probably not very SWIG compatible
+// A full map of SDL2
 namespace DenOfIz
 {
+    enum class DZ_API KeyMod
+    {
+        None     = 1 << 0,
+        LShift   = 1 << 1,
+        RShift   = 1 << 2,
+        LCtrl    = 1 << 3,
+        RCtrl    = 1 << 4,
+        LAlt     = 1 << 5,
+        RAlt     = 1 << 6,
+        LGui     = 1 << 7,
+        RGui     = 1 << 8,
+        NumLock  = 1 << 9,
+        CapsLock = 1 << 10,
+        AltGr    = 1 << 11,
+        Shift    = 1 << 12,
+        Ctrl     = 1 << 13,
+        Alt      = 1 << 14,
+        Gui      = 1 << 15
+    };
+    template class DZ_API BitSet<KeyMod>;
+
     enum class DZ_API KeyCode
     {
         Unknown = 0,
@@ -71,33 +93,32 @@ namespace DenOfIz
         Question  = '?',
         At        = '@',
 
-        // Uppercase letters
-        A = 'A',
-        B = 'B',
-        C = 'C',
-        D = 'D',
-        E = 'E',
-        F = 'F',
-        G = 'G',
-        H = 'H',
-        I = 'I',
-        J = 'J',
-        K = 'K',
-        L = 'L',
-        M = 'M',
-        N = 'N',
-        O = 'O',
-        P = 'P',
-        Q = 'Q',
-        R = 'R',
-        S = 'S',
-        T = 'T',
-        U = 'U',
-        V = 'V',
-        W = 'W',
-        X = 'X',
-        Y = 'Y',
-        Z = 'Z',
+        A = 'a',
+        B = 'b',
+        C = 'c',
+        D = 'd',
+        E = 'e',
+        F = 'f',
+        G = 'g',
+        H = 'h',
+        I = 'i',
+        J = 'j',
+        K = 'k',
+        L = 'l',
+        M = 'm',
+        N = 'n',
+        O = 'o',
+        P = 'p',
+        Q = 'q',
+        R = 'r',
+        S = 's',
+        T = 't',
+        U = 'u',
+        V = 'v',
+        W = 'w',
+        X = 'x',
+        Y = 'y',
+        Z = 'z',
 
         // Brackets and misc
         LeftBracket  = '[',

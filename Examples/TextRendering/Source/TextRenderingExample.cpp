@@ -258,7 +258,7 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
 
 void TextRenderingExample::HandleEvent( Event &event )
 {
-    if ( event.Type == SDL_KEYDOWN && event.Key.Keycode == KeyCode::Down )
+    if ( event.Type == EventType::KeyDown && event.Key.Keycode == KeyCode::Down )
     {
         m_currentAAModeIndex = ( m_currentAAModeIndex + 1 ) % 3;
         m_textRenderer->SetAntiAliasingMode( static_cast<AntiAliasingMode>( m_currentAAModeIndex ) );
@@ -266,7 +266,7 @@ void TextRenderingExample::HandleEvent( Event &event )
         const char *modeNames[] = { "None", "Grayscale", "Subpixel" };
         LOG( INFO ) << "Switched to antialiasing mode: " << modeNames[ m_currentAAModeIndex ];
     }
-    else if ( event.Type == SDL_KEYDOWN && event.Key.Keycode == KeyCode::F1 )
+    else if ( event.Type == EventType::KeyDown && event.Key.Keycode == KeyCode::F1 )
     {
         m_debugInfoEnabled = !m_debugInfoEnabled;
         if ( m_debugRenderer )

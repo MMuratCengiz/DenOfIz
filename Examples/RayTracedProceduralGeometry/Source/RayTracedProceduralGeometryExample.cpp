@@ -90,9 +90,9 @@ void RayTracedProceduralGeometryExample::BuildProceduralGeometryAABBs( )
 
 void RayTracedProceduralGeometryExample::HandleEvent( Event &event )
 {
-    switch ( event.Key.Keycode )
+    switch ( event.Type )
     {
-    case SDL_KEYDOWN:
+    case EventType::KeyDown:
         {
             switch ( event.Key.Keycode )
             {

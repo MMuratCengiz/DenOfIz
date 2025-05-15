@@ -53,7 +53,7 @@ public class Example {
     private class MyKeyboardCallback extends KeyboardEventCallback {
         @Override
         public void execute(KeyboardEventData data) {
-            if (data.getKeycode() == KeyCode.Escape && data.getState() == KeyState.Pressed.swigValue() /*todo fix naming*/) {
+            if (data.getKeycode() == KeyCode.Escape && data.getState() == KeyState.Pressed) {
                 running = false;
             }
         }

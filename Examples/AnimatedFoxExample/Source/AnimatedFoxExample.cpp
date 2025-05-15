@@ -381,7 +381,7 @@ void AnimatedFoxExample::HandleEvent( Event &event )
 {
     switch ( event.Type )
     {
-    case SDL_KEYDOWN:
+    case EventType::KeyDown:
         {
             switch ( event.Key.Keycode )
             {

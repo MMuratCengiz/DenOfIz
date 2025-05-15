@@ -57,7 +57,7 @@ internal class Program
     {
         public override void Execute(KeyboardEventData data)
         {
-            if (data is { Keycode: KeyCode.Escape, State: (uint)KeyState.Pressed })
+            if (data is { Keycode: KeyCode.Escape, State: KeyState.Pressed })
             {
                 program._running = false;
             }

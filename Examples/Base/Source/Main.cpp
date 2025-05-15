@@ -64,7 +64,7 @@ int DenOfIz::Main( IExample *example )
     {
         while ( InputSystem::PollEvent( event ) )
         {
-            if ( event.Type == SDL_QUIT )
+            if ( event.Type == EventType::Quit )
             {
                 running = false;
             }

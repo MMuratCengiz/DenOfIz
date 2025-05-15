@@ -32,99 +32,6 @@ namespace DenOfIz
         int X;
         int Y;
     };
-    struct DZ_API KeyModifiers
-    {
-        bool None       = true;
-        bool LeftShift  = false;
-        bool RightShift = false;
-        bool LeftCtrl   = false;
-        bool RightCtrl  = false;
-        bool LeftAlt    = false;
-        bool RightAlt   = false;
-        bool LeftGui    = false;
-        bool RightGui   = false;
-        bool NumLock    = false;
-        bool CapsLock   = false;
-        bool AltGr      = false;
-
-        bool Shift = false;
-        bool Ctrl  = false;
-        bool Alt   = false;
-        bool Gui   = false;
-
-#ifdef WINDOW_MANAGER_SDL
-        [[nodiscard]] uint16_t ToSDLKeymod( ) const
-        {
-            uint16_t mod = 0;
-            if ( LeftShift )
-            {
-                mod |= KMOD_LSHIFT;
-            }
-            if ( RightShift )
-            {
-                mod |= KMOD_RSHIFT;
-            }
-            if ( LeftCtrl )
-            {
-                mod |= KMOD_LCTRL;
-            }
-            if ( RightCtrl )
-            {
-                mod |= KMOD_RCTRL;
-            }
-            if ( LeftAlt )
-            {
-                mod |= KMOD_LALT;
-            }
-            if ( RightAlt )
-            {
-                mod |= KMOD_RALT;
-            }
-            if ( LeftGui )
-            {
-                mod |= KMOD_LGUI;
-            }
-            if ( RightGui )
-            {
-                mod |= KMOD_RGUI;
-            }
-            if ( NumLock )
-            {
-                mod |= KMOD_NUM;
-            }
-            if ( CapsLock )
-            {
-                mod |= KMOD_CAPS;
-            }
-            if ( AltGr )
-            {
-                mod |= KMOD_MODE;
-            }
-            return mod;
-        }
-
-        void FromSDLKeymod( const uint16_t mod )
-        {
-            None       = ( mod == 0 );
-            LeftShift  = ( mod & KMOD_LSHIFT ) != 0;
-            RightShift = ( mod & KMOD_RSHIFT ) != 0;
-            LeftCtrl   = ( mod & KMOD_LCTRL ) != 0;
-            RightCtrl  = ( mod & KMOD_RCTRL ) != 0;
-            LeftAlt    = ( mod & KMOD_LALT ) != 0;
-            RightAlt   = ( mod & KMOD_RALT ) != 0;
-            LeftGui    = ( mod & KMOD_LGUI ) != 0;
-            RightGui   = ( mod & KMOD_RGUI ) != 0;
-            NumLock    = ( mod & KMOD_NUM ) != 0;
-            CapsLock   = ( mod & KMOD_CAPS ) != 0;
-            AltGr      = ( mod & KMOD_MODE ) != 0;
-
-            Shift = LeftShift || RightShift;
-            Ctrl  = LeftCtrl || RightCtrl;
-            Alt   = LeftAlt || RightAlt;
-            Gui   = LeftGui || RightGui;
-        }
-#endif
-    };
 
     class DZ_API InputSystem
     {
@@ -139,17 +46,17 @@ namespace DenOfIz
         static bool WaitEvent( Event &outEvent );
         static bool WaitEventTimeout( Event &outEvent, int timeout );
         static void PumpEvents( );
-        static void FlushEvents( uint32_t minType, uint32_t maxType );
+        static void FlushEvents( EventType minType, EventType maxType );
         static void PushEvent( const Event &event );
 
         // Keyboard
-        static KeyState      GetKeyState( KeyCode key );
-        static bool          IsKeyPressed( KeyCode key );
-        static KeyModifiers  GetModState( );
-        static void          SetModState( const KeyModifiers &modifiers );
-        static KeyCode       GetKeyFromName( const InteropString &name );
-        static InteropString GetKeyName( KeyCode key );
-        static InteropString GetScancodeName( uint32_t scancode );
+        static KeyState       GetKeyState( KeyCode key );
+        static bool           IsKeyPressed( KeyCode key );
+        static BitSet<KeyMod> GetModState( );
+        static void           SetModState( const BitSet<KeyMod> &modifiers );
+        static KeyCode        GetKeyFromName( const InteropString &name );
+        static InteropString  GetKeyName( KeyCode key );
+        static InteropString  GetScancodeName( uint32_t scancode );
 
         // Mouse
         static MouseCoords GetMouseState( );
@@ -179,10 +86,13 @@ namespace DenOfIz
         [[nodiscard]] int16_t                  GetControllerAxisValue( int playerIndex, ControllerAxis axis ) const;
         [[nodiscard]] InteropString            GetControllerName( int playerIndex ) const;
         [[nodiscard]] bool                     SetControllerRumble( int playerIndex, uint16_t lowFrequency, uint16_t highFrequency, uint32_t durationMs ) const;
+
     private:
 #ifdef WINDOW_MANAGER_SDL
         static void ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outEvent );
 #endif
+        static BitSet<KeyMod> ConvertKeyMod( SDL_Keymod sdlMods );
+        static SDL_Keymod     ConvertToSdlKeyMod( const BitSet<KeyMod> &modifiers );
     };
 
 } // namespace DenOfIz
