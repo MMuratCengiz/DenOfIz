@@ -89,7 +89,7 @@ void RayTracedTriangleExample::Render( const uint32_t frameIndex, ICommandList *
     commandList->End( );
 }
 
-void RayTracedTriangleExample::HandleEvent( SDL_Event &event )
+void RayTracedTriangleExample::HandleEvent( Event &event )
 {
     m_worldData.Camera->HandleEvent( event );
     IExample::HandleEvent( event );

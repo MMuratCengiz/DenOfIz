@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 #include <DirectXMath.h>
+#include "DenOfIzGraphics/Input/Event.h"
 #include "Interop.h"
 
 class Camera
@@ -39,7 +40,7 @@ public:
     [[nodiscard]] DZ_EXAMPLES_API DirectX::XMVECTOR Position( ) const;
     [[nodiscard]] DZ_EXAMPLES_API DirectX::XMMATRIX ViewProjectionMatrix( ) const;
 
-    DZ_EXAMPLES_API void HandleEvent( const SDL_Event &event );
+    DZ_EXAMPLES_API void HandleEvent( const DenOfIz::Event &event );
     void                 SetPosition( const DirectX::XMVECTOR &position );
     void                 SetFront( const DirectX::XMVECTOR &front );
     DZ_EXAMPLES_API void SetAspectRatio( float aspectRatio );

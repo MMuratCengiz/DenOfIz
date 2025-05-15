@@ -21,6 +21,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
 #include <DenOfIzGraphics/Backends/GraphicsApi.h>
 
+#include "DenOfIzGraphics/Input/InputSystem.h"
+#include "DenOfIzGraphics/Input/Window.h"
+
 int DenOfIz::Main( IExample *example )
 {
     Engine::Init( );
@@ -34,29 +37,17 @@ int DenOfIz::Main( IExample *example )
         LOG( FATAL ) << "SDL_Init failed: " << SDL_GetError( );
     }
 
-    uint32_t windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_INPUT_FOCUS;
-    // SDL_SetRelativeMouseMode( SDL_TRUE );
-    // SDL_SetHint( SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1" );
-    // SDL_SetHint( SDL_HINT_MOUSE_RELATIVE_MODE_CENTER, "1" );
+    const auto exampleWindowDesc = example->WindowDesc( );
 
-#ifdef BUILD_VK
-    windowFlags |= SDL_WINDOW_VULKAN;
-#endif
+    WindowDesc windowDesc{ };
+    windowDesc.Width    = exampleWindowDesc.Width;
+    windowDesc.Height   = exampleWindowDesc.Height;
+    windowDesc.Position = WindowPosition::Centered;
+    Window window( windowDesc );
 
-#if __APPLE__
-    windowFlags |= SDL_WINDOW_METAL;
-#endif
+    window.SetResizable( exampleWindowDesc.Resizable );
 
-    const auto windowDesc = example->WindowDesc( );
-    if ( windowDesc.Resizable )
-    {
-        windowFlags |= SDL_WINDOW_RESIZABLE;
-    }
-    const auto window = SDL_CreateWindow( windowDesc.Title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowDesc.Width, windowDesc.Height, windowFlags );
-    SDL_WarpMouseInWindow( window, windowDesc.Width / 2, windowDesc.Height / 2 );
-
-    const auto windowHandle = std::make_unique<GraphicsWindowHandle>( );
-    windowHandle->CreateFromSDLWindow( window );
+    auto          graphicsWindowHandle = window.GetGraphicsWindowHandle( );
     APIPreference apiPreferences;
     apiPreferences.Windows = APIPreferenceWindows::DirectX12;
     apiPreferences.Linux   = APIPreferenceLinux::Vulkan;
@@ -65,17 +56,15 @@ int DenOfIz::Main( IExample *example )
     const auto gApi          = std::make_unique<GraphicsApi>( apiPreferences );
     auto       logicalDevice = std::unique_ptr<ILogicalDevice>( gApi->CreateAndLoadOptimalLogicalDevice( ) );
 
-    GraphicsWindowHandle graphicsWindowHandle{ };
-    graphicsWindowHandle.CreateFromSDLWindow( window );
-
     example->Init( &graphicsWindowHandle, gApi.get( ), logicalDevice.get( ) );
     auto      running = true;
-    SDL_Event event;
+    Event event;
+    InputSystem inputSystem{};
     while ( running )
     {
-        while ( SDL_PollEvent( &event ) )
+        while ( InputSystem::PollEvent( event ) )
         {
-            if ( event.type == SDL_QUIT )
+            if ( event.Type == SDL_QUIT )
             {
                 running = false;
             }
@@ -92,8 +81,5 @@ int DenOfIz::Main( IExample *example )
     delete example;
     logicalDevice.reset( );
     GraphicsApi::ReportLiveObjects( );
-
-    SDL_DestroyWindow( window );
-    SDL_Quit( );
     return 0;
 }

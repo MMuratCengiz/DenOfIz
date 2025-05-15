@@ -177,7 +177,7 @@ void TransparencyExample::Update( )
     RenderAndPresentFrame( );
 }
 
-void TransparencyExample::HandleEvent( SDL_Event &event )
+void TransparencyExample::HandleEvent( Event &event )
 {
     IExample::HandleEvent( event );
     m_camera->HandleEvent( event );

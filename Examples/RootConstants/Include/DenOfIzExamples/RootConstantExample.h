@@ -37,7 +37,7 @@ namespace DenOfIz
         ~RootConstantExample( ) override = default;
         void              Init( ) override;
         void              ModifyApiPreferences( APIPreference &defaultApiPreference ) override;
-        void              HandleEvent( SDL_Event &event ) override;
+        void              HandleEvent( Event &event ) override;
         void              Update( ) override;
         void              Quit( ) override;
         void              Render( uint32_t frameIndex, ICommandList *commandList ) override;

@@ -134,6 +134,9 @@ namespace DenOfIz
             {
                 flags |= SDL_WINDOW_POPUP_MENU;
             }
+#ifdef BUILD_METAL
+            flags |= SDL_WINDOW_METAL;
+#endif
 #ifdef BUILD_VK
             flags |= SDL_WINDOW_VULKAN;
 #endif
@@ -199,7 +202,6 @@ namespace DenOfIz
     {
         WindowDesc           m_properties{ };
         GraphicsWindowHandle m_windowHandle{ };
-        bool                 m_initialized;
         uint32_t             m_windowID;
 
 #ifdef WINDOW_MANAGER_SDL
@@ -207,14 +209,10 @@ namespace DenOfIz
 #endif
 
     public:
-        DZ_API Window( );
         DZ_API explicit Window( const WindowDesc &properties );
         DZ_API ~Window( );
-
-        DZ_API void Create( const WindowDesc &properties );
         DZ_API void Destroy( );
 
-        // Window control functions
         DZ_API void Show( ) const;
         DZ_API void Hide( ) const;
         DZ_API void Minimize( ) const;
@@ -237,14 +235,10 @@ namespace DenOfIz
         DZ_API void                               SetMinimumSize( int minWidth, int minHeight ) const;
         DZ_API void                               SetMaximumSize( int maxWidth, int maxHeight ) const;
         DZ_API [[nodiscard]] bool                 IsShown( ) const;
-        DZ_API [[nodiscard]] bool                 IsInitialized( ) const;
 
 #ifdef WINDOW_MANAGER_SDL
         [[nodiscard]] SDL_Window *GetSDLWindow( ) const;
 #endif
-    private:
-        static void InitializeSDL( );
-        static bool s_sdlInitialized;
     };
 
 } // namespace DenOfIz

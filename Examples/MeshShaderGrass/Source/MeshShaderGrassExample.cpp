@@ -123,13 +123,13 @@ void MeshShaderGrassExample::Render( uint32_t frameIndex, ICommandList *commandL
     commandList->End( );
 }
 
-void MeshShaderGrassExample::HandleEvent( SDL_Event &event )
+void MeshShaderGrassExample::HandleEvent( Event &event )
 {
-    switch ( event.type )
+    switch ( event.Type )
     {
     case SDL_KEYDOWN:
         {
-            switch ( event.key.keysym.sym )
+            switch ( event.Key.Keycode )
             {
             case SDLK_RETURN:
                 m_animateWind = !m_animateWind;

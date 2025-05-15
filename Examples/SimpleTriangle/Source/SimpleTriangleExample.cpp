@@ -95,7 +95,7 @@ void SimpleTriangleExample::Render( const uint32_t frameIndex, ICommandList *com
     commandList->End( );
 }
 
-void SimpleTriangleExample::HandleEvent( SDL_Event &event )
+void SimpleTriangleExample::HandleEvent( Event &event )
 {
     m_worldData.Camera->HandleEvent( event );
     IExample::HandleEvent( event );

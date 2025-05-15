@@ -164,7 +164,7 @@ void RenderTargetExample::Update( )
     Present( frameIndex );
 }
 
-void RenderTargetExample::HandleEvent( SDL_Event &event )
+void RenderTargetExample::HandleEvent( Event &event )
 {
     m_worldData.Camera->HandleEvent( event );
     IExample::HandleEvent( event );

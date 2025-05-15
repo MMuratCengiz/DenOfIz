@@ -88,15 +88,15 @@ void RayTracedProceduralGeometryExample::BuildProceduralGeometryAABBs( )
     }
 }
 
-void RayTracedProceduralGeometryExample::HandleEvent( SDL_Event &event )
+void RayTracedProceduralGeometryExample::HandleEvent( Event &event )
 {
-    switch ( event.type )
+    switch ( event.Key.Keycode )
     {
     case SDL_KEYDOWN:
         {
-            switch ( event.key.keysym.sym )
+            switch ( event.Key.Keycode )
             {
-            case SDLK_g:
+            case KeyCode::G:
                 m_animateGeometry = !m_animateGeometry;
                 break;
             default:;

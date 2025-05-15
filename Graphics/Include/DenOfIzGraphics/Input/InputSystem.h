@@ -18,12 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzGraphics/Backends/Common/SDLInclude.h>
 #include <DenOfIzGraphics/Input/Controller.h>
 #include <DenOfIzGraphics/Input/Event.h>
 #include <DenOfIzGraphics/Input/Window.h>
 #include <DenOfIzGraphics/Utilities/Engine.h>
 #include <DenOfIzGraphics/Utilities/Interop.h>
-#include <DenOfIzGraphics/Backends/Common/SDLInclude.h>
 
 namespace DenOfIz
 {
@@ -128,20 +128,13 @@ namespace DenOfIz
 
     class DZ_API InputSystem
     {
-        bool        m_initialized;
-        static bool s_sdlInitialized;
-
         Controller m_controllers[ 4 ];
-        bool       m_controllerInitialized[ 4 ]{};
+        bool       m_controllerInitialized[ 4 ]{ };
 
     public:
         InputSystem( );
         ~InputSystem( );
 
-        void Initialize( );
-        void Shutdown( );
-
-        // Event handling
         static bool PollEvent( Event &outEvent );
         static bool WaitEvent( Event &outEvent );
         static bool WaitEventTimeout( Event &outEvent, int timeout );
@@ -149,7 +142,7 @@ namespace DenOfIz
         static void FlushEvents( uint32_t minType, uint32_t maxType );
         static void PushEvent( const Event &event );
 
-        // Keyboard functions
+        // Keyboard
         static KeyState      GetKeyState( KeyCode key );
         static bool          IsKeyPressed( KeyCode key );
         static KeyModifiers  GetModState( );
@@ -158,7 +151,7 @@ namespace DenOfIz
         static InteropString GetKeyName( KeyCode key );
         static InteropString GetScancodeName( uint32_t scancode );
 
-        // Mouse functions
+        // Mouse
         static MouseCoords GetMouseState( );
         static MouseCoords GetGlobalMouseState( );
         static uint32_t    GetMouseButtons( );
@@ -170,11 +163,11 @@ namespace DenOfIz
         static void        CaptureMouse( bool enabled );
         static bool        GetMouseFocus( uint32_t windowID );
 
-        // Cursor functions
+        // Cursor
         static void ShowCursor( bool show );
         static bool IsCursorShown( );
 
-        // Controller functions
+        // Controller
         [[nodiscard]] static InteropArray<int> GetConnectedControllerIndices( );
         [[nodiscard]] static int               GetNumControllers( );
         bool                                   OpenController( int playerIndex, int controllerIndex );
@@ -185,13 +178,8 @@ namespace DenOfIz
         [[nodiscard]] bool                     IsControllerButtonPressed( int playerIndex, ControllerButton button ) const;
         [[nodiscard]] int16_t                  GetControllerAxisValue( int playerIndex, ControllerAxis axis ) const;
         [[nodiscard]] InteropString            GetControllerName( int playerIndex ) const;
-        bool                                   SetControllerRumble( int playerIndex, uint16_t lowFrequency, uint16_t highFrequency, uint32_t durationMs ) const;
-
-        [[nodiscard]] bool IsInitialized( ) const;
-
+        [[nodiscard]] bool                     SetControllerRumble( int playerIndex, uint16_t lowFrequency, uint16_t highFrequency, uint32_t durationMs ) const;
     private:
-        static void InitializeSDL( );
-
 #ifdef WINDOW_MANAGER_SDL
         static void ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outEvent );
 #endif

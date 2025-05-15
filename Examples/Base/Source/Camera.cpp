@@ -92,14 +92,14 @@ void Camera::Update( const float deltaTime )
     UpdateViewMatrix( );
 }
 
-void Camera::HandleEvent( const SDL_Event &event )
+void Camera::HandleEvent( const DenOfIz::Event &event )
 {
-    switch ( event.type )
+    switch ( event.Type )
     {
     case SDL_MOUSEMOTION:
         {
-            const int mouseX = event.motion.x;
-            const int mouseY = event.motion.y;
+            const int mouseX = event.Motion.X;
+            const int mouseY = event.Motion.Y;
 
             if ( m_firstMouse )
             {
@@ -150,18 +150,18 @@ void Camera::HandleEvent( const SDL_Event &event )
 
     case SDL_MOUSEWHEEL:
         {
-            const float zoomAmount = event.wheel.y * SCROLL_SENSITIVITY;
+            const float zoomAmount = event.Wheel.Y * SCROLL_SENSITIVITY;
             m_targetPosition       = XMVectorAdd( m_targetPosition, XMVectorScale( m_front, zoomAmount * m_moveSpeed ) );
             break;
         }
 
     case SDL_MOUSEBUTTONDOWN:
         {
-            if ( event.button.button == SDL_BUTTON_RIGHT )
+            if ( event.Button.Button == SDL_BUTTON_RIGHT )
             {
                 SDL_SetRelativeMouseMode( SDL_TRUE );
-                m_lastMouseX = event.button.x;
-                m_lastMouseY = event.button.y;
+                m_lastMouseX = event.Button.X;
+                m_lastMouseY = event.Button.Y;
                 m_firstMouse = true;
             }
             break;
@@ -169,7 +169,7 @@ void Camera::HandleEvent( const SDL_Event &event )
 
     case SDL_MOUSEBUTTONUP:
         {
-            if ( event.button.button == SDL_BUTTON_RIGHT )
+            if ( event.Button.Button == SDL_BUTTON_RIGHT )
             {
                 SDL_SetRelativeMouseMode( SDL_FALSE );
                 m_yaw   = m_targetYaw;
@@ -180,16 +180,16 @@ void Camera::HandleEvent( const SDL_Event &event )
 
     case SDL_KEYDOWN:
         {
-            switch ( event.key.keysym.sym )
+            switch ( event.Key.Keycode )
             {
-            case SDLK_f:
-                if ( event.key.keysym.mod & KMOD_CTRL )
+            case DenOfIz::KeyCode::F:
+                if ( event.Key.Mod & KMOD_CTRL )
                 {
                     ResetCamera( );
                 }
                 break;
-            case SDLK_SPACE:
-                if ( event.key.keysym.mod & KMOD_ALT )
+            case DenOfIz::KeyCode::Space:
+                if ( event.Key.Mod & KMOD_ALT )
                 {
                     m_isOrbiting = !m_isOrbiting;
                 }

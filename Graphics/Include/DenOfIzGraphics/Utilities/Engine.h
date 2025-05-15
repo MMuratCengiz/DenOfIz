@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/FileSystem/FSConfig.h"
 
 #include "glog/logging.h"
+#include "DenOfIzGraphics/Backends/Common/SDLInclude.h"
 
 namespace DenOfIz
 {
@@ -61,6 +62,12 @@ namespace DenOfIz
             {
                 FSConfig::InitDefaults( );
             }
+
+#ifdef WINDOW_MANAGER_SDL
+            SDL_SetMainReady( );
+            SDL_Init( SDL_INIT_VIDEO | SDL_INIT_SENSOR | SDL_INIT_GAMECONTROLLER );
+            std::atexit( SDL_Quit );
+#endif
 
             switch ( desc.LogLevel )
             {

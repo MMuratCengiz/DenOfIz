@@ -21,9 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-bool InputSystem::s_sdlInitialized = false;
-
-InputSystem::InputSystem( ) : m_initialized( false )
+InputSystem::InputSystem( )
 {
     for ( bool &controllerInitialized : m_controllerInitialized )
     {
@@ -33,40 +31,9 @@ InputSystem::InputSystem( ) : m_initialized( false )
 
 InputSystem::~InputSystem( )
 {
-    Shutdown( );
-}
-
-void InputSystem::Initialize( )
-{
-    if ( m_initialized )
+    for ( int i = 0; i < 4; ++i )
     {
-        return;
-    }
-
-    InitializeSDL( );
-    m_initialized = true;
-}
-
-void InputSystem::Shutdown( )
-{
-    if ( m_initialized )
-    {
-        for ( int i = 0; i < 4; ++i )
-        {
-            CloseController( i );
-        }
-
-        m_initialized = false;
-    }
-}
-
-void InputSystem::InitializeSDL( )
-{
-    if ( !s_sdlInitialized )
-    {
-        SDL_SetMainReady( );
-        SDL_Init( SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER );
-        s_sdlInitialized = true;
+        CloseController( i );
     }
 }
 
@@ -570,9 +537,4 @@ bool InputSystem::SetControllerRumble( const int playerIndex, const uint16_t low
     }
 
     return m_controllers[ playerIndex ].SetRumble( lowFrequency, highFrequency, durationMs );
-}
-
-bool InputSystem::IsInitialized( ) const
-{
-    return m_initialized;
 }

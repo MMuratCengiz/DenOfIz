@@ -79,7 +79,7 @@ void RootConstantExample::Update( )
     RenderAndPresentFrame( );
 }
 
-void RootConstantExample::HandleEvent( SDL_Event &event )
+void RootConstantExample::HandleEvent( Event &event )
 {
     m_worldData.Camera->HandleEvent( event );
     IExample::HandleEvent( event );

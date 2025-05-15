@@ -20,42 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-bool Window::s_sdlInitialized = false;
-
-Window::Window( ) : m_initialized( false ), m_windowID( 0 ), m_sdlWindow( nullptr )
+Window::Window( const WindowDesc &properties ) : m_properties( properties ), m_windowID( 0 ), m_sdlWindow( nullptr )
 {
-}
-
-Window::Window( const WindowDesc &properties ) : m_initialized( false ), m_windowID( 0 ), m_sdlWindow( nullptr )
-{
-    Create( properties );
-}
-
-Window::~Window( )
-{
-    Destroy( );
-}
-
-void Window::InitializeSDL( )
-{
-    if ( !s_sdlInitialized )
-    {
-        SDL_SetMainReady( );
-        SDL_Init( SDL_INIT_VIDEO );
-        s_sdlInitialized = true;
-    }
-}
-
-void Window::Create( const WindowDesc &properties )
-{
-    if ( m_initialized )
-    {
-        Destroy( );
-    }
-
-    m_properties = properties;
-    InitializeSDL( );
-
 #ifdef WINDOW_MANAGER_SDL
     const uint32_t flags = m_properties.Flags.ToSDLWindowFlags( );
 
@@ -75,25 +41,25 @@ void Window::Create( const WindowDesc &properties )
         m_windowID     = SDL_GetWindowID( m_sdlWindow );
         m_windowHandle = { };
         m_windowHandle.CreateFromSDLWindow( m_sdlWindow );
-        m_initialized = true;
     }
 #endif
 }
 
+Window::~Window( )
+{
+    Destroy( );
+}
+
 void Window::Destroy( )
 {
-    if ( m_initialized )
-    {
 #ifdef WINDOW_MANAGER_SDL
-        if ( m_sdlWindow )
-        {
-            SDL_DestroyWindow( m_sdlWindow );
-            m_sdlWindow = nullptr;
-        }
-#endif
-        m_initialized = false;
-        m_windowID    = 0;
+    if ( m_sdlWindow )
+    {
+        SDL_DestroyWindow( m_sdlWindow );
+        m_sdlWindow = nullptr;
     }
+#endif
+    m_windowID = 0;
 }
 
 void Window::Show( ) const
@@ -276,7 +242,6 @@ void Window::SetResizable( const bool resizable )
     {
         SDL_SetWindowResizable( m_sdlWindow, resizable ? SDL_TRUE : SDL_FALSE );
 
-        // Update flags
         const uint32_t flags = SDL_GetWindowFlags( m_sdlWindow );
         m_properties.Flags.FromSDLWindowFlags( flags );
     }
@@ -327,11 +292,6 @@ bool Window::IsShown( ) const
 #endif
 
     return m_properties.Flags.Shown;
-}
-
-bool Window::IsInitialized( ) const
-{
-    return m_initialized;
 }
 
 SDL_Window *Window::GetSDLWindow( ) const

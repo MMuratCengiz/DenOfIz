@@ -30,38 +30,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
 
-
     // Main example class
     class TransparencyExample final : public IExample
     {
         Time m_time;
 
-        // Spheres and transforms
         std::vector<std::unique_ptr<ColoredSphereAsset>> m_spheres;
-        std::vector<DirectX::XMFLOAT4X4> m_sphereTransforms;
+        std::vector<XMFLOAT4X4>                          m_sphereTransforms;
+        std::unique_ptr<ColoredSpherePipeline>           m_opaquePipeline;
+        std::unique_ptr<ColoredSpherePipeline>           m_transparentPipeline;
+        std::unique_ptr<ITextureResource>                m_depthBuffer;
 
-        // Custom pipelines for opaque and transparent objects
-        std::unique_ptr<ColoredSpherePipeline> m_opaquePipeline;
-        std::unique_ptr<ColoredSpherePipeline> m_transparentPipeline;
-
-        // Depth buffer for depth testing
-        std::unique_ptr<ITextureResource> m_depthBuffer;
-
-        // Transparency animation variables
-        float m_alphaValue;
-        int m_alphaDirection; // 1 for increasing, -1 for decreasing
+        float m_alphaValue = 0.0f;
+        int   m_alphaDirection = 0;
 
     public:
-        ~TransparencyExample() override = default;
-        void              Init() override;
-        void              ModifyApiPreferences(APIPreference &defaultApiPreference) override;
-        void              HandleEvent(SDL_Event &event) override;
-        void              Update() override;
-        void              Render(uint32_t frameIndex, ICommandList *commandList) override;
-        void              Quit() override;
-        struct ExampleWindowDesc WindowDesc() override
+        ~TransparencyExample( ) override = default;
+        void                     Init( ) override;
+        void                     ModifyApiPreferences( APIPreference &defaultApiPreference ) override;
+        void                     HandleEvent( Event &event ) override;
+        void                     Update( ) override;
+        void                     Render( uint32_t frameIndex, ICommandList *commandList ) override;
+        void                     Quit( ) override;
+        struct ExampleWindowDesc WindowDesc( ) override
         {
-            auto windowDesc  = DenOfIz::ExampleWindowDesc();
+            auto windowDesc  = DenOfIz::ExampleWindowDesc( );
             windowDesc.Title = "Custom Binding Transparency Example";
             return windowDesc;
         }

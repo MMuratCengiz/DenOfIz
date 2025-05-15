@@ -25,6 +25,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Renderer/Sync/FrameSync.h>
 #include <DenOfIzGraphics/Renderer/Sync/ResourceTracking.h>
 
+#include "DenOfIzGraphics/Input/Event.h"
+
 namespace DenOfIz
 {
     struct ExampleWindowDesc
@@ -140,25 +142,25 @@ namespace DenOfIz
         virtual void ModifyApiPreferences( APIPreference &defaultApiPreference )
         {
         }
-        virtual void HandleEvent( SDL_Event &event )
+        virtual void HandleEvent( Event &event )
         {
-            if ( event.type == SDL_KEYDOWN )
+            if ( event.Type == SDL_KEYDOWN )
             {
-                switch ( event.key.keysym.sym )
+                switch ( event.Key.Keycode )
                 {
-                case SDLK_ESCAPE:
+                case KeyCode::Escape:
                     m_isRunning = false;
                     break;
                 default:
                     break;
                 }
             }
-            else if ( event.type == SDL_WINDOWEVENT )
+            else if ( event.Type == SDL_WINDOWEVENT )
             {
-                if ( event.window.event == SDL_WINDOWEVENT_RESIZED || event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED )
+                if ( event.Window.Event == SDL_WINDOWEVENT_RESIZED || event.Window.Event == SDL_WINDOWEVENT_SIZE_CHANGED )
                 {
-                    const uint32_t newWidth  = event.window.data1;
-                    const uint32_t newHeight = event.window.data2;
+                    const uint32_t newWidth  = event.Window.Data1;
+                    const uint32_t newHeight = event.Window.Data2;
                     if ( newWidth > 0 && newHeight > 0 )
                     {
                         DLOG( INFO ) << "Window resized to " << newWidth << "x" << newHeight;
