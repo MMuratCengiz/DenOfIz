@@ -194,7 +194,7 @@ bool InputSystem::IsKeyPressed( const KeyCode key )
     return GetKeyState( key ) == KeyState::Pressed;
 }
 
-BitSet<KeyMod> InputSystem::GetModState( )
+DenOfIz::BitSet<KeyMod> InputSystem::GetModState( )
 {
 #ifdef WINDOW_MANAGER_SDL
     const uint16_t sdlMods = SDL_GetModState( );
@@ -345,7 +345,8 @@ void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outE
     }
 }
 
-BitSet<KeyMod> InputSystem::ConvertKeyMod( const SDL_Keymod sdlMods )
+// Keep namespace (Unambigious reference on OSX)
+DenOfIz::BitSet<KeyMod> InputSystem::ConvertKeyMod( const SDL_Keymod sdlMods )
 {
     BitSet result = KeyMod::None;
 #ifdef WINDOW_MANAGER_SDL
