@@ -4,11 +4,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 class NativeLibraryLoader {
@@ -38,54 +37,60 @@ class NativeLibraryLoader {
     }
 
     private static void loadNativeLibraries(String resourcePath) {
-        String[] resourceFiles = getResourceFiles(resourcePath);
-        if (resourceFiles.length == 0) {
-            throw new RuntimeException("No native libraries found in resources at: " + resourcePath);
+        File tempDir;
+        try {
+            tempDir = Files.createTempDirectory("denofiz-native-libs").toFile();
+            tempDir.deleteOnExit();
+        } catch (IOException ex) {
+            throw new RuntimeException("Failed to create temporary directory for native libraries", ex);
         }
 
-        for (String resourceFile : resourceFiles) {
+        for (String resourceFile : getResourceFiles(resourcePath)) {
             String fullResourcePath = resourcePath + resourceFile;
             URL url = DenOfIzRuntime.class.getResource(fullResourcePath);
             if (url != null) {
                 try {
-                    if ("file".equals(url.getProtocol())) {
-                        String path = new File(url.toURI()).getAbsolutePath();
-                        loadLibrary(path);
-                    } else {
-                        File tempFile = File.createTempFile("native-lib-", extractExtension(resourceFile));
-                        tempFile.deleteOnExit();
-
-                        try (InputStream in = url.openStream(); FileOutputStream out = new java.io.FileOutputStream(tempFile)) {
-                            byte[] buffer = new byte[4096];
-                            int bytesRead;
-                            while ((bytesRead = in.read(buffer)) != -1) {
-                                out.write(buffer, 0, bytesRead);
-                            }
+                    File tempFile = new File(tempDir, resourceFile);
+                    tempFile.deleteOnExit();
+                    try (InputStream in = url.openStream(); FileOutputStream out = new FileOutputStream(tempFile)) {
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        while ((bytesRead = in.read(buffer)) != -1) {
+                            out.write(buffer, 0, bytesRead);
                         }
-                        loadLibrary(tempFile.getAbsolutePath());
                     }
-                } catch (URISyntaxException | IOException ex) {
+                } catch (IOException ex) {
                     throw new RuntimeException("Failed to extract native library: " + fullResourcePath, ex);
                 }
             } else {
                 throw new RuntimeException("Native library not found: " + fullResourcePath);
             }
         }
-    }
 
-    private static String extractExtension(String filename) {
-        int dotIndex = filename.lastIndexOf('.');
-        return (dotIndex > 0) ? filename.substring(dotIndex) : "";
+        String os = getOperatingSystem();
+        if ("windows".equals(os)) {
+            loadLibrary(new File(tempDir, "dxcompiler.dll").getAbsolutePath());
+            loadLibrary(new File(tempDir, "dxil.dll").getAbsolutePath());
+            loadLibrary(new File(tempDir, "metalirconverter.dll").getAbsolutePath());
+            loadLibrary(new File(tempDir, "DenOfIzGraphicsJava.dll").getAbsolutePath());
+        } else if ("macos".equals(os)) {
+            loadLibrary(new File(tempDir, "libdxcompiler.dylib").getAbsolutePath());
+            loadLibrary(new File(tempDir, "libmetalirconverter.dylib").getAbsolutePath());
+            loadLibrary(new File(tempDir, "libDenOfIzGraphicsJava.jnilib").getAbsolutePath());
+        } else {
+            loadLibrary(new File(tempDir, "libdxcompiler.so").getAbsolutePath());
+            loadLibrary(new File(tempDir, "libDenOfIzGraphicsJava.so").getAbsolutePath());
+        }
     }
 
     private static String[] getResourceFiles(String directory) {
         String os = getOperatingSystem();
+        // Todo, we might have DenOfIzGraphics.dylib here and many more libraries if we build shared dlls
         if ("windows".equals(os)) {
             return new String[]{
                     "dxcompiler.dll",
                     "dxil.dll",
                     "metalirconverter.dll",
-                    "DenOfIzGraphics.dll",
                     "DenOfIzGraphicsJava.dll"
             };
         } else if ("macos".equals(os)) {
