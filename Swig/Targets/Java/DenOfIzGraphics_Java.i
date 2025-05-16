@@ -1,6 +1,4 @@
-%module(directors="1") DenOfIzGraphics
-
-%javapackage("com.denofiz.graphics")
+%module(directors="1") DenOfIzGraphicsJava
 
 %include "arrays_java.i"
 %include "enums.swg"
@@ -8,11 +6,8 @@
 %javaconst(1);
 %feature("autodoc", "1");
 %feature("accessors", "1");
-
-%apply int[] {int *}
-%apply long[] {long *}
-%apply float[] {float *}
-%apply boolean[] {bool *}
-%apply double[] {double *}
-%apply unsigned char[] {unsigned char *inputBytes}
-%apply unsigned char[] {unsigned char *data}
+%rename("%(firstlowercase)s", %$isfunction) "";
+%rename("waitOnFence") "DenOfIz::IFence::Wait";
+%rename("notifySemaphore") "DenOfIz::ISemaphore::Notify";
+%include "FrameSync_Cache_Java.i"
+%include "SwapChain_Cache_Java.i"

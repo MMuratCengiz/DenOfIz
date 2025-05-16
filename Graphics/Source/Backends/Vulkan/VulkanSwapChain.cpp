@@ -101,6 +101,7 @@ void VulkanSwapChain::CreateSwapChain( )
     createInfo.imageExtent      = VkExtent2D{ m_width, m_height };
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage       = VulkanEnumConverter::ConvertTextureUsage( ResourceDescriptor::RenderTarget, m_desc.ImageUsages );
+    m_viewport                  = { 0.0f, 0.0f, static_cast<float>( m_width ), static_cast<float>( m_height ) };
 
     const uint32_t qfIndexes[ 2 ] = { m_context->QueueFamilies.at( VulkanQueueType::Graphics ).Index, m_context->QueueFamilies.at( VulkanQueueType::Presentation ).Index };
 
@@ -295,8 +296,9 @@ void VulkanSwapChain::Resize( const uint32_t width, const uint32_t height )
     const VkSwapchainKHR oldSwapChain = m_swapChain;
     m_swapChain                       = VK_NULL_HANDLE;
 
-    m_width  = width;
-    m_height = height;
+    m_width    = width;
+    m_height   = height;
+    m_viewport = Viewport{ 0.0f, 0.0f, static_cast<float>( m_width ), static_cast<float>( m_height ) };
 
     Dispose( );
 
@@ -374,7 +376,7 @@ VkSwapchainKHR *VulkanSwapChain::GetSwapChain( )
     return &m_swapChain;
 }
 
-Viewport VulkanSwapChain::GetViewport( )
+const Viewport& VulkanSwapChain::GetViewport( )
 {
-    return { 0.0f, 0.0f, static_cast<float>( m_width ), static_cast<float>( m_height ) };
+    return m_viewport;
 }

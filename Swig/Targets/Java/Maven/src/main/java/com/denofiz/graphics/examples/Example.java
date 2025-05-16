@@ -235,11 +235,11 @@ public class Example {
         
         var frameIndex = frameSync.nextFrame();
         ICommandList commandList = frameSync.getCommandList(frameIndex);
-        
+
         commandList.begin();
-        
+
         var nextImage = frameSync.acquireNextImage(frameIndex);
-        ITextureResource renderTarget = swapChain.getRenderTarget(nextImage);
+        ITextureResource renderTarget = swapChain.getRenderTarget((int)nextImage);
         
         BatchTransitionDesc transitionDesc = new BatchTransitionDesc(commandList);
         transitionDesc.transitionTexture(renderTarget, ResourceUsage.RenderTarget);
@@ -249,7 +249,7 @@ public class Example {
         attachmentDesc.setResource(renderTarget);
         
         RenderingDesc renderingDesc = new RenderingDesc();
-        renderingDesc.getRTAttachments().addElement(attachmentDesc);
+        renderingDesc.addRTAttachment(attachmentDesc);
         
         commandList.beginRendering(renderingDesc);
         

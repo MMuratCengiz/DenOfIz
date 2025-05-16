@@ -20,24 +20,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-BatchTransitionDesc& BatchTransitionDesc::TransitionBuffer( IBufferResource *resource, const ResourceUsage newUsage, const QueueType queueType)
+void BatchTransitionDesc::Reset( ICommandList * commandList )
 {
-    TransitionBufferDesc& desc = BufferTransitions.EmplaceElement( );
+    m_bufferTransitions.Clear( );
+    m_textureTransitions.Clear( );
+    m_commandList = commandList;
+}
+
+void BatchTransitionDesc::TransitionBuffer( IBufferResource *resource, const ResourceUsage newUsage, const QueueType queueType)
+{
+    TransitionBufferDesc& desc = m_bufferTransitions.EmplaceElement( );
     desc.Buffer    = resource;
     desc.NewUsage  = newUsage;
     desc.QueueType = queueType;
-
-    return *this;
 }
 
-BatchTransitionDesc& BatchTransitionDesc::TransitionTexture( ITextureResource *resource, const ResourceUsage newUsage, const QueueType queueType )
+void BatchTransitionDesc::TransitionTexture( ITextureResource *resource, const ResourceUsage newUsage, const QueueType queueType )
 {
-    TransitionTextureDesc& desc = TextureTransitions.EmplaceElement( );
+    TransitionTextureDesc& desc = m_textureTransitions.EmplaceElement( );
     desc.Texture    = resource;
     desc.NewUsage  = newUsage;
     desc.QueueType = queueType;
-
-    return *this;
 }
 
 ResourceTracking::~ResourceTracking( )
@@ -134,8 +137,8 @@ void ResourceTracking::BatchTransition( const BatchTransitionDesc &desc )
 {
     PipelineBarrierDesc barrier;
 
-    ProcessBufferTransitions( desc.BufferTransitions, barrier );
-    ProcessTextureTransitions( desc.TextureTransitions, barrier );
+    ProcessBufferTransitions( desc.m_bufferTransitions, barrier );
+    ProcessTextureTransitions( desc.m_textureTransitions, barrier );
 
-    desc.CommandList->PipelineBarrier( barrier );
+    desc.m_commandList->PipelineBarrier( barrier );
 }

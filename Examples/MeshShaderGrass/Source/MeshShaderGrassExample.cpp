@@ -131,7 +131,7 @@ void MeshShaderGrassExample::HandleEvent( Event &event )
         {
             switch ( event.Key.Keycode )
             {
-            case SDLK_RETURN:
+            case KeyCode::Return:
                 m_animateWind = !m_animateWind;
                 LOG( INFO ) << "Wind animation " << ( m_animateWind ? "enabled" : "disabled" );
                 break;
@@ -366,7 +366,6 @@ void MeshShaderGrassExample::LoadGrassTexture( )
     commandList->Begin( );
 
     BatchTransitionDesc batchTransitionDesc{ commandList };
-    batchTransitionDesc.CommandList = commandList;
     batchTransitionDesc.TransitionTexture( m_grassTexture.get( ), ResourceUsage::ShaderResource, QueueType::Graphics );
     m_resourceTracking.BatchTransition( batchTransitionDesc );
 
@@ -513,7 +512,6 @@ void MeshShaderGrassExample::LoadTerrainTexture( )
     commandList->Begin( );
 
     BatchTransitionDesc batchTransitionDesc{ commandList };
-    batchTransitionDesc.CommandList = commandList;
     batchTransitionDesc.TransitionTexture( m_terrainTexture.get( ), ResourceUsage::ShaderResource, QueueType::Graphics );
     m_resourceTracking.BatchTransition( batchTransitionDesc );
 

@@ -40,8 +40,8 @@ namespace DenOfIz
         std::vector<std::unique_ptr<ISemaphore>> m_renderFinishedSemaphores;
         std::unique_ptr<ICommandListPool>        m_commandListPool;
 
-        uint64_t m_currentFrame = 0;
-        uint64_t m_nextFrame    = 0;
+        uint32_t m_currentFrame = 0;
+        uint32_t m_nextFrame    = 0;
 
         ILogicalDevice             *m_device;
         ISwapChain                 *m_swapChain;
@@ -50,12 +50,12 @@ namespace DenOfIz
 
     public:
         DZ_API explicit FrameSync( const FrameSyncDesc &desc );
-        DZ_API uint64_t      NextFrame( );
-        DZ_API IFence       *GetFrameFence( uint64_t frame ) const;
-        DZ_API ISemaphore   *GetPresentSignalSemaphore( uint64_t frame ) const;
-        DZ_API ICommandList *GetCommandList( uint64_t frame ) const;
-        DZ_API void          ExecuteCommandList( uint64_t frame, const InteropArray<ISemaphore*>& additionalSemaphores = {} ) const;
-        DZ_API uint32_t      AcquireNextImage( uint64_t frame ) const;
+        DZ_API uint32_t      NextFrame( );
+        DZ_API IFence       *GetFrameFence( uint32_t frame ) const;
+        DZ_API ISemaphore   *GetPresentSignalSemaphore( uint32_t frame ) const;
+        DZ_API ICommandList *GetCommandList( uint32_t frame ) const;
+        DZ_API void          ExecuteCommandList( uint32_t frame, const InteropArray<ISemaphore*>& additionalSemaphores = {} ) const;
+        DZ_API uint32_t      AcquireNextImage( uint32_t frame ) const;
         DZ_API PresentResult Present( uint32_t imageIndex ) const;
         DZ_API void          WaitIdle( ) const;
         DZ_API ~FrameSync( ) = default;

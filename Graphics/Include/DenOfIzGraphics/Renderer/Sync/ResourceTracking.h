@@ -33,32 +33,39 @@ namespace DenOfIz
 
     struct DZ_API TransitionResourceDesc
     {
-        ICommandList *CommandList{ };
+        ICommandList *CommandList = nullptr;
         ResourceUsage NewUsage  = ResourceUsage::Undefined;
         QueueType     QueueType = QueueType::Graphics;
     };
 
     struct DZ_API TransitionBufferDesc : TransitionResourceDesc
     {
-        IBufferResource *Buffer{ };
+        IBufferResource *Buffer = nullptr;
     };
     template class DZ_API InteropArray<TransitionBufferDesc>;
 
     struct DZ_API TransitionTextureDesc : TransitionResourceDesc
     {
-        ITextureResource *Texture{ };
+        ITextureResource *Texture = nullptr;
     };
     template class DZ_API InteropArray<TransitionTextureDesc>;
 
     struct DZ_API BatchTransitionDesc
     {
-        ICommandList                       *CommandList;
-        InteropArray<TransitionBufferDesc>  BufferTransitions;
-        InteropArray<TransitionTextureDesc> TextureTransitions;
+    private:
+        ICommandList                       *m_commandList;
+        InteropArray<TransitionBufferDesc>  m_bufferTransitions;
+        InteropArray<TransitionTextureDesc> m_textureTransitions;
 
-        explicit BatchTransitionDesc( ICommandList *commandList ) : CommandList( commandList ) { }
-        BatchTransitionDesc& TransitionBuffer( IBufferResource* resource, ResourceUsage newUsage, QueueType queueType = QueueType::Graphics );
-        BatchTransitionDesc& TransitionTexture( ITextureResource* resource, ResourceUsage newUsage, QueueType queueType = QueueType::Graphics );
+        friend class ResourceTracking;
+
+    public:
+        explicit BatchTransitionDesc( ICommandList *commandList ) : m_commandList( commandList )
+        {
+        }
+        void Reset( ICommandList* commandList ); // Resource pooling
+        void TransitionBuffer( IBufferResource *resource, ResourceUsage newUsage, QueueType queueType = QueueType::Graphics );
+        void TransitionTexture( ITextureResource *resource, ResourceUsage newUsage, QueueType queueType = QueueType::Graphics );
     };
 
     class ResourceTracking

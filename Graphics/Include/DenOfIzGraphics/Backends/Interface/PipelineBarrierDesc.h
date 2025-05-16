@@ -75,6 +75,13 @@ namespace DenOfIz
         InteropArray<MemoryBarrierDesc>  m_memoryBarriers;
 
     public:
+        void Clear( )
+        {
+            m_textureBarriers.Clear( );
+            m_bufferBarriers.Clear( );
+            m_memoryBarriers.Clear( );
+        }
+
         PipelineBarrierDesc &TextureBarrier( const TextureBarrierDesc &barrier )
         {
             m_textureBarriers.AddElement( barrier );

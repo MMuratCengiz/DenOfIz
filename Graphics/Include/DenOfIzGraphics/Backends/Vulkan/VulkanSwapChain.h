@@ -42,6 +42,7 @@ namespace DenOfIz
 
         uint32_t m_width  = 0;
         uint32_t m_height = 0;
+        Viewport m_viewport;
 
     public:
         VulkanSwapChain( VulkanContext *context, const SwapChainDesc &desc );
@@ -53,9 +54,9 @@ namespace DenOfIz
         void          Resize( uint32_t width, uint32_t height ) override;
         Format        GetPreferredFormat( ) override;
 
-        ITextureResource         *GetRenderTarget( uint32_t image ) override;
-        VkSwapchainKHR           *GetSwapChain( );
-        Viewport                  GetViewport( ) override;
+        ITextureResource *GetRenderTarget( uint32_t image ) override;
+        VkSwapchainKHR   *GetSwapChain( );
+        const Viewport   &GetViewport( ) override;
 
     private:
         void CreateSwapChain( );

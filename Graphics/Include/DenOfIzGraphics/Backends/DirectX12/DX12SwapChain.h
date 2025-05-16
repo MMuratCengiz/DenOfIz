@@ -29,7 +29,7 @@ namespace DenOfIz
 
     class DX12SwapChain final : public ISwapChain
     {
-        DX12Context                  *m_context = nullptr;
+        DX12Context                  *m_context      = nullptr;
         DX12CommandQueue             *m_commandQueue = nullptr;
         SwapChainDesc                 m_desc{ };
         wil::com_ptr<IDXGISwapChain4> m_swapChain = nullptr;
@@ -43,7 +43,6 @@ namespace DenOfIz
         DXGI_COLOR_SPACE_TYPE m_colorSpace{ };
         Viewport              m_viewport{ };
 
-
     public:
         DX12SwapChain( DX12Context *context, const SwapChainDesc &desc );
         ~DX12SwapChain( ) override;
@@ -54,7 +53,7 @@ namespace DenOfIz
         PresentResult     Present( const PresentDesc &desc ) override;
         Format            GetPreferredFormat( ) override;
         ITextureResource *GetRenderTarget( uint32_t image ) override;
-        Viewport          GetViewport( ) override;
+        const Viewport   &GetViewport( ) override;
         void              Resize( uint32_t width, uint32_t height ) override;
         void              CreateSwapChain( );
 

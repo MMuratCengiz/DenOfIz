@@ -26,6 +26,7 @@ DX12SwapChain::DX12SwapChain( DX12Context *context, const SwapChainDesc &desc ) 
 {
     m_desc.Width  = std::max( 1u, m_desc.Width );
     m_desc.Height = std::max( 1u, m_desc.Height );
+    m_viewport    = Viewport( 0.0f, 0.0f, static_cast<float>( m_desc.Width ), static_cast<float>( m_desc.Height ) );
     CreateSwapChain( );
 }
 
@@ -188,6 +189,8 @@ void DX12SwapChain::Resize( const uint32_t width, const uint32_t height )
     m_commandQueue->WaitIdle( );
     m_desc.Width  = width;
     m_desc.Height = height;
+    m_viewport    = Viewport( 0.0f, 0.0f, static_cast<float>( m_desc.Width ), static_cast<float>( m_desc.Height ) );
+
     for ( auto &buffer : m_buffers )
     {
         buffer.reset( );
@@ -246,19 +249,11 @@ void DX12SwapChain::Resize( const uint32_t width, const uint32_t height )
 
     m_depthStencilCpuHandle = m_context->CpuDescriptorHeaps[ D3D12_DESCRIPTOR_HEAP_TYPE_DSV ]->GetNextHandle( 1 ).Cpu;
     m_context->D3DDevice->CreateDepthStencilView( m_depthStencil.get( ), &dsvDesc, m_depthStencilCpuHandle );
-
-    m_viewport.Width  = static_cast<float>( width );
-    m_viewport.Height = static_cast<float>( height );
 }
 
-Viewport DX12SwapChain::GetViewport( )
+const Viewport &DX12SwapChain::GetViewport( )
 {
-    return Viewport{
-        0.0f,
-        0.0f,
-        static_cast<float>( m_desc.Width ),
-        static_cast<float>( m_desc.Height ),
-    };
+    return m_viewport;
 }
 
 ITextureResource *DX12SwapChain::GetRenderTarget( const uint32_t image )

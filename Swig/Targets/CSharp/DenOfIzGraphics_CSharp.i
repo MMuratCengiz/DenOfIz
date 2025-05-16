@@ -1,9 +1,7 @@
-%module(directors="1") DenOfIzGraphics
+%module(directors="1") DenOfIzGraphicsCSharp
 
-// Make sure to use the same module name as the main interface file
-// to avoid duplicate class definitions
-
-%csnamespace DenOfIz
-
+%include "typemaps.i"
+%include "std_string.i"
 %include "arrays_csharp.i"
-%apply unsigned char INPUT[]  {unsigned char *inputBytes}
+%include "FrameSync_Cache_CSharp.i"
+%include "SwapChain_Cache_CSharp.i"

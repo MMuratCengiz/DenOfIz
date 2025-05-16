@@ -261,7 +261,7 @@ internal class Program
         attachmentDesc.Resource = renderTarget;
 
         var renderingDesc = new RenderingDesc();
-        renderingDesc.RTAttachments.AddElement(attachmentDesc);
+        renderingDesc.AddRTAttachment(attachmentDesc);
 
         commandList.BeginRendering(renderingDesc);
 

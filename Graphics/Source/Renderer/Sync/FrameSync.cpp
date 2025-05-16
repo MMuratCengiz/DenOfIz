@@ -45,7 +45,7 @@ FrameSync::FrameSync( const FrameSyncDesc &desc ) : m_numFrames( desc.NumFrames 
     }
 }
 
-uint64_t FrameSync::NextFrame( )
+uint32_t FrameSync::NextFrame( )
 {
     m_currentFrame = m_nextFrame;
     m_nextFrame    = ( m_nextFrame + 1 ) % m_numFrames;
@@ -53,22 +53,22 @@ uint64_t FrameSync::NextFrame( )
     return m_currentFrame;
 }
 
-IFence *FrameSync::GetFrameFence( const uint64_t frame ) const
+IFence *FrameSync::GetFrameFence( const uint32_t frame ) const
 {
     return m_frameFences[ frame ].get( );
 }
 
-ISemaphore *FrameSync::GetPresentSignalSemaphore( uint64_t frame ) const
+ISemaphore *FrameSync::GetPresentSignalSemaphore( const uint32_t frame ) const
 {
     return m_renderFinishedSemaphores[ frame ].get( );
 }
 
-ICommandList *FrameSync::GetCommandList( const uint64_t frame ) const
+ICommandList *FrameSync::GetCommandList( const uint32_t frame ) const
 {
     return m_commandLists[ frame ];
 }
 
-void FrameSync::ExecuteCommandList( const uint64_t frame, const InteropArray<ISemaphore*>& additionalSemaphores ) const
+void FrameSync::ExecuteCommandList( const uint32_t frame, const InteropArray<ISemaphore*>& additionalSemaphores ) const
 {
     ExecuteCommandListsDesc desc{ };
     desc.Signal = m_frameFences[ frame ].get( );
@@ -82,7 +82,7 @@ void FrameSync::ExecuteCommandList( const uint64_t frame, const InteropArray<ISe
     m_commandQueue->ExecuteCommandLists( desc );
 }
 
-uint32_t FrameSync::AcquireNextImage( const uint64_t frame ) const
+uint32_t FrameSync::AcquireNextImage( const uint32_t frame ) const
 {
     return m_swapChain->AcquireNextImage( m_imageAvailableSemaphores[ frame ].get( ) );
 }

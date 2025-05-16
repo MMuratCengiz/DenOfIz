@@ -5,18 +5,6 @@
 #pragma SWIG nowarn=509 // overloaded method handling
 #pragma SWIG nowarn=314 // class/struct redefinition
 
-// Todo the includes below don't seem to be doing anything
-#if defined(SWIGCSHARP)
-#include "Targets/CSharp/DenOfIzGraphics_CSharp.i"
-#endif
-#if defined(SWIGJAVA)
-#include "Targets/Java/DenOfIzGraphics_Java.i"
-%feature("autodoc", "1");
-%feature("accessors", "1");
-%rename("%(firstlowercase)s", %$isfunction) "";
-%rename("waitOnFence") "DenOfIz::IFence::Wait";
-%rename("notifySemaphore") "DenOfIz::ISemaphore::Notify";
-#endif
 
 %{
 #include "DenOfIzGraphics/DenOfIzGraphics.h"
@@ -34,11 +22,12 @@ using namespace DirectX;
 %include "std_vector.i"
 %include "carrays.i"
 %include "cpointer.i"
-#ifdef SWIGCSHARP
-%include "arrays_csharp.i"
+
+#if defined(SWIGCSHARP)
+%include "Targets/CSharp/DenOfIzGraphics_CSharp.i"
 #endif
-#ifdef SWIGJAVA
-%include "arrays_java.i"
+#if defined(SWIGJAVA)
+%include "Targets/Java/DenOfIzGraphics_Java.i"
 #endif
 
 %apply void *VOID_INT_PTR { void * }
@@ -190,11 +179,36 @@ using namespace DirectX;
 %include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 // Dependency on IPipeline requires it to be separated from other RayTracing includes
 %include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderBindingTable.h>
+
+%newobject DenOfIz::ILogicalDevice::CreateCommandQueue;
+%newobject DenOfIz::ILogicalDevice::CreateCommandListPool;
+%newobject DenOfIz::ILogicalDevice::CreatePipeline;
+%newobject DenOfIz::ILogicalDevice::CreateSwapChain;
+%newobject DenOfIz::ILogicalDevice::CreateRootSignature;
+%newobject DenOfIz::ILogicalDevice::CreateInputLayout;
+%newobject DenOfIz::ILogicalDevice::CreateResourceBindGroup;
+%newobject DenOfIz::ILogicalDevice::CreateFence;
+%newobject DenOfIz::ILogicalDevice::CreateSemaphore;
+%newobject DenOfIz::ILogicalDevice::CreateBufferResource;
+%newobject DenOfIz::ILogicalDevice::CreateTextureResource;
+%newobject DenOfIz::ILogicalDevice::CreateSampler;
+%newobject DenOfIz::ILogicalDevice::CreateTopLevelAS;
+%newobject DenOfIz::ILogicalDevice::CreateBottomLevelAS;
+%newobject DenOfIz::ILogicalDevice::CreateShaderBindingTable;
+%newobject DenOfIz::ILogicalDevice::CreateLocalRootSignature;
+%newobject DenOfIz::ILogicalDevice::CreateShaderLocalData;
+
+%ignore DenOfIz::RenderingDesc::RTAttachments; // Uses performant array instead
 %include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 %include <DenOfIzGraphics/Backends/Interface/ICommandQueue.h>
+
 %include <DenOfIzGraphics/Backends/Interface/ICommandListPool.h>
 %include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
 %include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
+
+%newobject DenOfIz::GraphicsApi::CreateLogicalDevice;
+%newobject DenOfIz::GraphicsApi::CreateAndLoadOptimalLogicalDevice;
+
 %include <DenOfIzGraphics/Backends/GraphicsApi.h>
 
 %include <DenOfIzGraphics/Renderer/Sync/FrameSync.h>

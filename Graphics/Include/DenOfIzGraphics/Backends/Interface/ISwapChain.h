@@ -81,7 +81,7 @@ namespace DenOfIz
         virtual void          Resize( uint32_t width, uint32_t height )           = 0;
 
         virtual ITextureResource *GetRenderTarget( uint32_t image ) = 0;
-        virtual Viewport          GetViewport( )                    = 0;
+        virtual const Viewport   &GetViewport( )                    = 0;
     };
 
 } // namespace DenOfIz

@@ -64,9 +64,9 @@ ITextureResource *MetalSwapChain::GetRenderTarget( uint32_t image )
     return m_renderTargets[ image ].get( );
 }
 
-Viewport MetalSwapChain::GetViewport( )
+const Viewport& MetalSwapChain::GetViewport( )
 {
-    return Viewport{ 0, 0, static_cast<float>( m_desc.Width ), static_cast<float>( m_desc.Height ) };
+    return m_viewport;
 }
 
 void MetalSwapChain::Resize( uint32_t width, uint32_t height )
@@ -89,8 +89,10 @@ void MetalSwapChain::Resize( uint32_t width, uint32_t height )
         m_drawableDesc.HeapType     = HeapType::GPU;
         m_drawableDesc.DebugName    = "SwapChain";
         
-        m_desc.Width = width;
+        m_desc.Width  = width;
         m_desc.Height = height;
+        m_viewport    = Viewport{ 0, 0, static_cast<float>( m_desc.Width ), static_cast<float>( m_desc.Height ) };
+
         
         m_renderTargets.clear();
         m_renderTargets.resize(m_desc.NumBuffers);

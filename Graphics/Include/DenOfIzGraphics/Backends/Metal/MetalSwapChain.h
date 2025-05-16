@@ -36,6 +36,7 @@ namespace DenOfIz
         CAMetalLayer                                      *m_metalLayer;
         uint32_t                                           m_currentFrame;
         std::vector<std::unique_ptr<MetalTextureResource>> m_renderTargets;
+        Viewport                                           m_viewport;
 
     public:
         MetalSwapChain( MetalContext *context, const SwapChainDesc &desc );
@@ -44,7 +45,7 @@ namespace DenOfIz
         uint32_t          AcquireNextImage( ISemaphore *imageAvailableSemaphore ) override;
         Format            GetPreferredFormat( ) override;
         ITextureResource *GetRenderTarget( uint32_t image ) override;
-        Viewport          GetViewport( ) override;
+        const Viewport   &GetViewport( ) override;
         void              Resize( uint32_t width, uint32_t height ) override;
         PresentResult     Present( const PresentDesc &presentDesc ) override;
     };
