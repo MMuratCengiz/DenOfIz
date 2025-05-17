@@ -11,6 +11,16 @@
 %}
 #define DZ_API
 
+%feature("director") DenOfIz::EventCallback;
+%feature("director") DenOfIz::KeyboardEventCallback;
+%feature("director") DenOfIz::MouseMotionEventCallback;
+%feature("director") DenOfIz::MouseButtonEventCallback;
+%feature("director") DenOfIz::MouseWheelEventCallback;
+%feature("director") DenOfIz::WindowEventCallback;
+%feature("director") DenOfIz::ControllerAxisEventCallback;
+%feature("director") DenOfIz::ControllerButtonEventCallback;
+%feature("director") DenOfIz::QuitEventCallback;
+
 %warnfilter(516) InteropArray;
 
 // DirectX namespace is for internal use only

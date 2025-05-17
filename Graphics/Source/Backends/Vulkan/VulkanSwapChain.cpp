@@ -210,6 +210,11 @@ void VulkanSwapChain::Dispose( )
 
 uint32_t VulkanSwapChain::AcquireNextImage( ISemaphore *imageReadySemaphore )
 {
+    if ( m_width == 0 || m_height == 0 )
+    {
+        LOG( WARNING ) << "Cannot AcquireNextImage on Vulkan, width == 0 || height == 0, window might be minimized.";
+        return 0;
+    }
     const VulkanSemaphore *semaphore = dynamic_cast<VulkanSemaphore *>( imageReadySemaphore );
     uint32_t               nextImage = 0;
 
@@ -376,7 +381,7 @@ VkSwapchainKHR *VulkanSwapChain::GetSwapChain( )
     return &m_swapChain;
 }
 
-const Viewport& VulkanSwapChain::GetViewport( )
+const Viewport &VulkanSwapChain::GetViewport( )
 {
     return m_viewport;
 }
