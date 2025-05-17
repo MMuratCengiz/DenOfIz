@@ -23,41 +23,7 @@ public class Example {
     private WindowSize windowSize = new WindowSize();
     private Time time = new Time();
     private boolean running = true;
-
-    private class MyQuitCallback extends QuitEventCallback {
-        @Override
-        public void execute(QuitEventData data) {
-            running = false;
-        }
-    }
-
-    private class MyResizeCallback extends WindowEventCallback {
-        @Override
-        public void execute(WindowEventData data) {
-            WindowSize possibleNewSize = window.getSize();
-            if (possibleNewSize.getWidth() == windowSize.getWidth() &&
-                possibleNewSize.getHeight() == windowSize.getHeight()) {
-                return;
-            }
-            
-            frameSync.waitIdle();
-            swapChain.resize(possibleNewSize.getWidth(), possibleNewSize.getHeight());
-            windowSize = possibleNewSize;
-            
-            for (int i = 0; i < 3; i++) {
-                resourceTracking.trackTexture(swapChain.getRenderTarget(i), ResourceUsage.Common);
-            }
-        }
-    }
-
-    private class MyKeyboardCallback extends KeyboardEventCallback {
-        @Override
-        public void execute(KeyboardEventData data) {
-            if (data.getKeycode() == KeyCode.Escape && data.getState() == KeyState.Pressed) {
-                running = false;
-            }
-        }
-    }
+    private DZConstPool constPool = new DZConstPool();
 
     public static void main(String[] args) {
         // Very important to ensure necessary libraries are loaded, java evaluates "new EngineDesc" first therefore we have to split this up like this
@@ -72,32 +38,54 @@ public class Example {
         initializeGraphics();
         createTrianglePipeline();
         createVertexBuffer();
-        
+
         FrameDebugRendererDesc frameDebugRendererDesc = new FrameDebugRendererDesc();
         frameDebugRendererDesc.setGraphicsApi(graphicsApi);
         frameDebugRendererDesc.setLogicalDevice(device);
         frameDebugRendererDesc.setScale(0.6f);
         frameDebugRendererDesc.setScreenWidth((long)windowSize.getWidth());
         frameDebugRendererDesc.setScreenHeight((long)windowSize.getHeight());
-        
-        frameDebugRenderer = new FrameDebugRenderer(frameDebugRendererDesc);
-        InputSystem inputSystem = new InputSystem();
 
-        EventHandler eventHandler = new EventHandler(inputSystem);
-        eventHandler.setOnQuit(new MyQuitCallback());
-        eventHandler.setOnKeyDown(new MyKeyboardCallback());
-        eventHandler.setOnWindowEvent(new MyResizeCallback());
-        
+        frameDebugRenderer = new FrameDebugRenderer(frameDebugRendererDesc);
+
         Event evt = new Event();
-        
+
         while (running) {
             while (InputSystem.pollEvent(evt)) {
-                eventHandler.processEvent(evt);
+                if (evt.getType() == EventType.Quit) {
+                    running = false;
+                    break;
+                }
+                if (evt.getType() == EventType.WindowEvent) {
+                    WindowSize possibleNewSize = window.getSize();
+                    if (possibleNewSize.getWidth() != windowSize.getWidth() ||
+                        possibleNewSize.getHeight() != windowSize.getHeight()) {
+
+                        frameSync.waitIdle();
+                        swapChain.resize(possibleNewSize.getWidth(), possibleNewSize.getHeight());
+                        windowSize = possibleNewSize;
+
+                        for (int i = 0; i < 3; i++) {
+                            resourceTracking.trackTexture(swapChain.getRenderTarget(i), ResourceUsage.Common);
+                        }
+                    }
+                }
+                if (evt.getType() == EventType.KeyDown) {
+                    if (evt.getKey().getKeycode() == KeyCode.Escape) {
+                        running = false;
+                    }
+                    if (evt.getKey().getKeycode() == KeyCode.G) {
+                        frameSync.waitIdle();
+                        device.waitIdle();
+                        graphicsQueue.waitIdle();
+                        System.gc();
+                    }
+                }
             }
-            
+
             renderFrame();
         }
-        
+
         frameSync.waitIdle();
         graphicsQueue.waitIdle();
         device.waitIdle();
@@ -114,7 +102,7 @@ public class Example {
         flags.setResizable(true);
         windowDesc.setFlags(flags);
         windowDesc.setPosition(WindowPosition.Centered);
-        
+
         window = new Window(windowDesc);
         windowHandle = window.getGraphicsWindowHandle();
         windowSize = window.getSize();
@@ -128,22 +116,22 @@ public class Example {
 
         graphicsApi = new GraphicsApi(apiPreference);
         device = graphicsApi.createAndLoadOptimalLogicalDevice();
-        
+
         CommandQueueDesc queueDesc = new CommandQueueDesc();
         queueDesc.setQueueType(QueueType.Graphics);
         CommandQueueFlags flags = new CommandQueueFlags();
         flags.setRequirePresentationSupport(true);
         graphicsQueue = device.createCommandQueue(queueDesc);
-        
+
         SwapChainDesc swapChainDesc = createSwapChain();
-        
+
         FrameSyncDesc frameSyncDesc = new FrameSyncDesc();
         frameSyncDesc.setSwapChain(swapChain);
         frameSyncDesc.setDevice(device);
         frameSyncDesc.setNumFrames(3);
         frameSyncDesc.setCommandQueue(graphicsQueue);
         frameSync = new FrameSync(frameSyncDesc);
-        
+
         // Used to track the current usage for each resource, helps with setting up barriers
         resourceTracking = new ResourceTracking();
         for (int i = 0; i < swapChainDesc.getNumBuffers(); i++) {
@@ -172,16 +160,16 @@ public class Example {
         pixelShaderDesc.setStage(ShaderStage.Pixel);
         pixelShaderDesc.setEntryPoint(new InteropString("PSMain"));
         pixelShaderDesc.setData(getTrianglePixelShader());
-        
+
         ShaderProgramDesc shaderProgramDesc = new ShaderProgramDesc();
         shaderProgramDesc.getShaderStages().addElement(vertexShaderDesc);
         shaderProgramDesc.getShaderStages().addElement(pixelShaderDesc);
-        
+
         shaderProgram = new ShaderProgram(shaderProgramDesc);
         ShaderReflectDesc reflectDesc = shaderProgram.reflect();
         inputLayout = device.createInputLayout(reflectDesc.getInputLayout());
         rootSignature = device.createRootSignature(reflectDesc.getRootSignature());
-        
+
         PipelineDesc pipelineDesc = new PipelineDesc();
         pipelineDesc.setInputLayout(inputLayout);
         pipelineDesc.setShaderProgram(shaderProgram);
@@ -191,10 +179,10 @@ public class Example {
         GraphicsPipelineDesc graphicsPipelineDesc = new GraphicsPipelineDesc();
         graphicsPipelineDesc.getRenderTargets().addElement(renderTargetDesc);
         pipelineDesc.setGraphics(graphicsPipelineDesc);
-        
+
         trianglePipeline = device.createPipeline(pipelineDesc);
     }
-    
+
     private void createVertexBuffer() {
         float[] vertices = new float[] {
             // Position (XYZ)    // Color (RGBA)
@@ -202,15 +190,15 @@ public class Example {
             -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, // Bottom left (green)
             0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f // Bottom right (blue)
         };
-        
+
         long bufferSize = vertices.length * 4; // 4 bytes per float
         BufferDesc bufferDesc = new BufferDesc();
         bufferDesc.getDescriptor().set(ResourceDescriptor.VertexBuffer);
         bufferDesc.setNumBytes(bufferSize);
         bufferDesc.setDebugName(new InteropString("TriangleVertexBuffer"));
-        
+
         vertexBuffer = device.createBufferResource(bufferDesc);
-        
+
         BatchResourceCopy batchCopy = new BatchResourceCopy(device);
         batchCopy.begin();
 
@@ -225,34 +213,37 @@ public class Example {
         copyDesc.setData(byteArray.data());
         batchCopy.copyToGPUBuffer(copyDesc);
         batchCopy.submit();
-        
+
         resourceTracking.trackBuffer(vertexBuffer, ResourceUsage.VertexAndConstantBuffer);
     }
-    
+
     private void renderFrame() {
         time.tick();
         frameDebugRenderer.updateStats((float) time.getDeltaTime());
-        
-        var frameIndex = frameSync.nextFrame();
+
+        long frameIndex = frameSync.nextFrame();
         ICommandList commandList = frameSync.getCommandList(frameIndex);
 
         commandList.begin();
 
-        var nextImage = frameSync.acquireNextImage(frameIndex);
+        long nextImage = frameSync.acquireNextImage(frameIndex);
         ITextureResource renderTarget = swapChain.getRenderTarget((int)nextImage);
-        
-        BatchTransitionDesc transitionDesc = new BatchTransitionDesc(commandList);
+
+        final int frameIdx = (int)frameIndex;
+        BatchTransitionDesc transitionDesc = constPool.newObject(3, frameIdx, () -> new BatchTransitionDesc(commandList), BatchTransitionDesc.class);
+        transitionDesc.reset(commandList);
         transitionDesc.transitionTexture(renderTarget, ResourceUsage.RenderTarget);
         resourceTracking.batchTransition(transitionDesc);
-        
-        RenderingAttachmentDesc attachmentDesc = new RenderingAttachmentDesc();
+
+        RenderingAttachmentDesc attachmentDesc = constPool.newObject(3, frameIdx, () -> new RenderingAttachmentDesc(), RenderingAttachmentDesc.class);
         attachmentDesc.setResource(renderTarget);
-        
-        RenderingDesc renderingDesc = new RenderingDesc();
+
+        RenderingDesc renderingDesc = constPool.newObject(3, frameIdx, () -> new RenderingDesc(), RenderingDesc.class);
+        renderingDesc.clearRTAttachments();
         renderingDesc.addRTAttachment(attachmentDesc);
-        
+
         commandList.beginRendering(renderingDesc);
-        
+
         Viewport viewport = swapChain.getViewport();
         commandList.bindViewport(viewport.getX(), viewport.getY(), viewport.getWidth(), viewport.getHeight());
         commandList.bindScissorRect(viewport.getX(), viewport.getY(), viewport.getWidth(), viewport.getHeight());
@@ -261,8 +252,8 @@ public class Example {
         commandList.draw(3, 1, 0, 0);
         frameDebugRenderer.render(commandList);
         commandList.endRendering();
-        
-        transitionDesc = new BatchTransitionDesc(commandList);
+
+        transitionDesc.reset(commandList);
         transitionDesc.transitionTexture(renderTarget, ResourceUsage.Present);
         resourceTracking.batchTransition(transitionDesc);
         
