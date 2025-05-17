@@ -1,6 +1,4 @@
 import com.denofiz.graphics.*
-import java.util.concurrent.ConcurrentLinkedQueue
-
 
 /**
  * Renders a simple triangle
@@ -23,50 +21,7 @@ class Example {
     private var windowSize = WindowSize()
     private val time = Time()
     private var running = true
-
-    private val batchTransitionDescs = List(3) { BatchTransitionDesc(null) }
-    private val renderingAttachmentDescs = List(3) { RenderingAttachmentDesc() }
-    private val renderingDescs = List(3) { RenderingDesc() }
-
-
-    private inner class MyQuitCallback : QuitEventCallback() {
-        override fun execute(data: QuitEventData?) {
-            running = false
-        }
-    }
-
-    private inner class MyResizeCallback : WindowEventCallback() {
-        override fun execute(data: WindowEventData?) {
-            val possibleNewSize = window!!.size
-            if (possibleNewSize.width == windowSize.width &&
-                possibleNewSize.height == windowSize.height
-            ) {
-                return
-            }
-
-            frameSync!!.waitIdle()
-            swapChain!!.resize(possibleNewSize.width.toLong(), possibleNewSize.height.toLong())
-            windowSize = possibleNewSize
-
-            for (i in 0..2) {
-                resourceTracking!!.trackTexture(swapChain!!.getRenderTarget(i.toLong()), ResourceUsage.Common)
-            }
-        }
-    }
-
-    private inner class MyKeyboardCallback : KeyboardEventCallback() {
-        override fun execute(data: KeyboardEventData) {
-            if (data.keycode == KeyCode.Escape && data.state == KeyState.Pressed) {
-                running = false
-            }
-            if (data.keycode == KeyCode.G) {
-                frameSync?.waitIdle()
-                device?.waitIdle()
-                graphicsQueue?.waitIdle()
-                System.gc()
-            }
-        }
-    }
+    private val constPool = DZConstPool()
 
     fun run() {
         initializeWindow()
@@ -82,21 +37,39 @@ class Example {
         frameDebugRendererDesc.screenHeight = windowSize.height.toLong()
 
         frameDebugRenderer = FrameDebugRenderer(frameDebugRendererDesc)
-        val inputSystem = InputSystem()
-        val eventHandler = EventHandler(inputSystem)
-        eventHandler.setOnQuit(MyQuitCallback())
-        eventHandler.setOnKeyDown(MyKeyboardCallback())
-        eventHandler.setOnWindowEvent(MyResizeCallback())
 
         val evt = Event()
-
         while (running) {
             while (InputSystem.pollEvent(evt)) {
                 if (evt.type == EventType.Quit) {
                     running = false
                     break
                 }
-                eventHandler.processEvent(evt)
+                if (evt.type == EventType.WindowEvent) {
+                    val possibleNewSize = window!!.size
+                    if (possibleNewSize.width != windowSize.width ||
+                        possibleNewSize.height != windowSize.height
+                    ) {
+                        frameSync!!.waitIdle()
+                        swapChain!!.resize(possibleNewSize.width, possibleNewSize.height)
+                        windowSize = possibleNewSize
+
+                        for (i in 0..2) {
+                            resourceTracking!!.trackTexture(swapChain!!.getRenderTarget(i), ResourceUsage.Common)
+                        }
+                    }
+                }
+                if (evt.type == EventType.KeyDown) {
+                    if (evt.key.keycode == KeyCode.Escape) {
+                        running = false
+                    }
+                    if (evt.key.keycode == KeyCode.G) {
+                        frameSync?.waitIdle()
+                        device?.waitIdle()
+                        graphicsQueue?.waitIdle()
+                        System.gc()
+                    }
+                }
             }
 
             renderFrame()
@@ -126,7 +99,7 @@ class Example {
 
     private fun initializeGraphics() {
         val apiPreference = APIPreference()
-        apiPreference.windows = APIPreferenceWindows.Vulkan
+        apiPreference.windows = APIPreferenceWindows.DirectX12
         apiPreference.linux = APIPreferenceLinux.Vulkan
         apiPreference.osx = APIPreferenceOSX.Metal
 
@@ -152,7 +125,7 @@ class Example {
         // Used to track the current usage for each resource, helps with setting up barriers
         resourceTracking = ResourceTracking()
         for (i in 0..<swapChainDesc.numBuffers) {
-            resourceTracking!!.trackTexture(swapChain!!.getRenderTarget(i), ResourceUsage.Common)
+            resourceTracking!!.trackTexture(swapChain!!.getRenderTarget(i.toInt()), ResourceUsage.Common)
         }
     }
 
@@ -243,20 +216,19 @@ class Example {
         commandList.begin()
 
         val nextImage = frameSync!!.acquireNextImage(frameIndex)
-        val renderTarget = swapChain!!.getRenderTarget(nextImage)
+        val renderTarget = swapChain!!.getRenderTarget(nextImage.toInt())
 
-        val transitionDesc = batchTransitionDescs[frameIndex.toInt()]
-        transitionDesc.commandList = commandList
-        transitionDesc.textureTransitions.clear()
+        val transitionDesc = constPool.newObject(3, frameIndex.toInt()) { BatchTransitionDesc(commandList) }
+        transitionDesc.reset(commandList)
         transitionDesc.transitionTexture(renderTarget, ResourceUsage.RenderTarget)
         resourceTracking!!.batchTransition(transitionDesc)
 
-        val attachmentDesc = renderingAttachmentDescs[frameIndex.toInt()]
+        val attachmentDesc = constPool.newObject(3, frameIndex.toInt()) { RenderingAttachmentDesc() }
         attachmentDesc.resource = renderTarget
 
-        val renderingDesc = renderingDescs[frameIndex.toInt()]
-        renderingDesc.rtAttachments.clear()
-        renderingDesc.rtAttachments.addElement(attachmentDesc)
+        val renderingDesc = constPool.newObject(3, frameIndex.toInt()) { RenderingDesc() }
+        renderingDesc.clearRTAttachments()
+        renderingDesc.addRTAttachment(attachmentDesc)
 
         commandList.beginRendering(renderingDesc)
 
@@ -269,8 +241,7 @@ class Example {
         frameDebugRenderer!!.render(commandList)
         commandList.endRendering()
 
-        transitionDesc.textureTransitions.clear()
-        transitionDesc.commandList = commandList
+        transitionDesc.reset(commandList)
         transitionDesc.transitionTexture(renderTarget, ResourceUsage.Present)
         resourceTracking!!.batchTransition(transitionDesc)
 
@@ -280,7 +251,7 @@ class Example {
         val presentResult = frameSync!!.present(nextImage)
         if (presentResult == PresentResult.Timeout || presentResult == PresentResult.DeviceLost) {
             frameSync!!.waitIdle()
-            swapChain!!.resize(windowSize.width.toLong(), windowSize.height.toLong())
+            swapChain!!.resize(windowSize.width, windowSize.height)
         }
     }
 
