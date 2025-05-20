@@ -36,7 +36,7 @@ swig_add_library(DenOfIzGraphicsJava
 )
 target_compile_definitions(DenOfIzGraphicsJava PUBLIC SWIG)
 set_target_properties(DenOfIzGraphicsJava PROPERTIES
-        SWIG_FLAGS "-E;-DSWIGJAVA;-DSWIG"
+        SWIG_FLAGS "-E;-DSWIGJAVA;-DDZ_SWIG"
         CXX_STANDARD 23
         CXX_STANDARD_REQUIRED ON
         CXX_EXTENSIONS OFF
