@@ -53,7 +53,7 @@ namespace DenOfIz
     };
 } // namespace DenOfIz
 
-#ifndef SWIG
+#ifndef DZ_SWIG
 #define DZ_ARRAY_ACCESS( ElementType, DisplayName, FieldName )
 #else
 /// Swig creates a proxy element every time an InteropArray field is accessed, this is a way to work around this issue
