@@ -25,8 +25,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Utilities/Common.h>
 #include <DenOfIzGraphics/Backends/Common/SDLInclude.h>
 
+#ifndef _WIN32
 #define __EMULATE_UUID
 #include "WinAdapter.h"
+#endif
 
 #include <DenOfIzGraphics/Data/AlignedDataWriter.h>
 #include <DenOfIzGraphics/Data/Geometry.h>
