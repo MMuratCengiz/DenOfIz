@@ -70,15 +70,7 @@ namespace DenOfIz
         uint32_t LayerCount        = 1;
 
         InteropArray<RenderingAttachmentDesc> RTAttachments;
-
-        void ClearRTAttachments( )
-        {
-            RTAttachments.Clear( );
-        }
-        void AddRTAttachment( const RenderingAttachmentDesc &attachment )
-        {
-            RTAttachments.AddElement( attachment );
-        }
+        DZ_ARRAY_ACCESS( RenderingAttachmentDesc, RTAttachment, RTAttachments )
     };
     template class DZ_API InteropArray<RenderingAttachmentDesc>;
 
