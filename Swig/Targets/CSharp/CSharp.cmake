@@ -33,7 +33,7 @@ swig_add_library(DenOfIzGraphicsCSharp
         OUTPUT_DIR ${SWIG_CSHARP_CODE_DIR}
         OUTFILE_DIR ${SWIG_CSHARP_CXX_DIR}
 )
-target_compile_definitions(DenOfIzGraphicsCSharp PUBLIC SWIG)
+target_compile_definitions(DenOfIzGraphicsCSharp PUBLIC DZ_SWIG)
 set_target_properties(DenOfIzGraphicsCSharp PROPERTIES
         SWIG_FLAGS "-E;-DSWIGCSHARP;-DDZ_SWIG" # Use DZ_SWIG otherwise it conflicts with assimp
         CXX_STANDARD 23

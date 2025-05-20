@@ -34,7 +34,7 @@ swig_add_library(DenOfIzGraphicsJava
         OUTPUT_DIR ${SWIG_JAVA_PACKAGE_DIR}
         OUTFILE_DIR ${SWIG_JAVA_CXX_DIR}
 )
-target_compile_definitions(DenOfIzGraphicsJava PUBLIC SWIG)
+target_compile_definitions(DenOfIzGraphicsJava PUBLIC DZ_SWIG)
 set_target_properties(DenOfIzGraphicsJava PROPERTIES
         SWIG_FLAGS "-E;-DSWIGJAVA;-DDZ_SWIG"
         CXX_STANDARD 23
