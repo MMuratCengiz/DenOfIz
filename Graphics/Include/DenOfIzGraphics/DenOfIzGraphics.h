@@ -18,17 +18,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-// Include all graphics headers:
-#ifdef __APPLE_CC__
-// Import 3rd partly early on __APPLE__ before DirectXMath is included otherwise it breaks null
-// Some includes could be fine to move out as we test
-#include <DenOfIzGraphics/Utilities/Common.h>
-#include <DenOfIzGraphics/Backends/Common/SDLInclude.h>
+// Include all graphics headers
+// DirectXMath breaks null in most cases, so we import 3d party libraries first before it manages to do so
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
+#include <DenOfIzGraphics/Utilities/Common.h>
+#include <DenOfIzGraphics/Backends/Common/SDLInclude.h>
+
 #define __EMULATE_UUID
 #include "WinAdapter.h"
-#endif
 
 #include <DenOfIzGraphics/Data/AlignedDataWriter.h>
 #include <DenOfIzGraphics/Data/Geometry.h>
