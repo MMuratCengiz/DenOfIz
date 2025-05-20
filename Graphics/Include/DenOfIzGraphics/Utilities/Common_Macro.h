@@ -52,34 +52,3 @@ namespace DenOfIz
         ~NonCopyable( ) = default;
     };
 } // namespace DenOfIz
-
-#ifndef DZ_SWIG
-#define DZ_ARRAY_ACCESS( ElementType, DisplayName, FieldName )
-#else
-/// Swig creates a proxy element every time an InteropArray field is accessed, this is a way to work around this issue
-#define DZ_ARRAY_ACCESS( ElementType, DisplayName, FieldName )                                                                                                                     \
-    size_t Num##DisplayName##Elements( ) const                                                                                                                                     \
-    {                                                                                                                                                                              \
-        return FieldName.NumElements( );                                                                                                                                           \
-    }                                                                                                                                                                              \
-    void Set##DisplayName( size_t i, const ElementType &val )                                                                                                                      \
-    {                                                                                                                                                                              \
-        FieldName.SetElement( i, val );                                                                                                                                            \
-    }                                                                                                                                                                              \
-    const ElementType &Get##DisplayName( size_t i ) const                                                                                                                          \
-    {                                                                                                                                                                              \
-        return FieldName.GetElement( i );                                                                                                                                          \
-    }                                                                                                                                                                              \
-    void Add##DisplayName( const ElementType &val )                                                                                                                                \
-    {                                                                                                                                                                              \
-        FieldName.AddElement( val );                                                                                                                                               \
-    }                                                                                                                                                                              \
-    void Resize##DisplayName##s( size_t size )                                                                                                                                     \
-    {                                                                                                                                                                              \
-        FieldName.Resize( size );                                                                                                                                                  \
-    }                                                                                                                                                                              \
-    void Clear##DisplayName##s( )                                                                                                                                                  \
-    {                                                                                                                                                                              \
-        FieldName.Clear( );                                                                                                                                                        \
-    }
-#endif
