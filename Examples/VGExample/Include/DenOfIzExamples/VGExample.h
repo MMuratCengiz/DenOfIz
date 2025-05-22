@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Vector2d/VectorGraphics.h"
 #include "DenOfIzGraphics/Vector2d/VGPipeline.h"
 #include "DenOfIzGraphics/Vector2d/VGTransform.h"
+#include "DenOfIzGraphics/Assets/Font/TextRenderer.h"
 
 #include <DirectXMath.h>
 #include <memory>
@@ -40,6 +41,7 @@ namespace DenOfIz
         std::unique_ptr<VectorGraphics>     m_vectorGraphics;
         std::unique_ptr<VGPipeline>         m_vgPipeline;
         std::unique_ptr<VGTransform>        m_vgTransform;
+        std::unique_ptr<TextRenderer>       m_textRenderer;
 
         float      m_animationTime;
         XMFLOAT4X4 m_projectionMatrix;
@@ -73,11 +75,10 @@ namespace DenOfIz
         
         // Demo rendering functions
         void RenderBasicShapes( ) const;
+        void RenderNewFeatures( ) const;
         void RenderAnimatedShapes( ) const;
-        void RenderGradientShapes( ) const;
         void RenderCurveDemo( ) const;
         void RenderTransformDemo( ) const;
-        void RenderComplexDemo( ) const;
         
         // Helper functions
         static Float_4 GetAnimatedColor( float time, float offset = 0.0f );

@@ -94,20 +94,25 @@ void VGExample::Render( const uint32_t frameIndex, ICommandList *commandList )
     commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
     commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
 
-    // === Vector Graphics Rendering ===
+    // === Vector Graphics and Text Rendering ===
+    // Begin text renderer batch first
+    m_textRenderer->BeginBatch( );
+    
     // Begin vector graphics batch
-    m_vectorGraphics->BeginBatch( commandList );
+    m_vectorGraphics->BeginBatch( commandList, frameIndex );
 
     // Render different demo sections
     RenderBasicShapes( );
+    RenderNewFeatures( );
     RenderAnimatedShapes( );
-    RenderGradientShapes( );
     RenderCurveDemo( );
     RenderTransformDemo( );
-    RenderComplexDemo( );
 
     // End vector graphics batch (this will flush all geometry)
     m_vectorGraphics->EndBatch( );
+    
+    // End text renderer batch (this will flush all text)
+    m_textRenderer->EndBatch( commandList );
 
     // Render debug info
     m_debugRenderer->Render( commandList );
@@ -147,12 +152,24 @@ void VGExample::InitializeVectorGraphics( )
     pipelineDesc.SetupData     = true; // Use default projection data setup
     m_vgPipeline               = std::make_unique<VGPipeline>( pipelineDesc );
 
+    // Initialize TextRenderer
+    TextRendererDesc textRendererDesc;
+    textRendererDesc.LogicalDevice = m_logicalDevice;
+    m_textRenderer = std::make_unique<TextRenderer>( textRendererDesc );
+    m_textRenderer->Initialize( );
+    
+    // Set projection matrix for TextRenderer
+    Float_4x4 projMatrix;
+    std::memcpy( &projMatrix, &m_projectionMatrix, sizeof( Float_4x4 ) );
+    m_textRenderer->SetProjectionMatrix( projMatrix );
+
     // Create Vector Graphics renderer
     VectorGraphicsDesc vgDesc{ };
     vgDesc.LogicalDevice                = m_logicalDevice;
     vgDesc.InitialVertexBufferSize      = 256 * 1024;
     vgDesc.InitialIndexBufferSize       = 128 * 1024;
     vgDesc.DefaultTessellationTolerance = 2.0f;
+    vgDesc.TextRenderer                 = m_textRenderer.get( );
 
     m_vectorGraphics = std::make_unique<VectorGraphics>( vgDesc );
     m_vectorGraphics->SetPipeline( m_vgPipeline.get( ) );
@@ -284,56 +301,102 @@ void VGExample::RenderAnimatedShapes( ) const
     m_vectorGraphics->Restore( );
 }
 
-void VGExample::RenderGradientShapes( ) const
+void VGExample::RenderNewFeatures( ) const
 {
-    // === Gradient Demo (Bottom-Left Quadrant) ===
-    // Note: Gradients are set up but full shader support would be needed for rendering
-
+    // === New Features Demo - Showcasing recently implemented functionality ===
     m_vectorGraphics->Save( );
     m_vectorGraphics->Translate( { 50.0f, 400.0f } );
 
-    // For now, we'll simulate gradients with multiple colored shapes
-    // This demonstrates the API even though full gradient rendering isn't implemented yet
+    // 1. Rounded Rectangles with different corner radii
+    m_vectorGraphics->SetFillColor( { 0.8f, 0.4f, 0.6f, 1.0f } );
+    m_vectorGraphics->SetFillEnabled( true );
+    m_vectorGraphics->SetStrokeEnabled( false );
+    
+    VGRoundedRect roundedRect1;
+    roundedRect1.TopLeft = { 0.0f, 0.0f };
+    roundedRect1.BottomRight = { 100.0f, 60.0f };
+    roundedRect1.CornerRadii = { 15.0f, 5.0f, 20.0f, 10.0f }; // Different radii for each corner
+    m_vectorGraphics->FillRoundedRect( roundedRect1 );
 
-    // 1. "Linear Gradient" Rectangle (simulated with color bands)
-    for ( int i = 0; i < 10; ++i )
-    {
-        const float t     = i / 9.0f;
-        Float_4     color = { 1.0f * ( 1.0f - t ) + 0.0f * t, // Red to Blue
-                              0.0f, 0.0f * ( 1.0f - t ) + 1.0f * t, 1.0f };
+    // 2. Ellipse with rotation
+    m_vectorGraphics->Translate( { 120.0f, 30.0f } );
+    VGEllipse rotatedEllipse;
+    rotatedEllipse.Center = { 0.0f, 0.0f };
+    rotatedEllipse.Radii = { 40.0f, 20.0f };
+    rotatedEllipse.Rotation = m_animationTime * 0.5f; // Animated rotation
+    
+    m_vectorGraphics->SetFillColor( { 0.3f, 0.7f, 0.9f, 0.8f } );
+    m_vectorGraphics->FillEllipse( rotatedEllipse );
 
-        m_vectorGraphics->SetFillColor( color );
-        m_vectorGraphics->SetFillEnabled( true );
-        m_vectorGraphics->SetStrokeEnabled( false );
-        m_vectorGraphics->FillRect( { i * 8.0f, 0.0f }, { ( i + 1 ) * 8.0f, 60.0f } );
-    }
+    m_vectorGraphics->DrawText( "Sexooo", { 120.0f, 100.0f }, 36.0f );
 
-    // 2. "Radial Gradient" Circle (simulated with concentric circles)
-    m_vectorGraphics->Translate( { 150.0f, 30.0f } );
-    for ( int i = 10; i >= 1; --i )
-    {
-        const float t     = ( 10 - i ) / 9.0f;
-        Float_4     color = { 1.0f * ( 1.0f - t ) + 1.0f * t, // White to Yellow
-                              1.0f * ( 1.0f - t ) + 1.0f * t, 1.0f * ( 1.0f - t ) + 0.0f * t, 1.0f };
+    // 3. Ellipse stroke demo
+    m_vectorGraphics->Translate( { 100.0f, 0.0f } );
+    VGEllipse strokedEllipse;
+    strokedEllipse.Center = { 0.0f, 0.0f };
+    strokedEllipse.Radii = { 35.0f, 15.0f };
+    strokedEllipse.Rotation = -m_animationTime * 0.3f;
+    
+    m_vectorGraphics->SetFillEnabled( false );
+    m_vectorGraphics->SetStrokeEnabled( true );
+    m_vectorGraphics->SetStrokeColor( { 1.0f, 0.5f, 0.2f, 1.0f } );
+    m_vectorGraphics->SetStrokeWidth( 3.0f );
+    m_vectorGraphics->StrokeEllipse( strokedEllipse );
 
-        m_vectorGraphics->SetFillColor( color );
-        m_vectorGraphics->SetFillEnabled( true );
-        m_vectorGraphics->SetStrokeEnabled( false );
-        m_vectorGraphics->FillCircle( { 0.0f, 0.0f }, i * 3.0f );
-    }
+    // 4. Clipping demonstration
+    m_vectorGraphics->Translate( { 120.0f, 0.0f } );
+    
+    // Set up clipping rectangle
+    VGRect clipRect;
+    clipRect.TopLeft = { -25.0f, -20.0f };
+    clipRect.BottomRight = { 25.0f, 20.0f };
+    m_vectorGraphics->ClipRect( clipRect );
+    
+    // Draw shapes that will be clipped
+    m_vectorGraphics->SetFillEnabled( true );
+    m_vectorGraphics->SetStrokeEnabled( false );
+    m_vectorGraphics->SetFillColor( { 1.0f, 0.8f, 0.2f, 1.0f } );
+    
+    // Large circle that extends beyond clip rect
+    m_vectorGraphics->FillCircle( { 0.0f, 0.0f }, 35.0f );
+    
+    // Draw clip rect outline for reference
+    m_vectorGraphics->ResetClip( );
+    m_vectorGraphics->SetFillEnabled( false );
+    m_vectorGraphics->SetStrokeEnabled( true );
+    m_vectorGraphics->SetStrokeColor( { 1.0f, 0.0f, 0.0f, 1.0f } );
+    m_vectorGraphics->SetStrokeWidth( 2.0f );
+    m_vectorGraphics->StrokeRect( clipRect );
 
-    // 3. Multiple Alpha Levels
-    m_vectorGraphics->Translate( { 100.0f, -30.0f } );
-    for ( int i = 0; i < 5; ++i )
-    {
-        const float alpha = ( i + 1 ) * 0.2f;
-        m_vectorGraphics->SetAlpha( alpha );
-        m_vectorGraphics->SetFillColor( { 0.2f, 1.0f, 0.4f, 1.0f } );
-        m_vectorGraphics->SetFillEnabled( true );
-        m_vectorGraphics->SetStrokeEnabled( false );
-        m_vectorGraphics->FillRect( { i * 25.0f, 0.0f }, { i * 25.0f + 20.0f, 60.0f } );
-    }
-    m_vectorGraphics->SetAlpha( 1.0f ); // Reset alpha
+    // 5. Advanced path commands demo
+    m_vectorGraphics->Translate( { 120.0f, 0.0f } );
+    m_vectorGraphics->SetStrokeEnabled( true );
+    m_vectorGraphics->SetFillEnabled( false );
+    m_vectorGraphics->SetStrokeColor( { 0.6f, 0.2f, 0.9f, 1.0f } );
+    m_vectorGraphics->SetStrokeWidth( 2.5f );
+    
+    const VGPath2D advancedPath;
+    advancedPath.MoveTo( { -30.0f, 0.0f } );
+    // Horizontal line
+    advancedPath.HorizontalLineTo( -10.0f );
+    // Smooth quadratic curve (control point automatically calculated)
+    advancedPath.SmoothQuadraticCurveTo( { 10.0f, -20.0f } );
+    // Vertical line
+    advancedPath.VerticalLineTo( 0.0f );
+    // Smooth cubic curve 
+    advancedPath.SmoothCubicCurveTo( { 20.0f, 10.0f }, { 30.0f, 0.0f } );
+    
+    m_vectorGraphics->StrokePath( advancedPath );
+
+    // 6. Text rendering demo (if font is available)
+    m_vectorGraphics->Translate( { -340.0f, 80.0f } );
+    m_vectorGraphics->SetFillEnabled( true );
+    m_vectorGraphics->SetStrokeEnabled( false );
+    m_vectorGraphics->SetFillColor( { 1.0f, 1.0f, 1.0f, 1.0f } );
+    
+    // Note: Font is managed by TextRenderer
+    const InteropString demoText = "New VG Features!";
+    m_vectorGraphics->DrawText( demoText, { 0.0f, 0.0f }, 24.0f );
 
     m_vectorGraphics->Restore( );
 }
@@ -544,99 +607,6 @@ void VGExample::RenderTransformDemo( ) const
     m_vectorGraphics->Restore( );
 }
 
-void VGExample::RenderComplexDemo( ) const
-{
-    // === Complex Scene Demo (Center) ===
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 400.0f, 250.0f } );
-
-    // Create a complex animated scene
-    constexpr Float_2 center = { 0.0f, 0.0f };
-
-    // Background circle
-    m_vectorGraphics->SetFillColor( { 0.1f, 0.1f, 0.2f, 0.3f } );
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( false );
-    m_vectorGraphics->FillCircle( center, 80.0f );
-
-    // Spinning spokes
-    constexpr int numSpokes = 8;
-    for ( int i = 0; i < numSpokes; ++i )
-    {
-        const float angle = m_rotationAngle * 2.0f + i * 2.0f * XM_PI / numSpokes;
-        Float_2     start = GetCircularPosition( 20.0f, angle, center );
-        Float_2     end   = GetCircularPosition( 70.0f, angle, center );
-
-        m_vectorGraphics->SetStrokeColor( GetAnimatedColor( m_colorAnimTime, i * 0.3f ) );
-        m_vectorGraphics->SetStrokeWidth( 3.0f );
-        m_vectorGraphics->DrawLine( start, end, 3.0f );
-    }
-
-    // Central rotating square
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Rotate( -m_rotationAngle * 3.0f );
-    m_vectorGraphics->SetFillColor( { 1.0f, 1.0f, 1.0f, 0.9f } );
-    m_vectorGraphics->SetStrokeColor( { 0.0f, 0.0f, 0.0f, 1.0f } );
-    m_vectorGraphics->SetStrokeWidth( 2.0f );
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( true );
-    m_vectorGraphics->DrawRect( { -10.0f, -10.0f }, { 10.0f, 10.0f } );
-    m_vectorGraphics->Restore( );
-
-    // Orbiting smaller elements
-    constexpr int numOrbiters = 4;
-    for ( int i = 0; i < numOrbiters; ++i )
-    {
-        const float orbitAngle = m_animationTime * 0.8f + i * 2.0f * XM_PI / numOrbiters;
-        Float_2     orbitPos   = GetCircularPosition( 60.0f, orbitAngle, center );
-
-        m_vectorGraphics->Save( );
-        m_vectorGraphics->Translate( orbitPos );
-        m_vectorGraphics->Rotate( m_rotationAngle * ( i + 1 ) );
-
-        // Create different shapes for each orbiter
-        switch ( i )
-        {
-        case 0: // Triangle
-            {
-                VGPolygon triangle;
-                triangle.Points.AddElement( { 0.0f, -8.0f } );
-                triangle.Points.AddElement( { -7.0f, 6.0f } );
-                triangle.Points.AddElement( { 7.0f, 6.0f } );
-                triangle.IsClosed = true;
-                m_vectorGraphics->SetFillColor( { 1.0f, 0.3f, 0.3f, 1.0f } );
-                m_vectorGraphics->FillPolygon( triangle );
-            }
-            break;
-        case 1: // Circle
-            m_vectorGraphics->SetFillColor( { 0.3f, 1.0f, 0.3f, 1.0f } );
-            m_vectorGraphics->FillCircle( { 0.0f, 0.0f }, 8.0f );
-            break;
-        case 2: // Square
-            m_vectorGraphics->SetFillColor( { 0.3f, 0.3f, 1.0f, 1.0f } );
-            m_vectorGraphics->FillRect( { -6.0f, -6.0f }, { 6.0f, 6.0f } );
-            break;
-        case 3: // Diamond
-            {
-                VGPolygon diamond;
-                diamond.Points.AddElement( { 0.0f, -8.0f } );
-                diamond.Points.AddElement( { 8.0f, 0.0f } );
-                diamond.Points.AddElement( { 0.0f, 8.0f } );
-                diamond.Points.AddElement( { -8.0f, 0.0f } );
-                diamond.IsClosed = true;
-                m_vectorGraphics->SetFillColor( { 1.0f, 1.0f, 0.3f, 1.0f } );
-                m_vectorGraphics->FillPolygon( diamond );
-            }
-            break;
-        default:
-            break;
-        }
-
-        m_vectorGraphics->Restore( );
-    }
-
-    m_vectorGraphics->Restore( );
-}
 
 Float_4 VGExample::GetAnimatedColor( const float time, const float offset )
 {

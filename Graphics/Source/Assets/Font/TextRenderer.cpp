@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Font/Embedded/EmbeddedFonts.h"
 #include "DenOfIzGraphics/Assets/Font/EmbeddedTextRendererShaders.h"
+#include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
 #include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
 
@@ -132,6 +133,10 @@ void TextRenderer::Initialize( )
 
     m_resourceBindGroup = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
     m_resourceBindGroup->BeginUpdate( )->Cbv( 0, m_uniformBuffer.get( ) )->Srv( 0, m_fontAtlasTexture.get( ) )->Sampler( 0, m_fontSampler.get( ) )->EndUpdate( );
+
+    static FontLibrary defaultFontLibrary;
+    static auto        defaultFont = std::unique_ptr<Font>( defaultFontLibrary.LoadFont( { EmbeddedFonts::GetInconsolataRegular( ) } ) );
+    SetFont( defaultFont.get( ) );
 }
 
 void TextRenderer::SetFont( Font *font )
@@ -169,6 +174,7 @@ void TextRenderer::AddText( const TextRenderDesc &params )
 {
     if ( !m_currentFont || params.Text.NumChars( ) == 0 )
     {
+        LOG( WARNING ) << "Font or text is not set";
         return;
     }
 

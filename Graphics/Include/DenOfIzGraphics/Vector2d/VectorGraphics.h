@@ -18,14 +18,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzGraphics/Assets/Font/TextRenderer.h>
 #include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 #include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 #include "VGPipeline.h"
 #include "VGShapes.h"
 #include "VGTransform.h"
+
+#ifdef DrawText
+#undef DrawText
+#endif
 
 namespace DenOfIz
 {
@@ -35,6 +41,7 @@ namespace DenOfIz
         uint32_t        InitialVertexBufferSize      = 64 * 1024;
         uint32_t        InitialIndexBufferSize       = 32 * 1024;
         float           DefaultTessellationTolerance = 0.5f;
+        TextRenderer   *TextRenderer                 = nullptr;
     };
 
     enum class VGGradientType
@@ -181,12 +188,20 @@ namespace DenOfIz
 
         float                  m_tessellationTolerance = 0.5f;
         std::vector<Float_4x4> m_transformStack;
+        uint32_t               m_frameIndex = 0;
+
+        // Text rendering
+        TextRenderer *m_textRenderer = nullptr;
+
+        // Clipping state
+        std::vector<VGRect> m_clipStack;
+        bool                m_clippingEnabled = false;
 
     public:
         DZ_API explicit VectorGraphics( const VectorGraphicsDesc &desc );
         DZ_API ~VectorGraphics( );
 
-        DZ_API void BeginBatch( ICommandList *commandList );
+        DZ_API void BeginBatch( ICommandList *commandList, uint32_t frameIndex = 0 );
         DZ_API void EndBatch( );
         DZ_API void Flush( ); // Immediate render of current batch
 
@@ -272,20 +287,22 @@ namespace DenOfIz
         DZ_API void DrawLine( const Float_2 &start, const Float_2 &end, float thickness = 1.0f );
 
         // === Clipping API ===
-        DZ_API static void ClipRect( const VGRect &rect );
-        DZ_API static void ClipPath( const VGPath2D &path );
-        DZ_API static void ResetClip( );
+        DZ_API void   ClipRect( const VGRect &rect );
+        DZ_API void   ClipPath( const VGPath2D &path );
+        DZ_API void   ResetClip( );
+        DZ_API bool   IsClippingEnabled( ) const;
+        DZ_API VGRect GetCurrentClipRect( ) const;
 
-        // Note: Text rendering would integrate with existing font system
-        // void DrawText( const InteropString& text, const Float_2& position, IFont* font );
-        // void MeasureText( const InteropString& text, IFont* font, VGRect& bounds );
+        // Text rendering
+        DZ_API void   DrawText( const InteropString &text, const Float_2 &position, float scale = 1.0f ) const;
+        DZ_API VGRect MeasureText( const InteropString &text, float scale = 36.0f ) const;
 
         // === Configuration ===
         DZ_API void  SetTessellationTolerance( float tolerance );
         DZ_API float GetTessellationTolerance( ) const;
 
-        DZ_API void        SetPipeline( VGPipeline *pipeline );
-        DZ_API void        SetTransform( VGTransform *transform );
+        DZ_API void         SetPipeline( VGPipeline *pipeline );
+        DZ_API void         SetTransform( VGTransform *transform );
         DZ_API VGPipeline  *GetPipeline( ) const;
         DZ_API VGTransform *GetTransform( ) const;
 
@@ -325,18 +342,29 @@ namespace DenOfIz
         Float_4 ApplyAlpha( const Float_4 &color ) const;
 
         // Gradient utilities
-        static void SetupGradientVertexData( VGVertex &vertex, const Float_2 &position );
+        void SetupGradientVertexData( VGVertex &vertex, const Float_2 &position ) const;
 
         // Advanced tessellation algorithms
         void TessellateQuadraticBezier( const Float_2 &p0, const Float_2 &p1, const Float_2 &p2, std::vector<Float_2> &points );
         void TessellateCubicBezier( const Float_2 &p0, const Float_2 &p1, const Float_2 &p2, const Float_2 &p3, std::vector<Float_2> &points );
         void TessellateClosedPath( const std::vector<Float_2> &points );
-        void TriangulatePolygon( const std::vector<Float_2> &points, std::vector<uint32_t> &indices );
+        void TriangulatePolygon( const std::vector<Float_2> &points, std::vector<uint32_t> &indices ) const;
+        void TessellateEllipticalArc( const Float_2 &start, const Float_2 &radii, float xAxisRotation, bool largeArcFlag, bool sweepFlag, const Float_2 &end,
+                                      std::vector<Float_2> &points ) const;
+        void TessellateCircularArc( const Float_2 &center, float radius, float startAngle, float endAngle, bool clockwise, std::vector<Float_2> &points ) const;
 
         // Geometric utilities
         static float DistancePointToLine( const Float_2 &point, const Float_2 &lineStart, const Float_2 &lineEnd );
         static bool  IsPointInTriangle( const Float_2 &point, const Float_2 &a, const Float_2 &b, const Float_2 &c );
         static float Cross2D( const Float_2 &a, const Float_2 &b );
+
+        // Clipping utilities
+        bool   IsPointInClipRect( const Float_2 &point ) const;
+        VGRect IntersectRects( const VGRect &a, const VGRect &b ) const;
+
+        // Rounded rectangle utilities
+        void GenerateRoundedRectPath( float x1, float y1, float x2, float y2, float tlRadius, float trRadius, float blRadius, float brRadius, std::vector<Float_2> &path ) const;
+        void TessellateStrokeFromPaths( const std::vector<Float_2> &outerPath, const std::vector<Float_2> &innerPath );
 
         // Clear state
         void ClearBatch( );

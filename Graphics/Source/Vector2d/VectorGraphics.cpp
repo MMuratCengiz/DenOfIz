@@ -21,6 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DirectXMath.h>
 #include <algorithm>
 
+#include "DenOfIzGraphics/Assets/Font/Embedded/EmbeddedFonts.h"
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -30,7 +32,7 @@ using namespace DirectX;
 
 VectorGraphics::VectorGraphics( const VectorGraphicsDesc &desc ) :
     m_vertexBufferSize( desc.InitialVertexBufferSize ), m_indexBufferSize( desc.InitialIndexBufferSize ), m_logicalDevice( desc.LogicalDevice ),
-    m_tessellationTolerance( desc.DefaultTessellationTolerance )
+    m_tessellationTolerance( desc.DefaultTessellationTolerance ), m_textRenderer( desc.TextRenderer )
 {
     if ( !m_logicalDevice )
     {
@@ -65,9 +67,10 @@ VectorGraphics::VectorGraphics( const VectorGraphicsDesc &desc ) :
 
 VectorGraphics::~VectorGraphics( ) = default;
 
-void VectorGraphics::BeginBatch( ICommandList *commandList )
+void VectorGraphics::BeginBatch( ICommandList *commandList, const uint32_t frameIndex )
 {
     m_commandList = commandList;
+    m_frameIndex  = frameIndex;
     ClearBatch( );
 }
 
@@ -95,7 +98,7 @@ void VectorGraphics::Flush( )
     if ( m_transform )
     {
         const auto projMatrix = m_transform->GetProjectionMatrix( );
-        m_pipeline->UpdateProjection( 0, projMatrix ); // TODO: frame index management
+        m_pipeline->UpdateProjection( m_frameIndex, projMatrix );
         if ( const auto bindGroup = m_pipeline->GetBindGroup( 0, 0 ) )
         {
             m_commandList->BindResourceGroup( bindGroup );
@@ -548,17 +551,124 @@ void VectorGraphics::DrawLine( const Float_2 &start, const Float_2 &end, const f
 
 void VectorGraphics::ClipRect( const VGRect &rect )
 {
-    // TODO: Implement clipping
+    VGRect transformedRect;
+    transformedRect.TopLeft     = TransformPoint( rect.TopLeft );
+    transformedRect.BottomRight = TransformPoint( rect.BottomRight );
+
+    if ( m_clipStack.empty( ) )
+    {
+        m_clipStack.push_back( transformedRect );
+    }
+    else
+    {
+        // Intersect with current clip rect
+        const VGRect &currentClip  = m_clipStack.back( );
+        VGRect        intersection = IntersectRects( currentClip, transformedRect );
+        m_clipStack.push_back( intersection );
+    }
+
+    m_clippingEnabled = true;
 }
 
 void VectorGraphics::ClipPath( const VGPath2D &path )
 {
-    // TODO: Implement clipping
+    // For now, approximate path clipping with bounding box
+    // TODO: Implement proper path clipping using polygon clipping algorithms
+
+    if ( path.GetCommands( ).NumElements( ) == 0 )
+        return;
+
+    // Calculate bounding box of path
+    Float_2 minPoint     = { FLT_MAX, FLT_MAX };
+    Float_2 maxPoint     = { -FLT_MAX, -FLT_MAX };
+    Float_2 currentPoint = { 0.0f, 0.0f };
+
+    for ( uint32_t i = 0; i < path.GetCommands( ).NumElements( ); ++i )
+    {
+        const auto &command = path.GetCommands( ).GetElement( i );
+
+        switch ( command.Type )
+        {
+        case VGPathCommandType::MoveTo:
+            currentPoint = command.MoveTo.IsRelative ? Float_2{ currentPoint.X + command.MoveTo.Point.X, currentPoint.Y + command.MoveTo.Point.Y } : command.MoveTo.Point;
+            break;
+
+        case VGPathCommandType::LineTo:
+            currentPoint = command.LineTo.IsRelative ? Float_2{ currentPoint.X + command.LineTo.Point.X, currentPoint.Y + command.LineTo.Point.Y } : command.LineTo.Point;
+            break;
+
+        case VGPathCommandType::QuadraticCurveTo:
+            currentPoint = command.QuadraticCurveTo.IsRelative
+                               ? Float_2{ currentPoint.X + command.QuadraticCurveTo.EndPoint.X, currentPoint.Y + command.QuadraticCurveTo.EndPoint.Y }
+                               : command.QuadraticCurveTo.EndPoint;
+            break;
+
+        case VGPathCommandType::CubicCurveTo:
+            currentPoint = command.CubicCurveTo.IsRelative ? Float_2{ currentPoint.X + command.CubicCurveTo.EndPoint.X, currentPoint.Y + command.CubicCurveTo.EndPoint.Y }
+                                                           : command.CubicCurveTo.EndPoint;
+            break;
+
+        default:
+            break;
+        }
+
+        minPoint.X = std::min( minPoint.X, currentPoint.X );
+        minPoint.Y = std::min( minPoint.Y, currentPoint.Y );
+        maxPoint.X = std::max( maxPoint.X, currentPoint.X );
+        maxPoint.Y = std::max( maxPoint.Y, currentPoint.Y );
+    }
+
+    VGRect pathBounds;
+    pathBounds.TopLeft     = minPoint;
+    pathBounds.BottomRight = maxPoint;
+
+    ClipRect( pathBounds );
 }
 
 void VectorGraphics::ResetClip( )
 {
-    // TODO: Implement clipping
+    m_clipStack.clear( );
+    m_clippingEnabled = false;
+}
+
+bool VectorGraphics::IsClippingEnabled( ) const
+{
+    return m_clippingEnabled && !m_clipStack.empty( );
+}
+
+VGRect VectorGraphics::GetCurrentClipRect( ) const
+{
+    if ( m_clipStack.empty( ) )
+    {
+        return { { -FLT_MAX, -FLT_MAX }, { FLT_MAX, FLT_MAX } };
+    }
+    return m_clipStack.back( );
+}
+
+bool VectorGraphics::IsPointInClipRect( const Float_2 &point ) const
+{
+    if ( !IsClippingEnabled( ) )
+        return true;
+
+    const VGRect &clipRect = GetCurrentClipRect( );
+    return point.X >= clipRect.TopLeft.X && point.X <= clipRect.BottomRight.X && point.Y >= clipRect.TopLeft.Y && point.Y <= clipRect.BottomRight.Y;
+}
+
+VGRect VectorGraphics::IntersectRects( const VGRect &a, const VGRect &b ) const
+{
+    VGRect result;
+    result.TopLeft.X     = std::max( a.TopLeft.X, b.TopLeft.X );
+    result.TopLeft.Y     = std::max( a.TopLeft.Y, b.TopLeft.Y );
+    result.BottomRight.X = std::min( a.BottomRight.X, b.BottomRight.X );
+    result.BottomRight.Y = std::min( a.BottomRight.Y, b.BottomRight.Y );
+
+    // Ensure valid rectangle (no negative size)
+    if ( result.TopLeft.X > result.BottomRight.X || result.TopLeft.Y > result.BottomRight.Y )
+    {
+        result = { { 0.0f, 0.0f }, { 0.0f, 0.0f } }; // Empty rectangle
+    }
+
+    return result;
 }
 
 void VectorGraphics::SetTessellationTolerance( float tolerance )
@@ -686,7 +796,91 @@ void VectorGraphics::TessellatePath( const VGPath2D &path, bool forStroke )
             }
             break;
 
-        // TODO: Implement other path commands (arcs, smooth curves, etc.)
+        case VGPathCommandType::HorizontalLineTo:
+            {
+                Float_2 endPoint = command.HorizontalLineTo.IsRelative ? Float_2{ currentPoint.X + command.HorizontalLineTo.X, currentPoint.Y }
+                                                                       : Float_2{ command.HorizontalLineTo.X, currentPoint.Y };
+                pathPoints.push_back( endPoint );
+                currentPoint        = endPoint;
+                hasLastControlPoint = false;
+            }
+            break;
+
+        case VGPathCommandType::VerticalLineTo:
+            {
+                Float_2 endPoint =
+                    command.VerticalLineTo.IsRelative ? Float_2{ currentPoint.X, currentPoint.Y + command.VerticalLineTo.Y } : Float_2{ currentPoint.X, command.VerticalLineTo.Y };
+                pathPoints.push_back( endPoint );
+                currentPoint        = endPoint;
+                hasLastControlPoint = false;
+            }
+            break;
+
+        case VGPathCommandType::SmoothQuadraticCurveTo:
+            {
+                // Calculate reflected control point from last control point
+                Float_2 controlPoint = hasLastControlPoint ? Float_2{ 2.0f * currentPoint.X - lastControlPoint.X, 2.0f * currentPoint.Y - lastControlPoint.Y } : currentPoint;
+
+                Float_2 endPoint = command.SmoothQuadraticCurveTo.IsRelative
+                                       ? Float_2{ currentPoint.X + command.SmoothQuadraticCurveTo.EndPoint.X, currentPoint.Y + command.SmoothQuadraticCurveTo.EndPoint.Y }
+                                       : command.SmoothQuadraticCurveTo.EndPoint;
+
+                // Tessellate smooth quadratic Bézier curve
+                TessellateQuadraticBezier( currentPoint, controlPoint, endPoint, pathPoints );
+                currentPoint        = endPoint;
+                lastControlPoint    = controlPoint;
+                hasLastControlPoint = true;
+            }
+            break;
+
+        case VGPathCommandType::SmoothCubicCurveTo:
+            {
+                // Calculate reflected control point from last control point
+                Float_2 control1 = hasLastControlPoint ? Float_2{ 2.0f * currentPoint.X - lastControlPoint.X, 2.0f * currentPoint.Y - lastControlPoint.Y } : currentPoint;
+
+                Float_2 control2 = command.SmoothCubicCurveTo.IsRelative
+                                       ? Float_2{ currentPoint.X + command.SmoothCubicCurveTo.ControlPoint2.X, currentPoint.Y + command.SmoothCubicCurveTo.ControlPoint2.Y }
+                                       : command.SmoothCubicCurveTo.ControlPoint2;
+
+                Float_2 endPoint = command.SmoothCubicCurveTo.IsRelative
+                                       ? Float_2{ currentPoint.X + command.SmoothCubicCurveTo.EndPoint.X, currentPoint.Y + command.SmoothCubicCurveTo.EndPoint.Y }
+                                       : command.SmoothCubicCurveTo.EndPoint;
+
+                // Tessellate smooth cubic Bézier curve
+                TessellateCubicBezier( currentPoint, control1, control2, endPoint, pathPoints );
+                currentPoint        = endPoint;
+                lastControlPoint    = control2;
+                hasLastControlPoint = true;
+            }
+            break;
+
+        case VGPathCommandType::EllipticalArc:
+            {
+                Float_2 endPoint = command.EllipticalArc.IsRelative
+                                       ? Float_2{ currentPoint.X + command.EllipticalArc.EndPoint.X, currentPoint.Y + command.EllipticalArc.EndPoint.Y }
+                                       : command.EllipticalArc.EndPoint;
+
+                // Tessellate elliptical arc
+                TessellateEllipticalArc( currentPoint, command.EllipticalArc.Radii, command.EllipticalArc.XAxisRotation, command.EllipticalArc.LargeArcFlag,
+                                         command.EllipticalArc.SweepFlag, endPoint, pathPoints );
+                currentPoint        = endPoint;
+                hasLastControlPoint = false;
+            }
+            break;
+
+        case VGPathCommandType::CircularArc:
+            {
+                // Tessellate circular arc
+                TessellateCircularArc( command.CircularArc.Center, command.CircularArc.Radius, command.CircularArc.StartAngle, command.CircularArc.EndAngle,
+                                       command.CircularArc.Clockwise, pathPoints );
+                // Update current point to end of arc
+                const float endAngle = command.CircularArc.EndAngle;
+                currentPoint         = Float_2{ command.CircularArc.Center.X + command.CircularArc.Radius * cosf( endAngle ),
+                                        command.CircularArc.Center.Y + command.CircularArc.Radius * sinf( endAngle ) };
+                hasLastControlPoint  = false;
+            }
+            break;
+
         default:
             break;
         }
@@ -783,12 +977,73 @@ void VectorGraphics::TessellateRect( const VGRect &rect, const bool forStroke )
 
 void VectorGraphics::TessellateRoundedRect( const VGRoundedRect &rect, const bool forStroke )
 {
-    // TODO: Implement rounded rectangle tessellation
-    // For now, fall back to regular rectangle
-    VGRect simpleRect;
-    simpleRect.TopLeft     = rect.TopLeft;
-    simpleRect.BottomRight = rect.BottomRight;
-    TessellateRect( simpleRect, forStroke );
+    const auto color = forStroke ? ApplyAlpha( m_currentStyle.Stroke.Color ) : ApplyAlpha( m_currentStyle.Fill.Color );
+
+    // Clamp corner radii to valid ranges
+    const float maxRadius         = std::min( ( rect.BottomRight.X - rect.TopLeft.X ) * 0.5f, ( rect.BottomRight.Y - rect.TopLeft.Y ) * 0.5f );
+    const float topLeftRadius     = std::min( rect.CornerRadii.X, maxRadius ); // TopLeft
+    const float topRightRadius    = std::min( rect.CornerRadii.Y, maxRadius ); // TopRight
+    const float bottomRightRadius = std::min( rect.CornerRadii.Z, maxRadius ); // BottomRight
+    const float bottomLeftRadius  = std::min( rect.CornerRadii.W, maxRadius ); // BottomLeft
+
+    if ( forStroke )
+    {
+        // Generate stroke for rounded rectangle
+        const float halfWidth = m_currentStyle.Stroke.Width * 0.5f;
+
+        // For stroke, we need to create an outline path
+        std::vector<Float_2> outerPath, innerPath;
+
+        // Generate outer path
+        GenerateRoundedRectPath( rect.TopLeft.X - halfWidth, rect.TopLeft.Y - halfWidth, rect.BottomRight.X + halfWidth, rect.BottomRight.Y + halfWidth, topLeftRadius + halfWidth,
+                                 topRightRadius + halfWidth, bottomLeftRadius + halfWidth, bottomRightRadius + halfWidth, outerPath );
+
+        // Generate inner path
+        const float innerX1 = rect.TopLeft.X + halfWidth;
+        const float innerY1 = rect.TopLeft.Y + halfWidth;
+        const float innerX2 = rect.BottomRight.X - halfWidth;
+        const float innerY2 = rect.BottomRight.Y - halfWidth;
+
+        if ( innerX2 > innerX1 && innerY2 > innerY1 )
+        {
+            GenerateRoundedRectPath( innerX1, innerY1, innerX2, innerY2, std::max( 0.0f, topLeftRadius - halfWidth ), std::max( 0.0f, topRightRadius - halfWidth ),
+                                     std::max( 0.0f, bottomLeftRadius - halfWidth ), std::max( 0.0f, bottomRightRadius - halfWidth ), innerPath );
+        }
+
+        // Tessellate stroke using the path difference
+        TessellateStrokeFromPaths( outerPath, innerPath );
+    }
+    else
+    {
+        // Generate filled rounded rectangle using triangle fan from center
+        std::vector<Float_2> path;
+        GenerateRoundedRectPath( rect.TopLeft.X, rect.TopLeft.Y, rect.BottomRight.X, rect.BottomRight.Y, topLeftRadius, topRightRadius, bottomLeftRadius, bottomRightRadius, path );
+
+        if ( !path.empty( ) )
+        {
+            // Add center point for fan triangulation
+            const Float_2 center = { ( rect.TopLeft.X + rect.BottomRight.X ) * 0.5f, ( rect.TopLeft.Y + rect.BottomRight.Y ) * 0.5f };
+            AddVertex( TransformPoint( center ), color );
+            const uint32_t centerIndex = static_cast<uint32_t>( m_vertices.size( ) ) - 1;
+
+            // Add all path vertices
+            for ( const auto &point : path )
+            {
+                AddVertex( TransformPoint( point ), color );
+            }
+
+            // Create triangles from center to each edge
+            const uint32_t pathStartIndex = centerIndex + 1;
+            for ( size_t i = 0; i < path.size( ); ++i )
+            {
+                const size_t next = ( i + 1 ) % path.size( );
+                AddTriangle( centerIndex, pathStartIndex + static_cast<uint32_t>( i ), pathStartIndex + static_cast<uint32_t>( next ) );
+            }
+        }
+    }
+
+    const auto primitiveType = forStroke ? VGPrimitiveType::Stroke : VGPrimitiveType::Fill;
+    AddRenderCommand( primitiveType, static_cast<uint32_t>( m_vertices.size( ) ), static_cast<uint32_t>( m_indices.size( ) ) );
 }
 
 void VectorGraphics::TessellateCircle( const VGCircle &circle, const bool forStroke )
@@ -857,12 +1112,125 @@ void VectorGraphics::TessellateCircle( const VGCircle &circle, const bool forStr
 
 void VectorGraphics::TessellateEllipse( const VGEllipse &ellipse, const bool forStroke )
 {
-    // TODO: Implement ellipse tessellation with proper scaling and rotation
-    // For now, use circle approximation
-    VGCircle approxCircle;
-    approxCircle.Center = ellipse.Center;
-    approxCircle.Radius = ( ellipse.Radii.X + ellipse.Radii.Y ) * 0.5f; // Average radius
-    TessellateCircle( approxCircle, forStroke );
+    const auto color = forStroke ? ApplyAlpha( m_currentStyle.Stroke.Color ) : ApplyAlpha( m_currentStyle.Fill.Color );
+
+    // Calculate number of segments based on circumference approximation and tessellation tolerance
+    const float circumference =
+        XM_PI * ( 3.0f * ( ellipse.Radii.X + ellipse.Radii.Y ) - sqrtf( ( 3.0f * ellipse.Radii.X + ellipse.Radii.Y ) * ( ellipse.Radii.X + 3.0f * ellipse.Radii.Y ) ) );
+    int segments = std::max( 8, static_cast<int>( circumference / m_tessellationTolerance ) );
+    segments     = std::min( segments, 128 ); // Cap at reasonable maximum
+
+    const float angleStep   = 2.0f * XM_PI / segments;
+    const float cosRotation = cosf( ellipse.Rotation );
+    const float sinRotation = sinf( ellipse.Rotation );
+
+    if ( forStroke )
+    {
+        // Generate stroke outline for ellipse
+        const float strokeWidth = m_currentStyle.Stroke.Width;
+
+        // For ellipse stroke, we need to offset along the normal at each point
+        // This is complex for ellipses, so we'll use a simplified approach
+
+        for ( int i = 0; i < segments; ++i )
+        {
+            const float angle1 = i * angleStep;
+            const float angle2 = ( i + 1 ) * angleStep;
+
+            // Calculate points on ellipse
+            auto calculateEllipsePoint = [ & ]( const float angle, const float radiusScale = 1.0f ) -> Float_2
+            {
+                const float localX = ellipse.Radii.X * radiusScale * cosf( angle );
+                const float localY = ellipse.Radii.Y * radiusScale * sinf( angle );
+
+                // Apply rotation
+                const float rotatedX = localX * cosRotation - localY * sinRotation;
+                const float rotatedY = localX * sinRotation + localY * cosRotation;
+
+                return { ellipse.Center.X + rotatedX, ellipse.Center.Y + rotatedY };
+            };
+
+            // Calculate normal for stroke offset
+            auto calculateNormal = [ & ]( const float angle ) -> Float_2
+            {
+                // Derivative of ellipse parametric equations
+                const float dx = -ellipse.Radii.X * sinf( angle );
+                const float dy = ellipse.Radii.Y * cosf( angle );
+
+                // Apply rotation to derivative
+                const float rotatedDx = dx * cosRotation - dy * sinRotation;
+                const float rotatedDy = dx * sinRotation + dy * cosRotation;
+
+                // Perpendicular (normal) vector
+                const float normalX = -rotatedDy;
+                const float normalY = rotatedDx;
+
+                // Normalize
+                const float length = sqrtf( normalX * normalX + normalY * normalY );
+                if ( length > 1e-6f )
+                {
+                    return { normalX / length, normalY / length };
+                }
+                return { 0.0f, 1.0f };
+            };
+
+            const Float_2 point1  = calculateEllipsePoint( angle1 );
+            const Float_2 point2  = calculateEllipsePoint( angle2 );
+            const Float_2 normal1 = calculateNormal( angle1 );
+            const Float_2 normal2 = calculateNormal( angle2 );
+
+            const float halfWidth = strokeWidth * 0.5f;
+
+            // Inner and outer points
+            const Float_2 inner1 = { point1.X - normal1.X * halfWidth, point1.Y - normal1.Y * halfWidth };
+            const Float_2 outer1 = { point1.X + normal1.X * halfWidth, point1.Y + normal1.Y * halfWidth };
+            const Float_2 inner2 = { point2.X - normal2.X * halfWidth, point2.Y - normal2.Y * halfWidth };
+            const Float_2 outer2 = { point2.X + normal2.X * halfWidth, point2.Y + normal2.Y * halfWidth };
+
+            // Add quad for this segment
+            AddVertex( TransformPoint( inner1 ), color );
+            AddVertex( TransformPoint( outer1 ), color );
+            AddVertex( TransformPoint( outer2 ), color );
+            AddVertex( TransformPoint( inner2 ), color );
+
+            const uint32_t baseIndex = static_cast<uint32_t>( m_vertices.size( ) ) - 4;
+            AddQuad( baseIndex, baseIndex + 1, baseIndex + 2, baseIndex + 3 );
+        }
+    }
+    else
+    {
+        // Generate filled ellipse using triangle fan
+        AddVertex( TransformPoint( ellipse.Center ), color ); // Center vertex
+
+        // Add ellipse perimeter vertices
+        for ( int i = 0; i < segments; ++i )
+        {
+            const float angle = i * angleStep;
+
+            // Calculate point on ellipse (before rotation)
+            const float localX = ellipse.Radii.X * cosf( angle );
+            const float localY = ellipse.Radii.Y * sinf( angle );
+
+            // Apply rotation
+            const float rotatedX = localX * cosRotation - localY * sinRotation;
+            const float rotatedY = localX * sinRotation + localY * cosRotation;
+
+            const Float_2 point = { ellipse.Center.X + rotatedX, ellipse.Center.Y + rotatedY };
+            AddVertex( TransformPoint( point ), color );
+        }
+
+        // Create triangles with correct winding order (clockwise)
+        const uint32_t centerIndex = static_cast<uint32_t>( m_vertices.size( ) ) - segments - 1;
+        for ( int i = 0; i < segments; ++i )
+        {
+            const uint32_t next = ( i + 1 ) % segments;
+            // Clockwise winding: center -> next -> current
+            AddTriangle( centerIndex, centerIndex + 1 + next, centerIndex + 1 + i );
+        }
+    }
+
+    const auto primitiveType = forStroke ? VGPrimitiveType::Stroke : VGPrimitiveType::Fill;
+    AddRenderCommand( primitiveType, static_cast<uint32_t>( m_vertices.size( ) ), static_cast<uint32_t>( m_indices.size( ) ) );
 }
 
 void VectorGraphics::TessellatePolygon( const VGPolygon &polygon, const bool forStroke )
@@ -1018,10 +1386,13 @@ void VectorGraphics::AddRenderCommand( const VGPrimitiveType type, const uint32_
 void VectorGraphics::AddVertex( const Float_2 &position, const Float_4 &color, const Float_2 &texCoord )
 {
     VGVertex vertex;
-    vertex.Position     = position;
-    vertex.Color        = color;
-    vertex.TexCoord     = texCoord;
-    vertex.GradientData = { 0.0f, 0.0f, 0.0f, 0.0f }; // TODO: Setup gradient data
+    vertex.Position = position;
+    vertex.Color    = color;
+    vertex.TexCoord = texCoord;
+
+    // Setup gradient data based on current fill style
+    SetupGradientVertexData( vertex, position );
+
     m_vertices.push_back( vertex );
 }
 
@@ -1059,10 +1430,105 @@ Float_4 VectorGraphics::ApplyAlpha( const Float_4 &color ) const
     return { color.X, color.Y, color.Z, color.W * m_currentStyle.Composite.Alpha };
 }
 
-void VectorGraphics::SetupGradientVertexData( VGVertex &vertex, const Float_2 &position )
+void VectorGraphics::SetupGradientVertexData( VGVertex &vertex, const Float_2 &position ) const
 {
-    // TODO: Implement gradient vertex data setup
-    // This would calculate gradient coordinates based on fill style
+    switch ( m_currentStyle.Fill.Type )
+    {
+    case VGFillType::LinearGradient:
+        {
+            // Calculate gradient coordinate for linear gradient
+            const Float_2 &start = m_currentStyle.Fill.GradientStart;
+            const Float_2 &end   = m_currentStyle.Fill.GradientEnd;
+
+            // Vector from start to end
+            const Float_2 gradient         = { end.X - start.X, end.Y - start.Y };
+            const float   gradientLengthSq = gradient.X * gradient.X + gradient.Y * gradient.Y;
+
+            if ( gradientLengthSq > 1e-6f )
+            {
+                // Vector from start to current position
+                const Float_2 toPos = { position.X - start.X, position.Y - start.Y };
+
+                // Project position onto gradient line (dot product)
+                const float t = ( toPos.X * gradient.X + toPos.Y * gradient.Y ) / gradientLengthSq;
+
+                // Store gradient coordinate (t value) in the x component
+                vertex.GradientData.X = t;
+                vertex.GradientData.Y = 0.0f; // Unused for linear gradients
+            }
+            else
+            {
+                vertex.GradientData.X = 0.0f;
+                vertex.GradientData.Y = 0.0f;
+            }
+        }
+        break;
+
+    case VGFillType::RadialGradient:
+        {
+            // Calculate distance from gradient center for radial gradient
+            const Float_2 &center = m_currentStyle.Fill.GradientCenter;
+            const float    radius = m_currentStyle.Fill.GradientRadius;
+
+            // Distance from center to position
+            const float dx       = position.X - center.X;
+            const float dy       = position.Y - center.Y;
+            const float distance = sqrtf( dx * dx + dy * dy );
+
+            // Normalize by radius to get gradient coordinate
+            const float t = radius > 1e-6f ? distance / radius : 0.0f;
+
+            vertex.GradientData.X = t;
+            vertex.GradientData.Y = 0.0f; // Unused for radial gradients
+        }
+        break;
+
+    case VGFillType::ConicGradient:
+        {
+            // Calculate angle from gradient center for conic gradient
+            const Float_2 &center    = m_currentStyle.Fill.GradientCenter;
+            const float    baseAngle = m_currentStyle.Fill.GradientAngle;
+
+            // Calculate angle from center to position
+            const float dx    = position.X - center.X;
+            const float dy    = position.Y - center.Y;
+            float       angle = atan2f( dy, dx );
+
+            // Normalize angle relative to base angle
+            angle -= baseAngle;
+            while ( angle < 0.0f )
+                angle += 2.0f * XM_PI;
+            while ( angle >= 2.0f * XM_PI )
+                angle -= 2.0f * XM_PI;
+
+            // Normalize to [0, 1]
+            const float t = angle / ( 2.0f * XM_PI );
+
+            vertex.GradientData.X = t;
+            vertex.GradientData.Y = 0.0f; // Unused for conic gradients
+        }
+        break;
+
+    case VGFillType::Pattern:
+        {
+            // For patterns, we could store texture coordinates
+            // This depends on how the pattern transform is applied
+            // For now, just pass through the position
+            vertex.GradientData.X = position.X;
+            vertex.GradientData.Y = position.Y;
+        }
+        break;
+
+    default:
+        // For solid colors, no gradient data needed
+        vertex.GradientData.X = 0.0f;
+        vertex.GradientData.Y = 0.0f;
+        break;
+    }
+
+    // Store additional gradient info in z and w components if needed
+    vertex.GradientData.Z = 0.0f; // Could store gradient stop count or other info
+    vertex.GradientData.W = 0.0f; // Could store additional parameters
 }
 
 void VectorGraphics::ClearBatch( )
@@ -1148,7 +1614,7 @@ void VectorGraphics::TessellateClosedPath( const std::vector<Float_2> &points )
     AddRenderCommand( VGPrimitiveType::Fill, static_cast<uint32_t>( points.size( ) ), static_cast<uint32_t>( triangleIndices.size( ) ) );
 }
 
-void VectorGraphics::TriangulatePolygon( const std::vector<Float_2> &points, std::vector<uint32_t> &indices )
+void VectorGraphics::TriangulatePolygon( const std::vector<Float_2> &points, std::vector<uint32_t> &indices ) const
 {
     indices.clear( );
     DZ_RETURN_IF( points.size( ) < 3 );
@@ -1368,7 +1834,7 @@ void VectorGraphics::GenerateLineCap( const Float_2 &point, const Float_2 &direc
 
             for ( int i = 0; i <= segments; ++i )
             {
-                const float angle = ( isStart ? static_cast<float>( M_PI ) : 0.0f ) + ( static_cast<float>( M_PI ) * i / segments );
+                const float angle = ( isStart ? static_cast<float>( M_PI ) : 0.0f ) + static_cast<float>( M_PI ) * i / segments;
                 const float cos_a = cosf( angle );
                 const float sin_a = sinf( angle );
 
@@ -1472,8 +1938,8 @@ void VectorGraphics::GenerateLineJoin( const Float_2 &point, const Float_2 &dir1
                 const float length = sqrtf( lerpedPerp.X * lerpedPerp.X + lerpedPerp.Y * lerpedPerp.Y );
                 if ( length > 1e-6f )
                 {
-                    lerpedPerp.X = ( lerpedPerp.X / length ) * halfWidth;
-                    lerpedPerp.Y = ( lerpedPerp.Y / length ) * halfWidth;
+                    lerpedPerp.X = lerpedPerp.X / length * halfWidth;
+                    lerpedPerp.Y = lerpedPerp.Y / length * halfWidth;
                 }
 
                 Float_2 arcPoint = { point.X + lerpedPerp.X, point.Y + lerpedPerp.Y };
@@ -1503,5 +1969,303 @@ void VectorGraphics::GenerateLineJoin( const Float_2 &point, const Float_2 &dir1
             m_indices.push_back( baseIndex + 2 );
         }
         break;
+    }
+}
+
+void VectorGraphics::DrawText( const InteropString &text, const Float_2 &position, const float scale ) const
+{
+    DZ_RETURN_IF( !m_textRenderer );
+
+    const auto color = ApplyAlpha( m_currentStyle.Fill.Color );
+
+    TextRenderDesc textDesc;
+    textDesc.Text  = text;
+    textDesc.X     = position.X;
+    textDesc.Y     = position.Y;
+    textDesc.Color = color;
+    textDesc.Scale = scale;
+
+    m_textRenderer->AddText( textDesc );
+}
+
+VGRect VectorGraphics::MeasureText( const InteropString &text, const float scale ) const
+{
+    VGRect bounds = { { 0.0f, 0.0f }, { 0.0f, 0.0f } };
+
+    if ( !m_textRenderer || text.NumChars( ) == 0 )
+    {
+        return bounds;
+    }
+
+    const Float_2 size = m_textRenderer->MeasureText( text, scale, 36 /*TODO fix this please*/ );
+
+    bounds.TopLeft     = { 0.0f, 0.0f };
+    bounds.BottomRight = { size.X, size.Y };
+    return bounds;
+}
+
+void VectorGraphics::GenerateRoundedRectPath( const float x1, const float y1, const float x2, const float y2, const float tlRadius, const float trRadius, const float blRadius,
+                                              const float brRadius, std::vector<Float_2> &path ) const
+{
+    path.clear( );
+
+    // Calculate segments for corners based on tessellation tolerance
+    const auto calculateSegments = []( const float radius ) -> int
+    {
+        if ( radius <= 0.0f )
+        {
+            return 0;
+        }
+        return std::max( 4, static_cast<int>( XM_PI * radius / 2.0f ) );
+    };
+
+    const int tlSegments = calculateSegments( tlRadius );
+    const int trSegments = calculateSegments( trRadius );
+    const int blSegments = calculateSegments( blRadius );
+    const int brSegments = calculateSegments( brRadius );
+
+    // Start from top-left corner
+    // Top-left corner
+    if ( tlRadius > 0.0f && tlSegments > 0 )
+    {
+        for ( int i = 0; i <= tlSegments; ++i )
+        {
+            const float angle = XM_PI + static_cast<float>( i ) * ( XM_PI * 0.5f ) / tlSegments;
+            const float x     = x1 + tlRadius + tlRadius * cosf( angle );
+            const float y     = y1 + tlRadius + tlRadius * sinf( angle );
+            path.push_back( { x, y } );
+        }
+    }
+    else
+    {
+        path.push_back( { x1, y1 } );
+    }
+
+    // Top-right corner
+    if ( trRadius > 0.0f && trSegments > 0 )
+    {
+        for ( int i = 0; i <= trSegments; ++i )
+        {
+            const float angle = 1.5f * XM_PI + static_cast<float>( i ) * ( XM_PI * 0.5f ) / trSegments;
+            const float x     = x2 - trRadius + trRadius * cosf( angle );
+            const float y     = y1 + trRadius + trRadius * sinf( angle );
+            path.push_back( { x, y } );
+        }
+    }
+    else
+    {
+        path.push_back( { x2, y1 } );
+    }
+
+    // Bottom-right corner
+    if ( brRadius > 0.0f && brSegments > 0 )
+    {
+        for ( int i = 0; i <= brSegments; ++i )
+        {
+            const float angle = static_cast<float>( i ) * ( XM_PI * 0.5f ) / brSegments;
+            const float x     = x2 - brRadius + brRadius * cosf( angle );
+            const float y     = y2 - brRadius + brRadius * sinf( angle );
+            path.push_back( { x, y } );
+        }
+    }
+    else
+    {
+        path.push_back( { x2, y2 } );
+    }
+
+    // Bottom-left corner
+    if ( blRadius > 0.0f && blSegments > 0 )
+    {
+        for ( int i = 0; i <= blSegments; ++i )
+        {
+            const float angle = 0.5f * XM_PI + static_cast<float>( i ) * ( XM_PI * 0.5f ) / blSegments;
+            const float x     = x1 + blRadius + blRadius * cosf( angle );
+            const float y     = y2 - blRadius + blRadius * sinf( angle );
+            path.push_back( { x, y } );
+        }
+    }
+    else
+    {
+        path.push_back( { x1, y2 } );
+    }
+}
+
+void VectorGraphics::TessellateStrokeFromPaths( const std::vector<Float_2> &outerPath, const std::vector<Float_2> &innerPath )
+{
+    const auto color = ApplyAlpha( m_currentStyle.Stroke.Color );
+    DZ_RETURN_IF( outerPath.empty( ) );
+
+    if ( innerPath.empty( ) )
+    {
+        TessellateClosedPath( outerPath );
+        return;
+    }
+
+    // Create stroke by connecting outer and inner paths
+    const size_t outerSize = outerPath.size( );
+    const size_t innerSize = innerPath.size( );
+
+    // Add all outer path vertices
+    for ( const auto &point : outerPath )
+    {
+        AddVertex( TransformPoint( point ), color );
+    }
+
+    // Add all inner path vertices (in reverse order for proper winding)
+    for ( int i = static_cast<int>( innerSize ) - 1; i >= 0; --i )
+    {
+        AddVertex( TransformPoint( innerPath[ i ] ), color );
+    }
+
+    // Create triangles connecting outer and inner paths
+    const uint32_t outerStartIndex = static_cast<uint32_t>( m_vertices.size( ) ) - static_cast<uint32_t>( outerSize + innerSize );
+    const uint32_t innerStartIndex = outerStartIndex + static_cast<uint32_t>( outerSize );
+
+    // Connect outer path to inner path
+    for ( size_t i = 0; i < outerSize; ++i )
+    {
+        const size_t nextOuter = ( i + 1 ) % outerSize;
+        const size_t currInner = ( outerSize - 1 - i ) % innerSize;
+        const size_t nextInner = ( outerSize - 2 - i + innerSize ) % innerSize;
+
+        // Create quad between outer and inner edges
+        const uint32_t o1 = outerStartIndex + static_cast<uint32_t>( i );
+        const uint32_t o2 = outerStartIndex + static_cast<uint32_t>( nextOuter );
+        const uint32_t i1 = innerStartIndex + static_cast<uint32_t>( currInner );
+        const uint32_t i2 = innerStartIndex + static_cast<uint32_t>( nextInner );
+
+        // Two triangles for the quad
+        AddTriangle( o1, i1, o2 );
+        AddTriangle( o2, i1, i2 );
+    }
+}
+
+void VectorGraphics::TessellateEllipticalArc( const Float_2 &start, const Float_2 &radii, const float xAxisRotation, const bool largeArcFlag, const bool sweepFlag,
+                                              const Float_2 &end, std::vector<Float_2> &points ) const
+{
+    // Implementation of SVG elliptical arc conversion to center parameterization
+    // Based on SVG specification: https://www.w3.org/TR/SVG/implnote.html#ArcConversionEndpointToCenter
+
+    if ( start.X == end.X && start.Y == end.Y )
+    {
+        return; // Degenerate case
+    }
+
+    // Ensure radii are positive
+    const float rx = fabsf( radii.X );
+    const float ry = fabsf( radii.Y );
+
+    if ( rx == 0.0f || ry == 0.0f )
+    {
+        // Degenerate to line
+        points.push_back( end );
+        return;
+    }
+
+    const float cosRot = cosf( xAxisRotation );
+    const float sinRot = sinf( xAxisRotation );
+
+    // Step 1: Compute (x1', y1')
+    const float dx      = ( start.X - end.X ) * 0.5f;
+    const float dy      = ( start.Y - end.Y ) * 0.5f;
+    const float x1Prime = cosRot * dx + sinRot * dy;
+    const float y1Prime = -sinRot * dx + cosRot * dy;
+
+    // Step 2: Compute (cx', cy')
+    float       rxSq      = rx * rx;
+    float       rySq      = ry * ry;
+    const float x1PrimeSq = x1Prime * x1Prime;
+    const float y1PrimeSq = y1Prime * y1Prime;
+
+    // Correct radii if necessary
+    const float lambda = x1PrimeSq / rxSq + y1PrimeSq / rySq;
+    if ( lambda > 1.0f )
+    {
+        const float sqrtLambda = sqrtf( lambda );
+        rxSq *= lambda;
+        rySq *= lambda;
+    }
+
+    const float coeff = sqrtf( std::max( 0.0f, ( rxSq * rySq - rxSq * y1PrimeSq - rySq * x1PrimeSq ) / ( rxSq * y1PrimeSq + rySq * x1PrimeSq ) ) );
+    const float sign  = largeArcFlag == sweepFlag ? -1.0f : 1.0f;
+
+    const float cxPrime = sign * coeff * ( rx * y1Prime / ry );
+    const float cyPrime = sign * coeff * ( -ry * x1Prime / rx );
+
+    // Step 3: Compute (cx, cy) from (cx', cy')
+    const float cx = cosRot * cxPrime - sinRot * cyPrime + ( start.X + end.X ) * 0.5f;
+    const float cy = sinRot * cxPrime + cosRot * cyPrime + ( start.Y + end.Y ) * 0.5f;
+
+    // Step 4: Compute angles
+    auto vectorAngle = []( const float ux, const float uy, const float vx, const float vy ) -> float
+    {
+        const float dot = ux * vx + uy * vy;
+        const float det = ux * vy - uy * vx;
+        return atan2f( det, dot );
+    };
+
+    const float theta1 = vectorAngle( 1.0f, 0.0f, ( x1Prime - cxPrime ) / rx, ( y1Prime - cyPrime ) / ry );
+    const float dTheta = vectorAngle( ( x1Prime - cxPrime ) / rx, ( y1Prime - cyPrime ) / ry, ( -x1Prime - cxPrime ) / rx, ( -y1Prime - cyPrime ) / ry );
+
+    float deltaTheta = dTheta;
+    if ( sweepFlag && deltaTheta < 0.0f )
+    {
+        deltaTheta += 2.0f * XM_PI;
+    }
+    else if ( !sweepFlag && deltaTheta > 0.0f )
+    {
+        deltaTheta -= 2.0f * XM_PI;
+    }
+
+    // Tessellate the arc
+    const int   segments  = std::max( 4, static_cast<int>( fabsf( deltaTheta ) / m_tessellationTolerance * 10.0f ) );
+    const float angleStep = deltaTheta / segments;
+
+    for ( int i = 1; i <= segments; ++i )
+    {
+        const float angle    = theta1 + i * angleStep;
+        const float cosAngle = cosf( angle );
+        const float sinAngle = sinf( angle );
+
+        // Point on ellipse in local coordinates
+        const float localX = rx * cosAngle;
+        const float localY = ry * sinAngle;
+
+        // Transform to global coordinates
+        const float x = cx + cosRot * localX - sinRot * localY;
+        const float y = cy + sinRot * localX + cosRot * localY;
+
+        points.push_back( { x, y } );
+    }
+}
+
+void VectorGraphics::TessellateCircularArc( const Float_2 &center, const float radius, const float startAngle, const float endAngle, const bool clockwise,
+                                            std::vector<Float_2> &points ) const
+{
+    DZ_RETURN_IF( radius <= 0.0f );
+
+    float actualEndAngle = endAngle;
+
+    float sweep = actualEndAngle - startAngle;
+    if ( clockwise && sweep > 0.0f )
+    {
+        actualEndAngle -= 2.0f * XM_PI;
+        sweep = actualEndAngle - startAngle;
+    }
+    else if ( !clockwise && sweep < 0.0f )
+    {
+        actualEndAngle += 2.0f * XM_PI;
+        sweep = actualEndAngle - startAngle;
+    }
+
+    const int   segments  = std::max( 4, static_cast<int>( fabsf( sweep ) / m_tessellationTolerance * 10.0f ) );
+    const float angleStep = sweep / segments;
+
+    for ( int i = 1; i <= segments; ++i )
+    {
+        const float angle = startAngle + i * angleStep;
+        const float x     = center.X + radius * cosf( angle );
+        const float y     = center.Y + radius * sinf( angle );
+        points.push_back( { x, y } );
     }
 }
