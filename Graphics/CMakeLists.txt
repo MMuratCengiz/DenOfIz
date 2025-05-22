@@ -25,6 +25,7 @@ find_package(Freetype REQUIRED)
 find_package(harfbuzz CONFIG REQUIRED)
 find_package(msdfgen CONFIG REQUIRED)
 find_package(miniz CONFIG REQUIRED)
+find_package(tinyxml2 CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h")
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 
@@ -96,6 +97,14 @@ set(DEN_OF_IZ_INPUT_SOURCES
         Source/Input/EventHandler.cpp
         Source/Input/InputSystem.cpp
         Source/Input/Window.cpp
+)
+
+set(DEN_OF_IZ_VG_SOURCES
+        Source/Vector2d/VectorGraphics.cpp
+        Source/Vector2d/VGPipeline.cpp
+        Source/Vector2d/VGShapes.cpp
+        Source/Vector2d/VGTransform.cpp
+        Source/Vector2d/SvgLoader.cpp
 )
 
 set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
@@ -231,7 +240,7 @@ endif ()
 
 copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 
-add_library(DenOfIzGraphics ${DEN_OF_IZ_ASSETS_SOURCES} ${DEN_OF_IZ_GRAPHICS_SOURCES} ${DEN_OF_IZ_INPUT_SOURCES} ${DEN_OF_IZ_ANIMATION_SOURCES})
+add_library(DenOfIzGraphics ${DEN_OF_IZ_ASSETS_SOURCES} ${DEN_OF_IZ_GRAPHICS_SOURCES} ${DEN_OF_IZ_INPUT_SOURCES} ${DEN_OF_IZ_ANIMATION_SOURCES} ${DEN_OF_IZ_VG_SOURCES})
 #install_target(DenOfIzGraphics)
 
 if (CRT_LINKAGE_STATIC EQUAL 1)
@@ -246,9 +255,9 @@ set(ozz_build_tests OFF CACHE BOOL "Don't build ozz samples" FORCE)
 set(ozz_build_samples OFF CACHE BOOL "Don't build ozz samples" FORCE)
 set(ozz_build_howtos OFF CACHE BOOL "Don't build ozz howtos" FORCE)
 
-if(LINUX)
+if (LINUX)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif()
+endif ()
 add_subdirectory(_ThirdParty/ozz-animation)
 
 set(MSDF_ATLAS_BUILD_STANDALONE OFF CACHE BOOL "Build the msdf-atlas-gen standalone executable")
@@ -289,6 +298,7 @@ target_link_libraries(DenOfIzGraphics
         msdfgen::msdfgen-full
         msdf-atlas-gen::msdf-atlas-gen
         miniz::miniz
+        tinyxml2::tinyxml2
 )
 
 if (BUILD_SHARED_LIBS)

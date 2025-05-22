@@ -12,6 +12,7 @@
     "stb",
     "gtest",
     "taskflow",
+    "tinyxml2",
     "directxmath",
     "freetype",
     "harfbuzz",
