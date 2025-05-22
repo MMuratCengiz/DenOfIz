@@ -59,6 +59,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Import/ShaderImporter.h>
 #include <DenOfIzGraphics/Assets/Import/TextureImporter.h>
 
+#include <DenOfIzGraphics/Vector2d/VectorGraphics.h>
+
 #ifdef SWIGJAVA
 #define NULL 0  // Not sure where we lose this on MacOS to be investigated
 #endif

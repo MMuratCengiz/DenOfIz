@@ -296,6 +296,12 @@ using namespace DirectX;
 %include <DenOfIzGraphics/Assets/Import/ShaderImporter.h>
 %include <DenOfIzGraphics/Assets/Import/TextureImporter.h>
 
+// Vector Graphics includes
+%include <DenOfIzGraphics/Vector2d/VGTransform.h>
+%include <DenOfIzGraphics/Vector2d/VGPipeline.h>
+%include <DenOfIzGraphics/Vector2d/VGShapes.h>
+%include <DenOfIzGraphics/Vector2d/VectorGraphics.h>
+
 %include "DenOfIzGraphics_Input.i"
 
 // -- BitSet definitions
@@ -381,6 +387,9 @@ typedef DenOfIz::InteropArray<unsigned char> UnsignedCharArray;
 typedef DenOfIz::InteropArray<unsigned char> ByteArray;
 typedef DenOfIz::InteropArray<bool> BoolArray;
 typedef DenOfIz::InteropArray<int> IntArray;
+typedef DenOfIz::InteropArray<DenOfIz::VGGradientStop> VGGradientStopArray;
+typedef DenOfIz::InteropArray<DenOfIz::VGPathCommand> VGPathCommandArray;
+
 // Instantiations:
 %template(ASGeometryDescArray) DenOfIz::InteropArray<DenOfIz::ASGeometryDesc>;
 %template(ASInstanceDescArray) DenOfIz::InteropArray<DenOfIz::ASInstanceDesc>;
@@ -460,3 +469,7 @@ typedef DenOfIz::InteropArray<int> IntArray;
 %template(ByteArray) DenOfIz::InteropArray<unsigned char>;
 %template(BoolArray) DenOfIz::InteropArray<bool>;
 %template(IntArray) DenOfIz::InteropArray<int>;
+
+// Vector graphics
+%template(VGGradientStopArray) DenOfIz::InteropArray<DenOfIz::VGGradientStop>;
+%template(VGPathCommandArray) DenOfIz::InteropArray<DenOfIz::VGPathCommand>;

@@ -93,6 +93,10 @@ namespace DenOfIz
         DZ_API void ShapeText( const ShapeTextDesc &shapeDesc );
         DZ_API void GenerateTextVertices( const GenerateTextVerticesDesc &generateDesc ) const;
 
+        DZ_API Float_2 GetTextSize( ) const;
+        DZ_API float   GetTextWidth( ) const;
+        DZ_API float   GetTextHeight( ) const;
+
     private:
         static std::u32string Utf8ToUtf32( const std::string &utf8Text );
     };

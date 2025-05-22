@@ -148,7 +148,7 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
     m_totalWidth  = totalAdvance;
     m_totalHeight = static_cast<float>( m_font->m_desc.FontAsset->Metrics.LineHeight );
     hb_buffer_destroy( buffer );
-    hb_font_destroy(hbFont);
+    hb_font_destroy( hbFont );
 }
 
 void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateDesc ) const
@@ -177,7 +177,7 @@ void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateD
             continue;
         }
 
-        const float x0 = x + (shapedGlyph.XOffset + metrics->BearingX) * scale;
+        const float x0 = x + ( shapedGlyph.XOffset + metrics->BearingX ) * scale;
         const float x1 = x0 + metrics->Width * scale;
         const float y0 = y - metrics->BearingY * scale + shapedGlyph.YOffset * scale;
         const float y1 = y0 + metrics->Height * scale;
@@ -272,4 +272,19 @@ std::u32string TextLayout::Utf8ToUtf32( const std::string &utf8Text )
     }
 
     return result;
+}
+
+Float_2 TextLayout::GetTextSize( ) const
+{
+    return Float_2{ m_totalWidth, m_totalHeight };
+}
+
+float TextLayout::GetTextWidth( ) const
+{
+    return m_totalWidth;
+}
+
+float TextLayout::GetTextHeight( ) const
+{
+    return m_totalHeight;
 }

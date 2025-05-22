@@ -108,6 +108,9 @@ namespace DenOfIz
         DZ_API void BeginBatch( );
         DZ_API void AddText( const TextRenderDesc &params );
         DZ_API void EndBatch( ICommandList *commandList );
+        
+        DZ_API Float_2 MeasureText( const InteropString &text, float scale = 1.0f, uint32_t fontSize = 36 ) const;
+        DZ_API Float_2 MeasureText( const InteropString &text, Font *font, float scale = 1.0f, uint32_t fontSize = 36 ) const;
 
     private:
         void UpdateAtlasTexture( ICommandList *commandList );

@@ -335,3 +335,29 @@ void TextRenderer::UpdateBuffers( )
     memcpy( indexData, m_indexData.Data( ), m_indexData.NumElements( ) * sizeof( uint32_t ) );
     m_indexBuffer->UnmapMemory( );
 }
+
+Float_2 TextRenderer::MeasureText( const InteropString &text, const float scale, const uint32_t fontSize ) const
+{
+    return MeasureText( text, m_currentFont, scale, fontSize );
+}
+
+Float_2 TextRenderer::MeasureText( const InteropString &text, Font *font, const float scale, const uint32_t fontSize ) const
+{
+    if ( !font )
+    {
+        LOG( ERROR ) << "Cannot measure text: font is null";
+        return Float_2{ 0.0f, 0.0f };
+    }
+
+    TextLayoutDesc desc;
+    desc.Font = font;
+    TextLayout layout( desc );
+
+    ShapeTextDesc shapeDesc;
+    shapeDesc.Text     = text;
+    shapeDesc.FontSize = fontSize;
+    layout.ShapeText( shapeDesc );
+
+    const Float_2 textSize = layout.GetTextSize( );
+    return Float_2{ textSize.X * scale, textSize.Y * scale };
+}

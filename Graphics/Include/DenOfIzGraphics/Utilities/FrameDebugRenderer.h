@@ -40,7 +40,7 @@ namespace DenOfIz
 
         Float_4       TextColor   = { 1.0f, 1.0f, 1.0f, 1.0f };
         float         RefreshRate = 0.5f;
-        float         Scale       = 0.5f;
+        float         Scale       = 0.6f;
         TextDirection Direction   = TextDirection::Auto;
         bool          Enabled     = true;
     };
