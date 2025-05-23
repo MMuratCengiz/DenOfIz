@@ -101,7 +101,7 @@ void VectorGraphics::Flush( )
     {
         const auto projMatrix = m_transform->GetProjectionMatrix( );
         m_pipeline->UpdateProjection( m_frameIndex, projMatrix );
-        if ( const auto bindGroup = m_pipeline->GetBindGroup( 0, 0 ) )
+        if ( const auto bindGroup = m_pipeline->GetBindGroup( m_frameIndex, 0 ) )
         {
             m_commandList->BindResourceGroup( bindGroup );
         }
