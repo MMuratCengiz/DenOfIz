@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Vector2d/VectorGraphics.h>
 #include <DirectXMath.h>
 #include <algorithm>
+#include <mapbox/earcut.hpp>
 
 #include "DenOfIzGraphics/Assets/Font/Embedded/EmbeddedFonts.h"
 
@@ -565,7 +566,7 @@ void VectorGraphics::ClipRect( const VGRect &rect )
     {
         // Intersect with current clip rect
         const VGRect &currentClip  = m_clipStack.back( );
-        VGRect        intersection = IntersectRects( currentClip, transformedRect );
+        const VGRect  intersection = IntersectRects( currentClip, transformedRect );
         m_clipStack.push_back( intersection );
     }
 
@@ -1547,10 +1548,10 @@ void VectorGraphics::TessellateQuadraticBezier( const Float_2 &p0, const Float_2
 
     // Check if the curve is flat enough using distance from control point to chord
     const float dist = DistancePointToLine( p1, p0, p2 );
-    
+
     // Also check curve length to avoid over-tessellation of small curves
-    const float chordLength = sqrtf( (p2.X - p0.X) * (p2.X - p0.X) + (p2.Y - p0.Y) * (p2.Y - p0.Y) );
-    
+    const float chordLength = sqrtf( ( p2.X - p0.X ) * ( p2.X - p0.X ) + ( p2.Y - p0.Y ) * ( p2.Y - p0.Y ) );
+
     // If curve is flat enough OR very small, stop recursion
     if ( dist < flatnessTolerance || chordLength < flatnessTolerance * 2.0f )
     {
@@ -1577,9 +1578,9 @@ void VectorGraphics::TessellateCubicBezier( const Float_2 &p0, const Float_2 &p1
     const float dist1   = DistancePointToLine( p1, p0, p3 );
     const float dist2   = DistancePointToLine( p2, p0, p3 );
     const float maxDist = std::max( dist1, dist2 );
-    
+
     // Also check curve length to avoid over-tessellation of small curves
-    const float chordLength = sqrtf( (p3.X - p0.X) * (p3.X - p0.X) + (p3.Y - p0.Y) * (p3.Y - p0.Y) );
+    const float chordLength = sqrtf( ( p3.X - p0.X ) * ( p3.X - p0.X ) + ( p3.Y - p0.Y ) * ( p3.Y - p0.Y ) );
 
     // If curve is flat enough OR very small, stop recursion
     if ( maxDist < flatnessTolerance || chordLength < flatnessTolerance * 2.0f )
@@ -1630,109 +1631,46 @@ void VectorGraphics::TriangulatePolygon( const std::vector<Float_2> &points, std
     indices.clear( );
     DZ_RETURN_IF( points.size( ) < 3 );
 
-    // Simple ear clipping algorithm for polygon triangulation
-    std::vector<uint32_t> remaining;
-    for ( uint32_t i = 0; i < points.size( ); ++i )
+    // Convert Float_2 points to array format that earcut expects
+    std::vector<std::array<float, 2>> vertices;
+    vertices.reserve( points.size( ) );
+    for ( const auto &point : points )
     {
-        remaining.push_back( i );
+        vertices.push_back( { point.X, point.Y } );
     }
 
-    while ( remaining.size( ) > 3 )
+    const std::vector<std::vector<std::array<float, 2>>> polygon   = { vertices };
+    const auto                                           triangles = mapbox::earcut<uint32_t>( polygon );
+
+    // earcut returns indices in counter-clockwise order, reverse order to convert to clockwise
+    for ( size_t i = 0; i < triangles.size( ); i += 3 )
     {
-        bool earFound = false;
-
-        for ( size_t i = 0; i < remaining.size( ); ++i )
-        {
-            uint32_t prev = remaining[ ( i + remaining.size( ) - 1 ) % remaining.size( ) ];
-            uint32_t curr = remaining[ i ];
-            uint32_t next = remaining[ ( i + 1 ) % remaining.size( ) ];
-
-            // Check if this is a valid ear (convex vertex)
-            Float_2 a = points[ prev ];
-            Float_2 b = points[ curr ];
-            Float_2 c = points[ next ];
-
-            // Check if triangle is oriented correctly (clockwise)
-            const float cross = Cross2D( { c.X - a.X, c.Y - a.Y }, { b.X - a.X, b.Y - a.Y } );
-            if ( cross > 0 )
-            {
-                continue; // Reflex vertex, not an ear
-            }
-
-            // Check if any other vertex is inside this triangle
-            bool isEar = true;
-            for ( size_t j = 0; j < remaining.size( ); ++j )
-            {
-                if ( j == i || j == ( i + remaining.size( ) - 1 ) % remaining.size( ) || j == ( i + 1 ) % remaining.size( ) )
-                {
-                    continue;
-                }
-
-                if ( IsPointInTriangle( points[ remaining[ j ] ], a, b, c ) )
-                {
-                    isEar = false;
-                    break;
-                }
-            }
-
-            if ( isEar )
-            {
-                // Add triangle with clockwise winding
-                indices.push_back( prev );
-                indices.push_back( next );
-                indices.push_back( curr );
-
-                // Remove current vertex
-                remaining.erase( remaining.begin( ) + i );
-                earFound = true;
-                break;
-            }
-        }
-
-        if ( !earFound )
-        {
-            // Fallback: just use fan triangulation (clockwise)
-            indices.clear( );
-            for ( size_t i = 1; i < points.size( ) - 1; ++i )
-            {
-                indices.push_back( 0 );
-                indices.push_back( static_cast<uint32_t>( i + 1 ) );
-                indices.push_back( static_cast<uint32_t>( i ) );
-            }
-            break;
-        }
-    }
-
-    // Add the final triangle (clockwise)
-    if ( remaining.size( ) == 3 )
-    {
-        indices.push_back( remaining[ 0 ] );
-        indices.push_back( remaining[ 2 ] );
-        indices.push_back( remaining[ 1 ] );
+        indices.push_back( triangles[ i ] );
+        indices.push_back( triangles[ i + 2 ] );
+        indices.push_back( triangles[ i + 1 ] );
     }
 }
 
 float VectorGraphics::DistancePointToLine( const Float_2 &point, const Float_2 &lineStart, const Float_2 &lineEnd )
 {
-    const float dx       = lineEnd.X - lineStart.X;
-    const float dy       = lineEnd.Y - lineStart.Y;
-    const float lengthSq = dx * dx + dy * dy;
+    const XMVECTOR vPoint = XMVectorSet( point.X, point.Y, 0.0f, 0.0f );
+    const XMVECTOR vStart = XMVectorSet( lineStart.X, lineStart.Y, 0.0f, 0.0f );
+    const XMVECTOR vEnd   = XMVectorSet( lineEnd.X, lineEnd.Y, 0.0f, 0.0f );
+
+    const XMVECTOR vLine    = XMVectorSubtract( vEnd, vStart );
+    const float    lengthSq = XMVectorGetX( XMVector2LengthSq( vLine ) );
 
     if ( lengthSq < 1e-6f ) // Degenerate line
     {
-        return sqrtf( ( point.X - lineStart.X ) * ( point.X - lineStart.X ) + ( point.Y - lineStart.Y ) * ( point.Y - lineStart.Y ) );
+        return XMVectorGetX( XMVector2Length( XMVectorSubtract( vPoint, vStart ) ) );
     }
 
-    float t = ( ( point.X - lineStart.X ) * dx + ( point.Y - lineStart.Y ) * dy ) / lengthSq;
-    t       = std::clamp( t, 0.0f, 1.0f );
+    const XMVECTOR vToPoint = XMVectorSubtract( vPoint, vStart );
+    float          t        = XMVectorGetX( XMVector2Dot( vToPoint, vLine ) ) / lengthSq;
+    t                       = std::clamp( t, 0.0f, 1.0f );
 
-    const float projX = lineStart.X + t * dx;
-    const float projY = lineStart.Y + t * dy;
-
-    const float distX = point.X - projX;
-    const float distY = point.Y - projY;
-
-    return sqrtf( distX * distX + distY * distY );
+    const XMVECTOR vProj = XMVectorAdd( vStart, XMVectorScale( vLine, t ) );
+    return XMVectorGetX( XMVector2Length( XMVectorSubtract( vPoint, vProj ) ) );
 }
 
 bool VectorGraphics::IsPointInTriangle( const Float_2 &point, const Float_2 &a, const Float_2 &b, const Float_2 &c )
@@ -1753,7 +1691,10 @@ bool VectorGraphics::IsPointInTriangle( const Float_2 &point, const Float_2 &a, 
 
 float VectorGraphics::Cross2D( const Float_2 &a, const Float_2 &b )
 {
-    return a.X * b.Y - a.Y * b.X;
+    const XMVECTOR va    = XMVectorSet( a.X, a.Y, 0.0f, 0.0f );
+    const XMVECTOR vb    = XMVectorSet( b.X, b.Y, 0.0f, 0.0f );
+    const XMVECTOR cross = XMVector3Cross( va, vb );
+    return XMVectorGetZ( cross );
 }
 
 void VectorGraphics::GenerateStroke( const std::vector<Float_2> &points, const bool closed )
@@ -1768,24 +1709,26 @@ void VectorGraphics::GenerateStroke( const std::vector<Float_2> &points, const b
         Float_2 current = points[ i ];
         Float_2 next    = points[ i + 1 ];
 
-        // Calculate direction and perpendicular
-        Float_2     direction = { next.X - current.X, next.Y - current.Y };
-        const float length    = sqrtf( direction.X * direction.X + direction.Y * direction.Y );
+        const XMVECTOR vCurrent   = XMVectorSet( current.X, current.Y, 0.0f, 0.0f );
+        const XMVECTOR vNext      = XMVectorSet( next.X, next.Y, 0.0f, 0.0f );
+        XMVECTOR       vDirection = XMVectorSubtract( vNext, vCurrent );
+
+        const float length = XMVectorGetX( XMVector2Length( vDirection ) );
         if ( length < 1e-6f )
         {
             continue;
         }
 
-        direction.X /= length;
-        direction.Y /= length;
+        vDirection = XMVector2Normalize( vDirection );
+
+        Float_2 direction;
+        XMStoreFloat2( reinterpret_cast<XMFLOAT2 *>( &direction ), vDirection );
 
         const Float_2 perpendicular = { -direction.Y, direction.X };
-
-        // Create quad for line segment
-        Float_2 p1 = { current.X + perpendicular.X * halfWidth, current.Y + perpendicular.Y * halfWidth };
-        Float_2 p2 = { current.X - perpendicular.X * halfWidth, current.Y - perpendicular.Y * halfWidth };
-        Float_2 p3 = { next.X - perpendicular.X * halfWidth, next.Y - perpendicular.Y * halfWidth };
-        Float_2 p4 = { next.X + perpendicular.X * halfWidth, next.Y + perpendicular.Y * halfWidth };
+        Float_2       p1            = { current.X + perpendicular.X * halfWidth, current.Y + perpendicular.Y * halfWidth };
+        Float_2       p2            = { current.X - perpendicular.X * halfWidth, current.Y - perpendicular.Y * halfWidth };
+        Float_2       p3            = { next.X - perpendicular.X * halfWidth, next.Y - perpendicular.Y * halfWidth };
+        Float_2       p4            = { next.X + perpendicular.X * halfWidth, next.Y + perpendicular.Y * halfWidth };
 
         AddVertex( TransformPoint( p1 ), color );
         AddVertex( TransformPoint( p2 ), color );
@@ -1795,7 +1738,6 @@ void VectorGraphics::GenerateStroke( const std::vector<Float_2> &points, const b
         const uint32_t baseIndex = static_cast<uint32_t>( m_vertices.size( ) ) - 4;
         AddQuad( baseIndex, baseIndex + 1, baseIndex + 2, baseIndex + 3 );
 
-        // Add line joins
         if ( i > 0 )
         {
             const Float_2 prev       = points[ i - 1 ];
@@ -1955,17 +1897,21 @@ void VectorGraphics::GenerateLineJoin( const Float_2 &point, const Float_2 &dir1
 
             for ( int i = 0; i <= segments; ++i )
             {
-                const float t          = static_cast<float>( i ) / segments;
-                Float_2     lerpedPerp = { perp1.X * ( 1.0f - t ) + perp2.X * t, perp1.Y * ( 1.0f - t ) + perp2.Y * t };
+                const float t = static_cast<float>( i ) / segments;
 
-                const float length = sqrtf( lerpedPerp.X * lerpedPerp.X + lerpedPerp.Y * lerpedPerp.Y );
-                if ( length > 1e-6f )
-                {
-                    lerpedPerp.X = lerpedPerp.X / length * halfWidth;
-                    lerpedPerp.Y = lerpedPerp.Y / length * halfWidth;
-                }
+                // Use DirectXMath for vector interpolation and normalization
+                const XMVECTOR vPerp1      = XMVectorSet( perp1.X, perp1.Y, 0.0f, 0.0f );
+                const XMVECTOR vPerp2      = XMVectorSet( perp2.X, perp2.Y, 0.0f, 0.0f );
+                XMVECTOR       vLerpedPerp = XMVectorLerp( vPerp1, vPerp2, t );
 
-                Float_2 arcPoint = { point.X + lerpedPerp.X, point.Y + lerpedPerp.Y };
+                vLerpedPerp = XMVector2Normalize( vLerpedPerp );
+                vLerpedPerp = XMVectorScale( vLerpedPerp, halfWidth );
+
+                const XMVECTOR vPoint    = XMVectorSet( point.X, point.Y, 0.0f, 0.0f );
+                const XMVECTOR vArcPoint = XMVectorAdd( vPoint, vLerpedPerp );
+
+                Float_2 arcPoint;
+                XMStoreFloat2( reinterpret_cast<XMFLOAT2 *>( &arcPoint ), vArcPoint );
                 AddVertex( TransformPoint( arcPoint ), color );
             }
 
@@ -2037,9 +1983,8 @@ void VectorGraphics::GenerateRoundedRectPath( const float x1, const float y1, co
                                               const float brRadius, std::vector<Float_2> &path ) const
 {
     path.clear( );
-
     // Calculate segments for corners based on tessellation tolerance and radius
-    const auto calculateSegments = [this]( const float radius ) -> int
+    const auto calculateSegments = [ this ]( const float radius ) -> int
     {
         if ( radius <= 0.0f )
         {
@@ -2048,7 +1993,7 @@ void VectorGraphics::GenerateRoundedRectPath( const float x1, const float y1, co
         // Use tessellation tolerance for more adaptive quality
         // More segments for larger radii, fewer for smaller ones
         const float circumference = XM_PI * radius * 0.5f; // Quarter circle
-        const int segments = std::max( 6, static_cast<int>( circumference / m_tessellationTolerance ) );
+        const int   segments      = std::max( 6, static_cast<int>( circumference / m_tessellationTolerance ) );
         return std::min( segments, 32 ); // Cap at reasonable maximum
     };
 

@@ -210,8 +210,15 @@ InteropArray<Byte> VGPipeline::GetPixelShader( )
 
     float4 PSMain(PSInput input) : SV_TARGET
     {
-        // The alpha component of the color controls anti-aliasing through geometric feathering
-        return input.Color;
+        float4 color = input.Color;
+        float edgeDistance = input.GradientData.z;
+        if (edgeDistance > 0.0f)
+        {
+            float alpha = 1.0f - saturate(edgeDistance);
+            color.a *= alpha;
+        }
+        
+        return color;
     }
     )";
 

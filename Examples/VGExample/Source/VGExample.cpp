@@ -42,26 +42,6 @@ void VGExample::Init( )
 
     // Initialize vector graphics system
     InitializeVectorGraphics( );
-
-    // Initialize SVG loader and load test SVGs
-    m_svgLoader = std::make_unique<SvgLoader>( );
-    
-    // Try to load sample SVG
-    SvgLoadDesc options;
-    options.LoadText = true;
-    
-    const SvgLoadResult result = m_svgLoader->LoadFromFile( "Assets/SVG/sample.svg", options );
-    if ( result == SvgLoadResult::Success )
-    {
-        m_svgLoadedSuccessfully = true;
-        LOG( INFO ) << "SVG loaded successfully!";
-    }
-    else
-    {
-        LOG( WARNING ) << "Failed to load SVG: " << m_svgLoader->GetLastError( ).Get( );
-        m_svgLoadedSuccessfully = false;
-    }
-
     // Initialize animation state
     m_animationTime = 0.0f;
     m_rotationAngle = 0.0f;
@@ -195,7 +175,7 @@ void VGExample::InitializeVectorGraphics( )
     m_vectorGraphics->SetPipeline( m_vgPipeline.get( ) );
     m_vectorGraphics->SetTransform( m_vgTransform.get( ) );
     m_vectorGraphics->SetTessellationTolerance( 2.0f );
-    m_vectorGraphics->SetAntialiasingMode( VGAntialiasingMode::Subpixel );
+    m_vectorGraphics->SetAntialiasingMode( VGAntialiasingMode::Grayscale );
 }
 
 void VGExample::RenderBasicShapes( ) const
@@ -641,23 +621,6 @@ Float_2 VGExample::GetCircularPosition( const float radius, const float angle, c
 
 void VGExample::RenderSvgDemo( ) const
 {
-    // === SVG Demo Section ===
-    if ( !m_svgLoadedSuccessfully || !m_svgLoader )
-    {
-        // Show error message if SVG failed to load
-        m_vectorGraphics->Save( );
-        m_vectorGraphics->Translate( { 50.0f, 600.0f } );
-        
-        m_vectorGraphics->SetFillEnabled( true );
-        m_vectorGraphics->SetStrokeEnabled( false );
-        m_vectorGraphics->SetFillColor( { 1.0f, 0.3f, 0.3f, 1.0f } ); // Red for error
-        
-        const InteropString errorText = "SVG Loading Failed";
-        m_vectorGraphics->DrawText( errorText, { 0.0f, 0.0f } );
-        
-        m_vectorGraphics->Restore( );
-        return;
-    }
 
     // Show SVG loading success and render the loaded SVG
     m_vectorGraphics->Save( );
@@ -671,51 +634,8 @@ void VGExample::RenderSvgDemo( ) const
     const InteropString titleText = "SVG Rendering Demo";
     m_vectorGraphics->DrawText( titleText, { 0.0f, 0.0f });
 
-    // Render the loaded SVG
-    m_vectorGraphics->Translate( { 0.0f, 30.0f } );
-    
-    // Add a slight animation to the SVG
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 100.0f, 100.0f } ); // Center the SVG
-    m_vectorGraphics->Rotate( sinf( m_animationTime * 0.5f ) * 0.1f ); // Slight rotation
-    m_vectorGraphics->Scale( 1.0f + sinf( m_animationTime ) * 0.1f ); // Slight scaling
-    m_vectorGraphics->Translate( { -100.0f, -100.0f } ); // Move back
-    
-    // Render the SVG
-    m_svgLoader->RenderToVectorGraphics( m_vectorGraphics.get( ) );
-    
-    m_vectorGraphics->Restore( );
-
-    // Display SVG information
-    m_vectorGraphics->Translate( { 220.0f, 0.0f } );
-    
-    const Float_2 docSize = m_svgLoader->GetDocumentSize( );
-    const SvgViewBox viewBox = m_svgLoader->GetEffectiveViewBox( );
-    
-    // Format info strings
-    const std::string sizeStr = "Size: " + std::to_string( static_cast<int>( docSize.X ) ) + 
-                               "x" + std::to_string( static_cast<int>( docSize.Y ) );
-    const InteropString sizeText = sizeStr.c_str( );
-    
-    const std::string viewBoxStr = "ViewBox: " + std::to_string( static_cast<int>( viewBox.Width ) ) + 
-                                  "x" + std::to_string( static_cast<int>( viewBox.Height ) );
-    const InteropString viewBoxText = viewBoxStr.c_str( );
-
-    m_vectorGraphics->SetFillColor( { 0.8f, 0.8f, 0.8f, 1.0f } );
-    m_vectorGraphics->DrawText( sizeText, { 0.0f, 30.0f }, 0.6f );
-    m_vectorGraphics->DrawText( viewBoxText, { 0.0f, 50.0f }, 0.6f );
-    
-    const InteropString statusText = "Status: Loaded Successfully";
-    m_vectorGraphics->SetFillColor( { 0.3f, 1.0f, 0.3f, 0.6f } ); // Green for success
-    m_vectorGraphics->DrawText( statusText, { 0.0f, 70.0f }, 0.6 );
-
-    // Try to load and render the folder SVG as well
-    // m_vectorGraphics->Translate( { -220.0f, 220.0f } );
-
-    // Create a separate loader for the folder SVG
     SvgLoader folderLoader;
     SvgLoadDesc folderOptions;
-
     const SvgLoadResult folderResult = folderLoader.LoadFromFile( "Assets/SVG/folder.svg", folderOptions );
     if ( folderResult == SvgLoadResult::Success )
     {
@@ -732,6 +652,5 @@ void VGExample::RenderSvgDemo( ) const
         const InteropString errorText = "Folder SVG failed to load";
         m_vectorGraphics->DrawText( errorText, { 0.0f, 0.0f }, 0.6f );
     }
-
     m_vectorGraphics->Restore( );
 }

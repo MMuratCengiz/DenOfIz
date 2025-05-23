@@ -52,9 +52,6 @@ namespace DenOfIz
         float m_scaleAnimTime;
         float m_colorAnimTime;
 
-        std::unique_ptr<SvgLoader> m_svgLoader;
-        bool                       m_svgLoadedSuccessfully = false;
-
     public:
         VGExample( )           = default;
         ~VGExample( ) override = default;

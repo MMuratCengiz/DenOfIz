@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Utilities/Common.h>
 #include <DenOfIzGraphics/Vector2d/SvgLoader.h>
+#include <DirectXMath.h>
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -46,6 +47,7 @@ namespace
 
 using namespace DenOfIz;
 using namespace tinyxml2;
+using namespace DirectX;
 
 class SvgLoader::Impl
 {
@@ -1490,23 +1492,13 @@ SvgTransform SvgLoader::CombineTransforms( const SvgTransform &parent, const Svg
         return parent;
     }
 
-    // Combine matrices (simplified 2D matrix multiplication)
     SvgTransform result;
     result.HasTransform = true;
 
-    const Float_4x4 &p = parent.Matrix;
-    const Float_4x4 &c = child.Matrix;
-
-    result.Matrix._11 = p._11 * c._11 + p._12 * c._21;
-    result.Matrix._12 = p._11 * c._12 + p._12 * c._22;
-    result.Matrix._21 = p._21 * c._11 + p._22 * c._21;
-    result.Matrix._22 = p._21 * c._12 + p._22 * c._22;
-    result.Matrix._41 = p._11 * c._41 + p._12 * c._42 + p._41;
-    result.Matrix._42 = p._21 * c._41 + p._22 * c._42 + p._42;
-
-    result.Matrix._13 = result.Matrix._14 = result.Matrix._23 = result.Matrix._24 = 0.0f;
-    result.Matrix._31 = result.Matrix._32 = result.Matrix._34 = result.Matrix._43 = 0.0f;
-    result.Matrix._33 = result.Matrix._44 = 1.0f;
+    const XMMATRIX parentMatrix   = XMLoadFloat4x4( reinterpret_cast<const XMFLOAT4X4 *>( &parent.Matrix ) );
+    const XMMATRIX childMatrix    = XMLoadFloat4x4( reinterpret_cast<const XMFLOAT4X4 *>( &child.Matrix ) );
+    const XMMATRIX combinedMatrix = XMMatrixMultiply( childMatrix, parentMatrix );
+    XMStoreFloat4x4( reinterpret_cast<XMFLOAT4X4 *>( &result.Matrix ), combinedMatrix );
     return result;
 }
 

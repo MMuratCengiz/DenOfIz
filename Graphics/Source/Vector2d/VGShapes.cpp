@@ -17,11 +17,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Vector2d/VGShapes.h>
+#include <DirectXMath.h>
 #include <algorithm>
 #include <cmath>
 #include <limits>
 
 using namespace DenOfIz;
+using namespace DirectX;
 
 namespace
 {
@@ -30,9 +32,13 @@ namespace
 
     Float_2 TransformPoint( const Float_2 &point, const Float_4x4 &matrix )
     {
-        const float x = point.X * matrix._11 + point.Y * matrix._21 + matrix._41;
-        const float y = point.X * matrix._12 + point.Y * matrix._22 + matrix._42;
-        return { x, y };
+        const XMVECTOR vPoint       = XMVectorSet( point.X, point.Y, 0.0f, 1.0f );
+        const XMMATRIX mTransform   = XMLoadFloat4x4( reinterpret_cast<const XMFLOAT4X4 *>( &matrix ) );
+        const XMVECTOR vTransformed = XMVector4Transform( vPoint, mTransform );
+
+        Float_2 result;
+        XMStoreFloat2( reinterpret_cast<XMFLOAT2 *>( &result ), vTransformed );
+        return result;
     }
 
     Float_2 ReflectControlPoint( const Float_2 &current, const Float_2 &lastControl )
@@ -42,9 +48,9 @@ namespace
 
     float Distance( const Float_2 &a, const Float_2 &b )
     {
-        const float dx = b.X - a.X;
-        const float dy = b.Y - a.Y;
-        return std::sqrt( dx * dx + dy * dy );
+        const XMVECTOR va = XMVectorSet( a.X, a.Y, 0.0f, 0.0f );
+        const XMVECTOR vb = XMVectorSet( b.X, b.Y, 0.0f, 0.0f );
+        return XMVectorGetX( XMVector2Length( XMVectorSubtract( vb, va ) ) );
     }
 
     bool IsPointInPolygon( const Float_2 &point, const InteropArray<Float_2> &vertices, const VGFillRule fillRule )

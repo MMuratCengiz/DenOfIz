@@ -5,6 +5,7 @@
     "assimp",
     "wil",
     "miniz",
+    "earcut-hpp",
     "glog",
     "volk",
     "vulkan",
