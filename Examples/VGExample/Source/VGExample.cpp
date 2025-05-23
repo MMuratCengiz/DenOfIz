@@ -48,8 +48,6 @@ void VGExample::Init( )
     
     // Try to load sample SVG
     SvgLoadOptions options;
-    options.TargetSize = { 128.0f, 128.0f }; // Scale to 200x200
-    options.PreserveAspectRatio = true;
     options.LoadText = true;
     
     const SvgLoadResult result = m_svgLoader->LoadFromFile( "Assets/SVG/sample.svg", options );
@@ -73,7 +71,7 @@ void VGExample::Init( )
 
 void VGExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void VGExample::HandleEvent( Event &event )
@@ -713,22 +711,20 @@ void VGExample::RenderSvgDemo( ) const
     m_vectorGraphics->DrawText( statusText, { 0.0f, 70.0f }, 0.6 );
 
     // Try to load and render the folder SVG as well
-    m_vectorGraphics->Translate( { -220.0f, 220.0f } );
+    // m_vectorGraphics->Translate( { -220.0f, 220.0f } );
 
     // Create a separate loader for the folder SVG
     SvgLoader folderLoader;
     SvgLoadOptions folderOptions;
-    folderOptions.TargetSize = { 250.0f, 250.0f };
-    folderOptions.PreserveAspectRatio = true;
-    
+
     const SvgLoadResult folderResult = folderLoader.LoadFromFile( "Assets/SVG/folder.svg", folderOptions );
     if ( folderResult == SvgLoadResult::Success )
     {
         m_vectorGraphics->SetFillColor( { 1.0f, 1.0f, 1.0f, 1.0f } );
         const InteropString folderText = "Folder Icon:";
         m_vectorGraphics->DrawText( folderText, { 0.0f, 0.0f } );
-        
-        m_vectorGraphics->Translate( { 0.0f, 20.0f } );
+
+        m_vectorGraphics->Scale( 2.7f );
         folderLoader.RenderToVectorGraphics( m_vectorGraphics.get( ) );
     }
     else

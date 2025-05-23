@@ -60,7 +60,7 @@ public:
     std::vector<SvgRenderCommand>          renderCommands;
     std::vector<SvgTransform>              transformStack;
 
-    Float_2 currentRenderScale = { 1.0f, 1.0f };
+    // currentRenderScale removed - use VectorGraphics transform API instead
     ~Impl( )
     {
         renderCommands.clear( );
@@ -188,45 +188,17 @@ void SvgLoader::RenderToVectorGraphics( VectorGraphics *vectorGraphics ) const
     {
         return;
     }
-    vectorGraphics->Save( );
-    const Float_2 docSize    = GetDocumentSize( );
-    Float_2       finalScale = { m_impl->options.ScaleFactor, m_impl->options.ScaleFactor };
 
-    if ( m_impl->options.TargetSize.X > 0.0f || m_impl->options.TargetSize.Y > 0.0f )
-    {
-        Float_2 targetScale = { 1.0f, 1.0f };
-
-        if ( m_impl->options.TargetSize.X > 0.0f && m_impl->options.TargetSize.Y > 0.0f )
-        {
-            targetScale.X = m_impl->options.TargetSize.X / docSize.X;
-            targetScale.Y = m_impl->options.TargetSize.Y / docSize.Y;
-
-            if ( m_impl->options.PreserveAspectRatio )
-            {
-                const float minScale = std::min( targetScale.X, targetScale.Y );
-                targetScale.X = targetScale.Y = minScale;
-            }
-        }
-        else if ( m_impl->options.TargetSize.X > 0.0f )
-        {
-            targetScale.X = targetScale.Y = m_impl->options.TargetSize.X / docSize.X;
-        }
-        else if ( m_impl->options.TargetSize.Y > 0.0f )
-        {
-            targetScale.X = targetScale.Y = m_impl->options.TargetSize.Y / docSize.Y;
-        }
-
-        finalScale.X = targetScale.X * m_impl->options.ScaleFactor;
-        finalScale.Y = targetScale.Y * m_impl->options.ScaleFactor;
-    }
-
-    m_impl->currentRenderScale = finalScale;
+    // SVGLoader should NOT apply any transforms itself.
+    // All scaling and positioning should be handled by the caller via VectorGraphics.
+    // The TargetSize and ScaleFactor options are now ignored - the caller should handle scaling.
+    
+    // No internal scaling - use VectorGraphics transform API instead
+    
     for ( const auto &cmd : m_impl->renderCommands )
     {
         RenderCommand( vectorGraphics, cmd );
     }
-
-    vectorGraphics->Restore( );
 }
 
 void SvgLoader::RenderElementById( VectorGraphics *vectorGraphics, const InteropString &elementId ) const
@@ -260,6 +232,8 @@ Float_2 SvgLoader::GetDocumentSize( ) const
 {
     return m_impl->document.Size;
 }
+
+// CalculateTargetScale removed - use VectorGraphics transform API instead
 
 InteropString SvgLoader::GetLastError( ) const
 {

@@ -117,9 +117,7 @@ namespace DenOfIz
     // SVG Loading options
     struct DZ_API SvgLoadOptions
     {
-        float         ScaleFactor           = 1.0f;
-        Float_2       TargetSize            = { 0.0f, 0.0f }; // 0 means preserve original
-        bool          PreserveAspectRatio   = true;
+        // Removed all scaling options - use VectorGraphics transform API instead
         bool          LoadGradients         = true;
         bool          LoadText              = true;
         bool          ConvertTextToPaths    = false;
@@ -149,6 +147,7 @@ namespace DenOfIz
         DZ_API const SvgDocument &GetDocument( ) const;
         DZ_API SvgViewBox         GetEffectiveViewBox( ) const;
         DZ_API Float_2            GetDocumentSize( ) const;
+        // Removed CalculateTargetScale - use VectorGraphics transform API instead
 
         DZ_API InteropString GetLastError( ) const;
         DZ_API bool          HasErrors( ) const;

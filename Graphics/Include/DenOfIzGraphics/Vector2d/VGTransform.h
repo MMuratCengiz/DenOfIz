@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Utilities/InteropMath.h>
 #include <DirectXMath.h>
+#include <vector>
 
 namespace DenOfIz
 {
@@ -27,15 +28,34 @@ namespace DenOfIz
     {
         DirectX::XMFLOAT4X4 m_projection{ };
         DirectX::XMMATRIX m_transform{ };
+        std::vector<DirectX::XMMATRIX> m_transformStack;
 
     public:
         DZ_API VGTransform( uint32_t width, uint32_t height );
         DZ_API void      SetSize( uint32_t width, uint32_t height );
-        DZ_API void      Scale( Float_2 scale );
-        DZ_API void      Translate( Float_2 translation );
-        DZ_API void      Rotate( Float_2 quatXY );
+        
+        // Transform operations
+        DZ_API void      SetTransform( const Float_4x4 &transform );
+        DZ_API void      ResetTransform( );
+        DZ_API void      Transform( const Float_4x4 &matrix );
+        DZ_API void      Translate( const Float_2 &offset );
+        DZ_API void      Scale( const Float_2 &scale );
+        DZ_API void      Scale( float scale );
+        DZ_API void      Rotate( float angleRadians );
+        DZ_API void      Rotate( float angleRadians, const Float_2 &center );
+        DZ_API void      Skew( const Float_2 &skew );
+        
+        // Transform stack
+        DZ_API void      PushTransform( );
+        DZ_API void      PushTransform( const Float_4x4 &transform );
+        DZ_API void      PopTransform( );
+        
+        // Matrix getters
         DZ_API Float_4x4 GetMatrix( ) const;
         DZ_API Float_4x4 GetProjectionMatrix( ) const;
         DZ_API Float_4x4 GetCombinedMatrix( ) const; // projection * transform
+        
+    private:
+        void ApplyTransform( const DirectX::XMMATRIX &transform );
     };
 } // namespace DenOfIz

@@ -47,9 +47,6 @@ VectorGraphics::VectorGraphics( const VectorGraphicsDesc &desc ) :
     m_currentStyle.Stroke.Width    = 1.0f;
     m_currentStyle.Composite.Alpha = 1.0f;
 
-    const auto identity = XMMatrixIdentity( );
-    XMStoreFloat4x4( reinterpret_cast<XMFLOAT4X4 *>( &m_currentStyle.Transform ), identity );
-
     BufferDesc vbDesc;
     vbDesc.HeapType   = HeapType::CPU_GPU;
     vbDesc.Usages     = ResourceUsage::VertexAndConstantBuffer;
@@ -233,95 +230,100 @@ void VectorGraphics::SetStyle( const VGStyle &style )
     m_currentStyle = style;
 }
 
-void VectorGraphics::Save( )
+void VectorGraphics::Save( ) const
 {
-    m_transformStack.push_back( m_currentStyle.Transform );
-}
-
-void VectorGraphics::Restore( )
-{
-    if ( !m_transformStack.empty( ) )
+    if ( m_transform )
     {
-        m_currentStyle.Transform = m_transformStack.back( );
-        m_transformStack.pop_back( );
+        m_transform->PushTransform( );
     }
 }
 
-void VectorGraphics::PushTransform( const Float_4x4 &transform )
+void VectorGraphics::Restore( ) const
 {
-    Save( );
-    Transform( transform );
+    if ( m_transform )
+    {
+        m_transform->PopTransform( );
+    }
 }
 
-void VectorGraphics::PopTransform( )
+void VectorGraphics::PushTransform( const Float_4x4 &transform ) const
 {
-    Restore( );
+    if ( m_transform )
+    {
+        m_transform->PushTransform( transform );
+    }
 }
 
-void VectorGraphics::ResetTransform( )
+void VectorGraphics::PopTransform( ) const
 {
-    const auto identity = XMMatrixIdentity( );
-    XMStoreFloat4x4( reinterpret_cast<XMFLOAT4X4 *>( &m_currentStyle.Transform ), identity );
+    if ( m_transform )
+    {
+        m_transform->PopTransform( );
+    }
 }
 
-void VectorGraphics::Transform( const Float_4x4 &matrix )
+void VectorGraphics::ResetTransform( ) const
 {
-    const auto currentTransform = XMLoadFloat4x4( reinterpret_cast<const XMFLOAT4X4 *>( &m_currentStyle.Transform ) );
-    const auto newTransform     = XMLoadFloat4x4( reinterpret_cast<const XMFLOAT4X4 *>( &matrix ) );
-    const auto result           = XMMatrixMultiply( currentTransform, newTransform );
-    XMStoreFloat4x4( reinterpret_cast<XMFLOAT4X4 *>( &m_currentStyle.Transform ), result );
+    if ( m_transform )
+    {
+        m_transform->ResetTransform( );
+    }
 }
 
-void VectorGraphics::Translate( const Float_2 &offset )
+void VectorGraphics::Transform( const Float_4x4 &matrix ) const
 {
-    const auto translation      = XMMatrixTranslation( offset.X, offset.Y, 0.0f );
-    const auto currentTransform = XMLoadFloat4x4( reinterpret_cast<const XMFLOAT4X4 *>( &m_currentStyle.Transform ) );
-    const auto result           = XMMatrixMultiply( currentTransform, translation );
-    XMStoreFloat4x4( reinterpret_cast<XMFLOAT4X4 *>( &m_currentStyle.Transform ), result );
+    if ( m_transform )
+    {
+        m_transform->Transform( matrix );
+    }
 }
 
-void VectorGraphics::Scale( const Float_2 &scale )
+void VectorGraphics::Translate( const Float_2 &offset ) const
 {
-    const auto scaling          = XMMatrixScaling( scale.X, scale.Y, 1.0f );
-    const auto currentTransform = XMLoadFloat4x4( reinterpret_cast<const XMFLOAT4X4 *>( &m_currentStyle.Transform ) );
-    const auto result           = XMMatrixMultiply( currentTransform, scaling );
-    XMStoreFloat4x4( reinterpret_cast<XMFLOAT4X4 *>( &m_currentStyle.Transform ), result );
+    if ( m_transform )
+    {
+        m_transform->Translate( offset );
+    }
 }
 
-void VectorGraphics::Scale( const float scale )
+void VectorGraphics::Scale( const Float_2 &scale ) const
 {
-    Scale( { scale, scale } );
+    if ( m_transform )
+    {
+        m_transform->Scale( scale );
+    }
 }
 
-void VectorGraphics::Rotate( const float angleRadians )
+void VectorGraphics::Scale( const float scale ) const
 {
-    const auto rotation         = XMMatrixRotationZ( angleRadians );
-    const auto currentTransform = XMLoadFloat4x4( reinterpret_cast<const XMFLOAT4X4 *>( &m_currentStyle.Transform ) );
-    const auto result           = XMMatrixMultiply( currentTransform, rotation );
-    XMStoreFloat4x4( reinterpret_cast<XMFLOAT4X4 *>( &m_currentStyle.Transform ), result );
+    if ( m_transform )
+    {
+        m_transform->Scale( scale );
+    }
 }
 
-void VectorGraphics::Rotate( const float angleRadians, const Float_2 &center )
+void VectorGraphics::Rotate( const float angleRadians ) const
 {
-    const auto translate1 = XMMatrixTranslation( -center.X, -center.Y, 0.0f );
-    const auto rotation   = XMMatrixRotationZ( angleRadians );
-    const auto translate2 = XMMatrixTranslation( center.X, center.Y, 0.0f );
-    const auto transform  = XMMatrixMultiply( XMMatrixMultiply( translate1, rotation ), translate2 );
-
-    const auto currentTransform = XMLoadFloat4x4( reinterpret_cast<const XMFLOAT4X4 *>( &m_currentStyle.Transform ) );
-    const auto result           = XMMatrixMultiply( currentTransform, transform );
-    XMStoreFloat4x4( reinterpret_cast<XMFLOAT4X4 *>( &m_currentStyle.Transform ), result );
+    if ( m_transform )
+    {
+        m_transform->Rotate( angleRadians );
+    }
 }
 
-void VectorGraphics::Skew( const Float_2 &skew )
+void VectorGraphics::Rotate( const float angleRadians, const Float_2 &center ) const
 {
-    // Create skew matrix manually
-    const XMFLOAT4X4 skewMatrix = { 1.0f, skew.Y, 0.0f, 0.0f, skew.X, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+    if ( m_transform )
+    {
+        m_transform->Rotate( angleRadians, center );
+    }
+}
 
-    const auto transform        = XMLoadFloat4x4( &skewMatrix );
-    const auto currentTransform = XMLoadFloat4x4( reinterpret_cast<const XMFLOAT4X4 *>( &m_currentStyle.Transform ) );
-    const auto result           = XMMatrixMultiply( currentTransform, transform );
-    XMStoreFloat4x4( reinterpret_cast<XMFLOAT4X4 *>( &m_currentStyle.Transform ), result );
+void VectorGraphics::Skew( const Float_2 &skew ) const
+{
+    if ( m_transform )
+    {
+        m_transform->Skew( skew );
+    }
 }
 
 void VectorGraphics::DrawPath( const VGPath2D &path )
@@ -574,9 +576,7 @@ void VectorGraphics::ClipPath( const VGPath2D &path )
 {
     // For now, approximate path clipping with bounding box
     // TODO: Implement proper path clipping using polygon clipping algorithms
-
-    if ( path.GetCommands( ).NumElements( ) == 0 )
-        return;
+    DZ_RETURN_IF( path.GetCommands( ).NumElements( ) == 0 );
 
     // Calculate bounding box of path
     Float_2 minPoint     = { FLT_MAX, FLT_MAX };
@@ -648,7 +648,9 @@ VGRect VectorGraphics::GetCurrentClipRect( ) const
 bool VectorGraphics::IsPointInClipRect( const Float_2 &point ) const
 {
     if ( !IsClippingEnabled( ) )
+    {
         return true;
+    }
 
     const VGRect &clipRect = GetCurrentClipRect( );
     return point.X >= clipRect.TopLeft.X && point.X <= clipRect.BottomRight.X && point.Y >= clipRect.TopLeft.Y && point.Y <= clipRect.BottomRight.Y;
@@ -662,16 +664,15 @@ VGRect VectorGraphics::IntersectRects( const VGRect &a, const VGRect &b ) const
     result.BottomRight.X = std::min( a.BottomRight.X, b.BottomRight.X );
     result.BottomRight.Y = std::min( a.BottomRight.Y, b.BottomRight.Y );
 
-    // Ensure valid rectangle (no negative size)
     if ( result.TopLeft.X > result.BottomRight.X || result.TopLeft.Y > result.BottomRight.Y )
     {
-        result = { { 0.0f, 0.0f }, { 0.0f, 0.0f } }; // Empty rectangle
+        result = { { 0.0f, 0.0f }, { 0.0f, 0.0f } };
     }
 
     return result;
 }
 
-void VectorGraphics::SetTessellationTolerance( float tolerance )
+void VectorGraphics::SetTessellationTolerance( const float tolerance )
 {
     m_tessellationTolerance = tolerance;
 }
@@ -706,7 +707,6 @@ void VectorGraphics::TessellatePath( const VGPath2D &path, bool forStroke )
     const auto &commands = path.GetCommands( );
     DZ_RETURN_IF( commands.NumElements( ) == 0 );
 
-    // Build a list of points for the path
     std::vector<Float_2> pathPoints;
     Float_2              currentPoint        = { 0.0f, 0.0f };
     Float_2              startPoint          = { 0.0f, 0.0f };
@@ -723,7 +723,7 @@ void VectorGraphics::TessellatePath( const VGPath2D &path, bool forStroke )
             {
                 currentPoint = command.MoveTo.IsRelative ? Float_2{ currentPoint.X + command.MoveTo.Point.X, currentPoint.Y + command.MoveTo.Point.Y } : command.MoveTo.Point;
                 startPoint   = currentPoint;
-                pathPoints.clear( ); // Start new sub-path
+                pathPoints.clear( );
                 pathPoints.push_back( currentPoint );
                 hasLastControlPoint = false;
             }
@@ -1087,7 +1087,6 @@ void VectorGraphics::TessellateCircle( const VGCircle &circle, const bool forStr
     {
         // Generate filled circle using triangle fan
         AddVertex( TransformPoint( circle.Center ), color ); // Center vertex
-
         // Add circle perimeter vertices (only segments, not segments + 1)
         for ( int i = 0; i < segments; ++i )
         {
@@ -1201,16 +1200,13 @@ void VectorGraphics::TessellateEllipse( const VGEllipse &ellipse, const bool for
     {
         // Generate filled ellipse using triangle fan
         AddVertex( TransformPoint( ellipse.Center ), color ); // Center vertex
-
         // Add ellipse perimeter vertices
         for ( int i = 0; i < segments; ++i )
         {
             const float angle = i * angleStep;
-
             // Calculate point on ellipse (before rotation)
             const float localX = ellipse.Radii.X * cosf( angle );
             const float localY = ellipse.Radii.Y * sinf( angle );
-
             // Apply rotation
             const float rotatedX = localX * cosRotation - localY * sinRotation;
             const float rotatedY = localX * sinRotation + localY * cosRotation;
@@ -1241,12 +1237,13 @@ void VectorGraphics::TessellatePolygon( const VGPolygon &polygon, const bool for
 
     if ( forStroke )
     {
-        // Generate stroke for polygon edges
         for ( uint32_t i = 0; i < polygon.Points.NumElements( ); ++i )
         {
             const uint32_t nextIndex = ( i + 1 ) % polygon.Points.NumElements( );
             if ( !polygon.IsClosed && nextIndex == 0 )
+            {
                 break;
+            }
 
             VGLine line;
             line.StartPoint = polygon.Points.GetElement( i );
@@ -1257,16 +1254,11 @@ void VectorGraphics::TessellatePolygon( const VGPolygon &polygon, const bool for
     }
     else
     {
-        // Simple triangulation using fan method (works for convex polygons)
         const uint32_t baseVertexIndex = static_cast<uint32_t>( m_vertices.size( ) );
-
-        // Add all polygon vertices
         for ( uint32_t i = 0; i < polygon.Points.NumElements( ); ++i )
         {
             AddVertex( TransformPoint( polygon.Points.GetElement( i ) ), color );
         }
-
-        // Create triangles using fan triangulation (clockwise winding)
         for ( uint32_t i = 1; i < polygon.Points.NumElements( ) - 1; ++i )
         {
             AddTriangle( baseVertexIndex, baseVertexIndex + i + 1, baseVertexIndex + i );
@@ -1390,9 +1382,7 @@ void VectorGraphics::AddVertex( const Float_2 &position, const Float_4 &color, c
     vertex.Color    = color;
     vertex.TexCoord = texCoord;
 
-    // Setup gradient data based on current fill style
     SetupGradientVertexData( vertex, position );
-
     m_vertices.push_back( vertex );
 }
 
@@ -1411,18 +1401,30 @@ void VectorGraphics::AddQuad( const uint32_t v0, const uint32_t v1, const uint32
 
 Float_2 VectorGraphics::TransformPoint( const Float_2 &point ) const
 {
-    const auto transform   = XMLoadFloat4x4( reinterpret_cast<const XMFLOAT4X4 *>( &m_currentStyle.Transform ) );
-    const auto vector      = XMVectorSet( point.X, point.Y, 0.0f, 1.0f );
-    const auto transformed = XMVector4Transform( vector, transform );
+    if ( m_transform )
+    {
+        const auto transformMatrix = m_transform->GetMatrix( );
+        const auto transform       = XMLoadFloat4x4( reinterpret_cast<const XMFLOAT4X4 *>( &transformMatrix ) );
+        const auto vector          = XMVectorSet( point.X, point.Y, 0.0f, 1.0f );
+        const auto transformed     = XMVector4Transform( vector, transform );
 
-    Float_2 result;
-    XMStoreFloat2( reinterpret_cast<XMFLOAT2 *>( &result ), transformed );
-    return result;
+        Float_2 result;
+        XMStoreFloat2( reinterpret_cast<XMFLOAT2 *>( &result ), transformed );
+        return result;
+    }
+    return point;
 }
 
 Float_4x4 VectorGraphics::GetCurrentTransform( ) const
 {
-    return m_currentStyle.Transform;
+    if ( m_transform )
+    {
+        return m_transform->GetMatrix( );
+    }
+    const auto identity = XMMatrixIdentity( );
+    Float_4x4  result;
+    XMStoreFloat4x4( reinterpret_cast<XMFLOAT4X4 *>( &result ), identity );
+    return result;
 }
 
 Float_4 VectorGraphics::ApplyAlpha( const Float_4 &color ) const

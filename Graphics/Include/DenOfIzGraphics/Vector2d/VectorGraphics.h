@@ -133,7 +133,7 @@ namespace DenOfIz
         VGFillStyle      Fill;
         VGStrokeStyle    Stroke;
         VGCompositeStyle Composite;
-        Float_4x4        Transform;
+        // Transform is now managed by VGTransform
     };
 
     // Vertex data for rendering
@@ -187,7 +187,6 @@ namespace DenOfIz
         ILogicalDevice                  *m_logicalDevice    = nullptr;
 
         float                  m_tessellationTolerance = 0.5f;
-        std::vector<Float_4x4> m_transformStack;
         uint32_t               m_frameIndex = 0;
 
         // Text rendering
@@ -233,18 +232,18 @@ namespace DenOfIz
         DZ_API void           SetStyle( const VGStyle &style );
 
         // === Transform API ===
-        DZ_API void Save( );                                     // Push transform state
-        DZ_API void Restore( );                                  // Pop transform state
-        DZ_API void PushTransform( const Float_4x4 &transform ); // Push and apply transform
-        DZ_API void PopTransform( );                             // Pop transform state
-        DZ_API void ResetTransform( );
-        DZ_API void Transform( const Float_4x4 &matrix );
-        DZ_API void Translate( const Float_2 &offset );
-        DZ_API void Scale( const Float_2 &scale );
-        DZ_API void Scale( float scale );
-        DZ_API void Rotate( float angleRadians );
-        DZ_API void Rotate( float angleRadians, const Float_2 &center );
-        DZ_API void Skew( const Float_2 &skew );
+        DZ_API void Save( ) const;                                     // Push transform state
+        DZ_API void Restore( ) const;                                  // Pop transform state
+        DZ_API void PushTransform( const Float_4x4 &transform ) const; // Push and apply transform
+        DZ_API void PopTransform( ) const;                             // Pop transform state
+        DZ_API void ResetTransform( ) const;
+        DZ_API void Transform( const Float_4x4 &matrix ) const;
+        DZ_API void Translate( const Float_2 &offset ) const;
+        DZ_API void Scale( const Float_2 &scale ) const;
+        DZ_API void Scale( float scale ) const;
+        DZ_API void Rotate( float angleRadians ) const;
+        DZ_API void Rotate( float angleRadians, const Float_2 &center ) const;
+        DZ_API void Skew( const Float_2 &skew ) const;
 
         // Path drawing
         DZ_API void DrawPath( const VGPath2D &path );
