@@ -34,10 +34,12 @@ VGPipeline::VGPipeline( const VGPipelineDesc &desc )
 
     if ( desc.SetupData )
     {
+        m_alignedElementNumBytes = Utilities::Align( sizeof( Float_4x4 ), device->DeviceInfo( ).Constants.ConstantBufferAlignment );
+
         BufferDesc bufferDesc{ };
         bufferDesc.HeapType   = HeapType::CPU_GPU;
         bufferDesc.Usages     = ResourceUsage::VertexAndConstantBuffer;
-        bufferDesc.NumBytes   = sizeof( Float_4x4 ) * desc.NumFrames;
+        bufferDesc.NumBytes   = m_alignedElementNumBytes * desc.NumFrames;
         bufferDesc.Descriptor = ResourceDescriptor::Buffer;
         m_data                = std::unique_ptr<IBufferResource>( device->CreateBufferResource( bufferDesc ) );
         m_dataMappedMemory    = static_cast<Byte *>( m_data->MapMemory( ) );
@@ -108,7 +110,7 @@ VGPipeline::VGPipeline( const VGPipelineDesc &desc )
             BindBufferDesc bindBufferDesc{ };
             bindBufferDesc.Binding        = 0;
             bindBufferDesc.Resource       = m_data.get( );
-            bindBufferDesc.ResourceOffset = sizeof( Float_4x4 ) * i;
+            bindBufferDesc.ResourceOffset = m_alignedElementNumBytes * i;
             bindGroups[ 0 ]->Cbv( bindBufferDesc );
             bindGroups[ 0 ]->EndUpdate( );
         }
@@ -138,7 +140,7 @@ VGPipeline::VGPipeline( const VGPipelineDesc &desc )
 
 void VGPipeline::UpdateProjection( const uint32_t &frameIndex, const Float_4x4 &projection ) const
 {
-    std::memcpy( m_dataMappedMemory + sizeof( Float_4x4 ) * frameIndex, &projection, sizeof( Float_4x4 ) );
+    std::memcpy( m_dataMappedMemory + m_alignedElementNumBytes * frameIndex, &projection, sizeof( Float_4x4 ) );
 }
 
 IResourceBindGroup *VGPipeline::GetBindGroup( const uint32_t &frameIndex, const uint32_t &registerSpace ) const

@@ -54,6 +54,7 @@ namespace DenOfIz
         PipelineDesc                     m_pipelineDesc{ };
         std::unique_ptr<IBufferResource> m_data{ };
         Byte                            *m_dataMappedMemory = nullptr;
+        uint32_t                         m_alignedElementNumBytes;
 
     public:
         DZ_API explicit VGPipeline( const VGPipelineDesc &desc );
