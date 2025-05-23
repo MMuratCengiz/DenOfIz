@@ -47,7 +47,7 @@ void VGExample::Init( )
     m_svgLoader = std::make_unique<SvgLoader>( );
     
     // Try to load sample SVG
-    SvgLoadOptions options;
+    SvgLoadDesc options;
     options.LoadText = true;
     
     const SvgLoadResult result = m_svgLoader->LoadFromFile( "Assets/SVG/sample.svg", options );
@@ -714,7 +714,7 @@ void VGExample::RenderSvgDemo( ) const
 
     // Create a separate loader for the folder SVG
     SvgLoader folderLoader;
-    SvgLoadOptions folderOptions;
+    SvgLoadDesc folderOptions;
 
     const SvgLoadResult folderResult = folderLoader.LoadFromFile( "Assets/SVG/folder.svg", folderOptions );
     if ( folderResult == SvgLoadResult::Success )

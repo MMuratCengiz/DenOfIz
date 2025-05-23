@@ -47,6 +47,7 @@ namespace DenOfIz
         Float_4       FillColor   = { 0.0f, 0.0f, 0.0f, 1.0f };
         float         FillOpacity = 1.0f;
         InteropString FillRule    = "nonzero";
+        InteropString FillGradientId; // url(#gradientId)
 
         // Stroke properties
         bool          HasStroke        = false;
@@ -58,8 +59,8 @@ namespace DenOfIz
         float         StrokeMiterLimit = 4.0f;
         InteropString StrokeDashArray;
         float         StrokeDashOffset = 0.0f;
+        InteropString StrokeGradientId; // url(#gradientId)
 
-        // General properties
         float         Opacity = 1.0f;
         InteropString Display;
         InteropString Visibility = "visible";
@@ -94,7 +95,6 @@ namespace DenOfIz
         InteropArray<SvgGradientStop> Stops;
     };
 
-    // SVG Document structure
     struct DZ_API SvgDocument
     {
         Float_2                         Size = { 100.0f, 100.0f };
@@ -104,7 +104,6 @@ namespace DenOfIz
         InteropArray<SvgRadialGradient> RadialGradients;
     };
 
-    // SVG Loading result
     enum class SvgLoadResult
     {
         Success,
@@ -114,14 +113,12 @@ namespace DenOfIz
         InvalidFormat
     };
 
-    // SVG Loading options
-    struct DZ_API SvgLoadOptions
+    struct DZ_API SvgLoadDesc
     {
-        // Removed all scaling options - use VectorGraphics transform API instead
         bool          LoadGradients         = true;
         bool          LoadText              = true;
         bool          ConvertTextToPaths    = false;
-        float         TessellationTolerance = 1.0f;
+        float         TessellationTolerance = 2.0f;
         InteropString DefaultFontFamily     = "Arial";
         float         DefaultFontSize       = 12.0f;
     };
@@ -137,9 +134,9 @@ namespace DenOfIz
         SvgLoader( SvgLoader &&other ) noexcept;
         SvgLoader &operator=( SvgLoader &&other ) noexcept;
 
-        DZ_API SvgLoadResult LoadFromFile( const InteropString &filePath, const SvgLoadOptions &options = { } );
-        DZ_API SvgLoadResult LoadFromBinaryData( const InteropArray<Byte> &data, const SvgLoadOptions &options = { } );
-        DZ_API SvgLoadResult LoadFromString( const InteropString &svgContent, const SvgLoadOptions &options = { } );
+        DZ_API SvgLoadResult LoadFromFile( const InteropString &filePath, const SvgLoadDesc &options = { } );
+        DZ_API SvgLoadResult LoadFromBinaryData( const InteropArray<Byte> &data, const SvgLoadDesc &options = { } );
+        DZ_API SvgLoadResult LoadFromString( const InteropString &svgContent, const SvgLoadDesc &options = { } );
 
         DZ_API void RenderToVectorGraphics( VectorGraphics *vectorGraphics ) const;
         DZ_API void RenderElementById( VectorGraphics *vectorGraphics, const InteropString &elementId ) const;
@@ -265,5 +262,9 @@ namespace DenOfIz
 
         void SetError( const InteropString &error ) const;
         void RenderCommand( VectorGraphics *vectorGraphics, const SvgRenderCommand &cmd ) const;
+
+        // Gradient helper functions
+        bool          IsGradientUrl( const InteropString &value ) const;
+        InteropString ExtractGradientId( const InteropString &url ) const;
     };
 } // namespace DenOfIz

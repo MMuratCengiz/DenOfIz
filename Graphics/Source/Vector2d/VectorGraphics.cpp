@@ -1932,6 +1932,18 @@ void VectorGraphics::GenerateLineJoin( const Float_2 &point, const Float_2 &dir1
                 m_indices.push_back( baseIndex + 1 );
                 m_indices.push_back( baseIndex + 3 );
             }
+            else
+            {
+                // Fallback to a bevel join when miter limit is exceeded
+                AddVertex( TransformPoint( point ), color );
+                AddVertex( TransformPoint( { point.X + perp1.X * halfWidth, point.Y + perp1.Y * halfWidth } ), color );
+                AddVertex( TransformPoint( { point.X + perp2.X * halfWidth, point.Y + perp2.Y * halfWidth } ), color );
+
+                const uint32_t baseIndex = static_cast<uint32_t>( m_vertices.size( ) ) - 3;
+                m_indices.push_back( baseIndex );
+                m_indices.push_back( baseIndex + 1 );
+                m_indices.push_back( baseIndex + 2 );
+            }
         }
         break;
 
@@ -2313,43 +2325,4 @@ void VectorGraphics::SetAntialiasingWidth( const float width )
 float VectorGraphics::GetAntialiasingWidth( ) const
 {
     return m_antialiasingWidth;
-}
-
-void VectorGraphics::SetupEdgeData( VGVertex &vertex, const Float_2 &position, const Float_2 &edgeStart, const Float_2 &edgeEnd, const float primitiveType ) const
-{
-    if ( m_antialiasingMode == VGAntialiasingMode::None )
-    {
-        vertex.EdgeData = { 0.0f, 0.0f, 0.0f, primitiveType };
-        return;
-    }
-
-    // Calculate the distance from point to line segment
-    const Float_2 lineVec = { edgeEnd.X - edgeStart.X, edgeEnd.Y - edgeStart.Y };
-    const Float_2 pointVec = { position.X - edgeStart.X, position.Y - edgeStart.Y };
-    
-    const float lineLength = sqrtf( lineVec.X * lineVec.X + lineVec.Y * lineVec.Y );
-    if ( lineLength < 1e-6f )
-    {
-        vertex.EdgeData = { 0.0f, 0.0f, 0.0f, primitiveType };
-        return;
-    }
-
-    // Normalize line vector to get the edge normal
-    const Float_2 lineNormal = { lineVec.X / lineLength, lineVec.Y / lineLength };
-    const Float_2 edgeNormal = { -lineNormal.Y, lineNormal.X }; // Perpendicular to edge
-
-    // Calculate signed distance to edge (positive = outside, negative = inside)
-    const float signedDistance = pointVec.X * edgeNormal.X + pointVec.Y * edgeNormal.Y;
-    vertex.EdgeData = { signedDistance, edgeNormal.X, edgeNormal.Y, primitiveType };
-}
-
-void VectorGraphics::AddVertexWithEdgeData( const Float_2 &position, const Float_4 &color, const Float_2 &edgeStart, const Float_2 &edgeEnd, const float primitiveType )
-{
-    VGVertex vertex;
-    vertex.Position = TransformPoint( position );
-    vertex.Color = color;
-    vertex.TexCoord = { 0.0f, 0.0f };
-    SetupGradientVertexData( vertex, position );
-    SetupEdgeData( vertex, position, edgeStart, edgeEnd, primitiveType );
-    m_vertices.push_back( vertex );
 }

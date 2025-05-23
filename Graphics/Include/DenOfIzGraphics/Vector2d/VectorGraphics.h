@@ -150,7 +150,6 @@ namespace DenOfIz
         Float_4 Color;
         Float_2 TexCoord;
         Float_4 GradientData; // For gradient calculations
-        Float_4 EdgeData;     // For antialiasing: (distance to edge, edge normal.xy, primitive type)
     };
 
     // Rendering primitive types
@@ -194,11 +193,11 @@ namespace DenOfIz
         uint32_t                         m_indexBufferSize  = 0;
         ILogicalDevice                  *m_logicalDevice    = nullptr;
 
-        float                  m_tessellationTolerance = 0.5f;
-        uint32_t               m_frameIndex = 0;
+        float    m_tessellationTolerance = 0.5f;
+        uint32_t m_frameIndex            = 0;
 
-        VGAntialiasingMode     m_antialiasingMode = VGAntialiasingMode::None;
-        float                  m_antialiasingWidth = 1.0f;
+        VGAntialiasingMode m_antialiasingMode  = VGAntialiasingMode::None;
+        float              m_antialiasingWidth = 1.0f;
 
         // Text rendering
         TextRenderer *m_textRenderer = nullptr;
@@ -312,10 +311,10 @@ namespace DenOfIz
         DZ_API float GetTessellationTolerance( ) const;
 
         // Antialiasing configuration
-        DZ_API void              SetAntialiasingMode( VGAntialiasingMode mode );
+        DZ_API void               SetAntialiasingMode( VGAntialiasingMode mode );
         DZ_API VGAntialiasingMode GetAntialiasingMode( ) const;
-        DZ_API void              SetAntialiasingWidth( float width );
-        DZ_API float             GetAntialiasingWidth( ) const;
+        DZ_API void               SetAntialiasingWidth( float width );
+        DZ_API float              GetAntialiasingWidth( ) const;
 
         DZ_API void         SetPipeline( VGPipeline *pipeline );
         DZ_API void         SetTransform( VGTransform *transform );
@@ -359,10 +358,6 @@ namespace DenOfIz
 
         // Gradient utilities
         void SetupGradientVertexData( VGVertex &vertex, const Float_2 &position ) const;
-
-        // Antialiasing utilities
-        void SetupEdgeData( VGVertex &vertex, const Float_2 &position, const Float_2 &edgeStart, const Float_2 &edgeEnd, float primitiveType = 0.0f ) const;
-        void AddVertexWithEdgeData( const Float_2 &position, const Float_4 &color, const Float_2 &edgeStart, const Float_2 &edgeEnd, float primitiveType = 0.0f );
 
         // Advanced tessellation algorithms
         void TessellateQuadraticBezier( const Float_2 &p0, const Float_2 &p1, const Float_2 &p2, std::vector<Float_2> &points );

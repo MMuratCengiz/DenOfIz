@@ -52,7 +52,7 @@ class SvgLoader::Impl
 public:
     tinyxml2::XMLDocument xmlDoc;
     SvgDocument           document;
-    SvgLoadOptions        options;
+    SvgLoadDesc           options;
     InteropString         lastError;
     bool                  hasErrors = false;
 
@@ -109,7 +109,7 @@ SvgLoader &SvgLoader::operator=( SvgLoader &&other ) noexcept
     return *this;
 }
 
-SvgLoadResult SvgLoader::LoadFromFile( const InteropString &filePath, const SvgLoadOptions &options )
+SvgLoadResult SvgLoader::LoadFromFile( const InteropString &filePath, const SvgLoadDesc &options )
 {
     if ( !m_impl )
     {
@@ -133,7 +133,7 @@ SvgLoadResult SvgLoader::LoadFromFile( const InteropString &filePath, const SvgL
     return LoadFromString( content.c_str( ), options );
 }
 
-SvgLoadResult SvgLoader::LoadFromBinaryData( const InteropArray<Byte> &data, const SvgLoadOptions &options )
+SvgLoadResult SvgLoader::LoadFromBinaryData( const InteropArray<Byte> &data, const SvgLoadDesc &options )
 {
     if ( !m_impl || data.NumElements( ) == 0 )
     {
@@ -148,7 +148,7 @@ SvgLoadResult SvgLoader::LoadFromBinaryData( const InteropArray<Byte> &data, con
     return LoadFromString( content, options );
 }
 
-SvgLoadResult SvgLoader::LoadFromString( const InteropString &svgContent, const SvgLoadOptions &options )
+SvgLoadResult SvgLoader::LoadFromString( const InteropString &svgContent, const SvgLoadDesc &options )
 {
     if ( !m_impl )
     {
@@ -931,9 +931,10 @@ void SvgLoader::ParsePath( const XMLElement *element, const SvgStyle &style, con
     cmd.Style             = style;
     cmd.Transform         = transform;
 
-    VGPath2D  parsedPath = ParsePathData( pathData );
-    auto      pathPtr    = std::make_unique<VGPath2D>( std::move( parsedPath ) );
-    VGPath2D *rawPtr     = pathPtr.get( );
+    VGPath2D parsedPath = ParsePathData( pathData );
+    auto     pathPtr    = std::make_unique<VGPath2D>( std::move( parsedPath ) );
+    pathPtr->SetTessellationTolerance( m_impl->options.TessellationTolerance );
+    VGPath2D *rawPtr = pathPtr.get( );
     m_impl->pathStorage.push_back( std::move( pathPtr ) );
     cmd.PathData.Path = rawPtr;
 }
@@ -1045,8 +1046,16 @@ SvgStyle SvgLoader::ParseElementStyle( XMLElement *element, const SvgStyle &pare
         }
         else
         {
-            style.HasFill   = true;
-            style.FillColor = ParseColor( fill );
+            style.HasFill = true;
+            if ( IsGradientUrl( fill ) )
+            {
+                style.FillGradientId = ExtractGradientId( fill );
+                style.FillColor      = { 0.0f, 0.0f, 0.0f, 1.0f }; // Default fallback color
+            }
+            else
+            {
+                style.FillColor = ParseColor( fill );
+            }
         }
     }
 
@@ -1059,8 +1068,16 @@ SvgStyle SvgLoader::ParseElementStyle( XMLElement *element, const SvgStyle &pare
         }
         else
         {
-            style.HasStroke   = true;
-            style.StrokeColor = ParseColor( stroke );
+            style.HasStroke = true;
+            if ( IsGradientUrl( stroke ) )
+            {
+                style.StrokeGradientId = ExtractGradientId( stroke );
+                style.StrokeColor      = { 0.0f, 0.0f, 0.0f, 1.0f }; // Default fallback color
+            }
+            else
+            {
+                style.StrokeColor = ParseColor( stroke );
+            }
         }
     }
 
@@ -1169,8 +1186,16 @@ SvgStyle SvgLoader::ParseStyleAttribute( const InteropString &styleString, const
             }
             else
             {
-                style.HasFill   = true;
-                style.FillColor = ParseColor( value );
+                style.HasFill = true;
+                if ( IsGradientUrl( value ) )
+                {
+                    style.FillGradientId = ExtractGradientId( value );
+                    style.FillColor      = { 0.0f, 0.0f, 0.0f, 1.0f }; // Default fallback color
+                }
+                else
+                {
+                    style.FillColor = ParseColor( value );
+                }
             }
         }
         else if ( property.Equals( InteropString( "stroke" ) ) )
@@ -1181,8 +1206,16 @@ SvgStyle SvgLoader::ParseStyleAttribute( const InteropString &styleString, const
             }
             else
             {
-                style.HasStroke   = true;
-                style.StrokeColor = ParseColor( value );
+                style.HasStroke = true;
+                if ( IsGradientUrl( value ) )
+                {
+                    style.StrokeGradientId = ExtractGradientId( value );
+                    style.StrokeColor      = { 0.0f, 0.0f, 0.0f, 1.0f }; // Default fallback color
+                }
+                else
+                {
+                    style.StrokeColor = ParseColor( value );
+                }
             }
         }
         else if ( property.Equals( InteropString( "stroke-width" ) ) )
@@ -1493,7 +1526,14 @@ void SvgLoader::RenderCommand( VectorGraphics *vectorGraphics, const SvgRenderCo
     if ( cmd.Style.HasFill && cmd.Style.Visibility.Equals( InteropString( "visible" ) ) && !cmd.Style.Display.Equals( InteropString( "none" ) ) )
     {
         vectorGraphics->SetFillEnabled( true );
-        vectorGraphics->SetFillColor( cmd.Style.FillColor );
+        if ( !cmd.Style.FillGradientId.IsEmpty( ) )
+        {
+            ApplyGradientFill( vectorGraphics, cmd.Style.FillGradientId );
+        }
+        else
+        {
+            vectorGraphics->SetFillColor( cmd.Style.FillColor );
+        }
 
         if ( cmd.Style.FillRule.Equals( InteropString( "evenodd" ) ) )
         {
@@ -1817,4 +1857,46 @@ void SvgLoader::SetError( const InteropString &error ) const
     {
         m_impl->SetError( error );
     }
+}
+
+bool SvgLoader::IsGradientUrl( const InteropString &value ) const
+{
+    if ( value.IsEmpty( ) )
+    {
+        return false;
+    }
+
+    const char *str = value.Get( );
+    return StringStartsWith( str, "url(#" );
+}
+
+InteropString SvgLoader::ExtractGradientId( const InteropString &url ) const
+{
+    if ( !IsGradientUrl( url ) )
+    {
+        return InteropString( );
+    }
+
+    const char *str   = url.Get( );
+    const char *start = str + 5; // Skip "url(#"
+    const char *end   = std::strchr( start, ')' );
+
+    if ( !end )
+    {
+        return InteropString( ); // Invalid format
+    }
+
+    const size_t idLen = end - start;
+    if ( idLen == 0 )
+    {
+        return InteropString( ); // Empty ID
+    }
+
+    const auto idStr = new char[ idLen + 1 ];
+    SafeSubstringCopy( idStr, start, idLen, idLen + 1 );
+
+    InteropString result( idStr );
+    delete[] idStr;
+
+    return result;
 }
