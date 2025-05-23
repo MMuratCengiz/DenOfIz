@@ -959,10 +959,40 @@ void VectorGraphics::TessellateRect( const VGRect &rect, const bool forStroke )
     }
     else
     {
-        AddVertex( TransformPoint( rect.TopLeft ), color );                           // Top Left
-        AddVertex( TransformPoint( { rect.BottomRight.X, rect.TopLeft.Y } ), color ); // Top Right
-        AddVertex( TransformPoint( rect.BottomRight ), color );                       // Bottom Right
-        AddVertex( TransformPoint( { rect.TopLeft.X, rect.BottomRight.Y } ), color ); // Bottom Left
+        if ( m_antialiasingMode == VGAntialiasingMode::Geometric )
+        {
+            // For antialiased rectangles, expand geometry and calculate edge distances
+            const float aaWidth = m_antialiasingWidth;
+
+            // Expanded rectangle for antialiasing
+            const auto expandedTL = Float_2{ rect.TopLeft.X - aaWidth, rect.TopLeft.Y - aaWidth };
+            const auto expandedBR = Float_2{ rect.BottomRight.X + aaWidth, rect.BottomRight.Y + aaWidth };
+
+            // Calculate edge distances (negative values are outside, positive inside)
+            // Distance is calculated from the original rectangle boundaries
+            auto calcEdgeDistance = []( const Float_2 &point, const VGRect &rect, float aaWidth ) -> float
+            {
+                const float dx          = std::min( point.X - rect.TopLeft.X, rect.BottomRight.X - point.X );
+                const float dy          = std::min( point.Y - rect.TopLeft.Y, rect.BottomRight.Y - point.Y );
+                const float rawDistance = std::min( dx, dy ) / aaWidth;
+                // Clamp to reasonable antialiasing range [-1, 1]
+                return std::max( -1.0f, std::min( 1.0f, rawDistance ) );
+            };
+
+            // Create antialiased quad with proper edge distances
+            AddVertex( TransformPoint( expandedTL ), color, { 0, 0 }, calcEdgeDistance( expandedTL, rect, aaWidth ) );
+            AddVertex( TransformPoint( { expandedBR.X, expandedTL.Y } ), color, { 0, 0 }, calcEdgeDistance( { expandedBR.X, expandedTL.Y }, rect, aaWidth ) );
+            AddVertex( TransformPoint( expandedBR ), color, { 0, 0 }, calcEdgeDistance( expandedBR, rect, aaWidth ) );
+            AddVertex( TransformPoint( { expandedTL.X, expandedBR.Y } ), color, { 0, 0 }, calcEdgeDistance( { expandedTL.X, expandedBR.Y }, rect, aaWidth ) );
+        }
+        else
+        {
+            // Standard non-antialiased rectangle
+            AddVertex( TransformPoint( rect.TopLeft ), color );                           // Top Left
+            AddVertex( TransformPoint( { rect.BottomRight.X, rect.TopLeft.Y } ), color ); // Top Right
+            AddVertex( TransformPoint( rect.BottomRight ), color );                       // Bottom Right
+            AddVertex( TransformPoint( { rect.TopLeft.X, rect.BottomRight.Y } ), color ); // Bottom Left
+        }
 
         const uint32_t baseIndex = static_cast<uint32_t>( m_vertices.size( ) ) - 4;
 
@@ -1086,14 +1116,46 @@ void VectorGraphics::TessellateCircle( const VGCircle &circle, const bool forStr
     }
     else
     {
-        // Generate filled circle using triangle fan
-        AddVertex( TransformPoint( circle.Center ), color ); // Center vertex
-        // Add circle perimeter vertices (only segments, not segments + 1)
-        for ( int i = 0; i < segments; ++i )
+        if ( m_antialiasingMode == VGAntialiasingMode::Geometric )
         {
-            const float angle = i * angleStep;
-            Float_2     point = { circle.Center.X + circle.Radius * cosf( angle ), circle.Center.Y + circle.Radius * sinf( angle ) };
-            AddVertex( TransformPoint( point ), color );
+            // For antialiased circles, extend the radius and calculate edge distances
+            const float aaWidth        = m_antialiasingWidth;
+            const float extendedRadius = circle.Radius + aaWidth;
+
+            // Calculate edge distance for a point relative to circle
+            // Edge distance should be in range [-1, 1] for proper antialiasing
+            auto calcCircleEdgeDistance = []( const Float_2 &point, const Float_2 &center, float radius, float aaWidth ) -> float
+            {
+                const float dx             = point.X - center.X;
+                const float dy             = point.Y - center.Y;
+                const float distFromCenter = sqrtf( dx * dx + dy * dy );
+                const float rawDistance    = ( radius - distFromCenter ) / aaWidth;
+                // Clamp to reasonable antialiasing range [-1, 1]
+                return std::max( -1.0f, std::min( 1.0f, rawDistance ) );
+            };
+
+            // Center vertex with maximum edge distance
+            AddVertex( TransformPoint( circle.Center ), color, { 0, 0 }, calcCircleEdgeDistance( circle.Center, circle.Center, circle.Radius, aaWidth ) );
+
+            // Add extended circle perimeter vertices
+            for ( int i = 0; i < segments; ++i )
+            {
+                const float angle = i * angleStep;
+                Float_2     point = { circle.Center.X + extendedRadius * cosf( angle ), circle.Center.Y + extendedRadius * sinf( angle ) };
+                AddVertex( TransformPoint( point ), color, { 0, 0 }, calcCircleEdgeDistance( point, circle.Center, circle.Radius, aaWidth ) );
+            }
+        }
+        else
+        {
+            // Standard filled circle using triangle fan
+            AddVertex( TransformPoint( circle.Center ), color ); // Center vertex
+            // Add circle perimeter vertices (only segments, not segments + 1)
+            for ( int i = 0; i < segments; ++i )
+            {
+                const float angle = i * angleStep;
+                Float_2     point = { circle.Center.X + circle.Radius * cosf( angle ), circle.Center.Y + circle.Radius * sinf( angle ) };
+                AddVertex( TransformPoint( point ), color );
+            }
         }
 
         // Create triangles with correct winding order (clockwise)
@@ -1387,6 +1449,24 @@ void VectorGraphics::AddVertex( const Float_2 &position, const Float_4 &color, c
     m_vertices.push_back( vertex );
 }
 
+void VectorGraphics::AddVertex( const Float_2 &position, const Float_4 &color, const Float_2 &texCoord, const float edgeDistance )
+{
+    VGVertex vertex;
+    vertex.Position = position;
+    vertex.Color    = color;
+    vertex.TexCoord = texCoord;
+
+    SetupGradientVertexData( vertex, position );
+
+    // Override the edge distance for antialiasing
+    if ( m_antialiasingMode == VGAntialiasingMode::Geometric )
+    {
+        vertex.GradientData.Z = edgeDistance;
+    }
+
+    m_vertices.push_back( vertex );
+}
+
 void VectorGraphics::AddTriangle( const uint32_t v0, const uint32_t v1, const uint32_t v2 )
 {
     m_indices.push_back( v0 );
@@ -1500,9 +1580,13 @@ void VectorGraphics::SetupGradientVertexData( VGVertex &vertex, const Float_2 &p
             // Normalize angle relative to base angle
             angle -= baseAngle;
             while ( angle < 0.0f )
+            {
                 angle += 2.0f * XM_PI;
+            }
             while ( angle >= 2.0f * XM_PI )
+            {
                 angle -= 2.0f * XM_PI;
+            }
 
             // Normalize to [0, 1]
             const float t = angle / ( 2.0f * XM_PI );
@@ -1529,8 +1613,18 @@ void VectorGraphics::SetupGradientVertexData( VGVertex &vertex, const Float_2 &p
         break;
     }
 
-    // Store additional gradient info in z and w components if needed
-    vertex.GradientData.Z = 0.0f; // Could store gradient stop count or other info
+    // Store edge distance for antialiasing in Z component
+    if ( m_antialiasingMode == VGAntialiasingMode::Geometric )
+    {
+        // For geometric antialiasing, Z component stores distance to edge
+        // Positive values are interior, negative values are near edges
+        // This will be properly calculated in tessellation methods
+        vertex.GradientData.Z = 0.0f; // Will be set by tessellation methods
+    }
+    else
+    {
+        vertex.GradientData.Z = 0.0f; // No antialiasing
+    }
     vertex.GradientData.W = 0.0f; // Could store additional parameters
 }
 

@@ -40,8 +40,14 @@ void VGExample::Init( )
     debugRendererDesc.Enabled       = true;
     m_debugRenderer                 = std::make_unique<FrameDebugRenderer>( debugRendererDesc );
 
-    // Initialize vector graphics system
     InitializeVectorGraphics( );
+
+    m_folderSvgLoader = std::make_unique<SvgLoader>( );
+    SvgLoadDesc folderOptions;
+    folderOptions.TessellationTolerance = 0.1f;
+    const SvgLoadResult folderResult    = m_folderSvgLoader->LoadFromFile( "Assets/SVG/folder.svg", folderOptions );
+    m_folderSvgLoaded                   = folderResult == SvgLoadResult::Success;
+
     // Initialize animation state
     m_animationTime = 0.0f;
     m_rotationAngle = 0.0f;
@@ -96,7 +102,7 @@ void VGExample::Render( const uint32_t frameIndex, ICommandList *commandList )
     // === Vector Graphics and Text Rendering ===
     // Begin text renderer batch first
     m_textRenderer->BeginBatch( );
-    
+
     // Begin vector graphics batch
     m_vectorGraphics->BeginBatch( commandList, frameIndex );
 
@@ -110,7 +116,7 @@ void VGExample::Render( const uint32_t frameIndex, ICommandList *commandList )
 
     // End vector graphics batch (this will flush all geometry)
     m_vectorGraphics->EndBatch( );
-    
+
     // End text renderer batch (this will flush all text)
     m_textRenderer->EndBatch( commandList );
 
@@ -155,9 +161,9 @@ void VGExample::InitializeVectorGraphics( )
     // Initialize TextRenderer
     TextRendererDesc textRendererDesc;
     textRendererDesc.LogicalDevice = m_logicalDevice;
-    m_textRenderer = std::make_unique<TextRenderer>( textRendererDesc );
+    m_textRenderer                 = std::make_unique<TextRenderer>( textRendererDesc );
     m_textRenderer->Initialize( );
-    
+
     // Set projection matrix for TextRenderer
     Float_4x4 projMatrix;
     std::memcpy( &projMatrix, &m_projectionMatrix, sizeof( Float_4x4 ) );
@@ -175,7 +181,8 @@ void VGExample::InitializeVectorGraphics( )
     m_vectorGraphics->SetPipeline( m_vgPipeline.get( ) );
     m_vectorGraphics->SetTransform( m_vgTransform.get( ) );
     m_vectorGraphics->SetTessellationTolerance( 2.0f );
-    m_vectorGraphics->SetAntialiasingMode( VGAntialiasingMode::Grayscale );
+    m_vectorGraphics->SetAntialiasingMode( VGAntialiasingMode::Geometric );
+    m_vectorGraphics->SetAntialiasingWidth( 1.0f );
 }
 
 void VGExample::RenderBasicShapes( ) const
@@ -310,9 +317,9 @@ void VGExample::RenderNewFeatures( ) const
     m_vectorGraphics->SetFillColor( { 0.8f, 0.4f, 0.6f, 1.0f } );
     m_vectorGraphics->SetFillEnabled( true );
     m_vectorGraphics->SetStrokeEnabled( false );
-    
+
     VGRoundedRect roundedRect1;
-    roundedRect1.TopLeft = { 0.0f, 0.0f };
+    roundedRect1.TopLeft     = { 0.0f, 0.0f };
     roundedRect1.BottomRight = { 100.0f, 60.0f };
     roundedRect1.CornerRadii = { 15.0f, 5.0f, 20.0f, 10.0f }; // Different radii for each corner
     m_vectorGraphics->FillRoundedRect( roundedRect1 );
@@ -320,20 +327,20 @@ void VGExample::RenderNewFeatures( ) const
     // 2. Ellipse with rotation
     m_vectorGraphics->Translate( { 120.0f, 30.0f } );
     VGEllipse rotatedEllipse;
-    rotatedEllipse.Center = { 0.0f, 0.0f };
-    rotatedEllipse.Radii = { 40.0f, 20.0f };
+    rotatedEllipse.Center   = { 0.0f, 0.0f };
+    rotatedEllipse.Radii    = { 40.0f, 20.0f };
     rotatedEllipse.Rotation = m_animationTime * 0.5f; // Animated rotation
-    
+
     m_vectorGraphics->SetFillColor( { 0.3f, 0.7f, 0.9f, 0.8f } );
     m_vectorGraphics->FillEllipse( rotatedEllipse );
 
     // 3. Ellipse stroke demo
     m_vectorGraphics->Translate( { 100.0f, 0.0f } );
     VGEllipse strokedEllipse;
-    strokedEllipse.Center = { 0.0f, 0.0f };
-    strokedEllipse.Radii = { 35.0f, 15.0f };
+    strokedEllipse.Center   = { 0.0f, 0.0f };
+    strokedEllipse.Radii    = { 35.0f, 15.0f };
     strokedEllipse.Rotation = -m_animationTime * 0.3f;
-    
+
     m_vectorGraphics->SetFillEnabled( false );
     m_vectorGraphics->SetStrokeEnabled( true );
     m_vectorGraphics->SetStrokeColor( { 1.0f, 0.5f, 0.2f, 1.0f } );
@@ -342,21 +349,21 @@ void VGExample::RenderNewFeatures( ) const
 
     // 4. Clipping demonstration
     m_vectorGraphics->Translate( { 120.0f, 0.0f } );
-    
+
     // Set up clipping rectangle
     VGRect clipRect;
-    clipRect.TopLeft = { -25.0f, -20.0f };
+    clipRect.TopLeft     = { -25.0f, -20.0f };
     clipRect.BottomRight = { 25.0f, 20.0f };
     m_vectorGraphics->ClipRect( clipRect );
-    
+
     // Draw shapes that will be clipped
     m_vectorGraphics->SetFillEnabled( true );
     m_vectorGraphics->SetStrokeEnabled( false );
     m_vectorGraphics->SetFillColor( { 1.0f, 0.8f, 0.2f, 1.0f } );
-    
+
     // Large circle that extends beyond clip rect
     m_vectorGraphics->FillCircle( { 0.0f, 0.0f }, 35.0f );
-    
+
     // Draw clip rect outline for reference
     m_vectorGraphics->ResetClip( );
     m_vectorGraphics->SetFillEnabled( false );
@@ -371,7 +378,7 @@ void VGExample::RenderNewFeatures( ) const
     m_vectorGraphics->SetFillEnabled( false );
     m_vectorGraphics->SetStrokeColor( { 0.6f, 0.2f, 0.9f, 1.0f } );
     m_vectorGraphics->SetStrokeWidth( 2.5f );
-    
+
     const VGPath2D advancedPath;
     advancedPath.MoveTo( { -30.0f, 0.0f } );
     // Horizontal line
@@ -380,9 +387,9 @@ void VGExample::RenderNewFeatures( ) const
     advancedPath.SmoothQuadraticCurveTo( { 10.0f, -20.0f } );
     // Vertical line
     advancedPath.VerticalLineTo( 0.0f );
-    // Smooth cubic curve 
+    // Smooth cubic curve
     advancedPath.SmoothCubicCurveTo( { 20.0f, 10.0f }, { 30.0f, 0.0f } );
-    
+
     m_vectorGraphics->StrokePath( advancedPath );
 
     // 6. Text rendering demo (if font is available)
@@ -390,7 +397,7 @@ void VGExample::RenderNewFeatures( ) const
     m_vectorGraphics->SetFillEnabled( true );
     m_vectorGraphics->SetStrokeEnabled( false );
     m_vectorGraphics->SetFillColor( { 1.0f, 1.0f, 1.0f, 1.0f } );
-    
+
     // Note: Font is managed by TextRenderer
     const InteropString demoText = "New VG Features!";
     m_vectorGraphics->DrawText( demoText, { 0.0f, 20.0f } );
@@ -604,7 +611,6 @@ void VGExample::RenderTransformDemo( ) const
     m_vectorGraphics->Restore( );
 }
 
-
 Float_4 VGExample::GetAnimatedColor( const float time, const float offset )
 {
     // Create smooth color cycling using sine waves
@@ -630,21 +636,18 @@ void VGExample::RenderSvgDemo( ) const
     m_vectorGraphics->SetFillEnabled( true );
     m_vectorGraphics->SetStrokeEnabled( false );
     m_vectorGraphics->SetFillColor( { 1.0f, 1.0f, 1.0f, 1.0f } );
-    
-    const InteropString titleText = "SVG Rendering Demo";
-    m_vectorGraphics->DrawText( titleText, { 0.0f, 0.0f });
 
-    SvgLoader folderLoader;
-    SvgLoadDesc folderOptions;
-    const SvgLoadResult folderResult = folderLoader.LoadFromFile( "Assets/SVG/folder.svg", folderOptions );
-    if ( folderResult == SvgLoadResult::Success )
+    const InteropString titleText = "SVG Rendering Demo";
+    m_vectorGraphics->DrawText( titleText, { 0.0f, 0.0f } );
+
+    if ( m_folderSvgLoaded )
     {
         m_vectorGraphics->SetFillColor( { 1.0f, 1.0f, 1.0f, 1.0f } );
         const InteropString folderText = "Folder Icon:";
         m_vectorGraphics->DrawText( folderText, { 0.0f, 0.0f } );
 
         m_vectorGraphics->Scale( 2.7f );
-        folderLoader.RenderToVectorGraphics( m_vectorGraphics.get( ) );
+        m_folderSvgLoader->RenderToVectorGraphics( m_vectorGraphics.get( ) );
     }
     else
     {

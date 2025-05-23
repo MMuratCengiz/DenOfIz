@@ -43,6 +43,8 @@ namespace DenOfIz
         std::unique_ptr<VGPipeline>     m_vgPipeline;
         std::unique_ptr<VGTransform>    m_vgTransform;
         std::unique_ptr<TextRenderer>   m_textRenderer;
+        std::unique_ptr<SvgLoader>      m_folderSvgLoader;
+        bool                            m_folderSvgLoaded = false;
 
         float      m_animationTime;
         XMFLOAT4X4 m_projectionMatrix;

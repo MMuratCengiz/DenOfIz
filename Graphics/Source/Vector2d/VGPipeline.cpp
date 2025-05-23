@@ -127,7 +127,7 @@ VGPipeline::VGPipeline( const VGPipelineDesc &desc )
     rtDesc.Blend.Enable        = true;
     rtDesc.Blend.SrcBlend      = Blend::SrcAlpha;
     rtDesc.Blend.DstBlend      = Blend::InvSrcAlpha;
-    rtDesc.Blend.DstBlendAlpha = Blend::InvSrcAlpha;
+    rtDesc.Blend.DstBlendAlpha = Blend::One;
 
     pipelineDesc.Graphics.RenderTargets.AddElement( rtDesc );
     pipelineDesc.Graphics.PrimitiveTopology = PrimitiveTopology::Triangle;
@@ -217,7 +217,6 @@ InteropArray<Byte> VGPipeline::GetPixelShader( )
             float alpha = 1.0f - saturate(edgeDistance);
             color.a *= alpha;
         }
-        
         return color;
     }
     )";

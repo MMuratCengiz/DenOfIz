@@ -93,9 +93,8 @@ namespace DenOfIz
 
     enum class VGAntialiasingMode
     {
-        None,      // No antialiasing (current behavior)
-        Grayscale, // Standard edge antialiasing using fwidth derivatives
-        Subpixel   // LCD subpixel antialiasing (future enhancement)
+        None,
+        Geometric,
     };
 
     struct DZ_API VGStrokeStyle
@@ -346,6 +345,7 @@ namespace DenOfIz
 
         // Vertex generation
         void AddVertex( const Float_2 &position, const Float_4 &color, const Float_2 &texCoord = { 0, 0 } );
+        void AddVertex( const Float_2 &position, const Float_4 &color, const Float_2 &texCoord, float edgeDistance );
         void AddTriangle( uint32_t v0, uint32_t v1, uint32_t v2 );
         void AddQuad( uint32_t v0, uint32_t v1, uint32_t v2, uint32_t v3 );
 
