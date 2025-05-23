@@ -1977,6 +1977,11 @@ void VectorGraphics::DrawText( const InteropString &text, const Float_2 &positio
     DZ_RETURN_IF( !m_textRenderer );
 
     const auto color = ApplyAlpha( m_currentStyle.Fill.Color );
+    if ( m_transform )
+    {
+        const auto combinedMatrix = m_transform->GetCombinedMatrix( );
+        m_textRenderer->SetProjectionMatrix( combinedMatrix );
+    }
 
     TextRenderDesc textDesc;
     textDesc.Text  = text;

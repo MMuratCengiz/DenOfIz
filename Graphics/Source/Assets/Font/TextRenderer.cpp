@@ -78,13 +78,15 @@ void TextRenderer::Initialize( )
     stagingDesc.HeapType     = HeapType::CPU;
     m_fontAtlasStagingBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( stagingDesc ) );
 
-    m_vertexBufferDesc            = { };
-    m_vertexBufferDesc.NumBytes   = m_maxVertices * sizeof( GlyphVertex );
-    m_vertexBufferDesc.Descriptor = BitSet( ResourceDescriptor::VertexBuffer );
-    m_vertexBufferDesc.Usages     = ResourceUsage::VertexAndConstantBuffer;
-    m_vertexBufferDesc.HeapType   = HeapType::CPU_GPU;
-    m_vertexBufferDesc.DebugName  = "Font Vertex Buffer";
-    m_vertexBuffer                = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( m_vertexBufferDesc ) );
+    m_vertexBufferDesc                           = { };
+    m_vertexBufferDesc.NumBytes                  = m_maxVertices * sizeof( GlyphVertex );
+    m_vertexBufferDesc.Descriptor                = BitSet( ResourceDescriptor::VertexBuffer ) | ResourceDescriptor::StructuredBuffer;
+    m_vertexBufferDesc.Usages                    = ResourceUsage::VertexAndConstantBuffer;
+    m_vertexBufferDesc.HeapType                  = HeapType::CPU_GPU;
+    m_vertexBufferDesc.DebugName                 = "Font Vertex Buffer";
+    m_vertexBufferDesc.StructureDesc.NumElements = m_maxVertices;
+    m_vertexBufferDesc.StructureDesc.Stride      = sizeof( GlyphVertex );
+    m_vertexBuffer                               = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( m_vertexBufferDesc ) );
     m_resourceTracking.TrackBuffer( m_vertexBuffer.get( ), ResourceUsage::VertexAndConstantBuffer );
 
     m_indexBufferDesc            = { };
@@ -312,12 +314,10 @@ void TextRenderer::UpdateAtlasTexture( ICommandList *commandList )
 void TextRenderer::UpdateBuffers( )
 {
     // Check if we need to resize vertex buffer
-    if ( m_vertexBufferDesc.NumBytes < m_glyphVertices.NumElements( ) )
+    if ( m_vertexBufferDesc.NumBytes < m_glyphVertices.NumElements( ) * sizeof( GlyphVertex ) )
     {
-        BufferDesc newDesc = m_vertexBufferDesc;
-        newDesc.NumBytes   = m_maxVertices * sizeof( GlyphVertex );
-
-        auto newBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( newDesc ) );
+        m_vertexBufferDesc.NumBytes = m_maxVertices * sizeof( GlyphVertex );
+        auto newBuffer              = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( m_vertexBufferDesc ) );
         m_resourceTracking.TrackBuffer( newBuffer.get( ), ResourceUsage::VertexAndConstantBuffer );
         m_vertexBuffer = std::move( newBuffer );
     }
@@ -325,10 +325,8 @@ void TextRenderer::UpdateBuffers( )
     // Check if we need to resize index buffer
     if ( m_indexBufferDesc.NumBytes < m_indexData.NumElements( ) * sizeof( uint32_t ) )
     {
-        BufferDesc newDesc = m_indexBufferDesc;
-        newDesc.NumBytes   = m_maxIndices * sizeof( uint32_t );
-
-        auto newBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( newDesc ) );
+        m_indexBufferDesc.NumBytes = m_maxIndices * sizeof( uint32_t );
+        auto newBuffer             = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( m_indexBufferDesc ) );
         m_resourceTracking.TrackBuffer( newBuffer.get( ), ResourceUsage::IndexBuffer );
         m_indexBuffer = std::move( newBuffer );
     }

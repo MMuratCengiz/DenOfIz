@@ -220,9 +220,6 @@ void SvgLoader::RenderToVectorGraphics( VectorGraphics *vectorGraphics ) const
         finalScale.Y = targetScale.Y * m_impl->options.ScaleFactor;
     }
 
-    finalScale.X = std::max( 0.001f, std::min( finalScale.X, 1000.0f ) );
-    finalScale.Y = std::max( 0.001f, std::min( finalScale.Y, 1000.0f ) );
-
     m_impl->currentRenderScale = finalScale;
     for ( const auto &cmd : m_impl->renderCommands )
     {
@@ -1571,8 +1568,8 @@ void SvgLoader::RenderCommand( VectorGraphics *vectorGraphics, const SvgRenderCo
         vectorGraphics->SetStrokeEnabled( true );
         vectorGraphics->SetStrokeColor( cmd.Style.StrokeColor );
 
-        const float scaledStrokeWidth = cmd.Style.StrokeWidth * std::min( m_impl->currentRenderScale.X, m_impl->currentRenderScale.Y );
-        vectorGraphics->SetStrokeWidth( scaledStrokeWidth );
+        // Stroke width scaling is now handled by VectorGraphics transform system
+        vectorGraphics->SetStrokeWidth( cmd.Style.StrokeWidth );
 
         if ( cmd.Style.StrokeLineCap.Equals( InteropString( "round" ) ) )
         {
@@ -1608,8 +1605,7 @@ void SvgLoader::RenderCommand( VectorGraphics *vectorGraphics, const SvgRenderCo
         vectorGraphics->SetStrokeEnabled( false );
     }
 
-    const Float_2 &scale = m_impl->currentRenderScale;
-
+    // Coordinate scaling is now handled by VectorGraphics transform system
     switch ( cmd.Type )
     {
     case SvgRenderCommand::RectCommand:
@@ -1617,88 +1613,55 @@ void SvgLoader::RenderCommand( VectorGraphics *vectorGraphics, const SvgRenderCo
             if ( cmd.RectData.CornerRadii.X > 0.0f || cmd.RectData.CornerRadii.Y > 0.0f )
             {
                 VGRoundedRect roundedRect;
-                roundedRect.TopLeft     = { cmd.RectData.Rect.TopLeft.X * scale.X, cmd.RectData.Rect.TopLeft.Y * scale.Y };
-                roundedRect.BottomRight = { cmd.RectData.Rect.BottomRight.X * scale.X, cmd.RectData.Rect.BottomRight.Y * scale.Y };
-                roundedRect.CornerRadii = { cmd.RectData.CornerRadii.X * scale.X, cmd.RectData.CornerRadii.Y * scale.Y, cmd.RectData.CornerRadii.Z * scale.X,
-                                            cmd.RectData.CornerRadii.W * scale.Y };
+                roundedRect.TopLeft     = cmd.RectData.Rect.TopLeft;
+                roundedRect.BottomRight = cmd.RectData.Rect.BottomRight;
+                roundedRect.CornerRadii = cmd.RectData.CornerRadii;
                 vectorGraphics->DrawRoundedRect( roundedRect );
             }
             else
             {
-                VGRect scaledRect;
-                scaledRect.TopLeft     = { cmd.RectData.Rect.TopLeft.X * scale.X, cmd.RectData.Rect.TopLeft.Y * scale.Y };
-                scaledRect.BottomRight = { cmd.RectData.Rect.BottomRight.X * scale.X, cmd.RectData.Rect.BottomRight.Y * scale.Y };
-                vectorGraphics->DrawRect( scaledRect );
+                vectorGraphics->DrawRect( cmd.RectData.Rect );
             }
         }
         break;
 
     case SvgRenderCommand::CircleCommand:
         {
-            VGCircle scaledCircle;
-            scaledCircle.Center = { cmd.CircleData.Circle.Center.X * scale.X, cmd.CircleData.Circle.Center.Y * scale.Y };
-            scaledCircle.Radius = cmd.CircleData.Circle.Radius * std::min( scale.X, scale.Y );
-            vectorGraphics->DrawCircle( scaledCircle );
+            vectorGraphics->DrawCircle( cmd.CircleData.Circle );
         }
         break;
 
     case SvgRenderCommand::EllipseCommand:
         {
-            VGEllipse scaledEllipse;
-            scaledEllipse.Center  = { cmd.EllipseData.Ellipse.Center.X * scale.X, cmd.EllipseData.Ellipse.Center.Y * scale.Y };
-            scaledEllipse.Radii.X = cmd.EllipseData.Ellipse.Radii.X * scale.X;
-            scaledEllipse.Radii.Y = cmd.EllipseData.Ellipse.Radii.Y * scale.Y;
-            vectorGraphics->DrawEllipse( scaledEllipse );
+            vectorGraphics->DrawEllipse( cmd.EllipseData.Ellipse );
         }
         break;
 
     case SvgRenderCommand::LineCommand:
         {
-            VGLine scaledLine;
-            scaledLine.StartPoint = { cmd.LineData.Line.StartPoint.X * scale.X, cmd.LineData.Line.StartPoint.Y * scale.Y };
-            scaledLine.EndPoint   = { cmd.LineData.Line.EndPoint.X * scale.X, cmd.LineData.Line.EndPoint.Y * scale.Y };
-            vectorGraphics->DrawLine( scaledLine );
+            vectorGraphics->DrawLine( cmd.LineData.Line );
         }
         break;
 
     case SvgRenderCommand::PolygonCommand:
         {
-            VGPolygon scaledPolygon = cmd.PolygonData.Polygon;
-            for ( uint32_t i = 0; i < scaledPolygon.Points.NumElements( ); ++i )
-            {
-                scaledPolygon.Points.GetElement( i ).X *= scale.X;
-                scaledPolygon.Points.GetElement( i ).Y *= scale.Y;
-            }
-            vectorGraphics->DrawPolygon( scaledPolygon );
+            vectorGraphics->DrawPolygon( cmd.PolygonData.Polygon );
         }
         break;
 
     case SvgRenderCommand::PathCommand:
         if ( cmd.PathData.Path )
         {
-            // TODO For paths, we need to scale the path coordinates
-            // This is more complex and would require modifying the path data
-            // For now, let's use the transform approach for paths only
-            if ( scale.X != 1.0f || scale.Y != 1.0f )
-            {
-                vectorGraphics->Save( );
-                vectorGraphics->Scale( scale );
-                vectorGraphics->DrawPath( *cmd.PathData.Path );
-                vectorGraphics->Restore( );
-            }
-            else
-            {
-                vectorGraphics->DrawPath( *cmd.PathData.Path );
-            }
+            // Path scaling is now handled by VectorGraphics transform system
+            vectorGraphics->DrawPath( *cmd.PathData.Path );
         }
         break;
 
     case SvgRenderCommand::TextCommand:
         if ( m_impl->options.LoadText )
         {
-            const Float_2 scaledPosition = { cmd.TextData.Position.X * scale.X, cmd.TextData.Position.Y * scale.Y };
-            const float   scaledFontSize = cmd.TextData.FontSize * std::min( scale.X, scale.Y );
-            vectorGraphics->DrawText( cmd.TextData.Text, scaledPosition, scaledFontSize );
+            // Text scaling is now handled by VectorGraphics transform system
+            vectorGraphics->DrawText( cmd.TextData.Text, cmd.TextData.Position, cmd.TextData.FontSize );
         }
         break;
     }

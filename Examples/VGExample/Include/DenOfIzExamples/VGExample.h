@@ -20,12 +20,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzExamples/IExample.h>
 
+#include "DenOfIzGraphics/Assets/Font/TextRenderer.h"
 #include "DenOfIzGraphics/Utilities/FrameDebugRenderer.h"
 #include "DenOfIzGraphics/Utilities/Time.h"
-#include "DenOfIzGraphics/Vector2d/VectorGraphics.h"
+#include "DenOfIzGraphics/Vector2d/SvgLoader.h"
 #include "DenOfIzGraphics/Vector2d/VGPipeline.h"
 #include "DenOfIzGraphics/Vector2d/VGTransform.h"
-#include "DenOfIzGraphics/Assets/Font/TextRenderer.h"
+#include "DenOfIzGraphics/Vector2d/VectorGraphics.h"
 
 #include <DirectXMath.h>
 #include <memory>
@@ -38,18 +39,21 @@ namespace DenOfIz
         Time                                m_time;
 
         // Vector Graphics components
-        std::unique_ptr<VectorGraphics>     m_vectorGraphics;
-        std::unique_ptr<VGPipeline>         m_vgPipeline;
-        std::unique_ptr<VGTransform>        m_vgTransform;
-        std::unique_ptr<TextRenderer>       m_textRenderer;
+        std::unique_ptr<VectorGraphics> m_vectorGraphics;
+        std::unique_ptr<VGPipeline>     m_vgPipeline;
+        std::unique_ptr<VGTransform>    m_vgTransform;
+        std::unique_ptr<TextRenderer>   m_textRenderer;
 
         float      m_animationTime;
         XMFLOAT4X4 m_projectionMatrix;
 
         // Animation states for different demos
-        float      m_rotationAngle;
-        float      m_scaleAnimTime;
-        float      m_colorAnimTime;
+        float m_rotationAngle;
+        float m_scaleAnimTime;
+        float m_colorAnimTime;
+
+        std::unique_ptr<SvgLoader> m_svgLoader;
+        bool                       m_svgLoadedSuccessfully = false;
 
     public:
         VGExample( )           = default;
@@ -72,16 +76,17 @@ namespace DenOfIz
     private:
         void UpdateProjectionMatrix( );
         void InitializeVectorGraphics( );
-        
+
         // Demo rendering functions
         void RenderBasicShapes( ) const;
         void RenderNewFeatures( ) const;
         void RenderAnimatedShapes( ) const;
         void RenderCurveDemo( ) const;
         void RenderTransformDemo( ) const;
-        
+        void RenderSvgDemo( ) const;
+
         // Helper functions
         static Float_4 GetAnimatedColor( float time, float offset = 0.0f );
-        static Float_2 GetCircularPosition( float radius, float angle, const Float_2& center );
+        static Float_2 GetCircularPosition( float radius, float angle, const Float_2 &center );
     };
 } // namespace DenOfIz
