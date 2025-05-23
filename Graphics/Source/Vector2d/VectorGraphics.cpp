@@ -32,8 +32,7 @@ using namespace DenOfIz;
 using namespace DirectX;
 
 VectorGraphics::VectorGraphics( const VectorGraphicsDesc &desc ) :
-    m_vertexBufferSize( desc.InitialVertexBufferSize ), m_indexBufferSize( desc.InitialIndexBufferSize ), m_logicalDevice( desc.LogicalDevice ),
-    m_tessellationTolerance( desc.DefaultTessellationTolerance ), m_textRenderer( desc.TextRenderer )
+    m_logicalDevice( desc.LogicalDevice ), m_tessellationTolerance( desc.DefaultTessellationTolerance ), m_textRenderer( desc.TextRenderer )
 {
     if ( !m_logicalDevice )
     {
@@ -48,22 +47,27 @@ VectorGraphics::VectorGraphics( const VectorGraphicsDesc &desc ) :
     m_currentStyle.Stroke.Width    = 1.0f;
     m_currentStyle.Composite.Alpha = 1.0f;
 
-    BufferDesc vbDesc;
-    vbDesc.HeapType   = HeapType::CPU_GPU;
-    vbDesc.Usages     = ResourceUsage::VertexAndConstantBuffer;
-    vbDesc.NumBytes   = m_vertexBufferSize;
-    vbDesc.Descriptor = ResourceDescriptor::Buffer;
-    m_vertexBuffer    = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vbDesc ) );
+    EnsureVertexBufferCapacity( desc.InitialVertexBufferNumBytes );
+    EnsureIndexBufferCapacity( desc.InitialIndexBufferNumBytes );
 
-    BufferDesc ibDesc;
-    ibDesc.HeapType   = HeapType::CPU_GPU;
-    ibDesc.Usages     = ResourceUsage::IndexBuffer;
-    ibDesc.NumBytes   = m_indexBufferSize;
-    ibDesc.Descriptor = ResourceDescriptor::Buffer;
-    m_indexBuffer     = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( ibDesc ) );
+    m_vertexBufferNumBytes = desc.InitialVertexBufferNumBytes;
+    m_indexBufferNumBytes  = desc.InitialIndexBufferNumBytes;
 }
 
-VectorGraphics::~VectorGraphics( ) = default;
+VectorGraphics::~VectorGraphics( )
+{
+    if ( m_vertexBuffer )
+    {
+        m_vertexBuffer->UnmapMemory( );
+        m_vertexBufferMappedMemory = nullptr;
+    }
+
+    if ( m_indexBuffer )
+    {
+        m_indexBuffer->UnmapMemory( );
+        m_indexBufferMappedMemory = nullptr;
+    }
+}
 
 void VectorGraphics::BeginBatch( ICommandList *commandList, const uint32_t frameIndex )
 {
@@ -1367,33 +1371,49 @@ void VectorGraphics::TessellateLine( const VGLine &line )
 void VectorGraphics::EnsureVertexBufferCapacity( const uint32_t vertexCount )
 {
     const uint32_t requiredSize = vertexCount * sizeof( VGVertex );
-    DZ_RETURN_IF( requiredSize <= m_vertexBufferSize );
+    DZ_RETURN_IF( requiredSize <= m_vertexBufferNumBytes );
 
-    const uint32_t newSize = std::max( requiredSize, m_vertexBufferSize + m_vertexBufferSize / 2 );
+    if ( m_vertexBuffer )
+    {
+        m_vertexBuffer->UnmapMemory( );
+        m_vertexBufferMappedMemory = nullptr;
+    }
+
+    const uint32_t newSize = std::max( requiredSize, m_vertexBufferNumBytes + m_vertexBufferNumBytes / 2 );
     BufferDesc     bufferDesc;
-    bufferDesc.HeapType   = HeapType::CPU_GPU;
-    bufferDesc.Usages     = ResourceUsage::VertexAndConstantBuffer;
-    bufferDesc.NumBytes   = newSize;
-    bufferDesc.Descriptor = ResourceDescriptor::Buffer;
+    bufferDesc.HeapType                  = HeapType::CPU_GPU;
+    bufferDesc.Usages                    = ResourceUsage::VertexAndConstantBuffer;
+    bufferDesc.NumBytes                  = newSize;
+    bufferDesc.Descriptor                = BitSet( ResourceDescriptor::Buffer ) | ResourceDescriptor::StructuredBuffer;
+    bufferDesc.StructureDesc.NumElements = vertexCount;
+    bufferDesc.StructureDesc.Stride      = sizeof( VGVertex );
 
-    m_vertexBuffer     = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( bufferDesc ) );
-    m_vertexBufferSize = newSize;
+    m_vertexBuffer             = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( bufferDesc ) );
+    m_vertexBufferNumBytes     = newSize;
+    m_vertexBufferMappedMemory = static_cast<Byte *>( m_vertexBuffer->MapMemory( ) );
 }
 
 void VectorGraphics::EnsureIndexBufferCapacity( const uint32_t indexCount )
 {
     const uint32_t requiredSize = indexCount * sizeof( uint32_t );
-    DZ_RETURN_IF( requiredSize <= m_indexBufferSize );
+    DZ_RETURN_IF( requiredSize <= m_indexBufferNumBytes );
 
-    const uint32_t newSize = std::max( requiredSize, m_indexBufferSize + m_indexBufferSize / 2 );
+    if ( m_indexBuffer )
+    {
+        m_indexBuffer->UnmapMemory( );
+        m_indexBufferMappedMemory = nullptr;
+    }
+
+    const uint32_t newSize = std::max( requiredSize, m_indexBufferNumBytes + m_indexBufferNumBytes / 2 );
     BufferDesc     bufferDesc;
     bufferDesc.HeapType   = HeapType::CPU_GPU;
     bufferDesc.Usages     = ResourceUsage::IndexBuffer;
     bufferDesc.NumBytes   = newSize;
     bufferDesc.Descriptor = ResourceDescriptor::Buffer;
 
-    m_indexBuffer     = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( bufferDesc ) );
-    m_indexBufferSize = newSize;
+    m_indexBuffer             = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( bufferDesc ) );
+    m_indexBufferNumBytes     = newSize;
+    m_indexBufferMappedMemory = static_cast<Byte *>( m_indexBuffer->MapMemory( ) );
 }
 
 void VectorGraphics::UpdateBuffers( )
@@ -1401,27 +1421,13 @@ void VectorGraphics::UpdateBuffers( )
     if ( !m_vertices.empty( ) )
     {
         EnsureVertexBufferCapacity( static_cast<uint32_t>( m_vertices.size( ) ) );
-        if ( m_vertexBuffer )
-        {
-            if ( void *mappedMemory = m_vertexBuffer->MapMemory( ) )
-            {
-                memcpy( mappedMemory, m_vertices.data( ), m_vertices.size( ) * sizeof( VGVertex ) );
-                m_vertexBuffer->UnmapMemory( );
-            }
-        }
+        memcpy( m_vertexBufferMappedMemory, m_vertices.data( ), m_vertices.size( ) * sizeof( VGVertex ) );
     }
 
     if ( !m_indices.empty( ) )
     {
         EnsureIndexBufferCapacity( static_cast<uint32_t>( m_indices.size( ) ) );
-        if ( m_indexBuffer )
-        {
-            if ( void *mappedMemory = m_indexBuffer->MapMemory( ) )
-            {
-                memcpy( mappedMemory, m_indices.data( ), m_indices.size( ) * sizeof( uint32_t ) );
-                m_indexBuffer->UnmapMemory( );
-            }
-        }
+        memcpy( m_indexBufferMappedMemory, m_indices.data( ), m_indices.size( ) * sizeof( uint32_t ) );
     }
 }
 

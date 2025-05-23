@@ -57,7 +57,7 @@ void VGExample::Init( )
 
 void VGExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void VGExample::HandleEvent( Event &event )
@@ -172,8 +172,8 @@ void VGExample::InitializeVectorGraphics( )
     // Create Vector Graphics renderer
     VectorGraphicsDesc vgDesc{ };
     vgDesc.LogicalDevice                = m_logicalDevice;
-    vgDesc.InitialVertexBufferSize      = 256 * 1024;
-    vgDesc.InitialIndexBufferSize       = 128 * 1024;
+    vgDesc.InitialVertexBufferNumBytes      = 256 * 1024;
+    vgDesc.InitialIndexBufferNumBytes       = 128 * 1024;
     vgDesc.DefaultTessellationTolerance = 2.0f;
     vgDesc.TextRenderer                 = m_textRenderer.get( );
 
@@ -397,8 +397,6 @@ void VGExample::RenderNewFeatures( ) const
     m_vectorGraphics->SetFillEnabled( true );
     m_vectorGraphics->SetStrokeEnabled( false );
     m_vectorGraphics->SetFillColor( { 1.0f, 1.0f, 1.0f, 1.0f } );
-
-    // Note: Font is managed by TextRenderer
     const InteropString demoText = "New VG Features!";
     m_vectorGraphics->DrawText( demoText, { 0.0f, 20.0f } );
 
@@ -627,33 +625,10 @@ Float_2 VGExample::GetCircularPosition( const float radius, const float angle, c
 
 void VGExample::RenderSvgDemo( ) const
 {
-
     // Show SVG loading success and render the loaded SVG
     m_vectorGraphics->Save( );
     m_vectorGraphics->Translate( { 640.0f, 500.0f } );
-
-    // Title
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( false );
-    m_vectorGraphics->SetFillColor( { 1.0f, 1.0f, 1.0f, 1.0f } );
-
-    const InteropString titleText = "SVG Rendering Demo";
-    m_vectorGraphics->DrawText( titleText, { 0.0f, 0.0f } );
-
-    if ( m_folderSvgLoaded )
-    {
-        m_vectorGraphics->SetFillColor( { 1.0f, 1.0f, 1.0f, 1.0f } );
-        const InteropString folderText = "Folder Icon:";
-        m_vectorGraphics->DrawText( folderText, { 0.0f, 0.0f } );
-
-        m_vectorGraphics->Scale( 2.7f );
-        m_folderSvgLoader->RenderToVectorGraphics( m_vectorGraphics.get( ) );
-    }
-    else
-    {
-        m_vectorGraphics->SetFillColor( { 1.0f, 0.5f, 0.3f, 1.0f } ); // Orange for warning
-        const InteropString errorText = "Folder SVG failed to load";
-        m_vectorGraphics->DrawText( errorText, { 0.0f, 0.0f }, 0.6f );
-    }
+    m_vectorGraphics->Scale( 2.7f );
+    m_folderSvgLoader->RenderToVectorGraphics( m_vectorGraphics.get( ) );
     m_vectorGraphics->Restore( );
 }

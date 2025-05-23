@@ -38,8 +38,8 @@ namespace DenOfIz
     struct DZ_API VectorGraphicsDesc
     {
         ILogicalDevice *LogicalDevice                = nullptr;
-        uint32_t        InitialVertexBufferSize      = 64 * 1024;
-        uint32_t        InitialIndexBufferSize       = 32 * 1024;
+        uint32_t        InitialVertexBufferNumBytes      = 64 * 1024;
+        uint32_t        InitialIndexBufferNumBytes       = 32 * 1024;
         float           DefaultTessellationTolerance = 0.25f;
         TextRenderer   *TextRenderer                 = nullptr;
     };
@@ -148,7 +148,7 @@ namespace DenOfIz
         Float_2 Position;
         Float_4 Color;
         Float_2 TexCoord;
-        Float_4 GradientData; // For gradient calculations
+        Float_4 GradientData;
     };
 
     // Rendering primitive types
@@ -187,9 +187,11 @@ namespace DenOfIz
         std::vector<VGRenderCommand> m_renderCommands;
 
         std::unique_ptr<IBufferResource> m_vertexBuffer;
+        Byte                            *m_vertexBufferMappedMemory;
         std::unique_ptr<IBufferResource> m_indexBuffer;
-        uint32_t                         m_vertexBufferSize = 0;
-        uint32_t                         m_indexBufferSize  = 0;
+        Byte                            *m_indexBufferMappedMemory;
+        uint32_t                         m_vertexBufferNumBytes = 0;
+        uint32_t                         m_indexBufferNumBytes  = 0;
         ILogicalDevice                  *m_logicalDevice    = nullptr;
 
         float    m_tessellationTolerance = 0.5f;
