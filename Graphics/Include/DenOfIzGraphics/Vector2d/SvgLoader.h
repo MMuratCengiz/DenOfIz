@@ -255,7 +255,7 @@ namespace DenOfIz
 
         void         ProcessPathCommand( const VGPath2D &path, char command, const float *data, uint32_t numValues, Float_2 &currentPos, Float_2 &lastControlPoint ) const;
         SvgTransform CombineTransforms( const SvgTransform &parent, const SvgTransform &child ) const;
-        void         ApplyTransform( VectorGraphics *vectorGraphics, const SvgTransform &transform ) const;
+        void         ApplyTransform( const VectorGraphics *vectorGraphics, const SvgTransform &transform ) const;
         Float_2      ViewBoxToPixel( const Float_2 &viewBoxCoord ) const;
         float        ViewBoxToPixelScale( ) const;
 

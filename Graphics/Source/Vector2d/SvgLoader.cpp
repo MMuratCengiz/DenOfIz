@@ -60,7 +60,6 @@ public:
     std::vector<SvgRenderCommand>          renderCommands;
     std::vector<SvgTransform>              transformStack;
 
-    // currentRenderScale removed - use VectorGraphics transform API instead
     ~Impl( )
     {
         renderCommands.clear( );
@@ -141,10 +140,9 @@ SvgLoadResult SvgLoader::LoadFromBinaryData( const InteropArray<Byte> &data, con
         return SvgLoadResult::InvalidFormat;
     }
 
-    // Create null-terminated string from binary data
     InteropArray<char> charData( data.NumElements( ) + 1 );
     std::memcpy( charData.Data( ), data.Data( ), data.NumElements( ) );
-    charData.Data( )[ data.NumElements( ) ] = '\0'; // Ensure null termination
+    charData.SetElement( data.NumElements( ), '\0' );
 
     const InteropString content( charData.Data( ) );
     return LoadFromString( content, options );
@@ -188,13 +186,6 @@ void SvgLoader::RenderToVectorGraphics( VectorGraphics *vectorGraphics ) const
     {
         return;
     }
-
-    // SVGLoader should NOT apply any transforms itself.
-    // All scaling and positioning should be handled by the caller via VectorGraphics.
-    // The TargetSize and ScaleFactor options are now ignored - the caller should handle scaling.
-    
-    // No internal scaling - use VectorGraphics transform API instead
-    
     for ( const auto &cmd : m_impl->renderCommands )
     {
         RenderCommand( vectorGraphics, cmd );
@@ -233,8 +224,6 @@ Float_2 SvgLoader::GetDocumentSize( ) const
     return m_impl->document.Size;
 }
 
-// CalculateTargetScale removed - use VectorGraphics transform API instead
-
 InteropString SvgLoader::GetLastError( ) const
 {
     return m_impl->lastError;
@@ -269,7 +258,6 @@ static bool StringEndsWith( const char *str, const char *suffix )
     return std::strcmp( str + strLen - suffixLen, suffix ) == 0;
 }
 
-// Helper function to check if a string contains a substring
 static bool StringContains( const char *str, const char *substr )
 {
     if ( !str )
@@ -283,7 +271,7 @@ Float_4 SvgLoader::ParseColor( const InteropString &colorString )
 {
     if ( colorString.IsEmpty( ) || colorString.Equals( InteropString( "none" ) ) )
     {
-        return { 0.0f, 0.0f, 0.0f, 0.0f }; // Transparent
+        return { 0.0f, 0.0f, 0.0f, 0.0f };
     }
 
     const InteropString lowerColorString = colorString.ToLower( );
@@ -393,11 +381,8 @@ Float_4 SvgLoader::ParseColor( const InteropString &colorString )
             ptr++;
         b = std::strtof( ptr, const_cast<char **>( &ptr ) );
 
-        // Check if values are percentages
         const bool isPercentage = StringContains( valueStr, "%" );
-
         delete[] valueStr;
-
         if ( isPercentage )
         {
             r /= 100.0f;
@@ -414,7 +399,6 @@ Float_4 SvgLoader::ParseColor( const InteropString &colorString )
         return { r, g, b, 1.0f };
     }
 
-    // Default to black if parsing fails
     return { 0.0f, 0.0f, 0.0f, 1.0f };
 }
 
@@ -428,10 +412,9 @@ float SvgLoader::ParseLength( const InteropString &lengthString, const float ref
     const char  *str = lengthString.Get( );
     const size_t len = std::strlen( str );
 
-    // Handle percentages
     if ( StringEndsWith( str, "%" ) )
     {
-        // Create substring without the '%'
+        // Create substring without '%'
         const auto numStr = new char[ len ];
         SafeSubstringCopy( numStr, str, len - 1, len );
 
@@ -440,7 +423,7 @@ float SvgLoader::ParseLength( const InteropString &lengthString, const float ref
         return percent / 100.0f * referenceValue;
     }
 
-    // Handle units (for now, treat all units as pixels)
+    // Handle units(Todo we treat these all the same)
     if ( StringEndsWith( str, "px" ) || StringEndsWith( str, "pt" ) || StringEndsWith( str, "em" ) || StringEndsWith( str, "mm" ) || StringEndsWith( str, "cm" ) ||
          StringEndsWith( str, "in" ) )
     {
@@ -453,7 +436,6 @@ float SvgLoader::ParseLength( const InteropString &lengthString, const float ref
         return result;
     }
 
-    // Plain number
     return std::strtof( str, nullptr );
 }
 
@@ -467,14 +449,11 @@ SvgTransform SvgLoader::ParseTransform( const InteropString &transformString )
         return result;
     }
 
-    // Initialize as identity matrix
     result.Matrix       = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f };
     result.HasTransform = true;
 
-    // Convert to lowercase for easier parsing
     InteropString lowerStr = transformString.ToLower( );
     const char   *str      = lowerStr.Get( );
-
     if ( StringContains( str, "translate" ) )
     {
         if ( const char *start = std::strstr( str, "translate(" ) )
@@ -742,10 +721,8 @@ bool SvgLoader::ParseDocument( XMLElement *svgElement )
         }
     }
 
-    // Parse all children
     SvgTransform defaultTransform;
     defaultTransform.HasTransform = false;
-
     for ( XMLElement *element = svgElement->FirstChildElement( ); element; element = element->NextSiblingElement( ) )
     {
         const SvgStyle defaultStyle;
@@ -763,7 +740,6 @@ bool SvgLoader::ParseElement( XMLElement *element, const SvgStyle &parentStyle, 
     }
 
     const std::string tagName = element->Name( );
-
     // Skip defs as they were already processed
     if ( tagName == "defs" )
     {
@@ -903,7 +879,7 @@ void SvgLoader::ParsePolyline( const XMLElement *element, const SvgStyle &style,
     if ( !pointsStr.IsEmpty( ) )
     {
         cmd.PolygonData.Polygon.IsClosed = false;
-        const char *ptr = pointsStr.Get( );
+        const char *ptr                  = pointsStr.Get( );
         while ( *ptr )
         {
             while ( *ptr && ( std::isspace( *ptr ) || *ptr == ',' ) )
@@ -1117,11 +1093,9 @@ SvgStyle SvgLoader::ParseElementStyle( XMLElement *element, const SvgStyle &pare
 SvgStyle SvgLoader::ParseStyleAttribute( const InteropString &styleString, const SvgStyle &baseStyle ) const
 {
     SvgStyle style = baseStyle;
-
     // Parse CSS-style declarations separated by semicolons
     const InteropString str = styleString;
     const char         *ptr = str.Get( );
-
     while ( *ptr )
     {
         // Find property name
@@ -1497,15 +1471,13 @@ SvgTransform SvgLoader::CombineTransforms( const SvgTransform &parent, const Svg
     result.Matrix._41 = p._11 * c._41 + p._12 * c._42 + p._41;
     result.Matrix._42 = p._21 * c._41 + p._22 * c._42 + p._42;
 
-    // Set other matrix elements
     result.Matrix._13 = result.Matrix._14 = result.Matrix._23 = result.Matrix._24 = 0.0f;
     result.Matrix._31 = result.Matrix._32 = result.Matrix._34 = result.Matrix._43 = 0.0f;
     result.Matrix._33 = result.Matrix._44 = 1.0f;
-
     return result;
 }
 
-void SvgLoader::ApplyTransform( VectorGraphics *vectorGraphics, const SvgTransform &transform ) const
+void SvgLoader::ApplyTransform( const VectorGraphics *vectorGraphics, const SvgTransform &transform ) const
 {
     if ( transform.HasTransform )
     {
@@ -1572,14 +1544,38 @@ void SvgLoader::RenderCommand( VectorGraphics *vectorGraphics, const SvgRenderCo
         }
 
         vectorGraphics->SetStrokeMiterLimit( cmd.Style.StrokeMiterLimit );
-        // TODO: Handle dash arrays
+        if ( !cmd.Style.StrokeDashArray.IsEmpty( ) )
+        {
+            InteropArray<float> dashPattern;
+            const char         *ptr = cmd.Style.StrokeDashArray.Get( );
+            while ( *ptr )
+            {
+                while ( *ptr && ( std::isspace( *ptr ) || *ptr == ',' ) )
+                {
+                    ptr++;
+                }
+                if ( !*ptr )
+                {
+                    break;
+                }
+
+                const float value = std::strtof( ptr, const_cast<char **>( &ptr ) );
+                if ( value > 0.0f ) // Only add positive values
+                {
+                    dashPattern.AddElement( value );
+                }
+            }
+            if ( dashPattern.NumElements( ) > 0 )
+            {
+                vectorGraphics->SetStrokeDashPattern( dashPattern, cmd.Style.StrokeDashOffset );
+            }
+        }
     }
     else
     {
         vectorGraphics->SetStrokeEnabled( false );
     }
 
-    // Coordinate scaling is now handled by VectorGraphics transform system
     switch ( cmd.Type )
     {
     case SvgRenderCommand::RectCommand:
@@ -1626,7 +1622,6 @@ void SvgLoader::RenderCommand( VectorGraphics *vectorGraphics, const SvgRenderCo
     case SvgRenderCommand::PathCommand:
         if ( cmd.PathData.Path )
         {
-            // Path scaling is now handled by VectorGraphics transform system
             vectorGraphics->DrawPath( *cmd.PathData.Path );
         }
         break;
@@ -1634,7 +1629,6 @@ void SvgLoader::RenderCommand( VectorGraphics *vectorGraphics, const SvgRenderCo
     case SvgRenderCommand::TextCommand:
         if ( m_impl->options.LoadText )
         {
-            // Text scaling is now handled by VectorGraphics transform system
             vectorGraphics->DrawText( cmd.TextData.Text, cmd.TextData.Position, cmd.TextData.FontSize );
         }
         break;

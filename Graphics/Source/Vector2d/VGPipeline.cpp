@@ -172,6 +172,7 @@ InteropArray<Byte> VGPipeline::GetVertexShader( )
         float4 Color : COLOR;
         float2 TexCoord : TEXCOORD0;
         float4 GradientData : TEXCOORD1;
+        float4 EdgeData : TEXCOORD2;
     };
 
     struct PSInput
@@ -180,6 +181,7 @@ InteropArray<Byte> VGPipeline::GetVertexShader( )
         float4 Color : COLOR;
         float2 TexCoord : TEXCOORD0;
         float4 GradientData : TEXCOORD1;
+        float4 EdgeData : TEXCOORD2;
     };
 
     PSInput VSMain(VSInput input)
@@ -189,6 +191,7 @@ InteropArray<Byte> VGPipeline::GetVertexShader( )
         output.Color = input.Color;
         output.TexCoord = input.TexCoord;
         output.GradientData = input.GradientData;
+        output.EdgeData = input.EdgeData;
         return output;
     }
     )";
@@ -206,11 +209,39 @@ InteropArray<Byte> VGPipeline::GetPixelShader( )
         float4 Color : COLOR;
         float2 TexCoord : TEXCOORD0;
         float4 GradientData : TEXCOORD1;
+        float4 EdgeData : TEXCOORD2;
     };
+
+    float smoothEdge(float distance, float width)
+    {
+        // Use fwidth to get pixel size for antialiasing
+        float pixelSize = fwidth(distance);
+        float halfWidth = width * 0.5;
+        // Create smooth transition over one pixel
+        return 1.0 - smoothstep(-halfWidth - pixelSize, -halfWidth + pixelSize, distance);
+    }
 
     float4 PSMain(PSInput input) : SV_TARGET
     {
-        return input.Color;
+        float4 finalColor = input.Color;
+        
+        // EdgeData.x = signed distance to edge
+        // EdgeData.y, EdgeData.z = edge normal (for potential future use)
+        // EdgeData.w = primitive type (0=fill, 1=stroke, etc.)
+        
+        float edgeDistance = input.EdgeData.x;
+        float primitiveType = input.EdgeData.w;
+        
+        // Apply antialiasing if edge data is available
+        if (abs(edgeDistance) > 0.001)
+        {
+            // Calculate antialiasing factor using derivative-based edge detection
+            float antiAliasFactor = smoothEdge(edgeDistance, 1.0);
+            // Apply the antialiasing to the alpha channel
+            finalColor.a *= antiAliasFactor;
+        }
+        
+        return finalColor;
     }
     )";
 

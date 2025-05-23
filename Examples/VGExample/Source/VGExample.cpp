@@ -194,9 +194,8 @@ void VGExample::InitializeVectorGraphics( )
     m_vectorGraphics = std::make_unique<VectorGraphics>( vgDesc );
     m_vectorGraphics->SetPipeline( m_vgPipeline.get( ) );
     m_vectorGraphics->SetTransform( m_vgTransform.get( ) );
-
-    // Set default tessellation tolerance for smooth curves
     m_vectorGraphics->SetTessellationTolerance( 2.0f );
+    m_vectorGraphics->SetAntialiasingMode( VGAntialiasingMode::Subpixel );
 }
 
 void VGExample::RenderBasicShapes( ) const

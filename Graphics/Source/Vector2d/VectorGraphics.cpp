@@ -1542,12 +1542,17 @@ void VectorGraphics::ClearBatch( )
 
 void VectorGraphics::TessellateQuadraticBezier( const Float_2 &p0, const Float_2 &p1, const Float_2 &p2, std::vector<Float_2> &points )
 {
-    // Adaptive tessellation based on curvature
-    const float flatnessTolerance = m_tessellationTolerance;
+    // Improved adaptive tessellation with better flatness criteria
+    const float flatnessTolerance = m_tessellationTolerance * 0.5f; // Stricter tolerance for curves
 
-    // Check if the curve is flat enough
+    // Check if the curve is flat enough using distance from control point to chord
     const float dist = DistancePointToLine( p1, p0, p2 );
-    if ( dist < flatnessTolerance )
+    
+    // Also check curve length to avoid over-tessellation of small curves
+    const float chordLength = sqrtf( (p2.X - p0.X) * (p2.X - p0.X) + (p2.Y - p0.Y) * (p2.Y - p0.Y) );
+    
+    // If curve is flat enough OR very small, stop recursion
+    if ( dist < flatnessTolerance || chordLength < flatnessTolerance * 2.0f )
     {
         points.push_back( p2 );
         return;
@@ -1565,15 +1570,19 @@ void VectorGraphics::TessellateQuadraticBezier( const Float_2 &p0, const Float_2
 
 void VectorGraphics::TessellateCubicBezier( const Float_2 &p0, const Float_2 &p1, const Float_2 &p2, const Float_2 &p3, std::vector<Float_2> &points )
 {
-    // Adaptive tessellation based on curvature
-    const float flatnessTolerance = m_tessellationTolerance;
+    // Improved adaptive tessellation with stricter criteria for cubic curves
+    const float flatnessTolerance = m_tessellationTolerance * 0.4f; // Even stricter for cubic curves
 
-    // Check if the curve is flat enough by testing control points
+    // Check if the curve is flat enough by testing both control points
     const float dist1   = DistancePointToLine( p1, p0, p3 );
     const float dist2   = DistancePointToLine( p2, p0, p3 );
     const float maxDist = std::max( dist1, dist2 );
+    
+    // Also check curve length to avoid over-tessellation of small curves
+    const float chordLength = sqrtf( (p3.X - p0.X) * (p3.X - p0.X) + (p3.Y - p0.Y) * (p3.Y - p0.Y) );
 
-    if ( maxDist < flatnessTolerance )
+    // If curve is flat enough OR very small, stop recursion
+    if ( maxDist < flatnessTolerance || chordLength < flatnessTolerance * 2.0f )
     {
         points.push_back( p3 );
         return;
@@ -2004,7 +2013,8 @@ VGRect VectorGraphics::MeasureText( const InteropString &text, const float scale
         return bounds;
     }
 
-    const Float_2 size = m_textRenderer->MeasureText( text, scale, 36 /*TODO fix this please*/ );
+    // Use a reasonable default DPI for text measurement (96 DPI is standard for screen)
+    const Float_2 size = m_textRenderer->MeasureText( text, scale, 96.0f );
 
     bounds.TopLeft     = { 0.0f, 0.0f };
     bounds.BottomRight = { size.X, size.Y };
@@ -2016,14 +2026,18 @@ void VectorGraphics::GenerateRoundedRectPath( const float x1, const float y1, co
 {
     path.clear( );
 
-    // Calculate segments for corners based on tessellation tolerance
-    const auto calculateSegments = []( const float radius ) -> int
+    // Calculate segments for corners based on tessellation tolerance and radius
+    const auto calculateSegments = [this]( const float radius ) -> int
     {
         if ( radius <= 0.0f )
         {
             return 0;
         }
-        return std::max( 4, static_cast<int>( XM_PI * radius / 2.0f ) );
+        // Use tessellation tolerance for more adaptive quality
+        // More segments for larger radii, fewer for smaller ones
+        const float circumference = XM_PI * radius * 0.5f; // Quarter circle
+        const int segments = std::max( 6, static_cast<int>( circumference / m_tessellationTolerance ) );
+        return std::min( segments, 32 ); // Cap at reasonable maximum
     };
 
     const int tlSegments = calculateSegments( tlRadius );
@@ -2224,9 +2238,11 @@ void VectorGraphics::TessellateEllipticalArc( const Float_2 &start, const Float_
         deltaTheta -= 2.0f * XM_PI;
     }
 
-    // Tessellate the arc
-    const int   segments  = std::max( 4, static_cast<int>( fabsf( deltaTheta ) / m_tessellationTolerance * 10.0f ) );
-    const float angleStep = deltaTheta / segments;
+    // Tessellate the arc with improved quality
+    // Calculate segments based on arc length and tessellation tolerance
+    const float arcLength = fabsf( deltaTheta ) * std::max( rx, ry );
+    const int   segments  = std::max( 6, static_cast<int>( arcLength / m_tessellationTolerance ) );
+    const float angleStep = deltaTheta / std::min( segments, 64 ); // Cap maximum segments
 
     for ( int i = 1; i <= segments; ++i )
     {
@@ -2265,8 +2281,10 @@ void VectorGraphics::TessellateCircularArc( const Float_2 &center, const float r
         sweep = actualEndAngle - startAngle;
     }
 
-    const int   segments  = std::max( 4, static_cast<int>( fabsf( sweep ) / m_tessellationTolerance * 10.0f ) );
-    const float angleStep = sweep / segments;
+    // Calculate segments based on arc length for better quality
+    const float arcLength = fabsf( sweep ) * radius;
+    const int   segments  = std::max( 6, static_cast<int>( arcLength / m_tessellationTolerance ) );
+    const float angleStep = sweep / std::min( segments, 64 ); // Cap maximum segments
 
     for ( int i = 1; i <= segments; ++i )
     {
@@ -2275,4 +2293,63 @@ void VectorGraphics::TessellateCircularArc( const Float_2 &center, const float r
         const float y     = center.Y + radius * sinf( angle );
         points.push_back( { x, y } );
     }
+}
+
+void VectorGraphics::SetAntialiasingMode( const VGAntialiasingMode mode )
+{
+    m_antialiasingMode = mode;
+}
+
+VGAntialiasingMode VectorGraphics::GetAntialiasingMode( ) const
+{
+    return m_antialiasingMode;
+}
+
+void VectorGraphics::SetAntialiasingWidth( const float width )
+{
+    m_antialiasingWidth = std::max( 0.0f, width );
+}
+
+float VectorGraphics::GetAntialiasingWidth( ) const
+{
+    return m_antialiasingWidth;
+}
+
+void VectorGraphics::SetupEdgeData( VGVertex &vertex, const Float_2 &position, const Float_2 &edgeStart, const Float_2 &edgeEnd, const float primitiveType ) const
+{
+    if ( m_antialiasingMode == VGAntialiasingMode::None )
+    {
+        vertex.EdgeData = { 0.0f, 0.0f, 0.0f, primitiveType };
+        return;
+    }
+
+    // Calculate the distance from point to line segment
+    const Float_2 lineVec = { edgeEnd.X - edgeStart.X, edgeEnd.Y - edgeStart.Y };
+    const Float_2 pointVec = { position.X - edgeStart.X, position.Y - edgeStart.Y };
+    
+    const float lineLength = sqrtf( lineVec.X * lineVec.X + lineVec.Y * lineVec.Y );
+    if ( lineLength < 1e-6f )
+    {
+        vertex.EdgeData = { 0.0f, 0.0f, 0.0f, primitiveType };
+        return;
+    }
+
+    // Normalize line vector to get the edge normal
+    const Float_2 lineNormal = { lineVec.X / lineLength, lineVec.Y / lineLength };
+    const Float_2 edgeNormal = { -lineNormal.Y, lineNormal.X }; // Perpendicular to edge
+
+    // Calculate signed distance to edge (positive = outside, negative = inside)
+    const float signedDistance = pointVec.X * edgeNormal.X + pointVec.Y * edgeNormal.Y;
+    vertex.EdgeData = { signedDistance, edgeNormal.X, edgeNormal.Y, primitiveType };
+}
+
+void VectorGraphics::AddVertexWithEdgeData( const Float_2 &position, const Float_4 &color, const Float_2 &edgeStart, const Float_2 &edgeEnd, const float primitiveType )
+{
+    VGVertex vertex;
+    vertex.Position = TransformPoint( position );
+    vertex.Color = color;
+    vertex.TexCoord = { 0.0f, 0.0f };
+    SetupGradientVertexData( vertex, position );
+    SetupEdgeData( vertex, position, edgeStart, edgeEnd, primitiveType );
+    m_vertices.push_back( vertex );
 }

@@ -40,7 +40,7 @@ namespace DenOfIz
         ILogicalDevice *LogicalDevice                = nullptr;
         uint32_t        InitialVertexBufferSize      = 64 * 1024;
         uint32_t        InitialIndexBufferSize       = 32 * 1024;
-        float           DefaultTessellationTolerance = 0.5f;
+        float           DefaultTessellationTolerance = 0.25f;
         TextRenderer   *TextRenderer                 = nullptr;
     };
 
@@ -89,6 +89,13 @@ namespace DenOfIz
         RadialGradient,
         ConicGradient,
         Pattern
+    };
+
+    enum class VGAntialiasingMode
+    {
+        None,      // No antialiasing (current behavior)
+        Grayscale, // Standard edge antialiasing using fwidth derivatives
+        Subpixel   // LCD subpixel antialiasing (future enhancement)
     };
 
     struct DZ_API VGStrokeStyle
@@ -143,6 +150,7 @@ namespace DenOfIz
         Float_4 Color;
         Float_2 TexCoord;
         Float_4 GradientData; // For gradient calculations
+        Float_4 EdgeData;     // For antialiasing: (distance to edge, edge normal.xy, primitive type)
     };
 
     // Rendering primitive types
@@ -188,6 +196,9 @@ namespace DenOfIz
 
         float                  m_tessellationTolerance = 0.5f;
         uint32_t               m_frameIndex = 0;
+
+        VGAntialiasingMode     m_antialiasingMode = VGAntialiasingMode::None;
+        float                  m_antialiasingWidth = 1.0f;
 
         // Text rendering
         TextRenderer *m_textRenderer = nullptr;
@@ -300,6 +311,12 @@ namespace DenOfIz
         DZ_API void  SetTessellationTolerance( float tolerance );
         DZ_API float GetTessellationTolerance( ) const;
 
+        // Antialiasing configuration
+        DZ_API void              SetAntialiasingMode( VGAntialiasingMode mode );
+        DZ_API VGAntialiasingMode GetAntialiasingMode( ) const;
+        DZ_API void              SetAntialiasingWidth( float width );
+        DZ_API float             GetAntialiasingWidth( ) const;
+
         DZ_API void         SetPipeline( VGPipeline *pipeline );
         DZ_API void         SetTransform( VGTransform *transform );
         DZ_API VGPipeline  *GetPipeline( ) const;
@@ -342,6 +359,10 @@ namespace DenOfIz
 
         // Gradient utilities
         void SetupGradientVertexData( VGVertex &vertex, const Float_2 &position ) const;
+
+        // Antialiasing utilities
+        void SetupEdgeData( VGVertex &vertex, const Float_2 &position, const Float_2 &edgeStart, const Float_2 &edgeEnd, float primitiveType = 0.0f ) const;
+        void AddVertexWithEdgeData( const Float_2 &position, const Float_4 &color, const Float_2 &edgeStart, const Float_2 &edgeEnd, float primitiveType = 0.0f );
 
         // Advanced tessellation algorithms
         void TessellateQuadraticBezier( const Float_2 &p0, const Float_2 &p1, const Float_2 &p2, std::vector<Float_2> &points );
