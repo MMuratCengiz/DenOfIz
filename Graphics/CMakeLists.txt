@@ -51,7 +51,6 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Font/FontLibrary.cpp
         Source/Assets/Font/TextRenderer.cpp
         Source/Assets/Font/TextLayout.cpp
-        Source/Assets/SDFRenderer.cpp
         Source/Assets/GpuResource/GpuResourceLoader.cpp
         Source/Assets/Import/AssetScanner.cpp
         Source/Assets/Import/AssetPathUtilities.cpp
@@ -106,6 +105,7 @@ set(DEN_OF_IZ_INPUT_SOURCES
 )
 
 set(DEN_OF_IZ_VG_SOURCES
+        Source/Assets/Vector2d/SDFRenderer.cpp
         Source/Assets/Vector2d/ThorVGWrapper.cpp
 )
 
@@ -242,7 +242,13 @@ endif ()
 
 copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 
-add_library(DenOfIzGraphics ${DEN_OF_IZ_ASSETS_SOURCES} ${DEN_OF_IZ_GRAPHICS_SOURCES} ${DEN_OF_IZ_INPUT_SOURCES} ${DEN_OF_IZ_ANIMATION_SOURCES} ${DEN_OF_IZ_VG_SOURCES})
+add_library(DenOfIzGraphics
+        ${DEN_OF_IZ_ASSETS_SOURCES}
+        ${DEN_OF_IZ_GRAPHICS_SOURCES}
+        ${DEN_OF_IZ_INPUT_SOURCES}
+        ${DEN_OF_IZ_ANIMATION_SOURCES}
+        ${DEN_OF_IZ_VG_SOURCES}
+)
 #install_target(DenOfIzGraphics)
 
 if (CRT_LINKAGE_STATIC EQUAL 1)
@@ -310,6 +316,7 @@ if (BUILD_SHARED_LIBS)
     target_compile_definitions(DenOfIzGraphics INTERFACE DZ_GRAPHICS_IMPORTS)
     target_compile_definitions(DenOfIzGraphics PRIVATE BUILD_SHARED_LIBS)
 else ()
+    target_compile_definitions(DenOfIzGraphics PUBLIC TVG_STATIC)
     target_link_libraries(DenOfIzGraphics
             PUBLIC
             SDL2::SDL2-static

@@ -25,11 +25,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 // Init OS specific common includes, to make sure they are loaded first
+#include <thorvg.h>
+
 #include "Common_Apple.h"
 #include "Common_Windows.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FSConfig.h"
-#include "DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h"
-
 #include "DenOfIzGraphics/Backends/Common/SDLInclude.h"
 #include "glog/logging.h"
 
@@ -70,8 +70,8 @@ namespace DenOfIz
             std::atexit( SDL_Quit );
 #endif
 
-            ThorVGRenderer::Initialize( );
-            std::atexit( []{ ThorVGRenderer::Terminate(); } );
+            tvg::Initializer::init( tvg::CanvasEngine::Sw, std::thread::hardware_concurrency( ) );
+            std::atexit( [] { tvg::Initializer::term( tvg::CanvasEngine::Sw ); } );
 
             switch ( desc.LogLevel )
             {

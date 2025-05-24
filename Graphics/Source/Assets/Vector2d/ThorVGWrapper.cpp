@@ -22,7 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Renderer/Sync/ResourceTracking.h>
 #include <DenOfIzGraphics/Utilities/Common.h>
 
-#define TVG_STATIC // Todo check for this
 #include <thorvg.h>
 
 #include <cstring>
@@ -423,7 +422,6 @@ namespace DenOfIz
     ThorVGPaint *ThorVGShape::Duplicate( ) const
     {
         const auto newShape = new ThorVGShape( );
-        delete newShape->m_shape;
         newShape->m_shape = std::unique_ptr<tvg::Shape>( dynamic_cast<tvg::Shape *>( m_shape->duplicate( ) ) );
         return newShape;
     }
@@ -522,7 +520,6 @@ namespace DenOfIz
     ThorVGPaint *ThorVGPicture::Duplicate( ) const
     {
         const auto newPicture = new ThorVGPicture( );
-        delete newPicture->m_picture;
         newPicture->m_picture = std::unique_ptr<tvg::Picture>( dynamic_cast<tvg::Picture *>( m_picture->duplicate( ) ) );
         return newPicture;
     }
@@ -614,7 +611,6 @@ namespace DenOfIz
     ThorVGPaint *ThorVGScene::Duplicate( ) const
     {
         const auto newScene = new ThorVGScene( );
-        delete newScene->m_scene;
         newScene->m_scene = std::unique_ptr<tvg::Scene>( dynamic_cast<tvg::Scene *>( m_scene->duplicate( ) ) );
         return newScene;
     }
@@ -737,7 +733,7 @@ namespace DenOfIz
         uint32_t                                       m_height              = 0;
         uint32_t                                       m_numFrames           = 3;
 
-        explicit Impl( const Desc &desc ) : m_device( desc.LogicalDevice ), m_width( desc.Width ), m_height( desc.Height )
+        explicit Impl( const ThorVGRendererDesc &desc ) : m_device( desc.LogicalDevice ), m_width( desc.Width ), m_height( desc.Height )
         {
             if ( desc.NumFrames > 0 )
             {
@@ -848,7 +844,7 @@ namespace DenOfIz
         }
     };
 
-    ThorVGRenderer::ThorVGRenderer( const Desc &desc ) : m_impl( std::make_unique<Impl>( desc ) )
+    ThorVGRenderer::ThorVGRenderer( const ThorVGRendererDesc &desc ) : m_impl( std::make_unique<Impl>( desc ) )
     {
     }
 
@@ -956,20 +952,5 @@ namespace DenOfIz
         m_impl->CreateRenderTargets( );
         m_impl->CreateStagingBuffer( );
         return true;
-    }
-
-    bool ThorVGRenderer::Initialize( const uint32_t threads )
-    {
-        uint32_t adjustedThreads = threads;
-        if ( adjustedThreads == 0 )
-        {
-            adjustedThreads = std::thread::hardware_concurrency( );
-        }
-        return tvg::Initializer::init( tvg::CanvasEngine::Sw, adjustedThreads ) == tvg::Result::Success;
-    }
-
-    bool ThorVGRenderer::Terminate( )
-    {
-        return tvg::Initializer::term( tvg::CanvasEngine::Sw ) == tvg::Result::Success;
     }
 } // namespace DenOfIz

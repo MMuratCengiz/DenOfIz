@@ -18,25 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
-#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
-#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
-#include <DenOfIzGraphics/Utilities/Interop.h>
-#include <DenOfIzGraphics/Utilities/InteropMath.h>
-#include <memory>
+#include <thorvg.h>
 
-namespace tvg
-{
-    class Canvas;
-    class Fill;
-    class LinearGradient;
-    class Paint;
-    class Picture;
-    class RadialGradient;
-    class Scene;
-    class Shape;
-    class SwCanvas;
-} // namespace tvg
+#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
+#include <DenOfIzGraphics/Utilities/InteropMath.h>
 
 namespace DenOfIz
 {
@@ -48,7 +33,6 @@ namespace DenOfIz
     class ThorVGLinearGradient;
     class ThorVGRadialGradient;
     class ThorVGCanvas;
-    class ThorVGSwCanvas;
 
     enum class ThorVGFillRule
     {
@@ -348,19 +332,19 @@ namespace DenOfIz
         DZ_API const InteropArray<uint32_t> &GetData( ) const;
     };
 
+    struct DZ_API ThorVGRendererDesc
+    {
+        ILogicalDevice *LogicalDevice = nullptr;
+        uint32_t        Width         = 1024;
+        uint32_t        Height        = 1024;
+        uint32_t        ThreadCount   = 0;
+        uint32_t        NumFrames     = 0;
+    };
+
     class ThorVGRenderer
     {
     public:
-        struct Desc
-        {
-            ILogicalDevice *LogicalDevice = nullptr;
-            uint32_t        Width         = 1024;
-            uint32_t        Height        = 1024;
-            uint32_t        ThreadCount   = 0;
-            uint32_t        NumFrames     = 0;
-        };
-
-        DZ_API explicit ThorVGRenderer( const Desc &desc );
+        DZ_API explicit ThorVGRenderer( const ThorVGRendererDesc &desc );
         DZ_API ~ThorVGRenderer( );
 
         DZ_API ThorVGCanvas *GetCanvas( ) const;
@@ -373,10 +357,6 @@ namespace DenOfIz
         DZ_API ITextureResource *GetRenderTarget( uint32_t frameIndex ) const;
 
         DZ_API bool Resize( uint32_t width, uint32_t height ) const;
-
-        DZ_API static bool Initialize( uint32_t threads = 0 );
-        DZ_API static bool Terminate( );
-
     private:
         class Impl;
         std::unique_ptr<Impl> m_impl;
