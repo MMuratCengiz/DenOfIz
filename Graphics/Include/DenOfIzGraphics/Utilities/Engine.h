@@ -28,9 +28,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "Common_Apple.h"
 #include "Common_Windows.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FSConfig.h"
+#include "DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h"
 
-#include "glog/logging.h"
 #include "DenOfIzGraphics/Backends/Common/SDLInclude.h"
+#include "glog/logging.h"
 
 namespace DenOfIz
 {
@@ -68,6 +69,9 @@ namespace DenOfIz
             SDL_Init( SDL_INIT_VIDEO | SDL_INIT_SENSOR | SDL_INIT_GAMECONTROLLER );
             std::atexit( SDL_Quit );
 #endif
+
+            ThorVGRenderer::Initialize( );
+            std::atexit( []{ ThorVGRenderer::Terminate(); } );
 
             switch ( desc.LogLevel )
             {

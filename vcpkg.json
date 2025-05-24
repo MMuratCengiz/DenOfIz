@@ -8,6 +8,8 @@
     "earcut-hpp",
     "glog",
     "volk",
+    "pkgconf",
+    "thorvg",
     "vulkan",
     "vulkan-memory-allocator",
     "stb",

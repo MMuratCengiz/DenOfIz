@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 
-
 using namespace DenOfIz;
 
 BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device, const bool issueBarriers ) : m_device( device ), m_issueBarriers( issueBarriers )
@@ -108,9 +107,31 @@ void BatchResourceCopy::CopyDataToTexture( const CopyDataToTextureDesc &copyDesc
     stagingBufferDesc.NumBytes     = copyDesc.Data.NumElements( );
     stagingBufferDesc.DebugName    = "CopyDataToTexture_StagingBuffer";
 
+    const uint32_t bitSize = FormatNumBytes( copyDesc.DstTexture->GetFormat( ) );
+    if ( copyDesc.AutoAlign )
+    {
+        if ( copyDesc.Width == 0 || copyDesc.Height == 0 )
+        {
+            LOG( ERROR ) << "Width and Height cannot be 0 when AutoAlign is true.";
+            return;
+        }
+
+        const uint32_t alignedRowPitch   = Utilities::Align( copyDesc.Width * bitSize, m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
+        const uint32_t alignedSlicePitch = Utilities::Align( alignedRowPitch * copyDesc.Height, GetSubresourceAlignment( bitSize ) );
+        stagingBufferDesc.NumBytes       = alignedSlicePitch;
+    }
+
     const auto stagingBuffer = m_device->CreateBufferResource( stagingBufferDesc );
     void      *dst           = stagingBuffer->MapMemory( );
-    memcpy( dst, copyDesc.Data.Data( ), copyDesc.Data.NumElements( ) );
+    if ( copyDesc.AutoAlign )
+    {
+        AlignDataForTexture( copyDesc.Data.Data( ), copyDesc.Width, copyDesc.Height, bitSize, static_cast<Byte *>( dst ) );
+    }
+    else
+    {
+        memcpy( dst, copyDesc.Data.Data( ), copyDesc.Data.NumElements( ) );
+    }
+
     stagingBuffer->UnmapMemory( );
 
     CopyBufferToTextureDesc copyBufferToTextureDesc{ };
@@ -133,12 +154,12 @@ ITextureResource *BatchResourceCopy::CreateAndLoadTexture( const InteropString &
     textureDesc.HeapType     = HeapType::GPU;
     textureDesc.Descriptor   = ResourceDescriptor::Texture;
     textureDesc.InitialUsage = ResourceUsage::CopyDst;
-    textureDesc.Width        = texture.GetWidth();
-    textureDesc.Height       = texture.GetHeight();
-    textureDesc.Format       = texture.GetFormat();
-    textureDesc.Depth        = texture.GetDepth();
-    textureDesc.ArraySize    = texture.GetArraySize();
-    textureDesc.MipLevels    = texture.GetMipLevels();
+    textureDesc.Width        = texture.GetWidth( );
+    textureDesc.Height       = texture.GetHeight( );
+    textureDesc.Format       = texture.GetFormat( );
+    textureDesc.Depth        = texture.GetDepth( );
+    textureDesc.ArraySize    = texture.GetArraySize( );
+    textureDesc.MipLevels    = texture.GetMipLevels( );
     textureDesc.DebugName    = InteropString( "CreateAndLoadTexture(" ).Append( file.Get( ) ).Append( ")" );
 
     auto outTex = m_device->CreateTextureResource( textureDesc );
@@ -451,10 +472,10 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
 void BatchResourceCopy::CopyTextureToMemoryAligned( const Texture &texture, const TextureMip &mipData, Byte *dst ) const
 {
     const uint32_t alignedRowPitch   = Utilities::Align( mipData.RowPitch, m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
-    const uint32_t alignedSlicePitch = Utilities::Align( alignedRowPitch * mipData.NumRows, GetSubresourceAlignment( texture.GetBitsPerPixel() ) );
+    const uint32_t alignedSlicePitch = Utilities::Align( alignedRowPitch * mipData.NumRows, GetSubresourceAlignment( texture.GetBitsPerPixel( ) ) );
 
-    const Byte *pSrcData = texture.GetData().Data( ) + mipData.DataOffset;
-    for ( uint32_t z = 0; z < texture.GetArraySize(); ++z )
+    const Byte *pSrcData = texture.GetData( ).Data( ) + mipData.DataOffset;
+    for ( uint32_t z = 0; z < texture.GetArraySize( ); ++z )
     {
         const auto dstSlice = dst + alignedSlicePitch * z;
         const auto srcSlice = pSrcData + mipData.SlicePitch * z;
@@ -470,6 +491,23 @@ uint32_t BatchResourceCopy::GetSubresourceAlignment( const uint32_t bitSize ) co
     const uint32_t blockSize = std::max( 1u, bitSize >> 3 );
     const uint32_t alignment = Utilities::Align( m_device->DeviceInfo( ).Constants.BufferTextureAlignment, blockSize );
     return Utilities::Align( alignment, m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
+}
+
+void BatchResourceCopy::AlignDataForTexture( const Byte *src, const uint32_t width, const uint32_t height, const uint32_t bitsPerPixel, Byte *dst ) const
+{
+    const uint32_t alignedRowPitch   = Utilities::Align( width * bitsPerPixel, m_device->DeviceInfo( ).Constants.BufferTextureRowAlignment );
+    const uint32_t alignedSlicePitch = Utilities::Align( alignedRowPitch * height, GetSubresourceAlignment( bitsPerPixel ) );
+
+    constexpr uint32_t arraySize = 1; // Todo maybe take as input
+    for ( uint32_t z = 0; z < arraySize; ++z )
+    {
+        const auto dstSlice = dst + alignedSlicePitch * z;
+        const auto srcSlice = src + width * height * z;
+        for ( uint32_t y = 0; y < height; ++y )
+        {
+            memcpy( dstSlice + alignedRowPitch * y, srcSlice + width * y, width );
+        }
+    }
 }
 
 std::string BatchResourceCopy::NextId( const std::string &prefix )

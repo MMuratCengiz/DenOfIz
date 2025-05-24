@@ -41,10 +41,12 @@ namespace DenOfIz
     {
         ITextureResource  *DstTexture;
         InteropArray<Byte> Data;
-        uint32_t           MipLevel;
-        uint32_t           ArrayLayer;
-        uint32_t           RowPitch;
-        uint32_t           SlicePitch;
+
+        bool     AutoAlign  = false;
+        uint32_t Width      = 0; // Only required when AutoAlign = true
+        uint32_t Height     = 0; // Only required when AutoAlign = true
+        uint32_t ArrayLayer = 0;
+        uint32_t MipLevel   = 0;
     };
 
     struct DZ_API LoadTextureDesc
@@ -127,6 +129,7 @@ namespace DenOfIz
     private:
         void                   CleanResources( );
         void                   LoadTextureInternal( const Texture &texture, ITextureResource *dstTexture );
+        void                   AlignDataForTexture( const Byte * src, uint32_t width, uint32_t height, uint32_t bitsize, Byte *dst ) const;
         void                   CopyTextureToMemoryAligned( const Texture &texture, const TextureMip &mipData, Byte *dst ) const;
         [[nodiscard]] uint32_t GetSubresourceAlignment( uint32_t bitSize ) const;
         static std::string     NextId( const std::string &prefix );

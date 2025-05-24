@@ -30,6 +30,9 @@ find_path(STB_INCLUDE_DIRS "stb_image.h")
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
 find_path(EARCUT_HPP_INCLUDE_DIRS "mapbox/earcut.hpp")
 
+find_package(PkgConfig)
+pkg_check_modules(thorvg REQUIRED IMPORTED_TARGET thorvg)
+
 set(OZZ_ANIMATION_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/ozz-animation")
 if (EXISTS "${OZZ_ANIMATION_DIR}")
     set(OZZ_ANIMATION_INCLUDE_DIR "${OZZ_ANIMATION_DIR}/include")
@@ -48,6 +51,7 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Font/FontLibrary.cpp
         Source/Assets/Font/TextRenderer.cpp
         Source/Assets/Font/TextLayout.cpp
+        Source/Assets/SDFRenderer.cpp
         Source/Assets/GpuResource/GpuResourceLoader.cpp
         Source/Assets/Import/AssetScanner.cpp
         Source/Assets/Import/AssetPathUtilities.cpp
@@ -55,6 +59,7 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/Import/FontImporter.cpp
         Source/Assets/Import/ShaderImporter.cpp
         Source/Assets/Import/TextureImporter.cpp
+        Source/Assets/Import/VGImporter.cpp
         Source/Assets/Serde/Asset.cpp
         Source/Assets/Serde/Animation/AnimationAssetReader.cpp
         Source/Assets/Serde/Animation/AnimationAssetWriter.cpp
@@ -101,11 +106,7 @@ set(DEN_OF_IZ_INPUT_SOURCES
 )
 
 set(DEN_OF_IZ_VG_SOURCES
-        Source/Vector2d/VectorGraphics.cpp
-        Source/Vector2d/VGPipeline.cpp
-        Source/Vector2d/VGShapes.cpp
-        Source/Vector2d/VGTransform.cpp
-        Source/Vector2d/SvgLoader.cpp
+        Source/Assets/Vector2d/ThorVGWrapper.cpp
 )
 
 set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
@@ -301,6 +302,7 @@ target_link_libraries(DenOfIzGraphics
         msdf-atlas-gen::msdf-atlas-gen
         miniz::miniz
         tinyxml2::tinyxml2
+        PkgConfig::thorvg
 )
 
 if (BUILD_SHARED_LIBS)
