@@ -108,7 +108,8 @@ float4 main(PixelInput input) : SV_Target
         return materialData.Color;
     }
     float4 texColor = QuadTexture.Sample(QuadSampler, input.TexCoord);
-    return texColor * materialData.Color;
+    // For premultiplied alpha with white tint, we just return the texture color
+    return texColor;
 }
 )";
 
@@ -247,7 +248,7 @@ void QuadRenderer::CreateShaderResources( )
 
     RenderTargetDesc &renderTarget          = pipelineDesc.Graphics.RenderTargets.EmplaceElement( );
     renderTarget.Blend.Enable               = true;
-    renderTarget.Blend.SrcBlend             = Blend::SrcAlpha;
+    renderTarget.Blend.SrcBlend             = Blend::One; // Premultiplied alpha
     renderTarget.Blend.DstBlend             = Blend::InvSrcAlpha;
     renderTarget.Blend.BlendOp              = BlendOp::Add;
     renderTarget.Blend.SrcBlendAlpha        = Blend::One;
@@ -326,7 +327,7 @@ void QuadRenderer::AddMaterial( const QuadMaterialDesc &desc )
 
         UpdateMaterial( i, desc );
     }
-    m_drawBatches[ desc.MaterialId ] = { .StartInstance = m_materialBatchIndex++ };
+    m_drawBatches[ desc.MaterialId ] = { .StartInstance = 0, .MaterialId = desc.MaterialId };
 }
 
 void QuadRenderer::UpdateMaterial( const uint32_t frameIndex, const QuadMaterialDesc &desc ) const
@@ -346,7 +347,7 @@ void QuadRenderer::UpdateMaterial( const uint32_t frameIndex, const QuadMaterial
     BindBufferDesc bindMaterialShaderDataDesc{ };
     bindMaterialShaderDataDesc.Binding        = 1;
     bindMaterialShaderDataDesc.Resource       = m_materialBuffer.get( );
-    bindMaterialShaderDataDesc.ResourceOffset = dstOffset;
+    bindMaterialShaderDataDesc.ResourceOffset = frameIndex * m_desc.MaxNumMaterials * sizeof( MaterialShaderData );
 
     auto &resourceBindGroup = m_frameData[ frameIndex ].MaterialBindGroups.at( desc.MaterialId );
     resourceBindGroup->BeginUpdate( );
@@ -375,7 +376,8 @@ void QuadRenderer::AddQuad( const QuadDataDesc &desc )
     }
 
     DrawBatch &batch = m_drawBatches[ desc.MaterialId ];
-    batch.InstanceCount++;
+    batch.QuadIds.push_back( desc.QuadId );
+    batch.InstanceCount = batch.QuadIds.size( );
 }
 
 void QuadRenderer::UpdateQuad( const uint32_t frameIndex, const QuadDataDesc &desc ) const
@@ -403,19 +405,21 @@ void QuadRenderer::Render( const uint32_t frameIndex, ICommandList *commandList 
 
     commandList->BindVertexBuffer( m_vertexBuffer.get( ) );
     commandList->BindIndexBuffer( m_indexBuffer.get( ), IndexType::Uint32 );
+    commandList->BindPipeline( m_rasterPipeline.get( ) );
+    commandList->BindResourceGroup( frame.InstanceBindGroup.get( ) );
 
     for ( auto &[ materialId, drawBatch ] : m_drawBatches )
     {
-        RootConstants rootConstants;
-        rootConstants.StartInstance = drawBatch.StartInstance;
-        rootConstants.HasTexture    = m_materialDescs[ materialId ].Texture != nullptr ? 1 : 0;
-        frame.RootConstantsBindGroup->SetRootConstants( 0, &rootConstants );
-
-        commandList->BindPipeline( m_rasterPipeline.get( ) );
-        commandList->BindResourceGroup( frame.InstanceBindGroup.get( ) );
         commandList->BindResourceGroup( frame.MaterialBindGroups.at( materialId ).get( ) );
-        commandList->BindResourceGroup( frame.RootConstantsBindGroup.get( ) );
-        commandList->DrawIndexed( 6, drawBatch.InstanceCount, 0, 0, drawBatch.StartInstance );
+        for ( const uint32_t quadId : drawBatch.QuadIds )
+        {
+            RootConstants rootConstants;
+            rootConstants.StartInstance = quadId;
+            rootConstants.HasTexture    = m_materialDescs[ materialId ].Texture != nullptr ? 1 : 0;
+            frame.RootConstantsBindGroup->SetRootConstants( 0, &rootConstants );
+            commandList->BindResourceGroup( frame.RootConstantsBindGroup.get( ) );
+            commandList->DrawIndexed( 6, 1, 0, 0, 0 );
+        }
     }
 }
 

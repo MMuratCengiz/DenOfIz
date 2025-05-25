@@ -20,13 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzExamples/IExample.h>
 
+#include "../../../../Graphics/Include/DenOfIzGraphics/Assets/Vector2d/QuadRenderer.h"
 #include "DenOfIzGraphics/Assets/Font/TextRenderer.h"
+#include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h"
+#include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
 #include "DenOfIzGraphics/Utilities/FrameDebugRenderer.h"
 #include "DenOfIzGraphics/Utilities/Time.h"
-#include "DenOfIzGraphics/Vector2d/SvgLoader.h"
-#include "DenOfIzGraphics/Vector2d/VGPipeline.h"
-#include "DenOfIzGraphics/Vector2d/VGTransform.h"
-#include "DenOfIzGraphics/Vector2d/VectorGraphics.h"
 
 #include <DirectXMath.h>
 #include <memory>
@@ -35,21 +34,34 @@ namespace DenOfIz
 {
     class VGExample final : public IExample
     {
+        static constexpr auto               m_folderSVG    = "Assets/SVG/folder.svg";
+        static constexpr auto               m_folderAsset  = "Assets/Textures/folder.dztex";
+        static constexpr auto               m_milkTeaSVG   = "Assets/SVG/milk-tea.svg";
+        static constexpr auto               m_milkTeaAsset = "Assets/Textures/milk-tea.dztex";
         std::unique_ptr<FrameDebugRenderer> m_debugRenderer;
         Time                                m_time;
 
-        // Vector Graphics components
-        std::unique_ptr<VectorGraphics> m_vectorGraphics;
-        std::unique_ptr<VGPipeline>     m_vgPipeline;
-        std::unique_ptr<VGTransform>    m_vgTransform;
-        std::unique_ptr<TextRenderer>   m_textRenderer;
-        std::unique_ptr<SvgLoader>      m_folderSvgLoader;
-        bool                            m_folderSvgLoaded = false;
+        std::unique_ptr<QuadRenderer> m_quadRenderer;
+        std::unique_ptr<TextRenderer> m_textRenderer;
+
+        std::unique_ptr<ITextureResource> m_starTexture;
+        std::unique_ptr<ITextureResource> m_folderTexture;
+        std::unique_ptr<ITextureResource> m_milkTeaTexture;
+
+        std::vector<std::unique_ptr<BinaryReader>>       m_textureReaders;
+        std::vector<std::unique_ptr<TextureAssetReader>> m_assetReaders;
+
+        uint32_t m_redMaterialId     = 0;
+        uint32_t m_folderMaterialId  = 0;
+        uint32_t m_milkTeaMaterialId = 0;
+
+        uint32_t m_folderQuadIndex  = 0;
+        uint32_t m_milkTeaQuadIndex = 0;
+        bool     m_textLabelsAdded  = false;
 
         float      m_animationTime;
         XMFLOAT4X4 m_projectionMatrix;
 
-        // Animation states for different demos
         float m_rotationAngle;
         float m_scaleAnimTime;
         float m_colorAnimTime;
@@ -74,18 +86,11 @@ namespace DenOfIz
 
     private:
         void UpdateProjectionMatrix( );
-        void InitializeVectorGraphics( );
+        void InitializeRenderers( );
+        void LoadSvgTextures( );
+        void InitializeMaterials( );
 
-        // Demo rendering functions
-        void RenderBasicShapes( ) const;
-        void RenderNewFeatures( ) const;
-        void RenderAnimatedShapes( ) const;
-        void RenderCurveDemo( ) const;
-        void RenderTransformDemo( ) const;
-        void RenderSvgDemo( ) const;
-
-        // Helper functions
-        static Float_4 GetAnimatedColor( float time, float offset = 0.0f );
-        static Float_2 GetCircularPosition( float radius, float angle, const Float_2 &center );
+        void AddQuads( ) const;
+        void ImportSvgIfNeeded( const InteropString &svgPath, const InteropString &targetPath ) const;
     };
 } // namespace DenOfIz

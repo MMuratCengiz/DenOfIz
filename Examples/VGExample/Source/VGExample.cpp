@@ -18,6 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzExamples/VGExample.h>
 
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
+#include "DenOfIzGraphics/Assets/Import/VGImporter.h"
+#include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h"
+#include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 #include "DenOfIzGraphics/Utilities/FrameDebugRenderer.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 #include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
@@ -25,12 +30,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 using namespace DirectX;
 
-//
 void VGExample::Init( )
 {
     UpdateProjectionMatrix( );
 
-    // Initialize debug renderer
     FrameDebugRendererDesc debugRendererDesc{ };
     debugRendererDesc.GraphicsApi   = m_graphicsApi;
     debugRendererDesc.LogicalDevice = m_logicalDevice;
@@ -40,24 +43,21 @@ void VGExample::Init( )
     debugRendererDesc.Enabled       = true;
     m_debugRenderer                 = std::make_unique<FrameDebugRenderer>( debugRendererDesc );
 
-    InitializeVectorGraphics( );
+    InitializeRenderers( );
+    LoadSvgTextures( );
+    InitializeMaterials( );
 
-    m_folderSvgLoader = std::make_unique<SvgLoader>( );
-    SvgLoadDesc folderOptions;
-    folderOptions.TessellationTolerance = 0.1f;
-    const SvgLoadResult folderResult    = m_folderSvgLoader->LoadFromFile( "Assets/SVG/folder.svg", folderOptions );
-    m_folderSvgLoaded                   = folderResult == SvgLoadResult::Success;
-
-    // Initialize animation state
     m_animationTime = 0.0f;
     m_rotationAngle = 0.0f;
     m_scaleAnimTime = 0.0f;
     m_colorAnimTime = 0.0f;
+
+    AddQuads( );
 }
 
 void VGExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void VGExample::HandleEvent( Event &event )
@@ -70,12 +70,11 @@ void VGExample::Update( )
     m_time.Tick( );
     m_debugRenderer->UpdateStats( m_time.GetDeltaTime( ) );
 
-    // Update animation time
     const float deltaTime = m_time.GetDeltaTime( );
     m_animationTime += deltaTime;
-    m_rotationAngle += deltaTime * 0.5f; // 0.5 rad/sec
-    m_scaleAnimTime += deltaTime * 2.0f; // Faster scale animation
-    m_colorAnimTime += deltaTime * 1.5f; // Color cycling
+    m_rotationAngle += deltaTime * 0.5f;
+    m_scaleAnimTime += deltaTime * 2.0f;
+    m_colorAnimTime += deltaTime * 1.5f;
 
     RenderAndPresentFrame( );
 }
@@ -99,28 +98,11 @@ void VGExample::Render( const uint32_t frameIndex, ICommandList *commandList )
     commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
     commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
 
-    // === Vector Graphics and Text Rendering ===
-    // Begin text renderer batch first
     m_textRenderer->BeginBatch( );
-
-    // Begin vector graphics batch
-    m_vectorGraphics->BeginBatch( commandList, frameIndex );
-
-    // Render different demo sections
-    RenderBasicShapes( );
-    RenderNewFeatures( );
-    RenderAnimatedShapes( );
-    RenderCurveDemo( );
-    RenderTransformDemo( );
-    RenderSvgDemo( );
-
-    // End vector graphics batch (this will flush all geometry)
-    m_vectorGraphics->EndBatch( );
-
-    // End text renderer batch (this will flush all text)
     m_textRenderer->EndBatch( commandList );
 
-    // Render debug info
+    m_quadRenderer->Render( frameIndex, commandList );
+
     m_debugRenderer->Render( commandList );
 
     commandList->EndRendering( );
@@ -134,501 +116,146 @@ void VGExample::Render( const uint32_t frameIndex, ICommandList *commandList )
 
 void VGExample::UpdateProjectionMatrix( )
 {
-    // Create 2D orthographic projection matrix
-    constexpr float left   = 0.0f;
-    const float     right  = static_cast<float>( m_windowDesc.Width );
-    const float     bottom = static_cast<float>( m_windowDesc.Height );
-    constexpr float top    = 0.0f;
-    constexpr float nearZ  = -1.0f;
-    constexpr float farZ   = 1.0f;
-
-    const auto projection = XMMatrixOrthographicOffCenterLH( left, right, bottom, top, nearZ, farZ );
+    const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( m_windowDesc.Width ), static_cast<float>( m_windowDesc.Height ), 0.0f, 0.0f, 1.0f );
     XMStoreFloat4x4( &m_projectionMatrix, projection );
 }
 
-void VGExample::InitializeVectorGraphics( )
+void VGExample::InitializeRenderers( )
 {
-    // Create VG Transform with screen dimensions
-    m_vgTransform = std::make_unique<VGTransform>( m_windowDesc.Width, m_windowDesc.Height );
-
-    // Create VG Pipeline
-    VGPipelineDesc pipelineDesc{ };
-    pipelineDesc.LogicalDevice = m_logicalDevice;
-    pipelineDesc.NumFrames     = 3;
-    pipelineDesc.SetupData     = true; // Use default projection data setup
-    m_vgPipeline               = std::make_unique<VGPipeline>( pipelineDesc );
-
-    // Initialize TextRenderer
     TextRendererDesc textRendererDesc;
     textRendererDesc.LogicalDevice = m_logicalDevice;
     m_textRenderer                 = std::make_unique<TextRenderer>( textRendererDesc );
     m_textRenderer->Initialize( );
 
-    // Set projection matrix for TextRenderer
     Float_4x4 projMatrix;
     std::memcpy( &projMatrix, &m_projectionMatrix, sizeof( Float_4x4 ) );
     m_textRenderer->SetProjectionMatrix( projMatrix );
 
-    // Create Vector Graphics renderer
-    VectorGraphicsDesc vgDesc{ };
-    vgDesc.LogicalDevice                = m_logicalDevice;
-    vgDesc.InitialVertexBufferNumBytes      = 256 * 1024;
-    vgDesc.InitialIndexBufferNumBytes       = 128 * 1024;
-    vgDesc.DefaultTessellationTolerance = 2.0f;
-    vgDesc.TextRenderer                 = m_textRenderer.get( );
-
-    m_vectorGraphics = std::make_unique<VectorGraphics>( vgDesc );
-    m_vectorGraphics->SetPipeline( m_vgPipeline.get( ) );
-    m_vectorGraphics->SetTransform( m_vgTransform.get( ) );
-    m_vectorGraphics->SetTessellationTolerance( 2.0f );
-    m_vectorGraphics->SetAntialiasingMode( VGAntialiasingMode::Geometric );
-    m_vectorGraphics->SetAntialiasingWidth( 1.0f );
+    QuadRendererDesc quadRendererDesc;
+    quadRendererDesc.LogicalDevice = m_logicalDevice;
+    m_quadRenderer                 = std::make_unique<QuadRenderer>( quadRendererDesc );
+    m_quadRenderer->Initialize( );
+    m_quadRenderer->SetCanvas( m_windowDesc.Width, m_windowDesc.Height );
 }
 
-void VGExample::RenderBasicShapes( ) const
+void VGExample::LoadSvgTextures( )
 {
-    // === Basic Shapes Demo (Top-Left Quadrant) ===
-    // Save transform state
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 50.0f, 50.0f } );
+    ImportSvgIfNeeded( m_folderSVG, m_folderAsset );
+    ImportSvgIfNeeded( m_milkTeaSVG, m_milkTeaAsset );
 
-    // 1. Filled Rectangle
-    m_vectorGraphics->SetFillColor( { 1.0f, 0.3f, 0.3f, 1.0f } ); // Red
-    m_vectorGraphics->SetStrokeEnabled( false );
-    m_vectorGraphics->FillRect( { 0.0f, 0.0f }, { 80.0f, 60.0f } );
-
-    // 2. Stroked Rectangle
-    m_vectorGraphics->Translate( { 100.0f, 0.0f } );
-    m_vectorGraphics->SetFillEnabled( false );
-    m_vectorGraphics->SetStrokeColor( { 0.3f, 1.0f, 0.3f, 1.0f } ); // Green
-    m_vectorGraphics->SetStrokeWidth( 3.0f );
-    m_vectorGraphics->SetStrokeEnabled( true );
-    m_vectorGraphics->StrokeRect( { 0.0f, 0.0f }, { 80.0f, 60.0f } );
-
-    // 3. Filled Circle
-    m_vectorGraphics->Translate( { 100.0f, 0.0f } );
-    m_vectorGraphics->SetFillColor( { 0.3f, 0.3f, 1.0f, 1.0f } ); // Blue
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( false );
-    m_vectorGraphics->FillCircle( { 40.0f, 30.0f }, 25.0f );
-
-    // 4. Stroked Circle
-    m_vectorGraphics->Translate( { 100.0f, 0.0f } );
-    m_vectorGraphics->SetFillEnabled( false );
-    m_vectorGraphics->SetStrokeColor( { 1.0f, 1.0f, 0.3f, 1.0f } ); // Yellow
-    m_vectorGraphics->SetStrokeWidth( 2.0f );
-    m_vectorGraphics->SetStrokeEnabled( true );
-    m_vectorGraphics->StrokeCircle( { 40.0f, 30.0f }, 25.0f );
-
-    // 5. Lines with different thickness
-    m_vectorGraphics->Translate( { -300.0f, 80.0f } );
-    m_vectorGraphics->SetStrokeColor( { 1.0f, 0.5f, 0.0f, 1.0f } ); // Orange
-
-    for ( int i = 0; i < 5; ++i )
+    if ( !FileIO::FileExists( m_folderAsset ) || !FileIO::FileExists( m_milkTeaAsset ) )
     {
-        const float thickness = 1.0f + i * 2.0f;
-        m_vectorGraphics->SetStrokeWidth( thickness );
-        m_vectorGraphics->DrawLine( { 0.0f, i * 15.0f }, { 100.0f, i * 15.0f }, thickness );
+        LOG( FATAL ) << "SVG textures not found. Please run VGImporter to generate them.";
     }
 
-    // 6. Polygon (Triangle)
-    m_vectorGraphics->Translate( { 150.0f, -10.0f } );
-    VGPolygon triangle;
-    triangle.Points.AddElement( { 40.0f, 0.0f } );  // Top
-    triangle.Points.AddElement( { 0.0f, 60.0f } );  // Bottom-left
-    triangle.Points.AddElement( { 80.0f, 60.0f } ); // Bottom-right
-    triangle.IsClosed = true;
+    BatchResourceCopy batchCopy( m_logicalDevice );
+    batchCopy.Begin( );
 
-    m_vectorGraphics->SetFillColor( { 0.8f, 0.3f, 0.8f, 1.0f } ); // Magenta
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( false );
-    m_vectorGraphics->FillPolygon( triangle );
+    BinaryReader           folderReader( m_folderAsset );
+    TextureAssetReaderDesc readerDesc{ };
+    readerDesc.Reader = &folderReader;
+    TextureAssetReader textureAssetReader( readerDesc );
 
-    // Restore transform state
-    m_vectorGraphics->Restore( );
+    CreateAssetTextureDesc createDesc{ };
+    createDesc.Reader    = &textureAssetReader;
+    createDesc.DebugName = "FolderSVG_Texture";
+    m_folderTexture      = std::unique_ptr<ITextureResource>( batchCopy.CreateAndLoadAssetTexture( createDesc ) );
+
+    BinaryReader milkTeaReader( m_milkTeaAsset );
+    readerDesc.Reader    = &milkTeaReader;
+    textureAssetReader   = TextureAssetReader( readerDesc );
+    createDesc.Reader    = &textureAssetReader;
+    createDesc.DebugName = "MilkTeaSVG_Texture";
+    m_milkTeaTexture     = std::unique_ptr<ITextureResource>( batchCopy.CreateAndLoadAssetTexture( createDesc ) );
+
+    batchCopy.Submit( );
 }
 
-void VGExample::RenderAnimatedShapes( ) const
+void VGExample::InitializeMaterials( )
 {
-    // === Animated Shapes Demo (Top-Right Quadrant) ===
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 640.0f, 50.0f } );
+    DZ_RETURN_IF( !m_folderTexture );
+    DZ_RETURN_IF( !m_milkTeaTexture );
 
-    // 1. Rotating Square
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 50.0f, 50.0f } );
-    m_vectorGraphics->Rotate( m_rotationAngle, { 25.0f, 25.0f } );
-    m_vectorGraphics->SetFillColor( GetAnimatedColor( m_colorAnimTime, 0.0f ) );
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( false );
-    m_vectorGraphics->FillRect( { -25.0f, -25.0f }, { 25.0f, 25.0f } );
-    m_vectorGraphics->Restore( );
+    m_redMaterialId = 0;
+    QuadMaterialDesc redMaterial;
+    redMaterial.MaterialId = m_redMaterialId;
+    redMaterial.Color      = { 1.0f, 0.0f, 0.0f, 1.0f };
+    m_quadRenderer->AddMaterial( redMaterial );
 
-    // 2. Pulsating Circle
-    const float scale = 1.0f + 0.3f * sinf( m_scaleAnimTime );
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 150.0f, 50.0f } );
-    m_vectorGraphics->Scale( scale );
-    m_vectorGraphics->SetFillColor( GetAnimatedColor( m_colorAnimTime, 1.0f ) );
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( false );
-    m_vectorGraphics->FillCircle( { 0.0f, 0.0f }, 25.0f );
-    m_vectorGraphics->Restore( );
+    m_folderMaterialId = 1;
+    QuadMaterialDesc folderMaterial;
+    folderMaterial.MaterialId = m_folderMaterialId;
+    folderMaterial.Texture    = m_folderTexture.get( );
+    m_quadRenderer->AddMaterial( folderMaterial );
 
-    // 3. Orbiting Circles
-    constexpr int numOrbiters = 6;
-
-    for ( int i = 0; i < numOrbiters; ++i )
-    {
-        constexpr float   orbitRadius = 50.0f;
-        constexpr Float_2 center      = { 300.0f, 80.0f };
-        const float       angle       = m_animationTime + i * 2.0f * XM_PI / numOrbiters;
-        Float_2           pos         = GetCircularPosition( orbitRadius, angle, center );
-
-        m_vectorGraphics->SetFillColor( GetAnimatedColor( m_colorAnimTime, i * 0.5f ) );
-        m_vectorGraphics->SetFillEnabled( true );
-        m_vectorGraphics->SetStrokeEnabled( false );
-        m_vectorGraphics->FillCircle( pos, 8.0f );
-    }
-
-    // 4. Breathing Rectangle
-    const float breathScale = 1.0f + 0.2f * sinf( m_animationTime * 3.0f );
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 450.0f, 50.0f } );
-    m_vectorGraphics->Scale( { breathScale, breathScale } );
-    m_vectorGraphics->SetFillColor( { 0.5f, 0.8f, 1.0f, 0.8f } );
-    m_vectorGraphics->SetStrokeColor( { 0.2f, 0.4f, 0.8f, 1.0f } );
-    m_vectorGraphics->SetStrokeWidth( 2.0f );
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( true );
-    m_vectorGraphics->DrawRect( { -30.0f, -20.0f }, { 30.0f, 20.0f } );
-    m_vectorGraphics->Restore( );
-
-    m_vectorGraphics->Restore( );
+    m_milkTeaMaterialId = 2;
+    QuadMaterialDesc milkTeaMaterial;
+    milkTeaMaterial.MaterialId = m_milkTeaMaterialId;
+    milkTeaMaterial.Texture    = m_milkTeaTexture.get( );
+    milkTeaMaterial.Color      = { 1.0f, 1.0f, 1.0f, 1.0f };
+    m_quadRenderer->AddMaterial( milkTeaMaterial );
 }
 
-void VGExample::RenderNewFeatures( ) const
+void VGExample::AddQuads( ) const
 {
-    // === New Features Demo - Showcasing recently implemented functionality ===
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 50.0f, 400.0f } );
+    QuadDataDesc rectDesc;
+    rectDesc.QuadId     = 0;
+    rectDesc.Position   = { 50.0f, 50.0f };
+    rectDesc.Size       = { 80.0f, 60.0f };
+    rectDesc.MaterialId = m_redMaterialId;
+    m_quadRenderer->AddQuad( rectDesc );
 
-    // 1. Rounded Rectangles with different corner radii
-    m_vectorGraphics->SetFillColor( { 0.8f, 0.4f, 0.6f, 1.0f } );
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( false );
+    QuadDataDesc folderDesc;
+    folderDesc.QuadId         = 1;
+    folderDesc.Position       = { 50.0f, 350.0f };
+    folderDesc.Size           = { 128.0f, 128.0f };
+    folderDesc.Scale          = { 15.0f, 15.0f };
+    folderDesc.MaterialId     = m_folderMaterialId;
+    folderDesc.Rotation       = 0.0f;
+    folderDesc.RotationCenter = { 64.0f, 64.0f };
+    m_quadRenderer->AddQuad( folderDesc );
 
-    VGRoundedRect roundedRect1;
-    roundedRect1.TopLeft     = { 0.0f, 0.0f };
-    roundedRect1.BottomRight = { 100.0f, 60.0f };
-    roundedRect1.CornerRadii = { 15.0f, 5.0f, 20.0f, 10.0f }; // Different radii for each corner
-    m_vectorGraphics->FillRoundedRect( roundedRect1 );
-
-    // 2. Ellipse with rotation
-    m_vectorGraphics->Translate( { 120.0f, 30.0f } );
-    VGEllipse rotatedEllipse;
-    rotatedEllipse.Center   = { 0.0f, 0.0f };
-    rotatedEllipse.Radii    = { 40.0f, 20.0f };
-    rotatedEllipse.Rotation = m_animationTime * 0.5f; // Animated rotation
-
-    m_vectorGraphics->SetFillColor( { 0.3f, 0.7f, 0.9f, 0.8f } );
-    m_vectorGraphics->FillEllipse( rotatedEllipse );
-
-    // 3. Ellipse stroke demo
-    m_vectorGraphics->Translate( { 100.0f, 0.0f } );
-    VGEllipse strokedEllipse;
-    strokedEllipse.Center   = { 0.0f, 0.0f };
-    strokedEllipse.Radii    = { 35.0f, 15.0f };
-    strokedEllipse.Rotation = -m_animationTime * 0.3f;
-
-    m_vectorGraphics->SetFillEnabled( false );
-    m_vectorGraphics->SetStrokeEnabled( true );
-    m_vectorGraphics->SetStrokeColor( { 1.0f, 0.5f, 0.2f, 1.0f } );
-    m_vectorGraphics->SetStrokeWidth( 3.0f );
-    m_vectorGraphics->StrokeEllipse( strokedEllipse );
-
-    // 4. Clipping demonstration
-    m_vectorGraphics->Translate( { 120.0f, 0.0f } );
-
-    // Set up clipping rectangle
-    VGRect clipRect;
-    clipRect.TopLeft     = { -25.0f, -20.0f };
-    clipRect.BottomRight = { 25.0f, 20.0f };
-    m_vectorGraphics->ClipRect( clipRect );
-
-    // Draw shapes that will be clipped
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( false );
-    m_vectorGraphics->SetFillColor( { 1.0f, 0.8f, 0.2f, 1.0f } );
-
-    // Large circle that extends beyond clip rect
-    m_vectorGraphics->FillCircle( { 0.0f, 0.0f }, 35.0f );
-
-    // Draw clip rect outline for reference
-    m_vectorGraphics->ResetClip( );
-    m_vectorGraphics->SetFillEnabled( false );
-    m_vectorGraphics->SetStrokeEnabled( true );
-    m_vectorGraphics->SetStrokeColor( { 1.0f, 0.0f, 0.0f, 1.0f } );
-    m_vectorGraphics->SetStrokeWidth( 2.0f );
-    m_vectorGraphics->StrokeRect( clipRect );
-
-    // 5. Advanced path commands demo
-    m_vectorGraphics->Translate( { 120.0f, 0.0f } );
-    m_vectorGraphics->SetStrokeEnabled( true );
-    m_vectorGraphics->SetFillEnabled( false );
-    m_vectorGraphics->SetStrokeColor( { 0.6f, 0.2f, 0.9f, 1.0f } );
-    m_vectorGraphics->SetStrokeWidth( 2.5f );
-
-    const VGPath2D advancedPath;
-    advancedPath.MoveTo( { -30.0f, 0.0f } );
-    // Horizontal line
-    advancedPath.HorizontalLineTo( -10.0f );
-    // Smooth quadratic curve (control point automatically calculated)
-    advancedPath.SmoothQuadraticCurveTo( { 10.0f, -20.0f } );
-    // Vertical line
-    advancedPath.VerticalLineTo( 0.0f );
-    // Smooth cubic curve
-    advancedPath.SmoothCubicCurveTo( { 20.0f, 10.0f }, { 30.0f, 0.0f } );
-
-    m_vectorGraphics->StrokePath( advancedPath );
-
-    // 6. Text rendering demo (if font is available)
-    m_vectorGraphics->Translate( { -340.0f, 80.0f } );
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( false );
-    m_vectorGraphics->SetFillColor( { 1.0f, 1.0f, 1.0f, 1.0f } );
-    const InteropString demoText = "New VG Features!";
-    m_vectorGraphics->DrawText( demoText, { 0.0f, 20.0f } );
-
-    m_vectorGraphics->Restore( );
+    QuadDataDesc milkTeaDesc;
+    milkTeaDesc.QuadId     = 2;
+    milkTeaDesc.Position   = { 450.0f, 350.0f };
+    milkTeaDesc.Size       = { 1024.0f, 1024.0f };
+    milkTeaDesc.MaterialId = m_milkTeaMaterialId;
+    milkTeaDesc.Scale      = { 0.3f, 0.3f };
+    m_quadRenderer->AddQuad( milkTeaDesc );
 }
 
-void VGExample::RenderCurveDemo( ) const
+void VGExample::ImportSvgIfNeeded( const InteropString &svgPath, const InteropString &targetPath ) const
 {
-    // === Curve Rendering Demo (Middle-Left Section) ===
-
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 50.0f, 250.0f } );
-
-    // 1. Quadratic Bézier Curve - Animated
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->SetStrokeColor( { 1.0f, 0.4f, 0.2f, 1.0f } ); // Orange
-    m_vectorGraphics->SetStrokeWidth( 3.0f );
-    m_vectorGraphics->SetStrokeEnabled( true );
-    m_vectorGraphics->SetFillEnabled( false );
-
-    // Animated control point
-    const Float_2 animatedControlPoint = { 100.0f + 30.0f * sinf( m_animationTime * 2.0f ), -20.0f + 40.0f * cosf( m_animationTime * 1.5f ) };
-
-    const VGPath2D quadraticPath;
-    quadraticPath.MoveTo( { 0.0f, 0.0f } );
-    quadraticPath.QuadraticCurveTo( animatedControlPoint, { 150.0f, 0.0f } );
-    m_vectorGraphics->StrokePath( quadraticPath );
-
-    // Draw control point and handles
-    m_vectorGraphics->SetStrokeColor( { 0.6f, 0.6f, 0.6f, 0.7f } );
-    m_vectorGraphics->SetStrokeWidth( 1.0f );
-    m_vectorGraphics->DrawLine( { 0.0f, 0.0f }, animatedControlPoint, 1.0f );
-    m_vectorGraphics->DrawLine( animatedControlPoint, { 150.0f, 0.0f }, 1.0f );
-
-    // Draw control point
-    m_vectorGraphics->SetFillColor( { 1.0f, 0.2f, 0.2f, 1.0f } );
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( false );
-    m_vectorGraphics->FillCircle( animatedControlPoint, 4.0f );
-
-    m_vectorGraphics->Restore( );
-
-    // 2. Cubic Bézier Curve - Smooth S-curve
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 0.0f, 80.0f } );
-    m_vectorGraphics->SetStrokeColor( { 0.2f, 0.8f, 0.4f, 1.0f } ); // Green
-    m_vectorGraphics->SetStrokeWidth( 4.0f );
-    m_vectorGraphics->SetStrokeEnabled( true );
-    m_vectorGraphics->SetFillEnabled( false );
-
-    const VGPath2D cubicPath;
-    cubicPath.MoveTo( { 0.0f, 0.0f } );
-    cubicPath.CubicCurveTo( { 50.0f, -40.0f }, { 100.0f, 40.0f }, { 150.0f, 0.0f } );
-    m_vectorGraphics->StrokePath( cubicPath );
-
-    // Show control points
-    m_vectorGraphics->SetStrokeColor( { 0.6f, 0.6f, 0.6f, 0.5f } );
-    m_vectorGraphics->SetStrokeWidth( 1.0f );
-    m_vectorGraphics->DrawLine( { 0.0f, 0.0f }, { 50.0f, -40.0f }, 1.0f );
-    m_vectorGraphics->DrawLine( { 100.0f, 40.0f }, { 150.0f, 0.0f }, 1.0f );
-
-    m_vectorGraphics->SetFillColor( { 0.2f, 0.8f, 0.4f, 1.0f } );
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( false );
-    m_vectorGraphics->FillCircle( { 50.0f, -40.0f }, 3.0f );
-    m_vectorGraphics->FillCircle( { 100.0f, 40.0f }, 3.0f );
-
-    m_vectorGraphics->Restore( );
-
-    // 3. Wave Pattern - Multiple connected curves
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 200.0f, 40.0f } );
-    m_vectorGraphics->SetStrokeColor( { 0.4f, 0.2f, 1.0f, 1.0f } ); // Purple
-    m_vectorGraphics->SetStrokeWidth( 3.0f );
-    m_vectorGraphics->SetStrokeEnabled( true );
-    m_vectorGraphics->SetFillEnabled( false );
-
-    const VGPath2D wavePath;
-    wavePath.MoveTo( { 0.0f, 0.0f } );
-
-    // Create a smooth wave using multiple cubic curves
-    constexpr int numWaves = 4;
-
-    for ( int i = 0; i < numWaves; ++i )
+    if ( !FileIO::FileExists( targetPath ) && FileIO::FileExists( svgPath ) )
     {
-        constexpr float waveLength = 40.0f;
-        constexpr float amplitude  = 25.0f;
-        const float     x1         = i * waveLength;
-        const float     x2         = ( i + 0.5f ) * waveLength;
-        const float     x3         = ( i + 1 ) * waveLength;
+        LOG( WARNING ) << "SVG texture is missing, running import for: " << svgPath.Get( );
 
-        const float y1 = i % 2 == 0 ? -amplitude : amplitude;
-        const float y2 = i % 2 == 0 ? amplitude : -amplitude;
+        ImportJobDesc importJobDesc;
+        importJobDesc.SourceFilePath  = svgPath;
+        importJobDesc.TargetDirectory = "Assets/Textures/";
 
-        // Add time-based animation to the wave
-        const float animOffset = sinf( m_animationTime + i * 0.5f ) * 10.0f;
+        VGImportDesc desc{ };
+        desc.RenderWidth   = 1024;
+        desc.RenderHeight  = 1024;
+        desc.Scale         = 1.0f;
+        desc.Padding       = 8;
+        desc.Premultiply   = true;
+        desc.OutputFormat  = Format::R8G8B8A8Unorm;
+        importJobDesc.Desc = &desc;
 
-        wavePath.CubicCurveTo( { x1 + waveLength * 0.3f, y1 + animOffset }, { x2 - waveLength * 0.3f, y2 + animOffset },
-                               { x3, i + 1 < numWaves ? ( ( i + 1 ) % 2 == 0 ? -amplitude : amplitude ) : 0.0f } );
-    }
-
-    m_vectorGraphics->StrokePath( wavePath );
-    m_vectorGraphics->Restore( );
-
-    // 4. Heart Shape - Complex closed curve
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 420.0f, 60.0f } );
-
-    // Animate the heart size
-    const float heartScale = 1.0f + 0.2f * sinf( m_animationTime * 3.0f );
-    m_vectorGraphics->Scale( heartScale );
-
-    m_vectorGraphics->SetFillColor( { 1.0f, 0.2f, 0.3f, 1.0f } ); // Red
-    m_vectorGraphics->SetStrokeColor( { 0.8f, 0.1f, 0.2f, 1.0f } );
-    m_vectorGraphics->SetStrokeWidth( 2.0f );
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( true );
-
-    const VGPath2D heartPath;
-    // Heart shape using Bézier curves
-    heartPath.MoveTo( { 0.0f, 15.0f } );
-    heartPath.CubicCurveTo( { -25.0f, -10.0f }, { -25.0f, -25.0f }, { 0.0f, -5.0f } );
-    heartPath.CubicCurveTo( { 25.0f, -25.0f }, { 25.0f, -10.0f }, { 0.0f, 15.0f } );
-    heartPath.Close( );
-
-    m_vectorGraphics->FillPath( heartPath );
-    m_vectorGraphics->StrokePath( heartPath );
-    m_vectorGraphics->Restore( );
-
-    // 5. Spiral - Parametric curve
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 550.0f, 60.0f } );
-    m_vectorGraphics->SetStrokeColor( GetAnimatedColor( m_colorAnimTime, 2.0f ) );
-    m_vectorGraphics->SetStrokeWidth( 3.0f );
-    m_vectorGraphics->SetStrokeEnabled( true );
-    m_vectorGraphics->SetFillEnabled( false );
-
-    const VGPath2D spiralPath;
-    bool           firstPoint = true;
-
-    // Create spiral using line segments (could be improved with curves)
-    const float   spiralTurns    = 3.0f + sinf( m_animationTime ) * 0.5f;
-    constexpr int spiralSegments = 100;
-
-    for ( int i = 0; i <= spiralSegments; ++i )
-    {
-        const float t      = static_cast<float>( i ) / spiralSegments;
-        const float angle  = t * spiralTurns * 2.0f * XM_PI;
-        const float radius = t * 30.0f;
-
-        Float_2 point = { radius * cosf( angle ), radius * sinf( angle ) };
-
-        if ( firstPoint )
+        VGImporter     importer( { } );
+        ImporterResult result = importer.Import( importJobDesc );
+        if ( result.ResultCode != ImporterResultCode::Success )
         {
-            spiralPath.MoveTo( point );
-            firstPoint = false;
+            LOG( FATAL ) << "SVG import failed: " << result.ErrorMessage.Get( );
         }
         else
         {
-            spiralPath.LineTo( point );
+            for ( size_t i = 0; i < result.CreatedAssets.NumElements( ); ++i )
+            {
+                AssetUri uri = result.CreatedAssets.GetElement( i );
+                LOG( INFO ) << "Created SVG texture asset: " << uri.Path.Get( );
+            }
         }
     }
-
-    m_vectorGraphics->StrokePath( spiralPath );
-    m_vectorGraphics->Restore( );
-
-    m_vectorGraphics->Restore( );
-}
-
-void VGExample::RenderTransformDemo( ) const
-{
-    // === Transform Demo (Bottom-Right Quadrant) ===
-
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 640.0f, 400.0f } );
-
-    // 1. Nested Transforms
-    m_vectorGraphics->SetFillColor( { 1.0f, 0.8f, 0.2f, 1.0f } );
-    m_vectorGraphics->SetFillEnabled( true );
-    m_vectorGraphics->SetStrokeEnabled( false );
-
-    for ( int i = 0; i < 5; ++i )
-    {
-        m_vectorGraphics->Save( );
-        m_vectorGraphics->Translate( { 30.0f, 30.0f } );
-        m_vectorGraphics->Rotate( m_rotationAngle * ( i + 1 ) * 0.3f );
-        m_vectorGraphics->Scale( 0.8f );
-
-        m_vectorGraphics->FillRect( { -15.0f, -15.0f }, { 15.0f, 15.0f } );
-        m_vectorGraphics->Restore( );
-    }
-
-    // 2. Skew Transform
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 150.0f, 50.0f } );
-    m_vectorGraphics->Skew( { sinf( m_animationTime ) * 0.3f, cosf( m_animationTime * 0.7f ) * 0.2f } );
-    m_vectorGraphics->SetFillColor( { 0.8f, 0.2f, 1.0f, 1.0f } );
-    m_vectorGraphics->FillRect( { -25.0f, -25.0f }, { 25.0f, 25.0f } );
-    m_vectorGraphics->Restore( );
-
-    // 3. Combined Transforms
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 300.0f, 50.0f } );
-    m_vectorGraphics->Rotate( m_rotationAngle * 0.5f );
-    m_vectorGraphics->Scale( { 1.0f + 0.3f * sinf( m_scaleAnimTime ), 1.0f + 0.3f * cosf( m_scaleAnimTime ) } );
-    m_vectorGraphics->SetFillColor( { 0.2f, 0.8f, 1.0f, 1.0f } );
-    m_vectorGraphics->FillCircle( { 0.0f, 0.0f }, 20.0f );
-    m_vectorGraphics->Restore( );
-
-    m_vectorGraphics->Restore( );
-}
-
-Float_4 VGExample::GetAnimatedColor( const float time, const float offset )
-{
-    // Create smooth color cycling using sine waves
-    const float r = 0.5f + 0.5f * sinf( time + offset );
-    const float g = 0.5f + 0.5f * sinf( time + offset + 2.0f * XM_PI / 3.0f );
-    const float b = 0.5f + 0.5f * sinf( time + offset + 4.0f * XM_PI / 3.0f );
-    return { r, g, b, 1.0f };
-}
-
-Float_2 VGExample::GetCircularPosition( const float radius, const float angle, const Float_2 &center )
-{
-    return { center.X + radius * cosf( angle ), center.Y + radius * sinf( angle ) };
-}
-
-void VGExample::RenderSvgDemo( ) const
-{
-    // Show SVG loading success and render the loaded SVG
-    m_vectorGraphics->Save( );
-    m_vectorGraphics->Translate( { 640.0f, 500.0f } );
-    m_vectorGraphics->Scale( 2.7f );
-    m_folderSvgLoader->RenderToVectorGraphics( m_vectorGraphics.get( ) );
-    m_vectorGraphics->Restore( );
 }

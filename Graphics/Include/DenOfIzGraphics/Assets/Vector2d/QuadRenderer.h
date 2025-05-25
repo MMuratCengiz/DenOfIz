@@ -105,9 +105,10 @@ namespace DenOfIz
 
         struct DrawBatch
         {
-            uint32_t StartInstance;
-            uint32_t InstanceCount = 1;
-            uint32_t MaterialId;
+            uint32_t              StartInstance;
+            uint32_t              InstanceCount = 0;
+            uint32_t              MaterialId;
+            std::vector<uint32_t> QuadIds;
         };
 
         QuadRendererDesc m_desc;

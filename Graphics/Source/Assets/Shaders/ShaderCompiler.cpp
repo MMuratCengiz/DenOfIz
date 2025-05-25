@@ -205,6 +205,7 @@ CompileResult ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) cons
         arguments.push_back( L"-fvk-use-dx-position-w" );
         arguments.push_back( L"-fvk-use-dx-layout" );
         arguments.push_back( L"-fspv-debug=line" );
+        arguments.push_back( L"-fvk-support-nonzero-base-instance" );
     }
     for ( int i = 0; i < compileDesc.Defines.NumElements( ); ++i )
     {
