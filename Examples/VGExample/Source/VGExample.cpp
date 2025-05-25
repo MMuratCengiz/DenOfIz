@@ -22,10 +22,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
 #include "DenOfIzGraphics/Assets/Import/VGImporter.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h"
+#include "DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h"
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 #include "DenOfIzGraphics/Utilities/FrameDebugRenderer.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 #include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
+
+#include <cmath>
+#include <vector>
 
 using namespace DenOfIz;
 using namespace DirectX;
@@ -45,6 +49,7 @@ void VGExample::Init( )
 
     InitializeRenderers( );
     LoadSvgTextures( );
+    CreateStarTexture( );
     InitializeMaterials( );
 
     m_animationTime = 0.0f;
@@ -75,6 +80,21 @@ void VGExample::Update( )
     m_rotationAngle += deltaTime * 0.5f;
     m_scaleAnimTime += deltaTime * 2.0f;
     m_colorAnimTime += deltaTime * 1.5f;
+
+    // Update star rotation
+    QuadDataDesc starDesc;
+    starDesc.QuadId         = 3;
+    starDesc.Position       = { 850.0f, 150.0f };
+    starDesc.Size           = { 256.0f, 256.0f };
+    starDesc.MaterialId     = m_starMaterialId;
+    starDesc.Scale          = { 1.0f, 1.0f };
+    starDesc.Rotation       = m_rotationAngle;
+    starDesc.RotationCenter = { 128.0f, 128.0f };
+
+    for ( int i = 0; i < 3; ++i )
+    {
+        m_quadRenderer->UpdateQuad( i, starDesc );
+    }
 
     RenderAndPresentFrame( );
 }
@@ -171,10 +191,99 @@ void VGExample::LoadSvgTextures( )
     batchCopy.Submit( );
 }
 
+void VGExample::CreateStarTexture( )
+{
+    constexpr uint32_t width  = 256;
+    constexpr uint32_t height = 256;
+
+    ThorVGCanvasDesc canvasDesc{ };
+    canvasDesc.Width  = width;
+    canvasDesc.Height = height;
+    ThorVGCanvas canvas( canvasDesc );
+
+    ThorVGShape star;
+
+    constexpr float cx     = width / 2.0f;
+    constexpr float cy     = height / 2.0f;
+    constexpr float radius = 100.0f;
+    constexpr float inner  = radius * 0.4f;
+
+    star.MoveTo( cx, cy - radius );
+    for ( int i = 0; i < 10; ++i )
+    {
+        const float angle = ( i * 36.0f - 90.0f ) * 3.14159f / 180.0f;
+        const float r     = i % 2 == 0 ? radius : inner;
+        const float x     = cx + r * cos( angle );
+        const float y     = cy + r * sin( angle );
+        star.LineTo( x, y );
+    }
+
+    star.Close( );
+
+    ThorVGLinearGradient gradient;
+    gradient.Linear( cx - radius, cy - radius, cx + radius, cy + radius );
+
+    InteropArray<ThorVGColorStop> colorStops;
+    colorStops.Resize( 3 );
+    colorStops.SetElement( 0, { 0.0f, 255, 215, 0, 255 } );
+    colorStops.SetElement( 1, { 0.5f, 255, 255, 100, 255 } );
+    colorStops.SetElement( 2, { 1.0f, 255, 140, 0, 255 } );
+    gradient.ColorStops( colorStops );
+
+    star.Fill( &gradient );
+    star.Stroke( 255, 255, 255, 255 );
+    star.Stroke( 2.0f );
+
+    canvas.Push( &star );
+    canvas.Draw( );
+    canvas.Sync( );
+
+    const auto &data = canvas.GetData( );
+
+    TextureDesc textureDesc{ };
+    textureDesc.Width      = width;
+    textureDesc.Height     = height;
+    textureDesc.Format     = Format::R8G8B8A8Unorm;
+    textureDesc.Descriptor = ResourceDescriptor::Texture;
+    textureDesc.Usages     = ResourceUsage::ShaderResource;
+    textureDesc.DebugName  = InteropString( "Star_Texture" );
+
+    m_starTexture = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
+
+    std::vector<uint8_t> pixelData;
+    pixelData.reserve( width * height * 4 );
+
+    for ( uint32_t i = 0; i < data.NumElements( ); ++i )
+    {
+        const uint32_t pixel = data.GetElement( i );
+        const uint8_t  a     = pixel >> 24 & 0xFF;
+        const uint8_t  r     = pixel >> 16 & 0xFF;
+        const uint8_t  g     = pixel >> 8 & 0xFF;
+        const uint8_t  b     = pixel & 0xFF;
+
+        pixelData.push_back( r );
+        pixelData.push_back( g );
+        pixelData.push_back( b );
+        pixelData.push_back( a );
+    }
+
+    BatchResourceCopy batchCopy( m_logicalDevice );
+    batchCopy.Begin( );
+
+    CopyDataToTextureDesc copyDesc{ };
+    copyDesc.Data.MemCpy( pixelData.data( ), pixelData.size( ) );
+    copyDesc.DstTexture = m_starTexture.get( );
+    copyDesc.MipLevel   = 0;
+    batchCopy.CopyDataToTexture( copyDesc );
+
+    batchCopy.Submit( );
+}
+
 void VGExample::InitializeMaterials( )
 {
     DZ_RETURN_IF( !m_folderTexture );
     DZ_RETURN_IF( !m_milkTeaTexture );
+    DZ_RETURN_IF( !m_starTexture );
 
     m_redMaterialId = 0;
     QuadMaterialDesc redMaterial;
@@ -194,6 +303,13 @@ void VGExample::InitializeMaterials( )
     milkTeaMaterial.Texture    = m_milkTeaTexture.get( );
     milkTeaMaterial.Color      = { 1.0f, 1.0f, 1.0f, 1.0f };
     m_quadRenderer->AddMaterial( milkTeaMaterial );
+
+    m_starMaterialId = 3;
+    QuadMaterialDesc starMaterial;
+    starMaterial.MaterialId = m_starMaterialId;
+    starMaterial.Texture    = m_starTexture.get( );
+    starMaterial.Color      = { 1.0f, 1.0f, 1.0f, 1.0f };
+    m_quadRenderer->AddMaterial( starMaterial );
 }
 
 void VGExample::AddQuads( ) const
@@ -209,7 +325,7 @@ void VGExample::AddQuads( ) const
     folderDesc.QuadId         = 1;
     folderDesc.Position       = { 50.0f, 350.0f };
     folderDesc.Size           = { 128.0f, 128.0f };
-    folderDesc.Scale          = { 15.0f, 15.0f };
+    folderDesc.Scale          = { 1.0f, 1.0f };
     folderDesc.MaterialId     = m_folderMaterialId;
     folderDesc.Rotation       = 0.0f;
     folderDesc.RotationCenter = { 64.0f, 64.0f };
@@ -222,6 +338,16 @@ void VGExample::AddQuads( ) const
     milkTeaDesc.MaterialId = m_milkTeaMaterialId;
     milkTeaDesc.Scale      = { 0.3f, 0.3f };
     m_quadRenderer->AddQuad( milkTeaDesc );
+
+    QuadDataDesc starDesc;
+    starDesc.QuadId         = 3;
+    starDesc.Position       = { 850.0f, 150.0f };
+    starDesc.Size           = { 256.0f, 256.0f };
+    starDesc.MaterialId     = m_starMaterialId;
+    starDesc.Scale          = { 1.0f, 1.0f };
+    starDesc.Rotation       = 0.0f;
+    starDesc.RotationCenter = { 128.0f, 128.0f };
+    m_quadRenderer->AddQuad( starDesc );
 }
 
 void VGExample::ImportSvgIfNeeded( const InteropString &svgPath, const InteropString &targetPath ) const

@@ -54,9 +54,11 @@ namespace DenOfIz
         uint32_t m_redMaterialId     = 0;
         uint32_t m_folderMaterialId  = 0;
         uint32_t m_milkTeaMaterialId = 0;
+        uint32_t m_starMaterialId    = 0;
 
         uint32_t m_folderQuadIndex  = 0;
         uint32_t m_milkTeaQuadIndex = 0;
+        uint32_t m_starQuadIndex    = 0;
         bool     m_textLabelsAdded  = false;
 
         float      m_animationTime;
@@ -89,6 +91,7 @@ namespace DenOfIz
         void InitializeRenderers( );
         void LoadSvgTextures( );
         void InitializeMaterials( );
+        void CreateStarTexture( );
 
         void AddQuads( ) const;
         void ImportSvgIfNeeded( const InteropString &svgPath, const InteropString &targetPath ) const;

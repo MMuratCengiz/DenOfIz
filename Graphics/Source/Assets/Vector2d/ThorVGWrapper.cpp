@@ -31,6 +31,14 @@ using namespace DenOfIz;
 
 namespace DenOfIz
 {
+    void ThorVGCheckResult( tvg::Result result )
+    {
+        if ( result != tvg::Result::Success )
+        {
+            LOG( ERROR ) << "ThorVG invalid result: " << static_cast<uint32_t>( result );
+        }
+    }
+
     static tvg::Matrix ToTvgMatrix( const ThorVGMatrix &m )
     {
         return { m.E11, m.E12, m.E13, m.E21, m.E22, m.E23, m.E31, m.E32, m.E33 };
@@ -152,12 +160,12 @@ namespace DenOfIz
         m_gradient = tvg::LinearGradient::gen( );
     }
 
-    bool ThorVGLinearGradient::Linear( const float x1, const float y1, const float x2, const float y2 ) const
+    void ThorVGLinearGradient::Linear( const float x1, const float y1, const float x2, const float y2 ) const
     {
-        return m_gradient->linear( x1, y1, x2, y2 ) == tvg::Result::Success;
+        ThorVGCheckResult( m_gradient->linear( x1, y1, x2, y2 ) );
     }
 
-    bool ThorVGLinearGradient::ColorStops( const InteropArray<ThorVGColorStop> &colorStops )
+    void ThorVGLinearGradient::ColorStops( const InteropArray<ThorVGColorStop> &colorStops )
     {
         std::vector<tvg::Fill::ColorStop> stops;
         stops.reserve( colorStops.NumElements( ) );
@@ -168,17 +176,17 @@ namespace DenOfIz
             stops.push_back( { stop.Offset, stop.R, stop.G, stop.B, stop.A } );
         }
 
-        return m_gradient->colorStops( stops.data( ), static_cast<uint32_t>( stops.size( ) ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_gradient->colorStops( stops.data( ), static_cast<uint32_t>( stops.size( ) ) ) );
     }
 
-    bool ThorVGLinearGradient::Spread( const ThorVGSpreadMethod spread )
+    void ThorVGLinearGradient::Spread( const ThorVGSpreadMethod spread )
     {
-        return m_gradient->spread( ToTvgSpread( spread ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_gradient->spread( ToTvgSpread( spread ) ) );
     }
 
-    bool ThorVGLinearGradient::Transform( const ThorVGMatrix &m )
+    void ThorVGLinearGradient::Transform( const ThorVGMatrix &m )
     {
-        return m_gradient->transform( ToTvgMatrix( m ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_gradient->transform( ToTvgMatrix( m ) ) );
     }
 
     tvg::Fill *ThorVGLinearGradient::GetInternalFill( ) const
@@ -191,18 +199,13 @@ namespace DenOfIz
         m_gradient = tvg::RadialGradient::gen( );
     }
 
-    bool ThorVGRadialGradient::Radial( const float cx, const float cy, const float radius ) const
+    void ThorVGRadialGradient::Radial( const float cx, const float cy, const float radius ) const
     {
-        return m_gradient->radial( cx, cy, radius ) == tvg::Result::Success;
+        ThorVGCheckResult( m_gradient->radial( cx, cy, radius ) );
     }
 
-    bool ThorVGRadialGradient::ColorStops( const InteropArray<ThorVGColorStop> &colorStops )
+    void ThorVGRadialGradient::ColorStops( const InteropArray<ThorVGColorStop> &colorStops )
     {
-        if ( colorStops.NumElements( ) == 0 )
-        {
-            return false;
-        }
-
         std::vector<tvg::Fill::ColorStop> stops;
         stops.reserve( colorStops.NumElements( ) );
 
@@ -212,17 +215,17 @@ namespace DenOfIz
             stops.push_back( { stop.Offset, stop.R, stop.G, stop.B, stop.A } );
         }
 
-        return m_gradient->colorStops( stops.data( ), static_cast<uint32_t>( stops.size( ) ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_gradient->colorStops( stops.data( ), static_cast<uint32_t>( stops.size( ) ) ) );
     }
 
-    bool ThorVGRadialGradient::Spread( const ThorVGSpreadMethod spread )
+    void ThorVGRadialGradient::Spread( const ThorVGSpreadMethod spread )
     {
-        return m_gradient->spread( ToTvgSpread( spread ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_gradient->spread( ToTvgSpread( spread ) ) );
     }
 
-    bool ThorVGRadialGradient::Transform( const ThorVGMatrix &m )
+    void ThorVGRadialGradient::Transform( const ThorVGMatrix &m )
     {
-        return m_gradient->transform( ToTvgMatrix( m ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_gradient->transform( ToTvgMatrix( m ) ) );
     }
 
     tvg::Fill *ThorVGRadialGradient::GetInternalFill( ) const
@@ -235,42 +238,42 @@ namespace DenOfIz
         m_shape = tvg::Shape::gen( );
     }
 
-    bool ThorVGShape::Reset( ) const
+    void ThorVGShape::Reset( ) const
     {
-        return m_shape->reset( ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->reset( ) );
     }
 
-    bool ThorVGShape::MoveTo( const float x, const float y ) const
+    void ThorVGShape::MoveTo( const float x, const float y ) const
     {
-        return m_shape->moveTo( x, y ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->moveTo( x, y ) );
     }
 
-    bool ThorVGShape::LineTo( const float x, const float y ) const
+    void ThorVGShape::LineTo( const float x, const float y ) const
     {
-        return m_shape->lineTo( x, y ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->lineTo( x, y ) );
     }
 
-    bool ThorVGShape::CubicTo( const float cx1, const float cy1, const float cx2, const float cy2, const float x, const float y ) const
+    void ThorVGShape::CubicTo( const float cx1, const float cy1, const float cx2, const float cy2, const float x, const float y ) const
     {
-        return m_shape->cubicTo( cx1, cy1, cx2, cy2, x, y ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->cubicTo( cx1, cy1, cx2, cy2, x, y ) );
     }
 
-    bool ThorVGShape::Close( ) const
+    void ThorVGShape::Close( ) const
     {
-        return m_shape->close( ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->close( ) );
     }
 
-    bool ThorVGShape::AppendRect( const float x, const float y, const float w, const float h, const float rx, const float ry ) const
+    void ThorVGShape::AppendRect( const float x, const float y, const float w, const float h, const float rx, const float ry ) const
     {
-        return m_shape->appendRect( x, y, w, h, rx, ry ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->appendRect( x, y, w, h, rx, ry ) );
     }
 
-    bool ThorVGShape::AppendCircle( const float cx, const float cy, const float rx, const float ry ) const
+    void ThorVGShape::AppendCircle( const float cx, const float cy, const float rx, const float ry ) const
     {
-        return m_shape->appendCircle( cx, cy, rx, ry ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->appendCircle( cx, cy, rx, ry ) );
     }
 
-    bool ThorVGShape::AppendPath( const InteropArray<Float_2> &points ) const
+    void ThorVGShape::AppendPath( const InteropArray<Float_2> &points ) const
     {
         std::vector<tvg::PathCommand> commands;
         std::vector<tvg::Point>       pts;
@@ -284,76 +287,80 @@ namespace DenOfIz
             commands.push_back( tvg::PathCommand::LineTo );
         }
 
-        return m_shape->appendPath( commands.data( ), static_cast<uint32_t>( commands.size( ) ), pts.data( ), static_cast<uint32_t>( pts.size( ) ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->appendPath( commands.data( ), static_cast<uint32_t>( commands.size( ) ), pts.data( ), static_cast<uint32_t>( pts.size( ) ) ) );
     }
 
-    bool ThorVGShape::Fill( const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a ) const
+    void ThorVGShape::Fill( const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a ) const
     {
-        return m_shape->fill( r, g, b, a ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->fill( r, g, b, a ) );
     }
 
-    bool ThorVGShape::Fill( const ThorVGGradient *gradient ) const
+    void ThorVGShape::Fill( const ThorVGGradient *gradient ) const
     {
         if ( !gradient )
         {
-            return false;
+            LOG( ERROR ) << "ThorVGShape::Fill: gradient cannot be null";
+            return;
         }
         const auto fill = gradient->GetInternalFill( );
         if ( !fill )
         {
-            return false;
+            LOG( ERROR ) << "Specified gradient computed null internal fill";
+            return;
         }
 
         const auto cloned = fill->duplicate( );
-        return m_shape->fill( std::unique_ptr<tvg::Fill>( cloned ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->fill( std::unique_ptr<tvg::Fill>( cloned ) ) );
     }
 
-    bool ThorVGShape::Stroke( const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a ) const
+    void ThorVGShape::Stroke( const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a ) const
     {
-        return m_shape->stroke( r, g, b, a ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->stroke( r, g, b, a ) );
     }
 
-    bool ThorVGShape::Stroke( const float width ) const
+    void ThorVGShape::Stroke( const float width ) const
     {
-        return m_shape->stroke( width ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->stroke( width ) );
     }
 
-    bool ThorVGShape::Stroke( const ThorVGGradient *gradient ) const
+    void ThorVGShape::Stroke( const ThorVGGradient *gradient ) const
     {
         if ( !gradient )
         {
-            return false;
+            LOG( ERROR ) << "ThorVGShape::Stroke: gradient cannot be null";
+            return;
         }
         const auto fill = gradient->GetInternalFill( );
         if ( !fill )
         {
-            return false;
+            LOG( ERROR ) << "Specified gradient computed null internal fill";
+            return;
         }
 
         const auto cloned = fill->duplicate( );
-        return m_shape->stroke( std::unique_ptr<tvg::Fill>( cloned ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->stroke( std::unique_ptr<tvg::Fill>( cloned ) ) );
     }
 
-    bool ThorVGShape::StrokeCap( const ThorVGStrokeCap cap ) const
+    void ThorVGShape::StrokeCap( const ThorVGStrokeCap cap ) const
     {
-        return m_shape->stroke( ToTvgStrokeCap( cap ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->stroke( ToTvgStrokeCap( cap ) ) );
     }
 
-    bool ThorVGShape::StrokeJoin( const ThorVGStrokeJoin join ) const
+    void ThorVGShape::StrokeJoin( const ThorVGStrokeJoin join ) const
     {
-        return m_shape->stroke( ToTvgStrokeJoin( join ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->stroke( ToTvgStrokeJoin( join ) ) );
     }
 
-    bool ThorVGShape::StrokeMiterlimit( const float miterlimit ) const
+    void ThorVGShape::StrokeMiterlimit( const float miterlimit ) const
     {
-        return m_shape->stroke( miterlimit ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->stroke( miterlimit ) );
     }
 
-    bool ThorVGShape::StrokeDash( const InteropArray<float> &pattern, float offset ) const
+    void ThorVGShape::StrokeDash( const InteropArray<float> &pattern, float offset ) const
     {
         if ( pattern.NumElements( ) == 0 )
         {
-            return m_shape->stroke( nullptr, 0 ) == tvg::Result::Success;
+            ThorVGCheckResult( m_shape->stroke( nullptr, 0 ) );
         }
 
         std::vector<float> dashPattern;
@@ -363,53 +370,55 @@ namespace DenOfIz
         {
             dashPattern.push_back( pattern.GetElement( i ) );
         }
-        return m_shape->stroke( dashPattern.data( ), static_cast<uint32_t>( dashPattern.size( ) ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->stroke( dashPattern.data( ), static_cast<uint32_t>( dashPattern.size( ) ) ) );
     }
 
-    bool ThorVGShape::Transform( const ThorVGMatrix &m )
+    void ThorVGShape::Transform( const ThorVGMatrix &m )
     {
-        return m_shape->transform( ToTvgMatrix( m ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->transform( ToTvgMatrix( m ) ) );
     }
 
-    bool ThorVGShape::Translate( const float x, const float y )
+    void ThorVGShape::Translate( const float x, const float y )
     {
-        return m_shape->translate( x, y ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->translate( x, y ) );
     }
 
-    bool ThorVGShape::Scale( const float factor )
+    void ThorVGShape::Scale( const float factor )
     {
-        return m_shape->scale( factor ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->scale( factor ) );
     }
 
-    bool ThorVGShape::Rotate( const float degree )
+    void ThorVGShape::Rotate( const float degree )
     {
-        return m_shape->rotate( degree ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->rotate( degree ) );
     }
 
-    bool ThorVGShape::Opacity( const uint8_t opacity )
+    void ThorVGShape::Opacity( const uint8_t opacity )
     {
-        return m_shape->opacity( opacity ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->opacity( opacity ) );
     }
 
-    bool ThorVGShape::Composite( ThorVGPaint *target, const ThorVGCompositeMethod method )
+    void ThorVGShape::Composite( ThorVGPaint *target, const ThorVGCompositeMethod method )
     {
         if ( !target )
         {
-            return false;
+            LOG( ERROR ) << "ThorVGShape::Composite: target cannot be null";
+            return;
         }
         const auto paint = target->GetInternalPaint( );
         if ( !paint )
         {
-            return false;
+            LOG( ERROR ) << "Specified paint computed null internal paint";
+            return;
         }
 
         const auto cloned = paint->duplicate( );
-        return m_shape->composite( std::unique_ptr<tvg::Paint>( cloned ), ToTvgCompositeMethod( method ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->composite( std::unique_ptr<tvg::Paint>( cloned ), ToTvgCompositeMethod( method ) ) );
     }
 
-    bool ThorVGShape::Blend( const ThorVGBlendMethod method )
+    void ThorVGShape::Blend( const ThorVGBlendMethod method )
     {
-        return m_shape->blend( ToTvgBlendMethod( method ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_shape->blend( ToTvgBlendMethod( method ) ) );
     }
 
     ThorVGBounds ThorVGShape::GetBounds( const bool transformed ) const
@@ -436,24 +445,24 @@ namespace DenOfIz
         m_picture = tvg::Picture::gen( );
     }
 
-    bool ThorVGPicture::Load( const InteropString &path ) const
+    void ThorVGPicture::Load( const InteropString &path ) const
     {
-        return m_picture->load( path.Get( ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_picture->load( path.Get( ) ) );
     }
 
-    bool ThorVGPicture::Load( const InteropString &data, const uint32_t size, const InteropString &mimeType, const bool copy ) const
+    void ThorVGPicture::Load( const InteropString &data, const uint32_t size, const InteropString &mimeType, const bool copy ) const
     {
-        return m_picture->load( data.Get( ), size, mimeType.Get( ), copy ) == tvg::Result::Success;
+        ThorVGCheckResult( m_picture->load( data.Get( ), size, mimeType.Get( ), copy ) );
     }
 
-    bool ThorVGPicture::Load( uint32_t *data, const uint32_t w, const uint32_t h, const bool premultiplied ) const
+    void ThorVGPicture::Load( uint32_t *data, const uint32_t w, const uint32_t h, const bool premultiplied ) const
     {
-        return m_picture->load( data, w, h, premultiplied ) == tvg::Result::Success;
+        ThorVGCheckResult( m_picture->load( data, w, h, premultiplied ) );
     }
 
-    bool ThorVGPicture::Size( const float w, const float h ) const
+    void ThorVGPicture::Size( const float w, const float h ) const
     {
-        return m_picture->size( w, h ) == tvg::Result::Success;
+        ThorVGCheckResult( m_picture->size( w, h ) );
     }
 
     ThorVGSize ThorVGPicture::GetSize( ) const
@@ -464,50 +473,52 @@ namespace DenOfIz
         return size;
     }
 
-    bool ThorVGPicture::Transform( const ThorVGMatrix &m )
+    void ThorVGPicture::Transform( const ThorVGMatrix &m )
     {
-        return m_picture->transform( ToTvgMatrix( m ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_picture->transform( ToTvgMatrix( m ) ) );
     }
 
-    bool ThorVGPicture::Translate( const float x, const float y )
+    void ThorVGPicture::Translate( const float x, const float y )
     {
-        return m_picture->translate( x, y ) == tvg::Result::Success;
+        ThorVGCheckResult( m_picture->translate( x, y ) );
     }
 
-    bool ThorVGPicture::Scale( const float factor )
+    void ThorVGPicture::Scale( const float factor )
     {
-        return m_picture->scale( factor ) == tvg::Result::Success;
+        ThorVGCheckResult( m_picture->scale( factor ) );
     }
 
-    bool ThorVGPicture::Rotate( const float degree )
+    void ThorVGPicture::Rotate( const float degree )
     {
-        return m_picture->rotate( degree ) == tvg::Result::Success;
+        ThorVGCheckResult( m_picture->rotate( degree ) );
     }
 
-    bool ThorVGPicture::Opacity( const uint8_t opacity )
+    void ThorVGPicture::Opacity( const uint8_t opacity )
     {
-        return m_picture->opacity( opacity ) == tvg::Result::Success;
+        ThorVGCheckResult( m_picture->opacity( opacity ) );
     }
 
-    bool ThorVGPicture::Composite( ThorVGPaint *target, const ThorVGCompositeMethod method )
+    void ThorVGPicture::Composite( ThorVGPaint *target, const ThorVGCompositeMethod method )
     {
         if ( !target )
         {
-            return false;
+            LOG( ERROR ) << "ThorVGPicture::Composite: target cannot be null";
+            return;
         }
         const auto paint = target->GetInternalPaint( );
         if ( !paint )
         {
-            return false;
+            LOG( ERROR ) << "Specified paint computed null internal paint";
+            return;
         }
 
         const auto cloned = paint->duplicate( );
-        return m_picture->composite( std::unique_ptr<tvg::Paint>( cloned ), ToTvgCompositeMethod( method ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_picture->composite( std::unique_ptr<tvg::Paint>( cloned ), ToTvgCompositeMethod( method ) ) );
     }
 
-    bool ThorVGPicture::Blend( const ThorVGBlendMethod method )
+    void ThorVGPicture::Blend( const ThorVGBlendMethod method )
     {
-        return m_picture->blend( ToTvgBlendMethod( method ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_picture->blend( ToTvgBlendMethod( method ) ) );
     }
 
     ThorVGBounds ThorVGPicture::GetBounds( const bool transformed ) const
@@ -534,71 +545,75 @@ namespace DenOfIz
         m_scene = tvg::Scene::gen( );
     }
 
-    bool ThorVGScene::Push( ThorVGPaint *paint ) const
+    void ThorVGScene::Push( ThorVGPaint *paint ) const
     {
         if ( !paint )
         {
-            return false;
+            LOG( ERROR ) << "Provided paint cannot be null";
+            return;
         }
         const auto p = paint->GetInternalPaint( );
         if ( !p )
         {
-            return false;
+            LOG( ERROR ) << "Provided paint computed null internal paint";
+            return;
         }
 
         const auto cloned = p->duplicate( );
-        return m_scene->push( std::unique_ptr<tvg::Paint>( cloned ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_scene->push( std::unique_ptr<tvg::Paint>( cloned ) ) );
     }
 
-    bool ThorVGScene::Clear( const bool free ) const
+    void ThorVGScene::Clear( const bool free ) const
     {
-        return m_scene->clear( free ) == tvg::Result::Success;
+        ThorVGCheckResult( m_scene->clear( free ) );
     }
 
-    bool ThorVGScene::Transform( const ThorVGMatrix &m )
+    void ThorVGScene::Transform( const ThorVGMatrix &m )
     {
-        return m_scene->transform( ToTvgMatrix( m ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_scene->transform( ToTvgMatrix( m ) ) );
     }
 
-    bool ThorVGScene::Translate( const float x, const float y )
+    void ThorVGScene::Translate( const float x, const float y )
     {
-        return m_scene->translate( x, y ) == tvg::Result::Success;
+        ThorVGCheckResult( m_scene->translate( x, y ) );
     }
 
-    bool ThorVGScene::Scale( const float factor )
+    void ThorVGScene::Scale( const float factor )
     {
-        return m_scene->scale( factor ) == tvg::Result::Success;
+        ThorVGCheckResult( m_scene->scale( factor ) );
     }
 
-    bool ThorVGScene::Rotate( const float degree )
+    void ThorVGScene::Rotate( const float degree )
     {
-        return m_scene->rotate( degree ) == tvg::Result::Success;
+        ThorVGCheckResult( m_scene->rotate( degree ) );
     }
 
-    bool ThorVGScene::Opacity( const uint8_t opacity )
+    void ThorVGScene::Opacity( const uint8_t opacity )
     {
-        return m_scene->opacity( opacity ) == tvg::Result::Success;
+        ThorVGCheckResult( m_scene->opacity( opacity ) );
     }
 
-    bool ThorVGScene::Composite( ThorVGPaint *target, const ThorVGCompositeMethod method )
+    void ThorVGScene::Composite( ThorVGPaint *target, const ThorVGCompositeMethod method )
     {
         if ( !target )
         {
-            return false;
+            LOG( ERROR ) << "ThorVGScene::Composite: target cannot be null";
+            return;
         }
         const auto paint = target->GetInternalPaint( );
         if ( !paint )
         {
-            return false;
+            LOG( ERROR ) << "Specified paint computed null internal paint";
+            return;
         }
 
         const auto cloned = paint->duplicate( );
-        return m_scene->composite( std::unique_ptr<tvg::Paint>( cloned ), ToTvgCompositeMethod( method ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_scene->composite( std::unique_ptr<tvg::Paint>( cloned ), ToTvgCompositeMethod( method ) ) );
     }
 
-    bool ThorVGScene::Blend( const ThorVGBlendMethod method )
+    void ThorVGScene::Blend( const ThorVGBlendMethod method )
     {
-        return m_scene->blend( ToTvgBlendMethod( method ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_scene->blend( ToTvgBlendMethod( method ) ) );
     }
 
     ThorVGBounds ThorVGScene::GetBounds( const bool transformed ) const
@@ -623,88 +638,69 @@ namespace DenOfIz
     ThorVGCanvas::ThorVGCanvas( const ThorVGCanvasDesc &desc )
     {
         m_canvas = tvg::SwCanvas::gen( );
+        m_canvas->mempool( tvg::SwCanvas::MempoolPolicy::Individual );
         Resize( desc.Width, desc.Height );
     }
 
-    bool ThorVGCanvas::Push( ThorVGPaint *paint ) const
+    void ThorVGCanvas::Push( ThorVGPaint *paint ) const
     {
-        if ( !paint || !m_canvas )
+        if ( !paint )
         {
-            return false;
+            LOG( WARNING ) << "Invalid paint or canvas";
+            return;
         }
         const auto p = paint->GetInternalPaint( );
         if ( !p )
         {
-            return false;
+            LOG( WARNING ) << "Invalid paint";
+            return;
         }
         const auto cloned = p->duplicate( );
-        return m_canvas->push( std::unique_ptr<tvg::Paint>( cloned ) ) == tvg::Result::Success;
+        ThorVGCheckResult( m_canvas->push( std::unique_ptr<tvg::Paint>( cloned ) ) );
     }
 
-    bool ThorVGCanvas::Clear( const bool free )
+    void ThorVGCanvas::Clear( const bool free )
     {
         ResetData( );
-        if ( !m_canvas )
-        {
-            return false;
-        }
-        return m_canvas->clear( free ) == tvg::Result::Success;
+        ThorVGCheckResult( m_canvas->clear( free ) );
     }
 
-    bool ThorVGCanvas::Update( ThorVGPaint *paint ) const
+    void ThorVGCanvas::Update( ThorVGPaint *paint ) const
     {
-        if ( !m_canvas )
-        {
-            return false;
-        }
         if ( paint )
         {
             const auto p = paint->GetInternalPaint( );
             if ( !p )
             {
-                return false;
+                LOG( ERROR ) << "Specified paint computed null internal paint";
+                return;
             }
-            return m_canvas->update( p ) == tvg::Result::Success;
+            ThorVGCheckResult( m_canvas->update( p ) );
+            return;
         }
-        return m_canvas->update( ) == tvg::Result::Success;
+
+        ThorVGCheckResult( m_canvas->update( ) );
     }
 
-    bool ThorVGCanvas::Draw( ) const
+    void ThorVGCanvas::Draw( ) const
     {
-        if ( !m_canvas )
-        {
-            return false;
-        }
-        return m_canvas->draw( ) == tvg::Result::Success;
+        ThorVGCheckResult( m_canvas->draw( ) );
     }
 
-    bool ThorVGCanvas::Sync( ) const
+    void ThorVGCanvas::Sync( ) const
     {
-        if ( !m_canvas )
-        {
-            return false;
-        }
-        return m_canvas->sync( ) == tvg::Result::Success;
+        ThorVGCheckResult( m_canvas->sync( ) );
     }
 
-    bool ThorVGCanvas::Viewport( const int32_t x, const int32_t y, const int32_t w, const int32_t h ) const
+    void ThorVGCanvas::Viewport( const int32_t x, const int32_t y, const int32_t w, const int32_t h ) const
     {
-        if ( !m_canvas )
-        {
-            return false;
-        }
-        return m_canvas->viewport( x, y, w, h ) == tvg::Result::Success;
+        ThorVGCheckResult( m_canvas->viewport( x, y, w, h ) );
     }
 
-    bool ThorVGCanvas::Resize( const uint32_t w, const uint32_t h )
+    void ThorVGCanvas::Resize( const uint32_t w, const uint32_t h )
     {
         m_data.Resize( w * h * 4 );
-        return m_canvas->target( m_data.Data( ), w, w, h, tvg::SwCanvas::ARGB8888 ) == tvg::Result::Success;
-    }
-
-    bool ThorVGCanvas::Mempool( ) const
-    {
-        return m_canvas->mempool( tvg::SwCanvas::MempoolPolicy::Individual ) == tvg::Result::Success;
+        ThorVGCheckResult( m_canvas->target( m_data.Data( ), w, w, h, tvg::SwCanvas::ARGB8888 ) );
     }
 
     void ThorVGCanvas::ResetData( )
@@ -714,243 +710,8 @@ namespace DenOfIz
             m_data.SetElement( i, 0 );
         }
     }
-
     const InteropArray<uint32_t> &ThorVGCanvas::GetData( ) const
     {
         return m_data;
-    }
-
-    class ThorVGRenderer::Impl
-    {
-    public:
-        ILogicalDevice                                *m_device = nullptr;
-        std::unique_ptr<ThorVGCanvas>                  m_canvas;
-        std::vector<std::unique_ptr<ITextureResource>> m_renderTargets;
-        std::unique_ptr<IBufferResource>               m_stagingBuffer;
-        ResourceTracking                               m_resourceTracking;
-        void                                          *m_mappedStagingBuffer = nullptr;
-        uint32_t                                       m_width               = 0;
-        uint32_t                                       m_height              = 0;
-        uint32_t                                       m_numFrames           = 3;
-
-        explicit Impl( const ThorVGRendererDesc &desc ) : m_device( desc.LogicalDevice ), m_width( desc.Width ), m_height( desc.Height )
-        {
-            if ( desc.NumFrames > 0 )
-            {
-                m_numFrames = desc.NumFrames;
-            }
-
-            ThorVGCanvasDesc canvasDesc{ };
-            canvasDesc.Width  = m_width;
-            canvasDesc.Height = m_height;
-            m_canvas          = std::make_unique<ThorVGCanvas>( canvasDesc );
-
-            CreateRenderTargets( );
-            CreateStagingBuffer( );
-        }
-
-        ~Impl( )
-        {
-            if ( m_mappedStagingBuffer && m_stagingBuffer )
-            {
-                m_stagingBuffer->UnmapMemory( );
-                m_mappedStagingBuffer = nullptr;
-            }
-        }
-
-        void CreateRenderTargets( )
-        {
-            m_renderTargets.clear( );
-            m_renderTargets.reserve( m_numFrames );
-
-            for ( uint32_t i = 0; i < m_numFrames; ++i )
-            {
-                TextureDesc desc{ };
-                desc.Width      = m_width;
-                desc.Height     = m_height;
-                desc.Format     = Format::R8G8B8A8Unorm;
-                desc.Descriptor = ResourceDescriptor::Texture;
-                desc.Usages.Set( ResourceUsage::CopyDst );
-                desc.Usages.Set( ResourceUsage::ShaderResource );
-                desc.InitialUsage = ResourceUsage::Common;
-                desc.DebugName    = InteropString( "ThorVG_RenderTarget_" ).Append( std::to_string( i ).c_str( ) );
-
-                m_renderTargets.emplace_back( m_device->CreateTextureResource( desc ) );
-                m_resourceTracking.TrackTexture( m_renderTargets[ i ].get( ), ResourceUsage::Common );
-            }
-        }
-
-        void CreateStagingBuffer( )
-        {
-            if ( m_mappedStagingBuffer && m_stagingBuffer )
-            {
-                m_stagingBuffer->UnmapMemory( );
-                m_mappedStagingBuffer = nullptr;
-            }
-
-            BufferDesc stagingDesc{ };
-            stagingDesc.HeapType     = HeapType::CPU_GPU;
-            stagingDesc.NumBytes     = m_canvas->GetData( ).NumElements( ) * sizeof( uint32_t );
-            stagingDesc.InitialUsage = ResourceUsage::CopySrc;
-            stagingDesc.Usages.Set( ResourceUsage::CopySrc );
-            stagingDesc.DebugName = "ThorVG_StagingBuffer";
-
-            m_stagingBuffer.reset( m_device->CreateBufferResource( stagingDesc ) );
-            if ( m_stagingBuffer )
-            {
-                m_mappedStagingBuffer = m_stagingBuffer->MapMemory( );
-            }
-        }
-
-        bool UpdateTexture( ICommandList *commandList, const uint32_t frameIndex )
-        {
-            if ( frameIndex >= m_renderTargets.size( ) || !m_renderTargets[ frameIndex ] )
-            {
-                return false;
-            }
-
-            const auto renderTarget = m_renderTargets[ frameIndex ].get( );
-
-            BatchTransitionDesc batchTransitionDesc{ commandList };
-            batchTransitionDesc.TransitionTexture( renderTarget, ResourceUsage::CopyDst );
-            m_resourceTracking.BatchTransition( batchTransitionDesc );
-            if ( !m_stagingBuffer || !m_mappedStagingBuffer )
-            {
-                return false;
-            }
-
-            auto &data = m_canvas->GetData( );
-            std::memcpy( m_mappedStagingBuffer, data.Data( ), data.NumElements( ) * sizeof( uint32_t ) );
-
-            CopyBufferToTextureDesc copyDesc{ };
-            copyDesc.DstTexture = renderTarget;
-            copyDesc.SrcBuffer  = m_stagingBuffer.get( );
-            copyDesc.SrcOffset  = 0;
-            copyDesc.DstX       = 0;
-            copyDesc.DstY       = 0;
-            copyDesc.DstZ       = 0;
-            copyDesc.Format     = Format::R8G8B8A8Unorm;
-            copyDesc.MipLevel   = 0;
-            copyDesc.ArrayLayer = 0;
-            copyDesc.RowPitch   = m_width * sizeof( uint32_t );
-            copyDesc.NumRows    = m_height;
-
-            commandList->CopyBufferToTexture( copyDesc );
-
-            batchTransitionDesc.Reset( commandList );
-            batchTransitionDesc.TransitionTexture( renderTarget, ResourceUsage::ShaderResource );
-            m_resourceTracking.BatchTransition( batchTransitionDesc );
-            return true;
-        }
-    };
-
-    ThorVGRenderer::ThorVGRenderer( const ThorVGRendererDesc &desc ) : m_impl( std::make_unique<Impl>( desc ) )
-    {
-    }
-
-    ThorVGRenderer::~ThorVGRenderer( ) = default;
-
-    ThorVGCanvas *ThorVGRenderer::GetCanvas( ) const
-    {
-        return m_impl->m_canvas.get( );
-    }
-
-    bool ThorVGRenderer::BeginFrame( ) const
-    {
-        return m_impl->m_canvas->Clear( );
-    }
-
-    bool ThorVGRenderer::EndFrame( ) const
-    {
-        if ( !m_impl->m_canvas->Draw( ) )
-        {
-            return false;
-        }
-        return m_impl->m_canvas->Sync( );
-    }
-
-    bool ThorVGRenderer::RenderToTexture( ITextureResource *target, ICommandList *commandList ) const
-    {
-        if ( !target || !commandList )
-        {
-            return false;
-        }
-        if ( !m_impl->m_canvas->Sync( ) )
-        {
-            return false;
-        }
-
-        PipelineBarrierDesc barrier{ };
-        barrier.TextureBarrier( TextureBarrierDesc{ target, ResourceUsage::Undefined, ResourceUsage::CopyDst } );
-        commandList->PipelineBarrier( barrier );
-
-        if ( !m_impl->m_stagingBuffer || !m_impl->m_mappedStagingBuffer )
-        {
-            return false;
-        }
-
-        auto &data = m_impl->m_canvas->GetData( );
-        std::memcpy( m_impl->m_mappedStagingBuffer, data.Data( ), data.NumElements( ) * sizeof( uint32_t ) );
-
-        CopyBufferToTextureDesc copyDesc{ };
-        copyDesc.DstTexture = target;
-        copyDesc.SrcBuffer  = m_impl->m_stagingBuffer.get( );
-        copyDesc.SrcOffset  = 0;
-        copyDesc.DstX       = 0;
-        copyDesc.DstY       = 0;
-        copyDesc.DstZ       = 0;
-        copyDesc.Format     = Format::R8G8B8A8Unorm;
-        copyDesc.MipLevel   = 0;
-        copyDesc.ArrayLayer = 0;
-        copyDesc.RowPitch   = m_impl->m_width * sizeof( uint32_t );
-        copyDesc.NumRows    = m_impl->m_height;
-
-        commandList->CopyBufferToTexture( copyDesc );
-
-        barrier.Clear( );
-        barrier.TextureBarrier( TextureBarrierDesc{ target, ResourceUsage::CopyDst, ResourceUsage::ShaderResource } );
-        commandList->PipelineBarrier( barrier );
-
-        return true;
-    }
-
-    bool ThorVGRenderer::UpdateRenderTarget( ICommandList *commandList, const uint32_t frameIndex ) const
-    {
-        if ( !commandList )
-        {
-            return false;
-        }
-
-        return m_impl->UpdateTexture( commandList, frameIndex );
-    }
-
-    ITextureResource *ThorVGRenderer::GetRenderTarget( const uint32_t frameIndex ) const
-    {
-        if ( frameIndex >= m_impl->m_renderTargets.size( ) )
-        {
-            return nullptr;
-        }
-
-        return m_impl->m_renderTargets[ frameIndex ].get( );
-    }
-
-    bool ThorVGRenderer::Resize( const uint32_t width, const uint32_t height ) const
-    {
-        if ( width == m_impl->m_width && height == m_impl->m_height )
-        {
-            return true;
-        }
-
-        m_impl->m_width  = width;
-        m_impl->m_height = height;
-
-        if ( !m_impl->m_canvas->Resize( width, height ) )
-        {
-            return false;
-        }
-
-        m_impl->CreateRenderTargets( );
-        m_impl->CreateStagingBuffer( );
-        return true;
     }
 } // namespace DenOfIz

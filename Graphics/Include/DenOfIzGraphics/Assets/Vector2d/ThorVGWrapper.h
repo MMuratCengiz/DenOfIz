@@ -34,6 +34,8 @@ namespace DenOfIz
     class ThorVGRadialGradient;
     class ThorVGCanvas;
 
+    static void ThorVGCheckResult( tvg::Result result );
+
     enum class ThorVGFillRule
     {
         Winding,
@@ -129,16 +131,16 @@ namespace DenOfIz
     public:
         DZ_API virtual ~ThorVGPaint( ) = default;
 
-        DZ_API virtual bool Transform( const ThorVGMatrix &m ) = 0;
-        DZ_API virtual bool Translate( float x, float y )      = 0;
-        DZ_API virtual bool Scale( float factor )              = 0;
-        DZ_API virtual bool Rotate( float degree )             = 0;
+        DZ_API virtual void Transform( const ThorVGMatrix &m ) = 0;
+        DZ_API virtual void Translate( float x, float y )      = 0;
+        DZ_API virtual void Scale( float factor )              = 0;
+        DZ_API virtual void Rotate( float degree )             = 0;
 
-        DZ_API virtual bool Opacity( uint8_t opacity )                                     = 0;
-        DZ_API virtual bool Composite( ThorVGPaint *target, ThorVGCompositeMethod method ) = 0;
-        DZ_API virtual bool Blend( ThorVGBlendMethod method )                              = 0;
+        DZ_API virtual void Opacity( uint8_t opacity )                                     = 0;
+        DZ_API virtual void Composite( ThorVGPaint *target, ThorVGCompositeMethod method ) = 0;
+        DZ_API virtual void Blend( ThorVGBlendMethod method )                              = 0;
 
-        DZ_API [[nodiscard]] virtual ThorVGBounds GetBounds( bool transformed = false ) const = 0;
+        DZ_API virtual ThorVGBounds               GetBounds( bool transformed = false ) const = 0;
         DZ_API [[nodiscard]] virtual ThorVGPaint *Duplicate( ) const                          = 0;
 
     protected:
@@ -159,9 +161,9 @@ namespace DenOfIz
     public:
         DZ_API virtual ~ThorVGGradient( ) = default;
 
-        DZ_API virtual bool ColorStops( const InteropArray<ThorVGColorStop> &colorStops ) = 0;
-        DZ_API virtual bool Spread( ThorVGSpreadMethod spread )                           = 0;
-        DZ_API virtual bool Transform( const ThorVGMatrix &m )                            = 0;
+        DZ_API virtual void ColorStops( const InteropArray<ThorVGColorStop> &colorStops ) = 0;
+        DZ_API virtual void Spread( ThorVGSpreadMethod spread )                           = 0;
+        DZ_API virtual void Transform( const ThorVGMatrix &m )                            = 0;
 
     protected:
         ThorVGGradient( )                           = default;
@@ -180,10 +182,10 @@ namespace DenOfIz
         ThorVGLinearGradient( );
         ~ThorVGLinearGradient( ) override = default;
 
-        DZ_API [[nodiscard]] bool Linear( float x1, float y1, float x2, float y2 ) const;
-        DZ_API [[nodiscard]] bool ColorStops( const InteropArray<ThorVGColorStop> &colorStops ) override;
-        DZ_API [[nodiscard]] bool Spread( ThorVGSpreadMethod spread ) override;
-        DZ_API [[nodiscard]] bool Transform( const ThorVGMatrix &m ) override;
+        DZ_API void Linear( float x1, float y1, float x2, float y2 ) const;
+        DZ_API void ColorStops( const InteropArray<ThorVGColorStop> &colorStops ) override;
+        DZ_API void Spread( ThorVGSpreadMethod spread ) override;
+        DZ_API void Transform( const ThorVGMatrix &m ) override;
 
     private:
         tvg::Fill *GetInternalFill( ) const override;
@@ -197,10 +199,10 @@ namespace DenOfIz
         ThorVGRadialGradient( );
         ~ThorVGRadialGradient( ) override = default;
 
-        DZ_API [[nodiscard]] bool Radial( float cx, float cy, float radius ) const;
-        DZ_API [[nodiscard]] bool ColorStops( const InteropArray<ThorVGColorStop> &colorStops ) override;
-        DZ_API [[nodiscard]] bool Spread( ThorVGSpreadMethod spread ) override;
-        DZ_API [[nodiscard]] bool Transform( const ThorVGMatrix &m ) override;
+        DZ_API void Radial( float cx, float cy, float radius ) const;
+        DZ_API void ColorStops( const InteropArray<ThorVGColorStop> &colorStops ) override;
+        DZ_API void Spread( ThorVGSpreadMethod spread ) override;
+        DZ_API void Transform( const ThorVGMatrix &m ) override;
 
     private:
         tvg::Fill *GetInternalFill( ) const override;
@@ -214,36 +216,36 @@ namespace DenOfIz
         ThorVGShape( );
         ~ThorVGShape( ) override = default;
 
-        DZ_API [[nodiscard]] bool Reset( ) const;
-        DZ_API [[nodiscard]] bool MoveTo( float x, float y ) const;
-        DZ_API [[nodiscard]] bool LineTo( float x, float y ) const;
-        DZ_API [[nodiscard]] bool CubicTo( float cx1, float cy1, float cx2, float cy2, float x, float y ) const;
-        DZ_API [[nodiscard]] bool Close( ) const;
+        DZ_API void Reset( ) const;
+        DZ_API void MoveTo( float x, float y ) const;
+        DZ_API void LineTo( float x, float y ) const;
+        DZ_API void CubicTo( float cx1, float cy1, float cx2, float cy2, float x, float y ) const;
+        DZ_API void Close( ) const;
 
-        DZ_API [[nodiscard]] bool AppendRect( float x, float y, float w, float h, float rx = 0, float ry = 0 ) const;
-        DZ_API [[nodiscard]] bool AppendCircle( float cx, float cy, float rx, float ry ) const;
-        DZ_API [[nodiscard]] bool AppendPath( const InteropArray<Float_2> &points ) const;
+        DZ_API void AppendRect( float x, float y, float w, float h, float rx = 0, float ry = 0 ) const;
+        DZ_API void AppendCircle( float cx, float cy, float rx, float ry ) const;
+        DZ_API void AppendPath( const InteropArray<Float_2> &points ) const;
 
-        DZ_API [[nodiscard]] bool Fill( uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255 ) const;
-        DZ_API [[nodiscard]] bool Fill( const ThorVGGradient *gradient ) const;
+        DZ_API void Fill( uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255 ) const;
+        DZ_API void Fill( const ThorVGGradient *gradient ) const;
 
-        DZ_API [[nodiscard]] bool Stroke( uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255 ) const;
-        DZ_API [[nodiscard]] bool Stroke( float width ) const;
-        DZ_API [[nodiscard]] bool Stroke( const ThorVGGradient *gradient ) const;
-        DZ_API [[nodiscard]] bool StrokeCap( ThorVGStrokeCap cap ) const;
-        DZ_API [[nodiscard]] bool StrokeJoin( ThorVGStrokeJoin join ) const;
-        DZ_API [[nodiscard]] bool StrokeMiterlimit( float miterlimit ) const;
-        DZ_API [[nodiscard]] bool StrokeDash( const InteropArray<float> &pattern, float offset = 0 ) const;
+        DZ_API void Stroke( uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255 ) const;
+        DZ_API void Stroke( float width ) const;
+        DZ_API void Stroke( const ThorVGGradient *gradient ) const;
+        DZ_API void StrokeCap( ThorVGStrokeCap cap ) const;
+        DZ_API void StrokeJoin( ThorVGStrokeJoin join ) const;
+        DZ_API void StrokeMiterlimit( float miterlimit ) const;
+        DZ_API void StrokeDash( const InteropArray<float> &pattern, float offset = 0 ) const;
 
-        DZ_API [[nodiscard]] bool         Transform( const ThorVGMatrix &m ) override;
-        DZ_API [[nodiscard]] bool         Translate( float x, float y ) override;
-        DZ_API [[nodiscard]] bool         Scale( float factor ) override;
-        DZ_API [[nodiscard]] bool         Rotate( float degree ) override;
-        DZ_API [[nodiscard]] bool         Opacity( uint8_t opacity ) override;
-        DZ_API [[nodiscard]] bool         Composite( ThorVGPaint *target, ThorVGCompositeMethod method ) override;
-        DZ_API [[nodiscard]] bool         Blend( ThorVGBlendMethod method ) override;
-        DZ_API [[nodiscard]] ThorVGBounds GetBounds( bool transformed = false ) const override;
-        DZ_API [[nodiscard]] ThorVGPaint *Duplicate( ) const override;
+        DZ_API void         Transform( const ThorVGMatrix &m ) override;
+        DZ_API void         Translate( float x, float y ) override;
+        DZ_API void         Scale( float factor ) override;
+        DZ_API void         Rotate( float degree ) override;
+        DZ_API void         Opacity( uint8_t opacity ) override;
+        DZ_API void         Composite( ThorVGPaint *target, ThorVGCompositeMethod method ) override;
+        DZ_API void         Blend( ThorVGBlendMethod method ) override;
+        DZ_API ThorVGBounds GetBounds( bool transformed = false ) const override;
+        DZ_API ThorVGPaint *Duplicate( ) const override;
 
     private:
         tvg::Paint *GetInternalPaint( ) override;
@@ -257,20 +259,20 @@ namespace DenOfIz
         DZ_API ThorVGPicture( );
         DZ_API ~ThorVGPicture( ) override = default;
 
-        DZ_API bool Load( const InteropString &path ) const;
-        DZ_API bool Load( const InteropString &data, uint32_t size, const InteropString &mimeType = nullptr, bool copy = true ) const;
-        DZ_API bool Load( uint32_t *data, uint32_t w, uint32_t h, bool premultiplied = true ) const;
+        DZ_API void Load( const InteropString &path ) const;
+        DZ_API void Load( const InteropString &data, uint32_t size, const InteropString &mimeType = nullptr, bool copy = true ) const;
+        DZ_API void Load( uint32_t *data, uint32_t w, uint32_t h, bool premultiplied = true ) const;
+        DZ_API void Size( float w, float h ) const;
 
-        DZ_API [[nodiscard]] bool       Size( float w, float h ) const;
         DZ_API [[nodiscard]] ThorVGSize GetSize( ) const;
 
-        DZ_API bool                       Transform( const ThorVGMatrix &m ) override;
-        DZ_API bool                       Translate( float x, float y ) override;
-        DZ_API bool                       Scale( float factor ) override;
-        DZ_API bool                       Rotate( float degree ) override;
-        DZ_API bool                       Opacity( uint8_t opacity ) override;
-        DZ_API bool                       Composite( ThorVGPaint *target, ThorVGCompositeMethod method ) override;
-        DZ_API bool                       Blend( ThorVGBlendMethod method ) override;
+        DZ_API void                       Transform( const ThorVGMatrix &m ) override;
+        DZ_API void                       Translate( float x, float y ) override;
+        DZ_API void                       Scale( float factor ) override;
+        DZ_API void                       Rotate( float degree ) override;
+        DZ_API void                       Opacity( uint8_t opacity ) override;
+        DZ_API void                       Composite( ThorVGPaint *target, ThorVGCompositeMethod method ) override;
+        DZ_API void                       Blend( ThorVGBlendMethod method ) override;
         DZ_API [[nodiscard]] ThorVGBounds GetBounds( bool transformed = false ) const override;
         DZ_API [[nodiscard]] ThorVGPaint *Duplicate( ) const override;
 
@@ -286,16 +288,16 @@ namespace DenOfIz
         DZ_API ThorVGScene( );
         DZ_API ~ThorVGScene( ) override = default;
 
-        DZ_API bool               Push( ThorVGPaint *paint ) const;
-        DZ_API [[nodiscard]] bool Clear( bool free = true ) const;
+        DZ_API void Push( ThorVGPaint *paint ) const;
+        DZ_API void Clear( bool free = true ) const;
 
-        DZ_API bool                       Transform( const ThorVGMatrix &m ) override;
-        DZ_API bool                       Translate( float x, float y ) override;
-        DZ_API bool                       Scale( float factor ) override;
-        DZ_API bool                       Rotate( float degree ) override;
-        DZ_API bool                       Opacity( uint8_t opacity ) override;
-        DZ_API bool                       Composite( ThorVGPaint *target, ThorVGCompositeMethod method ) override;
-        DZ_API bool                       Blend( ThorVGBlendMethod method ) override;
+        DZ_API void                       Transform( const ThorVGMatrix &m ) override;
+        DZ_API void                       Translate( float x, float y ) override;
+        DZ_API void                       Scale( float factor ) override;
+        DZ_API void                       Rotate( float degree ) override;
+        DZ_API void                       Opacity( uint8_t opacity ) override;
+        DZ_API void                       Composite( ThorVGPaint *target, ThorVGCompositeMethod method ) override;
+        DZ_API void                       Blend( ThorVGBlendMethod method ) override;
         DZ_API [[nodiscard]] ThorVGBounds GetBounds( bool transformed = false ) const override;
         DZ_API [[nodiscard]] ThorVGPaint *Duplicate( ) const override;
 
@@ -318,15 +320,14 @@ namespace DenOfIz
         DZ_API explicit ThorVGCanvas( const ThorVGCanvasDesc &desc );
         DZ_API ~ThorVGCanvas( ) = default;
 
-        DZ_API bool Push( ThorVGPaint *paint ) const;
-        DZ_API bool Clear( bool free = true );
-        DZ_API bool Update( ThorVGPaint *paint = nullptr ) const;
-        DZ_API bool Draw( ) const;
-        DZ_API bool Sync( ) const;
-        DZ_API bool Viewport( int32_t x, int32_t y, int32_t w, int32_t h ) const;
+        DZ_API void Push( ThorVGPaint *paint ) const;
+        DZ_API void Clear( bool free = true );
+        DZ_API void Update( ThorVGPaint *paint = nullptr ) const;
+        DZ_API void Draw( ) const;
+        DZ_API void Sync( ) const;
+        DZ_API void Viewport( int32_t x, int32_t y, int32_t w, int32_t h ) const;
 
-        DZ_API bool Resize( uint32_t w, uint32_t h );
-        DZ_API bool Mempool( ) const;
+        DZ_API void Resize( uint32_t w, uint32_t h );
 
         DZ_API void  ResetData( );
         DZ_API const InteropArray<uint32_t> &GetData( ) const;
@@ -339,27 +340,5 @@ namespace DenOfIz
         uint32_t        Height        = 1024;
         uint32_t        ThreadCount   = 0;
         uint32_t        NumFrames     = 0;
-    };
-
-    // Not used, could potentially be deleted
-    class ThorVGRenderer
-    {
-    public:
-        DZ_API explicit ThorVGRenderer( const ThorVGRendererDesc &desc );
-        DZ_API ~ThorVGRenderer( );
-
-        DZ_API ThorVGCanvas *GetCanvas( ) const;
-
-        DZ_API bool BeginFrame( ) const;
-        DZ_API bool EndFrame( ) const;
-        DZ_API bool RenderToTexture( ITextureResource *target, ICommandList *commandList ) const;
-
-        DZ_API bool              UpdateRenderTarget( ICommandList *commandList, uint32_t frameIndex ) const;
-        DZ_API ITextureResource *GetRenderTarget( uint32_t frameIndex ) const;
-
-        DZ_API bool Resize( uint32_t width, uint32_t height ) const;
-    private:
-        class Impl;
-        std::unique_ptr<Impl> m_impl;
     };
 } // namespace DenOfIz

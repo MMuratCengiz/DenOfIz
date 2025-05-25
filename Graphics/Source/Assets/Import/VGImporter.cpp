@@ -97,12 +97,7 @@ ImporterResult VGImporter::Import( const ImportJobDesc &desc )
     }
 
     context.Result.ResultCode = ImportVGInternal( context );
-
-    if ( context.Result.ResultCode == ImporterResultCode::Success )
-    {
-        LOG( INFO ) << "Vector graphics import successful for: " << context.SourceFilePath.Get( );
-    }
-
+    LOG( INFO ) << "Vector graphics import successful for: " << context.SourceFilePath.Get( );
     return context.Result;
 }
 
@@ -122,27 +117,17 @@ ImporterResultCode VGImporter::ImportVGInternal( ImportContext &context )
     if ( context.Desc.Canvas )
     {
         const ThorVGCanvas *canvas = context.Desc.Canvas;
-        if ( !canvas->Draw( ) || !canvas->Sync( ) )
-        {
-            context.ErrorMessage = InteropString( "Failed to render provided canvas" );
-            return ImporterResultCode::ImportFailed;
-        }
+        canvas->Draw( );
+        canvas->Sync( );
         m_renderBuffer = canvas->GetData( );
     }
     else
     {
         ThorVGPicture thorPicture;
-        if ( !thorPicture.Load( context.SourceFilePath.Get( ) ) )
-        {
-            context.ErrorMessage = InteropString( "Failed to import SVG file: " ).Append( context.SourceFilePath.Get( ) );
-            return ImporterResultCode::ImportFailed;
-        }
+        thorPicture.Load( context.SourceFilePath.Get( ) );
         if ( context.Desc.RenderWidth != 0 && context.Desc.RenderHeight != 0 )
         {
-            if ( ! thorPicture.Size( context.Desc.RenderWidth, context.Desc.RenderHeight ) )
-            {
-                LOG( WARNING ) << "Failed to resize SVG to provided size";
-            }
+            thorPicture.Size( context.Desc.RenderWidth, context.Desc.RenderHeight );
         }
 
         ThorVGCanvasDesc canvasDesc;
@@ -151,11 +136,7 @@ ImporterResultCode VGImporter::ImportVGInternal( ImportContext &context )
 
         const ThorVGCanvas canvas{ canvasDesc };
         canvas.Push( &thorPicture );
-        if (! canvas.Draw( ) )
-        {
-            context.ErrorMessage = InteropString( "Failed to render provided canvas" );
-            return ImporterResultCode::ImportFailed;
-        }
+        canvas.Draw( );
         m_renderBuffer = canvas.GetData( );
     }
 
