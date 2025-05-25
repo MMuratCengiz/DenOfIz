@@ -31,7 +31,7 @@ using namespace DenOfIz;
 
 namespace DenOfIz
 {
-    void ThorVGCheckResult( tvg::Result result )
+    static void ThorVGCheckResult( tvg::Result result )
     {
         if ( result != tvg::Result::Success )
         {

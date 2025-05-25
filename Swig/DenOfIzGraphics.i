@@ -109,6 +109,7 @@ using namespace DirectX;
 // Bundle ignores:
 %ignore DenOfIz::Bundle::m_bundleFile;
 
+%ignore DenOfIz::ThorVGWrapper::Load( uint32_t *, uint32_t, uint32_t, bool ) const;
 %ignore DenOfIz::BinaryWriter::BinaryWriter(std::ostream *);
 %ignore DenOfIz::BinaryWriter::BinaryWriter(std::ostream *, const BinaryWriterDesc &);
 %ignore DenOfIz::BinaryReader::BinaryReader(std::istream *);
@@ -289,18 +290,17 @@ using namespace DirectX;
 %include <DenOfIzGraphics/Utilities/Time.h>
 %include <DenOfIzGraphics/Utilities/StepTimer.h>
 
+// Vector Graphics includes
+%include <DenOfIzGraphics/Assets/Vector2d/QuadRenderer.h>
+%include <DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h>
+
 %include <DenOfIzGraphics/Assets/Import/IAssetImporter.h>
 %include <DenOfIzGraphics/Assets/Import/AssetScanner.h>
 %include <DenOfIzGraphics/Assets/Import/AssimpImporter.h>
 %include <DenOfIzGraphics/Assets/Import/FontImporter.h>
 %include <DenOfIzGraphics/Assets/Import/ShaderImporter.h>
 %include <DenOfIzGraphics/Assets/Import/TextureImporter.h>
-
-// Vector Graphics includes
-%include <DenOfIzGraphics/Vector2d/VGTransform.h>
-%include <DenOfIzGraphics/Vector2d/VGPipeline.h>
-%include <DenOfIzGraphics/Vector2d/VGShapes.h>
-%include <DenOfIzGraphics/Vector2d/VectorGraphics.h>
+%include <DenOfIzGraphics/Assets/Import/VGImporter.h>
 
 %include "DenOfIzGraphics_Input.i"
 
@@ -387,8 +387,7 @@ typedef DenOfIz::InteropArray<unsigned char> UnsignedCharArray;
 typedef DenOfIz::InteropArray<unsigned char> ByteArray;
 typedef DenOfIz::InteropArray<bool> BoolArray;
 typedef DenOfIz::InteropArray<int> IntArray;
-typedef DenOfIz::InteropArray<DenOfIz::VGGradientStop> VGGradientStopArray;
-typedef DenOfIz::InteropArray<DenOfIz::VGPathCommand> VGPathCommandArray;
+typedef DenOfIz::InteropArray<DenOfIz::ThorVGColorStop> ThorVGColorStopArray;
 
 // Instantiations:
 %template(ASGeometryDescArray) DenOfIz::InteropArray<DenOfIz::ASGeometryDesc>;
@@ -471,5 +470,4 @@ typedef DenOfIz::InteropArray<DenOfIz::VGPathCommand> VGPathCommandArray;
 %template(IntArray) DenOfIz::InteropArray<int>;
 
 // Vector graphics
-%template(VGGradientStopArray) DenOfIz::InteropArray<DenOfIz::VGGradientStop>;
-%template(VGPathCommandArray) DenOfIz::InteropArray<DenOfIz::VGPathCommand>;
+%template(ThorVGColorStopArray) DenOfIz::InteropArray<DenOfIz::ThorVGColorStop>;

@@ -34,8 +34,6 @@ namespace DenOfIz
     class ThorVGRadialGradient;
     class ThorVGCanvas;
 
-    static void ThorVGCheckResult( tvg::Result result );
-
     enum class ThorVGFillRule
     {
         Winding,

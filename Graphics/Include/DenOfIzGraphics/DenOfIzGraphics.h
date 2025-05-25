@@ -53,15 +53,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Utilities/Time.h>
 #include <DenOfIzGraphics/Utilities/StepTimer.h>
 
+#include <DenOfIzGraphics/Assets/Vector2d/QuadRenderer.h>
+#include <DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h>
+
 #include <DenOfIzGraphics/Assets/Import/AssetScanner.h>
 #include <DenOfIzGraphics/Assets/Import/AssimpImporter.h>
 #include <DenOfIzGraphics/Assets/Import/FontImporter.h>
 #include <DenOfIzGraphics/Assets/Import/ShaderImporter.h>
 #include <DenOfIzGraphics/Assets/Import/TextureImporter.h>
+#include <DenOfIzGraphics/Assets/Import/VGImporter.h>
 
-#include <DenOfIzGraphics/Vector2d/VectorGraphics.h>
-#include <DenOfIzGraphics/Vector2d/SvgLoader.h>
-#include <DenOfIzGraphics/Vector2d/ThorVGWrapper.h>
 
 #ifdef SWIGJAVA
 #define NULL 0  // Not sure where we lose this on MacOS to be investigated
