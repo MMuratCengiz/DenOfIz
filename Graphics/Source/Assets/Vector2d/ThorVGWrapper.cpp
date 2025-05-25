@@ -422,7 +422,7 @@ namespace DenOfIz
     ThorVGPaint *ThorVGShape::Duplicate( ) const
     {
         const auto newShape = new ThorVGShape( );
-        newShape->m_shape = std::unique_ptr<tvg::Shape>( dynamic_cast<tvg::Shape *>( m_shape->duplicate( ) ) );
+        newShape->m_shape   = std::unique_ptr<tvg::Shape>( dynamic_cast<tvg::Shape *>( m_shape->duplicate( ) ) );
         return newShape;
     }
 
@@ -436,14 +436,14 @@ namespace DenOfIz
         m_picture = tvg::Picture::gen( );
     }
 
-    bool ThorVGPicture::Load( const char *path ) const
+    bool ThorVGPicture::Load( const InteropString &path ) const
     {
-        return m_picture->load( path ) == tvg::Result::Success;
+        return m_picture->load( path.Get( ) ) == tvg::Result::Success;
     }
 
-    bool ThorVGPicture::Load( const char *data, const uint32_t size, const char *mimeType, const bool copy ) const
+    bool ThorVGPicture::Load( const InteropString &data, const uint32_t size, const InteropString &mimeType, const bool copy ) const
     {
-        return m_picture->load( data, size, mimeType, copy ) == tvg::Result::Success;
+        return m_picture->load( data.Get( ), size, mimeType.Get( ), copy ) == tvg::Result::Success;
     }
 
     bool ThorVGPicture::Load( uint32_t *data, const uint32_t w, const uint32_t h, const bool premultiplied ) const
@@ -611,7 +611,7 @@ namespace DenOfIz
     ThorVGPaint *ThorVGScene::Duplicate( ) const
     {
         const auto newScene = new ThorVGScene( );
-        newScene->m_scene = std::unique_ptr<tvg::Scene>( dynamic_cast<tvg::Scene *>( m_scene->duplicate( ) ) );
+        newScene->m_scene   = std::unique_ptr<tvg::Scene>( dynamic_cast<tvg::Scene *>( m_scene->duplicate( ) ) );
         return newScene;
     }
 

@@ -363,6 +363,7 @@ namespace DenOfIz
          */
         uint32_t RootConstantRegisterSpace = 31;
 
+        // Maybe get rid of the instance and allow direct configuration
         static DZConfiguration Instance( )
         {
             static DZConfiguration instance;

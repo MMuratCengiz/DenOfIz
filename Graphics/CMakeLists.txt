@@ -105,7 +105,7 @@ set(DEN_OF_IZ_INPUT_SOURCES
 )
 
 set(DEN_OF_IZ_VG_SOURCES
-        Source/Assets/Vector2d/SDFRenderer.cpp
+        Source/Assets/Vector2d/QuadRenderer.cpp
         Source/Assets/Vector2d/ThorVGWrapper.cpp
 )
 

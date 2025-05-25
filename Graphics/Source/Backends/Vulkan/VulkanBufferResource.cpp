@@ -30,6 +30,8 @@ VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc d
     {
         alignment = m_context->SelectedDeviceInfo.Constants.StorageBufferAlignment;
     }
+    alignment = std::max( alignment, m_desc.Alignment );
+    alignment = std::max<uint32_t>( alignment, m_desc.StructureDesc.Stride );
     m_numBytes                  = Utilities::Align( m_desc.NumBytes, alignment );
     BitSet<ResourceUsage> usage = m_desc.Usages;
     usage |= m_desc.InitialUsage;

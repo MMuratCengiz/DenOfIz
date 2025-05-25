@@ -257,8 +257,8 @@ namespace DenOfIz
         DZ_API ThorVGPicture( );
         DZ_API ~ThorVGPicture( ) override = default;
 
-        DZ_API bool Load( const char *path ) const;
-        DZ_API bool Load( const char *data, uint32_t size, const char *mimeType = nullptr, bool copy = true ) const;
+        DZ_API bool Load( const InteropString &path ) const;
+        DZ_API bool Load( const InteropString &data, uint32_t size, const InteropString &mimeType = nullptr, bool copy = true ) const;
         DZ_API bool Load( uint32_t *data, uint32_t w, uint32_t h, bool premultiplied = true ) const;
 
         DZ_API [[nodiscard]] bool       Size( float w, float h ) const;
@@ -341,6 +341,7 @@ namespace DenOfIz
         uint32_t        NumFrames     = 0;
     };
 
+    // Not used, could potentially be deleted
     class ThorVGRenderer
     {
     public:

@@ -22,46 +22,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h>
 #include <DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h>
 
-namespace msdfgen
-{
-    class FreetypeHandle;
-    class FontHandle;
-} // namespace msdfgen
-
 namespace DenOfIz
 {
-    enum class VGRenderMode
-    {
-        Raster,
-        SDF,
-        MSDF,
-        MTSDF
-    };
-
     struct DZ_API VGImportDesc : ImportDesc
     {
-        uint32_t     RenderWidth  = 1024;
-        uint32_t     RenderHeight = 1024;
-        float        Scale        = 1.0f;
-        uint32_t     Padding      = 8;
-        bool         Premultiply  = true;
-        Format       OutputFormat = Format::R8G8B8A8Unorm;
-        VGRenderMode RenderMode   = VGRenderMode::Raster;
-
-        float         SDFPixelRange     = 8.0f;
-        float         SDFAngleThreshold = 3.0f;
-        uint32_t      SDFThreadCount    = 4;
-        ThorVGCanvas *Canvas            = nullptr;
+        uint32_t      RenderWidth  = 1024;
+        uint32_t      RenderHeight = 1024;
+        float         Scale        = 1.0f;
+        uint32_t      Padding      = 8;
+        bool          Premultiply  = true;
+        Format        OutputFormat = Format::R8G8B8A8Unorm;
+        ThorVGCanvas *Canvas       = nullptr;
     };
 
     struct DZ_API VGImporterDesc{ };
 
     class DZ_API VGImporter final : public IAssetImporter
     {
-        VGImporterDesc                 m_desc;
-        ImporterDesc                   m_importerInfo;
-        InteropArray<uint32_t>         m_renderBuffer;
-        msdfgen::FreetypeHandle       *m_msdfFtHandle = nullptr;
+        VGImporterDesc         m_desc;
+        ImporterDesc           m_importerInfo;
+        InteropArray<uint32_t> m_renderBuffer;
 
     public:
         explicit VGImporter( VGImporterDesc desc = { } );
@@ -85,11 +65,8 @@ namespace DenOfIz
         };
 
         ImporterResultCode ImportVGInternal( ImportContext &context );
-        ImporterResultCode RenderRasterToTexture( ImportContext &context );
-        ImporterResultCode RenderMSDFToTexture( ImportContext &context );
-
-        void WriteTextureAsset( const ImportContext &context, const TextureAsset &textureAsset, AssetUri &outAssetUri ) const;
-        void RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri ) const;
+        void               WriteTextureAsset( const ImportContext &context, const TextureAsset &textureAsset, AssetUri &outAssetUri ) const;
+        void               RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri ) const;
     };
 
 } // namespace DenOfIz

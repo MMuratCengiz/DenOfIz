@@ -33,7 +33,7 @@ namespace DenOfIz
     struct DZ_API CopyToGpuBufferDesc
     {
         IBufferResource   *DstBuffer;
-        uint64_t           DstBufferOffset;
+        uint64_t           DstBufferOffset = 0;
         InteropArray<Byte> Data;
     };
 
@@ -129,7 +129,7 @@ namespace DenOfIz
     private:
         void                   CleanResources( );
         void                   LoadTextureInternal( const Texture &texture, ITextureResource *dstTexture );
-        void                   AlignDataForTexture( const Byte * src, uint32_t width, uint32_t height, uint32_t bitsize, Byte *dst ) const;
+        void                   AlignDataForTexture( const Byte *src, uint32_t width, uint32_t height, uint32_t bitsize, Byte *dst ) const;
         void                   CopyTextureToMemoryAligned( const Texture &texture, const TextureMip &mipData, Byte *dst ) const;
         [[nodiscard]] uint32_t GetSubresourceAlignment( uint32_t bitSize ) const;
         static std::string     NextId( const std::string &prefix );
