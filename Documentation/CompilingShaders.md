@@ -81,6 +81,12 @@ arguments.push_back(L"-fspv-extension=SPV_KHR_ray_tracing");
 arguments.push_back(L"-fspv-extension=SPV_KHR_ray_query");
 ```
 
+5. Important: SV_InstanceId will always be 0 for the first instance regardless of StartInstanceLocation, this is to match DirectX12 behavior:
+
+```cpp
+arguments.push_back( L"-fvk-support-nonzero-base-instance" );
+```
+
 ### Metal (MSL)
 
 Metal has the most significant differences in its resource binding model:
@@ -134,9 +140,9 @@ Reflection is particularly important for Metal, which requires detailed knowledg
 1. **Always Use Reflection**: Let the shader reflection system handle binding information across platforms.
 
 2. **Use Register Spaces Consistently**:
-   - Space 0: Standard descriptor tables
-   - Space 2: Root-level buffers (DirectX 12 optimization)
-   - Space 31: Push constants
+    - Space 0: Standard descriptor tables
+    - Space 2: Root-level buffers (DirectX 12 optimization)
+    - Space 31: Push constants
 
 3. **Use Push Constants for Small, Frequently Updated Data**:
    ```hlsl
@@ -144,16 +150,16 @@ Reflection is particularly important for Metal, which requires detailed knowledg
    ```
 
 4. **Keep Push Constant Structs Compact**:
-   - Keep push constant data small and aligned
-   - Remember Vulkan only allows one push constant block
+    - Keep push constant data small and aligned
+    - Remember Vulkan only allows one push constant block
 
 5. **Test on All Target Platforms**:
-   - Some shader features might compile but behave differently across APIs
-   - Use API-specific validation layers and debugging tools
+    - Some shader features might compile but behave differently across APIs
+    - Use API-specific validation layers and debugging tools
 
 6. **Avoid API-Specific Features When Possible**:
-   - Use DenOfIz abstractions rather than platform-specific code
-   - If needed, use `#ifdef` directives for platform-specific code
+    - Use DenOfIz abstractions rather than platform-specific code
+    - If needed, use `#ifdef` directives for platform-specific code
 
 ## Debugging Shaders
 
@@ -192,4 +198,5 @@ CompileResult result = compiler.CompileHLSL(compileDesc);
 
 ## Conclusion
 
-DenOfIz's shader compilation system abstracts away most of the complexity of targeting multiple graphics APIs, but understanding the underlying differences is important for effective cross-platform development. Always use shader reflection, follow the register space conventions, and test on all target platforms to ensure compatibility.
+DenOfIz's shader compilation system abstracts away most of the complexity of targeting multiple graphics APIs, but understanding the underlying differences is important for
+effective cross-platform development. Always use shader reflection, follow the register space conventions, and test on all target platforms to ensure compatibility.
