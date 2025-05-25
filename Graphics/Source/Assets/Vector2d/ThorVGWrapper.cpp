@@ -431,7 +431,7 @@ namespace DenOfIz
     ThorVGPaint *ThorVGShape::Duplicate( ) const
     {
         const auto newShape = new ThorVGShape( );
-        newShape->m_shape   = std::unique_ptr<tvg::Shape>( dynamic_cast<tvg::Shape *>( m_shape->duplicate( ) ) );
+        newShape->m_shape   = std::unique_ptr<tvg::Shape>( static_cast<tvg::Shape *>( m_shape->duplicate( ) ) );
         return newShape;
     }
 
@@ -531,7 +531,7 @@ namespace DenOfIz
     ThorVGPaint *ThorVGPicture::Duplicate( ) const
     {
         const auto newPicture = new ThorVGPicture( );
-        newPicture->m_picture = std::unique_ptr<tvg::Picture>( dynamic_cast<tvg::Picture *>( m_picture->duplicate( ) ) );
+        newPicture->m_picture = std::unique_ptr<tvg::Picture>( static_cast<tvg::Picture *>( m_picture->duplicate( ) ) );
         return newPicture;
     }
 
@@ -626,7 +626,7 @@ namespace DenOfIz
     ThorVGPaint *ThorVGScene::Duplicate( ) const
     {
         const auto newScene = new ThorVGScene( );
-        newScene->m_scene   = std::unique_ptr<tvg::Scene>( dynamic_cast<tvg::Scene *>( m_scene->duplicate( ) ) );
+        newScene->m_scene   = std::unique_ptr<tvg::Scene>( static_cast<tvg::Scene *>( m_scene->duplicate( ) ) );
         return newScene;
     }
 
