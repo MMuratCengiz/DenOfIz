@@ -100,6 +100,7 @@ void ClayRenderer::ClearCaches( )
         }
     }
     m_shapeCache.clear( );
+    m_materialCache.clear( );
     m_nextMaterialId = 0;
     m_nextQuadId     = 0;
 }
@@ -124,9 +125,8 @@ void ClayRenderer::Render( ICommandList *commandList, const Clay_RenderCommandAr
         return;
     }
 
-    m_currentFrameQuadIndex     = 0;
-    m_currentFrameMaterialIndex = 0;
-    m_currentFrameIndex         = frameIndex;
+    m_currentFrameQuadIndex = 0;
+    m_currentFrameIndex     = frameIndex;
     for ( int i = 0; i < commands.length; ++i )
     {
         const Clay_RenderCommand *cmd = &commands.internalArray[ i ];
@@ -478,32 +478,31 @@ void ClayRenderer::CreateVectorShape( const Clay_BoundingBox &bounds, const Clay
 
 uint32_t ClayRenderer::GetOrCreateMaterial( const Clay_Color &color, ITextureResource *texture )
 {
-    const Float_4  dzColor    = { color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f };
-    const uint32_t materialId = m_currentFrameMaterialIndex;
-    if ( materialId >= m_nextMaterialId )
+    const MaterialKey key = { color, texture };
+    const auto it = m_materialCache.find( key );
+    if ( it != m_materialCache.end( ) )
     {
-        m_nextMaterialId = materialId + 1;
-
-        QuadMaterialDesc materialDesc;
-        materialDesc.MaterialId = materialId;
-        materialDesc.Texture    = texture;
-        materialDesc.Color      = dzColor;
-
-        m_quadRenderer->AddMaterial( materialDesc );
-    }
-    else
-    {
-        // Update existing material
-        QuadMaterialDesc materialDesc;
-        materialDesc.MaterialId = materialId;
-        materialDesc.Texture    = texture;
-        materialDesc.Color      = dzColor;
-
-        // Note: QuadRenderer doesn't have UpdateMaterial for all frames,
-        // so materials are expected to be relatively stable
+        return it->second;
     }
 
-    m_currentFrameMaterialIndex++;
+    const uint32_t materialId = m_nextMaterialId;
+    if ( materialId >= m_desc.MaxNumMaterials )
+    {
+        LOG( ERROR ) << "ClayRenderer: Exceeded maximum number of materials (" << m_desc.MaxNumMaterials << ")";
+        return m_nextMaterialId > 0 ? m_nextMaterialId - 1 : 0;
+    }
+
+    m_nextMaterialId++;
+
+    const Float_4 dzColor = { color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f };
+
+    QuadMaterialDesc materialDesc;
+    materialDesc.MaterialId = materialId;
+    materialDesc.Texture    = texture;
+    materialDesc.Color      = dzColor;
+
+    m_quadRenderer->AddMaterial( materialDesc );
+    m_materialCache[ key ] = materialId;
     return materialId;
 }
 

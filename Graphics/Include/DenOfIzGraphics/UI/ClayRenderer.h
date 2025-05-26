@@ -55,13 +55,38 @@ namespace DenOfIz
         };
         std::unordered_map<uint64_t, ShapeCache> m_shapeCache;
 
+        struct MaterialKey
+        {
+            Clay_Color        Color;
+            ITextureResource *Texture;
+
+            bool operator==( const MaterialKey &other ) const
+            {
+                return Color.r == other.Color.r && Color.g == other.Color.g && Color.b == other.Color.b && Color.a == other.Color.a && Texture == other.Texture;
+            }
+        };
+
+        struct MaterialKeyHash
+        {
+            std::size_t operator( )( const MaterialKey &key ) const noexcept
+            {
+                const std::size_t h1 = std::hash<float>{ }( key.Color.r );
+                const std::size_t h2 = std::hash<float>{ }( key.Color.g );
+                const std::size_t h3 = std::hash<float>{ }( key.Color.b );
+                const std::size_t h4 = std::hash<float>{ }( key.Color.a );
+                const std::size_t h5 = std::hash<void *>{ }( key.Texture );
+                return h1 ^ h2 << 1 ^ h3 << 2 ^ h4 << 3 ^ h5 << 4;
+            }
+        };
+
+        std::unordered_map<MaterialKey, uint32_t, MaterialKeyHash> m_materialCache;
+
         uint32_t m_nextMaterialId = 0;
         uint32_t m_nextQuadId     = 0;
         bool     m_needsClear     = true;
 
-        uint32_t m_currentFrameQuadIndex     = 0;
-        uint32_t m_currentFrameMaterialIndex = 0;
-        uint32_t m_currentFrameIndex         = 0;
+        uint32_t m_currentFrameQuadIndex = 0;
+        uint32_t m_currentFrameIndex     = 0;
 
         float m_viewportWidth  = 0;
         float m_viewportHeight = 0;
