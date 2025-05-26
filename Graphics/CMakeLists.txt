@@ -109,6 +109,12 @@ set(DEN_OF_IZ_VG_SOURCES
         Source/Assets/Vector2d/ThorVGWrapper.cpp
 )
 
+set(DEN_OF_IZ_UI_SOURCES
+        Source/UI/ClayWrapper.cpp
+        Source/UI/ClayRenderer.cpp
+        Source/UI/UIManager.cpp
+)
+
 set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Backends/GraphicsApi.cpp
         #Shader Compiler
@@ -247,6 +253,7 @@ add_library(DenOfIzGraphics
         ${DEN_OF_IZ_GRAPHICS_SOURCES}
         ${DEN_OF_IZ_INPUT_SOURCES}
         ${DEN_OF_IZ_ANIMATION_SOURCES}
+        ${DEN_OF_IZ_UI_SOURCES}
         ${DEN_OF_IZ_VG_SOURCES}
 )
 #install_target(DenOfIzGraphics)
@@ -279,6 +286,7 @@ add_subdirectory(_ThirdParty/msdf-atlas-gen)
 target_include_default_directories(DenOfIzGraphics)
 target_include_directories(DenOfIzGraphics
         PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/clay> $<INSTALL_INTERFACE:_ThirdParty/clay>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/Tiny> $<INSTALL_INTERFACE:_ThirdParty/Tiny>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/include> $<INSTALL_INTERFACE:_ThirdParty/MetalShaderConverter/include>
         $<BUILD_INTERFACE:${OZZ_ANIMATION_INCLUDE_DIR}> $<INSTALL_INTERFACE:_ThirdParty/ozz-animation/include>
