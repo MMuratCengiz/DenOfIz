@@ -124,7 +124,17 @@ QuadRenderer::QuadRenderer( const QuadRendererDesc &desc ) : m_desc( desc )
     Initialize( );
 }
 
-QuadRenderer::~QuadRenderer( ) = default;
+QuadRenderer::~QuadRenderer( )
+{
+    if ( m_instances )
+    {
+        m_instanceBuffer->UnmapMemory( );
+    }
+    if ( m_materialData )
+    {
+        m_materialBuffer->UnmapMemory( );
+    }
+}
 
 void QuadRenderer::Initialize( )
 {

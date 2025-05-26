@@ -49,6 +49,7 @@ set(DEN_OF_IZ_ASSETS_SOURCES
         Source/Assets/FileSystem/FSConfig.cpp
         Source/Assets/Font/Font.cpp
         Source/Assets/Font/FontLibrary.cpp
+        Source/Assets/Font/TextBatch.cpp
         Source/Assets/Font/TextRenderer.cpp
         Source/Assets/Font/TextLayout.cpp
         Source/Assets/GpuResource/GpuResourceLoader.cpp
@@ -112,7 +113,6 @@ set(DEN_OF_IZ_VG_SOURCES
 set(DEN_OF_IZ_UI_SOURCES
         Source/UI/Clay.cpp
         Source/UI/ClayRenderer.cpp
-        Source/UI/UIManager.cpp
 )
 
 set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES

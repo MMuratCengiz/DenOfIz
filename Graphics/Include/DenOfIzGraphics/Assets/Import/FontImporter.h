@@ -28,15 +28,16 @@ namespace msdfgen
 {
     class FreetypeHandle;
     class FontHandle;
-}
+} // namespace msdfgen
 
 namespace DenOfIz
 {
     struct DZ_API FontImportDesc : ImportDesc
     {
-        uint32_t InitialFontSize = 36;
-        uint32_t AtlasWidth      = 512;
-        uint32_t AtlasHeight     = 512;
+        uint32_t         InitialFontSize = 36;
+        uint32_t         AtlasWidth      = 512;
+        uint32_t         AtlasHeight     = 512;
+        BinaryContainer *TargetContainer = nullptr; // Not required, only useful to load font into memory
 
         FontImportDesc( ) = default;
         explicit FontImportDesc( const ImportDesc &base ) : ImportDesc( base )
@@ -89,10 +90,10 @@ namespace DenOfIz
         DZ_API [[nodiscard]] bool         ValidateFile( const InteropString &filePath ) const override;
 
     private:
-        ImporterResultCode          ImportFontInternal( ImportContext &context );
-        void                        GenerateAtlas( ImportContext &context ) const;
-        void                        WriteFontAsset( const ImportContext &context, AssetUri &outAssetUri ) const;
-        void                        ExtractFontMetrics( ImportContext &context, FT_Face face );
-        static Byte                 FloatToByte( const float &f );
+        ImporterResultCode ImportFontInternal( ImportContext &context );
+        void               GenerateAtlas( ImportContext &context ) const;
+        void               WriteFontAsset( const ImportContext &context, AssetUri &outAssetUri ) const;
+        void               ExtractFontMetrics( ImportContext &context, FT_Face face );
+        static Byte        FloatToByte( const float &f );
     };
 } // namespace DenOfIz

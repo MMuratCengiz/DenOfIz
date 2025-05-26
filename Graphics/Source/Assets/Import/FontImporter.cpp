@@ -332,8 +332,12 @@ void FontImporter::WriteFontAsset( const ImportContext &context, AssetUri &outAs
     }
     outputPath += fontAssetFileName.Get( );
 
-    BinaryContainer container{ };
-    BinaryWriter    writer( container );
+    BinaryContainer *container = context.Desc.TargetContainer;
+    if ( container == nullptr )
+    {
+        container = new BinaryContainer( );
+    }
+    BinaryWriter writer( *container );
 
     FontAssetWriterDesc writerDesc{ };
     writerDesc.Writer = &writer;
@@ -343,9 +347,12 @@ void FontImporter::WriteFontAsset( const ImportContext &context, AssetUri &outAs
     fontWriter.Write( msdfFontAsset );
     fontWriter.End( );
 
-    FileIO::WriteFile( outputPath.c_str( ), container.GetData( ) );
-
-    outAssetUri.Path = outputPath.c_str( );
+    if ( context.Desc.TargetContainer == nullptr )
+    {
+        FileIO::WriteFile( outputPath.c_str( ), container->GetData( ) );
+        outAssetUri.Path = outputPath.c_str( );
+        delete container;
+    }
 }
 
 Byte FontImporter::FloatToByte( const float &f )

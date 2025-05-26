@@ -55,8 +55,8 @@ void TextRenderingExample::Init( )
     textRendererDesc.InitialAtlasHeight = m_fontAsset->AtlasHeight;
     textRendererDesc.Width              = m_windowDesc.Width;
     textRendererDesc.Height             = m_windowDesc.Height;
+    textRendererDesc.Font               = m_font;
     m_textRenderer                      = std::make_unique<TextRenderer>( textRendererDesc );
-    m_textRenderer->SetFont( m_font );
     m_textRenderer->SetAntiAliasingMode( AntiAliasingMode::Grayscale );
 
     // Initialize the debug renderer with the same font asset
@@ -72,7 +72,7 @@ void TextRenderingExample::Init( )
     m_debugRenderer = std::make_unique<FrameDebugRenderer>( debugRendererDesc );
     m_debugRenderer->AddDebugLine( "Press F1 to toggle debug info", { 0.8f, 0.8f, 0.8f, 1.0f } );
 
-    m_animTime = 0.0f;
+    m_animTime          = 0.0f;
     m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
 }
 
@@ -161,11 +161,11 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
 
     float          verticalOffset = 120.0f;
     TextRenderDesc titleParams;
-    titleParams.Text  = "Font Rendering Example";
-    titleParams.X     = 50.0f;
-    titleParams.Y     = 50.0f + verticalOffset;
-    titleParams.Color = { 1.0f, 1.0f, 0.5f, 1.0f };
-    titleParams.Scale = 1.2f;
+    titleParams.Text     = "Font Rendering Example";
+    titleParams.X        = 50.0f;
+    titleParams.Y        = 50.0f + verticalOffset;
+    titleParams.Color    = { 1.0f, 1.0f, 0.5f, 1.0f };
+    titleParams.FontSize = 36;
     m_textRenderer->AddText( titleParams );
 
     // Current AA mode display
@@ -174,16 +174,15 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     currentModeParams.X     = 50.0f;
     currentModeParams.Y     = 100.0f + verticalOffset;
     currentModeParams.Color = { 0.5f, 1.0f, 1.0f, 1.0f };
-    currentModeParams.Scale = 1.0f;
     m_textRenderer->AddText( currentModeParams );
 
     // Instructions
     TextRenderDesc instructionsParams;
-    instructionsParams.Text  = "Press SPACE to cycle through antialiasing modes | Press F1 to toggle debug info";
-    instructionsParams.X     = 50.0f;
-    instructionsParams.Y     = 150.0f + verticalOffset;
-    instructionsParams.Color = { 0.8f, 0.8f, 0.8f, 1.0f };
-    instructionsParams.Scale = 0.8f;
+    instructionsParams.Text     = "Press SPACE to cycle through antialiasing modes | Press F1 to toggle debug info";
+    instructionsParams.X        = 50.0f;
+    instructionsParams.Y        = 150.0f + verticalOffset;
+    instructionsParams.Color    = { 0.8f, 0.8f, 0.8f, 1.0f };
+    instructionsParams.FontSize = 28;
     m_textRenderer->AddText( instructionsParams );
 
     // Sample text at different sizes
@@ -192,16 +191,15 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     sampleParams.X     = 50.0f;
     sampleParams.Y     = 200.0f + verticalOffset;
     sampleParams.Color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    sampleParams.Scale = 1.0f;
     m_textRenderer->AddText( sampleParams );
 
     // Smaller text
     TextRenderDesc smallParams;
-    smallParams.Text  = "Small Text - (0123456789) The quick brown fox jumps over the lazy dog";
-    smallParams.X     = 50.0f;
-    smallParams.Y     = 250.0f + verticalOffset;
-    smallParams.Color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    smallParams.Scale = 0.6f;
+    smallParams.Text     = "Small Text - (0123456789) The quick brown fox jumps over the lazy dog";
+    smallParams.X        = 50.0f;
+    smallParams.Y        = 250.0f + verticalOffset;
+    smallParams.Color    = { 1.0f, 1.0f, 1.0f, 1.0f };
+    smallParams.FontSize = 18;
     m_textRenderer->AddText( smallParams );
 
     TextRenderDesc animatedTextParams;
@@ -213,7 +211,7 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     float g                             = ( sin( m_animTime * 1.5f + 2.0f ) + 1.0f ) / 2.0f;
     float b                             = ( sin( m_animTime * 1.0f + 4.0f ) + 1.0f ) / 2.0f;
     animatedTextParams.Color            = { r, g, b, 1.0f };
-    animatedTextParams.Scale            = 1.0f + 0.2f * sin( m_animTime * 3.0f );
+    animatedTextParams.FontSize         = 36 + 6 * sin( m_animTime * 3.0f );
     animatedTextParams.HorizontalCenter = true;
     animatedTextParams.VerticalCenter   = true;
 
@@ -230,7 +228,7 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     float g2                        = ( sin( m_animTime * 2.0f + 1.0f ) + 1.0f ) / 2.0f;
     float b2                        = ( sin( m_animTime * 1.5f + 3.0f ) + 1.0f ) / 2.0f;
     animatedParams.Color            = { r2, g2, b2, 1.0f };
-    animatedParams.Scale            = 1.0f + 0.15f * sin( m_animTime * 2.0f );
+    animatedParams.FontSize         = 36 + 4 * sin( m_animTime * 2.0f );
     animatedParams.HorizontalCenter = true;
     m_textRenderer->AddText( animatedParams );
     m_textRenderer->EndBatch( commandList );

@@ -40,7 +40,7 @@ namespace DenOfIz
 
         Float_4       TextColor   = { 1.0f, 1.0f, 1.0f, 1.0f };
         float         RefreshRate = 0.5f;
-        float         Scale       = 0.6f;
+        uint32_t      FontSize    = 18;
         TextDirection Direction   = TextDirection::Auto;
         bool          Enabled     = true;
     };
@@ -86,7 +86,7 @@ namespace DenOfIz
 
         DZ_API void UpdateStats( float deltaTime );
         DZ_API void Render( ICommandList *commandList );
-        DZ_API void SetViewport( const Viewport& viewport );
+        DZ_API void SetViewport( const Viewport &viewport );
         DZ_API void SetProjectionMatrix( const Float_4x4 &projectionMatrix );
         DZ_API void SetScreenSize( uint32_t width, uint32_t height );
 

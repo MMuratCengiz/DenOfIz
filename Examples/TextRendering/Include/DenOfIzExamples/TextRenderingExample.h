@@ -37,7 +37,7 @@ namespace DenOfIz
         std::unique_ptr<BinaryReader>       m_binaryReader;
         std::unique_ptr<FontAssetReader>    m_fontAssetReader;
         std::unique_ptr<FontAsset>          m_fontAsset;
-        Font*                               m_font = nullptr; // Owned by FontLibrary
+        Font*                               m_font = nullptr;
         std::unique_ptr<TextRenderer>       m_textRenderer;
         std::unique_ptr<FrameDebugRenderer> m_debugRenderer;
         XMFLOAT4X4                          m_orthoProjection{ };

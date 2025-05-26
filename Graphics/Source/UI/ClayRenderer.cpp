@@ -114,7 +114,6 @@ void ClayRenderer::Render( ICommandList *commandList, const Clay_RenderCommandAr
 
     m_currentFrameQuadIndex     = 0;
     m_currentFrameMaterialIndex = 0;
-    m_desc.TextRenderer->BeginBatch( );
 
     for ( int i = 0; i < commands.length; ++i )
     {
@@ -138,7 +137,13 @@ void ClayRenderer::Render( ICommandList *commandList, const Clay_RenderCommandAr
             RenderBorder( cmd, frameIndex );
             break;
         case CLAY_RENDER_COMMAND_TYPE_TEXT:
-            RenderText( cmd, frameIndex );
+            // Flush any pending quads before rendering text
+            // if ( m_currentFrameQuadIndex > 0 )
+            // {
+            //     m_quadRenderer->Render( frameIndex, commandList );
+            //     m_currentFrameQuadIndex = 0;
+            // }
+            // RenderText( cmd, frameIndex, commandList );
             break;
         case CLAY_RENDER_COMMAND_TYPE_IMAGE:
             RenderImage( cmd, frameIndex );
@@ -153,8 +158,26 @@ void ClayRenderer::Render( ICommandList *commandList, const Clay_RenderCommandAr
         }
     }
 
+    if ( m_currentFrameQuadIndex > 0 )
+    {
+        m_quadRenderer->Render( frameIndex, commandList );
+    }
+    m_desc.TextRenderer->BeginBatch( );
+    for ( int i = 0; i < commands.length; ++i )
+    {
+        const Clay_RenderCommand *cmd = &commands.internalArray[ i ];
+        switch ( cmd->commandType )
+        {
+        case CLAY_RENDER_COMMAND_TYPE_TEXT:
+            RenderText( cmd, frameIndex, commandList );
+            break;
+        default:
+            break;
+        }
+    }
     m_desc.TextRenderer->EndBatch( commandList );
-    m_quadRenderer->Render( frameIndex, commandList );
+
+    // Render any remaining quads
 }
 
 ClayDimensions ClayRenderer::MeasureText( const InteropString &text, const Clay_TextElementConfig &desc ) const
@@ -299,7 +322,7 @@ void ClayRenderer::RenderBorder( const Clay_RenderCommand *command, const uint32
     }
 }
 
-void ClayRenderer::RenderText( const Clay_RenderCommand *command, const uint32_t frameIndex ) const
+void ClayRenderer::RenderText( const Clay_RenderCommand *command, const uint32_t frameIndex, ICommandList *commandList ) const
 {
     const Clay_TextRenderData data   = command->renderData.text;
     const Clay_BoundingBox    bounds = command->boundingBox;
@@ -322,6 +345,7 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, const uint32_t
     textDesc.LineHeight    = data.lineHeight;
     textDesc.Color         = Float_4( data.textColor.r / 255.0f, data.textColor.g / 255.0f, data.textColor.b / 255.0f, data.textColor.a / 255.0f );
 
+    // Use immediate rendering to maintain proper z-order
     m_desc.TextRenderer->AddText( textDesc );
 }
 

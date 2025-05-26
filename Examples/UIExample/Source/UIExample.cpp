@@ -25,21 +25,22 @@ using namespace DenOfIz;
 
 void UIExample::Init( )
 {
-    UIManagerDesc uiDesc{ };
+    ClayDesc uiDesc{ };
     uiDesc.LogicalDevice      = m_logicalDevice;
     uiDesc.RenderTargetFormat = Format::B8G8R8A8Unorm;
     uiDesc.NumFrames          = 3;
     uiDesc.Width              = m_windowDesc.Width;
     uiDesc.Height             = m_windowDesc.Height;
 
-    m_uiManager = std::make_unique<UIManager>( uiDesc );
+    m_clay = std::make_unique<Clay>( uiDesc );
 
     const auto viewport = m_swapChain->GetViewport( );
-    m_uiManager->SetViewportSize( viewport.Width, viewport.Height );
+    m_clay->SetViewportSize( viewport.Width, viewport.Height );
+    m_inter = m_clay->AddFont( m_library.LoadFont( "C:/Users/cengi/Downloads/Inter/Inter-VariableFont_opsz,wght.ttf" ) );
 
-    m_buttonId    = m_uiManager->HashString( "Button" );
-    m_textId      = m_uiManager->HashString( "Text" );
-    m_containerId = m_uiManager->HashString( "Container" );
+    m_buttonId    = m_clay->HashString( "Button" );
+    m_textId      = m_clay->HashString( "Text" );
+    m_containerId = m_clay->HashString( "Container" );
 
     m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
 }
@@ -54,7 +55,7 @@ void UIExample::Update( )
     m_time.Tick( );
     m_worldData.DeltaTime = m_time.GetDeltaTime( );
     m_worldData.Camera->Update( m_worldData.DeltaTime );
-    m_uiManager->UpdateScrollContainers( false, Float_2( 0, 0 ), m_worldData.DeltaTime );
+    m_clay->UpdateScrollContainers( false, Float_2( 0, 0 ), m_worldData.DeltaTime );
 
     RenderAndPresentFrame( );
 }
@@ -70,7 +71,7 @@ void UIExample::CreateUI( ) const
     container.Layout.ChildGap        = 16;
     container.BackgroundColor        = ClayColor( 45, 45, 48, 255 );
 
-    m_uiManager->OpenElement( container );
+    m_clay->OpenElement( container );
 
     ClayElementDeclaration headerContainer;
     headerContainer.Layout.Sizing.Width     = ClaySizingAxis::Grow( );
@@ -79,15 +80,16 @@ void UIExample::CreateUI( ) const
     headerContainer.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
     headerContainer.BackgroundColor         = ClayColor( 30, 30, 33, 255 );
 
-    m_uiManager->OpenElement( headerContainer );
+    m_clay->OpenElement( headerContainer );
 
     ClayTextDesc headerTextDesc;
     headerTextDesc.FontSize  = 24;
     headerTextDesc.TextColor = ClayColor( 255, 255, 255, 255 );
+    headerTextDesc.FontId    = m_inter;
 
-    m_uiManager->Text( "Clay UI Example", headerTextDesc );
+    m_clay->Text( "Clay UI Example", headerTextDesc );
 
-    m_uiManager->CloseElement( );
+    m_clay->CloseElement( );
 
     ClayElementDeclaration contentContainer;
     contentContainer.Layout.Sizing.Width    = ClaySizingAxis::Grow( );
@@ -96,7 +98,7 @@ void UIExample::CreateUI( ) const
     contentContainer.Layout.ChildGap        = 24;
     contentContainer.Layout.Padding         = ClayPadding( 24 );
 
-    m_uiManager->OpenElement( contentContainer );
+    m_clay->OpenElement( contentContainer );
 
     ClayElementDeclaration card;
     card.Layout.Sizing.Width    = ClaySizingAxis::Grow( ); // Cards will now grow to fill available space
@@ -111,7 +113,7 @@ void UIExample::CreateUI( ) const
 
     for ( int i = 0; i < 3; ++i )
     {
-        m_uiManager->OpenElement( card );
+        m_clay->OpenElement( card );
 
         ClayTextDesc cardTitleConfig;
         cardTitleConfig.FontSize  = 18;
@@ -119,43 +121,43 @@ void UIExample::CreateUI( ) const
 
         char titleBuffer[ 64 ];
         snprintf( titleBuffer, sizeof( titleBuffer ), "Card %d", i + 1 );
-        m_uiManager->Text( titleBuffer, cardTitleConfig );
+        m_clay->Text( titleBuffer, cardTitleConfig );
 
         ClayTextDesc cardTextConfig;
         cardTextConfig.FontSize  = 14;
         cardTextConfig.TextColor = ClayColor( 100, 100, 100, 255 );
         cardTextConfig.WrapMode  = ClayTextWrapMode::Words;
 
-        m_uiManager->Text( "This is a sample card component with some descriptive text inside. It demonstrates the layout capabilities of Clay UI.", cardTextConfig );
+        m_clay->Text( "This is a sample card component with some descriptive text inside. It demonstrates the layout capabilities of Clay UI.", cardTextConfig );
 
         ClayElementDeclaration spacer;
         spacer.Layout.Sizing.Height = ClaySizingAxis::Grow( );
-        m_uiManager->OpenElement( spacer );
-        m_uiManager->CloseElement( );
+        m_clay->OpenElement( spacer );
+        m_clay->CloseElement( );
 
         ClayElementDeclaration button;
-        button.Id                      = m_uiManager->HashString( "Button", i );
+        button.Id                      = m_clay->HashString( "Button", i );
         button.Layout.Sizing.Width     = ClaySizingAxis::Grow( );
         button.Layout.Sizing.Height    = ClaySizingAxis::Fixed( 36 );
         button.Layout.ChildAlignment.X = ClayAlignmentX::Center;
         button.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
         button.CornerRadius            = ClayCornerRadius( 4 );
 
-        bool isHovered         = m_uiManager->PointerOver( button.Id );
+        bool isHovered         = m_clay->PointerOver( button.Id );
         button.BackgroundColor = isHovered ? ClayColor( 0, 122, 204, 255 ) : ClayColor( 0, 102, 184, 255 );
 
-        m_uiManager->OpenElement( button );
+        m_clay->OpenElement( button );
 
         ClayTextDesc buttonTextConfig;
         buttonTextConfig.FontSize  = 14;
         buttonTextConfig.TextColor = ClayColor( 255, 255, 255, 255 );
 
-        m_uiManager->Text( "Learn More", buttonTextConfig );
-        m_uiManager->CloseElement( );
-        m_uiManager->CloseElement( );
+        m_clay->Text( "Learn More", buttonTextConfig );
+        m_clay->CloseElement( );
+        m_clay->CloseElement( );
     }
 
-    m_uiManager->CloseElement( );
+    m_clay->CloseElement( );
 
     ClayElementDeclaration footerContainer;
     footerContainer.Layout.Sizing.Width     = ClaySizingAxis::Grow( );
@@ -164,7 +166,7 @@ void UIExample::CreateUI( ) const
     footerContainer.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
     footerContainer.BackgroundColor         = ClayColor( 30, 30, 33, 255 );
 
-    m_uiManager->OpenElement( footerContainer );
+    m_clay->OpenElement( footerContainer );
 
     ClayTextDesc footerTextConfig;
     footerTextConfig.FontSize  = 12;
@@ -172,10 +174,10 @@ void UIExample::CreateUI( ) const
 
     char fpsBuffer[ 64 ];
     snprintf( fpsBuffer, sizeof( fpsBuffer ), "FPS: %.0f", 1.0 / m_worldData.DeltaTime );
-    m_uiManager->Text( fpsBuffer, footerTextConfig );
+    m_clay->Text( fpsBuffer, footerTextConfig );
 
-    m_uiManager->CloseElement( );
-    m_uiManager->CloseElement( );
+    m_clay->CloseElement( );
+    m_clay->CloseElement( );
 }
 
 void UIExample::Render( const uint32_t frameIndex, ICommandList *commandList )
@@ -200,9 +202,9 @@ void UIExample::Render( const uint32_t frameIndex, ICommandList *commandList )
     commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
     commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
 
-    m_uiManager->BeginFrame( viewport.Width, viewport.Height );
+    m_clay->BeginLayout( );
     CreateUI( );
-    m_uiManager->EndFrame(  commandList, frameIndex  );
+    m_clay->EndLayout( commandList, frameIndex );
 
     commandList->EndRendering( );
 
@@ -215,7 +217,7 @@ void UIExample::Render( const uint32_t frameIndex, ICommandList *commandList )
 
 void UIExample::HandleEvent( Event &event )
 {
-    m_uiManager->HandleEvent( event );
+    m_clay->HandleEvent( event );
     m_worldData.Camera->HandleEvent( event );
     IExample::HandleEvent( event );
 }
@@ -223,6 +225,6 @@ void UIExample::HandleEvent( Event &event )
 void UIExample::Quit( )
 {
     m_frameSync->WaitIdle( );
-    m_uiManager.reset( );
+    m_clay.reset( );
     IExample::Quit( );
 }

@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <clay.h>
 #include <memory>
 #include <unordered_map>
-#include "ClayInternal.h"
+#include "ClayData.h"
 
 namespace DenOfIz
 {
@@ -78,7 +78,7 @@ namespace DenOfIz
         void RenderRectangle( const Clay_RenderCommand *command, uint32_t frameIndex );
         void RenderRoundedRectangle( const Clay_RenderCommand *command, uint32_t frameIndex );
         void RenderBorder( const Clay_RenderCommand *command, uint32_t frameIndex );
-        void RenderText( const Clay_RenderCommand *command, uint32_t frameIndex ) const;
+        void RenderText( const Clay_RenderCommand *command, uint32_t frameIndex, ICommandList *commandList ) const;
         void RenderImage( const Clay_RenderCommand *command, uint32_t frameIndex );
 
         ITextureResource *GetOrCreateRoundedRectTexture( const Clay_BoundingBox &bounds, const Clay_RectangleRenderData &data );

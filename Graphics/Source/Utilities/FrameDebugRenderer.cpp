@@ -63,8 +63,8 @@ FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m
     textRendererDesc.InitialAtlasHeight = m_desc.FontAsset->AtlasHeight;
     textRendererDesc.Width              = m_desc.ScreenWidth;
     textRendererDesc.Height             = m_desc.ScreenHeight;
+    textRendererDesc.Font               = m_font;
     m_textRenderer                      = std::make_unique<TextRenderer>( textRendererDesc );
-    m_textRenderer->SetFont( m_font );
     m_textRenderer->SetAntiAliasingMode( AntiAliasingMode::Grayscale );
     SetViewport( Viewport{ 0.0f, 0.0f, static_cast<float>( m_desc.ScreenWidth ), static_cast<float>( m_desc.ScreenHeight ) } );
 }
@@ -116,11 +116,11 @@ void FrameDebugRenderer::Render( ICommandList *commandList )
 
     m_textRenderer->BeginBatch( );
 
-    float averageCharWidth = 9.0f * m_desc.Scale;
+    float averageCharWidth = 4.0f * m_desc.FontSize / m_font->Asset( )->InitialFontSize;
     float maxLineLength    = 155.0f;
     float rightMargin      = static_cast<float>( m_desc.ScreenWidth ) - averageCharWidth * maxLineLength / 2.0f;
     float yPos             = 20.0f;
-    float lineHeight       = 42.0f * m_desc.Scale;
+    float lineHeight       = 42.0f * m_desc.FontSize / m_font->Asset( )->InitialFontSize;
 
     char buffer[ 128 ];
 
@@ -130,7 +130,7 @@ void FrameDebugRenderer::Render( ICommandList *commandList )
     fpsParams.X                = rightMargin;
     fpsParams.Y                = yPos;
     fpsParams.Color            = m_frameTimeMs > 16.7f ? Float_4{ 1.0f, 0.4f, 0.4f, 1.0f } : m_desc.TextColor;
-    fpsParams.Scale            = m_desc.Scale;
+    fpsParams.FontSize         = m_desc.FontSize;
     fpsParams.HorizontalCenter = true;
     fpsParams.Direction        = m_desc.Direction;
     m_textRenderer->AddText( fpsParams );
@@ -142,7 +142,7 @@ void FrameDebugRenderer::Render( ICommandList *commandList )
     usageParams.X                = rightMargin;
     usageParams.Y                = yPos;
     usageParams.Color            = m_desc.TextColor;
-    usageParams.Scale            = m_desc.Scale;
+    usageParams.FontSize         = m_desc.FontSize;
     usageParams.HorizontalCenter = true;
     usageParams.Direction        = m_desc.Direction;
     m_textRenderer->AddText( usageParams );
@@ -154,7 +154,7 @@ void FrameDebugRenderer::Render( ICommandList *commandList )
     memParams.X                = rightMargin;
     memParams.Y                = yPos;
     memParams.Color            = m_desc.TextColor;
-    memParams.Scale            = m_desc.Scale;
+    memParams.FontSize         = m_desc.FontSize;
     memParams.HorizontalCenter = true;
     memParams.Direction        = m_desc.Direction;
     m_textRenderer->AddText( memParams );
@@ -167,7 +167,7 @@ void FrameDebugRenderer::Render( ICommandList *commandList )
         backendParams.X                = rightMargin;
         backendParams.Y                = yPos;
         backendParams.Color            = m_desc.TextColor;
-        backendParams.Scale            = m_desc.Scale;
+        backendParams.FontSize         = m_desc.FontSize;
         backendParams.HorizontalCenter = true;
         backendParams.Direction        = m_desc.Direction;
         m_textRenderer->AddText( backendParams );
@@ -181,7 +181,7 @@ void FrameDebugRenderer::Render( ICommandList *commandList )
         gpuParams.X                = rightMargin;
         gpuParams.Y                = yPos;
         gpuParams.Color            = m_desc.TextColor;
-        gpuParams.Scale            = m_desc.Scale;
+        gpuParams.FontSize         = m_desc.FontSize;
         gpuParams.HorizontalCenter = true;
         gpuParams.Direction        = m_desc.Direction;
         m_textRenderer->AddText( gpuParams );
@@ -195,7 +195,7 @@ void FrameDebugRenderer::Render( ICommandList *commandList )
         customParams.X                = rightMargin;
         customParams.Y                = yPos;
         customParams.Color            = line.Color;
-        customParams.Scale            = m_desc.Scale;
+        customParams.FontSize         = m_desc.FontSize;
         customParams.HorizontalCenter = true;
         customParams.Direction        = m_desc.Direction;
         m_textRenderer->AddText( customParams );

@@ -34,6 +34,7 @@ namespace DenOfIz
         std::mutex m_mutex;
 
         std::vector<FontAsset>                                 m_assets;
+        std::vector<std::unique_ptr<Font>>                     m_fontStore;
         std::unordered_map<std::string, std::unique_ptr<Font>> m_fonts;
 
     public:

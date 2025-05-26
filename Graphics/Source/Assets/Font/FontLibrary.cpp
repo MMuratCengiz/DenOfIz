@@ -33,20 +33,39 @@ FontLibrary::FontLibrary( )
 Font *FontLibrary::LoadFont( const FontDesc &desc )
 {
     std::lock_guard lock( m_mutex );
-    return new Font( m_ftLibrary, desc );
+    if ( desc.FontAsset->Uri.Path.IsEmpty( ) )
+    {
+        return m_fontStore.emplace_back( std::unique_ptr<Font>( new Font( m_ftLibrary, desc ) ) ).get( );
+    }
+
+    auto uriPath = desc.FontAsset->Uri.Path.Get( );
+    if ( m_fonts.contains( uriPath ) )
+    {
+        return m_fonts[ uriPath ].get( );
+    }
+    return m_fonts.emplace( uriPath, std::unique_ptr<Font>( new Font( m_ftLibrary, desc ) ) ).first->second.get( );
 }
 
 Font *FontLibrary::LoadFont( const InteropString &ttf )
 {
-    BinaryReader reader( ttf );
+    BinaryContainer targetContainer{};
 
+    FontImportDesc fontImport{};
+    fontImport.TargetContainer = &targetContainer;
+
+    ImportJobDesc importJob{};
+    importJob.SourceFilePath = ttf;
+    importJob.Desc = &fontImport;
+    m_fontImporter.Import( importJob );
+
+    BinaryReader reader( targetContainer );
     FontAssetReader fontReader( { &reader } );
-    FontAsset& asset = m_assets.emplace_back( fontReader.Read( ) );
+    FontAsset      &asset = m_assets.emplace_back( fontReader.Read( ) );
 
-    FontDesc desc{};
+    FontDesc desc{ };
     desc.FontAsset = &asset;
-    auto font = std::unique_ptr<Font>( new Font( m_ftLibrary, desc ) );
+    auto font      = std::unique_ptr<Font>( new Font( m_ftLibrary, desc ) );
 
     m_fonts.emplace( ttf.Get( ), std::move( font ) );
-    return m_fonts[  ttf.Get( ) ].get( );
+    return m_fonts[ ttf.Get( ) ].get( );
 }

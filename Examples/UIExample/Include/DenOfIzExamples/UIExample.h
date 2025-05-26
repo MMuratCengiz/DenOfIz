@@ -18,20 +18,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzExamples/IExample.h>
-#include <DenOfIzGraphics/UI/UIManager.h>
 #include <DenOfIzGraphics/Utilities/Time.h>
+
+#include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
+#include "DenOfIzGraphics/UI/Clay.h"
 
 namespace DenOfIz
 {
     class UIExample final : public IExample
     {
-        Time                       m_time;
-        std::unique_ptr<UIManager> m_uiManager;
-        Float_2                    m_mousePosition{ };
-        bool                       m_mousePressed{ };
-        uint32_t                   m_buttonId{ };
-        uint32_t                   m_textId{ };
-        uint32_t                   m_containerId{ };
+        FontLibrary           m_library{ };
+        uint16_t              m_inter = 0;
+        Time                  m_time;
+        std::unique_ptr<Clay> m_clay;
+        Float_2               m_mousePosition{ };
+        bool                  m_mousePressed{ };
+        uint32_t              m_buttonId{ };
+        uint32_t              m_textId{ };
+        uint32_t              m_containerId{ };
 
     public:
         ~UIExample( ) override = default;
