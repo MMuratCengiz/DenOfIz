@@ -51,8 +51,8 @@ void TextRenderingExample::Init( )
 
     TextRendererDesc textRendererDesc{ };
     textRendererDesc.LogicalDevice      = m_logicalDevice;
-    textRendererDesc.InitialAtlasWidth  = m_fontAsset->AtlasWidth;
-    textRendererDesc.InitialAtlasHeight = m_fontAsset->AtlasHeight;
+    textRendererDesc.InitialAtlasWidth  = m_font->Asset( )->AtlasWidth;
+    textRendererDesc.InitialAtlasHeight = m_font->Asset( )->AtlasHeight;
     textRendererDesc.Width              = m_windowDesc.Width;
     textRendererDesc.Height             = m_windowDesc.Height;
     textRendererDesc.Font               = m_font;
@@ -65,7 +65,7 @@ void TextRenderingExample::Init( )
     debugRendererDesc.LogicalDevice = m_logicalDevice;
     debugRendererDesc.ScreenWidth   = m_windowDesc.Width;
     debugRendererDesc.ScreenHeight  = m_windowDesc.Height;
-    debugRendererDesc.FontAsset     = m_fontAsset.get( );
+    debugRendererDesc.FontAsset     = m_font->Asset( );
     debugRendererDesc.TextColor     = { 0.8f, 1.0f, 0.8f, 1.0f };
     debugRendererDesc.Enabled       = m_debugInfoEnabled;
 
@@ -201,36 +201,6 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     smallParams.Color    = { 1.0f, 1.0f, 1.0f, 1.0f };
     smallParams.FontSize = 18;
     m_textRenderer->AddText( smallParams );
-
-    TextRenderDesc animatedTextParams;
-    animatedTextParams.Text = "YUPPP!!";
-    animatedTextParams.X    = static_cast<float>( m_windowDesc.Width ) / 2.0f;
-    animatedTextParams.Y    = static_cast<float>( m_windowDesc.Height ) / 2.0f + verticalOffset / 2.0f;
-
-    float r                             = ( sin( m_animTime * 2.0f ) + 1.0f ) / 2.0f;
-    float g                             = ( sin( m_animTime * 1.5f + 2.0f ) + 1.0f ) / 2.0f;
-    float b                             = ( sin( m_animTime * 1.0f + 4.0f ) + 1.0f ) / 2.0f;
-    animatedTextParams.Color            = { r, g, b, 1.0f };
-    animatedTextParams.FontSize         = 36 + 6 * sin( m_animTime * 3.0f );
-    animatedTextParams.HorizontalCenter = true;
-    animatedTextParams.VerticalCenter   = true;
-
-    m_textRenderer->AddText( animatedTextParams );
-
-    // Animated text with the current antialiasing mode
-    TextRenderDesc animatedParams;
-    animatedParams.Text = "Animated Text with Antialiasing";
-    animatedParams.X    = static_cast<float>( m_windowDesc.Width ) / 2.0f;
-    animatedParams.Y    = 350.0f + verticalOffset;
-
-    // Use different animation parameters for second animated text
-    float r2                        = ( sin( m_animTime * 1.0f ) + 1.0f ) / 2.0f;
-    float g2                        = ( sin( m_animTime * 2.0f + 1.0f ) + 1.0f ) / 2.0f;
-    float b2                        = ( sin( m_animTime * 1.5f + 3.0f ) + 1.0f ) / 2.0f;
-    animatedParams.Color            = { r2, g2, b2, 1.0f };
-    animatedParams.FontSize         = 36 + 4 * sin( m_animTime * 2.0f );
-    animatedParams.HorizontalCenter = true;
-    m_textRenderer->AddText( animatedParams );
     m_textRenderer->EndBatch( commandList );
 
     // Render debug info on top of everything else

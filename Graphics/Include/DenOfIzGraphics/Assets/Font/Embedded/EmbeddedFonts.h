@@ -18,23 +18,49 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "InconsolataRegular.h"
+#include "Inter.h"
 
 namespace DenOfIz
 {
     class EmbeddedFonts
     {
     public:
-        DZ_API static FontAsset *GetInconsolataRegular( )
+        DZ_API static FontAsset *GetInterVar( )
         {
-            static FontAsset inconsolataRegular = InconsolataRegular( );
-            return &inconsolataRegular;
+            static FontAsset interVar = InterVar( );
+            return &interVar;
         }
 
     private:
-        static FontAsset InconsolataRegular( )
+        static const InteropArray<Byte>& InterDataAggr( )
         {
-            BinaryReader    binaryReader( InconsolataRegular::Data );
+            static InteropArray<Byte> data;
+            static std::mutex         dataMutex;
+            if ( data.NumElements( ) == 0 )
+            {
+                std::lock_guard lock( dataMutex );
+                if ( data.NumElements( ) == 0 )
+                {
+                    std::vector<Byte> vData;
+                    const size_t      size0 = Inter::Data0.size( );
+                    const size_t      size1 = Inter::Data1.size( );
+                    const size_t      size2 = Inter::Data2.size( );
+                    const size_t      size3 = Inter::Data3.size( );
+                    vData.resize( size0 + size1 + size2 + size3 );
+                    memcpy( vData.data( ), Inter::Data0.data( ), size0 );
+                    memcpy( vData.data( ) + size0, Inter::Data1.data( ), size1 );
+                    memcpy( vData.data( ) + size0 + size1, Inter::Data2.data( ), size2 );
+                    memcpy( vData.data( ) + size0 + size1 + size2, Inter::Data3.data( ), size3 );
+
+                    data.MemCpy( vData.data( ), vData.size( ) );
+                }
+            }
+            return data;
+        }
+
+        static FontAsset InterVar( )
+        {
+            BinaryReader    binaryReader( InterDataAggr( ) );
             FontAssetReader reader( { &binaryReader } );
             return reader.Read( );
         }

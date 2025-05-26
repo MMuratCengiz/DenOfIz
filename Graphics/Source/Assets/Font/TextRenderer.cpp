@@ -40,9 +40,32 @@ TextRenderer::TextRenderer( const TextRendererDesc &desc ) : m_desc( desc )
     }
 
     m_logicalDevice = desc.LogicalDevice;
-    BinaryReader      binaryReader{ EmbeddedTextRendererShaders::ShaderAssetBytes };
-    ShaderAssetReader assetReader{ { &binaryReader } };
-    m_fontShaderProgram           = std::make_unique<ShaderProgram>( assetReader.Read( ) );
+
+    // ReSharper disable once CppTooWideScope
+    constexpr bool debugShaders = false;
+    if ( debugShaders )
+    {
+        // ReSharper disable once CppDFAUnreachableCode
+        BinaryReader      binaryReader{ EmbeddedTextRendererShaders::ShaderAssetBytes };
+        ShaderAssetReader assetReader{ { &binaryReader } };
+        m_fontShaderProgram = std::make_unique<ShaderProgram>( assetReader.Read( ) );
+    }
+    // ReSharper disable once CppRedundantElseKeywordInsideCompoundStatement
+    else
+    {
+        ShaderProgramDesc programDesc{ };
+        ShaderStageDesc  &vsDesc = programDesc.ShaderStages.EmplaceElement( );
+        vsDesc.Stage             = ShaderStage::Vertex;
+        vsDesc.EntryPoint        = "main";
+        vsDesc.Data              = EmbeddedTextRendererShaders::GetFontVertexShaderBytes( );
+
+        ShaderStageDesc &psDesc = programDesc.ShaderStages.EmplaceElement( );
+        psDesc.Stage            = ShaderStage::Pixel;
+        psDesc.EntryPoint       = "main";
+        psDesc.Data             = EmbeddedTextRendererShaders::GetFontPixelShaderBytes( );
+        m_fontShaderProgram     = std::make_unique<ShaderProgram>( programDesc );
+    }
+
     ShaderReflectDesc reflectDesc = m_fontShaderProgram->Reflect( );
 
     m_rootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflectDesc.RootSignature ) );
@@ -70,7 +93,7 @@ TextRenderer::TextRenderer( const TextRendererDesc &desc ) : m_desc( desc )
     if ( m_desc.Font == nullptr )
     {
         static FontLibrary defaultFontLibrary;
-        static auto        defaultFont = defaultFontLibrary.LoadFont( { EmbeddedFonts::GetInconsolataRegular( ) } );
+        static auto        defaultFont = defaultFontLibrary.LoadFont( { EmbeddedFonts::GetInterVar( ) } );
         AddFont( defaultFont, 0 );
     }
     else

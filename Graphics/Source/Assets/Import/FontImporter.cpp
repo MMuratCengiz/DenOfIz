@@ -215,11 +215,11 @@ void FontImporter::GenerateAtlas( ImportContext &context ) const
 
     msdf_atlas::GeneratorAttributes attributes;
     attributes.config.overlapSupport = true;
-
+    attributes.scanlinePass = true;
     msdf_atlas::ImmediateAtlasGenerator<float, 4, msdf_atlas::mtsdfGenerator, msdf_atlas::BitmapAtlasStorage<msdf_atlas::byte, 4>> generator( width, height );
 
     generator.setAttributes( attributes );
-    generator.setThreadCount( 4 );
+    generator.setThreadCount( std::thread::hardware_concurrency( ) );
 
     // Generate Atlas:
     generator.generate( glyphs.data( ), glyphs.size( ) );

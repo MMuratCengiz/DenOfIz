@@ -48,7 +48,7 @@ namespace DenOfIz
         [[nodiscard]] FT_Face FTFace( ) const;
 
     public:
-        DZ_API static constexpr float MsdfPixelRange = 4.0f;
+        DZ_API static constexpr float MsdfPixelRange = 12.0f;
 
         DZ_API [[nodiscard]] FontAsset *Asset( ) const;
         DZ_API ~Font( );
