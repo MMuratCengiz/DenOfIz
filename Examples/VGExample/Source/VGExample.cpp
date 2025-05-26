@@ -154,7 +154,6 @@ void VGExample::InitializeRenderers( )
     QuadRendererDesc quadRendererDesc;
     quadRendererDesc.LogicalDevice = m_logicalDevice;
     m_quadRenderer                 = std::make_unique<QuadRenderer>( quadRendererDesc );
-    m_quadRenderer->Initialize( );
     m_quadRenderer->SetCanvas( m_windowDesc.Width, m_windowDesc.Height );
 }
 
