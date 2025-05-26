@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include "ClayRenderer.h"
 #include "DenOfIzGraphics/Input/Event.h"
+#include "DenOfIzGraphics/Utilities/Time.h"
 
 namespace DenOfIz
 {
@@ -48,6 +49,7 @@ namespace DenOfIz
 
     class Clay
     {
+        Time                          m_time;
         std::unique_ptr<TextRenderer> m_textRenderer;
         std::unique_ptr<ClayRenderer> m_renderer;
         ClayPointerState              m_pointerState = ClayPointerState::Released;
@@ -69,7 +71,7 @@ namespace DenOfIz
         DZ_API void     UpdateScrollContainers( bool enableDragScrolling, Float_2 scrollDelta, float deltaTime ) const;
         DZ_API void     SetDebugModeEnabled( bool enabled );
 
-        DZ_API void BeginLayout( ) const;
+        DZ_API void BeginLayout( );
         DZ_API void EndLayout( ICommandList *commandList, uint32_t frameIndex ) const;
 
         DZ_API void OpenElement( const ClayElementDeclaration &declaration ) const;

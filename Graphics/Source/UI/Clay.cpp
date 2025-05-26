@@ -468,8 +468,9 @@ void Clay::UpdateScrollContainers( const bool enableDragScrolling, const Float_2
     Clay_UpdateScrollContainers( enableDragScrolling, Clay_Vector2{ scrollDelta.X, scrollDelta.Y }, deltaTime );
 }
 
-void Clay::BeginLayout( ) const
+void Clay::BeginLayout( )
 {
+    m_time.Tick( );
     DZ_NOT_NULL( m_context );
     SetPointerState( m_pointerPosition, m_pointerState );
     Clay_SetDebugModeEnabled( m_isDebugMode );
@@ -598,5 +599,11 @@ void Clay::HandleEvent( const Event &event )
         {
             m_isDebugMode = !Clay_IsDebugModeEnabled( );
         }
+    }
+
+    if ( event.Type == EventType::MouseWheel )
+    {
+        const auto wheelDelta = Clay_Vector2{ static_cast<float>( event.Wheel.X ), static_cast<float>( event.Wheel.Y ) };
+        Clay_UpdateScrollContainers( true, wheelDelta, m_time.GetDeltaTime( ) );
     }
 }
