@@ -67,6 +67,8 @@ namespace DenOfIz
         InteropArray<GlyphVertex> *OutVertices;
         InteropArray<uint32_t>    *OutIndices;
         float                      Scale = 1.0f;
+        uint16_t                   LetterSpacing = 0;  // Additional spacing between characters
+        uint16_t                   LineHeight = 0;     // Custom line height override
     };
     class TextLayout
     {
@@ -85,11 +87,17 @@ namespace DenOfIz
         std::vector<GlyphAdvance> m_shapedGlyphs;
         float                     m_totalWidth  = 0;
         float                     m_totalHeight = 0;
+        
+        // Caching for ShapeText
         InteropString             m_lastShapedText;
+        uint32_t                  m_lastFontSize = 0;
+        TextDirection             m_lastDirection = TextDirection::Auto;
+        UInt32_4                  m_lastScriptTag{ 0, 0, 0, 0 };
 
     public:
         DZ_API explicit TextLayout( const TextLayoutDesc &desc );
         DZ_API void SetFont( Font *font );
+        DZ_API Font *GetFont( ) const;
         DZ_API void ShapeText( const ShapeTextDesc &shapeDesc );
         DZ_API void GenerateTextVertices( const GenerateTextVerticesDesc &generateDesc ) const;
 

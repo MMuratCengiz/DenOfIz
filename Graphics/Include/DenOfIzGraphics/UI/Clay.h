@@ -19,34 +19,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Assets/Font/TextRenderer.h>
-#include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
-#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
 #include <functional>
 #include <memory>
-#include "ClayInternal.h"
+#include "ClayRenderer.h"
 
 namespace DenOfIz
 {
     struct DZ_API ClayWrapperDesc
     {
-        uint32_t Width;
-        uint32_t Height;
-        uint32_t MaxNumElements                 = 8192;
-        uint32_t MaxNumTextMeasureCacheElements = 16384; // Maybe remove
+        ILogicalDevice *LogicalDevice                  = nullptr;
+        TextRenderer   *TextRenderer                   = nullptr;
+        Format          RenderTargetFormat             = Format::B8G8R8A8Unorm;
+        uint32_t        NumFrames                      = 3;
+        uint32_t        MaxNumQuads                    = 2048;
+        uint32_t        MaxNumMaterials                = 128;
+        uint32_t        Width                          = 1024;
+        uint32_t        Height                         = 1024;
+        uint32_t        MaxNumElements                 = 8192;
+        uint32_t        MaxNumTextMeasureCacheElements = 16384; // Maybe remove
     };
 
-    class ClayWrapper
+    class Clay
     {
+        std::unique_ptr<ClayRenderer> m_renderer;
+
     public:
-        explicit ClayWrapper( const ClayWrapperDesc &desc );
-        ~ClayWrapper( );
+        explicit Clay( const ClayWrapperDesc &desc );
+        ~Clay( );
 
         void SetLayoutDimensions( float width, float height ) const;
         void SetPointerState( Float_2 position, ClayPointerState state ) const;
         void UpdateScrollContainers( bool enableDragScrolling, Float_2 scrollDelta, float deltaTime ) const;
 
-        void                            BeginLayout( ) const;
-        InteropArray<ClayRenderCommand> EndLayout( ) const;
+        void BeginLayout( ) const;
+        void EndLayout( ICommandList *commandList, uint32_t frameIndex ) const;
 
         void OpenElement( const ClayElementDeclaration &declaration ) const;
         void CloseElement( ) const;
@@ -67,10 +73,6 @@ namespace DenOfIz
         struct Impl;
         std::unique_ptr<Impl> m_impl;
         bool                  m_initialized;
-
-        // Internal use only - for ClayRenderer and UIManager
-        using MeasureTextFunction = std::function<ClayDimensions( const InteropString &text, const ClayTextDesc &desc )>;
-        void SetMeasureTextFunction( const MeasureTextFunction &func ) const;
 
         friend class ClayRenderer;
         friend class UIManager;

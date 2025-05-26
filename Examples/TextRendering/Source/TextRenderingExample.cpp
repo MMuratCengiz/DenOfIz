@@ -53,14 +53,11 @@ void TextRenderingExample::Init( )
     textRendererDesc.LogicalDevice      = m_logicalDevice;
     textRendererDesc.InitialAtlasWidth  = m_fontAsset->AtlasWidth;
     textRendererDesc.InitialAtlasHeight = m_fontAsset->AtlasHeight;
+    textRendererDesc.Width              = m_windowDesc.Width;
+    textRendererDesc.Height             = m_windowDesc.Height;
     m_textRenderer                      = std::make_unique<TextRenderer>( textRendererDesc );
-    m_textRenderer->Initialize( );
     m_textRenderer->SetFont( m_font );
     m_textRenderer->SetAntiAliasingMode( AntiAliasingMode::Grayscale );
-
-    const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( m_windowDesc.Width ), static_cast<float>( m_windowDesc.Height ), 0.0f, 0.0f, 1.0f );
-    XMStoreFloat4x4( &m_orthoProjection, projection );
-    m_textRenderer->SetProjectionMatrix( InteropMathConverter::Float_4x4FromXMFLOAT4X4( m_orthoProjection ) );
 
     // Initialize the debug renderer with the same font asset
     FrameDebugRendererDesc debugRendererDesc{ };
@@ -73,12 +70,9 @@ void TextRenderingExample::Init( )
     debugRendererDesc.Enabled       = m_debugInfoEnabled;
 
     m_debugRenderer = std::make_unique<FrameDebugRenderer>( debugRendererDesc );
-    m_debugRenderer->SetProjectionMatrix( InteropMathConverter::Float_4x4FromXMFLOAT4X4( m_orthoProjection ) );
-
     m_debugRenderer->AddDebugLine( "Press F1 to toggle debug info", { 0.8f, 0.8f, 0.8f, 1.0f } );
 
     m_animTime = 0.0f;
-
     m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
 }
 
@@ -165,7 +159,7 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
         break;
     }
 
-    float verticalOffset = 120.0f;
+    float          verticalOffset = 120.0f;
     TextRenderDesc titleParams;
     titleParams.Text  = "Font Rendering Example";
     titleParams.X     = 50.0f;

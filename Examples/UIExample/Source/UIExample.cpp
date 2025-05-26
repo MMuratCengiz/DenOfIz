@@ -46,7 +46,7 @@ void UIExample::Init( )
 
 void UIExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 {
-    defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
+    // defaultApiPreference.Windows = APIPreferenceWindows::Vulkan;
 }
 
 void UIExample::Update( )
@@ -54,13 +54,13 @@ void UIExample::Update( )
     m_time.Tick( );
     m_worldData.DeltaTime = m_time.GetDeltaTime( );
     m_worldData.Camera->Update( m_worldData.DeltaTime );
+    m_uiManager->UpdateScrollContainers( false, Float_2( 0, 0 ), m_worldData.DeltaTime );
 
     RenderAndPresentFrame( );
 }
 
 void UIExample::CreateUI( ) const
 {
-
     ClayElementDeclaration container;
     container.Id                     = m_containerId;
     container.Layout.Sizing.Width    = ClaySizingAxis::Grow( );
@@ -81,11 +81,11 @@ void UIExample::CreateUI( ) const
 
     m_uiManager->OpenElement( headerContainer );
 
-    ClayTextDesc headerTextConfig;
-    headerTextConfig.FontSize  = 24;
-    headerTextConfig.TextColor = ClayColor( 255, 255, 255, 255 );
+    ClayTextDesc headerTextDesc;
+    headerTextDesc.FontSize  = 24;
+    headerTextDesc.TextColor = ClayColor( 255, 255, 255, 255 );
 
-    m_uiManager->Text( "Clay UI Example", headerTextConfig );
+    m_uiManager->Text( "Clay UI Example", headerTextDesc );
 
     m_uiManager->CloseElement( );
 
@@ -175,7 +175,6 @@ void UIExample::CreateUI( ) const
     m_uiManager->Text( fpsBuffer, footerTextConfig );
 
     m_uiManager->CloseElement( );
-
     m_uiManager->CloseElement( );
 }
 
@@ -191,27 +190,19 @@ void UIExample::Render( const uint32_t frameIndex, ICommandList *commandList )
     RenderingAttachmentDesc attachmentDesc{ };
     attachmentDesc.Resource = renderTarget;
     attachmentDesc.SetClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+
     RenderingDesc renderingDesc{ };
     renderingDesc.RTAttachments.AddElement( attachmentDesc );
+
     commandList->BeginRendering( renderingDesc );
 
     const auto viewport = m_swapChain->GetViewport( );
     commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );
     commandList->BindScissorRect( viewport.X, viewport.Y, viewport.Width, viewport.Height );
 
-    ClayPointerState pointerState = ClayPointerState::Released;
-    if ( m_mousePressed )
-    {
-        pointerState = ClayPointerState::Pressed;
-    }
-
-    m_uiManager->SetPointerState( m_mousePosition, pointerState );
-    m_uiManager->UpdateScrollContainers( false, Float_2( 0, 0 ), m_worldData.DeltaTime );
-
     m_uiManager->BeginFrame( viewport.Width, viewport.Height );
     CreateUI( );
-    m_uiManager->EndFrame( );
-    m_uiManager->Render( commandList, frameIndex );
+    m_uiManager->EndFrame(  commandList, frameIndex  );
 
     commandList->EndRendering( );
 
@@ -224,30 +215,7 @@ void UIExample::Render( const uint32_t frameIndex, ICommandList *commandList )
 
 void UIExample::HandleEvent( Event &event )
 {
-    if ( event.Type == EventType::MouseMotion )
-    {
-        m_mousePosition = Float_2( static_cast<float>( event.Motion.X ), static_cast<float>( event.Motion.Y ) );
-    }
-    else if ( event.Type == EventType::MouseButtonDown )
-    {
-        if ( event.Button.Button == MouseButton::Left )
-        {
-            m_mousePressed = true;
-        }
-    }
-    else if ( event.Type == EventType::MouseButtonUp )
-    {
-        if ( event.Button.Button == MouseButton::Left )
-        {
-            m_mousePressed = false;
-        }
-    }
-    else if ( event.Type == EventType::WindowEvent && event.Window.Event == WindowEventType::SizeChanged )
-    {
-        const auto viewport = m_swapChain->GetViewport( );
-        m_uiManager->SetViewportSize( viewport.Width, viewport.Height );
-    }
-
+    m_uiManager->HandleEvent( event );
     m_worldData.Camera->HandleEvent( event );
     IExample::HandleEvent( event );
 }

@@ -86,6 +86,7 @@ namespace DenOfIz
 
         DZ_API void UpdateStats( float deltaTime );
         DZ_API void Render( ICommandList *commandList );
+        DZ_API void SetViewport( const Viewport& viewport );
         DZ_API void SetProjectionMatrix( const Float_4x4 &projectionMatrix );
         DZ_API void SetScreenSize( uint32_t width, uint32_t height );
 

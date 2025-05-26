@@ -1,11 +1,58 @@
-#include <DenOfIzGraphics/UI/ClayWrapper.h>
+#include <DenOfIzGraphics/UI/Clay.h>
 #include <cstring>
 #include <glog/logging.h>
+#include <unordered_map>
 
 #define CLAY_IMPLEMENTATION
 #include "clay.h"
 
 using namespace DenOfIz;
+
+namespace DenOfIz
+{
+    // Equality operator for ClayTextDesc
+    bool operator==( const ClayTextDesc &lhs, const ClayTextDesc &rhs )
+    {
+        return lhs.FontId == rhs.FontId &&
+               lhs.FontSize == rhs.FontSize &&
+               lhs.LetterSpacing == rhs.LetterSpacing &&
+               lhs.LineHeight == rhs.LineHeight &&
+               lhs.TextColor.R == rhs.TextColor.R &&
+               lhs.TextColor.G == rhs.TextColor.G &&
+               lhs.TextColor.B == rhs.TextColor.B &&
+               lhs.TextColor.A == rhs.TextColor.A &&
+               lhs.WrapMode == rhs.WrapMode &&
+               lhs.TextAlignment == rhs.TextAlignment &&
+               lhs.HashStringContents == rhs.HashStringContents;
+    }
+}
+
+namespace std
+{
+    template<>
+    struct hash<DenOfIz::ClayTextDesc>
+    {
+        size_t operator()( const DenOfIz::ClayTextDesc &desc ) const noexcept
+        {
+            size_t h1 = hash<uint32_t>{}( desc.FontId );
+            size_t h2 = hash<uint32_t>{}( desc.FontSize );
+            size_t h3 = hash<float>{}( desc.LetterSpacing );
+            size_t h4 = hash<float>{}( desc.LineHeight );
+            size_t h5 = hash<uint8_t>{}( desc.TextColor.R );
+            size_t h6 = hash<uint8_t>{}( desc.TextColor.G );
+            size_t h7 = hash<uint8_t>{}( desc.TextColor.B );
+            size_t h8 = hash<uint8_t>{}( desc.TextColor.A );
+            size_t h9 = hash<int>{}( static_cast<int>( desc.WrapMode ) );
+            size_t h10 = hash<int>{}( static_cast<int>( desc.TextAlignment ) );
+            size_t h11 = hash<bool>{}( desc.HashStringContents );
+
+            // Combine hashes using XOR with shifts
+            return h1 ^ ( h2 << 1 ) ^ ( h3 << 2 ) ^ ( h4 << 3 ) ^ ( h5 << 4 ) ^ 
+                   ( h6 << 5 ) ^ ( h7 << 6 ) ^ ( h8 << 7 ) ^ ( h9 << 8 ) ^ 
+                   ( h10 << 9 ) ^ ( h11 << 10 );
+        }
+    };
+}
 
 ClaySizingAxis ClaySizingAxis::Fit( const float min, const float max )
 {
@@ -54,18 +101,19 @@ ClayTextDesc::ClayTextDesc( ) :
 {
 }
 
-ClayElementDeclaration::ClayElementDeclaration( ) :
-    Id( 0 ), Image{ }, Floating{ }, Custom{ }, Scroll{ }, UserData( nullptr )
+ClayElementDeclaration::ClayElementDeclaration( ) : Id( 0 ), Image{ }, Floating{ }, Custom{ }, Scroll{ }, UserData( nullptr )
 {
 }
 
-struct ClayWrapper::Impl
+struct Clay::Impl
 {
-    Clay_Arena           arena;
-    Clay_Context        *context;
-    std::vector<uint8_t> memory;
-    MeasureTextFunction  measureTextFunc;
-    ClayWrapper         *wrapper;
+    ClayRenderer            *renderer;
+    Clay_Arena               arena;
+    Clay_Context            *context;
+    std::vector<uint8_t>     memory;
+    Clay                    *wrapper;
+    std::vector<std::string> frameStrings;
+    std::unordered_map<ClayTextDesc, Clay_TextElementConfig> textConfigCache;
 
     // ReSharper disable once CppPassValueParameterByConstReference used as callback below
     static Clay_Dimensions MeasureTextCallback( Clay_StringSlice text, Clay_TextElementConfig *config, void *userData )
@@ -73,10 +121,6 @@ struct ClayWrapper::Impl
         const auto *impl = static_cast<Impl *>( userData );
         DZ_NOT_NULL( impl );
 
-        if ( !impl->measureTextFunc )
-        {
-            return Clay_Dimensions{ 0, 0 };
-        }
         const std::string   tempStr( text.chars, text.length );
         const InteropString str( tempStr.c_str( ) );
 
@@ -90,7 +134,7 @@ struct ClayWrapper::Impl
         textConfig.TextAlignment      = static_cast<ClayTextAlignment>( config->textAlignment );
         textConfig.HashStringContents = config->hashStringContents;
 
-        const ClayDimensions dims = impl->measureTextFunc( str, textConfig );
+        const ClayDimensions dims = impl->renderer->MeasureText( str, *config );
         return Clay_Dimensions{ dims.Width, dims.Height };
     }
 
@@ -363,6 +407,20 @@ struct ClayWrapper::Impl
         return result;
     }
 
+    const Clay_TextElementConfig* GetOrCreateCachedTextConfig( const ClayTextDesc &desc )
+    {
+        auto it = textConfigCache.find( desc );
+        if ( it != textConfigCache.end( ) )
+        {
+            return &it->second;
+        }
+        
+        // Create new config and cache it
+        Clay_TextElementConfig newConfig = ConvertTextConfig( desc );
+        auto result = textConfigCache.emplace( desc, newConfig );
+        return &result.first->second;
+    }
+
     ClayRenderCommandType ConvertRenderCommandType( const Clay_RenderCommandType type ) const
     {
         switch ( type )
@@ -387,99 +445,21 @@ struct ClayWrapper::Impl
             return ClayRenderCommandType::None;
         }
     }
-
-    ClayRenderCommand ConvertRenderCommand( const Clay_RenderCommand &cmd ) const
-    {
-        ClayRenderCommand result{ };
-        result.BoundingBox.X      = cmd.boundingBox.x;
-        result.BoundingBox.Y      = cmd.boundingBox.y;
-        result.BoundingBox.Width  = cmd.boundingBox.width;
-        result.BoundingBox.Height = cmd.boundingBox.height;
-        result.CommandType        = ConvertRenderCommandType( cmd.commandType );
-        result.UserData           = cmd.userData;
-        result.Id                 = cmd.id;
-        result.ZIndex             = cmd.zIndex;
-
-        switch ( cmd.commandType )
-        {
-        case CLAY_RENDER_COMMAND_TYPE_RECTANGLE:
-            {
-                result.RenderData.Rectangle.BackgroundColor          = ClayColor( cmd.renderData.rectangle.backgroundColor.r, cmd.renderData.rectangle.backgroundColor.g,
-                                                                                  cmd.renderData.rectangle.backgroundColor.b, cmd.renderData.rectangle.backgroundColor.a );
-                result.RenderData.Rectangle.CornerRadius.TopLeft     = cmd.renderData.rectangle.cornerRadius.topLeft;
-                result.RenderData.Rectangle.CornerRadius.TopRight    = cmd.renderData.rectangle.cornerRadius.topRight;
-                result.RenderData.Rectangle.CornerRadius.BottomLeft  = cmd.renderData.rectangle.cornerRadius.bottomLeft;
-                result.RenderData.Rectangle.CornerRadius.BottomRight = cmd.renderData.rectangle.cornerRadius.bottomRight;
-                break;
-            }
-        case CLAY_RENDER_COMMAND_TYPE_TEXT:
-            {
-                auto contents                         = std::string( cmd.renderData.text.stringContents.chars, cmd.renderData.text.stringContents.length );
-                result.RenderData.Text.StringContents = InteropString( contents.c_str( ) );
-                result.RenderData.Text.TextColor =
-                    ClayColor( cmd.renderData.text.textColor.r, cmd.renderData.text.textColor.g, cmd.renderData.text.textColor.b, cmd.renderData.text.textColor.a );
-                result.RenderData.Text.FontId        = cmd.renderData.text.fontId;
-                result.RenderData.Text.FontSize      = cmd.renderData.text.fontSize;
-                result.RenderData.Text.LetterSpacing = cmd.renderData.text.letterSpacing;
-                result.RenderData.Text.LineHeight    = cmd.renderData.text.lineHeight;
-                break;
-            }
-        case CLAY_RENDER_COMMAND_TYPE_IMAGE:
-            {
-                result.RenderData.Image.BackgroundColor          = ClayColor( cmd.renderData.image.backgroundColor.r, cmd.renderData.image.backgroundColor.g,
-                                                                              cmd.renderData.image.backgroundColor.b, cmd.renderData.image.backgroundColor.a );
-                result.RenderData.Image.CornerRadius.TopLeft     = cmd.renderData.image.cornerRadius.topLeft;
-                result.RenderData.Image.CornerRadius.TopRight    = cmd.renderData.image.cornerRadius.topRight;
-                result.RenderData.Image.CornerRadius.BottomLeft  = cmd.renderData.image.cornerRadius.bottomLeft;
-                result.RenderData.Image.CornerRadius.BottomRight = cmd.renderData.image.cornerRadius.bottomRight;
-                result.RenderData.Image.SourceDimensions.Width   = cmd.renderData.image.sourceDimensions.width;
-                result.RenderData.Image.SourceDimensions.Height  = cmd.renderData.image.sourceDimensions.height;
-                result.RenderData.Image.ImageData                = cmd.renderData.image.imageData;
-                break;
-            }
-        case CLAY_RENDER_COMMAND_TYPE_BORDER:
-            {
-                result.RenderData.Border.Color =
-                    ClayColor( cmd.renderData.border.color.r, cmd.renderData.border.color.g, cmd.renderData.border.color.b, cmd.renderData.border.color.a );
-                result.RenderData.Border.CornerRadius.TopLeft     = cmd.renderData.border.cornerRadius.topLeft;
-                result.RenderData.Border.CornerRadius.TopRight    = cmd.renderData.border.cornerRadius.topRight;
-                result.RenderData.Border.CornerRadius.BottomLeft  = cmd.renderData.border.cornerRadius.bottomLeft;
-                result.RenderData.Border.CornerRadius.BottomRight = cmd.renderData.border.cornerRadius.bottomRight;
-                result.RenderData.Border.Width.Left               = cmd.renderData.border.width.left;
-                result.RenderData.Border.Width.Right              = cmd.renderData.border.width.right;
-                result.RenderData.Border.Width.Top                = cmd.renderData.border.width.top;
-                result.RenderData.Border.Width.Bottom             = cmd.renderData.border.width.bottom;
-                result.RenderData.Border.Width.BetweenChildren    = cmd.renderData.border.width.betweenChildren;
-                break;
-            }
-        case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:
-        case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END:
-            {
-                result.RenderData.Scroll.Horizontal = cmd.renderData.scroll.horizontal;
-                result.RenderData.Scroll.Vertical   = cmd.renderData.scroll.vertical;
-                break;
-            }
-        case CLAY_RENDER_COMMAND_TYPE_CUSTOM:
-            {
-                result.RenderData.Custom.BackgroundColor          = ClayColor( cmd.renderData.custom.backgroundColor.r, cmd.renderData.custom.backgroundColor.g,
-                                                                               cmd.renderData.custom.backgroundColor.b, cmd.renderData.custom.backgroundColor.a );
-                result.RenderData.Custom.CornerRadius.TopLeft     = cmd.renderData.custom.cornerRadius.topLeft;
-                result.RenderData.Custom.CornerRadius.TopRight    = cmd.renderData.custom.cornerRadius.topRight;
-                result.RenderData.Custom.CornerRadius.BottomLeft  = cmd.renderData.custom.cornerRadius.bottomLeft;
-                result.RenderData.Custom.CornerRadius.BottomRight = cmd.renderData.custom.cornerRadius.bottomRight;
-                result.RenderData.Custom.CustomData               = cmd.renderData.custom.customData;
-                break;
-            }
-        default:
-            break;
-        }
-
-        return result;
-    }
 };
 
-ClayWrapper::ClayWrapper( const ClayWrapperDesc &desc ) : m_impl( std::make_unique<Impl>( ) ), m_initialized( false )
+Clay::Clay( const ClayWrapperDesc &desc ) : m_impl( std::make_unique<Impl>( ) ), m_initialized( false )
 {
+    ClayRendererDesc clayRendererDesc{ };
+    clayRendererDesc.LogicalDevice      = desc.LogicalDevice;
+    clayRendererDesc.TextRenderer       = desc.TextRenderer;
+    clayRendererDesc.RenderTargetFormat = desc.RenderTargetFormat;
+    clayRendererDesc.NumFrames          = desc.NumFrames;
+    clayRendererDesc.MaxNumQuads        = desc.MaxNumQuads;
+    clayRendererDesc.MaxNumMaterials    = desc.MaxNumMaterials;
+    clayRendererDesc.Width              = desc.Width;
+    clayRendererDesc.Height             = desc.Height;
+
+    m_renderer      = std::make_unique<ClayRenderer>( clayRendererDesc );
     m_impl->wrapper = this;
     Clay_SetMaxElementCount( desc.MaxNumElements );
     Clay_SetMaxMeasureTextCacheWordCount( desc.MaxNumTextMeasureCacheElements );
@@ -499,61 +479,48 @@ ClayWrapper::ClayWrapper( const ClayWrapperDesc &desc ) : m_impl( std::make_uniq
     }
 
     Clay_SetMeasureTextFunction( Impl::MeasureTextCallback, m_impl.get( ) );
+    m_impl->renderer = m_renderer.get( );
 }
 
-ClayWrapper::~ClayWrapper( )
+Clay::~Clay( )
 {
     m_impl->context = nullptr;
     m_impl->memory.clear( );
 }
 
-void ClayWrapper::SetLayoutDimensions( const float width, const float height ) const
+void Clay::SetLayoutDimensions( const float width, const float height ) const
 {
     DZ_NOT_NULL( m_impl->context );
     Clay_SetLayoutDimensions( Clay_Dimensions{ width, height } );
+    m_renderer->Resize( width, height );
 }
 
-void ClayWrapper::SetPointerState( const Float_2 position, const ClayPointerState state ) const
+void Clay::SetPointerState( const Float_2 position, const ClayPointerState state ) const
 {
     DZ_NOT_NULL( m_impl->context );
-
-    const bool pointerDown = ( state == ClayPointerState::Pressed || state == ClayPointerState::PressedThisFrame );
-    Clay_SetPointerState( Clay_Vector2{ position.X, position.Y }, pointerDown );
+    Clay_SetPointerState( Clay_Vector2{ position.X, position.Y }, state == ClayPointerState::Pressed );
 }
 
-void ClayWrapper::UpdateScrollContainers( const bool enableDragScrolling, const Float_2 scrollDelta, const float deltaTime ) const
+void Clay::UpdateScrollContainers( const bool enableDragScrolling, const Float_2 scrollDelta, const float deltaTime ) const
 {
     DZ_NOT_NULL( m_impl->context );
     Clay_UpdateScrollContainers( enableDragScrolling, Clay_Vector2{ scrollDelta.X, scrollDelta.Y }, deltaTime );
 }
 
-void ClayWrapper::BeginLayout( ) const
+void Clay::BeginLayout( ) const
 {
     DZ_NOT_NULL( m_impl->context );
     Clay_BeginLayout( );
 }
 
-InteropArray<ClayRenderCommand> ClayWrapper::EndLayout( ) const
+void Clay::EndLayout( ICommandList *commandList, const uint32_t frameIndex ) const
 {
     DZ_NOT_NULL( m_impl->context );
-
-    Clay_RenderCommandArray clayCommands = Clay_EndLayout( );
-
-    InteropArray<ClayRenderCommand> commands;
-    commands.Resize( clayCommands.length );
-
-    for ( int32_t i = 0; i < clayCommands.length; ++i )
-    {
-        if ( const Clay_RenderCommand *clayCmd = Clay_RenderCommandArray_Get( &clayCommands, i ) )
-        {
-            commands.SetElement( i, m_impl->ConvertRenderCommand( *clayCmd ) );
-        }
-    }
-
-    return commands;
+    // m_impl->frameStrings.clear( );
+    m_renderer->Render( commandList, Clay_EndLayout( ), frameIndex );
 }
 
-void ClayWrapper::OpenElement( const ClayElementDeclaration &declaration ) const
+void Clay::OpenElement( const ClayElementDeclaration &declaration ) const
 {
     DZ_NOT_NULL( m_impl->context );
 
@@ -574,26 +541,25 @@ void ClayWrapper::OpenElement( const ClayElementDeclaration &declaration ) const
     Clay__ConfigureOpenElement( clayDecl );
 }
 
-void ClayWrapper::CloseElement( ) const
+void Clay::CloseElement( ) const
 {
     DZ_NOT_NULL( m_impl->context );
     Clay__CloseElement( );
 }
 
-void ClayWrapper::Text( const InteropString &text, const ClayTextDesc &desc ) const
+void Clay::Text( const InteropString &text, const ClayTextDesc &desc ) const
 {
     DZ_NOT_NULL( m_impl->context );
 
     Clay_String clayText;
     clayText.chars  = text.Get( );
-    clayText.length = static_cast<int32_t>( strlen( text.Get( ) ) );
+    clayText.length = text.NumChars( );
 
-    Clay_TextElementConfig clayConfig = m_impl->ConvertTextConfig( desc );
-
-    Clay__OpenTextElement( clayText, &clayConfig );
+    const Clay_TextElementConfig* clayConfig = m_impl->GetOrCreateCachedTextConfig( desc );
+    Clay__OpenTextElement( clayText, const_cast<Clay_TextElementConfig*>( clayConfig ) );
 }
 
-uint32_t ClayWrapper::HashString( const InteropString &str, const uint32_t index, const uint32_t baseId ) const
+uint32_t Clay::HashString( const InteropString &str, const uint32_t index, const uint32_t baseId ) const
 {
     Clay_String clayStr;
     clayStr.chars  = str.Get( );
@@ -603,19 +569,14 @@ uint32_t ClayWrapper::HashString( const InteropString &str, const uint32_t index
     return id.id;
 }
 
-void ClayWrapper::SetMeasureTextFunction( const MeasureTextFunction &func ) const
-{
-    m_impl->measureTextFunc = func;
-}
-
-bool ClayWrapper::PointerOver( const uint32_t id ) const
+bool Clay::PointerOver( const uint32_t id ) const
 {
     DZ_NOT_NULL( m_impl->context );
     const Clay_ElementId clayId{ id, 0, 0, Clay_String{} };
     return Clay_PointerOver( clayId );
 }
 
-ClayBoundingBox ClayWrapper::GetElementBoundingBox( const uint32_t id ) const
+ClayBoundingBox Clay::GetElementBoundingBox( const uint32_t id ) const
 {
     DZ_NOT_NULL( m_impl->context );
 

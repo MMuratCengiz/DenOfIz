@@ -36,9 +36,12 @@ namespace DenOfIz
 {
     struct DZ_API TextRendererDesc
     {
-        ILogicalDevice *LogicalDevice;
-        uint32_t        InitialAtlasWidth  = 512;
-        uint32_t        InitialAtlasHeight = 512;
+        ILogicalDevice  *LogicalDevice;
+        uint32_t         InitialAtlasWidth  = 512;
+        uint32_t         InitialAtlasHeight = 512;
+        AntiAliasingMode AntiAliasingMode   = AntiAliasingMode::Grayscale;
+        uint32_t         Width;
+        uint32_t         Height;
     };
 
     struct DZ_API TextRenderDesc
@@ -48,6 +51,10 @@ namespace DenOfIz
         float            Y                = 0.0f;
         Float_4          Color            = Float_4{ 1.0f, 1.0f, 1.0f, 1.0f };
         float            Scale            = 1.0f;
+        uint16_t         FontId           = 0;
+        uint16_t         FontSize         = 32;
+        uint16_t         LetterSpacing    = 0;
+        uint16_t         LineHeight       = 0;
         bool             HorizontalCenter = false;
         bool             VerticalCenter   = false;
         TextDirection    Direction        = TextDirection::Auto;
@@ -69,6 +76,7 @@ namespace DenOfIz
         AntiAliasingMode m_antiAliasingMode = AntiAliasingMode::Grayscale;
 
         std::unordered_map<std::string, Font *> m_loadedFonts;
+        std::unordered_map<uint16_t, Font *>    m_fontRegistry; // FontId -> Font mapping
 
         std::unique_ptr<ShaderProgram>      m_fontShaderProgram;
         std::unique_ptr<IPipeline>          m_fontPipeline;
@@ -81,6 +89,7 @@ namespace DenOfIz
         BufferDesc                          m_indexBufferDesc{ };
         std::unique_ptr<IBufferResource>    m_indexBuffer       = nullptr;
         std::unique_ptr<IBufferResource>    m_uniformBuffer     = nullptr;
+        FontShaderUniforms                 *m_uniformBufferData = nullptr;
         std::unique_ptr<IRootSignature>     m_rootSignature     = nullptr;
         std::unique_ptr<IResourceBindGroup> m_resourceBindGroup = nullptr;
         std::unique_ptr<IInputLayout>       m_inputLayout       = nullptr;
@@ -88,29 +97,40 @@ namespace DenOfIz
         Font                                    *m_currentFont = nullptr;
         std::vector<std::unique_ptr<TextLayout>> m_textLayouts;
         uint32_t                                 m_currentTextLayoutIndex = 0;
-        XMFLOAT4X4                               m_projectionMatrix{ };
-        bool                                     m_atlasNeedsUpdate   = false;
-        uint32_t                                 m_maxVertices        = 4096;
-        uint32_t                                 m_maxIndices         = 4096;
-        uint32_t                                 m_currentVertexCount = 0;
-        uint32_t                                 m_currentIndexCount  = 0;
-        InteropArray<GlyphVertex>                m_glyphVertices;
-        InteropArray<uint32_t>                   m_indexData;
+
+        // Separate TextLayout pool for MeasureText operations
+        mutable std::vector<std::unique_ptr<TextLayout>> m_measureTextLayouts;
+        mutable uint32_t                                 m_currentMeasureLayoutIndex = 0;
+        XMFLOAT4X4                                       m_projectionMatrix{ };
+        bool                                             m_atlasNeedsUpdate   = false;
+        uint32_t                                         m_maxVertices        = 4096;
+        uint32_t                                         m_maxIndices         = 4096;
+        uint32_t                                         m_currentVertexCount = 0;
+        uint32_t                                         m_currentIndexCount  = 0;
+        InteropArray<GlyphVertex>                        m_glyphVertices;
+        InteropArray<uint32_t>                           m_indexData;
 
     public:
         DZ_API explicit TextRenderer( const TextRendererDesc &desc );
         DZ_API ~TextRenderer( );
 
-        DZ_API void Initialize( );
         DZ_API void SetFont( Font *font );
         DZ_API void SetAntiAliasingMode( AntiAliasingMode antiAliasingMode );
         DZ_API void SetProjectionMatrix( const Float_4x4 &projectionMatrix );
+        DZ_API void SetViewport( const Viewport &viewport );
+
+        // Font management
+        DZ_API uint16_t RegisterFont( Font *font, uint16_t fontId = 0 ); // Returns assigned FontId
+        DZ_API Font    *GetFont( uint16_t fontId ) const;
+        DZ_API void     UnregisterFont( uint16_t fontId );
+
         DZ_API void BeginBatch( );
         DZ_API void AddText( const TextRenderDesc &params );
         DZ_API void EndBatch( ICommandList *commandList );
-        
+
         DZ_API Float_2 MeasureText( const InteropString &text, float scale = 1.0f, uint32_t fontSize = 36 ) const;
         DZ_API Float_2 MeasureText( const InteropString &text, Font *font, float scale = 1.0f, uint32_t fontSize = 36 ) const;
+        DZ_API Float_2 MeasureText( const InteropString &text, const TextRenderDesc &desc ) const;
 
     private:
         void UpdateAtlasTexture( ICommandList *commandList );

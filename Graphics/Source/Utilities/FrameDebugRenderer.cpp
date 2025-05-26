@@ -24,10 +24,19 @@ using namespace DenOfIz;
 
 FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m_desc( desc )
 {
-    DZ_NOT_NULL( m_desc.LogicalDevice );
+    if ( m_desc.LogicalDevice == nullptr )
+    {
+        LOG( WARNING ) << "FrameDebugRendererDesc.LogicalDevice cannot be null.";
+        return;
+    }
     if ( m_desc.GraphicsApi == nullptr )
     {
         LOG( WARNING ) << "FrameDebugRendererDesc.GraphicsApi is null, debug info will not contain API information.";
+    }
+    if ( m_desc.ScreenWidth == 0 || m_desc.ScreenHeight == 0 )
+    {
+        LOG( ERROR ) << "FrameDebugRendererDesc.ScreenWidth and FrameDebugRendererDesc.ScreenHeight must be set.";
+        return;
     }
 
     m_frameTimes.resize( m_maxFrameTimeSamples, 0.0 );
@@ -48,20 +57,16 @@ FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m
         m_backendName = m_desc.GraphicsApi->ActiveAPI( );
     }
     m_gpuName = m_desc.LogicalDevice->DeviceInfo( ).Name;
-
-    const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( m_desc.ScreenWidth ), static_cast<float>( m_desc.ScreenHeight ), 0.0f, 0.0f, 1.0f );
-    XMStoreFloat4x4( &m_projectionMatrix, projection );
-
     TextRendererDesc textRendererDesc{ };
     textRendererDesc.LogicalDevice      = m_desc.LogicalDevice;
     textRendererDesc.InitialAtlasWidth  = m_desc.FontAsset->AtlasWidth;
     textRendererDesc.InitialAtlasHeight = m_desc.FontAsset->AtlasHeight;
-
-    m_textRenderer = std::make_unique<TextRenderer>( textRendererDesc );
-    m_textRenderer->Initialize( );
+    textRendererDesc.Width              = m_desc.ScreenWidth;
+    textRendererDesc.Height             = m_desc.ScreenHeight;
+    m_textRenderer                      = std::make_unique<TextRenderer>( textRendererDesc );
     m_textRenderer->SetFont( m_font );
     m_textRenderer->SetAntiAliasingMode( AntiAliasingMode::Grayscale );
-    m_textRenderer->SetProjectionMatrix( InteropMathConverter::Float_4x4FromXMFLOAT4X4( m_projectionMatrix ) );
+    SetViewport( Viewport{ 0.0f, 0.0f, static_cast<float>( m_desc.ScreenWidth ), static_cast<float>( m_desc.ScreenHeight ) } );
 }
 
 void FrameDebugRenderer::UpdateStats( const float deltaTime )
@@ -200,6 +205,13 @@ void FrameDebugRenderer::Render( ICommandList *commandList )
     m_textRenderer->EndBatch( commandList );
 }
 
+void FrameDebugRenderer::SetViewport( const Viewport &viewport )
+{
+    const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( viewport.X, viewport.Width, viewport.Height, viewport.Y, 0.0f, 1.0f );
+    XMStoreFloat4x4( &m_projectionMatrix, projection );
+    m_textRenderer->SetViewport( viewport );
+}
+
 void FrameDebugRenderer::SetProjectionMatrix( const Float_4x4 &projectionMatrix )
 {
     m_projectionMatrix = InteropMathConverter::Float_4x4ToXMFLOAT4X4( projectionMatrix );
@@ -213,14 +225,7 @@ void FrameDebugRenderer::SetScreenSize( const uint32_t width, const uint32_t hei
 {
     m_desc.ScreenWidth  = width;
     m_desc.ScreenHeight = height;
-
-    const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( width ), static_cast<float>( height ), 0.0f, 0.0f, 1.0f );
-    XMStoreFloat4x4( &m_projectionMatrix, projection );
-
-    if ( m_textRenderer )
-    {
-        m_textRenderer->SetProjectionMatrix( InteropMathConverter::Float_4x4FromXMFLOAT4X4( m_projectionMatrix ) );
-    }
+    SetViewport( Viewport{ 0.0f, 0.0f, static_cast<float>( width ), static_cast<float>( height ) } );
 }
 
 void FrameDebugRenderer::AddDebugLine( const InteropString &text, const Float_4 &color )

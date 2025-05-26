@@ -23,6 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/UI/ClayInternal.h>
 #include <memory>
 
+#include "DenOfIzGraphics/Input/Event.h"
+
 namespace DenOfIz
 {
 	struct UIManagerDesc
@@ -40,6 +42,8 @@ namespace DenOfIz
 
 	class UIManager
 	{
+	    ClayPointerState m_pointerState;
+
 	    struct Impl;
 	    std::unique_ptr<Impl> m_impl;
 	    UIManagerDesc         m_desc;
@@ -48,7 +52,7 @@ namespace DenOfIz
 		DZ_API ~UIManager( );
 
 		DZ_API void BeginFrame( float width, float height ) const;
-		DZ_API void EndFrame( ) const;
+		DZ_API void EndFrame( ICommandList* commandList, uint32_t frameIndex ) const;
 
 		DZ_API void OpenElement( const ClayElementDeclaration &declaration ) const;
 		DZ_API void CloseElement( ) const;
@@ -61,7 +65,7 @@ namespace DenOfIz
 		DZ_API ClayBoundingBox GetElementBoundingBox( uint32_t id ) const;
 		DZ_API uint32_t        HashString( const InteropString &str, uint32_t index = 0, uint32_t baseId = 0 ) const;
 
-		DZ_API void Render( ICommandList *commandList, uint32_t frameIndex ) const;
+	    DZ_API void HandleEvent( const Event& event );
 		DZ_API void SetViewportSize( float width, float height ) const;
 	};
 

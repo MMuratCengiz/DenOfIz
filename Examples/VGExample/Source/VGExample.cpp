@@ -145,7 +145,6 @@ void VGExample::InitializeRenderers( )
     TextRendererDesc textRendererDesc;
     textRendererDesc.LogicalDevice = m_logicalDevice;
     m_textRenderer                 = std::make_unique<TextRenderer>( textRendererDesc );
-    m_textRenderer->Initialize( );
 
     Float_4x4 projMatrix;
     std::memcpy( &projMatrix, &m_projectionMatrix, sizeof( Float_4x4 ) );

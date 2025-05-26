@@ -17,8 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
+#include <DenOfIzGraphics/UI/Clay.h>
 #include <DenOfIzGraphics/UI/ClayRenderer.h>
-#include <DenOfIzGraphics/UI/ClayWrapper.h>
 #include <DenOfIzGraphics/Utilities/InteropMathConverter.h>
 #include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <cstring>
@@ -64,7 +64,7 @@ ClayRenderer::~ClayRenderer( )
     m_shapeCache.clear( );
 }
 
-void ClayRenderer::SetViewportSize( const float width, const float height )
+void ClayRenderer::Resize( const float width, const float height )
 {
     if ( m_viewportWidth != width || m_viewportHeight != height )
     {
@@ -98,9 +98,13 @@ void ClayRenderer::InvalidateLayout( )
     m_needsClear = true;
 }
 
-void ClayRenderer::Render( ICommandList *commandList, const InteropArray<ClayRenderCommand> &commands, const uint32_t frameIndex )
+void ClayRenderer::Render( ICommandList *commandList, const Clay_RenderCommandArray &commands, const uint32_t frameIndex )
 {
-    DZ_NOT_NULL( commandList );
+    if ( commandList == nullptr )
+    {
+        LOG( ERROR ) << "ClayRenderer::Render: commandList is null";
+        return;
+    }
 
     if ( m_needsClear )
     {
@@ -108,90 +112,82 @@ void ClayRenderer::Render( ICommandList *commandList, const InteropArray<ClayRen
         m_needsClear = false;
     }
 
-    // Reset frame indices to reuse existing quads/materials
     m_currentFrameQuadIndex     = 0;
     m_currentFrameMaterialIndex = 0;
+    m_desc.TextRenderer->BeginBatch( );
 
-    for ( int i = 0; i < commands.NumElements( ); ++i )
+    for ( int i = 0; i < commands.length; ++i )
     {
-        const auto &cmd = commands.GetElement( i );
-        switch ( cmd.CommandType )
+        const Clay_RenderCommand *cmd = &commands.internalArray[ i ];
+        switch ( cmd->commandType )
         {
-        case ClayRenderCommandType::Rectangle:
+        case CLAY_RENDER_COMMAND_TYPE_NONE:
+            break;
+        case CLAY_RENDER_COMMAND_TYPE_RECTANGLE:
+            if ( cmd->renderData.rectangle.cornerRadius.topLeft > 0 || cmd->renderData.rectangle.cornerRadius.topRight > 0 ||
+                 cmd->renderData.rectangle.cornerRadius.bottomLeft > 0 || cmd->renderData.rectangle.cornerRadius.bottomRight > 0 )
             {
-                if ( cmd.RenderData.Rectangle.CornerRadius.TopLeft > 0 || cmd.RenderData.Rectangle.CornerRadius.TopRight > 0 ||
-                     cmd.RenderData.Rectangle.CornerRadius.BottomLeft > 0 || cmd.RenderData.Rectangle.CornerRadius.BottomRight > 0 )
-                {
-                    RenderRoundedRectangle( commandList, cmd.BoundingBox, cmd.RenderData.Rectangle, frameIndex );
-                }
-                else
-                {
-                    RenderRectangle( commandList, cmd.BoundingBox, cmd.RenderData.Rectangle, frameIndex );
-                }
-                break;
+                RenderRoundedRectangle( cmd, frameIndex );
             }
-        case ClayRenderCommandType::Border:
+            else
             {
-                RenderBorder( commandList, cmd.BoundingBox, cmd.RenderData.Border, frameIndex );
-                break;
+                RenderRectangle( cmd, frameIndex );
             }
-        case ClayRenderCommandType::Text:
-            {
-                RenderText( commandList, cmd.BoundingBox, cmd.RenderData.Text, frameIndex );
-                break;
-            }
-        case ClayRenderCommandType::Image:
-            {
-                RenderImage( commandList, cmd.BoundingBox, cmd.RenderData.Image, frameIndex );
-                break;
-            }
-        case ClayRenderCommandType::ScissorStart:
-            {
-                commandList->BindScissorRect( static_cast<int32_t>( cmd.BoundingBox.X ), static_cast<int32_t>( cmd.BoundingBox.Y ), static_cast<int32_t>( cmd.BoundingBox.Width ),
-                                              static_cast<int32_t>( cmd.BoundingBox.Height ) );
-                break;
-            }
-        case ClayRenderCommandType::ScissorEnd:
-            {
-                break;
-            }
-        default:
+            break;
+        case CLAY_RENDER_COMMAND_TYPE_BORDER:
+            RenderBorder( cmd, frameIndex );
+            break;
+        case CLAY_RENDER_COMMAND_TYPE_TEXT:
+            RenderText( cmd, frameIndex );
+            break;
+        case CLAY_RENDER_COMMAND_TYPE_IMAGE:
+            RenderImage( cmd, frameIndex );
+            break;
+        case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:
+            commandList->BindScissorRect( cmd->boundingBox.x, cmd->boundingBox.y, cmd->boundingBox.width, cmd->boundingBox.height );
+            break;
+        case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END:
+            break;
+        case CLAY_RENDER_COMMAND_TYPE_CUSTOM:
             break;
         }
     }
 
+    m_desc.TextRenderer->EndBatch( commandList );
     m_quadRenderer->Render( frameIndex, commandList );
 }
 
-ClayDimensions ClayRenderer::MeasureText( const InteropString &text, const ClayTextDesc &desc ) const
+ClayDimensions ClayRenderer::MeasureText( const InteropString &text, const Clay_TextElementConfig &desc ) const
 {
-    if ( !m_desc.TextRenderer )
+    if ( text.NumChars( ) == 0 )
     {
         return ClayDimensions{ 0, 0 };
     }
 
     TextRenderDesc textDesc;
     textDesc.Text          = text;
-    textDesc.FontId        = desc.FontId;
-    textDesc.FontSize      = desc.FontSize;
-    textDesc.LetterSpacing = desc.LetterSpacing;
-    textDesc.LineHeight    = desc.LineHeight;
-    textDesc.Scale         = 1.0f; // Use font size instead of scale
+    textDesc.FontId        = desc.fontId;
+    textDesc.FontSize      = desc.fontSize;
+    textDesc.LetterSpacing = desc.letterSpacing;
+    textDesc.LineHeight    = desc.lineHeight;
 
     const Float_2 size = m_desc.TextRenderer->MeasureText( text, textDesc );
     return ClayDimensions{ size.X, size.Y };
 }
 
-void ClayRenderer::RenderRectangle( ICommandList *commandList, const ClayBoundingBox &bounds, const ClayRectangleRenderData &data, const uint32_t frameIndex )
+void ClayRenderer::RenderRectangle( const Clay_RenderCommand *command, const uint32_t frameIndex )
 {
-    const Float_4  color      = data.BackgroundColor.ToFloat4( );
-    const uint32_t materialId = GetOrCreateMaterial( color );
+    const Clay_RectangleRenderData data   = command->renderData.rectangle;
+    const Clay_BoundingBox         bounds = command->boundingBox;
+
+    const auto     color      = data.backgroundColor;
+    const uint32_t materialId = GetOrCreateMaterial( color, nullptr );
     const uint32_t quadId     = GetOrCreateQuad( bounds, materialId );
 
     QuadDataDesc quadDesc;
     quadDesc.QuadId     = quadId;
-    quadDesc.Position   = Float_2( bounds.X, bounds.Y );
-    quadDesc.Size       = Float_2( bounds.Width, bounds.Height );
+    quadDesc.Position   = Float_2( bounds.x, bounds.y );
+    quadDesc.Size       = Float_2( bounds.width, bounds.height );
     quadDesc.MaterialId = materialId;
     quadDesc.Rotation   = 0.0f;
     quadDesc.Scale      = Float_2( 1.0f, 1.0f );
@@ -201,138 +197,153 @@ void ClayRenderer::RenderRectangle( ICommandList *commandList, const ClayBoundin
     m_quadRenderer->UpdateQuad( frameIndex, quadDesc );
 }
 
-void ClayRenderer::RenderRoundedRectangle( ICommandList *commandList, const ClayBoundingBox &bounds, const ClayRectangleRenderData &data, const uint32_t frameIndex )
+void ClayRenderer::RenderRoundedRectangle( const Clay_RenderCommand *command, const uint32_t frameIndex )
 {
+    const Clay_RectangleRenderData data   = command->renderData.rectangle;
+    const Clay_BoundingBox         bounds = command->boundingBox;
+
     ITextureResource *shapeTexture = GetOrCreateRoundedRectTexture( bounds, data );
 
-    constexpr auto color      = Float_4( 1.0f, 1.0f, 1.0f, 1.0f ); // White tint since color is in texture
+    const auto     color      = data.backgroundColor;
     const uint32_t materialId = GetOrCreateMaterial( color, shapeTexture );
     const uint32_t quadId     = GetOrCreateQuad( bounds, materialId );
 
     QuadDataDesc quadDesc;
     quadDesc.QuadId     = quadId;
-    quadDesc.Position   = Float_2( bounds.X, bounds.Y );
-    quadDesc.Size       = Float_2( bounds.Width, bounds.Height );
+    quadDesc.Position   = Float_2( bounds.x, bounds.y );
+    quadDesc.Size       = Float_2( bounds.width, bounds.height );
     quadDesc.MaterialId = materialId;
-    quadDesc.Rotation   = 0.0f;
-    quadDesc.Scale      = Float_2( 1.0f, 1.0f );
-    quadDesc.UV0        = Float_2( 0.0f, 0.0f );
-    quadDesc.UV1        = Float_2( 1.0f, 1.0f );
 
     m_quadRenderer->UpdateQuad( frameIndex, quadDesc );
 }
 
-void ClayRenderer::RenderBorder( ICommandList *commandList, const ClayBoundingBox &bounds, const ClayBorderRenderData &data, const uint32_t frameIndex )
+void ClayRenderer::RenderBorder( const Clay_RenderCommand *command, const uint32_t frameIndex )
 {
-    if ( data.Width.Top > 0 )
+    const Clay_BoundingBox bounds = command->boundingBox;
+    Clay_BorderRenderData  data   = command->renderData.border;
+
+    if ( data.width.top > 0 )
     {
-        ClayBoundingBox topBorder;
-        topBorder.X      = bounds.X;
-        topBorder.Y      = bounds.Y;
-        topBorder.Width  = bounds.Width;
-        topBorder.Height = static_cast<float>( data.Width.Top );
+        Clay_BoundingBox topBorder;
+        topBorder.x      = bounds.x;
+        topBorder.y      = bounds.y;
+        topBorder.width  = bounds.width;
+        topBorder.height = static_cast<float>( data.width.top );
 
-        ClayRectangleRenderData rectData;
-        rectData.BackgroundColor = data.Color;
-        rectData.CornerRadius    = ClayCornerRadius( 0 );
+        Clay_RectangleRenderData rectData;
+        rectData.backgroundColor = data.color;
+        rectData.cornerRadius    = Clay_CornerRadius( 0, 0, 0, 0 );
 
-        RenderRectangle( commandList, topBorder, rectData, frameIndex );
+        Clay_RenderCommand rectCommand{ };
+        rectCommand.boundingBox          = topBorder;
+        rectCommand.renderData.rectangle = rectData;
+        rectCommand.commandType          = CLAY_RENDER_COMMAND_TYPE_RECTANGLE;
+        RenderRectangle( &rectCommand, frameIndex );
     }
 
-    if ( data.Width.Bottom > 0 )
+    if ( data.width.bottom > 0 )
     {
-        ClayBoundingBox bottomBorder;
-        bottomBorder.X      = bounds.X;
-        bottomBorder.Y      = bounds.Y + bounds.Height - data.Width.Bottom;
-        bottomBorder.Width  = bounds.Width;
-        bottomBorder.Height = static_cast<float>( data.Width.Bottom );
+        Clay_BoundingBox bottomBorder;
+        bottomBorder.x      = bounds.x;
+        bottomBorder.y      = bounds.y + bounds.height - data.width.bottom;
+        bottomBorder.width  = bounds.width;
+        bottomBorder.height = static_cast<float>( data.width.bottom );
 
-        ClayRectangleRenderData rectData;
-        rectData.BackgroundColor = data.Color;
-        rectData.CornerRadius    = ClayCornerRadius( 0 );
+        Clay_RectangleRenderData rectData;
+        rectData.backgroundColor = data.color;
+        rectData.cornerRadius    = Clay_CornerRadius( 0, 0, 0, 0 );
 
-        RenderRectangle( commandList, bottomBorder, rectData, frameIndex );
+        Clay_RenderCommand rectCommand{ };
+        rectCommand.boundingBox          = bottomBorder;
+        rectCommand.renderData.rectangle = rectData;
+        rectCommand.commandType          = CLAY_RENDER_COMMAND_TYPE_RECTANGLE;
+        RenderRectangle( &rectCommand, frameIndex );
     }
 
-    if ( data.Width.Left > 0 )
+    if ( data.width.left > 0 )
     {
-        ClayBoundingBox leftBorder;
-        leftBorder.X      = bounds.X;
-        leftBorder.Y      = bounds.Y + data.Width.Top;
-        leftBorder.Width  = static_cast<float>( data.Width.Left );
-        leftBorder.Height = bounds.Height - data.Width.Top - data.Width.Bottom;
+        Clay_BoundingBox leftBorder;
+        leftBorder.x      = bounds.x;
+        leftBorder.y      = bounds.y + data.width.top;
+        leftBorder.width  = static_cast<float>( data.width.left );
+        leftBorder.height = bounds.height - data.width.top - data.width.bottom;
 
-        ClayRectangleRenderData rectData;
-        rectData.BackgroundColor = data.Color;
-        rectData.CornerRadius    = ClayCornerRadius( 0 );
+        Clay_RectangleRenderData rectData;
+        rectData.backgroundColor = data.color;
+        rectData.cornerRadius    = Clay_CornerRadius( 0, 0, 0, 0 );
 
-        RenderRectangle( commandList, leftBorder, rectData, frameIndex );
+        Clay_RenderCommand rectCommand{ };
+        rectCommand.boundingBox          = leftBorder;
+        rectCommand.renderData.rectangle = rectData;
+        rectCommand.commandType          = CLAY_RENDER_COMMAND_TYPE_RECTANGLE;
+        RenderRectangle( &rectCommand, frameIndex );
     }
 
-    if ( data.Width.Right > 0 )
+    if ( data.width.right > 0 )
     {
-        ClayBoundingBox rightBorder;
-        rightBorder.X      = bounds.X + bounds.Width - data.Width.Right;
-        rightBorder.Y      = bounds.Y + data.Width.Top;
-        rightBorder.Width  = static_cast<float>( data.Width.Right );
-        rightBorder.Height = bounds.Height - data.Width.Top - data.Width.Bottom;
+        Clay_BoundingBox rightBorder;
+        rightBorder.x      = bounds.x + bounds.width - data.width.right;
+        rightBorder.y      = bounds.y + data.width.top;
+        rightBorder.width  = static_cast<float>( data.width.right );
+        rightBorder.height = bounds.height - data.width.top - data.width.bottom;
 
-        ClayRectangleRenderData rectData;
-        rectData.BackgroundColor = data.Color;
-        rectData.CornerRadius    = ClayCornerRadius( 0 );
+        Clay_RectangleRenderData rectData;
+        rectData.backgroundColor = data.color;
+        rectData.cornerRadius    = Clay_CornerRadius( 0, 0, 0, 0 );
 
-        RenderRectangle( commandList, rightBorder, rectData, frameIndex );
+        Clay_RenderCommand rectCommand{ };
+        rectCommand.boundingBox          = rightBorder;
+        rectCommand.renderData.rectangle = rectData;
+        rectCommand.commandType          = CLAY_RENDER_COMMAND_TYPE_RECTANGLE;
+        RenderRectangle( &rectCommand, frameIndex );
     }
 }
 
-void ClayRenderer::RenderText( ICommandList *commandList, const ClayBoundingBox &bounds, const ClayTextRenderData &data, const uint32_t frameIndex ) const
+void ClayRenderer::RenderText( const Clay_RenderCommand *command, const uint32_t frameIndex ) const
 {
-    if ( !m_desc.TextRenderer )
+    const Clay_TextRenderData data   = command->renderData.text;
+    const Clay_BoundingBox    bounds = command->boundingBox;
+
+    if ( data.stringContents.length == 0 )
     {
         return;
     }
 
-    // Begin text batch
-    m_desc.TextRenderer->BeginBatch( );
+    std::string s( data.stringContents.chars, data.stringContents.length);
 
-    // Setup text rendering parameters using enhanced TextRenderDesc
+
     TextRenderDesc textDesc;
-    textDesc.Text          = data.StringContents;
-    textDesc.X             = bounds.X;
-    textDesc.Y             = bounds.Y;
-    textDesc.FontId        = data.FontId;
-    textDesc.FontSize      = data.FontSize;
-    textDesc.LetterSpacing = data.LetterSpacing;
-    textDesc.LineHeight    = data.LineHeight;
-    textDesc.Scale         = 1.0f; // Use font size instead of scale
-    textDesc.Color         = Float_4( data.TextColor.R / 255.0f, data.TextColor.G / 255.0f, data.TextColor.B / 255.0f, data.TextColor.A / 255.0f );
+    textDesc.Text          = InteropString( data.stringContents.chars, data.stringContents.length );
+    textDesc.X             = bounds.x;
+    textDesc.Y             = bounds.y;
+    textDesc.FontId        = data.fontId;
+    textDesc.FontSize      = data.fontSize;
+    textDesc.LetterSpacing = data.letterSpacing;
+    textDesc.LineHeight    = data.lineHeight;
+    textDesc.Color         = Float_4( data.textColor.r / 255.0f, data.textColor.g / 255.0f, data.textColor.b / 255.0f, data.textColor.a / 255.0f );
 
     m_desc.TextRenderer->AddText( textDesc );
-    m_desc.TextRenderer->EndBatch( commandList );
 }
 
-void ClayRenderer::RenderImage( ICommandList *commandList, const ClayBoundingBox &bounds, const ClayImageRenderData &data, const uint32_t frameIndex )
+void ClayRenderer::RenderImage( const Clay_RenderCommand *command, const uint32_t frameIndex )
 {
-    const ITextureResource *texture = static_cast<ITextureResource *>( data.ImageData );
+    const Clay_ImageRenderData data   = command->renderData.image;
+    const Clay_BoundingBox     bounds = command->boundingBox;
+
+    const ITextureResource *texture = static_cast<ITextureResource *>( data.imageData );
     if ( !texture )
     {
         return;
     }
 
-    Float_4 tintColor = data.BackgroundColor.ToFloat4( );
-    if ( tintColor.X == 0 && tintColor.Y == 0 && tintColor.Z == 0 && tintColor.W == 0 )
-    {
-        tintColor = Float_4( 1, 1, 1, 1 );
-    }
-
-    const uint32_t materialId = GetOrCreateMaterial( tintColor, const_cast<ITextureResource *>( texture ) );
+    const uint32_t materialId = GetOrCreateMaterial( data.backgroundColor, const_cast<ITextureResource *>( texture ) );
     const uint32_t quadId     = GetOrCreateQuad( bounds, materialId );
 
     // Update quad data for this frame
     QuadDataDesc quadDesc;
     quadDesc.QuadId     = quadId;
-    quadDesc.Position   = Float_2( bounds.X, bounds.Y );
-    quadDesc.Size       = Float_2( bounds.Width, bounds.Height );
+    quadDesc.Position   = Float_2( bounds.x, bounds.y );
+    quadDesc.Size       = Float_2( bounds.width, bounds.height );
     quadDesc.MaterialId = materialId;
     quadDesc.Rotation   = 0.0f;
     quadDesc.Scale      = Float_2( 1.0f, 1.0f );
@@ -342,7 +353,7 @@ void ClayRenderer::RenderImage( ICommandList *commandList, const ClayBoundingBox
     m_quadRenderer->UpdateQuad( frameIndex, quadDesc );
 }
 
-ITextureResource *ClayRenderer::GetOrCreateRoundedRectTexture( const ClayBoundingBox &bounds, const ClayRectangleRenderData &data )
+ITextureResource *ClayRenderer::GetOrCreateRoundedRectTexture( const Clay_BoundingBox &bounds, const Clay_RectangleRenderData &data )
 {
     const uint64_t hash = GetShapeHash( bounds, data );
 
@@ -382,22 +393,22 @@ ITextureResource *ClayRenderer::GetOrCreateRoundedRectTexture( const ClayBoundin
     return cache.Texture;
 }
 
-uint64_t ClayRenderer::GetShapeHash( const ClayBoundingBox &bounds, const ClayRectangleRenderData &data ) const
+uint64_t ClayRenderer::GetShapeHash( const Clay_BoundingBox &bounds, const Clay_RectangleRenderData &data ) const
 {
     constexpr std::hash<float> hasher;
     uint64_t                   hash = 0;
-    hash ^= hasher( data.CornerRadius.TopLeft ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    hash ^= hasher( data.CornerRadius.TopRight ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    hash ^= hasher( data.CornerRadius.BottomLeft ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    hash ^= hasher( data.CornerRadius.BottomRight ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    hash ^= hasher( data.BackgroundColor.R ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    hash ^= hasher( data.BackgroundColor.G ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    hash ^= hasher( data.BackgroundColor.B ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    hash ^= hasher( data.BackgroundColor.A ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
+    hash ^= hasher( data.cornerRadius.topLeft ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
+    hash ^= hasher( data.cornerRadius.topRight ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
+    hash ^= hasher( data.cornerRadius.bottomLeft ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
+    hash ^= hasher( data.cornerRadius.bottomRight ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
+    hash ^= hasher( data.backgroundColor.r ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
+    hash ^= hasher( data.backgroundColor.g ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
+    hash ^= hasher( data.backgroundColor.b ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
+    hash ^= hasher( data.backgroundColor.a ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
     return hash;
 }
 
-void ClayRenderer::CreateVectorShape( const ClayBoundingBox &bounds, const ClayRectangleRenderData &data, ThorVGCanvas &canvas ) const
+void ClayRenderer::CreateVectorShape( const Clay_BoundingBox &bounds, const Clay_RectangleRenderData &data, ThorVGCanvas &canvas ) const
 {
     ThorVGShape shape;
 
@@ -409,21 +420,22 @@ void ClayRenderer::CreateVectorShape( const ClayBoundingBox &bounds, const ClayR
     const float minDim      = std::min( width, height );
     const float cornerScale = minDim / 100.0f; // Assume 100 units as reference
 
-    const float scaledTL = data.CornerRadius.TopLeft * cornerScale;
-    const float scaledTR = data.CornerRadius.TopRight * cornerScale;
-    const float scaledBL = data.CornerRadius.BottomLeft * cornerScale;
-    const float scaledBR = data.CornerRadius.BottomRight * cornerScale;
+    const float scaledTL = data.cornerRadius.topLeft * cornerScale;
+    const float scaledTR = data.cornerRadius.topRight * cornerScale;
+    const float scaledBL = data.cornerRadius.bottomLeft * cornerScale;
+    const float scaledBR = data.cornerRadius.bottomRight * cornerScale;
 
     shape.AppendRect( 0, 0, width, height, scaledTL, scaledTL );
 
-    shape.Fill( static_cast<uint8_t>( data.BackgroundColor.R ), static_cast<uint8_t>( data.BackgroundColor.G ), static_cast<uint8_t>( data.BackgroundColor.B ),
-                static_cast<uint8_t>( data.BackgroundColor.A ) );
+    shape.Fill( static_cast<uint8_t>( data.backgroundColor.r ), static_cast<uint8_t>( data.backgroundColor.g ), static_cast<uint8_t>( data.backgroundColor.b ),
+                static_cast<uint8_t>( data.backgroundColor.a ) );
 
     canvas.Push( &shape );
 }
 
-uint32_t ClayRenderer::GetOrCreateMaterial( const Float_4 &color, ITextureResource *texture )
+uint32_t ClayRenderer::GetOrCreateMaterial( const Clay_Color &color, ITextureResource *texture )
 {
+    const Float_4  dzColor    = { color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f };
     const uint32_t materialId = m_currentFrameMaterialIndex;
     if ( materialId >= m_nextMaterialId )
     {
@@ -432,7 +444,7 @@ uint32_t ClayRenderer::GetOrCreateMaterial( const Float_4 &color, ITextureResour
         QuadMaterialDesc materialDesc;
         materialDesc.MaterialId = materialId;
         materialDesc.Texture    = texture;
-        materialDesc.Color      = color;
+        materialDesc.Color      = dzColor;
 
         m_quadRenderer->AddMaterial( materialDesc );
     }
@@ -442,7 +454,7 @@ uint32_t ClayRenderer::GetOrCreateMaterial( const Float_4 &color, ITextureResour
         QuadMaterialDesc materialDesc;
         materialDesc.MaterialId = materialId;
         materialDesc.Texture    = texture;
-        materialDesc.Color      = color;
+        materialDesc.Color      = dzColor;
 
         // Note: QuadRenderer doesn't have UpdateMaterial for all frames,
         // so materials are expected to be relatively stable
@@ -452,14 +464,14 @@ uint32_t ClayRenderer::GetOrCreateMaterial( const Float_4 &color, ITextureResour
     return materialId;
 }
 
-uint32_t ClayRenderer::GetOrCreateQuad( const ClayBoundingBox &bounds, const uint32_t materialId )
+uint32_t ClayRenderer::GetOrCreateQuad( const Clay_BoundingBox &bounds, const uint32_t materialId )
 {
     const uint32_t quadId = m_currentFrameQuadIndex;
 
     QuadDataDesc quadDesc;
     quadDesc.QuadId     = quadId;
-    quadDesc.Position   = Float_2( bounds.X, bounds.Y );
-    quadDesc.Size       = Float_2( bounds.Width, bounds.Height );
+    quadDesc.Position   = Float_2( bounds.x, bounds.y );
+    quadDesc.Size       = Float_2( bounds.width, bounds.height );
     quadDesc.MaterialId = materialId;
     quadDesc.Rotation   = 0.0f;
     quadDesc.Scale      = Float_2( 1.0f, 1.0f );

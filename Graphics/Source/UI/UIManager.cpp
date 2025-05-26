@@ -17,8 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Assets/Font/TextRenderer.h>
+#include <DenOfIzGraphics/UI/Clay.h>
 #include <DenOfIzGraphics/UI/ClayRenderer.h>
-#include <DenOfIzGraphics/UI/ClayWrapper.h>
 #include <DenOfIzGraphics/UI/UIManager.h>
 
 using namespace DenOfIz;
@@ -26,41 +26,33 @@ using namespace DenOfIz;
 struct UIManager::Impl
 {
     std::unique_ptr<TextRenderer> TextRenderer;
-    std::unique_ptr<ClayWrapper>  ClayWrapper;
-    std::unique_ptr<ClayRenderer> ClayRenderer;
+    std::unique_ptr<Clay>  ClayWrapper;
     bool                          InFrame = false;
 };
 
-UIManager::UIManager( const UIManagerDesc &desc ) : m_desc( desc ), m_impl( std::make_unique<Impl>( ) )
+UIManager::UIManager( const UIManagerDesc &desc ) : m_pointerState( ClayPointerState::Released ), m_impl( std::make_unique<Impl>( ) ), m_desc( desc )
 {
     TextRendererDesc textRendererDesc{ };
     textRendererDesc.LogicalDevice = m_desc.LogicalDevice;
+    textRendererDesc.Width         = m_desc.Width;
+    textRendererDesc.Height        = m_desc.Height;
     m_impl->TextRenderer           = std::make_unique<TextRenderer>( textRendererDesc );
-    m_impl->TextRenderer->Initialize( );
+
 
     ClayWrapperDesc clayWrapperDesc{ };
-    clayWrapperDesc.Width = desc.Width;
-    clayWrapperDesc.Height = desc.Height;
-
-    m_impl->ClayWrapper = std::make_unique<ClayWrapper>( clayWrapperDesc );
-    ClayRendererDesc clayRendererDesc{ };
-    clayRendererDesc.LogicalDevice      = m_desc.LogicalDevice;
-    clayRendererDesc.TextRenderer       = m_impl->TextRenderer.get( );
-    clayRendererDesc.RenderTargetFormat = m_desc.RenderTargetFormat;
-    clayRendererDesc.NumFrames          = m_desc.NumFrames;
-    clayRendererDesc.MaxNumQuads        = m_desc.MaxNumQuads;
-    clayRendererDesc.MaxNumMaterials    = m_desc.MaxNumMaterials;
-    clayRendererDesc.Width  = m_desc.Width;
-    clayRendererDesc.Height = m_desc.Height;
-
-    m_impl->ClayRenderer = std::make_unique<ClayRenderer>( clayRendererDesc );
-    m_impl->ClayWrapper->SetMeasureTextFunction( [ this ]( const InteropString &text, const ClayTextDesc &config ) -> ClayDimensions
-                                                 { return m_impl->ClayRenderer->MeasureText( text, config ); } );
+    clayWrapperDesc.LogicalDevice      = m_desc.LogicalDevice;
+    clayWrapperDesc.TextRenderer       = m_impl->TextRenderer.get( );
+    clayWrapperDesc.RenderTargetFormat = m_desc.RenderTargetFormat;
+    clayWrapperDesc.NumFrames          = m_desc.NumFrames;
+    clayWrapperDesc.MaxNumQuads        = m_desc.MaxNumQuads;
+    clayWrapperDesc.MaxNumMaterials    = m_desc.MaxNumMaterials;
+    clayWrapperDesc.Width              = m_desc.Width;
+    clayWrapperDesc.Height             = m_desc.Height;
+    m_impl->ClayWrapper = std::make_unique<Clay>( clayWrapperDesc );
 }
 
 UIManager::~UIManager( )
 {
-    m_impl->ClayRenderer.reset( );
     m_impl->ClayWrapper.reset( );
     m_impl->TextRenderer.reset( );
 }
@@ -78,7 +70,7 @@ void UIManager::BeginFrame( const float width, const float height ) const
     m_impl->InFrame = true;
 }
 
-void UIManager::EndFrame( ) const
+void UIManager::EndFrame( ICommandList* commandList, uint32_t frameIndex ) const
 {
     if ( !m_impl->InFrame )
     {
@@ -87,6 +79,7 @@ void UIManager::EndFrame( ) const
     }
 
     m_impl->InFrame = false;
+    m_impl->ClayWrapper->EndLayout( commandList, frameIndex );
 }
 
 void UIManager::OpenElement( const ClayElementDeclaration &declaration ) const
@@ -129,14 +122,42 @@ uint32_t UIManager::HashString( const InteropString &str, const uint32_t index, 
     return m_impl->ClayWrapper->HashString( str, index, baseId );
 }
 
-void UIManager::Render( ICommandList *commandList, const uint32_t frameIndex ) const
+void UIManager::HandleEvent( const Event &event )
 {
-    const auto renderCommands = m_impl->ClayWrapper->EndLayout( );
-    m_impl->ClayRenderer->Render( commandList, renderCommands, frameIndex );
+    if ( event.Type == EventType::MouseMotion )
+    {
+        SetPointerState( Float_2{ static_cast<float>( event.Button.X ), static_cast<float>( event.Button.Y ) }, m_pointerState );
+    }
+
+    if ( event.Type == EventType::MouseButtonDown )
+    {
+        if ( event.Button.Button == MouseButton::Left )
+        {
+            SetPointerState( Float_2{ static_cast<float>( event.Button.X ), static_cast<float>( event.Button.Y ) }, ClayPointerState::Pressed );
+            m_pointerState = ClayPointerState::Pressed;
+        }
+    }
+
+    if ( event.Type == EventType::MouseButtonUp )
+    {
+        if ( event.Button.Button == MouseButton::Left )
+        {
+            SetPointerState( Float_2{ static_cast<float>( event.Button.X ), static_cast<float>( event.Button.Y ) }, ClayPointerState::Released );
+            m_pointerState = ClayPointerState::Released;
+        }
+    }
+
+    if ( event.Type == EventType::WindowEvent )
+    {
+        const auto windowEvent = event.Window.Event;
+        if ( windowEvent == WindowEventType::SizeChanged )
+        {
+            SetViewportSize( event.Window.Data1, event.Window.Data2 );
+        }
+    }
 }
 
 void UIManager::SetViewportSize( const float width, const float height ) const
 {
     m_impl->ClayWrapper->SetLayoutDimensions( width, height );
-    m_impl->ClayRenderer->SetViewportSize( width, height );
 }

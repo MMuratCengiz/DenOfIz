@@ -32,30 +32,19 @@ using namespace DirectX;
 
 TextRenderer::TextRenderer( const TextRendererDesc &desc ) : m_desc( desc )
 {
-    DZ_NOT_NULL( desc.LogicalDevice );
+    if ( !desc.LogicalDevice )
+    {
+        LOG( FATAL ) << "TextRendererDesc::LogicalDevice must not be null";
+        return;
+    }
+
     m_logicalDevice = desc.LogicalDevice;
-
-    XMStoreFloat4x4( &m_projectionMatrix, XMMatrixIdentity( ) );
-}
-
-TextRenderer::~TextRenderer( ) = default;
-
-void TextRenderer::Initialize( )
-{
     BinaryReader      binaryReader{ EmbeddedTextRendererShaders::ShaderAssetBytes };
     ShaderAssetReader assetReader{ { &binaryReader } };
     m_fontShaderProgram           = std::make_unique<ShaderProgram>( assetReader.Read( ) );
     ShaderReflectDesc reflectDesc = m_fontShaderProgram->Reflect( );
 
-    SamplerDesc samplerDesc;
-    samplerDesc.AddressModeU  = SamplerAddressMode::ClampToEdge;
-    samplerDesc.AddressModeV  = SamplerAddressMode::ClampToEdge;
-    samplerDesc.MipLodBias    = 0.0f;
-    samplerDesc.MaxAnisotropy = 1;
-    samplerDesc.CompareOp     = CompareOp::Never;
-    samplerDesc.MinLod        = 0.0f;
-    samplerDesc.MaxLod        = 0.0f;
-    m_fontSampler             = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( samplerDesc ) );
+    m_fontSampler             = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( {} ) );
 
     m_fontAtlasTextureDesc              = { };
     m_fontAtlasTextureDesc.Width        = m_desc.InitialAtlasWidth;
@@ -99,12 +88,15 @@ void TextRenderer::Initialize( )
     m_resourceTracking.TrackBuffer( m_indexBuffer.get( ), ResourceUsage::IndexBuffer );
 
     BufferDesc uniformBufferDesc;
-    uniformBufferDesc.NumBytes   = sizeof( FontShaderUniforms );
-    uniformBufferDesc.Descriptor = BitSet( ResourceDescriptor::UniformBuffer );
-    uniformBufferDesc.Usages     = ResourceUsage::VertexAndConstantBuffer;
-    uniformBufferDesc.HeapType   = HeapType::CPU_GPU;
-    uniformBufferDesc.DebugName  = "Font Uniform Buffer";
-    m_uniformBuffer              = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( uniformBufferDesc ) );
+    uniformBufferDesc.NumBytes                  = 3 * sizeof( FontShaderUniforms );
+    uniformBufferDesc.Descriptor                = BitSet( ResourceDescriptor::UniformBuffer );
+    uniformBufferDesc.Usages                    = ResourceUsage::VertexAndConstantBuffer;
+    uniformBufferDesc.HeapType                  = HeapType::CPU_GPU;
+    uniformBufferDesc.DebugName                 = "Font Uniform Buffer";
+    uniformBufferDesc.StructureDesc.NumElements = 1;
+    uniformBufferDesc.StructureDesc.Stride      = sizeof( FontShaderUniforms );
+    m_uniformBuffer                             = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( uniformBufferDesc ) );
+    m_uniformBufferData                         = static_cast<FontShaderUniforms *>( m_uniformBuffer->MapMemory( ) );
     m_resourceTracking.TrackBuffer( m_uniformBuffer.get( ), ResourceUsage::VertexAndConstantBuffer );
 
     m_rootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflectDesc.RootSignature ) );
@@ -139,7 +131,20 @@ void TextRenderer::Initialize( )
     static FontLibrary defaultFontLibrary;
     static auto        defaultFont = std::unique_ptr<Font>( defaultFontLibrary.LoadFont( { EmbeddedFonts::GetInconsolataRegular( ) } ) );
     SetFont( defaultFont.get( ) );
+    RegisterFont( defaultFont.get( ), 0 );
+
+    SetAntiAliasingMode( m_desc.AntiAliasingMode );
+    if ( m_desc.Width == 0 || m_desc.Height == 0 )
+    {
+        LOG( WARNING ) << "Invalid viewport size, call TextRenderer::SetProjection or TextRenderer::SetViewport before rendering";
+    }
+    else
+    {
+        SetViewport( Viewport{ 0, 0, static_cast<float>( m_desc.Width ), static_cast<float>( m_desc.Height ) } );
+    }
 }
+
+TextRenderer::~TextRenderer( ) = default;
 
 void TextRenderer::SetFont( Font *font )
 {
@@ -153,6 +158,47 @@ void TextRenderer::SetFont( Font *font )
     }
 }
 
+uint16_t TextRenderer::RegisterFont( Font *font, uint16_t fontId )
+{
+    DZ_NOT_NULL( font );
+    if ( fontId == 0 )
+    {
+        fontId = 1;
+        while ( m_fontRegistry.contains( fontId ) )
+        {
+            fontId++;
+        }
+    }
+
+    m_fontRegistry[ fontId ] = font;
+    LOG( INFO ) << "Font registered with ID: " << fontId;
+    return fontId;
+}
+
+Font *TextRenderer::GetFont( const uint16_t fontId ) const
+{
+    const auto it = m_fontRegistry.find( fontId );
+    if ( it != m_fontRegistry.end( ) )
+    {
+        return it->second;
+    }
+    return m_currentFont;
+}
+
+void TextRenderer::UnregisterFont( const uint16_t fontId )
+{
+    const auto it = m_fontRegistry.find( fontId );
+    if ( it != m_fontRegistry.end( ) )
+    {
+        m_fontRegistry.erase( it );
+        LOG( INFO ) << "Font ID " << fontId << " unregistered";
+    }
+    else
+    {
+        LOG( WARNING ) << "Attempted to unregister non-existent font ID: " << fontId;
+    }
+}
+
 void TextRenderer::SetAntiAliasingMode( const AntiAliasingMode antiAliasingMode )
 {
     m_antiAliasingMode = antiAliasingMode;
@@ -161,6 +207,17 @@ void TextRenderer::SetAntiAliasingMode( const AntiAliasingMode antiAliasingMode 
 void TextRenderer::SetProjectionMatrix( const Float_4x4 &projectionMatrix )
 {
     m_projectionMatrix = InteropMathConverter::Float_4x4ToXMFLOAT4X4( projectionMatrix );
+}
+
+void TextRenderer::SetViewport( const Viewport &viewport )
+{
+    if ( viewport.Width == 0 || viewport.Height == 0 )
+    {
+        LOG( WARNING ) << "Viewport::Width or Viewport::Height is zero, cannot set projection matrix";
+        return;
+    }
+    const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( viewport.X, viewport.Width, viewport.Height, viewport.Y, 0.0f, 1.0f );
+    XMStoreFloat4x4( &m_projectionMatrix, projection );
 }
 
 void TextRenderer::BeginBatch( )
@@ -174,9 +231,10 @@ void TextRenderer::BeginBatch( )
 
 void TextRenderer::AddText( const TextRenderDesc &params )
 {
-    if ( !m_currentFont || params.Text.NumChars( ) == 0 )
+    Font *font = params.FontId != 0 ? GetFont( params.FontId ) : m_currentFont;
+    if ( !font )
     {
-        LOG( WARNING ) << "Font or text is not set";
+        LOG( WARNING ) << "No font available for rendering";
         return;
     }
 
@@ -184,29 +242,44 @@ void TextRenderer::AddText( const TextRenderDesc &params )
     {
         m_textLayouts.resize( m_currentTextLayoutIndex + 1 );
 
-        TextLayoutDesc textLayoutDesc{ m_currentFont };
+        TextLayoutDesc textLayoutDesc{ font };
         m_textLayouts[ m_currentTextLayoutIndex ] = std::make_unique<TextLayout>( textLayoutDesc );
     }
     const auto &textLayout = m_textLayouts[ m_currentTextLayoutIndex ];
     m_currentTextLayoutIndex++;
 
+    if ( textLayout->GetFont( ) != font )
+    {
+        textLayout->SetFont( font );
+    }
+
     TextRenderDesc modifiedParams = params;
+
+    float effectiveScale = params.Scale;
+    if ( params.FontSize > 0 )
+    {
+        const float baseSize   = static_cast<float>( font->Asset( )->InitialFontSize );
+        const float targetSize = params.FontSize;
+        effectiveScale         = targetSize / baseSize * params.Scale;
+    }
 
     ShapeTextDesc shapeDesc{ };
     shapeDesc.Text      = params.Text;
     shapeDesc.Direction = params.Direction;
+    shapeDesc.FontSize  = params.FontSize > 0 ? params.FontSize : font->Asset( )->InitialFontSize;
+
     textLayout->ShapeText( shapeDesc );
 
     if ( params.HorizontalCenter || params.VerticalCenter )
     {
         if ( params.HorizontalCenter )
         {
-            modifiedParams.X -= m_currentFont->Asset( )->Metrics.LineHeight * params.Scale / 2.0f;
+            modifiedParams.X -= font->Asset( )->Metrics.LineHeight * effectiveScale / 2.0f;
         }
 
         if ( params.VerticalCenter )
         {
-            modifiedParams.Y -= m_currentFont->Asset( )->Metrics.LineHeight * params.Scale / 2.0f;
+            modifiedParams.Y -= font->Asset( )->Metrics.LineHeight * effectiveScale / 2.0f;
         }
     }
 
@@ -215,7 +288,9 @@ void TextRenderer::AddText( const TextRenderDesc &params )
     generateDesc.Color         = modifiedParams.Color;
     generateDesc.OutVertices   = &m_glyphVertices;
     generateDesc.OutIndices    = &m_indexData;
-    generateDesc.Scale         = params.Scale;
+    generateDesc.Scale         = effectiveScale;
+    generateDesc.LetterSpacing = params.LetterSpacing;
+    generateDesc.LineHeight    = params.LineHeight;
 
     textLayout->GenerateTextVertices( generateDesc );
 
@@ -246,17 +321,13 @@ void TextRenderer::EndBatch( ICommandList *commandList )
 
     UpdateBuffers( );
 
-    FontShaderUniforms uniforms{ };
-    uniforms.Projection = m_projectionMatrix;
-    uniforms.TextColor  = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
+    FontShaderUniforms* uniforms = m_uniformBufferData;
+    uniforms->Projection = m_projectionMatrix;
+    uniforms->TextColor  = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
 
     const auto *fontAsset      = m_currentFont->Asset( );
-    uniforms.TextureSizeParams = XMFLOAT4( static_cast<float>( fontAsset->AtlasWidth ), static_cast<float>( fontAsset->AtlasHeight ), Font::MsdfPixelRange,
+    uniforms->TextureSizeParams = XMFLOAT4( static_cast<float>( fontAsset->AtlasWidth ), static_cast<float>( fontAsset->AtlasHeight ), Font::MsdfPixelRange,
                                            static_cast<float>( static_cast<uint32_t>( m_antiAliasingMode ) ) );
-
-    void *mappedData = m_uniformBuffer->MapMemory( );
-    memcpy( mappedData, &uniforms, sizeof( FontShaderUniforms ) );
-    m_uniformBuffer->UnmapMemory( );
 
     commandList->BindPipeline( m_fontPipeline.get( ) );
     commandList->BindResourceGroup( m_resourceBindGroup.get( ) );
@@ -364,4 +435,64 @@ Float_2 TextRenderer::MeasureText( const InteropString &text, Font *font, const 
 
     const Float_2 textSize = layout.GetTextSize( );
     return Float_2{ textSize.X * scale, textSize.Y * scale };
+}
+
+Float_2 TextRenderer::MeasureText( const InteropString &text, const TextRenderDesc &desc ) const
+{
+    if ( text.NumChars( ) == 0 )
+    {
+        return Float_2{ 0.0f, 0.0f };
+    }
+    Font *font = desc.FontId != 0 ? GetFont( desc.FontId ) : m_currentFont;
+    if ( !font )
+    {
+        LOG( ERROR ) << "Cannot measure text: no font available";
+        return Float_2{ 0.0f, 0.0f };
+    }
+
+    float effectiveScale = desc.Scale;
+    if ( desc.FontSize > 0 )
+    {
+        const float baseSize   = static_cast<float>( font->Asset( )->InitialFontSize );
+        const float targetSize = desc.FontSize;
+        effectiveScale         = targetSize / baseSize * desc.Scale;
+    }
+
+    // Get or create a TextLayout from the pool
+    if ( m_measureTextLayouts.size( ) <= m_currentMeasureLayoutIndex )
+    {
+        m_measureTextLayouts.resize( m_currentMeasureLayoutIndex + 1 );
+        TextLayoutDesc layoutDesc{ font };
+        m_measureTextLayouts[ m_currentMeasureLayoutIndex ] = std::make_unique<TextLayout>( layoutDesc );
+    }
+
+    const auto &layout          = m_measureTextLayouts[ m_currentMeasureLayoutIndex ];
+    m_currentMeasureLayoutIndex = ( m_currentMeasureLayoutIndex + 1 ) % 16; // Cycle through 16 layouts
+
+    if ( layout->GetFont( ) != font )
+    {
+        layout->SetFont( font );
+    }
+
+    ShapeTextDesc shapeDesc;
+    shapeDesc.Text      = text;
+    shapeDesc.Direction = desc.Direction;
+    shapeDesc.FontSize  = desc.FontSize > 0 ? desc.FontSize : font->Asset( )->InitialFontSize;
+    layout->ShapeText( shapeDesc );
+
+    const Float_2 textSize = layout->GetTextSize( );
+
+    float adjustedWidth = textSize.X;
+    if ( desc.LetterSpacing > 0 && text.NumChars( ) > 0 )
+    {
+        adjustedWidth += static_cast<float>( desc.LetterSpacing ) * ( text.NumChars( ) - 1 ) * effectiveScale;
+    }
+
+    float adjustedHeight = textSize.Y;
+    if ( desc.LineHeight > 0 )
+    {
+        adjustedHeight = static_cast<float>( desc.LineHeight ) * effectiveScale;
+    }
+
+    return Float_2{ adjustedWidth * effectiveScale, adjustedHeight * effectiveScale };
 }

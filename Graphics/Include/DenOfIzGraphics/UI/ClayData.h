@@ -25,9 +25,7 @@ namespace DenOfIz
 
     enum class ClayPointerState : uint8_t
     {
-        PressedThisFrame,
         Pressed,
-        ReleasedThisFrame,
         Released
     };
 
@@ -220,14 +218,14 @@ namespace DenOfIz
 
     struct ClayTextDesc
     {
-        ClayColor         TextColor;
-        uint16_t          FontId;
-        uint16_t          FontSize;
-        uint16_t          LetterSpacing;
-        uint16_t          LineHeight;
-        ClayTextWrapMode  WrapMode;
-        ClayTextAlignment TextAlignment;
-        bool              HashStringContents;
+        ClayColor         TextColor          = ClayColor( 0, 0, 0, 255 );
+        uint16_t          FontId             = 0;
+        uint16_t          FontSize           = 16;
+        uint16_t          LetterSpacing      = 0;
+        uint16_t          LineHeight         = 0;
+        ClayTextWrapMode  WrapMode           = ClayTextWrapMode::Words;
+        ClayTextAlignment TextAlignment      = ClayTextAlignment::Left;
+        bool              HashStringContents = false;
 
         ClayTextDesc( );
     };

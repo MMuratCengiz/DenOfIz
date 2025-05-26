@@ -17,12 +17,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <iterator>
-#include <string>
 #include <algorithm>
-#include <cstring>
 #include <cctype>
+#include <cstring>
+#include <iterator>
 #include <stdexcept>
+#include <string>
 
 #ifdef _WIN32
 #ifdef DZ_GRAPHICS_EXPORTS
@@ -60,6 +60,16 @@ namespace DenOfIz
                 const size_t len = std::strlen( str );
                 m_data           = new char[ len + 1 ];
                 SafeCopyString( m_data, len + s_nullTerminatorLen, str );
+            }
+        }
+
+        InteropString( const char *str, const size_t len )
+        {
+            if ( str )
+            {
+                m_data = new char[ len + 1 ];
+                std::memcpy( m_data, str, len );
+                m_data[ len ] = '\0';
             }
         }
 

@@ -32,18 +32,38 @@ void TextLayout::SetFont( Font *font )
 {
     m_font           = font;
     m_lastShapedText = "";
+    m_lastFontSize   = 0;
+    m_lastDirection  = TextDirection::Auto;
+    m_lastScriptTag  = { 0, 0, 0, 0 };
     m_shapedGlyphs.clear( );
     m_totalWidth  = 0.0f;
     m_totalHeight = 0.0f;
 }
 
+Font *TextLayout::GetFont( ) const
+{
+    return m_font;
+}
+
 void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
 {
-    if ( m_lastShapedText.Equals( shapeDesc.Text ) )
+    // Check if we can use cached results
+    if ( m_lastShapedText.Equals( shapeDesc.Text ) &&
+         m_lastFontSize == shapeDesc.FontSize &&
+         m_lastDirection == shapeDesc.Direction &&
+         m_lastScriptTag.X == shapeDesc.HbScriptTag.X &&
+         m_lastScriptTag.Y == shapeDesc.HbScriptTag.Y &&
+         m_lastScriptTag.Z == shapeDesc.HbScriptTag.Z &&
+         m_lastScriptTag.W == shapeDesc.HbScriptTag.W )
     {
         return;
     }
+    
+    // Update cache keys
     m_lastShapedText = shapeDesc.Text;
+    m_lastFontSize = shapeDesc.FontSize;
+    m_lastDirection = shapeDesc.Direction;
+    m_lastScriptTag = shapeDesc.HbScriptTag;
 
     const std::string    utf8Text  = shapeDesc.Text.Get( );
     const std::u32string utf32Text = Utf8ToUtf32( utf8Text );
@@ -165,6 +185,7 @@ void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateD
     InteropArray<GlyphVertex> *outVertices = generateDesc.OutVertices;
     InteropArray<uint32_t>    *outIndices  = generateDesc.OutIndices;
     const float                scale       = generateDesc.Scale;
+    const float                letterSpacing = static_cast<float>( generateDesc.LetterSpacing ) * scale;
 
     const FontAsset *fontAsset  = m_font->Asset( );
     uint32_t         baseVertex = outVertices->NumElements( );
@@ -182,7 +203,7 @@ void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateD
         const float y0 = y - metrics->BearingY * scale + shapedGlyph.YOffset * scale;
         const float y1 = y0 + metrics->Height * scale;
 
-        x += shapedGlyph.XAdvance * scale;
+        x += shapedGlyph.XAdvance * scale + letterSpacing;
         y += shapedGlyph.YAdvance * scale;
 
         const float u0 = static_cast<float>( metrics->AtlasX ) / static_cast<float>( fontAsset->AtlasWidth );

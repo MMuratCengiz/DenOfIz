@@ -116,6 +116,7 @@ using namespace DirectX;
 %ignore DenOfIz::BinaryReader::BinaryReader(std::istream *, const BinaryReaderDesc &);
 
 // Fix InteropString/InteropArray:
+%ignore DenOfIz::InteropString::InteropString(const char *, const size_t);
 %ignore DenOfIz::InteropString::InteropString(InteropString &&);
 %ignore DenOfIz::InteropArray::InteropArray(std::initializer_list<T>);
 %ignore DenOfIz::InteropString::operator DenOfIz::InteropString;
