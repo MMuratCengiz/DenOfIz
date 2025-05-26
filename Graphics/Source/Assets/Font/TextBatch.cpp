@@ -132,7 +132,7 @@ void TextBatch::AddText( const AddTextDesc &desc )
     {
         if ( desc.HorizontalCenter )
         {
-            modifiedParams.X -= m_font->Asset( )->Metrics.LineHeight * effectiveScale / 2.0f;
+            modifiedParams.X -= textLayout->GetTextWidth( ) / 2.0f;
         }
 
         if ( desc.VerticalCenter )

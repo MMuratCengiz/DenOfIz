@@ -147,7 +147,7 @@ ImporterResultCode FontImporter::ImportFontInternal( ImportContext &context )
         return ImporterResultCode::InvalidParameters;
     }
 
-    error = FT_Set_Char_Size( face, context.Desc.InitialFontSize * 64, context.Desc.InitialFontSize * 64, 0, 0 );
+    error = FT_Set_Char_Size( face, 0, context.Desc.InitialFontSize * 64, 0, 0 );
     if ( error )
     {
         FT_Done_Face( face );
@@ -283,25 +283,19 @@ void FontImporter::GenerateAtlas( ImportContext &context ) const
         glyphDesc.AtlasX     = box.rect.x;
         glyphDesc.AtlasY     = height - ( box.rect.y + box.rect.h );
 
-        const msdfgen::Shape  &shape  = glyph.getShape( );
-        msdfgen::Shape::Bounds bounds = shape.getBounds( );
+        double planeBoundsL, planeBoundsB, planeBoundsR, planeBoundsT;
+        glyph.getQuadPlaneBounds( planeBoundsL, planeBoundsB, planeBoundsR, planeBoundsT );
 
-        constexpr double normFactor = 1000.0;
-        glyphDesc.Bounds.XMin       = bounds.l / normFactor;
-        glyphDesc.Bounds.XMax       = bounds.r / normFactor;
-        glyphDesc.Bounds.YMin       = bounds.b / normFactor;
-        glyphDesc.Bounds.YMax       = bounds.t / normFactor;
+        glyphDesc.Bounds.XMin = planeBoundsL;
+        glyphDesc.Bounds.XMax = planeBoundsR;
+        glyphDesc.Bounds.YMin = planeBoundsB;
+        glyphDesc.Bounds.YMax = planeBoundsT;
 
-        // Convert font to msdf Size
-        const double emScale = context.Desc.InitialFontSize / emSize;
+        glyphDesc.BearingX = static_cast<int32_t>( std::round( planeBoundsL * context.Desc.InitialFontSize ) );
+        glyphDesc.BearingY = static_cast<int32_t>( std::round( planeBoundsT * context.Desc.InitialFontSize ) );
 
-        const double scaledBoundsL = bounds.l / normFactor * context.Desc.InitialFontSize;
-        glyphDesc.BearingX         = static_cast<int32_t>( scaledBoundsL );
-        const double scaledBoundsT = bounds.t / normFactor * context.Desc.InitialFontSize;
-        glyphDesc.BearingY         = static_cast<int32_t>( scaledBoundsT );
-
-        glyphDesc.XAdvance = static_cast<uint32_t>( glyph.getAdvance( ) * emScale );
-        glyphDesc.YAdvance = 0; // TODO
+        glyphDesc.XAdvance = static_cast<uint32_t>( std::round( glyph.getAdvance( ) * context.Desc.InitialFontSize ) );
+        glyphDesc.YAdvance = 0;
     }
 
     FontGlyph spaceGlyph;
@@ -310,7 +304,7 @@ void FontImporter::GenerateAtlas( ImportContext &context ) const
     spaceGlyph.Height    = 0;
     spaceGlyph.BearingX  = 0;
     spaceGlyph.BearingY  = 0;
-    spaceGlyph.XAdvance  = context.Desc.InitialFontSize / 3;
+    spaceGlyph.XAdvance  = static_cast<uint32_t>( std::round( context.Desc.InitialFontSize * 0.3f ) );
     spaceGlyph.YAdvance  = 0;
     spaceGlyph.AtlasX    = 0;
     spaceGlyph.AtlasY    = 0;

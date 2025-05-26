@@ -36,18 +36,16 @@ namespace DenOfIz
     };
     struct DZ_API FontGlyph
     {
-        uint32_t           CodePoint = 0;
-        GlyphBounds        Bounds    = { };
-        uint32_t           Width     = 0;
-        uint32_t           Height    = 0;
-        uint32_t           BearingX  = 0;
-        uint32_t           BearingY  = 0;
-        uint32_t           XAdvance  = 0;
-        uint32_t           YAdvance  = 0;
-        uint32_t           AtlasX    = 0;
-        uint32_t           AtlasY    = 0;
-        uint32_t           Pitch     = 0;
-        InteropArray<Byte> Data; // MTSDF, RGBA
+        uint32_t    CodePoint = 0;
+        GlyphBounds Bounds    = { };
+        uint32_t    Width     = 0;
+        uint32_t    Height    = 0;
+        int32_t     BearingX  = 0;
+        int32_t     BearingY  = 0;
+        uint32_t    XAdvance  = 0;
+        uint32_t    YAdvance  = 0;
+        uint32_t    AtlasX    = 0;
+        uint32_t    AtlasY    = 0;
     };
     template class DZ_API InteropArray<FontGlyph>;
 
@@ -91,7 +89,7 @@ namespace DenOfIz
             Metrics.UnderlinePos       = 0;
             Metrics.UnderlineThickness = 0;
         }
-        
+
         static InteropString Extension( )
         {
             return "dzfont";

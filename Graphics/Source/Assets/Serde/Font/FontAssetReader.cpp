@@ -73,14 +73,12 @@ FontAsset FontAssetReader::Read( )
         glyph.Bounds.YMax = m_reader->ReadDouble( );
         glyph.Width       = m_reader->ReadUInt32( );
         glyph.Height      = m_reader->ReadUInt32( );
-        glyph.BearingX    = m_reader->ReadUInt32( );
-        glyph.BearingY    = m_reader->ReadUInt32( );
+        glyph.BearingX    = m_reader->ReadInt32( );
+        glyph.BearingY    = m_reader->ReadInt32( );
         glyph.XAdvance    = m_reader->ReadUInt32( );
         glyph.YAdvance    = m_reader->ReadUInt32( );
         glyph.AtlasX      = m_reader->ReadUInt32( );
         glyph.AtlasY      = m_reader->ReadUInt32( );
-        glyph.Pitch       = m_reader->ReadUInt32( );
-        glyph.Data        = m_reader->ReadBytes( glyph.Pitch * glyph.Height );
     }
 
     m_fontAsset.UserProperties    = AssetReaderHelpers::ReadUserProperties( m_reader );

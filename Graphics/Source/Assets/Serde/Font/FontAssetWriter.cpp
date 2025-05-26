@@ -90,13 +90,11 @@ void FontAssetWriter::WriteGlyph( const FontAsset &fontAsset ) const
         m_writer->WriteDouble( glyph.Bounds.YMax );
         m_writer->WriteUInt32( glyph.Width );
         m_writer->WriteUInt32( glyph.Height );
-        m_writer->WriteUInt32( glyph.BearingX );
-        m_writer->WriteUInt32( glyph.BearingY );
+        m_writer->WriteInt32( glyph.BearingX );
+        m_writer->WriteInt32( glyph.BearingY );
         m_writer->WriteUInt32( glyph.XAdvance );
         m_writer->WriteUInt32( glyph.YAdvance );
         m_writer->WriteUInt32( glyph.AtlasX );
         m_writer->WriteUInt32( glyph.AtlasY );
-        m_writer->WriteUInt32( glyph.Pitch );
-        m_writer->WriteBytes( glyph.Data );
     }
 }

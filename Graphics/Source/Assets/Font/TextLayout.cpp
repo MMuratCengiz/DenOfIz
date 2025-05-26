@@ -69,7 +69,7 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
     const std::u32string utf32Text = Utf8ToUtf32( utf8Text );
     const FT_Face        face      = m_font->FTFace( );
 
-    if ( const FT_Error error = FT_Set_Char_Size( face, shapeDesc.FontSize * 64, shapeDesc.FontSize * 64, 0, 0 ) )
+    if ( const FT_Error error = FT_Set_Char_Size( face, 0, shapeDesc.FontSize * 64, 0, 0 ) )
     {
         LOG( ERROR ) << "Failed to set font size: " << FT_Error_String( error );
         return;
@@ -185,7 +185,7 @@ void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateD
     InteropArray<GlyphVertex> *outVertices = generateDesc.OutVertices;
     InteropArray<uint32_t>    *outIndices  = generateDesc.OutIndices;
     const float                scale       = generateDesc.Scale;
-    const float                letterSpacing = static_cast<float>( generateDesc.LetterSpacing ) * scale;
+    const float                letterSpacing = generateDesc.LetterSpacing;
 
     const FontAsset *fontAsset  = m_font->Asset( );
     uint32_t         baseVertex = outVertices->NumElements( );
@@ -194,17 +194,17 @@ void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateD
         const FontGlyph *metrics = m_font->GetGlyph( shapedGlyph.CodePoint );
         if ( !metrics || metrics->Width == 0 || metrics->Height == 0 )
         {
-            x += shapedGlyph.XAdvance * scale;
+            x += shapedGlyph.XAdvance;
             continue;
         }
 
-        const float x0 = x + ( shapedGlyph.XOffset + metrics->BearingX ) * scale;
+        const float x0 = x + shapedGlyph.XOffset + metrics->BearingX * scale;
         const float x1 = x0 + metrics->Width * scale;
-        const float y0 = y - metrics->BearingY * scale + shapedGlyph.YOffset * scale;
+        const float y0 = y - metrics->BearingY * scale + shapedGlyph.YOffset;
         const float y1 = y0 + metrics->Height * scale;
 
-        x += shapedGlyph.XAdvance * scale + letterSpacing;
-        y += shapedGlyph.YAdvance * scale;
+        x += shapedGlyph.XAdvance + letterSpacing;
+        y += shapedGlyph.YAdvance;
 
         const float u0 = static_cast<float>( metrics->AtlasX ) / static_cast<float>( fontAsset->AtlasWidth );
         const float v0 = static_cast<float>( metrics->AtlasY ) / static_cast<float>( fontAsset->AtlasHeight );
