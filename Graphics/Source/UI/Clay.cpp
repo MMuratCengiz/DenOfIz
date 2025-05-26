@@ -64,9 +64,12 @@ Clay_Dimensions Clay::MeasureTextCallback( Clay_StringSlice text, Clay_TextEleme
     const auto *clay = static_cast<Clay *>( userData );
     DZ_NOT_NULL( clay );
 
-    const std::string   tempStr( text.chars, text.length );
-    const InteropString str( tempStr.c_str( ) );
+    if ( text.length == 0 )
+    {
+        return Clay_Dimensions{ 0, 0 };
+    }
 
+    const InteropString  str( text.chars, static_cast<size_t>( text.length ) );
     const ClayDimensions dims = clay->m_renderer->MeasureText( str, *config );
     return Clay_Dimensions{ dims.Width, dims.Height };
 }
@@ -412,7 +415,8 @@ Clay::Clay( const ClayDesc &desc )
     {
         LOG( ERROR ) << "Failed to initialize Clay: ";
     }
-
+    // Don't enable debug mode until we have a font
+    Clay_SetDebugModeEnabled( false );
     Clay_SetMeasureTextFunction( MeasureTextCallback, this );
     SetViewportSize( desc.Width, desc.Height );
 }
@@ -423,9 +427,14 @@ Clay::~Clay( )
     m_memory.clear( );
 }
 
-uint16_t Clay::AddFont( Font *font )
+uint16_t Clay::AddFont( Font *font ) const
 {
-    return m_textRenderer->AddFont( font );
+    const uint16_t fontId = m_textRenderer->AddFont( font );
+    if ( m_textRenderer->GetFont( 0 ) == nullptr && fontId != 0 )
+    {
+        m_textRenderer->AddFont( font, 0 );
+    }
+    return fontId;
 }
 
 void Clay::SetViewportSize( const float width, const float height ) const
@@ -433,6 +442,18 @@ void Clay::SetViewportSize( const float width, const float height ) const
     DZ_NOT_NULL( m_context );
     Clay_SetLayoutDimensions( Clay_Dimensions{ width, height } );
     m_renderer->Resize( width, height );
+}
+
+void Clay::SetDpiScale( const float dpiScale ) const
+{
+    m_renderer->SetDpiScale( dpiScale );
+    Clay_ResetMeasureTextCache( );
+}
+
+void Clay::SetDebugModeEnabled( const bool enabled )
+{
+    DZ_NOT_NULL( m_context );
+    m_isDebugMode = enabled;
 }
 
 void Clay::SetPointerState( const Float_2 position, const ClayPointerState state ) const
@@ -450,6 +471,8 @@ void Clay::UpdateScrollContainers( const bool enableDragScrolling, const Float_2
 void Clay::BeginLayout( ) const
 {
     DZ_NOT_NULL( m_context );
+    SetPointerState( m_pointerPosition, m_pointerState );
+    Clay_SetDebugModeEnabled( m_isDebugMode );
     Clay_BeginLayout( );
 }
 
@@ -490,8 +513,11 @@ void Clay::Text( const InteropString &text, const ClayTextDesc &desc ) const
 {
     DZ_NOT_NULL( m_context );
 
-    const Clay_String clayText = Clay__WriteStringToCharBuffer( &Clay_GetCurrentContext( )->dynamicStringData,
-                                                                CLAY__INIT( Clay_String ){ .length = static_cast<int>( text.NumChars( ) ), .chars = text.Get( ) } );
+    Clay_String tempString;
+    tempString.chars  = text.Get( );
+    tempString.length = static_cast<int>( text.NumChars( ) );
+
+    const Clay_String clayText = Clay__WriteStringToCharBuffer( &Clay_GetCurrentContext( )->dynamicStringData, tempString );
 
     const Clay_TextElementConfig tempConfig   = ConvertTextConfig( desc );
     Clay_TextElementConfig      *storedConfig = Clay__StoreTextElementConfig( tempConfig );
@@ -534,18 +560,17 @@ ClayBoundingBox Clay::GetElementBoundingBox( const uint32_t id ) const
 
 void Clay::HandleEvent( const Event &event )
 {
-
     if ( event.Type == EventType::MouseMotion )
     {
-        SetPointerState( Float_2{ static_cast<float>( event.Button.X ), static_cast<float>( event.Button.Y ) }, m_pointerState );
+        m_pointerPosition = Float_2{ static_cast<float>( event.Motion.X ), static_cast<float>( event.Motion.Y ) };
     }
 
     if ( event.Type == EventType::MouseButtonDown )
     {
         if ( event.Button.Button == MouseButton::Left )
         {
-            SetPointerState( Float_2{ static_cast<float>( event.Button.X ), static_cast<float>( event.Button.Y ) }, ClayPointerState::Pressed );
-            m_pointerState = ClayPointerState::Pressed;
+            m_pointerPosition = Float_2{ static_cast<float>( event.Button.X ), static_cast<float>( event.Button.Y ) };
+            m_pointerState    = ClayPointerState::Pressed;
         }
     }
 
@@ -553,8 +578,8 @@ void Clay::HandleEvent( const Event &event )
     {
         if ( event.Button.Button == MouseButton::Left )
         {
-            SetPointerState( Float_2{ static_cast<float>( event.Button.X ), static_cast<float>( event.Button.Y ) }, ClayPointerState::Released );
-            m_pointerState = ClayPointerState::Released;
+            m_pointerPosition = Float_2{ static_cast<float>( event.Button.X ), static_cast<float>( event.Button.Y ) };
+            m_pointerState    = ClayPointerState::Released;
         }
     }
 
@@ -564,6 +589,14 @@ void Clay::HandleEvent( const Event &event )
         if ( windowEvent == WindowEventType::SizeChanged )
         {
             SetViewportSize( event.Window.Data1, event.Window.Data2 );
+        }
+    }
+
+    if ( event.Type == EventType::KeyDown )
+    {
+        if ( event.Key.Keycode == KeyCode::F12 )
+        {
+            m_isDebugMode = !Clay_IsDebugModeEnabled( );
         }
     }
 }

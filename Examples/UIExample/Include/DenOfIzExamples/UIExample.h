@@ -28,7 +28,6 @@ namespace DenOfIz
     class UIExample final : public IExample
     {
         FontLibrary           m_library{ };
-        uint16_t              m_inter = 0;
         Time                  m_time;
         std::unique_ptr<Clay> m_clay;
         Float_2               m_mousePosition{ };

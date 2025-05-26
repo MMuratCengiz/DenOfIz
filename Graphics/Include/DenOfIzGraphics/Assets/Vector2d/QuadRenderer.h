@@ -39,9 +39,9 @@ namespace DenOfIz
         ILogicalDevice *LogicalDevice      = nullptr;
         Format          RenderTargetFormat = Format::B8G8R8A8Unorm;
         uint32_t        NumFrames          = 3;
-        uint32_t        BatchSize          = 1024;
+        uint32_t        BatchSize          = 10240;
         uint32_t        MaxNumMaterials    = 32;
-        uint32_t        MaxNumQuads        = 1024;
+        uint32_t        MaxNumQuads        = 10240;
     };
 
     struct DZ_API QuadMaterialDesc

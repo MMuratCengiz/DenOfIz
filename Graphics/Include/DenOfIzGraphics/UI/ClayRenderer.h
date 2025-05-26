@@ -61,14 +61,17 @@ namespace DenOfIz
 
         uint32_t m_currentFrameQuadIndex     = 0;
         uint32_t m_currentFrameMaterialIndex = 0;
+        uint32_t m_currentFrameIndex         = 0;
 
         float m_viewportWidth  = 0;
         float m_viewportHeight = 0;
+        float m_dpiScale       = 1.0f;
 
     public:
         explicit ClayRenderer( const ClayRendererDesc &desc );
         ~ClayRenderer( );
         void           Resize( float width, float height );
+        void           SetDpiScale( float dpiScale );
         void           Render( ICommandList *commandList, const Clay_RenderCommandArray &commands, uint32_t frameIndex );
         void           ClearCaches( );
         void           InvalidateLayout( );

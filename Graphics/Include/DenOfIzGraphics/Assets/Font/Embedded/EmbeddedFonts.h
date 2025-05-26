@@ -41,18 +41,21 @@ namespace DenOfIz
                 std::lock_guard lock( dataMutex );
                 if ( data.NumElements( ) == 0 )
                 {
-                    std::vector<Byte> vData;
-                    const size_t      size0 = Inter::Data0.size( );
-                    const size_t      size1 = Inter::Data1.size( );
-                    const size_t      size2 = Inter::Data2.size( );
-                    const size_t      size3 = Inter::Data3.size( );
-                    vData.resize( size0 + size1 + size2 + size3 );
-                    memcpy( vData.data( ), Inter::Data0.data( ), size0 );
-                    memcpy( vData.data( ) + size0, Inter::Data1.data( ), size1 );
-                    memcpy( vData.data( ) + size0 + size1, Inter::Data2.data( ), size2 );
-                    memcpy( vData.data( ) + size0 + size1 + size2, Inter::Data3.data( ), size3 );
+                    const size_t size0     = Inter::Data0.size( );
+                    const size_t size1     = Inter::Data1.size( );
+                    const size_t size2     = Inter::Data2.size( );
+                    const size_t size3     = Inter::Data3.size( );
+                    const size_t totalSize = size0 + size1 + size2 + size3;
 
-                    data.MemCpy( vData.data( ), vData.size( ) );
+                    std::vector<Byte> vData;
+                    vData.reserve( totalSize );
+
+                    vData.insert( vData.end( ), Inter::Data0.begin( ), Inter::Data0.end( ) );
+                    vData.insert( vData.end( ), Inter::Data1.begin( ), Inter::Data1.end( ) );
+                    vData.insert( vData.end( ), Inter::Data2.begin( ), Inter::Data2.end( ) );
+                    vData.insert( vData.end( ), Inter::Data3.begin( ), Inter::Data3.end( ) );
+
+                    data.MemCpy( vData.data( ), totalSize );
                 }
             }
             return data;

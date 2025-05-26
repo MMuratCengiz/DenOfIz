@@ -50,20 +50,24 @@ namespace DenOfIz
     {
         std::unique_ptr<TextRenderer> m_textRenderer;
         std::unique_ptr<ClayRenderer> m_renderer;
-        ClayPointerState              m_pointerState;
+        ClayPointerState              m_pointerState = ClayPointerState::Released;
+        Float_2                       m_pointerPosition{ 0, 0 };
         Clay_Arena                    m_arena;
         Clay_Context                 *m_context;
         std::vector<uint8_t>          m_memory;
-        uint16_t                      m_fontId = 1;
+        uint16_t                      m_fontId      = 1;
+        bool                          m_isDebugMode = false;
 
     public:
         DZ_API explicit Clay( const ClayDesc &desc );
         DZ_API ~Clay( );
 
-        DZ_API uint16_t AddFont( Font *font );
+        DZ_API uint16_t AddFont( Font *font ) const;
         DZ_API void     SetViewportSize( float width, float height ) const;
+        DZ_API void     SetDpiScale( float dpiScale ) const;
         DZ_API void     SetPointerState( Float_2 position, ClayPointerState state ) const;
         DZ_API void     UpdateScrollContainers( bool enableDragScrolling, Float_2 scrollDelta, float deltaTime ) const;
+        DZ_API void     SetDebugModeEnabled( bool enabled );
 
         DZ_API void BeginLayout( ) const;
         DZ_API void EndLayout( ICommandList *commandList, uint32_t frameIndex ) const;

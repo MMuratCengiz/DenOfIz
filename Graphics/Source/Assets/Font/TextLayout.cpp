@@ -47,23 +47,24 @@ Font *TextLayout::GetFont( ) const
 
 void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
 {
+    if ( shapeDesc.Text.IsEmpty( ) || !m_font )
+    {
+        return;
+    }
+
     // Check if we can use cached results
-    if ( m_lastShapedText.Equals( shapeDesc.Text ) &&
-         m_lastFontSize == shapeDesc.FontSize &&
-         m_lastDirection == shapeDesc.Direction &&
-         m_lastScriptTag.X == shapeDesc.HbScriptTag.X &&
-         m_lastScriptTag.Y == shapeDesc.HbScriptTag.Y &&
-         m_lastScriptTag.Z == shapeDesc.HbScriptTag.Z &&
+    if ( m_lastShapedText.Equals( shapeDesc.Text ) && m_lastFontSize == shapeDesc.FontSize && m_lastDirection == shapeDesc.Direction &&
+         m_lastScriptTag.X == shapeDesc.HbScriptTag.X && m_lastScriptTag.Y == shapeDesc.HbScriptTag.Y && m_lastScriptTag.Z == shapeDesc.HbScriptTag.Z &&
          m_lastScriptTag.W == shapeDesc.HbScriptTag.W )
     {
         return;
     }
-    
+
     // Update cache keys
     m_lastShapedText = shapeDesc.Text;
-    m_lastFontSize = shapeDesc.FontSize;
-    m_lastDirection = shapeDesc.Direction;
-    m_lastScriptTag = shapeDesc.HbScriptTag;
+    m_lastFontSize   = shapeDesc.FontSize;
+    m_lastDirection  = shapeDesc.Direction;
+    m_lastScriptTag  = shapeDesc.HbScriptTag;
 
     const std::string    utf8Text  = shapeDesc.Text.Get( );
     const std::u32string utf32Text = Utf8ToUtf32( utf8Text );
@@ -165,8 +166,13 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
         totalAdvance += glyphAdvance.XAdvance;
     }
 
-    m_totalWidth  = totalAdvance;
-    m_totalHeight = static_cast<float>( m_font->m_desc.FontAsset->Metrics.LineHeight );
+    m_totalWidth = totalAdvance;
+
+    const float baseSize       = static_cast<float>( m_font->Asset( )->InitialFontSize );
+    const float targetSize     = static_cast<float>( shapeDesc.FontSize );
+    const float effectiveScale = targetSize / baseSize;
+    const auto &metrics        = m_font->m_desc.FontAsset->Metrics;
+    m_totalHeight              = static_cast<float>( metrics.Ascent + metrics.Descent ) * effectiveScale;
     hb_buffer_destroy( buffer );
     hb_font_destroy( hbFont );
 }
@@ -179,12 +185,12 @@ void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateD
         return;
     }
 
-    float                      x           = generateDesc.StartPosition.X;
-    float                      y           = generateDesc.StartPosition.Y;
-    const Float_4             &color       = generateDesc.Color;
-    InteropArray<GlyphVertex> *outVertices = generateDesc.OutVertices;
-    InteropArray<uint32_t>    *outIndices  = generateDesc.OutIndices;
-    const float                scale       = generateDesc.Scale;
+    float                      x             = generateDesc.StartPosition.X;
+    float                      y             = generateDesc.StartPosition.Y;
+    const Float_4             &color         = generateDesc.Color;
+    InteropArray<GlyphVertex> *outVertices   = generateDesc.OutVertices;
+    InteropArray<uint32_t>    *outIndices    = generateDesc.OutIndices;
+    const float                scale         = generateDesc.Scale;
     const float                letterSpacing = generateDesc.LetterSpacing;
 
     const FontAsset *fontAsset  = m_font->Asset( );

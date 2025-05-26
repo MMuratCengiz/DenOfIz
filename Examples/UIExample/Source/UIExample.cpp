@@ -36,7 +36,7 @@ void UIExample::Init( )
 
     const auto viewport = m_swapChain->GetViewport( );
     m_clay->SetViewportSize( viewport.Width, viewport.Height );
-    m_inter = m_clay->AddFont( m_library.LoadFont( "C:/Users/cengi/Downloads/Inter/Inter-VariableFont_opsz,wght.ttf" ) );
+    m_clay->SetDebugModeEnabled( true );
 
     m_buttonId    = m_clay->HashString( "Button" );
     m_textId      = m_clay->HashString( "Text" );
@@ -85,8 +85,6 @@ void UIExample::CreateUI( ) const
     ClayTextDesc headerTextDesc;
     headerTextDesc.FontSize  = 24;
     headerTextDesc.TextColor = ClayColor( 255, 255, 255, 255 );
-    headerTextDesc.FontId    = m_inter;
-
     m_clay->Text( "Clay UI Example", headerTextDesc );
 
     m_clay->CloseElement( );
@@ -101,7 +99,7 @@ void UIExample::CreateUI( ) const
     m_clay->OpenElement( contentContainer );
 
     ClayElementDeclaration card;
-    card.Layout.Sizing.Width    = ClaySizingAxis::Grow( ); // Cards will now grow to fill available space
+    card.Layout.Sizing.Width    = ClaySizingAxis::Grow( );
     card.Layout.Sizing.Height   = ClaySizingAxis::Fit( 0, 400 );
     card.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
     card.Layout.Padding         = ClayPadding( 20 );

@@ -121,17 +121,38 @@ uint16_t TextRenderer::AddFont( Font *font, uint16_t fontId )
     }
     if ( m_fonts.size( ) <= fontId )
     {
-        m_fonts.resize( std::max<size_t>( fontId + 1, m_fonts.size( ) * 2 ) );
-        m_textBatches.resize( m_fonts.size( ) );
-        m_validFonts.push_back( fontId );
+        const size_t oldSize = m_fonts.size( );
+        const size_t newSize = std::max<size_t>( fontId + 1, m_fonts.size( ) * 2 );
+        m_fonts.resize( newSize );
+        m_textBatches.resize( newSize );
+        for ( size_t i = oldSize; i < newSize; ++i )
+        {
+            if ( !m_fonts[ i ] )
+            {
+                continue;
+            }
+            TextBatchDesc batchDesc;
+            batchDesc.Font                  = m_fonts[ i ];
+            batchDesc.LogicalDevice         = m_logicalDevice;
+            batchDesc.RendererRootSignature = m_rootSignature.get( );
+            m_textBatches[ i ]              = std::make_unique<TextBatch>( batchDesc );
+            m_textBatches[ i ]->SetProjectionMatrix( InteropMathConverter::Float_4x4FromXMFLOAT4X4( m_projectionMatrix ) );
+        }
+        if ( std::ranges::find( m_validFonts, fontId ) == m_validFonts.end( ) )
+        {
+            m_validFonts.push_back( fontId );
+        }
     }
     m_fonts[ fontId ] = font;
-
-    TextBatchDesc textBatchDesc{ };
-    textBatchDesc.Font                  = font;
-    textBatchDesc.LogicalDevice         = m_logicalDevice;
-    textBatchDesc.RendererRootSignature = m_rootSignature.get( );
-    m_textBatches[ fontId ]             = std::make_unique<TextBatch>( textBatchDesc );
+    if ( !m_textBatches[ fontId ] )
+    {
+        TextBatchDesc textBatchDesc{ };
+        textBatchDesc.Font                  = font;
+        textBatchDesc.LogicalDevice         = m_logicalDevice;
+        textBatchDesc.RendererRootSignature = m_rootSignature.get( );
+        m_textBatches[ fontId ]             = std::make_unique<TextBatch>( textBatchDesc );
+        m_textBatches[ fontId ]->SetProjectionMatrix( InteropMathConverter::Float_4x4FromXMFLOAT4X4( m_projectionMatrix ) );
+    }
     return fontId;
 }
 

@@ -68,10 +68,21 @@ void ClayRenderer::Resize( const float width, const float height )
 {
     if ( m_viewportWidth != width || m_viewportHeight != height )
     {
-        m_quadRenderer->SetCanvas( static_cast<uint32_t>( width ), static_cast<uint32_t>( height ) );
         m_viewportWidth  = width;
         m_viewportHeight = height;
-        m_needsClear     = true;
+
+        m_quadRenderer->SetCanvas( static_cast<uint32_t>( width ), static_cast<uint32_t>( height ) );
+        m_desc.TextRenderer->SetViewport( Viewport{ 0, 0, width, height } );
+        m_needsClear = true;
+    }
+}
+
+void ClayRenderer::SetDpiScale( const float dpiScale )
+{
+    if ( m_dpiScale != dpiScale )
+    {
+        m_dpiScale   = dpiScale;
+        m_needsClear = true;
     }
 }
 
@@ -110,11 +121,12 @@ void ClayRenderer::Render( ICommandList *commandList, const Clay_RenderCommandAr
     {
         ClearCaches( );
         m_needsClear = false;
+        return;
     }
 
     m_currentFrameQuadIndex     = 0;
     m_currentFrameMaterialIndex = 0;
-
+    m_currentFrameIndex         = frameIndex;
     for ( int i = 0; i < commands.length; ++i )
     {
         const Clay_RenderCommand *cmd = &commands.internalArray[ i ];
@@ -149,9 +161,11 @@ void ClayRenderer::Render( ICommandList *commandList, const Clay_RenderCommandAr
             RenderImage( cmd, frameIndex );
             break;
         case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:
-            commandList->BindScissorRect( cmd->boundingBox.x, cmd->boundingBox.y, cmd->boundingBox.width, cmd->boundingBox.height );
+            commandList->BindScissorRect( cmd->boundingBox.x * m_dpiScale, cmd->boundingBox.y * m_dpiScale, cmd->boundingBox.width * m_dpiScale,
+                                          cmd->boundingBox.height * m_dpiScale );
             break;
         case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END:
+            commandList->BindScissorRect( 0, 0, m_viewportWidth * m_dpiScale, m_viewportHeight * m_dpiScale );
             break;
         case CLAY_RENDER_COMMAND_TYPE_CUSTOM:
             break;
@@ -171,13 +185,18 @@ void ClayRenderer::Render( ICommandList *commandList, const Clay_RenderCommandAr
         case CLAY_RENDER_COMMAND_TYPE_TEXT:
             RenderText( cmd, frameIndex, commandList );
             break;
+        case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:
+            commandList->BindScissorRect( cmd->boundingBox.x * m_dpiScale, cmd->boundingBox.y * m_dpiScale, cmd->boundingBox.width * m_dpiScale,
+                                          cmd->boundingBox.height * m_dpiScale );
+            break;
+        case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END:
+            commandList->BindScissorRect( 0, 0, m_viewportWidth * m_dpiScale, m_viewportHeight * m_dpiScale );
+            break;
         default:
             break;
         }
     }
     m_desc.TextRenderer->EndBatch( commandList );
-
-    // Render any remaining quads
 }
 
 ClayDimensions ClayRenderer::MeasureText( const InteropString &text, const Clay_TextElementConfig &desc ) const
@@ -190,12 +209,17 @@ ClayDimensions ClayRenderer::MeasureText( const InteropString &text, const Clay_
     TextRenderDesc textDesc;
     textDesc.Text          = text;
     textDesc.FontId        = desc.fontId;
-    textDesc.FontSize      = desc.fontSize;
-    textDesc.LetterSpacing = desc.letterSpacing;
+    textDesc.FontSize      = desc.fontSize * m_dpiScale;
+    textDesc.LetterSpacing = desc.letterSpacing * m_dpiScale;
     textDesc.LineHeight    = desc.lineHeight;
 
-    const Float_2 size = m_desc.TextRenderer->MeasureText( text, textDesc );
-    return ClayDimensions{ size.X, size.Y };
+    const Float_2 size   = m_desc.TextRenderer->MeasureText( text, textDesc );
+    float         height = size.Y;
+    if ( desc.lineHeight > 0 )
+    {
+        height = static_cast<float>( desc.lineHeight );
+    }
+    return ClayDimensions{ size.X / m_dpiScale, height / m_dpiScale };
 }
 
 void ClayRenderer::RenderRectangle( const Clay_RenderCommand *command, const uint32_t frameIndex )
@@ -332,20 +356,15 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, const uint32_t
         return;
     }
 
-    std::string s( data.stringContents.chars, data.stringContents.length);
-
-
     TextRenderDesc textDesc;
     textDesc.Text          = InteropString( data.stringContents.chars, data.stringContents.length );
-    textDesc.X             = bounds.x;
-    textDesc.Y             = bounds.y;
+    textDesc.X             = bounds.x * m_dpiScale;
+    textDesc.Y             = bounds.y * m_dpiScale;
     textDesc.FontId        = data.fontId;
-    textDesc.FontSize      = data.fontSize;
-    textDesc.LetterSpacing = data.letterSpacing;
+    textDesc.FontSize      = data.fontSize * m_dpiScale;
+    textDesc.LetterSpacing = data.letterSpacing * m_dpiScale;
     textDesc.LineHeight    = data.lineHeight;
     textDesc.Color         = Float_4( data.textColor.r / 255.0f, data.textColor.g / 255.0f, data.textColor.b / 255.0f, data.textColor.a / 255.0f );
-
-    // Use immediate rendering to maintain proper z-order
     m_desc.TextRenderer->AddText( textDesc );
 }
 

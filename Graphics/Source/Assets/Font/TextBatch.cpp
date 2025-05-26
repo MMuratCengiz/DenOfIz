@@ -107,10 +107,14 @@ void TextBatch::AddText( const AddTextDesc &desc )
 {
     if ( m_textLayouts.size( ) <= m_currentTextLayoutIndex )
     {
-        m_textLayouts.resize( m_currentTextLayoutIndex + 1 );
-
-        TextLayoutDesc textLayoutDesc{ m_font };
-        m_textLayouts[ m_currentTextLayoutIndex ] = std::make_unique<TextLayout>( textLayoutDesc );
+        const size_t oldSize = m_textLayouts.size( );
+        const size_t newSize = std::max<size_t>( m_currentTextLayoutIndex + 1, m_textLayouts.size( ) + 32 );
+        m_textLayouts.resize( newSize );
+        for ( size_t i = oldSize; i < newSize; ++i )
+        {
+            TextLayoutDesc textLayoutDesc{ m_font };
+            m_textLayouts[ i ] = std::make_unique<TextLayout>( textLayoutDesc );
+        }
     }
 
     const auto &textLayout = m_textLayouts[ m_currentTextLayoutIndex++ ];
@@ -118,13 +122,13 @@ void TextBatch::AddText( const AddTextDesc &desc )
     AddTextDesc modifiedParams = desc;
 
     const float baseSize       = static_cast<float>( m_font->Asset( )->InitialFontSize );
-    const float targetSize     = desc.FontSize;
+    const float targetSize     = desc.FontSize > 0 ? desc.FontSize : baseSize;
     const auto  effectiveScale = targetSize / baseSize;
 
     ShapeTextDesc shapeDesc{ };
     shapeDesc.Text      = desc.Text;
     shapeDesc.Direction = desc.Direction;
-    shapeDesc.FontSize  = desc.FontSize > 0 ? desc.FontSize : m_font->Asset( )->InitialFontSize;
+    shapeDesc.FontSize  = targetSize;
 
     textLayout->ShapeText( shapeDesc );
 
@@ -137,12 +141,17 @@ void TextBatch::AddText( const AddTextDesc &desc )
 
         if ( desc.VerticalCenter )
         {
-            modifiedParams.Y -= m_font->Asset( )->Metrics.LineHeight * effectiveScale / 2.0f;
+            const auto &metrics    = m_font->Asset( )->Metrics;
+            const float textHeight = static_cast<float>( metrics.Ascent + metrics.Descent ) * effectiveScale;
+            modifiedParams.Y -= textHeight / 2.0f;
         }
     }
+    // Clay provides Y coordinate as top of text area
+    const float fontAscent = static_cast<float>( m_font->Asset( )->Metrics.Ascent ) * effectiveScale;
+    const float adjustedY  = modifiedParams.Y + fontAscent;
 
     GenerateTextVerticesDesc generateDesc{ };
-    generateDesc.StartPosition = { modifiedParams.X, modifiedParams.Y };
+    generateDesc.StartPosition = { modifiedParams.X, adjustedY };
     generateDesc.Color         = modifiedParams.Color;
     generateDesc.OutVertices   = &m_glyphVertices;
     generateDesc.OutIndices    = &m_indexData;
@@ -160,7 +169,6 @@ void TextBatch::AddText( const AddTextDesc &desc )
     {
         m_maxVertices = std::max( m_maxVertices * 2, m_currentVertexCount );
         m_maxIndices  = std::max( m_maxIndices * 2, m_currentIndexCount );
-        LOG( INFO ) << "Font render buffers resized: vertices=" << m_maxVertices << ", indices=" << m_maxIndices;
     }
 }
 
@@ -196,41 +204,41 @@ void TextBatch::SetProjectionMatrix( const Float_4x4 &projectionMatrix )
 Float_2 TextBatch::MeasureText( const InteropString &text, const AddTextDesc &desc ) const
 {
     const float baseSize       = static_cast<float>( m_font->Asset( )->InitialFontSize );
-    const float targetSize     = desc.FontSize;
+    const float targetSize     = desc.FontSize > 0 ? desc.FontSize : baseSize;
     const auto  effectiveScale = targetSize / baseSize;
 
-    // Get or create a TextLayout from the pool
-    if ( m_measureTextLayouts.size( ) <= m_currentMeasureLayoutIndex )
+    if ( text.NumChars( ) == 0 )
     {
-        m_measureTextLayouts.resize( m_currentMeasureLayoutIndex + 1 );
-        TextLayoutDesc layoutDesc{ m_font };
-        m_measureTextLayouts[ m_currentMeasureLayoutIndex ] = std::make_unique<TextLayout>( layoutDesc );
+        return Float_2{ 0.0f, 0.0f };
     }
 
-    const auto &layout          = m_measureTextLayouts[ m_currentMeasureLayoutIndex ];
-    m_currentMeasureLayoutIndex = ( m_currentMeasureLayoutIndex + 1 ) % 16; // Cycle through 16 layouts
+    const TextLayoutDesc layoutDesc{ m_font };
+    TextLayout           tempLayout( layoutDesc );
 
-    ShapeTextDesc shapeDesc;
+    ShapeTextDesc shapeDesc{ };
     shapeDesc.Text      = text;
     shapeDesc.Direction = desc.Direction;
-    shapeDesc.FontSize  = desc.FontSize > 0 ? desc.FontSize : m_font->Asset( )->InitialFontSize;
-    layout->ShapeText( shapeDesc );
+    shapeDesc.FontSize  = targetSize;
 
-    const Float_2 textSize = layout->GetTextSize( );
+    tempLayout.ShapeText( shapeDesc );
 
-    float adjustedWidth = textSize.X;
+    float textWidth  = tempLayout.GetTextWidth( );
+    float textHeight = tempLayout.GetTextHeight( );
     if ( desc.LetterSpacing > 0 && text.NumChars( ) > 0 )
     {
-        adjustedWidth += static_cast<float>( desc.LetterSpacing ) * ( text.NumChars( ) - 1 ) * effectiveScale;
+        textWidth += static_cast<float>( desc.LetterSpacing ) * ( text.NumChars( ) - 1 );
     }
 
-    float adjustedHeight = textSize.Y;
     if ( desc.LineHeight > 0 )
     {
-        adjustedHeight = static_cast<float>( desc.LineHeight ) * effectiveScale;
+        textHeight = static_cast<float>( desc.LineHeight );
     }
-
-    return Float_2{ adjustedWidth * effectiveScale, adjustedHeight * effectiveScale };
+    else
+    {
+        const auto &metrics = m_font->Asset( )->Metrics;
+        textHeight          = static_cast<float>( metrics.Ascent + metrics.Descent ) * effectiveScale;
+    }
+    return Float_2{ textWidth, textHeight };
 }
 
 void TextBatch::UpdateBuffers( )
@@ -238,17 +246,32 @@ void TextBatch::UpdateBuffers( )
     // Check if we need to resize vertex buffer
     if ( m_vertexBufferDesc.NumBytes < m_glyphVertices.NumElements( ) * sizeof( GlyphVertex ) )
     {
-        m_vertexBufferDesc.NumBytes = m_maxVertices * sizeof( GlyphVertex );
-        auto newBuffer              = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( m_vertexBufferDesc ) );
-        m_vertexBuffer              = std::move( newBuffer );
+        if ( m_vertexBufferMappedMemory )
+        {
+            m_vertexBuffer->UnmapMemory( );
+            m_vertexBufferMappedMemory = nullptr;
+        }
+
+        m_vertexBufferDesc.NumBytes                  = m_maxVertices * sizeof( GlyphVertex );
+        m_vertexBufferDesc.StructureDesc.NumElements = m_maxVertices;
+        auto newBuffer                               = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( m_vertexBufferDesc ) );
+        m_vertexBuffer                               = std::move( newBuffer );
+        m_vertexBufferMappedMemory                   = static_cast<Byte *>( m_vertexBuffer->MapMemory( ) );
     }
 
     // Check if we need to resize index buffer
     if ( m_indexBufferDesc.NumBytes < m_indexData.NumElements( ) * sizeof( uint32_t ) )
     {
+        if ( m_indexBufferMappedMemory )
+        {
+            m_indexBuffer->UnmapMemory( );
+            m_indexBufferMappedMemory = nullptr;
+        }
+
         m_indexBufferDesc.NumBytes = m_maxIndices * sizeof( uint32_t );
         auto newBuffer             = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( m_indexBufferDesc ) );
         m_indexBuffer              = std::move( newBuffer );
+        m_indexBufferMappedMemory  = static_cast<Byte *>( m_indexBuffer->MapMemory( ) );
     }
 
     memcpy( m_vertexBufferMappedMemory, m_glyphVertices.Data( ), m_glyphVertices.NumElements( ) * sizeof( GlyphVertex ) );
