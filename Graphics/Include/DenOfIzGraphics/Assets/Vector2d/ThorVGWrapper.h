@@ -311,6 +311,8 @@ namespace DenOfIz
 
     class ThorVGCanvas
     {
+        uint32_t                       m_width{};
+        uint32_t                       m_height{};
         InteropArray<uint32_t>         m_data;
         std::unique_ptr<tvg::SwCanvas> m_canvas = nullptr;
 
@@ -329,6 +331,7 @@ namespace DenOfIz
 
         DZ_API void  ResetData( );
         DZ_API const InteropArray<uint32_t> &GetData( ) const;
+        DZ_API InteropArray<Byte> GetDataAsBytes( ) const;
     };
 
     struct DZ_API ThorVGRendererDesc

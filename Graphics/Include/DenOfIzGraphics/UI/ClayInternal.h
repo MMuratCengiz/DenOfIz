@@ -18,4 +18,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-// TODO
+#include "ClayData.h"
+
+namespace DenOfIz
+{
+    struct ClayRenderCommand
+    {
+        ClayBoundingBox       BoundingBox;
+        ClayRenderCommandType CommandType;
+        void                 *UserData;
+        uint32_t              Id;
+        int16_t               ZIndex;
+
+        struct
+        {
+            ClayRectangleRenderData Rectangle;
+            ClayTextRenderData      Text;
+            ClayImageRenderData     Image;
+            ClayBorderRenderData    Border;
+            ClayCustomRenderData    Custom;
+            ClayScrollRenderData    Scroll;
+        } RenderData;
+    };
+} // namespace DenOfIz

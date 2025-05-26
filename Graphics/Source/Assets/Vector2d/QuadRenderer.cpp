@@ -120,6 +120,8 @@ QuadRenderer::QuadRenderer( const QuadRendererDesc &desc ) : m_desc( desc )
 
     XMStoreFloat4x4( &m_projectionMatrix, XMMatrixIdentity( ) );
     m_frameData.resize( desc.NumFrames );
+
+    Initialize( );
 }
 
 QuadRenderer::~QuadRenderer( ) = default;
@@ -397,6 +399,23 @@ void QuadRenderer::UpdateQuad( const uint32_t frameIndex, const QuadDataDesc &de
                                            desc.UV0.Y               // V offset
        );
     instance->MaterialId       = desc.MaterialId;
+}
+
+void QuadRenderer::ClearQuads( )
+{
+    m_drawBatches.clear( );
+}
+
+void QuadRenderer::ClearMaterials( )
+{
+    m_materialDescs.clear( );
+    m_materialDescs.resize( m_desc.MaxNumMaterials );
+    for ( auto &frame : m_frameData )
+    {
+        frame.MaterialBindGroups.clear( );
+    }
+    m_drawBatches.clear( );
+    m_materialBatchIndex = 0;
 }
 
 void QuadRenderer::Render( const uint32_t frameIndex, ICommandList *commandList )

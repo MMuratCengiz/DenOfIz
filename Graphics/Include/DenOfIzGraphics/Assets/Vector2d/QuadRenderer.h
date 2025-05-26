@@ -147,7 +147,6 @@ namespace DenOfIz
         DZ_API explicit QuadRenderer( const QuadRendererDesc &desc );
         DZ_API ~QuadRenderer( );
 
-        DZ_API void Initialize( );
         DZ_API void SetCanvas( uint32_t width, uint32_t height );
 
         DZ_API void AddMaterial( const QuadMaterialDesc &desc );
@@ -156,9 +155,13 @@ namespace DenOfIz
         DZ_API void AddQuad( const QuadDataDesc &desc );
         DZ_API void UpdateQuad( uint32_t frameIndex, const QuadDataDesc &desc ) const;
 
+        DZ_API void ClearQuads( );
+        DZ_API void ClearMaterials( );
+
         DZ_API void Render( uint32_t frameIndex, ICommandList *commandList );
 
     private:
+        void                Initialize( );
         void                CreateShaderResources( );
         void                CreateStaticQuadGeometry( );
         DirectX::XMFLOAT4X4 CalculateTransform( const QuadDataDesc &desc ) const;

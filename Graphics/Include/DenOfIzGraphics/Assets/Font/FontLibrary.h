@@ -19,18 +19,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Utilities/Interop.h>
-#include "Font.h"
 #include <mutex>
+#include "Font.h"
+
+#include "DenOfIzGraphics/Assets/Import/FontImporter.h"
 
 namespace DenOfIz
 {
     class FontLibrary
     {
+        FontImporter m_fontImporter{ FontImporterDesc{} };
+
         FT_Library m_ftLibrary{ };
         std::mutex m_mutex;
 
+        std::vector<FontAsset>                                 m_assets;
+        std::unordered_map<std::string, std::unique_ptr<Font>> m_fonts;
+
     public:
-        DZ_API FontLibrary( );
+        DZ_API       FontLibrary( );
         DZ_API Font *LoadFont( const FontDesc &desc );
+        DZ_API Font *LoadFont( const InteropString &ttf );
     };
 } // namespace DenOfIz

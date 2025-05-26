@@ -714,4 +714,23 @@ namespace DenOfIz
     {
         return m_data;
     }
+
+    InteropArray<Byte> ThorVGCanvas::GetDataAsBytes( ) const
+    {
+        InteropArray<Byte> pixelData( m_width * m_height * 4 );
+        for ( uint32_t i = 0; i < m_data.NumElements( ); ++i )
+        {
+            const uint32_t pixel = m_data.GetElement( i );
+            const uint8_t  a     = pixel >> 24 & 0xFF;
+            const uint8_t  r     = pixel >> 16 & 0xFF;
+            const uint8_t  g     = pixel >> 8 & 0xFF;
+            const uint8_t  b     = pixel & 0xFF;
+
+            pixelData.AddElement( r );
+            pixelData.AddElement( g );
+            pixelData.AddElement( b );
+            pixelData.AddElement( a );
+        }
+        return pixelData;
+    }
 } // namespace DenOfIz

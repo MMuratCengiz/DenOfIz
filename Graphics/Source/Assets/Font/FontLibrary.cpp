@@ -18,7 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Assets/Font/FontLibrary.h>
 
-DenOfIz::FontLibrary::FontLibrary( )
+#include "DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h"
+
+using namespace DenOfIz;
+
+FontLibrary::FontLibrary( )
 {
     if ( const FT_Error error = FT_Init_FreeType( &m_ftLibrary ) )
     {
@@ -26,8 +30,23 @@ DenOfIz::FontLibrary::FontLibrary( )
     }
 }
 
-DenOfIz::Font *DenOfIz::FontLibrary::LoadFont( const FontDesc &desc )
+Font *FontLibrary::LoadFont( const FontDesc &desc )
 {
     std::lock_guard lock( m_mutex );
     return new Font( m_ftLibrary, desc );
+}
+
+Font *FontLibrary::LoadFont( const InteropString &ttf )
+{
+    BinaryReader reader( ttf );
+
+    FontAssetReader fontReader( { &reader } );
+    FontAsset& asset = m_assets.emplace_back( fontReader.Read( ) );
+
+    FontDesc desc{};
+    desc.FontAsset = &asset;
+    auto font = std::unique_ptr<Font>( new Font( m_ftLibrary, desc ) );
+
+    m_fonts.emplace( ttf.Get( ), std::move( font ) );
+    return m_fonts[  ttf.Get( ) ].get( );
 }
