@@ -29,7 +29,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-
     enum class RootSignatureType
     {
         Graphics,
@@ -75,12 +74,25 @@ namespace DenOfIz
     template class DZ_API InteropArray<StaticSamplerDesc>;
     template class DZ_API InteropArray<RootConstantResourceBindingDesc>;
 
+    /// \brief Describes a bindless resource array that should be pre-allocated in the root signature
+    struct DZ_API BindlessResourceDesc
+    {
+        uint32_t            Binding;
+        uint32_t            RegisterSpace = 0;
+        ResourceBindingType Type          = ResourceBindingType::ShaderResource;
+        uint32_t            MaxArraySize  = 1024;
+        bool                IsDynamic     = true; // Can be updated at runtime
+        InteropString       Name;
+    };
+    template class DZ_API InteropArray<BindlessResourceDesc>;
+
     struct DZ_API RootSignatureDesc
     {
         // The order of the bindings must match the order of the shader inputs!!! TODO might need to be fixed but this is normal for DX12
         InteropArray<ResourceBindingDesc>             ResourceBindings;
-        InteropArray<StaticSamplerDesc>               StaticSamplers; // Not supported yet due to lack of support in Metal
+        InteropArray<StaticSamplerDesc>               StaticSamplers;
         InteropArray<RootConstantResourceBindingDesc> RootConstants;
+        InteropArray<BindlessResourceDesc>            BindlessResources;
     };
 
     class DZ_API IRootSignature

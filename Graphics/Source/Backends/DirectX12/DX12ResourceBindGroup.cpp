@@ -170,6 +170,32 @@ IResourceBindGroup *DX12ResourceBindGroup::Srv( const uint32_t binding, ITexture
     return this;
 }
 
+IResourceBindGroup *DX12ResourceBindGroup::SrvArray( const uint32_t binding, const InteropArray<ITextureResource *> &resources )
+{
+    const ResourceBindingSlot slot = GetSlot( binding, ResourceBindingType::ShaderResource );
+    const uint32_t baseOffset = m_dx12RootSignature->GetResourceOffset( slot );
+    for ( uint32_t i = 0; i < resources.NumElements( ); ++i )
+    {
+        DZ_NOT_NULL( resources.GetElement( i ) );
+        const uint32_t descriptorOffset = baseOffset + i;
+        reinterpret_cast<DX12TextureResource *>( resources.GetElement( i ) )->CreateView( CpuHandleCbvSrvUav( descriptorOffset ) );
+        m_cbvSrvUavCount++;
+    }
+    return this;
+}
+
+IResourceBindGroup *DX12ResourceBindGroup::SrvArrayIndex( const uint32_t binding, uint32_t arrayIndex, ITextureResource *resource )
+{
+    const ResourceBindingSlot slot = GetSlot( binding, ResourceBindingType::ShaderResource );
+    const uint32_t baseOffset = m_dx12RootSignature->GetResourceOffset( slot );
+    const uint32_t descriptorOffset = baseOffset + arrayIndex;
+    
+    DZ_NOT_NULL( resource );
+    reinterpret_cast<DX12TextureResource *>( resource )->CreateView( CpuHandleCbvSrvUav( descriptorOffset ) );
+    
+    return this;
+}
+
 IResourceBindGroup *DX12ResourceBindGroup::Srv( const uint32_t binding, ITopLevelAS *accelerationStructure )
 {
     return Srv( binding, dynamic_cast<DX12TopLevelAS *>( accelerationStructure )->Buffer( ) );

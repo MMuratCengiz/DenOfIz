@@ -94,6 +94,7 @@ namespace DenOfIz
         void ReflectLibrary( ReflectionState &state ) const;
         void ProcessInputBindingDesc( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex ) const;
         bool UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
+        void ProcessBindlessArrays( RootSignatureDesc &rootSignature ) const;
     };
 
 } // namespace DenOfIz

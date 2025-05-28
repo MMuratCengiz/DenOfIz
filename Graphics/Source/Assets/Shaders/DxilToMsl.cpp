@@ -106,7 +106,7 @@ bool IsResourceAlreadyProcessed( const std::vector<D3D12_SHADER_INPUT_BIND_DESC>
     return false;
 }
 
-IRDescriptorRange1 CreateDescriptorRange( const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc )
+IRDescriptorRange1 CreateDescriptorRange( const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, bool isBindless = false )
 {
     IRDescriptorRange1 descriptorRange                = { };
     descriptorRange.BaseShaderRegister                = shaderInputBindDesc.BindPoint;
@@ -114,6 +114,17 @@ IRDescriptorRange1 CreateDescriptorRange( const D3D12_SHADER_INPUT_BIND_DESC &sh
     descriptorRange.RegisterSpace                     = shaderInputBindDesc.Space;
     descriptorRange.OffsetInDescriptorsFromTableStart = IRDescriptorRangeOffsetAppend;
     descriptorRange.RangeType                         = DxcEnumConverter::ShaderTypeToIRDescriptorType( shaderInputBindDesc.Type );
+
+    if ( isBindless )
+    {
+        descriptorRange.Flags          = IRDescriptorRangeFlagDescriptorsVolatile;
+        descriptorRange.NumDescriptors = UINT_MAX;
+    }
+    else
+    {
+        descriptorRange.Flags = IRDescriptorRangeFlagNone;
+    }
+
     return descriptorRange;
 }
 
@@ -218,15 +229,17 @@ InteropArray<InteropArray<Byte>> DxilToMsl::Convert( const DxilToMslDesc &desc )
 
     for ( int shaderIndex = 0; shaderIndex < dxilShaders.NumElements( ); ++shaderIndex )
     {
-        auto dxilShader       = dxilShaders.GetElement( shaderIndex );
-        auto processResources = [ & ]( const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, const int i )
+        auto        dxilShader       = dxilShaders.GetElement( shaderIndex );
+        const auto &shaderDesc       = desc.Shaders.GetElement( shaderIndex );
+        auto        processResources = [ & ]( const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, const int i )
         {
             if ( IsResourceAlreadyProcessed( processedInputs, shaderInputBindDesc ) )
             {
                 return;
             }
             processedInputs.push_back( shaderInputBindDesc );
-            const bool isLocal = ShaderReflectionHelper::IsBindingLocalTo( dxilShader->RayTracing, shaderInputBindDesc );
+            const bool isLocal    = ShaderReflectionHelper::IsBindingLocalTo( dxilShader->RayTracing, shaderInputBindDesc );
+            const bool isBindless = ShaderReflectionHelper::IsBindingBindless( shaderDesc.Bindless, shaderInputBindDesc );
             if ( isLocal )
             {
                 ContainerUtilities::EnsureSize( localRegisterSpaceRanges, shaderInputBindDesc.Space );
@@ -273,7 +286,13 @@ InteropArray<InteropArray<Byte>> DxilToMsl::Convert( const DxilToMslDesc &desc )
             }
             else
             {
-                switch ( const IRDescriptorRange1 descriptorRange = CreateDescriptorRange( shaderInputBindDesc ); descriptorRange.RangeType )
+                const IRDescriptorRange1 descriptorRange = CreateDescriptorRange( shaderInputBindDesc, isBindless );
+                if ( isBindless )
+                {
+                    registerSpaceRange.HasBindlessResources = true;
+                }
+
+                switch ( descriptorRange.RangeType )
                 {
                 case IRDescriptorRangeTypeCBV:
                 case IRDescriptorRangeTypeSRV:

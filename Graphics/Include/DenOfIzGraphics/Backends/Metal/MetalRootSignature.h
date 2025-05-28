@@ -54,12 +54,13 @@ namespace DenOfIz
         };
         struct MetalDescriptorOffsets
         {
-            uint32_t                               CbvSrvUavTableOffset = 0; // Index of the CbvSrvUav table in the top level argument buffer
-            uint32_t                               SamplerTableOffset   = 0; // Index of the Sampler table in the top level argument buffer
-            std::unordered_map<uint32_t, uint32_t> UniqueTLABIndex;          // Unique indexes within the TopLevelArgumentBuffer for Root Level Cbvs
-            std::vector<MetalResourceBindingIndex> CbvSrvUavResourceIndices; // Indexes of each binding within the CbvUavSrv table
-            std::vector<uint32_t>                  SamplerResourceIndices;   // Indexes of each binding within the Sampler table
-            std::vector<MTLRenderStages>           SamplerResourceStages;    // Indexes of each binding within the Sampler table
+            uint32_t                               CbvSrvUavTableOffset = UINT_MAX; // Index of the CbvSrvUav table in the top level argument buffer
+            uint32_t                               SamplerTableOffset   = UINT_MAX; // Index of the Sampler table in the top level argument buffer
+            uint32_t                               CbvSrvUavResourceCount = 0;      // Counter for bindless resource indices
+            std::unordered_map<uint32_t, uint32_t> UniqueTLABIndex;                 // Unique indexes within the TopLevelArgumentBuffer for Root Level Cbvs
+            std::vector<MetalResourceBindingIndex> CbvSrvUavResourceIndices;        // Indexes of each binding within the CbvUavSrv table
+            std::vector<uint32_t>                  SamplerResourceIndices;          // Indexes of each binding within the Sampler table
+            std::vector<MTLRenderStages>           SamplerResourceStages;           // Indexes of each binding within the Sampler table
         };
 
         MetalContext     *m_context;
@@ -86,6 +87,7 @@ namespace DenOfIz
 
     private:
         static IRRootParameterType GetRootParameterType( ResourceBindingType type );
+        void                       AddBindlessResource( const BindlessResourceDesc &bindlessResource );
     };
 
 } // namespace DenOfIz

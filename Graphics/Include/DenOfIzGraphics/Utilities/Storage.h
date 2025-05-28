@@ -40,6 +40,14 @@ namespace DenOfIz
             return *ptr;
         }
 
+        template <typename T>
+        T *StoreArray( size_t count )
+        {
+            T *ptr = (T *)malloc( sizeof( T ) * count );
+            m_container.emplace_back( ptr );
+            return ptr;
+        }
+
         void Clear( )
         {
             for ( auto &item : m_container )

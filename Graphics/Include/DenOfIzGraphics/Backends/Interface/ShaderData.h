@@ -107,11 +107,19 @@ namespace DenOfIz
         void MarkSamplerAsLocal( uint32_t binding, uint32_t registerSpace );
     };
 
+    struct DZ_API BindlessSlot
+    {
+        ResourceBindingType Type;
+        uint32_t            Binding;
+        uint32_t            RegisterSpace;
+        uint32_t            MaxArraySize = 1024;
+    };
+
     struct DZ_API BindlessDesc
     {
-        InteropArray<ResourceBindingSlot> BindlessSlots;
+        InteropArray<BindlessSlot> BindlessArrays;
 
-        void MarkSrvAsBindless( uint32_t binding, uint32_t registerSpace );
+        void MarkSrvAsBindlessArray( uint32_t binding, uint32_t registerSpace, uint32_t maxArraySize );
     };
 
     enum class DZ_API CodePage
@@ -136,6 +144,7 @@ namespace DenOfIz
         BindlessDesc         Bindless;
     };
     template class DZ_API InteropArray<ShaderStageDesc>;
+    template class DZ_API InteropArray<BindlessSlot>;
 
     // Needs to be used as a pointer as Blob/Reflection might be deleted multiple times otherwise
     struct DZ_API CompiledShaderStage : private NonCopyable

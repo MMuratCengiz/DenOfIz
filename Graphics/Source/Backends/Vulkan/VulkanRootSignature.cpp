@@ -84,6 +84,13 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
     pipelineLayoutCreateInfo.pSetLayouts            = m_layouts.data( );
     pipelineLayoutCreateInfo.pushConstantRangeCount = m_pushConstants.size( );
     pipelineLayoutCreateInfo.pPushConstantRanges    = m_pushConstants.data( );
+
+    for ( int i = 0; i < m_desc.BindlessResources.NumElements( ); ++i )
+    {
+        const auto &bindlessResource = m_desc.BindlessResources.GetElement( i );
+        AddBindlessResource( bindlessResource );
+    }
+
     VK_CHECK_RESULT( vkCreatePipelineLayout( m_context->LogicalDevice, &pipelineLayoutCreateInfo, nullptr, &m_pipelineLayout ) );
 }
 
@@ -238,4 +245,74 @@ VkPipelineLayout VulkanRootSignature::PipelineLayout( ) const
 VkDescriptorSetLayout VulkanRootSignature::EmptyLayout( ) const
 {
     return m_emptyLayout;
+}
+
+void VulkanRootSignature::AddBindlessResource( const BindlessResourceDesc &bindlessResource )
+{
+    VkDescriptorSetLayoutBinding layoutBinding{ };
+    uint32_t bindingTypeOffset = 0;
+    switch ( bindlessResource.Type )
+    {
+    case ResourceBindingType::ConstantBuffer:
+        bindingTypeOffset            = ShaderCompiler::VkShiftCbv;
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        break;
+    case ResourceBindingType::ShaderResource:
+        bindingTypeOffset            = ShaderCompiler::VkShiftSrv;
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE; // For bindless texture arrays
+        break;
+    case ResourceBindingType::UnorderedAccess:
+        bindingTypeOffset            = ShaderCompiler::VkShiftUav;
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        break;
+    case ResourceBindingType::Sampler:
+        bindingTypeOffset            = ShaderCompiler::VkShiftSampler;
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+        break;
+    }
+
+    layoutBinding.binding            = bindingTypeOffset + bindlessResource.Binding;
+    layoutBinding.descriptorCount    = bindlessResource.MaxArraySize;
+    layoutBinding.stageFlags         = VK_SHADER_STAGE_ALL;
+    layoutBinding.pImmutableSamplers = nullptr;
+
+    m_layoutBindings[ bindlessResource.RegisterSpace ].push_back( layoutBinding );
+
+    const ResourceBindingSlot slot{
+        .Type          = bindlessResource.Type,
+        .Binding       = bindlessResource.Binding,
+        .RegisterSpace = bindlessResource.RegisterSpace,
+    };
+
+    ResourceBindingDesc bindingDesc;
+    bindingDesc.BindingType   = bindlessResource.Type;
+    bindingDesc.Binding       = layoutBinding.binding;
+    bindingDesc.RegisterSpace = bindlessResource.RegisterSpace;
+    bindingDesc.ArraySize     = bindlessResource.MaxArraySize;
+    
+    // Set descriptor type based on binding type
+    switch ( bindlessResource.Type )
+    {
+    case ResourceBindingType::ConstantBuffer:
+        bindingDesc.Descriptor = ResourceDescriptor::UniformBuffer;
+        break;
+    case ResourceBindingType::ShaderResource:
+        bindingDesc.Descriptor = ResourceDescriptor::Texture;
+        break;
+    case ResourceBindingType::UnorderedAccess:
+        bindingDesc.Descriptor = ResourceDescriptor::RWTexture;
+        break;
+    case ResourceBindingType::Sampler:
+        bindingDesc.Descriptor = ResourceDescriptor::Sampler;
+        break;
+    }
+    
+    // Add all shader stages for bindless resources
+    bindingDesc.Stages.AddElement( ShaderStage::Vertex );
+    bindingDesc.Stages.AddElement( ShaderStage::Pixel );
+    bindingDesc.Stages.AddElement( ShaderStage::Compute );
+    bindingDesc.Stages.AddElement( ShaderStage::Mesh );
+    bindingDesc.Stages.AddElement( ShaderStage::Task );
+
+    m_resourceBindingMap[ slot.Key( ) ] = bindingDesc;
 }

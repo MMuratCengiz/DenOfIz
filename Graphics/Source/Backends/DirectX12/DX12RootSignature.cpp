@@ -46,6 +46,11 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
         AddRootConstant( desc.RootConstants.GetElement( i ) );
     }
 
+    for ( int i = 0; i < desc.BindlessResources.NumElements( ); ++i )
+    {
+        AddBindlessResource( desc.BindlessResources.GetElement( i ) );
+    }
+
     if ( m_descriptorRangesShaderVisibilities.size( ) == 1 )
     {
         m_cbvSrvUavVisibility = *m_descriptorRangesShaderVisibilities.begin( );
@@ -73,6 +78,11 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
     rootSignatureDesc.NumStaticSamplers = m_staticSamplerDescriptorRanges.size( );
     rootSignatureDesc.pStaticSamplers   = m_staticSamplerDescriptorRanges.data( );
     DX_CHECK_RESULT( D3D12SerializeRootSignature( &rootSignatureDesc, rootSignatureVersion, &signature, &error ) );
+    if ( signature == nullptr )
+    {
+        LOG( ERROR ) << "Failed to serialize root signature: " << std::string( static_cast<char *>( error->GetBufferPointer( ) ), error->GetBufferSize(  ) );
+        return;
+    }
     DX_CHECK_RESULT( m_context->D3DDevice->CreateRootSignature( 0, signature->GetBufferPointer( ), signature->GetBufferSize( ), IID_PPV_ARGS( m_rootSignature.put( ) ) ) );
 }
 
@@ -257,6 +267,50 @@ void DX12RootSignature::AddRootConstant( const RootConstantResourceBindingDesc &
     dxRootConstant.Constants.ShaderRegister = rootConstant.Binding;
     dxRootConstant.Constants.RegisterSpace  = DZConfiguration::Instance( ).RootConstantRegisterSpace;
     m_usedStages |= dxRootConstant.ShaderVisibility;
+}
+
+void DX12RootSignature::AddBindlessResource( const BindlessResourceDesc &bindlessResource )
+{
+    ContainerUtilities::EnsureSize( m_registerSpaceRanges, bindlessResource.RegisterSpace );
+    ContainerUtilities::EnsureSize( m_registerSpaceOrder, bindlessResource.RegisterSpace );
+    RegisterSpaceRangesDesc &registerSpaceRange = m_registerSpaceRanges[ bindlessResource.RegisterSpace ];
+    registerSpaceRange.Space                    = bindlessResource.RegisterSpace;
+
+    CD3DX12_DESCRIPTOR_RANGE &descriptorRange = registerSpaceRange.CbvSrvUavRanges.emplace_back( );
+    switch ( bindlessResource.Type )
+    {
+    case ResourceBindingType::ConstantBuffer:
+        descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+        break;
+    case ResourceBindingType::ShaderResource:
+        descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        break;
+    case ResourceBindingType::UnorderedAccess:
+        descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+        break;
+    case ResourceBindingType::Sampler:
+        // Samplers go in a separate range
+        LOG( WARNING ) << "Bindless samplers not yet implemented in DX12";
+        return;
+    }
+
+    descriptorRange.NumDescriptors                    = bindlessResource.MaxArraySize;
+    descriptorRange.BaseShaderRegister                = bindlessResource.Binding;
+    descriptorRange.RegisterSpace                     = bindlessResource.RegisterSpace;
+    descriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+    const ResourceBindingSlot slot{
+        .Type          = bindlessResource.Type,
+        .Binding       = bindlessResource.Binding,
+        .RegisterSpace = bindlessResource.RegisterSpace,
+    };
+    
+    RegisterSpaceOrder &spaceOrder = ContainerUtilities::SafeAt( m_registerSpaceOrder, bindlessResource.RegisterSpace );
+    spaceOrder.ResourceOffsetMap[ slot.Key( ) ] = spaceOrder.ResourceCount;
+    spaceOrder.ResourceCount += bindlessResource.MaxArraySize; // Reserve space for the entire array
+
+    m_descriptorRangesShaderVisibilities.insert( D3D12_SHADER_VISIBILITY_ALL );
+    m_usedStages |= D3D12_SHADER_VISIBILITY_ALL;
 }
 
 uint32_t DX12RootSignature::RegisterSpaceOffset( const uint32_t registerSpace ) const

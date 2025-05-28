@@ -68,6 +68,7 @@ void VulkanResourceBindGroup::SetRootConstants( const uint32_t binding, void *da
 IResourceBindGroup *VulkanResourceBindGroup::BeginUpdate( )
 {
     m_writeDescriptorSets.clear( );
+    m_storage.Clear( );
     return this;
 }
 
@@ -114,6 +115,46 @@ IResourceBindGroup *VulkanResourceBindGroup::Srv( const BindBufferDesc &desc )
 IResourceBindGroup *VulkanResourceBindGroup::Srv( const uint32_t binding, ITextureResource *resource )
 {
     BindTexture( GetSlot( binding, ResourceBindingType::ShaderResource ), resource );
+    return this;
+}
+
+IResourceBindGroup *VulkanResourceBindGroup::SrvArray( const uint32_t binding, const InteropArray<ITextureResource *> &resources )
+{
+    const ResourceBindingSlot slot = GetSlot( binding, ResourceBindingType::ShaderResource );
+
+    VkWriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor( slot );
+    writeDescriptorSet.descriptorCount       = resources.NumElements( );
+    writeDescriptorSet.dstArrayElement       = 0;
+
+    auto *imageInfos = m_storage.StoreArray<VkDescriptorImageInfo>( resources.NumElements( ) );
+    for ( uint32_t i = 0; i < resources.NumElements( ); ++i )
+    {
+        const auto *vulkanResource  = dynamic_cast<VulkanTextureResource *>( resources.GetElement( i ) );
+        imageInfos[ i ].imageLayout = vulkanResource->Layout( );
+        imageInfos[ i ].imageView   = vulkanResource->ImageView( );
+        imageInfos[ i ].sampler     = VK_NULL_HANDLE;
+    }
+    writeDescriptorSet.pImageInfo = imageInfos;
+
+    return this;
+}
+
+IResourceBindGroup *VulkanResourceBindGroup::SrvArrayIndex( const uint32_t binding, const uint32_t arrayIndex, ITextureResource *resource )
+{
+    const auto               *vulkanResource = dynamic_cast<VulkanTextureResource *>( resource );
+    const ResourceBindingSlot slot           = GetSlot( binding, ResourceBindingType::ShaderResource );
+
+    VkWriteDescriptorSet &writeDescriptorSet = CreateWriteDescriptor( slot );
+    writeDescriptorSet.dstArrayElement       = arrayIndex;
+    writeDescriptorSet.descriptorCount       = 1;
+
+    auto &imageInfo       = m_storage.Store<VkDescriptorImageInfo>( );
+    imageInfo.imageLayout = vulkanResource->Layout( );
+    imageInfo.imageView   = vulkanResource->ImageView( );
+    imageInfo.sampler     = VK_NULL_HANDLE;
+
+    writeDescriptorSet.pImageInfo = &imageInfo;
+
     return this;
 }
 

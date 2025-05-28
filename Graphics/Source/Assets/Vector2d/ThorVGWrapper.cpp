@@ -450,9 +450,9 @@ namespace DenOfIz
         ThorVGCheckResult( m_picture->load( path.Get( ) ) );
     }
 
-    void ThorVGPicture::Load( const InteropString &data, const uint32_t size, const InteropString &mimeType, const bool copy ) const
+    void ThorVGPicture::Load( const InteropArray<Byte> &data, const InteropString &mimeType, const bool copy ) const
     {
-        ThorVGCheckResult( m_picture->load( data.Get( ), size, mimeType.Get( ), copy ) );
+        ThorVGCheckResult( m_picture->load( reinterpret_cast<const char *>( data.Data( ) ), static_cast<uint32_t>( data.NumElements( ) ), mimeType.Get( ), copy ) );
     }
 
     void ThorVGPicture::Load( uint32_t *data, const uint32_t w, const uint32_t h, const bool premultiplied ) const

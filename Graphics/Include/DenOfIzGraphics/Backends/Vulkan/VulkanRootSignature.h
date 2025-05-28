@@ -57,6 +57,7 @@ namespace DenOfIz
         void                                       AddResourceBinding( const ResourceBindingDesc &binding );
         void                                       AddRootConstant( const RootConstantResourceBindingDesc &rootConstantBinding );
         void                                       AddStaticSampler( const StaticSamplerDesc &sampler );
+        void                                       AddBindlessResource( const BindlessResourceDesc &bindlessResource );
         [[nodiscard]] VkDescriptorSetLayoutBinding CreateDescriptorSetLayoutBinding( const ResourceBindingDesc &binding );
     };
 } // namespace DenOfIz

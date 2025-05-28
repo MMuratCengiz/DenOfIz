@@ -68,6 +68,7 @@ namespace DenOfIz
         virtual BitSet<ResourceUsage> InitialState( ) const = 0;
         virtual Format                GetFormat( ) const    = 0;
     };
+    template class DZ_API InteropArray<ITextureResource *>;
 
     DZ_API void ValidateTextureDesc( TextureDesc &desc );
 

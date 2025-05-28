@@ -45,9 +45,9 @@ uint32_t ResourceBindingSlot::Key( ) const
     return static_cast<uint32_t>( Type ) * 1000 + RegisterSpace * 100 + Binding;
 }
 
-void BindlessDesc::MarkSrvAsBindless( const uint32_t binding, const uint32_t registerSpace )
+void BindlessDesc::MarkSrvAsBindlessArray( const uint32_t binding, const uint32_t registerSpace, const uint32_t maxArraySize )
 {
-    BindlessSlots.AddElement( { .Type = ResourceBindingType::ShaderResource, .Binding = binding, .RegisterSpace = registerSpace } );
+    BindlessArrays.AddElement( { .Type = ResourceBindingType::ShaderResource, .Binding = binding, .RegisterSpace = registerSpace, .MaxArraySize = maxArraySize } );
 }
 
 InteropString ResourceBindingSlot::ToInteropString( ) const

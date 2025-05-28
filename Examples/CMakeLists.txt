@@ -1,4 +1,5 @@
 add_subdirectory(Base)
+add_subdirectory(Bindless)
 add_subdirectory(RootConstants)
 add_subdirectory(RenderTarget)
 add_subdirectory(RayTracedTriangle)

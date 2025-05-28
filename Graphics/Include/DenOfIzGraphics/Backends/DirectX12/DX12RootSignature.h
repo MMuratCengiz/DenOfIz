@@ -90,6 +90,7 @@ namespace DenOfIz
         void                                     AddStaticSampler( const StaticSamplerDesc &desc );
         void                                     AddResourceBinding( const ResourceBindingDesc &binding );
         void                                     AddRootConstant( const RootConstantResourceBindingDesc &rootConstant );
+        void                                     AddBindlessResource( const BindlessResourceDesc &bindlessResource );
         [[nodiscard]] D3D12_ROOT_SIGNATURE_FLAGS ComputeShaderVisibility( ) const;
     };
 

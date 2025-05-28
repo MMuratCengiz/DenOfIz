@@ -113,6 +113,28 @@ IResourceBindGroup *MetalResourceBindGroup::Srv( const uint32_t binding, ITextur
     return this;
 }
 
+IResourceBindGroup *MetalResourceBindGroup::SrvArray( const uint32_t binding, const InteropArray<ITextureResource *> &resources )
+{
+    for ( uint32_t i = 0; i < resources.NumElements( ); ++i )
+    {
+        m_boundTextures.emplace_back( GetSlot( binding, ResourceBindingType::ShaderResource ), resources.GetElement( i ) );
+    }
+    return this;
+}
+
+IResourceBindGroup *MetalResourceBindGroup::SrvArrayIndex( const uint32_t binding, uint32_t arrayIndex, ITextureResource *resource )
+{
+    MetalTextureResource *metalTexture = static_cast<MetalTextureResource *>( resource );
+    const ResourceBindingSlot slot = GetSlot( binding, ResourceBindingType::ShaderResource );
+    
+    const uint32_t baseIndex = m_rootSignature->CbvSrvUavResourceIndex( slot );
+    const uint32_t actualIndex = baseIndex + arrayIndex;
+    
+    m_cbvSrvUavTable->Table.EncodeTexture( metalTexture->Instance( ), metalTexture->MinLODClamp( ), actualIndex );
+    m_textures.emplace_back( metalTexture, m_rootSignature->CbvSrvUavResourceShaderStages( slot ), metalTexture->Usage( ) );
+    return this;
+}
+
 IResourceBindGroup *MetalResourceBindGroup::Srv( const uint32_t binding, ITopLevelAS *accelerationStructure )
 {
     m_boundAccelerationStructures.emplace_back( GetSlot( binding, ResourceBindingType::ShaderResource ), accelerationStructure );

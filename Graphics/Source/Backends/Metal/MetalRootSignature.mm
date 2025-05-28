@@ -111,6 +111,8 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
                 }
                 cbvSrvUavIndex++;
             }
+
+            offsets.CbvSrvUavResourceCount = cbvSrvUavIndex;
         }
 
         if ( hasSamplers )
@@ -130,6 +132,12 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
             }
         }
     };
+
+    for ( int i = 0; i < desc.BindlessResources.NumElements( ); ++i )
+    {
+        const auto &bindlessResource = desc.BindlessResources.GetElement( i );
+        AddBindlessResource( bindlessResource );
+    }
 }
 
 const uint32_t MetalRootSignature::NumTLABAddresses( ) const
@@ -159,6 +167,42 @@ IRRootParameterType MetalRootSignature::GetRootParameterType( ResourceBindingTyp
         return IRRootParameterTypeUAV;
     default:
         return IRRootParameterTypeCBV;
+    }
+}
+
+void MetalRootSignature::AddBindlessResource( const BindlessResourceDesc &bindlessResource )
+{
+    ContainerUtilities::EnsureSize( m_descriptorOffsets, bindlessResource.RegisterSpace + 1 );
+    auto &offsets = m_descriptorOffsets[ bindlessResource.RegisterSpace ];
+    
+    if ( bindlessResource.Type != ResourceBindingType::Sampler )
+    {
+        if ( offsets.CbvSrvUavTableOffset == UINT_MAX )
+        {
+            m_numTLABAddresses++;
+            offsets.CbvSrvUavTableOffset = m_numTLABAddresses - 1;
+        }
+        
+        ContainerUtilities::EnsureSize( offsets.CbvSrvUavResourceIndices, bindlessResource.Binding + bindlessResource.MaxArraySize );
+        for ( uint32_t i = 0; i < bindlessResource.MaxArraySize; ++i )
+        {
+            auto &bindingIndices = offsets.CbvSrvUavResourceIndices[ bindlessResource.Binding + i ];
+            switch ( bindlessResource.Type )
+            {
+            case ResourceBindingType::ConstantBuffer:
+                bindingIndices.Cbv = offsets.CbvSrvUavResourceCount++;
+                bindingIndices.CbvStages = MTLRenderStageVertex | MTLRenderStageFragment;
+                break;
+            case ResourceBindingType::ShaderResource:
+                bindingIndices.Srv = offsets.CbvSrvUavResourceCount++;
+                bindingIndices.SrvStages = MTLRenderStageVertex | MTLRenderStageFragment;
+                break;
+            case ResourceBindingType::UnorderedAccess:
+                bindingIndices.Uav = offsets.CbvSrvUavResourceCount++;
+                bindingIndices.UavStages = MTLRenderStageVertex | MTLRenderStageFragment;
+                break;
+            }
+        }
     }
 }
 

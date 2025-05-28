@@ -100,7 +100,7 @@ void ShaderProgram::Compile( )
         m_shaderDescs.push_back( stage );
     }
 
-#if defined(_WIN32) || defined(__APPLE__) // TODO metal shader converter on linux: not yet supported
+#if defined( _WIN32 ) || defined( __APPLE__ ) // TODO metal shader converter on linux: not yet supported
     DxilToMslDesc dxilToMslDesc{ };
     dxilToMslDesc.Shaders    = m_desc.ShaderStages;
     dxilToMslDesc.RayTracing = m_desc.RayTracing;
@@ -199,6 +199,9 @@ void ShaderProgram::CreateReflectionData( )
             libraryReflection->Release( );
         }
     }
+
+    // Process bindless arrays from all shader stages
+    ProcessBindlessArrays( rootSignature );
 
 #ifndef NDEBUG
     ReflectionDebugOutput::DumpReflectionInfo( m_reflectDesc );
@@ -410,18 +413,71 @@ void ShaderProgram::ProcessInputBindingDesc( const ReflectionState &state, const
         resourceBindings = &state.LocalRootSignature->ResourceBindings;
     }
 
-    const bool isBindless = ShaderReflectionHelper::IsBindingBindless( state.ShaderDesc->Bindless, shaderInputBindDesc );
+    const bool isBindless      = ShaderReflectionHelper::IsBindingBindless( state.ShaderDesc->Bindless, shaderInputBindDesc );
+    bool       isBindlessArray = false;
+    for ( int i = 0; i < state.ShaderDesc->Bindless.BindlessArrays.NumElements( ); ++i )
+    {
+        const auto &bindlessSlot = state.ShaderDesc->Bindless.BindlessArrays.GetElement( i );
+        if ( bindlessSlot.Binding == shaderInputBindDesc.BindPoint && bindlessSlot.RegisterSpace == shaderInputBindDesc.Space &&
+             bindlessSlot.Type == DxcEnumConverter::ReflectTypeToBufferBindingType( shaderInputBindDesc.Type ) )
+        {
+            isBindlessArray = true;
+            break;
+        }
+    }
+
+    // Skip creating regular resource binding for bindless arrays as they're handled separately
+    if ( isBindlessArray )
+    {
+        return;
+    }
 
     ResourceBindingDesc &resourceBindingDesc = resourceBindings->EmplaceElement( );
     resourceBindingDesc.Name                 = shaderInputBindDesc.Name;
     resourceBindingDesc.Binding              = shaderInputBindDesc.BindPoint;
     resourceBindingDesc.RegisterSpace        = shaderInputBindDesc.Space;
-    resourceBindingDesc.ArraySize            = shaderInputBindDesc.BindCount;
+    resourceBindingDesc.ArraySize            = isBindless ? UINT_MAX : shaderInputBindDesc.BindCount;
     resourceBindingDesc.BindingType          = bindingType;
     resourceBindingDesc.Descriptor           = DxcEnumConverter::ReflectTypeToRootSignatureType( shaderInputBindDesc.Type, shaderInputBindDesc.Dimension );
     resourceBindingDesc.Stages.AddElement( state.ShaderDesc->Stage );
-    resourceBindingDesc.IsBindless           = isBindless;
+    resourceBindingDesc.IsBindless = isBindless;
     ShaderReflectionHelper::FillReflectionData( state.ShaderReflection, state.FunctionReflection, resourceBindingDesc.Reflection, resourceIndex );
+}
+
+void ShaderProgram::ProcessBindlessArrays( RootSignatureDesc &rootSignature ) const
+{
+    for ( int stageIndex = 0; stageIndex < m_desc.ShaderStages.NumElements( ); ++stageIndex )
+    {
+        const auto &shaderStage = m_desc.ShaderStages.GetElement( stageIndex );
+        for ( int i = 0; i < shaderStage.Bindless.BindlessArrays.NumElements( ); ++i )
+        {
+            const auto &bindlessSlot  = shaderStage.Bindless.BindlessArrays.GetElement( i );
+            bool        alreadyExists = false;
+            for ( int j = 0; j < rootSignature.BindlessResources.NumElements( ); ++j )
+            {
+                const auto &existing = rootSignature.BindlessResources.GetElement( j );
+                if ( existing.Binding == bindlessSlot.Binding && existing.RegisterSpace == bindlessSlot.RegisterSpace && existing.Type == bindlessSlot.Type )
+                {
+                    alreadyExists = true;
+                    break;
+                }
+            }
+
+            if ( !alreadyExists )
+            {
+                BindlessResourceDesc &bindlessResource = rootSignature.BindlessResources.EmplaceElement( );
+                bindlessResource.Binding               = bindlessSlot.Binding;
+                bindlessResource.RegisterSpace         = bindlessSlot.RegisterSpace;
+                bindlessResource.Type                  = bindlessSlot.Type;
+                bindlessResource.MaxArraySize          = bindlessSlot.MaxArraySize;
+                bindlessResource.IsDynamic             = true;
+                bindlessResource.Name                  = InteropString( "BindlessArray_" )
+                                            .Append( std::to_string( bindlessSlot.Binding ).c_str( ) )
+                                            .Append( "_" )
+                                            .Append( std::to_string( bindlessSlot.RegisterSpace ).c_str( ) );
+            }
+        }
+    }
 }
 
 bool ShaderProgram::UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const

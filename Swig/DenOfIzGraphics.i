@@ -109,7 +109,7 @@ using namespace DirectX;
 // Bundle ignores:
 %ignore DenOfIz::Bundle::m_bundleFile;
 
-%ignore DenOfIz::ThorVGWrapper::Load( uint32_t *, uint32_t, uint32_t, bool ) const;
+%ignore DenOfIz::ThorVGPicture::Load( uint32_t *, uint32_t, uint32_t, bool ) const;
 %ignore DenOfIz::BinaryWriter::BinaryWriter(std::ostream *);
 %ignore DenOfIz::BinaryWriter::BinaryWriter(std::ostream *, const BinaryWriterDesc &);
 %ignore DenOfIz::BinaryReader::BinaryReader(std::istream *);
@@ -347,8 +347,11 @@ typedef DenOfIz::InteropArray<DenOfIz::Byte> ByteArray;
 typedef DenOfIz::InteropArray<DenOfIz::GlyphVertex> GlyphVertexArray;
 typedef DenOfIz::InteropArray<DenOfIz::AssetEntry> AssetEntryArray;
 typedef DenOfIz::InteropArray<DenOfIz::ShaderRecordDebugData> ShaderRecordDebugDataArray;
+typedef DenOfIz::InteropArray<DenOfIz::ITextureResource*> ITextureResourceArray;
 typedef DenOfIz::InteropArray<DenOfIz::ILocalRootSignature*> ILocalRootSignatureArray;
 typedef DenOfIz::InteropArray<DenOfIz::LocalRootSignatureDesc> LocalRootSignatureDescArray;
+typedef DenOfIz::InteropArray<DenOfIz::BindlessSlot> BindlessSlotArray;
+typedef DenOfIz::InteropArray<DenOfIz::BindlessResourceDesc> BindlessResourceDescArray;
 typedef DenOfIz::InteropArray<DenOfIz::AnimationClip> AnimationClipArray;
 typedef DenOfIz::InteropArray<DenOfIz::JointAnimTrack> JointAnimTrackArray;
 typedef DenOfIz::InteropArray<DenOfIz::Joint> JointArray;
@@ -421,7 +424,10 @@ typedef DenOfIz::InteropArray<DenOfIz::ThorVGColorStop> ThorVGColorStopArray;
 %template(Float_4x4Array) DenOfIz::InteropArray<DenOfIz::Float_4x4>;
 %template(ShaderRecordDebugDataArray) DenOfIz::InteropArray<DenOfIz::ShaderRecordDebugData>;
 %template(ILocalRootSignatureArray) DenOfIz::InteropArray<DenOfIz::ILocalRootSignature*>;
+%template(ITextureResourceArray) DenOfIz::InteropArray<DenOfIz::ITextureResource*>;
 %template(LocalRootSignatureDescArray) DenOfIz::InteropArray<DenOfIz::LocalRootSignatureDesc>;
+%template(BindlessSlotArray) DenOfIz::InteropArray<DenOfIz::BindlessSlot>;
+%template(BindlessResourceDescArray) DenOfIz::InteropArray<DenOfIz::BindlessResourceDesc>;
 
 // Animation related types
 %template(AnimationClipArray) DenOfIz::InteropArray<DenOfIz::AnimationClip>;

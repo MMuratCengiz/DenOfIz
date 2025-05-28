@@ -83,7 +83,6 @@ internal class Program
         var frameDebugRendererDesc = new FrameDebugRendererDesc();
         frameDebugRendererDesc.GraphicsApi = _graphicsApi;
         frameDebugRendererDesc.LogicalDevice = _device;
-        frameDebugRendererDesc.Scale = 0.6f;
         frameDebugRendererDesc.ScreenWidth = (uint)_window.GetSize().Width;
         frameDebugRendererDesc.ScreenHeight = (uint)_window.GetSize().Height;
 
@@ -107,7 +106,6 @@ internal class Program
             RenderFrame();
         }
 
-        // We always need to wait for ongoing operations to finish before exiting
         _frameSync.WaitIdle();
         _graphicsQueue.WaitIdle();
         _device.WaitIdle();

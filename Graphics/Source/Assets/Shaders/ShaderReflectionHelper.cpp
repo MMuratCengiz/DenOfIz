@@ -36,7 +36,7 @@ bool ShaderReflectionHelper::IsBindingLocalTo( const RayTracingShaderDesc &rayTr
 
 bool ShaderReflectionHelper::IsBindingBindless( const BindlessDesc &bindlessDesc, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc )
 {
-    const auto &bindings = bindlessDesc.BindlessSlots;
+    const auto &bindings = bindlessDesc.BindlessArrays;
     for ( int i = 0; i < bindings.NumElements( ); ++i )
     {
         if ( auto &element = bindings.GetElement( i ); element.Binding == shaderInputBindDesc.BindPoint && element.RegisterSpace == shaderInputBindDesc.Space &&

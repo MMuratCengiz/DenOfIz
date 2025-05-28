@@ -48,6 +48,7 @@ namespace DenOfIz
         std::vector<IRDescriptorRange1>  CbvSrvUavRanges;
         std::vector<IRDescriptorRange1>  SamplerRanges;
         IRShaderVisibility               ShaderVisibility;
+        bool                             HasBindlessResources = false;
     };
 
     typedef const std::function<void( D3D12_SHADER_INPUT_BIND_DESC &, int )> ReflectionCallback;
