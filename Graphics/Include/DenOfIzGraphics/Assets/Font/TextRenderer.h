@@ -41,7 +41,7 @@ namespace DenOfIz
         AntiAliasingMode AntiAliasingMode   = AntiAliasingMode::Grayscale;
         uint32_t         Width;
         uint32_t         Height;
-        Font            *Font;
+        Font            *Font = nullptr;
     };
 
     struct DZ_API TextRenderDesc : AddTextDesc
