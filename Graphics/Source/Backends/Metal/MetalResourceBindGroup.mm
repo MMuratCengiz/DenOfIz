@@ -65,6 +65,7 @@ IResourceBindGroup *MetalResourceBindGroup::BeginUpdate( )
     m_boundBuffers.clear( );
     m_boundBuffersWithOffsets.clear( );
     m_boundTextures.clear( );
+    m_boundTextureArrayIndices.clear( );
     m_boundSamplers.clear( );
     m_rootParameterBindings.clear( );
     m_indirectResources.clear( );
@@ -117,21 +118,19 @@ IResourceBindGroup *MetalResourceBindGroup::SrvArray( const uint32_t binding, co
 {
     for ( uint32_t i = 0; i < resources.NumElements( ); ++i )
     {
-        m_boundTextures.emplace_back( GetSlot( binding, ResourceBindingType::ShaderResource ), resources.GetElement( i ) );
+        SrvArrayIndex( binding, i, resources.GetElement( i ) );
     }
     return this;
 }
 
 IResourceBindGroup *MetalResourceBindGroup::SrvArrayIndex( const uint32_t binding, uint32_t arrayIndex, ITextureResource *resource )
 {
-    MetalTextureResource *metalTexture = static_cast<MetalTextureResource *>( resource );
     const ResourceBindingSlot slot = GetSlot( binding, ResourceBindingType::ShaderResource );
     
-    const uint32_t baseIndex = m_rootSignature->CbvSrvUavResourceIndex( slot );
-    const uint32_t actualIndex = baseIndex + arrayIndex;
+    m_boundTextureArrayIndices.emplace_back( MetalTextureArrayIndexBinding{
+        slot, arrayIndex, resource
+    } );
     
-    m_cbvSrvUavTable->Table.EncodeTexture( metalTexture->Instance( ), metalTexture->MinLODClamp( ), actualIndex );
-    m_textures.emplace_back( metalTexture, m_rootSignature->CbvSrvUavResourceShaderStages( slot ), metalTexture->Usage( ) );
     return this;
 }
 
@@ -172,11 +171,14 @@ IResourceBindGroup *MetalResourceBindGroup::Sampler( const uint32_t binding, ISa
 
 void MetalResourceBindGroup::EndUpdate( )
 {
-    size_t cbvSrvUavTableSize = m_boundAccelerationStructures.size( ) + m_boundBuffers.size( ) + m_boundBuffersWithOffsets.size( ) + m_boundTextures.size( );
-    if ( m_desc.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
+    uint32_t cbvSrvUavTableSize = m_rootSignature->CbvSrvUavTableSize( m_desc.RegisterSpace );
+    if ( cbvSrvUavTableSize == 0 )
     {
-        // Buffers will be bound separately
-        cbvSrvUavTableSize = m_boundTextures.size( );
+        cbvSrvUavTableSize = m_boundAccelerationStructures.size( ) + m_boundBuffers.size( ) + m_boundBuffersWithOffsets.size( ) + m_boundTextures.size( ) + m_boundTextureArrayIndices.size( );
+        if ( m_desc.RegisterSpace == DZConfiguration::Instance( ).RootLevelBufferRegisterSpace )
+        {
+            cbvSrvUavTableSize = m_boundTextures.size( ) + m_boundTextureArrayIndices.size( );
+        }
     }
 
     if ( cbvSrvUavTableSize > 0 )
@@ -209,6 +211,10 @@ void MetalResourceBindGroup::EndUpdate( )
     for ( auto item : m_boundTextures )
     {
         BindTexture( item.first, item.second );
+    }
+    for ( auto item : m_boundTextureArrayIndices )
+    {
+        BindTextureArrayIndex( item.Slot, item.ArrayIndex, item.Resource );
     }
     for ( auto item : m_boundSamplers )
     {
@@ -273,6 +279,17 @@ void MetalResourceBindGroup::BindTexture( const ResourceBindingSlot &slot, IText
     m_textures.emplace_back( metalTexture, m_rootSignature->CbvSrvUavResourceShaderStages( slot ), metalTexture->Usage( ) );
 }
 
+void MetalResourceBindGroup::BindTextureArrayIndex( const ResourceBindingSlot &slot, uint32_t arrayIndex, ITextureResource *resource )
+{
+    MetalTextureResource *metalTexture = static_cast<MetalTextureResource *>( resource );
+    
+    const uint32_t baseIndex = m_rootSignature->CbvSrvUavResourceIndex( slot );
+    const uint32_t actualIndex = baseIndex + arrayIndex;
+    
+    m_cbvSrvUavTable->Table.EncodeTexture( metalTexture->Instance( ), metalTexture->MinLODClamp( ), actualIndex );
+    m_textures.emplace_back( metalTexture, m_rootSignature->CbvSrvUavResourceShaderStages( slot ), metalTexture->Usage( ) );
+}
+
 void MetalResourceBindGroup::BindSampler( const ResourceBindingSlot &slot, ISampler *sampler )
 {
     MetalSampler           *metalSampler = static_cast<MetalSampler *>( sampler );
@@ -330,4 +347,9 @@ const std::vector<MetalUpdateDescItem<MetalSampler>> &MetalResourceBindGroup::Sa
 ResourceBindingSlot MetalResourceBindGroup::GetSlot( uint32_t binding, const ResourceBindingType &type ) const
 {
     return ResourceBindingSlot{ .Type = type, .Binding = binding, .RegisterSpace = m_desc.RegisterSpace };
+}
+
+uint32_t MetalResourceBindGroup::RegisterSpace( ) const
+{
+    return m_desc.RegisterSpace;
 }

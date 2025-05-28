@@ -59,6 +59,13 @@ namespace DenOfIz
         uint32_t            Offset;
     };
 
+    struct MetalTextureArrayIndexBinding
+    {
+        ResourceBindingSlot Slot;
+        uint32_t            ArrayIndex;
+        ITextureResource   *Resource;
+    };
+
     struct MetalDescriptorTableBinding
     {
         // Top level argument buffer offset
@@ -81,6 +88,7 @@ namespace DenOfIz
         std::vector<std::pair<ResourceBindingSlot, IBufferResource *>>  m_boundBuffers;
         std::vector<MetalBufferBindingWithOffset>                       m_boundBuffersWithOffsets;
         std::vector<std::pair<ResourceBindingSlot, ITextureResource *>> m_boundTextures;
+        std::vector<MetalTextureArrayIndexBinding>                      m_boundTextureArrayIndices;
         std::vector<std::pair<ResourceBindingSlot, ISampler *>>         m_boundSamplers;
 
         std::vector<id<MTLResource>>                           m_indirectResources;
@@ -124,12 +132,14 @@ namespace DenOfIz
         const std::vector<MetalUpdateDescItem<MetalSampler>>         &Samplers( ) const;
 
         [[nodiscard]] MetalRootSignature *RootSignature( ) const;
+        [[nodiscard]] uint32_t RegisterSpace( ) const;
 
     private:
         void                BindAccelerationStructure( const ResourceBindingSlot &slot, ITopLevelAS *accelerationStructure );
         void                BindBuffer( const ResourceBindingSlot &slot, IBufferResource *resource );
         void                BindBufferWithOffset( const ResourceBindingSlot &slot, IBufferResource *resource, uint32_t offset );
         void                BindTexture( const ResourceBindingSlot &slot, ITextureResource *resource );
+        void                BindTextureArrayIndex( const ResourceBindingSlot &slot, uint32_t arrayIndex, ITextureResource *resource );
         void                BindSampler( const ResourceBindingSlot &slot, ISampler *sampler );
         ResourceBindingSlot GetSlot( uint32_t binding, const ResourceBindingType &type ) const;
     };

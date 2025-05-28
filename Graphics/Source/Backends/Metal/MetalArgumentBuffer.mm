@@ -30,6 +30,8 @@ DescriptorTable::DescriptorTable( MetalContext *context, size_t numEntries ) : m
     m_buffer      = [m_context->Device newBufferWithLength:length options:MTLResourceStorageModeShared];
     m_contents    = (IRDescriptorTableEntry *)m_buffer.contents;
     [m_buffer setLabel:@"DescriptorTable"];
+    
+    memset( m_contents, 0, length );
 }
 
 void DescriptorTable::SetDebugName( const std::string &name )
@@ -119,7 +121,6 @@ void MetalArgumentBuffer::EncodeRootConstant( uint64_t offset, uint32_t numRootC
 void MetalArgumentBuffer::EncodeAddress( uint64_t offset, uint32_t index, uint64_t address ) const
 {
     uint64_t addressLocation = Utilities::Align( offset + ( index * sizeof( uint64_t ) ), 8 );
-    //    LOG( INFO ) << "Address location: " << addressLocation << " offset: " << offset << " index: " << index << " sizeof(uint64_t): " << sizeof( uint64_t );
     if ( addressLocation > m_capacity )
     {
         LOG( ERROR ) << "MetalArgumentBuffer::EncodeAddress: Index or offset out of bounds";

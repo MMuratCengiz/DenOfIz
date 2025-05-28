@@ -80,8 +80,18 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
 
         if ( hasCbvSrvUav )
         {
-            m_numTLABAddresses++;
-            offsets.CbvSrvUavTableOffset = currentTLABOffset++;
+            if ( offsets.CbvSrvUavTableOffset == UINT_MAX )
+            {
+                if ( space == 1 )
+                {
+                    offsets.CbvSrvUavTableOffset = 2;
+                }
+                else
+                {
+                    offsets.CbvSrvUavTableOffset = currentTLABOffset++;
+                }
+                m_numTLABAddresses++;
+            }
 
             for ( const auto &binding : bindings )
             {
@@ -117,8 +127,15 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
 
         if ( hasSamplers )
         {
+            if ( space == 0 )
+            {
+                offsets.SamplerTableOffset = 1;
+            }
+            else
+            {
+                offsets.SamplerTableOffset = currentTLABOffset++;
+            }
             m_numTLABAddresses++;
-            offsets.SamplerTableOffset = currentTLABOffset++;
             for ( const auto &binding : bindings )
             {
                 if ( binding.BindingType == ResourceBindingType::Sampler )
@@ -179,8 +196,19 @@ void MetalRootSignature::AddBindlessResource( const BindlessResourceDesc &bindle
     {
         if ( offsets.CbvSrvUavTableOffset == UINT_MAX )
         {
+            // For bindless resources, we need to override the normal TLAB assignment
+            // Parameter[0]: Space 0 bindless SRV 
+            // Parameter[1]: Space 0 sampler
+            // Parameter[2]: Space 1 CBV
+            if ( bindlessResource.RegisterSpace == 0 )
+            {
+                offsets.CbvSrvUavTableOffset = 0;
+            }
+            else
+            {
+                offsets.CbvSrvUavTableOffset = 2;
+            }
             m_numTLABAddresses++;
-            offsets.CbvSrvUavTableOffset = m_numTLABAddresses - 1;
         }
         
         ContainerUtilities::EnsureSize( offsets.CbvSrvUavResourceIndices, bindlessResource.Binding + bindlessResource.MaxArraySize );
@@ -220,6 +248,16 @@ const uint32_t MetalRootSignature::CbvSrvUavTableOffset( uint32_t registerSpace 
         return 0;
     }
     return m_descriptorOffsets[ registerSpace ].CbvSrvUavTableOffset;
+}
+
+const uint32_t MetalRootSignature::CbvSrvUavTableSize( uint32_t registerSpace ) const
+{
+    if ( registerSpace >= m_descriptorOffsets.size( ) )
+    {
+        LOG( ERROR ) << "Invalid register space";
+        return 0;
+    }
+    return m_descriptorOffsets[ registerSpace ].CbvSrvUavResourceCount;
 }
 
 const uint32_t MetalRootSignature::CbvSrvUavResourceIndex( const ResourceBindingSlot &slot ) const

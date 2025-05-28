@@ -238,7 +238,7 @@ void MetalCommandList::ProcessBindGroup( const MetalResourceBindGroup *metalBind
     {
         return;
     }
-
+    
     if ( m_rootSignature == nullptr || m_rootSignature != metalBindGroup->RootSignature( ) )
     {
         m_rootSignature       = metalBindGroup->RootSignature( );
@@ -259,13 +259,13 @@ void MetalCommandList::ProcessBindGroup( const MetalResourceBindGroup *metalBind
     }
 
     const MetalDescriptorTableBinding *cbvSrvUavTable = metalBindGroup->CbvSrvUavTable( );
-    if ( cbvSrvUavTable != nullptr && cbvSrvUavTable->NumEntries > 0 )
+    if ( cbvSrvUavTable != nullptr )
     {
         m_argumentBuffer->EncodeAddress( addressesOffset, cbvSrvUavTable->TLABOffset, cbvSrvUavTable->Table.Buffer( ).gpuAddress );
         UseResource( cbvSrvUavTable->Table.Buffer( ) );
     }
     const MetalDescriptorTableBinding *samplerTable = metalBindGroup->SamplerTable( );
-    if ( samplerTable != nullptr && samplerTable->NumEntries > 0 )
+    if ( samplerTable != nullptr )
     {
         m_argumentBuffer->EncodeAddress( addressesOffset, samplerTable->TLABOffset, samplerTable->Table.Buffer( ).gpuAddress );
         UseResource( samplerTable->Table.Buffer( ) );
