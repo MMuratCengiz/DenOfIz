@@ -24,6 +24,12 @@ using namespace DenOfIz;
 
 VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureDesc desc ) : m_desc( std::move( desc ) ), m_context( context )
 {
+    for ( int i = 0; i < m_desc.BindlessResources.NumElements( ); ++i )
+    {
+        const auto &bindlessResource = m_desc.BindlessResources.GetElement( i );
+        AddBindlessResource( bindlessResource );
+    }
+
     for ( int i = 0; i < m_desc.ResourceBindings.NumElements( ); ++i )
     {
         const ResourceBindingDesc &binding = m_desc.ResourceBindings.GetElement( i );
@@ -84,12 +90,6 @@ VulkanRootSignature::VulkanRootSignature( VulkanContext *context, RootSignatureD
     pipelineLayoutCreateInfo.pSetLayouts            = m_layouts.data( );
     pipelineLayoutCreateInfo.pushConstantRangeCount = m_pushConstants.size( );
     pipelineLayoutCreateInfo.pPushConstantRanges    = m_pushConstants.data( );
-
-    for ( int i = 0; i < m_desc.BindlessResources.NumElements( ); ++i )
-    {
-        const auto &bindlessResource = m_desc.BindlessResources.GetElement( i );
-        AddBindlessResource( bindlessResource );
-    }
 
     VK_CHECK_RESULT( vkCreatePipelineLayout( m_context->LogicalDevice, &pipelineLayoutCreateInfo, nullptr, &m_pipelineLayout ) );
 }
@@ -249,44 +249,10 @@ VkDescriptorSetLayout VulkanRootSignature::EmptyLayout( ) const
 
 void VulkanRootSignature::AddBindlessResource( const BindlessResourceDesc &bindlessResource )
 {
-    VkDescriptorSetLayoutBinding layoutBinding{ };
-    uint32_t bindingTypeOffset = 0;
-    switch ( bindlessResource.Type )
-    {
-    case ResourceBindingType::ConstantBuffer:
-        bindingTypeOffset            = ShaderCompiler::VkShiftCbv;
-        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        break;
-    case ResourceBindingType::ShaderResource:
-        bindingTypeOffset            = ShaderCompiler::VkShiftSrv;
-        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE; // For bindless texture arrays
-        break;
-    case ResourceBindingType::UnorderedAccess:
-        bindingTypeOffset            = ShaderCompiler::VkShiftUav;
-        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        break;
-    case ResourceBindingType::Sampler:
-        bindingTypeOffset            = ShaderCompiler::VkShiftSampler;
-        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-        break;
-    }
-
-    layoutBinding.binding            = bindingTypeOffset + bindlessResource.Binding;
-    layoutBinding.descriptorCount    = bindlessResource.MaxArraySize;
-    layoutBinding.stageFlags         = VK_SHADER_STAGE_ALL;
-    layoutBinding.pImmutableSamplers = nullptr;
-
-    m_layoutBindings[ bindlessResource.RegisterSpace ].push_back( layoutBinding );
-
-    const ResourceBindingSlot slot{
-        .Type          = bindlessResource.Type,
-        .Binding       = bindlessResource.Binding,
-        .RegisterSpace = bindlessResource.RegisterSpace,
-    };
-
+    // Create a ResourceBindingDesc from the BindlessResourceDesc
     ResourceBindingDesc bindingDesc;
     bindingDesc.BindingType   = bindlessResource.Type;
-    bindingDesc.Binding       = layoutBinding.binding;
+    bindingDesc.Binding       = bindlessResource.Binding;
     bindingDesc.RegisterSpace = bindlessResource.RegisterSpace;
     bindingDesc.ArraySize     = bindlessResource.MaxArraySize;
     
@@ -314,5 +280,6 @@ void VulkanRootSignature::AddBindlessResource( const BindlessResourceDesc &bindl
     bindingDesc.Stages.AddElement( ShaderStage::Mesh );
     bindingDesc.Stages.AddElement( ShaderStage::Task );
 
-    m_resourceBindingMap[ slot.Key( ) ] = bindingDesc;
+    // Reuse the existing AddResourceBinding method which properly handles the offset
+    AddResourceBinding( bindingDesc );
 }

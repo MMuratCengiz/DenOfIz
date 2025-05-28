@@ -135,7 +135,6 @@ IResourceBindGroup *VulkanResourceBindGroup::SrvArray( const uint32_t binding, c
         imageInfos[ i ].sampler     = VK_NULL_HANDLE;
     }
     writeDescriptorSet.pImageInfo = imageInfos;
-
     return this;
 }
 
@@ -154,7 +153,6 @@ IResourceBindGroup *VulkanResourceBindGroup::SrvArrayIndex( const uint32_t bindi
     imageInfo.sampler     = VK_NULL_HANDLE;
 
     writeDescriptorSet.pImageInfo = &imageInfo;
-
     return this;
 }
 
