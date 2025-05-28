@@ -49,6 +49,8 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
 
     m_descriptorOffsets.resize( bindingsBySpace.rbegin( )->first + 1 );
     int currentTLABOffset = m_numRootConstantBytes / sizeof( uint64_t );
+    
+    bool hasBindlessResources = desc.BindlessResources.NumElements( ) > 0;
     for ( const auto &[ space, bindings ] : bindingsBySpace )
     {
         auto &offsets = m_descriptorOffsets[ space ];
@@ -82,7 +84,7 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
         {
             if ( offsets.CbvSrvUavTableOffset == UINT_MAX )
             {
-                if ( space == 1 )
+                if ( hasBindlessResources && space == 1 )
                 {
                     offsets.CbvSrvUavTableOffset = 2;
                 }
@@ -127,9 +129,10 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
 
         if ( hasSamplers )
         {
-            if ( space == 0 )
+            // Only use hardcoded offsets when bindless resources are present
+            if ( hasBindlessResources && space == 0 )
             {
-                offsets.SamplerTableOffset = 1;
+                offsets.SamplerTableOffset = 1; // Parameter[1] for bindless case
             }
             else
             {

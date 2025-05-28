@@ -432,9 +432,9 @@ void QuadRenderer::Render( const uint32_t frameIndex, ICommandList *commandList 
 {
     const FrameData &frame = m_frameData[ frameIndex ];
 
+    commandList->BindPipeline( m_rasterPipeline.get( ) );
     commandList->BindVertexBuffer( m_vertexBuffer.get( ) );
     commandList->BindIndexBuffer( m_indexBuffer.get( ), IndexType::Uint32 );
-    commandList->BindPipeline( m_rasterPipeline.get( ) );
     commandList->BindResourceGroup( frame.InstanceBindGroup.get( ) );
 
     for ( auto &[ materialId, drawBatch ] : m_drawBatches )
