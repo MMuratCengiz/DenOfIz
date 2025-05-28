@@ -36,8 +36,7 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc )
     quadDesc.LogicalDevice      = m_desc.LogicalDevice;
     quadDesc.RenderTargetFormat = m_desc.RenderTargetFormat;
     quadDesc.NumFrames          = m_desc.NumFrames;
-    quadDesc.BatchSize          = 1024;
-    quadDesc.MaxNumMaterials    = m_desc.MaxNumMaterials;
+    quadDesc.MaxNumTextures     = 256; // Support up to 256 unique textures
     quadDesc.MaxNumQuads        = m_desc.MaxNumQuads;
 
     m_quadRenderer = std::make_unique<QuadRenderer>( quadDesc );
@@ -50,6 +49,7 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc )
 
 ClayRenderer::~ClayRenderer( )
 {
+    m_textureIndices.clear( );
     for ( auto &cache : m_shapeCache | std::views::values )
     {
         if ( cache.Texture )
@@ -89,8 +89,7 @@ void ClayRenderer::SetDpiScale( const float dpiScale )
 void ClayRenderer::ClearCaches( )
 {
     m_quadRenderer->ClearQuads( );
-    m_quadRenderer->ClearMaterials( );
-
+    m_textureIndices.clear( );
     for ( auto &cache : m_shapeCache | std::views::values )
     {
         if ( cache.Texture )
@@ -100,9 +99,7 @@ void ClayRenderer::ClearCaches( )
         }
     }
     m_shapeCache.clear( );
-    m_materialCache.clear( );
-    m_nextMaterialId = 0;
-    m_nextQuadId     = 0;
+    m_nextQuadId = 0;
 }
 
 void ClayRenderer::InvalidateLayout( )
@@ -227,21 +224,8 @@ void ClayRenderer::RenderRectangle( const Clay_RenderCommand *command, const uin
     const Clay_RectangleRenderData data   = command->renderData.rectangle;
     const Clay_BoundingBox         bounds = command->boundingBox;
 
-    const auto     color      = data.backgroundColor;
-    const uint32_t materialId = GetOrCreateMaterial( color, nullptr );
-    const uint32_t quadId     = GetOrCreateQuad( bounds, materialId );
-
-    QuadDataDesc quadDesc;
-    quadDesc.QuadId     = quadId;
-    quadDesc.Position   = Float_2( bounds.x, bounds.y );
-    quadDesc.Size       = Float_2( bounds.width, bounds.height );
-    quadDesc.MaterialId = materialId;
-    quadDesc.Rotation   = 0.0f;
-    quadDesc.Scale      = Float_2( 1.0f, 1.0f );
-    quadDesc.UV0        = Float_2( 0.0f, 0.0f );
-    quadDesc.UV1        = Float_2( 1.0f, 1.0f );
-
-    m_quadRenderer->UpdateQuad( frameIndex, quadDesc );
+    const auto color = data.backgroundColor;
+    AddQuad( bounds, color, 0 );
 }
 
 void ClayRenderer::RenderRoundedRectangle( const Clay_RenderCommand *command, const uint32_t frameIndex )
@@ -250,18 +234,10 @@ void ClayRenderer::RenderRoundedRectangle( const Clay_RenderCommand *command, co
     const Clay_BoundingBox         bounds = command->boundingBox;
 
     ITextureResource *shapeTexture = GetOrCreateRoundedRectTexture( bounds, data );
+    const uint32_t    textureIndex = GetOrRegisterTexture( shapeTexture );
+    const auto        color        = data.backgroundColor;
 
-    const auto     color      = data.backgroundColor;
-    const uint32_t materialId = GetOrCreateMaterial( color, shapeTexture );
-    const uint32_t quadId     = GetOrCreateQuad( bounds, materialId );
-
-    QuadDataDesc quadDesc;
-    quadDesc.QuadId     = quadId;
-    quadDesc.Position   = Float_2( bounds.x, bounds.y );
-    quadDesc.Size       = Float_2( bounds.width, bounds.height );
-    quadDesc.MaterialId = materialId;
-
-    m_quadRenderer->UpdateQuad( frameIndex, quadDesc );
+    AddQuad( bounds, color, textureIndex );
 }
 
 void ClayRenderer::RenderBorder( const Clay_RenderCommand *command, const uint32_t frameIndex )
@@ -373,27 +349,14 @@ void ClayRenderer::RenderImage( const Clay_RenderCommand *command, const uint32_
     const Clay_ImageRenderData data   = command->renderData.image;
     const Clay_BoundingBox     bounds = command->boundingBox;
 
-    const ITextureResource *texture = static_cast<ITextureResource *>( data.imageData );
+    const auto texture = static_cast<ITextureResource *>( data.imageData );
     if ( !texture )
     {
         return;
     }
 
-    const uint32_t materialId = GetOrCreateMaterial( data.backgroundColor, const_cast<ITextureResource *>( texture ) );
-    const uint32_t quadId     = GetOrCreateQuad( bounds, materialId );
-
-    // Update quad data for this frame
-    QuadDataDesc quadDesc;
-    quadDesc.QuadId     = quadId;
-    quadDesc.Position   = Float_2( bounds.x, bounds.y );
-    quadDesc.Size       = Float_2( bounds.width, bounds.height );
-    quadDesc.MaterialId = materialId;
-    quadDesc.Rotation   = 0.0f;
-    quadDesc.Scale      = Float_2( 1.0f, 1.0f );
-    quadDesc.UV0        = Float_2( 0.0f, 0.0f );
-    quadDesc.UV1        = Float_2( 1.0f, 1.0f );
-
-    m_quadRenderer->UpdateQuad( frameIndex, quadDesc );
+    const uint32_t textureIndex = GetOrRegisterTexture( texture );
+    AddQuad( bounds, data.backgroundColor, textureIndex );
 }
 
 ITextureResource *ClayRenderer::GetOrCreateRoundedRectTexture( const Clay_BoundingBox &bounds, const Clay_RectangleRenderData &data )
@@ -467,8 +430,8 @@ void ClayRenderer::CreateVectorShape( const Clay_BoundingBox &bounds, const Clay
     const float scaledTR = data.cornerRadius.topRight * cornerScale;
     const float scaledBL = data.cornerRadius.bottomLeft * cornerScale;
     const float scaledBR = data.cornerRadius.bottomRight * cornerScale;
-
-    shape.AppendRect( 0, 0, width, height, scaledTL, scaledTL );
+    const float avgCornerScale = ( scaledTL + scaledTR + scaledBL + scaledBR ) / 4;
+    shape.AppendRect( 0, 0, width, height, avgCornerScale, avgCornerScale );
 
     shape.Fill( static_cast<uint8_t>( data.backgroundColor.r ), static_cast<uint8_t>( data.backgroundColor.g ), static_cast<uint8_t>( data.backgroundColor.b ),
                 static_cast<uint8_t>( data.backgroundColor.a ) );
@@ -476,55 +439,48 @@ void ClayRenderer::CreateVectorShape( const Clay_BoundingBox &bounds, const Clay
     canvas.Push( &shape );
 }
 
-uint32_t ClayRenderer::GetOrCreateMaterial( const Clay_Color &color, ITextureResource *texture )
+uint32_t ClayRenderer::GetOrRegisterTexture( ITextureResource *texture )
 {
-    const MaterialKey key = { color, texture };
-    const auto it = m_materialCache.find( key );
-    if ( it != m_materialCache.end( ) )
+    if ( !texture )
+    {
+        return 0;
+    }
+
+    const auto it = m_textureIndices.find( texture );
+    if ( it != m_textureIndices.end( ) )
     {
         return it->second;
     }
 
-    const uint32_t materialId = m_nextMaterialId;
-    if ( materialId >= m_desc.MaxNumMaterials )
-    {
-        LOG( ERROR ) << "ClayRenderer: Exceeded maximum number of materials (" << m_desc.MaxNumMaterials << ")";
-        return m_nextMaterialId > 0 ? m_nextMaterialId - 1 : 0;
-    }
-
-    m_nextMaterialId++;
-
-    const Float_4 dzColor = { color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f };
-
-    QuadMaterialDesc materialDesc;
-    materialDesc.MaterialId = materialId;
-    materialDesc.Texture    = texture;
-    materialDesc.Color      = dzColor;
-
-    m_quadRenderer->AddMaterial( materialDesc );
-    m_materialCache[ key ] = materialId;
-    return materialId;
+    const uint32_t index        = m_quadRenderer->RegisterTexture( texture );
+    m_textureIndices[ texture ] = index;
+    return index;
 }
 
-uint32_t ClayRenderer::GetOrCreateQuad( const Clay_BoundingBox &bounds, const uint32_t materialId )
+void ClayRenderer::AddQuad( const Clay_BoundingBox &bounds, const Clay_Color &color, const uint32_t textureIndex )
 {
-    const uint32_t quadId = m_currentFrameQuadIndex;
+    const uint32_t quadId  = m_currentFrameQuadIndex;
+    const Float_4  dzColor = { color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f };
 
     QuadDataDesc quadDesc;
-    quadDesc.QuadId     = quadId;
-    quadDesc.Position   = Float_2( bounds.x, bounds.y );
-    quadDesc.Size       = Float_2( bounds.width, bounds.height );
-    quadDesc.MaterialId = materialId;
-    quadDesc.Rotation   = 0.0f;
-    quadDesc.Scale      = Float_2( 1.0f, 1.0f );
-    quadDesc.UV0        = Float_2( 0.0f, 0.0f );
-    quadDesc.UV1        = Float_2( 1.0f, 1.0f );
+    quadDesc.QuadId       = quadId;
+    quadDesc.Position     = Float_2( bounds.x, bounds.y );
+    quadDesc.Size         = Float_2( bounds.width, bounds.height );
+    quadDesc.TextureIndex = textureIndex;
+    quadDesc.Color        = dzColor;
+    quadDesc.Rotation     = 0.0f;
+    quadDesc.Scale        = Float_2( 1.0f, 1.0f );
+    quadDesc.UV0          = Float_2( 0.0f, 0.0f );
+    quadDesc.UV1          = Float_2( 1.0f, 1.0f );
 
     if ( quadId >= m_nextQuadId )
     {
         m_nextQuadId = quadId + 1;
         m_quadRenderer->AddQuad( quadDesc );
     }
+    else
+    {
+        m_quadRenderer->UpdateQuad( m_currentFrameIndex, quadDesc );
+    }
     m_currentFrameQuadIndex++;
-    return quadId;
 }

@@ -38,25 +38,19 @@ struct InstanceData
 {
     float4x4 Transform;
     float4 UVScaleOffset;
-    uint MaterialId;
+    uint TextureIndex;
+    float4 Color;
     float3 _Pad0;
-    float4 _Pad1;
 };
 
 struct VertexOutput
 {
     float4 Position : SV_Position;
     float2 TexCoord : TEXCOORD0;
-    uint MaterialId : TEXCOORD1;
+    uint TextureIndex : TEXCOORD1;
+    float4 Color : TEXCOORD2;
 };
 
-struct RootConstants {
-    uint StartInstance;
-    uint HasTexture;
-    float2 Padding;
-};
-
-[[vk::push_constant]] ConstantBuffer<RootConstants> rootConstants : register(b0, space31);
 StructuredBuffer<InstanceData> Instances : register(t0);
 cbuffer FrameConstants : register(b0)
 {
@@ -66,50 +60,41 @@ cbuffer FrameConstants : register(b0)
 VertexOutput main(VertexInput input, uint instanceID : SV_InstanceID)
 {
     VertexOutput output;
-    InstanceData instance = Instances[rootConstants.StartInstance + instanceID];
+    InstanceData instance = Instances[instanceID];
     float4 worldPos = mul(float4(input.Position, 1.0), instance.Transform);
     output.Position = mul(worldPos, Projection);
     output.TexCoord = input.TexCoord * instance.UVScaleOffset.xy + instance.UVScaleOffset.zw;
-    output.MaterialId = instance.MaterialId;
+    output.TextureIndex = instance.TextureIndex;
+    output.Color = instance.Color;
     return output;
 }
 )";
 
 static auto RasterPixelShader = R"(
-struct MaterialData
-{
-    float4 Color;
-};
-
-struct RootConstants {
-    uint StartInstance;
-    uint HasTexture;
-    float2 Padding;
-};
-
-[[vk::push_constant]] ConstantBuffer<RootConstants> rootConstants : register(b0, space31);
-
-SamplerState QuadSampler : register(s0);
-Texture2D QuadTexture : register(t0, space1);
-StructuredBuffer<MaterialData> MaterialDatas : register(t1, space1);
-
 struct PixelInput
 {
     float4 Position : SV_Position;
     float2 TexCoord : TEXCOORD0;
-    uint MaterialId : TEXCOORD1;
+    uint TextureIndex : TEXCOORD1;
+    float4 Color : TEXCOORD2;
 };
+
+// Bindless texture array
+Texture2D<float4> g_Textures[] : register(t0, space1);
+SamplerState g_Sampler : register(s0, space1);
 
 float4 main(PixelInput input) : SV_Target
 {
-    MaterialData materialData = MaterialDatas[ input.MaterialId ];
-    if (rootConstants.HasTexture == 0) // 0 means no texture available
+    if (input.TextureIndex == 0) // 0 means no texture (null texture)
     {
-        return materialData.Color;
+        return input.Color;
     }
-    float4 texColor = QuadTexture.Sample(QuadSampler, input.TexCoord);
-    // For premultiplied alpha with white tint, we just return the texture color
-    return texColor;
+    
+    // Use dynamic indexing with the bindless texture array
+    float4 texColor = g_Textures[input.TextureIndex].Sample(g_Sampler, input.TexCoord);
+    
+    // Multiply with vertex color for tinting
+    return texColor * input.Color;
 }
 )";
 
@@ -120,6 +105,12 @@ QuadRenderer::QuadRenderer( const QuadRendererDesc &desc ) : m_desc( desc )
 
     XMStoreFloat4x4( &m_projectionMatrix, XMMatrixIdentity( ) );
     m_frameData.resize( desc.NumFrames );
+    m_textures.resize( desc.MaxNumTextures );
+
+    for ( uint32_t i = 1; i < desc.MaxNumTextures; ++i )
+    {
+        m_freeTextureIndices.push_back( i );
+    }
 
     Initialize( );
 }
@@ -129,10 +120,6 @@ QuadRenderer::~QuadRenderer( )
     if ( m_instances )
     {
         m_instanceBuffer->UnmapMemory( );
-    }
-    if ( m_materialData )
-    {
-        m_materialBuffer->UnmapMemory( );
     }
 }
 
@@ -162,17 +149,6 @@ void QuadRenderer::Initialize( )
     m_instanceBuffer                             = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( instanceBufferDesc ) );
     m_instances                                  = static_cast<QuadInstance *>( m_instanceBuffer->MapMemory( ) );
 
-    BufferDesc materialBufferDesc{ };
-    materialBufferDesc.NumBytes                  = m_desc.NumFrames * m_desc.MaxNumMaterials * sizeof( MaterialShaderData );
-    materialBufferDesc.Descriptor                = BitSet( ResourceDescriptor::StructuredBuffer );
-    materialBufferDesc.Usages                    = ResourceUsage::ShaderResource;
-    materialBufferDesc.HeapType                  = HeapType::CPU_GPU;
-    materialBufferDesc.DebugName                 = InteropString( "Quad Renderer Material Buffer Frame" );
-    materialBufferDesc.StructureDesc.NumElements = m_desc.NumFrames * m_desc.MaxNumMaterials;
-    materialBufferDesc.StructureDesc.Stride      = sizeof( MaterialShaderData );
-    m_materialBuffer                             = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( materialBufferDesc ) );
-    m_materialData                               = static_cast<Byte *>( m_materialBuffer->MapMemory( ) );
-
     uint32_t   alignedFrameConstants = Utilities::Align( sizeof( FrameConstants ), 256 );
     BufferDesc constantsBufferDesc;
     constantsBufferDesc.NumBytes   = m_desc.NumFrames * alignedFrameConstants;
@@ -181,6 +157,17 @@ void QuadRenderer::Initialize( )
     constantsBufferDesc.HeapType   = HeapType::CPU_GPU;
     constantsBufferDesc.DebugName  = InteropString( "Quad Renderer Constants Buffer" );
     m_constantsBuffer              = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( constantsBufferDesc ) );
+
+    // Null texture at 0
+    TextureDesc textureDesc{ };
+    textureDesc.Width      = 1;
+    textureDesc.Height     = 1;
+    textureDesc.Format     = m_desc.RenderTargetFormat;
+    textureDesc.Usages     = ResourceUsage::ShaderResource;
+    textureDesc.DebugName  = InteropString( "Quad Renderer Null Texture" );
+    textureDesc.Descriptor = ResourceDescriptor::Texture;
+    m_nullTexture          = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
+    m_textures[ 0 ]        = m_nullTexture.get( );
 
     for ( uint32_t frameIdx = 0; frameIdx < m_desc.NumFrames; ++frameIdx )
     {
@@ -197,24 +184,15 @@ void QuadRenderer::Initialize( )
         BindBufferDesc bindConstantsBufferDesc{ };
         bindConstantsBufferDesc.Resource       = m_constantsBuffer.get( );
         bindConstantsBufferDesc.ResourceOffset = frameIdx * alignedFrameConstants;
-        frame.InstanceBindGroup->BeginUpdate( )->Cbv( bindConstantsBufferDesc )->Srv( bindInstanceBufferDesc )->Sampler( 0, m_sampler.get( ) )->EndUpdate( );
+        frame.InstanceBindGroup->BeginUpdate( )->Cbv( bindConstantsBufferDesc )->Srv( bindInstanceBufferDesc )->EndUpdate( );
 
-        ResourceBindGroupDesc rootConstantsBindGroupDesc{ };
-        rootConstantsBindGroupDesc.RootSignature = m_rootSignature.get( );
-        rootConstantsBindGroupDesc.RegisterSpace = DZConfiguration::Instance( ).RootConstantRegisterSpace;
-        frame.RootConstantsBindGroup             = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( rootConstantsBindGroupDesc ) );
+        ResourceBindGroupDesc textureBindGroupDesc{ };
+        textureBindGroupDesc.RootSignature = m_rootSignature.get( );
+        textureBindGroupDesc.RegisterSpace = 1;
+        frame.TextureBindGroup             = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( textureBindGroupDesc ) );
+
+        UpdateTextureBindings( frameIdx );
     }
-
-    TextureDesc textureDesc{ };
-    textureDesc.Width      = 1;
-    textureDesc.Height     = 1;
-    textureDesc.Format     = m_desc.RenderTargetFormat;
-    textureDesc.Usages     = ResourceUsage::ShaderResource;
-    textureDesc.DebugName  = InteropString( "Quad Renderer Null Texture" );
-    textureDesc.Descriptor = ResourceDescriptor::Texture;
-    m_nullTexture          = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
-
-    m_materialDescs.resize( m_desc.MaxNumMaterials );
 }
 
 void QuadRenderer::SetCanvas( const uint32_t width, const uint32_t height )
@@ -245,6 +223,7 @@ void QuadRenderer::CreateShaderResources( )
     pixelShaderDesc.EntryPoint       = "main";
     const InteropString psStr( RasterPixelShader );
     pixelShaderDesc.Data = InteropUtilities::StringToBytes( psStr );
+    pixelShaderDesc.Bindless.MarkSrvAsBindlessArray( 0, 1, m_desc.MaxNumTextures );
 
     m_shaderProgram = std::make_unique<ShaderProgram>( shaderProgramDesc );
 
@@ -320,52 +299,39 @@ void QuadRenderer::CreateStaticQuadGeometry( )
     batchResourceCopy.Submit( );
 }
 
-void QuadRenderer::AddMaterial( const QuadMaterialDesc &desc )
+uint32_t QuadRenderer::RegisterTexture( ITextureResource *texture )
 {
-    if ( desc.MaterialId >= m_desc.MaxNumMaterials )
+    if ( m_freeTextureIndices.empty( ) )
     {
-        LOG( WARNING ) << "Maximum number of materials reached";
-        return;
+        LOG( WARNING ) << "Maximum number of textures reached";
+        return 0;
     }
-    m_materialDescs[ desc.MaterialId ] = desc;
-    for ( int i = 0; i < m_desc.NumFrames; ++i )
+
+    const uint32_t index = m_freeTextureIndices.back( );
+    m_freeTextureIndices.pop_back( );
+
+    m_textures[ index ] = texture;
+    for ( uint32_t frameIdx = 0; frameIdx < m_desc.NumFrames; ++frameIdx )
     {
-        auto &resourceBindGroups = m_frameData[ i ].MaterialBindGroups;
-
-        ResourceBindGroupDesc bindGroupDesc{ };
-        bindGroupDesc.RootSignature           = m_rootSignature.get( );
-        bindGroupDesc.RegisterSpace           = 1;
-        resourceBindGroups[ desc.MaterialId ] = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
-
-        UpdateMaterial( i, desc );
+        UpdateTextureBindings( frameIdx );
     }
-    m_drawBatches[ desc.MaterialId ] = { .StartInstance = 0, .MaterialId = desc.MaterialId };
+    return index;
 }
 
-void QuadRenderer::UpdateMaterial( const uint32_t frameIndex, const QuadMaterialDesc &desc ) const
+void QuadRenderer::UnregisterTexture( const uint32_t textureIndex )
 {
-    if ( desc.MaterialId >= m_desc.MaxNumMaterials )
+    if ( textureIndex == 0 || textureIndex >= m_desc.MaxNumTextures )
     {
-        LOG( WARNING ) << "Invalid material ID: " << desc.MaterialId;
+        LOG( WARNING ) << "Invalid texture index: " << textureIndex;
         return;
     }
 
-    MaterialShaderData shaderData{ };
-    shaderData.Color = desc.Color;
-
-    const uint64_t dstOffset = frameIndex * m_desc.MaxNumMaterials * sizeof( MaterialShaderData ) + desc.MaterialId * sizeof( MaterialShaderData );
-    std::memcpy( m_materialData + dstOffset, &shaderData, sizeof( MaterialShaderData ) );
-
-    BindBufferDesc bindMaterialShaderDataDesc{ };
-    bindMaterialShaderDataDesc.Binding        = 1;
-    bindMaterialShaderDataDesc.Resource       = m_materialBuffer.get( );
-    bindMaterialShaderDataDesc.ResourceOffset = frameIndex * m_desc.MaxNumMaterials * sizeof( MaterialShaderData );
-
-    auto &resourceBindGroup = m_frameData[ frameIndex ].MaterialBindGroups.at( desc.MaterialId );
-    resourceBindGroup->BeginUpdate( );
-    resourceBindGroup->Srv( bindMaterialShaderDataDesc );
-    resourceBindGroup->Srv( 0, desc.Texture != nullptr ? desc.Texture : m_nullTexture.get( ) );
-    resourceBindGroup->EndUpdate( );
+    m_textures[ textureIndex ] = nullptr;
+    m_freeTextureIndices.push_back( textureIndex );
+    for ( uint32_t frameIdx = 0; frameIdx < m_desc.NumFrames; ++frameIdx )
+    {
+        UpdateTextureBindings( frameIdx );
+    }
 }
 
 void QuadRenderer::AddQuad( const QuadDataDesc &desc )
@@ -381,20 +347,12 @@ void QuadRenderer::AddQuad( const QuadDataDesc &desc )
         UpdateQuad( i, desc );
     }
 
-    if ( !m_drawBatches.contains( desc.MaterialId ) )
-    {
-        LOG( ERROR ) << "Material ID does not exist, add it first using AddMaterial";
-        return;
-    }
-
-    DrawBatch &batch = m_drawBatches[ desc.MaterialId ];
-    batch.QuadIds.push_back( desc.QuadId );
-    batch.InstanceCount = batch.QuadIds.size( );
+    m_currentQuadCount = std::max( m_currentQuadCount, desc.QuadId + 1 );
 }
 
 void QuadRenderer::UpdateQuad( const uint32_t frameIndex, const QuadDataDesc &desc ) const
 {
-    if ( desc.QuadId > m_desc.MaxNumQuads )
+    if ( desc.QuadId >= m_desc.MaxNumQuads )
     {
         LOG( WARNING ) << "Invalid quad ID: " << desc.QuadId << ". QuadRendererDesc::MaxNumQuads is configured to be: " << m_desc.MaxNumQuads;
         return;
@@ -408,48 +366,46 @@ void QuadRenderer::UpdateQuad( const uint32_t frameIndex, const QuadDataDesc &de
                                            desc.UV0.X,              // U offset
                                            desc.UV0.Y               // V offset
        );
-    instance->MaterialId       = desc.MaterialId;
+    instance->TextureIndex     = desc.TextureIndex;
+    instance->Color            = desc.Color;
 }
 
 void QuadRenderer::ClearQuads( )
 {
-    m_drawBatches.clear( );
-}
-
-void QuadRenderer::ClearMaterials( )
-{
-    m_materialDescs.clear( );
-    m_materialDescs.resize( m_desc.MaxNumMaterials );
-    for ( auto &frame : m_frameData )
-    {
-        frame.MaterialBindGroups.clear( );
-    }
-    m_drawBatches.clear( );
-    m_materialBatchIndex = 0;
+    m_currentQuadCount = 0;
 }
 
 void QuadRenderer::Render( const uint32_t frameIndex, ICommandList *commandList )
 {
+    if ( m_currentQuadCount == 0 )
+    {
+        return;
+    }
+
     const FrameData &frame = m_frameData[ frameIndex ];
 
     commandList->BindVertexBuffer( m_vertexBuffer.get( ) );
     commandList->BindIndexBuffer( m_indexBuffer.get( ), IndexType::Uint32 );
     commandList->BindPipeline( m_rasterPipeline.get( ) );
     commandList->BindResourceGroup( frame.InstanceBindGroup.get( ) );
+    commandList->BindResourceGroup( frame.TextureBindGroup.get( ) );
+    commandList->DrawIndexed( 6, m_currentQuadCount, 0, 0, 0 );
+}
 
-    for ( auto &[ materialId, drawBatch ] : m_drawBatches )
+void QuadRenderer::UpdateTextureBindings( const uint32_t frameIndex )
+{
+    const FrameData &frame = m_frameData[ frameIndex ];
+
+    frame.TextureBindGroup->BeginUpdate( );
+    InteropArray<ITextureResource *> textureArray;
+    for ( const auto &texture : m_textures )
     {
-        commandList->BindResourceGroup( frame.MaterialBindGroups.at( materialId ).get( ) );
-        for ( const uint32_t quadId : drawBatch.QuadIds )
-        {
-            RootConstants rootConstants;
-            rootConstants.StartInstance = quadId;
-            rootConstants.HasTexture    = m_materialDescs[ materialId ].Texture != nullptr ? 1 : 0;
-            frame.RootConstantsBindGroup->SetRootConstants( 0, &rootConstants );
-            commandList->BindResourceGroup( frame.RootConstantsBindGroup.get( ) );
-            commandList->DrawIndexed( 6, 1, 0, 0, 0 );
-        }
+        textureArray.AddElement( texture ? texture : m_nullTexture.get( ) );
     }
+
+    frame.TextureBindGroup->SrvArray( 0, textureArray );
+    frame.TextureBindGroup->Sampler( 0, m_sampler.get( ) );
+    frame.TextureBindGroup->EndUpdate( );
 }
 
 XMFLOAT4X4 QuadRenderer::CalculateTransform( const QuadDataDesc &desc ) const

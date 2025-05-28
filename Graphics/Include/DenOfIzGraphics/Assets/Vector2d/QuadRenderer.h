@@ -39,16 +39,15 @@ namespace DenOfIz
         ILogicalDevice *LogicalDevice      = nullptr;
         Format          RenderTargetFormat = Format::B8G8R8A8Unorm;
         uint32_t        NumFrames          = 3;
-        uint32_t        BatchSize          = 10240;
-        uint32_t        MaxNumMaterials    = 32;
+        uint32_t        MaxNumTextures     = 64;
         uint32_t        MaxNumQuads        = 10240;
     };
 
     struct DZ_API QuadMaterialDesc
     {
-        uint32_t          MaterialId = 0;
-        ITextureResource *Texture    = nullptr;
-        Float_4           Color      = { 1.0f, 1.0f, 1.0f, 1.0f };
+        uint32_t MaterialId   = 0;
+        uint32_t TextureIndex = 0; // Index into the bindless texture array
+        Float_4  Color        = { 1.0f, 1.0f, 1.0f, 1.0f };
     };
 
     struct DZ_API QuadDataDesc
@@ -56,7 +55,8 @@ namespace DenOfIz
         uint32_t QuadId         = 0;
         Float_2  Position       = { 0.0f, 0.0f };
         Float_2  Size           = { 100.0f, 100.0f };
-        uint32_t MaterialId     = 0;
+        uint32_t TextureIndex   = 0; // Index into the bindless texture array
+        Float_4  Color          = { 1.0f, 1.0f, 1.0f, 1.0f };
         float    Rotation       = 0.0f;
         Float_2  RotationCenter = { 0.0f, 0.0f };
         Float_2  Scale          = { 1.0f, 1.0f };
@@ -76,39 +76,14 @@ namespace DenOfIz
         {
             DirectX::XMFLOAT4X4 Transform;
             DirectX::XMFLOAT4   UVScaleOffset; // xy: scale, zw: offset
-            uint32_t            MaterialId;
+            uint32_t            TextureIndex;
+            Float_4             Color;
             Float_3             _Pad0;
-            Float_4             _Pad1; // Fully align with 256, DX12 Constant buffer offset
         };
 
         struct FrameConstants
         {
             DirectX::XMFLOAT4X4 Projection;
-        };
-
-        struct RootConstants
-        {
-            uint32_t StartInstance;
-            uint32_t HasTexture;
-            float    Padding[ 2 ];
-        };
-
-        struct MaterialShaderData
-        {
-            Float_4 Color;
-        };
-
-        struct MaterialData
-        {
-            ITextureResource *Texture = nullptr;
-        };
-
-        struct DrawBatch
-        {
-            uint32_t              StartInstance;
-            uint32_t              InstanceCount = 0;
-            uint32_t              MaterialId;
-            std::vector<uint32_t> QuadIds;
         };
 
         QuadRendererDesc m_desc;
@@ -125,21 +100,17 @@ namespace DenOfIz
 
         struct FrameData
         {
-            std::unique_ptr<IResourceBindGroup>                               InstanceBindGroup;
-            std::unordered_map<uint32_t, std::unique_ptr<IResourceBindGroup>> MaterialBindGroups;
-            std::unique_ptr<IResourceBindGroup>                               RootConstantsBindGroup;
+            std::unique_ptr<IResourceBindGroup> InstanceBindGroup;
+            std::unique_ptr<IResourceBindGroup> TextureBindGroup;
         };
-        std::vector<FrameData>        m_frameData;
-        std::vector<QuadMaterialDesc> m_materialDescs;
-
-        uint32_t                                m_materialBatchIndex = 0;
-        std::unordered_map<uint32_t, DrawBatch> m_drawBatches; // key = MaterialId
-        std::unique_ptr<IBufferResource>        m_instanceBuffer = nullptr;
-        QuadInstance                           *m_instances      = nullptr;
-        std::unique_ptr<IBufferResource>        m_materialBuffer = nullptr;
-        Byte                                   *m_materialData   = nullptr;
-        std::unique_ptr<IBufferResource>        m_constantsBuffer;
-        std::unique_ptr<ITextureResource>       m_nullTexture;
+        std::vector<FrameData>            m_frameData;
+        std::vector<ITextureResource *>   m_textures;
+        std::vector<uint32_t>             m_freeTextureIndices;
+        uint32_t                          m_currentQuadCount = 0;
+        std::unique_ptr<IBufferResource>  m_instanceBuffer   = nullptr;
+        QuadInstance                     *m_instances        = nullptr;
+        std::unique_ptr<IBufferResource>  m_constantsBuffer;
+        std::unique_ptr<ITextureResource> m_nullTexture;
 
         DirectX::XMFLOAT4X4 m_projectionMatrix;
 
@@ -149,14 +120,13 @@ namespace DenOfIz
 
         DZ_API void SetCanvas( uint32_t width, uint32_t height );
 
-        DZ_API void AddMaterial( const QuadMaterialDesc &desc );
-        DZ_API void UpdateMaterial( uint32_t frameIndex, const QuadMaterialDesc &desc ) const;
+        DZ_API uint32_t RegisterTexture( ITextureResource *texture );
+        DZ_API void     UnregisterTexture( uint32_t textureIndex );
 
         DZ_API void AddQuad( const QuadDataDesc &desc );
         DZ_API void UpdateQuad( uint32_t frameIndex, const QuadDataDesc &desc ) const;
 
         DZ_API void ClearQuads( );
-        DZ_API void ClearMaterials( );
 
         DZ_API void Render( uint32_t frameIndex, ICommandList *commandList );
 
@@ -164,6 +134,7 @@ namespace DenOfIz
         void                Initialize( );
         void                CreateShaderResources( );
         void                CreateStaticQuadGeometry( );
+        void                UpdateTextureBindings( uint32_t frameIndex );
         DirectX::XMFLOAT4X4 CalculateTransform( const QuadDataDesc &desc ) const;
     };
 

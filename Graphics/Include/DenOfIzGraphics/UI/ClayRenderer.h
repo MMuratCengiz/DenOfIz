@@ -53,37 +53,11 @@ namespace DenOfIz
         {
             ITextureResource *Texture = nullptr;
         };
-        std::unordered_map<uint64_t, ShapeCache> m_shapeCache;
+        std::unordered_map<uint64_t, ShapeCache>         m_shapeCache;
+        std::unordered_map<ITextureResource *, uint32_t> m_textureIndices;
 
-        struct MaterialKey
-        {
-            Clay_Color        Color;
-            ITextureResource *Texture;
-
-            bool operator==( const MaterialKey &other ) const
-            {
-                return Color.r == other.Color.r && Color.g == other.Color.g && Color.b == other.Color.b && Color.a == other.Color.a && Texture == other.Texture;
-            }
-        };
-
-        struct MaterialKeyHash
-        {
-            std::size_t operator( )( const MaterialKey &key ) const noexcept
-            {
-                const std::size_t h1 = std::hash<float>{ }( key.Color.r );
-                const std::size_t h2 = std::hash<float>{ }( key.Color.g );
-                const std::size_t h3 = std::hash<float>{ }( key.Color.b );
-                const std::size_t h4 = std::hash<float>{ }( key.Color.a );
-                const std::size_t h5 = std::hash<void *>{ }( key.Texture );
-                return h1 ^ h2 << 1 ^ h3 << 2 ^ h4 << 3 ^ h5 << 4;
-            }
-        };
-
-        std::unordered_map<MaterialKey, uint32_t, MaterialKeyHash> m_materialCache;
-
-        uint32_t m_nextMaterialId = 0;
-        uint32_t m_nextQuadId     = 0;
-        bool     m_needsClear     = true;
+        uint32_t m_nextQuadId = 0;
+        bool     m_needsClear = true;
 
         uint32_t m_currentFrameQuadIndex = 0;
         uint32_t m_currentFrameIndex     = 0;
@@ -113,8 +87,8 @@ namespace DenOfIz
         uint64_t          GetShapeHash( const Clay_BoundingBox &bounds, const Clay_RectangleRenderData &data ) const;
         void              CreateVectorShape( const Clay_BoundingBox &bounds, const Clay_RectangleRenderData &data, ThorVGCanvas &canvas ) const;
 
-        uint32_t GetOrCreateMaterial( const Clay_Color &color, ITextureResource *texture = nullptr );
-        uint32_t GetOrCreateQuad( const Clay_BoundingBox &bounds, uint32_t materialId );
+        uint32_t GetOrRegisterTexture( ITextureResource *texture );
+        void     AddQuad( const Clay_BoundingBox &bounds, const Clay_Color &color, uint32_t textureIndex );
     };
 
 } // namespace DenOfIz

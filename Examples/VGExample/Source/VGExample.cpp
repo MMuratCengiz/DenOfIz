@@ -50,7 +50,7 @@ void VGExample::Init( )
     InitializeRenderers( );
     LoadSvgTextures( );
     CreateStarTexture( );
-    InitializeMaterials( );
+    RegisterTextures( );
 
     m_animationTime = 0.0f;
     m_rotationAngle = 0.0f;
@@ -86,7 +86,8 @@ void VGExample::Update( )
     starDesc.QuadId         = 3;
     starDesc.Position       = { 850.0f, 150.0f };
     starDesc.Size           = { 256.0f, 256.0f };
-    starDesc.MaterialId     = m_starMaterialId;
+    starDesc.TextureIndex   = m_starTextureIndex;
+    starDesc.Color          = { 1.0f, 1.0f, 1.0f, 1.0f };
     starDesc.Scale          = { 1.0f, 1.0f };
     starDesc.Rotation       = m_rotationAngle;
     starDesc.RotationCenter = { 128.0f, 128.0f };
@@ -277,46 +278,25 @@ void VGExample::CreateStarTexture( )
     batchCopy.Submit( );
 }
 
-void VGExample::InitializeMaterials( )
+void VGExample::RegisterTextures( )
 {
     DZ_RETURN_IF( !m_folderTexture );
     DZ_RETURN_IF( !m_milkTeaTexture );
     DZ_RETURN_IF( !m_starTexture );
 
-    m_redMaterialId = 0;
-    QuadMaterialDesc redMaterial;
-    redMaterial.MaterialId = m_redMaterialId;
-    redMaterial.Color      = { 1.0f, 0.0f, 0.0f, 1.0f };
-    m_quadRenderer->AddMaterial( redMaterial );
-
-    m_folderMaterialId = 1;
-    QuadMaterialDesc folderMaterial;
-    folderMaterial.MaterialId = m_folderMaterialId;
-    folderMaterial.Texture    = m_folderTexture.get( );
-    m_quadRenderer->AddMaterial( folderMaterial );
-
-    m_milkTeaMaterialId = 2;
-    QuadMaterialDesc milkTeaMaterial;
-    milkTeaMaterial.MaterialId = m_milkTeaMaterialId;
-    milkTeaMaterial.Texture    = m_milkTeaTexture.get( );
-    milkTeaMaterial.Color      = { 1.0f, 1.0f, 1.0f, 1.0f };
-    m_quadRenderer->AddMaterial( milkTeaMaterial );
-
-    m_starMaterialId = 3;
-    QuadMaterialDesc starMaterial;
-    starMaterial.MaterialId = m_starMaterialId;
-    starMaterial.Texture    = m_starTexture.get( );
-    starMaterial.Color      = { 1.0f, 1.0f, 1.0f, 1.0f };
-    m_quadRenderer->AddMaterial( starMaterial );
+    m_folderTextureIndex  = m_quadRenderer->RegisterTexture( m_folderTexture.get( ) );
+    m_milkTeaTextureIndex = m_quadRenderer->RegisterTexture( m_milkTeaTexture.get( ) );
+    m_starTextureIndex    = m_quadRenderer->RegisterTexture( m_starTexture.get( ) );
 }
 
 void VGExample::AddQuads( ) const
 {
     QuadDataDesc rectDesc;
-    rectDesc.QuadId     = 0;
-    rectDesc.Position   = { 50.0f, 50.0f };
-    rectDesc.Size       = { 80.0f, 60.0f };
-    rectDesc.MaterialId = m_redMaterialId;
+    rectDesc.QuadId       = 0;
+    rectDesc.Position     = { 50.0f, 50.0f };
+    rectDesc.Size         = { 80.0f, 60.0f };
+    rectDesc.TextureIndex = 0; // No texture (null texture)
+    rectDesc.Color        = { 1.0f, 0.0f, 0.0f, 1.0f }; // Red color
     m_quadRenderer->AddQuad( rectDesc );
 
     QuadDataDesc folderDesc;
@@ -324,24 +304,27 @@ void VGExample::AddQuads( ) const
     folderDesc.Position       = { 50.0f, 350.0f };
     folderDesc.Size           = { 128.0f, 128.0f };
     folderDesc.Scale          = { 1.0f, 1.0f };
-    folderDesc.MaterialId     = m_folderMaterialId;
+    folderDesc.TextureIndex   = m_folderTextureIndex;
+    folderDesc.Color          = { 1.0f, 1.0f, 1.0f, 1.0f }; // White (no tint)
     folderDesc.Rotation       = 0.0f;
     folderDesc.RotationCenter = { 64.0f, 64.0f };
     m_quadRenderer->AddQuad( folderDesc );
 
     QuadDataDesc milkTeaDesc;
-    milkTeaDesc.QuadId     = 2;
-    milkTeaDesc.Position   = { 450.0f, 350.0f };
-    milkTeaDesc.Size       = { 1024.0f, 1024.0f };
-    milkTeaDesc.MaterialId = m_milkTeaMaterialId;
-    milkTeaDesc.Scale      = { 0.3f, 0.3f };
+    milkTeaDesc.QuadId       = 2;
+    milkTeaDesc.Position     = { 450.0f, 350.0f };
+    milkTeaDesc.Size         = { 1024.0f, 1024.0f };
+    milkTeaDesc.TextureIndex = m_milkTeaTextureIndex;
+    milkTeaDesc.Color        = { 1.0f, 1.0f, 1.0f, 1.0f }; // White (no tint)
+    milkTeaDesc.Scale        = { 0.3f, 0.3f };
     m_quadRenderer->AddQuad( milkTeaDesc );
 
     QuadDataDesc starDesc;
     starDesc.QuadId         = 3;
     starDesc.Position       = { 850.0f, 150.0f };
     starDesc.Size           = { 256.0f, 256.0f };
-    starDesc.MaterialId     = m_starMaterialId;
+    starDesc.TextureIndex   = m_starTextureIndex;
+    starDesc.Color          = { 1.0f, 1.0f, 1.0f, 1.0f }; // White (no tint)
     starDesc.Scale          = { 1.0f, 1.0f };
     starDesc.Rotation       = 0.0f;
     starDesc.RotationCenter = { 128.0f, 128.0f };

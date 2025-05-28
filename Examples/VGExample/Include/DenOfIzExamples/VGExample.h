@@ -51,10 +51,9 @@ namespace DenOfIz
         std::vector<std::unique_ptr<BinaryReader>>       m_textureReaders;
         std::vector<std::unique_ptr<TextureAssetReader>> m_assetReaders;
 
-        uint32_t m_redMaterialId     = 0;
-        uint32_t m_folderMaterialId  = 0;
-        uint32_t m_milkTeaMaterialId = 0;
-        uint32_t m_starMaterialId    = 0;
+        uint32_t m_folderTextureIndex  = 0;
+        uint32_t m_milkTeaTextureIndex = 0;
+        uint32_t m_starTextureIndex    = 0;
 
         uint32_t m_folderQuadIndex  = 0;
         uint32_t m_milkTeaQuadIndex = 0;
@@ -90,7 +89,7 @@ namespace DenOfIz
         void UpdateProjectionMatrix( );
         void InitializeRenderers( );
         void LoadSvgTextures( );
-        void InitializeMaterials( );
+        void RegisterTextures( );
         void CreateStarTexture( );
 
         void AddQuads( ) const;
