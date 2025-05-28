@@ -34,6 +34,20 @@ bool ShaderReflectionHelper::IsBindingLocalTo( const RayTracingShaderDesc &rayTr
     return false;
 }
 
+bool ShaderReflectionHelper::IsBindingBindless( const BindlessDesc &bindlessDesc, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc )
+{
+    const auto &bindings = bindlessDesc.BindlessSlots;
+    for ( int i = 0; i < bindings.NumElements( ); ++i )
+    {
+        if ( auto &element = bindings.GetElement( i ); element.Binding == shaderInputBindDesc.BindPoint && element.RegisterSpace == shaderInputBindDesc.Space &&
+                                                       element.Type == DxcEnumConverter::ReflectTypeToBufferBindingType( shaderInputBindDesc.Type ) )
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void ShaderReflectionHelper::FillTypeInfo( ID3D12ShaderReflectionType *reflType, InteropArray<ReflectionResourceField> &fields, const uint32_t parentIndex, const uint32_t level )
 {
     D3D12_SHADER_TYPE_DESC typeDesc;

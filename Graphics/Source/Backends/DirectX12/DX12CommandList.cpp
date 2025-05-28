@@ -135,6 +135,7 @@ void DX12CommandList::BindPipeline( IPipeline *pipeline )
     }
 }
 
+// TODO If BindVertex buffer is called before BindPipeline we might read the wrong stride
 void DX12CommandList::BindVertexBuffer( IBufferResource *buffer, uint64_t offset )
 {
     DZ_NOT_NULL( buffer );

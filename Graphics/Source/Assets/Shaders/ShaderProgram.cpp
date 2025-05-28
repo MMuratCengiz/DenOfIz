@@ -410,6 +410,8 @@ void ShaderProgram::ProcessInputBindingDesc( const ReflectionState &state, const
         resourceBindings = &state.LocalRootSignature->ResourceBindings;
     }
 
+    const bool isBindless = ShaderReflectionHelper::IsBindingBindless( state.ShaderDesc->Bindless, shaderInputBindDesc );
+
     ResourceBindingDesc &resourceBindingDesc = resourceBindings->EmplaceElement( );
     resourceBindingDesc.Name                 = shaderInputBindDesc.Name;
     resourceBindingDesc.Binding              = shaderInputBindDesc.BindPoint;
@@ -418,6 +420,7 @@ void ShaderProgram::ProcessInputBindingDesc( const ReflectionState &state, const
     resourceBindingDesc.BindingType          = bindingType;
     resourceBindingDesc.Descriptor           = DxcEnumConverter::ReflectTypeToRootSignatureType( shaderInputBindDesc.Type, shaderInputBindDesc.Dimension );
     resourceBindingDesc.Stages.AddElement( state.ShaderDesc->Stage );
+    resourceBindingDesc.IsBindless           = isBindless;
     ShaderReflectionHelper::FillReflectionData( state.ShaderReflection, state.FunctionReflection, resourceBindingDesc.Reflection, resourceIndex );
 }
 

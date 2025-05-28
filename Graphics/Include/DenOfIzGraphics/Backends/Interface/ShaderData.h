@@ -107,6 +107,13 @@ namespace DenOfIz
         void MarkSamplerAsLocal( uint32_t binding, uint32_t registerSpace );
     };
 
+    struct DZ_API BindlessDesc
+    {
+        InteropArray<ResourceBindingSlot> BindlessSlots;
+
+        void MarkSrvAsBindless( uint32_t binding, uint32_t registerSpace );
+    };
+
     enum class DZ_API CodePage
     {
         ACP, // ANSI, detects UTF8 with BOM
@@ -126,6 +133,7 @@ namespace DenOfIz
         InteropString               EntryPoint = "main";
         /// \brief Only available for Raygen, Miss and Hit shaders(Intersection, ClosestHit, AnyHit)
         RayTracingShaderDesc RayTracing;
+        BindlessDesc         Bindless;
     };
     template class DZ_API InteropArray<ShaderStageDesc>;
 

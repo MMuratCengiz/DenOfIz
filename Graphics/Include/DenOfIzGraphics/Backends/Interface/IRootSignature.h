@@ -51,6 +51,7 @@ namespace DenOfIz
         InteropArray<ShaderStage>  Stages;
         int                        ArraySize = 1; // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
         ReflectionDesc             Reflection{ };
+        bool                       IsBindless = false;
     };
     DZ_API InteropArray<ResourceBindingDesc> SortResourceBindings( const InteropArray<ResourceBindingDesc> &bindings );
 
