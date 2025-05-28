@@ -28,7 +28,6 @@ find_package(miniz CONFIG REQUIRED)
 find_package(tinyxml2 CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb_image.h")
 find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
-find_path(EARCUT_HPP_INCLUDE_DIRS "mapbox/earcut.hpp")
 
 find_package(PkgConfig)
 pkg_check_modules(thorvg REQUIRED IMPORTED_TARGET thorvg)
@@ -291,7 +290,6 @@ target_include_directories(DenOfIzGraphics
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/include> $<INSTALL_INTERFACE:_ThirdParty/MetalShaderConverter/include>
         $<BUILD_INTERFACE:${OZZ_ANIMATION_INCLUDE_DIR}> $<INSTALL_INTERFACE:_ThirdParty/ozz-animation/include>
         $<BUILD_INTERFACE:${MSDF_ATLAS_GEN_INCLUDE_DIR}> $<INSTALL_INTERFACE:_ThirdParty/msdf-atlas-gen>
-        ${EARCUT_HPP_INCLUDE_DIRS}
         ${STB_INCLUDE_DIRS}
 )
 

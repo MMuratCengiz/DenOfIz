@@ -1,10 +1,10 @@
+#define CLAY_IMPLEMENTATION
+#include "clay.h"
+
 #include <DenOfIzGraphics/UI/Clay.h>
 #include <cstring>
 #include <glog/logging.h>
 #include <unordered_map>
-
-#define CLAY_IMPLEMENTATION
-#include "clay.h"
 
 using namespace DenOfIz;
 

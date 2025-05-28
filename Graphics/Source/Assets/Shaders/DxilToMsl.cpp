@@ -106,7 +106,7 @@ bool IsResourceAlreadyProcessed( const std::vector<D3D12_SHADER_INPUT_BIND_DESC>
     return false;
 }
 
-IRDescriptorRange1 CreateDescriptorRange( const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, bool isBindless = false )
+IRDescriptorRange1 CreateDescriptorRange( const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, bool isBindless = false, uint32_t maxArraySize = 0 )
 {
     IRDescriptorRange1 descriptorRange                = { };
     descriptorRange.BaseShaderRegister                = shaderInputBindDesc.BindPoint;
@@ -118,7 +118,7 @@ IRDescriptorRange1 CreateDescriptorRange( const D3D12_SHADER_INPUT_BIND_DESC &sh
     if ( isBindless )
     {
         descriptorRange.Flags          = IRDescriptorRangeFlagDescriptorsVolatile;
-        descriptorRange.NumDescriptors = UINT_MAX;
+        descriptorRange.NumDescriptors = maxArraySize;
     }
     else
     {
@@ -238,8 +238,9 @@ InteropArray<InteropArray<Byte>> DxilToMsl::Convert( const DxilToMslDesc &desc )
                 return;
             }
             processedInputs.push_back( shaderInputBindDesc );
-            const bool isLocal    = ShaderReflectionHelper::IsBindingLocalTo( dxilShader->RayTracing, shaderInputBindDesc );
-            const bool isBindless = ShaderReflectionHelper::IsBindingBindless( shaderDesc.Bindless, shaderInputBindDesc );
+            const bool          isLocal      = ShaderReflectionHelper::IsBindingLocalTo( dxilShader->RayTracing, shaderInputBindDesc );
+            const bool          isBindless   = ShaderReflectionHelper::IsBindingBindless( shaderDesc.Bindless, shaderInputBindDesc );
+            const BindlessSlot *bindlessSlot = isBindless ? ShaderReflectionHelper::GetBindlessSlot( shaderDesc.Bindless, shaderInputBindDesc ) : nullptr;
             if ( isLocal )
             {
                 ContainerUtilities::EnsureSize( localRegisterSpaceRanges, shaderInputBindDesc.Space );
@@ -286,7 +287,8 @@ InteropArray<InteropArray<Byte>> DxilToMsl::Convert( const DxilToMslDesc &desc )
             }
             else
             {
-                const IRDescriptorRange1 descriptorRange = CreateDescriptorRange( shaderInputBindDesc, isBindless );
+                const uint32_t           maxArraySize    = bindlessSlot ? bindlessSlot->MaxArraySize : 0;
+                const IRDescriptorRange1 descriptorRange = CreateDescriptorRange( shaderInputBindDesc, isBindless, maxArraySize );
                 if ( isBindless )
                 {
                     registerSpaceRange.HasBindlessResources = true;

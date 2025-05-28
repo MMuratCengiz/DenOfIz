@@ -60,6 +60,7 @@ namespace DenOfIz
         id<MTLBuffer>                        m_indexBuffer;
         MTLIndexType                         m_indexType;
         uint64_t                             m_currentBufferOffset = 0;
+        uint64_t                             m_indexBufferOffset   = 0;
         std::unique_ptr<MetalArgumentBuffer> m_argumentBuffer;
         MetalRootSignature                  *m_rootSignature;
         MetalPipeline                       *m_pipeline;

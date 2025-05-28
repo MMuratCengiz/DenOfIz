@@ -181,8 +181,8 @@ void MetalCommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType
         break;
     }
 
-    m_indexBuffer = static_cast<MetalBufferResource *>( buffer )->Instance( );
-    m_currentBufferOffset = offset;
+    m_indexBuffer       = static_cast<MetalBufferResource *>( buffer )->Instance( );
+    m_indexBufferOffset = offset;
 }
 
 void MetalCommandList::BindViewport( float x, float y, float width, float height )
@@ -238,7 +238,7 @@ void MetalCommandList::ProcessBindGroup( const MetalResourceBindGroup *metalBind
     {
         return;
     }
-
+    
     if ( m_rootSignature == nullptr || m_rootSignature != metalBindGroup->RootSignature( ) )
     {
         m_rootSignature       = metalBindGroup->RootSignature( );
@@ -259,13 +259,13 @@ void MetalCommandList::ProcessBindGroup( const MetalResourceBindGroup *metalBind
     }
 
     const MetalDescriptorTableBinding *cbvSrvUavTable = metalBindGroup->CbvSrvUavTable( );
-    if ( cbvSrvUavTable != nullptr && cbvSrvUavTable->NumEntries > 0 )
+    if ( cbvSrvUavTable != nullptr )
     {
         m_argumentBuffer->EncodeAddress( addressesOffset, cbvSrvUavTable->TLABOffset, cbvSrvUavTable->Table.Buffer( ).gpuAddress );
         UseResource( cbvSrvUavTable->Table.Buffer( ) );
     }
     const MetalDescriptorTableBinding *samplerTable = metalBindGroup->SamplerTable( );
-    if ( samplerTable != nullptr && samplerTable->NumEntries > 0 )
+    if ( samplerTable != nullptr )
     {
         m_argumentBuffer->EncodeAddress( addressesOffset, samplerTable->TLABOffset, samplerTable->Table.Buffer( ).gpuAddress );
         UseResource( samplerTable->Table.Buffer( ) );
@@ -299,13 +299,11 @@ void MetalCommandList::DrawIndexed( uint32_t indexCount, uint32_t instanceCount,
     }
     SwitchEncoder( MetalEncoderType::Render );
     BindCommandResources( );
-    // Add buffer offset to the firstIndex parameter (need to adjust based on index type)
-    uint32_t adjustedFirstIndex = firstIndex;
-    if (m_currentBufferOffset > 0)
-    {
-        adjustedFirstIndex += static_cast<uint32_t>(m_currentBufferOffset / (m_indexType == MTLIndexTypeUInt16 ? 2 : 4));
-    }
-    IRRuntimeDrawIndexedPrimitives( m_renderEncoder, MTLPrimitiveTypeTriangle, indexCount, m_indexType, m_indexBuffer, adjustedFirstIndex, instanceCount, vertexOffset, firstInstance );
+
+    uint64_t indexSize = (m_indexType == MTLIndexTypeUInt16) ? 2 : 4;
+    uint64_t totalByteOffset = m_indexBufferOffset + (firstIndex * indexSize);
+
+    IRRuntimeDrawIndexedPrimitives( m_renderEncoder, MTLPrimitiveTypeTriangle, indexCount, m_indexType, m_indexBuffer, totalByteOffset, instanceCount, vertexOffset, firstInstance );
     TopLevelArgumentBufferNextOffset( );
 }
 

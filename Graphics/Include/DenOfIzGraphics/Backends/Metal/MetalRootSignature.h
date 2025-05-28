@@ -77,6 +77,7 @@ namespace DenOfIz
         [[nodiscard]] const uint32_t                       &NumRootConstantBytes( ) const;
         [[nodiscard]] const std::vector<MetalRootConstant> &RootConstants( ) const;
         const uint32_t                                      CbvSrvUavTableOffset( uint32_t registerSpace ) const;
+        const uint32_t                                      CbvSrvUavTableSize( uint32_t registerSpace ) const;
         const uint32_t                                      CbvSrvUavResourceIndex( const ResourceBindingSlot &slot ) const;
         const MTLRenderStages                               CbvSrvUavResourceShaderStages( const ResourceBindingSlot &slot ) const;
         const uint32_t                                      SamplerTableOffset( uint32_t registerSpace ) const;

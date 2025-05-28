@@ -48,6 +48,20 @@ bool ShaderReflectionHelper::IsBindingBindless( const BindlessDesc &bindlessDesc
     return false;
 }
 
+const BindlessSlot* ShaderReflectionHelper::GetBindlessSlot( const BindlessDesc &bindlessDesc, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc )
+{
+    const auto &bindings = bindlessDesc.BindlessArrays;
+    for ( int i = 0; i < bindings.NumElements( ); ++i )
+    {
+        if ( auto &element = bindings.GetElement( i ); element.Binding == shaderInputBindDesc.BindPoint && element.RegisterSpace == shaderInputBindDesc.Space &&
+                                                       element.Type == DxcEnumConverter::ReflectTypeToBufferBindingType( shaderInputBindDesc.Type ) )
+        {
+            return &element;
+        }
+    }
+    return nullptr;
+}
+
 void ShaderReflectionHelper::FillTypeInfo( ID3D12ShaderReflectionType *reflType, InteropArray<ReflectionResourceField> &fields, const uint32_t parentIndex, const uint32_t level )
 {
     D3D12_SHADER_TYPE_DESC typeDesc;
