@@ -889,7 +889,6 @@ void ClayRenderer::AddVerticesWithDepth( const InteropArray<UIVertex> &vertices,
     m_currentDepth += DEPTH_INCREMENT;
 }
 
-// ReSharper disable once CppDFAUnreachableCode
 void ClayRenderer::FlushCurrentBatch( )
 {
     // ReSharper disable once CppDFAConstantConditions
@@ -898,6 +897,7 @@ void ClayRenderer::FlushCurrentBatch( )
         return;
     }
 
+    // ReSharper disable once CppDFAUnreachableCode
     constexpr uint32_t vertexAlignment = 256 / sizeof( UIVertex );
     constexpr uint32_t indexAlignment  = 256 / sizeof( uint32_t );
 
