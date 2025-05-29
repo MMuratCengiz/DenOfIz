@@ -195,11 +195,11 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
 
     // Smaller text
     TextRenderDesc smallParams;
-    smallParams.Text     = "Small Text - (0123456789) The quick brown fox jumps over the lazy dog";
+    smallParams.Text     = "Learn Text - (0123456789) The quick brown fox jumps over the lazy dog";
     smallParams.X        = 50.0f;
     smallParams.Y        = 250.0f + verticalOffset;
     smallParams.Color    = { 1.0f, 1.0f, 1.0f, 1.0f };
-    smallParams.FontSize = 18;
+    smallParams.FontSize = 14;
     m_textRenderer->AddText( smallParams );
     m_textRenderer->EndBatch( commandList );
 
