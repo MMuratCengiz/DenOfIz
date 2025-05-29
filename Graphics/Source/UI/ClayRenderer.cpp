@@ -132,16 +132,15 @@ void ClayRenderer::CreatePipeline( )
     pipelineDesc.Graphics.DepthTest.Write              = true;
     pipelineDesc.Graphics.DepthStencilAttachmentFormat = Format::D32Float;
 
-    RenderTargetDesc &renderTarget           = pipelineDesc.Graphics.RenderTargets.EmplaceElement( );
-    renderTarget.Format                      = m_desc.RenderTargetFormat;
-    renderTarget.Blend.Enable                = true;
-    renderTarget.Blend.SrcBlend              = Blend::SrcAlpha;
-    renderTarget.Blend.DstBlend              = Blend::InvSrcAlpha;
-    renderTarget.Blend.BlendOp               = BlendOp::Add;
-    renderTarget.Blend.SrcBlendAlpha         = Blend::One;
-    renderTarget.Blend.DstBlendAlpha         = Blend::InvSrcAlpha;
-    renderTarget.Blend.BlendOpAlpha          = BlendOp::Add;
-    renderTarget.Blend.RenderTargetWriteMask = 0x0F; // All channels
+    RenderTargetDesc &renderTarget   = pipelineDesc.Graphics.RenderTargets.EmplaceElement( );
+    renderTarget.Format              = m_desc.RenderTargetFormat;
+    renderTarget.Blend.Enable        = true;
+    renderTarget.Blend.SrcBlend      = Blend::SrcAlpha;
+    renderTarget.Blend.DstBlend      = Blend::InvSrcAlpha;
+    renderTarget.Blend.BlendOp       = BlendOp::Add;
+    renderTarget.Blend.SrcBlendAlpha = Blend::One;
+    renderTarget.Blend.DstBlendAlpha = Blend::InvSrcAlpha;
+    renderTarget.Blend.BlendOpAlpha  = BlendOp::Add;
 
     m_pipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 }
@@ -442,7 +441,7 @@ void ClayRenderer::ProcessRenderCommand( const Clay_RenderCommand *command, ICom
         break;
 
     case CLAY_RENDER_COMMAND_TYPE_IMAGE:
-        RenderImage( command, commandList );
+        RenderImage( command );
         break;
 
     case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:
@@ -553,7 +552,6 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
         ShapeTextDesc shapeDesc{ };
         shapeDesc.Text      = InteropString( data.stringContents.chars, data.stringContents.length );
         shapeDesc.FontSize  = static_cast<uint32_t>( targetSize );
-        shapeDesc.Direction = TextDirection::LeftToRight;
 
         newLayout->ShapeText( shapeDesc );
         textLayout                   = newLayout.get( );
@@ -601,7 +599,7 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
     }
 }
 
-void ClayRenderer::RenderImage( const Clay_RenderCommand *command, ICommandList *commandList )
+void ClayRenderer::RenderImage( const Clay_RenderCommand *command )
 {
     const auto &data   = command->renderData.image;
     const auto &bounds = command->boundingBox;

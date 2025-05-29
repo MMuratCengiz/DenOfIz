@@ -204,7 +204,7 @@ namespace DenOfIz
         void RenderRectangle( const Clay_RenderCommand *command, ICommandList *commandList );
         void RenderBorder( const Clay_RenderCommand *command, ICommandList *commandList );
         void RenderText( const Clay_RenderCommand *command, ICommandList *commandList );
-        void RenderImage( const Clay_RenderCommand *command, ICommandList *commandList );
+        void RenderImage( const Clay_RenderCommand *command );
         void SetScissor( const Clay_RenderCommand *command );
         void ClearScissor( );
 
