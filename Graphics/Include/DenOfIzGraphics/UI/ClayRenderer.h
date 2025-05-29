@@ -57,6 +57,17 @@ namespace DenOfIz
 
     class ClayRenderer
     {
+    public:
+        struct FontData
+        {
+            Font                                    *FontPtr = nullptr;
+            std::unique_ptr<ITextureResource>        Atlas;
+            uint32_t                                 TextureIndex = 0;
+            std::vector<std::unique_ptr<TextLayout>> TextLayouts;
+            uint32_t                                 CurrentLayoutIndex = 0;
+        };
+
+    private:
         struct UIUniforms
         {
             XMFLOAT4X4 Projection;
@@ -97,33 +108,39 @@ namespace DenOfIz
         InteropArray<uint32_t> m_batchedIndices;
         float                  m_currentDepth  = 0.9f;
         static constexpr float DEPTH_INCREMENT = -0.0001f;
+        struct ScissorState
+        {
+            bool  Enabled = false;
+            float X       = 0;
+            float Y       = 0;
+            float Width   = 0;
+            float Height  = 0;
+        };
+        struct DrawBatch
+        {
+            uint32_t     VertexOffset;
+            uint32_t     IndexOffset;
+            uint32_t     IndexCount;
+            ScissorState Scissor;
+        };
+        std::vector<DrawBatch> m_drawBatches;
+        uint32_t               m_totalVertexCount = 0;
+        uint32_t               m_totalIndexCount  = 0;
 
         std::unique_ptr<IBufferResource> m_uniformBuffer;
         UIUniforms                      *m_uniformBufferData  = nullptr;
         uint32_t                         m_alignedUniformSize = 0;
 
-        struct FontData
-        {
-            Font                                    *FontPtr = nullptr;
-            std::unique_ptr<ITextureResource>        Atlas;
-            uint32_t                                 TextureIndex = 0;
-            std::vector<std::unique_ptr<TextLayout>> TextLayouts;
-            uint32_t                                 CurrentLayoutIndex = 0;
-        };
         std::unordered_map<uint16_t, FontData> m_fonts;
 
-        struct TextCacheKey
+        struct TextCacheKey : ShapeTextDesc
         {
-            std::string   Text;
-            uint16_t      FontId;
-            uint32_t      FontSize;
-            TextDirection Direction;
-            UInt32_4      ScriptTag;
+            uint16_t FontId;
 
             bool operator==( const TextCacheKey &other ) const
             {
-                return Text == other.Text && FontId == other.FontId && FontSize == other.FontSize && Direction == other.Direction && ScriptTag.X == other.ScriptTag.X &&
-                       ScriptTag.Y == other.ScriptTag.Y && ScriptTag.Z == other.ScriptTag.Z && ScriptTag.W == other.ScriptTag.W;
+                return strcmp( Text.Get( ), other.Text.Get( ) ) == 0 && FontId == other.FontId && FontSize == other.FontSize && Direction == other.Direction &&
+                       HbScriptTag.X == other.HbScriptTag.X && HbScriptTag.Y == other.HbScriptTag.Y && HbScriptTag.Z == other.HbScriptTag.Z && HbScriptTag.W == other.HbScriptTag.W;
             }
         };
 
@@ -131,11 +148,11 @@ namespace DenOfIz
         {
             std::size_t operator( )( const TextCacheKey &key ) const
             {
-                const std::size_t h1 = std::hash<std::string>{ }( key.Text );
+                const std::size_t h1 = std::hash<std::string>{ }( key.Text.Get( ) );
                 const std::size_t h2 = std::hash<uint16_t>{ }( key.FontId );
                 const std::size_t h3 = std::hash<uint32_t>{ }( key.FontSize );
                 const std::size_t h4 = std::hash<int>{ }( static_cast<int>( key.Direction ) );
-                const std::size_t h5 = std::hash<uint32_t>{ }( key.ScriptTag.X );
+                const std::size_t h5 = std::hash<uint32_t>{ }( key.HbScriptTag.X );
                 return h1 ^ h2 << 1 ^ h3 << 2 ^ h4 << 3 ^ h5 << 4;
             }
         };
@@ -154,14 +171,6 @@ namespace DenOfIz
         float      m_dpiScale       = 1.0f;
         XMFLOAT4X4 m_projectionMatrix;
 
-        struct ScissorState
-        {
-            bool  Enabled = false;
-            float X       = 0;
-            float Y       = 0;
-            float Width   = 0;
-            float Height  = 0;
-        };
         std::vector<ScissorState> m_scissorStack;
         std::unique_ptr<ISampler> m_linearSampler;
         ResourceTracking          m_resourceTracking;
@@ -196,11 +205,13 @@ namespace DenOfIz
         void RenderBorder( const Clay_RenderCommand *command, ICommandList *commandList );
         void RenderText( const Clay_RenderCommand *command, ICommandList *commandList );
         void RenderImage( const Clay_RenderCommand *command, ICommandList *commandList );
-        void SetScissor( const Clay_RenderCommand *command, ICommandList *commandList );
-        void ClearScissor( ICommandList *commandList );
+        void SetScissor( const Clay_RenderCommand *command );
+        void ClearScissor( );
 
         void AddVerticesWithDepth( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices );
         void FlushBatchedGeometry( ICommandList *commandList );
+        void FlushCurrentBatch( );                            // Flush current batch to buffers
+        void ExecuteDrawBatches( ICommandList *commandList ) const; // Execute all batched draw calls
 
         uint32_t RegisterTexture( ITextureResource *texture );
         void     UpdateTextureBindings( uint32_t frameIndex ) const;

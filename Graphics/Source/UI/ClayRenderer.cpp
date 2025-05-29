@@ -360,6 +360,12 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
         m_texturesDirty = false;
     }
 
+    // Clear batches from previous frame
+    m_drawBatches.clear( );
+    m_totalVertexCount = 0;
+    m_totalIndexCount  = 0;
+    m_currentDepth     = 0.9f;
+
     // Generate vertices
     for ( size_t i = 0; i < commands.length; ++i )
     {
@@ -440,11 +446,11 @@ void ClayRenderer::ProcessRenderCommand( const Clay_RenderCommand *command, ICom
         break;
 
     case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:
-        SetScissor( command, commandList );
+        SetScissor( command );
         break;
 
     case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END:
-        ClearScissor( commandList );
+        ClearScissor( );
         break;
 
     default:
@@ -529,11 +535,9 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
     const float effectiveScale = targetSize / baseSize;
 
     TextCacheKey cacheKey;
-    cacheKey.Text      = std::string( data.stringContents.chars, data.stringContents.length );
-    cacheKey.FontId    = data.fontId;
-    cacheKey.FontSize  = static_cast<uint32_t>( targetSize );
-    cacheKey.Direction = TextDirection::Auto;
-    cacheKey.ScriptTag = UInt32_4{ 'L', 'a', 't', 'n' };
+    cacheKey.Text     = InteropString( data.stringContents.chars, data.stringContents.length );
+    cacheKey.FontId   = data.fontId;
+    cacheKey.FontSize = static_cast<uint32_t>( targetSize );
 
     TextLayout *textLayout = nullptr;
     auto        cacheIt    = m_textShapeCache.find( cacheKey );
@@ -549,7 +553,7 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
         ShapeTextDesc shapeDesc{ };
         shapeDesc.Text      = InteropString( data.stringContents.chars, data.stringContents.length );
         shapeDesc.FontSize  = static_cast<uint32_t>( targetSize );
-        shapeDesc.Direction = TextDirection::Auto;
+        shapeDesc.Direction = TextDirection::LeftToRight;
 
         newLayout->ShapeText( shapeDesc );
         textLayout                   = newLayout.get( );
@@ -630,8 +634,11 @@ void ClayRenderer::RenderImage( const Clay_RenderCommand *command, ICommandList 
     }
 }
 
-void ClayRenderer::SetScissor( const Clay_RenderCommand *command, ICommandList *commandList )
+void ClayRenderer::SetScissor( const Clay_RenderCommand *command )
 {
+    // Flush current batch before changing scissor
+    FlushCurrentBatch( );
+
     const auto &bounds = command->boundingBox;
 
     ScissorState state;
@@ -642,23 +649,14 @@ void ClayRenderer::SetScissor( const Clay_RenderCommand *command, ICommandList *
     state.Height  = bounds.height;
 
     m_scissorStack.push_back( state );
-    commandList->BindScissorRect( bounds.x, bounds.y, bounds.width, bounds.height );
 }
 
-void ClayRenderer::ClearScissor( ICommandList *commandList )
+void ClayRenderer::ClearScissor( )
 {
+    FlushCurrentBatch( );
     if ( !m_scissorStack.empty( ) )
     {
         m_scissorStack.pop_back( );
-    }
-    if ( m_scissorStack.empty( ) )
-    {
-        commandList->BindScissorRect( 0, 0, m_viewportWidth, m_viewportHeight );
-    }
-    else
-    {
-        const auto &state = m_scissorStack.back( );
-        commandList->BindScissorRect( state.X, state.Y, state.Width, state.Height );
     }
 }
 
@@ -891,31 +889,92 @@ void ClayRenderer::AddVerticesWithDepth( const InteropArray<UIVertex> &vertices,
     m_currentDepth += DEPTH_INCREMENT;
 }
 
-void ClayRenderer::FlushBatchedGeometry( ICommandList *commandList )
+// ReSharper disable once CppDFAUnreachableCode
+void ClayRenderer::FlushCurrentBatch( )
 {
+    // ReSharper disable once CppDFAConstantConditions
     if ( m_batchedVertices.NumElements( ) == 0 || m_batchedIndices.NumElements( ) == 0 )
     {
         return;
     }
 
+    constexpr uint32_t vertexAlignment = 256 / sizeof( UIVertex );
+    constexpr uint32_t indexAlignment  = 256 / sizeof( uint32_t );
+
+    const uint32_t alignedVertexOffset = ( m_totalVertexCount + vertexAlignment - 1 ) / vertexAlignment * vertexAlignment;
+    const uint32_t alignedIndexOffset  = ( m_totalIndexCount + indexAlignment - 1 ) / indexAlignment * indexAlignment;
+
     const size_t vertexDataSize = m_batchedVertices.NumElements( ) * sizeof( UIVertex );
     const size_t indexDataSize  = m_batchedIndices.NumElements( ) * sizeof( uint32_t );
 
-    if ( vertexDataSize <= m_desc.MaxVertices * sizeof( UIVertex ) && indexDataSize <= m_desc.MaxIndices * sizeof( uint32_t ) )
+    if ( ( alignedVertexOffset + m_batchedVertices.NumElements( ) ) * sizeof( UIVertex ) > m_desc.MaxVertices * sizeof( UIVertex ) ||
+         ( alignedIndexOffset + m_batchedIndices.NumElements( ) ) * sizeof( uint32_t ) > m_desc.MaxIndices * sizeof( uint32_t ) )
     {
-        memcpy( m_vertexBufferData, m_batchedVertices.Data( ), vertexDataSize );
-        memcpy( m_indexBufferData, m_batchedIndices.Data( ), indexDataSize );
+        LOG( ERROR ) << "ClayRenderer: Geometry exceeds buffer limits";
+        return;
+    }
 
-        commandList->BindVertexBuffer( m_vertexBuffer.get( ) );
-        commandList->BindIndexBuffer( m_indexBuffer.get( ), IndexType::Uint32 );
-        commandList->DrawIndexed( m_batchedIndices.NumElements( ), 1, 0, 0, 0 );
+    memcpy( m_vertexBufferData + alignedVertexOffset * sizeof( UIVertex ), m_batchedVertices.Data( ), vertexDataSize );
+
+    const auto indexDst = reinterpret_cast<uint32_t *>( m_indexBufferData + alignedIndexOffset * sizeof( uint32_t ) );
+    for ( uint32_t i = 0; i < m_batchedIndices.NumElements( ); ++i )
+    {
+        indexDst[ i ] = m_batchedIndices.GetElement( i ) + alignedVertexOffset;
+    }
+
+    DrawBatch batch;
+    batch.VertexOffset = alignedVertexOffset;
+    batch.IndexOffset  = alignedIndexOffset;
+    batch.IndexCount   = m_batchedIndices.NumElements( );
+
+    if ( !m_scissorStack.empty( ) )
+    {
+        batch.Scissor = m_scissorStack.back( );
     }
     else
     {
-        LOG( ERROR ) << "ClayRenderer: Batched geometry exceeds buffer limits";
+        batch.Scissor.Enabled = false;
+        batch.Scissor.X       = 0;
+        batch.Scissor.Y       = 0;
+        batch.Scissor.Width   = m_viewportWidth;
+        batch.Scissor.Height  = m_viewportHeight;
     }
+
+    m_drawBatches.push_back( batch );
+
+    m_totalVertexCount = alignedVertexOffset + m_batchedVertices.NumElements( );
+    m_totalIndexCount  = alignedIndexOffset + m_batchedIndices.NumElements( );
 
     m_batchedVertices.Clear( );
     m_batchedIndices.Clear( );
-    m_currentDepth = 0.9f;
+}
+
+void ClayRenderer::ExecuteDrawBatches( ICommandList *commandList ) const
+{
+    if ( m_drawBatches.empty( ) )
+    {
+        return;
+    }
+
+    commandList->BindVertexBuffer( m_vertexBuffer.get( ) );
+    commandList->BindIndexBuffer( m_indexBuffer.get( ), IndexType::Uint32 );
+
+    for ( const auto &batch : m_drawBatches )
+    {
+        if ( batch.Scissor.Enabled )
+        {
+            commandList->BindScissorRect( batch.Scissor.X, batch.Scissor.Y, batch.Scissor.Width, batch.Scissor.Height );
+        }
+        else
+        {
+            commandList->BindScissorRect( 0, 0, m_viewportWidth, m_viewportHeight );
+        }
+        commandList->DrawIndexed( batch.IndexCount, 1, batch.IndexOffset, 0, 0 );
+    }
+}
+
+void ClayRenderer::FlushBatchedGeometry( ICommandList *commandList )
+{
+    FlushCurrentBatch( );
+    ExecuteDrawBatches( commandList );
 }

@@ -146,7 +146,7 @@ void TextBatch::AddText( const AddTextDesc &desc )
             modifiedParams.Y -= textHeight / 2.0f;
         }
     }
-    // Clay provides Y coordinate as top of text area
+
     const float fontAscent = static_cast<float>( m_font->Asset( )->Metrics.Ascent ) * effectiveScale;
     const float adjustedY  = modifiedParams.Y + fontAscent;
 

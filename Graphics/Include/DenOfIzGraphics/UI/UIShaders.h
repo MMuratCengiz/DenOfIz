@@ -97,10 +97,10 @@ float4 main(PSInput input) : SV_TARGET
     {
         return input.Color;
     }
-    
+
     // Sample texture
     float4 texColor = Textures[NonUniformResourceIndex(input.TextureIndex - 1)].Sample(LinearSampler, input.TexCoord);
-    
+
     // For now, treat all non-zero textures as potential MSDF fonts
     // TODO: Better way to distinguish font textures from regular images
     if (input.TextureIndex > 0 && input.TextureIndex < 128)
@@ -108,17 +108,20 @@ float4 main(PSInput input) : SV_TARGET
         // MSDF text rendering
         float3 msdf = texColor.rgb;
         float sd = median(msdf.r, msdf.g, msdf.b);
-        
+
         // TODO: This assumes all font atlases are the same size, which may not be true
         // A better solution would be to store per-texture metadata
         float2 textureSize = FontParams.xy;
         float pxRange = FontParams.z;
-        
+
         float screenPxRangeValue = screenPxRange(input.TexCoord, pxRange, textureSize);
         float screenPxDistance = screenPxRangeValue * (sd - 0.5);
         float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
-        
-        opacity = opacity * texColor.a;
+
+        if (texColor.a <= 1.0)
+        {
+            opacity = opacity * texColor.a;
+        }
         return float4(input.Color.rgb, input.Color.a * opacity);
     }
     else
