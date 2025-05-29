@@ -61,6 +61,7 @@ namespace DenOfIz
         {
             XMFLOAT4X4 Projection;
             XMFLOAT4   ScreenSize; // xy: screen dimensions, zw: unused
+            XMFLOAT4   FontParams; // x: atlas width, y: atlas height, z: pixel range, w: unused
         };
 
         ClayRendererDesc m_desc;
@@ -143,6 +144,7 @@ namespace DenOfIz
 
         std::unordered_map<void *, uint32_t> m_imageTextureIndices;
         std::vector<ITextureResource *>      m_textures;
+        std::vector<bool>                    m_textureFontFlags; // true if texture is a font atlas
         std::unique_ptr<ITextureResource>    m_nullTexture;
         uint32_t                             m_nextTextureIndex = 1;
         bool                                 m_texturesDirty    = true;

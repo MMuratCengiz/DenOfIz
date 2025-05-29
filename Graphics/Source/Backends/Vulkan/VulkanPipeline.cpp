@@ -410,6 +410,10 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigureMeshPipeli
 [[nodiscard]] VkPipelineVertexInputStateCreateInfo VulkanPipeline::ConfigureVertexInputState( ) const
 {
     const auto                                *inputLayout          = dynamic_cast<VulkanInputLayout *>( m_desc.InputLayout );
+    if ( inputLayout == nullptr )
+    {
+        return VkPipelineVertexInputStateCreateInfo{ .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
+    }
     const VkPipelineVertexInputStateCreateInfo inputStateCreateInfo = inputLayout->GetVertexInputState( );
     return inputStateCreateInfo;
 }

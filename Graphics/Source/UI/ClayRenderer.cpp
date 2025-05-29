@@ -40,6 +40,7 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_l
     m_viewportHeight = desc.Height;
 
     m_textures.resize( desc.MaxTextures, nullptr );
+    m_textureFontFlags.resize( desc.MaxTextures, false );
 
     CommandQueueDesc commandQueueDesc{ };
     commandQueueDesc.QueueType = QueueType::Graphics;
@@ -176,13 +177,7 @@ void ClayRenderer::CreateBuffers( )
     m_uniformBufferData          = static_cast<UIUniforms *>( m_uniformBuffer->MapMemory( ) );
 
     SamplerDesc linearSamplerDesc{ };
-    linearSamplerDesc.MagFilter    = Filter::Linear;
-    linearSamplerDesc.MinFilter    = Filter::Linear;
-    linearSamplerDesc.MipmapMode   = MipmapMode::Linear;
-    linearSamplerDesc.AddressModeU = SamplerAddressMode::ClampToEdge;
-    linearSamplerDesc.AddressModeV = SamplerAddressMode::ClampToEdge;
-    linearSamplerDesc.AddressModeW = SamplerAddressMode::ClampToEdge;
-    m_linearSampler                = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( linearSamplerDesc ) );
+    m_linearSampler = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( SamplerDesc{ } ) );
 
     m_frameData.resize( m_desc.NumFrames );
 
@@ -337,6 +332,20 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
     UIUniforms tempUniforms;
     tempUniforms.Projection = m_projectionMatrix;
     tempUniforms.ScreenSize = XMFLOAT4( m_viewportWidth, m_viewportHeight, 0.0f, 0.0f );
+
+    float atlasWidth  = 512.0f;
+    float atlasHeight = 512.0f;
+    for ( const auto &fontData : m_fonts | std::views::values )
+    {
+        // Todo we're using first one for now
+        if ( fontData.FontPtr && fontData.FontPtr->Asset( ) )
+        {
+            atlasWidth  = static_cast<float>( fontData.FontPtr->Asset( )->AtlasWidth );
+            atlasHeight = static_cast<float>( fontData.FontPtr->Asset( )->AtlasHeight );
+            break;
+        }
+    }
+    tempUniforms.FontParams = XMFLOAT4( atlasWidth, atlasHeight, Font::MsdfPixelRange, 0.0f );
 
     uint8_t *uniformLocation = reinterpret_cast<uint8_t *>( m_uniformBufferData ) + frameIndex * m_alignedUniformSize;
     memcpy( uniformLocation, &tempUniforms, sizeof( UIUniforms ) );
@@ -516,7 +525,7 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
     }
 
     const float baseSize       = static_cast<float>( fontData->FontPtr->Asset( )->InitialFontSize );
-    const float targetSize     = data.fontSize > 0 ? data.fontSize : baseSize;
+    const float targetSize     = data.fontSize > 0 ? data.fontSize * m_dpiScale : baseSize;
     const float effectiveScale = targetSize / baseSize;
 
     TextCacheKey cacheKey;
@@ -548,20 +557,19 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
     }
 
     const float fontAscent = static_cast<float>( fontData->FontPtr->Asset( )->Metrics.Ascent ) * effectiveScale;
-    const float adjustedY  = bounds.y + fontAscent;
+    const float adjustedY  = bounds.y * m_dpiScale + fontAscent;
 
     InteropArray<GlyphVertex> glyphVertices;
     InteropArray<uint32_t>    glyphIndices;
 
     GenerateTextVerticesDesc generateDesc{ };
-    const float              bearingPadding = 2.0f * effectiveScale; // Same as TextBatch
-    generateDesc.StartPosition              = Float_2{ bounds.x + bearingPadding, adjustedY };
-    generateDesc.Color                      = Float_4{ data.textColor.r / 255.0f, data.textColor.g / 255.0f, data.textColor.b / 255.0f, data.textColor.a / 255.0f };
-    generateDesc.OutVertices                = &glyphVertices;
-    generateDesc.OutIndices                 = &glyphIndices;
-    generateDesc.Scale                      = effectiveScale;
-    generateDesc.LetterSpacing              = data.letterSpacing;
-    generateDesc.LineHeight                 = data.lineHeight;
+    generateDesc.StartPosition = Float_2{ bounds.x * m_dpiScale, adjustedY };
+    generateDesc.Color         = Float_4{ data.textColor.r / 255.0f, data.textColor.g / 255.0f, data.textColor.b / 255.0f, data.textColor.a / 255.0f };
+    generateDesc.OutVertices   = &glyphVertices;
+    generateDesc.OutIndices    = &glyphIndices;
+    generateDesc.Scale         = effectiveScale;
+    generateDesc.LetterSpacing = data.letterSpacing * m_dpiScale;
+    generateDesc.LineHeight    = data.lineHeight;
 
     textLayout->GenerateTextVertices( generateDesc );
     if ( glyphVertices.NumElements( ) > 0 && glyphIndices.NumElements( ) > 0 )
@@ -715,19 +723,17 @@ void ClayRenderer::InitializeFontAtlas( FontData *fontData )
         return;
     }
 
-    TextureDesc texDesc{ };
-    texDesc.Format     = Format::R8G8B8A8Unorm;
-    texDesc.Width      = fontAsset->AtlasWidth;
-    texDesc.Height     = fontAsset->AtlasHeight;
-    texDesc.Depth      = 1;
-    texDesc.ArraySize  = 1;
-    texDesc.MipLevels  = 1;
-    texDesc.Usages     = BitSet( ResourceUsage::ShaderResource );
-    texDesc.Descriptor = BitSet( ResourceDescriptor::Texture );
-    texDesc.HeapType   = HeapType::GPU;
-    texDesc.DebugName  = InteropString( "Font Atlas" );
+    TextureDesc textureDesc{ };
+    textureDesc.Width        = fontAsset->AtlasWidth;
+    textureDesc.Height       = fontAsset->AtlasHeight;
+    textureDesc.Format       = Format::R8G8B8A8Unorm;
+    textureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture );
+    textureDesc.Usages       = BitSet( ResourceUsage::ShaderResource );
+    textureDesc.InitialUsage = ResourceUsage::ShaderResource;
+    textureDesc.HeapType     = HeapType::GPU;
+    textureDesc.DebugName    = "Font Atlas Texture";
+    fontData->Atlas          = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
 
-    fontData->Atlas = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( texDesc ) );
     if ( fontAsset->AtlasData.NumElements( ) > 0 )
     {
         CommandQueueDesc commandQueueDesc{ };
@@ -753,15 +759,6 @@ void ClayRenderer::InitializeFontAtlas( FontData *fontData )
         stagingDesc.DebugName         = "Font MSDF Atlas Staging Buffer";
         stagingDesc.HeapType          = HeapType::CPU;
         auto m_fontAtlasStagingBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( stagingDesc ) );
-
-        TextureDesc textureDesc{ };
-        textureDesc.Width        = fontAsset->AtlasWidth;
-        textureDesc.Height       = fontAsset->AtlasHeight;
-        textureDesc.Format       = Format::R8G8B8A8Unorm;
-        textureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture );
-        textureDesc.InitialUsage = ResourceUsage::ShaderResource;
-        textureDesc.DebugName    = "Font MTSDF Atlas Texture";
-        fontData->Atlas          = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
 
         m_resourceTracking.TrackTexture( fontData->Atlas.get( ), ResourceUsage::ShaderResource );
         m_resourceTracking.TrackBuffer( m_fontAtlasStagingBuffer.get( ), ResourceUsage::CopySrc );
@@ -860,7 +857,7 @@ ClayDimensions ClayRenderer::MeasureText( const InteropString &text, const Clay_
     TextLayout           layout( layoutDesc );
 
     const float baseSize   = static_cast<float>( font->Asset( )->InitialFontSize );
-    const float targetSize = desc.fontSize > 0 ? desc.fontSize : baseSize;
+    const float targetSize = desc.fontSize > 0 ? desc.fontSize * m_dpiScale : baseSize;
 
     ShapeTextDesc shapeDesc{ };
     shapeDesc.Text      = text;
@@ -870,8 +867,8 @@ ClayDimensions ClayRenderer::MeasureText( const InteropString &text, const Clay_
     layout.ShapeText( shapeDesc );
 
     const auto size = layout.GetTextSize( );
-    result.Width    = size.X;
-    result.Height   = size.Y;
+    result.Width    = size.X / m_dpiScale;
+    result.Height   = size.Y / m_dpiScale;
 
     return result;
 }

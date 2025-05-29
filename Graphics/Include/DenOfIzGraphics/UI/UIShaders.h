@@ -43,6 +43,7 @@ cbuffer UIUniforms : register(b0, space0)
 {
     float4x4 Projection;
     float4 ScreenSize; // xy: screen dimensions, zw: unused
+    float4 FontParams; // x: atlas width, y: atlas height, z: pixel range, w: unused
 };
 
 VSOutput main(VSInput input)
@@ -69,6 +70,7 @@ cbuffer UIUniforms : register(b0, space0)
 {
     float4x4 Projection;
     float4 ScreenSize; // xy: screen dimensions, zw: unused
+    float4 FontParams; // x: atlas width, y: atlas height, z: pixel range, w: unused
 };
 
 // Space 1: Bindless texture array and sampler
@@ -99,27 +101,24 @@ float4 main(PSInput input) : SV_TARGET
     // Sample texture
     float4 texColor = Textures[NonUniformResourceIndex(input.TextureIndex - 1)].Sample(LinearSampler, input.TexCoord);
     
-    // Check if this is a font texture (MSDF) - fonts use texture indices 1-127, images use 128+
-    if (input.TextureIndex < 128)
+    // For now, treat all non-zero textures as potential MSDF fonts
+    // TODO: Better way to distinguish font textures from regular images
+    if (input.TextureIndex > 0 && input.TextureIndex < 128)
     {
         // MSDF text rendering
         float3 msdf = texColor.rgb;
         float sd = median(msdf.r, msdf.g, msdf.b);
         
-        // Approximate texture size from screen size (can be improved with per-texture data)
-        float2 textureSize = float2(512.0, 512.0); // Default atlas size
-        float pxRange = 12.0; // Default MSDF pixel range
+        // TODO: This assumes all font atlases are the same size, which may not be true
+        // A better solution would be to store per-texture metadata
+        float2 textureSize = FontParams.xy;
+        float pxRange = FontParams.z;
         
         float screenPxRangeValue = screenPxRange(input.TexCoord, pxRange, textureSize);
         float screenPxDistance = screenPxRangeValue * (sd - 0.5);
         float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
         
-        // Handle texture alpha channel
-        if (texColor.a <= 1.0)
-        {
-            opacity = opacity * texColor.a;
-        }
-        
+        opacity = opacity * texColor.a;
         return float4(input.Color.rgb, input.Color.a * opacity);
     }
     else
