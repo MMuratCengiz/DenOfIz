@@ -88,8 +88,10 @@ void MetalPipeline::CreateGraphicsPipeline( )
     pipelineStateDescriptor.inputPrimitiveTopology       = MetalEnumConverter::ConvertTopologyClass( m_desc.Graphics.PrimitiveTopology );
     pipelineStateDescriptor.sampleCount                  = MSAASampleCountToNumSamples( m_desc.Graphics.MSAASampleCount );
 
-    auto *mtkInputLayout                     = dynamic_cast<MetalInputLayout *>( m_desc.InputLayout );
-    pipelineStateDescriptor.vertexDescriptor = mtkInputLayout->GetVertexDescriptor( );
+    auto *mtkInputLayout = dynamic_cast<MetalInputLayout *>( m_desc.InputLayout );
+    if ( mtkInputLayout != nullptr ) {
+        pipelineStateDescriptor.vertexDescriptor = mtkInputLayout->GetVertexDescriptor( );
+    }
 
     int attachmentIdx = 0;
     for ( int i = 0; i < m_desc.Graphics.RenderTargets.NumElements( ); ++i )
