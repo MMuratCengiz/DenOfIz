@@ -32,22 +32,24 @@ namespace DenOfIz
     {
         ILogicalDevice *LogicalDevice = nullptr;
         Format          OutputFormat  = Format::B8G8R8A8Unorm;
+        uint32_t        NumFrames     = 3;
     };
 
     class FullscreenQuadPipeline
     {
-        ILogicalDevice                     *m_logicalDevice = nullptr;
-        std::unique_ptr<ShaderProgram>      m_shaderProgram;
-        std::unique_ptr<IPipeline>          m_pipeline;
-        std::unique_ptr<IRootSignature>     m_rootSignature;
-        std::unique_ptr<IResourceBindGroup> m_resourceBindGroup;
-        std::unique_ptr<ISampler>           m_linearSampler;
+        ILogicalDevice                                  *m_logicalDevice = nullptr;
+        std::unique_ptr<ShaderProgram>                   m_shaderProgram;
+        std::unique_ptr<IPipeline>                       m_pipeline;
+        std::unique_ptr<IRootSignature>                  m_rootSignature;
+        std::vector<std::unique_ptr<IResourceBindGroup>> m_resourceBindGroups;
+        std::unique_ptr<ISampler>                        m_linearSampler;
 
     public:
         explicit FullscreenQuadPipeline( const FullscreenQuadPipelineDesc &desc );
         ~FullscreenQuadPipeline( ) = default;
 
-        void DrawTextureToScreen( ICommandList *commandList, ITextureResource *sourceTexture ) const;
+        void UpdateTarget( uint32_t frameIndex, ITextureResource *sourceTexture ) const;
+        void DrawTextureToScreen( ICommandList *commandList, uint32_t frameIndex ) const;
 
     private:
         void CreateShaderProgram( );

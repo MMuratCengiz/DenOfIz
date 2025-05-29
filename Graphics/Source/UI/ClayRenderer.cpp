@@ -61,11 +61,13 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_l
     for ( uint32_t i = 0; i < desc.NumFrames && i < commandLists.NumElements( ); ++i )
     {
         m_frameData[ i ].CommandList = commandLists.GetElement( i );
+        m_frameData[ i ].FrameFence  = std::unique_ptr<IFence>( m_logicalDevice->CreateFence( ) );
     }
 
     FullscreenQuadPipelineDesc quadDesc{ };
     quadDesc.LogicalDevice = m_logicalDevice;
     quadDesc.OutputFormat  = desc.RenderTargetFormat;
+    quadDesc.NumFrames     = desc.NumFrames;
     m_fullscreenQuad       = std::make_unique<FullscreenQuadPipeline>( quadDesc );
 
     static FontLibrary defaultFontLibrary;
@@ -307,7 +309,21 @@ void ClayRenderer::SetDpiScale( const float dpiScale )
     m_dpiScale = dpiScale;
 }
 
-void ClayRenderer::Render( ICommandList *commandList, Clay_RenderCommandArray commands, uint32_t frameIndex )
+void ClayRenderer::Render( ICommandList *commandList, const Clay_RenderCommandArray commands, const uint32_t frameIndex )
+{
+    if ( frameIndex >= m_frameData.size( ) )
+    {
+        LOG( ERROR ) << "ClayRenderer::Render: Invalid frame index " << frameIndex;
+        return;
+    }
+
+    const FrameData &frame = m_frameData[ frameIndex ];
+    frame.FrameFence->Wait( );
+
+    RenderInternal( commandList, commands, frameIndex );
+}
+
+void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommandArray commands, uint32_t frameIndex )
 {
     if ( commands.length == 0 )
     {
@@ -387,10 +403,11 @@ void ClayRenderer::Render( ICommandList *commandList, Clay_RenderCommandArray co
 
     ExecuteCommandListsDesc executeDesc{ };
     executeDesc.CommandLists.AddElement( uiCmdList );
+    executeDesc.Signal = frame.FrameFence.get( );
     m_commandQueue->ExecuteCommandLists( executeDesc );
-    m_commandQueue->WaitIdle( ); // Todo implement proper frame management
 
-    m_fullscreenQuad->DrawTextureToScreen( commandList, frame.ColorTarget.get( ) );
+    m_fullscreenQuad->UpdateTarget( frameIndex, frame.ColorTarget.get( ) );
+    m_fullscreenQuad->DrawTextureToScreen( commandList, frameIndex );
 }
 
 void ClayRenderer::ProcessRenderCommand( const Clay_RenderCommand *command, ICommandList *commandList )
@@ -498,31 +515,37 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
         return;
     }
 
-    if ( fontData->TextLayouts.size( ) <= fontData->CurrentLayoutIndex )
-    {
-        const size_t oldSize = fontData->TextLayouts.size( );
-        const size_t newSize = std::max<size_t>( fontData->CurrentLayoutIndex + 1, fontData->TextLayouts.size( ) + 32 );
-        fontData->TextLayouts.resize( newSize );
-        for ( size_t i = oldSize; i < newSize; ++i )
-        {
-            TextLayoutDesc textLayoutDesc{ fontData->FontPtr };
-            fontData->TextLayouts[ i ] = std::make_unique<TextLayout>( textLayoutDesc );
-        }
-    }
-
-    const auto &textLayout = fontData->TextLayouts[ fontData->CurrentLayoutIndex++ ];
-
     const float baseSize       = static_cast<float>( fontData->FontPtr->Asset( )->InitialFontSize );
     const float targetSize     = data.fontSize > 0 ? data.fontSize : baseSize;
     const float effectiveScale = targetSize / baseSize;
 
-    ShapeTextDesc shapeDesc{ };
-    shapeDesc.Text      = InteropString( data.stringContents.chars, data.stringContents.length );
-    shapeDesc.FontSize  = static_cast<uint32_t>( targetSize );
-    shapeDesc.Direction = TextDirection::Auto;
+    TextCacheKey cacheKey;
+    cacheKey.Text      = std::string( data.stringContents.chars, data.stringContents.length );
+    cacheKey.FontId    = data.fontId;
+    cacheKey.FontSize  = static_cast<uint32_t>( targetSize );
+    cacheKey.Direction = TextDirection::Auto;
+    cacheKey.ScriptTag = UInt32_4{ 'L', 'a', 't', 'n' };
 
-    // TODO This needs to be cached, its incredibly expensive.
-    textLayout->ShapeText( shapeDesc );
+    TextLayout *textLayout = nullptr;
+    auto        cacheIt    = m_textShapeCache.find( cacheKey );
+    if ( cacheIt != m_textShapeCache.end( ) )
+    {
+        textLayout = cacheIt->second.get( );
+    }
+    else
+    {
+        TextLayoutDesc textLayoutDesc{ fontData->FontPtr };
+        auto           newLayout = std::make_unique<TextLayout>( textLayoutDesc );
+
+        ShapeTextDesc shapeDesc{ };
+        shapeDesc.Text      = InteropString( data.stringContents.chars, data.stringContents.length );
+        shapeDesc.FontSize  = static_cast<uint32_t>( targetSize );
+        shapeDesc.Direction = TextDirection::Auto;
+
+        newLayout->ShapeText( shapeDesc );
+        textLayout                   = newLayout.get( );
+        m_textShapeCache[ cacheKey ] = std::move( newLayout );
+    }
 
     const float fontAscent = static_cast<float>( fontData->FontPtr->Asset( )->Metrics.Ascent ) * effectiveScale;
     const float adjustedY  = bounds.y + fontAscent;
@@ -778,6 +801,8 @@ void ClayRenderer::InitializeFontAtlas( FontData *fontData )
 
 void ClayRenderer::ClearCaches( )
 {
+    ClearTextShapeCache( );
+
     for ( auto &val : m_fonts | std::views::values )
     {
         val.TextLayouts.clear( );
@@ -809,6 +834,11 @@ void ClayRenderer::ClearCaches( )
     {
         m_texturesDirty = true;
     }
+}
+
+void ClayRenderer::ClearTextShapeCache( )
+{
+    m_textShapeCache.clear( );
 }
 
 ClayDimensions ClayRenderer::MeasureText( const InteropString &text, const Clay_TextElementConfig &desc ) const

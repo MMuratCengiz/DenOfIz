@@ -69,9 +69,13 @@ void FullscreenQuadPipeline::CreatePipeline( const FullscreenQuadPipelineDesc &d
 
     m_pipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 
-    ResourceBindGroupDesc bindGroupDesc{ };
-    bindGroupDesc.RootSignature = m_rootSignature.get( );
-    m_resourceBindGroup         = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
+    m_resourceBindGroups.resize( desc.NumFrames );
+    for ( uint32_t i = 0; i < desc.NumFrames; ++i )
+    {
+        ResourceBindGroupDesc bindGroupDesc{ };
+        bindGroupDesc.RootSignature = m_rootSignature.get( );
+        m_resourceBindGroups[ i ]   = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
+    }
 }
 
 void FullscreenQuadPipeline::CreateSampler( )
@@ -86,17 +90,32 @@ void FullscreenQuadPipeline::CreateSampler( )
     m_linearSampler          = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( samplerDesc ) );
 }
 
-void FullscreenQuadPipeline::DrawTextureToScreen( ICommandList *commandList, ITextureResource *sourceTexture ) const
+void FullscreenQuadPipeline::UpdateTarget( const uint32_t frameIndex, ITextureResource *sourceTexture ) const
 {
+    if ( frameIndex >= m_resourceBindGroups.size( ) )
+    {
+        LOG( ERROR ) << "FullscreenQuadPipeline::UpdateTarget: Invalid frame index " << frameIndex;
+        return;
+    }
+    
     if ( sourceTexture == nullptr )
     {
-        LOG( ERROR ) << "FullscreenQuadPipeline::DrawTextureToScreen: sourceTexture cannot be null";
+        LOG( ERROR ) << "FullscreenQuadPipeline::UpdateTarget: sourceTexture cannot be null";
         return;
     }
 
-    // Todo move this to a separate UpdateTarget() call, we should also accept separate target for each frame(and require frameIndex to this call)
-    m_resourceBindGroup->BeginUpdate( )->Srv( 0, sourceTexture )->Sampler( 0, m_linearSampler.get( ) )->EndUpdate( );
+    m_resourceBindGroups[ frameIndex ]->BeginUpdate( )->Srv( 0, sourceTexture )->Sampler( 0, m_linearSampler.get( ) )->EndUpdate( );
+}
+
+void FullscreenQuadPipeline::DrawTextureToScreen( ICommandList *commandList, const uint32_t frameIndex ) const
+{
+    if ( frameIndex >= m_resourceBindGroups.size( ) )
+    {
+        LOG( ERROR ) << "FullscreenQuadPipeline::DrawTextureToScreen: Invalid frame index " << frameIndex;
+        return;
+    }
+
     commandList->BindPipeline( m_pipeline.get( ) );
-    commandList->BindResourceGroup( m_resourceBindGroup.get( ) );
+    commandList->BindResourceGroup( m_resourceBindGroups[ frameIndex ].get( ) );
     commandList->Draw( 3, 1, 0, 0 );
 }

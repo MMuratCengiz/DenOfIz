@@ -24,10 +24,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandListPool.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandQueue.h>
+#include <DenOfIzGraphics/Backends/Interface/IFence.h>
 #include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
+#include <DenOfIzGraphics/Backends/Interface/ISemaphore.h>
 #include <DenOfIzGraphics/UI/ClayData.h>
 #include <DenOfIzGraphics/UI/FullscreenQuadPipeline.h>
 #include <DenOfIzGraphics/UI/UIShapes.h>
@@ -78,6 +80,7 @@ namespace DenOfIz
             std::unique_ptr<ITextureResource>   ColorTarget;
             std::unique_ptr<ITextureResource>   DepthBuffer;
             ICommandList                       *CommandList = nullptr;
+            std::unique_ptr<IFence>             FrameFence;
         };
         std::vector<FrameData> m_frameData;
 
@@ -108,6 +111,36 @@ namespace DenOfIz
         };
         std::unordered_map<uint16_t, FontData> m_fonts;
 
+        struct TextCacheKey
+        {
+            std::string   Text;
+            uint16_t      FontId;
+            uint32_t      FontSize;
+            TextDirection Direction;
+            UInt32_4      ScriptTag;
+
+            bool operator==( const TextCacheKey &other ) const
+            {
+                return Text == other.Text && FontId == other.FontId && FontSize == other.FontSize && Direction == other.Direction && ScriptTag.X == other.ScriptTag.X &&
+                       ScriptTag.Y == other.ScriptTag.Y && ScriptTag.Z == other.ScriptTag.Z && ScriptTag.W == other.ScriptTag.W;
+            }
+        };
+
+        struct TextCacheKeyHash
+        {
+            std::size_t operator( )( const TextCacheKey &key ) const
+            {
+                const std::size_t h1 = std::hash<std::string>{ }( key.Text );
+                const std::size_t h2 = std::hash<uint16_t>{ }( key.FontId );
+                const std::size_t h3 = std::hash<uint32_t>{ }( key.FontSize );
+                const std::size_t h4 = std::hash<int>{ }( static_cast<int>( key.Direction ) );
+                const std::size_t h5 = std::hash<uint32_t>{ }( key.ScriptTag.X );
+                return h1 ^ h2 << 1 ^ h3 << 2 ^ h4 << 3 ^ h5 << 4;
+            }
+        };
+
+        std::unordered_map<TextCacheKey, std::unique_ptr<TextLayout>, TextCacheKeyHash> m_textShapeCache;
+
         std::unordered_map<void *, uint32_t> m_imageTextureIndices;
         std::vector<ITextureResource *>      m_textures;
         std::unique_ptr<ITextureResource>    m_nullTexture;
@@ -130,6 +163,7 @@ namespace DenOfIz
         std::vector<ScissorState> m_scissorStack;
         std::unique_ptr<ISampler> m_linearSampler;
         ResourceTracking          m_resourceTracking;
+        uint32_t                  m_currentFrameIndex = 0;
 
     public:
         explicit ClayRenderer( const ClayRendererDesc &desc );
@@ -143,6 +177,7 @@ namespace DenOfIz
         void Render( ICommandList *commandList, Clay_RenderCommandArray commands, uint32_t frameIndex );
 
         void           ClearCaches( );
+        void           ClearTextShapeCache( );
         ClayDimensions MeasureText( const InteropString &text, const Clay_TextElementConfig &desc ) const;
 
     private:
@@ -153,6 +188,7 @@ namespace DenOfIz
         void CreateRenderTargets( );
         void UpdateProjectionMatrix( );
 
+        void RenderInternal( ICommandList *commandList, Clay_RenderCommandArray commands, uint32_t frameIndex );
         void ProcessRenderCommand( const Clay_RenderCommand *command, ICommandList *commandList );
         void RenderRectangle( const Clay_RenderCommand *command, ICommandList *commandList );
         void RenderBorder( const Clay_RenderCommand *command, ICommandList *commandList );
