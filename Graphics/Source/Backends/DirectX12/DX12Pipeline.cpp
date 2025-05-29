@@ -58,13 +58,21 @@ DX12Pipeline::DX12Pipeline( DX12Context *context, PipelineDesc desc ) : m_contex
 
 void DX12Pipeline::CreateGraphicsPipeline( )
 {
-    m_topology             = DX12EnumConverter::ConvertPrimitiveTopology( m_desc.Graphics.PrimitiveTopology );
-    const auto inputLayout = dynamic_cast<DX12InputLayout *>( m_desc.InputLayout );
-    DZ_NOT_NULL( inputLayout );
-    m_iaStride = inputLayout->Stride( );
+    m_topology                          = DX12EnumConverter::ConvertPrimitiveTopology( m_desc.Graphics.PrimitiveTopology );
+    const auto              inputLayout = dynamic_cast<DX12InputLayout *>( m_desc.InputLayout );
+    D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{ };
+    if ( inputLayout == nullptr )
+    {
+        m_iaStride = 0;
+    }
+    else
+    {
+        m_iaStride      = inputLayout->Stride( );
+        inputLayoutDesc = inputLayout->GetInputLayout( );
+    }
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = { };
-    psoDesc.InputLayout                        = inputLayout->GetInputLayout( );
+    psoDesc.InputLayout                        = inputLayoutDesc;
     psoDesc.pRootSignature                     = m_rootSignature->Instance( );
     SetGraphicsShaders( psoDesc );
 

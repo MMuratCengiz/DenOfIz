@@ -390,11 +390,8 @@ Clay::Clay( const ClayDesc &desc )
 
     ClayRendererDesc clayRendererDesc{ };
     clayRendererDesc.LogicalDevice      = desc.LogicalDevice;
-    clayRendererDesc.TextRenderer       = m_textRenderer.get( );
     clayRendererDesc.RenderTargetFormat = desc.RenderTargetFormat;
     clayRendererDesc.NumFrames          = desc.NumFrames;
-    clayRendererDesc.MaxNumQuads        = desc.MaxNumQuads;
-    clayRendererDesc.MaxNumMaterials    = desc.MaxNumMaterials;
     clayRendererDesc.Width              = desc.Width;
     clayRendererDesc.Height             = desc.Height;
 
@@ -415,7 +412,7 @@ Clay::Clay( const ClayDesc &desc )
     {
         LOG( ERROR ) << "Failed to initialize Clay: ";
     }
-    // Don't enable debug mode until we have a font
+
     Clay_SetDebugModeEnabled( false );
     Clay_SetMeasureTextFunction( MeasureTextCallback, this );
     SetViewportSize( desc.Width, desc.Height );

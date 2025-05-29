@@ -112,6 +112,8 @@ set(DEN_OF_IZ_VG_SOURCES
 set(DEN_OF_IZ_UI_SOURCES
         Source/UI/Clay.cpp
         Source/UI/ClayRenderer.cpp
+        Source/UI/UIShapes.cpp
+        Source/UI/FullscreenQuadPipeline.cpp
 )
 
 set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES

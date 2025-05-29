@@ -18,77 +18,157 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Font/TextRenderer.h>
-#include <DenOfIzGraphics/Assets/Vector2d/QuadRenderer.h>
-#include <DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h>
+#include <DenOfIzGraphics/Assets/Font/Font.h>
+#include <DenOfIzGraphics/Assets/Font/TextLayout.h>
+#include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
+#include <DenOfIzGraphics/Backends/Interface/ICommandListPool.h>
+#include <DenOfIzGraphics/Backends/Interface/ICommandQueue.h>
 #include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
+#include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
+#include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
+#include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
+#include <DenOfIzGraphics/UI/ClayData.h>
+#include <DenOfIzGraphics/UI/FullscreenQuadPipeline.h>
+#include <DenOfIzGraphics/UI/UIShapes.h>
 #include <clay.h>
 #include <memory>
 #include <unordered_map>
-#include "ClayData.h"
+#include <vector>
+#include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
+
+#include <DirectXMath.h>
 
 namespace DenOfIz
 {
     struct ClayRendererDesc
     {
         ILogicalDevice *LogicalDevice      = nullptr;
-        TextRenderer   *TextRenderer       = nullptr;
         Format          RenderTargetFormat = Format::B8G8R8A8Unorm;
         uint32_t        NumFrames          = 3;
-        uint32_t        MaxNumQuads        = 2048;
-        uint32_t        MaxNumMaterials    = 128;
-        uint32_t        Width              = 1024;
-        uint32_t        Height             = 1024;
+        uint32_t        MaxVertices        = 65536;
+        uint32_t        MaxIndices         = 98304;
+        uint32_t        MaxTextures        = 128;
+        float           Width              = 1024;
+        float           Height             = 1024;
     };
 
-    /// This class is intentionally not public API, users should not need to know about the internals of the renderer
     class ClayRenderer
     {
-        ClayRendererDesc              m_desc;
-        std::unique_ptr<QuadRenderer> m_quadRenderer;
-        std::unique_ptr<ThorVGCanvas> m_vectorCanvas;
-
-        struct ShapeCache
+        struct UIUniforms
         {
-            ITextureResource *Texture = nullptr;
+            XMFLOAT4X4 Projection;
+            XMFLOAT4   ScreenSize; // xy: screen dimensions, zw: unused
         };
-        std::unordered_map<uint64_t, ShapeCache>         m_shapeCache;
-        std::unordered_map<ITextureResource *, uint32_t> m_textureIndices;
 
-        uint32_t m_nextQuadId = 0;
-        bool     m_needsClear = true;
+        ClayRendererDesc m_desc;
+        ILogicalDevice  *m_logicalDevice = nullptr;
 
-        uint32_t m_currentFrameQuadIndex = 0;
-        uint32_t m_currentFrameIndex     = 0;
+        std::unique_ptr<ShaderProgram>  m_shaderProgram;
+        std::unique_ptr<IPipeline>      m_pipeline;
+        std::unique_ptr<IRootSignature> m_rootSignature;
+        std::unique_ptr<IInputLayout>   m_inputLayout;
 
-        float m_viewportWidth  = 0;
-        float m_viewportHeight = 0;
-        float m_dpiScale       = 1.0f;
+        std::unique_ptr<FullscreenQuadPipeline> m_fullscreenQuad; // Todo this needs to manage multiple frames in flight
+
+        struct FrameData
+        {
+            std::unique_ptr<IResourceBindGroup> ConstantsBindGroup;
+            std::unique_ptr<IResourceBindGroup> TextureBindGroup;
+            std::unique_ptr<ITextureResource>   ColorTarget;
+            std::unique_ptr<ITextureResource>   DepthBuffer;
+            ICommandList                       *CommandList = nullptr;
+        };
+        std::vector<FrameData> m_frameData;
+
+        std::unique_ptr<ICommandQueue>    m_commandQueue;
+        std::unique_ptr<ICommandListPool> m_commandListPool;
+
+        std::unique_ptr<IBufferResource> m_vertexBuffer;
+        std::unique_ptr<IBufferResource> m_indexBuffer;
+        uint8_t                         *m_vertexBufferData = nullptr;
+        uint8_t                         *m_indexBufferData  = nullptr;
+
+        InteropArray<UIVertex> m_batchedVertices;
+        InteropArray<uint32_t> m_batchedIndices;
+        float                  m_currentDepth  = 0.9f;
+        static constexpr float DEPTH_INCREMENT = -0.0001f;
+
+        std::unique_ptr<IBufferResource> m_uniformBuffer;
+        UIUniforms                      *m_uniformBufferData  = nullptr;
+        uint32_t                         m_alignedUniformSize = 0;
+
+        struct FontData
+        {
+            Font                                    *FontPtr = nullptr;
+            std::unique_ptr<ITextureResource>        Atlas;
+            uint32_t                                 TextureIndex = 0;
+            std::vector<std::unique_ptr<TextLayout>> TextLayouts;
+            uint32_t                                 CurrentLayoutIndex = 0;
+        };
+        std::unordered_map<uint16_t, FontData> m_fonts;
+
+        std::unordered_map<void *, uint32_t> m_imageTextureIndices;
+        std::vector<ITextureResource *>      m_textures;
+        std::unique_ptr<ITextureResource>    m_nullTexture;
+        uint32_t                             m_nextTextureIndex = 1;
+        bool                                 m_texturesDirty    = true;
+
+        float      m_viewportWidth  = 0;
+        float      m_viewportHeight = 0;
+        float      m_dpiScale       = 1.0f;
+        XMFLOAT4X4 m_projectionMatrix;
+
+        struct ScissorState
+        {
+            bool  Enabled = false;
+            float X       = 0;
+            float Y       = 0;
+            float Width   = 0;
+            float Height  = 0;
+        };
+        std::vector<ScissorState> m_scissorStack;
+        std::unique_ptr<ISampler> m_linearSampler;
+        ResourceTracking          m_resourceTracking;
 
     public:
         explicit ClayRenderer( const ClayRendererDesc &desc );
         ~ClayRenderer( );
-        void           Resize( float width, float height );
-        void           SetDpiScale( float dpiScale );
-        void           Render( ICommandList *commandList, const Clay_RenderCommandArray &commands, uint32_t frameIndex );
+
+        void AddFont( uint16_t fontId, Font *font );
+        void RemoveFont( uint16_t fontId );
+
+        void Resize( float width, float height );
+        void SetDpiScale( float dpiScale );
+        void Render( ICommandList *commandList, Clay_RenderCommandArray commands, uint32_t frameIndex );
+
         void           ClearCaches( );
-        void           InvalidateLayout( );
         ClayDimensions MeasureText( const InteropString &text, const Clay_TextElementConfig &desc ) const;
 
     private:
-        void RenderRectangle( const Clay_RenderCommand *command, uint32_t frameIndex );
-        void RenderRoundedRectangle( const Clay_RenderCommand *command, uint32_t frameIndex );
-        void RenderBorder( const Clay_RenderCommand *command, uint32_t frameIndex );
-        void RenderText( const Clay_RenderCommand *command, uint32_t frameIndex, ICommandList *commandList ) const;
-        void RenderImage( const Clay_RenderCommand *command, uint32_t frameIndex );
+        void CreateShaderProgram( );
+        void CreatePipeline( );
+        void CreateBuffers( );
+        void CreateNullTexture( );
+        void CreateRenderTargets( );
+        void UpdateProjectionMatrix( );
 
-        ITextureResource *GetOrCreateRoundedRectTexture( const Clay_BoundingBox &bounds, const Clay_RectangleRenderData &data );
-        uint64_t          GetShapeHash( const Clay_BoundingBox &bounds, const Clay_RectangleRenderData &data ) const;
-        void              CreateVectorShape( const Clay_BoundingBox &bounds, const Clay_RectangleRenderData &data, ThorVGCanvas &canvas ) const;
+        void ProcessRenderCommand( const Clay_RenderCommand *command, ICommandList *commandList );
+        void RenderRectangle( const Clay_RenderCommand *command, ICommandList *commandList );
+        void RenderBorder( const Clay_RenderCommand *command, ICommandList *commandList );
+        void RenderText( const Clay_RenderCommand *command, ICommandList *commandList );
+        void RenderImage( const Clay_RenderCommand *command, ICommandList *commandList );
+        void SetScissor( const Clay_RenderCommand *command, ICommandList *commandList );
+        void ClearScissor( ICommandList *commandList );
 
-        uint32_t GetOrRegisterTexture( ITextureResource *texture );
-        void     AddQuad( const Clay_BoundingBox &bounds, const Clay_Color &color, uint32_t textureIndex );
+        void AddVerticesWithDepth( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices );
+        void FlushBatchedGeometry( ICommandList *commandList );
+
+        uint32_t RegisterTexture( ITextureResource *texture );
+        void     UpdateTextureBindings( uint32_t frameIndex ) const;
+
+        FontData *GetFontData( uint16_t fontId );
+        void      InitializeFontAtlas( FontData *fontData );
     };
 
 } // namespace DenOfIz

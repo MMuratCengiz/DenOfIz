@@ -1,0 +1,155 @@
+/*
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+
+#include <DenOfIzGraphics/Utilities/Interop.h>
+
+namespace DenOfIz::EmbeddedUIShaders
+{
+    static auto UIVertexShaderSource = R"(
+struct VSInput
+{
+    float3 Position : POSITION;
+    float2 TexCoord : TEXCOORD0;
+    float4 Color : COLOR0;
+    uint TextureIndex : TEXINDEX;
+};
+
+struct VSOutput
+{
+    float4 Position : SV_POSITION;
+    float2 TexCoord : TEXCOORD0;
+    float4 Color : COLOR0;
+    uint TextureIndex : TEXINDEX;
+};
+
+cbuffer UIUniforms : register(b0, space0)
+{
+    float4x4 Projection;
+    float4 ScreenSize; // xy: screen dimensions, zw: unused
+};
+
+VSOutput main(VSInput input)
+{
+    VSOutput output;
+    output.Position = mul(float4(input.Position, 1.0), Projection);
+    output.TexCoord = input.TexCoord;
+    output.Color = input.Color;
+    output.TextureIndex = input.TextureIndex;
+    return output;
+})";
+
+    static auto UIPixelShaderSource = R"(
+struct PSInput
+{
+    float4 Position : SV_POSITION;
+    float2 TexCoord : TEXCOORD0;
+    float4 Color : COLOR0;
+    uint TextureIndex : TEXINDEX;
+};
+
+// Space 0: Constants only
+cbuffer UIUniforms : register(b0, space0)
+{
+    float4x4 Projection;
+    float4 ScreenSize; // xy: screen dimensions, zw: unused
+};
+
+// Space 1: Bindless texture array and sampler
+Texture2D Textures[] : register(t0, space1);
+SamplerState LinearSampler : register(s0, space1);
+
+// MSDF rendering helper function to calculate median of 3 values
+float median(float r, float g, float b)
+{
+    return max(min(r, g), min(max(r, g), b));
+}
+
+float screenPxRange(float2 texCoord, float pxRange, float2 textureSize)
+{
+    float2 unitRange = float2(pxRange, pxRange) / textureSize;
+    float2 screenTexSize = float2(1.0, 1.0) / fwidth(texCoord);
+    return max(0.5 * dot(unitRange, screenTexSize), 1.0);
+}
+
+float4 main(PSInput input) : SV_TARGET
+{
+    // TextureIndex 0 means solid color (no texture)
+    if (input.TextureIndex == 0)
+    {
+        return input.Color;
+    }
+    
+    // Sample texture
+    float4 texColor = Textures[NonUniformResourceIndex(input.TextureIndex - 1)].Sample(LinearSampler, input.TexCoord);
+    
+    // Check if this is a font texture (MSDF) - fonts use texture indices 1-127, images use 128+
+    if (input.TextureIndex < 128)
+    {
+        // MSDF text rendering
+        float3 msdf = texColor.rgb;
+        float sd = median(msdf.r, msdf.g, msdf.b);
+        
+        // Approximate texture size from screen size (can be improved with per-texture data)
+        float2 textureSize = float2(512.0, 512.0); // Default atlas size
+        float pxRange = 12.0; // Default MSDF pixel range
+        
+        float screenPxRangeValue = screenPxRange(input.TexCoord, pxRange, textureSize);
+        float screenPxDistance = screenPxRangeValue * (sd - 0.5);
+        float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
+        
+        // Handle texture alpha channel
+        if (texColor.a <= 1.0)
+        {
+            opacity = opacity * texColor.a;
+        }
+        
+        return float4(input.Color.rgb, input.Color.a * opacity);
+    }
+    else
+    {
+        // Regular image texture
+        return texColor * input.Color;
+    }
+}
+)";
+
+    static InteropArray<Byte> StringToByteArray( const char *str )
+    {
+        const size_t       len = strlen( str );
+        InteropArray<Byte> result( len );
+        for ( size_t i = 0; i < len; i++ )
+        {
+            result.SetElement( i, static_cast<Byte>( str[ i ] ) );
+        }
+        return result;
+    }
+
+    // Get shader sources as byte arrays
+    static InteropArray<Byte> GetUIVertexShaderBytes( )
+    {
+        return StringToByteArray( UIVertexShaderSource );
+    }
+
+    static InteropArray<Byte> GetUIPixelShaderBytes( )
+    {
+        return StringToByteArray( UIPixelShaderSource );
+    }
+
+} // namespace DenOfIz::EmbeddedUIShaders

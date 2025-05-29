@@ -303,7 +303,7 @@ uint32_t QuadRenderer::RegisterTexture( ITextureResource *texture )
 {
     if ( m_freeTextureIndices.empty( ) )
     {
-        LOG( WARNING ) << "Maximum number of textures reached";
+    LOG( WARNING ) << "Maximum number of textures reached";
         return 0;
     }
 

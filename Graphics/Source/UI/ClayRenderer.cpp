@@ -16,471 +16,879 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Assets/Font/Embedded/EmbeddedFonts.h>
+#include <DenOfIzGraphics/Assets/Font/FontLibrary.h>
+#include <DenOfIzGraphics/Assets/Import/ShaderImporter.h>
+#include <DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/UI/Clay.h>
 #include <DenOfIzGraphics/UI/ClayRenderer.h>
-#include <DenOfIzGraphics/Utilities/InteropMathConverter.h>
-#include <DenOfIzGraphics/Utilities/Utilities.h>
-#include <cstring>
-#include <functional>
+#include <DenOfIzGraphics/UI/UIShaders.h>
+#include <DenOfIzGraphics/Utilities/Common.h>
 
 using namespace DenOfIz;
 using namespace DirectX;
 
-ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc )
+ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_logicalDevice( desc.LogicalDevice )
 {
-    DZ_NOT_NULL( desc.LogicalDevice );
-    DZ_NOT_NULL( desc.TextRenderer );
+    if ( m_logicalDevice == nullptr )
+    {
+        LOG( ERROR ) << "ClayRenderer: LogicalDevice cannot be null";
+        return;
+    }
 
-    QuadRendererDesc quadDesc;
-    quadDesc.LogicalDevice      = m_desc.LogicalDevice;
-    quadDesc.RenderTargetFormat = m_desc.RenderTargetFormat;
-    quadDesc.NumFrames          = m_desc.NumFrames;
-    quadDesc.MaxNumTextures     = 256; // Support up to 256 unique textures
-    quadDesc.MaxNumQuads        = m_desc.MaxNumQuads;
+    m_viewportWidth  = desc.Width;
+    m_viewportHeight = desc.Height;
 
-    m_quadRenderer = std::make_unique<QuadRenderer>( quadDesc );
+    m_textures.resize( desc.MaxTextures, nullptr );
 
-    ThorVGCanvasDesc canvasDesc;
-    canvasDesc.Width  = m_desc.Width;
-    canvasDesc.Height = m_desc.Height;
-    m_vectorCanvas    = std::make_unique<ThorVGCanvas>( canvasDesc );
+    CommandQueueDesc commandQueueDesc{ };
+    commandQueueDesc.QueueType = QueueType::Graphics;
+    m_commandQueue             = std::unique_ptr<ICommandQueue>( m_logicalDevice->CreateCommandQueue( commandQueueDesc ) );
+
+    CommandListPoolDesc poolDesc{ };
+    poolDesc.CommandQueue    = m_commandQueue.get( );
+    poolDesc.NumCommandLists = desc.NumFrames;
+    m_commandListPool        = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( poolDesc ) );
+
+    CreateShaderProgram( );
+    CreatePipeline( );
+    CreateNullTexture( );
+    CreateBuffers( );
+    CreateRenderTargets( );
+    UpdateProjectionMatrix( );
+
+    auto commandLists = m_commandListPool->GetCommandLists( );
+    for ( uint32_t i = 0; i < desc.NumFrames && i < commandLists.NumElements( ); ++i )
+    {
+        m_frameData[ i ].CommandList = commandLists.GetElement( i );
+    }
+
+    FullscreenQuadPipelineDesc quadDesc{ };
+    quadDesc.LogicalDevice = m_logicalDevice;
+    quadDesc.OutputFormat  = desc.RenderTargetFormat;
+    m_fullscreenQuad       = std::make_unique<FullscreenQuadPipeline>( quadDesc );
+
+    static FontLibrary defaultFontLibrary;
+    static auto        defaultFont = defaultFontLibrary.LoadFont( { EmbeddedFonts::GetInterVar( ) } );
+    AddFont( 0, defaultFont );
 }
 
 ClayRenderer::~ClayRenderer( )
 {
-    m_textureIndices.clear( );
-    for ( auto &cache : m_shapeCache | std::views::values )
+    if ( m_vertexBufferData )
     {
-        if ( cache.Texture )
-        {
-            delete cache.Texture;
-            cache.Texture = nullptr;
-        }
+        m_vertexBuffer->UnmapMemory( );
+    }
+    if ( m_indexBufferData )
+    {
+        m_indexBuffer->UnmapMemory( );
+    }
+    if ( m_uniformBufferData )
+    {
+        m_uniformBuffer->UnmapMemory( );
+    }
+}
+
+void ClayRenderer::CreateShaderProgram( )
+{
+    ShaderProgramDesc programDesc{ };
+
+    ShaderStageDesc &vsDesc = programDesc.ShaderStages.EmplaceElement( );
+    vsDesc.Stage            = ShaderStage::Vertex;
+    vsDesc.EntryPoint       = InteropString( "main" );
+    vsDesc.Data             = EmbeddedUIShaders::GetUIVertexShaderBytes( );
+
+    ShaderStageDesc &psDesc = programDesc.ShaderStages.EmplaceElement( );
+    psDesc.Stage            = ShaderStage::Pixel;
+    psDesc.EntryPoint       = InteropString( "main" );
+    psDesc.Data             = EmbeddedUIShaders::GetUIPixelShaderBytes( );
+
+    psDesc.Bindless.MarkSrvAsBindlessArray( 0, 1, m_desc.MaxTextures );
+    m_shaderProgram = std::make_unique<ShaderProgram>( programDesc );
+}
+
+void ClayRenderer::CreatePipeline( )
+{
+    const ShaderReflectDesc reflectDesc = m_shaderProgram->Reflect( );
+    m_rootSignature                     = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflectDesc.RootSignature ) );
+    m_inputLayout                       = std::unique_ptr<IInputLayout>( m_logicalDevice->CreateInputLayout( reflectDesc.InputLayout ) );
+
+    PipelineDesc pipelineDesc{ };
+    pipelineDesc.RootSignature = m_rootSignature.get( );
+    pipelineDesc.InputLayout   = m_inputLayout.get( );
+    pipelineDesc.ShaderProgram = m_shaderProgram.get( );
+    pipelineDesc.BindPoint     = BindPoint::Graphics;
+
+    pipelineDesc.Graphics.PrimitiveTopology = PrimitiveTopology::Triangle;
+    pipelineDesc.Graphics.CullMode          = CullMode::None;
+    pipelineDesc.Graphics.FillMode          = FillMode::Solid;
+
+    // Depth test used for z-ordering
+    pipelineDesc.Graphics.DepthTest.Enable             = true;
+    pipelineDesc.Graphics.DepthTest.CompareOp          = CompareOp::Less;
+    pipelineDesc.Graphics.DepthTest.Write              = true;
+    pipelineDesc.Graphics.DepthStencilAttachmentFormat = Format::D32Float;
+
+    RenderTargetDesc &renderTarget           = pipelineDesc.Graphics.RenderTargets.EmplaceElement( );
+    renderTarget.Format                      = m_desc.RenderTargetFormat;
+    renderTarget.Blend.Enable                = true;
+    renderTarget.Blend.SrcBlend              = Blend::SrcAlpha;
+    renderTarget.Blend.DstBlend              = Blend::InvSrcAlpha;
+    renderTarget.Blend.BlendOp               = BlendOp::Add;
+    renderTarget.Blend.SrcBlendAlpha         = Blend::One;
+    renderTarget.Blend.DstBlendAlpha         = Blend::InvSrcAlpha;
+    renderTarget.Blend.BlendOpAlpha          = BlendOp::Add;
+    renderTarget.Blend.RenderTargetWriteMask = 0x0F; // All channels
+
+    m_pipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
+}
+
+void ClayRenderer::CreateBuffers( )
+{
+    BufferDesc vertexBufferDesc{ };
+    vertexBufferDesc.NumBytes   = m_desc.MaxVertices * sizeof( UIVertex );
+    vertexBufferDesc.Descriptor = ResourceDescriptor::VertexBuffer;
+    vertexBufferDesc.Usages     = ResourceUsage::VertexAndConstantBuffer;
+    vertexBufferDesc.HeapType   = HeapType::CPU_GPU;
+    vertexBufferDesc.DebugName  = InteropString( "UI Vertex Buffer" );
+    m_vertexBuffer              = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vertexBufferDesc ) );
+    m_vertexBufferData          = static_cast<uint8_t *>( m_vertexBuffer->MapMemory( ) );
+
+    BufferDesc indexBufferDesc{ };
+    indexBufferDesc.NumBytes   = m_desc.MaxIndices * sizeof( uint32_t );
+    indexBufferDesc.Descriptor = ResourceDescriptor::IndexBuffer;
+    indexBufferDesc.Usages     = ResourceUsage::IndexBuffer;
+    indexBufferDesc.HeapType   = HeapType::CPU_GPU;
+    indexBufferDesc.DebugName  = InteropString( "UI Index Buffer" );
+    m_indexBuffer              = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( indexBufferDesc ) );
+    m_indexBufferData          = static_cast<uint8_t *>( m_indexBuffer->MapMemory( ) );
+
+    m_alignedUniformSize = Utilities::Align( sizeof( UIUniforms ), 256 );
+    BufferDesc uniformBufferDesc{ };
+    uniformBufferDesc.NumBytes   = m_desc.NumFrames * m_alignedUniformSize;
+    uniformBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
+    uniformBufferDesc.Usages     = ResourceUsage::VertexAndConstantBuffer;
+    uniformBufferDesc.HeapType   = HeapType::CPU_GPU;
+    uniformBufferDesc.DebugName  = InteropString( "UI Uniform Buffer" );
+    m_uniformBuffer              = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( uniformBufferDesc ) );
+    m_uniformBufferData          = static_cast<UIUniforms *>( m_uniformBuffer->MapMemory( ) );
+
+    SamplerDesc linearSamplerDesc{ };
+    linearSamplerDesc.MagFilter    = Filter::Linear;
+    linearSamplerDesc.MinFilter    = Filter::Linear;
+    linearSamplerDesc.MipmapMode   = MipmapMode::Linear;
+    linearSamplerDesc.AddressModeU = SamplerAddressMode::ClampToEdge;
+    linearSamplerDesc.AddressModeV = SamplerAddressMode::ClampToEdge;
+    linearSamplerDesc.AddressModeW = SamplerAddressMode::ClampToEdge;
+    m_linearSampler                = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( linearSamplerDesc ) );
+
+    m_frameData.resize( m_desc.NumFrames );
+
+    for ( uint32_t frameIdx = 0; frameIdx < m_desc.NumFrames; ++frameIdx )
+    {
+        FrameData &frame = m_frameData[ frameIdx ];
+
+        ResourceBindGroupDesc constantGroupDesc{ };
+        constantGroupDesc.RootSignature = m_rootSignature.get( );
+        constantGroupDesc.RegisterSpace = 0; // Default space for constants
+        frame.ConstantsBindGroup        = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( constantGroupDesc ) );
+
+        BindBufferDesc bindUniformsDesc{ };
+        bindUniformsDesc.Resource       = m_uniformBuffer.get( );
+        bindUniformsDesc.ResourceOffset = frameIdx * m_alignedUniformSize;
+
+        frame.ConstantsBindGroup->BeginUpdate( )->Cbv( bindUniformsDesc )->EndUpdate( );
+
+        ResourceBindGroupDesc textureGroupDesc{ };
+        textureGroupDesc.RootSignature = m_rootSignature.get( );
+        textureGroupDesc.RegisterSpace = 1; // Space 1 for bindless textures
+        frame.TextureBindGroup         = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( textureGroupDesc ) );
     }
 
-    m_quadRenderer.reset( );
-    m_vectorCanvas.reset( );
-    m_shapeCache.clear( );
+    for ( uint32_t frameIdx = 0; frameIdx < m_desc.NumFrames; ++frameIdx )
+    {
+        UpdateTextureBindings( frameIdx );
+    }
+}
+
+void ClayRenderer::CreateNullTexture( )
+{
+    TextureDesc textureDesc{ };
+    textureDesc.Width      = 1;
+    textureDesc.Height     = 1;
+    textureDesc.Format     = Format::R8G8B8A8Unorm;
+    textureDesc.Usages     = BitSet( ResourceUsage::ShaderResource );
+    textureDesc.Descriptor = BitSet( ResourceDescriptor::Texture );
+    textureDesc.HeapType   = HeapType::GPU;
+    textureDesc.DebugName  = InteropString( "UI Null Texture" );
+
+    m_nullTexture   = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
+    m_textures[ 0 ] = m_nullTexture.get( );
+}
+
+void ClayRenderer::CreateRenderTargets( )
+{
+    for ( uint32_t frameIdx = 0; frameIdx < m_desc.NumFrames; ++frameIdx )
+    {
+        FrameData &frame = m_frameData[ frameIdx ];
+
+        TextureDesc colorDesc{ };
+        colorDesc.Width        = static_cast<uint32_t>( m_viewportWidth );
+        colorDesc.Height       = static_cast<uint32_t>( m_viewportHeight );
+        colorDesc.Format       = m_desc.RenderTargetFormat;
+        colorDesc.Usages       = BitSet( ResourceUsage::RenderTarget ) | ResourceUsage::ShaderResource;
+        colorDesc.InitialUsage = BitSet( ResourceUsage::RenderTarget );
+        colorDesc.Descriptor   = BitSet( ResourceDescriptor::RenderTarget ) | ResourceDescriptor::Texture;
+        colorDesc.HeapType     = HeapType::GPU;
+        colorDesc.DebugName    = InteropString( "UI Color Target Frame " ).Append( std::to_string( frameIdx ).c_str( ) );
+
+        frame.ColorTarget = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( colorDesc ) );
+
+        TextureDesc depthDesc{ };
+        depthDesc.Width        = static_cast<uint32_t>( m_viewportWidth );
+        depthDesc.Height       = static_cast<uint32_t>( m_viewportHeight );
+        depthDesc.Format       = Format::D32Float;
+        depthDesc.Usages       = BitSet( ResourceUsage::DepthWrite ) | ResourceUsage::DepthRead;
+        depthDesc.InitialUsage = BitSet( ResourceUsage::DepthWrite ) | ResourceUsage::DepthRead;
+        depthDesc.Descriptor   = BitSet( ResourceDescriptor::DepthStencil ) | ResourceDescriptor::Texture;
+        depthDesc.HeapType     = HeapType::GPU;
+        depthDesc.DebugName    = InteropString( "UI Depth Buffer Frame " ).Append( std::to_string( frameIdx ).c_str( ) );
+
+        frame.DepthBuffer = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( depthDesc ) );
+
+        m_resourceTracking.TrackTexture( frame.ColorTarget.get( ), ResourceUsage::RenderTarget );
+        m_resourceTracking.TrackTexture( frame.DepthBuffer.get( ), ResourceUsage::DepthWrite );
+    }
+}
+
+void ClayRenderer::UpdateProjectionMatrix( )
+{
+    const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, m_viewportWidth, m_viewportHeight, 0.0f, 0.0f, 1.0f );
+    XMStoreFloat4x4( &m_projectionMatrix, projection );
+}
+
+void ClayRenderer::AddFont( const uint16_t fontId, Font *font )
+{
+    if ( font == nullptr )
+    {
+        LOG( ERROR ) << "ClayRenderer::AddFont: Font cannot be null";
+        return;
+    }
+
+    auto &fontData   = m_fonts[ fontId ];
+    fontData.FontPtr = font;
+    InitializeFontAtlas( &fontData );
+}
+
+void ClayRenderer::RemoveFont( const uint16_t fontId )
+{
+    const auto it = m_fonts.find( fontId );
+    if ( it != m_fonts.end( ) )
+    {
+        if ( it->second.TextureIndex > 0 && it->second.TextureIndex <= m_textures.size( ) )
+        {
+            m_textures[ it->second.TextureIndex - 1 ] = nullptr;
+            m_texturesDirty                           = true; // Mark textures as dirty when removing
+        }
+        m_fonts.erase( it );
+    }
 }
 
 void ClayRenderer::Resize( const float width, const float height )
 {
-    if ( m_viewportWidth != width || m_viewportHeight != height )
-    {
-        m_viewportWidth  = width;
-        m_viewportHeight = height;
-
-        m_quadRenderer->SetCanvas( static_cast<uint32_t>( width ), static_cast<uint32_t>( height ) );
-        m_desc.TextRenderer->SetViewport( Viewport{ 0, 0, width, height } );
-        m_needsClear = true;
-    }
+    m_viewportWidth  = width;
+    m_viewportHeight = height;
+    CreateRenderTargets( );
+    UpdateProjectionMatrix( );
 }
 
 void ClayRenderer::SetDpiScale( const float dpiScale )
 {
-    if ( m_dpiScale != dpiScale )
+    m_dpiScale = dpiScale;
+}
+
+void ClayRenderer::Render( ICommandList *commandList, Clay_RenderCommandArray commands, uint32_t frameIndex )
+{
+    if ( commands.length == 0 )
     {
-        m_dpiScale   = dpiScale;
-        m_needsClear = true;
+        return;
+    }
+
+    m_batchedVertices.Clear( );
+    m_batchedIndices.Clear( );
+    m_currentDepth = 0.9f; // Depth starts from high goes low, lowest values are rendered
+
+    UIUniforms tempUniforms;
+    tempUniforms.Projection = m_projectionMatrix;
+    tempUniforms.ScreenSize = XMFLOAT4( m_viewportWidth, m_viewportHeight, 0.0f, 0.0f );
+
+    uint8_t *uniformLocation = reinterpret_cast<uint8_t *>( m_uniformBufferData ) + frameIndex * m_alignedUniformSize;
+    memcpy( uniformLocation, &tempUniforms, sizeof( UIUniforms ) );
+
+    const FrameData &frame = m_frameData[ frameIndex ];
+    if ( m_texturesDirty )
+    {
+        for ( uint32_t i = 0; i < m_desc.NumFrames; ++i )
+        {
+            UpdateTextureBindings( i );
+        }
+        m_texturesDirty = false;
+    }
+
+    // Generate vertices
+    for ( size_t i = 0; i < commands.length; ++i )
+    {
+        const Clay_RenderCommand *cmd = Clay_RenderCommandArray_Get( &commands, i );
+        ProcessRenderCommand( cmd, commandList );
+    }
+
+    ICommandList *uiCmdList = frame.CommandList;
+    uiCmdList->Begin( );
+
+    BatchTransitionDesc batchTransitionDesc{ uiCmdList };
+    batchTransitionDesc.TransitionTexture( frame.ColorTarget.get( ), ResourceUsage::RenderTarget );
+    batchTransitionDesc.TransitionTexture( frame.DepthBuffer.get( ), ResourceUsage::DepthWrite );
+    m_resourceTracking.BatchTransition( batchTransitionDesc );
+
+    {
+        RenderingDesc            renderingDesc{ };
+        RenderingAttachmentDesc &colorAttachment = renderingDesc.RTAttachments.EmplaceElement( );
+        colorAttachment.Resource                 = frame.ColorTarget.get( );
+        colorAttachment.LoadOp                   = LoadOp::Clear;
+        colorAttachment.StoreOp                  = StoreOp::Store;
+        colorAttachment.SetClearColor( 0.0f, 0.0f, 0.0f, 1.0f ); // Clear to transparent
+
+        renderingDesc.DepthAttachment.Resource = frame.DepthBuffer.get( );
+        renderingDesc.DepthAttachment.LoadOp   = LoadOp::Clear;
+        renderingDesc.DepthAttachment.StoreOp  = StoreOp::DontCare;
+        renderingDesc.DepthAttachment.SetClearDepthStencil( 1.0f, 0.0f ); // Clear to far depth
+
+        renderingDesc.RenderAreaWidth   = m_viewportWidth;
+        renderingDesc.RenderAreaHeight  = m_viewportHeight;
+        renderingDesc.RenderAreaOffsetX = 0.0f;
+        renderingDesc.RenderAreaOffsetY = 0.0f;
+
+        uiCmdList->BeginRendering( renderingDesc );
+        uiCmdList->BindViewport( 0.0f, 0.0f, m_viewportWidth, m_viewportHeight );
+        uiCmdList->BindScissorRect( 0.0f, 0.0f, m_viewportWidth, m_viewportHeight );
+        uiCmdList->BindPipeline( m_pipeline.get( ) );
+        uiCmdList->BindResourceGroup( frame.ConstantsBindGroup.get( ) );
+        uiCmdList->BindResourceGroup( frame.TextureBindGroup.get( ) );
+
+        FlushBatchedGeometry( uiCmdList );
+        uiCmdList->EndRendering( );
+    }
+
+    batchTransitionDesc = BatchTransitionDesc{ uiCmdList };
+    batchTransitionDesc.TransitionTexture( frame.ColorTarget.get( ), ResourceUsage::ShaderResource );
+    m_resourceTracking.BatchTransition( batchTransitionDesc );
+
+    uiCmdList->End( );
+
+    ExecuteCommandListsDesc executeDesc{ };
+    executeDesc.CommandLists.AddElement( uiCmdList );
+    m_commandQueue->ExecuteCommandLists( executeDesc );
+    m_commandQueue->WaitIdle( ); // Todo implement proper frame management
+
+    m_fullscreenQuad->DrawTextureToScreen( commandList, frame.ColorTarget.get( ) );
+}
+
+void ClayRenderer::ProcessRenderCommand( const Clay_RenderCommand *command, ICommandList *commandList )
+{
+    switch ( command->commandType )
+    {
+    case CLAY_RENDER_COMMAND_TYPE_RECTANGLE:
+        RenderRectangle( command, commandList );
+        break;
+
+    case CLAY_RENDER_COMMAND_TYPE_BORDER:
+        RenderBorder( command, commandList );
+        break;
+
+    case CLAY_RENDER_COMMAND_TYPE_TEXT:
+        RenderText( command, commandList );
+        break;
+
+    case CLAY_RENDER_COMMAND_TYPE_IMAGE:
+        RenderImage( command, commandList );
+        break;
+
+    case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:
+        SetScissor( command, commandList );
+        break;
+
+    case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END:
+        ClearScissor( commandList );
+        break;
+
+    default:
+        LOG( WARNING ) << "Unknown Clay render command type: " << command->commandType;
+        break;
     }
 }
 
-void ClayRenderer::ClearCaches( )
+void ClayRenderer::RenderRectangle( const Clay_RenderCommand *command, ICommandList *commandList )
 {
-    m_quadRenderer->ClearQuads( );
-    m_textureIndices.clear( );
-    for ( auto &cache : m_shapeCache | std::views::values )
+    const auto &data   = command->renderData.rectangle;
+    const auto &bounds = command->boundingBox;
+
+    InteropArray<UIVertex> vertices;
+    InteropArray<uint32_t> indices;
+    constexpr uint32_t     currentVertexCount = 0;
+
+    if ( data.cornerRadius.topLeft > 0 || data.cornerRadius.topRight > 0 || data.cornerRadius.bottomLeft > 0 || data.cornerRadius.bottomRight > 0 )
     {
-        if ( cache.Texture )
+        UIShapes::GenerateRoundedRectangleDesc desc{ };
+        desc.Bounds            = bounds;
+        desc.Color             = data.backgroundColor;
+        desc.CornerRadius      = data.cornerRadius;
+        desc.TextureIndex      = 0; // Solid color
+        desc.SegmentsPerCorner = 8;
+
+        UIShapes::GenerateRoundedRectangle( desc, &vertices, &indices, currentVertexCount );
+    }
+    else
+    {
+        UIShapes::GenerateRectangleDesc desc{ };
+        desc.Bounds       = bounds;
+        desc.Color        = data.backgroundColor;
+        desc.TextureIndex = 0;
+
+        UIShapes::GenerateRectangle( desc, &vertices, &indices, currentVertexCount );
+    }
+
+    if ( vertices.NumElements( ) > 0 && indices.NumElements( ) > 0 )
+    {
+        AddVerticesWithDepth( vertices, indices );
+    }
+}
+
+void ClayRenderer::RenderBorder( const Clay_RenderCommand *command, ICommandList *commandList )
+{
+    const auto &data   = command->renderData.border;
+    const auto &bounds = command->boundingBox;
+
+    InteropArray<UIVertex> vertices;
+    InteropArray<uint32_t> indices;
+    constexpr uint32_t     currentVertexCount = 0;
+
+    UIShapes::GenerateBorderDesc desc{ };
+    desc.Bounds            = bounds;
+    desc.Color             = data.color;
+    desc.BorderWidth       = data.width;
+    desc.CornerRadius      = data.cornerRadius;
+    desc.SegmentsPerCorner = 8;
+
+    UIShapes::GenerateBorder( desc, &vertices, &indices, currentVertexCount );
+    if ( vertices.NumElements( ) > 0 && indices.NumElements( ) > 0 )
+    {
+        AddVerticesWithDepth( vertices, indices );
+    }
+}
+
+void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *commandList )
+{
+    const auto &data   = command->renderData.text;
+    const auto &bounds = command->boundingBox;
+
+    FontData *fontData = GetFontData( data.fontId );
+    if ( fontData == nullptr || fontData->FontPtr == nullptr )
+    {
+        LOG( WARNING ) << "Font not found for ID: " << data.fontId;
+        return;
+    }
+
+    if ( fontData->TextLayouts.size( ) <= fontData->CurrentLayoutIndex )
+    {
+        const size_t oldSize = fontData->TextLayouts.size( );
+        const size_t newSize = std::max<size_t>( fontData->CurrentLayoutIndex + 1, fontData->TextLayouts.size( ) + 32 );
+        fontData->TextLayouts.resize( newSize );
+        for ( size_t i = oldSize; i < newSize; ++i )
         {
-            delete cache.Texture;
-            cache.Texture = nullptr;
+            TextLayoutDesc textLayoutDesc{ fontData->FontPtr };
+            fontData->TextLayouts[ i ] = std::make_unique<TextLayout>( textLayoutDesc );
         }
     }
-    m_shapeCache.clear( );
-    m_nextQuadId = 0;
-}
 
-void ClayRenderer::InvalidateLayout( )
-{
-    m_needsClear = true;
-}
+    const auto &textLayout = fontData->TextLayouts[ fontData->CurrentLayoutIndex++ ];
 
-void ClayRenderer::Render( ICommandList *commandList, const Clay_RenderCommandArray &commands, const uint32_t frameIndex )
-{
-    if ( commandList == nullptr )
+    const float baseSize       = static_cast<float>( fontData->FontPtr->Asset( )->InitialFontSize );
+    const float targetSize     = data.fontSize > 0 ? data.fontSize : baseSize;
+    const float effectiveScale = targetSize / baseSize;
+
+    ShapeTextDesc shapeDesc{ };
+    shapeDesc.Text      = InteropString( data.stringContents.chars, data.stringContents.length );
+    shapeDesc.FontSize  = static_cast<uint32_t>( targetSize );
+    shapeDesc.Direction = TextDirection::Auto;
+
+    // TODO This needs to be cached, its incredibly expensive.
+    textLayout->ShapeText( shapeDesc );
+
+    const float fontAscent = static_cast<float>( fontData->FontPtr->Asset( )->Metrics.Ascent ) * effectiveScale;
+    const float adjustedY  = bounds.y + fontAscent;
+
+    InteropArray<GlyphVertex> glyphVertices;
+    InteropArray<uint32_t>    glyphIndices;
+
+    GenerateTextVerticesDesc generateDesc{ };
+    const float              bearingPadding = 2.0f * effectiveScale; // Same as TextBatch
+    generateDesc.StartPosition              = Float_2{ bounds.x + bearingPadding, adjustedY };
+    generateDesc.Color                      = Float_4{ data.textColor.r / 255.0f, data.textColor.g / 255.0f, data.textColor.b / 255.0f, data.textColor.a / 255.0f };
+    generateDesc.OutVertices                = &glyphVertices;
+    generateDesc.OutIndices                 = &glyphIndices;
+    generateDesc.Scale                      = effectiveScale;
+    generateDesc.LetterSpacing              = data.letterSpacing;
+    generateDesc.LineHeight                 = data.lineHeight;
+
+    textLayout->GenerateTextVertices( generateDesc );
+    if ( glyphVertices.NumElements( ) > 0 && glyphIndices.NumElements( ) > 0 )
     {
-        LOG( ERROR ) << "ClayRenderer::Render: commandList is null";
-        return;
-    }
+        InteropArray<UIVertex> vertices;
+        InteropArray<uint32_t> indices;
 
-    if ( m_needsClear )
-    {
-        ClearCaches( );
-        m_needsClear = false;
-        return;
-    }
-
-    m_currentFrameQuadIndex = 0;
-    m_currentFrameIndex     = frameIndex;
-    for ( int i = 0; i < commands.length; ++i )
-    {
-        const Clay_RenderCommand *cmd = &commands.internalArray[ i ];
-        switch ( cmd->commandType )
+        // Convert glyph vertices to UI vertices
+        for ( uint32_t i = 0; i < glyphVertices.NumElements( ); ++i )
         {
-        case CLAY_RENDER_COMMAND_TYPE_NONE:
-            break;
-        case CLAY_RENDER_COMMAND_TYPE_RECTANGLE:
-            if ( cmd->renderData.rectangle.cornerRadius.topLeft > 0 || cmd->renderData.rectangle.cornerRadius.topRight > 0 ||
-                 cmd->renderData.rectangle.cornerRadius.bottomLeft > 0 || cmd->renderData.rectangle.cornerRadius.bottomRight > 0 )
-            {
-                RenderRoundedRectangle( cmd, frameIndex );
-            }
-            else
-            {
-                RenderRectangle( cmd, frameIndex );
-            }
-            break;
-        case CLAY_RENDER_COMMAND_TYPE_BORDER:
-            RenderBorder( cmd, frameIndex );
-            break;
-        case CLAY_RENDER_COMMAND_TYPE_TEXT:
-            // Flush any pending quads before rendering text
-            // if ( m_currentFrameQuadIndex > 0 )
-            // {
-            //     m_quadRenderer->Render( frameIndex, commandList );
-            //     m_currentFrameQuadIndex = 0;
-            // }
-            // RenderText( cmd, frameIndex, commandList );
-            break;
-        case CLAY_RENDER_COMMAND_TYPE_IMAGE:
-            RenderImage( cmd, frameIndex );
-            break;
-        case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:
-            commandList->BindScissorRect( cmd->boundingBox.x * m_dpiScale, cmd->boundingBox.y * m_dpiScale, cmd->boundingBox.width * m_dpiScale,
-                                          cmd->boundingBox.height * m_dpiScale );
-            break;
-        case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END:
-            commandList->BindScissorRect( 0, 0, m_viewportWidth * m_dpiScale, m_viewportHeight * m_dpiScale );
-            break;
-        case CLAY_RENDER_COMMAND_TYPE_CUSTOM:
-            break;
+            const GlyphVertex glyph = glyphVertices.GetElement( i );
+            UIVertex          vertex;
+            vertex.Position     = XMFLOAT3( glyph.Position.X, glyph.Position.Y, 0.0f ); // Z will be set in AddVerticesWithDepth
+            vertex.TexCoord     = XMFLOAT2( glyph.UV.X, glyph.UV.Y );
+            vertex.Color        = XMFLOAT4( glyph.Color.X, glyph.Color.Y, glyph.Color.Z, glyph.Color.W );
+            vertex.TextureIndex = fontData->TextureIndex;
+            vertices.AddElement( vertex );
         }
-    }
 
-    if ( m_currentFrameQuadIndex > 0 )
-    {
-        m_quadRenderer->Render( frameIndex, commandList );
-    }
-    m_desc.TextRenderer->BeginBatch( );
-    for ( int i = 0; i < commands.length; ++i )
-    {
-        const Clay_RenderCommand *cmd = &commands.internalArray[ i ];
-        switch ( cmd->commandType )
+        for ( uint32_t i = 0; i < glyphIndices.NumElements( ); ++i )
         {
-        case CLAY_RENDER_COMMAND_TYPE_TEXT:
-            RenderText( cmd, frameIndex, commandList );
-            break;
-        case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START:
-            commandList->BindScissorRect( cmd->boundingBox.x * m_dpiScale, cmd->boundingBox.y * m_dpiScale, cmd->boundingBox.width * m_dpiScale,
-                                          cmd->boundingBox.height * m_dpiScale );
-            break;
-        case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END:
-            commandList->BindScissorRect( 0, 0, m_viewportWidth * m_dpiScale, m_viewportHeight * m_dpiScale );
-            break;
-        default:
-            break;
+            indices.AddElement( glyphIndices.GetElement( i ) );
         }
+        AddVerticesWithDepth( vertices, indices );
     }
-    m_desc.TextRenderer->EndBatch( commandList );
 }
 
-ClayDimensions ClayRenderer::MeasureText( const InteropString &text, const Clay_TextElementConfig &desc ) const
+void ClayRenderer::RenderImage( const Clay_RenderCommand *command, ICommandList *commandList )
 {
-    if ( text.NumChars( ) == 0 )
+    const auto &data   = command->renderData.image;
+    const auto &bounds = command->boundingBox;
+
+    uint32_t   textureIndex = 0;
+    const auto it           = m_imageTextureIndices.find( data.imageData );
+    if ( it != m_imageTextureIndices.end( ) )
     {
-        return ClayDimensions{ 0, 0 };
+        textureIndex = it->second;
     }
-
-    TextRenderDesc textDesc;
-    textDesc.Text          = text;
-    textDesc.FontId        = desc.fontId;
-    textDesc.FontSize      = desc.fontSize * m_dpiScale;
-    textDesc.LetterSpacing = desc.letterSpacing * m_dpiScale;
-    textDesc.LineHeight    = desc.lineHeight;
-
-    const Float_2 size   = m_desc.TextRenderer->MeasureText( text, textDesc );
-    float         height = size.Y;
-    if ( desc.lineHeight > 0 )
+    else
     {
-        height = static_cast<float>( desc.lineHeight );
+        const auto texture                      = static_cast<ITextureResource *>( data.imageData );
+        textureIndex                            = RegisterTexture( texture );
+        m_imageTextureIndices[ data.imageData ] = textureIndex;
     }
-    return ClayDimensions{ size.X / m_dpiScale, height / m_dpiScale };
-}
 
-void ClayRenderer::RenderRectangle( const Clay_RenderCommand *command, const uint32_t frameIndex )
-{
-    const Clay_RectangleRenderData data   = command->renderData.rectangle;
-    const Clay_BoundingBox         bounds = command->boundingBox;
+    InteropArray<UIVertex> vertices;
+    InteropArray<uint32_t> indices;
 
-    const auto color = data.backgroundColor;
-    AddQuad( bounds, color, 0 );
-}
+    UIShapes::GenerateRectangleDesc desc{ };
+    desc.Bounds       = bounds;
+    desc.Color        = Clay_Color{ 255, 255, 255, 255 }; // White to show texture colors
+    desc.TextureIndex = textureIndex;
 
-void ClayRenderer::RenderRoundedRectangle( const Clay_RenderCommand *command, const uint32_t frameIndex )
-{
-    const Clay_RectangleRenderData data   = command->renderData.rectangle;
-    const Clay_BoundingBox         bounds = command->boundingBox;
-
-    ITextureResource *shapeTexture = GetOrCreateRoundedRectTexture( bounds, data );
-    const uint32_t    textureIndex = GetOrRegisterTexture( shapeTexture );
-    const auto        color        = data.backgroundColor;
-
-    AddQuad( bounds, color, textureIndex );
-}
-
-void ClayRenderer::RenderBorder( const Clay_RenderCommand *command, const uint32_t frameIndex )
-{
-    const Clay_BoundingBox bounds = command->boundingBox;
-    Clay_BorderRenderData  data   = command->renderData.border;
-
-    if ( data.width.top > 0 )
+    UIShapes::GenerateRectangle( desc, &vertices, &indices, 0 );
+    if ( vertices.NumElements( ) > 0 && indices.NumElements( ) > 0 )
     {
-        Clay_BoundingBox topBorder;
-        topBorder.x      = bounds.x;
-        topBorder.y      = bounds.y;
-        topBorder.width  = bounds.width;
-        topBorder.height = static_cast<float>( data.width.top );
-
-        Clay_RectangleRenderData rectData;
-        rectData.backgroundColor = data.color;
-        rectData.cornerRadius    = Clay_CornerRadius( 0, 0, 0, 0 );
-
-        Clay_RenderCommand rectCommand{ };
-        rectCommand.boundingBox          = topBorder;
-        rectCommand.renderData.rectangle = rectData;
-        rectCommand.commandType          = CLAY_RENDER_COMMAND_TYPE_RECTANGLE;
-        RenderRectangle( &rectCommand, frameIndex );
-    }
-
-    if ( data.width.bottom > 0 )
-    {
-        Clay_BoundingBox bottomBorder;
-        bottomBorder.x      = bounds.x;
-        bottomBorder.y      = bounds.y + bounds.height - data.width.bottom;
-        bottomBorder.width  = bounds.width;
-        bottomBorder.height = static_cast<float>( data.width.bottom );
-
-        Clay_RectangleRenderData rectData;
-        rectData.backgroundColor = data.color;
-        rectData.cornerRadius    = Clay_CornerRadius( 0, 0, 0, 0 );
-
-        Clay_RenderCommand rectCommand{ };
-        rectCommand.boundingBox          = bottomBorder;
-        rectCommand.renderData.rectangle = rectData;
-        rectCommand.commandType          = CLAY_RENDER_COMMAND_TYPE_RECTANGLE;
-        RenderRectangle( &rectCommand, frameIndex );
-    }
-
-    if ( data.width.left > 0 )
-    {
-        Clay_BoundingBox leftBorder;
-        leftBorder.x      = bounds.x;
-        leftBorder.y      = bounds.y + data.width.top;
-        leftBorder.width  = static_cast<float>( data.width.left );
-        leftBorder.height = bounds.height - data.width.top - data.width.bottom;
-
-        Clay_RectangleRenderData rectData;
-        rectData.backgroundColor = data.color;
-        rectData.cornerRadius    = Clay_CornerRadius( 0, 0, 0, 0 );
-
-        Clay_RenderCommand rectCommand{ };
-        rectCommand.boundingBox          = leftBorder;
-        rectCommand.renderData.rectangle = rectData;
-        rectCommand.commandType          = CLAY_RENDER_COMMAND_TYPE_RECTANGLE;
-        RenderRectangle( &rectCommand, frameIndex );
-    }
-
-    if ( data.width.right > 0 )
-    {
-        Clay_BoundingBox rightBorder;
-        rightBorder.x      = bounds.x + bounds.width - data.width.right;
-        rightBorder.y      = bounds.y + data.width.top;
-        rightBorder.width  = static_cast<float>( data.width.right );
-        rightBorder.height = bounds.height - data.width.top - data.width.bottom;
-
-        Clay_RectangleRenderData rectData;
-        rectData.backgroundColor = data.color;
-        rectData.cornerRadius    = Clay_CornerRadius( 0, 0, 0, 0 );
-
-        Clay_RenderCommand rectCommand{ };
-        rectCommand.boundingBox          = rightBorder;
-        rectCommand.renderData.rectangle = rectData;
-        rectCommand.commandType          = CLAY_RENDER_COMMAND_TYPE_RECTANGLE;
-        RenderRectangle( &rectCommand, frameIndex );
+        AddVerticesWithDepth( vertices, indices );
     }
 }
 
-void ClayRenderer::RenderText( const Clay_RenderCommand *command, const uint32_t frameIndex, ICommandList *commandList ) const
+void ClayRenderer::SetScissor( const Clay_RenderCommand *command, ICommandList *commandList )
 {
-    const Clay_TextRenderData data   = command->renderData.text;
-    const Clay_BoundingBox    bounds = command->boundingBox;
+    const auto &bounds = command->boundingBox;
 
-    if ( data.stringContents.length == 0 )
+    ScissorState state;
+    state.Enabled = true;
+    state.X       = bounds.x;
+    state.Y       = bounds.y;
+    state.Width   = bounds.width;
+    state.Height  = bounds.height;
+
+    m_scissorStack.push_back( state );
+    commandList->BindScissorRect( bounds.x, bounds.y, bounds.width, bounds.height );
+}
+
+void ClayRenderer::ClearScissor( ICommandList *commandList )
+{
+    if ( !m_scissorStack.empty( ) )
     {
-        return;
+        m_scissorStack.pop_back( );
     }
-
-    TextRenderDesc textDesc;
-    textDesc.Text          = InteropString( data.stringContents.chars, data.stringContents.length );
-    textDesc.X             = bounds.x * m_dpiScale;
-    textDesc.Y             = bounds.y * m_dpiScale;
-    textDesc.FontId        = data.fontId;
-    textDesc.FontSize      = data.fontSize * m_dpiScale;
-    textDesc.LetterSpacing = data.letterSpacing * m_dpiScale;
-    textDesc.LineHeight    = data.lineHeight;
-    textDesc.Color         = Float_4( data.textColor.r / 255.0f, data.textColor.g / 255.0f, data.textColor.b / 255.0f, data.textColor.a / 255.0f );
-    m_desc.TextRenderer->AddText( textDesc );
-}
-
-void ClayRenderer::RenderImage( const Clay_RenderCommand *command, const uint32_t frameIndex )
-{
-    const Clay_ImageRenderData data   = command->renderData.image;
-    const Clay_BoundingBox     bounds = command->boundingBox;
-
-    const auto texture = static_cast<ITextureResource *>( data.imageData );
-    if ( !texture )
+    if ( m_scissorStack.empty( ) )
     {
-        return;
+        commandList->BindScissorRect( 0, 0, m_viewportWidth, m_viewportHeight );
     }
-
-    const uint32_t textureIndex = GetOrRegisterTexture( texture );
-    AddQuad( bounds, data.backgroundColor, textureIndex );
-}
-
-ITextureResource *ClayRenderer::GetOrCreateRoundedRectTexture( const Clay_BoundingBox &bounds, const Clay_RectangleRenderData &data )
-{
-    const uint64_t hash = GetShapeHash( bounds, data );
-
-    auto it = m_shapeCache.find( hash );
-    if ( it != m_shapeCache.end( ) && it->second.Texture != nullptr )
+    else
     {
-        return it->second.Texture;
+        const auto &state = m_scissorStack.back( );
+        commandList->BindScissorRect( state.X, state.Y, state.Width, state.Height );
     }
-
-    m_vectorCanvas->Clear( );
-    CreateVectorShape( bounds, data, *m_vectorCanvas );
-
-    m_vectorCanvas->Draw( );
-    m_vectorCanvas->Sync( );
-
-    TextureDesc textureDesc;
-    textureDesc.Width        = m_desc.Width;
-    textureDesc.Height       = m_desc.Height;
-    textureDesc.Format       = Format::R8G8B8A8Unorm;
-    textureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture );
-    textureDesc.InitialUsage = ResourceUsage::ShaderResource;
-    textureDesc.DebugName    = "Clay Rounded Rectangle Texture";
-
-    std::unique_ptr<ITextureResource> texture( m_desc.LogicalDevice->CreateTextureResource( textureDesc ) );
-
-    BatchResourceCopy batchCopy( m_desc.LogicalDevice );
-    batchCopy.Begin( );
-
-    CopyDataToTextureDesc copyDesc;
-    copyDesc.Data       = m_vectorCanvas->GetDataAsBytes( );
-    copyDesc.DstTexture = texture.get( );
-    batchCopy.CopyDataToTexture( copyDesc );
-    batchCopy.Submit( );
-
-    ShapeCache &cache = m_shapeCache[ hash ];
-    cache.Texture     = texture.release( );
-    return cache.Texture;
 }
 
-uint64_t ClayRenderer::GetShapeHash( const Clay_BoundingBox &bounds, const Clay_RectangleRenderData &data ) const
+uint32_t ClayRenderer::RegisterTexture( ITextureResource *texture )
 {
-    constexpr std::hash<float> hasher;
-    uint64_t                   hash = 0;
-    hash ^= hasher( data.cornerRadius.topLeft ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    hash ^= hasher( data.cornerRadius.topRight ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    hash ^= hasher( data.cornerRadius.bottomLeft ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    hash ^= hasher( data.cornerRadius.bottomRight ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    hash ^= hasher( data.backgroundColor.r ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    hash ^= hasher( data.backgroundColor.g ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    hash ^= hasher( data.backgroundColor.b ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    hash ^= hasher( data.backgroundColor.a ) + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
-    return hash;
-}
-
-void ClayRenderer::CreateVectorShape( const Clay_BoundingBox &bounds, const Clay_RectangleRenderData &data, ThorVGCanvas &canvas ) const
-{
-    ThorVGShape shape;
-
-    const float width  = static_cast<float>( m_desc.Width );
-    const float height = static_cast<float>( m_desc.Height );
-
-    // Calculate corner radius as a percentage of the smaller dimension
-    // This ensures corners scale properly when the texture is stretched
-    const float minDim      = std::min( width, height );
-    const float cornerScale = minDim / 100.0f; // Assume 100 units as reference
-
-    const float scaledTL = data.cornerRadius.topLeft * cornerScale;
-    const float scaledTR = data.cornerRadius.topRight * cornerScale;
-    const float scaledBL = data.cornerRadius.bottomLeft * cornerScale;
-    const float scaledBR = data.cornerRadius.bottomRight * cornerScale;
-    const float avgCornerScale = ( scaledTL + scaledTR + scaledBL + scaledBR ) / 4;
-    shape.AppendRect( 0, 0, width, height, avgCornerScale, avgCornerScale );
-
-    shape.Fill( static_cast<uint8_t>( data.backgroundColor.r ), static_cast<uint8_t>( data.backgroundColor.g ), static_cast<uint8_t>( data.backgroundColor.b ),
-                static_cast<uint8_t>( data.backgroundColor.a ) );
-
-    canvas.Push( &shape );
-}
-
-uint32_t ClayRenderer::GetOrRegisterTexture( ITextureResource *texture )
-{
-    if ( !texture )
+    if ( texture == nullptr )
     {
         return 0;
     }
 
-    const auto it = m_textureIndices.find( texture );
-    if ( it != m_textureIndices.end( ) )
+    for ( uint32_t i = 0; i < m_textures.size( ); ++i )
     {
-        return it->second;
+        if ( m_textures[ i ] == nullptr )
+        {
+            m_textures[ i ] = texture;
+            m_texturesDirty = true;
+            return i + 1; // Texture index 0 is reserved for solid color
+        }
     }
 
-    const uint32_t index        = m_quadRenderer->RegisterTexture( texture );
-    m_textureIndices[ texture ] = index;
-    return index;
+    LOG( ERROR ) << "ClayRenderer: Exceeded maximum texture count";
+    return 0;
 }
 
-void ClayRenderer::AddQuad( const Clay_BoundingBox &bounds, const Clay_Color &color, const uint32_t textureIndex )
+void ClayRenderer::UpdateTextureBindings( const uint32_t frameIndex ) const
 {
-    const uint32_t quadId  = m_currentFrameQuadIndex;
-    const Float_4  dzColor = { color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f };
-
-    QuadDataDesc quadDesc;
-    quadDesc.QuadId       = quadId;
-    quadDesc.Position     = Float_2( bounds.x, bounds.y );
-    quadDesc.Size         = Float_2( bounds.width, bounds.height );
-    quadDesc.TextureIndex = textureIndex;
-    quadDesc.Color        = dzColor;
-    quadDesc.Rotation     = 0.0f;
-    quadDesc.Scale        = Float_2( 1.0f, 1.0f );
-    quadDesc.UV0          = Float_2( 0.0f, 0.0f );
-    quadDesc.UV1          = Float_2( 1.0f, 1.0f );
-
-    if ( quadId >= m_nextQuadId )
+    if ( frameIndex >= m_frameData.size( ) )
     {
-        m_nextQuadId = quadId + 1;
-        m_quadRenderer->AddQuad( quadDesc );
+        return;
+    }
+
+    const FrameData                 &frame = m_frameData[ frameIndex ];
+    InteropArray<ITextureResource *> textureArray;
+    for ( const auto &tex : m_textures )
+    {
+        textureArray.AddElement( tex ? tex : m_nullTexture.get( ) );
+    }
+    frame.TextureBindGroup->BeginUpdate( )->SrvArray( 0, textureArray )->Sampler( 0, m_linearSampler.get( ) )->EndUpdate( );
+}
+
+ClayRenderer::FontData *ClayRenderer::GetFontData( const uint16_t fontId )
+{
+    const auto it = m_fonts.find( fontId );
+    if ( it != m_fonts.end( ) )
+    {
+        return &it->second;
+    }
+    return nullptr;
+}
+
+void ClayRenderer::InitializeFontAtlas( FontData *fontData )
+{
+    if ( fontData == nullptr || fontData->FontPtr == nullptr )
+    {
+        return;
+    }
+
+    const auto *fontAsset = fontData->FontPtr->Asset( );
+    if ( fontAsset == nullptr )
+    {
+        LOG( ERROR ) << "Font asset is null";
+        return;
+    }
+
+    TextureDesc texDesc{ };
+    texDesc.Format     = Format::R8G8B8A8Unorm;
+    texDesc.Width      = fontAsset->AtlasWidth;
+    texDesc.Height     = fontAsset->AtlasHeight;
+    texDesc.Depth      = 1;
+    texDesc.ArraySize  = 1;
+    texDesc.MipLevels  = 1;
+    texDesc.Usages     = BitSet( ResourceUsage::ShaderResource );
+    texDesc.Descriptor = BitSet( ResourceDescriptor::Texture );
+    texDesc.HeapType   = HeapType::GPU;
+    texDesc.DebugName  = InteropString( "Font Atlas" );
+
+    fontData->Atlas = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( texDesc ) );
+    if ( fontAsset->AtlasData.NumElements( ) > 0 )
+    {
+        CommandQueueDesc commandQueueDesc{ };
+        commandQueueDesc.QueueType = QueueType::Graphics;
+
+        auto commandQueue = std::unique_ptr<ICommandQueue>( m_logicalDevice->CreateCommandQueue( commandQueueDesc ) );
+
+        CommandListPoolDesc commandListPoolDesc{ };
+        commandListPoolDesc.CommandQueue    = commandQueue.get( );
+        commandListPoolDesc.NumCommandLists = 1;
+
+        auto commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( commandListPoolDesc ) );
+        auto commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
+        commandList->Begin( );
+
+        const auto alignedPitch = Utilities::Align( fontAsset->AtlasWidth * FontAsset::NumChannels, m_logicalDevice->DeviceInfo( ).Constants.BufferTextureRowAlignment );
+        const auto alignedSlice = Utilities::Align( fontAsset->AtlasHeight, m_logicalDevice->DeviceInfo( ).Constants.BufferTextureAlignment );
+
+        BufferDesc stagingDesc;
+        stagingDesc.NumBytes          = alignedPitch * alignedSlice;
+        stagingDesc.Descriptor        = BitSet( ResourceDescriptor::Buffer );
+        stagingDesc.InitialUsage      = ResourceUsage::CopySrc;
+        stagingDesc.DebugName         = "Font MSDF Atlas Staging Buffer";
+        stagingDesc.HeapType          = HeapType::CPU;
+        auto m_fontAtlasStagingBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( stagingDesc ) );
+
+        TextureDesc textureDesc{ };
+        textureDesc.Width        = fontAsset->AtlasWidth;
+        textureDesc.Height       = fontAsset->AtlasHeight;
+        textureDesc.Format       = Format::R8G8B8A8Unorm;
+        textureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture );
+        textureDesc.InitialUsage = ResourceUsage::ShaderResource;
+        textureDesc.DebugName    = "Font MTSDF Atlas Texture";
+        fontData->Atlas          = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
+
+        m_resourceTracking.TrackTexture( fontData->Atlas.get( ), ResourceUsage::ShaderResource );
+        m_resourceTracking.TrackBuffer( m_fontAtlasStagingBuffer.get( ), ResourceUsage::CopySrc );
+
+        LoadAtlasIntoGpuTextureDesc loadDesc{ };
+        loadDesc.Device        = m_logicalDevice;
+        loadDesc.StagingBuffer = m_fontAtlasStagingBuffer.get( );
+        loadDesc.CommandList   = commandList;
+        loadDesc.Texture       = fontData->Atlas.get( );
+        FontAssetReader::LoadAtlasIntoGpuTexture( *fontAsset, loadDesc );
+
+        BatchTransitionDesc batchTransitionDesc{ commandList };
+        batchTransitionDesc.TransitionTexture( fontData->Atlas.get( ), ResourceUsage::CopyDst );
+        m_resourceTracking.BatchTransition( batchTransitionDesc );
+
+        CopyBufferToTextureDesc copyDesc{ };
+        copyDesc.SrcBuffer  = m_fontAtlasStagingBuffer.get( );
+        copyDesc.DstTexture = fontData->Atlas.get( );
+        copyDesc.RowPitch   = fontAsset->AtlasWidth * 4; // 4 bytes per pixel (RGBA)
+        copyDesc.Format     = fontData->Atlas->GetFormat( );
+
+        commandList->CopyBufferToTexture( copyDesc );
+
+        batchTransitionDesc = BatchTransitionDesc{ commandList };
+        batchTransitionDesc.TransitionTexture( fontData->Atlas.get( ), ResourceUsage::ShaderResource );
+        m_resourceTracking.BatchTransition( batchTransitionDesc );
+
+        commandList->End( );
+        ExecuteCommandListsDesc executeDesc{ };
+        executeDesc.CommandLists = { commandList };
+        commandQueue->ExecuteCommandLists( executeDesc );
+        commandQueue->WaitIdle( );
+    }
+
+    fontData->TextureIndex = RegisterTexture( fontData->Atlas.get( ) );
+}
+
+void ClayRenderer::ClearCaches( )
+{
+    for ( auto &val : m_fonts | std::views::values )
+    {
+        val.TextLayouts.clear( );
+        val.CurrentLayoutIndex = 0;
+    }
+
+    m_imageTextureIndices.clear( );
+    bool anyTextureCleared = false;
+    for ( uint32_t i = 1; i < m_textures.size( ); ++i )
+    {
+        bool isFontTexture = false;
+        for ( const auto &val : m_fonts | std::views::values )
+        {
+            if ( val.TextureIndex == i + 1 )
+            {
+                isFontTexture = true;
+                break;
+            }
+        }
+
+        if ( !isFontTexture && m_textures[ i ] != nullptr )
+        {
+            m_textures[ i ]   = nullptr;
+            anyTextureCleared = true;
+        }
+    }
+
+    if ( anyTextureCleared )
+    {
+        m_texturesDirty = true;
+    }
+}
+
+ClayDimensions ClayRenderer::MeasureText( const InteropString &text, const Clay_TextElementConfig &desc ) const
+{
+    ClayDimensions result{ };
+    result.Width  = 0;
+    result.Height = 0;
+
+    const auto it = m_fonts.find( desc.fontId );
+    if ( it == m_fonts.end( ) || it->second.FontPtr == nullptr )
+    {
+        return result;
+    }
+
+    const FontData &fontData = it->second;
+    Font           *font     = fontData.FontPtr;
+
+    const TextLayoutDesc layoutDesc{ font };
+    TextLayout           layout( layoutDesc );
+
+    const float baseSize   = static_cast<float>( font->Asset( )->InitialFontSize );
+    const float targetSize = desc.fontSize > 0 ? desc.fontSize : baseSize;
+
+    ShapeTextDesc shapeDesc{ };
+    shapeDesc.Text      = text;
+    shapeDesc.FontSize  = static_cast<uint32_t>( targetSize );
+    shapeDesc.Direction = TextDirection::Auto;
+
+    layout.ShapeText( shapeDesc );
+
+    const auto size = layout.GetTextSize( );
+    result.Width    = size.X;
+    result.Height   = size.Y;
+
+    return result;
+}
+
+void ClayRenderer::AddVerticesWithDepth( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices )
+{
+    const uint32_t baseVertexIndex = m_batchedVertices.NumElements( );
+    for ( uint32_t i = 0; i < vertices.NumElements( ); ++i )
+    {
+        UIVertex vertex   = vertices.GetElement( i );
+        vertex.Position.z = m_currentDepth;
+        m_batchedVertices.AddElement( vertex );
+    }
+
+    for ( uint32_t i = 0; i < indices.NumElements( ); ++i )
+    {
+        m_batchedIndices.AddElement( indices.GetElement( i ) + baseVertexIndex );
+    }
+
+    m_currentDepth += DEPTH_INCREMENT;
+}
+
+void ClayRenderer::FlushBatchedGeometry( ICommandList *commandList )
+{
+    if ( m_batchedVertices.NumElements( ) == 0 || m_batchedIndices.NumElements( ) == 0 )
+    {
+        return;
+    }
+
+    const size_t vertexDataSize = m_batchedVertices.NumElements( ) * sizeof( UIVertex );
+    const size_t indexDataSize  = m_batchedIndices.NumElements( ) * sizeof( uint32_t );
+
+    if ( vertexDataSize <= m_desc.MaxVertices * sizeof( UIVertex ) && indexDataSize <= m_desc.MaxIndices * sizeof( uint32_t ) )
+    {
+        memcpy( m_vertexBufferData, m_batchedVertices.Data( ), vertexDataSize );
+        memcpy( m_indexBufferData, m_batchedIndices.Data( ), indexDataSize );
+
+        commandList->BindVertexBuffer( m_vertexBuffer.get( ) );
+        commandList->BindIndexBuffer( m_indexBuffer.get( ), IndexType::Uint32 );
+        commandList->DrawIndexed( m_batchedIndices.NumElements( ), 1, 0, 0, 0 );
     }
     else
     {
-        m_quadRenderer->UpdateQuad( m_currentFrameIndex, quadDesc );
+        LOG( ERROR ) << "ClayRenderer: Batched geometry exceeds buffer limits";
     }
-    m_currentFrameQuadIndex++;
+
+    m_batchedVertices.Clear( );
+    m_batchedIndices.Clear( );
+    m_currentDepth = 0.9f;
 }
