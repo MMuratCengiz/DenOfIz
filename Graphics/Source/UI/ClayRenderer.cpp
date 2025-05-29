@@ -139,7 +139,7 @@ void ClayRenderer::CreatePipeline( )
     renderTarget.Blend.DstBlend      = Blend::InvSrcAlpha;
     renderTarget.Blend.BlendOp       = BlendOp::Add;
     renderTarget.Blend.SrcBlendAlpha = Blend::One;
-    renderTarget.Blend.DstBlendAlpha = Blend::InvSrcAlpha;
+    renderTarget.Blend.DstBlendAlpha = Blend::Zero;
     renderTarget.Blend.BlendOpAlpha  = BlendOp::Add;
 
     m_pipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
@@ -550,8 +550,8 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
         auto           newLayout = std::make_unique<TextLayout>( textLayoutDesc );
 
         ShapeTextDesc shapeDesc{ };
-        shapeDesc.Text      = InteropString( data.stringContents.chars, data.stringContents.length );
-        shapeDesc.FontSize  = static_cast<uint32_t>( targetSize );
+        shapeDesc.Text     = InteropString( data.stringContents.chars, data.stringContents.length );
+        shapeDesc.FontSize = static_cast<uint32_t>( targetSize );
 
         newLayout->ShapeText( shapeDesc );
         textLayout                   = newLayout.get( );

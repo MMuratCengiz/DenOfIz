@@ -122,7 +122,11 @@ float4 main(PSInput input) : SV_TARGET
         {
             opacity = opacity * texColor.a;
         }
-        return float4(input.Color.rgb, input.Color.a * opacity);
+        float4 finalColor = float4(input.Color.rgb, input.Color.a * opacity);
+        if (finalColor.a < 0.001f) {
+            discard;
+        }
+        return finalColor;
     }
     else
     {
