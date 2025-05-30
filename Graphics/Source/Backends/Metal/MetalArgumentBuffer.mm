@@ -39,6 +39,19 @@ void DescriptorTable::SetDebugName( const std::string &name )
     [m_buffer setLabel:[NSString stringWithUTF8String:name.c_str( )]];
 }
 
+void DescriptorTable::Reset( size_t newNumEntries )
+{
+    if ( newNumEntries != m_numEntries )
+    {
+        m_numEntries = newNumEntries;
+        size_t length = sizeof( IRDescriptorTableEntry ) * m_numEntries;
+        m_buffer = [m_context->Device newBufferWithLength:length options:MTLResourceStorageModeShared];
+        m_contents = (IRDescriptorTableEntry *)m_buffer.contents;
+    }
+    
+    memset( m_contents, 0, sizeof( IRDescriptorTableEntry ) * m_numEntries );
+}
+
 void DescriptorTable::EncodeBuffer( id<MTLBuffer> buffer, uint32_t index, uint32_t offset )
 {
     DZ_ASSERTM( index < m_numEntries, "DescriptorTable::EncodeBuffer: index out of bounds" );

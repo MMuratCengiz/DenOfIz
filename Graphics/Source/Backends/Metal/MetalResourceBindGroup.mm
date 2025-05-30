@@ -183,15 +183,31 @@ void MetalResourceBindGroup::EndUpdate( )
 
     if ( cbvSrvUavTableSize > 0 )
     {
-        m_cbvSrvUavTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, cbvSrvUavTableSize ) );
-        m_cbvSrvUavTable->Table.SetDebugName( "CbvSrvUav Table[Space: " + std::to_string( m_desc.RegisterSpace ) + "]" );
-        m_cbvSrvUavTable->TLABOffset = m_rootSignature->CbvSrvUavTableOffset( m_desc.RegisterSpace );
+        if ( !m_cbvSrvUavTable )
+        {
+            m_cbvSrvUavTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, cbvSrvUavTableSize ) );
+            m_cbvSrvUavTable->Table.SetDebugName( "CbvSrvUav Table[Space: " + std::to_string( m_desc.RegisterSpace ) + "]" );
+            m_cbvSrvUavTable->TLABOffset = m_rootSignature->CbvSrvUavTableOffset( m_desc.RegisterSpace );
+        }
+        else
+        {
+            m_cbvSrvUavTable->Table.Reset( cbvSrvUavTableSize );
+        }
+        m_cbvSrvUavTable->NumEntries = 0;
     }
     if ( !m_boundSamplers.empty( ) )
     {
-        m_samplerTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, m_boundSamplers.size( ) ) );
-        m_samplerTable->Table.SetDebugName( "Sampler Table[Space: " + std::to_string( m_desc.RegisterSpace ) + "]" );
-        m_samplerTable->TLABOffset = m_rootSignature->SamplerTableOffset( m_desc.RegisterSpace );
+        if ( !m_samplerTable )
+        {
+            m_samplerTable = std::make_unique<MetalDescriptorTableBinding>( 0, DescriptorTable( m_context, m_boundSamplers.size( ) ) );
+            m_samplerTable->Table.SetDebugName( "Sampler Table[Space: " + std::to_string( m_desc.RegisterSpace ) + "]" );
+            m_samplerTable->TLABOffset = m_rootSignature->SamplerTableOffset( m_desc.RegisterSpace );
+        }
+        else
+        {
+            m_samplerTable->Table.Reset( m_boundSamplers.size( ) );
+        }
+        m_samplerTable->NumEntries = 0;
     }
 
     for ( auto item : m_boundBuffers )

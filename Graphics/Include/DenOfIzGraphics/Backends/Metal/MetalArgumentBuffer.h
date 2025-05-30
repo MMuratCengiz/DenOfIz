@@ -15,6 +15,7 @@ namespace DenOfIz
     public:
         DescriptorTable( MetalContext *context, size_t numEntries );
         void SetDebugName( const std::string &name );
+        void Reset( size_t newNumEntries );
 
         void                        EncodeBuffer( id<MTLBuffer> buffer, uint32_t index, uint32_t offset = 0 );
         void                        EncodeTexture( id<MTLTexture> texture, float minLodClamp, uint32_t index );

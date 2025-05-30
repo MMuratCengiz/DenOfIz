@@ -35,8 +35,8 @@ namespace DenOfIz
         MTLRenderStages  ShaderStages = 0;
         MTLResourceUsage Usage        = MTLResourceUsageRead;
 
-        MetalUpdateDescItem() = default;
-        MetalUpdateDescItem( T* resource, MTLRenderStages shaderStages, MTLResourceUsage usage ) : Resource( resource ), ShaderStages( shaderStages ), Usage( usage )
+        MetalUpdateDescItem( ) = default;
+        MetalUpdateDescItem( T *resource, MTLRenderStages shaderStages, MTLResourceUsage usage ) : Resource( resource ), ShaderStages( shaderStages ), Usage( usage )
         {
         }
     };
@@ -46,7 +46,7 @@ namespace DenOfIz
         uint32_t      TLABOffset = 0;
         id<MTLBuffer> Buffer;
 
-        MetalRootParameterBinding() = default;
+        MetalRootParameterBinding( ) = default;
         MetalRootParameterBinding( uint32_t offset, id<MTLBuffer> buffer ) : TLABOffset( offset ), Buffer( buffer )
         {
         }
@@ -132,7 +132,7 @@ namespace DenOfIz
         const std::vector<MetalUpdateDescItem<MetalSampler>>         &Samplers( ) const;
 
         [[nodiscard]] MetalRootSignature *RootSignature( ) const;
-        [[nodiscard]] uint32_t RegisterSpace( ) const;
+        [[nodiscard]] uint32_t            RegisterSpace( ) const;
 
     private:
         void                BindAccelerationStructure( const ResourceBindingSlot &slot, ITopLevelAS *accelerationStructure );
