@@ -106,7 +106,7 @@ void ClayRenderer::CreateShaderProgram( )
     psDesc.EntryPoint       = InteropString( "main" );
     psDesc.Data             = EmbeddedUIShaders::GetUIPixelShaderBytes( );
 
-    psDesc.Bindless.MarkSrvAsBindlessArray( 0, 1, m_desc.MaxTextures );
+    psDesc.Bindless.MarkSrvAsBindlessArray( 0, 0, m_desc.MaxTextures );
     m_shaderProgram = std::make_unique<ShaderProgram>( programDesc );
 }
 
@@ -186,7 +186,7 @@ void ClayRenderer::CreateBuffers( )
 
         ResourceBindGroupDesc constantGroupDesc{ };
         constantGroupDesc.RootSignature = m_rootSignature.get( );
-        constantGroupDesc.RegisterSpace = 0; // Default space for constants
+        constantGroupDesc.RegisterSpace = 1;
         frame.ConstantsBindGroup        = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( constantGroupDesc ) );
 
         BindBufferDesc bindUniformsDesc{ };
@@ -197,7 +197,7 @@ void ClayRenderer::CreateBuffers( )
 
         ResourceBindGroupDesc textureGroupDesc{ };
         textureGroupDesc.RootSignature = m_rootSignature.get( );
-        textureGroupDesc.RegisterSpace = 1; // Space 1 for bindless textures
+        textureGroupDesc.RegisterSpace = 0; // Todo metal needs bindless arrays at 0
         frame.TextureBindGroup         = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( textureGroupDesc ) );
     }
 
@@ -281,10 +281,10 @@ void ClayRenderer::RemoveFont( const uint16_t fontId )
     const auto it = m_fonts.find( fontId );
     if ( it != m_fonts.end( ) )
     {
-        if ( it->second.TextureIndex > 0 && it->second.TextureIndex <= m_textures.size( ) )
+        if ( it->second.TextureIndex > 0 && it->second.TextureIndex < m_textures.size( ) )
         {
-            m_textures[ it->second.TextureIndex - 1 ] = nullptr;
-            m_texturesDirty                           = true; // Mark textures as dirty when removing
+            m_textures[ it->second.TextureIndex ] = nullptr;
+            m_texturesDirty                       = true; // Mark textures as dirty when removing
         }
         m_fonts.erase( it );
     }
@@ -554,7 +554,6 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
         LOG( WARNING ) << "Font not found for ID: " << data.fontId;
         return;
     }
-
     const float baseSize       = static_cast<float>( fontData->FontPtr->Asset( )->InitialFontSize );
     const float targetSize     = data.fontSize > 0 ? data.fontSize * m_dpiScale : baseSize;
     const float effectiveScale = targetSize / baseSize;
@@ -675,13 +674,13 @@ uint32_t ClayRenderer::RegisterTexture( ITextureResource *texture )
         return 0;
     }
 
-    for ( uint32_t i = 0; i < m_textures.size( ); ++i )
+    for ( uint32_t i = 1; i < m_textures.size( ); ++i )
     {
         if ( m_textures[ i ] == nullptr )
         {
             m_textures[ i ] = texture;
             m_texturesDirty = true;
-            return i + 1; // Texture index 0 is reserved for solid color
+            return i;
         }
     }
 
@@ -820,7 +819,7 @@ void ClayRenderer::ClearCaches( )
         bool isFontTexture = false;
         for ( const auto &val : m_fonts | std::views::values )
         {
-            if ( val.TextureIndex == i + 1 )
+            if ( val.TextureIndex == i )
             {
                 isFontTexture = true;
                 break;
@@ -904,8 +903,8 @@ void ClayRenderer::FlushCurrentBatch( )
     const size_t vertexDataSize = m_batchedVertices.NumElements( ) * sizeof( UIVertex );
     const size_t indexDataSize  = m_batchedIndices.NumElements( ) * sizeof( uint32_t );
 
-    if ( ( alignedVertexOffset + m_batchedVertices.NumElements( ) ) * sizeof( UIVertex ) > m_desc.MaxVertices * sizeof( UIVertex ) ||
-         ( alignedIndexOffset + m_batchedIndices.NumElements( ) ) * sizeof( uint32_t ) > m_desc.MaxIndices * sizeof( uint32_t ) )
+    if ( ( alignedVertexOffset + m_batchedVertices.NumElements( ) ) > m_desc.MaxVertices ||
+         ( alignedIndexOffset + m_batchedIndices.NumElements( ) ) > m_desc.MaxIndices )
     {
         LOG( ERROR ) << "ClayRenderer: Geometry exceeds buffer limits";
         return;
@@ -916,7 +915,7 @@ void ClayRenderer::FlushCurrentBatch( )
     const auto indexDst = reinterpret_cast<uint32_t *>( m_indexBufferData + alignedIndexOffset * sizeof( uint32_t ) );
     for ( uint32_t i = 0; i < m_batchedIndices.NumElements( ); ++i )
     {
-        indexDst[ i ] = m_batchedIndices.GetElement( i ) + alignedVertexOffset;
+        indexDst[ i ] = m_batchedIndices.GetElement( i ); // Don't add vertex offset here, use baseVertex instead
     }
 
     DrawBatch batch;
@@ -966,7 +965,7 @@ void ClayRenderer::ExecuteDrawBatches( ICommandList *commandList ) const
         {
             commandList->BindScissorRect( 0, 0, m_viewportWidth, m_viewportHeight );
         }
-        commandList->DrawIndexed( batch.IndexCount, 1, batch.IndexOffset, 0, 0 );
+        commandList->DrawIndexed( batch.IndexCount, 1, batch.IndexOffset, batch.VertexOffset, 0 );
     }
 }
 

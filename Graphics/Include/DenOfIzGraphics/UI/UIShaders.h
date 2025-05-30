@@ -39,7 +39,7 @@ struct VSOutput
     uint TextureIndex : TEXINDEX;
 };
 
-cbuffer UIUniforms : register(b0, space0)
+cbuffer UIUniforms : register(b0, space1)
 {
     float4x4 Projection;
     float4 ScreenSize; // xy: screen dimensions, zw: unused
@@ -65,17 +65,15 @@ struct PSInput
     uint TextureIndex : TEXINDEX;
 };
 
-// Space 0: Constants only
-cbuffer UIUniforms : register(b0, space0)
+Texture2D Textures[] : register(t0, space0);
+SamplerState LinearSampler : register(s0, space0);
+
+cbuffer UIUniforms : register(b0, space1)
 {
     float4x4 Projection;
     float4 ScreenSize; // xy: screen dimensions, zw: unused
     float4 FontParams; // x: atlas width, y: atlas height, z: pixel range, w: unused
 };
-
-// Space 1: Bindless texture array and sampler
-Texture2D Textures[] : register(t0, space1);
-SamplerState LinearSampler : register(s0, space1);
 
 // MSDF rendering helper function to calculate median of 3 values
 float median(float r, float g, float b)
@@ -98,8 +96,7 @@ float4 main(PSInput input) : SV_TARGET
         return input.Color;
     }
 
-    // Sample texture
-    float4 texColor = Textures[NonUniformResourceIndex(input.TextureIndex - 1)].Sample(LinearSampler, input.TexCoord);
+    float4 texColor = Textures[input.TextureIndex].Sample(LinearSampler, input.TexCoord);
 
     // For now, treat all non-zero textures as potential MSDF fonts
     // TODO: Better way to distinguish font textures from regular images
