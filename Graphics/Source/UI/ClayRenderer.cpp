@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/UI/ClayRenderer.h>
 #include <DenOfIzGraphics/UI/UIShaders.h>
 #include <DenOfIzGraphics/Utilities/Common.h>
+#include <cmath>
 
 using namespace DenOfIz;
 using namespace DirectX;
@@ -383,7 +384,7 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
     m_currentDepth     = 0.9f;
 
     // Generate vertices
-    for ( size_t i = 0; i < commands.length; ++i )
+    for ( int32_t i = 0; i < commands.length; ++i )
     {
         const Clay_RenderCommand *cmd = Clay_RenderCommandArray_Get( &commands, i );
         ProcessRenderCommand( cmd, commandList );
@@ -467,6 +468,10 @@ void ClayRenderer::ProcessRenderCommand( const Clay_RenderCommand *command, ICom
 
     case CLAY_RENDER_COMMAND_TYPE_SCISSOR_END:
         ClearScissor( );
+        break;
+
+    case CLAY_RENDER_COMMAND_TYPE_CUSTOM:
+        RenderCustom( command, commandList );
         break;
 
     default:
@@ -638,6 +643,137 @@ void ClayRenderer::RenderImage( const Clay_RenderCommand *command )
     if ( vertices.NumElements( ) > 0 && indices.NumElements( ) > 0 )
     {
         AddVerticesWithDepth( vertices, indices );
+    }
+}
+
+void ClayRenderer::RenderCustom( const Clay_RenderCommand *command, ICommandList *commandList )
+{
+    const auto &data   = command->renderData.custom;
+    const auto &bounds = command->boundingBox;
+
+    if ( data.customData == nullptr )
+    {
+        return;
+    }
+
+    const auto *textFieldData = static_cast<const ClayTextFieldRenderData *>( data.customData );
+    if ( textFieldData != nullptr && textFieldData->State != nullptr )
+    {
+        RenderTextField( command, textFieldData, commandList );
+    }
+    else
+    {
+        LOG( WARNING ) << "Unknown custom widget type in RenderCustom";
+    }
+}
+
+void ClayRenderer::RenderTextField( const Clay_RenderCommand *command, const ClayTextFieldRenderData *textFieldData, ICommandList *commandList )
+{
+    const auto &bounds = command->boundingBox;
+    const auto *state  = textFieldData->State;
+    const auto &desc   = textFieldData->Desc;
+
+    constexpr float deltaTime           = 1.0f / 60.0f;
+    constexpr float CURSOR_BLINK_PERIOD = 1.2f;
+
+    const_cast<ClayTextFieldState *>( state )->CursorBlinkTime += deltaTime;
+    if ( state->CursorBlinkTime >= CURSOR_BLINK_PERIOD )
+    {
+        const_cast<ClayTextFieldState *>( state )->CursorBlinkTime = 0.0f;
+        const_cast<ClayTextFieldState *>( state )->CursorVisible   = !state->CursorVisible;
+    }
+
+    InteropArray<UIVertex> backgroundVertices;
+    InteropArray<uint32_t> backgroundIndices;
+
+    UIShapes::GenerateRectangleDesc backgroundDesc{ };
+    backgroundDesc.Bounds       = bounds;
+    backgroundDesc.Color        = Clay_Color{ desc.BackgroundColor.R, desc.BackgroundColor.G, desc.BackgroundColor.B, desc.BackgroundColor.A };
+    backgroundDesc.TextureIndex = 0; // Solid color
+
+    UIShapes::GenerateRectangle( backgroundDesc, &backgroundVertices, &backgroundIndices, 0 );
+    if ( backgroundVertices.NumElements( ) > 0 && backgroundIndices.NumElements( ) > 0 )
+    {
+        AddVerticesWithDepth( backgroundVertices, backgroundIndices );
+    }
+
+    InteropArray<UIVertex> borderVertices;
+    InteropArray<uint32_t> borderIndices;
+
+    const ClayColor             &borderColor = state->IsFocused ? desc.FocusBorderColor : desc.BorderColor;
+    UIShapes::GenerateBorderDesc borderDesc{ };
+    borderDesc.Bounds       = bounds;
+    borderDesc.Color        = Clay_Color{ borderColor.R, borderColor.G, borderColor.B, borderColor.A };
+    borderDesc.BorderWidth  = Clay_BorderWidth{ 1, 1, 1, 1, 0 };
+    borderDesc.CornerRadius = Clay_CornerRadius{ 0, 0, 0, 0 };
+
+    UIShapes::GenerateBorder( borderDesc, &borderVertices, &borderIndices, 0 );
+    if ( borderVertices.NumElements( ) > 0 && borderIndices.NumElements( ) > 0 )
+    {
+        AddVerticesWithDepth( borderVertices, borderIndices );
+    }
+
+    const std::string &displayText = state->Text.empty( ) ? desc.PlaceholderText : state->Text;
+    const ClayColor   &textColor   = state->Text.empty( ) ? desc.PlaceholderColor : desc.TextColor;
+
+    if ( !displayText.empty( ) )
+    {
+        Clay_RenderCommand tempTextCommand                    = *command;
+        tempTextCommand.commandType                           = CLAY_RENDER_COMMAND_TYPE_TEXT;
+        tempTextCommand.renderData.text.stringContents.chars  = displayText.c_str( );
+        tempTextCommand.renderData.text.stringContents.length = static_cast<int32_t>( displayText.length( ) );
+        tempTextCommand.renderData.text.textColor             = Clay_Color{ textColor.R, textColor.G, textColor.B, textColor.A };
+        tempTextCommand.renderData.text.fontId                = desc.FontId;
+        tempTextCommand.renderData.text.fontSize              = desc.FontSize;
+        tempTextCommand.renderData.text.letterSpacing         = 0;
+        tempTextCommand.renderData.text.lineHeight            = 0;
+
+        tempTextCommand.boundingBox.x += desc.Padding.Left;
+        tempTextCommand.boundingBox.y += desc.Padding.Top;
+        tempTextCommand.boundingBox.width -= desc.Padding.Left + desc.Padding.Right;
+        tempTextCommand.boundingBox.height -= desc.Padding.Top + desc.Padding.Bottom;
+
+        RenderText( &tempTextCommand, commandList );
+    }
+
+    if ( state->IsFocused && state->CursorVisible && !desc.ReadOnly )
+    {
+        float cursorX = bounds.x + desc.Padding.Left;
+
+        if ( !state->Text.empty( ) && state->CursorPosition > 0 )
+        {
+            const std::string textBeforeCursor = state->Text.substr( 0, std::min( state->CursorPosition, state->Text.length( ) ) );
+
+            Clay_TextElementConfig measureConfig{ };
+            measureConfig.fontId        = desc.FontId;
+            measureConfig.fontSize      = desc.FontSize;
+            measureConfig.textColor     = Clay_Color{ };
+            measureConfig.wrapMode      = CLAY_TEXT_WRAP_NONE;
+            measureConfig.textAlignment = CLAY_TEXT_ALIGN_LEFT;
+
+            const ClayDimensions textSize = MeasureText( InteropString( textBeforeCursor.c_str( ) ), measureConfig );
+            cursorX += textSize.Width;
+        }
+
+        InteropArray<UIVertex> cursorVertices;
+        InteropArray<uint32_t> cursorIndices;
+
+        Clay_BoundingBox cursorBounds;
+        cursorBounds.x      = cursorX;
+        cursorBounds.y      = bounds.y + desc.Padding.Top;
+        cursorBounds.width  = desc.CursorWidth;
+        cursorBounds.height = bounds.height - desc.Padding.Top - desc.Padding.Bottom;
+
+        UIShapes::GenerateRectangleDesc cursorDesc{ };
+        cursorDesc.Bounds       = cursorBounds;
+        cursorDesc.Color        = Clay_Color{ desc.CursorColor.R, desc.CursorColor.G, desc.CursorColor.B, desc.CursorColor.A };
+        cursorDesc.TextureIndex = 0; // Solid color
+
+        UIShapes::GenerateRectangle( cursorDesc, &cursorVertices, &cursorIndices, 0 );
+        if ( cursorVertices.NumElements( ) > 0 && cursorIndices.NumElements( ) > 0 )
+        {
+            AddVerticesWithDepth( cursorVertices, cursorIndices );
+        }
     }
 }
 
@@ -903,8 +1039,7 @@ void ClayRenderer::FlushCurrentBatch( )
     const size_t vertexDataSize = m_batchedVertices.NumElements( ) * sizeof( UIVertex );
     const size_t indexDataSize  = m_batchedIndices.NumElements( ) * sizeof( uint32_t );
 
-    if ( ( alignedVertexOffset + m_batchedVertices.NumElements( ) ) > m_desc.MaxVertices ||
-         ( alignedIndexOffset + m_batchedIndices.NumElements( ) ) > m_desc.MaxIndices )
+    if ( ( alignedVertexOffset + m_batchedVertices.NumElements( ) ) > m_desc.MaxVertices || ( alignedIndexOffset + m_batchedIndices.NumElements( ) ) > m_desc.MaxIndices )
     {
         LOG( ERROR ) << "ClayRenderer: Geometry exceeds buffer limits";
         return;

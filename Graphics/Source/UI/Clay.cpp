@@ -2,6 +2,7 @@
 #include "clay.h"
 
 #include <DenOfIzGraphics/UI/Clay.h>
+#include <cmath>
 #include <cstring>
 #include <glog/logging.h>
 #include <unordered_map>
@@ -471,9 +472,9 @@ void Clay::UpdateScrollContainers( const bool enableDragScrolling, const Float_2
     Float_2 totalScrollDelta = scrollDelta;
     totalScrollDelta.X += m_scrollDelta.X;
     totalScrollDelta.Y += m_scrollDelta.Y;
-    
+
     Clay_UpdateScrollContainers( enableDragScrolling, Clay_Vector2{ totalScrollDelta.X, totalScrollDelta.Y }, deltaTime );
-    
+
     m_scrollDelta.X = 0;
     m_scrollDelta.Y = 0;
 }
@@ -534,6 +535,77 @@ void Clay::Text( const InteropString &text, const ClayTextDesc &desc ) const
     Clay_TextElementConfig      *storedConfig = Clay__StoreTextElementConfig( tempConfig );
 
     Clay__OpenTextElement( clayText, storedConfig );
+}
+
+void Clay::TextField( const uint32_t id, ClayTextFieldState *state, const ClayTextFieldDesc &desc )
+{
+    DZ_NOT_NULL( m_context );
+    DZ_NOT_NULL( state );
+
+    m_textFieldStates[ id ] = state;
+
+    static ClayTextFieldRenderData renderData;
+    renderData.State     = state;
+    renderData.Desc      = desc;
+    renderData.ElementId = id;
+
+    ClayElementDeclaration textFieldElement;
+    textFieldElement.Id = id;
+    textFieldElement.Layout.Sizing =
+        ClaySizing{ ClaySizingAxis::Grow( ), ClaySizingAxis::Fixed( static_cast<float>( desc.FontSize + desc.Padding.Top + desc.Padding.Bottom + 4 ) ) };
+    textFieldElement.BackgroundColor   = desc.BackgroundColor;
+    textFieldElement.Custom.CustomData = &renderData;
+
+    const bool isHovered = PointerOver( id );
+    if ( isHovered && m_pointerState == ClayPointerState::Pressed )
+    {
+        m_focusedTextFieldId = id;
+        state->IsFocused     = true;
+
+        const ClayBoundingBox bounds = GetElementBoundingBox( id );
+        const float           clickX = m_pointerPosition.X - bounds.X - desc.Padding.Left;
+
+        if ( !state->Text.empty( ) && clickX > 0 )
+        {
+            size_t                 newCursorPos = 0;
+            Clay_TextElementConfig measureConfig{ };
+            measureConfig.fontId        = desc.FontId;
+            measureConfig.fontSize      = desc.FontSize;
+            measureConfig.textColor     = Clay_Color{ };
+            measureConfig.wrapMode      = CLAY_TEXT_WRAP_NONE;
+            measureConfig.textAlignment = CLAY_TEXT_ALIGN_LEFT;
+
+            float bestDistance = FLT_MAX;
+            for ( size_t i = 0; i <= state->Text.length( ); ++i )
+            {
+                const std::string    textSubstring = state->Text.substr( 0, i );
+                const ClayDimensions textSize      = m_renderer->MeasureText( InteropString( textSubstring.c_str( ) ), measureConfig );
+                const float          distance      = std::abs( textSize.Width - clickX );
+
+                if ( distance < bestDistance )
+                {
+                    bestDistance = distance;
+                    newCursorPos = i;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            state->CursorPosition = newCursorPos;
+        }
+    }
+    else if ( isHovered == false && m_pointerState == ClayPointerState::Pressed && state->IsFocused )
+    {
+        state->IsFocused = false;
+        if ( m_focusedTextFieldId == id )
+        {
+            m_focusedTextFieldId = 0;
+        }
+    }
+
+    OpenElement( textFieldElement );
+    CloseElement( );
 }
 
 uint32_t Clay::HashString( const InteropString &str, const uint32_t index, const uint32_t baseId ) const
@@ -609,11 +681,117 @@ void Clay::HandleEvent( const Event &event )
         {
             m_isDebugMode = !Clay_IsDebugModeEnabled( );
         }
+
+        if ( m_focusedTextFieldId != 0 )
+        {
+            const auto it = m_textFieldStates.find( m_focusedTextFieldId );
+            if ( it != m_textFieldStates.end( ) )
+            {
+                ClayTextFieldState *state = it->second;
+                HandleTextFieldInput( state, event );
+            }
+        }
+    }
+
+    if ( event.Type == EventType::TextInput )
+    {
+        if ( m_focusedTextFieldId != 0 )
+        {
+            const auto it = m_textFieldStates.find( m_focusedTextFieldId );
+            if ( it != m_textFieldStates.end( ) )
+            {
+                ClayTextFieldState *state = it->second;
+                if ( !state->Text.empty( ) || event.Text.Text[ 0 ] != '\0' )
+                {
+                    const std::string newText( event.Text.Text );
+                    if ( !newText.empty( ) && newText[ 0 ] >= 32 && newText[ 0 ] < 127 ) // Printable ASCII
+                    {
+                        state->Text.insert( state->CursorPosition, newText );
+                        state->CursorPosition += newText.length( );
+                        state->CursorBlinkTime = 0.0f;
+                        state->CursorVisible   = true;
+                    }
+                }
+            }
+        }
     }
 
     if ( event.Type == EventType::MouseWheel )
     {
         m_scrollDelta.X += static_cast<float>( event.Wheel.X ) * 30.0f;
         m_scrollDelta.Y += static_cast<float>( event.Wheel.Y ) * 30.0f;
+    }
+}
+
+void Clay::HandleTextFieldInput( ClayTextFieldState *state, const Event &event )
+{
+    if ( event.Type != EventType::KeyDown )
+    {
+        return;
+    }
+
+    switch ( event.Key.Keycode )
+    {
+    case KeyCode::Backspace:
+        if ( state->CursorPosition > 0 && !state->Text.empty( ) )
+        {
+            state->Text.erase( state->CursorPosition - 1, 1 );
+            state->CursorPosition--;
+            state->CursorBlinkTime = 0.0f;
+            state->CursorVisible   = true;
+        }
+        break;
+
+    case KeyCode::Delete:
+        if ( state->CursorPosition < state->Text.length( ) )
+        {
+            state->Text.erase( state->CursorPosition, 1 );
+            state->CursorBlinkTime = 0.0f;
+            state->CursorVisible   = true;
+        }
+        break;
+
+    case KeyCode::Left:
+        if ( state->CursorPosition > 0 )
+        {
+            state->CursorPosition--;
+            state->CursorBlinkTime = 0.0f;
+            state->CursorVisible   = true;
+        }
+        break;
+
+    case KeyCode::Right:
+        if ( state->CursorPosition < state->Text.length( ) )
+        {
+            state->CursorPosition++;
+            state->CursorBlinkTime = 0.0f;
+            state->CursorVisible   = true;
+        }
+        break;
+
+    case KeyCode::Home:
+        state->CursorPosition  = 0;
+        state->CursorBlinkTime = 0.0f;
+        state->CursorVisible   = true;
+        break;
+
+    case KeyCode::End:
+        state->CursorPosition  = state->Text.length( );
+        state->CursorBlinkTime = 0.0f;
+        state->CursorVisible   = true;
+        break;
+
+    case KeyCode::Return:
+        state->IsFocused     = false;
+        m_focusedTextFieldId = 0;
+        break;
+
+    case KeyCode::Escape:
+        state->IsFocused     = false;
+        m_focusedTextFieldId = 0;
+        break;
+
+    default:
+        break;
     }
 }

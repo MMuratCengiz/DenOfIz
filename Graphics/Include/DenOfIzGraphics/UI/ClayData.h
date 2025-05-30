@@ -19,6 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DenOfIzGraphics/Utilities/InteropMath.h>
+#include <cfloat>
+#include <string>
 
 namespace DenOfIz
 {
@@ -322,4 +324,79 @@ namespace DenOfIz
         bool Horizontal;
         bool Vertical;
     };
+
+    enum class ClayTextFieldType : uint8_t
+    {
+        SingleLine,
+        MultiLine,
+        Password
+    };
+
+    struct ClayTextFieldState
+    {
+        std::string Text;
+        size_t      CursorPosition  = 0;
+        size_t      SelectionStart  = 0;
+        size_t      SelectionEnd    = 0;
+        bool        IsFocused       = false;
+        bool        HasSelection    = false;
+        float       CursorBlinkTime = 0.0f;
+        bool        CursorVisible   = true;
+    };
+
+    struct ClayTextFieldDesc
+    {
+        ClayTextFieldType Type             = ClayTextFieldType::SingleLine;
+        std::string       PlaceholderText  = "";
+        ClayColor         PlaceholderColor = ClayColor( 150, 150, 150, 255 );
+        ClayColor         TextColor        = ClayColor( 0, 0, 0, 255 );
+        ClayColor         BackgroundColor  = ClayColor( 255, 255, 255, 255 );
+        ClayColor         BorderColor      = ClayColor( 200, 200, 200, 255 );
+        ClayColor         FocusBorderColor = ClayColor( 0, 120, 215, 255 );
+        ClayColor         SelectionColor   = ClayColor( 0, 120, 215, 100 );
+        ClayColor         CursorColor      = ClayColor( 0, 0, 0, 255 );
+        uint16_t          FontId           = 0;
+        uint16_t          FontSize         = 14;
+        ClayPadding       Padding          = ClayPadding( 8 );
+        float             CursorWidth      = 1.0f;
+        bool              ReadOnly         = false;
+        size_t            MaxLength        = 0; // 0 = unlimited
+    };
+
+    struct ClayTextFieldRenderData
+    {
+        ClayTextFieldState *State;
+        ClayTextFieldDesc   Desc;
+        uint32_t            ElementId;
+    };
+
+    namespace ClayWidgets
+    {
+        inline ClayTextFieldDesc CreateSingleLineInput( const std::string &placeholder = "Enter text..." )
+        {
+            ClayTextFieldDesc desc;
+            desc.Type             = ClayTextFieldType::SingleLine;
+            desc.PlaceholderText  = placeholder;
+            desc.TextColor        = ClayColor( 0, 0, 0, 255 );
+            desc.BackgroundColor  = ClayColor( 255, 255, 255, 255 );
+            desc.BorderColor      = ClayColor( 200, 200, 200, 255 );
+            desc.FocusBorderColor = ClayColor( 0, 120, 215, 255 );
+            desc.Padding          = ClayPadding( 8 );
+            return desc;
+        }
+
+        inline ClayTextFieldDesc CreatePasswordInput( const std::string &placeholder = "Enter password..." )
+        {
+            ClayTextFieldDesc desc = CreateSingleLineInput( placeholder );
+            desc.Type              = ClayTextFieldType::Password;
+            return desc;
+        }
+
+        inline ClayTextFieldDesc CreateTextArea( const std::string &placeholder = "Enter text..." )
+        {
+            ClayTextFieldDesc desc = CreateSingleLineInput( placeholder );
+            desc.Type              = ClayTextFieldType::MultiLine;
+            return desc;
+        }
+    } // namespace ClayWidgets
 } // namespace DenOfIz

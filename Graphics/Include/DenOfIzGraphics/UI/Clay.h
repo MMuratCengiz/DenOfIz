@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Font/TextRenderer.h>
 #include <functional>
 #include <memory>
+#include <unordered_map>
 #include "ClayRenderer.h"
 #include "DenOfIzGraphics/Input/Event.h"
 #include "DenOfIzGraphics/Utilities/Time.h"
@@ -61,6 +62,10 @@ namespace DenOfIz
         uint16_t                      m_fontId      = 1;
         bool                          m_isDebugMode = false;
 
+        // Text field management
+        uint32_t                      m_focusedTextFieldId = 0;
+        std::unordered_map<uint32_t, ClayTextFieldState *> m_textFieldStates;
+
     public:
         DZ_API explicit Clay( const ClayDesc &desc );
         DZ_API ~Clay( );
@@ -80,6 +85,7 @@ namespace DenOfIz
         DZ_API void CloseElement( ) const;
 
         DZ_API void Text( const InteropString &text, const ClayTextDesc &desc ) const;
+        DZ_API void TextField( uint32_t id, ClayTextFieldState *state, const ClayTextFieldDesc &desc );
 
         DZ_API uint32_t HashString( const InteropString &str, uint32_t index = 0, uint32_t baseId = 0 ) const;
 
@@ -113,5 +119,8 @@ namespace DenOfIz
         Clay_TextElementConfig         ConvertTextConfig( const ClayTextDesc &config ) const;
         const Clay_TextElementConfig  *GetOrCreateCachedTextConfig( const ClayTextDesc &desc );
         ClayRenderCommandType          ConvertRenderCommandType( Clay_RenderCommandType type ) const;
+
+        // Text field input handling
+        void HandleTextFieldInput( ClayTextFieldState *state, const Event &event );
     };
 } // namespace DenOfIz
