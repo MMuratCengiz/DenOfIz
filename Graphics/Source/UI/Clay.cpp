@@ -453,16 +453,29 @@ void Clay::SetDebugModeEnabled( const bool enabled )
     m_isDebugMode = enabled;
 }
 
+bool Clay::IsDebugModeEnabled( ) const
+{
+    return m_isDebugMode;
+}
+
 void Clay::SetPointerState( const Float_2 position, const ClayPointerState state ) const
 {
     DZ_NOT_NULL( m_context );
     Clay_SetPointerState( Clay_Vector2{ position.X, position.Y }, state == ClayPointerState::Pressed );
 }
 
-void Clay::UpdateScrollContainers( const bool enableDragScrolling, const Float_2 scrollDelta, const float deltaTime ) const
+void Clay::UpdateScrollContainers( const bool enableDragScrolling, const Float_2 scrollDelta, const float deltaTime )
 {
     DZ_NOT_NULL( m_context );
-    Clay_UpdateScrollContainers( enableDragScrolling, Clay_Vector2{ scrollDelta.X, scrollDelta.Y }, deltaTime );
+
+    Float_2 totalScrollDelta = scrollDelta;
+    totalScrollDelta.X += m_scrollDelta.X;
+    totalScrollDelta.Y += m_scrollDelta.Y;
+    
+    Clay_UpdateScrollContainers( enableDragScrolling, Clay_Vector2{ totalScrollDelta.X, totalScrollDelta.Y }, deltaTime );
+    
+    m_scrollDelta.X = 0;
+    m_scrollDelta.Y = 0;
 }
 
 void Clay::BeginLayout( )
@@ -600,7 +613,7 @@ void Clay::HandleEvent( const Event &event )
 
     if ( event.Type == EventType::MouseWheel )
     {
-        const auto wheelDelta = Clay_Vector2{ static_cast<float>( event.Wheel.X ), static_cast<float>( event.Wheel.Y ) };
-        Clay_UpdateScrollContainers( true, wheelDelta, m_time.GetDeltaTime( ) );
+        m_scrollDelta.X += static_cast<float>( event.Wheel.X ) * 30.0f;
+        m_scrollDelta.Y += static_cast<float>( event.Wheel.Y ) * 30.0f;
     }
 }

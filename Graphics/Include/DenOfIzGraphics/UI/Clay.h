@@ -54,6 +54,7 @@ namespace DenOfIz
         std::unique_ptr<ClayRenderer> m_renderer;
         ClayPointerState              m_pointerState = ClayPointerState::Released;
         Float_2                       m_pointerPosition{ 0, 0 };
+        Float_2                       m_scrollDelta{ 0, 0 };
         Clay_Arena                    m_arena;
         Clay_Context                 *m_context;
         std::vector<uint8_t>          m_memory;
@@ -68,8 +69,9 @@ namespace DenOfIz
         DZ_API void     SetViewportSize( float width, float height ) const;
         DZ_API void     SetDpiScale( float dpiScale ) const;
         DZ_API void     SetPointerState( Float_2 position, ClayPointerState state ) const;
-        DZ_API void     UpdateScrollContainers( bool enableDragScrolling, Float_2 scrollDelta, float deltaTime ) const;
+        DZ_API void     UpdateScrollContainers( bool enableDragScrolling, Float_2 scrollDelta, float deltaTime );
         DZ_API void     SetDebugModeEnabled( bool enabled );
+        DZ_API bool     IsDebugModeEnabled( ) const;
 
         DZ_API void BeginLayout( );
         DZ_API void EndLayout( ICommandList *commandList, uint32_t frameIndex ) const;
