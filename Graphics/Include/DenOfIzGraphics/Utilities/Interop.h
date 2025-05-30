@@ -459,6 +459,23 @@ namespace DenOfIz
             m_numElements = size;
         }
 
+        void Reserve( const size_t capacity )
+        {
+            if ( m_capacity < capacity )
+            {
+                m_capacity = capacity;
+                m_capacity = ( m_capacity + 7 ) & ( ~7 ); // Align to 8 bytes
+                T *newArray = new T[ m_capacity ];
+                if ( m_array )
+                {
+                    MoveArray( m_array, newArray, m_numElements );
+                    DestroyElements( m_array, m_numElements );
+                    delete[] m_array;
+                }
+                m_array = newArray;
+            }
+        }
+
     private:
         void InitializeElements( T *array, size_t start, const size_t end )
         {
