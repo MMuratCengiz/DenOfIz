@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Assets/Font/Font.h>
 #include <DenOfIzGraphics/Assets/Font/TextLayout.h>
+#include <DenOfIzGraphics/Assets/Font/TextLayoutCache.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandListPool.h>
@@ -133,31 +134,9 @@ namespace DenOfIz
 
         std::unordered_map<uint16_t, FontData> m_fonts;
 
-        struct TextCacheKey : ShapeTextDesc
-        {
-            uint16_t FontId;
+        mutable TextLayoutCache m_textLayoutCache;
+        mutable uint32_t        m_currentFrame = 0;
 
-            bool operator==( const TextCacheKey &other ) const
-            {
-                return strcmp( Text.Get( ), other.Text.Get( ) ) == 0 && FontId == other.FontId && FontSize == other.FontSize && Direction == other.Direction &&
-                       HbScriptTag.X == other.HbScriptTag.X && HbScriptTag.Y == other.HbScriptTag.Y && HbScriptTag.Z == other.HbScriptTag.Z && HbScriptTag.W == other.HbScriptTag.W;
-            }
-        };
-
-        struct TextCacheKeyHash
-        {
-            std::size_t operator( )( const TextCacheKey &key ) const
-            {
-                const std::size_t h1 = std::hash<std::string>{ }( key.Text.Get( ) );
-                const std::size_t h2 = std::hash<uint16_t>{ }( key.FontId );
-                const std::size_t h3 = std::hash<uint32_t>{ }( key.FontSize );
-                const std::size_t h4 = std::hash<int>{ }( static_cast<int>( key.Direction ) );
-                const std::size_t h5 = std::hash<uint32_t>{ }( key.HbScriptTag.X );
-                return h1 ^ h2 << 1 ^ h3 << 2 ^ h4 << 3 ^ h5 << 4;
-            }
-        };
-
-        std::unordered_map<TextCacheKey, std::unique_ptr<TextLayout>, TextCacheKeyHash> m_textShapeCache;
 
         std::unordered_map<void *, uint32_t> m_imageTextureIndices;
         std::vector<ITextureResource *>      m_textures;
@@ -188,7 +167,6 @@ namespace DenOfIz
         void Render( ICommandList *commandList, Clay_RenderCommandArray commands, uint32_t frameIndex );
 
         void           ClearCaches( );
-        void           ClearTextShapeCache( );
         ClayDimensions MeasureText( const InteropString &text, const Clay_TextElementConfig &desc ) const;
 
     private:
@@ -210,7 +188,7 @@ namespace DenOfIz
 
         void AddVerticesWithDepth( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices );
         void FlushBatchedGeometry( ICommandList *commandList );
-        void FlushCurrentBatch( );                            // Flush current batch to buffers
+        void FlushCurrentBatch( );                                  // Flush current batch to buffers
         void ExecuteDrawBatches( ICommandList *commandList ) const; // Execute all batched draw calls
 
         uint32_t RegisterTexture( ITextureResource *texture );
@@ -218,6 +196,10 @@ namespace DenOfIz
 
         FontData *GetFontData( uint16_t fontId );
         void      InitializeFontAtlas( FontData *fontData );
+
+        TextLayout *GetOrCreateShapedText( const Clay_RenderCommand *command, Font *font ) const;
+        TextLayout *GetOrCreateShapedTextDirect( const char *text, size_t length, uint16_t fontId, uint32_t fontSize, Font *font ) const;
+        void        CleanupTextLayoutCache( ) const;
     };
 
 } // namespace DenOfIz

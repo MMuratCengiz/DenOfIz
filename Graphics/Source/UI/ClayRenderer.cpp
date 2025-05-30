@@ -324,8 +324,18 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
         return;
     }
 
+    ++m_currentFrame;
+    if ( m_currentFrame % 300 == 0 )
+    {
+        CleanupTextLayoutCache( );
+    }
+
     m_batchedVertices.Clear( );
     m_batchedIndices.Clear( );
+
+    m_batchedVertices.Reserve( commands.length * 6 );
+    m_batchedIndices.Reserve( commands.length * 9 );
+
     m_currentDepth = 0.9f; // Depth starts from high goes low, lowest values are rendered
 
     UIUniforms tempUniforms;
@@ -511,6 +521,7 @@ void ClayRenderer::RenderBorder( const Clay_RenderCommand *command, ICommandList
     desc.SegmentsPerCorner = 8;
 
     UIShapes::GenerateBorder( desc, &vertices, &indices, currentVertexCount );
+
     if ( vertices.NumElements( ) > 0 && indices.NumElements( ) > 0 )
     {
         AddVerticesWithDepth( vertices, indices );
@@ -522,7 +533,7 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
     const auto &data   = command->renderData.text;
     const auto &bounds = command->boundingBox;
 
-    FontData *fontData = GetFontData( data.fontId );
+    const FontData *fontData = GetFontData( data.fontId );
     if ( fontData == nullptr || fontData->FontPtr == nullptr )
     {
         LOG( WARNING ) << "Font not found for ID: " << data.fontId;
@@ -533,30 +544,7 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
     const float targetSize     = data.fontSize > 0 ? data.fontSize * m_dpiScale : baseSize;
     const float effectiveScale = targetSize / baseSize;
 
-    TextCacheKey cacheKey;
-    cacheKey.Text     = InteropString( data.stringContents.chars, data.stringContents.length );
-    cacheKey.FontId   = data.fontId;
-    cacheKey.FontSize = static_cast<uint32_t>( targetSize );
-
-    TextLayout *textLayout = nullptr;
-    auto        cacheIt    = m_textShapeCache.find( cacheKey );
-    if ( cacheIt != m_textShapeCache.end( ) )
-    {
-        textLayout = cacheIt->second.get( );
-    }
-    else
-    {
-        TextLayoutDesc textLayoutDesc{ fontData->FontPtr };
-        auto           newLayout = std::make_unique<TextLayout>( textLayoutDesc );
-
-        ShapeTextDesc shapeDesc{ };
-        shapeDesc.Text     = InteropString( data.stringContents.chars, data.stringContents.length );
-        shapeDesc.FontSize = static_cast<uint32_t>( targetSize );
-
-        newLayout->ShapeText( shapeDesc );
-        textLayout                   = newLayout.get( );
-        m_textShapeCache[ cacheKey ] = std::move( newLayout );
-    }
+    const TextLayout *textLayout = GetOrCreateShapedText( command, fontData->FontPtr );
 
     const float fontAscent = static_cast<float>( fontData->FontPtr->Asset( )->Metrics.Ascent ) * effectiveScale;
     const float adjustedY  = bounds.y * m_dpiScale + fontAscent;
@@ -574,12 +562,12 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
     generateDesc.LineHeight    = data.lineHeight;
 
     textLayout->GenerateTextVertices( generateDesc );
+
     if ( glyphVertices.NumElements( ) > 0 && glyphIndices.NumElements( ) > 0 )
     {
         InteropArray<UIVertex> vertices;
         InteropArray<uint32_t> indices;
 
-        // Convert glyph vertices to UI vertices
         for ( uint32_t i = 0; i < glyphVertices.NumElements( ); ++i )
         {
             const GlyphVertex glyph = glyphVertices.GetElement( i );
@@ -595,6 +583,7 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
         {
             indices.AddElement( glyphIndices.GetElement( i ) );
         }
+
         AddVerticesWithDepth( vertices, indices );
     }
 }
@@ -794,8 +783,7 @@ void ClayRenderer::InitializeFontAtlas( FontData *fontData )
 
 void ClayRenderer::ClearCaches( )
 {
-    ClearTextShapeCache( );
-
+    m_textLayoutCache.Clear( );
     for ( auto &val : m_fonts | std::views::values )
     {
         val.TextLayouts.clear( );
@@ -829,11 +817,6 @@ void ClayRenderer::ClearCaches( )
     }
 }
 
-void ClayRenderer::ClearTextShapeCache( )
-{
-    m_textShapeCache.clear( );
-}
-
 ClayDimensions ClayRenderer::MeasureText( const InteropString &text, const Clay_TextElementConfig &desc ) const
 {
     ClayDimensions result{ };
@@ -849,20 +832,13 @@ ClayDimensions ClayRenderer::MeasureText( const InteropString &text, const Clay_
     const FontData &fontData = it->second;
     Font           *font     = fontData.FontPtr;
 
-    const TextLayoutDesc layoutDesc{ font };
-    TextLayout           layout( layoutDesc );
-
     const float baseSize   = static_cast<float>( font->Asset( )->InitialFontSize );
     const float targetSize = desc.fontSize > 0 ? desc.fontSize * m_dpiScale : baseSize;
 
-    ShapeTextDesc shapeDesc{ };
-    shapeDesc.Text      = text;
-    shapeDesc.FontSize  = static_cast<uint32_t>( targetSize );
-    shapeDesc.Direction = TextDirection::Auto;
+    // Use the cached text layout system
+    const TextLayout *layout = GetOrCreateShapedTextDirect( text.Get( ), text.NumChars( ), desc.fontId, static_cast<uint32_t>( targetSize ), font );
 
-    layout.ShapeText( shapeDesc );
-
-    const auto size = layout.GetTextSize( );
+    const auto size = layout->GetTextSize( );
     result.Width    = size.X / m_dpiScale;
     result.Height   = size.Y / m_dpiScale;
 
@@ -975,4 +951,22 @@ void ClayRenderer::FlushBatchedGeometry( ICommandList *commandList )
 {
     FlushCurrentBatch( );
     ExecuteDrawBatches( commandList );
+}
+
+TextLayout *ClayRenderer::GetOrCreateShapedText( const Clay_RenderCommand *command, Font *font ) const
+{
+    const auto &data       = command->renderData.text;
+    const float targetSize = data.fontSize > 0 ? data.fontSize * m_dpiScale : static_cast<float>( font->Asset( )->InitialFontSize );
+    return GetOrCreateShapedTextDirect( data.stringContents.chars, data.stringContents.length, data.fontId, static_cast<uint32_t>( targetSize ), font );
+}
+
+TextLayout *ClayRenderer::GetOrCreateShapedTextDirect( const char *text, const size_t length, const uint16_t fontId, const uint32_t fontSize, Font *font ) const
+{
+    const uint64_t textHash = TextLayoutCache::HashString( text, length );
+    return m_textLayoutCache.GetOrCreate( textHash, fontId, fontSize, font, text, length, m_currentFrame );
+}
+
+void ClayRenderer::CleanupTextLayoutCache( ) const
+{
+    m_textLayoutCache.Cleanup( m_currentFrame );
 }
