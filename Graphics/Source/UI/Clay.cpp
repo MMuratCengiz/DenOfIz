@@ -605,7 +605,7 @@ void Clay::HandleEvent( const Event &event )
 
     if ( event.Type == EventType::KeyDown )
     {
-        if ( event.Key.Keycode == KeyCode::F12 )
+        if ( event.Key.Keycode == KeyCode::F11 )
         {
             m_isDebugMode = !Clay_IsDebugModeEnabled( );
         }

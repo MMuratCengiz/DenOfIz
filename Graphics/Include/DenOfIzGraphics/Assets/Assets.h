@@ -69,6 +69,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "Font/Font.h"
 #include "Font/FontLibrary.h"
 #include "Font/TextLayout.h"
+#include "Font/TextLayoutCache.h"
 #include "Font/TextRenderer.h"
 
 #include "Bundle/Bundle.h"
