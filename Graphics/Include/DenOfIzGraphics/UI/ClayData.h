@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <DenOfIzGraphics/Utilities/Interop.h>
 #include <DenOfIzGraphics/Utilities/InteropMath.h>
 #include <cfloat>
 #include <string>
@@ -334,20 +335,34 @@ namespace DenOfIz
 
     struct ClayTextFieldState
     {
-        std::string Text;
-        size_t      CursorPosition  = 0;
-        size_t      SelectionStart  = 0;
-        size_t      SelectionEnd    = 0;
-        bool        IsFocused       = false;
-        bool        HasSelection    = false;
-        float       CursorBlinkTime = 0.0f;
-        bool        CursorVisible   = true;
+        InteropString Text;
+        size_t        CursorPosition  = 0;
+        size_t        SelectionStart  = 0;
+        size_t        SelectionEnd    = 0;
+        bool          IsFocused       = false;
+        bool          HasSelection    = false;
+        float         CursorBlinkTime = 0.0f;
+        bool          CursorVisible   = true;
+        bool          IsSelecting     = false;
+        size_t        DragStartPos    = 0;
+        size_t        SelectionAnchor = 0; // The fixed end of the selection when using Shift+arrows
+
+        InteropString GetSelectedText( ) const;
+        void          ClearSelection( );
+        void          DeleteSelection( );
+
+        // Helper methods for string operations
+        bool          IsTextEmpty( ) const;
+        size_t        GetTextLength( ) const;
+        void          InsertText( size_t position, const InteropString &text );
+        void          EraseText( size_t position, size_t count );
+        InteropString GetTextSubstring( size_t start, size_t length ) const;
     };
 
     struct ClayTextFieldDesc
     {
         ClayTextFieldType Type             = ClayTextFieldType::SingleLine;
-        std::string       PlaceholderText  = "";
+        InteropString     PlaceholderText  = "";
         ClayColor         PlaceholderColor = ClayColor( 150, 150, 150, 255 );
         ClayColor         TextColor        = ClayColor( 0, 0, 0, 255 );
         ClayColor         BackgroundColor  = ClayColor( 255, 255, 255, 255 );
@@ -372,7 +387,7 @@ namespace DenOfIz
 
     namespace ClayWidgets
     {
-        inline ClayTextFieldDesc CreateSingleLineInput( const std::string &placeholder = "Enter text..." )
+        inline ClayTextFieldDesc CreateSingleLineInput( const InteropString &placeholder = "Enter text..." )
         {
             ClayTextFieldDesc desc;
             desc.Type             = ClayTextFieldType::SingleLine;
@@ -385,14 +400,14 @@ namespace DenOfIz
             return desc;
         }
 
-        inline ClayTextFieldDesc CreatePasswordInput( const std::string &placeholder = "Enter password..." )
+        inline ClayTextFieldDesc CreatePasswordInput( const InteropString &placeholder = "Enter password..." )
         {
             ClayTextFieldDesc desc = CreateSingleLineInput( placeholder );
             desc.Type              = ClayTextFieldType::Password;
             return desc;
         }
 
-        inline ClayTextFieldDesc CreateTextArea( const std::string &placeholder = "Enter text..." )
+        inline ClayTextFieldDesc CreateTextArea( const InteropString &placeholder = "Enter text..." )
         {
             ClayTextFieldDesc desc = CreateSingleLineInput( placeholder );
             desc.Type              = ClayTextFieldType::MultiLine;

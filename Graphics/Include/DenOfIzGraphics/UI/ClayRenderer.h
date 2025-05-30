@@ -60,17 +60,15 @@ namespace DenOfIz
 
     class ClayRenderer
     {
-    public:
         struct FontData
         {
-            Font                                    *FontPtr = nullptr;
-            std::unique_ptr<ITextureResource>        Atlas;
-            uint32_t                                 TextureIndex = 0;
-            std::vector<std::unique_ptr<TextLayout>> TextLayouts;
-            uint32_t                                 CurrentLayoutIndex = 0;
+            Font                                     *FontPtr = nullptr;
+            std::unique_ptr<ITextureResource>         Atlas;
+            uint32_t                                  TextureIndex = 0;
+            InteropArray<std::unique_ptr<TextLayout>> TextLayouts;
+            uint32_t                                  CurrentLayoutIndex = 0;
         };
 
-    private:
         struct UIUniforms
         {
             XMFLOAT4X4 Projection;

@@ -674,7 +674,7 @@ void ClayRenderer::RenderTextField( const Clay_RenderCommand *command, const Cla
     const auto &desc   = textFieldData->Desc;
 
     constexpr float deltaTime           = 1.0f / 60.0f;
-    constexpr float CURSOR_BLINK_PERIOD = 1.2f;
+    constexpr float CURSOR_BLINK_PERIOD = 3.0f;
 
     const_cast<ClayTextFieldState *>( state )->CursorBlinkTime += deltaTime;
     if ( state->CursorBlinkTime >= CURSOR_BLINK_PERIOD )
@@ -713,8 +713,66 @@ void ClayRenderer::RenderTextField( const Clay_RenderCommand *command, const Cla
         AddVerticesWithDepth( borderVertices, borderIndices );
     }
 
-    const std::string &displayText = state->Text.empty( ) ? desc.PlaceholderText : state->Text;
-    const ClayColor   &textColor   = state->Text.empty( ) ? desc.PlaceholderColor : desc.TextColor;
+    if ( state->HasSelection && state->SelectionStart != state->SelectionEnd )
+    {
+        size_t selStart = std::min( state->SelectionStart, state->SelectionEnd );
+        size_t selEnd   = std::max( state->SelectionStart, state->SelectionEnd );
+        selStart        = std::min( selStart, state->Text.NumChars( ) );
+        selEnd          = std::min( selEnd, state->Text.NumChars( ) );
+
+        std::string textStr = state->Text.Get( );
+
+        if ( selStart < selEnd )
+        {
+            float selectionStartX = bounds.x + desc.Padding.Left;
+            if ( selStart > 0 )
+            {
+                const std::string      textBeforeSelection = textStr.substr( 0, selStart );
+                Clay_TextElementConfig measureConfig{ };
+                measureConfig.fontId        = desc.FontId;
+                measureConfig.fontSize      = desc.FontSize;
+                measureConfig.textColor     = Clay_Color{ };
+                measureConfig.wrapMode      = CLAY_TEXT_WRAP_NONE;
+                measureConfig.textAlignment = CLAY_TEXT_ALIGN_LEFT;
+
+                const ClayDimensions beforeSize = MeasureText( InteropString( textBeforeSelection.c_str( ) ), measureConfig );
+                selectionStartX += beforeSize.Width;
+            }
+
+            const std::string      selectedText = textStr.substr( selStart, selEnd - selStart );
+            Clay_TextElementConfig measureConfig{ };
+            measureConfig.fontId        = desc.FontId;
+            measureConfig.fontSize      = desc.FontSize;
+            measureConfig.textColor     = Clay_Color{ };
+            measureConfig.wrapMode      = CLAY_TEXT_WRAP_NONE;
+            measureConfig.textAlignment = CLAY_TEXT_ALIGN_LEFT;
+
+            const ClayDimensions selectedSize = MeasureText( InteropString( selectedText.c_str( ) ), measureConfig );
+
+            InteropArray<UIVertex> selectionVertices;
+            InteropArray<uint32_t> selectionIndices;
+
+            Clay_BoundingBox selectionBounds;
+            selectionBounds.x      = selectionStartX;
+            selectionBounds.y      = bounds.y + desc.Padding.Top;
+            selectionBounds.width  = selectedSize.Width;
+            selectionBounds.height = bounds.height - desc.Padding.Top - desc.Padding.Bottom;
+
+            UIShapes::GenerateRectangleDesc selectionDesc{ };
+            selectionDesc.Bounds       = selectionBounds;
+            selectionDesc.Color        = Clay_Color{ desc.SelectionColor.R, desc.SelectionColor.G, desc.SelectionColor.B, desc.SelectionColor.A };
+            selectionDesc.TextureIndex = 0;
+
+            UIShapes::GenerateRectangle( selectionDesc, &selectionVertices, &selectionIndices, 0 );
+            if ( selectionVertices.NumElements( ) > 0 && selectionIndices.NumElements( ) > 0 )
+            {
+                AddVerticesWithDepth( selectionVertices, selectionIndices );
+            }
+        }
+    }
+
+    const std::string &displayText = std::string( state->Text.NumChars( ) == 0 ? desc.PlaceholderText.Get( ) : state->Text.Get( ) );
+    const ClayColor   &textColor   = state->Text.NumChars( ) == 0 ? desc.PlaceholderColor : desc.TextColor;
 
     if ( !displayText.empty( ) )
     {
@@ -740,9 +798,10 @@ void ClayRenderer::RenderTextField( const Clay_RenderCommand *command, const Cla
     {
         float cursorX = bounds.x + desc.Padding.Left;
 
-        if ( !state->Text.empty( ) && state->CursorPosition > 0 )
+        if ( !state->Text.NumChars( ) == 0 && state->CursorPosition > 0 )
         {
-            const std::string textBeforeCursor = state->Text.substr( 0, std::min( state->CursorPosition, state->Text.length( ) ) );
+            std::string       textStr          = state->Text.Get( );
+            const std::string textBeforeCursor = textStr.substr( 0, std::min( state->CursorPosition, state->Text.NumChars( ) ) );
 
             Clay_TextElementConfig measureConfig{ };
             measureConfig.fontId        = desc.FontId;
@@ -944,7 +1003,7 @@ void ClayRenderer::ClearCaches( )
     m_textVertexCache.Clear( );
     for ( auto &val : m_fonts | std::views::values )
     {
-        val.TextLayouts.clear( );
+        val.TextLayouts.Clear( );
         val.CurrentLayoutIndex = 0;
     }
 

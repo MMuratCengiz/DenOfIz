@@ -2,12 +2,108 @@
 #include "clay.h"
 
 #include <DenOfIzGraphics/UI/Clay.h>
+#include <DenOfIzGraphics/UI/ClayClipboard.h>
 #include <cmath>
 #include <cstring>
 #include <glog/logging.h>
 #include <unordered_map>
 
 using namespace DenOfIz;
+
+InteropString ClayTextFieldState::GetSelectedText( ) const
+{
+    if ( !HasSelection || SelectionStart == SelectionEnd || IsTextEmpty( ) )
+    {
+        return InteropString( "" );
+    }
+
+    size_t start = std::min( SelectionStart, SelectionEnd );
+    size_t end   = std::max( SelectionStart, SelectionEnd );
+    start        = std::min( start, GetTextLength( ) );
+    end          = std::min( end, GetTextLength( ) );
+
+    if ( start >= end )
+    {
+        return InteropString( "" );
+    }
+
+    return GetTextSubstring( start, end - start );
+}
+
+void ClayTextFieldState::ClearSelection( )
+{
+    HasSelection   = false;
+    SelectionStart = 0;
+    SelectionEnd   = 0;
+}
+
+void ClayTextFieldState::DeleteSelection( )
+{
+    if ( !HasSelection || SelectionStart == SelectionEnd )
+    {
+        return;
+    }
+
+    size_t start = std::min( SelectionStart, SelectionEnd );
+    size_t end   = std::max( SelectionStart, SelectionEnd );
+    start        = std::min( start, GetTextLength( ) );
+    end          = std::min( end, GetTextLength( ) );
+
+    if ( start < end )
+    {
+        EraseText( start, end - start );
+        CursorPosition = start;
+    }
+
+    ClearSelection( );
+}
+
+bool ClayTextFieldState::IsTextEmpty( ) const
+{
+    return Text.IsEmpty( );
+}
+
+size_t ClayTextFieldState::GetTextLength( ) const
+{
+    return Text.NumChars( );
+}
+
+void ClayTextFieldState::InsertText( size_t position, const InteropString &text )
+{
+    std::string current( Text.Get( ) );
+    std::string toInsert( text.Get( ) );
+
+    if ( position > current.length( ) )
+    {
+        position = current.length( );
+    }
+
+    current.insert( position, toInsert );
+    Text = InteropString( current.c_str( ) );
+}
+
+void ClayTextFieldState::EraseText( const size_t position, const size_t count )
+{
+    std::string current( Text.Get( ) );
+
+    if ( position < current.length( ) )
+    {
+        current.erase( position, count );
+        Text = InteropString( current.c_str( ) );
+    }
+}
+
+InteropString ClayTextFieldState::GetTextSubstring( const size_t start, const size_t length ) const
+{
+    std::string current( Text.Get( ) );
+
+    if ( start >= current.length( ) )
+    {
+        return InteropString( "" );
+    }
+
+    return InteropString( current.substr( start, length ).c_str( ) );
+}
 
 ClaySizingAxis ClaySizingAxis::Fit( const float min, const float max )
 {
@@ -556,52 +652,111 @@ void Clay::TextField( const uint32_t id, ClayTextFieldState *state, const ClayTe
     textFieldElement.BackgroundColor   = desc.BackgroundColor;
     textFieldElement.Custom.CustomData = &renderData;
 
-    const bool isHovered = PointerOver( id );
-    if ( isHovered && m_pointerState == ClayPointerState::Pressed )
+    const bool            isHovered = PointerOver( id );
+    const ClayBoundingBox bounds    = GetElementBoundingBox( id );
+
+    if ( isHovered )
     {
-        m_focusedTextFieldId = id;
-        state->IsFocused     = true;
-
-        const ClayBoundingBox bounds = GetElementBoundingBox( id );
-        const float           clickX = m_pointerPosition.X - bounds.X - desc.Padding.Left;
-
-        if ( !state->Text.empty( ) && clickX > 0 )
+        if ( m_pointerState == ClayPointerState::Pressed && !state->IsSelecting )
         {
-            size_t                 newCursorPos = 0;
-            Clay_TextElementConfig measureConfig{ };
-            measureConfig.fontId        = desc.FontId;
-            measureConfig.fontSize      = desc.FontSize;
-            measureConfig.textColor     = Clay_Color{ };
-            measureConfig.wrapMode      = CLAY_TEXT_WRAP_NONE;
-            measureConfig.textAlignment = CLAY_TEXT_ALIGN_LEFT;
+            m_focusedTextFieldId = id;
+            state->IsFocused     = true;
+            state->ClearSelection( );
 
-            float bestDistance = FLT_MAX;
-            for ( size_t i = 0; i <= state->Text.length( ); ++i )
+            const float clickX       = m_pointerPosition.X - bounds.X - desc.Padding.Left;
+            size_t      newCursorPos = 0;
+
+            if ( !state->IsTextEmpty( ) && clickX > 0 )
             {
-                const std::string    textSubstring = state->Text.substr( 0, i );
-                const ClayDimensions textSize      = m_renderer->MeasureText( InteropString( textSubstring.c_str( ) ), measureConfig );
-                const float          distance      = std::abs( textSize.Width - clickX );
+                Clay_TextElementConfig measureConfig{ };
+                measureConfig.fontId        = desc.FontId;
+                measureConfig.fontSize      = desc.FontSize;
+                measureConfig.textColor     = Clay_Color{ };
+                measureConfig.wrapMode      = CLAY_TEXT_WRAP_NONE;
+                measureConfig.textAlignment = CLAY_TEXT_ALIGN_LEFT;
 
-                if ( distance < bestDistance )
+                float bestDistance = FLT_MAX;
+                for ( size_t i = 0; i <= state->GetTextLength( ); ++i )
                 {
-                    bestDistance = distance;
-                    newCursorPos = i;
-                }
-                else
-                {
-                    break;
+                    const std::string    textSubstring = state->GetTextSubstring( 0, i ).Get( );
+                    const ClayDimensions textSize      = m_renderer->MeasureText( InteropString( textSubstring.c_str( ) ), measureConfig );
+                    const float          distance      = std::abs( textSize.Width - clickX );
+
+                    if ( distance < bestDistance )
+                    {
+                        bestDistance = distance;
+                        newCursorPos = i;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
             }
+
             state->CursorPosition = newCursorPos;
+            state->DragStartPos   = newCursorPos;
+            state->IsSelecting    = true;
+        }
+        else if ( state->IsSelecting && state->IsFocused )
+        {
+            const float dragX   = m_pointerPosition.X - bounds.X - desc.Padding.Left;
+            size_t      dragPos = 0;
+
+            if ( !state->IsTextEmpty( ) && dragX > 0 )
+            {
+                Clay_TextElementConfig measureConfig{ };
+                measureConfig.fontId        = desc.FontId;
+                measureConfig.fontSize      = desc.FontSize;
+                measureConfig.textColor     = Clay_Color{ };
+                measureConfig.wrapMode      = CLAY_TEXT_WRAP_NONE;
+                measureConfig.textAlignment = CLAY_TEXT_ALIGN_LEFT;
+
+                float bestDistance = FLT_MAX;
+                for ( size_t i = 0; i <= state->GetTextLength( ); ++i )
+                {
+                    const std::string    textSubstring = state->GetTextSubstring( 0, i ).Get( );
+                    const ClayDimensions textSize      = m_renderer->MeasureText( InteropString( textSubstring.c_str( ) ), measureConfig );
+                    const float          distance      = std::abs( textSize.Width - dragX );
+
+                    if ( distance < bestDistance )
+                    {
+                        bestDistance = distance;
+                        dragPos      = i;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if ( dragPos != state->DragStartPos )
+            {
+                state->SelectionStart = state->DragStartPos;
+                state->SelectionEnd   = dragPos;
+                state->HasSelection   = true;
+                state->CursorPosition = dragPos;
+            }
+            else
+            {
+                state->ClearSelection( );
+            }
         }
     }
-    else if ( isHovered == false && m_pointerState == ClayPointerState::Pressed && state->IsFocused )
+    else if ( m_pointerState == ClayPointerState::Pressed && state->IsFocused )
     {
-        state->IsFocused = false;
+        state->IsFocused   = false;
+        state->IsSelecting = false;
         if ( m_focusedTextFieldId == id )
         {
             m_focusedTextFieldId = 0;
         }
+    }
+
+    if ( m_pointerState == ClayPointerState::Released && state->IsSelecting )
+    {
+        state->IsSelecting = false;
     }
 
     OpenElement( textFieldElement );
@@ -701,12 +856,16 @@ void Clay::HandleEvent( const Event &event )
             if ( it != m_textFieldStates.end( ) )
             {
                 ClayTextFieldState *state = it->second;
-                if ( !state->Text.empty( ) || event.Text.Text[ 0 ] != '\0' )
+                if ( !state->IsTextEmpty( ) || event.Text.Text[ 0 ] != '\0' )
                 {
                     const std::string newText( event.Text.Text );
                     if ( !newText.empty( ) && newText[ 0 ] >= 32 && newText[ 0 ] < 127 ) // Printable ASCII
                     {
-                        state->Text.insert( state->CursorPosition, newText );
+                        if ( state->HasSelection )
+                        {
+                            state->DeleteSelection( );
+                        }
+                        state->InsertText( state->CursorPosition, InteropString( newText.c_str( ) ) );
                         state->CursorPosition += newText.length( );
                         state->CursorBlinkTime = 0.0f;
                         state->CursorVisible   = true;
@@ -730,53 +889,211 @@ void Clay::HandleTextFieldInput( ClayTextFieldState *state, const Event &event )
         return;
     }
 
+    const bool isCtrlDown     = event.Key.Mod.IsSet( KeyMod::Ctrl ) || event.Key.Mod.IsSet( KeyMod::LCtrl ) || event.Key.Mod.IsSet( KeyMod::RCtrl );
+    const bool isShiftDown    = event.Key.Mod.IsSet( KeyMod::Shift ) || event.Key.Mod.IsSet( KeyMod::LShift ) || event.Key.Mod.IsSet( KeyMod::RShift );
+    const bool isCmdDown      = event.Key.Mod.IsSet( KeyMod::Gui ) || event.Key.Mod.IsSet( KeyMod::LGui ) || event.Key.Mod.IsSet( KeyMod::RGui ); // Command key on macOS
+    const bool isModifierDown = isCtrlDown || isCmdDown;
+
+    if ( isModifierDown )
+    {
+        switch ( event.Key.Keycode )
+        {
+        case KeyCode::A: // Select All
+            state->SelectionStart = 0;
+            state->SelectionEnd   = state->GetTextLength( );
+            state->HasSelection   = true;
+            state->CursorPosition = state->GetTextLength( );
+            break;
+
+        case KeyCode::C: // Copy
+            if ( state->HasSelection )
+            {
+                std::string selectedText = state->GetSelectedText( ).Get( );
+                ClayClipboard::SetText( InteropString( selectedText.c_str( ) ) );
+                LOG( INFO ) << "Copied to clipboard: " << selectedText;
+            }
+            break;
+
+        case KeyCode::V: // Paste
+            {
+                std::string pasteText = ClayClipboard::GetText( ).Get( );
+                if ( !pasteText.empty( ) )
+                {
+                    if ( state->HasSelection )
+                    {
+                        state->DeleteSelection( );
+                    }
+                    // TODO: Add max length check when desc is available in state
+                    state->InsertText( state->CursorPosition, InteropString( pasteText.c_str( ) ) );
+                    state->CursorPosition += pasteText.length( );
+                    state->CursorBlinkTime = 0.0f;
+                    state->CursorVisible   = true;
+                }
+            }
+            break;
+
+        case KeyCode::X: // Cut
+            if ( state->HasSelection )
+            {
+                std::string selectedText = state->GetSelectedText( ).Get( );
+                ClayClipboard::SetText( InteropString( selectedText.c_str( ) ) );
+                LOG( INFO ) << "Cut to clipboard: " << selectedText;
+                state->DeleteSelection( );
+                state->CursorBlinkTime = 0.0f;
+                state->CursorVisible   = true;
+            }
+            break;
+
+        default:
+            // Other keys are not handled by shortcuts
+            break;
+        }
+        return;
+    }
+
     switch ( event.Key.Keycode )
     {
     case KeyCode::Backspace:
-        if ( state->CursorPosition > 0 && !state->Text.empty( ) )
+        if ( state->HasSelection )
         {
-            state->Text.erase( state->CursorPosition - 1, 1 );
-            state->CursorPosition--;
-            state->CursorBlinkTime = 0.0f;
-            state->CursorVisible   = true;
+            state->DeleteSelection( );
         }
+        else if ( state->CursorPosition > 0 && !state->IsTextEmpty( ) )
+        {
+            state->EraseText( state->CursorPosition - 1, 1 );
+            state->CursorPosition--;
+        }
+        state->CursorBlinkTime = 0.0f;
+        state->CursorVisible   = true;
         break;
 
     case KeyCode::Delete:
-        if ( state->CursorPosition < state->Text.length( ) )
+        if ( state->HasSelection )
         {
-            state->Text.erase( state->CursorPosition, 1 );
-            state->CursorBlinkTime = 0.0f;
-            state->CursorVisible   = true;
+            state->DeleteSelection( );
         }
+        else if ( state->CursorPosition < state->GetTextLength( ) )
+        {
+            state->EraseText( state->CursorPosition, 1 );
+        }
+        state->CursorBlinkTime = 0.0f;
+        state->CursorVisible   = true;
         break;
 
     case KeyCode::Left:
-        if ( state->CursorPosition > 0 )
+        if ( isShiftDown )
         {
-            state->CursorPosition--;
-            state->CursorBlinkTime = 0.0f;
-            state->CursorVisible   = true;
+            // Extend selection
+            if ( !state->HasSelection )
+            {
+                state->SelectionAnchor = state->CursorPosition;
+                state->SelectionStart  = state->CursorPosition;
+                state->SelectionEnd    = state->CursorPosition;
+                state->HasSelection    = true;
+            }
+            if ( state->CursorPosition > 0 )
+            {
+                state->CursorPosition--;
+                // Update selection based on anchor
+                state->SelectionStart = std::min( state->CursorPosition, state->SelectionAnchor );
+                state->SelectionEnd   = std::max( state->CursorPosition, state->SelectionAnchor );
+            }
         }
+        else
+        {
+            // Move cursor
+            if ( state->HasSelection )
+            {
+                // Move to start of selection
+                state->CursorPosition = std::min( state->SelectionStart, state->SelectionEnd );
+                state->ClearSelection( );
+            }
+            else if ( state->CursorPosition > 0 )
+            {
+                state->CursorPosition--;
+            }
+        }
+        state->CursorBlinkTime = 0.0f;
+        state->CursorVisible   = true;
         break;
 
     case KeyCode::Right:
-        if ( state->CursorPosition < state->Text.length( ) )
+        if ( isShiftDown )
         {
-            state->CursorPosition++;
-            state->CursorBlinkTime = 0.0f;
-            state->CursorVisible   = true;
+            // Extend selection
+            if ( !state->HasSelection )
+            {
+                state->SelectionAnchor = state->CursorPosition;
+                state->SelectionStart  = state->CursorPosition;
+                state->SelectionEnd    = state->CursorPosition;
+                state->HasSelection    = true;
+            }
+            if ( state->CursorPosition < state->GetTextLength( ) )
+            {
+                state->CursorPosition++;
+                // Update selection based on anchor
+                state->SelectionStart = std::min( state->CursorPosition, state->SelectionAnchor );
+                state->SelectionEnd   = std::max( state->CursorPosition, state->SelectionAnchor );
+            }
         }
+        else
+        {
+            // Move cursor
+            if ( state->HasSelection )
+            {
+                // Move to end of selection
+                state->CursorPosition = std::max( state->SelectionStart, state->SelectionEnd );
+                state->ClearSelection( );
+            }
+            else if ( state->CursorPosition < state->GetTextLength( ) )
+            {
+                state->CursorPosition++;
+            }
+        }
+        state->CursorBlinkTime = 0.0f;
+        state->CursorVisible   = true;
         break;
 
     case KeyCode::Home:
-        state->CursorPosition  = 0;
+        if ( isShiftDown )
+        {
+            // Select to beginning
+            if ( !state->HasSelection )
+            {
+                state->SelectionAnchor = state->CursorPosition;
+                state->HasSelection    = true;
+            }
+            state->CursorPosition = 0;
+            state->SelectionStart = 0;
+            state->SelectionEnd   = state->SelectionAnchor;
+        }
+        else
+        {
+            state->CursorPosition = 0;
+            state->ClearSelection( );
+        }
         state->CursorBlinkTime = 0.0f;
         state->CursorVisible   = true;
         break;
 
     case KeyCode::End:
-        state->CursorPosition  = state->Text.length( );
+        if ( isShiftDown )
+        {
+            // Select to end
+            if ( !state->HasSelection )
+            {
+                state->SelectionAnchor = state->CursorPosition;
+                state->HasSelection    = true;
+            }
+            state->CursorPosition = state->GetTextLength( );
+            state->SelectionStart = state->SelectionAnchor;
+            state->SelectionEnd   = state->GetTextLength( );
+        }
+        else
+        {
+            state->CursorPosition = state->GetTextLength( );
+            state->ClearSelection( );
+        }
         state->CursorBlinkTime = 0.0f;
         state->CursorVisible   = true;
         break;
@@ -789,6 +1106,7 @@ void Clay::HandleTextFieldInput( ClayTextFieldState *state, const Event &event )
     case KeyCode::Escape:
         state->IsFocused     = false;
         m_focusedTextFieldId = 0;
+        state->ClearSelection( );
         break;
 
     default:
