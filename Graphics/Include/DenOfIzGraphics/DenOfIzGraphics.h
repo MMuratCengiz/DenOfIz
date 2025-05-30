@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Include all graphics headers
 // DirectXMath breaks null in most cases, so we import 3d party libraries first before it manages to do so
+#include <clay.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <DenOfIzGraphics/Utilities/Common.h>
@@ -63,6 +64,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Import/TextureImporter.h>
 #include <DenOfIzGraphics/Assets/Import/VGImporter.h>
 
+#include <DenOfIzGraphics/UI/Clay.h>
 
 #ifdef SWIGJAVA
 #define NULL 0  // Not sure where we lose this on MacOS to be investigated

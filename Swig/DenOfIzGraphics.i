@@ -109,6 +109,7 @@ using namespace DirectX;
 // Bundle ignores:
 %ignore DenOfIz::Bundle::m_bundleFile;
 
+%ignore DenOfIz::ThorVGPicture::Load( uint32_t *, uint32_t, uint32_t ) const;
 %ignore DenOfIz::ThorVGPicture::Load( uint32_t *, uint32_t, uint32_t, bool ) const;
 %ignore DenOfIz::BinaryWriter::BinaryWriter(std::ostream *);
 %ignore DenOfIz::BinaryWriter::BinaryWriter(std::ostream *, const BinaryWriterDesc &);
@@ -304,6 +305,9 @@ using namespace DirectX;
 %include <DenOfIzGraphics/Assets/Import/VGImporter.h>
 
 %include "DenOfIzGraphics_Input.i"
+
+%include <DenOfIzGraphics/UI/ClayData.h>
+%include <DenOfIzGraphics/UI/Clay.h>
 
 // -- BitSet definitions
 // Convenience typedefs

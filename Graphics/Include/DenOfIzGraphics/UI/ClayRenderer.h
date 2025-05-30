@@ -33,7 +33,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/ISemaphore.h>
 #include <DenOfIzGraphics/UI/ClayData.h>
 #include <DenOfIzGraphics/UI/FullscreenQuadPipeline.h>
+#include <DenOfIzGraphics/UI/UIShapeCache.h>
 #include <DenOfIzGraphics/UI/UIShapes.h>
+#include <DenOfIzGraphics/UI/UITextVertexCache.h>
 #include <clay.h>
 #include <memory>
 #include <unordered_map>
@@ -134,9 +136,10 @@ namespace DenOfIz
 
         std::unordered_map<uint16_t, FontData> m_fonts;
 
-        mutable TextLayoutCache m_textLayoutCache;
-        mutable uint32_t        m_currentFrame = 0;
-
+        mutable TextLayoutCache   m_textLayoutCache;
+        mutable UIShapeCache      m_shapeCache;
+        mutable UITextVertexCache m_textVertexCache;
+        mutable uint32_t          m_currentFrame = 0;
 
         std::unordered_map<void *, uint32_t> m_imageTextureIndices;
         std::vector<ITextureResource *>      m_textures;
@@ -180,7 +183,7 @@ namespace DenOfIz
         void RenderInternal( ICommandList *commandList, Clay_RenderCommandArray commands, uint32_t frameIndex );
         void ProcessRenderCommand( const Clay_RenderCommand *command, ICommandList *commandList );
         void RenderRectangle( const Clay_RenderCommand *command, ICommandList *commandList );
-        void RenderBorder( const Clay_RenderCommand *command, ICommandList *commandList );
+        void RenderBorder( const Clay_RenderCommand *command );
         void RenderText( const Clay_RenderCommand *command, ICommandList *commandList );
         void RenderImage( const Clay_RenderCommand *command );
         void SetScissor( const Clay_RenderCommand *command );

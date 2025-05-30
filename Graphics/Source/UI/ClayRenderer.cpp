@@ -325,7 +325,14 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
     }
 
     ++m_currentFrame;
-    if ( m_currentFrame % 300 == 0 )
+
+    if ( m_currentFrame % 6000 /*frame*/ == 0 )
+    {
+        m_shapeCache.Cleanup( m_currentFrame );
+        m_textVertexCache.Cleanup( m_currentFrame );
+    }
+
+    if ( m_currentFrame % 3000 /*frame*/ == 0 )
     {
         CleanupTextLayoutCache( );
     }
@@ -443,7 +450,7 @@ void ClayRenderer::ProcessRenderCommand( const Clay_RenderCommand *command, ICom
         break;
 
     case CLAY_RENDER_COMMAND_TYPE_BORDER:
-        RenderBorder( command, commandList );
+        RenderBorder( command );
         break;
 
     case CLAY_RENDER_COMMAND_TYPE_TEXT:
@@ -473,58 +480,66 @@ void ClayRenderer::RenderRectangle( const Clay_RenderCommand *command, ICommandL
     const auto &data   = command->renderData.rectangle;
     const auto &bounds = command->boundingBox;
 
-    InteropArray<UIVertex> vertices;
-    InteropArray<uint32_t> indices;
-    constexpr uint32_t     currentVertexCount = 0;
+    const ShapeCacheKey cacheKey = UIShapeCache::CreateRectangleKey( command );
+    CachedShape        *cached   = m_shapeCache.GetOrCreateCachedShape( cacheKey, m_currentFrame );
 
-    if ( data.cornerRadius.topLeft > 0 || data.cornerRadius.topRight > 0 || data.cornerRadius.bottomLeft > 0 || data.cornerRadius.bottomRight > 0 )
+    if ( cached->vertices.NumElements( ) == 0 )
     {
-        UIShapes::GenerateRoundedRectangleDesc desc{ };
-        desc.Bounds            = bounds;
-        desc.Color             = data.backgroundColor;
-        desc.CornerRadius      = data.cornerRadius;
-        desc.TextureIndex      = 0; // Solid color
-        desc.SegmentsPerCorner = 8;
+        constexpr uint32_t currentVertexCount = 0;
 
-        UIShapes::GenerateRoundedRectangle( desc, &vertices, &indices, currentVertexCount );
+        if ( data.cornerRadius.topLeft > 0 || data.cornerRadius.topRight > 0 || data.cornerRadius.bottomLeft > 0 || data.cornerRadius.bottomRight > 0 )
+        {
+            UIShapes::GenerateRoundedRectangleDesc desc{ };
+            desc.Bounds            = bounds;
+            desc.Color             = data.backgroundColor;
+            desc.CornerRadius      = data.cornerRadius;
+            desc.TextureIndex      = 0; // Solid color
+            desc.SegmentsPerCorner = 8;
+
+            UIShapes::GenerateRoundedRectangle( desc, &cached->vertices, &cached->indices, currentVertexCount );
+        }
+        else
+        {
+            UIShapes::GenerateRectangleDesc desc{ };
+            desc.Bounds       = bounds;
+            desc.Color        = data.backgroundColor;
+            desc.TextureIndex = 0;
+
+            UIShapes::GenerateRectangle( desc, &cached->vertices, &cached->indices, currentVertexCount );
+        }
     }
-    else
-    {
-        UIShapes::GenerateRectangleDesc desc{ };
-        desc.Bounds       = bounds;
-        desc.Color        = data.backgroundColor;
-        desc.TextureIndex = 0;
 
-        UIShapes::GenerateRectangle( desc, &vertices, &indices, currentVertexCount );
-    }
-
-    if ( vertices.NumElements( ) > 0 && indices.NumElements( ) > 0 )
+    if ( cached->vertices.NumElements( ) > 0 && cached->indices.NumElements( ) > 0 )
     {
-        AddVerticesWithDepth( vertices, indices );
+        AddVerticesWithDepth( cached->vertices, cached->indices );
     }
 }
 
-void ClayRenderer::RenderBorder( const Clay_RenderCommand *command, ICommandList *commandList )
+void ClayRenderer::RenderBorder( const Clay_RenderCommand *command )
 {
     const auto &data   = command->renderData.border;
     const auto &bounds = command->boundingBox;
 
-    InteropArray<UIVertex> vertices;
-    InteropArray<uint32_t> indices;
-    constexpr uint32_t     currentVertexCount = 0;
+    const ShapeCacheKey cacheKey = UIShapeCache::CreateBorderKey( command );
+    CachedShape        *cached   = m_shapeCache.GetOrCreateCachedShape( cacheKey, m_currentFrame );
 
-    UIShapes::GenerateBorderDesc desc{ };
-    desc.Bounds            = bounds;
-    desc.Color             = data.color;
-    desc.BorderWidth       = data.width;
-    desc.CornerRadius      = data.cornerRadius;
-    desc.SegmentsPerCorner = 8;
-
-    UIShapes::GenerateBorder( desc, &vertices, &indices, currentVertexCount );
-
-    if ( vertices.NumElements( ) > 0 && indices.NumElements( ) > 0 )
+    if ( cached->vertices.NumElements( ) == 0 )
     {
-        AddVerticesWithDepth( vertices, indices );
+        constexpr uint32_t currentVertexCount = 0;
+
+        UIShapes::GenerateBorderDesc desc{ };
+        desc.Bounds            = bounds;
+        desc.Color             = data.color;
+        desc.BorderWidth       = data.width;
+        desc.CornerRadius      = data.cornerRadius;
+        desc.SegmentsPerCorner = 8;
+
+        UIShapes::GenerateBorder( desc, &cached->vertices, &cached->indices, currentVertexCount );
+    }
+
+    if ( cached->vertices.NumElements( ) > 0 && cached->indices.NumElements( ) > 0 )
+    {
+        AddVerticesWithDepth( cached->vertices, cached->indices );
     }
 }
 
@@ -549,42 +564,48 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
     const float fontAscent = static_cast<float>( fontData->FontPtr->Asset( )->Metrics.Ascent ) * effectiveScale;
     const float adjustedY  = bounds.y * m_dpiScale + fontAscent;
 
-    InteropArray<GlyphVertex> glyphVertices;
-    InteropArray<uint32_t>    glyphIndices;
+    const TextVertexCacheKey vertexCacheKey = UITextVertexCache::CreateTextVertexKey( command, effectiveScale, adjustedY, m_dpiScale );
+    CachedTextVertices      *cachedVertices = m_textVertexCache.GetOrCreateCachedTextVertices( vertexCacheKey, m_currentFrame );
 
-    GenerateTextVerticesDesc generateDesc{ };
-    generateDesc.StartPosition = Float_2{ bounds.x * m_dpiScale, adjustedY };
-    generateDesc.Color         = Float_4{ data.textColor.r / 255.0f, data.textColor.g / 255.0f, data.textColor.b / 255.0f, data.textColor.a / 255.0f };
-    generateDesc.OutVertices   = &glyphVertices;
-    generateDesc.OutIndices    = &glyphIndices;
-    generateDesc.Scale         = effectiveScale;
-    generateDesc.LetterSpacing = data.letterSpacing * m_dpiScale;
-    generateDesc.LineHeight    = data.lineHeight;
-
-    textLayout->GenerateTextVertices( generateDesc );
-
-    if ( glyphVertices.NumElements( ) > 0 && glyphIndices.NumElements( ) > 0 )
+    if ( cachedVertices->vertices.NumElements( ) == 0 )
     {
-        InteropArray<UIVertex> vertices;
-        InteropArray<uint32_t> indices;
+        InteropArray<GlyphVertex> glyphVertices;
+        InteropArray<uint32_t>    glyphIndices;
 
-        for ( uint32_t i = 0; i < glyphVertices.NumElements( ); ++i )
+        GenerateTextVerticesDesc generateDesc{ };
+        generateDesc.StartPosition = Float_2{ bounds.x * m_dpiScale, adjustedY };
+        generateDesc.Color         = Float_4{ data.textColor.r / 255.0f, data.textColor.g / 255.0f, data.textColor.b / 255.0f, data.textColor.a / 255.0f };
+        generateDesc.OutVertices   = &glyphVertices;
+        generateDesc.OutIndices    = &glyphIndices;
+        generateDesc.Scale         = effectiveScale;
+        generateDesc.LetterSpacing = data.letterSpacing * m_dpiScale;
+        generateDesc.LineHeight    = data.lineHeight;
+
+        textLayout->GenerateTextVertices( generateDesc );
+
+        if ( glyphVertices.NumElements( ) > 0 && glyphIndices.NumElements( ) > 0 )
         {
-            const GlyphVertex glyph = glyphVertices.GetElement( i );
-            UIVertex          vertex;
-            vertex.Position     = XMFLOAT3( glyph.Position.X, glyph.Position.Y, 0.0f ); // Z will be set in AddVerticesWithDepth
-            vertex.TexCoord     = XMFLOAT2( glyph.UV.X, glyph.UV.Y );
-            vertex.Color        = XMFLOAT4( glyph.Color.X, glyph.Color.Y, glyph.Color.Z, glyph.Color.W );
-            vertex.TextureIndex = fontData->TextureIndex;
-            vertices.AddElement( vertex );
-        }
+            for ( uint32_t i = 0; i < glyphVertices.NumElements( ); ++i )
+            {
+                const GlyphVertex glyph = glyphVertices.GetElement( i );
+                UIVertex          vertex;
+                vertex.Position     = XMFLOAT3( glyph.Position.X, glyph.Position.Y, 0.0f ); // Z will be set in AddVerticesWithDepth
+                vertex.TexCoord     = XMFLOAT2( glyph.UV.X, glyph.UV.Y );
+                vertex.Color        = XMFLOAT4( glyph.Color.X, glyph.Color.Y, glyph.Color.Z, glyph.Color.W );
+                vertex.TextureIndex = fontData->TextureIndex;
+                cachedVertices->vertices.AddElement( vertex );
+            }
 
-        for ( uint32_t i = 0; i < glyphIndices.NumElements( ); ++i )
-        {
-            indices.AddElement( glyphIndices.GetElement( i ) );
+            for ( uint32_t i = 0; i < glyphIndices.NumElements( ); ++i )
+            {
+                cachedVertices->indices.AddElement( glyphIndices.GetElement( i ) );
+            }
         }
+    }
 
-        AddVerticesWithDepth( vertices, indices );
+    if ( cachedVertices->vertices.NumElements( ) > 0 && cachedVertices->indices.NumElements( ) > 0 )
+    {
+        AddVerticesWithDepth( cachedVertices->vertices, cachedVertices->indices );
     }
 }
 
@@ -784,6 +805,8 @@ void ClayRenderer::InitializeFontAtlas( FontData *fontData )
 void ClayRenderer::ClearCaches( )
 {
     m_textLayoutCache.Clear( );
+    m_shapeCache.Clear( );
+    m_textVertexCache.Clear( );
     for ( auto &val : m_fonts | std::views::values )
     {
         val.TextLayouts.clear( );
