@@ -32,6 +32,9 @@ ColorPickerWidget::ColorPickerWidget( Clay *clay, const uint32_t id, const Float
     m_colorPickerState.Rgb        = m_rgb;
     m_colorPickerState.Hsv        = m_hsv;
     m_colorPickerState.IsExpanded = m_isExpanded;
+
+    m_widgetData.Type = ClayCustomWidgetType::ColorPicker;
+    m_widgetData.Data = &m_renderData;
 }
 
 void ColorPickerWidget::Update( float deltaTime )
@@ -41,10 +44,18 @@ void ColorPickerWidget::Update( float deltaTime )
 
 void ColorPickerWidget::CreateLayoutElement( )
 {
+    m_colorPickerState.Rgb        = m_rgb;
+    m_colorPickerState.Hsv        = m_hsv;
+    m_colorPickerState.IsExpanded = m_isExpanded;
+
+    m_renderData.State     = &m_colorPickerState;
+    m_renderData.Desc      = m_style;
+    m_renderData.ElementId = m_id;
+
     ClayElementDeclaration decl;
     decl.Id                   = m_id;
-    decl.Layout.Sizing.Width  = ClaySizingAxis::Fixed( m_style.Size );
-    decl.Layout.Sizing.Height = ClaySizingAxis::Fixed( m_style.Size );
+    decl.Layout.Sizing.Width  = ClaySizingAxis::Fixed( m_isExpanded ? m_style.Size : m_style.CompactSize );
+    decl.Layout.Sizing.Height = ClaySizingAxis::Fixed( m_isExpanded ? m_style.Size : m_style.CompactSize );
     decl.Custom.CustomData    = &m_widgetData;
 
     m_clay->OpenElement( decl );
@@ -60,9 +71,6 @@ void ColorPickerWidget::Render( )
     m_renderData.State     = &m_colorPickerState;
     m_renderData.Desc      = m_style;
     m_renderData.ElementId = m_id;
-
-    m_widgetData.Type = ClayCustomWidgetType::ColorPicker;
-    m_widgetData.Data = &m_renderData;
 }
 
 void ColorPickerWidget::HandleEvent( const Event &event )

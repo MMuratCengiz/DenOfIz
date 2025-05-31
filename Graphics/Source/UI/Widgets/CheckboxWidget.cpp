@@ -22,9 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-CheckboxWidget::CheckboxWidget( Clay *clay, const uint32_t id, const bool initialChecked, const CheckboxStyle &style ) : Widget( clay, id ), m_isChecked( initialChecked ), m_style( style )
+CheckboxWidget::CheckboxWidget( Clay *clay, const uint32_t id, const bool initialChecked, const CheckboxStyle &style ) :
+    Widget( clay, id ), m_isChecked( initialChecked ), m_style( style )
 {
     m_checkboxState.Checked = initialChecked;
+
+    m_widgetData.Type = ClayCustomWidgetType::Checkbox;
+    m_widgetData.Data = &m_renderData;
 }
 
 void CheckboxWidget::Update( float deltaTime )
@@ -34,6 +38,12 @@ void CheckboxWidget::Update( float deltaTime )
 
 void CheckboxWidget::CreateLayoutElement( )
 {
+    m_checkboxState.Checked = m_isChecked;
+
+    m_renderData.State     = &m_checkboxState;
+    m_renderData.Desc      = m_style;
+    m_renderData.ElementId = m_id;
+
     ClayElementDeclaration decl;
     decl.Id                   = m_id;
     decl.Layout.Sizing.Width  = ClaySizingAxis::Fixed( m_style.Size );
@@ -46,14 +56,12 @@ void CheckboxWidget::CreateLayoutElement( )
 
 void CheckboxWidget::Render( )
 {
+    // Update state for rendering
     m_checkboxState.Checked = m_isChecked;
 
     m_renderData.State     = &m_checkboxState;
     m_renderData.Desc      = m_style;
     m_renderData.ElementId = m_id;
-
-    m_widgetData.Type = ClayCustomWidgetType::Checkbox;
-    m_widgetData.Data = &m_renderData;
 }
 
 void CheckboxWidget::HandleEvent( const Event &event )

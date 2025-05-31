@@ -185,6 +185,7 @@ namespace DenOfIz
         void RenderRectangle( const Clay_RenderCommand *command, ICommandList *commandList );
         void RenderBorder( const Clay_RenderCommand *command );
         void RenderText( const Clay_RenderCommand *command, ICommandList *commandList );
+        void RenderSingleLineText( const Clay_RenderCommand *command, const FontData *fontData, float effectiveScale, float fontAscent );
         void RenderImage( const Clay_RenderCommand *command );
         void RenderCustom( const Clay_RenderCommand *command, ICommandList *commandList );
         void RenderTextField( const Clay_RenderCommand *command, const ClayTextFieldRenderData *textFieldData, ICommandList *commandList );

@@ -69,9 +69,13 @@ void UIExample::Init( )
 
     m_accentColorPicker = m_clay->CreateColorPicker( m_clay->HashString( "AccentColorPicker" ), Float_3{ 0.2f, 0.6f, 1.0f } );
 
-    m_usernameField = m_clay->CreateTextField( m_clay->HashString( "UsernameField" ) );
-    m_passwordField = m_clay->CreateTextField( m_clay->HashString( "PasswordField" ) );
-    m_commentsField = m_clay->CreateTextField( m_clay->HashString( "CommentsField" ) );
+    m_usernameField = m_clay->CreateTextField( m_clay->HashString( "UsernameField" ), ClayWidgets::CreateSingleLineInput( "Enter username..." ) );
+
+    auto passwordStyle = ClayWidgets::CreatePasswordInput( "Enter password..." );
+    m_passwordField    = m_clay->CreateTextField( m_clay->HashString( "PasswordField" ), passwordStyle );
+
+    auto commentsStyle = ClayWidgets::CreateTextArea( "Share your thoughts..." );
+    m_commentsField    = m_clay->CreateTextField( m_clay->HashString( "CommentsField" ), commentsStyle );
 
     m_themeDropdown->SetSelectedIndex( 0 );
     m_languageDropdown->SetSelectedIndex( 0 );
@@ -104,7 +108,7 @@ void UIExample::CreateUI( )
 
     ClayElementDeclaration container;
     container.Id                     = m_containerId;
-    container.Layout.Sizing.Width    = ClaySizingAxis::Grow( );
+    container.Layout.Sizing.Width    = ClaySizingAxis::Grow( 600 );
     container.Layout.Sizing.Height   = ClaySizingAxis::Grow( );
     container.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
     container.Layout.Padding         = ClayPadding( 24 );
@@ -129,6 +133,7 @@ void UIExample::CreateUI( )
     CreateFooter( cardColor, textColor, secondaryTextColor );
     m_clay->CloseElement( );
 
+    m_clay->RenderFloatingWidgets( );
     m_mouseJustReleased = false;
 }
 
@@ -153,7 +158,7 @@ void UIExample::CreateHeader( const ClayColor &textColor ) const
 void UIExample::CreateSettingsPanel( const ClayColor &cardColor, const ClayColor &textColor, const ClayColor &secondaryTextColor ) const
 {
     ClayElementDeclaration leftColumn;
-    leftColumn.Layout.Sizing.Width    = ClaySizingAxis::Fixed( 400 );
+    leftColumn.Layout.Sizing.Width    = ClaySizingAxis::Percent( 0.45f );
     leftColumn.Layout.Sizing.Height   = ClaySizingAxis::Grow( );
     leftColumn.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
     leftColumn.Layout.ChildGap        = 16;

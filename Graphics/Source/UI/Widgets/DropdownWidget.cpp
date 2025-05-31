@@ -29,6 +29,9 @@ DropdownWidget::DropdownWidget( Clay *clay, uint32_t id, const InteropArray<Inte
     m_dropdownState.SelectedIndex = -1;
     m_dropdownState.IsOpen        = false;
     m_dropdownState.ScrollOffset  = 0.0f;
+
+    m_widgetData.Type = ClayCustomWidgetType::Dropdown;
+    m_widgetData.Data = &m_renderData;
 }
 
 void DropdownWidget::Update( float deltaTime )
@@ -38,6 +41,16 @@ void DropdownWidget::Update( float deltaTime )
 
 void DropdownWidget::CreateLayoutElement( )
 {
+    m_dropdownState.SelectedIndex = m_selectedIndex;
+    m_dropdownState.IsOpen        = m_isOpen;
+    m_dropdownState.ScrollOffset  = m_scrollOffset;
+
+    m_style.Options = m_options;
+
+    m_renderData.State     = &m_dropdownState;
+    m_renderData.Desc      = m_style;
+    m_renderData.ElementId = m_id;
+
     ClayElementDeclaration decl;
     decl.Id                   = m_id;
     decl.Layout.Sizing.Width  = ClaySizingAxis::Grow( );
@@ -46,11 +59,6 @@ void DropdownWidget::CreateLayoutElement( )
 
     m_clay->OpenElement( decl );
     m_clay->CloseElement( );
-
-    if ( m_isOpen )
-    {
-        RenderDropdownList( );
-    }
 }
 
 void DropdownWidget::Render( )
@@ -62,9 +70,6 @@ void DropdownWidget::Render( )
     m_renderData.State     = &m_dropdownState;
     m_renderData.Desc      = m_style;
     m_renderData.ElementId = m_id;
-
-    m_widgetData.Type = ClayCustomWidgetType::Dropdown;
-    m_widgetData.Data = &m_renderData;
 }
 
 void DropdownWidget::HandleEvent( const Event &event )
@@ -188,12 +193,29 @@ const DropdownStyle &DropdownWidget::GetStyle( ) const
 
 void DropdownWidget::RenderDropdownList( )
 {
+    const auto parentBounds = m_clay->GetElementBoundingBox( m_id );
+    const auto viewportSize = m_clay->GetViewportSize( );
+
+    const float spaceBelow     = viewportSize.Height - ( parentBounds.Y + parentBounds.Height );
+    const float spaceAbove     = parentBounds.Y;
+    const float dropdownHeight = std::min( m_style.MaxDropdownHeight, m_options.NumElements( ) * m_style.ItemHeight );
+
     ClayFloatingDesc floatingDesc;
-    floatingDesc.Offset             = Float_2{ 0, 32 };
-    floatingDesc.Expand             = ClayDimensions{ 1, 0 };
-    floatingDesc.ZIndex             = 1000;
-    floatingDesc.ParentId           = m_id;
-    floatingDesc.ElementAttachPoint = ClayFloatingAttachPoint::LeftTop;
+    floatingDesc.Offset   = Float_2{ 0, 0 };
+    floatingDesc.Expand   = ClayDimensions{ 1, 0 };
+    floatingDesc.ZIndex   = 1000;
+    floatingDesc.ParentId = m_id;
+
+    if ( spaceBelow >= dropdownHeight || spaceBelow >= spaceAbove )
+    {
+        floatingDesc.ElementAttachPoint = ClayFloatingAttachPoint::LeftTop;
+        floatingDesc.ParentAttachPoint  = ClayFloatingAttachPoint::LeftBottom;
+    }
+    else
+    {
+        floatingDesc.ElementAttachPoint = ClayFloatingAttachPoint::LeftBottom;
+        floatingDesc.ParentAttachPoint  = ClayFloatingAttachPoint::LeftTop;
+    }
 
     // Create scroll config
     ClayScrollDesc scrollDesc;
@@ -202,7 +224,7 @@ void DropdownWidget::RenderDropdownList( )
     ClayElementDeclaration listDecl;
     listDecl.Id                     = m_dropdownListId;
     listDecl.Floating               = floatingDesc;
-    listDecl.Layout.Sizing.Width    = ClaySizingAxis::Grow( );
+    listDecl.Layout.Sizing.Width    = ClaySizingAxis::Fixed( 0 );
     listDecl.Layout.Sizing.Height   = ClaySizingAxis::Fixed( m_style.MaxDropdownHeight );
     listDecl.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
     listDecl.BackgroundColor        = m_style.DropdownBgColor;
@@ -219,7 +241,6 @@ void DropdownWidget::RenderDropdownList( )
         bool     isHovered  = m_clay->PointerOver( itemId );
         bool     isSelected = static_cast<int32_t>( i ) == m_selectedIndex;
 
-        // Determine item color
         ClayColor itemColor = m_style.BackgroundColor;
         if ( isSelected )
         {

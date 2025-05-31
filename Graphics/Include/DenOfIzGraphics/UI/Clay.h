@@ -75,13 +75,14 @@ namespace DenOfIz
         DZ_API explicit Clay( const ClayDesc &desc );
         DZ_API ~Clay( );
 
-        DZ_API uint16_t AddFont( Font *font ) const;
-        DZ_API void     SetViewportSize( float width, float height ) const;
-        DZ_API void     SetDpiScale( float dpiScale ) const;
-        DZ_API void     SetPointerState( Float_2 position, ClayPointerState state ) const;
-        DZ_API void     UpdateScrollContainers( bool enableDragScrolling, Float_2 scrollDelta, float deltaTime );
-        DZ_API void     SetDebugModeEnabled( bool enabled );
-        DZ_API bool     IsDebugModeEnabled( ) const;
+        DZ_API uint16_t       AddFont( Font *font ) const;
+        DZ_API void           SetViewportSize( float width, float height ) const;
+        DZ_API ClayDimensions GetViewportSize( ) const;
+        DZ_API void           SetDpiScale( float dpiScale ) const;
+        DZ_API void           SetPointerState( Float_2 position, ClayPointerState state ) const;
+        DZ_API void           UpdateScrollContainers( bool enableDragScrolling, Float_2 scrollDelta, float deltaTime );
+        DZ_API void           SetDebugModeEnabled( bool enabled );
+        DZ_API bool           IsDebugModeEnabled( ) const;
 
         DZ_API void BeginLayout( );
         DZ_API void EndLayout( ICommandList *commandList, uint32_t frameIndex, float deltaTime = 0.016f ) const;
@@ -109,6 +110,7 @@ namespace DenOfIz
         DZ_API void    RemoveWidget( uint32_t id );
         DZ_API void    UpdateWidgets( float deltaTime ) const;
         DZ_API void    RenderWidgets( ) const;
+        DZ_API void    RenderFloatingWidgets( ) const;
 
     private:
         static Clay_Dimensions MeasureTextCallback( Clay_StringSlice text, Clay_TextElementConfig *config, void *userData );

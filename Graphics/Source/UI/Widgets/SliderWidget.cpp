@@ -29,6 +29,9 @@ SliderWidget::SliderWidget( Clay *clay, const uint32_t id, const float initialVa
 {
     m_sliderState.Value          = m_value;
     m_sliderState.IsBeingDragged = false;
+
+    m_widgetData.Type = ClayCustomWidgetType::Slider;
+    m_widgetData.Data = &m_renderData;
 }
 
 void SliderWidget::Update( float deltaTime )
@@ -38,6 +41,13 @@ void SliderWidget::Update( float deltaTime )
 
 void SliderWidget::CreateLayoutElement( )
 {
+    m_sliderState.Value          = m_value;
+    m_sliderState.IsBeingDragged = m_isDragging;
+
+    m_renderData.State     = &m_sliderState;
+    m_renderData.Desc      = m_style;
+    m_renderData.ElementId = m_id;
+
     ClayElementDeclaration decl;
     decl.Id                   = m_id;
     decl.Layout.Sizing.Width  = ClaySizingAxis::Grow( );
@@ -56,9 +66,6 @@ void SliderWidget::Render( )
     m_renderData.State     = &m_sliderState;
     m_renderData.Desc      = m_style;
     m_renderData.ElementId = m_id;
-
-    m_widgetData.Type = ClayCustomWidgetType::Slider;
-    m_widgetData.Data = &m_renderData;
 }
 
 void SliderWidget::HandleEvent( const Event &event )

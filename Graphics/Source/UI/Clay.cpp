@@ -539,6 +539,13 @@ void Clay::SetViewportSize( const float width, const float height ) const
     m_renderer->Resize( width, height );
 }
 
+ClayDimensions Clay::GetViewportSize( ) const
+{
+    DZ_NOT_NULL( m_context );
+    Clay_Dimensions dimensions = Clay_GetCurrentContext( )->layoutDimensions;
+    return ClayDimensions{ dimensions.width, dimensions.height };
+}
+
 void Clay::SetDpiScale( const float dpiScale ) const
 {
     m_renderer->SetDpiScale( dpiScale );
@@ -806,5 +813,19 @@ void Clay::RenderWidgets( ) const
     for ( auto *widget : m_widgetUpdateOrder )
     {
         widget->Render( );
+    }
+}
+
+void Clay::RenderFloatingWidgets( ) const
+{
+    for ( auto *widget : m_widgetUpdateOrder )
+    {
+        if ( auto *dropdown = dynamic_cast<DropdownWidget *>( widget ) )
+        {
+            if ( dropdown->IsOpen( ) )
+            {
+                dropdown->RenderDropdownList( );
+            }
+        }
     }
 }

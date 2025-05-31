@@ -21,9 +21,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Import/ShaderImporter.h>
 #include <DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
+#include <DenOfIzGraphics/UI/ClayData.h>
 #include <DenOfIzGraphics/UI/ClayRenderer.h>
 #include <DenOfIzGraphics/UI/UIShaders.h>
 #include <DenOfIzGraphics/Utilities/Common.h>
+#include <algorithm>
 #include <cmath>
 
 using namespace DenOfIz;
@@ -568,10 +570,59 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
     const float targetSize     = data.fontSize > 0 ? data.fontSize * m_dpiScale : baseSize;
     const float effectiveScale = targetSize / baseSize;
 
+    const std::string textStr( data.stringContents.chars, data.stringContents.length );
+    if ( textStr.find( '\n' ) != std::string::npos )
+    {
+        std::vector<std::string> lines;
+        size_t                   start = 0;
+        size_t                   pos   = 0;
+
+        while ( pos <= textStr.length( ) )
+        {
+            if ( pos == textStr.length( ) || textStr[ pos ] == '\n' )
+            {
+                lines.push_back( textStr.substr( start, pos - start ) );
+                start = pos + 1;
+            }
+            pos++;
+        }
+
+        const float fontAscent        = static_cast<float>( fontData->FontPtr->Asset( )->Metrics.Ascent ) * effectiveScale;
+        const float fontDescent       = static_cast<float>( fontData->FontPtr->Asset( )->Metrics.Descent ) * effectiveScale;
+        const float defaultLineHeight = ( fontAscent + fontDescent ) * 1.2f; // Default 1.2x line spacing
+        const float lineHeight        = data.lineHeight > 0 ? data.lineHeight : defaultLineHeight;
+
+        float currentY = bounds.y * m_dpiScale + fontAscent;
+
+        for ( const auto &line : lines )
+        {
+            if ( !line.empty( ) )
+            {
+                Clay_RenderCommand lineCommand                    = *command;
+                lineCommand.renderData.text.stringContents.chars  = line.c_str( );
+                lineCommand.renderData.text.stringContents.length = static_cast<int32_t>( line.length( ) );
+                lineCommand.boundingBox.y                         = currentY / m_dpiScale - fontAscent / m_dpiScale;
+
+                RenderSingleLineText( &lineCommand, fontData, effectiveScale, fontAscent );
+            }
+            currentY += lineHeight;
+        }
+    }
+    else
+    {
+        const float fontAscent = static_cast<float>( fontData->FontPtr->Asset( )->Metrics.Ascent ) * effectiveScale;
+        RenderSingleLineText( command, fontData, effectiveScale, fontAscent );
+    }
+}
+
+void ClayRenderer::RenderSingleLineText( const Clay_RenderCommand *command, const FontData *fontData, float effectiveScale, float fontAscent )
+{
+    const auto &data   = command->renderData.text;
+    const auto &bounds = command->boundingBox;
+
     const TextLayout *textLayout = GetOrCreateShapedText( command, fontData->FontPtr );
 
-    const float fontAscent = static_cast<float>( fontData->FontPtr->Asset( )->Metrics.Ascent ) * effectiveScale;
-    const float adjustedY  = bounds.y * m_dpiScale + fontAscent;
+    const float adjustedY = bounds.y * m_dpiScale + fontAscent;
 
     const TextVertexCacheKey vertexCacheKey = UITextVertexCache::CreateTextVertexKey( command, effectiveScale, adjustedY, m_dpiScale );
     CachedTextVertices      *cachedVertices = m_textVertexCache.GetOrCreateCachedTextVertices( vertexCacheKey, m_currentFrame );
@@ -760,22 +811,6 @@ void ClayRenderer::RenderTextField( const Clay_RenderCommand *command, const Cla
 
         if ( selStart < selEnd )
         {
-            float selectionStartX = bounds.x + desc.Padding.Left;
-            if ( selStart > 0 )
-            {
-                const std::string      textBeforeSelection = textStr.substr( 0, selStart );
-                Clay_TextElementConfig measureConfig{ };
-                measureConfig.fontId        = desc.FontId;
-                measureConfig.fontSize      = desc.FontSize;
-                measureConfig.textColor     = Clay_Color{ };
-                measureConfig.wrapMode      = CLAY_TEXT_WRAP_NONE;
-                measureConfig.textAlignment = CLAY_TEXT_ALIGN_LEFT;
-
-                const ClayDimensions beforeSize = MeasureText( InteropString( textBeforeSelection.c_str( ) ), measureConfig );
-                selectionStartX += beforeSize.Width;
-            }
-
-            const std::string      selectedText = textStr.substr( selStart, selEnd - selStart );
             Clay_TextElementConfig measureConfig{ };
             measureConfig.fontId        = desc.FontId;
             measureConfig.fontSize      = desc.FontSize;
@@ -783,26 +818,109 @@ void ClayRenderer::RenderTextField( const Clay_RenderCommand *command, const Cla
             measureConfig.wrapMode      = CLAY_TEXT_WRAP_NONE;
             measureConfig.textAlignment = CLAY_TEXT_ALIGN_LEFT;
 
-            const ClayDimensions selectedSize = MeasureText( InteropString( selectedText.c_str( ) ), measureConfig );
+            const ClayDimensions lineTextSize    = MeasureText( InteropString( "I" ), measureConfig );
+            const float          lineHeight      = desc.LineHeight > 0 ? desc.LineHeight : lineTextSize.Height * 1.2f;
+            const float          selectionHeight = lineTextSize.Height;
 
-            InteropArray<UIVertex> selectionVertices;
-            InteropArray<uint32_t> selectionIndices;
-
-            Clay_BoundingBox selectionBounds;
-            selectionBounds.x      = selectionStartX;
-            selectionBounds.y      = bounds.y + desc.Padding.Top;
-            selectionBounds.width  = selectedSize.Width;
-            selectionBounds.height = bounds.height - desc.Padding.Top - desc.Padding.Bottom;
-
-            UIShapes::GenerateRectangleDesc selectionDesc{ };
-            selectionDesc.Bounds       = selectionBounds;
-            selectionDesc.Color        = Clay_Color{ desc.SelectionColor.R, desc.SelectionColor.G, desc.SelectionColor.B, desc.SelectionColor.A };
-            selectionDesc.TextureIndex = 0;
-
-            UIShapes::GenerateRectangle( selectionDesc, &selectionVertices, &selectionIndices, 0 );
-            if ( selectionVertices.NumElements( ) > 0 && selectionIndices.NumElements( ) > 0 )
+            if ( desc.Type == ClayTextFieldType::MultiLine )
             {
-                AddVerticesWithDepth( selectionVertices, selectionIndices );
+                const std::string textBeforeSelection = textStr.substr( 0, selStart );
+                const std::string selectedText        = textStr.substr( selStart, selEnd - selStart );
+
+                size_t startLine              = 0;
+                size_t lastNewlineBeforeStart = 0;
+                for ( size_t i = 0; i < textBeforeSelection.length( ); ++i )
+                {
+                    if ( textBeforeSelection[ i ] == '\n' )
+                    {
+                        startLine++;
+                        lastNewlineBeforeStart = i + 1;
+                    }
+                }
+
+                const std::string    textOnStartLine = textBeforeSelection.substr( lastNewlineBeforeStart );
+                const ClayDimensions startLineSize   = MeasureText( InteropString( textOnStartLine.c_str( ) ), measureConfig );
+
+                float currentY = bounds.y + desc.Padding.Top + startLine * lineHeight;
+                float currentX = bounds.x + desc.Padding.Left + startLineSize.Width;
+
+                size_t currentPos = 0;
+                while ( currentPos < selectedText.length( ) )
+                {
+                    // Find next newline or end of selection
+                    size_t nextNewline = selectedText.find( '\n', currentPos );
+                    if ( nextNewline == std::string::npos )
+                    {
+                        nextNewline = selectedText.length( );
+                    }
+
+                    const std::string    lineText = selectedText.substr( currentPos, nextNewline - currentPos );
+                    const ClayDimensions lineSize = MeasureText( InteropString( lineText.c_str( ) ), measureConfig );
+
+                    InteropArray<UIVertex> selectionVertices;
+                    InteropArray<uint32_t> selectionIndices;
+
+                    Clay_BoundingBox selectionBounds;
+                    selectionBounds.x      = currentX;
+                    selectionBounds.y      = currentY;
+                    selectionBounds.width  = lineSize.Width;
+                    selectionBounds.height = selectionHeight;
+
+                    UIShapes::GenerateRectangleDesc selectionDesc{ };
+                    selectionDesc.Bounds       = selectionBounds;
+                    selectionDesc.Color        = Clay_Color{ desc.SelectionColor.R, desc.SelectionColor.G, desc.SelectionColor.B, desc.SelectionColor.A };
+                    selectionDesc.TextureIndex = 0;
+
+                    UIShapes::GenerateRectangle( selectionDesc, &selectionVertices, &selectionIndices, 0 );
+                    if ( selectionVertices.NumElements( ) > 0 && selectionIndices.NumElements( ) > 0 )
+                    {
+                        AddVerticesWithDepth( selectionVertices, selectionIndices );
+                    }
+
+                    if ( nextNewline < selectedText.length( ) )
+                    {
+                        currentY += lineHeight;
+                        currentX   = bounds.x + desc.Padding.Left;
+                        currentPos = nextNewline + 1;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                float selectionStartX = bounds.x + desc.Padding.Left;
+                if ( selStart > 0 )
+                {
+                    const std::string    textBeforeSelection = textStr.substr( 0, selStart );
+                    const ClayDimensions beforeSize          = MeasureText( InteropString( textBeforeSelection.c_str( ) ), measureConfig );
+                    selectionStartX += beforeSize.Width;
+                }
+
+                const std::string    selectedText = textStr.substr( selStart, selEnd - selStart );
+                const ClayDimensions selectedSize = MeasureText( InteropString( selectedText.c_str( ) ), measureConfig );
+
+                InteropArray<UIVertex> selectionVertices;
+                InteropArray<uint32_t> selectionIndices;
+
+                Clay_BoundingBox selectionBounds;
+                selectionBounds.x      = selectionStartX;
+                selectionBounds.y      = bounds.y + desc.Padding.Top;
+                selectionBounds.width  = selectedSize.Width;
+                selectionBounds.height = selectionHeight;
+
+                UIShapes::GenerateRectangleDesc selectionDesc{ };
+                selectionDesc.Bounds       = selectionBounds;
+                selectionDesc.Color        = Clay_Color{ desc.SelectionColor.R, desc.SelectionColor.G, desc.SelectionColor.B, desc.SelectionColor.A };
+                selectionDesc.TextureIndex = 0;
+
+                UIShapes::GenerateRectangle( selectionDesc, &selectionVertices, &selectionIndices, 0 );
+                if ( selectionVertices.NumElements( ) > 0 && selectionIndices.NumElements( ) > 0 )
+                {
+                    AddVerticesWithDepth( selectionVertices, selectionIndices );
+                }
             }
         }
     }
@@ -820,7 +938,7 @@ void ClayRenderer::RenderTextField( const Clay_RenderCommand *command, const Cla
         tempTextCommand.renderData.text.fontId                = desc.FontId;
         tempTextCommand.renderData.text.fontSize              = desc.FontSize;
         tempTextCommand.renderData.text.letterSpacing         = 0;
-        tempTextCommand.renderData.text.lineHeight            = 0;
+        tempTextCommand.renderData.text.lineHeight            = desc.LineHeight;
 
         tempTextCommand.boundingBox.x += desc.Padding.Left;
         tempTextCommand.boundingBox.y += desc.Padding.Top;
@@ -833,21 +951,64 @@ void ClayRenderer::RenderTextField( const Clay_RenderCommand *command, const Cla
     if ( state->IsFocused && state->CursorVisible && !desc.ReadOnly )
     {
         float cursorX = bounds.x + desc.Padding.Left;
+        float cursorY = bounds.y + desc.Padding.Top;
+
+        Clay_TextElementConfig cursorMeasureConfig{ };
+        cursorMeasureConfig.fontId        = desc.FontId;
+        cursorMeasureConfig.fontSize      = desc.FontSize;
+        cursorMeasureConfig.textColor     = Clay_Color{ };
+        cursorMeasureConfig.wrapMode      = CLAY_TEXT_WRAP_NONE;
+        cursorMeasureConfig.textAlignment = CLAY_TEXT_ALIGN_LEFT;
+
+        const ClayDimensions cursorTextSize = MeasureText( InteropString( "I" ), cursorMeasureConfig );
+        const float          cursorHeight   = cursorTextSize.Height;
+        const float          lineHeight     = desc.LineHeight > 0 ? desc.LineHeight : cursorTextSize.Height * 1.2f;
 
         if ( !state->Text.NumChars( ) == 0 && state->CursorPosition > 0 )
         {
             std::string       textStr          = state->Text.Get( );
             const std::string textBeforeCursor = textStr.substr( 0, std::min( state->CursorPosition, state->Text.NumChars( ) ) );
 
-            Clay_TextElementConfig measureConfig{ };
-            measureConfig.fontId        = desc.FontId;
-            measureConfig.fontSize      = desc.FontSize;
-            measureConfig.textColor     = Clay_Color{ };
-            measureConfig.wrapMode      = CLAY_TEXT_WRAP_NONE;
-            measureConfig.textAlignment = CLAY_TEXT_ALIGN_LEFT;
+            if ( desc.Type == ClayTextFieldType::MultiLine )
+            {
+                // Count newlines before cursor to determine which line we're on
+                size_t lineNumber     = 0;
+                size_t lastNewlinePos = 0;
 
-            const ClayDimensions textSize = MeasureText( InteropString( textBeforeCursor.c_str( ) ), measureConfig );
-            cursorX += textSize.Width;
+                for ( size_t i = 0; i < textBeforeCursor.length( ); ++i )
+                {
+                    if ( textBeforeCursor[ i ] == '\n' )
+                    {
+                        lineNumber++;
+                        lastNewlinePos = i + 1;
+                    }
+                }
+
+                const std::string textOnCurrentLine = textBeforeCursor.substr( lastNewlinePos );
+
+                Clay_TextElementConfig measureConfig{ };
+                measureConfig.fontId        = desc.FontId;
+                measureConfig.fontSize      = desc.FontSize;
+                measureConfig.textColor     = Clay_Color{ };
+                measureConfig.wrapMode      = CLAY_TEXT_WRAP_NONE;
+                measureConfig.textAlignment = CLAY_TEXT_ALIGN_LEFT;
+
+                const ClayDimensions textSize = MeasureText( InteropString( textOnCurrentLine.c_str( ) ), measureConfig );
+                cursorX += textSize.Width;
+                cursorY += lineNumber * lineHeight;
+            }
+            else
+            {
+                Clay_TextElementConfig measureConfig{ };
+                measureConfig.fontId        = desc.FontId;
+                measureConfig.fontSize      = desc.FontSize;
+                measureConfig.textColor     = Clay_Color{ };
+                measureConfig.wrapMode      = CLAY_TEXT_WRAP_NONE;
+                measureConfig.textAlignment = CLAY_TEXT_ALIGN_LEFT;
+
+                const ClayDimensions textSize = MeasureText( InteropString( textBeforeCursor.c_str( ) ), measureConfig );
+                cursorX += textSize.Width;
+            }
         }
 
         InteropArray<UIVertex> cursorVertices;
@@ -855,9 +1016,9 @@ void ClayRenderer::RenderTextField( const Clay_RenderCommand *command, const Cla
 
         Clay_BoundingBox cursorBounds;
         cursorBounds.x      = cursorX;
-        cursorBounds.y      = bounds.y + desc.Padding.Top;
+        cursorBounds.y      = cursorY;
         cursorBounds.width  = desc.CursorWidth;
-        cursorBounds.height = bounds.height - desc.Padding.Top - desc.Padding.Bottom;
+        cursorBounds.height = cursorHeight;
 
         UIShapes::GenerateRectangleDesc cursorDesc{ };
         cursorDesc.Bounds       = cursorBounds;
@@ -1010,10 +1171,8 @@ void ClayRenderer::RenderDropdown( const Clay_RenderCommand *command, const Clay
     const auto *state  = dropdownData->State;
     const auto &desc   = dropdownData->Desc;
 
-    const std::string &displayText = ( state->SelectedIndex >= 0 && state->SelectedIndex < static_cast<int32_t>( desc.Options.NumElements( ) ) )
-                                         ? std::string( desc.Options.GetElement( state->SelectedIndex ).Get( ) )
-                                         : std::string( desc.PlaceholderText.Get( ) );
-    const ClayColor   &textColor   = ( state->SelectedIndex >= 0 ) ? desc.TextColor : desc.PlaceholderColor;
+    const std::string &displayText = state->SelectedIndex >= 0 ? std::string( state->SelectedText.Get( ) ) : std::string( desc.PlaceholderText.Get( ) );
+    const ClayColor   &textColor   = state->SelectedIndex >= 0 ? desc.TextColor : desc.PlaceholderColor;
 
     if ( !displayText.empty( ) )
     {
@@ -1073,13 +1232,30 @@ void ClayRenderer::RenderColorPicker( const Clay_RenderCommand *command, const C
 
         UIShapes::GenerateRectangleDesc colorDesc{ };
         colorDesc.Bounds       = bounds;
-        colorDesc.Color        = Clay_Color{ state->Rgb.X * 255, state->Rgb.Y * 255, state->Rgb.Z * 255, 255 };
+        colorDesc.Color        = Clay_Color{ std::clamp( state->Rgb.X * 255.0f, 0.0f, 255.0f ), std::clamp( state->Rgb.Y * 255.0f, 0.0f, 255.0f ),
+                                      std::clamp( state->Rgb.Z * 255.0f, 0.0f, 255.0f ), 255.0f };
         colorDesc.TextureIndex = 0;
 
         UIShapes::GenerateRectangle( colorDesc, &colorVertices, &colorIndices, 0 );
         if ( colorVertices.NumElements( ) > 0 && colorIndices.NumElements( ) > 0 )
         {
             AddVerticesWithDepth( colorVertices, colorIndices );
+        }
+
+        // Add border for visibility
+        InteropArray<UIVertex> borderVertices;
+        InteropArray<uint32_t> borderIndices;
+
+        UIShapes::GenerateBorderDesc borderDesc{ };
+        borderDesc.Bounds       = bounds;
+        borderDesc.Color        = Clay_Color{ 128, 128, 128, 255 }; // Gray border
+        borderDesc.BorderWidth  = Clay_BorderWidth{ 1, 1, 1, 1, 0 };
+        borderDesc.CornerRadius = Clay_CornerRadius{ 4, 4, 4, 4 };
+
+        UIShapes::GenerateBorder( borderDesc, &borderVertices, &borderIndices, 0 );
+        if ( borderVertices.NumElements( ) > 0 && borderIndices.NumElements( ) > 0 )
+        {
+            AddVerticesWithDepth( borderVertices, borderIndices );
         }
     }
     else
@@ -1095,9 +1271,11 @@ void ClayRenderer::RenderColorPicker( const Clay_RenderCommand *command, const C
         InteropArray<UIVertex> wheelVertices;
         InteropArray<uint32_t> wheelIndices;
 
+        // TODO: HSV color wheel rendering
         UIShapes::GenerateRoundedRectangleDesc wheelDesc{ };
         wheelDesc.Bounds       = wheelBounds;
-        wheelDesc.Color        = Clay_Color{ 255, 255, 255, 255 };
+        wheelDesc.Color        = Clay_Color{ std::clamp( state->Rgb.X * 255.0f, 0.0f, 255.0f ), std::clamp( state->Rgb.Y * 255.0f, 0.0f, 255.0f ),
+                                      std::clamp( state->Rgb.Z * 255.0f, 0.0f, 255.0f ), 255.0f };
         wheelDesc.TextureIndex = 0;
         wheelDesc.CornerRadius = Clay_CornerRadius{ 4, 4, 4, 4 };
 
@@ -1118,7 +1296,7 @@ void ClayRenderer::RenderColorPicker( const Clay_RenderCommand *command, const C
 
         UIShapes::GenerateRectangleDesc valueDesc{ };
         valueDesc.Bounds       = valueBounds;
-        valueDesc.Color        = Clay_Color{ state->Hsv.Z * 255, state->Hsv.Z * 255, state->Hsv.Z * 255, 255 };
+        valueDesc.Color        = Clay_Color{ state->Hsv.Z * 255.0f, state->Hsv.Z * 255.0f, state->Hsv.Z * 255.0f, 255.0f };
         valueDesc.TextureIndex = 0;
 
         UIShapes::GenerateRectangle( valueDesc, &valueVertices, &valueIndices, 0 );
@@ -1391,7 +1569,7 @@ void ClayRenderer::FlushCurrentBatch( )
     const size_t vertexDataSize = m_batchedVertices.NumElements( ) * sizeof( UIVertex );
     const size_t indexDataSize  = m_batchedIndices.NumElements( ) * sizeof( uint32_t );
 
-    if ( ( alignedVertexOffset + m_batchedVertices.NumElements( ) ) > m_desc.MaxVertices || ( alignedIndexOffset + m_batchedIndices.NumElements( ) ) > m_desc.MaxIndices )
+    if ( alignedVertexOffset + m_batchedVertices.NumElements( ) > m_desc.MaxVertices || alignedIndexOffset + m_batchedIndices.NumElements( ) > m_desc.MaxIndices )
     {
         LOG( ERROR ) << "ClayRenderer: Geometry exceeds buffer limits";
         return;

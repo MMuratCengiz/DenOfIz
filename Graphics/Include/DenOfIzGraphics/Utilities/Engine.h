@@ -73,24 +73,28 @@ namespace DenOfIz
             tvg::Initializer::init( tvg::CanvasEngine::Sw, std::thread::hardware_concurrency( ) );
             std::atexit( [] { tvg::Initializer::term( tvg::CanvasEngine::Sw ); } );
 
+            FLAGS_alsologtostderr           = true;
+            FLAGS_colorlogtostdout          = true;
+            FLAGS_max_log_size              = 50;
+            FLAGS_stop_logging_if_full_disk = true;
+            FLAGS_logfile_mode              = 0644;
+            FLAGS_logcleansecs              = 60 * 60 * 24;
+
             switch ( desc.LogLevel )
             {
             case LogLevel::Info:
-                google::LogAtLevel( google::GLOG_INFO, "DenOfIz.log" );
+                FLAGS_minloglevel = google::GLOG_INFO;
                 break;
             case LogLevel::Warning:
-                google::LogAtLevel( google::GLOG_WARNING, "DenOfIz.log" );
+                FLAGS_minloglevel = google::GLOG_WARNING;
                 break;
             case LogLevel::Error:
-                google::LogAtLevel( google::GLOG_ERROR, "DenOfIz.log" );
+                FLAGS_minloglevel = google::GLOG_ERROR;
                 break;
             case LogLevel::Fatal:
-                google::LogAtLevel( google::GLOG_FATAL, "DenOfIz.log" );
+                FLAGS_minloglevel = google::GLOG_FATAL;
                 break;
             }
-
-            FLAGS_alsologtostderr  = true;
-            FLAGS_colorlogtostdout = true;
 
             const auto logFile = desc.LogFile.Get( );
             google::InitGoogleLogging( "DenOfIz" );
@@ -102,6 +106,7 @@ namespace DenOfIz
 
         static void Shutdown( )
         {
+            google::ShutdownGoogleLogging( );
         }
     };
 } // namespace DenOfIz

@@ -61,8 +61,7 @@ namespace DenOfIz
         DZ_API void                 SetStyle( const DropdownStyle &style );
         DZ_API const DropdownStyle &GetStyle( ) const;
 
-    private:
-        void RenderDropdownList( );
+        DZ_API void RenderDropdownList( );
     };
 
 } // namespace DenOfIz

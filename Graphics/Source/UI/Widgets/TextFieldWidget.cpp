@@ -36,6 +36,9 @@ TextFieldWidget::TextFieldWidget( Clay *clay, uint32_t id, const TextFieldStyle 
     m_textFieldState.CursorVisible   = m_cursorVisible;
     m_textFieldState.CursorBlinkTime = m_cursorBlinkTime;
     m_textFieldState.SelectionAnchor = m_selectionAnchor;
+
+    m_widgetData.Type = ClayCustomWidgetType::TextField;
+    m_widgetData.Data = &m_renderData;
 }
 
 void TextFieldWidget::Update( const float deltaTime )
@@ -46,13 +49,45 @@ void TextFieldWidget::Update( const float deltaTime )
 
 void TextFieldWidget::CreateLayoutElement( )
 {
+    m_textFieldState.Text            = m_text;
+    m_textFieldState.CursorPosition  = m_cursorPosition;
+    m_textFieldState.SelectionStart  = m_selectionStart;
+    m_textFieldState.SelectionEnd    = m_selectionEnd;
+    m_textFieldState.HasSelection    = m_hasSelection;
+    m_textFieldState.IsFocused       = m_isFocused;
+    m_textFieldState.CursorVisible   = m_cursorVisible;
+    m_textFieldState.CursorBlinkTime = m_cursorBlinkTime;
+    m_textFieldState.SelectionAnchor = m_selectionAnchor;
+
+    m_renderData.State     = &m_textFieldState;
+    m_renderData.Desc      = m_style;
+    m_renderData.ElementId = m_id;
+
     ClayElementDeclaration decl;
     decl.Id                   = m_id;
     decl.Layout.Sizing.Width  = ClaySizingAxis::Grow( );
     decl.Layout.Sizing.Height = ClaySizingAxis::Fixed( m_style.Height );
     decl.Custom.CustomData    = &m_widgetData;
 
+    if ( m_style.Type == ClayTextFieldType::MultiLine )
+    {
+        decl.Scroll.Vertical   = true;
+        decl.Scroll.Horizontal = false;
+    }
+
     m_clay->OpenElement( decl );
+
+    if ( m_style.Type == ClayTextFieldType::MultiLine && false ) // Disabled for now
+    {
+        const InteropString displayText = m_text.NumChars( ) == 0 ? m_style.PlaceholderText : m_text;
+        ClayTextDesc        textDesc;
+        textDesc.TextColor = m_text.NumChars( ) == 0 ? m_style.PlaceholderColor : m_style.TextColor;
+        textDesc.FontId    = m_style.FontId;
+        textDesc.FontSize  = m_style.FontSize;
+        textDesc.WrapMode  = ClayTextWrapMode::Newlines;
+        m_clay->Text( displayText, textDesc );
+    }
+
     m_clay->CloseElement( );
 }
 
@@ -71,9 +106,6 @@ void TextFieldWidget::Render( )
     m_renderData.State     = &m_textFieldState;
     m_renderData.Desc      = m_style;
     m_renderData.ElementId = m_id;
-
-    m_widgetData.Type = ClayCustomWidgetType::TextField;
-    m_widgetData.Data = &m_renderData;
 }
 
 void TextFieldWidget::HandleEvent( const Event &event )
@@ -446,7 +478,16 @@ void TextFieldWidget::HandleKeyPress( const Event &event )
         break;
 
     case KeyCode::Return:
-        m_isFocused = false;
+        if ( m_style.Type == ClayTextFieldType::MultiLine && !m_style.ReadOnly )
+        {
+            InsertText( InteropString( "\n" ) );
+            m_cursorBlinkTime = 0.0f;
+            m_cursorVisible   = true;
+        }
+        else
+        {
+            m_isFocused = false;
+        }
         break;
 
     case KeyCode::Escape:

@@ -372,10 +372,11 @@ namespace DenOfIz
         ClayColor         CursorColor      = ClayColor( 0, 0, 0, 255 );
         uint16_t          FontId           = 0;
         uint16_t          FontSize         = 14;
+        uint16_t          LineHeight       = 0;
         ClayPadding       Padding          = ClayPadding( 8 );
         float             CursorWidth      = 1.0f;
         bool              ReadOnly         = false;
-        size_t            Height           = 70;
+        size_t            Height           = 32;
         size_t            MaxLength        = 0; // 0 = unlimited
     };
 
@@ -538,6 +539,7 @@ namespace DenOfIz
         {
             ClayTextFieldDesc desc = CreateSingleLineInput( placeholder );
             desc.Type              = ClayTextFieldType::MultiLine;
+            desc.Height            = 100; // More appropriate height for multi-line text
             return desc;
         }
 
