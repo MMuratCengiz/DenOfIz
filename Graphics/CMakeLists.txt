@@ -123,6 +123,8 @@ set(DEN_OF_IZ_UI_SOURCES
         Source/UI/Widgets/DropdownWidget.cpp
         Source/UI/Widgets/ColorPickerWidget.cpp
         Source/UI/Widgets/TextFieldWidget.cpp
+        Source/UI/Widgets/ResizableContainerWidget.cpp
+        Source/UI/Widgets/DockableContainerWidget.cpp
         Source/UI/FullscreenQuadPipeline.cpp
 )
 

@@ -24,6 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/UI/ClayData.h>
 #include <DenOfIzGraphics/UI/ClayRenderer.h>
 #include <DenOfIzGraphics/UI/UIShaders.h>
+#include <DenOfIzGraphics/UI/Widgets/DockableContainerWidget.h>
+#include <DenOfIzGraphics/UI/Widgets/ResizableContainerWidget.h>
 #include <DenOfIzGraphics/Utilities/Common.h>
 #include <algorithm>
 #include <cmath>
@@ -747,6 +749,18 @@ void ClayRenderer::RenderCustom( const Clay_RenderCommand *command, ICommandList
         {
             const auto *colorPickerData = static_cast<const ClayColorPickerRenderData *>( widgetData->Data );
             RenderColorPicker( command, colorPickerData, commandList );
+            break;
+        }
+    case ClayCustomWidgetType::ResizableContainer:
+        {
+            const auto *resizableData = static_cast<const ClayResizableContainerRenderData *>( widgetData->Data );
+            RenderResizableContainer( command, resizableData, commandList );
+            break;
+        }
+    case ClayCustomWidgetType::DockableContainer:
+        {
+            const auto *dockableData = static_cast<const ClayDockableContainerRenderData *>( widgetData->Data );
+            RenderDockableContainer( command, dockableData, commandList );
             break;
         }
     default:
@@ -1656,4 +1670,123 @@ TextLayout *ClayRenderer::GetOrCreateShapedTextDirect( const char *text, const s
 void ClayRenderer::CleanupTextLayoutCache( ) const
 {
     m_textLayoutCache.Cleanup( m_currentFrame );
+}
+
+void ClayRenderer::RenderResizableContainer( const Clay_RenderCommand *command, const ClayResizableContainerRenderData *resizableData, ICommandList *commandList )
+{
+    const auto &bounds = command->boundingBox;
+    const auto *state  = resizableData->State;
+    const auto &desc   = resizableData->Desc;
+
+    // Render resize handles if resizing is enabled
+    if ( desc.EnableResize )
+    {
+        const float handleSize = desc.ResizeHandleSize;
+
+        // Corner handles (higher priority for interaction)
+        const std::vector<std::pair<float, float>> cornerOffsets = {
+            { 0, 0 },                                                 // NorthWest
+            { bounds.width - handleSize, 0 },                         // NorthEast
+            { 0, bounds.height - handleSize },                        // SouthWest
+            { bounds.width - handleSize, bounds.height - handleSize } // SouthEast
+        };
+
+        for ( const auto &[ offsetX, offsetY ] : cornerOffsets )
+        {
+            InteropArray<UIVertex> handleVertices;
+            InteropArray<uint32_t> handleIndices;
+
+            Clay_BoundingBox handleBounds;
+            handleBounds.x      = bounds.x + offsetX;
+            handleBounds.y      = bounds.y + offsetY;
+            handleBounds.width  = handleSize;
+            handleBounds.height = handleSize;
+
+            UIShapes::GenerateRectangleDesc handleDesc{ };
+            handleDesc.Bounds       = handleBounds;
+            handleDesc.Color        = Clay_Color{ desc.HandleColor.R, desc.HandleColor.G, desc.HandleColor.B, desc.HandleColor.A };
+            handleDesc.TextureIndex = 0;
+
+            UIShapes::GenerateRectangle( handleDesc, &handleVertices, &handleIndices, 0 );
+            if ( handleVertices.NumElements( ) > 0 && handleIndices.NumElements( ) > 0 )
+            {
+                AddVerticesWithDepth( handleVertices, handleIndices );
+            }
+        }
+
+        // Edge handles
+        const std::vector<std::tuple<float, float, float, float>> edgeHandles = {
+            { handleSize, 0, bounds.width - 2 * handleSize, handleSize },                          // North
+            { handleSize, bounds.height - handleSize, bounds.width - 2 * handleSize, handleSize }, // South
+            { 0, handleSize, handleSize, bounds.height - 2 * handleSize },                         // West
+            { bounds.width - handleSize, handleSize, handleSize, bounds.height - 2 * handleSize }  // East
+        };
+
+        for ( const auto &[ offsetX, offsetY, width, height ] : edgeHandles )
+        {
+            InteropArray<UIVertex> handleVertices;
+            InteropArray<uint32_t> handleIndices;
+
+            Clay_BoundingBox handleBounds;
+            handleBounds.x      = bounds.x + offsetX;
+            handleBounds.y      = bounds.y + offsetY;
+            handleBounds.width  = width;
+            handleBounds.height = height;
+
+            UIShapes::GenerateRectangleDesc handleDesc{ };
+            handleDesc.Bounds       = handleBounds;
+            handleDesc.Color        = Clay_Color{ desc.HandleColor.R, desc.HandleColor.G, desc.HandleColor.B, desc.HandleColor.A };
+            handleDesc.TextureIndex = 0;
+
+            UIShapes::GenerateRectangle( handleDesc, &handleVertices, &handleIndices, 0 );
+            if ( handleVertices.NumElements( ) > 0 && handleIndices.NumElements( ) > 0 )
+            {
+                AddVerticesWithDepth( handleVertices, handleIndices );
+            }
+        }
+    }
+}
+
+void ClayRenderer::RenderDockableContainer( const Clay_RenderCommand *command, const ClayDockableContainerRenderData *dockableData, ICommandList *commandList )
+{
+    const auto &bounds = command->boundingBox;
+    const auto *state  = dockableData->State;
+    const auto &desc   = dockableData->Desc;
+
+    if ( state->ShowDockZones )
+    {
+        if ( static_cast<DockingSide>( state->HoveredDockZone ) != DockingSide::None )
+        {
+            InteropArray<UIVertex> highlightVertices;
+            InteropArray<uint32_t> highlightIndices;
+
+            UIShapes::GenerateRectangleDesc highlightDesc{ };
+            highlightDesc.Bounds       = bounds;
+            highlightDesc.Color        = Clay_Color{ desc.DockZoneColor.R, desc.DockZoneColor.G, desc.DockZoneColor.B, 50 };
+            highlightDesc.TextureIndex = 0;
+
+            UIShapes::GenerateRectangle( highlightDesc, &highlightVertices, &highlightIndices, 0 );
+            if ( highlightVertices.NumElements( ) > 0 && highlightIndices.NumElements( ) > 0 )
+            {
+                AddVerticesWithDepth( highlightVertices, highlightIndices );
+            }
+        }
+    }
+
+    if ( state->IsDragging )
+    {
+        InteropArray<UIVertex> dragVertices;
+        InteropArray<uint32_t> dragIndices;
+
+        UIShapes::GenerateRectangleDesc dragDesc{ };
+        dragDesc.Bounds       = bounds;
+        dragDesc.Color        = Clay_Color{ 100, 100, 100, 100 };
+        dragDesc.TextureIndex = 0;
+
+        UIShapes::GenerateRectangle( dragDesc, &dragVertices, &dragIndices, 0 );
+        if ( dragVertices.NumElements( ) > 0 && dragIndices.NumElements( ) > 0 )
+        {
+            AddVerticesWithDepth( dragVertices, dragIndices );
+        }
+    }
 }

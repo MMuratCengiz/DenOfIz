@@ -46,6 +46,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    struct ClayResizableContainerRenderData;
+    struct ClayDockableContainerRenderData;
+
     struct ClayRendererDesc
     {
         ILogicalDevice *LogicalDevice      = nullptr;
@@ -193,6 +196,8 @@ namespace DenOfIz
         void RenderSlider( const Clay_RenderCommand *command, const ClaySliderRenderData *sliderData, ICommandList *commandList );
         void RenderDropdown( const Clay_RenderCommand *command, const ClayDropdownRenderData *dropdownData, ICommandList *commandList );
         void RenderColorPicker( const Clay_RenderCommand *command, const ClayColorPickerRenderData *colorPickerData, ICommandList *commandList );
+        void RenderResizableContainer( const Clay_RenderCommand *command, const ClayResizableContainerRenderData *resizableData, ICommandList *commandList );
+        void RenderDockableContainer( const Clay_RenderCommand *command, const ClayDockableContainerRenderData *dockableData, ICommandList *commandList );
         void SetScissor( const Clay_RenderCommand *command );
         void ClearScissor( );
 

@@ -24,7 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/UI/Clay.h"
 #include "DenOfIzGraphics/UI/Widgets/CheckboxWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/ColorPickerWidget.h"
+#include "DenOfIzGraphics/UI/Widgets/DockableContainerWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/DropdownWidget.h"
+#include "DenOfIzGraphics/UI/Widgets/ResizableContainerWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/SliderWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/TextFieldWidget.h"
 
@@ -39,16 +41,20 @@ namespace DenOfIz
         bool                  m_mousePressed{ };
         bool                  m_mouseJustReleased{ };
 
-        CheckboxWidget    *m_darkModeCheckbox         = nullptr;
-        CheckboxWidget    *m_enableAnimationsCheckbox = nullptr;
-        SliderWidget      *m_volumeSlider             = nullptr;
-        SliderWidget      *m_brightnessSlider         = nullptr;
-        DropdownWidget    *m_themeDropdown            = nullptr;
-        DropdownWidget    *m_languageDropdown         = nullptr;
-        ColorPickerWidget *m_accentColorPicker        = nullptr;
-        TextFieldWidget   *m_usernameField            = nullptr;
-        TextFieldWidget   *m_passwordField            = nullptr;
-        TextFieldWidget   *m_commentsField            = nullptr;
+        CheckboxWidget                 *m_darkModeCheckbox         = nullptr;
+        CheckboxWidget                 *m_enableAnimationsCheckbox = nullptr;
+        SliderWidget                   *m_volumeSlider             = nullptr;
+        SliderWidget                   *m_brightnessSlider         = nullptr;
+        DropdownWidget                 *m_themeDropdown            = nullptr;
+        DropdownWidget                 *m_languageDropdown         = nullptr;
+        ColorPickerWidget              *m_accentColorPicker        = nullptr;
+        TextFieldWidget                *m_usernameField            = nullptr;
+        TextFieldWidget                *m_passwordField            = nullptr;
+        TextFieldWidget                *m_commentsField            = nullptr;
+        ResizableContainerWidget       *m_resizableContainer       = nullptr;
+        DockableContainerWidget        *m_dockableContainer1       = nullptr;
+        DockableContainerWidget        *m_dockableContainer2       = nullptr;
+        std::unique_ptr<DockingManager> m_dockingManager           = nullptr;
 
         uint32_t m_containerId{ };
         uint32_t m_scrollContainerId{ };

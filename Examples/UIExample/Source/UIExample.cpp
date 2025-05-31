@@ -80,6 +80,58 @@ void UIExample::Init( )
     m_themeDropdown->SetSelectedIndex( 0 );
     m_languageDropdown->SetSelectedIndex( 0 );
 
+    m_dockingManager = std::make_unique<DockingManager>( m_clay.get( ) );
+
+    ResizableContainerStyle resizableStyle;
+    resizableStyle.Title        = InteropString( "Resizable Container" );
+    resizableStyle.MinWidth     = 200.0f;
+    resizableStyle.MinHeight    = 150.0f;
+    resizableStyle.ShowTitleBar = true;
+    m_resizableContainer        = m_clay->CreateResizableContainer( m_clay->HashString( "ResizableContainer" ), resizableStyle );
+
+    DockableContainerStyle dockableStyle1;
+    dockableStyle1.Title     = InteropString( "Properties Panel" );
+    dockableStyle1.MinWidth  = 250.0f;
+    dockableStyle1.MinHeight = 200.0f;
+    m_dockableContainer1     = m_clay->CreateDockableContainer( m_clay->HashString( "DockableContainer1" ), m_dockingManager.get( ), dockableStyle1 );
+
+    DockableContainerStyle dockableStyle2;
+    dockableStyle2.Title     = InteropString( "Hierarchy Panel" );
+    dockableStyle2.MinWidth  = 200.0f;
+    dockableStyle2.MinHeight = 300.0f;
+    m_dockableContainer2     = m_clay->CreateDockableContainer( m_clay->HashString( "DockableContainer2" ), m_dockingManager.get( ), dockableStyle2 );
+
+    m_resizableContainer->SetContentRenderer(
+        [ this ]( )
+        {
+            ClayTextDesc textDesc;
+            textDesc.TextColor = ClayColor( 0, 0, 0, 255 );
+            textDesc.FontSize  = 14;
+            m_clay->Text( InteropString( "This is a resizable container!\nDrag the edges to resize." ), textDesc );
+        } );
+
+    m_dockableContainer1->SetContentRenderer(
+        [ this ]( )
+        {
+            ClayTextDesc textDesc;
+            textDesc.TextColor = ClayColor( 0, 0, 0, 255 );
+            textDesc.FontSize  = 14;
+            m_clay->Text( InteropString( "Properties:\n• Property 1: Value\n• Property 2: Another Value\n• Property 3: Yet Another" ), textDesc );
+        } );
+
+    m_dockableContainer2->SetContentRenderer(
+        [ this ]( )
+        {
+            ClayTextDesc textDesc;
+            textDesc.TextColor = ClayColor( 0, 0, 0, 255 );
+            textDesc.FontSize  = 14;
+            m_clay->Text( InteropString( "Hierarchy:\n└ Root Object\n  ├ Child 1\n  ├ Child 2\n  └ Child 3" ), textDesc );
+        } );
+
+    // Set initial positions for dockable containers
+    m_dockableContainer1->SetFloatingPosition( Float_2{ 50.0f, 100.0f } );
+    m_dockableContainer2->SetFloatingPosition( Float_2{ 350.0f, 150.0f } );
+
     m_time.OnEachSecond = []( const double fps ) { LOG( INFO ) << "FPS: " << fps; };
 }
 
@@ -94,6 +146,11 @@ void UIExample::Update( )
     m_worldData.DeltaTime = m_time.GetDeltaTime( );
     m_worldData.Camera->Update( m_worldData.DeltaTime );
     m_clay->UpdateScrollContainers( false, Float_2( 0, 0 ), m_worldData.DeltaTime );
+
+    if ( m_dockingManager )
+    {
+        m_dockingManager->Update( m_worldData.DeltaTime );
+    }
 
     RenderAndPresentFrame( );
 }
@@ -132,6 +189,28 @@ void UIExample::CreateUI( )
 
     CreateFooter( cardColor, textColor, secondaryTextColor );
     m_clay->CloseElement( );
+
+    // Render container widgets
+    if ( m_resizableContainer )
+    {
+        m_resizableContainer->CreateLayoutElement( );
+    }
+
+    if ( m_dockableContainer1 )
+    {
+        m_dockableContainer1->CreateLayoutElement( );
+    }
+
+    if ( m_dockableContainer2 )
+    {
+        m_dockableContainer2->CreateLayoutElement( );
+    }
+
+    // Render docking manager (for dock zones)
+    if ( m_dockingManager )
+    {
+        m_dockingManager->Render( );
+    }
 
     m_clay->RenderFloatingWidgets( );
     m_mouseJustReleased = false;

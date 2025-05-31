@@ -391,11 +391,13 @@ namespace DenOfIz
 
     enum class ClayCustomWidgetType : uint32_t
     {
-        TextField   = 0x54455854, // 'TEXT'
-        Checkbox    = 0x43484543, // 'CHEC'
-        Slider      = 0x534C4944, // 'SLID'
-        Dropdown    = 0x44524F50, // 'DROP'
-        ColorPicker = 0x434F4C4F  // 'COLO'
+        TextField          = 0x54455854, // 'TEXT'
+        Checkbox           = 0x43484543, // 'CHEC'
+        Slider             = 0x534C4944, // 'SLID'
+        Dropdown           = 0x44524F50, // 'DROP'
+        ColorPicker        = 0x434F4C4F, // 'COLO'
+        ResizableContainer = 0x52455349, // 'RESI'
+        DockableContainer  = 0x444F434B  // 'DOCK'
     };
 
     struct ClayCustomWidgetData
@@ -520,6 +522,90 @@ namespace DenOfIz
         ClayColorPickerState *State;
         ClayColorPickerDesc   Desc;
         uint32_t              ElementId;
+    };
+
+    struct ClayResizableContainerState
+    {
+        float   Width           = 300.0f;
+        float   Height          = 200.0f;
+        bool    IsResizing      = false;
+        uint8_t ResizeDirection = 0; // ResizeDirection::None
+        Float_2 ResizeStartPos  = Float_2{ 0.0f, 0.0f };
+        Float_2 InitialSize     = Float_2{ 0.0f, 0.0f };
+        Float_2 InitialPosition = Float_2{ 0.0f, 0.0f };
+    };
+
+    struct ClayResizableContainerDesc
+    {
+        float         MinWidth         = 100.0f;
+        float         MinHeight        = 100.0f;
+        float         MaxWidth         = 1000.0f;
+        float         MaxHeight        = 800.0f;
+        float         ResizeHandleSize = 8.0f;
+        ClayColor     BackgroundColor  = ClayColor( 245, 245, 245, 255 );
+        ClayColor     BorderColor      = ClayColor( 200, 200, 200, 255 );
+        ClayColor     HandleColor      = ClayColor( 150, 150, 150, 255 );
+        ClayColor     TitleBarColor    = ClayColor( 240, 240, 240, 255 );
+        ClayColor     TitleTextColor   = ClayColor( 0, 0, 0, 255 );
+        uint16_t      FontId           = 0;
+        uint16_t      FontSize         = 14;
+        float         TitleBarHeight   = 32.0f;
+        float         BorderWidth      = 1.0f;
+        bool          ShowTitleBar     = true;
+        bool          EnableResize     = true;
+        InteropString Title            = "Container";
+    };
+
+    struct ClayResizableContainerRenderData
+    {
+        ClayResizableContainerState *State;
+        ClayResizableContainerDesc   Desc;
+        uint32_t                     ElementId;
+    };
+
+    struct ClayDockableContainerState
+    {
+        uint8_t  Mode             = 0; // DockingMode::Floating
+        uint8_t  DockedSide       = 0; // DockingSide::None
+        uint32_t ParentDockId     = 0;
+        Float_2  FloatingPosition = Float_2{ 100.0f, 100.0f };
+        Float_2  FloatingSize     = Float_2{ 300.0f, 200.0f };
+        bool     IsDragging       = false;
+        Float_2  DragStartPos     = Float_2{ 0.0f, 0.0f };
+        Float_2  DragOffset       = Float_2{ 0.0f, 0.0f };
+        bool     ShowDockZones    = false;
+        uint8_t  HoveredDockZone  = 0; // DockingSide::None
+        int32_t  TabIndex         = -1;
+        bool     IsActive         = true;
+    };
+
+    struct ClayDockableContainerDesc
+    {
+        InteropString Title            = "Dockable Container";
+        ClayColor     BackgroundColor  = ClayColor( 245, 245, 245, 255 );
+        ClayColor     BorderColor      = ClayColor( 200, 200, 200, 255 );
+        ClayColor     TitleBarColor    = ClayColor( 240, 240, 240, 255 );
+        ClayColor     TitleTextColor   = ClayColor( 0, 0, 0, 255 );
+        ClayColor     ActiveTabColor   = ClayColor( 255, 255, 255, 255 );
+        ClayColor     InactiveTabColor = ClayColor( 230, 230, 230, 255 );
+        ClayColor     DockZoneColor    = ClayColor( 0, 120, 215, 100 );
+        uint16_t      FontId           = 0;
+        uint16_t      FontSize         = 14;
+        float         TitleBarHeight   = 32.0f;
+        float         TabHeight        = 28.0f;
+        float         BorderWidth      = 1.0f;
+        float         MinWidth         = 100.0f;
+        float         MinHeight        = 100.0f;
+        bool          AllowUndock      = true;
+        bool          AllowResize      = true;
+        bool          ShowCloseButton  = true;
+    };
+
+    struct ClayDockableContainerRenderData
+    {
+        ClayDockableContainerState *State;
+        ClayDockableContainerDesc   Desc;
+        uint32_t                    ElementId;
     };
 
     namespace ClayWidgets

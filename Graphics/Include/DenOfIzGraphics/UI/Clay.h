@@ -25,14 +25,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ClayRenderer.h"
 #include "DenOfIzGraphics/Input/Event.h"
 #include "DenOfIzGraphics/Utilities/Time.h"
-#include "Widgets/CheckboxWidget.h"
-#include "Widgets/ColorPickerWidget.h"
-#include "Widgets/DropdownWidget.h"
-#include "Widgets/SliderWidget.h"
-#include "Widgets/TextFieldWidget.h"
-
 namespace DenOfIz
 {
+    // Forward declarations
+    class Widget;
+    class CheckboxWidget;
+    class ColorPickerWidget;
+    class DropdownWidget;
+    class SliderWidget;
+    class TextFieldWidget;
+    class ResizableContainerWidget;
+    class DockableContainerWidget;
+    class DockingManager;
+
+    using CheckboxStyle           = ClayCheckboxDesc;
+    using SliderStyle             = ClaySliderDesc;
+    using DropdownStyle           = ClayDropdownDesc;
+    using ColorPickerStyle        = ClayColorPickerDesc;
+    using TextFieldStyle          = ClayTextFieldDesc;
+    using ResizableContainerStyle = ClayResizableContainerDesc;
+    using DockableContainerStyle  = ClayDockableContainerDesc;
+
     struct DZ_API ClayDesc
     {
         ILogicalDevice *LogicalDevice                  = nullptr;
@@ -100,11 +113,13 @@ namespace DenOfIz
         DZ_API ClayDimensions  MeasureText( const InteropString &text, uint16_t fontId, uint16_t fontSize ) const;
 
         // Widget creation methods
-        DZ_API CheckboxWidget    *CreateCheckbox( uint32_t id, bool initialChecked = false, const CheckboxStyle &style = { } );
-        DZ_API SliderWidget      *CreateSlider( uint32_t id, float initialValue = 0.5f, const SliderStyle &style = { } );
-        DZ_API DropdownWidget    *CreateDropdown( uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style = { } );
-        DZ_API ColorPickerWidget *CreateColorPicker( uint32_t id, const Float_3 &initialRgb = Float_3{ 1.0f, 0.0f, 0.0f }, const ColorPickerStyle &style = { } );
-        DZ_API TextFieldWidget   *CreateTextField( uint32_t id, const TextFieldStyle &style = { } );
+        DZ_API CheckboxWidget           *CreateCheckbox( uint32_t id, bool initialChecked = false, const CheckboxStyle &style = { } );
+        DZ_API SliderWidget             *CreateSlider( uint32_t id, float initialValue = 0.5f, const SliderStyle &style = { } );
+        DZ_API DropdownWidget           *CreateDropdown( uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style = { } );
+        DZ_API ColorPickerWidget        *CreateColorPicker( uint32_t id, const Float_3 &initialRgb = Float_3{ 1.0f, 0.0f, 0.0f }, const ColorPickerStyle &style = { } );
+        DZ_API TextFieldWidget          *CreateTextField( uint32_t id, const TextFieldStyle &style = { } );
+        DZ_API ResizableContainerWidget *CreateResizableContainer( uint32_t id, const ResizableContainerStyle &style = { } );
+        DZ_API DockableContainerWidget  *CreateDockableContainer( uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style = { } );
 
         // Widget management
         DZ_API Widget *GetWidget( uint32_t id ) const;

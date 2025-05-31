@@ -3,6 +3,13 @@
 
 #include <DenOfIzGraphics/UI/Clay.h>
 #include <DenOfIzGraphics/UI/ClayClipboard.h>
+#include <DenOfIzGraphics/UI/Widgets/CheckboxWidget.h>
+#include <DenOfIzGraphics/UI/Widgets/ColorPickerWidget.h>
+#include <DenOfIzGraphics/UI/Widgets/DockableContainerWidget.h>
+#include <DenOfIzGraphics/UI/Widgets/DropdownWidget.h>
+#include <DenOfIzGraphics/UI/Widgets/ResizableContainerWidget.h>
+#include <DenOfIzGraphics/UI/Widgets/SliderWidget.h>
+#include <DenOfIzGraphics/UI/Widgets/TextFieldWidget.h>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -793,6 +800,24 @@ TextFieldWidget *Clay::CreateTextField( uint32_t id, const TextFieldStyle &style
     auto             widget = std::make_unique<TextFieldWidget>( this, id, style );
     TextFieldWidget *ptr    = widget.get( );
     m_widgets[ id ]         = std::move( widget );
+    m_widgetUpdateOrder.push_back( ptr );
+    return ptr;
+}
+
+ResizableContainerWidget *Clay::CreateResizableContainer( uint32_t id, const ResizableContainerStyle &style )
+{
+    auto                      widget = std::make_unique<ResizableContainerWidget>( this, id, style );
+    ResizableContainerWidget *ptr    = widget.get( );
+    m_widgets[ id ]                  = std::move( widget );
+    m_widgetUpdateOrder.push_back( ptr );
+    return ptr;
+}
+
+DockableContainerWidget *Clay::CreateDockableContainer( uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style )
+{
+    auto                     widget = std::make_unique<DockableContainerWidget>( this, id, dockingManager, style );
+    DockableContainerWidget *ptr    = widget.get( );
+    m_widgets[ id ]                 = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
     return ptr;
 }
