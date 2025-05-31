@@ -22,6 +22,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 #include "DenOfIzGraphics/UI/Clay.h"
+#include "DenOfIzGraphics/UI/Widgets/CheckboxWidget.h"
+#include "DenOfIzGraphics/UI/Widgets/ColorPickerWidget.h"
+#include "DenOfIzGraphics/UI/Widgets/DropdownWidget.h"
+#include "DenOfIzGraphics/UI/Widgets/SliderWidget.h"
+#include "DenOfIzGraphics/UI/Widgets/TextFieldWidget.h"
 
 namespace DenOfIz
 {
@@ -32,9 +37,25 @@ namespace DenOfIz
         std::unique_ptr<Clay> m_clay;
         Float_2               m_mousePosition{ };
         bool                  m_mousePressed{ };
-        uint32_t              m_buttonId{ };
-        uint32_t              m_textId{ };
-        uint32_t              m_containerId{ };
+        bool                  m_mouseJustReleased{ };
+
+        CheckboxWidget    *m_darkModeCheckbox         = nullptr;
+        CheckboxWidget    *m_enableAnimationsCheckbox = nullptr;
+        SliderWidget      *m_volumeSlider             = nullptr;
+        SliderWidget      *m_brightnessSlider         = nullptr;
+        DropdownWidget    *m_themeDropdown            = nullptr;
+        DropdownWidget    *m_languageDropdown         = nullptr;
+        ColorPickerWidget *m_accentColorPicker        = nullptr;
+        TextFieldWidget   *m_usernameField            = nullptr;
+        TextFieldWidget   *m_passwordField            = nullptr;
+        TextFieldWidget   *m_commentsField            = nullptr;
+
+        uint32_t m_containerId{ };
+        uint32_t m_scrollContainerId{ };
+
+        std::string                 m_statusText = "Welcome! Explore the widgets below.";
+        InteropArray<InteropString> m_themeOptions;
+        InteropArray<InteropString> m_languageOptions;
 
     public:
         ~UIExample( ) override = default;
@@ -54,6 +75,15 @@ namespace DenOfIz
         }
 
     private:
-        void CreateUI( ) const;
+        void CreateUI( );
+        void CreateHeader( const ClayColor &textColor ) const;
+        void CreateSettingsPanel( const ClayColor &cardColor, const ClayColor &textColor, const ClayColor &secondaryTextColor ) const;
+        void CreateFormsPanel( const ClayColor &cardColor, const ClayColor &textColor, const ClayColor &secondaryTextColor ) const;
+        void CreateFooter( const ClayColor &cardColor, const ClayColor &textColor, const ClayColor &secondaryTextColor );
+        void CreateCard( const ClayColor &cardColor, const ClayColor &textColor, const char *title ) const;
+        void CreateCheckboxRow( const char *label, CheckboxWidget *widget, const ClayColor &textColor ) const;
+        void CreateSliderRow( const char *label, SliderWidget *widget, const ClayColor &textColor, const ClayColor &secondaryTextColor ) const;
+        void CreateDropdownRow( const char *label, DropdownWidget *widget, const ClayColor &textColor ) const;
+        void CreateTextFieldRow( const char *label, TextFieldWidget *widget, const ClayColor &textColor ) const;
     };
 } // namespace DenOfIz

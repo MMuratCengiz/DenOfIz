@@ -117,6 +117,12 @@ set(DEN_OF_IZ_UI_SOURCES
         Source/UI/UIShapes.cpp
         Source/UI/UIShapeCache.cpp
         Source/UI/UITextVertexCache.cpp
+        Source/UI/Widgets/Widget.cpp
+        Source/UI/Widgets/CheckboxWidget.cpp
+        Source/UI/Widgets/SliderWidget.cpp
+        Source/UI/Widgets/DropdownWidget.cpp
+        Source/UI/Widgets/ColorPickerWidget.cpp
+        Source/UI/Widgets/TextFieldWidget.cpp
         Source/UI/FullscreenQuadPipeline.cpp
 )
 

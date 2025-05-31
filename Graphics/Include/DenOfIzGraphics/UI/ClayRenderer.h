@@ -149,6 +149,7 @@ namespace DenOfIz
         float      m_viewportWidth  = 0;
         float      m_viewportHeight = 0;
         float      m_dpiScale       = 1.0f;
+        float      m_deltaTime      = 0.016f; // Default to 60 FPS
         XMFLOAT4X4 m_projectionMatrix;
 
         std::vector<ScissorState> m_scissorStack;
@@ -165,6 +166,7 @@ namespace DenOfIz
 
         void Resize( float width, float height );
         void SetDpiScale( float dpiScale );
+        void SetDeltaTime( float deltaTime );
         void Render( ICommandList *commandList, Clay_RenderCommandArray commands, uint32_t frameIndex );
 
         void           ClearCaches( );
@@ -186,6 +188,10 @@ namespace DenOfIz
         void RenderImage( const Clay_RenderCommand *command );
         void RenderCustom( const Clay_RenderCommand *command, ICommandList *commandList );
         void RenderTextField( const Clay_RenderCommand *command, const ClayTextFieldRenderData *textFieldData, ICommandList *commandList );
+        void RenderCheckbox( const Clay_RenderCommand *command, const ClayCheckboxRenderData *checkboxData, ICommandList *commandList );
+        void RenderSlider( const Clay_RenderCommand *command, const ClaySliderRenderData *sliderData, ICommandList *commandList );
+        void RenderDropdown( const Clay_RenderCommand *command, const ClayDropdownRenderData *dropdownData, ICommandList *commandList );
+        void RenderColorPicker( const Clay_RenderCommand *command, const ClayColorPickerRenderData *colorPickerData, ICommandList *commandList );
         void SetScissor( const Clay_RenderCommand *command );
         void ClearScissor( );
 

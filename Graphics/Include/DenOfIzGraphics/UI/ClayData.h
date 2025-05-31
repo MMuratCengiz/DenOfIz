@@ -375,7 +375,23 @@ namespace DenOfIz
         ClayPadding       Padding          = ClayPadding( 8 );
         float             CursorWidth      = 1.0f;
         bool              ReadOnly         = false;
+        size_t            Height           = 70;
         size_t            MaxLength        = 0; // 0 = unlimited
+    };
+
+    enum class ClayCustomWidgetType : uint32_t
+    {
+        TextField   = 0x54455854, // 'TEXT'
+        Checkbox    = 0x43484543, // 'CHEC'
+        Slider      = 0x534C4944, // 'SLID'
+        Dropdown    = 0x44524F50, // 'DROP'
+        ColorPicker = 0x434F4C4F  // 'COLO'
+    };
+
+    struct ClayCustomWidgetData
+    {
+        ClayCustomWidgetType Type;
+        void                *Data;
     };
 
     struct ClayTextFieldRenderData
@@ -383,6 +399,117 @@ namespace DenOfIz
         ClayTextFieldState *State;
         ClayTextFieldDesc   Desc;
         uint32_t            ElementId;
+    };
+
+    struct ClayCheckboxState
+    {
+        bool Checked = false;
+    };
+
+    struct ClayCheckboxDesc
+    {
+        ClayColor BackgroundColor      = ClayColor( 255, 255, 255, 255 );
+        ClayColor BorderColor          = ClayColor( 200, 200, 200, 255 );
+        ClayColor CheckColor           = ClayColor( 0, 120, 215, 255 );
+        ClayColor HoverBackgroundColor = ClayColor( 240, 240, 240, 255 );
+        ClayColor HoverBorderColor     = ClayColor( 0, 120, 215, 255 );
+        float     Size                 = 20.0f;
+        float     BorderWidth          = 1.0f;
+        float     CornerRadius         = 2.0f;
+    };
+
+    struct ClayCheckboxRenderData
+    {
+        ClayCheckboxState *State;
+        ClayCheckboxDesc   Desc;
+        uint32_t           ElementId;
+    };
+
+    struct ClaySliderState
+    {
+        float Value          = 0.0f;
+        bool  IsBeingDragged = false;
+    };
+
+    struct ClaySliderDesc
+    {
+        float     MinValue        = 0.0f;
+        float     MaxValue        = 1.0f;
+        float     Step            = 0.01f;
+        ClayColor BackgroundColor = ClayColor( 200, 200, 200, 255 );
+        ClayColor FillColor       = ClayColor( 0, 120, 215, 255 );
+        ClayColor KnobColor       = ClayColor( 255, 255, 255, 255 );
+        ClayColor KnobBorderColor = ClayColor( 150, 150, 150, 255 );
+        float     Height          = 6.0f;
+        float     KnobSize        = 20.0f;
+        float     CornerRadius    = 3.0f;
+    };
+
+    struct ClaySliderRenderData
+    {
+        ClaySliderState *State;
+        ClaySliderDesc   Desc;
+        uint32_t         ElementId;
+    };
+
+    struct ClayDropdownState
+    {
+        bool          IsOpen        = false;
+        int32_t       SelectedIndex = -1;
+        InteropString SelectedText  = "";
+        float         ScrollOffset  = 0.0f;
+    };
+
+    struct ClayDropdownDesc
+    {
+        InteropArray<InteropString> Options;
+        InteropString               PlaceholderText   = "Select option...";
+        ClayColor                   BackgroundColor   = ClayColor( 255, 255, 255, 255 );
+        ClayColor                   BorderColor       = ClayColor( 200, 200, 200, 255 );
+        ClayColor                   TextColor         = ClayColor( 0, 0, 0, 255 );
+        ClayColor                   PlaceholderColor  = ClayColor( 150, 150, 150, 255 );
+        ClayColor                   HoverColor        = ClayColor( 240, 240, 240, 255 );
+        ClayColor                   SelectedColor     = ClayColor( 0, 120, 215, 255 );
+        ClayColor                   DropdownBgColor   = ClayColor( 255, 255, 255, 255 );
+        uint16_t                    FontId            = 0;
+        uint16_t                    FontSize          = 14;
+        ClayPadding                 Padding           = ClayPadding( 8 );
+        float                       MaxDropdownHeight = 200.0f;
+        float                       ItemHeight        = 32.0f;
+    };
+
+    struct ClayDropdownRenderData
+    {
+        ClayDropdownState *State;
+        ClayDropdownDesc   Desc;
+        uint32_t           ElementId;
+    };
+
+    struct ClayColorPickerState
+    {
+        Float_3 Hsv                  = Float_3{ 0.0f, 1.0f, 1.0f };
+        Float_3 Rgb                  = Float_3{ 1.0f, 0.0f, 0.0f };
+        bool    IsColorWheelDragging = false;
+        bool    IsValueBarDragging   = false;
+        bool    IsExpanded           = false;
+    };
+
+    struct ClayColorPickerDesc
+    {
+        float     Size            = 150.0f;
+        float     ValueBarWidth   = 20.0f;
+        float     CompactSize     = 40.0f;
+        ClayColor BorderColor     = ClayColor( 200, 200, 200, 255 );
+        ClayColor BackgroundColor = ClayColor( 255, 255, 255, 255 );
+        float     BorderWidth     = 1.0f;
+        float     CornerRadius    = 4.0f;
+    };
+
+    struct ClayColorPickerRenderData
+    {
+        ClayColorPickerState *State;
+        ClayColorPickerDesc   Desc;
+        uint32_t              ElementId;
     };
 
     namespace ClayWidgets
@@ -411,6 +538,37 @@ namespace DenOfIz
         {
             ClayTextFieldDesc desc = CreateSingleLineInput( placeholder );
             desc.Type              = ClayTextFieldType::MultiLine;
+            return desc;
+        }
+
+        inline ClayCheckboxDesc CreateCheckbox( float size = 20.0f )
+        {
+            ClayCheckboxDesc desc;
+            desc.Size = size;
+            return desc;
+        }
+
+        inline ClaySliderDesc CreateSlider( float minValue = 0.0f, float maxValue = 1.0f, float step = 0.01f )
+        {
+            ClaySliderDesc desc;
+            desc.MinValue = minValue;
+            desc.MaxValue = maxValue;
+            desc.Step     = step;
+            return desc;
+        }
+
+        inline ClayDropdownDesc CreateDropdown( const InteropArray<InteropString> &options, const InteropString &placeholder = "Select option..." )
+        {
+            ClayDropdownDesc desc;
+            desc.Options         = options;
+            desc.PlaceholderText = placeholder;
+            return desc;
+        }
+
+        inline ClayColorPickerDesc CreateColorPicker( float size = 150.0f )
+        {
+            ClayColorPickerDesc desc;
+            desc.Size = size;
             return desc;
         }
     } // namespace ClayWidgets

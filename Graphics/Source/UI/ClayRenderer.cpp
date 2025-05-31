@@ -304,6 +304,11 @@ void ClayRenderer::SetDpiScale( const float dpiScale )
     m_dpiScale = dpiScale;
 }
 
+void ClayRenderer::SetDeltaTime( const float deltaTime )
+{
+    m_deltaTime = deltaTime;
+}
+
 void ClayRenderer::Render( ICommandList *commandList, const Clay_RenderCommandArray commands, const uint32_t frameIndex )
 {
     if ( frameIndex >= m_frameData.size( ) )
@@ -648,22 +653,54 @@ void ClayRenderer::RenderImage( const Clay_RenderCommand *command )
 
 void ClayRenderer::RenderCustom( const Clay_RenderCommand *command, ICommandList *commandList )
 {
-    const auto &data   = command->renderData.custom;
-    const auto &bounds = command->boundingBox;
-
+    const auto &data = command->renderData.custom;
     if ( data.customData == nullptr )
     {
         return;
     }
 
-    const auto *textFieldData = static_cast<const ClayTextFieldRenderData *>( data.customData );
-    if ( textFieldData != nullptr && textFieldData->State != nullptr )
+    const auto *widgetData = static_cast<const ClayCustomWidgetData *>( data.customData );
+    if ( widgetData == nullptr || widgetData->Data == nullptr )
     {
-        RenderTextField( command, textFieldData, commandList );
+        LOG( WARNING ) << "Invalid custom widget data in RenderCustom";
+        return;
     }
-    else
+
+    switch ( widgetData->Type )
     {
-        LOG( WARNING ) << "Unknown custom widget type in RenderCustom";
+    case ClayCustomWidgetType::TextField:
+        {
+            const auto *textFieldData = static_cast<const ClayTextFieldRenderData *>( widgetData->Data );
+            RenderTextField( command, textFieldData, commandList );
+            break;
+        }
+    case ClayCustomWidgetType::Checkbox:
+        {
+            const auto *checkboxData = static_cast<const ClayCheckboxRenderData *>( widgetData->Data );
+            RenderCheckbox( command, checkboxData, commandList );
+            break;
+        }
+    case ClayCustomWidgetType::Slider:
+        {
+            const auto *sliderData = static_cast<const ClaySliderRenderData *>( widgetData->Data );
+            RenderSlider( command, sliderData, commandList );
+            break;
+        }
+    case ClayCustomWidgetType::Dropdown:
+        {
+            const auto *dropdownData = static_cast<const ClayDropdownRenderData *>( widgetData->Data );
+            RenderDropdown( command, dropdownData, commandList );
+            break;
+        }
+    case ClayCustomWidgetType::ColorPicker:
+        {
+            const auto *colorPickerData = static_cast<const ClayColorPickerRenderData *>( widgetData->Data );
+            RenderColorPicker( command, colorPickerData, commandList );
+            break;
+        }
+    default:
+        LOG( WARNING ) << "Unknown custom widget type in RenderCustom: " << static_cast<uint32_t>( widgetData->Type );
+        break;
     }
 }
 
@@ -673,10 +710,9 @@ void ClayRenderer::RenderTextField( const Clay_RenderCommand *command, const Cla
     const auto *state  = textFieldData->State;
     const auto &desc   = textFieldData->Desc;
 
-    constexpr float deltaTime           = 1.0f / 60.0f;
-    constexpr float CURSOR_BLINK_PERIOD = 3.0f;
+    constexpr float CURSOR_BLINK_PERIOD = 1.0f; // Blink every second
 
-    const_cast<ClayTextFieldState *>( state )->CursorBlinkTime += deltaTime;
+    const_cast<ClayTextFieldState *>( state )->CursorBlinkTime += m_deltaTime;
     if ( state->CursorBlinkTime >= CURSOR_BLINK_PERIOD )
     {
         const_cast<ClayTextFieldState *>( state )->CursorBlinkTime = 0.0f;
@@ -771,8 +807,8 @@ void ClayRenderer::RenderTextField( const Clay_RenderCommand *command, const Cla
         }
     }
 
-    const std::string &displayText = std::string( state->Text.NumChars( ) == 0 ? desc.PlaceholderText.Get( ) : state->Text.Get( ) );
-    const ClayColor   &textColor   = state->Text.NumChars( ) == 0 ? desc.PlaceholderColor : desc.TextColor;
+    const auto      &displayText = std::string( state->Text.NumChars( ) == 0 ? desc.PlaceholderText.Get( ) : state->Text.Get( ) );
+    const ClayColor &textColor   = state->Text.NumChars( ) == 0 ? desc.PlaceholderColor : desc.TextColor;
 
     if ( !displayText.empty( ) )
     {
@@ -832,6 +868,263 @@ void ClayRenderer::RenderTextField( const Clay_RenderCommand *command, const Cla
         if ( cursorVertices.NumElements( ) > 0 && cursorIndices.NumElements( ) > 0 )
         {
             AddVerticesWithDepth( cursorVertices, cursorIndices );
+        }
+    }
+}
+
+void ClayRenderer::RenderCheckbox( const Clay_RenderCommand *command, const ClayCheckboxRenderData *checkboxData, ICommandList *commandList )
+{
+    const auto &bounds = command->boundingBox;
+    const auto *state  = checkboxData->State;
+    const auto &desc   = checkboxData->Desc;
+
+    if ( state->Checked )
+    {
+        InteropArray<UIVertex> checkVertices;
+        InteropArray<uint32_t> checkIndices;
+
+        const float checkSize    = desc.Size * 0.6f;
+        const float checkOffsetX = bounds.x + ( desc.Size - checkSize ) * 0.5f;
+        const float checkOffsetY = bounds.y + ( desc.Size - checkSize ) * 0.5f;
+
+        Clay_BoundingBox checkBounds;
+        checkBounds.x      = checkOffsetX;
+        checkBounds.y      = checkOffsetY;
+        checkBounds.width  = checkSize;
+        checkBounds.height = checkSize;
+
+        UIShapes::GenerateRectangleDesc checkDesc{ };
+        checkDesc.Bounds       = checkBounds;
+        checkDesc.Color        = Clay_Color{ desc.CheckColor.R, desc.CheckColor.G, desc.CheckColor.B, desc.CheckColor.A };
+        checkDesc.TextureIndex = 0;
+
+        UIShapes::GenerateRectangle( checkDesc, &checkVertices, &checkIndices, 0 );
+        if ( checkVertices.NumElements( ) > 0 && checkIndices.NumElements( ) > 0 )
+        {
+            AddVerticesWithDepth( checkVertices, checkIndices );
+        }
+    }
+}
+
+void ClayRenderer::RenderSlider( const Clay_RenderCommand *command, const ClaySliderRenderData *sliderData, ICommandList *commandList )
+{
+    const auto &bounds = command->boundingBox;
+    const auto *state  = sliderData->State;
+    const auto &desc   = sliderData->Desc;
+
+    const float trackY       = bounds.y + ( bounds.height - desc.Height ) * 0.5f;
+    const float trackPadding = desc.KnobSize * 0.5f;
+    const float trackWidth   = bounds.width - trackPadding * 2.0f;
+
+    Clay_BoundingBox trackBounds;
+    trackBounds.x      = bounds.x + trackPadding;
+    trackBounds.y      = trackY;
+    trackBounds.width  = trackWidth;
+    trackBounds.height = desc.Height;
+
+    InteropArray<UIVertex> trackVertices;
+    InteropArray<uint32_t> trackIndices;
+
+    UIShapes::GenerateRoundedRectangleDesc trackDesc{ };
+    trackDesc.Bounds       = trackBounds;
+    trackDesc.Color        = Clay_Color{ desc.BackgroundColor.R, desc.BackgroundColor.G, desc.BackgroundColor.B, desc.BackgroundColor.A };
+    trackDesc.TextureIndex = 0;
+    trackDesc.CornerRadius = Clay_CornerRadius{ desc.CornerRadius, desc.CornerRadius, desc.CornerRadius, desc.CornerRadius };
+
+    UIShapes::GenerateRoundedRectangle( trackDesc, &trackVertices, &trackIndices, 0 );
+    if ( trackVertices.NumElements( ) > 0 && trackIndices.NumElements( ) > 0 )
+    {
+        AddVerticesWithDepth( trackVertices, trackIndices );
+    }
+
+    const float normalizedValue = ( state->Value - desc.MinValue ) / ( desc.MaxValue - desc.MinValue );
+    const float fillWidth       = trackWidth * normalizedValue;
+
+    if ( fillWidth > 0 )
+    {
+        Clay_BoundingBox fillBounds;
+        fillBounds.x      = trackBounds.x;
+        fillBounds.y      = trackBounds.y;
+        fillBounds.width  = fillWidth;
+        fillBounds.height = trackBounds.height;
+
+        InteropArray<UIVertex> fillVertices;
+        InteropArray<uint32_t> fillIndices;
+
+        UIShapes::GenerateRoundedRectangleDesc fillDesc{ };
+        fillDesc.Bounds       = fillBounds;
+        fillDesc.Color        = Clay_Color{ desc.FillColor.R, desc.FillColor.G, desc.FillColor.B, desc.FillColor.A };
+        fillDesc.TextureIndex = 0;
+        fillDesc.CornerRadius = Clay_CornerRadius{ desc.CornerRadius, desc.CornerRadius, desc.CornerRadius, desc.CornerRadius };
+
+        UIShapes::GenerateRoundedRectangle( fillDesc, &fillVertices, &fillIndices, 0 );
+        if ( fillVertices.NumElements( ) > 0 && fillIndices.NumElements( ) > 0 )
+        {
+            AddVerticesWithDepth( fillVertices, fillIndices );
+        }
+    }
+
+    const float knobX = trackBounds.x + normalizedValue * trackWidth - desc.KnobSize * 0.5f;
+    const float knobY = bounds.y + ( bounds.height - desc.KnobSize ) * 0.5f;
+
+    Clay_BoundingBox knobBounds;
+    knobBounds.x      = knobX;
+    knobBounds.y      = knobY;
+    knobBounds.width  = desc.KnobSize;
+    knobBounds.height = desc.KnobSize;
+
+    InteropArray<UIVertex> knobVertices;
+    InteropArray<uint32_t> knobIndices;
+
+    UIShapes::GenerateRoundedRectangleDesc knobDesc{ };
+    knobDesc.Bounds       = knobBounds;
+    knobDesc.Color        = Clay_Color{ desc.KnobColor.R, desc.KnobColor.G, desc.KnobColor.B, desc.KnobColor.A };
+    knobDesc.TextureIndex = 0;
+    knobDesc.CornerRadius = Clay_CornerRadius{ desc.KnobSize * 0.5f, desc.KnobSize * 0.5f, desc.KnobSize * 0.5f, desc.KnobSize * 0.5f };
+
+    UIShapes::GenerateRoundedRectangle( knobDesc, &knobVertices, &knobIndices, 0 );
+    if ( knobVertices.NumElements( ) > 0 && knobIndices.NumElements( ) > 0 )
+    {
+        AddVerticesWithDepth( knobVertices, knobIndices );
+    }
+
+    InteropArray<UIVertex> knobBorderVertices;
+    InteropArray<uint32_t> knobBorderIndices;
+
+    UIShapes::GenerateBorderDesc knobBorderDesc{ };
+    knobBorderDesc.Bounds       = knobBounds;
+    knobBorderDesc.Color        = Clay_Color{ desc.KnobBorderColor.R, desc.KnobBorderColor.G, desc.KnobBorderColor.B, desc.KnobBorderColor.A };
+    knobBorderDesc.BorderWidth  = Clay_BorderWidth{ 1, 1, 1, 1, 0 };
+    knobBorderDesc.CornerRadius = Clay_CornerRadius{ desc.KnobSize * 0.5f, desc.KnobSize * 0.5f, desc.KnobSize * 0.5f, desc.KnobSize * 0.5f };
+
+    UIShapes::GenerateBorder( knobBorderDesc, &knobBorderVertices, &knobBorderIndices, 0 );
+    if ( knobBorderVertices.NumElements( ) > 0 && knobBorderIndices.NumElements( ) > 0 )
+    {
+        AddVerticesWithDepth( knobBorderVertices, knobBorderIndices );
+    }
+}
+
+void ClayRenderer::RenderDropdown( const Clay_RenderCommand *command, const ClayDropdownRenderData *dropdownData, ICommandList *commandList )
+{
+    const auto &bounds = command->boundingBox;
+    const auto *state  = dropdownData->State;
+    const auto &desc   = dropdownData->Desc;
+
+    const std::string &displayText = ( state->SelectedIndex >= 0 && state->SelectedIndex < static_cast<int32_t>( desc.Options.NumElements( ) ) )
+                                         ? std::string( desc.Options.GetElement( state->SelectedIndex ).Get( ) )
+                                         : std::string( desc.PlaceholderText.Get( ) );
+    const ClayColor   &textColor   = ( state->SelectedIndex >= 0 ) ? desc.TextColor : desc.PlaceholderColor;
+
+    if ( !displayText.empty( ) )
+    {
+        Clay_RenderCommand tempTextCommand                    = *command;
+        tempTextCommand.commandType                           = CLAY_RENDER_COMMAND_TYPE_TEXT;
+        tempTextCommand.renderData.text.stringContents.chars  = displayText.c_str( );
+        tempTextCommand.renderData.text.stringContents.length = static_cast<int32_t>( displayText.length( ) );
+        tempTextCommand.renderData.text.textColor             = Clay_Color{ textColor.R, textColor.G, textColor.B, textColor.A };
+        tempTextCommand.renderData.text.fontId                = desc.FontId;
+        tempTextCommand.renderData.text.fontSize              = desc.FontSize;
+        tempTextCommand.renderData.text.letterSpacing         = 0;
+        tempTextCommand.renderData.text.lineHeight            = 0;
+
+        tempTextCommand.boundingBox.x += desc.Padding.Left;
+        tempTextCommand.boundingBox.y += desc.Padding.Top;
+        tempTextCommand.boundingBox.width -= desc.Padding.Left + desc.Padding.Right + 20;
+        tempTextCommand.boundingBox.height -= desc.Padding.Top + desc.Padding.Bottom;
+
+        RenderText( &tempTextCommand, commandList );
+    }
+
+    constexpr float arrowSize = 8.0f;
+    const float     arrowX    = bounds.x + bounds.width - desc.Padding.Right - arrowSize;
+    const float     arrowY    = bounds.y + ( bounds.height - arrowSize ) * 0.5f;
+
+    InteropArray<UIVertex> arrowVertices;
+    InteropArray<uint32_t> arrowIndices;
+
+    Clay_BoundingBox arrowBounds;
+    arrowBounds.x      = arrowX;
+    arrowBounds.y      = arrowY;
+    arrowBounds.width  = arrowSize;
+    arrowBounds.height = arrowSize;
+
+    UIShapes::GenerateRectangleDesc arrowDesc{ };
+    arrowDesc.Bounds       = arrowBounds;
+    arrowDesc.Color        = Clay_Color{ desc.TextColor.R, desc.TextColor.G, desc.TextColor.B, desc.TextColor.A };
+    arrowDesc.TextureIndex = 0;
+
+    UIShapes::GenerateRectangle( arrowDesc, &arrowVertices, &arrowIndices, 0 );
+    if ( arrowVertices.NumElements( ) > 0 && arrowIndices.NumElements( ) > 0 )
+    {
+        AddVerticesWithDepth( arrowVertices, arrowIndices );
+    }
+}
+
+void ClayRenderer::RenderColorPicker( const Clay_RenderCommand *command, const ClayColorPickerRenderData *colorPickerData, ICommandList *commandList )
+{
+    const auto &bounds = command->boundingBox;
+    const auto *state  = colorPickerData->State;
+    const auto &desc   = colorPickerData->Desc;
+
+    if ( !state->IsExpanded )
+    {
+        InteropArray<UIVertex> colorVertices;
+        InteropArray<uint32_t> colorIndices;
+
+        UIShapes::GenerateRectangleDesc colorDesc{ };
+        colorDesc.Bounds       = bounds;
+        colorDesc.Color        = Clay_Color{ state->Rgb.X * 255, state->Rgb.Y * 255, state->Rgb.Z * 255, 255 };
+        colorDesc.TextureIndex = 0;
+
+        UIShapes::GenerateRectangle( colorDesc, &colorVertices, &colorIndices, 0 );
+        if ( colorVertices.NumElements( ) > 0 && colorIndices.NumElements( ) > 0 )
+        {
+            AddVerticesWithDepth( colorVertices, colorIndices );
+        }
+    }
+    else
+    {
+        const float colorWheelSize = desc.Size - desc.ValueBarWidth - 10.0f;
+
+        Clay_BoundingBox wheelBounds;
+        wheelBounds.x      = bounds.x;
+        wheelBounds.y      = bounds.y;
+        wheelBounds.width  = colorWheelSize;
+        wheelBounds.height = colorWheelSize;
+
+        InteropArray<UIVertex> wheelVertices;
+        InteropArray<uint32_t> wheelIndices;
+
+        UIShapes::GenerateRoundedRectangleDesc wheelDesc{ };
+        wheelDesc.Bounds       = wheelBounds;
+        wheelDesc.Color        = Clay_Color{ 255, 255, 255, 255 };
+        wheelDesc.TextureIndex = 0;
+        wheelDesc.CornerRadius = Clay_CornerRadius{ 4, 4, 4, 4 };
+
+        UIShapes::GenerateRoundedRectangle( wheelDesc, &wheelVertices, &wheelIndices, 0 );
+        if ( wheelVertices.NumElements( ) > 0 && wheelIndices.NumElements( ) > 0 )
+        {
+            AddVerticesWithDepth( wheelVertices, wheelIndices );
+        }
+
+        Clay_BoundingBox valueBounds;
+        valueBounds.x      = bounds.x + colorWheelSize + 5.0f;
+        valueBounds.y      = bounds.y;
+        valueBounds.width  = desc.ValueBarWidth;
+        valueBounds.height = colorWheelSize;
+
+        InteropArray<UIVertex> valueVertices;
+        InteropArray<uint32_t> valueIndices;
+
+        UIShapes::GenerateRectangleDesc valueDesc{ };
+        valueDesc.Bounds       = valueBounds;
+        valueDesc.Color        = Clay_Color{ state->Hsv.Z * 255, state->Hsv.Z * 255, state->Hsv.Z * 255, 255 };
+        valueDesc.TextureIndex = 0;
+
+        UIShapes::GenerateRectangle( valueDesc, &valueVertices, &valueIndices, 0 );
+        if ( valueVertices.NumElements( ) > 0 && valueIndices.NumElements( ) > 0 )
+        {
+            AddVerticesWithDepth( valueVertices, valueIndices );
         }
     }
 }
