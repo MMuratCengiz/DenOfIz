@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DirectXMath.h>
 
 #include "TextBatch.h"
+
 using namespace DirectX;
 
 namespace DenOfIz

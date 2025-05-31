@@ -70,7 +70,6 @@ namespace DenOfIz
     class Clay
     {
         Time                          m_time;
-        std::unique_ptr<TextRenderer> m_textRenderer;
         std::unique_ptr<ClayRenderer> m_renderer;
         std::unique_ptr<ClayContext>  m_clayContext;
         ClayPointerState              m_pointerState = ClayPointerState::Released;
@@ -86,7 +85,6 @@ namespace DenOfIz
         DZ_API explicit Clay( const ClayDesc &desc );
         DZ_API ~Clay( );
 
-        DZ_API uint16_t       AddFont( Font *font ) const;
         DZ_API void           SetViewportSize( float width, float height ) const;
         DZ_API ClayDimensions GetViewportSize( ) const;
         DZ_API void           SetDpiScale( float dpiScale ) const;
@@ -110,7 +108,6 @@ namespace DenOfIz
         DZ_API void            HandleEvent( const Event &event );
         DZ_API ClayDimensions  MeasureText( const InteropString &text, uint16_t fontId, uint16_t fontSize ) const;
 
-        // Widget creation methods
         DZ_API CheckboxWidget           *CreateCheckbox( uint32_t id, bool initialChecked = false, const CheckboxStyle &style = { } );
         DZ_API SliderWidget             *CreateSlider( uint32_t id, float initialValue = 0.5f, const SliderStyle &style = { } );
         DZ_API DropdownWidget           *CreateDropdown( uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style = { } );
@@ -119,39 +116,11 @@ namespace DenOfIz
         DZ_API ResizableContainerWidget *CreateResizableContainer( uint32_t id, const ResizableContainerStyle &style = { } );
         DZ_API DockableContainerWidget  *CreateDockableContainer( uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style = { } );
 
-        // Docking management
-        DZ_API std::unique_ptr<DockingManager> CreateDockingManager( );
+        DZ_API DockingManager *CreateDockingManager( ) const;
 
         // Widget management
         DZ_API Widget *GetWidget( uint32_t id ) const;
         DZ_API void    RemoveWidget( uint32_t id );
         DZ_API void    UpdateWidgets( float deltaTime ) const;
-
-    private:
-        static Clay_Dimensions MeasureTextCallback( Clay_StringSlice text, Clay_TextElementConfig *config, void *userData );
-
-        Clay_LayoutDirection           ConvertLayoutDirection( ClayLayoutDirection dir ) const;
-        Clay_LayoutAlignmentX          ConvertAlignmentX( ClayAlignmentX align ) const;
-        Clay_LayoutAlignmentY          ConvertAlignmentY( ClayAlignmentY align ) const;
-        Clay__SizingType               ConvertSizingType( ClaySizingType type ) const;
-        Clay_SizingAxis                ConvertSizingAxis( const ClaySizingAxis &axis ) const;
-        Clay_Sizing                    ConvertSizing( const ClaySizing &sizing ) const;
-        Clay_Padding                   ConvertPadding( const ClayPadding &padding ) const;
-        Clay_ChildAlignment            ConvertChildAlignment( const ClayChildAlignment &alignment ) const;
-        Clay_LayoutConfig              ConvertLayoutConfig( const ClayLayoutDesc &config ) const;
-        Clay_Color                     ConvertColor( const ClayColor &color ) const;
-        Clay_CornerRadius              ConvertCornerRadius( const ClayCornerRadius &radius ) const;
-        Clay_BorderWidth               ConvertBorderWidth( const ClayBorderWidth &width ) const;
-        Clay_BorderElementConfig       ConvertBorderConfig( const ClayBorderDesc &config ) const;
-        Clay_ImageElementConfig        ConvertImageConfig( const ClayImageDesc &config ) const;
-        Clay_FloatingAttachPointType   ConvertFloatingAttachPoint( ClayFloatingAttachPoint point ) const;
-        Clay_FloatingAttachToElement   ConvertFloatingAttachTo( ClayFloatingAttachTo attachTo ) const;
-        Clay_FloatingElementConfig     ConvertFloatingConfig( const ClayFloatingDesc &config ) const;
-        Clay_ScrollElementConfig       ConvertScrollConfig( const ClayScrollDesc &config ) const;
-        Clay_CustomElementConfig       ConvertCustomConfig( const ClayCustomDesc &config ) const;
-        Clay_TextElementConfigWrapMode ConvertTextWrapMode( ClayTextWrapMode mode ) const;
-        Clay_TextAlignment             ConvertTextAlignment( ClayTextAlignment align ) const;
-        Clay_TextElementConfig         ConvertTextConfig( const ClayTextDesc &config ) const;
-        ClayRenderCommandType          ConvertRenderCommandType( Clay_RenderCommandType type ) const;
     };
 } // namespace DenOfIz

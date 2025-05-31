@@ -81,7 +81,7 @@ void UIExample::Init( )
     m_themeDropdown->SetSelectedIndex( 0 );
     m_languageDropdown->SetSelectedIndex( 0 );
 
-    m_dockingManager = m_clay->CreateDockingManager();
+    m_dockingManager = std::unique_ptr<DockingManager>( m_clay->CreateDockingManager( ) );
 
     ResizableContainerStyle resizableStyle;
     resizableStyle.Title        = InteropString( "Resizable Container" );
