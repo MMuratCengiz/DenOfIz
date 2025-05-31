@@ -1,6 +1,3 @@
-#define CLAY_IMPLEMENTATION
-#include "clay.h"
-
 #include <DenOfIzGraphics/UI/Clay.h>
 #include <DenOfIzGraphics/UI/ClayClipboard.h>
 #include <DenOfIzGraphics/UI/Widgets/CheckboxWidget.h>
@@ -519,33 +516,17 @@ Clay::Clay( const ClayDesc &desc )
     clayRendererDesc.Height             = desc.Height;
 
     m_renderer = std::make_unique<ClayRenderer>( clayRendererDesc );
-    Clay_SetMaxElementCount( desc.MaxNumElements );
-    Clay_SetMaxMeasureTextCacheWordCount( desc.MaxNumTextMeasureCacheElements );
 
-    const uint32_t minMemorySize = Clay_MinMemorySize( );
-    m_memory.resize( minMemorySize );
-    m_arena = Clay_CreateArenaWithCapacityAndMemory( minMemorySize, m_memory.data( ) );
-
-    Clay_ErrorHandler errorHandler;
-    errorHandler.errorHandlerFunction = ErrorHandler;
-    errorHandler.userData             = this;
-
-    m_context = Clay_Initialize( m_arena, Clay_Dimensions{ static_cast<float>( desc.Width ), static_cast<float>( desc.Height ) }, errorHandler );
-    if ( !m_context )
-    {
-        LOG( ERROR ) << "Failed to initialize Clay: ";
-    }
-
-    Clay_SetDebugModeEnabled( false );
-    Clay_SetMeasureTextFunction( MeasureTextCallback, this );
-    SetViewportSize( desc.Width, desc.Height );
+    ClayContextDesc clayContextDesc{ };
+    clayContextDesc.LogicalDevice                  = desc.LogicalDevice;
+    clayContextDesc.Width                          = desc.Width;
+    clayContextDesc.Height                         = desc.Height;
+    clayContextDesc.MaxNumElements                 = desc.MaxNumElements;
+    clayContextDesc.MaxNumTextMeasureCacheElements = desc.MaxNumTextMeasureCacheElements;
+    m_clayContext                                  = std::make_unique<ClayContext>( clayContextDesc );
 }
 
-Clay::~Clay( )
-{
-    m_context = nullptr;
-    m_memory.clear( );
-}
+Clay::~Clay( ) = default;
 
 uint16_t Clay::AddFont( Font *font ) const
 {
@@ -559,28 +540,28 @@ uint16_t Clay::AddFont( Font *font ) const
 
 void Clay::SetViewportSize( const float width, const float height ) const
 {
-    DZ_NOT_NULL( m_context );
-    Clay_SetLayoutDimensions( Clay_Dimensions{ width, height } );
+    DZ_NOT_NULL( m_clayContext );
+    m_clayContext->SetViewportSize( width, height );
     m_renderer->Resize( width, height );
 }
 
 ClayDimensions Clay::GetViewportSize( ) const
 {
-    DZ_NOT_NULL( m_context );
-    Clay_Dimensions dimensions = Clay_GetCurrentContext( )->layoutDimensions;
-    return ClayDimensions{ dimensions.width, dimensions.height };
+    DZ_NOT_NULL( m_clayContext );
+    return m_clayContext->GetViewportSize( );
 }
 
 void Clay::SetDpiScale( const float dpiScale ) const
 {
     m_renderer->SetDpiScale( dpiScale );
-    Clay_ResetMeasureTextCache( );
+    m_clayContext->SetDpiScale( dpiScale );
 }
 
 void Clay::SetDebugModeEnabled( const bool enabled )
 {
-    DZ_NOT_NULL( m_context );
+    DZ_NOT_NULL( m_clayContext );
     m_isDebugMode = enabled;
+    m_clayContext->SetDebugModeEnabled( enabled );
 }
 
 bool Clay::IsDebugModeEnabled( ) const
@@ -590,19 +571,19 @@ bool Clay::IsDebugModeEnabled( ) const
 
 void Clay::SetPointerState( const Float_2 position, const ClayPointerState state ) const
 {
-    DZ_NOT_NULL( m_context );
-    Clay_SetPointerState( Clay_Vector2{ position.X, position.Y }, state == ClayPointerState::Pressed );
+    DZ_NOT_NULL( m_clayContext );
+    m_clayContext->SetPointerState( position, state );
 }
 
 void Clay::UpdateScrollContainers( const bool enableDragScrolling, const Float_2 scrollDelta, const float deltaTime )
 {
-    DZ_NOT_NULL( m_context );
+    DZ_NOT_NULL( m_clayContext );
 
     Float_2 totalScrollDelta = scrollDelta;
     totalScrollDelta.X += m_scrollDelta.X;
     totalScrollDelta.Y += m_scrollDelta.Y;
 
-    Clay_UpdateScrollContainers( enableDragScrolling, Clay_Vector2{ totalScrollDelta.X, totalScrollDelta.Y }, deltaTime );
+    m_clayContext->UpdateScrollContainers( enableDragScrolling, totalScrollDelta, deltaTime );
 
     m_scrollDelta.X = 0;
     m_scrollDelta.Y = 0;
@@ -611,97 +592,53 @@ void Clay::UpdateScrollContainers( const bool enableDragScrolling, const Float_2
 void Clay::BeginLayout( )
 {
     m_time.Tick( );
-    DZ_NOT_NULL( m_context );
+    DZ_NOT_NULL( m_clayContext );
     SetPointerState( m_pointerPosition, m_pointerState );
-    Clay_SetDebugModeEnabled( m_isDebugMode );
-    Clay_BeginLayout( );
+    m_clayContext->SetDebugModeEnabled( m_isDebugMode );
+    m_clayContext->BeginLayout( );
 }
 
 void Clay::EndLayout( ICommandList *commandList, const uint32_t frameIndex, const float deltaTime ) const
 {
-    DZ_NOT_NULL( m_context );
+    DZ_NOT_NULL( m_clayContext );
 
     this->UpdateWidgets( deltaTime );
-    this->RenderWidgets( );
 
     m_renderer->SetDeltaTime( deltaTime );
-    m_renderer->Render( commandList, Clay_EndLayout( ), frameIndex );
+    m_renderer->Render( commandList, m_clayContext->EndLayoutAndGetCommands( deltaTime ), frameIndex );
 }
 
 void Clay::OpenElement( const ClayElementDeclaration &declaration ) const
 {
-    DZ_NOT_NULL( m_context );
-
-    Clay__OpenElement( );
-
-    Clay_ElementDeclaration clayDecl;
-    clayDecl.id              = Clay_ElementId{ declaration.Id, 0, 0, Clay_String{} };
-    clayDecl.layout          = ConvertLayoutConfig( declaration.Layout );
-    clayDecl.backgroundColor = ConvertColor( declaration.BackgroundColor );
-    clayDecl.cornerRadius    = ConvertCornerRadius( declaration.CornerRadius );
-    clayDecl.image           = ConvertImageConfig( declaration.Image );
-    clayDecl.floating        = ConvertFloatingConfig( declaration.Floating );
-    clayDecl.custom          = ConvertCustomConfig( declaration.Custom );
-    clayDecl.scroll          = ConvertScrollConfig( declaration.Scroll );
-    clayDecl.border          = ConvertBorderConfig( declaration.Border );
-    clayDecl.userData        = declaration.UserData;
-
-    Clay__ConfigureOpenElement( clayDecl );
+    DZ_NOT_NULL( m_clayContext );
+    m_clayContext->OpenElement( declaration );
 }
 
 void Clay::CloseElement( ) const
 {
-    DZ_NOT_NULL( m_context );
-    Clay__CloseElement( );
+    DZ_NOT_NULL( m_clayContext );
+    m_clayContext->CloseElement( );
 }
 
 void Clay::Text( const InteropString &text, const ClayTextDesc &desc ) const
 {
-    DZ_NOT_NULL( m_context );
-
-    Clay_String tempString;
-    tempString.chars  = text.Get( );
-    tempString.length = static_cast<int>( text.NumChars( ) );
-
-    const Clay_String clayText = Clay__WriteStringToCharBuffer( &Clay_GetCurrentContext( )->dynamicStringData, tempString );
-
-    const Clay_TextElementConfig tempConfig   = ConvertTextConfig( desc );
-    Clay_TextElementConfig      *storedConfig = Clay__StoreTextElementConfig( tempConfig );
-
-    Clay__OpenTextElement( clayText, storedConfig );
+    DZ_NOT_NULL( m_clayContext );
+    m_clayContext->Text( text, desc );
 }
 
 uint32_t Clay::HashString( const InteropString &str, const uint32_t index, const uint32_t baseId ) const
 {
-    Clay_String clayStr;
-    clayStr.chars  = str.Get( );
-    clayStr.length = static_cast<int32_t>( strlen( str.Get( ) ) );
-
-    const Clay_ElementId id = Clay__HashString( clayStr, index, baseId );
-    return id.id;
+    return m_clayContext->HashString( str, index, baseId );
 }
 
 bool Clay::PointerOver( const uint32_t id ) const
 {
-    DZ_NOT_NULL( m_context );
-    const Clay_ElementId clayId{ id, 0, 0, Clay_String{} };
-    return Clay_PointerOver( clayId );
+    return m_clayContext->PointerOver( id );
 }
 
 ClayBoundingBox Clay::GetElementBoundingBox( const uint32_t id ) const
 {
-    DZ_NOT_NULL( m_context );
-
-    const Clay_ElementId   clayId{ id, 0, 0, Clay_String{} };
-    const Clay_ElementData data = Clay_GetElementData( clayId );
-
-    ClayBoundingBox result;
-    result.X      = data.boundingBox.x;
-    result.Y      = data.boundingBox.y;
-    result.Width  = data.boundingBox.width;
-    result.Height = data.boundingBox.height;
-
-    return result;
+    return m_clayContext->GetElementBoundingBox( id );
 }
 
 void Clay::HandleEvent( const Event &event )
@@ -742,7 +679,7 @@ void Clay::HandleEvent( const Event &event )
     {
         if ( event.Key.Keycode == KeyCode::F11 )
         {
-            m_isDebugMode = !Clay_IsDebugModeEnabled( );
+            m_isDebugMode = !m_clayContext->IsDebugModeEnabled( );
         }
     }
 
@@ -761,64 +698,71 @@ void Clay::HandleEvent( const Event &event )
 
 CheckboxWidget *Clay::CreateCheckbox( uint32_t id, bool initialChecked, const CheckboxStyle &style )
 {
-    auto            widget = std::make_unique<CheckboxWidget>( this, id, initialChecked, style );
+    auto            widget = std::make_unique<CheckboxWidget>( m_clayContext.get( ), id, initialChecked, style );
     CheckboxWidget *ptr    = widget.get( );
     m_widgets[ id ]        = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
+    m_renderer->RegisterWidget( id, ptr );
     return ptr;
 }
 
 SliderWidget *Clay::CreateSlider( uint32_t id, float initialValue, const SliderStyle &style )
 {
-    auto          widget = std::make_unique<SliderWidget>( this, id, initialValue, style );
+    auto          widget = std::make_unique<SliderWidget>( m_clayContext.get( ), id, initialValue, style );
     SliderWidget *ptr    = widget.get( );
     m_widgets[ id ]      = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
+    m_renderer->RegisterWidget( id, ptr );
     return ptr;
 }
 
 DropdownWidget *Clay::CreateDropdown( uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style )
 {
-    auto            widget = std::make_unique<DropdownWidget>( this, id, options, style );
+    auto            widget = std::make_unique<DropdownWidget>( m_clayContext.get( ), id, options, style );
     DropdownWidget *ptr    = widget.get( );
     m_widgets[ id ]        = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
+    m_renderer->RegisterWidget( id, ptr );
     return ptr;
 }
 
 ColorPickerWidget *Clay::CreateColorPicker( uint32_t id, const Float_3 &initialRgb, const ColorPickerStyle &style )
 {
-    auto               widget = std::make_unique<ColorPickerWidget>( this, id, initialRgb, style );
+    auto               widget = std::make_unique<ColorPickerWidget>( m_clayContext.get( ), id, initialRgb, style );
     ColorPickerWidget *ptr    = widget.get( );
     m_widgets[ id ]           = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
+    m_renderer->RegisterWidget( id, ptr );
     return ptr;
 }
 
 TextFieldWidget *Clay::CreateTextField( uint32_t id, const TextFieldStyle &style )
 {
-    auto             widget = std::make_unique<TextFieldWidget>( this, id, style );
+    auto             widget = std::make_unique<TextFieldWidget>( m_clayContext.get( ), id, style );
     TextFieldWidget *ptr    = widget.get( );
     m_widgets[ id ]         = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
+    m_renderer->RegisterWidget( id, ptr );
     return ptr;
 }
 
 ResizableContainerWidget *Clay::CreateResizableContainer( uint32_t id, const ResizableContainerStyle &style )
 {
-    auto                      widget = std::make_unique<ResizableContainerWidget>( this, id, style );
+    auto                      widget = std::make_unique<ResizableContainerWidget>( m_clayContext.get( ), id, style );
     ResizableContainerWidget *ptr    = widget.get( );
     m_widgets[ id ]                  = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
+    m_renderer->RegisterWidget( id, ptr );
     return ptr;
 }
 
 DockableContainerWidget *Clay::CreateDockableContainer( uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style )
 {
-    auto                     widget = std::make_unique<DockableContainerWidget>( this, id, dockingManager, style );
+    auto                     widget = std::make_unique<DockableContainerWidget>( m_clayContext.get( ), id, dockingManager, style );
     DockableContainerWidget *ptr    = widget.get( );
     m_widgets[ id ]                 = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
+    m_renderer->RegisterWidget( id, ptr );
     return ptr;
 }
 
@@ -843,6 +787,11 @@ void Clay::RemoveWidget( const uint32_t id )
     }
 }
 
+std::unique_ptr<DockingManager> Clay::CreateDockingManager( )
+{
+    return std::make_unique<DockingManager>( m_clayContext.get( ) );
+}
+
 void Clay::UpdateWidgets( const float deltaTime ) const
 {
     for ( auto *widget : m_widgetUpdateOrder )
@@ -851,33 +800,7 @@ void Clay::UpdateWidgets( const float deltaTime ) const
     }
 }
 
-void Clay::RenderWidgets( ) const
-{
-    for ( auto *widget : m_widgetUpdateOrder )
-    {
-        widget->Render( );
-    }
-}
-
-void Clay::RenderFloatingWidgets( ) const
-{
-    for ( auto *widget : m_widgetUpdateOrder )
-    {
-        if ( auto *dropdown = dynamic_cast<DropdownWidget *>( widget ) )
-        {
-            if ( dropdown->IsOpen( ) )
-            {
-                dropdown->RenderDropdownList( );
-            }
-        }
-    }
-}
-
 ClayDimensions Clay::MeasureText( const InteropString &text, const uint16_t fontId, const uint16_t fontSize ) const
 {
-    Clay_TextElementConfig config{ };
-    config.fontId   = fontId;
-    config.fontSize = fontSize;
-
-    return m_renderer->MeasureText( text, config );
+    return m_clayContext->MeasureText( text, fontId, fontSize );
 }

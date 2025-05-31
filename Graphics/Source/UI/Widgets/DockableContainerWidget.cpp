@@ -16,22 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/UI/Clay.h>
+#include <DenOfIzGraphics/UI/ClayContext.h>
 #include <DenOfIzGraphics/UI/Widgets/DockableContainerWidget.h>
 #include <algorithm>
 #include <cmath>
 
 using namespace DenOfIz;
 
-DockableContainerWidget::DockableContainerWidget( Clay *clay, const uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style ) :
-    Widget( clay, id ), m_style( style ), m_dockingManager( dockingManager )
+DockableContainerWidget::DockableContainerWidget( ClayContext *clayContext, const uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style ) :
+    Widget( clayContext, id ), m_style( style ), m_dockingManager( dockingManager )
 {
     m_containerState.FloatingSize = Float_2{ 300.0f, 200.0f };
     m_containerState.Mode         = static_cast<uint8_t>( DockingMode::Floating );
     m_containerState.DockedSide   = static_cast<uint8_t>( DockingSide::None );
-
-    m_widgetData.Type = ClayCustomWidgetType::DockableContainer;
-    m_widgetData.Data = &m_renderData;
 
     if ( m_dockingManager )
     {
@@ -43,10 +40,10 @@ DockableContainerWidget::DockableContainerWidget( Clay *clay, const uint32_t id,
         ResizableContainerStyle resizableStyle;
         resizableStyle.MinWidth     = m_style.MinWidth;
         resizableStyle.MinHeight    = m_style.MinHeight;
-        resizableStyle.ShowTitleBar = false; // We'll handle our own title bar
+        resizableStyle.ShowTitleBar = false;
         resizableStyle.EnableResize = true;
 
-        m_resizableContainer = std::make_unique<ResizableContainerWidget>( clay, id + 1, resizableStyle );
+        m_resizableContainer = std::make_unique<ResizableContainerWidget>( m_clayContext, id + 1, resizableStyle );
     }
 }
 
@@ -74,35 +71,34 @@ void DockableContainerWidget::CreateLayoutElement( )
         return;
     }
 
-    m_renderData.State     = &m_containerState;
-    m_renderData.Desc      = m_style;
-    m_renderData.ElementId = m_id;
-
     ClayElementDeclaration decl;
-    decl.Id                = m_id;
-    decl.Custom.CustomData = &m_widgetData;
+    decl.Id = m_id;
 
     if ( static_cast<DockingMode>( m_containerState.Mode ) == DockingMode::Floating )
     {
-        // Floating mode - use fixed positioning
         decl.Layout.Sizing.Width  = ClaySizingAxis::Fixed( m_containerState.FloatingSize.X );
         decl.Layout.Sizing.Height = ClaySizingAxis::Fixed( m_containerState.FloatingSize.Y );
-        decl.Floating.AttachTo    = ClayFloatingAttachTo::Root;
+        decl.Floating.AttachTo    = ClayFloatingAttachTo::Root; // Attach to root viewport, not another element
         decl.Floating.Offset      = m_containerState.FloatingPosition;
-        decl.Floating.ZIndex      = 100.0f;
+        decl.Floating.ZIndex      = 500.0f; // Lower than dropdown (1000) but higher than regular elements
     }
     else
     {
-        // Docked mode - size based on parent
         decl.Layout.Sizing.Width  = ClaySizingAxis::Grow( );
         decl.Layout.Sizing.Height = ClaySizingAxis::Grow( );
     }
 
     decl.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
+    decl.Custom.CustomData      = this;
+    decl.BackgroundColor        = m_style.BackgroundColor;
+    decl.Border.Color           = m_style.BorderColor;
+    decl.Border.Width           = ClayBorderWidth( static_cast<uint16_t>( m_style.BorderWidth ) );
+    decl.CornerRadius           = ClayCornerRadius( 4 );
 
-    m_clay->OpenElement( decl );
+    m_clayContext->OpenElement( decl );
 
     ClayElementDeclaration titleBarDecl;
+    titleBarDecl.Id                      = m_clayContext->HashString( InteropString( "titlebar" ), 0, m_id );
     titleBarDecl.Layout.Sizing.Width     = ClaySizingAxis::Grow( );
     titleBarDecl.Layout.Sizing.Height    = ClaySizingAxis::Fixed( m_style.TitleBarHeight );
     titleBarDecl.Layout.LayoutDirection  = ClayLayoutDirection::LeftToRight;
@@ -112,39 +108,40 @@ void DockableContainerWidget::CreateLayoutElement( )
     titleBarDecl.Border.Color            = m_style.BorderColor;
     titleBarDecl.Border.Width            = ClayBorderWidth( static_cast<uint16_t>( m_style.BorderWidth ) );
 
-    m_clay->OpenElement( titleBarDecl );
+    m_clayContext->OpenElement( titleBarDecl );
 
     ClayTextDesc titleTextDesc;
     titleTextDesc.TextColor = m_style.TitleTextColor;
     titleTextDesc.FontId    = m_style.FontId;
     titleTextDesc.FontSize  = m_style.FontSize;
-    m_clay->Text( m_style.Title, titleTextDesc );
+    m_clayContext->Text( m_style.Title, titleTextDesc );
 
     ClayElementDeclaration spacerDecl;
     spacerDecl.Layout.Sizing.Width = ClaySizingAxis::Grow( );
-    m_clay->OpenElement( spacerDecl );
-    m_clay->CloseElement( );
+    m_clayContext->OpenElement( spacerDecl );
+    m_clayContext->CloseElement( );
 
     if ( m_style.ShowCloseButton )
     {
         ClayElementDeclaration closeButtonDecl;
+        closeButtonDecl.Id                      = m_clayContext->HashString( InteropString( "closebutton" ), 0, m_id );
         closeButtonDecl.Layout.Sizing.Width     = ClaySizingAxis::Fixed( 20.0f );
         closeButtonDecl.Layout.Sizing.Height    = ClaySizingAxis::Fixed( 20.0f );
         closeButtonDecl.BackgroundColor         = ClayColor( 220, 220, 220, 255 );
         closeButtonDecl.Layout.ChildAlignment.X = ClayAlignmentX::Center;
         closeButtonDecl.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
 
-        m_clay->OpenElement( closeButtonDecl );
+        m_clayContext->OpenElement( closeButtonDecl );
 
         ClayTextDesc closeTextDesc;
         closeTextDesc.TextColor = ClayColor( 0, 0, 0, 255 );
         closeTextDesc.FontSize  = 12;
-        m_clay->Text( InteropString( "×" ), closeTextDesc );
+        m_clayContext->Text( InteropString( "×" ), closeTextDesc );
 
-        m_clay->CloseElement( );
+        m_clayContext->CloseElement( );
     }
 
-    m_clay->CloseElement( );
+    m_clayContext->CloseElement( );
 
     ClayElementDeclaration contentDecl;
     contentDecl.Layout.Sizing.Width  = ClaySizingAxis::Grow( );
@@ -154,26 +151,38 @@ void DockableContainerWidget::CreateLayoutElement( )
     contentDecl.Border.Color         = m_style.BorderColor;
     contentDecl.Border.Width         = ClayBorderWidth( static_cast<uint16_t>( m_style.BorderWidth ) );
 
-    m_clay->OpenElement( contentDecl );
+    m_clayContext->OpenElement( contentDecl );
     if ( m_contentRenderer )
     {
         m_contentRenderer( );
     }
 
-    m_clay->CloseElement( );
-    m_clay->CloseElement( );
+    m_clayContext->CloseElement( );
+    m_clayContext->CloseElement( );
 }
 
-void DockableContainerWidget::Render( )
+void DockableContainerWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
 {
     if ( m_isClosed )
     {
         return;
     }
 
-    m_renderData.State     = &m_containerState;
-    m_renderData.Desc      = m_style;
-    m_renderData.ElementId = m_id;
+    // Background, border, and corner radius are now handled by Clay elements in CreateLayoutElement
+    // Only render interactive visual effects here (dock zones, drag visualization, etc.)
+    const auto &bounds = command->boundingBox;
+
+    if ( m_containerState.IsDragging )
+    {
+        ClayBoundingBox dragOverlay;
+        dragOverlay.X      = bounds.x;
+        dragOverlay.Y      = bounds.y;
+        dragOverlay.Width  = bounds.width;
+        dragOverlay.Height = bounds.height;
+
+        ClayColor dragColor = ClayColor( 100, 100, 100, 100 );
+        AddRectangle( renderBatch, dragOverlay, dragColor );
+    }
 }
 
 void DockableContainerWidget::HandleEvent( const Event &event )
@@ -187,24 +196,34 @@ void DockableContainerWidget::HandleEvent( const Event &event )
     {
         const float mouseX = static_cast<float>( event.Button.X );
         const float mouseY = static_cast<float>( event.Button.Y );
-        if ( m_style.ShowCloseButton && IsPointInCloseButton( mouseX, mouseY ) )
+
+        // Check close button using Clay's pointer detection
+        if ( m_style.ShowCloseButton )
         {
-            Close( );
-            return;
+            const uint32_t closeButtonId = m_clayContext->HashString( InteropString( "closebutton" ), 0, m_id );
+            if ( m_clayContext->PointerOver( closeButtonId ) )
+            {
+                Close( );
+                return;
+            }
         }
 
-        // Check title bar for dragging
-        if ( IsPointInTitleBar( mouseX, mouseY ) && m_style.AllowUndock )
+        // Check title bar for dragging using Clay's pointer detection
+        if ( m_style.AllowUndock )
         {
-            m_containerState.IsDragging   = true;
-            m_containerState.DragStartPos = Float_2{ mouseX, mouseY };
-
-            const auto bounds           = GetBoundingBox( );
-            m_containerState.DragOffset = Float_2{ mouseX - bounds.X, mouseY - bounds.Y };
-
-            if ( m_dockingManager )
+            const uint32_t titleBarId = m_clayContext->HashString( InteropString( "titlebar" ), 0, m_id );
+            if ( m_clayContext->PointerOver( titleBarId ) )
             {
-                m_dockingManager->StartDragging( this );
+                m_containerState.IsDragging   = true;
+                m_containerState.DragStartPos = Float_2{ mouseX, mouseY };
+
+                const auto bounds           = GetBoundingBox( );
+                m_containerState.DragOffset = Float_2{ mouseX - bounds.X, mouseY - bounds.Y };
+
+                if ( m_dockingManager )
+                {
+                    m_dockingManager->StartDragging( this );
+                }
             }
         }
     }
@@ -358,7 +377,7 @@ ClayBoundingBox DockableContainerWidget::GetCloseButtonBounds( ) const
                             bounds.Y + ( m_style.TitleBarHeight - 20.0f ) * 0.5f, 20.0f, 20.0f };
 }
 
-DockingManager::DockingManager( Clay *clay ) : m_clay( clay )
+DockingManager::DockingManager( ClayContext *clayContext ) : m_clayContext( clayContext )
 {
 }
 
@@ -368,7 +387,7 @@ DockingManager::~DockingManager( )
 
 void DockingManager::RegisterContainer( DockableContainerWidget *container )
 {
-    if ( std::find( m_containers.begin( ), m_containers.end( ), container ) == m_containers.end( ) )
+    if ( std::ranges::find( m_containers, container ) == m_containers.end( ) )
     {
         m_containers.push_back( container );
     }
@@ -376,12 +395,11 @@ void DockingManager::RegisterContainer( DockableContainerWidget *container )
 
 void DockingManager::UnregisterContainer( DockableContainerWidget *container )
 {
-    m_containers.erase( std::remove( m_containers.begin( ), m_containers.end( ), container ), m_containers.end( ) );
+    m_containers.erase( std::ranges::remove( m_containers, container ).begin( ), m_containers.end( ) );
 }
 
 void DockingManager::Update( const float deltaTime ) const
 {
-    // Update all containers
     for ( auto *container : m_containers )
     {
         if ( container )
@@ -453,23 +471,14 @@ void DockingManager::UpdateDockZones( const Float_2 mousePos )
 {
     m_dockZones.clear( );
 
-    // Create dock zones for viewport edges
-    const auto      viewport = m_clay->GetViewportSize( );
+    const auto      viewport = m_clayContext->GetViewportSize( );
     constexpr float zoneSize = 100.0f;
 
-    // Left zone
     m_dockZones.push_back( DockZone{ DockingSide::Left, ClayBoundingBox{ 0, 0, zoneSize, viewport.Height } } );
-
-    // Right zone
     m_dockZones.push_back( DockZone{ DockingSide::Right, ClayBoundingBox{ viewport.Width - zoneSize, 0, zoneSize, viewport.Height } } );
-
-    // Top zone
     m_dockZones.push_back( DockZone{ DockingSide::Top, ClayBoundingBox{ 0, 0, viewport.Width, zoneSize } } );
-
-    // Bottom zone
     m_dockZones.push_back( DockZone{ DockingSide::Bottom, ClayBoundingBox{ 0, viewport.Height - zoneSize, viewport.Width, zoneSize } } );
 
-    // Update hover state
     for ( auto &zone : m_dockZones )
     {
         zone.IsHighlighted =
@@ -491,15 +500,15 @@ void DockingManager::RenderDockZones( ) const
             zoneDecl.Floating.ZIndex      = 200.0f;
             zoneDecl.BackgroundColor      = ClayColor( 0, 120, 215, 100 );
 
-            m_clay->OpenElement( zoneDecl );
-            m_clay->CloseElement( );
+            m_clayContext->OpenElement( zoneDecl );
+            m_clayContext->CloseElement( );
         }
     }
 }
 
 ClayBoundingBox DockingManager::GetDockZoneBounds( const DockingSide side ) const
 {
-    const auto      viewport = m_clay->GetViewportSize( );
+    const auto      viewport = m_clayContext->GetViewportSize( );
     constexpr float zoneSize = 100.0f;
 
     switch ( side )

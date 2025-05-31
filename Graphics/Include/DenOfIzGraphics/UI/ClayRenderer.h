@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
 #include <DenOfIzGraphics/Backends/Interface/ISemaphore.h>
+#include <DenOfIzGraphics/UI/ClayContext.h>
 #include <DenOfIzGraphics/UI/ClayData.h>
 #include <DenOfIzGraphics/UI/FullscreenQuadPipeline.h>
 #include <DenOfIzGraphics/UI/UIShapeCache.h>
@@ -49,6 +50,8 @@ namespace DenOfIz
     struct ClayResizableContainerRenderData;
     struct ClayDockableContainerRenderData;
 
+    class Widget;
+
     struct ClayRendererDesc
     {
         ILogicalDevice *LogicalDevice      = nullptr;
@@ -59,6 +62,23 @@ namespace DenOfIz
         uint32_t        MaxTextures        = 128;
         float           Width              = 1024;
         float           Height             = 1024;
+    };
+
+    // Forward declaration for ClayRenderer
+    class ClayRenderer;
+
+    // Implementation of IRenderBatch for ClayRenderer
+    class ClayRenderBatch : public IRenderBatch
+    {
+        ClayRenderer *m_renderer;
+
+    public:
+        ClayRenderBatch( ClayRenderer *renderer ) : m_renderer( renderer )
+        {
+        }
+
+        void     AddVertices( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices ) override;
+        uint32_t GetCurrentVertexOffset( ) const override;
     };
 
     class ClayRenderer
@@ -87,7 +107,7 @@ namespace DenOfIz
         std::unique_ptr<IRootSignature> m_rootSignature;
         std::unique_ptr<IInputLayout>   m_inputLayout;
 
-        std::unique_ptr<FullscreenQuadPipeline> m_fullscreenQuad; // Todo this needs to manage multiple frames in flight
+        std::unique_ptr<FullscreenQuadPipeline> m_fullscreenQuad;
 
         struct FrameData
         {
@@ -144,7 +164,7 @@ namespace DenOfIz
 
         std::unordered_map<void *, uint32_t> m_imageTextureIndices;
         std::vector<ITextureResource *>      m_textures;
-        std::vector<bool>                    m_textureFontFlags; // true if texture is a font atlas
+        std::vector<bool>                    m_textureFontFlags;
         std::unique_ptr<ITextureResource>    m_nullTexture;
         uint32_t                             m_nextTextureIndex = 1;
         bool                                 m_texturesDirty    = true;
@@ -152,13 +172,15 @@ namespace DenOfIz
         float      m_viewportWidth  = 0;
         float      m_viewportHeight = 0;
         float      m_dpiScale       = 1.0f;
-        float      m_deltaTime      = 0.016f; // Default to 60 FPS
+        float      m_deltaTime      = 0.016f;
         XMFLOAT4X4 m_projectionMatrix;
 
         std::vector<ScissorState> m_scissorStack;
         std::unique_ptr<ISampler> m_linearSampler;
         ResourceTracking          m_resourceTracking;
         uint32_t                  m_currentFrameIndex = 0;
+
+        std::unordered_map<uint32_t, Widget *> m_widgets;
 
     public:
         explicit ClayRenderer( const ClayRendererDesc &desc );
@@ -174,6 +196,12 @@ namespace DenOfIz
 
         void           ClearCaches( );
         ClayDimensions MeasureText( const InteropString &text, const Clay_TextElementConfig &desc ) const;
+
+        void RegisterWidget( uint32_t id, Widget *widget );
+        void UnregisterWidget( uint32_t id );
+
+        void     AddVerticesWithDepth( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices );
+        uint32_t GetCurrentVertexCount( ) const;
 
     private:
         void CreateShaderProgram( );
@@ -200,11 +228,9 @@ namespace DenOfIz
         void RenderDockableContainer( const Clay_RenderCommand *command, const ClayDockableContainerRenderData *dockableData, ICommandList *commandList );
         void SetScissor( const Clay_RenderCommand *command );
         void ClearScissor( );
-
-        void AddVerticesWithDepth( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices );
         void FlushBatchedGeometry( ICommandList *commandList );
-        void FlushCurrentBatch( );                                  // Flush current batch to buffers
-        void ExecuteDrawBatches( ICommandList *commandList ) const; // Execute all batched draw calls
+        void FlushCurrentBatch( );
+        void ExecuteDrawBatches( ICommandList *commandList ) const;
 
         uint32_t RegisterTexture( ITextureResource *texture );
         void     UpdateTextureBindings( uint32_t frameIndex ) const;

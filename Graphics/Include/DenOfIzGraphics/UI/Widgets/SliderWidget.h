@@ -26,21 +26,18 @@ namespace DenOfIz
 
     class SliderWidget : public Widget
     {
-        float                   m_value        = 0.0f;
-        bool                    m_isDragging   = false;
-        bool                    m_valueChanged = false;
-        SliderStyle             m_style;
-        Float_2                 m_lastMousePos;
-        ClaySliderState         m_sliderState;
-        ClaySliderRenderData    m_renderData;
-        ClayCustomWidgetData    m_widgetData;
+        float       m_value        = 0.0f;
+        bool        m_isDragging   = false;
+        bool        m_valueChanged = false;
+        SliderStyle m_style;
+        Float_2     m_lastMousePos;
 
     public:
-        DZ_API SliderWidget( Clay *clay, uint32_t id, float initialValue = 0.5f, const SliderStyle &style = { } );
+        DZ_API SliderWidget( ClayContext *clayContext, uint32_t id, float initialValue = 0.5f, const SliderStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;
-        DZ_API void Render( ) override;
+        DZ_API void Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch ) override;
         DZ_API void HandleEvent( const Event &event ) override;
 
         DZ_API float GetValue( ) const;

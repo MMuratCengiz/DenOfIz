@@ -26,19 +26,16 @@ namespace DenOfIz
 
     class CheckboxWidget : public Widget
     {
-        bool                      m_isChecked  = false;
-        bool                      m_wasClicked = false;
-        CheckboxStyle             m_style;
-        ClayCheckboxState         m_checkboxState;
-        ClayCheckboxRenderData    m_renderData;
-        ClayCustomWidgetData      m_widgetData;
+        bool          m_isChecked  = false;
+        bool          m_wasClicked = false;
+        CheckboxStyle m_style;
 
     public:
-        DZ_API CheckboxWidget( Clay *clay, uint32_t id, bool initialChecked = false, const CheckboxStyle &style = { } );
+        DZ_API CheckboxWidget( ClayContext *clayContext, uint32_t id, bool initialChecked = false, const CheckboxStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;
-        DZ_API void Render( ) override;
+        DZ_API void Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch ) override;
         DZ_API void HandleEvent( const Event &event ) override;
 
         DZ_API bool IsChecked( ) const;

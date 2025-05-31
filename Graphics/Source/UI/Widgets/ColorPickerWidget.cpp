@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/UI/Clay.h>
 #include <DenOfIzGraphics/UI/ClayData.h>
 #include <DenOfIzGraphics/UI/Widgets/ColorPickerWidget.h>
 #include <algorithm>
@@ -24,17 +23,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-ColorPickerWidget::ColorPickerWidget( Clay *clay, const uint32_t id, const Float_3 &initialRgb, const ColorPickerStyle &style ) :
-    Widget( clay, id ), m_rgb( initialRgb ), m_style( style )
+ColorPickerWidget::ColorPickerWidget( ClayContext *clayContext, const uint32_t id, const Float_3 &initialRgb, const ColorPickerStyle &style ) :
+    Widget( clayContext, id ), m_rgb( initialRgb ), m_style( style )
 {
     m_hsv = RGBToHSV( m_rgb );
-
-    m_colorPickerState.Rgb        = m_rgb;
-    m_colorPickerState.Hsv        = m_hsv;
-    m_colorPickerState.IsExpanded = m_isExpanded;
-
-    m_widgetData.Type = ClayCustomWidgetType::ColorPicker;
-    m_widgetData.Data = &m_renderData;
 }
 
 void ColorPickerWidget::Update( float deltaTime )
@@ -44,33 +36,40 @@ void ColorPickerWidget::Update( float deltaTime )
 
 void ColorPickerWidget::CreateLayoutElement( )
 {
-    m_colorPickerState.Rgb        = m_rgb;
-    m_colorPickerState.Hsv        = m_hsv;
-    m_colorPickerState.IsExpanded = m_isExpanded;
-
-    m_renderData.State     = &m_colorPickerState;
-    m_renderData.Desc      = m_style;
-    m_renderData.ElementId = m_id;
 
     ClayElementDeclaration decl;
     decl.Id                   = m_id;
     decl.Layout.Sizing.Width  = ClaySizingAxis::Fixed( m_isExpanded ? m_style.Size : m_style.CompactSize );
     decl.Layout.Sizing.Height = ClaySizingAxis::Fixed( m_isExpanded ? m_style.Size : m_style.CompactSize );
-    decl.Custom.CustomData    = &m_widgetData;
+    decl.Custom.CustomData    = this;
 
-    m_clay->OpenElement( decl );
-    m_clay->CloseElement( );
+    m_clayContext->OpenElement( decl );
+    m_clayContext->CloseElement( );
 }
 
-void ColorPickerWidget::Render( )
+void ColorPickerWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
 {
-    m_colorPickerState.Rgb        = m_rgb;
-    m_colorPickerState.Hsv        = m_hsv;
-    m_colorPickerState.IsExpanded = m_isExpanded;
+    const auto &bounds = command->boundingBox;
 
-    m_renderData.State     = &m_colorPickerState;
-    m_renderData.Desc      = m_style;
-    m_renderData.ElementId = m_id;
+    ClayBoundingBox colorBounds;
+    colorBounds.X      = bounds.x;
+    colorBounds.Y      = bounds.y;
+    colorBounds.Width  = bounds.width;
+    colorBounds.Height = bounds.height;
+
+    ClayColor currentColor;
+    currentColor.R = static_cast<uint8_t>( m_rgb.X * 255 );
+    currentColor.G = static_cast<uint8_t>( m_rgb.Y * 255 );
+    currentColor.B = static_cast<uint8_t>( m_rgb.Z * 255 );
+    currentColor.A = 255;
+
+    AddRectangle( renderBatch, colorBounds, currentColor );
+
+    ClayBorderWidth borderWidth( 1 );
+    ClayColor       borderColor( 128, 128, 128, 255 );
+    AddBorder( renderBatch, colorBounds, borderColor, borderWidth );
+
+    // TODO: Add color picker interface (color wheel, value bar, etc.)
 }
 
 void ColorPickerWidget::HandleEvent( const Event &event )
@@ -133,10 +132,12 @@ void ColorPickerWidget::HandleEvent( const Event &event )
         }
     }
 }
+
 Float_3 ColorPickerWidget::GetRGB( ) const
 {
     return m_rgb;
 }
+
 Float_3 ColorPickerWidget::GetHSV( ) const
 {
     return m_hsv;
@@ -197,7 +198,7 @@ void ColorPickerWidget::UpdateFromMouseWheel( const float mouseX, const float mo
 
     if ( distance <= radius )
     {
-        const float angle = std::atan2( dy, dx ) + 3.14159f; // Convert to 0-2PI range
+        const float angle = std::atan2( dy, dx ) + XM_PI;
         const float hue   = angle / ( 2.0f * 3.14159f ) * 360.0f;
 
         const float saturation = std::min( distance / radius, 1.0f );

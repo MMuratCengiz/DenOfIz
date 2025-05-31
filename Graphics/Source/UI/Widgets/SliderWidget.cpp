@@ -16,22 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/UI/Clay.h>
-#include <DenOfIzGraphics/UI/ClayData.h>
 #include <DenOfIzGraphics/UI/Widgets/SliderWidget.h>
 #include <algorithm>
 #include <cmath>
 
 using namespace DenOfIz;
 
-SliderWidget::SliderWidget( Clay *clay, const uint32_t id, const float initialValue, const SliderStyle &style ) :
-    Widget( clay, id ), m_value( std::clamp( initialValue, style.MinValue, style.MaxValue ) ), m_style( style ), m_lastMousePos( { } )
+SliderWidget::SliderWidget( ClayContext *clayContext, const uint32_t id, const float initialValue, const SliderStyle &style ) :
+    Widget( clayContext, id ), m_value( std::clamp( initialValue, style.MinValue, style.MaxValue ) ), m_style( style ), m_lastMousePos( { } )
 {
-    m_sliderState.Value          = m_value;
-    m_sliderState.IsBeingDragged = false;
-
-    m_widgetData.Type = ClayCustomWidgetType::Slider;
-    m_widgetData.Data = &m_renderData;
 }
 
 void SliderWidget::Update( float deltaTime )
@@ -41,51 +34,72 @@ void SliderWidget::Update( float deltaTime )
 
 void SliderWidget::CreateLayoutElement( )
 {
-    m_sliderState.Value          = m_value;
-    m_sliderState.IsBeingDragged = m_isDragging;
-
-    m_renderData.State     = &m_sliderState;
-    m_renderData.Desc      = m_style;
-    m_renderData.ElementId = m_id;
-
     ClayElementDeclaration decl;
     decl.Id                   = m_id;
     decl.Layout.Sizing.Width  = ClaySizingAxis::Grow( );
     decl.Layout.Sizing.Height = ClaySizingAxis::Fixed( m_style.KnobSize );
-    decl.Custom.CustomData    = &m_widgetData;
+    decl.Custom.CustomData    = this;
 
-    m_clay->OpenElement( decl );
-    m_clay->CloseElement( );
+    m_clayContext->OpenElement( decl );
+    m_clayContext->CloseElement( );
 }
 
-void SliderWidget::Render( )
+void SliderWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
 {
-    m_sliderState.Value          = m_value;
-    m_sliderState.IsBeingDragged = m_isDragging;
+    const auto &bounds = command->boundingBox;
 
-    m_renderData.State     = &m_sliderState;
-    m_renderData.Desc      = m_style;
-    m_renderData.ElementId = m_id;
+    const float trackY       = bounds.y + ( bounds.height - m_style.Height ) * 0.5f;
+    const float trackPadding = m_style.KnobSize * 0.5f;
+    const float trackWidth   = bounds.width - trackPadding * 2.0f;
+
+    ClayBoundingBox trackBounds;
+    trackBounds.X      = bounds.x + trackPadding;
+    trackBounds.Y      = trackY;
+    trackBounds.Width  = trackWidth;
+    trackBounds.Height = m_style.Height;
+
+    AddRectangle( renderBatch, trackBounds, m_style.BackgroundColor, ClayCornerRadius( m_style.CornerRadius ) );
+
+    const float normalizedValue = ( m_value - m_style.MinValue ) / ( m_style.MaxValue - m_style.MinValue );
+    const float fillWidth       = trackWidth * normalizedValue;
+
+    if ( fillWidth > 0 )
+    {
+        ClayBoundingBox fillBounds = trackBounds;
+        fillBounds.Width           = fillWidth;
+        AddRectangle( renderBatch, fillBounds, m_style.FillColor, ClayCornerRadius( m_style.CornerRadius ) );
+    }
+
+    const float knobX = bounds.x + trackPadding + normalizedValue * trackWidth - m_style.KnobSize * 0.5f;
+    const float knobY = bounds.y + ( bounds.height - m_style.KnobSize ) * 0.5f;
+
+    ClayBoundingBox knobBounds;
+    knobBounds.X      = knobX;
+    knobBounds.Y      = knobY;
+    knobBounds.Width  = m_style.KnobSize;
+    knobBounds.Height = m_style.KnobSize;
+
+    AddRectangle( renderBatch, knobBounds, m_style.KnobColor, ClayCornerRadius( m_style.KnobSize * 0.5f ) );
+
+    ClayBorderWidth knobBorderWidth( 1 );
+    AddBorder( renderBatch, knobBounds, m_style.KnobBorderColor, knobBorderWidth, ClayCornerRadius( m_style.KnobSize * 0.5f ) );
 }
 
 void SliderWidget::HandleEvent( const Event &event )
 {
     m_valueChanged = false;
-
     if ( event.Type == EventType::MouseButtonDown && event.Button.Button == MouseButton::Left )
     {
         if ( m_isHovered )
         {
-            m_isDragging                 = true;
-            m_sliderState.IsBeingDragged = true;
-            m_lastMousePos               = Float_2{ static_cast<float>( event.Button.X ), static_cast<float>( event.Button.Y ) };
+            m_isDragging   = true;
+            m_lastMousePos = Float_2{ static_cast<float>( event.Button.X ), static_cast<float>( event.Button.Y ) };
             UpdateValueFromMouse( static_cast<float>( event.Button.X ) );
         }
     }
     else if ( event.Type == EventType::MouseButtonUp && event.Button.Button == MouseButton::Left )
     {
-        m_isDragging                 = false;
-        m_sliderState.IsBeingDragged = false;
+        m_isDragging = false;
     }
     else if ( event.Type == EventType::MouseMotion && m_isDragging )
     {
@@ -104,9 +118,8 @@ void SliderWidget::SetValue( const float value )
     const float newValue = std::clamp( value, m_style.MinValue, m_style.MaxValue );
     if ( m_value != newValue )
     {
-        m_value             = newValue;
-        m_sliderState.Value = newValue;
-        m_valueChanged      = true;
+        m_value        = newValue;
+        m_valueChanged = true;
     }
 }
 

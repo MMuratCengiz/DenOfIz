@@ -16,60 +16,77 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/UI/Clay.h>
 #include <DenOfIzGraphics/UI/ClayData.h>
 #include <DenOfIzGraphics/UI/Widgets/DropdownWidget.h>
 #include <algorithm>
 
 using namespace DenOfIz;
 
-DropdownWidget::DropdownWidget( Clay *clay, uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style ) :
-    Widget( clay, id ), m_options( options ), m_style( style ), m_dropdownListId( clay->HashString( InteropString( "dropdown_list" ), 0, id ) )
+DropdownWidget::DropdownWidget( ClayContext *clayContext, uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style ) :
+    Widget( clayContext, id ), m_options( options ), m_style( style ), m_dropdownListId( clayContext->HashString( InteropString( "dropdown_list" ), 0, id ) )
 {
-    m_dropdownState.SelectedIndex = -1;
-    m_dropdownState.IsOpen        = false;
-    m_dropdownState.ScrollOffset  = 0.0f;
-
-    m_widgetData.Type = ClayCustomWidgetType::Dropdown;
-    m_widgetData.Data = &m_renderData;
 }
 
 void DropdownWidget::Update( float deltaTime )
 {
     UpdateHoverState( );
+    m_dropdownListCreatedThisFrame = false;
 }
 
 void DropdownWidget::CreateLayoutElement( )
 {
-    m_dropdownState.SelectedIndex = m_selectedIndex;
-    m_dropdownState.IsOpen        = m_isOpen;
-    m_dropdownState.ScrollOffset  = m_scrollOffset;
-
     m_style.Options = m_options;
-
-    m_renderData.State     = &m_dropdownState;
-    m_renderData.Desc      = m_style;
-    m_renderData.ElementId = m_id;
 
     ClayElementDeclaration decl;
     decl.Id                   = m_id;
     decl.Layout.Sizing.Width  = ClaySizingAxis::Grow( );
     decl.Layout.Sizing.Height = ClaySizingAxis::Fixed( m_style.ItemHeight );
-    decl.Custom.CustomData    = &m_widgetData;
+    decl.Layout.Padding       = m_style.Padding;
+    decl.Custom.CustomData    = this;
+    decl.BackgroundColor      = m_style.BackgroundColor;
+    decl.Border.Color         = m_style.BorderColor;
+    decl.Border.Width         = ClayBorderWidth( 1 );
 
-    m_clay->OpenElement( decl );
-    m_clay->CloseElement( );
+    m_clayContext->OpenElement( decl );
+
+    const InteropString &displayText = GetSelectedText( );
+    const ClayColor     &textColor   = m_selectedIndex >= 0 ? m_style.TextColor : m_style.PlaceholderColor;
+
+    if ( !displayText.IsEmpty( ) )
+    {
+        ClayTextDesc textDesc;
+        textDesc.TextColor = textColor;
+        textDesc.FontId    = m_style.FontId;
+        textDesc.FontSize  = m_style.FontSize;
+
+        m_clayContext->Text( displayText, textDesc );
+    }
+
+    m_clayContext->CloseElement( );
+    if ( m_isOpen && !m_dropdownListCreatedThisFrame )
+    {
+        RenderDropdownList( );
+        m_dropdownListCreatedThisFrame = true;
+    }
 }
 
-void DropdownWidget::Render( )
+void DropdownWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
 {
-    m_dropdownState.SelectedIndex = m_selectedIndex;
-    m_dropdownState.IsOpen        = m_isOpen;
-    m_dropdownState.ScrollOffset  = m_scrollOffset;
+    const auto &bounds = command->boundingBox;
 
-    m_renderData.State     = &m_dropdownState;
-    m_renderData.Desc      = m_style;
-    m_renderData.ElementId = m_id;
+    // Background, border, and text are now handled by Clay elements in CreateLayoutElement
+    // Only render dropdown arrow here
+    constexpr float arrowSize = 8.0f;
+    const float     arrowX    = bounds.x + bounds.width - m_style.Padding.Right - arrowSize;
+    const float     arrowY    = bounds.y + ( bounds.height - arrowSize ) * 0.5f;
+
+    ClayBoundingBox arrowBounds;
+    arrowBounds.X      = arrowX;
+    arrowBounds.Y      = arrowY;
+    arrowBounds.Width  = arrowSize;
+    arrowBounds.Height = arrowSize;
+
+    AddRectangle( renderBatch, arrowBounds, m_style.TextColor );
 }
 
 void DropdownWidget::HandleEvent( const Event &event )
@@ -84,35 +101,33 @@ void DropdownWidget::HandleEvent( const Event &event )
         }
         else if ( m_isOpen )
         {
-            const auto dropdownBounds = m_clay->GetElementBoundingBox( m_dropdownListId );
-            if ( event.Button.X >= dropdownBounds.X && event.Button.X <= dropdownBounds.X + dropdownBounds.Width && event.Button.Y >= dropdownBounds.Y &&
-                 event.Button.Y <= dropdownBounds.Y + dropdownBounds.Height )
+            bool clickedOnItem = false;
+            for ( size_t i = 0; i < m_options.NumElements( ); ++i )
             {
-                const float   relativeY    = event.Button.Y - dropdownBounds.Y + m_scrollOffset;
-                const int32_t clickedIndex = static_cast<int32_t>( relativeY / m_style.ItemHeight );
-
-                if ( clickedIndex >= 0 && clickedIndex < static_cast<int32_t>( m_options.NumElements( ) ) )
+                uint32_t itemId = m_clayContext->HashString( "item", static_cast<uint32_t>( i ), m_dropdownListId );
+                if ( m_clayContext->PointerOver( itemId ) )
                 {
-                    SetSelectedIndex( clickedIndex );
-                    m_isOpen = false;
+                    SetSelectedIndex( static_cast<int32_t>( i ) );
+                    m_isOpen      = false;
+                    clickedOnItem = true;
+                    break;
                 }
             }
-            else
+            if ( !clickedOnItem && !m_clayContext->PointerOver( m_dropdownListId ) )
             {
                 m_isOpen = false;
             }
         }
     }
-    else if ( event.Type == EventType::MouseWheel && m_dropdownState.IsOpen )
+    else if ( event.Type == EventType::MouseWheel && m_isOpen )
     {
-        const auto dropdownBounds = m_clay->GetElementBoundingBox( m_dropdownListId );
+        const auto dropdownBounds = m_clayContext->GetElementBoundingBox( m_dropdownListId );
         if ( event.Wheel.X >= dropdownBounds.X && event.Wheel.X <= dropdownBounds.X + dropdownBounds.Width && event.Wheel.Y >= dropdownBounds.Y &&
              event.Wheel.Y <= dropdownBounds.Y + dropdownBounds.Height )
         {
-            const float totalHeight      = m_options.NumElements( ) * m_style.ItemHeight;
-            const float maxScroll        = std::max( 0.0f, totalHeight - m_style.MaxDropdownHeight );
-            m_scrollOffset               = std::clamp( m_scrollOffset - event.Wheel.Y * 20.0f, 0.0f, maxScroll );
-            m_dropdownState.ScrollOffset = m_scrollOffset;
+            const float totalHeight = m_options.NumElements( ) * m_style.ItemHeight;
+            const float maxScroll   = std::max( 0.0f, totalHeight - m_style.MaxDropdownHeight );
+            m_scrollOffset          = std::clamp( m_scrollOffset - event.Wheel.Y * 20.0f, 0.0f, maxScroll );
         }
     }
 }
@@ -125,23 +140,14 @@ void DropdownWidget::SetSelectedIndex( const int32_t index )
 {
     if ( index >= -1 && index < static_cast<int32_t>( m_options.NumElements( ) ) && index != m_selectedIndex )
     {
-        m_selectedIndex               = index;
-        m_dropdownState.SelectedIndex = index;
-        if ( index >= 0 )
-        {
-            m_dropdownState.SelectedText = m_options.GetElement( index );
-        }
-        else
-        {
-            m_dropdownState.SelectedText = m_style.PlaceholderText;
-        }
+        m_selectedIndex    = index;
         m_selectionChanged = true;
     }
 }
 
 InteropString DropdownWidget::GetSelectedText( ) const
 {
-    return m_dropdownState.SelectedText;
+    return m_selectedIndex >= 0 ? m_options.GetElement( m_selectedIndex ) : m_style.PlaceholderText;
 }
 
 bool DropdownWidget::WasSelectionChanged( ) const
@@ -169,10 +175,8 @@ void DropdownWidget::SetOptions( const InteropArray<InteropString> &options )
     m_options = options;
     if ( m_selectedIndex >= static_cast<int32_t>( options.NumElements( ) ) )
     {
-        m_selectedIndex               = -1;
-        m_dropdownState.SelectedIndex = -1;
-        m_dropdownState.SelectedText  = m_style.PlaceholderText;
-        m_selectionChanged            = true;
+        m_selectedIndex    = -1;
+        m_selectionChanged = true;
     }
 }
 
@@ -193,8 +197,13 @@ const DropdownStyle &DropdownWidget::GetStyle( ) const
 
 void DropdownWidget::RenderDropdownList( )
 {
-    const auto parentBounds = m_clay->GetElementBoundingBox( m_id );
-    const auto viewportSize = m_clay->GetViewportSize( );
+    if ( m_dropdownListCreatedThisFrame )
+    {
+        return;
+    }
+    m_dropdownListCreatedThisFrame = true;
+    const auto parentBounds        = m_clayContext->GetElementBoundingBox( m_id );
+    const auto viewportSize        = m_clayContext->GetViewportSize( );
 
     const float spaceBelow           = viewportSize.Height - ( parentBounds.Y + parentBounds.Height );
     const float actualDropdownHeight = m_options.NumElements( ) * m_style.ItemHeight;
@@ -203,9 +212,9 @@ void DropdownWidget::RenderDropdownList( )
     ClayFloatingDesc floatingDesc;
     floatingDesc.Offset   = Float_2{ -1, 0 };
     floatingDesc.Expand   = ClayDimensions{ 2, 0 };
-    floatingDesc.ZIndex   = 1000;
-    floatingDesc.ParentId = m_id;
-    floatingDesc.AttachTo = ClayFloatingAttachTo::ElementWithId;
+    floatingDesc.ZIndex   = 1000; // High z-index to ensure dropdown renders above everything
+    floatingDesc.ParentId = 0;
+    floatingDesc.AttachTo = ClayFloatingAttachTo::Parent;
 
     if ( spaceBelow > 10 )
     {
@@ -233,12 +242,11 @@ void DropdownWidget::RenderDropdownList( )
     listDecl.CornerRadius           = ClayCornerRadius( 4 );
     listDecl.Scroll                 = scrollDesc;
 
-    m_clay->OpenElement( listDecl );
-
+    m_clayContext->OpenElement( listDecl );
     for ( size_t i = 0; i < m_options.NumElements( ); ++i )
     {
-        uint32_t itemId     = m_clay->HashString( "item", static_cast<uint32_t>( i ), m_dropdownListId );
-        bool     isHovered  = m_clay->PointerOver( itemId );
+        uint32_t itemId     = m_clayContext->HashString( "item", static_cast<uint32_t>( i ), m_dropdownListId );
+        bool     isHovered  = m_clayContext->PointerOver( itemId );
         bool     isSelected = static_cast<int32_t>( i ) == m_selectedIndex;
 
         ClayColor itemColor = m_style.BackgroundColor;
@@ -258,16 +266,16 @@ void DropdownWidget::RenderDropdownList( )
         itemDecl.Layout.Padding       = m_style.Padding;
         itemDecl.BackgroundColor      = itemColor;
 
-        m_clay->OpenElement( itemDecl );
+        m_clayContext->OpenElement( itemDecl );
 
         ClayTextDesc textDesc;
         textDesc.TextColor = isSelected ? ClayColor( 255, 255, 255, 255 ) : m_style.TextColor;
         textDesc.FontId    = m_style.FontId;
         textDesc.FontSize  = m_style.FontSize;
 
-        m_clay->Text( m_options.GetElement( i ), textDesc );
-        m_clay->CloseElement( );
+        m_clayContext->Text( m_options.GetElement( i ), textDesc );
+        m_clayContext->CloseElement( );
     }
 
-    m_clay->CloseElement( );
+    m_clayContext->CloseElement( );
 }

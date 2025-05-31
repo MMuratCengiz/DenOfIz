@@ -35,16 +35,14 @@ namespace DenOfIz
         float                       m_scrollOffset     = 0.0f;
         DropdownStyle               m_style;
         uint32_t                    m_dropdownListId;
-        ClayDropdownState           m_dropdownState;
-        ClayDropdownRenderData      m_renderData;
-        ClayCustomWidgetData        m_widgetData;
+        bool                        m_dropdownListCreatedThisFrame = false;
 
     public:
-        DZ_API DropdownWidget( Clay *clay, uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style = { } );
+        DZ_API DropdownWidget( ClayContext *clayContext, uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;
-        DZ_API void Render( ) override;
+        DZ_API void Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch ) override;
         DZ_API void HandleEvent( const Event &event ) override;
 
         DZ_API int32_t       GetSelectedIndex( ) const;

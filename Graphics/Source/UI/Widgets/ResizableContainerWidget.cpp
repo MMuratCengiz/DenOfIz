@@ -16,20 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/UI/Clay.h>
 #include <DenOfIzGraphics/UI/Widgets/ResizableContainerWidget.h>
 #include <algorithm>
 
 using namespace DenOfIz;
 
-ResizableContainerWidget::ResizableContainerWidget( Clay *clay, const uint32_t id, const ResizableContainerStyle &style ) : Widget( clay, id ), m_style( style )
+ResizableContainerWidget::ResizableContainerWidget( ClayContext *clayContext, const uint32_t id, const ResizableContainerStyle &style ) :
+    Widget( clayContext, id ), m_style( style )
 {
     m_containerState.Width           = style.MinWidth + 100.0f;
     m_containerState.Height          = style.MinHeight + 50.0f;
     m_containerState.ResizeDirection = static_cast<uint8_t>( ResizeDirection::None );
-
-    m_widgetData.Type = ClayCustomWidgetType::ResizableContainer;
-    m_widgetData.Data = &m_renderData;
 }
 
 void ResizableContainerWidget::Update( const float deltaTime )
@@ -40,17 +37,14 @@ void ResizableContainerWidget::Update( const float deltaTime )
 
 void ResizableContainerWidget::CreateLayoutElement( )
 {
-    m_renderData.State     = &m_containerState;
-    m_renderData.Desc      = m_style;
-    m_renderData.ElementId = m_id;
 
     ClayElementDeclaration decl;
     decl.Id                   = m_id;
     decl.Layout.Sizing.Width  = ClaySizingAxis::Fixed( m_containerState.Width );
     decl.Layout.Sizing.Height = ClaySizingAxis::Fixed( m_containerState.Height );
-    decl.Custom.CustomData    = &m_widgetData;
+    decl.Custom.CustomData    = this;
 
-    m_clay->OpenElement( decl );
+    m_clayContext->OpenElement( decl );
 
     if ( m_style.ShowTitleBar )
     {
@@ -62,15 +56,15 @@ void ResizableContainerWidget::CreateLayoutElement( )
         titleBarDecl.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
         titleBarDecl.BackgroundColor         = m_style.TitleBarColor;
 
-        m_clay->OpenElement( titleBarDecl );
+        m_clayContext->OpenElement( titleBarDecl );
 
         ClayTextDesc titleTextDesc;
         titleTextDesc.TextColor = m_style.TitleTextColor;
         titleTextDesc.FontId    = m_style.FontId;
         titleTextDesc.FontSize  = m_style.FontSize;
-        m_clay->Text( m_style.Title, titleTextDesc );
+        m_clayContext->Text( m_style.Title, titleTextDesc );
 
-        m_clay->CloseElement( );
+        m_clayContext->CloseElement( );
     }
 
     ClayElementDeclaration contentDecl;
@@ -81,21 +75,32 @@ void ResizableContainerWidget::CreateLayoutElement( )
     contentDecl.Border.Color         = m_style.BorderColor;
     contentDecl.Border.Width         = ClayBorderWidth( static_cast<uint16_t>( m_style.BorderWidth ) );
 
-    m_clay->OpenElement( contentDecl );
+    m_clayContext->OpenElement( contentDecl );
     if ( m_contentRenderer )
     {
         m_contentRenderer( );
     }
 
-    m_clay->CloseElement( );
-    m_clay->CloseElement( );
+    m_clayContext->CloseElement( );
+    m_clayContext->CloseElement( );
 }
 
-void ResizableContainerWidget::Render( )
+void ResizableContainerWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
 {
-    m_renderData.State     = &m_containerState;
-    m_renderData.Desc      = m_style;
-    m_renderData.ElementId = m_id;
+    const auto &bounds = command->boundingBox;
+
+    ClayBoundingBox containerBounds;
+    containerBounds.X      = bounds.x;
+    containerBounds.Y      = bounds.y;
+    containerBounds.Width  = bounds.width;
+    containerBounds.Height = bounds.height;
+
+    AddRectangle( renderBatch, containerBounds, m_style.BackgroundColor );
+
+    ClayBorderWidth borderWidth( static_cast<uint16_t>( m_style.BorderWidth ) );
+    AddBorder( renderBatch, containerBounds, m_style.BorderColor, borderWidth );
+
+    // TODO: Add resize handles rendering
 }
 
 void ResizableContainerWidget::HandleEvent( const Event &event )

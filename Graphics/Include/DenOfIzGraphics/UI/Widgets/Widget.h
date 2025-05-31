@@ -18,29 +18,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <clay.h>
+
 #include <DenOfIzGraphics/Input/Event.h>
+#include <DenOfIzGraphics/UI/ClayContext.h>
 #include <DenOfIzGraphics/UI/ClayData.h>
+#include <DenOfIzGraphics/UI/UIShapes.h>
 
 namespace DenOfIz
 {
-    class Clay;
-
     class Widget
     {
     protected:
-        uint32_t m_id;
-        Clay    *m_clay;
-        bool     m_isHovered = false;
-        bool     m_isFocused = false;
+        uint32_t     m_id;
+        ClayContext *m_clayContext;
+        bool         m_isHovered = false;
+        bool         m_isFocused = false;
 
     public:
-        DZ_API Widget( Clay *clay, uint32_t id );
+        DZ_API Widget( ClayContext *clayContext, uint32_t id );
         DZ_API virtual ~Widget( );
 
-        DZ_API virtual void Update( float deltaTime )         = 0;
-        DZ_API virtual void CreateLayoutElement( )            = 0;
-        DZ_API virtual void Render( )                         = 0;
-        DZ_API virtual void HandleEvent( const Event &event ) = 0;
+        DZ_API virtual void Update( float deltaTime )                                              = 0;
+        DZ_API virtual void CreateLayoutElement( )                                                 = 0;
+        DZ_API virtual void Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch ) = 0;
+        DZ_API virtual void HandleEvent( const Event &event )                                      = 0;
 
         DZ_API uint32_t GetId( ) const;
         DZ_API bool     IsHovered( ) const;
@@ -50,6 +52,12 @@ namespace DenOfIz
         DZ_API void UpdateHoverState( );
 
         DZ_API ClayBoundingBox GetBoundingBox( ) const;
+
+    protected:
+        DZ_API void AddRectangle( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const ClayColor &color, const ClayCornerRadius &cornerRadius = ClayCornerRadius( ) );
+        DZ_API void AddBorder( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const ClayColor &color, const ClayBorderWidth &width,
+                               const ClayCornerRadius &cornerRadius = ClayCornerRadius( ) );
+        DZ_API void AddText( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const InteropString &text, const ClayTextDesc &desc );
     };
 
     struct WidgetRenderData

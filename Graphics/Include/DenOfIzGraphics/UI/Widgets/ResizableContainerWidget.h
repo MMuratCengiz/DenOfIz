@@ -36,24 +36,21 @@ namespace DenOfIz
         SouthWest
     };
 
-    // Use types from ClayData.h
     using ResizableContainerStyle = ClayResizableContainerDesc;
 
     class ResizableContainerWidget : public Widget
     {
-        ClayResizableContainerState      m_containerState;
-        ResizableContainerStyle          m_style;
-        ClayResizableContainerRenderData m_renderData;
-        ClayCustomWidgetData             m_widgetData;
-        std::function<void( )>           m_contentRenderer;
-        bool                             m_sizeChanged = false;
+        ClayResizableContainerState m_containerState;
+        ResizableContainerStyle     m_style;
+        std::function<void( )>      m_contentRenderer;
+        bool                        m_sizeChanged = false;
 
     public:
-        DZ_API ResizableContainerWidget( Clay *clay, uint32_t id, const ResizableContainerStyle &style = { } );
+        DZ_API ResizableContainerWidget( ClayContext *clayContext, uint32_t id, const ResizableContainerStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;
-        DZ_API void Render( ) override;
+        DZ_API void Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch ) override;
         DZ_API void HandleEvent( const Event &event ) override;
 
         DZ_API void    SetSize( float width, float height );

@@ -22,12 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <functional>
 #include <memory>
 #include <unordered_map>
+#include "ClayContext.h"
 #include "ClayRenderer.h"
 #include "DenOfIzGraphics/Input/Event.h"
 #include "DenOfIzGraphics/Utilities/Time.h"
+
 namespace DenOfIz
 {
-    // Forward declarations
     class Widget;
     class CheckboxWidget;
     class ColorPickerWidget;
@@ -71,16 +72,13 @@ namespace DenOfIz
         Time                          m_time;
         std::unique_ptr<TextRenderer> m_textRenderer;
         std::unique_ptr<ClayRenderer> m_renderer;
+        std::unique_ptr<ClayContext>  m_clayContext;
         ClayPointerState              m_pointerState = ClayPointerState::Released;
         Float_2                       m_pointerPosition{ 0, 0 };
         Float_2                       m_scrollDelta{ 0, 0 };
-        Clay_Arena                    m_arena;
-        Clay_Context                 *m_context;
-        std::vector<uint8_t>          m_memory;
         uint16_t                      m_fontId      = 1;
         bool                          m_isDebugMode = false;
 
-        // Widget management
         std::unordered_map<uint32_t, std::unique_ptr<Widget>> m_widgets;
         std::vector<Widget *>                                 m_widgetUpdateOrder;
 
@@ -121,12 +119,13 @@ namespace DenOfIz
         DZ_API ResizableContainerWidget *CreateResizableContainer( uint32_t id, const ResizableContainerStyle &style = { } );
         DZ_API DockableContainerWidget  *CreateDockableContainer( uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style = { } );
 
+        // Docking management
+        DZ_API std::unique_ptr<DockingManager> CreateDockingManager( );
+
         // Widget management
         DZ_API Widget *GetWidget( uint32_t id ) const;
         DZ_API void    RemoveWidget( uint32_t id );
         DZ_API void    UpdateWidgets( float deltaTime ) const;
-        DZ_API void    RenderWidgets( ) const;
-        DZ_API void    RenderFloatingWidgets( ) const;
 
     private:
         static Clay_Dimensions MeasureTextCallback( Clay_StringSlice text, Clay_TextElementConfig *config, void *userData );

@@ -28,24 +28,21 @@ namespace DenOfIz
 
     class ColorPickerWidget : public Widget
     {
-        Float_3                    m_hsv                = Float_3{ 0.0f, 1.0f, 1.0f }; // Hue, Saturation, Value
-        Float_3                    m_rgb                = Float_3{ 1.0f, 0.0f, 0.0f }; // Red, Green, Blue
-        bool                       m_isExpanded         = false;
-        bool                       m_colorChanged       = false;
-        bool                       m_isDraggingWheel    = false;
-        bool                       m_isDraggingValueBar = false;
-        ColorPickerStyle           m_style;
-        Float_2                    m_lastMousePos;
-        ClayColorPickerState       m_colorPickerState;
-        ClayColorPickerRenderData  m_renderData;
-        ClayCustomWidgetData       m_widgetData;
+        Float_3          m_hsv                = Float_3{ 0.0f, 1.0f, 1.0f };
+        Float_3          m_rgb                = Float_3{ 1.0f, 0.0f, 0.0f };
+        bool             m_isExpanded         = false;
+        bool             m_colorChanged       = false;
+        bool             m_isDraggingWheel    = false;
+        bool             m_isDraggingValueBar = false;
+        ColorPickerStyle m_style;
+        Float_2          m_lastMousePos;
 
     public:
-        DZ_API ColorPickerWidget( Clay *clay, uint32_t id, const Float_3 &initialRgb = Float_3{ 1.0f, 0.0f, 0.0f }, const ColorPickerStyle &style = { } );
+        DZ_API ColorPickerWidget( ClayContext *clayContext, uint32_t id, const Float_3 &initialRgb = Float_3{ 1.0f, 0.0f, 0.0f }, const ColorPickerStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;
-        DZ_API void Render( ) override;
+        DZ_API void Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch ) override;
         DZ_API void HandleEvent( const Event &event ) override;
 
         DZ_API Float_3 GetRGB( ) const;

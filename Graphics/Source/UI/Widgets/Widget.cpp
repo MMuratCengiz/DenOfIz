@@ -16,12 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/UI/Clay.h>
 #include <DenOfIzGraphics/UI/Widgets/Widget.h>
 
 using namespace DenOfIz;
 
-Widget::Widget( Clay *clay, const uint32_t id ) : m_id( id ), m_clay( clay )
+Widget::Widget( ClayContext *clayContext, const uint32_t id ) : m_id( id ), m_clayContext( clayContext )
 {
 }
 
@@ -51,10 +50,64 @@ void Widget::UpdateHoverState( const bool hovered )
 
 void Widget::UpdateHoverState( )
 {
-    m_isHovered = m_clay->PointerOver( m_id );
+    m_isHovered = m_clayContext->PointerOver( m_id );
 }
 
 ClayBoundingBox Widget::GetBoundingBox( ) const
 {
-    return m_clay->GetElementBoundingBox( m_id );
+    return m_clayContext->GetElementBoundingBox( m_id );
+}
+
+void Widget::AddRectangle( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const ClayColor &color, const ClayCornerRadius &cornerRadius )
+{
+    InteropArray<UIVertex> vertices;
+    InteropArray<uint32_t> indices;
+
+    if ( cornerRadius.TopLeft == 0 && cornerRadius.TopRight == 0 && cornerRadius.BottomLeft == 0 && cornerRadius.BottomRight == 0 )
+    {
+        UIShapes::GenerateRectangleDesc desc;
+        desc.Bounds       = Clay_BoundingBox{ bounds.X, bounds.Y, bounds.Width, bounds.Height };
+        desc.Color        = Clay_Color{ color.R, color.G, color.B, color.A };
+        desc.TextureIndex = 0;
+        UIShapes::GenerateRectangle( desc, &vertices, &indices, 0 );
+    }
+    else
+    {
+        UIShapes::GenerateRoundedRectangleDesc desc;
+        desc.Bounds       = Clay_BoundingBox{ bounds.X, bounds.Y, bounds.Width, bounds.Height };
+        desc.Color        = Clay_Color{ color.R, color.G, color.B, color.A };
+        desc.CornerRadius = Clay_CornerRadius{ cornerRadius.TopLeft, cornerRadius.TopRight, cornerRadius.BottomLeft, cornerRadius.BottomRight };
+        desc.TextureIndex = 0;
+        UIShapes::GenerateRoundedRectangle( desc, &vertices, &indices, 0 );
+    }
+
+    renderBatch->AddVertices( vertices, indices );
+}
+
+void Widget::AddBorder( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const ClayColor &color, const ClayBorderWidth &width, const ClayCornerRadius &cornerRadius )
+{
+    InteropArray<UIVertex> vertices;
+    InteropArray<uint32_t> indices;
+
+    UIShapes::GenerateBorderDesc desc;
+    desc.Bounds       = Clay_BoundingBox{ bounds.X, bounds.Y, bounds.Width, bounds.Height };
+    desc.Color        = Clay_Color{ color.R, color.G, color.B, color.A };
+    desc.BorderWidth  = Clay_BorderWidth{ width.Left, width.Right, width.Top, width.Bottom, width.BetweenChildren };
+    desc.CornerRadius = Clay_CornerRadius{ cornerRadius.TopLeft, cornerRadius.TopRight, cornerRadius.BottomLeft, cornerRadius.BottomRight };
+    UIShapes::GenerateBorder( desc, &vertices, &indices, 0 );
+
+    renderBatch->AddVertices( vertices, indices );
+}
+
+void Widget::AddText( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const InteropString &text, const ClayTextDesc &desc )
+{
+    InteropArray<UIVertex> vertices;
+    InteropArray<uint32_t> indices;
+
+    m_clayContext->RenderTextToVertices( text, desc, bounds, &vertices, &indices );
+
+    if ( vertices.NumElements( ) > 0 && indices.NumElements( ) > 0 )
+    {
+        renderBatch->AddVertices( vertices, indices );
+    }
 }

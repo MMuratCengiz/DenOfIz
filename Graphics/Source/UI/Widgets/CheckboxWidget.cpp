@@ -16,19 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/UI/Clay.h>
-#include <DenOfIzGraphics/UI/ClayData.h>
 #include <DenOfIzGraphics/UI/Widgets/CheckboxWidget.h>
 
 using namespace DenOfIz;
 
-CheckboxWidget::CheckboxWidget( Clay *clay, const uint32_t id, const bool initialChecked, const CheckboxStyle &style ) :
-    Widget( clay, id ), m_isChecked( initialChecked ), m_style( style )
+CheckboxWidget::CheckboxWidget( ClayContext *clayContext, const uint32_t id, const bool initialChecked, const CheckboxStyle &style ) :
+    Widget( clayContext, id ), m_isChecked( initialChecked ), m_style( style )
 {
-    m_checkboxState.Checked = initialChecked;
-
-    m_widgetData.Type = ClayCustomWidgetType::Checkbox;
-    m_widgetData.Data = &m_renderData;
 }
 
 void CheckboxWidget::Update( float deltaTime )
@@ -38,30 +32,48 @@ void CheckboxWidget::Update( float deltaTime )
 
 void CheckboxWidget::CreateLayoutElement( )
 {
-    m_checkboxState.Checked = m_isChecked;
-
-    m_renderData.State     = &m_checkboxState;
-    m_renderData.Desc      = m_style;
-    m_renderData.ElementId = m_id;
-
     ClayElementDeclaration decl;
     decl.Id                   = m_id;
     decl.Layout.Sizing.Width  = ClaySizingAxis::Fixed( m_style.Size );
     decl.Layout.Sizing.Height = ClaySizingAxis::Fixed( m_style.Size );
-    decl.Custom.CustomData    = &m_widgetData;
+    decl.Custom.CustomData    = this;
 
-    m_clay->OpenElement( decl );
-    m_clay->CloseElement( );
+    m_clayContext->OpenElement( decl );
+    m_clayContext->CloseElement( );
 }
 
-void CheckboxWidget::Render( )
+void CheckboxWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
 {
-    // Update state for rendering
-    m_checkboxState.Checked = m_isChecked;
+    const auto &bounds = command->boundingBox;
 
-    m_renderData.State     = &m_checkboxState;
-    m_renderData.Desc      = m_style;
-    m_renderData.ElementId = m_id;
+    ClayBoundingBox checkboxBounds;
+    checkboxBounds.X      = bounds.x;
+    checkboxBounds.Y      = bounds.y;
+    checkboxBounds.Width  = bounds.width;
+    checkboxBounds.Height = bounds.height;
+
+    ClayColor backgroundColor = m_isHovered ? m_style.HoverBackgroundColor : m_style.BackgroundColor;
+    ClayColor borderColor     = m_isHovered ? m_style.HoverBorderColor : m_style.BorderColor;
+
+    AddRectangle( renderBatch, checkboxBounds, backgroundColor, ClayCornerRadius( m_style.CornerRadius ) );
+
+    ClayBorderWidth borderWidth( static_cast<uint16_t>( m_style.BorderWidth ) );
+    AddBorder( renderBatch, checkboxBounds, borderColor, borderWidth, ClayCornerRadius( m_style.CornerRadius ) );
+
+    if ( m_isChecked )
+    {
+        const float checkSize    = m_style.Size * 0.6f;
+        const float checkOffsetX = bounds.x + ( m_style.Size - checkSize ) * 0.5f;
+        const float checkOffsetY = bounds.y + ( m_style.Size - checkSize ) * 0.5f;
+
+        ClayBoundingBox checkBounds;
+        checkBounds.X      = checkOffsetX;
+        checkBounds.Y      = checkOffsetY;
+        checkBounds.Width  = checkSize;
+        checkBounds.Height = checkSize;
+
+        AddRectangle( renderBatch, checkBounds, m_style.CheckColor );
+    }
 }
 
 void CheckboxWidget::HandleEvent( const Event &event )
@@ -72,9 +84,8 @@ void CheckboxWidget::HandleEvent( const Event &event )
     {
         if ( m_isHovered )
         {
-            m_isChecked             = !m_isChecked;
-            m_checkboxState.Checked = m_isChecked;
-            m_wasClicked            = true;
+            m_isChecked  = !m_isChecked;
+            m_wasClicked = true;
         }
     }
 }
@@ -88,9 +99,8 @@ void CheckboxWidget::SetChecked( const bool checked )
 {
     if ( m_isChecked != checked )
     {
-        m_isChecked             = checked;
-        m_checkboxState.Checked = checked;
-        m_wasClicked            = true;
+        m_isChecked  = checked;
+        m_wasClicked = true;
     }
 }
 

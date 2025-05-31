@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+
 #include <DenOfIzExamples/UIExample.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include <DenOfIzGraphics/Utilities/InteropUtilities.h>
@@ -80,7 +81,7 @@ void UIExample::Init( )
     m_themeDropdown->SetSelectedIndex( 0 );
     m_languageDropdown->SetSelectedIndex( 0 );
 
-    m_dockingManager = std::make_unique<DockingManager>( m_clay.get( ) );
+    m_dockingManager = m_clay->CreateDockingManager();
 
     ResizableContainerStyle resizableStyle;
     resizableStyle.Title        = InteropString( "Resizable Container" );
@@ -211,8 +212,6 @@ void UIExample::CreateUI( )
     {
         m_dockingManager->Render( );
     }
-
-    m_clay->RenderFloatingWidgets( );
     m_mouseJustReleased = false;
 }
 

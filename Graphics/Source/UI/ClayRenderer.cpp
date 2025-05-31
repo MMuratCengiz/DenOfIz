@@ -711,6 +711,25 @@ void ClayRenderer::RenderCustom( const Clay_RenderCommand *command, ICommandList
     {
         return;
     }
+    if ( auto *widget = static_cast<Widget *>( data.customData ) )
+    {
+        bool isRegisteredWidget = false;
+        for ( const auto &pair : m_widgets )
+        {
+            if ( pair.second == widget )
+            {
+                isRegisteredWidget = true;
+                break;
+            }
+        }
+
+        if ( isRegisteredWidget )
+        {
+            ClayRenderBatch renderBatch( this );
+            widget->Render( command, &renderBatch );
+            return;
+        }
+    }
 
     const auto *widgetData = static_cast<const ClayCustomWidgetData *>( data.customData );
     if ( widgetData == nullptr || widgetData->Data == nullptr )
@@ -775,7 +794,7 @@ void ClayRenderer::RenderTextField( const Clay_RenderCommand *command, const Cla
     const auto *state  = textFieldData->State;
     const auto &desc   = textFieldData->Desc;
 
-    constexpr float CURSOR_BLINK_PERIOD = 1.0f; // Blink every second
+    constexpr float CURSOR_BLINK_PERIOD = 1.0f;
 
     const_cast<ClayTextFieldState *>( state )->CursorBlinkTime += m_deltaTime;
     if ( state->CursorBlinkTime >= CURSOR_BLINK_PERIOD )
@@ -1789,4 +1808,29 @@ void ClayRenderer::RenderDockableContainer( const Clay_RenderCommand *command, c
             AddVerticesWithDepth( dragVertices, dragIndices );
         }
     }
+}
+
+void ClayRenderer::RegisterWidget( uint32_t id, Widget *widget )
+{
+    m_widgets[ id ] = widget;
+}
+
+void ClayRenderer::UnregisterWidget( uint32_t id )
+{
+    m_widgets.erase( id );
+}
+
+uint32_t ClayRenderer::GetCurrentVertexCount( ) const
+{
+    return m_batchedVertices.NumElements( );
+}
+
+void ClayRenderBatch::AddVertices( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices )
+{
+    m_renderer->AddVerticesWithDepth( vertices, indices );
+}
+
+uint32_t ClayRenderBatch::GetCurrentVertexOffset( ) const
+{
+    return m_renderer->GetCurrentVertexCount( );
 }

@@ -16,29 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/UI/Clay.h>
-#include <DenOfIzGraphics/UI/ClayData.h>
+#include <DenOfIzGraphics/UI/ClayClipboard.h>
 #include <DenOfIzGraphics/UI/Widgets/TextFieldWidget.h>
 #include <algorithm>
 
-#include "DenOfIzGraphics/UI/ClayClipboard.h"
-
 using namespace DenOfIz;
 
-TextFieldWidget::TextFieldWidget( Clay *clay, uint32_t id, const TextFieldStyle &style ) : Widget( clay, id ), m_style( style )
+TextFieldWidget::TextFieldWidget( ClayContext *clayContext, uint32_t id, const TextFieldStyle &style ) : Widget( clayContext, id ), m_style( style )
 {
-    m_textFieldState.Text            = m_text;
-    m_textFieldState.CursorPosition  = m_cursorPosition;
-    m_textFieldState.SelectionStart  = m_selectionStart;
-    m_textFieldState.SelectionEnd    = m_selectionEnd;
-    m_textFieldState.HasSelection    = m_hasSelection;
-    m_textFieldState.IsFocused       = false;
-    m_textFieldState.CursorVisible   = m_cursorVisible;
-    m_textFieldState.CursorBlinkTime = m_cursorBlinkTime;
-    m_textFieldState.SelectionAnchor = m_selectionAnchor;
-
-    m_widgetData.Type = ClayCustomWidgetType::TextField;
-    m_widgetData.Data = &m_renderData;
 }
 
 void TextFieldWidget::Update( const float deltaTime )
@@ -49,25 +34,11 @@ void TextFieldWidget::Update( const float deltaTime )
 
 void TextFieldWidget::CreateLayoutElement( )
 {
-    m_textFieldState.Text            = m_text;
-    m_textFieldState.CursorPosition  = m_cursorPosition;
-    m_textFieldState.SelectionStart  = m_selectionStart;
-    m_textFieldState.SelectionEnd    = m_selectionEnd;
-    m_textFieldState.HasSelection    = m_hasSelection;
-    m_textFieldState.IsFocused       = m_isFocused;
-    m_textFieldState.CursorVisible   = m_cursorVisible;
-    m_textFieldState.CursorBlinkTime = m_cursorBlinkTime;
-    m_textFieldState.SelectionAnchor = m_selectionAnchor;
-
-    m_renderData.State     = &m_textFieldState;
-    m_renderData.Desc      = m_style;
-    m_renderData.ElementId = m_id;
-
     ClayElementDeclaration decl;
     decl.Id                   = m_id;
     decl.Layout.Sizing.Width  = ClaySizingAxis::Grow( );
     decl.Layout.Sizing.Height = ClaySizingAxis::Fixed( m_style.Height );
-    decl.Custom.CustomData    = &m_widgetData;
+    decl.Layout.Padding       = m_style.Padding;
 
     if ( m_style.Type == ClayTextFieldType::MultiLine )
     {
@@ -75,43 +46,192 @@ void TextFieldWidget::CreateLayoutElement( )
         decl.Scroll.Horizontal = false;
     }
 
-    m_clay->OpenElement( decl );
+    decl.Custom.CustomData = this;
+    decl.BackgroundColor   = m_style.BackgroundColor;
+    decl.Border.Color      = m_isFocused ? m_style.FocusBorderColor : m_style.BorderColor;
+    decl.Border.Width      = ClayBorderWidth( 1 );
 
-    if ( m_style.Type == ClayTextFieldType::MultiLine && false ) // Disabled for now
+    m_clayContext->OpenElement( decl );
+
+    // Add text element if we have text to display
+    if ( !m_text.IsEmpty( ) )
     {
-        const InteropString displayText = m_text.NumChars( ) == 0 ? m_style.PlaceholderText : m_text;
-        ClayTextDesc        textDesc;
-        textDesc.TextColor = m_text.NumChars( ) == 0 ? m_style.PlaceholderColor : m_style.TextColor;
+        ClayTextDesc textDesc;
+        textDesc.TextColor = m_style.TextColor;
         textDesc.FontId    = m_style.FontId;
         textDesc.FontSize  = m_style.FontSize;
-        textDesc.WrapMode  = ClayTextWrapMode::Newlines;
-        m_clay->Text( displayText, textDesc );
+
+        m_clayContext->Text( m_text, textDesc );
+    }
+    else if ( !m_style.PlaceholderText.IsEmpty( ) )
+    {
+        ClayTextDesc textDesc;
+        textDesc.TextColor = m_style.PlaceholderColor;
+        textDesc.FontId    = m_style.FontId;
+        textDesc.FontSize  = m_style.FontSize;
+
+        m_clayContext->Text( m_style.PlaceholderText, textDesc );
     }
 
-    m_clay->CloseElement( );
+    m_clayContext->CloseElement( );
 }
 
-void TextFieldWidget::Render( )
+void TextFieldWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
 {
-    m_textFieldState.Text            = m_text;
-    m_textFieldState.CursorPosition  = m_cursorPosition;
-    m_textFieldState.SelectionStart  = m_selectionStart;
-    m_textFieldState.SelectionEnd    = m_selectionEnd;
-    m_textFieldState.HasSelection    = m_hasSelection;
-    m_textFieldState.IsFocused       = m_isFocused;
-    m_textFieldState.CursorVisible   = m_cursorVisible;
-    m_textFieldState.CursorBlinkTime = m_cursorBlinkTime;
-    m_textFieldState.SelectionAnchor = m_selectionAnchor;
+    const auto &bounds = command->boundingBox;
 
-    m_renderData.State     = &m_textFieldState;
-    m_renderData.Desc      = m_style;
-    m_renderData.ElementId = m_id;
+    // Background, border, and text are handled by Clay elements in CreateLayoutElement
+    // Only render cursor and selection here as these are interactive elements
+
+    // Text bounds with padding (needed for cursor positioning)
+    ClayBoundingBox textBounds;
+    textBounds.X      = bounds.x + m_style.Padding.Left;
+    textBounds.Y      = bounds.y + m_style.Padding.Top;
+    textBounds.Width  = bounds.width - m_style.Padding.Left - m_style.Padding.Right;
+    textBounds.Height = bounds.height - m_style.Padding.Top - m_style.Padding.Bottom;
+
+    if ( m_hasSelection && m_selectionStart != m_selectionEnd )
+    {
+        const size_t selStart = std::min( m_selectionStart, m_selectionEnd );
+        const size_t selEnd   = std::max( m_selectionStart, m_selectionEnd );
+
+        if ( selStart < selEnd && selEnd <= m_text.NumChars( ) )
+        {
+            const ClayDimensions textSizeForSelection = m_clayContext->MeasureText( InteropString( "I" ), m_style.FontId, m_style.FontSize );
+            const float          selectionHeight      = textSizeForSelection.Height;
+
+            if ( m_style.Type == ClayTextFieldType::MultiLine )
+            {
+                const std::string textStr             = m_text.Get( );
+                const std::string textBeforeSelection = textStr.substr( 0, selStart );
+                const std::string selectedText        = textStr.substr( selStart, selEnd - selStart );
+
+                size_t startLine              = 0;
+                size_t lastNewlineBeforeStart = 0;
+                for ( size_t i = 0; i < textBeforeSelection.length( ); ++i )
+                {
+                    if ( textBeforeSelection[ i ] == '\n' )
+                    {
+                        startLine++;
+                        lastNewlineBeforeStart = i + 1;
+                    }
+                }
+
+                const std::string    textOnStartLine = textBeforeSelection.substr( lastNewlineBeforeStart );
+                const ClayDimensions startLineSize   = m_clayContext->MeasureText( InteropString( textOnStartLine.c_str( ) ), m_style.FontId, m_style.FontSize );
+
+                float currentY = textBounds.Y + startLine * selectionHeight;
+                float currentX = textBounds.X + startLineSize.Width;
+
+                size_t currentPos = 0;
+                while ( currentPos < selectedText.length( ) )
+                {
+                    size_t nextNewline = selectedText.find( '\n', currentPos );
+                    if ( nextNewline == std::string::npos )
+                    {
+                        nextNewline = selectedText.length( );
+                    }
+
+                    const std::string    lineText = selectedText.substr( currentPos, nextNewline - currentPos );
+                    const ClayDimensions lineSize = m_clayContext->MeasureText( InteropString( lineText.c_str( ) ), m_style.FontId, m_style.FontSize );
+
+                    ClayBoundingBox selectionBounds;
+                    selectionBounds.X      = currentX;
+                    selectionBounds.Y      = currentY;
+                    selectionBounds.Width  = lineSize.Width;
+                    selectionBounds.Height = selectionHeight;
+
+                    AddRectangle( renderBatch, selectionBounds, m_style.SelectionColor );
+
+                    if ( nextNewline < selectedText.length( ) )
+                    {
+                        currentY += selectionHeight;
+                        currentX   = textBounds.X;
+                        currentPos = nextNewline + 1;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                float selectionStartX = textBounds.X;
+                if ( selStart > 0 )
+                {
+                    const std::string    textBeforeSelection = std::string( m_text.Get( ) ).substr( 0, selStart );
+                    const ClayDimensions beforeSize          = m_clayContext->MeasureText( InteropString( textBeforeSelection.c_str( ) ), m_style.FontId, m_style.FontSize );
+                    selectionStartX += beforeSize.Width;
+                }
+
+                const std::string    selectedText = std::string( m_text.Get( ) ).substr( selStart, selEnd - selStart );
+                const ClayDimensions selectedSize = m_clayContext->MeasureText( InteropString( selectedText.c_str( ) ), m_style.FontId, m_style.FontSize );
+
+                ClayBoundingBox selectionBounds;
+                selectionBounds.X      = selectionStartX;
+                selectionBounds.Y      = textBounds.Y;
+                selectionBounds.Width  = selectedSize.Width;
+                selectionBounds.Height = selectionHeight;
+
+                AddRectangle( renderBatch, selectionBounds, m_style.SelectionColor );
+            }
+        }
+    }
+
+    if ( m_isFocused && m_cursorVisible && !m_style.ReadOnly )
+    {
+        const ClayDimensions textSizeForCursor = m_clayContext->MeasureText( InteropString( "I" ), m_style.FontId, m_style.FontSize );
+        const float          cursorHeight      = textSizeForCursor.Height;
+        const float          lineHeight        = m_style.LineHeight > 0 ? m_style.LineHeight : cursorHeight * 1.2f;
+
+        float cursorX = textBounds.X;
+        float cursorY = textBounds.Y;
+
+        if ( !m_text.IsEmpty( ) && m_cursorPosition > 0 )
+        {
+            const std::string textStr          = m_text.Get( );
+            const std::string textBeforeCursor = textStr.substr( 0, std::min( m_cursorPosition, m_text.NumChars( ) ) );
+
+            if ( m_style.Type == ClayTextFieldType::MultiLine )
+            {
+                size_t lineNumber     = 0;
+                size_t lastNewlinePos = 0;
+                for ( size_t i = 0; i < textBeforeCursor.length( ); ++i )
+                {
+                    if ( textBeforeCursor[ i ] == '\n' )
+                    {
+                        lineNumber++;
+                        lastNewlinePos = i + 1;
+                    }
+                }
+
+                const std::string    textOnCurrentLine = textBeforeCursor.substr( lastNewlinePos );
+                const ClayDimensions textSize          = m_clayContext->MeasureText( InteropString( textOnCurrentLine.c_str( ) ), m_style.FontId, m_style.FontSize );
+
+                cursorX += textSize.Width;
+                cursorY += lineNumber * lineHeight;
+            }
+            else
+            {
+                const ClayDimensions textSize = m_clayContext->MeasureText( InteropString( textBeforeCursor.c_str( ) ), m_style.FontId, m_style.FontSize );
+                cursorX += textSize.Width;
+            }
+        }
+
+        ClayBoundingBox cursorBounds;
+        cursorBounds.X      = cursorX;
+        cursorBounds.Y      = cursorY;
+        cursorBounds.Width  = m_style.CursorWidth;
+        cursorBounds.Height = cursorHeight;
+
+        AddRectangle( renderBatch, cursorBounds, m_style.CursorColor );
+    }
 }
 
 void TextFieldWidget::HandleEvent( const Event &event )
 {
     m_textChanged = false;
-
     if ( event.Type == EventType::MouseButtonDown && event.Button.Button == MouseButton::Left )
     {
         if ( m_isHovered )
@@ -136,9 +256,7 @@ void TextFieldWidget::HandleEvent( const Event &event )
     }
     else if ( event.Type == EventType::MouseMotion && m_isSelecting )
     {
-        // Update selection
-        const size_t dragPos = GetCharacterIndexAtPosition( event.Motion.X, event.Motion.Y );
-        if ( dragPos != m_dragStartPos )
+        if ( const size_t dragPos = GetCharacterIndexAtPosition( event.Motion.X, event.Motion.Y ); dragPos != m_dragStartPos )
         {
             m_hasSelection   = true;
             m_selectionStart = std::min( m_selectionAnchor, dragPos );
@@ -300,8 +418,7 @@ void TextFieldWidget::HandleKeyPress( const Event &event )
         case KeyCode::V: // Paste
             if ( !m_style.ReadOnly )
             {
-                const InteropString pasteText = ClayClipboard::GetText( );
-                if ( pasteText.NumChars( ) > 0 )
+                if ( const InteropString pasteText = ClayClipboard::GetText( ); pasteText.NumChars( ) > 0 )
                 {
                     if ( m_hasSelection )
                     {
@@ -540,10 +657,10 @@ size_t TextFieldWidget::GetCharacterIndexAtPosition( const float x, const float 
     const std::string textStr( m_text.Get( ) );
     if ( m_style.Type == ClayTextFieldType::MultiLine )
     {
-        const ClayDimensions lineTextSize = m_clay->MeasureText( InteropString( "I" ), m_style.FontId, m_style.FontSize );
+        const ClayDimensions lineTextSize = m_clayContext->MeasureText( InteropString( "I" ), m_style.FontId, m_style.FontSize );
         const float          lineHeight   = m_style.LineHeight > 0 ? m_style.LineHeight : lineTextSize.Height * 1.2f;
 
-        size_t lineNumber = relativeY / lineHeight;
+        size_t lineNumber = std::max( 0.0f, relativeY ) / lineHeight;
 
         std::vector<std::string> lines;
         size_t                   start = 0;
@@ -583,7 +700,7 @@ size_t TextFieldWidget::GetCharacterIndexAtPosition( const float x, const float 
             {
                 const size_t         mid    = ( low + high ) / 2;
                 std::string          substr = line.substr( 0, mid );
-                const ClayDimensions dims   = m_clay->MeasureText( InteropString( substr.c_str( ) ), m_style.FontId, m_style.FontSize );
+                const ClayDimensions dims   = m_clayContext->MeasureText( InteropString( substr.c_str( ) ), m_style.FontId, m_style.FontSize );
                 if ( dims.Width < relativeX )
                 {
                     low = mid + 1;
@@ -608,10 +725,9 @@ size_t TextFieldWidget::GetCharacterIndexAtPosition( const float x, const float 
     size_t high = textStr.length( );
     while ( low < high )
     {
-        const size_t         mid    = ( low + high ) / 2;
-        std::string          substr = textStr.substr( 0, mid );
-        const ClayDimensions dims   = m_clay->MeasureText( InteropString( substr.c_str( ) ), m_style.FontId, m_style.FontSize );
-        if ( dims.Width < relativeX )
+        const size_t mid    = ( low + high ) / 2;
+        std::string  substr = textStr.substr( 0, mid );
+        if ( const ClayDimensions dims = m_clayContext->MeasureText( InteropString( substr.c_str( ) ), m_style.FontId, m_style.FontSize ); dims.Width < relativeX )
         {
             low = mid + 1;
         }

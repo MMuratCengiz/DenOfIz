@@ -33,30 +33,27 @@ namespace DenOfIz
 
     using TextFieldStyle = ClayTextFieldDesc;
 
-    class DZ_API TextFieldWidget: public Widget
+    class DZ_API TextFieldWidget : public Widget
     {
-        InteropString         m_text;
-        size_t                m_cursorPosition  = 0;
-        size_t                m_selectionStart  = 0;
-        size_t                m_selectionEnd    = 0;
-        bool                  m_hasSelection    = false;
-        bool                  m_textChanged     = false;
-        float                 m_cursorBlinkTime = 0.0f;
-        bool                  m_cursorVisible   = true;
-        bool                  m_isSelecting     = false;
-        size_t                m_dragStartPos    = 0;
-        size_t                m_selectionAnchor = 0;
-        TextFieldStyle        m_style;
-        ClayTextFieldState    m_textFieldState;
-        ClayTextFieldRenderData m_renderData;
-        ClayCustomWidgetData    m_widgetData;
+        InteropString  m_text;
+        size_t         m_cursorPosition  = 0;
+        size_t         m_selectionStart  = 0;
+        size_t         m_selectionEnd    = 0;
+        bool           m_hasSelection    = false;
+        bool           m_textChanged     = false;
+        float          m_cursorBlinkTime = 0.0f;
+        bool           m_cursorVisible   = true;
+        bool           m_isSelecting     = false;
+        size_t         m_dragStartPos    = 0;
+        size_t         m_selectionAnchor = 0;
+        TextFieldStyle m_style;
 
     public:
-        DZ_API TextFieldWidget( Clay *clay, uint32_t id, const TextFieldStyle &style = { } );
+        DZ_API TextFieldWidget( ClayContext *clayContext, uint32_t id, const TextFieldStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;
-        DZ_API void Render( ) override;
+        DZ_API void Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch ) override;
         DZ_API void HandleEvent( const Event &event ) override;
 
         DZ_API InteropString GetText( ) const;
