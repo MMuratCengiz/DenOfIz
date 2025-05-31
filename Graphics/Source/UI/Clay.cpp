@@ -368,6 +368,23 @@ Clay_FloatingAttachPointType Clay::ConvertFloatingAttachPoint( const ClayFloatin
     }
 }
 
+Clay_FloatingAttachToElement Clay::ConvertFloatingAttachTo( const ClayFloatingAttachTo attachTo ) const
+{
+    switch ( attachTo )
+    {
+    case ClayFloatingAttachTo::None:
+        return CLAY_ATTACH_TO_NONE;
+    case ClayFloatingAttachTo::Parent:
+        return CLAY_ATTACH_TO_PARENT;
+    case ClayFloatingAttachTo::ElementWithId:
+        return CLAY_ATTACH_TO_ELEMENT_WITH_ID;
+    case ClayFloatingAttachTo::Root:
+        return CLAY_ATTACH_TO_ROOT;
+    default:
+        return CLAY_ATTACH_TO_NONE;
+    }
+}
+
 Clay_FloatingElementConfig Clay::ConvertFloatingConfig( const ClayFloatingDesc &config ) const
 {
     Clay_FloatingElementConfig result{ };
@@ -379,6 +396,7 @@ Clay_FloatingElementConfig Clay::ConvertFloatingConfig( const ClayFloatingDesc &
     result.parentId             = config.ParentId;
     result.attachPoints.element = ConvertFloatingAttachPoint( config.ElementAttachPoint );
     result.attachPoints.parent  = ConvertFloatingAttachPoint( config.ParentAttachPoint );
+    result.attachTo             = ConvertFloatingAttachTo( config.AttachTo );
     return result;
 }
 
@@ -828,4 +846,13 @@ void Clay::RenderFloatingWidgets( ) const
             }
         }
     }
+}
+
+ClayDimensions Clay::MeasureText( const InteropString &text, const uint16_t fontId, const uint16_t fontSize ) const
+{
+    Clay_TextElementConfig config{ };
+    config.fontId   = fontId;
+    config.fontSize = fontSize;
+
+    return m_renderer->MeasureText( text, config );
 }

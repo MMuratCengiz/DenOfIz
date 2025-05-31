@@ -196,17 +196,18 @@ void DropdownWidget::RenderDropdownList( )
     const auto parentBounds = m_clay->GetElementBoundingBox( m_id );
     const auto viewportSize = m_clay->GetViewportSize( );
 
-    const float spaceBelow     = viewportSize.Height - ( parentBounds.Y + parentBounds.Height );
-    const float spaceAbove     = parentBounds.Y;
-    const float dropdownHeight = std::min( m_style.MaxDropdownHeight, m_options.NumElements( ) * m_style.ItemHeight );
+    const float spaceBelow           = viewportSize.Height - ( parentBounds.Y + parentBounds.Height );
+    const float actualDropdownHeight = m_options.NumElements( ) * m_style.ItemHeight;
+    const float dropdownHeight       = std::min( m_style.MaxDropdownHeight, actualDropdownHeight );
 
     ClayFloatingDesc floatingDesc;
-    floatingDesc.Offset   = Float_2{ 0, 0 };
-    floatingDesc.Expand   = ClayDimensions{ 1, 0 };
+    floatingDesc.Offset   = Float_2{ -1, 0 };
+    floatingDesc.Expand   = ClayDimensions{ 2, 0 };
     floatingDesc.ZIndex   = 1000;
     floatingDesc.ParentId = m_id;
+    floatingDesc.AttachTo = ClayFloatingAttachTo::ElementWithId;
 
-    if ( spaceBelow >= dropdownHeight || spaceBelow >= spaceAbove )
+    if ( spaceBelow > 10 )
     {
         floatingDesc.ElementAttachPoint = ClayFloatingAttachPoint::LeftTop;
         floatingDesc.ParentAttachPoint  = ClayFloatingAttachPoint::LeftBottom;
@@ -217,15 +218,14 @@ void DropdownWidget::RenderDropdownList( )
         floatingDesc.ParentAttachPoint  = ClayFloatingAttachPoint::LeftTop;
     }
 
-    // Create scroll config
     ClayScrollDesc scrollDesc;
-    scrollDesc.Vertical = true;
+    scrollDesc.Vertical = actualDropdownHeight > m_style.MaxDropdownHeight;
 
     ClayElementDeclaration listDecl;
     listDecl.Id                     = m_dropdownListId;
     listDecl.Floating               = floatingDesc;
-    listDecl.Layout.Sizing.Width    = ClaySizingAxis::Fixed( 0 );
-    listDecl.Layout.Sizing.Height   = ClaySizingAxis::Fixed( m_style.MaxDropdownHeight );
+    listDecl.Layout.Sizing.Width    = ClaySizingAxis::Fixed( parentBounds.Width ); // Use parent's exact width
+    listDecl.Layout.Sizing.Height   = ClaySizingAxis::Fixed( dropdownHeight );
     listDecl.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
     listDecl.BackgroundColor        = m_style.DropdownBgColor;
     listDecl.Border.Color           = m_style.BorderColor;

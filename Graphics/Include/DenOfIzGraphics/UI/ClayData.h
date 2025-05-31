@@ -87,6 +87,14 @@ namespace DenOfIz
         RightBottom
     };
 
+    enum class ClayFloatingAttachTo : uint8_t
+    {
+        None,
+        Parent,
+        ElementWithId,
+        Root
+    };
+
     enum class ClayRenderCommandType : uint8_t
     {
         None,
@@ -247,6 +255,7 @@ namespace DenOfIz
         uint32_t                ParentId;
         ClayFloatingAttachPoint ElementAttachPoint;
         ClayFloatingAttachPoint ParentAttachPoint;
+        ClayFloatingAttachTo    AttachTo = ClayFloatingAttachTo::None;
     };
 
     struct ClayBorderDesc

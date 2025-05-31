@@ -97,6 +97,7 @@ namespace DenOfIz
         DZ_API bool            PointerOver( uint32_t id ) const;
         DZ_API ClayBoundingBox GetElementBoundingBox( uint32_t id ) const;
         DZ_API void            HandleEvent( const Event &event );
+        DZ_API ClayDimensions  MeasureText( const InteropString &text, uint16_t fontId, uint16_t fontSize ) const;
 
         // Widget creation methods
         DZ_API CheckboxWidget    *CreateCheckbox( uint32_t id, bool initialChecked = false, const CheckboxStyle &style = { } );
@@ -130,6 +131,7 @@ namespace DenOfIz
         Clay_BorderElementConfig       ConvertBorderConfig( const ClayBorderDesc &config ) const;
         Clay_ImageElementConfig        ConvertImageConfig( const ClayImageDesc &config ) const;
         Clay_FloatingAttachPointType   ConvertFloatingAttachPoint( ClayFloatingAttachPoint point ) const;
+        Clay_FloatingAttachToElement   ConvertFloatingAttachTo( ClayFloatingAttachTo attachTo ) const;
         Clay_FloatingElementConfig     ConvertFloatingConfig( const ClayFloatingDesc &config ) const;
         Clay_ScrollElementConfig       ConvertScrollConfig( const ClayScrollDesc &config ) const;
         Clay_CustomElementConfig       ConvertCustomConfig( const ClayCustomDesc &config ) const;

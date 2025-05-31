@@ -80,7 +80,7 @@ namespace DenOfIz
         void   HandleKeyPress( const Event &event );
         void   HandleTextInput( const Event &event );
         void   UpdateCursorBlink( float deltaTime );
-        size_t GetCharacterIndexAtPosition( float x ) const;
+        size_t GetCharacterIndexAtPosition( float x, float y = 0 ) const;
     };
 
 } // namespace DenOfIz

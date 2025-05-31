@@ -118,7 +118,7 @@ void TextFieldWidget::HandleEvent( const Event &event )
         {
             m_isFocused = true;
 
-            const size_t clickPos = GetCharacterIndexAtPosition( event.Button.X );
+            const size_t clickPos = GetCharacterIndexAtPosition( event.Button.X, event.Button.Y );
             m_cursorPosition      = clickPos;
             m_selectionAnchor     = clickPos;
             m_dragStartPos        = clickPos;
@@ -137,7 +137,7 @@ void TextFieldWidget::HandleEvent( const Event &event )
     else if ( event.Type == EventType::MouseMotion && m_isSelecting )
     {
         // Update selection
-        const size_t dragPos = GetCharacterIndexAtPosition( event.Motion.X );
+        const size_t dragPos = GetCharacterIndexAtPosition( event.Motion.X, event.Motion.Y );
         if ( dragPos != m_dragStartPos )
         {
             m_hasSelection   = true;
@@ -526,18 +526,100 @@ void TextFieldWidget::UpdateCursorBlink( const float deltaTime )
     }
 }
 
-size_t TextFieldWidget::GetCharacterIndexAtPosition( const float x ) const
+size_t TextFieldWidget::GetCharacterIndexAtPosition( const float x, const float y ) const
 {
-    // TODO: Use Text layout, must be input somehow
     const auto  bounds    = GetBoundingBox( );
     const float relativeX = x - bounds.X - m_style.Padding.Left;
+    const float relativeY = y - bounds.Y - m_style.Padding.Top;
 
+    if ( relativeX <= 0 && relativeY <= 0 )
+    {
+        return 0;
+    }
+
+    const std::string textStr( m_text.Get( ) );
+    if ( m_style.Type == ClayTextFieldType::MultiLine )
+    {
+        const ClayDimensions lineTextSize = m_clay->MeasureText( InteropString( "I" ), m_style.FontId, m_style.FontSize );
+        const float          lineHeight   = m_style.LineHeight > 0 ? m_style.LineHeight : lineTextSize.Height * 1.2f;
+
+        size_t lineNumber = relativeY / lineHeight;
+
+        std::vector<std::string> lines;
+        size_t                   start = 0;
+        size_t                   pos   = 0;
+        while ( pos <= textStr.length( ) )
+        {
+            if ( pos == textStr.length( ) || textStr[ pos ] == '\n' )
+            {
+                lines.push_back( textStr.substr( start, pos - start ) );
+                start = pos + 1;
+            }
+            pos++;
+        }
+
+        if ( lineNumber >= lines.size( ) )
+        {
+            lineNumber = lines.size( ) > 0 ? lines.size( ) - 1 : 0;
+        }
+
+        size_t charOffset = 0;
+        for ( size_t i = 0; i < lineNumber && i < lines.size( ); ++i )
+        {
+            charOffset += lines[ i ].length( ) + 1; // +1 for newline
+        }
+
+        if ( lineNumber < lines.size( ) )
+        {
+            const std::string &line = lines[ lineNumber ];
+            if ( relativeX <= 0 )
+            {
+                return charOffset;
+            }
+
+            size_t low  = 0;
+            size_t high = line.length( );
+            while ( low < high )
+            {
+                const size_t         mid    = ( low + high ) / 2;
+                std::string          substr = line.substr( 0, mid );
+                const ClayDimensions dims   = m_clay->MeasureText( InteropString( substr.c_str( ) ), m_style.FontId, m_style.FontSize );
+                if ( dims.Width < relativeX )
+                {
+                    low = mid + 1;
+                }
+                else
+                {
+                    high = mid;
+                }
+            }
+
+            return charOffset + low;
+        }
+
+        return charOffset;
+    }
     if ( relativeX <= 0 )
     {
         return 0;
     }
 
-    const float  avgCharWidth = m_style.FontSize * 0.6f; // Rough estimate
-    const size_t index        = relativeX / avgCharWidth;
-    return std::min( index, m_text.NumChars( ) );
+    size_t low  = 0;
+    size_t high = textStr.length( );
+    while ( low < high )
+    {
+        const size_t         mid    = ( low + high ) / 2;
+        std::string          substr = textStr.substr( 0, mid );
+        const ClayDimensions dims   = m_clay->MeasureText( InteropString( substr.c_str( ) ), m_style.FontId, m_style.FontSize );
+        if ( dims.Width < relativeX )
+        {
+            low = mid + 1;
+        }
+        else
+        {
+            high = mid;
+        }
+    }
+
+    return low;
 }
