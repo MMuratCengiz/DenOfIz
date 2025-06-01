@@ -53,7 +53,6 @@ void TextFieldWidget::CreateLayoutElement( )
 
     m_clayContext->OpenElement( decl );
 
-    // Add text element if we have text to display
     if ( !m_text.IsEmpty( ) )
     {
         ClayTextDesc textDesc;
@@ -294,6 +293,9 @@ void TextFieldWidget::SetText( const InteropString &text )
     m_cursorPosition = m_text.NumChars( );
     ClearSelection( );
     m_textChanged = true;
+
+    m_characterPositionsValid = false;
+    InvalidateTextCache( );
 }
 bool TextFieldWidget::WasTextChanged( ) const
 {
@@ -336,6 +338,10 @@ void TextFieldWidget::DeleteSelection( )
     m_cursorPosition = m_selectionStart;
     ClearSelection( );
     m_textChanged = true;
+
+    // Invalidate cached character positions
+    m_characterPositionsValid = false;
+    InvalidateTextCache( );
 }
 
 void TextFieldWidget::SelectAll( )
@@ -392,6 +398,9 @@ void TextFieldWidget::InsertText( const InteropString &text )
     m_text = InteropString( currentText.c_str( ) );
     m_cursorPosition += text.NumChars( );
     m_textChanged = true;
+
+    m_characterPositionsValid = false;
+    InvalidateTextCache( );
 }
 
 void TextFieldWidget::HandleKeyPress( const Event &event )
@@ -436,6 +445,72 @@ void TextFieldWidget::HandleKeyPress( const Event &event )
             {
                 ClayClipboard::SetText( GetSelectedText( ) );
                 DeleteSelection( );
+                m_cursorBlinkTime = 0.0f;
+                m_cursorVisible   = true;
+            }
+            break;
+
+        case KeyCode::Left: // Move to previous word
+            {
+                const size_t newPos = FindPreviousWordBoundary( m_cursorPosition );
+                if ( isShiftDown )
+                {
+                    ExtendSelection( newPos );
+                }
+                else
+                {
+                    m_cursorPosition = newPos;
+                    ClearSelection( );
+                }
+                m_cursorBlinkTime = 0.0f;
+                m_cursorVisible   = true;
+            }
+            break;
+
+        case KeyCode::Right: // Move to next word
+            {
+                const size_t newPos = FindNextWordBoundary( m_cursorPosition );
+                if ( isShiftDown )
+                {
+                    ExtendSelection( newPos );
+                }
+                else
+                {
+                    m_cursorPosition = newPos;
+                    ClearSelection( );
+                }
+                m_cursorBlinkTime = 0.0f;
+                m_cursorVisible   = true;
+            }
+            break;
+
+        case KeyCode::Backspace: // Delete previous word
+            if ( !m_style.ReadOnly )
+            {
+                if ( m_hasSelection )
+                {
+                    DeleteSelection( );
+                }
+                else
+                {
+                    DeleteWord( false );
+                }
+                m_cursorBlinkTime = 0.0f;
+                m_cursorVisible   = true;
+            }
+            break;
+
+        case KeyCode::Delete: // Delete next word
+            if ( !m_style.ReadOnly )
+            {
+                if ( m_hasSelection )
+                {
+                    DeleteSelection( );
+                }
+                else
+                {
+                    DeleteWord( true );
+                }
                 m_cursorBlinkTime = 0.0f;
                 m_cursorVisible   = true;
             }
@@ -514,45 +589,37 @@ void TextFieldWidget::HandleKeyPress( const Event &event )
         break;
 
     case KeyCode::Home:
-        if ( isShiftDown )
         {
-            if ( !m_hasSelection )
+            const size_t newPos = m_style.Type == ClayTextFieldType::MultiLine ? GetLineStartPosition( m_cursorPosition ) : 0;
+            if ( isShiftDown )
             {
-                m_selectionAnchor = m_cursorPosition;
+                ExtendSelection( newPos );
             }
-            m_cursorPosition = 0;
-            m_hasSelection   = true;
-            m_selectionStart = 0;
-            m_selectionEnd   = m_selectionAnchor;
+            else
+            {
+                m_cursorPosition = newPos;
+                ClearSelection( );
+            }
+            m_cursorBlinkTime = 0.0f;
+            m_cursorVisible   = true;
         }
-        else
-        {
-            m_cursorPosition = 0;
-            ClearSelection( );
-        }
-        m_cursorBlinkTime = 0.0f;
-        m_cursorVisible   = true;
         break;
 
     case KeyCode::End:
-        if ( isShiftDown )
         {
-            if ( !m_hasSelection )
+            const size_t newPos = m_style.Type == ClayTextFieldType::MultiLine ? GetLineEndPosition( m_cursorPosition ) : m_text.NumChars( );
+            if ( isShiftDown )
             {
-                m_selectionAnchor = m_cursorPosition;
+                ExtendSelection( newPos );
             }
-            m_cursorPosition = m_text.NumChars( );
-            m_hasSelection   = true;
-            m_selectionStart = m_selectionAnchor;
-            m_selectionEnd   = m_text.NumChars( );
+            else
+            {
+                m_cursorPosition = newPos;
+                ClearSelection( );
+            }
+            m_cursorBlinkTime = 0.0f;
+            m_cursorVisible   = true;
         }
-        else
-        {
-            m_cursorPosition = m_text.NumChars( );
-            ClearSelection( );
-        }
-        m_cursorBlinkTime = 0.0f;
-        m_cursorVisible   = true;
         break;
 
     case KeyCode::Backspace:
@@ -568,7 +635,9 @@ void TextFieldWidget::HandleKeyPress( const Event &event )
                 text.erase( m_cursorPosition - 1, 1 );
                 m_text = InteropString( text.c_str( ) );
                 m_cursorPosition--;
-                m_textChanged = true;
+                m_textChanged             = true;
+                m_characterPositionsValid = false;
+                InvalidateTextCache( );
             }
         }
         m_cursorBlinkTime = 0.0f;
@@ -586,8 +655,10 @@ void TextFieldWidget::HandleKeyPress( const Event &event )
             {
                 std::string text( m_text.Get( ) );
                 text.erase( m_cursorPosition, 1 );
-                m_text        = InteropString( text.c_str( ) );
-                m_textChanged = true;
+                m_text                    = InteropString( text.c_str( ) );
+                m_textChanged             = true;
+                m_characterPositionsValid = false;
+                InvalidateTextCache( );
             }
         }
         m_cursorBlinkTime = 0.0f;
@@ -610,6 +681,42 @@ void TextFieldWidget::HandleKeyPress( const Event &event )
     case KeyCode::Escape:
         m_isFocused = false;
         ClearSelection( );
+        break;
+
+    case KeyCode::Up:
+        if ( m_style.Type == ClayTextFieldType::MultiLine )
+        {
+            const size_t newPos = MovePositionUp( m_cursorPosition );
+            if ( isShiftDown )
+            {
+                ExtendSelection( newPos );
+            }
+            else
+            {
+                m_cursorPosition = newPos;
+                ClearSelection( );
+            }
+            m_cursorBlinkTime = 0.0f;
+            m_cursorVisible   = true;
+        }
+        break;
+
+    case KeyCode::Down:
+        if ( m_style.Type == ClayTextFieldType::MultiLine )
+        {
+            const size_t newPos = MovePositionDown( m_cursorPosition );
+            if ( isShiftDown )
+            {
+                ExtendSelection( newPos );
+            }
+            else
+            {
+                m_cursorPosition = newPos;
+                ClearSelection( );
+            }
+            m_cursorBlinkTime = 0.0f;
+            m_cursorVisible   = true;
+        }
         break;
 
     default:
@@ -654,6 +761,9 @@ size_t TextFieldWidget::GetCharacterIndexAtPosition( const float x, const float 
         return 0;
     }
 
+    // Update character position cache if needed
+    UpdateCharacterPositions( );
+
     const std::string textStr( m_text.Get( ) );
     if ( m_style.Type == ClayTextFieldType::MultiLine )
     {
@@ -694,24 +804,28 @@ size_t TextFieldWidget::GetCharacterIndexAtPosition( const float x, const float 
                 return charOffset;
             }
 
-            size_t low  = 0;
-            size_t high = line.length( );
-            while ( low < high )
+            if ( charOffset < m_characterPositions.size( ) )
             {
-                const size_t         mid    = ( low + high ) / 2;
-                std::string          substr = line.substr( 0, mid );
-                const ClayDimensions dims   = m_clayContext->MeasureText( InteropString( substr.c_str( ) ), m_style.FontId, m_style.FontSize );
-                if ( dims.Width < relativeX )
+                for ( size_t i = 0; i < line.length( ) && charOffset + i < m_characterPositions.size( ); ++i )
                 {
-                    low = mid + 1;
-                }
-                else
-                {
-                    high = mid;
+                    if ( m_characterPositions[ charOffset + i ] >= relativeX )
+                    {
+                        // Check if we're closer to the previous character
+                        if ( i > 0 )
+                        {
+                            const float prevDist = relativeX - m_characterPositions[ charOffset + i - 1 ];
+                            const float currDist = m_characterPositions[ charOffset + i ] - relativeX;
+                            if ( prevDist < currDist )
+                            {
+                                return charOffset + i;
+                            }
+                        }
+                        return charOffset + i;
+                    }
                 }
             }
 
-            return charOffset + low;
+            return charOffset + line.length( );
         }
 
         return charOffset;
@@ -721,21 +835,249 @@ size_t TextFieldWidget::GetCharacterIndexAtPosition( const float x, const float 
         return 0;
     }
 
-    size_t low  = 0;
-    size_t high = textStr.length( );
-    while ( low < high )
+    for ( size_t i = 0; i < m_characterPositions.size( ); ++i )
     {
-        const size_t mid    = ( low + high ) / 2;
-        std::string  substr = textStr.substr( 0, mid );
-        if ( const ClayDimensions dims = m_clayContext->MeasureText( InteropString( substr.c_str( ) ), m_style.FontId, m_style.FontSize ); dims.Width < relativeX )
+        if ( m_characterPositions[ i ] >= relativeX )
         {
-            low = mid + 1;
-        }
-        else
-        {
-            high = mid;
+            if ( i > 0 )
+            {
+                const float prevDist = relativeX - m_characterPositions[ i - 1 ];
+                const float currDist = m_characterPositions[ i ] - relativeX;
+                if ( prevDist < currDist )
+                {
+                    return i;
+                }
+            }
+            return i;
         }
     }
 
-    return low;
+    return textStr.length( );
+}
+
+void TextFieldWidget::UpdateCharacterPositions( ) const
+{
+    if ( m_characterPositionsValid )
+    {
+        return;
+    }
+
+    const std::string textStr( m_text.Get( ) );
+    const uint64_t    textHash = ClayTextCache::HashString( textStr.c_str( ), textStr.length( ) );
+    if ( m_lastTextHash == textHash && !m_characterPositions.empty( ) )
+    {
+        m_characterPositionsValid = true;
+        return;
+    }
+
+    m_lastTextHash = textHash;
+    m_characterPositions.clear( );
+    m_characterPositions.reserve( textStr.length( ) + 1 );
+
+    if ( m_style.Type != ClayTextFieldType::MultiLine )
+    {
+        m_characterPositions.push_back( 0 );
+        for ( size_t i = 1; i <= textStr.length( ); ++i )
+        {
+            const std::string    charStr  = textStr.substr( i - 1, 1 );
+            const ClayDimensions charDims = m_clayContext->MeasureText( InteropString( charStr.c_str( ) ), m_style.FontId, m_style.FontSize );
+            const float          prevPos  = m_characterPositions[ i - 1 ];
+            m_characterPositions.push_back( prevPos + charDims.Width );
+        }
+    }
+    else
+    {
+        size_t lineStart = 0;
+        float  currentX  = 0;
+
+        for ( size_t i = 0; i <= textStr.length( ); ++i )
+        {
+            if ( i == textStr.length( ) || textStr[ i ] == '\n' )
+            {
+                if ( i > lineStart )
+                {
+                    const std::string    lineText = textStr.substr( lineStart, i - lineStart );
+                    const ClayDimensions lineDims = m_clayContext->MeasureText( InteropString( lineText.c_str( ) ), m_style.FontId, m_style.FontSize );
+                    currentX                      = lineDims.Width;
+                }
+
+                m_characterPositions.push_back( currentX );
+                if ( i < textStr.length( ) )
+                {
+                    lineStart = i + 1;
+                    currentX  = 0;
+                }
+            }
+            else if ( i > lineStart )
+            {
+                const std::string    substr = textStr.substr( lineStart, i - lineStart );
+                const ClayDimensions dims   = m_clayContext->MeasureText( InteropString( substr.c_str( ) ), m_style.FontId, m_style.FontSize );
+                m_characterPositions.push_back( dims.Width );
+            }
+            else
+            {
+                m_characterPositions.push_back( 0 );
+            }
+        }
+    }
+
+    m_characterPositionsValid = true;
+}
+
+void TextFieldWidget::InvalidateTextCache( ) const
+{
+    if ( const auto *clayText = m_clayContext->GetClayText( ) )
+    {
+        clayText->ClearCaches( );
+    }
+}
+
+size_t TextFieldWidget::FindPreviousWordBoundary( size_t pos ) const
+{
+    const std::string text( m_text.Get( ) );
+    if ( pos == 0 )
+    {
+        return 0;
+    }
+    while ( pos > 0 && std::isspace( text[ pos - 1 ] ) )
+    {
+        pos--;
+    }
+    while ( pos > 0 && !std::isspace( text[ pos - 1 ] ) )
+    {
+        pos--;
+    }
+
+    return pos;
+}
+
+size_t TextFieldWidget::FindNextWordBoundary( size_t pos ) const
+{
+    const std::string text( m_text.Get( ) );
+    const size_t      length = text.length( );
+
+    if ( pos >= length )
+    {
+        return length;
+    }
+    while ( pos < length && !std::isspace( text[ pos ] ) )
+    {
+        pos++;
+    }
+    while ( pos < length && std::isspace( text[ pos ] ) )
+    {
+        pos++;
+    }
+
+    return pos;
+}
+
+size_t TextFieldWidget::GetLineStartPosition( size_t pos ) const
+{
+    const std::string text( m_text.Get( ) );
+    while ( pos > 0 && text[ pos - 1 ] != '\n' )
+    {
+        pos--;
+    }
+
+    return pos;
+}
+
+size_t TextFieldWidget::GetLineEndPosition( size_t pos ) const
+{
+    const std::string text( m_text.Get( ) );
+    const size_t      length = text.length( );
+    while ( pos < length && text[ pos ] != '\n' )
+    {
+        pos++;
+    }
+
+    return pos;
+}
+
+size_t TextFieldWidget::MovePositionUp( size_t pos ) const
+{
+    const std::string text( m_text.Get( ) );
+    const size_t      lineStart = GetLineStartPosition( pos );
+    if ( lineStart == 0 )
+    {
+        return 0;
+    }
+
+    const size_t posInLine     = pos - lineStart;
+    const size_t prevLineEnd   = lineStart - 1;
+    size_t       prevLineStart = prevLineEnd;
+    while ( prevLineStart > 0 && text[ prevLineStart - 1 ] != '\n' )
+    {
+        prevLineStart--;
+    }
+    const size_t prevLineLength = prevLineEnd - prevLineStart;
+    const size_t newPos         = prevLineStart + std::min( posInLine, prevLineLength );
+
+    return newPos;
+}
+
+size_t TextFieldWidget::MovePositionDown( size_t pos ) const
+{
+    const std::string text( m_text.Get( ) );
+    const size_t      length    = text.length( );
+    const size_t      lineStart = GetLineStartPosition( pos );
+    const size_t      lineEnd   = GetLineEndPosition( pos );
+
+    if ( lineEnd >= length )
+    {
+        return length;
+    }
+
+    const size_t posInLine     = pos - lineStart;
+    const size_t nextLineStart = lineEnd + 1;
+    const size_t nextLineEnd   = GetLineEndPosition( nextLineStart );
+
+    const size_t nextLineLength = nextLineEnd - nextLineStart;
+    const size_t newPos         = nextLineStart + std::min( posInLine, nextLineLength );
+
+    return newPos;
+}
+
+void TextFieldWidget::DeleteWord( bool forward )
+{
+    if ( m_style.ReadOnly )
+    {
+        return;
+    }
+    std::string text( m_text.Get( ) );
+    size_t      deleteStart, deleteEnd;
+    if ( forward )
+    {
+        deleteStart = m_cursorPosition;
+        deleteEnd   = FindNextWordBoundary( m_cursorPosition );
+    }
+    else
+    {
+        deleteEnd   = m_cursorPosition;
+        deleteStart = FindPreviousWordBoundary( m_cursorPosition );
+    }
+
+    if ( deleteStart != deleteEnd )
+    {
+        text.erase( deleteStart, deleteEnd - deleteStart );
+        m_text                    = InteropString( text.c_str( ) );
+        m_cursorPosition          = deleteStart;
+        m_textChanged             = true;
+        m_characterPositionsValid = false;
+        InvalidateTextCache( );
+    }
+}
+
+void TextFieldWidget::ExtendSelection( size_t newPos )
+{
+    if ( !m_hasSelection )
+    {
+        m_selectionAnchor = m_cursorPosition;
+    }
+
+    m_cursorPosition = newPos;
+    m_hasSelection   = true;
+    m_selectionStart = std::min( m_selectionAnchor, m_cursorPosition );
+    m_selectionEnd   = std::max( m_selectionAnchor, m_cursorPosition );
 }

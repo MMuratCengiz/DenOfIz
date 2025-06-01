@@ -48,6 +48,10 @@ namespace DenOfIz
         size_t         m_selectionAnchor = 0;
         TextFieldStyle m_style;
 
+        mutable std::vector<float> m_characterPositions;
+        mutable bool               m_characterPositionsValid = false;
+        mutable uint64_t           m_lastTextHash            = 0;
+
     public:
         DZ_API TextFieldWidget( ClayContext *clayContext, uint32_t id, const TextFieldStyle &style = { } );
 
@@ -78,6 +82,18 @@ namespace DenOfIz
         void   HandleTextInput( const Event &event );
         void   UpdateCursorBlink( float deltaTime );
         size_t GetCharacterIndexAtPosition( float x, float y = 0 ) const;
+        void   UpdateCharacterPositions( ) const;
+        void   InvalidateTextCache( ) const;
+        void   RenderTextWithSelection( IRenderBatch *renderBatch, const ClayBoundingBox &textBounds ) const;
+
+        size_t FindPreviousWordBoundary( size_t pos ) const;
+        size_t FindNextWordBoundary( size_t pos ) const;
+        size_t GetLineStartPosition( size_t pos ) const;
+        size_t GetLineEndPosition( size_t pos ) const;
+        size_t MovePositionUp( size_t pos ) const;
+        size_t MovePositionDown( size_t pos ) const;
+        void   DeleteWord( bool forward );
+        void   ExtendSelection( size_t newPos );
     };
 
 } // namespace DenOfIz
