@@ -54,10 +54,9 @@ namespace DenOfIz
         DZ_API ClayBoundingBox GetBoundingBox( ) const;
 
     protected:
-        DZ_API void AddRectangle( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const ClayColor &color, const ClayCornerRadius &cornerRadius = ClayCornerRadius( ) );
+        DZ_API void AddRectangle( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const ClayColor &color, const ClayCornerRadius &cornerRadius = ClayCornerRadius( ) ) const;
         DZ_API void AddBorder( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const ClayColor &color, const ClayBorderWidth &width,
-                               const ClayCornerRadius &cornerRadius = ClayCornerRadius( ) );
-        DZ_API void AddText( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const InteropString &text, const ClayTextDesc &desc );
+                               const ClayCornerRadius &cornerRadius = ClayCornerRadius( ) ) const;
     };
 
     struct WidgetRenderData

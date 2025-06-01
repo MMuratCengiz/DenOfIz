@@ -18,12 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Font/TextRenderer.h>
 #include <functional>
 #include <memory>
 #include <unordered_map>
 #include "ClayContext.h"
 #include "ClayRenderer.h"
+#include "ClayTextCache.h"
 #include "DenOfIzGraphics/Input/Event.h"
 #include "DenOfIzGraphics/Utilities/Time.h"
 
@@ -107,6 +107,9 @@ namespace DenOfIz
         DZ_API ClayBoundingBox GetElementBoundingBox( uint32_t id ) const;
         DZ_API void            HandleEvent( const Event &event );
         DZ_API ClayDimensions  MeasureText( const InteropString &text, uint16_t fontId, uint16_t fontSize ) const;
+
+        DZ_API void AddFont( uint16_t fontId, Font *font ) const;
+        DZ_API void RemoveFont( uint16_t fontId ) const;
 
         DZ_API CheckboxWidget           *CreateCheckbox( uint32_t id, bool initialChecked = false, const CheckboxStyle &style = { } );
         DZ_API SliderWidget             *CreateSlider( uint32_t id, float initialValue = 0.5f, const SliderStyle &style = { } );

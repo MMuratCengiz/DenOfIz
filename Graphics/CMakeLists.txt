@@ -115,6 +115,7 @@ set(DEN_OF_IZ_UI_SOURCES
         Source/UI/Clay.cpp
         Source/UI/ClayClipboard.cpp
         Source/UI/ClayRenderer.cpp
+        Source/UI/ClayTextCache.cpp
         Source/UI/UIShapes.cpp
         Source/UI/UIShapeCache.cpp
         Source/UI/UITextVertexCache.cpp

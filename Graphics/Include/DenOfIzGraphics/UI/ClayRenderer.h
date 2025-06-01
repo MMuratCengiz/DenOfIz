@@ -18,9 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Font/Font.h>
-#include <DenOfIzGraphics/Assets/Font/TextLayout.h>
-#include <DenOfIzGraphics/Assets/Font/TextLayoutCache.h>
 #include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 #include <DenOfIzGraphics/Backends/Interface/ICommandListPool.h>
@@ -30,13 +27,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
 #include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
 #include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
-#include <DenOfIzGraphics/Backends/Interface/ISemaphore.h>
 #include <DenOfIzGraphics/UI/ClayContext.h>
 #include <DenOfIzGraphics/UI/ClayData.h>
+#include <DenOfIzGraphics/UI/ClayTextCache.h>
 #include <DenOfIzGraphics/UI/FullscreenQuadPipeline.h>
 #include <DenOfIzGraphics/UI/UIShapeCache.h>
 #include <DenOfIzGraphics/UI/UIShapes.h>
-#include <DenOfIzGraphics/UI/UITextVertexCache.h>
 #include <clay.h>
 #include <memory>
 #include <unordered_map>
@@ -47,14 +43,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct ClayResizableContainerRenderData;
-    struct ClayDockableContainerRenderData;
 
     class Widget;
 
     struct ClayRendererDesc
     {
         ILogicalDevice *LogicalDevice      = nullptr;
+        ClayContext    *ClayContext        = nullptr;
         Format          RenderTargetFormat = Format::B8G8R8A8Unorm;
         uint32_t        NumFrames          = 3;
         uint32_t        MaxVertices        = 65536;
@@ -64,16 +59,14 @@ namespace DenOfIz
         float           Height             = 1024;
     };
 
-    // Forward declaration for ClayRenderer
     class ClayRenderer;
 
-    // Implementation of IRenderBatch for ClayRenderer
-    class ClayRenderBatch : public IRenderBatch
+    class ClayRenderBatch final : public IRenderBatch
     {
         ClayRenderer *m_renderer;
 
     public:
-        ClayRenderBatch( ClayRenderer *renderer ) : m_renderer( renderer )
+        explicit ClayRenderBatch( ClayRenderer *renderer ) : m_renderer( renderer )
         {
         }
 
@@ -83,24 +76,17 @@ namespace DenOfIz
 
     class ClayRenderer
     {
-        struct FontData
-        {
-            Font                                     *FontPtr = nullptr;
-            std::unique_ptr<ITextureResource>         Atlas;
-            uint32_t                                  TextureIndex = 0;
-            InteropArray<std::unique_ptr<TextLayout>> TextLayouts;
-            uint32_t                                  CurrentLayoutIndex = 0;
-        };
-
         struct UIUniforms
         {
-            XMFLOAT4X4 Projection;
-            XMFLOAT4   ScreenSize; // xy: screen dimensions, zw: unused
-            XMFLOAT4   FontParams; // x: atlas width, y: atlas height, z: pixel range, w: unused
+            DirectX::XMFLOAT4X4 Projection;
+            DirectX::XMFLOAT4   ScreenSize; // xy: screen dimensions, zw: unused
+            DirectX::XMFLOAT4   FontParams; // x: atlas width, y: atlas height, z: pixel range, w: unused
         };
 
         ClayRendererDesc m_desc;
         ILogicalDevice  *m_logicalDevice = nullptr;
+        ClayContext     *m_clayContext   = nullptr;
+        ClayTextCache   *m_clayText      = nullptr;
 
         std::unique_ptr<ShaderProgram>  m_shaderProgram;
         std::unique_ptr<IPipeline>      m_pipeline;
@@ -155,12 +141,8 @@ namespace DenOfIz
         UIUniforms                      *m_uniformBufferData  = nullptr;
         uint32_t                         m_alignedUniformSize = 0;
 
-        std::unordered_map<uint16_t, FontData> m_fonts;
-
-        mutable TextLayoutCache   m_textLayoutCache;
-        mutable UIShapeCache      m_shapeCache;
-        mutable UITextVertexCache m_textVertexCache;
-        mutable uint32_t          m_currentFrame = 0;
+        mutable UIShapeCache m_shapeCache;
+        mutable uint32_t     m_currentFrame = 0;
 
         std::unordered_map<void *, uint32_t> m_imageTextureIndices;
         std::vector<ITextureResource *>      m_textures;
@@ -169,11 +151,11 @@ namespace DenOfIz
         uint32_t                             m_nextTextureIndex = 1;
         bool                                 m_texturesDirty    = true;
 
-        float      m_viewportWidth  = 0;
-        float      m_viewportHeight = 0;
-        float      m_dpiScale       = 1.0f;
-        float      m_deltaTime      = 0.016f;
-        XMFLOAT4X4 m_projectionMatrix;
+        float               m_viewportWidth  = 0;
+        float               m_viewportHeight = 0;
+        float               m_dpiScale       = 1.0f;
+        float               m_deltaTime      = 0.016f;
+        DirectX::XMFLOAT4X4 m_projectionMatrix;
 
         std::vector<ScissorState> m_scissorStack;
         std::unique_ptr<ISampler> m_linearSampler;
@@ -185,9 +167,6 @@ namespace DenOfIz
     public:
         explicit ClayRenderer( const ClayRendererDesc &desc );
         ~ClayRenderer( );
-
-        void AddFont( uint16_t fontId, Font *font );
-        void RemoveFont( uint16_t fontId );
 
         void Resize( float width, float height );
         void SetDpiScale( float dpiScale );
@@ -216,7 +195,7 @@ namespace DenOfIz
         void RenderRectangle( const Clay_RenderCommand *command, ICommandList *commandList );
         void RenderBorder( const Clay_RenderCommand *command );
         void RenderText( const Clay_RenderCommand *command, ICommandList *commandList );
-        void RenderSingleLineText( const Clay_RenderCommand *command, const FontData *fontData, float effectiveScale, float fontAscent );
+        void RenderSingleLineText( const Clay_RenderCommand *command, uint16_t fontId, float effectiveScale, float fontAscent );
         void RenderImage( const Clay_RenderCommand *command );
         void RenderCustom( const Clay_RenderCommand *command, ICommandList *commandList );
         void RenderTextField( const Clay_RenderCommand *command, const ClayTextFieldRenderData *textFieldData, ICommandList *commandList );
@@ -234,13 +213,7 @@ namespace DenOfIz
 
         uint32_t RegisterTexture( ITextureResource *texture );
         void     UpdateTextureBindings( uint32_t frameIndex ) const;
-
-        FontData *GetFontData( uint16_t fontId );
-        void      InitializeFontAtlas( FontData *fontData );
-
-        TextLayout *GetOrCreateShapedText( const Clay_RenderCommand *command, Font *font ) const;
-        TextLayout *GetOrCreateShapedTextDirect( const char *text, size_t length, uint16_t fontId, uint32_t fontSize, Font *font ) const;
-        void        CleanupTextLayoutCache( ) const;
+        void     SyncFontTexturesFromClayText( );
     };
 
 } // namespace DenOfIz

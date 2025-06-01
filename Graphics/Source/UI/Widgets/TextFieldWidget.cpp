@@ -183,7 +183,7 @@ void TextFieldWidget::Render( const Clay_RenderCommand *command, IRenderBatch *r
     {
         const ClayDimensions textSizeForCursor = m_clayContext->MeasureText( InteropString( "I" ), m_style.FontId, m_style.FontSize );
         const float          cursorHeight      = textSizeForCursor.Height;
-        const float          lineHeight        = m_style.LineHeight > 0 ? m_style.LineHeight : cursorHeight * 1.2f;
+        const float          lineHeight        = m_style.LineHeight > 0 ? m_style.LineHeight : cursorHeight;
 
         float cursorX = textBounds.X;
         float cursorY = textBounds.Y;

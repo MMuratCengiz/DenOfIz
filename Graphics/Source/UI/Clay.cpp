@@ -1,3 +1,5 @@
+#include <DenOfIzGraphics/Assets/Font/Embedded/EmbeddedFonts.h>
+#include <DenOfIzGraphics/Assets/Font/FontLibrary.h>
 #include <DenOfIzGraphics/UI/Clay.h>
 #include <DenOfIzGraphics/UI/ClayClipboard.h>
 #include <DenOfIzGraphics/UI/Widgets/CheckboxWidget.h>
@@ -173,15 +175,6 @@ Clay::Clay( const ClayDesc &desc )
         return;
     }
 
-    ClayRendererDesc clayRendererDesc{ };
-    clayRendererDesc.LogicalDevice      = desc.LogicalDevice;
-    clayRendererDesc.RenderTargetFormat = desc.RenderTargetFormat;
-    clayRendererDesc.NumFrames          = desc.NumFrames;
-    clayRendererDesc.Width              = desc.Width;
-    clayRendererDesc.Height             = desc.Height;
-
-    m_renderer = std::make_unique<ClayRenderer>( clayRendererDesc );
-
     ClayContextDesc clayContextDesc{ };
     clayContextDesc.LogicalDevice                  = desc.LogicalDevice;
     clayContextDesc.Width                          = desc.Width;
@@ -189,6 +182,16 @@ Clay::Clay( const ClayDesc &desc )
     clayContextDesc.MaxNumElements                 = desc.MaxNumElements;
     clayContextDesc.MaxNumTextMeasureCacheElements = desc.MaxNumTextMeasureCacheElements;
     m_clayContext                                  = std::make_unique<ClayContext>( clayContextDesc );
+
+    ClayRendererDesc clayRendererDesc{ };
+    clayRendererDesc.LogicalDevice      = desc.LogicalDevice;
+    clayRendererDesc.ClayContext        = m_clayContext.get( );
+    clayRendererDesc.RenderTargetFormat = desc.RenderTargetFormat;
+    clayRendererDesc.NumFrames          = desc.NumFrames;
+    clayRendererDesc.Width              = desc.Width;
+    clayRendererDesc.Height             = desc.Height;
+
+    m_renderer = std::make_unique<ClayRenderer>( clayRendererDesc );
 }
 
 Clay::~Clay( ) = default;
@@ -442,7 +445,7 @@ void Clay::RemoveWidget( const uint32_t id )
     }
 }
 
-DockingManager* Clay::CreateDockingManager( ) const
+DockingManager *Clay::CreateDockingManager( ) const
 {
     return new DockingManager( m_clayContext.get( ) );
 }
@@ -458,4 +461,15 @@ void Clay::UpdateWidgets( const float deltaTime ) const
 ClayDimensions Clay::MeasureText( const InteropString &text, const uint16_t fontId, const uint16_t fontSize ) const
 {
     return m_clayContext->MeasureText( text, fontId, fontSize );
+}
+
+void Clay::AddFont( const uint16_t fontId, Font *font ) const
+{
+    m_clayContext->AddFont( fontId, font );
+    m_renderer->Render( nullptr, Clay_RenderCommandArray{ }, 0 );
+}
+
+void Clay::RemoveFont( const uint16_t fontId ) const
+{
+    m_clayContext->RemoveFont( fontId );
 }

@@ -27,248 +27,242 @@ using namespace DenOfIz;
 
 // ReSharper disable once CppPassValueParameterByConstReference used as callback below
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
-Clay_Dimensions ClayContext::MeasureTextCallback(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData)
+Clay_Dimensions ClayContext::MeasureTextCallback( Clay_StringSlice text, Clay_TextElementConfig *config, void *userData )
 {
-    const auto *context = static_cast<ClayContext *>(userData);
-    DZ_NOT_NULL(context);
+    const auto *context = static_cast<ClayContext *>( userData );
+    DZ_NOT_NULL( context );
 
-    if (text.length == 0)
+    if ( text.length == 0 )
     {
         return Clay_Dimensions{ 0, 0 };
     }
 
-    const InteropString str(text.chars, static_cast<size_t>(text.length));
-    const ClayDimensions dims = context->MeasureText(str, config->fontId, config->fontSize);
+    const InteropString  str( text.chars, static_cast<size_t>( text.length ) );
+    const ClayDimensions dims = context->MeasureText( str, config->fontId, config->fontSize );
     return Clay_Dimensions{ dims.Width, dims.Height };
 }
 
 // ReSharper disable once CppPassValueParameterByConstReference, used as callback below
-static void ErrorHandler(Clay_ErrorData error)
+static void ErrorHandler( Clay_ErrorData error )
 {
-    const InteropString errorText(error.errorText.chars);
-    LOG(ERROR) << "Clay error: " << errorText.Get();
+    const InteropString errorText( error.errorText.chars );
+    LOG( ERROR ) << "Clay error: " << errorText.Get( );
 }
 
-ClayContext::ClayContext(const ClayContextDesc &desc)
+ClayContext::ClayContext( const ClayContextDesc &desc )
 {
-    if (desc.LogicalDevice == nullptr)
+    if ( desc.LogicalDevice == nullptr )
     {
-        LOG(ERROR) << "ClayContext: Logical device is null";
+        LOG( ERROR ) << "ClayContext: Logical device is null";
         return;
     }
 
-    if (desc.Width == 0 || desc.Height == 0)
+    if ( desc.Width == 0 || desc.Height == 0 )
     {
-        LOG(ERROR) << "ClayContext: invalid dimensions provided: " << desc.Width << "x" << desc.Height;
+        LOG( ERROR ) << "ClayContext: invalid dimensions provided: " << desc.Width << "x" << desc.Height;
         return;
     }
 
-    TextRendererDesc textRendererDesc{};
-    textRendererDesc.LogicalDevice = desc.LogicalDevice;
-    textRendererDesc.Width         = desc.Width;
-    textRendererDesc.Height        = desc.Height;
-    m_textRenderer                 = std::make_unique<TextRenderer>(textRendererDesc);
+    ClayTextCacheDesc clayTextDesc{ };
+    clayTextDesc.LogicalDevice = desc.LogicalDevice;
+    clayTextDesc.MaxTextures   = 128;
+    m_clayText                 = std::make_unique<ClayTextCache>( clayTextDesc );
 
-    Clay_SetMaxElementCount(desc.MaxNumElements);
-    Clay_SetMaxMeasureTextCacheWordCount(desc.MaxNumTextMeasureCacheElements);
+    Clay_SetMaxElementCount( desc.MaxNumElements );
+    Clay_SetMaxMeasureTextCacheWordCount( desc.MaxNumTextMeasureCacheElements );
 
-    const uint32_t minMemorySize = Clay_MinMemorySize();
-    m_memory.resize(minMemorySize);
-    m_arena = Clay_CreateArenaWithCapacityAndMemory(minMemorySize, m_memory.data());
+    const uint32_t minMemorySize = Clay_MinMemorySize( );
+    m_memory.resize( minMemorySize );
+    m_arena = Clay_CreateArenaWithCapacityAndMemory( minMemorySize, m_memory.data( ) );
 
     Clay_ErrorHandler errorHandler;
     errorHandler.errorHandlerFunction = ErrorHandler;
     errorHandler.userData             = this;
 
-    m_context = Clay_Initialize(m_arena, Clay_Dimensions{ static_cast<float>(desc.Width), static_cast<float>(desc.Height) }, errorHandler);
-    if (!m_context)
+    m_context = Clay_Initialize( m_arena, Clay_Dimensions{ static_cast<float>( desc.Width ), static_cast<float>( desc.Height ) }, errorHandler );
+    if ( !m_context )
     {
-        LOG(ERROR) << "Failed to initialize Clay";
+        LOG( ERROR ) << "Failed to initialize Clay";
     }
 
-    Clay_SetDebugModeEnabled(false);
-    Clay_SetMeasureTextFunction(MeasureTextCallback, this);
-    SetViewportSize(desc.Width, desc.Height);
+    Clay_SetDebugModeEnabled( false );
+    Clay_SetMeasureTextFunction( MeasureTextCallback, this );
+    SetViewportSize( desc.Width, desc.Height );
 }
 
-ClayContext::~ClayContext()
+ClayContext::~ClayContext( )
 {
     m_context = nullptr;
-    m_memory.clear();
+    m_memory.clear( );
 }
 
-void ClayContext::BeginLayout()
+void ClayContext::BeginLayout( ) const
 {
-    DZ_NOT_NULL(m_context);
-    Clay_BeginLayout();
+    DZ_NOT_NULL( m_context );
+    Clay_BeginLayout( );
 }
 
-void ClayContext::SetViewportSize(const float width, const float height)
+void ClayContext::SetViewportSize( const float width, const float height ) const
 {
-    DZ_NOT_NULL(m_context);
-    Clay_SetLayoutDimensions(Clay_Dimensions{ width, height });
+    DZ_NOT_NULL( m_context );
+    Clay_SetLayoutDimensions( Clay_Dimensions{ width, height } );
 }
 
-ClayDimensions ClayContext::GetViewportSize() const
+ClayDimensions ClayContext::GetViewportSize( ) const
 {
-    DZ_NOT_NULL(m_context);
-    Clay_Dimensions dimensions = Clay_GetCurrentContext()->layoutDimensions;
+    DZ_NOT_NULL( m_context );
+    const Clay_Dimensions dimensions = Clay_GetCurrentContext( )->layoutDimensions;
     return ClayDimensions{ dimensions.width, dimensions.height };
 }
 
-void ClayContext::SetDpiScale(const float dpiScale)
+void ClayContext::SetDpiScale( const float dpiScale )
 {
+    m_clayText->SetDpiScale( dpiScale );
     m_dpiScale = dpiScale;
-    Clay_ResetMeasureTextCache();
+    Clay_ResetMeasureTextCache( );
 }
 
-void ClayContext::SetPointerState(const Float_2 position, const ClayPointerState state)
+void ClayContext::SetPointerState( const Float_2 position, const ClayPointerState state )
 {
-    DZ_NOT_NULL(m_context);
+    DZ_NOT_NULL( m_context );
     m_pointerPosition = position;
     m_pointerState    = state;
-    Clay_SetPointerState(Clay_Vector2{ position.X, position.Y }, state == ClayPointerState::Pressed);
+    Clay_SetPointerState( Clay_Vector2{ position.X, position.Y }, state == ClayPointerState::Pressed );
 }
 
-void ClayContext::UpdateScrollContainers(const bool enableDragScrolling, const Float_2 scrollDelta, const float deltaTime)
+void ClayContext::UpdateScrollContainers( const bool enableDragScrolling, const Float_2 scrollDelta, const float deltaTime )
 {
-    DZ_NOT_NULL(m_context);
+    DZ_NOT_NULL( m_context );
     m_scrollDelta = scrollDelta;
-    Clay_UpdateScrollContainers(enableDragScrolling, Clay_Vector2{ scrollDelta.X, scrollDelta.Y }, deltaTime);
+    Clay_UpdateScrollContainers( enableDragScrolling, Clay_Vector2{ scrollDelta.X, scrollDelta.Y }, deltaTime );
 }
 
-void ClayContext::SetDebugModeEnabled(const bool enabled)
+void ClayContext::SetDebugModeEnabled( const bool enabled )
 {
-    DZ_NOT_NULL(m_context);
+    DZ_NOT_NULL( m_context );
     m_isDebugMode = enabled;
-    Clay_SetDebugModeEnabled(enabled);
+    Clay_SetDebugModeEnabled( enabled );
 }
 
-bool ClayContext::IsDebugModeEnabled() const
+bool ClayContext::IsDebugModeEnabled( ) const
 {
     return m_isDebugMode;
 }
 
-void ClayContext::OpenElement(const ClayElementDeclaration &declaration)
+void ClayContext::OpenElement( const ClayElementDeclaration &declaration ) const
 {
-    DZ_NOT_NULL(m_context);
-    
-    Clay__OpenElement();
-    
+    DZ_NOT_NULL( m_context );
+
+    Clay__OpenElement( );
+
     Clay_ElementDeclaration clayDecl;
     clayDecl.id              = Clay_ElementId{ declaration.Id, 0, 0, Clay_String{} };
-    clayDecl.layout          = ConvertLayoutConfig(declaration.Layout);
-    clayDecl.backgroundColor = ConvertColor(declaration.BackgroundColor);
-    clayDecl.cornerRadius    = ConvertCornerRadius(declaration.CornerRadius);
-    clayDecl.image           = ConvertImageConfig(declaration.Image);
-    clayDecl.floating        = ConvertFloatingConfig(declaration.Floating);
-    clayDecl.custom          = ConvertCustomConfig(declaration.Custom);
-    clayDecl.scroll          = ConvertScrollConfig(declaration.Scroll);
-    clayDecl.border          = ConvertBorderConfig(declaration.Border);
+    clayDecl.layout          = ConvertLayoutConfig( declaration.Layout );
+    clayDecl.backgroundColor = ConvertColor( declaration.BackgroundColor );
+    clayDecl.cornerRadius    = ConvertCornerRadius( declaration.CornerRadius );
+    clayDecl.image           = ConvertImageConfig( declaration.Image );
+    clayDecl.floating        = ConvertFloatingConfig( declaration.Floating );
+    clayDecl.custom          = ConvertCustomConfig( declaration.Custom );
+    clayDecl.scroll          = ConvertScrollConfig( declaration.Scroll );
+    clayDecl.border          = ConvertBorderConfig( declaration.Border );
     clayDecl.userData        = nullptr;
-    
-    Clay__ConfigureOpenElement(clayDecl);
+
+    Clay__ConfigureOpenElement( clayDecl );
 }
 
-void ClayContext::CloseElement()
+void ClayContext::CloseElement( ) const
 {
-    DZ_NOT_NULL(m_context);
-    Clay__CloseElement();
+    DZ_NOT_NULL( m_context );
+    Clay__CloseElement( );
 }
 
-void ClayContext::Text(const InteropString &text, const ClayTextDesc &desc)
+void ClayContext::AddFont( const uint16_t fontId, Font *font ) const
 {
-    DZ_NOT_NULL(m_context);
-    
+    m_clayText->AddFont( fontId, font );
+}
+
+void ClayContext::RemoveFont( const uint16_t fontId ) const
+{
+    m_clayText->RemoveFont( fontId );
+}
+
+Font *ClayContext::GetFont( const uint16_t fontId ) const
+{
+    return m_clayText->GetFont( fontId );
+}
+
+void ClayContext::Text( const InteropString &text, const ClayTextDesc &desc ) const
+{
+    DZ_NOT_NULL( m_context );
+
     Clay_String tempString;
-    tempString.chars  = text.Get();
-    tempString.length = static_cast<int>(text.NumChars());
-    
-    const Clay_String clayText = Clay__WriteStringToCharBuffer(&Clay_GetCurrentContext()->dynamicStringData, tempString);
-    
-    const Clay_TextElementConfig tempConfig   = ConvertTextConfig(desc);
-    Clay_TextElementConfig      *storedConfig = Clay__StoreTextElementConfig(tempConfig);
-    
-    Clay__OpenTextElement(clayText, storedConfig);
+    tempString.chars  = text.Get( );
+    tempString.length = static_cast<int>( text.NumChars( ) );
+
+    const Clay_String clayText = Clay__WriteStringToCharBuffer( &Clay_GetCurrentContext( )->dynamicStringData, tempString );
+
+    const Clay_TextElementConfig tempConfig   = ConvertTextConfig( desc );
+    Clay_TextElementConfig      *storedConfig = Clay__StoreTextElementConfig( tempConfig );
+
+    Clay__OpenTextElement( clayText, storedConfig );
 }
 
-uint32_t ClayContext::HashString(const InteropString &str, const uint32_t index, const uint32_t baseId) const
+uint32_t ClayContext::HashString( const InteropString &str, const uint32_t index, const uint32_t baseId ) const
 {
     Clay_String clayStr;
-    clayStr.chars = str.Get();
-    clayStr.length = static_cast<int32_t>(strlen(str.Get()));
-    
-    const Clay_ElementId id = Clay__HashString(clayStr, index, baseId);
+    clayStr.chars  = str.Get( );
+    clayStr.length = static_cast<int32_t>( strlen( str.Get( ) ) );
+
+    const Clay_ElementId id = Clay__HashString( clayStr, index, baseId );
     return id.id;
 }
 
-bool ClayContext::PointerOver(const uint32_t id) const
+bool ClayContext::PointerOver( const uint32_t id ) const
 {
-    DZ_NOT_NULL(m_context);
+    DZ_NOT_NULL( m_context );
     Clay_ElementId elementId;
     elementId.id = id;
-    return Clay_PointerOver(elementId);
+    return Clay_PointerOver( elementId );
 }
 
-ClayBoundingBox ClayContext::GetElementBoundingBox(const uint32_t id) const
+ClayBoundingBox ClayContext::GetElementBoundingBox( const uint32_t id ) const
 {
-    DZ_NOT_NULL(m_context);
+    DZ_NOT_NULL( m_context );
     Clay_ElementId elementId;
-    elementId.id = id;
-    const Clay_ElementData data = Clay_GetElementData(elementId);
-    Clay_BoundingBox clayBox = data.boundingBox;
+    elementId.id                   = id;
+    const Clay_ElementData data    = Clay_GetElementData( elementId );
+    const Clay_BoundingBox clayBox = data.boundingBox;
     return ClayBoundingBox{ clayBox.x, clayBox.y, clayBox.width, clayBox.height };
 }
 
-uint16_t ClayContext::AddFont(Font *font)
+ClayTextCache *ClayContext::GetClayText( ) const
 {
-    const uint16_t fontId = m_textRenderer->AddFont(font);
-    if (m_textRenderer->GetFont(0) == nullptr && fontId != 0)
-    {
-        m_textRenderer->AddFont(font, 0);
-    }
-    return fontId;
+    return m_clayText.get( );
 }
 
-ClayDimensions ClayContext::MeasureText(const InteropString &text, const uint16_t fontId, const uint16_t fontSize) const
+ClayDimensions ClayContext::MeasureText( const InteropString &text, const uint16_t fontId, const uint16_t fontSize ) const
 {
-    if (text.IsEmpty())
+    if ( text.IsEmpty( ) )
     {
         return ClayDimensions{ 0, 0 };
     }
 
-    Font *font = m_textRenderer->GetFont(fontId);
-    if (!font)
-    {
-        return ClayDimensions{ 0, 0 };
-    }
-
-    // Use text renderer to measure text
-    const float width  = static_cast<float>(text.NumChars() * fontSize * 0.6f); // Rough estimate
-    const float height = static_cast<float>(fontSize);
-    
-    return ClayDimensions{ width * m_dpiScale, height * m_dpiScale };
+    Clay_TextElementConfig config{ };
+    config.fontId   = fontId;
+    config.fontSize = fontSize;
+    return m_clayText->MeasureText( text, config );
 }
 
-void ClayContext::RenderTextToVertices(const InteropString &text, const ClayTextDesc &desc, const ClayBoundingBox &bounds, 
-                                      InteropArray<UIVertex> *outVertices, InteropArray<uint32_t> *outIndices) const
+Clay_RenderCommandArray ClayContext::EndLayoutAndGetCommands( const float deltaTime ) const
 {
-    // This is placeholder - the actual text rendering should be handled directly by ClayRenderer
-    // using its cached text layout system and MSDF font atlases for bindless rendering efficiency.
-    // For now, return empty to avoid interfering with the existing text rendering pipeline.
-    return;
-}
-
-Clay_RenderCommandArray ClayContext::EndLayoutAndGetCommands(const float deltaTime)
-{
-    DZ_NOT_NULL(m_context);
-    return Clay_EndLayout();
+    DZ_NOT_NULL( m_context );
+    return Clay_EndLayout( );
 }
 
 // Type conversion methods
-Clay_LayoutDirection ClayContext::ConvertLayoutDirection(const ClayLayoutDirection dir) const
+Clay_LayoutDirection ClayContext::ConvertLayoutDirection( const ClayLayoutDirection dir ) const
 {
-    switch (dir)
+    switch ( dir )
     {
     case ClayLayoutDirection::LeftToRight:
         return CLAY_LEFT_TO_RIGHT;
@@ -279,9 +273,9 @@ Clay_LayoutDirection ClayContext::ConvertLayoutDirection(const ClayLayoutDirecti
     }
 }
 
-Clay_LayoutAlignmentX ClayContext::ConvertAlignmentX(const ClayAlignmentX align) const
+Clay_LayoutAlignmentX ClayContext::ConvertAlignmentX( const ClayAlignmentX align ) const
 {
-    switch (align)
+    switch ( align )
     {
     case ClayAlignmentX::Left:
         return CLAY_ALIGN_X_LEFT;
@@ -294,9 +288,9 @@ Clay_LayoutAlignmentX ClayContext::ConvertAlignmentX(const ClayAlignmentX align)
     }
 }
 
-Clay_LayoutAlignmentY ClayContext::ConvertAlignmentY(const ClayAlignmentY align) const
+Clay_LayoutAlignmentY ClayContext::ConvertAlignmentY( const ClayAlignmentY align ) const
 {
-    switch (align)
+    switch ( align )
     {
     case ClayAlignmentY::Top:
         return CLAY_ALIGN_Y_TOP;
@@ -309,9 +303,9 @@ Clay_LayoutAlignmentY ClayContext::ConvertAlignmentY(const ClayAlignmentY align)
     }
 }
 
-Clay__SizingType ClayContext::ConvertSizingType(const ClaySizingType type) const
+Clay__SizingType ClayContext::ConvertSizingType( const ClaySizingType type ) const
 {
-    switch (type)
+    switch ( type )
     {
     case ClaySizingType::Fit:
         return CLAY__SIZING_TYPE_FIT;
@@ -326,12 +320,12 @@ Clay__SizingType ClayContext::ConvertSizingType(const ClaySizingType type) const
     }
 }
 
-Clay_SizingAxis ClayContext::ConvertSizingAxis(const ClaySizingAxis &axis) const
+Clay_SizingAxis ClayContext::ConvertSizingAxis( const ClaySizingAxis &axis ) const
 {
-    Clay_SizingAxis clayAxis{};
-    clayAxis.type = ConvertSizingType(axis.Type);
-    
-    if (axis.Type == ClaySizingType::Percent)
+    Clay_SizingAxis clayAxis{ };
+    clayAxis.type = ConvertSizingType( axis.Type );
+
+    if ( axis.Type == ClaySizingType::Percent )
     {
         clayAxis.size.percent = axis.Size.Percent;
     }
@@ -340,67 +334,62 @@ Clay_SizingAxis ClayContext::ConvertSizingAxis(const ClaySizingAxis &axis) const
         clayAxis.size.minMax.min = axis.Size.MinMax.Min;
         clayAxis.size.minMax.max = axis.Size.MinMax.Max;
     }
-    
+
     return clayAxis;
 }
 
-Clay_Sizing ClayContext::ConvertSizing(const ClaySizing &sizing) const
+Clay_Sizing ClayContext::ConvertSizing( const ClaySizing &sizing ) const
 {
-    return Clay_Sizing{ ConvertSizingAxis(sizing.Width), ConvertSizingAxis(sizing.Height) };
+    return Clay_Sizing{ ConvertSizingAxis( sizing.Width ), ConvertSizingAxis( sizing.Height ) };
 }
 
-Clay_Padding ClayContext::ConvertPadding(const ClayPadding &padding) const
+Clay_Padding ClayContext::ConvertPadding( const ClayPadding &padding ) const
 {
     return Clay_Padding{ padding.Left, padding.Right, padding.Top, padding.Bottom };
 }
 
-Clay_ChildAlignment ClayContext::ConvertChildAlignment(const ClayChildAlignment &alignment) const
+Clay_ChildAlignment ClayContext::ConvertChildAlignment( const ClayChildAlignment &alignment ) const
 {
-    return Clay_ChildAlignment{ ConvertAlignmentX(alignment.X), ConvertAlignmentY(alignment.Y) };
+    return Clay_ChildAlignment{ ConvertAlignmentX( alignment.X ), ConvertAlignmentY( alignment.Y ) };
 }
 
-Clay_LayoutConfig ClayContext::ConvertLayoutConfig(const ClayLayoutDesc &config) const
+Clay_LayoutConfig ClayContext::ConvertLayoutConfig( const ClayLayoutDesc &config ) const
 {
-    return Clay_LayoutConfig{
-        ConvertSizing(config.Sizing),
-        ConvertPadding(config.Padding),
-        config.ChildGap,
-        ConvertChildAlignment(config.ChildAlignment),
-        ConvertLayoutDirection(config.LayoutDirection)
-    };
+    return Clay_LayoutConfig{ ConvertSizing( config.Sizing ), ConvertPadding( config.Padding ), config.ChildGap, ConvertChildAlignment( config.ChildAlignment ),
+                              ConvertLayoutDirection( config.LayoutDirection ) };
 }
 
-Clay_Color ClayContext::ConvertColor(const ClayColor &color) const
+Clay_Color ClayContext::ConvertColor( const ClayColor &color ) const
 {
     return Clay_Color{ color.R, color.G, color.B, color.A };
 }
 
-Clay_CornerRadius ClayContext::ConvertCornerRadius(const ClayCornerRadius &radius) const
+Clay_CornerRadius ClayContext::ConvertCornerRadius( const ClayCornerRadius &radius ) const
 {
     return Clay_CornerRadius{ radius.TopLeft, radius.TopRight, radius.BottomLeft, radius.BottomRight };
 }
 
-Clay_BorderWidth ClayContext::ConvertBorderWidth(const ClayBorderWidth &width) const
+Clay_BorderWidth ClayContext::ConvertBorderWidth( const ClayBorderWidth &width ) const
 {
     return Clay_BorderWidth{ width.Left, width.Right, width.Top, width.Bottom, width.BetweenChildren };
 }
 
-Clay_BorderElementConfig ClayContext::ConvertBorderConfig(const ClayBorderDesc &config) const
+Clay_BorderElementConfig ClayContext::ConvertBorderConfig( const ClayBorderDesc &config ) const
 {
     Clay_BorderElementConfig result;
-    result.width = ConvertBorderWidth(config.Width);
-    result.color = ConvertColor(config.Color);
+    result.width = ConvertBorderWidth( config.Width );
+    result.color = ConvertColor( config.Color );
     return result;
 }
 
-Clay_ImageElementConfig ClayContext::ConvertImageConfig(const ClayImageDesc &config) const
+Clay_ImageElementConfig ClayContext::ConvertImageConfig( const ClayImageDesc &config ) const
 {
     return Clay_ImageElementConfig{ config.ImageData, Clay_Dimensions{ config.SourceDimensions.Width, config.SourceDimensions.Height } };
 }
 
-Clay_FloatingAttachPointType ClayContext::ConvertFloatingAttachPoint(const ClayFloatingAttachPoint point) const
+Clay_FloatingAttachPointType ClayContext::ConvertFloatingAttachPoint( const ClayFloatingAttachPoint point ) const
 {
-    switch (point)
+    switch ( point )
     {
     case ClayFloatingAttachPoint::LeftTop:
         return CLAY_ATTACH_POINT_LEFT_TOP;
@@ -425,9 +414,9 @@ Clay_FloatingAttachPointType ClayContext::ConvertFloatingAttachPoint(const ClayF
     }
 }
 
-Clay_FloatingAttachToElement ClayContext::ConvertFloatingAttachTo(const ClayFloatingAttachTo attachTo) const
+Clay_FloatingAttachToElement ClayContext::ConvertFloatingAttachTo( const ClayFloatingAttachTo attachTo ) const
 {
-    switch (attachTo)
+    switch ( attachTo )
     {
     case ClayFloatingAttachTo::None:
         return CLAY_ATTACH_TO_NONE;
@@ -442,35 +431,35 @@ Clay_FloatingAttachToElement ClayContext::ConvertFloatingAttachTo(const ClayFloa
     }
 }
 
-Clay_FloatingElementConfig ClayContext::ConvertFloatingConfig(const ClayFloatingDesc &config) const
+Clay_FloatingElementConfig ClayContext::ConvertFloatingConfig( const ClayFloatingDesc &config ) const
 {
-    Clay_FloatingElementConfig result{};
-    result.offset.x = config.Offset.X;
-    result.offset.y = config.Offset.Y;
-    result.expand.width = config.Expand.Width;
-    result.expand.height = config.Expand.Height;
-    result.zIndex = config.ZIndex;  // Keep as full float, don't cast to uint16_t
-    result.parentId = static_cast<int16_t>(config.ParentId);
-    result.attachPoints.element = ConvertFloatingAttachPoint(config.ElementAttachPoint);
-    result.attachPoints.parent = ConvertFloatingAttachPoint(config.ParentAttachPoint);
-    result.attachTo = ConvertFloatingAttachTo(config.AttachTo);  // CRITICAL: This was missing!
-    result.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_CAPTURE;
+    Clay_FloatingElementConfig result{ };
+    result.offset.x             = config.Offset.X;
+    result.offset.y             = config.Offset.Y;
+    result.expand.width         = config.Expand.Width;
+    result.expand.height        = config.Expand.Height;
+    result.zIndex               = config.ZIndex;
+    result.parentId             = static_cast<int16_t>( config.ParentId );
+    result.attachPoints.element = ConvertFloatingAttachPoint( config.ElementAttachPoint );
+    result.attachPoints.parent  = ConvertFloatingAttachPoint( config.ParentAttachPoint );
+    result.attachTo             = ConvertFloatingAttachTo( config.AttachTo );
+    result.pointerCaptureMode   = CLAY_POINTER_CAPTURE_MODE_CAPTURE;
     return result;
 }
 
-Clay_ScrollElementConfig ClayContext::ConvertScrollConfig(const ClayScrollDesc &config) const
+Clay_ScrollElementConfig ClayContext::ConvertScrollConfig( const ClayScrollDesc &config ) const
 {
     return Clay_ScrollElementConfig{ config.Horizontal, config.Vertical };
 }
 
-Clay_CustomElementConfig ClayContext::ConvertCustomConfig(const ClayCustomDesc &config) const
+Clay_CustomElementConfig ClayContext::ConvertCustomConfig( const ClayCustomDesc &config ) const
 {
     return Clay_CustomElementConfig{ config.CustomData };
 }
 
-Clay_TextElementConfigWrapMode ClayContext::ConvertTextWrapMode(const ClayTextWrapMode mode) const
+Clay_TextElementConfigWrapMode ClayContext::ConvertTextWrapMode( const ClayTextWrapMode mode ) const
 {
-    switch (mode)
+    switch ( mode )
     {
     case ClayTextWrapMode::Words:
         return CLAY_TEXT_WRAP_WORDS;
@@ -483,9 +472,9 @@ Clay_TextElementConfigWrapMode ClayContext::ConvertTextWrapMode(const ClayTextWr
     }
 }
 
-Clay_TextAlignment ClayContext::ConvertTextAlignment(const ClayTextAlignment align) const
+Clay_TextAlignment ClayContext::ConvertTextAlignment( const ClayTextAlignment align ) const
 {
-    switch (align)
+    switch ( align )
     {
     case ClayTextAlignment::Left:
         return CLAY_TEXT_ALIGN_LEFT;
@@ -498,22 +487,20 @@ Clay_TextAlignment ClayContext::ConvertTextAlignment(const ClayTextAlignment ali
     }
 }
 
-Clay_TextElementConfig ClayContext::ConvertTextConfig(const ClayTextDesc &config) const
+Clay_TextElementConfig ClayContext::ConvertTextConfig( const ClayTextDesc &config ) const
 {
-    return Clay_TextElementConfig{
-        ConvertColor(config.TextColor),
-        config.FontId,
-        config.FontSize,
-        config.LetterSpacing,
-        config.LineHeight,
-        ConvertTextWrapMode(config.WrapMode),
-        ConvertTextAlignment(config.TextAlignment)
-    };
+    return Clay_TextElementConfig{ ConvertColor( config.TextColor ),
+                                   config.FontId,
+                                   config.FontSize,
+                                   config.LetterSpacing,
+                                   config.LineHeight,
+                                   ConvertTextWrapMode( config.WrapMode ),
+                                   ConvertTextAlignment( config.TextAlignment ) };
 }
 
-ClayRenderCommandType ClayContext::ConvertRenderCommandType(const Clay_RenderCommandType type) const
+ClayRenderCommandType ClayContext::ConvertRenderCommandType( const Clay_RenderCommandType type ) const
 {
-    switch (type)
+    switch ( type )
     {
     case CLAY_RENDER_COMMAND_TYPE_NONE:
         return ClayRenderCommandType::None;

@@ -198,7 +198,7 @@ void ColorPickerWidget::UpdateFromMouseWheel( const float mouseX, const float mo
 
     if ( distance <= radius )
     {
-        const float angle = std::atan2( dy, dx ) + XM_PI;
+        const float angle = std::atan2( dy, dx ) + DirectX::XM_PI;
         const float hue   = angle / ( 2.0f * 3.14159f ) * 360.0f;
 
         const float saturation = std::min( distance / radius, 1.0f );

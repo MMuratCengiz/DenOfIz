@@ -58,7 +58,7 @@ ClayBoundingBox Widget::GetBoundingBox( ) const
     return m_clayContext->GetElementBoundingBox( m_id );
 }
 
-void Widget::AddRectangle( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const ClayColor &color, const ClayCornerRadius &cornerRadius )
+void Widget::AddRectangle( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const ClayColor &color, const ClayCornerRadius &cornerRadius ) const
 {
     InteropArray<UIVertex> vertices;
     InteropArray<uint32_t> indices;
@@ -84,7 +84,7 @@ void Widget::AddRectangle( IRenderBatch *renderBatch, const ClayBoundingBox &bou
     renderBatch->AddVertices( vertices, indices );
 }
 
-void Widget::AddBorder( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const ClayColor &color, const ClayBorderWidth &width, const ClayCornerRadius &cornerRadius )
+void Widget::AddBorder( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const ClayColor &color, const ClayBorderWidth &width, const ClayCornerRadius &cornerRadius ) const
 {
     InteropArray<UIVertex> vertices;
     InteropArray<uint32_t> indices;
@@ -97,17 +97,4 @@ void Widget::AddBorder( IRenderBatch *renderBatch, const ClayBoundingBox &bounds
     UIShapes::GenerateBorder( desc, &vertices, &indices, 0 );
 
     renderBatch->AddVertices( vertices, indices );
-}
-
-void Widget::AddText( IRenderBatch *renderBatch, const ClayBoundingBox &bounds, const InteropString &text, const ClayTextDesc &desc )
-{
-    InteropArray<UIVertex> vertices;
-    InteropArray<uint32_t> indices;
-
-    m_clayContext->RenderTextToVertices( text, desc, bounds, &vertices, &indices );
-
-    if ( vertices.NumElements( ) > 0 && indices.NumElements( ) > 0 )
-    {
-        renderBatch->AddVertices( vertices, indices );
-    }
 }

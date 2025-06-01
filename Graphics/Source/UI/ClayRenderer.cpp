@@ -16,10 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Assets/Font/Embedded/EmbeddedFonts.h>
-#include <DenOfIzGraphics/Assets/Font/FontLibrary.h>
-#include <DenOfIzGraphics/Assets/Import/ShaderImporter.h>
-#include <DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h>
 #include <DenOfIzGraphics/Data/BatchResourceCopy.h>
 #include <DenOfIzGraphics/UI/ClayData.h>
 #include <DenOfIzGraphics/UI/ClayRenderer.h>
@@ -33,13 +29,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 using namespace DirectX;
 
-ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_logicalDevice( desc.LogicalDevice )
+ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_logicalDevice( desc.LogicalDevice ), m_clayContext( desc.ClayContext )
 {
     if ( m_logicalDevice == nullptr )
     {
         LOG( ERROR ) << "ClayRenderer: LogicalDevice cannot be null";
         return;
     }
+
+    if ( m_clayContext == nullptr )
+    {
+        LOG( ERROR ) << "ClayRenderer: ClayContext cannot be null";
+        return;
+    }
+    m_clayText = m_clayContext->GetClayText( );
 
     m_viewportWidth  = desc.Width;
     m_viewportHeight = desc.Height;
@@ -75,10 +78,6 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_l
     quadDesc.OutputFormat  = desc.RenderTargetFormat;
     quadDesc.NumFrames     = desc.NumFrames;
     m_fullscreenQuad       = std::make_unique<FullscreenQuadPipeline>( quadDesc );
-
-    static FontLibrary defaultFontLibrary;
-    static auto        defaultFont = defaultFontLibrary.LoadFont( { EmbeddedFonts::GetInterVar( ) } );
-    AddFont( 0, defaultFont );
 }
 
 ClayRenderer::~ClayRenderer( )
@@ -268,33 +267,6 @@ void ClayRenderer::UpdateProjectionMatrix( )
     XMStoreFloat4x4( &m_projectionMatrix, projection );
 }
 
-void ClayRenderer::AddFont( const uint16_t fontId, Font *font )
-{
-    if ( font == nullptr )
-    {
-        LOG( ERROR ) << "ClayRenderer::AddFont: Font cannot be null";
-        return;
-    }
-
-    auto &fontData   = m_fonts[ fontId ];
-    fontData.FontPtr = font;
-    InitializeFontAtlas( &fontData );
-}
-
-void ClayRenderer::RemoveFont( const uint16_t fontId )
-{
-    const auto it = m_fonts.find( fontId );
-    if ( it != m_fonts.end( ) )
-    {
-        if ( it->second.TextureIndex > 0 && it->second.TextureIndex < m_textures.size( ) )
-        {
-            m_textures[ it->second.TextureIndex ] = nullptr;
-            m_texturesDirty                       = true; // Mark textures as dirty when removing
-        }
-        m_fonts.erase( it );
-    }
-}
-
 void ClayRenderer::Resize( const float width, const float height )
 {
     m_viewportWidth  = width;
@@ -306,6 +278,10 @@ void ClayRenderer::Resize( const float width, const float height )
 void ClayRenderer::SetDpiScale( const float dpiScale )
 {
     m_dpiScale = dpiScale;
+    if ( m_clayText )
+    {
+        m_clayText->SetDpiScale( dpiScale );
+    }
 }
 
 void ClayRenderer::SetDeltaTime( const float deltaTime )
@@ -336,15 +312,18 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
 
     ++m_currentFrame;
 
+    if ( m_clayText )
+    {
+        m_clayText->UpdateFrame( m_currentFrame );
+    }
+
     if ( m_currentFrame % 6000 /*frame*/ == 0 )
     {
         m_shapeCache.Cleanup( m_currentFrame );
-        m_textVertexCache.Cleanup( m_currentFrame );
-    }
-
-    if ( m_currentFrame % 3000 /*frame*/ == 0 )
-    {
-        CleanupTextLayoutCache( );
+        if ( m_clayText )
+        {
+            m_clayText->CleanupCaches( 3000, 6000 );
+        }
     }
 
     m_batchedVertices.Clear( );
@@ -361,17 +340,21 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
 
     float atlasWidth  = 512.0f;
     float atlasHeight = 512.0f;
-    for ( const auto &fontData : m_fonts | std::views::values )
+    if ( m_clayText )
     {
-        // Todo we're using first one for now
-        if ( fontData.FontPtr && fontData.FontPtr->Asset( ) )
+        // Get atlas dimensions from first available font
+        for ( uint16_t fontId = 0; fontId < 100; ++fontId )
         {
-            atlasWidth  = static_cast<float>( fontData.FontPtr->Asset( )->AtlasWidth );
-            atlasHeight = static_cast<float>( fontData.FontPtr->Asset( )->AtlasHeight );
-            break;
+            Font *font = m_clayText->GetFont( fontId );
+            if ( font && font->Asset( ) )
+            {
+                atlasWidth  = static_cast<float>( font->Asset( )->AtlasWidth );
+                atlasHeight = static_cast<float>( font->Asset( )->AtlasHeight );
+                break;
+            }
         }
     }
-    tempUniforms.FontParams = XMFLOAT4( atlasWidth, atlasHeight, Font::MsdfPixelRange, 0.0f );
+    tempUniforms.FontParams = XMFLOAT4( atlasWidth, atlasHeight, 12.0f, 0.0f ); // Using hardcoded MsdfPixelRange
 
     uint8_t *uniformLocation = reinterpret_cast<uint8_t *>( m_uniformBufferData ) + frameIndex * m_alignedUniformSize;
     memcpy( uniformLocation, &tempUniforms, sizeof( UIUniforms ) );
@@ -379,6 +362,7 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
     const FrameData &frame = m_frameData[ frameIndex ];
     if ( m_texturesDirty )
     {
+        SyncFontTexturesFromClayText( );
         for ( uint32_t i = 0; i < m_desc.NumFrames; ++i )
         {
             UpdateTextureBindings( i );
@@ -562,13 +546,19 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
     const auto &data   = command->renderData.text;
     const auto &bounds = command->boundingBox;
 
-    const FontData *fontData = GetFontData( data.fontId );
-    if ( fontData == nullptr || fontData->FontPtr == nullptr )
+    if ( !m_clayText )
+    {
+        LOG( WARNING ) << "ClayText not set in ClayRenderer";
+        return;
+    }
+
+    const Font *font = m_clayText->GetFont( data.fontId );
+    if ( font == nullptr )
     {
         LOG( WARNING ) << "Font not found for ID: " << data.fontId;
         return;
     }
-    const float baseSize       = static_cast<float>( fontData->FontPtr->Asset( )->InitialFontSize );
+    const float baseSize       = static_cast<float>( font->Asset( )->InitialFontSize );
     const float targetSize     = data.fontSize > 0 ? data.fontSize * m_dpiScale : baseSize;
     const float effectiveScale = targetSize / baseSize;
 
@@ -589,9 +579,9 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
             pos++;
         }
 
-        const float fontAscent        = static_cast<float>( fontData->FontPtr->Asset( )->Metrics.Ascent ) * effectiveScale;
-        const float fontDescent       = static_cast<float>( fontData->FontPtr->Asset( )->Metrics.Descent ) * effectiveScale;
-        const float defaultLineHeight = ( fontAscent + fontDescent ) * 1.2f; // Default 1.2x line spacing
+        const float fontAscent        = static_cast<float>( font->Asset( )->Metrics.Ascent ) * effectiveScale;
+        const float fontDescent       = static_cast<float>( font->Asset( )->Metrics.Descent ) * effectiveScale;
+        const float defaultLineHeight = ( fontAscent + fontDescent ) * 1.2f;
         const float lineHeight        = data.lineHeight > 0 ? data.lineHeight : defaultLineHeight;
 
         float currentY = bounds.y * m_dpiScale + fontAscent;
@@ -605,29 +595,41 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
                 lineCommand.renderData.text.stringContents.length = static_cast<int32_t>( line.length( ) );
                 lineCommand.boundingBox.y                         = currentY / m_dpiScale - fontAscent / m_dpiScale;
 
-                RenderSingleLineText( &lineCommand, fontData, effectiveScale, fontAscent );
+                RenderSingleLineText( &lineCommand, data.fontId, effectiveScale, fontAscent );
             }
             currentY += lineHeight;
         }
     }
     else
     {
-        const float fontAscent = static_cast<float>( fontData->FontPtr->Asset( )->Metrics.Ascent ) * effectiveScale;
-        RenderSingleLineText( command, fontData, effectiveScale, fontAscent );
+        const float fontAscent = static_cast<float>( font->Asset( )->Metrics.Ascent ) * effectiveScale;
+        RenderSingleLineText( command, data.fontId, effectiveScale, fontAscent );
     }
 }
 
-void ClayRenderer::RenderSingleLineText( const Clay_RenderCommand *command, const FontData *fontData, float effectiveScale, float fontAscent )
+void ClayRenderer::RenderSingleLineText( const Clay_RenderCommand *command, const uint16_t fontId, const float effectiveScale, const float fontAscent )
 {
     const auto &data   = command->renderData.text;
     const auto &bounds = command->boundingBox;
 
-    const TextLayout *textLayout = GetOrCreateShapedText( command, fontData->FontPtr );
+    if ( !m_clayText )
+    {
+        LOG( WARNING ) << "ClayText not set in ClayRenderer";
+        return;
+    }
+
+    Font *font = m_clayText->GetFont( fontId );
+    if ( !font )
+    {
+        return;
+    }
+
+    const TextLayout *textLayout = m_clayText->GetOrCreateShapedText( command, font );
 
     const float adjustedY = bounds.y * m_dpiScale + fontAscent;
 
     const TextVertexCacheKey vertexCacheKey = UITextVertexCache::CreateTextVertexKey( command, effectiveScale, adjustedY, m_dpiScale );
-    CachedTextVertices      *cachedVertices = m_textVertexCache.GetOrCreateCachedTextVertices( vertexCacheKey, m_currentFrame );
+    CachedTextVertices      *cachedVertices = m_clayText->GetOrCreateTextVertices( vertexCacheKey );
 
     if ( cachedVertices->vertices.NumElements( ) == 0 )
     {
@@ -654,7 +656,7 @@ void ClayRenderer::RenderSingleLineText( const Clay_RenderCommand *command, cons
                 vertex.Position     = XMFLOAT3( glyph.Position.X, glyph.Position.Y, 0.0f ); // Z will be set in AddVerticesWithDepth
                 vertex.TexCoord     = XMFLOAT2( glyph.UV.X, glyph.UV.Y );
                 vertex.Color        = XMFLOAT4( glyph.Color.X, glyph.Color.Y, glyph.Color.Z, glyph.Color.W );
-                vertex.TextureIndex = fontData->TextureIndex;
+                vertex.TextureIndex = m_clayText->GetFontTextureIndex( fontId );
                 cachedVertices->vertices.AddElement( vertex );
             }
 
@@ -714,9 +716,9 @@ void ClayRenderer::RenderCustom( const Clay_RenderCommand *command, ICommandList
     if ( auto *widget = static_cast<Widget *>( data.customData ) )
     {
         bool isRegisteredWidget = false;
-        for ( const auto &pair : m_widgets )
+        for ( const auto &val : m_widgets | std::views::values )
         {
-            if ( pair.second == widget )
+            if ( val == widget )
             {
                 isRegisteredWidget = true;
                 break;
@@ -1396,136 +1398,44 @@ void ClayRenderer::UpdateTextureBindings( const uint32_t frameIndex ) const
 
     const FrameData                 &frame = m_frameData[ frameIndex ];
     InteropArray<ITextureResource *> textureArray;
-    for ( const auto &tex : m_textures )
+
+    // Build texture array - ClayText manages font texture indices
+    for ( size_t i = 0; i < m_textures.size( ); ++i )
     {
+        ITextureResource *tex = m_textures[ i ];
+
+        // Check if this is a font texture slot that needs updating from ClayText
+        if ( m_clayText && m_textureFontFlags[ i ] )
+        {
+            // ClayText maintains the mapping of texture indices to font textures
+            // We'll get the actual texture when RenderText sets it up
+            tex = m_textures[ i ];
+        }
+
         textureArray.AddElement( tex ? tex : m_nullTexture.get( ) );
     }
     frame.TextureBindGroup->BeginUpdate( )->SrvArray( 0, textureArray )->Sampler( 0, m_linearSampler.get( ) )->EndUpdate( );
 }
 
-ClayRenderer::FontData *ClayRenderer::GetFontData( const uint16_t fontId )
-{
-    const auto it = m_fonts.find( fontId );
-    if ( it != m_fonts.end( ) )
-    {
-        return &it->second;
-    }
-    return nullptr;
-}
-
-void ClayRenderer::InitializeFontAtlas( FontData *fontData )
-{
-    if ( fontData == nullptr || fontData->FontPtr == nullptr )
-    {
-        return;
-    }
-
-    const auto *fontAsset = fontData->FontPtr->Asset( );
-    if ( fontAsset == nullptr )
-    {
-        LOG( ERROR ) << "Font asset is null";
-        return;
-    }
-
-    TextureDesc textureDesc{ };
-    textureDesc.Width        = fontAsset->AtlasWidth;
-    textureDesc.Height       = fontAsset->AtlasHeight;
-    textureDesc.Format       = Format::R8G8B8A8Unorm;
-    textureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture );
-    textureDesc.Usages       = BitSet( ResourceUsage::ShaderResource );
-    textureDesc.InitialUsage = ResourceUsage::ShaderResource;
-    textureDesc.HeapType     = HeapType::GPU;
-    textureDesc.DebugName    = "Font Atlas Texture";
-    fontData->Atlas          = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
-
-    if ( fontAsset->AtlasData.NumElements( ) > 0 )
-    {
-        CommandQueueDesc commandQueueDesc{ };
-        commandQueueDesc.QueueType = QueueType::Graphics;
-
-        auto commandQueue = std::unique_ptr<ICommandQueue>( m_logicalDevice->CreateCommandQueue( commandQueueDesc ) );
-
-        CommandListPoolDesc commandListPoolDesc{ };
-        commandListPoolDesc.CommandQueue    = commandQueue.get( );
-        commandListPoolDesc.NumCommandLists = 1;
-
-        auto commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( commandListPoolDesc ) );
-        auto commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
-        commandList->Begin( );
-
-        const auto alignedPitch = Utilities::Align( fontAsset->AtlasWidth * FontAsset::NumChannels, m_logicalDevice->DeviceInfo( ).Constants.BufferTextureRowAlignment );
-        const auto alignedSlice = Utilities::Align( fontAsset->AtlasHeight, m_logicalDevice->DeviceInfo( ).Constants.BufferTextureAlignment );
-
-        BufferDesc stagingDesc;
-        stagingDesc.NumBytes          = alignedPitch * alignedSlice;
-        stagingDesc.Descriptor        = BitSet( ResourceDescriptor::Buffer );
-        stagingDesc.InitialUsage      = ResourceUsage::CopySrc;
-        stagingDesc.DebugName         = "Font MSDF Atlas Staging Buffer";
-        stagingDesc.HeapType          = HeapType::CPU;
-        auto m_fontAtlasStagingBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( stagingDesc ) );
-
-        m_resourceTracking.TrackTexture( fontData->Atlas.get( ), ResourceUsage::ShaderResource );
-        m_resourceTracking.TrackBuffer( m_fontAtlasStagingBuffer.get( ), ResourceUsage::CopySrc );
-
-        LoadAtlasIntoGpuTextureDesc loadDesc{ };
-        loadDesc.Device        = m_logicalDevice;
-        loadDesc.StagingBuffer = m_fontAtlasStagingBuffer.get( );
-        loadDesc.CommandList   = commandList;
-        loadDesc.Texture       = fontData->Atlas.get( );
-        FontAssetReader::LoadAtlasIntoGpuTexture( *fontAsset, loadDesc );
-
-        BatchTransitionDesc batchTransitionDesc{ commandList };
-        batchTransitionDesc.TransitionTexture( fontData->Atlas.get( ), ResourceUsage::CopyDst );
-        m_resourceTracking.BatchTransition( batchTransitionDesc );
-
-        CopyBufferToTextureDesc copyDesc{ };
-        copyDesc.SrcBuffer  = m_fontAtlasStagingBuffer.get( );
-        copyDesc.DstTexture = fontData->Atlas.get( );
-        copyDesc.RowPitch   = fontAsset->AtlasWidth * 4; // 4 bytes per pixel (RGBA)
-        copyDesc.Format     = fontData->Atlas->GetFormat( );
-
-        commandList->CopyBufferToTexture( copyDesc );
-
-        batchTransitionDesc = BatchTransitionDesc{ commandList };
-        batchTransitionDesc.TransitionTexture( fontData->Atlas.get( ), ResourceUsage::ShaderResource );
-        m_resourceTracking.BatchTransition( batchTransitionDesc );
-
-        commandList->End( );
-        ExecuteCommandListsDesc executeDesc{ };
-        executeDesc.CommandLists = { commandList };
-        commandQueue->ExecuteCommandLists( executeDesc );
-        commandQueue->WaitIdle( );
-    }
-
-    fontData->TextureIndex = RegisterTexture( fontData->Atlas.get( ) );
-}
-
 void ClayRenderer::ClearCaches( )
 {
-    m_textLayoutCache.Clear( );
     m_shapeCache.Clear( );
-    m_textVertexCache.Clear( );
-    for ( auto &val : m_fonts | std::views::values )
+    if ( m_clayText )
     {
-        val.TextLayouts.Clear( );
-        val.CurrentLayoutIndex = 0;
+        m_clayText->ClearCaches( );
     }
 
     m_imageTextureIndices.clear( );
     bool anyTextureCleared = false;
     for ( uint32_t i = 1; i < m_textures.size( ); ++i )
     {
-        bool isFontTexture = false;
-        for ( const auto &val : m_fonts | std::views::values )
+        // Skip font textures - they're managed by ClayText
+        if ( m_textureFontFlags[ i ] )
         {
-            if ( val.TextureIndex == i )
-            {
-                isFontTexture = true;
-                break;
-            }
+            continue;
         }
 
-        if ( !isFontTexture && m_textures[ i ] != nullptr )
+        if ( m_textures[ i ] != nullptr )
         {
             m_textures[ i ]   = nullptr;
             anyTextureCleared = true;
@@ -1540,30 +1450,12 @@ void ClayRenderer::ClearCaches( )
 
 ClayDimensions ClayRenderer::MeasureText( const InteropString &text, const Clay_TextElementConfig &desc ) const
 {
-    ClayDimensions result{ };
-    result.Width  = 0;
-    result.Height = 0;
-
-    const auto it = m_fonts.find( desc.fontId );
-    if ( it == m_fonts.end( ) || it->second.FontPtr == nullptr )
+    if ( !m_clayText )
     {
-        return result;
+        return ClayDimensions{ 0, 0 };
     }
 
-    const FontData &fontData = it->second;
-    Font           *font     = fontData.FontPtr;
-
-    const float baseSize   = static_cast<float>( font->Asset( )->InitialFontSize );
-    const float targetSize = desc.fontSize > 0 ? desc.fontSize * m_dpiScale : baseSize;
-
-    // Use the cached text layout system
-    const TextLayout *layout = GetOrCreateShapedTextDirect( text.Get( ), text.NumChars( ), desc.fontId, static_cast<uint32_t>( targetSize ), font );
-
-    const auto size = layout->GetTextSize( );
-    result.Width    = size.X / m_dpiScale;
-    result.Height   = size.Y / m_dpiScale;
-
-    return result;
+    return m_clayText->MeasureText( text, desc );
 }
 
 void ClayRenderer::AddVerticesWithDepth( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices )
@@ -1671,24 +1563,6 @@ void ClayRenderer::FlushBatchedGeometry( ICommandList *commandList )
 {
     FlushCurrentBatch( );
     ExecuteDrawBatches( commandList );
-}
-
-TextLayout *ClayRenderer::GetOrCreateShapedText( const Clay_RenderCommand *command, Font *font ) const
-{
-    const auto &data       = command->renderData.text;
-    const float targetSize = data.fontSize > 0 ? data.fontSize * m_dpiScale : static_cast<float>( font->Asset( )->InitialFontSize );
-    return GetOrCreateShapedTextDirect( data.stringContents.chars, data.stringContents.length, data.fontId, static_cast<uint32_t>( targetSize ), font );
-}
-
-TextLayout *ClayRenderer::GetOrCreateShapedTextDirect( const char *text, const size_t length, const uint16_t fontId, const uint32_t fontSize, Font *font ) const
-{
-    const uint64_t textHash = TextLayoutCache::HashString( text, length );
-    return m_textLayoutCache.GetOrCreate( textHash, fontId, fontSize, font, text, length, m_currentFrame );
-}
-
-void ClayRenderer::CleanupTextLayoutCache( ) const
-{
-    m_textLayoutCache.Cleanup( m_currentFrame );
 }
 
 void ClayRenderer::RenderResizableContainer( const Clay_RenderCommand *command, const ClayResizableContainerRenderData *resizableData, ICommandList *commandList )
@@ -1810,12 +1684,12 @@ void ClayRenderer::RenderDockableContainer( const Clay_RenderCommand *command, c
     }
 }
 
-void ClayRenderer::RegisterWidget( uint32_t id, Widget *widget )
+void ClayRenderer::RegisterWidget( const uint32_t id, Widget *widget )
 {
     m_widgets[ id ] = widget;
 }
 
-void ClayRenderer::UnregisterWidget( uint32_t id )
+void ClayRenderer::UnregisterWidget( const uint32_t id )
 {
     m_widgets.erase( id );
 }
@@ -1833,4 +1707,20 @@ void ClayRenderBatch::AddVertices( const InteropArray<UIVertex> &vertices, const
 uint32_t ClayRenderBatch::GetCurrentVertexOffset( ) const
 {
     return m_renderer->GetCurrentVertexCount( );
+}
+
+void ClayRenderer::SyncFontTexturesFromClayText( )
+{
+    for ( uint16_t fontId = 0; fontId < 100; ++fontId )
+    {
+        if ( ITextureResource *fontTexture = m_clayText->GetFontTexture( fontId ) )
+        {
+            const uint32_t textureIndex = m_clayText->GetFontTextureIndex( fontId );
+            if ( textureIndex > 0 && textureIndex < m_textures.size( ) )
+            {
+                m_textures[ textureIndex ]         = fontTexture;
+                m_textureFontFlags[ textureIndex ] = true;
+            }
+        }
+    }
 }
