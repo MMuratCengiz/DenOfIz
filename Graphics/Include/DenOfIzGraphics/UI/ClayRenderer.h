@@ -198,13 +198,6 @@ namespace DenOfIz
         void RenderSingleLineText( const Clay_RenderCommand *command, uint16_t fontId, float effectiveScale, float fontAscent );
         void RenderImage( const Clay_RenderCommand *command );
         void RenderCustom( const Clay_RenderCommand *command, ICommandList *commandList );
-        void RenderTextField( const Clay_RenderCommand *command, const ClayTextFieldRenderData *textFieldData, ICommandList *commandList );
-        void RenderCheckbox( const Clay_RenderCommand *command, const ClayCheckboxRenderData *checkboxData, ICommandList *commandList );
-        void RenderSlider( const Clay_RenderCommand *command, const ClaySliderRenderData *sliderData, ICommandList *commandList );
-        void RenderDropdown( const Clay_RenderCommand *command, const ClayDropdownRenderData *dropdownData, ICommandList *commandList );
-        void RenderColorPicker( const Clay_RenderCommand *command, const ClayColorPickerRenderData *colorPickerData, ICommandList *commandList );
-        void RenderResizableContainer( const Clay_RenderCommand *command, const ClayResizableContainerRenderData *resizableData, ICommandList *commandList );
-        void RenderDockableContainer( const Clay_RenderCommand *command, const ClayDockableContainerRenderData *dockableData, ICommandList *commandList );
         void SetScissor( const Clay_RenderCommand *command );
         void ClearScissor( );
         void FlushBatchedGeometry( ICommandList *commandList );
