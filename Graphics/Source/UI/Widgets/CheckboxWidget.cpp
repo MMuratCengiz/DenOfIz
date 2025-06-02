@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-CheckboxWidget::CheckboxWidget( ClayContext *clayContext, const uint32_t id, const bool initialChecked, const CheckboxStyle &style ) :
+CheckboxWidget::CheckboxWidget( IClayContext *clayContext, const uint32_t id, const bool initialChecked, const CheckboxStyle &style ) :
     Widget( clayContext, id ), m_isChecked( initialChecked ), m_style( style )
 {
 }

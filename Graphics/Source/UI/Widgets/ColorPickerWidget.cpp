@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-ColorPickerWidget::ColorPickerWidget( ClayContext *clayContext, const uint32_t id, const Float_3 &initialRgb, const ColorPickerStyle &style ) :
+ColorPickerWidget::ColorPickerWidget( IClayContext *clayContext, const uint32_t id, const Float_3 &initialRgb, const ColorPickerStyle &style ) :
     Widget( clayContext, id ), m_rgb( initialRgb ), m_style( style )
 {
     m_hsv = RGBToHSV( m_rgb );

@@ -43,7 +43,7 @@ cbuffer UIUniforms : register(b0, space1)
 {
     float4x4 Projection;
     float4 ScreenSize; // xy: screen dimensions, zw: unused
-    float4 FontParams; // x: atlas width, y: atlas height, z: pixel range, w: unused
+    float4 FontParams; // x: atlas width, y: atlas height, z: pixel range, w: first non-font texture index
 };
 
 VSOutput main(VSInput input)
@@ -72,7 +72,7 @@ cbuffer UIUniforms : register(b0, space1)
 {
     float4x4 Projection;
     float4 ScreenSize; // xy: screen dimensions, zw: unused
-    float4 FontParams; // x: atlas width, y: atlas height, z: pixel range, w: unused
+    float4 FontParams; // x: atlas width, y: atlas height, z: pixel range, w: first non-font texture index
 };
 
 // MSDF rendering helper function to calculate median of 3 values
@@ -98,9 +98,9 @@ float4 main(PSInput input) : SV_TARGET
 
     float4 texColor = Textures[input.TextureIndex].Sample(LinearSampler, input.TexCoord);
 
-    // For now, treat all non-zero textures as potential MSDF fonts
-    // TODO: Better way to distinguish font textures from regular images
-    if (input.TextureIndex > 0 && input.TextureIndex < 128)
+    // Textures with index < FontParams.w are font textures (MSDF)
+    // Textures with index >= FontParams.w are regular image textures
+    if (input.TextureIndex > 0 && input.TextureIndex < (uint)FontParams.w)
     {
         // MSDF text rendering
         float3 msdf = texColor.rgb;

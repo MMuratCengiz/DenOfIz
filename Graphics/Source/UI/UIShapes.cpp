@@ -309,9 +309,9 @@ void UIShapes::AddVertex( InteropArray<UIVertex> *vertices, const float x, const
                           const uint32_t textureIndex )
 {
     UIVertex vertex;
-    vertex.Position     = XMFLOAT3( x, y, z );
-    vertex.TexCoord     = XMFLOAT2( u, v );
-    vertex.Color        = color;
+    vertex.Position     = Float_3{ x, y, z };
+    vertex.TexCoord     = Float_2{ u, v };
+    vertex.Color        = Float_4{ color.x, color.y, color.z, color.w };
     vertex.TextureIndex = textureIndex;
 
     vertices->AddElement( vertex );

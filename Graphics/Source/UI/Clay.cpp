@@ -190,6 +190,7 @@ Clay::Clay( const ClayDesc &desc )
     clayRendererDesc.NumFrames          = desc.NumFrames;
     clayRendererDesc.Width              = desc.Width;
     clayRendererDesc.Height             = desc.Height;
+    clayRendererDesc.MaxPipelineWidgets = desc.MaxPipelineWidgets;
 
     m_renderer = std::make_unique<ClayRenderer>( clayRendererDesc );
 }
@@ -347,7 +348,6 @@ void Clay::HandleEvent( const Event &event )
         m_scrollDelta.Y += static_cast<float>( event.Wheel.Y ) * 30.0f;
     }
 
-    // Forward event to all widgets
     for ( auto *widget : m_widgetUpdateOrder )
     {
         widget->HandleEvent( event );
@@ -358,7 +358,7 @@ CheckboxWidget *Clay::CreateCheckbox( uint32_t id, bool initialChecked, const Ch
 {
     auto            widget = std::make_unique<CheckboxWidget>( m_clayContext.get( ), id, initialChecked, style );
     CheckboxWidget *ptr    = widget.get( );
-    m_widgets[ id ]        = std::move( widget );
+    m_ownedWidgets[ id ]   = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
     m_renderer->RegisterWidget( id, ptr );
     return ptr;
@@ -368,7 +368,7 @@ SliderWidget *Clay::CreateSlider( uint32_t id, float initialValue, const SliderS
 {
     auto          widget = std::make_unique<SliderWidget>( m_clayContext.get( ), id, initialValue, style );
     SliderWidget *ptr    = widget.get( );
-    m_widgets[ id ]      = std::move( widget );
+    m_ownedWidgets[ id ] = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
     m_renderer->RegisterWidget( id, ptr );
     return ptr;
@@ -378,7 +378,7 @@ DropdownWidget *Clay::CreateDropdown( uint32_t id, const InteropArray<InteropStr
 {
     auto            widget = std::make_unique<DropdownWidget>( m_clayContext.get( ), id, options, style );
     DropdownWidget *ptr    = widget.get( );
-    m_widgets[ id ]        = std::move( widget );
+    m_ownedWidgets[ id ]   = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
     m_renderer->RegisterWidget( id, ptr );
     return ptr;
@@ -388,7 +388,7 @@ ColorPickerWidget *Clay::CreateColorPicker( uint32_t id, const Float_3 &initialR
 {
     auto               widget = std::make_unique<ColorPickerWidget>( m_clayContext.get( ), id, initialRgb, style );
     ColorPickerWidget *ptr    = widget.get( );
-    m_widgets[ id ]           = std::move( widget );
+    m_ownedWidgets[ id ]      = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
     m_renderer->RegisterWidget( id, ptr );
     return ptr;
@@ -398,7 +398,7 @@ TextFieldWidget *Clay::CreateTextField( uint32_t id, const TextFieldStyle &style
 {
     auto             widget = std::make_unique<TextFieldWidget>( m_clayContext.get( ), id, style );
     TextFieldWidget *ptr    = widget.get( );
-    m_widgets[ id ]         = std::move( widget );
+    m_ownedWidgets[ id ]    = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
     m_renderer->RegisterWidget( id, ptr );
     return ptr;
@@ -408,7 +408,7 @@ ResizableContainerWidget *Clay::CreateResizableContainer( uint32_t id, const Res
 {
     auto                      widget = std::make_unique<ResizableContainerWidget>( m_clayContext.get( ), id, style );
     ResizableContainerWidget *ptr    = widget.get( );
-    m_widgets[ id ]                  = std::move( widget );
+    m_ownedWidgets[ id ]             = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
     m_renderer->RegisterWidget( id, ptr );
     return ptr;
@@ -418,7 +418,7 @@ DockableContainerWidget *Clay::CreateDockableContainer( uint32_t id, DockingMana
 {
     auto                     widget = std::make_unique<DockableContainerWidget>( m_clayContext.get( ), id, dockingManager, style );
     DockableContainerWidget *ptr    = widget.get( );
-    m_widgets[ id ]                 = std::move( widget );
+    m_ownedWidgets[ id ]            = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
     m_renderer->RegisterWidget( id, ptr );
     return ptr;
@@ -426,22 +426,42 @@ DockableContainerWidget *Clay::CreateDockableContainer( uint32_t id, DockingMana
 
 Widget *Clay::GetWidget( const uint32_t id ) const
 {
-    const auto it = m_widgets.find( id );
-    if ( it != m_widgets.end( ) )
+    const auto ownedIt = m_ownedWidgets.find( id );
+    if ( ownedIt != m_ownedWidgets.end( ) )
     {
-        return it->second.get( );
+        return ownedIt->second.get( );
+    }
+    const auto externalIt = m_externalWidgets.find( id );
+    if ( externalIt != m_externalWidgets.end( ) )
+    {
+        return externalIt->second;
     }
     return nullptr;
 }
 
 void Clay::RemoveWidget( const uint32_t id )
 {
-    const auto it = m_widgets.find( id );
-    if ( it != m_widgets.end( ) )
+    Widget    *widget  = nullptr;
+    const auto ownedIt = m_ownedWidgets.find( id );
+    if ( ownedIt != m_ownedWidgets.end( ) )
     {
-        Widget *widget = it->second.get( );
+        widget = ownedIt->second.get( );
+        m_ownedWidgets.erase( ownedIt );
+    }
+    else
+    {
+        const auto externalIt = m_externalWidgets.find( id );
+        if ( externalIt != m_externalWidgets.end( ) )
+        {
+            widget = externalIt->second;
+            m_externalWidgets.erase( externalIt );
+        }
+    }
+
+    if ( widget )
+    {
         std::erase( m_widgetUpdateOrder, widget );
-        m_widgets.erase( it );
+        m_renderer->UnregisterWidget( id );
     }
 }
 
@@ -456,6 +476,21 @@ void Clay::UpdateWidgets( const float deltaTime ) const
     {
         widget->Update( deltaTime );
     }
+}
+
+void Clay::RegisterPipelineWidget( Widget *widget )
+{
+    DZ_NOT_NULL( widget );
+
+    const uint32_t id       = widget->GetId( );
+    m_externalWidgets[ id ] = widget;
+    m_widgetUpdateOrder.push_back( widget );
+    m_renderer->RegisterWidget( id, widget );
+}
+
+IClayContext *Clay::GetContext( ) const
+{
+    return m_clayContext.get( );
 }
 
 ClayDimensions Clay::MeasureText( const InteropString &text, const uint16_t fontId, const uint16_t fontSize ) const

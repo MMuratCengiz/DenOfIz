@@ -53,7 +53,7 @@ namespace DenOfIz
         mutable uint64_t           m_lastTextHash            = 0;
 
     public:
-        DZ_API TextFieldWidget( ClayContext *clayContext, uint32_t id, const TextFieldStyle &style = { } );
+        DZ_API TextFieldWidget( IClayContext *clayContext, uint32_t id, const TextFieldStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;
@@ -83,8 +83,6 @@ namespace DenOfIz
         void   UpdateCursorBlink( float deltaTime );
         size_t GetCharacterIndexAtPosition( float x, float y = 0 ) const;
         void   UpdateCharacterPositions( ) const;
-        void   InvalidateTextCache( ) const;
-        void   RenderTextWithSelection( IRenderBatch *renderBatch, const ClayBoundingBox &textBounds ) const;
 
         size_t FindPreviousWordBoundary( size_t pos ) const;
         size_t FindNextWordBoundary( size_t pos ) const;

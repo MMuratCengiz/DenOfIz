@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/UI/ClayData.h>
 #include <DenOfIzGraphics/UI/ClayTextCache.h>
+#include <DenOfIzGraphics/UI/IClayContext.h>
 #include <DenOfIzGraphics/UI/UIShapes.h>
 #include <functional>
 #include <memory>
@@ -38,16 +39,8 @@ namespace DenOfIz
         uint32_t        MaxNumTextMeasureCacheElements = 16384;
     };
 
-    class IRenderBatch
-    {
-    public:
-        virtual ~IRenderBatch( )                                                                                      = default;
-        virtual void     AddVertices( const InteropArray<UIVertex> &vertices, const InteropArray<uint32_t> &indices ) = 0;
-        virtual uint32_t GetCurrentVertexOffset( ) const                                                              = 0;
-    };
-
-    /// Not public API, intended for internal use within Clay.h and ClayRenderer
-    class ClayContext
+    /// Implementation of IClayContext, also provides additional internal methods
+    class ClayContext : public IClayContext
     {
         std::unique_ptr<ClayTextCache> m_clayText     = nullptr;
         ClayPointerState               m_pointerState = ClayPointerState::Released;
@@ -62,34 +55,32 @@ namespace DenOfIz
 
     public:
         explicit ClayContext( const ClayContextDesc &desc );
-        ~ClayContext( );
+        ~ClayContext( ) override;
 
-        void           BeginLayout( ) const;
-        void           SetViewportSize( float width, float height ) const;
-        ClayDimensions GetViewportSize( ) const;
-        void           SetDpiScale( float dpiScale );
-        void           SetPointerState( Float_2 position, ClayPointerState state );
-        void           UpdateScrollContainers( bool enableDragScrolling, Float_2 scrollDelta, float deltaTime );
-        void           SetDebugModeEnabled( bool enabled );
-        bool           IsDebugModeEnabled( ) const;
+        void            OpenElement( const ClayElementDeclaration &declaration ) const override;
+        void            CloseElement( ) const override;
+        void            Text( const InteropString &text, const ClayTextDesc &desc ) const override;
+        ClayDimensions  MeasureText( const InteropString &text, uint16_t fontId, uint16_t fontSize ) const override;
+        uint32_t        HashString( const InteropString &str, uint32_t index = 0, uint32_t baseId = 0 ) const override;
+        bool            PointerOver( uint32_t id ) const override;
+        ClayBoundingBox GetElementBoundingBox( uint32_t id ) const override;
+        ClayDimensions  GetViewportSize( ) const override;
+        bool            IsDebugModeEnabled( ) const override;
 
-        void OpenElement( const ClayElementDeclaration &declaration ) const;
-        void CloseElement( ) const;
+        void BeginLayout( ) const;
+        void SetViewportSize( float width, float height ) const;
+        void SetDpiScale( float dpiScale );
+        void SetPointerState( Float_2 position, ClayPointerState state );
+        void UpdateScrollContainers( bool enableDragScrolling, Float_2 scrollDelta, float deltaTime );
+        void SetDebugModeEnabled( bool enabled );
 
         void  AddFont( uint16_t fontId, Font *font ) const;
         void  RemoveFont( uint16_t fontId ) const;
         Font *GetFont( uint16_t fontId ) const;
-        void  Text( const InteropString &text, const ClayTextDesc &desc ) const;
-
-        uint32_t        HashString( const InteropString &str, uint32_t index = 0, uint32_t baseId = 0 ) const;
-        bool            PointerOver( uint32_t id ) const;
-        ClayBoundingBox GetElementBoundingBox( uint32_t id ) const;
 
         ClayTextCache *GetClayText( ) const;
-        ClayDimensions MeasureText( const InteropString &text, uint16_t fontId, uint16_t fontSize ) const;
 
-        Clay_RenderCommandArray EndLayoutAndGetCommands( float deltaTime = 0.016f ) const;
-
+        Clay_RenderCommandArray        EndLayoutAndGetCommands( float deltaTime = 0.016f ) const;
         Clay_LayoutDirection           ConvertLayoutDirection( ClayLayoutDirection dir ) const;
         Clay_LayoutAlignmentX          ConvertAlignmentX( ClayAlignmentX align ) const;
         Clay_LayoutAlignmentY          ConvertAlignmentY( ClayAlignmentY align ) const;

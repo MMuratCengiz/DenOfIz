@@ -46,7 +46,7 @@ namespace DenOfIz
         bool                        m_sizeChanged = false;
 
     public:
-        DZ_API ResizableContainerWidget( ClayContext *clayContext, uint32_t id, const ResizableContainerStyle &style = { } );
+        DZ_API ResizableContainerWidget( IClayContext *clayContext, uint32_t id, const ResizableContainerStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;

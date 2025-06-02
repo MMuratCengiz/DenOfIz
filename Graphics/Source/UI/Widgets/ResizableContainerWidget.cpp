@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-ResizableContainerWidget::ResizableContainerWidget( ClayContext *clayContext, const uint32_t id, const ResizableContainerStyle &style ) :
+ResizableContainerWidget::ResizableContainerWidget( IClayContext *clayContext, const uint32_t id, const ResizableContainerStyle &style ) :
     Widget( clayContext, id ), m_style( style )
 {
     m_containerState.Width           = style.MinWidth + 100.0f;

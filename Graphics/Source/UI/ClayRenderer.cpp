@@ -59,6 +59,23 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_l
     poolDesc.NumCommandLists = desc.NumFrames;
     m_commandListPool        = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( poolDesc ) );
 
+    // Create command list pool for pipeline widgets
+    if ( desc.MaxPipelineWidgets > 0 )
+    {
+        CommandListPoolDesc pipelinePoolDesc{ };
+        pipelinePoolDesc.CommandQueue    = m_commandQueue.get( );
+        pipelinePoolDesc.NumCommandLists = desc.MaxPipelineWidgets * desc.NumFrames;
+        m_pipelineWidgetCommandListPool  = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( pipelinePoolDesc ) );
+
+        m_pipelineWidgetData.resize( desc.MaxPipelineWidgets * desc.NumFrames );
+        auto pipelineCommandLists = m_pipelineWidgetCommandListPool->GetCommandLists( );
+        for ( uint32_t i = 0; i < pipelineCommandLists.NumElements( ) && i < m_pipelineWidgetData.size( ); ++i )
+        {
+            m_pipelineWidgetData[ i ].CommandList = pipelineCommandLists.GetElement( i );
+            m_pipelineWidgetData[ i ].Semaphore   = std::unique_ptr<ISemaphore>( m_logicalDevice->CreateSemaphore( ) );
+        }
+    }
+
     CreateShaderProgram( );
     CreatePipeline( );
     CreateNullTexture( );
@@ -273,6 +290,13 @@ void ClayRenderer::Resize( const float width, const float height )
     m_viewportHeight = height;
     CreateRenderTargets( );
     UpdateProjectionMatrix( );
+    for ( const auto &widget : m_widgets | std::views::values )
+    {
+        if ( widget && widget->HasPipeline( ) )
+        {
+            widget->ResizeRenderResources( static_cast<uint32_t>( width ), static_cast<uint32_t>( height ) );
+        }
+    }
 }
 
 void ClayRenderer::SetDpiScale( const float dpiScale )
@@ -342,7 +366,6 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
     float atlasHeight = 512.0f;
     if ( m_clayText )
     {
-        // Get atlas dimensions from first available font
         for ( uint16_t fontId = 0; fontId < 100; ++fontId )
         {
             Font *font = m_clayText->GetFont( fontId );
@@ -354,7 +377,18 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
             }
         }
     }
-    tempUniforms.FontParams = XMFLOAT4( atlasWidth, atlasHeight, 12.0f, 0.0f ); // Using hardcoded MsdfPixelRange
+
+    float firstNonFontIndex = 128.0f;
+    for ( uint32_t i = 1; i < m_textureFontFlags.size( ); ++i )
+    {
+        if ( !m_textureFontFlags[ i ] && m_textures[ i ] != nullptr )
+        {
+            firstNonFontIndex = static_cast<float>( i );
+            break;
+        }
+    }
+
+    tempUniforms.FontParams = XMFLOAT4( atlasWidth, atlasHeight, 12.0f, firstNonFontIndex );
 
     uint8_t *uniformLocation = reinterpret_cast<uint8_t *>( m_uniformBufferData ) + frameIndex * m_alignedUniformSize;
     memcpy( uniformLocation, &tempUniforms, sizeof( UIUniforms ) );
@@ -370,13 +404,111 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
         m_texturesDirty = false;
     }
 
-    // Clear batches from previous frame
     m_drawBatches.clear( );
     m_totalVertexCount = 0;
     m_totalIndexCount  = 0;
     m_currentDepth     = 0.9f;
+    m_pipelineWidgetsToRender.clear( );
 
-    // Generate vertices
+    uint32_t                   pipelineWidgetIndex = 0;
+    InteropArray<ISemaphore *> pipelineWidgetSemaphores;
+    for ( int32_t i = 0; i < commands.length; ++i )
+    {
+        const Clay_RenderCommand *cmd = Clay_RenderCommandArray_Get( &commands, i );
+        if ( cmd->commandType != CLAY_RENDER_COMMAND_TYPE_CUSTOM )
+        {
+            continue;
+        }
+        const auto &data = cmd->renderData.custom;
+        if ( data.customData == nullptr )
+        {
+            continue;
+        }
+        auto *widget = static_cast<Widget *>( data.customData );
+        if ( widget == nullptr )
+        {
+            continue;
+        }
+        bool isRegisteredWidget = false;
+        for ( const auto &widgetPtr : m_widgets | std::views::values )
+        {
+            if ( widgetPtr == widget )
+            {
+                isRegisteredWidget = true;
+                break;
+            }
+        }
+
+        if ( isRegisteredWidget && widget->HasPipeline( ) )
+        {
+            m_pipelineWidgetsToRender.push_back( widget );
+            if ( pipelineWidgetIndex >= m_desc.MaxPipelineWidgets )
+            {
+                LOG( WARNING ) << "Exceeded maximum pipeline widgets";
+                break;
+            }
+
+            uint32_t dataIndex = frameIndex * m_desc.MaxPipelineWidgets + pipelineWidgetIndex;
+            if ( dataIndex >= m_pipelineWidgetData.size( ) )
+            {
+                LOG( ERROR ) << "Invalid pipeline widget data index";
+                continue;
+            }
+
+            const PipelineWidgetData &widgetData = m_pipelineWidgetData[ dataIndex ];
+            if ( !widgetData.CommandList || !widgetData.Semaphore )
+            {
+                continue;
+            }
+
+            WidgetExecutePipelineDesc context;
+            context.CommandList = widgetData.CommandList;
+            context.FrameIndex  = frameIndex;
+            context.BoundingBox = { cmd->boundingBox.x, cmd->boundingBox.y, cmd->boundingBox.width, cmd->boundingBox.height };
+
+            if ( !m_scissorStack.empty( ) )
+            {
+                const ScissorState &scissor = m_scissorStack.back( );
+                context.ScissorRect.X       = scissor.X;
+                context.ScissorRect.Y       = scissor.Y;
+                context.ScissorRect.Width   = scissor.Width;
+                context.ScissorRect.Height  = scissor.Height;
+            }
+            else
+            {
+                context.ScissorRect.X      = 0.0f;
+                context.ScissorRect.Y      = 0.0f;
+                context.ScissorRect.Width  = m_viewportWidth;
+                context.ScissorRect.Height = m_viewportHeight;
+            }
+
+            widget->ExecuteCustomPipeline( context );
+            const uint32_t textureIndex = widget->GetTextureIndex( );
+            if ( textureIndex > 0 && textureIndex < m_textures.size( ) && widget->GetRenderTarget( frameIndex ) )
+            {
+                if ( !m_textureFontFlags[ textureIndex ] )
+                {
+                    m_textures[ textureIndex ] = widget->GetRenderTarget( frameIndex );
+                    m_texturesDirty            = true;
+                }
+            }
+
+            ExecuteCommandListsDesc widgetExecuteDesc{ };
+            widgetExecuteDesc.CommandLists.AddElement( widgetData.CommandList );
+            widgetExecuteDesc.SignalSemaphores.AddElement( widgetData.Semaphore.get( ) );
+            m_commandQueue->ExecuteCommandLists( widgetExecuteDesc );
+
+            pipelineWidgetSemaphores.AddElement( widgetData.Semaphore.get( ) );
+            pipelineWidgetIndex++;
+        }
+    }
+
+    if ( m_texturesDirty )
+    {
+        UpdateTextureBindings( frameIndex );
+        m_texturesDirty = false;
+    }
+
     for ( int32_t i = 0; i < commands.length; ++i )
     {
         const Clay_RenderCommand *cmd = Clay_RenderCommandArray_Get( &commands, i );
@@ -429,6 +561,11 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
     ExecuteCommandListsDesc executeDesc{ };
     executeDesc.CommandLists.AddElement( uiCmdList );
     executeDesc.Signal = frame.FrameFence.get( );
+    for ( uint32_t i = 0; i < pipelineWidgetSemaphores.NumElements( ); ++i )
+    {
+        executeDesc.WaitSemaphores.AddElement( pipelineWidgetSemaphores.GetElement( i ) );
+    }
+
     m_commandQueue->ExecuteCommandLists( executeDesc );
 
     m_fullscreenQuad->UpdateTarget( frameIndex, frame.ColorTarget.get( ) );
@@ -611,13 +748,6 @@ void ClayRenderer::RenderSingleLineText( const Clay_RenderCommand *command, cons
 {
     const auto &data   = command->renderData.text;
     const auto &bounds = command->boundingBox;
-
-    if ( !m_clayText )
-    {
-        LOG( WARNING ) << "ClayText not set in ClayRenderer";
-        return;
-    }
-
     Font *font = m_clayText->GetFont( fontId );
     if ( !font )
     {
@@ -653,9 +783,9 @@ void ClayRenderer::RenderSingleLineText( const Clay_RenderCommand *command, cons
             {
                 const GlyphVertex glyph = glyphVertices.GetElement( i );
                 UIVertex          vertex;
-                vertex.Position     = XMFLOAT3( glyph.Position.X, glyph.Position.Y, 0.0f ); // Z will be set in AddVerticesWithDepth
-                vertex.TexCoord     = XMFLOAT2( glyph.UV.X, glyph.UV.Y );
-                vertex.Color        = XMFLOAT4( glyph.Color.X, glyph.Color.Y, glyph.Color.Z, glyph.Color.W );
+                vertex.Position     = Float_3{ glyph.Position.X, glyph.Position.Y, 0.0f }; // Z will be set in AddVerticesWithDepth
+                vertex.TexCoord     = glyph.UV;
+                vertex.Color        = glyph.Color;
                 vertex.TextureIndex = m_clayText->GetFontTextureIndex( fontId );
                 cachedVertices->vertices.AddElement( vertex );
             }
@@ -717,9 +847,9 @@ void ClayRenderer::RenderCustom( const Clay_RenderCommand *command, ICommandList
     if ( auto *widget = static_cast<Widget *>( data.customData ) )
     {
         bool isRegisteredWidget = false;
-        for ( const auto &val : m_widgets | std::views::values )
+        for ( const auto &widgetPtr : m_widgets | std::views::values )
         {
-            if ( val == widget )
+            if ( widgetPtr == widget )
             {
                 isRegisteredWidget = true;
                 break;
@@ -728,8 +858,42 @@ void ClayRenderer::RenderCustom( const Clay_RenderCommand *command, ICommandList
 
         if ( isRegisteredWidget )
         {
-            ClayRenderBatch renderBatch( this );
-            widget->Render( command, &renderBatch );
+            if ( widget->HasPipeline( ) )
+            {
+                uint32_t textureIndex = widget->GetTextureIndex( );
+
+                // Check if texture index conflicts with fonts and needs re-registration
+                if ( textureIndex > 0 && textureIndex < m_textureFontFlags.size( ) && m_textureFontFlags[ textureIndex ] )
+                {
+                    // Re-register to get a new texture index
+                    widget->SetTextureIndex( 0 );
+                    textureIndex = RegisterTexture( nullptr );
+                    widget->SetTextureIndex( textureIndex );
+                }
+
+                if ( widget->GetRenderTarget( m_currentFrameIndex ) && textureIndex > 0 )
+                {
+
+                    InteropArray<UIVertex> vertices;
+                    InteropArray<uint32_t> indices;
+
+                    UIShapes::GenerateRectangleDesc desc{ };
+                    desc.Bounds       = command->boundingBox;
+                    desc.Color        = Clay_Color{ 255, 255, 255, 255 }; // White to show texture
+                    desc.TextureIndex = textureIndex;
+
+                    UIShapes::GenerateRectangle( desc, &vertices, &indices, 0 );
+                    if ( vertices.NumElements( ) > 0 && indices.NumElements( ) > 0 )
+                    {
+                        AddVerticesWithDepth( vertices, indices );
+                    }
+                }
+            }
+            else
+            {
+                ClayRenderBatch renderBatch( this );
+                widget->Render( command, &renderBatch );
+            }
         }
         else
         {
@@ -765,13 +929,12 @@ void ClayRenderer::ClearScissor( )
 
 uint32_t ClayRenderer::RegisterTexture( ITextureResource *texture )
 {
-    if ( texture == nullptr )
-    {
-        return 0;
-    }
-
     for ( uint32_t i = 1; i < m_textures.size( ); ++i )
     {
+        if ( m_textureFontFlags[ i ] )
+        {
+            continue;
+        }
         if ( m_textures[ i ] == nullptr )
         {
             m_textures[ i ] = texture;
@@ -852,7 +1015,7 @@ void ClayRenderer::AddVerticesWithDepth( const InteropArray<UIVertex> &vertices,
     for ( uint32_t i = 0; i < vertices.NumElements( ); ++i )
     {
         UIVertex vertex   = vertices.GetElement( i );
-        vertex.Position.z = m_currentDepth;
+        vertex.Position.Z = m_currentDepth;
         m_batchedVertices.AddElement( vertex );
     }
 
@@ -956,6 +1119,23 @@ void ClayRenderer::FlushBatchedGeometry( ICommandList *commandList )
 void ClayRenderer::RegisterWidget( const uint32_t id, Widget *widget )
 {
     m_widgets[ id ] = widget;
+    if ( widget && widget->HasPipeline( ) )
+    {
+        const uint32_t currentIndex = widget->GetTextureIndex( );
+        if ( currentIndex > 0 && currentIndex < m_textureFontFlags.size( ) && m_textureFontFlags[ currentIndex ] )
+        {
+            widget->SetTextureIndex( 0 );
+        }
+        if ( widget->GetRenderTarget( 0 ) == nullptr )
+        {
+            widget->InitializeRenderResources( m_logicalDevice, static_cast<uint32_t>( m_viewportWidth ), static_cast<uint32_t>( m_viewportHeight ) );
+        }
+        if ( widget->GetTextureIndex( ) == 0 )
+        {
+            const uint32_t textureIndex = RegisterTexture( nullptr ); // Reserve a slot
+            widget->SetTextureIndex( textureIndex );
+        }
+    }
 }
 
 void ClayRenderer::UnregisterWidget( const uint32_t id )

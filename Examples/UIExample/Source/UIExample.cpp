@@ -133,6 +133,14 @@ void UIExample::Init( )
     m_dockableContainer1->SetFloatingPosition( Float_2{ 50.0f, 100.0f } );
     m_dockableContainer2->SetFloatingPosition( Float_2{ 350.0f, 150.0f } );
 
+    // Create the spinning 3D cube widget
+    m_spinningCubeWidget = std::make_unique<Spinning3DCubeWidget>( m_clay->GetContext( ), m_clay->HashString( "SpinningCubeWidget" ) );
+    m_spinningCubeWidget->SetRotationSpeed( 1.5f );
+    m_spinningCubeWidget->SetCubeColor( DirectX::XMFLOAT4( 0.2f, 0.6f, 1.0f, 1.0f ) );
+    
+    // Register the widget with Clay (we keep ownership)
+    m_clay->RegisterPipelineWidget( m_spinningCubeWidget.get( ) );
+
     m_time.OnEachSecond = []( const double fps ) { LOG( INFO ) << "FPS: " << fps; };
 }
 
@@ -271,6 +279,8 @@ void UIExample::CreateFormsPanel( const ClayColor &cardColor, const ClayColor &t
     rightColumn.Layout.Sizing.Height   = ClaySizingAxis::Grow( );
     rightColumn.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
     rightColumn.Layout.ChildGap        = 16;
+    // Enable vertical scrolling to ensure all content is reachable
+    rightColumn.Scroll.Vertical        = true;
 
     m_clay->OpenElement( rightColumn );
 
@@ -326,6 +336,32 @@ void UIExample::CreateFormsPanel( const ClayColor &cardColor, const ClayColor &t
 
     m_clay->CloseElement( );
 
+    m_clay->CloseElement( );
+
+    // Add the 3D Cube Widget
+    CreateCard( cardColor, textColor, "🎮 3D Spinning Cube" );
+    
+    ClayTextDesc cubeDesc;
+    cubeDesc.FontSize  = 14;
+    cubeDesc.TextColor = secondaryTextColor;
+    m_clay->Text( "Custom widget with its own rendering pipeline:", cubeDesc );
+    
+    ClayElementDeclaration cubeContainer;
+    cubeContainer.Layout.Sizing.Width     = ClaySizingAxis::Grow( );
+    cubeContainer.Layout.Sizing.Height    = ClaySizingAxis::Fixed( 220 );
+    cubeContainer.Layout.ChildAlignment.X = ClayAlignmentX::Center;
+    cubeContainer.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
+    cubeContainer.Layout.Padding          = ClayPadding( 10 );
+    
+    m_clay->OpenElement( cubeContainer );
+    
+    if ( m_spinningCubeWidget )
+    {
+        m_spinningCubeWidget->CreateLayoutElement( );
+    }
+    
+    m_clay->CloseElement( );
+    
     m_clay->CloseElement( );
 
     m_clay->CloseElement( );
@@ -558,6 +594,17 @@ void UIExample::HandleEvent( Event &event )
 void UIExample::Quit( )
 {
     m_frameSync->WaitIdle( );
+    
+    // Remove our widget from Clay before destroying it
+    if ( m_spinningCubeWidget )
+    {
+        m_clay->RemoveWidget( m_spinningCubeWidget->GetId( ) );
+    }
+    
+    // Clean up our widget
+    m_spinningCubeWidget.reset( );
+    
+    // Clean up Clay
     m_clay.reset( );
     IExample::Quit( );
 }

@@ -38,7 +38,7 @@ namespace DenOfIz
         Float_2          m_lastMousePos;
 
     public:
-        DZ_API ColorPickerWidget( ClayContext *clayContext, uint32_t id, const Float_3 &initialRgb = Float_3{ 1.0f, 0.0f, 0.0f }, const ColorPickerStyle &style = { } );
+        DZ_API ColorPickerWidget( IClayContext *clayContext, uint32_t id, const Float_3 &initialRgb = Float_3{ 1.0f, 0.0f, 0.0f }, const ColorPickerStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;

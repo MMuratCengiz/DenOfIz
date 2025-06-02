@@ -64,7 +64,7 @@ namespace DenOfIz
         bool                                      m_isClosed = false;
 
     public:
-        DZ_API DockableContainerWidget( ClayContext *clayContext, uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style = { } );
+        DZ_API DockableContainerWidget( IClayContext *clayContext, uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;

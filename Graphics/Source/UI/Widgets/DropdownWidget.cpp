@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DropdownWidget::DropdownWidget( ClayContext *clayContext, uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style ) :
+DropdownWidget::DropdownWidget( IClayContext *clayContext, uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style ) :
     Widget( clayContext, id ), m_options( options ), m_style( style ), m_dropdownListId( clayContext->HashString( InteropString( "dropdown_list" ), 0, id ) )
 {
 }

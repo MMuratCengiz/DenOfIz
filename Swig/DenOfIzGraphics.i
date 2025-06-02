@@ -306,6 +306,7 @@ using namespace DirectX;
 
 %include "DenOfIzGraphics_Input.i"
 
+%include <DenOfIzGraphics/UI/IClayContext.h>
 %include <DenOfIzGraphics/UI/ClayData.h>
 %include <DenOfIzGraphics/UI/Clay.h>
 

@@ -20,9 +20,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/UI/Widgets/TextFieldWidget.h>
 #include <algorithm>
 
+#include "DenOfIzGraphics/UI/ClayTextCache.h"
+
 using namespace DenOfIz;
 
-TextFieldWidget::TextFieldWidget( ClayContext *clayContext, uint32_t id, const TextFieldStyle &style ) : Widget( clayContext, id ), m_style( style )
+TextFieldWidget::TextFieldWidget( IClayContext *clayContext, uint32_t id, const TextFieldStyle &style ) : Widget( clayContext, id ), m_style( style )
 {
 }
 
@@ -295,7 +297,6 @@ void TextFieldWidget::SetText( const InteropString &text )
     m_textChanged = true;
 
     m_characterPositionsValid = false;
-    InvalidateTextCache( );
 }
 bool TextFieldWidget::WasTextChanged( ) const
 {
@@ -337,11 +338,8 @@ void TextFieldWidget::DeleteSelection( )
     m_text           = InteropString( newText.c_str( ) );
     m_cursorPosition = m_selectionStart;
     ClearSelection( );
-    m_textChanged = true;
-
-    // Invalidate cached character positions
+    m_textChanged             = true;
     m_characterPositionsValid = false;
-    InvalidateTextCache( );
 }
 
 void TextFieldWidget::SelectAll( )
@@ -400,7 +398,6 @@ void TextFieldWidget::InsertText( const InteropString &text )
     m_textChanged = true;
 
     m_characterPositionsValid = false;
-    InvalidateTextCache( );
 }
 
 void TextFieldWidget::HandleKeyPress( const Event &event )
@@ -637,7 +634,6 @@ void TextFieldWidget::HandleKeyPress( const Event &event )
                 m_cursorPosition--;
                 m_textChanged             = true;
                 m_characterPositionsValid = false;
-                InvalidateTextCache( );
             }
         }
         m_cursorBlinkTime = 0.0f;
@@ -658,7 +654,6 @@ void TextFieldWidget::HandleKeyPress( const Event &event )
                 m_text                    = InteropString( text.c_str( ) );
                 m_textChanged             = true;
                 m_characterPositionsValid = false;
-                InvalidateTextCache( );
             }
         }
         m_cursorBlinkTime = 0.0f;
@@ -924,14 +919,6 @@ void TextFieldWidget::UpdateCharacterPositions( ) const
     m_characterPositionsValid = true;
 }
 
-void TextFieldWidget::InvalidateTextCache( ) const
-{
-    if ( const auto *clayText = m_clayContext->GetClayText( ) )
-    {
-        clayText->ClearCaches( );
-    }
-}
-
 size_t TextFieldWidget::FindPreviousWordBoundary( size_t pos ) const
 {
     const std::string text( m_text.Get( ) );
@@ -1065,7 +1052,6 @@ void TextFieldWidget::DeleteWord( bool forward )
         m_cursorPosition          = deleteStart;
         m_textChanged             = true;
         m_characterPositionsValid = false;
-        InvalidateTextCache( );
     }
 }
 

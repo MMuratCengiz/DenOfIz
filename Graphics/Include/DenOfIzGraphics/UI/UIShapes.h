@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "IClayContext.h"
 #include <DenOfIzGraphics/Utilities/Interop.h>
 #include <clay.h>
 
@@ -25,13 +26,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    struct UIVertex
-    {
-        DirectX::XMFLOAT3 Position; // Z used for depth test
-        DirectX::XMFLOAT2 TexCoord;
-        DirectX::XMFLOAT4 Color;
-        uint32_t          TextureIndex; // For bindless textures
-    };
 
     class UIShapes
     {

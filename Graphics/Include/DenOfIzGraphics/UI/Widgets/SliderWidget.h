@@ -33,7 +33,7 @@ namespace DenOfIz
         Float_2     m_lastMousePos;
 
     public:
-        DZ_API SliderWidget( ClayContext *clayContext, uint32_t id, float initialValue = 0.5f, const SliderStyle &style = { } );
+        DZ_API SliderWidget( IClayContext *clayContext, uint32_t id, float initialValue = 0.5f, const SliderStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;

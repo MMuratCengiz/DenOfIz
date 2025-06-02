@@ -38,7 +38,7 @@ namespace DenOfIz
         bool                        m_dropdownListCreatedThisFrame = false;
 
     public:
-        DZ_API DropdownWidget( ClayContext *clayContext, uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style = { } );
+        DZ_API DropdownWidget( IClayContext *clayContext, uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;

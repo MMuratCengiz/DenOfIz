@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DockableContainerWidget::DockableContainerWidget( ClayContext *clayContext, const uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style ) :
+DockableContainerWidget::DockableContainerWidget( IClayContext *clayContext, const uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style ) :
     Widget( clayContext, id ), m_style( style ), m_dockingManager( dockingManager )
 {
     m_containerState.FloatingSize = Float_2{ 300.0f, 200.0f };

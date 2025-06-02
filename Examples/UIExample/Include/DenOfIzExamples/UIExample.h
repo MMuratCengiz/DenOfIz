@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/UI/Widgets/ResizableContainerWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/SliderWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/TextFieldWidget.h"
+#include <DenOfIzExamples/Spinning3DCubeWidget.h>
 
 namespace DenOfIz
 {
@@ -54,7 +55,8 @@ namespace DenOfIz
         ResizableContainerWidget       *m_resizableContainer       = nullptr;
         DockableContainerWidget        *m_dockableContainer1       = nullptr;
         DockableContainerWidget        *m_dockableContainer2       = nullptr;
-        std::unique_ptr<DockingManager> m_dockingManager           = nullptr;
+        std::unique_ptr<DockingManager>       m_dockingManager = nullptr;
+        std::unique_ptr<Spinning3DCubeWidget> m_spinningCubeWidget;
 
         uint32_t m_containerId{ };
         uint32_t m_scrollContainerId{ };

@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-SliderWidget::SliderWidget( ClayContext *clayContext, const uint32_t id, const float initialValue, const SliderStyle &style ) :
+SliderWidget::SliderWidget( IClayContext *clayContext, const uint32_t id, const float initialValue, const SliderStyle &style ) :
     Widget( clayContext, id ), m_value( std::clamp( initialValue, style.MinValue, style.MaxValue ) ), m_style( style ), m_lastMousePos( { } )
 {
 }

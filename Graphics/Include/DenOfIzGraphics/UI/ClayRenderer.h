@@ -57,6 +57,7 @@ namespace DenOfIz
         uint32_t        MaxTextures        = 128;
         float           Width              = 1024;
         float           Height             = 1024;
+        uint32_t        MaxPipelineWidgets = 16;
     };
 
     class ClayRenderer;
@@ -163,6 +164,16 @@ namespace DenOfIz
         uint32_t                  m_currentFrameIndex = 0;
 
         std::unordered_map<uint32_t, Widget *> m_widgets;
+        
+        // Pipeline widget resources
+        struct PipelineWidgetData
+        {
+            ICommandList                       *CommandList = nullptr;
+            std::unique_ptr<ISemaphore>         Semaphore;
+        };
+        std::vector<PipelineWidgetData>        m_pipelineWidgetData;
+        std::vector<Widget *>                  m_pipelineWidgetsToRender;
+        std::unique_ptr<ICommandListPool>      m_pipelineWidgetCommandListPool;
 
     public:
         explicit ClayRenderer( const ClayRendererDesc &desc );

@@ -31,7 +31,7 @@ namespace DenOfIz
         CheckboxStyle m_style;
 
     public:
-        DZ_API CheckboxWidget( ClayContext *clayContext, uint32_t id, bool initialChecked = false, const CheckboxStyle &style = { } );
+        DZ_API CheckboxWidget( IClayContext *clayContext, uint32_t id, bool initialChecked = false, const CheckboxStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;

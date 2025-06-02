@@ -20,12 +20,42 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-Widget::Widget( ClayContext *clayContext, const uint32_t id ) : m_id( id ), m_clayContext( clayContext )
+Widget::Widget( IClayContext *clayContext, const uint32_t id ) : m_id( id ), m_clayContext( clayContext )
 {
+    m_renderTargets.resize( m_numFrames );
 }
 
 Widget::~Widget( )
 {
+}
+
+bool Widget::HasPipeline( ) const
+{
+    return m_hasPipeline;
+}
+void Widget::InitializeRenderResources( ILogicalDevice *device, uint32_t width, uint32_t height )
+{
+}
+
+void Widget::ResizeRenderResources( uint32_t width, uint32_t height )
+{
+}
+void Widget::ExecuteCustomPipeline( const WidgetExecutePipelineDesc &context )
+{
+}
+
+ITextureResource *Widget::GetRenderTarget( const uint32_t frameIndex ) const
+{
+    return m_renderTargets[ frameIndex ].get( );
+}
+
+void Widget::SetTextureIndex( const uint32_t index )
+{
+    m_textureIndex = index;
+}
+uint32_t Widget::GetTextureIndex( ) const
+{
+    return m_textureIndex;
 }
 
 uint32_t Widget::GetId( ) const

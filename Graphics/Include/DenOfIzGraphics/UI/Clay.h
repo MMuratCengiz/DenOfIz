@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <functional>
 #include <memory>
 #include <unordered_map>
 #include "ClayContext.h"
@@ -58,6 +57,7 @@ namespace DenOfIz
         uint32_t        Height                         = 0;
         uint32_t        MaxNumElements                 = 8192;
         uint32_t        MaxNumTextMeasureCacheElements = 16384; // Maybe remove
+        uint32_t        MaxPipelineWidgets             = 16;    // Maximum number of widgets with their own rendering pipelines
     };
 
     struct DZ_API AddFontDesc
@@ -78,7 +78,8 @@ namespace DenOfIz
         uint16_t                      m_fontId      = 1;
         bool                          m_isDebugMode = false;
 
-        std::unordered_map<uint32_t, std::unique_ptr<Widget>> m_widgets;
+        std::unordered_map<uint32_t, std::unique_ptr<Widget>> m_ownedWidgets;    // Clay-created widgets
+        std::unordered_map<uint32_t, Widget *>                m_externalWidgets; // User-managed widgets
         std::vector<Widget *>                                 m_widgetUpdateOrder;
 
     public:
@@ -121,9 +122,11 @@ namespace DenOfIz
 
         DZ_API DockingManager *CreateDockingManager( ) const;
 
-        // Widget management
         DZ_API Widget *GetWidget( uint32_t id ) const;
         DZ_API void    RemoveWidget( uint32_t id );
         DZ_API void    UpdateWidgets( float deltaTime ) const;
+
+        DZ_API void          RegisterPipelineWidget( Widget *widget );
+        DZ_API IClayContext *GetContext( ) const;
     };
 } // namespace DenOfIz

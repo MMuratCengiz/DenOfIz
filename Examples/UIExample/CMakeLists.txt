@@ -3,6 +3,7 @@ include(${PROJECT_SOURCE_DIR}/cmake/common.cmake)
 SET(DEN_OF_IZ_EXAMPLES_UI_EXAMPLE_SOURCES
         main.cpp
         Source/UIExample.cpp
+        Source/Spinning3DCubeWidget.cpp
 )
 
 add_executable(DenOfIzExamples-UIExample MACOSX_BUNDLE ${DEN_OF_IZ_EXAMPLES_UI_EXAMPLE_SOURCES})
