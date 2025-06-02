@@ -97,7 +97,7 @@ endfunction()
 
 function(LINUX_LIB target)
     if (UNIX AND NOT APPLE)
-        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-std=c++23>)
+        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-std=c++20>)
     endif ()
 endfunction()
 

@@ -30,7 +30,8 @@ FontLibrary::FontLibrary( )
     }
 }
 
-Font *FontLibrary::LoadFont( const FontDesc &desc )
+// Note keep DenOfIz::Font here to disambiguate in Linux
+DenOfIz::Font *FontLibrary::LoadFont( const FontDesc &desc )
 {
     std::lock_guard lock( m_mutex );
     if ( desc.FontAsset->Uri.Path.IsEmpty( ) )
@@ -46,7 +47,8 @@ Font *FontLibrary::LoadFont( const FontDesc &desc )
     return m_fonts.emplace( uriPath, std::unique_ptr<Font>( new Font( m_ftLibrary, desc ) ) ).first->second.get( );
 }
 
-Font *FontLibrary::LoadFont( const InteropString &ttf )
+// Note keep DenOfIz::Font here to disambiguate in Linux
+DenOfIz::Font *FontLibrary::LoadFont( const InteropString &ttf )
 {
     BinaryContainer targetContainer{};
 

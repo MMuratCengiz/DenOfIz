@@ -156,7 +156,8 @@ uint16_t TextRenderer::AddFont( Font *font, uint16_t fontId )
     return fontId;
 }
 
-Font *TextRenderer::GetFont( const uint16_t fontId ) const
+// Note keep DenOfIz::Font here to disambiguate in Linux
+DenOfIz::Font *TextRenderer::GetFont( const uint16_t fontId ) const
 {
     if ( m_fonts.size( ) <= fontId )
     {

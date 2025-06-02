@@ -18,6 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Assets/Shaders/ReflectionDebugOutput.h>
 
+#ifdef __linux__
+#include <iomanip>
+#endif
+
 using namespace DenOfIz;
 
 void ReflectionDebugOutput::DumpIRRootParameters( const std::vector<IRRootParameter1> &rootParameters, const char *prefix )

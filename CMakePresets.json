@@ -105,7 +105,11 @@
       "name": "Linux_Base",
       "hidden": true,
       "inherits": "Base",
-      "generator": "Ninja"
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
     },
     {
       "name": "Debug_Linux",
@@ -113,7 +117,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
-        "CMAKE_CXX_FLAGS": "-D_DEBUG -g -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -Wno-error=dangling-reference",
+        "CMAKE_CXX_FLAGS": "-D_DEBUG -g -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -fpermissive",
         "BUILD_TESTS": "ON",
         "BUILD_EXAMPLES": "ON",
         "SWIG_CSHARP": "ON"
@@ -126,7 +130,7 @@
         "BUILD_SHARED_LIBS": "ON",
         "CMAKE_BUILD_TYPE": "Debug",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
-        "CMAKE_CXX_FLAGS": "-D_DEBUG -g -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -Wno-error=dangling-reference",
+        "CMAKE_CXX_FLAGS": "-D_DEBUG -g -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers",
         "BUILD_TESTS": "ON",
         "BUILD_EXAMPLES": "ON",
         "SWIG_CSHARP": "ON",

@@ -73,7 +73,8 @@ void ClayTextCache::RemoveFont( const uint16_t fontId )
     }
 }
 
-Font *ClayTextCache::GetFont( const uint16_t fontId ) const
+// Note keep DenOfIz::Font here to disambiguate in Linux
+DenOfIz::Font *ClayTextCache::GetFont( const uint16_t fontId ) const
 {
     const auto it = m_fonts.find( fontId );
     if ( it != m_fonts.end( ) )

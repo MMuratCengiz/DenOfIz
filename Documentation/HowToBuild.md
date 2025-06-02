@@ -36,7 +36,7 @@ Before using DenOfIz, ensure you have the following prerequisites installed:
   sudo apt-get install -y libfreetype-dev libharfbuzz-dev
   sudo apt-get install -y libltdl-dev libtool autoconf automake autoconf-archive
   sudo apt-get install -y libwayland-dev libxkbcommon-dev libegl1-mesa-dev
-  sudo apt-get install -y libibus-1.0-dev
+  sudo apt-get install -y libibus-1.0-dev python3-jinja2
   ```
 
 ## Building

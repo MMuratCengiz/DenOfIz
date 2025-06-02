@@ -30,8 +30,8 @@ VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc d
     {
         alignment = m_context->SelectedDeviceInfo.Constants.StorageBufferAlignment;
     }
-    alignment = std::max( alignment, m_desc.Alignment );
-    alignment = std::max<uint32_t>( alignment, m_desc.StructureDesc.Stride );
+    alignment                   = std::max( alignment, m_desc.Alignment );
+    alignment                   = std::max<uint32_t>( alignment, m_desc.StructureDesc.Stride );
     m_numBytes                  = Utilities::Align( m_desc.NumBytes, alignment );
     BitSet<ResourceUsage> usage = m_desc.Usages;
     usage |= m_desc.InitialUsage;
@@ -78,15 +78,28 @@ VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc d
 
 void *VulkanBufferResource::MapMemory( )
 {
-    DZ_ASSERTM( m_desc.HeapType == HeapType::CPU_GPU || m_desc.HeapType == HeapType::CPU, "Can only map to CPU visible buffer" );
-    DZ_ASSERTM( m_mappedMemory == nullptr, std::format( "Memory already mapped {}", m_desc.DebugName.Get( ) ) );
+    if ( m_desc.HeapType != HeapType::CPU && m_desc.HeapType != HeapType::CPU_GPU )
+    {
+        LOG( WARNING ) << "Can only map to CPU visible buffer";
+        return nullptr;
+    }
+    if ( m_mappedMemory != nullptr )
+    {
+        LOG(WARNING) << "Memory already mapped before mapping: " << m_desc.DebugName.Get( );
+        return m_mappedMemory;
+    }
+
     vmaMapMemory( m_context->Vma, m_allocation, &m_mappedMemory );
     return m_mappedMemory;
 }
 
 void VulkanBufferResource::UnmapMemory( )
 {
-    DZ_ASSERTM( m_mappedMemory != nullptr, std::format( "Memory not mapped, buffer: {}", m_desc.DebugName.Get( ) ) );
+    if ( m_mappedMemory == nullptr )
+    {
+        LOG( WARNING ) << "Memory not mapped before unmapping: " << m_desc.DebugName.Get( );
+        return;
+    }
     vmaUnmapMemory( m_context->Vma, m_allocation );
     m_mappedMemory = nullptr;
 }
