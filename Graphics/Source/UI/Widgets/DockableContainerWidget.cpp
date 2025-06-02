@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 
 DockableContainerWidget::DockableContainerWidget( IClayContext *clayContext, const uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style ) :
-    Widget( clayContext, id ), m_style( style ), m_dockingManager( dockingManager )
+    IContainer( clayContext, id ), m_style( style ), m_dockingManager( dockingManager )
 {
     m_containerState.FloatingSize = Float_2{ 300.0f, 200.0f };
     m_containerState.Mode         = static_cast<uint8_t>( DockingMode::Floating );
@@ -50,6 +50,7 @@ DockableContainerWidget::DockableContainerWidget( IClayContext *clayContext, con
 void DockableContainerWidget::Update( const float deltaTime )
 {
     UpdateHoverState( );
+    m_contentOpen = false;
 
     if ( m_resizableContainer && static_cast<DockingMode>( m_containerState.Mode ) == DockingMode::Floating )
     {
@@ -64,9 +65,14 @@ void DockableContainerWidget::Update( const float deltaTime )
     }
 }
 
-void DockableContainerWidget::CreateLayoutElement( )
+void DockableContainerWidget::OpenContent( )
 {
     if ( m_isClosed )
+    {
+        return;
+    }
+
+    if ( m_contentOpen )
     {
         return;
     }
@@ -147,18 +153,21 @@ void DockableContainerWidget::CreateLayoutElement( )
     contentDecl.Layout.Sizing.Width  = ClaySizingAxis::Grow( );
     contentDecl.Layout.Sizing.Height = ClaySizingAxis::Grow( );
     contentDecl.Layout.Padding       = ClayPadding( 8 );
-    contentDecl.BackgroundColor      = m_style.BackgroundColor;
-    contentDecl.Border.Color         = m_style.BorderColor;
-    contentDecl.Border.Width         = ClayBorderWidth( static_cast<uint16_t>( m_style.BorderWidth ) );
 
     m_clayContext->OpenElement( contentDecl );
-    if ( m_contentRenderer )
+    m_contentOpen = true;
+}
+
+void DockableContainerWidget::CloseContent( )
+{
+    if ( !m_contentOpen )
     {
-        m_contentRenderer->RenderContent( );
+        return;
     }
 
-    m_clayContext->CloseElement( );
-    m_clayContext->CloseElement( );
+    m_clayContext->CloseElement( ); // Close content
+    m_clayContext->CloseElement( ); // Close container
+    m_contentOpen = false;
 }
 
 void DockableContainerWidget::Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch )
@@ -264,10 +273,6 @@ void DockableContainerWidget::HandleEvent( const Event &event )
     }
 }
 
-void DockableContainerWidget::SetContentRenderer( IContentRenderer* renderer )
-{
-    m_contentRenderer = std::move( renderer );
-}
 
 void DockableContainerWidget::SetStyle( const DockableContainerStyle &style )
 {
@@ -331,6 +336,7 @@ bool DockableContainerWidget::IsClosed( ) const
 void DockableContainerWidget::Close( )
 {
     m_isClosed = true;
+    m_contentOpen = false;  // Reset content state when closing
 }
 
 void DockableContainerWidget::Show( )

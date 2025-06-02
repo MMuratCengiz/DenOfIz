@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "ResizableContainerWidget.h"
-#include <DenOfIzGraphics/UI/IContentRenderer.h>
+#include <DenOfIzGraphics/UI/IContainer.h>
 #include <memory>
 #include <vector>
+#include "ResizableContainerWidget.h"
 
 namespace DenOfIz
 {
@@ -54,24 +54,25 @@ namespace DenOfIz
 
     class DockingManager;
 
-    class DockableContainerWidget : public Widget
+    class DockableContainerWidget : public IContainer
     {
         ClayDockableContainerState                m_containerState;
         DockableContainerStyle                    m_style;
-        IContentRenderer                         *m_contentRenderer     = nullptr;
-        DockingManager                           *m_dockingManager      = nullptr;
+        DockingManager                           *m_dockingManager = nullptr;
         std::unique_ptr<ResizableContainerWidget> m_resizableContainer;
-        bool                                      m_isClosed            = false;
+        bool                                      m_isClosed    = false;
+        bool                                      m_contentOpen = false;
 
     public:
         DZ_API DockableContainerWidget( IClayContext *clayContext, uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
-        DZ_API void CreateLayoutElement( ) override;
         DZ_API void Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch ) override;
         DZ_API void HandleEvent( const Event &event ) override;
 
-        DZ_API void                          SetContentRenderer( IContentRenderer *renderer );
+        DZ_API void OpenContent( ) override;
+        DZ_API void CloseContent( ) override;
+
         DZ_API void                          SetStyle( const DockableContainerStyle &style );
         DZ_API const DockableContainerStyle &GetStyle( ) const;
 

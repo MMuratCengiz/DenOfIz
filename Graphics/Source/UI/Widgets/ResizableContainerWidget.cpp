@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace DenOfIz;
 
 ResizableContainerWidget::ResizableContainerWidget( IClayContext *clayContext, const uint32_t id, const ResizableContainerStyle &style ) :
-    Widget( clayContext, id ), m_style( style )
+    IContainer( clayContext, id ), m_style( style )
 {
     m_containerState.Width           = style.MinWidth + 100.0f;
     m_containerState.Height          = style.MinHeight + 50.0f;
@@ -33,16 +33,30 @@ void ResizableContainerWidget::Update( const float deltaTime )
 {
     UpdateHoverState( );
     m_sizeChanged = false;
+    m_contentOpen = false;
 }
 
-void ResizableContainerWidget::CreateLayoutElement( )
+void ResizableContainerWidget::OpenContent( )
 {
+    if ( m_contentOpen )
+    {
+        return;
+    }
 
     ClayElementDeclaration decl;
-    decl.Id                   = m_id;
-    decl.Layout.Sizing.Width  = ClaySizingAxis::Fixed( m_containerState.Width );
-    decl.Layout.Sizing.Height = ClaySizingAxis::Fixed( m_containerState.Height );
-    decl.Custom.CustomData    = this;
+    decl.Id                     = m_id;
+    decl.Layout.Sizing.Width    = ClaySizingAxis::Fixed( m_containerState.Width );
+    decl.Layout.Sizing.Height   = ClaySizingAxis::Fixed( m_containerState.Height );
+    decl.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
+    decl.Custom.CustomData      = this;
+    decl.BackgroundColor        = m_style.BackgroundColor;
+    decl.Border.Color           = m_style.BorderColor;
+    decl.Border.Width           = ClayBorderWidth( static_cast<uint16_t>( m_style.BorderWidth ) );
+    decl.CornerRadius           = ClayCornerRadius( 4 );
+
+    decl.Floating.AttachTo = ClayFloatingAttachTo::Root;
+    decl.Floating.Offset   = m_position;
+    decl.Floating.ZIndex   = 400.0f;
 
     m_clayContext->OpenElement( decl );
 
@@ -76,13 +90,19 @@ void ResizableContainerWidget::CreateLayoutElement( )
     contentDecl.Border.Width         = ClayBorderWidth( static_cast<uint16_t>( m_style.BorderWidth ) );
 
     m_clayContext->OpenElement( contentDecl );
-    if ( m_contentRenderer )
+    m_contentOpen = true;
+}
+
+void ResizableContainerWidget::CloseContent( )
+{
+    if ( !m_contentOpen )
     {
-        m_contentRenderer->RenderContent( );
+        return;
     }
 
-    m_clayContext->CloseElement( );
-    m_clayContext->CloseElement( );
+    m_clayContext->CloseElement( ); // Close content
+    m_clayContext->CloseElement( ); // Close container
+    m_contentOpen = false;
 }
 
 void ResizableContainerWidget::Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch )
@@ -165,11 +185,6 @@ bool ResizableContainerWidget::WasSizeChanged( ) const
 void ResizableContainerWidget::ClearSizeChangedEvent( )
 {
     m_sizeChanged = false;
-}
-
-void ResizableContainerWidget::SetContentRenderer( IContentRenderer* renderer )
-{
-    m_contentRenderer = renderer;
 }
 
 void ResizableContainerWidget::SetStyle( const ResizableContainerStyle &style )
@@ -315,4 +330,14 @@ ClayBoundingBox ResizableContainerWidget::GetResizeHandleBounds( const ResizeDir
     }
 
     return handleBounds;
+}
+
+void ResizableContainerWidget::SetPosition( const Float_2 &position )
+{
+    m_position = position;
+}
+
+Float_2 ResizableContainerWidget::GetPosition( ) const
+{
+    return m_position;
 }
