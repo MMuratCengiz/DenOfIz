@@ -20,6 +20,7 @@
 %feature("director") DenOfIz::ControllerAxisEventCallback;
 %feature("director") DenOfIz::ControllerButtonEventCallback;
 %feature("director") DenOfIz::QuitEventCallback;
+%feature("director") DenOfIz::IContentRenderer;
 
 %warnfilter(516) InteropArray;
 
@@ -309,6 +310,18 @@ using namespace DirectX;
 %include <DenOfIzGraphics/UI/IClayContext.h>
 %include <DenOfIzGraphics/UI/ClayData.h>
 %include <DenOfIzGraphics/UI/Clay.h>
+%include <DenOfIzGraphics/UI/UIShapes.h>
+%include <DenOfIzGraphics/UI/IContentRenderer.h>
+
+// UI Widgets
+%include <DenOfIzGraphics/UI/Widgets/Widget.h>
+%include <DenOfIzGraphics/UI/Widgets/CheckboxWidget.h>
+%include <DenOfIzGraphics/UI/Widgets/SliderWidget.h>
+%include <DenOfIzGraphics/UI/Widgets/TextFieldWidget.h>
+%include <DenOfIzGraphics/UI/Widgets/DropdownWidget.h>
+%include <DenOfIzGraphics/UI/Widgets/ColorPickerWidget.h>
+%include <DenOfIzGraphics/UI/Widgets/ResizableContainerWidget.h>
+%include <DenOfIzGraphics/UI/Widgets/DockableContainerWidget.h>
 
 // -- BitSet definitions
 // Convenience typedefs
@@ -483,3 +496,8 @@ typedef DenOfIz::InteropArray<DenOfIz::ThorVGColorStop> ThorVGColorStopArray;
 
 // Vector graphics
 %template(ThorVGColorStopArray) DenOfIz::InteropArray<DenOfIz::ThorVGColorStop>;
+
+// UI related types
+typedef DenOfIz::InteropArray<DenOfIz::UIVertex> UIVertexArray;
+
+%template(UIVertexArray) DenOfIz::InteropArray<DenOfIz::UIVertex>;

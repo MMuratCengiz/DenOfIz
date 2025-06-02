@@ -65,6 +65,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Assets/Import/VGImporter.h>
 
 #include <DenOfIzGraphics/UI/Clay.h>
+#include <DenOfIzGraphics/UI/ClayData.h>
+#include <DenOfIzGraphics/UI/IClayContext.h>
+#include <DenOfIzGraphics/UI/IContentRenderer.h>
+
+#include <DenOfIzGraphics/UI/Widgets/Widget.h>
+#include <DenOfIzGraphics/UI/Widgets/CheckboxWidget.h>
+#include <DenOfIzGraphics/UI/Widgets/SliderWidget.h>
+#include <DenOfIzGraphics/UI/Widgets/TextFieldWidget.h>
+#include <DenOfIzGraphics/UI/Widgets/DropdownWidget.h>
+#include <DenOfIzGraphics/UI/Widgets/ColorPickerWidget.h>
+#include <DenOfIzGraphics/UI/Widgets/ResizableContainerWidget.h>
+#include <DenOfIzGraphics/UI/Widgets/DockableContainerWidget.h>
 
 #ifdef SWIGJAVA
 #define NULL 0  // Not sure where we lose this on MacOS to be investigated

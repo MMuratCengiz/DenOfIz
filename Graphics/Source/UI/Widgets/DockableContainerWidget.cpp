@@ -154,31 +154,27 @@ void DockableContainerWidget::CreateLayoutElement( )
     m_clayContext->OpenElement( contentDecl );
     if ( m_contentRenderer )
     {
-        m_contentRenderer( );
+        m_contentRenderer->RenderContent( );
     }
 
     m_clayContext->CloseElement( );
     m_clayContext->CloseElement( );
 }
 
-void DockableContainerWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
+void DockableContainerWidget::Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch )
 {
     if ( m_isClosed )
     {
         return;
     }
 
-    // Background, border, and corner radius are now handled by Clay elements in CreateLayoutElement
-    // Only render interactive visual effects here (dock zones, drag visualization, etc.)
-    const auto &bounds = command->boundingBox;
-
     if ( m_containerState.IsDragging )
     {
         ClayBoundingBox dragOverlay;
-        dragOverlay.X      = bounds.x;
-        dragOverlay.Y      = bounds.y;
-        dragOverlay.Width  = bounds.width;
-        dragOverlay.Height = bounds.height;
+        dragOverlay.X      = boundingBox.X;
+        dragOverlay.Y      = boundingBox.Y;
+        dragOverlay.Width  = boundingBox.Width;
+        dragOverlay.Height = boundingBox.Height;
 
         ClayColor dragColor = ClayColor( 100, 100, 100, 100 );
         AddRectangle( renderBatch, dragOverlay, dragColor );
@@ -268,7 +264,7 @@ void DockableContainerWidget::HandleEvent( const Event &event )
     }
 }
 
-void DockableContainerWidget::SetContentRenderer( std::function<void( )> renderer )
+void DockableContainerWidget::SetContentRenderer( IContentRenderer* renderer )
 {
     m_contentRenderer = std::move( renderer );
 }

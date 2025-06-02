@@ -44,16 +44,14 @@ void SliderWidget::CreateLayoutElement( )
     m_clayContext->CloseElement( );
 }
 
-void SliderWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
+void SliderWidget::Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch )
 {
-    const auto &bounds = command->boundingBox;
-
-    const float trackY       = bounds.y + ( bounds.height - m_style.Height ) * 0.5f;
+    const float trackY       = boundingBox.Y + ( boundingBox.Height - m_style.Height ) * 0.5f;
     const float trackPadding = m_style.KnobSize * 0.5f;
-    const float trackWidth   = bounds.width - trackPadding * 2.0f;
+    const float trackWidth   = boundingBox.Width - trackPadding * 2.0f;
 
     ClayBoundingBox trackBounds;
-    trackBounds.X      = bounds.x + trackPadding;
+    trackBounds.X      = boundingBox.X + trackPadding;
     trackBounds.Y      = trackY;
     trackBounds.Width  = trackWidth;
     trackBounds.Height = m_style.Height;
@@ -70,8 +68,8 @@ void SliderWidget::Render( const Clay_RenderCommand *command, IRenderBatch *rend
         AddRectangle( renderBatch, fillBounds, m_style.FillColor, ClayCornerRadius( m_style.CornerRadius ) );
     }
 
-    const float knobX = bounds.x + trackPadding + normalizedValue * trackWidth - m_style.KnobSize * 0.5f;
-    const float knobY = bounds.y + ( bounds.height - m_style.KnobSize ) * 0.5f;
+    const float knobX = boundingBox.X + trackPadding + normalizedValue * trackWidth - m_style.KnobSize * 0.5f;
+    const float knobY = boundingBox.Y + ( boundingBox.Height - m_style.KnobSize ) * 0.5f;
 
     ClayBoundingBox knobBounds;
     knobBounds.X      = knobX;

@@ -18,28 +18,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/UI/UIShapes.h>
-#include <DenOfIzGraphics/Utilities/InteropArray.h>
-#include <clay.h>
+#include <DenOfIzGraphics/Utilities/Common.h>
 
 namespace DenOfIz
 {
-    class ClayRenderer;
-
-    class IClayCustomWidget
+    class DZ_API IContentRenderer
     {
     public:
-        virtual ~IClayCustomWidget( ) = default;
-
-        virtual void Render( const Clay_RenderCommand *command, InteropArray<UIVertex> &vertices, InteropArray<uint32_t> &indices, uint32_t currentVertexOffset,
-                             ClayRenderer *renderer ) = 0;
-
-        virtual void HandleEvent( const Event &event )
-        {
-        }
-
-        virtual void Update( float deltaTime )
-        {
-        }
+        virtual ~IContentRenderer( ) = default;
+        virtual void RenderContent( ) = 0;
     };
 } // namespace DenOfIz

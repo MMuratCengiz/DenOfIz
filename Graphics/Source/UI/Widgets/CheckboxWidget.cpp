@@ -42,15 +42,15 @@ void CheckboxWidget::CreateLayoutElement( )
     m_clayContext->CloseElement( );
 }
 
-void CheckboxWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
+void CheckboxWidget::Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch )
 {
-    const auto &bounds = command->boundingBox;
+    const auto &bounds = boundingBox;
 
     ClayBoundingBox checkboxBounds;
-    checkboxBounds.X      = bounds.x;
-    checkboxBounds.Y      = bounds.y;
-    checkboxBounds.Width  = bounds.width;
-    checkboxBounds.Height = bounds.height;
+    checkboxBounds.X      = bounds.X;
+    checkboxBounds.Y      = bounds.Y;
+    checkboxBounds.Width  = bounds.Width;
+    checkboxBounds.Height = bounds.Height;
 
     ClayColor backgroundColor = m_isHovered ? m_style.HoverBackgroundColor : m_style.BackgroundColor;
     ClayColor borderColor     = m_isHovered ? m_style.HoverBorderColor : m_style.BorderColor;
@@ -63,8 +63,8 @@ void CheckboxWidget::Render( const Clay_RenderCommand *command, IRenderBatch *re
     if ( m_isChecked )
     {
         const float checkSize    = m_style.Size * 0.6f;
-        const float checkOffsetX = bounds.x + ( m_style.Size - checkSize ) * 0.5f;
-        const float checkOffsetY = bounds.y + ( m_style.Size - checkSize ) * 0.5f;
+        const float checkOffsetX = bounds.X + ( m_style.Size - checkSize ) * 0.5f;
+        const float checkOffsetY = bounds.Y + ( m_style.Size - checkSize ) * 0.5f;
 
         ClayBoundingBox checkBounds;
         checkBounds.X      = checkOffsetX;

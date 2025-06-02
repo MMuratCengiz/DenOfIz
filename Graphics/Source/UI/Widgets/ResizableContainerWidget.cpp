@@ -78,22 +78,20 @@ void ResizableContainerWidget::CreateLayoutElement( )
     m_clayContext->OpenElement( contentDecl );
     if ( m_contentRenderer )
     {
-        m_contentRenderer( );
+        m_contentRenderer->RenderContent( );
     }
 
     m_clayContext->CloseElement( );
     m_clayContext->CloseElement( );
 }
 
-void ResizableContainerWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
+void ResizableContainerWidget::Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch )
 {
-    const auto &bounds = command->boundingBox;
-
     ClayBoundingBox containerBounds;
-    containerBounds.X      = bounds.x;
-    containerBounds.Y      = bounds.y;
-    containerBounds.Width  = bounds.width;
-    containerBounds.Height = bounds.height;
+    containerBounds.X      = boundingBox.X;
+    containerBounds.Y      = boundingBox.Y;
+    containerBounds.Width  = boundingBox.Width;
+    containerBounds.Height = boundingBox.Height;
 
     AddRectangle( renderBatch, containerBounds, m_style.BackgroundColor );
 
@@ -169,9 +167,9 @@ void ResizableContainerWidget::ClearSizeChangedEvent( )
     m_sizeChanged = false;
 }
 
-void ResizableContainerWidget::SetContentRenderer( std::function<void( )> renderer )
+void ResizableContainerWidget::SetContentRenderer( IContentRenderer* renderer )
 {
-    m_contentRenderer = std::move( renderer );
+    m_contentRenderer = renderer;
 }
 
 void ResizableContainerWidget::SetStyle( const ResizableContainerStyle &style )

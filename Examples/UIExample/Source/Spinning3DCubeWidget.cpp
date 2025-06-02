@@ -363,9 +363,9 @@ void Spinning3DCubeWidget::CreateLayoutElement( )
     m_clayContext->CloseElement( );
 }
 
-void Spinning3DCubeWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
+void Spinning3DCubeWidget::Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch )
 {
-    m_bounds = command->boundingBox;
+    m_bounds = boundingBox;
 }
 
 void Spinning3DCubeWidget::HandleEvent( const Event &event )

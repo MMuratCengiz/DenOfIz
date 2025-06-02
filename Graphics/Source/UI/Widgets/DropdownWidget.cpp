@@ -70,15 +70,11 @@ void DropdownWidget::CreateLayoutElement( )
     }
 }
 
-void DropdownWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
+void DropdownWidget::Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch )
 {
-    const auto &bounds = command->boundingBox;
-
-    // Background, border, and text are now handled by Clay elements in CreateLayoutElement
-    // Only render dropdown arrow here
     constexpr float arrowSize = 8.0f;
-    const float     arrowX    = bounds.x + bounds.width - m_style.Padding.Right - arrowSize;
-    const float     arrowY    = bounds.y + ( bounds.height - arrowSize ) * 0.5f;
+    const float     arrowX    = boundingBox.X + boundingBox.Width - m_style.Padding.Right - arrowSize;
+    const float     arrowY    = boundingBox.Y + ( boundingBox.Height - arrowSize ) * 0.5f;
 
     ClayBoundingBox arrowBounds;
     arrowBounds.X      = arrowX;

@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <functional>
 #include "Widget.h"
+#include <DenOfIzGraphics/UI/IContentRenderer.h>
 
 namespace DenOfIz
 {
@@ -42,15 +42,15 @@ namespace DenOfIz
     {
         ClayResizableContainerState m_containerState;
         ResizableContainerStyle     m_style;
-        std::function<void( )>      m_contentRenderer;
-        bool                        m_sizeChanged = false;
+        IContentRenderer           *m_contentRenderer = nullptr;
+        bool                        m_sizeChanged      = false;
 
     public:
         DZ_API ResizableContainerWidget( IClayContext *clayContext, uint32_t id, const ResizableContainerStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;
-        DZ_API void Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch ) override;
+        DZ_API void Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch ) override;
         DZ_API void HandleEvent( const Event &event ) override;
 
         DZ_API void    SetSize( float width, float height );
@@ -58,8 +58,7 @@ namespace DenOfIz
         DZ_API bool    WasSizeChanged( ) const;
         DZ_API void    ClearSizeChangedEvent( );
 
-        // Todo remove std::function callback
-        DZ_API void                           SetContentRenderer( std::function<void( )> renderer );
+        DZ_API void                           SetContentRenderer( IContentRenderer *renderer );
         DZ_API void                           SetStyle( const ResizableContainerStyle &style );
         DZ_API const ResizableContainerStyle &GetStyle( ) const;
 

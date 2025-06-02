@@ -47,15 +47,13 @@ void ColorPickerWidget::CreateLayoutElement( )
     m_clayContext->CloseElement( );
 }
 
-void ColorPickerWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
+void ColorPickerWidget::Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch )
 {
-    const auto &bounds = command->boundingBox;
-
     ClayBoundingBox colorBounds;
-    colorBounds.X      = bounds.x;
-    colorBounds.Y      = bounds.y;
-    colorBounds.Width  = bounds.width;
-    colorBounds.Height = bounds.height;
+    colorBounds.X      = boundingBox.X;
+    colorBounds.Y      = boundingBox.Y;
+    colorBounds.Width  = boundingBox.Width;
+    colorBounds.Height = boundingBox.Height;
 
     ClayColor currentColor;
     currentColor.R = static_cast<uint8_t>( m_rgb.X * 255 );

@@ -77,19 +77,13 @@ void TextFieldWidget::CreateLayoutElement( )
     m_clayContext->CloseElement( );
 }
 
-void TextFieldWidget::Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch )
+void TextFieldWidget::Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch )
 {
-    const auto &bounds = command->boundingBox;
-
-    // Background, border, and text are handled by Clay elements in CreateLayoutElement
-    // Only render cursor and selection here as these are interactive elements
-
-    // Text bounds with padding (needed for cursor positioning)
     ClayBoundingBox textBounds;
-    textBounds.X      = bounds.x + m_style.Padding.Left;
-    textBounds.Y      = bounds.y + m_style.Padding.Top;
-    textBounds.Width  = bounds.width - m_style.Padding.Left - m_style.Padding.Right;
-    textBounds.Height = bounds.height - m_style.Padding.Top - m_style.Padding.Bottom;
+    textBounds.X      = boundingBox.X + m_style.Padding.Left;
+    textBounds.Y      = boundingBox.Y + m_style.Padding.Top;
+    textBounds.Width  = boundingBox.Width - m_style.Padding.Left - m_style.Padding.Right;
+    textBounds.Height = boundingBox.Height - m_style.Padding.Top - m_style.Padding.Bottom;
 
     if ( m_hasSelection && m_selectionStart != m_selectionEnd )
     {

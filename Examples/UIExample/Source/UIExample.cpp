@@ -90,6 +90,7 @@ void UIExample::Init( )
     resizableStyle.ShowTitleBar = true;
     m_resizableContainer        = m_clay->CreateResizableContainer( m_clay->HashString( "ResizableContainer" ), resizableStyle );
 
+    // Todo we rewrite containers to be swig friendly
     DockableContainerStyle dockableStyle1;
     dockableStyle1.Title     = InteropString( "Properties Panel" );
     dockableStyle1.MinWidth  = 250.0f;
@@ -101,34 +102,6 @@ void UIExample::Init( )
     dockableStyle2.MinWidth  = 200.0f;
     dockableStyle2.MinHeight = 300.0f;
     m_dockableContainer2     = m_clay->CreateDockableContainer( m_clay->HashString( "DockableContainer2" ), m_dockingManager.get( ), dockableStyle2 );
-
-    m_resizableContainer->SetContentRenderer(
-        [ this ]( )
-        {
-            ClayTextDesc textDesc;
-            textDesc.TextColor = ClayColor( 0, 0, 0, 255 );
-            textDesc.FontSize  = 14;
-            m_clay->Text( InteropString( "This is a resizable container!\nDrag the edges to resize." ), textDesc );
-        } );
-
-    m_dockableContainer1->SetContentRenderer(
-        [ this ]( )
-        {
-            ClayTextDesc textDesc;
-            textDesc.TextColor = ClayColor( 0, 0, 0, 255 );
-            textDesc.FontSize  = 14;
-            m_clay->Text( InteropString( "Properties:\n• Property 1: Value\n• Property 2: Another Value\n• Property 3: Yet Another" ), textDesc );
-        } );
-
-    m_dockableContainer2->SetContentRenderer(
-        [ this ]( )
-        {
-            ClayTextDesc textDesc;
-            textDesc.TextColor = ClayColor( 0, 0, 0, 255 );
-            textDesc.FontSize  = 14;
-            m_clay->Text( InteropString( "Hierarchy:\n└ Root Object\n  ├ Child 1\n  ├ Child 2\n  └ Child 3" ), textDesc );
-        } );
-
     // Set initial positions for dockable containers
     m_dockableContainer1->SetFloatingPosition( Float_2{ 50.0f, 100.0f } );
     m_dockableContainer2->SetFloatingPosition( Float_2{ 350.0f, 150.0f } );

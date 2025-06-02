@@ -42,7 +42,7 @@ namespace DenOfIz
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;
-        DZ_API void Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch ) override;
+        DZ_API void Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch ) override;
         DZ_API void HandleEvent( const Event &event ) override;
 
         DZ_API int32_t       GetSelectedIndex( ) const;

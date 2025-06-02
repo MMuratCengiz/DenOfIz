@@ -18,8 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <clay.h>
-
 #include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
 #include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
 #include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
@@ -28,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/UI/IClayContext.h>
 #include <DenOfIzGraphics/UI/UIShapes.h>
 #include <memory>
+#include <vector>
 
 namespace DenOfIz
 {
@@ -59,7 +58,7 @@ namespace DenOfIz
 
         DZ_API virtual void Update( float deltaTime )                                              = 0;
         DZ_API virtual void CreateLayoutElement( )                                                 = 0;
-        DZ_API virtual void Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch ) = 0;
+        DZ_API virtual void Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch ) = 0;
         DZ_API virtual void HandleEvent( const Event &event )                                      = 0;
 
         DZ_API virtual bool HasPipeline( ) const;

@@ -61,7 +61,7 @@ namespace DenOfIz
         float             m_rotation      = 0.0f;
         float             m_rotationSpeed = 1.0f;
         DirectX::XMFLOAT4 m_cubeColor     = DirectX::XMFLOAT4( 0.2f, 0.5f, 0.9f, 1.0f );
-        Clay_BoundingBox  m_bounds{ };
+        ClayBoundingBox   m_bounds{ };
         ILogicalDevice   *m_device = nullptr;
 
         ResourceTracking                                 m_resourceTracking;
@@ -78,7 +78,7 @@ namespace DenOfIz
 
         void Update( float deltaTime ) override;
         void CreateLayoutElement( ) override;
-        void Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch ) override;
+        void Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch ) override;
         void HandleEvent( const Event &event ) override;
 
         void InitializeRenderResources( ILogicalDevice *device, uint32_t width, uint32_t height ) override;

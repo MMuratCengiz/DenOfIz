@@ -882,8 +882,9 @@ void ClayRenderer::RenderCustom( const Clay_RenderCommand *command, ICommandList
             }
             else
             {
-                ClayRenderBatch renderBatch( this );
-                widget->Render( command, &renderBatch );
+                ClayRenderBatch       renderBatch( this );
+                const ClayBoundingBox boundingBox = { command->boundingBox.x, command->boundingBox.y, command->boundingBox.width, command->boundingBox.height };
+                widget->Render( boundingBox, &renderBatch );
             }
         }
         else

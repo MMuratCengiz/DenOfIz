@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <functional>
+#include "ResizableContainerWidget.h"
+#include <DenOfIzGraphics/UI/IContentRenderer.h>
 #include <memory>
 #include <vector>
-#include "ResizableContainerWidget.h"
 
 namespace DenOfIz
 {
@@ -58,20 +58,20 @@ namespace DenOfIz
     {
         ClayDockableContainerState                m_containerState;
         DockableContainerStyle                    m_style;
-        std::function<void( )>                    m_contentRenderer;
-        DockingManager                           *m_dockingManager = nullptr;
+        IContentRenderer                         *m_contentRenderer     = nullptr;
+        DockingManager                           *m_dockingManager      = nullptr;
         std::unique_ptr<ResizableContainerWidget> m_resizableContainer;
-        bool                                      m_isClosed = false;
+        bool                                      m_isClosed            = false;
 
     public:
         DZ_API DockableContainerWidget( IClayContext *clayContext, uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style = { } );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void CreateLayoutElement( ) override;
-        DZ_API void Render( const Clay_RenderCommand *command, IRenderBatch *renderBatch ) override;
+        DZ_API void Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch ) override;
         DZ_API void HandleEvent( const Event &event ) override;
 
-        DZ_API void                          SetContentRenderer( std::function<void( )> renderer );
+        DZ_API void                          SetContentRenderer( IContentRenderer *renderer );
         DZ_API void                          SetStyle( const DockableContainerStyle &style );
         DZ_API const DockableContainerStyle &GetStyle( ) const;
 
