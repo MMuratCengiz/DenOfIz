@@ -82,8 +82,9 @@ void DockableContainerWidget::OpenContent( )
 
     if ( static_cast<DockingMode>( m_containerState.Mode ) == DockingMode::Floating )
     {
-        decl.Layout.Sizing.Width  = ClaySizingAxis::Fixed( m_containerState.FloatingSize.X );
-        decl.Layout.Sizing.Height = ClaySizingAxis::Fixed( m_containerState.FloatingSize.Y );
+        decl.Layout.Padding       = ClayPadding( 8 );
+        decl.Layout.Sizing.Width  = ClaySizingAxis::Fit( m_containerState.FloatingSize.X );
+        decl.Layout.Sizing.Height = ClaySizingAxis::Fit( m_containerState.FloatingSize.Y );
         decl.Floating.AttachTo    = ClayFloatingAttachTo::Root; // Attach to root viewport, not another element
         decl.Floating.Offset      = m_containerState.FloatingPosition;
         decl.Floating.ZIndex      = 500.0f; // Lower than dropdown (1000) but higher than regular elements
@@ -273,7 +274,6 @@ void DockableContainerWidget::HandleEvent( const Event &event )
     }
 }
 
-
 void DockableContainerWidget::SetStyle( const DockableContainerStyle &style )
 {
     m_style = style;
@@ -335,8 +335,8 @@ bool DockableContainerWidget::IsClosed( ) const
 
 void DockableContainerWidget::Close( )
 {
-    m_isClosed = true;
-    m_contentOpen = false;  // Reset content state when closing
+    m_isClosed    = true;
+    m_contentOpen = false; // Reset content state when closing
 }
 
 void DockableContainerWidget::Show( )

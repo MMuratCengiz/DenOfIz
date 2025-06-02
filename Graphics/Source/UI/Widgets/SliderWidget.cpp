@@ -38,6 +38,7 @@ void SliderWidget::CreateLayoutElement( )
     decl.Id                   = m_id;
     decl.Layout.Sizing.Width  = ClaySizingAxis::Grow( );
     decl.Layout.Sizing.Height = ClaySizingAxis::Fixed( m_style.KnobSize );
+    decl.Layout.Padding       = ClayPadding( 8 );
     decl.Custom.CustomData    = this;
 
     m_clayContext->OpenElement( decl );

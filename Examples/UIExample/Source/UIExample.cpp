@@ -40,80 +40,52 @@ void UIExample::Init( )
     m_clay->SetViewportSize( viewport.Width, viewport.Height );
     m_clay->SetDebugModeEnabled( true );
 
-    m_containerId       = m_clay->HashString( "Container" );
-    m_scrollContainerId = m_clay->HashString( "ScrollContainer" );
+    m_containerId = m_clay->HashString( "Container" );
 
-    m_themeOptions.AddElement( InteropString( "Modern Light" ) );
-    m_themeOptions.AddElement( InteropString( "Modern Dark" ) );
-    m_themeOptions.AddElement( InteropString( "Classic" ) );
-    m_themeOptions.AddElement( InteropString( "High Contrast" ) );
+    m_dpiScaleOptions.AddElement( InteropString( "100%" ) );
+    m_dpiScaleOptions.AddElement( InteropString( "125%" ) );
+    m_dpiScaleOptions.AddElement( InteropString( "150%" ) );
+    m_dpiScaleOptions.AddElement( InteropString( "175%" ) );
+    m_dpiScaleOptions.AddElement( InteropString( "200%" ) );
 
-    m_languageOptions.AddElement( InteropString( "English" ) );
-    m_languageOptions.AddElement( InteropString( "Spanish" ) );
-    m_languageOptions.AddElement( InteropString( "French" ) );
-    m_languageOptions.AddElement( InteropString( "German" ) );
-    m_languageOptions.AddElement( InteropString( "Japanese" ) );
-
-    // Create widgets using the new widget system
-    m_darkModeCheckbox         = m_clay->CreateCheckbox( m_clay->HashString( "DarkModeCheckbox" ), false );
-    m_enableAnimationsCheckbox = m_clay->CreateCheckbox( m_clay->HashString( "AnimationsCheckbox" ), true );
+    m_darkModeCheckbox = m_clay->CreateCheckbox( m_clay->HashString( "DarkModeCheckbox" ), false );
 
     SliderStyle sliderStyle = { };
     sliderStyle.MinValue    = 0.0f;
-    sliderStyle.MaxValue    = 1.0f;
+    sliderStyle.MaxValue    = 2.0f;
     sliderStyle.Step        = 0.01f;
-    m_volumeSlider          = m_clay->CreateSlider( m_clay->HashString( "VolumeSlider" ), 0.75f, sliderStyle );
-    m_brightnessSlider      = m_clay->CreateSlider( m_clay->HashString( "BrightnessSlider" ), 0.5f, sliderStyle );
+    m_cubeRotationSlider    = m_clay->CreateSlider( m_clay->HashString( "CubeRotationSlider" ), 1.0f, sliderStyle );
 
-    m_themeDropdown    = m_clay->CreateDropdown( m_clay->HashString( "ThemeDropdown" ), m_themeOptions );
-    m_languageDropdown = m_clay->CreateDropdown( m_clay->HashString( "LanguageDropdown" ), m_languageOptions );
+    m_dpiScaleDropdown = m_clay->CreateDropdown( m_clay->HashString( "DpiScaleDropdown" ), m_dpiScaleOptions );
+    m_dpiScaleDropdown->SetSelectedIndex( 0 );
 
-    m_accentColorPicker = m_clay->CreateColorPicker( m_clay->HashString( "AccentColorPicker" ), Float_3{ 0.2f, 0.6f, 1.0f } );
-
-    m_usernameField = m_clay->CreateTextField( m_clay->HashString( "UsernameField" ), ClayWidgets::CreateSingleLineInput( "Enter username..." ) );
-
-    auto passwordStyle = ClayWidgets::CreatePasswordInput( "Enter password..." );
-    m_passwordField    = m_clay->CreateTextField( m_clay->HashString( "PasswordField" ), passwordStyle );
-
-    auto commentsStyle = ClayWidgets::CreateTextArea( "Share your thoughts..." );
-    m_commentsField    = m_clay->CreateTextField( m_clay->HashString( "CommentsField" ), commentsStyle );
-
-    m_themeDropdown->SetSelectedIndex( 0 );
-    m_languageDropdown->SetSelectedIndex( 0 );
+    auto multilineStyle  = ClayWidgets::CreateTextArea( "Enter your text here..." );
+    m_multilineTextField = m_clay->CreateTextField( m_clay->HashString( "MultilineTextField" ), multilineStyle );
 
     m_dockingManager = std::unique_ptr<DockingManager>( m_clay->CreateDockingManager( ) );
 
-    ResizableContainerStyle resizableStyle;
-    resizableStyle.Title        = InteropString( "Resizable Container" );
-    resizableStyle.MinWidth     = 200.0f;
-    resizableStyle.MinHeight    = 150.0f;
-    resizableStyle.ShowTitleBar = true;
-    m_resizableContainer        = m_clay->CreateResizableContainer( m_clay->HashString( "ResizableContainer" ), resizableStyle );
+    DockableContainerStyle cubeContainerStyle;
+    cubeContainerStyle.Title           = InteropString( "3D Cube Control" );
+    cubeContainerStyle.MinWidth        = 300.0f;
+    cubeContainerStyle.MinHeight       = 250.0f;
+    cubeContainerStyle.BackgroundColor = ClayColor( 48, 51, 54, 255 );
+    m_cubeContainer                    = m_clay->CreateDockableContainer( m_clay->HashString( "CubeContainer" ), m_dockingManager.get( ), cubeContainerStyle );
+    m_cubeContainer->SetFloatingPosition( Float_2{ 400.0f, 200.0f } );
+    m_cubeContainer->Close( ); // Start hidden
 
-    // Todo we rewrite containers to be swig friendly
-    DockableContainerStyle dockableStyle1;
-    dockableStyle1.Title     = InteropString( "Properties Panel" );
-    dockableStyle1.MinWidth  = 250.0f;
-    dockableStyle1.MinHeight = 200.0f;
-    m_dockableContainer1     = m_clay->CreateDockableContainer( m_clay->HashString( "DockableContainer1" ), m_dockingManager.get( ), dockableStyle1 );
+    DockableContainerStyle textContainerStyle;
+    textContainerStyle.Title     = InteropString( "Text Editor" );
+    textContainerStyle.MinWidth  = 400.0f;
+    textContainerStyle.MinHeight = 300.0f;
+    m_textContainer              = m_clay->CreateDockableContainer( m_clay->HashString( "TextContainer" ), m_dockingManager.get( ), textContainerStyle );
+    m_textContainer->SetFloatingPosition( Float_2{ 100.0f, 300.0f } );
+    m_textContainer->Close( ); // Start hidden
 
-    DockableContainerStyle dockableStyle2;
-    dockableStyle2.Title     = InteropString( "Hierarchy Panel" );
-    dockableStyle2.MinWidth  = 200.0f;
-    dockableStyle2.MinHeight = 300.0f;
-    m_dockableContainer2     = m_clay->CreateDockableContainer( m_clay->HashString( "DockableContainer2" ), m_dockingManager.get( ), dockableStyle2 );
-    // Set initial positions for dockable containers
-    m_dockableContainer1->SetFloatingPosition( Float_2{ 50.0f, 100.0f } );
-    m_dockableContainer2->SetFloatingPosition( Float_2{ 350.0f, 150.0f } );
-
-    // Create the spinning 3D cube widget
     m_spinningCubeWidget = std::make_unique<Spinning3DCubeWidget>( m_clay->GetContext( ), m_clay->HashString( "SpinningCubeWidget" ) );
-    m_spinningCubeWidget->SetRotationSpeed( 1.5f );
-    m_spinningCubeWidget->SetCubeColor( DirectX::XMFLOAT4( 0.2f, 0.6f, 1.0f, 1.0f ) );
-    
-    // Register the widget with Clay (we keep ownership)
-    m_clay->RegisterPipelineWidget( m_spinningCubeWidget.get( ) );
+    m_spinningCubeWidget->SetRotationSpeed( 1.0f );
+    m_spinningCubeWidget->SetCubeColor( XMFLOAT4( 0.2f, 0.6f, 1.0f, 1.0f ) );
 
+    m_clay->RegisterPipelineWidget( m_spinningCubeWidget.get( ) );
     m_time.OnEachSecond = []( const double fps ) { LOG( INFO ) << "FPS: " << fps; };
 }
 
@@ -134,20 +106,34 @@ void UIExample::Update( )
         m_dockingManager->Update( m_worldData.DeltaTime );
     }
 
+    if ( m_spinningCubeWidget && m_cubeRotationSlider )
+    {
+        m_spinningCubeWidget->SetRotationSpeed( m_cubeRotationSlider->GetValue( ) );
+    }
+
+    if ( m_dpiScaleDropdown )
+    {
+        const int selectedIndex = m_dpiScaleDropdown->GetSelectedIndex( );
+        if ( selectedIndex >= 0 && selectedIndex < 5 )
+        {
+            constexpr float dpiScales[] = { 1.0f, 1.25f, 1.5f, 1.75f, 2.0f };
+            m_clay->SetDpiScale( dpiScales[ selectedIndex ] ); // Todo this works terribly :/
+        }
+    }
+
     RenderAndPresentFrame( );
 }
 
 void UIExample::CreateUI( )
 {
-    const bool      darkMode           = m_darkModeCheckbox ? m_darkModeCheckbox->IsChecked( ) : false;
-    const ClayColor bgColor            = darkMode ? ClayColor( 30, 30, 33, 255 ) : ClayColor( 245, 245, 250, 255 );
-    const ClayColor cardColor          = darkMode ? ClayColor( 45, 45, 48, 255 ) : ClayColor( 255, 255, 255, 255 );
-    const ClayColor textColor          = darkMode ? ClayColor( 240, 240, 240, 255 ) : ClayColor( 20, 20, 20, 255 );
-    const ClayColor secondaryTextColor = darkMode ? ClayColor( 180, 180, 180, 255 ) : ClayColor( 100, 100, 100, 255 );
+    const bool      darkMode  = m_darkModeCheckbox ? m_darkModeCheckbox->IsChecked( ) : false;
+    const ClayColor bgColor   = darkMode ? ClayColor( 30, 30, 33, 255 ) : ClayColor( 245, 245, 250, 255 );
+    const ClayColor cardColor = darkMode ? ClayColor( 45, 45, 48, 255 ) : ClayColor( 255, 255, 255, 255 );
+    const ClayColor textColor = darkMode ? ClayColor( 240, 240, 240, 255 ) : ClayColor( 20, 20, 20, 255 );
 
     ClayElementDeclaration container;
     container.Id                     = m_containerId;
-    container.Layout.Sizing.Width    = ClaySizingAxis::Grow( 600 );
+    container.Layout.Sizing.Width    = ClaySizingAxis::Grow( 400 );
     container.Layout.Sizing.Height   = ClaySizingAxis::Grow( );
     container.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
     container.Layout.Padding         = ClayPadding( 24 );
@@ -157,42 +143,77 @@ void UIExample::CreateUI( )
     m_clay->OpenElement( container );
 
     CreateHeader( textColor );
-    ClayElementDeclaration contentContainer;
-    contentContainer.Layout.Sizing.Width    = ClaySizingAxis::Grow( );
-    contentContainer.Layout.Sizing.Height   = ClaySizingAxis::Grow( );
-    contentContainer.Layout.LayoutDirection = ClayLayoutDirection::LeftToRight;
-    contentContainer.Layout.ChildGap        = 24;
+    CreateMainContent( cardColor, textColor );
 
-    m_clay->OpenElement( contentContainer );
-    CreateSettingsPanel( cardColor, textColor, secondaryTextColor );
-
-    CreateFormsPanel( cardColor, textColor, secondaryTextColor );
     m_clay->CloseElement( );
 
-    CreateFooter( cardColor, textColor, secondaryTextColor );
-    m_clay->CloseElement( );
-
-    // Render container widgets
-    if ( m_resizableContainer )
+    if ( !m_cubeContainer->IsClosed( ) )
     {
-        m_resizableContainer->CreateLayoutElement( );
+        m_cubeContainer->OpenContent( );
+
+        ClayElementDeclaration cubeContent;
+        cubeContent.Layout.Sizing.Width    = ClaySizingAxis::Grow( );
+        cubeContent.Layout.Sizing.Height   = ClaySizingAxis::Grow( );
+        cubeContent.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
+        cubeContent.Layout.Padding         = ClayPadding( 16 );
+        cubeContent.Layout.ChildGap        = 16;
+
+        m_clay->OpenElement( cubeContent );
+
+        ClayTextDesc sliderLabel;
+        sliderLabel.FontSize  = 14;
+        sliderLabel.TextColor = textColor;
+        m_clay->Text( "Rotation Speed:", sliderLabel );
+
+        if ( m_cubeRotationSlider )
+        {
+            m_cubeRotationSlider->CreateLayoutElement( );
+        }
+
+        ClayElementDeclaration cubeWidgetContainer;
+        cubeWidgetContainer.Layout.Sizing.Width     = ClaySizingAxis::Grow( );
+        cubeWidgetContainer.Layout.Sizing.Height    = ClaySizingAxis::Fixed( 150 );
+        cubeWidgetContainer.Layout.ChildAlignment.X = ClayAlignmentX::Center;
+        cubeWidgetContainer.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
+
+        m_clay->OpenElement( cubeWidgetContainer );
+
+        if ( m_spinningCubeWidget )
+        {
+            m_spinningCubeWidget->CreateLayoutElement( );
+        }
+
+        m_clay->CloseElement( );
+        m_clay->CloseElement( );
+
+        m_cubeContainer->CloseContent( );
     }
 
-    if ( m_dockableContainer1 )
+    if ( !m_textContainer->IsClosed( ) )
     {
-        m_dockableContainer1->CreateLayoutElement( );
-    }
+        m_textContainer->OpenContent( );
 
-    if ( m_dockableContainer2 )
-    {
-        m_dockableContainer2->CreateLayoutElement( );
-    }
+        ClayElementDeclaration textContent;
+        textContent.Layout.Sizing.Width  = ClaySizingAxis::Grow( );
+        textContent.Layout.Sizing.Height = ClaySizingAxis::Grow( );
+        textContent.Layout.Padding       = ClayPadding( 16 );
 
-    // Render docking manager (for dock zones)
+        m_clay->OpenElement( textContent );
+
+        ClayTextDesc textDesc{ };
+        textDesc.FontSize  = 18;
+        textDesc.TextColor = textColor;
+        m_clay->Text( m_multilineTextField->GetText( ), textDesc );
+
+        m_clay->CloseElement( );
+
+        m_textContainer->CloseContent( );
+    }
     if ( m_dockingManager )
     {
         m_dockingManager->Render( );
     }
+
     m_mouseJustReleased = false;
 }
 
@@ -200,176 +221,90 @@ void UIExample::CreateHeader( const ClayColor &textColor ) const
 {
     ClayElementDeclaration headerContainer;
     headerContainer.Layout.Sizing.Width     = ClaySizingAxis::Grow( );
-    headerContainer.Layout.Sizing.Height    = ClaySizingAxis::Fixed( 80 );
+    headerContainer.Layout.Sizing.Height    = ClaySizingAxis::Fixed( 60 );
     headerContainer.Layout.ChildAlignment.X = ClayAlignmentX::Center;
     headerContainer.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
 
     m_clay->OpenElement( headerContainer );
 
     ClayTextDesc headerTextDesc;
-    headerTextDesc.FontSize  = 32;
+    headerTextDesc.FontSize  = 28;
     headerTextDesc.TextColor = textColor;
-    m_clay->Text( "🎨 Clay UI Widget Showcase", headerTextDesc );
+    m_clay->Text( "UI Example", headerTextDesc );
 
     m_clay->CloseElement( );
 }
 
-void UIExample::CreateSettingsPanel( const ClayColor &cardColor, const ClayColor &textColor, const ClayColor &secondaryTextColor ) const
+void UIExample::CreateMainContent( const ClayColor &cardColor, const ClayColor &textColor ) const
 {
-    ClayElementDeclaration leftColumn;
-    leftColumn.Layout.Sizing.Width    = ClaySizingAxis::Percent( 0.45f );
-    leftColumn.Layout.Sizing.Height   = ClaySizingAxis::Grow( );
-    leftColumn.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
-    leftColumn.Layout.ChildGap        = 16;
+    ClayElementDeclaration contentContainer;
+    contentContainer.Layout.Sizing.Width     = ClaySizingAxis::Grow( );
+    contentContainer.Layout.Sizing.Height    = ClaySizingAxis::Grow( );
+    contentContainer.Layout.LayoutDirection  = ClayLayoutDirection::TopToBottom;
+    contentContainer.Layout.ChildGap         = 20;
+    contentContainer.Layout.ChildAlignment.X = ClayAlignmentX::Center;
 
-    m_clay->OpenElement( leftColumn );
+    m_clay->OpenElement( contentContainer );
 
     CreateCard( cardColor, textColor, "⚙️ Settings" );
+
     CreateCheckboxRow( "Dark Mode", m_darkModeCheckbox, textColor );
-    CreateCheckboxRow( "Enable Animations", m_enableAnimationsCheckbox, textColor );
+    CreateDropdownRow( "DPI Scale", m_dpiScaleDropdown, textColor );
 
     m_clay->CloseElement( );
 
-    CreateCard( cardColor, textColor, "🔊 Audio & Display" );
-    CreateSliderRow( "Volume", m_volumeSlider, textColor, secondaryTextColor );
-    CreateSliderRow( "Brightness", m_brightnessSlider, textColor, secondaryTextColor );
+    ClayElementDeclaration buttonRow;
+    buttonRow.Layout.Sizing.Width     = ClaySizingAxis::Fit( );
+    buttonRow.Layout.Sizing.Height    = ClaySizingAxis::Fixed( 50 );
+    buttonRow.Layout.LayoutDirection  = ClayLayoutDirection::LeftToRight;
+    buttonRow.Layout.ChildGap         = 16;
+    buttonRow.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
+
+    m_clay->OpenElement( buttonRow );
+
+    const ClayColor buttonBg   = m_darkModeCheckbox && m_darkModeCheckbox->IsChecked( ) ? ClayColor( 70, 130, 180, 255 ) : ClayColor( 100, 149, 237, 255 );
+    const auto      buttonText = ClayColor( 255, 255, 255, 255 );
+
+    const uint32_t showBoxButtonId = m_clay->HashString( "ShowBoxButton" );
+    CreateButton( "Show Box", buttonBg, buttonText, showBoxButtonId );
+
+    if ( m_clay->PointerOver( showBoxButtonId ) && m_mouseJustReleased )
+    {
+        m_cubeContainer->Show( );
+    }
+
+    const uint32_t popTextButtonId = m_clay->HashString( "PopTextButton" );
+    CreateButton( "Pop Text!", buttonBg, buttonText, popTextButtonId );
+
+    if ( m_clay->PointerOver( popTextButtonId ) && m_mouseJustReleased )
+    {
+        m_textContainer->Show( );
+    }
 
     m_clay->CloseElement( );
-
-    CreateCard( cardColor, textColor, "🎨 Appearance" );
-    CreateDropdownRow( "Theme", m_themeDropdown, textColor );
-    CreateDropdownRow( "Language", m_languageDropdown, textColor );
-
-    m_clay->CloseElement( );
-
-    m_clay->CloseElement( );
-}
-
-void UIExample::CreateFormsPanel( const ClayColor &cardColor, const ClayColor &textColor, const ClayColor &secondaryTextColor ) const
-{
-    ClayElementDeclaration rightColumn;
-    rightColumn.Layout.Sizing.Width    = ClaySizingAxis::Grow( );
-    rightColumn.Layout.Sizing.Height   = ClaySizingAxis::Grow( );
-    rightColumn.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
-    rightColumn.Layout.ChildGap        = 16;
-    // Enable vertical scrolling to ensure all content is reachable
-    rightColumn.Scroll.Vertical        = true;
-
-    m_clay->OpenElement( rightColumn );
-
-    CreateCard( cardColor, textColor, "👤 User Profile" );
-    CreateTextFieldRow( "Username", m_usernameField, textColor );
-    CreateTextFieldRow( "Password", m_passwordField, textColor );
-
-    m_clay->CloseElement( );
-
-    CreateCard( cardColor, textColor, "💬 Comments" );
-
-    ClayTextDesc labelDesc;
-    labelDesc.FontSize  = 14;
-    labelDesc.TextColor = textColor;
-    m_clay->Text( "Comments:", labelDesc );
+    CreateCard( cardColor, textColor, "Text Area" );
 
     ClayElementDeclaration textFieldContainer;
     textFieldContainer.Layout.Sizing.Width  = ClaySizingAxis::Grow( );
-    textFieldContainer.Layout.Sizing.Height = ClaySizingAxis::Fixed( 120 );
+    textFieldContainer.Layout.Sizing.Height = ClaySizingAxis::Fixed( 150 );
     textFieldContainer.Layout.Padding       = ClayPadding( 4 );
 
     m_clay->OpenElement( textFieldContainer );
 
-    if ( m_commentsField )
+    if ( m_multilineTextField )
     {
-        m_commentsField->CreateLayoutElement( );
+        m_multilineTextField->CreateLayoutElement( );
     }
 
     m_clay->CloseElement( );
-
-    m_clay->CloseElement( );
-
-    CreateCard( cardColor, textColor, "🌈 Accent Color (Surprise!)" );
-
-    ClayTextDesc colorLabelDesc;
-    colorLabelDesc.FontSize  = 14;
-    colorLabelDesc.TextColor = secondaryTextColor;
-    m_clay->Text( "Choose your favorite accent color:", colorLabelDesc );
-
-    ClayElementDeclaration colorPickerContainer;
-    colorPickerContainer.Layout.Sizing.Width     = ClaySizingAxis::Grow( );
-    colorPickerContainer.Layout.Sizing.Height    = ClaySizingAxis::Fixed( 180 );
-    colorPickerContainer.Layout.ChildAlignment.X = ClayAlignmentX::Center;
-    colorPickerContainer.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
-    colorPickerContainer.Layout.Padding          = ClayPadding( 20 );
-
-    m_clay->OpenElement( colorPickerContainer );
-
-    if ( m_accentColorPicker )
-    {
-        m_accentColorPicker->CreateLayoutElement( );
-    }
-
-    m_clay->CloseElement( );
-
-    m_clay->CloseElement( );
-
-    // Add the 3D Cube Widget
-    CreateCard( cardColor, textColor, "🎮 3D Spinning Cube" );
-    
-    ClayTextDesc cubeDesc;
-    cubeDesc.FontSize  = 14;
-    cubeDesc.TextColor = secondaryTextColor;
-    m_clay->Text( "Custom widget with its own rendering pipeline:", cubeDesc );
-    
-    ClayElementDeclaration cubeContainer;
-    cubeContainer.Layout.Sizing.Width     = ClaySizingAxis::Grow( );
-    cubeContainer.Layout.Sizing.Height    = ClaySizingAxis::Fixed( 220 );
-    cubeContainer.Layout.ChildAlignment.X = ClayAlignmentX::Center;
-    cubeContainer.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
-    cubeContainer.Layout.Padding          = ClayPadding( 10 );
-    
-    m_clay->OpenElement( cubeContainer );
-    
-    if ( m_spinningCubeWidget )
-    {
-        m_spinningCubeWidget->CreateLayoutElement( );
-    }
-    
-    m_clay->CloseElement( );
-    
-    m_clay->CloseElement( );
-
-    m_clay->CloseElement( );
-}
-
-void UIExample::CreateFooter( const ClayColor &cardColor, const ClayColor &textColor, const ClayColor &secondaryTextColor )
-{
-    ClayElementDeclaration footerContainer;
-    footerContainer.Layout.Sizing.Width     = ClaySizingAxis::Grow( );
-    footerContainer.Layout.Sizing.Height    = ClaySizingAxis::Fixed( 60 );
-    footerContainer.Layout.ChildAlignment.X = ClayAlignmentX::Center;
-    footerContainer.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
-    footerContainer.BackgroundColor         = cardColor;
-    footerContainer.CornerRadius            = ClayCornerRadius( 8 );
-
-    m_clay->OpenElement( footerContainer );
-
-    ClayTextDesc statusDesc;
-    statusDesc.FontSize  = 14;
-    statusDesc.TextColor = secondaryTextColor;
-
-    char statusBuffer[ 256 ];
-    snprintf( statusBuffer, sizeof( statusBuffer ), "Status: %s | FPS: %.0f | Volume: %.0f%% | Theme: %s", m_statusText.c_str( ), 1.0 / m_worldData.DeltaTime,
-              m_volumeSlider ? m_volumeSlider->GetValue( ) * 100.0f : 0.0f,
-              m_themeDropdown && m_themeDropdown->GetSelectedIndex( ) >= 0 ? m_themeOptions.GetElement( m_themeDropdown->GetSelectedIndex( ) ).Get( ) : "None" );
-
-    m_clay->Text( statusBuffer, statusDesc );
-
-    m_clay->CloseElement( );
+    m_clay->CloseElement( ); // Close text card
+    m_clay->CloseElement( ); // Close content container
 }
 
 void UIExample::CreateCard( const ClayColor &cardColor, const ClayColor &textColor, const char *title ) const
 {
     ClayElementDeclaration card;
-    card.Layout.Sizing.Width    = ClaySizingAxis::Grow( );
+    card.Layout.Sizing.Width    = ClaySizingAxis::Fixed( 400 );
     card.Layout.Sizing.Height   = ClaySizingAxis::Fit( );
     card.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
     card.Layout.Padding         = ClayPadding( 20 );
@@ -411,53 +346,6 @@ void UIExample::CreateCheckboxRow( const char *label, CheckboxWidget *widget, co
     m_clay->CloseElement( );
 }
 
-void UIExample::CreateSliderRow( const char *label, SliderWidget *widget, const ClayColor &textColor, const ClayColor &secondaryTextColor ) const
-{
-    ClayElementDeclaration row;
-    row.Layout.Sizing.Width    = ClaySizingAxis::Grow( );
-    row.Layout.Sizing.Height   = ClaySizingAxis::Fixed( 50 );
-    row.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
-    row.Layout.ChildGap        = 8;
-
-    m_clay->OpenElement( row );
-
-    // Label with value
-    ClayElementDeclaration labelRow;
-    labelRow.Layout.Sizing.Width     = ClaySizingAxis::Grow( );
-    labelRow.Layout.Sizing.Height    = ClaySizingAxis::Fixed( 20 );
-    labelRow.Layout.LayoutDirection  = ClayLayoutDirection::LeftToRight;
-    labelRow.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
-
-    m_clay->OpenElement( labelRow );
-
-    ClayTextDesc labelDesc;
-    labelDesc.FontSize  = 14;
-    labelDesc.TextColor = textColor;
-    m_clay->Text( label, labelDesc );
-
-    ClayElementDeclaration spacer;
-    spacer.Layout.Sizing.Width = ClaySizingAxis::Grow( );
-    m_clay->OpenElement( spacer );
-    m_clay->CloseElement( );
-
-    char valueText[ 32 ];
-    snprintf( valueText, sizeof( valueText ), "%.0f%%", widget ? widget->GetValue( ) * 100.0f : 0.0f );
-    ClayTextDesc valueDesc;
-    valueDesc.FontSize  = 12;
-    valueDesc.TextColor = secondaryTextColor;
-    m_clay->Text( valueText, valueDesc );
-
-    m_clay->CloseElement( ); // Close label row
-
-    // Slider
-    if ( widget )
-    {
-        widget->CreateLayoutElement( );
-    }
-
-    m_clay->CloseElement( ); // Close main row
-}
-
 void UIExample::CreateDropdownRow( const char *label, DropdownWidget *widget, const ClayColor &textColor ) const
 {
     ClayElementDeclaration row;
@@ -481,33 +369,29 @@ void UIExample::CreateDropdownRow( const char *label, DropdownWidget *widget, co
     m_clay->CloseElement( );
 }
 
-void UIExample::CreateTextFieldRow( const char *label, TextFieldWidget *widget, const ClayColor &textColor ) const
+void UIExample::CreateButton( const char *text, const ClayColor &bgColor, const ClayColor &textColor, const uint32_t buttonId ) const
 {
-    ClayElementDeclaration row;
-    row.Layout.Sizing.Width    = ClaySizingAxis::Grow( );
-    row.Layout.Sizing.Height   = ClaySizingAxis::Fixed( 70 );
-    row.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
-    row.Layout.ChildGap        = 8;
+    ClayElementDeclaration button;
+    button.Id                      = buttonId;
+    button.Layout.Sizing.Width     = ClaySizingAxis::Fixed( 120 );
+    button.Layout.Sizing.Height    = ClaySizingAxis::Fixed( 40 );
+    button.Layout.ChildAlignment.X = ClayAlignmentX::Center;
+    button.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
+    button.BackgroundColor         = bgColor;
+    button.CornerRadius            = ClayCornerRadius( 8 );
 
-    m_clay->OpenElement( row );
-
-    ClayTextDesc labelDesc;
-    labelDesc.FontSize  = 14;
-    labelDesc.TextColor = textColor;
-    m_clay->Text( label, labelDesc );
-
-    ClayElementDeclaration textFieldContainer;
-    textFieldContainer.Layout.Sizing.Width  = ClaySizingAxis::Grow( );
-    textFieldContainer.Layout.Sizing.Height = ClaySizingAxis::Fixed( 40 );
-
-    m_clay->OpenElement( textFieldContainer );
-
-    if ( widget )
+    if ( m_clay->PointerOver( buttonId ) )
     {
-        widget->CreateLayoutElement( );
+        button.BackgroundColor = ClayColor( bgColor.R - 20, bgColor.G - 20, bgColor.B - 20, bgColor.A );
     }
 
-    m_clay->CloseElement( );
+    m_clay->OpenElement( button );
+
+    ClayTextDesc buttonTextDesc;
+    buttonTextDesc.FontSize  = 14;
+    buttonTextDesc.TextColor = textColor;
+    m_clay->Text( text, buttonTextDesc );
+
     m_clay->CloseElement( );
 }
 
@@ -567,17 +451,11 @@ void UIExample::HandleEvent( Event &event )
 void UIExample::Quit( )
 {
     m_frameSync->WaitIdle( );
-    
-    // Remove our widget from Clay before destroying it
     if ( m_spinningCubeWidget )
     {
         m_clay->RemoveWidget( m_spinningCubeWidget->GetId( ) );
     }
-    
-    // Clean up our widget
     m_spinningCubeWidget.reset( );
-    
-    // Clean up Clay
     m_clay.reset( );
     IExample::Quit( );
 }

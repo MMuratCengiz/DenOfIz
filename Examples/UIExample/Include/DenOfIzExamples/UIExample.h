@@ -23,10 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 #include "DenOfIzGraphics/UI/Clay.h"
 #include "DenOfIzGraphics/UI/Widgets/CheckboxWidget.h"
-#include "DenOfIzGraphics/UI/Widgets/ColorPickerWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/DockableContainerWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/DropdownWidget.h"
-#include "DenOfIzGraphics/UI/Widgets/ResizableContainerWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/SliderWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/TextFieldWidget.h"
 #include <DenOfIzExamples/Spinning3DCubeWidget.h>
@@ -42,28 +40,18 @@ namespace DenOfIz
         bool                  m_mousePressed{ };
         bool                  m_mouseJustReleased{ };
 
-        CheckboxWidget                 *m_darkModeCheckbox         = nullptr;
-        CheckboxWidget                 *m_enableAnimationsCheckbox = nullptr;
-        SliderWidget                   *m_volumeSlider             = nullptr;
-        SliderWidget                   *m_brightnessSlider         = nullptr;
-        DropdownWidget                 *m_themeDropdown            = nullptr;
-        DropdownWidget                 *m_languageDropdown         = nullptr;
-        ColorPickerWidget              *m_accentColorPicker        = nullptr;
-        TextFieldWidget                *m_usernameField            = nullptr;
-        TextFieldWidget                *m_passwordField            = nullptr;
-        TextFieldWidget                *m_commentsField            = nullptr;
-        ResizableContainerWidget       *m_resizableContainer       = nullptr;
-        DockableContainerWidget        *m_dockableContainer1       = nullptr;
-        DockableContainerWidget        *m_dockableContainer2       = nullptr;
-        std::unique_ptr<DockingManager>       m_dockingManager = nullptr;
+        CheckboxWidget  *m_darkModeCheckbox = nullptr;
+        SliderWidget    *m_cubeRotationSlider = nullptr;
+        DropdownWidget  *m_dpiScaleDropdown = nullptr;
+        TextFieldWidget *m_multilineTextField = nullptr;
+        
+        DockableContainerWidget *m_cubeContainer = nullptr;
+        DockableContainerWidget *m_textContainer = nullptr;
+        std::unique_ptr<DockingManager> m_dockingManager = nullptr;
         std::unique_ptr<Spinning3DCubeWidget> m_spinningCubeWidget;
 
         uint32_t m_containerId{ };
-        uint32_t m_scrollContainerId{ };
-
-        std::string                 m_statusText = "Welcome! Explore the widgets below.";
-        InteropArray<InteropString> m_themeOptions;
-        InteropArray<InteropString> m_languageOptions;
+        InteropArray<InteropString> m_dpiScaleOptions;
 
     public:
         ~UIExample( ) override = default;
@@ -77,21 +65,18 @@ namespace DenOfIz
         {
             auto windowDesc   = DenOfIz::ExampleWindowDesc( );
             windowDesc.Title  = "UIExample";
-            windowDesc.Width  = 1280;
-            windowDesc.Height = 720;
+            windowDesc.Width  = 1600;
+            windowDesc.Height = 900;
             return windowDesc;
         }
 
     private:
         void CreateUI( );
         void CreateHeader( const ClayColor &textColor ) const;
-        void CreateSettingsPanel( const ClayColor &cardColor, const ClayColor &textColor, const ClayColor &secondaryTextColor ) const;
-        void CreateFormsPanel( const ClayColor &cardColor, const ClayColor &textColor, const ClayColor &secondaryTextColor ) const;
-        void CreateFooter( const ClayColor &cardColor, const ClayColor &textColor, const ClayColor &secondaryTextColor );
+        void CreateMainContent( const ClayColor &cardColor, const ClayColor &textColor ) const;
         void CreateCard( const ClayColor &cardColor, const ClayColor &textColor, const char *title ) const;
         void CreateCheckboxRow( const char *label, CheckboxWidget *widget, const ClayColor &textColor ) const;
-        void CreateSliderRow( const char *label, SliderWidget *widget, const ClayColor &textColor, const ClayColor &secondaryTextColor ) const;
         void CreateDropdownRow( const char *label, DropdownWidget *widget, const ClayColor &textColor ) const;
-        void CreateTextFieldRow( const char *label, TextFieldWidget *widget, const ClayColor &textColor ) const;
+        void CreateButton( const char *text, const ClayColor &bgColor, const ClayColor &textColor, uint32_t buttonId ) const;
     };
 } // namespace DenOfIz
