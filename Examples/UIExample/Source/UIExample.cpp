@@ -26,6 +26,11 @@ using namespace DenOfIz;
 
 void UIExample::Init( )
 {
+    m_darkMode  = m_darkModeCheckbox ? m_darkModeCheckbox->IsChecked( ) : false;
+    m_bgColor   = m_darkMode ? ClayColor( 30, 30, 33, 255 ) : ClayColor( 245, 245, 250, 255 );
+    m_cardColor = m_darkMode ? ClayColor( 45, 45, 48, 255 ) : ClayColor( 255, 255, 255, 255 );
+    m_textColor = m_darkMode ? ClayColor( 240, 240, 240, 255 ) : ClayColor( 20, 20, 20, 255 );
+
     ClayDesc uiDesc{ };
     uiDesc.LogicalDevice      = m_logicalDevice;
     uiDesc.RenderTargetFormat = Format::B8G8R8A8Unorm;
@@ -68,7 +73,7 @@ void UIExample::Init( )
     cubeContainerStyle.Title           = InteropString( "3D Cube Control" );
     cubeContainerStyle.MinWidth        = 300.0f;
     cubeContainerStyle.MinHeight       = 250.0f;
-    cubeContainerStyle.BackgroundColor = ClayColor( 48, 51, 54, 255 );
+    cubeContainerStyle.BackgroundColor = m_bgColor;
     m_cubeContainer                    = m_clay->CreateDockableContainer( m_clay->HashString( "CubeContainer" ), m_dockingManager.get( ), cubeContainerStyle );
     m_cubeContainer->SetFloatingPosition( Float_2{ 400.0f, 200.0f } );
     m_cubeContainer->Close( ); // Start hidden
@@ -126,10 +131,10 @@ void UIExample::Update( )
 
 void UIExample::CreateUI( )
 {
-    const bool      darkMode  = m_darkModeCheckbox ? m_darkModeCheckbox->IsChecked( ) : false;
-    const ClayColor bgColor   = darkMode ? ClayColor( 30, 30, 33, 255 ) : ClayColor( 245, 245, 250, 255 );
-    const ClayColor cardColor = darkMode ? ClayColor( 45, 45, 48, 255 ) : ClayColor( 255, 255, 255, 255 );
-    const ClayColor textColor = darkMode ? ClayColor( 240, 240, 240, 255 ) : ClayColor( 20, 20, 20, 255 );
+    m_darkMode  = m_darkModeCheckbox ? m_darkModeCheckbox->IsChecked( ) : false;
+    m_bgColor   = m_darkMode ? ClayColor( 30, 30, 33, 255 ) : ClayColor( 245, 245, 250, 255 );
+    m_cardColor = m_darkMode ? ClayColor( 45, 45, 48, 255 ) : ClayColor( 255, 255, 255, 255 );
+    m_textColor = m_darkMode ? ClayColor( 240, 240, 240, 255 ) : ClayColor( 20, 20, 20, 255 );
 
     ClayElementDeclaration container;
     container.Id                     = m_containerId;
@@ -138,38 +143,33 @@ void UIExample::CreateUI( )
     container.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
     container.Layout.Padding         = ClayPadding( 24 );
     container.Layout.ChildGap        = 24;
-    container.BackgroundColor        = bgColor;
+    container.BackgroundColor        = m_bgColor;
 
     m_clay->OpenElement( container );
 
-    CreateHeader( textColor );
-    CreateMainContent( cardColor, textColor );
+    CreateHeader( m_textColor );
+    CreateMainContent( m_cardColor, m_textColor );
 
     m_clay->CloseElement( );
 
     if ( !m_cubeContainer->IsClosed( ) )
     {
-        m_cubeContainer->OpenContent( );
+        m_cubeContainer->OpenElement( );
 
         ClayElementDeclaration cubeContent;
         cubeContent.Layout.Sizing.Width    = ClaySizingAxis::Grow( );
         cubeContent.Layout.Sizing.Height   = ClaySizingAxis::Grow( );
         cubeContent.Layout.LayoutDirection = ClayLayoutDirection::TopToBottom;
         cubeContent.Layout.Padding         = ClayPadding( 16 );
-        cubeContent.Layout.ChildGap        = 16;
+        cubeContent.Layout.ChildGap        = 32;
 
         m_clay->OpenElement( cubeContent );
 
         ClayTextDesc sliderLabel;
         sliderLabel.FontSize  = 14;
-        sliderLabel.TextColor = textColor;
+        sliderLabel.TextColor = m_textColor;
         m_clay->Text( "Rotation Speed:", sliderLabel );
-
-        if ( m_cubeRotationSlider )
-        {
-            m_cubeRotationSlider->CreateLayoutElement( );
-        }
-
+        m_cubeRotationSlider->CreateLayoutElement( );
         ClayElementDeclaration cubeWidgetContainer;
         cubeWidgetContainer.Layout.Sizing.Width     = ClaySizingAxis::Grow( );
         cubeWidgetContainer.Layout.Sizing.Height    = ClaySizingAxis::Fixed( 150 );
@@ -177,21 +177,16 @@ void UIExample::CreateUI( )
         cubeWidgetContainer.Layout.ChildAlignment.Y = ClayAlignmentY::Center;
 
         m_clay->OpenElement( cubeWidgetContainer );
-
-        if ( m_spinningCubeWidget )
-        {
-            m_spinningCubeWidget->CreateLayoutElement( );
-        }
-
+        m_spinningCubeWidget->CreateLayoutElement( );
         m_clay->CloseElement( );
         m_clay->CloseElement( );
 
-        m_cubeContainer->CloseContent( );
+        m_cubeContainer->CloseElement( );
     }
 
     if ( !m_textContainer->IsClosed( ) )
     {
-        m_textContainer->OpenContent( );
+        m_textContainer->OpenElement( );
 
         ClayElementDeclaration textContent;
         textContent.Layout.Sizing.Width  = ClaySizingAxis::Grow( );
@@ -202,12 +197,12 @@ void UIExample::CreateUI( )
 
         ClayTextDesc textDesc{ };
         textDesc.FontSize  = 18;
-        textDesc.TextColor = textColor;
+        textDesc.TextColor = m_textColor;
         m_clay->Text( m_multilineTextField->GetText( ), textDesc );
 
         m_clay->CloseElement( );
 
-        m_textContainer->CloseContent( );
+        m_textContainer->CloseElement( );
     }
     if ( m_dockingManager )
     {

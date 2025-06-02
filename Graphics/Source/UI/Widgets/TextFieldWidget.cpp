@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-TextFieldWidget::TextFieldWidget( IClayContext *clayContext, uint32_t id, const TextFieldStyle &style ) : Widget( clayContext, id ), m_style( style )
+TextFieldWidget::TextFieldWidget( IClayContext *clayContext, const uint32_t id, const TextFieldStyle &style ) : Widget( clayContext, id ), m_style( style )
 {
 }
 
@@ -271,6 +271,7 @@ void TextFieldWidget::HandleEvent( const Event &event )
         }
     }
 }
+
 InteropString TextFieldWidget::GetText( ) const
 {
     return m_text;
@@ -976,7 +977,7 @@ size_t TextFieldWidget::GetLineEndPosition( size_t pos ) const
     return pos;
 }
 
-size_t TextFieldWidget::MovePositionUp( size_t pos ) const
+size_t TextFieldWidget::MovePositionUp( const size_t pos ) const
 {
     const std::string text( m_text.Get( ) );
     const size_t      lineStart = GetLineStartPosition( pos );
@@ -998,7 +999,7 @@ size_t TextFieldWidget::MovePositionUp( size_t pos ) const
     return newPos;
 }
 
-size_t TextFieldWidget::MovePositionDown( size_t pos ) const
+size_t TextFieldWidget::MovePositionDown( const size_t pos ) const
 {
     const std::string text( m_text.Get( ) );
     const size_t      length    = text.length( );
@@ -1020,7 +1021,7 @@ size_t TextFieldWidget::MovePositionDown( size_t pos ) const
     return newPos;
 }
 
-void TextFieldWidget::DeleteWord( bool forward )
+void TextFieldWidget::DeleteWord( const bool forward )
 {
     if ( m_style.ReadOnly )
     {
@@ -1049,7 +1050,7 @@ void TextFieldWidget::DeleteWord( bool forward )
     }
 }
 
-void TextFieldWidget::ExtendSelection( size_t newPos )
+void TextFieldWidget::ExtendSelection( const size_t newPos )
 {
     if ( !m_hasSelection )
     {

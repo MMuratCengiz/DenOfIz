@@ -36,7 +36,7 @@ void ResizableContainerWidget::Update( const float deltaTime )
     m_contentOpen = false;
 }
 
-void ResizableContainerWidget::OpenContent( )
+void ResizableContainerWidget::OpenElement( )
 {
     if ( m_contentOpen )
     {
@@ -93,7 +93,7 @@ void ResizableContainerWidget::OpenContent( )
     m_contentOpen = true;
 }
 
-void ResizableContainerWidget::CloseContent( )
+void ResizableContainerWidget::CloseElement( )
 {
     if ( !m_contentOpen )
     {

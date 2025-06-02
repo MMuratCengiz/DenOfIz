@@ -70,8 +70,8 @@ namespace DenOfIz
         DZ_API void Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch ) override;
         DZ_API void HandleEvent( const Event &event ) override;
 
-        DZ_API void OpenContent( ) override;
-        DZ_API void CloseContent( ) override;
+        DZ_API void OpenElement( ) override;
+        DZ_API void CloseElement( ) override;
 
         DZ_API void                          SetStyle( const DockableContainerStyle &style );
         DZ_API const DockableContainerStyle &GetStyle( ) const;

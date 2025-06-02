@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzExamples/IExample.h>
 #include <DenOfIzGraphics/Utilities/Time.h>
 
+#include <DenOfIzExamples/Spinning3DCubeWidget.h>
 #include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 #include "DenOfIzGraphics/UI/Clay.h"
 #include "DenOfIzGraphics/UI/Widgets/CheckboxWidget.h"
@@ -27,7 +28,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/UI/Widgets/DropdownWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/SliderWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/TextFieldWidget.h"
-#include <DenOfIzExamples/Spinning3DCubeWidget.h>
 
 namespace DenOfIz
 {
@@ -40,18 +40,23 @@ namespace DenOfIz
         bool                  m_mousePressed{ };
         bool                  m_mouseJustReleased{ };
 
-        CheckboxWidget  *m_darkModeCheckbox = nullptr;
+        CheckboxWidget  *m_darkModeCheckbox   = nullptr;
         SliderWidget    *m_cubeRotationSlider = nullptr;
-        DropdownWidget  *m_dpiScaleDropdown = nullptr;
+        DropdownWidget  *m_dpiScaleDropdown   = nullptr;
         TextFieldWidget *m_multilineTextField = nullptr;
-        
-        DockableContainerWidget *m_cubeContainer = nullptr;
-        DockableContainerWidget *m_textContainer = nullptr;
-        std::unique_ptr<DockingManager> m_dockingManager = nullptr;
+
+        DockableContainerWidget              *m_cubeContainer  = nullptr;
+        DockableContainerWidget              *m_textContainer  = nullptr;
+        std::unique_ptr<DockingManager>       m_dockingManager = nullptr;
         std::unique_ptr<Spinning3DCubeWidget> m_spinningCubeWidget;
 
-        uint32_t m_containerId{ };
+        uint32_t                    m_containerId{ };
         InteropArray<InteropString> m_dpiScaleOptions;
+
+        bool      m_darkMode  = false;
+        ClayColor m_bgColor   = { };
+        ClayColor m_cardColor = { };
+        ClayColor m_textColor = { };
 
     public:
         ~UIExample( ) override = default;

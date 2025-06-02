@@ -65,7 +65,7 @@ void DockableContainerWidget::Update( const float deltaTime )
     }
 }
 
-void DockableContainerWidget::OpenContent( )
+void DockableContainerWidget::OpenElement( )
 {
     if ( m_isClosed )
     {
@@ -159,7 +159,7 @@ void DockableContainerWidget::OpenContent( )
     m_contentOpen = true;
 }
 
-void DockableContainerWidget::CloseContent( )
+void DockableContainerWidget::CloseElement( )
 {
     if ( !m_contentOpen )
     {

@@ -54,8 +54,8 @@ namespace DenOfIz
         DZ_API void HandleEvent( const Event &event ) override;
 
         // IContainer implementation
-        DZ_API void OpenContent( ) override;
-        DZ_API void CloseContent( ) override;
+        DZ_API void OpenElement( ) override;
+        DZ_API void CloseElement( ) override;
 
         DZ_API void    SetSize( float width, float height );
         DZ_API Float_2 GetSize( ) const;

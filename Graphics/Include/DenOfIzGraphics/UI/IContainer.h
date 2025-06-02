@@ -25,9 +25,9 @@ namespace DenOfIz
     /// Container widgets that can hold other widgets or Clay elements.
     ///
     /// Container widgets work like Clay's OpenElement/CloseElement pattern:
-    /// - Call OpenContent() to begin adding content
+    /// - Call OpenElement() to begin adding content
     /// - Add widgets or Clay elements
-    /// - Call CloseContent() to finish
+    /// - Call CloseElement() to finish
     ///
     class DZ_API IContainer : public Widget
     {
@@ -36,12 +36,12 @@ namespace DenOfIz
         {
         }
         virtual ~IContainer( ) = default;
-        virtual void OpenContent( )  = 0;
-        virtual void CloseContent( ) = 0;
+        virtual void OpenElement( )  = 0;
+        virtual void CloseElement( ) = 0;
         void         CreateLayoutElement( ) override
         {
-            OpenContent( );
-            CloseContent( );
+            OpenElement( );
+            CloseElement( );
         }
     };
 
