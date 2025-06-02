@@ -53,6 +53,7 @@ namespace DenOfIz
         uint32_t        NumFrames                      = 3;
         uint32_t        MaxNumQuads                    = 2048;
         uint32_t        MaxNumMaterials                = 128;
+        uint32_t        MaxNumFonts                    = 16;    // Number of texture slots reserved for fonts
         uint32_t        Width                          = 0;
         uint32_t        Height                         = 0;
         uint32_t        MaxNumElements                 = 8192;

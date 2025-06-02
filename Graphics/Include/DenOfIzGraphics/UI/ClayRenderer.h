@@ -55,6 +55,7 @@ namespace DenOfIz
         uint32_t        MaxVertices        = 65536;
         uint32_t        MaxIndices         = 98304;
         uint32_t        MaxTextures        = 128;
+        uint32_t        MaxNumFonts        = 16;
         float           Width              = 1024;
         float           Height             = 1024;
         uint32_t        MaxPipelineWidgets = 16;
@@ -147,9 +148,7 @@ namespace DenOfIz
 
         std::unordered_map<void *, uint32_t> m_imageTextureIndices;
         std::vector<ITextureResource *>      m_textures;
-        std::vector<bool>                    m_textureFontFlags;
         std::unique_ptr<ITextureResource>    m_nullTexture;
-        uint32_t                             m_nextTextureIndex = 1;
         bool                                 m_texturesDirty    = true;
 
         float               m_viewportWidth  = 0;

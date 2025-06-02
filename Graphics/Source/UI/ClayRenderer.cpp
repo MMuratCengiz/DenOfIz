@@ -48,7 +48,6 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_l
     m_viewportHeight = desc.Height;
 
     m_textures.resize( desc.MaxTextures, nullptr );
-    m_textureFontFlags.resize( desc.MaxTextures, false );
 
     CommandQueueDesc commandQueueDesc{ };
     commandQueueDesc.QueueType = QueueType::Graphics;
@@ -378,17 +377,9 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
         }
     }
 
-    float firstNonFontIndex = 128.0f;
-    for ( uint32_t i = 1; i < m_textureFontFlags.size( ); ++i )
-    {
-        if ( !m_textureFontFlags[ i ] && m_textures[ i ] != nullptr )
-        {
-            firstNonFontIndex = static_cast<float>( i );
-            break;
-        }
-    }
-
-    tempUniforms.FontParams = XMFLOAT4( atlasWidth, atlasHeight, 12.0f, firstNonFontIndex );
+    // Font textures use indices 1 to MaxNumFonts
+    // Regular textures use indices MaxNumFonts+1 and above
+    tempUniforms.FontParams = XMFLOAT4( atlasWidth, atlasHeight, 12.0f, static_cast<float>( m_desc.MaxNumFonts + 1 ) );
 
     uint8_t *uniformLocation = reinterpret_cast<uint8_t *>( m_uniformBufferData ) + frameIndex * m_alignedUniformSize;
     memcpy( uniformLocation, &tempUniforms, sizeof( UIUniforms ) );
@@ -486,7 +477,7 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
             const uint32_t textureIndex = widget->GetTextureIndex( );
             if ( textureIndex > 0 && textureIndex < m_textures.size( ) && widget->GetRenderTarget( frameIndex ) )
             {
-                if ( !m_textureFontFlags[ textureIndex ] )
+                if ( textureIndex > m_desc.MaxNumFonts )
                 {
                     m_textures[ textureIndex ] = widget->GetRenderTarget( frameIndex );
                     m_texturesDirty            = true;
@@ -748,7 +739,7 @@ void ClayRenderer::RenderSingleLineText( const Clay_RenderCommand *command, cons
 {
     const auto &data   = command->renderData.text;
     const auto &bounds = command->boundingBox;
-    Font *font = m_clayText->GetFont( fontId );
+    Font       *font   = m_clayText->GetFont( fontId );
     if ( !font )
     {
         return;
@@ -863,7 +854,7 @@ void ClayRenderer::RenderCustom( const Clay_RenderCommand *command, ICommandList
                 uint32_t textureIndex = widget->GetTextureIndex( );
 
                 // Check if texture index conflicts with fonts and needs re-registration
-                if ( textureIndex > 0 && textureIndex < m_textureFontFlags.size( ) && m_textureFontFlags[ textureIndex ] )
+                if ( textureIndex > 0 && textureIndex <= m_desc.MaxNumFonts )
                 {
                     // Re-register to get a new texture index
                     widget->SetTextureIndex( 0 );
@@ -929,12 +920,9 @@ void ClayRenderer::ClearScissor( )
 
 uint32_t ClayRenderer::RegisterTexture( ITextureResource *texture )
 {
-    for ( uint32_t i = 1; i < m_textures.size( ); ++i )
+    // Start from MaxNumFonts+1 to skip font texture slots
+    for ( uint32_t i = m_desc.MaxNumFonts + 1; i < m_textures.size( ); ++i )
     {
-        if ( m_textureFontFlags[ i ] )
-        {
-            continue;
-        }
         if ( m_textures[ i ] == nullptr )
         {
             m_textures[ i ] = texture;
@@ -959,11 +947,6 @@ void ClayRenderer::UpdateTextureBindings( const uint32_t frameIndex ) const
     for ( size_t i = 0; i < m_textures.size( ); ++i )
     {
         ITextureResource *tex = m_textures[ i ];
-        if ( m_clayText && m_textureFontFlags[ i ] )
-        {
-            tex = m_textures[ i ];
-        }
-
         textureArray.AddElement( tex ? tex : m_nullTexture.get( ) );
     }
     frame.TextureBindGroup->BeginUpdate( )->SrvArray( 0, textureArray )->Sampler( 0, m_linearSampler.get( ) )->EndUpdate( );
@@ -979,13 +962,9 @@ void ClayRenderer::ClearCaches( )
 
     m_imageTextureIndices.clear( );
     bool anyTextureCleared = false;
-    for ( uint32_t i = 1; i < m_textures.size( ); ++i )
+    // Clear non-font textures
+    for ( uint32_t i = m_desc.MaxNumFonts + 1; i < m_textures.size( ); ++i )
     {
-        if ( m_textureFontFlags[ i ] )
-        {
-            continue;
-        }
-
         if ( m_textures[ i ] != nullptr )
         {
             m_textures[ i ]   = nullptr;
@@ -1122,7 +1101,7 @@ void ClayRenderer::RegisterWidget( const uint32_t id, Widget *widget )
     if ( widget && widget->HasPipeline( ) )
     {
         const uint32_t currentIndex = widget->GetTextureIndex( );
-        if ( currentIndex > 0 && currentIndex < m_textureFontFlags.size( ) && m_textureFontFlags[ currentIndex ] )
+        if ( currentIndex > 0 && currentIndex <= m_desc.MaxNumFonts )
         {
             widget->SetTextureIndex( 0 );
         }
@@ -1167,8 +1146,7 @@ void ClayRenderer::SyncFontTexturesFromClayText( )
             const uint32_t textureIndex = m_clayText->GetFontTextureIndex( fontId );
             if ( textureIndex > 0 && textureIndex < m_textures.size( ) )
             {
-                m_textures[ textureIndex ]         = fontTexture;
-                m_textureFontFlags[ textureIndex ] = true;
+                m_textures[ textureIndex ] = fontTexture;
             }
         }
     }

@@ -188,6 +188,7 @@ Clay::Clay( const ClayDesc &desc )
     clayRendererDesc.ClayContext        = m_clayContext.get( );
     clayRendererDesc.RenderTargetFormat = desc.RenderTargetFormat;
     clayRendererDesc.NumFrames          = desc.NumFrames;
+    clayRendererDesc.MaxNumFonts        = desc.MaxNumFonts;
     clayRendererDesc.Width              = desc.Width;
     clayRendererDesc.Height             = desc.Height;
     clayRendererDesc.MaxPipelineWidgets = desc.MaxPipelineWidgets;
