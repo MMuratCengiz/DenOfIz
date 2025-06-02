@@ -69,20 +69,11 @@ void UIExample::Init( )
 
     m_dockingManager = std::unique_ptr<DockingManager>( m_clay->CreateDockingManager( ) );
 
-    DockableContainerStyle cubeContainerStyle;
-    cubeContainerStyle.Title           = InteropString( "3D Cube Control" );
-    cubeContainerStyle.MinWidth        = 300.0f;
-    cubeContainerStyle.MinHeight       = 250.0f;
-    cubeContainerStyle.BackgroundColor = m_bgColor;
-    m_cubeContainer                    = m_clay->CreateDockableContainer( m_clay->HashString( "CubeContainer" ), m_dockingManager.get( ), cubeContainerStyle );
+    m_cubeContainer = m_clay->CreateDockableContainer( m_clay->HashString( "CubeContainer" ), m_dockingManager.get( ) );
     m_cubeContainer->SetFloatingPosition( Float_2{ 400.0f, 200.0f } );
     m_cubeContainer->Close( ); // Start hidden
 
-    DockableContainerStyle textContainerStyle;
-    textContainerStyle.Title     = InteropString( "Text Editor" );
-    textContainerStyle.MinWidth  = 400.0f;
-    textContainerStyle.MinHeight = 300.0f;
-    m_textContainer              = m_clay->CreateDockableContainer( m_clay->HashString( "TextContainer" ), m_dockingManager.get( ), textContainerStyle );
+    m_textContainer = m_clay->CreateDockableContainer( m_clay->HashString( "TextContainer" ), m_dockingManager.get( ) );
     m_textContainer->SetFloatingPosition( Float_2{ 100.0f, 300.0f } );
     m_textContainer->Close( ); // Start hidden
 
@@ -131,10 +122,13 @@ void UIExample::Update( )
 
 void UIExample::CreateUI( )
 {
-    m_darkMode  = m_darkModeCheckbox ? m_darkModeCheckbox->IsChecked( ) : false;
-    m_bgColor   = m_darkMode ? ClayColor( 30, 30, 33, 255 ) : ClayColor( 245, 245, 250, 255 );
-    m_cardColor = m_darkMode ? ClayColor( 45, 45, 48, 255 ) : ClayColor( 255, 255, 255, 255 );
-    m_textColor = m_darkMode ? ClayColor( 240, 240, 240, 255 ) : ClayColor( 20, 20, 20, 255 );
+    const bool previousDarkMode = m_darkMode;
+    m_darkMode                  = m_darkModeCheckbox ? m_darkModeCheckbox->IsChecked( ) : false;
+    m_bgColor                   = m_darkMode ? ClayColor( 30, 30, 33, 255 ) : ClayColor( 245, 245, 250, 255 );
+    m_cardColor                 = m_darkMode ? ClayColor( 45, 45, 48, 255 ) : ClayColor( 255, 255, 255, 255 );
+    m_textColor                 = m_darkMode ? ClayColor( 240, 240, 240, 255 ) : ClayColor( 20, 20, 20, 255 );
+
+    // Container styles will be updated in OpenElement calls below
 
     ClayElementDeclaration container;
     container.Id                     = m_containerId;
@@ -154,7 +148,21 @@ void UIExample::CreateUI( )
 
     if ( !m_cubeContainer->IsClosed( ) )
     {
-        m_cubeContainer->OpenElement( );
+        DockableContainerStyle cubeStyle;
+        cubeStyle.Title           = InteropString( "3D Cube Control" );
+        cubeStyle.MinWidth        = 300.0f;
+        cubeStyle.MinHeight       = 250.0f;
+        cubeStyle.BackgroundColor = m_bgColor;
+        cubeStyle.TitleBarColor   = m_darkMode ? ClayColor( 60, 60, 65, 255 ) : ClayColor( 230, 230, 235, 255 );
+        cubeStyle.TitleTextColor  = m_textColor;
+        cubeStyle.BorderColor     = m_darkMode ? ClayColor( 80, 80, 85, 255 ) : ClayColor( 200, 200, 205, 255 );
+        cubeStyle.BorderWidth     = 1.0f;
+        cubeStyle.TitleBarHeight  = 30.0f;
+        cubeStyle.FontSize        = 14;
+        cubeStyle.ShowCloseButton = true;
+        cubeStyle.AllowResize     = true;
+        cubeStyle.AllowUndock     = true;
+        m_cubeContainer->OpenElement( cubeStyle );
 
         ClayElementDeclaration cubeContent;
         cubeContent.Layout.Sizing.Width    = ClaySizingAxis::Grow( );
@@ -186,7 +194,21 @@ void UIExample::CreateUI( )
 
     if ( !m_textContainer->IsClosed( ) )
     {
-        m_textContainer->OpenElement( );
+        DockableContainerStyle textStyle;
+        textStyle.Title           = InteropString( "Text Editor" );
+        textStyle.MinWidth        = 400.0f;
+        textStyle.MinHeight       = 300.0f;
+        textStyle.BackgroundColor = m_cardColor;
+        textStyle.TitleBarColor   = m_darkMode ? ClayColor( 60, 60, 65, 255 ) : ClayColor( 230, 230, 235, 255 );
+        textStyle.TitleTextColor  = m_textColor;
+        textStyle.BorderColor     = m_darkMode ? ClayColor( 80, 80, 85, 255 ) : ClayColor( 200, 200, 205, 255 );
+        textStyle.BorderWidth     = 1.0f;
+        textStyle.TitleBarHeight  = 30.0f;
+        textStyle.FontSize        = 14;
+        textStyle.ShowCloseButton = true;
+        textStyle.AllowResize     = true;
+        textStyle.AllowUndock     = true;
+        m_textContainer->OpenElement( textStyle );
 
         ClayElementDeclaration textContent;
         textContent.Layout.Sizing.Width  = ClaySizingAxis::Grow( );

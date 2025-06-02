@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/UI/IContainer.h>
 #include <memory>
 #include <vector>
 #include "ResizableContainerWidget.h"
@@ -54,7 +53,7 @@ namespace DenOfIz
 
     class DockingManager;
 
-    class DockableContainerWidget : public IContainer
+    class DockableContainerWidget : public Widget
     {
         ClayDockableContainerState                m_containerState;
         DockableContainerStyle                    m_style;
@@ -64,16 +63,16 @@ namespace DenOfIz
         bool                                      m_contentOpen = false;
 
     public:
-        DZ_API DockableContainerWidget( IClayContext *clayContext, uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style = { } );
+        DZ_API DockableContainerWidget( IClayContext *clayContext, uint32_t id, DockingManager *dockingManager );
 
         DZ_API void Update( float deltaTime ) override;
         DZ_API void Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch ) override;
         DZ_API void HandleEvent( const Event &event ) override;
 
-        DZ_API void OpenElement( ) override;
-        DZ_API void CloseElement( ) override;
+        DZ_API void CreateLayoutElement( ) override;
+        DZ_API void OpenElement( const DockableContainerStyle &style );
+        DZ_API void CloseElement( );
 
-        DZ_API void                          SetStyle( const DockableContainerStyle &style );
         DZ_API const DockableContainerStyle &GetStyle( ) const;
 
         DZ_API void        SetDockingMode( DockingMode mode );

@@ -21,12 +21,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-ResizableContainerWidget::ResizableContainerWidget( IClayContext *clayContext, const uint32_t id, const ResizableContainerStyle &style ) :
-    IContainer( clayContext, id ), m_style( style )
+ResizableContainerWidget::ResizableContainerWidget( IClayContext *clayContext, const uint32_t id ) : Widget( clayContext, id )
 {
-    m_containerState.Width           = style.MinWidth + 100.0f;
-    m_containerState.Height          = style.MinHeight + 50.0f;
+    // Initialize container state with default size
+    m_containerState.Width           = 300.0f; // Default width
+    m_containerState.Height          = 200.0f; // Default height
     m_containerState.ResizeDirection = static_cast<uint8_t>( ResizeDirection::None );
+
+    // Style will be provided in OpenElement calls
+    m_style = ResizableContainerStyle( );
 }
 
 void ResizableContainerWidget::Update( const float deltaTime )
@@ -36,8 +39,9 @@ void ResizableContainerWidget::Update( const float deltaTime )
     m_contentOpen = false;
 }
 
-void ResizableContainerWidget::OpenElement( )
+void ResizableContainerWidget::OpenElement( const ResizableContainerStyle &style )
 {
+    m_style = style;
     if ( m_contentOpen )
     {
         return;
@@ -107,16 +111,8 @@ void ResizableContainerWidget::CloseElement( )
 
 void ResizableContainerWidget::Render( const ClayBoundingBox &boundingBox, IRenderBatch *renderBatch )
 {
-    ClayBoundingBox containerBounds;
-    containerBounds.X      = boundingBox.X;
-    containerBounds.Y      = boundingBox.Y;
-    containerBounds.Width  = boundingBox.Width;
-    containerBounds.Height = boundingBox.Height;
-
-    AddRectangle( renderBatch, containerBounds, m_style.BackgroundColor );
-
-    ClayBorderWidth borderWidth( static_cast<uint16_t>( m_style.BorderWidth ) );
-    AddBorder( renderBatch, containerBounds, m_style.BorderColor, borderWidth );
+    // Background and border are already rendered by Clay through the styling in OpenElement
+    // This method should only render additional elements like resize handles
 
     // TODO: Add resize handles rendering
 }
@@ -159,6 +155,11 @@ void ResizableContainerWidget::HandleEvent( const Event &event )
     }
 }
 
+void ResizableContainerWidget::CreateLayoutElement( )
+{
+    LOG( FATAL ) << "Not supported, use OpenElement & CloseElement instead.";
+}
+
 void ResizableContainerWidget::SetSize( const float width, const float height )
 {
     const float newWidth  = std::clamp( width, m_style.MinWidth, m_style.MaxWidth );
@@ -185,11 +186,6 @@ bool ResizableContainerWidget::WasSizeChanged( ) const
 void ResizableContainerWidget::ClearSizeChangedEvent( )
 {
     m_sizeChanged = false;
-}
-
-void ResizableContainerWidget::SetStyle( const ResizableContainerStyle &style )
-{
-    m_style = style;
 }
 
 const ResizableContainerStyle &ResizableContainerWidget::GetStyle( ) const

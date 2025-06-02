@@ -23,8 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-DockableContainerWidget::DockableContainerWidget( IClayContext *clayContext, const uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style ) :
-    IContainer( clayContext, id ), m_style( style ), m_dockingManager( dockingManager )
+DockableContainerWidget::DockableContainerWidget( IClayContext *clayContext, const uint32_t id, DockingManager *dockingManager ) :
+    Widget( clayContext, id ), m_dockingManager( dockingManager )
 {
     m_containerState.FloatingSize = Float_2{ 300.0f, 200.0f };
     m_containerState.Mode         = static_cast<uint8_t>( DockingMode::Floating );
@@ -35,16 +35,7 @@ DockableContainerWidget::DockableContainerWidget( IClayContext *clayContext, con
         m_dockingManager->RegisterContainer( this );
     }
 
-    if ( m_style.AllowResize )
-    {
-        ResizableContainerStyle resizableStyle;
-        resizableStyle.MinWidth     = m_style.MinWidth;
-        resizableStyle.MinHeight    = m_style.MinHeight;
-        resizableStyle.ShowTitleBar = false;
-        resizableStyle.EnableResize = true;
-
-        m_resizableContainer = std::make_unique<ResizableContainerWidget>( m_clayContext, id + 1, resizableStyle );
-    }
+    m_style = DockableContainerStyle();
 }
 
 void DockableContainerWidget::Update( const float deltaTime )
@@ -65,8 +56,13 @@ void DockableContainerWidget::Update( const float deltaTime )
     }
 }
 
-void DockableContainerWidget::OpenElement( )
+void DockableContainerWidget::OpenElement( const DockableContainerStyle &style )
 {
+    m_style = style;
+    if ( m_style.AllowResize && !m_resizableContainer )
+    {
+        m_resizableContainer = std::make_unique<ResizableContainerWidget>( m_clayContext, m_id + 1 );
+    }
     if ( m_isClosed )
     {
         return;
@@ -186,7 +182,7 @@ void DockableContainerWidget::Render( const ClayBoundingBox &boundingBox, IRende
         dragOverlay.Width  = boundingBox.Width;
         dragOverlay.Height = boundingBox.Height;
 
-        ClayColor dragColor = ClayColor( 100, 100, 100, 100 );
+        const auto dragColor = ClayColor( 100, 100, 100, 100 );
         AddRectangle( renderBatch, dragOverlay, dragColor );
     }
 }
@@ -274,9 +270,9 @@ void DockableContainerWidget::HandleEvent( const Event &event )
     }
 }
 
-void DockableContainerWidget::SetStyle( const DockableContainerStyle &style )
+void DockableContainerWidget::CreateLayoutElement( )
 {
-    m_style = style;
+    LOG(FATAL) << "Not supported, use OpenElement & CloseElement instead.";
 }
 
 const DockableContainerStyle &DockableContainerWidget::GetStyle( ) const

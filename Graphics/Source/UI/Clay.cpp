@@ -405,9 +405,9 @@ TextFieldWidget *Clay::CreateTextField( uint32_t id, const TextFieldStyle &style
     return ptr;
 }
 
-ResizableContainerWidget *Clay::CreateResizableContainer( uint32_t id, const ResizableContainerStyle &style )
+ResizableContainerWidget *Clay::CreateResizableContainer( uint32_t id )
 {
-    auto                      widget = std::make_unique<ResizableContainerWidget>( m_clayContext.get( ), id, style );
+    auto                      widget = std::make_unique<ResizableContainerWidget>( m_clayContext.get( ), id );
     ResizableContainerWidget *ptr    = widget.get( );
     m_ownedWidgets[ id ]             = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );
@@ -415,9 +415,9 @@ ResizableContainerWidget *Clay::CreateResizableContainer( uint32_t id, const Res
     return ptr;
 }
 
-DockableContainerWidget *Clay::CreateDockableContainer( uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style )
+DockableContainerWidget *Clay::CreateDockableContainer( uint32_t id, DockingManager *dockingManager )
 {
-    auto                     widget = std::make_unique<DockableContainerWidget>( m_clayContext.get( ), id, dockingManager, style );
+    auto                     widget = std::make_unique<DockableContainerWidget>( m_clayContext.get( ), id, dockingManager );
     DockableContainerWidget *ptr    = widget.get( );
     m_ownedWidgets[ id ]            = std::move( widget );
     m_widgetUpdateOrder.push_back( ptr );

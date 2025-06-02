@@ -118,8 +118,8 @@ namespace DenOfIz
         DZ_API DropdownWidget           *CreateDropdown( uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style = { } );
         DZ_API ColorPickerWidget        *CreateColorPicker( uint32_t id, const Float_3 &initialRgb = {}, const ColorPickerStyle &style = { } );
         DZ_API TextFieldWidget          *CreateTextField( uint32_t id, const TextFieldStyle &style = { } );
-        DZ_API ResizableContainerWidget *CreateResizableContainer( uint32_t id, const ResizableContainerStyle &style = { } );
-        DZ_API DockableContainerWidget  *CreateDockableContainer( uint32_t id, DockingManager *dockingManager, const DockableContainerStyle &style = { } );
+        DZ_API ResizableContainerWidget *CreateResizableContainer( uint32_t id );
+        DZ_API DockableContainerWidget  *CreateDockableContainer( uint32_t id, DockingManager *dockingManager );
 
         DZ_API DockingManager *CreateDockingManager( ) const;
 
