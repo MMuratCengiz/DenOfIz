@@ -28,7 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Import/FontImporter.h"
 #include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
-#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
+#include "DenOfIzExamples/InteropMathConverter.h"
 
 using namespace DenOfIz;
 
