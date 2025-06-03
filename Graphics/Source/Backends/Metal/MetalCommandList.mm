@@ -16,10 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#import <DenOfIzGraphics/Backends/Metal/MetalCommandList.h>
-#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalBottomLevelAS.h>
-#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderBindingTable.h>
-#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalTopLevelAS.h>
+#import "DenOfIzGraphicsInternal/Backends/Metal/MetalCommandList.h"
+#import "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalBottomLevelAS.h"
+#import "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalShaderBindingTable.h"
+#import "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalTopLevelAS.h"
+#import "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 

@@ -16,10 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <../../../Internal/DenOfIzGraphicsInternal/Utilities/ContainerUtilities.h>
 #include <DenOfIzGraphics/Assets/Shaders/DxilToMsl.h>
 #include <DenOfIzGraphics/Assets/Shaders/ReflectionDebugOutput.h>
 #include <DenOfIzGraphics/Assets/Shaders/ShaderReflectionHelper.h>
-#include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
 
 using namespace DenOfIz;
 

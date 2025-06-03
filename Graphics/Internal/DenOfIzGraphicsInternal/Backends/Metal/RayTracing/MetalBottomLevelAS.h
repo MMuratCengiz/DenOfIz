@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IBottomLevelAS.h>
-#include <DenOfIzGraphics/Backends/Metal/MetalBufferResource.h>
+#include "DenOfIzGraphics/Backends/Interface/RayTracing/IBottomLevelAS.h"
+#include "DenOfIzGraphicsInternal/Backends/Metal/MetalBufferResource.h"
 
 namespace DenOfIz
 {

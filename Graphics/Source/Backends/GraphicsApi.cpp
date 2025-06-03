@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 #ifdef BUILD_METAL
-#include "DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h"
+#include "DenOfIzGraphicsInternal/Backends/Metal/MetalLogicalDevice.h"
 #endif
 
 

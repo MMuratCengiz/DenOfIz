@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Metal/MetalEnumConverter.h>
-#include <DenOfIzGraphics/Backends/Metal/MetalInputLayout.h>
+#include "DenOfIzGraphicsInternal/Backends/Metal/MetalEnumConverter.h"
+#include "DenOfIzGraphicsInternal/Backends/Metal/MetalInputLayout.h"
 
 #include <utility>
 

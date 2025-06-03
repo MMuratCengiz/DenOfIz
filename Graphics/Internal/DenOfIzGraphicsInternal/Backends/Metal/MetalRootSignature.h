@@ -18,9 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
-#include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
-#include <unordered_set>
+#include "DenOfIzGraphics/Backends/Interface/IRootSignature.h"
 
 namespace DenOfIz
 {

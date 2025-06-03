@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Metal/RayTracing/MetalLocalRootSignature.h>
-#include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
+#include "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalLocalRootSignature.h"
+#include "DenOfIzGraphicsInternal/Utilities/ContainerUtilities.h"
 #include <algorithm>
 
 using namespace DenOfIz;

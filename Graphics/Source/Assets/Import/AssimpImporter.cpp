@@ -13,7 +13,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-// Include first due to DirectXMath breaking NULL on external libraries
 #include <assimp/Importer.hpp>
 #include <assimp/material.h>
 #include <assimp/scene.h>
@@ -22,7 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <unordered_map>
 
 // ReSharper disable CppMemberFunctionMayBeStatic
-#include <DirectXMath.h>
 #include <algorithm>
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
@@ -47,6 +45,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Data/Texture.h"
 #include "DenOfIzGraphics/Utilities/InteropMath.h"
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
+
+// Include first due to DirectXMath breaking NULL on external libraries
+#include <DirectXMath.h>
 
 using namespace DenOfIz;
 

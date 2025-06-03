@@ -18,8 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
-#include <DenOfIzGraphics/Utilities/Cast.h>
+#include "DenOfIzGraphics/Backends/Interface/ICommandList.h"
 #include "MetalArgumentBuffer.h"
 #include "MetalBufferResource.h"
 #include "MetalContext.h"

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#import "DenOfIzGraphics/Backends/Metal/MetalFence.h"
+#import "DenOfIzGraphicsInternal/Backends/Metal/MetalFence.h"
 
 using namespace DenOfIz;
 MetalFence::MetalFence( MetalContext *context ) : m_context( context )

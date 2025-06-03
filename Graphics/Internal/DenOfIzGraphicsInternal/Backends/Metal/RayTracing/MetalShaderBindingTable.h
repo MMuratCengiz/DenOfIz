@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderBindingTable.h>
-#include <DenOfIzGraphics/Backends/Metal/MetalBufferResource.h>
-#include <DenOfIzGraphics/Backends/Metal/MetalPipeline.h>
+#include "DenOfIzGraphics/Backends/Interface/RayTracing/IShaderBindingTable.h"
+#include "DenOfIzGraphicsInternal/Backends/Metal/MetalBufferResource.h"
+#include "DenOfIzGraphicsInternal/Backends/Metal/MetalPipeline.h"
 
 namespace DenOfIz
 {

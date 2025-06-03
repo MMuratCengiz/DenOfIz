@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalData.h>
-#include <DenOfIzGraphics/Backends/Metal/MetalArgumentBuffer.h>
-#include <DenOfIzGraphics/Backends/Metal/MetalContext.h>
-#include <DenOfIzGraphics/Backends/Metal/RayTracing/MetalLocalRootSignature.h>
+#include "DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalData.h"
+#include "DenOfIzGraphicsInternal/Backends/Metal/MetalArgumentBuffer.h"
+#include "DenOfIzGraphicsInternal/Backends/Metal/MetalContext.h"
+#include "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalLocalRootSignature.h"
 
 namespace DenOfIz
 {

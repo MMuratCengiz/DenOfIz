@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/ReflectionData.h>
-#include <DenOfIzGraphics/Utilities/Common_Macro.h>
+#include "DenOfIzGraphics/Backends/Interface/ReflectionData.h"
+#include "DenOfIzGraphics/Utilities/Common_Macro.h"
 #include "MetalContext.h"
 #include "MetalPipeline.h"
 

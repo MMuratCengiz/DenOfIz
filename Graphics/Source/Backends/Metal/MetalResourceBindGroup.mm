@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Metal/MetalResourceBindGroup.h>
-#include <DenOfIzGraphics/Backends/Metal/RayTracing/MetalTopLevelAS.h>
+#include "DenOfIzGraphicsInternal/Backends/Metal/MetalResourceBindGroup.h"
+#include "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalTopLevelAS.h"
 
 using namespace DenOfIz;
 

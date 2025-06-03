@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalBottomLevelAS.h>
-#import "DenOfIzGraphics/Backends/Metal/MetalEnumConverter.h"
+#import "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalBottomLevelAS.h"
+#import "DenOfIzGraphicsInternal/Backends/Metal/MetalEnumConverter.h"
 
 using namespace DenOfIz;
 

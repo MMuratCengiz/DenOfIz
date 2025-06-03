@@ -18,12 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #import "Metal/Metal.h"
 #define IR_PRIVATE_IMPLEMENTATION
-#import <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
-#import <DenOfIzGraphics/Backends/Metal/MetalCommandQueue.h>
-#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalBottomLevelAS.h>
-#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderBindingTable.h>
-#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderLocalData.h>
-#import <DenOfIzGraphics/Backends/Metal/RayTracing/MetalTopLevelAS.h>
+#import "DenOfIzGraphicsInternal/Backends/Metal/MetalLogicalDevice.h"
+#import "DenOfIzGraphicsInternal/Backends/Metal/MetalCommandQueue.h"
+#import "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalBottomLevelAS.h"
+#import "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalShaderBindingTable.h"
+#import "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalShaderLocalData.h"
+#import "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalTopLevelAS.h"
 #import <metal_irconverter/metal_irconverter.h>
 #import <metal_irconverter_runtime/metal_irconverter_runtime.h>
 

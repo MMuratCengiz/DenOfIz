@@ -16,11 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Metal/MetalArgumentBuffer.h>
 #include <future>
 
-#import "DenOfIzGraphics/Utilities/ContainerUtilities.h"
-#import "DenOfIzGraphics/Utilities/Utilities.h"
+#import "DenOfIzGraphicsInternal/Utilities/ContainerUtilities.h"
+#import "DenOfIzGraphicsInternal/Utilities/Utilities.h"
+#import "DenOfIzGraphicsInternal/Backends/Metal/MetalArgumentBuffer.h"
 
 using namespace DenOfIz;
 

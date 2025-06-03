@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/ILocalRootSignature.h>
-#include <DenOfIzGraphics/Backends/Metal/MetalContext.h>
+#include "DenOfIzGraphics/Backends/Interface/RayTracing/ILocalRootSignature.h"
+#include "DenOfIzGraphicsInternal/Backends/Metal/MetalContext.h"
 
 namespace DenOfIz
 {

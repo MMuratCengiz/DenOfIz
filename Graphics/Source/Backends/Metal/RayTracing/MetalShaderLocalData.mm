@@ -16,9 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Metal/MetalBufferResource.h>
-#include <DenOfIzGraphics/Backends/Metal/MetalTextureResource.h>
-#include <DenOfIzGraphics/Backends/Metal/RayTracing/MetalShaderLocalData.h>
+#include "DenOfIzGraphicsInternal/Backends/Metal/MetalBufferResource.h"
+#include "DenOfIzGraphicsInternal/Backends/Metal/MetalTextureResource.h"
+#include "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalShaderLocalData.h"
 
 using namespace DenOfIz;
 

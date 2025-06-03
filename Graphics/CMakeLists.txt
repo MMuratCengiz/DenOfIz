@@ -141,12 +141,9 @@ set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
         Source/Data/Texture.cpp
         Source/Data/Geometry.cpp
 
-        #Renderers
-        Source/Renderer/Assets/AssetData.cpp
-        Source/Renderer/Assets/MaterialData.cpp
+        # Sync Helpers
         Source/Renderer/Sync/FrameSync.cpp
         Source/Renderer/Sync/ResourceTracking.cpp
-        Source/Renderer/Graph/RenderGraph.cpp
 
         Source/Utilities/StepTimer.cpp
         Source/Utilities/Time.cpp

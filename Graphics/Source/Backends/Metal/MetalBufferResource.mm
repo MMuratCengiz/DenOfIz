@@ -16,8 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#import <DenOfIzGraphics/Backends/Metal/MetalBufferResource.h>
-#import <DenOfIzGraphics/Backends/Metal/MetalEnumConverter.h>
+#import "DenOfIzGraphicsInternal/Backends/Metal/MetalBufferResource.h"
+#import "DenOfIzGraphicsInternal/Backends/Metal/MetalEnumConverter.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 

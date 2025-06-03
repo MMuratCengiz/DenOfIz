@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/UI/Widgets/Widget.h>
+#include "DenOfIzGraphics/UI/Widgets/Widget.h"
 
 using namespace DenOfIz;
 
