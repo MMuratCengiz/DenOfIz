@@ -20,71 +20,66 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/UI/UIShapes.h>
 #include <clay.h>
-#include <unordered_map>
 #include <memory>
+#include <unordered_map>
 
 namespace DenOfIz
 {
-
-    struct DZ_API ShapeCacheKey
+    // Intentionally Not DZ_API internal use
+    struct ShapeCacheKey
     {
         float    x, y, width, height;
         uint32_t colorRGBA;
         uint32_t textureIndex;
-        float    cornerRadius[4]; // tl, tr, br, bl
-        float    borderWidth[4];  // top, right, bottom, left
-        uint32_t shapeType;       // 0=rectangle, 1=border
+        float    cornerRadius[ 4 ]; // tl, tr, br, bl
+        float    borderWidth[ 4 ];  // top, right, bottom, left
+        uint32_t shapeType;         // 0=rectangle, 1=border
 
-        bool operator==(const ShapeCacheKey &other) const
+        bool operator==( const ShapeCacheKey &other ) const
         {
-            return x == other.x && y == other.y && width == other.width && height == other.height && 
-                   colorRGBA == other.colorRGBA && textureIndex == other.textureIndex &&
-                   cornerRadius[0] == other.cornerRadius[0] && cornerRadius[1] == other.cornerRadius[1] && 
-                   cornerRadius[2] == other.cornerRadius[2] && cornerRadius[3] == other.cornerRadius[3] &&
-                   borderWidth[0] == other.borderWidth[0] && borderWidth[1] == other.borderWidth[1] && 
-                   borderWidth[2] == other.borderWidth[2] && borderWidth[3] == other.borderWidth[3] &&
-                   shapeType == other.shapeType;
+            return x == other.x && y == other.y && width == other.width && height == other.height && colorRGBA == other.colorRGBA && textureIndex == other.textureIndex &&
+                   cornerRadius[ 0 ] == other.cornerRadius[ 0 ] && cornerRadius[ 1 ] == other.cornerRadius[ 1 ] && cornerRadius[ 2 ] == other.cornerRadius[ 2 ] &&
+                   cornerRadius[ 3 ] == other.cornerRadius[ 3 ] && borderWidth[ 0 ] == other.borderWidth[ 0 ] && borderWidth[ 1 ] == other.borderWidth[ 1 ] &&
+                   borderWidth[ 2 ] == other.borderWidth[ 2 ] && borderWidth[ 3 ] == other.borderWidth[ 3 ] && shapeType == other.shapeType;
         }
     };
 
-    struct DZ_API ShapeCacheKeyHash
+    struct ShapeCacheKeyHash
     {
-        std::size_t operator()(const ShapeCacheKey &key) const
+        std::size_t operator( )( const ShapeCacheKey &key ) const
         {
-            std::size_t h1 = std::hash<float>{}(key.x);
-            std::size_t h2 = std::hash<float>{}(key.y);
-            std::size_t h3 = std::hash<float>{}(key.width);
-            std::size_t h4 = std::hash<float>{}(key.height);
-            std::size_t h5 = std::hash<uint32_t>{}(key.colorRGBA);
-            std::size_t h6 = std::hash<uint32_t>{}(key.textureIndex);
-            std::size_t h7 = std::hash<uint32_t>{}(key.shapeType);
-            return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3) ^ (h5 << 4) ^ (h6 << 5) ^ (h7 << 6);
+            const std::size_t h1 = std::hash<float>{ }( key.x );
+            const std::size_t h2 = std::hash<float>{ }( key.y );
+            const std::size_t h3 = std::hash<float>{ }( key.width );
+            const std::size_t h4 = std::hash<float>{ }( key.height );
+            const std::size_t h5 = std::hash<uint32_t>{ }( key.colorRGBA );
+            const std::size_t h6 = std::hash<uint32_t>{ }( key.textureIndex );
+            const std::size_t h7 = std::hash<uint32_t>{ }( key.shapeType );
+            return h1 ^ h2 << 1 ^ h3 << 2 ^ h4 << 3 ^ h5 << 4 ^ h6 << 5 ^ h7 << 6;
         }
     };
 
-    struct DZ_API CachedShape
+    struct CachedShape
     {
         InteropArray<UIVertex> vertices;
         InteropArray<uint32_t> indices;
         uint32_t               lastUsedFrame = 0;
     };
 
-    class DZ_API UIShapeCache
+    class UIShapeCache
     {
     public:
-        UIShapeCache() = default;
-        ~UIShapeCache() = default;
+        UIShapeCache( )  = default;
+        ~UIShapeCache( ) = default;
 
-        // Cache management
-        CachedShape* GetOrCreateCachedShape(const ShapeCacheKey &key, uint32_t currentFrame);
-        void Cleanup(uint32_t currentFrame, uint32_t maxAge = 1024);
-        void Clear();
-        size_t GetCacheSize() const;
+        CachedShape *GetOrCreateCachedShape( const ShapeCacheKey &key, uint32_t currentFrame );
+        void         Cleanup( uint32_t currentFrame, uint32_t maxAge = 1024 );
+        void         Clear( );
+        size_t       GetCacheSize( ) const;
 
-        // Key creation helpers
-        static ShapeCacheKey CreateRectangleKey(const Clay_RenderCommand *command);
-        static ShapeCacheKey CreateBorderKey(const Clay_RenderCommand *command);
-        static uint32_t ColorToRGBA(const Clay_Color &color);
+        static ShapeCacheKey CreateRectangleKey( const Clay_RenderCommand *command );
+        static ShapeCacheKey CreateBorderKey( const Clay_RenderCommand *command );
+        static uint32_t      ColorToRGBA( const Clay_Color &color );
 
     private:
         std::unordered_map<ShapeCacheKey, std::unique_ptr<CachedShape>, ShapeCacheKeyHash> m_cache;

@@ -33,7 +33,7 @@ namespace DenOfIz
 
     using TextFieldStyle = ClayTextFieldDesc;
 
-    class DZ_API TextFieldWidget : public Widget
+    class TextFieldWidget : public Widget
     {
         InteropString  m_text;
         size_t         m_cursorPosition  = 0;

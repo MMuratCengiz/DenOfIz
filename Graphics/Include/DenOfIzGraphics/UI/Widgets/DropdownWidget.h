@@ -26,7 +26,7 @@ namespace DenOfIz
 {
     using DropdownStyle = ClayDropdownDesc;
 
-    class DZ_API DropdownWidget : public Widget
+    class DropdownWidget : public Widget
     {
         InteropArray<InteropString> m_options;
         int32_t                     m_selectedIndex    = -1;

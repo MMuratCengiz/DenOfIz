@@ -25,8 +25,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+    // Intentionally Not DZ_API internal use
     // clang-format off
-    struct DZ_API TextVertexCacheKey
+    struct TextVertexCacheKey
     {
         uint64_t textHash;
         uint16_t fontId;
@@ -46,7 +47,7 @@ namespace DenOfIz
         }
     };
 
-    struct DZ_API TextVertexCacheKeyHash
+    struct TextVertexCacheKeyHash
     {
         std::size_t operator()(const TextVertexCacheKey &key) const
         {
@@ -61,7 +62,7 @@ namespace DenOfIz
         }
     };
 
-    struct DZ_API CachedTextVertices
+    struct CachedTextVertices
     {
         InteropArray<UIVertex> vertices;
         InteropArray<uint32_t> indices;
@@ -69,7 +70,7 @@ namespace DenOfIz
     };
     // clang-format on
 
-    class DZ_API UITextVertexCache
+    class UITextVertexCache
     {
     public:
         UITextVertexCache() = default;
