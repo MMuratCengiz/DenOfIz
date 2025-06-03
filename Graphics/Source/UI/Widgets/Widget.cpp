@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/UI/Widgets/Widget.h"
+#include "DenOfIzGraphicsInternal/UI/UIShapes.h"
 
 using namespace DenOfIz;
 

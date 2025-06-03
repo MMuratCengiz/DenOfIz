@@ -18,11 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
-#include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
 #include <unordered_set>
 #include "DX12Context.h"
-#include "DX12EnumConverter.h"
+#include "DenOfIzGraphics/Backends/Interface/IRootSignature.h"
 
 namespace DenOfIz
 {

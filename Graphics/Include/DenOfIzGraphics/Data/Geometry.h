@@ -29,13 +29,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/BitSet.h>
-#include <DenOfIzGraphics/Utilities/Interop.h>
+#include "DenOfIzGraphics/Utilities/BitSet.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 #include <cmath>
 #include <cstdint>
 #include <map>
-#include <numbers>
-#include <vector>
 
 namespace DenOfIz
 {

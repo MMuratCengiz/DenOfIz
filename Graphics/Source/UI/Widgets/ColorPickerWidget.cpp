@@ -16,10 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/UI/ClayData.h>
-#include <DenOfIzGraphics/UI/Widgets/ColorPickerWidget.h>
+#include "DenOfIzGraphics/UI/ClayData.h"
+#include "DenOfIzGraphics/UI/Widgets/ColorPickerWidget.h"
 #include <algorithm>
 #include <cmath>
+#include <DirectXMath.h>
 
 using namespace DenOfIz;
 

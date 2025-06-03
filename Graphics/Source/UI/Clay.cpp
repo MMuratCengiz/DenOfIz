@@ -1,19 +1,40 @@
-#include <DenOfIzGraphics/Assets/Font/Embedded/EmbeddedFonts.h>
-#include <DenOfIzGraphics/Assets/Font/FontLibrary.h>
-#include <DenOfIzGraphics/UI/Clay.h>
-#include <DenOfIzGraphics/UI/ClayClipboard.h>
-#include <DenOfIzGraphics/UI/Widgets/CheckboxWidget.h>
-#include <DenOfIzGraphics/UI/Widgets/ColorPickerWidget.h>
-#include <DenOfIzGraphics/UI/Widgets/DockableContainerWidget.h>
-#include <DenOfIzGraphics/UI/Widgets/DropdownWidget.h>
-#include <DenOfIzGraphics/UI/Widgets/ResizableContainerWidget.h>
-#include <DenOfIzGraphics/UI/Widgets/SliderWidget.h>
-#include <DenOfIzGraphics/UI/Widgets/TextFieldWidget.h>
+/*
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+#include "DenOfIzGraphics/UI/Clay.h"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <glog/logging.h>
 #include <unordered_map>
+#include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
+#include "DenOfIzGraphics/UI/ClayClipboard.h"
+#include "DenOfIzGraphics/UI/Widgets/CheckboxWidget.h"
+#include "DenOfIzGraphics/UI/Widgets/ColorPickerWidget.h"
+#include "DenOfIzGraphics/UI/Widgets/DockableContainerWidget.h"
+#include "DenOfIzGraphics/UI/Widgets/DropdownWidget.h"
+#include "DenOfIzGraphics/UI/Widgets/ResizableContainerWidget.h"
+#include "DenOfIzGraphics/UI/Widgets/SliderWidget.h"
+#include "DenOfIzGraphics/UI/Widgets/TextFieldWidget.h"
+#include "DenOfIzGraphics/Utilities/Time.h"
+#include "DenOfIzGraphicsInternal/Assets/Font/Embedded/EmbeddedFonts.h"
+#include "DenOfIzGraphicsInternal/UI/ClayContext.h"
+#include "DenOfIzGraphicsInternal/UI/ClayRenderer.h"
 
 using namespace DenOfIz;
 
@@ -161,7 +182,23 @@ ClayElementDeclaration::ClayElementDeclaration( ) : Id( 0 ), Image{ }, Floating{
 {
 }
 
-Clay::Clay( const ClayDesc &desc )
+struct Clay::Impl
+{
+    Time                          time;
+    std::unique_ptr<ClayRenderer> renderer;
+    std::unique_ptr<ClayContext>  clayContext;
+    ClayPointerState              pointerState = ClayPointerState::Released;
+    Float_2                       pointerPosition{ 0, 0 };
+    Float_2                       scrollDelta{ 0, 0 };
+    uint16_t                      fontId      = 1;
+    bool                          isDebugMode = false;
+
+    std::unordered_map<uint32_t, std::unique_ptr<Widget>> ownedWidgets;    // Clay-created widgets
+    std::unordered_map<uint32_t, Widget *>                externalWidgets; // User-managed widgets
+    std::vector<Widget *>                                 widgetUpdateOrder;
+};
+
+Clay::Clay( const ClayDesc &desc ) : m_impl( std::make_unique<Impl>( ) )
 {
     if ( desc.LogicalDevice == nullptr )
     {
@@ -181,11 +218,11 @@ Clay::Clay( const ClayDesc &desc )
     clayContextDesc.Height                         = desc.Height;
     clayContextDesc.MaxNumElements                 = desc.MaxNumElements;
     clayContextDesc.MaxNumTextMeasureCacheElements = desc.MaxNumTextMeasureCacheElements;
-    m_clayContext                                  = std::make_unique<ClayContext>( clayContextDesc );
+    m_impl->clayContext                            = std::make_unique<ClayContext>( clayContextDesc );
 
     ClayRendererDesc clayRendererDesc{ };
     clayRendererDesc.LogicalDevice      = desc.LogicalDevice;
-    clayRendererDesc.ClayContext        = m_clayContext.get( );
+    clayRendererDesc.ClayContext        = m_impl->clayContext.get( );
     clayRendererDesc.RenderTargetFormat = desc.RenderTargetFormat;
     clayRendererDesc.NumFrames          = desc.NumFrames;
     clayRendererDesc.MaxNumFonts        = desc.MaxNumFonts;
@@ -193,127 +230,127 @@ Clay::Clay( const ClayDesc &desc )
     clayRendererDesc.Height             = desc.Height;
     clayRendererDesc.MaxPipelineWidgets = desc.MaxPipelineWidgets;
 
-    m_renderer = std::make_unique<ClayRenderer>( clayRendererDesc );
+    m_impl->renderer = std::make_unique<ClayRenderer>( clayRendererDesc );
 }
 
 Clay::~Clay( ) = default;
 
 void Clay::SetViewportSize( const float width, const float height ) const
 {
-    DZ_NOT_NULL( m_clayContext );
-    m_clayContext->SetViewportSize( width, height );
-    m_renderer->Resize( width, height );
+    DZ_NOT_NULL( m_impl->clayContext );
+    m_impl->clayContext->SetViewportSize( width, height );
+    m_impl->renderer->Resize( width, height );
 }
 
 ClayDimensions Clay::GetViewportSize( ) const
 {
-    DZ_NOT_NULL( m_clayContext );
-    return m_clayContext->GetViewportSize( );
+    DZ_NOT_NULL( m_impl->clayContext );
+    return m_impl->clayContext->GetViewportSize( );
 }
 
 void Clay::SetDpiScale( const float dpiScale ) const
 {
-    m_renderer->SetDpiScale( dpiScale );
-    m_clayContext->SetDpiScale( dpiScale );
+    m_impl->renderer->SetDpiScale( dpiScale );
+    m_impl->clayContext->SetDpiScale( dpiScale );
 }
 
-void Clay::SetDebugModeEnabled( const bool enabled )
+void Clay::SetDebugModeEnabled( const bool enabled ) const
 {
-    DZ_NOT_NULL( m_clayContext );
-    m_isDebugMode = enabled;
-    m_clayContext->SetDebugModeEnabled( enabled );
+    DZ_NOT_NULL( m_impl->clayContext );
+    m_impl->isDebugMode = enabled;
+    m_impl->clayContext->SetDebugModeEnabled( enabled );
 }
 
 bool Clay::IsDebugModeEnabled( ) const
 {
-    return m_isDebugMode;
+    return m_impl->isDebugMode;
 }
 
 void Clay::SetPointerState( const Float_2 position, const ClayPointerState state ) const
 {
-    DZ_NOT_NULL( m_clayContext );
-    m_clayContext->SetPointerState( position, state );
+    DZ_NOT_NULL( m_impl->clayContext );
+    m_impl->clayContext->SetPointerState( position, state );
 }
 
-void Clay::UpdateScrollContainers( const bool enableDragScrolling, const Float_2 scrollDelta, const float deltaTime )
+void Clay::UpdateScrollContainers( const bool enableDragScrolling, const Float_2 scrollDelta, const float deltaTime ) const
 {
-    DZ_NOT_NULL( m_clayContext );
+    DZ_NOT_NULL( m_impl->clayContext );
 
     Float_2 totalScrollDelta = scrollDelta;
-    totalScrollDelta.X += m_scrollDelta.X;
-    totalScrollDelta.Y += m_scrollDelta.Y;
+    totalScrollDelta.X += m_impl->scrollDelta.X;
+    totalScrollDelta.Y += m_impl->scrollDelta.Y;
 
-    m_clayContext->UpdateScrollContainers( enableDragScrolling, totalScrollDelta, deltaTime );
+    m_impl->clayContext->UpdateScrollContainers( enableDragScrolling, totalScrollDelta, deltaTime );
 
-    m_scrollDelta.X = 0;
-    m_scrollDelta.Y = 0;
+    m_impl->scrollDelta.X = 0;
+    m_impl->scrollDelta.Y = 0;
 }
 
-void Clay::BeginLayout( )
+void Clay::BeginLayout( ) const
 {
-    m_time.Tick( );
-    DZ_NOT_NULL( m_clayContext );
-    SetPointerState( m_pointerPosition, m_pointerState );
-    m_clayContext->SetDebugModeEnabled( m_isDebugMode );
-    m_clayContext->BeginLayout( );
+    m_impl->time.Tick( );
+    DZ_NOT_NULL( m_impl->clayContext );
+    SetPointerState( m_impl->pointerPosition, m_impl->pointerState );
+    m_impl->clayContext->SetDebugModeEnabled( m_impl->isDebugMode );
+    m_impl->clayContext->BeginLayout( );
 }
 
 void Clay::EndLayout( ICommandList *commandList, const uint32_t frameIndex, const float deltaTime ) const
 {
-    DZ_NOT_NULL( m_clayContext );
+    DZ_NOT_NULL( m_impl->clayContext );
 
     this->UpdateWidgets( deltaTime );
 
-    m_renderer->SetDeltaTime( deltaTime );
-    m_renderer->Render( commandList, m_clayContext->EndLayoutAndGetCommands( deltaTime ), frameIndex );
+    m_impl->renderer->SetDeltaTime( deltaTime );
+    m_impl->renderer->Render( commandList, m_impl->clayContext->EndLayoutAndGetCommands( deltaTime ), frameIndex );
 }
 
 void Clay::OpenElement( const ClayElementDeclaration &declaration ) const
 {
-    DZ_NOT_NULL( m_clayContext );
-    m_clayContext->OpenElement( declaration );
+    DZ_NOT_NULL( m_impl->clayContext );
+    m_impl->clayContext->OpenElement( declaration );
 }
 
 void Clay::CloseElement( ) const
 {
-    DZ_NOT_NULL( m_clayContext );
-    m_clayContext->CloseElement( );
+    DZ_NOT_NULL( m_impl->clayContext );
+    m_impl->clayContext->CloseElement( );
 }
 
 void Clay::Text( const InteropString &text, const ClayTextDesc &desc ) const
 {
-    DZ_NOT_NULL( m_clayContext );
-    m_clayContext->Text( text, desc );
+    DZ_NOT_NULL( m_impl->clayContext );
+    m_impl->clayContext->Text( text, desc );
 }
 
 uint32_t Clay::HashString( const InteropString &str, const uint32_t index, const uint32_t baseId ) const
 {
-    return m_clayContext->HashString( str, index, baseId );
+    return m_impl->clayContext->HashString( str, index, baseId );
 }
 
 bool Clay::PointerOver( const uint32_t id ) const
 {
-    return m_clayContext->PointerOver( id );
+    return m_impl->clayContext->PointerOver( id );
 }
 
 ClayBoundingBox Clay::GetElementBoundingBox( const uint32_t id ) const
 {
-    return m_clayContext->GetElementBoundingBox( id );
+    return m_impl->clayContext->GetElementBoundingBox( id );
 }
 
-void Clay::HandleEvent( const Event &event )
+void Clay::HandleEvent( const Event &event ) const
 {
     if ( event.Type == EventType::MouseMotion )
     {
-        m_pointerPosition = Float_2{ static_cast<float>( event.Motion.X ), static_cast<float>( event.Motion.Y ) };
+        m_impl->pointerPosition = Float_2{ static_cast<float>( event.Motion.X ), static_cast<float>( event.Motion.Y ) };
     }
 
     if ( event.Type == EventType::MouseButtonDown )
     {
         if ( event.Button.Button == MouseButton::Left )
         {
-            m_pointerPosition = Float_2{ static_cast<float>( event.Button.X ), static_cast<float>( event.Button.Y ) };
-            m_pointerState    = ClayPointerState::Pressed;
+            m_impl->pointerPosition = Float_2{ static_cast<float>( event.Button.X ), static_cast<float>( event.Button.Y ) };
+            m_impl->pointerState    = ClayPointerState::Pressed;
         }
     }
 
@@ -321,8 +358,8 @@ void Clay::HandleEvent( const Event &event )
     {
         if ( event.Button.Button == MouseButton::Left )
         {
-            m_pointerPosition = Float_2{ static_cast<float>( event.Button.X ), static_cast<float>( event.Button.Y ) };
-            m_pointerState    = ClayPointerState::Released;
+            m_impl->pointerPosition = Float_2{ static_cast<float>( event.Button.X ), static_cast<float>( event.Button.Y ) };
+            m_impl->pointerState    = ClayPointerState::Released;
         }
     }
 
@@ -339,173 +376,173 @@ void Clay::HandleEvent( const Event &event )
     {
         if ( event.Key.Keycode == KeyCode::F11 )
         {
-            m_isDebugMode = !m_clayContext->IsDebugModeEnabled( );
+            m_impl->isDebugMode = !m_impl->clayContext->IsDebugModeEnabled( );
         }
     }
 
     if ( event.Type == EventType::MouseWheel )
     {
-        m_scrollDelta.X += static_cast<float>( event.Wheel.X ) * 30.0f;
-        m_scrollDelta.Y += static_cast<float>( event.Wheel.Y ) * 30.0f;
+        m_impl->scrollDelta.X += static_cast<float>( event.Wheel.X ) * 30.0f;
+        m_impl->scrollDelta.Y += static_cast<float>( event.Wheel.Y ) * 30.0f;
     }
 
-    for ( auto *widget : m_widgetUpdateOrder )
+    for ( auto *widget : m_impl->widgetUpdateOrder )
     {
         widget->HandleEvent( event );
     }
 }
 
-CheckboxWidget *Clay::CreateCheckbox( uint32_t id, bool initialChecked, const CheckboxStyle &style )
+CheckboxWidget *Clay::CreateCheckbox( uint32_t id, bool initialChecked, const CheckboxStyle &style ) const
 {
-    auto            widget = std::make_unique<CheckboxWidget>( m_clayContext.get( ), id, initialChecked, style );
-    CheckboxWidget *ptr    = widget.get( );
-    m_ownedWidgets[ id ]   = std::move( widget );
-    m_widgetUpdateOrder.push_back( ptr );
-    m_renderer->RegisterWidget( id, ptr );
+    auto            widget     = std::make_unique<CheckboxWidget>( m_impl->clayContext.get( ), id, initialChecked, style );
+    CheckboxWidget *ptr        = widget.get( );
+    m_impl->ownedWidgets[ id ] = std::move( widget );
+    m_impl->widgetUpdateOrder.push_back( ptr );
+    m_impl->renderer->RegisterWidget( id, ptr );
     return ptr;
 }
 
-SliderWidget *Clay::CreateSlider( uint32_t id, float initialValue, const SliderStyle &style )
+SliderWidget *Clay::CreateSlider( uint32_t id, float initialValue, const SliderStyle &style ) const
 {
-    auto          widget = std::make_unique<SliderWidget>( m_clayContext.get( ), id, initialValue, style );
-    SliderWidget *ptr    = widget.get( );
-    m_ownedWidgets[ id ] = std::move( widget );
-    m_widgetUpdateOrder.push_back( ptr );
-    m_renderer->RegisterWidget( id, ptr );
+    auto          widget       = std::make_unique<SliderWidget>( m_impl->clayContext.get( ), id, initialValue, style );
+    SliderWidget *ptr          = widget.get( );
+    m_impl->ownedWidgets[ id ] = std::move( widget );
+    m_impl->widgetUpdateOrder.push_back( ptr );
+    m_impl->renderer->RegisterWidget( id, ptr );
     return ptr;
 }
 
-DropdownWidget *Clay::CreateDropdown( uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style )
+DropdownWidget *Clay::CreateDropdown( uint32_t id, const InteropArray<InteropString> &options, const DropdownStyle &style ) const
 {
-    auto            widget = std::make_unique<DropdownWidget>( m_clayContext.get( ), id, options, style );
-    DropdownWidget *ptr    = widget.get( );
-    m_ownedWidgets[ id ]   = std::move( widget );
-    m_widgetUpdateOrder.push_back( ptr );
-    m_renderer->RegisterWidget( id, ptr );
+    auto            widget     = std::make_unique<DropdownWidget>( m_impl->clayContext.get( ), id, options, style );
+    DropdownWidget *ptr        = widget.get( );
+    m_impl->ownedWidgets[ id ] = std::move( widget );
+    m_impl->widgetUpdateOrder.push_back( ptr );
+    m_impl->renderer->RegisterWidget( id, ptr );
     return ptr;
 }
 
-ColorPickerWidget *Clay::CreateColorPicker( uint32_t id, const Float_3 &initialRgb, const ColorPickerStyle &style )
+ColorPickerWidget *Clay::CreateColorPicker( uint32_t id, const Float_3 &initialRgb, const ColorPickerStyle &style ) const
 {
-    auto               widget = std::make_unique<ColorPickerWidget>( m_clayContext.get( ), id, initialRgb, style );
-    ColorPickerWidget *ptr    = widget.get( );
-    m_ownedWidgets[ id ]      = std::move( widget );
-    m_widgetUpdateOrder.push_back( ptr );
-    m_renderer->RegisterWidget( id, ptr );
+    auto               widget  = std::make_unique<ColorPickerWidget>( m_impl->clayContext.get( ), id, initialRgb, style );
+    ColorPickerWidget *ptr     = widget.get( );
+    m_impl->ownedWidgets[ id ] = std::move( widget );
+    m_impl->widgetUpdateOrder.push_back( ptr );
+    m_impl->renderer->RegisterWidget( id, ptr );
     return ptr;
 }
 
-TextFieldWidget *Clay::CreateTextField( uint32_t id, const TextFieldStyle &style )
+TextFieldWidget *Clay::CreateTextField( uint32_t id, const TextFieldStyle &style ) const
 {
-    auto             widget = std::make_unique<TextFieldWidget>( m_clayContext.get( ), id, style );
-    TextFieldWidget *ptr    = widget.get( );
-    m_ownedWidgets[ id ]    = std::move( widget );
-    m_widgetUpdateOrder.push_back( ptr );
-    m_renderer->RegisterWidget( id, ptr );
+    auto             widget    = std::make_unique<TextFieldWidget>( m_impl->clayContext.get( ), id, style );
+    TextFieldWidget *ptr       = widget.get( );
+    m_impl->ownedWidgets[ id ] = std::move( widget );
+    m_impl->widgetUpdateOrder.push_back( ptr );
+    m_impl->renderer->RegisterWidget( id, ptr );
     return ptr;
 }
 
-ResizableContainerWidget *Clay::CreateResizableContainer( uint32_t id )
+ResizableContainerWidget *Clay::CreateResizableContainer( uint32_t id ) const
 {
-    auto                      widget = std::make_unique<ResizableContainerWidget>( m_clayContext.get( ), id );
+    auto                      widget = std::make_unique<ResizableContainerWidget>( m_impl->clayContext.get( ), id );
     ResizableContainerWidget *ptr    = widget.get( );
-    m_ownedWidgets[ id ]             = std::move( widget );
-    m_widgetUpdateOrder.push_back( ptr );
-    m_renderer->RegisterWidget( id, ptr );
+    m_impl->ownedWidgets[ id ]       = std::move( widget );
+    m_impl->widgetUpdateOrder.push_back( ptr );
+    m_impl->renderer->RegisterWidget( id, ptr );
     return ptr;
 }
 
-DockableContainerWidget *Clay::CreateDockableContainer( uint32_t id, DockingManager *dockingManager )
+DockableContainerWidget *Clay::CreateDockableContainer( uint32_t id, DockingManager *dockingManager ) const
 {
-    auto                     widget = std::make_unique<DockableContainerWidget>( m_clayContext.get( ), id, dockingManager );
+    auto                     widget = std::make_unique<DockableContainerWidget>( m_impl->clayContext.get( ), id, dockingManager );
     DockableContainerWidget *ptr    = widget.get( );
-    m_ownedWidgets[ id ]            = std::move( widget );
-    m_widgetUpdateOrder.push_back( ptr );
-    m_renderer->RegisterWidget( id, ptr );
+    m_impl->ownedWidgets[ id ]      = std::move( widget );
+    m_impl->widgetUpdateOrder.push_back( ptr );
+    m_impl->renderer->RegisterWidget( id, ptr );
     return ptr;
 }
 
 Widget *Clay::GetWidget( const uint32_t id ) const
 {
-    const auto ownedIt = m_ownedWidgets.find( id );
-    if ( ownedIt != m_ownedWidgets.end( ) )
+    const auto ownedIt = m_impl->ownedWidgets.find( id );
+    if ( ownedIt != m_impl->ownedWidgets.end( ) )
     {
         return ownedIt->second.get( );
     }
-    const auto externalIt = m_externalWidgets.find( id );
-    if ( externalIt != m_externalWidgets.end( ) )
+    const auto externalIt = m_impl->externalWidgets.find( id );
+    if ( externalIt != m_impl->externalWidgets.end( ) )
     {
         return externalIt->second;
     }
     return nullptr;
 }
 
-void Clay::RemoveWidget( const uint32_t id )
+void Clay::RemoveWidget( const uint32_t id ) const
 {
     Widget    *widget  = nullptr;
-    const auto ownedIt = m_ownedWidgets.find( id );
-    if ( ownedIt != m_ownedWidgets.end( ) )
+    const auto ownedIt = m_impl->ownedWidgets.find( id );
+    if ( ownedIt != m_impl->ownedWidgets.end( ) )
     {
         widget = ownedIt->second.get( );
-        m_ownedWidgets.erase( ownedIt );
+        m_impl->ownedWidgets.erase( ownedIt );
     }
     else
     {
-        const auto externalIt = m_externalWidgets.find( id );
-        if ( externalIt != m_externalWidgets.end( ) )
+        const auto externalIt = m_impl->externalWidgets.find( id );
+        if ( externalIt != m_impl->externalWidgets.end( ) )
         {
             widget = externalIt->second;
-            m_externalWidgets.erase( externalIt );
+            m_impl->externalWidgets.erase( externalIt );
         }
     }
 
     if ( widget )
     {
-        std::erase( m_widgetUpdateOrder, widget );
-        m_renderer->UnregisterWidget( id );
+        std::erase( m_impl->widgetUpdateOrder, widget );
+        m_impl->renderer->UnregisterWidget( id );
     }
 }
 
 DockingManager *Clay::CreateDockingManager( ) const
 {
-    return new DockingManager( m_clayContext.get( ) );
+    return new DockingManager( m_impl->clayContext.get( ) );
 }
 
 void Clay::UpdateWidgets( const float deltaTime ) const
 {
-    for ( auto *widget : m_widgetUpdateOrder )
+    for ( auto *widget : m_impl->widgetUpdateOrder )
     {
         widget->Update( deltaTime );
     }
 }
 
-void Clay::RegisterPipelineWidget( Widget *widget )
+void Clay::RegisterPipelineWidget( Widget *widget ) const
 {
     DZ_NOT_NULL( widget );
 
-    const uint32_t id       = widget->GetId( );
-    m_externalWidgets[ id ] = widget;
-    m_widgetUpdateOrder.push_back( widget );
-    m_renderer->RegisterWidget( id, widget );
+    const uint32_t id             = widget->GetId( );
+    m_impl->externalWidgets[ id ] = widget;
+    m_impl->widgetUpdateOrder.push_back( widget );
+    m_impl->renderer->RegisterWidget( id, widget );
 }
 
 IClayContext *Clay::GetContext( ) const
 {
-    return m_clayContext.get( );
+    return m_impl->clayContext.get( );
 }
 
 ClayDimensions Clay::MeasureText( const InteropString &text, const uint16_t fontId, const uint16_t fontSize ) const
 {
-    return m_clayContext->MeasureText( text, fontId, fontSize );
+    return m_impl->clayContext->MeasureText( text, fontId, fontSize );
 }
 
 void Clay::AddFont( const uint16_t fontId, Font *font ) const
 {
-    m_clayContext->AddFont( fontId, font );
-    m_renderer->Render( nullptr, Clay_RenderCommandArray{ }, 0 );
+    m_impl->clayContext->AddFont( fontId, font );
+    m_impl->renderer->Render( nullptr, Clay_RenderCommandArray{ }, 0 );
 }
 
 void Clay::RemoveFont( const uint16_t fontId ) const
 {
-    m_clayContext->RemoveFont( fontId );
+    m_impl->clayContext->RemoveFont( fontId );
 }

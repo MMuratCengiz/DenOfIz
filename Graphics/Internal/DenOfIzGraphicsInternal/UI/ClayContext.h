@@ -20,13 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <clay.h>
 
-#include "DenOfIzGraphics/UI/ClayData.h"
-#include "DenOfIzGraphics/UI/ClayTextCache.h"
-#include "DenOfIzGraphics/UI/IClayContext.h"
-#include <DenOfIzGraphics/UI/UIShapes.h>
-#include <functional>
 #include <memory>
 #include <vector>
+#include "ClayTextCache.h"
+#include "DenOfIzGraphics/UI/ClayData.h"
+#include "DenOfIzGraphics/UI/IClayContext.h"
+#include "UIShapes.h"
 
 namespace DenOfIz
 {

@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/UI/Widgets/TextFieldWidget.h>
 #include <algorithm>
 
-#include "DenOfIzGraphics/UI/ClayTextCache.h"
+#include "../../../Internal/DenOfIzGraphicsInternal/UI/ClayTextCache.h"
 
 using namespace DenOfIz;
 

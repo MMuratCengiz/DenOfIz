@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "IClayContext.h"
-#include "DenOfIzGraphics/Utilities/Interop.h"
 #include <clay.h>
+#include "DenOfIzGraphics/UI/IClayContext.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 
 #include <DirectXMath.h>
 

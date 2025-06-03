@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define CLAY_IMPLEMENTATION
 #include "clay.h"
 
-#include <DenOfIzGraphics/UI/ClayContext.h>
+#include <../../Internal/DenOfIzGraphicsInternal/UI/ClayContext.h>
 #include <DenOfIzGraphics/Utilities/Common.h>
 #include <glog/logging.h>
 

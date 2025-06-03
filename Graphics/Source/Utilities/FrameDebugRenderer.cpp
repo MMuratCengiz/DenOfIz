@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Utilities/FrameDebugRenderer.h"
-#include "DenOfIzGraphics/Assets/Font/Embedded/EmbeddedFonts.h"
+#include "DenOfIzGraphicsInternal/Assets/Font/Embedded/EmbeddedFonts.h"
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
 
 using namespace DenOfIz;

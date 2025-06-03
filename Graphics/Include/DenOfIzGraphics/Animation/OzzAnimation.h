@@ -18,9 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h>
-#include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h>
-#include <DenOfIzGraphics/Utilities/InteropMath.h>
+#include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h"
+#include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h"
 
 namespace DenOfIz
 {

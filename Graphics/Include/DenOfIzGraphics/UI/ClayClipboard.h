@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class ClayClipboard
+    class DZ_API ClayClipboard
     {
     public:
         static void          SetText( const InteropString &text );

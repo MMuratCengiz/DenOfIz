@@ -16,18 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "DenOfIzGraphicsInternal/UI/ClayTextCache.h"
+#include <glog/logging.h>
+#include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h"
 #include "DenOfIzGraphics/Backends/Interface/ICommandList.h"
 #include "DenOfIzGraphics/Backends/Interface/ICommandListPool.h"
 #include "DenOfIzGraphics/Backends/Interface/ICommandQueue.h"
 #include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
-#include "DenOfIzGraphics/UI/ClayTextCache.h"
-#include "DenOfIzGraphics/Utilities/Common.h"
+#include "DenOfIzGraphicsInternal/Assets/Font/Embedded/EmbeddedFonts.h"
 #include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
-#include <glog/logging.h>
-
-#include "DenOfIzGraphics/Assets/Font/Embedded/EmbeddedFonts.h"
-#include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 
 using namespace DenOfIz;
 

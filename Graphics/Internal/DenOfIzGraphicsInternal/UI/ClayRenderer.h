@@ -18,26 +18,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
-#include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
-#include <DenOfIzGraphics/Backends/Interface/ICommandListPool.h>
-#include <DenOfIzGraphics/Backends/Interface/ICommandQueue.h>
-#include <DenOfIzGraphics/Backends/Interface/IFence.h>
-#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
-#include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
-#include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
-#include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
-#include <DenOfIzGraphics/UI/ClayContext.h>
-#include <DenOfIzGraphics/UI/ClayData.h>
-#include <DenOfIzGraphics/UI/ClayTextCache.h>
-#include <DenOfIzGraphics/UI/FullscreenQuadPipeline.h>
-#include <DenOfIzGraphics/UI/UIShapeCache.h>
-#include <DenOfIzGraphics/UI/UIShapes.h>
 #include <clay.h>
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include "ClayContext.h"
+#include "ClayTextCache.h"
+#include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
+#include "DenOfIzGraphics/Backends/Interface/ICommandList.h"
+#include "DenOfIzGraphics/Backends/Interface/ICommandListPool.h"
+#include "DenOfIzGraphics/Backends/Interface/ICommandQueue.h"
+#include "DenOfIzGraphics/Backends/Interface/IFence.h"
+#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
+#include "DenOfIzGraphics/Backends/Interface/IPipeline.h"
+#include "DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h"
+#include "DenOfIzGraphics/Backends/Interface/IRootSignature.h"
 #include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
+#include "DenOfIzGraphics/UI/ClayData.h"
+#include "DenOfIzGraphicsInternal/UI/FullscreenQuadPipeline.h"
+#include "UIShapeCache.h"
+#include "UIShapes.h"
 
 #include <DirectXMath.h>
 
@@ -149,7 +149,7 @@ namespace DenOfIz
         std::unordered_map<void *, uint32_t> m_imageTextureIndices;
         std::vector<ITextureResource *>      m_textures;
         std::unique_ptr<ITextureResource>    m_nullTexture;
-        bool                                 m_texturesDirty    = true;
+        bool                                 m_texturesDirty = true;
 
         float               m_viewportWidth  = 0;
         float               m_viewportHeight = 0;
@@ -163,16 +163,16 @@ namespace DenOfIz
         uint32_t                  m_currentFrameIndex = 0;
 
         std::unordered_map<uint32_t, Widget *> m_widgets;
-        
+
         // Pipeline widget resources
         struct PipelineWidgetData
         {
-            ICommandList                       *CommandList = nullptr;
-            std::unique_ptr<ISemaphore>         Semaphore;
+            ICommandList               *CommandList = nullptr;
+            std::unique_ptr<ISemaphore> Semaphore;
         };
-        std::vector<PipelineWidgetData>        m_pipelineWidgetData;
-        std::vector<Widget *>                  m_pipelineWidgetsToRender;
-        std::unique_ptr<ICommandListPool>      m_pipelineWidgetCommandListPool;
+        std::vector<PipelineWidgetData>   m_pipelineWidgetData;
+        std::vector<Widget *>             m_pipelineWidgetsToRender;
+        std::unique_ptr<ICommandListPool> m_pipelineWidgetCommandListPool;
 
     public:
         explicit ClayRenderer( const ClayRendererDesc &desc );

@@ -20,12 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <clay.h>
 
-#include <DenOfIzGraphics/Assets/Font/Font.h>
-#include <DenOfIzGraphics/Assets/Font/TextLayoutCache.h>
-#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
-#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
-#include <DenOfIzGraphics/UI/ClayData.h>
-#include <DenOfIzGraphics/UI/UITextVertexCache.h>
+#include "DenOfIzGraphics/Assets/Font/Font.h"
+#include "DenOfIzGraphicsInternal/Assets/Font/TextLayoutCache.h"
+#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
+#include "DenOfIzGraphics/Backends/Interface/ITextureResource.h"
+#include "DenOfIzGraphics/UI/ClayData.h"
+#include "UITextVertexCache.h"
 #include <memory>
 #include <unordered_map>
 

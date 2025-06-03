@@ -21,8 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Utilities/Common_Asserts.h"
 
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
-#include "DenOfIzGraphics/Assets/Font/Embedded/EmbeddedFonts.h"
-#include "DenOfIzGraphics/Assets/Font/EmbeddedTextRendererShaders.h"
+#include "DenOfIzGraphicsInternal/Assets/Font/Embedded/EmbeddedFonts.h"
+#include "DenOfIzGraphicsInternal/Assets/Font/EmbeddedTextRendererShaders.h"
 #include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"

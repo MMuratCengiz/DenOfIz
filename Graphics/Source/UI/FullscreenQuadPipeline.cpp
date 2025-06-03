@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/UI/FullscreenQuadPipeline.h>
-#include <DenOfIzGraphics/UI/FullscreenQuadShaders.h>
+#include <../../Internal/DenOfIzGraphicsInternal/UI/FullscreenQuadPipeline.h>
+#include <../../Internal/DenOfIzGraphicsInternal/UI/FullscreenQuadShaders.h>
 #include <DenOfIzGraphics/Utilities/Common.h>
 
 using namespace DenOfIz;

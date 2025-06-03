@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Animation/OzzAnimation.h>
-#include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h>
-#include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h>
+#include "DenOfIzGraphics/Animation/OzzAnimation.h"
+#include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h"
+#include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h"
 #include <string>
 #include <unordered_map>
 

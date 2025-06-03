@@ -18,17 +18,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h>
-#include <DenOfIzGraphics/Backends/Interface/CommonData.h>
-#include <DenOfIzGraphics/Utilities/Common.h>
 #include <functional>
+#include "DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h"
+#include "DenOfIzGraphics/Backends/Interface/CommonData.h"
+#include "DenOfIzGraphics/Utilities/Common.h"
+
+#include "dds.h"
 
 #define DZ_USE_DDS
 #define DZ_USE_STB_IMAGE
-
-#ifdef DZ_USE_DDS
-#include "dds.h"
-#endif
 
 namespace DenOfIz
 {
@@ -99,8 +97,6 @@ namespace DenOfIz
         void LoadTextureFromMemory( const Byte *data, size_t dataNumBytes );
         void LoadTextureDDSFromMemory( const Byte *data, size_t dataNumBytes );
         void LoadTextureSTBFromMemory( const Byte *data, size_t dataNumBytes );
-#ifdef DZ_USE_DDS
-        static enum Format GetFormatFromDDS( const dds::DXGI_FORMAT &format );
-#endif
+
     };
 } // namespace DenOfIz

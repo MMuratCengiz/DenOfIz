@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/UI/UIShapes.h>
+#include "DenOfIzGraphicsInternal/UI/UIShapes.h"
 #include <clay.h>
 #include <memory>
 #include <unordered_map>

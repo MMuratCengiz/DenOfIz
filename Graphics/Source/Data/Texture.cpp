@@ -25,7 +25,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #if defined( DZ_USE_STB_IMAGE )
 #include "stb_image.h"
 #endif
-
+#ifdef DZ_USE_DDS
+#include "dds.h"
+#endif
 #include <DenOfIzGraphicsInternal/Utilities/Utilities.h>
 #include <filesystem>
 #include <fstream>
@@ -143,77 +145,7 @@ void Texture::LoadTextureSTB( )
     m_data.MemCpy( contents, m_slicePitch );
 }
 
-void Texture::LoadTextureDDS( )
-{
-    // Step 1: Read the DDS file
-    std::ifstream file( m_path, std::ios::binary | std::ios::ate );
-    DZ_RETURN_IF( !file.is_open( ) );
-    if ( !file.is_open( ) )
-    {
-        LOG( WARNING ) << "Error loading texture: " << m_path << ", reason: File not found";
-        return;
-    }
-
-    const std::streamsize size = file.tellg( );
-    file.seekg( 0, std::ios::beg );
-
-    std::vector<Byte> fileDataHeap( size );
-    Byte             *fileData = fileDataHeap.data( );
-
-    if ( !file.read( reinterpret_cast<char *>( fileData ), size ) )
-    {
-        LOG( WARNING ) << "Error loading texture: " << m_path << ", reason: File read error";
-        return;
-    }
-
-    m_ddsHeader = dds::read_header( fileData, size );
-    if ( !m_ddsHeader.is_valid( ) )
-    {
-        LOG( WARNING ) << "Error loading texture: " << m_path << ", reason: Invalid DDS header";
-        return;
-    }
-
-    m_arraySize    = 1;
-    m_width        = m_ddsHeader.width( );
-    m_height       = m_ddsHeader.height( );
-    m_depth        = m_ddsHeader.depth( );
-    m_mipLevels    = m_ddsHeader.mip_levels( );
-    m_arraySize    = m_ddsHeader.array_size( );
-    m_format       = GetFormatFromDDS( m_ddsHeader.format( ) );
-    m_bitsPerPixel = m_ddsHeader.bits_per_element( );
-    m_blockSize    = m_ddsHeader.block_size( );
-    m_rowPitch     = std::max( 1U, ( m_width + ( m_blockSize - 1 ) ) / m_blockSize ) * m_bitsPerPixel >> 3;
-    m_numRows      = std::max( 1U, ( m_height + ( m_blockSize - 1 ) ) / m_blockSize );
-    m_slicePitch   = m_rowPitch * m_numRows;
-
-    m_data.Resize( m_ddsHeader.data_size( ) );
-    m_data.MemCpy( fileData + m_ddsHeader.data_offset( ), m_ddsHeader.data_size( ) );
-
-    if ( m_ddsHeader.is_1d( ) )
-    {
-        m_dimension = TextureDimension::Texture1D;
-    }
-    else if ( m_ddsHeader.is_3d( ) )
-    {
-        m_dimension = TextureDimension::Texture3D;
-    }
-    else
-    {
-        m_dimension = TextureDimension::Texture2D;
-    }
-    if ( m_ddsHeader.is_cubemap( ) )
-    {
-        m_dimension = TextureDimension::TextureCube;
-    }
-
-    if ( IsFormatBC( m_format ) )
-    {
-        m_width  = Utilities::Align( m_width, FormatBlockSize( m_format ) );
-        m_height = Utilities::Align( m_height, FormatBlockSize( m_format ) );
-    }
-}
-
-Format Texture::GetFormatFromDDS( const dds::DXGI_FORMAT &format )
+Format GetFormatFromDDS( const dds::DXGI_FORMAT &format )
 {
     switch ( format )
     {
@@ -415,6 +347,76 @@ Format Texture::GetFormatFromDDS( const dds::DXGI_FORMAT &format )
         return Format::Undefined;
     }
     return Format::Undefined;
+}
+
+void Texture::LoadTextureDDS( )
+{
+    // Step 1: Read the DDS file
+    std::ifstream file( m_path, std::ios::binary | std::ios::ate );
+    DZ_RETURN_IF( !file.is_open( ) );
+    if ( !file.is_open( ) )
+    {
+        LOG( WARNING ) << "Error loading texture: " << m_path << ", reason: File not found";
+        return;
+    }
+
+    const std::streamsize size = file.tellg( );
+    file.seekg( 0, std::ios::beg );
+
+    std::vector<Byte> fileDataHeap( size );
+    Byte             *fileData = fileDataHeap.data( );
+
+    if ( !file.read( reinterpret_cast<char *>( fileData ), size ) )
+    {
+        LOG( WARNING ) << "Error loading texture: " << m_path << ", reason: File read error";
+        return;
+    }
+
+    m_ddsHeader = dds::read_header( fileData, size );
+    if ( !m_ddsHeader.is_valid( ) )
+    {
+        LOG( WARNING ) << "Error loading texture: " << m_path << ", reason: Invalid DDS header";
+        return;
+    }
+
+    m_arraySize    = 1;
+    m_width        = m_ddsHeader.width( );
+    m_height       = m_ddsHeader.height( );
+    m_depth        = m_ddsHeader.depth( );
+    m_mipLevels    = m_ddsHeader.mip_levels( );
+    m_arraySize    = m_ddsHeader.array_size( );
+    m_format       = GetFormatFromDDS( m_ddsHeader.format( ) );
+    m_bitsPerPixel = m_ddsHeader.bits_per_element( );
+    m_blockSize    = m_ddsHeader.block_size( );
+    m_rowPitch     = std::max( 1U, ( m_width + ( m_blockSize - 1 ) ) / m_blockSize ) * m_bitsPerPixel >> 3;
+    m_numRows      = std::max( 1U, ( m_height + ( m_blockSize - 1 ) ) / m_blockSize );
+    m_slicePitch   = m_rowPitch * m_numRows;
+
+    m_data.Resize( m_ddsHeader.data_size( ) );
+    m_data.MemCpy( fileData + m_ddsHeader.data_offset( ), m_ddsHeader.data_size( ) );
+
+    if ( m_ddsHeader.is_1d( ) )
+    {
+        m_dimension = TextureDimension::Texture1D;
+    }
+    else if ( m_ddsHeader.is_3d( ) )
+    {
+        m_dimension = TextureDimension::Texture3D;
+    }
+    else
+    {
+        m_dimension = TextureDimension::Texture2D;
+    }
+    if ( m_ddsHeader.is_cubemap( ) )
+    {
+        m_dimension = TextureDimension::TextureCube;
+    }
+
+    if ( IsFormatBC( m_format ) )
+    {
+        m_width  = Utilities::Align( m_width, FormatBlockSize( m_format ) );
+        m_height = Utilities::Align( m_height, FormatBlockSize( m_format ) );
+    }
 }
 
 void Texture::StreamMipData( const MipStreamCallback &callback ) const

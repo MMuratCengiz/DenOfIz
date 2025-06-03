@@ -18,15 +18,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <memory>
+#include <vector>
 #include "DenOfIzGraphics/Backends/Interface/ICommandList.h"
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 #include "DenOfIzGraphics/Backends/Interface/ITextureResource.h"
 #include "DenOfIzGraphics/Input/Event.h"
 #include "DenOfIzGraphics/UI/ClayData.h"
 #include "DenOfIzGraphics/UI/IClayContext.h"
-#include "DenOfIzGraphics/UI/UIShapes.h"
-#include <memory>
-#include <vector>
 
 namespace DenOfIz
 {

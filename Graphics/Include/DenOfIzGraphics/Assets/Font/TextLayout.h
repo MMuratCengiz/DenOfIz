@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Interop.h>
+#include "DenOfIzGraphics/Utilities/Interop.h"
 #include <vector>
 
 #include "Font.h"
@@ -88,7 +88,6 @@ namespace DenOfIz
         float                     m_totalWidth  = 0;
         float                     m_totalHeight = 0;
 
-        // Caching for ShapeText
         InteropString m_lastShapedText;
         uint32_t      m_lastFontSize  = 0;
         TextDirection m_lastDirection = TextDirection::Auto;
