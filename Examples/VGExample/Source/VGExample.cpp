@@ -16,8 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzExamples/VGExample.h>
-
+#include "DenOfIzExamples/VGExample.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
 #include "DenOfIzGraphics/Assets/Import/VGImporter.h"
@@ -26,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 #include "DenOfIzGraphics/Utilities/FrameDebugRenderer.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
-#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
+#include "DenOfIzExamples/InteropMathConverter.h"
 
 #include <cmath>
 #include <vector>

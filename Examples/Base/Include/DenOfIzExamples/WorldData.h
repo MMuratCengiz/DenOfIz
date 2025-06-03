@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
+#include <DenOfIzExamples/Assets/AssetData.h>
 #include "Camera.h"
 #include "PerMaterialBinding.h"
 

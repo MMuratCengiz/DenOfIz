@@ -43,8 +43,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ozz/base/maths/simd_quaternion.h"
 #include "ozz/geometry/runtime/skinning_job.h"
 
-#include <DenOfIzGraphics/Animation/OzzAnimation.h>
-#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
+#include "DenOfIzGraphics/Animation/OzzAnimation.h"
+#include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
 #include <ranges>
 
 namespace DenOfIz

@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
+#include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "IBufferResource.h"
 #include "ICommandListPool.h"
 #include "ICommandQueue.h"

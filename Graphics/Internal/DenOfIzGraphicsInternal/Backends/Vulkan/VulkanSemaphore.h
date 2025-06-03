@@ -1,6 +1,6 @@
 /*
-Blazar Engine - 3D Game Engine
-Copyright (c) 2020-2021 Muhammed Murat Cengiz
+Den Of Iz - Game/Game Engine
+Copyright (c) 2020-2024 Muhammed Murat Cengiz
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,23 +18,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "Common.h"
+#include "DenOfIzGraphics/Backends/Interface/ISemaphore.h"
+#include "VulkanContext.h"
 
 namespace DenOfIz
 {
 
-    class Utilities
+    class VulkanSemaphore final : public ISemaphore
     {
-        Utilities( ) = default;
+        VulkanContext *m_context;
+        VkSemaphore    m_semaphore{ };
+        uint64_t       m_value = 0;
 
     public:
-        static std::string ReadFile( const std::string &filename );
-        static std::string GetFileDirectory( const std::string &file, bool includeFinalSep = true );
-        static std::string GetFilename( const std::string &file );
-        static std::string CombineDirectories( const std::string &directory, const std::string &file );
-        static std::string AppPath( const std::string &resourcePath );
-        static uint32_t    Align( const uint32_t value, const uint32_t alignment );
-        static uint32_t    HashInts( uint32_t args, ... );
+        explicit VulkanSemaphore( VulkanContext *context );
+        ~VulkanSemaphore( ) override;
+        void Wait( ) /*todo remove*/;
+        void Notify( ) override;
+
+        [[nodiscard]] VkSemaphore GetSemaphore( ) const;
     };
 
 } // namespace DenOfIz

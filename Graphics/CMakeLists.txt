@@ -299,13 +299,14 @@ set(VCPKG_MANIFEST_NO_DEFAULT_FEATURES ON CACHE BOOL "Disable default features")
 add_subdirectory(_ThirdParty/msdf-atlas-gen)
 
 target_include_default_directories(DenOfIzGraphics)
+target_include_directories(DenOfIzGraphics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Internal)
 target_include_directories(DenOfIzGraphics
         PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/clay> $<INSTALL_INTERFACE:_ThirdParty/clay>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/Tiny> $<INSTALL_INTERFACE:_ThirdParty/Tiny>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/include> $<INSTALL_INTERFACE:_ThirdParty/MetalShaderConverter/include>
-        $<BUILD_INTERFACE:${OZZ_ANIMATION_INCLUDE_DIR}> $<INSTALL_INTERFACE:_ThirdParty/ozz-animation/include>
-        $<BUILD_INTERFACE:${MSDF_ATLAS_GEN_INCLUDE_DIR}> $<INSTALL_INTERFACE:_ThirdParty/msdf-atlas-gen>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/clay>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/Tiny>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/include>
+        $<BUILD_INTERFACE:${OZZ_ANIMATION_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${MSDF_ATLAS_GEN_INCLUDE_DIR}>
         ${STB_INCLUDE_DIRS}
 )
 

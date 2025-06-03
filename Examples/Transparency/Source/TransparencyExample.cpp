@@ -15,9 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzExamples/ColoredSphereAsset.h>
-#include <DenOfIzExamples/TransparencyExample.h>
-#include <DenOfIzGraphics/Utilities/Time.h>
+#include "DenOfIzExamples/ColoredSphereAsset.h"
+#include "DenOfIzExamples/TransparencyExample.h"
+#include "DenOfIzGraphics/Utilities/Time.h"
 #include <DirectXMath.h>
 
 using namespace DenOfIz;

@@ -15,18 +15,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzGraphics/Assets/FileSystem/PathResolver.h>
-#include <DenOfIzGraphics/Assets/Font/TextRenderer.h>
-#include <DenOfIzGraphics/Utilities/Common_Asserts.h>
-#include <DirectXMath.h>
+#include "DenOfIzGraphics/Assets/Font/TextRenderer.h"
 #include <unordered_map>
+#include "DenOfIzGraphics/Assets/FileSystem/PathResolver.h"
+#include "DenOfIzGraphics/Utilities/Common_Asserts.h"
 
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Font/Embedded/EmbeddedFonts.h"
 #include "DenOfIzGraphics/Assets/Font/EmbeddedTextRendererShaders.h"
 #include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
-#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
+#include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
+
+#include <DirectXMath.h>
 
 using namespace DenOfIz;
 using namespace DirectX;

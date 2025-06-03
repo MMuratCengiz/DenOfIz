@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DirectXMath.h>
-#include "InteropMath.h"
+#include "DenOfIzGraphics/Utilities/InteropMath.h"
 
 namespace DenOfIz
 {

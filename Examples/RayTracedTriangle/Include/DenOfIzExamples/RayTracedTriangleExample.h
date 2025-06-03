@@ -17,10 +17,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <DenOfIzExamples/IExample.h>
-#include <DenOfIzExamples/QuadPipeline.h>
-#include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
-#include <DenOfIzGraphics/Utilities/Time.h>
+#include "DenOfIzExamples/IExample.h"
+#include "DenOfIzExamples/QuadPipeline.h"
+#include "DenOfIzGraphics/Utilities/Time.h"
 
 namespace DenOfIz
 {

@@ -16,13 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <DenOfIzGraphics/Assets/Import/AssetPathUtilities.h>
 #include <DenOfIzGraphics/Assets/Import/TextureImporter.h>
 #include <DenOfIzGraphics/Assets/Stream/BinaryWriter.h>
-#include <DenOfIzGraphics/Assets/Import/AssetPathUtilities.h>
-#include <algorithm>
 #include <filesystem>
 
-#include "DenOfIzGraphics/Assets/FileSystem/PathResolver.h"
+#include "DenOfIzGraphics/Assets/Bundle/BundleManager.h"
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
+#include "DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h"
+#include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h"
+#include "DenOfIzGraphics/Data/Texture.h"
 
 using namespace DenOfIz;
 

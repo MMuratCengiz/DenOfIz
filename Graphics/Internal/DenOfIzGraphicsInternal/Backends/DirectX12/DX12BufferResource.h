@@ -18,10 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
-#include <DenOfIzGraphics/Utilities/Utilities.h>
+#include "DenOfIzGraphics/Backends/Interface/IBufferResource.h"
 #include "DX12Context.h"
-#include "DX12EnumConverter.h"
 
 namespace DenOfIz
 {

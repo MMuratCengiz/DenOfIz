@@ -1,8 +1,6 @@
 #pragma once
 
 #include <DenOfIzExamples/IExample.h>
-#include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
-#include <DenOfIzGraphics/Renderer/Sync/ResourceTracking.h>
 #include <DenOfIzGraphics/Utilities/StepTimer.h>
 #include <DenOfIzGraphics/Utilities/Time.h>
 #include <RayTracingHlslCompat.h>

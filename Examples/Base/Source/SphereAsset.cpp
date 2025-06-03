@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzExamples/SphereAsset.h>
+#include <../Include/DenOfIzExamples/Assets/SphereAsset.h>
 #include <DenOfIzGraphics/Data/Geometry.h>
 
 using namespace DenOfIz;

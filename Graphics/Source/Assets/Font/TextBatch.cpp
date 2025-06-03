@@ -16,11 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Assets/Font/TextBatch.h>
-
+#include "DenOfIzGraphics/Assets/Font/TextBatch.h"
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h"
 #include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
-#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
+#include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 

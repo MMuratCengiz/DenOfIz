@@ -18,13 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Bundle/BundleManager.h>
-#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
-#include <DenOfIzGraphics/Assets/Import/IAssetImporter.h>
-#include <DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h>
-#include <DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h>
-#include <DenOfIzGraphics/Data/Texture.h>
-#include <DenOfIzGraphics/Utilities/Utilities.h>
+#include "DenOfIzGraphics/Assets/Bundle/BundleManager.h"
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
+#include "DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h"
+#include "DenOfIzGraphics/Data/Texture.h"
 
 namespace DenOfIz
 {

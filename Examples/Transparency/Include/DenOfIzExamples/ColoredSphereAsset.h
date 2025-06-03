@@ -17,10 +17,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <DenOfIzExamples/Interop.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/Data/Geometry.h>
-#include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
+#include "DenOfIzExamples/Interop.h"
+#include "DenOfIzGraphics/Data/BatchResourceCopy.h"
+#include "DenOfIzGraphics/Data/Geometry.h"
+#include "DenOfIzExamples/Assets/AssetData.h"
 #include <DirectXMath.h>
 
 namespace DenOfIz

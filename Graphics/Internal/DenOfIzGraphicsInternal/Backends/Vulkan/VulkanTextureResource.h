@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "../Interface/ITextureResource.h"
+#include "DenOfIzGraphics/Backends/Interface/ITextureResource.h"
 #include "VulkanContext.h"
 
 namespace DenOfIz

@@ -16,10 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzExamples/ColoredSpherePipeline.h>
+#include "DenOfIzExamples/ColoredSpherePipeline.h"
 
 using namespace DenOfIz;
 using namespace DirectX;
+
+uint32_t Align( const uint32_t value, const uint32_t alignment )
+{
+    return ( value + alignment - 1 ) & ~( alignment - 1 );
+}
 
 ColoredSpherePipeline::ColoredSpherePipeline( const GraphicsApi *graphicsApi, ILogicalDevice *device, bool isTransparent, uint32_t numSpheres ) :
     m_device( device ), m_isTransparent( isTransparent ), m_numSpheres( numSpheres )
@@ -105,7 +110,7 @@ ColoredSpherePipeline::ColoredSpherePipeline( const GraphicsApi *graphicsApi, IL
     }
 
     {
-        uint32_t   alignedNumBytes = Utilities::Align( sizeof( ModelMatrixData ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
+        uint32_t   alignedNumBytes = Align( sizeof( ModelMatrixData ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
         BufferDesc modelBufferDesc{ };
         modelBufferDesc.NumBytes   = alignedNumBytes * m_numSpheres;
         modelBufferDesc.Descriptor = BitSet( ResourceDescriptor::UniformBuffer );
@@ -138,7 +143,7 @@ ColoredSpherePipeline::ColoredSpherePipeline( const GraphicsApi *graphicsApi, IL
     }
 
     {
-        uint32_t   alignedNumBytes = Utilities::Align( sizeof( SphereMaterialData ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
+        uint32_t   alignedNumBytes = Align( sizeof( SphereMaterialData ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
         BufferDesc materialBufferDesc{ };
         materialBufferDesc.NumBytes   = alignedNumBytes * m_numSpheres;
         materialBufferDesc.Descriptor = BitSet( ResourceDescriptor::UniformBuffer );
@@ -147,7 +152,7 @@ ColoredSpherePipeline::ColoredSpherePipeline( const GraphicsApi *graphicsApi, IL
         m_materialBuffer              = std::unique_ptr<IBufferResource>( device->CreateBufferResource( materialBufferDesc ) );
         m_materialMappedData          = static_cast<Byte *>( m_materialBuffer->MapMemory( ) );
 
-        uint32_t alignedAlphaNumBytes = Utilities::Align( sizeof( AlphaData ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
+        uint32_t alignedAlphaNumBytes = Align( sizeof( AlphaData ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
         if ( isTransparent )
         {
             BufferDesc alphaBufferDesc{ };
@@ -227,7 +232,7 @@ void ColoredSpherePipeline::UpdateViewProjection( const Camera *camera ) const
 
 void ColoredSpherePipeline::UpdateModel( const uint32_t sphereIndex, const XMFLOAT4X4 &modelMatrix ) const
 {
-    const uint32_t alignedNumBytes = Utilities::Align( sizeof( ModelMatrixData ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
+    const uint32_t alignedNumBytes = Align( sizeof( ModelMatrixData ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
     memcpy( m_modelMappedData + alignedNumBytes * sphereIndex, &modelMatrix, sizeof( XMFLOAT4X4 ) );
 }
 
@@ -246,7 +251,7 @@ void ColoredSpherePipeline::UpdateMaterialColor( const uint32_t sphereIndex, con
         materialData.fresnelPower    = 1.0f;
     }
 
-    const uint32_t alignedNumBytes = Utilities::Align( sizeof( SphereMaterialData ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
+    const uint32_t alignedNumBytes = Align( sizeof( SphereMaterialData ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
     memcpy( m_materialMappedData + alignedNumBytes * sphereIndex, &materialData, sizeof( SphereMaterialData ) );
 }
 

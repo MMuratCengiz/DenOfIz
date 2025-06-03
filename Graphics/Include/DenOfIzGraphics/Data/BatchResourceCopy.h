@@ -20,7 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
 #include <DenOfIzGraphics/Data/Geometry.h>
-#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <future>
 #include "Texture.h"
 

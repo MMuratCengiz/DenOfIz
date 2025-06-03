@@ -18,11 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanLocalRootSignature.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h>
-#include <DenOfIzGraphics/Utilities/Utilities.h>
+#include "DenOfIzGraphics/Backends/Interface/IPipeline.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanContext.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanLocalRootSignature.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanEnumConverter.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 namespace DenOfIz
 {

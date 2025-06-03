@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "../Interface/ICommandList.h"
+#include "DenOfIzGraphics/Backends/Interface/ICommandList.h"
 #include "VulkanContext.h"
 #include "VulkanPipeline.h"
 #include "VulkanResourceBindGroup.h"

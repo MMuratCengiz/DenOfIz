@@ -14,7 +14,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <DenOfIzGraphics/Utilities/Utilities.h>
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 #include <cstdarg>
 #include <filesystem>
 #include <fstream>

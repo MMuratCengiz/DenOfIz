@@ -10,6 +10,7 @@ set(DEN_OF_IZ_EXAMPLES_BASE_SOURCES
         Source/PerMaterialBinding.cpp
         Source/QuadPipeline.cpp
         Source/SphereAsset.cpp
+        Source/InteropMathConverter.cpp # Temporarily duplicated to help with pimplification
 )
 
 add_library(DenOfIzExamples-Base ${DEN_OF_IZ_EXAMPLES_BASE_SOURCES})

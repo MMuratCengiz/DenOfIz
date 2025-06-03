@@ -18,23 +18,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "NullTexture.h"
-#include <DenOfIzExamples/Assets/MaterialData.h>
+#include <DirectXMath.h>
+#include "DenOfIzGraphics/Utilities/InteropMath.h"
 
 namespace DenOfIz
 {
-    class PerMaterialBinding final
+    class DZ_API InteropMathConverter
     {
-        constexpr static uint8_t            RegisterSpace = 1;
-        std::unique_ptr<IResourceBindGroup> m_bindGroup;
-        std::unique_ptr<NullTexture>        m_nullTexture;
-
     public:
-        DZ_EXAMPLES_API                                   PerMaterialBinding( ILogicalDevice *device, IRootSignature *rootSignature );
-        DZ_EXAMPLES_API void                              Update( const MaterialData *materialData ) const;
-        [[nodiscard]] DZ_EXAMPLES_API IResourceBindGroup *BindGroup( ) const;
-
-    private:
-        [[nodiscard]] ITextureResource *OrNull( ITextureResource *texture ) const;
+        static DirectX::XMFLOAT4X4 Float_4x4ToXMFLOAT4X4(const Float_4x4& matrix);
+        static Float_4x4 Float_4x4FromXMFLOAT4X4(const DirectX::XMFLOAT4X4& matrix);
+        static Float_4x4 Float_4X4FromXMMATRIX(const DirectX::XMMATRIX& matrix);
+        static DirectX::XMMATRIX Float_4X4ToXMMATRIX(const Float_4x4& matrix);
     };
 } // namespace DenOfIz

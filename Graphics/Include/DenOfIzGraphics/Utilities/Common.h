@@ -22,7 +22,6 @@
 #include <cstddef>
 #include <cstring>
 #include <functional>
-#include <glog/logging.h>
 #include <iostream>
 #include <memory>
 #include "Common_Apple.h"

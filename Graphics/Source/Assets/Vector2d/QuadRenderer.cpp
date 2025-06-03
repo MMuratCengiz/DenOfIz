@@ -16,11 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Assets/Vector2d/QuadRenderer.h>
-#include <DenOfIzGraphics/Utilities/Common_Asserts.h>
-#include <DenOfIzGraphics/Utilities/InteropMathConverter.h>
-#include <DenOfIzGraphics/Utilities/InteropUtilities.h>
+#include "DenOfIzGraphics/Assets/Vector2d/QuadRenderer.h"
 #include <algorithm>
+#include "../../../Include/DenOfIzGraphics/Utilities/InteropUtilities.h"
+#include "DenOfIzGraphics/Utilities/Common_Asserts.h"
+#include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 

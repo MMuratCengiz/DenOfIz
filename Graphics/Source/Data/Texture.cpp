@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "stb_image.h"
 #endif
 
-#include <DenOfIzGraphics/Utilities/Utilities.h>
+#include <DenOfIzGraphicsInternal/Utilities/Utilities.h>
 #include <filesystem>
 #include <fstream>
 

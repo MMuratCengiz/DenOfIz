@@ -19,9 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "Interop.h"
-#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
+#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
+#include "DenOfIzGraphics/Data/BatchResourceCopy.h"
+#include "DenOfIzExamples/Assets/AssetData.h"
 #include <DirectXMath.h>
 
 using namespace DirectX;

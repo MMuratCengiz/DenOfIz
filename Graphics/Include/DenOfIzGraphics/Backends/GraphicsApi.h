@@ -1,21 +1,13 @@
 #pragma once
 
-#ifdef BUILD_VK
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
-#endif
-
-#ifdef BUILD_DX12
-#include <DenOfIzGraphics/Backends/DirectX12/DX12LogicalDevice.h>
-#endif
-
-#ifdef BUILD_METAL
-#include <DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h>
-#endif
-
 #include "Interface/ILogicalDevice.h"
 
 namespace DenOfIz
 {
+    class VulkanLogicalDevice;
+    class DX12LogicalDevice;
+    class MetalLogicalDevice;
+
     enum class APIPreferenceWindows
     {
         DirectX12,

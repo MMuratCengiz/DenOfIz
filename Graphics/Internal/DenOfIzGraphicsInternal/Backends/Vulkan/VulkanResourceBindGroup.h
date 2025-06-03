@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
-#include <DenOfIzGraphics/Utilities/Storage.h>
+#include "DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h"
+#include "DenOfIzGraphicsInternal/Utilities/Storage.h"
 #include "VulkanContext.h"
 #include "VulkanDescriptorPoolManager.h"
 #include "VulkanRootSignature.h"

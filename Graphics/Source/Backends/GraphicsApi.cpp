@@ -16,7 +16,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/GraphicsApi.h>
+#include "DenOfIzGraphics/Backends/GraphicsApi.h"
+
+#ifdef BUILD_VK
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanLogicalDevice.h"
+#endif
+
+#ifdef BUILD_DX12
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12LogicalDevice.h"
+#endif
+
+#ifdef BUILD_METAL
+#include "DenOfIzGraphics/Backends/Metal/MetalLogicalDevice.h"
+#endif
+
 
 using namespace DenOfIz;
 

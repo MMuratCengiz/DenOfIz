@@ -16,16 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzExamples/AnimatedFoxExample.h>
-#include <DenOfIzGraphics/Animation/AnimationStateManager.h>
-#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
-#include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetReader.h>
-#include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h>
-#include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h>
-#include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
+#include "DenOfIzExamples/AnimatedFoxExample.h"
+#include "DenOfIzGraphics/Animation/AnimationStateManager.h"
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetReader.h"
+#include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
+#include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h"
+#include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
+#include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 
-#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
+#include "DenOfIzExamples/InteropMathConverter.h"
 
 using namespace DirectX;
 using namespace DenOfIz;

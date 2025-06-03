@@ -15,11 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzExamples/BindlessExample.h>
-#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
-#include <DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/Utilities/InteropUtilities.h>
+#include "DenOfIzExamples/BindlessExample.h"
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h"
+#include "DenOfIzGraphics/Data/BatchResourceCopy.h"
+#include "DenOfIzGraphics/Utilities/InteropUtilities.h"
 #include <cmath>
 #include <cstring>
 

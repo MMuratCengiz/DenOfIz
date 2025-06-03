@@ -13,17 +13,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+// Include first due to DirectXMath breaking NULL on external libraries
+#include <assimp/Importer.hpp>
+#include <assimp/material.h>
+#include <assimp/scene.h>
+#include <functional>
+#include <typeinfo>
+#include <unordered_map>
+
 // ReSharper disable CppMemberFunctionMayBeStatic
-#include <DenOfIzGraphics/Assets/Import/AssimpImporter.h>
-#include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetWriter.h>
-#include <DenOfIzGraphics/Assets/Serde/Material/MaterialAssetWriter.h>
-#include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetWriter.h>
-#include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetWriter.h>
-#include <DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h>
-#include <DenOfIzGraphics/Assets/Stream/BinaryWriter.h>
-#include <DenOfIzGraphics/Data/Texture.h>
-#include <DenOfIzGraphics/Assets/Import/AssetPathUtilities.h>
-#include <DenOfIzGraphics/Utilities/Utilities.h>
 #include <DirectXMath.h>
 #include <algorithm>
 #include <assimp/cimport.h>
@@ -32,49 +30,120 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <limits>
 #include <ranges>
 #include <set>
-
-#include "DenOfIzGraphics/Utilities/InteropMathConverter.h"
+#include "DenOfIzGraphics/Assets/Bundle/BundleManager.h"
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphics/Assets/Import/AssetPathUtilities.h"
+#include "DenOfIzGraphics/Assets/Import/AssimpImporter.h"
+#include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h"
+#include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetWriter.h"
+#include "DenOfIzGraphics/Assets/Serde/Material/MaterialAsset.h"
+#include "DenOfIzGraphics/Assets/Serde/Material/MaterialAssetWriter.h"
+#include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAsset.h"
+#include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetWriter.h"
+#include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h"
+#include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetWriter.h"
+#include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h"
+#include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
+#include "DenOfIzGraphics/Data/Texture.h"
+#include "DenOfIzGraphics/Utilities/InteropMath.h"
+#include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
 
 using namespace DenOfIz;
 
-AssimpImporter::AssimpImporter( AssimpImporterDesc desc ) : m_desc( std::move( desc ) )
+class AssimpImporter::Impl
 {
-    m_importerInfo.Name = "Assimp Importer";
-    m_importerInfo.SupportedExtensions.AddElement( ".fbx" );
-    m_importerInfo.SupportedExtensions.AddElement( ".gltf" );
-    m_importerInfo.SupportedExtensions.AddElement( ".glb" );
-    m_importerInfo.SupportedExtensions.AddElement( ".obj" );
-    m_importerInfo.SupportedExtensions.AddElement( ".dae" );
-    m_importerInfo.SupportedExtensions.AddElement( ".blend" );
-    m_importerInfo.SupportedExtensions.AddElement( ".3ds" );
-    m_importerInfo.SupportedExtensions.AddElement( ".ase" );
-    m_importerInfo.SupportedExtensions.AddElement( ".ifc" );
-    m_importerInfo.SupportedExtensions.AddElement( ".xgl" );
-    m_importerInfo.SupportedExtensions.AddElement( ".zgl" );
-    m_importerInfo.SupportedExtensions.AddElement( ".ply" );
-    m_importerInfo.SupportedExtensions.AddElement( ".dxf" );
-    m_importerInfo.SupportedExtensions.AddElement( ".lwo" );
-    m_importerInfo.SupportedExtensions.AddElement( ".lws" );
-    m_importerInfo.SupportedExtensions.AddElement( ".lxo" );
-    m_importerInfo.SupportedExtensions.AddElement( ".stl" );
-    m_importerInfo.SupportedExtensions.AddElement( ".x" );
-    m_importerInfo.SupportedExtensions.AddElement( ".ac" );
-    m_importerInfo.SupportedExtensions.AddElement( ".ms3d" );
+public:
+    ImporterDesc             m_importerInfo;
+    const AssimpImporterDesc m_desc;
+
+    struct ImportContext
+    {
+        const aiScene   *Scene = nullptr;
+        InteropString    SourceFilePath;
+        InteropString    TargetDirectory;
+        InteropString    AssetNamePrefix;
+        AssimpImportDesc Desc;
+        ImporterResult   Result;
+        InteropString    ErrorMessage;
+
+        std::unordered_map<std::string, AssetUri>    MaterialNameToAssetUriMap;
+        std::unordered_map<std::string, AssetUri>    TexturePathToAssetUriMap;
+        std::unordered_map<std::string, uint32_t>    BoneNameToIndexMap;
+        std::unordered_map<std::string, aiMatrix4x4> BoneNameToInverseBindMatrixMap;
+        std::map<int32_t, const aiNode *>            IndexToAssimpNodeMap;
+        std::map<const aiNode *, aiMatrix4x4>        WorldTransformCache;
+        AssetUri                                     SkeletonAssetUri;
+        uint32_t                                     CurrentSubMeshIndex = 0;
+        MeshAsset                                    MeshAsset{ };
+    };
+
+    explicit Impl( AssimpImporterDesc desc ) : m_desc( std::move( desc ) )
+    {
+        m_importerInfo.Name = "Assimp Importer";
+        m_importerInfo.SupportedExtensions.AddElement( ".fbx" );
+        m_importerInfo.SupportedExtensions.AddElement( ".gltf" );
+        m_importerInfo.SupportedExtensions.AddElement( ".glb" );
+        m_importerInfo.SupportedExtensions.AddElement( ".obj" );
+        m_importerInfo.SupportedExtensions.AddElement( ".dae" );
+        m_importerInfo.SupportedExtensions.AddElement( ".blend" );
+        m_importerInfo.SupportedExtensions.AddElement( ".3ds" );
+        m_importerInfo.SupportedExtensions.AddElement( ".ase" );
+        m_importerInfo.SupportedExtensions.AddElement( ".ifc" );
+        m_importerInfo.SupportedExtensions.AddElement( ".xgl" );
+        m_importerInfo.SupportedExtensions.AddElement( ".zgl" );
+        m_importerInfo.SupportedExtensions.AddElement( ".ply" );
+        m_importerInfo.SupportedExtensions.AddElement( ".dxf" );
+        m_importerInfo.SupportedExtensions.AddElement( ".lwo" );
+        m_importerInfo.SupportedExtensions.AddElement( ".lws" );
+        m_importerInfo.SupportedExtensions.AddElement( ".lxo" );
+        m_importerInfo.SupportedExtensions.AddElement( ".stl" );
+        m_importerInfo.SupportedExtensions.AddElement( ".x" );
+        m_importerInfo.SupportedExtensions.AddElement( ".ac" );
+        m_importerInfo.SupportedExtensions.AddElement( ".ms3d" );
+    }
+
+    ImporterResultCode ImportSceneInternal( ImportContext &context );
+    ImporterResultCode ProcessNode( ImportContext &context, const aiNode *node, MeshAssetWriter *meshWriter, SkeletonAsset &skeletonAsset, int32_t parentJointIndex = -1 );
+    ImporterResultCode ProcessMesh( ImportContext &context, const aiMesh *mesh, MeshAssetWriter &assetWriter ) const;
+    void               ProcessMaterial( ImportContext &context, const aiMaterial *material ) const;
+    bool               ProcessTexture( ImportContext &context, const aiMaterial *material, aiTextureType textureType, const InteropString &semanticName, AssetUri &outAssetUri ) const;
+    void               ProcessAnimation( ImportContext &context, const aiAnimation *animation, AssetUri &outAssetUri ) const;
+
+    void ConfigureAssimpImportFlags( const AssimpImportDesc &options, unsigned int &flags, Assimp::Importer &importer ) const;
+    void CalculateMeshBounds( const aiMesh *mesh, float scaleFactor, Float_3 &outMin, Float_3 &outMax ) const;
+
+    void WriteMaterialAsset( ImportContext &context, const MaterialAsset &materialAsset, AssetUri &outAssetUri ) const;
+    void WriteTextureAsset( ImportContext &context, const aiTexture *texture, const std::string &path, const InteropString &semanticName, AssetUri &outAssetUri ) const;
+    void WriteSkeletonAsset( ImportContext &context, const SkeletonAsset &skeletonAsset ) const;
+    void WriteAnimationAsset( ImportContext &context, const AnimationAsset &animationAsset, AssetUri &outAssetUri ) const;
+
+    Float_4x4 ConvertMatrix( const aiMatrix4x4 &matrix ) const;
+    Float_4   ConvertQuaternion( const aiQuaternion &quat ) const;
+    Float_3   ConvertVector3( const aiVector3D &vec ) const;
+    Float_2   ConvertVector2( const aiVector3D &vec ) const;
+    Float_4   ConvertColor( const aiColor4D &color ) const;
+
+    void RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri ) const;
+    void GenerateMeshLODs( const ImportContext &context, MeshAssetWriter &meshWriter ) const;
+};
+
+AssimpImporter::AssimpImporter( AssimpImporterDesc desc ) : m_pImpl( std::make_unique<Impl>( std::move( desc ) ) )
+{
 }
 
 AssimpImporter::~AssimpImporter( ) = default;
 
 ImporterDesc AssimpImporter::GetImporterInfo( ) const
 {
-    return m_importerInfo;
+    return m_pImpl->m_importerInfo;
 }
 
 bool AssimpImporter::CanProcessFileExtension( const InteropString &extension ) const
 {
     const InteropString lowerExt = extension.ToLower( );
-    for ( size_t i = 0; i < m_importerInfo.SupportedExtensions.NumElements( ); ++i )
+    for ( size_t i = 0; i < m_pImpl->m_importerInfo.SupportedExtensions.NumElements( ); ++i )
     {
-        if ( m_importerInfo.SupportedExtensions.GetElement( i ).Equals( lowerExt ) )
+        if ( m_pImpl->m_importerInfo.SupportedExtensions.GetElement( i ).Equals( lowerExt ) )
         {
             return true;
         }
@@ -95,11 +164,11 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
 {
     LOG( INFO ) << "Starting Assimp import for file: " << desc.SourceFilePath.Get( );
 
-    ImportContext context;
+    Impl::ImportContext context;
     context.SourceFilePath  = desc.SourceFilePath;
     context.TargetDirectory = desc.TargetDirectory;
     context.AssetNamePrefix = desc.AssetNamePrefix;
-    context.Desc            = *static_cast<AssimpImportDesc*>( desc.Desc );
+    context.Desc            = *static_cast<AssimpImportDesc *>( desc.Desc );
 
     if ( !FileIO::FileExists( context.SourceFilePath ) )
     {
@@ -123,7 +192,7 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
 
     Assimp::Importer importer;
     unsigned int     flags = 0;
-    ConfigureAssimpImportFlags( context.Desc, flags, importer );
+    m_pImpl->ConfigureAssimpImportFlags( context.Desc, flags, importer );
 
     LOG( INFO ) << "Assimp reading file: " << context.SourceFilePath.Get( );
     context.Scene = importer.ReadFile( FileIO::GetResourcePath( context.SourceFilePath ).Get( ), flags );
@@ -136,7 +205,7 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
         return context.Result;
     }
 
-    context.Result.ResultCode = ImportSceneInternal( context );
+    context.Result.ResultCode = m_pImpl->ImportSceneInternal( context );
 
     if ( context.Result.ResultCode == ImporterResultCode::Success )
     {
@@ -150,7 +219,7 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
     return context.Result;
 }
 
-ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
+ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &context )
 {
     MeshAsset &meshAsset = context.MeshAsset;
     meshAsset.Name       = AssetPathUtilities::GetAssetNameFromFilePath( context.SourceFilePath );
@@ -353,7 +422,8 @@ ImporterResultCode AssimpImporter::ImportSceneInternal( ImportContext &context )
     return ImporterResultCode::Success;
 }
 
-ImporterResultCode AssimpImporter::ProcessNode( ImportContext &context, const aiNode *node, MeshAssetWriter *meshWriter, SkeletonAsset &skeletonAsset, int32_t parentJointIndex )
+ImporterResultCode AssimpImporter::Impl::ProcessNode( ImportContext &context, const aiNode *node, MeshAssetWriter *meshWriter, SkeletonAsset &skeletonAsset,
+                                                      int32_t parentJointIndex )
 {
     if ( !node )
     {
@@ -475,7 +545,7 @@ ImporterResultCode AssimpImporter::ProcessNode( ImportContext &context, const ai
     return ImporterResultCode::Success;
 }
 
-ImporterResultCode AssimpImporter::ProcessMesh( ImportContext &context, const aiMesh *mesh, MeshAssetWriter &assetWriter )
+ImporterResultCode AssimpImporter::Impl::ProcessMesh( ImportContext &context, const aiMesh *mesh, MeshAssetWriter &assetWriter ) const
 {
     if ( !mesh->HasFaces( ) || !mesh->HasPositions( ) )
     {
@@ -652,7 +722,7 @@ ImporterResultCode AssimpImporter::ProcessMesh( ImportContext &context, const ai
     return ImporterResultCode::Success;
 }
 
-void AssimpImporter::ProcessMaterial( ImportContext &context, const aiMaterial *material )
+void AssimpImporter::Impl::ProcessMaterial( ImportContext &context, const aiMaterial *material ) const
 {
     AssetUri          assetUri;
     const std::string matNameStr = material->GetName( ).C_Str( );
@@ -718,7 +788,8 @@ void AssimpImporter::ProcessMaterial( ImportContext &context, const aiMaterial *
     WriteMaterialAsset( context, matAsset, assetUri );
 }
 
-bool AssimpImporter::ProcessTexture( ImportContext &context, const aiMaterial *material, const aiTextureType textureType, const InteropString &semanticName, AssetUri &outAssetUri )
+bool AssimpImporter::Impl::ProcessTexture( ImportContext &context, const aiMaterial *material, const aiTextureType textureType, const InteropString &semanticName,
+                                           AssetUri &outAssetUri ) const
 {
     aiString aiPath;
     if ( material->GetTexture( textureType, 0, &aiPath ) != AI_SUCCESS || aiPath.length == 0 )
@@ -755,7 +826,7 @@ bool AssimpImporter::ProcessTexture( ImportContext &context, const aiMaterial *m
     return true;
 }
 
-void AssimpImporter::ProcessAnimation( ImportContext &context, const aiAnimation *animation, AssetUri &outAssetUri )
+void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAnimation *animation, AssetUri &outAssetUri ) const
 {
     const std::string animNameStr = animation->mName.C_Str( );
     InteropString     animName    = AssetPathUtilities::SanitizeAssetName( animNameStr.c_str( ) );
@@ -839,7 +910,7 @@ void AssimpImporter::ProcessAnimation( ImportContext &context, const aiAnimation
     LOG( INFO ) << "Successfully wrote animation asset: " << outAssetUri.ToInteropString( ).Get( );
 }
 
-void AssimpImporter::CalculateMeshBounds( const aiMesh *mesh, const float scaleFactor, Float_3 &outMin, Float_3 &outMax )
+void AssimpImporter::Impl::CalculateMeshBounds( const aiMesh *mesh, const float scaleFactor, Float_3 &outMin, Float_3 &outMax ) const
 {
     if ( !mesh || !mesh->HasPositions( ) || mesh->mNumVertices == 0 )
     {
@@ -869,13 +940,13 @@ void AssimpImporter::CalculateMeshBounds( const aiMesh *mesh, const float scaleF
     }
 }
 
-void AssimpImporter::GenerateMeshLODs( const ImportContext & /*context*/, MeshAssetWriter & /*meshWriter*/ )
+void AssimpImporter::Impl::GenerateMeshLODs( const ImportContext & /*context*/, MeshAssetWriter & /*meshWriter*/ ) const
 {
     // TODO Implement this with MeshOptimizer
     LOG( WARNING ) << "Not yet implemented";
 }
 
-void AssimpImporter::ConfigureAssimpImportFlags( const AssimpImportDesc &options, unsigned int &flags, Assimp::Importer &importer )
+void AssimpImporter::Impl::ConfigureAssimpImportFlags( const AssimpImportDesc &options, unsigned int &flags, Assimp::Importer &importer ) const
 {
     flags |= aiProcess_ImproveCacheLocality;
     flags |= aiProcess_SortByPType;
@@ -951,7 +1022,7 @@ void AssimpImporter::ConfigureAssimpImportFlags( const AssimpImportDesc &options
     }
 }
 
-void AssimpImporter::WriteMaterialAsset( ImportContext &context, const MaterialAsset &materialAsset, AssetUri &outAssetUri )
+void AssimpImporter::Impl::WriteMaterialAsset( ImportContext &context, const MaterialAsset &materialAsset, AssetUri &outAssetUri ) const
 {
     const InteropString assetFilename   = AssetPathUtilities::CreateAssetFileName( context.AssetNamePrefix, materialAsset.Name, "Material", MaterialAsset::Extension( ) );
     const InteropString targetAssetPath = FileIO::GetAbsolutePath( InteropString( context.TargetDirectory ).Append( "/" ).Append( assetFilename.Get( ) ) );
@@ -987,7 +1058,7 @@ TextureExtension GetTextureExtension( const aiTexture *texture, const InteropArr
     return texExtension;
 }
 
-void AssimpImporter::WriteTextureAsset( ImportContext &context, const aiTexture *texture, const std::string &path, const InteropString &semanticName, AssetUri &outAssetUri )
+void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTexture *texture, const std::string &path, const InteropString &semanticName, AssetUri &outAssetUri ) const
 {
     InteropString texName;
     if ( texture != nullptr )
@@ -1031,19 +1102,19 @@ void AssimpImporter::WriteTextureAsset( ImportContext &context, const aiTexture 
         sourceTexture = std::make_unique<Texture>( InteropString( path.c_str( ) ) );
     }
 
-    texAsset.Width        = sourceTexture->GetWidth();
-    texAsset.Height       = sourceTexture->GetHeight();
-    texAsset.Depth        = sourceTexture->GetDepth();
-    texAsset.Format       = sourceTexture->GetFormat();
-    texAsset.Dimension    = sourceTexture->GetDimension();
-    texAsset.MipLevels    = sourceTexture->GetMipLevels();
-    texAsset.ArraySize    = sourceTexture->GetArraySize();
-    texAsset.BitsPerPixel = sourceTexture->GetBitsPerPixel();
-    texAsset.BlockSize    = sourceTexture->GetBlockSize();
-    texAsset.RowPitch     = sourceTexture->GetRowPitch();
-    texAsset.NumRows      = sourceTexture->GetNumRows();
-    texAsset.SlicePitch   = sourceTexture->GetSlicePitch();
-    texAsset.Mips.Resize( sourceTexture->GetMipLevels() * sourceTexture->GetArraySize() );
+    texAsset.Width        = sourceTexture->GetWidth( );
+    texAsset.Height       = sourceTexture->GetHeight( );
+    texAsset.Depth        = sourceTexture->GetDepth( );
+    texAsset.Format       = sourceTexture->GetFormat( );
+    texAsset.Dimension    = sourceTexture->GetDimension( );
+    texAsset.MipLevels    = sourceTexture->GetMipLevels( );
+    texAsset.ArraySize    = sourceTexture->GetArraySize( );
+    texAsset.BitsPerPixel = sourceTexture->GetBitsPerPixel( );
+    texAsset.BlockSize    = sourceTexture->GetBlockSize( );
+    texAsset.RowPitch     = sourceTexture->GetRowPitch( );
+    texAsset.NumRows      = sourceTexture->GetNumRows( );
+    texAsset.SlicePitch   = sourceTexture->GetSlicePitch( );
+    texAsset.Mips.Resize( sourceTexture->GetMipLevels( ) * sourceTexture->GetArraySize( ) );
 
     size_t mipIndex = 0;
     // Have to double stream to write metadata correctly first
@@ -1057,7 +1128,7 @@ void AssimpImporter::WriteTextureAsset( ImportContext &context, const aiTexture 
             const size_t mipOffset = mipData.DataOffset;
 
             InteropArray<Byte> mipDataBuffer;
-            mipDataBuffer.MemCpy( sourceTexture->GetData().Data( ) + mipOffset, mipSize );
+            mipDataBuffer.MemCpy( sourceTexture->GetData( ).Data( ) + mipOffset, mipSize );
             assetWriter.AddPixelData( mipDataBuffer, mipData.MipIndex, mipData.ArrayIndex );
         } );
 
@@ -1066,7 +1137,7 @@ void AssimpImporter::WriteTextureAsset( ImportContext &context, const aiTexture 
     context.TexturePathToAssetUriMap[ targetAssetPath.Get( ) ] = outAssetUri;
 }
 
-void AssimpImporter::WriteSkeletonAsset( ImportContext &context, const SkeletonAsset &skeletonAsset )
+void AssimpImporter::Impl::WriteSkeletonAsset( ImportContext &context, const SkeletonAsset &skeletonAsset ) const
 {
     const InteropString assetFilename   = AssetPathUtilities::CreateAssetFileName( context.AssetNamePrefix, skeletonAsset.Name, "Skeleton", SkeletonAsset::Extension( ) );
     const InteropString targetAssetPath = FileIO::GetAbsolutePath( InteropString( context.TargetDirectory ).Append( "/" ).Append( assetFilename.Get( ) ) );
@@ -1080,7 +1151,7 @@ void AssimpImporter::WriteSkeletonAsset( ImportContext &context, const SkeletonA
     RegisterCreatedAsset( context, context.SkeletonAssetUri );
 }
 
-void AssimpImporter::WriteAnimationAsset( ImportContext &context, const AnimationAsset &animationAsset, AssetUri &outAssetUri )
+void AssimpImporter::Impl::WriteAnimationAsset( ImportContext &context, const AnimationAsset &animationAsset, AssetUri &outAssetUri ) const
 {
     const InteropString assetFilename   = AssetPathUtilities::CreateAssetFileName( context.AssetNamePrefix, animationAsset.Name, "Animation", AnimationAsset::Extension( ) );
     const InteropString targetAssetPath = FileIO::GetAbsolutePath( InteropString( context.TargetDirectory ).Append( "/" ).Append( assetFilename.Get( ) ) );
@@ -1094,7 +1165,7 @@ void AssimpImporter::WriteAnimationAsset( ImportContext &context, const Animatio
     RegisterCreatedAsset( context, outAssetUri );
 }
 
-Float_4x4 AssimpImporter::ConvertMatrix( const aiMatrix4x4 &matrix ) const
+Float_4x4 AssimpImporter::Impl::ConvertMatrix( const aiMatrix4x4 &matrix ) const
 {
     // Both of these are row major, but their layouts don't quite match, Float_4X4 is analogous to XMFLOAT4X4 and 1=1 layout mapping returns an invalid matrix
     // Decomposing and recomposing seem like the safest bet
@@ -1115,26 +1186,26 @@ Float_4x4 AssimpImporter::ConvertMatrix( const aiMatrix4x4 &matrix ) const
     return InteropMathConverter::Float_4X4FromXMMATRIX( matrixXM );
 }
 
-Float_4 AssimpImporter::ConvertQuaternion( const aiQuaternion &quat )
+Float_4 AssimpImporter::Impl::ConvertQuaternion( const aiQuaternion &quat ) const
 {
     return { quat.x, quat.y, quat.z, quat.w };
 }
-Float_3 AssimpImporter::ConvertVector3( const aiVector3D &vec )
+Float_3 AssimpImporter::Impl::ConvertVector3( const aiVector3D &vec ) const
 {
     return { vec.x, vec.y, vec.z };
 }
-Float_2 AssimpImporter::ConvertVector2( const aiVector3D &vec )
+Float_2 AssimpImporter::Impl::ConvertVector2( const aiVector3D &vec ) const
 {
     return { vec.x, vec.y };
 }
-Float_4 AssimpImporter::ConvertColor( const aiColor4D &color )
+Float_4 AssimpImporter::Impl::ConvertColor( const aiColor4D &color ) const
 {
     return { color.r, color.g, color.b, color.a };
 }
 
 // File path utility methods moved to FilePathUtilities class
 
-void AssimpImporter::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri )
+void AssimpImporter::Impl::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri ) const
 {
     context.Result.CreatedAssets.AddElement( assetUri );
 }

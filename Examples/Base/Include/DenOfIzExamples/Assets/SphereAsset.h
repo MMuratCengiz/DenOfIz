@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "Interop.h"
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/Renderer/Assets/AssetData.h>
+#include "DenOfIzGraphics/Data/BatchResourceCopy.h"
+#include "DenOfIzExamples/Assets/AssetData.h"
 #include <DirectXMath.h>
+#include "../Interop.h"
 
 namespace DenOfIz
 {
@@ -29,7 +29,6 @@ namespace DenOfIz
 
     class SphereAsset final
     {
-    private:
         XMFLOAT4X4                       m_modelMatrix = { };
         std::unique_ptr<IBufferResource> m_modelBuffer;
         std::unique_ptr<AssetData>       m_assetData;
