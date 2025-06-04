@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #import "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalShaderBindingTable.h"
 #import "DenOfIzGraphicsInternal/Backends/Metal/RayTracing/MetalTopLevelAS.h"
 #import "DenOfIzGraphicsInternal/Utilities/Utilities.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 

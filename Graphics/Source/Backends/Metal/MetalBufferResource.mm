@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #import "DenOfIzGraphicsInternal/Backends/Metal/MetalBufferResource.h"
 #import "DenOfIzGraphicsInternal/Backends/Metal/MetalEnumConverter.h"
 #include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
