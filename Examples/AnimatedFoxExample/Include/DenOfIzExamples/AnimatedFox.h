@@ -1,10 +1,10 @@
 #pragma once
 
-#include <DenOfIzExamples/IExample.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/Renderer/Common/CommandListRing.h>
-#include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
-#include <DenOfIzGraphics/Utilities/Time.h>
+#include "DenOfIzExamples/IExample.h"
+#include "DenOfIzGraphics/Data/BatchResourceCopy.h"
+#include "DenOfIzGraphics/Renderer/Common/CommandListRing.h"
+#include "DenOfIzGraphics/Renderer/Graph/RenderGraph.h"
+#include "DenOfIzGraphics/Utilities/Time.h"
 #include <RayTracingHlslCompat.h>
 
 namespace DenOfIz

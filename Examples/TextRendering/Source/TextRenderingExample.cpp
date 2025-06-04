@@ -23,8 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  * It works by generating distance fields that represent the shape of each glyph and
  * using a special shader to render them with sharp edges.
  */
-#include <DenOfIzExamples/TextRenderingExample.h>
-
+#include "DenOfIzExamples/TextRenderingExample.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Import/FontImporter.h"
 #include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"

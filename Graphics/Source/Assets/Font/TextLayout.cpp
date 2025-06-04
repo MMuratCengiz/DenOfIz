@@ -17,6 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Assets/Font/TextLayout.h>
+#include <DenOfIzGraphicsInternal/Assets/Font/FontImpl.h>
+#include <DenOfIzGraphicsInternal/Utilities/Logging.h>
 #include <harfbuzz/hb-ft.h>
 #include <harfbuzz/hb.h>
 #include <unordered_map>
@@ -68,24 +70,27 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
 
     const std::string    utf8Text  = shapeDesc.Text.Get( );
     const std::u32string utf32Text = Utf8ToUtf32( utf8Text );
-    const FT_Face        face      = m_font->FTFace( );
+    FT_Face              face      = m_font->GetFTFace( );
 
     if ( const FT_Error error = FT_Set_Char_Size( face, 0, shapeDesc.FontSize * 64, 0, 0 ) )
     {
         LOG( ERROR ) << "Failed to set font size: " << FT_Error_String( error );
         return;
     }
-    hb_font_t *hbFont = hb_ft_font_create_referenced( face );
+    
+    // Use the cached HarfBuzz font from Font
+    hb_font_t *hbFont = m_font->GetHBFont( );
     if ( !hbFont )
     {
-        LOG( ERROR ) << "Failed to create HarfBuzz font";
+        LOG( ERROR ) << "HarfBuzz font not available";
+        return;
     }
 
     hb_buffer_t *buffer = hb_buffer_create( );
     if ( !hb_buffer_allocation_successful( buffer ) )
     {
-        hb_font_destroy( hbFont );
         LOG( ERROR ) << "Failed to allocate HarfBuzz buffer";
+        return;
     }
 
     hb_buffer_reset( buffer );
@@ -129,7 +134,7 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
     {
         LOG( ERROR ) << "No glyph positions returned from HarfBuzz shaping";
         hb_buffer_destroy( buffer );
-        hb_font_destroy( hbFont );
+        return;
     }
 
     constexpr float posScale = 1.0f / 64.0f; // HarfBuzz units to pixels, HarfBuzz uses 26.6 fixed-point format
@@ -171,10 +176,9 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
     const float baseSize       = static_cast<float>( m_font->Asset( )->InitialFontSize );
     const float targetSize     = static_cast<float>( shapeDesc.FontSize );
     const float effectiveScale = targetSize / baseSize;
-    const auto &metrics        = m_font->m_desc.FontAsset->Metrics;
+    const auto &metrics        = m_font->Asset( )->Metrics;
     m_totalHeight              = static_cast<float>( metrics.Ascent + metrics.Descent ) * effectiveScale;
     hb_buffer_destroy( buffer );
-    hb_font_destroy( hbFont );
 }
 
 void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateDesc ) const

@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
+#include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include <DirectXMath.h>
 #include "DenOfIzGraphics/Input/Event.h"
 #include "Interop.h"

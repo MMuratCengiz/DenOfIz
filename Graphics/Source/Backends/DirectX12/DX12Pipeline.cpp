@@ -16,10 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/DirectX12/DX12InputLayout.h>
-#include <DenOfIzGraphics/Backends/DirectX12/DX12Pipeline.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h>
-#include <DenOfIzGraphics/Utilities/Storage.h>
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12InputLayout.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Pipeline.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h"
+#include "DenOfIzGraphicsInternal/Utilities/Storage.h"
 #include <codecvt>
 #include <directx/d3dx12.h>
 #include <utility>

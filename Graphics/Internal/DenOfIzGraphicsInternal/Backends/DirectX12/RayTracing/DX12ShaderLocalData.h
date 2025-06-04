@@ -18,18 +18,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/DirectX12/DX12Context.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h>
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalData.h>
+#include "DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalData.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Context.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h"
 
 namespace DenOfIz
 {
     class DX12ShaderLocalData final : public IShaderLocalData
     {
-        DX12Context               *m_context;
-        ShaderLocalDataDesc        m_desc;
+        DX12Context            *m_context;
+        ShaderLocalDataDesc     m_desc;
         DX12LocalRootSignature *m_layout;
-        std::vector<Byte>          m_data;
+        std::vector<Byte>       m_data;
 
     public:
         DX12ShaderLocalData( DX12Context *context, const ShaderLocalDataDesc &desc );

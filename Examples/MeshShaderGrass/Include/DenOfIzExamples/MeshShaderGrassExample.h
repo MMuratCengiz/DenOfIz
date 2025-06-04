@@ -18,14 +18,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzExamples/DefaultRenderPipeline.h>
-#include <DenOfIzExamples/IExample.h>
-#include <DenOfIzExamples/PerFrameBinding.h>
-#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
-#include <DenOfIzGraphics/Utilities/StepTimer.h>
-#include <DenOfIzGraphics/Utilities/Time.h>
+#include "DenOfIzExamples/DefaultRenderPipeline.h"
+#include "DenOfIzExamples/IExample.h"
+#include "DenOfIzExamples/PerFrameBinding.h"
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphics/Utilities/StepTimer.h"
+#include "DenOfIzGraphics/Utilities/Time.h"
 // DXMath to the end for weird osx error with nulls
-#include <DenOfIzExamples/Camera.h>
+#include "DenOfIzExamples/Camera.h"
 
 namespace DenOfIz
 {

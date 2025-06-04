@@ -16,11 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzExamples/IExample.h>
-#include <DenOfIzExamples/Main.h>
-#include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
-#include <DenOfIzGraphics/Backends/GraphicsApi.h>
-
+#include "DenOfIzExamples/Main.h"
+#include "DenOfIzExamples/IExample.h"
+#include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
+#include "DenOfIzGraphics/Backends/GraphicsApi.h"
 #include "DenOfIzGraphics/Input/InputSystem.h"
 #include "DenOfIzGraphics/Input/Window.h"
 
@@ -57,9 +56,9 @@ int DenOfIz::Main( IExample *example )
     auto       logicalDevice = std::unique_ptr<ILogicalDevice>( gApi->CreateAndLoadOptimalLogicalDevice( ) );
 
     example->Init( &graphicsWindowHandle, gApi.get( ), logicalDevice.get( ) );
-    auto      running = true;
-    Event event;
-    InputSystem inputSystem{};
+    auto        running = true;
+    Event       event;
+    InputSystem inputSystem{ };
     while ( running )
     {
         while ( InputSystem::PollEvent( event ) )

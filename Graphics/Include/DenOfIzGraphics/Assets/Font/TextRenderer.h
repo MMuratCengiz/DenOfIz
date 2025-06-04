@@ -17,14 +17,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Font/Font.h>
-#include <DenOfIzGraphics/Assets/Font/TextLayout.h>
-#include <DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h>
-#include <DenOfIzGraphics/Backends/GraphicsApi.h>
-#include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
-#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
-#include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
-#include <DenOfIzGraphics/Renderer/Sync/ResourceTracking.h>
+#include "DenOfIzGraphics/Assets/Font/Font.h"
+#include "DenOfIzGraphics/Assets/Font/TextLayout.h"
+#include "DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h"
+#include "DenOfIzGraphics/Backends/GraphicsApi.h"
+#include "DenOfIzGraphics/Backends/Interface/ICommandList.h"
+#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
+#include "DenOfIzGraphics/Backends/Interface/IPipeline.h"
+#include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
 
 #include <DirectXMath.h>
 

@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "gtest/gtest.h"
 
-#include <DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h>
-#include <DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h>
-#include <DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h>
+#include "DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h"
+#include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h"
+#include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h"
 
 using namespace DenOfIz;
 

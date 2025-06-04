@@ -17,14 +17,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Assets/Font/Font.h>
+#include <DenOfIzGraphicsInternal/Assets/Font/FontImpl.h>
+#include <DenOfIzGraphicsInternal/Utilities/Logging.h>
 
 using namespace DenOfIz;
 
-Font::Font( const FT_Library library, const FontDesc &desc ) : m_ftLibrary( library ), m_desc( desc )
+Font::Font( FT_Library ftLibrary, const FontDesc &desc ) : m_impl( std::make_unique<FontImpl>( ftLibrary ) ), m_desc( desc )
 {
     const Byte    *data         = desc.FontAsset->Data.Data( );
     const uint64_t dataNumBytes = desc.FontAsset->DataNumBytes;
-    if ( FT_New_Memory_Face( m_ftLibrary, data, dataNumBytes, 0, &m_face ) )
+    if ( FT_New_Memory_Face( m_impl->m_ftLibrary, data, dataNumBytes, 0, &m_impl->m_face ) )
     {
         LOG( ERROR ) << "Failed to load font: " << desc.FontAsset->Uri.Path.Get( );
     }
@@ -36,15 +38,27 @@ Font::Font( const FT_Library library, const FontDesc &desc ) : m_ftLibrary( libr
     }
 
     const uint32_t initialFontSize = m_desc.FontAsset->InitialFontSize * 64;
-    if ( const FT_Error error = FT_Set_Char_Size( m_face, 0, initialFontSize, 0, 0 ) )
+    if ( const FT_Error error = FT_Set_Char_Size( m_impl->m_face, 0, initialFontSize, 0, 0 ) )
     {
         LOG( ERROR ) << "Failed to set font size: " << FT_Error_String( error );
     }
+
+    // Create the HarfBuzz font once and cache it
+    m_impl->m_hbFont = hb_ft_font_create_referenced( m_impl->m_face );
+    if ( !m_impl->m_hbFont )
+    {
+        LOG( ERROR ) << "Failed to create HarfBuzz font";
+    }
 }
 
-FT_Face Font::FTFace( ) const
+FT_Face Font::GetFTFace( ) const
 {
-    return m_face;
+    return m_impl->m_face;
+}
+
+hb_font_t *Font::GetHBFont( ) const
+{
+    return m_impl->m_hbFont;
 }
 
 FontAsset *Font::Asset( ) const
@@ -52,13 +66,7 @@ FontAsset *Font::Asset( ) const
     return m_desc.FontAsset;
 }
 
-Font::~Font( )
-{
-    if ( m_face )
-    {
-        FT_Done_Face( m_face );
-    }
-}
+Font::~Font( ) = default;
 
 FontGlyph *Font::GetGlyph( const uint32_t codePoint )
 {

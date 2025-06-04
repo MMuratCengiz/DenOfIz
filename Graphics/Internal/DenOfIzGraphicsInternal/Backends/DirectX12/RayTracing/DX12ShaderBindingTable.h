@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/DirectX12/DX12BufferResource.h>
-#include <DenOfIzGraphics/Backends/DirectX12/DX12Context.h>
-#include <DenOfIzGraphics/Backends/DirectX12/DX12Pipeline.h>
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderBindingTable.h>
+#include "DenOfIzGraphics/Backends/Interface/RayTracing/IShaderBindingTable.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12BufferResource.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Context.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Pipeline.h"
 
 namespace DenOfIz
 {
@@ -40,11 +40,11 @@ namespace DenOfIz
         D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE m_hitGroupShaderRange{ };
         D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE m_missShaderRange{ };
 
-        uint32_t m_missGroupOffset   = 0;
-        uint32_t m_hitGroupOffset    = 0;
-        uint32_t m_rayGenNumBytes    = 0;
-        uint32_t m_missNumBytes = 0;
-        uint32_t m_hitGroupNumBytes  = 0;
+        uint32_t m_missGroupOffset  = 0;
+        uint32_t m_hitGroupOffset   = 0;
+        uint32_t m_rayGenNumBytes   = 0;
+        uint32_t m_missNumBytes     = 0;
+        uint32_t m_hitGroupNumBytes = 0;
 
         ShaderBindingTableDebugData m_debugData;
 

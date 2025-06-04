@@ -17,11 +17,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Serde/Font/FontAsset.h>
-#include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
-#include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
-#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
+#include "DenOfIzGraphics/Assets/Serde/Font/FontAsset.h"
+#include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
+#include "DenOfIzGraphics/Backends/Interface/ICommandList.h"
+#include "DenOfIzGraphics/Backends/Interface/ITextureResource.h"
+#include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 
 #include "DenOfIzGraphics/Assets/Font/TextRenderer.h"
 

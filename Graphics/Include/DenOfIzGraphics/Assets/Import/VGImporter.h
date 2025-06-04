@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Import/IAssetImporter.h>
-#include <DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h>
-#include <DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h>
+#include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
+#include "DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h"
+#include "DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h"
 
 namespace DenOfIz
 {

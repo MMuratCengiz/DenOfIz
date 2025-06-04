@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "gtest/gtest.h"
 
-#include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAsset.h>
-#include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h>
-#include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetWriter.h>
+#include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAsset.h"
+#include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
+#include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetWriter.h"
 #include "../../TestComparators.h"
 
 using namespace DenOfIz;

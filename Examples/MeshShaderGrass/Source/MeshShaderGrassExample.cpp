@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzExamples/MeshShaderGrassExample.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
+#include "DenOfIzExamples/MeshShaderGrassExample.h"
+#include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 
 using namespace DirectX;
 using namespace DenOfIz;

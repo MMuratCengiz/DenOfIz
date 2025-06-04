@@ -16,15 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Assets/Bundle/BundleManager.h>
-#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
-#include <DenOfIzGraphics/Assets/Import/AssimpImporter.h>
-#include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetReader.h>
-#include <DenOfIzGraphics/Assets/Serde/Material/MaterialAssetReader.h>
-#include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h>
-#include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h>
-#include <DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h>
-#include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
+#include 'DenOfIzGraphics/Assets/Bundle/BundleManager.h"
+#include 'DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include 'DenOfIzGraphics/Assets/Import/AssimpImporter.h"
+#include 'DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetReader.h"
+#include 'DenOfIzGraphics/Assets/Serde/Material/MaterialAssetReader.h"
+#include 'DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
+#include 'DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h"
+#include 'DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h"
+#include 'DenOfIzGraphics/Assets/Stream/BinaryReader.h"
 #include <filesystem>
 #include <fstream>
 #include "gtest/gtest.h"

@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
-#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
-#include <DenOfIzGraphics/Utilities/Interop.h>
+#include "DenOfIzGraphics/Backends/Interface/IBufferResource.h"
+#include "DenOfIzGraphics/Backends/Interface/ITextureResource.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 #include "ILocalRootSignature.h"
 
 namespace DenOfIz

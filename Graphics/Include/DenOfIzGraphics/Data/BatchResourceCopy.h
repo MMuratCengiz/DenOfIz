@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 #include "DenOfIzGraphics/Data/Geometry.h"
-#include <DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h>
+#include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h"
 #include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
 
 namespace DenOfIz

@@ -17,7 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <../../../../Graphics/Internal/DenOfIzGraphicsInternal/UI/ClayRenderer.h>
 #include <DenOfIzExamples/IExample.h>
 #include <DenOfIzGraphics/Assets/Font/FontLibrary.h>
 #include <DenOfIzGraphics/Assets/Font/TextRenderer.h>

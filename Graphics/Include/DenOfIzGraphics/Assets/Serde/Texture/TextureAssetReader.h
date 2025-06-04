@@ -18,11 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
+#include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
 #include "TextureAsset.h"
 
-#include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
-#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
+#include "DenOfIzGraphics/Backends/Interface/ICommandList.h"
+#include "DenOfIzGraphics/Backends/Interface/ITextureResource.h"
 
 namespace DenOfIz
 {

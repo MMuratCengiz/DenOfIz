@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/DirectX12/DX12BufferResource.h>
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IBottomLevelAS.h>
+#include "DenOfIzGraphics/Backends/Interface/RayTracing/IBottomLevelAS.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12BufferResource.h"
 
 namespace DenOfIz
 {

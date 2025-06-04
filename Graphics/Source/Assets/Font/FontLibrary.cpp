@@ -17,6 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <DenOfIzGraphics/Assets/Font/FontLibrary.h>
+#include <DenOfIzGraphicsInternal/Utilities/Logging.h>
+#include <freetype/freetype.h>
 
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h"
 
@@ -27,6 +29,18 @@ FontLibrary::FontLibrary( )
     if ( const FT_Error error = FT_Init_FreeType( &m_ftLibrary ) )
     {
         LOG( ERROR ) << "Failed to initialize FreeType library: " << FT_Error_String( error );
+    }
+}
+
+FontLibrary::~FontLibrary( )
+{
+    // Clear fonts before destroying FreeType library
+    m_fonts.clear( );
+    m_fontStore.clear( );
+    
+    if ( m_ftLibrary )
+    {
+        FT_Done_FreeType( m_ftLibrary );
     }
 }
 

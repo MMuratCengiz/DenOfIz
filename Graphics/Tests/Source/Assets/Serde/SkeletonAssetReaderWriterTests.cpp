@@ -2,9 +2,9 @@
 
 #include "gtest/gtest.h"
 
-#include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h>
-#include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h>
-#include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetWriter.h>
+#include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h"
+#include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h"
+#include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetWriter.h"
 #include "../../TestComparators.h"
 
 using namespace DenOfIz;

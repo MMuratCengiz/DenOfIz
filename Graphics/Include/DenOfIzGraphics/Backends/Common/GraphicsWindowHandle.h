@@ -18,14 +18,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Engine.h>
-#include <DenOfIzGraphics/Utilities/Interop.h>
+#include "DenOfIzGraphics/Utilities/Engine.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 
 #ifdef WINDOW_MANAGER_NATIVE
 #error "Not implemented yet"
 #endif
 #define WINDOW_MANAGER_SDL
-#include <DenOfIzGraphics/Backends/Common/SDLInclude.h>
+#include "DenOfIzGraphics/Backends/Common/SDLInclude.h"
 
 namespace DenOfIz
 {

@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // http://go.microsoft.com/fwlink/?LinkId=248929
 // http://go.microsoft.com/fwlink/?LinkID=615561
 //--------------------------------------------------------------------------------------
-#include <DenOfIzGraphics/Data/Geometry.h>
+#include "DenOfIzGraphics/Data/Geometry.h"
 #include <DirectXMath.h>
 #include <stdexcept>
 #include <vector>

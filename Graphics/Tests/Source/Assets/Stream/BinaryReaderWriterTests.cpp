@@ -17,10 +17,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "gtest/gtest.h"
 
-#include <DenOfIzGraphics/Assets/Stream/BinaryContainer.h>
-#include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
-#include <DenOfIzGraphics/Assets/Stream/BinaryWriter.h>
-#include <DenOfIzGraphics/Utilities/InteropMath.h>
+#include "DenOfIzGraphics/Assets/Stream/BinaryContainer.h"
+#include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
+#include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
+#include "DenOfIzGraphics/Utilities/InteropMath.h"
 
 using namespace DenOfIz;
 

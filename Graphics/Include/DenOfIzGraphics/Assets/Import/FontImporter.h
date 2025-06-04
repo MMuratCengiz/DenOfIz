@@ -17,21 +17,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Bundle/BundleManager.h>
 #include <DenOfIzGraphics/Assets/Import/IAssetImporter.h>
-#include <DenOfIzGraphics/Assets/Serde/Font/FontAsset.h>
 #include <DenOfIzGraphics/Assets/Serde/Font/FontAssetWriter.h>
-
-#include <freetype/freetype.h>
-
-namespace msdfgen
-{
-    class FreetypeHandle;
-    class FontHandle;
-} // namespace msdfgen
+#include <memory>
 
 namespace DenOfIz
 {
+    struct FontImporterImpl;
+
     struct DZ_API FontImportDesc : ImportDesc
     {
         uint32_t         InitialFontSize = 36;
@@ -47,53 +40,19 @@ namespace DenOfIz
 
     struct DZ_API FontImporterDesc{ };
 
-    class FontImporter final : public IAssetImporter
+    class DZ_API FontImporter final : public IAssetImporter
     {
-        ImporterDesc             m_importerDesc;
-        const FontImporterDesc   m_desc;
-        FT_Library               m_ftLibrary;
-        msdfgen::FreetypeHandle *m_msdfFtHandle = nullptr;
-
-        struct Rect
-        {
-            uint32_t X;
-            uint32_t Y;
-            uint32_t Width;
-            uint32_t Height;
-        };
-
-        struct ImportContext
-        {
-            InteropString  SourceFilePath;
-            InteropString  TargetDirectory;
-            InteropString  AssetNamePrefix;
-            FontImportDesc Desc;
-            ImporterResult Result;
-            InteropString  ErrorMessage;
-
-            FontAsset FontAsset;
-
-            uint32_t CurrentAtlasX = 0;
-            uint32_t CurrentAtlasY = 0;
-            uint32_t RowHeight     = 0;
-
-            msdfgen::FontHandle *MsdfFont = nullptr;
-        };
+        ImporterDesc                      m_importerDesc;
+        const FontImporterDesc            m_desc;
+        std::unique_ptr<FontImporterImpl> m_impl;
 
     public:
-        DZ_API explicit FontImporter( FontImporterDesc desc );
-        DZ_API ~FontImporter( ) override;
+        explicit FontImporter( FontImporterDesc desc );
+        ~FontImporter( ) override;
 
-        DZ_API [[nodiscard]] ImporterDesc GetImporterInfo( ) const override;
-        DZ_API [[nodiscard]] bool         CanProcessFileExtension( const InteropString &extension ) const override;
-        DZ_API ImporterResult             Import( const ImportJobDesc &desc ) override;
-        DZ_API [[nodiscard]] bool         ValidateFile( const InteropString &filePath ) const override;
-
-    private:
-        ImporterResultCode ImportFontInternal( ImportContext &context );
-        void               GenerateAtlas( ImportContext &context ) const;
-        void               WriteFontAsset( const ImportContext &context, AssetUri &outAssetUri ) const;
-        void               ExtractFontMetrics( ImportContext &context, FT_Face face );
-        static Byte        FloatToByte( const float &f );
+        [[nodiscard]] ImporterDesc GetImporterInfo( ) const override;
+        [[nodiscard]] bool         CanProcessFileExtension( const InteropString &extension ) const override;
+        ImporterResult             Import( const ImportJobDesc &desc ) override;
+        [[nodiscard]] bool         ValidateFile( const InteropString &filePath ) const override;
     };
 } // namespace DenOfIz

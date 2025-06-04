@@ -18,40 +18,44 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Interop.h>
-#include <freetype/freetype.h>
+#include <memory>
 #include <unordered_map>
-
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAsset.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
+
+// Forward declarations for FreeType and HarfBuzz types
+struct FT_FaceRec_;
+typedef struct FT_FaceRec_ *FT_Face;
+struct FT_LibraryRec_;
+typedef struct FT_LibraryRec_ *FT_Library;
+struct hb_font_t;
 
 namespace DenOfIz
 {
-    // This is pretty much a FreeType container
+    struct FontImpl;
     struct DZ_API FontDesc
     {
-        // Specify either FontPath or FontData
         FontAsset *FontAsset;
     };
 
-    // This class is generally not DZ_API friendly due to heavily relying on 3rd party libraries
-    class Font
+    class DZ_API Font
     {
-        FT_Library                              m_ftLibrary{ };
-        FT_Face                                 m_face{ };
+        std::unique_ptr<FontImpl>               m_impl;
         FontDesc                                m_desc;
         std::unordered_map<uint32_t, FontGlyph> m_glyphs;
 
         friend class FontLibrary;
         friend class TextLayout;
 
-        Font( FT_Library library, const FontDesc &desc );
-        [[nodiscard]] FT_Face FTFace( ) const;
+        Font( FT_Library ftLibrary, const FontDesc &desc );
+        [[nodiscard]] FT_Face    GetFTFace( ) const;
+        [[nodiscard]] hb_font_t *GetHBFont( ) const;
 
     public:
-        DZ_API static constexpr float MsdfPixelRange = 12.0f;
+        static constexpr float MsdfPixelRange = 12.0f;
 
-        DZ_API [[nodiscard]] FontAsset *Asset( ) const;
-        DZ_API ~Font( );
-        DZ_API FontGlyph *GetGlyph( uint32_t codePoint );
+        [[nodiscard]] FontAsset *Asset( ) const;
+        ~Font( );
+        FontGlyph *GetGlyph( uint32_t codePoint );
     };
 } // namespace DenOfIz

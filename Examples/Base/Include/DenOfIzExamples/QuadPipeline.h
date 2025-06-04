@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "Interop.h"
-#include <DenOfIzGraphics/Backends/GraphicsApi.h>
+#include "DenOfIzGraphics/Backends/GraphicsApi.h"
 #include "PerDrawBinding.h"
 #include "PerFrameBinding.h"
 #include "PerMaterialBinding.h"

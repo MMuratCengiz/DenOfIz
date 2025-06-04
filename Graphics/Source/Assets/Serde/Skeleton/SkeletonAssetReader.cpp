@@ -1,6 +1,6 @@
-#include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h>
-#include <DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h>
-#include <DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h>
+#include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
+#include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
+#include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAssetReader.h"
 
 using namespace DenOfIz;
 

@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <../../../Internal/DenOfIzGraphicsInternal/Utilities/ContainerUtilities.h>
-#include <DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h>
-#include <DenOfIzGraphics/Assets/Shaders/DxcEnumConverter.h>
-#include <DenOfIzGraphics/Assets/Shaders/DxilToMsl.h>
-#include <DenOfIzGraphics/Assets/Shaders/ReflectionDebugOutput.h>
-#include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
+#include "DenOfIzGraphicsInternal/Utilities/ContainerUtilities.h"
+#include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
+#include "DenOfIzGraphics/Assets/Shaders/DxcEnumConverter.h"
+#include "DenOfIzGraphics/Assets/Shaders/DxilToMsl.h"
+#include "DenOfIzGraphics/Assets/Shaders/ReflectionDebugOutput.h"
+#include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
 #include <ranges>
 #include <set>
 #include <utility>

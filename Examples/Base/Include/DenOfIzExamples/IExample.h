@@ -18,12 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
-#include <DenOfIzGraphics/Backends/GraphicsApi.h>
+#include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
+#include "DenOfIzGraphics/Backends/GraphicsApi.h"
 #include "WorldData.h"
 
-#include <DenOfIzGraphics/Renderer/Sync/FrameSync.h>
-#include <DenOfIzGraphics/Renderer/Sync/ResourceTracking.h>
+#include "DenOfIzGraphics/Renderer/Sync/FrameSync.h"
+#include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
 
 #include "DenOfIzGraphics/Input/Event.h"
 

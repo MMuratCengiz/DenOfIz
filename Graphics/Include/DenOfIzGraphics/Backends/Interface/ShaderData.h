@@ -18,14 +18,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Common.h>
+#include "DenOfIzGraphics/Utilities/Common.h"
 
 #include <string>
 #include "IBufferResource.h"
 #include "ITextureResource.h"
 
 #ifdef _WIN32
-#include <DenOfIzGraphics/Utilities/Common_Windows.h> // Include this before to make sure NOMINMAX is defined
+#include "DenOfIzGraphics/Utilities/Common_Windows.h" // Include this before to make sure NOMINMAX is defined
 #include <wrl/client.h>
 #else
 #define __EMULATE_UUID

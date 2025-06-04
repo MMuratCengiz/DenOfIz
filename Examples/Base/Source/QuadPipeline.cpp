@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzExamples/QuadPipeline.h>
-#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
+#include "DenOfIzExamples/QuadPipeline.h"
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 
 using namespace DenOfIz;
 

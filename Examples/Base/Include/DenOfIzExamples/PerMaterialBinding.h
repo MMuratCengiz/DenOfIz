@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "NullTexture.h"
-#include <DenOfIzExamples/Assets/MaterialData.h>
+#include "DenOfIzExamples/Assets/MaterialData.h"
 
 namespace DenOfIz
 {

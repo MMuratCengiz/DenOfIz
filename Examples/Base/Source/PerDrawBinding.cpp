@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzExamples/PerDrawBinding.h>
+#include "DenOfIzExamples/PerDrawBinding.h"
 #include <DirectXMath.h>
 
 using namespace DenOfIz;

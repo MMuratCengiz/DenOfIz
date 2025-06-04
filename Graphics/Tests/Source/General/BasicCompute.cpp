@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 
 #include "DenOfIzGraphics/Backends/GraphicsApi.h"
 #include "gtest/gtest.h"

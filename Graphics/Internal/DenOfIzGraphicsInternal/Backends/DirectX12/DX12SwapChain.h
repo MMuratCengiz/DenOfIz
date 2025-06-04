@@ -19,10 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DX12CommandQueue.h"
-
-#include <DenOfIzGraphics/Backends/Interface/ISwapChain.h>
 #include "DX12Context.h"
-#include "DenOfIzGraphics/Backends/DirectX12/DX12TextureResource.h"
+#include "DX12TextureResource.h"
+#include "DenOfIzGraphics/Backends/Interface/ISwapChain.h"
 
 namespace DenOfIz
 {

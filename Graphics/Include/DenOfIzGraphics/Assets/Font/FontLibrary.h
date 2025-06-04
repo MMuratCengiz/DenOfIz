@@ -20,13 +20,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <DenOfIzGraphics/Utilities/Interop.h>
 #include <mutex>
+#include <vector>
+#include <unordered_map>
 #include "Font.h"
 
 #include "DenOfIzGraphics/Assets/Import/FontImporter.h"
 
 namespace DenOfIz
 {
-    class FontLibrary
+    class DZ_API FontLibrary
     {
         FontImporter m_fontImporter{ FontImporterDesc{} };
 
@@ -38,8 +40,9 @@ namespace DenOfIz
         std::unordered_map<std::string, std::unique_ptr<Font>> m_fonts;
 
     public:
-        DZ_API       FontLibrary( );
-        DZ_API Font *LoadFont( const FontDesc &desc );
-        DZ_API Font *LoadFont( const InteropString &ttf );
+        FontLibrary( );
+        ~FontLibrary( );
+        Font *LoadFont( const FontDesc &desc );
+        Font *LoadFont( const InteropString &ttf );
     };
 } // namespace DenOfIz

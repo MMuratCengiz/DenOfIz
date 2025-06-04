@@ -16,10 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Assets/Import/AssetPathUtilities.h>
-#include <DenOfIzGraphics/Assets/Import/TextureImporter.h>
-#include <DenOfIzGraphics/Assets/Stream/BinaryWriter.h>
+#include "DenOfIzGraphics/Assets/Import/TextureImporter.h"
 #include <filesystem>
+#include "DenOfIzGraphics/Assets/Import/AssetPathUtilities.h"
+#include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
 
 #include "DenOfIzGraphics/Assets/Bundle/BundleManager.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"

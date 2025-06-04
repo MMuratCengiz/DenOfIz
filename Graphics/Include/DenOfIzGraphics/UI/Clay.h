@@ -19,6 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <memory>
+
+#include "DenOfIzGraphics/Assets/Font/Font.h"
+#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 #include "DenOfIzGraphics/Input/Event.h"
 #include "DenOfIzGraphics/UI/ClayData.h"
 

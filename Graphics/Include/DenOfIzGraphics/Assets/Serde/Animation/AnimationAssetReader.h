@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
+#include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
 #include "AnimationAsset.h"
 
 namespace DenOfIz

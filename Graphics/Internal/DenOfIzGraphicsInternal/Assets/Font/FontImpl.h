@@ -18,16 +18,33 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Assets/Serde/Asset.h"
-#include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
+#include <DenOfIzGraphics/Assets/Font/Font.h>
+#include <freetype/freetype.h>
+#include <harfbuzz/hb-ft.h>
+#include <harfbuzz/hb.h>
 
 namespace DenOfIz
 {
-    class DZ_API AssetWriterHelpers
+    struct FontImpl
     {
-    public:
-        static void WriteAssetDataStream( const BinaryWriter *writer, const AssetDataStream &stream );
-        static void WriteProperties( const BinaryWriter *writer, const InteropArray<UserProperty> &properties );
-        static void WriteUserProperty( const BinaryWriter *writer, const UserProperty &property );
+        FT_Library m_ftLibrary{ };
+        FT_Face    m_face{ };
+        hb_font_t *m_hbFont{ };
+
+        explicit FontImpl( const FT_Library library ) : m_ftLibrary( library )
+        {
+        }
+
+        ~FontImpl( )
+        {
+            if ( m_hbFont )
+            {
+                hb_font_destroy( m_hbFont );
+            }
+            if ( m_face )
+            {
+                FT_Done_Face( m_face );
+            }
+        }
     };
 } // namespace DenOfIz
