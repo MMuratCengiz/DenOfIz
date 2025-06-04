@@ -16,9 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/DirectX12/DX12BarrierHelper.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderLocalData.h>
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12BarrierHelper.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12ShaderLocalData.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 

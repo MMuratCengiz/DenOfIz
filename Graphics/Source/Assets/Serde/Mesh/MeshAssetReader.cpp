@@ -16,8 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h>
-#include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h>
+#include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
+#include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 MeshAssetReader::MeshAssetReader( const MeshAssetReaderDesc &desc ) : m_reader( desc.Reader ), m_desc( desc ), m_metadataRead( false )

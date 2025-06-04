@@ -16,12 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/DirectX12/DX12BarrierHelper.h>
-#include <DenOfIzGraphics/Backends/DirectX12/DX12CommandList.h>
-#include <DenOfIzGraphics/Backends/DirectX12/DX12Fence.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h>
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12TopLevelAS.h>
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12BarrierHelper.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12CommandList.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Fence.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12TopLevelAS.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <utility>
 
 using namespace DenOfIz;

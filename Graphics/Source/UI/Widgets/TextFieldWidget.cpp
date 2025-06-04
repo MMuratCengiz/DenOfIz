@@ -16,11 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/UI/ClayClipboard.h>
-#include <DenOfIzGraphics/UI/Widgets/TextFieldWidget.h>
+#include "DenOfIzGraphics/UI/Widgets/TextFieldWidget.h"
 #include <algorithm>
-
-#include "../../../Internal/DenOfIzGraphicsInternal/UI/ClayTextCache.h"
+#include "DenOfIzGraphics/UI/ClayClipboard.h"
+#include "DenOfIzGraphicsInternal/UI/ClayTextCache.h"
 
 using namespace DenOfIz;
 

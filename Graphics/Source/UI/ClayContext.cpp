@@ -19,9 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define CLAY_IMPLEMENTATION
 #include "clay.h"
 
-#include <../../Internal/DenOfIzGraphicsInternal/UI/ClayContext.h>
-#include <DenOfIzGraphics/Utilities/Common.h>
-#include <glog/logging.h>
+#include "DenOfIzGraphicsInternal/UI/ClayContext.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 

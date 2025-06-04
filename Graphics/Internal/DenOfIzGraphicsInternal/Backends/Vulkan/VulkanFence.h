@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "../Interface/IFence.h"
+#include "DenOfIzGraphics/Backends/Interface/IFence.h"
 #include "VulkanContext.h"
 
 namespace DenOfIz

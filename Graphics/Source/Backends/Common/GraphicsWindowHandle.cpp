@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
+#include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include <SDL2/SDL_syswm.h>
 
 using namespace DenOfIz;

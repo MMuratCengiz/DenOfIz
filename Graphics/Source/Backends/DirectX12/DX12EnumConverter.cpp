@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/DirectX12/DX12EnumConverter.h>
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12EnumConverter.h"
 #include "DenOfIzGraphics/Backends/Interface/RayTracing/IBottomLevelAS.h"
 
 using namespace DenOfIz;

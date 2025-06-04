@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <../../../Internal/DenOfIzGraphicsInternal/UI/ClayContext.h>
-#include <DenOfIzGraphics/UI/Widgets/DockableContainerWidget.h>
+#include "DenOfIzGraphicsInternal/UI/ClayContext.h"
+#include "DenOfIzGraphics/UI/Widgets/DockableContainerWidget.h"
 #include <algorithm>
 #include <cmath>
 

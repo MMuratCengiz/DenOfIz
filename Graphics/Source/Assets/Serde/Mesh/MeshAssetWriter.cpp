@@ -16,9 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h>
-#include <DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetWriter.h>
-#include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
+#include "DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h"
+#include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetWriter.h"
+#include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <unordered_map>
 
 using namespace DenOfIz;

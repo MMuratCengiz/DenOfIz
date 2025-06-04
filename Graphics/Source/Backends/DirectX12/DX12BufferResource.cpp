@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12EnumConverter.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Fence.h"
 #include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 typedef size_t i;
 using namespace DenOfIz;

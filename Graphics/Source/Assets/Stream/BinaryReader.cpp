@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <cstring>
 #include <fstream>
 #include <iomanip>

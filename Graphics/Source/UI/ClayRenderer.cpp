@@ -16,13 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "../../Internal/DenOfIzGraphicsInternal/UI/ClayRenderer.h"
+#include "DenOfIzGraphicsInternal/UI/ClayRenderer.h"
 #include <cmath>
-#include "../../Internal/DenOfIzGraphicsInternal/UI/UIShaders.h"
+#include "DenOfIzGraphicsInternal/UI/UIShaders.h"
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 #include "DenOfIzGraphics/UI/ClayData.h"
 #include "DenOfIzGraphics/UI/Widgets/ResizableContainerWidget.h"
-#include "DenOfIzGraphics/Utilities/Common.h"
 #include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;

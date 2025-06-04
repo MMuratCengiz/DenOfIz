@@ -20,7 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-#include <glog/logging.h>
 #include <unordered_map>
 #include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 #include "DenOfIzGraphics/UI/ClayClipboard.h"
@@ -35,6 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Assets/Font/Embedded/EmbeddedFonts.h"
 #include "DenOfIzGraphicsInternal/UI/ClayContext.h"
 #include "DenOfIzGraphicsInternal/UI/ClayRenderer.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 

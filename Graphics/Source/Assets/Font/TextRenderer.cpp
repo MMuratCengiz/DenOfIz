@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 #include <DirectXMath.h>
 

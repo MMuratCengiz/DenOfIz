@@ -16,7 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/DirectX12/DX12RootSignature.h>
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12RootSignature.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12EnumConverter.h"
+#include "DenOfIzGraphicsInternal/Utilities/ContainerUtilities.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
@@ -61,7 +64,7 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
         m_samplerVisibility = *m_samplerRangesShaderVisibilities.begin( );
     }
 
-    std::copy( m_rootConstants.begin( ), m_rootConstants.end( ), std::back_inserter( m_rootParameters ) );
+    std::ranges::copy( m_rootConstants, std::back_inserter( m_rootParameters ) );
     for ( const auto &range : m_registerSpaceRanges )
     {
         if ( range.Space != -1 )
@@ -80,7 +83,7 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
     DX_CHECK_RESULT( D3D12SerializeRootSignature( &rootSignatureDesc, rootSignatureVersion, &signature, &error ) );
     if ( signature == nullptr )
     {
-        LOG( ERROR ) << "Failed to serialize root signature: " << std::string( static_cast<char *>( error->GetBufferPointer( ) ), error->GetBufferSize(  ) );
+        LOG( ERROR ) << "Failed to serialize root signature: " << std::string( static_cast<char *>( error->GetBufferPointer( ) ), error->GetBufferSize( ) );
         return;
     }
     DX_CHECK_RESULT( m_context->D3DDevice->CreateRootSignature( 0, signature->GetBufferPointer( ), signature->GetBufferSize( ), IID_PPV_ARGS( m_rootSignature.put( ) ) ) );
@@ -304,8 +307,8 @@ void DX12RootSignature::AddBindlessResource( const BindlessResourceDesc &bindles
         .Binding       = bindlessResource.Binding,
         .RegisterSpace = bindlessResource.RegisterSpace,
     };
-    
-    RegisterSpaceOrder &spaceOrder = ContainerUtilities::SafeAt( m_registerSpaceOrder, bindlessResource.RegisterSpace );
+
+    RegisterSpaceOrder &spaceOrder              = ContainerUtilities::SafeAt( m_registerSpaceOrder, bindlessResource.RegisterSpace );
     spaceOrder.ResourceOffsetMap[ slot.Key( ) ] = spaceOrder.ResourceCount;
     spaceOrder.ResourceCount += bindlessResource.MaxArraySize; // Reserve space for the entire array
 

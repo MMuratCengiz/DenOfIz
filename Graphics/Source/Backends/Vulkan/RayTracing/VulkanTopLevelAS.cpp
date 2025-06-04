@@ -16,9 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.h>
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h>
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.h"
+
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanBufferResource.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanEnumConverter.h"
 
 using namespace DenOfIz;
 

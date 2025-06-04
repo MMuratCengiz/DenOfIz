@@ -45,6 +45,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Data/Texture.h"
 #include "DenOfIzGraphics/Utilities/InteropMath.h"
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 // Include first due to DirectXMath breaking NULL on external libraries
 #include <DirectXMath.h>

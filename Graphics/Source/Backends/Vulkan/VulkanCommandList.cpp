@@ -16,14 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.h>
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.h>
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanFence.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanPipelineBarrierHelper.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h>
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanCommandList.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanBufferResource.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanFence.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanPipelineBarrierHelper.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanResourceBindGroup.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanSwapChain.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
@@ -151,19 +153,19 @@ void VulkanCommandList::BindPipeline( IPipeline *pipeline )
     vkCmdBindPipeline( m_commandBuffer, m_currentPipeline->BindPoint( ), m_currentPipeline->Instance( ) );
 }
 
-void VulkanCommandList::BindVertexBuffer( IBufferResource *buffer, uint64_t offset )
+void VulkanCommandList::BindVertexBuffer( IBufferResource *buffer, const uint64_t offset )
 {
     DZ_NOT_NULL( buffer );
-    const auto      bufferResource = dynamic_cast<VulkanBufferResource *>( buffer );
-    VkDeviceSize    vkOffset       = offset;
+    const auto         bufferResource = dynamic_cast<VulkanBufferResource *>( buffer );
+    const VkDeviceSize vkOffset       = offset;
     vkCmdBindVertexBuffers( m_commandBuffer, 0, 1, &bufferResource->Instance( ), &vkOffset );
 }
 
-void VulkanCommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType, uint64_t offset )
+void VulkanCommandList::BindIndexBuffer( IBufferResource *buffer, const IndexType &indexType, const uint64_t offset )
 {
     DZ_NOT_NULL( buffer );
-    const auto   bufferResource = dynamic_cast<VulkanBufferResource *>( buffer );
-    VkDeviceSize vkOffset       = offset;
+    const auto         bufferResource = dynamic_cast<VulkanBufferResource *>( buffer );
+    const VkDeviceSize vkOffset       = offset;
 
     switch ( indexType )
     {

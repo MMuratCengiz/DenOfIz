@@ -16,10 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanLocalRootSignature.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h>
-#include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
-#include <DenOfIzGraphics/Utilities/Utilities.h>
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanLocalRootSignature.h"
+
+#include "DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanEnumConverter.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 

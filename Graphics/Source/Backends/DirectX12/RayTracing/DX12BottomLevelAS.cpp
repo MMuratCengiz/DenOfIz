@@ -15,7 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzGraphics/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h>
+
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12EnumConverter.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
@@ -57,21 +60,21 @@ DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASD
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = { };
     m_context->D3DDevice->GetRaytracingAccelerationStructurePrebuildInfo( &prebuildDesc, &info );
 
-    BufferDesc bufferDesc   = { };
-    bufferDesc.Descriptor   = BitSet( ResourceDescriptor::RWBuffer ) | ResourceDescriptor::AccelerationStructure;
-    bufferDesc.HeapType     = HeapType::GPU;
-    bufferDesc.NumBytes     = info.ResultDataMaxSizeInBytes;
-    bufferDesc.Usages       = ResourceUsage::AccelerationStructureWrite;
-    bufferDesc.DebugName    = "Bottom Level Acceleration Structure";
-    m_asBuffer              = std::make_unique<DX12BufferResource>( m_context, bufferDesc );
+    BufferDesc bufferDesc = { };
+    bufferDesc.Descriptor = BitSet( ResourceDescriptor::RWBuffer ) | ResourceDescriptor::AccelerationStructure;
+    bufferDesc.HeapType   = HeapType::GPU;
+    bufferDesc.NumBytes   = info.ResultDataMaxSizeInBytes;
+    bufferDesc.Usages     = ResourceUsage::AccelerationStructureWrite;
+    bufferDesc.DebugName  = "Bottom Level Acceleration Structure";
+    m_asBuffer            = std::make_unique<DX12BufferResource>( m_context, bufferDesc );
 
-    BufferDesc scratchBufferDesc   = { };
-    scratchBufferDesc.HeapType     = HeapType::GPU;
-    scratchBufferDesc.NumBytes     = static_cast<UINT>( info.ScratchDataSizeInBytes );
-    scratchBufferDesc.Descriptor   = BitSet( ResourceDescriptor::RWBuffer );
-    scratchBufferDesc.Usages       = ResourceUsage::UnorderedAccess;
-    scratchBufferDesc.DebugName    = "Bottom Level Acceleration Structure Scratch";
-    m_scratch                      = std::make_unique<DX12BufferResource>( m_context, scratchBufferDesc );
+    BufferDesc scratchBufferDesc = { };
+    scratchBufferDesc.HeapType   = HeapType::GPU;
+    scratchBufferDesc.NumBytes   = static_cast<UINT>( info.ScratchDataSizeInBytes );
+    scratchBufferDesc.Descriptor = BitSet( ResourceDescriptor::RWBuffer );
+    scratchBufferDesc.Usages     = ResourceUsage::UnorderedAccess;
+    scratchBufferDesc.DebugName  = "Bottom Level Acceleration Structure Scratch";
+    m_scratch                    = std::make_unique<DX12BufferResource>( m_context, scratchBufferDesc );
 }
 
 void DX12BottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &triangle, D3D12_RAYTRACING_GEOMETRY_DESC &dx12Geometry ) const

@@ -15,14 +15,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#include "DenOfIzGraphics/Assets/Import/ShaderImporter.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/FileSystem/PathResolver.h"
 #include "DenOfIzGraphics/Assets/Import/AssetPathUtilities.h"
-#include "DenOfIzGraphics/Assets/Import/ShaderImporter.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetWriter.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryContainer.h"
 #include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
 #include "DenOfIzGraphics/Utilities/Common_Asserts.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 

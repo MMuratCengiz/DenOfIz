@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <fstream>
 #include <ranges>
 #include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 #ifdef _WIN32
 #include <wrl/client.h>

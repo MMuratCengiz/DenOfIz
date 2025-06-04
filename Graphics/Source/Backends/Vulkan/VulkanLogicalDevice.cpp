@@ -16,25 +16,26 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.h>
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.h>
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderLocalData.h>
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandList.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanFence.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanLogicalDevice.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h>
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanLogicalDevice.h"
 #include <algorithm>
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanShaderLocalData.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanBufferResource.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanCommandList.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanCommandQueue.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanFence.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanResourceBindGroup.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanRootSignature.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanSwapChain.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanTextureResource.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 #define VOLK_IMPLEMENTATION
 #include "volk.h"
 
 #define VMA_IMPLEMENTATION
-
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandQueue.h>
 
 #include <vk_mem_alloc.h>
 
@@ -466,7 +467,7 @@ void VulkanLogicalDevice::CreateLogicalDevice( )
         features.geometryShader = true;
     }
 
-    void *pNext = nullptr;
+    void                                 *pNext = nullptr;
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures{ };
     if ( m_context->SelectedDeviceInfo.Capabilities.MeshShaders )
     {

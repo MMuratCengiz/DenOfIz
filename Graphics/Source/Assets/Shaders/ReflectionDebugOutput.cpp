@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphicsInternal/Assets/Shaders/ReflectionDebugOutput.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 #ifdef __linux__
 #include <iomanip>

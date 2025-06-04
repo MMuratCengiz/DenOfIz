@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderBindingTable.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanPipeline.h>
+#include "DenOfIzGraphics/Backends/Interface/RayTracing/IShaderBindingTable.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanBufferResource.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanPipeline.h"
 
 namespace DenOfIz
 {

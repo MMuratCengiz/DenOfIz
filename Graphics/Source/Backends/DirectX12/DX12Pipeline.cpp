@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Pipeline.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12LocalRootSignature.h"
 #include "DenOfIzGraphicsInternal/Utilities/Storage.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <codecvt>
 #include <directx/d3dx12.h>
 #include <utility>

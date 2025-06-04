@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h"
 #include "DenOfIzGraphics/Data/Texture.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 

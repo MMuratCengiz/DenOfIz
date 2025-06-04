@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderBindingTable.h>
+#include "DenOfIzGraphics/Backends/Interface/RayTracing/IShaderBindingTable.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 

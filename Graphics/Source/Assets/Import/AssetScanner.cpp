@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Import/AssetScanner.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <filesystem>
 
 using namespace DenOfIz;

@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h>
+#include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
 
 using namespace DenOfIz;
 

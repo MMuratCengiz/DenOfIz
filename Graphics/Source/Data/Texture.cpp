@@ -17,6 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Data/Texture.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 #if not defined( STB_IMAGE_IMPLEMENTATION ) and defined( BUILD_SHARED_LIBS ) // Otherwise it's built by assimp
 #define STB_IMAGE_IMPLEMENTATION
@@ -28,7 +30,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifdef DZ_USE_DDS
 #include "dds.h"
 #endif
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 #include <filesystem>
 #include <fstream>
 

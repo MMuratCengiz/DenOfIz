@@ -16,9 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanRootSignature.h>
-#include <DenOfIzGraphics/Utilities/ContainerUtilities.h>
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanRootSignature.h"
 #include <ranges>
+#include "DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h"
+#include "DenOfIzGraphicsInternal/Utilities/ContainerUtilities.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
@@ -255,7 +257,7 @@ void VulkanRootSignature::AddBindlessResource( const BindlessResourceDesc &bindl
     bindingDesc.Binding       = bindlessResource.Binding;
     bindingDesc.RegisterSpace = bindlessResource.RegisterSpace;
     bindingDesc.ArraySize     = bindlessResource.MaxArraySize;
-    
+
     // Set descriptor type based on binding type
     switch ( bindlessResource.Type )
     {
@@ -272,7 +274,7 @@ void VulkanRootSignature::AddBindlessResource( const BindlessResourceDesc &bindl
         bindingDesc.Descriptor = ResourceDescriptor::Sampler;
         break;
     }
-    
+
     // Add all shader stages for bindless resources
     bindingDesc.Stages.AddElement( ShaderStage::Vertex );
     bindingDesc.Stages.AddElement( ShaderStage::Pixel );

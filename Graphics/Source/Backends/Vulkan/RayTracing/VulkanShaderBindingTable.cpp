@@ -16,12 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.h>
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanShaderLocalData.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanFence.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanPipelineBarrierHelper.h>
-#include <stdexcept>
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanShaderLocalData.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanBufferResource.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanFence.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanPipeline.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanPipelineBarrierHelper.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 

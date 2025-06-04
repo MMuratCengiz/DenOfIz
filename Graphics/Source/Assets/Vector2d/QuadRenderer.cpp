@@ -18,12 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/Vector2d/QuadRenderer.h"
 #include <algorithm>
-#include "../../../Include/DenOfIzGraphics/Utilities/InteropUtilities.h"
-#include "DenOfIzGraphics/Utilities/Common_Asserts.h"
-#include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
-
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
+#include "DenOfIzGraphics/Utilities/Common_Asserts.h"
+#include "DenOfIzGraphics/Utilities/InteropUtilities.h"
+#include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 using namespace DirectX;
@@ -304,7 +304,7 @@ uint32_t QuadRenderer::RegisterTexture( ITextureResource *texture )
 {
     if ( m_freeTextureIndices.empty( ) )
     {
-    LOG( WARNING ) << "Maximum number of textures reached";
+        LOG( WARNING ) << "Maximum number of textures reached";
         return 0;
     }
 
@@ -376,7 +376,7 @@ void QuadRenderer::ClearQuads( )
     m_currentQuadCount = 0;
 }
 
-void QuadRenderer::Render( const uint32_t frameIndex, ICommandList *commandList )
+void QuadRenderer::Render( const uint32_t frameIndex, ICommandList *commandList ) const
 {
     if ( m_currentQuadCount == 0 )
     {
@@ -393,7 +393,7 @@ void QuadRenderer::Render( const uint32_t frameIndex, ICommandList *commandList 
     commandList->DrawIndexed( 6, m_currentQuadCount, 0, 0, 0 );
 }
 
-void QuadRenderer::UpdateTextureBindings( const uint32_t frameIndex )
+void QuadRenderer::UpdateTextureBindings( const uint32_t frameIndex ) const
 {
     const FrameData &frame = m_frameData[ frameIndex ];
 

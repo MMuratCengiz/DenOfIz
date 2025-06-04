@@ -16,8 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/DirectX12/DX12Semaphore.h>
-#include <DenOfIzGraphics/Backends/DirectX12/DX12SwapChain.h>
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12SwapChain.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12EnumConverter.h"
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Semaphore.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 using namespace Microsoft::WRL;

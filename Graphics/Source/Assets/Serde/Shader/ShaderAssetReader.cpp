@@ -15,9 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
 #include "DenOfIzGraphics/Assets/Serde/Common/AssetReaderHelpers.h"
-#include "DenOfIzGraphics/Utilities/Common_Asserts.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 #ifdef _WIN32
 #include <wrl/client.h>

@@ -18,21 +18,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalData.h>
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanLocalRootSignature.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanContext.h>
-#include <DenOfIzGraphics/Utilities/Storage.h>
+#include "DenOfIzGraphics/Backends/Interface/RayTracing/IShaderLocalData.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanLocalRootSignature.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanContext.h"
+#include "DenOfIzGraphicsInternal/Utilities/Storage.h"
 
 namespace DenOfIz
 {
     class VulkanShaderLocalData final : public IShaderLocalData
     {
-        VulkanContext                    *m_context;
+        VulkanContext                    *m_context{};
         ShaderLocalDataDesc               m_desc;
         VulkanLocalRootSignature         *m_layout;
         std::vector<Byte>                 m_data;
-        Storage                           m_storage;
-        std::vector<VkWriteDescriptorSet> m_writeDescriptorSets;
+        Storage                           m_storage{};
+        std::vector<VkWriteDescriptorSet> m_writeDescriptorSets{};
         std::vector<uint8_t>              m_inlineData;
         VkDescriptorSet                   m_descriptorSet = nullptr;
 

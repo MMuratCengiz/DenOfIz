@@ -18,8 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/RayTracing/IBottomLevelAS.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
+#include "DenOfIzGraphics/Backends/Interface/RayTracing/IBottomLevelAS.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanBufferResource.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanContext.h"
 
 namespace DenOfIz
 {

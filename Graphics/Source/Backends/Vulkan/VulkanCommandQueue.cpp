@@ -16,9 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanCommandQueue.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanFence.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanSwapChain.h>
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanCommandQueue.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanFence.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanSwapChain.h"
 
 using namespace DenOfIz;
 

@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Utilities/Common.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 namespace DenOfIz
 {

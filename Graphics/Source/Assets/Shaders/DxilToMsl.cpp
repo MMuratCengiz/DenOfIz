@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Assets/Shaders/ReflectionDebugOutput.h"
 #include "DenOfIzGraphicsInternal/Assets/Shaders/ShaderReflectionHelper.h"
 #include "DenOfIzGraphicsInternal/Utilities/ContainerUtilities.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 #ifdef _WIN32
 #include <wrl/client.h>

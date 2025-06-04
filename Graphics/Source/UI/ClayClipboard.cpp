@@ -16,9 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/UI/ClayClipboard.h>
+#include "DenOfIzGraphics/UI/ClayClipboard.h"
 #include <SDL2/SDL.h>
-#include <glog/logging.h>
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 namespace DenOfIz
 {

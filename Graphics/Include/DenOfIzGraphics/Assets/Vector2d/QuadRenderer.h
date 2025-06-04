@@ -128,13 +128,13 @@ namespace DenOfIz
 
         DZ_API void ClearQuads( );
 
-        DZ_API void Render( uint32_t frameIndex, ICommandList *commandList );
+        DZ_API void Render( uint32_t frameIndex, ICommandList *commandList ) const;
 
     private:
         void                Initialize( );
         void                CreateShaderResources( );
         void                CreateStaticQuadGeometry( );
-        void                UpdateTextureBindings( uint32_t frameIndex );
+        void                UpdateTextureBindings( uint32_t frameIndex ) const;
         DirectX::XMFLOAT4X4 CalculateTransform( const QuadDataDesc &desc ) const;
     };
 

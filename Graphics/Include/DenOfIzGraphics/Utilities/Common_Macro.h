@@ -18,24 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "exception"
 #include "Interop.h"
-
-#define DZ_RETURN_IF( condition )                                                                                                                                                  \
-    if ( condition )                                                                                                                                                               \
-    return
-#define DZ_ASSERTM( exp, msg )                                                                                                                                                     \
-    if ( !( exp ) )                                                                                                                                                                \
-    DLOG( ERROR ) << msg
-#define DZ_NOT_NULL( exp )                                                                                                                                                         \
-    do                                                                                                                                                                             \
-    {                                                                                                                                                                              \
-        if ( !exp )                                                                                                                                                                \
-        {                                                                                                                                                                          \
-            LOG( FATAL ) << #exp " is required but was null.";                                                                                                                     \
-        }                                                                                                                                                                          \
-    }                                                                                                                                                                              \
-    while ( 0 )
 
 namespace DenOfIz
 {

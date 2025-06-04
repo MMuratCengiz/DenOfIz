@@ -15,11 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
 
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanBufferResource.h"
 #include <utility>
-#include "DenOfIzGraphics/Backends/Vulkan/VulkanEnumConverter.h"
-#include "DenOfIzGraphics/Utilities/Utilities.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanEnumConverter.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 
@@ -85,7 +85,7 @@ void *VulkanBufferResource::MapMemory( )
     }
     if ( m_mappedMemory != nullptr )
     {
-        LOG(WARNING) << "Memory already mapped before mapping: " << m_desc.DebugName.Get( );
+        LOG( WARNING ) << "Memory already mapped before mapping: " << m_desc.DebugName.Get( );
         return m_mappedMemory;
     }
 

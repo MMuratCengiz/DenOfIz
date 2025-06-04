@@ -41,9 +41,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  * under the License.
  */
 
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanPipelineBarrierHelper.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h>
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanBufferResource.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanPipelineBarrierHelper.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanTextureResource.h"
 
 typedef VkBufferMemoryBarrier memoryBarrier;
 using namespace DenOfIz;

@@ -16,10 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanBufferResource.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanResourceBindGroup.h>
-#include <DenOfIzGraphics/Backends/Vulkan/VulkanTextureResource.h>
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/RayTracing/VulkanTopLevelAS.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanBufferResource.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanResourceBindGroup.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanTextureResource.h"
 
 using namespace DenOfIz;
 

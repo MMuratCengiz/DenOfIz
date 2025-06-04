@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Input/EventHandler.h>
-#include <DenOfIzGraphics/Utilities/Common_Macro.h>
+#include "DenOfIzGraphics/Input/EventHandler.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
