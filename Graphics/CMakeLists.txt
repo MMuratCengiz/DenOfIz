@@ -417,7 +417,7 @@ if (APPLE)
 
     target_link_directories(
             DenOfIzGraphics
-            PRIVATE
+            PUBLIC
             _ThirdParty/osx_dxc/lib/
     )
 
