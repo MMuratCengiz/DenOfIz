@@ -23,7 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAsset.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 
-// Forward declarations for FreeType and HarfBuzz types
 struct FT_FaceRec_;
 typedef struct FT_FaceRec_ *FT_Face;
 struct FT_LibraryRec_;
@@ -38,7 +37,7 @@ namespace DenOfIz
         FontAsset *FontAsset;
     };
 
-    class DZ_API Font
+    class Font
     {
         std::unique_ptr<FontImpl>               m_impl;
         FontDesc                                m_desc;
@@ -52,10 +51,10 @@ namespace DenOfIz
         [[nodiscard]] hb_font_t *GetHBFont( ) const;
 
     public:
-        static constexpr float MsdfPixelRange = 12.0f;
+        DZ_API static constexpr float MsdfPixelRange = 12.0f;
 
-        [[nodiscard]] FontAsset *Asset( ) const;
-        ~Font( );
-        FontGlyph *GetGlyph( uint32_t codePoint );
+        DZ_API [[nodiscard]] FontAsset *Asset( ) const;
+        DZ_API ~Font( );
+        DZ_API FontGlyph *GetGlyph( uint32_t codePoint );
     };
 } // namespace DenOfIz

@@ -17,63 +17,104 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Input/InputSystem.h"
+#include "DenOfIzGraphicsInternal/Backends/Common/SDLInclude.h"
 #include <cstring> // For std::memset
 
 using namespace DenOfIz;
 
-InputSystem::InputSystem( )
+// Implementation struct
+struct InputSystem::Impl
 {
-    for ( bool &controllerInitialized : m_controllerInitialized )
-    {
-        controllerInitialized = false;
-    }
+	Controller m_controllers[ 4 ];
+	bool       m_controllerInitialized[ 4 ] = { false, false, false, false };
+
+	Impl( )
+	{
+		for ( bool &controllerInitialized : m_controllerInitialized )
+		{
+			controllerInitialized = false;
+		}
+	}
+
+	~Impl( )
+	{
+		for ( int i = 0; i < 4; ++i )
+		{
+			if ( m_controllerInitialized[ i ] )
+			{
+				m_controllers[ i ].Close( );
+				m_controllerInitialized[ i ] = false;
+			}
+		}
+	}
+
+	// Helper function to safely copy strings
+	static void SafeCopyString( char *dest, size_t destSize, const char *src )
+	{
+		if ( dest && src && destSize > 0 )
+		{
+			size_t srcLen = std::strlen( src );
+			size_t copyLen = ( srcLen < destSize - 1 ) ? srcLen : destSize - 1;
+			std::memcpy( dest, src, copyLen );
+			dest[ copyLen ] = '\0';
+		}
+	}
+
+#ifdef WINDOW_MANAGER_SDL
+	// SDL event conversion functions
+	static void ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outEvent );
+	static BitSet<KeyMod> ConvertKeyMod( SDL_Keymod sdlMods );
+	static SDL_Keymod ConvertToSdlKeyMod( const BitSet<KeyMod> &modifiers );
+#endif
+};
+
+InputSystem::InputSystem( )
+	: m_impl( std::make_unique<Impl>( ) )
+{
 }
 
-InputSystem::~InputSystem( )
-{
-    for ( int i = 0; i < 4; ++i )
-    {
-        CloseController( i );
-    }
-}
+InputSystem::~InputSystem( ) = default;
+
+InputSystem::InputSystem( InputSystem&& other ) noexcept = default;
+InputSystem& InputSystem::operator=( InputSystem&& other ) noexcept = default;
 
 bool InputSystem::PollEvent( Event &outEvent )
 {
 #ifdef WINDOW_MANAGER_SDL
-    SDL_Event sdlEvent;
-    if ( SDL_PollEvent( &sdlEvent ) )
-    {
-        ConvertSDLEventToEvent( sdlEvent, outEvent );
-        return true;
-    }
+	SDL_Event sdlEvent;
+	if ( SDL_PollEvent( &sdlEvent ) )
+	{
+		Impl::ConvertSDLEventToEvent( sdlEvent, outEvent );
+		return true;
+	}
 #endif
-    return false;
+	return false;
 }
 
 bool InputSystem::WaitEvent( Event &outEvent )
 {
 #ifdef WINDOW_MANAGER_SDL
-    SDL_Event sdlEvent;
-    if ( SDL_WaitEvent( &sdlEvent ) )
-    {
-        ConvertSDLEventToEvent( sdlEvent, outEvent );
-        return true;
-    }
+	SDL_Event sdlEvent;
+	if ( SDL_WaitEvent( &sdlEvent ) )
+	{
+		Impl::ConvertSDLEventToEvent( sdlEvent, outEvent );
+		return true;
+	}
 #endif
-    return false;
+	return false;
 }
 
 bool InputSystem::WaitEventTimeout( Event &outEvent, const int timeout )
 {
 #ifdef WINDOW_MANAGER_SDL
-    SDL_Event sdlEvent;
-    if ( SDL_WaitEventTimeout( &sdlEvent, timeout ) )
-    {
-        ConvertSDLEventToEvent( sdlEvent, outEvent );
-        return true;
-    }
+	SDL_Event sdlEvent;
+	if ( SDL_WaitEventTimeout( &sdlEvent, timeout ) )
+	{
+		Impl::ConvertSDLEventToEvent( sdlEvent, outEvent );
+		return true;
+	}
 #endif
-    return false;
+	return false;
 }
 
 void InputSystem::PumpEvents( )
@@ -197,17 +238,17 @@ bool InputSystem::IsKeyPressed( const KeyCode key )
 DenOfIz::BitSet<KeyMod> InputSystem::GetModState( )
 {
 #ifdef WINDOW_MANAGER_SDL
-    const uint16_t sdlMods = SDL_GetModState( );
-    return ConvertKeyMod( static_cast<SDL_Keymod>( sdlMods ) );
+	const uint16_t sdlMods = SDL_GetModState( );
+	return Impl::ConvertKeyMod( static_cast<SDL_Keymod>( sdlMods ) );
 #else
-    return BitSet( );
+	return BitSet<KeyMod>( );
 #endif
 }
 
 void InputSystem::SetModState( const BitSet<KeyMod> &modifiers )
 {
 #ifdef WINDOW_MANAGER_SDL
-    SDL_SetModState( ConvertToSdlKeyMod( modifiers ) );
+	SDL_SetModState( Impl::ConvertToSdlKeyMod( modifiers ) );
 #endif
 }
 
@@ -240,7 +281,7 @@ InteropString InputSystem::GetScancodeName( const uint32_t scancode )
 }
 
 #ifdef WINDOW_MANAGER_SDL
-void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outEvent )
+void InputSystem::Impl::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outEvent )
 {
     outEvent.Type = static_cast<EventType>( sdlEvent.type );
 
@@ -260,7 +301,7 @@ void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outE
     case SDL_TEXTEDITING:
         outEvent.Edit.Common.Timestamp = sdlEvent.edit.timestamp;
         outEvent.Edit.Common.WindowID  = sdlEvent.edit.windowID;
-        SafeCopyString( outEvent.Edit.Text, sizeof( outEvent.Edit.Text ), sdlEvent.edit.text );
+        Impl::SafeCopyString( outEvent.Edit.Text, sizeof( outEvent.Edit.Text ), sdlEvent.edit.text );
         outEvent.Edit.Start  = sdlEvent.edit.start;
         outEvent.Edit.Length = sdlEvent.edit.length;
         break;
@@ -268,7 +309,7 @@ void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outE
     case SDL_TEXTINPUT:
         outEvent.Text.Common.Timestamp = sdlEvent.text.timestamp;
         outEvent.Text.Common.WindowID  = sdlEvent.text.windowID;
-        SafeCopyString( outEvent.Text.Text, sizeof( outEvent.Text.Text ), sdlEvent.text.text );
+        Impl::SafeCopyString( outEvent.Text.Text, sizeof( outEvent.Text.Text ), sdlEvent.text.text );
         break;
 
     case SDL_MOUSEMOTION:
@@ -346,7 +387,7 @@ void InputSystem::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outE
 }
 
 // Keep namespace (Unambigious reference on OSX)
-DenOfIz::BitSet<KeyMod> InputSystem::ConvertKeyMod( const SDL_Keymod sdlMods )
+DenOfIz::BitSet<KeyMod> InputSystem::Impl::ConvertKeyMod( const SDL_Keymod sdlMods )
 {
     BitSet result = KeyMod::None;
 #ifdef WINDOW_MANAGER_SDL
@@ -414,7 +455,7 @@ DenOfIz::BitSet<KeyMod> InputSystem::ConvertKeyMod( const SDL_Keymod sdlMods )
     return result;
 }
 
-SDL_Keymod InputSystem::ConvertToSdlKeyMod( const BitSet<KeyMod> &modifiers )
+SDL_Keymod InputSystem::Impl::ConvertToSdlKeyMod( const BitSet<KeyMod> &modifiers )
 {
     uint16_t sdlMods = 0;
     if ( modifiers.IsSet( KeyMod::LShift ) )
@@ -599,107 +640,107 @@ int InputSystem::GetNumControllers( )
 
 bool InputSystem::OpenController( const int playerIndex, const int controllerIndex )
 {
-    if ( playerIndex < 0 || playerIndex >= 4 )
-    {
-        return false;
-    }
+	if ( playerIndex < 0 || playerIndex >= 4 )
+	{
+		return false;
+	}
 
-    if ( m_controllerInitialized[ playerIndex ] )
-    {
-        CloseController( playerIndex );
-    }
+	if ( m_impl->m_controllerInitialized[ playerIndex ] )
+	{
+		CloseController( playerIndex );
+	}
 
-    const bool result                      = m_controllers[ playerIndex ].Open( controllerIndex );
-    m_controllerInitialized[ playerIndex ] = result;
+	const bool result                      = m_impl->m_controllers[ playerIndex ].Open( controllerIndex );
+	m_impl->m_controllerInitialized[ playerIndex ] = result;
 
-    if ( result )
-    {
-        return m_controllers[ playerIndex ].SetPlayerIndex( playerIndex );
-    }
+	if ( result )
+	{
+		return m_impl->m_controllers[ playerIndex ].SetPlayerIndex( playerIndex );
+	}
 
-    return result;
+	return result;
 }
 
 void InputSystem::CloseController( const int playerIndex )
 {
-    if ( playerIndex < 0 || playerIndex >= 4 )
-    {
-        return;
-    }
+	if ( playerIndex < 0 || playerIndex >= 4 )
+	{
+		return;
+	}
 
-    if ( m_controllerInitialized[ playerIndex ] )
-    {
-        m_controllers[ playerIndex ].Close( );
-        m_controllerInitialized[ playerIndex ] = false;
-    }
+	if ( m_impl->m_controllerInitialized[ playerIndex ] )
+	{
+		m_impl->m_controllers[ playerIndex ].Close( );
+		m_impl->m_controllerInitialized[ playerIndex ] = false;
+	}
 }
 
 bool InputSystem::IsControllerConnected( const int playerIndex ) const
 {
-    if ( playerIndex < 0 || playerIndex >= 4 )
-    {
-        return false;
-    }
+	if ( playerIndex < 0 || playerIndex >= 4 )
+	{
+		return false;
+	}
 
-    return m_controllerInitialized[ playerIndex ] && m_controllers[ playerIndex ].IsConnected( );
+	return m_impl->m_controllerInitialized[ playerIndex ] && m_impl->m_controllers[ playerIndex ].IsConnected( );
 }
 
 Controller *InputSystem::GetController( const int playerIndex )
 {
-    if ( playerIndex < 0 || playerIndex >= 4 || !m_controllerInitialized[ playerIndex ] )
-    {
-        return nullptr;
-    }
+	if ( playerIndex < 0 || playerIndex >= 4 || !m_impl->m_controllerInitialized[ playerIndex ] )
+	{
+		return nullptr;
+	}
 
-    return &m_controllers[ playerIndex ];
+	return &m_impl->m_controllers[ playerIndex ];
 }
 
 const Controller *InputSystem::GetController( const int playerIndex ) const
 {
-    if ( playerIndex < 0 || playerIndex >= 4 || !m_controllerInitialized[ playerIndex ] )
-    {
-        return nullptr;
-    }
+	if ( playerIndex < 0 || playerIndex >= 4 || !m_impl->m_controllerInitialized[ playerIndex ] )
+	{
+		return nullptr;
+	}
 
-    return &m_controllers[ playerIndex ];
+	return &m_impl->m_controllers[ playerIndex ];
 }
 
 bool InputSystem::IsControllerButtonPressed( const int playerIndex, const ControllerButton button ) const
 {
-    if ( playerIndex < 0 || playerIndex >= 4 || !m_controllerInitialized[ playerIndex ] )
-    {
-        return false;
-    }
+	if ( playerIndex < 0 || playerIndex >= 4 || !m_impl->m_controllerInitialized[ playerIndex ] )
+	{
+		return false;
+	}
 
-    return m_controllers[ playerIndex ].IsButtonPressed( button );
+	return m_impl->m_controllers[ playerIndex ].IsButtonPressed( button );
 }
 
 int16_t InputSystem::GetControllerAxisValue( const int playerIndex, const ControllerAxis axis ) const
 {
-    if ( playerIndex < 0 || playerIndex >= 4 || !m_controllerInitialized[ playerIndex ] )
-    {
-        return 0;
-    }
+	if ( playerIndex < 0 || playerIndex >= 4 || !m_impl->m_controllerInitialized[ playerIndex ] )
+	{
+		return 0;
+	}
 
-    return m_controllers[ playerIndex ].GetAxisValue( axis );
+	return m_impl->m_controllers[ playerIndex ].GetAxisValue( axis );
 }
 
 InteropString InputSystem::GetControllerName( const int playerIndex ) const
 {
-    if ( playerIndex < 0 || playerIndex >= 4 || !m_controllerInitialized[ playerIndex ] )
-    {
-        return { };
-    }
+	if ( playerIndex < 0 || playerIndex >= 4 || !m_impl->m_controllerInitialized[ playerIndex ] )
+	{
+		return { };
+	}
 
-    return m_controllers[ playerIndex ].GetName( );
+	return m_impl->m_controllers[ playerIndex ].GetName( );
 }
 
 bool InputSystem::SetControllerRumble( const int playerIndex, const uint16_t lowFrequency, const uint16_t highFrequency, const uint32_t durationMs ) const
 {
-    if ( playerIndex < 0 || playerIndex >= 4 || !m_controllerInitialized[ playerIndex ] )
-    {
-        return false;
-    }
+	if ( playerIndex < 0 || playerIndex >= 4 || !m_impl->m_controllerInitialized[ playerIndex ] )
+	{
+		return false;
+	}
 
-    return m_controllers[ playerIndex ].SetRumble( lowFrequency, highFrequency, durationMs );
+	return m_impl->m_controllers[ playerIndex ].SetRumble( lowFrequency, highFrequency, durationMs );
 }

@@ -62,11 +62,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "Shaders/ShaderCompiler.h"
 #include "Shaders/ShaderReflectDesc.h"
 
-#include "Font/EmbeddedTextRendererShaders.h"
 #include "Font/Font.h"
 #include "Font/FontLibrary.h"
 #include "Font/TextLayout.h"
-#include "Font/TextLayoutCache.h"
 #include "Font/TextRenderer.h"
 
 #include "Bundle/Bundle.h"

@@ -18,15 +18,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
-#include <DenOfIzGraphics/Backends/Interface/ICommandList.h>
-#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
-#include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
-#include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
-#include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
-#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
-#include <DenOfIzGraphics/Renderer/Sync/ResourceTracking.h>
-#include <DenOfIzGraphics/Utilities/InteropMath.h>
+#include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
+#include "DenOfIzGraphics/Backends/Interface/ICommandList.h"
+#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
+#include "DenOfIzGraphics/Backends/Interface/IPipeline.h"
+#include "DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h"
+#include "DenOfIzGraphics/Backends/Interface/IRootSignature.h"
+#include "DenOfIzGraphics/Backends/Interface/ITextureResource.h"
+#include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
+#include "DenOfIzGraphics/Utilities/InteropMath.h"
 #include <memory>
 #include <vector>
 

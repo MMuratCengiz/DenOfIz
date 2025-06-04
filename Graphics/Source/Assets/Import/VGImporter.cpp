@@ -22,7 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Import/VGImporter.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetWriter.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryWriter.h"
-#include "DenOfIzGraphics/Utilities/Common_Asserts.h"
 #include <filesystem>
 
 using namespace DenOfIz;

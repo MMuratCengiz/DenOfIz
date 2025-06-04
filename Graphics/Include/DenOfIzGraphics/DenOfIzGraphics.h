@@ -18,19 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-// Include all graphics headers
-// DirectXMath breaks null in most cases, so we import 3d party libraries first before it manages to do so
-#include <clay.h>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include "DenOfIzGraphics/Utilities/Common.h"
-#include "DenOfIzGraphics/Backends/Common/SDLInclude.h"
-
-#ifndef _WIN32
-#define __EMULATE_UUID
-#include "WinAdapter.h"
-#endif
-
 #include "DenOfIzGraphics/Data/AlignedDataWriter.h"
 #include "DenOfIzGraphics/Data/Geometry.h"
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
@@ -41,7 +28,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Input System
 #include "DenOfIzGraphics/Input/Controller.h"
 #include "DenOfIzGraphics/Input/Event.h"
-#include "DenOfIzGraphics/Input/EventHandler.h"
 #include "DenOfIzGraphics/Input/InputData.h"
 #include "DenOfIzGraphics/Input/InputSystem.h"
 #include "DenOfIzGraphics/Input/Window.h"

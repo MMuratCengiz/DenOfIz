@@ -16,9 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/Data/Texture.h>
+#include "DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h"
+#include "DenOfIzGraphics/Data/BatchResourceCopy.h"
+#include "DenOfIzGraphics/Data/Texture.h"
 
 #include <thorvg.h>
 

@@ -26,8 +26,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Backends/Interface/IPipeline.h"
 #include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
 
-#include <DirectXMath.h>
-
 #include "TextBatch.h"
 
 using namespace DirectX;

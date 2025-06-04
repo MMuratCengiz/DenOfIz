@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class DZ_API FontLibrary
+    class FontLibrary
     {
         FontImporter m_fontImporter{ FontImporterDesc{} };
 
@@ -39,9 +39,9 @@ namespace DenOfIz
         std::unordered_map<std::string, std::unique_ptr<Font>> m_fonts;
 
     public:
-        FontLibrary( );
-        ~FontLibrary( );
-        Font *LoadFont( const FontDesc &desc );
-        Font *LoadFont( const InteropString &ttf );
+        DZ_API FontLibrary( );
+        DZ_API ~FontLibrary( );
+        DZ_API Font *LoadFont( const FontDesc &desc );
+        DZ_API Font *LoadFont( const InteropString &ttf );
     };
 } // namespace DenOfIz

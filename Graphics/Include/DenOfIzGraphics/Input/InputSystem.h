@@ -19,12 +19,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Utilities/Common.h"
-#include "DenOfIzGraphics/Backends/Common/SDLInclude.h"
 #include "DenOfIzGraphics/Input/Controller.h"
 #include "DenOfIzGraphics/Input/Event.h"
 #include "DenOfIzGraphics/Input/Window.h"
 #include "DenOfIzGraphics/Utilities/Engine.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
+#include <memory>
 
 namespace DenOfIz
 {
@@ -36,12 +36,18 @@ namespace DenOfIz
 
     class DZ_API InputSystem
     {
-        Controller m_controllers[ 4 ];
-        bool       m_controllerInitialized[ 4 ]{ };
+        struct Impl;
+        std::unique_ptr<Impl> m_impl;
 
     public:
         InputSystem( );
         ~InputSystem( );
+        
+        InputSystem( const InputSystem& ) = delete;
+        InputSystem& operator=( const InputSystem& ) = delete;
+        
+        InputSystem( InputSystem&& other ) noexcept;
+        InputSystem& operator=( InputSystem&& other ) noexcept;
 
         static bool PollEvent( Event &outEvent );
         static bool WaitEvent( Event &outEvent );
@@ -87,13 +93,6 @@ namespace DenOfIz
         [[nodiscard]] int16_t                  GetControllerAxisValue( int playerIndex, ControllerAxis axis ) const;
         [[nodiscard]] InteropString            GetControllerName( int playerIndex ) const;
         [[nodiscard]] bool                     SetControllerRumble( int playerIndex, uint16_t lowFrequency, uint16_t highFrequency, uint32_t durationMs ) const;
-
-    private:
-#ifdef WINDOW_MANAGER_SDL
-        static void ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outEvent );
-#endif
-        static BitSet<KeyMod> ConvertKeyMod( SDL_Keymod sdlMods );
-        static SDL_Keymod     ConvertToSdlKeyMod( const BitSet<KeyMod> &modifiers );
     };
 
 } // namespace DenOfIz
