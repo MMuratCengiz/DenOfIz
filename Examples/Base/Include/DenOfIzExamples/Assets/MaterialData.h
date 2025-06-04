@@ -22,10 +22,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 #include "DenOfIzGraphics/Backends/Interface/ITextureResource.h"
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
+#include "DenOfIzExamples/Interop.h"
 
 namespace DenOfIz
 {
-    struct DZ_API MaterialDesc
+    struct MaterialDesc
     {
         ILogicalDevice    *Device;
         BatchResourceCopy *BatchCopy;
@@ -49,15 +50,15 @@ namespace DenOfIz
         std::unique_ptr<ITextureResource> m_aoTexture;
 
     public:
-        DZ_API MaterialData( const MaterialDesc &desc );
-        DZ_API ~MaterialData( ) = default;
+        MaterialData( const MaterialDesc &desc );
+        ~MaterialData( ) = default;
 
-        [[nodiscard]] DZ_API ISampler         *Sampler( ) const;
-        [[nodiscard]] DZ_API ITextureResource *AlbedoTexture( ) const;
-        [[nodiscard]] DZ_API ITextureResource *NormalTexture( ) const;
-        [[nodiscard]] DZ_API ITextureResource *HeightTexture( ) const;
-        [[nodiscard]] DZ_API ITextureResource *MetallicTexture( ) const;
-        [[nodiscard]] DZ_API ITextureResource *RoughnessTexture( ) const;
-        [[nodiscard]] DZ_API ITextureResource *AoTexture( ) const;
+        [[nodiscard]] ISampler         *Sampler( ) const;
+        [[nodiscard]] ITextureResource *AlbedoTexture( ) const;
+        [[nodiscard]] ITextureResource *NormalTexture( ) const;
+        [[nodiscard]] ITextureResource *HeightTexture( ) const;
+        [[nodiscard]] ITextureResource *MetallicTexture( ) const;
+        [[nodiscard]] ITextureResource *RoughnessTexture( ) const;
+        [[nodiscard]] ITextureResource *AoTexture( ) const;
     };
 } // namespace DenOfIz

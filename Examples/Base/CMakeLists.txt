@@ -1,6 +1,9 @@
 find_package(SDL2 CONFIG REQUIRED)
+find_package(glog CONFIG REQUIRED)
 
 set(DEN_OF_IZ_EXAMPLES_BASE_SOURCES
+        Source/Assets/AssetData.cpp
+        Source/Assets/MaterialData.cpp
         Source/Camera.cpp
         Source/DefaultRenderPipeline.cpp
         Source/Main.cpp
@@ -18,6 +21,9 @@ target_include_default_directories(DenOfIzExamples-Base)
 target_link_libraries(DenOfIzExamples-Base
         PUBLIC
         DenOfIzGraphics
+        glog::glog
+        SDL2::SDL2
+        SDL2::SDL2main
 )
 if (BUILD_SHARED_LIBS)
     target_compile_definitions(DenOfIzExamples-Base PRIVATE DZ_EXAMPLES_EXPORTS)

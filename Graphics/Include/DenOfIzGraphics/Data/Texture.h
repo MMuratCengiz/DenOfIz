@@ -23,13 +23,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Backends/Interface/CommonData.h"
 #include "DenOfIzGraphics/Utilities/Common.h"
 
-#include "dds.h"
+namespace dds
+{
+    struct Header;
+}
 
 #define DZ_USE_DDS
 #define DZ_USE_STB_IMAGE
 
 namespace DenOfIz
 {
+    struct DDSHeaderDeleter
+    {
+        void operator( )( const dds::Header *ptr ) const;
+    };
 
     enum class TextureExtension
     {
@@ -46,10 +53,10 @@ namespace DenOfIz
     typedef std::function<void( TextureMip mipData )> MipStreamCallback;
     class Texture
     {
-        std::string             m_path;
-        std::vector<TextureMip> m_mipData;
-        dds::Header             m_ddsHeader{ };
-        Byte                   *m_contentData{ };
+        std::string                                    m_path;
+        std::vector<TextureMip>                        m_mipData;
+        std::unique_ptr<dds::Header, DDSHeaderDeleter> m_ddsHeader;
+        Byte                                          *m_contentData{ };
 
         uint32_t           m_width{ };
         uint32_t           m_height{ };
@@ -97,6 +104,5 @@ namespace DenOfIz
         void LoadTextureFromMemory( const Byte *data, size_t dataNumBytes );
         void LoadTextureDDSFromMemory( const Byte *data, size_t dataNumBytes );
         void LoadTextureSTBFromMemory( const Byte *data, size_t dataNumBytes );
-
     };
 } // namespace DenOfIz

@@ -20,6 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <exception>
 #include <stdexcept>
+
+#define GLOG_NO_EXPORT
 #include <glog/logging.h>
 
 #define DZ_RETURN_IF( condition )                                                                                                                                                  \

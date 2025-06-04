@@ -68,7 +68,7 @@ namespace DenOfIz
         uint32_t FontSize = 16;
     };
 
-    class DZ_API Clay
+    class Clay
     {
         struct Impl;
         std::unique_ptr<Impl> m_impl;

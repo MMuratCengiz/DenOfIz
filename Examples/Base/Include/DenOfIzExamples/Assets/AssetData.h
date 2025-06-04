@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace DenOfIz
 {
     /// <summary> AssetData class is a container class for asset information, reduces clutter. </summary>
-    struct DZ_API AssetDataDesc
+    struct AssetDataDesc
     {
         ILogicalDevice    *Device{ };
         BatchResourceCopy *BatchCopy{ };
@@ -42,12 +42,12 @@ namespace DenOfIz
         uint32_t                         m_numIndices  = 0;
 
     public:
-        DZ_API explicit AssetData( const AssetDataDesc &desc );
-        DZ_API void                           UpdateMaterialData( MaterialData *materialData );
-        [[nodiscard]] DZ_API IBufferResource *VertexBuffer( ) const;
-        [[nodiscard]] DZ_API IBufferResource *IndexBuffer( ) const;
-        [[nodiscard]] DZ_API MaterialData    *Material( ) const;
-        [[nodiscard]] DZ_API uint32_t         NumVertices( ) const;
-        [[nodiscard]] DZ_API uint32_t         NumIndices( ) const;
+        explicit AssetData( const AssetDataDesc &desc );
+        void                           UpdateMaterialData( MaterialData *materialData );
+        [[nodiscard]] IBufferResource *VertexBuffer( ) const;
+        [[nodiscard]] IBufferResource *IndexBuffer( ) const;
+        [[nodiscard]] MaterialData    *Material( ) const;
+        [[nodiscard]] uint32_t         NumVertices( ) const;
+        [[nodiscard]] uint32_t         NumIndices( ) const;
     };
 } // namespace DenOfIz

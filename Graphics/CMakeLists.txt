@@ -309,7 +309,7 @@ target_include_directories(DenOfIzGraphics
 
 
 target_link_libraries(DenOfIzGraphics
-        PUBLIC
+        PRIVATE
         glog::glog
         Microsoft::DirectXMath
         SDL2::SDL2

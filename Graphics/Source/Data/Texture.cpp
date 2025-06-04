@@ -17,8 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Data/Texture.h"
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 #if not defined( STB_IMAGE_IMPLEMENTATION ) and defined( BUILD_SHARED_LIBS ) // Otherwise it's built by assimp
 #define STB_IMAGE_IMPLEMENTATION
@@ -35,6 +35,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
+void DDSHeaderDeleter::operator( )( const dds::Header *ptr ) const
+{
+    delete ptr;
+}
+
 Texture::Texture( const InteropString &path ) : m_path( Utilities::AppPath( path.Get( ) ) )
 {
     if ( !std::filesystem::exists( m_path ) )
@@ -42,7 +47,6 @@ Texture::Texture( const InteropString &path ) : m_path( Utilities::AppPath( path
         LOG( ERROR ) << "Texture file does not exist: " << m_path;
         return;
     }
-
     if ( const std::filesystem::path &extension = std::filesystem::path( m_path ).extension( ); extension == ".dds" )
     {
         m_extension = TextureExtension::DDS;
@@ -123,7 +127,7 @@ void Texture::LoadTextureSTB( )
 {
     int width, height, channels;
 
-    stbi_uc *contents = stbi_load( m_path.c_str( ), &width, &height, &channels, STBI_rgb_alpha );
+    const stbi_uc *contents = stbi_load( m_path.c_str( ), &width, &height, &channels, STBI_rgb_alpha );
 
     if ( contents == nullptr )
     {
@@ -373,34 +377,35 @@ void Texture::LoadTextureDDS( )
         return;
     }
 
-    m_ddsHeader = dds::read_header( fileData, size );
-    if ( !m_ddsHeader.is_valid( ) )
+    const dds::Header header = dds::read_header( fileData, size );
+    m_ddsHeader              = std::unique_ptr<dds::Header, DDSHeaderDeleter>( new dds::Header( header ) );
+    if ( !m_ddsHeader->is_valid( ) )
     {
         LOG( WARNING ) << "Error loading texture: " << m_path << ", reason: Invalid DDS header";
         return;
     }
 
     m_arraySize    = 1;
-    m_width        = m_ddsHeader.width( );
-    m_height       = m_ddsHeader.height( );
-    m_depth        = m_ddsHeader.depth( );
-    m_mipLevels    = m_ddsHeader.mip_levels( );
-    m_arraySize    = m_ddsHeader.array_size( );
-    m_format       = GetFormatFromDDS( m_ddsHeader.format( ) );
-    m_bitsPerPixel = m_ddsHeader.bits_per_element( );
-    m_blockSize    = m_ddsHeader.block_size( );
+    m_width        = m_ddsHeader->width( );
+    m_height       = m_ddsHeader->height( );
+    m_depth        = m_ddsHeader->depth( );
+    m_mipLevels    = m_ddsHeader->mip_levels( );
+    m_arraySize    = m_ddsHeader->array_size( );
+    m_format       = GetFormatFromDDS( m_ddsHeader->format( ) );
+    m_bitsPerPixel = m_ddsHeader->bits_per_element( );
+    m_blockSize    = m_ddsHeader->block_size( );
     m_rowPitch     = std::max( 1U, ( m_width + ( m_blockSize - 1 ) ) / m_blockSize ) * m_bitsPerPixel >> 3;
     m_numRows      = std::max( 1U, ( m_height + ( m_blockSize - 1 ) ) / m_blockSize );
     m_slicePitch   = m_rowPitch * m_numRows;
 
-    m_data.Resize( m_ddsHeader.data_size( ) );
-    m_data.MemCpy( fileData + m_ddsHeader.data_offset( ), m_ddsHeader.data_size( ) );
+    m_data.Resize( m_ddsHeader->data_size( ) );
+    m_data.MemCpy( fileData + m_ddsHeader->data_offset( ), m_ddsHeader->data_size( ) );
 
-    if ( m_ddsHeader.is_1d( ) )
+    if ( m_ddsHeader->is_1d( ) )
     {
         m_dimension = TextureDimension::Texture1D;
     }
-    else if ( m_ddsHeader.is_3d( ) )
+    else if ( m_ddsHeader->is_3d( ) )
     {
         m_dimension = TextureDimension::Texture3D;
     }
@@ -408,7 +413,7 @@ void Texture::LoadTextureDDS( )
     {
         m_dimension = TextureDimension::Texture2D;
     }
-    if ( m_ddsHeader.is_cubemap( ) )
+    if ( m_ddsHeader->is_cubemap( ) )
     {
         m_dimension = TextureDimension::TextureCube;
     }
@@ -517,16 +522,16 @@ void Texture::StreamMipDataDDS( const MipStreamCallback &callback ) const
         for ( uint32_t mip = 0; mip < m_mipLevels; ++mip )
         {
             // this.Data already skips the data_offset() but mip_offset() includes it
-            const auto externalOffset = m_ddsHeader.mip_offset( mip, array ) - m_ddsHeader.data_offset( );
+            const auto externalOffset = m_ddsHeader->mip_offset( mip, array ) - m_ddsHeader->data_offset( );
 
             TextureMip mipData{ };
-            mipData.Width      = m_ddsHeader.width( ) >> mip;
-            mipData.Height     = m_ddsHeader.height( ) >> mip;
+            mipData.Width      = m_ddsHeader->width( ) >> mip;
+            mipData.Height     = m_ddsHeader->height( ) >> mip;
             mipData.MipIndex   = mip;
             mipData.ArrayIndex = array;
-            mipData.RowPitch   = m_ddsHeader.row_pitch( mip );
+            mipData.RowPitch   = m_ddsHeader->row_pitch( mip );
             mipData.NumRows    = m_numRows >> mip;
-            mipData.SlicePitch = m_ddsHeader.slice_pitch( mip );
+            mipData.SlicePitch = m_ddsHeader->slice_pitch( mip );
             mipData.DataOffset = externalOffset;
 
             callback( mipData );
@@ -570,35 +575,36 @@ void Texture::LoadTextureDDSFromMemory( const Byte *data, const size_t dataNumBy
         return;
     }
 
-    m_ddsHeader = dds::read_header( data, dataNumBytes );
-    if ( !m_ddsHeader.is_valid( ) )
+    const dds::Header header = dds::read_header( data, dataNumBytes );
+    m_ddsHeader              = std::unique_ptr<dds::Header, DDSHeaderDeleter>( new dds::Header( header ) );
+    if ( !m_ddsHeader->is_valid( ) )
     {
         LOG( WARNING ) << "Error loading texture from memory: Invalid DDS header";
         return;
     }
 
     m_arraySize    = 1;
-    m_width        = m_ddsHeader.width( );
-    m_height       = m_ddsHeader.height( );
-    m_depth        = m_ddsHeader.depth( );
-    m_mipLevels    = m_ddsHeader.mip_levels( );
-    m_arraySize    = m_ddsHeader.array_size( );
-    m_format       = GetFormatFromDDS( m_ddsHeader.format( ) );
-    m_bitsPerPixel = m_ddsHeader.bits_per_element( );
-    m_blockSize    = m_ddsHeader.block_size( );
+    m_width        = m_ddsHeader->width( );
+    m_height       = m_ddsHeader->height( );
+    m_depth        = m_ddsHeader->depth( );
+    m_mipLevels    = m_ddsHeader->mip_levels( );
+    m_arraySize    = m_ddsHeader->array_size( );
+    m_format       = GetFormatFromDDS( m_ddsHeader->format( ) );
+    m_bitsPerPixel = m_ddsHeader->bits_per_element( );
+    m_blockSize    = m_ddsHeader->block_size( );
     m_rowPitch     = std::max( 1U, ( m_width + ( m_blockSize - 1 ) ) / m_blockSize ) * m_bitsPerPixel >> 3;
     m_numRows      = std::max( 1U, ( m_height + ( m_blockSize - 1 ) ) / m_blockSize );
     m_slicePitch   = m_rowPitch * m_numRows;
 
-    m_data.Resize( m_ddsHeader.data_size( ) );
-    const uint8_t *srcData = data + m_ddsHeader.data_offset( );
-    m_data.MemCpy( srcData, m_ddsHeader.data_size( ) );
+    m_data.Resize( m_ddsHeader->data_size( ) );
+    const uint8_t *srcData = data + m_ddsHeader->data_offset( );
+    m_data.MemCpy( srcData, m_ddsHeader->data_size( ) );
 
-    if ( m_ddsHeader.is_1d( ) )
+    if ( m_ddsHeader->is_1d( ) )
     {
         m_dimension = TextureDimension::Texture1D;
     }
-    else if ( m_ddsHeader.is_3d( ) )
+    else if ( m_ddsHeader->is_3d( ) )
     {
         m_dimension = TextureDimension::Texture3D;
     }
@@ -606,7 +612,7 @@ void Texture::LoadTextureDDSFromMemory( const Byte *data, const size_t dataNumBy
     {
         m_dimension = TextureDimension::Texture2D;
     }
-    if ( m_ddsHeader.is_cubemap( ) )
+    if ( m_ddsHeader->is_cubemap( ) )
     {
         m_dimension = TextureDimension::TextureCube;
     }

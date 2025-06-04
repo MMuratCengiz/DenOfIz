@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <SDL2/SDL.h>
 #include "DenOfIzExamples/Camera.h"
 #include <algorithm>
-#include "DenOfIzGraphics/Utilities/Common_Macro.h"#include <SDL2/SDL.h>
 
 using namespace DirectX;
 
