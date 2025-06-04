@@ -21,6 +21,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <DenOfIzGraphics/Backends/Interface/ReflectionData.h>
 #include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
 #include <metal_irconverter/metal_irconverter.h>
+
+#ifdef _WIN32
+#include <wrl/client.h>
+#include "DenOfIzGraphics/Utilities/Common_Windows.h"
+#else
+#define __EMULATE_UUID
+#include "WinAdapter.h"
+#endif
+
+#include "dxcapi.h"
+
 #ifndef _WIN32
 #define interface struct
 #endif

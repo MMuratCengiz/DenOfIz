@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphicsInternal/UI/UIShapes.h"
 #include <clay.h>
 #include <memory>
 #include <unordered_map>
+#include "DenOfIzGraphicsInternal/UI/UIShapes.h"
 
 namespace DenOfIz
 {
@@ -73,16 +73,16 @@ namespace DenOfIz
     class UITextVertexCache
     {
     public:
-        UITextVertexCache() = default;
-        ~UITextVertexCache() = default;
+        UITextVertexCache( )  = default;
+        ~UITextVertexCache( ) = default;
 
-        CachedTextVertices* GetOrCreateCachedTextVertices(const TextVertexCacheKey &key, uint32_t currentFrame);
-        void Cleanup(uint32_t currentFrame, uint32_t maxAge = 120);
-        void Clear();
-        size_t GetCacheSize() const;
+        CachedTextVertices *GetOrCreateCachedTextVertices( const TextVertexCacheKey &key, uint32_t currentFrame );
+        void                Cleanup( uint32_t currentFrame, uint32_t maxAge = 120 );
+        void                Clear( );
+        size_t              GetCacheSize( ) const;
 
-        static TextVertexCacheKey CreateTextVertexKey(const Clay_RenderCommand *command, float effectiveScale, float adjustedY, float dpiScale);
-        static uint32_t ColorToRGBA(const Clay_Color &color);
+        static TextVertexCacheKey CreateTextVertexKey( const Clay_RenderCommand *command, float effectiveScale, float adjustedY, float dpiScale );
+        static uint32_t           ColorToRGBA( const Clay_Color &color );
 
     private:
         std::unordered_map<TextVertexCacheKey, std::unique_ptr<CachedTextVertices>, TextVertexCacheKeyHash> m_cache;
