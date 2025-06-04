@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/Bundle/Bundle.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>

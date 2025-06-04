@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "exception"
-#include "glog/logging.h"
 #include "Interop.h"
 
 #define DZ_RETURN_IF( condition )                                                                                                                                                  \

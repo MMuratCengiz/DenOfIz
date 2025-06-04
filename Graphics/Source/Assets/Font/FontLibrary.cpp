@@ -16,9 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Assets/Font/FontLibrary.h>
-#include <DenOfIzGraphicsInternal/Utilities/Logging.h>
+#include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 #include <freetype/freetype.h>
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h"
 
@@ -37,7 +37,7 @@ FontLibrary::~FontLibrary( )
     // Clear fonts before destroying FreeType library
     m_fonts.clear( );
     m_fontStore.clear( );
-    
+
     if ( m_ftLibrary )
     {
         FT_Done_FreeType( m_ftLibrary );
@@ -64,17 +64,17 @@ DenOfIz::Font *FontLibrary::LoadFont( const FontDesc &desc )
 // Note keep DenOfIz::Font here to disambiguate in Linux
 DenOfIz::Font *FontLibrary::LoadFont( const InteropString &ttf )
 {
-    BinaryContainer targetContainer{};
+    BinaryContainer targetContainer{ };
 
-    FontImportDesc fontImport{};
+    FontImportDesc fontImport{ };
     fontImport.TargetContainer = &targetContainer;
 
-    ImportJobDesc importJob{};
+    ImportJobDesc importJob{ };
     importJob.SourceFilePath = ttf;
-    importJob.Desc = &fontImport;
+    importJob.Desc           = &fontImport;
     m_fontImporter.Import( importJob );
 
-    BinaryReader reader( targetContainer );
+    BinaryReader    reader( targetContainer );
     FontAssetReader fontReader( { &reader } );
     FontAsset      &asset = m_assets.emplace_back( fontReader.Read( ) );
 

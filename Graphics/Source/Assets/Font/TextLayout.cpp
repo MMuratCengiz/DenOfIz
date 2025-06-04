@@ -16,9 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Assets/Font/TextLayout.h>
-#include <DenOfIzGraphicsInternal/Assets/Font/FontImpl.h>
-#include <DenOfIzGraphicsInternal/Utilities/Logging.h>
+#include "DenOfIzGraphics/Assets/Font/TextLayout.h"
+#include "DenOfIzGraphicsInternal/Assets/Font/FontImpl.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <harfbuzz/hb-ft.h>
 #include <harfbuzz/hb.h>
 #include <unordered_map>
