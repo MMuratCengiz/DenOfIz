@@ -26,14 +26,12 @@ MetalSwapChain::MetalSwapChain( MetalContext *context, const SwapChainDesc &desc
 {
     SDL_SysWMinfo wmInfo;
 	SDL_VERSION( &wmInfo.version );
-    SDLWindow* window = m_desc.WindowHandle->GetSDLWindow( );
+    SDL_Window* window = m_desc.WindowHandle->GetSDLWindow( );
 	if ( SDL_GetWindowWMInfo( window, &wmInfo ) )
 	{
 		NSWindow* nsWindow = wmInfo.info.cocoa.window;
         m_view = (NSView*)nsWindow.contentView;
 	}
-
-    m_view                            = (NSView*)m_desc.WindowHandle->GetNativeView( );
     m_view.autoresizesSubviews        = YES;
     m_view.layer                      = [CAMetalLayer layer];
     m_metalLayer                      = (CAMetalLayer *)m_view.layer;

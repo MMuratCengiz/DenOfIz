@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzExamples/Main.h"
 #include <SDL2/SDL.h>
+#include "DenOfIzExamples/Main.h"
 #include "DenOfIzExamples/IExample.h"
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "DenOfIzGraphics/Backends/GraphicsApi.h"
