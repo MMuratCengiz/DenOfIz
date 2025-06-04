@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "gtest/gtest.h"
 
-#include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h>
-#include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetReader.h>
-#include <DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetWriter.h>
-#include <DenOfIzGraphics/Assets/Stream/BinaryContainer.h>
+#include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAsset.h"
+#include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetReader.h"
+#include "DenOfIzGraphics/Assets/Serde/Animation/AnimationAssetWriter.h"
+#include "DenOfIzGraphics/Assets/Stream/BinaryContainer.h"
 #include "../../TestComparators.h"
 
 using namespace DenOfIz;

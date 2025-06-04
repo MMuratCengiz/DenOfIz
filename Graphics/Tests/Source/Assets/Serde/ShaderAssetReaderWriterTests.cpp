@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "gtest/gtest.h"
 
-#include <DenOfIzGraphics/Assets/Serde/Shader/ShaderAsset.h>
-#include <DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h>
-#include <DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetWriter.h>
+#include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAsset.h"
+#include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
+#include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetWriter.h"
 
 using namespace DenOfIz;
 

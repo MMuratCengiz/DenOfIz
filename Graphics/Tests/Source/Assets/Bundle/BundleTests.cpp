@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "gtest/gtest.h"
 
-#include <DenOfIzGraphics/Assets/Bundle/Bundle.h>
-#include <DenOfIzGraphics/Assets/Bundle/BundleManager.h>
-#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
+#include "DenOfIzGraphics/Assets/Bundle/Bundle.h"
+#include "DenOfIzGraphics/Assets/Bundle/BundleManager.h"
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include <filesystem>
 #include "../../TestComparators.h"
 

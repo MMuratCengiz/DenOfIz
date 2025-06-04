@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
+#include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
 #include "IBufferResource.h"
 #include "IInputLayout.h"
 #include "IRootSignature.h"

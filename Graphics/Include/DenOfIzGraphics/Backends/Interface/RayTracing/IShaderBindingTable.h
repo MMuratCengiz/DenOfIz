@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
+#include "DenOfIzGraphics/Backends/Interface/IPipeline.h"
 #include "IBottomLevelAS.h"
 #include "IShaderLocalData.h"
 #include "ITopLevelAS.h"

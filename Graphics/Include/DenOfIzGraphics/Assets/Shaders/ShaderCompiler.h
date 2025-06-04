@@ -1,7 +1,7 @@
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
-#include <DenOfIzGraphics/Utilities/Common.h>
+#include "DenOfIzGraphics/Backends/Interface/ShaderData.h"
+#include "DenOfIzGraphics/Utilities/Common.h"
 #include <memory>
 
 namespace DenOfIz

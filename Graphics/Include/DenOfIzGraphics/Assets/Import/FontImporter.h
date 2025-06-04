@@ -17,8 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Import/IAssetImporter.h>
-#include <DenOfIzGraphics/Assets/Serde/Font/FontAssetWriter.h>
+#include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
+#include "DenOfIzGraphics/Assets/Serde/Font/FontAssetWriter.h"
 #include <memory>
 
 namespace DenOfIz

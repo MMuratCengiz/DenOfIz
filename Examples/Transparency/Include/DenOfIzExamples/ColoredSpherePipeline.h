@@ -17,17 +17,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <DenOfIzExamples/Interop.h>
-#include <DenOfIzExamples/PerDrawBinding.h>
-#include <DenOfIzExamples/PerFrameBinding.h>
-#include <DenOfIzExamples/WorldData.h>
-#include <DenOfIzGraphics/Backends/Common/ShaderProgram.h>
-#include <DenOfIzGraphics/Backends/GraphicsApi.h>
-#include <DenOfIzGraphics/Backends/Interface/IBufferResource.h>
-#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
-#include <DenOfIzGraphics/Backends/Interface/IPipeline.h>
-#include <DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h>
-#include <DenOfIzGraphics/Backends/Interface/IRootSignature.h>
+#include "DenOfIzExamples/Interop.h"
+#include "DenOfIzExamples/PerDrawBinding.h"
+#include "DenOfIzExamples/PerFrameBinding.h"
+#include "DenOfIzExamples/WorldData.h"
+#include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
+#include "DenOfIzGraphics/Backends/GraphicsApi.h"
+#include "DenOfIzGraphics/Backends/Interface/IBufferResource.h"
+#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
+#include "DenOfIzGraphics/Backends/Interface/IPipeline.h"
+#include "DenOfIzGraphics/Backends/Interface/IResourceBindGroup.h"
+#include "DenOfIzGraphics/Backends/Interface/IRootSignature.h"
 #include <DirectXMath.h>
 
 namespace DenOfIz

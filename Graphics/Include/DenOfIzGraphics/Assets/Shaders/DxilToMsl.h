@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Backends/Interface/ShaderData.h>
-#include <DenOfIzGraphics/Utilities/Interop.h>
+#include "DenOfIzGraphics/Backends/Interface/ShaderData.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 #include <memory>
 
 namespace DenOfIz

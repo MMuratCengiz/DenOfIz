@@ -17,12 +17,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Font/FontLibrary.h>
-#include <DenOfIzGraphics/Assets/Font/TextRenderer.h>
-#include <DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h>
-#include <DenOfIzGraphics/Assets/Stream/BinaryReader.h>
-#include <DenOfIzGraphics/Backends/GraphicsApi.h>
-#include <DenOfIzGraphics/Utilities/Time.h>
+#include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
+#include "DenOfIzGraphics/Assets/Font/TextRenderer.h"
+#include "DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h"
+#include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
+#include "DenOfIzGraphics/Backends/GraphicsApi.h"
+#include "DenOfIzGraphics/Utilities/Time.h"
 #include <chrono>
 #include <deque>
 #include <memory>

@@ -19,11 +19,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 // Include all graphics headers, and supporting code such as animation and font
-#include <DenOfIzGraphics/Assets/Font/TextRenderer.h>
-#include <DenOfIzGraphics/Backends/GraphicsApi.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/Data/Geometry.h>
+#include "DenOfIzGraphics/Assets/Font/TextRenderer.h"
+#include "DenOfIzGraphics/Backends/GraphicsApi.h"
+#include "DenOfIzGraphics/Data/BatchResourceCopy.h"
+#include "DenOfIzGraphics/Data/Geometry.h"
 
 #include "DenOfIzGraphics.h"
 #include "Animation/AnimationStateManager.h"
-#include "Assets/"
+#include "Assets/Assets.h"

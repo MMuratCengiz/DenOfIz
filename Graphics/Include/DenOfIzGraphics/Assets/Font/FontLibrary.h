@@ -18,13 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Interop.h>
 #include <mutex>
-#include <vector>
 #include <unordered_map>
-#include "Font.h"
-
+#include <vector>
 #include "DenOfIzGraphics/Assets/Import/FontImporter.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
+#include "Font.h"
 
 namespace DenOfIz
 {

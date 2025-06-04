@@ -20,9 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "ICommandQueue.h"
 
-#include <DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h>
-#include <DenOfIzGraphics/Backends/Interface/ISemaphore.h>
-#include <DenOfIzGraphics/Backends/Interface/ITextureResource.h>
+#include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
+#include "DenOfIzGraphics/Backends/Interface/ISemaphore.h"
+#include "DenOfIzGraphics/Backends/Interface/ITextureResource.h"
 
 namespace DenOfIz
 {

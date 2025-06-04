@@ -18,13 +18,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Utilities/Common.h>
-#include <DenOfIzGraphics/Backends/Common/SDLInclude.h>
-#include <DenOfIzGraphics/Input/Controller.h>
-#include <DenOfIzGraphics/Input/Event.h>
-#include <DenOfIzGraphics/Input/Window.h>
-#include <DenOfIzGraphics/Utilities/Engine.h>
-#include <DenOfIzGraphics/Utilities/Interop.h>
+#include "DenOfIzGraphics/Utilities/Common.h"
+#include "DenOfIzGraphics/Backends/Common/SDLInclude.h"
+#include "DenOfIzGraphics/Input/Controller.h"
+#include "DenOfIzGraphics/Input/Event.h"
+#include "DenOfIzGraphics/Input/Window.h"
+#include "DenOfIzGraphics/Utilities/Engine.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 
 namespace DenOfIz
 {

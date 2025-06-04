@@ -18,11 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Input/Event.h>
-#include <DenOfIzGraphics/Input/EventCallbacks.h>
-#include <DenOfIzGraphics/Input/InputSystem.h>
-#include <DenOfIzGraphics/Utilities/Engine.h>
-#include <DenOfIzGraphics/Utilities/Interop.h>
+#include "DenOfIzGraphics/Input/Event.h"
+#include "DenOfIzGraphics/Input/EventCallbacks.h"
+#include "DenOfIzGraphics/Input/InputSystem.h"
+#include "DenOfIzGraphics/Utilities/Engine.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 
 namespace DenOfIz
 {
