@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzGraphics/Assets/Shaders/ShaderReflectionHelper.h>
+#include "DenOfIzGraphicsInternal/Assets/Shaders/ShaderReflectionHelper.h"
 
 using namespace DenOfIz;
 
@@ -48,7 +48,7 @@ bool ShaderReflectionHelper::IsBindingBindless( const BindlessDesc &bindlessDesc
     return false;
 }
 
-const BindlessSlot* ShaderReflectionHelper::GetBindlessSlot( const BindlessDesc &bindlessDesc, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc )
+const BindlessSlot *ShaderReflectionHelper::GetBindlessSlot( const BindlessDesc &bindlessDesc, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc )
 {
     const auto &bindings = bindlessDesc.BindlessArrays;
     for ( int i = 0; i < bindings.NumElements( ); ++i )

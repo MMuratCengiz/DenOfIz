@@ -16,15 +16,27 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzGraphicsInternal/Utilities/ContainerUtilities.h"
-#include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
-#include "DenOfIzGraphics/Assets/Shaders/DxcEnumConverter.h"
-#include "DenOfIzGraphics/Assets/Shaders/DxilToMsl.h"
-#include "DenOfIzGraphics/Assets/Shaders/ReflectionDebugOutput.h"
 #include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
 #include <ranges>
 #include <set>
 #include <utility>
+#include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAsset.h"
+#include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetReader.h"
+#include "DenOfIzGraphics/Assets/Shaders/DxilToMsl.h"
+#include "DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h"
+#include "DenOfIzGraphicsInternal/Assets/Shaders/DxcEnumConverter.h"
+#include "DenOfIzGraphicsInternal/Assets/Shaders/ReflectionDebugOutput.h"
+#include "DenOfIzGraphicsInternal/Assets/Shaders/ShaderReflectionHelper.h"
+
+#ifdef _WIN32
+#include <wrl/client.h>
+#include "DenOfIzGraphics/Utilities/Common_Windows.h"
+#else
+#define __EMULATE_UUID
+#include "WinAdapter.h"
+#endif
+
+#include "dxcapi.h"
 
 using namespace DenOfIz;
 
@@ -38,29 +50,89 @@ using namespace DenOfIz;
     }                                                                                                                                                                              \
     while ( false )
 
-ShaderProgram::ShaderProgram( ShaderProgramDesc desc ) : m_desc( std::move( desc ) )
+struct ReflectionState
 {
-    Compile( );
-    CreateReflectionData( );
+    RootSignatureDesc        *RootSignatureDesc;
+    InputLayoutDesc          *InputLayoutDesc;
+    LocalRootSignatureDesc   *LocalRootSignature;
+    ShaderStageDesc const    *ShaderDesc;
+    CompiledShaderStage      *CompiledShader;
+    ID3D12ShaderReflection   *ShaderReflection;
+    ID3D12LibraryReflection  *LibraryReflection;
+    ID3D12FunctionReflection *FunctionReflection;
+};
+
+class ShaderProgram::Impl
+{
+public:
+    ShaderCompiler                                    m_compiler;
+    std::vector<std::unique_ptr<CompiledShaderStage>> m_compiledShaders;
+    std::vector<ShaderStageDesc>                      m_shaderDescs; // Index matched with m_compiledShaders
+    ShaderReflectDesc                                 m_reflectDesc;
+    ShaderProgramDesc                                 m_desc;
+
+    explicit Impl( ShaderProgramDesc desc ) : m_desc( std::move( desc ) )
+    {
+    }
+    explicit Impl( const ShaderAsset & )
+    {
+    }
+
+    void Compile( );
+    void CreateReflectionData( );
+    void InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
+    void ReflectShader( const ReflectionState &state ) const;
+    void ReflectLibrary( ReflectionState &state ) const;
+    void ProcessInputBindingDesc( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex ) const;
+    bool UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
+    void ProcessBindlessArrays( RootSignatureDesc &rootSignature ) const;
+};
+
+ShaderProgram::ShaderProgram( ShaderProgramDesc desc ) : m_pImpl( std::make_unique<Impl>( std::move( desc ) ) )
+{
+    m_pImpl->Compile( );
+    m_pImpl->CreateReflectionData( );
 }
 
-ShaderProgram::ShaderProgram( const ShaderAsset &asset )
+ShaderProgram::ShaderProgram( const ShaderAsset &asset ) : m_pImpl( std::make_unique<Impl>( asset ) )
 {
     CompiledShader shader = ShaderAssetReader::ConvertToCompiledShader( asset );
     for ( int i = 0; i < shader.Stages.NumElements( ); ++i )
     {
         CompiledShaderStage *shaderStage = shader.Stages.GetElement( i );
-        m_compiledShaders.emplace_back( std::unique_ptr<CompiledShaderStage>( shaderStage ) );
+        m_pImpl->m_compiledShaders.emplace_back( std::unique_ptr<CompiledShaderStage>( shaderStage ) );
     }
-    m_reflectDesc     = shader.ReflectDesc;
-    m_desc            = { };
-    m_desc.RayTracing = shader.RayTracing;
+    m_pImpl->m_reflectDesc     = shader.ReflectDesc;
+    m_pImpl->m_desc            = { };
+    m_pImpl->m_desc.RayTracing = shader.RayTracing;
+}
+
+ShaderProgram::~ShaderProgram( ) = default;
+
+InteropArray<CompiledShaderStage *> ShaderProgram::CompiledShaders( ) const
+{
+    InteropArray<CompiledShaderStage *> compiledShaders;
+    for ( auto &shader : m_pImpl->m_compiledShaders )
+    {
+        compiledShaders.AddElement( shader.get( ) );
+    }
+    return compiledShaders;
+}
+
+ShaderReflectDesc ShaderProgram::Reflect( ) const
+{
+    return m_pImpl->m_reflectDesc;
+}
+
+ShaderProgramDesc ShaderProgram::Desc( ) const
+{
+    return m_pImpl->m_desc;
 }
 
 /**
  * \brief Compiles the shaders targeting MSL/DXIL/SPIR-V. MSL is double compiled, first time to DXIL and reflect and provide a root signature to the second compilation.
  */
-void ShaderProgram::Compile( )
+void ShaderProgram::Impl::Compile( )
 {
     std::vector<CompiledShaderStage *> dxilShaders;
 
@@ -127,8 +199,15 @@ void ShaderProgram::Compile( )
 #endif
 }
 
-void ShaderProgram::CreateReflectionData( )
+void ShaderProgram::Impl::CreateReflectionData( )
 {
+    IDxcUtils    *dxcUtils = nullptr;
+    const HRESULT hr       = DxcCreateInstance( CLSID_DxcUtils, IID_PPV_ARGS( &dxcUtils ) );
+    if ( FAILED( hr ) )
+    {
+        LOG( ERROR ) << "Failed to create DxcUtils for reflection";
+        return;
+    }
     m_reflectDesc = { };
     m_reflectDesc.LocalRootSignatures.Resize( m_compiledShaders.size( ) );
     m_reflectDesc.ThreadGroups.Resize( m_compiledShaders.size( ) );
@@ -152,8 +231,8 @@ void ShaderProgram::CreateReflectionData( )
         LocalRootSignatureDesc &recordLayout = m_reflectDesc.LocalRootSignatures.GetElement( stageIndex );
         reflectionState.LocalRootSignature   = &recordLayout;
 
-        auto            reflectionBlob = shader->Reflection;
-        const DxcBuffer reflectionBuffer{
+        auto      reflectionBlob = shader->Reflection;
+        DxcBuffer reflectionBuffer{
             .Ptr      = reflectionBlob.Data( ),
             .Size     = reflectionBlob.NumElements( ),
             .Encoding = 0,
@@ -170,17 +249,16 @@ void ShaderProgram::CreateReflectionData( )
         case ShaderStage::Intersection:
         case ShaderStage::Raygen:
         case ShaderStage::Miss:
-            DXC_CHECK_RESULT( m_compiler.DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &libraryReflection ) ) );
+            DXC_CHECK_RESULT( dxcUtils->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &libraryReflection ) ) );
             reflectionState.LibraryReflection = libraryReflection;
             ReflectLibrary( reflectionState );
             break;
         case ShaderStage::Vertex:
         default:
-            DXC_CHECK_RESULT( m_compiler.DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) ) );
+            DXC_CHECK_RESULT( dxcUtils->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &shaderReflection ) ) );
             reflectionState.ShaderReflection = shaderReflection;
             ReflectShader( reflectionState );
 
-            // Extract thread group size for compute/mesh/task shaders
             if ( shader->Stage == ShaderStage::Compute || shader->Stage == ShaderStage::Mesh || shader->Stage == ShaderStage::Task )
             {
                 ThreadGroupInfo threadGroup = ShaderReflectionHelper::ExtractThreadGroupSize( shaderReflection, nullptr );
@@ -200,22 +278,16 @@ void ShaderProgram::CreateReflectionData( )
         }
     }
 
-    // Process bindless arrays from all shader stages
     ProcessBindlessArrays( rootSignature );
 
 #ifndef NDEBUG
     ReflectionDebugOutput::DumpReflectionInfo( m_reflectDesc );
 #endif
-}
 
-InteropArray<CompiledShaderStage *> ShaderProgram::CompiledShaders( ) const
-{
-    InteropArray<CompiledShaderStage *> compiledShaders;
-    for ( auto &shader : m_compiledShaders )
+    if ( dxcUtils )
     {
-        compiledShaders.AddElement( shader.get( ) );
+        dxcUtils->Release( );
     }
-    return std::move( compiledShaders );
 }
 
 Format MaskToFormat( const D3D_REGISTER_COMPONENT_TYPE componentType, const uint32_t mask )
@@ -308,17 +380,7 @@ Format MaskToFormat( const D3D_REGISTER_COMPONENT_TYPE componentType, const uint
     }
 }
 
-ShaderReflectDesc ShaderProgram::Reflect( ) const
-{
-    return m_reflectDesc;
-}
-
-ShaderProgramDesc ShaderProgram::Desc( ) const
-{
-    return m_desc;
-}
-
-void ShaderProgram::ReflectShader( const ReflectionState &state ) const
+void ShaderProgram::Impl::ReflectShader( const ReflectionState &state ) const
 {
     ID3D12ShaderReflection *shaderReflection = state.ShaderReflection;
 
@@ -339,7 +401,7 @@ void ShaderProgram::ReflectShader( const ReflectionState &state ) const
     }
 }
 
-void ShaderProgram::ReflectLibrary( ReflectionState &state ) const
+void ShaderProgram::Impl::ReflectLibrary( ReflectionState &state ) const
 {
     ID3D12LibraryReflection *libraryReflection = state.LibraryReflection;
 
@@ -378,7 +440,7 @@ void ShaderProgram::ReflectLibrary( ReflectionState &state ) const
     }
 }
 
-void ShaderProgram::ProcessInputBindingDesc( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, const int resourceIndex ) const
+void ShaderProgram::Impl::ProcessInputBindingDesc( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, const int resourceIndex ) const
 {
     if ( UpdateBoundResourceStage( state, shaderInputBindDesc ) )
     {
@@ -444,7 +506,7 @@ void ShaderProgram::ProcessInputBindingDesc( const ReflectionState &state, const
     ShaderReflectionHelper::FillReflectionData( state.ShaderReflection, state.FunctionReflection, resourceBindingDesc.Reflection, resourceIndex );
 }
 
-void ShaderProgram::ProcessBindlessArrays( RootSignatureDesc &rootSignature ) const
+void ShaderProgram::Impl::ProcessBindlessArrays( RootSignatureDesc &rootSignature ) const
 {
     for ( int stageIndex = 0; stageIndex < m_desc.ShaderStages.NumElements( ); ++stageIndex )
     {
@@ -480,7 +542,7 @@ void ShaderProgram::ProcessBindlessArrays( RootSignatureDesc &rootSignature ) co
     }
 }
 
-bool ShaderProgram::UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
+bool ShaderProgram::Impl::UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const
 {
     const ResourceBindingType bindingType = DxcEnumConverter::ReflectTypeToBufferBindingType( shaderInputBindDesc.Type );
     // Check if Resource is already bound, if so add the stage to the existing binding and continue
@@ -529,7 +591,7 @@ bool ShaderProgram::UpdateBoundResourceStage( const ReflectionState &state, cons
     return found;
 }
 
-void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const
+void ShaderProgram::Impl::InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const
 {
     constexpr D3D_NAME providedSemantics[ 8 ] = {
         D3D_NAME_VERTEX_ID, D3D_NAME_INSTANCE_ID,   D3D_NAME_PRIMITIVE_ID, D3D_NAME_RENDER_TARGET_ARRAY_INDEX, D3D_NAME_VIEWPORT_ARRAY_INDEX,
@@ -571,8 +633,4 @@ void ShaderProgram::InitInputLayout( ID3D12ShaderReflection *shaderReflection, I
             inputElementsArray.Elements.AddElement( inputElements[ i ] );
         }
     }
-}
-
-ShaderProgram::~ShaderProgram( )
-{
 }

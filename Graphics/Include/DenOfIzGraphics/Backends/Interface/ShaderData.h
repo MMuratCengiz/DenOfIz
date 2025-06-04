@@ -24,16 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "IBufferResource.h"
 #include "ITextureResource.h"
 
-#ifdef _WIN32
-#include "DenOfIzGraphics/Utilities/Common_Windows.h" // Include this before to make sure NOMINMAX is defined
-#include <wrl/client.h>
-#else
-#define __EMULATE_UUID
-#include "WinAdapter.h"
-#endif
-
 #include "RayTracing/RayTracingData.h"
-#include "dxcapi.h"
 
 namespace DenOfIz
 {

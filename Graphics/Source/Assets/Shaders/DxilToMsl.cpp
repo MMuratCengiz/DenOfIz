@@ -16,12 +16,85 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <../../../Internal/DenOfIzGraphicsInternal/Utilities/ContainerUtilities.h>
-#include <DenOfIzGraphics/Assets/Shaders/DxilToMsl.h>
-#include <DenOfIzGraphics/Assets/Shaders/ReflectionDebugOutput.h>
-#include <DenOfIzGraphics/Assets/Shaders/ShaderReflectionHelper.h>
+#include "DenOfIzGraphics/Assets/Shaders/DxilToMsl.h"
+#include <functional>
+#include <unordered_map>
+#include "DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h"
+#include "DenOfIzGraphics/Backends/Interface/IRootSignature.h"
+#include "DenOfIzGraphics/Backends/Interface/RayTracing/ILocalRootSignature.h"
+#include "DenOfIzGraphicsInternal/Assets/Shaders/DxcEnumConverter.h"
+#include "DenOfIzGraphicsInternal/Assets/Shaders/ReflectionDebugOutput.h"
+#include "DenOfIzGraphicsInternal/Assets/Shaders/ShaderReflectionHelper.h"
+#include "DenOfIzGraphicsInternal/Utilities/ContainerUtilities.h"
+
+#ifdef _WIN32
+#include <wrl/client.h>
+#include "DenOfIzGraphics/Utilities/Common_Windows.h"
+#else
+#define __EMULATE_UUID
+#include "WinAdapter.h"
+#endif
+
+#include "dxcapi.h"
+#include "metal_irconverter/metal_irconverter.h"
 
 using namespace DenOfIz;
+
+struct MetalDescriptorOffsets
+{
+    // -1 is used for debugging purposes to show that no descriptor table exists in this root signature of that type
+    int                                    CbvSrvUavOffset      = -1;
+    int                                    SamplerOffset        = -1;
+    int                                    LocalCbvSrvUavOffset = -1;
+    int                                    LocalSamplerOffset   = -1;
+    std::unordered_map<uint32_t, uint32_t> UniqueTLABIndex{ };
+};
+
+// This is used to order the root parameters in the root signature as metal top level argument buffer expects them in the same order
+// Binding goes from 0 till max register space.
+struct RegisterSpaceRange
+{
+    std::vector<IRRootConstants>     RootConstants;
+    std::vector<IRRootDescriptor>    RootArguments;
+    std::vector<IRRootParameterType> RootArgumentTypes;
+    std::vector<IRDescriptorRange1>  CbvSrvUavRanges;
+    std::vector<IRDescriptorRange1>  SamplerRanges;
+    IRShaderVisibility               ShaderVisibility;
+    bool                             HasBindlessResources = false;
+};
+
+typedef const std::function<void( D3D12_SHADER_INPUT_BIND_DESC &, int )> ReflectionCallback;
+
+struct CompileMslDesc
+{
+    IRRootSignature     *RootSignature;
+    IRRootSignature     *LocalRootSignature;
+    ShaderRayTracingDesc RayTracing;
+};
+
+class DxilToMsl::Impl
+{
+public:
+    ShaderCompiler m_compiler;
+
+    ID3D12ShaderReflection   *m_shaderReflection   = nullptr;
+    ID3D12LibraryReflection  *m_libraryReflection  = nullptr;
+    ID3D12FunctionReflection *m_functionReflection = nullptr;
+
+    IRCompiler *m_irCompiler = nullptr;
+
+    Impl( );
+    ~Impl( );
+    InteropArray<InteropArray<Byte>> Convert( const DxilToMslDesc &desc );
+
+private:
+    [[nodiscard]] InteropArray<Byte> Compile( const CompileDesc &compileDesc, const InteropArray<Byte> &dxil, const CompileMslDesc &compileMslDesc,
+                                              const RayTracingShaderDesc &rayTracingShaderDesc ) const;
+
+    IRRootSignature *CreateRootSignature( std::vector<RegisterSpaceRange> &registerSpaceRanges, bool isLocal ) const;
+    void             IterateBoundResources( CompiledShaderStage *shader, ReflectionCallback &callback );
+    void             DxcCheckResult( HRESULT hr ) const;
+};
 
 void PutRootParameterDescriptorTable( std::vector<IRRootParameter1> &rootParameters, const IRShaderVisibility visibility, std::vector<IRDescriptorRange1> &ranges )
 {
@@ -39,8 +112,16 @@ void PutRootParameterDescriptorTable( std::vector<IRRootParameter1> &rootParamet
 }
 
 // Todo perhaps share this with main reflection code
-void DxilToMsl::IterateBoundResources( CompiledShaderStage *shader, ReflectionCallback &callback )
+void DxilToMsl::Impl::IterateBoundResources( CompiledShaderStage *shader, ReflectionCallback &callback )
 {
+    IDxcUtils *dxcUtils = nullptr;
+    HRESULT    hr       = DxcCreateInstance( CLSID_DxcUtils, IID_PPV_ARGS( &dxcUtils ) );
+    if ( FAILED( hr ) )
+    {
+        LOG( ERROR ) << "Failed to create DxcUtils for reflection";
+        return;
+    }
+
     auto            reflectionBlob = shader->Reflection;
     const DxcBuffer reflectionBuffer{
         .Ptr      = reflectionBlob.Data( ),
@@ -56,7 +137,7 @@ void DxilToMsl::IterateBoundResources( CompiledShaderStage *shader, ReflectionCa
     case ShaderStage::Raygen:
     case ShaderStage::Miss:
         {
-            DxcCheckResult( m_compiler.DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &m_libraryReflection ) ) );
+            DxcCheckResult( dxcUtils->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &m_libraryReflection ) ) );
             D3D12_LIBRARY_DESC libraryDesc{ };
             DxcCheckResult( m_libraryReflection->GetDesc( &libraryDesc ) );
 
@@ -77,7 +158,7 @@ void DxilToMsl::IterateBoundResources( CompiledShaderStage *shader, ReflectionCa
         break;
     default:
         {
-            DxcCheckResult( m_compiler.DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &m_shaderReflection ) ) );
+            DxcCheckResult( dxcUtils->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &m_shaderReflection ) ) );
 
             D3D12_SHADER_DESC shaderDesc{ };
             DxcCheckResult( m_shaderReflection->GetDesc( &shaderDesc ) );
@@ -91,6 +172,10 @@ void DxilToMsl::IterateBoundResources( CompiledShaderStage *shader, ReflectionCa
             }
         }
         break;
+    }
+    if ( dxcUtils )
+    {
+        dxcUtils->Release( );
     }
 }
 
@@ -128,7 +213,7 @@ IRDescriptorRange1 CreateDescriptorRange( const D3D12_SHADER_INPUT_BIND_DESC &sh
     return descriptorRange;
 }
 
-IRRootSignature *DxilToMsl::CreateRootSignature( std::vector<RegisterSpaceRange> &registerSpaceRanges, const bool isLocal ) const
+IRRootSignature *DxilToMsl::Impl::CreateRootSignature( std::vector<RegisterSpaceRange> &registerSpaceRanges, const bool isLocal ) const
 {
     std::vector<IRRootParameter1> rootParameters;
     int                           registerSpace = 0;
@@ -204,7 +289,7 @@ IRRootSignature *DxilToMsl::CreateRootSignature( std::vector<RegisterSpaceRange>
 }
 // For metal, we need to produce a root signature to compile a correct metal lib
 // We also keep track of how the root parameter layout looks like so
-DxilToMsl::~DxilToMsl( )
+DxilToMsl::Impl::~Impl( )
 {
     if ( m_shaderReflection )
     {
@@ -219,8 +304,16 @@ DxilToMsl::~DxilToMsl( )
     }
 }
 
-InteropArray<InteropArray<Byte>> DxilToMsl::Convert( const DxilToMslDesc &desc )
+InteropArray<InteropArray<Byte>> DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
 {
+    IDxcUtils    *dxcUtils = nullptr;
+    const HRESULT hr       = DxcCreateInstance( CLSID_DxcUtils, IID_PPV_ARGS( &dxcUtils ) );
+    if ( FAILED( hr ) )
+    {
+        LOG( ERROR ) << "Failed to create DxcUtils";
+        return { };
+    }
+
     const InteropArray<CompiledShaderStage *> &dxilShaders = desc.DXILShaders;
     // We use this vector to make sure register spaces are ordered correctly, the order of the root parameters is also how the Top Level Argument Buffer expects them
     std::vector<RegisterSpaceRange>           localRegisterSpaceRanges;
@@ -343,7 +436,7 @@ InteropArray<InteropArray<Byte>> DxilToMsl::Convert( const DxilToMslDesc &desc )
                 m_shaderReflection->Release( );
                 m_shaderReflection = nullptr;
             }
-            m_compiler.DxcUtils( )->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &m_shaderReflection ) );
+            dxcUtils->CreateReflection( &reflectionBuffer, IID_PPV_ARGS( &m_shaderReflection ) );
         }
 
         auto mslBlob = Compile( compileDesc, dxilShader->DXIL, compileMslDesc, shader.RayTracing );
@@ -353,11 +446,16 @@ InteropArray<InteropArray<Byte>> DxilToMsl::Convert( const DxilToMslDesc &desc )
     IRRootSignatureDestroy( compileMslDesc.LocalRootSignature );
     IRRootSignatureDestroy( compileMslDesc.RootSignature );
 
+    if ( dxcUtils )
+    {
+        dxcUtils->Release( );
+    }
+
     return result;
 }
 
-InteropArray<Byte> DxilToMsl::Compile( const CompileDesc &compileDesc, const InteropArray<Byte> &dxil, const CompileMslDesc &compileMslDesc,
-                                       const RayTracingShaderDesc &rayTracingShaderDesc ) const
+InteropArray<Byte> DxilToMsl::Impl::Compile( const CompileDesc &compileDesc, const InteropArray<Byte> &dxil, const CompileMslDesc &compileMslDesc,
+                                             const RayTracingShaderDesc &rayTracingShaderDesc ) const
 {
     const IRRootSignature *rootSignature  = compileMslDesc.RootSignature;
     const IRRootSignature *localSignature = compileMslDesc.LocalRootSignature;
@@ -405,9 +503,9 @@ InteropArray<Byte> DxilToMsl::Compile( const CompileDesc &compileDesc, const Int
                                               compileMslDesc.RayTracing.MaxRecursionDepth, IRRayGenerationCompilationVisibleFunction,
                                               IRIntersectionFunctionCompilationVisibleFunction );
 
-    IRObject *irDxil  = IRObjectCreateFromDXIL( static_cast<const uint8_t *>( dxil.Data( ) ), dxil.NumElements( ), IRBytecodeOwnershipNone );
-    IRError  *irError = nullptr;
-    IRObject *outIr   = IRCompilerAllocCompileAndLink( irCompiler, compileDesc.EntryPoint.Get( ), irDxil, &irError );
+    IRObject       *irDxil  = IRObjectCreateFromDXIL( static_cast<const uint8_t *>( dxil.Data( ) ), dxil.NumElements( ), IRBytecodeOwnershipNone );
+    IRError        *irError = nullptr;
+    const IRObject *outIr   = IRCompilerAllocCompileAndLink( irCompiler, compileDesc.EntryPoint.Get( ), irDxil, &irError );
 
     if ( !outIr )
     {
@@ -431,10 +529,29 @@ InteropArray<Byte> DxilToMsl::Compile( const CompileDesc &compileDesc, const Int
     return mslBlob;
 }
 
-void DxilToMsl::DxcCheckResult( const HRESULT hr ) const
+void DxilToMsl::Impl::DxcCheckResult( const HRESULT hr ) const
 {
     if ( FAILED( hr ) )
     {
         LOG( ERROR ) << "DXC Error: " << hr;
     }
+}
+
+DxilToMsl::Impl::Impl( )
+{
+#ifdef __APPLE__
+    m_irCompiler = IRCompilerCreate( );
+#endif
+}
+
+// Public interface implementations
+DxilToMsl::DxilToMsl( ) : m_pImpl( std::make_unique<Impl>( ) )
+{
+}
+
+DxilToMsl::~DxilToMsl( ) = default;
+
+InteropArray<InteropArray<Byte>> DxilToMsl::Convert( const DxilToMslDesc &desc )
+{
+    return m_pImpl->Convert( desc );
 }

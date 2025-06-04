@@ -17,13 +17,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h"
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 #include <fstream>
 #include <ranges>
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
+
+#ifdef _WIN32
+#include <wrl/client.h>
+#include "DenOfIzGraphics/Utilities/Common_Windows.h" // Include this before to make sure NOMINMAX is defined
+#else
+#define __EMULATE_UUID
+#include "WinAdapter.h"
+#endif
+
+#include "dxcapi.h"
 
 using namespace DenOfIz;
 
-ShaderCompiler::ShaderCompiler( )
+class ShaderCompiler::Impl
+{
+public:
+    IDxcLibrary        *m_dxcLibrary        = nullptr;
+    IDxcCompiler3      *m_dxcCompiler       = nullptr;
+    IDxcUtils          *m_dxcUtils          = nullptr;
+    IDxcIncludeHandler *m_dxcIncludeHandler = nullptr;
+
+    Impl( );
+    ~Impl( );
+    [[nodiscard]] CompileResult CompileHLSL( const CompileDesc &compileDesc ) const;
+};
+
+ShaderCompiler::Impl::Impl( )
 {
     HRESULT result = DxcCreateInstance( CLSID_DxcLibrary, IID_PPV_ARGS( &m_dxcLibrary ) );
     if ( FAILED( result ) )
@@ -50,16 +73,11 @@ ShaderCompiler::ShaderCompiler( )
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-ShaderCompiler::~ShaderCompiler( )
+ShaderCompiler::Impl::~Impl( )
 {
 }
 
-IDxcUtils *ShaderCompiler::DxcUtils( ) const
-{
-    return m_dxcUtils;
-}
-
-CompileResult ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) const
+CompileResult ShaderCompiler::Impl::CompileHLSL( const CompileDesc &compileDesc ) const
 {
     if ( compileDesc.TargetIL == TargetIL::MSL )
     {
@@ -309,4 +327,15 @@ CompileResult ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) cons
         reflection->Release( );
     }
     return { .Code = codeArray, .Reflection = reflectionArray };
+}
+
+ShaderCompiler::ShaderCompiler( ) : m_pImpl( std::make_unique<Impl>( ) )
+{
+}
+
+ShaderCompiler::~ShaderCompiler( ) = default;
+
+CompileResult ShaderCompiler::CompileHLSL( const CompileDesc &compileDesc ) const
+{
+    return m_pImpl->CompileHLSL( compileDesc );
 }

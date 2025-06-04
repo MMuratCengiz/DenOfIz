@@ -18,12 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h"
-#include "DenOfIzGraphics/Assets/Shaders/ShaderReflectionHelper.h"
-#include "DenOfIzGraphics/Backends/Interface/IInputLayout.h"
-#include "DenOfIzGraphics/Backends/Interface/IRootSignature.h"
-#include "DenOfIzGraphics/Backends/Interface/RayTracing/ILocalRootSignature.h"
-#include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAsset.h"
+#include <memory>
+#include "DenOfIzGraphics/Assets/Shaders/ShaderReflectDesc.h"
+#include "DenOfIzGraphics/Backends/Interface/ShaderData.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 
 namespace DenOfIz
 {
@@ -47,19 +45,6 @@ namespace DenOfIz
         ShaderRayTracingDesc          RayTracing;
     };
 
-    // State data for reflection processing during `ShaderProgram::Reflect( );`
-    struct ReflectionState
-    {
-        RootSignatureDesc        *RootSignatureDesc;
-        InputLayoutDesc          *InputLayoutDesc;
-        LocalRootSignatureDesc   *LocalRootSignature;
-        ShaderStageDesc const    *ShaderDesc;
-        CompiledShaderStage      *CompiledShader;
-        ID3D12ShaderReflection   *ShaderReflection;
-        ID3D12LibraryReflection  *LibraryReflection;
-        ID3D12FunctionReflection *FunctionReflection;
-    };
-
     struct DZ_API CompiledShader
     {
         // The user should clean up these!
@@ -69,32 +54,23 @@ namespace DenOfIz
     };
     template class DZ_API InteropArray<CompiledShader>;
 
+    struct ShaderAsset;
+
     class ShaderProgram
     {
-        ShaderCompiler                                    m_compiler;
-        std::vector<std::unique_ptr<CompiledShaderStage>> m_compiledShaders;
-        std::vector<ShaderStageDesc>                      m_shaderDescs; // Index matched with m_compiledShaders
-        ShaderReflectDesc                                 m_reflectDesc;
-        ShaderProgramDesc                                 m_desc;
-
     public:
         DZ_API explicit ShaderProgram( ShaderProgramDesc desc );
         // Load shader program generated offline into a file
         DZ_API explicit ShaderProgram( const ShaderAsset &asset );
+        DZ_API ~ShaderProgram( );
+
         [[nodiscard]] DZ_API InteropArray<CompiledShaderStage *> CompiledShaders( ) const;
         [[nodiscard]] DZ_API ShaderReflectDesc                   Reflect( ) const;
         [[nodiscard]] DZ_API ShaderProgramDesc                   Desc( ) const;
-        DZ_API ~ShaderProgram( );
 
     private:
-        void Compile( );
-        void CreateReflectionData( );
-        void InitInputLayout( ID3D12ShaderReflection *shaderReflection, InputLayoutDesc &inputLayoutDesc, const D3D12_SHADER_DESC &shaderDesc ) const;
-        void ReflectShader( const ReflectionState &state ) const;
-        void ReflectLibrary( ReflectionState &state ) const;
-        void ProcessInputBindingDesc( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, int resourceIndex ) const;
-        bool UpdateBoundResourceStage( const ReflectionState &state, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc ) const;
-        void ProcessBindlessArrays( RootSignatureDesc &rootSignature ) const;
+        class Impl;
+        std::unique_ptr<Impl> m_pImpl;
     };
 
 } // namespace DenOfIz

@@ -58,12 +58,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "Serde/Texture/TextureAssetReader.h"
 #include "Serde/Texture/TextureAssetWriter.h"
 
-#include "Shaders/DxcEnumConverter.h"
 #include "Shaders/DxilToMsl.h"
-#include "Shaders/ReflectionDebugOutput.h"
 #include "Shaders/ShaderCompiler.h"
 #include "Shaders/ShaderReflectDesc.h"
-#include "Shaders/ShaderReflectionHelper.h"
 
 #include "Font/EmbeddedTextRendererShaders.h"
 #include "Font/Font.h"
