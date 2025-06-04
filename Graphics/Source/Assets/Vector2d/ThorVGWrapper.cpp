@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h"
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
-#include "DenOfIzGraphics/Data/Texture.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 #include <thorvg.h>
 
@@ -153,10 +153,16 @@ namespace DenOfIz
         }
     }
 
+    ThorVGPaint::~ThorVGPaint( ) = default;
+
+    ThorVGGradient::~ThorVGGradient( ) = default;
+
     ThorVGLinearGradient::ThorVGLinearGradient( )
     {
         m_gradient = tvg::LinearGradient::gen( );
     }
+
+    ThorVGLinearGradient::~ThorVGLinearGradient( ) = default;
 
     void ThorVGLinearGradient::Linear( const float x1, const float y1, const float x2, const float y2 ) const
     {
@@ -197,6 +203,8 @@ namespace DenOfIz
         m_gradient = tvg::RadialGradient::gen( );
     }
 
+    ThorVGRadialGradient::~ThorVGRadialGradient( ) = default;
+
     void ThorVGRadialGradient::Radial( const float cx, const float cy, const float radius ) const
     {
         ThorVGCheckResult( m_gradient->radial( cx, cy, radius ) );
@@ -235,6 +243,8 @@ namespace DenOfIz
     {
         m_shape = tvg::Shape::gen( );
     }
+
+    ThorVGShape::~ThorVGShape( ) = default;
 
     void ThorVGShape::Reset( ) const
     {
@@ -443,6 +453,8 @@ namespace DenOfIz
         m_picture = tvg::Picture::gen( );
     }
 
+    ThorVGPicture::~ThorVGPicture( ) = default;
+
     void ThorVGPicture::Load( const InteropString &path ) const
     {
         ThorVGCheckResult( m_picture->load( path.Get( ) ) );
@@ -543,6 +555,8 @@ namespace DenOfIz
         m_scene = tvg::Scene::gen( );
     }
 
+    ThorVGScene::~ThorVGScene( ) = default;
+
     void ThorVGScene::Push( ThorVGPaint *paint ) const
     {
         if ( !paint )
@@ -639,6 +653,8 @@ namespace DenOfIz
         m_canvas->mempool( tvg::SwCanvas::MempoolPolicy::Individual );
         Resize( desc.Width, desc.Height );
     }
+
+    ThorVGCanvas::~ThorVGCanvas( ) = default;
 
     void ThorVGCanvas::Push( ThorVGPaint *paint ) const
     {

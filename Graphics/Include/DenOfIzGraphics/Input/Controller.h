@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <memory>
 #include "DenOfIzGraphics/Input/InputData.h"
 #include "DenOfIzGraphics/Utilities/Engine.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
-#include "DenOfIzGraphics/Backends/Common/SDLInclude.h"
 
 namespace DenOfIz
 {
@@ -38,30 +38,23 @@ namespace DenOfIz
 
     class Controller
     {
-        bool        m_initialized;
-        int         m_controllerIndex;
-        uint32_t    m_instanceID;
-        static bool s_sdlInitialized;
-
-#ifdef WINDOW_MANAGER_SDL
-        SDL_GameController *m_gameController;
-        SDL_Joystick       *m_joystick;
-#endif
+        struct Impl;
+        std::unique_ptr<Impl> m_impl;
 
     public:
         DZ_API Controller( );
         DZ_API explicit Controller( int controllerIndex );
         DZ_API ~Controller( );
 
-        DZ_API bool Open( int controllerIndex );
-        DZ_API void Close( );
+        DZ_API bool Open( int controllerIndex ) const;
+        DZ_API void Close( ) const;
 
         DZ_API [[nodiscard]] bool    IsButtonPressed( ControllerButton button ) const;
         DZ_API [[nodiscard]] int16_t GetAxisValue( ControllerAxis axis ) const;
 
-        DZ_API bool HasRumble( ) const;
-        DZ_API bool SetRumble( uint16_t lowFrequencyRumble, uint16_t highFrequencyRumble, uint32_t durationMs ) const;
-        DZ_API bool SetTriggerRumble( bool leftTrigger, bool rightTrigger, uint16_t strength, uint32_t durationMs ) const;
+        DZ_API [[nodiscard]] bool HasRumble( ) const;
+        DZ_API [[nodiscard]] bool SetRumble( uint16_t lowFrequencyRumble, uint16_t highFrequencyRumble, uint32_t durationMs ) const;
+        DZ_API [[nodiscard]] bool SetTriggerRumble( bool leftTrigger, bool rightTrigger, uint16_t strength, uint32_t durationMs ) const;
 
         DZ_API [[nodiscard]] InteropString GetButtonName( ControllerButton button ) const;
         DZ_API [[nodiscard]] InteropString GetAxisName( ControllerAxis axis ) const;

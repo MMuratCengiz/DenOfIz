@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Backends/GraphicsApi.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 #ifdef BUILD_VK
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanLogicalDevice.h"
@@ -29,7 +30,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifdef BUILD_METAL
 #include "DenOfIzGraphicsInternal/Backends/Metal/MetalLogicalDevice.h"
 #endif
-
 
 using namespace DenOfIz;
 

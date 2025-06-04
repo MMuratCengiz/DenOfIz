@@ -17,7 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphicsInternal/UI/ClayTextCache.h"
-#include <glog/logging.h>
 #include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h"
 #include "DenOfIzGraphics/Backends/Interface/ICommandList.h"
@@ -26,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
 #include "DenOfIzGraphicsInternal/Assets/Font/Embedded/EmbeddedFonts.h"
 #include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 

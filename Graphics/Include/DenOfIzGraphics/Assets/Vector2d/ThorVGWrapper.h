@@ -21,6 +21,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 #include "DenOfIzGraphics/Utilities/InteropMath.h"
 
+namespace tvg
+{
+    class Paint;
+    class Fill;
+    class LinearGradient;
+    class RadialGradient;
+    class Shape;
+    class Picture;
+    class Scene;
+    class SwCanvas;
+}
+
 namespace DenOfIz
 {
     class ThorVGPaint;
@@ -125,7 +137,7 @@ namespace DenOfIz
     class ThorVGPaint
     {
     public:
-        DZ_API virtual ~ThorVGPaint( ) = default;
+        DZ_API virtual ~ThorVGPaint( );
 
         DZ_API virtual void Transform( const ThorVGMatrix &m ) = 0;
         DZ_API virtual void Translate( float x, float y )      = 0;
@@ -155,7 +167,7 @@ namespace DenOfIz
     class ThorVGGradient
     {
     public:
-        DZ_API virtual ~ThorVGGradient( ) = default;
+        DZ_API virtual ~ThorVGGradient( );
 
         DZ_API virtual void ColorStops( const InteropArray<ThorVGColorStop> &colorStops ) = 0;
         DZ_API virtual void Spread( ThorVGSpreadMethod spread )                           = 0;
@@ -176,7 +188,7 @@ namespace DenOfIz
 
     public:
         ThorVGLinearGradient( );
-        ~ThorVGLinearGradient( ) override = default;
+        ~ThorVGLinearGradient( ) override;
 
         DZ_API void Linear( float x1, float y1, float x2, float y2 ) const;
         DZ_API void ColorStops( const InteropArray<ThorVGColorStop> &colorStops ) override;
@@ -193,7 +205,7 @@ namespace DenOfIz
 
     public:
         ThorVGRadialGradient( );
-        ~ThorVGRadialGradient( ) override = default;
+        ~ThorVGRadialGradient( ) override;
 
         DZ_API void Radial( float cx, float cy, float radius ) const;
         DZ_API void ColorStops( const InteropArray<ThorVGColorStop> &colorStops ) override;
@@ -210,7 +222,7 @@ namespace DenOfIz
 
     public:
         ThorVGShape( );
-        ~ThorVGShape( ) override = default;
+        ~ThorVGShape( ) override;
 
         DZ_API void Reset( ) const;
         DZ_API void MoveTo( float x, float y ) const;
@@ -253,7 +265,7 @@ namespace DenOfIz
 
     public:
         DZ_API ThorVGPicture( );
-        DZ_API ~ThorVGPicture( ) override = default;
+        DZ_API ~ThorVGPicture( ) override;
 
         DZ_API void Load( const InteropString &path ) const;
         DZ_API void Load( const InteropArray<Byte> &data, const InteropString &mimeType = nullptr, bool copy = true ) const;
@@ -282,7 +294,7 @@ namespace DenOfIz
 
     public:
         DZ_API ThorVGScene( );
-        DZ_API ~ThorVGScene( ) override = default;
+        DZ_API ~ThorVGScene( ) override;
 
         DZ_API void Push( ThorVGPaint *paint ) const;
         DZ_API void Clear( bool free = true ) const;
@@ -316,7 +328,7 @@ namespace DenOfIz
 
     public:
         DZ_API explicit ThorVGCanvas( const ThorVGCanvasDesc &desc );
-        DZ_API ~ThorVGCanvas( ) = default;
+        DZ_API ~ThorVGCanvas( );
 
         DZ_API void Push( ThorVGPaint *paint ) const;
         DZ_API void Clear( bool free = true );

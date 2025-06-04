@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanPipeline.h"
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanRootSignature.h"
 #include <ranges>
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 

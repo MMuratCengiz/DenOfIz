@@ -60,6 +60,29 @@ struct InputSystem::Impl
 		}
 	}
 
+	// SDL button state conversion functions
+	static MouseButtonState FromSDLButtonState( uint32_t state )
+	{
+		MouseButtonState result;
+		result.LeftButton   = ( state & SDL_BUTTON_LMASK ) != 0;
+		result.MiddleButton = ( state & SDL_BUTTON_MMASK ) != 0;
+		result.RightButton  = ( state & SDL_BUTTON_RMASK ) != 0;
+		result.X1Button     = ( state & SDL_BUTTON_X1MASK ) != 0;
+		result.X2Button     = ( state & SDL_BUTTON_X2MASK ) != 0;
+		return result;
+	}
+
+	static uint32_t ToSDLButtonState( const MouseButtonState& buttons )
+	{
+		uint32_t state = 0;
+		if ( buttons.LeftButton )   state |= SDL_BUTTON_LMASK;
+		if ( buttons.MiddleButton ) state |= SDL_BUTTON_MMASK;
+		if ( buttons.RightButton )  state |= SDL_BUTTON_RMASK;
+		if ( buttons.X1Button )     state |= SDL_BUTTON_X1MASK;
+		if ( buttons.X2Button )     state |= SDL_BUTTON_X2MASK;
+		return state;
+	}
+
 #ifdef WINDOW_MANAGER_SDL
 	// SDL event conversion functions
 	static void ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event &outEvent );
@@ -154,7 +177,7 @@ void InputSystem::PushEvent( const Event &event )
         sdlEvent.motion.timestamp = event.Motion.Common.Timestamp;
         sdlEvent.motion.windowID  = event.Motion.Common.WindowID;
         sdlEvent.motion.which     = event.Motion.MouseID;
-        sdlEvent.motion.state     = event.Motion.Buttons.ToSDLButtonState( );
+        sdlEvent.motion.state     = Impl::ToSDLButtonState( event.Motion.Buttons );
         sdlEvent.motion.x         = event.Motion.X;
         sdlEvent.motion.y         = event.Motion.Y;
         sdlEvent.motion.xrel      = event.Motion.RelX;
@@ -316,7 +339,7 @@ void InputSystem::Impl::ConvertSDLEventToEvent( const SDL_Event &sdlEvent, Event
         outEvent.Motion.Common.Timestamp = sdlEvent.motion.timestamp;
         outEvent.Motion.Common.WindowID  = sdlEvent.motion.windowID;
         outEvent.Motion.MouseID          = sdlEvent.motion.which;
-        outEvent.Motion.Buttons          = MouseButtonState::FromSDLButtonState( sdlEvent.motion.state );
+        outEvent.Motion.Buttons          = Impl::FromSDLButtonState( sdlEvent.motion.state );
         outEvent.Motion.X                = sdlEvent.motion.x;
         outEvent.Motion.Y                = sdlEvent.motion.y;
         outEvent.Motion.RelX             = sdlEvent.motion.xrel;
@@ -567,7 +590,11 @@ MouseCoords InputSystem::GetRelativeMouseState( )
 void InputSystem::WarpMouseInWindow( const Window &window, const int x, const int y )
 {
 #ifdef WINDOW_MANAGER_SDL
-    SDL_WarpMouseInWindow( window.GetSDLWindow( ), x, y );
+    SDL_Window* sdlWindow = SDL_GetWindowFromID( window.GetWindowID( ) );
+    if ( sdlWindow )
+    {
+        SDL_WarpMouseInWindow( sdlWindow, x, y );
+    }
 #endif
 }
 

@@ -24,14 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <chrono>
 #endif
 
-// Init OS specific common includes, to make sure they are loaded first
-#include <thorvg.h>
-
 #include "Common_Apple.h"
 #include "Common_Windows.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FSConfig.h"
-#include "DenOfIzGraphics/Backends/Common/SDLInclude.h"
-#include "glog/logging.h"
 
 namespace DenOfIz
 {
@@ -53,60 +48,7 @@ namespace DenOfIz
     class DZ_API Engine
     {
     public:
-        static void Init( const EngineDesc &desc = { } )
-        {
-            if ( !desc.FS.AssetPath.IsEmpty( ) )
-            {
-                FSConfig::Init( desc.FS );
-            }
-            else
-            {
-                FSConfig::InitDefaults( );
-            }
-
-#ifdef WINDOW_MANAGER_SDL
-            SDL_SetMainReady( );
-            SDL_Init( SDL_INIT_VIDEO | SDL_INIT_SENSOR | SDL_INIT_GAMECONTROLLER );
-            std::atexit( SDL_Quit );
-#endif
-
-            tvg::Initializer::init( tvg::CanvasEngine::Sw, std::thread::hardware_concurrency( ) );
-            std::atexit( [] { tvg::Initializer::term( tvg::CanvasEngine::Sw ); } );
-
-            FLAGS_alsologtostderr           = true;
-            FLAGS_colorlogtostdout          = true;
-            FLAGS_max_log_size              = 50;
-            FLAGS_stop_logging_if_full_disk = true;
-            FLAGS_logfile_mode              = 0644;
-            FLAGS_logcleansecs              = 60 * 60 * 24;
-
-            switch ( desc.LogLevel )
-            {
-            case LogLevel::Info:
-                FLAGS_minloglevel = google::GLOG_INFO;
-                break;
-            case LogLevel::Warning:
-                FLAGS_minloglevel = google::GLOG_WARNING;
-                break;
-            case LogLevel::Error:
-                FLAGS_minloglevel = google::GLOG_ERROR;
-                break;
-            case LogLevel::Fatal:
-                FLAGS_minloglevel = google::GLOG_FATAL;
-                break;
-            }
-
-            const auto logFile = desc.LogFile.Get( );
-            google::InitGoogleLogging( "DenOfIz" );
-            google::SetLogDestination( google::GLOG_INFO, logFile );
-            google::SetLogDestination( google::GLOG_WARNING, logFile );
-            google::SetLogDestination( google::GLOG_ERROR, logFile );
-            google::SetLogDestination( google::GLOG_FATAL, logFile );
-        }
-
-        static void Shutdown( )
-        {
-            google::ShutdownGoogleLogging( );
-        }
+        static void Init( const EngineDesc &desc = { } );
+        static void Shutdown( );
     };
 } // namespace DenOfIz

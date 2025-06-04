@@ -21,11 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "DenOfIzGraphics/Backends/GraphicsApi.h"
 #include "WorldData.h"
-
 #include "DenOfIzGraphics/Renderer/Sync/FrameSync.h"
 #include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
-
 #include "DenOfIzGraphics/Input/Event.h"
+#include <glog/logging.h>
 
 namespace DenOfIz
 {
@@ -56,7 +55,7 @@ namespace DenOfIz
     public:
         virtual ~IExample( ) = default;
 
-        void Init( GraphicsWindowHandle *window, GraphicsApi *graphicsApi, ILogicalDevice *device )
+        void Init( GraphicsWindowHandle *const window, GraphicsApi *graphicsApi, ILogicalDevice *device )
         {
             m_windowHandle  = window;
             m_graphicsApi   = graphicsApi;

@@ -16,9 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanSwapChain.h"
+#include "DenOfIzGraphicsInternal/Backends/Common/SDLInclude.h"
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanCommandQueue.h"
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanEnumConverter.h"
-#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanSwapChain.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
@@ -35,20 +36,12 @@ VulkanSwapChain::VulkanSwapChain( VulkanContext *context, const SwapChainDesc &d
 void VulkanSwapChain::CreateSurface( )
 {
     DZ_NOT_NULL( m_context );
-    DZ_NOT_NULL( m_desc.WindowHandle->GetNativeHandle( ) );
-#ifdef WIN32
-    VkWin32SurfaceCreateInfoKHR createInfo{ };
-    createInfo.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-    createInfo.hwnd      = m_desc.WindowHandle->GetNativeHandle( );
-    createInfo.hinstance = ::GetModuleHandle( nullptr );
-    createInfo.flags     = 0;
-    createInfo.pNext     = nullptr;
-    VK_CHECK_RESULT( vkCreateWin32SurfaceKHR( m_context->Instance, &createInfo, nullptr, &m_surface ) );
-#elif __linux__
-    SDL_Vulkan_CreateSurface( m_desc.WindowHandle->GetNativeHandle( ), m_context->Instance, &m_surface );
-#else
-#error "Not implemented yet"
-#endif
+    DZ_NOT_NULL( m_desc.WindowHandle );
+    SDL_Window *sdlWindow = m_desc.WindowHandle->GetSDLWindow( );
+    if ( !SDL_Vulkan_CreateSurface( sdlWindow, m_context->Instance, &m_surface ) )
+    {
+        LOG( FATAL ) << "Failed to create Vulkan surface: " << SDL_GetError( );
+    }
     uint32_t                        count;
     std::vector<VkSurfaceFormatKHR> surfaceFormats;
     vkGetPhysicalDeviceSurfaceFormatsKHR( m_context->PhysicalDevice, m_surface, &count, nullptr );

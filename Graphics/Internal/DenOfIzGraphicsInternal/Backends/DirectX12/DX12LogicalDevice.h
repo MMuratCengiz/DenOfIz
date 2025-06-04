@@ -19,16 +19,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 #ifdef BUILD_DX12
 
-#include <DenOfIzGraphics/Backends/Interface/ILogicalDevice.h>
-#include <DenOfIzGraphics/Utilities/Common.h>
-#include "DX12BufferResource.h"
+#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
+#include "DenOfIzGraphics/Utilities/Common.h"
 #include "DX12CommandListPool.h"
 #include "DX12Context.h"
 #include "DX12Fence.h"
-#include "DX12ResourceBindGroup.h"
-#include "DX12TextureResource.h"
 
-#include <dxgidebug.h>
+#ifdef _WIN32
+#undef CreateSemaphore
+#endif
 
 namespace DenOfIz
 {

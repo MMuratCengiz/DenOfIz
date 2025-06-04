@@ -17,88 +17,76 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
-#include <SDL2/SDL_syswm.h>
+#include "DenOfIzGraphicsInternal/Backends/Common/SDLInclude.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
-#ifdef WINDOW_MANAGER_SDL
-void GraphicsWindowHandle::InitSDL( )
+struct GraphicsWindowHandle::Impl
 {
-    if ( SDL_WasInit( SDL_INIT_VIDEO ) == 0 )
+	SDL_Window *m_sdlWindow = nullptr;
+	uint32_t m_windowId = 0;
+
+	void InitSDL( ) const
     {
-        LOG( INFO ) << "Initializing SDL";
-        if ( SDL_Init( SDL_INIT_VIDEO ) != 0 )
-        {
-            LOG( FATAL ) << "Failed to initialize SDL: " << SDL_GetError( );
-        }
-        atexit( SDL_Quit );
-    }
+		if ( SDL_WasInit( SDL_INIT_VIDEO ) == 0 )
+		{
+			LOG( INFO ) << "Initializing SDL";
+			if ( SDL_Init( SDL_INIT_VIDEO ) != 0 )
+			{
+				LOG( FATAL ) << "Failed to initialize SDL: " << SDL_GetError( );
+			}
+			atexit( SDL_Quit );
+		}
+	}
+};
+
+GraphicsWindowHandle::GraphicsWindowHandle( ) 
+	: m_impl( std::make_unique<Impl>( ) )
+{
 }
 
-void GraphicsWindowHandle::CreateFromSDLWindow( SDL_Window *window )
-{
-    InitSDL( );
-    m_sdlWindow = window;
-    SDL_SysWMinfo info;
-    SDL_VERSION( &info.version );
-    if ( SDL_GetWindowWMInfo( window, &info ) )
-    {
-#ifdef _WIN32
-        m_windowHandle = info.info.win.window;
-#elif __APPLE__
-        m_windowHandle = info.info.cocoa.window;
-#elif __linux__
-        m_windowHandle = window;
-#endif
-    }
+GraphicsWindowHandle::~GraphicsWindowHandle( ) = default;
 
-    if ( m_windowHandle == nullptr )
-    {
-        LOG( FATAL ) << "Failed to get window handle";
-    }
+void GraphicsWindowHandle::CreateFromSDLWindowId( const uint32_t windowId ) const
+{
+	m_impl->InitSDL( );
+	m_impl->m_windowId = windowId;
+	
+	SDL_Window *window = SDL_GetWindowFromID( windowId );
+	if ( window == nullptr )
+	{
+		LOG( FATAL ) << "Failed to get window from SDL ID: " << windowId << " - " << SDL_GetError( );
+	}
+	m_impl->m_sdlWindow = window;
 }
 
-void GraphicsWindowHandle::CreateViaSDLWindowID( uint32_t windowID )
+uint32_t GraphicsWindowHandle::GetSDLWindowId( ) const
 {
-    InitSDL( );
-    SDL_Window *window = SDL_GetWindowFromID( windowID );
-    if ( window == nullptr )
-    {
-        LOG( FATAL ) << "Failed to get window from SDL ID: " << windowID << " - " << SDL_GetError( );
-    }
-    CreateFromSDLWindow( window );
+	return m_impl->m_windowId;
 }
 
-void GraphicsWindowHandle::CreateFromSDLWindowRawPtr( void *window )
+GraphicsWindowSurface GraphicsWindowHandle::GetSurface( ) const
 {
-    InitSDL( );
-    SDL_Window *pWindow = static_cast<SDL_Window *>( window );
-    if ( pWindow == nullptr )
-    {
-        LOG( FATAL ) << "Failed to get SDLWindow from raw pointer";
-    }
-    else
-    {
-        LOG( INFO ) << "Found window with title: " << SDL_GetWindowTitle( pWindow ) << ", id: " << SDL_GetWindowID( pWindow );
-    }
-    CreateFromSDLWindow( pWindow );
+	GraphicsWindowSurface result{ };
+	if ( m_impl->m_sdlWindow )
+	{
+        if ( const SDL_Surface *surface = SDL_GetWindowSurface( m_impl->m_sdlWindow ) )
+		{
+			result.Width  = surface->w;
+			result.Height = surface->h;
+		}
+	}
+
+	return result;
 }
 
-#endif
-const GraphicsWindowSurface GraphicsWindowHandle::GetSurface( ) const
+bool GraphicsWindowHandle::IsValid( ) const
 {
-#ifdef WINDOW_MANAGER_SDL
-    GraphicsWindowSurface result{ };
-    SDL_Surface          *surface = SDL_GetWindowSurface( m_sdlWindow );
-    result.Width                  = surface->w;
-    result.Height                 = surface->h;
-    return result;
-#else
-#error "Not implemented yet"
-#endif
+	return m_impl->m_windowId != 0 && m_impl->m_sdlWindow != nullptr;
 }
 
-TWindowHandle GraphicsWindowHandle::GetNativeHandle( ) const
+SDL_Window* GraphicsWindowHandle::GetSDLWindow( ) const
 {
-    return m_windowHandle;
+	return m_impl->m_sdlWindow;
 }

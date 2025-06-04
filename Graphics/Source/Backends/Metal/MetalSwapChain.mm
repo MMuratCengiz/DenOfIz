@@ -18,12 +18,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphicsInternal/Backends/Metal/MetalSwapChain.h"
 #include "DenOfIzGraphicsInternal/Backends/Metal/MetalSemaphore.h"
+#include "DenOfIzGraphicsInternal/Backends/Common/SDLInclude.h"
 
 using namespace DenOfIz;
 
 MetalSwapChain::MetalSwapChain( MetalContext *context, const SwapChainDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_view                            = m_desc.WindowHandle->GetNativeHandle( ).contentView;
+    SDL_SysWMinfo wmInfo;
+	SDL_VERSION( &wmInfo.version );
+    SDLWindow* window = m_desc.WindowHandle->GetSDLWindow( );
+	if ( SDL_GetWindowWMInfo( window, &wmInfo ) )
+	{
+		NSWindow* nsWindow = wmInfo.info.cocoa.window;
+        m_view = (NSView*)nsWindow.contentView;
+	}
+
+    m_view                            = (NSView*)m_desc.WindowHandle->GetNativeView( );
     m_view.autoresizesSubviews        = YES;
     m_view.layer                      = [CAMetalLayer layer];
     m_metalLayer                      = (CAMetalLayer *)m_view.layer;

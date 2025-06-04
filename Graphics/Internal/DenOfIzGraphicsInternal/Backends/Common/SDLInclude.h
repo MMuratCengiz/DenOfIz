@@ -25,17 +25,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #ifdef BUILD_VK
-#include "SDL2/SDL_vulkan.h"
+#include <SDL2/SDL_vulkan.h>
 #endif
-
-#ifdef _WIN32
 #include <SDL2/SDL_syswm.h>
-typedef HWND TWindowHandle;
-#elif __APPLE__
-typedef NSWindow *TWindowHandle;
-#elif __linux__
-// SDL Required on linux for now
-typedef SDL_Window* TWindowHandle;
 
 // Cleanup X11 macro pollution
 #undef Bool
@@ -47,5 +39,3 @@ typedef SDL_Window* TWindowHandle;
 #undef InputFocus
 
 #endif
-
-#endif // WINDOW_MANAGER_SDL

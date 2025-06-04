@@ -1,5 +1,6 @@
 #pragma once
 
+#include <intsafe.h>
 #include "DenOfIzExamples/IExample.h"
 #include "DenOfIzGraphics/Utilities/StepTimer.h"
 #include "DenOfIzGraphics/Utilities/Time.h"

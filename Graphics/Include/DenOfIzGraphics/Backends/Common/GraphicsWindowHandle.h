@@ -18,59 +18,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <memory>
 #include "DenOfIzGraphics/Utilities/Engine.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 
-#ifdef WINDOW_MANAGER_NATIVE
-#error "Not implemented yet"
-#endif
-#define WINDOW_MANAGER_SDL
-#include "DenOfIzGraphics/Backends/Common/SDLInclude.h"
+struct SDL_Window;
 
 namespace DenOfIz
 {
-
     struct DZ_API GraphicsWindowSurface
     {
         uint32_t Width;
         uint32_t Height;
     };
 
-    class DZ_API GraphicsWindowHandle
+    class GraphicsWindowHandle
     {
-#ifdef WINDOW_MANAGER_SDL
-        SDL_Window *m_sdlWindow;
-#endif
-        TWindowHandle m_windowHandle;
+        struct Impl;
+        std::unique_ptr<Impl> m_impl;
 
     public:
-        GraphicsWindowHandle( ) = default;
+        DZ_API GraphicsWindowHandle( );
+        DZ_API ~GraphicsWindowHandle( );
 
-#ifdef WINDOW_MANAGER_SDL
-        void CreateFromSDLWindow( SDL_Window *window );
-        void CreateViaSDLWindowID( uint32_t windowID );
-        void CreateFromSDLWindowRawPtr( void *);
-#else
-#error "Not implemented yet"
-#endif
+        DZ_API void CreateFromSDLWindowId( uint32_t windowId ) const;
 
-        [[nodiscard]] TWindowHandle GetNativeHandle( ) const;
-
-#ifdef __APPLE__
-        [[nodiscard]] NSView *GetNativeView( ) const
-        {
-
-            return m_windowHandle.contentView;
-        }
-#endif
-
-        [[nodiscard]] const GraphicsWindowSurface GetSurface( ) const;
-        ~GraphicsWindowHandle( ) = default;
-
-#ifdef WINDOW_MANAGER_SDL
-    private:
-        void InitSDL( );
-#endif
+        DZ_API [[nodiscard]] uint32_t              GetSDLWindowId( ) const;
+        DZ_API [[nodiscard]] GraphicsWindowSurface GetSurface( ) const;
+        DZ_API [[nodiscard]] bool                  IsValid( ) const;
+        DZ_API [[nodiscard]] SDL_Window           *GetSDLWindow( ) const;
     };
 
 } // namespace DenOfIz

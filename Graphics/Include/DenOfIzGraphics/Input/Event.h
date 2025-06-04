@@ -60,45 +60,6 @@ namespace DenOfIz
         bool RightButton  = false;
         bool X1Button     = false;
         bool X2Button     = false;
-
-#ifdef WINDOW_MANAGER_SDL
-        static MouseButtonState FromSDLButtonState( const uint32_t state )
-        {
-            MouseButtonState result;
-            result.LeftButton   = ( state & SDL_BUTTON_LMASK ) != 0;
-            result.MiddleButton = ( state & SDL_BUTTON_MMASK ) != 0;
-            result.RightButton  = ( state & SDL_BUTTON_RMASK ) != 0;
-            result.X1Button     = ( state & SDL_BUTTON_X1MASK ) != 0;
-            result.X2Button     = ( state & SDL_BUTTON_X2MASK ) != 0;
-            return result;
-        }
-
-        uint32_t ToSDLButtonState( ) const
-        {
-            uint32_t state = 0;
-            if ( LeftButton )
-            {
-                state |= SDL_BUTTON_LMASK;
-            }
-            if ( MiddleButton )
-            {
-                state |= SDL_BUTTON_MMASK;
-            }
-            if ( RightButton )
-            {
-                state |= SDL_BUTTON_RMASK;
-            }
-            if ( X1Button )
-            {
-                state |= SDL_BUTTON_X1MASK;
-            }
-            if ( X2Button )
-            {
-                state |= SDL_BUTTON_X2MASK;
-            }
-            return state;
-        }
-#endif
     };
 
     struct DZ_API MouseMotionEventData

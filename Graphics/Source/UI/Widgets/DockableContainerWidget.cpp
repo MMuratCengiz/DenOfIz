@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphicsInternal/UI/ClayContext.h"
 #include "DenOfIzGraphics/UI/Widgets/DockableContainerWidget.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <algorithm>
 #include <cmath>
 

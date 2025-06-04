@@ -17,6 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12SwapChain.h"
+#include <SDL2/SDL_syswm.h>
+#include "DenOfIzGraphicsInternal/Backends/Common/SDLInclude.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12EnumConverter.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Semaphore.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
@@ -43,8 +45,14 @@ void DX12SwapChain::CreateSwapChain( )
         DLOG( INFO ) << "Swap chain size does not match window size. This could be intentional";
     }
 
-    HWND hwnd = m_desc.WindowHandle->GetNativeHandle( );
-
+    SDL_Window   *sdlWindow = m_desc.WindowHandle->GetSDLWindow( );
+    SDL_SysWMinfo wmInfo;
+    SDL_VERSION( &wmInfo.version );
+    if ( !SDL_GetWindowWMInfo( sdlWindow, &wmInfo ) )
+    {
+        LOG( FATAL ) << "Failed to get window info from SDL: " << SDL_GetError( );
+    }
+    HWND                  hwnd          = wmInfo.info.win.window;
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { };
     swapChainDesc.Width                 = m_desc.Width;
     swapChainDesc.Height                = m_desc.Height;

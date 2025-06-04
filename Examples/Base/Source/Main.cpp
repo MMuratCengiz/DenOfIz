@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzExamples/Main.h"
+#include <SDL2/SDL.h>
 #include "DenOfIzExamples/IExample.h"
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "DenOfIzGraphics/Backends/GraphicsApi.h"
@@ -55,7 +56,7 @@ int DenOfIz::Main( IExample *example )
     const auto gApi          = std::make_unique<GraphicsApi>( apiPreferences );
     auto       logicalDevice = std::unique_ptr<ILogicalDevice>( gApi->CreateAndLoadOptimalLogicalDevice( ) );
 
-    example->Init( &graphicsWindowHandle, gApi.get( ), logicalDevice.get( ) );
+    example->Init( graphicsWindowHandle, gApi.get( ), logicalDevice.get( ) );
     auto        running = true;
     Event       event;
     InputSystem inputSystem{ };

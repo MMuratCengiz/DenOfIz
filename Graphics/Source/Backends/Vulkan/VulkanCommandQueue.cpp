@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanCommandQueue.h"
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanFence.h"
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanSwapChain.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 

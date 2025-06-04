@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/UI/ClayClipboard.h"
-#include <SDL2/SDL.h>
+#include "DenOfIzGraphicsInternal/Backends/Common/SDLInclude.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 namespace DenOfIz

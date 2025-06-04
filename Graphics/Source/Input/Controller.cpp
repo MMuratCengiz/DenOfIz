@@ -17,16 +17,38 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Input/Controller.h"
+#include "DenOfIzGraphicsInternal/Backends/Common/SDLInclude.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
-bool Controller::s_sdlInitialized = false;
+struct Controller::Impl
+{
+    bool     m_initialized;
+    int      m_controllerIndex;
+    uint32_t m_instanceID;
+#ifdef WINDOW_MANAGER_SDL
+    SDL_GameController *m_gameController;
+    SDL_Joystick       *m_joystick;
+#endif
 
-Controller::Controller( ) : m_initialized( false ), m_controllerIndex( -1 ), m_instanceID( 0 ), m_gameController( nullptr ), m_joystick( nullptr )
+    Impl( ) :
+        m_initialized( false ), m_controllerIndex( -1 ), m_instanceID( 0 )
+#ifdef WINDOW_MANAGER_SDL
+        ,
+        m_gameController( nullptr ), m_joystick( nullptr )
+#endif
+    {
+    }
+};
+
+static bool s_sdlInitialized = false;
+
+Controller::Controller( ) : m_impl( std::make_unique<Impl>( ) )
 {
 }
 
-Controller::Controller( const int controllerIndex ) : m_initialized( false ), m_controllerIndex( -1 ), m_instanceID( 0 ), m_gameController( nullptr ), m_joystick( nullptr )
+Controller::Controller( const int controllerIndex ) : m_impl( std::make_unique<Impl>( ) )
 {
     Open( controllerIndex );
 }
@@ -40,6 +62,7 @@ void Controller::InitializeSDL( )
 {
     if ( !s_sdlInitialized )
     {
+#ifdef WINDOW_MANAGER_SDL
         if ( SDL_WasInit( SDL_INIT_GAMECONTROLLER ) == 0 )
         {
             LOG( INFO ) << "Initializing SDL Game Controller";
@@ -48,11 +71,12 @@ void Controller::InitializeSDL( )
                 LOG( FATAL ) << "Failed to initialize SDL Game Controller: " << SDL_GetError( );
             }
         }
+#endif
         s_sdlInitialized = true;
     }
 }
 
-bool Controller::Open( const int controllerIndex )
+bool Controller::Open( const int controllerIndex ) const
 {
     Close( );
 
@@ -65,63 +89,63 @@ bool Controller::Open( const int controllerIndex )
         return false;
     }
 
-    m_gameController = SDL_GameControllerOpen( controllerIndex );
-    if ( m_gameController == nullptr )
+    m_impl->m_gameController = SDL_GameControllerOpen( controllerIndex );
+    if ( m_impl->m_gameController == nullptr )
     {
         LOG( ERROR ) << "Could not open game controller " << controllerIndex << ": " << SDL_GetError( );
         return false;
     }
 
-    m_joystick = SDL_GameControllerGetJoystick( m_gameController );
-    if ( m_joystick == nullptr )
+    m_impl->m_joystick = SDL_GameControllerGetJoystick( m_impl->m_gameController );
+    if ( m_impl->m_joystick == nullptr )
     {
-        SDL_GameControllerClose( m_gameController );
-        m_gameController = nullptr;
+        SDL_GameControllerClose( m_impl->m_gameController );
+        m_impl->m_gameController = nullptr;
         LOG( ERROR ) << "Could not get joystick from controller " << controllerIndex << ": " << SDL_GetError( );
         return false;
     }
 
-    m_controllerIndex = controllerIndex;
-    m_instanceID      = SDL_JoystickInstanceID( m_joystick );
-    m_initialized     = true;
+    m_impl->m_controllerIndex = controllerIndex;
+    m_impl->m_instanceID      = SDL_JoystickInstanceID( m_impl->m_joystick );
+    m_impl->m_initialized     = true;
 
-    LOG( INFO ) << "Opened controller " << controllerIndex << " (" << GetName( ).Get( ) << "), instance ID: " << m_instanceID;
+    LOG( INFO ) << "Opened controller " << controllerIndex << " (" << GetName( ).Get( ) << "), instance ID: " << m_impl->m_instanceID;
     return true;
 #else
     return false;
 #endif
 }
 
-void Controller::Close( )
+void Controller::Close( ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
         return;
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    if ( m_gameController != nullptr )
+    if ( m_impl->m_gameController != nullptr )
     {
-        SDL_GameControllerClose( m_gameController );
-        m_gameController = nullptr;
-        m_joystick       = nullptr;
+        SDL_GameControllerClose( m_impl->m_gameController );
+        m_impl->m_gameController = nullptr;
+        m_impl->m_joystick       = nullptr;
     }
 #endif
 
-    m_controllerIndex = -1;
-    m_instanceID      = 0;
-    m_initialized     = false;
+    m_impl->m_controllerIndex = -1;
+    m_impl->m_instanceID      = 0;
+    m_impl->m_initialized     = false;
 }
 
 bool Controller::IsButtonPressed( ControllerButton button ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
         return false;
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    return SDL_GameControllerGetButton( m_gameController, static_cast<SDL_GameControllerButton>( button ) ) == 1;
+    return SDL_GameControllerGetButton( m_impl->m_gameController, static_cast<SDL_GameControllerButton>( button ) ) == 1;
 #else
     return false;
 #endif
@@ -129,13 +153,13 @@ bool Controller::IsButtonPressed( ControllerButton button ) const
 
 int16_t Controller::GetAxisValue( ControllerAxis axis ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
         return 0;
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    return SDL_GameControllerGetAxis( m_gameController, static_cast<SDL_GameControllerAxis>( axis ) );
+    return SDL_GameControllerGetAxis( m_impl->m_gameController, static_cast<SDL_GameControllerAxis>( axis ) );
 #else
     return 0;
 #endif
@@ -143,13 +167,13 @@ int16_t Controller::GetAxisValue( ControllerAxis axis ) const
 
 bool Controller::HasRumble( ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
         return false;
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    return SDL_GameControllerHasRumble( m_gameController ) == SDL_TRUE;
+    return SDL_GameControllerHasRumble( m_impl->m_gameController ) == SDL_TRUE;
 #else
     return false;
 #endif
@@ -157,13 +181,13 @@ bool Controller::HasRumble( ) const
 
 bool Controller::SetRumble( const uint16_t lowFrequencyRumble, const uint16_t highFrequencyRumble, const uint32_t durationMs ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
         return false;
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    return SDL_GameControllerRumble( m_gameController, lowFrequencyRumble, highFrequencyRumble, durationMs ) == 0;
+    return SDL_GameControllerRumble( m_impl->m_gameController, lowFrequencyRumble, highFrequencyRumble, durationMs ) == 0;
 #else
     return false;
 #endif
@@ -171,7 +195,7 @@ bool Controller::SetRumble( const uint16_t lowFrequencyRumble, const uint16_t hi
 
 bool Controller::SetTriggerRumble( const bool leftTrigger, const bool rightTrigger, const uint16_t strength, const uint32_t durationMs ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
         return false;
     }
@@ -179,15 +203,15 @@ bool Controller::SetTriggerRumble( const bool leftTrigger, const bool rightTrigg
 #ifdef WINDOW_MANAGER_SDL
     if ( leftTrigger && rightTrigger )
     {
-        return SDL_GameControllerRumbleTriggers( m_gameController, strength, strength, durationMs ) == 0;
+        return SDL_GameControllerRumbleTriggers( m_impl->m_gameController, strength, strength, durationMs ) == 0;
     }
     if ( leftTrigger )
     {
-        return SDL_GameControllerRumbleTriggers( m_gameController, strength, 0, durationMs ) == 0;
+        return SDL_GameControllerRumbleTriggers( m_impl->m_gameController, strength, 0, durationMs ) == 0;
     }
     if ( rightTrigger )
     {
-        return SDL_GameControllerRumbleTriggers( m_gameController, 0, strength, durationMs ) == 0;
+        return SDL_GameControllerRumbleTriggers( m_impl->m_gameController, 0, strength, durationMs ) == 0;
     }
 #endif
 
@@ -196,13 +220,13 @@ bool Controller::SetTriggerRumble( const bool leftTrigger, const bool rightTrigg
 
 InteropString Controller::GetButtonName( ControllerButton button ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
-        return InteropString( );
+        return { };
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    return InteropString( SDL_GameControllerGetStringForButton( static_cast<SDL_GameControllerButton>( button ) ) );
+    return { SDL_GameControllerGetStringForButton( static_cast<SDL_GameControllerButton>( button ) ) };
 #else
     return InteropString( );
 #endif
@@ -210,13 +234,13 @@ InteropString Controller::GetButtonName( ControllerButton button ) const
 
 InteropString Controller::GetAxisName( ControllerAxis axis ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
-        return InteropString( );
+        return { };
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    return InteropString( SDL_GameControllerGetStringForAxis( static_cast<SDL_GameControllerAxis>( axis ) ) );
+    return { SDL_GameControllerGetStringForAxis( static_cast<SDL_GameControllerAxis>( axis ) ) };
 #else
     return InteropString( );
 #endif
@@ -224,13 +248,13 @@ InteropString Controller::GetAxisName( ControllerAxis axis ) const
 
 bool Controller::HasButton( ControllerButton button ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
         return false;
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    return SDL_GameControllerHasButton( m_gameController, static_cast<SDL_GameControllerButton>( button ) ) == SDL_TRUE;
+    return SDL_GameControllerHasButton( m_impl->m_gameController, static_cast<SDL_GameControllerButton>( button ) ) == SDL_TRUE;
 #else
     return false;
 #endif
@@ -238,13 +262,13 @@ bool Controller::HasButton( ControllerButton button ) const
 
 bool Controller::HasAxis( ControllerAxis axis ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
         return false;
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    return SDL_GameControllerHasAxis( m_gameController, static_cast<SDL_GameControllerAxis>( axis ) ) == SDL_TRUE;
+    return SDL_GameControllerHasAxis( m_impl->m_gameController, static_cast<SDL_GameControllerAxis>( axis ) ) == SDL_TRUE;
 #else
     return false;
 #endif
@@ -252,13 +276,13 @@ bool Controller::HasAxis( ControllerAxis axis ) const
 
 InteropString Controller::GetMapping( ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
-        return InteropString( );
+        return { };
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    return InteropString( SDL_GameControllerMapping( m_gameController ) );
+    return { SDL_GameControllerMapping( m_impl->m_gameController ) };
 #else
     return InteropString( );
 #endif
@@ -266,13 +290,13 @@ InteropString Controller::GetMapping( ) const
 
 bool Controller::IsConnected( ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
         return false;
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    return SDL_GameControllerGetAttached( m_gameController ) == SDL_TRUE;
+    return SDL_GameControllerGetAttached( m_impl->m_gameController ) == SDL_TRUE;
 #else
     return false;
 #endif
@@ -280,13 +304,13 @@ bool Controller::IsConnected( ) const
 
 InteropString Controller::GetName( ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
-        return InteropString( );
+        return { };
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    return InteropString( SDL_GameControllerName( m_gameController ) );
+    return { SDL_GameControllerName( m_impl->m_gameController ) };
 #else
     return InteropString( );
 #endif
@@ -294,32 +318,32 @@ InteropString Controller::GetName( ) const
 
 uint32_t Controller::GetInstanceID( ) const
 {
-    return m_instanceID;
+    return m_impl->m_instanceID;
 }
 
 ControllerDeviceInfo Controller::GetDeviceInfo( ) const
 {
     ControllerDeviceInfo info = { };
 
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
         return info;
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    info.InstanceID  = m_instanceID;
+    info.InstanceID  = m_impl->m_instanceID;
     info.Name        = GetName( );
     info.IsConnected = IsConnected( );
     info.PlayerIndex = GetPlayerIndex( );
 
     // Get vendor and product information
-    const uint16_t vendor = SDL_GameControllerGetVendor( m_gameController );
+    const uint16_t vendor = SDL_GameControllerGetVendor( m_impl->m_gameController );
     info.VendorID         = vendor;
 
-    const uint16_t product = SDL_GameControllerGetProduct( m_gameController );
+    const uint16_t product = SDL_GameControllerGetProduct( m_impl->m_gameController );
     info.ProductID         = product;
 
-    const uint16_t version = SDL_GameControllerGetProductVersion( m_gameController );
+    const uint16_t version = SDL_GameControllerGetProductVersion( m_impl->m_gameController );
     info.Version           = version;
 #endif
 
@@ -328,13 +352,13 @@ ControllerDeviceInfo Controller::GetDeviceInfo( ) const
 
 bool Controller::SetPlayerIndex( const int playerIndex ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
         return false;
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    SDL_GameControllerSetPlayerIndex( m_gameController, playerIndex );
+    SDL_GameControllerSetPlayerIndex( m_impl->m_gameController, playerIndex );
     return true;
 #else
     return false;
@@ -343,13 +367,13 @@ bool Controller::SetPlayerIndex( const int playerIndex ) const
 
 int Controller::GetPlayerIndex( ) const
 {
-    if ( !m_initialized )
+    if ( !m_impl->m_initialized )
     {
         return -1;
     }
 
 #ifdef WINDOW_MANAGER_SDL
-    return SDL_GameControllerGetPlayerIndex( m_gameController );
+    return SDL_GameControllerGetPlayerIndex( m_impl->m_gameController );
 #else
     return -1;
 #endif
@@ -415,9 +439,9 @@ InteropString Controller::GetControllerNameForIndex( const int joystickIndex )
 #ifdef WINDOW_MANAGER_SDL
     if ( IsGameController( joystickIndex ) )
     {
-        return InteropString( SDL_GameControllerNameForIndex( joystickIndex ) );
+        return { SDL_GameControllerNameForIndex( joystickIndex ) };
     }
 #endif
 
-    return InteropString( );
+    return { };
 }

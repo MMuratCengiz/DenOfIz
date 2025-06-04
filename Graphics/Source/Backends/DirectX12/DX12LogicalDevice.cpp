@@ -16,9 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12LogicalDevice.h"
+#include "DenOfIzGraphicsInternal/Backends/Common/SDLInclude.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12CommandQueue.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12InputLayout.h"
-#include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12LogicalDevice.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12Semaphore.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12SwapChain.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12BottomLeveLAS.h"
@@ -26,8 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12ShaderLocalData.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12TopLevelAS.h"
-
-#include "SDL2/SDL_syswm.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 

@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanBufferResource.h"
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanResourceBindGroup.h"
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanTextureResource.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
