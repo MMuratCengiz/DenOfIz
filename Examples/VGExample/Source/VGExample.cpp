@@ -279,9 +279,10 @@ void VGExample::CreateStarTexture( )
 
 void VGExample::RegisterTextures( )
 {
-    DZ_RETURN_IF( !m_folderTexture );
-    DZ_RETURN_IF( !m_milkTeaTexture );
-    DZ_RETURN_IF( !m_starTexture );
+    if( !m_folderTexture || !m_milkTeaTexture || !m_starTexture )
+    {
+        return;
+    }
 
     m_folderTextureIndex  = m_quadRenderer->RegisterTexture( m_folderTexture.get( ) );
     m_milkTeaTextureIndex = m_quadRenderer->RegisterTexture( m_milkTeaTexture.get( ) );
