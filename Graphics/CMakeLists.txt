@@ -298,7 +298,7 @@ add_subdirectory(_ThirdParty/msdf-atlas-gen)
 target_include_default_directories(DenOfIzGraphics)
 target_include_directories(DenOfIzGraphics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Internal)
 target_include_directories(DenOfIzGraphics
-        PUBLIC
+        PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/clay>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/Tiny>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/include>
@@ -338,7 +338,7 @@ if (BUILD_SHARED_LIBS)
 else ()
     target_compile_definitions(DenOfIzGraphics PUBLIC TVG_STATIC)
     target_link_libraries(DenOfIzGraphics
-            PUBLIC
+            PRIVATE
             SDL2::SDL2-static
     )
 endif ()
@@ -373,7 +373,7 @@ if (WIN32)
     set_target_properties(metalirconverter PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/metalirconverter.lib")
 
     target_link_libraries(DenOfIzGraphics
-            PUBLIC
+            PRIVATE
             WIL::WIL
             dxgi
             d3d12
@@ -417,12 +417,12 @@ if (APPLE)
 
     target_link_directories(
             DenOfIzGraphics
-            PUBLIC
+            PRIVATE
             _ThirdParty/osx_dxc/lib/
     )
 
     target_include_directories(DenOfIzGraphics
-            PUBLIC
+            PRIVATE
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include/wsl/stubs
             _ThirdParty/osx_dxc/include/dxc
@@ -457,7 +457,7 @@ if (LINUX)
 
     target_link_directories(
             DenOfIzGraphics
-            PUBLIC
+            PRIVATE
             _ThirdParty/linux_dxc/lib/
     )
 
@@ -468,7 +468,7 @@ if (LINUX)
     )
 
     target_include_directories(DenOfIzGraphics
-            PUBLIC
+            PRIVATE
             # Use DirectX-Headers from DirecXShaderCompiler even though we use prebuilt dxc, see note above on Dxc
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include/wsl/stubs
@@ -481,7 +481,7 @@ endif ()
 
 if (WIN32 OR LINUX)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_VK)
-    target_link_libraries(DenOfIzGraphics PUBLIC
+    target_link_libraries(DenOfIzGraphics PRIVATE
             volk::volk
             volk::volk_headers
             GPUOpen::VulkanMemoryAllocator)
