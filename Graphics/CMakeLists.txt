@@ -100,7 +100,6 @@ set(DEN_OF_IZ_ANIMATION_SOURCES
 
 set(DEN_OF_IZ_INPUT_SOURCES
         Source/Input/Controller.cpp
-        Source/Input/EventHandler.cpp
         Source/Input/InputSystem.cpp
         Source/Input/Window.cpp
 )
