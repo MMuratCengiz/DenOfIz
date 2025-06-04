@@ -47,6 +47,7 @@ TextLayout *TextLayoutCache::GetOrCreate( const uint64_t textHash, const uint16_
     shapeDesc.Direction   = key.direction;
     shapeDesc.HbScriptTag = key.scriptTag;
 
+    cachedLayout->layout->SetFont( font );
     cachedLayout->layout->ShapeText( shapeDesc );
 
     TextLayout *layoutPtr = cachedLayout->layout.get( );

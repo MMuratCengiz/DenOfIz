@@ -42,13 +42,6 @@ Font::Font( FT_Library ftLibrary, const FontDesc &desc ) : m_impl( std::make_uni
     {
         LOG( ERROR ) << "Failed to set font size: " << FT_Error_String( error );
     }
-
-    // Create the HarfBuzz font once and cache it
-    m_impl->m_hbFont = hb_ft_font_create_referenced( m_impl->m_face );
-    if ( !m_impl->m_hbFont )
-    {
-        LOG( ERROR ) << "Failed to create HarfBuzz font";
-    }
 }
 
 FT_Face Font::GetFTFace( ) const
@@ -56,9 +49,33 @@ FT_Face Font::GetFTFace( ) const
     return m_impl->m_face;
 }
 
-hb_font_t *Font::GetHBFont( ) const
+hb_font_t *Font::GetHBFont( const uint32_t fontSize ) const
 {
-    return m_impl->m_hbFont;
+    std::lock_guard lock( m_impl->m_hbFontsMutex );
+    const auto      it = m_impl->m_hbFonts.find( fontSize );
+    if ( it != m_impl->m_hbFonts.end( ) )
+    {
+        return it->second;
+    }
+    hb_font_t *hbFont = nullptr;
+    {
+        std::lock_guard faceLock( m_impl->m_faceMutex );
+        const uint32_t              sizeIn26_6 = fontSize * 64;
+        if ( const FT_Error error = FT_Set_Char_Size( m_impl->m_face, 0, sizeIn26_6, 0, 0 ) )
+        {
+            LOG( ERROR ) << "Failed to set font size: " << FT_Error_String( error );
+            return nullptr;
+        }
+
+        hbFont = hb_ft_font_create_referenced( m_impl->m_face );
+    }
+    if ( !hbFont )
+    {
+        LOG( ERROR ) << "Failed to create HarfBuzz font for size " << fontSize;
+        return nullptr;
+    }
+    m_impl->m_hbFonts[ fontSize ] = hbFont;
+    return hbFont;
 }
 
 FontAsset *Font::Asset( ) const

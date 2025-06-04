@@ -22,6 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <freetype/freetype.h>
 #include <harfbuzz/hb-ft.h>
 #include <harfbuzz/hb.h>
+#include <mutex>
+#include <ranges>
+#include <unordered_map>
 
 namespace DenOfIz
 {
@@ -29,7 +32,10 @@ namespace DenOfIz
     {
         FT_Library m_ftLibrary{ };
         FT_Face    m_face{ };
-        hb_font_t *m_hbFont{ };
+        
+        mutable std::unordered_map<uint32_t, hb_font_t*> m_hbFonts;
+        mutable std::mutex m_hbFontsMutex;
+        mutable std::mutex m_faceMutex;
 
         explicit FontImpl( const FT_Library library ) : m_ftLibrary( library )
         {
@@ -37,10 +43,14 @@ namespace DenOfIz
 
         ~FontImpl( )
         {
-            if ( m_hbFont )
+            for ( auto &font : m_hbFonts | std::views::values )
             {
-                hb_font_destroy( m_hbFont );
+                if ( font )
+                {
+                    hb_font_destroy( font );
+                }
             }
+            
             if ( m_face )
             {
                 FT_Done_Face( m_face );

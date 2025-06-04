@@ -48,7 +48,7 @@ namespace DenOfIz
 
         Font( FT_Library ftLibrary, const FontDesc &desc );
         [[nodiscard]] FT_Face    GetFTFace( ) const;
-        [[nodiscard]] hb_font_t *GetHBFont( ) const;
+        [[nodiscard]] hb_font_t *GetHBFont( uint32_t fontSize ) const;
 
     public:
         DZ_API static constexpr float MsdfPixelRange = 12.0f;

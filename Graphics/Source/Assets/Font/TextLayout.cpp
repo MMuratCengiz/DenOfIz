@@ -17,11 +17,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Assets/Font/TextLayout.h"
-#include "DenOfIzGraphicsInternal/Assets/Font/FontImpl.h"
-#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include <harfbuzz/hb-ft.h>
 #include <harfbuzz/hb.h>
 #include <unordered_map>
+#include "DenOfIzGraphicsInternal/Assets/Font/FontImpl.h"
+#include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
 
@@ -54,7 +54,6 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
         return;
     }
 
-    // Check if we can use cached results
     if ( m_lastShapedText.Equals( shapeDesc.Text ) && m_lastFontSize == shapeDesc.FontSize && m_lastDirection == shapeDesc.Direction &&
          m_lastScriptTag.X == shapeDesc.HbScriptTag.X && m_lastScriptTag.Y == shapeDesc.HbScriptTag.Y && m_lastScriptTag.Z == shapeDesc.HbScriptTag.Z &&
          m_lastScriptTag.W == shapeDesc.HbScriptTag.W )
@@ -62,7 +61,6 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
         return;
     }
 
-    // Update cache keys
     m_lastShapedText = shapeDesc.Text;
     m_lastFontSize   = shapeDesc.FontSize;
     m_lastDirection  = shapeDesc.Direction;
@@ -70,19 +68,10 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
 
     const std::string    utf8Text  = shapeDesc.Text.Get( );
     const std::u32string utf32Text = Utf8ToUtf32( utf8Text );
-    FT_Face              face      = m_font->GetFTFace( );
-
-    if ( const FT_Error error = FT_Set_Char_Size( face, 0, shapeDesc.FontSize * 64, 0, 0 ) )
-    {
-        LOG( ERROR ) << "Failed to set font size: " << FT_Error_String( error );
-        return;
-    }
-    
-    // Use the cached HarfBuzz font from Font
-    hb_font_t *hbFont = m_font->GetHBFont( );
+    hb_font_t           *hbFont    = m_font->GetHBFont( shapeDesc.FontSize );
     if ( !hbFont )
     {
-        LOG( ERROR ) << "HarfBuzz font not available";
+        LOG( ERROR ) << "HarfBuzz font not available for size " << shapeDesc.FontSize;
         return;
     }
 
@@ -143,6 +132,7 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
     float totalAdvance = 0.0f;
 
     std::unordered_map<uint32_t, uint32_t> glyphIndexToCodePoint;
+    const FT_Face                          face = m_font->GetFTFace( );
     for ( const char32_t codePoint : utf32Text )
     {
         if ( FT_UInt glyphIndex = FT_Get_Char_Index( face, codePoint ) )
