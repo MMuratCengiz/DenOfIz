@@ -184,7 +184,7 @@ namespace DenOfIz
 
     class ThorVGLinearGradient final : public ThorVGGradient
     {
-        std::unique_ptr<tvg::LinearGradient> m_gradient = nullptr;
+        std::unique_ptr<tvg::LinearGradient> m_gradient;
 
     public:
         ThorVGLinearGradient( );
@@ -201,7 +201,7 @@ namespace DenOfIz
 
     class ThorVGRadialGradient final : public ThorVGGradient
     {
-        std::unique_ptr<tvg::RadialGradient> m_gradient = nullptr;
+        std::unique_ptr<tvg::RadialGradient> m_gradient;
 
     public:
         ThorVGRadialGradient( );
@@ -218,7 +218,7 @@ namespace DenOfIz
 
     class ThorVGShape final : public ThorVGPaint
     {
-        std::unique_ptr<tvg::Shape> m_shape = nullptr;
+        std::unique_ptr<tvg::Shape> m_shape;
 
     public:
         ThorVGShape( );
@@ -261,7 +261,7 @@ namespace DenOfIz
 
     class ThorVGPicture final : public ThorVGPaint
     {
-        std::unique_ptr<tvg::Picture> m_picture = nullptr;
+        std::unique_ptr<tvg::Picture> m_picture;
 
     public:
         DZ_API ThorVGPicture( );
@@ -290,7 +290,7 @@ namespace DenOfIz
 
     class ThorVGScene final : public ThorVGPaint
     {
-        std::unique_ptr<tvg::Scene> m_scene = nullptr;
+        std::unique_ptr<tvg::Scene> m_scene;
 
     public:
         DZ_API ThorVGScene( );
@@ -324,7 +324,7 @@ namespace DenOfIz
         uint32_t                       m_width{};
         uint32_t                       m_height{};
         InteropArray<uint32_t>         m_data;
-        std::unique_ptr<tvg::SwCanvas> m_canvas = nullptr;
+        std::unique_ptr<tvg::SwCanvas> m_canvas;
 
     public:
         DZ_API explicit ThorVGCanvas( const ThorVGCanvasDesc &desc );

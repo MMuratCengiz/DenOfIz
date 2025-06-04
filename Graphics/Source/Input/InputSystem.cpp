@@ -275,7 +275,8 @@ void InputSystem::SetModState( const BitSet<KeyMod> &modifiers )
 #endif
 }
 
-KeyCode InputSystem::GetKeyFromName( const InteropString &name )
+// Keep DenOfIz:: here to avoid conflicts with X11 in linux
+DenOfIz::KeyCode InputSystem::GetKeyFromName( const InteropString &name )
 {
 #ifdef WINDOW_MANAGER_SDL
     SDL_Keycode keycode = SDL_GetKeyFromName( name.Get( ) );

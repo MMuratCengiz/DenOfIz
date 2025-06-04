@@ -143,7 +143,9 @@ namespace
 #endif
 } // anonymous namespace
 
-struct Window::Impl
+using DenOfIzWindow = DenOfIz::Window;
+
+struct DenOfIzWindow::Impl
 {
     WindowDesc                            m_properties;
     std::unique_ptr<GraphicsWindowHandle> m_windowHandle;
@@ -173,7 +175,7 @@ struct Window::Impl
     }
 };
 
-Window::Window( const WindowDesc &properties ) : m_impl( std::make_unique<Impl>( properties ) )
+DenOfIzWindow::Window( const WindowDesc &properties ) : m_impl( std::make_unique<Impl>( properties ) )
 {
 #ifdef WINDOW_MANAGER_SDL
     const uint32_t flags = ToSDLWindowFlags( m_impl->m_properties.Flags );
@@ -198,9 +200,9 @@ Window::Window( const WindowDesc &properties ) : m_impl( std::make_unique<Impl>(
 #endif
 }
 
-Window::~Window( ) = default;
+DenOfIzWindow::~Window( ) = default;
 
-void Window::Destroy( ) const
+void DenOfIzWindow::Destroy( ) const
 {
     if ( m_impl )
     {
@@ -208,7 +210,7 @@ void Window::Destroy( ) const
     }
 }
 
-void Window::Show( ) const
+void DenOfIzWindow::Show( ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -218,7 +220,7 @@ void Window::Show( ) const
 #endif
 }
 
-void Window::Hide( ) const
+void DenOfIzWindow::Hide( ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -228,7 +230,7 @@ void Window::Hide( ) const
 #endif
 }
 
-void Window::Minimize( ) const
+void DenOfIzWindow::Minimize( ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -238,7 +240,7 @@ void Window::Minimize( ) const
 #endif
 }
 
-void Window::Maximize( ) const
+void DenOfIzWindow::Maximize( ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -248,7 +250,7 @@ void Window::Maximize( ) const
 #endif
 }
 
-void Window::Raise( ) const
+void DenOfIzWindow::Raise( ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -258,7 +260,7 @@ void Window::Raise( ) const
 #endif
 }
 
-void Window::Restore( ) const
+void DenOfIzWindow::Restore( ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -268,17 +270,17 @@ void Window::Restore( ) const
 #endif
 }
 
-GraphicsWindowHandle* Window::GetGraphicsWindowHandle( ) const
+GraphicsWindowHandle* DenOfIzWindow::GetGraphicsWindowHandle( ) const
 {
     return m_impl->m_windowHandle.get( );
 }
 
-uint32_t Window::GetWindowID( ) const
+uint32_t DenOfIzWindow::GetWindowID( ) const
 {
     return m_impl ? m_impl->m_windowID : 0;
 }
 
-WindowSize Window::GetSize( ) const
+WindowSize DenOfIzWindow::GetSize( ) const
 {
     WindowSize size = { 0, 0 };
 
@@ -292,7 +294,7 @@ WindowSize Window::GetSize( ) const
     return size;
 }
 
-void Window::SetSize( const int width, const int height ) const
+void DenOfIzWindow::SetSize( const int width, const int height ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -302,7 +304,7 @@ void Window::SetSize( const int width, const int height ) const
 #endif
 }
 
-InteropString Window::GetTitle( ) const
+InteropString DenOfIzWindow::GetTitle( ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -314,7 +316,7 @@ InteropString Window::GetTitle( ) const
     return m_impl ? m_impl->m_properties.Title : InteropString{ };
 }
 
-void Window::SetTitle( const InteropString &title ) const
+void DenOfIzWindow::SetTitle( const InteropString &title ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -329,7 +331,7 @@ void Window::SetTitle( const InteropString &title ) const
     }
 }
 
-bool Window::GetFullscreen( ) const
+bool DenOfIzWindow::GetFullscreen( ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -342,7 +344,7 @@ bool Window::GetFullscreen( ) const
     return m_impl ? ( m_impl->m_properties.Flags.Fullscreen || m_impl->m_properties.Flags.FullscreenDesktop ) : false;
 }
 
-void Window::SetFullscreen( const bool fullscreen ) const
+void DenOfIzWindow::SetFullscreen( const bool fullscreen ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -356,7 +358,7 @@ void Window::SetFullscreen( const bool fullscreen ) const
 #endif
 }
 
-void Window::SetPosition( const int x, const int y ) const
+void DenOfIzWindow::SetPosition( const int x, const int y ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -372,7 +374,7 @@ void Window::SetPosition( const int x, const int y ) const
     }
 }
 
-WindowCoords Window::GetPosition( ) const
+WindowCoords DenOfIzWindow::GetPosition( ) const
 {
     WindowCoords result = { 0, 0 };
 #ifdef WINDOW_MANAGER_SDL
@@ -390,7 +392,7 @@ WindowCoords Window::GetPosition( ) const
     return result;
 }
 
-void Window::SetResizable( const bool resizable ) const
+void DenOfIzWindow::SetResizable( const bool resizable ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -403,7 +405,7 @@ void Window::SetResizable( const bool resizable ) const
 #endif
 }
 
-void Window::SetBordered( const bool bordered ) const
+void DenOfIzWindow::SetBordered( const bool bordered ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -416,7 +418,7 @@ void Window::SetBordered( const bool bordered ) const
 #endif
 }
 
-void Window::SetMinimumSize( const int minWidth, const int minHeight ) const
+void DenOfIzWindow::SetMinimumSize( const int minWidth, const int minHeight ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -426,7 +428,7 @@ void Window::SetMinimumSize( const int minWidth, const int minHeight ) const
 #endif
 }
 
-void Window::SetMaximumSize( const int maxWidth, const int maxHeight ) const
+void DenOfIzWindow::SetMaximumSize( const int maxWidth, const int maxHeight ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
@@ -436,7 +438,7 @@ void Window::SetMaximumSize( const int maxWidth, const int maxHeight ) const
 #endif
 }
 
-bool Window::IsShown( ) const
+bool DenOfIzWindow::IsShown( ) const
 {
 #ifdef WINDOW_MANAGER_SDL
     if ( m_impl && m_impl->m_sdlWindow )
