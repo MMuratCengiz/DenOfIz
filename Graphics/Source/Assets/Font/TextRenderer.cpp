@@ -136,7 +136,7 @@ uint16_t TextRenderer::AddFont( Font *font, uint16_t fontId )
             batchDesc.LogicalDevice         = m_logicalDevice;
             batchDesc.RendererRootSignature = m_rootSignature.get( );
             m_textBatches[ i ]              = std::make_unique<TextBatch>( batchDesc );
-            m_textBatches[ i ]->SetProjectionMatrix( InteropMathConverter::Float_4x4FromXMFLOAT4X4( m_projectionMatrix ) );
+            m_textBatches[ i ]->SetProjectionMatrix( m_projectionMatrix );
         }
         if ( std::ranges::find( m_validFonts, fontId ) == m_validFonts.end( ) )
         {
@@ -151,7 +151,7 @@ uint16_t TextRenderer::AddFont( Font *font, uint16_t fontId )
         textBatchDesc.LogicalDevice         = m_logicalDevice;
         textBatchDesc.RendererRootSignature = m_rootSignature.get( );
         m_textBatches[ fontId ]             = std::make_unique<TextBatch>( textBatchDesc );
-        m_textBatches[ fontId ]->SetProjectionMatrix( InteropMathConverter::Float_4x4FromXMFLOAT4X4( m_projectionMatrix ) );
+        m_textBatches[ fontId ]->SetProjectionMatrix( m_projectionMatrix );
     }
     return fontId;
 }
@@ -188,7 +188,7 @@ void TextRenderer::SetAntiAliasingMode( const AntiAliasingMode antiAliasingMode 
 
 void TextRenderer::SetProjectionMatrix( const Float_4x4 &projectionMatrix )
 {
-    m_projectionMatrix = InteropMathConverter::Float_4x4ToXMFLOAT4X4( projectionMatrix );
+    m_projectionMatrix = projectionMatrix;
     // Todo the below shouldn't be necessary but we need to refactor TextRenderer to have separate register spaces for batch and renderer bindings
     for ( const uint16_t fontId : m_validFonts )
     {
@@ -203,12 +203,14 @@ void TextRenderer::SetViewport( const Viewport &viewport )
         LOG( WARNING ) << "Viewport::Width or Viewport::Height is zero, cannot set projection matrix";
         return;
     }
+    XMFLOAT4X4     projection4x4{ };
     const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( viewport.X, viewport.Width, viewport.Height, viewport.Y, 0.0f, 1.0f );
-    XMStoreFloat4x4( &m_projectionMatrix, projection );
+    XMStoreFloat4x4( &projection4x4, projection );
+    m_projectionMatrix = InteropMathConverter::Float_4x4FromXMFLOAT4X4( projection4x4 );
     // Todo Same as above
     for ( const uint16_t fontId : m_validFonts )
     {
-        m_textBatches[ fontId ]->SetProjectionMatrix( InteropMathConverter::Float_4x4FromXMFLOAT4X4( m_projectionMatrix ) );
+        m_textBatches[ fontId ]->SetProjectionMatrix( m_projectionMatrix );
     }
 }
 

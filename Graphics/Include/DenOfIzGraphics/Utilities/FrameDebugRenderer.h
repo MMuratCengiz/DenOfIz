@@ -17,15 +17,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
+#include <chrono>
+#include <deque>
+#include <memory>
 #include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 #include "DenOfIzGraphics/Assets/Font/TextRenderer.h"
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
 #include "DenOfIzGraphics/Backends/GraphicsApi.h"
 #include "DenOfIzGraphics/Utilities/Time.h"
-#include <chrono>
-#include <deque>
-#include <memory>
 
 namespace DenOfIz
 {
@@ -54,7 +54,7 @@ namespace DenOfIz
         std::unique_ptr<FontAsset>       m_fontAsset;
         Font                            *m_font = nullptr; // Owned by FontLibrary
         std::unique_ptr<TextRenderer>    m_textRenderer;
-        XMFLOAT4X4                       m_projectionMatrix{ };
+        Float_4x4                        m_projectionMatrix{ };
 
         // Performance tracking
         Time               m_time;

@@ -20,10 +20,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h"
 #include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
+
+#include <DirectXMath.h>
 
 using namespace DenOfIz;
+using namespace DirectX;
 
 TextBatch::TextBatch( const TextBatchDesc &desc ) : m_desc( desc )
 {
@@ -185,11 +188,11 @@ void TextBatch::EndBatch( ICommandList *commandList )
     // Todo split this up into batch specific and text renderer specific
     FontShaderUniforms *uniforms = m_uniformBufferData;
     uniforms->Projection         = m_projectionMatrix;
-    uniforms->TextColor          = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
+    uniforms->TextColor          = Float_4{ 1.0f, 1.0f, 1.0f, 1.0f };
 
     const auto *fontAsset       = m_font->Asset( );
-    uniforms->TextureSizeParams = XMFLOAT4( static_cast<float>( fontAsset->AtlasWidth ), static_cast<float>( fontAsset->AtlasHeight ), Font::MsdfPixelRange,
-                                            static_cast<float>( static_cast<uint32_t>( AntiAliasingMode::Grayscale ) ) );
+    uniforms->TextureSizeParams = Float_4{ static_cast<float>( fontAsset->AtlasWidth ), static_cast<float>( fontAsset->AtlasHeight ), Font::MsdfPixelRange,
+                                           static_cast<float>( static_cast<uint32_t>( AntiAliasingMode::Grayscale ) ) };
 
     commandList->BindResourceGroup( m_resourceBindGroup.get( ) );
     commandList->BindVertexBuffer( m_vertexBuffer.get( ) );
@@ -199,7 +202,7 @@ void TextBatch::EndBatch( ICommandList *commandList )
 
 void TextBatch::SetProjectionMatrix( const Float_4x4 &projectionMatrix )
 {
-    m_projectionMatrix = InteropMathConverter::Float_4x4ToXMFLOAT4X4( projectionMatrix );
+    m_projectionMatrix = projectionMatrix;
 }
 
 Float_2 TextBatch::MeasureText( const InteropString &text, const AddTextDesc &desc ) const

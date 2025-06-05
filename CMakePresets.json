@@ -143,7 +143,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
-        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -Wno-error=dangling-reference",
+        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -fpermissive",
         "SWIG_CSHARP": "ON",
         "SWIG_JAVA": "ON"
       }
@@ -155,7 +155,7 @@
         "BUILD_SHARED_LIBS": "ON",
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
-        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -Wno-error=dangling-reference",
+        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -fpermissive",
         "SWIG_CSHARP": "ON",
         "SWIG_JAVA": "ON"
       }
@@ -215,7 +215,7 @@
       "cacheVariables": {
         "BUILD_SHARED_LIBS": "OFF",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
-        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -Wno-error=dangling-reference"
+        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -fpermissive"
       }
     },
     {
@@ -224,7 +224,7 @@
       "cacheVariables": {
         "BUILD_SHARED_LIBS": "ON",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
-        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -Wno-error=dangling-reference"
+        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -fpermissive"
       }
     }
   ],

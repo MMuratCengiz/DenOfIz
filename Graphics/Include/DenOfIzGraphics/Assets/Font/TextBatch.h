@@ -18,15 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzGraphics/Assets/Font/Font.h>
-#include <DenOfIzGraphics/Utilities/Interop.h>
-
+#include "DenOfIzGraphics/Assets/Font/Font.h"
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 #include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 #include "TextLayout.h"
-
-#include <DirectXMath.h>
-using namespace DirectX;
 
 namespace DenOfIz
 {
@@ -56,9 +52,9 @@ namespace DenOfIz
     {
         struct FontShaderUniforms
         {
-            XMFLOAT4X4 Projection;
-            XMFLOAT4   TextColor;
-            XMFLOAT4   TextureSizeParams; // xy: texture dimensions, z: pixel range, w: unused
+            Float_4x4 Projection;
+            Float_4   TextColor;
+            Float_4   TextureSizeParams; // xy: texture dimensions, z: pixel range, w: unused
         };
 
         TextBatchDesc   m_desc;
@@ -87,7 +83,7 @@ namespace DenOfIz
 
         std::vector<std::unique_ptr<TextLayout>> m_textLayouts;
         uint32_t                                 m_currentTextLayoutIndex = 0;
-        XMFLOAT4X4                               m_projectionMatrix{ };
+        Float_4x4                                m_projectionMatrix{ };
 
         mutable std::vector<std::unique_ptr<TextLayout>> m_measureTextLayouts;
         mutable uint32_t                                 m_currentMeasureLayoutIndex = 0;

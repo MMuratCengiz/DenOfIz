@@ -17,11 +17,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Utilities/FrameDebugRenderer.h"
+#include <DirectXMath.h>
 #include "DenOfIzGraphicsInternal/Assets/Font/Embedded/EmbeddedFonts.h"
 #include "DenOfIzGraphicsInternal/Utilities/InteropMathConverter.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
+using namespace DirectX;
 
 FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m_desc( desc )
 {
@@ -202,14 +204,16 @@ void FrameDebugRenderer::Render( ICommandList *commandList )
 
 void FrameDebugRenderer::SetViewport( const Viewport &viewport )
 {
+    XMFLOAT4X4     projection4x4{ };
     const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( viewport.X, viewport.Width, viewport.Height, viewport.Y, 0.0f, 1.0f );
-    XMStoreFloat4x4( &m_projectionMatrix, projection );
+    XMStoreFloat4x4( &projection4x4, projection );
+    m_projectionMatrix = InteropMathConverter::Float_4x4FromXMFLOAT4X4( projection4x4 );
     m_textRenderer->SetViewport( viewport );
 }
 
 void FrameDebugRenderer::SetProjectionMatrix( const Float_4x4 &projectionMatrix )
 {
-    m_projectionMatrix = InteropMathConverter::Float_4x4ToXMFLOAT4X4( projectionMatrix );
+    m_projectionMatrix = projectionMatrix;
     if ( m_textRenderer )
     {
         m_textRenderer->SetProjectionMatrix( projectionMatrix );

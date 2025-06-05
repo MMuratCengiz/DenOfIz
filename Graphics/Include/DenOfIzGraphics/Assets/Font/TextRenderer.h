@@ -25,10 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 #include "DenOfIzGraphics/Backends/Interface/IPipeline.h"
 #include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
-
 #include "TextBatch.h"
-
-using namespace DirectX;
 
 namespace DenOfIz
 {
@@ -59,12 +56,12 @@ namespace DenOfIz
         std::unique_ptr<ShaderProgram> m_fontShaderProgram;
         std::unique_ptr<IPipeline>     m_fontPipeline;
 
-        std::unique_ptr<IRootSignature>     m_rootSignature     = nullptr;
-        std::unique_ptr<IInputLayout>       m_inputLayout       = nullptr;
+        std::unique_ptr<IRootSignature> m_rootSignature = nullptr;
+        std::unique_ptr<IInputLayout>   m_inputLayout   = nullptr;
 
         Font               *m_font = nullptr;
         std::vector<Font *> m_fonts;
-        XMFLOAT4X4          m_projectionMatrix{ };
+        Float_4x4           m_projectionMatrix{ };
 
         std::vector<uint32_t>                   m_validFonts;
         std::vector<std::unique_ptr<TextBatch>> m_textBatches; // index = fontId
