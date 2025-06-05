@@ -350,7 +350,7 @@ void VGExample::ImportSvgIfNeeded( const InteropString &svgPath, const InteropSt
         desc.OutputFormat  = Format::R8G8B8A8Unorm;
         importJobDesc.Desc = &desc;
 
-        VGImporter     importer( { } );
+        VGImporter     importer( VGImporterDesc{} );
         ImporterResult result = importer.Import( importJobDesc );
         if ( result.ResultCode != ImporterResultCode::Success )
         {

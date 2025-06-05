@@ -52,7 +52,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/UI/Clay.h"
 #include "DenOfIzGraphics/UI/ClayData.h"
 #include "DenOfIzGraphics/UI/IClayContext.h"
-#include "DenOfIzGraphics/UI/IContainer.h"
 
 #include "DenOfIzGraphics/UI/Widgets/Widget.h"
 #include "DenOfIzGraphics/UI/Widgets/CheckboxWidget.h"

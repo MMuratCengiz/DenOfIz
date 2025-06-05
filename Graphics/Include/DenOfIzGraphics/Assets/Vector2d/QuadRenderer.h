@@ -18,6 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <memory>
+#include <vector>
 #include "DenOfIzGraphics/Backends/Common/ShaderProgram.h"
 #include "DenOfIzGraphics/Backends/Interface/ICommandList.h"
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
@@ -27,10 +29,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Backends/Interface/ITextureResource.h"
 #include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
 #include "DenOfIzGraphics/Utilities/InteropMath.h"
-#include <memory>
-#include <vector>
-
-#include <DirectXMath.h>
 
 namespace DenOfIz
 {
@@ -68,22 +66,22 @@ namespace DenOfIz
     {
         struct QuadVertex
         {
-            DirectX::XMFLOAT3 Position;
-            DirectX::XMFLOAT2 TexCoord;
+            Float_3 Position;
+            Float_2 TexCoord;
         };
 
         struct QuadInstance
         {
-            DirectX::XMFLOAT4X4 Transform;
-            DirectX::XMFLOAT4   UVScaleOffset; // xy: scale, zw: offset
-            uint32_t            TextureIndex;
-            Float_4             Color;
-            Float_3             _Pad0;
+            Float_4x4 Transform;
+            Float_4   UVScaleOffset; // xy: scale, zw: offset
+            uint32_t  TextureIndex;
+            Float_4   Color;
+            Float_3   _Pad0;
         };
 
         struct FrameConstants
         {
-            DirectX::XMFLOAT4X4 Projection;
+            Float_4x4 Projection;
         };
 
         QuadRendererDesc m_desc;
@@ -112,7 +110,7 @@ namespace DenOfIz
         std::unique_ptr<IBufferResource>  m_constantsBuffer;
         std::unique_ptr<ITextureResource> m_nullTexture;
 
-        DirectX::XMFLOAT4X4 m_projectionMatrix;
+        Float_4x4 m_projectionMatrix;
 
     public:
         DZ_API explicit QuadRenderer( const QuadRendererDesc &desc );
@@ -131,11 +129,11 @@ namespace DenOfIz
         DZ_API void Render( uint32_t frameIndex, ICommandList *commandList ) const;
 
     private:
-        void                Initialize( );
-        void                CreateShaderResources( );
-        void                CreateStaticQuadGeometry( );
-        void                UpdateTextureBindings( uint32_t frameIndex ) const;
-        DirectX::XMFLOAT4X4 CalculateTransform( const QuadDataDesc &desc ) const;
+        void      Initialize( );
+        void      CreateShaderResources( );
+        void      CreateStaticQuadGeometry( );
+        void      UpdateTextureBindings( uint32_t frameIndex ) const;
+        Float_4x4 CalculateTransform( const QuadDataDesc &desc ) const;
     };
 
 } // namespace DenOfIz

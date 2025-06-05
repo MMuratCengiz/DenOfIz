@@ -24,6 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
+#include <DirectXMath.h>
+
 using namespace DenOfIz;
 using namespace DirectX;
 
@@ -103,7 +105,7 @@ QuadRenderer::QuadRenderer( const QuadRendererDesc &desc ) : m_desc( desc )
     DZ_NOT_NULL( desc.LogicalDevice );
     m_logicalDevice = desc.LogicalDevice;
 
-    XMStoreFloat4x4( &m_projectionMatrix, XMMatrixIdentity( ) );
+    m_projectionMatrix = InteropMathConverter::Float_4X4FromXMMATRIX( XMMatrixIdentity( ) );
     m_frameData.resize( desc.NumFrames );
     m_textures.resize( desc.MaxNumTextures );
 
@@ -197,8 +199,8 @@ void QuadRenderer::Initialize( )
 
 void QuadRenderer::SetCanvas( const uint32_t width, const uint32_t height )
 {
-    const XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( width ), static_cast<float>( height ), 0.0f, 0.0f, 1.0f );
-    XMStoreFloat4x4( &m_projectionMatrix, projection );
+    const XMMATRIX projection      = XMMatrixOrthographicOffCenterLH( 0.0f, static_cast<float>( width ), static_cast<float>( height ), 0.0f, 0.0f, 1.0f );
+    m_projectionMatrix             = InteropMathConverter::Float_4X4FromXMMATRIX( projection );
     const auto     mappedData      = static_cast<Byte *>( m_constantsBuffer->MapMemory( ) );
     const uint32_t alignedMemBytes = Utilities::Align( sizeof( FrameConstants ), 256 );
     for ( int i = 0; i < m_desc.NumFrames; ++i )
@@ -255,10 +257,10 @@ void QuadRenderer::CreateStaticQuadGeometry( )
 {
     // Create a unit quad (0,0) to (1,1)
     constexpr QuadVertex vertices[ 4 ] = {
-        { XMFLOAT3( 0.0f, 0.0f, 0.0f ), XMFLOAT2( 0.0f, 0.0f ) }, // Top-left
-        { XMFLOAT3( 1.0f, 0.0f, 0.0f ), XMFLOAT2( 1.0f, 0.0f ) }, // Top-right
-        { XMFLOAT3( 1.0f, 1.0f, 0.0f ), XMFLOAT2( 1.0f, 1.0f ) }, // Bottom-right
-        { XMFLOAT3( 0.0f, 1.0f, 0.0f ), XMFLOAT2( 0.0f, 1.0f ) }  // Bottom-left
+        { Float_3{ 0.0f, 0.0f, 0.0f }, Float_2{ 0.0f, 0.0f } }, // Top-left
+        { Float_3{ 1.0f, 0.0f, 0.0f }, Float_2{ 1.0f, 0.0f } }, // Top-right
+        { Float_3{ 1.0f, 1.0f, 0.0f }, Float_2{ 1.0f, 1.0f } }, // Bottom-right
+        { Float_3{ 0.0f, 1.0f, 0.0f }, Float_2{ 0.0f, 1.0f } }  // Bottom-left
     };
 
     const uint32_t indices[ 6 ] = {
@@ -358,16 +360,17 @@ void QuadRenderer::UpdateQuad( const uint32_t frameIndex, const QuadDataDesc &de
         return;
     }
 
-    QuadInstance    *instance  = &m_instances[ desc.QuadId + frameIndex * m_desc.MaxNumQuads ];
-    const XMFLOAT4X4 transform = CalculateTransform( desc );
-    instance->Transform        = transform;
-    instance->UVScaleOffset    = XMFLOAT4( desc.UV1.X - desc.UV0.X, // U scale
-                                           desc.UV1.Y - desc.UV0.Y, // V scale
-                                           desc.UV0.X,              // U offset
-                                           desc.UV0.Y               // V offset
-       );
-    instance->TextureIndex     = desc.TextureIndex;
-    instance->Color            = desc.Color;
+    QuadInstance   *instance  = &m_instances[ desc.QuadId + frameIndex * m_desc.MaxNumQuads ];
+    const Float_4x4 transform = CalculateTransform( desc );
+    instance->Transform       = transform;
+    instance->UVScaleOffset   = Float_4{
+        desc.UV1.X - desc.UV0.X, // U scale
+        desc.UV1.Y - desc.UV0.Y, // V scale
+        desc.UV0.X,              // U offset
+        desc.UV0.Y               // V offset
+    };
+    instance->TextureIndex = desc.TextureIndex;
+    instance->Color        = desc.Color;
 }
 
 void QuadRenderer::ClearQuads( )
@@ -408,7 +411,7 @@ void QuadRenderer::UpdateTextureBindings( const uint32_t frameIndex ) const
     frame.TextureBindGroup->EndUpdate( );
 }
 
-XMFLOAT4X4 QuadRenderer::CalculateTransform( const QuadDataDesc &desc ) const
+Float_4x4 QuadRenderer::CalculateTransform( const QuadDataDesc &desc ) const
 {
     XMMATRIX transform = XMMatrixIdentity( );
     transform          = transform * XMMatrixScaling( desc.Size.X * desc.Scale.X, desc.Size.Y * desc.Scale.Y, 1.0f );
@@ -427,7 +430,5 @@ XMFLOAT4X4 QuadRenderer::CalculateTransform( const QuadDataDesc &desc ) const
 
     transform = transform * XMMatrixTranslation( desc.Position.X, desc.Position.Y, 0.0f );
 
-    XMFLOAT4X4 result;
-    XMStoreFloat4x4( &result, transform );
-    return result;
+    return InteropMathConverter::Float_4X4FromXMMATRIX( transform );
 }
