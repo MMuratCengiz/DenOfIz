@@ -1,275 +1,13 @@
 include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
 
-# On windows use dxc from vcpkg, on other platforms build it from source
-if (WIN32 OR LINUX)
-    find_package(directx-headers CONFIG REQUIRED)
-endif ()
-if (WIN32)
-    find_package(directx12-agility CONFIG REQUIRED)
-endif ()
-
-if (WIN32 OR LINUX)
-    find_package(volk CONFIG REQUIRED)
-    find_package(Vulkan REQUIRED)
-    find_package(VulkanMemoryAllocator CONFIG REQUIRED)
-endif ()
-
-find_package(SDL2 CONFIG REQUIRED)
-find_package(wil CONFIG REQUIRED)
-find_package(directxmath CONFIG REQUIRED)
-find_package(Taskflow CONFIG REQUIRED)
-find_package(glog CONFIG REQUIRED)
-find_package(assimp CONFIG REQUIRED)
-find_package(draco CONFIG REQUIRED)
-find_package(Freetype REQUIRED)
-find_package(harfbuzz CONFIG REQUIRED)
-find_package(msdfgen CONFIG REQUIRED)
-find_package(miniz CONFIG REQUIRED)
-find_package(tinyxml2 CONFIG REQUIRED)
-find_path(STB_INCLUDE_DIRS "stb_image.h")
-find_path(TINGLING_INCLUDE_DIRS "tiny_gltf.h")
-
-find_package(PkgConfig)
-pkg_check_modules(thorvg REQUIRED IMPORTED_TARGET thorvg)
-
-set(OZZ_ANIMATION_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/ozz-animation")
-if (EXISTS "${OZZ_ANIMATION_DIR}")
-    set(OZZ_ANIMATION_INCLUDE_DIR "${OZZ_ANIMATION_DIR}/include")
-    set(OZZ_ANIMATION_FOUND TRUE)
-else ()
-    message(FATAL_ERROR "ozz-animation not found in _ThirdParty directory")
-endif ()
-
-set(DEN_OF_IZ_ASSETS_SOURCES
-        Source/Assets/Bundle/Bundle.cpp
-        Source/Assets/Bundle/BundleManager.cpp
-        Source/Assets/FileSystem/PathResolver.cpp
-        Source/Assets/FileSystem/FileIO.cpp
-        Source/Assets/FileSystem/FSConfig.cpp
-        Source/Assets/Font/Font.cpp
-        Source/Assets/Font/FontLibrary.cpp
-        Source/Assets/Font/TextBatch.cpp
-        Source/Assets/Font/TextRenderer.cpp
-        Source/Assets/Font/TextLayout.cpp
-        Source/Assets/Font/TextLayoutCache.cpp
-        Source/Assets/GpuResource/GpuResourceLoader.cpp
-        Source/Assets/Import/AssetScanner.cpp
-        Source/Assets/Import/AssetPathUtilities.cpp
-        Source/Assets/Import/AssimpImporter.cpp
-        Source/Assets/Import/FontImporter.cpp
-        Source/Assets/Import/ShaderImporter.cpp
-        Source/Assets/Import/TextureImporter.cpp
-        Source/Assets/Import/VGImporter.cpp
-        Source/Assets/Serde/Asset.cpp
-        Source/Assets/Serde/Animation/AnimationAssetReader.cpp
-        Source/Assets/Serde/Animation/AnimationAssetWriter.cpp
-        Source/Assets/Serde/Common/AssetReaderHelpers.cpp
-        Source/Assets/Serde/Common/AssetWriterHelpers.cpp
-        Source/Assets/Serde/Font/FontAssetReader.cpp
-        Source/Assets/Serde/Font/FontAssetWriter.cpp
-        Source/Assets/Serde/Material/MaterialAssetReader.cpp
-        Source/Assets/Serde/Material/MaterialAssetWriter.cpp
-        Source/Assets/Serde/Mesh/MeshAssetReader.cpp
-        Source/Assets/Serde/Mesh/MeshAssetWriter.cpp
-        Source/Assets/Serde/Physics/PhysicsAssetReader.cpp
-        Source/Assets/Serde/Physics/PhysicsAssetWriter.cpp
-        Source/Assets/Serde/Shader/ShaderAssetReader.cpp
-        Source/Assets/Serde/Shader/ShaderAssetWriter.cpp
-        Source/Assets/Serde/Skeleton/SkeletonAssetReader.cpp
-        Source/Assets/Serde/Skeleton/SkeletonAssetWriter.cpp
-        Source/Assets/Serde/Texture/TextureAssetReader.cpp
-        Source/Assets/Serde/Texture/TextureAssetWriter.cpp
-        Source/Assets/Shaders/DxcEnumConverter.cpp
-        Source/Assets/Shaders/ReflectionDebugOutput.cpp
-        Source/Assets/Shaders/ShaderCompiler.cpp
-        Source/Assets/Shaders/ShaderReflectionHelper.cpp
-        Source/Assets/Shaders/ShaderProgram.cpp
-        Source/Assets/Stream/BinaryContainer.cpp
-        Source/Assets/Stream/BinaryReader.cpp
-        Source/Assets/Stream/BinaryWriter.cpp
-)
-
-if (APPLE OR WIN32)
-    set(DEN_OF_IZ_ASSETS_SOURCES ${DEN_OF_IZ_ASSETS_SOURCES} Source/Assets/Shaders/DxilToMsl.cpp)
-endif ()
-
-set(DEN_OF_IZ_ANIMATION_SOURCES
-        Source/Animation/AnimationStateManager.cpp
-        Source/Animation/OzzAnimation.cpp
-)
-
-set(DEN_OF_IZ_INPUT_SOURCES
-        Source/Input/Controller.cpp
-        Source/Input/InputSystem.cpp
-        Source/Input/Window.cpp
-)
-
-set(DEN_OF_IZ_VG_SOURCES
-        Source/Assets/Vector2d/QuadRenderer.cpp
-        Source/Assets/Vector2d/ThorVGWrapper.cpp
-)
-
-set(DEN_OF_IZ_UI_SOURCES
-        Source/UI/ClayContext.cpp
-        Source/UI/Clay.cpp
-        Source/UI/ClayClipboard.cpp
-        Source/UI/ClayRenderer.cpp
-        Source/UI/ClayTextCache.cpp
-        Source/UI/UIShapes.cpp
-        Source/UI/UIShapeCache.cpp
-        Source/UI/UITextVertexCache.cpp
-        Source/UI/Widgets/Widget.cpp
-        Source/UI/Widgets/CheckboxWidget.cpp
-        Source/UI/Widgets/SliderWidget.cpp
-        Source/UI/Widgets/DropdownWidget.cpp
-        Source/UI/Widgets/ColorPickerWidget.cpp
-        Source/UI/Widgets/TextFieldWidget.cpp
-        Source/UI/Widgets/ResizableContainerWidget.cpp
-        Source/UI/Widgets/DockableContainerWidget.cpp
-        Source/UI/FullscreenQuadPipeline.cpp
-)
-
-set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
-        Source/Backends/GraphicsApi.cpp
-        #Shader Compiler
-        Source/Backends/Common/GraphicsWindowHandle.cpp
-
-        #Data
-        Source/Data/AlignedDataWriter.cpp
-        Source/Data/BatchResourceCopy.cpp
-        Source/Data/Texture.cpp
-        Source/Data/Geometry.cpp
-
-        # Sync Helpers
-        Source/Renderer/Sync/FrameSync.cpp
-        Source/Renderer/Sync/ResourceTracking.cpp
-
-        Source/Utilities/Engine.cpp
-        Source/Utilities/StepTimer.cpp
-        Source/Utilities/Time.cpp
-        Source/Utilities/Utilities.cpp
-        Source/Utilities/FrameDebugRenderer.cpp
-        Source/Utilities/InteropMathConverter.cpp
-        Source/Utilities/InteropUtilities.cpp
-
-        # Interface utilities
-        Source/Backends/Interface/CommonData.cpp
-        Source/Backends/Interface/IRootSignature.cpp
-        Source/Backends/Interface/ITextureResource.cpp
-        Source/Backends/Interface/ShaderData.cpp
-        Source/Backends/Interface/RayTracing/IShaderBindingTable.cpp
-        Source/Backends/Interface/RayTracing/ILocalRootSignature.cpp
-)
-
-set(DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES
-        Source/Backends/Vulkan/VulkanLogicalDevice.cpp
-        Source/Backends/Vulkan/VulkanCommandList.cpp
-        Source/Backends/Vulkan/VulkanCommandQueue.cpp
-        Source/Backends/Vulkan/VulkanCommandPool.cpp
-        Source/Backends/Vulkan/VulkanEnumConverter.cpp
-        Source/Backends/Vulkan/VulkanResourceBindGroup.cpp
-        Source/Backends/Vulkan/VulkanInputLayout.cpp
-        Source/Backends/Vulkan/VulkanPipeline.cpp
-        Source/Backends/Vulkan/VulkanRootSignature.cpp
-        Source/Backends/Vulkan/VulkanSwapChain.cpp
-        # RayTracing
-        Source/Backends/Vulkan/RayTracing/VulkanBottomLevelAS.cpp
-        Source/Backends/Vulkan/RayTracing/VulkanShaderBindingTable.cpp
-        Source/Backends/Vulkan/RayTracing/VulkanLocalRootSignature.cpp
-        Source/Backends/Vulkan/RayTracing/VulkanShaderLocalData.cpp
-        Source/Backends/Vulkan/RayTracing/VulkanTopLevelAS.cpp
-        # Vulkan Resources
-        Source/Backends/Vulkan/VulkanFence.cpp
-        Source/Backends/Vulkan/VulkanSemaphore.cpp
-        Source/Backends/Vulkan/VulkanBufferResource.cpp
-        Source/Backends/Vulkan/VulkanTextureResource.cpp
-        Source/Backends/Vulkan/VulkanPipelineBarrierHelper.cpp
-        Source/Backends/Vulkan/VulkanDescriptorPoolManager.cpp
-)
-
-
-set(DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES
-        #DirectX12 Backend
-        Source/Backends/DirectX12/DX12LogicalDevice.cpp
-        Source/Backends/DirectX12/DX12EnumConverter.cpp
-        Source/Backends/DirectX12/DX12Pipeline.cpp
-        Source/Backends/DirectX12/DX12SwapChain.cpp
-        Source/Backends/DirectX12/DX12RootSignature.cpp
-        Source/Backends/DirectX12/DX12InputLayout.cpp
-        Source/Backends/DirectX12/DX12ResourceBindGroup.cpp
-        Source/Backends/DirectX12/DX12CommandList.cpp
-        Source/Backends/DirectX12/DX12CommandQueue.cpp
-        Source/Backends/DirectX12/DX12DescriptorHeap.cpp
-        Source/Backends/DirectX12/DX12CommandListPool.cpp
-        Source/Backends/DirectX12/DX12BarrierHelper.cpp
-        # RayTracing
-        Source/Backends/DirectX12/RayTracing/DX12BottomLevelAS.cpp
-        Source/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.cpp
-        Source/Backends/DirectX12/RayTracing/DX12LocalRootSignature.cpp
-        Source/Backends/DirectX12/RayTracing/DX12ShaderLocalData.cpp
-        Source/Backends/DirectX12/RayTracing/DX12TopLevelAS.cpp
-
-        #DirectX12 Resources
-        Source/Backends/DirectX12/DX12BufferResource.cpp
-        Source/Backends/DirectX12/DX12Fence.cpp
-        Source/Backends/DirectX12/DX12TextureResource.cpp
-        Source/Backends/DirectX12/DX12Semaphore.cpp
-)
-
-set(DEN_OF_IZ_GRAPHICS_METAL_SOURCES
-        Source/Backends/Metal/MetalArgumentBuffer.mm
-        Source/Backends/Metal/MetalBufferResource.mm
-        Source/Backends/Metal/MetalCommandList.mm
-        Source/Backends/Metal/MetalCommandQueue.mm
-        Source/Backends/Metal/MetalCommandListPool.mm
-        Source/Backends/Metal/MetalEnumConverter.mm
-        Source/Backends/Metal/MetalFence.mm
-        Source/Backends/Metal/MetalInputLayout.mm
-        Source/Backends/Metal/MetalLogicalDevice.mm
-        Source/Backends/Metal/MetalPipeline.mm
-        Source/Backends/Metal/MetalResourceBindGroup.mm
-        Source/Backends/Metal/MetalRootSignature.mm
-        Source/Backends/Metal/MetalSemaphore.mm
-        Source/Backends/Metal/MetalSwapChain.mm
-        Source/Backends/Metal/MetalTextureResource.mm
-        # RayTracing
-        Source/Backends/Metal/RayTracing/MetalBottomLevelAS.mm
-        Source/Backends/Metal/RayTracing/MetalShaderBindingTable.mm
-        Source/Backends/Metal/RayTracing/MetalLocalRootSignature.mm
-        Source/Backends/Metal/RayTracing/MetalShaderLocalData.mm
-        Source/Backends/Metal/RayTracing/MetalTopLevelAS.mm
-)
-
-if (WIN32)
-    set(DEN_OF_IZ_GRAPHICS_SOURCES
-            ${DEN_OF_IZ_GRAPHICS_COMMON_SOURCES}
-            ${DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES}
-            ${DEN_OF_IZ_GRAPHICS_DIRECTX12_SOURCES}
-    )
-elseif (APPLE)
-    set(DEN_OF_IZ_GRAPHICS_SOURCES
-            ${DEN_OF_IZ_GRAPHICS_COMMON_SOURCES}
-            ${DEN_OF_IZ_GRAPHICS_METAL_SOURCES}
-    )
-else ()
-    set(DEN_OF_IZ_GRAPHICS_SOURCES
-            ${DEN_OF_IZ_GRAPHICS_COMMON_SOURCES}
-            ${DEN_OF_IZ_GRAPHICS_VULKAN_SOURCES}
-    )
-endif ()
+include(Packages.cmake)
+include(Sources.cmake)
 
 copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 
-add_library(DenOfIzGraphicsObjects OBJECT
-        ${DEN_OF_IZ_ASSETS_SOURCES}
-        ${DEN_OF_IZ_GRAPHICS_SOURCES}
-        ${DEN_OF_IZ_INPUT_SOURCES}
-        ${DEN_OF_IZ_ANIMATION_SOURCES}
-        ${DEN_OF_IZ_UI_SOURCES}
-        ${DEN_OF_IZ_VG_SOURCES}
-)
-
+add_library(DenOfIzGraphicsObjects OBJECT ${DEN_OF_IZ_GRAPHICS_SOURCES})
 add_library(DenOfIzGraphics STATIC $<TARGET_OBJECTS:DenOfIzGraphicsObjects>)
+
 include(GNUInstallDirs)
 install(TARGETS DenOfIzGraphics
         EXPORT DenOfIzGraphicsTargets
@@ -333,37 +71,6 @@ install(EXPORT DenOfIzGraphicsTargets
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/DenOfIzGraphics
 )
 
-if (CRT_LINKAGE_STATIC EQUAL 1)
-    set(ozz_build_msvc_rt_dll OFF CACHE BOOL "Select msvc DLL runtime library" FORCE)
-    set(MSDF_ATLAS_DYNAMIC_RUNTIME OFF CACHE BOOL "Link dynamic runtime library instead of static" FORCE)
-else ()
-    set(ozz_build_msvc_rt_dll ON CACHE BOOL "Select msvc DLL runtime library" FORCE)
-    set(MSDF_ATLAS_DYNAMIC_RUNTIME ON CACHE BOOL "Link dynamic runtime library instead of static" FORCE)
-endif ()
-
-set(ozz_build_tests OFF CACHE BOOL "Don't build ozz samples" FORCE)
-set(ozz_build_samples OFF CACHE BOOL "Don't build ozz samples" FORCE)
-set(ozz_build_howtos OFF CACHE BOOL "Don't build ozz howtos" FORCE)
-
-if (LINUX)
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif ()
-
-set(ozz_build_tools OFF CACHE BOOL "Don't build ozz tools" FORCE)
-set(CMAKE_SKIP_INSTALL_RULES ON)
-add_subdirectory(_ThirdParty/ozz-animation EXCLUDE_FROM_ALL)
-set(CMAKE_SKIP_INSTALL_RULES OFF)
-
-set(MSDF_ATLAS_BUILD_STANDALONE OFF CACHE BOOL "Build the msdf-atlas-gen standalone executable")
-set(MSDF_ATLAS_USE_SKIA OFF CACHE BOOL "Build with the Skia library")
-set(MSDF_ATLAS_NO_ARTERY_FONT ON CACHE BOOL "Disable Artery Font export and do not require its submodule")
-set(MSDFGEN_USE_SKIA OFF CACHE BOOL "Build msdfgen with the Skia library")
-set(MSDFGEN_VCPKG_FEATURES_SET ON CACHE BOOL "Use vcpkg features")
-set(VCPKG_MANIFEST_NO_DEFAULT_FEATURES ON CACHE BOOL "Disable default features")
-
-set(CMAKE_SKIP_INSTALL_RULES ON)
-add_subdirectory(_ThirdParty/msdf-atlas-gen EXCLUDE_FROM_ALL)
-set(CMAKE_SKIP_INSTALL_RULES OFF)
 target_include_default_directories(DenOfIzGraphicsObjects)
 target_include_directories(DenOfIzGraphicsObjects PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Internal)
 target_include_directories(DenOfIzGraphicsObjects
@@ -379,52 +86,29 @@ target_include_directories(DenOfIzGraphicsObjects
 target_include_default_directories(DenOfIzGraphics)
 target_include_directories(DenOfIzGraphics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Internal)
 
-target_link_libraries(DenOfIzGraphicsObjects
-        PRIVATE
+SET(DENOFIZ_LINKED_LIBRARIES
         glog::glog
         Microsoft::DirectXMath
         SDL2::SDL2
         SDL2::SDL2main
         Taskflow::Taskflow
         assimp::assimp
-        ozz_animation
-        ozz_geometry
-        ozz_animation_offline
+        $<BUILD_INTERFACE:ozz_animation>
+        $<BUILD_INTERFACE:ozz_geometry>
+        $<BUILD_INTERFACE:ozz_animation_offline>
         Freetype::Freetype
         harfbuzz::harfbuzz
         msdfgen::msdfgen
         msdfgen::msdfgen-ext
         msdfgen::msdfgen-core
         msdfgen::msdfgen-full
-        msdf-atlas-gen::msdf-atlas-gen
+        $<BUILD_INTERFACE:msdf-atlas-gen::msdf-atlas-gen>
         miniz::miniz
         tinyxml2::tinyxml2
         PkgConfig::thorvg
 )
-
-# Link all dependencies to the final library as well to ensure they are included in the static library
-target_link_libraries(DenOfIzGraphics
-        PRIVATE
-        glog::glog
-        Microsoft::DirectXMath
-        SDL2::SDL2
-        SDL2::SDL2main
-        Taskflow::Taskflow
-        assimp::assimp
-        ozz_animation
-        ozz_geometry
-        ozz_animation_offline
-        Freetype::Freetype
-        harfbuzz::harfbuzz
-        msdfgen::msdfgen
-        msdfgen::msdfgen-ext
-        msdfgen::msdfgen-core
-        msdfgen::msdfgen-full
-        msdf-atlas-gen::msdf-atlas-gen
-        miniz::miniz
-        tinyxml2::tinyxml2
-        PkgConfig::thorvg
-)
+target_link_libraries(DenOfIzGraphicsObjects PRIVATE ${DENOFIZ_LINKED_LIBRARIES})
+target_link_libraries(DenOfIzGraphics PRIVATE ${DENOFIZ_LINKED_LIBRARIES})
 
 if (BUILD_SHARED_LIBS)
     target_compile_definitions(DenOfIzGraphicsObjects PRIVATE DZ_GRAPHICS_EXPORTS)
@@ -445,11 +129,6 @@ if (WIN32)
     add_subdirectory(_ThirdParty/D3D12MemoryAllocator EXCLUDE_FROM_ALL)
     set(CMAKE_SKIP_INSTALL_RULES OFF)
 
-    target_link_directories(
-            DenOfIzGraphicsObjects
-            PRIVATE
-            _ThirdParty/dxc/lib/${CPU_ARCHITECTURE}
-    )
     target_link_directories(
             DenOfIzGraphics
             PRIVATE
@@ -532,11 +211,6 @@ if (APPLE)
     )
 
     target_link_directories(
-            DenOfIzGraphicsObjects
-            PUBLIC
-            _ThirdParty/osx_dxc/lib/
-    )
-    target_link_directories(
             DenOfIzGraphics
             PUBLIC
             _ThirdParty/osx_dxc/lib/
@@ -577,11 +251,6 @@ if (LINUX)
             COPYONLY
     )
 
-    target_link_directories(
-            DenOfIzGraphicsObjects
-            PRIVATE
-            _ThirdParty/linux_dxc/lib/
-    )
     target_link_directories(
             DenOfIzGraphics
             PRIVATE
