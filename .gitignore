@@ -10,6 +10,9 @@ cmake-build-debug/
 cmake-build-release/
 CMakeCache.txt
 build/DenOfIz
+install/DenOfIz
+install/demo/build
+install/demo/cmake-build-debug
 
 vcpkg_installed
 
