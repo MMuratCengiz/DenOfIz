@@ -18,7 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "Inter.h"
+#include "DenOfIzGraphics/Assets/Serde/Font/FontAsset.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 
 namespace DenOfIz
 {
@@ -27,45 +28,12 @@ namespace DenOfIz
     public:
         DZ_API static FontAsset *GetInterVar( )
         {
-            static FontAsset interVar = InterVar( );
+            static FontAsset interVar = GetInterVarInternal( );
             return &interVar;
         }
 
     private:
-        static const InteropArray<Byte>& InterDataAggr( )
-        {
-            static InteropArray<Byte> data;
-            static std::mutex         dataMutex;
-            if ( data.NumElements( ) == 0 )
-            {
-                std::lock_guard lock( dataMutex );
-                if ( data.NumElements( ) == 0 )
-                {
-                    const size_t size0     = Inter::Data0.size( );
-                    const size_t size1     = Inter::Data1.size( );
-                    const size_t size2     = Inter::Data2.size( );
-                    const size_t size3     = Inter::Data3.size( );
-                    const size_t totalSize = size0 + size1 + size2 + size3;
-
-                    std::vector<Byte> vData;
-                    vData.reserve( totalSize );
-
-                    vData.insert( vData.end( ), Inter::Data0.begin( ), Inter::Data0.end( ) );
-                    vData.insert( vData.end( ), Inter::Data1.begin( ), Inter::Data1.end( ) );
-                    vData.insert( vData.end( ), Inter::Data2.begin( ), Inter::Data2.end( ) );
-                    vData.insert( vData.end( ), Inter::Data3.begin( ), Inter::Data3.end( ) );
-
-                    data.MemCpy( vData.data( ), totalSize );
-                }
-            }
-            return data;
-        }
-
-        static FontAsset InterVar( )
-        {
-            BinaryReader    binaryReader( InterDataAggr( ) );
-            FontAssetReader reader( { &binaryReader } );
-            return reader.Read( );
-        }
+        static const InteropArray<Byte> &GetInterData( );
+        static FontAsset                 GetInterVarInternal( );
     };
 } // namespace DenOfIz

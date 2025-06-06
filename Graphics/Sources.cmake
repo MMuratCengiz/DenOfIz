@@ -10,6 +10,7 @@ set(DEN_OF_IZ_ASSETS_SOURCES
     Source/Assets/Font/TextRenderer.cpp
     Source/Assets/Font/TextLayout.cpp
     Source/Assets/Font/TextLayoutCache.cpp
+    Source/Assets/Font/EmbeddedFonts.cpp
     Source/Assets/GpuResource/GpuResourceLoader.cpp
     Source/Assets/Import/AssetScanner.cpp
     Source/Assets/Import/AssetPathUtilities.cpp
