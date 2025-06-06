@@ -53,7 +53,10 @@
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-windows-static",
         "CRT_LINKAGE_STATIC": "1",
-        "CMAKE_CXX_FLAGS": "/MP -DNOMINMAX",
+        "CMAKE_CXX_FLAGS": "/MP -DNOMINMAX /O2 /Gy /GF /Gw /Zc:inline /GL",
+        "CMAKE_EXE_LINKER_FLAGS": "/OPT:REF /OPT:ICF /LTCG",
+        "CMAKE_SHARED_LINKER_FLAGS": "/OPT:REF /OPT:ICF /LTCG",
+        "CMAKE_STATIC_LINKER_FLAGS": "/LTCG",
         "SWIG_CSHARP": "ON",
         "SWIG_JAVA": "ON"
       }
@@ -66,7 +69,10 @@
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-windows",
         "CRT_LINKAGE_STATIC": "0",
-        "CMAKE_CXX_FLAGS": "-Od -Zi -W3 /c /EHsc /MP -DNOMINMAX  /wd\"4267\" /wd\"4244\"",
+        "CMAKE_CXX_FLAGS": "/O2 /Gy /GF /Gw /Zc:inline /GL /W3 /c /EHsc /MP -DNOMINMAX /wd\"4267\" /wd\"4244\"",
+        "CMAKE_EXE_LINKER_FLAGS": "/OPT:REF /OPT:ICF /LTCG",
+        "CMAKE_SHARED_LINKER_FLAGS": "/OPT:REF /OPT:ICF /LTCG",
+        "CMAKE_STATIC_LINKER_FLAGS": "/LTCG",
         "SWIG_CSHARP": "ON",
         "SWIG_JAVA": "ON"
       }
@@ -96,6 +102,10 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "arm64-osx",
+        "CMAKE_CXX_FLAGS": "-O3 -ffunction-sections -fdata-sections -fmerge-all-constants -flto",
+        "CMAKE_EXE_LINKER_FLAGS": "-Wl,-dead_strip -flto",
+        "CMAKE_SHARED_LINKER_FLAGS": "-Wl,-dead_strip -flto",
+        "CMAKE_STATIC_LINKER_FLAGS": "-flto",
         "SWIG_CSHARP": "ON",
         "SWIG_JAVA": "ON"
       }
@@ -143,7 +153,10 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
-        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -fpermissive",
+        "CMAKE_CXX_FLAGS": "-O3 -ffunction-sections -fdata-sections -fmerge-all-constants -flto -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -fpermissive",
+        "CMAKE_EXE_LINKER_FLAGS": "-Wl,--gc-sections -flto",
+        "CMAKE_SHARED_LINKER_FLAGS": "-Wl,--gc-sections -flto",
+        "CMAKE_STATIC_LINKER_FLAGS": "-flto",
         "SWIG_CSHARP": "ON",
         "SWIG_JAVA": "ON"
       }
@@ -155,7 +168,10 @@
         "BUILD_SHARED_LIBS": "ON",
         "CMAKE_BUILD_TYPE": "Release",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
-        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -fpermissive",
+        "CMAKE_CXX_FLAGS": "-O3 -ffunction-sections -fdata-sections -fmerge-all-constants -flto -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -fpermissive",
+        "CMAKE_EXE_LINKER_FLAGS": "-Wl,--gc-sections -flto",
+        "CMAKE_SHARED_LINKER_FLAGS": "-Wl,--gc-sections -flto",
+        "CMAKE_STATIC_LINKER_FLAGS": "-flto",
         "SWIG_CSHARP": "ON",
         "SWIG_JAVA": "ON"
       }
@@ -181,7 +197,10 @@
         "BUILD_SHARED_LIBS": "ON",
         "CRT_LINKAGE_STATIC": "1",
         "VCPKG_TARGET_TRIPLET": "x64-windows-static",
-        "CMAKE_CXX_FLAGS": "/MP /EHsc -DNOMINMAX"
+        "CMAKE_CXX_FLAGS": "/MP /EHsc -DNOMINMAX /O2 /Gy /GF /Gw /Zc:inline /GL",
+        "CMAKE_EXE_LINKER_FLAGS": "/OPT:REF /OPT:ICF /LTCG",
+        "CMAKE_SHARED_LINKER_FLAGS": "/OPT:REF /OPT:ICF /LTCG",
+        "CMAKE_STATIC_LINKER_FLAGS": "/LTCG"
       }
     },
     {
@@ -189,7 +208,11 @@
       "inherits": ["MacOS_Base", "Install_Base"],
       "cacheVariables": {
         "BUILD_SHARED_LIBS": "ON",
-        "VCPKG_TARGET_TRIPLET": "arm64-osx"
+        "VCPKG_TARGET_TRIPLET": "arm64-osx",
+        "CMAKE_CXX_FLAGS": "-O3 -ffunction-sections -fdata-sections -fmerge-all-constants -flto",
+        "CMAKE_EXE_LINKER_FLAGS": "-Wl,-dead_strip -flto",
+        "CMAKE_SHARED_LINKER_FLAGS": "-Wl,-dead_strip -flto",
+        "CMAKE_STATIC_LINKER_FLAGS": "-flto"
       }
     },
     {
@@ -198,7 +221,10 @@
       "cacheVariables": {
         "BUILD_SHARED_LIBS": "ON",
         "VCPKG_TARGET_TRIPLET": "x64-linux",
-        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -fpermissive"
+        "CMAKE_CXX_FLAGS": "-O3 -ffunction-sections -fdata-sections -fmerge-all-constants -flto -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -fpermissive",
+        "CMAKE_EXE_LINKER_FLAGS": "-Wl,--gc-sections -flto",
+        "CMAKE_SHARED_LINKER_FLAGS": "-Wl,--gc-sections -flto",
+        "CMAKE_STATIC_LINKER_FLAGS": "-flto"
       }
     }
   ],
