@@ -1,0 +1,90 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/DenOfIzGraphicsTargets.cmake")
+if(WIN32)
+    set(DENOFIZ_RUNTIME_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_BINDIR@")
+else()
+    set(DENOFIZ_RUNTIME_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_LIBDIR@")
+endif()
+
+if (WIN32)
+    set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
+        INTERFACE_LINK_LIBRARIES dxgi d3d12 dxcompiler
+    )
+    set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
+        INTERFACE_COMPILE_DEFINITIONS BUILD_DX12 BUILD_VK TVG_STATIC
+    )
+    if(MSVC)
+        set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
+            INTERFACE_COMPILE_OPTIONS "/MT$<$<CONFIG:Debug>:d>"
+        )
+    endif()
+elseif (APPLE)
+    set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
+        INTERFACE_LINK_LIBRARIES 
+        "-framework Cocoa"
+        "-framework Foundation"
+        "-framework Metal"
+        "-framework MetalKit"
+        dxcompiler
+    )
+    set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
+        INTERFACE_COMPILE_DEFINITIONS BUILD_METAL TVG_STATIC
+    )
+    set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
+        INTERFACE_COMPILE_OPTIONS
+        "$<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>"
+        "$<$<COMPILE_LANGUAGE:C>:-x objective-c>"
+        "-fobjc-arc"
+    )
+elseif (LINUX)
+    set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
+        INTERFACE_LINK_LIBRARIES dxcompiler
+    )
+    set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
+        INTERFACE_COMPILE_DEFINITIONS BUILD_VK TVG_STATIC
+    )
+endif()
+
+set_property(TARGET DenOfIz::DenOfIzGraphics APPEND PROPERTY
+    INTERFACE_COMPILE_DEFINITIONS DZ_GRAPHICS_IMPORTS
+)
+
+set(DENOFIZ_GRAPHICS_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_INCLUDEDIR@")
+set(DENOFIZ_GRAPHICS_LIB_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_LIBDIR@")
+set(DENOFIZ_GRAPHICS_RUNTIME_DIR "${DENOFIZ_RUNTIME_DIR}")
+
+function(denofiz_copy_runtime_dependencies target)
+    if(WIN32)
+        set(RUNTIME_DEPS
+            "${DENOFIZ_RUNTIME_DIR}/DenOfIzGraphics.dll"
+            "${DENOFIZ_RUNTIME_DIR}/dxcompiler.dll"
+            "${DENOFIZ_RUNTIME_DIR}/dxil.dll"
+            "${DENOFIZ_RUNTIME_DIR}/metalirconverter.dll"
+        )
+    elseif(APPLE)
+        set(RUNTIME_DEPS
+            "${DENOFIZ_RUNTIME_DIR}/DenOfIzGraphics.dylib"
+            "${DENOFIZ_RUNTIME_DIR}/libdxcompiler.dylib"
+            "${DENOFIZ_RUNTIME_DIR}/libmetalirconverter.dylib"
+        )
+    elseif(LINUX)
+        set(RUNTIME_DEPS
+            "${DENOFIZ_RUNTIME_DIR}/libDenOfIzGraphics.so"
+            "${DENOFIZ_RUNTIME_DIR}/libdxcompiler.so"
+            "${DENOFIZ_RUNTIME_DIR}/libdxil.so"
+        )
+    endif()
+    foreach(dep ${RUNTIME_DEPS})
+        if(EXISTS ${dep})
+            add_custom_command(TARGET ${target} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${dep} $<TARGET_FILE_DIR:${target}>
+            )
+        else()
+            message(WARNING "Runtime dependency not found: ${dep}")
+        endif()
+    endforeach()
+endfunction()
+
+check_required_components(DenOfIzGraphics)

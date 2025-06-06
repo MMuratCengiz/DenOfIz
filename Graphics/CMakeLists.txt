@@ -126,10 +126,6 @@ else ()
 endif ()
 
 if (WIN32)
-    set(CMAKE_SKIP_INSTALL_RULES ON)
-    add_subdirectory(_ThirdParty/D3D12MemoryAllocator EXCLUDE_FROM_ALL)
-    set(CMAKE_SKIP_INSTALL_RULES OFF)
-
     target_link_directories(
             DenOfIzGraphics
             PRIVATE
