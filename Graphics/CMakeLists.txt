@@ -5,8 +5,7 @@ include(Sources.cmake)
 
 copy_to_binary(${CMAKE_CURRENT_SOURCE_DIR} "Assets" *)
 
-add_library(DenOfIzGraphicsObjects OBJECT ${DEN_OF_IZ_GRAPHICS_SOURCES})
-add_library(DenOfIzGraphics STATIC $<TARGET_OBJECTS:DenOfIzGraphicsObjects>)
+add_library(DenOfIzGraphics  ${DEN_OF_IZ_GRAPHICS_SOURCES})
 
 include(GNUInstallDirs)
 install(TARGETS DenOfIzGraphics
@@ -71,9 +70,9 @@ install(EXPORT DenOfIzGraphicsTargets
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/DenOfIzGraphics
 )
 
-target_include_default_directories(DenOfIzGraphicsObjects)
-target_include_directories(DenOfIzGraphicsObjects PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Internal)
-target_include_directories(DenOfIzGraphicsObjects
+target_include_default_directories(DenOfIzGraphics)
+target_include_directories(DenOfIzGraphics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Internal)
+target_include_directories(DenOfIzGraphics
         PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/clay>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/Tiny>
@@ -86,7 +85,7 @@ target_include_directories(DenOfIzGraphicsObjects
 target_include_default_directories(DenOfIzGraphics)
 target_include_directories(DenOfIzGraphics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Internal)
 
-SET(DENOFIZ_LINKED_LIBRARIES
+target_link_libraries(DenOfIzGraphics PRIVATE
         glog::glog
         Microsoft::DirectXMath
         SDL2::SDL2
@@ -105,20 +104,15 @@ SET(DENOFIZ_LINKED_LIBRARIES
         $<BUILD_INTERFACE:msdf-atlas-gen::msdf-atlas-gen>
         miniz::miniz
         tinyxml2::tinyxml2
-        PkgConfig::thorvg
-)
-target_link_libraries(DenOfIzGraphicsObjects PRIVATE ${DENOFIZ_LINKED_LIBRARIES})
-target_link_libraries(DenOfIzGraphics PRIVATE ${DENOFIZ_LINKED_LIBRARIES})
+        PkgConfig::thorvg)
 
 if (BUILD_SHARED_LIBS)
-    target_compile_definitions(DenOfIzGraphicsObjects PRIVATE DZ_GRAPHICS_EXPORTS)
     target_compile_definitions(DenOfIzGraphics PRIVATE DZ_GRAPHICS_EXPORTS)
     target_compile_definitions(DenOfIzGraphics INTERFACE DZ_GRAPHICS_IMPORTS)
-    target_compile_definitions(DenOfIzGraphicsObjects PRIVATE BUILD_SHARED_LIBS)
+    target_compile_definitions(DenOfIzGraphics PRIVATE BUILD_SHARED_LIBS)
 else ()
-    target_compile_definitions(DenOfIzGraphicsObjects PUBLIC TVG_STATIC)
     target_compile_definitions(DenOfIzGraphics PUBLIC TVG_STATIC)
-    target_link_libraries(DenOfIzGraphicsObjects
+    target_link_libraries(DenOfIzGraphics
             PRIVATE
             SDL2::SDL2-static
     )
@@ -154,13 +148,7 @@ if (WIN32)
     add_library(metalirconverter STATIC IMPORTED)
     set_target_properties(metalirconverter PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/metalirconverter.lib")
 
-    target_link_libraries(DenOfIzGraphicsObjects
-            PRIVATE
-            WIL::WIL
-            Microsoft::DirectX-Headers
-            Microsoft::DirectX-Guids
-            D3D12MemoryAllocator
-    )
+
     target_link_libraries(DenOfIzGraphics
             PRIVATE
             dxgi
@@ -172,14 +160,13 @@ if (WIN32)
             D3D12MemoryAllocator
     )
     
-    # Link metalirconverter directly to object library to avoid export issues
-    target_link_libraries(DenOfIzGraphicsObjects
+    target_link_libraries(DenOfIzGraphics
             PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/MetalShaderConverter/lib/metalirconverter.lib
     )
 
     if (TARGET Microsoft::DirectX12-Agility)
-        target_link_libraries(DenOfIzGraphicsObjects
+        target_link_libraries(DenOfIzGraphics
                 PRIVATE
                 Microsoft::DirectX12-Agility
         )
@@ -190,7 +177,6 @@ if (WIN32)
                 COMMAND_EXPAND_LISTS
         )
     endif ()
-    target_compile_definitions(DenOfIzGraphicsObjects PUBLIC BUILD_DX12)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_DX12)
 endif ()
 if (APPLE)
@@ -216,7 +202,7 @@ if (APPLE)
             _ThirdParty/osx_dxc/lib/
     )
 
-    target_include_directories(DenOfIzGraphicsObjects
+    target_include_directories(DenOfIzGraphics
             PRIVATE
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include/wsl/stubs
@@ -232,12 +218,11 @@ if (APPLE)
             PRIVATE dxcompiler
     )
 
-    target_compile_definitions(DenOfIzGraphicsObjects PUBLIC BUILD_METAL)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_METAL)
-    target_compile_options(DenOfIzGraphicsObjects PRIVATE
+    target_compile_options(DenOfIzGraphics PRIVATE
             $<$<COMPILE_LANGUAGE:CXX>:-x objective-c++>
             $<$<COMPILE_LANGUAGE:C>:-x objective-c>)
-    set_property(TARGET DenOfIzGraphicsObjects APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
+    set_property(TARGET DenOfIzGraphics APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
 endif ()
 if (LINUX)
     configure_file(
@@ -263,7 +248,7 @@ if (LINUX)
             # Microsoft::DirectX-Headers # Can't use this because it conflicts with Dxc
     )
 
-    target_include_directories(DenOfIzGraphicsObjects
+    target_include_directories(DenOfIzGraphics
             PRIVATE
             # Use DirectX-Headers from DirecXShaderCompiler even though we use prebuilt dxc, see note above on Dxc
             _ThirdParty/DirectXShaderCompiler/external/DirectX-Headers/include
@@ -272,29 +257,21 @@ if (LINUX)
     )
 
     #/usr/bin/ld: relocation R_X86_64_PC32 against symbol `_ZNSt6ranges5views4keysE' can not be used when making a shared object; recompile with -fPIC
-    set_target_properties(DenOfIzGraphicsObjects PROPERTIES POSITION_INDEPENDENT_CODE ON)
     set_target_properties(DenOfIzGraphics PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif ()
 
 if (WIN32 OR LINUX)
-    target_compile_definitions(DenOfIzGraphicsObjects PUBLIC BUILD_VK)
     target_compile_definitions(DenOfIzGraphics PUBLIC BUILD_VK)
-    target_link_libraries(DenOfIzGraphicsObjects PRIVATE
-            volk::volk
-            volk::volk_headers
-            GPUOpen::VulkanMemoryAllocator)
     target_link_libraries(DenOfIzGraphics PRIVATE
             volk::volk
             volk::volk_headers
             GPUOpen::VulkanMemoryAllocator)
 endif ()
 
-set_target_default_properties(DenOfIzGraphicsObjects)
 set_target_default_properties(DenOfIzGraphics)
 #target_compile_definitions(DenOfIzGraphics PUBLIC NSIGHT_ENABLE)
 
 if (LINUX)
-    LINUX_LIB(DenOfIzGraphicsObjects)
     LINUX_LIB(DenOfIzGraphics)
 endif ()
 
