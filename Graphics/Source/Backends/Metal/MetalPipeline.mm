@@ -71,7 +71,7 @@ void MetalPipeline::CreateGraphicsPipeline( )
             fragmentFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
             break;
         default:
-            spdlog::error("Unsupported shader stage: {}", static_cast<int>( shader->Stage ));
+            spdlog::error( "Unsupported shader stage: {}", static_cast<int>( shader->Stage ) );
             break;
         }
     }
@@ -340,9 +340,11 @@ id<MTLFunction> MetalPipeline::CreateShaderFunction( id<MTLLibrary> library, con
 {
     NSString       *entryPointName = [NSString stringWithUTF8String:entryPoint.c_str( )];
     id<MTLFunction> function       = [library newFunctionWithName:entryPointName];
-    if ( function == nil )
+    if (function == nil)
     {
-        spdlog::error("Error creating function for entry point: {}", entryPointName);
+        NSString *description = entryPointName;
+        std::string entryPointStr = [description UTF8String];
+        spdlog::error("Error creating function for entry point: {}", entryPointStr);
     }
     return function;
 }
