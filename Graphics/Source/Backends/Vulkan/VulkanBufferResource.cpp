@@ -81,12 +81,12 @@ void *VulkanBufferResource::MapMemory( )
 {
     if ( m_desc.HeapType != HeapType::CPU && m_desc.HeapType != HeapType::CPU_GPU )
     {
-        LOG( WARNING ) << "Can only map to CPU visible buffer";
+        spdlog::warn("Can only map to CPU visible buffer");
         return nullptr;
     }
     if ( m_mappedMemory != nullptr )
     {
-        LOG( WARNING ) << "Memory already mapped before mapping: " << m_desc.DebugName.Get( );
+        spdlog::warn("Memory already mapped before mapping: {}", m_desc.DebugName.Get( ));
         return m_mappedMemory;
     }
 
@@ -98,7 +98,7 @@ void VulkanBufferResource::UnmapMemory( )
 {
     if ( m_mappedMemory == nullptr )
     {
-        LOG( WARNING ) << "Memory not mapped before unmapping: " << m_desc.DebugName.Get( );
+        spdlog::warn("Memory not mapped before unmapping: {}", m_desc.DebugName.Get( ));
         return;
     }
     vmaUnmapMemory( m_context->Vma, m_allocation );
@@ -109,7 +109,7 @@ VulkanBufferResource::~VulkanBufferResource( )
 {
     if ( m_mappedMemory != nullptr )
     {
-        LOG( WARNING ) << "Memory not unmapped before lifetime of the buffer.";
+        spdlog::warn("Memory not unmapped before lifetime of the buffer.");
         vmaUnmapMemory( m_context->Vma, m_allocation );
     }
 

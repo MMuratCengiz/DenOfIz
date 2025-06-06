@@ -30,7 +30,7 @@ MetalCommandQueue::MetalCommandQueue(MetalContext* context, const CommandQueueDe
 
         if (!m_queue)
         {
-            LOG(FATAL) << "Failed to create Metal command queue";
+            spdlog::critical("Failed to create Metal command queue");
         }
     }
 }

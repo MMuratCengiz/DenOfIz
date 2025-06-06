@@ -55,7 +55,7 @@ void RenderTargetExample::Init( )
     sphereRenderItem.Data  = m_sphere->Data( );
     sphereRenderItem.Model = m_sphere->ModelMatrix( );
 
-    m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
+    m_time.OnEachSecond = []( const double fps ) { spdlog::warn("FPS: {}", fps); };
 
     CommandListPoolDesc commandListPoolDesc{ };
     commandListPoolDesc.CommandQueue    = m_graphicsQueue.get( );

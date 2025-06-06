@@ -82,7 +82,7 @@ void UIExample::Init( )
     m_spinningCubeWidget->SetCubeColor( XMFLOAT4( 0.2f, 0.6f, 1.0f, 1.0f ) );
 
     m_clay->RegisterPipelineWidget( m_spinningCubeWidget.get( ) );
-    m_time.OnEachSecond = []( const double fps ) { LOG( INFO ) << "FPS: " << fps; };
+    m_time.OnEachSecond = []( const double fps ) { spdlog::info("FPS: {}", fps); };
 }
 
 void UIExample::ModifyApiPreferences( APIPreference &defaultApiPreference )

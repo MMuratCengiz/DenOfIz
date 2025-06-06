@@ -41,7 +41,7 @@ MetalRootSignature::MetalRootSignature( MetalContext *context, const RootSignatu
         const auto &trueIndex = m_desc.RootConstants.GetElement( i ).Binding;
         if ( trueIndex >= m_desc.RootConstants.NumElements( ) )
         {
-            LOG( FATAL ) << "Root constant binding index is out of range. Make sure all bindings are provided in ascending order.";
+            spdlog::critical("Root constant binding index is out of range. Make sure all bindings are provided in ascending order.");
         }
         const auto &rootConstant     = m_desc.RootConstants.GetElement( trueIndex );
         m_rootConstants[ trueIndex ] = { .Offset = m_numRootConstantBytes, .NumBytes = rootConstant.NumBytes };
@@ -248,7 +248,7 @@ const uint32_t MetalRootSignature::CbvSrvUavTableOffset( uint32_t registerSpace 
 {
     if ( registerSpace >= m_descriptorOffsets.size( ) )
     {
-        LOG( ERROR ) << "Invalid register space";
+        spdlog::error("Invalid register space");
         return 0;
     }
     return m_descriptorOffsets[ registerSpace ].CbvSrvUavTableOffset;
@@ -258,7 +258,7 @@ const uint32_t MetalRootSignature::CbvSrvUavTableSize( uint32_t registerSpace ) 
 {
     if ( registerSpace >= m_descriptorOffsets.size( ) )
     {
-        LOG( ERROR ) << "Invalid register space";
+        spdlog::error("Invalid register space");
         return 0;
     }
     return m_descriptorOffsets[ registerSpace ].CbvSrvUavResourceCount;
@@ -268,7 +268,7 @@ const uint32_t MetalRootSignature::CbvSrvUavResourceIndex( const ResourceBinding
 {
     if ( slot.RegisterSpace >= m_descriptorOffsets.size( ) )
     {
-        LOG( ERROR ) << "Invalid register space";
+        spdlog::error("Invalid register space");
         return 0;
     }
 
@@ -290,7 +290,7 @@ const uint32_t MetalRootSignature::CbvSrvUavResourceIndex( const ResourceBinding
     }
     if ( resourceIndex == -1 )
     {
-        LOG( ERROR ) << "Resource binding with type[" << static_cast<int>( slot.Type ) << "],binding[" << slot.Binding << "],register[" << slot.RegisterSpace << "] not found.";
+        spdlog::error("Resource binding with type[ {} ],binding[ {} ],register[{} ] not found.", static_cast<int>( slot.Type ), slot.Binding, slot.RegisterSpace);
         return 0;
     }
     return resourceIndex;
@@ -300,7 +300,7 @@ const MTLRenderStages MetalRootSignature::CbvSrvUavResourceShaderStages( const R
 {
     if ( slot.RegisterSpace >= m_descriptorOffsets.size( ) )
     {
-        LOG( ERROR ) << "Invalid register space";
+        spdlog::error("Invalid register space");
         return 0;
     }
 
@@ -323,7 +323,7 @@ const MTLRenderStages MetalRootSignature::SamplerResourceShaderStages( const Den
 {
     if ( slot.RegisterSpace >= m_descriptorOffsets.size( ) )
     {
-        LOG( ERROR ) << "Invalid register space";
+        spdlog::error("Invalid register space");
         return 0;
     }
 
@@ -334,7 +334,7 @@ const uint32_t MetalRootSignature::SamplerTableOffset( uint32_t registerSpace ) 
 {
     if ( registerSpace >= m_descriptorOffsets.size( ) )
     {
-        LOG( ERROR ) << "Invalid register space";
+        spdlog::error("Invalid register space");
         return 0;
     }
 
@@ -345,7 +345,7 @@ const uint32_t MetalRootSignature::SamplerResourceIndex( const ResourceBindingSl
 {
     if ( slot.RegisterSpace >= m_descriptorOffsets.size( ) )
     {
-        LOG( ERROR ) << "Invalid register space";
+        spdlog::error("Invalid register space");
         return 0;
     }
 

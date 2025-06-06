@@ -11,17 +11,17 @@ target_include_default_directories(DenOfIzExamples-AnimatedFox)
 
 # Find and include ozz-animation libraries
 set(OZZ_ROOT "${PROJECT_SOURCE_DIR}/Graphics/_ThirdParty/ozz-animation")
-target_include_directories(DenOfIzExamples-AnimatedFox PUBLIC 
-    ${OZZ_ROOT}/include
-    ${OZZ_ROOT}/src
+target_include_directories(DenOfIzExamples-AnimatedFox PUBLIC
+        ${OZZ_ROOT}/include
+        ${OZZ_ROOT}/src
 )
 
 target_link_libraries(DenOfIzExamples-AnimatedFox
-    PUBLIC
-    DenOfIzExamples-Base
-    ozz_animation
-    ozz_animation_offline
-    ozz_base
+        PUBLIC
+        DenOfIzExamples-Base
+        ozz_animation
+        ozz_animation_offline
+        ozz_base
 )
 
 apple_app(DenOfIzExamples-AnimatedFox)

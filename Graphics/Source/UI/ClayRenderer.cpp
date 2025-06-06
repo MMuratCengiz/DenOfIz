@@ -18,12 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphicsInternal/UI/ClayRenderer.h"
 #include <cmath>
-#include "DenOfIzGraphicsInternal/UI/UIShaders.h"
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 #include "DenOfIzGraphics/UI/ClayData.h"
 #include "DenOfIzGraphics/UI/Widgets/ResizableContainerWidget.h"
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
+#include "DenOfIzGraphicsInternal/UI/UIShaders.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 using namespace DirectX;
@@ -32,13 +32,13 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_l
 {
     if ( m_logicalDevice == nullptr )
     {
-        LOG( ERROR ) << "ClayRenderer: LogicalDevice cannot be null";
+        spdlog::error( "ClayRenderer: LogicalDevice cannot be null" );
         return;
     }
 
     if ( m_clayContext == nullptr )
     {
-        LOG( ERROR ) << "ClayRenderer: ClayContext cannot be null";
+        spdlog::error( "ClayRenderer: ClayContext cannot be null" );
         return;
     }
     m_clayText = m_clayContext->GetClayText( );
@@ -315,7 +315,7 @@ void ClayRenderer::Render( ICommandList *commandList, const Clay_RenderCommandAr
 {
     if ( frameIndex >= m_frameData.size( ) )
     {
-        LOG( ERROR ) << "ClayRenderer::Render: Invalid frame index " << frameIndex;
+        spdlog::error( "ClayRenderer::Render: Invalid frame index {}", frameIndex );
         return;
     }
 
@@ -434,14 +434,14 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
             m_pipelineWidgetsToRender.push_back( widget );
             if ( pipelineWidgetIndex >= m_desc.MaxPipelineWidgets )
             {
-                LOG( WARNING ) << "Exceeded maximum pipeline widgets";
+                spdlog::warn( "Exceeded maximum pipeline widgets" );
                 break;
             }
 
             uint32_t dataIndex = frameIndex * m_desc.MaxPipelineWidgets + pipelineWidgetIndex;
             if ( dataIndex >= m_pipelineWidgetData.size( ) )
             {
-                LOG( ERROR ) << "Invalid pipeline widget data index";
+                spdlog::error( "Invalid pipeline widget data index" );
                 continue;
             }
 
@@ -595,7 +595,7 @@ void ClayRenderer::ProcessRenderCommand( const Clay_RenderCommand *command, ICom
         break;
 
     default:
-        LOG( WARNING ) << "Unknown Clay render command type: " << command->commandType;
+        spdlog::warn( "Unknown Clay render command type: {}", static_cast<int>( command->commandType ) );
         break;
     }
 }
@@ -675,14 +675,14 @@ void ClayRenderer::RenderText( const Clay_RenderCommand *command, ICommandList *
 
     if ( !m_clayText )
     {
-        LOG( WARNING ) << "ClayText not set in ClayRenderer";
+        spdlog::warn( "ClayText not set in ClayRenderer" );
         return;
     }
 
     const Font *font = m_clayText->GetFont( data.fontId );
     if ( font == nullptr )
     {
-        LOG( WARNING ) << "Font not found for ID: " << data.fontId;
+        spdlog::warn( "Font not found for ID: {}", data.fontId );
         return;
     }
     const float baseSize       = static_cast<float>( font->Asset( )->InitialFontSize );
@@ -888,7 +888,7 @@ void ClayRenderer::RenderCustom( const Clay_RenderCommand *command, ICommandList
         }
         else
         {
-            LOG( WARNING ) << "Widget not registered, use ClayRenderer::RegisterWidget";
+            spdlog::warn( "Widget not registered, use ClayRenderer::RegisterWidget" );
         }
     }
 }
@@ -931,7 +931,7 @@ uint32_t ClayRenderer::RegisterTexture( ITextureResource *texture )
         }
     }
 
-    LOG( ERROR ) << "ClayRenderer: Exceeded maximum texture count";
+    spdlog::error( "ClayRenderer: Exceeded maximum texture count" );
     return 0;
 }
 
@@ -1026,7 +1026,7 @@ void ClayRenderer::FlushCurrentBatch( )
 
     if ( alignedVertexOffset + m_batchedVertices.NumElements( ) > m_desc.MaxVertices || alignedIndexOffset + m_batchedIndices.NumElements( ) > m_desc.MaxIndices )
     {
-        LOG( ERROR ) << "ClayRenderer: Geometry exceeds buffer limits";
+        spdlog::error( "ClayRenderer: Geometry exceeds buffer limits" );
         return;
     }
 

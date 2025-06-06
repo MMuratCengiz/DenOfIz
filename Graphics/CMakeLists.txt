@@ -86,7 +86,7 @@ target_include_default_directories(DenOfIzGraphics)
 target_include_directories(DenOfIzGraphics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Internal)
 
 target_link_libraries(DenOfIzGraphics PRIVATE
-        glog::glog
+        spdlog::spdlog
         Microsoft::DirectXMath
         SDL2::SDL2
         SDL2::SDL2main
@@ -103,7 +103,6 @@ target_link_libraries(DenOfIzGraphics PRIVATE
         msdfgen::msdfgen-full
         $<BUILD_INTERFACE:msdf-atlas-gen::msdf-atlas-gen>
         miniz::miniz
-        tinyxml2::tinyxml2
         PkgConfig::thorvg)
 
 if (DZ_INSTALL)

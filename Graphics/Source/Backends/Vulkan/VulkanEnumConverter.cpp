@@ -703,7 +703,7 @@ VkImageUsageFlags VulkanEnumConverter::ConvertTextureUsage( BitSet<ResourceDescr
     }
     if ( flags == 0 )
     {
-        LOG( WARNING ) << "No suitable descriptor specified for texture.";
+        spdlog::warn("No suitable descriptor specified for texture.");
     }
     return flags;
 }

@@ -28,7 +28,7 @@ MeshAssetWriter::MeshAssetWriter( const MeshAssetWriterDesc &desc ) : m_writer( 
 {
     if ( !m_writer )
     {
-        LOG( FATAL ) << "BinaryWriter cannot be null for MeshAssetWriter";
+        spdlog::critical("BinaryWriter cannot be null for MeshAssetWriter");
     }
 }
 
@@ -357,7 +357,7 @@ void MeshAssetWriter::Write( const MeshAsset &meshAssetData )
 {
     if ( m_state != State::Idle )
     {
-        LOG( FATAL ) << "WriteMetadata can only be called once at the beginning.";
+        spdlog::critical("WriteMetadata can only be called once at the beginning.");
     }
 
     m_meshAsset                = meshAssetData;
@@ -381,11 +381,11 @@ void MeshAssetWriter::AddVertex( const MeshVertex &vertex )
 {
     if ( m_state != State::ReadyToWriteData && m_state != State::WritingVertices )
     {
-        LOG( FATAL ) << "AddVertex called at invalid state " << static_cast<int>( m_state );
+        spdlog::critical("AddVertex called at invalid state {}", static_cast<int>( m_state ));
     }
     if ( m_currentSubMeshIndex >= m_expectedSubMeshCount )
     {
-        LOG( FATAL ) << "AddVertex called after all SubMeshes should have been written.";
+        spdlog::critical("AddVertex called after all SubMeshes should have been written.");
     }
 
     SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.GetElement( m_currentSubMeshIndex );
@@ -433,12 +433,12 @@ void MeshAssetWriter::AddIndex16( const uint16_t index )
 {
     if ( m_state != State::ExpectingIndices && m_state != State::WritingIndices )
     {
-        LOG( FATAL ) << "AddIndex16 called at invalid state " << static_cast<int>( m_state );
+        spdlog::critical("AddIndex16 called at invalid state {}", static_cast<int>( m_state ));
     }
     SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.GetElement( m_currentSubMeshIndex );
     if ( currentSubMesh.IndexType != IndexType::Uint16 )
     {
-        LOG( WARNING ) << "Adding uint16 index to SubMesh " << m_currentSubMeshIndex << " expecting Uint32.";
+        spdlog::warn("Adding uint16 index to SubMesh {} expecting Uint32.", m_currentSubMeshIndex);
     }
 
     if ( m_state == State::ExpectingIndices )
@@ -480,12 +480,12 @@ void MeshAssetWriter::AddIndex32( const uint32_t index )
 {
     if ( m_state != State::ExpectingIndices && m_state != State::WritingIndices )
     {
-        LOG( FATAL ) << "AddIndex32 called at invalid state " << static_cast<int>( m_state );
+        spdlog::critical("AddIndex32 called at invalid state {}", static_cast<int>( m_state ));
     }
     SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.GetElement( m_currentSubMeshIndex );
     if ( currentSubMesh.IndexType != IndexType::Uint32 )
     {
-        LOG( WARNING ) << "Adding uint32 index to SubMesh " << m_currentSubMeshIndex << " expecting Uint16.";
+        spdlog::warn("Adding uint32 index to SubMesh {} expecting Uint16.", m_currentSubMeshIndex);
     }
 
     if ( m_state == State::ExpectingIndices )
@@ -527,13 +527,13 @@ void MeshAssetWriter::AddConvexHullData( const uint32_t boundingVolumeIndex, con
 {
     if ( m_state != State::ExpectingHulls && m_state != State::WritingHulls )
     {
-        LOG( FATAL ) << "AddConvexHullData called at invalid state " << static_cast<int>( m_state );
+        spdlog::critical("AddConvexHullData called at invalid state {}", static_cast<int>( m_state ));
     }
     SubMeshData &currentSubMesh = m_meshAsset.SubMeshes.GetElement( m_currentSubMeshIndex );
     if ( boundingVolumeIndex >= currentSubMesh.BoundingVolumes.NumElements( ) ||
          currentSubMesh.BoundingVolumes.GetElement( boundingVolumeIndex ).Type != BoundingVolumeType::ConvexHull )
     {
-        LOG( FATAL ) << "Invalid boundingVolumeIndex or not a ConvexHull type.";
+        spdlog::critical("Invalid boundingVolumeIndex or not a ConvexHull type.");
     }
 
     if ( m_state == State::ExpectingHulls )
@@ -571,11 +571,11 @@ void MeshAssetWriter::AddMorphTargetDelta( const MorphTargetDelta &delta )
 {
     if ( m_state != State::ExpectingMorphTarget && m_state != State::WritingDeltas )
     {
-        LOG( FATAL ) << "AddMorphTargetDelta called at invalid state " << static_cast<int>( m_state );
+        spdlog::critical("AddMorphTargetDelta called at invalid state {}", static_cast<int>( m_state ));
     }
     if ( m_currentMorphTargetIndex >= m_expectedMorphTargetCount )
     {
-        LOG( FATAL ) << "AddMorphTargetDelta called after all MorphTargets should have been written.";
+        spdlog::critical("AddMorphTargetDelta called after all MorphTargets should have been written.");
     }
 
     MorphTarget &currentMorph = m_meshAsset.MorphTargets.GetElement( m_currentMorphTargetIndex );
@@ -605,16 +605,16 @@ void MeshAssetWriter::FinalizeAsset( )
     {
         if ( !( m_state == State::ReadyToWriteData && m_expectedSubMeshCount == 0 && m_expectedMorphTargetCount == 0 ) )
         {
-            LOG( FATAL ) << "FinalizeAsset called in invalid state " << static_cast<int>( m_state ) << ". Ensure all expected data was added.";
+            spdlog::critical("FinalizeAsset called in invalid state {} . Ensure all expected data was added.", static_cast<int>( m_state ));
         }
     }
     if ( m_writtenSubMeshCount != m_expectedSubMeshCount )
     {
-        LOG( FATAL ) << "FinalizeAsset called but not all SubMeshes were written/ended.";
+        spdlog::critical("FinalizeAsset called but not all SubMeshes were written/ended.");
     }
     if ( m_writtenMorphTargetCount != m_expectedMorphTargetCount )
     {
-        LOG( FATAL ) << "FinalizeAsset called but not all MorphTargets were written/ended.";
+        spdlog::critical("FinalizeAsset called but not all MorphTargets were written/ended.");
     }
 
     const uint64_t currentPos = m_writer->Position( );

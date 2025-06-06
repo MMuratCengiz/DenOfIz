@@ -116,7 +116,7 @@ void VulkanTextureResource::CreateImageView( )
         }
         else
         {
-            LOG( WARNING ) << "Unsupported array size for image type";
+            spdlog::warn( "Unsupported array size for image type" );
         }
     }
     VkImageViewCreateInfo viewCreateInfo{ };

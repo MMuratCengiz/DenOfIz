@@ -17,6 +17,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Utilities/Engine.h"
+#include <cstring>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <thorvg.h>
 #include <thread>
 #include "DenOfIzGraphicsInternal/Backends/Common/SDLInclude.h"
@@ -44,38 +47,42 @@ void Engine::Init( const EngineDesc &desc )
     tvg::Initializer::init( tvg::CanvasEngine::Sw, std::thread::hardware_concurrency( ) );
     std::atexit( [] { tvg::Initializer::term( tvg::CanvasEngine::Sw ); } );
 
-    FLAGS_alsologtostderr           = true;
-    FLAGS_colorlogtostdout          = true;
-    FLAGS_max_log_size              = 50;
-    FLAGS_stop_logging_if_full_disk = true;
-    FLAGS_logfile_mode              = 0644;
-    FLAGS_logcleansecs              = 60 * 60 * 24;
+    std::vector<spdlog::sink_ptr> sinks;
 
+    const auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>( );
+    console_sink->set_color_mode( spdlog::color_mode::always );
+    sinks.push_back( console_sink );
+
+    const auto logFile = desc.LogFile.Get( );
+    if ( logFile && std::strlen( logFile ) > 0 )
+    {
+        const auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>( logFile, true );
+        sinks.push_back( file_sink );
+    }
+
+    const auto logger = std::make_shared<spdlog::logger>( "DenOfIz", begin( sinks ), end( sinks ) );
     switch ( desc.LogLevel )
     {
     case LogLevel::Info:
-        FLAGS_minloglevel = google::GLOG_INFO;
+        logger->set_level( spdlog::level::info );
         break;
     case LogLevel::Warning:
-        FLAGS_minloglevel = google::GLOG_WARNING;
+        logger->set_level( spdlog::level::warn );
         break;
     case LogLevel::Error:
-        FLAGS_minloglevel = google::GLOG_ERROR;
+        logger->set_level( spdlog::level::err );
         break;
     case LogLevel::Fatal:
-        FLAGS_minloglevel = google::GLOG_FATAL;
+        logger->set_level( spdlog::level::critical );
         break;
     }
 
-    const auto logFile = desc.LogFile.Get( );
-    google::InitGoogleLogging( "DenOfIz" );
-    google::SetLogDestination( google::GLOG_INFO, logFile );
-    google::SetLogDestination( google::GLOG_WARNING, logFile );
-    google::SetLogDestination( google::GLOG_ERROR, logFile );
-    google::SetLogDestination( google::GLOG_FATAL, logFile );
+    logger->set_pattern( "[%Y-%m-%d %H:%M:%S.%e] [%l] [%s:%#] %v" );
+    spdlog::set_default_logger( logger );
+    logger->flush_on( spdlog::level::err );
 }
 
 void Engine::Shutdown( )
 {
-    google::ShutdownGoogleLogging( );
+    spdlog::shutdown( );
 }

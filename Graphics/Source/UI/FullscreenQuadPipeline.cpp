@@ -26,7 +26,7 @@ FullscreenQuadPipeline::FullscreenQuadPipeline( const FullscreenQuadPipelineDesc
 {
     if ( m_logicalDevice == nullptr )
     {
-        LOG( ERROR ) << "FullscreenQuadPipeline: LogicalDevice cannot be null";
+        spdlog::error("FullscreenQuadPipeline: LogicalDevice cannot be null");
         return;
     }
 
@@ -94,13 +94,13 @@ void FullscreenQuadPipeline::UpdateTarget( const uint32_t frameIndex, ITextureRe
 {
     if ( frameIndex >= m_resourceBindGroups.size( ) )
     {
-        LOG( ERROR ) << "FullscreenQuadPipeline::UpdateTarget: Invalid frame index " << frameIndex;
+        spdlog::error("FullscreenQuadPipeline::UpdateTarget: Invalid frame index {}", frameIndex);
         return;
     }
     
     if ( sourceTexture == nullptr )
     {
-        LOG( ERROR ) << "FullscreenQuadPipeline::UpdateTarget: sourceTexture cannot be null";
+        spdlog::error("FullscreenQuadPipeline::UpdateTarget: sourceTexture cannot be null");
         return;
     }
 
@@ -111,7 +111,7 @@ void FullscreenQuadPipeline::DrawTextureToScreen( ICommandList *commandList, con
 {
     if ( frameIndex >= m_resourceBindGroups.size( ) )
     {
-        LOG( ERROR ) << "FullscreenQuadPipeline::DrawTextureToScreen: Invalid frame index " << frameIndex;
+        spdlog::error("FullscreenQuadPipeline::DrawTextureToScreen: Invalid frame index {}", frameIndex);
         return;
     }
 

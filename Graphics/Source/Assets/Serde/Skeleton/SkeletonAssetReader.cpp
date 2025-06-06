@@ -27,7 +27,7 @@ SkeletonAssetReader::SkeletonAssetReader( const SkeletonAssetReaderDesc &desc ) 
 {
     if ( !m_reader )
     {
-        LOG( FATAL ) << "BinaryReader cannot be null for SkeletonAssetReader";
+        spdlog::critical("BinaryReader cannot be null for SkeletonAssetReader");
     }
 }
 
@@ -40,13 +40,13 @@ SkeletonAsset SkeletonAssetReader::Read( )
     m_skeletonAsset.Magic = m_reader->ReadUInt64( );
     if ( m_skeletonAsset.Magic != SkeletonAsset{ }.Magic )
     {
-        LOG( FATAL ) << "Invalid SkeletonAsset magic number.";
+        spdlog::critical("Invalid SkeletonAsset magic number.");
     }
 
     m_skeletonAsset.Version = m_reader->ReadUInt32( );
     if ( m_skeletonAsset.Version > SkeletonAsset::Latest )
     {
-        LOG( WARNING ) << "SkeletonAsset version mismatch.";
+        spdlog::warn("SkeletonAsset version mismatch.");
     }
 
     m_skeletonAsset.NumBytes = m_reader->ReadUInt64( );

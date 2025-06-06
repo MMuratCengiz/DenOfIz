@@ -78,7 +78,7 @@ namespace DenOfIz
             auto value = map.find( key );
             if ( value == map.end( ) )
             {
-                LOG( ERROR ) << "Unable to find key [" << key << "]. " << notFoundMessage;
+                spdlog::error("Unable to find key [ {} ]. {}", key, notFoundMessage);
             }
             return value->second;
         }

@@ -33,7 +33,7 @@ namespace DenOfIz
     {
         if ( result != tvg::Result::Success )
         {
-            LOG( ERROR ) << "ThorVG invalid result: " << static_cast<uint32_t>( result );
+            spdlog::error("ThorVG invalid result: {}", static_cast<uint32_t>( result ));
         }
     }
 
@@ -307,13 +307,13 @@ namespace DenOfIz
     {
         if ( !gradient )
         {
-            LOG( ERROR ) << "ThorVGShape::Fill: gradient cannot be null";
+            spdlog::error("ThorVGShape::Fill: gradient cannot be null");
             return;
         }
         const auto fill = gradient->GetInternalFill( );
         if ( !fill )
         {
-            LOG( ERROR ) << "Specified gradient computed null internal fill";
+            spdlog::error("Specified gradient computed null internal fill");
             return;
         }
 
@@ -335,13 +335,13 @@ namespace DenOfIz
     {
         if ( !gradient )
         {
-            LOG( ERROR ) << "ThorVGShape::Stroke: gradient cannot be null";
+            spdlog::error("ThorVGShape::Stroke: gradient cannot be null");
             return;
         }
         const auto fill = gradient->GetInternalFill( );
         if ( !fill )
         {
-            LOG( ERROR ) << "Specified gradient computed null internal fill";
+            spdlog::error("Specified gradient computed null internal fill");
             return;
         }
 
@@ -410,13 +410,13 @@ namespace DenOfIz
     {
         if ( !target )
         {
-            LOG( ERROR ) << "ThorVGShape::Composite: target cannot be null";
+            spdlog::error("ThorVGShape::Composite: target cannot be null");
             return;
         }
         const auto paint = target->GetInternalPaint( );
         if ( !paint )
         {
-            LOG( ERROR ) << "Specified paint computed null internal paint";
+            spdlog::error("Specified paint computed null internal paint");
             return;
         }
 
@@ -512,13 +512,13 @@ namespace DenOfIz
     {
         if ( !target )
         {
-            LOG( ERROR ) << "ThorVGPicture::Composite: target cannot be null";
+            spdlog::error("ThorVGPicture::Composite: target cannot be null");
             return;
         }
         const auto paint = target->GetInternalPaint( );
         if ( !paint )
         {
-            LOG( ERROR ) << "Specified paint computed null internal paint";
+            spdlog::error("Specified paint computed null internal paint");
             return;
         }
 
@@ -561,13 +561,13 @@ namespace DenOfIz
     {
         if ( !paint )
         {
-            LOG( ERROR ) << "Provided paint cannot be null";
+            spdlog::error("Provided paint cannot be null");
             return;
         }
         const auto p = paint->GetInternalPaint( );
         if ( !p )
         {
-            LOG( ERROR ) << "Provided paint computed null internal paint";
+            spdlog::error("Provided paint computed null internal paint");
             return;
         }
 
@@ -609,13 +609,13 @@ namespace DenOfIz
     {
         if ( !target )
         {
-            LOG( ERROR ) << "ThorVGScene::Composite: target cannot be null";
+            spdlog::error("ThorVGScene::Composite: target cannot be null");
             return;
         }
         const auto paint = target->GetInternalPaint( );
         if ( !paint )
         {
-            LOG( ERROR ) << "Specified paint computed null internal paint";
+            spdlog::error("Specified paint computed null internal paint");
             return;
         }
 
@@ -660,13 +660,13 @@ namespace DenOfIz
     {
         if ( !paint )
         {
-            LOG( WARNING ) << "Invalid paint or canvas";
+            spdlog::warn("Invalid paint or canvas");
             return;
         }
         const auto p = paint->GetInternalPaint( );
         if ( !p )
         {
-            LOG( WARNING ) << "Invalid paint";
+            spdlog::warn("Invalid paint");
             return;
         }
         const auto cloned = p->duplicate( );
@@ -686,7 +686,7 @@ namespace DenOfIz
             const auto p = paint->GetInternalPaint( );
             if ( !p )
             {
-                LOG( ERROR ) << "Specified paint computed null internal paint";
+                spdlog::error("Specified paint computed null internal paint");
                 return;
             }
             ThorVGCheckResult( m_canvas->update( p ) );

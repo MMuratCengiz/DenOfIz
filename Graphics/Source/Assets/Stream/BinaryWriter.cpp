@@ -48,7 +48,7 @@ BinaryWriter::BinaryWriter( const InteropString &filePath, const BinaryWriterDes
     m_isStreamValid = true;
     if ( !stream->is_open( ) )
     {
-        LOG( ERROR ) << "Failed to open file for writing: " << filePath.Get( );
+        spdlog::error("Failed to open file for writing: {}", filePath.Get( ));
         m_isStreamValid = false;
     }
     m_stream = stream;

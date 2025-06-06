@@ -40,7 +40,7 @@ void AnimatedFoxExample::Init( )
     m_camera->SetPosition( XMVECTOR{ 0.0f, 1.0f, -10.0f, 1.0f } );
     m_camera->SetFront( XMVECTOR{ 0.0f, 0.0f, 1.0f, 0.0f } );
 
-    m_timer.OnEachSecond = []( const uint32_t fps ) { LOG( WARNING ) << "FPS: " << fps; };
+    m_timer.OnEachSecond = []( const uint32_t fps ) { spdlog::warn( "FPS: {}", fps ); };
 }
 
 void AnimatedFoxExample::ModifyApiPreferences( APIPreference &apiPreference )
@@ -59,44 +59,44 @@ void AnimatedFoxExample::LoadFoxAssets( )
     if ( bool assetsExist = FileIO::FileExists( meshPath ) && FileIO::FileExists( skeletonPath ) && FileIO::FileExists( walkAnimPath ) && FileIO::FileExists( runAnimPath );
          !assetsExist )
     {
-        LOG( WARNING ) << "One or more fox assets are missing. Attempting to import the model...";
+        spdlog::warn( "One or more fox assets are missing. Attempting to import the model..." );
         if ( InteropString sourceGltfPath = "Assets/Models/Fox.gltf"; !ImportFoxModel( sourceGltfPath ) )
         {
-            LOG( FATAL ) << "Failed to import fox model!";
+            spdlog::critical( "Failed to import fox model!" );
             return;
         }
 
         assetsExist = FileIO::FileExists( meshPath ) && FileIO::FileExists( skeletonPath ) && FileIO::FileExists( walkAnimPath ) && FileIO::FileExists( runAnimPath );
         if ( !assetsExist )
         {
-            LOG( FATAL ) << "Import completed but some assets are still missing. Using fallback quad mesh.";
+            spdlog::critical( "Import completed but some assets are still missing. Using fallback quad mesh." );
             return;
         }
 
-        LOG( INFO ) << "Successfully imported fox model.";
+        spdlog::info( "Successfully imported fox model." );
     }
 
-    LOG( INFO ) << "Loading mesh from: " << meshPath.Get( );
+    spdlog::info( "Loading mesh from: {}", meshPath.Get( ) );
     BinaryReader        meshReader( meshPath );
     MeshAssetReaderDesc meshReaderDesc{ };
     meshReaderDesc.Reader = &meshReader;
     MeshAssetReader meshAssetReader( meshReaderDesc );
     m_foxMesh = meshAssetReader.Read( );
 
-    LOG( INFO ) << "Loading texture from: " << texturePath.Get( );
+    spdlog::info( "Loading texture from: {}", texturePath.Get( ) );
     m_textureAssetBinaryReader = std::make_unique<BinaryReader>( texturePath );
     TextureAssetReaderDesc textureReaderDesc{ };
     textureReaderDesc.Reader = m_textureAssetBinaryReader.get( );
     m_textureAssetReader     = std::make_unique<TextureAssetReader>( textureReaderDesc );
 
-    LOG( INFO ) << "Loading skeleton from: " << skeletonPath.Get( );
+    spdlog::info( "Loading skeleton from: {}", skeletonPath.Get( ) );
     BinaryReader            skeletonReader( skeletonPath );
     SkeletonAssetReaderDesc skeletonReaderDesc{ };
     skeletonReaderDesc.Reader = &skeletonReader;
     SkeletonAssetReader skeletonAssetReader( skeletonReaderDesc );
     m_foxSkeleton = skeletonAssetReader.Read( );
 
-    LOG( INFO ) << "Loading animations from: " << walkAnimPath.Get( ) << " and " << runAnimPath.Get( );
+    spdlog::info( "Loading animations from: {} and {}", walkAnimPath.Get( ), runAnimPath.Get( ) );
     BinaryReader             walkAnimReader( walkAnimPath );
     AnimationAssetReaderDesc walkAnimReaderDesc{ };
     walkAnimReaderDesc.Reader = &walkAnimReader;
@@ -112,7 +112,7 @@ void AnimatedFoxExample::LoadFoxAssets( )
     const auto &subMeshes = m_foxMesh.SubMeshes;
     if ( subMeshes.NumElements( ) == 0 )
     {
-        LOG( FATAL ) << "Fox mesh has no sub-meshes.";
+        spdlog::critical( "Fox mesh has no sub-meshes." );
         return;
     }
 
@@ -121,10 +121,10 @@ void AnimatedFoxExample::LoadFoxAssets( )
     m_vertices.clear( );
     m_indices.Clear( );
 
-    LOG( INFO ) << "Reading vertex data from mesh asset...";
+    spdlog::info( "Reading vertex data from mesh asset..." );
 
     InteropArray<MeshVertex> meshVertices = meshAssetReader.ReadVertices( subMesh.VertexStream );
-    LOG( INFO ) << "Read " << meshVertices.NumElements( ) << " vertices from mesh asset";
+    spdlog::info( "Read {} vertices from mesh asset", meshVertices.NumElements( ) );
 
     m_vertices.resize( meshVertices.NumElements( ) );
     for ( size_t i = 0; i < meshVertices.NumElements( ); ++i )
@@ -153,9 +153,9 @@ void AnimatedFoxExample::LoadFoxAssets( )
         skinnedVertex.BoneWeights  = { mv.BoneWeights.X, mv.BoneWeights.Y, mv.BoneWeights.Z, mv.BoneWeights.W };
     }
 
-    LOG( INFO ) << "Reading index data from mesh asset...";
+    spdlog::info( "Reading index data from mesh asset..." );
     m_indices = meshAssetReader.ReadIndices32( subMesh.IndexStream );
-    LOG( INFO ) << "Read " << m_indices.NumElements( ) << " 32-bit indices from mesh asset";
+    spdlog::info( "Read {} 32-bit indices from mesh asset", m_indices.NumElements( ) );
 }
 
 void AnimatedFoxExample::SetupAnimation( )
@@ -442,7 +442,7 @@ bool AnimatedFoxExample::ImportFoxModel( const InteropString &gltfPath )
 {
     if ( !FileIO::FileExists( gltfPath ) )
     {
-        LOG( FATAL ) << "Source GLTF file not found at: " << gltfPath.Get( );
+        spdlog::critical( "Source GLTF file not found at: {}", gltfPath.Get( ) );
         return false;
     }
 
@@ -450,7 +450,7 @@ bool AnimatedFoxExample::ImportFoxModel( const InteropString &gltfPath )
 
     if ( !importer.ValidateFile( gltfPath ) )
     {
-        LOG( ERROR ) << "AssimpImporter cannot process the file: " << gltfPath.Get( );
+        spdlog::error( "AssimpImporter cannot process the file: {}", gltfPath.Get( ) );
         return false;
     }
 
@@ -473,14 +473,14 @@ bool AnimatedFoxExample::ImportFoxModel( const InteropString &gltfPath )
     ImporterResult result = importer.Import( importJobDesc );
     if ( result.ResultCode != ImporterResultCode::Success )
     {
-        LOG( ERROR ) << "Import failed: " << result.ErrorMessage.Get( );
+        spdlog::error( "Import failed: {}", result.ErrorMessage.Get( ) );
         return false;
     }
 
     for ( size_t i = 0; i < result.CreatedAssets.NumElements( ); ++i )
     {
         AssetUri uri = result.CreatedAssets.GetElement( i );
-        LOG( INFO ) << "Created asset: " << uri.Path.Get( );
+        spdlog::info( "Created asset: {}", uri.Path.Get( ) );
     }
 
     return true;

@@ -119,7 +119,7 @@ void DxilToMsl::Impl::IterateBoundResources( CompiledShaderStage *shader, Reflec
     HRESULT    hr       = DxcCreateInstance( CLSID_DxcUtils, IID_PPV_ARGS( &dxcUtils ) );
     if ( FAILED( hr ) )
     {
-        LOG( ERROR ) << "Failed to create DxcUtils for reflection";
+        spdlog::error("Failed to create DxcUtils for reflection");
         return;
     }
 
@@ -282,7 +282,7 @@ IRRootSignature *DxilToMsl::Impl::CreateRootSignature( std::vector<RegisterSpace
 
     if ( error )
     {
-        LOG( ERROR ) << "Error producing IRRootSignature, error code [" << IRErrorGetCode( error ) << "]";
+        spdlog::error("Error producing IRRootSignature, error code [ {} ]", IRErrorGetCode( error ));
         IRErrorDestroy( error );
     }
 
@@ -311,7 +311,7 @@ InteropArray<InteropArray<Byte>> DxilToMsl::Impl::Convert( const DxilToMslDesc &
     const HRESULT hr       = DxcCreateInstance( CLSID_DxcUtils, IID_PPV_ARGS( &dxcUtils ) );
     if ( FAILED( hr ) )
     {
-        LOG( ERROR ) << "Failed to create DxcUtils";
+        spdlog::error("Failed to create DxcUtils");
         return { };
     }
 
@@ -371,7 +371,7 @@ InteropArray<InteropArray<Byte>> DxilToMsl::Impl::Convert( const DxilToMslDesc &
             {
                 if ( isLocal )
                 {
-                    LOG( ERROR ) << "Local root level buffers are not supported, use root constants instead.";
+                    spdlog::error("Local root level buffers are not supported, use root constants instead.");
                 }
                 IRRootDescriptor &rootDescriptor = registerSpaceRange.RootArguments.emplace_back( );
                 rootDescriptor.RegisterSpace     = shaderInputBindDesc.Space;
@@ -510,7 +510,7 @@ InteropArray<Byte> DxilToMsl::Impl::Compile( const CompileDesc &compileDesc, con
 
     if ( !outIr )
     {
-        LOG( ERROR ) << "Failed to compile and link DXIL to MSL, ErrorCode[" << IRErrorGetCode( irError ) << "]";
+        spdlog::error("Failed to compile and link DXIL to MSL, ErrorCode[ {} ]", IRErrorGetCode( irError ));
         IRErrorDestroy( irError );
     }
 
@@ -534,7 +534,7 @@ void DxilToMsl::Impl::DxcCheckResult( const HRESULT hr ) const
 {
     if ( FAILED( hr ) )
     {
-        LOG( ERROR ) << "DXC Error: " << hr;
+        spdlog::error("DXC Error: {}", hr);
     }
 }
 

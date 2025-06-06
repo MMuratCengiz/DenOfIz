@@ -79,7 +79,7 @@ const uint32_t MetalLocalRootSignature::InlineDataOffset( uint32_t binding ) con
 {
     if ( binding >= m_inlineDataOffsets.size( ) )
     {
-        LOG( ERROR ) << "Invalid binding index(" << binding << ")";
+        spdlog::error("Invalid binding index( {} )", binding);
         return 0;
     }
     return m_inlineDataOffsets[ binding ];
@@ -89,7 +89,7 @@ const uint32_t MetalLocalRootSignature::InlineNumBytes( uint32_t binding ) const
 {
     if ( binding >= m_inlineDataNumBytes.size( ) )
     {
-        LOG( ERROR ) << "Invalid binding index(" << binding << ")";
+        spdlog::error("Invalid binding index( {} )", binding);
         return 0;
     }
     return m_inlineDataNumBytes[ binding ];
@@ -126,7 +126,7 @@ bool MetalLocalRootSignature::EnsureSize( uint32_t binding, const std::vector<Me
 {
     if ( binding >= bindings.size( ) )
     {
-        LOG( ERROR ) << "Invalid binding index(" << binding << ")";
+        spdlog::error("Invalid binding index( {} )", binding);
         return false;
     }
 

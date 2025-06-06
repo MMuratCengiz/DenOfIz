@@ -57,7 +57,7 @@ bool VGImporter::CanProcessFileExtension( const InteropString &extension ) const
 
 ImporterResult VGImporter::Import( const ImportJobDesc &desc )
 {
-    LOG( INFO ) << "Starting vector graphics import for file: " << desc.SourceFilePath.Get( );
+    spdlog::info("Starting vector graphics import for file: {}", desc.SourceFilePath.Get( ));
 
     ImportContext context;
     context.SourceFilePath  = desc.SourceFilePath;
@@ -69,7 +69,7 @@ ImporterResult VGImporter::Import( const ImportJobDesc &desc )
     {
         context.Result.ResultCode   = ImporterResultCode::InvalidParameters;
         context.Result.ErrorMessage = InteropString( "Cannot specify both Canvas and file path - use one or the other" );
-        LOG( ERROR ) << context.Result.ErrorMessage.Get( );
+        spdlog::error("{}", context.Result.ErrorMessage.Get( ));
         return context.Result;
     }
 
@@ -79,25 +79,25 @@ ImporterResult VGImporter::Import( const ImportJobDesc &desc )
         {
             context.Result.ResultCode   = ImporterResultCode::FileNotFound;
             context.Result.ErrorMessage = InteropString( "Source file not found: " ).Append( context.SourceFilePath.Get( ) );
-            LOG( ERROR ) << context.Result.ErrorMessage.Get( );
+            spdlog::error("{}", context.Result.ErrorMessage.Get( ));
             return context.Result;
         }
     }
 
     if ( !FileIO::FileExists( context.TargetDirectory ) )
     {
-        LOG( INFO ) << "Target directory does not exist, attempting to create: " << context.TargetDirectory.Get( );
+        spdlog::info("Target directory does not exist, attempting to create: {}", context.TargetDirectory.Get( ));
         if ( !FileIO::CreateDirectories( context.TargetDirectory ) )
         {
             context.Result.ResultCode   = ImporterResultCode::WriteFailed;
             context.Result.ErrorMessage = InteropString( "Failed to create target directory: " ).Append( context.TargetDirectory.Get( ) );
-            LOG( ERROR ) << context.Result.ErrorMessage.Get( );
+            spdlog::error("{}", context.Result.ErrorMessage.Get( ));
             return context.Result;
         }
     }
 
     context.Result.ResultCode = ImportVGInternal( context );
-    LOG( INFO ) << "Vector graphics import successful for: " << context.SourceFilePath.Get( );
+    spdlog::info("Vector graphics import successful for: {}", context.SourceFilePath.Get( ));
     return context.Result;
 }
 

@@ -279,7 +279,7 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
     const HRESULT result     = DxcCreateInstance( CLSID_DxcLibrary, IID_PPV_ARGS( &dxcLibrary ) );
     if ( FAILED( result ) || !dxcLibrary )
     {
-        LOG( ERROR ) << "Failed to create DXC library for blob conversion";
+        spdlog::error("Failed to create DXC library for blob conversion");
         return compiledShader;
     }
 

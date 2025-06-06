@@ -72,7 +72,7 @@ Bundle::Bundle( const BundleDirectoryDesc &directoryDesc ) : m_bundleFile( nullp
 
     if ( !FileIO::FileExists( resolvedDirPath ) || !std::filesystem::is_directory( dirPath ) )
     {
-        LOG( ERROR ) << "Directory does not exist or is not a directory: " << dirPath;
+        spdlog::error("Directory does not exist or is not a directory: {}", dirPath);
         return;
     }
 
@@ -119,7 +119,7 @@ Bundle::Bundle( const BundleDirectoryDesc &directoryDesc ) : m_bundleFile( nullp
         }
         else
         {
-            LOG( ERROR ) << "Failed to add asset: file does not exist: " << relPathStr;
+            spdlog::error("Failed to add asset: file does not exist: {}", relPathStr);
         }
     };
 
@@ -174,7 +174,7 @@ BinaryReader *Bundle::OpenReader( const AssetUri &assetUri )
 
             if ( result != MZ_OK )
             {
-                LOG( ERROR ) << "Failed to decompress asset: " << uriStr;
+                spdlog::error("Failed to decompress asset: {}", uriStr);
                 return nullptr;
             }
 
@@ -220,7 +220,7 @@ void Bundle::LoadTableOfContents( )
 {
     if ( !m_bundleFile->good( ) )
     {
-        LOG( ERROR ) << "Failed to read bundle: invalid file stream";
+        spdlog::error("Failed to read bundle: invalid file stream");
         return;
     }
 
@@ -236,13 +236,13 @@ void Bundle::LoadTableOfContents( )
 
     if ( header.Magic != BundleHeader::BundleHeaderMagic )
     {
-        LOG( ERROR ) << "Invalid bundle format: incorrect magic number";
+        spdlog::error("Invalid bundle format: incorrect magic number");
         return;
     }
 
     if ( header.Version > BundleHeader::Latest )
     {
-        LOG( ERROR ) << "Unsupported bundle version: " << header.Version;
+        spdlog::error("Unsupported bundle version: {}", header.Version);
         return;
     }
 
@@ -270,14 +270,14 @@ void Bundle::LoadTableOfContents( )
         m_assetEntries[ pathStr ] = entry;
     }
 
-    LOG( INFO ) << "Loaded bundle TOC: " << header.NumAssets << " assets";
+    spdlog::info("Loaded bundle TOC: {} assets", header.NumAssets);
 }
 
 void Bundle::WriteEmptyHeader( ) const
 {
     if ( !m_bundleFile->good( ) )
     {
-        LOG( ERROR ) << "Failed to write bundle: invalid file stream";
+        spdlog::error("Failed to write bundle: invalid file stream");
         return;
     }
 
@@ -299,21 +299,21 @@ void Bundle::WriteEmptyHeader( ) const
     writer.Seek( header.TOCOffset );
     writer.Flush( );
 
-    LOG( INFO ) << "Created new empty bundle";
+    spdlog::info("Created new empty bundle");
 }
 
 void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const InteropArray<Byte> &data )
 {
     if ( !m_bundleFile || !m_bundleFile->good( ) )
     {
-        LOG( ERROR ) << "Failed to add asset: invalid file stream";
+        spdlog::error("Failed to add asset: invalid file stream");
         return;
     }
 
     const std::string uriStr = assetUri.ToInteropString( ).Get( );
     if ( const auto existingIt = m_assetEntries.find( uriStr ); existingIt != m_assetEntries.end( ) )
     {
-        LOG( WARNING ) << "Asset already exists in bundle, replacing: " << uriStr;
+        spdlog::warn("Asset already exists in bundle, replacing: {}", uriStr);
     }
 
     m_bundleFile->seekp( 0, std::ios::end );
@@ -332,7 +332,7 @@ void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const Int
 
         if ( result != MZ_OK )
         {
-            LOG( ERROR ) << "Failed to compress asset: " << uriStr;
+            spdlog::error("Failed to compress asset: {}", uriStr);
             return;
         }
 
@@ -359,7 +359,7 @@ void Bundle::AddAsset( const AssetUri &assetUri, const AssetType type, const Int
     m_assetEntries[ uriStr ] = entry;
     m_isDirty                = true;
 
-    LOG( INFO ) << "Added asset to bundle: " << uriStr << " (" << numBytes << " bytes)";
+    spdlog::info("Added asset to bundle: {} ({} bytes)", uriStr, numBytes);
 }
 
 bool Bundle::Exists( const AssetUri &assetUri ) const
@@ -371,7 +371,7 @@ bool Bundle::Save( )
 {
     if ( !m_bundleFile || !m_bundleFile->good( ) )
     {
-        LOG( ERROR ) << "Failed to save bundle: invalid file stream";
+        spdlog::error("Failed to save bundle: invalid file stream");
         return false;
     }
 
@@ -409,7 +409,7 @@ bool Bundle::Save( )
     writer.Flush( );
     m_isDirty = false;
 
-    LOG( INFO ) << "Saved bundle with " << header.NumAssets << " assets";
+    spdlog::info("Saved bundle with {} assets", header.NumAssets);
     return true;
 }
 

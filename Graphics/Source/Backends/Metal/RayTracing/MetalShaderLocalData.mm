@@ -58,8 +58,7 @@ void MetalShaderLocalData::Cbv( uint32_t binding, const InteropArray<Byte> &data
     auto numBytes = m_layout->InlineNumBytes( binding );
     if ( data.NumElements( ) > numBytes )
     {
-        LOG( ERROR ) << "Data larger than expected: [" << data.NumElements( ) << " vs " << numBytes << "] for binding: " << binding
-                     << " This could lead to data corruption. Binding skipped.";
+        spdlog::error("Data larger than expected: [ {} vs {} ] for binding: {} This could lead to data corruption. Binding skipped.", data.NumElements( ), numBytes, binding);
         return;
     }
 
@@ -140,13 +139,13 @@ void MetalShaderLocalData::EnsureSrvUavTable( )
 {
     if ( !m_srvUavTable )
     {
-        LOG( ERROR ) << "There are no SRV or UAV bindings.";
+        spdlog::error("There are no SRV or UAV bindings.");
     }
 }
 void MetalShaderLocalData::EnsureSamplerTable( )
 {
     if ( !m_srvUavTable )
     {
-        LOG( ERROR ) << "There are no sampler bindings.";
+        spdlog::error("There are no sampler bindings.");
     }
 }

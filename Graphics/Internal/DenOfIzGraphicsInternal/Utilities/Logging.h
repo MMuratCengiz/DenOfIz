@@ -20,21 +20,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <exception>
 #include <stdexcept>
+#include <spdlog/spdlog.h>
 
-#include <glog/logging.h>
+// Direct spdlog usage - no more glog-style macros
+// Use spdlog::info(), spdlog::warn(), spdlog::error(), spdlog::critical()
+// For debug logging, use spdlog::debug()
 
+// Custom macros
 #define DZ_RETURN_IF( condition )                                                                                                                                                  \
     if ( condition )                                                                                                                                                               \
     return
 #define DZ_ASSERTM( exp, msg )                                                                                                                                                     \
     if ( !( exp ) )                                                                                                                                                                \
-    DLOG( ERROR ) << msg
+    spdlog::debug( msg )
 #define DZ_NOT_NULL( exp )                                                                                                                                                         \
     do                                                                                                                                                                             \
     {                                                                                                                                                                              \
         if ( !exp )                                                                                                                                                                \
         {                                                                                                                                                                          \
-            LOG( FATAL ) << #exp " is required but was null.";                                                                                                                     \
+            spdlog::critical( "{} is required but was null.", #exp );                                                                                                              \
             throw std::runtime_error( "Null Pointer Exception: " #exp " is required but was null." );                                                                              \
         }                                                                                                                                                                          \
     }                                                                                                                                                                              \

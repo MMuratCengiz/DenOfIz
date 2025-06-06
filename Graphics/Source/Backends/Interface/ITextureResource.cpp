@@ -25,35 +25,35 @@ void DenOfIz::ValidateTextureDesc( TextureDesc &desc )
 {
     if ( desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) && desc.MSAASampleCount != MSAASampleCount::_0 )
     {
-        LOG( WARNING ) << "MSAA textures cannot be used as UAVs. Resetting MSAASampleCount to 0.";
+        spdlog::warn("MSAA textures cannot be used as UAVs. Resetting MSAASampleCount to 0.");
         desc.MSAASampleCount = MSAASampleCount::_0;
     }
 
     if ( desc.MSAASampleCount != MSAASampleCount::_0 && desc.MipLevels > 1 )
     {
-        LOG( WARNING ) << "Mip mapped textures cannot be sampled. Resetting MSAASampleCount to 0.";
+        spdlog::warn("Mip mapped textures cannot be sampled. Resetting MSAASampleCount to 0.");
         desc.MSAASampleCount = MSAASampleCount::_0;
     }
 
     if ( desc.ArraySize > 1 && desc.Depth > 1 )
     {
-        LOG( WARNING ) << "Array textures cannot have depth. Resetting depth to 1.";
+        spdlog::warn("Array textures cannot have depth. Resetting depth to 1.");
         desc.Depth = 1;
     }
 
     if ( !desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) && !desc.Descriptor.IsSet( ResourceDescriptor::Texture ) &&
          !desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) )
     {
-        LOG( WARNING ) << "Descriptor does not specify a texture: [ResourceDescriptor::(RWTexture/Texture/TextureCube)].";
+        spdlog::warn("Descriptor does not specify a texture: [ResourceDescriptor::(RWTexture/Texture/TextureCube)].");
     }
 
     if ( desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) && desc.ArraySize != 6 )
     {
-        LOG( WARNING ) << "TextureCube does not have an array size of 6. ";
+        spdlog::warn("TextureCube does not have an array size of 6. ");
     }
 
     if ( desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) && desc.Height != desc.Width )
     {
-        LOG( WARNING ) << "TextureCube does not have equal width and height.";
+        spdlog::warn("TextureCube does not have equal width and height.");
     }
 }

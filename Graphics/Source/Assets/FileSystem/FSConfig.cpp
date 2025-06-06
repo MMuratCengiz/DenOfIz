@@ -36,8 +36,7 @@ void FSConfig::Init( const FSDesc &config )
     std::lock_guard   guard( mutex );
     if ( !m_profileConfig.AssetPath.IsEmpty( ) )
     {
-        LOG( WARNING ) << "FSConfig already initialized with asset path: " << m_profileConfig.AssetPath.Get( )
-                       << ". Overriding this value is not recommended. You should initialize this class with the correct config at application startup.";
+        spdlog::warn("FSConfig already initialized with asset path: {} . Overriding this value is not recommended. You should initialize this class with the correct config at application startup.", m_profileConfig.AssetPath.Get( ));
     }
     m_profileConfig = config;
 }

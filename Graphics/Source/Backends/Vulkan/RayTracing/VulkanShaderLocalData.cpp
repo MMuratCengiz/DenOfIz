@@ -71,8 +71,7 @@ void VulkanShaderLocalData::Cbv( const uint32_t binding, const InteropArray<Byte
     auto           numBytes = m_layout->CbvNumBytes( binding );
     if ( data.NumElements( ) > numBytes )
     {
-        LOG( ERROR ) << "Data larger than expected: [" << data.NumElements( ) << " vs " << numBytes << "] for binding: " << binding
-                     << " This could lead to data corruption. Binding skipped.";
+        spdlog::error( "Data larger than expected: [ {} vs {} ] for binding: {} This could lead to data corruption. Binding skipped.", data.NumElements( ), numBytes, binding );
         return;
     }
     memcpy( m_inlineData.data( ) + offset, data.Data( ), data.NumElements( ) );

@@ -164,7 +164,7 @@ bool AssimpImporter::ValidateFile( const InteropString &filePath ) const
 
 ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
 {
-    LOG( INFO ) << "Starting Assimp import for file: " << desc.SourceFilePath.Get( );
+    spdlog::info( "Starting Assimp import for file: {}", desc.SourceFilePath.Get( ) );
 
     Impl::ImportContext context;
     context.SourceFilePath  = desc.SourceFilePath;
@@ -176,18 +176,18 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
     {
         context.Result.ResultCode   = ImporterResultCode::FileNotFound;
         context.Result.ErrorMessage = InteropString( "Source file not found: " ).Append( context.SourceFilePath.Get( ) );
-        LOG( ERROR ) << context.Result.ErrorMessage.Get( );
+        spdlog::error( "{}", context.Result.ErrorMessage.Get( ) );
         return context.Result;
     }
 
     if ( !FileIO::FileExists( context.TargetDirectory ) )
     {
-        LOG( INFO ) << "Target directory does not exist, attempting to create: " << context.TargetDirectory.Get( );
+        spdlog::info( "Target directory does not exist, attempting to create: {}", context.TargetDirectory.Get( ) );
         if ( !FileIO::CreateDirectories( context.TargetDirectory ) )
         {
             context.Result.ResultCode   = ImporterResultCode::WriteFailed;
             context.Result.ErrorMessage = InteropString( "Failed to create target directory: " ).Append( context.TargetDirectory.Get( ) );
-            LOG( ERROR ) << context.Result.ErrorMessage.Get( );
+            spdlog::error( "{}", context.Result.ErrorMessage.Get( ) );
             return context.Result;
         }
     }
@@ -196,14 +196,14 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
     unsigned int     flags = 0;
     m_pImpl->ConfigureAssimpImportFlags( context.Desc, flags, importer );
 
-    LOG( INFO ) << "Assimp reading file: " << context.SourceFilePath.Get( );
+    spdlog::info( "Assimp reading file: {}", context.SourceFilePath.Get( ) );
     context.Scene = importer.ReadFile( FileIO::GetResourcePath( context.SourceFilePath ).Get( ), flags );
 
     if ( !context.Scene || context.Scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !context.Scene->mRootNode )
     {
         context.Result.ResultCode   = ImporterResultCode::ImportFailed;
         context.Result.ErrorMessage = InteropString( "Assimp importer failed: " ).Append( importer.GetErrorString( ) );
-        LOG( ERROR ) << context.Result.ErrorMessage.Get( );
+        spdlog::error( "{}", context.Result.ErrorMessage.Get( ) );
         return context.Result;
     }
 
@@ -211,11 +211,11 @@ ImporterResult AssimpImporter::Import( const ImportJobDesc &desc )
 
     if ( context.Result.ResultCode == ImporterResultCode::Success )
     {
-        LOG( INFO ) << "Assimp import successful for: " << context.SourceFilePath.Get( );
+        spdlog::info( "Assimp import successful for: {}", context.SourceFilePath.Get( ) );
     }
     else
     {
-        LOG( ERROR ) << "Assimp import failed for: " << context.SourceFilePath.Get( ) << " Error: " << context.Result.ErrorMessage.Get( );
+        spdlog::error( "Assimp import failed for: {} Error: {}", context.SourceFilePath.Get( ), context.Result.ErrorMessage.Get( ) );
     }
 
     return context.Result;
@@ -229,8 +229,8 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
     SkeletonAsset skeletonAsset;
     skeletonAsset.Name = meshAsset.Name;
 
-    LOG( INFO ) << "Starting import for: " << meshAsset.Name.Get( );
-    LOG( INFO ) << "Phase 1: Gathering bones and meshes...";
+    spdlog::info( "Starting import for: {}", meshAsset.Name.Get( ) );
+    spdlog::info( "Phase 1: Gathering bones and meshes..." );
 
     for ( uint32_t i = 0; i < context.Scene->mNumMeshes; ++i )
     {
@@ -256,7 +256,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
 
     if ( context.Desc.ImportMaterials && context.Scene->HasMaterials( ) )
     {
-        LOG( INFO ) << "Phase 2: Processing " << context.Scene->mNumMaterials << " materials...";
+        spdlog::info( "Phase 2: Processing {} materials...", context.Scene->mNumMaterials );
         for ( unsigned int i = 0; i < context.Scene->mNumMaterials; ++i )
         {
             ProcessMaterial( context, context.Scene->mMaterials[ i ] );
@@ -265,10 +265,10 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
 
     if ( context.Desc.ImportSkeletons && !context.BoneNameToIndexMap.empty( ) )
     {
-        LOG( INFO ) << "Phase 3: Building skeleton hierarchy...";
+        spdlog::info( "Phase 3: Building skeleton hierarchy..." );
         if ( const ImporterResultCode result = ProcessNode( context, context.Scene->mRootNode, nullptr, skeletonAsset ); result != ImporterResultCode::Success )
         {
-            LOG( ERROR ) << "Failed to build skeleton hierarchy";
+            spdlog::error( "Failed to build skeleton hierarchy" );
             return result;
         }
 
@@ -279,7 +279,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
         }
     }
 
-    LOG( INFO ) << "Phase 4: Collecting meshes and preparing submesh metadata...";
+    spdlog::info( "Phase 4: Collecting meshes and preparing submesh metadata..." );
     std::vector<const aiMesh *> uniqueMeshes;
     std::set<unsigned int>      processedMeshIndices;
 
@@ -376,10 +376,10 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
         meshAsset.NumLODs           = 1; // TODO LODs not yet implemented
     }
 
-    LOG( INFO ) << "Found " << uniqueMeshes.size( ) << " unique meshes";
+    spdlog::info( "Found {} unique meshes", uniqueMeshes.size( ) );
     if ( context.Desc.ImportAnimations && context.Scene->HasAnimations( ) )
     {
-        LOG( INFO ) << "Phase 5: Processing " << context.Scene->mNumAnimations << " animations...";
+        spdlog::info( "Phase 5: Processing {} animations...", context.Scene->mNumAnimations );
         for ( unsigned int i = 0; i < context.Scene->mNumAnimations; ++i )
         {
             AssetUri animUri;
@@ -390,7 +390,7 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
 
     if ( !uniqueMeshes.empty( ) )
     {
-        LOG( INFO ) << "Phase 6: Writing mesh asset with " << meshAsset.SubMeshes.NumElements( ) << " submeshes...";
+        spdlog::info( "Phase 6: Writing mesh asset with {} submeshes...", meshAsset.SubMeshes.NumElements( ) );
         const InteropString meshAssetFilename = AssetPathUtilities::CreateAssetFileName( context.AssetNamePrefix, meshAsset.Name, "Mesh", MeshAsset::Extension( ) );
         InteropString       meshTargetPath    = context.TargetDirectory.Append( "/" ).Append( meshAssetFilename.Get( ) );
         meshTargetPath                        = FileIO::GetAbsolutePath( meshTargetPath );
@@ -407,17 +407,17 @@ ImporterResultCode AssimpImporter::Impl::ImportSceneInternal( ImportContext &con
         {
             if ( const ImporterResultCode result = ProcessMesh( context, mesh, meshWriter ); result != ImporterResultCode::Success )
             {
-                LOG( ERROR ) << "Failed to process mesh #" << mesh->mName.C_Str( ) << ": " << context.ErrorMessage.Get( );
+                spdlog::error( "Failed to process mesh # {} : {}", mesh->mName.C_Str( ), context.ErrorMessage.Get( ) );
                 return result;
             }
         }
 
         meshWriter.FinalizeAsset( );
         RegisterCreatedAsset( context, meshUri );
-        LOG( INFO ) << "Successfully wrote Mesh asset: " << meshUri.ToInteropString( ).Get( );
+        spdlog::info( "Successfully wrote Mesh asset: {}", meshUri.ToInteropString( ).Get( ) );
         if ( context.Desc.ImportAnimations && context.Scene->HasAnimations( ) )
         {
-            LOG( WARNING ) << "No processable meshes found in the scene";
+            spdlog::warn( "No processable meshes found in the scene" );
         }
     }
 
@@ -475,7 +475,7 @@ ImporterResultCode AssimpImporter::Impl::ProcessNode( ImportContext &context, co
             }
             else
             {
-                LOG( WARNING ) << "Inverse bind matrix not found in map for joint: " << joint.Name.Get( ) << ". Using identity."; /* Set identity */
+                spdlog::warn( "Inverse bind matrix not found in map for joint: {} . Using identity.", joint.Name.Get( ) ); /* Set identity */
             }
             skeletonAsset.Joints.AddElement( joint );
             if ( parentJointIndex >= 0 && parentJointIndex < static_cast<int32_t>( skeletonAsset.Joints.NumElements( ) ) )
@@ -529,7 +529,7 @@ ImporterResultCode AssimpImporter::Impl::ProcessNode( ImportContext &context, co
             {
                 if ( const ImporterResultCode meshResult = ProcessMesh( context, mesh, *meshWriter ); meshResult != ImporterResultCode::Success )
                 {
-                    LOG( ERROR ) << "Failed writing data for mesh #" << node->mMeshes[ i ] << " attached to node " << nodeNameStr;
+                    spdlog::error( "Failed writing data for mesh # {} attached to node {}", node->mMeshes[ i ], nodeNameStr );
                     return meshResult;
                 }
             }
@@ -557,11 +557,10 @@ ImporterResultCode AssimpImporter::Impl::ProcessMesh( ImportContext &context, co
     const uint32_t submeshIndex = context.CurrentSubMeshIndex;
     if ( submeshIndex >= context.MeshAsset.SubMeshes.NumElements( ) )
     {
-        LOG( ERROR ) << "ProcessMesh: Invalid submesh index " << submeshIndex;
+        spdlog::error( "ProcessMesh: Invalid submesh index {}", submeshIndex );
         return ImporterResultCode::InvalidParameters;
     }
-    LOG( INFO ) << "Writing data for mesh: " << mesh->mName.C_Str( ) << " (SubMesh: " << submeshIndex << " with " << mesh->mNumVertices << " vertices and " << mesh->mNumFaces * 3
-                << " indices)";
+    spdlog::info( "Writing data for mesh: {} (SubMesh: {} with {} vertices and {} indices)", mesh->mName.C_Str( ), submeshIndex, mesh->mNumVertices, mesh->mNumFaces * 3 );
     const VertexEnabledAttributes &attributes      = context.MeshAsset.EnabledAttributes;
     const VertexAttributeConfig   &attributeConfig = context.MeshAsset.AttributeConfig;
 
@@ -576,14 +575,14 @@ ImporterResultCode AssimpImporter::Impl::ProcessMesh( ImportContext &context, co
 
             if ( !context.BoneNameToIndexMap.contains( boneName ) )
             {
-                LOG( WARNING ) << "Bone '" << boneName << "' not found in skeleton - will be ignored";
+                spdlog::warn( "Bone ' {} ' not found in skeleton - will be ignored", boneName );
                 continue;
             }
 
             int boneIndex = context.BoneNameToIndexMap[ boneName ];
             if ( boneIndex < 0 )
             {
-                LOG( WARNING ) << "Bone '" << boneName << "' has invalid index " << boneIndex;
+                spdlog::warn( "Bone ' {} ' has invalid index {}", boneName, boneIndex );
                 continue;
             }
 
@@ -737,7 +736,7 @@ void AssimpImporter::Impl::ProcessMaterial( ImportContext &context, const aiMate
     {
         return;
     }
-    LOG( INFO ) << "Processing material: " << matName.Get( );
+    spdlog::info( "Processing material: {}", matName.Get( ) );
     MaterialAsset matAsset;
     matAsset.Name = matName;
     aiColor4D color;
@@ -801,16 +800,16 @@ bool AssimpImporter::Impl::ProcessTexture( ImportContext &context, const aiMater
     const std::string texPathStr = aiPath.C_Str( );
     if ( texPathStr[ 0 ] == '*' )
     {
-        LOG( INFO ) << "Processing embedded texture for material '" << material->GetName( ).C_Str( ) << "', semantic: " << semanticName.Get( );
+        spdlog::info( "Processing embedded texture for material ' {} ', semantic: {}", material->GetName( ).C_Str( ), semanticName.Get( ) );
         if ( const int textureIndex = std::stoi( texPathStr.substr( 1 ) ); textureIndex >= 0 && textureIndex < static_cast<int>( context.Scene->mNumTextures ) )
         {
             WriteTextureAsset( context, context.Scene->mTextures[ textureIndex ], "", semanticName, outAssetUri );
             return true;
         }
-        LOG( ERROR ) << "Invalid embedded texture index " << texPathStr.substr( 1 ) << " for material '" << material->GetName( ).C_Str( ) << "'.";
+        spdlog::error( "Invalid embedded texture index {} for material '{} '.", texPathStr.substr( 1 ), material->GetName( ).C_Str( ) );
         return false;
     }
-    LOG( INFO ) << "Processing external texture reference: '" << texPathStr << "' for semantic: " << semanticName.Get( );
+    spdlog::info( "Processing external texture reference: ' {} ' for semantic: {}", texPathStr, semanticName.Get( ) );
     if ( context.TexturePathToAssetUriMap.contains( texPathStr ) )
     {
         outAssetUri = context.TexturePathToAssetUriMap[ texPathStr ];
@@ -821,7 +820,7 @@ bool AssimpImporter::Impl::ProcessTexture( ImportContext &context, const aiMater
     const std::filesystem::path absoluteTexturePath = texturePath.is_absolute( ) ? texturePath : absolute( modelPath.parent_path( ) / texturePath );
     if ( !exists( absoluteTexturePath ) )
     {
-        LOG( ERROR ) << "External texture file not found: " << absoluteTexturePath.string( ) << " (referenced by material '" << material->GetName( ).C_Str( ) << "')";
+        spdlog::error( "External texture file not found: {} (referenced by material '{} ')", absoluteTexturePath.string( ), material->GetName( ).C_Str( ) );
         return false;
     }
     WriteTextureAsset( context, nullptr, absoluteTexturePath.string( ), semanticName, outAssetUri );
@@ -836,7 +835,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
     {
         animName = InteropString( "Animation_" ).Append( std::to_string( context.Result.CreatedAssets.NumElements( ) ).c_str( ) );
     }
-    LOG( INFO ) << "Processing animation: " << animName.Get( ) << " Duration: " << animation->mDuration << " Ticks/Sec: " << animation->mTicksPerSecond;
+    spdlog::info( "Processing animation: {} Duration: {} Ticks/Sec: {}", animName.Get( ), animation->mDuration, animation->mTicksPerSecond );
 
     AnimationAsset animAsset;
     animAsset.Name        = animName;
@@ -847,7 +846,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
     const double ticksPerSecond = animation->mTicksPerSecond > 0 ? animation->mTicksPerSecond : 24.0;
     clip.Duration               = static_cast<float>( animation->mDuration / ticksPerSecond );
 
-    LOG( INFO ) << "Processing " << animation->mNumChannels << " joint animation channels (raw keys).";
+    spdlog::info( "Processing {} joint animation channels (raw keys).", animation->mNumChannels );
     clip.Tracks.Resize( animation->mNumChannels );
     for ( unsigned int i = 0; i < animation->mNumChannels; ++i )
     {
@@ -857,7 +856,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
 
         if ( !context.BoneNameToIndexMap.contains( track.JointName.Get( ) ) )
         {
-            LOG( WARNING ) << "Animation channel '" << track.JointName.Get( ) << "' does not correspond to a known skeleton joint. Skipping channel.";
+            spdlog::warn( "Animation channel ' {} ' does not correspond to a known skeleton joint. Skipping channel.", track.JointName.Get( ) );
             continue;
         }
 
@@ -890,7 +889,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
         }
     }
 
-    LOG( INFO ) << "Processing " << animation->mNumMorphMeshChannels << " morph target animation channels.";
+    spdlog::info( "Processing {} morph target animation channels.", animation->mNumMorphMeshChannels );
     clip.MorphTracks.Resize( animation->mNumMorphMeshChannels );
     for ( unsigned int i = 0; i < animation->mNumMorphMeshChannels; ++i )
     {
@@ -909,7 +908,7 @@ void AssimpImporter::Impl::ProcessAnimation( ImportContext &context, const aiAni
 
     animAsset.Animations.AddElement( clip );
     WriteAnimationAsset( context, animAsset, outAssetUri );
-    LOG( INFO ) << "Successfully wrote animation asset: " << outAssetUri.ToInteropString( ).Get( );
+    spdlog::info( "Successfully wrote animation asset: {}", outAssetUri.ToInteropString( ).Get( ) );
 }
 
 void AssimpImporter::Impl::CalculateMeshBounds( const aiMesh *mesh, const float scaleFactor, Float_3 &outMin, Float_3 &outMax ) const
@@ -945,7 +944,7 @@ void AssimpImporter::Impl::CalculateMeshBounds( const aiMesh *mesh, const float 
 void AssimpImporter::Impl::GenerateMeshLODs( const ImportContext & /*context*/, MeshAssetWriter & /*meshWriter*/ ) const
 {
     // TODO Implement this with MeshOptimizer
-    LOG( WARNING ) << "Not yet implemented";
+    spdlog::warn( "Not yet implemented" );
 }
 
 void AssimpImporter::Impl::ConfigureAssimpImportFlags( const AssimpImportDesc &options, unsigned int &flags, Assimp::Importer &importer ) const
@@ -1009,7 +1008,7 @@ void AssimpImporter::Impl::ConfigureAssimpImportFlags( const AssimpImportDesc &o
         flags |= aiProcess_OptimizeMeshes | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType;
         if ( flags & aiProcess_PreTransformVertices )
         {
-            LOG( WARNING ) << "MergeMeshes and PreTransformVertices may conflict. Disabling PreTransformVertices.";
+            spdlog::warn( "MergeMeshes and PreTransformVertices may conflict. Disabling PreTransformVertices." );
             flags &= ~aiProcess_PreTransformVertices;
         }
         if ( !( flags & aiProcess_PreTransformVertices ) )
@@ -1031,7 +1030,7 @@ void AssimpImporter::Impl::WriteMaterialAsset( ImportContext &context, const Mat
     outAssetUri                         = AssetUri::Create( assetFilename );
     MaterialAsset mutableAsset          = materialAsset;
     mutableAsset.Uri                    = outAssetUri;
-    LOG( INFO ) << "Writing Material asset to: " << targetAssetPath.Get( );
+    spdlog::info( "Writing Material asset to: {}", targetAssetPath.Get( ) );
     BinaryWriter              writer( targetAssetPath );
     const MaterialAssetWriter assetWriter( { &writer } );
     assetWriter.Write( mutableAsset );
@@ -1084,7 +1083,7 @@ void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTe
     TextureAssetWriter assetWriter( { &writer } );
 
     outAssetUri = AssetUri::Create( assetFilename );
-    LOG( INFO ) << "Writing embedded Texture asset to: " << targetAssetPath.Get( ) << " (Semantic: " << semanticName.Get( ) << ")";
+    spdlog::info( "Writing embedded Texture asset to: {} (Semantic: {} )", targetAssetPath.Get( ), semanticName.Get( ) );
     TextureAsset texAsset;
     texAsset.Name = texName;
     texAsset.Uri  = outAssetUri;
@@ -1147,7 +1146,7 @@ void AssimpImporter::Impl::WriteSkeletonAsset( ImportContext &context, const Ske
     context.SkeletonAssetUri            = AssetUri::Create( assetFilename );
     SkeletonAsset mutableAsset          = skeletonAsset;
     mutableAsset.Uri                    = context.SkeletonAssetUri;
-    LOG( INFO ) << "Writing Skeleton asset to: " << targetAssetPath.Get( );
+    spdlog::info( "Writing Skeleton asset to: {}", targetAssetPath.Get( ) );
     BinaryWriter              writer( targetAssetPath );
     const SkeletonAssetWriter assetWriter( { &writer } );
     assetWriter.Write( mutableAsset );
@@ -1161,7 +1160,7 @@ void AssimpImporter::Impl::WriteAnimationAsset( ImportContext &context, const An
     outAssetUri                         = AssetUri::Create( assetFilename );
     AnimationAsset mutableAsset         = animationAsset;
     mutableAsset.Uri                    = outAssetUri;
-    LOG( INFO ) << "Writing Animation asset to: " << targetAssetPath.Get( );
+    spdlog::info( "Writing Animation asset to: {}", targetAssetPath.Get( ) );
     BinaryWriter         writer( targetAssetPath );
     AnimationAssetWriter assetWriter( { &writer } );
     assetWriter.Write( mutableAsset );

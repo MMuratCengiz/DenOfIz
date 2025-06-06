@@ -43,8 +43,7 @@ void DX12ShaderLocalData::Cbv( const uint32_t binding, const InteropArray<Byte> 
     const uint32_t numBytes = m_layout->CbvNumBytes( binding );
     if ( data.NumElements( ) > numBytes )
     {
-        LOG( ERROR ) << "Data larger than expected: [" << data.NumElements( ) << " vs " << numBytes << "] for binding: " << binding
-                     << " This could lead to data corruption. Binding skipped.";
+        spdlog::error("Data larger than expected: [ {} vs {} ] for binding: {} This could lead to data corruption. Binding skipped.", data.NumElements( ), numBytes, binding);
         return;
     }
     memcpy( m_data.data( ) + m_layout->CbvOffset( binding ), data.Data( ), numBytes );

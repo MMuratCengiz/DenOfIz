@@ -49,7 +49,7 @@ MTLPixelFormat MetalEnumConverter::ConvertFormat( Format format )
     case Format::R32G32B32Float:
     case Format::R32G32B32Uint:
     case Format::R32G32B32Sint:
-        LOG( WARNING ) << "Unsupported Format for Metal: R32G32B32..., Returning Undefined.";
+        spdlog::warn("Unsupported Format for Metal: R32G32B32..., Returning Undefined.");
         return MTLPixelFormatInvalid;
     case Format::R16G16B16A16Float:
         return MTLPixelFormatRGBA16Float;
@@ -286,10 +286,10 @@ MTLVertexFormat MetalEnumConverter::ConvertFormatToVertexFormat( Format format )
     case Format::R8Uint:
         return MTLVertexFormatUChar;
     default:
-        LOG( WARNING ) << "Warning: Format does not have a corresponding MTLVertexFormat: " << static_cast<int>( format );
+        spdlog::warn("Warning: Format does not have a corresponding MTLVertexFormat: {}", static_cast<int>( format ));
         return MTLVertexFormatInvalid;
     }
-    LOG( WARNING ) << "Warning: Unknown format: " << static_cast<int>( format );
+    spdlog::warn("Warning: Unknown format: {}", static_cast<int>( format ));
     return MTLVertexFormatInvalid;
 }
 
@@ -384,7 +384,7 @@ MTLAttributeFormat MetalEnumConverter::ConvertFormatToAttributeFormat( Format fo
         break;
     }
 
-    LOG( WARNING ) << "Warning: Unknown format: " << static_cast<int>( format );
+    spdlog::warn("Warning: Unknown format: {}", static_cast<int>( format ));
     return MTLAttributeFormatInvalid;
 }
 

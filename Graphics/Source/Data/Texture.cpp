@@ -41,7 +41,7 @@ Texture::Texture( const InteropString &path ) : m_path( Utilities::AppPath( path
 {
     if ( !std::filesystem::exists( m_path ) )
     {
-        LOG( ERROR ) << "Texture file does not exist: " << m_path;
+        spdlog::error("Texture file does not exist: {}", m_path);
         return;
     }
     if ( const std::filesystem::path &extension = std::filesystem::path( m_path ).extension( ); extension == ".dds" )
@@ -99,7 +99,7 @@ TextureExtension Texture::IdentifyTextureFormat( const InteropArray<Byte> &data 
     const size_t dataNumBytes = data.NumElements( );
     if ( dataNumBytes == 0 )
     {
-        LOG( ERROR ) << "Data array is empty";
+        spdlog::error("Data array is empty");
         return TextureExtension::DDS;
     }
 
@@ -128,7 +128,7 @@ void Texture::LoadTextureSTB( )
 
     if ( contents == nullptr )
     {
-        LOG( WARNING ) << "Error loading texture: " << m_path << ", reason:" << stbi_failure_reason( );
+        spdlog::warn("Error loading texture: {} , reason:{}", m_path, stbi_failure_reason( ));
         return;
     }
     m_width        = static_cast<uint32_t>( std::max<int>( 1, width ) );
@@ -358,7 +358,7 @@ void Texture::LoadTextureDDS( )
     DZ_RETURN_IF( !file.is_open( ) );
     if ( !file.is_open( ) )
     {
-        LOG( WARNING ) << "Error loading texture: " << m_path << ", reason: File not found";
+        spdlog::warn("Error loading texture: {} , reason: File not found", m_path);
         return;
     }
 
@@ -370,7 +370,7 @@ void Texture::LoadTextureDDS( )
 
     if ( !file.read( reinterpret_cast<char *>( fileData ), size ) )
     {
-        LOG( WARNING ) << "Error loading texture: " << m_path << ", reason: File read error";
+        spdlog::warn("Error loading texture: {} , reason: File read error", m_path);
         return;
     }
 
@@ -378,7 +378,7 @@ void Texture::LoadTextureDDS( )
     m_ddsHeader              = std::unique_ptr<dds::Header, DDSHeaderDeleter>( new dds::Header( header ) );
     if ( !m_ddsHeader->is_valid( ) )
     {
-        LOG( WARNING ) << "Error loading texture: " << m_path << ", reason: Invalid DDS header";
+        spdlog::warn("Error loading texture: {} , reason: Invalid DDS header", m_path);
         return;
     }
 
@@ -568,7 +568,7 @@ void Texture::LoadTextureDDSFromMemory( const Byte *data, const size_t dataNumBy
 {
     if ( data == nullptr || dataNumBytes < sizeof( dds::Header ) )
     {
-        LOG( WARNING ) << "Invalid DDS data provided";
+        spdlog::warn("Invalid DDS data provided");
         return;
     }
 
@@ -576,7 +576,7 @@ void Texture::LoadTextureDDSFromMemory( const Byte *data, const size_t dataNumBy
     m_ddsHeader              = std::unique_ptr<dds::Header, DDSHeaderDeleter>( new dds::Header( header ) );
     if ( !m_ddsHeader->is_valid( ) )
     {
-        LOG( WARNING ) << "Error loading texture from memory: Invalid DDS header";
+        spdlog::warn("Error loading texture from memory: Invalid DDS header");
         return;
     }
 
@@ -629,7 +629,7 @@ void Texture::LoadTextureSTBFromMemory( const Byte *data, const size_t dataNumBy
 
     if ( contents == nullptr )
     {
-        LOG( WARNING ) << "Error loading texture from memory with STB, reason:" << stbi_failure_reason( );
+        spdlog::warn("Error loading texture from memory with STB, reason: {}", stbi_failure_reason( ));
         return;
     }
 

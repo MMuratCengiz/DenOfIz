@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <SDL2/SDL.h>
 #include "DenOfIzExamples/Main.h"
+#include <SDL2/SDL.h>
 #include "DenOfIzExamples/IExample.h"
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "DenOfIzGraphics/Backends/GraphicsApi.h"
@@ -34,7 +34,7 @@ int DenOfIz::Main( IExample *example )
 #endif
     if ( SDL_Init( SDL_INIT_EVERYTHING ^ SDL_INIT_AUDIO ) != 0 )
     {
-        LOG( FATAL ) << "SDL_Init failed: " << SDL_GetError( );
+        spdlog::critical( "SDL_Init failed: {}", SDL_GetError( ) );
     }
 
     const auto exampleWindowDesc = example->WindowDesc( );

@@ -26,7 +26,7 @@ namespace DenOfIz
     {
         if ( SDL_SetClipboardText( text.Get( ) ) != 0 )
         {
-            LOG( ERROR ) << "Failed to set clipboard text: " << SDL_GetError( );
+            spdlog::error("Failed to set clipboard text: {}", SDL_GetError( ));
         }
     }
 
@@ -35,7 +35,7 @@ namespace DenOfIz
         char *clipboardText = SDL_GetClipboardText( );
         if ( clipboardText == nullptr )
         {
-            LOG( ERROR ) << "Failed to get clipboard text: " << SDL_GetError( );
+            spdlog::error("Failed to get clipboard text: {}", SDL_GetError( ));
             return InteropString( "" );
         }
 

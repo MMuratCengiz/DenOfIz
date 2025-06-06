@@ -40,7 +40,7 @@ void VulkanSwapChain::CreateSurface( )
     SDL_Window *sdlWindow = m_desc.WindowHandle->GetSDLWindow( );
     if ( !SDL_Vulkan_CreateSurface( sdlWindow, m_context->Instance, &m_surface ) )
     {
-        LOG( FATAL ) << "Failed to create Vulkan surface: " << SDL_GetError( );
+        spdlog::critical( "Failed to create Vulkan surface: {}", SDL_GetError( ) );
     }
     uint32_t                        count;
     std::vector<VkSurfaceFormatKHR> surfaceFormats;
@@ -82,7 +82,7 @@ void VulkanSwapChain::CreateSwapChain( )
 
     if ( imageCount < desiredImageCount )
     {
-        DLOG( WARNING ) << "Requested buffer count " << desiredImageCount << " is not supported. Using " << imageCount;
+        spdlog::debug( "Requested buffer count {} is not supported. Using {}", desiredImageCount, imageCount );
         desiredImageCount = imageCount;
     }
 
@@ -121,7 +121,7 @@ void VulkanSwapChain::CreateSwapChain( )
     const VkResult result = vkCreateSwapchainKHR( m_context->LogicalDevice, &createInfo, nullptr, &m_swapChain );
     if ( result != VK_SUCCESS )
     {
-        LOG( ERROR ) << "Failed to create initial swap chain: " << result;
+        spdlog::error( "Failed to create initial swap chain: {}", static_cast<int>( result ) );
         return;
     }
 
@@ -206,7 +206,7 @@ uint32_t VulkanSwapChain::AcquireNextImage( ISemaphore *imageReadySemaphore )
 {
     if ( m_width == 0 || m_height == 0 )
     {
-        LOG( WARNING ) << "Cannot AcquireNextImage on Vulkan, width == 0 || height == 0, window might be minimized.";
+        spdlog::warn( "Cannot AcquireNextImage on Vulkan, width == 0 || height == 0, window might be minimized." );
         return 0;
     }
     const VulkanSemaphore *semaphore = dynamic_cast<VulkanSemaphore *>( imageReadySemaphore );
@@ -216,7 +216,7 @@ uint32_t VulkanSwapChain::AcquireNextImage( ISemaphore *imageReadySemaphore )
     const VkResult     result  = vkAcquireNextImageKHR( m_context->LogicalDevice, m_swapChain, timeout, semaphore->GetSemaphore( ), VK_NULL_HANDLE, &nextImage );
     if ( result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR )
     {
-        DLOG( ERROR ) << "VulkanSwapChain::AcquireNextImage - Failed to acquire next image: " << result;
+        spdlog::debug( "VulkanSwapChain::AcquireNextImage - Failed to acquire next image: {}", static_cast<int>( result ) );
         return 0;
     }
 
@@ -314,7 +314,7 @@ void VulkanSwapChain::Resize( const uint32_t width, const uint32_t height )
 
     if ( imageCount < desiredImageCount )
     {
-        DLOG( WARNING ) << "Requested buffer count " << desiredImageCount << " is not supported. Using " << imageCount;
+        spdlog::debug( "Requested buffer count {} is not supported. Using {}", desiredImageCount, imageCount );
         desiredImageCount = imageCount;
     }
 

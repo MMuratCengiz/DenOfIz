@@ -49,16 +49,16 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL g_DebugCallback( VkDebugUtilsMessageSeveri
     {
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT:
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-        DLOG( INFO ) << pCallbackData->pMessage;
+        spdlog::debug("{}", pCallbackData->pMessage);
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-        LOG( INFO ) << pCallbackData->pMessage;
+        spdlog::info("{}", pCallbackData->pMessage);
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-        LOG( WARNING ) << pCallbackData->pMessage;
+        spdlog::warn("{}", pCallbackData->pMessage);
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-        LOG( FATAL ) << pCallbackData->pMessage;
+        spdlog::critical("{}", pCallbackData->pMessage);
         break;
     }
     return VK_FALSE;
@@ -188,7 +188,7 @@ void VulkanLogicalDevice::CreateDevice( )
 
     if ( m_supportedLayers.contains( "VK_LAYER_KHRONOS_validation" ) )
     {
-        DLOG( INFO ) << "Enabling Vk Validation Layers.";
+        spdlog::debug("Enabling Vk Validation Layers.");
         VK_CHECK_RESULT( vkCreateDebugUtilsMessengerEXT( m_context->Instance, &debugUtilsCreateInfo, nullptr, &m_debugMessenger ) );
     }
 }
@@ -214,11 +214,11 @@ void CollectExtensions( const std::vector<VkExtensionProperties> &availableExten
         {
             if ( failOnMissing )
             {
-                LOG( ERROR ) << "Missing Required Extension: " << requiredExtension;
+                spdlog::error("Missing Required Extension: {}", requiredExtension);
             }
             else
             {
-                LOG( WARNING ) << "Missing Optional Extension: " << requiredExtension;
+                spdlog::warn("Missing Optional Extension: {}", requiredExtension);
             }
         }
     }
@@ -262,7 +262,7 @@ void VulkanLogicalDevice::InitSupportedLayers( std::vector<const char *> &layers
         {
             m_supportedLayers.insert( prp.layerName );
             layers.emplace_back( layerPair->first.c_str( ) );
-            LOG( INFO ) << "Found Enabled Layer: " + layerPair->first;
+            spdlog::info("{}", "Found Enabled Layer: " + layerPair->first);
         }
     }
 }

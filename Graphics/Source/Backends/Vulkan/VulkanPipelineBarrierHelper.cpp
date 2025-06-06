@@ -395,6 +395,6 @@ uint32_t VulkanPipelineBarrierHelper::GetQueueFamilyIndex( const VulkanContext *
         return context->QueueFamilies.at( VulkanQueueType::Compute ).Index;
     }
 
-    LOG( WARNING ) << "Unknown queue type: " << static_cast<int>( queueType );
+    spdlog::warn("Unknown queue type: {}", static_cast<int>( queueType ));
     return VK_QUEUE_FAMILY_IGNORED;
 }

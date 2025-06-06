@@ -45,20 +45,20 @@ Clay_Dimensions ClayContext::MeasureTextCallback( Clay_StringSlice text, Clay_Te
 static void ErrorHandler( Clay_ErrorData error )
 {
     const InteropString errorText( error.errorText.chars );
-    LOG( ERROR ) << "Clay error: " << errorText.Get( );
+    spdlog::error("Clay error: {}", errorText.Get( ));
 }
 
 ClayContext::ClayContext( const ClayContextDesc &desc )
 {
     if ( desc.LogicalDevice == nullptr )
     {
-        LOG( ERROR ) << "ClayContext: Logical device is null";
+        spdlog::error("ClayContext: Logical device is null");
         return;
     }
 
     if ( desc.Width == 0 || desc.Height == 0 )
     {
-        LOG( ERROR ) << "ClayContext: invalid dimensions provided: " << desc.Width << "x" << desc.Height;
+        spdlog::error("ClayContext: invalid dimensions provided: {} x{}", desc.Width, desc.Height);
         return;
     }
 
@@ -81,7 +81,7 @@ ClayContext::ClayContext( const ClayContextDesc &desc )
     m_context = Clay_Initialize( m_arena, Clay_Dimensions{ static_cast<float>( desc.Width ), static_cast<float>( desc.Height ) }, errorHandler );
     if ( !m_context )
     {
-        LOG( ERROR ) << "Failed to initialize Clay";
+        spdlog::error("Failed to initialize Clay");
     }
 
     Clay_SetDebugModeEnabled( false );

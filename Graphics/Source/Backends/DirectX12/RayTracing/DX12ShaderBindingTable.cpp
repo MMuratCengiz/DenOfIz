@@ -55,7 +55,7 @@ void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
 
     if ( !m_mappedMemory )
     {
-        LOG( ERROR ) << "Failed to map memory for shader binding table.";
+        spdlog::error("Failed to map memory for shader binding table.");
     }
 
     bufferDesc.Usages    = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::ShaderBindingTable;
@@ -95,14 +95,14 @@ void DX12ShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
 
     if ( desc.HitGroupExportName.IsEmpty( ) )
     {
-        LOG( ERROR ) << "Hit group name cannot be empty.";
+        spdlog::error("Hit group name cannot be empty.");
         return;
     }
 
     const void *hitGroupIdentifier = m_pipeline->GetShaderIdentifier( desc.HitGroupExportName.Get( ) );
     if ( !hitGroupIdentifier )
     {
-        LOG( ERROR ) << "Hit group export not found in pipeline.";
+        spdlog::error("Hit group export not found in pipeline.");
         return;
     }
     memcpy( hitGroupEntry, hitGroupIdentifier, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES );

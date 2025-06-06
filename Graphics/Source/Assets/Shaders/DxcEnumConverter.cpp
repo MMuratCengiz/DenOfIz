@@ -46,7 +46,7 @@ ResourceBindingType DxcEnumConverter::ReflectTypeToBufferBindingType( const D3D_
     case D3D_SIT_UAV_FEEDBACKTEXTURE:
         break;
     }
-    LOG( ERROR ) << "Unknown resource type";
+    spdlog::error("Unknown resource type");
     return ResourceBindingType::ConstantBuffer;
 }
 ReflectionBindingType DxcEnumConverter::ReflectTypeToBufferReflectionBindingType( const D3D_SHADER_INPUT_TYPE type )
@@ -119,7 +119,7 @@ ResourceDescriptor DxcEnumConverter::ReflectTypeToRootSignatureType( const D3D_S
     case D3D_SIT_UAV_FEEDBACKTEXTURE:
         break;
     }
-    LOG( ERROR ) << "Unknown resource type";
+    spdlog::error("Unknown resource type");
     return ResourceDescriptor::Texture;
 }
 
@@ -554,7 +554,7 @@ IRDescriptorRangeType DxcEnumConverter::ShaderTypeToIRDescriptorType( const D3D_
         descriptorRangeType = IRDescriptorRangeTypeUAV;
         break;
     default:
-        LOG( ERROR ) << "Unknown resource type";
+        spdlog::error("Unknown resource type");
         break;
     }
     return descriptorRangeType;

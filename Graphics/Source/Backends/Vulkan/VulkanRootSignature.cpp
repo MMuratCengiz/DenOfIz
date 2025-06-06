@@ -164,7 +164,7 @@ void VulkanRootSignature::AddRootConstant( const RootConstantResourceBindingDesc
 {
     if ( rootConstantBinding.Binding >= m_pushConstants.size( ) )
     {
-        LOG( FATAL ) << "Root constant binding out of range: " << rootConstantBinding.Binding;
+        spdlog::critical("Root constant binding out of range: {}", rootConstantBinding.Binding);
     }
 
     uint32_t offset = 0;
@@ -220,7 +220,7 @@ VkPushConstantRange VulkanRootSignature::PushConstantRange( const uint32_t bindi
 {
     if ( binding >= m_pushConstants.size( ) )
     {
-        LOG( ERROR ) << "Root constant not found for binding " << binding;
+        spdlog::error("Root constant not found for binding {}", binding);
     }
     return m_pushConstants[ binding ];
 }
@@ -234,7 +234,7 @@ const VkDescriptorSetLayout &VulkanRootSignature::DescriptorSetLayout( const uin
 {
     if ( registerSpace >= m_layouts.size( ) )
     {
-        LOG( ERROR ) << "Descriptor set not found for register space " << registerSpace;
+        spdlog::error("Descriptor set not found for register space {}", registerSpace);
     }
     return m_layouts[ registerSpace ];
 }

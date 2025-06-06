@@ -52,24 +52,24 @@ ShaderCompiler::Impl::Impl( )
     HRESULT result = DxcCreateInstance( CLSID_DxcLibrary, IID_PPV_ARGS( &m_dxcLibrary ) );
     if ( FAILED( result ) )
     {
-        LOG( FATAL ) << "Failed to initialize DXC Library";
+        spdlog::critical("Failed to initialize DXC Library");
     }
 
     result = DxcCreateInstance( CLSID_DxcCompiler, IID_PPV_ARGS( &m_dxcCompiler ) );
     if ( FAILED( result ) )
     {
-        LOG( FATAL ) << "Failed to initialize DXC Compiler";
+        spdlog::critical("Failed to initialize DXC Compiler");
     }
 
     result = DxcCreateInstance( CLSID_DxcUtils, IID_PPV_ARGS( &m_dxcUtils ) );
     if ( FAILED( result ) )
     {
-        LOG( FATAL ) << "Failed to initialize DXC Utils";
+        spdlog::critical("Failed to initialize DXC Utils");
     }
     result = m_dxcUtils->CreateDefaultIncludeHandler( &m_dxcIncludeHandler );
     if ( FAILED( result ) )
     {
-        LOG( FATAL ) << "Failed to initialize DXC Include Handler";
+        spdlog::critical("Failed to initialize DXC Include Handler");
     }
 }
 
@@ -82,8 +82,8 @@ CompileResult ShaderCompiler::Impl::CompileHLSL( const CompileDesc &compileDesc 
 {
     if ( compileDesc.TargetIL == TargetIL::MSL )
     {
-        LOG( FATAL ) << "MSL requires a root signature to provide an accurate metallib with the context of all shaders. Using shader reflection create an IRRootSignature and pass "
-                        "it to the DxilToMsl class.";
+        spdlog::critical("MSL requires a root signature to provide an accurate metallib with the context of all shaders. Using shader reflection create an IRRootSignature and pass "
+                        "it to the DxilToMsl class.");
         return { };
     }
 
@@ -116,7 +116,7 @@ CompileResult ShaderCompiler::Impl::CompileHLSL( const CompileDesc &compileDesc 
         result = m_dxcLibrary->CreateBlobWithEncodingOnHeapCopy( compileDesc.Data.Data( ), compileDesc.Data.NumElements( ), codePage, &sourceBlob );
         if ( FAILED( result ) )
         {
-            LOG( FATAL ) << "Could not create blob from memory data, error code: " << result;
+            spdlog::critical("Could not create blob from memory data, error code: {}", result);
         }
     }
     else if ( !compileDesc.Path.IsEmpty( ) )
@@ -127,12 +127,12 @@ CompileResult ShaderCompiler::Impl::CompileHLSL( const CompileDesc &compileDesc 
 
         if ( FAILED( result ) )
         {
-            LOG( FATAL ) << "Could not load shader file: " << path << " error code: " << GetLastError( );
+            spdlog::critical("Could not load shader file: {} error code: {}", path, GetLastError( ));
         }
     }
     else
     {
-        LOG( FATAL ) << "Neither Path nor Data provided for shader compilation";
+        spdlog::critical("Neither Path nor Data provided for shader compilation");
     }
 
     std::string hlslVersion = "6_6";
@@ -172,7 +172,7 @@ CompileResult ShaderCompiler::Impl::CompileHLSL( const CompileDesc &compileDesc 
         targetProfile = "as";
         break;
     default:
-        LOG( WARNING ) << "Invalid shader stage";
+        spdlog::warn("Invalid shader stage");
         break;
     }
     targetProfile += "_" + hlslVersion;
@@ -283,7 +283,7 @@ CompileResult ShaderCompiler::Impl::CompileHLSL( const CompileDesc &compileDesc 
     {
         if ( FAILED( dxcResult->GetStatus( &result ) ) )
         {
-            LOG( WARNING ) << "Unable to get shader status";
+            spdlog::warn("Unable to get shader status");
         }
     }
 
@@ -293,7 +293,7 @@ CompileResult ShaderCompiler::Impl::CompileHLSL( const CompileDesc &compileDesc 
         result = dxcResult->GetErrorBuffer( &errorBlob );
         if ( SUCCEEDED( result ) && errorBlob )
         {
-            LOG( ERROR ) << "Shader compilation failed :\n\n" << static_cast<const char *>( errorBlob->GetBufferPointer( ) );
+            spdlog::error("Shader compilation failed :\n\n {}", static_cast<const char *>( errorBlob->GetBufferPointer( ) ));
             errorBlob->Release( );
             throw std::runtime_error( "Compilation failed" );
         }
@@ -302,7 +302,7 @@ CompileResult ShaderCompiler::Impl::CompileHLSL( const CompileDesc &compileDesc 
     IDxcBlob *code = nullptr;
     if ( FAILED( dxcResult->GetResult( &code ) ) )
     {
-        LOG( ERROR ) << "Failed to get shader code";
+        spdlog::error("Failed to get shader code");
     }
 
     IDxcBlob *reflection = nullptr;
@@ -310,7 +310,7 @@ CompileResult ShaderCompiler::Impl::CompileHLSL( const CompileDesc &compileDesc 
     {
         if ( FAILED( dxcResult->GetOutput( DXC_OUT_REFLECTION, IID_PPV_ARGS( &reflection ), nullptr ) ) )
         {
-            LOG( ERROR ) << "Failed to get shader reflection";
+            spdlog::error("Failed to get shader reflection");
         }
     }
 

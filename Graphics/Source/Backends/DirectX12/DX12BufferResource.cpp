@@ -218,7 +218,7 @@ DX12BufferResource::~DX12BufferResource( )
 {
     if ( m_mappedMemory != nullptr )
     {
-        LOG( WARNING ) << "Memory for buffer: " << m_desc.DebugName.Get( ) << " not unmapped before lifetime of the buffer.";
+        spdlog::warn("Memory for buffer: {} not unmapped before lifetime of the buffer.", m_desc.DebugName.Get( ));
         m_resource->Unmap( 0, nullptr );
         m_mappedMemory = nullptr;
     }

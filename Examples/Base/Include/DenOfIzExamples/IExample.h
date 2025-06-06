@@ -18,13 +18,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <spdlog/spdlog.h>
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "DenOfIzGraphics/Backends/GraphicsApi.h"
-#include "WorldData.h"
+#include "DenOfIzGraphics/Input/Event.h"
 #include "DenOfIzGraphics/Renderer/Sync/FrameSync.h"
 #include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
-#include "DenOfIzGraphics/Input/Event.h"
-#include <glog/logging.h>
+#include "WorldData.h"
 
 namespace DenOfIz
 {
@@ -113,7 +113,7 @@ namespace DenOfIz
             case PresentResult::Success:
                 break;
             case PresentResult::Suboptimal:
-                DLOG( INFO ) << "Swap chain is suboptimal, recreating...";
+                spdlog::info( "Swap chain is suboptimal, recreating..." );
                 if ( m_windowHandle )
                 {
                     const GraphicsWindowSurface surface = m_windowHandle->GetSurface( );
@@ -127,11 +127,11 @@ namespace DenOfIz
                 break;
 
             case PresentResult::Timeout:
-                DLOG( WARNING ) << "Present timed out, continuing...";
+                spdlog::warn( "Present timed out, continuing..." );
                 break;
 
             case PresentResult::DeviceLost:
-                DLOG( ERROR ) << "Device lost during presentation, recreating swap chain...";
+                spdlog::error( "Device lost during presentation, recreating swap chain..." );
                 m_logicalDevice->WaitIdle( );
                 CreateSwapChain( );
                 break;
@@ -162,7 +162,7 @@ namespace DenOfIz
                     const uint32_t newHeight = event.Window.Data2;
                     if ( newWidth > 0 && newHeight > 0 )
                     {
-                        DLOG( INFO ) << "Window resized to " << newWidth << "x" << newHeight;
+                        spdlog::info( "Window resized to {}x{}", newWidth, newHeight );
                         HandleResize( newWidth, newHeight );
                     }
                 }

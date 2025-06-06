@@ -78,7 +78,7 @@ void MetalCommandList::BeginRendering( const RenderingDesc &renderingDesc )
             const RenderingAttachmentDesc &attachment = renderingDesc.RTAttachments.GetElement( i );
             if ( attachment.Resource == nullptr )
             {
-                LOG( ERROR ) << "BeginRendering called with null render target attachment at index " << i;
+                spdlog::error("BeginRendering called with null render target attachment at index {}", i);
                 return;
             }
             MetalTextureResource *metalRtResource = static_cast<MetalTextureResource *>( attachment.Resource );
@@ -160,7 +160,7 @@ void MetalCommandList::BindVertexBuffer( IBufferResource *buffer, uint64_t offse
     {
     case QueueType::Copy:
     case QueueType::Compute:
-        LOG( WARNING ) << "BindVertexBuffer is not supported for Copy and Compute queues";
+        spdlog::warn("BindVertexBuffer is not supported for Copy and Compute queues");
         break;
     case QueueType::Graphics:
         {
@@ -191,7 +191,7 @@ void MetalCommandList::BindViewport( float x, float y, float width, float height
 {
     if ( width <= 0.0f || height <= 0.0f )
     {
-        LOG( ERROR ) << "Invalid viewport dimensions: width=" << width << ", height=" << height;
+        spdlog::error("Invalid viewport dimensions: width= {} , height={}", width, height);
         return;
     }
     SwitchEncoder( MetalEncoderType::Render );
@@ -203,7 +203,7 @@ void MetalCommandList::BindScissorRect( float x, float y, float width, float hei
 {
     if ( width <= 0.0f || height <= 0.0f )
     {
-        LOG( ERROR ) << "Invalid scissor rect dimensions: width=" << width << ", height=" << height;
+        spdlog::error("Invalid scissor rect dimensions: width= {} , height={}", width, height);
         return;
     }
     SwitchEncoder( MetalEncoderType::Render );
@@ -297,7 +297,7 @@ void MetalCommandList::DrawIndexed( uint32_t indexCount, uint32_t instanceCount,
 {
     if ( indexCount == 0 || instanceCount == 0 )
     {
-        LOG( WARNING ) << "Possible unintentional behavior, DrawIndexed called with zero count: indexCount=" << indexCount << ", instanceCount=" << instanceCount;
+        spdlog::warn("Possible unintentional behavior, DrawIndexed called with zero count: indexCount= {} , instanceCount={}", indexCount, instanceCount);
     }
     SwitchEncoder( MetalEncoderType::Render );
     BindCommandResources( );
@@ -313,7 +313,7 @@ void MetalCommandList::Draw( uint32_t vertexCount, uint32_t instanceCount, uint3
 {
     if ( vertexCount == 0 || instanceCount == 0 )
     {
-        LOG( WARNING ) << "Possible unintentional behavior, Draw called with zero count: vertexCount=" << vertexCount << ", instanceCount=" << instanceCount;
+        spdlog::warn("Possible unintentional behavior, Draw called with zero count: vertexCount= {} , instanceCount={}", vertexCount, instanceCount);
     }
     SwitchEncoder( MetalEncoderType::Render );
     BindCommandResources( );
@@ -325,7 +325,7 @@ void MetalCommandList::Dispatch( uint32_t groupCountX, uint32_t groupCountY, uin
 {
     if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
     {
-        LOG( WARNING ) << "Possible unintentional behavior, Dispatch called with zero group count: x=" << groupCountX << ", y=" << groupCountY << ", z=" << groupCountZ;
+        spdlog::warn("Possible unintentional behavior, Dispatch called with zero group count: x= {} , y= {} , z={}", groupCountX, groupCountY, groupCountZ);
     }
     SwitchEncoder( MetalEncoderType::Compute );
     BindCommandResources( );
@@ -339,7 +339,7 @@ void MetalCommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t 
 {
     if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
     {
-        LOG( WARNING ) << "Possible unintentional behavior, DispatchMesh called with zero group count: x=" << groupCountX << ", y=" << groupCountY << ", z=" << groupCountZ;
+        spdlog::warn("Possible unintentional behavior, DispatchMesh called with zero group count: x= {} , y= {} , z={}", groupCountX, groupCountY, groupCountZ);
     }
     SwitchEncoder( MetalEncoderType::Render );
     BindCommandResources( );
@@ -358,7 +358,7 @@ void MetalCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferR
     
     if ( copyBufferRegionDesc.NumBytes == 0 )
     {
-        LOG( WARNING ) << "Possible unintentional behavior, CopyBufferRegion called with zero NumBytes";
+        spdlog::warn("Possible unintentional behavior, CopyBufferRegion called with zero NumBytes");
     }
     
     MetalBufferResource *srcBuffer = dynamic_cast<MetalBufferResource *>( copyBufferRegionDesc.SrcBuffer );
@@ -379,8 +379,7 @@ void MetalCommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyTextu
 
     if ( copyTextureRegionDesc.Width == 0 || copyTextureRegionDesc.Height == 0 )
     {
-        LOG( WARNING ) << "Possible unintentional behavior, CopyTextureRegion called with zero dimensions: Width=" << copyTextureRegionDesc.Width
-                       << ", Height=" << copyTextureRegionDesc.Height;
+        spdlog::warn("Possible unintentional behavior, CopyTextureRegion called with zero dimensions: Width= {} , Height={}", copyTextureRegionDesc.Width, copyTextureRegionDesc.Height);
     }
     
     MetalTextureResource *srcTexture = dynamic_cast<MetalTextureResource *>( copyTextureRegionDesc.SrcTexture );
@@ -456,7 +455,7 @@ void MetalCommandList::UpdateTopLevelAS( const UpdateTopLevelASDesc &updateDesc 
     MetalTopLevelAS *metalTopLevelAS = static_cast<MetalTopLevelAS *>( updateDesc.TopLevelAS );
     if ( !metalTopLevelAS )
     {
-        LOG( ERROR ) << "Invalid top level acceleration structure.";
+        spdlog::error("Invalid top level acceleration structure.");
         return;
     }
 
@@ -482,7 +481,7 @@ void MetalCommandList::BuildTopLevelAS( const BuildTopLevelASDesc &buildTopLevel
     MetalTopLevelAS *metalTopLevelAS = static_cast<MetalTopLevelAS *>( buildTopLevelASDesc.TopLevelAS );
     if ( !metalTopLevelAS )
     {
-        LOG( ERROR ) << "Invalid top level acceleration structure.";
+        spdlog::error("Invalid top level acceleration structure.");
         return;
     }
 
@@ -504,7 +503,7 @@ void MetalCommandList::BuildBottomLevelAS( const BuildBottomLevelASDesc &buildBo
     MetalBottomLevelAS *metalBottomLevelAS = static_cast<MetalBottomLevelAS *>( buildBottomLevelASDesc.BottomLevelAS );
     if ( !metalBottomLevelAS )
     {
-        LOG( ERROR ) << "Invalid bottom level acceleration structure.";
+        spdlog::error("Invalid bottom level acceleration structure.");
         return;
     }
 
@@ -522,8 +521,7 @@ void MetalCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
     DZ_NOT_NULL( dispatchRaysDesc.ShaderBindingTable );
     if ( dispatchRaysDesc.Width == 0 || dispatchRaysDesc.Height == 0 || dispatchRaysDesc.Depth == 0 )
     {
-        LOG( WARNING ) << "DispatchRays called with zero dimensions: width=" << dispatchRaysDesc.Width << ", height=" << dispatchRaysDesc.Height
-                       << ", depth=" << dispatchRaysDesc.Depth;
+        spdlog::warn("DispatchRays called with zero dimensions: width= {} , height= {} , depth={}", dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth);
     }
     SwitchEncoder( MetalEncoderType::Compute );
     BindCommandResources( );
@@ -726,7 +724,7 @@ void MetalCommandList::SwitchEncoder( DenOfIz::MetalEncoderType encoderType, boo
             }
             break;
         case MetalEncoderType::Render:
-            LOG( ERROR ) << "Using metal, render encoder should be initialized in BeginRendering. This error means the order of your commands ";
+            spdlog::error("Using metal, render encoder should be initialized in BeginRendering. This error means the order of your commands ");
             break;
         case MetalEncoderType::None:
             // Simply end current encoder

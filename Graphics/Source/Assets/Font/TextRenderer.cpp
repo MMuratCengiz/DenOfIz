@@ -35,7 +35,7 @@ TextRenderer::TextRenderer( const TextRendererDesc &desc ) : m_desc( desc )
 {
     if ( !desc.LogicalDevice )
     {
-        LOG( FATAL ) << "TextRendererDesc::LogicalDevice must not be null";
+        spdlog::critical("TextRendererDesc::LogicalDevice must not be null");
         return;
     }
 
@@ -104,7 +104,7 @@ TextRenderer::TextRenderer( const TextRendererDesc &desc ) : m_desc( desc )
     SetAntiAliasingMode( m_desc.AntiAliasingMode );
     if ( m_desc.Width == 0 || m_desc.Height == 0 )
     {
-        LOG( WARNING ) << "Invalid viewport size, call TextRenderer::SetProjection or TextRenderer::SetViewport before rendering";
+        spdlog::warn("Invalid viewport size, call TextRenderer::SetProjection or TextRenderer::SetViewport before rendering");
     }
     else
     {
@@ -161,13 +161,13 @@ DenOfIz::Font *TextRenderer::GetFont( const uint16_t fontId ) const
 {
     if ( m_fonts.size( ) <= fontId )
     {
-        LOG( ERROR ) << "Font ID " << fontId << " does not exist";
+        spdlog::error("Font ID {} does not exist", fontId);
         return nullptr;
     }
     Font *font = m_fonts[ fontId ];
     if ( font == nullptr )
     {
-        LOG( ERROR ) << "Font ID " << fontId << " does not exist";
+        spdlog::error("Font ID {} does not exist", fontId);
     }
     return font;
 }
@@ -200,7 +200,7 @@ void TextRenderer::SetViewport( const Viewport &viewport )
 {
     if ( viewport.Width == 0 || viewport.Height == 0 )
     {
-        LOG( WARNING ) << "Viewport::Width or Viewport::Height is zero, cannot set projection matrix";
+        spdlog::warn("Viewport::Width or Viewport::Height is zero, cannot set projection matrix");
         return;
     }
     XMFLOAT4X4     projection4x4{ };
@@ -227,7 +227,7 @@ void TextRenderer::AddText( const TextRenderDesc &params ) const
     const Font *font = GetFont( params.FontId );
     if ( !font )
     {
-        LOG( WARNING ) << "No font available for rendering";
+        spdlog::warn("No font available for rendering");
         return;
     }
     m_textBatches[ params.FontId ]->AddText( params );
@@ -253,7 +253,7 @@ Float_2 TextRenderer::MeasureText( const InteropString &text, const TextRenderDe
     const Font *font = GetFont( desc.FontId );
     if ( !font )
     {
-        LOG( ERROR ) << "Cannot measure text: no font available";
+        spdlog::error("Cannot measure text: no font available");
         return Float_2{ 0.0f, 0.0f };
     }
 

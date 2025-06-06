@@ -25,7 +25,7 @@ SkeletonAssetWriter::SkeletonAssetWriter( const SkeletonAssetWriterDesc &desc ) 
 {
     if ( !m_writer )
     {
-        LOG( FATAL ) << "BinaryWriter cannot be null for SkeletonAssetWriter";
+        spdlog::critical("BinaryWriter cannot be null for SkeletonAssetWriter");
     }
 }
 

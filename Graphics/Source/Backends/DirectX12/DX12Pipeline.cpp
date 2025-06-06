@@ -130,13 +130,13 @@ void DX12Pipeline::CreateRayTracingPipeline( )
 {
     if ( m_desc.InputLayout )
     {
-        LOG( WARNING ) << "Input layout is provided to a ray tracing pipeline, this has no effect.";
+        spdlog::warn("Input layout is provided to a ray tracing pipeline, this has no effect.");
     }
 
     auto *rootSignature = dynamic_cast<DX12RootSignature *>( m_desc.RootSignature );
     if ( rootSignature->Instance( ) == nullptr )
     {
-        LOG( ERROR ) << "Root signature is not initialized";
+        spdlog::error("Root signature is not initialized");
     }
 
     auto    compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
@@ -345,7 +345,7 @@ void DX12Pipeline::PrintRayTracingPipelineDesc( const D3D12_STATE_OBJECT_DESC *d
         ss << "--------------------------------------------------------------------\n";
     }
 
-    LOG( INFO ) << "\n" << ss.str( );
+    spdlog::info("\n {}", ss.str( ));
 }
 
 void DX12Pipeline::InitDepthStencil( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const
@@ -509,7 +509,7 @@ void DX12Pipeline::CreateMeshPipeline( )
             meshPipelineStateStream.PS = GetShaderByteCode( compiledShader );
             break;
         default:
-            LOG( WARNING ) << "Unsupported shader stage for mesh pipeline: " << static_cast<int>( compiledShader->Stage );
+            spdlog::warn("Unsupported shader stage for mesh pipeline: {}", static_cast<int>( compiledShader->Stage ));
             break;
         }
     }

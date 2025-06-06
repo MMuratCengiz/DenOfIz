@@ -184,7 +184,7 @@ uint32_t VulkanLocalRootSignature::CbvOffset( uint32_t cbvIndex ) const
 {
     if ( cbvIndex >= m_inlineDataOffsets.size( ) )
     {
-        LOG( ERROR ) << "Invalid binding index for inline data(" << cbvIndex << ")";
+        spdlog::error("Invalid binding index for inline data( {} )", cbvIndex);
         return 0;
     }
     return m_inlineDataOffsets[ cbvIndex ];
@@ -194,7 +194,7 @@ uint32_t VulkanLocalRootSignature::CbvNumBytes( uint32_t cbvIndex ) const
 {
     if ( cbvIndex >= m_inlineDataNumBytes.size( ) )
     {
-        LOG( ERROR ) << "Invalid binding index for inline data size(" << cbvIndex << ")";
+        spdlog::error("Invalid binding index for inline data size( {} )", cbvIndex);
         return 0;
     }
     return m_inlineDataNumBytes[ cbvIndex ];

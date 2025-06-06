@@ -63,7 +63,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     {                                                                                                                                                                              \
         if ( FAILED( result ) )                                                                                                                                                    \
         {                                                                                                                                                                          \
-            LOG( ERROR ) << "DirectX12 Layer Error: " << result;                                                                                                                   \
+            spdlog::error("DirectX12 Layer Error: {}", result);                                                                                                                   \
         }                                                                                                                                                                          \
     }                                                                                                                                                                              \
     while ( false )

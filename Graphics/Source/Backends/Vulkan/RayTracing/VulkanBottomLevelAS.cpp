@@ -119,12 +119,12 @@ void VulkanBottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &tri
 
     if ( vertexBuffer == nullptr )
     {
-        LOG( WARNING ) << "Geometry has no vertices, or vertex buffer is null.";
+        spdlog::warn("Geometry has no vertices, or vertex buffer is null.");
         return;
     }
     if ( indexBuffer == nullptr && triangle.NumIndices > 0 )
     {
-        LOG( WARNING ) << "Geometry.NumIndices > 0, but Geometry.IndexBuffer == nullptr.";
+        spdlog::warn("Geometry.NumIndices > 0, but Geometry.IndexBuffer == nullptr.");
         return;
     }
 
@@ -146,7 +146,7 @@ void VulkanBottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &tri
                                                        Format::R16G16B16A16Float, Format::R16G16Snorm,    Format::R16G16B16A16Snorm };
     if ( !allowedFormats.contains( triangle.VertexFormat ) )
     {
-        LOG( WARNING ) << "Invalid vertex format for acceleration structure geometry.";
+        spdlog::warn("Invalid vertex format for acceleration structure geometry.");
     }
 }
 

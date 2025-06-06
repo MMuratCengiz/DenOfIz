@@ -26,7 +26,7 @@ MaterialAssetReader::MaterialAssetReader( const MaterialAssetReaderDesc &desc ) 
 {
     if ( !m_reader )
     {
-        LOG( FATAL ) << "BinaryReader cannot be null for MaterialAssetReader";
+        spdlog::critical("BinaryReader cannot be null for MaterialAssetReader");
     }
 }
 
@@ -38,13 +38,13 @@ MaterialAsset MaterialAssetReader::Read( )
     m_materialAsset.Magic = m_reader->ReadUInt64( );
     if ( m_materialAsset.Magic != MaterialAsset{ }.Magic )
     {
-        LOG( FATAL ) << "Invalid MaterialAsset magic number.";
+        spdlog::critical("Invalid MaterialAsset magic number.");
     }
 
     m_materialAsset.Version = m_reader->ReadUInt32( );
     if ( m_materialAsset.Version > MaterialAsset::Latest )
     {
-        LOG( WARNING ) << "MaterialAsset version mismatch.";
+        spdlog::warn("MaterialAsset version mismatch.");
     }
 
     m_materialAsset.NumBytes = m_reader->ReadUInt64( );

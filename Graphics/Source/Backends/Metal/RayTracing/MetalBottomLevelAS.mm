@@ -33,7 +33,7 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
         m_hitGroupType                 = geometry.Type;
         if ( i > 0 && geometry.Type != m_hitGroupType )
         {
-            LOG( ERROR ) << "All geometries in a BLAS must have the same type in Metal.";
+            spdlog::error("All geometries in a BLAS must have the same type in Metal.");
             return;
         }
 
@@ -46,7 +46,7 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
             [m_geometryDescriptors addObject:InitializeAABBs( geometry )];
             break;
         default:
-            LOG( ERROR ) << "Invalid geometry type: " << static_cast<int>( geometry.Type );
+            spdlog::error("Invalid geometry type: {}", static_cast<int>( geometry.Type ));
             break;
         }
 
@@ -90,7 +90,7 @@ MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::Initiali
     MetalBufferResource *vertexBuffer = (MetalBufferResource *)triangle.VertexBuffer;
     if ( !vertexBuffer || triangle.NumVertices == 0 )
     {
-        LOG( ERROR ) << "Invalid triangle geometry: no vertices or vertex buffer.";
+        spdlog::error("Invalid triangle geometry: no vertices or vertex buffer.");
         return nil;
     }
 
@@ -108,7 +108,7 @@ MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::Initiali
         MetalBufferResource *indexBuffer = (MetalBufferResource *)triangle.IndexBuffer;
         if ( !indexBuffer )
         {
-            LOG( ERROR ) << "Geometry.NumIndices > 0, but Geometry.IndexBuffer == nullptr.";
+            spdlog::error("Geometry.NumIndices > 0, but Geometry.IndexBuffer == nullptr.");
             return nil;
         }
 
@@ -133,7 +133,7 @@ MTLAccelerationStructureBoundingBoxGeometryDescriptor *MetalBottomLevelAS::Initi
     MetalBufferResource *aabbBuffer = (MetalBufferResource *)aabb.Buffer;
     if ( !aabbBuffer || aabb.NumAABBs == 0 )
     {
-        LOG( ERROR ) << "Invalid AABB geometry: no AABBs or AABB buffer.";
+        spdlog::error("Invalid AABB geometry: no AABBs or AABB buffer.");
         return nil;
     }
 

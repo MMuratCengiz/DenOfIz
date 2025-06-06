@@ -39,7 +39,7 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
 
         if ( blas == nullptr )
         {
-            LOG( WARNING ) << "BLAS is null.";
+            spdlog::warn("BLAS is null.");
             continue;
         }
 

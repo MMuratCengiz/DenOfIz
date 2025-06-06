@@ -114,7 +114,7 @@ void BatchResourceCopy::CopyDataToTexture( const CopyDataToTextureDesc &copyDesc
     {
         if ( copyDesc.Width == 0 || copyDesc.Height == 0 )
         {
-            LOG( ERROR ) << "Width and Height cannot be 0 when AutoAlign is true.";
+            spdlog::error("Width and Height cannot be 0 when AutoAlign is true.");
             return;
         }
 
@@ -324,7 +324,7 @@ void BatchResourceCopy::LoadAssetTexture( const LoadAssetTextureDesc &loadDesc )
 {
     if ( !loadDesc.Reader || !loadDesc.DstTexture )
     {
-        LOG( ERROR ) << "TextureAssetReader and DstTexture cannot be null";
+        spdlog::error("TextureAssetReader and DstTexture cannot be null");
         return;
     }
 
@@ -359,7 +359,7 @@ void BatchResourceCopy::LoadAssetStreamToBuffer( const LoadAssetStreamToBufferDe
     DZ_NOT_NULL( loadDesc.Reader );
     if ( loadDesc.Stream.NumBytes == 0 )
     {
-        LOG( WARNING ) << "LoadAssetStreamToBuffer: Stream has no data to load.";
+        spdlog::warn("LoadAssetStreamToBuffer: Stream has no data to load.");
         return;
     }
 
@@ -375,7 +375,7 @@ void BatchResourceCopy::LoadAssetStreamToBuffer( const LoadAssetStreamToBufferDe
         const int        bytesActuallyReadMem = reader->Read( fullData, static_cast<uint32_t>( memBytesCopied ), static_cast<uint32_t>( bytesToReadMem ) );
         if ( bytesActuallyReadMem != static_cast<int>( bytesToReadMem ) )
         {
-            LOG( FATAL ) << "Failed to read expected chunk size from mesh asset stream into memory.";
+            spdlog::critical("Failed to read expected chunk size from mesh asset stream into memory.");
         }
         memBytesCopied += bytesActuallyReadMem;
     }
@@ -384,7 +384,7 @@ void BatchResourceCopy::LoadAssetStreamToBuffer( const LoadAssetStreamToBufferDe
     copyDesc.Data      = std::move( fullData );
     if ( loadDesc.DstBufferOffset != 0 )
     {
-        LOG( WARNING ) << "LoadStreamToBuffer: DstBufferOffset ignored by CopyToGPUBuffer.";
+        spdlog::warn("LoadStreamToBuffer: DstBufferOffset ignored by CopyToGPUBuffer.");
     }
     CopyToGPUBuffer( copyDesc );
     reader->Seek( position );

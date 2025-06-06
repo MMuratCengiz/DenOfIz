@@ -26,7 +26,7 @@ TextureAssetWriter::TextureAssetWriter( const TextureAssetWriterDesc &desc ) : m
 {
     if ( !m_writer )
     {
-        LOG( FATAL ) << "BinaryWriter cannot be null for TextureAssetWriter";
+        spdlog::critical("BinaryWriter cannot be null for TextureAssetWriter");
     }
 }
 
@@ -55,25 +55,25 @@ void TextureAssetWriter::ValidateMipRange( const uint32_t mipIndex, const uint32
 {
     if ( mipIndex >= m_textureAsset.MipLevels || arrayLayer >= m_textureAsset.ArraySize )
     {
-        LOG( FATAL ) << "Attempted to add more Mip or Array data than expected.";
+        spdlog::critical("Attempted to add more Mip or Array data than expected.");
     }
     if ( !m_isFirstMip )
     {
         if ( mipIndex < m_lastMipIndex || arrayLayer < m_lastArrayIndex ||
              ( mipIndex == m_lastMipIndex && ( arrayLayer != m_lastArrayIndex || arrayLayer != m_lastArrayIndex + 1 ) ) )
         {
-            LOG( FATAL ) << "Attempting to write mip data out of order expected either mipLevel[" << m_lastMipIndex << " (+1)] or arrayIndex[" << m_lastArrayIndex << " (+1)]";
+            spdlog::critical("Attempting to write mip data out of order expected either mipLevel[ {} (+1)] or arrayIndex[{} (+1)]", m_lastMipIndex, m_lastArrayIndex);
         }
         else if ( mipIndex == m_lastMipIndex + 1 && arrayLayer != 0 )
         {
-            LOG( FATAL ) << "Attempting to write mip data out of order expected array index to be 0.";
+            spdlog::critical("Attempting to write mip data out of order expected array index to be 0.");
         }
     }
     else
     {
         if ( mipIndex != 0 || arrayLayer != 0 )
         {
-            LOG( FATAL ) << "Attempting to write mip data out of order expected mip level to be 0 and array index to be 0.";
+            spdlog::critical("Attempting to write mip data out of order expected mip level to be 0 and array index to be 0.");
         }
     }
     m_isFirstMip = false;
@@ -88,16 +88,16 @@ void TextureAssetWriter::Write( const TextureAsset &textureAsset )
     m_writer->WriteString( m_textureAsset.SourcePath );
     if ( m_textureAsset.Width == 0 || m_textureAsset.Height == 0 )
     {
-        LOG( WARNING ) << "TextureAssetWriter: Texture dimensions are zero, which may indicate uninitialized data";
+        spdlog::warn("TextureAssetWriter: Texture dimensions are zero, which may indicate uninitialized data");
     }
     if ( m_textureAsset.Format == Format::Undefined )
     {
-        LOG( WARNING ) << "TextureAssetWriter: Texture format is undefined, defaulting to R8G8B8A8Unorm";
+        spdlog::warn("TextureAssetWriter: Texture format is undefined, defaulting to R8G8B8A8Unorm");
         m_textureAsset.Format = Format::R8G8B8A8Unorm;
     }
     if ( m_textureAsset.BitsPerPixel == 0 )
     {
-        LOG( WARNING ) << "TextureAssetWriter: BitsPerPixel is 0, attempting to set based on format";
+        spdlog::warn("TextureAssetWriter: BitsPerPixel is 0, attempting to set based on format");
         switch ( m_textureAsset.Format )
         {
         case Format::R8G8B8A8Unorm:
@@ -160,7 +160,7 @@ void TextureAssetWriter::Write( const TextureAsset &textureAsset )
 
     if ( m_textureAsset.NumRows == 0 )
     {
-        LOG( WARNING ) << "TextureAssetWriter: NumRows is 0, calculating based on height and format";
+        spdlog::warn("TextureAssetWriter: NumRows is 0, calculating based on height and format");
         if ( m_textureAsset.Format >= Format::BC1Unorm && m_textureAsset.Format <= Format::BC7Unorm )
         {
             m_textureAsset.NumRows = ( m_textureAsset.Height + m_textureAsset.BlockSize - 1 ) / m_textureAsset.BlockSize;
@@ -178,7 +178,7 @@ void TextureAssetWriter::Write( const TextureAsset &textureAsset )
 
     if ( m_textureAsset.Mips.NumElements( ) == 0 )
     {
-        LOG( WARNING ) << "TextureAssetWriter: No mip levels found, creating default mip level";
+        spdlog::warn("TextureAssetWriter: No mip levels found, creating default mip level");
         TextureMip mip{ };
         mip.Width      = std::max( 1u, m_textureAsset.Width );
         mip.Height     = std::max( 1u, m_textureAsset.Height );
@@ -245,7 +245,7 @@ void TextureAssetWriter::AddPixelData( const InteropArray<Byte> &bytes, const ui
     // If mip was not found, add a new mip entry (unless we're already at max mips)
     if ( !mipFound && ( mipIndex < m_textureAsset.MipLevels ) && ( arrayLayer < m_textureAsset.ArraySize ) )
     {
-        LOG( WARNING ) << "TextureAssetWriter: Adding missing mip entry for level " << mipIndex << ", array layer " << arrayLayer;
+        spdlog::warn("TextureAssetWriter: Adding missing mip entry for level {} , array layer {}", mipIndex, arrayLayer);
         const uint32_t mipWidth  = std::max( 1u, m_textureAsset.Width >> mipIndex );
         const uint32_t mipHeight = std::max( 1u, m_textureAsset.Height >> mipIndex );
 

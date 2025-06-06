@@ -37,12 +37,12 @@ void MetalResourceBindGroup::SetRootConstantsData( uint32_t binding, const Inter
     const auto &rootConstants = m_rootSignature->RootConstants( );
     if ( binding >= rootConstants.size( ) )
     {
-        LOG( FATAL ) << "Root constant binding out of range";
+        spdlog::critical("Root constant binding out of range");
     }
     const auto &rootConstantBinding = rootConstants[ binding ];
     if ( data.NumElements( ) != rootConstantBinding.NumBytes )
     {
-        LOG( ERROR ) << "Root constant size mismatch. Expected: " << rootConstantBinding.NumBytes << ", Got: " << data.NumElements( );
+        spdlog::error("Root constant size mismatch. Expected: {} , Got: {}", rootConstantBinding.NumBytes, data.NumElements( ));
         return;
     }
     SetRootConstants( binding, (void *)data.Data( ) );
@@ -54,7 +54,7 @@ void MetalResourceBindGroup::SetRootConstants( uint32_t binding, void *data )
     const auto &rootConstants = m_rootSignature->RootConstants( );
     if ( binding >= rootConstants.size( ) )
     {
-        LOG( FATAL ) << "Root constant binding out of range";
+        spdlog::critical("Root constant binding out of range");
     }
     const auto &rootConstantBinding = rootConstants[ binding ];
     std::memcpy( &m_rootConstant[ rootConstantBinding.Offset ], data, rootConstantBinding.NumBytes );

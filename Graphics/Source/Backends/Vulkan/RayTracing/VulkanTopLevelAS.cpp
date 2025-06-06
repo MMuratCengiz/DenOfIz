@@ -35,7 +35,7 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
         auto                 *vkBLAS       = dynamic_cast<VulkanBottomLevelAS *>( instanceDesc.BLAS );
         if ( vkBLAS == nullptr )
         {
-            LOG( WARNING ) << "BLAS is null.";
+            spdlog::warn( "BLAS is null." );
             continue;
         }
 

@@ -28,7 +28,7 @@ Font::Font( FT_Library ftLibrary, const FontDesc &desc ) : m_impl( std::make_uni
     const uint64_t dataNumBytes = desc.FontAsset->DataNumBytes;
     if ( FT_New_Memory_Face( m_impl->m_ftLibrary, data, dataNumBytes, 0, &m_impl->m_face ) )
     {
-        LOG( ERROR ) << "Failed to load font: " << desc.FontAsset->Uri.Path.Get( );
+        spdlog::error("Failed to load font: {}", desc.FontAsset->Uri.Path.Get( ));
     }
 
     for ( int i = 0; i < m_desc.FontAsset->Glyphs.NumElements( ); i++ )
@@ -40,7 +40,7 @@ Font::Font( FT_Library ftLibrary, const FontDesc &desc ) : m_impl( std::make_uni
     const uint32_t initialFontSize = m_desc.FontAsset->InitialFontSize * 64;
     if ( const FT_Error error = FT_Set_Char_Size( m_impl->m_face, 0, initialFontSize, 0, 0 ) )
     {
-        LOG( ERROR ) << "Failed to set font size: " << FT_Error_String( error );
+        spdlog::error("Failed to set font size: {}", FT_Error_String( error ));
     }
 }
 
@@ -63,7 +63,7 @@ hb_font_t *Font::GetHBFont( const uint32_t fontSize ) const
         const uint32_t              sizeIn26_6 = fontSize * 64;
         if ( const FT_Error error = FT_Set_Char_Size( m_impl->m_face, 0, sizeIn26_6, 0, 0 ) )
         {
-            LOG( ERROR ) << "Failed to set font size: " << FT_Error_String( error );
+            spdlog::error("Failed to set font size: {}", FT_Error_String( error ));
             return nullptr;
         }
 
@@ -71,7 +71,7 @@ hb_font_t *Font::GetHBFont( const uint32_t fontSize ) const
     }
     if ( !hbFont )
     {
-        LOG( ERROR ) << "Failed to create HarfBuzz font for size " << fontSize;
+        spdlog::error("Failed to create HarfBuzz font for size {}", fontSize);
         return nullptr;
     }
     m_impl->m_hbFonts[ fontSize ] = hbFont;

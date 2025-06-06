@@ -33,7 +33,7 @@ VulkanCommandQueue::VulkanCommandQueue( VulkanContext *context, const CommandQue
 
     if ( m_queue == VK_NULL_HANDLE )
     {
-        LOG( FATAL ) << "Failed to create queue";
+        spdlog::critical("Failed to create queue");
     }
 }
 
@@ -149,7 +149,7 @@ void VulkanCommandQueue::FindQueueFamilyIndex( const VkQueueFlags requiredFlags 
         }
     }
 
-    LOG( WARNING ) << "Could not find queue of required type. Using default queue family";
+    spdlog::warn("Could not find queue of required type. Using default queue family");
     m_queueFamilyIndex = 0;
     m_queueIndex       = 0;
 }

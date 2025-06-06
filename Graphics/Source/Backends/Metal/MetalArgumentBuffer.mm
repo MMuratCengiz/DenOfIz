@@ -82,7 +82,7 @@ MetalArgumentBuffer::MetalArgumentBuffer( MetalContext *context, size_t capacity
     m_buffer     = [m_context->Device newBufferWithLength:m_capacity options:MTLResourceStorageModeShared];
     if ( !m_buffer )
     {
-        LOG( ERROR ) << "Failed to allocate Metal argument buffer";
+        spdlog::error("Failed to allocate Metal argument buffer");
     }
     [m_buffer setLabel:@"MetalArgumentBuffer"];
     m_contents = (Byte *)m_buffer.contents;
@@ -95,7 +95,7 @@ std::pair<Byte *, uint64_t> MetalArgumentBuffer::Reserve( size_t numAddresses, u
     auto numBytes = Utilities::Align( sizeof( uint64_t ) * numAddresses + numRootConstantBytes, 8 );
     if ( m_nextOffset + numBytes > m_capacity )
     {
-        LOG( ERROR ) << "MetalArgumentBuffer::Allocate: out of memory";
+        spdlog::error("MetalArgumentBuffer::Allocate: out of memory");
         return std::pair<Byte *, uint64_t>( nullptr, 0 );
     }
 
@@ -115,16 +115,16 @@ std::pair<Byte *, uint64_t> MetalArgumentBuffer::Duplicate( size_t numAddresses,
 
 void MetalArgumentBuffer::EncodeRootConstant( uint64_t offset, uint32_t numRootConstantBytes, const Byte *data ) const
 {
-    //    LOG ( INFO ) << "Encoding root constant at offset: " << offset << " numRootConstantBytes: " << numRootConstantBytes << " data: " << data;
+    //    spdlog::info("Encoding root constant at offset: {} numRootConstantBytes: {} data: {}", offset, numRootConstantBytes, data);
     if ( numRootConstantBytes == 0 )
     {
-        LOG( ERROR ) << "MetalArgumentBuffer::EncodeRootConstant: No bytes reserved for root constants";
+        spdlog::error("MetalArgumentBuffer::EncodeRootConstant: No bytes reserved for root constants");
         return;
     }
 
     if ( numRootConstantBytes + offset > m_capacity )
     {
-        LOG( ERROR ) << "MetalArgumentBuffer::EncodeRootConstant: Index or offset out of bounds";
+        spdlog::error("MetalArgumentBuffer::EncodeRootConstant: Index or offset out of bounds");
         return;
     }
 
@@ -136,7 +136,7 @@ void MetalArgumentBuffer::EncodeAddress( uint64_t offset, uint32_t index, uint64
     uint64_t addressLocation = Utilities::Align( offset + ( index * sizeof( uint64_t ) ), 8 );
     if ( addressLocation > m_capacity )
     {
-        LOG( ERROR ) << "MetalArgumentBuffer::EncodeAddress: Index or offset out of bounds";
+        spdlog::error("MetalArgumentBuffer::EncodeAddress: Index or offset out of bounds");
         return;
     }
     std::memcpy( &m_contents[ addressLocation ], &address, sizeof( uint64_t ) );

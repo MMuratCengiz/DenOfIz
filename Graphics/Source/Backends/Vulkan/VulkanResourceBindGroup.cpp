@@ -48,7 +48,7 @@ void VulkanResourceBindGroup::SetRootConstantsData( uint32_t binding, const Inte
     const VkPushConstantRange pushConstantRange = m_rootSignature->PushConstantRange( binding );
     if ( data.NumElements( ) != pushConstantRange.size )
     {
-        LOG( ERROR ) << "Root constant size mismatch. Expected: " << pushConstantRange.size << ", Got: " << data.NumElements( );
+        spdlog::error("Root constant size mismatch. Expected: {} , Got: {}", pushConstantRange.size, data.NumElements( ));
         return;
     }
     SetRootConstants( binding, (void *)data.Data( ) );

@@ -79,7 +79,7 @@ void BindlessExample::Init( )
 
     m_pipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 
-    m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
+    m_time.OnEachSecond = []( const double fps ) { spdlog::warn("FPS: {}", fps); };
 }
 
 void BindlessExample::ModifyApiPreferences( APIPreference &defaultApiPreference )

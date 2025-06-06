@@ -39,7 +39,7 @@ DX12CommandQueue::DX12CommandQueue( DX12Context *context, const CommandQueueDesc
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
         break;
     default:
-        LOG( ERROR ) << "Unknown queue type";
+        spdlog::error("Unknown queue type");
         break;
     }
 

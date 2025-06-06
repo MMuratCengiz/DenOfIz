@@ -24,7 +24,7 @@ void RootConstantExample::Init( )
 {
     m_quadPipeline      = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice, "Assets/Shaders/PushConstantColor.ps.hlsl" );
     m_resourceBindGroup = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( RootConstantBindGroupDesc( m_quadPipeline->RootSignature( ) ) ) );
-    m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
+    m_time.OnEachSecond = []( const double fps ) { spdlog::warn("FPS: {}", fps); };
 }
 
 void RootConstantExample::Render( const uint32_t frameIndex, ICommandList *commandList )

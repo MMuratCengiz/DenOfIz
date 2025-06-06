@@ -158,7 +158,7 @@ void ResizableContainerWidget::HandleEvent( const Event &event )
 
 void ResizableContainerWidget::CreateLayoutElement( )
 {
-    LOG( FATAL ) << "Not supported, use OpenElement & CloseElement instead.";
+    spdlog::critical("Not supported, use OpenElement & CloseElement instead.");
 }
 
 void ResizableContainerWidget::SetSize( const float width, const float height )

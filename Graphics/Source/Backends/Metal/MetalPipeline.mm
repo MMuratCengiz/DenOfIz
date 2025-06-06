@@ -71,14 +71,14 @@ void MetalPipeline::CreateGraphicsPipeline( )
             fragmentFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
             break;
         default:
-            LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage );
+            spdlog::error("Unsupported shader stage: {}", static_cast<int>( shader->Stage ));
             break;
         }
     }
 
     if ( vertexFunction == nullptr || fragmentFunction == nullptr )
     {
-        LOG( ERROR ) << "Failed to create vertex or fragment function";
+        spdlog::error("Failed to create vertex or fragment function");
         return;
     }
     // Configure a pipeline descriptor that is used to create a pipeline state.
@@ -181,14 +181,14 @@ void MetalPipeline::CreateComputePipeline( )
             threadGroup = shader->ThreadGroup;
             break;
         default:
-            LOG( ERROR ) << "Unsupported shader stage: " << static_cast<int>( shader->Stage );
+            spdlog::error("Unsupported shader stage: {}", static_cast<int>( shader->Stage ));
             break;
         }
     }
 
     if ( computeFunction == nullptr )
     {
-        LOG( ERROR ) << "Failed to create compute function";
+        spdlog::error("Failed to create compute function");
         return;
     }
 
@@ -342,7 +342,7 @@ id<MTLFunction> MetalPipeline::CreateShaderFunction( id<MTLLibrary> library, con
     id<MTLFunction> function       = [library newFunctionWithName:entryPointName];
     if ( function == nil )
     {
-        LOG( ERROR ) << "Error creating function for entry point: " << entryPointName;
+        spdlog::error("Error creating function for entry point: {}", entryPointName);
     }
     return function;
 }
@@ -459,7 +459,7 @@ const uint64_t &MetalPipeline::FindVisibleShaderIndexByName( const std::string &
     auto shaderFunction = m_visibleFunctions.find( name );
     if ( shaderFunction == m_visibleFunctions.end( ) )
     {
-        LOG( ERROR ) << "Shader function not found: " << name;
+        spdlog::error("Shader function not found: {}", name);
         return { };
     }
     return shaderFunction->second;
@@ -508,14 +508,14 @@ void MetalPipeline::CreateMeshPipeline( )
                 m_usedMeshShaderStages.Pixel = true;
                 break;
             default:
-                LOG( ERROR ) << "Unsupported shader stage for mesh pipeline: " << static_cast<int>( shader->Stage );
+                spdlog::error("Unsupported shader stage for mesh pipeline: {}", static_cast<int>( shader->Stage ));
                 break;
         }
     }
     
     if ( meshFunction == nullptr )
     {
-        LOG( ERROR ) << "Failed to create mesh function";
+        spdlog::error("Failed to create mesh function");
         return;
     }
 

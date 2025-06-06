@@ -82,7 +82,7 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
 
     if ( !m_texture )
     {
-        LOG( ERROR ) << "Failed to create Metal texture resource: " << m_desc.DebugName.Get( );
+        spdlog::error("Failed to create Metal texture resource: {}", m_desc.DebugName.Get( ));
     }
 }
 
@@ -139,7 +139,7 @@ void MetalTextureResource::SetTextureType( )
     {
         if ( hasDepth )
         {
-            LOG( ERROR ) << "Array textures cannot have depth.";
+            spdlog::error("Array textures cannot have depth.");
         }
         else if ( hasHeight )
         {
@@ -218,7 +218,7 @@ MetalSampler::MetalSampler( MetalContext *context, const SamplerDesc &desc ) : m
     m_sampler                          = [m_context->Device newSamplerStateWithDescriptor:samplerDesc];
     if ( !m_sampler )
     {
-        LOG( ERROR ) << "Failed to create Metal sampler state: " << desc.DebugName.Get( );
+        spdlog::error("Failed to create Metal sampler state: {}", desc.DebugName.Get( ));
     }
 }
 

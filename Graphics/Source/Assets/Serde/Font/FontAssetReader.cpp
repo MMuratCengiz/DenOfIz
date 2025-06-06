@@ -40,7 +40,7 @@ FontAsset FontAssetReader::Read( )
     m_fontAsset.Magic   = m_reader->ReadUInt64( );
     if ( m_fontAsset.Magic != FontAsset{ }.Magic ) // DZFONT
     {
-        LOG( ERROR ) << "Invalid font asset magic word";
+        spdlog::error("Invalid font asset magic word");
         return m_fontAsset;
     }
     m_fontAsset.Version  = m_reader->ReadUInt32( );
@@ -94,7 +94,7 @@ void FontAssetReader::LoadAtlasIntoGpuTexture( const FontAsset &fontAsset, const
 {
     if ( !desc.CommandList || !desc.Texture )
     {
-        LOG( FATAL ) << "CommandList and Texture are required for LoadIntoGpuTexture";
+        spdlog::critical("CommandList and Texture are required for LoadIntoGpuTexture");
         return;
     }
 

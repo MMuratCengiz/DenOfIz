@@ -85,7 +85,7 @@ void DX12ResourceBindGroup::SetRootConstantsData( const uint32_t binding, const 
     const size_t numBytes = m_dx12RootSignature->RootConstants( )[ binding ].Constants.Num32BitValues * sizeof( uint32_t );
     if ( data.NumElements( ) != numBytes )
     {
-        LOG( ERROR ) << "Root constant size mismatch. Expected: " << numBytes << ", Got: " << data.NumElements( );
+        spdlog::error("Root constant size mismatch. Expected: {} , Got: {}", numBytes, data.NumElements( ));
         return;
     }
     SetRootConstants( binding, (void *)data.Data( ) );
@@ -97,7 +97,7 @@ void DX12ResourceBindGroup::SetRootConstants( const uint32_t binding, void *data
     ContainerUtilities::EnsureSize( m_rootConstants, binding );
     if (binding >= m_dx12RootSignature->RootConstants( ).size( ) )
     {
-        LOG( ERROR ) << "Root constant binding [" << binding << "] is out of range.";
+        spdlog::error("Root constant binding [ {} ] is out of range.", binding);
         return;
     }
 
@@ -125,7 +125,7 @@ IResourceBindGroup *DX12ResourceBindGroup::Cbv( const BindBufferDesc &desc )
     DZ_NOT_NULL( dx12Buffer );
     if ( desc.ResourceOffset % m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment != 0 )
     {
-        LOG( ERROR ) << "Constant buffer offset [" << desc.ResourceOffset << "] is not aligned to [" << m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment << "].";
+        spdlog::error("Constant buffer offset [ {} ] is not aligned to [{} ].", desc.ResourceOffset, m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment);
         return this;
     }
     const ResourceBindingSlot slot = GetSlot( desc.Binding, ResourceBindingType::ConstantBuffer );
@@ -275,7 +275,7 @@ bool DX12ResourceBindGroup::UpdateRootDescriptor( const ResourceBindingSlot &slo
     {
         if ( slot.Binding >= m_rootDescriptors.size( ) )
         {
-            LOG( ERROR ) << "Root descriptor binding [" << slot.Binding << "] is out of range.";
+            spdlog::error("Root descriptor binding [ {} ] is out of range.", slot.Binding);
         }
 
         m_rootDescriptors[ slot.Binding ].GpuAddress = gpuAddress;

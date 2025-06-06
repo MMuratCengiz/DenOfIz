@@ -106,7 +106,7 @@ namespace DenOfIz
         {
             if ( !skeletonAsset )
             {
-                LOG( ERROR ) << "Skeleton is required for OzzAnimation";
+                spdlog::error("Skeleton is required for OzzAnimation");
                 return;
             }
 
@@ -191,7 +191,7 @@ namespace DenOfIz
             }
             else
             {
-                LOG( ERROR ) << "Failed to build ozz skeleton";
+                spdlog::error("Failed to build ozz skeleton");
             }
         }
 
@@ -199,7 +199,7 @@ namespace DenOfIz
         {
             if ( !skeleton )
             {
-                LOG( ERROR ) << "Skeleton not initialized";
+                spdlog::error("Skeleton not initialized");
                 return nullptr;
             }
 
@@ -228,7 +228,7 @@ namespace DenOfIz
 
                 if ( jointIndex < 0 || jointIndex >= static_cast<int>( numJoints ) )
                 {
-                    LOG( WARNING ) << "Animation track for joint '" << jointName << "' has no corresponding joint in skeleton";
+                    spdlog::warn("Animation track for joint ' {} ' has no corresponding joint in skeleton", jointName);
                     continue;
                 }
 
@@ -269,7 +269,7 @@ namespace DenOfIz
             auto                                                built = builder( rawAnimation );
             if ( !built )
             {
-                LOG( ERROR ) << "Failed to build ozz animation";
+                spdlog::error("Failed to build ozz animation");
                 return nullptr;
             }
 
@@ -438,7 +438,7 @@ namespace DenOfIz
     {
         if ( !animation || !context )
         {
-            LOG( ERROR ) << "Invalid animation or context";
+            spdlog::error("Invalid animation or context");
             return;
         }
 
@@ -446,7 +446,7 @@ namespace DenOfIz
 
         if ( animation->Animations.NumElements( ) == 0 )
         {
-            LOG( WARNING ) << "Animation asset contains no animations";
+            spdlog::warn("Animation asset contains no animations");
             return;
         }
 
@@ -456,7 +456,7 @@ namespace DenOfIz
 
         if ( !internalContext->animation )
         {
-            LOG( ERROR ) << "Failed to convert animation";
+            spdlog::error("Failed to convert animation");
         }
     }
 
@@ -475,7 +475,7 @@ namespace DenOfIz
     {
         if ( !context || keys.NumElements( ) == 0 )
         {
-            LOG( ERROR ) << "Invalid context or empty keys";
+            spdlog::error("Invalid context or empty keys");
             return;
         }
 
@@ -504,7 +504,7 @@ namespace DenOfIz
     {
         if ( !context || keys.NumElements( ) == 0 || timestamps.NumElements( ) != keys.NumElements( ) )
         {
-            LOG( ERROR ) << "Invalid context, empty keys, or mismatched timestamps";
+            spdlog::error("Invalid context, empty keys, or mismatched timestamps");
             return;
         }
 
@@ -533,7 +533,7 @@ namespace DenOfIz
     {
         if ( !context || keys.NumElements( ) == 0 || timestamps.NumElements( ) != keys.NumElements( ) )
         {
-            LOG( ERROR ) << "Invalid context, empty keys, or mismatched timestamps";
+            spdlog::error("Invalid context, empty keys, or mismatched timestamps");
             return;
         }
 
@@ -562,7 +562,7 @@ namespace DenOfIz
     {
         if ( !context || keys.NumElements( ) == 0 || timestamps.NumElements( ) != keys.NumElements( ) )
         {
-            LOG( ERROR ) << "Invalid context, empty keys, or mismatched timestamps";
+            spdlog::error("Invalid context, empty keys, or mismatched timestamps");
             return;
         }
 
@@ -592,14 +592,14 @@ namespace DenOfIz
         SamplingJobResult result{ };
         if ( !desc.Context )
         {
-            LOG( ERROR ) << "Invalid sampling job parameters";
+            spdlog::error("Invalid sampling job parameters");
             return result;
         }
 
         auto *internalContext = reinterpret_cast<InternalContext *>( desc.Context );
         if ( !internalContext->animation || !internalContext->samplingContext )
         {
-            LOG( ERROR ) << "No animation loaded in context or sampling context not initialized";
+            spdlog::error("No animation loaded in context or sampling context not initialized");
             return result;
         }
 
@@ -617,7 +617,7 @@ namespace DenOfIz
 
         if ( !samplingJob.Run( ) )
         {
-            LOG( ERROR ) << "Animation sampling failed";
+            spdlog::error("Animation sampling failed");
             return result;
         }
 
@@ -628,7 +628,7 @@ namespace DenOfIz
 
         if ( !ltmJob.Run( ) )
         {
-            LOG( ERROR ) << "Local to model transformation failed";
+            spdlog::error("Local to model transformation failed");
             return result;
         }
 
@@ -667,7 +667,7 @@ namespace DenOfIz
         BlendingJobResult result{ };
         if ( !desc.Context || desc.Layers.NumElements( ) == 0 )
         {
-            LOG( ERROR ) << "Invalid blending job parameters";
+            spdlog::error("Invalid blending job parameters");
             return result;
         }
 
@@ -683,7 +683,7 @@ namespace DenOfIz
             const auto &layer = desc.Layers.GetElement( i );
             if ( layer.Transforms.NumElements( ) == 0 )
             {
-                LOG( ERROR ) << "Invalid transforms in layer " << i;
+                spdlog::error("Invalid transforms in layer {}", i);
                 return result;
             }
 
@@ -710,7 +710,7 @@ namespace DenOfIz
 
         if ( !blendingJob.Run( ) )
         {
-            LOG( ERROR ) << "Blending job failed";
+            spdlog::error("Blending job failed");
             return result;
         }
 
@@ -721,7 +721,7 @@ namespace DenOfIz
 
         if ( !ltmJob.Run( ) )
         {
-            LOG( ERROR ) << "Local to model transformation failed after blending";
+            spdlog::error("Local to model transformation failed after blending");
             return result;
         }
 
@@ -735,7 +735,7 @@ namespace DenOfIz
         LocalToModelJobResult result{ };
         if ( !desc.Context )
         {
-            LOG( ERROR ) << "Invalid local to model job parameters";
+            spdlog::error("Invalid local to model job parameters");
             return result;
         }
 
@@ -753,7 +753,7 @@ namespace DenOfIz
 
         if ( !ltmJob.Run( ) )
         {
-            LOG( ERROR ) << "Local to model transformation failed";
+            spdlog::error("Local to model transformation failed");
             return result;
         }
 
@@ -769,7 +769,7 @@ namespace DenOfIz
         if ( !desc.Context || desc.JointTransforms.NumElements( ) == 0 || desc.Vertices.NumElements( ) == 0 || desc.Weights.NumElements( ) == 0 ||
              !desc.Indices.NumElements( ) == 0 || desc.InfluenceCount <= 0 )
         {
-            LOG( ERROR ) << "Invalid skinning job parameters";
+            spdlog::error("Invalid skinning job parameters");
             return result;
         }
 
@@ -797,7 +797,7 @@ namespace DenOfIz
 
         if ( !skinningJob.Run( ) )
         {
-            LOG( ERROR ) << "Skinning job failed";
+            spdlog::error("Skinning job failed");
             return result;
         }
 
@@ -836,13 +836,13 @@ namespace DenOfIz
 
         if ( !ozzJob.Validate( ) )
         {
-            LOG( ERROR ) << "IKTwoBoneJob: Validation failed";
+            spdlog::error("IKTwoBoneJob: Validation failed");
             return result;
         }
 
         if ( !ozzJob.Run( ) )
         {
-            LOG( ERROR ) << "IKTwoBoneJob: Execution failed";
+            spdlog::error("IKTwoBoneJob: Execution failed");
             return result;
         }
 
@@ -859,13 +859,13 @@ namespace DenOfIz
         IkAimJobResult result{ };
         if ( !desc.Context || desc.JointIndex < 0 )
         {
-            LOG( ERROR ) << "Invalid IK aim job parameters";
+            spdlog::error("Invalid IK aim job parameters");
             return result;
         }
 
         if ( !m_impl->skeleton || desc.JointIndex >= m_impl->skeleton->num_joints( ) )
         {
-            LOG( ERROR ) << "Invalid joint index or skeleton not initialized";
+            spdlog::error("Invalid joint index or skeleton not initialized");
             return result;
         }
 
@@ -883,13 +883,13 @@ namespace DenOfIz
 
         if ( !ozzJob.Validate( ) )
         {
-            LOG( ERROR ) << "IKAimJob: Validation failed";
+            spdlog::error("IKAimJob: Validation failed");
             return result;
         }
 
         if ( !ozzJob.Run( ) )
         {
-            LOG( ERROR ) << "IKAimJob: Execution failed";
+            spdlog::error("IKAimJob: Execution failed");
             return result;
         }
 
@@ -904,7 +904,7 @@ namespace DenOfIz
         result.Type = desc.Type; // Required?
         if ( !desc.Context || desc.TrackIndex < 0 )
         {
-            LOG( ERROR ) << "Invalid track sampling job parameters";
+            spdlog::error("Invalid track sampling job parameters");
             return result;
         }
 
@@ -918,7 +918,7 @@ namespace DenOfIz
             {
                 if ( desc.TrackIndex >= static_cast<int>( internalContext->floatTracks.size( ) ) )
                 {
-                    LOG( ERROR ) << "Float track index out of range";
+                    spdlog::error("Float track index out of range");
                     return result;
                 }
                 ozz::animation::FloatTrackSamplingJob job;
@@ -933,7 +933,7 @@ namespace DenOfIz
             {
                 if ( desc.TrackIndex >= static_cast<int>( internalContext->float2Tracks.size( ) ) )
                 {
-                    LOG( ERROR ) << "Float2 track index out of range";
+                    spdlog::error("Float2 track index out of range");
                     return result;
                 }
 
@@ -955,7 +955,7 @@ namespace DenOfIz
             {
                 if ( desc.TrackIndex >= static_cast<int>( internalContext->float3Tracks.size( ) ) )
                 {
-                    LOG( ERROR ) << "Float3 track index out of range";
+                    spdlog::error("Float3 track index out of range");
                     return result;
                 }
 
@@ -978,7 +978,7 @@ namespace DenOfIz
             {
                 if ( desc.TrackIndex >= static_cast<int>( internalContext->float4Tracks.size( ) ) )
                 {
-                    LOG( ERROR ) << "Float4 track index out of range";
+                    spdlog::error("Float4 track index out of range");
                     return result;
                 }
 
@@ -1002,7 +1002,7 @@ namespace DenOfIz
             {
                 if ( desc.TrackIndex >= static_cast<int>( internalContext->quaternionTracks.size( ) ) )
                 {
-                    LOG( ERROR ) << "Quaternion track index out of range";
+                    spdlog::error("Quaternion track index out of range");
                     return result;
                 }
 
@@ -1022,13 +1022,13 @@ namespace DenOfIz
                 break;
             }
         default:
-            LOG( ERROR ) << "Unsupported track value type";
+            spdlog::error("Unsupported track value type");
             return result;
         }
 
         if ( !success )
         {
-            LOG( ERROR ) << "Track sampling failed";
+            spdlog::error("Track sampling failed");
             return result;
         }
 
@@ -1041,14 +1041,14 @@ namespace DenOfIz
         TrackTriggeringResult result{ };
         if ( !desc.Context || desc.TrackIndex < 0 )
         {
-            LOG( ERROR ) << "Invalid track triggering job parameters";
+            spdlog::error("Invalid track triggering job parameters");
             return result;
         }
 
         const auto *internalContext = reinterpret_cast<InternalContext *>( desc.Context );
         if ( desc.TrackIndex >= static_cast<int>( internalContext->floatTracks.size( ) ) )
         {
-            LOG( ERROR ) << "Track index out of range";
+            spdlog::error("Track index out of range");
             return result;
         }
 
@@ -1061,7 +1061,7 @@ namespace DenOfIz
 
         if ( !job.Run( ) )
         {
-            LOG( ERROR ) << "Track triggering failed";
+            spdlog::error("Track triggering failed");
             return result;
         }
 
@@ -1093,7 +1093,7 @@ namespace DenOfIz
     {
         if ( !m_impl->skeleton )
         {
-            LOG( ERROR ) << "Skeleton not initialized";
+            spdlog::error("Skeleton not initialized");
             return;
         }
 

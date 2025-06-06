@@ -82,7 +82,7 @@ void DX12BottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &trian
     const DX12BufferResource *dx12VertexBuffer = dynamic_cast<DX12BufferResource *>( triangle.VertexBuffer );
     if ( triangle.NumVertices == 0 || dx12VertexBuffer == nullptr )
     {
-        LOG( WARNING ) << "Geometry has no vertices, or vertex buffer is null.";
+        spdlog::warn("Geometry has no vertices, or vertex buffer is null.");
         return;
     }
 
@@ -93,7 +93,7 @@ void DX12BottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &trian
         const DX12BufferResource *dx12IndexBuffer = dynamic_cast<DX12BufferResource *>( triangle.IndexBuffer );
         if ( dx12IndexBuffer == nullptr )
         {
-            LOG( WARNING ) << "Geometry.NumIndices > 0, but Geometry.IndexBuffer == nullptr.";
+            spdlog::warn("Geometry.NumIndices > 0, but Geometry.IndexBuffer == nullptr.");
             return;
         }
 
@@ -111,7 +111,7 @@ void DX12BottomLevelAS::InitializeTriangles( const ASGeometryTriangleDesc &trian
                                                     Format::R16G16B16A16Float, Format::R16G16Snorm,    Format::R16G16B16A16Snorm };
     if ( !allowedFormats.contains( triangle.VertexFormat ) )
     {
-        LOG( WARNING ) << "Invalid vertex format for acceleration structure geometry.";
+        spdlog::warn("Invalid vertex format for acceleration structure geometry.");
     }
 }
 
@@ -120,7 +120,7 @@ void DX12BottomLevelAS::InitializeAABBs( const ASGeometryAABBDesc &aabb, D3D12_R
     const DX12BufferResource *dx12AABBBuffer = dynamic_cast<DX12BufferResource *>( aabb.Buffer );
     if ( aabb.NumAABBs == 0 || dx12AABBBuffer == nullptr )
     {
-        LOG( WARNING ) << "Geometry has no AABBs, or AABB buffer is null.";
+        spdlog::warn("Geometry has no AABBs, or AABB buffer is null.");
         return;
     }
 

@@ -106,7 +106,7 @@ std::string Utilities::AppPath( const std::string &resourcePath )
         return std::string( path ) + "/" + resourcePath;
     }
     CFRelease( resourcesURL );
-    LOG( WARNING ) << "Unable to load file: " << resourcePath;
+    spdlog::warn("Unable to load file: {}", resourcePath);
     return "";
 #else
     return resourcePath;

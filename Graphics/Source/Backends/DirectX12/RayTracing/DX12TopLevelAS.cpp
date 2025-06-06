@@ -33,7 +33,7 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
         const DX12BottomLevelAS *dx12Blas     = dynamic_cast<DX12BottomLevelAS *>( instanceDesc.BLAS );
         if ( dx12Blas == nullptr )
         {
-            LOG( WARNING ) << "Blas is null.";
+            spdlog::warn("Blas is null.");
             continue;
         }
 

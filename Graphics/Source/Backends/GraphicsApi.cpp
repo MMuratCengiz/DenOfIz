@@ -47,21 +47,21 @@ ILogicalDevice *GraphicsApi::CreateLogicalDevice( ) const
 #ifdef BUILD_VK
     if ( IsVulkanPreferred( ) )
     {
-        LOG( INFO ) << "Graphics API: Vulkan.";
+        spdlog::info("Graphics API: Vulkan.");
         logicalDevice = new VulkanLogicalDevice( );
     }
 #endif
 #ifdef BUILD_DX12
     if ( IsDX12Preferred( ) )
     {
-        LOG( INFO ) << "Graphics API: DirectX12.";
+        spdlog::info("Graphics API: DirectX12.");
         logicalDevice = new DX12LogicalDevice( );
     }
 #endif
 #ifdef BUILD_METAL
     if ( IsMetalPreferred( ) )
     {
-        LOG( INFO ) << "Graphics API: Metal.";
+        spdlog::info("Graphics API: Metal.");
         logicalDevice = new MetalLogicalDevice( );
     }
 #endif
@@ -75,14 +75,14 @@ ILogicalDevice *GraphicsApi::CreateLogicalDevice( ) const
 
 void GraphicsApi::LogDeviceCapabilities( const PhysicalDevice gpuDesc ) const
 {
-    LOG( INFO ) << "Loaded device: " << gpuDesc.Name.Get( );
-    LOG( INFO ) << "Device Capabilities:";
-    LOG( INFO ) << "Dedicated GPU " << ( gpuDesc.Properties.IsDedicated ? "Yes" : "No" );
-    LOG( INFO ) << "Available Memory " << gpuDesc.Properties.MemoryAvailableInMb << "MB";
-    LOG( INFO ) << "Dedicated Transfer Queue: " << ( gpuDesc.Capabilities.DedicatedCopyQueue ? "Yes" : "No" );
-    LOG( INFO ) << "Compute Shaders: " << ( gpuDesc.Capabilities.ComputeShaders ? "Yes" : "No" );
-    LOG( INFO ) << "Ray Tracing: " << ( gpuDesc.Capabilities.RayTracing ? "Yes" : "No" );
-    LOG( INFO ) << "Tearing: " << ( gpuDesc.Capabilities.Tearing ? "Yes" : "No" );
+    spdlog::info("Loaded device: {}", gpuDesc.Name.Get( ));
+    spdlog::info("Device Capabilities:");
+    spdlog::info("Dedicated GPU {}", ( gpuDesc.Properties.IsDedicated ? "Yes" : "No" ));
+    spdlog::info("Available Memory {} MB", gpuDesc.Properties.MemoryAvailableInMb);
+    spdlog::info("Dedicated Transfer Queue: {}", ( gpuDesc.Capabilities.DedicatedCopyQueue ? "Yes" : "No" ));
+    spdlog::info("Compute Shaders: {}", ( gpuDesc.Capabilities.ComputeShaders ? "Yes" : "No" ));
+    spdlog::info("Ray Tracing: {}", ( gpuDesc.Capabilities.RayTracing ? "Yes" : "No" ));
+    spdlog::info("Tearing: {}", ( gpuDesc.Capabilities.Tearing ? "Yes" : "No" ));
 }
 
 ILogicalDevice *GraphicsApi::CreateAndLoadOptimalLogicalDevice( ) const

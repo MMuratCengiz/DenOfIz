@@ -1,5 +1,5 @@
 find_package(SDL2 CONFIG REQUIRED)
-find_package(glog CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 
 set(DEN_OF_IZ_EXAMPLES_BASE_SOURCES
         Source/Assets/AssetData.cpp
@@ -21,7 +21,7 @@ target_include_default_directories(DenOfIzExamples-Base)
 target_link_libraries(DenOfIzExamples-Base
         PUBLIC
         DenOfIzGraphics
-        glog::glog
+        spdlog::spdlog
         SDL2::SDL2
         SDL2::SDL2main
 )

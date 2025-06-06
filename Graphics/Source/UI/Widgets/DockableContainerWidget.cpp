@@ -273,7 +273,7 @@ void DockableContainerWidget::HandleEvent( const Event &event )
 
 void DockableContainerWidget::CreateLayoutElement( )
 {
-    LOG(FATAL) << "Not supported, use OpenElement & CloseElement instead.";
+    spdlog::critical("Not supported, use OpenElement & CloseElement instead.");
 }
 
 const DockableContainerStyle &DockableContainerWidget::GetStyle( ) const

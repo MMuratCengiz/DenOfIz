@@ -34,7 +34,7 @@ void MeshShaderGrassExample::Init( )
     CreateTerrainPipeline( );
     CreateMeshShaderPipeline( );
 
-    m_time.OnEachSecond = []( const double fps ) { LOG( WARNING ) << "FPS: " << fps; };
+    m_time.OnEachSecond = []( const double fps ) { spdlog::warn("FPS: {}", fps); };
 }
 
 void MeshShaderGrassExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
@@ -133,7 +133,7 @@ void MeshShaderGrassExample::HandleEvent( Event &event )
             {
             case KeyCode::Return:
                 m_animateWind = !m_animateWind;
-                LOG( INFO ) << "Wind animation " << ( m_animateWind ? "enabled" : "disabled" );
+                spdlog::info("Wind animation {}", ( m_animateWind ? "enabled" : "disabled" ));
                 break;
 
             default:
