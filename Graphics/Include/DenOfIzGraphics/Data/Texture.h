@@ -28,9 +28,6 @@ namespace dds
     struct Header;
 }
 
-#define DZ_USE_DDS
-#define DZ_USE_STB_IMAGE
-
 namespace DenOfIz
 {
     struct DDSHeaderDeleter

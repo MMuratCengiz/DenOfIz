@@ -1,3 +1,5 @@
+option(DZ_INSTALL "Enable install" ON)
+
 include("${PROJECT_SOURCE_DIR}/cmake/common.cmake")
 
 include(Packages.cmake)
@@ -70,8 +72,6 @@ install(EXPORT DenOfIzGraphicsTargets
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/DenOfIzGraphics
 )
 
-target_include_default_directories(DenOfIzGraphics)
-target_include_directories(DenOfIzGraphics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Internal)
 target_include_directories(DenOfIzGraphics
         PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/clay>
@@ -106,11 +106,19 @@ target_link_libraries(DenOfIzGraphics PRIVATE
         tinyxml2::tinyxml2
         PkgConfig::thorvg)
 
+if (DZ_INSTALL)
+    target_compile_definitions(DenOfIzGraphics PUBLIC TVG_STATIC)
+endif()
 if (BUILD_SHARED_LIBS)
     target_compile_definitions(DenOfIzGraphics PRIVATE DZ_GRAPHICS_EXPORTS)
+    target_compile_definitions(DenOfIzGraphics PRIVATE GLOG_EXPORT)
     target_compile_definitions(DenOfIzGraphics INTERFACE DZ_GRAPHICS_IMPORTS)
     target_compile_definitions(DenOfIzGraphics PRIVATE BUILD_SHARED_LIBS)
+    if (NOT DZ_INSTALL)
+        target_compile_definitions(DenOfIzGraphics PRIVATE STB_IMPLEMENTATION)
+    endif()
 else ()
+    target_compile_definitions(DenOfIzGraphics PUBLIC GLOG_NO_EXPORT)
     target_compile_definitions(DenOfIzGraphics PUBLIC TVG_STATIC)
     target_link_libraries(DenOfIzGraphics
             PRIVATE

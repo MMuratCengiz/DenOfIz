@@ -55,10 +55,12 @@ if (LINUX)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif ()
 
-set(ozz_build_tools OFF CACHE BOOL "Don't build ozz tools" FORCE)
+set(BUILD_SHARED_LIBS_TEMP ${BUILD_SHARED_LIBS})
+set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_SKIP_INSTALL_RULES ON)
+
+set(ozz_build_tools OFF CACHE BOOL "Don't build ozz tools" FORCE)
 add_subdirectory(_ThirdParty/ozz-animation EXCLUDE_FROM_ALL)
-set(CMAKE_SKIP_INSTALL_RULES OFF)
 
 set(MSDF_ATLAS_BUILD_STANDALONE OFF CACHE BOOL "Build the msdf-atlas-gen standalone executable")
 set(MSDF_ATLAS_USE_SKIA OFF CACHE BOOL "Build with the Skia library")
@@ -67,6 +69,6 @@ set(MSDFGEN_USE_SKIA OFF CACHE BOOL "Build msdfgen with the Skia library")
 set(MSDFGEN_VCPKG_FEATURES_SET ON CACHE BOOL "Use vcpkg features")
 set(VCPKG_MANIFEST_NO_DEFAULT_FEATURES ON CACHE BOOL "Disable default features")
 
-set(CMAKE_SKIP_INSTALL_RULES ON)
 add_subdirectory(_ThirdParty/msdf-atlas-gen EXCLUDE_FROM_ALL)
 set(CMAKE_SKIP_INSTALL_RULES OFF)
+set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS_TEMP})

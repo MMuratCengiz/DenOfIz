@@ -20,16 +20,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 #include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
-#if not defined( STB_IMAGE_IMPLEMENTATION ) and defined( BUILD_SHARED_LIBS ) // Otherwise it's built by assimp
+#ifdef STB_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #endif
-#if defined( DZ_USE_STB_IMAGE )
 #include "stb_image.h"
-#endif
-#ifdef DZ_USE_DDS
+
 #include "dds.h"
-#endif
 #include <filesystem>
 #include <fstream>
 

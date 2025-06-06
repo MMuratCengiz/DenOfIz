@@ -170,39 +170,22 @@
         "BUILD_EXAMPLES": "OFF",
         "SWIG_CSHARP": "OFF",
         "SWIG_JAVA": "OFF",
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "DZ_INSTALL": "ON"
       }
     },
     {
-      "name": "Install_Windows_Static",
+      "name": "Install_Windows",
       "inherits": ["Windows_Base", "Install_Base"],
       "cacheVariables": {
-        "BUILD_SHARED_LIBS": "OFF",
+        "BUILD_SHARED_LIBS": "ON",
         "CRT_LINKAGE_STATIC": "1",
         "VCPKG_TARGET_TRIPLET": "x64-windows-static",
         "CMAKE_CXX_FLAGS": "/MP /EHsc -DNOMINMAX"
       }
     },
     {
-      "name": "Install_Windows_Shared",
-      "inherits": ["Windows_Base", "Install_Base"],
-      "cacheVariables": {
-        "BUILD_SHARED_LIBS": "ON",
-        "CRT_LINKAGE_STATIC": "0",
-        "VCPKG_TARGET_TRIPLET": "x64-windows",
-        "CMAKE_CXX_FLAGS": "/MP /EHsc -DNOMINMAX"
-      }
-    },
-    {
-      "name": "Install_OSX_Static",
-      "inherits": ["MacOS_Base", "Install_Base"],
-      "cacheVariables": {
-        "BUILD_SHARED_LIBS": "OFF",
-        "VCPKG_TARGET_TRIPLET": "arm64-osx"
-      }
-    },
-    {
-      "name": "Install_OSX_Shared",
+      "name": "Install_OSX",
       "inherits": ["MacOS_Base", "Install_Base"],
       "cacheVariables": {
         "BUILD_SHARED_LIBS": "ON",
@@ -210,16 +193,7 @@
       }
     },
     {
-      "name": "Install_Linux_Static",
-      "inherits": ["Linux_Base", "Install_Base"],
-      "cacheVariables": {
-        "BUILD_SHARED_LIBS": "OFF",
-        "VCPKG_TARGET_TRIPLET": "x64-linux",
-        "CMAKE_CXX_FLAGS": "-O2 -Wall -Wextra -DNOMINMAX -Wno-error=type-limits -Wno-changes-meaning -Wno-error=ignored-qualifiers -fpermissive"
-      }
-    },
-    {
-      "name": "Install_Linux_Shared",
+      "name": "Install_Linux",
       "inherits": ["Linux_Base", "Install_Base"],
       "cacheVariables": {
         "BUILD_SHARED_LIBS": "ON",
@@ -280,40 +254,25 @@
       "displayName": "Build Release Shared Linux"
     },
     {
-      "name": "Install_Windows_Static",
-      "configurePreset": "Install_Windows_Static",
-      "displayName": "Install Windows Static",
-      "targets": ["install"]
+      "name": "Install_Windows",
+      "configurePreset": "Install_Windows",
+      "displayName": "Install Windows",
+      "targets": ["install"],
+      "configuration": "Release"
     },
     {
-      "name": "Install_Windows_Shared",
-      "configurePreset": "Install_Windows_Shared",
-      "displayName": "Install Windows Shared",
-      "targets": ["install"]
+      "name": "Install_OSX",
+      "configurePreset": "Install_OSX",
+      "displayName": "Install OSX",
+      "targets": ["install"],
+      "configuration": "Release"
     },
     {
-      "name": "Install_OSX_Static",
-      "configurePreset": "Install_OSX_Static",
-      "displayName": "Install OSX Static",
-      "targets": ["install"]
-    },
-    {
-      "name": "Install_OSX_Shared",
-      "configurePreset": "Install_OSX_Shared",
-      "displayName": "Install OSX Shared",
-      "targets": ["install"]
-    },
-    {
-      "name": "Install_Linux_Static",
-      "configurePreset": "Install_Linux_Static",
-      "displayName": "Install Linux Static",
-      "targets": ["install"]
-    },
-    {
-      "name": "Install_Linux_Shared",
-      "configurePreset": "Install_Linux_Shared",
-      "displayName": "Install Linux Shared",
-      "targets": ["install"]
+      "name": "Install_Linux",
+      "configurePreset": "Install_Linux",
+      "displayName": "Install Linux",
+      "targets": ["install"],
+      "configuration": "Release"
     }
   ]
 }

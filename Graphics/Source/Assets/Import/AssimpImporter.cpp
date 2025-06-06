@@ -108,8 +108,8 @@ public:
     ImporterResultCode ProcessNode( ImportContext &context, const aiNode *node, MeshAssetWriter *meshWriter, SkeletonAsset &skeletonAsset, int32_t parentJointIndex = -1 );
     ImporterResultCode ProcessMesh( ImportContext &context, const aiMesh *mesh, MeshAssetWriter &assetWriter ) const;
     void               ProcessMaterial( ImportContext &context, const aiMaterial *material ) const;
-    bool               ProcessTexture( ImportContext &context, const aiMaterial *material, aiTextureType textureType, const InteropString &semanticName, AssetUri &outAssetUri ) const;
-    void               ProcessAnimation( ImportContext &context, const aiAnimation *animation, AssetUri &outAssetUri ) const;
+    bool ProcessTexture( ImportContext &context, const aiMaterial *material, aiTextureType textureType, const InteropString &semanticName, AssetUri &outAssetUri ) const;
+    void ProcessAnimation( ImportContext &context, const aiAnimation *animation, AssetUri &outAssetUri ) const;
 
     void ConfigureAssimpImportFlags( const AssimpImportDesc &options, unsigned int &flags, Assimp::Importer &importer ) const;
     void CalculateMeshBounds( const aiMesh *mesh, float scaleFactor, Float_3 &outMin, Float_3 &outMax ) const;
@@ -1060,7 +1060,8 @@ TextureExtension GetTextureExtension( const aiTexture *texture, const InteropArr
     return texExtension;
 }
 
-void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTexture *texture, const std::string &path, const InteropString &semanticName, AssetUri &outAssetUri ) const
+void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTexture *texture, const std::string &path, const InteropString &semanticName,
+                                              AssetUri &outAssetUri ) const
 {
     InteropString texName;
     if ( texture != nullptr )
