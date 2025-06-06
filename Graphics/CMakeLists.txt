@@ -201,8 +201,9 @@ if (APPLE)
 
     target_link_directories(
             DenOfIzGraphics
-            PRIVATE
-            _ThirdParty/osx_dxc/lib/
+            PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/_ThirdParty/osx_dxc/lib>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}>
     )
 
     target_include_directories(DenOfIzGraphics
