@@ -61,7 +61,7 @@ DX12DescriptorHeap::DX12DescriptorHeap( ID3D12Device *device, D3D12_DESCRIPTOR_H
 
     if( FAILED( device->CreateDescriptorHeap( &desc, IID_PPV_ARGS( m_heap.addressof( ) ) ) ) )
     {
-        spdlog::error("Failed to create descriptor heap.");
+        spdlog::error( "Failed to create descriptor heap." );
     }
 
     m_descriptorSize  = device->GetDescriptorHandleIncrementSize( type );

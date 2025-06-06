@@ -84,7 +84,7 @@ DX12LocalRootSignature::DX12LocalRootSignature( DX12Context *context, const Loca
     DX_CHECK_RESULT( D3D12SerializeVersionedRootSignature( &localSigDesc, &serializedRootSig, &errorBlob ) );
     if ( errorBlob )
     {
-        spdlog::error("Failed to serialize local root signature: {}", errorBlob->GetBufferPointer( ));
+        spdlog::error( "Failed to serialize local root signature: {}", errorBlob->GetBufferPointer( ) );
         return;
     }
     DX_CHECK_RESULT(
@@ -95,7 +95,7 @@ uint32_t DX12LocalRootSignature::CbvIndex( const uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_bindingIndices[ CBV_INDEX ].size( ) )
     {
-        spdlog::error("Invalid binding index for CBV( {} )", bindingIndex);
+        spdlog::error( "Invalid binding index for CBV( {} )", bindingIndex );
     }
     return m_bindingIndices[ CBV_INDEX ][ bindingIndex ];
 }
@@ -114,7 +114,7 @@ size_t DX12LocalRootSignature::CbvNumBytes( const uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_cbvNumBytes.size( ) )
     {
-        spdlog::error("Invalid binding index for CBV( {} )", bindingIndex);
+        spdlog::error( "Invalid binding index for CBV( {} )", bindingIndex );
     }
     return m_cbvNumBytes[ bindingIndex ];
 }
@@ -123,7 +123,7 @@ uint32_t DX12LocalRootSignature::SrvIndex( const uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_bindingIndices[ SRV_INDEX ].size( ) )
     {
-        spdlog::error("Invalid binding index for SRV( {} )", bindingIndex);
+        spdlog::error( "Invalid binding index for SRV( {} )", bindingIndex );
     }
     return m_bindingIndices[ SRV_INDEX ][ bindingIndex ];
 }
@@ -132,7 +132,7 @@ uint32_t DX12LocalRootSignature::UavIndex( const uint32_t bindingIndex ) const
 {
     if ( bindingIndex >= m_bindingIndices[ UAV_INDEX ].size( ) )
     {
-        spdlog::error("Invalid binding index for UAV( {} )", bindingIndex);
+        spdlog::error( "Invalid binding index for UAV( {} )", bindingIndex );
     }
     return m_bindingIndices[ UAV_INDEX ][ bindingIndex ];
 }

@@ -26,7 +26,7 @@ PhysicsAssetReader::PhysicsAssetReader( const PhysicsAssetReaderDesc &desc ) : m
 {
     if ( !m_reader )
     {
-        spdlog::critical("BinaryReader cannot be null for PhysicsAssetReader");
+        spdlog::critical( "BinaryReader cannot be null for PhysicsAssetReader" );
     }
 }
 
@@ -38,13 +38,13 @@ PhysicsAsset PhysicsAssetReader::Read( )
     m_physicsAsset.Magic = m_reader->ReadUInt64( );
     if ( m_physicsAsset.Magic != PhysicsAsset{ }.Magic )
     {
-        spdlog::critical("Invalid PhysicsAsset magic number.");
+        spdlog::critical( "Invalid PhysicsAsset magic number." );
     }
 
     m_physicsAsset.Version = m_reader->ReadUInt32( );
     if ( m_physicsAsset.Version > PhysicsAsset::Latest )
     {
-        spdlog::warn("PhysicsAsset version mismatch.");
+        spdlog::warn( "PhysicsAsset version mismatch." );
     }
 
     m_physicsAsset.NumBytes = m_reader->ReadUInt64( );

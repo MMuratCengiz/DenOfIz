@@ -51,7 +51,7 @@ void SimpleTriangleExample::Init( )
 
     m_pipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 
-    m_time.OnEachSecond = []( const double fps ) { spdlog::warn("FPS: {}", fps); };
+    m_time.OnEachSecond = []( const double fps ) { spdlog::warn( "FPS: {}", fps ); };
 }
 
 void SimpleTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPreference )

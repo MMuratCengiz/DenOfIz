@@ -119,7 +119,7 @@ void VulkanShaderBindingTable::BindHitGroup( const HitGroupBindingDesc &desc )
     const void *hitGroupIdentifier = m_pipeline->GetShaderIdentifier( desc.HitGroupExportName.Get( ) );
     if ( !hitGroupIdentifier )
     {
-        spdlog::error("Hit group export not found in pipeline.");
+        spdlog::error( "Hit group export not found in pipeline." );
         return;
     }
 

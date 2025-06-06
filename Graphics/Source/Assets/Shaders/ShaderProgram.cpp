@@ -46,7 +46,7 @@ using namespace DenOfIz;
     {                                                                                                                                                                              \
         if ( FAILED( result ) )                                                                                                                                                    \
         {                                                                                                                                                                          \
-            spdlog::error("DXC Error: {}", result);                                                                                                                               \
+            spdlog::error( "DXC Error: {}", result );                                                                                                                              \
         }                                                                                                                                                                          \
     }                                                                                                                                                                              \
     while ( false )
@@ -143,7 +143,7 @@ void ShaderProgram::Impl::Compile( )
         // Validate Shader
         if ( stage.Path.IsEmpty( ) && stage.Data.NumElements( ) == 0 )
         {
-            spdlog::error("Either stage.Path or stage.Data must be set for stage {} ", i);
+            spdlog::error( "Either stage.Path or stage.Data must be set for stage {} ", i );
             continue;
         }
 
@@ -187,7 +187,7 @@ void ShaderProgram::Impl::Compile( )
     auto      mslShaders = dxilToMsl.Convert( dxilToMslDesc );
     if ( mslShaders.NumElements( ) != m_desc.ShaderStages.NumElements( ) )
     {
-        spdlog::error("Num DXIL shaders != Num MSL Shaders, probable bug in DxilToMsl");
+        spdlog::error( "Num DXIL shaders != Num MSL Shaders, probable bug in DxilToMsl" );
         return;
     }
 
@@ -196,7 +196,7 @@ void ShaderProgram::Impl::Compile( )
         m_compiledShaders[ i ]->MSL = std::move( mslShaders.GetElement( i ) );
     }
 #else
-    spdlog::error("MSL compilation is not supported on this platform");
+    spdlog::error( "MSL compilation is not supported on this platform" );
 #endif
 }
 
@@ -206,7 +206,7 @@ void ShaderProgram::Impl::CreateReflectionData( )
     const HRESULT hr       = DxcCreateInstance( CLSID_DxcUtils, IID_PPV_ARGS( &dxcUtils ) );
     if ( FAILED( hr ) )
     {
-        spdlog::error("Failed to create DxcUtils for reflection");
+        spdlog::error( "Failed to create DxcUtils for reflection" );
         return;
     }
     m_reflectDesc = { };
@@ -457,7 +457,8 @@ void ShaderProgram::Impl::ProcessInputBindingDesc( const ReflectionState &state,
         ShaderReflectionHelper::FillReflectionData( state.ShaderReflection, state.FunctionReflection, rootConstantReflection, resourceIndex );
         if ( rootConstantReflection.Type != ReflectionBindingType::Pointer && rootConstantReflection.Type != ReflectionBindingType::Struct )
         {
-            spdlog::critical("Root constant reflection type mismatch. RegisterSpace [ {} ] is reserved for root constants. Which cannot be samplers or textures.", shaderInputBindDesc.Space);
+            spdlog::critical( "Root constant reflection type mismatch. RegisterSpace [ {} ] is reserved for root constants. Which cannot be samplers or textures.",
+                              shaderInputBindDesc.Space );
         }
         RootConstantResourceBindingDesc &rootConstantBinding = state.RootSignatureDesc->RootConstants.EmplaceElement( );
         rootConstantBinding.Name                             = shaderInputBindDesc.Name;

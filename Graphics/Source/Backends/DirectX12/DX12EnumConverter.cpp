@@ -92,7 +92,7 @@ uint32_t DX12EnumConverter::ConvertSampleCount( const MSAASampleCount &sampleCou
         return 16;
     case MSAASampleCount::_32:
     case MSAASampleCount::_64:
-        spdlog::warn("Exceeded the maximum sample count of 16 for this API, defaulting to 16.");
+        spdlog::warn( "Exceeded the maximum sample count of 16 for this API, defaulting to 16." );
         return 16;
     }
 

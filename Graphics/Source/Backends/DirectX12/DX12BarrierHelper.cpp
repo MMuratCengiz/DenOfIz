@@ -428,7 +428,7 @@ void DX12BarrierHelper::ExecuteLegacyResourceBarrier( ID3D12GraphicsCommandList7
             if ( resourceBarriers[ i ].Type == D3D12_RESOURCE_BARRIER_TYPE_TRANSITION &&
                  resourceBarriers[ i ].Transition.StateBefore == resourceBarriers[ i ].Transition.StateAfter )
             {
-                spdlog::error("State before and after are the same for resource barrier");
+                spdlog::error( "State before and after are the same for resource barrier" );
             }
         }
         commandList->ResourceBarrier( static_cast<UINT>( resourceBarriers.size( ) ), resourceBarriers.data( ) );

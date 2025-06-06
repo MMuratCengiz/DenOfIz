@@ -42,7 +42,7 @@ void DX12SwapChain::CreateSwapChain( )
 
     if ( GraphicsWindowSurface surface = m_desc.WindowHandle->GetSurface( ); m_desc.Width != surface.Width || m_desc.Height != surface.Height )
     {
-        spdlog::debug("Swap chain size does not match window size. This could be intentional");
+        spdlog::debug( "Swap chain size does not match window size. This could be intentional" );
     }
 
     SDL_Window   *sdlWindow = m_desc.WindowHandle->GetSDLWindow( );
@@ -50,7 +50,7 @@ void DX12SwapChain::CreateSwapChain( )
     SDL_VERSION( &wmInfo.version );
     if ( !SDL_GetWindowWMInfo( sdlWindow, &wmInfo ) )
     {
-        spdlog::critical("Failed to get window info from SDL: {}", SDL_GetError( ));
+        spdlog::critical( "Failed to get window info from SDL: {}", SDL_GetError( ) );
     }
     HWND                  hwnd          = wmInfo.info.win.window;
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { };
@@ -192,7 +192,7 @@ void DX12SwapChain::Resize( const uint32_t width, const uint32_t height )
 {
     if ( width == 0 || height == 0 )
     {
-        spdlog::debug("Cannot resize swap chain to zero dimensions");
+        spdlog::debug( "Cannot resize swap chain to zero dimensions" );
         return;
     }
 

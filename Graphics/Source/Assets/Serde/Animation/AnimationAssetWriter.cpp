@@ -26,7 +26,7 @@ AnimationAssetWriter::AnimationAssetWriter( const AnimationAssetWriterDesc &desc
 {
     if ( !m_writer )
     {
-        spdlog::critical("BinaryWriter cannot be null for AnimationAssetWriter");
+        spdlog::critical( "BinaryWriter cannot be null for AnimationAssetWriter" );
     }
 }
 

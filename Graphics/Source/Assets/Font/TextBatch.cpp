@@ -32,12 +32,12 @@ TextBatch::TextBatch( const TextBatchDesc &desc ) : m_desc( desc )
 {
     if ( desc.LogicalDevice == nullptr )
     {
-        spdlog::error("TextBatch::TextBatch LogicalDevice cannot be null");
+        spdlog::error( "TextBatch::TextBatch LogicalDevice cannot be null" );
         return;
     }
     if ( desc.Font == nullptr )
     {
-        spdlog::error("TextBatch::TextBatch LogicalDevice cannot be null");
+        spdlog::error( "TextBatch::TextBatch LogicalDevice cannot be null" );
         return;
     }
     m_font                                       = desc.Font;

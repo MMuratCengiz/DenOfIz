@@ -83,7 +83,7 @@ DX12RootSignature::DX12RootSignature( DX12Context *context, const RootSignatureD
     DX_CHECK_RESULT( D3D12SerializeRootSignature( &rootSignatureDesc, rootSignatureVersion, &signature, &error ) );
     if ( signature == nullptr )
     {
-        spdlog::error("Failed to serialize root signature: {}", std::string( static_cast<char *>( error->GetBufferPointer( ) ), error->GetBufferSize( ) ));
+        spdlog::error( "Failed to serialize root signature: {}", std::string( static_cast<char *>( error->GetBufferPointer( ) ), error->GetBufferSize( ) ) );
         return;
     }
     DX_CHECK_RESULT( m_context->D3DDevice->CreateRootSignature( 0, signature->GetBufferPointer( ), signature->GetBufferSize( ), IID_PPV_ARGS( m_rootSignature.put( ) ) ) );
@@ -93,7 +93,7 @@ uint32_t DX12RootSignature::GetResourceOffset( const ResourceBindingSlot &slot )
 {
     if ( slot.RegisterSpace >= m_registerSpaceOrder.size( ) )
     {
-        spdlog::error("Register space {} is not bound to any bind group.", slot.RegisterSpace);
+        spdlog::error( "Register space {} is not bound to any bind group.", slot.RegisterSpace );
     }
     return ContainerUtilities::SafeGetMapValue( m_registerSpaceOrder[ slot.RegisterSpace ].ResourceOffsetMap, slot.Key( ),
                                                 "Binding slot does not exist in root signature: " + std::string( slot.ToInteropString( ).Get( ) ) );
@@ -293,7 +293,7 @@ void DX12RootSignature::AddBindlessResource( const BindlessResourceDesc &bindles
         break;
     case ResourceBindingType::Sampler:
         // Samplers go in a separate range
-        spdlog::warn("Bindless samplers not yet implemented in DX12");
+        spdlog::warn( "Bindless samplers not yet implemented in DX12" );
         return;
     }
 
@@ -320,7 +320,7 @@ uint32_t DX12RootSignature::RegisterSpaceOffset( const uint32_t registerSpace ) 
 {
     if ( registerSpace >= m_registerSpaceOffsets.size( ) )
     {
-        spdlog::error("Register space {} does not exists in any binding.", registerSpace);
+        spdlog::error( "Register space {} does not exists in any binding.", registerSpace );
     }
 
     return m_registerSpaceOffsets[ registerSpace ];

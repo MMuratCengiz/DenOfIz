@@ -85,13 +85,13 @@ FontImporter::FontImporter( const FontImporterDesc desc ) : m_desc( desc ), m_im
 {
     if ( const FT_Error error = FT_Init_FreeType( &m_impl->m_ftLibrary ); error != 0 )
     {
-        spdlog::critical("Failed to initialize FreeType library: {}", FT_Error_String( error ));
+        spdlog::critical( "Failed to initialize FreeType library: {}", FT_Error_String( error ) );
     }
 
     m_impl->m_msdfFtHandle = msdfgen::initializeFreetype( );
     if ( !m_impl->m_msdfFtHandle )
     {
-        spdlog::critical("Failed to initialize MSDF Freetype library");
+        spdlog::critical( "Failed to initialize MSDF Freetype library" );
     }
 
     m_importerDesc.Name = "Font Importer";
@@ -234,7 +234,7 @@ namespace
         msdfgen::FontHandle *msdfFont     = msdfgen::loadFontData( impl.m_msdfFtHandle, data, dataNumBytes );
         if ( !msdfFont )
         {
-            spdlog::error("Failed to load MSDF font for glyph generation");
+            spdlog::error( "Failed to load MSDF font for glyph generation" );
             return;
         }
 

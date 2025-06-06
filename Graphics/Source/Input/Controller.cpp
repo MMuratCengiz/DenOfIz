@@ -65,10 +65,10 @@ void Controller::InitializeSDL( )
 #ifdef WINDOW_MANAGER_SDL
         if ( SDL_WasInit( SDL_INIT_GAMECONTROLLER ) == 0 )
         {
-            spdlog::info("Initializing SDL Game Controller");
+            spdlog::info( "Initializing SDL Game Controller" );
             if ( SDL_InitSubSystem( SDL_INIT_GAMECONTROLLER ) != 0 )
             {
-                spdlog::critical("Failed to initialize SDL Game Controller: {}", SDL_GetError( ));
+                spdlog::critical( "Failed to initialize SDL Game Controller: {}", SDL_GetError( ) );
             }
         }
 #endif
@@ -85,14 +85,14 @@ bool Controller::Open( const int controllerIndex ) const
 #ifdef WINDOW_MANAGER_SDL
     if ( !IsGameController( controllerIndex ) )
     {
-        spdlog::warn("Device at index {} is not a game controller", controllerIndex);
+        spdlog::warn( "Device at index {} is not a game controller", controllerIndex );
         return false;
     }
 
     m_impl->m_gameController = SDL_GameControllerOpen( controllerIndex );
     if ( m_impl->m_gameController == nullptr )
     {
-        spdlog::error("Could not open game controller {} : {}", controllerIndex, SDL_GetError( ));
+        spdlog::error( "Could not open game controller {} : {}", controllerIndex, SDL_GetError( ) );
         return false;
     }
 
@@ -101,7 +101,7 @@ bool Controller::Open( const int controllerIndex ) const
     {
         SDL_GameControllerClose( m_impl->m_gameController );
         m_impl->m_gameController = nullptr;
-        spdlog::error("Could not get joystick from controller {} : {}", controllerIndex, SDL_GetError( ));
+        spdlog::error( "Could not get joystick from controller {} : {}", controllerIndex, SDL_GetError( ) );
         return false;
     }
 
@@ -109,7 +109,7 @@ bool Controller::Open( const int controllerIndex ) const
     m_impl->m_instanceID      = SDL_JoystickInstanceID( m_impl->m_joystick );
     m_impl->m_initialized     = true;
 
-    spdlog::info("Opened controller {} ( {} ), instance ID: {}", controllerIndex, GetName( ).Get( ), m_impl->m_instanceID);
+    spdlog::info( "Opened controller {} ( {} ), instance ID: {}", controllerIndex, GetName( ).Get( ), m_impl->m_instanceID );
     return true;
 #else
     return false;

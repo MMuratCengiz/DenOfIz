@@ -29,16 +29,16 @@ FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m
 {
     if ( m_desc.LogicalDevice == nullptr )
     {
-        spdlog::warn("FrameDebugRendererDesc.LogicalDevice cannot be null.");
+        spdlog::warn( "FrameDebugRendererDesc.LogicalDevice cannot be null." );
         return;
     }
     if ( m_desc.GraphicsApi == nullptr )
     {
-        spdlog::warn("FrameDebugRendererDesc.GraphicsApi is null, debug info will not contain API information.");
+        spdlog::warn( "FrameDebugRendererDesc.GraphicsApi is null, debug info will not contain API information." );
     }
     if ( m_desc.ScreenWidth == 0 || m_desc.ScreenHeight == 0 )
     {
-        spdlog::error("FrameDebugRendererDesc.ScreenWidth and FrameDebugRendererDesc.ScreenHeight must be set.");
+        spdlog::error( "FrameDebugRendererDesc.ScreenWidth and FrameDebugRendererDesc.ScreenHeight must be set." );
         return;
     }
 

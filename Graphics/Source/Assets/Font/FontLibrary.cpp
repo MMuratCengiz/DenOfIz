@@ -28,7 +28,7 @@ FontLibrary::FontLibrary( )
 {
     if ( const FT_Error error = FT_Init_FreeType( &m_ftLibrary ) )
     {
-        spdlog::error("Failed to initialize FreeType library: {}", FT_Error_String( error ));
+        spdlog::error( "Failed to initialize FreeType library: {}", FT_Error_String( error ) );
     }
 }
 

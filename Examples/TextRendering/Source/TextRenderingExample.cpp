@@ -72,7 +72,7 @@ void TextRenderingExample::Init( )
     m_debugRenderer->AddDebugLine( "Press F1 to toggle debug info", { 0.8f, 0.8f, 0.8f, 1.0f } );
 
     m_animTime          = 0.0f;
-    m_time.OnEachSecond = []( const double fps ) { spdlog::warn("FPS: {}", fps); };
+    m_time.OnEachSecond = []( const double fps ) { spdlog::warn( "FPS: {}", fps ); };
 }
 
 void TextRenderingExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
@@ -225,7 +225,7 @@ void TextRenderingExample::HandleEvent( Event &event )
         m_textRenderer->SetAntiAliasingMode( static_cast<AntiAliasingMode>( m_currentAAModeIndex ) );
 
         const char *modeNames[] = { "None", "Grayscale", "Subpixel" };
-        spdlog::info("Switched to antialiasing mode: {}", modeNames[ m_currentAAModeIndex ]);
+        spdlog::info( "Switched to antialiasing mode: {}", modeNames[ m_currentAAModeIndex ] );
     }
     else if ( event.Type == EventType::KeyDown && event.Key.Keycode == KeyCode::F1 )
     {
@@ -234,7 +234,7 @@ void TextRenderingExample::HandleEvent( Event &event )
         {
             m_debugRenderer->SetEnabled( m_debugInfoEnabled );
         }
-        spdlog::info("Debug info {}", ( m_debugInfoEnabled ? "enabled" : "disabled" ));
+        spdlog::info( "Debug info {}", ( m_debugInfoEnabled ? "enabled" : "disabled" ) );
     }
 
     m_worldData.Camera->HandleEvent( event );
@@ -251,7 +251,7 @@ void TextRenderingExample::ImportFont( ) const
 {
     if ( !FileIO::FileExists( m_fontAssetPath ) )
     {
-        spdlog::warn("Font is missing, running import.");
+        spdlog::warn( "Font is missing, running import." );
         ImportJobDesc importJobDesc;
         importJobDesc.SourceFilePath  = "Assets/Fonts/Inconsolata-Regular.ttf";
         importJobDesc.TargetDirectory = "Assets/Fonts/";
@@ -263,18 +263,18 @@ void TextRenderingExample::ImportFont( ) const
         ImporterResult result = importer.Import( importJobDesc );
         if ( result.ResultCode != ImporterResultCode::Success )
         {
-            spdlog::error("Import failed: {}", result.ErrorMessage.Get( ));
+            spdlog::error( "Import failed: {}", result.ErrorMessage.Get( ) );
         }
 
         for ( size_t i = 0; i < result.CreatedAssets.NumElements( ); ++i )
         {
             AssetUri uri = result.CreatedAssets.GetElement( i );
-            spdlog::info("Created asset: {}", uri.Path.Get( ));
+            spdlog::info( "Created asset: {}", uri.Path.Get( ) );
         }
 
         if ( !FileIO::FileExists( m_fontAssetPath ) )
         {
-            spdlog::critical("Import completed but some font is still missing.");
+            spdlog::critical( "Import completed but some font is still missing." );
         }
     }
 }

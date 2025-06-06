@@ -27,7 +27,7 @@ TextureAssetReader::TextureAssetReader( const TextureAssetReaderDesc &desc ) : m
 {
     if ( !m_reader )
     {
-        spdlog::critical("BinaryReader cannot be null for TextureAssetReader");
+        spdlog::critical( "BinaryReader cannot be null for TextureAssetReader" );
     }
 }
 
@@ -56,13 +56,13 @@ TextureAsset TextureAssetReader::Read( )
     m_textureAsset.Magic = m_reader->ReadUInt64( );
     if ( m_textureAsset.Magic != TextureAsset{ }.Magic )
     {
-        spdlog::critical("Invalid TextureAsset magic number.");
+        spdlog::critical( "Invalid TextureAsset magic number." );
     }
 
     m_textureAsset.Version = m_reader->ReadUInt32( );
     if ( m_textureAsset.Version > TextureAsset::Latest )
     {
-        spdlog::warn("TextureAsset version mismatch.");
+        spdlog::warn( "TextureAsset version mismatch." );
     }
     m_textureAsset.NumBytes = m_reader->ReadUInt64( );
     m_textureAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
@@ -106,7 +106,7 @@ InteropArray<Byte> TextureAssetReader::ReadRaw( const uint32_t mipLevel, const u
 {
     if ( mipLevel >= m_textureAsset.MipLevels || arrayLayer >= m_textureAsset.ArraySize )
     {
-        spdlog::critical("Invalid mip level or array layer requested");
+        spdlog::critical( "Invalid mip level or array layer requested" );
         return { };
     }
 
@@ -118,7 +118,7 @@ InteropArray<Byte> TextureAssetReader::ReadRaw( const uint32_t mipLevel, const u
 
     if ( const uint32_t bytesRead = m_reader->Read( mipData, 0, mip.SlicePitch ); bytesRead != mip.SlicePitch )
     {
-        spdlog::error("Could not read complete mip data. Expected {} bytes, got {}", mip.SlicePitch, bytesRead);
+        spdlog::error( "Could not read complete mip data. Expected {} bytes, got {}", mip.SlicePitch, bytesRead );
     }
 
     return mipData;
@@ -128,7 +128,7 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
 {
     if ( !desc.CommandList || !desc.Texture )
     {
-        spdlog::critical("CommandList and Texture are required for LoadIntoGpuTexture");
+        spdlog::critical( "CommandList and Texture are required for LoadIntoGpuTexture" );
         return;
     }
 
@@ -147,7 +147,7 @@ void TextureAssetReader::LoadIntoGpuTexture( const LoadIntoGpuTextureDesc &desc 
 
         if ( bytesRead != bytesToRead )
         {
-            spdlog::error("Failed to read expected number of bytes. Expected: {} , Read: {}", bytesToRead, bytesRead);
+            spdlog::error( "Failed to read expected number of bytes. Expected: {} , Read: {}", bytesToRead, bytesRead );
             break;
         }
 

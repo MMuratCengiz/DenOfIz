@@ -25,7 +25,7 @@ MeshAssetReader::MeshAssetReader( const MeshAssetReaderDesc &desc ) : m_reader( 
 {
     if ( !m_reader )
     {
-        spdlog::critical("BinaryReader cannot be null for MeshAssetReader");
+        spdlog::critical( "BinaryReader cannot be null for MeshAssetReader" );
     }
 }
 
@@ -266,7 +266,7 @@ MeshAsset MeshAssetReader::Read( )
 {
     if ( m_metadataRead )
     {
-        spdlog::warn("ReadMetadata called more than once.");
+        spdlog::warn( "ReadMetadata called more than once." );
         m_reader->Seek( m_dataBlockStartOffset );
         return m_meshAsset;
     }
@@ -274,12 +274,12 @@ MeshAsset MeshAssetReader::Read( )
     m_meshAsset.Magic = m_reader->ReadUInt64( );
     if ( m_meshAsset.Magic != MeshAsset{ }.Magic )
     {
-        spdlog::critical("Invalid MeshAsset magic number.");
+        spdlog::critical( "Invalid MeshAsset magic number." );
     }
     m_meshAsset.Version = m_reader->ReadUInt32( );
     if ( m_meshAsset.Version > MeshAsset::Latest )
     {
-        spdlog::warn("MeshAsset version mismatch.");
+        spdlog::warn( "MeshAsset version mismatch." );
     }
     m_meshAsset.NumBytes = m_reader->ReadUInt64( );
     m_meshAsset.Uri      = AssetUri::Parse( m_reader->ReadString( ) );
@@ -354,7 +354,7 @@ const MeshAsset &MeshAssetReader::GetMetadata( ) const
     if ( !m_metadataRead )
     {
 
-        spdlog::critical("GetMetadata called before ReadMetadata successfully completed.");
+        spdlog::critical( "GetMetadata called before ReadMetadata successfully completed." );
     }
     return m_meshAsset;
 }
@@ -363,11 +363,11 @@ void MeshAssetReader::LoadStreamToMemory( const LoadToMemoryDesc &desc ) const
 {
     if ( !m_metadataRead )
     {
-        spdlog::critical("ReadMetadata must be called first.");
+        spdlog::critical( "ReadMetadata must be called first." );
     }
     if ( !desc.Memory )
     {
-        spdlog::critical("Destination memory array cannot be null.");
+        spdlog::critical( "Destination memory array cannot be null." );
         return;
     }
     if ( desc.Stream.NumBytes == 0 )
@@ -388,7 +388,7 @@ void MeshAssetReader::LoadStreamToMemory( const LoadToMemoryDesc &desc ) const
         const int        bytesActuallyRead = m_reader->Read( *desc.Memory, static_cast<uint32_t>( desc.DstMemoryOffset + bytesCopied ), static_cast<uint32_t>( bytesToRead ) );
         if ( bytesActuallyRead != static_cast<int>( bytesToRead ) )
         {
-            spdlog::critical("Failed to read expected chunk size from mesh asset stream into memory.");
+            spdlog::critical( "Failed to read expected chunk size from mesh asset stream into memory." );
         }
         bytesCopied += bytesActuallyRead;
     }
@@ -398,7 +398,7 @@ InteropArray<MeshVertex> MeshAssetReader::ReadVertices( const AssetDataStream &s
 {
     if ( !m_metadataRead )
     {
-        spdlog::critical("ReadMetadata must be called first.");
+        spdlog::critical( "ReadMetadata must be called first." );
     }
     const uint32_t vertexSize = VertexEntryNumBytes( );
     if ( vertexSize == 0 || stream.NumBytes == 0 )
@@ -407,7 +407,7 @@ InteropArray<MeshVertex> MeshAssetReader::ReadVertices( const AssetDataStream &s
     }
     if ( stream.NumBytes % vertexSize != 0 )
     {
-        spdlog::warn("Vertex stream size warning for stream with offset {}", stream.Offset);
+        spdlog::warn( "Vertex stream size warning for stream with offset {}", stream.Offset );
     }
     const uint64_t numVertices = stream.NumBytes / vertexSize;
 
@@ -424,7 +424,7 @@ InteropArray<uint16_t> MeshAssetReader::ReadIndices16( const AssetDataStream &st
 {
     if ( !m_metadataRead )
     {
-        spdlog::critical("ReadMetadata must be called first.");
+        spdlog::critical( "ReadMetadata must be called first." );
     }
 
     constexpr uint32_t indexSize = sizeof( uint16_t );
@@ -434,7 +434,7 @@ InteropArray<uint16_t> MeshAssetReader::ReadIndices16( const AssetDataStream &st
     }
     if ( stream.NumBytes % indexSize != 0 )
     {
-        spdlog::warn("Index stream size warning for stream with offset {}", stream.Offset);
+        spdlog::warn( "Index stream size warning for stream with offset {}", stream.Offset );
     }
     const uint64_t numIndices = stream.NumBytes / indexSize;
     m_reader->Seek( stream.Offset );
@@ -450,7 +450,7 @@ InteropArray<uint32_t> MeshAssetReader::ReadIndices32( const AssetDataStream &st
 {
     if ( !m_metadataRead )
     {
-        spdlog::critical("ReadMetadata must be called first.");
+        spdlog::critical( "ReadMetadata must be called first." );
     }
 
     constexpr uint32_t indexSize = sizeof( uint32_t );
@@ -460,7 +460,7 @@ InteropArray<uint32_t> MeshAssetReader::ReadIndices32( const AssetDataStream &st
     }
     if ( stream.NumBytes % indexSize != 0 )
     {
-        spdlog::warn("Index stream size warning for stream with offset {}", stream.Offset);
+        spdlog::warn( "Index stream size warning for stream with offset {}", stream.Offset );
     }
     const uint64_t numIndices = stream.NumBytes / indexSize;
     m_reader->Seek( stream.Offset );
@@ -476,7 +476,7 @@ InteropArray<MorphTargetDelta> MeshAssetReader::ReadMorphTargetDeltas( const Ass
 {
     if ( !m_metadataRead )
     {
-        spdlog::critical("ReadMetadata must be called first.");
+        spdlog::critical( "ReadMetadata must be called first." );
     }
 
     const uint32_t deltaSize = MorphDeltaEntryNumBytes( );
@@ -486,7 +486,7 @@ InteropArray<MorphTargetDelta> MeshAssetReader::ReadMorphTargetDeltas( const Ass
     }
     if ( stream.NumBytes % deltaSize != 0 )
     {
-        spdlog::warn("Morph delta stream size warning for stream with offset {}", stream.Offset);
+        spdlog::warn( "Morph delta stream size warning for stream with offset {}", stream.Offset );
     }
     const uint64_t numDeltas = stream.NumBytes / deltaSize;
 
@@ -503,7 +503,7 @@ InteropArray<Byte> MeshAssetReader::ReadConvexHullData( const AssetDataStream &s
 {
     if ( !m_metadataRead )
     {
-        spdlog::critical("ReadMetadata must be called first.");
+        spdlog::critical( "ReadMetadata must be called first." );
     }
     if ( stream.NumBytes == 0 )
     {

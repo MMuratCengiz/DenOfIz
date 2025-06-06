@@ -33,7 +33,7 @@ void ShaderAssetWriter::Write( const ShaderAsset &shaderAsset )
 {
     if ( m_finalized )
     {
-        spdlog::error("Cannot write to a finalized asset writer");
+        spdlog::error( "Cannot write to a finalized asset writer" );
         return;
     }
 

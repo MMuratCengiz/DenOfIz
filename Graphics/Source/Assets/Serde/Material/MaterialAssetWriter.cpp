@@ -26,7 +26,7 @@ MaterialAssetWriter::MaterialAssetWriter( const MaterialAssetWriterDesc &desc ) 
 {
     if ( !m_writer )
     {
-        spdlog::critical("BinaryWriter cannot be null for MaterialAssetWriter");
+        spdlog::critical( "BinaryWriter cannot be null for MaterialAssetWriter" );
     }
 }
 

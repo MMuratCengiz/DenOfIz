@@ -33,7 +33,7 @@ ClayTextCache::ClayTextCache( const ClayTextCacheDesc &desc ) : m_logicalDevice(
 {
     if ( m_logicalDevice == nullptr )
     {
-        spdlog::error("ClayText: LogicalDevice cannot be null");
+        spdlog::error( "ClayText: LogicalDevice cannot be null" );
         return;
     }
 
@@ -49,7 +49,7 @@ void ClayTextCache::AddFont( const uint16_t fontId, Font *font )
 {
     if ( font == nullptr )
     {
-        spdlog::error("ClayText::AddFont: Font cannot be null");
+        spdlog::error( "ClayText::AddFont: Font cannot be null" );
         return;
     }
 
@@ -208,7 +208,7 @@ void ClayTextCache::InitializeFontAtlas( ClayTextFontData *fontData )
     const auto *fontAsset = fontData->FontPtr->Asset( );
     if ( fontAsset == nullptr )
     {
-        spdlog::error("Font asset is null");
+        spdlog::error( "Font asset is null" );
         return;
     }
 
@@ -311,6 +311,6 @@ uint32_t ClayTextCache::RegisterTexture( ITextureResource *texture )
         }
     }
 
-    spdlog::error("ClayText: Exceeded maximum texture count");
+    spdlog::error( "ClayText: Exceeded maximum texture count" );
     return 0;
 }

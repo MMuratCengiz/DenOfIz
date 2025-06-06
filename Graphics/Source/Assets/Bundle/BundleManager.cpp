@@ -129,7 +129,7 @@ void BundleManager::AddAsset( Bundle *bundle, const AssetUri &path, AssetType ty
     {
         if ( m_mountedBundles.empty( ) )
         {
-            spdlog::error("Cannot add asset: no bundle provided and no mounted bundles available");
+            spdlog::error( "Cannot add asset: no bundle provided and no mounted bundles available" );
             return;
         }
         bundle = m_mountedBundles[ 0 ];
@@ -137,7 +137,7 @@ void BundleManager::AddAsset( Bundle *bundle, const AssetUri &path, AssetType ty
 
     if ( std::ranges::find( m_mountedBundles, bundle ) == m_mountedBundles.end( ) )
     {
-        spdlog::warn("Adding asset to a bundle that is not mounted in this manager");
+        spdlog::warn( "Adding asset to a bundle that is not mounted in this manager" );
     }
 
     bundle->AddAsset( path, type, data );

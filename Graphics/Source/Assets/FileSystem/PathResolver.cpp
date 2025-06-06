@@ -42,7 +42,7 @@ std::string PathResolver::ResolvePath( const std::string &path )
     }
 
     CFRelease( resourcesURL );
-    spdlog::warn("Unable to resolve path: {}", path);
+    spdlog::warn( "Unable to resolve path: {}", path );
     return "";
 #else
     return path;
@@ -71,7 +71,7 @@ std::string PathResolver::ResolveBundlePath( const std::string &bundlePath )
     }
 
     CFRelease( resourcesURL );
-    spdlog::warn("Unable to resolve bundle path: {}", bundlePath);
+    spdlog::warn( "Unable to resolve bundle path: {}", bundlePath );
     return "";
 #else
     return bundlePath;

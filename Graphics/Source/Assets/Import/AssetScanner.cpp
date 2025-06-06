@@ -58,23 +58,23 @@ void AssetScanner::Scan( const InteropString &directoryToScan, const InteropStri
 {
     if ( !FileIO::FileExists( directoryToScan ) )
     {
-        spdlog::error("Asset scanner root path does not exist: {}", directoryToScan.Get( ));
+        spdlog::error( "Asset scanner root path does not exist: {}", directoryToScan.Get( ) );
         return;
     }
     if ( !FileIO::FileExists( targetDirectory ) )
     {
-        spdlog::error("Asset scanner target directory does not exist: {}", targetDirectory.Get( ));
+        spdlog::error( "Asset scanner target directory does not exist: {}", targetDirectory.Get( ) );
         return;
     }
 
     const auto fsPath = std::filesystem::path( directoryToScan.Get( ) );
     if ( !std::filesystem::is_directory( fsPath ) )
     {
-        spdlog::error("Asset scanner root path is not a directory: {}", directoryToScan.Get( ));
+        spdlog::error( "Asset scanner root path is not a directory: {}", directoryToScan.Get( ) );
         return;
     }
 
-    spdlog::info("Scanning for assets in: {}", directoryToScan.Get( ));
+    spdlog::info( "Scanning for assets in: {}", directoryToScan.Get( ) );
     for ( const auto &entry : std::filesystem::recursive_directory_iterator( fsPath ) )
     {
         if ( !entry.is_regular_file( ) )
@@ -113,7 +113,7 @@ void AssetScanner::Scan( const InteropString &directoryToScan, const InteropStri
             IAssetImporter *importer = m_importers.GetElement( i );
             if ( importer->CanProcessFileExtension( fileExtension ) )
             {
-                spdlog::info("Found asset to process: {} with importer: {}", modifiedPath.Get( ), importer->GetImporterInfo( ).Name.Get( ));
+                spdlog::info( "Found asset to process: {} with importer: {}", modifiedPath.Get( ), importer->GetImporterInfo( ).Name.Get( ) );
 
                 ImportJobDesc jobDesc;
                 jobDesc.SourceFilePath  = modifiedPath;
@@ -125,11 +125,11 @@ void AssetScanner::Scan( const InteropString &directoryToScan, const InteropStri
 
                 if ( result.ResultCode != ImporterResultCode::Success )
                 {
-                    spdlog::error("Failed to import asset: {} Error: {}", modifiedPath.Get( ), result.ErrorMessage.Get( ));
+                    spdlog::error( "Failed to import asset: {} Error: {}", modifiedPath.Get( ), result.ErrorMessage.Get( ) );
                 }
                 else
                 {
-                    spdlog::info("Successfully imported asset: {} Created {} assets", modifiedPath.Get( ), result.CreatedAssets.NumElements( ));
+                    spdlog::info( "Successfully imported asset: {} Created {} assets", modifiedPath.Get( ), result.CreatedAssets.NumElements( ) );
                 }
                 break;
             }

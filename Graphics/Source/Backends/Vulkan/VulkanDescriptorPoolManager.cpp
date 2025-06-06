@@ -70,7 +70,7 @@ void VulkanDescriptorPoolManager::AllocateDescriptorSets( const VkDescriptorSetA
 {
     if ( allocateInfo.descriptorSetCount > m_maxSets )
     {
-        spdlog::error("Descriptor set count exceeds maximum set count");
+        spdlog::error( "Descriptor set count exceeds maximum set count" );
     }
 
     if ( m_currentPool->m_setsAllocated + allocateInfo.descriptorSetCount > m_currentPool->m_numSets )

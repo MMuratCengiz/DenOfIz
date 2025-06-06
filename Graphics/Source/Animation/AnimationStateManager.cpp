@@ -27,7 +27,7 @@ AnimationStateManager::AnimationStateManager( const AnimationStateManagerDesc &d
 {
     if ( !desc.Skeleton )
     {
-        spdlog::error("Skeleton is required for AnimationStateManager");
+        spdlog::error( "Skeleton is required for AnimationStateManager" );
         return;
     }
 
@@ -71,13 +71,13 @@ void AnimationStateManager::AddAnimation( const AnimationAsset &animationAsset )
 
         m_animations[ animName.Get( ) ] = std::move( state );
 
-        spdlog::info("Added animation ' {} ' with duration {} s", animName.Get( ), clip.Duration);
+        spdlog::info( "Added animation ' {} ' with duration {} s", animName.Get( ), clip.Duration );
     }
 
     if ( m_currentAnimation.NumChars( ) > 0 && !m_animations.empty( ) )
     {
         m_currentAnimation = InteropString( m_animations.begin( )->first.c_str( ) );
-        spdlog::info("Set default animation to ' {} '", m_currentAnimation.Get( ));
+        spdlog::info( "Set default animation to ' {} '", m_currentAnimation.Get( ) );
     }
 }
 
@@ -85,7 +85,7 @@ void AnimationStateManager::Play( const InteropString &animationName, const bool
 {
     if ( !HasAnimation( animationName ) )
     {
-        spdlog::error("Animation ' {} ' not found", animationName.Get( ));
+        spdlog::error( "Animation ' {} ' not found", animationName.Get( ) );
         return;
     }
 
@@ -101,14 +101,14 @@ void AnimationStateManager::Play( const InteropString &animationName, const bool
     newAnim.Playing     = true;
     newAnim.CurrentTime = 0.0f;
 
-    spdlog::info("Playing animation ' {} '{}", animationName.Get( ), ( loop ? " (looping)" : "" ));
+    spdlog::info( "Playing animation ' {} '{}", animationName.Get( ), ( loop ? " (looping)" : "" ) );
 }
 
 void AnimationStateManager::BlendTo( const InteropString &animationName, const float blendTime )
 {
     if ( !HasAnimation( animationName ) )
     {
-        spdlog::error("Animation ' {} ' not found", animationName.Get( ));
+        spdlog::error( "Animation ' {} ' not found", animationName.Get( ) );
         return;
     }
 
@@ -128,7 +128,7 @@ void AnimationStateManager::BlendTo( const InteropString &animationName, const f
     targetAnim.Playing     = true;
     targetAnim.CurrentTime = 0.0f;
 
-    spdlog::info("Blending from ' {} ' to ' {} ' over {} s", m_currentAnimation.Get( ), animationName.Get( ), blendTime);
+    spdlog::info( "Blending from ' {} ' to ' {} ' over {} s", m_currentAnimation.Get( ), animationName.Get( ), blendTime );
 }
 
 void AnimationStateManager::Stop( )
@@ -199,7 +199,7 @@ void AnimationStateManager::Update( const float deltaTime )
         const SamplingJobResult result = m_ozzAnimation->RunSamplingJob( samplingDesc );
         if ( !result.Success )
         {
-            spdlog::error("Failed to sample animation ' {} '", anim.Name.Get( ));
+            spdlog::error( "Failed to sample animation ' {} '", anim.Name.Get( ) );
         }
         m_modelTransforms = result.Transforms;
     }
@@ -268,7 +268,7 @@ void AnimationStateManager::UpdateBlending( const float deltaTime )
     const SamplingJobResult targetResult = m_ozzAnimation->RunSamplingJob( targetSamplingDesc );
     if ( !sourceResult.Success || !targetResult.Success )
     {
-        spdlog::error("Failed to sample animations for blending");
+        spdlog::error( "Failed to sample animations for blending" );
         return;
     }
 
@@ -294,7 +294,7 @@ void AnimationStateManager::UpdateBlending( const float deltaTime )
     const BlendingJobResult result = m_ozzAnimation->RunBlendingJob( blendingDesc );
     if ( !result.Success )
     {
-        spdlog::error("Failed to blend animations");
+        spdlog::error( "Failed to blend animations" );
     }
     m_modelTransforms = result.Transforms;
 }

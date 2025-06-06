@@ -52,7 +52,7 @@ void ResourceTracking::TrackBuffer( IBufferResource *buffer, const ResourceUsage
 {
     if ( m_bufferStates.contains( buffer ) )
     {
-        spdlog::warn("Buffer already tracked");
+        spdlog::warn( "Buffer already tracked" );
     }
 
     m_bufferStates[ buffer ].CurrentQueue = queueType;

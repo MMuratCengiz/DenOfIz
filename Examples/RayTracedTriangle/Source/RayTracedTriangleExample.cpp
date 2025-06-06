@@ -29,7 +29,7 @@ void RayTracedTriangleExample::Init( )
     CreateRayTracingPipeline( );
     CreateShaderBindingTable( );
 
-    m_time.OnEachSecond = []( const double fps ) { spdlog::warn("FPS: {}", fps); };
+    m_time.OnEachSecond = []( const double fps ) { spdlog::warn( "FPS: {}", fps ); };
 }
 
 void RayTracedTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPreference )

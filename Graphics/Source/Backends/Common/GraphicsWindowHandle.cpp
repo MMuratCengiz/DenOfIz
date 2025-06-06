@@ -31,11 +31,11 @@ struct GraphicsWindowHandle::Impl
     {
 		if ( SDL_WasInit( SDL_INIT_VIDEO ) == 0 )
 		{
-			spdlog::info("Initializing SDL");
-			if ( SDL_Init( SDL_INIT_VIDEO ) != 0 )
+            spdlog::info( "Initializing SDL" );
+            if ( SDL_Init( SDL_INIT_VIDEO ) != 0 )
 			{
-				spdlog::critical("Failed to initialize SDL: {}", SDL_GetError( ));
-			}
+                spdlog::critical( "Failed to initialize SDL: {}", SDL_GetError( ) );
+            }
 			atexit( SDL_Quit );
 		}
 	}
@@ -56,8 +56,8 @@ void GraphicsWindowHandle::CreateFromSDLWindowId( const uint32_t windowId ) cons
 	SDL_Window *window = SDL_GetWindowFromID( windowId );
 	if ( window == nullptr )
 	{
-		spdlog::critical("Failed to get window from SDL ID: {} - {}", windowId, SDL_GetError( ));
-	}
+        spdlog::critical( "Failed to get window from SDL ID: {} - {}", windowId, SDL_GetError( ) );
+    }
 	m_impl->m_sdlWindow = window;
 }
 

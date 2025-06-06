@@ -72,7 +72,7 @@ void TransparencyExample::Init( )
     XMStoreFloat4x4( &sphere3Matrix, sphere3Transform );
     m_sphereTransforms.push_back( sphere3Matrix );
 
-    m_time.OnEachSecond = []( const double fps ) { spdlog::warn("FPS: {}", fps); };
+    m_time.OnEachSecond = []( const double fps ) { spdlog::warn( "FPS: {}", fps ); };
 
     auto eye = XMVectorSet( 0.0f, 0.5f, -5.0f, 1.0f );
     m_camera->SetPosition( eye );

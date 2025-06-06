@@ -56,7 +56,7 @@ void DX12CommandList::BeginRendering( const RenderingDesc &renderingDesc )
         const auto &rtAttachment = renderingDesc.RTAttachments.GetElement( i );
         if ( rtAttachment.Resource == nullptr )
         {
-            spdlog::error("BeginRendering called with null render target attachment at index {}", i);
+            spdlog::error( "BeginRendering called with null render target attachment at index {}", i );
             return;
         }
         auto *pImageResource = dynamic_cast<DX12TextureResource *>( rtAttachment.Resource );
@@ -182,7 +182,7 @@ void DX12CommandList::BindViewport( const float x, const float y, const float wi
 {
     if ( width <= 0.0f || height <= 0.0f )
     {
-        spdlog::error("Invalid viewport dimensions: width= {} , height={}", width, height);
+        spdlog::error( "Invalid viewport dimensions: width= {} , height={}", width, height );
         return;
     }
 
@@ -194,7 +194,7 @@ void DX12CommandList::BindScissorRect( const float x, const float y, const float
 {
     if ( width <= 0.0f || height <= 0.0f )
     {
-        spdlog::error("Invalid scissor rect dimensions: width= {} , height={}", width, height);
+        spdlog::error( "Invalid scissor rect dimensions: width= {} , height={}", width, height );
         return;
     }
 
@@ -258,7 +258,7 @@ void DX12CommandList::BindResourceGroup( const uint32_t index, const D3D12_GPU_D
         }
         break;
     default:
-        spdlog::error("`BindResourceGroup` is an invalid function for queue type");
+        spdlog::error( "`BindResourceGroup` is an invalid function for queue type" );
         break;
     }
 }
@@ -315,7 +315,7 @@ void DX12CommandList::SetRootConstants( const DX12RootConstant &rootConstant ) c
         m_commandList->SetComputeRoot32BitConstants( rootConstant.Binding, rootConstant.NumBytes / 4, rootConstant.Data, 0 );
         break;
     default:
-        spdlog::error("`SetRootConstants` is an invalid function for queue type");
+        spdlog::error( "`SetRootConstants` is an invalid function for queue type" );
         break;
     }
 }
@@ -329,7 +329,7 @@ void DX12CommandList::DrawIndexed( const uint32_t indexCount, const uint32_t ins
 {
     if ( indexCount == 0 || instanceCount == 0 )
     {
-        spdlog::warn("Possible unintentional behavior, DrawIndexed called with zero count: indexCount= {} , instanceCount={}", indexCount, instanceCount);
+        spdlog::warn( "Possible unintentional behavior, DrawIndexed called with zero count: indexCount= {} , instanceCount={}", indexCount, instanceCount );
     }
 
     ProcessBindGroups( );
@@ -340,7 +340,7 @@ void DX12CommandList::Draw( const uint32_t vertexCount, const uint32_t instanceC
 {
     if ( vertexCount == 0 || instanceCount == 0 )
     {
-        spdlog::warn("Possible unintentional behavior, Draw called with zero count: vertexCount= {} , instanceCount={}", vertexCount, instanceCount);
+        spdlog::warn( "Possible unintentional behavior, Draw called with zero count: vertexCount= {} , instanceCount={}", vertexCount, instanceCount );
     }
 
     ProcessBindGroups( );
@@ -351,7 +351,7 @@ void DX12CommandList::Dispatch( const uint32_t groupCountX, const uint32_t group
 {
     if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
     {
-        spdlog::warn("Possible unintentional behavior, Dispatch called with zero group count: x= {} , y= {} , z={}", groupCountX, groupCountY, groupCountZ);
+        spdlog::warn( "Possible unintentional behavior, Dispatch called with zero group count: x= {} , y= {} , z={}", groupCountX, groupCountY, groupCountZ );
     }
 
     ProcessBindGroups( );
@@ -362,7 +362,7 @@ void DX12CommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t g
 {
     if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
     {
-        spdlog::warn("Possible unintentional behavior, DispatchMesh called with zero group count: x= {} , y= {} , z={}", groupCountX, groupCountY, groupCountZ);
+        spdlog::warn( "Possible unintentional behavior, DispatchMesh called with zero group count: x= {} , y= {} , z={}", groupCountX, groupCountY, groupCountZ );
     }
 
     ProcessBindGroups( );
@@ -379,7 +379,7 @@ void DX12CommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBufferRe
 
     if ( copyBufferRegionDesc.NumBytes == 0 )
     {
-        spdlog::warn("Possible unintentional behavior, CopyBufferRegion called with zero NumBytes");
+        spdlog::warn( "Possible unintentional behavior, CopyBufferRegion called with zero NumBytes" );
     }
 
     m_commandList->CopyBufferRegion( dstBuffer->Resource( ), copyBufferRegionDesc.DstOffset, srcBuffer->Resource( ), copyBufferRegionDesc.SrcOffset,
@@ -396,7 +396,8 @@ void DX12CommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyTextur
 
     if ( copyTextureRegionDesc.Width == 0 || copyTextureRegionDesc.Height == 0 )
     {
-        spdlog::warn("Possible unintentional behavior, CopyTextureRegion called with zero dimensions: Width= {} , Height={}", copyTextureRegionDesc.Width, copyTextureRegionDesc.Height);
+        spdlog::warn( "Possible unintentional behavior, CopyTextureRegion called with zero dimensions: Width= {} , Height={}", copyTextureRegionDesc.Width,
+                      copyTextureRegionDesc.Height );
     }
 
     D3D12_TEXTURE_COPY_LOCATION src = { };
@@ -528,7 +529,7 @@ void DX12CommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
     DZ_NOT_NULL( dispatchRaysDesc.ShaderBindingTable );
     if ( dispatchRaysDesc.Width == 0 || dispatchRaysDesc.Height == 0 || dispatchRaysDesc.Depth == 0 )
     {
-        spdlog::warn("DispatchRays called with zero dimensions: width= {} , height= {} , depth={}", dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth);
+        spdlog::warn( "DispatchRays called with zero dimensions: width= {} , height= {} , depth={}", dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth );
     }
 
     ProcessBindGroups( );
@@ -561,7 +562,7 @@ void DX12CommandList::SetRootSignature( ID3D12RootSignature *rootSignature )
         m_commandList->SetComputeRootSignature( rootSignature );
         break;
     default:
-        spdlog::error("SetRootSignature is an invalid function for queue type");
+        spdlog::error( "SetRootSignature is an invalid function for queue type" );
         break;
     }
 }

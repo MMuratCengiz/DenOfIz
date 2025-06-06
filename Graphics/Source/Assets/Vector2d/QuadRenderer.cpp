@@ -305,7 +305,7 @@ uint32_t QuadRenderer::RegisterTexture( ITextureResource *texture )
 {
     if ( m_freeTextureIndices.empty( ) )
     {
-        spdlog::warn("Maximum number of textures reached");
+        spdlog::warn( "Maximum number of textures reached" );
         return 0;
     }
 
@@ -324,7 +324,7 @@ void QuadRenderer::UnregisterTexture( const uint32_t textureIndex )
 {
     if ( textureIndex == 0 || textureIndex >= m_desc.MaxNumTextures )
     {
-        spdlog::warn("Invalid texture index: {}", textureIndex);
+        spdlog::warn( "Invalid texture index: {}", textureIndex );
         return;
     }
 
@@ -340,7 +340,7 @@ void QuadRenderer::AddQuad( const QuadDataDesc &desc )
 {
     if ( desc.QuadId >= m_desc.MaxNumQuads )
     {
-        spdlog::warn("Maximum number of quads reached");
+        spdlog::warn( "Maximum number of quads reached" );
         return;
     }
 
@@ -356,7 +356,7 @@ void QuadRenderer::UpdateQuad( const uint32_t frameIndex, const QuadDataDesc &de
 {
     if ( desc.QuadId >= m_desc.MaxNumQuads )
     {
-        spdlog::warn("Invalid quad ID: {} . QuadRendererDesc::MaxNumQuads is configured to be: {}", desc.QuadId, m_desc.MaxNumQuads);
+        spdlog::warn( "Invalid quad ID: {} . QuadRendererDesc::MaxNumQuads is configured to be: {}", desc.QuadId, m_desc.MaxNumQuads );
         return;
     }
 

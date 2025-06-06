@@ -49,7 +49,7 @@ BinaryReader::BinaryReader( const InteropString &filePath, const BinaryReaderDes
     stream->open( FileIO::GetResourcePath( filePath ).Get( ), std::ios::binary );
     if ( !stream->is_open( ) )
     {
-        spdlog::error("Failed to open file for reading: {}", filePath.Get( ));
+        spdlog::error( "Failed to open file for reading: {}", filePath.Get( ) );
         m_isStreamValid = false;
         return;
     }
@@ -167,7 +167,7 @@ uint16_t BinaryReader::ReadUInt16( )
     m_stream->read( reinterpret_cast<char *>( bytes ), 2 );
     if ( m_stream->gcount( ) != 2 )
     {
-        spdlog::error("Failed to read 2 bytes for uint16");
+        spdlog::error( "Failed to read 2 bytes for uint16" );
         return 0;
     }
 
@@ -190,7 +190,7 @@ uint32_t BinaryReader::ReadUInt32( )
 
     if ( m_stream->gcount( ) != 4 )
     {
-        spdlog::error("Failed to read 4 bytes for uint32");
+        spdlog::error( "Failed to read 4 bytes for uint32" );
         return 0;
     }
 
@@ -269,7 +269,7 @@ InteropString BinaryReader::ReadString( )
 
     if ( static_cast<uint32_t>( m_stream->gcount( ) ) != length )
     {
-        spdlog::error("Failed to read full string, expected {} bytes", length);
+        spdlog::error( "Failed to read full string, expected {} bytes", length );
     }
 
     return { buffer.data( ) };
@@ -409,7 +409,7 @@ bool BinaryReader::IsStreamValid( ) const
 {
     if ( !m_isStreamValid || m_stream->eof( ) )
     {
-        spdlog::error("Attempted to read string beyond end of file");
+        spdlog::error( "Attempted to read string beyond end of file" );
         return false;
     }
 
@@ -426,7 +426,7 @@ bool BinaryReader::TrackReadBytes( const uint32_t requested )
             m_readNumBytes += requested;
             return true;
         }
-        spdlog::error("Attempted to read beyond end of the allowed range");
+        spdlog::error( "Attempted to read beyond end of the allowed range" );
         return false;
     }
     return true;
@@ -484,7 +484,7 @@ void BinaryReader::WriteCppArrayToFile( const InteropString &targetFile ) const
     std::ofstream       outputFile( resourcePath.Get( ) );
     if ( !outputFile.is_open( ) )
     {
-        spdlog::error("Failed to open file for writing: {}", resourcePath.Get( ));
+        spdlog::error( "Failed to open file for writing: {}", resourcePath.Get( ) );
         Seek( currentPos );
         return;
     }

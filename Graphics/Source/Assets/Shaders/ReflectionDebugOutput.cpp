@@ -130,7 +130,7 @@ void ReflectionDebugOutput::DumpIRRootParameters( const std::vector<IRRootParame
         }
     }
 
-    spdlog::info("{}", output.str( ));
+    spdlog::info( "{}", output.str( ) );
 }
 
 
@@ -152,7 +152,7 @@ void ReflectionDebugOutput::DumpReflectionInfo( const ShaderReflectDesc &reflect
     }
 
     output << "\n\n";
-    spdlog::info("{}", output.str( ));
+    spdlog::info( "{}", output.str( ) );
 }
 
 void ReflectionDebugOutput::DumpResourceBindings( std::stringstream &output, const InteropArray<ResourceBindingDesc> &resourceBindings )

@@ -26,7 +26,7 @@ PhysicsAssetWriter::PhysicsAssetWriter( const PhysicsAssetWriterDesc &desc ) : m
 {
     if ( !m_writer )
     {
-        spdlog::critical("BinaryWriter cannot be null for PhysicsAssetWriter");
+        spdlog::critical( "BinaryWriter cannot be null for PhysicsAssetWriter" );
     }
 }
 

@@ -42,5 +42,5 @@ void IShaderBindingTable::PrintShaderBindingTableDebugData( const ShaderBindingT
     PrintRecordDebugData( ss, "MissShaderTable", table.MissShaders, table.MissNumBytes );
     PrintRecordDebugData( ss, "HitGroupShaderTable", table.HitGroups, table.HitGroupNumBytes );
 
-    spdlog::info("\n {}", ss.str( ));
+    spdlog::info( "\n {}", ss.str( ) );
 }

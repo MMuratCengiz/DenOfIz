@@ -66,11 +66,11 @@ ImporterResult ShaderImporter::Import( const ImportJobDesc &desc )
 
     if ( !desc.SourceFilePath.IsEmpty( ) )
     {
-        spdlog::warn("ShaderImporter needs all shader stages and all shader files, please use context.Options.ProgramDesc instead.");
+        spdlog::warn( "ShaderImporter needs all shader stages and all shader files, please use context.Options.ProgramDesc instead." );
     }
     if ( context.Desc.ProgramDesc.ShaderStages.NumElements( ) == 0 )
     {
-        spdlog::warn("No Shader Stages provided.");
+        spdlog::warn( "No Shader Stages provided." );
         return ImporterResult{ ImporterResultCode::InvalidParameters, "No Shader Stages provided." };
     }
 

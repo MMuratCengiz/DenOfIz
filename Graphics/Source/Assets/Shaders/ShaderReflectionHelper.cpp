@@ -109,7 +109,7 @@ void ShaderReflectionHelper::FillReflectionData( ID3D12ShaderReflection *shaderR
     }
     else
     {
-        spdlog::critical("No shader reflection object found, make sure no compilation errors occurred.");
+        spdlog::critical( "No shader reflection object found, make sure no compilation errors occurred." );
         return;
     }
 
@@ -164,7 +164,7 @@ void ShaderReflectionHelper::DxcCheckResult( const HRESULT hr )
 {
     if ( FAILED( hr ) )
     {
-        spdlog::error("DXC Error: {}", hr);
+        spdlog::error( "DXC Error: {}", hr );
     }
 }
 

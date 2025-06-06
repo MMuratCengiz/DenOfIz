@@ -71,14 +71,14 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
     hb_font_t           *hbFont    = m_font->GetHBFont( shapeDesc.FontSize );
     if ( !hbFont )
     {
-        spdlog::error("HarfBuzz font not available for size {}", shapeDesc.FontSize);
+        spdlog::error( "HarfBuzz font not available for size {}", shapeDesc.FontSize );
         return;
     }
 
     hb_buffer_t *buffer = hb_buffer_create( );
     if ( !hb_buffer_allocation_successful( buffer ) )
     {
-        spdlog::error("Failed to allocate HarfBuzz buffer");
+        spdlog::error( "Failed to allocate HarfBuzz buffer" );
         return;
     }
 
@@ -121,7 +121,7 @@ void TextLayout::ShapeText( const ShapeTextDesc &shapeDesc )
 
     if ( !glyphPos || glyphCount == 0 )
     {
-        spdlog::error("No glyph positions returned from HarfBuzz shaping");
+        spdlog::error( "No glyph positions returned from HarfBuzz shaping" );
         hb_buffer_destroy( buffer );
         return;
     }
@@ -175,7 +175,7 @@ void TextLayout::GenerateTextVertices( const GenerateTextVerticesDesc &generateD
 {
     if ( m_shapedGlyphs.empty( ) )
     {
-        spdlog::error("No glyphs to generate vertices for, call ShapeText first.");
+        spdlog::error( "No glyphs to generate vertices for, call ShapeText first." );
         return;
     }
 

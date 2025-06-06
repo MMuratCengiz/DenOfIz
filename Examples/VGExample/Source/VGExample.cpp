@@ -163,7 +163,7 @@ void VGExample::LoadSvgTextures( )
 
     if ( !FileIO::FileExists( m_folderAsset ) || !FileIO::FileExists( m_milkTeaAsset ) )
     {
-        spdlog::critical("SVG textures not found. Please run VGImporter to generate them.");
+        spdlog::critical( "SVG textures not found. Please run VGImporter to generate them." );
     }
 
     BatchResourceCopy batchCopy( m_logicalDevice );
@@ -335,7 +335,7 @@ void VGExample::ImportSvgIfNeeded( const InteropString &svgPath, const InteropSt
 {
     if ( !FileIO::FileExists( targetPath ) && FileIO::FileExists( svgPath ) )
     {
-        spdlog::warn("SVG texture is missing, running import for: {}", svgPath.Get( ));
+        spdlog::warn( "SVG texture is missing, running import for: {}", svgPath.Get( ) );
 
         ImportJobDesc importJobDesc;
         importJobDesc.SourceFilePath  = svgPath;
@@ -354,14 +354,14 @@ void VGExample::ImportSvgIfNeeded( const InteropString &svgPath, const InteropSt
         ImporterResult result = importer.Import( importJobDesc );
         if ( result.ResultCode != ImporterResultCode::Success )
         {
-            spdlog::critical("SVG import failed: {}", result.ErrorMessage.Get( ));
+            spdlog::critical( "SVG import failed: {}", result.ErrorMessage.Get( ) );
         }
         else
         {
             for ( size_t i = 0; i < result.CreatedAssets.NumElements( ); ++i )
             {
                 AssetUri uri = result.CreatedAssets.GetElement( i );
-                spdlog::info("Created SVG texture asset: {}", uri.Path.Get( ));
+                spdlog::info( "Created SVG texture asset: {}", uri.Path.Get( ) );
             }
         }
     }

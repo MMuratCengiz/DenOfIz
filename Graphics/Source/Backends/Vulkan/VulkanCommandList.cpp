@@ -72,7 +72,7 @@ void VulkanCommandList::BeginRendering( const RenderingDesc &renderingDesc )
         const auto &colorAttachment = renderingDesc.RTAttachments.GetElement( i );
         if ( colorAttachment.Resource == nullptr )
         {
-            spdlog::error("BeginRendering called with null render target attachment at index {}", i);
+            spdlog::error( "BeginRendering called with null render target attachment at index {}", i );
             return;
         }
         auto *vkColorAttachmentResource = dynamic_cast<VulkanTextureResource *>( colorAttachment.Resource );
@@ -182,7 +182,7 @@ void VulkanCommandList::BindViewport( const float offsetX, const float offsetY, 
 {
     if ( width <= 0.0f || height <= 0.0f )
     {
-        spdlog::error("Invalid viewport dimensions: width= {} , height={}", width, height);
+        spdlog::error( "Invalid viewport dimensions: width= {} , height={}", width, height );
         return;
     }
     m_viewport.x = offsetX;
@@ -201,7 +201,7 @@ void VulkanCommandList::BindScissorRect( const float offsetX, const float offset
 {
     if ( width <= 0.0f || height <= 0.0f )
     {
-        spdlog::error("Invalid scissor rect dimensions: width= {} , height={}", width, height);
+        spdlog::error( "Invalid scissor rect dimensions: width= {} , height={}", width, height );
         return;
     }
     m_scissorRect               = VkRect2D( );
@@ -234,7 +234,7 @@ void VulkanCommandList::CopyBufferRegion( const CopyBufferRegionDesc &copyBuffer
 
     if ( copyBufferRegionDesc.NumBytes == 0 )
     {
-        spdlog::warn("Possible unintentional behavior, CopyBufferRegion called with zero NumBytes");
+        spdlog::warn( "Possible unintentional behavior, CopyBufferRegion called with zero NumBytes" );
     }
 
     VkBufferCopy copyRegion{ };
@@ -255,7 +255,8 @@ void VulkanCommandList::CopyTextureRegion( const CopyTextureRegionDesc &copyText
 
     if ( copyTextureRegionDesc.Width == 0 || copyTextureRegionDesc.Height == 0 )
     {
-        spdlog::warn("Possible unintentional behavior, CopyTextureRegion called with zero dimensions: Width= {} , Height={}", copyTextureRegionDesc.Width, copyTextureRegionDesc.Height);
+        spdlog::warn( "Possible unintentional behavior, CopyTextureRegion called with zero dimensions: Width= {} , Height={}", copyTextureRegionDesc.Width,
+                      copyTextureRegionDesc.Height );
     }
 
     VkImageCopy copyRegion{ };
@@ -392,7 +393,7 @@ void VulkanCommandList::DrawIndexed( const uint32_t indexCount, const uint32_t i
 {
     if ( indexCount == 0 || instanceCount == 0 )
     {
-        spdlog::warn("Possible unintentional behavior, DrawIndexed called with zero count: indexCount= {} , instanceCount={}", indexCount, instanceCount);
+        spdlog::warn( "Possible unintentional behavior, DrawIndexed called with zero count: indexCount= {} , instanceCount={}", indexCount, instanceCount );
     }
     ProcessBindGroups( );
     vkCmdDrawIndexed( m_commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance );
@@ -402,7 +403,7 @@ void VulkanCommandList::Draw( const uint32_t vertexCount, const uint32_t instanc
 {
     if ( vertexCount == 0 || instanceCount == 0 )
     {
-        spdlog::warn("Possible unintentional behavior, Draw called with zero count: vertexCount= {} , instanceCount={}", vertexCount, instanceCount);
+        spdlog::warn( "Possible unintentional behavior, Draw called with zero count: vertexCount= {} , instanceCount={}", vertexCount, instanceCount );
     }
     ProcessBindGroups( );
     vkCmdDraw( m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance );
@@ -413,7 +414,7 @@ void VulkanCommandList::DispatchRays( const DispatchRaysDesc &dispatchRaysDesc )
     DZ_NOT_NULL( dispatchRaysDesc.ShaderBindingTable );
     if ( dispatchRaysDesc.Width == 0 || dispatchRaysDesc.Height == 0 || dispatchRaysDesc.Depth == 0 )
     {
-        spdlog::warn("DispatchRays called with zero dimensions: width= {} , height= {} , depth={}", dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth);
+        spdlog::warn( "DispatchRays called with zero dimensions: width= {} , height= {} , depth={}", dispatchRaysDesc.Width, dispatchRaysDesc.Height, dispatchRaysDesc.Depth );
     }
 
     ProcessBindGroups( );
@@ -428,7 +429,7 @@ void VulkanCommandList::Dispatch( const uint32_t groupCountX, const uint32_t gro
 {
     if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
     {
-        spdlog::warn("Possible unintentional behavior, Dispatch called with zero group count: x= {} , y= {} , z={}", groupCountX, groupCountY, groupCountZ);
+        spdlog::warn( "Possible unintentional behavior, Dispatch called with zero group count: x= {} , y= {} , z={}", groupCountX, groupCountY, groupCountZ );
     }
 
     ProcessBindGroups( );
@@ -439,7 +440,7 @@ void VulkanCommandList::DispatchMesh( const uint32_t groupCountX, const uint32_t
 {
     if ( groupCountX == 0 || groupCountY == 0 || groupCountZ == 0 )
     {
-        spdlog::warn("Possible unintentional behavior, DispatchMesh called with zero group count: x= {} , y= {} , z={}", groupCountX, groupCountY, groupCountZ);
+        spdlog::warn( "Possible unintentional behavior, DispatchMesh called with zero group count: x= {} , y= {} , z={}", groupCountX, groupCountY, groupCountZ );
     }
 
     ProcessBindGroups( );

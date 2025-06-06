@@ -52,7 +52,7 @@ void DX12LogicalDevice::CreateDevice( )
         }
         else
         {
-            spdlog::warn("Direct3D Debug Device is not available");
+            spdlog::warn( "Direct3D Debug Device is not available" );
         }
 
         if ( wil::com_ptr<IDXGIInfoQueue> dxgiInfoQueue; SUCCEEDED( DXGIGetDebugInterface1( 0, IID_PPV_ARGS( dxgiInfoQueue.put( ) ) ) ) )
@@ -168,7 +168,7 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
     if ( FAILED( m_context->D3DDevice->CheckFeatureSupport( D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof( shaderModel ) ) ) ||
          shaderModel.HighestShaderModel < D3D_SHADER_MODEL_6_3 )
     {
-        spdlog::critical("ERROR: Requires Shader Model 6.3 or better support.");
+        spdlog::critical( "ERROR: Requires Shader Model 6.3 or better support." );
         throw std::exception( "Requires Shader Model 6.3 or better support" );
     }
 
@@ -202,14 +202,14 @@ void DX12LogicalDevice::LoadPhysicalDevice( const PhysicalDevice &device )
                 {
                 case D3D12_MESSAGE_SEVERITY_ERROR:
                 case D3D12_MESSAGE_SEVERITY_CORRUPTION:
-                    spdlog::critical("{}", description);
+                    spdlog::critical( "{}", description );
                     break;
                 case D3D12_MESSAGE_SEVERITY_WARNING:
-                    spdlog::warn("{}", description);
+                    spdlog::warn( "{}", description );
                     break;
                 case D3D12_MESSAGE_SEVERITY_INFO:
                 case D3D12_MESSAGE_SEVERITY_MESSAGE:
-                    spdlog::info("{}", description);
+                    spdlog::info( "{}", description );
                     break;
                 }
             },

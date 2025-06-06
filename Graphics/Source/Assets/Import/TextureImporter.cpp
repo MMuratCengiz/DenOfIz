@@ -78,7 +78,7 @@ bool TextureImporter::ValidateFile( const InteropString &filePath ) const
 
 ImporterResult TextureImporter::Import( const ImportJobDesc &desc )
 {
-    spdlog::info("Starting texture import for file: {}", desc.SourceFilePath.Get( ));
+    spdlog::info( "Starting texture import for file: {}", desc.SourceFilePath.Get( ) );
 
     ImportContext context;
     context.SourceFilePath  = desc.SourceFilePath;
@@ -90,24 +90,24 @@ ImporterResult TextureImporter::Import( const ImportJobDesc &desc )
     {
         context.Result.ResultCode   = ImporterResultCode::FileNotFound;
         context.Result.ErrorMessage = InteropString( "Source file not found: " ).Append( context.SourceFilePath.Get( ) );
-        spdlog::error("{}", context.Result.ErrorMessage.Get( ));
+        spdlog::error( "{}", context.Result.ErrorMessage.Get( ) );
         return context.Result;
     }
 
     if ( !FileIO::FileExists( context.TargetDirectory ) )
     {
-        spdlog::info("Target directory does not exist, attempting to create: {}", context.TargetDirectory.Get( ));
+        spdlog::info( "Target directory does not exist, attempting to create: {}", context.TargetDirectory.Get( ) );
         if ( !FileIO::CreateDirectories( context.TargetDirectory ) )
         {
             context.Result.ResultCode   = ImporterResultCode::WriteFailed;
             context.Result.ErrorMessage = InteropString( "Failed to create target directory: " ).Append( context.TargetDirectory.Get( ) );
-            spdlog::error("{}", context.Result.ErrorMessage.Get( ));
+            spdlog::error( "{}", context.Result.ErrorMessage.Get( ) );
             return context.Result;
         }
     }
 
     context.Result.ResultCode = ImportTextureInternal( context );
-    spdlog::info("Texture import successful for: {}", context.SourceFilePath.Get( ));
+    spdlog::info( "Texture import successful for: {}", context.SourceFilePath.Get( ) );
     return context.Result;
 }
 
@@ -165,5 +165,5 @@ void TextureImporter::WriteTextureAsset( const ImportContext &context, const Tex
 void TextureImporter::RegisterCreatedAsset( ImportContext &context, const AssetUri &assetUri )
 {
     context.Result.CreatedAssets.AddElement( assetUri );
-    spdlog::info("Created texture asset: {}", assetUri.Path.Get( ));
+    spdlog::info( "Created texture asset: {}", assetUri.Path.Get( ) );
 }

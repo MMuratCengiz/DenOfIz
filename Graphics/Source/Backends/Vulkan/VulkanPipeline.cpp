@@ -147,7 +147,7 @@ void VulkanPipeline::CreateRayTracingPipeline( )
         case ShaderStage::Miss:
             break;
         default:
-            spdlog::error("Invalid shader stage for ray tracing pipeline");
+            spdlog::error( "Invalid shader stage for ray tracing pipeline" );
             continue;
         }
 
@@ -243,7 +243,7 @@ void *VulkanPipeline::GetShaderIdentifier( const std::string &exportName )
     const auto it = m_shaderIdentifierOffsets.find( exportName );
     if ( it == m_shaderIdentifierOffsets.end( ) )
     {
-        spdlog::error("Could not find shader identifier for export {}", exportName);
+        spdlog::error( "Could not find shader identifier for export {}", exportName );
         return nullptr;
     }
 
@@ -354,7 +354,7 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigureMeshPipeli
         // Only include task, mesh, and pixel/fragment shaders for mesh pipeline
         if ( compiledShader->Stage != ShaderStage::Task && compiledShader->Stage != ShaderStage::Mesh && compiledShader->Stage != ShaderStage::Pixel )
         {
-            spdlog::warn("Skipping non-mesh shader stage in mesh pipeline: {}", static_cast<int>( compiledShader->Stage ));
+            spdlog::warn( "Skipping non-mesh shader stage in mesh pipeline: {}", static_cast<int>( compiledShader->Stage ) );
             continue;
         }
 

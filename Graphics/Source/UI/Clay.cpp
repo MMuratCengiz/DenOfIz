@@ -202,13 +202,13 @@ Clay::Clay( const ClayDesc &desc ) : m_impl( std::make_unique<Impl>( ) )
 {
     if ( desc.LogicalDevice == nullptr )
     {
-        spdlog::error("Clay::Clay Logical device is null");
+        spdlog::error( "Clay::Clay Logical device is null" );
         return;
     }
 
     if ( desc.Width == 0 || desc.Height == 0 )
     {
-        spdlog::error("Clay::Clay invalid dimensions provided: {} x{}", desc.Width, desc.Height);
+        spdlog::error( "Clay::Clay invalid dimensions provided: {} x{}", desc.Width, desc.Height );
         return;
     }
 
