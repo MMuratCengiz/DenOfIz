@@ -64,7 +64,7 @@ function(denofiz_copy_runtime_dependencies target)
         )
     elseif(APPLE)
         set(RUNTIME_DEPS
-            "${DENOFIZ_RUNTIME_DIR}/DenOfIzGraphics.dylib"
+            "${DENOFIZ_RUNTIME_DIR}/libDenOfIzGraphics.dylib"
             "${DENOFIZ_RUNTIME_DIR}/libdxcompiler.dylib"
             "${DENOFIZ_RUNTIME_DIR}/libmetalirconverter.dylib"
         )
