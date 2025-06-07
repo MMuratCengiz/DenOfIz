@@ -4,6 +4,7 @@ using System.Diagnostics;
 
 public class Config
 {
+    public string OutputDir { get; }
     public string InstallLocation { get; }
     public string LibraryDir { get; }
     public string LibraryName { get; }
@@ -64,6 +65,7 @@ public class Config
             throw new Exception("Unsupported OS");
         }
         
+        OutputDir = Path.Combine(gitRoot, "Bindings", "CppSharp", "Out", "Code");
         Includes = Path.Combine(InstallLocation, "include");
     }
 }

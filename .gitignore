@@ -20,3 +20,5 @@ out/
 .cache
 .DS_Store
 **/.claude/settings.local.json
+
+Bindings/CppSharp/Out
