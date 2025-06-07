@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzGraphics/Backends/Interface/RayTracing/IShaderBindingTable.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include <sstream>
 
 using namespace DenOfIz;
 
