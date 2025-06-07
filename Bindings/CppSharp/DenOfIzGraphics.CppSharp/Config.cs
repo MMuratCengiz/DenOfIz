@@ -5,7 +5,7 @@ using System.Diagnostics;
 public class Config
 {
     public string InstallLocation { get; }
-    public string LibraryFile { get; }
+    public string LibraryDir { get; }
     public string LibraryName { get; }
     public string Includes { get; }
 
@@ -24,7 +24,7 @@ public class Config
         };
 
         process.Start();
-        var gitRoot = process.StandardOutput.ReadToEnd().Trim();
+        var gitRoot = Path.GetFullPath(process.StandardOutput.ReadToEnd().Trim());
         process.WaitForExit();
 
         var installLocation = Path.Combine(gitRoot, "install", "DenOfIz");
@@ -43,20 +43,20 @@ public class Config
 
         if (OperatingSystem.IsWindows())
         {
-            InstallLocation = Path.Combine(installLocation, osDirectories["windows"], "bin");
-            LibraryFile = Path.Combine(InstallLocation, osLibraries["windows"]);
+            InstallLocation = Path.Combine(installLocation, osDirectories["windows"]);
+            LibraryDir = Path.Combine(InstallLocation, "bin");
             LibraryName = osLibraries["windows"];
         }
         else if (OperatingSystem.IsMacOS())
         {
-            InstallLocation = Path.Combine(installLocation, osDirectories["osx"], "bin");
-            LibraryFile = Path.Combine(InstallLocation, osLibraries["osx"]);
+            InstallLocation = Path.Combine(installLocation, osDirectories["osx"]);
+            LibraryDir = Path.Combine(InstallLocation, "lib");
             LibraryName = osLibraries["osx"];
         }
         else if (OperatingSystem.IsLinux())
         {
-            InstallLocation = Path.Combine(installLocation, osDirectories["linux"], "bin");
-            LibraryFile = Path.Combine(InstallLocation, osLibraries["linux"]);
+            InstallLocation = Path.Combine(installLocation, osDirectories["linux"]);
+            LibraryDir = Path.Combine(InstallLocation, "lib");
             LibraryName = osLibraries["linux"];
         }
         else
@@ -64,6 +64,6 @@ public class Config
             throw new Exception("Unsupported OS");
         }
         
-        Includes = Path.Combine(installLocation, "include");
+        Includes = Path.Combine(InstallLocation, "include");
     }
 }

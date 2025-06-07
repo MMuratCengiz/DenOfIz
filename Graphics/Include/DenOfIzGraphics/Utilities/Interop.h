@@ -20,9 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <cctype>
 #include <cstring>
-#include <iterator>
-#include <stdexcept>
-#include <string>
+#include <iostream>
 
 #ifdef _WIN32
 #ifdef DZ_GRAPHICS_EXPORTS
@@ -524,7 +522,9 @@ namespace DenOfIz
         {
             if ( index >= m_numElements )
             {
-                throw std::out_of_range( "Index out of bounds: " + std::to_string( index ) + " >= " + std::to_string( m_numElements ) );
+                // Temporarily replace std::throw
+                std::cerr << "Index out of bounds: " << index << " >= " << m_numElements << std::endl;
+                std::exit( -2 );
             }
         }
     };

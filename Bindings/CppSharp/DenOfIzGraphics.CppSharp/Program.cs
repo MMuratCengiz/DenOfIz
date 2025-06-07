@@ -3,4 +3,4 @@
 
 using CppSharp;
 
-var library = new DenOfIzGraphicsLibrary(new Config());
+ConsoleDriver.Run(new DenOfIzGraphicsLibrary(new Config()));

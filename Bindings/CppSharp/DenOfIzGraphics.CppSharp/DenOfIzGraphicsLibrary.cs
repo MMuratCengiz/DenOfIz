@@ -16,9 +16,9 @@ public class DenOfIzGraphicsLibrary(Config config) : ILibrary
         
         var module = options.AddModule("DenOfIzGraphics");
         module.IncludeDirs.Add(config.Includes);
-        module.LibraryDirs.Add(config.InstallLocation);
+        module.LibraryDirs.Add(config.LibraryDir);
         module.Libraries.Add(config.LibraryName);
-        module.Headers.Add("DenOfIzGraphics.h");
+        module.Headers.Add("DenOfIzGraphics/DenOfIzGraphics.h");
     }
 
     public void Preprocess(Driver driver, ASTContext ctx)
