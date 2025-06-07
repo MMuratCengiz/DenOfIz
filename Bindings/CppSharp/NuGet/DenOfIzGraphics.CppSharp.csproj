@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<AssemblyName>DenOfIzGraphics.CppSharp</AssemblyName>
+		<RootNamespace>DenOfIzGraphics</RootNamespace>
+		<LangVersion>8.0</LangVersion>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="src_gen\*.cs" />
+		
+		<Compile Include="src\DenOfIzRuntime.cs" />
+		<Compile Include="src\NativeLibraryLoader.cs" />
+		<Compile Include="src\StdDelegates.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+		<PackageReference Include="CppSharp.Runtime" Version="1.1.5.3168" />
+	</ItemGroup>
+
+</Project>

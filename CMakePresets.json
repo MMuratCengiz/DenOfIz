@@ -184,7 +184,8 @@
         "SWIG_CSHARP": "OFF",
         "SWIG_JAVA": "OFF",
         "CMAKE_BUILD_TYPE": "Release",
-        "DZ_INSTALL": "ON"
+        "DZ_INSTALL": "ON",
+        "BUILD_BINDINGS_CSHARP": "ON"
       }
     },
     {

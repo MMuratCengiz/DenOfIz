@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+	<metadata>
+		<id>DenOfIzGraphics.CppSharp</id>
+		<version>1.0.0</version>
+		<title>DenOfIzGraphics CppSharp Bindings</title>
+		<authors>DenOfIz</authors>
+		<owners>DenOfIz</owners>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<license type="expression">MIT</license>
+		<projectUrl>https://github.com/DenOfIz/DenOfIz</projectUrl>
+		<description>CppSharp-generated C# bindings for DenOfIzGraphics, a cross-platform graphics library.</description>
+		<releaseNotes>Initial release of CppSharp bindings.</releaseNotes>
+		<copyright>Copyright (c) 2025 DenOfIz</copyright>
+		<tags>graphics rendering directx12 metal vulkan cppsharp</tags>
+		<dependencies>
+			<group targetFramework=".NETStandard2.0">
+				<dependency id="CppSharp.Runtime" version="1.1.5.3168" />
+			</group>
+		</dependencies>
+	</metadata>
+	<files>
+		<file src="bin\Release\netstandard2.0\DenOfIzGraphics.CppSharp.dll" target="lib\netstandard2.0\" />
+		
+		<file src="runtimes\**\*" target="runtimes\" />
+		<file src="build\DenOfIzGraphics.CppSharp.targets" target="build\" />
+		
+		<file src="src\*.cs" target="contentFiles\cs\netstandard2.0\" />
+		<file src="src_gen\*.cs" target="contentFiles\cs\netstandard2.0\Generated\" />
+	</files>
+</package>

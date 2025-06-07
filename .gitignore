@@ -21,4 +21,8 @@ out/
 .DS_Store
 **/.claude/settings.local.json
 
-Bindings/CppSharp/Out
+Bindings/CppSharp/Out/Project/
+Bindings/CppSharp/Out/Code/*-symbols.cpp
+Bindings/CppSharp/**/*.user
+Bindings/CppSharp/**/*.nupkg
+Bindings/CppSharp/**/*.snupkg
