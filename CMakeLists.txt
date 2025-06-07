@@ -21,6 +21,7 @@ option(CRT_LINKAGE_STATIC "Link MSVC runtime statically" 1)
 option(BUILD_TESTS OFF)
 option(BUILD_EXAMPLES OFF)
 option(BUILD_SHARED_LIBS OFF)
+option(BUILD_TOOLS OFF)
 option(SWIG_CSHARP "Build DenOfIzGraphics csharp bindings" OFF)
 
 set(Boost_NO_WARN_NEW_VERSIONS 1)

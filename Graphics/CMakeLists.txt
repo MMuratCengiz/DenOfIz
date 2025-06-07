@@ -283,6 +283,6 @@ if (BUILD_TESTS)
     add_subdirectory(Tests)
 endif ()
 
-if (NOT CMAKE_CROSSCOMPILING)
+if (BUILD_TOOLS)
     add_subdirectory(Tools)
 endif ()
