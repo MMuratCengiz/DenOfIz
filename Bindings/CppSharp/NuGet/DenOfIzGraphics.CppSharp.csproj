@@ -15,7 +15,6 @@
 		
 		<Compile Include="src\DenOfIzRuntime.cs" />
 		<Compile Include="src\NativeLibraryLoader.cs" />
-		<Compile Include="src\StdDelegates.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

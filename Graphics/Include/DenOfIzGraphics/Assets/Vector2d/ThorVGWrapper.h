@@ -270,7 +270,7 @@ namespace DenOfIz
         DZ_API void Load( const InteropString &path ) const;
         DZ_API void Load( const InteropArray<Byte> &data, const InteropString &mimeType = nullptr, bool copy = true ) const;
         DZ_API void Load( uint32_t *data, uint32_t w, uint32_t h, bool premultiplied = true ) const;
-        DZ_API void Size( float w, float h ) const;
+        DZ_API void SetSize( float w, float h ) const;
 
         DZ_API [[nodiscard]] ThorVGSize GetSize( ) const;
 

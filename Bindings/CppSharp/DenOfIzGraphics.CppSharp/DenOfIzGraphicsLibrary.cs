@@ -20,18 +20,17 @@ public class DenOfIzGraphicsLibrary(Config config) : ILibrary
             parserOptions.SetupMSVC(VisualStudioVersion.VS2022);
             parserOptions.AddDefines("_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH");
         }
-        
+
         var options = driver.Options;
         options.GeneratorKind = GeneratorKind.CSharp;
         options.OutputDir = config.OutputDir;
 
         var module = options.AddModule("DenOfIzGraphics");
+        module.OutputNamespace = "";
         module.IncludeDirs.Add(config.Includes);
         module.LibraryDirs.Add(config.LibraryDir);
         module.Libraries.Add(config.LibraryName);
         module.Headers.Add("DenOfIzGraphics/DenOfIzGraphics.h");
-        
-        module.OutputNamespace = "DenOfIz";
     }
 
     public void Preprocess(Driver driver, ASTContext ctx)
@@ -46,6 +45,9 @@ public class DenOfIzGraphicsLibrary(Config config) : ILibrary
     {
         driver.Context.TranslationUnitPasses.RenameDeclsUpperCase(RenameTargets.Any);
         driver.Context.TranslationUnitPasses.AddPass(new FunctionToInstanceMethodPass());
+        driver.Context.TranslationUnitPasses.AddPass(new MoveFunctionToClassPass());
         driver.Context.TranslationUnitPasses.AddPass(new FixDefaultParamValuesOfOverridesPass());
+        driver.Context.TranslationUnitPasses.AddPass(new DelegatesPass());
+        driver.Context.TranslationUnitPasses.AddPass(new StripUnusedSystemTypesPass());
     }
 }

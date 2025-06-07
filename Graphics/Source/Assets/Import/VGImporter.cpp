@@ -127,7 +127,7 @@ ImporterResultCode VGImporter::ImportVGInternal( ImportContext &context )
         thorPicture.Load( context.SourceFilePath.Get( ) );
         if ( context.Desc.RenderWidth != 0 && context.Desc.RenderHeight != 0 )
         {
-            thorPicture.Size( context.Desc.RenderWidth, context.Desc.RenderHeight );
+            thorPicture.SetSize( context.Desc.RenderWidth, context.Desc.RenderHeight );
         }
 
         ThorVGCanvasDesc canvasDesc;

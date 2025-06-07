@@ -23,10 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    class DZ_API OzzContext
+    struct DZ_API OzzContext
     {
-        OzzContext( ) = default;
-        friend class OzzAnimation;
     };
 
     struct DZ_API SamplingJobResult

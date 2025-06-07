@@ -470,7 +470,7 @@ namespace DenOfIz
         ThorVGCheckResult( m_picture->load( data, w, h, premultiplied ) );
     }
 
-    void ThorVGPicture::Size( const float w, const float h ) const
+    void ThorVGPicture::SetSize( const float w, const float h ) const
     {
         ThorVGCheckResult( m_picture->size( w, h ) );
     }
