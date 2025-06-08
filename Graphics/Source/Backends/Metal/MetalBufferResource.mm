@@ -145,7 +145,7 @@ void MetalBufferResource::WriteData( const InteropArray<Byte> &data, uint32_t bu
     return m_mappedMemory;
 }
 
-[[nodiscard]] DenOfIz::BitSet<ResourceUsage> MetalBufferResource::InitialState( ) const
+[[nodiscard]] uint32_t MetalBufferResource::InitialState( ) const
 {
     // Doesn't matter much for Metal
     return m_desc.InitialUsage;

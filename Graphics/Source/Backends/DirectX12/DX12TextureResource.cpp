@@ -65,18 +65,18 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
     D3D12MA::ALLOCATION_DESC allocationDesc = { };
     allocationDesc.HeapType                 = D3D12_HEAP_TYPE_DEFAULT;
 
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::RWTexture )
     {
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
 
     D3D12_RESOURCE_STATES initialState = DX12EnumConverter::ConvertResourceUsage( m_currentUsage );
 
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RenderTarget ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::RenderTarget )
     {
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     }
-    else if ( m_desc.Descriptor.IsSet( ResourceDescriptor::DepthStencil ) )
+    else if ( m_desc.Descriptor & ResourceDescriptor::DepthStencil )
     {
         resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     }
@@ -86,20 +86,20 @@ DX12TextureResource::DX12TextureResource( DX12Context *context, const TextureDes
     D3D12_CLEAR_VALUE clearValue = { };
     clearValue.Format            = resourceDesc.Format;
 
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RenderTarget ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::RenderTarget )
     {
         clearValue.Color[ 0 ] = 0.0f;
         clearValue.Color[ 1 ] = 0.0f;
         clearValue.Color[ 2 ] = 0.0f;
         clearValue.Color[ 3 ] = 1.0f;
     }
-    else if ( m_desc.Descriptor.IsSet( ResourceDescriptor::DepthStencil ) )
+    else if ( m_desc.Descriptor & ResourceDescriptor::DepthStencil )
     {
         clearValue.DepthStencil.Depth   = 1.0f;
         clearValue.DepthStencil.Stencil = 0.0f;
     }
 
-    if ( m_desc.Descriptor.Any( { ResourceDescriptor::DepthStencil, ResourceDescriptor::RenderTarget } ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::DepthStencil || m_desc.Descriptor & ResourceDescriptor::RenderTarget )
     {
         HRESULT hr = m_context->DX12MemoryAllocator->CreateResource( &allocationDesc, &resourceDesc, initialState, &clearValue, &m_allocation, IID_PPV_ARGS( &m_resource ) );
         DX_CHECK_RESULT( hr );
@@ -133,13 +133,13 @@ DX12TextureResource::~DX12TextureResource( )
     }
 }
 
-void DX12TextureResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle )
+void DX12TextureResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle ) const
 {
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::Texture ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::Texture )
     {
         CreateTextureSrv( cpuHandle );
     }
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::RWTexture )
     {
         CreateTextureUav( cpuHandle );
     }
@@ -201,7 +201,7 @@ const D3D12_CPU_DESCRIPTOR_HANDLE &DX12TextureResource::GetOrCreateDsvHandle( )
         return m_dsvHandle;
     }
 
-    m_dsvHandle = m_context->DsvDescriptorHeap->GetNextHandle( 1 ).Cpu;
+    m_dsvHandle                           = m_context->DsvDescriptorHeap->GetNextHandle( 1 ).Cpu;
     D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = { };
     dsvDesc.Format                        = DX12EnumConverter::ConvertFormat( m_desc.Format );
 
@@ -381,7 +381,7 @@ ID3D12Resource *DX12TextureResource::Resource( ) const
     return m_resource;
 }
 
-BitSet<ResourceUsage> DX12TextureResource::InitialState( ) const
+uint32_t DX12TextureResource::InitialState( ) const
 {
     return m_currentUsage;
 }

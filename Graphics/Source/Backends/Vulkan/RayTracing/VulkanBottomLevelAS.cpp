@@ -36,11 +36,11 @@ VulkanBottomLevelAS::VulkanBottomLevelAS( VulkanContext *context, const BottomLe
         const ASGeometryDesc              &geometry   = desc.Geometries.GetElement( i );
         VkAccelerationStructureGeometryKHR vkGeometry = { };
         vkGeometry.sType                              = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-        if ( geometry.Flags.IsSet( GeometryFlags::Opaque ) )
+        if ( geometry.Flags & GeometryFlags::Opaque )
         {
             vkGeometry.flags |= VK_GEOMETRY_OPAQUE_BIT_KHR;
         }
-        if ( geometry.Flags.IsSet( GeometryFlags::NoDuplicateAnyHitInvocation ) )
+        if ( geometry.Flags & GeometryFlags::NoDuplicateAnyHitInvocation )
         {
             vkGeometry.flags |= VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR;
         }

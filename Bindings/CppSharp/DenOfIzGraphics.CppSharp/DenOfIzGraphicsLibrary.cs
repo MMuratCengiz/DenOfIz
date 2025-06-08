@@ -35,6 +35,8 @@ public class DenOfIzGraphicsLibrary(Config config) : ILibrary
 
     public void Preprocess(Driver driver, ASTContext ctx)
     {
+        // Add type map for ByteArray if needed
+        // This is where we could add custom handling for ByteArray marshaling
     }
 
     public void Postprocess(Driver driver, ASTContext ctx)
@@ -48,6 +50,7 @@ public class DenOfIzGraphicsLibrary(Config config) : ILibrary
         driver.Context.TranslationUnitPasses.AddPass(new MoveFunctionToClassPass());
         driver.Context.TranslationUnitPasses.AddPass(new FixDefaultParamValuesOfOverridesPass());
         driver.Context.TranslationUnitPasses.AddPass(new DelegatesPass());
+        driver.Context.TranslationUnitPasses.AddPass(new HandleDefaultParamValuesPass());
         driver.Context.TranslationUnitPasses.AddPass(new StripUnusedSystemTypesPass());
     }
 }

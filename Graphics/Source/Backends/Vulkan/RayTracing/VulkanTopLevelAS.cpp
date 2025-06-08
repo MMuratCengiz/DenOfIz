@@ -56,7 +56,7 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
 
     BufferDesc instanceBufferDesc = { };
     instanceBufferDesc.NumBytes   = desc.Instances.NumElements( ) * sizeof( VkAccelerationStructureInstanceKHR );
-    instanceBufferDesc.Descriptor = BitSet( ResourceDescriptor::RWBuffer );
+    instanceBufferDesc.Descriptor = ResourceDescriptor::RWBuffer;
     instanceBufferDesc.Usages     = ResourceUsage::AccelerationStructureGeometry;
     instanceBufferDesc.HeapType   = HeapType::CPU_GPU;
     m_instanceBuffer              = std::make_unique<VulkanBufferResource>( m_context, instanceBufferDesc );
@@ -88,7 +88,7 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
     // Create acceleration structure buffer
     BufferDesc bufferDesc = { };
     bufferDesc.NumBytes   = sizeInfo.accelerationStructureSize;
-    bufferDesc.Descriptor = BitSet( ResourceDescriptor::RWBuffer ) | ResourceDescriptor::AccelerationStructure;
+    bufferDesc.Descriptor = ResourceDescriptor::RWBuffer | ResourceDescriptor::AccelerationStructure;
     bufferDesc.HeapType   = HeapType::GPU;
     m_buffer              = std::make_unique<VulkanBufferResource>( m_context, bufferDesc );
 

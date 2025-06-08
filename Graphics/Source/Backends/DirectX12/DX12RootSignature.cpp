@@ -207,7 +207,7 @@ void DX12RootSignature::AddResourceBinding( const ResourceBindingDesc &binding )
      * - Shader visibilities are tracked in a hash set to determine the visibility of the descriptor table. Note since all bindings could use the same shader visibility, we cannot
      * simply check for size.
      */
-    if ( binding.Descriptor.IsSet( ResourceDescriptor::Sampler ) )
+    if ( binding.Descriptor & ResourceDescriptor::Sampler )
     {
         spaceDesc.SamplerRanges.push_back( descriptorRange );
         spaceOrder.ResourceOffsetMap[ slot.Key( ) ] = spaceOrder.SamplerCount++;

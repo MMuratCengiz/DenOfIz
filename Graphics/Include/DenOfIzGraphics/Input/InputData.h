@@ -18,33 +18,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Utilities/BitSet.h"
 #include "DenOfIzGraphics/Utilities/Engine.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 
 // A full map of SDL2
 namespace DenOfIz
 {
-    enum class DZ_API KeyMod
+    namespace KeyMod
     {
-        None     = 1 << 0,
-        LShift   = 1 << 1,
-        RShift   = 1 << 2,
-        LCtrl    = 1 << 3,
-        RCtrl    = 1 << 4,
-        LAlt     = 1 << 5,
-        RAlt     = 1 << 6,
-        LGui     = 1 << 7,
-        RGui     = 1 << 8,
-        NumLock  = 1 << 9,
-        CapsLock = 1 << 10,
-        AltGr    = 1 << 11,
-        Shift    = 1 << 12,
-        Ctrl     = 1 << 13,
-        Alt      = 1 << 14,
-        Gui      = 1 << 15
-    };
-    template class DZ_API BitSet<KeyMod>;
+        DZ_API constexpr uint32_t None     = 1 << 0;
+        DZ_API constexpr uint32_t LShift   = 1 << 1;
+        DZ_API constexpr uint32_t RShift   = 1 << 2;
+        DZ_API constexpr uint32_t LCtrl    = 1 << 3;
+        DZ_API constexpr uint32_t RCtrl    = 1 << 4;
+        DZ_API constexpr uint32_t LAlt     = 1 << 5;
+        DZ_API constexpr uint32_t RAlt     = 1 << 6;
+        DZ_API constexpr uint32_t LGui     = 1 << 7;
+        DZ_API constexpr uint32_t RGui     = 1 << 8;
+        DZ_API constexpr uint32_t NumLock  = 1 << 9;
+        DZ_API constexpr uint32_t CapsLock = 1 << 10;
+        DZ_API constexpr uint32_t AltGr    = 1 << 11;
+        DZ_API constexpr uint32_t Shift    = 1 << 12;
+        DZ_API constexpr uint32_t Ctrl     = 1 << 13;
+        DZ_API constexpr uint32_t Alt      = 1 << 14;
+        DZ_API constexpr uint32_t Gui      = 1 << 15;
+    } // namespace KeyMod
 
     enum class DZ_API KeyCode
     {

@@ -142,7 +142,7 @@ void QuadRenderer::Initialize( )
 
     BufferDesc instanceBufferDesc{ };
     instanceBufferDesc.NumBytes                  = m_desc.NumFrames * m_desc.MaxNumQuads * sizeof( QuadInstance );
-    instanceBufferDesc.Descriptor                = BitSet( ResourceDescriptor::StructuredBuffer );
+    instanceBufferDesc.Descriptor                = ResourceDescriptor::StructuredBuffer;
     instanceBufferDesc.Usages                    = ResourceUsage::ShaderResource;
     instanceBufferDesc.HeapType                  = HeapType::CPU_GPU;
     instanceBufferDesc.DebugName                 = InteropString( "Quad Renderer Instance Buffer" );
@@ -154,7 +154,7 @@ void QuadRenderer::Initialize( )
     uint32_t   alignedFrameConstants = Utilities::Align( sizeof( FrameConstants ), 256 );
     BufferDesc constantsBufferDesc;
     constantsBufferDesc.NumBytes   = m_desc.NumFrames * alignedFrameConstants;
-    constantsBufferDesc.Descriptor = BitSet( ResourceDescriptor::UniformBuffer );
+    constantsBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
     constantsBufferDesc.Usages     = ResourceUsage::VertexAndConstantBuffer;
     constantsBufferDesc.HeapType   = HeapType::CPU_GPU;
     constantsBufferDesc.DebugName  = InteropString( "Quad Renderer Constants Buffer" );
@@ -270,7 +270,7 @@ void QuadRenderer::CreateStaticQuadGeometry( )
 
     BufferDesc vertexBufferDesc{ };
     vertexBufferDesc.NumBytes                  = sizeof( vertices );
-    vertexBufferDesc.Descriptor                = BitSet( ResourceDescriptor::VertexBuffer );
+    vertexBufferDesc.Descriptor                = ResourceDescriptor::VertexBuffer;
     vertexBufferDesc.Usages                    = ResourceUsage::VertexAndConstantBuffer;
     vertexBufferDesc.HeapType                  = HeapType::GPU;
     vertexBufferDesc.DebugName                 = "Quad Renderer Vertex Buffer";
@@ -280,7 +280,7 @@ void QuadRenderer::CreateStaticQuadGeometry( )
 
     BufferDesc indexBufferDesc{ };
     indexBufferDesc.NumBytes   = sizeof( indices );
-    indexBufferDesc.Descriptor = BitSet( ResourceDescriptor::IndexBuffer );
+    indexBufferDesc.Descriptor = ResourceDescriptor::IndexBuffer;
     indexBufferDesc.Usages     = ResourceUsage::IndexBuffer;
     indexBufferDesc.HeapType   = HeapType::GPU;
     indexBufferDesc.DebugName  = "Quad Renderer Index Buffer";

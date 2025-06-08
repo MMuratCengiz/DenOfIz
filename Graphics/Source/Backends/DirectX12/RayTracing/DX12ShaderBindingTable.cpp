@@ -19,8 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12ShaderBindingTable.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/DX12BarrierHelper.h"
 #include "DenOfIzGraphicsInternal/Backends/DirectX12/RayTracing/DX12ShaderLocalData.h"
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 
@@ -46,7 +46,7 @@ void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
     BufferDesc bufferDesc = { };
     bufferDesc.NumBytes   = m_numBufferBytes;
     bufferDesc.HeapType   = HeapType::CPU_GPU;
-    bufferDesc.Usages     = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::ShaderBindingTable;
+    bufferDesc.Usages     = ResourceUsage::CopySrc | ResourceUsage::ShaderBindingTable;
     bufferDesc.Descriptor = ResourceDescriptor::Buffer;
     bufferDesc.DebugName  = "Shader Binding Table Staging Buffer";
 
@@ -58,7 +58,7 @@ void DX12ShaderBindingTable::Resize( const SBTSizeDesc &desc )
         spdlog::error( "Failed to map memory for shader binding table." );
     }
 
-    bufferDesc.Usages    = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::ShaderBindingTable;
+    bufferDesc.Usages    = ResourceUsage::CopyDst | ResourceUsage::ShaderBindingTable;
     bufferDesc.HeapType  = HeapType::GPU;
     bufferDesc.DebugName = "Shader Binding Table Buffer";
     m_buffer             = std::make_unique<DX12BufferResource>( m_context, bufferDesc );

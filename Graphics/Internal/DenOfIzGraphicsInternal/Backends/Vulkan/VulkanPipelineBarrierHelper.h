@@ -34,8 +34,8 @@ namespace DenOfIz
         static VkImageMemoryBarrier  CreateImageBarrier( const VulkanContext *context, const TextureBarrierDesc &barrier, VkAccessFlags &srcAccessFlags,
                                                          VkAccessFlags &dstAccessFlags, QueueType queueType );
         static VkBufferMemoryBarrier CreateBufferBarrier( const BufferBarrierDesc &barrier, VkAccessFlags &srcAccessFlags, VkAccessFlags &dstAccessFlags, QueueType queueType );
-        static VkAccessFlags         GetAccessFlags( const BitSet<ResourceUsage> &state, const QueueType queueType );
-        static VkImageLayout         GetImageLayout( const BitSet<ResourceUsage> &state );
+        static VkAccessFlags         GetAccessFlags( const uint32_t &state, const QueueType queueType );
+        static VkImageLayout         GetImageLayout( const uint32_t &state );
         static VkPipelineStageFlags  GetPipelineStageFlags( const VulkanContext *context, QueueType queueType, VkAccessFlags accessFlags );
         static uint32_t              GetQueueFamilyIndex( const VulkanContext *context, QueueType queueType );
     };

@@ -43,12 +43,12 @@ namespace DenOfIz
     {
         TextureAspect              Aspect = TextureAspect::Color;
         Format                     Format = Format::Undefined;
-        BitSet<ResourceDescriptor> Descriptor;
+        uint32_t Descriptor;
 
         HeapType              HeapType        = HeapType::GPU;
         MSAASampleCount       MSAASampleCount = MSAASampleCount::_0;
-        ResourceUsage         InitialUsage;
-        BitSet<ResourceUsage> Usages;
+        uint32_t              InitialUsage;
+        uint32_t              Usages;
         SamplerDesc           Sampler; // Requires `| Descriptor::Sampler`
 
         uint32_t Width = 1;
@@ -65,7 +65,7 @@ namespace DenOfIz
     {
     public:
         virtual ~ITextureResource( )                        = default;
-        virtual BitSet<ResourceUsage> InitialState( ) const = 0;
+        virtual uint32_t InitialState( ) const = 0;
         virtual Format                GetFormat( ) const    = 0;
     };
     template class DZ_API InteropArray<ITextureResource *>;

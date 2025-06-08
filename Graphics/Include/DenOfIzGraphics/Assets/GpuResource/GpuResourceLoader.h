@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
-#include "DenOfIzGraphics/Utilities/Interop.h"
 #include <future>
 #include <queue>
+#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 
 namespace DenOfIz
 {
@@ -73,7 +73,7 @@ namespace DenOfIz
         uint32_t               ArrayLayer;
         TextureSubresourceDesc SubresourceDesc;
         InteropArray<Byte>     Data;
-        ResourceUsage          CurrentState;
+        uint32_t               CurrentState;
     };
 
     struct DZ_API BufferUpdateDesc
@@ -81,7 +81,7 @@ namespace DenOfIz
         IBufferResource     *Buffer;
         uint64_t             DstOffset;
         UpdateSourceDataDesc SourceData;
-        ResourceUsage        CurrentUsage;
+        uint32_t             CurrentUsage;
     };
 
     struct DZ_API FlushUpdatesDesc

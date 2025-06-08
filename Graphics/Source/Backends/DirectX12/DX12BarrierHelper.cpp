@@ -39,7 +39,7 @@ void DX12BarrierHelper::ExecuteResourceBarrier( const DX12Context *context, ID3D
     }
 }
 
-bool IsUavBarrier( const ResourceUsage &before, const ResourceUsage &after )
+bool IsUavBarrier( const uint32_t &before, const uint32_t &after )
 {
     return before == ResourceUsage::UnorderedAccess && after == ResourceUsage::UnorderedAccess ||
            before == ResourceUsage::AccelerationStructureWrite && after == ResourceUsage::AccelerationStructureRead ||
@@ -51,31 +51,31 @@ UINT CalcSubresourceIndex( const uint32_t mipLevel, const uint32_t layer, const 
     return mipLevel + layer * mipLevels + depth * mipLevels * depthOrArraySize;
 }
 
-D3D12_BARRIER_SYNC GetSyncFlagsForState( const BitSet<ResourceUsage> &state )
+D3D12_BARRIER_SYNC GetSyncFlagsForState( const uint32_t &state )
 {
     D3D12_BARRIER_SYNC syncFlags = D3D12_BARRIER_SYNC_NONE;
 
-    if ( state.IsSet( ResourceUsage::RenderTarget ) )
+    if ( state & ResourceUsage::RenderTarget )
     {
         syncFlags |= D3D12_BARRIER_SYNC_RENDER_TARGET;
     }
-    if ( state.IsSet( ResourceUsage::UnorderedAccess ) )
+    if ( state & ResourceUsage::UnorderedAccess )
     {
         syncFlags |= D3D12_BARRIER_SYNC_ALL;
     }
-    if ( state.IsSet( ResourceUsage::DepthWrite ) )
+    if ( state & ResourceUsage::DepthWrite )
     {
         syncFlags |= D3D12_BARRIER_SYNC_DEPTH_STENCIL;
     }
-    if ( state.IsSet( ResourceUsage::DepthRead ) )
+    if ( state & ResourceUsage::DepthRead )
     {
         syncFlags |= D3D12_BARRIER_SYNC_DEPTH_STENCIL;
     }
-    if ( state.IsSet( ResourceUsage::CopyDst ) || state.IsSet( ResourceUsage::CopySrc ) )
+    if ( state & ResourceUsage::CopyDst || state & ResourceUsage::CopySrc )
     {
         syncFlags |= D3D12_BARRIER_SYNC_COPY;
     }
-    if ( state.IsSet( ResourceUsage::AccelerationStructureWrite ) || state.IsSet( ResourceUsage::AccelerationStructureRead ) )
+    if ( state & ResourceUsage::AccelerationStructureWrite || state & ResourceUsage::AccelerationStructureRead )
     {
         syncFlags |= D3D12_BARRIER_SYNC_BUILD_RAYTRACING_ACCELERATION_STRUCTURE;
     }
@@ -169,7 +169,6 @@ void DX12BarrierHelper::ExecuteEnhancedResourceBarrier( ID3D12GraphicsCommandLis
             dxTextureBarrier.AccessAfter  = DX12EnumConverter::ConvertResourceStateToBarrierAccess( textureBarrier.NewState, textureBarrier.DestinationQueue );
             dxTextureBarrier.SyncBefore   = GetSyncFlagsForState( textureBarrier.OldState );
             dxTextureBarrier.SyncAfter    = GetSyncFlagsForState( textureBarrier.NewState );
-
         }
         else
         {
@@ -292,7 +291,7 @@ void DX12BarrierHelper::ExecuteLegacyResourceBarrier( ID3D12GraphicsCommandList7
         const auto     &textureBarrier = barrier.GetTextureBarriers( ).GetElement( i );
         ID3D12Resource *pResource      = dynamic_cast<DX12TextureResource *>( textureBarrier.Resource )->Resource( );
 
-        if ( textureBarrier.OldState.IsSet( ResourceUsage::UnorderedAccess ) && textureBarrier.NewState.IsSet( ResourceUsage::UnorderedAccess ) )
+        if ( textureBarrier.OldState & ResourceUsage::UnorderedAccess && textureBarrier.NewState & ResourceUsage::UnorderedAccess )
         {
             D3D12_RESOURCE_BARRIER uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV( pResource );
             resourceBarriers.push_back( uavBarrier );
@@ -316,7 +315,7 @@ void DX12BarrierHelper::ExecuteLegacyResourceBarrier( ID3D12GraphicsCommandList7
         const auto     &bufferBarrier = barrier.GetBufferBarriers( ).GetElement( i );
         ID3D12Resource *pResource     = dynamic_cast<DX12BufferResource *>( bufferBarrier.Resource )->Resource( );
 
-        if ( bufferBarrier.OldState.IsSet( ResourceUsage::UnorderedAccess ) && bufferBarrier.NewState.IsSet( ResourceUsage::UnorderedAccess ) )
+        if ( bufferBarrier.OldState & ResourceUsage::UnorderedAccess && bufferBarrier.NewState & ResourceUsage::UnorderedAccess )
         {
             D3D12_RESOURCE_BARRIER uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV( pResource );
             resourceBarriers.push_back( uavBarrier );

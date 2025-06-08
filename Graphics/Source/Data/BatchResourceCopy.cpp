@@ -191,7 +191,7 @@ ITextureResource *BatchResourceCopy::CreateAndLoadAssetTexture( const CreateAsse
     textureDesc.ArraySize    = textureAsset.ArraySize;
     textureDesc.MipLevels    = textureAsset.MipLevels;
 
-    BitSet descriptors = ResourceDescriptor::Texture;
+    uint32_t descriptors = ResourceDescriptor::Texture;
     if ( textureAsset.Dimension == TextureDimension::TextureCube )
     {
         descriptors |= ResourceDescriptor::TextureCube;
@@ -200,7 +200,7 @@ ITextureResource *BatchResourceCopy::CreateAndLoadAssetTexture( const CreateAsse
     descriptors |= loadDesc.AdditionalDescriptors;
     textureDesc.Descriptor = descriptors;
 
-    BitSet<ResourceUsage> usages = BitSet( ResourceUsage::ShaderResource ) | ResourceUsage::CopyDst;
+    uint32_t usages = ResourceUsage::ShaderResource | ResourceUsage::CopyDst;
     usages |= loadDesc.AdditionalUsages;
     textureDesc.Usages = usages;
 

@@ -136,10 +136,10 @@ void Spinning3DCubeWidget::CreatePipeline( )
 void Spinning3DCubeWidget::CreateGeometry( )
 {
     BoxDesc boxDesc{ };
-    boxDesc.Width  = 1.0f;
-    boxDesc.Height = 1.0f;
-    boxDesc.Depth  = 1.0f;
-    boxDesc.BuildDesc.Set( BuildDesc::BuildNormal );
+    boxDesc.Width         = 1.0f;
+    boxDesc.Height        = 1.0f;
+    boxDesc.Depth         = 1.0f;
+    boxDesc.BuildDesc     = BuildDesc::BuildNormal;
     GeometryData geometry = Geometry::BuildBox( boxDesc );
 
     InteropArray<CubeVertex> formattedVertices( geometry.Vertices.NumElements( ) );
@@ -228,9 +228,9 @@ void Spinning3DCubeWidget::InitializeRenderResources( ILogicalDevice *device, co
         rtDesc.Width                = rtSize;
         rtDesc.Height               = rtSize;
         rtDesc.Format               = Format::B8G8R8A8Unorm;
-        rtDesc.Usages               = BitSet( ResourceUsage::RenderTarget ) | ResourceUsage::ShaderResource;
-        rtDesc.InitialUsage         = BitSet( ResourceUsage::ShaderResource );
-        rtDesc.Descriptor           = BitSet( ResourceDescriptor::RenderTarget ) | ResourceDescriptor::Texture;
+        rtDesc.Usages               = ResourceUsage::RenderTarget | ResourceUsage::ShaderResource;
+        rtDesc.InitialUsage         = ResourceUsage::ShaderResource;
+        rtDesc.Descriptor           = ResourceDescriptor::RenderTarget | ResourceDescriptor::Texture;
         rtDesc.HeapType             = HeapType::GPU;
         rtDesc.DebugName            = InteropString( "3D Cube Widget Render Target Frame " ).Append( std::to_string( frameIdx ).c_str( ) );
         m_renderTargets[ frameIdx ] = std::unique_ptr<ITextureResource>( device->CreateTextureResource( rtDesc ) );
@@ -240,9 +240,9 @@ void Spinning3DCubeWidget::InitializeRenderResources( ILogicalDevice *device, co
         depthDesc.Width            = rtSize;
         depthDesc.Height           = rtSize;
         depthDesc.Format           = Format::D32Float;
-        depthDesc.Usages           = BitSet( ResourceUsage::DepthWrite ) | ResourceUsage::DepthRead;
-        depthDesc.InitialUsage     = BitSet( ResourceUsage::DepthWrite ) | ResourceUsage::DepthRead;
-        depthDesc.Descriptor       = BitSet( ResourceDescriptor::DepthStencil );
+        depthDesc.Usages           = ResourceUsage::DepthWrite | ResourceUsage::DepthRead;
+        depthDesc.InitialUsage     = ResourceUsage::DepthWrite | ResourceUsage::DepthRead;
+        depthDesc.Descriptor       = ResourceDescriptor::DepthStencil;
         depthDesc.HeapType         = HeapType::GPU;
         depthDesc.DebugName        = InteropString( "3D Cube Widget Depth Buffer Frame " ).Append( std::to_string( frameIdx ).c_str( ) );
         m_depthBuffers[ frameIdx ] = std::unique_ptr<ITextureResource>( device->CreateTextureResource( depthDesc ) );
@@ -264,9 +264,9 @@ void Spinning3DCubeWidget::ResizeRenderResources( const uint32_t width, const ui
         rtDesc.Width                = rtSize;
         rtDesc.Height               = rtSize;
         rtDesc.Format               = Format::B8G8R8A8Unorm;
-        rtDesc.Usages               = BitSet( ResourceUsage::RenderTarget ) | ResourceUsage::ShaderResource;
-        rtDesc.InitialUsage         = BitSet( ResourceUsage::ShaderResource );
-        rtDesc.Descriptor           = BitSet( ResourceDescriptor::RenderTarget ) | ResourceDescriptor::Texture;
+        rtDesc.Usages               = ResourceUsage::RenderTarget | ResourceUsage::ShaderResource;
+        rtDesc.InitialUsage         = ResourceUsage::ShaderResource;
+        rtDesc.Descriptor           = ResourceDescriptor::RenderTarget | ResourceDescriptor::Texture;
         rtDesc.HeapType             = HeapType::GPU;
         rtDesc.DebugName            = InteropString( "3D Cube Widget Render Target Frame " ).Append( std::to_string( frameIdx ).c_str( ) );
         m_renderTargets[ frameIdx ] = std::unique_ptr<ITextureResource>( m_device->CreateTextureResource( rtDesc ) );
@@ -277,9 +277,9 @@ void Spinning3DCubeWidget::ResizeRenderResources( const uint32_t width, const ui
         depthDesc.Width            = rtSize;
         depthDesc.Height           = rtSize;
         depthDesc.Format           = Format::D32Float;
-        depthDesc.Usages           = BitSet( ResourceUsage::DepthWrite ) | ResourceUsage::DepthRead;
-        depthDesc.InitialUsage     = BitSet( ResourceUsage::DepthWrite ) | ResourceUsage::DepthRead;
-        depthDesc.Descriptor       = BitSet( ResourceDescriptor::DepthStencil );
+        depthDesc.Usages           = ResourceUsage::DepthWrite | ResourceUsage::DepthRead;
+        depthDesc.InitialUsage     = ResourceUsage::DepthWrite | ResourceUsage::DepthRead;
+        depthDesc.Descriptor       = ResourceDescriptor::DepthStencil;
         depthDesc.HeapType         = HeapType::GPU;
         depthDesc.DebugName        = InteropString( "3D Cube Widget Depth Buffer Frame " ).Append( std::to_string( frameIdx ).c_str( ) );
         m_depthBuffers[ frameIdx ] = std::unique_ptr<ITextureResource>( m_device->CreateTextureResource( depthDesc ) );

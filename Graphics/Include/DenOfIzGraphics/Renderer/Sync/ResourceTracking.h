@@ -18,24 +18,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 #include <mutex>
 #include <unordered_map>
+#include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 
 namespace DenOfIz
 {
     struct ResourceState
     {
-        std::mutex    Mutex;
-        ResourceUsage CurrentUsage = ResourceUsage::Undefined;
-        QueueType     CurrentQueue = QueueType::Graphics;
+        std::mutex Mutex;
+        uint32_t   CurrentUsage = ResourceUsage::Undefined;
+        QueueType  CurrentQueue = QueueType::Graphics;
     };
 
     struct DZ_API TransitionResourceDesc
     {
         ICommandList *CommandList = nullptr;
-        ResourceUsage NewUsage  = ResourceUsage::Undefined;
-        QueueType     QueueType = QueueType::Graphics;
+        uint32_t      NewUsage    = ResourceUsage::Undefined;
+        QueueType     QueueType   = QueueType::Graphics;
     };
 
     struct DZ_API TransitionBufferDesc : TransitionResourceDesc
@@ -63,9 +63,9 @@ namespace DenOfIz
         explicit BatchTransitionDesc( ICommandList *commandList ) : m_commandList( commandList )
         {
         }
-        void Reset( ICommandList* commandList ); // Resource pooling
-        void TransitionBuffer( IBufferResource *resource, ResourceUsage newUsage, QueueType queueType = QueueType::Graphics );
-        void TransitionTexture( ITextureResource *resource, ResourceUsage newUsage, QueueType queueType = QueueType::Graphics );
+        void Reset( ICommandList *commandList ); // Resource pooling
+        void TransitionBuffer( IBufferResource *resource, const uint32_t &newUsage, QueueType queueType = QueueType::Graphics );
+        void TransitionTexture( ITextureResource *resource, const uint32_t &newUsage, QueueType queueType = QueueType::Graphics );
     };
 
     class ResourceTracking
@@ -77,8 +77,8 @@ namespace DenOfIz
         DZ_API ResourceTracking( ) = default;
         DZ_API ~ResourceTracking( );
 
-        DZ_API void TrackBuffer( IBufferResource *buffer, ResourceUsage currentUsage, QueueType queueType = QueueType::Graphics );
-        DZ_API void TrackTexture( ITextureResource *texture, ResourceUsage currentUsage, QueueType queueType = QueueType::Graphics );
+        DZ_API void TrackBuffer( IBufferResource *buffer, const uint32_t &currentUsage, QueueType queueType = QueueType::Graphics );
+        DZ_API void TrackTexture( ITextureResource *texture, const uint32_t &currentUsage, QueueType queueType = QueueType::Graphics );
 
         DZ_API void UntrackBuffer( IBufferResource *buffer );
         DZ_API void UntrackTexture( ITextureResource *texture );

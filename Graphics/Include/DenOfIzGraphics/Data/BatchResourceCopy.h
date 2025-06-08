@@ -70,8 +70,8 @@ namespace DenOfIz
     struct DZ_API CreateAssetTextureDesc
     {
         TextureAssetReader        *Reader;
-        BitSet<ResourceDescriptor> AdditionalDescriptors;
-        BitSet<ResourceUsage>      AdditionalUsages;
+        uint32_t                   AdditionalDescriptors;
+        uint32_t                   AdditionalUsages;
         InteropString              DebugName;
     };
 

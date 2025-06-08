@@ -30,7 +30,7 @@ namespace DenOfIz
         uint32_t      m_width        = 1;
         uint32_t      m_height       = 1;
         uint32_t      m_depth        = 1;
-        ResourceUsage m_currentUsage = ResourceUsage::Undefined;
+        uint32_t      m_currentUsage = ResourceUsage::Undefined;
 
         TextureDesc                  m_desc{ };
         DX12Context                 *m_context    = nullptr;
@@ -45,13 +45,13 @@ namespace DenOfIz
         DX12TextureResource( DX12Context *context, const TextureDesc &desc );
         DX12TextureResource( ID3D12Resource2 *resource, const D3D12_CPU_DESCRIPTOR_HANDLE &cpuHandle );
         ~DX12TextureResource( ) override;
-        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle );
+        void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle ) const;
 
         [[nodiscard]] const TextureDesc         &GetDesc( ) const;
         [[nodiscard]] const D3D12_RESOURCE_DESC &GetResourceDesc( ) const;
         [[nodiscard]] ID3D12Resource            *Resource( ) const;
 
-        [[nodiscard]] BitSet<ResourceUsage> InitialState( ) const override;
+        [[nodiscard]] uint32_t InitialState( ) const override;
         [[nodiscard]] uint32_t              GetWidth( ) const;
         [[nodiscard]] uint32_t              GetHeight( ) const;
         [[nodiscard]] uint32_t              GetDepth( ) const;

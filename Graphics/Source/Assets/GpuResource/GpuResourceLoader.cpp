@@ -23,7 +23,7 @@ using namespace DenOfIz;
 StagingBuffer::StagingBuffer( ILogicalDevice *device, const uint64_t numBytes )
 {
     BufferDesc desc{ };
-    desc.Usages.Set( ResourceUsage::CopySrc );
+    desc.Usages     = ResourceUsage::CopySrc;
     desc.NumBytes   = numBytes;
     desc.HeapType   = HeapType::CPU_GPU;
     m_buffer        = std::unique_ptr<IBufferResource>( device->CreateBufferResource( desc ) );
@@ -73,4 +73,3 @@ void StagingBuffer::Advance( const uint64_t size, const UpdateHandle handle )
     m_currentOffset += size;
     m_lastHandle = handle;
 }
-

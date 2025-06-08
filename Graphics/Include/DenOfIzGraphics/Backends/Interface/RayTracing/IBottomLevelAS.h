@@ -23,12 +23,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
-    enum class GeometryFlags
+    namespace GeometryFlags
     {
-        Opaque                      = 1 << 0,
-        NoDuplicateAnyHitInvocation = 1 << 1
-    };
-    template class DZ_API BitSet<GeometryFlags>;
+        DZ_API constexpr uint32_t Opaque                      = 1 << 0;
+        DZ_API constexpr uint32_t NoDuplicateAnyHitInvocation = 1 << 1;
+    } // namespace GeometryFlags
 
     struct DZ_API ASGeometryTriangleDesc
     {
@@ -67,7 +66,7 @@ namespace DenOfIz
         HitGroupType           Type;
         ASGeometryTriangleDesc Triangles;
         ASGeometryAABBDesc     AABBs;
-        BitSet<GeometryFlags>  Flags;
+        uint32_t               Flags;
     };
 
     template class DZ_API InteropArray<ASGeometryDesc>;
@@ -75,7 +74,7 @@ namespace DenOfIz
     struct DZ_API BottomLevelASDesc
     {
         InteropArray<ASGeometryDesc> Geometries;
-        BitSet<ASBuildFlags>         BuildFlags;
+        uint32_t                     BuildFlags;
     };
 
     class DZ_API IBottomLevelAS

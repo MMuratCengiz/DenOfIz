@@ -29,7 +29,7 @@ using namespace DenOfIz;
 DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) : m_context( context ), m_desc( std::move( desc ) ), m_cpuHandles( { } )
 {
     uint32_t alignment = std::max( static_cast<uint32_t>( D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT ), m_desc.Alignment );
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::StructuredBuffer )
     {
         alignment = std::max( alignment, static_cast<uint32_t>( m_desc.StructureDesc.Stride ) );
     }
@@ -37,11 +37,11 @@ DX12BufferResource::DX12BufferResource( DX12Context *context, BufferDesc desc ) 
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
 
     D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWBuffer ) || m_desc.Usages.IsSet( ResourceUsage::UnorderedAccess ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::RWBuffer || m_desc.Usages & ResourceUsage::UnorderedAccess )
     {
         flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::AccelerationStructure ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::AccelerationStructure )
     {
         flags |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
         initialState = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
@@ -75,7 +75,7 @@ void DX12BufferResource::CreateView( const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle
         break;
     case ResourceBindingType::ShaderResource:
         // This shouldn't be necessary
-        if ( m_desc.Descriptor.IsSet( ResourceDescriptor::AccelerationStructure ) )
+        if ( m_desc.Descriptor & ResourceDescriptor::AccelerationStructure )
         {
             CreateView( cpuHandle, DX12BufferViewType::AccelerationStructure, offset );
         }
@@ -107,13 +107,13 @@ void DX12BufferResource::CreateView( D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, DX12
             desc.Buffer.Flags                    = D3D12_BUFFER_SRV_FLAG_NONE;
             desc.Buffer.FirstElement             = m_desc.StructureDesc.Offset + offset / stride;
 
-            if ( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) )
+            if ( m_desc.Descriptor & ResourceDescriptor::StructuredBuffer )
             {
                 desc.Format                     = DXGI_FORMAT_UNKNOWN;
                 desc.Buffer.NumElements         = offset > 0 ? m_desc.StructureDesc.NumElements - offset / stride : m_desc.StructureDesc.NumElements;
                 desc.Buffer.StructureByteStride = stride;
             }
-            else if ( m_desc.Descriptor.Any( { ResourceDescriptor::Buffer, ResourceDescriptor::RWBuffer } ) )
+            else if ( m_desc.Descriptor & ResourceDescriptor::Buffer || m_desc.Descriptor & ResourceDescriptor::RWBuffer )
             {
                 desc.Format                     = DXGI_FORMAT_UNKNOWN;
                 desc.Buffer.NumElements         = offset > 0 ? ( m_numBytes - offset ) / stride : m_numBytes / stride;
@@ -189,7 +189,7 @@ InteropArray<Byte> DX12BufferResource::GetData( ) const
     return std::move( data );
 }
 
-void DX12BufferResource::SetData( const InteropArray<Byte> &data, bool keepMapped )
+void DX12BufferResource::SetData( const InteropArray<Byte> &data, const bool keepMapped )
 {
     if ( m_mappedMemory == nullptr )
     {
@@ -234,7 +234,7 @@ ID3D12Resource2 *DX12BufferResource::Resource( ) const
     return m_resource.get( );
 }
 
-BitSet<ResourceUsage> DX12BufferResource::InitialState( ) const
+uint32_t DX12BufferResource::InitialState( ) const
 {
     return m_state;
 }

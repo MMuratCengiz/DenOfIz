@@ -46,7 +46,7 @@ namespace DenOfIz
 
         [[nodiscard]] size_t                NumBytes( ) const override;
         [[nodiscard]] const void           *Data( ) const override;
-        [[nodiscard]] BitSet<ResourceUsage> InitialState( ) const override;
+        [[nodiscard]] uint32_t InitialState( ) const override;
 
         // Interop API
         [[nodiscard]] InteropArray<Byte> GetData( ) const override;

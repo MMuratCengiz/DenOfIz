@@ -44,6 +44,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace DenOfIz
 {
+
     class DZ_API InteropString
     {
         char     *m_data              = nullptr;

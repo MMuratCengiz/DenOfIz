@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Utilities/BitSet.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
 
 namespace DenOfIz
@@ -29,20 +28,19 @@ namespace DenOfIz
         AABBs
     };
 
-    enum class ASBuildFlags
+    namespace ASBuildFlags
     {
-        None            = 1 << 1,
-        AllowUpdate     = 1 << 2,
-        AllowCompaction = 1 << 3,
-        PreferFastTrace = 1 << 4,
-        PreferFastBuild = 1 << 5,
-        LowMemory       = 1 << 6,
-        FastTrace       = 1 << 7,
-        FastBuild       = 1 << 8,
-        MinimizeMemory  = 1 << 9,
-        PerformUpdate   = 1 << 10,
-    };
-    template class DZ_API BitSet<ASBuildFlags>;
+        constexpr uint32_t None            = 1 << 1;
+        constexpr uint32_t AllowUpdate     = 1 << 2;
+        constexpr uint32_t AllowCompaction = 1 << 3;
+        constexpr uint32_t PreferFastTrace = 1 << 4;
+        constexpr uint32_t PreferFastBuild = 1 << 5;
+        constexpr uint32_t LowMemory       = 1 << 6;
+        constexpr uint32_t FastTrace       = 1 << 7;
+        constexpr uint32_t FastBuild       = 1 << 8;
+        constexpr uint32_t MinimizeMemory  = 1 << 9;
+        constexpr uint32_t PerformUpdate   = 1 << 10;
+    } // namespace ASBuildFlags
 
 #ifdef BUILD_METAL
     constexpr uint32_t TriangleIntersectionShader   = 0;

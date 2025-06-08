@@ -31,11 +31,11 @@ DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASD
     {
         const ASGeometryDesc           &geometry     = desc.Geometries.GetElement( i );
         D3D12_RAYTRACING_GEOMETRY_DESC &dx12Geometry = m_geometryDescs[ i ];
-        if ( geometry.Flags.IsSet( GeometryFlags::Opaque ) )
+        if ( geometry.Flags & GeometryFlags::Opaque )
         {
             dx12Geometry.Flags |= D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
         }
-        if ( geometry.Flags.IsSet( GeometryFlags::NoDuplicateAnyHitInvocation ) )
+        if ( geometry.Flags & GeometryFlags::NoDuplicateAnyHitInvocation )
         {
             dx12Geometry.Flags |= D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION;
         }
@@ -61,7 +61,7 @@ DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASD
     m_context->D3DDevice->GetRaytracingAccelerationStructurePrebuildInfo( &prebuildDesc, &info );
 
     BufferDesc bufferDesc = { };
-    bufferDesc.Descriptor = BitSet( ResourceDescriptor::RWBuffer ) | ResourceDescriptor::AccelerationStructure;
+    bufferDesc.Descriptor = ResourceDescriptor::RWBuffer | ResourceDescriptor::AccelerationStructure;
     bufferDesc.HeapType   = HeapType::GPU;
     bufferDesc.NumBytes   = info.ResultDataMaxSizeInBytes;
     bufferDesc.Usages     = ResourceUsage::AccelerationStructureWrite;
@@ -71,7 +71,7 @@ DX12BottomLevelAS::DX12BottomLevelAS( DX12Context *context, const BottomLevelASD
     BufferDesc scratchBufferDesc = { };
     scratchBufferDesc.HeapType   = HeapType::GPU;
     scratchBufferDesc.NumBytes   = static_cast<UINT>( info.ScratchDataSizeInBytes );
-    scratchBufferDesc.Descriptor = BitSet( ResourceDescriptor::RWBuffer );
+    scratchBufferDesc.Descriptor = ResourceDescriptor::RWBuffer;
     scratchBufferDesc.Usages     = ResourceUsage::UnorderedAccess;
     scratchBufferDesc.DebugName  = "Bottom Level Acceleration Structure Scratch";
     m_scratch                    = std::make_unique<DX12BufferResource>( m_context, scratchBufferDesc );

@@ -37,7 +37,7 @@ namespace DenOfIz
     struct DZ_API TopLevelASDesc
     {
         InteropArray<ASInstanceDesc> Instances;
-        BitSet<ASBuildFlags>         BuildFlags;
+        uint32_t                     BuildFlags;
     };
 
     struct DZ_API UpdateTransformsDesc

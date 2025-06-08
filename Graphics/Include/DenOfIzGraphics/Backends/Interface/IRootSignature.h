@@ -46,7 +46,7 @@ namespace DenOfIz
         ResourceBindingType        BindingType = ResourceBindingType::ConstantBuffer;
         uint32_t                   Binding{ };
         uint32_t                   RegisterSpace = 0;
-        BitSet<ResourceDescriptor> Descriptor;
+        uint32_t                   Descriptor;
         InteropArray<ShaderStage>  Stages;
         int                        ArraySize = 1; // 1 is both 'Arr[1]'(Size of 1) and Simply 'Var'(Non array variable)
         ReflectionDesc             Reflection{ };

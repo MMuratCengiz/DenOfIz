@@ -41,8 +41,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  * under the License.
  */
 
-#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanBufferResource.h"
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanPipelineBarrierHelper.h"
+#include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanBufferResource.h"
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanTextureResource.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
@@ -54,7 +54,7 @@ void VulkanPipelineBarrierHelper::ExecutePipelineBarrier( const VulkanContext *c
 {
     VkAccessFlags srcAccessFlags = { };
     VkAccessFlags dstAccessFlags = { };
-    
+
     std::vector<VkImageMemoryBarrier>       vkImageBarriers;
     const InteropArray<TextureBarrierDesc> &textureBarriers = barrier.GetTextureBarriers( );
     for ( int i = 0; i < textureBarriers.NumElements( ); i++ )
@@ -99,7 +99,7 @@ VkImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier( const Vulk
     VkImageMemoryBarrier         imageMemoryBarrier{ };
     imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 
-    if ( barrier.OldState.IsSet( ResourceUsage::UnorderedAccess ) && barrier.NewState.IsSet( ResourceUsage::UnorderedAccess ) )
+    if ( barrier.OldState & ResourceUsage::UnorderedAccess && barrier.NewState & ResourceUsage::UnorderedAccess )
     {
         imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
         imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
@@ -123,7 +123,7 @@ VkImageMemoryBarrier VulkanPipelineBarrierHelper::CreateImageBarrier( const Vulk
     imageMemoryBarrier.subresourceRange.layerCount     = barrier.EnableSubresourceBarrier ? 1 : VK_REMAINING_ARRAY_LAYERS;
 
     imageMemoryBarrier.srcQueueFamilyIndex = GetQueueFamilyIndex( context, barrier.SourceQueue );
-    if ( barrier.EnableQueueBarrier && !barrier.OldState.IsSet( ResourceUsage::Undefined ) )
+    if ( barrier.EnableQueueBarrier && ( barrier.OldState & ResourceUsage::Undefined ) == 0 )
     {
         imageMemoryBarrier.srcQueueFamilyIndex = GetQueueFamilyIndex( context, barrier.SourceQueue );
         imageMemoryBarrier.dstQueueFamilyIndex = GetQueueFamilyIndex( context, barrier.DestinationQueue );
@@ -149,7 +149,7 @@ VkBufferMemoryBarrier VulkanPipelineBarrierHelper::CreateBufferBarrier( const Bu
     memoryBarrier.offset = 0;
     memoryBarrier.size   = VK_WHOLE_SIZE;
 
-    if ( barrier.OldState.IsSet( ResourceUsage::UnorderedAccess ) && barrier.NewState.IsSet( ResourceUsage::UnorderedAccess ) )
+    if ( barrier.OldState & ResourceUsage::UnorderedAccess && barrier.NewState & ResourceUsage::UnorderedAccess )
     {
         memoryBarrier.srcAccessMask |= VK_ACCESS_SHADER_WRITE_BIT;
         memoryBarrier.dstAccessMask |= VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
@@ -165,19 +165,19 @@ VkBufferMemoryBarrier VulkanPipelineBarrierHelper::CreateBufferBarrier( const Bu
     return memoryBarrier;
 }
 
-VkAccessFlags VulkanPipelineBarrierHelper::GetAccessFlags( const BitSet<ResourceUsage> &state, const QueueType queueType )
+VkAccessFlags VulkanPipelineBarrierHelper::GetAccessFlags( const uint32_t &state, const QueueType queueType )
 {
     VkAccessFlags result = 0;
 
-    if ( state.IsSet( ResourceUsage::CopySrc ) )
+    if ( state & ResourceUsage::CopySrc )
     {
         result |= VK_ACCESS_TRANSFER_READ_BIT;
     }
-    if ( state.IsSet( ResourceUsage::CopyDst ) )
+    if ( state & ResourceUsage::CopyDst )
     {
         result |= VK_ACCESS_TRANSFER_WRITE_BIT;
     }
-    if ( state.IsSet( ResourceUsage::VertexAndConstantBuffer ) )
+    if ( state & ResourceUsage::VertexAndConstantBuffer )
     {
         result |= VK_ACCESS_UNIFORM_READ_BIT;
         if ( queueType == QueueType::Graphics )
@@ -185,43 +185,43 @@ VkAccessFlags VulkanPipelineBarrierHelper::GetAccessFlags( const BitSet<Resource
             result |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
         }
     }
-    if ( state.IsSet( ResourceUsage::IndexBuffer ) )
+    if ( state & ResourceUsage::IndexBuffer )
     {
         result |= VK_ACCESS_INDEX_READ_BIT;
     }
-    if ( state.IsSet( ResourceUsage::UnorderedAccess ) )
+    if ( state & ResourceUsage::UnorderedAccess )
     {
         result |= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
     }
-    if ( state.IsSet( ResourceUsage::IndirectArgument ) )
+    if ( state & ResourceUsage::IndirectArgument )
     {
         result |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
     }
-    if ( state.IsSet( ResourceUsage::RenderTarget ) )
+    if ( state & ResourceUsage::RenderTarget )
     {
         result |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     }
-    if ( state.IsSet( ResourceUsage::DepthWrite ) )
+    if ( state & ResourceUsage::DepthWrite )
     {
         result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     }
-    if ( state.IsSet( ResourceUsage::DepthRead ) )
+    if ( state & ResourceUsage::DepthRead )
     {
         result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
     }
-    if ( state.IsSet( ResourceUsage::ShaderResource ) )
+    if ( state & ResourceUsage::ShaderResource )
     {
         result |= VK_ACCESS_SHADER_READ_BIT;
     }
-    if ( state.IsSet( ResourceUsage::Present ) )
+    if ( state & ResourceUsage::Present )
     {
         result |= VK_ACCESS_MEMORY_READ_BIT;
     }
-    if ( state.IsSet( ResourceUsage::AccelerationStructureRead ) )
+    if ( state & ResourceUsage::AccelerationStructureRead )
     {
         result |= VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     }
-    if ( state.IsSet( ResourceUsage::AccelerationStructureWrite ) )
+    if ( state & ResourceUsage::AccelerationStructureWrite )
     {
         result |= VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
     }
@@ -229,41 +229,41 @@ VkAccessFlags VulkanPipelineBarrierHelper::GetAccessFlags( const BitSet<Resource
     return result;
 }
 
-VkImageLayout VulkanPipelineBarrierHelper::GetImageLayout( const BitSet<ResourceUsage> &state )
+VkImageLayout VulkanPipelineBarrierHelper::GetImageLayout( const uint32_t &state )
 {
-    if ( state.IsSet( ResourceUsage::CopySrc ) )
+    if ( state & ResourceUsage::CopySrc )
     {
         return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     }
-    if ( state.IsSet( ResourceUsage::CopyDst ) )
+    if ( state & ResourceUsage::CopyDst )
     {
         return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     }
-    if ( state.IsSet( ResourceUsage::RenderTarget ) )
+    if ( state & ResourceUsage::RenderTarget )
     {
         return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
-    if ( state.IsSet( ResourceUsage::DepthWrite ) )
+    if ( state & ResourceUsage::DepthWrite )
     {
         return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     }
-    if ( state.IsSet( ResourceUsage::DepthRead ) )
+    if ( state & ResourceUsage::DepthRead )
     {
         return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     }
-    if ( state.IsSet( ResourceUsage::UnorderedAccess ) )
+    if ( state & ResourceUsage::UnorderedAccess )
     {
         return VK_IMAGE_LAYOUT_GENERAL;
     }
-    if ( state.Any( { ResourceUsage::ShaderResource, ResourceUsage::PixelShaderResource } ) )
+    if ( state & ( ResourceUsage::ShaderResource | ResourceUsage::PixelShaderResource ) )
     {
         return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
-    if ( state.IsSet( ResourceUsage::Present ) )
+    if ( state & ResourceUsage::Present )
     {
         return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     }
-    if ( state.IsSet( ResourceUsage::Common ) )
+    if ( state & ResourceUsage::Common )
     {
         return VK_IMAGE_LAYOUT_GENERAL;
     }

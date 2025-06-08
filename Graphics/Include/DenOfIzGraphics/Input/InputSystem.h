@@ -18,13 +18,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Utilities/Common.h"
+#include <memory>
 #include "DenOfIzGraphics/Input/Controller.h"
 #include "DenOfIzGraphics/Input/Event.h"
 #include "DenOfIzGraphics/Input/Window.h"
+#include "DenOfIzGraphics/Utilities/Common.h"
 #include "DenOfIzGraphics/Utilities/Engine.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
-#include <memory>
 
 namespace DenOfIz
 {
@@ -42,12 +42,12 @@ namespace DenOfIz
     public:
         InputSystem( );
         ~InputSystem( );
-        
-        InputSystem( const InputSystem& ) = delete;
-        InputSystem& operator=( const InputSystem& ) = delete;
-        
-        InputSystem( InputSystem&& other ) noexcept;
-        InputSystem& operator=( InputSystem&& other ) noexcept;
+
+        InputSystem( const InputSystem & )            = delete;
+        InputSystem &operator=( const InputSystem & ) = delete;
+
+        InputSystem( InputSystem &&other ) noexcept;
+        InputSystem &operator=( InputSystem &&other ) noexcept;
 
         static bool PollEvent( Event &outEvent );
         static bool WaitEvent( Event &outEvent );
@@ -57,13 +57,13 @@ namespace DenOfIz
         static void PushEvent( const Event &event );
 
         // Keyboard
-        static KeyState       GetKeyState( KeyCode key );
-        static bool           IsKeyPressed( KeyCode key );
-        static BitSet<KeyMod> GetModState( );
-        static void           SetModState( const BitSet<KeyMod> &modifiers );
-        static KeyCode        GetKeyFromName( const InteropString &name );
-        static InteropString  GetKeyName( KeyCode key );
-        static InteropString  GetScancodeName( uint32_t scancode );
+        static KeyState      GetKeyState( KeyCode key );
+        static bool          IsKeyPressed( KeyCode key );
+        static uint32_t      GetModState( );
+        static void          SetModState( const uint32_t &modifiers );
+        static KeyCode       GetKeyFromName( const InteropString &name );
+        static InteropString GetKeyName( KeyCode key );
+        static InteropString GetScancodeName( uint32_t scancode );
 
         // Mouse
         static MouseCoords GetMouseState( );

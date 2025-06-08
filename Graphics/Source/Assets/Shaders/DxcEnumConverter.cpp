@@ -76,7 +76,7 @@ ReflectionBindingType DxcEnumConverter::ReflectTypeToBufferReflectionBindingType
     return ReflectionBindingType::Struct;
 }
 
-ResourceDescriptor DxcEnumConverter::ReflectTypeToRootSignatureType( const D3D_SHADER_INPUT_TYPE type, const D3D_SRV_DIMENSION dimension )
+uint32_t DxcEnumConverter::ReflectTypeToRootSignatureType( const D3D_SHADER_INPUT_TYPE type, const D3D_SRV_DIMENSION dimension )
 {
     switch ( type )
     {

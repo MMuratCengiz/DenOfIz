@@ -44,7 +44,7 @@ TextBatch::TextBatch( const TextBatchDesc &desc ) : m_desc( desc )
     m_logicalDevice                              = desc.LogicalDevice;
     m_vertexBufferDesc                           = { };
     m_vertexBufferDesc.NumBytes                  = m_maxVertices * sizeof( GlyphVertex );
-    m_vertexBufferDesc.Descriptor                = BitSet( ResourceDescriptor::VertexBuffer ) | ResourceDescriptor::StructuredBuffer;
+    m_vertexBufferDesc.Descriptor                = ResourceDescriptor::VertexBuffer | ResourceDescriptor::StructuredBuffer;
     m_vertexBufferDesc.Usages                    = ResourceUsage::VertexAndConstantBuffer;
     m_vertexBufferDesc.HeapType                  = HeapType::CPU_GPU;
     m_vertexBufferDesc.DebugName                 = "Font Vertex Buffer";
@@ -55,7 +55,7 @@ TextBatch::TextBatch( const TextBatchDesc &desc ) : m_desc( desc )
 
     m_indexBufferDesc            = { };
     m_indexBufferDesc.NumBytes   = m_maxIndices * sizeof( uint32_t );
-    m_indexBufferDesc.Descriptor = BitSet( ResourceDescriptor::IndexBuffer );
+    m_indexBufferDesc.Descriptor = ResourceDescriptor::IndexBuffer;
     m_indexBufferDesc.Usages     = ResourceUsage::IndexBuffer;
     m_indexBufferDesc.HeapType   = HeapType::CPU_GPU;
     m_indexBufferDesc.DebugName  = "Font Index Buffer";
@@ -64,7 +64,7 @@ TextBatch::TextBatch( const TextBatchDesc &desc ) : m_desc( desc )
 
     BufferDesc uniformBufferDesc;
     uniformBufferDesc.NumBytes                  = 3 * sizeof( FontShaderUniforms );
-    uniformBufferDesc.Descriptor                = BitSet( ResourceDescriptor::UniformBuffer );
+    uniformBufferDesc.Descriptor                = ResourceDescriptor::UniformBuffer;
     uniformBufferDesc.Usages                    = ResourceUsage::VertexAndConstantBuffer;
     uniformBufferDesc.HeapType                  = HeapType::CPU_GPU;
     uniformBufferDesc.DebugName                 = "Font Uniform Buffer";
@@ -304,7 +304,7 @@ void TextBatch::InitializeAtlas( )
 
     BufferDesc stagingDesc;
     stagingDesc.NumBytes          = alignedPitch * alignedSlice;
-    stagingDesc.Descriptor        = BitSet( ResourceDescriptor::Buffer );
+    stagingDesc.Descriptor        = ResourceDescriptor::Buffer;
     stagingDesc.InitialUsage      = ResourceUsage::CopySrc;
     stagingDesc.DebugName         = "Font MSDF Atlas Staging Buffer";
     stagingDesc.HeapType          = HeapType::CPU;
@@ -314,7 +314,7 @@ void TextBatch::InitializeAtlas( )
     textureDesc.Width        = fontAsset->AtlasWidth;
     textureDesc.Height       = fontAsset->AtlasHeight;
     textureDesc.Format       = Format::R8G8B8A8Unorm;
-    textureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture );
+    textureDesc.Descriptor   = ResourceDescriptor::Texture;
     textureDesc.InitialUsage = ResourceUsage::ShaderResource;
     textureDesc.DebugName    = "Font MTSDF Atlas Texture";
     m_atlas                  = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );

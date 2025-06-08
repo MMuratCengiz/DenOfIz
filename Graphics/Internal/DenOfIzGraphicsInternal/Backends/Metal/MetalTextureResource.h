@@ -31,7 +31,7 @@ namespace DenOfIz
         uint32_t      m_width        = 1;
         uint32_t      m_height       = 1;
         uint32_t      m_depth        = 1;
-        ResourceUsage m_initialState = ResourceUsage::Undefined;
+        uint32_t      m_initialState = ResourceUsage::Undefined;
 
         friend class MetalSwapChain;
         TextureDesc     m_desc;
@@ -51,7 +51,7 @@ namespace DenOfIz
         const MTLTextureType  &Type( ) const;
         const MTLTextureUsage &Usage( ) const;
 
-        [[nodiscard]] BitSet<ResourceUsage> InitialState( ) const override;
+        [[nodiscard]] uint32_t InitialState( ) const override;
         [[nodiscard]] uint32_t              GetWidth( ) const;
         [[nodiscard]] uint32_t              GetHeight( ) const;
         [[nodiscard]] uint32_t              GetDepth( ) const;

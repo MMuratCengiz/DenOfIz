@@ -28,9 +28,9 @@ namespace DenOfIz
 
     struct DZ_API TextureBarrierDesc
     {
-        ITextureResource     *Resource;
-        BitSet<ResourceUsage> OldState{ };
-        BitSet<ResourceUsage> NewState{ };
+        ITextureResource *Resource;
+        uint32_t          OldState{ };
+        uint32_t          NewState{ };
 
         bool      EnableQueueBarrier = false;
         QueueType SourceQueue;
@@ -44,9 +44,9 @@ namespace DenOfIz
 
     struct DZ_API BufferBarrierDesc
     {
-        IBufferResource      *Resource;
-        BitSet<ResourceUsage> OldState;
-        BitSet<ResourceUsage> NewState;
+        IBufferResource *Resource;
+        uint32_t         OldState;
+        uint32_t         NewState;
     };
     template class DZ_API InteropArray<BufferBarrierDesc>;
 
@@ -56,13 +56,13 @@ namespace DenOfIz
         ITopLevelAS             *TopLevelAS      = nullptr;
         IBufferResource         *BufferResource  = nullptr;
         ITextureResource        *TextureResource = nullptr;
-        BitSet<ResourceUsage>    OldState;
-        BitSet<ResourceUsage>    NewState;
+        uint32_t                 OldState;
+        uint32_t                 NewState;
         static MemoryBarrierDesc Uav( )
         {
             MemoryBarrierDesc barrier{ };
-            barrier.OldState.Set( ResourceUsage::UnorderedAccess );
-            barrier.NewState.Set( ResourceUsage::UnorderedAccess );
+            barrier.OldState = ResourceUsage::UnorderedAccess;
+            barrier.NewState = ResourceUsage::UnorderedAccess;
             return barrier;
         }
     };

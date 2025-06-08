@@ -111,9 +111,9 @@ void SimpleTriangleExample::CreateVertexBuffer( )
     };
 
     BufferDesc bufferDesc{ };
-    bufferDesc.Descriptor.Set( ResourceDescriptor::VertexBuffer );
-    bufferDesc.NumBytes  = vertices.size( ) * sizeof( float );
-    bufferDesc.DebugName = "TriangleVertexBuffer";
+    bufferDesc.Descriptor = ResourceDescriptor::VertexBuffer;
+    bufferDesc.NumBytes   = vertices.size( ) * sizeof( float );
+    bufferDesc.DebugName  = "TriangleVertexBuffer";
 
     m_vertexBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( bufferDesc ) );
 

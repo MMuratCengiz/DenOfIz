@@ -19,22 +19,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanBufferResource.h"
 #include <utility>
 #include "DenOfIzGraphicsInternal/Backends/Vulkan/VulkanEnumConverter.h"
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 
 VulkanBufferResource::VulkanBufferResource( VulkanContext *context, BufferDesc desc ) : m_desc( std::move( desc ) ), m_context( context )
 {
     uint32_t alignment = m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment;
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::StructuredBuffer )
     {
         alignment = m_context->SelectedDeviceInfo.Constants.StorageBufferAlignment;
     }
-    alignment                   = std::max( alignment, m_desc.Alignment );
-    alignment                   = std::max<uint32_t>( alignment, m_desc.StructureDesc.Stride );
-    m_numBytes                  = Utilities::Align( m_desc.NumBytes, alignment );
-    BitSet<ResourceUsage> usage = m_desc.Usages;
+    alignment      = std::max( alignment, m_desc.Alignment );
+    alignment      = std::max<uint32_t>( alignment, m_desc.StructureDesc.Stride );
+    m_numBytes     = Utilities::Align( m_desc.NumBytes, alignment );
+    uint32_t usage = m_desc.Usages;
     usage |= m_desc.InitialUsage;
 
     VkBufferCreateInfo bufferCreateInfo{ };
@@ -148,7 +148,7 @@ void VulkanBufferResource::WriteData( const InteropArray<Byte> &data, uint32_t b
     std::memcpy( static_cast<Byte *>( m_mappedMemory ) + bufferOffset, data.Data( ), data.NumElements( ) );
 }
 
-BitSet<ResourceUsage> VulkanBufferResource::InitialState( ) const
+uint32_t VulkanBufferResource::InitialState( ) const
 {
     return m_state;
 }

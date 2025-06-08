@@ -219,9 +219,9 @@ void RayTracedProceduralGeometryExample::CreateRenderTargets( )
     textureDesc.Width        = m_windowDesc.Width;
     textureDesc.Height       = m_windowDesc.Height;
     textureDesc.Format       = Format::B8G8R8A8Unorm;
-    textureDesc.Descriptor   = BitSet( ResourceDescriptor::RWTexture );
+    textureDesc.Descriptor   = ResourceDescriptor::RWTexture;
     textureDesc.InitialUsage = ResourceUsage::UnorderedAccess;
-    textureDesc.Usages       = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::UnorderedAccess;
+    textureDesc.Usages       = ResourceUsage::CopySrc | ResourceUsage::UnorderedAccess;
 
     for ( uint32_t i = 0; i < 3; ++i )
     {
@@ -310,7 +310,7 @@ void RayTracedProceduralGeometryExample::CreateAccelerationStructures( )
         }
 
         TopLevelASDesc topLevelDesc{ };
-        topLevelDesc.BuildFlags = BitSet( ASBuildFlags::PreferFastTrace );
+        topLevelDesc.BuildFlags = ASBuildFlags::PreferFastTrace;
         topLevelDesc.Instances.AddElement( triangleInstanceDesc );
         topLevelDesc.Instances.AddElement( aabbInstanceDesc );
         m_topLevelAS = std::unique_ptr<ITopLevelAS>( m_logicalDevice->CreateTopLevelAS( topLevelDesc ) );
@@ -361,32 +361,32 @@ void RayTracedProceduralGeometryExample::CreateResources( )
                                     { { 1.0f, 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } } };
 
     BufferDesc vbDesc{ };
-    vbDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer ); // These are not real vertex buffers
+    vbDesc.Descriptor   = ResourceDescriptor::Buffer; // These are not real vertex buffers
     vbDesc.InitialUsage = ResourceUsage::CopyDst;
-    vbDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::AccelerationStructureGeometry;
+    vbDesc.Usages       = ResourceUsage::CopyDst | ResourceUsage::AccelerationStructureGeometry;
     vbDesc.NumBytes     = sizeof( vertices );
     vbDesc.DebugName    = "Plane_VertexBuffer";
     m_vertexBuffer      = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vbDesc ) );
 
     BufferDesc ibDesc{ };
-    ibDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer ); // Not real index buffer
+    ibDesc.Descriptor   = ResourceDescriptor::Buffer; // Not real index buffer
     ibDesc.InitialUsage = ResourceUsage::CopyDst;
-    ibDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::AccelerationStructureGeometry;
+    ibDesc.Usages       = ResourceUsage::CopyDst | ResourceUsage::AccelerationStructureGeometry;
     ibDesc.NumBytes     = sizeof( indices );
     ibDesc.DebugName    = "Plane_IndexBuffer";
     m_indexBuffer       = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( ibDesc ) );
 
     BufferDesc aabbDesc{ };
-    aabbDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer );
+    aabbDesc.Descriptor   = ResourceDescriptor::Buffer;
     aabbDesc.InitialUsage = ResourceUsage::CopyDst;
-    aabbDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::AccelerationStructureGeometry;
+    aabbDesc.Usages       = ResourceUsage::CopyDst | ResourceUsage::AccelerationStructureGeometry;
     aabbDesc.NumBytes     = sizeof( AABBBoundingBox ) * IntersectionShaderType::TotalPrimitiveCount;
     aabbDesc.DebugName    = "AABB_Buffer";
     m_aabbBuffer          = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( aabbDesc ) );
 
     BufferDesc attributesDesc{ };
     attributesDesc.HeapType                  = HeapType::CPU_GPU;
-    attributesDesc.Descriptor                = BitSet( ResourceDescriptor::Buffer ) | ResourceDescriptor::StructuredBuffer;
+    attributesDesc.Descriptor                = ResourceDescriptor::Buffer | ResourceDescriptor::StructuredBuffer;
     attributesDesc.NumBytes                  = sizeof( PrimitiveInstancePerFrameBuffer ) * IntersectionShaderType::TotalPrimitiveCount;
     attributesDesc.StructureDesc.NumElements = IntersectionShaderType::TotalPrimitiveCount;
     attributesDesc.StructureDesc.Stride      = sizeof( PrimitiveInstancePerFrameBuffer );
@@ -613,7 +613,7 @@ void RayTracedProceduralGeometryExample::InitializeScene( )
     sceneBufferDesc.HeapType   = HeapType::CPU_GPU;
     sceneBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
     sceneBufferDesc.NumBytes   = sizeof( SceneConstantBuffer );
-    sceneBufferDesc.Usages     = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::VertexAndConstantBuffer;
+    sceneBufferDesc.Usages     = ResourceUsage::CopyDst | ResourceUsage::VertexAndConstantBuffer;
     sceneBufferDesc.DebugName  = "SceneConstantBuffer";
     m_sceneConstantBuffer      = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( sceneBufferDesc ) );
     m_sceneConstants           = static_cast<SceneConstantBuffer *>( m_sceneConstantBuffer->MapMemory( ) );

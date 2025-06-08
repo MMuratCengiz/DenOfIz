@@ -23,7 +23,7 @@ using namespace DenOfIz;
 
 void DenOfIz::ValidateTextureDesc( TextureDesc &desc )
 {
-    if ( desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) && desc.MSAASampleCount != MSAASampleCount::_0 )
+    if ( ( desc.Descriptor & ResourceDescriptor::RWTexture ) && desc.MSAASampleCount != MSAASampleCount::_0 )
     {
         spdlog::warn( "MSAA textures cannot be used as UAVs. Resetting MSAASampleCount to 0." );
         desc.MSAASampleCount = MSAASampleCount::_0;
@@ -41,18 +41,18 @@ void DenOfIz::ValidateTextureDesc( TextureDesc &desc )
         desc.Depth = 1;
     }
 
-    if ( !desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) && !desc.Descriptor.IsSet( ResourceDescriptor::Texture ) &&
-         !desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) )
+    if ( !( desc.Descriptor & ResourceDescriptor::RWTexture ) && !( desc.Descriptor & ResourceDescriptor::Texture ) &&
+         !( desc.Descriptor & ResourceDescriptor::TextureCube ) )
     {
         spdlog::warn( "Descriptor does not specify a texture: [ResourceDescriptor::(RWTexture/Texture/TextureCube)]." );
     }
 
-    if ( desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) && desc.ArraySize != 6 )
+    if ( ( desc.Descriptor & ResourceDescriptor::TextureCube ) && desc.ArraySize != 6 )
     {
         spdlog::warn( "TextureCube does not have an array size of 6. " );
     }
 
-    if ( desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) && desc.Height != desc.Width )
+    if ( ( desc.Descriptor & ResourceDescriptor::TextureCube ) && desc.Height != desc.Width )
     {
         spdlog::warn( "TextureCube does not have equal width and height." );
     }

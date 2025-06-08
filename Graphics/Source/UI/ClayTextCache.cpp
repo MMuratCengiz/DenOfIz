@@ -216,8 +216,8 @@ void ClayTextCache::InitializeFontAtlas( ClayTextFontData *fontData )
     textureDesc.Width        = fontAsset->AtlasWidth;
     textureDesc.Height       = fontAsset->AtlasHeight;
     textureDesc.Format       = Format::R8G8B8A8Unorm;
-    textureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture );
-    textureDesc.Usages       = BitSet( ResourceUsage::ShaderResource );
+    textureDesc.Descriptor   = ResourceDescriptor::Texture;
+    textureDesc.Usages       = ResourceUsage::ShaderResource;
     textureDesc.InitialUsage = ResourceUsage::ShaderResource;
     textureDesc.HeapType     = HeapType::GPU;
     textureDesc.DebugName    = "ClayText Font Atlas Texture";
@@ -243,7 +243,7 @@ void ClayTextCache::InitializeFontAtlas( ClayTextFontData *fontData )
 
         BufferDesc stagingDesc;
         stagingDesc.NumBytes     = alignedPitch * alignedSlice;
-        stagingDesc.Descriptor   = BitSet( ResourceDescriptor::Buffer );
+        stagingDesc.Descriptor   = ResourceDescriptor::Buffer;
         stagingDesc.InitialUsage = ResourceUsage::CopySrc;
         stagingDesc.DebugName    = "ClayText Font MSDF Atlas Staging Buffer";
         stagingDesc.HeapType     = HeapType::CPU;

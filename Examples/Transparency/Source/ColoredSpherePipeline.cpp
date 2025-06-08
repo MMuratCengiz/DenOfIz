@@ -92,7 +92,7 @@ ColoredSpherePipeline::ColoredSpherePipeline( const GraphicsApi *graphicsApi, IL
     {
         BufferDesc viewProjBufferDesc{ };
         viewProjBufferDesc.NumBytes   = sizeof( ViewProjectionData );
-        viewProjBufferDesc.Descriptor = BitSet( ResourceDescriptor::UniformBuffer );
+        viewProjBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
         viewProjBufferDesc.HeapType   = HeapType::CPU_GPU;
         viewProjBufferDesc.DebugName  = "ViewProjectionBuffer";
         m_viewProjBuffer              = std::unique_ptr<IBufferResource>( device->CreateBufferResource( viewProjBufferDesc ) );
@@ -113,7 +113,7 @@ ColoredSpherePipeline::ColoredSpherePipeline( const GraphicsApi *graphicsApi, IL
         uint32_t   alignedNumBytes = Align( sizeof( ModelMatrixData ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
         BufferDesc modelBufferDesc{ };
         modelBufferDesc.NumBytes   = alignedNumBytes * m_numSpheres;
-        modelBufferDesc.Descriptor = BitSet( ResourceDescriptor::UniformBuffer );
+        modelBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
         modelBufferDesc.HeapType   = HeapType::CPU_GPU;
         modelBufferDesc.DebugName  = "ModelMatrixBuffer";
         m_modelBuffer              = std::unique_ptr<IBufferResource>( device->CreateBufferResource( modelBufferDesc ) );
@@ -146,7 +146,7 @@ ColoredSpherePipeline::ColoredSpherePipeline( const GraphicsApi *graphicsApi, IL
         uint32_t   alignedNumBytes = Align( sizeof( SphereMaterialData ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
         BufferDesc materialBufferDesc{ };
         materialBufferDesc.NumBytes   = alignedNumBytes * m_numSpheres;
-        materialBufferDesc.Descriptor = BitSet( ResourceDescriptor::UniformBuffer );
+        materialBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
         materialBufferDesc.HeapType   = HeapType::CPU_GPU;
         materialBufferDesc.DebugName  = isTransparent ? "TransparentMaterialBuffer" : "OpaqueMaterialBuffer";
         m_materialBuffer              = std::unique_ptr<IBufferResource>( device->CreateBufferResource( materialBufferDesc ) );
@@ -157,7 +157,7 @@ ColoredSpherePipeline::ColoredSpherePipeline( const GraphicsApi *graphicsApi, IL
         {
             BufferDesc alphaBufferDesc{ };
             alphaBufferDesc.NumBytes   = sizeof( AlphaData ) * m_numSpheres;
-            alphaBufferDesc.Descriptor = BitSet( ResourceDescriptor::UniformBuffer );
+            alphaBufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
             alphaBufferDesc.HeapType   = HeapType::CPU_GPU;
             alphaBufferDesc.DebugName  = "AlphaAnimationBuffer";
             m_alphaBuffer              = std::unique_ptr<IBufferResource>( device->CreateBufferResource( alphaBufferDesc ) );

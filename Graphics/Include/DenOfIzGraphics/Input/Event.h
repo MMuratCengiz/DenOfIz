@@ -35,7 +35,7 @@ namespace DenOfIz
         KeyState        State;
         uint32_t        Repeat;
         KeyCode         Keycode;
-        BitSet<KeyMod>  Mod;
+        uint32_t        Mod;
         uint32_t        Scancode;
     };
 

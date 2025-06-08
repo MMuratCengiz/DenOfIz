@@ -30,7 +30,7 @@ namespace DenOfIz
         MetalEnumConverter( ) = delete;
 
     public:
-        static MTLBindingAccess          ConvertDescriptorToBindingAccess( const BitSet<ResourceDescriptor> &descriptor );
+        static MTLBindingAccess          ConvertDescriptorToBindingAccess( const uint32_t &descriptor );
         static MTLPixelFormat            ConvertFormat( Format format );
         static MTLVertexFormat           ConvertFormatToVertexFormat( Format format );
         static MTLAttributeFormat        ConvertFormatToAttributeFormat( Format format );

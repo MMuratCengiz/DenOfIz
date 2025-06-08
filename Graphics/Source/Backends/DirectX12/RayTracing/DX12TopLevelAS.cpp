@@ -64,7 +64,7 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
     m_instanceBuffer->UnmapMemory( );
 
     BufferDesc bufferDesc = { };
-    bufferDesc.Descriptor = BitSet( ResourceDescriptor::RWBuffer ) | ResourceDescriptor::AccelerationStructure;
+    bufferDesc.Descriptor = ResourceDescriptor::RWBuffer | ResourceDescriptor::AccelerationStructure;
     bufferDesc.HeapType   = HeapType::GPU;
     bufferDesc.NumBytes   = info.ResultDataMaxSizeInBytes;
     bufferDesc.Usages     = ResourceUsage::AccelerationStructureWrite;
@@ -77,7 +77,7 @@ DX12TopLevelAS::DX12TopLevelAS( DX12Context *context, const TopLevelASDesc &desc
     BufferDesc scratchBufferDesc = { };
     scratchBufferDesc.HeapType   = HeapType::GPU;
     scratchBufferDesc.NumBytes   = static_cast<UINT>( info.ScratchDataSizeInBytes );
-    scratchBufferDesc.Descriptor = BitSet( ResourceDescriptor::RWBuffer );
+    scratchBufferDesc.Descriptor = ResourceDescriptor::RWBuffer;
     scratchBufferDesc.Usages     = ResourceUsage::UnorderedAccess;
     scratchBufferDesc.DebugName  = "Top Level Acceleration Structure Scratch Buffer";
     m_scratch                    = std::make_unique<DX12BufferResource>( m_context, scratchBufferDesc );

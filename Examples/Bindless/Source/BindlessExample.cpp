@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "DenOfIzExamples/BindlessExample.h"
+#include <cmath>
+#include <cstring>
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Vector2d/ThorVGWrapper.h"
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 #include "DenOfIzGraphics/Utilities/InteropUtilities.h"
-#include <cmath>
-#include <cstring>
 
 using namespace DenOfIz;
 
@@ -170,9 +170,9 @@ void BindlessExample::CreateVertexBuffer( )
     };
 
     BufferDesc bufferDesc{ };
-    bufferDesc.Descriptor.Set( ResourceDescriptor::VertexBuffer );
-    bufferDesc.NumBytes  = vertices.size( ) * sizeof( float );
-    bufferDesc.DebugName = "TriangleVertexBuffer";
+    bufferDesc.Descriptor = ResourceDescriptor::VertexBuffer;
+    bufferDesc.NumBytes   = vertices.size( ) * sizeof( float );
+    bufferDesc.DebugName  = "TriangleVertexBuffer";
 
     m_vertexBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( bufferDesc ) );
 
@@ -401,10 +401,10 @@ void BindlessExample::CreateSampler( )
 void BindlessExample::CreateConstantBuffer( )
 {
     BufferDesc bufferDesc{ };
-    bufferDesc.Descriptor.Set( ResourceDescriptor::UniformBuffer );
-    bufferDesc.NumBytes  = sizeof( PerFrameData );
-    bufferDesc.DebugName = "PerFrameConstantBuffer";
-    bufferDesc.HeapType  = HeapType::CPU_GPU;
+    bufferDesc.Descriptor = ResourceDescriptor::UniformBuffer;
+    bufferDesc.NumBytes   = sizeof( PerFrameData );
+    bufferDesc.DebugName  = "PerFrameConstantBuffer";
+    bufferDesc.HeapType   = HeapType::CPU_GPU;
 
     m_constantBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( bufferDesc ) );
 

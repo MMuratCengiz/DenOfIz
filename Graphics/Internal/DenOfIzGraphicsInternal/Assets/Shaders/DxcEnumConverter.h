@@ -48,7 +48,7 @@ namespace DenOfIz
     public:
         static ResourceBindingType   ReflectTypeToBufferBindingType( D3D_SHADER_INPUT_TYPE type );
         static ReflectionBindingType ReflectTypeToBufferReflectionBindingType( D3D_SHADER_INPUT_TYPE type );
-        static ResourceDescriptor    ReflectTypeToRootSignatureType( D3D_SHADER_INPUT_TYPE type, D3D_SRV_DIMENSION dimension );
+        static uint32_t              ReflectTypeToRootSignatureType( D3D_SHADER_INPUT_TYPE type, D3D_SRV_DIMENSION dimension );
         static std::string           GetFieldTypeString( ReflectionFieldType type );
         static std::string           GetBindingTypeString( ResourceBindingType type );
         static std::string           GetStagesString( const InteropArray<ShaderStage> &stages );

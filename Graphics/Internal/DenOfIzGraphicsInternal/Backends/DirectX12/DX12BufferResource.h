@@ -41,7 +41,7 @@ namespace DenOfIz
         uint32_t                                   m_numBytes     = 0;
         const void                                *m_data         = nullptr;
         void                                      *m_mappedMemory = nullptr;
-        BitSet<ResourceUsage>                      m_state;
+        uint32_t                                   m_state;
         std::array<D3D12_CPU_DESCRIPTOR_HANDLE, 4> m_cpuHandles;
         bool                                       allocated = false;
 
@@ -56,7 +56,7 @@ namespace DenOfIz
         void                                      UnmapMemory( ) override;
 
         ~DX12BufferResource( ) override;
-        BitSet<ResourceUsage> InitialState( ) const override;
+        uint32_t InitialState( ) const override;
         size_t                NumBytes( ) const override;
         const void           *Data( ) const override;
 

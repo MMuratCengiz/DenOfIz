@@ -18,11 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Utilities/BitSet.h"
-#include "DenOfIzGraphics/Utilities/Common.h"
-#include "DenOfIzGraphics/Utilities/Interop.h"
 #include <string>
 #include <vector>
+#include "DenOfIzGraphics/Utilities/Common.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 
 namespace DenOfIz
 {
@@ -211,48 +210,49 @@ namespace DenOfIz
         DecrementAndWrap
     };
 
-    enum class ResourceDescriptor
+    namespace ResourceDescriptor
     {
-        Buffer                = 1 << 1,
-        RWBuffer              = 1 << 2,
-        Texture               = 1 << 3,
-        RWTexture             = 1 << 4,
-        RenderTarget          = 1 << 5,
-        DepthStencil          = 1 << 6,
-        Sampler               = 1 << 7,
-        UniformBuffer         = 1 << 8,
-        RootConstant          = 1 << 9,
-        IndexBuffer           = 1 << 10,
-        VertexBuffer          = 1 << 11,
-        IndirectBuffer        = 1 << 12,
-        TextureCube           = 1 << 13,
-        AccelerationStructure = 1 << 14,
-        StructuredBuffer      = 1 << 15,
-    };
+        DZ_API constexpr uint32_t None                  = 0;
+        DZ_API constexpr uint32_t Buffer                = 1 << 1;
+        DZ_API constexpr uint32_t RWBuffer              = 1 << 2;
+        DZ_API constexpr uint32_t Texture               = 1 << 3;
+        DZ_API constexpr uint32_t RWTexture             = 1 << 4;
+        DZ_API constexpr uint32_t RenderTarget          = 1 << 5;
+        DZ_API constexpr uint32_t DepthStencil          = 1 << 6;
+        DZ_API constexpr uint32_t Sampler               = 1 << 7;
+        DZ_API constexpr uint32_t UniformBuffer         = 1 << 8;
+        DZ_API constexpr uint32_t RootConstant          = 1 << 9;
+        DZ_API constexpr uint32_t IndexBuffer           = 1 << 10;
+        DZ_API constexpr uint32_t VertexBuffer          = 1 << 11;
+        DZ_API constexpr uint32_t IndirectBuffer        = 1 << 12;
+        DZ_API constexpr uint32_t TextureCube           = 1 << 13;
+        DZ_API constexpr uint32_t AccelerationStructure = 1 << 14;
+        DZ_API constexpr uint32_t StructuredBuffer      = 1 << 15;
+    } // namespace ResourceDescriptor
 
-    enum class ResourceUsage
+    namespace ResourceUsage
     {
-        Undefined                     = 1 << 1,
-        VertexAndConstantBuffer       = 1 << 2,
-        IndexBuffer                   = 1 << 3,
-        RenderTarget                  = 1 << 4,
-        UnorderedAccess               = 1 << 5,
-        DepthWrite                    = 1 << 6,
-        DepthRead                     = 1 << 7,
-        ShaderResource                = 1 << 8,
-        PixelShaderResource           = 1 << 9,
-        StreamOut                     = 1 << 10,
-        IndirectArgument              = 1 << 11,
-        CopyDst                       = 1 << 12,
-        CopySrc                       = 1 << 13,
-        GenericRead                   = 1 << 14,
-        Present                       = 1 << 15,
-        Common                        = 1 << 16,
-        AccelerationStructureRead     = 1 << 17,
-        AccelerationStructureWrite    = 1 << 18,
-        AccelerationStructureGeometry = 1 << 19,
-        ShaderBindingTable            = 1 << 20,
-    };
+        DZ_API constexpr uint32_t Undefined                     = 1 << 1;
+        DZ_API constexpr uint32_t VertexAndConstantBuffer       = 1 << 2;
+        DZ_API constexpr uint32_t IndexBuffer                   = 1 << 3;
+        DZ_API constexpr uint32_t RenderTarget                  = 1 << 4;
+        DZ_API constexpr uint32_t UnorderedAccess               = 1 << 5;
+        DZ_API constexpr uint32_t DepthWrite                    = 1 << 6;
+        DZ_API constexpr uint32_t DepthRead                     = 1 << 7;
+        DZ_API constexpr uint32_t ShaderResource                = 1 << 8;
+        DZ_API constexpr uint32_t PixelShaderResource           = 1 << 9;
+        DZ_API constexpr uint32_t StreamOut                     = 1 << 10;
+        DZ_API constexpr uint32_t IndirectArgument              = 1 << 11;
+        DZ_API constexpr uint32_t CopyDst                       = 1 << 12;
+        DZ_API constexpr uint32_t CopySrc                       = 1 << 13;
+        DZ_API constexpr uint32_t GenericRead                   = 1 << 14;
+        DZ_API constexpr uint32_t Present                       = 1 << 15;
+        DZ_API constexpr uint32_t Common                        = 1 << 16;
+        DZ_API constexpr uint32_t AccelerationStructureRead     = 1 << 17;
+        DZ_API constexpr uint32_t AccelerationStructureWrite    = 1 << 18;
+        DZ_API constexpr uint32_t AccelerationStructureGeometry = 1 << 19;
+        DZ_API constexpr uint32_t ShaderBindingTable            = 1 << 20;
+    } // namespace ResourceUsage
 
     enum class ResourceBindingType
     {
@@ -261,7 +261,7 @@ namespace DenOfIz
         UnorderedAccess,
         Sampler
     };
-    DZ_API ResourceBindingType ResourceDescriptorBindingType( const BitSet<ResourceDescriptor> &descriptor );
+    DZ_API ResourceBindingType ResourceDescriptorBindingType( const uint32_t &descriptor );
 
     struct DZ_API ResourceBindingSlot
     {
@@ -370,7 +370,4 @@ namespace DenOfIz
             return instance;
         }
     };
-
-    template class DZ_API BitSet<ResourceDescriptor>;
-    template class DZ_API BitSet<ResourceUsage>;
 } // namespace DenOfIz

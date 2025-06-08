@@ -41,7 +41,7 @@ VulkanTextureResource::VulkanTextureResource( VulkanContext *context, const Text
         imageType = VK_IMAGE_TYPE_2D;
     }
 
-    BitSet<ResourceUsage> usage = m_desc.Usages;
+    uint32_t usage = m_desc.Usages;
     usage |= m_desc.InitialUsage;
 
     VkImageCreateInfo imageCreateInfo{ };
@@ -96,7 +96,7 @@ void VulkanTextureResource::CreateImageView( )
         viewType = VK_IMAGE_VIEW_TYPE_2D;
     }
 
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::TextureCube ) )
+    if ( m_desc.Descriptor &ResourceDescriptor::TextureCube )
     {
         viewType = VK_IMAGE_VIEW_TYPE_CUBE;
     }
@@ -253,7 +253,7 @@ uint32_t VulkanTextureResource::GetWidth( ) const
     return m_width;
 }
 
-BitSet<ResourceUsage> VulkanTextureResource::InitialState( ) const
+uint32_t VulkanTextureResource::InitialState( ) const
 {
     return m_initialState;
 }

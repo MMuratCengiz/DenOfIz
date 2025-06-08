@@ -173,7 +173,7 @@ const MTLTextureUsage &MetalTextureResource::Usage( ) const
     return m_textureUsage;
 }
 
-DenOfIz::BitSet<ResourceUsage> MetalTextureResource::InitialState( ) const
+uint32_t MetalTextureResource::InitialState( ) const
 {
     return m_initialState;
 }

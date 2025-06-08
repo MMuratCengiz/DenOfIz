@@ -235,7 +235,7 @@ void MeshShaderGrassExample::CreateConstantsBuffer( )
     constantsDesc.HeapType   = HeapType::CPU_GPU;
     constantsDesc.Descriptor = ResourceDescriptor::UniformBuffer;
     constantsDesc.NumBytes   = sizeof( GrassConstants );
-    constantsDesc.Usages     = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::VertexAndConstantBuffer;
+    constantsDesc.Usages     = ResourceUsage::CopyDst | ResourceUsage::VertexAndConstantBuffer;
     constantsDesc.DebugName  = "GrassConstantsBuffer";
     m_grassConstantsBuffer   = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( constantsDesc ) );
     m_grassConstants         = static_cast<GrassConstants *>( m_grassConstantsBuffer->MapMemory( ) );
@@ -262,9 +262,9 @@ void MeshShaderGrassExample::CreateConstantsBuffer( )
     depthDesc.Width        = m_windowDesc.Width;
     depthDesc.Height       = m_windowDesc.Height;
     depthDesc.Format       = Format::D32Float;
-    depthDesc.Descriptor   = BitSet( ResourceDescriptor::DepthStencil );
+    depthDesc.Descriptor   = ResourceDescriptor::DepthStencil;
     depthDesc.InitialUsage = ResourceUsage::DepthWrite;
-    depthDesc.Usages       = BitSet( ResourceUsage::DepthWrite ) | ResourceUsage::DepthRead;
+    depthDesc.Usages       = ResourceUsage::DepthWrite | ResourceUsage::DepthRead;
     depthDesc.DebugName    = "DepthBuffer";
     m_depthBuffer          = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( depthDesc ) );
     m_resourceTracking.TrackTexture( m_depthBuffer.get( ), ResourceUsage::DepthWrite );
@@ -287,9 +287,9 @@ void MeshShaderGrassExample::LoadGrassTexture( )
     textureDesc.Width        = 128;
     textureDesc.Height       = 128;
     textureDesc.Format       = Format::R8G8B8A8Unorm;
-    textureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture );
+    textureDesc.Descriptor   = ResourceDescriptor::Texture;
     textureDesc.InitialUsage = ResourceUsage::CopyDst;
-    textureDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::ShaderResource;
+    textureDesc.Usages       = ResourceUsage::CopyDst | ResourceUsage::ShaderResource;
     textureDesc.DebugName    = "GrassTexture";
 
     m_grassTexture = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
@@ -381,7 +381,7 @@ void MeshShaderGrassExample::CreateTerrainGeometry( )
     QuadDesc quadDesc;
     quadDesc.Width     = 100.0f;
     quadDesc.Height    = 100.0f;
-    quadDesc.BuildDesc = BitSet( BuildDesc::BuildNormal ) | BuildDesc::BuildTexCoord;
+    quadDesc.BuildDesc = BuildDesc::BuildNormal | BuildDesc::BuildTexCoord;
     m_terrainGeometry  = Geometry::BuildQuadXZ( quadDesc );
 
     // Create vertex buffer for terrain
@@ -389,7 +389,7 @@ void MeshShaderGrassExample::CreateTerrainGeometry( )
     vertexDesc.HeapType   = HeapType::GPU;
     vertexDesc.Descriptor = ResourceDescriptor::VertexBuffer;
     vertexDesc.NumBytes   = m_terrainGeometry.Vertices.NumElements( ) * sizeof( GeometryVertexData );
-    vertexDesc.Usages     = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::VertexAndConstantBuffer;
+    vertexDesc.Usages     = ResourceUsage::CopyDst | ResourceUsage::VertexAndConstantBuffer;
     vertexDesc.DebugName  = "TerrainVertexBuffer";
     m_terrainVertexBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vertexDesc ) );
 
@@ -398,7 +398,7 @@ void MeshShaderGrassExample::CreateTerrainGeometry( )
     indexDesc.HeapType   = HeapType::GPU;
     indexDesc.Descriptor = ResourceDescriptor::IndexBuffer;
     indexDesc.NumBytes   = m_terrainGeometry.Indices.NumElements( ) * sizeof( uint32_t );
-    indexDesc.Usages     = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::IndexBuffer;
+    indexDesc.Usages     = ResourceUsage::CopyDst | ResourceUsage::IndexBuffer;
     indexDesc.DebugName  = "TerrainIndexBuffer";
     m_terrainIndexBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( indexDesc ) );
 
@@ -437,9 +437,9 @@ void MeshShaderGrassExample::LoadTerrainTexture( )
     textureDesc.Width        = 256;
     textureDesc.Height       = 256;
     textureDesc.Format       = Format::R8G8B8A8Unorm;
-    textureDesc.Descriptor   = BitSet( ResourceDescriptor::Texture );
+    textureDesc.Descriptor   = ResourceDescriptor::Texture;
     textureDesc.InitialUsage = ResourceUsage::CopyDst;
-    textureDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::ShaderResource;
+    textureDesc.Usages       = ResourceUsage::CopyDst | ResourceUsage::ShaderResource;
     textureDesc.DebugName    = "TerrainTexture";
 
     m_terrainTexture = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );

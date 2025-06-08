@@ -43,17 +43,17 @@ namespace DenOfIz
         static VkFilter                             ConvertFilter( const Filter &filter );
         static VkSamplerAddressMode                 ConvertAddressMode( const SamplerAddressMode &addressMode );
         static VkSamplerMipmapMode                  ConvertMipmapMode( const MipmapMode &mipmapMode );
-        static VkBufferUsageFlags                   ConvertBufferUsage( BitSet<ResourceDescriptor> descriptor, BitSet<ResourceUsage> usages );
+        static VkBufferUsageFlags                   ConvertBufferUsage( const uint32_t& descriptor, const uint32_t& usages );
         static VkImageAspectFlagBits                ConvertImageAspect( TextureAspect aspect );
-        static VkImageUsageFlags                    ConvertTextureDescriptorToUsage( BitSet<ResourceDescriptor> descriptor, BitSet<ResourceUsage> initialState );
+        static VkImageUsageFlags                    ConvertTextureDescriptorToUsage( const uint32_t& descriptor, const uint32_t& initialState );
         static VmaMemoryUsage                       ConvertHeapType( HeapType location );
         static VkFormat                             ConvertImageFormat( const Format &imageFormat );
-        static VkDescriptorType                     ConvertResourceDescriptorToDescriptorType( const BitSet<ResourceDescriptor> &descriptor );
+        static VkDescriptorType                     ConvertResourceDescriptorToDescriptorType( const uint32_t &descriptor );
         static VkPrimitiveTopology                  ConvertPrimitiveTopology( const PrimitiveTopology &topology );
         static VkPipelineBindPoint                  ConvertPipelineBindPoint( const BindPoint &point );
-        static VkImageUsageFlags                    ConvertTextureUsage( BitSet<ResourceDescriptor> descriptor, BitSet<ResourceUsage> usage );
-        static VkImageLayout                        ConvertTextureDescriptorToLayout( BitSet<ResourceUsage> initialState );
-        static VkBuildAccelerationStructureFlagsKHR ConvertAccelerationStructureBuildFlags( BitSet<ASBuildFlags> buildFlags );
+        static VkImageUsageFlags                    ConvertTextureUsage( uint32_t descriptor, uint32_t usage );
+        static VkImageLayout                        ConvertTextureDescriptorToLayout( uint32_t initialState );
+        static VkBuildAccelerationStructureFlagsKHR ConvertAccelerationStructureBuildFlags( uint32_t buildFlags );
     };
 
 } // namespace DenOfIz

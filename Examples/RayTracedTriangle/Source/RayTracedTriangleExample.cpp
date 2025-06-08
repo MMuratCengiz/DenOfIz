@@ -103,8 +103,8 @@ void RayTracedTriangleExample::CreateRenderTargets( )
     textureDesc.Width      = m_windowDesc.Width;
     textureDesc.Height     = m_windowDesc.Height;
     textureDesc.Format     = Format::B8G8R8A8Unorm;
-    textureDesc.Descriptor = BitSet( ResourceDescriptor::RWTexture );
-    textureDesc.Usages     = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::UnorderedAccess;
+    textureDesc.Descriptor = ResourceDescriptor::RWTexture;
+    textureDesc.Usages     = ResourceUsage::CopySrc | ResourceUsage::UnorderedAccess;
     for ( uint32_t i = 0; i < 3; ++i )
     {
         textureDesc.DebugName   = InteropString( "RayTracing Output " ).Append( std::to_string( i ).c_str( ) );
@@ -189,18 +189,18 @@ void RayTracedTriangleExample::CreateResources( )
     constexpr Vertex vertices[] = { { 0, -offset, depthValue }, { -offset, offset, depthValue }, { offset, offset, depthValue } };
 
     BufferDesc vbDesc{ };
-    vbDesc.Descriptor   = BitSet( ResourceDescriptor::VertexBuffer );
+    vbDesc.Descriptor   = ResourceDescriptor::VertexBuffer;
     vbDesc.InitialUsage = ResourceUsage::CopyDst;
-    vbDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::VertexAndConstantBuffer | ResourceUsage::AccelerationStructureGeometry;
+    vbDesc.Usages       = ResourceUsage::CopyDst | ResourceUsage::VertexAndConstantBuffer | ResourceUsage::AccelerationStructureGeometry;
     vbDesc.NumBytes     = sizeof( vertices );
     vbDesc.DebugName    = "VertexBuffer";
     m_vertexBuffer      = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vbDesc ) );
 
     BufferDesc ibDesc{ };
-    ibDesc.Descriptor   = BitSet( ResourceDescriptor::IndexBuffer );
+    ibDesc.Descriptor   = ResourceDescriptor::IndexBuffer;
     ibDesc.NumBytes     = sizeof( indices );
     ibDesc.InitialUsage = ResourceUsage::CopyDst;
-    ibDesc.Usages       = BitSet( ResourceUsage::CopyDst ) | ResourceUsage::IndexBuffer | ResourceUsage::AccelerationStructureGeometry;
+    ibDesc.Usages       = ResourceUsage::CopyDst | ResourceUsage::IndexBuffer | ResourceUsage::AccelerationStructureGeometry;
     ibDesc.DebugName    = "IndexBuffer";
     m_indexBuffer       = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( ibDesc ) );
 

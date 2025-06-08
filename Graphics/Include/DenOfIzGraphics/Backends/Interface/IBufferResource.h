@@ -36,9 +36,9 @@ namespace DenOfIz
         size_t                     NumBytes{ };
         StructuredBufferDesc       StructureDesc{ }; // For Structured Buffers, set `ResourceDescriptor::StructuredBuffer`
         Format                     Format = Format::Undefined;
-        BitSet<ResourceDescriptor> Descriptor;
-        ResourceUsage              InitialUsage = ResourceUsage::Common; // Todo remove
-        BitSet<ResourceUsage>      Usages;
+        uint32_t                   Descriptor;
+        uint32_t                   InitialUsage = ResourceUsage::Common;
+        uint32_t                   Usages;
         HeapType                   HeapType;
         InteropString              DebugName;
     };
@@ -52,7 +52,7 @@ namespace DenOfIz
         virtual void *MapMemory( )   = 0;
         virtual void  UnmapMemory( ) = 0;
         //--
-        [[nodiscard]] virtual BitSet<ResourceUsage> InitialState( ) const = 0;
+        [[nodiscard]] virtual uint32_t InitialState( ) const = 0;
         [[nodiscard]] virtual size_t                NumBytes( ) const     = 0;
         [[nodiscard]] virtual const void           *Data( ) const         = 0;
 

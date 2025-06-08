@@ -52,8 +52,8 @@ void VulkanShaderBindingTable::Resize( const SBTSizeDesc &desc )
 
     BufferDesc bufferDesc{ };
     bufferDesc.NumBytes   = m_numBufferBytes;
-    bufferDesc.Descriptor = BitSet( ResourceDescriptor::Buffer );
-    bufferDesc.Usages     = BitSet( ResourceUsage::CopySrc ) | ResourceUsage::ShaderBindingTable;
+    bufferDesc.Descriptor = ResourceDescriptor::Buffer;
+    bufferDesc.Usages     = ResourceUsage::CopySrc | ResourceUsage::ShaderBindingTable;
     bufferDesc.HeapType   = HeapType::CPU_GPU;
     bufferDesc.DebugName  = "Shader Binding Table Staging Buffer";
 
@@ -66,7 +66,7 @@ void VulkanShaderBindingTable::Resize( const SBTSizeDesc &desc )
     }
 
     bufferDesc.InitialUsage = ResourceUsage::CopyDst;
-    bufferDesc.Usages       = BitSet( ResourceUsage::ShaderBindingTable ) | ResourceUsage::CopyDst;
+    bufferDesc.Usages       = ResourceUsage::ShaderBindingTable | ResourceUsage::CopyDst;
     bufferDesc.HeapType     = HeapType::GPU;
     bufferDesc.DebugName    = "Shader Binding Table Buffer";
     m_buffer                = std::make_unique<VulkanBufferResource>( m_context, bufferDesc );

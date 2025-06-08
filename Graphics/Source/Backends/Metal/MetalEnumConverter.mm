@@ -21,10 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-MTLBindingAccess MetalEnumConverter::ConvertDescriptorToBindingAccess( const BitSet<ResourceDescriptor> &descriptor )
+MTLBindingAccess MetalEnumConverter::ConvertDescriptorToBindingAccess( const uint32_t &descriptor )
 {
     // Todo is this correct?
-    if ( descriptor.Any( { ResourceDescriptor::RWTexture, ResourceDescriptor::RWBuffer } ) )
+    if ( descriptor & ( ResourceDescriptor::RWTexture | ResourceDescriptor::RWBuffer ) )
     {
         return MTLBindingAccessReadWrite;
     }

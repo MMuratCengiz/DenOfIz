@@ -40,7 +40,7 @@ void TransparencyExample::Init( )
     depthDesc.Height       = m_windowDesc.Height;
     depthDesc.InitialUsage = ResourceUsage::DepthWrite;
     depthDesc.Format       = Format::D32Float;
-    depthDesc.Descriptor   = BitSet( ResourceDescriptor::DepthStencil );
+    depthDesc.Descriptor   = ResourceDescriptor::DepthStencil;
     depthDesc.HeapType     = HeapType::GPU;
     depthDesc.DebugName    = "DepthBuffer";
     m_depthBuffer          = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( depthDesc ) );

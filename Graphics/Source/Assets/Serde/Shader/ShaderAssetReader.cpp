@@ -173,7 +173,7 @@ void ShaderAssetReader::ReadRootSignature( RootSignatureDesc &rootSignature ) co
         sampler.Binding.BindingType   = static_cast<ResourceBindingType>( m_reader->ReadUInt32( ) );
         sampler.Binding.Binding       = m_reader->ReadUInt32( );
         sampler.Binding.RegisterSpace = m_reader->ReadUInt32( );
-        sampler.Binding.Descriptor    = static_cast<ResourceDescriptor>( m_reader->ReadUInt32( ) );
+        sampler.Binding.Descriptor    = m_reader->ReadUInt32( );
 
         const uint32_t numStages = m_reader->ReadUInt32( );
         sampler.Binding.Stages.Resize( numStages );
@@ -225,7 +225,7 @@ void ShaderAssetReader::ReadResourceBinding( ResourceBindingDesc &binding ) cons
     binding.BindingType   = static_cast<ResourceBindingType>( m_reader->ReadUInt32( ) );
     binding.Binding       = m_reader->ReadUInt32( );
     binding.RegisterSpace = m_reader->ReadUInt32( );
-    binding.Descriptor    = static_cast<ResourceDescriptor>( m_reader->ReadUInt32( ) );
+    binding.Descriptor    = m_reader->ReadUInt32( );
 
     const uint32_t numStages = m_reader->ReadUInt32( );
     binding.Stages.Resize( numStages );

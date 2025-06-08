@@ -50,7 +50,7 @@ namespace DenOfIz
         Format                BackBufferFormat  = Format::B8G8R8A8Unorm;
         Format                DepthBufferFormat = Format::D32Float;
         ICommandQueue        *CommandQueue      = nullptr;
-        BitSet<ResourceUsage> ImageUsages;
+        uint32_t ImageUsages;
     };
 
     struct DZ_API Viewport

@@ -184,13 +184,13 @@ void Camera::HandleEvent( const DenOfIz::Event &event )
             switch ( event.Key.Keycode )
             {
             case DenOfIz::KeyCode::F:
-                if ( event.Key.Mod.IsSet( DenOfIz::KeyMod::Ctrl ) )
+                if ( event.Key.Mod & DenOfIz::KeyMod::Ctrl )
                 {
                     ResetCamera( );
                 }
                 break;
             case DenOfIz::KeyCode::Space:
-                if ( event.Key.Mod.IsSet( DenOfIz::KeyMod::Alt ) )
+                if ( event.Key.Mod & DenOfIz::KeyMod::Alt )
                 {
                     m_isOrbiting = !m_isOrbiting;
                 }

@@ -396,9 +396,9 @@ void TextFieldWidget::InsertText( const InteropString &text )
 
 void TextFieldWidget::HandleKeyPress( const Event &event )
 {
-    const bool isCtrlDown  = event.Key.Mod.IsSet( KeyMod::Ctrl ) || event.Key.Mod.IsSet( KeyMod::LCtrl ) || event.Key.Mod.IsSet( KeyMod::RCtrl );
-    const bool isShiftDown = event.Key.Mod.IsSet( KeyMod::Shift ) || event.Key.Mod.IsSet( KeyMod::LShift ) || event.Key.Mod.IsSet( KeyMod::RShift );
-    const bool isCmdDown   = event.Key.Mod.IsSet( KeyMod::Gui ) || event.Key.Mod.IsSet( KeyMod::LGui ) || event.Key.Mod.IsSet( KeyMod::RGui ); // Command key on macOS
+    const bool isCtrlDown  = event.Key.Mod & KeyMod::Ctrl || event.Key.Mod & KeyMod::LCtrl || event.Key.Mod & KeyMod::RCtrl;
+    const bool isShiftDown = event.Key.Mod & KeyMod::Shift || event.Key.Mod & KeyMod::LShift || event.Key.Mod & KeyMod::RShift;
+    const bool isCmdDown   = event.Key.Mod & KeyMod::Gui || event.Key.Mod & KeyMod::LGui || event.Key.Mod & KeyMod::RGui; // Command key on macOS
 
     if ( isCtrlDown || isCmdDown )
     {

@@ -28,7 +28,7 @@ void BatchTransitionDesc::Reset( ICommandList * commandList )
     m_commandList = commandList;
 }
 
-void BatchTransitionDesc::TransitionBuffer( IBufferResource *resource, const ResourceUsage newUsage, const QueueType queueType)
+void BatchTransitionDesc::TransitionBuffer( IBufferResource *resource, const uint32_t& newUsage, const QueueType queueType)
 {
     TransitionBufferDesc& desc = m_bufferTransitions.EmplaceElement( );
     desc.Buffer    = resource;
@@ -36,7 +36,7 @@ void BatchTransitionDesc::TransitionBuffer( IBufferResource *resource, const Res
     desc.QueueType = queueType;
 }
 
-void BatchTransitionDesc::TransitionTexture( ITextureResource *resource, const ResourceUsage newUsage, const QueueType queueType )
+void BatchTransitionDesc::TransitionTexture( ITextureResource *resource, const uint32_t& newUsage, const QueueType queueType )
 {
     TransitionTextureDesc& desc = m_textureTransitions.EmplaceElement( );
     desc.Texture    = resource;
@@ -48,7 +48,7 @@ ResourceTracking::~ResourceTracking( )
 {
 }
 
-void ResourceTracking::TrackBuffer( IBufferResource *buffer, const ResourceUsage currentUsage, const QueueType queueType )
+void ResourceTracking::TrackBuffer( IBufferResource *buffer, const uint32_t& currentUsage, const QueueType queueType )
 {
     if ( m_bufferStates.contains( buffer ) )
     {
@@ -59,7 +59,7 @@ void ResourceTracking::TrackBuffer( IBufferResource *buffer, const ResourceUsage
     m_bufferStates[ buffer ].CurrentUsage = currentUsage;
 }
 
-void ResourceTracking::TrackTexture( ITextureResource *texture, const ResourceUsage currentUsage, const QueueType queueType )
+void ResourceTracking::TrackTexture( ITextureResource *texture, const uint32_t& currentUsage, const QueueType queueType )
 {
     // Trust the user that this is an update.
     m_textureStates[ texture ].CurrentQueue = queueType;

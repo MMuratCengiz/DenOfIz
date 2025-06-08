@@ -232,8 +232,8 @@ void ClayRenderer::CreateNullTexture( )
     textureDesc.Width      = 1;
     textureDesc.Height     = 1;
     textureDesc.Format     = Format::R8G8B8A8Unorm;
-    textureDesc.Usages     = BitSet( ResourceUsage::ShaderResource );
-    textureDesc.Descriptor = BitSet( ResourceDescriptor::Texture );
+    textureDesc.Usages     = ResourceUsage::ShaderResource;
+    textureDesc.Descriptor = ResourceDescriptor::Texture;
     textureDesc.HeapType   = HeapType::GPU;
     textureDesc.DebugName  = InteropString( "UI Null Texture" );
 
@@ -251,9 +251,9 @@ void ClayRenderer::CreateRenderTargets( )
         colorDesc.Width        = static_cast<uint32_t>( m_viewportWidth );
         colorDesc.Height       = static_cast<uint32_t>( m_viewportHeight );
         colorDesc.Format       = m_desc.RenderTargetFormat;
-        colorDesc.Usages       = BitSet( ResourceUsage::RenderTarget ) | ResourceUsage::ShaderResource;
-        colorDesc.InitialUsage = BitSet( ResourceUsage::RenderTarget );
-        colorDesc.Descriptor   = BitSet( ResourceDescriptor::RenderTarget ) | ResourceDescriptor::Texture;
+        colorDesc.Usages       = ResourceUsage::RenderTarget | ResourceUsage::ShaderResource;
+        colorDesc.InitialUsage = ResourceUsage::RenderTarget;
+        colorDesc.Descriptor   = ResourceDescriptor::RenderTarget | ResourceDescriptor::Texture;
         colorDesc.HeapType     = HeapType::GPU;
         colorDesc.DebugName    = InteropString( "UI Color Target Frame " ).Append( std::to_string( frameIdx ).c_str( ) );
 
@@ -263,9 +263,9 @@ void ClayRenderer::CreateRenderTargets( )
         depthDesc.Width        = static_cast<uint32_t>( m_viewportWidth );
         depthDesc.Height       = static_cast<uint32_t>( m_viewportHeight );
         depthDesc.Format       = Format::D32Float;
-        depthDesc.Usages       = BitSet( ResourceUsage::DepthWrite ) | ResourceUsage::DepthRead;
-        depthDesc.InitialUsage = BitSet( ResourceUsage::DepthWrite ) | ResourceUsage::DepthRead;
-        depthDesc.Descriptor   = BitSet( ResourceDescriptor::DepthStencil ) | ResourceDescriptor::Texture;
+        depthDesc.Usages       = ResourceUsage::DepthWrite | ResourceUsage::DepthRead;
+        depthDesc.InitialUsage = ResourceUsage::DepthWrite | ResourceUsage::DepthRead;
+        depthDesc.Descriptor   = ResourceDescriptor::DepthStencil | ResourceDescriptor::Texture;
         depthDesc.HeapType     = HeapType::GPU;
         depthDesc.DebugName    = InteropString( "UI Depth Buffer Frame " ).Append( std::to_string( frameIdx ).c_str( ) );
 

@@ -318,17 +318,17 @@ int DenOfIz::MSAASampleCountToNumSamples( const MSAASampleCount &sampleCount )
     }
 }
 
-ResourceBindingType DenOfIz::ResourceDescriptorBindingType( const BitSet<ResourceDescriptor> &descriptor )
+ResourceBindingType DenOfIz::ResourceDescriptorBindingType( const uint32_t &descriptor )
 {
-    if ( descriptor.Any( { ResourceDescriptor::RWTexture, ResourceDescriptor::RWBuffer } ) )
+    if ( ( descriptor & ResourceDescriptor::RWTexture ) == ResourceDescriptor::RWTexture || ( descriptor & ResourceDescriptor::RWBuffer ) == ResourceDescriptor::RWBuffer )
     {
         return ResourceBindingType::UnorderedAccess;
     }
-    if ( descriptor.IsSet( ResourceDescriptor::Sampler ) )
+    if ( ( descriptor & ResourceDescriptor::Sampler ) == ResourceDescriptor::Sampler )
     {
         return ResourceBindingType::Sampler;
     }
-    if ( descriptor.IsSet( ResourceDescriptor::UniformBuffer ) )
+    if ( ( descriptor & ResourceDescriptor::UniformBuffer ) == ResourceDescriptor::UniformBuffer )
     {
         return ResourceBindingType::ConstantBuffer;
     }

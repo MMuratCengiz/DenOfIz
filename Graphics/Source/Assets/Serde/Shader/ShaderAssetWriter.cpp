@@ -159,7 +159,7 @@ void ShaderAssetWriter::WriteRootSignature( const RootSignatureDesc &rootSignatu
         m_writer->WriteUInt32( static_cast<uint32_t>( sampler.Binding.BindingType ) );
         m_writer->WriteUInt32( sampler.Binding.Binding );
         m_writer->WriteUInt32( sampler.Binding.RegisterSpace );
-        m_writer->WriteUInt32( sampler.Binding.Descriptor.Value( ) );
+        m_writer->WriteUInt32( sampler.Binding.Descriptor );
 
         const uint32_t numStages = sampler.Binding.Stages.NumElements( );
         m_writer->WriteUInt32( numStages );
@@ -210,7 +210,7 @@ void ShaderAssetWriter::WriteResourceBinding( const ResourceBindingDesc &resourc
     m_writer->WriteUInt32( static_cast<uint32_t>( resourceBinding.BindingType ) );
     m_writer->WriteUInt32( resourceBinding.Binding );
     m_writer->WriteUInt32( resourceBinding.RegisterSpace );
-    m_writer->WriteUInt32( resourceBinding.Descriptor.Value( ) );
+    m_writer->WriteUInt32( resourceBinding.Descriptor );
 
     const uint32_t numStages = resourceBinding.Stages.NumElements( );
     m_writer->WriteUInt32( numStages );
