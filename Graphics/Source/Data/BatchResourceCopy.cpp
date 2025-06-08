@@ -449,22 +449,23 @@ void BatchResourceCopy::LoadTextureInternal( const Texture &texture, ITextureRes
     const auto stagingBuffer       = m_device->CreateBufferResource( stagingBufferDesc );
     const auto stagingMappedMemory = static_cast<Byte *>( stagingBuffer->MapMemory( ) );
 
-    texture.StreamMipData(
-        [ & ]( const TextureMip &mipData )
-        {
-            CopyTextureToMemoryAligned( texture, mipData, stagingMappedMemory + mipData.DataOffset );
+    const auto mipDataArray = texture.ReadMipData( );
+    for ( uint32_t i = 0; i < mipDataArray.NumElements( ); ++i )
+    {
+        const TextureMip &mipData = mipDataArray.GetElement( i );
+        CopyTextureToMemoryAligned( texture, mipData, stagingMappedMemory + mipData.DataOffset );
 
-            CopyBufferToTextureDesc copyBufferToTextureDesc{ };
-            copyBufferToTextureDesc.DstTexture = dstTexture;
-            copyBufferToTextureDesc.SrcBuffer  = stagingBuffer;
-            copyBufferToTextureDesc.SrcOffset  = mipData.DataOffset;
-            copyBufferToTextureDesc.Format     = dstTexture->GetFormat( );
-            copyBufferToTextureDesc.MipLevel   = mipData.MipIndex;
-            copyBufferToTextureDesc.ArrayLayer = mipData.ArrayIndex;
-            copyBufferToTextureDesc.RowPitch   = mipData.RowPitch;
-            copyBufferToTextureDesc.NumRows    = mipData.NumRows;
-            m_copyCommandList->CopyBufferToTexture( copyBufferToTextureDesc );
-        } );
+        CopyBufferToTextureDesc copyBufferToTextureDesc{ };
+        copyBufferToTextureDesc.DstTexture = dstTexture;
+        copyBufferToTextureDesc.SrcBuffer  = stagingBuffer;
+        copyBufferToTextureDesc.SrcOffset  = mipData.DataOffset;
+        copyBufferToTextureDesc.Format     = dstTexture->GetFormat( );
+        copyBufferToTextureDesc.MipLevel   = mipData.MipIndex;
+        copyBufferToTextureDesc.ArrayLayer = mipData.ArrayIndex;
+        copyBufferToTextureDesc.RowPitch   = mipData.RowPitch;
+        copyBufferToTextureDesc.NumRows    = mipData.NumRows;
+        m_copyCommandList->CopyBufferToTexture( copyBufferToTextureDesc );
+    }
 
     stagingBuffer->UnmapMemory( );
     std::lock_guard lock( m_resourceCleanLock );

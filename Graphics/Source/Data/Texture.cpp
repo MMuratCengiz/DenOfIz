@@ -422,19 +422,6 @@ void Texture::LoadTextureDDS( )
     }
 }
 
-void Texture::StreamMipData( const MipStreamCallback &callback ) const
-{
-    switch ( m_extension )
-    {
-    case TextureExtension::DDS:
-        StreamMipDataDDS( callback );
-        break;
-    default:
-        StreamMipDataSTB( callback );
-        break;
-    }
-}
-
 uint32_t Texture::GetWidth( ) const
 {
     return m_width;
@@ -508,47 +495,49 @@ const InteropArray<Byte> &Texture::GetData( ) const
 InteropArray<TextureMip> Texture::ReadMipData( ) const
 {
     InteropArray<TextureMip> mipData;
-    StreamMipData( [ & ]( const TextureMip &mip ) { mipData.AddElement( mip ); } );
-    return mipData;
-}
-
-void Texture::StreamMipDataDDS( const MipStreamCallback &callback ) const
-{
-    for ( uint32_t array = 0; array < m_arraySize; ++array )
+    
+    switch ( m_extension )
     {
-        for ( uint32_t mip = 0; mip < m_mipLevels; ++mip )
+    case TextureExtension::DDS:
+        // Inline StreamMipDataDDS logic
+        for ( uint32_t array = 0; array < m_arraySize; ++array )
         {
-            // this.Data already skips the data_offset() but mip_offset() includes it
-            const auto externalOffset = m_ddsHeader->mip_offset( mip, array ) - m_ddsHeader->data_offset( );
+            for ( uint32_t mip = 0; mip < m_mipLevels; ++mip )
+            {
+                // this.Data already skips the data_offset() but mip_offset() includes it
+                const auto externalOffset = m_ddsHeader->mip_offset( mip, array ) - m_ddsHeader->data_offset( );
 
-            TextureMip mipData{ };
-            mipData.Width      = m_ddsHeader->width( ) >> mip;
-            mipData.Height     = m_ddsHeader->height( ) >> mip;
-            mipData.MipIndex   = mip;
-            mipData.ArrayIndex = array;
-            mipData.RowPitch   = m_ddsHeader->row_pitch( mip );
-            mipData.NumRows    = m_numRows >> mip;
-            mipData.SlicePitch = m_ddsHeader->slice_pitch( mip );
-            mipData.DataOffset = externalOffset;
+                TextureMip mipInfo{ };
+                mipInfo.Width      = m_ddsHeader->width( ) >> mip;
+                mipInfo.Height     = m_ddsHeader->height( ) >> mip;
+                mipInfo.MipIndex   = mip;
+                mipInfo.ArrayIndex = array;
+                mipInfo.RowPitch   = m_ddsHeader->row_pitch( mip );
+                mipInfo.NumRows    = m_numRows >> mip;
+                mipInfo.SlicePitch = m_ddsHeader->slice_pitch( mip );
+                mipInfo.DataOffset = externalOffset;
 
-            callback( mipData );
+                mipData.AddElement( mipInfo );
+            }
         }
+        break;
+    default:
+        // Inline StreamMipDataSTB logic
+        TextureMip mipInfo{ };
+        mipInfo.Width      = m_width;
+        mipInfo.Height     = m_height;
+        mipInfo.MipIndex   = 0;
+        mipInfo.ArrayIndex = 0;
+        mipInfo.RowPitch   = m_rowPitch;
+        mipInfo.NumRows    = m_numRows;
+        mipInfo.SlicePitch = m_slicePitch;
+        mipInfo.DataOffset = 0;
+
+        mipData.AddElement( mipInfo );
+        break;
     }
-}
-
-void Texture::StreamMipDataSTB( const MipStreamCallback &callback ) const
-{
-    TextureMip mipData{ };
-    mipData.Width      = m_width;
-    mipData.Height     = m_height;
-    mipData.MipIndex   = 0;
-    mipData.ArrayIndex = 0;
-    mipData.RowPitch   = m_rowPitch;
-    mipData.NumRows    = m_numRows;
-    mipData.SlicePitch = m_slicePitch;
-    mipData.DataOffset = 0;
-
-    callback( mipData );
+    
+    return mipData;
 }
 
 void Texture::LoadTextureFromMemory( const Byte *data, const size_t dataNumBytes )

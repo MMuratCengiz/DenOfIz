@@ -1118,21 +1118,24 @@ void AssimpImporter::Impl::WriteTextureAsset( ImportContext &context, const aiTe
     texAsset.SlicePitch   = sourceTexture->GetSlicePitch( );
     texAsset.Mips.Resize( sourceTexture->GetMipLevels( ) * sourceTexture->GetArraySize( ) );
 
-    size_t mipIndex = 0;
-    // Have to double stream to write metadata correctly first
-    sourceTexture->StreamMipData( [ & ]( const TextureMip &mipData ) { texAsset.Mips.SetElement( mipIndex++, mipData ); } );
+    // Have to double stream to write metadata correctly unfortunately
+    const auto mipDataArray = sourceTexture->ReadMipData( );
+    for ( uint32_t i = 0; i < mipDataArray.NumElements( ); ++i )
+    {
+        texAsset.Mips.SetElement( i, mipDataArray.GetElement( i ) );
+    }
     assetWriter.Write( texAsset );
 
-    sourceTexture->StreamMipData(
-        [ & ]( const TextureMip &mipData )
-        {
-            const size_t mipSize   = mipData.SlicePitch;
-            const size_t mipOffset = mipData.DataOffset;
+    for ( uint32_t i = 0; i < mipDataArray.NumElements( ); ++i )
+    {
+        const TextureMip &mipData = mipDataArray.GetElement( i );
+        const size_t mipSize   = mipData.SlicePitch;
+        const size_t mipOffset = mipData.DataOffset;
 
-            InteropArray<Byte> mipDataBuffer;
-            mipDataBuffer.MemCpy( sourceTexture->GetData( ).Data( ) + mipOffset, mipSize );
-            assetWriter.AddPixelData( mipDataBuffer, mipData.MipIndex, mipData.ArrayIndex );
-        } );
+        InteropArray<Byte> mipDataBuffer;
+        mipDataBuffer.MemCpy( sourceTexture->GetData( ).Data( ) + mipOffset, mipSize );
+        assetWriter.AddPixelData( mipDataBuffer, mipData.MipIndex, mipData.ArrayIndex );
+    }
 
     assetWriter.End( );
     RegisterCreatedAsset( context, outAssetUri );

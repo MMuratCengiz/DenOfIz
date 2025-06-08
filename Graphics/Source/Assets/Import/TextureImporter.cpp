@@ -145,16 +145,17 @@ void TextureImporter::WriteTextureAsset( const ImportContext &context, const Tex
     TextureAssetWriter textureWriter( writerDesc );
     textureWriter.Write( textureAsset );
 
-    m_texture->StreamMipData(
-        [ & ]( const TextureMip &mipData )
-        {
-            const size_t mipSize   = mipData.SlicePitch;
-            const size_t mipOffset = mipData.DataOffset;
+    const auto mipDataArray = m_texture->ReadMipData( );
+    for ( uint32_t i = 0; i < mipDataArray.NumElements( ); ++i )
+    {
+        const TextureMip &mipData = mipDataArray.GetElement( i );
+        const size_t mipSize   = mipData.SlicePitch;
+        const size_t mipOffset = mipData.DataOffset;
 
-            InteropArray<Byte> mipDataBuffer;
-            mipDataBuffer.MemCpy( m_texture->GetData( ).Data( ) + mipOffset, mipSize );
-            textureWriter.AddPixelData( mipDataBuffer, mipData.MipIndex, mipData.ArrayIndex );
-        } );
+        InteropArray<Byte> mipDataBuffer;
+        mipDataBuffer.MemCpy( m_texture->GetData( ).Data( ) + mipOffset, mipSize );
+        textureWriter.AddPixelData( mipDataBuffer, mipData.MipIndex, mipData.ArrayIndex );
+    }
 
     textureWriter.End( );
     writer.Flush( );

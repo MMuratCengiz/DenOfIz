@@ -18,7 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <functional>
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAsset.h"
 #include "DenOfIzGraphics/Backends/Interface/CommonData.h"
 #include "DenOfIzGraphics/Utilities/Common.h"
@@ -47,7 +46,6 @@ namespace DenOfIz
         PIC,
     };
 
-    typedef std::function<void( TextureMip mipData )> MipStreamCallback;
     class Texture
     {
         std::string                                    m_path;
@@ -75,7 +73,6 @@ namespace DenOfIz
         DZ_API explicit Texture( const InteropArray<Byte> &data, TextureExtension extension = TextureExtension::DDS );
         DZ_API static TextureExtension                IdentifyTextureFormat( const InteropArray<Byte> &data );
         DZ_API [[nodiscard]] InteropArray<TextureMip> ReadMipData( ) const;
-        void                                          StreamMipData( const MipStreamCallback &callback ) const;
 
         DZ_API [[nodiscard]] uint32_t                  GetWidth( ) const;
         DZ_API [[nodiscard]] uint32_t                  GetHeight( ) const;
@@ -95,8 +92,6 @@ namespace DenOfIz
     private:
         void LoadTextureSTB( );
         void LoadTextureDDS( );
-        void StreamMipDataDDS( const MipStreamCallback &callback ) const;
-        void StreamMipDataSTB( const MipStreamCallback &callback ) const;
 
         void LoadTextureFromMemory( const Byte *data, size_t dataNumBytes );
         void LoadTextureDDSFromMemory( const Byte *data, size_t dataNumBytes );
