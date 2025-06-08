@@ -20,18 +20,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzExamples/IExample.h"
 #include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 #include "DenOfIzGraphics/Assets/Font/TextRenderer.h"
-#include "DenOfIzGraphics/Assets/Import/FontImporter.h"
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
 #include "DenOfIzGraphics/Utilities/FrameDebugRenderer.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
 
 namespace DenOfIz
 {
     class TextRenderingExample final : public IExample
     {
         const InteropString m_fontAssetPath = "Assets/Fonts/Inconsolata-Regular.dzfont";
-        Time                                m_time;
         std::unique_ptr<FontLibrary>        m_fontLibrary;
         std::unique_ptr<BinaryReader>       m_binaryReader;
         std::unique_ptr<FontAssetReader>    m_fontAssetReader;

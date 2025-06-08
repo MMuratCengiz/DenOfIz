@@ -39,8 +39,6 @@ void AnimatedFoxExample::Init( )
 
     m_camera->SetPosition( XMVECTOR{ 0.0f, 1.0f, -10.0f, 1.0f } );
     m_camera->SetFront( XMVECTOR{ 0.0f, 0.0f, 1.0f, 0.0f } );
-
-    m_timer.OnEachSecond = []( const uint32_t fps ) { spdlog::warn( "FPS: {}", fps ); };
 }
 
 void AnimatedFoxExample::ModifyApiPreferences( APIPreference &apiPreference )
@@ -291,15 +289,13 @@ void AnimatedFoxExample::CreateShaders( )
 
 void AnimatedFoxExample::Update( )
 {
-    m_timer.Tick( );
-    m_time.Tick( );
-    const auto deltaTime = static_cast<float>( m_time.GetDeltaTime( ) );
+    const auto deltaTime = static_cast<float>( m_stepTimer.GetDeltaTime( ) );
     m_camera->Update( deltaTime );
     if ( m_perFrameData != nullptr )
     {
         m_perFrameData->ViewProjection = m_camera->ViewProjectionMatrix( );
         m_perFrameData->CameraPosition = m_camera->Position( );
-        m_perFrameData->Time           = XMVectorSet( static_cast<float>( m_timer.GetElapsedSeconds( ) ), static_cast<float>( m_time.GetDeltaTime( ) ), 0.0f, 0.0f );
+        m_perFrameData->Time           = XMVectorSet( static_cast<float>( m_stepTimer.GetElapsedSeconds( ) ), static_cast<float>( m_stepTimer.GetDeltaTime( ) ), 0.0f, 0.0f );
     }
     if ( m_animPlaying )
     {

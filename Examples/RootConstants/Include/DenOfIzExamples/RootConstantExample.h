@@ -19,14 +19,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzExamples/IExample.h"
 #include "DenOfIzExamples/QuadPipeline.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
 
 namespace DenOfIz
 {
     class RootConstantExample final : public IExample
     {
         std::array<float, 4>                m_color = { 0.3f, 0.1f, 0.7f, 1.0f };
-        Time                                m_time;
         std::unique_ptr<QuadPipeline>       m_quadPipeline;
         std::unique_ptr<IResourceBindGroup> m_resourceBindGroup;
         uint32_t                            m_rgbIterator = 0;

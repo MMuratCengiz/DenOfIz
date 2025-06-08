@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "DenOfIzExamples/IExample.h"
 #include "DenOfIzExamples/QuadPipeline.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
 
 namespace DenOfIz
 {
@@ -39,7 +38,6 @@ namespace DenOfIz
 
     class RayTracedTriangleExample final : public IExample
     {
-        Time                                             m_time;
         std::array<std::unique_ptr<ITextureResource>, 3> m_raytracingOutput;
         std::unique_ptr<IResourceBindGroup>              m_rootConstantBindGroup;
         // Raytracing:

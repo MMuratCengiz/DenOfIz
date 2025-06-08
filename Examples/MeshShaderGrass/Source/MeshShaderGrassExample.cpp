@@ -33,8 +33,6 @@ void MeshShaderGrassExample::Init( )
     LoadTerrainTexture( );
     CreateTerrainPipeline( );
     CreateMeshShaderPipeline( );
-
-    m_time.OnEachSecond = []( const double fps ) { spdlog::warn( "FPS: {}", fps ); };
 }
 
 void MeshShaderGrassExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
@@ -45,9 +43,7 @@ void MeshShaderGrassExample::ModifyApiPreferences( APIPreference &defaultApiPref
 
 void MeshShaderGrassExample::Update( )
 {
-    m_time.Tick( );
-    m_stepTimer.Tick( );
-    m_worldData.DeltaTime = m_time.GetDeltaTime( );
+    m_worldData.DeltaTime = m_stepTimer.GetDeltaTime( );
     m_camera->Update( m_worldData.DeltaTime );
 
     // Update time and animation parameters

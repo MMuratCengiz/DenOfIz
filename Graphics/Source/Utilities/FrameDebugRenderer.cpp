@@ -43,7 +43,6 @@ FrameDebugRenderer::FrameDebugRenderer( const FrameDebugRendererDesc &desc ) : m
     }
 
     m_frameTimes.resize( m_maxFrameTimeSamples, 0.0 );
-    m_time.OnEachSecond = [ this ]( const double fps ) { m_fps = fps; };
 
     if ( m_desc.FontAsset == nullptr )
     {
@@ -80,6 +79,7 @@ void FrameDebugRenderer::UpdateStats( const float deltaTime )
     }
 
     m_time.Tick( );
+    m_fps = m_time.GetFramesPerSecond( );
     UpdateFrameTimeStats( deltaTime );
 
     m_statsRefreshTimer += deltaTime;

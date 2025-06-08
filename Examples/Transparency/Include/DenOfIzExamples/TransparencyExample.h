@@ -20,7 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzExamples/ColoredSphereAsset.h"
 #include "DenOfIzExamples/IExample.h"
 #include "DenOfIzExamples/QuadPipeline.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
 #include <DirectXMath.h>
 
 #include "ColoredSpherePipeline.h"
@@ -31,8 +30,6 @@ namespace DenOfIz
     // Main example class
     class TransparencyExample final : public IExample
     {
-        Time m_time;
-
         std::vector<std::unique_ptr<ColoredSphereAsset>> m_spheres;
         std::vector<XMFLOAT4X4>                          m_sphereTransforms;
         std::unique_ptr<ColoredSpherePipeline>           m_opaquePipeline;

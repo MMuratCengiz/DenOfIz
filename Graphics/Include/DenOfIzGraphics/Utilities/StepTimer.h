@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include <chrono>
-#include <functional>
 #include "Common.h"
 
 namespace DenOfIz
@@ -50,12 +49,14 @@ namespace DenOfIz
     public:
         DZ_API StepTimer( );
 
+        [[nodiscard]] DZ_API double   GetDeltaTime( ) const;
         [[nodiscard]] DZ_API uint64_t GetElapsedTicks( ) const;
         [[nodiscard]] DZ_API double   GetElapsedSeconds( ) const;
         [[nodiscard]] DZ_API uint64_t GetTotalTicks( ) const;
         [[nodiscard]] DZ_API double   GetTotalSeconds( ) const;
         [[nodiscard]] DZ_API uint32_t GetFrameCount( ) const;
         [[nodiscard]] DZ_API uint32_t GetFramesPerSecond( ) const;
+        [[nodiscard]] DZ_API bool     HasNewSecond( ) const;
 
         DZ_API void SetFixedTimeStep( bool isFixedTimestep );
         DZ_API void SetTargetElapsedTicks( uint64_t targetElapsed );
@@ -63,7 +64,5 @@ namespace DenOfIz
 
         DZ_API void ResetElapsedTime( );
         DZ_API void Tick( );
-
-        std::function<void( uint32_t )> OnEachSecond;
     };
 } // namespace DenOfIz

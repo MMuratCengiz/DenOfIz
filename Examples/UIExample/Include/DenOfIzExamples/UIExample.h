@@ -17,10 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <DenOfIzExamples/IExample.h>
-#include <DenOfIzGraphics/Utilities/Time.h>
-
-#include <DenOfIzExamples/Spinning3DCubeWidget.h>
+#include "DenOfIzExamples/IExample.h"
 #include "DenOfIzGraphics/Assets/Font/FontLibrary.h"
 #include "DenOfIzGraphics/UI/Clay.h"
 #include "DenOfIzGraphics/UI/Widgets/CheckboxWidget.h"
@@ -28,13 +25,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/UI/Widgets/DropdownWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/SliderWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/TextFieldWidget.h"
+#include "Spinning3DCubeWidget.h"
 
 namespace DenOfIz
 {
     class UIExample final : public IExample
     {
         FontLibrary           m_library{ };
-        Time                  m_time;
         std::unique_ptr<Clay> m_clay;
         Float_2               m_mousePosition{ };
         bool                  m_mousePressed{ };

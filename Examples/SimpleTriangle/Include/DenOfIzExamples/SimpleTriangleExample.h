@@ -17,10 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include <DenOfIzExamples/IExample.h>
-#include <DenOfIzExamples/QuadPipeline.h>
-#include <DenOfIzGraphics/Renderer/Graph/RenderGraph.h>
-#include <DenOfIzGraphics/Utilities/Time.h>
+#include "DenOfIzExamples/IExample.h"
+#include "DenOfIzExamples/QuadPipeline.h"
 
 namespace DenOfIz
 {
@@ -40,7 +38,6 @@ namespace DenOfIz
 
     class SimpleTriangleExample final : public IExample
     {
-        Time                             m_time;
         std::unique_ptr<IBufferResource> m_rayGenCBResource;
         std::unique_ptr<ShaderProgram>   m_program;
         std::unique_ptr<IPipeline>       m_pipeline;

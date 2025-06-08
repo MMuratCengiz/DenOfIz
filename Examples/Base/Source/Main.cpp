@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <SDL2/SDL.h>
 
-#include "DenOfIzExamples/Main.h"
 #include "DenOfIzExamples/IExample.h"
+#include "DenOfIzExamples/Main.h"
 #include "DenOfIzGraphics/Backends/Common/GraphicsWindowHandle.h"
 #include "DenOfIzGraphics/Backends/GraphicsApi.h"
 #include "DenOfIzGraphics/Input/InputSystem.h"
@@ -74,6 +74,7 @@ int DenOfIz::Main( IExample *example )
                 running = false;
             }
         }
+        example->Tick( );
         example->Update( );
     }
 

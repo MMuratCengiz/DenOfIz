@@ -25,6 +25,11 @@ StepTimer::StepTimer( )
     m_targetElapsedTicks = TicksPerSecond / 60;
 }
 
+double StepTimer::GetDeltaTime( ) const
+{
+    return static_cast<double>( m_elapsedTicks ) / TicksPerSecond;
+}
+
 uint64_t StepTimer::GetElapsedTicks( ) const
 {
     return m_elapsedTicks;
@@ -130,10 +135,5 @@ void StepTimer::Tick( )
         m_framesPerSecond  = m_framesThisSecond;
         m_framesThisSecond = 0;
         m_secondCounter %= TicksPerSecond;
-
-        if ( OnEachSecond )
-        {
-            OnEachSecond( m_framesPerSecond );
-        }
     }
 }

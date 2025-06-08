@@ -15,10 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <DenOfIzExamples/SimpleTriangleExample.h>
-#include <DenOfIzGraphics/Assets/FileSystem/FileIO.h>
-#include <DenOfIzGraphics/Utilities/Time.h>
-
+#include "DenOfIzExamples/SimpleTriangleExample.h"
+#include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Utilities/InteropUtilities.h"
 
 using namespace DenOfIz;
@@ -50,8 +48,6 @@ void SimpleTriangleExample::Init( )
     pipelineDesc.Graphics.RenderTargets.AddElement( { .Format = Format::B8G8R8A8Unorm } );
 
     m_pipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
-
-    m_time.OnEachSecond = []( const double fps ) { spdlog::warn( "FPS: {}", fps ); };
 }
 
 void SimpleTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
@@ -61,10 +57,8 @@ void SimpleTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPrefe
 
 void SimpleTriangleExample::Update( )
 {
-    m_time.Tick( );
-    m_worldData.DeltaTime = m_time.GetDeltaTime( );
+    m_worldData.DeltaTime = m_stepTimer.GetDeltaTime( );
     m_worldData.Camera->Update( m_worldData.DeltaTime );
-
     RenderAndPresentFrame( );
 }
 

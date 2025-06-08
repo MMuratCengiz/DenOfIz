@@ -24,10 +24,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  * using a special shader to render them with sharp edges.
  */
 #include "DenOfIzExamples/TextRenderingExample.h"
+#include "DenOfIzExamples/InteropMathConverter.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Import/FontImporter.h"
 #include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
-#include "DenOfIzExamples/InteropMathConverter.h"
 
 using namespace DenOfIz;
 
@@ -70,9 +70,7 @@ void TextRenderingExample::Init( )
 
     m_debugRenderer = std::make_unique<FrameDebugRenderer>( debugRendererDesc );
     m_debugRenderer->AddDebugLine( "Press F1 to toggle debug info", { 0.8f, 0.8f, 0.8f, 1.0f } );
-
-    m_animTime          = 0.0f;
-    m_time.OnEachSecond = []( const double fps ) { spdlog::warn( "FPS: {}", fps ); };
+    m_animTime = 0.0f;
 }
 
 void TextRenderingExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
@@ -82,8 +80,7 @@ void TextRenderingExample::ModifyApiPreferences( APIPreference &defaultApiPrefer
 
 void TextRenderingExample::Update( )
 {
-    m_time.Tick( );
-    m_worldData.DeltaTime = m_time.GetDeltaTime( );
+    m_worldData.DeltaTime = m_stepTimer.GetDeltaTime( );
     m_worldData.Camera->Update( m_worldData.DeltaTime );
 
     m_animTime += m_worldData.DeltaTime;

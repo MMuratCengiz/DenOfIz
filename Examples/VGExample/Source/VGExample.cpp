@@ -71,10 +71,9 @@ void VGExample::HandleEvent( Event &event )
 
 void VGExample::Update( )
 {
-    m_time.Tick( );
-    m_debugRenderer->UpdateStats( m_time.GetDeltaTime( ) );
+    m_debugRenderer->UpdateStats( m_stepTimer.GetDeltaTime( ) );
 
-    const float deltaTime = m_time.GetDeltaTime( );
+    const float deltaTime = m_stepTimer.GetDeltaTime( );
     m_animationTime += deltaTime;
     m_rotationAngle += deltaTime * 0.5f;
     m_scaleAnimTime += deltaTime * 2.0f;

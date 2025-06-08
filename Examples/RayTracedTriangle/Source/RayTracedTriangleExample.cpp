@@ -17,7 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "DenOfIzExamples/RayTracedTriangleExample.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
 
 using namespace DenOfIz;
 
@@ -28,8 +27,6 @@ void RayTracedTriangleExample::Init( )
     CreateAccelerationStructures( );
     CreateRayTracingPipeline( );
     CreateShaderBindingTable( );
-
-    m_time.OnEachSecond = []( const double fps ) { spdlog::warn( "FPS: {}", fps ); };
 }
 
 void RayTracedTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
@@ -39,8 +36,7 @@ void RayTracedTriangleExample::ModifyApiPreferences( APIPreference &defaultApiPr
 
 void RayTracedTriangleExample::Update( )
 {
-    m_time.Tick( );
-    m_worldData.DeltaTime = m_time.GetDeltaTime( );
+    m_worldData.DeltaTime = m_stepTimer.GetDeltaTime( );
     m_worldData.Camera->Update( m_worldData.DeltaTime );
 
     RenderAndPresentFrame( );

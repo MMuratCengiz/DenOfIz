@@ -78,8 +78,6 @@ void BindlessExample::Init( )
     pipelineDesc.Graphics.RenderTargets.AddElement( { .Format = Format::B8G8R8A8Unorm } );
 
     m_pipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
-
-    m_time.OnEachSecond = []( const double fps ) { spdlog::warn( "FPS: {}", fps ); };
 }
 
 void BindlessExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
@@ -89,8 +87,7 @@ void BindlessExample::ModifyApiPreferences( APIPreference &defaultApiPreference 
 
 void BindlessExample::Update( )
 {
-    m_time.Tick( );
-    m_worldData.DeltaTime = m_time.GetDeltaTime( );
+    m_worldData.DeltaTime = m_stepTimer.GetDeltaTime( );
     m_worldData.Camera->Update( m_worldData.DeltaTime );
     m_elapsedTime += m_worldData.DeltaTime;
 

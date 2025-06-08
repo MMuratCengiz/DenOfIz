@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "DenOfIzExamples/RootConstantExample.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
 
 using namespace DenOfIz;
 
@@ -24,7 +23,6 @@ void RootConstantExample::Init( )
 {
     m_quadPipeline      = std::make_unique<QuadPipeline>( m_graphicsApi, m_logicalDevice, "Assets/Shaders/PushConstantColor.ps.hlsl" );
     m_resourceBindGroup = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( RootConstantBindGroupDesc( m_quadPipeline->RootSignature( ) ) ) );
-    m_time.OnEachSecond = []( const double fps ) { spdlog::warn( "FPS: {}", fps ); };
 }
 
 void RootConstantExample::Render( const uint32_t frameIndex, ICommandList *commandList )
@@ -66,15 +64,14 @@ void RootConstantExample::ModifyApiPreferences( APIPreference &defaultApiPrefere
 
 void RootConstantExample::Update( )
 {
-    m_time.Tick( );
-    m_color[ m_rgbIterator ] += m_time.GetDeltaTime( );
+    m_color[ m_rgbIterator ] += m_stepTimer.GetDeltaTime( );
     if ( m_color[ m_rgbIterator ] > 1.0f )
     {
         m_color[ m_rgbIterator ] = 0.0f;
         m_rgbIterator            = ( m_rgbIterator + 1 ) % 3;
     }
     m_resourceBindGroup->SetRootConstants( 0, m_color.data( ) );
-    m_worldData.DeltaTime = m_time.GetDeltaTime( );
+    m_worldData.DeltaTime = m_stepTimer.GetDeltaTime( );
     m_worldData.Camera->Update( m_worldData.DeltaTime );
     RenderAndPresentFrame( );
 }

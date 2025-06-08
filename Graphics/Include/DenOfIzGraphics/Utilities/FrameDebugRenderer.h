@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Serde/Font/FontAssetReader.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
 #include "DenOfIzGraphics/Backends/GraphicsApi.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
+#include "DenOfIzGraphics/Utilities/StepTimer.h"
 
 namespace DenOfIz
 {
@@ -57,7 +57,7 @@ namespace DenOfIz
         Float_4x4                        m_projectionMatrix{ };
 
         // Performance tracking
-        Time               m_time;
+        StepTimer          m_time;
         double             m_fps              = 0.0;
         double             m_frameTimeMs      = 0.0;
         double             m_cpuUsagePercent  = 0.0;

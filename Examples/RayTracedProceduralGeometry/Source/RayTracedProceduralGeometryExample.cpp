@@ -29,8 +29,6 @@ void RayTracedProceduralGeometryExample::Init( )
     CreateAccelerationStructures( );
     CreateRayTracingPipeline( );
     CreateShaderBindingTable( );
-
-    m_time.OnEachSecond = []( const double fps ) { spdlog::warn( "FPS: {}", fps ); };
 }
 
 void RayTracedProceduralGeometryExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
@@ -157,9 +155,7 @@ void RayTracedProceduralGeometryExample::UpdateAABBPrimitiveAttributes( )
 
 void RayTracedProceduralGeometryExample::Update( )
 {
-    m_stepTimer.Tick( );
-    m_time.Tick( );
-    m_camera->Update( m_time.GetDeltaTime( ) );
+    m_camera->Update( m_stepTimer.GetDeltaTime( ) );
     const float elapsedTime = static_cast<float>( m_stepTimer.GetElapsedSeconds( ) );
 
     if ( m_animateGeometry )

@@ -18,14 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <DenOfIzExamples/IExample.h>
-
-#include "../../../../Graphics/Include/DenOfIzGraphics/Assets/Vector2d/QuadRenderer.h"
+#include "DenOfIzExamples/IExample.h"
+#include "DenOfIzGraphics/Assets/Vector2d/QuadRenderer.h"
 #include "DenOfIzGraphics/Assets/Font/TextRenderer.h"
 #include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h"
 #include "DenOfIzGraphics/Assets/Stream/BinaryReader.h"
 #include "DenOfIzGraphics/Utilities/FrameDebugRenderer.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
 
 #include <DirectXMath.h>
 #include <memory>
@@ -39,7 +37,6 @@ namespace DenOfIz
         static constexpr auto               m_milkTeaSVG   = "Assets/SVG/milk-tea.svg";
         static constexpr auto               m_milkTeaAsset = "Assets/Textures/milk-tea.dztex";
         std::unique_ptr<FrameDebugRenderer> m_debugRenderer;
-        Time                                m_time;
 
         std::unique_ptr<QuadRenderer> m_quadRenderer;
         std::unique_ptr<TextRenderer> m_textRenderer;

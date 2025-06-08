@@ -20,13 +20,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzExamples/IExample.h"
 #include "DenOfIzExamples/QuadPipeline.h"
 #include "DenOfIzGraphics/Backends/Interface/ITextureResource.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
 
 namespace DenOfIz
 {
     class BindlessExample final : public IExample
     {
-        Time                             m_time;
         float                            m_elapsedTime = 0.0f;
         std::unique_ptr<ShaderProgram>   m_program;
         std::unique_ptr<IPipeline>       m_pipeline;

@@ -16,11 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <DenOfIzExamples/UIExample.h>
-#include <DenOfIzGraphics/Data/BatchResourceCopy.h>
-#include <DenOfIzGraphics/Utilities/InteropUtilities.h>
-#include <DenOfIzGraphics/Utilities/Time.h>
+#include "DenOfIzExamples/UIExample.h"
 #include <cstdio>
+#include "DenOfIzGraphics/Data/BatchResourceCopy.h"
+#include "DenOfIzGraphics/Utilities/InteropUtilities.h"
 
 using namespace DenOfIz;
 
@@ -82,7 +81,6 @@ void UIExample::Init( )
     m_spinningCubeWidget->SetCubeColor( XMFLOAT4( 0.2f, 0.6f, 1.0f, 1.0f ) );
 
     m_clay->RegisterPipelineWidget( m_spinningCubeWidget.get( ) );
-    m_time.OnEachSecond = []( const double fps ) { spdlog::info( "FPS: {}", fps ); };
 }
 
 void UIExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
@@ -92,8 +90,7 @@ void UIExample::ModifyApiPreferences( APIPreference &defaultApiPreference )
 
 void UIExample::Update( )
 {
-    m_time.Tick( );
-    m_worldData.DeltaTime = m_time.GetDeltaTime( );
+    m_worldData.DeltaTime = m_stepTimer.GetDeltaTime( );
     m_worldData.Camera->Update( m_worldData.DeltaTime );
     m_clay->UpdateScrollContainers( false, Float_2( 0, 0 ), m_worldData.DeltaTime );
 

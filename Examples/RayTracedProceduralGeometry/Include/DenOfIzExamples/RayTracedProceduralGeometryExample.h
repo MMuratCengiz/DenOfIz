@@ -3,7 +3,6 @@
 #include <intsafe.h>
 #include "DenOfIzExamples/IExample.h"
 #include "DenOfIzGraphics/Utilities/StepTimer.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
 #include <RayTracingHlslCompat.h>
 
 namespace DenOfIz
@@ -117,8 +116,6 @@ namespace DenOfIz
         // Constants and state
         std::vector<AABBBoundingBox>               m_aabbs;
         std::vector<InteropArray<AABBBoundingBox>> m_aabbPerGeometry;
-        Time                                       m_time;
-        StepTimer                                  m_stepTimer;
         double                                     m_animateGeometryTime = 1.0f;
         bool                                       m_animateGeometry     = true;
 

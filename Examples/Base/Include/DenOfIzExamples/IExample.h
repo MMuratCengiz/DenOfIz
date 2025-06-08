@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Input/Event.h"
 #include "DenOfIzGraphics/Renderer/Sync/FrameSync.h"
 #include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
+#include "DenOfIzGraphics/Utilities/StepTimer.h"
 #include "WorldData.h"
 
 namespace DenOfIz
@@ -51,6 +52,8 @@ namespace DenOfIz
         ResourceTracking               m_resourceTracking{ };
         std::unique_ptr<FrameSync>     m_frameSync;
         bool                           m_isRunning = true;
+        StepTimer                      m_stepTimer;
+        uint32_t                       m_lastElapsedSecond = 0;
 
     public:
         virtual ~IExample( ) = default;
@@ -96,6 +99,18 @@ namespace DenOfIz
                 m_resourceTracking.TrackTexture( m_swapChain->GetRenderTarget( i ), ResourceUsage::Common );
             }
         }
+
+        void Tick( )
+        {
+            m_stepTimer.Tick( );
+            const uint32_t elapsedSeconds = std::floor( m_stepTimer.GetTotalSeconds( ) );
+            if ( elapsedSeconds != m_lastElapsedSecond )
+            {
+                m_lastElapsedSecond = elapsedSeconds;
+                spdlog::warn( "FPS: {}", m_stepTimer.GetFramesPerSecond( ) );
+            }
+        }
+
         void RenderAndPresentFrame( )
         {
             const uint64_t frameIndex = m_frameSync->NextFrame( );
@@ -103,6 +118,7 @@ namespace DenOfIz
             m_frameSync->ExecuteCommandList( frameIndex );
             Present( frameIndex );
         }
+
         virtual void Render( uint32_t frameIndex, ICommandList *commandList )
         {
         }

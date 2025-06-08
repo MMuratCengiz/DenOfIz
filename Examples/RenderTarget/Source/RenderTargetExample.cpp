@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "DenOfIzExamples/RenderTargetExample.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
 
 using namespace DenOfIz;
 
@@ -54,8 +53,6 @@ void RenderTargetExample::Init( )
     auto &sphereRenderItem = materialBatch.RenderItems.emplace_back( );
     sphereRenderItem.Data  = m_sphere->Data( );
     sphereRenderItem.Model = m_sphere->ModelMatrix( );
-
-    m_time.OnEachSecond = []( const double fps ) { spdlog::warn( "FPS: {}", fps ); };
 
     CommandListPoolDesc commandListPoolDesc{ };
     commandListPoolDesc.CommandQueue    = m_graphicsQueue.get( );
@@ -150,8 +147,7 @@ void RenderTargetExample::ModifyApiPreferences( APIPreference &defaultApiPrefere
 
 void RenderTargetExample::Update( )
 {
-    m_time.Tick( );
-    m_worldData.DeltaTime = m_time.GetDeltaTime( );
+    m_worldData.DeltaTime = m_stepTimer.GetDeltaTime( );
     m_worldData.Camera->Update( m_worldData.DeltaTime );
 
     // Custom RenderAndPresentFrame for additional semaphores

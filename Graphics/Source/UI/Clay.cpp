@@ -30,8 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/UI/Widgets/ResizableContainerWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/SliderWidget.h"
 #include "DenOfIzGraphics/UI/Widgets/TextFieldWidget.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
-#include "DenOfIzGraphicsInternal/Assets/Font/Embedded/EmbeddedFonts.h"
+#include "DenOfIzGraphics/Utilities/StepTimer.h"
 #include "DenOfIzGraphicsInternal/UI/ClayContext.h"
 #include "DenOfIzGraphicsInternal/UI/ClayRenderer.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
@@ -184,7 +183,7 @@ ClayElementDeclaration::ClayElementDeclaration( ) : Id( 0 ), Image{ }, Floating{
 
 struct Clay::Impl
 {
-    Time                          time;
+    StepTimer                     time;
     std::unique_ptr<ClayRenderer> renderer;
     std::unique_ptr<ClayContext>  clayContext;
     ClayPointerState              pointerState = ClayPointerState::Released;

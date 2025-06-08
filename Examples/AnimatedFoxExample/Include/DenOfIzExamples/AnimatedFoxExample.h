@@ -28,7 +28,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Serde/Skeleton/SkeletonAsset.h"
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 #include "DenOfIzGraphics/Utilities/StepTimer.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
 #include <DirectXMath.h>
 
 
@@ -67,9 +66,6 @@ namespace DenOfIz
 
     class AnimatedFoxExample final : public IExample
     {
-        StepTimer m_timer;
-        Time      m_time;
-
         std::unique_ptr<IBufferResource>  m_vertexBuffer;
         std::unique_ptr<IBufferResource>  m_indexBuffer;
         std::unique_ptr<IBufferResource>  m_boneTransformsBuffer;

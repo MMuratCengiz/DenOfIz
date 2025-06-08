@@ -17,7 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "DenOfIzExamples/ColoredSphereAsset.h"
 #include "DenOfIzExamples/TransparencyExample.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
 #include <DirectXMath.h>
 
 using namespace DenOfIz;
@@ -71,8 +70,6 @@ void TransparencyExample::Init( )
     XMFLOAT4X4     sphere3Matrix;
     XMStoreFloat4x4( &sphere3Matrix, sphere3Transform );
     m_sphereTransforms.push_back( sphere3Matrix );
-
-    m_time.OnEachSecond = []( const double fps ) { spdlog::warn( "FPS: {}", fps ); };
 
     auto eye = XMVectorSet( 0.0f, 0.5f, -5.0f, 1.0f );
     m_camera->SetPosition( eye );
@@ -145,8 +142,7 @@ void TransparencyExample::ModifyApiPreferences( APIPreference &defaultApiPrefere
 
 void TransparencyExample::Update( )
 {
-    m_time.Tick( );
-    m_worldData.DeltaTime = m_time.GetDeltaTime( );
+    m_worldData.DeltaTime = m_stepTimer.GetDeltaTime( );
     m_worldData.Camera    = m_camera.get( );
     m_camera->Update( m_worldData.DeltaTime );
 

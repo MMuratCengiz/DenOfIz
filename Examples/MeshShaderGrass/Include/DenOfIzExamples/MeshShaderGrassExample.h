@@ -23,7 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzExamples/PerFrameBinding.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Utilities/StepTimer.h"
-#include "DenOfIzGraphics/Utilities/Time.h"
 // DXMath to the end for weird osx error with nulls
 #include "DenOfIzExamples/Camera.h"
 
@@ -78,9 +77,6 @@ namespace DenOfIz
         GeometryData                        m_terrainGeometry;
 
         GrassConstants *m_grassConstants = nullptr;
-
-        StepTimer m_stepTimer;
-        Time      m_time;
 
         float m_elapsedTime = 0.0f;
         bool  m_animateWind = true;

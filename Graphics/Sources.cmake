@@ -99,7 +99,6 @@ set(DEN_OF_IZ_GRAPHICS_COMMON_SOURCES
     Source/Renderer/Sync/ResourceTracking.cpp
     Source/Utilities/Engine.cpp
     Source/Utilities/StepTimer.cpp
-    Source/Utilities/Time.cpp
     Source/Utilities/Utilities.cpp
     Source/Utilities/FrameDebugRenderer.cpp
     Source/Utilities/InteropMathConverter.cpp
