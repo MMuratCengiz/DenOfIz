@@ -29,101 +29,99 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "DenOfIzGraphics/Utilities/BitSet.h"
-#include "DenOfIzGraphics/Utilities/Interop.h"
 #include <cmath>
 #include <cstdint>
 #include <map>
+#include "DenOfIzGraphics/Utilities/BitSet.h"
+#include "DenOfIzGraphics/Utilities/Interop.h"
 
 namespace DenOfIz
 {
-    enum class BuildDesc
+    namespace BuildDesc
     {
-        BuildNormal    = 1 << 0,
-        BuildTangent   = 1 << 1,
-        BuildBitangent = 1 << 2,
-        BuildTexCoord  = 1 << 3,
-        RightHanded    = 1 << 4,
-        InvertNormals  = 1 << 5,
-    };
-
-    template class DZ_API BitSet<BuildDesc>;
+        constexpr uint32_t BuildNormal    = 1 << 0;
+        constexpr uint32_t BuildTangent   = 1 << 1;
+        constexpr uint32_t BuildBitangent = 1 << 2;
+        constexpr uint32_t BuildTexCoord  = 1 << 3;
+        constexpr uint32_t RightHanded    = 1 << 4;
+        constexpr uint32_t InvertNormals  = 1 << 5;
+    } // namespace BuildDesc
 
     struct DZ_API QuadDesc
     {
-        BitSet<BuildDesc> BuildDesc;
-        float             Width;
-        float             Height;
+        uint32_t BuildDesc;
+        float    Width;
+        float    Height;
     };
 
     struct DZ_API BoxDesc
     {
-        BitSet<BuildDesc> BuildDesc;
-        float             Width;
-        float             Height;
-        float             Depth;
+        uint32_t BuildDesc;
+        float    Width;
+        float    Height;
+        float    Depth;
     };
 
     struct DZ_API SphereDesc
     {
-        BitSet<BuildDesc> BuildDesc;
-        float             Diameter{ };
-        size_t            Tessellation{ };
+        uint32_t BuildDesc;
+        float    Diameter{ };
+        size_t   Tessellation{ };
     };
 
     struct DZ_API GeoSphereDesc
     {
-        BitSet<BuildDesc> BuildDesc;
-        float             Diameter{ };
-        size_t            Tessellation{ };
+        uint32_t BuildDesc;
+        float    Diameter{ };
+        size_t   Tessellation{ };
     };
 
     struct DZ_API CylinderDesc
     {
-        BitSet<BuildDesc> BuildDesc;
-        float             Diameter{ };
-        float             Height{ };
-        size_t            Tessellation{ };
+        uint32_t BuildDesc;
+        float    Diameter{ };
+        float    Height{ };
+        size_t   Tessellation{ };
     };
 
     struct DZ_API ConeDesc
     {
-        BitSet<BuildDesc> BuildDesc;
-        float             Diameter{ };
-        float             Height{ };
-        size_t            Tessellation{ };
+        uint32_t BuildDesc;
+        float    Diameter{ };
+        float    Height{ };
+        size_t   Tessellation{ };
     };
 
     struct DZ_API TorusDesc
     {
-        BitSet<BuildDesc> BuildDesc;
-        float             Diameter{ };
-        float             Thickness{ };
-        size_t            Tessellation{ };
+        uint32_t BuildDesc;
+        float    Diameter{ };
+        float    Thickness{ };
+        size_t   Tessellation{ };
     };
 
     struct DZ_API TetrahedronDesc
     {
-        BitSet<BuildDesc> BuildDesc;
-        float             Size{ };
+        uint32_t BuildDesc;
+        float    Size{ };
     };
 
     struct DZ_API OctahedronDesc
     {
-        BitSet<BuildDesc> BuildDesc;
-        float             Size{ };
+        uint32_t BuildDesc;
+        float    Size{ };
     };
 
     struct DZ_API DodecahedronDesc
     {
-        BitSet<BuildDesc> BuildDesc;
-        float             Size{ };
+        uint32_t BuildDesc;
+        float    Size{ };
     };
 
     struct DZ_API IcosahedronDesc
     {
-        BitSet<BuildDesc> BuildDesc;
-        float             Size{ };
+        uint32_t BuildDesc;
+        float    Size{ };
     };
 
     struct DZ_API GeometryPositionVertexData

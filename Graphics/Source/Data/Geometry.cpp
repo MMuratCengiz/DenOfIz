@@ -99,8 +99,8 @@ inline void InvertNormals( GeometryData &data )
 //--------------------------------------------------------------------------------------
 GeometryData Geometry::BuildQuadXY( const QuadDesc &quadDesc )
 {
-    const bool   rightHanded   = quadDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
-    const bool   invertNormals = quadDesc.BuildDesc.IsSet( BuildDesc::InvertNormals );
+    const bool   rightHanded   = ( quadDesc.BuildDesc & BuildDesc::RightHanded ) == BuildDesc::RightHanded;
+    const bool   invertNormals = ( quadDesc.BuildDesc & BuildDesc::InvertNormals ) == BuildDesc::InvertNormals;
     GeometryData result{ };
     auto        &vertices = result.Vertices;
     auto        &indices  = result.Indices;
@@ -155,8 +155,8 @@ GeometryData Geometry::BuildQuadXY( const QuadDesc &quadDesc )
 //--------------------------------------------------------------------------------------
 GeometryData Geometry::BuildQuadXZ( const QuadDesc &quadDesc )
 {
-    const bool   rightHanded   = quadDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
-    const bool   invertNormals = quadDesc.BuildDesc.IsSet( BuildDesc::InvertNormals );
+    const bool   rightHanded   = ( quadDesc.BuildDesc & BuildDesc::RightHanded ) == BuildDesc::RightHanded;
+    const bool   invertNormals = ( quadDesc.BuildDesc & BuildDesc::InvertNormals ) == BuildDesc::InvertNormals;
     GeometryData result{ };
     auto        &vertices = result.Vertices;
     auto        &indices  = result.Indices;
@@ -212,8 +212,8 @@ GeometryData Geometry::BuildQuadXZ( const QuadDesc &quadDesc )
 GeometryData Geometry::BuildBox( const BoxDesc &boxDesc )
 {
     const XMFLOAT3 size( boxDesc.Width, boxDesc.Height, boxDesc.Depth );
-    const bool     rightHanded   = boxDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
-    const bool     invertNormals = boxDesc.BuildDesc.IsSet( BuildDesc::InvertNormals );
+    const bool     rightHanded   = ( boxDesc.BuildDesc & BuildDesc::RightHanded ) == BuildDesc::RightHanded;
+    const bool     invertNormals = ( boxDesc.BuildDesc & BuildDesc::InvertNormals ) == BuildDesc::InvertNormals;
     GeometryData   result{ };
     auto          &vertices = result.Vertices;
 
@@ -290,8 +290,8 @@ GeometryData Geometry::BuildSphere( const SphereDesc &sphereDesc )
 {
     const float  diameter      = sphereDesc.Diameter;
     const size_t tessellation  = sphereDesc.Tessellation;
-    const bool   rightHanded   = sphereDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
-    const bool   invertNormals = sphereDesc.BuildDesc.IsSet( BuildDesc::InvertNormals );
+    const bool   rightHanded   = ( sphereDesc.BuildDesc & BuildDesc::RightHanded ) == BuildDesc::RightHanded;
+    const bool   invertNormals = ( sphereDesc.BuildDesc & BuildDesc::InvertNormals ) == BuildDesc::InvertNormals;
     GeometryData result{ };
     auto        &vertices = result.Vertices;
 
@@ -376,7 +376,7 @@ GeometryData Geometry::BuildGeoSphere( const GeoSphereDesc &geoSphereDesc )
 {
     float        diameter     = geoSphereDesc.Diameter;
     size_t       tessellation = geoSphereDesc.Tessellation;
-    bool         rightHanded  = geoSphereDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
+    bool         rightHanded  = ( geoSphereDesc.BuildDesc & BuildDesc::RightHanded ) == BuildDesc::RightHanded;
     GeometryData result{ };
     auto        &vertices = result.Vertices;
     auto        &indices  = result.Indices;
@@ -762,7 +762,7 @@ GeometryData Geometry::BuildCylinder( const CylinderDesc &cylinderDesc )
     const float  diameter     = cylinderDesc.Diameter;
     float        height       = cylinderDesc.Height;
     const size_t tessellation = cylinderDesc.Tessellation;
-    const bool   rightHanded  = cylinderDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
+    const bool   rightHanded  = ( cylinderDesc.BuildDesc & BuildDesc::RightHanded ) == BuildDesc::RightHanded;
     GeometryData result{ };
     auto        &vertices = result.Vertices;
 
@@ -818,7 +818,7 @@ GeometryData Geometry::BuildCone( const ConeDesc &coneDesc )
     const float  diameter     = coneDesc.Diameter;
     float        height       = coneDesc.Height;
     const size_t tessellation = coneDesc.Tessellation;
-    const bool   rightHanded  = coneDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
+    const bool   rightHanded  = ( coneDesc.BuildDesc & BuildDesc::RightHanded ) == BuildDesc::RightHanded;
     GeometryData result{ };
     auto        &vertices = result.Vertices;
 
@@ -877,7 +877,7 @@ GeometryData Geometry::BuildTorus( const TorusDesc &torusDesc )
     const float  diameter     = torusDesc.Diameter;
     const float  thickness    = torusDesc.Thickness;
     const size_t tessellation = torusDesc.Tessellation;
-    const bool   rightHanded  = torusDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
+    const bool   rightHanded  = ( torusDesc.BuildDesc & BuildDesc::RightHanded ) == BuildDesc::RightHanded;
     GeometryData result{ };
     auto        &vertices = result.Vertices;
 
@@ -946,7 +946,7 @@ GeometryData Geometry::BuildTorus( const TorusDesc &torusDesc )
 GeometryData Geometry::BuildTetrahedron( const TetrahedronDesc &tetrahedronDesc )
 {
     const float  size        = tetrahedronDesc.Size;
-    const bool   rightHanded = tetrahedronDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
+    const bool   rightHanded = ( tetrahedronDesc.BuildDesc & BuildDesc::RightHanded ) == BuildDesc::RightHanded;
     GeometryData result{ };
     auto        &vertices = result.Vertices;
     const auto  &indices  = result.Indices;
@@ -1002,7 +1002,7 @@ GeometryData Geometry::BuildTetrahedron( const TetrahedronDesc &tetrahedronDesc 
 GeometryData Geometry::BuildOctahedron( const OctahedronDesc &octahedronDesc )
 {
     const float  size        = octahedronDesc.Size;
-    const bool   rightHanded = octahedronDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
+    const bool   rightHanded = ( octahedronDesc.BuildDesc & BuildDesc::RightHanded ) == BuildDesc::RightHanded;
     GeometryData result{ };
     auto        &vertices = result.Vertices;
     const auto  &indices  = result.Indices;
@@ -1054,7 +1054,7 @@ GeometryData Geometry::BuildOctahedron( const OctahedronDesc &octahedronDesc )
 GeometryData Geometry::BuildDodecahedron( const DodecahedronDesc &dodecahedronDesc )
 {
     const float  size        = dodecahedronDesc.Size;
-    const bool   rightHanded = dodecahedronDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
+    const bool   rightHanded = ( dodecahedronDesc.BuildDesc & BuildDesc::RightHanded ) == BuildDesc::RightHanded;
     GeometryData result{ };
     auto        &vertices = result.Vertices;
     const auto  &indices  = result.Indices;
@@ -1145,7 +1145,7 @@ GeometryData Geometry::BuildDodecahedron( const DodecahedronDesc &dodecahedronDe
 GeometryData Geometry::BuildIcosahedron( const IcosahedronDesc &icosahedronDesc )
 {
     const float  size        = icosahedronDesc.Size;
-    const bool   rightHanded = icosahedronDesc.BuildDesc.IsSet( BuildDesc::RightHanded );
+    const bool   rightHanded = ( icosahedronDesc.BuildDesc & BuildDesc::RightHanded ) == BuildDesc::RightHanded;
     GeometryData result{ };
     auto        &vertices = result.Vertices;
 
