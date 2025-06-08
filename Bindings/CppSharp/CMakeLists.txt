@@ -27,7 +27,8 @@ file(MAKE_DIRECTORY ${NUGET_BASE_DIR})
 
 find_program(DOTNET_EXECUTABLE dotnet)
 if(NOT DOTNET_EXECUTABLE)
-	message(FATAL_ERROR "dotnet executable not found. Please install .NET SDK.")
+	message(STATUS "dotnet executable not found. Skipping CppSharp bindings generation.")
+	return()
 endif()
 
 add_custom_target(DenOfIz-CppSharpGenerate

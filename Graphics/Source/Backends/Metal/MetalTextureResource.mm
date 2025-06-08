@@ -61,16 +61,16 @@ MetalTextureResource::MetalTextureResource( MetalContext *context, const Texture
         break;
     }
 
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::RWTexture ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::RWTexture )
     {
         textureDesc.usage |= MTLTextureUsageShaderWrite;
     }
 
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::DepthStencil ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::DepthStencil )
     {
         textureDesc.usage |= MTLTextureUsageShaderRead;
     }
-    if ( m_desc.Descriptor.Any( { ResourceDescriptor::RenderTarget, ResourceDescriptor::DepthStencil } ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::RenderTarget || m_desc.Descriptor & ResourceDescriptor::DepthStencil )
     {
         textureDesc.usage |= MTLTextureUsageRenderTarget;
     }
@@ -104,7 +104,7 @@ void MetalTextureResource::SetTextureType( )
 {
     // When using Metal Shader Converter + HLSL, the conversion is always an array.
     bool isArray   = true; // m_desc.ArraySize > 1;
-    bool isTexture = m_desc.Descriptor.Any( { ResourceDescriptor::Texture, ResourceDescriptor::RWTexture, ResourceDescriptor::RenderTarget, ResourceDescriptor::DepthStencil } );
+    bool isTexture = m_desc.Descriptor & ( ResourceDescriptor::Texture | ResourceDescriptor::RWTexture | ResourceDescriptor::RenderTarget | ResourceDescriptor::DepthStencil );
     bool isTextureCube = m_desc.Descriptor == ResourceDescriptor::TextureCube;
     bool hasDepth      = m_desc.Depth > 1;
     bool hasHeight     = m_desc.Height > 1;

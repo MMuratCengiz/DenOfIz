@@ -50,18 +50,18 @@ MetalBottomLevelAS::MetalBottomLevelAS( MetalContext *context, const BottomLevel
             break;
         }
 
-        if ( geometry.Flags.IsSet( GeometryFlags::Opaque ) )
+        if ( geometry.Flags & GeometryFlags::Opaque )
         {
             m_options |= MTLAccelerationStructureInstanceOptionOpaque;
         }
     }
 
     MTLAccelerationStructureUsage usage = MTLAccelerationStructureUsageNone;
-    if ( desc.BuildFlags.IsSet( ASBuildFlags::FastBuild ) )
+    if ( desc.BuildFlags & ASBuildFlags::FastBuild )
     {
         usage = MTLAccelerationStructureUsagePreferFastBuild;
     }
-    else if ( desc.BuildFlags.IsSet( ASBuildFlags::AllowUpdate ) )
+    else if ( desc.BuildFlags & ASBuildFlags::AllowUpdate )
     {
         usage = MTLAccelerationStructureUsageRefit;
     }
@@ -119,8 +119,8 @@ MTLAccelerationStructureTriangleGeometryDescriptor *MetalBottomLevelAS::Initiali
         m_indirectResources.push_back( indexBuffer->Instance( ) );
     }
 
-    triangleDesc.opaque                                       = geometry.Flags.IsSet( GeometryFlags::Opaque );
-    triangleDesc.allowDuplicateIntersectionFunctionInvocation = !geometry.Flags.IsSet( GeometryFlags::NoDuplicateAnyHitInvocation );
+    triangleDesc.opaque                                       = geometry.Flags & GeometryFlags::Opaque;
+    triangleDesc.allowDuplicateIntersectionFunctionInvocation = !geometry.Flags & GeometryFlags::NoDuplicateAnyHitInvocation;
 
     return triangleDesc;
 }
@@ -144,8 +144,8 @@ MTLAccelerationStructureBoundingBoxGeometryDescriptor *MetalBottomLevelAS::Initi
     aabbDesc.boundingBoxStride               = sizeof( MTLAxisAlignedBoundingBox );
     aabbDesc.boundingBoxCount                = aabb.NumAABBs;
 
-    aabbDesc.opaque                                       = geometry.Flags.IsSet( GeometryFlags::Opaque );
-    aabbDesc.allowDuplicateIntersectionFunctionInvocation = !geometry.Flags.IsSet( GeometryFlags::NoDuplicateAnyHitInvocation );
+    aabbDesc.opaque                                       = geometry.Flags & GeometryFlags::Opaque;
+    aabbDesc.allowDuplicateIntersectionFunctionInvocation = !(geometry.Flags & GeometryFlags::NoDuplicateAnyHitInvocation);
 
     return aabbDesc;
 }

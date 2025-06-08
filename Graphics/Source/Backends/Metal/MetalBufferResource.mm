@@ -26,13 +26,13 @@ using namespace DenOfIz;
 MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDesc &desc ) : m_context( context ), m_desc( desc )
 {
     NSUInteger alignment = 16;
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::UniformBuffer ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::UniformBuffer )
     {
         alignment = (NSUInteger)m_context->SelectedDeviceInfo.Constants.ConstantBufferAlignment;
     }
     alignment  = std::max( alignment, (NSUInteger)m_desc.Alignment );
     m_numBytes = Utilities::Align( m_desc.NumBytes, alignment );
-    if ( m_desc.Descriptor.IsSet( ResourceDescriptor::StructuredBuffer ) )
+    if ( m_desc.Descriptor & ResourceDescriptor::StructuredBuffer )
     {
         size_t elementSize  = m_desc.StructureDesc.Stride;
         size_t elementCount = m_desc.StructureDesc.NumElements;
@@ -54,7 +54,7 @@ MetalBufferResource::MetalBufferResource( MetalContext *context, const BufferDes
     NSString *nsName = [NSString stringWithUTF8String:desc.DebugName.Get( )];
     m_buffer.label   = nsName;
 
-    if ( m_desc.Descriptor.Any( { ResourceDescriptor::RWBuffer, ResourceDescriptor::AccelerationStructure } ) || m_desc.InitialUsage == ResourceUsage::UnorderedAccess ||
+    if ( m_desc.Descriptor & ( ResourceDescriptor::RWBuffer | ResourceDescriptor::AccelerationStructure ) || m_desc.InitialUsage == ResourceUsage::UnorderedAccess ||
          m_desc.InitialUsage == ResourceUsage::DepthWrite || m_desc.InitialUsage == ResourceUsage::AccelerationStructureWrite || m_desc.InitialUsage == ResourceUsage::CopyDst )
     {
         m_usage = MTLResourceUsageRead | MTLResourceUsageWrite;
