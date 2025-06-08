@@ -20,10 +20,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace DenOfIz;
 
-InteropArray<Byte> InteropUtilities::StringToBytes( const InteropString &str )
+ByteArray InteropUtilities::StringToBytes( const char *str )
 {
-    const std::string  stdStr = str.Get( );
-    InteropArray<Byte> result( stdStr.size( ) );
-    std::memcpy( result.Data( ), stdStr.c_str( ), stdStr.size( ) );
+    if ( !str )
+    {
+        return { nullptr, 0 };
+    }
+
+    const std::string stdStr = str;
+    ByteArray         result{ };
+
+    const size_t size = stdStr.size( ) + 1;
+    result.Elements   = static_cast<Byte *>( std::malloc( size ) );
+
+    if ( !result.Elements )
+    {
+        result.NumElements = 0;
+        return result;
+    }
+
+    result.NumElements = size;
+    std::memcpy( result.Elements, stdStr.c_str( ), size );
     return result;
 }

@@ -18,9 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <memory>
 #include "DenOfIzGraphics/Backends/Interface/ShaderData.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
-#include <memory>
 
 namespace DenOfIz
 {
@@ -36,7 +36,7 @@ namespace DenOfIz
     public:
         DZ_API DxilToMsl( );
         DZ_API ~DxilToMsl( );
-        DZ_API InteropArray<InteropArray<Byte>> Convert( const DxilToMslDesc &desc );
+        DZ_API InteropArray<ByteArray> Convert( const DxilToMslDesc &desc );
 
     private:
         class Impl;

@@ -286,34 +286,34 @@ ShaderAsset ShaderAssetWriter::CreateFromCompiledShader( const CompiledShader &c
         stageAsset.EntryPoint = compiledStage->EntryPoint;
         stageAsset.RayTracing = compiledStage->RayTracing;
 
-        if ( compiledStage->DXIL.NumElements( ) > 0 )
+        if ( compiledStage->DXIL.NumElements > 0 )
         {
-            const void  *data = compiledStage->DXIL.Data( );
-            const size_t size = compiledStage->DXIL.NumElements( );
+            const void  *data = compiledStage->DXIL.Elements;
+            const size_t size = compiledStage->DXIL.NumElements;
             stageAsset.DXIL.Resize( size );
             memcpy( stageAsset.DXIL.Data( ), data, size );
         }
 
-        if ( compiledStage->MSL.NumElements( ) > 0 )
+        if ( compiledStage->MSL.NumElements > 0 )
         {
-            const void  *data = compiledStage->MSL.Data( );
-            const size_t size = compiledStage->MSL.NumElements( );
+            const void  *data = compiledStage->MSL.Elements;
+            const size_t size = compiledStage->MSL.NumElements;
             stageAsset.MSL.Resize( size );
             memcpy( stageAsset.MSL.Data( ), data, size );
         }
 
-        if ( compiledStage->SPIRV.NumElements( ) > 0 )
+        if ( compiledStage->SPIRV.NumElements > 0 )
         {
-            const void  *data = compiledStage->SPIRV.Data( );
-            const size_t size = compiledStage->SPIRV.NumElements( );
+            const void  *data = compiledStage->SPIRV.Elements;
+            const size_t size = compiledStage->SPIRV.NumElements;
             stageAsset.SPIRV.Resize( size );
             memcpy( stageAsset.SPIRV.Data( ), data, size );
         }
 
-        if ( compiledStage->Reflection.NumElements( ) > 0 )
+        if ( compiledStage->Reflection.NumElements > 0 )
         {
-            const void  *data = compiledStage->Reflection.Data( );
-            const size_t size = compiledStage->Reflection.NumElements( );
+            const void  *data = compiledStage->Reflection.Elements;
+            const size_t size = compiledStage->Reflection.NumElements;
             stageAsset.Reflection.Resize( size );
             memcpy( stageAsset.Reflection.Data( ), data, size );
         }

@@ -19,8 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Shaders/ShaderCompiler.h"
 #include <fstream>
 #include <ranges>
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 #ifdef _WIN32
 #include <wrl/client.h>
@@ -112,9 +112,9 @@ CompileResult ShaderCompiler::Impl::CompileHLSL( const CompileDesc &compileDesc 
         break;
     }
 
-    if ( compileDesc.Data.NumElements( ) > 0 )
+    if ( compileDesc.Data.NumElements > 0 )
     {
-        result = m_dxcLibrary->CreateBlobWithEncodingOnHeapCopy( compileDesc.Data.Data( ), compileDesc.Data.NumElements( ), codePage, &sourceBlob );
+        result = m_dxcLibrary->CreateBlobWithEncodingOnHeapCopy( compileDesc.Data.Elements, compileDesc.Data.NumElements, codePage, &sourceBlob );
         if ( FAILED( result ) )
         {
             spdlog::critical( "Could not create blob from memory data, error code: {}", result );
@@ -318,17 +318,20 @@ CompileResult ShaderCompiler::Impl::CompileHLSL( const CompileDesc &compileDesc 
     dxcResult->Release( );
     sourceBlob->Release( );
 
-    InteropArray<Byte> codeArray{ };
-    codeArray.MemCpy( code->GetBufferPointer( ), code->GetBufferSize( ) );
+    ByteArray resultCode{ };
+    resultCode.Elements    = static_cast<Byte *>( std::malloc( code->GetBufferSize( ) ) );
+    resultCode.NumElements = code->GetBufferSize( );
+    std::memcpy( resultCode.Elements, code->GetBufferPointer( ), code->GetBufferSize( ) );
     code->Release( );
-
-    InteropArray<Byte> reflectionArray{ };
+    ByteArray resultReflection{ .Elements = nullptr, .NumElements = 0 };
     if ( reflection )
     {
-        reflectionArray.MemCpy( reflection->GetBufferPointer( ), reflection->GetBufferSize( ) );
+        resultReflection.Elements    = static_cast<Byte *>( std::malloc( reflection->GetBufferSize( ) ) );
+        resultReflection.NumElements = reflection->GetBufferSize( );
+        std::memcpy( resultReflection.Elements, reflection->GetBufferPointer( ), reflection->GetBufferSize( ) );
         reflection->Release( );
     }
-    return { .Code = codeArray, .Reflection = reflectionArray };
+    return { .Code = resultCode, .Reflection = resultReflection };
 }
 
 ShaderCompiler::ShaderCompiler( ) : m_pImpl( std::make_unique<Impl>( ) )

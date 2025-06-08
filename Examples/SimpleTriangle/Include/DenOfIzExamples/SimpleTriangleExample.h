@@ -49,12 +49,12 @@ namespace DenOfIz
 
     public:
         ~SimpleTriangleExample( ) override = default;
-        void              Init( ) override;
-        void              ModifyApiPreferences( APIPreference &defaultApiPreference ) override;
-        void              HandleEvent( Event &event ) override;
-        void              Update( ) override;
-        void              Render( uint32_t frameIndex, ICommandList *commandList ) override;
-        void              Quit( ) override;
+        void                     Init( ) override;
+        void                     ModifyApiPreferences( APIPreference &defaultApiPreference ) override;
+        void                     HandleEvent( Event &event ) override;
+        void                     Update( ) override;
+        void                     Render( uint32_t frameIndex, ICommandList *commandList ) override;
+        void                     Quit( ) override;
         struct ExampleWindowDesc WindowDesc( ) override
         {
             auto windowDesc   = DenOfIz::ExampleWindowDesc( );
@@ -65,8 +65,8 @@ namespace DenOfIz
         }
 
     private:
-        void                      CreateVertexBuffer( );
-        static InteropArray<Byte> VertexShader( );
-        static InteropArray<Byte> PixelShader( );
+        void             CreateVertexBuffer( );
+        static ByteArray VertexShader( );
+        static ByteArray PixelShader( );
     };
 } // namespace DenOfIz

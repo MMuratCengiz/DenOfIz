@@ -48,6 +48,9 @@ void BindlessExample::Init( )
     pixelShaderDesc.Bindless.MarkSrvAsBindlessArray( 0, 0, NUM_TEXTURES );
 
     m_program                           = std::make_unique<ShaderProgram>( shaderProgramDesc );
+    std::free( vertexShaderDesc.Data.Elements );
+    std::free( pixelShaderDesc.Data.Elements );
+
     const ShaderReflectDesc reflectDesc = m_program->Reflect( );
     m_inputLayout                       = std::unique_ptr<IInputLayout>( m_logicalDevice->CreateInputLayout( reflectDesc.InputLayout ) );
     m_rootSignature                     = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflectDesc.RootSignature ) );
@@ -188,7 +191,7 @@ void BindlessExample::CreateVertexBuffer( )
     m_resourceTracking.TrackBuffer( m_vertexBuffer.get( ), ResourceUsage::VertexAndConstantBuffer );
 }
 
-InteropArray<Byte> BindlessExample::VertexShader( )
+ByteArray BindlessExample::VertexShader( )
 {
     const auto shaderCode = R"(
         struct VSInput
@@ -211,12 +214,10 @@ InteropArray<Byte> BindlessExample::VertexShader( )
             return output;
         }
         )";
-
-    const InteropString str( shaderCode );
-    return InteropUtilities::StringToBytes( str );
+    return InteropUtilities::StringToBytes( shaderCode );
 }
 
-InteropArray<Byte> BindlessExample::PixelShader( )
+ByteArray BindlessExample::PixelShader( )
 {
     const auto shaderCode = R"(
         struct PSInput
@@ -247,9 +248,7 @@ InteropArray<Byte> BindlessExample::PixelShader( )
             return color;
         }
         )";
-
-    const InteropString str( shaderCode );
-    return InteropUtilities::StringToBytes( str );
+    return InteropUtilities::StringToBytes( shaderCode );
 }
 
 void BindlessExample::CreateTextures( )

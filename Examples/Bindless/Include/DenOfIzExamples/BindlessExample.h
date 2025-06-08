@@ -67,11 +67,11 @@ namespace DenOfIz
         }
 
     private:
-        void                      CreateVertexBuffer( );
-        void                      CreateTextures( );
-        void                      CreateSampler( );
-        void                      CreateConstantBuffer( );
-        static InteropArray<Byte> VertexShader( );
-        static InteropArray<Byte> PixelShader( );
+        void             CreateVertexBuffer( );
+        void             CreateTextures( );
+        void             CreateSampler( );
+        void             CreateConstantBuffer( );
+        static ByteArray VertexShader( );
+        static ByteArray PixelShader( );
     };
 } // namespace DenOfIz

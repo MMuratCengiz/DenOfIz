@@ -1,8 +1,8 @@
 #pragma once
 
+#include <memory>
 #include "DenOfIzGraphics/Backends/Interface/ShaderData.h"
 #include "DenOfIzGraphics/Utilities/Common.h"
-#include <memory>
 
 namespace DenOfIz
 {
@@ -10,7 +10,7 @@ namespace DenOfIz
     {
         InteropString               Path;
         CodePage                    CodePage;
-        InteropArray<Byte>          Data;
+        ByteArray                   Data;
         InteropString               EntryPoint = "main";
         ShaderStage                 Stage;
         TargetIL                    TargetIL;
@@ -19,8 +19,8 @@ namespace DenOfIz
 
     struct DZ_API CompileResult
     {
-        InteropArray<Byte> Code;
-        InteropArray<Byte> Reflection;
+        ByteArray Code;
+        ByteArray Reflection;
     };
 
     class ShaderCompiler final
@@ -34,6 +34,7 @@ namespace DenOfIz
         DZ_API ShaderCompiler( );
         DZ_API ~ShaderCompiler( );
         DZ_API [[nodiscard]] CompileResult CompileHLSL( const CompileDesc &compileDesc ) const;
+
     private:
         class Impl;
         std::unique_ptr<Impl> m_pImpl;

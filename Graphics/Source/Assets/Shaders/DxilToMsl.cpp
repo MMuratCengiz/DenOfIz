@@ -86,11 +86,11 @@ public:
 
     Impl( );
     ~Impl( );
-    InteropArray<InteropArray<Byte>> Convert( const DxilToMslDesc &desc );
+    InteropArray<ByteArray> Convert( const DxilToMslDesc &desc );
 
 private:
-    [[nodiscard]] InteropArray<Byte> Compile( const CompileDesc &compileDesc, const InteropArray<Byte> &dxil, const CompileMslDesc &compileMslDesc,
-                                              const RayTracingShaderDesc &rayTracingShaderDesc ) const;
+    [[nodiscard]] ByteArray Compile( const CompileDesc &compileDesc, const ByteArray &dxil, const CompileMslDesc &compileMslDesc,
+                                     const RayTracingShaderDesc &rayTracingShaderDesc ) const;
 
     IRRootSignature *CreateRootSignature( std::vector<RegisterSpaceRange> &registerSpaceRanges, bool isLocal ) const;
     void             IterateBoundResources( CompiledShaderStage *shader, ReflectionCallback &callback );
@@ -125,8 +125,8 @@ void DxilToMsl::Impl::IterateBoundResources( CompiledShaderStage *shader, Reflec
 
     auto            reflectionBlob = shader->Reflection;
     const DxcBuffer reflectionBuffer{
-        .Ptr      = reflectionBlob.Data( ),
-        .Size     = reflectionBlob.NumElements( ),
+        .Ptr      = reflectionBlob.Elements,
+        .Size     = reflectionBlob.NumElements,
         .Encoding = 0,
     };
 
@@ -305,7 +305,7 @@ DxilToMsl::Impl::~Impl( )
     }
 }
 
-InteropArray<InteropArray<Byte>> DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
+InteropArray<ByteArray> DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
 {
     IDxcUtils    *dxcUtils = nullptr;
     const HRESULT hr       = DxcCreateInstance( CLSID_DxcUtils, IID_PPV_ARGS( &dxcUtils ) );
@@ -405,7 +405,7 @@ InteropArray<InteropArray<Byte>> DxilToMsl::Impl::Convert( const DxilToMslDesc &
         IterateBoundResources( dxilShader, processResources );
     }
 
-    auto result = InteropArray<InteropArray<Byte>>( desc.Shaders.NumElements( ) );
+    auto result = InteropArray<ByteArray>( desc.Shaders.NumElements( ) );
 
     CompileMslDesc compileMslDesc{ };
     compileMslDesc.RootSignature      = CreateRootSignature( registerSpaceRanges, false );
@@ -425,11 +425,11 @@ InteropArray<InteropArray<Byte>> DxilToMsl::Impl::Convert( const DxilToMslDesc &
         compileDesc.TargetIL    = TargetIL::MSL;
 
         auto &dxilShader = dxilShaders.GetElement( shaderIndex );
-        if ( dxilShader->Reflection.NumElements( ) > 0 )
+        if ( dxilShader->Reflection.NumElements > 0 )
         {
             const DxcBuffer reflectionBuffer{
-                .Ptr      = dxilShader->Reflection.Data( ),
-                .Size     = dxilShader->Reflection.NumElements( ),
+                .Ptr      = dxilShader->Reflection.Elements,
+                .Size     = dxilShader->Reflection.NumElements,
                 .Encoding = 0,
             };
             if ( m_shaderReflection )
@@ -455,8 +455,8 @@ InteropArray<InteropArray<Byte>> DxilToMsl::Impl::Convert( const DxilToMslDesc &
     return result;
 }
 
-InteropArray<Byte> DxilToMsl::Impl::Compile( const CompileDesc &compileDesc, const InteropArray<Byte> &dxil, const CompileMslDesc &compileMslDesc,
-                                             const RayTracingShaderDesc &rayTracingShaderDesc ) const
+ByteArray DxilToMsl::Impl::Compile( const CompileDesc &compileDesc, const ByteArray &dxil, const CompileMslDesc &compileMslDesc,
+                                    const RayTracingShaderDesc &rayTracingShaderDesc ) const
 {
     const IRRootSignature *rootSignature  = compileMslDesc.RootSignature;
     const IRRootSignature *localSignature = compileMslDesc.LocalRootSignature;
@@ -467,7 +467,7 @@ InteropArray<Byte> DxilToMsl::Impl::Compile( const CompileDesc &compileDesc, con
     IRCompilerSetGlobalRootSignature( irCompiler, rootSignature );
     IRCompilerSetLocalRootSignature( irCompiler, localSignature );
 
-    PrimitiveTopology meshTopology = PrimitiveTopology::Triangle;
+    auto meshTopology = PrimitiveTopology::Triangle;
     if ( compileDesc.Stage == ShaderStage::Mesh && m_shaderReflection )
     {
         meshTopology = ShaderReflectionHelper::ExtractMeshOutputTopology( m_shaderReflection );
@@ -504,7 +504,7 @@ InteropArray<Byte> DxilToMsl::Impl::Compile( const CompileDesc &compileDesc, con
                                               compileMslDesc.RayTracing.MaxRecursionDepth, IRRayGenerationCompilationVisibleFunction,
                                               IRIntersectionFunctionCompilationVisibleFunction );
 
-    IRObject       *irDxil  = IRObjectCreateFromDXIL( static_cast<const uint8_t *>( dxil.Data( ) ), dxil.NumElements( ), IRBytecodeOwnershipNone );
+    IRObject       *irDxil  = IRObjectCreateFromDXIL( dxil.Elements, dxil.NumElements, IRBytecodeOwnershipNone );
     IRError        *irError = nullptr;
     const IRObject *outIr   = IRCompilerAllocCompileAndLink( irCompiler, compileDesc.EntryPoint.Get( ), irDxil, &irError );
 
@@ -527,7 +527,12 @@ InteropArray<Byte> DxilToMsl::Impl::Compile( const CompileDesc &compileDesc, con
     IRMetalLibBinaryDestroy( metalLib );
     IRObjectDestroy( irDxil );
     IRCompilerDestroy( irCompiler );
-    return mslBlob;
+
+    const ByteArray result{
+        .Elements    = metalLibByteCode,
+        .NumElements = metalLibSize,
+    };
+    return result;
 }
 
 void DxilToMsl::Impl::DxcCheckResult( const HRESULT hr ) const
@@ -552,7 +557,7 @@ DxilToMsl::DxilToMsl( ) : m_pImpl( std::make_unique<Impl>( ) )
 
 DxilToMsl::~DxilToMsl( ) = default;
 
-InteropArray<InteropArray<Byte>> DxilToMsl::Convert( const DxilToMslDesc &desc )
+InteropArray<ByteArray> DxilToMsl::Convert( const DxilToMslDesc &desc )
 {
     return m_pImpl->Convert( desc );
 }

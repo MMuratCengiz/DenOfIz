@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
 
 #include "DenOfIzGraphics/Utilities/Common.h"
-#include "DenOfIzGraphics/Utilities/Interop.h"  // For ByteArray
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 #include <string>
 #include "IBufferResource.h"
@@ -128,7 +128,7 @@ namespace DenOfIz
         ShaderStage                 Stage;
         CodePage                    CodePage;
         InteropString               Path;
-        InteropArray<Byte>          Data;
+        ByteArray                   Data;
         InteropArray<InteropString> Defines;
         InteropString               EntryPoint = "main";
         /// \brief Only available for Raygen, Miss and Hit shaders(Intersection, ClosestHit, AnyHit)
@@ -142,10 +142,10 @@ namespace DenOfIz
     struct DZ_API CompiledShaderStage : private NonCopyable
     {
         ShaderStage          Stage;
-        InteropArray<Byte>   DXIL;
-        InteropArray<Byte>   MSL;
-        InteropArray<Byte>   SPIRV;
-        InteropArray<Byte>   Reflection;
+        ByteArray            DXIL;
+        ByteArray            MSL;
+        ByteArray            SPIRV;
+        ByteArray            Reflection;
         InteropString        EntryPoint;
         RayTracingShaderDesc RayTracing;
         ThreadGroupInfo      ThreadGroup; // Thread group size for compute, mesh, and task shaders

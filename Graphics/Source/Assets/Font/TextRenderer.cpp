@@ -53,16 +53,21 @@ TextRenderer::TextRenderer( const TextRendererDesc &desc ) : m_desc( desc )
     // ReSharper disable once CppRedundantElseKeywordInsideCompoundStatement
     else
     {
+        std::vector<Byte> vertexShader = EmbeddedTextRendererShaders::GetFontVertexShaderBytes( );
+        std::vector<Byte> pixelShader  = EmbeddedTextRendererShaders::GetFontPixelShaderBytes( );
+
         ShaderProgramDesc programDesc{ };
         ShaderStageDesc  &vsDesc = programDesc.ShaderStages.EmplaceElement( );
         vsDesc.Stage             = ShaderStage::Vertex;
         vsDesc.EntryPoint        = "main";
-        vsDesc.Data              = EmbeddedTextRendererShaders::GetFontVertexShaderBytes( );
+        vsDesc.Data.Elements     = vertexShader.data( );
+        vsDesc.Data.NumElements  = vertexShader.size( );
 
         ShaderStageDesc &psDesc = programDesc.ShaderStages.EmplaceElement( );
         psDesc.Stage            = ShaderStage::Pixel;
         psDesc.EntryPoint       = "main";
-        psDesc.Data             = EmbeddedTextRendererShaders::GetFontPixelShaderBytes( );
+        psDesc.Data.Elements    = pixelShader.data( );
+        psDesc.Data.NumElements = pixelShader.size( );
         m_fontShaderProgram     = std::make_unique<ShaderProgram>( programDesc );
     }
 

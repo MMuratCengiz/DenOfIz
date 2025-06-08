@@ -32,11 +32,14 @@ void SimpleTriangleExample::Init( )
     vertexShaderDesc.EntryPoint       = "VSMain";
     vertexShaderDesc.Data             = VertexShader( );
 
-    ShaderStageDesc &pixelShaderDesc    = shaderProgramDesc.ShaderStages.EmplaceElement( );
-    pixelShaderDesc.Stage               = ShaderStage::Pixel;
-    pixelShaderDesc.EntryPoint          = "PSMain";
-    pixelShaderDesc.Data                = PixelShader( );
-    m_program                           = std::make_unique<ShaderProgram>( shaderProgramDesc );
+    ShaderStageDesc &pixelShaderDesc = shaderProgramDesc.ShaderStages.EmplaceElement( );
+    pixelShaderDesc.Stage            = ShaderStage::Pixel;
+    pixelShaderDesc.EntryPoint       = "PSMain";
+    pixelShaderDesc.Data             = PixelShader( );
+    m_program                        = std::make_unique<ShaderProgram>( shaderProgramDesc );
+    std::free( vertexShaderDesc.Data.Elements );
+    std::free( pixelShaderDesc.Data.Elements );
+
     const ShaderReflectDesc reflectDesc = m_program->Reflect( );
     m_inputLayout                       = std::unique_ptr<IInputLayout>( m_logicalDevice->CreateInputLayout( reflectDesc.InputLayout ) );
     m_rootSignature                     = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflectDesc.RootSignature ) );
@@ -129,7 +132,7 @@ void SimpleTriangleExample::CreateVertexBuffer( )
     m_resourceTracking.TrackBuffer( m_vertexBuffer.get( ), ResourceUsage::VertexAndConstantBuffer );
 }
 
-InteropArray<Byte> SimpleTriangleExample::VertexShader( )
+ByteArray SimpleTriangleExample::VertexShader( )
 {
     const auto shaderCode = R"(
         struct VSInput
@@ -153,11 +156,10 @@ InteropArray<Byte> SimpleTriangleExample::VertexShader( )
         }
         )";
 
-    const InteropString str( shaderCode );
-    return InteropUtilities::StringToBytes( str );
+    return InteropUtilities::StringToBytes( shaderCode );
 }
 
-InteropArray<Byte> SimpleTriangleExample::PixelShader( )
+ByteArray SimpleTriangleExample::PixelShader( )
 {
     const auto shaderCode = R"(
         struct PSInput
@@ -172,6 +174,5 @@ InteropArray<Byte> SimpleTriangleExample::PixelShader( )
             }
         )";
 
-    const InteropString str( shaderCode );
-    return InteropUtilities::StringToBytes( str );
+    return InteropUtilities::StringToBytes( shaderCode );
 }

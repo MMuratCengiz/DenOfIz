@@ -58,23 +58,23 @@ float4 main(PSInput input) : SV_TARGET
 {
     return SourceTexture.Sample(LinearSampler, input.TexCoord);
 })";
-    static InteropArray<Byte> StringToByteArray( const char *str )
+    static std::vector<Byte> StringToByteArray( const char *str )
     {
         const size_t       len = strlen( str );
-        InteropArray<Byte> result( len );
+        std::vector<Byte> result( len );
         for ( size_t i = 0; i < len; i++ )
         {
-            result.SetElement( i, static_cast<Byte>( str[ i ] ) );
+            result[ i ] = static_cast<Byte>( str[ i ] );
         }
         return result;
     }
 
-    static InteropArray<Byte> GetFullscreenQuadVertexShaderBytes( )
+    static std::vector<Byte> GetFullscreenQuadVertexShaderBytes( )
     {
         return StringToByteArray( FullscreenQuadVertexShaderSource );
     }
 
-    static InteropArray<Byte> GetFullscreenQuadPixelShaderBytes( )
+    static std::vector<Byte> GetFullscreenQuadPixelShaderBytes( )
     {
         return StringToByteArray( FullscreenQuadPixelShaderSource );
     }

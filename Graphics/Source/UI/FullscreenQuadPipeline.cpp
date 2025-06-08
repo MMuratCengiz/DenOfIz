@@ -39,15 +39,20 @@ void FullscreenQuadPipeline::CreateShaderProgram( )
 {
     ShaderProgramDesc programDesc{ };
 
+    auto vertexShader = EmbeddedFullscreenQuadShaders::GetFullscreenQuadVertexShaderBytes( );
+    auto pixelShader  = EmbeddedFullscreenQuadShaders::GetFullscreenQuadPixelShaderBytes( );
+
     ShaderStageDesc &vsDesc = programDesc.ShaderStages.EmplaceElement( );
     vsDesc.Stage            = ShaderStage::Vertex;
     vsDesc.EntryPoint       = InteropString( "main" );
-    vsDesc.Data             = EmbeddedFullscreenQuadShaders::GetFullscreenQuadVertexShaderBytes( );
+    vsDesc.Data.Elements    = vertexShader.data( );
+    vsDesc.Data.NumElements = vertexShader.size( );
 
     ShaderStageDesc &psDesc = programDesc.ShaderStages.EmplaceElement( );
     psDesc.Stage            = ShaderStage::Pixel;
     psDesc.EntryPoint       = InteropString( "main" );
-    psDesc.Data             = EmbeddedFullscreenQuadShaders::GetFullscreenQuadPixelShaderBytes( );
+    psDesc.Data.Elements    = pixelShader.data( );
+    psDesc.Data.NumElements = pixelShader.size( );
 
     m_shaderProgram = std::make_unique<ShaderProgram>( programDesc );
 }
@@ -97,7 +102,7 @@ void FullscreenQuadPipeline::UpdateTarget( const uint32_t frameIndex, ITextureRe
         spdlog::error( "FullscreenQuadPipeline::UpdateTarget: Invalid frame index {}", frameIndex );
         return;
     }
-    
+
     if ( sourceTexture == nullptr )
     {
         spdlog::error( "FullscreenQuadPipeline::UpdateTarget: sourceTexture cannot be null" );

@@ -299,7 +299,10 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
             IDxcBlobEncoding *blob = nullptr;
             if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.DXIL.Data( ), stageAsset.DXIL.NumElements( ), DXC_CP_ACP, &blob ) ) )
             {
-                compiledStage->DXIL.MemCpy( blob->GetBufferPointer( ), blob->GetBufferSize( ) );
+                compiledStage->DXIL.Elements    = static_cast<Byte *>( std::malloc( blob->GetBufferSize( ) ) );
+                compiledStage->DXIL.NumElements = blob->GetBufferSize( );
+                std::memcpy( compiledStage->DXIL.Elements, blob->GetBufferPointer( ), blob->GetBufferSize( ) );
+                blob->Release( );
             }
         }
 
@@ -308,7 +311,10 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
             IDxcBlobEncoding *blob = nullptr;
             if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.MSL.Data( ), stageAsset.MSL.NumElements( ), DXC_CP_ACP, &blob ) ) )
             {
-                compiledStage->MSL.MemCpy( blob->GetBufferPointer( ), blob->GetBufferSize( ) );
+                compiledStage->MSL.Elements    = static_cast<Byte *>( std::malloc( blob->GetBufferSize( ) ) );
+                compiledStage->MSL.NumElements = blob->GetBufferSize( );
+                std::memcpy( compiledStage->MSL.Elements, blob->GetBufferPointer( ), blob->GetBufferSize( ) );
+                blob->Release( );
             }
         }
 
@@ -317,7 +323,10 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
             IDxcBlobEncoding *blob = nullptr;
             if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.SPIRV.Data( ), stageAsset.SPIRV.NumElements( ), DXC_CP_ACP, &blob ) ) )
             {
-                compiledStage->SPIRV.MemCpy( blob->GetBufferPointer( ), blob->GetBufferSize( ) );
+                compiledStage->SPIRV.Elements    = static_cast<Byte *>( std::malloc( blob->GetBufferSize( ) ) );
+                compiledStage->SPIRV.NumElements = blob->GetBufferSize( );
+                std::memcpy( compiledStage->SPIRV.Elements, blob->GetBufferPointer( ), blob->GetBufferSize( ) );
+                blob->Release( );
             }
         }
 
@@ -326,7 +335,10 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
             IDxcBlobEncoding *blob = nullptr;
             if ( SUCCEEDED( dxcLibrary->CreateBlobWithEncodingOnHeapCopy( stageAsset.Reflection.Data( ), stageAsset.Reflection.NumElements( ), DXC_CP_ACP, &blob ) ) )
             {
-                compiledStage->Reflection.MemCpy( blob->GetBufferPointer( ), blob->GetBufferSize( ) );
+                compiledStage->Reflection.Elements    = static_cast<Byte *>( std::malloc( blob->GetBufferSize( ) ) );
+                compiledStage->Reflection.NumElements = blob->GetBufferSize( );
+                std::memcpy( compiledStage->Reflection.Elements, blob->GetBufferPointer( ), blob->GetBufferSize( ) );
+                blob->Release( );
             }
         }
     }

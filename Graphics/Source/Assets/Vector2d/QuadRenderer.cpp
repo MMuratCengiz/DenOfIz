@@ -217,17 +217,17 @@ void QuadRenderer::CreateShaderResources( )
     ShaderStageDesc &vertexShaderDesc = shaderProgramDesc.ShaderStages.EmplaceElement( );
     vertexShaderDesc.Stage            = ShaderStage::Vertex;
     vertexShaderDesc.EntryPoint       = "main";
-    const InteropString vsStr( QuadVertexShader );
-    vertexShaderDesc.Data = InteropUtilities::StringToBytes( vsStr );
+    vertexShaderDesc.Data             = InteropUtilities::StringToBytes( QuadVertexShader );
 
     ShaderStageDesc &pixelShaderDesc = shaderProgramDesc.ShaderStages.EmplaceElement( );
     pixelShaderDesc.Stage            = ShaderStage::Pixel;
     pixelShaderDesc.EntryPoint       = "main";
-    const InteropString psStr( RasterPixelShader );
-    pixelShaderDesc.Data = InteropUtilities::StringToBytes( psStr );
+    pixelShaderDesc.Data             = InteropUtilities::StringToBytes( RasterPixelShader );
     pixelShaderDesc.Bindless.MarkSrvAsBindlessArray( 0, 1, m_desc.MaxNumTextures );
 
     m_shaderProgram = std::make_unique<ShaderProgram>( shaderProgramDesc );
+    std::free( vertexShaderDesc.Data.Elements );
+    std::free( pixelShaderDesc.Data.Elements );
 
     const ShaderReflectDesc reflectDesc = m_shaderProgram->Reflect( );
     m_rootSignature                     = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflectDesc.RootSignature ) );

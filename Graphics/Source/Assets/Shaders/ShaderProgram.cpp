@@ -71,6 +71,7 @@ public:
     std::vector<ShaderStageDesc>                      m_shaderDescs; // Index matched with m_compiledShaders
     ShaderReflectDesc                                 m_reflectDesc;
     ShaderProgramDesc                                 m_desc;
+    std::vector<ByteArray>                            m_dataToClean;
 
     explicit Impl( ShaderProgramDesc desc ) : m_desc( std::move( desc ) )
     {
@@ -101,14 +102,28 @@ ShaderProgram::ShaderProgram( const ShaderAsset &asset ) : m_pImpl( std::make_un
     for ( int i = 0; i < shader.Stages.NumElements( ); ++i )
     {
         CompiledShaderStage *shaderStage = shader.Stages.GetElement( i );
-        m_pImpl->m_compiledShaders.emplace_back( std::unique_ptr<CompiledShaderStage>( shaderStage ) );
+        const auto          &ownedShader = m_pImpl->m_compiledShaders.emplace_back( std::unique_ptr<CompiledShaderStage>( shaderStage ) );
+        // ShaderAssetReader doesn't clean this data because we may need it in the lifetime of the program
+        m_pImpl->m_dataToClean.push_back( ownedShader->DXIL );
+        m_pImpl->m_dataToClean.push_back( ownedShader->MSL );
+        m_pImpl->m_dataToClean.push_back( ownedShader->SPIRV );
+        m_pImpl->m_dataToClean.push_back( ownedShader->Reflection );
     }
     m_pImpl->m_reflectDesc     = shader.ReflectDesc;
     m_pImpl->m_desc            = { };
     m_pImpl->m_desc.RayTracing = shader.RayTracing;
 }
 
-ShaderProgram::~ShaderProgram( ) = default;
+ShaderProgram::~ShaderProgram( )
+{
+    for ( const auto &data : m_pImpl->m_dataToClean )
+    {
+        if ( data.Elements )
+        {
+            free( data.Elements );
+        }
+    }
+}
 
 InteropArray<CompiledShaderStage *> ShaderProgram::CompiledShaders( ) const
 {
@@ -141,7 +156,7 @@ void ShaderProgram::Impl::Compile( )
     {
         const auto &stage = m_desc.ShaderStages.GetElement( i );
         // Validate Shader
-        if ( stage.Path.IsEmpty( ) && stage.Data.NumElements( ) == 0 )
+        if ( stage.Path.IsEmpty( ) && stage.Data.NumElements == 0 )
         {
             spdlog::error( "Either stage.Path or stage.Data must be set for stage {} ", i );
             continue;
@@ -157,17 +172,20 @@ void ShaderProgram::Impl::Compile( )
         compileDesc.TargetIL    = TargetIL::DXIL;
 
         auto [ dxil, reflection ] = m_compiler.CompileHLSL( compileDesc );
+        m_dataToClean.push_back( dxil );
+        m_dataToClean.push_back( reflection );
 
         compileDesc.TargetIL = TargetIL::SPIRV;
         auto [ spirv, _ ]    = m_compiler.CompileHLSL( compileDesc );
+        m_dataToClean.push_back( spirv );
 
         const auto &compiledShader = m_compiledShaders.emplace_back( std::make_unique<CompiledShaderStage>( ) );
         compiledShader->Stage      = stage.Stage;
         compiledShader->EntryPoint = stage.EntryPoint;
         compiledShader->RayTracing = stage.RayTracing;
         compiledShader->Reflection = reflection;
-        compiledShader->DXIL       = std::move( dxil );
-        compiledShader->SPIRV      = std::move( spirv );
+        compiledShader->DXIL       = dxil;
+        compiledShader->SPIRV      = spirv;
         compiledShader->MSL        = { }; // Set below
 
         m_shaderDescs.push_back( stage );
@@ -193,7 +211,8 @@ void ShaderProgram::Impl::Compile( )
 
     for ( int i = 0; i < mslShaders.NumElements( ); ++i )
     {
-        m_compiledShaders[ i ]->MSL = std::move( mslShaders.GetElement( i ) );
+        m_compiledShaders[ i ]->MSL = mslShaders.GetElement( i );
+        m_dataToClean.push_back( mslShaders.GetElement( i ) );
     }
 #else
     spdlog::error( "MSL compilation is not supported on this platform" );
@@ -232,11 +251,11 @@ void ShaderProgram::Impl::CreateReflectionData( )
         LocalRootSignatureDesc &recordLayout = m_reflectDesc.LocalRootSignatures.GetElement( stageIndex );
         reflectionState.LocalRootSignature   = &recordLayout;
 
-        auto      reflectionBlob = shader->Reflection;
-        DxcBuffer reflectionBuffer{
-            .Ptr      = reflectionBlob.Data( ),
-            .Size     = reflectionBlob.NumElements( ),
-            .Encoding = 0,
+        const auto reflectionBlob = shader->Reflection;
+        DxcBuffer  reflectionBuffer{
+             .Ptr      = reflectionBlob.Elements,
+             .Size     = reflectionBlob.NumElements,
+             .Encoding = 0,
         };
 
         ID3D12ShaderReflection  *shaderReflection  = nullptr;

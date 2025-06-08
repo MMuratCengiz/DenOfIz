@@ -133,24 +133,24 @@ float4 main(PSInput input) : SV_TARGET
 }
 )";
 
-    static InteropArray<Byte> StringToByteArray( const char *str )
+    static std::vector<Byte> StringToByteArray( const char *str )
     {
         const size_t       len = strlen( str );
-        InteropArray<Byte> result( len );
+        std::vector<Byte> result( len );
         for ( size_t i = 0; i < len; i++ )
         {
-            result.SetElement( i, static_cast<Byte>( str[ i ] ) );
+            result[ i ] = static_cast<Byte>( str[ i ] );
         }
         return result;
     }
 
     // Get shader sources as byte arrays
-    static InteropArray<Byte> GetUIVertexShaderBytes( )
+    static std::vector<Byte> GetUIVertexShaderBytes( )
     {
         return StringToByteArray( UIVertexShaderSource );
     }
 
-    static InteropArray<Byte> GetUIPixelShaderBytes( )
+    static std::vector<Byte> GetUIPixelShaderBytes( )
     {
         return StringToByteArray( UIPixelShaderSource );
     }

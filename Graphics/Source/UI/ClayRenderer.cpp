@@ -115,15 +115,20 @@ void ClayRenderer::CreateShaderProgram( )
 {
     ShaderProgramDesc programDesc{ };
 
+    auto vertexShader = EmbeddedUIShaders::GetUIVertexShaderBytes( );
+    auto pixelShader  = EmbeddedUIShaders::GetUIPixelShaderBytes( );
+
     ShaderStageDesc &vsDesc = programDesc.ShaderStages.EmplaceElement( );
     vsDesc.Stage            = ShaderStage::Vertex;
     vsDesc.EntryPoint       = InteropString( "main" );
-    vsDesc.Data             = EmbeddedUIShaders::GetUIVertexShaderBytes( );
+    vsDesc.Data.Elements    = vertexShader.data( );
+    vsDesc.Data.NumElements = vertexShader.size( );
 
     ShaderStageDesc &psDesc = programDesc.ShaderStages.EmplaceElement( );
     psDesc.Stage            = ShaderStage::Pixel;
     psDesc.EntryPoint       = InteropString( "main" );
-    psDesc.Data             = EmbeddedUIShaders::GetUIPixelShaderBytes( );
+    psDesc.Data.Elements    = pixelShader.data( );
+    psDesc.Data.NumElements = pixelShader.size( );
 
     psDesc.Bindless.MarkSrvAsBindlessArray( 0, 0, m_desc.MaxTextures );
     m_shaderProgram = std::make_unique<ShaderProgram>( programDesc );

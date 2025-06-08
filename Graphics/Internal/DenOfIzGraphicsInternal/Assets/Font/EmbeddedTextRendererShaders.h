@@ -105,40 +105,45 @@ float4 main(PSInput input) : SV_TARGET
 )";
 
     // Helper function to create a byte array from a string
-    static InteropArray<Byte> StringToByteArray( const char *str )
+    static std::vector<Byte> StringToByteArray( const char *str )
     {
-        const size_t       len = strlen( str );
-        InteropArray<Byte> result( len );
+        const size_t      len = strlen( str );
+        std::vector<Byte> result( len );
         for ( size_t i = 0; i < len; i++ )
         {
-            result.SetElement( i, static_cast<Byte>( str[ i ] ) );
+            result[ i ] = static_cast<Byte>( str[ i ] );
         }
         return result;
     }
 
     // Get shader sources as byte arrays
-    static InteropArray<Byte> GetFontVertexShaderBytes( )
+    static std::vector<Byte> GetFontVertexShaderBytes( )
     {
         return StringToByteArray( FontVertexShaderSource );
     }
 
-    static InteropArray<Byte> GetFontPixelShaderBytes( )
+    static std::vector<Byte> GetFontPixelShaderBytes( )
     {
         return StringToByteArray( FontPixelShaderSource );
     }
 
     static void RegenerateShaderAssetBytes( )
     {
+        std::vector<Byte> vertexShaderBytes = GetFontVertexShaderBytes( );
+        std::vector<Byte> pixelShaderBytes  = GetFontPixelShaderBytes( );
+
         ShaderProgramDesc programDesc{ };
         ShaderStageDesc  &vsDesc = programDesc.ShaderStages.EmplaceElement( );
         vsDesc.Stage             = ShaderStage::Vertex;
         vsDesc.EntryPoint        = "main";
-        vsDesc.Data              = GetFontVertexShaderBytes( );
+        vsDesc.Data.Elements     = vertexShaderBytes.data( );
+        vsDesc.Data.NumElements  = vertexShaderBytes.size( );
 
         ShaderStageDesc &psDesc = programDesc.ShaderStages.EmplaceElement( );
         psDesc.Stage            = ShaderStage::Pixel;
         psDesc.EntryPoint       = "main";
-        psDesc.Data             = GetFontPixelShaderBytes( );
+        psDesc.Data.Elements     = pixelShaderBytes.data( );
+        psDesc.Data.NumElements  = pixelShaderBytes.size( );
 
         const ShaderProgram shaderProgram( programDesc );
 
