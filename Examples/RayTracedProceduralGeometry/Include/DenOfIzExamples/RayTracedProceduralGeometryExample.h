@@ -1,8 +1,10 @@
 #pragma once
 
-#include <intsafe.h>
 #include "DenOfIzExamples/IExample.h"
 #include "DenOfIzGraphics/Utilities/StepTimer.h"
+#ifndef UINT
+#define UINT uint32_t
+#endif
 #include <RayTracingHlslCompat.h>
 
 namespace DenOfIz
