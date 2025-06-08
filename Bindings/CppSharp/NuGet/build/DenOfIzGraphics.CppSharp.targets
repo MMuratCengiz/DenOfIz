@@ -1,28 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-	<PropertyGroup>
-		<DenOfIzGraphicsRuntimeIdentifier Condition="'$(DenOfIzGraphicsRuntimeIdentifier)' == '' and '$([MSBuild]::IsOSPlatform(Windows))' == 'true'">win-x64</DenOfIzGraphicsRuntimeIdentifier>
-		<DenOfIzGraphicsRuntimeIdentifier Condition="'$(DenOfIzGraphicsRuntimeIdentifier)' == '' and '$([MSBuild]::IsOSPlatform(OSX))' == 'true'">osx-arm64</DenOfIzGraphicsRuntimeIdentifier>
-		<DenOfIzGraphicsRuntimeIdentifier Condition="'$(DenOfIzGraphicsRuntimeIdentifier)' == '' and '$([MSBuild]::IsOSPlatform(Linux))' == 'true'">linux-x64</DenOfIzGraphicsRuntimeIdentifier>
-	</PropertyGroup>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <NativeCopy Include="$(MSBuildThisFileDirectory)..\runtimes\$(RuntimeIdentifier)\native\*.*">
+      <Link>%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </NativeCopy>
+  </ItemGroup>
 
-	<ItemGroup>
-		<DenOfIzGraphicsNativeLibs Include="$(MSBuildThisFileDirectory)..\runtimes\$(DenOfIzGraphicsRuntimeIdentifier)\native\*.*" />
-	</ItemGroup>
-
-	<Target Name="CopyDenOfIzGraphicsNativeLibs" AfterTargets="Build">
-		<Copy SourceFiles="@(DenOfIzGraphicsNativeLibs)"
-			  DestinationFolder="$(OutputPath)"
-			  SkipUnchangedFiles="true"
-			  UseSymboliclinksIfPossible="false" />
-	</Target>
-
-	<Target Name="IncludeDenOfIzGraphicsNativeLibsInPublish" BeforeTargets="PrepareForPublish">
-		<ItemGroup>
-			<ResolvedFileToPublish Include="@(DenOfIzGraphicsNativeLibs)">
-				<RelativePath>%(Filename)%(Extension)</RelativePath>
-				<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-			</ResolvedFileToPublish>
-		</ItemGroup>
-	</Target>
+  <Target Name="CopyNativeBinaries" AfterTargets="Build">
+    <Copy SourceFiles="@(NativeCopy)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
