@@ -142,16 +142,17 @@ void Spinning3DCubeWidget::CreateGeometry( )
     boxDesc.BuildDesc     = BuildDesc::BuildNormal;
     GeometryData geometry = Geometry::BuildBox( boxDesc );
 
-    InteropArray<CubeVertex> formattedVertices( geometry.Vertices.NumElements( ) );
+    std::vector<CubeVertex> formattedVertices( geometry.Vertices.NumElements( ) );
     for ( int i = 0; i < geometry.Vertices.NumElements( ); i++ )
     {
         const GeometryVertexData &vertexData = geometry.Vertices.GetElement( i );
-        formattedVertices.SetElement(
-            i, { { vertexData.Position.X, vertexData.Position.Y, vertexData.Position.Z }, { vertexData.Normal.X, vertexData.Normal.Y, vertexData.Normal.Z }, m_cubeColor } );
+        formattedVertices[ i ]               = { { vertexData.Position.X, vertexData.Position.Y, vertexData.Position.Z },
+                                                 { vertexData.Normal.X, vertexData.Normal.Y, vertexData.Normal.Z },
+                                                 m_cubeColor };
     }
 
     BufferDesc vertexBufferDesc{ };
-    vertexBufferDesc.NumBytes   = formattedVertices.NumElements( ) * sizeof( CubeVertex );
+    vertexBufferDesc.NumBytes   = formattedVertices.size( ) * sizeof( CubeVertex );
     vertexBufferDesc.Descriptor = ResourceDescriptor::VertexBuffer;
     vertexBufferDesc.Usages     = ResourceUsage::VertexAndConstantBuffer;
     vertexBufferDesc.HeapType   = HeapType::GPU;
@@ -171,15 +172,17 @@ void Spinning3DCubeWidget::CreateGeometry( )
     batchCopy.Begin( );
 
     CopyToGpuBufferDesc vertexCopyDesc;
-    vertexCopyDesc.DstBuffer       = m_vertexBuffer.get( );
-    vertexCopyDesc.DstBufferOffset = 0;
-    vertexCopyDesc.Data.MemCpy( formattedVertices.Data( ), formattedVertices.NumElements( ) * sizeof( CubeVertex ) );
+    vertexCopyDesc.DstBuffer        = m_vertexBuffer.get( );
+    vertexCopyDesc.DstBufferOffset  = 0;
+    vertexCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( formattedVertices.data( ) );
+    vertexCopyDesc.Data.NumElements = formattedVertices.size( ) * sizeof( CubeVertex );
     batchCopy.CopyToGPUBuffer( vertexCopyDesc );
 
     CopyToGpuBufferDesc indexCopyDesc;
-    indexCopyDesc.DstBuffer       = m_indexBuffer.get( );
-    indexCopyDesc.DstBufferOffset = 0;
-    indexCopyDesc.Data.MemCpy( geometry.Indices.Data( ), geometry.Indices.NumElements( ) * sizeof( uint32_t ) );
+    indexCopyDesc.DstBuffer        = m_indexBuffer.get( );
+    indexCopyDesc.DstBufferOffset  = 0;
+    indexCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( geometry.Indices.Data( ) );
+    indexCopyDesc.Data.NumElements = geometry.Indices.NumElements( ) * sizeof( uint32_t );
     batchCopy.CopyToGPUBuffer( indexCopyDesc );
 
     batchCopy.Submit( );

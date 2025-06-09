@@ -189,8 +189,9 @@ void BindlessExample::CreateVertexBuffer( )
     batchCopy.Begin( );
 
     CopyToGpuBufferDesc copyDesc{ };
-    copyDesc.DstBuffer = m_vertexBuffer.get( );
-    copyDesc.Data.MemCpy( vertices.data( ), vertices.size( ) * sizeof( float ) );
+    copyDesc.DstBuffer        = m_vertexBuffer.get( );
+    copyDesc.Data.Elements    = reinterpret_cast<const Byte *>( vertices.data( ) );
+    copyDesc.Data.NumElements = vertices.size( ) * sizeof( float );
     batchCopy.CopyToGPUBuffer( copyDesc );
     batchCopy.Submit( );
 
@@ -375,10 +376,12 @@ void BindlessExample::CreateTextures( )
         BatchResourceCopy batchCopy( m_logicalDevice );
         batchCopy.Begin( );
 
+        auto                  dataAsBytes = canvas.GetDataAsBytes( );
         CopyDataToTextureDesc copyDesc{ };
-        copyDesc.Data       = canvas.GetDataAsBytes( );
-        copyDesc.DstTexture = m_textures[ i ].get( );
-        copyDesc.MipLevel   = 0;
+        copyDesc.Data.Elements    = dataAsBytes.Data( );
+        copyDesc.Data.NumElements = dataAsBytes.NumElements( );
+        copyDesc.DstTexture       = m_textures[ i ].get( );
+        copyDesc.MipLevel         = 0;
         batchCopy.CopyDataToTexture( copyDesc );
 
         batchCopy.Submit( );

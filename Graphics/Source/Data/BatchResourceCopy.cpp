@@ -17,8 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 
@@ -72,18 +72,18 @@ void BatchResourceCopy::CopyToGPUBuffer( const CopyToGpuBufferDesc &copyDesc )
     BufferDesc stagingBufferDesc{ };
     stagingBufferDesc.HeapType     = HeapType::CPU_GPU;
     stagingBufferDesc.InitialUsage = ResourceUsage::CopySrc;
-    stagingBufferDesc.NumBytes     = Utilities::Align( copyDesc.Data.NumElements( ), m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
+    stagingBufferDesc.NumBytes     = Utilities::Align( copyDesc.Data.NumElements, m_device->DeviceInfo( ).Constants.ConstantBufferAlignment );
     stagingBufferDesc.DebugName    = "CopyToGPUBuffer_StagingBuffer";
 
     const auto stagingBuffer = m_device->CreateBufferResource( stagingBufferDesc );
-    memcpy( stagingBuffer->MapMemory( ), copyDesc.Data.Data( ), copyDesc.Data.NumElements( ) );
+    memcpy( stagingBuffer->MapMemory( ), copyDesc.Data.Elements, copyDesc.Data.NumElements );
     stagingBuffer->UnmapMemory( );
 
     CopyBufferRegionDesc copyBufferRegionDesc{ };
     copyBufferRegionDesc.DstBuffer = copyDesc.DstBuffer;
     copyBufferRegionDesc.SrcBuffer = stagingBuffer;
     copyBufferRegionDesc.DstOffset = copyDesc.DstBufferOffset;
-    copyBufferRegionDesc.NumBytes  = copyDesc.Data.NumElements( );
+    copyBufferRegionDesc.NumBytes  = copyDesc.Data.NumElements;
 
     CopyBufferRegion( copyBufferRegionDesc );
 
@@ -106,7 +106,7 @@ void BatchResourceCopy::CopyDataToTexture( const CopyDataToTextureDesc &copyDesc
     BufferDesc stagingBufferDesc{ };
     stagingBufferDesc.HeapType     = HeapType::CPU_GPU;
     stagingBufferDesc.InitialUsage = ResourceUsage::CopySrc;
-    stagingBufferDesc.NumBytes     = copyDesc.Data.NumElements( );
+    stagingBufferDesc.NumBytes     = copyDesc.Data.NumElements;
     stagingBufferDesc.DebugName    = "CopyDataToTexture_StagingBuffer";
 
     const uint32_t bitSize = FormatNumBytes( copyDesc.DstTexture->GetFormat( ) );
@@ -127,11 +127,11 @@ void BatchResourceCopy::CopyDataToTexture( const CopyDataToTextureDesc &copyDesc
     void      *dst           = stagingBuffer->MapMemory( );
     if ( copyDesc.AutoAlign )
     {
-        AlignDataForTexture( copyDesc.Data.Data( ), copyDesc.Width, copyDesc.Height, bitSize, static_cast<Byte *>( dst ) );
+        AlignDataForTexture( copyDesc.Data.Elements, copyDesc.Width, copyDesc.Height, bitSize, static_cast<Byte *>( dst ) );
     }
     else
     {
-        memcpy( dst, copyDesc.Data.Data( ), copyDesc.Data.NumElements( ) );
+        memcpy( dst, copyDesc.Data.Elements, copyDesc.Data.NumElements );
     }
 
     stagingBuffer->UnmapMemory( );
@@ -231,7 +231,7 @@ ITextureResource *BatchResourceCopy::CreateAndLoadAssetTexture( const CreateAsse
     return texture;
 }
 
-IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte> &data, const uint32_t numBytes )
+IBufferResource *BatchResourceCopy::CreateUniformBuffer( const ByteArrayView &data, const uint32_t numBytes )
 {
     BufferDesc bufferDesc{ };
     bufferDesc.HeapType     = HeapType::GPU;
@@ -271,9 +271,9 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
     const auto vertexBuffer = m_device->CreateBufferResource( vBufferDesc );
 
     CopyToGpuBufferDesc vbCopyDesc{ };
-    vbCopyDesc.DstBuffer = vertexBuffer;
-    // Todo not efficient at all, fix later
-    vbCopyDesc.Data.MemCpy( geometryData.Vertices.Data( ), numBytes );
+    vbCopyDesc.DstBuffer        = vertexBuffer;
+    vbCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( geometryData.Vertices.Data( ) );
+    vbCopyDesc.Data.NumElements = geometryData.Vertices.NumElements( ) * sizeof( GeometryVertexData );
     CopyToGPUBuffer( vbCopyDesc );
 
     if ( m_issueBarriers )
@@ -300,9 +300,9 @@ IBufferResource *BatchResourceCopy::CreateUniformBuffer( const InteropArray<Byte
     const auto indexBuffer = m_device->CreateBufferResource( iBufferDesc );
 
     CopyToGpuBufferDesc ibCopyDesc{ };
-    ibCopyDesc.DstBuffer = indexBuffer;
-    // Todo not efficient at all, fix later
-    ibCopyDesc.Data.MemCpy( geometryData.Indices.Data( ), numBytes );
+    ibCopyDesc.DstBuffer        = indexBuffer;
+    ibCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( geometryData.Indices.Data( ) );
+    ibCopyDesc.Data.NumElements = geometryData.Indices.NumElements( ) * sizeof( uint32_t );
     CopyToGPUBuffer( ibCopyDesc );
 
     if ( m_issueBarriers )
@@ -380,8 +380,9 @@ void BatchResourceCopy::LoadAssetStreamToBuffer( const LoadAssetStreamToBufferDe
         memBytesCopied += bytesActuallyReadMem;
     }
     CopyToGpuBufferDesc copyDesc;
-    copyDesc.DstBuffer = loadDesc.DstBuffer;
-    copyDesc.Data      = std::move( fullData );
+    copyDesc.DstBuffer        = loadDesc.DstBuffer;
+    copyDesc.Data.Elements    = fullData.Data( );
+    copyDesc.Data.NumElements = fullData.NumElements( );
     if ( loadDesc.DstBufferOffset != 0 )
     {
         spdlog::warn( "LoadStreamToBuffer: DstBufferOffset ignored by CopyToGPUBuffer." );

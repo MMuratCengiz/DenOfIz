@@ -227,18 +227,21 @@ void RayTracedTriangleExample::CreateResources( )
     batchResourceCopy.Begin( );
 
     CopyToGpuBufferDesc vertexCopy{ };
-    vertexCopy.DstBuffer = m_vertexBuffer.get( );
-    vertexCopy.Data      = vertexArray;
+    vertexCopy.DstBuffer        = m_vertexBuffer.get( );
+    vertexCopy.Data.Elements    = reinterpret_cast<const Byte *>( &vertices[ 0 ] );
+    vertexCopy.Data.NumElements = sizeof( vertices );
     batchResourceCopy.CopyToGPUBuffer( vertexCopy );
 
     CopyToGpuBufferDesc indexCopy{ };
-    indexCopy.DstBuffer = m_indexBuffer.get( );
-    indexCopy.Data      = indexArray;
+    indexCopy.DstBuffer        = m_indexBuffer.get( );
+    indexCopy.Data.Elements    = reinterpret_cast<const Byte *>( &indices[ 0 ] );
+    indexCopy.Data.NumElements = sizeof( indices );
     batchResourceCopy.CopyToGPUBuffer( indexCopy );
 
     CopyToGpuBufferDesc rayGenCBCopy{ };
-    rayGenCBCopy.DstBuffer = m_rayGenCBResource.get( );
-    rayGenCBCopy.Data      = rayGenCBArray;
+    rayGenCBCopy.DstBuffer     = m_rayGenCBResource.get( );
+    rayGenCBCopy.Data.Elements    = rayGenCBArray.Data( );
+    rayGenCBCopy.Data.NumElements = rayGenCBArray.NumElements( );
     batchResourceCopy.CopyToGPUBuffer( rayGenCBCopy );
     batchResourceCopy.Submit( );
 }

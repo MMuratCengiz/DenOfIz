@@ -30,6 +30,12 @@ namespace DenOfIz
         size_t NumElements;
     };
 
+    struct DZ_API ByteArrayView
+    {
+        const Byte *Elements;
+        size_t      NumElements;
+    };
+
     struct DZ_API ByteArrayArray
     {
         ByteArray *Elements;

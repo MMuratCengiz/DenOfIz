@@ -403,17 +403,21 @@ void RayTracedProceduralGeometryExample::CreateResources( )
         m_aabbPrimitiveAttributeBufferMemory[ i ].bottomLevelASToLocalSpace = XMMatrixIdentity( );
     }
 
-    InteropArray<Byte> vertexArray( sizeof( vertices ) );
-    vertexArray.MemCpy( vertices, sizeof( vertices ) );
-    batchResourceCopy.CopyToGPUBuffer( { m_vertexBuffer.get( ), 0, vertexArray } );
+    CopyToGpuBufferDesc copyToGpuBufferDesc{ };
+    copyToGpuBufferDesc.DstBuffer        = m_vertexBuffer.get( );
+    copyToGpuBufferDesc.Data.Elements    = reinterpret_cast<const Byte *>( &vertices[ 0 ] );
+    copyToGpuBufferDesc.Data.NumElements = sizeof( vertices );
+    batchResourceCopy.CopyToGPUBuffer( copyToGpuBufferDesc );
 
-    InteropArray<Byte> indexArray( sizeof( indices ) );
-    indexArray.MemCpy( indices, sizeof( indices ) );
-    batchResourceCopy.CopyToGPUBuffer( { m_indexBuffer.get( ), 0, indexArray } );
+    copyToGpuBufferDesc.DstBuffer        = m_indexBuffer.get( );
+    copyToGpuBufferDesc.Data.Elements    = reinterpret_cast<const Byte *>( &indices[ 0 ] );
+    copyToGpuBufferDesc.Data.NumElements = sizeof( indices );
+    batchResourceCopy.CopyToGPUBuffer( copyToGpuBufferDesc );
 
-    InteropArray<Byte> aabbArray( sizeof( AABBBoundingBox ) * m_aabbs.size( ) );
-    aabbArray.MemCpy( m_aabbs.data( ), sizeof( AABBBoundingBox ) * m_aabbs.size( ) );
-    batchResourceCopy.CopyToGPUBuffer( { m_aabbBuffer.get( ), 0, aabbArray } );
+    copyToGpuBufferDesc.DstBuffer        = m_aabbBuffer.get( );
+    copyToGpuBufferDesc.Data.Elements    = reinterpret_cast<const Byte *>( m_aabbs.data( ) );
+    copyToGpuBufferDesc.Data.NumElements = sizeof( AABBBoundingBox ) * m_aabbs.size( );
+    batchResourceCopy.CopyToGPUBuffer( copyToGpuBufferDesc );
     batchResourceCopy.Submit( );
 
     InitializeScene( );

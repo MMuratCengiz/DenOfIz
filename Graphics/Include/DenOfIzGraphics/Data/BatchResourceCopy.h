@@ -21,24 +21,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <future>
 #include "Texture.h"
 
+#include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
+#include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h"
 #include "DenOfIzGraphics/Backends/Interface/ILogicalDevice.h"
 #include "DenOfIzGraphics/Data/Geometry.h"
-#include "DenOfIzGraphics/Assets/Serde/Texture/TextureAssetReader.h"
-#include "DenOfIzGraphics/Assets/Serde/Mesh/MeshAssetReader.h"
 
 namespace DenOfIz
 {
     struct DZ_API CopyToGpuBufferDesc
     {
-        IBufferResource   *DstBuffer;
-        uint64_t           DstBufferOffset = 0;
-        InteropArray<Byte> Data;
+        IBufferResource *DstBuffer;
+        uint64_t         DstBufferOffset = 0;
+        ByteArrayView    Data;
     };
 
     struct DZ_API CopyDataToTextureDesc
     {
-        ITextureResource  *DstTexture;
-        InteropArray<Byte> Data;
+        ITextureResource *DstTexture;
+        ByteArrayView     Data;
 
         bool     AutoAlign  = false;
         uint32_t Width      = 0; // Only required when AutoAlign = true
@@ -69,10 +69,10 @@ namespace DenOfIz
 
     struct DZ_API CreateAssetTextureDesc
     {
-        TextureAssetReader        *Reader;
-        uint32_t                   AdditionalDescriptors;
-        uint32_t                   AdditionalUsages;
-        InteropString              DebugName;
+        TextureAssetReader *Reader;
+        uint32_t            AdditionalDescriptors;
+        uint32_t            AdditionalUsages;
+        InteropString       DebugName;
     };
 
     /// <code>
@@ -119,7 +119,7 @@ namespace DenOfIz
         DZ_API void                           LoadTexture( const LoadTextureDesc &loadDesc );
         DZ_API void                           LoadAssetTexture( const LoadAssetTextureDesc &loadDesc );
         DZ_API void                           LoadAssetStreamToBuffer( const LoadAssetStreamToBufferDesc &loadDesc );
-        [[nodiscard]] DZ_API IBufferResource *CreateUniformBuffer( const InteropArray<Byte> &, uint32_t numBytes );
+        [[nodiscard]] DZ_API IBufferResource *CreateUniformBuffer( const ByteArrayView &, uint32_t numBytes );
         [[nodiscard]] DZ_API IBufferResource *CreateGeometryVertexBuffer( const GeometryData &geometryData );
         [[nodiscard]] DZ_API IBufferResource *CreateGeometryIndexBuffer( const GeometryData &geometryData );
         DZ_API void                           Submit( ISemaphore *notify = nullptr );

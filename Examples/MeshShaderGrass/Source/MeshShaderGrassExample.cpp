@@ -330,8 +330,9 @@ void MeshShaderGrassExample::LoadGrassTexture( )
     texArray.MemCpy( textureData.data( ), textureData.size( ) );
 
     CopyDataToTextureDesc copyDesc{ };
-    copyDesc.DstTexture = m_grassTexture.get( );
-    copyDesc.Data       = texArray;
+    copyDesc.DstTexture       = m_grassTexture.get( );
+    copyDesc.Data.Elements    = texArray.Data( );
+    copyDesc.Data.NumElements = texArray.NumElements( );
     batchResourceCopy.CopyDataToTexture( copyDesc );
     batchResourceCopy.Submit( );
 
@@ -383,13 +384,15 @@ void MeshShaderGrassExample::CreateTerrainGeometry( )
     batchResourceCopy.Begin( );
 
     CopyToGpuBufferDesc vertexCopyDesc{ };
-    vertexCopyDesc.DstBuffer = m_terrainVertexBuffer.get( );
-    vertexCopyDesc.Data.MemCpy( m_terrainGeometry.Vertices.Data( ), m_terrainGeometry.Vertices.NumElements( ) * sizeof( GeometryVertexData ) );
+    vertexCopyDesc.DstBuffer        = m_terrainVertexBuffer.get( );
+    vertexCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( m_terrainGeometry.Vertices.Data( ) );
+    vertexCopyDesc.Data.NumElements = m_terrainGeometry.Vertices.NumElements( ) * sizeof( GeometryVertexData );
     batchResourceCopy.CopyToGPUBuffer( vertexCopyDesc );
 
     CopyToGpuBufferDesc indexCopyDesc{ };
-    indexCopyDesc.DstBuffer = m_terrainIndexBuffer.get( );
-    indexCopyDesc.Data.MemCpy( m_terrainGeometry.Indices.Data( ), m_terrainGeometry.Indices.NumElements( ) * sizeof( uint32_t ) );
+    indexCopyDesc.DstBuffer        = m_terrainIndexBuffer.get( );
+    indexCopyDesc.Data.Elements    = reinterpret_cast<const Byte *>( m_terrainGeometry.Indices.Data( ) );
+    indexCopyDesc.Data.NumElements = m_terrainGeometry.Indices.NumElements( ) * sizeof( uint32_t );
     batchResourceCopy.CopyToGPUBuffer( indexCopyDesc );
 
     batchResourceCopy.Submit( );
@@ -468,8 +471,9 @@ void MeshShaderGrassExample::LoadTerrainTexture( )
     texArray.MemCpy( textureData.data( ), textureData.size( ) );
 
     CopyDataToTextureDesc copyDesc{ };
-    copyDesc.DstTexture = m_terrainTexture.get( );
-    copyDesc.Data       = texArray;
+    copyDesc.DstTexture       = m_terrainTexture.get( );
+    copyDesc.Data.Elements    = texArray.Data( );
+    copyDesc.Data.NumElements = texArray.NumElements( );
     batchResourceCopy.CopyDataToTexture( copyDesc );
     batchResourceCopy.Submit( );
 

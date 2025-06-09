@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzExamples/VGExample.h"
+#include "DenOfIzExamples/InteropMathConverter.h"
 #include "DenOfIzGraphics/Assets/FileSystem/FileIO.h"
 #include "DenOfIzGraphics/Assets/Import/IAssetImporter.h"
 #include "DenOfIzGraphics/Assets/Import/VGImporter.h"
@@ -25,7 +26,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Data/BatchResourceCopy.h"
 #include "DenOfIzGraphics/Utilities/FrameDebugRenderer.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
-#include "DenOfIzExamples/InteropMathConverter.h"
 
 #include <cmath>
 #include <vector>
@@ -268,7 +268,8 @@ void VGExample::CreateStarTexture( )
     batchCopy.Begin( );
 
     CopyDataToTextureDesc copyDesc{ };
-    copyDesc.Data.MemCpy( pixelData.data( ), pixelData.size( ) );
+    copyDesc.Data.Elements    = pixelData.data( );
+    copyDesc.Data.NumElements = pixelData.size( );
     copyDesc.DstTexture = m_starTexture.get( );
     copyDesc.MipLevel   = 0;
     batchCopy.CopyDataToTexture( copyDesc );
@@ -278,7 +279,7 @@ void VGExample::CreateStarTexture( )
 
 void VGExample::RegisterTextures( )
 {
-    if( !m_folderTexture || !m_milkTeaTexture || !m_starTexture )
+    if ( !m_folderTexture || !m_milkTeaTexture || !m_starTexture )
     {
         return;
     }
@@ -294,7 +295,7 @@ void VGExample::AddQuads( ) const
     rectDesc.QuadId       = 0;
     rectDesc.Position     = { 50.0f, 50.0f };
     rectDesc.Size         = { 80.0f, 60.0f };
-    rectDesc.TextureIndex = 0; // No texture (null texture)
+    rectDesc.TextureIndex = 0;                          // No texture (null texture)
     rectDesc.Color        = { 1.0f, 0.0f, 0.0f, 1.0f }; // Red color
     m_quadRenderer->AddQuad( rectDesc );
 
@@ -349,7 +350,7 @@ void VGExample::ImportSvgIfNeeded( const InteropString &svgPath, const InteropSt
         desc.OutputFormat  = Format::R8G8B8A8Unorm;
         importJobDesc.Desc = &desc;
 
-        VGImporter     importer( VGImporterDesc{} );
+        VGImporter     importer( VGImporterDesc{ } );
         ImporterResult result = importer.Import( importJobDesc );
         if ( result.ResultCode != ImporterResultCode::Success )
         {

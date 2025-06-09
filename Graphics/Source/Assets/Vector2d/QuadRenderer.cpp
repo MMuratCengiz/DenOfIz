@@ -300,13 +300,15 @@ void QuadRenderer::CreateStaticQuadGeometry( )
 
     batchResourceCopy.Begin( );
     CopyToGpuBufferDesc copyToGpuBufferDesc;
-    copyToGpuBufferDesc.Data.MemCpy( &vertices[ 0 ], sizeof( vertices ) );
-    copyToGpuBufferDesc.DstBuffer = m_vertexBuffer.get( );
+    copyToGpuBufferDesc.Data.Elements    = reinterpret_cast<const Byte *>( &vertices[ 0 ] );
+    copyToGpuBufferDesc.Data.NumElements = sizeof( vertices );
+    copyToGpuBufferDesc.DstBuffer        = m_vertexBuffer.get( );
     batchResourceCopy.CopyToGPUBuffer( copyToGpuBufferDesc );
 
-    copyToGpuBufferDesc = { };
-    copyToGpuBufferDesc.Data.MemCpy( &indices[ 0 ], sizeof( indices ) );
-    copyToGpuBufferDesc.DstBuffer = m_indexBuffer.get( );
+    copyToGpuBufferDesc                  = { };
+    copyToGpuBufferDesc.Data.Elements    = reinterpret_cast<const Byte *>( &indices[ 0 ] );
+    copyToGpuBufferDesc.Data.NumElements = sizeof( indices );
+    copyToGpuBufferDesc.DstBuffer        = m_indexBuffer.get( );
     batchResourceCopy.CopyToGPUBuffer( copyToGpuBufferDesc );
     batchResourceCopy.Submit( );
 }

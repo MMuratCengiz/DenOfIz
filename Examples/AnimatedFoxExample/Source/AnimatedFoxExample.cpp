@@ -119,10 +119,7 @@ void AnimatedFoxExample::LoadFoxAssets( )
     m_vertices.clear( );
     m_indices.Clear( );
 
-    spdlog::info( "Reading vertex data from mesh asset..." );
-
     InteropArray<MeshVertex> meshVertices = meshAssetReader.ReadVertices( subMesh.VertexStream );
-    spdlog::info( "Read {} vertices from mesh asset", meshVertices.NumElements( ) );
 
     m_vertices.resize( meshVertices.NumElements( ) );
     for ( size_t i = 0; i < meshVertices.NumElements( ); ++i )
@@ -150,10 +147,7 @@ void AnimatedFoxExample::LoadFoxAssets( )
         skinnedVertex.BlendIndices = { mv.BlendIndices.X, mv.BlendIndices.Y, mv.BlendIndices.Z, mv.BlendIndices.W };
         skinnedVertex.BoneWeights  = { mv.BoneWeights.X, mv.BoneWeights.Y, mv.BoneWeights.Z, mv.BoneWeights.W };
     }
-
-    spdlog::info( "Reading index data from mesh asset..." );
     m_indices = meshAssetReader.ReadIndices32( subMesh.IndexStream );
-    spdlog::info( "Read {} 32-bit indices from mesh asset", m_indices.NumElements( ) );
 }
 
 void AnimatedFoxExample::SetupAnimation( )
@@ -200,24 +194,18 @@ void AnimatedFoxExample::CreateBuffers( )
     BatchResourceCopy batchCopy( m_logicalDevice );
     batchCopy.Begin( );
 
-    size_t             vertexDataSize = m_vertices.size( ) * sizeof( SkinnedVertex );
-    InteropArray<Byte> vertexData( vertexDataSize );
-    memcpy( vertexData.Data( ), m_vertices.data( ), vertexDataSize );
-
-    size_t             indexDataSize = m_indices.NumElements( ) * sizeof( uint32_t );
-    InteropArray<Byte> indexData( indexDataSize );
-    memcpy( indexData.Data( ), m_indices.Data( ), indexDataSize );
-
     CopyToGpuBufferDesc vertexCopyDesc;
-    vertexCopyDesc.DstBuffer       = m_vertexBuffer.get( );
-    vertexCopyDesc.DstBufferOffset = 0;
-    vertexCopyDesc.Data            = vertexData;
+    vertexCopyDesc.DstBuffer        = m_vertexBuffer.get( );
+    vertexCopyDesc.DstBufferOffset  = 0;
+    vertexCopyDesc.Data.Elements    = reinterpret_cast<Byte *>( m_vertices.data( ) );
+    vertexCopyDesc.Data.NumElements = m_vertices.size( ) * sizeof( SkinnedVertex );
     batchCopy.CopyToGPUBuffer( vertexCopyDesc );
 
     CopyToGpuBufferDesc indexCopyDesc;
-    indexCopyDesc.DstBuffer       = m_indexBuffer.get( );
-    indexCopyDesc.DstBufferOffset = 0;
-    indexCopyDesc.Data            = indexData;
+    indexCopyDesc.DstBuffer        = m_indexBuffer.get( );
+    indexCopyDesc.DstBufferOffset  = 0;
+    indexCopyDesc.Data.Elements    = reinterpret_cast<Byte *>( m_indices.Data( ) );
+    indexCopyDesc.Data.NumElements = m_indices.NumElements( ) * sizeof( uint32_t );
     batchCopy.CopyToGPUBuffer( indexCopyDesc );
 
     batchCopy.Submit( );

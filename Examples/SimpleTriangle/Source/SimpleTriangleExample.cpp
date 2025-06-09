@@ -128,8 +128,9 @@ void SimpleTriangleExample::CreateVertexBuffer( )
     batchCopy.Begin( );
 
     CopyToGpuBufferDesc copyDesc{ };
-    copyDesc.DstBuffer = m_vertexBuffer.get( );
-    copyDesc.Data.MemCpy( vertices.data( ), vertices.size( ) * sizeof( float ) );
+    copyDesc.DstBuffer        = m_vertexBuffer.get( );
+    copyDesc.Data.Elements    = reinterpret_cast<const Byte *>( &vertices[ 0 ] );
+    copyDesc.Data.NumElements = sizeof( vertices );
     batchCopy.CopyToGPUBuffer( copyDesc );
     batchCopy.Submit( );
 
