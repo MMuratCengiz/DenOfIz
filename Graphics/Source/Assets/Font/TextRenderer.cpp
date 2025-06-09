@@ -56,19 +56,24 @@ TextRenderer::TextRenderer( const TextRendererDesc &desc ) : m_desc( desc )
         std::vector<Byte> vertexShader = EmbeddedTextRendererShaders::GetFontVertexShaderBytes( );
         std::vector<Byte> pixelShader  = EmbeddedTextRendererShaders::GetFontPixelShaderBytes( );
 
-        ShaderProgramDesc programDesc{ };
-        ShaderStageDesc  &vsDesc = programDesc.ShaderStages.EmplaceElement( );
-        vsDesc.Stage             = ShaderStage::Vertex;
-        vsDesc.EntryPoint        = "main";
-        vsDesc.Data.Elements     = vertexShader.data( );
-        vsDesc.Data.NumElements  = vertexShader.size( );
+        std::array<ShaderStageDesc, 2> shaderStages( { } );
 
-        ShaderStageDesc &psDesc = programDesc.ShaderStages.EmplaceElement( );
+        ShaderStageDesc &vsDesc = shaderStages[ 0 ];
+        vsDesc.Stage            = ShaderStage::Vertex;
+        vsDesc.EntryPoint       = "main";
+        vsDesc.Data.Elements    = vertexShader.data( );
+        vsDesc.Data.NumElements = vertexShader.size( );
+
+        ShaderStageDesc &psDesc = shaderStages[ 1 ];
         psDesc.Stage            = ShaderStage::Pixel;
         psDesc.EntryPoint       = "main";
         psDesc.Data.Elements    = pixelShader.data( );
         psDesc.Data.NumElements = pixelShader.size( );
-        m_fontShaderProgram     = std::make_unique<ShaderProgram>( programDesc );
+
+        ShaderProgramDesc programDesc{ };
+        programDesc.ShaderStages.NumElements = shaderStages.size( );
+        programDesc.ShaderStages.Elements    = shaderStages.data( );
+        m_fontShaderProgram                  = std::make_unique<ShaderProgram>( programDesc );
     }
 
     ShaderReflectDesc reflectDesc = m_fontShaderProgram->Reflect( );

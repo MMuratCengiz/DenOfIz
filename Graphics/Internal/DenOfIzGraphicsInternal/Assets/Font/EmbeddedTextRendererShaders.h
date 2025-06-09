@@ -132,19 +132,22 @@ float4 main(PSInput input) : SV_TARGET
         std::vector<Byte> vertexShaderBytes = GetFontVertexShaderBytes( );
         std::vector<Byte> pixelShaderBytes  = GetFontPixelShaderBytes( );
 
-        ShaderProgramDesc programDesc{ };
-        ShaderStageDesc  &vsDesc = programDesc.ShaderStages.EmplaceElement( );
-        vsDesc.Stage             = ShaderStage::Vertex;
-        vsDesc.EntryPoint        = "main";
-        vsDesc.Data.Elements     = vertexShaderBytes.data( );
-        vsDesc.Data.NumElements  = vertexShaderBytes.size( );
+        std::array<ShaderStageDesc, 2> shaderStages( { } );
+        ShaderStageDesc               &vsDesc = shaderStages[ 0 ];
+        vsDesc.Stage                          = ShaderStage::Vertex;
+        vsDesc.EntryPoint                     = "main";
+        vsDesc.Data.Elements                  = vertexShaderBytes.data( );
+        vsDesc.Data.NumElements               = vertexShaderBytes.size( );
 
-        ShaderStageDesc &psDesc = programDesc.ShaderStages.EmplaceElement( );
+        ShaderStageDesc &psDesc = shaderStages[ 1 ];
         psDesc.Stage            = ShaderStage::Pixel;
         psDesc.EntryPoint       = "main";
-        psDesc.Data.Elements     = pixelShaderBytes.data( );
-        psDesc.Data.NumElements  = pixelShaderBytes.size( );
+        psDesc.Data.Elements    = pixelShaderBytes.data( );
+        psDesc.Data.NumElements = pixelShaderBytes.size( );
 
+        ShaderProgramDesc programDesc{ };
+        programDesc.ShaderStages.NumElements = shaderStages.size( );
+        programDesc.ShaderStages.Elements    = shaderStages.data( );
         const ShaderProgram shaderProgram( programDesc );
 
         CompiledShader compiledShader;

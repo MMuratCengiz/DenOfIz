@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "DenOfIzGraphics/Backends/Interface/ShaderData.h"
+#include <cstdlib> // for std::realloc
 
 using namespace DenOfIz;
 
@@ -43,11 +44,6 @@ void RayTracingShaderDesc::MarkSamplerAsLocal( const uint32_t binding, const uin
 uint32_t ResourceBindingSlot::Key( ) const
 {
     return static_cast<uint32_t>( Type ) * 1000 + RegisterSpace * 100 + Binding;
-}
-
-void BindlessDesc::MarkSrvAsBindlessArray( const uint32_t binding, const uint32_t registerSpace, const uint32_t maxArraySize )
-{
-    BindlessArrays.AddElement( { .Type = ResourceBindingType::ShaderResource, .Binding = binding, .RegisterSpace = registerSpace, .MaxArraySize = maxArraySize } );
 }
 
 InteropString ResourceBindingSlot::ToInteropString( ) const

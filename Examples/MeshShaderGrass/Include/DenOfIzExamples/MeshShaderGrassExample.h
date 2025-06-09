@@ -96,6 +96,6 @@ namespace DenOfIz
         void CreateTerrainGeometry( );
         void CreateTerrainPipeline( );
         void LoadTerrainTexture( );
-        void UpdateConstants( );
+        void UpdateConstants( ) const;
     };
 } // namespace DenOfIz

@@ -110,13 +110,13 @@ void VulkanPipeline::CreateComputePipeline( )
 
 void VulkanPipeline::CreateRayTracingPipeline( )
 {
-    const InteropArray<CompiledShaderStage *> &compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
+    const CompiledShaderStageArray &compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
 
-    m_shaderModules.reserve( compiledShaders.NumElements( ) );
+    m_shaderModules.reserve( compiledShaders.NumElements );
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-    shaderStages.reserve( compiledShaders.NumElements( ) );
+    shaderStages.reserve( compiledShaders.NumElements );
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shaderGroups;
-    shaderGroups.reserve( compiledShaders.NumElements( ) + m_desc.RayTracing.HitGroups.NumElements( ) );
+    shaderGroups.reserve( compiledShaders.NumElements + m_desc.RayTracing.HitGroups.NumElements( ) );
 
     std::vector<VkDescriptorSetLayout> allLayouts;
     const auto                         rootSig        = dynamic_cast<VulkanRootSignature *>( m_desc.RootSignature );
@@ -133,9 +133,9 @@ void VulkanPipeline::CreateRayTracingPipeline( )
         }
     };
 
-    for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
+    for ( int i = 0; i < compiledShaders.NumElements; ++i )
     {
-        const auto                 &compiledShader = compiledShaders.GetElement( i );
+        const auto                 &compiledShader = compiledShaders.Elements[ i ];
         const VkShaderStageFlagBits stage          = VulkanEnumConverter::ConvertShaderStage( compiledShader->Stage );
 
         switch ( compiledShader->Stage )
@@ -276,9 +276,9 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigurePipelineSt
     std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos;
 
     const auto &compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
-    for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < compiledShaders.NumElements; ++i )
     {
-        const auto                      &compiledShader        = compiledShaders.GetElement( i );
+        const auto                      &compiledShader        = compiledShaders.Elements[ i ];
         VkPipelineShaderStageCreateInfo &shaderStageCreateInfo = pipelineStageCreateInfos.emplace_back( );
         shaderStageCreateInfo.sType                            = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 
@@ -347,9 +347,9 @@ std::vector<VkPipelineShaderStageCreateInfo> VulkanPipeline::ConfigureMeshPipeli
     std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos;
 
     const auto &compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
-    for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < compiledShaders.NumElements; ++i )
     {
-        const auto &compiledShader = compiledShaders.GetElement( i );
+        const auto &compiledShader = compiledShaders.Elements[ i ];
 
         // Only include task, mesh, and pixel/fragment shaders for mesh pipeline
         if ( compiledShader->Stage != ShaderStage::Task && compiledShader->Stage != ShaderStage::Mesh && compiledShader->Stage != ShaderStage::Pixel )

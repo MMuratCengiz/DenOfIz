@@ -68,15 +68,16 @@ class ShaderProgram::Impl
 public:
     ShaderCompiler                                    m_compiler;
     std::vector<std::unique_ptr<CompiledShaderStage>> m_compiledShaders;
+    std::vector<CompiledShaderStage *>                m_compiledShaderPtrs;
     std::vector<ShaderStageDesc>                      m_shaderDescs; // Index matched with m_compiledShaders
     ShaderReflectDesc                                 m_reflectDesc;
     ShaderProgramDesc                                 m_desc;
     std::vector<ByteArray>                            m_dataToClean;
 
-    explicit Impl( ShaderProgramDesc desc ) : m_desc( std::move( desc ) )
+    explicit Impl( const ShaderProgramDesc &desc ) : m_desc( desc )
     {
     }
-    explicit Impl( const ShaderAsset & )
+    explicit Impl( const ShaderAsset & ) : m_desc( { } )
     {
     }
 
@@ -98,11 +99,12 @@ ShaderProgram::ShaderProgram( ShaderProgramDesc desc ) : m_pImpl( std::make_uniq
 
 ShaderProgram::ShaderProgram( const ShaderAsset &asset ) : m_pImpl( std::make_unique<Impl>( asset ) )
 {
-    CompiledShader shader = ShaderAssetReader::ConvertToCompiledShader( asset );
-    for ( int i = 0; i < shader.Stages.NumElements( ); ++i )
+    const CompiledShader shader = ShaderAssetReader::ConvertToCompiledShader( asset );
+    for ( uint32_t i = 0; i < shader.Stages.NumElements; ++i )
     {
-        CompiledShaderStage *shaderStage = shader.Stages.GetElement( i );
+        CompiledShaderStage *shaderStage = shader.Stages.Elements[ i ];
         const auto          &ownedShader = m_pImpl->m_compiledShaders.emplace_back( std::unique_ptr<CompiledShaderStage>( shaderStage ) );
+        m_pImpl->m_compiledShaderPtrs.push_back( ownedShader.get( ) );
         // ShaderAssetReader doesn't clean this data because we may need it in the lifetime of the program
         m_pImpl->m_dataToClean.push_back( ownedShader->DXIL );
         m_pImpl->m_dataToClean.push_back( ownedShader->MSL );
@@ -125,13 +127,11 @@ ShaderProgram::~ShaderProgram( )
     }
 }
 
-InteropArray<CompiledShaderStage *> ShaderProgram::CompiledShaders( ) const
+CompiledShaderStageArray ShaderProgram::CompiledShaders( ) const
 {
-    InteropArray<CompiledShaderStage *> compiledShaders;
-    for ( auto &shader : m_pImpl->m_compiledShaders )
-    {
-        compiledShaders.AddElement( shader.get( ) );
-    }
+    CompiledShaderStageArray compiledShaders{ };
+    compiledShaders.NumElements = static_cast<uint32_t>( m_pImpl->m_compiledShaders.size( ) );
+    compiledShaders.Elements    = m_pImpl->m_compiledShaderPtrs.data( );
     return compiledShaders;
 }
 
@@ -152,9 +152,9 @@ void ShaderProgram::Impl::Compile( )
 {
     std::vector<CompiledShaderStage *> dxilShaders;
 
-    for ( int i = 0; i < m_desc.ShaderStages.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < m_desc.ShaderStages.NumElements; ++i )
     {
-        const auto &stage = m_desc.ShaderStages.GetElement( i );
+        const auto &stage = m_desc.ShaderStages.Elements[ i ];
         // Validate Shader
         if ( stage.Path.IsEmpty( ) && stage.Data.NumElements == 0 )
         {
@@ -180,6 +180,8 @@ void ShaderProgram::Impl::Compile( )
         m_dataToClean.push_back( spirv );
 
         const auto &compiledShader = m_compiledShaders.emplace_back( std::make_unique<CompiledShaderStage>( ) );
+        m_compiledShaderPtrs.push_back( compiledShader.get( ) );
+
         compiledShader->Stage      = stage.Stage;
         compiledShader->EntryPoint = stage.EntryPoint;
         compiledShader->RayTracing = stage.RayTracing;
@@ -196,24 +198,30 @@ void ShaderProgram::Impl::Compile( )
     dxilToMslDesc.Shaders    = m_desc.ShaderStages;
     dxilToMslDesc.RayTracing = m_desc.RayTracing;
 
-    for ( auto &shader : m_compiledShaders )
+    dxilToMslDesc.DXILShaders.NumElements = static_cast<uint32_t>( m_compiledShaders.size( ) );
+    dxilToMslDesc.DXILShaders.Elements    = static_cast<CompiledShaderStage **>( std::malloc( dxilToMslDesc.DXILShaders.NumElements * sizeof( CompiledShaderStage * ) ) );
+    for ( uint32_t i = 0; i < dxilToMslDesc.DXILShaders.NumElements; ++i )
     {
-        dxilToMslDesc.DXILShaders.AddElement( shader.get( ) );
+        dxilToMslDesc.DXILShaders.Elements[ i ] = m_compiledShaders[ i ].get( );
     }
 
-    DxilToMsl dxilToMsl{ };
-    auto      mslShaders = dxilToMsl.Convert( dxilToMslDesc );
-    if ( mslShaders.NumElements( ) != m_desc.ShaderStages.NumElements( ) )
+    DxilToMsl            dxilToMsl{ };
+    const ByteArrayArray mslShaders = dxilToMsl.Convert( dxilToMslDesc );
+    if ( mslShaders.NumElements != m_desc.ShaderStages.NumElements )
     {
         spdlog::error( "Num DXIL shaders != Num MSL Shaders, probable bug in DxilToMsl" );
+        std::free( dxilToMslDesc.DXILShaders.Elements );
+        std::free( mslShaders.Elements );
         return;
     }
 
-    for ( int i = 0; i < mslShaders.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < mslShaders.NumElements; ++i )
     {
-        m_compiledShaders[ i ]->MSL = mslShaders.GetElement( i );
-        m_dataToClean.push_back( mslShaders.GetElement( i ) );
+        m_compiledShaders[ i ]->MSL = mslShaders.Elements[ i ];
+        m_dataToClean.push_back( mslShaders.Elements[ i ] );
     }
+    std::free( dxilToMslDesc.DXILShaders.Elements );
+    std::free( mslShaders.Elements );
 #else
     spdlog::error( "MSL compilation is not supported on this platform" );
 #endif
@@ -247,7 +255,7 @@ void ShaderProgram::Impl::CreateReflectionData( )
     {
         auto &shader                         = m_compiledShaders[ stageIndex ];
         reflectionState.CompiledShader       = shader.get( );
-        reflectionState.ShaderDesc           = &m_desc.ShaderStages.GetElement( stageIndex );
+        reflectionState.ShaderDesc           = &m_desc.ShaderStages.Elements[ stageIndex ];
         LocalRootSignatureDesc &recordLayout = m_reflectDesc.LocalRootSignatures.GetElement( stageIndex );
         reflectionState.LocalRootSignature   = &recordLayout;
 
@@ -497,9 +505,9 @@ void ShaderProgram::Impl::ProcessInputBindingDesc( const ReflectionState &state,
 
     const bool isBindless      = ShaderReflectionHelper::IsBindingBindless( state.ShaderDesc->Bindless, shaderInputBindDesc );
     bool       isBindlessArray = false;
-    for ( int i = 0; i < state.ShaderDesc->Bindless.BindlessArrays.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < state.ShaderDesc->Bindless.BindlessArrays.NumElements; ++i )
     {
-        const auto &bindlessSlot = state.ShaderDesc->Bindless.BindlessArrays.GetElement( i );
+        const auto &bindlessSlot = state.ShaderDesc->Bindless.BindlessArrays.Elements[ i ];
         if ( bindlessSlot.Binding == shaderInputBindDesc.BindPoint && bindlessSlot.RegisterSpace == shaderInputBindDesc.Space &&
              bindlessSlot.Type == DxcEnumConverter::ReflectTypeToBufferBindingType( shaderInputBindDesc.Type ) )
         {
@@ -528,12 +536,12 @@ void ShaderProgram::Impl::ProcessInputBindingDesc( const ReflectionState &state,
 
 void ShaderProgram::Impl::ProcessBindlessArrays( RootSignatureDesc &rootSignature ) const
 {
-    for ( int stageIndex = 0; stageIndex < m_desc.ShaderStages.NumElements( ); ++stageIndex )
+    for ( uint32_t stageIndex = 0; stageIndex < m_desc.ShaderStages.NumElements; ++stageIndex )
     {
-        const auto &shaderStage = m_desc.ShaderStages.GetElement( stageIndex );
-        for ( int i = 0; i < shaderStage.Bindless.BindlessArrays.NumElements( ); ++i )
+        const auto &shaderStage = m_desc.ShaderStages.Elements[ stageIndex ];
+        for ( uint32_t i = 0; i < shaderStage.Bindless.BindlessArrays.NumElements; ++i )
         {
-            const auto &bindlessSlot  = shaderStage.Bindless.BindlessArrays.GetElement( i );
+            const auto &bindlessSlot  = shaderStage.Bindless.BindlessArrays.Elements[ i ];
             bool        alreadyExists = false;
             for ( int j = 0; j < rootSignature.BindlessResources.NumElements( ); ++j )
             {

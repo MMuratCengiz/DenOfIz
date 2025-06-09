@@ -117,11 +117,11 @@ void DX12Pipeline::CreateGraphicsPipeline( )
 void DX12Pipeline::CreateComputePipeline( )
 {
     const auto &compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
-    DZ_ASSERTM( compiledShaders.NumElements( ) == 1, "Compute pipeline must have at least/only one shader" );
+    DZ_ASSERTM( compiledShaders.NumElements == 1, "Compute pipeline must have at least/only one shader" );
 
     D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = { };
     psoDesc.pRootSignature                    = m_rootSignature->Instance( );
-    psoDesc.CS                                = GetShaderByteCode( compiledShaders.GetElement( 0 ) );
+    psoDesc.CS                                = GetShaderByteCode( compiledShaders.Elements[ 0 ] );
 
     DX_CHECK_RESULT( m_context->D3DDevice->CreateComputePipelineState( &psoDesc, IID_PPV_ARGS( m_pipeline.put( ) ) ) );
 }
@@ -141,7 +141,7 @@ void DX12Pipeline::CreateRayTracingPipeline( )
 
     auto    compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
     Storage storage{ };
-    storage.Reserve( compiledShaders.NumElements( ) * 2 ); // 2, Local root signature Desc, SubObject to exports association Desc
+    storage.Reserve( compiledShaders.NumElements * 2 ); // 2, Local root signature Desc, SubObject to exports association Desc
     std::vector<D3D12_STATE_SUBOBJECT> subObjects;
     subObjects.reserve( 256 );
     m_hitGroups.reserve( m_desc.RayTracing.HitGroups.NumElements( ) );
@@ -157,14 +157,14 @@ void DX12Pipeline::CreateRayTracingPipeline( )
 
     // std::vector<D3D12_DXIL_LIBRARY_DESC> dxilLibs;
     std::vector<D3D12_DXIL_LIBRARY_DESC> dxilLibs;
-    dxilLibs.reserve( compiledShaders.NumElements( ) );
+    dxilLibs.reserve( compiledShaders.NumElements );
     // Lifetime Management:
     std::vector<std::wstring> entryPoints;
-    entryPoints.reserve( compiledShaders.NumElements( ) * 2 );
+    entryPoints.reserve( compiledShaders.NumElements * 2 );
     // --
-    for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < compiledShaders.NumElements; ++i )
     {
-        if ( const auto &compiledShader = compiledShaders.GetElement( i ) )
+        if ( const auto &compiledShader = compiledShaders.Elements[ i ] )
         {
             DZ_WS_STRING( wEntryPoint, compiledShader->EntryPoint.Get( ) );
             entryPoints.push_back( wEntryPoint );
@@ -402,9 +402,9 @@ void DX12Pipeline::SetMSAASampleCount( const PipelineDesc &desc, D3D12_GRAPHICS_
 void DX12Pipeline::SetGraphicsShaders( D3D12_GRAPHICS_PIPELINE_STATE_DESC &psoDesc ) const
 {
     const auto &compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
-    for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < compiledShaders.NumElements; ++i )
     {
-        switch ( const auto &compiledShader = compiledShaders.GetElement( i ); compiledShader->Stage )
+        switch ( const auto &compiledShader = compiledShaders.Elements[ i ]; compiledShader->Stage )
         {
         case ShaderStage::Vertex:
             psoDesc.VS = GetShaderByteCode( compiledShader );
@@ -494,9 +494,9 @@ void DX12Pipeline::CreateMeshPipeline( )
     meshPipelineStateStream.AS = D3D12_SHADER_BYTECODE{ };
     meshPipelineStateStream.MS = D3D12_SHADER_BYTECODE{ };
 
-    for ( int i = 0; i < compiledShaders.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < compiledShaders.NumElements; ++i )
     {
-        const auto &compiledShader = compiledShaders.GetElement( i );
+        const auto &compiledShader = compiledShaders.Elements[ i ];
         switch ( compiledShader->Stage )
         {
         case ShaderStage::Task:

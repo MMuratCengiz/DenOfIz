@@ -30,6 +30,12 @@ namespace DenOfIz
         size_t NumElements;
     };
 
+    struct DZ_API ByteArrayArray
+    {
+        ByteArray *Elements;
+        uint32_t   NumElements;
+    };
+
     struct DZ_API BoolArray
     {
         bool    *Elements;

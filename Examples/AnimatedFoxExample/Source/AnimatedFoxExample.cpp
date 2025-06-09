@@ -225,21 +225,22 @@ void AnimatedFoxExample::CreateBuffers( )
 
 void AnimatedFoxExample::CreateShaders( )
 {
-    InteropArray<ShaderStageDesc> shaderStages( 2 );
+    std::array<ShaderStageDesc, 2> shaderStages( { } );
 
-    ShaderStageDesc &vsDesc = shaderStages.GetElement( 0 );
+    ShaderStageDesc &vsDesc = shaderStages[ 0 ];
     vsDesc.Stage            = ShaderStage::Vertex;
     vsDesc.Path             = "Assets/Shaders/SkinnedMesh.vs.hlsl";
     vsDesc.EntryPoint       = "main";
 
-    ShaderStageDesc &psDesc = shaderStages.GetElement( 1 );
+    ShaderStageDesc &psDesc = shaderStages[ 1 ];
     psDesc.Stage            = ShaderStage::Pixel;
     psDesc.Path             = "Assets/Shaders/SkinnedMesh.ps.hlsl";
     psDesc.EntryPoint       = "main";
 
     ShaderProgramDesc programDesc{ };
-    programDesc.ShaderStages = shaderStages;
-    auto skinnedMeshProgram  = std::make_unique<ShaderProgram>( programDesc );
+    programDesc.ShaderStages.Elements    = shaderStages.data( );
+    programDesc.ShaderStages.NumElements = shaderStages.size( );
+    auto skinnedMeshProgram              = std::make_unique<ShaderProgram>( programDesc );
 
     auto reflection            = skinnedMeshProgram->Reflect( );
     m_skinnedMeshRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );

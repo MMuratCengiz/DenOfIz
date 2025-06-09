@@ -113,25 +113,35 @@ ClayRenderer::~ClayRenderer( )
 
 void ClayRenderer::CreateShaderProgram( )
 {
-    ShaderProgramDesc programDesc{ };
-
     auto vertexShader = EmbeddedUIShaders::GetUIVertexShaderBytes( );
     auto pixelShader  = EmbeddedUIShaders::GetUIPixelShaderBytes( );
 
-    ShaderStageDesc &vsDesc = programDesc.ShaderStages.EmplaceElement( );
-    vsDesc.Stage            = ShaderStage::Vertex;
-    vsDesc.EntryPoint       = InteropString( "main" );
-    vsDesc.Data.Elements    = vertexShader.data( );
-    vsDesc.Data.NumElements = vertexShader.size( );
+    std::array<ShaderStageDesc, 2> shaderStages( { } );
+    ShaderStageDesc               &vsDesc = shaderStages[ 0 ];
+    vsDesc.Stage                          = ShaderStage::Vertex;
+    vsDesc.EntryPoint                     = InteropString( "main" );
+    vsDesc.Data.Elements                  = vertexShader.data( );
+    vsDesc.Data.NumElements               = vertexShader.size( );
 
-    ShaderStageDesc &psDesc = programDesc.ShaderStages.EmplaceElement( );
+    ShaderStageDesc &psDesc = shaderStages[ 1 ];
     psDesc.Stage            = ShaderStage::Pixel;
     psDesc.EntryPoint       = InteropString( "main" );
     psDesc.Data.Elements    = pixelShader.data( );
     psDesc.Data.NumElements = pixelShader.size( );
 
-    psDesc.Bindless.MarkSrvAsBindlessArray( 0, 0, m_desc.MaxTextures );
-    m_shaderProgram = std::make_unique<ShaderProgram>( programDesc );
+
+    std::array<BindlessSlot, 1> bindlessSlots{ };
+    bindlessSlots[ 0 ].RegisterSpace = 0;
+    bindlessSlots[ 0 ].Binding       = 1;
+    bindlessSlots[ 0 ].MaxArraySize  = m_desc.MaxTextures;
+
+    psDesc.Bindless.BindlessArrays.Elements    = bindlessSlots.data( );
+    psDesc.Bindless.BindlessArrays.NumElements = bindlessSlots.size( );
+
+    ShaderProgramDesc programDesc{ };
+    programDesc.ShaderStages.Elements    = shaderStages.data( );
+    programDesc.ShaderStages.NumElements = shaderStages.size( );
+    m_shaderProgram                      = std::make_unique<ShaderProgram>( programDesc );
 }
 
 void ClayRenderer::CreatePipeline( )

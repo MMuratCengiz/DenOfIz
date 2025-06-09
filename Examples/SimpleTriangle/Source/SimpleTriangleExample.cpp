@@ -25,18 +25,22 @@ void SimpleTriangleExample::Init( )
 {
     CreateVertexBuffer( );
 
-    ShaderProgramDesc shaderProgramDesc{ };
+    std::array<ShaderStageDesc, 2> shaderStages( { } );
 
-    ShaderStageDesc &vertexShaderDesc = shaderProgramDesc.ShaderStages.EmplaceElement( );
+    ShaderStageDesc &vertexShaderDesc = shaderStages[ 0 ];
     vertexShaderDesc.Stage            = ShaderStage::Vertex;
     vertexShaderDesc.EntryPoint       = "VSMain";
     vertexShaderDesc.Data             = VertexShader( );
 
-    ShaderStageDesc &pixelShaderDesc = shaderProgramDesc.ShaderStages.EmplaceElement( );
+    ShaderStageDesc &pixelShaderDesc = shaderStages[ 1 ];
     pixelShaderDesc.Stage            = ShaderStage::Pixel;
     pixelShaderDesc.EntryPoint       = "PSMain";
     pixelShaderDesc.Data             = PixelShader( );
-    m_program                        = std::make_unique<ShaderProgram>( shaderProgramDesc );
+
+    ShaderProgramDesc shaderProgramDesc{ };
+    shaderProgramDesc.ShaderStages.Elements    = shaderStages.data( );
+    shaderProgramDesc.ShaderStages.NumElements = shaderStages.size( );
+    m_program                                  = std::make_unique<ShaderProgram>( shaderProgramDesc );
     std::free( vertexShaderDesc.Data.Elements );
     std::free( pixelShaderDesc.Data.Elements );
 

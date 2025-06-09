@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h"
 #include "DenOfIzGraphics/Assets/Serde/Shader/ShaderAssetWriter.h"
+#include "DenOfIzGraphics/Assets/Serde/Common/AssetWriterHelpers.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
 
 using namespace DenOfIz;
@@ -41,12 +41,12 @@ void ShaderAssetWriter::Write( const ShaderAsset &shaderAsset )
     m_streamStartOffset = m_writer->Position( );
     WriteHeader( 0 );
 
-    const uint32_t numStages = shaderAsset.Stages.NumElements( );
+    const uint32_t numStages = shaderAsset.Stages.NumElements;
     m_writer->WriteUInt32( numStages );
 
     for ( uint32_t i = 0; i < numStages; ++i )
     {
-        const ShaderStageAsset &stage = shaderAsset.Stages.GetElement( i );
+        const ShaderStageAsset &stage = shaderAsset.Stages.Elements[ i ];
 
         m_writer->WriteUInt32( static_cast<uint32_t>( stage.Stage ) );
         m_writer->WriteString( stage.EntryPoint );
@@ -274,13 +274,15 @@ ShaderAsset ShaderAssetWriter::CreateFromCompiledShader( const CompiledShader &c
 
     shaderAsset.ReflectDesc = compiledShader.ReflectDesc;
 
-    const uint32_t numStages = compiledShader.Stages.NumElements( );
-    shaderAsset.Stages.Resize( numStages );
+    const uint32_t numStages = compiledShader.Stages.NumElements;
+
+    shaderAsset.Stages.NumElements = numStages;
+    shaderAsset.Stages.Elements    = static_cast<ShaderStageAsset *>( std::malloc( numStages * sizeof( ShaderStageAsset ) ) );
 
     for ( uint32_t i = 0; i < numStages; ++i )
     {
-        const CompiledShaderStage *compiledStage = compiledShader.Stages.GetElement( i );
-        ShaderStageAsset          &stageAsset    = shaderAsset.Stages.GetElement( i );
+        const CompiledShaderStage *compiledStage = compiledShader.Stages.Elements[ i ];
+        ShaderStageAsset          &stageAsset    = shaderAsset.Stages.Elements[ i ];
 
         stageAsset.Stage      = compiledStage->Stage;
         stageAsset.EntryPoint = compiledStage->EntryPoint;

@@ -29,12 +29,12 @@ uint32_t Align( const uint32_t value, const uint32_t alignment )
 ColoredSpherePipeline::ColoredSpherePipeline( const GraphicsApi *graphicsApi, ILogicalDevice *device, bool isTransparent, uint32_t numSpheres ) :
     m_device( device ), m_isTransparent( isTransparent ), m_numSpheres( numSpheres )
 {
-    InteropArray<ShaderStageDesc> shaderStages{ };
-    ShaderStageDesc              &vertexShaderDesc = shaderStages.EmplaceElement( );
-    vertexShaderDesc.Path                          = "Assets/Shaders/ColoredSphere.vs.hlsl";
-    vertexShaderDesc.Stage                         = ShaderStage::Vertex;
+    std::array<ShaderStageDesc, 2> shaderStages( { } );
+    ShaderStageDesc               &vertexShaderDesc = shaderStages[ 0 ];
+    vertexShaderDesc.Path                           = "Assets/Shaders/ColoredSphere.vs.hlsl";
+    vertexShaderDesc.Stage                          = ShaderStage::Vertex;
 
-    ShaderStageDesc &pixelShaderDesc = shaderStages.EmplaceElement( );
+    ShaderStageDesc &pixelShaderDesc = shaderStages[ 1 ];
     if ( isTransparent )
     {
         pixelShaderDesc.Path = "Assets/Shaders/TransparentGlassSphere.ps.hlsl";
@@ -45,8 +45,11 @@ ColoredSpherePipeline::ColoredSpherePipeline( const GraphicsApi *graphicsApi, IL
     }
     pixelShaderDesc.Stage = ShaderStage::Pixel;
 
-    m_program              = std::make_unique<ShaderProgram>( ShaderProgramDesc{ .ShaderStages = shaderStages } );
-    auto programReflection = m_program->Reflect( );
+    ShaderProgramDesc programDesc{ };
+    programDesc.ShaderStages.Elements    = shaderStages.data( );
+    programDesc.ShaderStages.NumElements = shaderStages.size( );
+    m_program                            = std::make_unique<ShaderProgram>( programDesc );
+    auto programReflection               = m_program->Reflect( );
 
     m_rootSignature = std::unique_ptr<IRootSignature>( device->CreateRootSignature( programReflection.RootSignature ) );
     m_inputLayout   = std::unique_ptr<IInputLayout>( device->CreateInputLayout( programReflection.InputLayout ) );
@@ -167,10 +170,10 @@ ColoredSpherePipeline::ColoredSpherePipeline( const GraphicsApi *graphicsApi, IL
         m_materialBindGroups.resize( m_numSpheres );
         for ( int i = 0; i < m_numSpheres; ++i )
         {
-            SphereMaterialData materialData{};
-            materialData.color              = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
-            materialData.refractionIndex    = isTransparent ? 1.5f : 1.0f;
-            materialData.fresnelPower       = isTransparent ? 3.0f : 1.0f;
+            SphereMaterialData materialData{ };
+            materialData.color           = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
+            materialData.refractionIndex = isTransparent ? 1.5f : 1.0f;
+            materialData.fresnelPower    = isTransparent ? 3.0f : 1.0f;
             memcpy( m_modelMappedData + alignedNumBytes * i, &materialData, sizeof( SphereMaterialData ) );
 
             auto                 &materialBindGroup = m_materialBindGroups[ i ];

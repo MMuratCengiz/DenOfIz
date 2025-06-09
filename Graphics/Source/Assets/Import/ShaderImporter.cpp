@@ -68,7 +68,7 @@ ImporterResult ShaderImporter::Import( const ImportJobDesc &desc )
     {
         spdlog::warn( "ShaderImporter needs all shader stages and all shader files, please use context.Options.ProgramDesc instead." );
     }
-    if ( context.Desc.ProgramDesc.ShaderStages.NumElements( ) == 0 )
+    if ( context.Desc.ProgramDesc.ShaderStages.NumElements == 0 )
     {
         spdlog::warn( "No Shader Stages provided." );
         return ImporterResult{ ImporterResultCode::InvalidParameters, "No Shader Stages provided." };
@@ -140,9 +140,9 @@ InteropString ShaderImporter::GetAssetName( const ImportContext &context )
     {
         return context.Desc.OutputShaderName;
     }
-    if ( context.Desc.ProgramDesc.ShaderStages.NumElements( ) > 0 )
+    if ( context.Desc.ProgramDesc.ShaderStages.NumElements > 0 )
     {
-        const ShaderStageDesc &primaryStage = context.Desc.ProgramDesc.ShaderStages.GetElement( 0 );
+        const ShaderStageDesc &primaryStage = context.Desc.ProgramDesc.ShaderStages.Elements[ 0 ];
         if ( !primaryStage.Path.IsEmpty( ) )
         {
             return AssetPathUtilities::GetAssetNameFromFilePath( primaryStage.Path );

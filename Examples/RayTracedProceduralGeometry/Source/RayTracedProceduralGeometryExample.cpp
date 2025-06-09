@@ -422,34 +422,34 @@ void RayTracedProceduralGeometryExample::CreateResources( )
 
 void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
 {
-    InteropArray<ShaderStageDesc> shaderStages( 8 );
+    std::array<ShaderStageDesc, 8> shaderStages( { } );
     { // Create shaders
         int32_t shaderIndex = 0;
 
-        ShaderStageDesc &rayGenShaderDesc = shaderStages.GetElement( shaderIndex++ );
+        ShaderStageDesc &rayGenShaderDesc = shaderStages[ shaderIndex++ ];
         rayGenShaderDesc.Stage            = ShaderStage::Raygen;
         rayGenShaderDesc.Path             = "Assets/Shaders/RTProceduralGeometry/RayGen.hlsl";
         rayGenShaderDesc.EntryPoint       = "MyRaygenShader";
 
-        ShaderStageDesc &missShaderDesc = shaderStages.GetElement( shaderIndex++ );
+        ShaderStageDesc &missShaderDesc = shaderStages[ shaderIndex++ ];
         missShaderDesc.Stage            = ShaderStage::Miss;
         missShaderDesc.Path             = "Assets/Shaders/RTProceduralGeometry/Miss.hlsl";
         missShaderDesc.EntryPoint       = "MyMissShader";
 
-        ShaderStageDesc &shadowMissShaderDesc = shaderStages.GetElement( shaderIndex++ );
+        ShaderStageDesc &shadowMissShaderDesc = shaderStages[ shaderIndex++ ];
         shadowMissShaderDesc.Stage            = ShaderStage::Miss;
         shadowMissShaderDesc.Path             = "Assets/Shaders/RTProceduralGeometry/Miss.hlsl";
         shadowMissShaderDesc.EntryPoint       = "MyMissShader_ShadowRay";
 
         m_closestHitTriangleIndex              = shaderIndex++;
-        ShaderStageDesc &triangleHitShaderDesc = shaderStages.GetElement( m_closestHitTriangleIndex );
+        ShaderStageDesc &triangleHitShaderDesc = shaderStages[ m_closestHitTriangleIndex ];
         triangleHitShaderDesc.Stage            = ShaderStage::ClosestHit;
         triangleHitShaderDesc.Path             = "Assets/Shaders/RTProceduralGeometry/ClosestHit.hlsl";
         triangleHitShaderDesc.EntryPoint       = "MyClosestHitShader_Triangle";
         triangleHitShaderDesc.RayTracing.MarkCbvAsLocal( 1, 3 );
 
         m_closestHitAABBIndex                     = shaderIndex++;
-        ShaderStageDesc &aabbHitShaderDesc        = shaderStages.GetElement( m_closestHitAABBIndex );
+        ShaderStageDesc &aabbHitShaderDesc        = shaderStages[ m_closestHitAABBIndex ];
         aabbHitShaderDesc.Stage                   = ShaderStage::ClosestHit;
         aabbHitShaderDesc.Path                    = "Assets/Shaders/RTProceduralGeometry/ClosestHit.hlsl";
         aabbHitShaderDesc.EntryPoint              = "MyClosestHitShader_AABB";
@@ -460,7 +460,7 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
         const char *aabbHitGroupTypes[] = { "AnalyticPrimitive", "VolumetricPrimitive", "SignedDistancePrimitive" };
         for ( int i = 0; i < IntersectionShaderType::Count; i++ )
         {
-            ShaderStageDesc &intersectionShaderDesc = shaderStages.GetElement( shaderIndex++ );
+            ShaderStageDesc &intersectionShaderDesc = shaderStages[ shaderIndex++ ];
             intersectionShaderDesc.Stage            = ShaderStage::Intersection;
             auto aabbShaderPath                     = InteropString( "Assets/Shaders/RTProceduralGeometry/Intersection_" ).Append( aabbHitGroupTypes[ i ] ).Append( ".hlsl" );
             intersectionShaderDesc.Path             = aabbShaderPath;
@@ -471,13 +471,13 @@ void RayTracedProceduralGeometryExample::CreateRayTracingPipeline( )
     }
 
     ShaderProgramDesc programDesc{ };
-    programDesc.ShaderStages                    = shaderStages;
+    programDesc.ShaderStages.Elements           = shaderStages.data( );
+    programDesc.ShaderStages.NumElements        = shaderStages.size( );
     programDesc.RayTracing.MaxRecursionDepth    = MAX_RAY_RECURSION_DEPTH;
     programDesc.RayTracing.MaxNumPayloadBytes   = sizeof( RayPayload );
     programDesc.RayTracing.MaxNumAttributeBytes = sizeof( ProceduralPrimitiveAttributes );
     m_rayTracingProgram                         = std::make_unique<ShaderProgram>( programDesc );
 
-    // Create root signature and pipeline
     auto reflection           = m_rayTracingProgram->Reflect( );
     m_rayTracingRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
 

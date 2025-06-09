@@ -37,23 +37,31 @@ namespace DenOfIz
         ShaderStage   Stage;
         InteropString EntryName;
     };
-    template class DZ_API InteropArray<ShaderRecordBindingDesc>;
+    struct DZ_API ShaderRecordBindingDescArray
+    {
+        ShaderRecordBindingDesc *Elements;
+        uint32_t                 NumElements;
+    };
 
     struct DZ_API ShaderProgramDesc
     {
-        InteropArray<ShaderStageDesc> ShaderStages;
-        ShaderRayTracingDesc          RayTracing;
+        ShaderStageDescArray ShaderStages;
+        ShaderRayTracingDesc RayTracing;
     };
 
     struct DZ_API CompiledShader
     {
         // The user should clean up these!
-        InteropArray<CompiledShaderStage *> Stages;
-        ShaderReflectDesc                   ReflectDesc;
-        ShaderRayTracingDesc                RayTracing;
+        CompiledShaderStageArray Stages;
+        ShaderReflectDesc        ReflectDesc;
+        ShaderRayTracingDesc     RayTracing;
     };
-    template class DZ_API InteropArray<CompiledShader>;
 
+    struct DZ_API CompiledShaderArray
+    {
+        CompiledShader *Elements;
+        uint32_t        NumElements;
+    };
     struct ShaderAsset;
 
     class ShaderProgram
@@ -64,13 +72,13 @@ namespace DenOfIz
         DZ_API explicit ShaderProgram( const ShaderAsset &asset );
         DZ_API ~ShaderProgram( );
 
-        [[nodiscard]] DZ_API InteropArray<CompiledShaderStage *> CompiledShaders( ) const;
+        [[nodiscard]] DZ_API CompiledShaderStageArray CompiledShaders( ) const;
         [[nodiscard]] DZ_API ShaderReflectDesc                   Reflect( ) const;
         [[nodiscard]] DZ_API ShaderProgramDesc                   Desc( ) const;
 
     private:
         class Impl;
-        std::unique_ptr<Impl>         m_pImpl;
+        std::unique_ptr<Impl> m_pImpl;
     };
 
 } // namespace DenOfIz

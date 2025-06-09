@@ -23,15 +23,19 @@ using namespace DenOfIz;
 
 DefaultRenderPipeline::DefaultRenderPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice )
 {
-    InteropArray<ShaderStageDesc> shaderStages{ };
-    ShaderStageDesc              &vertexShaderDesc = shaderStages.EmplaceElement( );
-    vertexShaderDesc.Path                          = "Assets/Shaders/DefaultRenderPipeline.vs.hlsl";
-    vertexShaderDesc.Stage                         = ShaderStage::Vertex;
-    ShaderStageDesc &pixelShaderDesc               = shaderStages.EmplaceElement( );
-    pixelShaderDesc.Path                           = "Assets/Shaders/DefaultRenderPipeline.ps.hlsl";
-    pixelShaderDesc.Stage                          = ShaderStage::Pixel;
+    std::vector<ShaderStageDesc> shaderStages{ };
+    ShaderStageDesc             &vertexShaderDesc = shaderStages.emplace_back( );
+    vertexShaderDesc.Path                         = "Assets/Shaders/DefaultRenderPipeline.vs.hlsl";
+    vertexShaderDesc.Stage                        = ShaderStage::Vertex;
+    ShaderStageDesc &pixelShaderDesc              = shaderStages.emplace_back( );
+    pixelShaderDesc.Path                          = "Assets/Shaders/DefaultRenderPipeline.ps.hlsl";
+    pixelShaderDesc.Stage                         = ShaderStage::Pixel;
 
-    m_program              = std::make_unique<ShaderProgram>( ShaderProgramDesc{ .ShaderStages = shaderStages } );
+    ShaderProgramDesc programDesc{ };
+    programDesc.ShaderStages.Elements    = shaderStages.data( );
+    programDesc.ShaderStages.NumElements = shaderStages.size( );
+
+    m_program              = std::make_unique<ShaderProgram>( programDesc );
     auto programReflection = m_program->Reflect( );
 
     m_rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( programReflection.RootSignature ) );

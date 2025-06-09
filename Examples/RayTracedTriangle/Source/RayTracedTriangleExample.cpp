@@ -114,28 +114,26 @@ void RayTracedTriangleExample::CreateRenderTargets( )
 
 void RayTracedTriangleExample::CreateRayTracingPipeline( )
 {
-    InteropArray<ShaderStageDesc> shaderStages;
-    ShaderStageDesc               rayGenShaderDesc{ };
-    rayGenShaderDesc.Stage      = ShaderStage::Raygen;
-    rayGenShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
-    rayGenShaderDesc.EntryPoint = "MyRaygenShader";
-    shaderStages.AddElement( rayGenShaderDesc );
+    std::array<ShaderStageDesc, 3> shaderStages( { } );
+    ShaderStageDesc               &rayGenShaderDesc = shaderStages[ 0 ];
+    rayGenShaderDesc.Stage                          = ShaderStage::Raygen;
+    rayGenShaderDesc.Path                           = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
+    rayGenShaderDesc.EntryPoint                     = "MyRaygenShader";
 
-    ShaderStageDesc closestHitShaderDesc{ };
-    closestHitShaderDesc.Stage      = ShaderStage::ClosestHit;
-    closestHitShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
-    closestHitShaderDesc.EntryPoint = "MyClosestHitShader";
+    ShaderStageDesc &closestHitShaderDesc = shaderStages[ 1 ];
+    closestHitShaderDesc.Stage            = ShaderStage::ClosestHit;
+    closestHitShaderDesc.Path             = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
+    closestHitShaderDesc.EntryPoint       = "MyClosestHitShader";
     closestHitShaderDesc.RayTracing.MarkCbvAsLocal( 0, 29 );
 
-    shaderStages.AddElement( closestHitShaderDesc );
-    ShaderStageDesc missShaderDesc{ };
-    missShaderDesc.Stage      = ShaderStage::Miss;
-    missShaderDesc.Path       = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
-    missShaderDesc.EntryPoint = "MyMissShader";
-    shaderStages.AddElement( missShaderDesc );
+    ShaderStageDesc &missShaderDesc = shaderStages[ 2 ];
+    missShaderDesc.Stage            = ShaderStage::Miss;
+    missShaderDesc.Path             = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
+    missShaderDesc.EntryPoint       = "MyMissShader";
 
     ShaderProgramDesc programDesc{ };
-    programDesc.ShaderStages                    = shaderStages;
+    programDesc.ShaderStages.Elements           = shaderStages.data( );
+    programDesc.ShaderStages.NumElements        = shaderStages.size( );
     programDesc.RayTracing.MaxNumPayloadBytes   = 4 * sizeof( float );
     programDesc.RayTracing.MaxNumAttributeBytes = 2 * sizeof( float );
     programDesc.RayTracing.MaxRecursionDepth    = 1;

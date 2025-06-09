@@ -89,22 +89,21 @@ float4 main(PSInput input) : SV_TARGET {
 }
 )";
 
-    ShaderProgramDesc programDesc{ };
+    std::array<ShaderStageDesc, 2> shaderStages( { } );
+    ShaderStageDesc               &vsDesc = shaderStages[ 0 ];
+    vsDesc.Stage                          = ShaderStage::Vertex;
+    vsDesc.EntryPoint                     = InteropString( "main" );
+    vsDesc.Data                           = InteropUtilities::StringToBytes( vertexShaderHLSL );
 
-    ShaderStageDesc &vsDesc = programDesc.ShaderStages.EmplaceElement( );
-    vsDesc.Stage            = ShaderStage::Vertex;
-    vsDesc.EntryPoint       = InteropString( "main" );
-    vsDesc.Data             = InteropUtilities::StringToBytes( vertexShaderHLSL );
-
-    ShaderStageDesc &psDesc = programDesc.ShaderStages.EmplaceElement( );
+    ShaderStageDesc &psDesc = shaderStages[ 1 ];
     psDesc.Stage            = ShaderStage::Pixel;
     psDesc.EntryPoint       = InteropString( "main" );
     psDesc.Data             = InteropUtilities::StringToBytes( pixelShaderHLSL );
 
-    m_shaderProgram = std::make_unique<ShaderProgram>( programDesc );
-
-    delete vsDesc.Data.Elements;
-    delete psDesc.Data.Elements;
+    ShaderProgramDesc programDesc{ };
+    programDesc.ShaderStages.Elements    = shaderStages.data( );
+    programDesc.ShaderStages.NumElements = shaderStages.size( );
+    m_shaderProgram                      = std::make_unique<ShaderProgram>( programDesc );
 }
 
 void Spinning3DCubeWidget::CreatePipeline( )

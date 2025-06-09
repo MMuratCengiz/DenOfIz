@@ -37,24 +37,26 @@ FullscreenQuadPipeline::FullscreenQuadPipeline( const FullscreenQuadPipelineDesc
 
 void FullscreenQuadPipeline::CreateShaderProgram( )
 {
-    ShaderProgramDesc programDesc{ };
-
     auto vertexShader = EmbeddedFullscreenQuadShaders::GetFullscreenQuadVertexShaderBytes( );
     auto pixelShader  = EmbeddedFullscreenQuadShaders::GetFullscreenQuadPixelShaderBytes( );
 
-    ShaderStageDesc &vsDesc = programDesc.ShaderStages.EmplaceElement( );
-    vsDesc.Stage            = ShaderStage::Vertex;
-    vsDesc.EntryPoint       = InteropString( "main" );
-    vsDesc.Data.Elements    = vertexShader.data( );
-    vsDesc.Data.NumElements = vertexShader.size( );
+    std::array<ShaderStageDesc, 2> shaderStages( { } );
+    ShaderStageDesc               &vsDesc = shaderStages[ 0 ];
+    vsDesc.Stage                          = ShaderStage::Vertex;
+    vsDesc.EntryPoint                     = InteropString( "main" );
+    vsDesc.Data.Elements                  = vertexShader.data( );
+    vsDesc.Data.NumElements               = vertexShader.size( );
 
-    ShaderStageDesc &psDesc = programDesc.ShaderStages.EmplaceElement( );
+    ShaderStageDesc &psDesc = shaderStages[ 1 ];
     psDesc.Stage            = ShaderStage::Pixel;
     psDesc.EntryPoint       = InteropString( "main" );
     psDesc.Data.Elements    = pixelShader.data( );
     psDesc.Data.NumElements = pixelShader.size( );
 
-    m_shaderProgram = std::make_unique<ShaderProgram>( programDesc );
+    ShaderProgramDesc programDesc{ };
+    programDesc.ShaderStages.NumElements = shaderStages.size( );
+    programDesc.ShaderStages.Elements    = shaderStages.data( );
+    m_shaderProgram                      = std::make_unique<ShaderProgram>( programDesc );
 }
 
 void FullscreenQuadPipeline::CreatePipeline( const FullscreenQuadPipelineDesc &desc )

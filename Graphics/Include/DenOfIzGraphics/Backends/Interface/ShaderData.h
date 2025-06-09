@@ -101,17 +101,21 @@ namespace DenOfIz
 
     struct DZ_API BindlessSlot
     {
-        ResourceBindingType Type;
-        uint32_t            Binding;
-        uint32_t            RegisterSpace;
-        uint32_t            MaxArraySize = 1024;
+        ResourceBindingType Type          = ResourceBindingType::ShaderResource;
+        uint32_t            Binding       = 0;
+        uint32_t            RegisterSpace = 0;
+        uint32_t            MaxArraySize  = 1024;
+    };
+
+    struct DZ_API BindlessArray
+    {
+        BindlessSlot *Elements;
+        uint32_t      NumElements;
     };
 
     struct DZ_API BindlessDesc
     {
-        InteropArray<BindlessSlot> BindlessArrays;
-
-        void MarkSrvAsBindlessArray( uint32_t binding, uint32_t registerSpace, uint32_t maxArraySize );
+        BindlessArray BindlessArrays;
     };
 
     enum class DZ_API CodePage
@@ -135,8 +139,12 @@ namespace DenOfIz
         RayTracingShaderDesc RayTracing;
         BindlessDesc         Bindless;
     };
-    template class DZ_API InteropArray<ShaderStageDesc>;
-    template class DZ_API InteropArray<BindlessSlot>;
+
+    struct DZ_API ShaderStageDescArray
+    {
+        ShaderStageDesc *Elements;
+        uint32_t         NumElements;
+    };
 
     // Needs to be used as a pointer as Blob/Reflection might be deleted multiple times otherwise
     struct DZ_API CompiledShaderStage : private NonCopyable
@@ -150,5 +158,10 @@ namespace DenOfIz
         RayTracingShaderDesc RayTracing;
         ThreadGroupInfo      ThreadGroup; // Thread group size for compute, mesh, and task shaders
     };
-    template class DZ_API InteropArray<CompiledShaderStage *>;
+
+    struct DZ_API CompiledShaderStageArray
+    {
+        CompiledShaderStage **Elements; // Array of pointers
+        uint32_t              NumElements;
+    };
 } // namespace DenOfIz

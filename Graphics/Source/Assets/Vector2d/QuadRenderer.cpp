@@ -212,20 +212,30 @@ void QuadRenderer::SetCanvas( const uint32_t width, const uint32_t height )
 
 void QuadRenderer::CreateShaderResources( )
 {
-    ShaderProgramDesc shaderProgramDesc{ };
+    std::array<ShaderStageDesc, 2> shaderStages( { } );
 
-    ShaderStageDesc &vertexShaderDesc = shaderProgramDesc.ShaderStages.EmplaceElement( );
+    ShaderStageDesc &vertexShaderDesc = shaderStages[ 0 ];
     vertexShaderDesc.Stage            = ShaderStage::Vertex;
     vertexShaderDesc.EntryPoint       = "main";
     vertexShaderDesc.Data             = InteropUtilities::StringToBytes( QuadVertexShader );
 
-    ShaderStageDesc &pixelShaderDesc = shaderProgramDesc.ShaderStages.EmplaceElement( );
+    ShaderStageDesc &pixelShaderDesc = shaderStages[ 1 ];
     pixelShaderDesc.Stage            = ShaderStage::Pixel;
     pixelShaderDesc.EntryPoint       = "main";
     pixelShaderDesc.Data             = InteropUtilities::StringToBytes( RasterPixelShader );
-    pixelShaderDesc.Bindless.MarkSrvAsBindlessArray( 0, 1, m_desc.MaxNumTextures );
 
-    m_shaderProgram = std::make_unique<ShaderProgram>( shaderProgramDesc );
+    std::array<BindlessSlot, 1> bindlessSlots{ };
+    bindlessSlots[ 0 ].RegisterSpace = 0;
+    bindlessSlots[ 0 ].Binding       = 1;
+    bindlessSlots[ 0 ].MaxArraySize  = m_desc.MaxNumTextures;
+
+    pixelShaderDesc.Bindless.BindlessArrays.Elements    = bindlessSlots.data( );
+    pixelShaderDesc.Bindless.BindlessArrays.NumElements = bindlessSlots.size( );
+
+    ShaderProgramDesc shaderProgramDesc{ };
+    shaderProgramDesc.ShaderStages.NumElements = shaderStages.size( );
+    shaderProgramDesc.ShaderStages.Elements    = shaderStages.data( );
+    m_shaderProgram                            = std::make_unique<ShaderProgram>( shaderProgramDesc );
     std::free( vertexShaderDesc.Data.Elements );
     std::free( pixelShaderDesc.Data.Elements );
 

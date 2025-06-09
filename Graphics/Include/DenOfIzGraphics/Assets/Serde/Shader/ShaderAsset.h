@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Assets/Serde/Asset.h"
 #include "DenOfIzGraphics/Assets/Shaders/ShaderReflectDesc.h"
 #include "DenOfIzGraphics/Utilities/Interop.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 namespace DenOfIz
 {
@@ -33,16 +34,21 @@ namespace DenOfIz
         InteropArray<Byte>   Reflection; // Generated Dxc reflection
         RayTracingShaderDesc RayTracing;
     };
-    template class DZ_API InteropArray<ShaderStageAsset>;
+
+    struct DZ_API ShaderStageAssetArray
+    {
+        ShaderStageAsset *Elements;
+        uint32_t          NumElements;
+    };
 
     struct DZ_API ShaderAsset : AssetHeader
     {
         static constexpr uint32_t Latest = 1;
 
-        InteropArray<ShaderStageAsset> Stages;
-        ShaderReflectDesc              ReflectDesc;
-        ShaderRayTracingDesc           RayTracing;
-        InteropArray<UserProperty>     UserProperties;
+        ShaderStageAssetArray      Stages;
+        ShaderReflectDesc          ReflectDesc;
+        ShaderRayTracingDesc       RayTracing;
+        InteropArray<UserProperty> UserProperties;
 
         ShaderAsset( ) : AssetHeader( 0x44414853445A /*DZSHAD*/, Latest, 0 )
         {

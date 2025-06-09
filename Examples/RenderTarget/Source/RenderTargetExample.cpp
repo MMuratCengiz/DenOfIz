@@ -35,7 +35,7 @@ void RenderTargetExample::Init( )
     textureDesc.Width      = m_windowDesc.Width;
     textureDesc.Height     = m_windowDesc.Height;
     textureDesc.Format     = Format::B8G8R8A8Unorm;
-    textureDesc.Descriptor = BitSet( ResourceDescriptor::Texture ) | ResourceDescriptor::RenderTarget;
+    textureDesc.Descriptor = ResourceDescriptor::Texture | ResourceDescriptor::RenderTarget;
     // textureDesc.InitialUsage = ResourceUsage::ShaderResource;
     textureDesc.DebugName = "Deferred Render Target";
     for ( uint32_t i = 0; i < 3; ++i )

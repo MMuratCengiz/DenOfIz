@@ -32,24 +32,30 @@ void BindlessExample::Init( )
     CreateSampler( );
     CreateConstantBuffer( );
 
-    ShaderProgramDesc shaderProgramDesc{ };
+    std::array<ShaderStageDesc, 2> shaderStages( { } );
+    ShaderStageDesc               &vertexShaderDesc = shaderStages[ 0 ];
+    vertexShaderDesc.Stage                          = ShaderStage::Vertex;
+    vertexShaderDesc.EntryPoint                     = "VSMain";
+    vertexShaderDesc.Data                           = VertexShader( );
 
-    ShaderStageDesc &vertexShaderDesc = shaderProgramDesc.ShaderStages.EmplaceElement( );
-    vertexShaderDesc.Stage            = ShaderStage::Vertex;
-    vertexShaderDesc.EntryPoint       = "VSMain";
-    vertexShaderDesc.Data             = VertexShader( );
-
-    ShaderStageDesc &pixelShaderDesc = shaderProgramDesc.ShaderStages.EmplaceElement( );
+    ShaderStageDesc &pixelShaderDesc = shaderStages[ 1 ];
     pixelShaderDesc.Stage            = ShaderStage::Pixel;
     pixelShaderDesc.EntryPoint       = "PSMain";
     pixelShaderDesc.Data             = PixelShader( );
 
-    // Mark texture array as bindless at binding 0, space 0 with max 4 textures
-    pixelShaderDesc.Bindless.MarkSrvAsBindlessArray( 0, 0, NUM_TEXTURES );
+    std::array<BindlessSlot, 1> bindlessSlots( { } );
+    bindlessSlots[ 0 ].RegisterSpace = 0;
+    bindlessSlots[ 0 ].Binding       = 0;
+    bindlessSlots[ 0 ].MaxArraySize  = NUM_TEXTURES;
+    bindlessSlots[ 0 ].Type          = ResourceBindingType::ShaderResource;
 
-    m_program                           = std::make_unique<ShaderProgram>( shaderProgramDesc );
-    std::free( vertexShaderDesc.Data.Elements );
-    std::free( pixelShaderDesc.Data.Elements );
+    pixelShaderDesc.Bindless.BindlessArrays.Elements    = bindlessSlots.data( );
+    pixelShaderDesc.Bindless.BindlessArrays.NumElements = bindlessSlots.size( );
+
+    ShaderProgramDesc shaderProgramDesc{ };
+    shaderProgramDesc.ShaderStages.Elements    = shaderStages.data( );
+    shaderProgramDesc.ShaderStages.NumElements = shaderStages.size( );
+    m_program                                  = std::make_unique<ShaderProgram>( shaderProgramDesc );
 
     const ShaderReflectDesc reflectDesc = m_program->Reflect( );
     m_inputLayout                       = std::unique_ptr<IInputLayout>( m_logicalDevice->CreateInputLayout( reflectDesc.InputLayout ) );

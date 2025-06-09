@@ -86,7 +86,7 @@ public:
 
     Impl( );
     ~Impl( );
-    InteropArray<ByteArray> Convert( const DxilToMslDesc &desc );
+    ByteArrayArray Convert( const DxilToMslDesc &desc );
 
 private:
     [[nodiscard]] ByteArray Compile( const CompileDesc &compileDesc, const ByteArray &dxil, const CompileMslDesc &compileMslDesc,
@@ -305,26 +305,32 @@ DxilToMsl::Impl::~Impl( )
     }
 }
 
-InteropArray<ByteArray> DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
+ByteArrayArray DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
 {
+    // Check for empty input
+    if ( desc.Shaders.NumElements == 0 || desc.DXILShaders.NumElements == 0 )
+    {
+        return { nullptr, 0 };
+    }
+
     IDxcUtils    *dxcUtils = nullptr;
     const HRESULT hr       = DxcCreateInstance( CLSID_DxcUtils, IID_PPV_ARGS( &dxcUtils ) );
     if ( FAILED( hr ) )
     {
         spdlog::error( "Failed to create DxcUtils" );
-        return { };
+        return { nullptr, 0 };
     }
 
-    const InteropArray<CompiledShaderStage *> &dxilShaders = desc.DXILShaders;
+    const CompiledShaderStageArray &dxilShaders = desc.DXILShaders;
     // We use this vector to make sure register spaces are ordered correctly, the order of the root parameters is also how the Top Level Argument Buffer expects them
     std::vector<RegisterSpaceRange>           localRegisterSpaceRanges;
     std::vector<RegisterSpaceRange>           registerSpaceRanges;
     std::vector<D3D12_SHADER_INPUT_BIND_DESC> processedInputs; // Handle duplicate inputs
 
-    for ( int shaderIndex = 0; shaderIndex < dxilShaders.NumElements( ); ++shaderIndex )
+    for ( uint32_t shaderIndex = 0; shaderIndex < dxilShaders.NumElements; ++shaderIndex )
     {
-        auto        dxilShader       = dxilShaders.GetElement( shaderIndex );
-        const auto &shaderDesc       = desc.Shaders.GetElement( shaderIndex );
+        auto        dxilShader       = dxilShaders.Elements[ shaderIndex ];
+        const auto &shaderDesc       = desc.Shaders.Elements[ shaderIndex ];
         auto        processResources = [ & ]( const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc, const int i )
         {
             if ( IsResourceAlreadyProcessed( processedInputs, shaderInputBindDesc ) )
@@ -405,16 +411,24 @@ InteropArray<ByteArray> DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
         IterateBoundResources( dxilShader, processResources );
     }
 
-    auto result = InteropArray<ByteArray>( desc.Shaders.NumElements( ) );
+    ByteArrayArray result;
+    result.NumElements = desc.Shaders.NumElements;
+    result.Elements = static_cast<ByteArray *>( std::malloc( result.NumElements * sizeof( ByteArray ) ) );
+    
+    // Initialize all elements to empty in case of error
+    for ( uint32_t i = 0; i < result.NumElements; ++i )
+    {
+        result.Elements[ i ] = { nullptr, 0 };
+    }
 
     CompileMslDesc compileMslDesc{ };
     compileMslDesc.RootSignature      = CreateRootSignature( registerSpaceRanges, false );
     compileMslDesc.LocalRootSignature = CreateRootSignature( localRegisterSpaceRanges, true );
     compileMslDesc.RayTracing         = desc.RayTracing;
 
-    for ( int shaderIndex = 0; shaderIndex < desc.Shaders.NumElements( ); ++shaderIndex )
+    for ( uint32_t shaderIndex = 0; shaderIndex < desc.Shaders.NumElements; ++shaderIndex )
     {
-        const auto &shader = desc.Shaders.GetElement( shaderIndex );
+        const auto &shader = desc.Shaders.Elements[ shaderIndex ];
 
         CompileDesc compileDesc = { };
         compileDesc.Path        = shader.Path;
@@ -424,7 +438,7 @@ InteropArray<ByteArray> DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
         compileDesc.Stage       = shader.Stage;
         compileDesc.TargetIL    = TargetIL::MSL;
 
-        auto &dxilShader = dxilShaders.GetElement( shaderIndex );
+        auto &dxilShader = dxilShaders.Elements[ shaderIndex ];
         if ( dxilShader->Reflection.NumElements > 0 )
         {
             const DxcBuffer reflectionBuffer{
@@ -441,7 +455,7 @@ InteropArray<ByteArray> DxilToMsl::Impl::Convert( const DxilToMslDesc &desc )
         }
 
         auto mslBlob = Compile( compileDesc, dxilShader->DXIL, compileMslDesc, shader.RayTracing );
-        result.SetElement( shaderIndex, mslBlob );
+        result.Elements[ shaderIndex ] = mslBlob;
     }
 
     IRRootSignatureDestroy( compileMslDesc.LocalRootSignature );
@@ -521,15 +535,14 @@ ByteArray DxilToMsl::Impl::Compile( const CompileDesc &compileDesc, const ByteAr
     const auto   metalLibByteCode = new uint8_t[ metalLibSize ];
     IRMetalLibGetBytecode( metalLib, metalLibByteCode );
 
-    InteropArray<Byte> mslBlob{ };
-    mslBlob.MemCpy( metalLibByteCode, metalLibSize );
+    // Note: metalLibByteCode ownership is transferred to ByteArray
 
     IRMetalLibBinaryDestroy( metalLib );
     IRObjectDestroy( irDxil );
     IRCompilerDestroy( irCompiler );
 
     const ByteArray result{
-        .Elements    = metalLibByteCode,
+        .Elements    = reinterpret_cast<Byte *>( metalLibByteCode ),
         .NumElements = metalLibSize,
     };
     return result;
@@ -557,7 +570,7 @@ DxilToMsl::DxilToMsl( ) : m_pImpl( std::make_unique<Impl>( ) )
 
 DxilToMsl::~DxilToMsl( ) = default;
 
-InteropArray<ByteArray> DxilToMsl::Convert( const DxilToMslDesc &desc )
+ByteArrayArray DxilToMsl::Convert( const DxilToMslDesc &desc )
 {
     return m_pImpl->Convert( desc );
 }

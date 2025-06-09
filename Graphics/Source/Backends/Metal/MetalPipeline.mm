@@ -57,9 +57,9 @@ void MetalPipeline::CreateGraphicsPipeline( )
     id<MTLFunction> fragmentFunction = nullptr;
 
     const auto &shaders = m_desc.ShaderProgram->CompiledShaders( );
-    for ( int i = 0; i < shaders.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < shaders.NumElements; ++i )
     {
-        const auto    &shader     = shaders.GetElement( i );
+        const auto    &shader     = shaders.Elements[ i ];
         std::string    entryPoint = shader->EntryPoint.Get( );
         id<MTLLibrary> library    = LoadLibrary( shader->MSL );
         switch ( shader->Stage )
@@ -170,9 +170,9 @@ void MetalPipeline::CreateComputePipeline( )
     ThreadGroupInfo threadGroup = { 0, 0, 0 };
 
     const auto &shaders = m_desc.ShaderProgram->CompiledShaders( );
-    for ( int i = 0; i < shaders.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < shaders.NumElements; ++i )
     {
-        const auto &shader  = shaders.GetElement( i );
+        const auto &shader  = shaders.Elements[ i ];
         auto        library = LoadLibrary( shader->MSL );
         switch ( shader->Stage )
         {
@@ -237,16 +237,16 @@ void MetalPipeline::CreateRayTracingPipeline( )
     auto compiledShaders = m_desc.ShaderProgram->CompiledShaders( );
 
     MTLComputePipelineDescriptor    *pipelineStateDescriptor = [[MTLComputePipelineDescriptor alloc] init];
-    NSMutableArray<id<MTLFunction>> *functionHandles = [NSMutableArray arrayWithCapacity:compiledShaders.NumElements( ) + 2]; // +2 for triangle and procedural intersection shaders
+    NSMutableArray<id<MTLFunction>> *functionHandles = [NSMutableArray arrayWithCapacity:compiledShaders.NumElements + 2]; // +2 for triangle and procedural intersection shaders
 
     // Operations done in the visible function table need to skip the first entry, which is reserved for the null function.
     constexpr uint32_t nullFunctionOffset = 1;
     m_visibleFunctions[ "Null" ]          = 0;
 
-    uint32_t numVisibleFunctions = nullFunctionOffset + compiledShaders.NumElements( );
-    for ( uint32_t i = 0; i < compiledShaders.NumElements( ); ++i )
+    uint32_t numVisibleFunctions = nullFunctionOffset + compiledShaders.NumElements;
+    for ( uint32_t i = 0; i < compiledShaders.NumElements; ++i )
     {
-        const auto     &shader      = compiledShaders.GetElement( i );
+        const auto     &shader      = compiledShaders.Elements[ i ];
         id<MTLLibrary>  library     = LoadLibrary( shader->MSL );
         id<MTLFunction> mtlFunction = CreateShaderFunction( library, shader->EntryPoint.Get( ) );
 
@@ -488,9 +488,9 @@ void MetalPipeline::CreateMeshPipeline( )
     ThreadGroupInfo meshThreadGroup = { 0, 0, 0 };   // Mesh shader thread group
     
     const auto &shaders = m_desc.ShaderProgram->CompiledShaders( );
-    for ( int i = 0; i < shaders.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < shaders.NumElements; ++i )
     {
-        const auto &shader = shaders.GetElement( i );
+        const auto &shader = shaders.Elements[ i ];
         id<MTLLibrary> library = LoadLibrary( shader->MSL );
         
         switch ( shader->Stage )

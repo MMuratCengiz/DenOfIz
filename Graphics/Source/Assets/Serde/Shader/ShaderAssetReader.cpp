@@ -49,12 +49,13 @@ ShaderAsset ShaderAssetReader::Read( )
     m_streamStartOffset = m_reader->Position( );
     ReadHeader( );
 
-    const uint32_t numStages = m_reader->ReadUInt32( );
-    m_shaderAsset.Stages.Resize( numStages );
+    const uint32_t numStages         = m_reader->ReadUInt32( );
+    m_shaderAsset.Stages.NumElements = numStages;
+    m_shaderAsset.Stages.Elements    = static_cast<ShaderStageAsset *>( std::malloc( numStages * sizeof( ShaderStageAsset ) ) );
 
     for ( uint32_t i = 0; i < numStages; ++i )
     {
-        ShaderStageAsset &stage = m_shaderAsset.Stages.GetElement( i );
+        ShaderStageAsset &stage = m_shaderAsset.Stages.Elements[ i ];
 
         stage.Stage      = static_cast<ShaderStage>( m_reader->ReadUInt32( ) );
         stage.EntryPoint = m_reader->ReadString( );
@@ -272,8 +273,9 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
 
     compiledShader.ReflectDesc = shaderAsset.ReflectDesc;
 
-    const uint32_t numStages = shaderAsset.Stages.NumElements( );
-    compiledShader.Stages.Resize( numStages );
+    const uint32_t numStages          = shaderAsset.Stages.NumElements;
+    compiledShader.Stages.NumElements = numStages;
+    compiledShader.Stages.Elements    = static_cast<CompiledShaderStage **>( std::malloc( numStages * sizeof( CompiledShaderStage * ) ) );
 
     IDxcLibrary  *dxcLibrary = nullptr;
     const HRESULT result     = DxcCreateInstance( CLSID_DxcLibrary, IID_PPV_ARGS( &dxcLibrary ) );
@@ -285,10 +287,10 @@ CompiledShader ShaderAssetReader::ConvertToCompiledShader( const ShaderAsset &sh
 
     for ( uint32_t i = 0; i < numStages; ++i )
     {
-        const ShaderStageAsset &stageAsset = shaderAsset.Stages.GetElement( i );
+        const ShaderStageAsset &stageAsset = shaderAsset.Stages.Elements[ i ];
         // We expect the user to delete these pointers(ShaderProgram assigns them to a unique ptr).
-        auto compiledStage = new CompiledShaderStage( );
-        compiledShader.Stages.SetElement( i, compiledStage );
+        auto compiledStage                  = new CompiledShaderStage( );
+        compiledShader.Stages.Elements[ i ] = compiledStage;
 
         compiledStage->Stage      = stageAsset.Stage;
         compiledStage->EntryPoint = stageAsset.EntryPoint;

@@ -23,15 +23,19 @@ using namespace DenOfIz;
 
 QuadPipeline::QuadPipeline( const GraphicsApi *graphicsApi, ILogicalDevice *logicalDevice, const char *pixelShader )
 {
-    InteropArray<ShaderStageDesc> shaderStages;
-    ShaderStageDesc              &vertexShaderDesc = shaderStages.EmplaceElement( );
-    vertexShaderDesc.Path                          = "Assets/Shaders/FullscreenQuad.vs.hlsl";
-    vertexShaderDesc.Stage                         = ShaderStage::Vertex;
-    ShaderStageDesc &pixelShaderDesc               = shaderStages.EmplaceElement( );
-    pixelShaderDesc.Path                           = pixelShader;
-    pixelShaderDesc.Stage                          = ShaderStage::Pixel;
+    std::vector<ShaderStageDesc> shaderStages;
+    ShaderStageDesc             &vertexShaderDesc = shaderStages.emplace_back( );
+    vertexShaderDesc.Path                         = "Assets/Shaders/FullscreenQuad.vs.hlsl";
+    vertexShaderDesc.Stage                        = ShaderStage::Vertex;
+    ShaderStageDesc &pixelShaderDesc              = shaderStages.emplace_back( );
+    pixelShaderDesc.Path                          = pixelShader;
+    pixelShaderDesc.Stage                         = ShaderStage::Pixel;
 
-    auto program           = std::make_unique<ShaderProgram>( ShaderProgramDesc{ .ShaderStages = shaderStages } );
+    ShaderProgramDesc programDesc{ };
+    programDesc.ShaderStages.Elements    = shaderStages.data( );
+    programDesc.ShaderStages.NumElements = shaderStages.size( );
+
+    auto program           = std::make_unique<ShaderProgram>( programDesc );
     auto programReflection = program->Reflect( );
 
     m_rootSignature = std::unique_ptr<IRootSignature>( logicalDevice->CreateRootSignature( programReflection.RootSignature ) );

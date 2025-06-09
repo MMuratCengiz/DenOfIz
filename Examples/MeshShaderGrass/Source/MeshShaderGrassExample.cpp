@@ -160,48 +160,40 @@ void MeshShaderGrassExample::Quit( )
 
 void MeshShaderGrassExample::CreateMeshShaderPipeline( )
 {
-    // Initialize shader stages for mesh shader pipeline
-    InteropArray<ShaderStageDesc> shaderStages( 2 );
+    std::array<ShaderStageDesc, 2> shaderStages( { } );
 
-    // Mesh shader
-    ShaderStageDesc &meshShaderDesc = shaderStages.GetElement( 0 );
+    ShaderStageDesc &meshShaderDesc = shaderStages[ 0 ];
     meshShaderDesc.Stage            = ShaderStage::Mesh;
     meshShaderDesc.Path             = "Assets/Shaders/GrassShader/GrassMS.hlsl";
     meshShaderDesc.EntryPoint       = "main";
 
-    // Pixel shader
-    ShaderStageDesc &pixelShaderDesc = shaderStages.GetElement( 1 );
+    ShaderStageDesc &pixelShaderDesc = shaderStages[ 1 ];
     pixelShaderDesc.Stage            = ShaderStage::Pixel;
     pixelShaderDesc.Path             = "Assets/Shaders/GrassShader/GrassPS.hlsl";
     pixelShaderDesc.EntryPoint       = "main";
 
-    // Create shader program
     ShaderProgramDesc programDesc{ };
-    programDesc.ShaderStages = shaderStages;
-    m_meshShaderProgram      = std::make_unique<ShaderProgram>( programDesc );
+    programDesc.ShaderStages.Elements    = shaderStages.data( );
+    programDesc.ShaderStages.NumElements = shaderStages.size( );
+    m_meshShaderProgram                  = std::make_unique<ShaderProgram>( programDesc );
 
-    // Get shader reflection data
     auto reflection = m_meshShaderProgram->Reflect( );
 
-    // Create root signature
     m_meshRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
 
-    // Create pipeline
     PipelineDesc pipelineDesc{ };
-    pipelineDesc.BindPoint     = BindPoint::Mesh; // Use mesh shader pipeline
+    pipelineDesc.BindPoint     = BindPoint::Mesh;
     pipelineDesc.RootSignature = m_meshRootSignature.get( );
     pipelineDesc.ShaderProgram = m_meshShaderProgram.get( );
 
-    // Configure graphics pipeline details
     pipelineDesc.Graphics.PrimitiveTopology            = PrimitiveTopology::Triangle;
-    pipelineDesc.Graphics.CullMode                     = CullMode::None; // No culling for grass as it's double-sided
+    pipelineDesc.Graphics.CullMode                     = CullMode::None;
     pipelineDesc.Graphics.FillMode                     = FillMode::Solid;
     pipelineDesc.Graphics.DepthStencilAttachmentFormat = Format::D32Float;
     pipelineDesc.Graphics.DepthTest.Enable             = true;
     pipelineDesc.Graphics.DepthTest.Write              = true;
     pipelineDesc.Graphics.DepthTest.CompareOp          = CompareOp::Less;
 
-    // Alpha blending for grass
     RenderTargetDesc rtDesc{ };
     rtDesc.Format              = Format::B8G8R8A8Unorm;
     rtDesc.Blend.Enable        = true;
@@ -211,19 +203,16 @@ void MeshShaderGrassExample::CreateMeshShaderPipeline( )
     rtDesc.Blend.DstBlendAlpha = Blend::Zero;
     pipelineDesc.Graphics.RenderTargets.AddElement( rtDesc );
 
-    // Create pipeline
     m_meshPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 
-    // Create resource bind group
     ResourceBindGroupDesc bindGroupDesc{ };
     bindGroupDesc.RootSignature = m_meshRootSignature.get( );
     bindGroupDesc.RegisterSpace = 0;
     m_meshBindGroup             = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
 
-    // Bind resources
     m_meshBindGroup->BeginUpdate( );
-    m_meshBindGroup->Cbv( 0, m_grassConstantsBuffer.get( ) ); // Grass constants
-    m_meshBindGroup->Srv( 0, m_grassTexture.get( ) );         // Grass texture
+    m_meshBindGroup->Cbv( 0, m_grassConstantsBuffer.get( ) );
+    m_meshBindGroup->Srv( 0, m_grassTexture.get( ) );
     m_meshBindGroup->Sampler( 0, m_grassSampler.get( ) );
     m_meshBindGroup->EndUpdate( );
 }
@@ -240,24 +229,21 @@ void MeshShaderGrassExample::CreateConstantsBuffer( )
     m_grassConstantsBuffer   = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( constantsDesc ) );
     m_grassConstants         = static_cast<GrassConstants *>( m_grassConstantsBuffer->MapMemory( ) );
 
-    // Initialize default values with improved parameters for denser grass
-    m_grassConstants->WindDirection       = { 1.0f, 0.0f, 0.0f, 0.5f };    // X-direction wind with gentle strength
-    m_grassConstants->GrassColor          = { 0.42f, 0.85f, 0.27f, 1.0f }; // Vibrant green
-    m_grassConstants->GrassColorVariation = { 0.18f, 0.15f, 0.1f, 0.0f };  // Increased color variation for natural look
+    m_grassConstants->WindDirection       = { 1.0f, 0.0f, 0.0f, 0.5f };
+    m_grassConstants->GrassColor          = { 0.42f, 0.85f, 0.27f, 1.0f };
+    m_grassConstants->GrassColorVariation = { 0.18f, 0.15f, 0.1f, 0.0f }; // Increased color variation for natural look
     m_grassConstants->Time                = 0.0f;
-    m_grassConstants->DensityFactor       = 64.0f; // Significantly increased density for fuller grass
-    m_grassConstants->HeightScale         = 1.0f;  // Slightly shorter to allow more blades
-    m_grassConstants->WidthScale          = 0.06f; // Thinner grass blades for more blades per area
-    m_grassConstants->MaxDistance         = 50.0f; // Extended LOD distance
-    m_grassConstants->TerrainScale        = 0.2f;  // Scale of terrain height variation
-    m_grassConstants->TerrainHeight       = 3.0f;  // Maximum height of terrain
-    m_grassConstants->TerrainRoughness    = 0.7f;  // Terrain roughness
+    m_grassConstants->DensityFactor       = 64.0f;
+    m_grassConstants->HeightScale         = 1.0f;
+    m_grassConstants->WidthScale          = 0.06f;
+    m_grassConstants->MaxDistance         = 50.0f;
+    m_grassConstants->TerrainScale        = 0.2f;
+    m_grassConstants->TerrainHeight       = 3.0f;
+    m_grassConstants->TerrainRoughness    = 0.7f;
 
-    // Identity matrices initially
     m_grassConstants->Model          = XMMatrixIdentity( );
     m_grassConstants->ViewProjection = XMMatrixIdentity( );
 
-    // Create depth buffer for rendering
     TextureDesc depthDesc{ };
     depthDesc.Width        = m_windowDesc.Width;
     depthDesc.Height       = m_windowDesc.Height;
@@ -282,7 +268,6 @@ void MeshShaderGrassExample::LoadGrassTexture( )
     samplerDesc.DebugName    = "GrassSampler";
     m_grassSampler           = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( samplerDesc ) );
 
-    // Create a simple texture for grass (could be replaced with a loaded texture)
     TextureDesc textureDesc{ };
     textureDesc.Width        = 128;
     textureDesc.Height       = 128;
@@ -295,7 +280,6 @@ void MeshShaderGrassExample::LoadGrassTexture( )
     m_grassTexture = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
     m_resourceTracking.TrackTexture( m_grassTexture.get( ), ResourceUsage::CopyDst );
 
-    // Create texture data with a simple gradient alpha
     std::vector<uint8_t> textureData( textureDesc.Width * textureDesc.Height * 4 );
     for ( uint32_t y = 0; y < textureDesc.Height; ++y )
     {
@@ -303,11 +287,9 @@ void MeshShaderGrassExample::LoadGrassTexture( )
         {
             uint32_t idx = ( y * textureDesc.Width + x ) * 4;
 
-            // Create a more detailed gradient with noise for blade texture
             float centerX = static_cast<float>( x ) / textureDesc.Width - 0.5f;
             float centerY = static_cast<float>( y ) / textureDesc.Height;
 
-            // Basic edge fade
             float distanceFromCenter = std::abs( centerX ) * 2.0f;
             float alphaEdge          = 1.0f - std::min( 1.0f, distanceFromCenter * 1.8f );
 
@@ -340,7 +322,6 @@ void MeshShaderGrassExample::LoadGrassTexture( )
         }
     }
 
-    // Copy data to texture
     BatchResourceCopy batchResourceCopy( m_logicalDevice );
     batchResourceCopy.Begin( );
 
@@ -354,7 +335,6 @@ void MeshShaderGrassExample::LoadGrassTexture( )
     batchResourceCopy.CopyDataToTexture( copyDesc );
     batchResourceCopy.Submit( );
 
-    // Transition texture to shader resource
     const auto    commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( { m_graphicsQueue.get( ) } ) );
     ICommandList *commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
     const auto    syncFence       = std::unique_ptr<IFence>( m_logicalDevice->CreateFence( ) );
@@ -377,14 +357,12 @@ void MeshShaderGrassExample::LoadGrassTexture( )
 
 void MeshShaderGrassExample::CreateTerrainGeometry( )
 {
-    // Create a quad for the terrain with appropriate tessellation
     QuadDesc quadDesc;
     quadDesc.Width     = 100.0f;
     quadDesc.Height    = 100.0f;
     quadDesc.BuildDesc = BuildDesc::BuildNormal | BuildDesc::BuildTexCoord;
     m_terrainGeometry  = Geometry::BuildQuadXZ( quadDesc );
 
-    // Create vertex buffer for terrain
     BufferDesc vertexDesc{ };
     vertexDesc.HeapType   = HeapType::GPU;
     vertexDesc.Descriptor = ResourceDescriptor::VertexBuffer;
@@ -393,7 +371,6 @@ void MeshShaderGrassExample::CreateTerrainGeometry( )
     vertexDesc.DebugName  = "TerrainVertexBuffer";
     m_terrainVertexBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( vertexDesc ) );
 
-    // Create index buffer for terrain
     BufferDesc indexDesc{ };
     indexDesc.HeapType   = HeapType::GPU;
     indexDesc.Descriptor = ResourceDescriptor::IndexBuffer;
@@ -402,7 +379,6 @@ void MeshShaderGrassExample::CreateTerrainGeometry( )
     indexDesc.DebugName  = "TerrainIndexBuffer";
     m_terrainIndexBuffer = std::unique_ptr<IBufferResource>( m_logicalDevice->CreateBufferResource( indexDesc ) );
 
-    // Copy data to buffers
     BatchResourceCopy batchResourceCopy( m_logicalDevice );
     batchResourceCopy.Begin( );
 
@@ -421,7 +397,6 @@ void MeshShaderGrassExample::CreateTerrainGeometry( )
 
 void MeshShaderGrassExample::LoadTerrainTexture( )
 {
-    // Create a sampler for the terrain texture
     SamplerDesc samplerDesc{ };
     samplerDesc.MinFilter    = Filter::Linear;
     samplerDesc.MagFilter    = Filter::Linear;
@@ -432,7 +407,6 @@ void MeshShaderGrassExample::LoadTerrainTexture( )
     samplerDesc.DebugName    = "TerrainSampler";
     m_terrainSampler         = std::unique_ptr<ISampler>( m_logicalDevice->CreateSampler( samplerDesc ) );
 
-    // Create a simple green/brown texture for terrain
     TextureDesc textureDesc{ };
     textureDesc.Width        = 256;
     textureDesc.Height       = 256;
@@ -445,7 +419,6 @@ void MeshShaderGrassExample::LoadTerrainTexture( )
     m_terrainTexture = std::unique_ptr<ITextureResource>( m_logicalDevice->CreateTextureResource( textureDesc ) );
     m_resourceTracking.TrackTexture( m_terrainTexture.get( ), ResourceUsage::CopyDst );
 
-    // Create texture data with soil/grass pattern
     std::vector<uint8_t> textureData( textureDesc.Width * textureDesc.Height * 4 );
     for ( uint32_t y = 0; y < textureDesc.Height; ++y )
     {
@@ -523,40 +496,34 @@ void MeshShaderGrassExample::LoadTerrainTexture( )
 
 void MeshShaderGrassExample::CreateTerrainPipeline( )
 {
-    // Initialize shader stages for terrain pipeline
-    InteropArray<ShaderStageDesc> shaderStages( 2 );
+    std::array<ShaderStageDesc, 2> shaderStages( { } );
 
-    // Vertex shader
-    ShaderStageDesc &vertexShaderDesc = shaderStages.GetElement( 0 );
+    ShaderStageDesc &vertexShaderDesc = shaderStages[ 0 ];
     vertexShaderDesc.Stage            = ShaderStage::Vertex;
     vertexShaderDesc.Path             = "Assets/Shaders/TerrainShader/TerrainVS.hlsl";
     vertexShaderDesc.EntryPoint       = "main";
 
-    // Pixel shader
-    ShaderStageDesc &pixelShaderDesc = shaderStages.GetElement( 1 );
+    ShaderStageDesc &pixelShaderDesc = shaderStages[ 1 ];
     pixelShaderDesc.Stage            = ShaderStage::Pixel;
     pixelShaderDesc.Path             = "Assets/Shaders/TerrainShader/TerrainPS.hlsl";
     pixelShaderDesc.EntryPoint       = "main";
 
-    // Create shader program
     ShaderProgramDesc programDesc{ };
-    programDesc.ShaderStages = shaderStages;
-    m_terrainShaderProgram   = std::make_unique<ShaderProgram>( programDesc );
+    programDesc.ShaderStages.Elements    = shaderStages.data( );
+    programDesc.ShaderStages.NumElements = shaderStages.size( );
+    m_terrainShaderProgram               = std::make_unique<ShaderProgram>( programDesc );
 
-    // Get shader reflection data
     auto reflection = m_terrainShaderProgram->Reflect( );
 
-    // Create root signature
     m_terrainRootSignature = std::unique_ptr<IRootSignature>( m_logicalDevice->CreateRootSignature( reflection.RootSignature ) );
     m_terrainInputLayout   = std::unique_ptr<IInputLayout>( m_logicalDevice->CreateInputLayout( reflection.InputLayout ) );
-    // Create pipeline
+
     PipelineDesc pipelineDesc{ };
     pipelineDesc.BindPoint     = BindPoint::Graphics;
     pipelineDesc.RootSignature = m_terrainRootSignature.get( );
     pipelineDesc.InputLayout   = m_terrainInputLayout.get( );
     pipelineDesc.ShaderProgram = m_terrainShaderProgram.get( );
 
-    // Configure graphics pipeline details
     pipelineDesc.Graphics.PrimitiveTopology            = PrimitiveTopology::Triangle;
     pipelineDesc.Graphics.CullMode                     = CullMode::BackFace;
     pipelineDesc.Graphics.FillMode                     = FillMode::Solid;
@@ -565,21 +532,17 @@ void MeshShaderGrassExample::CreateTerrainPipeline( )
     pipelineDesc.Graphics.DepthTest.Write              = true;
     pipelineDesc.Graphics.DepthTest.CompareOp          = CompareOp::Less;
 
-    // Render target format
     RenderTargetDesc rtDesc{ };
     rtDesc.Format = Format::B8G8R8A8Unorm;
     pipelineDesc.Graphics.RenderTargets.AddElement( rtDesc );
 
-    // Create pipeline
     m_terrainPipeline = std::unique_ptr<IPipeline>( m_logicalDevice->CreatePipeline( pipelineDesc ) );
 
-    // Create resource bind group
     ResourceBindGroupDesc bindGroupDesc{ };
     bindGroupDesc.RootSignature = m_terrainRootSignature.get( );
     bindGroupDesc.RegisterSpace = 0;
     m_terrainBindGroup          = std::unique_ptr<IResourceBindGroup>( m_logicalDevice->CreateResourceBindGroup( bindGroupDesc ) );
 
-    // Bind resources
     m_terrainBindGroup->BeginUpdate( );
     m_terrainBindGroup->Cbv( 0, m_grassConstantsBuffer.get( ) ); // Use same constants buffer
     m_terrainBindGroup->Srv( 0, m_terrainTexture.get( ) );
@@ -587,14 +550,13 @@ void MeshShaderGrassExample::CreateTerrainPipeline( )
     m_terrainBindGroup->EndUpdate( );
 }
 
-void MeshShaderGrassExample::UpdateConstants( )
+void MeshShaderGrassExample::UpdateConstants( ) const
 {
-    // Update time
     m_grassConstants->Time = m_elapsedTime;
 
     // Create more natural wind patterns with multiple frequencies
-    float primaryWindAngle   = m_elapsedTime * 0.3f;
-    float secondaryWindAngle = m_elapsedTime * 0.17f; // Different frequency for variation
+    const float primaryWindAngle   = m_elapsedTime * 0.3f;
+    const float secondaryWindAngle = m_elapsedTime * 0.17f; // Different frequency for variation
 
     // Primary wind direction - smooth circular motion
     float windX = cos( primaryWindAngle );
@@ -605,12 +567,12 @@ void MeshShaderGrassExample::UpdateConstants( )
     windZ += sin( secondaryWindAngle * 1.2f ) * 0.15f;
 
     // Normalize the direction
-    float windLength = sqrt( windX * windX + windZ * windZ );
+    const float windLength = sqrt( windX * windX + windZ * windZ );
     windX /= windLength;
     windZ /= windLength;
 
     // Apply a pulsing wind strength for gusts (subtle)
-    float gustStrength = 0.8f + sin( m_elapsedTime * 0.5f ) * 0.15f + sin( m_elapsedTime * 1.3f ) * 0.05f;
+    const float gustStrength = 0.8f + sin( m_elapsedTime * 0.5f ) * 0.15f + sin( m_elapsedTime * 1.3f ) * 0.05f;
 
     // Set wind direction and strength
     m_grassConstants->WindDirection.x = windX;
