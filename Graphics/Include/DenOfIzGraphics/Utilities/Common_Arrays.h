@@ -54,6 +54,12 @@ namespace DenOfIz
         uint32_t NumElements;
     };
 
+    struct DZ_API FloatArrayArray
+    {
+        FloatArray *Elements;
+        uint32_t    NumElements;
+    };
+
     struct DZ_API Int32Array
     {
         int32_t *Elements;

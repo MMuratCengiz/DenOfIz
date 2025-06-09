@@ -73,9 +73,9 @@ void MetalCommandList::BeginRendering( const RenderingDesc &renderingDesc )
     auto passDesc = MTLRenderPassDescriptor.renderPassDescriptor;
     @autoreleasepool
     {
-        for ( auto i = 0; i < renderingDesc.RTAttachments.NumElements( ); i++ )
+        for ( uint32_t i = 0; i < renderingDesc.RTAttachments.NumElements; i++ )
         {
-            const RenderingAttachmentDesc &attachment = renderingDesc.RTAttachments.GetElement( i );
+            const RenderingAttachmentDesc &attachment = renderingDesc.RTAttachments.Elements[ i ];
             if ( attachment.Resource == nullptr )
             {
                 spdlog::error("BeginRendering called with null render target attachment at index {}", i);

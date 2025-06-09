@@ -21,29 +21,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "../IBufferResource.h"
 #include "IBottomLevelAS.h"
 #include "RayTracingData.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 namespace DenOfIz
 {
     struct DZ_API ASInstanceDesc
     {
-        IBottomLevelAS     *BLAS;
-        InteropArray<float> Transform; // TODO: InteropArray so it can be used in other languages interop, find a way to force size
-        uint32_t            ContributionToHitGroupIndex;
-        uint32_t            ID;
-        uint32_t            Mask = 0xFF;
+        IBottomLevelAS *BLAS;
+        FloatArray      Transform;
+        uint32_t        ContributionToHitGroupIndex;
+        uint32_t        ID;
+        uint32_t        Mask = 0xFF;
     };
-    template class DZ_API InteropArray<ASInstanceDesc>;
+
+    struct DZ_API ASInstanceDescArray
+    {
+        ASInstanceDesc *Elements;
+        uint32_t        NumElements;
+    };
 
     struct DZ_API TopLevelASDesc
     {
-        InteropArray<ASInstanceDesc> Instances;
-        uint32_t                     BuildFlags;
+        ASInstanceDescArray Instances;
+        uint32_t            BuildFlags;
     };
 
     struct DZ_API UpdateTransformsDesc
     {
         // Each element in the outer array is a new instance
-        InteropArray<InteropArray<float>> Transforms;
+        FloatArrayArray Transforms;
     };
 
     class DZ_API ITopLevelAS

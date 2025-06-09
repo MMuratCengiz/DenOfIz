@@ -131,7 +131,8 @@ void TextRenderingExample::Render( const uint32_t frameIndex, ICommandList *comm
     attachmentDesc.ClearColor[ 3 ] = 1.0f;
 
     RenderingDesc renderingDesc{ };
-    renderingDesc.RTAttachments.AddElement( attachmentDesc );
+    renderingDesc.RTAttachments.Elements    = &attachmentDesc;
+    renderingDesc.RTAttachments.NumElements = 1;
 
     commandList->BeginRendering( renderingDesc );
 

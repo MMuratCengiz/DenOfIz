@@ -225,8 +225,8 @@ void QuadRenderer::CreateShaderResources( )
     pixelShaderDesc.Data             = InteropUtilities::StringToBytes( RasterPixelShader );
 
     std::array<BindlessSlot, 1> bindlessSlots{ };
-    bindlessSlots[ 0 ].RegisterSpace = 0;
-    bindlessSlots[ 0 ].Binding       = 1;
+    bindlessSlots[ 0 ].RegisterSpace = 1;
+    bindlessSlots[ 0 ].Binding       = 0;
     bindlessSlots[ 0 ].MaxArraySize  = m_desc.MaxNumTextures;
 
     pixelShaderDesc.Bindless.BindlessArrays.Elements    = bindlessSlots.data( );

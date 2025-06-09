@@ -53,26 +53,26 @@ void VulkanCommandQueue::ExecuteCommandLists( const ExecuteCommandListsDesc &exe
     std::vector<VkPipelineStageFlags> waitStages;
     std::vector<VkSemaphore>          waitSemaphores;
 
-    for ( int i = 0; i < executeCommandListsDesc.WaitSemaphores.NumElements( ); i++ )
+    for ( uint32_t i = 0; i < executeCommandListsDesc.WaitSemaphores.NumElements; i++ )
     {
-        const auto *vulkanSemaphore = dynamic_cast<VulkanSemaphore *>( executeCommandListsDesc.WaitSemaphores.GetElement( i ) );
+        const auto *vulkanSemaphore = dynamic_cast<VulkanSemaphore *>( executeCommandListsDesc.WaitSemaphores.Elements[ i ] );
         waitSemaphores.push_back( vulkanSemaphore->GetSemaphore( ) );
         waitStages.push_back( VK_PIPELINE_STAGE_ALL_COMMANDS_BIT );
     }
 
     std::vector<VkSemaphore> signalSemaphores;
-    for ( int i = 0; i < executeCommandListsDesc.SignalSemaphores.NumElements( ); i++ )
+    for ( uint32_t i = 0; i < executeCommandListsDesc.SignalSemaphores.NumElements; i++ )
     {
-        const auto *vulkanSemaphore = dynamic_cast<VulkanSemaphore *>( executeCommandListsDesc.SignalSemaphores.GetElement( i ) );
+        const auto *vulkanSemaphore = dynamic_cast<VulkanSemaphore *>( executeCommandListsDesc.SignalSemaphores.Elements[ i ] );
         signalSemaphores.push_back( vulkanSemaphore->GetSemaphore( ) );
     }
 
     std::vector<VkCommandBuffer> commandBuffers;
-    commandBuffers.reserve( executeCommandListsDesc.CommandLists.NumElements( ) );
+    commandBuffers.reserve( executeCommandListsDesc.CommandLists.NumElements );
 
-    for ( int i = 0; i < executeCommandListsDesc.CommandLists.NumElements( ); i++ )
+    for ( uint32_t i = 0; i < executeCommandListsDesc.CommandLists.NumElements; i++ )
     {
-        auto *vulkanCmdList = dynamic_cast<VulkanCommandList *>( executeCommandListsDesc.CommandLists.GetElement( i ) );
+        auto *vulkanCmdList = dynamic_cast<VulkanCommandList *>( executeCommandListsDesc.CommandLists.Elements[ i ] );
         commandBuffers.push_back( vulkanCmdList->GetCommandBuffer( ) );
     }
 

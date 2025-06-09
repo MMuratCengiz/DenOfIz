@@ -83,18 +83,18 @@ void DX12CommandQueue::WaitIdle( )
 
 void DX12CommandQueue::ExecuteCommandLists( const ExecuteCommandListsDesc &executeCommandListsDesc )
 {
-    for ( int i = 0; i < executeCommandListsDesc.WaitSemaphores.NumElements( ); i++ )
+    for ( uint32_t i = 0; i < executeCommandListsDesc.WaitSemaphores.NumElements; i++ )
     {
-        const auto *dx12Semaphore = dynamic_cast<DX12Semaphore *>( executeCommandListsDesc.WaitSemaphores.GetElement( i ) );
+        const auto *dx12Semaphore = dynamic_cast<DX12Semaphore *>( executeCommandListsDesc.WaitSemaphores.Elements[ i ] );
         DX_CHECK_RESULT( m_commandQueue->Wait( dx12Semaphore->GetFence( ), dx12Semaphore->GetCurrentValue( ) ) );
     }
 
     std::vector<ID3D12CommandList *> d3dCommandLists;
-    d3dCommandLists.reserve( executeCommandListsDesc.CommandLists.NumElements( ) );
+    d3dCommandLists.reserve( executeCommandListsDesc.CommandLists.NumElements );
 
-    for ( int i = 0; i < executeCommandListsDesc.CommandLists.NumElements( ); i++ )
+    for ( uint32_t i = 0; i < executeCommandListsDesc.CommandLists.NumElements; i++ )
     {
-        const auto *dx12CmdList = dynamic_cast<DX12CommandList *>( executeCommandListsDesc.CommandLists.GetElement( i ) );
+        const auto *dx12CmdList = dynamic_cast<DX12CommandList *>( executeCommandListsDesc.CommandLists.Elements[ i ] );
         d3dCommandLists.push_back( dx12CmdList->GetCommandList( ) );
     }
 
@@ -106,9 +106,9 @@ void DX12CommandQueue::ExecuteCommandLists( const ExecuteCommandListsDesc &execu
         dx12Fence->NotifyCommandQueue( m_commandQueue.get( ) );
     }
 
-    for ( int i = 0; i < executeCommandListsDesc.SignalSemaphores.NumElements( ); i++ )
+    for ( uint32_t i = 0; i < executeCommandListsDesc.SignalSemaphores.NumElements; i++ )
     {
-        auto *dx12Semaphore = dynamic_cast<DX12Semaphore *>( executeCommandListsDesc.SignalSemaphores.GetElement( i ) );
+        auto *dx12Semaphore = dynamic_cast<DX12Semaphore *>( executeCommandListsDesc.SignalSemaphores.Elements[ i ] );
         dx12Semaphore->NotifyCommandQueue( m_commandQueue.get( ) );
     }
 }

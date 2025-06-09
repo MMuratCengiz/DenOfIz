@@ -29,11 +29,12 @@ namespace DenOfIz
         std::vector<wil::com_ptr<ID3D12CommandAllocator>>    m_commandAllocators;
         std::vector<wil::com_ptr<ID3D12GraphicsCommandList>> m_dx12CommandLists;
         std::vector<std::unique_ptr<DX12CommandList>>        m_commandLists;
+        std::vector<DX12CommandList *>                       m_commandListPtrs;
         CommandListPoolDesc                                  m_desc;
 
     public:
         DX12CommandListPool( DX12Context *context, CommandListPoolDesc desc );
-        InteropArray<ICommandList *> GetCommandLists( ) override;
+        ICommandListArray GetCommandLists( ) override;
         ~DX12CommandListPool( ) override = default;
     };
 } // namespace DenOfIz

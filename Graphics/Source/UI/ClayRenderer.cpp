@@ -67,9 +67,9 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_l
 
         m_pipelineWidgetData.resize( desc.MaxPipelineWidgets * desc.NumFrames );
         auto pipelineCommandLists = m_pipelineWidgetCommandListPool->GetCommandLists( );
-        for ( uint32_t i = 0; i < pipelineCommandLists.NumElements( ) && i < m_pipelineWidgetData.size( ); ++i )
+        for ( uint32_t i = 0; i < pipelineCommandLists.NumElements && i < m_pipelineWidgetData.size( ); ++i )
         {
-            m_pipelineWidgetData[ i ].CommandList = pipelineCommandLists.GetElement( i );
+            m_pipelineWidgetData[ i ].CommandList = pipelineCommandLists.Elements[ i ];
             m_pipelineWidgetData[ i ].Semaphore   = std::unique_ptr<ISemaphore>( m_logicalDevice->CreateSemaphore( ) );
         }
     }
@@ -82,9 +82,9 @@ ClayRenderer::ClayRenderer( const ClayRendererDesc &desc ) : m_desc( desc ), m_l
     UpdateProjectionMatrix( );
 
     auto commandLists = m_commandListPool->GetCommandLists( );
-    for ( uint32_t i = 0; i < desc.NumFrames && i < commandLists.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < desc.NumFrames && i < commandLists.NumElements; ++i )
     {
-        m_frameData[ i ].CommandList = commandLists.GetElement( i );
+        m_frameData[ i ].CommandList = commandLists.Elements[ i ];
         m_frameData[ i ].FrameFence  = std::unique_ptr<IFence>( m_logicalDevice->CreateFence( ) );
     }
 
@@ -129,11 +129,11 @@ void ClayRenderer::CreateShaderProgram( )
     psDesc.Data.Elements    = pixelShader.data( );
     psDesc.Data.NumElements = pixelShader.size( );
 
-
-    std::array<BindlessSlot, 1> bindlessSlots{ };
+    std::array<BindlessSlot, 1> bindlessSlots( { } );
     bindlessSlots[ 0 ].RegisterSpace = 0;
-    bindlessSlots[ 0 ].Binding       = 1;
+    bindlessSlots[ 0 ].Binding       = 0;
     bindlessSlots[ 0 ].MaxArraySize  = m_desc.MaxTextures;
+    bindlessSlots[ 0 ].Type          = ResourceBindingType::ShaderResource;
 
     psDesc.Bindless.BindlessArrays.Elements    = bindlessSlots.data( );
     psDesc.Bindless.BindlessArrays.NumElements = bindlessSlots.size( );
@@ -498,9 +498,14 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
                 }
             }
 
+            ICommandList *widgetCommandList = widgetData.CommandList;
+            ISemaphore   *widgetSemaphore   = widgetData.Semaphore.get( );
+
             ExecuteCommandListsDesc widgetExecuteDesc{ };
-            widgetExecuteDesc.CommandLists.AddElement( widgetData.CommandList );
-            widgetExecuteDesc.SignalSemaphores.AddElement( widgetData.Semaphore.get( ) );
+            widgetExecuteDesc.CommandLists.Elements        = &widgetCommandList;
+            widgetExecuteDesc.CommandLists.NumElements     = 1;
+            widgetExecuteDesc.SignalSemaphores.Elements    = &widgetSemaphore;
+            widgetExecuteDesc.SignalSemaphores.NumElements = 1;
             m_commandQueue->ExecuteCommandLists( widgetExecuteDesc );
 
             pipelineWidgetSemaphores.AddElement( widgetData.Semaphore.get( ) );
@@ -529,12 +534,15 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
     m_resourceTracking.BatchTransition( batchTransitionDesc );
 
     {
-        RenderingDesc            renderingDesc{ };
-        RenderingAttachmentDesc &colorAttachment = renderingDesc.RTAttachments.EmplaceElement( );
-        colorAttachment.Resource                 = frame.ColorTarget.get( );
-        colorAttachment.LoadOp                   = LoadOp::Clear;
-        colorAttachment.StoreOp                  = StoreOp::Store;
+        RenderingDesc           renderingDesc{ };
+        RenderingAttachmentDesc colorAttachment{ };
+        colorAttachment.Resource = frame.ColorTarget.get( );
+        colorAttachment.LoadOp   = LoadOp::Clear;
+        colorAttachment.StoreOp  = StoreOp::Store;
         colorAttachment.SetClearColor( 0.0f, 0.0f, 0.0f, 1.0f ); // Clear to transparent
+
+        renderingDesc.RTAttachments.Elements    = &colorAttachment;
+        renderingDesc.RTAttachments.NumElements = 1;
 
         renderingDesc.DepthAttachment.Resource = frame.DepthBuffer.get( );
         renderingDesc.DepthAttachment.LoadOp   = LoadOp::Clear;
@@ -564,12 +572,11 @@ void ClayRenderer::RenderInternal( ICommandList *commandList, Clay_RenderCommand
     uiCmdList->End( );
 
     ExecuteCommandListsDesc executeDesc{ };
-    executeDesc.CommandLists.AddElement( uiCmdList );
-    executeDesc.Signal = frame.FrameFence.get( );
-    for ( uint32_t i = 0; i < pipelineWidgetSemaphores.NumElements( ); ++i )
-    {
-        executeDesc.WaitSemaphores.AddElement( pipelineWidgetSemaphores.GetElement( i ) );
-    }
+    executeDesc.CommandLists.Elements      = &uiCmdList;
+    executeDesc.CommandLists.NumElements   = 1;
+    executeDesc.Signal                     = frame.FrameFence.get( );
+    executeDesc.WaitSemaphores.Elements    = pipelineWidgetSemaphores.Data( );
+    executeDesc.WaitSemaphores.NumElements = pipelineWidgetSemaphores.NumElements( );
 
     m_commandQueue->ExecuteCommandLists( executeDesc );
 

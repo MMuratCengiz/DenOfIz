@@ -39,8 +39,8 @@ void RootConstantExample::Render( const uint32_t frameIndex, ICommandList *comma
     quadAttachmentDesc.Resource = renderTarget;
 
     RenderingDesc quadRenderingDesc{ };
-    quadRenderingDesc.RTAttachments.AddElement( quadAttachmentDesc );
-
+    quadRenderingDesc.RTAttachments.Elements    = &quadAttachmentDesc;
+    quadRenderingDesc.RTAttachments.NumElements = 1;
     commandList->BeginRendering( quadRenderingDesc );
     const Viewport &viewport = m_swapChain->GetViewport( );
     commandList->BindViewport( viewport.X, viewport.Y, viewport.Width, viewport.Height );

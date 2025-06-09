@@ -52,15 +52,14 @@ DX12CommandListPool::DX12CommandListPool( DX12Context *context, CommandListPoolD
     for ( uint32_t i = 0; i < desc.NumCommandLists; i++ )
     {
         m_commandLists.push_back( std::make_unique<DX12CommandList>( m_context, m_commandAllocators[ i ], m_dx12CommandLists[ i ], commandListCreateInfo ) );
+        m_commandListPtrs.push_back( m_commandLists[ i ].get( ) );
     }
 }
 
-InteropArray<ICommandList *> DX12CommandListPool::GetCommandLists( )
+ICommandListArray DX12CommandListPool::GetCommandLists( )
 {
-    InteropArray<ICommandList *> commandLists( m_commandLists.size( ) );
-    for ( int i = 0; i < m_commandLists.size( ); i++ )
-    {
-        commandLists.SetElement( i, m_commandLists[ i ].get( ) );
-    }
+    ICommandListArray commandLists{ };
+    commandLists.Elements    = reinterpret_cast<ICommandList **>( m_commandListPtrs.data( ) );
+    commandLists.NumElements = static_cast<uint32_t>( m_commandListPtrs.size( ) );
     return commandLists;
 }

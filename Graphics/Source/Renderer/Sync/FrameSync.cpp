@@ -39,9 +39,9 @@ FrameSync::FrameSync( const FrameSyncDesc &desc ) : m_numFrames( desc.NumFrames 
     }
 
     auto commandLists = m_commandListPool->GetCommandLists( );
-    for ( uint32_t i = 0; i < commandLists.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < commandLists.NumElements; ++i )
     {
-        m_commandLists.push_back( commandLists.GetElement( i ) );
+        m_commandLists.push_back( commandLists.Elements[ i ] );
     }
 }
 
@@ -70,15 +70,24 @@ ICommandList *FrameSync::GetCommandList( const uint32_t frame ) const
 
 void FrameSync::ExecuteCommandList( const uint32_t frame, const InteropArray<ISemaphore*>& additionalSemaphores ) const
 {
-    ExecuteCommandListsDesc desc{ };
-    desc.Signal = m_frameFences[ frame ].get( );
-    desc.WaitSemaphores.AddElement( m_imageAvailableSemaphores[ frame ].get( ) );
+    std::vector<ISemaphore*> waitSemaphores;
+    waitSemaphores.push_back( m_imageAvailableSemaphores[ frame ].get( ) );
     for ( int i = 0; i < additionalSemaphores.NumElements( ); ++i )
     {
-        desc.WaitSemaphores.AddElement( additionalSemaphores.GetElement( i ) );
+        waitSemaphores.push_back( additionalSemaphores.GetElement( i ) );
     }
-    desc.SignalSemaphores.AddElement( m_renderFinishedSemaphores[ frame ].get( ) );
-    desc.CommandLists.AddElement( GetCommandList( frame ) );
+    
+    ISemaphore* signalSemaphore = m_renderFinishedSemaphores[ frame ].get( );
+    ICommandList* commandList = GetCommandList( frame );
+    
+    ExecuteCommandListsDesc desc{ };
+    desc.Signal = m_frameFences[ frame ].get( );
+    desc.WaitSemaphores.Elements = waitSemaphores.data( );
+    desc.WaitSemaphores.NumElements = static_cast<uint32_t>( waitSemaphores.size( ) );
+    desc.SignalSemaphores.Elements = &signalSemaphore;
+    desc.SignalSemaphores.NumElements = 1;
+    desc.CommandLists.Elements = &commandList;
+    desc.CommandLists.NumElements = 1;
     m_commandQueue->ExecuteCommandLists( desc );
 }
 
@@ -89,9 +98,12 @@ uint32_t FrameSync::AcquireNextImage( const uint32_t frame ) const
 
 PresentResult FrameSync::Present( const uint32_t imageIndex ) const
 {
+    ISemaphore* waitSemaphore = m_renderFinishedSemaphores[ m_currentFrame ].get( );
+    
     PresentDesc presentDesc{ };
     presentDesc.Image = imageIndex;
-    presentDesc.WaitSemaphores.AddElement( m_renderFinishedSemaphores[ m_currentFrame ].get( ) );
+    presentDesc.WaitSemaphores.Elements = &waitSemaphore;
+    presentDesc.WaitSemaphores.NumElements = 1;
     return m_swapChain->Present( presentDesc );
 }
 

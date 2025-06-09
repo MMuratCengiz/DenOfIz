@@ -28,8 +28,8 @@ namespace DenOfIz
 {
     struct DZ_API PresentDesc
     {
-        uint32_t                   Image;
-        InteropArray<ISemaphore *> WaitSemaphores;
+        uint32_t         Image;
+        ISemaphoreArray  WaitSemaphores;
     };
 
     enum class PresentResult

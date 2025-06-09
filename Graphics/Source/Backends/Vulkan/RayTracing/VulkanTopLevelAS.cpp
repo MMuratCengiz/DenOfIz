@@ -28,10 +28,10 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
 {
     m_flags = VulkanEnumConverter::ConvertAccelerationStructureBuildFlags( desc.BuildFlags );
     // Prepare instance descriptions
-    m_instances.resize( desc.Instances.NumElements( ) );
-    for ( uint32_t i = 0; i < desc.Instances.NumElements( ); ++i )
+    m_instances.resize( desc.Instances.NumElements );
+    for ( uint32_t i = 0; i < desc.Instances.NumElements; ++i )
     {
-        const ASInstanceDesc &instanceDesc = desc.Instances.GetElement( i );
+        const ASInstanceDesc &instanceDesc = desc.Instances.Elements[ i ];
         auto                 *vkBLAS       = dynamic_cast<VulkanBottomLevelAS *>( instanceDesc.BLAS );
         if ( vkBLAS == nullptr )
         {
@@ -40,7 +40,7 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
         }
 
         VkAccelerationStructureInstanceKHR &vkInstance = m_instances[ i ];
-        memcpy( vkInstance.transform.matrix, instanceDesc.Transform.Data( ), 12 * sizeof( float ) );
+        memcpy( vkInstance.transform.matrix, instanceDesc.Transform.Elements, 12 * sizeof( float ) );
         vkInstance.instanceCustomIndex                    = instanceDesc.ID;
         vkInstance.mask                                   = instanceDesc.Mask;
         vkInstance.instanceShaderBindingTableRecordOffset = instanceDesc.ContributionToHitGroupIndex;
@@ -48,14 +48,14 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
         vkInstance.flags                                  = VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR;
     }
 
-    m_buildRangeInfo.primitiveCount  = desc.Instances.NumElements( );
+    m_buildRangeInfo.primitiveCount  = desc.Instances.NumElements;
     m_buildRangeInfo.primitiveOffset = 0;
     m_buildRangeInfo.firstVertex     = 0;
     m_buildRangeInfo.transformOffset = 0;
     m_buildRangeInfoPtr[ 0 ]         = &m_buildRangeInfo;
 
     BufferDesc instanceBufferDesc = { };
-    instanceBufferDesc.NumBytes   = desc.Instances.NumElements( ) * sizeof( VkAccelerationStructureInstanceKHR );
+    instanceBufferDesc.NumBytes   = desc.Instances.NumElements * sizeof( VkAccelerationStructureInstanceKHR );
     instanceBufferDesc.Descriptor = ResourceDescriptor::RWBuffer;
     instanceBufferDesc.Usages     = ResourceUsage::AccelerationStructureGeometry;
     instanceBufferDesc.HeapType   = HeapType::CPU_GPU;
@@ -82,7 +82,7 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
 
     VkAccelerationStructureBuildSizesInfoKHR sizeInfo = { };
     sizeInfo.sType                                    = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-    uint32_t numElements                              = desc.Instances.NumElements( );
+    uint32_t numElements                              = desc.Instances.NumElements;
     vkGetAccelerationStructureBuildSizesKHR( m_context->LogicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildInfo, &numElements, &sizeInfo );
 
     // Create acceleration structure buffer
@@ -118,11 +118,11 @@ VulkanTopLevelAS::VulkanTopLevelAS( VulkanContext *context, const TopLevelASDesc
 
 void VulkanTopLevelAS::UpdateInstanceTransforms( const UpdateTransformsDesc &desc )
 {
-    for ( int i = 0; i < desc.Transforms.NumElements( ); i++ )
+    for ( uint32_t i = 0; i < desc.Transforms.NumElements; i++ )
     {
-        InteropArray<float>                 transform  = desc.Transforms.GetElement( i );
+        const FloatArray                   &transform  = desc.Transforms.Elements[ i ];
         VkAccelerationStructureInstanceKHR &vkInstance = m_instances[ i ];
-        memcpy( vkInstance.transform.matrix, transform.Data( ), 12 * sizeof( float ) );
+        memcpy( vkInstance.transform.matrix, transform.Elements, 12 * sizeof( float ) );
     }
 
     void *instanceBufferMemory = m_instanceBuffer->MapMemory( );

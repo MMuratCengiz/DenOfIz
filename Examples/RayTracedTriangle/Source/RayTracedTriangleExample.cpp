@@ -114,17 +114,23 @@ void RayTracedTriangleExample::CreateRenderTargets( )
 
 void RayTracedTriangleExample::CreateRayTracingPipeline( )
 {
-    std::array<ShaderStageDesc, 3> shaderStages( { } );
-    ShaderStageDesc               &rayGenShaderDesc = shaderStages[ 0 ];
-    rayGenShaderDesc.Stage                          = ShaderStage::Raygen;
-    rayGenShaderDesc.Path                           = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
-    rayGenShaderDesc.EntryPoint                     = "MyRaygenShader";
+    std::array<ShaderStageDesc, 3>     shaderStages( { } );
+    std::array<ResourceBindingSlot, 1> localBindings( { } );
+    localBindings[ 0 ].Binding       = 0;
+    localBindings[ 0 ].RegisterSpace = 29;
+    localBindings[ 0 ].Type          = ResourceBindingType::ConstantBuffer;
 
-    ShaderStageDesc &closestHitShaderDesc = shaderStages[ 1 ];
-    closestHitShaderDesc.Stage            = ShaderStage::ClosestHit;
-    closestHitShaderDesc.Path             = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
-    closestHitShaderDesc.EntryPoint       = "MyClosestHitShader";
-    closestHitShaderDesc.RayTracing.MarkCbvAsLocal( 0, 29 );
+    ShaderStageDesc &rayGenShaderDesc = shaderStages[ 0 ];
+    rayGenShaderDesc.Stage            = ShaderStage::Raygen;
+    rayGenShaderDesc.Path             = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
+    rayGenShaderDesc.EntryPoint       = "MyRaygenShader";
+
+    ShaderStageDesc &closestHitShaderDesc                     = shaderStages[ 1 ];
+    closestHitShaderDesc.Stage                                = ShaderStage::ClosestHit;
+    closestHitShaderDesc.Path                                 = "Assets/Shaders/RayTracing/RayTracedTriangle.hlsl";
+    closestHitShaderDesc.EntryPoint                           = "MyClosestHitShader";
+    closestHitShaderDesc.RayTracing.LocalBindings.Elements    = localBindings.data( );
+    closestHitShaderDesc.RayTracing.LocalBindings.NumElements = localBindings.size( );
 
     ShaderStageDesc &missShaderDesc = shaderStages[ 2 ];
     missShaderDesc.Stage            = ShaderStage::Miss;
@@ -239,7 +245,7 @@ void RayTracedTriangleExample::CreateResources( )
     batchResourceCopy.CopyToGPUBuffer( indexCopy );
 
     CopyToGpuBufferDesc rayGenCBCopy{ };
-    rayGenCBCopy.DstBuffer     = m_rayGenCBResource.get( );
+    rayGenCBCopy.DstBuffer        = m_rayGenCBResource.get( );
     rayGenCBCopy.Data.Elements    = rayGenCBArray.Data( );
     rayGenCBCopy.Data.NumElements = rayGenCBArray.NumElements( );
     batchResourceCopy.CopyToGPUBuffer( rayGenCBCopy );
@@ -272,16 +278,18 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
     instanceDesc.BLAS = m_bottomLevelAS.get( );
     instanceDesc.Mask = 255;
 
-    constexpr float transform[ 3 ][ 4 ] = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } };
-    instanceDesc.Transform.MemCpy( transform, sizeof( transform ) );
+    float transform[ 3 ][ 4 ]          = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } };
+    instanceDesc.Transform.Elements    = &transform[ 0 ][ 0 ];
+    instanceDesc.Transform.NumElements = 3 * 4;
 
     TopLevelASDesc topLevelASDesc{ };
-    topLevelASDesc.BuildFlags = ASBuildFlags::PreferFastTrace;
-    topLevelASDesc.Instances.AddElement( instanceDesc );
-    m_topLevelAS = std::unique_ptr<ITopLevelAS>( m_logicalDevice->CreateTopLevelAS( topLevelASDesc ) );
+    topLevelASDesc.BuildFlags            = ASBuildFlags::PreferFastTrace;
+    topLevelASDesc.Instances.Elements    = &instanceDesc;
+    topLevelASDesc.Instances.NumElements = 1;
+    m_topLevelAS                         = std::unique_ptr<ITopLevelAS>( m_logicalDevice->CreateTopLevelAS( topLevelASDesc ) );
 
     const auto    commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( { commandQueue.get( ), 1 } ) );
-    ICommandList *commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
+    ICommandList *commandList     = commandListPool->GetCommandLists( ).Elements[ 0 ];
     const auto    syncFence       = std::unique_ptr<IFence>( m_logicalDevice->CreateFence( ) );
 
     commandList->Begin( );
@@ -292,8 +300,9 @@ void RayTracedTriangleExample::CreateAccelerationStructures( )
     commandList->End( );
 
     ExecuteCommandListsDesc executeDesc{ };
-    executeDesc.CommandLists.AddElement( commandList );
-    executeDesc.Signal = syncFence.get( );
+    executeDesc.CommandLists.Elements    = &commandList;
+    executeDesc.CommandLists.NumElements = 1;
+    executeDesc.Signal                   = syncFence.get( );
     commandQueue->ExecuteCommandLists( executeDesc );
 
     syncFence->Wait( );

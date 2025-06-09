@@ -78,8 +78,12 @@ void SimpleTriangleExample::Render( const uint32_t frameIndex, ICommandList *com
     batchTransitionDesc.TransitionTexture( renderTarget, ResourceUsage::RenderTarget );
     m_resourceTracking.BatchTransition( batchTransitionDesc );
 
+    RenderingAttachmentDesc attachmentDesc{ };
+    attachmentDesc.Resource = renderTarget;
+
     RenderingDesc renderingDesc{ };
-    renderingDesc.RTAttachments.AddElement( { .Resource = renderTarget } );
+    renderingDesc.RTAttachments.Elements    = &attachmentDesc;
+    renderingDesc.RTAttachments.NumElements = 1;
     commandList->BeginRendering( renderingDesc );
 
     const auto viewport = m_swapChain->GetViewport( );

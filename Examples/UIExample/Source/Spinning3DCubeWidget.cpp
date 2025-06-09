@@ -306,12 +306,15 @@ void Spinning3DCubeWidget::ExecuteCustomPipeline( const WidgetExecutePipelineDes
     batchTransitionDesc.TransitionTexture( depthBuffer, ResourceUsage::DepthWrite );
     m_resourceTracking.BatchTransition( batchTransitionDesc );
 
-    RenderingDesc            renderingDesc{ };
-    RenderingAttachmentDesc &colorAttachment = renderingDesc.RTAttachments.EmplaceElement( );
-    colorAttachment.Resource                 = renderTarget;
-    renderingDesc.DepthAttachment.Resource   = depthBuffer;
-    renderingDesc.RenderAreaWidth            = 512;
-    renderingDesc.RenderAreaHeight           = 512;
+    RenderingAttachmentDesc attachmentDesc{ };
+    attachmentDesc.Resource = renderTarget;
+
+    RenderingDesc renderingDesc{ };
+    renderingDesc.RTAttachments.Elements    = &attachmentDesc;
+    renderingDesc.RTAttachments.NumElements = 1;
+    renderingDesc.DepthAttachment.Resource  = depthBuffer;
+    renderingDesc.RenderAreaWidth           = 512;
+    renderingDesc.RenderAreaHeight          = 512;
 
     context.CommandList->BeginRendering( renderingDesc );
     context.CommandList->BindViewport( 0.0f, 0.0f, rtSize, rtSize );

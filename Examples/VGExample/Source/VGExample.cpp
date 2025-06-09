@@ -107,10 +107,12 @@ void VGExample::Render( const uint32_t frameIndex, ICommandList *commandList )
     batchTransitionDesc.TransitionTexture( renderTarget, ResourceUsage::RenderTarget );
     m_resourceTracking.BatchTransition( batchTransitionDesc );
 
-    RenderingDesc            renderingDesc{ };
-    RenderingAttachmentDesc &renderingAttachmentDesc = renderingDesc.RTAttachments.EmplaceElement( );
-    renderingAttachmentDesc.Resource                 = renderTarget;
+    RenderingDesc           renderingDesc{ };
+    RenderingAttachmentDesc renderingAttachmentDesc{ };
+    renderingAttachmentDesc.Resource = renderTarget;
     renderingAttachmentDesc.SetClearColor( 0.31, 0.3, 0.33, 1.0 );
+    renderingDesc.RTAttachments.Elements    = &renderingAttachmentDesc;
+    renderingDesc.RTAttachments.NumElements = 1;
     commandList->BeginRendering( renderingDesc );
 
     const auto viewport = m_swapChain->GetViewport( );
@@ -270,8 +272,8 @@ void VGExample::CreateStarTexture( )
     CopyDataToTextureDesc copyDesc{ };
     copyDesc.Data.Elements    = pixelData.data( );
     copyDesc.Data.NumElements = pixelData.size( );
-    copyDesc.DstTexture = m_starTexture.get( );
-    copyDesc.MipLevel   = 0;
+    copyDesc.DstTexture       = m_starTexture.get( );
+    copyDesc.MipLevel         = 0;
     batchCopy.CopyDataToTexture( copyDesc );
 
     batchCopy.Submit( );

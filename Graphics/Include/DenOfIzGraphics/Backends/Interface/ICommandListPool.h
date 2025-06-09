@@ -32,7 +32,7 @@ namespace DenOfIz
     class DZ_API ICommandListPool
     {
     public:
-        virtual InteropArray<ICommandList *> GetCommandLists( ) = 0;
-        virtual ~ICommandListPool( )                            = default;
+        virtual ICommandListArray GetCommandLists( ) = 0;
+        virtual ~ICommandListPool( )                 = default;
     };
 } // namespace DenOfIz

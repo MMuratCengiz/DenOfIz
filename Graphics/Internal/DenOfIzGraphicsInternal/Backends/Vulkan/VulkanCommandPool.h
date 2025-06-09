@@ -28,13 +28,14 @@ namespace DenOfIz
     {
         VulkanContext                                  *m_context;
         std::vector<std::unique_ptr<VulkanCommandList>> m_commandLists;
+        std::vector<VulkanCommandList *>               m_commandListPtrs;
         CommandListPoolDesc                             m_desc;
         VkCommandPool                                   m_commandPool{ };
         VulkanCommandQueue                             *m_commandQueue;
 
     public:
         VulkanCommandPool( VulkanContext *context, const CommandListPoolDesc &desc );
-        InteropArray<ICommandList *> GetCommandLists( ) override;
+        ICommandListArray GetCommandLists( ) override;
         [[nodiscard]] QueueType      GetQueueType( ) const;
         ~VulkanCommandPool( ) override = default;
     };

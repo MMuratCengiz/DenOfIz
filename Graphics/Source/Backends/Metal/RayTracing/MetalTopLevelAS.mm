@@ -24,17 +24,17 @@ using namespace DenOfIz;
 
 MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &desc ) : m_context( context ), m_desc( desc )
 {
-    m_instanceBuffer = [m_context->Device newBufferWithLength:sizeof( MTLAccelerationStructureUserIDInstanceDescriptor ) * m_desc.Instances.NumElements( )
+    m_instanceBuffer = [m_context->Device newBufferWithLength:sizeof( MTLAccelerationStructureUserIDInstanceDescriptor ) * m_desc.Instances.NumElements
                                                       options:MTLResourceStorageModeShared];
     [m_instanceBuffer setLabel:@"Instance Descriptor Buffer"];
 
     m_instanceDescriptors = (MTLAccelerationStructureUserIDInstanceDescriptor *)m_instanceBuffer.contents;
     m_indirectResources.push_back( m_instanceBuffer );
 
-    m_blasList = [NSMutableArray arrayWithCapacity:desc.Instances.NumElements( )];
-    for ( size_t i = 0; i < desc.Instances.NumElements( ); ++i )
+    m_blasList = [NSMutableArray arrayWithCapacity:desc.Instances.NumElements];
+    for ( size_t i = 0; i < desc.Instances.NumElements; ++i )
     {
-        const ASInstanceDesc &instanceDesc = desc.Instances.GetElement( i );
+        const ASInstanceDesc &instanceDesc = desc.Instances.Elements[ i ];
         MetalBottomLevelAS   *blas         = dynamic_cast<MetalBottomLevelAS *>( instanceDesc.BLAS );
 
         if ( blas == nullptr )
@@ -52,7 +52,7 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
         instance->options                                          = blas->Options( );
         instance->mask                                             = instanceDesc.Mask;
 
-        const float *transformData = instanceDesc.Transform.Data( );
+        const float *transformData = instanceDesc.Transform.Elements;
         for ( int row = 0; row < 3; ++row )
         {
             for ( int col = 0; col < 4; ++col )
@@ -71,7 +71,7 @@ MetalTopLevelAS::MetalTopLevelAS( MetalContext *context, const TopLevelASDesc &d
     m_descriptor                                 = [MTLInstanceAccelerationStructureDescriptor descriptor];
     m_descriptor.instancedAccelerationStructures = m_blasList;
     m_descriptor.instanceDescriptorBuffer        = m_instanceBuffer;
-    m_descriptor.instanceCount                   = desc.Instances.NumElements( );
+    m_descriptor.instanceCount                   = desc.Instances.NumElements;
     m_descriptor.instanceDescriptorType          = MTLAccelerationStructureInstanceDescriptorTypeUserID;
     if ( m_desc.BuildFlags & ASBuildFlags::AllowUpdate )
     {
@@ -146,9 +146,9 @@ const std::vector<id<MTLResource>> &MetalTopLevelAS::IndirectResources( ) const
 
 void MetalTopLevelAS::UpdateInstanceTransforms( const UpdateTransformsDesc &desc )
 {
-    for ( size_t i = 0; i < desc.Transforms.NumElements( ); ++i )
+    for ( size_t i = 0; i < desc.Transforms.NumElements; ++i )
     {
-        const float                                      *transformData = desc.Transforms.GetElement( i ).Data( );
+        const float                                      *transformData = desc.Transforms.Elements[ i ].Elements;
         MTLAccelerationStructureUserIDInstanceDescriptor *instance      = &m_instanceDescriptors[ i ];
 
         for ( int row = 0; row < 3; ++row )

@@ -342,7 +342,8 @@ void AnimatedFoxExample::Render( const uint32_t frameIndex, ICommandList *comman
     attachmentDesc.SetClearColor( 0.1f, 0.1f, 0.2f, 1.0f );
 
     RenderingDesc renderingDesc;
-    renderingDesc.RTAttachments.AddElement( attachmentDesc );
+    renderingDesc.RTAttachments.Elements = &attachmentDesc;
+    renderingDesc.RTAttachments.NumElements = 1;
 
     commandList->BeginRendering( renderingDesc );
 

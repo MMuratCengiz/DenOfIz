@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "RayTracing/IBottomLevelAS.h"
 #include "RayTracing/IShaderBindingTable.h"
 #include "RayTracing/ITopLevelAS.h"
+#include "DenOfIzGraphics/Utilities/Common_Arrays.h"
 
 namespace DenOfIz
 {
@@ -58,6 +59,12 @@ namespace DenOfIz
         }
     };
 
+    struct DZ_API RenderingAttachmentDescArray
+    {
+        RenderingAttachmentDesc *Elements;
+        uint32_t                 NumElements;
+    };
+
     struct DZ_API RenderingDesc
     {
         RenderingAttachmentDesc DepthAttachment;
@@ -69,10 +76,8 @@ namespace DenOfIz
         float    RenderAreaOffsetY = 0.0f;
         uint32_t LayerCount        = 1;
 
-        InteropArray<RenderingAttachmentDesc> RTAttachments;
-        DZ_ARRAY_ACCESS( RenderingAttachmentDesc, RTAttachment, RTAttachments )
+        RenderingAttachmentDescArray RTAttachments;
     };
-    template class DZ_API InteropArray<RenderingAttachmentDesc>;
 
     struct DZ_API CopyBufferRegionDesc
     {
@@ -154,8 +159,8 @@ namespace DenOfIz
 
     struct DZ_API UpdateTopLevelASDesc
     {
-        ITopLevelAS                      *TopLevelAS = nullptr;
-        InteropArray<InteropArray<float>> Transforms;
+        ITopLevelAS      *TopLevelAS = nullptr;
+        FloatArrayArray   Transforms;
     };
 
     struct DZ_API BuildBottomLevelASDesc
@@ -196,5 +201,10 @@ namespace DenOfIz
 
         virtual const QueueType GetQueueType( ) = 0;
     };
-    template class DZ_API InteropArray<ICommandList *>;
+
+    struct DZ_API ICommandListArray
+    {
+        ICommandList **Elements;
+        uint32_t       NumElements;
+    };
 } // namespace DenOfIz

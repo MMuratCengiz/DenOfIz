@@ -85,18 +85,20 @@ namespace DenOfIz
         uint32_t MaxRecursionDepth    = 1;
     };
 
+    struct DZ_API ResourceBindingSlotArray
+    {
+        ResourceBindingSlot *Elements;
+        uint32_t             NumElements;
+    };
+
     struct DZ_API RayTracingShaderDesc
     {
         // For metal, it needs to know before compiling what the hit group is otherwise intersection shaders do not work
-        HitGroupType                      HitGroupType = HitGroupType::Triangles;
-        InteropArray<ResourceBindingSlot> LocalBindings;
+        HitGroupType             HitGroupType = HitGroupType::Triangles;
+        ResourceBindingSlotArray LocalBindings;
         // Local bindings are used to mark resources as local, so they are not included in the global resource list
         // The binding will be added to the corresponding ShaderDataLayoutDesc in the corresponding index of LocalRootSignatureDesc at
         // ShaderReflectDesc.LocalRootSignatures[shaderIndex], where shaderIndex is the index of the shader in the order of shaders provided to CompileDesc.
-        void MarkCbvAsLocal( uint32_t binding, uint32_t registerSpace );
-        void MarkSrvAsLocal( uint32_t binding, uint32_t registerSpace );
-        void MarkUavAsLocal( uint32_t binding, uint32_t registerSpace );
-        void MarkSamplerAsLocal( uint32_t binding, uint32_t registerSpace );
     };
 
     struct DZ_API BindlessSlot
@@ -107,7 +109,7 @@ namespace DenOfIz
         uint32_t            MaxArraySize  = 1024;
     };
 
-    struct DZ_API BindlessArray
+    struct DZ_API BindlessSlotArray
     {
         BindlessSlot *Elements;
         uint32_t      NumElements;
@@ -115,7 +117,7 @@ namespace DenOfIz
 
     struct DZ_API BindlessDesc
     {
-        BindlessArray BindlessArrays;
+        BindlessSlotArray BindlessArrays;
     };
 
     enum class DZ_API CodePage

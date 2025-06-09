@@ -423,7 +423,8 @@ void UIExample::Render( const uint32_t frameIndex, ICommandList *commandList )
     attachmentDesc.SetClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 
     RenderingDesc renderingDesc{ };
-    renderingDesc.RTAttachments.AddElement( attachmentDesc );
+    renderingDesc.RTAttachments.Elements = &attachmentDesc;
+    renderingDesc.RTAttachments.NumElements = 1;
 
     commandList->BeginRendering( renderingDesc );
 

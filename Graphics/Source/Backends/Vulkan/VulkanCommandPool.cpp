@@ -38,16 +38,15 @@ VulkanCommandPool::VulkanCommandPool( VulkanContext *context, const CommandListP
         commandListDesc.QueueType = GetQueueType( );
 
         m_commandLists.emplace_back( std::make_unique<VulkanCommandList>( context, commandListDesc, m_commandPool ) );
+        m_commandListPtrs.push_back( m_commandLists[ i ].get( ) );
     }
 }
 
-InteropArray<ICommandList *> VulkanCommandPool::GetCommandLists( )
+ICommandListArray VulkanCommandPool::GetCommandLists( )
 {
-    InteropArray<ICommandList *> commandLists( m_commandLists.size( ) );
-    for ( int i = 0; i < m_commandLists.size( ); i++ )
-    {
-        commandLists.SetElement( i, m_commandLists[ i ].get( ) );
-    }
+    ICommandListArray commandLists;
+    commandLists.Elements    = reinterpret_cast<ICommandList **>( m_commandListPtrs.data( ) );
+    commandLists.NumElements = static_cast<uint32_t>( m_commandListPtrs.size( ) );
     return commandLists;
 }
 

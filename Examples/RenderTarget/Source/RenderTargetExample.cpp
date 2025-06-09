@@ -60,9 +60,9 @@ void RenderTargetExample::Init( )
     m_deferredCommandListPool           = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( commandListPoolDesc ) );
 
     auto commandLists = m_deferredCommandListPool->GetCommandLists( );
-    for ( int i = 0; i < commandLists.NumElements( ); ++i )
+    for ( int i = 0; i < commandLists.NumElements; ++i )
     {
-        m_deferredCommandLists[ i ] = commandLists.GetElement( i );
+        m_deferredCommandLists[ i ] = commandLists.Elements[ i ];
         m_deferredSemaphores[ i ]   = std::unique_ptr<ISemaphore>( m_logicalDevice->CreateSemaphore( ) );
     }
 
@@ -78,7 +78,7 @@ void RenderTargetExample::Init( )
 
 void RenderTargetExample::RenderDeferredImage( const uint32_t frameIndex )
 {
-    const auto &m_deferredCommandList = m_deferredCommandLists[ frameIndex ];
+    auto &m_deferredCommandList = m_deferredCommandLists[ frameIndex ];
     m_deferredCommandList->Begin( );
 
     BatchTransitionDesc batchTransitionDesc{ m_deferredCommandList };
@@ -88,8 +88,9 @@ void RenderTargetExample::RenderDeferredImage( const uint32_t frameIndex )
     RenderingAttachmentDesc renderingAttachmentDesc{ };
     renderingAttachmentDesc.Resource = m_deferredRenderTargets[ frameIndex ].get( );
 
-    RenderingDesc renderingDesc{ };
-    renderingDesc.RTAttachments.AddElement( renderingAttachmentDesc );
+    RenderingDesc renderingDesc;
+    renderingDesc.RTAttachments.Elements    = &renderingAttachmentDesc;
+    renderingDesc.RTAttachments.NumElements = 1;
 
     m_deferredCommandList->BeginRendering( renderingDesc );
 
@@ -102,8 +103,11 @@ void RenderTargetExample::RenderDeferredImage( const uint32_t frameIndex )
     m_deferredCommandList->End( );
 
     ExecuteCommandListsDesc executeCommandListsDesc{ };
-    executeCommandListsDesc.CommandLists.AddElement( m_deferredCommandList );
-    executeCommandListsDesc.SignalSemaphores.AddElement( m_deferredSemaphores[ frameIndex ].get( ) );
+    executeCommandListsDesc.CommandLists.Elements        = &m_deferredCommandList;
+    executeCommandListsDesc.CommandLists.NumElements     = 1;
+    ISemaphore *semaphore                                = m_deferredSemaphores[ frameIndex ].get( );
+    executeCommandListsDesc.SignalSemaphores.Elements    = &semaphore;
+    executeCommandListsDesc.SignalSemaphores.NumElements = 1;
     m_graphicsQueue->ExecuteCommandLists( executeCommandListsDesc );
 }
 
@@ -121,8 +125,9 @@ void RenderTargetExample::Render( const uint32_t frameIndex, ICommandList *comma
     RenderingAttachmentDesc quadAttachmentDesc{ };
     quadAttachmentDesc.Resource = renderTarget;
 
-    RenderingDesc quadRenderingDesc{ };
-    quadRenderingDesc.RTAttachments.AddElement( quadAttachmentDesc );
+    RenderingDesc quadRenderingDesc;
+    quadRenderingDesc.RTAttachments.Elements = &quadAttachmentDesc;
+    quadRenderingDesc.RTAttachments.NumElements = 1;
 
     commandList->BeginRendering( quadRenderingDesc );
 

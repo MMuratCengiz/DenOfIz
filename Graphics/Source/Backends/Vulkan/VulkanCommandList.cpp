@@ -67,9 +67,9 @@ void VulkanCommandList::BeginRendering( const RenderingDesc &renderingDesc )
 
     std::vector<VkRenderingAttachmentInfo> colorAttachments;
 
-    for ( int i = 0; i < renderingDesc.RTAttachments.NumElements( ); ++i )
+    for ( uint32_t i = 0; i < renderingDesc.RTAttachments.NumElements; ++i )
     {
-        const auto &colorAttachment = renderingDesc.RTAttachments.GetElement( i );
+        const auto &colorAttachment = renderingDesc.RTAttachments.Elements[ i ];
         if ( colorAttachment.Resource == nullptr )
         {
             spdlog::error( "BeginRendering called with null render target attachment at index {}", i );

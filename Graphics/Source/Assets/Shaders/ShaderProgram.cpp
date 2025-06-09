@@ -73,6 +73,7 @@ public:
     ShaderReflectDesc                                 m_reflectDesc;
     ShaderProgramDesc                                 m_desc;
     std::vector<ByteArray>                            m_dataToClean;
+    std::vector<ResourceBindingSlotArray>             m_localBindingsToClean;
 
     explicit Impl( const ShaderProgramDesc &desc ) : m_desc( desc )
     {
@@ -111,6 +112,7 @@ ShaderProgram::ShaderProgram( const ShaderAsset &asset ) : m_pImpl( std::make_un
         m_pImpl->m_dataToClean.push_back( ownedShader->SPIRV );
         m_pImpl->m_dataToClean.push_back( ownedShader->Reflection );
     }
+
     m_pImpl->m_reflectDesc     = shader.ReflectDesc;
     m_pImpl->m_desc            = { };
     m_pImpl->m_desc.RayTracing = shader.RayTracing;

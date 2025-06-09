@@ -49,9 +49,9 @@ void MetalCommandQueue::ExecuteCommandLists(const ExecuteCommandListsDesc& execu
     @autoreleasepool
     {
         bool waitRequired = false;
-        for (int i = 0; i < executeCommandListsDesc.WaitSemaphores.NumElements(); ++i)
+        for (uint32_t i = 0; i < executeCommandListsDesc.WaitSemaphores.NumElements; ++i)
         {
-            MetalSemaphore* semaphore = static_cast<MetalSemaphore*>(executeCommandListsDesc.WaitSemaphores.GetElement(i));
+            MetalSemaphore* semaphore = static_cast<MetalSemaphore*>(executeCommandListsDesc.WaitSemaphores.Elements[i]);
             if (semaphore->IsSignaled())
             {
                 waitRequired = true;
@@ -63,9 +63,9 @@ void MetalCommandQueue::ExecuteCommandLists(const ExecuteCommandListsDesc& execu
         {
             id<MTLCommandBuffer> waitCommandBuffer = [m_queue commandBufferWithUnretainedReferences];
 
-            for (int i = 0; i < executeCommandListsDesc.WaitSemaphores.NumElements(); ++i)
+            for (uint32_t i = 0; i < executeCommandListsDesc.WaitSemaphores.NumElements; ++i)
             {
-                MetalSemaphore* semaphore = static_cast<MetalSemaphore*>(executeCommandListsDesc.WaitSemaphores.GetElement(i));
+                MetalSemaphore* semaphore = static_cast<MetalSemaphore*>(executeCommandListsDesc.WaitSemaphores.Elements[i]);
                 if (semaphore->IsSignaled())
                 {
                     semaphore->WaitFor(waitCommandBuffer);
@@ -77,9 +77,9 @@ void MetalCommandQueue::ExecuteCommandLists(const ExecuteCommandListsDesc& execu
             waitCommandBuffer = nil;
         }
 
-        for (int i = 0; i < executeCommandListsDesc.CommandLists.NumElements(); i++)
+        for (uint32_t i = 0; i < executeCommandListsDesc.CommandLists.NumElements; i++)
         {
-            MetalCommandList* cmdList = static_cast<MetalCommandList*>(executeCommandListsDesc.CommandLists.GetElement(i));
+            MetalCommandList* cmdList = static_cast<MetalCommandList*>(executeCommandListsDesc.CommandLists.Elements[i]);
 
             if (executeCommandListsDesc.Signal)
             {
@@ -87,9 +87,9 @@ void MetalCommandQueue::ExecuteCommandLists(const ExecuteCommandListsDesc& execu
                 metalFence->NotifyOnCommandBufferCompletion(cmdList->GetCommandBuffer());
             }
 
-            for (int j = 0; j < executeCommandListsDesc.SignalSemaphores.NumElements(); ++j)
+            for (uint32_t j = 0; j < executeCommandListsDesc.SignalSemaphores.NumElements; ++j)
             {
-                MetalSemaphore* metalSemaphore = static_cast<MetalSemaphore*>(executeCommandListsDesc.SignalSemaphores.GetElement(j));
+                MetalSemaphore* metalSemaphore = static_cast<MetalSemaphore*>(executeCommandListsDesc.SignalSemaphores.Elements[j]);
                 metalSemaphore->NotifyOnCommandBufferCompletion(cmdList->GetCommandBuffer());
             }
 

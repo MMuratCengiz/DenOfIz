@@ -63,12 +63,12 @@ void ShaderAssetWriter::Write( const ShaderAsset &shaderAsset )
         m_writer->WriteUInt64( stage.Reflection.NumElements( ) );
         m_writer->WriteBytes( stage.Reflection );
 
-        const uint32_t numLocalBindings = stage.RayTracing.LocalBindings.NumElements( );
+        const uint32_t numLocalBindings = stage.RayTracing.LocalBindings.NumElements;
         m_writer->WriteUInt32( numLocalBindings );
 
         for ( uint32_t j = 0; j < numLocalBindings; ++j )
         {
-            const ResourceBindingSlot &binding = stage.RayTracing.LocalBindings.GetElement( j );
+            const ResourceBindingSlot &binding = stage.RayTracing.LocalBindings.Elements[ j ];
             m_writer->WriteUInt32( binding.RegisterSpace );
             m_writer->WriteUInt32( binding.Binding );
             m_writer->WriteUInt32( static_cast<uint32_t>( binding.Type ) );

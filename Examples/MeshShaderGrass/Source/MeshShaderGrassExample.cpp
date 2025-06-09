@@ -81,9 +81,10 @@ void MeshShaderGrassExample::Render( uint32_t frameIndex, ICommandList *commandL
     depthAttachmentDesc.ClearDepthStencil[ 0 ] = 1.0f;
     depthAttachmentDesc.ClearDepthStencil[ 1 ] = 0.0f;
 
-    RenderingDesc renderingDesc{ };
-    renderingDesc.RTAttachments.AddElement( attachmentDesc );
-    renderingDesc.DepthAttachment = depthAttachmentDesc;
+    RenderingDesc renderingDesc;
+    renderingDesc.RTAttachments.Elements    = &attachmentDesc;
+    renderingDesc.RTAttachments.NumElements = 1;
+    renderingDesc.DepthAttachment           = depthAttachmentDesc;
 
     commandList->BeginRendering( renderingDesc );
 
@@ -337,7 +338,7 @@ void MeshShaderGrassExample::LoadGrassTexture( )
     batchResourceCopy.Submit( );
 
     const auto    commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( { m_graphicsQueue.get( ) } ) );
-    ICommandList *commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
+    ICommandList *commandList     = commandListPool->GetCommandLists( ).Elements[ 0 ];
     const auto    syncFence       = std::unique_ptr<IFence>( m_logicalDevice->CreateFence( ) );
 
     commandList->Begin( );
@@ -349,8 +350,9 @@ void MeshShaderGrassExample::LoadGrassTexture( )
     commandList->End( );
 
     ExecuteCommandListsDesc executeDesc{ };
-    executeDesc.CommandLists.AddElement( commandList );
-    executeDesc.Signal = syncFence.get( );
+    executeDesc.CommandLists.Elements    = &commandList;
+    executeDesc.CommandLists.NumElements = 1;
+    executeDesc.Signal                   = syncFence.get( );
     m_graphicsQueue->ExecuteCommandLists( executeDesc );
 
     syncFence->Wait( );
@@ -479,7 +481,7 @@ void MeshShaderGrassExample::LoadTerrainTexture( )
 
     // Transition texture to shader resource
     const auto    commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( { m_graphicsQueue.get( ) } ) );
-    ICommandList *commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
+    ICommandList *commandList     = commandListPool->GetCommandLists( ).Elements[ 0 ];
     const auto    syncFence       = std::unique_ptr<IFence>( m_logicalDevice->CreateFence( ) );
 
     commandList->Begin( );
@@ -491,8 +493,9 @@ void MeshShaderGrassExample::LoadTerrainTexture( )
     commandList->End( );
 
     ExecuteCommandListsDesc executeDesc{ };
-    executeDesc.CommandLists.AddElement( commandList );
-    executeDesc.Signal = syncFence.get( );
+    executeDesc.CommandLists.Elements    = &commandList;
+    executeDesc.CommandLists.NumElements = 1;
+    executeDesc.Signal                   = syncFence.get( );
     m_graphicsQueue->ExecuteCommandLists( executeDesc );
 
     syncFence->Wait( );

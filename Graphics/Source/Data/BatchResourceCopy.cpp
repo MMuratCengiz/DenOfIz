@@ -28,9 +28,9 @@ BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device, const bool issueBa
 
     m_commandListPool = std::unique_ptr<ICommandListPool>( m_device->CreateCommandListPool( { m_copyQueue.get( ) } ) );
     auto commandLists = m_commandListPool->GetCommandLists( );
-    DZ_ASSERTM( commandLists.NumElements( ) != 0, "Command list pool did not produce any command lists." );
+    DZ_ASSERTM( commandLists.NumElements != 0, "Command list pool did not produce any command lists." );
 
-    m_copyCommandList = commandLists.GetElement( 0 );
+    m_copyCommandList = commandLists.Elements[ 0 ];
     m_executeFence    = std::unique_ptr<IFence>( m_device->CreateFence( ) );
 
     if ( m_issueBarriers )
@@ -42,7 +42,7 @@ BatchResourceCopy::BatchResourceCopy( ILogicalDevice *device, const bool issueBa
         poolDesc.NumCommandLists = 1;
         m_syncCommandPool        = std::unique_ptr<ICommandListPool>( m_device->CreateCommandListPool( poolDesc ) );
 
-        m_syncCommandList = m_syncCommandPool->GetCommandLists( ).GetElement( 0 );
+        m_syncCommandList = m_syncCommandPool->GetCommandLists( ).Elements[ 0 ];
         m_batchCopyWait   = std::unique_ptr<ISemaphore>( m_device->CreateSemaphore( ) );
         m_syncWait        = std::unique_ptr<IFence>( m_device->CreateFence( ) );
     }
@@ -395,25 +395,36 @@ void BatchResourceCopy::Submit( ISemaphore *notify )
 {
     m_copyCommandList->End( );
 
-    ExecuteCommandListsDesc desc{ };
-    m_executeFence->Reset( );
-    desc.Signal = m_executeFence.get( );
-    desc.SignalSemaphores.AddElement( m_batchCopyWait.get( ) );
+    uint32_t                    numSignalSemaphores = 1;
+    std::array<ISemaphore *, 2> signalSemaphores( { } );
+    signalSemaphores[ 0 ] = m_batchCopyWait.get( );
     if ( notify )
     {
-        desc.SignalSemaphores.AddElement( notify );
+        signalSemaphores[ 1 ] = notify;
+        ++numSignalSemaphores;
     }
-    desc.CommandLists.AddElement( m_copyCommandList );
+
+    ExecuteCommandListsDesc desc{ };
+    m_executeFence->Reset( );
+    desc.Signal                       = m_executeFence.get( );
+    desc.SignalSemaphores.Elements    = signalSemaphores.data( );
+    desc.SignalSemaphores.NumElements = numSignalSemaphores;
+    desc.CommandLists.Elements        = &m_copyCommandList;
+    desc.CommandLists.NumElements     = 1;
     m_copyQueue->ExecuteCommandLists( desc );
     m_cleanResourcesFuture = std::async( std::launch::async, [ this ] { CleanResources( ); } );
 
     if ( m_issueBarriers )
     {
+        std::array<ISemaphore *, 1> waitSemaphores( { } );
+        waitSemaphores[ 0 ] = m_batchCopyWait.get( );
         m_syncWait->Reset( );
         ExecuteCommandListsDesc syncDesc{ };
-        syncDesc.Signal = m_syncWait.get( );
-        syncDesc.WaitSemaphores.AddElement( m_batchCopyWait.get( ) );
-        syncDesc.CommandLists.AddElement( m_syncCommandList );
+        syncDesc.Signal                     = m_syncWait.get( );
+        syncDesc.WaitSemaphores.Elements    = waitSemaphores.data( );
+        syncDesc.WaitSemaphores.NumElements = waitSemaphores.size( );
+        syncDesc.CommandLists.Elements      = &m_syncCommandList;
+        syncDesc.CommandLists.NumElements   = 1;
         m_syncCommandList->End( );
         m_syncQueue->ExecuteCommandLists( syncDesc );
         m_syncWait->Wait( );

@@ -294,7 +294,7 @@ void TextBatch::InitializeAtlas( )
     commandListPoolDesc.NumCommandLists = 1;
 
     auto commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( commandListPoolDesc ) );
-    auto commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
+    auto commandList     = commandListPool->GetCommandLists( ).Elements[ 0 ];
     commandList->Begin( );
 
     const auto *fontAsset = m_desc.Font->Asset( );
@@ -348,7 +348,8 @@ void TextBatch::InitializeAtlas( )
 
     commandList->End( );
     ExecuteCommandListsDesc executeDesc{ };
-    executeDesc.CommandLists = { commandList };
+    executeDesc.CommandLists.Elements    = &commandList;
+    executeDesc.CommandLists.NumElements = 1;
     commandQueue->ExecuteCommandLists( executeDesc );
     commandQueue->WaitIdle( );
 }

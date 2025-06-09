@@ -15,9 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include "DenOfIzExamples/ColoredSphereAsset.h"
 #include "DenOfIzExamples/TransparencyExample.h"
 #include <DirectXMath.h>
+#include "DenOfIzExamples/ColoredSphereAsset.h"
 
 using namespace DenOfIz;
 using namespace DirectX;
@@ -101,8 +101,9 @@ void TransparencyExample::Render( const uint32_t frameIndex, ICommandList *comma
     depthAttachmentDesc.SetClearDepthStencil( 1.0f, 0.0f );
 
     RenderingDesc renderingDesc{ };
-    renderingDesc.RTAttachments.AddElement( renderingAttachmentDesc );
-    renderingDesc.DepthAttachment = depthAttachmentDesc;
+    renderingDesc.RTAttachments.Elements    = &renderingAttachmentDesc;
+    renderingDesc.RTAttachments.NumElements = 1;
+    renderingDesc.DepthAttachment           = depthAttachmentDesc;
 
     commandList->BeginRendering( renderingDesc );
 

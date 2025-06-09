@@ -72,12 +72,13 @@ ShaderAsset ShaderAssetReader::Read( )
         const uint64_t reflectionSize = m_reader->ReadUInt64( );
         stage.Reflection              = m_reader->ReadBytes( reflectionSize );
 
-        const uint32_t numLocalBindings = m_reader->ReadUInt32( );
-        stage.RayTracing.LocalBindings.Resize( numLocalBindings );
+        const uint32_t numLocalBindings            = m_reader->ReadUInt32( );
+        stage.RayTracing.LocalBindings.Elements    = static_cast<ResourceBindingSlot *>( std::malloc( numLocalBindings * sizeof( ResourceBindingSlot ) ) );
+        stage.RayTracing.LocalBindings.NumElements = numLocalBindings;
 
         for ( uint32_t j = 0; j < numLocalBindings; ++j )
         {
-            ResourceBindingSlot &binding = stage.RayTracing.LocalBindings.GetElement( j );
+            ResourceBindingSlot &binding = stage.RayTracing.LocalBindings.Elements[ j ];
             binding.RegisterSpace        = m_reader->ReadUInt32( );
             binding.Binding              = m_reader->ReadUInt32( );
             binding.Type                 = static_cast<ResourceBindingType>( m_reader->ReadUInt32( ) );

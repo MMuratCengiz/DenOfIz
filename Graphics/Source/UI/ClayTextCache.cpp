@@ -24,8 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "DenOfIzGraphics/Backends/Interface/ICommandQueue.h"
 #include "DenOfIzGraphics/Renderer/Sync/ResourceTracking.h"
 #include "DenOfIzGraphicsInternal/Assets/Font/Embedded/EmbeddedFonts.h"
-#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 #include "DenOfIzGraphicsInternal/Utilities/Logging.h"
+#include "DenOfIzGraphicsInternal/Utilities/Utilities.h"
 
 using namespace DenOfIz;
 
@@ -235,7 +235,7 @@ void ClayTextCache::InitializeFontAtlas( ClayTextFontData *fontData )
         commandListPoolDesc.NumCommandLists = 1;
 
         auto commandListPool = std::unique_ptr<ICommandListPool>( m_logicalDevice->CreateCommandListPool( commandListPoolDesc ) );
-        auto commandList     = commandListPool->GetCommandLists( ).GetElement( 0 );
+        auto commandList     = commandListPool->GetCommandLists( ).Elements[ 0 ];
         commandList->Begin( );
 
         const auto alignedPitch = Utilities::Align( fontAsset->AtlasWidth * FontAsset::NumChannels, m_logicalDevice->DeviceInfo( ).Constants.BufferTextureRowAlignment );
@@ -278,7 +278,8 @@ void ClayTextCache::InitializeFontAtlas( ClayTextFontData *fontData )
 
         commandList->End( );
         ExecuteCommandListsDesc executeDesc{ };
-        executeDesc.CommandLists = { commandList };
+        executeDesc.CommandLists.Elements    = &commandList;
+        executeDesc.CommandLists.NumElements = 1;
         commandQueue->ExecuteCommandLists( executeDesc );
         commandQueue->WaitIdle( );
     }

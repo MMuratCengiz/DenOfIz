@@ -50,10 +50,10 @@ void DX12CommandList::Begin( )
 
 void DX12CommandList::BeginRendering( const RenderingDesc &renderingDesc )
 {
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> renderTargets( renderingDesc.RTAttachments.NumElements( ) );
-    for ( int i = 0; i < renderingDesc.RTAttachments.NumElements( ); i++ )
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> renderTargets( renderingDesc.RTAttachments.NumElements );
+    for ( uint32_t i = 0; i < renderingDesc.RTAttachments.NumElements; i++ )
     {
-        const auto &rtAttachment = renderingDesc.RTAttachments.GetElement( i );
+        const auto &rtAttachment = renderingDesc.RTAttachments.Elements[ i ];
         if ( rtAttachment.Resource == nullptr )
         {
             spdlog::error( "BeginRendering called with null render target attachment at index {}", i );

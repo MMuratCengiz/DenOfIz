@@ -24,9 +24,9 @@ using namespace DenOfIz;
 bool ShaderReflectionHelper::IsBindingLocalTo( const RayTracingShaderDesc &rayTracingShaderDesc, const D3D12_SHADER_INPUT_BIND_DESC &shaderInputBindDesc )
 {
     const auto &bindings = rayTracingShaderDesc.LocalBindings;
-    for ( size_t i = 0; i < bindings.NumElements( ); ++i )
+    for ( size_t i = 0; i < bindings.NumElements; ++i )
     {
-        const ResourceBindingSlot &element = bindings.GetElement( i );
+        const ResourceBindingSlot &element = bindings.Elements[ i ];
         if ( element.Binding == shaderInputBindDesc.BindPoint && element.RegisterSpace == shaderInputBindDesc.Space &&
              element.Type == DxcEnumConverter::ReflectTypeToBufferBindingType( shaderInputBindDesc.Type ) )
         {
