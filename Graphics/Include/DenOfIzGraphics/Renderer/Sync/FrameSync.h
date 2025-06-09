@@ -54,7 +54,7 @@ namespace DenOfIz
         DZ_API IFence       *GetFrameFence( uint32_t frame ) const;
         DZ_API ISemaphore   *GetPresentSignalSemaphore( uint32_t frame ) const;
         DZ_API ICommandList *GetCommandList( uint32_t frame ) const;
-        DZ_API void          ExecuteCommandList( uint32_t frame, const InteropArray<ISemaphore*>& additionalSemaphores = {} ) const;
+        DZ_API void          ExecuteCommandList( uint32_t frame, const ISemaphoreArray& additionalSemaphores = {} ) const;
         DZ_API uint32_t      AcquireNextImage( uint32_t frame ) const;
         DZ_API PresentResult Present( uint32_t imageIndex ) const;
         DZ_API void          WaitIdle( ) const;

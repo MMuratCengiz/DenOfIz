@@ -68,13 +68,13 @@ ICommandList *FrameSync::GetCommandList( const uint32_t frame ) const
     return m_commandLists[ frame ];
 }
 
-void FrameSync::ExecuteCommandList( const uint32_t frame, const InteropArray<ISemaphore*>& additionalSemaphores ) const
+void FrameSync::ExecuteCommandList( const uint32_t frame, const ISemaphoreArray& additionalSemaphores ) const
 {
     std::vector<ISemaphore*> waitSemaphores;
     waitSemaphores.push_back( m_imageAvailableSemaphores[ frame ].get( ) );
-    for ( int i = 0; i < additionalSemaphores.NumElements( ); ++i )
+    for ( int i = 0; i < additionalSemaphores.NumElements; ++i )
     {
-        waitSemaphores.push_back( additionalSemaphores.GetElement( i ) );
+        waitSemaphores.push_back( additionalSemaphores.Elements[ i ] );
     }
     
     ISemaphore* signalSemaphore = m_renderFinishedSemaphores[ frame ].get( );
