@@ -38,10 +38,6 @@ add_custom_target(DenOfIz-CppSharpGenerate
 	VERBATIM
 )
 
-if(NOT TARGET install)
-	message(WARNING "CppSharp bindings require DenOfIzGraphics to be installed first. Run 'cmake --install' before generating bindings.")
-endif()
-
 add_custom_target(DenOfIz-CppSharpNuGet
 	DEPENDS DenOfIz-CppSharpGenerate
 	COMMENT "Building CppSharp NuGet package..."
